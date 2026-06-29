@@ -642,97 +642,97 @@
 
 # Phase 7 — Scene Definitions
 
-* [ ] **SCN-001｜P0｜建立 Scene Registry**
+* [x] **SCN-001｜P0｜建立 Scene Registry**
 
   * 依賴：DOM-008
   * 驗收：可透過 scene ID 取得 SceneDefinition。
 
-* [ ] **SCN-002｜P0｜建立 Architecture Scene 基本地面**
+* [x] **SCN-002｜P0｜建立 Architecture Scene 基本地面**
 
   * 依賴：R3D-001
   * 驗收：有地面與可辨識拍攝位置。
 
-* [ ] **SCN-003｜P0｜建立 Architecture Scene 建築立面**
+* [x] **SCN-003｜P0｜建立 Architecture Scene 建築立面**
 
   * 依賴：SCN-002
   * 驗收：包含明確垂直線與建築頂部。
 
-* [ ] **SCN-004｜P0｜定義 Architecture Composition Target：建築頂部**
+* [x] **SCN-004｜P0｜定義 Architecture Composition Target：建築頂部**
 
   * 依賴：SCN-003
   * 驗收：有可計算 bounds 的 building top target。
 
-* [ ] **SCN-005｜P0｜定義 Architecture Composition Target：主建築**
+* [x] **SCN-005｜P0｜定義 Architecture Composition Target：主建築**
 
   * 依賴：SCN-003
   * 驗收：有可計算 bounds 的 main building target。
 
-* [ ] **SCN-006｜P0｜建立 Architecture Scene Camera Preset**
+* [x] **SCN-006｜P0｜建立 Architecture Scene Camera Preset**
 
   * 依賴：SCN-003
   * 驗收：初始狀態未完整收入建築頂部。
 
-* [ ] **SCN-007｜P0｜建立 Table Scene 桌面 Geometry**
+* [x] **SCN-007｜P0｜建立 Table Scene 桌面 Geometry**
 
   * 依賴：R3D-001
   * 驗收：桌面由近至遠明確延伸。
 
-* [ ] **SCN-008｜P0｜建立 Table Scene 近景 Target**
+* [x] **SCN-008｜P0｜建立 Table Scene 近景 Target**
 
   * 依賴：SCN-007
   * 驗收：近景物件有固定 world position。
 
-* [ ] **SCN-009｜P0｜建立 Table Scene 中景 Target**
+* [x] **SCN-009｜P0｜建立 Table Scene 中景 Target**
 
   * 依賴：SCN-007
   * 驗收：中景物件有固定 world position。
 
-* [ ] **SCN-010｜P0｜建立 Table Scene 遠景 Target**
+* [x] **SCN-010｜P0｜建立 Table Scene 遠景 Target**
 
   * 依賴：SCN-007
   * 驗收：遠景物件有固定 world position。
 
-* [ ] **SCN-011｜P0｜建立 Table Scene Camera Preset**
+* [x] **SCN-011｜P0｜建立 Table Scene Camera Preset**
 
   * 依賴：SCN-008 至 SCN-010
   * 驗收：zero tilt 時不可在 f/22 內令三 target 全部 sharp。
 
-* [ ] **SCN-012｜P0｜建立 Shelf Scene 主體 Geometry**
+* [x] **SCN-012｜P0｜建立 Shelf Scene 主體 Geometry**
 
   * 依賴：R3D-001
   * 驗收：主體在 X/Z 平面有明確斜向延伸。
 
-* [ ] **SCN-013｜P0｜建立 Shelf Scene 前景 Target**
+* [x] **SCN-013｜P0｜建立 Shelf Scene 前景 Target**
 
   * 依賴：SCN-012
   * 驗收：前景 target 有固定 world position。
 
-* [ ] **SCN-014｜P0｜建立 Shelf Scene 中景 Target**
+* [x] **SCN-014｜P0｜建立 Shelf Scene 中景 Target**
 
   * 依賴：SCN-012
   * 驗收：中景 target 有固定 world position。
 
-* [ ] **SCN-015｜P0｜建立 Shelf Scene 遠景 Target**
+* [x] **SCN-015｜P0｜建立 Shelf Scene 遠景 Target**
 
   * 依賴：SCN-012
   * 驗收：遠景 target 有固定 world position。
 
-* [ ] **SCN-016｜P0｜建立 Shelf Scene Camera Preset**
+* [x] **SCN-016｜P0｜建立 Shelf Scene Camera Preset**
 
   * 依賴：SCN-013 至 SCN-015
   * 驗收：zero swing 時不可在 f/22 內令三 target 全部 sharp。
 
-* [ ] **SCN-017｜P0｜建立所有 SceneDefinition**
+* [x] **SCN-017｜P0｜建立所有 SceneDefinition**
 
   * 依賴：SCN-006、SCN-011、SCN-016
   * 驗收：三個 scene 均註冊於 Scene Registry。
 
-* [ ] **SCN-018｜P1｜壓縮場景紋理**
+* [x] **SCN-018｜P1｜壓縮場景紋理**
 
   * 依賴：SCN-017
   * 驗收：主要紋理具壓縮格式，初始載入不明顯阻塞。
 
-* [ ] **SCN-019｜P1｜場景 Lazy Loading**
+* [x] **SCN-019｜P1｜場景 Lazy Loading**
 
   * 依賴：SCN-017
   * 驗收：只載入當前 scene 必需資產。
@@ -741,107 +741,107 @@
 
 # Phase 8 — Ground Glass
 
-* [ ] **GGL-001｜P0｜建立 Ground Glass Panel Component**
+* [x] **GGL-001｜P0｜建立 Ground Glass Panel Component**
 
   * 依賴：ENV-016
   * 驗收：Simulator Workspace 可顯示固定 4×5 比例 panel。
 
-* [ ] **GGL-002｜P0｜建立 Ground Glass Render Target**
+* [x] **GGL-002｜P0｜建立 Ground Glass Render Target**
 
   * 依賴：R3D-001
   * 驗收：可把場景渲染至獨立 texture。
 
-* [ ] **GGL-003｜P0｜建立 Ground Glass 專用 Camera**
+* [x] **GGL-003｜P0｜建立 Ground Glass 專用 Camera**
 
   * 依賴：GGL-002
   * 驗收：ground glass 使用獨立 camera，不影響 3D observer camera。
 
-* [ ] **GGL-004｜P0｜套用 Off-axis Projection Matrix**
+* [x] **GGL-004｜P0｜套用 Off-axis Projection Matrix**
 
   * 依賴：GGL-003、OPT-023
   * 驗收：ground glass camera 使用 DerivedOpticsState projection data。
 
-* [ ] **GGL-005｜P0｜驗證 Rise 改變 Ground Glass 垂直構圖**
+* [x] **GGL-005｜P0｜驗證 Rise 改變 Ground Glass 垂直構圖**
 
   * 依賴：GGL-004
   * 驗收：rise 增加時畫面包含更多上方場景。
 
-* [ ] **GGL-006｜P0｜建立 Ground Glass Flip Shader**
+* [x] **GGL-006｜P0｜建立 Ground Glass Flip Shader**
 
   * 依賴：GGL-002
   * 驗收：可獨立控制 X 與 Y flip。
 
-* [ ] **GGL-007｜P0｜預設啟用上下及左右反轉**
+* [x] **GGL-007｜P0｜預設啟用上下及左右反轉**
 
   * 依賴：GGL-006
   * 驗收：assist 關閉時 `flipX=true`、`flipY=true`。
 
-* [ ] **GGL-008｜P0｜實作 Orientation Assist**
+* [x] **GGL-008｜P0｜實作 Orientation Assist**
 
   * 依賴：STA-010、GGL-006
   * 驗收：assist 開啟時畫面恢復正常方向。
 
-* [ ] **GGL-009｜P0｜建立 Grid Overlay**
+* [x] **GGL-009｜P0｜建立 Grid Overlay**
 
   * 依賴：GGL-001、STA-012
   * 驗收：格線可開關且不影響 render texture。
 
-* [ ] **GGL-010｜P0｜建立 Center Line Overlay**
+* [x] **GGL-010｜P0｜建立 Center Line Overlay**
 
   * 依賴：GGL-001
   * 驗收：顯示水平及垂直中心線。
 
-* [ ] **GGL-011｜P0｜建立 Current Settings Overlay**
+* [x] **GGL-011｜P0｜建立 Current Settings Overlay**
 
   * 依賴：STA-015
   * 驗收：顯示 rise、tilt、swing、focus、aperture 數值。
 
-* [ ] **GGL-012｜P0｜建立 Depth Render Target**
+* [x] **GGL-012｜P0｜建立 Depth Render Target**
 
   * 依賴：GGL-002
   * 驗收：可取得與 color target 對應的 depth texture。
 
-* [ ] **GGL-013｜P0｜建立深度值線性化**
+* [x] **GGL-013｜P0｜建立深度值線性化**
 
   * 依賴：GGL-012
   * 驗收：shader 可將 depth sample 轉換為可用距離資料。
 
-* [ ] **GGL-014｜P0｜建立 World Position Reconstruction**
+* [x] **GGL-014｜P0｜建立 World Position Reconstruction**
 
   * 依賴：GGL-013、OPT-024
   * 驗收：shader 可近似取得 pixel 對應的世界位置。
 
-* [ ] **GGL-015｜P0｜建立 Focus Plane Distance Shader Logic**
+* [x] **GGL-015｜P0｜建立 Focus Plane Distance Shader Logic**
 
   * 依賴：GGL-014、OPT-014
   * 驗收：每 pixel 可計算至 focus plane 的距離。
 
-* [ ] **GGL-016｜P0｜建立 Aperture-based Blur Strength Logic**
+* [x] **GGL-016｜P0｜建立 Aperture-based Blur Strength Logic**
 
   * 依賴：GGL-015、OPT-016
   * 驗收：f/5.6 blur 強度高於 f/32。
 
-* [ ] **GGL-017｜P0｜建立 Half-resolution Blur Pass**
+* [x] **GGL-017｜P0｜建立 Half-resolution Blur Pass**
 
   * 依賴：GGL-016
   * 驗收：景深模糊在半解析度 pass 執行。
 
-* [ ] **GGL-018｜P0｜整合 Ground Glass DOF Pipeline**
+* [x] **GGL-018｜P0｜整合 Ground Glass DOF Pipeline**
 
   * 依賴：GGL-012 至 GGL-017
   * 驗收：focus、tilt、swing、aperture 改變時清晰帶即時更新。
 
-* [ ] **GGL-019｜P1｜建立 Focus Target Status Overlay**
+* [x] **GGL-019｜P1｜建立 Focus Target Status Overlay**
 
   * 依賴：OPT-020、STA-011
   * 驗收：可顯示每個 target 的 sharpness status。
 
-* [ ] **GGL-020｜P1｜建立非色彩 Focus Assist Pattern**
+* [x] **GGL-020｜P1｜建立非色彩 Focus Assist Pattern**
 
   * 依賴：GGL-019
   * 驗收：sharp / near-sharp / blurred 不只依賴顏色區分。
 
-* [ ] **GGL-021｜P1｜建立 Ground Glass Zoom Mode**
+* [x] **GGL-021｜P1｜建立 Ground Glass Zoom Mode**
 
   * 依賴：GGL-001
   * 驗收：使用者可局部放大地面玻璃畫面，不改變 camera state。
@@ -850,107 +850,107 @@
 
 # Phase 9 — 2D Geometry Diagrams
 
-* [ ] **GEO-001｜P0｜建立 SVG Geometry Viewport**
+* [x] **GEO-001｜P0｜建立 SVG Geometry Viewport**
 
   * 依賴：ENV-013
   * 驗收：可 render 可縮放 SVG canvas。
 
-* [ ] **GEO-002｜P0｜建立 SVG PlaneLine 元件**
+* [x] **GEO-002｜P0｜建立 SVG PlaneLine 元件**
 
   * 依賴：GEO-001
   * 驗收：可用 point 與 normal 表示一條平面截線。
 
-* [ ] **GEO-003｜P0｜建立 SVG RayLine 元件**
+* [x] **GEO-003｜P0｜建立 SVG RayLine 元件**
 
   * 依賴：GEO-001
   * 驗收：可顯示 optical axis 或 hinge line。
 
-* [ ] **GEO-004｜P0｜建立 SVG PointMarker 元件**
+* [x] **GEO-004｜P0｜建立 SVG PointMarker 元件**
 
   * 依賴：GEO-001
   * 驗收：可顯示 focus point 或交點標記。
 
-* [ ] **GEO-005｜P0｜建立 SVG Region 元件**
+* [x] **GEO-005｜P0｜建立 SVG Region 元件**
 
   * 依賴：GEO-001
   * 驗收：可表示 DOF near/far 區域。
 
-* [ ] **GEO-006｜P0｜建立 Diagram Legend 元件**
+* [x] **GEO-006｜P0｜建立 Diagram Legend 元件**
 
   * 依賴：GEO-001
   * 驗收：能以文字識別 film plane、lens plane、focus plane、DOF。
 
-* [ ] **GEO-007｜P0｜建立世界座標轉側視座標 Helper**
+* [x] **GEO-007｜P0｜建立世界座標轉側視座標 Helper**
 
   * 依賴：DOM-001
   * 驗收：將 X/Z 或 Y/Z 資料正確映射至 SVG。
 
-* [ ] **GEO-008｜P0｜建立世界座標轉俯視座標 Helper**
+* [x] **GEO-008｜P0｜建立世界座標轉俯視座標 Helper**
 
   * 依賴：DOM-001
   * 驗收：將 X/Z 資料正確映射至 SVG。
 
-* [ ] **GEO-009｜P0｜建立 Side View Film Plane 顯示**
+* [x] **GEO-009｜P0｜建立 Side View Film Plane 顯示**
 
   * 依賴：GEO-002、OPT-001
   * 驗收：側視圖可顯示固定底片平面。
 
-* [ ] **GEO-010｜P0｜建立 Side View Lens Plane 顯示**
+* [x] **GEO-010｜P0｜建立 Side View Lens Plane 顯示**
 
   * 依賴：GEO-002、OPT-007
   * 驗收：rise、tilt 改變時 lens plane 同步更新。
 
-* [ ] **GEO-011｜P0｜建立 Side View Optical Axis 顯示**
+* [x] **GEO-011｜P0｜建立 Side View Optical Axis 顯示**
 
   * 依賴：GEO-003、OPT-008
   * 驗收：光軸由 lens center 指向 focus point。
 
-* [ ] **GEO-012｜P0｜建立 Side View Focus Plane 顯示**
+* [x] **GEO-012｜P0｜建立 Side View Focus Plane 顯示**
 
   * 依賴：GEO-002、OPT-014
   * 驗收：tilt 改變時 focus plane 顯示方向更新。
 
-* [ ] **GEO-013｜P0｜建立 Side View DOF Region 顯示**
+* [x] **GEO-013｜P0｜建立 Side View DOF Region 顯示**
 
   * 依賴：GEO-005、OPT-017、OPT-018
   * 驗收：aperture 改變時區域寬度改變。
 
-* [ ] **GEO-014｜P0｜建立 Top View Film Plane 顯示**
+* [x] **GEO-014｜P0｜建立 Top View Film Plane 顯示**
 
   * 依賴：GEO-002、OPT-001
   * 驗收：俯視圖可顯示底片平面。
 
-* [ ] **GEO-015｜P0｜建立 Top View Lens Plane 顯示**
+* [x] **GEO-015｜P0｜建立 Top View Lens Plane 顯示**
 
   * 依賴：GEO-002、OPT-007
   * 驗收：swing 改變時 lens plane 顯示方向更新。
 
-* [ ] **GEO-016｜P0｜建立 Top View Optical Axis 顯示**
+* [x] **GEO-016｜P0｜建立 Top View Optical Axis 顯示**
 
   * 依賴：GEO-003、OPT-008
   * 驗收：俯視光軸與 derived state 一致。
 
-* [ ] **GEO-017｜P0｜建立 Top View Focus Plane 顯示**
+* [x] **GEO-017｜P0｜建立 Top View Focus Plane 顯示**
 
   * 依賴：GEO-002、OPT-014
   * 驗收：swing 改變時 focus plane 顯示方向更新。
 
-* [ ] **GEO-018｜P0｜建立 Top View DOF Region 顯示**
+* [x] **GEO-018｜P0｜建立 Top View DOF Region 顯示**
 
   * 依賴：GEO-005、OPT-017、OPT-018
   * 驗收：aperture 改變時 DOF 區域更新。
 
-* [ ] **GEO-019｜P0｜建立 Geometry View Selector**
+* [x] **GEO-019｜P0｜建立 Geometry View Selector**
 
   * 依賴：GEO-009 至 GEO-018
   * 驗收：可切換 side 與 top view。
 
-* [ ] **GEO-020｜P0｜為 Guided Task 設定預設 Geometry View**
+* [x] **GEO-020｜P0｜為 Guided Task 設定預設 Geometry View**
 
   * 依賴：GEO-019、TSK-001
   * 驗收：Rise/Tilt 預設 side；Swing 預設 top。
 
-* [ ] **GEO-021｜P1｜建立 Diagram Snapshot Tests**
+* [x] **GEO-021｜P1｜建立 Diagram Snapshot Tests**
 
   * 依賴：GEO-019
   * 驗收：固定 movement state 可產生穩定 SVG snapshot。

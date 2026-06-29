@@ -118,6 +118,18 @@ describe("app store STA-001", () => {
     expect(task.currentTaskEvaluation).toBeNull();
   });
 
+  it("uses guided-task default geometry view for rise and tilt as side view", () => {
+    const { setActiveTask, restartTask } = useAppStore.getState();
+
+    setActiveTask("task-rise-basics");
+    restartTask();
+    expect(useAppStore.getState().camera.geometryView).toBe("side");
+
+    setActiveTask("task-tilt-basics");
+    restartTask();
+    expect(useAppStore.getState().camera.geometryView).toBe("side");
+  });
+
   it("clamps focus distance to current scene range", () => {
     const { setActiveScene, setFocusDistance } = useAppStore.getState();
     setActiveScene("table-tilt");

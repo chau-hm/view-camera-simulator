@@ -9,7 +9,37 @@ export const sceneRegistry: Record<string, SceneDefinition> = {
   [shelfSwingScene.id]: shelfSwingScene,
 };
 
+export const sceneOrder = [architectureRiseScene.id, tableTiltScene.id, shelfSwingScene.id] as const;
+
 export const getSceneById = (sceneId: string): SceneDefinition | undefined => sceneRegistry[sceneId];
+
+export const getAllScenes = (): SceneDefinition[] => sceneOrder.map((sceneId) => sceneRegistry[sceneId]);
+
+export const getNextSceneId = (sceneId: string): string | null => {
+  const index = sceneOrder.indexOf(sceneId as (typeof sceneOrder)[number]);
+  if (index === -1 || index + 1 >= sceneOrder.length) {
+    return null;
+  }
+  return sceneOrder[index + 1];
+};
+
+export const getRequiredSceneAssets = (sceneId: string) => {
+  const scene = getSceneById(sceneId);
+  return scene?.assets.filter((asset) => asset.loadStrategy !== "lazy") ?? [];
+};
+
+export const getLazySceneAssets = (sceneId: string) => {
+  const scene = getSceneById(sceneId);
+  return scene?.assets.filter((asset) => asset.loadStrategy === "lazy") ?? [];
+};
+
+export const getPreloadSceneAssets = (sceneId: string) => {
+  const nextSceneId = getNextSceneId(sceneId);
+  if (!nextSceneId) {
+    return [];
+  }
+  return getRequiredSceneAssets(nextSceneId);
+};
 
 export type FocusDistanceRangeMm = {
   min: number;

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { SceneRenderer } from "../../render/SceneRenderer";
+import { getLazySceneAssets, getPreloadSceneAssets, getRequiredSceneAssets } from "../../scenes/definitions";
 import { isWebGLAvailable } from "../../utils/webgl";
 import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
@@ -28,6 +29,9 @@ export const SceneViewport = ({ scene, opticsState, simulateAssetFailure }: Scen
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("standard");
   const [viewResetNonce, setViewResetNonce] = useState(0);
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
+  const requiredAssets = useMemo(() => getRequiredSceneAssets(scene.id), [scene.id]);
+  const lazyAssets = useMemo(() => getLazySceneAssets(scene.id), [scene.id]);
+  const preloadAssets = useMemo(() => getPreloadSceneAssets(scene.id), [scene.id]);
 
   if (!webglAvailable) {
     return (
@@ -87,6 +91,10 @@ export const SceneViewport = ({ scene, opticsState, simulateAssetFailure }: Scen
           {UI_COPY.simulator.sceneViewReset}
         </button>
       </div>
+      <p style={{ fontSize: 12, color: "#4b5563", marginTop: 0 }}>
+        Loaded assets: {requiredAssets.length} required, {lazyAssets.length} lazy for current scene,{" "}
+        {preloadAssets.length} preload for next scene.
+      </p>
       <SceneRenderer
         scene={scene}
         opticsState={opticsState}

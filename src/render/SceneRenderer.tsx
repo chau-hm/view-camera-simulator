@@ -1,10 +1,10 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DoubleSide } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { DerivedOpticsState } from "../types/optics";
-import type { SceneDefinition } from "../types/scene";
+import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { UI_COPY } from "../ui/copy";
@@ -22,8 +22,6 @@ type SceneRendererProps = {
 };
 
 const WORLD_SCALE = 0.001;
-const DEFAULT_OBSERVER_CAMERA_POSITION: [number, number, number] = [0.6, 0.5, 1.6];
-const DEFAULT_OBSERVER_CAMERA_TARGET: [number, number, number] = [0, 0, -0.2];
 
 const toWorld = (millimeter: number): number => millimeter * WORLD_SCALE;
 const vecToWorld = (value: { x: number; y: number; z: number }): [number, number, number] => [
@@ -123,6 +121,119 @@ const PlaneOverlay = ({ color, point }: { color: string; point: [number, number,
   </mesh>
 );
 
+const SceneAssetMesh = ({ assetId }: { assetId: string }) => {
+  switch (assetId) {
+    case "architecture-ground":
+      return (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -toWorld(60), 0]}>
+          <planeGeometry args={[toWorld(12000), toWorld(12000)]} />
+          <meshStandardMaterial color="#e5e7eb" />
+        </mesh>
+      );
+    case "architecture-building-facade":
+      return (
+        <group>
+          <mesh position={[0, toWorld(5000), toWorld(9500)]}>
+            <boxGeometry args={[toWorld(2500), toWorld(10000), toWorld(1200)]} />
+            <meshStandardMaterial color="#94a3b8" />
+          </mesh>
+          {[-800, -300, 300, 800].map((offsetX) => (
+            <mesh key={offsetX} position={[toWorld(offsetX), toWorld(5000), toWorld(8900)]}>
+              <boxGeometry args={[toWorld(70), toWorld(9800), toWorld(80)]} />
+              <meshStandardMaterial color="#64748b" />
+            </mesh>
+          ))}
+        </group>
+      );
+    case "table-floor":
+      return (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toWorld(620), 0]}>
+          <planeGeometry args={[toWorld(9000), toWorld(9000)]} />
+          <meshStandardMaterial color="#ece7e1" />
+        </mesh>
+      );
+    case "table-top":
+      return (
+        <mesh position={[0, toWorld(800), toWorld(2400)]} rotation={[0.12, 0, 0]}>
+          <boxGeometry args={[toWorld(2800), toWorld(80), toWorld(3600)]} />
+          <meshStandardMaterial color="#b45309" />
+        </mesh>
+      );
+    case "table-props":
+      return (
+        <group>
+          <mesh position={[toWorld(-650), toWorld(860), toWorld(1200)]}>
+            <cylinderGeometry args={[toWorld(90), toWorld(90), toWorld(140), 20]} />
+            <meshStandardMaterial color="#60a5fa" />
+          </mesh>
+          <mesh position={[toWorld(50), toWorld(850), toWorld(2400)]}>
+            <boxGeometry args={[toWorld(260), toWorld(40), toWorld(180)]} />
+            <meshStandardMaterial color="#f59e0b" />
+          </mesh>
+          <mesh position={[toWorld(550), toWorld(845), toWorld(3600)]}>
+            <boxGeometry args={[toWorld(280), toWorld(30), toWorld(220)]} />
+            <meshStandardMaterial color="#a855f7" />
+          </mesh>
+        </group>
+      );
+    case "shelf-floor":
+      return (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toWorld(640), 0]}>
+          <planeGeometry args={[toWorld(10000), toWorld(10000)]} />
+          <meshStandardMaterial color="#e2e8f0" />
+        </mesh>
+      );
+    case "shelf-diagonal-structure":
+      return (
+        <group>
+          <mesh position={[0, toWorld(1200), toWorld(3400)]} rotation={[0, -0.35, 0]}>
+            <boxGeometry args={[toWorld(3000), toWorld(120), toWorld(6000)]} />
+            <meshStandardMaterial color="#64748b" />
+          </mesh>
+          <mesh position={[toWorld(-1100), toWorld(1350), toWorld(1700)]}>
+            <boxGeometry args={[toWorld(120), toWorld(700), toWorld(120)]} />
+            <meshStandardMaterial color="#334155" />
+          </mesh>
+          <mesh position={[toWorld(0), toWorld(1350), toWorld(3300)]}>
+            <boxGeometry args={[toWorld(120), toWorld(700), toWorld(120)]} />
+            <meshStandardMaterial color="#334155" />
+          </mesh>
+          <mesh position={[toWorld(1200), toWorld(1350), toWorld(5100)]}>
+            <boxGeometry args={[toWorld(120), toWorld(700), toWorld(120)]} />
+            <meshStandardMaterial color="#334155" />
+          </mesh>
+        </group>
+      );
+    case "shelf-decor":
+      return (
+        <group>
+          <mesh position={[toWorld(-1100), toWorld(1230), toWorld(1700)]}>
+            <boxGeometry args={[toWorld(180), toWorld(180), toWorld(120)]} />
+            <meshStandardMaterial color="#f97316" />
+          </mesh>
+          <mesh position={[toWorld(0), toWorld(1230), toWorld(3300)]}>
+            <boxGeometry args={[toWorld(180), toWorld(180), toWorld(120)]} />
+            <meshStandardMaterial color="#22c55e" />
+          </mesh>
+          <mesh position={[toWorld(1200), toWorld(1230), toWorld(5100)]}>
+            <boxGeometry args={[toWorld(180), toWorld(180), toWorld(120)]} />
+            <meshStandardMaterial color="#06b6d4" />
+          </mesh>
+        </group>
+      );
+    default:
+      return null;
+  }
+};
+
+const SceneAssets = ({ assets }: { assets: SceneAsset[] }) => (
+  <>
+    {assets.map((asset) => (
+      <SceneAssetMesh key={asset.id} assetId={asset.id} />
+    ))}
+  </>
+);
+
 const SceneContent = ({
   scene,
   opticsState,
@@ -139,10 +250,7 @@ const SceneContent = ({
     <ambientLight intensity={0.65} />
     <directionalLight position={[2, 4, 2]} intensity={0.7} />
     <hemisphereLight args={["#ffffff", "#d1d5db", 0.45]} />
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -toWorld(60), 0]}>
-      <planeGeometry args={[toWorld(8000), toWorld(8000)]} />
-      <meshStandardMaterial color="#e5e7eb" />
-    </mesh>
+    <SceneAssets assets={scene.assets.filter((asset) => asset.loadStrategy !== "lazy")} />
     <RearStandard />
     <FrontStandard opticsState={opticsState} />
     <FilmPlane opticsState={opticsState} />
@@ -176,22 +284,44 @@ export const SceneRenderer = ({
   onAssetError,
 }: SceneRendererProps) => {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const [loadLazyAssets, setLoadLazyAssets] = useState(false);
   const qualityConfig = useMemo(() => QUALITY_CONFIG[renderQuality], [renderQuality]);
+  const observerCameraPosition = useMemo(
+    () => vecToWorld(scene.cameraPlacement.position),
+    [scene.cameraPlacement.position],
+  );
+  const observerCameraTarget = useMemo(
+    () => vecToWorld(scene.cameraPlacement.target),
+    [scene.cameraPlacement.target],
+  );
+  const activeAssets = useMemo(
+    () =>
+      scene.assets.filter((asset) =>
+        loadLazyAssets ? true : asset.loadStrategy !== "lazy",
+      ),
+    [loadLazyAssets, scene.assets],
+  );
 
   useEffect(() => {
     if (controlsRef.current) {
-      controlsRef.current.target.set(...DEFAULT_OBSERVER_CAMERA_TARGET);
+      controlsRef.current.target.set(...observerCameraTarget);
       controlsRef.current.update();
     }
-  }, []);
+  }, [observerCameraTarget]);
 
   useEffect(() => {
     if (controlsRef.current) {
       controlsRef.current.reset();
-      controlsRef.current.target.set(...DEFAULT_OBSERVER_CAMERA_TARGET);
+      controlsRef.current.target.set(...observerCameraTarget);
       controlsRef.current.update();
     }
-  }, [viewResetNonce]);
+  }, [observerCameraTarget, viewResetNonce]);
+
+  useEffect(() => {
+    setLoadLazyAssets(false);
+    const timer = setTimeout(() => setLoadLazyAssets(true), 0);
+    return () => clearTimeout(timer);
+  }, [scene.id]);
 
   useEffect(() => {
     if (simulateAssetFailure && attempt === 0) {
@@ -207,11 +337,11 @@ export const SceneRenderer = ({
     <div data-testid="scene-canvas" style={{ height: 320, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}>
       <Canvas
         dpr={qualityConfig.dpr}
-        camera={{ position: DEFAULT_OBSERVER_CAMERA_POSITION, fov: 45, near: 0.01, far: 200 }}
+        camera={{ position: observerCameraPosition, fov: 45, near: 0.01, far: 200 }}
         gl={{ antialias: renderQuality !== "low" }}
       >
         <SceneContent
-          scene={scene}
+          scene={{ ...scene, assets: activeAssets }}
           opticsState={opticsState}
           showFocusPlaneOverlay={showFocusPlaneOverlay}
           showDofOverlay={showDofOverlay}

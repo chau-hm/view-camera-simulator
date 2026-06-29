@@ -83,8 +83,13 @@ export const SimulatorWorkspace = ({
           opticsState={opticsState}
           focusAssistEnabled={camera.focusAssistEnabled}
           gridEnabled={camera.gridEnabled}
+          riseMm={camera.frontRiseMm}
+          tiltDeg={camera.frontTiltDeg}
+          swingDeg={camera.frontSwingDeg}
+          focusDistanceMm={camera.focusDistanceMm}
+          aperture={camera.aperture}
         />
-        <GeometryViewport opticsState={opticsState} />
+        <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
       </div>
       <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
         <MovementControls />

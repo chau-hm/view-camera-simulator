@@ -31,6 +31,11 @@ export const UI_COPY = {
     tiltLabel: "Tilt",
     swingLabel: "Swing",
     groundGlassTitle: "Ground Glass",
+    groundGlassZoomIn: "Zoom in",
+    groundGlassZoomOut: "Zoom out",
+    groundGlassRenderPipeline: "Ground glass pipeline",
+    groundGlassCurrentSettings: "Current settings",
+    groundGlassFocusTargets: "Focus targets",
     sceneTitle: "3D Scene",
     sceneViewReset: "Reset 3D view",
     focusPlaneOverlayLabel: "Show focus plane",
@@ -48,6 +53,9 @@ export const UI_COPY = {
   render: {
     groundGlassPreview: "Ground glass preview",
     focusAssistBadge: "Focus assist",
+    focusStatusSharp: "Sharp",
+    focusStatusAcceptable: "Near-sharp",
+    focusStatusSoft: "Blurred",
     sceneAssetLoadFailedPrefix: "Failed to load scene assets for",
   },
 } as const;

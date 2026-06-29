@@ -18,6 +18,13 @@ export type SceneAsset = {
   id: string;
   kind: "model" | "helper";
   source: string;
+  textureFormat?: "ktx2" | "webp" | "none";
+  loadStrategy?: "eager" | "lazy";
+};
+
+export type CameraPlacement = {
+  position: Vec3;
+  target: Vec3;
 };
 
 export type SceneDefinition = {
@@ -26,6 +33,7 @@ export type SceneDefinition = {
   description: string;
   assets: SceneAsset[];
   cameraPreset: Pick<CameraState, "focusDistanceMm" | "aperture" | "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg">;
+  cameraPlacement: CameraPlacement;
   bounds: Bounds3;
   focusTargets: FocusTarget[];
   compositionTargets: CompositionTarget[];
