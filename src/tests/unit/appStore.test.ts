@@ -96,6 +96,7 @@ describe("app store STA-001", () => {
           label: "Primary focus target is sharp",
           passed: false,
           score: 0.4,
+          message: "Primary focus target is soft",
         },
       ],
       primaryFeedback: "Adjust movement",
@@ -110,7 +111,7 @@ describe("app store STA-001", () => {
     expect(camera.frontRiseMm).toBe(DEFAULT_CAMERA_STATE.frontRiseMm);
     expect(camera.frontTiltDeg).toBe(DEFAULT_CAMERA_STATE.frontTiltDeg);
     expect(camera.frontSwingDeg).toBe(DEFAULT_CAMERA_STATE.frontSwingDeg);
-    expect(camera.focusDistanceMm).toBe(DEFAULT_CAMERA_STATE.focusDistanceMm);
+    expect(camera.focusDistanceMm).toBe(3200);
     expect(camera.aperture).toBe(DEFAULT_CAMERA_STATE.aperture);
     expect(camera.geometryView).toBe("top");
     expect(scene.activeSceneId).toBe("shelf-swing");

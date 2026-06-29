@@ -55,8 +55,8 @@ export const SimulatorWorkspace = ({
   const opticsState = selectDerivedOpticsState(camera);
   const task = taskId ? getTaskById(taskId) ?? null : null;
   const evaluation = useMemo(
-    () => (task ? evaluateTask(task, safeScene, opticsState) : null),
-    [opticsState, safeScene, task],
+    () => (task ? evaluateTask(task, safeScene, camera, opticsState) : null),
+    [camera, opticsState, safeScene, task],
   );
   useEffect(() => {
     setCurrentTaskEvaluation(evaluation);

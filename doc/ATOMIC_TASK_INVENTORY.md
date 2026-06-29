@@ -959,97 +959,97 @@
 
 # Phase 10 — Task Engine
 
-* [ ] **TSK-001｜P0｜建立 Task Registry**
+* [x] **TSK-001｜P0｜建立 Task Registry**
 
   * 依賴：DOM-011
   * 驗收：可用 task ID 取得 TaskDefinition。
 
-* [ ] **TSK-002｜P0｜建立 Success Criterion：Focus Targets Sharp**
+* [x] **TSK-002｜P0｜建立 Success Criterion：Focus Targets Sharp**
 
   * 依賴：OPT-020
   * 驗收：可檢查指定 targets 是否達 `sharpness >= 0.8`。
 
-* [ ] **TSK-003｜P0｜建立 Success Criterion：Movement Used**
+* [x] **TSK-003｜P0｜建立 Success Criterion：Movement Used**
 
   * 依賴：DOM-006
   * 驗收：可檢查 rise、tilt 或 swing 是否超過最低使用值。
 
-* [ ] **TSK-004｜P0｜建立 Success Criterion：Movement Range**
+* [x] **TSK-004｜P0｜建立 Success Criterion：Movement Range**
 
   * 依賴：DOM-006
   * 驗收：可檢查 movement 是否處於 task 指定範圍。
 
-* [ ] **TSK-005｜P0｜建立 Success Criterion：Allowed Aperture**
+* [x] **TSK-005｜P0｜建立 Success Criterion：Allowed Aperture**
 
   * 依賴：DOM-006
   * 驗收：可阻止使用指定禁止光圈完成關卡。
 
-* [ ] **TSK-006｜P0｜建立 Ground Glass Frame Bounds 計算**
+* [x] **TSK-006｜P0｜建立 Ground Glass Frame Bounds 計算**
 
   * 依賴：OPT-023
   * 驗收：可取得可見 frame 的世界座標範圍或 projection relation。
 
-* [ ] **TSK-007｜P0｜建立 Composition Coverage 計算**
+* [x] **TSK-007｜P0｜建立 Composition Coverage 計算**
 
   * 依賴：TSK-006、DOM-010
   * 驗收：可回傳 composition target 可見比例。
 
-* [ ] **TSK-008｜P0｜建立 Success Criterion：Composition Visible**
+* [x] **TSK-008｜P0｜建立 Success Criterion：Composition Visible**
 
   * 依賴：TSK-007
   * 驗收：可檢查指定 target 的最低可見比例。
 
-* [ ] **TSK-009｜P0｜建立 Task Score 計算**
+* [x] **TSK-009｜P0｜建立 Task Score 計算**
 
   * 依賴：TSK-002 至 TSK-008
   * 驗收：score = passed criteria / total criteria × 100。
 
-* [ ] **TSK-010｜P0｜建立 Task Completion 判定**
+* [x] **TSK-010｜P0｜建立 Task Completion 判定**
 
   * 依賴：TSK-009
   * 驗收：全部 required criteria pass 才為 completed。
 
-* [ ] **TSK-011｜P0｜建立 Rise Task Definition**
+* [x] **TSK-011｜P0｜建立 Rise Task Definition**
 
   * 依賴：SCN-017、TSK-001
   * 驗收：`rise-01` 限制及成功條件符合 Spec。
 
-* [ ] **TSK-012｜P0｜建立 Tilt Task Definition**
+* [x] **TSK-012｜P0｜建立 Tilt Task Definition**
 
   * 依賴：SCN-017、TSK-001
   * 驗收：`tilt-01` 禁止 f/32，要求三 target sharp 與合理 tilt。
 
-* [ ] **TSK-013｜P0｜建立 Swing Task Definition**
+* [x] **TSK-013｜P0｜建立 Swing Task Definition**
 
   * 依賴：SCN-017、TSK-001
   * 驗收：`swing-01` 禁止 f/32，要求三 target sharp 與合理 swing。
 
-* [ ] **TSK-014｜P0｜建立 Task Evaluator**
+* [x] **TSK-014｜P0｜建立 Task Evaluator**
 
   * 依賴：TSK-002 至 TSK-013
   * 驗收：輸入 task、scene、camera、optics 後回傳完整 TaskEvaluation。
 
-* [ ] **TSK-015｜P0｜建立 Rise Task Primary Feedback**
+* [x] **TSK-015｜P0｜建立 Rise Task Primary Feedback**
 
   * 依賴：TSK-014、DOM-015
   * 驗收：可針對 top 未入畫、rise 太低、rise 太高、完成提供不同文字。
 
-* [ ] **TSK-016｜P0｜建立 Tilt Task Primary Feedback**
+* [x] **TSK-016｜P0｜建立 Tilt Task Primary Feedback**
 
   * 依賴：TSK-014、DOM-015
   * 驗收：可針對 tilt 不足、過量、focus 不準、f/32 限制、完成提供不同文字。
 
-* [ ] **TSK-017｜P0｜建立 Swing Task Primary Feedback**
+* [x] **TSK-017｜P0｜建立 Swing Task Primary Feedback**
 
   * 依賴：TSK-014、DOM-015
   * 驗收：可針對 swing 不足、過量、方向錯誤、focus 不準、完成提供不同文字。
 
-* [ ] **TSK-018｜P0｜建立 Feedback Priority Rule**
+* [x] **TSK-018｜P0｜建立 Feedback Priority Rule**
 
   * 依賴：TSK-015 至 TSK-017
   * 驗收：同時多項失敗時只輸出最具教學價值的一條 primary feedback。
 
-* [ ] **TSK-019｜P0｜建立 Secondary Hint Rule**
+* [x] **TSK-019｜P0｜建立 Secondary Hint Rule**
 
   * 依賴：TSK-018
   * 驗收：可選擇性提供第二條補充提示，最多一條。
