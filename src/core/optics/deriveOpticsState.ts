@@ -2,53 +2,79 @@ import type { CameraState } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
 import { calculateDepthOfField } from "./calculateDepthOfField";
-import { calculateFocusPlane } from "./calculateFocusPlane";
+import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
-import { calculateLensPlane } from "./calculateLensPlane";
+import {
+  calculateLensFilmHingeLine,
+  calculateLensPlane,
+  createFilmPlane,
+  createOpticalAxis,
+  isLensFilmNearlyParallel,
+} from "./calculateLensPlane";
+import {
+  calculateFilmPlaneCorners,
+  calculateOffAxisProjectionMatrix,
+  createOffAxisProjectionInput,
+} from "./calculateOffAxisProjection";
 import { calculateSharpness } from "./calculateSharpness";
+import { isFiniteVec3, vec } from "../math/vec";
 
-const baseFallbackState = (cameraState: CameraState): DerivedOpticsState => {
-  const lensCenterWorld = { x: 0, y: cameraState.frontRiseMm, z: 0 };
-  const lensNormalWorld = { x: 0, y: 0, z: 1 };
-  const filmCenterWorld = { x: 0, y: 0, z: -cameraState.focalLengthMm };
-  const filmNormalWorld = { x: 0, y: 0, z: 1 };
-  const opticalAxis = {
-    origin: lensCenterWorld,
-    direction: { x: 0, y: 0, z: 1 },
+const isFiniteCameraInput = (cameraState: CameraState): boolean =>
+  [
+    cameraState.focalLengthMm,
+    cameraState.focusDistanceMm,
+    cameraState.frontRiseMm,
+    cameraState.frontTiltDeg,
+    cameraState.frontSwingDeg,
+  ].every((value) => Number.isFinite(value));
+
+const baseFallbackState = (cameraState: CameraState, errorMessage: string): DerivedOpticsState => {
+  const lensCenterWorld = vec(0, cameraState.frontRiseMm, 0);
+  const lensNormalWorld = vec(0, 0, 1);
+  const { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(cameraState.focalLengthMm);
+  const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
+  const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
+  const focusPointWorld = vec(0, 0, cameraState.focusDistanceMm);
+  const focusPlane = {
+    point: focusPointWorld,
+    normal: filmNormalWorld,
+    distance: focusPointWorld.z,
   };
+  const offAxisProjectionInput = createOffAxisProjectionInput(lensCenterWorld, filmPlaneCornersWorld);
 
   return {
     lensCenterWorld,
     lensNormalWorld,
-    lensPlane: { point: lensCenterWorld, normal: lensNormalWorld, distance: 0 },
+    lensPlane: { point: lensCenterWorld, normal: lensNormalWorld, distance: lensCenterWorld.z },
     filmCenterWorld,
     filmNormalWorld,
-    filmPlane: { point: filmCenterWorld, normal: filmNormalWorld, distance: -cameraState.focalLengthMm },
+    filmPlane,
+    filmPlaneCornersWorld,
     opticalAxis,
-    focusPointWorld: { x: 0, y: 0, z: cameraState.focusDistanceMm },
-    focusPlane: {
-      point: { x: 0, y: 0, z: cameraState.focusDistanceMm },
-      normal: { x: 0, y: 0, z: 1 },
-      distance: cameraState.focusDistanceMm,
-    },
+    lensFilmHingeLine: null,
+    focusPointWorld,
+    focusPlane,
     depthOfFieldNearPlane: {
-      point: { x: 0, y: 0, z: cameraState.focusDistanceMm - 10 },
-      normal: { x: 0, y: 0, z: 1 },
-      distance: cameraState.focusDistanceMm - 10,
+      point: { x: 0, y: 0, z: cameraState.focusDistanceMm - 16 },
+      normal: filmNormalWorld,
+      distance: cameraState.focusDistanceMm - 16,
     },
     depthOfFieldFarPlane: {
-      point: { x: 0, y: 0, z: cameraState.focusDistanceMm + 10 },
-      normal: { x: 0, y: 0, z: 1 },
-      distance: cameraState.focusDistanceMm + 10,
+      point: { x: 0, y: 0, z: cameraState.focusDistanceMm + 16 },
+      normal: filmNormalWorld,
+      distance: cameraState.focusDistanceMm + 16,
     },
+    offAxisProjectionInput,
+    offAxisProjectionMatrix: calculateOffAxisProjectionMatrix(offAxisProjectionInput),
     groundGlassProjection: calculateGroundGlassProjection(cameraState.groundGlassAssistEnabled),
     focusTargets: [],
     diagnostics: {
       isParallelLensFilm: true,
       tiltAngleDeg: cameraState.frontTiltDeg,
       swingAngleDeg: cameraState.frontSwingDeg,
+      focusPlaneModel: "parallel",
       fallbackApplied: true,
-      errorMessage: "Fallback optics state in use",
+      errorMessage,
     },
   };
 };
@@ -57,44 +83,64 @@ export const deriveOpticsState = (
   cameraState: CameraState,
   scene: SceneDefinition,
 ): DerivedOpticsState => {
-  try {
-    const { lensCenterWorld, lensNormalWorld, lensPlane } = calculateLensPlane(cameraState);
-    const filmCenterWorld = { x: 0, y: 0, z: -cameraState.focalLengthMm };
-    const filmNormalWorld = { x: 0, y: 0, z: 1 };
-    const filmPlane = { point: filmCenterWorld, normal: filmNormalWorld, distance: -cameraState.focalLengthMm };
-    const opticalAxis = { origin: lensCenterWorld, direction: lensNormalWorld };
-
-    const { focusPointWorld, focusPlane } = calculateFocusPlane(cameraState, opticalAxis);
-    const { depthOfFieldNearPlane, depthOfFieldFarPlane } = calculateDepthOfField(
-      focusPlane,
-      cameraState.aperture,
-    );
-
-    return {
-      lensCenterWorld,
-      lensNormalWorld,
-      lensPlane,
-      filmCenterWorld,
-      filmNormalWorld,
-      filmPlane,
-      opticalAxis,
-      focusPointWorld,
-      focusPlane,
-      depthOfFieldNearPlane,
-      depthOfFieldFarPlane,
-      groundGlassProjection: calculateGroundGlassProjection(cameraState.groundGlassAssistEnabled),
-      focusTargets: calculateSharpness(scene),
-      diagnostics: {
-        isParallelLensFilm: cameraState.frontTiltDeg === 0 && cameraState.frontSwingDeg === 0,
-        tiltAngleDeg: cameraState.frontTiltDeg,
-        swingAngleDeg: cameraState.frontSwingDeg,
-        fallbackApplied: false,
-      },
-    };
-  } catch (error) {
-    const fallbackState = baseFallbackState(cameraState);
-    fallbackState.diagnostics.errorMessage =
-      error instanceof Error ? error.message : "Unknown optics computation error";
-    return fallbackState;
+  if (!isFiniteCameraInput(cameraState)) {
+    return baseFallbackState(cameraState, "Invalid camera input");
   }
+  if (cameraState.focusDistanceMm <= 0) {
+    return baseFallbackState(cameraState, "Invalid focus distance");
+  }
+  if (cameraState.focalLengthMm <= 0) {
+    return baseFallbackState(cameraState, "Invalid focal length");
+  }
+
+  const { lensCenterWorld, lensNormalWorld, lensPlane } = calculateLensPlane(cameraState);
+  if (!isFiniteVec3(lensCenterWorld) || !isFiniteVec3(lensNormalWorld)) {
+    return baseFallbackState(cameraState, "Invalid lens geometry");
+  }
+
+  const { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(cameraState.focalLengthMm);
+  const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
+  const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
+  const focusPointWorld = calculateFocusPoint(cameraState, opticalAxis);
+  const isParallelLensFilm = isLensFilmNearlyParallel(lensPlane, filmPlane);
+  const lensFilmHingeLine = isParallelLensFilm ? null : calculateLensFilmHingeLine(lensPlane, filmPlane);
+  const { focusPlane, focusPlaneModel } = calculateFocusPlaneWithFallback(
+    focusPointWorld,
+    filmPlane,
+    lensFilmHingeLine,
+    isParallelLensFilm || !lensFilmHingeLine,
+  );
+  const { depthOfFieldNearPlane, depthOfFieldFarPlane } = calculateDepthOfField(
+    focusPlane,
+    cameraState.aperture,
+  );
+  const offAxisProjectionInput = createOffAxisProjectionInput(lensCenterWorld, filmPlaneCornersWorld);
+  const offAxisProjectionMatrix = calculateOffAxisProjectionMatrix(offAxisProjectionInput);
+
+  return {
+    lensCenterWorld,
+    lensNormalWorld,
+    lensPlane,
+    filmCenterWorld,
+    filmNormalWorld,
+    filmPlane,
+    filmPlaneCornersWorld,
+    opticalAxis,
+    lensFilmHingeLine,
+    focusPointWorld,
+    focusPlane,
+    depthOfFieldNearPlane,
+    depthOfFieldFarPlane,
+    offAxisProjectionInput,
+    offAxisProjectionMatrix,
+    groundGlassProjection: calculateGroundGlassProjection(cameraState.groundGlassAssistEnabled),
+    focusTargets: calculateSharpness(scene, focusPlane, cameraState.aperture),
+    diagnostics: {
+      isParallelLensFilm,
+      tiltAngleDeg: cameraState.frontTiltDeg,
+      swingAngleDeg: cameraState.frontSwingDeg,
+      focusPlaneModel,
+      fallbackApplied: false,
+    },
+  };
 };

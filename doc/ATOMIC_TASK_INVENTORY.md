@@ -350,132 +350,132 @@
 
 # Phase 4 — Optics Kernel
 
-* [ ] **OPT-001｜P0｜建立固定 Film Plane**
+* [x] **OPT-001｜P0｜建立固定 Film Plane**
 
   * 依賴：DOM-003、DOM-013
   * 驗收：film plane 固定於指定座標，normal 指向 `+Z`。
 
-* [ ] **OPT-002｜P0｜建立 Base Lens Center**
+* [x] **OPT-002｜P0｜建立 Base Lens Center**
 
   * 依賴：DOM-001、DOM-013
   * 驗收：鏡頭中心的預設位置以毫米表示，並可作為 movement 基準。
 
-* [ ] **OPT-003｜P0｜計算 Rise 後 Lens Center**
+* [x] **OPT-003｜P0｜計算 Rise 後 Lens Center**
 
   * 依賴：OPT-002、STA-002
   * 驗收：只改變 lens center 的 Y 值。
 
-* [ ] **OPT-004｜P0｜計算 Tilt Rotation**
+* [x] **OPT-004｜P0｜計算 Tilt Rotation**
 
   * 依賴：MTH-009、STA-003
   * 驗收：tilt 只繞 X 軸旋轉。
 
-* [ ] **OPT-005｜P0｜計算 Swing Rotation**
+* [x] **OPT-005｜P0｜計算 Swing Rotation**
 
   * 依賴：MTH-010、STA-004
   * 驗收：swing 只繞 Y 軸旋轉。
 
-* [ ] **OPT-006｜P0｜計算 Lens Normal**
+* [x] **OPT-006｜P0｜計算 Lens Normal**
 
   * 依賴：OPT-004、OPT-005
   * 驗收：zero tilt/swing 時，lens normal 與 film normal 平行。
 
-* [ ] **OPT-007｜P0｜建立 Lens Plane**
+* [x] **OPT-007｜P0｜建立 Lens Plane**
 
   * 依賴：OPT-003、OPT-006、MTH-011
   * 驗收：lens plane 使用正確 center 與 normal。
 
-* [ ] **OPT-008｜P0｜建立 Optical Axis**
+* [x] **OPT-008｜P0｜建立 Optical Axis**
 
   * 依賴：OPT-003、OPT-006
   * 驗收：ray origin 為 lens center；direction 與 lens normal 一致。
 
-* [ ] **OPT-009｜P0｜計算 Focus Point**
+* [x] **OPT-009｜P0｜計算 Focus Point**
 
   * 依賴：OPT-008、STA-005
   * 驗收：focus point 位於 optical axis 上，距離等於 focusDistanceMm。
 
-* [ ] **OPT-010｜P0｜判斷 Lens 與 Film 是否近平行**
+* [x] **OPT-010｜P0｜判斷 Lens 與 Film 是否近平行**
 
   * 依賴：OPT-001、OPT-007、MTH-015
   * 驗收：夾角小於 `0.1°` 時回傳 true。
 
-* [ ] **OPT-011｜P0｜建立平行模型 Focus Plane**
+* [x] **OPT-011｜P0｜建立平行模型 Focus Plane**
 
   * 依賴：OPT-001、OPT-009
   * 驗收：focus plane 通過 focus point，normal 與 film plane 相同。
 
-* [ ] **OPT-012｜P0｜計算 Lens / Film 交線**
+* [x] **OPT-012｜P0｜計算 Lens / Film 交線**
 
   * 依賴：OPT-001、OPT-007、MTH-014
   * 驗收：非平行時可取得 hinge line。
 
-* [ ] **OPT-013｜P0｜建立 Scheimpflug Focus Plane**
+* [x] **OPT-013｜P0｜建立 Scheimpflug Focus Plane**
 
   * 依賴：OPT-009、OPT-012、MTH-005、MTH-006
   * 驗收：focus plane 同時經過 hinge line 與 focus point。
 
-* [ ] **OPT-014｜P0｜建立 Focus Plane Fallback**
+* [x] **OPT-014｜P0｜建立 Focus Plane Fallback**
 
   * 依賴：OPT-010、OPT-011、OPT-013
   * 驗收：近平行時使用平行模型，否則使用 Scheimpflug 模型。
 
-* [ ] **OPT-015｜P0｜建立 Optics Diagnostics**
+* [x] **OPT-015｜P0｜建立 Optics Diagnostics**
 
   * 依賴：OPT-010、OPT-014
   * 驗收：輸出 `isParallelLensFilm`、tilt angle、swing angle、fallback state。
 
-* [ ] **OPT-016｜P0｜建立 Aperture Tolerance Mapping**
+* [x] **OPT-016｜P0｜建立 Aperture Tolerance Mapping**
 
   * 依賴：DOM-013
   * 驗收：f/5.6 至 f/32 對應單調增加的 acceptable sharpness range。
 
-* [ ] **OPT-017｜P0｜建立 Depth-of-Field Near Plane**
+* [x] **OPT-017｜P0｜建立 Depth-of-Field Near Plane**
 
   * 依賴：OPT-014、OPT-016
   * 驗收：near plane 與 focus plane 平行，並向近端偏移。
 
-* [ ] **OPT-018｜P0｜建立 Depth-of-Field Far Plane**
+* [x] **OPT-018｜P0｜建立 Depth-of-Field Far Plane**
 
   * 依賴：OPT-014、OPT-016
   * 驗收：far plane 與 focus plane 平行，並向遠端偏移。
 
-* [ ] **OPT-019｜P0｜計算單一 Focus Target Sharpness**
+* [x] **OPT-019｜P0｜計算單一 Focus Target Sharpness**
 
   * 依賴：OPT-014、OPT-016、MTH-012
   * 驗收：回傳 distance、acceptable range、score、status。
 
-* [ ] **OPT-020｜P0｜建立 Focus Target Sharpness Collection**
+* [x] **OPT-020｜P0｜建立 Focus Target Sharpness Collection**
 
   * 依賴：OPT-019、DOM-009
   * 驗收：可對 scene 所有 targets 計算一致結果。
 
-* [ ] **OPT-021｜P0｜計算 Film Plane 四角**
+* [x] **OPT-021｜P0｜計算 Film Plane 四角**
 
   * 依賴：OPT-001、DOM-013
   * 驗收：回傳正確 4×5 尺寸的四個世界座標角點。
 
-* [ ] **OPT-022｜P0｜建立 Off-axis Projection Input**
+* [x] **OPT-022｜P0｜建立 Off-axis Projection Input**
 
   * 依賴：OPT-003、OPT-021
   * 驗收：輸出 lens center 與 film corners，供 renderer 建立 projection matrix。
 
-* [ ] **OPT-023｜P0｜計算 Off-axis Projection Matrix**
+* [x] **OPT-023｜P0｜計算 Off-axis Projection Matrix**
 
   * 依賴：OPT-022
   * 驗收：zero rise 時正常投影；rise 增加時可改變畫面垂直構圖。
 
-* [ ] **OPT-024｜P0｜整合 deriveOpticsState**
+* [x] **OPT-024｜P0｜整合 deriveOpticsState**
 
   * 依賴：OPT-001 至 OPT-023
   * 驗收：單一 pure function 回傳完整 DerivedOpticsState。
 
-* [ ] **OPT-025｜P0｜為 deriveOpticsState 加入數值安全回退**
+* [x] **OPT-025｜P0｜為 deriveOpticsState 加入數值安全回退**
 
   * 依賴：OPT-024、MTH-016
   * 驗收：不合法或近退化輸入不產生 NaN / Infinity。
 
-* [ ] **OPT-026｜P0｜建立 Derived Optics Memoization**
+* [x] **OPT-026｜P0｜建立 Derived Optics Memoization**
 
   * 依賴：OPT-024、STA-016
   * 驗收：只有 relevant camera 或 scene 值改變時才重算。
@@ -484,72 +484,72 @@
 
 # Phase 5 — Optics Unit Tests
 
-* [ ] **TST-OPT-001｜P0｜測試 Rise 改變 Lens Center Y**
+* [x] **TST-OPT-001｜P0｜測試 Rise 改變 Lens Center Y**
 
   * 依賴：OPT-003
   * 驗收：rise 前後只有 Y 值改變。
 
-* [ ] **TST-OPT-002｜P0｜測試 Tilt 改變 Lens Normal**
+* [x] **TST-OPT-002｜P0｜測試 Tilt 改變 Lens Normal**
 
   * 依賴：OPT-006
   * 驗收：tilt 不為零時 normal 改變。
 
-* [ ] **TST-OPT-003｜P0｜測試 Swing 改變 Lens Normal**
+* [x] **TST-OPT-003｜P0｜測試 Swing 改變 Lens Normal**
 
   * 依賴：OPT-006
   * 驗收：swing 不為零時 normal 改變。
 
-* [ ] **TST-OPT-004｜P0｜測試 Zero Movement 平行狀態**
+* [x] **TST-OPT-004｜P0｜測試 Zero Movement 平行狀態**
 
   * 依賴：OPT-010
   * 驗收：tilt=0、swing=0 時判定近平行。
 
-* [ ] **TST-OPT-005｜P0｜測試平行 Focus Plane**
+* [x] **TST-OPT-005｜P0｜測試平行 Focus Plane**
 
   * 依賴：OPT-011
   * 驗收：focus plane normal 與 film normal 平行。
 
-* [ ] **TST-OPT-006｜P0｜測試 Tilt 改變 Focus Plane 側視方向**
+* [x] **TST-OPT-006｜P0｜測試 Tilt 改變 Focus Plane 側視方向**
 
   * 依賴：OPT-013
   * 驗收：tilt 改變時 focus plane normal 改變。
 
-* [ ] **TST-OPT-007｜P0｜測試 Swing 改變 Focus Plane 俯視方向**
+* [x] **TST-OPT-007｜P0｜測試 Swing 改變 Focus Plane 俯視方向**
 
   * 依賴：OPT-013
   * 驗收：swing 改變時 focus plane normal 改變。
 
-* [ ] **TST-OPT-008｜P0｜測試 Aperture 不改變 Focus Plane**
+* [x] **TST-OPT-008｜P0｜測試 Aperture 不改變 Focus Plane**
 
   * 依賴：OPT-014、OPT-016
   * 驗收：不同 aperture 取得相同 focus plane normal。
 
-* [ ] **TST-OPT-009｜P0｜測試 Aperture 擴大 DOF**
+* [x] **TST-OPT-009｜P0｜測試 Aperture 擴大 DOF**
 
   * 依賴：OPT-017、OPT-018
   * 驗收：f/32 的 DOF 寬度大於 f/5.6。
 
-* [ ] **TST-OPT-010｜P0｜測試 Focus Target Score 上限**
+* [x] **TST-OPT-010｜P0｜測試 Focus Target Score 上限**
 
   * 依賴：OPT-019
   * 驗收：score 永遠位於 0 至 1。
 
-* [ ] **TST-OPT-011｜P0｜測試 Focus Plane 上 Target 接近 Sharp**
+* [x] **TST-OPT-011｜P0｜測試 Focus Plane 上 Target 接近 Sharp**
 
   * 依賴：OPT-019
   * 驗收：位於 focus plane 上的 target score ≥ 0.99。
 
-* [ ] **TST-OPT-012｜P0｜測試離焦距離增加時 Score 遞減**
+* [x] **TST-OPT-012｜P0｜測試離焦距離增加時 Score 遞減**
 
   * 依賴：OPT-019
   * 驗收：距離較遠 target 的 score 較低。
 
-* [ ] **TST-OPT-013｜P0｜測試近乎平行 Fallback**
+* [x] **TST-OPT-013｜P0｜測試近乎平行 Fallback**
 
   * 依賴：OPT-025
   * 驗收：非常小 tilt 不會造成 invalid plane。
 
-* [ ] **TST-OPT-014｜P0｜測試 Off-axis Projection Rise 行為**
+* [x] **TST-OPT-014｜P0｜測試 Off-axis Projection Rise 行為**
 
   * 依賴：OPT-023
   * 驗收：rise 增加時 projection 的垂直偏移值改變。
@@ -558,82 +558,82 @@
 
 # Phase 6 — 3D Renderer
 
-* [ ] **R3D-001｜P0｜建立主 React Three Fiber Canvas**
+* [x] **R3D-001｜P0｜建立主 React Three Fiber Canvas**
 
   * 依賴：ENV-004、ENV-018
   * 驗收：Simulator route 顯示 WebGL Canvas。
 
-* [ ] **R3D-002｜P0｜建立主場景背景**
+* [x] **R3D-002｜P0｜建立主場景背景**
 
   * 依賴：R3D-001
   * 驗收：Canvas 有固定背景色或環境背景。
 
-* [ ] **R3D-003｜P0｜建立基本環境燈光**
+* [x] **R3D-003｜P0｜建立基本環境燈光**
 
   * 依賴：R3D-001
   * 驗收：場景中的相機與目標物可辨識。
 
-* [ ] **R3D-004｜P0｜建立固定後組模型**
+* [x] **R3D-004｜P0｜建立固定後組模型**
 
   * 依賴：OPT-001
   * 驗收：後組位置不受 movement 影響。
 
-* [ ] **R3D-005｜P0｜建立前組 Frame 模型**
+* [x] **R3D-005｜P0｜建立前組 Frame 模型**
 
   * 依賴：OPT-007
   * 驗收：前組可接受 position 與 rotation props。
 
-* [ ] **R3D-006｜P0｜建立 Lens Board 模型**
+* [x] **R3D-006｜P0｜建立 Lens Board 模型**
 
   * 依賴：R3D-005
   * 驗收：鏡頭板隨前組移動與旋轉。
 
-* [ ] **R3D-007｜P0｜建立簡化鏡頭模型**
+* [x] **R3D-007｜P0｜建立簡化鏡頭模型**
 
   * 依賴：R3D-006
   * 驗收：鏡頭固定於鏡頭板中心。
 
-* [ ] **R3D-008｜P0｜建立固定底片平面可視化**
+* [x] **R3D-008｜P0｜建立固定底片平面可視化**
 
   * 依賴：OPT-001
   * 驗收：4×5 底片平面在 3D 場景中可辨識。
 
-* [ ] **R3D-009｜P0｜建立簡化皮腔模型**
+* [x] **R3D-009｜P0｜建立簡化皮腔模型**
 
   * 依賴：R3D-004、R3D-005
   * 驗收：皮腔在前後組之間持續連接。
 
-* [ ] **R3D-010｜P0｜建立光軸 Overlay**
+* [x] **R3D-010｜P0｜建立光軸 Overlay**
 
   * 依賴：OPT-008
   * 驗收：可顯示 lens center 至 focus point 的光軸線。
 
-* [ ] **R3D-011｜P0｜將 Derived Optics 套用至前組**
+* [x] **R3D-011｜P0｜將 Derived Optics 套用至前組**
 
   * 依賴：R3D-005、OPT-024
   * 驗收：rise、tilt、swing 即時反映於前組模型。
 
-* [ ] **R3D-012｜P1｜建立 Orbit Controls**
+* [x] **R3D-012｜P1｜建立 Orbit Controls**
 
   * 依賴：R3D-001
   * 驗收：使用者可旋轉與縮放「觀察相機」，不改變虛擬大片幅相機位置。
 
-* [ ] **R3D-013｜P1｜建立 3D View Reset**
+* [x] **R3D-013｜P1｜建立 3D View Reset**
 
   * 依賴：R3D-012
   * 驗收：可回復預設觀察角度。
 
-* [ ] **R3D-014｜P1｜建立 Focus Plane Overlay**
+* [x] **R3D-014｜P1｜建立 Focus Plane Overlay**
 
   * 依賴：OPT-014
   * 驗收：focus plane 可在 3D 場景中顯示及隱藏。
 
-* [ ] **R3D-015｜P1｜建立 DOF Region Overlay**
+* [x] **R3D-015｜P1｜建立 DOF Region Overlay**
 
   * 依賴：OPT-017、OPT-018
   * 驗收：near/far 範圍隨 aperture 改變。
 
-* [ ] **R3D-016｜P1｜建立 Render Quality Profile**
+* [x] **R3D-016｜P1｜建立 Render Quality Profile**
 
   * 依賴：R3D-001
   * 驗收：可選 high / standard / low 三種 render quality。

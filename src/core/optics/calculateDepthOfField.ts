@@ -1,28 +1,26 @@
 import type { Plane } from "../../types/optics";
+import { planeFromPointNormal } from "../math/plane";
+import { add, scale } from "../math/vec";
+
+const APERTURE_TOLERANCE_MM: Record<number, number> = {
+  5.6: 8,
+  11: 16,
+  22: 32,
+  32: 48,
+};
+
+export const mapApertureToToleranceMm = (aperture: number): number => APERTURE_TOLERANCE_MM[aperture] ?? 16;
 
 export const calculateDepthOfField = (
   focusPlane: Plane,
   aperture: number,
 ): { depthOfFieldNearPlane: Plane; depthOfFieldFarPlane: Plane } => {
-  const dofOffset = Math.max(5, 30 / aperture);
+  const dofOffset = mapApertureToToleranceMm(aperture);
+  const nearPoint = add(focusPlane.point, scale(focusPlane.normal, -dofOffset));
+  const farPoint = add(focusPlane.point, scale(focusPlane.normal, dofOffset));
+
   return {
-    depthOfFieldNearPlane: {
-      ...focusPlane,
-      point: {
-        x: focusPlane.point.x - focusPlane.normal.x * dofOffset,
-        y: focusPlane.point.y - focusPlane.normal.y * dofOffset,
-        z: focusPlane.point.z - focusPlane.normal.z * dofOffset,
-      },
-      distance: focusPlane.distance - dofOffset,
-    },
-    depthOfFieldFarPlane: {
-      ...focusPlane,
-      point: {
-        x: focusPlane.point.x + focusPlane.normal.x * dofOffset,
-        y: focusPlane.point.y + focusPlane.normal.y * dofOffset,
-        z: focusPlane.point.z + focusPlane.normal.z * dofOffset,
-      },
-      distance: focusPlane.distance + dofOffset,
-    },
+    depthOfFieldNearPlane: planeFromPointNormal(nearPoint, focusPlane.normal),
+    depthOfFieldFarPlane: planeFromPointNormal(farPoint, focusPlane.normal),
   };
 };

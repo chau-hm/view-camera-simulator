@@ -78,7 +78,7 @@ export const SimulatorWorkspace = ({
         </p>
       )}
       <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        <SceneViewport scene={scene} simulateAssetFailure={simulateAssetFailure} />
+        <SceneViewport scene={scene} opticsState={opticsState} simulateAssetFailure={simulateAssetFailure} />
         <GroundGlassViewport
           opticsState={opticsState}
           focusAssistEnabled={camera.focusAssistEnabled}
