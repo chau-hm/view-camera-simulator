@@ -16,15 +16,32 @@ const defaultControlState = {
   aperture: DEFAULT_CAMERA_STATE.aperture,
 };
 
+type SceneRuntimeState = {
+  activeSceneId: string;
+};
+
+type TaskRuntimeState = {
+  activeTaskId: string | null;
+  currentTaskEvaluation: TaskEvaluation | null;
+};
+
+type UIState = {
+  mode: SimulatorMode;
+  geometryView: GeometryView;
+  groundGlassAssistEnabled: boolean;
+  focusAssistEnabled: boolean;
+  gridEnabled: boolean;
+};
+
 export type AppStore = {
   camera: CameraState;
-  currentTaskEvaluation: TaskEvaluation | null;
+  scene: SceneRuntimeState;
+  task: TaskRuntimeState;
+  ui: UIState;
   setCurrentTaskEvaluation: (evaluation: TaskEvaluation | null) => void;
   setMode: (mode: SimulatorMode) => void;
   setActiveScene: (sceneId: string) => void;
   setActiveTask: (taskId: string | null) => void;
-  setScene: (sceneId: string) => void;
-  setTask: (taskId: string | null) => void;
   setRise: (value: number) => void;
   setTilt: (value: number) => void;
   setSwing: (value: number) => void;
@@ -41,15 +58,34 @@ export type AppStore = {
 
 export const useAppStore = create<AppStore>((set) => ({
   camera: DEFAULT_CAMERA_STATE,
-  currentTaskEvaluation: null,
-  setCurrentTaskEvaluation: (evaluation) => set({ currentTaskEvaluation: evaluation }),
-  setMode: (mode) => set((state) => ({ camera: { ...state.camera, mode } })),
+  scene: { activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId },
+  task: {
+    activeTaskId: DEFAULT_CAMERA_STATE.activeTaskId,
+    currentTaskEvaluation: null,
+  },
+  ui: {
+    mode: DEFAULT_CAMERA_STATE.mode,
+    geometryView: DEFAULT_CAMERA_STATE.geometryView,
+    groundGlassAssistEnabled: DEFAULT_CAMERA_STATE.groundGlassAssistEnabled,
+    focusAssistEnabled: DEFAULT_CAMERA_STATE.focusAssistEnabled,
+    gridEnabled: DEFAULT_CAMERA_STATE.gridEnabled,
+  },
+  setCurrentTaskEvaluation: (evaluation) =>
+    set((state) => ({
+      task: { ...state.task, currentTaskEvaluation: evaluation },
+    })),
+  setMode: (mode) => set((state) => ({ camera: { ...state.camera, mode }, ui: { ...state.ui, mode } })),
   setActiveScene: (sceneId) =>
-    set((state) => ({ camera: { ...state.camera, activeSceneId: sceneId }, currentTaskEvaluation: null })),
+    set((state) => ({
+      camera: { ...state.camera, activeSceneId: sceneId },
+      scene: { ...state.scene, activeSceneId: sceneId },
+      task: { ...state.task, currentTaskEvaluation: null },
+    })),
   setActiveTask: (taskId) =>
-    set((state) => ({ camera: { ...state.camera, activeTaskId: taskId }, currentTaskEvaluation: null })),
-  setScene: (sceneId) => set((state) => ({ camera: { ...state.camera, activeSceneId: sceneId } })),
-  setTask: (taskId) => set((state) => ({ camera: { ...state.camera, activeTaskId: taskId } })),
+    set((state) => ({
+      camera: { ...state.camera, activeTaskId: taskId },
+      task: { ...state.task, activeTaskId: taskId, currentTaskEvaluation: null },
+    })),
   setRise: (value) =>
     set((state) => ({
       camera: {
@@ -74,12 +110,17 @@ export const useAppStore = create<AppStore>((set) => ({
   setFocusDistance: (value) =>
     set((state) => ({ camera: { ...state.camera, focusDistanceMm: Math.max(100, value) } })),
   setAperture: (value) => set((state) => ({ camera: { ...state.camera, aperture: value } })),
-  setGeometryView: (value) => set((state) => ({ camera: { ...state.camera, geometryView: value } })),
+  setGeometryView: (value) =>
+    set((state) => ({ camera: { ...state.camera, geometryView: value }, ui: { ...state.ui, geometryView: value } })),
   toggleGroundGlassAssist: () =>
     set((state) => ({
       camera: {
         ...state.camera,
         groundGlassAssistEnabled: !state.camera.groundGlassAssistEnabled,
+      },
+      ui: {
+        ...state.ui,
+        groundGlassAssistEnabled: !state.ui.groundGlassAssistEnabled,
       },
     })),
   toggleFocusAssist: () =>
@@ -88,15 +129,23 @@ export const useAppStore = create<AppStore>((set) => ({
         ...state.camera,
         focusAssistEnabled: !state.camera.focusAssistEnabled,
       },
+      ui: {
+        ...state.ui,
+        focusAssistEnabled: !state.ui.focusAssistEnabled,
+      },
     })),
-  toggleGrid: () => set((state) => ({ camera: { ...state.camera, gridEnabled: !state.camera.gridEnabled } })),
+  toggleGrid: () =>
+    set((state) => ({
+      camera: { ...state.camera, gridEnabled: !state.camera.gridEnabled },
+      ui: { ...state.ui, gridEnabled: !state.ui.gridEnabled },
+    })),
   resetMovements: () =>
     set((state) => ({
       camera: {
         ...state.camera,
         ...defaultMovementState,
       },
-      currentTaskEvaluation: null,
+      task: { ...state.task, currentTaskEvaluation: null },
     })),
   restartTask: () =>
     set((state) => ({
@@ -104,7 +153,22 @@ export const useAppStore = create<AppStore>((set) => ({
         ...state.camera,
         ...defaultControlState,
       },
-      currentTaskEvaluation: null,
+      task: { ...state.task, currentTaskEvaluation: null },
     })),
-  resetCamera: () => set({ camera: DEFAULT_CAMERA_STATE, currentTaskEvaluation: null }),
+  resetCamera: () =>
+    set({
+      camera: DEFAULT_CAMERA_STATE,
+      scene: { activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId },
+      task: {
+        activeTaskId: DEFAULT_CAMERA_STATE.activeTaskId,
+        currentTaskEvaluation: null,
+      },
+      ui: {
+        mode: DEFAULT_CAMERA_STATE.mode,
+        geometryView: DEFAULT_CAMERA_STATE.geometryView,
+        groundGlassAssistEnabled: DEFAULT_CAMERA_STATE.groundGlassAssistEnabled,
+        focusAssistEnabled: DEFAULT_CAMERA_STATE.focusAssistEnabled,
+        gridEnabled: DEFAULT_CAMERA_STATE.gridEnabled,
+      },
+    }),
 }));

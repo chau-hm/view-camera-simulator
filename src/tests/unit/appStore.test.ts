@@ -4,7 +4,7 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("app store STA-001", () => {
   afterEach(() => {
-    useAppStore.setState({ camera: DEFAULT_CAMERA_STATE, currentTaskEvaluation: null });
+    useAppStore.getState().resetCamera();
   });
 
   it("exposes required STA-001 actions", () => {
@@ -22,15 +22,29 @@ describe("app store STA-001", () => {
     expect(typeof store.restartTask).toBe("function");
   });
 
+  it("contains camera scene task ui state groups", () => {
+    const { camera, scene, task, ui } = useAppStore.getState();
+
+    expect(camera.activeSceneId).toBe(scene.activeSceneId);
+    expect(camera.activeTaskId).toBe(task.activeTaskId);
+    expect(camera.mode).toBe(ui.mode);
+    expect(camera.geometryView).toBe(ui.geometryView);
+    expect(camera.groundGlassAssistEnabled).toBe(ui.groundGlassAssistEnabled);
+    expect(camera.focusAssistEnabled).toBe(ui.focusAssistEnabled);
+    expect(camera.gridEnabled).toBe(ui.gridEnabled);
+  });
+
   it("updates active scene and task with STA-001 actions", () => {
     const { setActiveScene, setActiveTask } = useAppStore.getState();
 
     setActiveScene("table-tilt");
     setActiveTask("task-tilt-basics");
 
-    const { camera } = useAppStore.getState();
+    const { camera, scene, task } = useAppStore.getState();
     expect(camera.activeSceneId).toBe("table-tilt");
     expect(camera.activeTaskId).toBe("task-tilt-basics");
+    expect(scene.activeSceneId).toBe("table-tilt");
+    expect(task.activeTaskId).toBe("task-tilt-basics");
   });
 
   it("resets only movement values with resetMovements", () => {
@@ -78,7 +92,7 @@ describe("app store STA-001", () => {
 
     restartTask();
 
-    const { camera, currentTaskEvaluation } = useAppStore.getState();
+    const { camera, task } = useAppStore.getState();
     expect(camera.activeSceneId).toBe("shelf-swing");
     expect(camera.activeTaskId).toBe("task-swing-basics");
     expect(camera.frontRiseMm).toBe(DEFAULT_CAMERA_STATE.frontRiseMm);
@@ -86,6 +100,6 @@ describe("app store STA-001", () => {
     expect(camera.frontSwingDeg).toBe(DEFAULT_CAMERA_STATE.frontSwingDeg);
     expect(camera.focusDistanceMm).toBe(DEFAULT_CAMERA_STATE.focusDistanceMm);
     expect(camera.aperture).toBe(DEFAULT_CAMERA_STATE.aperture);
-    expect(currentTaskEvaluation).toBeNull();
+    expect(task.currentTaskEvaluation).toBeNull();
   });
 });

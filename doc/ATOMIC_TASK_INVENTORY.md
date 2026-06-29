@@ -1,1608 +1,1433 @@
-# View Camera Movement Simulator — Task Inventory
+# View Camera Movement Simulator — Atomic Task Inventory
 
 **版本**：MVP v0.1
-**估算單位**：S / M / L
-**優先級**：P0 = MVP 必須；P1 = MVP 完成前建議；P2 = MVP 後
-**依賴關係**：以 Task ID 表示
+**任務粒度原則**：每個 Task 只產生一個可驗收結果；不可將多個無直接依賴的工作混入同一項。
+**優先級**：`P0` 必須完成；`P1` 可於核心流程完成後加入。
+**建議執行方式**：每個 Task 使用獨立 branch / PR，完成後須通過 typecheck、lint 與相關測試。
 
 ---
 
-## 1. 工作流與總覽
+# Phase 0 — 專案基礎
 
-```mermaid
-flowchart LR
-  F[Foundation] --> O[Optics Kernel]
-  F --> R[3D Renderer]
-  O --> G[Ground Glass]
-  O --> D[2D Geometry]
-  R --> G
-  O --> T[Task Engine]
-  D --> T
-  G --> T
-  T --> U[Guided UI / Feedback]
-  U --> Q[QA and Release]
-```
+* [x] **ENV-001｜P0｜建立 Vite React TypeScript 專案**
 
-| 工作包                        | Task 數量 | 主要成果                         |
-| -------------------------- | ------: | ---------------------------- |
-| Foundation                 |       6 | 可運行前端骨架與型別基線                 |
-| Optics Kernel              |       9 | 可測試的 movement、焦平面、景深計算       |
-| 3D Rendering               |       6 | 相機模型、場景及 movement 視覺化        |
-| Ground Glass               |       6 | 倒像預覽、景深與輔助圖層                 |
-| Geometry Diagram           |       5 | 側視及俯視幾何圖                     |
-| Scene Content              |       5 | 三個可用教學場景                     |
-| Task Engine                |       6 | 關卡、判定、回饋                     |
-| Application UI             |       7 | Guided / Free Mode、控制與 reset |
-| QA / Performance / Release |       9 | 測試、可及性、部署                    |
-| **合計**                     |  **59** | MVP 可交付版本                    |
+  * 依賴：無
+  * 驗收：可執行 `npm run dev` 並顯示基本 React 頁面。
+
+* [ ] **ENV-002｜P0｜啟用 TypeScript strict mode**
+
+  * 依賴：ENV-001
+  * 驗收：`tsconfig.json` 啟用 strict；專案可通過 `npm run typecheck`。
+
+* [x] **ENV-003｜P0｜安裝 Three.js**
+
+  * 依賴：ENV-001
+  * 驗收：專案可 import `three`，無 build error。
+
+* [x] **ENV-004｜P0｜安裝 React Three Fiber**
+
+  * 依賴：ENV-003
+  * 驗收：可 render 最小化 `<Canvas />` 元件。
+
+* [ ] **ENV-005｜P0｜安裝 React Three Drei**
+
+  * 依賴：ENV-004
+  * 驗收：可 import 至少一個 Drei helper，無 build error。
+
+* [x] **ENV-006｜P0｜安裝 Zustand**
+
+  * 依賴：ENV-001
+  * 驗收：可建立最小 state store 並在 React component 讀取。
+
+* [x] **ENV-007｜P0｜安裝 Vitest**
+
+  * 依賴：ENV-001
+  * 驗收：`npm run test` 可執行一個 sample test。
+
+* [x] **ENV-008｜P0｜安裝 React Testing Library**
+
+  * 依賴：ENV-007
+  * 驗收：可 render 一個 React component 並斷言文字存在。
+
+* [x] **ENV-009｜P0｜安裝 Playwright**
+
+  * 依賴：ENV-001
+  * 驗收：可執行 sample browser test。
+
+* [x] **ENV-010｜P0｜設定 ESLint**
+
+  * 依賴：ENV-001
+  * 驗收：`npm run lint` 可執行並檢查 `src/`。
+
+* [x] **ENV-011｜P0｜設定 Prettier**
+
+  * 依賴：ENV-001
+  * 驗收：可執行格式化指令，且不與 ESLint 衝突。
+
+* [x] **ENV-012｜P0｜建立 npm scripts**
+
+  * 依賴：ENV-007、ENV-009、ENV-010
+  * 驗收：具備 `dev`、`build`、`typecheck`、`lint`、`test`、`test:e2e` scripts。
+
+* [x] **ENV-013｜P0｜建立指定目錄結構**
+
+  * 依賴：ENV-001
+  * 驗收：建立 `app`、`components`、`core`、`render`、`scenes`、`state`、`types`、`tests` 等目錄。
+
+* [x] **ENV-014｜P0｜建立 App Root**
+
+  * 依賴：ENV-013
+  * 驗收：`App.tsx` 可載入應用程式主框架。
+
+* [x] **ENV-015｜P0｜建立基本 Router**
+
+  * 依賴：ENV-014
+  * 驗收：至少支援首頁、Simulator、Not Found 三個 route。
+
+* [ ] **ENV-016｜P0｜建立 App Shell**
+
+  * 依賴：ENV-015
+  * 驗收：提供 header、main content container 及全域錯誤顯示區域。
+
+* [ ] **ENV-017｜P1｜建立 Error Boundary**
+
+  * 依賴：ENV-016
+  * 驗收：子元件 throw error 時顯示 fallback，而非白畫面。
+
+* [x] **ENV-018｜P0｜建立 WebGL 支援檢測**
+
+  * 依賴：ENV-014
+  * 驗收：不支援 WebGL 時顯示可理解的 fallback 訊息。
 
 ---
 
-# 2. Foundation
+# Phase 1 — 型別、常數與資料契約
 
-## FND-001 — 初始化前端專案
+* [x] **DOM-001｜P0｜定義 Vec3 型別**
 
-**優先級**：P0
-**估算**：S
-**依賴**：無
+  * 依賴：ENV-013
+  * 驗收：建立 `{ x, y, z }` 型別，供所有幾何模組共用。
 
-### 工作內容
+* [x] **DOM-002｜P0｜定義 Ray 型別**
 
-* 建立 React、TypeScript、Vite 專案。
-* 設定 ESLint、Prettier。
-* 建立基本 npm scripts：
+  * 依賴：DOM-001
+  * 驗收：Ray 具備 `origin` 與 normalized `direction`。
 
-  * `dev`
-  * `build`
-  * `test`
-  * `test:watch`
-  * `test:e2e`
-  * `lint`
-  * `typecheck`
+* [ ] **DOM-003｜P0｜定義 Plane 型別**
 
-### 驗收條件
+  * 依賴：DOM-001
+  * 驗收：Plane 具備 `point` 與 normalized `normal`。
 
-* `npm run dev` 可啟動。
-* `npm run build` 成功。
-* `npm run typecheck` 無錯誤。
-* `npm run lint` 無 error。
+* [x] **DOM-004｜P0｜定義 Transform 型別**
+
+  * 依賴：DOM-001
+  * 驗收：可表示 position、rotation 或 quaternion。
+
+* [x] **DOM-005｜P0｜定義 Bounds3 型別**
+
+  * 依賴：DOM-001
+  * 驗收：可表示 3D bounding box 的 min/max。
+
+* [x] **DOM-006｜P0｜定義 CameraState 型別**
+
+  * 依賴：DOM-001
+  * 驗收：包含 focal length、aperture、focus、rise、tilt、swing、模式及 UI flags。
+
+* [x] **DOM-007｜P0｜定義 DerivedOpticsState 型別**
+
+  * 依賴：DOM-002、DOM-003、DOM-006
+  * 驗收：包含 lens plane、film plane、optical axis、focus plane、DOF planes 及 diagnostics。
+
+* [ ] **DOM-008｜P0｜定義 SceneDefinition 型別**
+
+  * 依賴：DOM-005、DOM-006
+  * 驗收：包含場景 ID、資產、camera preset、focus targets、composition targets。
+
+* [ ] **DOM-009｜P0｜定義 FocusTarget 型別**
+
+  * 依賴：DOM-001
+  * 驗收：包含 ID、label、world position、weight。
+
+* [ ] **DOM-010｜P0｜定義 CompositionTarget 型別**
+
+  * 依賴：DOM-005
+  * 驗收：包含 ID、label、world bounds。
+
+* [ ] **DOM-011｜P0｜定義 TaskDefinition 型別**
+
+  * 依賴：DOM-006、DOM-008
+  * 驗收：包含 task ID、scene ID、enabled controls、constraints、criteria、feedback rules。
+
+* [ ] **DOM-012｜P0｜定義 TaskEvaluation 型別**
+
+  * 依賴：DOM-011
+  * 驗收：包含 status、criteria、score、primary feedback、secondary feedback。
+
+* [x] **DOM-013｜P0｜建立相機常數**
+
+  * 依賴：DOM-006
+  * 驗收：固定 4×5 尺寸、150mm 鏡頭、rise/tilt/swing 範圍與 aperture options。
+
+* [x] **DOM-014｜P0｜建立預設 CameraState**
+
+  * 依賴：DOM-006、DOM-013
+  * 驗收：可作為首次載入及 reset 基準。
+
+* [ ] **DOM-015｜P0｜建立集中式 UI 文字資料**
+
+  * 依賴：ENV-013
+  * 驗收：教學提示與 user-facing labels 不散落於 renderer 或 math modules。
 
 ---
 
-## FND-002 — 建立專案目錄與模組邊界
+# Phase 2 — State Management
 
-**優先級**：P0
-**估算**：S
-**依賴**：FND-001
+* [x] **STA-001｜P0｜建立 Zustand Store Skeleton**
 
-### 工作內容
+  * 依賴：ENV-006、DOM-006
+  * 驗收：Store 可保存 `camera`、`scene`、`task`、`ui` 四類 state。
 
-建立 Spec 指定的主要目錄：
+* [x] **STA-002｜P0｜實作 setRise action**
+
+  * 依賴：STA-001、DOM-013
+  * 驗收：輸入值被 clamp 至 `0–40mm`。
+
+* [x] **STA-003｜P0｜實作 setTilt action**
+
+  * 依賴：STA-001、DOM-013
+  * 驗收：輸入值被 clamp 至 `-10° 至 +10°`。
+
+* [x] **STA-004｜P0｜實作 setSwing action**
+
+  * 依賴：STA-001、DOM-013
+  * 驗收：輸入值被 clamp 至 `-10° 至 +10°`。
+
+* [ ] **STA-005｜P0｜實作 setFocusDistance action**
+
+  * 依賴：STA-001
+  * 驗收：focus 被限制於當前 scene 的合法範圍。
+
+* [ ] **STA-006｜P0｜實作 setAperture action**
+
+  * 依賴：STA-001、DOM-013
+  * 驗收：只接受 `f/5.6`、`f/11`、`f/22`、`f/32`。
+
+* [x] **STA-007｜P0｜實作 setMode action**
+
+  * 依賴：STA-001
+  * 驗收：可在 `guided` 與 `free` 間切換。
+
+* [x] **STA-008｜P0｜實作 setActiveScene action**
+
+  * 依賴：STA-001
+  * 驗收：切換 scene 時更新 scene ID。
+
+* [x] **STA-009｜P0｜實作 setActiveTask action**
+
+  * 依賴：STA-001
+  * 驗收：可載入指定 task 或清除 active task。
+
+* [x] **STA-010｜P0｜實作 ground glass assist toggle**
+
+  * 依賴：STA-001
+  * 驗收：切換值可被 renderer 讀取。
+
+* [ ] **STA-011｜P0｜實作 focus assist toggle**
+
+  * 依賴：STA-001
+  * 驗收：切換值可被 renderer 及 UI 讀取。
+
+* [ ] **STA-012｜P0｜實作 grid toggle**
+
+  * 依賴：STA-001
+  * 驗收：切換值可被 ground glass overlay 讀取。
+
+* [ ] **STA-013｜P0｜實作 resetMovements action**
+
+  * 依賴：STA-002 至 STA-006、DOM-014
+  * 驗收：只重設 rise、tilt、swing、focus、aperture，不改變 scene 或 mode。
+
+* [ ] **STA-014｜P0｜實作 restartTask action**
+
+  * 依賴：STA-008、STA-009
+  * 驗收：完整恢復 task 的 initial camera state 與提示狀態。
+
+* [ ] **STA-015｜P0｜建立 camera state selector**
+
+  * 依賴：STA-001
+  * 驗收：UI 可訂閱 camera state 而不造成不必要 re-render。
+
+* [ ] **STA-016｜P0｜建立 derived optics selector**
+
+  * 依賴：STA-001、OPT-019
+  * 驗收：所有 renderer 與 evaluator 可取得相同 DerivedOpticsState instance。
+
+---
+
+# Phase 3 — Math Foundation
+
+* [ ] **MTH-001｜P0｜實作 Vec3 add**
+
+  * 依賴：DOM-001
+  * 驗收：輸入兩個 Vec3，回傳正確相加結果。
+
+* [ ] **MTH-002｜P0｜實作 Vec3 subtract**
+
+  * 依賴：DOM-001
+  * 驗收：回傳正確相減結果。
+
+* [ ] **MTH-003｜P0｜實作 Vec3 scale**
+
+  * 依賴：DOM-001
+  * 驗收：回傳正確倍數向量。
+
+* [ ] **MTH-004｜P0｜實作 Vec3 dot product**
+
+  * 依賴：DOM-001
+  * 驗收：回傳正確內積。
+
+* [ ] **MTH-005｜P0｜實作 Vec3 cross product**
+
+  * 依賴：DOM-001
+  * 驗收：回傳符合右手座標系的外積。
+
+* [ ] **MTH-006｜P0｜實作 Vec3 normalize**
+
+  * 依賴：DOM-001
+  * 驗收：正常向量回傳 unit vector；零向量安全回退。
+
+* [ ] **MTH-007｜P0｜實作 Vec3 distance**
+
+  * 依賴：DOM-001
+  * 驗收：回傳兩點 Euclidean distance。
+
+* [ ] **MTH-008｜P0｜實作 Vec3 angle**
+
+  * 依賴：MTH-004、MTH-006
+  * 驗收：可正確計算兩法線夾角。
+
+* [ ] **MTH-009｜P0｜實作繞 X 軸 rotation helper**
+
+  * 依賴：DOM-001
+  * 驗收：可將 unit vector 旋轉指定角度。
+
+* [ ] **MTH-010｜P0｜實作繞 Y 軸 rotation helper**
+
+  * 依賴：DOM-001
+  * 驗收：可將 unit vector 旋轉指定角度。
+
+* [ ] **MTH-011｜P0｜實作 Plane 建構 helper**
+
+  * 依賴：DOM-003、MTH-006
+  * 驗收：輸出 plane normal 必為 normalized。
+
+* [ ] **MTH-012｜P0｜實作 point-to-plane distance**
+
+  * 依賴：DOM-003、MTH-004
+  * 驗收：可取得點到平面的有號與絕對距離。
+
+* [ ] **MTH-013｜P0｜實作 ray-plane intersection**
+
+  * 依賴：DOM-002、DOM-003
+  * 驗收：相交時回傳 point；平行時回傳明確 null 或 result state。
+
+* [ ] **MTH-014｜P0｜實作 plane-plane intersection line**
+
+  * 依賴：DOM-003、MTH-005
+  * 驗收：非平行平面可回傳交線 point 與 direction。
+
+* [ ] **MTH-015｜P0｜實作平面近似平行檢查**
+
+  * 依賴：MTH-008
+  * 驗收：可按 threshold 判斷兩平面是否近平行。
+
+* [ ] **MTH-016｜P0｜建立數值安全工具**
+
+  * 依賴：MTH-001 至 MTH-015
+  * 驗收：提供 `isFiniteVec3`、safe normalize、epsilon guard。
+
+---
+
+# Phase 4 — Optics Kernel
+
+* [ ] **OPT-001｜P0｜建立固定 Film Plane**
+
+  * 依賴：DOM-003、DOM-013
+  * 驗收：film plane 固定於指定座標，normal 指向 `+Z`。
+
+* [ ] **OPT-002｜P0｜建立 Base Lens Center**
+
+  * 依賴：DOM-001、DOM-013
+  * 驗收：鏡頭中心的預設位置以毫米表示，並可作為 movement 基準。
+
+* [ ] **OPT-003｜P0｜計算 Rise 後 Lens Center**
+
+  * 依賴：OPT-002、STA-002
+  * 驗收：只改變 lens center 的 Y 值。
+
+* [ ] **OPT-004｜P0｜計算 Tilt Rotation**
+
+  * 依賴：MTH-009、STA-003
+  * 驗收：tilt 只繞 X 軸旋轉。
+
+* [ ] **OPT-005｜P0｜計算 Swing Rotation**
+
+  * 依賴：MTH-010、STA-004
+  * 驗收：swing 只繞 Y 軸旋轉。
+
+* [ ] **OPT-006｜P0｜計算 Lens Normal**
+
+  * 依賴：OPT-004、OPT-005
+  * 驗收：zero tilt/swing 時，lens normal 與 film normal 平行。
+
+* [ ] **OPT-007｜P0｜建立 Lens Plane**
+
+  * 依賴：OPT-003、OPT-006、MTH-011
+  * 驗收：lens plane 使用正確 center 與 normal。
+
+* [ ] **OPT-008｜P0｜建立 Optical Axis**
+
+  * 依賴：OPT-003、OPT-006
+  * 驗收：ray origin 為 lens center；direction 與 lens normal 一致。
+
+* [ ] **OPT-009｜P0｜計算 Focus Point**
+
+  * 依賴：OPT-008、STA-005
+  * 驗收：focus point 位於 optical axis 上，距離等於 focusDistanceMm。
+
+* [ ] **OPT-010｜P0｜判斷 Lens 與 Film 是否近平行**
+
+  * 依賴：OPT-001、OPT-007、MTH-015
+  * 驗收：夾角小於 `0.1°` 時回傳 true。
+
+* [ ] **OPT-011｜P0｜建立平行模型 Focus Plane**
+
+  * 依賴：OPT-001、OPT-009
+  * 驗收：focus plane 通過 focus point，normal 與 film plane 相同。
+
+* [ ] **OPT-012｜P0｜計算 Lens / Film 交線**
+
+  * 依賴：OPT-001、OPT-007、MTH-014
+  * 驗收：非平行時可取得 hinge line。
+
+* [ ] **OPT-013｜P0｜建立 Scheimpflug Focus Plane**
+
+  * 依賴：OPT-009、OPT-012、MTH-005、MTH-006
+  * 驗收：focus plane 同時經過 hinge line 與 focus point。
+
+* [ ] **OPT-014｜P0｜建立 Focus Plane Fallback**
+
+  * 依賴：OPT-010、OPT-011、OPT-013
+  * 驗收：近平行時使用平行模型，否則使用 Scheimpflug 模型。
+
+* [ ] **OPT-015｜P0｜建立 Optics Diagnostics**
+
+  * 依賴：OPT-010、OPT-014
+  * 驗收：輸出 `isParallelLensFilm`、tilt angle、swing angle、fallback state。
+
+* [ ] **OPT-016｜P0｜建立 Aperture Tolerance Mapping**
+
+  * 依賴：DOM-013
+  * 驗收：f/5.6 至 f/32 對應單調增加的 acceptable sharpness range。
+
+* [ ] **OPT-017｜P0｜建立 Depth-of-Field Near Plane**
+
+  * 依賴：OPT-014、OPT-016
+  * 驗收：near plane 與 focus plane 平行，並向近端偏移。
+
+* [ ] **OPT-018｜P0｜建立 Depth-of-Field Far Plane**
+
+  * 依賴：OPT-014、OPT-016
+  * 驗收：far plane 與 focus plane 平行，並向遠端偏移。
+
+* [ ] **OPT-019｜P0｜計算單一 Focus Target Sharpness**
+
+  * 依賴：OPT-014、OPT-016、MTH-012
+  * 驗收：回傳 distance、acceptable range、score、status。
+
+* [ ] **OPT-020｜P0｜建立 Focus Target Sharpness Collection**
+
+  * 依賴：OPT-019、DOM-009
+  * 驗收：可對 scene 所有 targets 計算一致結果。
+
+* [ ] **OPT-021｜P0｜計算 Film Plane 四角**
+
+  * 依賴：OPT-001、DOM-013
+  * 驗收：回傳正確 4×5 尺寸的四個世界座標角點。
+
+* [ ] **OPT-022｜P0｜建立 Off-axis Projection Input**
+
+  * 依賴：OPT-003、OPT-021
+  * 驗收：輸出 lens center 與 film corners，供 renderer 建立 projection matrix。
+
+* [ ] **OPT-023｜P0｜計算 Off-axis Projection Matrix**
+
+  * 依賴：OPT-022
+  * 驗收：zero rise 時正常投影；rise 增加時可改變畫面垂直構圖。
+
+* [ ] **OPT-024｜P0｜整合 deriveOpticsState**
+
+  * 依賴：OPT-001 至 OPT-023
+  * 驗收：單一 pure function 回傳完整 DerivedOpticsState。
+
+* [ ] **OPT-025｜P0｜為 deriveOpticsState 加入數值安全回退**
+
+  * 依賴：OPT-024、MTH-016
+  * 驗收：不合法或近退化輸入不產生 NaN / Infinity。
+
+* [ ] **OPT-026｜P0｜建立 Derived Optics Memoization**
+
+  * 依賴：OPT-024、STA-016
+  * 驗收：只有 relevant camera 或 scene 值改變時才重算。
+
+---
+
+# Phase 5 — Optics Unit Tests
+
+* [ ] **TST-OPT-001｜P0｜測試 Rise 改變 Lens Center Y**
+
+  * 依賴：OPT-003
+  * 驗收：rise 前後只有 Y 值改變。
+
+* [ ] **TST-OPT-002｜P0｜測試 Tilt 改變 Lens Normal**
+
+  * 依賴：OPT-006
+  * 驗收：tilt 不為零時 normal 改變。
+
+* [ ] **TST-OPT-003｜P0｜測試 Swing 改變 Lens Normal**
+
+  * 依賴：OPT-006
+  * 驗收：swing 不為零時 normal 改變。
+
+* [ ] **TST-OPT-004｜P0｜測試 Zero Movement 平行狀態**
+
+  * 依賴：OPT-010
+  * 驗收：tilt=0、swing=0 時判定近平行。
+
+* [ ] **TST-OPT-005｜P0｜測試平行 Focus Plane**
+
+  * 依賴：OPT-011
+  * 驗收：focus plane normal 與 film normal 平行。
+
+* [ ] **TST-OPT-006｜P0｜測試 Tilt 改變 Focus Plane 側視方向**
+
+  * 依賴：OPT-013
+  * 驗收：tilt 改變時 focus plane normal 改變。
+
+* [ ] **TST-OPT-007｜P0｜測試 Swing 改變 Focus Plane 俯視方向**
+
+  * 依賴：OPT-013
+  * 驗收：swing 改變時 focus plane normal 改變。
+
+* [ ] **TST-OPT-008｜P0｜測試 Aperture 不改變 Focus Plane**
+
+  * 依賴：OPT-014、OPT-016
+  * 驗收：不同 aperture 取得相同 focus plane normal。
+
+* [ ] **TST-OPT-009｜P0｜測試 Aperture 擴大 DOF**
+
+  * 依賴：OPT-017、OPT-018
+  * 驗收：f/32 的 DOF 寬度大於 f/5.6。
+
+* [ ] **TST-OPT-010｜P0｜測試 Focus Target Score 上限**
+
+  * 依賴：OPT-019
+  * 驗收：score 永遠位於 0 至 1。
+
+* [ ] **TST-OPT-011｜P0｜測試 Focus Plane 上 Target 接近 Sharp**
+
+  * 依賴：OPT-019
+  * 驗收：位於 focus plane 上的 target score ≥ 0.99。
+
+* [ ] **TST-OPT-012｜P0｜測試離焦距離增加時 Score 遞減**
+
+  * 依賴：OPT-019
+  * 驗收：距離較遠 target 的 score 較低。
+
+* [ ] **TST-OPT-013｜P0｜測試近乎平行 Fallback**
+
+  * 依賴：OPT-025
+  * 驗收：非常小 tilt 不會造成 invalid plane。
+
+* [ ] **TST-OPT-014｜P0｜測試 Off-axis Projection Rise 行為**
+
+  * 依賴：OPT-023
+  * 驗收：rise 增加時 projection 的垂直偏移值改變。
+
+---
+
+# Phase 6 — 3D Renderer
+
+* [ ] **R3D-001｜P0｜建立主 React Three Fiber Canvas**
+
+  * 依賴：ENV-004、ENV-018
+  * 驗收：Simulator route 顯示 WebGL Canvas。
+
+* [ ] **R3D-002｜P0｜建立主場景背景**
+
+  * 依賴：R3D-001
+  * 驗收：Canvas 有固定背景色或環境背景。
+
+* [ ] **R3D-003｜P0｜建立基本環境燈光**
+
+  * 依賴：R3D-001
+  * 驗收：場景中的相機與目標物可辨識。
+
+* [ ] **R3D-004｜P0｜建立固定後組模型**
+
+  * 依賴：OPT-001
+  * 驗收：後組位置不受 movement 影響。
+
+* [ ] **R3D-005｜P0｜建立前組 Frame 模型**
+
+  * 依賴：OPT-007
+  * 驗收：前組可接受 position 與 rotation props。
+
+* [ ] **R3D-006｜P0｜建立 Lens Board 模型**
+
+  * 依賴：R3D-005
+  * 驗收：鏡頭板隨前組移動與旋轉。
+
+* [ ] **R3D-007｜P0｜建立簡化鏡頭模型**
+
+  * 依賴：R3D-006
+  * 驗收：鏡頭固定於鏡頭板中心。
+
+* [ ] **R3D-008｜P0｜建立固定底片平面可視化**
+
+  * 依賴：OPT-001
+  * 驗收：4×5 底片平面在 3D 場景中可辨識。
+
+* [ ] **R3D-009｜P0｜建立簡化皮腔模型**
+
+  * 依賴：R3D-004、R3D-005
+  * 驗收：皮腔在前後組之間持續連接。
+
+* [ ] **R3D-010｜P0｜建立光軸 Overlay**
+
+  * 依賴：OPT-008
+  * 驗收：可顯示 lens center 至 focus point 的光軸線。
+
+* [ ] **R3D-011｜P0｜將 Derived Optics 套用至前組**
+
+  * 依賴：R3D-005、OPT-024
+  * 驗收：rise、tilt、swing 即時反映於前組模型。
+
+* [ ] **R3D-012｜P1｜建立 Orbit Controls**
+
+  * 依賴：R3D-001
+  * 驗收：使用者可旋轉與縮放「觀察相機」，不改變虛擬大片幅相機位置。
+
+* [ ] **R3D-013｜P1｜建立 3D View Reset**
+
+  * 依賴：R3D-012
+  * 驗收：可回復預設觀察角度。
+
+* [ ] **R3D-014｜P1｜建立 Focus Plane Overlay**
+
+  * 依賴：OPT-014
+  * 驗收：focus plane 可在 3D 場景中顯示及隱藏。
+
+* [ ] **R3D-015｜P1｜建立 DOF Region Overlay**
+
+  * 依賴：OPT-017、OPT-018
+  * 驗收：near/far 範圍隨 aperture 改變。
+
+* [ ] **R3D-016｜P1｜建立 Render Quality Profile**
+
+  * 依賴：R3D-001
+  * 驗收：可選 high / standard / low 三種 render quality。
+
+---
+
+# Phase 7 — Scene Definitions
+
+* [ ] **SCN-001｜P0｜建立 Scene Registry**
+
+  * 依賴：DOM-008
+  * 驗收：可透過 scene ID 取得 SceneDefinition。
+
+* [ ] **SCN-002｜P0｜建立 Architecture Scene 基本地面**
+
+  * 依賴：R3D-001
+  * 驗收：有地面與可辨識拍攝位置。
+
+* [ ] **SCN-003｜P0｜建立 Architecture Scene 建築立面**
+
+  * 依賴：SCN-002
+  * 驗收：包含明確垂直線與建築頂部。
+
+* [ ] **SCN-004｜P0｜定義 Architecture Composition Target：建築頂部**
+
+  * 依賴：SCN-003
+  * 驗收：有可計算 bounds 的 building top target。
+
+* [ ] **SCN-005｜P0｜定義 Architecture Composition Target：主建築**
+
+  * 依賴：SCN-003
+  * 驗收：有可計算 bounds 的 main building target。
+
+* [ ] **SCN-006｜P0｜建立 Architecture Scene Camera Preset**
+
+  * 依賴：SCN-003
+  * 驗收：初始狀態未完整收入建築頂部。
+
+* [ ] **SCN-007｜P0｜建立 Table Scene 桌面 Geometry**
+
+  * 依賴：R3D-001
+  * 驗收：桌面由近至遠明確延伸。
+
+* [ ] **SCN-008｜P0｜建立 Table Scene 近景 Target**
+
+  * 依賴：SCN-007
+  * 驗收：近景物件有固定 world position。
+
+* [ ] **SCN-009｜P0｜建立 Table Scene 中景 Target**
+
+  * 依賴：SCN-007
+  * 驗收：中景物件有固定 world position。
+
+* [ ] **SCN-010｜P0｜建立 Table Scene 遠景 Target**
+
+  * 依賴：SCN-007
+  * 驗收：遠景物件有固定 world position。
+
+* [ ] **SCN-011｜P0｜建立 Table Scene Camera Preset**
+
+  * 依賴：SCN-008 至 SCN-010
+  * 驗收：zero tilt 時不可在 f/22 內令三 target 全部 sharp。
+
+* [ ] **SCN-012｜P0｜建立 Shelf Scene 主體 Geometry**
+
+  * 依賴：R3D-001
+  * 驗收：主體在 X/Z 平面有明確斜向延伸。
+
+* [ ] **SCN-013｜P0｜建立 Shelf Scene 前景 Target**
+
+  * 依賴：SCN-012
+  * 驗收：前景 target 有固定 world position。
+
+* [ ] **SCN-014｜P0｜建立 Shelf Scene 中景 Target**
+
+  * 依賴：SCN-012
+  * 驗收：中景 target 有固定 world position。
+
+* [ ] **SCN-015｜P0｜建立 Shelf Scene 遠景 Target**
+
+  * 依賴：SCN-012
+  * 驗收：遠景 target 有固定 world position。
+
+* [ ] **SCN-016｜P0｜建立 Shelf Scene Camera Preset**
+
+  * 依賴：SCN-013 至 SCN-015
+  * 驗收：zero swing 時不可在 f/22 內令三 target 全部 sharp。
+
+* [ ] **SCN-017｜P0｜建立所有 SceneDefinition**
+
+  * 依賴：SCN-006、SCN-011、SCN-016
+  * 驗收：三個 scene 均註冊於 Scene Registry。
+
+* [ ] **SCN-018｜P1｜壓縮場景紋理**
+
+  * 依賴：SCN-017
+  * 驗收：主要紋理具壓縮格式，初始載入不明顯阻塞。
+
+* [ ] **SCN-019｜P1｜場景 Lazy Loading**
+
+  * 依賴：SCN-017
+  * 驗收：只載入當前 scene 必需資產。
+
+---
+
+# Phase 8 — Ground Glass
+
+* [ ] **GGL-001｜P0｜建立 Ground Glass Panel Component**
+
+  * 依賴：ENV-016
+  * 驗收：Simulator Workspace 可顯示固定 4×5 比例 panel。
+
+* [ ] **GGL-002｜P0｜建立 Ground Glass Render Target**
+
+  * 依賴：R3D-001
+  * 驗收：可把場景渲染至獨立 texture。
+
+* [ ] **GGL-003｜P0｜建立 Ground Glass 專用 Camera**
+
+  * 依賴：GGL-002
+  * 驗收：ground glass 使用獨立 camera，不影響 3D observer camera。
+
+* [ ] **GGL-004｜P0｜套用 Off-axis Projection Matrix**
+
+  * 依賴：GGL-003、OPT-023
+  * 驗收：ground glass camera 使用 DerivedOpticsState projection data。
+
+* [ ] **GGL-005｜P0｜驗證 Rise 改變 Ground Glass 垂直構圖**
+
+  * 依賴：GGL-004
+  * 驗收：rise 增加時畫面包含更多上方場景。
+
+* [ ] **GGL-006｜P0｜建立 Ground Glass Flip Shader**
+
+  * 依賴：GGL-002
+  * 驗收：可獨立控制 X 與 Y flip。
+
+* [ ] **GGL-007｜P0｜預設啟用上下及左右反轉**
+
+  * 依賴：GGL-006
+  * 驗收：assist 關閉時 `flipX=true`、`flipY=true`。
+
+* [ ] **GGL-008｜P0｜實作 Orientation Assist**
+
+  * 依賴：STA-010、GGL-006
+  * 驗收：assist 開啟時畫面恢復正常方向。
+
+* [ ] **GGL-009｜P0｜建立 Grid Overlay**
+
+  * 依賴：GGL-001、STA-012
+  * 驗收：格線可開關且不影響 render texture。
+
+* [ ] **GGL-010｜P0｜建立 Center Line Overlay**
+
+  * 依賴：GGL-001
+  * 驗收：顯示水平及垂直中心線。
+
+* [ ] **GGL-011｜P0｜建立 Current Settings Overlay**
+
+  * 依賴：STA-015
+  * 驗收：顯示 rise、tilt、swing、focus、aperture 數值。
+
+* [ ] **GGL-012｜P0｜建立 Depth Render Target**
+
+  * 依賴：GGL-002
+  * 驗收：可取得與 color target 對應的 depth texture。
+
+* [ ] **GGL-013｜P0｜建立深度值線性化**
+
+  * 依賴：GGL-012
+  * 驗收：shader 可將 depth sample 轉換為可用距離資料。
+
+* [ ] **GGL-014｜P0｜建立 World Position Reconstruction**
+
+  * 依賴：GGL-013、OPT-024
+  * 驗收：shader 可近似取得 pixel 對應的世界位置。
+
+* [ ] **GGL-015｜P0｜建立 Focus Plane Distance Shader Logic**
+
+  * 依賴：GGL-014、OPT-014
+  * 驗收：每 pixel 可計算至 focus plane 的距離。
+
+* [ ] **GGL-016｜P0｜建立 Aperture-based Blur Strength Logic**
+
+  * 依賴：GGL-015、OPT-016
+  * 驗收：f/5.6 blur 強度高於 f/32。
+
+* [ ] **GGL-017｜P0｜建立 Half-resolution Blur Pass**
+
+  * 依賴：GGL-016
+  * 驗收：景深模糊在半解析度 pass 執行。
+
+* [ ] **GGL-018｜P0｜整合 Ground Glass DOF Pipeline**
+
+  * 依賴：GGL-012 至 GGL-017
+  * 驗收：focus、tilt、swing、aperture 改變時清晰帶即時更新。
+
+* [ ] **GGL-019｜P1｜建立 Focus Target Status Overlay**
+
+  * 依賴：OPT-020、STA-011
+  * 驗收：可顯示每個 target 的 sharpness status。
+
+* [ ] **GGL-020｜P1｜建立非色彩 Focus Assist Pattern**
+
+  * 依賴：GGL-019
+  * 驗收：sharp / near-sharp / blurred 不只依賴顏色區分。
+
+* [ ] **GGL-021｜P1｜建立 Ground Glass Zoom Mode**
+
+  * 依賴：GGL-001
+  * 驗收：使用者可局部放大地面玻璃畫面，不改變 camera state。
+
+---
+
+# Phase 9 — 2D Geometry Diagrams
+
+* [ ] **GEO-001｜P0｜建立 SVG Geometry Viewport**
+
+  * 依賴：ENV-013
+  * 驗收：可 render 可縮放 SVG canvas。
+
+* [ ] **GEO-002｜P0｜建立 SVG PlaneLine 元件**
+
+  * 依賴：GEO-001
+  * 驗收：可用 point 與 normal 表示一條平面截線。
+
+* [ ] **GEO-003｜P0｜建立 SVG RayLine 元件**
+
+  * 依賴：GEO-001
+  * 驗收：可顯示 optical axis 或 hinge line。
+
+* [ ] **GEO-004｜P0｜建立 SVG PointMarker 元件**
+
+  * 依賴：GEO-001
+  * 驗收：可顯示 focus point 或交點標記。
+
+* [ ] **GEO-005｜P0｜建立 SVG Region 元件**
+
+  * 依賴：GEO-001
+  * 驗收：可表示 DOF near/far 區域。
+
+* [ ] **GEO-006｜P0｜建立 Diagram Legend 元件**
+
+  * 依賴：GEO-001
+  * 驗收：能以文字識別 film plane、lens plane、focus plane、DOF。
+
+* [ ] **GEO-007｜P0｜建立世界座標轉側視座標 Helper**
+
+  * 依賴：DOM-001
+  * 驗收：將 X/Z 或 Y/Z 資料正確映射至 SVG。
+
+* [ ] **GEO-008｜P0｜建立世界座標轉俯視座標 Helper**
+
+  * 依賴：DOM-001
+  * 驗收：將 X/Z 資料正確映射至 SVG。
+
+* [ ] **GEO-009｜P0｜建立 Side View Film Plane 顯示**
+
+  * 依賴：GEO-002、OPT-001
+  * 驗收：側視圖可顯示固定底片平面。
+
+* [ ] **GEO-010｜P0｜建立 Side View Lens Plane 顯示**
+
+  * 依賴：GEO-002、OPT-007
+  * 驗收：rise、tilt 改變時 lens plane 同步更新。
+
+* [ ] **GEO-011｜P0｜建立 Side View Optical Axis 顯示**
+
+  * 依賴：GEO-003、OPT-008
+  * 驗收：光軸由 lens center 指向 focus point。
+
+* [ ] **GEO-012｜P0｜建立 Side View Focus Plane 顯示**
+
+  * 依賴：GEO-002、OPT-014
+  * 驗收：tilt 改變時 focus plane 顯示方向更新。
+
+* [ ] **GEO-013｜P0｜建立 Side View DOF Region 顯示**
+
+  * 依賴：GEO-005、OPT-017、OPT-018
+  * 驗收：aperture 改變時區域寬度改變。
+
+* [ ] **GEO-014｜P0｜建立 Top View Film Plane 顯示**
+
+  * 依賴：GEO-002、OPT-001
+  * 驗收：俯視圖可顯示底片平面。
+
+* [ ] **GEO-015｜P0｜建立 Top View Lens Plane 顯示**
+
+  * 依賴：GEO-002、OPT-007
+  * 驗收：swing 改變時 lens plane 顯示方向更新。
+
+* [ ] **GEO-016｜P0｜建立 Top View Optical Axis 顯示**
+
+  * 依賴：GEO-003、OPT-008
+  * 驗收：俯視光軸與 derived state 一致。
+
+* [ ] **GEO-017｜P0｜建立 Top View Focus Plane 顯示**
+
+  * 依賴：GEO-002、OPT-014
+  * 驗收：swing 改變時 focus plane 顯示方向更新。
+
+* [ ] **GEO-018｜P0｜建立 Top View DOF Region 顯示**
+
+  * 依賴：GEO-005、OPT-017、OPT-018
+  * 驗收：aperture 改變時 DOF 區域更新。
+
+* [ ] **GEO-019｜P0｜建立 Geometry View Selector**
+
+  * 依賴：GEO-009 至 GEO-018
+  * 驗收：可切換 side 與 top view。
+
+* [ ] **GEO-020｜P0｜為 Guided Task 設定預設 Geometry View**
+
+  * 依賴：GEO-019、TSK-001
+  * 驗收：Rise/Tilt 預設 side；Swing 預設 top。
+
+* [ ] **GEO-021｜P1｜建立 Diagram Snapshot Tests**
+
+  * 依賴：GEO-019
+  * 驗收：固定 movement state 可產生穩定 SVG snapshot。
+
+---
+
+# Phase 10 — Task Engine
+
+* [ ] **TSK-001｜P0｜建立 Task Registry**
+
+  * 依賴：DOM-011
+  * 驗收：可用 task ID 取得 TaskDefinition。
+
+* [ ] **TSK-002｜P0｜建立 Success Criterion：Focus Targets Sharp**
+
+  * 依賴：OPT-020
+  * 驗收：可檢查指定 targets 是否達 `sharpness >= 0.8`。
+
+* [ ] **TSK-003｜P0｜建立 Success Criterion：Movement Used**
+
+  * 依賴：DOM-006
+  * 驗收：可檢查 rise、tilt 或 swing 是否超過最低使用值。
+
+* [ ] **TSK-004｜P0｜建立 Success Criterion：Movement Range**
+
+  * 依賴：DOM-006
+  * 驗收：可檢查 movement 是否處於 task 指定範圍。
+
+* [ ] **TSK-005｜P0｜建立 Success Criterion：Allowed Aperture**
+
+  * 依賴：DOM-006
+  * 驗收：可阻止使用指定禁止光圈完成關卡。
+
+* [ ] **TSK-006｜P0｜建立 Ground Glass Frame Bounds 計算**
+
+  * 依賴：OPT-023
+  * 驗收：可取得可見 frame 的世界座標範圍或 projection relation。
+
+* [ ] **TSK-007｜P0｜建立 Composition Coverage 計算**
+
+  * 依賴：TSK-006、DOM-010
+  * 驗收：可回傳 composition target 可見比例。
+
+* [ ] **TSK-008｜P0｜建立 Success Criterion：Composition Visible**
+
+  * 依賴：TSK-007
+  * 驗收：可檢查指定 target 的最低可見比例。
+
+* [ ] **TSK-009｜P0｜建立 Task Score 計算**
+
+  * 依賴：TSK-002 至 TSK-008
+  * 驗收：score = passed criteria / total criteria × 100。
+
+* [ ] **TSK-010｜P0｜建立 Task Completion 判定**
+
+  * 依賴：TSK-009
+  * 驗收：全部 required criteria pass 才為 completed。
+
+* [ ] **TSK-011｜P0｜建立 Rise Task Definition**
+
+  * 依賴：SCN-017、TSK-001
+  * 驗收：`rise-01` 限制及成功條件符合 Spec。
+
+* [ ] **TSK-012｜P0｜建立 Tilt Task Definition**
+
+  * 依賴：SCN-017、TSK-001
+  * 驗收：`tilt-01` 禁止 f/32，要求三 target sharp 與合理 tilt。
+
+* [ ] **TSK-013｜P0｜建立 Swing Task Definition**
+
+  * 依賴：SCN-017、TSK-001
+  * 驗收：`swing-01` 禁止 f/32，要求三 target sharp 與合理 swing。
+
+* [ ] **TSK-014｜P0｜建立 Task Evaluator**
+
+  * 依賴：TSK-002 至 TSK-013
+  * 驗收：輸入 task、scene、camera、optics 後回傳完整 TaskEvaluation。
+
+* [ ] **TSK-015｜P0｜建立 Rise Task Primary Feedback**
+
+  * 依賴：TSK-014、DOM-015
+  * 驗收：可針對 top 未入畫、rise 太低、rise 太高、完成提供不同文字。
+
+* [ ] **TSK-016｜P0｜建立 Tilt Task Primary Feedback**
+
+  * 依賴：TSK-014、DOM-015
+  * 驗收：可針對 tilt 不足、過量、focus 不準、f/32 限制、完成提供不同文字。
+
+* [ ] **TSK-017｜P0｜建立 Swing Task Primary Feedback**
+
+  * 依賴：TSK-014、DOM-015
+  * 驗收：可針對 swing 不足、過量、方向錯誤、focus 不準、完成提供不同文字。
+
+* [ ] **TSK-018｜P0｜建立 Feedback Priority Rule**
+
+  * 依賴：TSK-015 至 TSK-017
+  * 驗收：同時多項失敗時只輸出最具教學價值的一條 primary feedback。
+
+* [ ] **TSK-019｜P0｜建立 Secondary Hint Rule**
+
+  * 依賴：TSK-018
+  * 驗收：可選擇性提供第二條補充提示，最多一條。
+
+---
+
+# Phase 11 — Simulator UI
+
+* [ ] **UI-001｜P0｜建立 Simulator Workspace Grid**
+
+  * 依賴：ENV-016
+  * 驗收：Desktop 1280px 寬時同時顯示 3D、ground glass、geometry、controls。
+
+* [ ] **UI-002｜P0｜放置 Scene Viewport**
+
+  * 依賴：UI-001、R3D-001
+  * 驗收：左上區域顯示 3D scene。
+
+* [ ] **UI-003｜P0｜放置 Ground Glass Viewport**
+
+  * 依賴：UI-001、GGL-001
+  * 驗收：右上區域顯示 ground glass。
+
+* [ ] **UI-004｜P0｜放置 Geometry Viewport**
+
+  * 依賴：UI-001、GEO-001
+  * 驗收：左下區域顯示 SVG diagram。
+
+* [ ] **UI-005｜P0｜建立 Movement Controls Panel**
+
+  * 依賴：STA-002 至 STA-004
+  * 驗收：包含 rise、tilt、swing slider 與數值。
+
+* [ ] **UI-006｜P0｜建立 Rise Slider**
+
+  * 依賴：UI-005
+  * 驗收：操作 slider 更新 store，單位顯示為 mm。
+
+* [ ] **UI-007｜P0｜建立 Tilt Slider**
+
+  * 依賴：UI-005
+  * 驗收：操作 slider 更新 store，單位顯示為 °。
+
+* [ ] **UI-008｜P0｜建立 Swing Slider**
+
+  * 依賴：UI-005
+  * 驗收：操作 slider 更新 store，單位顯示為 °。
+
+* [ ] **UI-009｜P0｜建立 Focus Slider**
+
+  * 依賴：STA-005
+  * 驗收：顯示距離值並受 scene range 限制。
+
+* [ ] **UI-010｜P0｜建立 Aperture Selector**
+
+  * 依賴：STA-006
+  * 驗收：只可選固定 aperture options。
+
+* [ ] **UI-011｜P0｜建立 View Options Controls**
+
+  * 依賴：STA-010 至 STA-012
+  * 驗收：可切換 orientation assist、grid、focus assist。
+
+* [ ] **UI-012｜P0｜建立 Reset Movements Button**
+
+  * 依賴：STA-013
+  * 驗收：按下後只重設 movement、focus、aperture。
+
+* [ ] **UI-013｜P0｜建立 Restart Task Button**
+
+  * 依賴：STA-014
+  * 驗收：按下後完整重設當前 task。
+
+* [ ] **UI-014｜P0｜建立 Task Objective Panel**
+
+  * 依賴：TSK-011 至 TSK-013
+  * 驗收：顯示 task title、目標、限制及允許 controls。
+
+* [ ] **UI-015｜P0｜建立 Criterion Status List**
+
+  * 依賴：TSK-014
+  * 驗收：顯示每個 criterion pass/fail、current value、expected value。
+
+* [ ] **UI-016｜P0｜建立 Feedback Panel**
+
+  * 依賴：TSK-018、TSK-019
+  * 驗收：顯示 primary feedback 與可選 secondary hint。
+
+* [ ] **UI-017｜P0｜建立 Task Completed Overlay**
+
+  * 依賴：TSK-010
+  * 驗收：完成時顯示分數、最終 movement、focus、aperture。
+
+* [ ] **UI-018｜P0｜建立 Guided Mode Controls Lock**
+
+  * 依賴：DOM-011、TSK-011 至 TSK-013
+  * 驗收：非 task enabled controls 可見但 disabled，並附原因。
+
+* [ ] **UI-019｜P0｜建立 Free Mode Scene Picker**
+
+  * 依賴：SCN-017、STA-008
+  * 驗收：可切換三個 scene。
+
+* [ ] **UI-020｜P0｜建立 Free Mode All Controls Enabled Rule**
+
+  * 依賴：STA-007、UI-018
+  * 驗收：Free Mode 中所有 MVP controls 均可操作。
+
+* [ ] **UI-021｜P1｜建立 Help Modal**
+
+  * 依賴：DOM-015
+  * 驗收：可顯示 Rise、Tilt、Swing 的短說明，不改變 simulator state。
+
+* [ ] **UI-022｜P1｜加入 Keyboard Slider Support**
+
+  * 依賴：UI-006 至 UI-010
+  * 驗收：Arrow keys 微調，Shift+Arrow 大步調整，Home/End 到邊界。
+
+* [ ] **UI-023｜P1｜加入 Reduced Motion Support**
+
+  * 依賴：R3D-001、UI-001
+  * 驗收：符合 `prefers-reduced-motion` 時取消不必要補間動畫。
+
+* [ ] **UI-024｜P1｜加入 ARIA Labels**
+
+  * 依賴：UI-005 至 UI-021
+  * 驗收：controls、toggles、panels 均有可讀 label。
+
+---
+
+# Phase 12 — Integration Tests
+
+* [ ] **TST-INT-001｜P0｜測試 Rise Slider 更新 Store**
+
+  * 依賴：UI-006
+  * 驗收：變更 slider 後 state rise 值正確。
+
+* [ ] **TST-INT-002｜P0｜測試 Tilt Slider 更新 Store**
+
+  * 依賴：UI-007
+  * 驗收：變更 slider 後 state tilt 值正確。
+
+* [ ] **TST-INT-003｜P0｜測試 Swing Slider 更新 Store**
+
+  * 依賴：UI-008
+  * 驗收：變更 slider 後 state swing 值正確。
+
+* [ ] **TST-INT-004｜P0｜測試 Rise 同步更新 3D View**
+
+  * 依賴：R3D-011、UI-006
+  * 驗收：rise state 改變後前組 Y position 改變。
+
+* [ ] **TST-INT-005｜P0｜測試 Tilt 同步更新 Side Diagram**
+
+  * 依賴：GEO-012、UI-007
+  * 驗收：tilt 改變後 focus plane SVG orientation 改變。
+
+* [ ] **TST-INT-006｜P0｜測試 Swing 同步更新 Top Diagram**
+
+  * 依賴：GEO-017、UI-008
+  * 驗收：swing 改變後 focus plane SVG orientation 改變。
+
+* [ ] **TST-INT-007｜P0｜測試 Aperture 同步更新 DOF**
+
+  * 依賴：GGL-018、UI-010
+  * 驗收：aperture 改變後 DOF uniform 或 derived range 改變。
+
+* [ ] **TST-INT-008｜P0｜測試 Orientation Assist**
+
+  * 依賴：GGL-008、UI-011
+  * 驗收：toggle 正確切換 flip state。
+
+* [ ] **TST-INT-009｜P0｜測試 Guided Mode Disabled Controls**
+
+  * 依賴：UI-018
+  * 驗收：Rise 關的 Tilt/Swing controls 無法互動。
+
+* [ ] **TST-INT-010｜P0｜測試 Reset Movements**
+
+  * 依賴：UI-012
+  * 驗收：reset 後數值回到 task 或 default baseline。
+
+* [ ] **TST-INT-011｜P0｜測試 Restart Task**
+
+  * 依賴：UI-013
+  * 驗收：scene、task、movement、feedback 均回到初始狀態。
+
+* [ ] **TST-INT-012｜P0｜測試 Task Evaluation 顯示**
+
+  * 依賴：UI-015、TSK-014
+  * 驗收：criteria UI 與 evaluator 回傳結果一致。
+
+* [ ] **TST-INT-013｜P0｜測試 Completion Overlay**
+
+  * 依賴：UI-017
+  * 驗收：task completed 時 overlay 出現。
+
+---
+
+# Phase 13 — End-to-End Tests
+
+* [ ] **TST-E2E-001｜P0｜建立 Playwright 基礎設定**
+
+  * 依賴：ENV-009
+  * 驗收：可啟動 dev server 並執行一個 smoke test。
+
+* [ ] **TST-E2E-002｜P0｜測試首頁進入 Guided Mode**
+
+  * 依賴：ENV-015、UI-001
+  * 驗收：使用者可由首頁進入第一個 task。
+
+* [ ] **TST-E2E-003｜P0｜測試 Rise 關失敗狀態**
+
+  * 依賴：TSK-011、UI-014
+  * 驗收：初始 state 不可完成 rise 關。
+
+* [ ] **TST-E2E-004｜P0｜測試 Rise 關完成**
+
+  * 依賴：TST-E2E-003
+  * 驗收：設定合理 rise 後 task 顯示 completed。
+
+* [ ] **TST-E2E-005｜P0｜測試 Tilt 關禁止 f/32**
+
+  * 依賴：TSK-012
+  * 驗收：即使 targets 清晰，選 f/32 仍不可完成。
+
+* [ ] **TST-E2E-006｜P0｜測試 Tilt 關完成**
+
+  * 依賴：TSK-012
+  * 驗收：合理 tilt、focus、f/22 設定可完成。
+
+* [ ] **TST-E2E-007｜P0｜測試 Swing 關失敗狀態**
+
+  * 依賴：TSK-013
+  * 驗收：zero swing 時不可完成。
+
+* [ ] **TST-E2E-008｜P0｜測試 Swing 關完成**
+
+  * 依賴：TSK-013
+  * 驗收：合理 swing、focus、f/22 設定可完成。
+
+* [ ] **TST-E2E-009｜P0｜測試 Restart Task**
+
+  * 依賴：UI-013
+  * 驗收：完成或變更 task 後重啟，狀態回復初始值。
+
+* [ ] **TST-E2E-010｜P0｜測試 Free Mode Scene Switching**
+
+  * 依賴：UI-019、UI-020
+  * 驗收：三個 scene 可正常切換且不出現 runtime error。
+
+* [ ] **TST-E2E-011｜P1｜測試 WebGL Fallback**
+
+  * 依賴：ENV-018
+  * 驗收：模擬 WebGL 不可用時顯示 fallback UI。
+
+---
+
+# Phase 14 — Performance, Accessibility and Release
+
+* [ ] **PERF-001｜P0｜量測 Movement Input Latency**
+
+  * 依賴：GGL-018、R3D-011
+  * 驗收：slider input 至主要視覺更新目標低於 100ms。
+
+* [ ] **PERF-002｜P0｜量測 Ground Glass FPS**
+
+  * 依賴：GGL-018
+  * 驗收：一般 desktop 裝置可維持至少 30 FPS。
+
+* [ ] **PERF-003｜P1｜加入 Ground Glass Resolution Scaling**
+
+  * 依賴：GGL-018
+  * 驗收：低效能模式可降低 render target resolution。
+
+* [ ] **PERF-004｜P1｜加入 DOF Quality Scaling**
+
+  * 依賴：GGL-017
+  * 驗收：低效能模式可降低 blur samples 或停用高成本 pass。
+
+* [ ] **PERF-005｜P1｜量測 Scene Switch Duration**
+
+  * 依賴：SCN-019
+  * 驗收：場景切換目標少於 2 秒。
+
+* [ ] **A11Y-001｜P0｜檢查所有 Control Label**
+
+  * 依賴：UI-005 至 UI-011
+  * 驗收：所有 interactive controls 均有可讀 label。
+
+* [ ] **A11Y-002｜P0｜檢查 Focus Status 非色彩資訊**
+
+  * 依賴：GGL-019、GGL-020
+  * 驗收：sharpness status 有文字或 icon，不只靠顏色。
+
+* [ ] **A11Y-003｜P1｜完成 Keyboard-only Rise Task**
+
+  * 依賴：UI-022
+  * 驗收：只使用鍵盤可完成 Rise 關。
+
+* [ ] **REL-001｜P0｜建立 CI Lint Job**
+
+  * 依賴：ENV-010
+  * 驗收：Pull Request 自動執行 lint。
+
+* [ ] **REL-002｜P0｜建立 CI Typecheck Job**
+
+  * 依賴：ENV-002
+  * 驗收：Pull Request 自動執行 typecheck。
+
+* [ ] **REL-003｜P0｜建立 CI Unit Test Job**
+
+  * 依賴：ENV-007
+  * 驗收：Pull Request 自動執行 Vitest。
+
+* [ ] **REL-004｜P1｜建立 CI E2E Test Job**
+
+  * 依賴：TST-E2E-001
+  * 驗收：Pull Request 或 deployment preview 可執行 Playwright。
+
+* [ ] **REL-005｜P1｜建立 Static Deployment Preview**
+
+  * 依賴：REL-001 至 REL-003
+  * 驗收：每次合併或 preview 可產出可訪問 static build。
+
+* [ ] **REL-006｜P0｜建立 Release Checklist**
+
+  * 依賴：所有 P0 Tasks
+  * 驗收：包含 tests、performance、console errors、scope check、三關完成驗證。
+
+* [ ] **REL-007｜P0｜完成 MVP Smoke Test**
+
+  * 依賴：REL-006
+  * 驗收：Rise、Tilt、Swing 三關可由新使用者流程完整通過。
+
+---
+
+# Recommended Execution Order
 
 ```text
-src/
-  app/
-  components/
-  core/
-  scenes/
-  render/
-  state/
-  types/
-  utils/
-  tests/
-```
-
-### 驗收條件
-
-* `core/optics` 不可 import React。
-* `render` 不可包含任務規則。
-* `components` 不可自行重算光學幾何。
-* `types` 為共用型別唯一來源。
-
----
-
-## FND-003 — 安裝核心依賴
-
-**優先級**：P0
-**估算**：S
-**依賴**：FND-001
-
-### 工作內容
-
-安裝並設定：
-
-* `three`
-* `@react-three/fiber`
-* `@react-three/drei`
-* `zustand`
-* `vitest`
-* `@testing-library/react`
-* `playwright`
-* SVG 或數學工具所需依賴
-
-### 驗收條件
-
-* 可 render 最小化 React Three Fiber Canvas。
-* Vitest 可執行最小測試。
-* Playwright 可開啟本地測試頁。
-
----
-
-## FND-004 — 建立共用型別與常數
-
-**優先級**：P0
-**估算**：M
-**依賴**：FND-002
-
-### 工作內容
-
-建立：
-
-* `Vec3`
-* `Ray`
-* `Plane`
-* `Transform`
-* `Bounds3`
-* `CameraState`
-* `DerivedOpticsState`
-* `SceneDefinition`
-* `TaskDefinition`
-* `TaskEvaluation`
-* `CAMERA_CONSTANTS`
-
-### 驗收條件
-
-* 不可使用 `any` 作核心光學型別。
-* 4×5 底片尺寸固定為 `127mm × 101.6mm`。
-* 150mm 鏡頭、rise / tilt / swing 範圍符合 Spec。
-
----
-
-## FND-005 — 建立應用路由與 App Shell
-
-**優先級**：P0
-**估算**：M
-**依賴**：FND-001
-
-### 工作內容
-
-建立頁面：
-
-* 首頁。
-* 模式選擇頁。
-* Simulator Workspace。
-* 關卡結果頁或結果 overlay。
-
-### 驗收條件
-
-* 使用者可從首頁進入 Guided Mode。
-* 使用者可從首頁進入 Free Mode。
-* URL 可包含 scene 或 task 識別碼。
-* 無效 route 有 fallback。
-
----
-
-## FND-006 — 建立錯誤與 WebGL fallback 畫面
-
-**優先級**：P1
-**估算**：S
-**依賴**：FND-005
-
-### 工作內容
-
-* 偵測 WebGL 可用性。
-* 3D 資產載入失敗時顯示 error state。
-* optics calculation failure 時採安全回退。
-
-### 驗收條件
-
-* WebGL 不可用時不會白畫面。
-* 顯示可理解的瀏覽器支援提示。
-* 無法載入資產時可重新嘗試。
-
----
-
-# 3. State Management
-
-## STA-001 — 建立 Zustand App Store
-
-**優先級**：P0
-**估算**：M
-**依賴**：FND-004
-
-### 工作內容
-
-建立：
-
-* camera state。
-* active scene。
-* active task。
-* UI display options。
-* current task evaluation。
-* reset actions。
-
-### 驗收條件
-
-提供以下 actions：
-
-```ts
-setRise()
-setTilt()
-setSwing()
-setFocusDistance()
-setAperture()
-setMode()
-setActiveScene()
-setActiveTask()
-resetMovements()
-restartTask()
+1. ENV-001 至 ENV-018
+2. DOM-001 至 DOM-015
+3. STA-001 至 STA-015
+4. MTH-001 至 MTH-016
+5. OPT-001 至 OPT-026
+6. TST-OPT-001 至 TST-OPT-014
+7. R3D-001 至 R3D-011
+8. SCN-001 至 SCN-017
+9. GGL-001 至 GGL-018
+10. GEO-001 至 GEO-020
+11. TSK-001 至 TSK-019
+12. UI-001 至 UI-020
+13. TST-INT-001 至 TST-INT-013
+14. TST-E2E-001 至 TST-E2E-010
+15. PERF-001、PERF-002、A11Y-001、REL-001 至 REL-007
+16. 最後才處理所有 P1 tasks
 ```
 
 ---
 
-## STA-002 — Movement 輸入限制與正規化
+# First Implementable Work Package
 
-**優先級**：P0
-**估算**：S
-**依賴**：STA-001
-
-### 工作內容
-
-* Rise clamp 至 `0–40mm`。
-* Tilt clamp 至 `-10° 至 +10°`。
-* Swing clamp 至 `-10° 至 +10°`。
-* Aperture 僅容許固定選項。
-* Focus 範圍依 scene 定義限制。
-
-### 驗收條件
-
-* 任何 UI 或程式呼叫均不能寫入非法 movement。
-* 單元測試覆蓋所有 clamp 情況。
-
----
-
-## STA-003 — Derived Optics State Selector
-
-**優先級**：P0
-**估算**：M
-**依賴**：STA-001、OPT-001
-
-### 工作內容
-
-* 由 `CameraState + SceneDefinition` 產生 `DerivedOpticsState`。
-* 使用 memoization 避免不必要重算。
-* 所有 renderer 及 task evaluator 使用同一 selector。
-
-### 驗收條件
-
-* UI component 不可自行呼叫零散 optics helpers。
-* 同一 camera state 只產生一份共享 derived state。
-* movement 改變時衍生狀態可於 100ms 內更新。
-
----
-
-# 4. Optics Kernel
-
-## OPT-001 — 向量、平面及射線數學工具
-
-**優先級**：P0
-**估算**：M
-**依賴**：FND-004
-
-### 工作內容
-
-實作：
-
-* 向量加減、dot、cross、normalize。
-* Ray-plane intersection。
-* Plane-plane intersection line。
-* angle between normals。
-* rotation matrix / quaternion helpers。
-* 世界座標及毫米單位處理。
-
-### 驗收條件
-
-* 所有函式為 pure functions。
-* 零向量與平行平面有安全處理。
-* 單元測試涵蓋正常及 edge cases。
-
----
-
-## OPT-002 — 計算底片平面與鏡頭平面
-
-**優先級**：P0
-**估算**：M
-**依賴**：OPT-001、STA-002
-
-### 工作內容
-
-* 固定 film plane。
-* 根據 rise 計算 lens center。
-* 根據 tilt / swing 計算 lens normal。
-* 產生 `lensPlane`。
-
-### 驗收條件
-
-* Rise 只改變 lens center 的 Y 值。
-* Tilt 繞 X 軸。
-* Swing 繞 Y 軸。
-* zero movement 時 lens normal 與 film normal 平行。
-
----
-
-## OPT-003 — 光軸與 Focus Point 計算
-
-**優先級**：P0
-**估算**：S
-**依賴**：OPT-002
-
-### 工作內容
-
-* 計算 optical axis ray。
-* 根據 focus distance 建立 focus point。
-* 支援各 scene 自訂 focus 最小／最大距離。
-
-### 驗收條件
-
-* focus point 位於 optical axis 上。
-* 改變 focus distance 時 focus point 沿光軸移動。
-* Rise、tilt、swing 改變時光軸方向可正確更新。
-
----
-
-## OPT-004 — 平行平面焦平面模型
-
-**優先級**：P0
-**估算**：S
-**依賴**：OPT-003
-
-### 工作內容
-
-當 lens plane 與 film plane 夾角低於 `0.1°`：
-
-* focus plane 與 film plane 平行。
-* focus plane 通過 focus point。
-
-### 驗收條件
-
-* tilt = 0 且 swing = 0 時必定進入此模式。
-* 不可出現 NaN、Infinity 或零向量 normal。
-* 單元測試驗證 focus plane 平行 film plane。
-
----
-
-## OPT-005 — Scheimpflug 焦平面計算
-
-**優先級**：P0
-**估算**：L
-**依賴**：OPT-001、OPT-003、OPT-004
-
-### 工作內容
-
-* 計算 lens plane 與 film plane 交線。
-* 建立通過交線與 focus point 的 focus plane。
-* 回傳正常化 focus plane normal。
-* 產生側視及俯視使用的交線資訊。
-
-### 驗收條件
-
-* Tilt 改變時，focus plane 側視方向有明確變化。
-* Swing 改變時，focus plane 俯視方向有明確變化。
-* Aperture 不可改變 focus plane normal。
-* 接近平行情況正確回退至 OPT-004。
-
----
-
-## OPT-006 — 景深近似平面計算
-
-**優先級**：P0
-**估算**：M
-**依賴**：OPT-005
-
-### 工作內容
-
-* 根據 aperture 產生 focus plane 前後可接受清晰範圍。
-* 產生 near plane、far plane。
-* 建立可配置的 tolerance 常數。
-
-### 驗收條件
-
-* f/5.6 的景深最窄。
-* f/32 的景深最寬。
-* aperture 改變不改變最佳焦平面方向。
-* 近端與遠端平面不應互相反轉。
-
----
-
-## OPT-007 — Focus Target Sharpness 計算
-
-**優先級**：P0
-**估算**：M
-**依賴**：OPT-006
-
-### 工作內容
-
-* 計算 target 到 focus plane 距離。
-* 計算 sharpness score。
-* 映射為：
-
-  * `sharp`
-  * `near-sharp`
-  * `blurred`
-
-### 驗收條件
-
-* score 範圍為 `0–1`。
-* 位於 focus plane 上的 target score 接近 `1`。
-* 距離增加時 score 單調遞減。
-* aperture 收細時 acceptable range 變大。
-
----
-
-## OPT-008 — Ground Glass Off-axis Projection 計算
-
-**優先級**：P0
-**估算**：L
-**依賴**：OPT-002、OPT-003
-
-### 工作內容
-
-* 根據 lens center、film plane 四角、焦距建立 off-axis projection。
-* 輸出 renderer 可用的 projection data 或 camera matrix。
-* Rise 必須影響取景垂直位置。
-
-### 驗收條件
-
-* Rise 增加時，ground glass 可見更多場景上方內容。
-* 不可將 Rise 以整部相機 tilt 偽造。
-* projection 對 zero rise 正常工作。
-
----
-
-## OPT-009 — Optics Kernel 整合函式
-
-**優先級**：P0
-**估算**：M
-**依賴**：OPT-002 至 OPT-008
-
-### 工作內容
-
-實作：
-
-```ts
-deriveOpticsState(
-  camera: CameraState,
-  scene: SceneDefinition
-): DerivedOpticsState
-```
-
-### 驗收條件
-
-* 單一函式回傳所有 renderer 及 evaluator 所需資料。
-* 不可由 UI 層自行重算 optics。
-* unit tests 覆蓋 rise、tilt、swing、focus、aperture 組合。
-
----
-
-# 5. 3D Rendering
-
-## REN-001 — 建立主 WebGL Canvas 與渲染基礎
-
-**優先級**：P0
-**估算**：M
-**依賴**：FND-003、STA-001
-
-### 工作內容
-
-* 建立 React Three Fiber Canvas。
-* 設定燈光、背景、resize。
-* 建立 loading state。
-* 支援 reduced motion。
-
-### 驗收條件
-
-* Canvas 可在 1280px 寬桌面畫面正常顯示。
-* 視窗 resize 不破版。
-* WebGL 載入失敗時交由 FND-006 fallback。
-
----
-
-## REN-002 — 建立抽象化 4×5 View Camera 模型
-
-**優先級**：P0
-**估算**：M
-**依賴**：REN-001、OPT-002
-
-### 工作內容
-
-建立簡化模型：
-
-* 前組。
-* 後組。
-* 鏡頭板。
-* 鏡頭。
-* 皮腔。
-* 底片平面。
-* 光軸。
-* 基本 rail。
-
-### 驗收條件
-
-* Rise、tilt、swing 在 3D 模型上可明確看見。
-* 後組固定。
-* 相機模型不需高寫實度，但須具結構可讀性。
-
----
-
-## REN-003 — 前組 Movement 視覺同步
-
-**優先級**：P0
-**估算**：M
-**依賴**：REN-002、OPT-009
-
-### 工作內容
-
-* Lens board 跟隨 `lensCenterWorld`。
-* Lens board rotation 跟隨 `lensNormalWorld`。
-* Bellows 視覺上連接前組與後組。
-* 顯示可選的 lens plane overlay。
-
-### 驗收條件
-
-* Rise 不改變鏡頭板角度。
-* Tilt / swing 不改變 rise 數值。
-* 3D movement 與 2D diagram 一致。
-
----
-
-## REN-004 — 場景鏡頭與操作視角
-
-**優先級**：P1
-**估算**：M
-**依賴**：REN-001
-
-### 工作內容
-
-* 使用者可旋轉、縮放 3D 相機外觀視角。
-* 不可移動虛擬大片幅相機在場景中的拍攝位置。
-* 提供 reset 3D view。
-
-### 驗收條件
-
-* 使用者不會意外改變拍攝相機本身位置。
-* 操作視角 reset 後回到預設角度。
-* 不影響 ground glass 或 optics state。
-
----
-
-## REN-005 — Focus Plane 與景深區域 3D Overlay
-
-**優先級**：P1
-**估算**：M
-**依賴**：OPT-009、REN-001
-
-### 工作內容
-
-* 在 3D 場景顯示 focus plane。
-* 可選顯示 depth-of-field near / far 範圍。
-* 提供開關。
-
-### 驗收條件
-
-* Tilt / swing 時 overlay 平面同步轉動。
-* Aperture 改變時只有景深範圍改變。
-* Overlay 可關閉，不遮擋主要學習內容。
-
----
-
-## REN-006 — 3D Renderer 效能調校
-
-**優先級**：P1
-**估算**：M
-**依賴**：REN-001 至 REN-005
-
-### 工作內容
-
-* 限制 geometry complexity。
-* 實作 asset lazy loading。
-* 避免每 frame 建立新 object。
-* 為低效能裝置建立 render quality 等級。
-
-### 驗收條件
-
-* 常見 desktop 保持至少 30 FPS。
-* 連續拖拉 slider 不會出現嚴重卡頓。
-* 3D scene 切換目標少於 2 秒。
-
----
-
-# 6. Ground Glass
-
-## GGL-001 — 建立 Ground Glass Render Target
-
-**優先級**：P0
-**估算**：L
-**依賴**：REN-001、OPT-008
-
-### 工作內容
-
-* 建立專用 off-axis camera。
-* 建立 color render target。
-* 將 render target 顯示於 UI panel。
-* 4×5 aspect ratio。
-
-### 驗收條件
-
-* Ground glass 顯示與主 3D 場景不同的「拍攝視角」。
-* Rise、tilt、swing、focus 改變時更新。
-* 4×5 邊界固定正確。
-
----
-
-## GGL-002 — 地面玻璃倒像與方向輔助
-
-**優先級**：P0
-**估算**：S
-**依賴**：GGL-001
-
-### 工作內容
-
-* 預設 flip X、flip Y。
-* orientation assist 開啟時畫面轉正。
-* UI 顯示模式狀態。
-
-### 驗收條件
-
-* 關閉 assist 時，上下及左右均反轉。
-* 開啟 assist 時，畫面正常方向。
-* 切換不影響 optics calculation。
-
----
-
-## GGL-003 — Grid 與數值 Overlay
-
-**優先級**：P0
-**估算**：S
-**依賴**：GGL-001、STA-001
-
-### 工作內容
-
-* 三分格或九宮格。
-* 中心線。
-* 顯示 rise、tilt、swing、focus、aperture。
-* 格線可開關。
-
-### 驗收條件
-
-* Overlay 不改變 render target 本身。
-* 數值與 state 同步。
-* 格線於 orientation assist 切換時仍正確顯示。
-
----
-
-## GGL-004 — 教學級 DOF Shader
-
-**優先級**：P0
-**估算**：L
-**依賴**：GGL-001、OPT-006、OPT-007
-
-### 工作內容
-
-* 建立 depth render target。
-* 由 pixel depth 重建或近似 world position。
-* 根據 focus plane 距離與 aperture 計算 blur strength。
-* 套用半解析度 blur pass。
-
-### 驗收條件
-
-* 改變 aperture 時模糊範圍有可見差異。
-* tilt / swing 時清晰帶方向隨 focus plane 改變。
-* f/5.6 明顯比 f/32 景深窄。
-* 低效能模式可降低 quality。
-
----
-
-## GGL-005 — Focus Assist Overlay
-
-**優先級**：P1
-**估算**：M
-**依賴**：OPT-007、GGL-004
-
-### 工作內容
-
-* 顯示 key targets 的清晰度狀態。
-* 使用文字、pattern、outline 或 icon。
-* 顯示 `sharp / near-sharp / blurred`。
-
-### 驗收條件
-
-* 不只依賴單一顏色。
-* 可關閉。
-* 顯示的 target score 與 task evaluator 相同。
-
----
-
-## GGL-006 — Ground Glass 放大檢視
-
-**優先級**：P1
-**估算**：M
-**依賴**：GGL-001
-
-### 工作內容
-
-* 使用者可點擊局部放大。
-* 提供拖曳或固定 focus target 放大。
-* 可離開放大模式。
-
-### 驗收條件
-
-* 放大不改變相機 state。
-* 影像清晰度變化仍可辨識。
-* 不能造成主畫面顯著掉幀。
-
----
-
-# 7. 2D Geometry Diagram
-
-## GEO-001 — SVG Geometry 基礎元件
-
-**優先級**：P0
-**估算**：M
-**依賴**：FND-004、OPT-009
-
-### 工作內容
-
-建立可重用 SVG 元件：
-
-* PlaneLine。
-* RayLine。
-* FocusPointMarker。
-* DOFRegion。
-* AxisLabel。
-* DiagramLegend。
-
-### 驗收條件
-
-* 所有項目有文字標示。
-* 不只透過顏色辨識。
-* 可依不同 scene scale 自動縮放。
-
----
-
-## GEO-002 — 側視圖：Rise / Tilt / Focus
-
-**優先級**：P0
-**估算**：M
-**依賴**：GEO-001
-
-### 工作內容
-
-顯示：
-
-* film plane。
-* lens plane。
-* optical axis。
-* focus point。
-* focus plane。
-* near / far DOF plane。
-* rise displacement。
-* 桌面或建築代表物件。
-
-### 驗收條件
-
-* Rise 改變 lens center 高度。
-* Tilt 改變 focus plane 側視方向。
-* Aperture 只改變 DOF 範圍。
-* 所有圖形取自 `DerivedOpticsState`。
-
----
-
-## GEO-003 — 俯視圖：Swing / Focus
-
-**優先級**：P0
-**估算**：M
-**依賴**：GEO-001
-
-### 工作內容
-
-顯示：
-
-* film plane。
-* lens plane。
-* optical axis。
-* focus plane。
-* DOF 範圍。
-* 斜向主體代表線。
-
-### 驗收條件
-
-* Swing 改變 lens plane 與 focus plane 俯視方向。
-* Tilt 不應錯誤改變俯視 focus plane 主方向。
-* UI 可切換側視與俯視。
-
----
-
-## GEO-004 — Diagram View Selector 與圖例
-
-**優先級**：P1
-**估算**：S
-**依賴**：GEO-002、GEO-003
-
-### 工作內容
-
-* 側視／俯視切換。
-* 依關卡預設適當視圖。
-* 顯示圖例與簡短說明。
-
-### 驗收條件
-
-* Rise / Tilt 關卡預設側視。
-* Swing 關卡預設俯視。
-* 切換不重設相機設定。
-
----
-
-## GEO-005 — Geometry Diagram Visual Tests
-
-**優先級**：P1
-**估算**：M
-**依賴**：GEO-002、GEO-003
-
-### 工作內容
-
-* 建立固定 state visual snapshots。
-* 測試 zero movement、rise max、tilt ±5°、swing ±5°。
-* 確認 label 不重疊至不可讀。
-
-### 驗收條件
-
-* 主要圖形於不同狀態有可辨識差異。
-* SVG 不出現 NaN、Infinity coordinate。
-* snapshot diff 有合理可維護基線。
-
----
-
-# 8. Scene Content
-
-## SCN-001 — 建築 Rise 場景
-
-**優先級**：P0
-**估算**：M
-**依賴**：REN-001、OPT-008
-
-### 工作內容
-
-* 建立高樓立面、地面、天空背景。
-* 定義 building top composition target。
-* 定義主建築可見範圍 target。
-* 設定固定拍攝位置與初始 state。
-
-### 驗收條件
-
-* 初始 state 無法完整看見建築頂部。
-* rise 約 12–35mm 可完成任務。
-* 場景清楚呈現垂直建築元素。
-
----
-
-## SCN-002 — 桌面 Tilt 場景
-
-**優先級**：P0
-**估算**：M
-**依賴**：REN-001、OPT-007
-
-### 工作內容
-
-* 建立由近至遠延伸的桌面。
-* 放置近、中、遠三個 focus target。
-* target 需呈現可辨識細節。
-* 設定適合 tilt 學習的幾何位置。
-
-### 驗收條件
-
-* tilt = 0 時不可能在 f/22 或更大光圈讓三個目標都 sharp。
-* 合理 tilt + focus 可讓三個 target 達 `>= 0.8`。
-* 過量 tilt 會令至少一個 target 明顯失焦。
-
----
-
-## SCN-003 — 斜向書架／走廊 Swing 場景
-
-**優先級**：P0
-**估算**：M
-**依賴**：REN-001、OPT-007
-
-### 工作內容
-
-* 建立斜向延伸書架、欄杆或走廊。
-* 放置近、中、遠三個 focus target。
-* target 在水平面方向有明確斜向分布。
-
-### 驗收條件
-
-* swing = 0 時不能在 f/22 或更大光圈完成。
-* 合理 swing + focus 可令三 target 達標。
-* swing 方向錯誤時關鍵 targets 失焦。
-
----
-
-## SCN-004 — Scene Definition 與 Asset Loader
-
-**優先級**：P0
-**估算**：M
-**依賴**：SCN-001、SCN-002、SCN-003
-
-### 工作內容
-
-* 建立三份 `SceneDefinition`。
-* 管理 asset URL、camera preset、targets、bounds。
-* 建立 scene registry。
-
-### 驗收條件
-
-* 可透過 scene ID 載入全部場景。
-* 每 scene 都有 initial camera state。
-* 每 scene 的 focus target 具 world position 與 label。
-
----
-
-## SCN-005 — Scene Asset 優化
-
-**優先級**：P1
-**估算**：M
-**依賴**：SCN-004
-
-### 工作內容
-
-* 壓縮紋理。
-* 控制 polygon count。
-* lazy load 非當前場景。
-* 預載下一關必要資產。
-
-### 驗收條件
-
-* 首次載入目標低於 5 秒。
-* 場景切換低於 2 秒。
-* 不因場景資產導致長時間 main-thread blocking。
-
----
-
-# 9. Task Engine and Feedback
-
-## TSK-001 — 任務資料模型與 Registry
-
-**優先級**：P0
-**估算**：M
-**依賴**：FND-004、SCN-004
-
-### 工作內容
-
-* 定義 `TaskDefinition`。
-* 建立 task registry。
-* 實作 `rise-01`、`tilt-01`、`swing-01`。
-
-### 驗收條件
-
-* 每個 task 可對應唯一 scene。
-* 每個 task 定義 enabled controls、constraints、criteria、feedback rules。
-* 任務資料不可硬寫在 React component。
-
----
-
-## TSK-002 — Focus Target 成功條件判定
-
-**優先級**：P0
-**估算**：S
-**依賴**：OPT-007、TSK-001
-
-### 工作內容
-
-* 驗證指定 target sharpness score。
-* 回傳每 target pass / fail。
-* 支援 target 權重。
-
-### 驗收條件
-
-* Tilt / Swing 關卡可依三個 targets 判定。
-* `sharpness >= 0.8` 代表成功。
-* 評估結果可提供 UI 顯示。
-
----
-
-## TSK-003 — Composition Coverage 判定
-
-**優先級**：P0
-**估算**：L
-**依賴**：OPT-008、SCN-001、TSK-001
-
-### 工作內容
-
-* 估算 composition target 在 ground glass frame 中可見比例。
-* 用於建築頂部及主建築可見比例判定。
-
-### 驗收條件
-
-* 建築頂部 coverage 可量化。
-* rise 增加時建築頂部 coverage 單調增加。
-* 成功門檻可設為 `>= 95%`。
-
----
-
-## TSK-004 — Movement / Aperture Constraint 判定
-
-**優先級**：P0
-**估算**：S
-**依賴**：TSK-001、STA-002
-
-### 工作內容
-
-檢查：
-
-* 最低 movement 使用量。
-* 最大 movement 範圍。
-* 指定可用 aperture。
-* 禁止 f/32 的學習限制。
-
-### 驗收條件
-
-* Tilt / Swing task 使用 f/32 時不可完成。
-* movement 不足時即使 targets sharp 亦不可完成。
-* constraints 顯示清楚失敗原因。
-
----
-
-## TSK-005 — Task Evaluator 整合
-
-**優先級**：P0
-**估算**：M
-**依賴**：TSK-002、TSK-003、TSK-004
-
-### 工作內容
-
-實作：
-
-```ts
-evaluateTask(
-  task,
-  scene,
-  camera,
-  optics
-): TaskEvaluation
-```
-
-### 驗收條件
-
-* 回傳 `in-progress / completed / blocked`。
-* 回傳每條 criterion 的 current value 與 expected value。
-* score 以通過條件比例計算。
-* 所有 required criteria pass 才 completed。
-
----
-
-## TSK-006 — Feedback Engine
-
-**優先級**：P0
-**估算**：M
-**依賴**：TSK-005
-
-### 工作內容
-
-根據失敗條件產生：
-
-* primary feedback。
-* secondary hint。
-* 完成解說。
-
-### 驗收條件
-
-* 每個關卡至少支援 4 種具體回饋。
-* 回饋須說明「原因 + 建議動作」。
-* 不只顯示「錯誤」或「未完成」。
-
----
-
-# 10. Application UI
-
-## UI-001 — Simulator Workspace Layout
-
-**優先級**：P0
-**估算**：M
-**依賴**：FND-005、REN-001、GGL-001、GEO-002
-
-### 工作內容
-
-建立桌面版版面：
-
-| 區域 | 內容                     |
-| -- | ---------------------- |
-| 左上 | 3D Scene View          |
-| 右上 | Ground Glass           |
-| 左下 | Geometry Diagram       |
-| 右下 | Controls、Task、Feedback |
-
-### 驗收條件
-
-* 最低 1280px 寬度可正常閱讀。
-* 不需捲動即可見主要 interaction areas。
-* 各區域可隨 viewport 縮放。
-
----
-
-## UI-002 — Movement Controls
-
-**優先級**：P0
-**估算**：M
-**依賴**：STA-001、STA-002
-
-### 工作內容
-
-建立：
-
-* Rise slider。
-* Tilt slider。
-* Swing slider。
-* 數值顯示。
-* reset 個別 movement 或全部 movement。
-
-### 驗收條件
-
-* keyboard 可調整。
-* 顯示單位：mm、°。
-* Guided Mode 未開放 control 必須 disabled。
-* slider 改變須即時更新全部視圖。
-
----
-
-## UI-003 — Focus 與 Aperture Controls
-
-**優先級**：P0
-**估算**：S
-**依賴**：STA-001
-
-### 工作內容
-
-* Focus slider。
-* Aperture selector。
-* 顯示當前 focus distance。
-* 顯示關卡 aperture 限制。
-
-### 驗收條件
-
-* aperture 僅容許固定值。
-* 禁止 aperture 在 Guided Mode 中有明確說明。
-* focus 受 scene range 限制。
-
----
-
-## UI-004 — Guided Mode 控制與學習提示
-
-**優先級**：P0
-**估算**：M
-**依賴**：TSK-001、TSK-006、UI-002、UI-003
-
-### 工作內容
-
-* 顯示 task title、目標、限制。
-* 顯示最多兩條當前提示。
-* disabled controls 顯示理由。
-* 任務完成顯示結果 overlay。
-
-### 驗收條件
-
-* Rise 關只開 Rise / Focus / Aperture。
-* Tilt 關只開 Tilt / Focus / Aperture。
-* Swing 關只開 Swing / Focus / Aperture。
-* 完成時顯示使用者的最終設定。
-
----
-
-## UI-005 — Free Practice Mode
-
-**優先級**：P0
-**估算**：M
-**依賴**：SCN-004、UI-002、UI-003
-
-### 工作內容
-
-* 所有 MVP controls 開放。
-* 可切換三個場景。
-* 顯示 focus target 即時狀態。
-* 不強制任務完成。
-
-### 驗收條件
-
-* 切換場景不會造成 app crash。
-* scene 切換後更新 focus range 及 preset。
-* 可從 Free Mode 返回 Guided Mode。
-
----
-
-## UI-006 — Reset、Restart、Help
-
-**優先級**：P1
-**估算**：S
-**依賴**：STA-001、UI-004
-
-### 工作內容
-
-* Reset Movements。
-* Restart Task。
-* Help modal。
-* 顯示 movement 基本定義。
-
-### 驗收條件
-
-* Reset Movements 保留場景與模式。
-* Restart Task 恢復關卡初始 state。
-* Help 不會重設任何設定。
-
----
-
-## UI-007 — Accessibility and Reduced Motion
-
-**優先級**：P1
-**估算**：M
-**依賴**：UI-001 至 UI-006
-
-### 工作內容
-
-* 完整 keyboard navigation。
-* ARIA labels。
-* focus indicator。
-* `prefers-reduced-motion` 支援。
-* 非色彩 focus status。
-
-### 驗收條件
-
-* 可只用鍵盤完成 Rise 關。
-* disabled controls 可被 screen reader 正確理解。
-* reduced motion 下無不必要平滑動畫。
-
----
-
-# 11. Testing, Performance and Release
-
-## QAT-001 — Optics Kernel Unit Tests
-
-**優先級**：P0
-**估算**：L
-**依賴**：OPT-001 至 OPT-009
-
-### 工作內容
-
-建立 Vitest coverage：
-
-* Rise。
-* Tilt。
-* Swing。
-* Parallel fallback。
-* Focus plane orientation。
-* Aperture / DOF。
-* Sharpness score。
-* clamp。
-* invalid geometry fallback。
-
-### 驗收條件
-
-* 核心 optics modules coverage 至少 85%。
-* 所有 edge cases 不產生 NaN / Infinity。
-* 所有測試可在 CI 執行。
-
----
-
-## QAT-002 — Component Integration Tests
-
-**優先級**：P0
-**估算**：M
-**依賴**：UI-001 至 UI-005、TSK-005
-
-### 工作內容
-
-測試：
-
-* slider interaction。
-* state 同步。
-* Guided Mode disable logic。
-* reset logic。
-* feedback output。
-* orientation assist。
-
-### 驗收條件
-
-* Rise 更新後 Ground Glass / diagram state 同步。
-* Tilt / swing controls 觸發正確 derived state。
-* task completion UI 可被測試驗證。
-
----
-
-## QAT-003 — Playwright E2E：Rise 關
-
-**優先級**：P0
-**估算**：M
-**依賴**：TSK-005、UI-004
-
-### 工作內容
-
-* 開啟 `rise-01`。
-* 調整 rise 至成功範圍。
-* 驗證 completed。
-* 驗證 restart。
-
-### 驗收條件
-
-* 頭部可見比例不足時不完成。
-* 合理 rise 設定可完成。
-* 結果頁顯示 Rise 解說。
-
----
-
-## QAT-004 — Playwright E2E：Tilt 與 Swing 關
-
-**優先級**：P0
-**估算**：L
-**依賴**：TSK-005、UI-004
-
-### 工作內容
-
-* 驗證 f/32 不可完成。
-* 驗證合理 tilt / focus / f/22 可完成。
-* 驗證合理 swing / focus / f/22 可完成。
-* 驗證錯誤方向／過量 movement 不完成。
-
-### 驗收條件
-
-* Tilt 和 Swing 任務各至少一個成功與一個失敗案例。
-* 使用者可重試並完成。
-* 無 console errors。
-
----
-
-## QAT-005 — Visual Regression Tests
-
-**優先級**：P1
-**估算**：M
-**依賴**：GEO-005、GGL-003
-
-### 工作內容
-
-建立 screenshot baseline：
-
-* Rise 0 / 20 / 40mm。
-* Tilt 0 / +5° / -5°。
-* Swing 0 / +5° / -5°。
-* Ground glass assist on / off。
-* focus assist on / off。
-
-### 驗收條件
-
-* 可偵測 diagram 或 ground glass direction 意外改變。
-* baseline 可在 CI 維護。
-* 不因非決定性動畫導致隨機失敗。
-
----
-
-## QAT-006 — Performance Profiling
-
-**優先級**：P1
-**估算**：M
-**依賴**：REN-006、GGL-004、SCN-005
-
-### 工作內容
-
-* Profile slider drag。
-* Profile DOF shader。
-* Profile scene switching。
-* 設定 render quality fallback。
-
-### 驗收條件
-
-* 一般 desktop 目標至少 30 FPS。
-* movement input 到畫面更新少於 100ms。
-* Ground Glass render target 可動態降低解析度。
-
----
-
-## QAT-007 — Cross-browser Validation
-
-**優先級**：P1
-**估算**：M
-**依賴**：QAT-003、QAT-004
-
-### 工作內容
-
-驗證：
-
-* Chrome。
-* Edge。
-* Safari Desktop。
-
-### 驗收條件
-
-* 核心 simulator 可於三者正常運作。
-* WebGL fallback 可於不支援環境正確顯示。
-* 不存在 browser-specific crash。
-
----
-
-## QAT-008 — Static Deployment Pipeline
-
-**優先級**：P1
-**估算**：S
-**依賴**：FND-001、QAT-001
-
-### 工作內容
-
-* 建立 CI。
-* 執行 lint、typecheck、unit test、build。
-* 部署至 static hosting preview。
-
-### 驗收條件
-
-* Pull request 有 build status。
-* build artifact 可部署。
-* 失敗測試阻止 release。
-
----
-
-## QAT-009 — MVP Release Checklist
-
-**優先級**：P0
-**估算**：S
-**依賴**：所有 P0 Tasks
-
-### 工作內容
-
-建立 release checklist，確認：
-
-* 範圍沒有擴張。
-* 三關可完成。
-* 所有測試通過。
-* 效能達標。
-* 無 P0 bugs。
-* 無 console errors。
-
-### 驗收條件
-
-* 所有 P0 task 標記完成。
-* MVP Definition of Done 全數通過。
-* 已記錄已知 P1 / P2 限制。
-
----
-
-# 12. 建議實作 Sprint 順序
-
-## Sprint 1：基礎與光學核心
-
-| Task              |
-| ----------------- |
-| FND-001 至 FND-005 |
-| STA-001 至 STA-002 |
-| OPT-001 至 OPT-004 |
-| QAT-001（第一批）      |
-
-**Sprint 完成條件**：可用純數學測試驗證 rise、tilt、swing、focus plane 的基本行為。
-
----
-
-## Sprint 2：Scheimpflug、3D 相機與首個場景
-
-| Task                        |
-| --------------------------- |
-| OPT-005 至 OPT-009           |
-| STA-003                     |
-| REN-001 至 REN-003           |
-| SCN-001                     |
-| QAT-001（完整 optics coverage） |
-
-**Sprint 完成條件**：3D 場景內可操作相機前組，並正確顯示 focus plane。
-
----
-
-## Sprint 3：Ground Glass 與 2D 幾何圖
-
-| Task              |
-| ----------------- |
-| GGL-001 至 GGL-004 |
-| GEO-001 至 GEO-004 |
-| UI-001 至 UI-003   |
-| QAT-002（第一批）      |
-
-**Sprint 完成條件**：rise、tilt、swing 可同步影響 3D、ground glass 及 2D diagram。
-
----
-
-## Sprint 4：關卡與教學流程
-
-| Task              |
-| ----------------- |
-| SCN-002 至 SCN-004 |
-| TSK-001 至 TSK-006 |
-| UI-004 至 UI-006   |
-| QAT-003 至 QAT-004 |
-
-**Sprint 完成條件**：三個關卡可完成，並有可理解的失敗與完成回饋。
-
----
-
-## Sprint 5：品質、效能與發布
-
-| Task              |
-| ----------------- |
-| GGL-005 至 GGL-006 |
-| GEO-005           |
-| REN-004 至 REN-006 |
-| SCN-005           |
-| UI-007            |
-| QAT-005 至 QAT-009 |
-
-**Sprint 完成條件**：達到 MVP Definition of Done，可部署測試版。
-
----
-
-# 13. MVP 關鍵路徑
-
-以下 task 屬關鍵路徑，延誤會直接阻礙 MVP：
+以下是最適合首先交給工程代理執行的 atomic task 範圍：
 
 ```text
-FND-001
-→ FND-004
-→ STA-001
-→ OPT-001
-→ OPT-002
-→ OPT-003
-→ OPT-005
-→ OPT-006
-→ OPT-007
-→ OPT-008
-→ OPT-009
-→ GGL-001
-→ GGL-004
-→ GEO-002 / GEO-003
-→ TSK-005
-→ UI-004
-→ QAT-003 / QAT-004
-→ QAT-009
+ENV-001 至 ENV-016
+DOM-001 至 DOM-014
+STA-001 至 STA-006
+MTH-001 至 MTH-016
+OPT-001 至 OPT-011
+TST-OPT-001 至 TST-OPT-005
 ```
 
----
+完成後應具備：
 
-# 14. MVP 外候選 Backlog
-
-以下項目不可插入 MVP 開發，只可在 MVP release 後重新評估：
-
-| ID      | 項目                       | 優先級 |
-| ------- | ------------------------ | --- |
-| FUT-001 | Rear tilt / swing / rise | P2  |
-| FUT-002 | Front shift / fall       | P2  |
-| FUT-003 | 鏡頭像圈與暗角                  | P2  |
-| FUT-004 | 90mm / 210mm 鏡頭切換        | P2  |
-| FUT-005 | 5×7 / 8×10 格式            | P2  |
-| FUT-006 | 皮腔延伸曝光補償                 | P2  |
-| FUT-007 | 底片、快門、暗片工作流              | P2  |
-| FUT-008 | 教師帳戶及學生進度                | P2  |
-| FUT-009 | 自訂場景與任務編輯器               | P2  |
-| FUT-010 | 高精度鏡頭光學模型                | P2  |
-
----
-
-# 15. 建議首個工程任務包
-
-第一個可直接交給工程代理的任務包：
-
-```text
-完成 FND-001 至 FND-005、STA-001、STA-002、OPT-001 至 OPT-004。
-
-交付要求：
-1. 可啟動 React + TypeScript + Vite 專案。
-2. 有完整 core types 與 CAMERA_CONSTANTS。
-3. 有 Zustand store，可更新 rise、tilt、swing、focus、aperture。
-4. 有純函式 optics kernel，支援：
-   - lens plane
-   - film plane
-   - optical axis
-   - focus point
-   - 平行平面 focus plane fallback
-5. 有 Vitest unit tests。
-6. npm run lint、typecheck、test、build 全部通過。
-7. 暫時不需要 Three.js scene 或 UI 完整視覺效果。
-```
+* 可運行的 React + TypeScript + Vite 專案。
+* 可更新 rise、tilt、swing、focus、aperture 的 Zustand store。
+* 正確的 core geometry 型別及 math helpers。
+* 可建立 film plane、lens plane、optical axis、focus point。
+* 無 tilt/swing 時可正確使用平行 focus plane 模型。
+* 全部相關 unit tests 通過。
