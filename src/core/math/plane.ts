@@ -1,5 +1,5 @@
 import type { Plane, Vec3 } from "../../types/optics";
-import { dot, normalize } from "./vec";
+import { DEFAULT_EPSILON, add, angleDeg, cross, dot, normalize, scale, subtract } from "./vec";
 
 export const planeFromPointNormal = (point: Vec3, normal: Vec3): Plane => {
   const safeNormal = normalize(normal);
@@ -8,4 +8,46 @@ export const planeFromPointNormal = (point: Vec3, normal: Vec3): Plane => {
     normal: safeNormal,
     distance: dot(safeNormal, point),
   };
+};
+
+export const pointToPlaneSignedDistance = (point: Vec3, plane: Plane): number =>
+  dot(plane.normal, subtract(point, plane.point));
+
+export const pointToPlaneDistance = (point: Vec3, plane: Plane): number =>
+  Math.abs(pointToPlaneSignedDistance(point, plane));
+
+export type PlaneIntersectionLine = {
+  point: Vec3;
+  direction: Vec3;
+};
+
+export const intersectPlanes = (
+  first: Plane,
+  second: Plane,
+  epsilon = DEFAULT_EPSILON,
+): PlaneIntersectionLine | null => {
+  const direction = cross(first.normal, second.normal);
+  const denominator = dot(direction, direction);
+  if (denominator <= epsilon * epsilon) {
+    return null;
+  }
+
+  const firstPart = scale(cross(direction, second.normal), first.distance);
+  const secondPart = scale(cross(first.normal, direction), second.distance);
+  const point = scale(add(firstPart, secondPart), 1 / denominator);
+
+  return {
+    point,
+    direction: normalize(direction),
+  };
+};
+
+export const arePlanesNearlyParallel = (
+  first: Plane,
+  second: Plane,
+  thresholdDeg = 0.1,
+): boolean => {
+  const angle = angleDeg(first.normal, second.normal);
+  const acuteAngle = Math.min(angle, 180 - angle);
+  return acuteAngle < thresholdDeg;
 };

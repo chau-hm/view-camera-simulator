@@ -266,82 +266,82 @@
 
 # Phase 3 — Math Foundation
 
-* [ ] **MTH-001｜P0｜實作 Vec3 add**
+* [x] **MTH-001｜P0｜實作 Vec3 add**
 
   * 依賴：DOM-001
   * 驗收：輸入兩個 Vec3，回傳正確相加結果。
 
-* [ ] **MTH-002｜P0｜實作 Vec3 subtract**
+* [x] **MTH-002｜P0｜實作 Vec3 subtract**
 
   * 依賴：DOM-001
   * 驗收：回傳正確相減結果。
 
-* [ ] **MTH-003｜P0｜實作 Vec3 scale**
+* [x] **MTH-003｜P0｜實作 Vec3 scale**
 
   * 依賴：DOM-001
   * 驗收：回傳正確倍數向量。
 
-* [ ] **MTH-004｜P0｜實作 Vec3 dot product**
+* [x] **MTH-004｜P0｜實作 Vec3 dot product**
 
   * 依賴：DOM-001
   * 驗收：回傳正確內積。
 
-* [ ] **MTH-005｜P0｜實作 Vec3 cross product**
+* [x] **MTH-005｜P0｜實作 Vec3 cross product**
 
   * 依賴：DOM-001
   * 驗收：回傳符合右手座標系的外積。
 
-* [ ] **MTH-006｜P0｜實作 Vec3 normalize**
+* [x] **MTH-006｜P0｜實作 Vec3 normalize**
 
   * 依賴：DOM-001
   * 驗收：正常向量回傳 unit vector；零向量安全回退。
 
-* [ ] **MTH-007｜P0｜實作 Vec3 distance**
+* [x] **MTH-007｜P0｜實作 Vec3 distance**
 
   * 依賴：DOM-001
   * 驗收：回傳兩點 Euclidean distance。
 
-* [ ] **MTH-008｜P0｜實作 Vec3 angle**
+* [x] **MTH-008｜P0｜實作 Vec3 angle**
 
   * 依賴：MTH-004、MTH-006
   * 驗收：可正確計算兩法線夾角。
 
-* [ ] **MTH-009｜P0｜實作繞 X 軸 rotation helper**
+* [x] **MTH-009｜P0｜實作繞 X 軸 rotation helper**
 
   * 依賴：DOM-001
   * 驗收：可將 unit vector 旋轉指定角度。
 
-* [ ] **MTH-010｜P0｜實作繞 Y 軸 rotation helper**
+* [x] **MTH-010｜P0｜實作繞 Y 軸 rotation helper**
 
   * 依賴：DOM-001
   * 驗收：可將 unit vector 旋轉指定角度。
 
-* [ ] **MTH-011｜P0｜實作 Plane 建構 helper**
+* [x] **MTH-011｜P0｜實作 Plane 建構 helper**
 
   * 依賴：DOM-003、MTH-006
   * 驗收：輸出 plane normal 必為 normalized。
 
-* [ ] **MTH-012｜P0｜實作 point-to-plane distance**
+* [x] **MTH-012｜P0｜實作 point-to-plane distance**
 
   * 依賴：DOM-003、MTH-004
   * 驗收：可取得點到平面的有號與絕對距離。
 
-* [ ] **MTH-013｜P0｜實作 ray-plane intersection**
+* [x] **MTH-013｜P0｜實作 ray-plane intersection**
 
   * 依賴：DOM-002、DOM-003
   * 驗收：相交時回傳 point；平行時回傳明確 null 或 result state。
 
-* [ ] **MTH-014｜P0｜實作 plane-plane intersection line**
+* [x] **MTH-014｜P0｜實作 plane-plane intersection line**
 
   * 依賴：DOM-003、MTH-005
   * 驗收：非平行平面可回傳交線 point 與 direction。
 
-* [ ] **MTH-015｜P0｜實作平面近似平行檢查**
+* [x] **MTH-015｜P0｜實作平面近似平行檢查**
 
   * 依賴：MTH-008
   * 驗收：可按 threshold 判斷兩平面是否近平行。
 
-* [ ] **MTH-016｜P0｜建立數值安全工具**
+* [x] **MTH-016｜P0｜建立數值安全工具**
 
   * 依賴：MTH-001 至 MTH-015
   * 驗收：提供 `isFiniteVec3`、safe normalize、epsilon guard。
