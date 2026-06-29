@@ -14,8 +14,8 @@ export const FocusControl = () => {
         Focus distance ({formatMillimeter(focusControl.focusDistanceMm)})
         <input
           type="range"
-          min={focusControl.focusDistanceRangeMm.min}
-          max={focusControl.focusDistanceRangeMm.max}
+          min={focusControl.focusDistanceMinMm}
+          max={focusControl.focusDistanceMaxMm}
           step={10}
           value={focusControl.focusDistanceMm}
           onChange={(event) => setFocusDistance(Number(event.target.value))}
