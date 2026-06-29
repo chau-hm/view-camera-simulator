@@ -1,0 +1,85 @@
+import { useEffect, useMemo } from "react";
+import { evaluateTask } from "../../core/tasks/evaluateTask";
+import { getTaskById } from "../../core/tasks/taskRegistry";
+import { getSceneById } from "../../scenes/definitions";
+import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { useAppStore } from "../../state/appStore";
+import { selectDerivedOpticsState } from "../../state/selectors";
+import type { SimulatorMode } from "../../types/camera";
+import { ApertureControl } from "../controls/ApertureControl";
+import { FocusControl } from "../controls/FocusControl";
+import { MovementControls } from "../controls/MovementControls";
+import { ResetControls } from "../controls/ResetControls";
+import { ViewOptions } from "../controls/ViewOptions";
+import { FeedbackPanel } from "../simulator/FeedbackPanel";
+import { GeometryViewport } from "../simulator/GeometryViewport";
+import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
+import { SceneViewport } from "../simulator/SceneViewport";
+import { TaskPanel } from "../simulator/TaskPanel";
+
+type SimulatorWorkspaceProps = {
+  mode: SimulatorMode;
+  sceneId: string;
+  taskId: string | null;
+  simulateAssetFailure: boolean;
+};
+
+export const SimulatorWorkspace = ({
+  mode,
+  sceneId,
+  taskId,
+  simulateAssetFailure,
+}: SimulatorWorkspaceProps) => {
+  const setMode = useAppStore((state) => state.setMode);
+  const setScene = useAppStore((state) => state.setScene);
+  const setTask = useAppStore((state) => state.setTask);
+  const camera = useAppStore((state) => state.camera);
+
+  useEffect(() => {
+    if (camera.mode !== mode) {
+      setMode(mode);
+    }
+    if (camera.activeSceneId !== sceneId) {
+      setScene(sceneId);
+    }
+    if (camera.activeTaskId !== taskId) {
+      setTask(taskId);
+    }
+  }, [camera.activeSceneId, camera.activeTaskId, camera.mode, mode, sceneId, setMode, setScene, setTask, taskId]);
+
+  const scene = getSceneById(sceneId);
+  const safeScene = scene ?? architectureRiseScene;
+
+  const opticsState = selectDerivedOpticsState(camera);
+  const task = taskId ? getTaskById(taskId) ?? null : null;
+  const evaluation = useMemo(
+    () => (task ? evaluateTask(task, safeScene, opticsState) : null),
+    [opticsState, safeScene, task],
+  );
+
+  if (!scene) {
+    return <p>Unknown scene: {sceneId}</p>;
+  }
+
+  return (
+    <div style={{ display: "grid", gap: "1rem" }}>
+      {opticsState.diagnostics.fallbackApplied && (
+        <p role="alert">Optics fallback active: {opticsState.diagnostics.errorMessage}</p>
+      )}
+      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
+        <SceneViewport scene={scene} simulateAssetFailure={simulateAssetFailure} />
+        <GroundGlassViewport opticsState={opticsState} />
+        <GeometryViewport opticsState={opticsState} />
+      </div>
+      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <MovementControls />
+        <FocusControl />
+        <ApertureControl />
+        <ViewOptions />
+        <ResetControls />
+      </div>
+      <TaskPanel task={task} />
+      <FeedbackPanel evaluation={evaluation} />
+    </div>
+  );
+};
