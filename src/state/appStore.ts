@@ -1,19 +1,22 @@
 import { create } from "zustand";
+import { getTaskById } from "../core/tasks/taskRegistry";
 import { clamp } from "../core/math/clamps";
+import { getSceneFocusDistanceRange } from "../scenes/definitions";
 import type { ApertureValue, CameraState, GeometryView, SimulatorMode } from "../types/camera";
 import type { TaskEvaluation } from "../types/task";
-import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE, isApertureValue } from "../utils/constants";
 
-const defaultMovementState = {
+const defaultControlState = {
   frontRiseMm: DEFAULT_CAMERA_STATE.frontRiseMm,
   frontTiltDeg: DEFAULT_CAMERA_STATE.frontTiltDeg,
   frontSwingDeg: DEFAULT_CAMERA_STATE.frontSwingDeg,
-};
-
-const defaultControlState = {
-  ...defaultMovementState,
   focusDistanceMm: DEFAULT_CAMERA_STATE.focusDistanceMm,
   aperture: DEFAULT_CAMERA_STATE.aperture,
+};
+
+const clampFocusDistanceForScene = (sceneId: string, value: number) => {
+  const range = getSceneFocusDistanceRange(sceneId);
+  return clamp(value, range.min, range.max);
 };
 
 type SceneRuntimeState = {
@@ -77,7 +80,11 @@ export const useAppStore = create<AppStore>((set) => ({
   setMode: (mode) => set((state) => ({ camera: { ...state.camera, mode }, ui: { ...state.ui, mode } })),
   setActiveScene: (sceneId) =>
     set((state) => ({
-      camera: { ...state.camera, activeSceneId: sceneId },
+      camera: {
+        ...state.camera,
+        activeSceneId: sceneId,
+        focusDistanceMm: clampFocusDistanceForScene(sceneId, state.camera.focusDistanceMm),
+      },
       scene: { ...state.scene, activeSceneId: sceneId },
       task: { ...state.task, currentTaskEvaluation: null },
     })),
@@ -108,8 +115,19 @@ export const useAppStore = create<AppStore>((set) => ({
       },
     })),
   setFocusDistance: (value) =>
-    set((state) => ({ camera: { ...state.camera, focusDistanceMm: Math.max(100, value) } })),
-  setAperture: (value) => set((state) => ({ camera: { ...state.camera, aperture: value } })),
+    set((state) => ({
+      camera: {
+        ...state.camera,
+        focusDistanceMm: clampFocusDistanceForScene(state.camera.activeSceneId, value),
+      },
+    })),
+  setAperture: (value) =>
+    set((state) => ({
+      camera: {
+        ...state.camera,
+        aperture: isApertureValue(value) ? value : state.camera.aperture,
+      },
+    })),
   setGeometryView: (value) =>
     set((state) => ({ camera: { ...state.camera, geometryView: value }, ui: { ...state.ui, geometryView: value } })),
   toggleGroundGlassAssist: () =>
@@ -143,18 +161,52 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) => ({
       camera: {
         ...state.camera,
-        ...defaultMovementState,
+        ...defaultControlState,
+        focusDistanceMm: clampFocusDistanceForScene(
+          state.camera.activeSceneId,
+          defaultControlState.focusDistanceMm,
+        ),
       },
       task: { ...state.task, currentTaskEvaluation: null },
     })),
   restartTask: () =>
-    set((state) => ({
-      camera: {
-        ...state.camera,
-        ...defaultControlState,
-      },
-      task: { ...state.task, currentTaskEvaluation: null },
-    })),
+    set((state) => {
+      const activeTask = state.task.activeTaskId ? getTaskById(state.task.activeTaskId) : undefined;
+      const nextSceneId = activeTask?.sceneId ?? state.scene.activeSceneId;
+      const nextMode = activeTask?.mode ?? state.ui.mode;
+      const nextControlState = activeTask?.initialCameraState ?? defaultControlState;
+      const focusDistanceMm = clampFocusDistanceForScene(nextSceneId, nextControlState.focusDistanceMm);
+      const nextGeometryView = activeTask?.initialCameraState?.geometryView ?? state.camera.geometryView;
+      const nextGroundGlassAssistEnabled =
+        activeTask?.initialCameraState?.groundGlassAssistEnabled ?? state.camera.groundGlassAssistEnabled;
+      const nextFocusAssistEnabled =
+        activeTask?.initialCameraState?.focusAssistEnabled ?? state.camera.focusAssistEnabled;
+      const nextGridEnabled = activeTask?.initialCameraState?.gridEnabled ?? state.camera.gridEnabled;
+
+      return {
+        camera: {
+          ...state.camera,
+          activeSceneId: nextSceneId,
+          mode: nextMode,
+          ...nextControlState,
+          geometryView: nextGeometryView,
+          groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
+          focusAssistEnabled: nextFocusAssistEnabled,
+          gridEnabled: nextGridEnabled,
+          focusDistanceMm,
+        },
+        scene: { ...state.scene, activeSceneId: nextSceneId },
+        task: { ...state.task, currentTaskEvaluation: null },
+        ui: {
+          ...state.ui,
+          mode: nextMode,
+          geometryView: nextGeometryView,
+          groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
+          focusAssistEnabled: nextFocusAssistEnabled,
+          gridEnabled: nextGridEnabled,
+        },
+      };
+    }),
   resetCamera: () =>
     set({
       camera: DEFAULT_CAMERA_STATE,

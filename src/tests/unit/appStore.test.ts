@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { useAppStore } from "../../state/appStore";
+import { getSceneFocusDistanceRange } from "../../scenes/definitions";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("app store STA-001", () => {
@@ -48,19 +49,21 @@ describe("app store STA-001", () => {
   });
 
   it("resets only movement values with resetMovements", () => {
-    const { setRise, setTilt, setSwing, setFocusDistance, resetMovements } = useAppStore.getState();
+    const { setRise, setTilt, setSwing, setFocusDistance, setAperture, resetMovements } = useAppStore.getState();
 
     setRise(20);
     setTilt(4);
     setSwing(-5);
     setFocusDistance(4500);
+    setAperture(22);
     resetMovements();
 
     const { camera } = useAppStore.getState();
     expect(camera.frontRiseMm).toBe(DEFAULT_CAMERA_STATE.frontRiseMm);
     expect(camera.frontTiltDeg).toBe(DEFAULT_CAMERA_STATE.frontTiltDeg);
     expect(camera.frontSwingDeg).toBe(DEFAULT_CAMERA_STATE.frontSwingDeg);
-    expect(camera.focusDistanceMm).toBe(4500);
+    expect(camera.focusDistanceMm).toBe(DEFAULT_CAMERA_STATE.focusDistanceMm);
+    expect(camera.aperture).toBe(DEFAULT_CAMERA_STATE.aperture);
   });
 
   it("restarts task by resetting controls and clearing evaluation", () => {
@@ -92,7 +95,7 @@ describe("app store STA-001", () => {
 
     restartTask();
 
-    const { camera, task } = useAppStore.getState();
+    const { camera, scene, ui, task } = useAppStore.getState();
     expect(camera.activeSceneId).toBe("shelf-swing");
     expect(camera.activeTaskId).toBe("task-swing-basics");
     expect(camera.frontRiseMm).toBe(DEFAULT_CAMERA_STATE.frontRiseMm);
@@ -100,6 +103,54 @@ describe("app store STA-001", () => {
     expect(camera.frontSwingDeg).toBe(DEFAULT_CAMERA_STATE.frontSwingDeg);
     expect(camera.focusDistanceMm).toBe(DEFAULT_CAMERA_STATE.focusDistanceMm);
     expect(camera.aperture).toBe(DEFAULT_CAMERA_STATE.aperture);
+    expect(camera.geometryView).toBe("top");
+    expect(scene.activeSceneId).toBe("shelf-swing");
+    expect(ui.mode).toBe("guided");
     expect(task.currentTaskEvaluation).toBeNull();
+  });
+
+  it("clamps focus distance to current scene range", () => {
+    const { setActiveScene, setFocusDistance } = useAppStore.getState();
+    setActiveScene("table-tilt");
+    const tableTiltRange = getSceneFocusDistanceRange("table-tilt");
+
+    setFocusDistance(tableTiltRange.min - 500);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(tableTiltRange.min);
+
+    setFocusDistance(tableTiltRange.max + 500);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(tableTiltRange.max);
+  });
+
+  it("re-clamps focus when active scene changes", () => {
+    const { setActiveScene, setFocusDistance } = useAppStore.getState();
+    const architectureRange = getSceneFocusDistanceRange("architecture-rise");
+    setActiveScene("architecture-rise");
+    setFocusDistance(architectureRange.max);
+
+    setActiveScene("table-tilt");
+    const tableTiltRange = getSceneFocusDistanceRange("table-tilt");
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(tableTiltRange.max);
+  });
+
+  it("rejects invalid aperture values", () => {
+    const { setAperture } = useAppStore.getState();
+    setAperture(22);
+    expect(useAppStore.getState().camera.aperture).toBe(22);
+
+    Reflect.apply(setAperture, undefined, [7.1]);
+    expect(useAppStore.getState().camera.aperture).toBe(22);
+  });
+
+  it("toggles focus and grid assists in both camera and ui state", () => {
+    const { toggleFocusAssist, toggleGrid } = useAppStore.getState();
+
+    toggleFocusAssist();
+    toggleGrid();
+
+    const { camera, ui } = useAppStore.getState();
+    expect(camera.focusAssistEnabled).toBe(true);
+    expect(ui.focusAssistEnabled).toBe(true);
+    expect(camera.gridEnabled).toBe(false);
+    expect(ui.gridEnabled).toBe(false);
   });
 });

@@ -1,8 +1,10 @@
+import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "../../state/appStore";
+import { selectApertureControlState } from "../../state/selectors";
 import { CAMERA_CONSTANTS, isApertureValue } from "../../utils/constants";
 
 export const ApertureControl = () => {
-  const aperture = useAppStore((state) => state.camera.aperture);
+  const { aperture } = useAppStore(useShallow(selectApertureControlState));
   const setAperture = useAppStore((state) => state.setAperture);
 
   return (

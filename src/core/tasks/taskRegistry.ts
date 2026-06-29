@@ -7,6 +7,17 @@ export const taskRegistry: Record<string, TaskDefinition> = {
     title: "Lift composition with rise",
     mode: "guided",
     movementConstraint: "rise-only",
+    initialCameraState: {
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      focusDistanceMm: 2000,
+      aperture: 11,
+      geometryView: "side",
+      groundGlassAssistEnabled: false,
+      focusAssistEnabled: false,
+      gridEnabled: true,
+    },
   },
   "task-tilt-basics": {
     id: "task-tilt-basics",
@@ -14,6 +25,17 @@ export const taskRegistry: Record<string, TaskDefinition> = {
     title: "Align tabletop focus with tilt",
     mode: "guided",
     movementConstraint: "tilt-only",
+    initialCameraState: {
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      focusDistanceMm: 2000,
+      aperture: 11,
+      geometryView: "side",
+      groundGlassAssistEnabled: false,
+      focusAssistEnabled: false,
+      gridEnabled: true,
+    },
   },
   "task-swing-basics": {
     id: "task-swing-basics",
@@ -21,6 +43,17 @@ export const taskRegistry: Record<string, TaskDefinition> = {
     title: "Align diagonal focus with swing",
     mode: "guided",
     movementConstraint: "swing-only",
+    initialCameraState: {
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      focusDistanceMm: 2000,
+      aperture: 11,
+      geometryView: "top",
+      groundGlassAssistEnabled: false,
+      focusAssistEnabled: false,
+      gridEnabled: true,
+    },
   },
 };
 

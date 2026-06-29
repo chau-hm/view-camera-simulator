@@ -202,12 +202,12 @@
   * 依賴：STA-001、DOM-013
   * 驗收：輸入值被 clamp 至 `-10° 至 +10°`。
 
-* [ ] **STA-005｜P0｜實作 setFocusDistance action**
+* [x] **STA-005｜P0｜實作 setFocusDistance action**
 
   * 依賴：STA-001
   * 驗收：focus 被限制於當前 scene 的合法範圍。
 
-* [ ] **STA-006｜P0｜實作 setAperture action**
+* [x] **STA-006｜P0｜實作 setAperture action**
 
   * 依賴：STA-001、DOM-013
   * 驗收：只接受 `f/5.6`、`f/11`、`f/22`、`f/32`。
@@ -232,32 +232,32 @@
   * 依賴：STA-001
   * 驗收：切換值可被 renderer 讀取。
 
-* [ ] **STA-011｜P0｜實作 focus assist toggle**
+* [x] **STA-011｜P0｜實作 focus assist toggle**
 
   * 依賴：STA-001
   * 驗收：切換值可被 renderer 及 UI 讀取。
 
-* [ ] **STA-012｜P0｜實作 grid toggle**
+* [x] **STA-012｜P0｜實作 grid toggle**
 
   * 依賴：STA-001
   * 驗收：切換值可被 ground glass overlay 讀取。
 
-* [ ] **STA-013｜P0｜實作 resetMovements action**
+* [x] **STA-013｜P0｜實作 resetMovements action**
 
   * 依賴：STA-002 至 STA-006、DOM-014
   * 驗收：只重設 rise、tilt、swing、focus、aperture，不改變 scene 或 mode。
 
-* [ ] **STA-014｜P0｜實作 restartTask action**
+* [x] **STA-014｜P0｜實作 restartTask action**
 
   * 依賴：STA-008、STA-009
   * 驗收：完整恢復 task 的 initial camera state 與提示狀態。
 
-* [ ] **STA-015｜P0｜建立 camera state selector**
+* [x] **STA-015｜P0｜建立 camera state selector**
 
   * 依賴：STA-001
   * 驗收：UI 可訂閱 camera state 而不造成不必要 re-render。
 
-* [ ] **STA-016｜P0｜建立 derived optics selector**
+* [x] **STA-016｜P0｜建立 derived optics selector**
 
   * 依賴：STA-001、OPT-019
   * 驗收：所有 renderer 與 evaluator 可取得相同 DerivedOpticsState instance。
