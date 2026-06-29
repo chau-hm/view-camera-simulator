@@ -1,8 +1,17 @@
-import type { TaskEvaluation } from "../../types/task";
+import type { TaskDefinition, TaskEvaluation } from "../../types/task";
 
-export const feedbackEngine = (evaluation: TaskEvaluation): string[] => {
-  if (evaluation.passed) {
-    return ["Good work. You matched the task constraints."];
+export const feedbackEngine = (
+  task: TaskDefinition,
+  evaluation: TaskEvaluation,
+): { primaryFeedback: string; secondaryFeedback: string[] } => {
+  if (evaluation.status === "passed") {
+    return {
+      primaryFeedback: task.feedbackRules.passPrimary,
+      secondaryFeedback: [],
+    };
   }
-  return ["Adjust movement and focus to align the focus plane with subject geometry."];
+  return {
+    primaryFeedback: task.feedbackRules.failPrimary,
+    secondaryFeedback: task.feedbackRules.failSecondary,
+  };
 };

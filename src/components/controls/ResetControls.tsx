@@ -1,4 +1,5 @@
 import { useAppStore } from "../../state/appStore";
+import { UI_COPY } from "../../ui/copy";
 
 export const ResetControls = () => {
   const resetMovements = useAppStore((state) => state.resetMovements);
@@ -6,13 +7,13 @@ export const ResetControls = () => {
 
   return (
     <section>
-      <h3>Reset</h3>
+      <h3>{UI_COPY.controls.resetTitle}</h3>
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
         <button type="button" onClick={resetMovements}>
-          Reset movements
+          {UI_COPY.controls.resetMovementsButton}
         </button>
         <button type="button" onClick={restartTask}>
-          Restart task
+          {UI_COPY.controls.restartTaskButton}
         </button>
       </div>
     </section>

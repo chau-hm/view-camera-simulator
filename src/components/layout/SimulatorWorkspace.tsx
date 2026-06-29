@@ -6,6 +6,7 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { useAppStore } from "../../state/appStore";
 import { selectDerivedOpticsState } from "../../state/selectors";
 import type { SimulatorMode } from "../../types/camera";
+import { UI_COPY } from "../../ui/copy";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
 import { MovementControls } from "../controls/MovementControls";
@@ -62,13 +63,19 @@ export const SimulatorWorkspace = ({
   }, [evaluation, setCurrentTaskEvaluation]);
 
   if (!scene) {
-    return <p>Unknown scene: {sceneId}</p>;
+    return (
+      <p>
+        {UI_COPY.simulator.unknownScenePrefix}: {sceneId}
+      </p>
+    );
   }
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       {opticsState.diagnostics.fallbackApplied && (
-        <p role="alert">Optics fallback active: {opticsState.diagnostics.errorMessage}</p>
+        <p role="alert">
+          {UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}
+        </p>
       )}
       <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
         <SceneViewport scene={scene} simulateAssetFailure={simulateAssetFailure} />

@@ -1,6 +1,7 @@
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "../../state/appStore";
 import { selectApertureControlState } from "../../state/selectors";
+import { UI_COPY } from "../../ui/copy";
 import { CAMERA_CONSTANTS, isApertureValue } from "../../utils/constants";
 
 export const ApertureControl = () => {
@@ -9,7 +10,7 @@ export const ApertureControl = () => {
 
   return (
     <section>
-      <h3>Aperture</h3>
+      <h3>{UI_COPY.controls.apertureTitle}</h3>
       <select
         value={aperture}
         onChange={(event) => {

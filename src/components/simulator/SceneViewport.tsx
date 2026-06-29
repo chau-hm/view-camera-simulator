@@ -3,6 +3,7 @@ import { SceneRenderer } from "../../render/SceneRenderer";
 import { isWebGLAvailable } from "../../utils/webgl";
 import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
+import { UI_COPY } from "../../ui/copy";
 
 type SceneViewportProps = {
   scene: SceneDefinition;
@@ -17,8 +18,8 @@ export const SceneViewport = ({ scene, simulateAssetFailure }: SceneViewportProp
   if (!webglAvailable) {
     return (
       <section>
-        <h2>3D Scene</h2>
-        <p>WebGL is unavailable in this browser. Please use a WebGL-capable browser on desktop.</p>
+        <h2>{UI_COPY.simulator.sceneTitle}</h2>
+        <p>{UI_COPY.simulator.webglUnavailable}</p>
       </section>
     );
   }
@@ -26,7 +27,7 @@ export const SceneViewport = ({ scene, simulateAssetFailure }: SceneViewportProp
   if (assetError) {
     return (
       <section>
-        <h2>3D Scene</h2>
+        <h2>{UI_COPY.simulator.sceneTitle}</h2>
         <p>{assetError.message}</p>
         <button
           type="button"
@@ -35,7 +36,7 @@ export const SceneViewport = ({ scene, simulateAssetFailure }: SceneViewportProp
             setAttempt((value) => value + 1);
           }}
         >
-          Retry loading scene
+          {UI_COPY.simulator.retryLoadScene}
         </button>
       </section>
     );
@@ -43,12 +44,12 @@ export const SceneViewport = ({ scene, simulateAssetFailure }: SceneViewportProp
 
   return (
     <section>
-      <h2>3D Scene</h2>
+      <h2>{UI_COPY.simulator.sceneTitle}</h2>
       <SceneRenderer
         scene={scene}
         attempt={attempt}
         simulateAssetFailure={simulateAssetFailure}
-        onAssetError={(message) => setAssetError({ title: "Scene load failed", message })}
+        onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
       />
     </section>
   );

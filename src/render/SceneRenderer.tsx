@@ -1,6 +1,8 @@
+import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useEffect } from "react";
 import type { SceneDefinition } from "../types/scene";
+import { UI_COPY } from "../ui/copy";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -28,7 +30,7 @@ export const SceneRenderer = ({
 }: SceneRendererProps) => {
   useEffect(() => {
     if (simulateAssetFailure && attempt === 0) {
-      onAssetError(`Failed to load scene assets for ${scene.id}.`);
+      onAssetError(`${UI_COPY.render.sceneAssetLoadFailedPrefix} ${scene.id}.`);
     }
   }, [attempt, onAssetError, scene.id, simulateAssetFailure]);
 
@@ -40,6 +42,7 @@ export const SceneRenderer = ({
     <div style={{ height: 260, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}>
       <Canvas camera={{ position: [0, 1.5, 4], fov: 50 }}>
         <DemoScene />
+        <OrbitControls enablePan={false} enableZoom={false} />
       </Canvas>
     </div>
   );

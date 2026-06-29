@@ -1,4 +1,5 @@
 import type { CameraState } from "./camera";
+import type { SceneDefinition } from "./scene";
 
 export type TaskInitialCameraState = Pick<
   CameraState,
@@ -18,13 +19,42 @@ export type TaskDefinition = {
   sceneId: string;
   title: string;
   mode: "guided" | "free";
-  movementConstraint?: "rise-only" | "tilt-only" | "swing-only";
+  enabledControls: Array<"rise" | "tilt" | "swing" | "focusDistance" | "aperture" | "geometryView">;
+  constraints: {
+    movement?: "rise-only" | "tilt-only" | "swing-only";
+    notes: string[];
+  };
+  criteria: Array<{
+    id: string;
+    label: string;
+    target: "focus" | "composition";
+    threshold: number;
+  }>;
+  feedbackRules: {
+    passPrimary: string;
+    failPrimary: string;
+    failSecondary: string[];
+  };
   initialCameraState?: TaskInitialCameraState;
+};
+
+export type TaskCriteriaEvaluation = {
+  criterionId: string;
+  label: string;
+  passed: boolean;
+  score: number;
 };
 
 export type TaskEvaluation = {
   taskId: string;
-  passed: boolean;
+  status: "passed" | "failed";
   score: number;
-  feedback: string[];
+  criteria: TaskCriteriaEvaluation[];
+  primaryFeedback: string;
+  secondaryFeedback: string[];
+};
+
+export type TaskEvaluationContext = {
+  task: TaskDefinition;
+  scene: SceneDefinition;
 };

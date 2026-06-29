@@ -1,6 +1,7 @@
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "../../state/appStore";
 import { selectViewOptionState } from "../../state/selectors";
+import { UI_COPY } from "../../ui/copy";
 
 export const ViewOptions = () => {
   const viewOptions = useAppStore(useShallow(selectViewOptionState));
@@ -11,15 +12,15 @@ export const ViewOptions = () => {
 
   return (
     <section>
-      <h3>View Options</h3>
+      <h3>{UI_COPY.controls.viewOptionsTitle}</h3>
       <label>
-        Geometry view
+        {UI_COPY.controls.geometryViewLabel}
         <select
           value={viewOptions.geometryView}
           onChange={(event) => setGeometryView(event.target.value === "top" ? "top" : "side")}
         >
-          <option value="side">Side</option>
-          <option value="top">Top</option>
+          <option value="side">{UI_COPY.controls.geometryViewSide}</option>
+          <option value="top">{UI_COPY.controls.geometryViewTop}</option>
         </select>
       </label>
       <label>
@@ -28,15 +29,15 @@ export const ViewOptions = () => {
           checked={viewOptions.groundGlassAssistEnabled}
           onChange={toggleGroundGlassAssist}
         />
-        Ground glass assist
+        {UI_COPY.controls.groundGlassAssistLabel}
       </label>
       <label>
         <input type="checkbox" checked={viewOptions.focusAssistEnabled} onChange={toggleFocusAssist} />
-        Focus assist
+        {UI_COPY.controls.focusAssistLabel}
       </label>
       <label>
         <input type="checkbox" checked={viewOptions.gridEnabled} onChange={toggleGrid} />
-        Grid
+        {UI_COPY.controls.gridLabel}
       </label>
     </section>
   );

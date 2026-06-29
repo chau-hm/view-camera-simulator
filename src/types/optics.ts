@@ -10,6 +10,7 @@ export type Ray = {
 };
 
 export type Plane = {
+  point: Vec3;
   normal: Vec3;
   distance: number;
 };

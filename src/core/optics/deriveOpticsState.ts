@@ -20,15 +20,27 @@ const baseFallbackState = (cameraState: CameraState): DerivedOpticsState => {
   return {
     lensCenterWorld,
     lensNormalWorld,
-    lensPlane: { normal: lensNormalWorld, distance: 0 },
+    lensPlane: { point: lensCenterWorld, normal: lensNormalWorld, distance: 0 },
     filmCenterWorld,
     filmNormalWorld,
-    filmPlane: { normal: filmNormalWorld, distance: -cameraState.focalLengthMm },
+    filmPlane: { point: filmCenterWorld, normal: filmNormalWorld, distance: -cameraState.focalLengthMm },
     opticalAxis,
     focusPointWorld: { x: 0, y: 0, z: cameraState.focusDistanceMm },
-    focusPlane: { normal: { x: 0, y: 0, z: 1 }, distance: cameraState.focusDistanceMm },
-    depthOfFieldNearPlane: { normal: { x: 0, y: 0, z: 1 }, distance: cameraState.focusDistanceMm - 10 },
-    depthOfFieldFarPlane: { normal: { x: 0, y: 0, z: 1 }, distance: cameraState.focusDistanceMm + 10 },
+    focusPlane: {
+      point: { x: 0, y: 0, z: cameraState.focusDistanceMm },
+      normal: { x: 0, y: 0, z: 1 },
+      distance: cameraState.focusDistanceMm,
+    },
+    depthOfFieldNearPlane: {
+      point: { x: 0, y: 0, z: cameraState.focusDistanceMm - 10 },
+      normal: { x: 0, y: 0, z: 1 },
+      distance: cameraState.focusDistanceMm - 10,
+    },
+    depthOfFieldFarPlane: {
+      point: { x: 0, y: 0, z: cameraState.focusDistanceMm + 10 },
+      normal: { x: 0, y: 0, z: 1 },
+      distance: cameraState.focusDistanceMm + 10,
+    },
     groundGlassProjection: calculateGroundGlassProjection(cameraState.groundGlassAssistEnabled),
     focusTargets: [],
     diagnostics: {
@@ -49,7 +61,7 @@ export const deriveOpticsState = (
     const { lensCenterWorld, lensNormalWorld, lensPlane } = calculateLensPlane(cameraState);
     const filmCenterWorld = { x: 0, y: 0, z: -cameraState.focalLengthMm };
     const filmNormalWorld = { x: 0, y: 0, z: 1 };
-    const filmPlane = { normal: filmNormalWorld, distance: -cameraState.focalLengthMm };
+    const filmPlane = { point: filmCenterWorld, normal: filmNormalWorld, distance: -cameraState.focalLengthMm };
     const opticalAxis = { origin: lensCenterWorld, direction: lensNormalWorld };
 
     const { focusPointWorld, focusPlane } = calculateFocusPlane(cameraState, opticalAxis);

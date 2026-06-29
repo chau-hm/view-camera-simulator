@@ -1,5 +1,6 @@
 import { useShallow } from "zustand/react/shallow";
 import { selectMovementControlState } from "../../state/selectors";
+import { UI_COPY } from "../../ui/copy";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import { useAppStore } from "../../state/appStore";
@@ -12,9 +13,9 @@ export const MovementControls = () => {
 
   return (
     <section>
-      <h3>Movement</h3>
+      <h3>{UI_COPY.controls.movementTitle}</h3>
       <label>
-        Rise ({formatMillimeter(movement.frontRiseMm)})
+        {UI_COPY.controls.riseLabel} ({formatMillimeter(movement.frontRiseMm)})
         <input
           type="range"
           min={CAMERA_CONSTANTS.riseMinMm}
@@ -24,7 +25,7 @@ export const MovementControls = () => {
         />
       </label>
       <label>
-        Tilt ({formatDegrees(movement.frontTiltDeg)})
+        {UI_COPY.controls.tiltLabel} ({formatDegrees(movement.frontTiltDeg)})
         <input
           type="range"
           min={CAMERA_CONSTANTS.tiltMinDeg}
@@ -35,7 +36,7 @@ export const MovementControls = () => {
         />
       </label>
       <label>
-        Swing ({formatDegrees(movement.frontSwingDeg)})
+        {UI_COPY.controls.swingLabel} ({formatDegrees(movement.frontSwingDeg)})
         <input
           type="range"
           min={CAMERA_CONSTANTS.swingMinDeg}

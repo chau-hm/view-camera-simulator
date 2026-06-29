@@ -88,9 +88,18 @@ describe("app store STA-001", () => {
     setAperture(22);
     setCurrentTaskEvaluation({
       taskId: "task-swing-basics",
-      passed: false,
+      status: "failed",
       score: 40,
-      feedback: ["Adjust movement"],
+      criteria: [
+        {
+          criterionId: "focus-main",
+          label: "Primary focus target is sharp",
+          passed: false,
+          score: 0.4,
+        },
+      ],
+      primaryFeedback: "Adjust movement",
+      secondaryFeedback: [],
     });
 
     restartTask();

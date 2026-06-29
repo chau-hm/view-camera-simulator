@@ -1,6 +1,7 @@
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "../../state/appStore";
 import { selectFocusControlState } from "../../state/selectors";
+import { UI_COPY } from "../../ui/copy";
 import { formatMillimeter } from "../../utils/formatters";
 
 export const FocusControl = () => {
@@ -9,9 +10,9 @@ export const FocusControl = () => {
 
   return (
     <section>
-      <h3>Focus</h3>
+      <h3>{UI_COPY.controls.focusTitle}</h3>
       <label>
-        Focus distance ({formatMillimeter(focusControl.focusDistanceMm)})
+        {UI_COPY.controls.focusDistanceLabel} ({formatMillimeter(focusControl.focusDistanceMm)})
         <input
           type="range"
           min={focusControl.focusDistanceMinMm}

@@ -14,7 +14,7 @@
   * 依賴：無
   * 驗收：可執行 `npm run dev` 並顯示基本 React 頁面。
 
-* [ ] **ENV-002｜P0｜啟用 TypeScript strict mode**
+* [x] **ENV-002｜P0｜啟用 TypeScript strict mode**
 
   * 依賴：ENV-001
   * 驗收：`tsconfig.json` 啟用 strict；專案可通過 `npm run typecheck`。
@@ -29,7 +29,7 @@
   * 依賴：ENV-003
   * 驗收：可 render 最小化 `<Canvas />` 元件。
 
-* [ ] **ENV-005｜P0｜安裝 React Three Drei**
+* [x] **ENV-005｜P0｜安裝 React Three Drei**
 
   * 依賴：ENV-004
   * 驗收：可 import 至少一個 Drei helper，無 build error。
@@ -84,12 +84,12 @@
   * 依賴：ENV-014
   * 驗收：至少支援首頁、Simulator、Not Found 三個 route。
 
-* [ ] **ENV-016｜P0｜建立 App Shell**
+* [x] **ENV-016｜P0｜建立 App Shell**
 
   * 依賴：ENV-015
   * 驗收：提供 header、main content container 及全域錯誤顯示區域。
 
-* [ ] **ENV-017｜P1｜建立 Error Boundary**
+* [x] **ENV-017｜P1｜建立 Error Boundary**
 
   * 依賴：ENV-016
   * 驗收：子元件 throw error 時顯示 fallback，而非白畫面。
@@ -113,7 +113,7 @@
   * 依賴：DOM-001
   * 驗收：Ray 具備 `origin` 與 normalized `direction`。
 
-* [ ] **DOM-003｜P0｜定義 Plane 型別**
+* [x] **DOM-003｜P0｜定義 Plane 型別**
 
   * 依賴：DOM-001
   * 驗收：Plane 具備 `point` 與 normalized `normal`。
@@ -138,27 +138,27 @@
   * 依賴：DOM-002、DOM-003、DOM-006
   * 驗收：包含 lens plane、film plane、optical axis、focus plane、DOF planes 及 diagnostics。
 
-* [ ] **DOM-008｜P0｜定義 SceneDefinition 型別**
+* [x] **DOM-008｜P0｜定義 SceneDefinition 型別**
 
   * 依賴：DOM-005、DOM-006
   * 驗收：包含場景 ID、資產、camera preset、focus targets、composition targets。
 
-* [ ] **DOM-009｜P0｜定義 FocusTarget 型別**
+* [x] **DOM-009｜P0｜定義 FocusTarget 型別**
 
   * 依賴：DOM-001
   * 驗收：包含 ID、label、world position、weight。
 
-* [ ] **DOM-010｜P0｜定義 CompositionTarget 型別**
+* [x] **DOM-010｜P0｜定義 CompositionTarget 型別**
 
   * 依賴：DOM-005
   * 驗收：包含 ID、label、world bounds。
 
-* [ ] **DOM-011｜P0｜定義 TaskDefinition 型別**
+* [x] **DOM-011｜P0｜定義 TaskDefinition 型別**
 
   * 依賴：DOM-006、DOM-008
   * 驗收：包含 task ID、scene ID、enabled controls、constraints、criteria、feedback rules。
 
-* [ ] **DOM-012｜P0｜定義 TaskEvaluation 型別**
+* [x] **DOM-012｜P0｜定義 TaskEvaluation 型別**
 
   * 依賴：DOM-011
   * 驗收：包含 status、criteria、score、primary feedback、secondary feedback。
@@ -173,7 +173,7 @@
   * 依賴：DOM-006、DOM-013
   * 驗收：可作為首次載入及 reset 基準。
 
-* [ ] **DOM-015｜P0｜建立集中式 UI 文字資料**
+* [x] **DOM-015｜P0｜建立集中式 UI 文字資料**
 
   * 依賴：ENV-013
   * 驗收：教學提示與 user-facing labels 不散落於 renderer 或 math modules。

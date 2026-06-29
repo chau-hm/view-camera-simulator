@@ -1,3 +1,5 @@
+import { UI_COPY } from "../ui/copy";
+
 type GroundGlassRendererProps = {
   assistEnabled: boolean;
   focusAssistEnabled: boolean;
@@ -22,9 +24,11 @@ export const GroundGlassRenderer = ({ assistEnabled, focusAssistEnabled, gridEna
         transform,
       }}
     >
-      Ground glass preview
+      {UI_COPY.render.groundGlassPreview}
       {focusAssistEnabled && (
-        <span style={{ position: "absolute", bottom: 8, right: 8, fontSize: 12, color: "#1d4ed8" }}>Focus assist</span>
+        <span style={{ position: "absolute", bottom: 8, right: 8, fontSize: 12, color: "#1d4ed8" }}>
+          {UI_COPY.render.focusAssistBadge}
+        </span>
       )}
     </div>
   );
