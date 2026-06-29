@@ -31,8 +31,9 @@ export const SimulatorWorkspace = ({
   simulateAssetFailure,
 }: SimulatorWorkspaceProps) => {
   const setMode = useAppStore((state) => state.setMode);
-  const setScene = useAppStore((state) => state.setScene);
-  const setTask = useAppStore((state) => state.setTask);
+  const setActiveScene = useAppStore((state) => state.setActiveScene);
+  const setActiveTask = useAppStore((state) => state.setActiveTask);
+  const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
 
   useEffect(() => {
@@ -40,12 +41,12 @@ export const SimulatorWorkspace = ({
       setMode(mode);
     }
     if (camera.activeSceneId !== sceneId) {
-      setScene(sceneId);
+      setActiveScene(sceneId);
     }
     if (camera.activeTaskId !== taskId) {
-      setTask(taskId);
+      setActiveTask(taskId);
     }
-  }, [camera.activeSceneId, camera.activeTaskId, camera.mode, mode, sceneId, setMode, setScene, setTask, taskId]);
+  }, [camera.activeSceneId, camera.activeTaskId, camera.mode, mode, sceneId, setActiveScene, setActiveTask, setMode, taskId]);
 
   const scene = getSceneById(sceneId);
   const safeScene = scene ?? architectureRiseScene;
@@ -56,6 +57,9 @@ export const SimulatorWorkspace = ({
     () => (task ? evaluateTask(task, safeScene, opticsState) : null),
     [opticsState, safeScene, task],
   );
+  useEffect(() => {
+    setCurrentTaskEvaluation(evaluation);
+  }, [evaluation, setCurrentTaskEvaluation]);
 
   if (!scene) {
     return <p>Unknown scene: {sceneId}</p>;
