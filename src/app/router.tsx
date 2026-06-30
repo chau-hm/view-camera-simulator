@@ -11,4 +11,8 @@ export const routes = [
   { path: "*", element: <Navigate to="/not-found" replace /> },
 ];
 
-export const router = createBrowserRouter(routes);
+const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+export const router = createBrowserRouter(routes, {
+  basename: basename || "/",
+});

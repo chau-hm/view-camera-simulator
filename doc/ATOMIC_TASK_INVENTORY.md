@@ -1182,67 +1182,67 @@
 
 # Phase 12 — Integration Tests
 
-* [ ] **TST-INT-001｜P0｜測試 Rise Slider 更新 Store**
+* [x] **TST-INT-001｜P0｜測試 Rise Slider 更新 Store**
 
   * 依賴：UI-006
   * 驗收：變更 slider 後 state rise 值正確。
 
-* [ ] **TST-INT-002｜P0｜測試 Tilt Slider 更新 Store**
+* [x] **TST-INT-002｜P0｜測試 Tilt Slider 更新 Store**
 
   * 依賴：UI-007
   * 驗收：變更 slider 後 state tilt 值正確。
 
-* [ ] **TST-INT-003｜P0｜測試 Swing Slider 更新 Store**
+* [x] **TST-INT-003｜P0｜測試 Swing Slider 更新 Store**
 
   * 依賴：UI-008
   * 驗收：變更 slider 後 state swing 值正確。
 
-* [ ] **TST-INT-004｜P0｜測試 Rise 同步更新 3D View**
+* [x] **TST-INT-004｜P0｜測試 Rise 同步更新 3D View**
 
   * 依賴：R3D-011、UI-006
   * 驗收：rise state 改變後前組 Y position 改變。
 
-* [ ] **TST-INT-005｜P0｜測試 Tilt 同步更新 Side Diagram**
+* [x] **TST-INT-005｜P0｜測試 Tilt 同步更新 Side Diagram**
 
   * 依賴：GEO-012、UI-007
   * 驗收：tilt 改變後 focus plane SVG orientation 改變。
 
-* [ ] **TST-INT-006｜P0｜測試 Swing 同步更新 Top Diagram**
+* [x] **TST-INT-006｜P0｜測試 Swing 同步更新 Top Diagram**
 
   * 依賴：GEO-017、UI-008
   * 驗收：swing 改變後 focus plane SVG orientation 改變。
 
-* [ ] **TST-INT-007｜P0｜測試 Aperture 同步更新 DOF**
+* [x] **TST-INT-007｜P0｜測試 Aperture 同步更新 DOF**
 
   * 依賴：GGL-018、UI-010
   * 驗收：aperture 改變後 DOF uniform 或 derived range 改變。
 
-* [ ] **TST-INT-008｜P0｜測試 Orientation Assist**
+* [x] **TST-INT-008｜P0｜測試 Orientation Assist**
 
   * 依賴：GGL-008、UI-011
   * 驗收：toggle 正確切換 flip state。
 
-* [ ] **TST-INT-009｜P0｜測試 Guided Mode Disabled Controls**
+* [x] **TST-INT-009｜P0｜測試 Guided Mode Disabled Controls**
 
   * 依賴：UI-018
   * 驗收：Rise 關的 Tilt/Swing controls 無法互動。
 
-* [ ] **TST-INT-010｜P0｜測試 Reset Movements**
+* [x] **TST-INT-010｜P0｜測試 Reset Movements**
 
   * 依賴：UI-012
   * 驗收：reset 後數值回到 task 或 default baseline。
 
-* [ ] **TST-INT-011｜P0｜測試 Restart Task**
+* [x] **TST-INT-011｜P0｜測試 Restart Task**
 
   * 依賴：UI-013
   * 驗收：scene、task、movement、feedback 均回到初始狀態。
 
-* [ ] **TST-INT-012｜P0｜測試 Task Evaluation 顯示**
+* [x] **TST-INT-012｜P0｜測試 Task Evaluation 顯示**
 
   * 依賴：UI-015、TSK-014
   * 驗收：criteria UI 與 evaluator 回傳結果一致。
 
-* [ ] **TST-INT-013｜P0｜測試 Completion Overlay**
+* [x] **TST-INT-013｜P0｜測試 Completion Overlay**
 
   * 依賴：UI-017
   * 驗收：task completed 時 overlay 出現。

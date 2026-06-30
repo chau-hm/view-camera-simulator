@@ -37,6 +37,7 @@ export const SceneViewport = ({ scene, opticsState, simulateAssetFailure }: Scen
     return (
       <section>
         <h2>{UI_COPY.simulator.sceneTitle}</h2>
+        <p data-testid="scene-front-y-mm">Front standard Y: {opticsState.lensCenterWorld.y.toFixed(1)} mm</p>
         <p>{UI_COPY.simulator.webglUnavailable}</p>
       </section>
     );
@@ -63,6 +64,7 @@ export const SceneViewport = ({ scene, opticsState, simulateAssetFailure }: Scen
   return (
     <section>
       <h2>{UI_COPY.simulator.sceneTitle}</h2>
+      <p data-testid="scene-front-y-mm">Front standard Y: {opticsState.lensCenterWorld.y.toFixed(1)} mm</p>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
         <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
           <input

@@ -22,9 +22,12 @@ export const PlaneLine = ({ plane, label, stroke, dashed = false, ...shared }: P
   const end = worldToDiagramPoint(line.end, shared.view, shared.bounds, shared.width, shared.height);
   const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
 
+  const testId = `plane-line-${label.toLowerCase().replace(/\s+/g, "-")}`;
+
   return (
     <g>
       <line
+        data-testid={testId}
         x1={start.x}
         y1={start.y}
         x2={end.x}

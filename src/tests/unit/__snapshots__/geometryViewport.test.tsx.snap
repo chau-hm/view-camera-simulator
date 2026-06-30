@@ -26,6 +26,7 @@ exports[`GeometryViewport > renders side-view svg snapshot 1`] = `
   </g>
   <g>
     <line
+      data-testid="plane-line-film"
       stroke="#0284c7"
       stroke-width="2"
       x1="24"
@@ -44,6 +45,7 @@ exports[`GeometryViewport > renders side-view svg snapshot 1`] = `
   </g>
   <g>
     <line
+      data-testid="plane-line-lens"
       stroke="#475569"
       stroke-width="2"
       x1="24"
@@ -62,6 +64,7 @@ exports[`GeometryViewport > renders side-view svg snapshot 1`] = `
   </g>
   <g>
     <line
+      data-testid="plane-line-focus"
       stroke="#16a34a"
       stroke-dasharray="6 4"
       stroke-width="2"
@@ -158,6 +161,7 @@ exports[`GeometryViewport > renders top-view svg snapshot 1`] = `
   </g>
   <g>
     <line
+      data-testid="plane-line-film"
       stroke="#0284c7"
       stroke-width="2"
       x1="230"
@@ -176,6 +180,7 @@ exports[`GeometryViewport > renders top-view svg snapshot 1`] = `
   </g>
   <g>
     <line
+      data-testid="plane-line-lens"
       stroke="#475569"
       stroke-width="2"
       x1="271.1198315073832"
@@ -194,6 +199,7 @@ exports[`GeometryViewport > renders top-view svg snapshot 1`] = `
   </g>
   <g>
     <line
+      data-testid="plane-line-focus"
       stroke="#16a34a"
       stroke-dasharray="6 4"
       stroke-width="2"

@@ -71,6 +71,21 @@ npm run dev
 - `npm run test:watch`
 - `npm run test:e2e`
 
+## CI/CD and GitHub Pages deployment
+
+This repository includes `.github/workflows/pages.yml`:
+
+- CI on pull requests and pushes to all branches (`lint`, `typecheck`, `test`)
+- CD on pushes to the repository default branch (build + deploy to GitHub Pages)
+
+Deployment uses the repository name as the Vite base path and publishes `dist/` to Pages.
+For SPA deep-link fallback on GitHub Pages, the workflow also copies `dist/index.html` to `dist/404.html`.
+
+After pushing this workflow, enable Pages in repository settings:
+
+1. Go to **Settings → Pages**
+2. Set **Source** to **GitHub Actions**
+
 ## Next Steps
 
 1. Continue with `STA-*` and `OPT-*` deeper implementation.
