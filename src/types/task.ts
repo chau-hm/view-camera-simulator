@@ -99,6 +99,7 @@ export type TaskEvaluation = {
   criteria: TaskCriteriaEvaluation[];
   primaryFeedback: string;
   secondaryFeedback: string[];
+  finalCameraState?: Pick<CameraState, "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "focusDistanceMm" | "aperture">;
 };
 
 export type TaskEvaluationContext = {

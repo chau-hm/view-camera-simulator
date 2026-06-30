@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
-import { getSceneById } from "../../scenes/definitions";
+import { getAllScenes, getSceneById } from "../../scenes/definitions";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { useAppStore } from "../../state/appStore";
 import { selectDerivedOpticsState } from "../../state/selectors";
@@ -36,6 +36,15 @@ export const SimulatorWorkspace = ({
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
+  const allScenes = getAllScenes();
+  const task = taskId ? getTaskById(taskId) ?? null : null;
+  const reducedMotion = useMemo(
+    () =>
+      typeof window !== "undefined" && typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        : false,
+    [],
+  );
 
   useEffect(() => {
     if (camera.mode !== mode) {
@@ -53,7 +62,13 @@ export const SimulatorWorkspace = ({
   const safeScene = scene ?? architectureRiseScene;
 
   const opticsState = selectDerivedOpticsState(camera);
-  const task = taskId ? getTaskById(taskId) ?? null : null;
+  const lockReason = UI_COPY.controls.guidedControlLockedReason;
+  const enabledControls = useMemo(() => {
+    if (mode === "free" || !task) {
+      return new Set(["rise", "tilt", "swing", "focusDistance", "aperture", "geometryView", "focusAssist", "grid", "groundGlassAssist"]);
+    }
+    return new Set([...task.enabledControls]);
+  }, [mode, task]);
   const evaluation = useMemo(
     () => (task ? evaluateTask(task, safeScene, camera, opticsState) : null),
     [camera, opticsState, safeScene, task],
@@ -71,7 +86,21 @@ export const SimulatorWorkspace = ({
   }
 
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
+    <div style={{ display: "grid", gap: "1rem" }} data-reduced-motion={reducedMotion ? "true" : "false"}>
+      {mode === "free" && (
+        <section aria-label={UI_COPY.simulator.scenePickerLabel}>
+          <label>
+            {UI_COPY.simulator.scenePickerLabel}
+            <select value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
+              {allScenes.map((registeredScene) => (
+                <option key={registeredScene.id} value={registeredScene.id}>
+                  {registeredScene.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </section>
+      )}
       {opticsState.diagnostics.fallbackApplied && (
         <p role="alert">
           {UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}
@@ -92,10 +121,21 @@ export const SimulatorWorkspace = ({
         <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
       </div>
       <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-        <MovementControls />
-        <FocusControl />
-        <ApertureControl />
-        <ViewOptions />
+        <MovementControls
+          riseEnabled={enabledControls.has("rise")}
+          tiltEnabled={enabledControls.has("tilt")}
+          swingEnabled={enabledControls.has("swing")}
+          lockReason={lockReason}
+        />
+        <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
+        <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
+        <ViewOptions
+          geometryViewEnabled={enabledControls.has("geometryView")}
+          orientationAssistEnabled={mode === "free"}
+          focusAssistEnabled={mode === "free"}
+          gridEnabled={mode === "free"}
+          lockReason={lockReason}
+        />
         <ResetControls />
       </div>
       <TaskPanel task={task} />

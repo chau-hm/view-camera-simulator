@@ -1058,122 +1058,122 @@
 
 # Phase 11 — Simulator UI
 
-* [ ] **UI-001｜P0｜建立 Simulator Workspace Grid**
+* [x] **UI-001｜P0｜建立 Simulator Workspace Grid**
 
   * 依賴：ENV-016
   * 驗收：Desktop 1280px 寬時同時顯示 3D、ground glass、geometry、controls。
 
-* [ ] **UI-002｜P0｜放置 Scene Viewport**
+* [x] **UI-002｜P0｜放置 Scene Viewport**
 
   * 依賴：UI-001、R3D-001
   * 驗收：左上區域顯示 3D scene。
 
-* [ ] **UI-003｜P0｜放置 Ground Glass Viewport**
+* [x] **UI-003｜P0｜放置 Ground Glass Viewport**
 
   * 依賴：UI-001、GGL-001
   * 驗收：右上區域顯示 ground glass。
 
-* [ ] **UI-004｜P0｜放置 Geometry Viewport**
+* [x] **UI-004｜P0｜放置 Geometry Viewport**
 
   * 依賴：UI-001、GEO-001
   * 驗收：左下區域顯示 SVG diagram。
 
-* [ ] **UI-005｜P0｜建立 Movement Controls Panel**
+* [x] **UI-005｜P0｜建立 Movement Controls Panel**
 
   * 依賴：STA-002 至 STA-004
   * 驗收：包含 rise、tilt、swing slider 與數值。
 
-* [ ] **UI-006｜P0｜建立 Rise Slider**
+* [x] **UI-006｜P0｜建立 Rise Slider**
 
   * 依賴：UI-005
   * 驗收：操作 slider 更新 store，單位顯示為 mm。
 
-* [ ] **UI-007｜P0｜建立 Tilt Slider**
+* [x] **UI-007｜P0｜建立 Tilt Slider**
 
   * 依賴：UI-005
   * 驗收：操作 slider 更新 store，單位顯示為 °。
 
-* [ ] **UI-008｜P0｜建立 Swing Slider**
+* [x] **UI-008｜P0｜建立 Swing Slider**
 
   * 依賴：UI-005
   * 驗收：操作 slider 更新 store，單位顯示為 °。
 
-* [ ] **UI-009｜P0｜建立 Focus Slider**
+* [x] **UI-009｜P0｜建立 Focus Slider**
 
   * 依賴：STA-005
   * 驗收：顯示距離值並受 scene range 限制。
 
-* [ ] **UI-010｜P0｜建立 Aperture Selector**
+* [x] **UI-010｜P0｜建立 Aperture Selector**
 
   * 依賴：STA-006
   * 驗收：只可選固定 aperture options。
 
-* [ ] **UI-011｜P0｜建立 View Options Controls**
+* [x] **UI-011｜P0｜建立 View Options Controls**
 
   * 依賴：STA-010 至 STA-012
   * 驗收：可切換 orientation assist、grid、focus assist。
 
-* [ ] **UI-012｜P0｜建立 Reset Movements Button**
+* [x] **UI-012｜P0｜建立 Reset Movements Button**
 
   * 依賴：STA-013
   * 驗收：按下後只重設 movement、focus、aperture。
 
-* [ ] **UI-013｜P0｜建立 Restart Task Button**
+* [x] **UI-013｜P0｜建立 Restart Task Button**
 
   * 依賴：STA-014
   * 驗收：按下後完整重設當前 task。
 
-* [ ] **UI-014｜P0｜建立 Task Objective Panel**
+* [x] **UI-014｜P0｜建立 Task Objective Panel**
 
   * 依賴：TSK-011 至 TSK-013
   * 驗收：顯示 task title、目標、限制及允許 controls。
 
-* [ ] **UI-015｜P0｜建立 Criterion Status List**
+* [x] **UI-015｜P0｜建立 Criterion Status List**
 
   * 依賴：TSK-014
   * 驗收：顯示每個 criterion pass/fail、current value、expected value。
 
-* [ ] **UI-016｜P0｜建立 Feedback Panel**
+* [x] **UI-016｜P0｜建立 Feedback Panel**
 
   * 依賴：TSK-018、TSK-019
   * 驗收：顯示 primary feedback 與可選 secondary hint。
 
-* [ ] **UI-017｜P0｜建立 Task Completed Overlay**
+* [x] **UI-017｜P0｜建立 Task Completed Overlay**
 
   * 依賴：TSK-010
   * 驗收：完成時顯示分數、最終 movement、focus、aperture。
 
-* [ ] **UI-018｜P0｜建立 Guided Mode Controls Lock**
+* [x] **UI-018｜P0｜建立 Guided Mode Controls Lock**
 
   * 依賴：DOM-011、TSK-011 至 TSK-013
   * 驗收：非 task enabled controls 可見但 disabled，並附原因。
 
-* [ ] **UI-019｜P0｜建立 Free Mode Scene Picker**
+* [x] **UI-019｜P0｜建立 Free Mode Scene Picker**
 
   * 依賴：SCN-017、STA-008
   * 驗收：可切換三個 scene。
 
-* [ ] **UI-020｜P0｜建立 Free Mode All Controls Enabled Rule**
+* [x] **UI-020｜P0｜建立 Free Mode All Controls Enabled Rule**
 
   * 依賴：STA-007、UI-018
   * 驗收：Free Mode 中所有 MVP controls 均可操作。
 
-* [ ] **UI-021｜P1｜建立 Help Modal**
+* [x] **UI-021｜P1｜建立 Help Modal**
 
   * 依賴：DOM-015
   * 驗收：可顯示 Rise、Tilt、Swing 的短說明，不改變 simulator state。
 
-* [ ] **UI-022｜P1｜加入 Keyboard Slider Support**
+* [x] **UI-022｜P1｜加入 Keyboard Slider Support**
 
   * 依賴：UI-006 至 UI-010
   * 驗收：Arrow keys 微調，Shift+Arrow 大步調整，Home/End 到邊界。
 
-* [ ] **UI-023｜P1｜加入 Reduced Motion Support**
+* [x] **UI-023｜P1｜加入 Reduced Motion Support**
 
   * 依賴：R3D-001、UI-001
   * 驗收：符合 `prefers-reduced-motion` 時取消不必要補間動畫。
 
-* [ ] **UI-024｜P1｜加入 ARIA Labels**
+* [x] **UI-024｜P1｜加入 ARIA Labels**
 
   * 依賴：UI-005 至 UI-021
   * 驗收：controls、toggles、panels 均有可讀 label。

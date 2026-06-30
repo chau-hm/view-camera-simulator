@@ -116,6 +116,13 @@ export const evaluateTask = (
     criteria,
     primaryFeedback: "",
     secondaryFeedback: [],
+    finalCameraState: {
+      frontRiseMm: camera.frontRiseMm,
+      frontTiltDeg: camera.frontTiltDeg,
+      frontSwingDeg: camera.frontSwingDeg,
+      focusDistanceMm: camera.focusDistanceMm,
+      aperture: camera.aperture,
+    },
   };
   const feedback = feedbackEngine(task, evaluation, {
     camera,
