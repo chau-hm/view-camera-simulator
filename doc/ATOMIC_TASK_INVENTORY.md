@@ -1320,12 +1320,12 @@
   * 依賴：GGL-018
   * 驗收：一般 desktop 裝置可維持至少 30 FPS。
 
-* [ ] **PERF-003｜P1｜加入 Ground Glass Resolution Scaling**
+* [x] **PERF-003｜P1｜加入 Ground Glass Resolution Scaling**
 
   * 依賴：GGL-018
   * 驗收：低效能模式可降低 render target resolution。
 
-* [ ] **PERF-004｜P1｜加入 DOF Quality Scaling**
+* [x] **PERF-004｜P1｜加入 DOF Quality Scaling**
 
   * 依賴：GGL-017
   * 驗收：低效能模式可降低 blur samples 或停用高成本 pass。
@@ -1335,42 +1335,42 @@
   * 依賴：SCN-019
   * 驗收：場景切換目標少於 2 秒。
 
-* [ ] **A11Y-001｜P0｜檢查所有 Control Label**
+* [x] **A11Y-001｜P0｜檢查所有 Control Label**
 
   * 依賴：UI-005 至 UI-011
   * 驗收：所有 interactive controls 均有可讀 label。
 
-* [ ] **A11Y-002｜P0｜檢查 Focus Status 非色彩資訊**
+* [x] **A11Y-002｜P0｜檢查 Focus Status 非色彩資訊**
 
   * 依賴：GGL-019、GGL-020
   * 驗收：sharpness status 有文字或 icon，不只靠顏色。
 
-* [ ] **A11Y-003｜P1｜完成 Keyboard-only Rise Task**
+* [x] **A11Y-003｜P1｜完成 Keyboard-only Rise Task**
 
   * 依賴：UI-022
   * 驗收：只使用鍵盤可完成 Rise 關。
 
-* [ ] **REL-001｜P0｜建立 CI Lint Job**
+* [x] **REL-001｜P0｜建立 CI Lint Job**
 
   * 依賴：ENV-010
   * 驗收：Pull Request 自動執行 lint。
 
-* [ ] **REL-002｜P0｜建立 CI Typecheck Job**
+* [x] **REL-002｜P0｜建立 CI Typecheck Job**
 
   * 依賴：ENV-002
   * 驗收：Pull Request 自動執行 typecheck。
 
-* [ ] **REL-003｜P0｜建立 CI Unit Test Job**
+* [x] **REL-003｜P0｜建立 CI Unit Test Job**
 
   * 依賴：ENV-007
   * 驗收：Pull Request 自動執行 Vitest。
 
-* [ ] **REL-004｜P1｜建立 CI E2E Test Job**
+* [x] **REL-004｜P1｜建立 CI E2E Test Job**
 
   * 依賴：TST-E2E-001
   * 驗收：Pull Request 或 deployment preview 可執行 Playwright。
 
-* [ ] **REL-005｜P1｜建立 Static Deployment Preview**
+* [x] **REL-005｜P1｜建立 Static Deployment Preview**
 
   * 依賴：REL-001 至 REL-003
   * 驗收：每次合併或 preview 可產出可訪問 static build。
@@ -1380,7 +1380,7 @@
   * 依賴：所有 P0 Tasks
   * 驗收：包含 tests、performance、console errors、scope check、三關完成驗證。
 
-* [ ] **REL-007｜P0｜完成 MVP Smoke Test**
+* [x] **REL-007｜P0｜完成 MVP Smoke Test**
 
   * 依賴：REL-006
   * 驗收：Rise、Tilt、Swing 三關可由新使用者流程完整通過。

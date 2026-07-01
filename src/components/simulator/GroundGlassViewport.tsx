@@ -1,6 +1,7 @@
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import type { ApertureValue } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
+import type { RenderQualityProfile } from "../../types/ui";
 import { UI_COPY } from "../../ui/copy";
 
 type GroundGlassViewportProps = {
@@ -12,6 +13,7 @@ type GroundGlassViewportProps = {
   swingDeg: number;
   focusDistanceMm: number;
   aperture: ApertureValue;
+  renderQuality: RenderQualityProfile;
 };
 
 export const GroundGlassViewport = ({
@@ -23,6 +25,7 @@ export const GroundGlassViewport = ({
   swingDeg,
   focusDistanceMm,
   aperture,
+  renderQuality,
 }: GroundGlassViewportProps) => (
   <section>
     <h2>{UI_COPY.simulator.groundGlassTitle}</h2>
@@ -36,6 +39,7 @@ export const GroundGlassViewport = ({
       swingDeg={swingDeg}
       focusDistanceMm={focusDistanceMm}
       aperture={aperture}
+      renderQuality={renderQuality}
     />
   </section>
 );

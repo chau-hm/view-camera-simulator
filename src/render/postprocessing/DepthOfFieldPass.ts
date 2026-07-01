@@ -1,11 +1,13 @@
 import type { DerivedOpticsState } from "../../types/optics";
+import type { RenderQualityProfile } from "../../types/ui";
 import {
   calculateApertureBlurStrength,
   calculateFocusPlaneDistanceMm,
-  createHalfResolutionBlurPass,
+  createScaledBlurPass,
   linearizeDepthSample,
   reconstructWorldPosition,
 } from "../groundGlassPipeline";
+import { getRenderQualitySettings } from "../renderQuality";
 
 export type DepthOfFieldPassConfig = {
   enabled: boolean;
@@ -14,6 +16,7 @@ export type DepthOfFieldPassConfig = {
   sampleDepth: number;
   sampleUv: { u: number; v: number };
   aperture: number;
+  renderQuality: RenderQualityProfile;
 };
 
 export type DepthOfFieldPassResult = {
@@ -32,26 +35,24 @@ export const createDepthOfFieldPass = (
   opticsState: DerivedOpticsState,
 ): DepthOfFieldPassResult => {
   const linearDepthMm = linearizeDepthSample(config.sampleDepth) * 1000;
-  const worldPosition = reconstructWorldPosition(
-    config.sampleUv.u,
-    config.sampleUv.v,
-    linearDepthMm,
-    opticsState,
-  );
-  const distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(worldPosition, opticsState.focusPlane);
-  const blurStrength = config.enabled
-    ? calculateApertureBlurStrength(distanceToFocusPlaneMm, config.aperture)
+  const qualitySettings = getRenderQualitySettings(config.renderQuality);
+  const worldPosition = config.enabled
+    ? reconstructWorldPosition(config.sampleUv.u, config.sampleUv.v, linearDepthMm, opticsState)
+    : null;
+  const distanceToFocusPlaneMm = worldPosition
+    ? calculateFocusPlaneDistanceMm(worldPosition, opticsState.focusPlane)
     : 0;
+  const blurStrength = config.enabled ? calculateApertureBlurStrength(distanceToFocusPlaneMm, config.aperture) : 0;
 
   return {
     enabled: config.enabled,
     linearDepthMm,
     distanceToFocusPlaneMm,
     blurStrength,
-    blurPass: createHalfResolutionBlurPass({
+    blurPass: createScaledBlurPass({
       widthPx: config.widthPx,
       heightPx: config.heightPx,
       textureId: "dof-source",
-    }),
+    }, qualitySettings.blurPassScale),
   };
 };

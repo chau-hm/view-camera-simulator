@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getAllScenes, getSceneById } from "../../scenes/definitions";
@@ -6,6 +6,7 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { useAppStore } from "../../state/appStore";
 import { selectDerivedOpticsState } from "../../state/selectors";
 import type { SimulatorMode } from "../../types/camera";
+import type { RenderQualityProfile } from "../../types/ui";
 import { UI_COPY } from "../../ui/copy";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
@@ -36,6 +37,7 @@ export const SimulatorWorkspace = ({
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
+  const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("standard");
   const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
   const reducedMotion = useMemo(
@@ -101,7 +103,13 @@ export const SimulatorWorkspace = ({
         </p>
       )}
       <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        <SceneViewport scene={safeScene} opticsState={opticsState} simulateAssetFailure={simulateAssetFailure} />
+        <SceneViewport
+          scene={safeScene}
+          opticsState={opticsState}
+          renderQuality={renderQuality}
+          setRenderQuality={setRenderQuality}
+          simulateAssetFailure={simulateAssetFailure}
+        />
         <GroundGlassViewport
           opticsState={opticsState}
           focusAssistEnabled={camera.focusAssistEnabled}
@@ -111,6 +119,7 @@ export const SimulatorWorkspace = ({
           swingDeg={camera.frontSwingDeg}
           focusDistanceMm={camera.focusDistanceMm}
           aperture={camera.aperture}
+          renderQuality={renderQuality}
         />
         <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
       </div>

@@ -8,6 +8,7 @@ import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { UI_COPY } from "../ui/copy";
+import { getRenderQualitySettings } from "./renderQuality";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -29,12 +30,6 @@ const vecToWorld = (value: { x: number; y: number; z: number }): [number, number
   toWorld(value.y),
   toWorld(value.z),
 ];
-
-const QUALITY_CONFIG: Record<RenderQualityProfile, { dpr: number }> = {
-  high: { dpr: 2 },
-  standard: { dpr: 1.5 },
-  low: { dpr: 1 },
-};
 
 const RearStandard = () => (
   <>
@@ -285,7 +280,7 @@ export const SceneRenderer = ({
 }: SceneRendererProps) => {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
-  const qualityConfig = useMemo(() => QUALITY_CONFIG[renderQuality], [renderQuality]);
+  const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const observerCameraPosition = useMemo(
     () => vecToWorld(scene.cameraPlacement.position),
     [scene.cameraPlacement.position],
@@ -338,7 +333,7 @@ export const SceneRenderer = ({
       <Canvas
         dpr={qualityConfig.dpr}
         camera={{ position: observerCameraPosition, fov: 45, near: 0.01, far: 200 }}
-        gl={{ antialias: renderQuality !== "low" }}
+        gl={{ antialias: qualityConfig.antialias }}
       >
         <SceneContent
           scene={{ ...scene, assets: activeAssets }}

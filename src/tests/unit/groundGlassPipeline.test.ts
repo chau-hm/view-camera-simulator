@@ -12,8 +12,12 @@ import {
 import { createDepthOfFieldPass } from "../../render/postprocessing/DepthOfFieldPass";
 import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import type { RenderQualityProfile } from "../../types/ui";
 
 describe("ground glass pipeline", () => {
+  const standardQuality: RenderQualityProfile = "standard";
+  const lowQuality: RenderQualityProfile = "low";
+
   it("keeps 4x5 panel render target dimensions", () => {
     const renderTarget = createGroundGlassRenderTarget(500, 400);
     expect(renderTarget.widthPx / renderTarget.heightPx).toBeCloseTo(1.25, 8);
@@ -29,9 +33,20 @@ describe("ground glass pipeline", () => {
       architectureRiseScene,
     );
 
-    const basePipeline = createGroundGlassDofPipeline(base, 500, 400);
-    const raisedPipeline = createGroundGlassDofPipeline(raised, 500, 400);
+    const basePipeline = createGroundGlassDofPipeline(base, 500, 400, standardQuality);
+    const raisedPipeline = createGroundGlassDofPipeline(raised, 500, 400, standardQuality);
     expect(raisedPipeline.verticalFrameOffsetPx).not.toBe(basePipeline.verticalFrameOffsetPx);
+  });
+
+  it("scales the pipeline down for low render quality", () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    const standardPipeline = createGroundGlassDofPipeline(opticsState, 500, 400, standardQuality);
+    const lowPipeline = createGroundGlassDofPipeline(opticsState, 500, 400, lowQuality);
+
+    expect(lowPipeline.colorTarget.widthPx).toBeLessThan(standardPipeline.colorTarget.widthPx);
+    expect(lowPipeline.colorTarget.heightPx).toBeLessThan(standardPipeline.colorTarget.heightPx);
+    expect(lowPipeline.blurPass.widthPx).toBeLessThan(standardPipeline.blurPass.widthPx);
+    expect(lowPipeline.blurPass.heightPx).toBeLessThan(standardPipeline.blurPass.heightPx);
   });
 
   it("keeps flip state aligned with orientation assist", () => {
@@ -92,11 +107,31 @@ describe("ground glass pipeline", () => {
         sampleDepth: 0.5,
         sampleUv: { u: 0.45, v: 0.6 },
         aperture: DEFAULT_CAMERA_STATE.aperture,
+        renderQuality: standardQuality,
       },
       opticsState,
     );
     expect(assistPass.targets.length).toBe(opticsState.focusTargets.length);
     expect(dofPass.blurPass.widthPx).toBe(250);
     expect(dofPass.blurPass.heightPx).toBe(200);
+  });
+
+  it("reduces dof pass resolution in low quality mode", () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    const dofPass = createDepthOfFieldPass(
+      {
+        enabled: true,
+        widthPx: 500,
+        heightPx: 400,
+        sampleDepth: 0.5,
+        sampleUv: { u: 0.45, v: 0.6 },
+        aperture: DEFAULT_CAMERA_STATE.aperture,
+        renderQuality: lowQuality,
+      },
+      opticsState,
+    );
+
+    expect(dofPass.blurPass.widthPx).toBeLessThan(250);
+    expect(dofPass.blurPass.heightPx).toBeLessThan(200);
   });
 });
