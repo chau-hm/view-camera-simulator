@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getAllScenes, getSceneById } from "../../scenes/definitions";
@@ -16,6 +16,7 @@ import { ViewOptions } from "../controls/ViewOptions";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
+import { PerformancePanel } from "../simulator/PerformancePanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
 
@@ -38,6 +39,9 @@ export const SimulatorWorkspace = ({
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("standard");
+  const [movementInputLatencyMs, setMovementInputLatencyMs] = useState<number | null>(null);
+  const [groundGlassFps, setGroundGlassFps] = useState<number | null>(null);
+  const [sceneSwitchDurationMs, setSceneSwitchDurationMs] = useState<number | null>(null);
   const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
   const reducedMotion = useMemo(
@@ -69,6 +73,15 @@ export const SimulatorWorkspace = ({
     () => (task ? evaluateTask(task, safeScene, camera, opticsState) : null),
     [camera, opticsState, safeScene, task],
   );
+  const handleMovementInputSample = useCallback((sampleMs: number) => {
+    setMovementInputLatencyMs(sampleMs);
+  }, []);
+  const handleGroundGlassFpsSample = useCallback((sampleFps: number) => {
+    setGroundGlassFps(sampleFps);
+  }, []);
+  const handleSceneSwitchSample = useCallback((sampleMs: number) => {
+    setSceneSwitchDurationMs(sampleMs);
+  }, []);
   useEffect(() => {
     setCurrentTaskEvaluation(evaluation);
   }, [evaluation, setCurrentTaskEvaluation]);
@@ -109,6 +122,7 @@ export const SimulatorWorkspace = ({
           renderQuality={renderQuality}
           setRenderQuality={setRenderQuality}
           simulateAssetFailure={simulateAssetFailure}
+          onSceneSwitchSample={handleSceneSwitchSample}
         />
         <GroundGlassViewport
           opticsState={opticsState}
@@ -120,6 +134,7 @@ export const SimulatorWorkspace = ({
           focusDistanceMm={camera.focusDistanceMm}
           aperture={camera.aperture}
           renderQuality={renderQuality}
+          onFrameRateSample={handleGroundGlassFpsSample}
         />
         <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
       </div>
@@ -129,6 +144,7 @@ export const SimulatorWorkspace = ({
           tiltEnabled={enabledControls.has("tilt")}
           swingEnabled={enabledControls.has("swing")}
           lockReason={lockReason}
+          onInputSample={handleMovementInputSample}
         />
         <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
         <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
@@ -141,6 +157,11 @@ export const SimulatorWorkspace = ({
         />
         <ResetControls />
       </div>
+      <PerformancePanel
+        movementInputLatencyMs={movementInputLatencyMs}
+        groundGlassFps={groundGlassFps}
+        sceneSwitchDurationMs={sceneSwitchDurationMs}
+      />
       <TaskPanel task={task} />
       <FeedbackPanel evaluation={evaluation} />
     </div>

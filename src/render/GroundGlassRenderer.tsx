@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ApertureValue } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { RenderQualityProfile } from "../types/ui";
@@ -8,6 +8,7 @@ import { createFocusAssistPass } from "./postprocessing/FocusAssistPass";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
+import { formatPerformanceSample } from "../utils/performance";
 
 type GroundGlassRendererProps = {
   opticsState: DerivedOpticsState;
@@ -20,6 +21,7 @@ type GroundGlassRendererProps = {
   focusDistanceMm: number;
   aperture: ApertureValue;
   renderQuality: RenderQualityProfile;
+  onFrameRateSample?: (sampleFps: number) => void;
 };
 
 const PANEL_WIDTH_PX = 500;
@@ -48,12 +50,15 @@ export const GroundGlassRenderer = ({
   focusDistanceMm,
   aperture,
   renderQuality,
+  onFrameRateSample,
 }: GroundGlassRendererProps) => {
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [zoomOrigin, setZoomOrigin] = useState<{ xPercent: number; yPercent: number }>({
     xPercent: 50,
     yPercent: 50,
   });
+  const [frameRate, setFrameRate] = useState<number | null>(null);
+  const frameRateSampleCallbackRef = useRef(onFrameRateSample);
   const projection = opticsState.groundGlassProjection;
   const invertHorizontal = assistEnabled ? false : projection.invertHorizontal;
   const invertVertical = assistEnabled ? false : projection.invertVertical;
@@ -85,6 +90,39 @@ export const GroundGlassRenderer = ({
       ),
     [aperture, opticsState, renderQuality],
   );
+  useEffect(() => {
+    frameRateSampleCallbackRef.current = onFrameRateSample;
+  }, [onFrameRateSample]);
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+      return undefined;
+    }
+
+    let frameCount = 0;
+    let sampleStart = 0;
+    let rafId = 0;
+
+    const loop = (time: number) => {
+      if (sampleStart === 0) {
+        sampleStart = time;
+      }
+
+      frameCount += 1;
+      const elapsed = time - sampleStart;
+      if (elapsed >= 500) {
+        const fps = (frameCount * 1000) / elapsed;
+        setFrameRate(fps);
+        frameRateSampleCallbackRef.current?.(fps);
+        frameCount = 0;
+        sampleStart = time;
+      }
+
+      rafId = window.requestAnimationFrame(loop);
+    };
+
+    rafId = window.requestAnimationFrame(loop);
+    return () => window.cancelAnimationFrame(rafId);
+  }, []);
 
   const blurOpacity = Math.min(0.85, dofSample.blurStrength * 1.2);
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
@@ -225,6 +263,7 @@ export const GroundGlassRenderer = ({
           Camera source: {pipeline.camera.source}, Blur pass: {pipeline.blurPass.widthPx}×
           {pipeline.blurPass.heightPx}, Scale {qualitySettings.groundGlassScale}
         </span>
+        <span>{UI_COPY.performance.groundGlassFpsLabel}: {formatPerformanceSample(frameRate, "FPS")}</span>
       </div>
       {focusAssist.enabled && (
         <div style={{ display: "grid", gap: "0.25rem", fontSize: 12 }}>

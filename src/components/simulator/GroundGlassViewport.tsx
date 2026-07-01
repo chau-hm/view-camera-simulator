@@ -14,6 +14,7 @@ type GroundGlassViewportProps = {
   focusDistanceMm: number;
   aperture: ApertureValue;
   renderQuality: RenderQualityProfile;
+  onFrameRateSample?: (sampleFps: number) => void;
 };
 
 export const GroundGlassViewport = ({
@@ -26,6 +27,7 @@ export const GroundGlassViewport = ({
   focusDistanceMm,
   aperture,
   renderQuality,
+  onFrameRateSample,
 }: GroundGlassViewportProps) => (
   <section>
     <h2>{UI_COPY.simulator.groundGlassTitle}</h2>
@@ -40,6 +42,7 @@ export const GroundGlassViewport = ({
       focusDistanceMm={focusDistanceMm}
       aperture={aperture}
       renderQuality={renderQuality}
+      onFrameRateSample={onFrameRateSample}
     />
   </section>
 );

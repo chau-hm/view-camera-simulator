@@ -51,7 +51,8 @@ export const UI_COPY = {
     renderQualityHigh: "High",
     renderQualityStandard: "Standard",
     renderQualityLow: "Low",
-    webglUnavailable: "WebGL is unavailable in this browser. Please use a WebGL-capable browser on desktop.",
+    webglUnavailable:
+      "WebGL is unavailable in this browser. Please use a WebGL-capable browser on desktop.",
     retryLoadScene: "Retry loading scene",
     sceneLoadFailed: "Scene load failed",
     unknownScenePrefix: "Unknown scene",
@@ -64,6 +65,12 @@ export const UI_COPY = {
     criterionExpectedLabel: "Expected",
     taskCompletedTitle: "Task completed",
     taskCompletedSummaryLabel: "Final settings",
+  },
+  performance: {
+    title: "Performance",
+    movementInputLatencyLabel: "Movement input latency",
+    groundGlassFpsLabel: "Ground glass FPS",
+    sceneSwitchDurationLabel: "Scene switch duration",
   },
   render: {
     groundGlassPreview: "Ground glass preview",

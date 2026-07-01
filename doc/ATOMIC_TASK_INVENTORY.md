@@ -1310,12 +1310,12 @@
 
 # Phase 14 — Performance, Accessibility and Release
 
-* [ ] **PERF-001｜P0｜量測 Movement Input Latency**
+* [x] **PERF-001｜P0｜量測 Movement Input Latency**
 
   * 依賴：GGL-018、R3D-011
   * 驗收：slider input 至主要視覺更新目標低於 100ms。
 
-* [ ] **PERF-002｜P0｜量測 Ground Glass FPS**
+* [x] **PERF-002｜P0｜量測 Ground Glass FPS**
 
   * 依賴：GGL-018
   * 驗收：一般 desktop 裝置可維持至少 30 FPS。
@@ -1330,7 +1330,7 @@
   * 依賴：GGL-017
   * 驗收：低效能模式可降低 blur samples 或停用高成本 pass。
 
-* [ ] **PERF-005｜P1｜量測 Scene Switch Duration**
+* [x] **PERF-005｜P1｜量測 Scene Switch Duration**
 
   * 依賴：SCN-019
   * 驗收：場景切換目標少於 2 秒。
@@ -1375,7 +1375,7 @@
   * 依賴：REL-001 至 REL-003
   * 驗收：每次合併或 preview 可產出可訪問 static build。
 
-* [ ] **REL-006｜P0｜建立 Release Checklist**
+* [x] **REL-006｜P0｜建立 Release Checklist**
 
   * 依賴：所有 P0 Tasks
   * 驗收：包含 tests、performance、console errors、scope check、三關完成驗證。

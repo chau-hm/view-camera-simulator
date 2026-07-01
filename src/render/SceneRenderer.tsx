@@ -20,6 +20,7 @@ type SceneRendererProps = {
   viewResetNonce: number;
   simulateAssetFailure: boolean;
   onAssetError: (message: string) => void;
+  onSceneSwitchSample?: (sampleMs: number) => void;
 };
 
 const WORLD_SCALE = 0.001;
@@ -277,9 +278,13 @@ export const SceneRenderer = ({
   viewResetNonce,
   simulateAssetFailure,
   onAssetError,
+  onSceneSwitchSample,
 }: SceneRendererProps) => {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
+  const sceneSwitchStartRef = useRef<number | null>(null);
+  const sceneSwitchCallbackRef = useRef(onSceneSwitchSample);
+  const hasMountedRef = useRef(false);
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const observerCameraPosition = useMemo(
     () => vecToWorld(scene.cameraPlacement.position),
@@ -313,10 +318,28 @@ export const SceneRenderer = ({
   }, [observerCameraTarget, viewResetNonce]);
 
   useEffect(() => {
+    sceneSwitchCallbackRef.current = onSceneSwitchSample;
+  }, [onSceneSwitchSample]);
+
+  useEffect(() => {
+    const shouldMeasureSwitch = hasMountedRef.current;
+    hasMountedRef.current = true;
+    if (shouldMeasureSwitch) {
+      sceneSwitchStartRef.current = performance.now();
+    }
+
     setLoadLazyAssets(false);
     const timer = setTimeout(() => setLoadLazyAssets(true), 0);
     return () => clearTimeout(timer);
   }, [scene.id]);
+
+  useEffect(() => {
+    if (loadLazyAssets && sceneSwitchStartRef.current !== null) {
+      const sampleMs = performance.now() - sceneSwitchStartRef.current;
+      sceneSwitchStartRef.current = null;
+      sceneSwitchCallbackRef.current?.(sampleMs);
+    }
+  }, [loadLazyAssets]);
 
   useEffect(() => {
     if (simulateAssetFailure && attempt === 0) {

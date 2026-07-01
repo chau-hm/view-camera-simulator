@@ -6,20 +6,33 @@ import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import { useAppStore } from "../../state/appStore";
 import { handleRangeInputKeyboard } from "../../utils/rangeInputKeyboard";
+import { scheduleNextPaintSample } from "../../utils/performance";
 
 type MovementControlsProps = {
   riseEnabled: boolean;
   tiltEnabled: boolean;
   swingEnabled: boolean;
   lockReason: string;
+  onInputSample?: (sampleMs: number) => void;
 };
 
-export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockReason }: MovementControlsProps) => {
+export const MovementControls = ({
+  riseEnabled,
+  tiltEnabled,
+  swingEnabled,
+  lockReason,
+  onInputSample,
+}: MovementControlsProps) => {
   const movement = useAppStore(useShallow(selectMovementControlState));
   const setRise = useAppStore((state) => state.setRise);
   const setTilt = useAppStore((state) => state.setTilt);
   const setSwing = useAppStore((state) => state.setSwing);
   const [helpOpen, setHelpOpen] = useState(false);
+  const reportInputSample = () => {
+    if (onInputSample) {
+      scheduleNextPaintSample(onInputSample);
+    }
+  };
 
   return (
     <section aria-label={UI_COPY.controls.movementTitle}>
@@ -52,10 +65,16 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
               min: CAMERA_CONSTANTS.riseMinMm,
               max: CAMERA_CONSTANTS.riseMaxMm,
               step: 1,
-              onChangeValue: setRise,
+              onChangeValue: (value) => {
+                setRise(value);
+                reportInputSample();
+              },
             })
           }
-          onChange={(event) => setRise(Number(event.target.value))}
+          onChange={(event) => {
+            setRise(Number(event.target.value));
+            reportInputSample();
+          }}
         />
         {!riseEnabled && <small>{lockReason}</small>}
       </label>
@@ -75,10 +94,16 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
               min: CAMERA_CONSTANTS.tiltMinDeg,
               max: CAMERA_CONSTANTS.tiltMaxDeg,
               step: 0.1,
-              onChangeValue: setTilt,
+              onChangeValue: (value) => {
+                setTilt(value);
+                reportInputSample();
+              },
             })
           }
-          onChange={(event) => setTilt(Number(event.target.value))}
+          onChange={(event) => {
+            setTilt(Number(event.target.value));
+            reportInputSample();
+          }}
         />
         {!tiltEnabled && <small>{lockReason}</small>}
       </label>
@@ -98,10 +123,16 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
               min: CAMERA_CONSTANTS.swingMinDeg,
               max: CAMERA_CONSTANTS.swingMaxDeg,
               step: 0.1,
-              onChangeValue: setSwing,
+              onChangeValue: (value) => {
+                setSwing(value);
+                reportInputSample();
+              },
             })
           }
-          onChange={(event) => setSwing(Number(event.target.value))}
+          onChange={(event) => {
+            setSwing(Number(event.target.value));
+            reportInputSample();
+          }}
         />
         {!swingEnabled && <small>{lockReason}</small>}
       </label>

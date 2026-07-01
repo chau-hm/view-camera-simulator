@@ -14,6 +14,7 @@ type SceneViewportProps = {
   renderQuality: RenderQualityProfile;
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
   simulateAssetFailure: boolean;
+  onSceneSwitchSample?: (sampleMs: number) => void;
 };
 
 const parseRenderQuality = (value: string): RenderQualityProfile => {
@@ -29,6 +30,7 @@ export const SceneViewport = ({
   renderQuality,
   setRenderQuality,
   simulateAssetFailure,
+  onSceneSwitchSample,
 }: SceneViewportProps) => {
   const [attempt, setAttempt] = useState(0);
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
@@ -104,6 +106,9 @@ export const SceneViewport = ({
         Loaded assets: {requiredAssets.length} required, {lazyAssets.length} lazy for current scene,{" "}
         {preloadAssets.length} preload for next scene.
       </p>
+      {onSceneSwitchSample && (
+        <p style={{ fontSize: 12, color: "#4b5563", marginTop: 0 }}>Scene switch timing is being sampled live.</p>
+      )}
       <SceneRenderer
         scene={scene}
         opticsState={opticsState}
@@ -114,6 +119,7 @@ export const SceneViewport = ({
         viewResetNonce={viewResetNonce}
         simulateAssetFailure={simulateAssetFailure}
         onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
+        onSceneSwitchSample={onSceneSwitchSample}
       />
     </section>
   );
