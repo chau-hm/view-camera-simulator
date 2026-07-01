@@ -3,10 +3,10 @@ import { planeFromPointNormal } from "../math/plane";
 import { add, scale } from "../math/vec";
 
 const APERTURE_TOLERANCE_MM: Record<number, number> = {
-  5.6: 8,
-  11: 16,
-  22: 32,
-  32: 48,
+  5.6: 800,
+  11: 1600,
+  22: 3200,
+  32: 4800,
 };
 
 export const mapApertureToToleranceMm = (aperture: number): number => APERTURE_TOLERANCE_MM[aperture] ?? 16;

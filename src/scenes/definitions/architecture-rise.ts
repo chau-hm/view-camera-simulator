@@ -40,13 +40,13 @@ export const architectureRiseScene: SceneDefinition = {
   },
   bounds: {
     min: { x: -2600, y: 0, z: 800 },
-    max: { x: 2600, y: 10800, z: 13200 },
+    max: { x: 2600, y: 2600, z: 13200 },
   },
   focusTargets: [
     {
       id: "building-mid-facade",
       label: "Building mid facade",
-      worldPosition: { x: 0, y: 3600, z: 9000 },
+      worldPosition: { x: 0, y: 1200, z: 9000 },
       weight: 1,
     },
   ],
@@ -55,16 +55,16 @@ export const architectureRiseScene: SceneDefinition = {
       id: "building-top",
       label: "Building top should be visible",
       worldBounds: {
-        min: { x: -900, y: 9300, z: 9000 },
-        max: { x: 900, y: 10200, z: 9800 },
+        min: { x: -900, y: 1800, z: 9000 },
+        max: { x: 900, y: 2400, z: 9800 },
       },
     },
     {
       id: "building-main-body",
       label: "Main building body should stay framed",
       worldBounds: {
-        min: { x: -1400, y: 1200, z: 8600 },
-        max: { x: 1400, y: 9200, z: 10100 },
+        min: { x: -1400, y: 200, z: 8600 },
+        max: { x: 1400, y: 1800, z: 10100 },
       },
     },
   ],
