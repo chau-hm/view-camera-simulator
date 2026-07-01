@@ -1251,57 +1251,57 @@
 
 # Phase 13 — End-to-End Tests
 
-* [ ] **TST-E2E-001｜P0｜建立 Playwright 基礎設定**
+* [x] **TST-E2E-001｜P0｜建立 Playwright 基礎設定**
 
   * 依賴：ENV-009
   * 驗收：可啟動 dev server 並執行一個 smoke test。
 
-* [ ] **TST-E2E-002｜P0｜測試首頁進入 Guided Mode**
+* [x] **TST-E2E-002｜P0｜測試首頁進入 Guided Mode**
 
   * 依賴：ENV-015、UI-001
   * 驗收：使用者可由首頁進入第一個 task。
 
-* [ ] **TST-E2E-003｜P0｜測試 Rise 關失敗狀態**
+* [x] **TST-E2E-003｜P0｜測試Rise 關失敗狀態**
 
   * 依賴：TSK-011、UI-014
   * 驗收：初始 state 不可完成 rise 關。
 
-* [ ] **TST-E2E-004｜P0｜測試 Rise 關完成**
+* [x] **TST-E2E-004｜P0｜測試Rise 關完成**
 
   * 依賴：TST-E2E-003
   * 驗收：設定合理 rise 後 task 顯示 completed。
 
-* [ ] **TST-E2E-005｜P0｜測試 Tilt 關禁止 f/32**
+* [x] **TST-E2E-005｜P0｜測試Tilt 關禁止 f/32**
 
   * 依賴：TSK-012
   * 驗收：即使 targets 清晰，選 f/32 仍不可完成。
 
-* [ ] **TST-E2E-006｜P0｜測試 Tilt 關完成**
+* [x] **TST-E2E-006｜P0｜測試Tilt 關完成**
 
   * 依賴：TSK-012
   * 驗收：合理 tilt、focus、f/22 設定可完成。
 
-* [ ] **TST-E2E-007｜P0｜測試 Swing 關失敗狀態**
+* [x] **TST-E2E-007｜P0｜測試Swing 關失敗狀態**
 
   * 依賴：TSK-013
   * 驗收：zero swing 時不可完成。
 
-* [ ] **TST-E2E-008｜P0｜測試 Swing 關完成**
+* [x] **TST-E2E-008｜P0｜測試Swing 關完成**
 
   * 依賴：TSK-013
   * 驗收：合理 swing、focus、f/22 設定可完成。
 
-* [ ] **TST-E2E-009｜P0｜測試 Restart Task**
+* [x] **TST-E2E-009｜P0｜測試 Restart Task**
 
   * 依賴：UI-013
   * 驗收：完成或變更 task 後重啟，狀態回復初始值。
 
-* [ ] **TST-E2E-010｜P0｜測試 Free Mode Scene Switching**
+* [x] **TST-E2E-010｜P0｜測試 Free Mode Scene Switching**
 
   * 依賴：UI-019、UI-020
   * 驗收：三個 scene 可正常切換且不出現 runtime error。
 
-* [ ] **TST-E2E-011｜P1｜測試 WebGL Fallback**
+* [x] **TST-E2E-011｜P1｜測試 WebGL Fallback**
 
   * 依賴：ENV-018
   * 驗收：模擬 WebGL 不可用時顯示 fallback UI。

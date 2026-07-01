@@ -47,18 +47,12 @@ export const SimulatorWorkspace = ({
   );
 
   useEffect(() => {
-    if (camera.mode !== mode) {
-      setMode(mode);
-    }
-    if (camera.activeSceneId !== sceneId) {
-      setActiveScene(sceneId);
-    }
-    if (camera.activeTaskId !== taskId) {
-      setActiveTask(taskId);
-    }
-  }, [camera.activeSceneId, camera.activeTaskId, camera.mode, mode, sceneId, setActiveScene, setActiveTask, setMode, taskId]);
+    setMode(mode);
+    setActiveScene(sceneId);
+    setActiveTask(taskId);
+  }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId]);
 
-  const scene = getSceneById(sceneId);
+  const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
 
   const opticsState = selectDerivedOpticsState(camera);
@@ -107,7 +101,7 @@ export const SimulatorWorkspace = ({
         </p>
       )}
       <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        <SceneViewport scene={scene} opticsState={opticsState} simulateAssetFailure={simulateAssetFailure} />
+        <SceneViewport scene={safeScene} opticsState={opticsState} simulateAssetFailure={simulateAssetFailure} />
         <GroundGlassViewport
           opticsState={opticsState}
           focusAssistEnabled={camera.focusAssistEnabled}

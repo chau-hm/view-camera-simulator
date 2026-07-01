@@ -45,7 +45,7 @@ export const tableTiltScene: SceneDefinition = {
   focusTargets: [
     { id: "near-cup", label: "Near cup", worldPosition: { x: -650, y: 840, z: 1200 }, weight: 1 },
     { id: "mid-notebook", label: "Middle notebook", worldPosition: { x: 50, y: 840, z: 2400 }, weight: 1 },
-    { id: "far-book", label: "Far book", worldPosition: { x: 550, y: 840, z: 3600 }, weight: 1 },
+    { id: "far-book", label: "Far book", worldPosition: { x: 450, y: 840, z: 3200 }, weight: 1 },
   ],
   compositionTargets: [
     {
