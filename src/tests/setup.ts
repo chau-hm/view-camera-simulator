@@ -5,10 +5,10 @@ vi.mock("../utils/webgl", () => ({
   isWebGLAvailable: () => true,
 }));
 
-vi.mock("@react-three/fiber", async () => {
-  const actual = await vi.importActual<typeof import("@react-three/fiber")>("@react-three/fiber");
-  return {
-    ...actual,
-    Canvas: () => null,
-  };
-});
+vi.mock("@react-three/fiber", () => ({
+  Canvas: () => null,
+}));
+
+vi.mock("@react-three/drei", () => ({
+  OrbitControls: () => null,
+}));

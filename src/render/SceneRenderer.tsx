@@ -1,8 +1,8 @@
-import { OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { DoubleSide } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { OrbitControls as OrbitControlsController } from "three-stdlib";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
@@ -23,6 +23,36 @@ type SceneRendererProps = {
 };
 
 const WORLD_SCALE = 0.001;
+
+type OrbitControlsProps = {
+  enablePan?: boolean;
+  enableZoom?: boolean;
+  enableRotate?: boolean;
+};
+
+const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function OrbitControls(
+  { enablePan = false, enableZoom = true, enableRotate = true },
+  ref,
+) {
+  const { camera, gl } = useThree();
+  const controls = useMemo(() => new OrbitControlsController(camera, gl.domElement), [camera, gl.domElement]);
+
+  useFrame(() => {
+    controls.update();
+  });
+
+  useImperativeHandle(ref, () => controls, [controls]);
+
+  useEffect(() => () => controls.dispose(), [controls]);
+
+  useEffect(() => {
+    controls.enablePan = enablePan;
+    controls.enableZoom = enableZoom;
+    controls.enableRotate = enableRotate;
+  }, [controls, enablePan, enableRotate, enableZoom]);
+
+  return null;
+});
 
 const toWorld = (millimeter: number): number => millimeter * WORLD_SCALE;
 const vecToWorld = (value: { x: number; y: number; z: number }): [number, number, number] => [

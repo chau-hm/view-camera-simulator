@@ -1,8 +1,12 @@
+import { lazy, Suspense } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
-import { SimulatorWorkspace } from "../components/layout/SimulatorWorkspace";
 import { getSceneById } from "../scenes/definitions";
 import type { SimulatorMode } from "../types/camera";
+
+const SimulatorWorkspace = lazy(() =>
+  import("../components/layout/SimulatorWorkspace").then((module) => ({ default: module.SimulatorWorkspace })),
+);
 
 export const HomePage = () => (
   <AppShell title="View Camera Simulator">
@@ -49,12 +53,14 @@ export const SimulatorRoutePage = () => {
 
   return (
     <AppShell title="Simulator workspace">
-      <SimulatorWorkspace
-        mode={parsedMode}
-        sceneId={resolvedSceneId}
-        taskId={taskId ?? null}
-        simulateAssetFailure={searchParams.get("assetError") === "1"}
-      />
+      <Suspense fallback={<p>Loading simulator workspace…</p>}>
+        <SimulatorWorkspace
+          mode={parsedMode}
+          sceneId={resolvedSceneId}
+          taskId={taskId ?? null}
+          simulateAssetFailure={searchParams.get("assetError") === "1"}
+        />
+      </Suspense>
     </AppShell>
   );
 };
