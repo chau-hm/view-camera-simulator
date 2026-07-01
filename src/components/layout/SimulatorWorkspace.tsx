@@ -120,6 +120,7 @@ export const SimulatorWorkspace = ({
           focusDistanceMm={camera.focusDistanceMm}
           aperture={camera.aperture}
           renderQuality={renderQuality}
+          sceneId={camera.activeSceneId}
         />
         <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
       </div>

@@ -55,4 +55,46 @@ describe("GroundGlassRenderer", () => {
     fireEvent.click(zoomIn);
     expect(screen.getByRole("button", { name: "Zoom out" })).toBeInTheDocument();
   });
+
+  it("updates the preview when focus and movement controls change", () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    const { rerender } = render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        focusAssistEnabled={false}
+        gridEnabled={false}
+        riseMm={0}
+        tiltDeg={0}
+        swingDeg={0}
+        focusDistanceMm={2000}
+        aperture={11}
+        renderQuality="standard"
+      />,
+    );
+
+    const scene = screen.getByTestId("ground-glass-scene");
+    const focusRing = screen.getByTestId("ground-glass-focus-ring");
+    const beforeSceneTransform = scene.getAttribute("style");
+    const beforeFocusRing = focusRing.getAttribute("style");
+
+    rerender(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        focusAssistEnabled={false}
+        gridEnabled={false}
+        riseMm={24}
+        tiltDeg={4}
+        swingDeg={-3}
+        focusDistanceMm={4200}
+        aperture={32}
+        renderQuality="standard"
+      />,
+    );
+
+    expect(screen.getByTestId("ground-glass-scene").getAttribute("style")).not.toBe(beforeSceneTransform);
+    expect(screen.getByTestId("ground-glass-focus-ring").getAttribute("style")).not.toBe(beforeFocusRing);
+    expect(screen.getByText(/4200\.0 mm focus/)).toBeInTheDocument();
+  });
 });

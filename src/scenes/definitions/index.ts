@@ -2,14 +2,16 @@ import type { SceneDefinition } from "../../types/scene";
 import { architectureRiseScene } from "./architecture-rise";
 import { shelfSwingScene } from "./shelf-swing";
 import { tableTiltScene } from "./table-tilt";
+import { debugSimpleDofScene } from "./debug-simple-dof";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
   [architectureRiseScene.id]: architectureRiseScene,
   [tableTiltScene.id]: tableTiltScene,
   [shelfSwingScene.id]: shelfSwingScene,
+  [debugSimpleDofScene.id]: debugSimpleDofScene,
 };
 
-export const sceneOrder = [architectureRiseScene.id, tableTiltScene.id, shelfSwingScene.id] as const;
+export const sceneOrder = [architectureRiseScene.id, tableTiltScene.id, shelfSwingScene.id, debugSimpleDofScene.id] as const;
 
 export const getSceneById = (sceneId: string): SceneDefinition | undefined => sceneRegistry[sceneId];
 

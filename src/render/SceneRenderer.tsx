@@ -275,7 +275,7 @@ const SceneContent = ({
     <ambientLight intensity={0.65} />
     <directionalLight position={[2, 4, 2]} intensity={0.7} />
     <hemisphereLight args={["#ffffff", "#d1d5db", 0.45]} />
-    <SceneAssets assets={scene.assets.filter((asset) => asset.loadStrategy !== "lazy")} />
+    <SceneAssets assets={scene.assets} />
     <RearStandard />
     <FrontStandard opticsState={opticsState} />
     <FilmPlane opticsState={opticsState} />

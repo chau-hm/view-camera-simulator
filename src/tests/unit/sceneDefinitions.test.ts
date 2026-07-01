@@ -14,13 +14,18 @@ import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("scene definitions", () => {
-  it("registers all three scenes", () => {
-    expect(Object.keys(sceneRegistry)).toEqual(["architecture-rise", "table-tilt", "shelf-swing"]);
-    expect(getAllScenes().length).toBe(3);
+  it("registers the core scenes", () => {
+    // allow additional debug scenes to be registered in tests/environments
+    expect(Object.keys(sceneRegistry)).toEqual(
+      expect.arrayContaining(["architecture-rise", "table-tilt", "shelf-swing"]),
+    );
+    expect(getAllScenes().length).toBeGreaterThanOrEqual(3);
   });
 
   it("defines architecture composition targets for top and main building", () => {
-    const compositionTargetIds = architectureRiseScene.compositionTargets.map((target) => target.id);
+    const compositionTargetIds = architectureRiseScene.compositionTargets.map(
+      (target) => target.id,
+    );
     expect(compositionTargetIds).toContain("building-top");
     expect(compositionTargetIds).toContain("building-main-body");
     expect(architectureRiseScene.cameraPreset.frontRiseMm).toBe(0);

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import type { ApertureValue } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { RenderQualityProfile } from "../types/ui";
@@ -8,6 +8,8 @@ import { createFocusAssistPass } from "./postprocessing/FocusAssistPass";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
+import { calculateFocusPlaneDistanceMm, calculateApertureBlurStrength } from "./groundGlassPipeline";
+import { getSceneById } from "../scenes/definitions";
 
 type GroundGlassRendererProps = {
   opticsState: DerivedOpticsState;
@@ -20,6 +22,7 @@ type GroundGlassRendererProps = {
   focusDistanceMm: number;
   aperture: ApertureValue;
   renderQuality: RenderQualityProfile;
+  sceneId?: string;
 };
 
 const PANEL_WIDTH_PX = 500;
@@ -37,6 +40,8 @@ const statusPatternGlyph = {
   cross: "✕",
 } as const;
 
+const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+
 export const GroundGlassRenderer = ({
   opticsState,
   assistEnabled,
@@ -48,6 +53,7 @@ export const GroundGlassRenderer = ({
   focusDistanceMm,
   aperture,
   renderQuality,
+  sceneId,
 }: GroundGlassRendererProps) => {
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [zoomOrigin, setZoomOrigin] = useState<{ xPercent: number; yPercent: number }>({
@@ -87,8 +93,117 @@ export const GroundGlassRenderer = ({
   );
 
   const blurOpacity = Math.min(0.85, dofSample.blurStrength * 1.2);
+  const blurRadiusPx = Math.max(0, dofSample.blurStrength * (qualitySettings.groundGlassScale > 0.8 ? 9 : 6));
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
   const zoomScale = zoomEnabled ? 1.9 : 1;
+  const sceneShiftX = clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
+  const sceneShiftY = clamp(-riseMm * 2 + tiltDeg * 4 - pipeline.verticalFrameOffsetPx * 0.15, -80, 80);
+  const sceneRotationDeg = clamp(tiltDeg * 1.25 + swingDeg * 0.75, -18, 18);
+  const focusShift = clamp((focusDistanceMm - 2000) / 4000, -1, 1);
+  const focusScale = 1 + focusShift * 0.04;
+  const focusRingSize = 68 + dofSample.blurStrength * 56;
+  const focusRingOpacity = 0.35 + (1 - dofSample.blurStrength) * 0.45;
+  const sceneBackground = `radial-gradient(circle at ${50 + clamp(riseMm * 0.75, -18, 18)}% ${
+    48 - clamp(tiltDeg * 2.2, -18, 18)
+  }%, rgba(96,165,250,0.34), rgba(30,41,59,0.9) 42%, rgba(15,23,42,0.97) 100%)`;
+  const focusDistanceLabel = `${formatMillimeter(focusDistanceMm)} focus / ${dofSample.distanceToFocusPlaneMm.toFixed(1)} mm delta`;
+
+  // Project scene focus targets (if available) into ground-glass UV coordinates for positioning overlays
+  const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
+  const projectedTargets = (
+    sceneDef?.focusTargets ?? []
+  ).map((t) => {
+    const topLeft = opticsState.filmPlaneCornersWorld.topLeft;
+    const topRight = opticsState.filmPlaneCornersWorld.topRight;
+    const bottomLeft = opticsState.filmPlaneCornersWorld.bottomLeft;
+    const spanX = topRight.x - topLeft.x;
+    const spanY = topLeft.y - bottomLeft.y;
+    const w = t.worldPosition;
+    const u = spanX === 0 ? 0.5 : (w.x - topLeft.x) / spanX;
+    const v = spanY === 0 ? 0.5 : (topLeft.y - w.y) / spanY;
+    const leftPercent = clamp(u * 100, 0, 100);
+    const topPercent = clamp(v * 100, 0, 100);
+    const distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(w, opticsState.focusPlane);
+    const blurStrengthAtTarget = calculateApertureBlurStrength(distanceToFocusPlaneMm, aperture as unknown as number);
+    return { id: t.id, leftPercent, topPercent, blurStrengthAtTarget };
+  });
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Draw an approximate per-target DOF onto a canvas so the ground-glass preview visually matches
+  // the 3D focus targets (spheres/boxes) without a full shader pipeline yet.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // device pixel ratio aware sizing
+    const dpr = window.devicePixelRatio || 1;
+    const w = PANEL_WIDTH_PX;
+    const h = PANEL_HEIGHT_PX;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Clear
+    ctx.clearRect(0, 0, w, h);
+
+    // base vignette/background
+    ctx.fillStyle = "#0b1220";
+    ctx.fillRect(0, 0, w, h);
+    const g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) / 1.2);
+    g.addColorStop(0, "rgba(255,255,255,0.08)");
+    g.addColorStop(1, "rgba(0,0,0,0.6)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+
+    // draw grid faint
+    ctx.strokeStyle = "rgba(255,255,255,0.03)";
+    ctx.lineWidth = 1;
+    const step = 20;
+    for (let x = 0; x < w; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x + 0.5, 0);
+      ctx.lineTo(x + 0.5, h);
+      ctx.stroke();
+    }
+    for (let y = 0; y < h; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y + 0.5);
+      ctx.lineTo(w, y + 0.5);
+      ctx.stroke();
+    }
+
+    // draw each projected target as a blurred circle whose blur depends on blurStrengthAtTarget
+    projectedTargets.forEach((pt) => {
+      const cx = (pt.leftPercent / 100) * w;
+      const cy = (pt.topPercent / 100) * h;
+      const baseRadius = 18 + (1 - pt.blurStrengthAtTarget) * 42; // sharper -> larger crisp core
+      const blurPx = 8 + pt.blurStrengthAtTarget * 40;
+
+      // draw soft glow
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = "rgba(255,80,80,0.12)";
+      ctx.filter = `blur(${blurPx}px)`;
+      ctx.beginPath();
+      ctx.arc(cx, cy, baseRadius * 1.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // draw core
+      ctx.save();
+      ctx.filter = "none";
+      ctx.beginPath();
+      ctx.fillStyle = "#ef4444";
+      ctx.arc(cx, cy, Math.max(4, baseRadius * (1 - pt.blurStrengthAtTarget * 0.6)), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+  }, [projectedTargets, dofSample, zoomEnabled, zoomOrigin]);
 
   return (
     <div style={{ display: "grid", gap: "0.5rem" }}>
@@ -123,9 +238,9 @@ export const GroundGlassRenderer = ({
           style={{
             position: "absolute",
             inset: 0,
-            background:
-              "linear-gradient(160deg, rgba(15,23,42,0.95), rgba(71,85,105,0.92) 50%, rgba(15,23,42,0.95))",
-            backgroundPositionY,
+            backgroundImage: sceneBackground,
+            backgroundPosition: `center ${backgroundPositionY}`,
+            backgroundRepeat: "no-repeat",
             transform,
             transformOrigin: "center",
           }}
@@ -138,6 +253,234 @@ export const GroundGlassRenderer = ({
             transformOrigin: `${zoomOrigin.xPercent}% ${zoomOrigin.yPercent}%`,
           }}
         >
+        <canvas
+          ref={canvasRef}
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+              transform: `translate(${sceneShiftX}px, ${sceneShiftY}px) rotate(${sceneRotationDeg}deg) scale(${focusScale})`,
+              transformOrigin: "center",
+            }}
+        />
+        <div
+          data-testid="ground-glass-scene"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02) 48%, rgba(0,0,0,0.14) 100%)",
+            filter: `blur(${blurRadiusPx}px)`,
+            transform: `translate(${sceneShiftX}px, ${sceneShiftY}px) rotate(${sceneRotationDeg}deg) scale(${focusScale})`,
+            transformOrigin: "center",
+          }}
+        >
+            {(() => {
+              const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
+              // If we have a scene definition with focus targets, project those into film UV and render placeholders anchored to them.
+              if (sceneDef && sceneDef.focusTargets && sceneDef.focusTargets.length > 0) {
+                const topLeft = opticsState.filmPlaneCornersWorld.topLeft;
+                const topRight = opticsState.filmPlaneCornersWorld.topRight;
+                const bottomLeft = opticsState.filmPlaneCornersWorld.bottomLeft;
+                const spanX = topRight.x - topLeft.x;
+                const spanY = topLeft.y - bottomLeft.y;
+
+                const projectedTargets = sceneDef.focusTargets.map((t) => {
+                  const w = t.worldPosition;
+                  const u = spanX === 0 ? 0.5 : (w.x - topLeft.x) / spanX;
+                  const v = spanY === 0 ? 0.5 : (topLeft.y - w.y) / spanY;
+                  const leftPercent = clamp(u * 100, 0, 100);
+                  const topPercent = clamp(v * 100, 0, 100);
+                  const distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(w, opticsState.focusPlane);
+                  const blurStrengthAtTarget = calculateApertureBlurStrength(distanceToFocusPlaneMm, aperture as unknown as number);
+                  return { id: t.id, leftPercent, topPercent, blurStrengthAtTarget };
+                });
+
+                return (
+                  <>
+                    {projectedTargets.map((pt) => (
+                      <div
+                        key={pt.id}
+                        style={{
+                          position: "absolute",
+                          left: `${pt.leftPercent}%`,
+                          top: `${pt.topPercent}%`,
+                          width: sceneId === "architecture-rise" ? "18%" : "10%",
+                          height: sceneId === "architecture-rise" ? "48%" : "14%",
+                          marginLeft: sceneId === "architecture-rise" ? "-9%" : "-5%",
+                          marginTop: sceneId === "architecture-rise" ? "-24%" : "-7%",
+                          borderRadius: sceneId === "architecture-rise" ? 10 : 4,
+                          background:
+                            sceneId === "architecture-rise"
+                              ? "linear-gradient(180deg, rgba(148,163,184,0.95), rgba(71,85,105,0.92) 30%, rgba(15,23,42,0.9))"
+                              : "rgba(255,255,255,0.9)",
+                          boxShadow: pt.blurStrengthAtTarget < 0.35 ? "0 0 18px rgba(255,255,255,0.28)" : "0 4px 8px rgba(0,0,0,0.45)",
+                          opacity: 1 - clamp(pt.blurStrengthAtTarget, 0, 1) * 0.7,
+                        }}
+                      />
+                    ))}
+                  </>
+                );
+              }
+
+              // Fallback: previous hard-coded visuals for scenes without targets
+              if (!sceneId || sceneId === "architecture-rise") {
+                return (
+                  <>
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: "18%",
+                        top: "20%",
+                        width: "20%",
+                        height: "58%",
+                        borderRadius: 8,
+                        background:
+                          "linear-gradient(180deg, rgba(148,163,184,0.95), rgba(71,85,105,0.92) 30%, rgba(15,23,42,0.9))",
+                        boxShadow: "0 0 0 1px rgba(255,255,255,0.08)",
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: "16%",
+                        bottom: "18%",
+                        width: "22%",
+                        height: "18%",
+                        borderRadius: 999,
+                        background: "rgba(17,24,39,0.75)",
+                        boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.1)",
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: `${46 + riseMm * 0.4 + swingDeg * 0.5}%`,
+                        top: `${36 - tiltDeg * 1.2}%`,
+                        width: "10%",
+                        height: "28%",
+                        borderRadius: 6,
+                        background: "rgba(248,250,252,0.92)",
+                        boxShadow: "0 0 18px rgba(255,255,255,0.28)",
+                      }}
+                    />
+                  </>
+                );
+              }
+
+              return null;
+            })()}
+            {sceneId === "table-tilt" && (
+              <>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(0deg, #78350f 0%, #b45309 60%, transparent 60%)",
+                    opacity: 0.85,
+                  }}
+                />
+                {/* Near Cup */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "22%",
+                    bottom: "22%",
+                    width: "12%",
+                    height: "22%",
+                    borderRadius: "4px",
+                    background: "linear-gradient(90deg, #60a5fa, #2563eb)",
+                    boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
+                  }}
+                />
+                {/* Middle Notebook */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "46%",
+                    bottom: "34%",
+                    width: "18%",
+                    height: "14%",
+                    transform: "rotate(-12deg)",
+                    background: "#f59e0b",
+                    borderRadius: "2px",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
+                  }}
+                />
+                {/* Far Book */}
+                <div
+                  style={{
+                    position: "absolute",
+                    right: "26%",
+                    bottom: "44%",
+                    width: "14%",
+                    height: "10%",
+                    background: "#a855f7",
+                    borderRadius: "1px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                  }}
+                />
+              </>
+            )}
+            {sceneId === "shelf-swing" && (
+              <>
+                {/* Diagonal shelf line representing the perspective board */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "10%",
+                    top: "52%",
+                    width: "80%",
+                    height: "4%",
+                    transform: "rotate(14deg)",
+                    background: "#475569",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.4)",
+                  }}
+                />
+                {/* Near shelf item (orange block) */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "22%",
+                    top: "32%",
+                    width: "11%",
+                    height: "16%",
+                    background: "#f97316",
+                    borderRadius: "3px",
+                    boxShadow: "0 3px 5px rgba(0,0,0,0.25)",
+                  }}
+                />
+                {/* Middle shelf item (green block) */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "48%",
+                    top: "40%",
+                    width: "9%",
+                    height: "13%",
+                    background: "#22c55e",
+                    borderRadius: "3px",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  }}
+                />
+                {/* Back shelf item (cyan block) */}
+                <div
+                  style={{
+                    position: "absolute",
+                    right: "26%",
+                    top: "46%",
+                    width: "7%",
+                    height: "10%",
+                    background: "#06b6d4",
+                    borderRadius: "3px",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                  }}
+                />
+              </>
+            )}
+          </div>
           <div
             style={{
               position: "absolute",
@@ -189,6 +532,37 @@ export const GroundGlassRenderer = ({
         >
           {UI_COPY.render.groundGlassPreview}
         </div>
+        <div
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            padding: "2px 6px",
+            borderRadius: 4,
+            fontSize: 11,
+            background: "rgba(15,23,42,0.72)",
+            color: "#e2e8f0",
+          }}
+        >
+          {focusDistanceLabel}
+        </div>
+        <div
+          data-testid="ground-glass-focus-ring"
+          style={{
+            position: "absolute",
+            left: `${projectedTargets[0] ? projectedTargets[0].leftPercent : 50 + swingDeg * 0.5}%`,
+            top: `${projectedTargets[0] ? projectedTargets[0].topPercent : 50 - tiltDeg * 0.5}%`,
+            width: focusRingSize,
+            height: focusRingSize,
+            marginLeft: -focusRingSize / 2,
+            marginTop: -focusRingSize / 2,
+            borderRadius: "50%",
+            border: "2px solid rgba(59,130,246,0.7)",
+            boxShadow: `0 0 0 10px rgba(59,130,246,${focusRingOpacity * 0.25})`,
+            opacity: focusRingOpacity,
+            pointerEvents: "none",
+          }}
+        />
         {focusAssist.enabled && (
           <span
             style={{
