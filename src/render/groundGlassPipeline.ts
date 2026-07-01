@@ -1,6 +1,8 @@
 import { mapApertureToToleranceMm } from "../core/optics/calculateDepthOfField";
 import { pointToPlaneDistance } from "../core/math/plane";
 import type { DerivedOpticsState, Plane, Vec3 } from "../types/optics";
+import type { RenderQualityProfile } from "../types/ui";
+import { getRenderQualitySettings, scaleResolution } from "./renderQuality";
 
 export type GroundGlassRenderTarget = {
   widthPx: number;
@@ -111,18 +113,31 @@ export const createHalfResolutionBlurPass = (
   heightPx: Math.max(1, Math.floor(colorTarget.heightPx / 2)),
 });
 
+export const createScaledBlurPass = (
+  colorTarget: GroundGlassRenderTarget,
+  blurPassScale: number,
+): HalfResolutionBlurPass => ({
+  widthPx: Math.max(1, Math.floor(colorTarget.widthPx * blurPassScale)),
+  heightPx: Math.max(1, Math.floor(colorTarget.heightPx * blurPassScale)),
+});
+
 export const createGroundGlassDofPipeline = (
   opticsState: DerivedOpticsState,
   widthPx: number,
   heightPx: number,
+  renderQuality: RenderQualityProfile,
 ): GroundGlassDofPipeline => {
-  const colorTarget = createGroundGlassRenderTarget(widthPx, heightPx);
+  const qualitySettings = getRenderQualitySettings(renderQuality);
+  const colorTarget = createGroundGlassRenderTarget(
+    scaleResolution(widthPx, qualitySettings.groundGlassScale),
+    scaleResolution(heightPx, qualitySettings.groundGlassScale),
+  );
   const depthTarget = createGroundGlassDepthTarget(colorTarget);
   const camera = applyOffAxisProjectionMatrix(
     createGroundGlassCamera(opticsState.offAxisProjectionMatrix),
     opticsState.offAxisProjectionMatrix,
   );
-  const blurPass = createHalfResolutionBlurPass(colorTarget);
+  const blurPass = createScaledBlurPass(colorTarget, qualitySettings.blurPassScale);
   const verticalFrameOffsetPx = computeGroundGlassVerticalFrameOffsetPx(
     opticsState.offAxisProjectionMatrix,
     colorTarget.heightPx,

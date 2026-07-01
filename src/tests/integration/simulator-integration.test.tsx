@@ -131,4 +131,56 @@ describe("phase 12 integration", () => {
       expect(screen.getByText(new RegExp(criterion.label))).toBeInTheDocument();
     }
   });
+
+  it("TST-INT-013 honors reduced motion preference", () => {
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: (query: string) => ({
+        matches: query.includes("prefers-reduced-motion"),
+        media: query,
+        onchange: null,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        dispatchEvent: () => false,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+      }),
+    });
+
+    const { container } = renderWorkspace("guided", "architecture-rise", "task-rise-basics");
+
+    expect(container.querySelector('[data-reduced-motion="true"]')).toBeInTheDocument();
+
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: originalMatchMedia,
+    });
+  });
+
+  it("TST-INT-014 supports keyboard-only rise task completion", () => {
+    renderWorkspace("guided", "architecture-rise", "task-rise-basics");
+    const riseInput = screen.getByLabelText("Rise");
+    riseInput.focus();
+
+    for (let i = 0; i < 12; i += 1) {
+      fireEvent.keyDown(riseInput, { key: "ArrowRight", code: "ArrowRight" });
+    }
+
+    expect(screen.getByRole("heading", { name: "Task completed" })).toBeInTheDocument();
+  });
+
+  it("TST-INT-015 exposes readable control labels", () => {
+    renderWorkspace("free", "architecture-rise", null);
+
+    expect(screen.getByLabelText("Rise")).toBeInTheDocument();
+    expect(screen.getByLabelText("Tilt")).toBeInTheDocument();
+    expect(screen.getByLabelText("Swing")).toBeInTheDocument();
+    expect(screen.getByLabelText("Focus distance")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Scene" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Ground glass assist")).toBeInTheDocument();
+    expect(screen.getByLabelText("Focus assist")).toBeInTheDocument();
+    expect(screen.getByLabelText("Grid")).toBeInTheDocument();
+  });
 });

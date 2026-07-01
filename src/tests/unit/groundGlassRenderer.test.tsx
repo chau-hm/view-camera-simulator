@@ -23,6 +23,7 @@ describe("GroundGlassRenderer", () => {
         swingDeg={DEFAULT_CAMERA_STATE.frontSwingDeg}
         focusDistanceMm={DEFAULT_CAMERA_STATE.focusDistanceMm}
         aperture={DEFAULT_CAMERA_STATE.aperture}
+        renderQuality="standard"
       />,
     );
 
@@ -30,6 +31,7 @@ describe("GroundGlassRenderer", () => {
     expect(screen.getByText("Current settings")).toBeInTheDocument();
     expect(screen.getByText("Focus targets")).toBeInTheDocument();
     expect(screen.getByText("Focus assist")).toBeInTheDocument();
+    expect(screen.getByText(/Sharp|Near-sharp|Blurred/)).toBeInTheDocument();
   });
 
   it("supports zoom mode without changing camera state", () => {
@@ -45,6 +47,7 @@ describe("GroundGlassRenderer", () => {
         swingDeg={-1}
         focusDistanceMm={2500}
         aperture={11}
+        renderQuality="low"
       />,
     );
 

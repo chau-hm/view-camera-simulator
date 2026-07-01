@@ -19,6 +19,7 @@ Foundation (`FND-*`) bootstrap is now in place:
 - minimal React Three Fiber scene viewport
 - app routes for Home / Mode / Simulator / Result / fallback
 - WebGL and scene-load fallback states
+- render quality profiles for 3D and ground-glass performance scaling
 
 Product/design specs remain under `doc/`.
 

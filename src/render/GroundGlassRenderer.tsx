@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import type { ApertureValue } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
+import type { RenderQualityProfile } from "../types/ui";
 import { UI_COPY } from "../ui/copy";
 import { formatDegrees, formatMillimeter } from "../utils/formatters";
 import { createFocusAssistPass } from "./postprocessing/FocusAssistPass";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
+import { getRenderQualitySettings } from "./renderQuality";
 
 type GroundGlassRendererProps = {
   opticsState: DerivedOpticsState;
@@ -17,6 +19,7 @@ type GroundGlassRendererProps = {
   swingDeg: number;
   focusDistanceMm: number;
   aperture: ApertureValue;
+  renderQuality: RenderQualityProfile;
 };
 
 const PANEL_WIDTH_PX = 500;
@@ -44,6 +47,7 @@ export const GroundGlassRenderer = ({
   swingDeg,
   focusDistanceMm,
   aperture,
+  renderQuality,
 }: GroundGlassRendererProps) => {
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [zoomOrigin, setZoomOrigin] = useState<{ xPercent: number; yPercent: number }>({
@@ -57,9 +61,10 @@ export const GroundGlassRenderer = ({
   const scaleY = invertVertical ? -1 : 1;
   const transform = `scale(${scaleX}, ${scaleY})`;
   const pipeline = useMemo(
-    () => createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX),
-    [opticsState],
+    () => createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality),
+    [opticsState, renderQuality],
   );
+  const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const focusAssist = useMemo(
     () => createFocusAssistPass({ enabled: focusAssistEnabled, targets: opticsState.focusTargets }),
     [focusAssistEnabled, opticsState.focusTargets],
@@ -74,10 +79,11 @@ export const GroundGlassRenderer = ({
           sampleDepth: 0.55,
           sampleUv: { u: 0.5, v: 0.5 },
           aperture,
+          renderQuality,
         },
         opticsState,
       ),
-    [aperture, opticsState],
+    [aperture, opticsState, renderQuality],
   );
 
   const blurOpacity = Math.min(0.85, dofSample.blurStrength * 1.2);
@@ -209,11 +215,15 @@ export const GroundGlassRenderer = ({
           Focus {formatMillimeter(focusDistanceMm)} | Aperture f/{aperture}
         </span>
         <span>
+          Quality {renderQuality} | Color target: {pipeline.colorTarget.widthPx}×{pipeline.colorTarget.heightPx} | Blur
+          pass: {pipeline.blurPass.widthPx}×{pipeline.blurPass.heightPx}
+        </span>
+        <span>
           Color target: {pipeline.colorTarget.textureId}, Depth target: {pipeline.depthTarget.depthTextureId}
         </span>
         <span>
-          Camera source: {pipeline.camera.source}, Half-res blur pass: {pipeline.blurPass.widthPx}×
-          {pipeline.blurPass.heightPx}
+          Camera source: {pipeline.camera.source}, Blur pass: {pipeline.blurPass.widthPx}×
+          {pipeline.blurPass.heightPx}, Scale {qualitySettings.groundGlassScale}
         </span>
       </div>
       {focusAssist.enabled && (

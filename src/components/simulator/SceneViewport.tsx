@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import { getLazySceneAssets, getPreloadSceneAssets, getRequiredSceneAssets } from "../../scenes/definitions";
 import { isWebGLAvailable } from "../../utils/webgl";
@@ -11,6 +11,8 @@ import { UI_COPY } from "../../ui/copy";
 type SceneViewportProps = {
   scene: SceneDefinition;
   opticsState: DerivedOpticsState;
+  renderQuality: RenderQualityProfile;
+  setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
   simulateAssetFailure: boolean;
 };
 
@@ -21,12 +23,17 @@ const parseRenderQuality = (value: string): RenderQualityProfile => {
   return "standard";
 };
 
-export const SceneViewport = ({ scene, opticsState, simulateAssetFailure }: SceneViewportProps) => {
+export const SceneViewport = ({
+  scene,
+  opticsState,
+  renderQuality,
+  setRenderQuality,
+  simulateAssetFailure,
+}: SceneViewportProps) => {
   const [attempt, setAttempt] = useState(0);
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
   const [showFocusPlaneOverlay, setShowFocusPlaneOverlay] = useState(true);
   const [showDofOverlay, setShowDofOverlay] = useState(true);
-  const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("standard");
   const [viewResetNonce, setViewResetNonce] = useState(0);
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
   const requiredAssets = useMemo(() => getRequiredSceneAssets(scene.id), [scene.id]);
