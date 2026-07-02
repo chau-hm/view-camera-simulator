@@ -230,7 +230,7 @@ const LegendUpdater = ({
 }: {
   containerRef: RefObject<HTMLDivElement | null>;
   opticsState: DerivedOpticsState;
-  setLegendPositions: React.Dispatch<Record<string, { left: number; top: number; visible: boolean }>> | any;
+  setLegendPositions: React.Dispatch<React.SetStateAction<Record<string, { left: number; top: number; visible: boolean }>>>;
 }) => {
   const { camera, gl } = useThree();
   const tmpV = useMemo(() => new Vector3(), []);
@@ -613,10 +613,6 @@ export const SceneRenderer = ({
     }
   }, [attempt, onAssetError, scene.id, simulateAssetFailure]);
 
-  if (simulateAssetFailure && attempt === 0) {
-    return null;
-  }
-
   const defaultContainerStyle: React.CSSProperties = { height: 320, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" };
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -626,8 +622,13 @@ export const SceneRenderer = ({
 
   // ensure the wrapper is positioned so absolute children (legends, button) are positioned relative to it
   const wrapperStyle: React.CSSProperties = containerStyle
-    ? { ...containerStyle, position: (containerStyle as any).position ?? "relative" }
+    ? { ...containerStyle, position: (containerStyle as React.CSSProperties).position ?? "relative" }
     : { ...defaultContainerStyle, position: "relative" };
+
+  // If assets failed to load, don't render the canvas content. This return must come after hooks to satisfy hook rules.
+  if (simulateAssetFailure && attempt === 0) {
+    return null;
+  }
 
   return (
     <div ref={containerRef} data-testid="scene-canvas" style={wrapperStyle}>
