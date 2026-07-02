@@ -71,6 +71,8 @@ npm run dev
 - `npm run test`
 - `npm run test:watch`
 - `npm run test:e2e`
+- `npm run ci:local` (lint + typecheck + test + build)
+- `npm run ci:local:e2e` (`ci:local` + Playwright E2E)
 
 ## CI/CD and GitHub Pages deployment
 
@@ -81,6 +83,20 @@ This repository includes `.github/workflows/pages.yml`:
 
 Deployment uses the repository name as the Vite base path and publishes `dist/` to Pages.
 For SPA deep-link fallback on GitHub Pages, the workflow also copies `dist/index.html` to `dist/404.html`.
+
+### Run CI checks locally
+
+To run the CI-style checks before pushing:
+
+```bash
+npm run ci:local
+```
+
+To include Playwright E2E checks as well:
+
+```bash
+npm run ci:local:e2e
+```
 
 After pushing this workflow, enable Pages in repository settings:
 
