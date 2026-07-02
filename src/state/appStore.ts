@@ -118,9 +118,13 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) => ({
       camera: {
         ...state.camera,
-        focusDistanceMm: clampFocusDistanceForScene(state.camera.activeSceneId, value),
+        // Allow explicit Infinity for 'infinity reset' without clamping.
+        focusDistanceMm: Number.isFinite(value)
+          ? clampFocusDistanceForScene(state.camera.activeSceneId, value)
+          : value,
       },
     })),
+
   setAperture: (value) =>
     set((state) => ({
       camera: {

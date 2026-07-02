@@ -60,11 +60,17 @@ export const SimulatorWorkspace = ({
   const opticsState = selectDerivedOpticsState(camera);
   const lockReason = UI_COPY.controls.guidedControlLockedReason;
   const enabledControls = useMemo(() => {
+    // For the Focus Fundamentals scene, lock movement controls to only focusDistance and aperture
+    const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
+    if (focusFundamentals) {
+      return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid", "groundGlassAssist"]);
+    }
+
     if (mode === "free" || !task) {
       return new Set(["rise", "tilt", "swing", "focusDistance", "aperture", "geometryView", "focusAssist", "grid", "groundGlassAssist"]);
     }
     return new Set([...task.enabledControls]);
-  }, [mode, task]);
+  }, [mode, task, camera.activeSceneId]);
   const evaluation = useMemo(
     () => (task ? evaluateTask(task, safeScene, camera, opticsState) : null),
     [camera, opticsState, safeScene, task],

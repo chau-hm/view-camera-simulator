@@ -9,6 +9,8 @@ import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
 import { calculateFocusPlaneDistanceMm, calculateApertureBlurStrength } from "./groundGlassPipeline";
+import { focusPlaneWidthMm, focusPlaneHeightMm, verticalFovDegreesFromImageDistance, cocDiameterMm } from "../core/optics/thinLensModel";
+import { CAMERA_CONSTANTS } from "../utils/constants";
 import { getSceneById } from "../scenes/definitions";
 
 type GroundGlassRendererProps = {
@@ -60,16 +62,31 @@ export const GroundGlassRenderer = ({
     xPercent: 50,
     yPercent: 50,
   });
-  const projection = opticsState.groundGlassProjection;
-  const invertHorizontal = assistEnabled ? false : projection.invertHorizontal;
-  const invertVertical = assistEnabled ? false : projection.invertVertical;
+  // Explicit preview modes for Focus Fundamentals: 'raw' (invert both axes) or 'upright' (correct both axes)
+  const [previewMode, setPreviewMode] = useState<"raw" | "upright">(sceneId === "focus-fundamentals-two-targets" ? "raw" : assistEnabled ? "upright" : "raw");
+  const invertHorizontal = previewMode === "raw" ? true : false;
+  const invertVertical = previewMode === "raw" ? true : false;
   const scaleX = invertHorizontal ? -1 : 1;
   const scaleY = invertVertical ? -1 : 1;
   const transform = `scale(${scaleX}, ${scaleY})`;
-  const pipeline = useMemo(
-    () => createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality),
-    [opticsState, renderQuality],
-  );
+  const pipeline = useMemo(() => {
+    // For the dedicated Focus Fundamentals scene use the thin-lens optical projection
+    const useThinLens = sceneId === "focus-fundamentals-two-targets";
+    if (useThinLens) {
+      // derive image distance from opticsState: filmPlane.distance is the canonical imageDistance when lens fixed
+      // However deriveOpticsState does not currently expose imageDistance directly; use distance from lens center to film center
+      const imageDistanceMm = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
+      return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality, {
+        useThinLens: true,
+        focalLengthMm: opticsState.filmPlane.distance ?? 150,
+        imageDistanceMm,
+        sensorWidthMm: 127,
+        sensorHeightMm: 101.6,
+      });
+    }
+
+    return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality);
+  }, [opticsState, renderQuality, sceneId]);
   const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const focusAssist = useMemo(
     () => createFocusAssistPass({ enabled: focusAssistEnabled, targets: opticsState.focusTargets }),
@@ -96,9 +113,11 @@ export const GroundGlassRenderer = ({
   const blurRadiusPx = Math.max(0, dofSample.blurStrength * (qualitySettings.groundGlassScale > 0.8 ? 9 : 6));
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
   const zoomScale = zoomEnabled ? 1.9 : 1;
-  const sceneShiftX = clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
-  const sceneShiftY = clamp(-riseMm * 2 + tiltDeg * 4 - pipeline.verticalFrameOffsetPx * 0.15, -80, 80);
-  const sceneRotationDeg = clamp(tiltDeg * 1.25 + swingDeg * 0.75, -18, 18);
+  // For Focus Fundamentals scene, ignore rise/tilt/swing to maintain a strict no-movement baseline
+  const isFocusFundamentals = sceneId === "focus-fundamentals-two-targets";
+  const sceneShiftX = isFocusFundamentals ? 0 : clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
+  const sceneShiftY = isFocusFundamentals ? 0 : clamp(-riseMm * 2 + tiltDeg * 4 - pipeline.verticalFrameOffsetPx * 0.15, -80, 80);
+  const sceneRotationDeg = isFocusFundamentals ? 0 : clamp(tiltDeg * 1.25 + swingDeg * 0.75, -18, 18);
   const focusShift = clamp((focusDistanceMm - 2000) / 4000, -1, 1);
   const focusScale = 1 + focusShift * 0.04;
   const focusRingSize = 68 + dofSample.blurStrength * 56;
@@ -245,6 +264,21 @@ export const GroundGlassRenderer = ({
             transformOrigin: "center",
           }}
         />
+        {/* Preview mode toggle for Focus Fundamentals */}
+        {sceneId === "focus-fundamentals-two-targets" && (
+          <div style={{ position: "absolute", left: 8, top: 8, zIndex: 10 }}>
+            <label style={{ color: "#e5e7eb", fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: "#94a3b8" }}>Preview:</span>
+              <button
+                type="button"
+                onClick={() => setPreviewMode(previewMode === "raw" ? "upright" : "raw")}
+                style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#fff", padding: "4px 8px", borderRadius: 6 }}
+              >
+                {previewMode === "raw" ? "Raw ground glass" : "Upright assist"}
+              </button>
+            </label>
+          </div>
+        )}
         <div
           style={{
             position: "absolute",
@@ -600,6 +634,40 @@ export const GroundGlassRenderer = ({
           {pipeline.blurPass.heightPx}, Scale {qualitySettings.groundGlassScale}
         </span>
       </div>
+
+      {/* Thin-lens debug readout for the Focus Fundamentals scene */}
+      {sceneId === "focus-fundamentals-two-targets" && (() => {
+        const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
+        const vFov = verticalFovDegreesFromImageDistance(101.6, imgDist);
+        const hFov = (2 * Math.atan(127 / (2 * imgDist))) * (180 / Math.PI);
+        const focusW = focusPlaneWidthMm(127, focusDistanceMm, imgDist);
+        const focusH = focusPlaneHeightMm(101.6, focusDistanceMm, imgDist);
+
+        const nearZ = opticsState.depthOfFieldNearPlane.point.z;
+        const farZ = opticsState.depthOfFieldFarPlane.point.z;
+
+        const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
+
+        return (
+          <div style={{ display: "grid", gap: "0.125rem", fontSize: 12, borderTop: "1px dashed #e5e7eb", paddingTop: "0.5rem" }}>
+            <strong>Focus Fundamentals Debug</strong>
+            <span>Focal length: {CAMERA_CONSTANTS.focalLengthMm} mm</span>
+            <span>Aperture: f/{aperture}</span>
+            <span>Focus distance: {formatMillimeter(focusDistanceMm)}</span>
+            <span>Image distance: {imgDist.toFixed(2)} mm</span>
+            <span>Sensor: {CAMERA_CONSTANTS.filmWidthMm} × {CAMERA_CONSTANTS.filmHeightMm} mm</span>
+            <span>Vertical FOV: {vFov.toFixed(3)}° | Horizontal FOV: {hFov.toFixed(3)}°</span>
+            <span>Focus plane dims: {focusW.toFixed(2)} × {focusH.toFixed(2)} mm</span>
+            <span>DOF near Z: {nearZ.toFixed(2)} mm | DOF far Z: {farZ.toFixed(2)} mm</span>
+            {sceneDef?.focusTargets.map((t) => {
+              const coc = cocDiameterMm(CAMERA_CONSTANTS.focalLengthMm, aperture as number, imgDist, t.worldPosition.z);
+              return (
+                <span key={t.id}>{t.id}: axial depth {t.worldPosition.z} mm | CoC {coc.toFixed(3)} mm</span>
+              );
+            })}
+          </div>
+        );
+      })()}
       {focusAssist.enabled && (
         <div style={{ display: "grid", gap: "0.25rem", fontSize: 12 }}>
           <strong>{UI_COPY.simulator.groundGlassFocusTargets}</strong>

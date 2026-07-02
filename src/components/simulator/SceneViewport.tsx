@@ -1,5 +1,6 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { SceneRenderer } from "../../render/SceneRenderer";
+import { useAppStore } from "../../state/appStore";
 import { getLazySceneAssets, getPreloadSceneAssets, getRequiredSceneAssets } from "../../scenes/definitions";
 import { isWebGLAvailable } from "../../utils/webgl";
 import type { UiErrorState } from "../../types/ui";
@@ -35,6 +36,7 @@ export const SceneViewport = ({
   const [showFocusPlaneOverlay, setShowFocusPlaneOverlay] = useState(true);
   const [showDofOverlay, setShowDofOverlay] = useState(true);
   const [viewResetNonce, setViewResetNonce] = useState(0);
+  const [bigView, setBigView] = useState(false);
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
   const requiredAssets = useMemo(() => getRequiredSceneAssets(scene.id), [scene.id]);
   const lazyAssets = useMemo(() => getLazySceneAssets(scene.id), [scene.id]);
@@ -85,6 +87,16 @@ export const SceneViewport = ({
           <input type="checkbox" checked={showDofOverlay} onChange={(event) => setShowDofOverlay(event.target.checked)} />
           {UI_COPY.simulator.dofOverlayLabel}
         </label>
+        <button
+          type="button"
+          onClick={() => {
+            // Infinity reset: set focus distance to Infinity and reset front standard movements
+            useAppStore.getState().setFocusDistance(Infinity);
+            useAppStore.getState().resetMovements();
+          }}
+        >
+          Infinity Reset
+        </button>
         <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
           <span>{UI_COPY.simulator.renderQualityLabel}</span>
           <select
@@ -99,22 +111,78 @@ export const SceneViewport = ({
         <button type="button" onClick={() => setViewResetNonce((value) => value + 1)}>
           {UI_COPY.simulator.sceneViewReset}
         </button>
+        <button
+          type="button"
+          onClick={() => setBigView((v) => !v)}
+          style={{ marginLeft: "auto", background: bigView ? "#ef4444" : undefined, color: bigView ? "#fff" : undefined }}
+        >
+          {bigView ? "Exit Big View" : "Big View"}
+        </button>
       </div>
       <p style={{ fontSize: 12, color: "#4b5563", marginTop: 0 }}>
         Loaded assets: {requiredAssets.length} required, {lazyAssets.length} lazy for current scene,{" "}
         {preloadAssets.length} preload for next scene.
       </p>
-      <SceneRenderer
-        scene={scene}
-        opticsState={opticsState}
-        attempt={attempt}
-        showFocusPlaneOverlay={showFocusPlaneOverlay}
-        showDofOverlay={showDofOverlay}
-        renderQuality={renderQuality}
-        viewResetNonce={viewResetNonce}
-        simulateAssetFailure={simulateAssetFailure}
-        onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
-      />
+      {/* Scene renderer container - either inline or shown as an overlay when bigView is true. */}
+      {bigView ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "70vw",
+            height: "70vh",
+            background: "white",
+            zIndex: 2000,
+            boxShadow: "0 20px 60px rgba(2,6,23,0.5)",
+            borderRadius: 8,
+            padding: "0.5rem",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
+            <strong>{UI_COPY.simulator.sceneTitle} — Big View</strong>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button type="button" onClick={() => setBigView(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+          <div style={{ flex: 1, marginTop: "0.5rem" }}>
+            <SceneRenderer
+              scene={scene}
+              opticsState={opticsState}
+              attempt={attempt}
+              showFocusPlaneOverlay={showFocusPlaneOverlay}
+              showDofOverlay={showDofOverlay}
+              showOpticalDebugPlanes={false}
+              renderQuality={renderQuality}
+              viewResetNonce={viewResetNonce}
+              simulateAssetFailure={simulateAssetFailure}
+              onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
+              containerStyle={{ width: "100%", height: "100%" }}
+            />
+          </div>
+        </div>
+      ) : (
+        <SceneRenderer
+          scene={scene}
+          opticsState={opticsState}
+          attempt={attempt}
+          showFocusPlaneOverlay={showFocusPlaneOverlay}
+          showDofOverlay={showDofOverlay}
+          showOpticalDebugPlanes={false}
+          renderQuality={renderQuality}
+          viewResetNonce={viewResetNonce}
+          simulateAssetFailure={simulateAssetFailure}
+          onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
+          containerStyle={{ height: 320, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
+        />
+      )}
     </section>
   );
 };

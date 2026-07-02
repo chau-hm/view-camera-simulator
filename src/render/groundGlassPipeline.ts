@@ -121,11 +121,20 @@ export const createScaledBlurPass = (
   heightPx: Math.max(1, Math.floor(colorTarget.heightPx * blurPassScale)),
 });
 
+type ThinLensParams = {
+  useThinLens: boolean;
+  focalLengthMm: number;
+  imageDistanceMm: number;
+  sensorWidthMm: number;
+  sensorHeightMm: number;
+};
+
 export const createGroundGlassDofPipeline = (
   opticsState: DerivedOpticsState,
   widthPx: number,
   heightPx: number,
   renderQuality: RenderQualityProfile,
+  thinLensParams?: ThinLensParams,
 ): GroundGlassDofPipeline => {
   const qualitySettings = getRenderQualitySettings(renderQuality);
   const colorTarget = createGroundGlassRenderTarget(
@@ -133,15 +142,47 @@ export const createGroundGlassDofPipeline = (
     scaleResolution(heightPx, qualitySettings.groundGlassScale),
   );
   const depthTarget = createGroundGlassDepthTarget(colorTarget);
-  const camera = applyOffAxisProjectionMatrix(
-    createGroundGlassCamera(opticsState.offAxisProjectionMatrix),
-    opticsState.offAxisProjectionMatrix,
-  );
+
+  let projectionMatrix = opticsState.offAxisProjectionMatrix;
+
+  if (thinLensParams && thinLensParams.useThinLens) {
+    // build a symmetric perspective projection matrix from sensor size and image distance
+    const nearMm = 10;
+    const farMm = 50000;
+    const aspect = thinLensParams.sensorWidthMm / thinLensParams.sensorHeightMm;
+    const verticalFovRadians = 2 * Math.atan(thinLensParams.sensorHeightMm / (2 * thinLensParams.imageDistanceMm));
+    const top = nearMm * Math.tan(verticalFovRadians / 2);
+    const bottom = -top;
+    const right = top * aspect;
+    const left = -right;
+
+    const width = right - left;
+    const height = top - bottom;
+    const depth = farMm - nearMm;
+
+    projectionMatrix = [
+      (2 * nearMm) / width,
+      0,
+      0,
+      0,
+      0,
+      (2 * nearMm) / height,
+      0,
+      0,
+      (right + left) / width,
+      (top + bottom) / height,
+      -(farMm + nearMm) / depth,
+      -1,
+      0,
+      0,
+      (-2 * farMm * nearMm) / depth,
+      0,
+    ];
+  }
+
+  const camera = applyOffAxisProjectionMatrix(createGroundGlassCamera(projectionMatrix), projectionMatrix);
   const blurPass = createScaledBlurPass(colorTarget, qualitySettings.blurPassScale);
-  const verticalFrameOffsetPx = computeGroundGlassVerticalFrameOffsetPx(
-    opticsState.offAxisProjectionMatrix,
-    colorTarget.heightPx,
-  );
+  const verticalFrameOffsetPx = computeGroundGlassVerticalFrameOffsetPx(projectionMatrix, colorTarget.heightPx);
 
   return {
     colorTarget,

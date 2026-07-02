@@ -4,6 +4,8 @@ import type { SceneDefinition } from "../../types/scene";
 import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
+import { imageDistanceMm } from "./thinLensModel";
+import { planeFromPointNormal } from "../math/plane";
 import {
   calculateLensFilmHingeLine,
   calculateLensPlane,
@@ -93,12 +95,34 @@ export const deriveOpticsState = (
     return baseFallbackState(cameraState, "Invalid focal length");
   }
 
-  const { lensCenterWorld, lensNormalWorld, lensPlane } = calculateLensPlane(cameraState);
+  const _lensResult = calculateLensPlane(cameraState);
+  let lensCenterWorld = _lensResult.lensCenterWorld;
+  const lensNormalWorld = _lensResult.lensNormalWorld;
+  let lensPlane = _lensResult.lensPlane;
   if (!isFiniteVec3(lensCenterWorld) || !isFiniteVec3(lensNormalWorld)) {
     return baseFallbackState(cameraState, "Invalid lens geometry");
   }
 
-  const { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(cameraState.focalLengthMm);
+  let { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(cameraState.focalLengthMm);
+
+  // For the Focus Fundamentals scene (front-standard focusing):
+  // - rear datum / film datum remain at z = 0
+  // - lens (front standard) moves to +imageDistanceMm from the rear datum
+  // All values remain in mm until conversion at render boundary.
+  if (scene.id === "focus-fundamentals-two-targets") {
+    const img = imageDistanceMm(cameraState.focalLengthMm, cameraState.focusDistanceMm);
+    // keep film datum at rear datum (z = 0)
+    filmCenterWorld = vec(0, 0, 0);
+    filmNormalWorld = vec(0, 0, 1);
+    filmPlane = planeFromPointNormal(filmCenterWorld, filmNormalWorld);
+
+    // Move lens center to +imageDistanceMm from the rear datum (front standard moves)
+    // For this strict baseline, ignore any lateral/front rise: lens x/y are zero
+    lensCenterWorld = vec(0, 0, img);
+    // recompute lensPlane with updated lens center
+    lensPlane = planeFromPointNormal(lensCenterWorld, lensNormalWorld);
+  }
+
   const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
   const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
   const focusPointWorld = calculateFocusPoint(cameraState, opticalAxis);
