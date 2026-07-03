@@ -70,6 +70,7 @@ export const GroundGlassRenderer = ({
   });
   // Explicit preview modes for Focus Fundamentals: 'raw' (invert both axes) or 'upright' (correct both axes)
   const [previewMode, setPreviewMode] = useState<"raw" | "upright">(sceneId === "focus-fundamentals-two-targets" ? "raw" : assistEnabled ? "upright" : "raw");
+  const [rawRttDebug, setRawRttDebug] = useState(false);
   const invertHorizontal = previewMode === "raw" ? true : false;
   const invertVertical = previewMode === "raw" ? true : false;
   const scaleX = invertHorizontal ? -1 : 1;
@@ -184,20 +185,23 @@ export const GroundGlassRenderer = ({
           setZoomOrigin({ xPercent, yPercent });
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: sceneBackground,
-            backgroundPosition: `center ${backgroundPositionY}`,
-            backgroundRepeat: "no-repeat",
-            transform,
-            transformOrigin: "center",
-          }}
-        />
+        {/* Decorative background; hide for Focus Fundamentals (RTT) or when Raw RTT Debug is enabled */}
+        {!(isFocusFundamentals || rawRttDebug) && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: sceneBackground,
+              backgroundPosition: `center ${backgroundPositionY}`,
+              backgroundRepeat: "no-repeat",
+              transform,
+              transformOrigin: "center",
+            }}
+          />
+        )}
         {/* Preview mode toggle for Focus Fundamentals */}
         {sceneId === "focus-fundamentals-two-targets" && (
-          <div style={{ position: "absolute", left: 8, top: 8, zIndex: 10 }}>
+          <div style={{ position: "absolute", left: 8, top: 8, zIndex: 10, display: "flex", gap: 8 }}>
             <label style={{ color: "#e5e7eb", fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
               <span style={{ fontSize: 11, color: "#94a3b8" }}>Preview:</span>
               <button
@@ -206,6 +210,17 @@ export const GroundGlassRenderer = ({
                 style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#fff", padding: "4px 8px", borderRadius: 6 }}
               >
                 {previewMode === "raw" ? "Raw ground glass" : "Upright assist"}
+              </button>
+            </label>
+            {/* Raw RTT Debug toggle */}
+            <label style={{ color: "#e5e7eb", fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: "#94a3b8" }}>RTT Debug:</span>
+              <button
+                type="button"
+                onClick={() => setRawRttDebug((s) => !s)}
+                style={{ background: rawRttDebug ? "#ef4444" : "rgba(255,255,255,0.06)", border: "none", color: "#fff", padding: "4px 8px", borderRadius: 6 }}
+              >
+                {rawRttDebug ? "Raw ON" : "Raw OFF"}
               </button>
             </label>
           </div>
@@ -231,6 +246,7 @@ export const GroundGlassRenderer = ({
               previewMode={previewMode}
               focusRingRadiusPx={focusRingSize}
               focusRingOpacity={focusRingOpacity}
+              rawDebug={rawRttDebug}
             />
           </div>
         ) : (
@@ -487,7 +503,7 @@ export const GroundGlassRenderer = ({
               transform: "translateY(-0.5px)",
             }}
           />
-          {gridEnabled && (
+          {gridEnabled && !rawRttDebug && (
             <div
               style={{
                 position: "absolute",
@@ -498,13 +514,16 @@ export const GroundGlassRenderer = ({
               }}
             />
           )}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(0,0,0,${blurOpacity}) 100%)`,
-            }}
-          />
+          {/* radial vignette / blur overlay; hide for RTT focus fundamentals or raw RTT debug */}
+          {!(isFocusFundamentals || rawRttDebug) && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(0,0,0,${blurOpacity}) 100%)`,
+              }}
+            />
+          )}
         </div>
         <div
           style={{
@@ -554,7 +573,7 @@ export const GroundGlassRenderer = ({
             }}
           />
         )}
-        {focusAssist.enabled && (
+        {focusAssist.enabled && !rawRttDebug && (
           <span
             style={{
               position: "absolute",

@@ -16,6 +16,7 @@ type GroundGlassRTTProps = {
   previewMode?: "raw" | "upright";
   focusRingRadiusPx?: number;
   focusRingOpacity?: number;
+  rawDebug?: boolean;
 };
 
 type PostResources = {
@@ -25,7 +26,7 @@ type PostResources = {
   tempRT: THREE.WebGLRenderTarget;
 };
 
-function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, }: GroundGlassRTTProps) {
+function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, }: GroundGlassRTTProps) {
   const renderTarget = useRef<THREE.WebGLRenderTarget | null>(null);
   const offscreenScene = useRef<THREE.Scene | null>(null);
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
@@ -88,11 +89,16 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     const fragH = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; uniform float near; uniform float far; uniform float imageDistanceMm; uniform float focalLengthMm; uniform float fNumber; uniform float sensorWidthMm; uniform float renderWidth; uniform float renderHeight; uniform float maxCoC; uniform float useRaw;
     float viewZFromDepth(float depth){ float z_n = depth * 2.0 - 1.0; return (2.0 * near * far) / (far + near - z_n * (far - near)); }
     float computeCoCPx(float depth){ float viewZ = viewZFromDepth(depth); float U = abs(viewZ) * 1000.0; float f = focalLengthMm; float vObject = (f * U) / max(0.0001, (U - f)); float apertureDiameter = f / max(1.0, fNumber); float cocMm = apertureDiameter * abs(1.0 - (imageDistanceMm / vObject)); float pixelsPerMm = renderWidth / sensorWidthMm; return clamp(cocMm * pixelsPerMm, 0.0, maxCoC); }
-    void main(){ vec2 uv = vUv; if(useRaw > 0.5){ gl_FragColor = texture2D(tColor, uv); return; } float depth = texture2D(tDepth, uv).x; float coc = computeCoCPx(depth); float maxSamples = 9.0; float halfSamples = floor(maxSamples*0.5); vec3 accum = vec3(0.0); float total = 0.0; for(int i=0;i<9;i++){ float idx = float(i) - halfSamples; float offset = idx * (coc / maxCoC); vec2 o = vec2(offset / renderWidth, 0.0); vec3 c = texture2D(tColor, uv + o).rgb; float w = 1.0; accum += c * w; total += w; } gl_FragColor = vec4(accum/total,1.0); }`;
+    void main(){ vec2 uv = vUv; if(useRaw > 0.5){ gl_FragColor = texture2D(tColor, uv); return; } float depth = texture2D(tDepth, uv).x; float coc = computeCoCPx(depth); float radius = min(maxCoC, coc); // blur radius in pixels
+    float sampleStep = 1.0; // px step
+    float sampleCountF = clamp(floor(radius / sampleStep) * 2.0 + 1.0, 1.0, 15.0);
+    float halfSamples = floor((sampleCountF - 1.0) * 0.5);
+    float sigma = max(0.5, radius * 0.35);
+    vec3 accum = vec3(0.0); float total = 0.0; for(int i=0;i<15;i++){ float idx = float(i) - halfSamples; if(abs(idx) > halfSamples) continue; float offsetPx = (halfSamples < 0.5) ? 0.0 : idx * (radius / max(halfSamples, 1.0)); vec2 o = vec2(offsetPx / renderWidth, 0.0); vec3 c = texture2D(tColor, uv + o).rgb; float w = exp(-0.5 * (offsetPx*offsetPx) / (sigma*sigma)); accum += c * w; total += w; } gl_FragColor = vec4(accum / max(total, 1e-6), 1.0); }`;
     const fragV = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; uniform float renderWidth; uniform float renderHeight; uniform float maxCoC; uniform float focalLengthMm; uniform float fNumber; uniform float imageDistanceMm; uniform float sensorWidthMm; uniform float near; uniform float far; uniform vec2 ringCenter; uniform float ringRadiusPx; uniform vec3 ringColor; uniform float ringOpacity; uniform float showRing; uniform float useRaw;
     float viewZFromDepth(float depth){ float z_n = depth * 2.0 - 1.0; return (2.0 * near * far) / (far + near - z_n * (far - near)); }
     float computeCoCPx(float depth){ float viewZ = viewZFromDepth(depth); float U = abs(viewZ) * 1000.0; float f = focalLengthMm; float vObject = (f * U) / max(0.0001, (U - f)); float apertureDiameter = f / max(1.0, fNumber); float cocMm = apertureDiameter * abs(1.0 - (imageDistanceMm / vObject)); float pixelsPerMm = renderWidth / sensorWidthMm; return clamp(cocMm * pixelsPerMm, 0.0, maxCoC); }
-    void main(){ vec2 uv = vUv; if(useRaw > 0.5){ vec3 colorRaw = texture2D(tColor, uv).rgb; vec3 color = colorRaw; if(showRing > 0.5){ vec2 px = uv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenter * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); } gl_FragColor = vec4(color,1.0); return; } float depth = texture2D(tDepth, uv).x; float coc = computeCoCPx(depth); float maxSamples = 9.0; float halfSamples = floor(maxSamples*0.5); vec3 accum = vec3(0.0); float total = 0.0; for(int i=0;i<9;i++){ float idx = float(i) - halfSamples; float offset = idx * (coc / maxCoC); vec2 o = vec2(0.0, offset / renderHeight); vec3 c = texture2D(tColor, uv + o).rgb; float w = 1.0; accum += c * w; total += w; } vec3 color = accum/total;
+    void main(){ vec2 uv = vUv; if(useRaw > 0.5){ vec3 colorRaw = texture2D(tColor, uv).rgb; vec3 color = colorRaw; if(showRing > 0.5){ vec2 px = uv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenter * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); } gl_FragColor = vec4(color,1.0); return; } float depth = texture2D(tDepth, uv).x; float coc = computeCoCPx(depth); float radius = min(maxCoC, coc); float sampleStep = 1.0; float sampleCountF = clamp(floor(radius / sampleStep) * 2.0 + 1.0, 1.0, 15.0); float halfSamples = floor((sampleCountF - 1.0) * 0.5); float sigma = max(0.5, radius * 0.35); vec3 accum = vec3(0.0); float total = 0.0; for(int i=0;i<15;i++){ float idx = float(i) - halfSamples; if(abs(idx) > halfSamples) continue; float offsetPx = (halfSamples < 0.5) ? 0.0 : idx * (radius / max(halfSamples, 1.0)); vec2 o = vec2(0.0, offsetPx / renderHeight); vec3 c = texture2D(tColor, uv + o).rgb; float w = exp(-0.5 * (offsetPx*offsetPx) / (sigma*sigma)); accum += c * w; total += w; } vec3 color = accum / max(total, 1e-6);
     if(showRing > 0.5){ vec2 px = uv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenter * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
     gl_FragColor = vec4(color,1.0); }`;
 
@@ -224,7 +230,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matH.uniforms.far.value = cam.far;
       // if depthTex is the 1x1 fallback we should bypass DOF and show raw color for debugging
       const isFallbackDepth = depthTex === (OffscreenRenderer as unknown as { _fallbackDepth?: THREE.DataTexture })._fallbackDepth;
-      matH.uniforms.useRaw.value = isFallbackDepth ? 1.0 : 0.0;
+      // honor raw debug mode (bypass DOF) or fallback depth
+      matH.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
 
       gl.setRenderTarget(tempRT);
       gl.setClearColor(0x0b1220, 1);
@@ -243,7 +250,10 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matV.uniforms.fNumber.value = aperture;
       matV.uniforms.near.value = cam.near;
       matV.uniforms.far.value = cam.far;
-      matV.uniforms.useRaw.value = isFallbackDepth ? 1.0 : 0.0;
+      // honor raw debug mode (bypass DOF) or fallback depth
+      matV.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
+      // hide focus ring in raw debug mode
+      if (rawDebug) matV.uniforms.showRing.value = 0.0;
 
       // compute focus ring projection for first focus target (if available)
       const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
@@ -279,12 +289,12 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <Canvas style={{ width: "100%", height: "100%" }} gl={{ preserveDrawingBuffer: false }} orthographic={false}>
-        <OffscreenRenderer opticsState={opticsState} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} />
+        <OffscreenRenderer opticsState={opticsState} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} />
       </Canvas>
     </div>
   );
