@@ -1,8 +1,10 @@
-import { useMemo, useState, useRef, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
+/* eslint-disable react-refresh/only-export-components */
+import { useMemo, useState, useRef } from "react";
+import { GroundGlassRTT } from "./GroundGlassRTT";
+import { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { ApertureValue } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
+export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
 import { UI_COPY } from "../ui/copy";
 import { formatDegrees, formatMillimeter } from "../utils/formatters";
@@ -46,9 +48,7 @@ const statusPatternGlyph = {
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
-const WORLD_SCALE = 0.001;
-const toWorld = (mm: number) => mm * WORLD_SCALE;
-const vecToWorld = (v: { x: number; y: number; z: number }): [number, number, number] => [toWorld(v.x), toWorld(v.y), toWorld(v.z)];
+
 
 export const GroundGlassRenderer = ({
   opticsState,
@@ -94,6 +94,7 @@ export const GroundGlassRenderer = ({
     return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality);
   }, [opticsState, renderQuality, sceneId]);
   const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const focusAssist = useMemo(
     () => createFocusAssistPass({ enabled: focusAssistEnabled, targets: opticsState.focusTargets }),
     [focusAssistEnabled, opticsState.focusTargets],
@@ -135,131 +136,24 @@ export const GroundGlassRenderer = ({
 
   // Project scene focus targets (if available) into ground-glass UV coordinates for positioning overlays
   const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
-  const projectedTargets = (
-    sceneDef?.focusTargets ?? []
-  ).map((t) => {
-    const topLeft = opticsState.filmPlaneCornersWorld.topLeft;
-    const topRight = opticsState.filmPlaneCornersWorld.topRight;
-    const bottomLeft = opticsState.filmPlaneCornersWorld.bottomLeft;
-    const spanX = topRight.x - topLeft.x;
-    const spanY = topLeft.y - bottomLeft.y;
-    const w = t.worldPosition;
-    const u = spanX === 0 ? 0.5 : (w.x - topLeft.x) / spanX;
-    const v = spanY === 0 ? 0.5 : (topLeft.y - w.y) / spanY;
-    const leftPercent = clamp(u * 100, 0, 100);
-    const topPercent = clamp(v * 100, 0, 100);
-    const distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(w, opticsState.focusPlane);
+  // Compute image distance from lens center to film center (used by thin-lens projection)
+  const imageDistanceMm = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
+
+  const projectedTargets = (sceneDef?.focusTargets ?? []).map((t) => {
+    // Use the canonical thin-lens projection helper so canvas/DOM overlays match the RTT rendering
+    const p = projectWorldPointToGroundGlass(t.worldPosition, opticsState.lensCenterWorld, imageDistanceMm, CAMERA_CONSTANTS.filmWidthMm, CAMERA_CONSTANTS.filmHeightMm);
+    const orientedU = previewMode === "upright" ? 1 - p.uRaw : p.uRaw;
+    const orientedV = previewMode === "upright" ? 1 - p.vRaw : p.vRaw;
+    const leftPercent = p.visible ? clamp(orientedU * 100, 0, 100) : -999; // off-screen sentinel
+    const topPercent = p.visible ? clamp(orientedV * 100, 0, 100) : -999;
+    const distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(t.worldPosition, opticsState.focusPlane);
     const blurStrengthAtTarget = calculateApertureBlurStrength(distanceToFocusPlaneMm, aperture as unknown as number);
-    return { id: t.id, leftPercent, topPercent, blurStrengthAtTarget };
+    return { id: t.id, leftPercent, topPercent, blurStrengthAtTarget, visible: p.visible };
   });
 
-  // For Focus Fundamentals use a render-to-texture pipeline using three.js via react-three/fiber.
-  // GroundGlassRTT renders the shared 3D scene offscreen using a groundGlassCamera placed at the lens center
-  // and exposes the result as a texture that can be displayed in the ground-glass panel. For Phase 1 this
-  // produces a correct geometric projection without CSS focus hacks.
-  import * as THREE from "three";
-
-  const GroundGlassRTT = ({}) => {
-    // create render target sized by panel dims
-    const renderTarget = useRef<THREE.WebGLRenderTarget | null>(null);
-    const offscreenScene = useRef<THREE.Scene | null>(null);
-    const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
-    const planeRef = useRef<any>(null);
-
-    const { gl, size } = useThree();
-
-    // create offscreen resources once
-    useEffect(() => {
-      // initialize render target
-      const rt = new THREE.WebGLRenderTarget(PANEL_WIDTH_PX, PANEL_HEIGHT_PX);
-      rt.texture.encoding = THREE.sRGBEncoding;
-      renderTarget.current = rt;
-
-      // offscreen scene
-      const scene = new THREE.Scene();
-      offscreenScene.current = scene;
-
-      // build simple geometry: rear standard
-      const rear = new THREE.Mesh(new THREE.BoxGeometry(toWorld(180), toWorld(140), toWorld(18)), new THREE.MeshStandardMaterial({ color: "#4b5563" }));
-      rear.position.set(...vecToWorld(opticsState.filmCenterWorld));
-      scene.add(rear);
-
-      // front standard / lens block
-      const frontGroup = new THREE.Group();
-      const frontBox = new THREE.Mesh(new THREE.BoxGeometry(toWorld(180), toWorld(140), toWorld(12)), new THREE.MeshStandardMaterial({ color: "#6b7280" }));
-      frontGroup.add(frontBox);
-      const frontPanel = new THREE.Mesh(new THREE.BoxGeometry(toWorld(100), toWorld(100), toWorld(8)), new THREE.MeshStandardMaterial({ color: "#9ca3af" }));
-      frontPanel.position.set(0, 0, toWorld(8));
-      frontGroup.add(frontPanel);
-      const lensCyl = new THREE.Mesh(new THREE.CylinderGeometry(toWorld(18), toWorld(18), toWorld(18), 24), new THREE.MeshStandardMaterial({ color: "#1f2937" }));
-      lensCyl.rotation.x = Math.PI / 2;
-      lensCyl.position.set(0, 0, toWorld(16));
-      frontGroup.add(lensCyl);
-      frontGroup.position.set(...vecToWorld(opticsState.lensCenterWorld));
-      scene.add(frontGroup);
-
-      // focus targets
-      sceneDef?.focusTargets.forEach((t) => {
-        const s = new THREE.Mesh(new THREE.SphereGeometry(toWorld(20), 16, 12), new THREE.MeshStandardMaterial({ color: "#ef4444" }));
-        s.position.set(...vecToWorld(t.worldPosition));
-        scene.add(s);
-      });
-
-      // simple plane floor
-      const floor = new THREE.Mesh(new THREE.PlaneGeometry(toWorld(4000), toWorld(4000)), new THREE.MeshStandardMaterial({ color: "#0b1220" }));
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = -toWorld(200);
-      scene.add(floor);
-
-      return () => {
-        rt.dispose();
-      };
-    }, []);
-
-    useFrame(() => {
-      if (!renderTarget.current || !offscreenScene.current) return;
-      const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
-      const vertFovRad = 2 * Math.atan(CAMERA_CONSTANTS.filmHeightMm / (2 * imgDist));
-      const vertFovDeg = (vertFovRad * 180) / Math.PI;
-
-      if (!groundGlassCamera.current) {
-        const cam = new THREE.PerspectiveCamera(vertFovDeg, PANEL_WIDTH_PX / PANEL_HEIGHT_PX, 0.1, 10000);
-        groundGlassCamera.current = cam;
-      }
-
-      const cam = groundGlassCamera.current as THREE.PerspectiveCamera;
-      cam.fov = vertFovDeg;
-      cam.aspect = PANEL_WIDTH_PX / PANEL_HEIGHT_PX;
-      cam.updateProjectionMatrix();
-      const lensPos = new THREE.Vector3(...vecToWorld(opticsState.lensCenterWorld));
-      cam.position.copy(lensPos);
-      const dir = new THREE.Vector3(opticsState.opticalAxis.direction.x, opticsState.opticalAxis.direction.y, opticsState.opticalAxis.direction.z);
-      const lookAt = new THREE.Vector3().copy(lensPos).add(dir.multiplyScalar(1000));
-      cam.lookAt(lookAt);
-
-      const prev = gl.getRenderTarget();
-      gl.setRenderTarget(renderTarget.current);
-      gl.render(offscreenScene.current, cam);
-      gl.setRenderTarget(prev);
-
-      // update full-screen plane material map
-      if (planeRef.current && planeRef.current.material) {
-        planeRef.current.material.map = renderTarget.current.texture;
-        planeRef.current.material.needsUpdate = true;
-      }
-    });
-
-    // Fullscreen quad displaying render target
-    return (
-      <>
-        <mesh ref={planeRef} position={[0, 0, 0]}>
-          <planeGeometry args={[2, 2]} />
-          <meshBasicMaterial toneMapped={false} map={renderTarget.current ? renderTarget.current.texture : null} />
-        </mesh>
-      </>
-    );
-  };
-
+  // GroundGlassRTT prototype (offscreen three.js render) removed from this file for now.
+  // Phase 1 RTT implementation will be moved to src/render/GroundGlassRTT.tsx in a follow-up commit.
+  const apertureNumber = typeof aperture === 'number' ? aperture : Number(aperture as unknown as number);
 
   return (
     <div style={{ display: "grid", gap: "0.5rem" }}>
@@ -324,18 +218,36 @@ export const GroundGlassRenderer = ({
             transformOrigin: `${zoomOrigin.xPercent}% ${zoomOrigin.yPercent}%`,
           }}
         >
-        <canvas
-          ref={canvasRef}
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
+        {/* For focus fundamentals show the RTT instead of the legacy canvas */}
+        {sceneId === "focus-fundamentals-two-targets" ? (
+          <div data-testid="ground-glass-rtt" style={{ position: "absolute", inset: 0 }}>
+            {/* GroundGlassRTT renders the real 3D scene to a texture and displays it */}
+            <GroundGlassRTT
+              opticsState={opticsState}
+              sceneId={sceneId}
+              widthPx={PANEL_WIDTH_PX}
+              heightPx={PANEL_HEIGHT_PX}
+              aperture={apertureNumber}
+              previewMode={previewMode}
+              focusRingRadiusPx={focusRingSize}
+              focusRingOpacity={focusRingOpacity}
+            />
+          </div>
+        ) : (
+          <canvas
+            ref={canvasRef}
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
               transform: `translate(${sceneShiftX}px, ${sceneShiftY}px) rotate(${sceneRotationDeg}deg) scale(${focusScale})`,
               transformOrigin: "center",
             }}
-        />
+          />
+        )}
+
         <div
           data-testid="ground-glass-scene"
           style={{
@@ -351,7 +263,12 @@ export const GroundGlassRenderer = ({
             {(() => {
               const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
               // If we have a scene definition with focus targets, project those into film UV and render placeholders anchored to them.
+              // IMPORTANT: Do not render DOM placeholder target elements for the Focus Fundamentals scene — the RTT pipeline provides the ground-glass imagery.
               if (sceneDef && sceneDef.focusTargets && sceneDef.focusTargets.length > 0) {
+                if (sceneId === "focus-fundamentals-two-targets") {
+                  return null;
+                }
+
                 const topLeft = opticsState.filmPlaneCornersWorld.topLeft;
                 const topRight = opticsState.filmPlaneCornersWorld.topRight;
                 const bottomLeft = opticsState.filmPlaneCornersWorld.bottomLeft;
@@ -617,23 +534,26 @@ export const GroundGlassRenderer = ({
         >
           {focusDistanceLabel}
         </div>
-        <div
-          data-testid="ground-glass-focus-ring"
-          style={{
-            position: "absolute",
-            left: `${projectedTargets[0] ? projectedTargets[0].leftPercent : 50 + swingDeg * 0.5}%`,
-            top: `${projectedTargets[0] ? projectedTargets[0].topPercent : 50 - tiltDeg * 0.5}%`,
-            width: focusRingSize,
-            height: focusRingSize,
-            marginLeft: -focusRingSize / 2,
-            marginTop: -focusRingSize / 2,
-            borderRadius: "50%",
-            border: "2px solid rgba(59,130,246,0.7)",
-            boxShadow: `0 0 0 10px rgba(59,130,246,${focusRingOpacity * 0.25})`,
-            opacity: focusRingOpacity,
-            pointerEvents: "none",
-          }}
-        />
+        {sceneId !== "focus-fundamentals-two-targets" && (
+          <div
+            data-testid="ground-glass-focus-ring"
+            style={{
+              position: "absolute",
+              left: `${projectedTargets[0] && projectedTargets[0].visible ? projectedTargets[0].leftPercent : 50 + swingDeg * 0.5}%`,
+              top: `${projectedTargets[0] && projectedTargets[0].visible ? projectedTargets[0].topPercent : 50 - tiltDeg * 0.5}%`,
+              display: projectedTargets[0] && projectedTargets[0].visible ? "block" : "none",
+              width: focusRingSize,
+              height: focusRingSize,
+              marginLeft: -focusRingSize / 2,
+              marginTop: -focusRingSize / 2,
+              borderRadius: "50%",
+              border: "2px solid rgba(59,130,246,0.7)",
+              boxShadow: `0 0 0 10px rgba(59,130,246,${focusRingOpacity * 0.25})`,
+              opacity: focusRingOpacity,
+              pointerEvents: "none",
+            }}
+          />
+        )}
         {focusAssist.enabled && (
           <span
             style={{
