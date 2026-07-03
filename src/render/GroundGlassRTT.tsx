@@ -97,10 +97,10 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     gl_FragColor = vec4(color,1.0); }`;
 
     const matH = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragH, uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, near: { value: 0.1 }, far: { value: 10000.0 }, imageDistanceMm: { value: 100.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: aperture }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, useRaw: { value: 0.0 }
+      tColor: { value: null }, tDepth: { value: null }, near: { value: 0.1 }, far: { value: 10000.0 }, imageDistanceMm: { value: 100.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, useRaw: { value: 0.0 }
     }});
     const matV = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragV, uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: aperture }, imageDistanceMm: { value: 100.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, near: { value: 0.1 }, far: { value: 10000.0 }, ringCenter: { value: new THREE.Vector2(-1, -1) }, ringRadiusPx: { value: 0.0 }, ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) }, ringOpacity: { value: 0.8 }, showRing: { value: 0.0 }, useRaw: { value: 0.0 }
+      tColor: { value: null }, tDepth: { value: null }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, imageDistanceMm: { value: 100.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, near: { value: 0.1 }, far: { value: 10000.0 }, ringCenter: { value: new THREE.Vector2(-1, -1) }, ringRadiusPx: { value: 0.0 }, ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) }, ringOpacity: { value: 0.8 }, showRing: { value: 0.0 }, useRaw: { value: 0.0 }
     }});
 
     const quadH = new THREE.Mesh(quadGeo, matH);
@@ -112,10 +112,13 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     (OffscreenRenderer as unknown as { _post?: PostResources })._post = { postSceneH, postSceneV, orthoCam, tempRT };
 
     // Simple rear/front standards and a lens block
-    const rear = new THREE.Mesh(new THREE.BoxGeometry(toWorld(180), toWorld(140), toWorld(18)), new THREE.MeshStandardMaterial({ color: "#4b5563" }));
-    rear.position.set(...vecToWorld(opticsState.filmCenterWorld));
+    let rear: THREE.Mesh | null = null;
+    rear = new THREE.Mesh(new THREE.BoxGeometry(toWorld(180), toWorld(140), toWorld(18)), new THREE.MeshStandardMaterial({ color: "#4b5563" }));
+    // initial position — updated each frame using opticsState
+    rear.position.set(0, 0, 0);
     scene.add(rear);
 
+    // frontGroup is intentionally not added to the offscreen scene to avoid occlusion
     const frontGroup = new THREE.Group();
     const frontBox = new THREE.Mesh(new THREE.BoxGeometry(toWorld(180), toWorld(140), toWorld(12)), new THREE.MeshStandardMaterial({ color: "#6b7280" }));
     frontGroup.add(frontBox);
@@ -126,17 +129,15 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     lensCyl.rotation.x = Math.PI / 2;
     lensCyl.position.set(0, 0, toWorld(16));
     frontGroup.add(lensCyl);
-    // Do not add the frontGroup (camera housing) to the offscreen ground-glass scene —
-    // it lives around the lens center and can occlude the camera's view of scene targets.
-    // frontGroup.position.set(...vecToWorld(opticsState.lensCenterWorld));
-    // scene.add(frontGroup);
 
-    // focus targets
+    // focus targets — positions are scene-local and independent of opticsState
     const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
+    const targetMeshes: THREE.Mesh[] = [];
     (sceneDef?.focusTargets ?? []).forEach((t) => {
       const s = new THREE.Mesh(new THREE.SphereGeometry(toWorld(20), 16, 12), new THREE.MeshStandardMaterial({ color: "#ef4444" }));
       s.position.set(...vecToWorld(t.worldPosition));
       scene.add(s);
+      targetMeshes.push(s);
     });
 
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(toWorld(4000), toWorld(4000)), new THREE.MeshStandardMaterial({ color: "#0b1220" }));
@@ -150,7 +151,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // clear post resources
       (OffscreenRenderer as unknown as { _post?: PostResources })._post = undefined;
     };
-  }, [gl, widthPx, heightPx, opticsState, sceneId, aperture]);
+  }, [gl, widthPx, heightPx, sceneId]);
 
   useFrame(() => {
     if (!renderTarget.current || !offscreenScene.current) return;
@@ -173,9 +174,34 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     const lookAt = new THREE.Vector3().copy(lensPos).add(dir.multiplyScalar(1000));
     cam.lookAt(lookAt);
 
+    // update dynamic mesh positions created earlier
+    try {
+      // update rear if present
+      const scene = offscreenScene.current as THREE.Scene;
+      const rearMesh = scene.children.find((c) => (c as THREE.Mesh).geometry && (c as THREE.Mesh).material && (c as THREE.Mesh).geometry.type === 'BoxGeometry') as THREE.Mesh | undefined;
+      if (rearMesh) {
+        const f = vecToWorld(opticsState.filmCenterWorld);
+        rearMesh.position.set(f[0], f[1], f[2]);
+      }
+
+      // update target meshes if any
+      // assume target sphere geometries use 'SphereGeometry'
+      scene.children.forEach((c) => {
+        const m = c as THREE.Mesh;
+        if (m.geometry && m.geometry.type === 'SphereGeometry') {
+          // update from scene definition positions in case they changed (rare)
+          // no-op here
+        }
+      });
+    } catch {
+      // ignore
+    }
+
     // 1) render scene to color+depth renderTarget
     const prev = gl.getRenderTarget();
     gl.setRenderTarget(renderTarget.current);
+    gl.setClearColor(0x0b1220, 1);
+    gl.clear(true, true, true);
     gl.render(offscreenScene.current, cam);
 
     // 2) horizontal separable pass -> tempRT
@@ -201,6 +227,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matH.uniforms.useRaw.value = isFallbackDepth ? 1.0 : 0.0;
 
       gl.setRenderTarget(tempRT);
+      gl.setClearColor(0x0b1220, 1);
+      gl.clear(true, true, true);
       gl.render(postSceneH, orthoCam);
 
       // 3) vertical pass -> screen
@@ -238,23 +266,25 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       }
 
       gl.setRenderTarget(null);
+      gl.setClearColor(0x0b1220, 1);
+      gl.clear(true, true, true);
       gl.render(postSceneV, orthoCam);
     } else {
       gl.setRenderTarget(null);
     }
 
     gl.setRenderTarget(prev);
-  });
+  }, 1);
 
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sceneId, widthPx, heightPx, previewMode, focusRingRadiusPx, focusRingOpacity }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <Canvas style={{ width: "100%", height: "100%" }} gl={{ preserveDrawingBuffer: false }} orthographic={false}>
-        <OffscreenRenderer opticsState={opticsState} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={/* default will be overwritten by parent */ 11.0} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} />
+        <OffscreenRenderer opticsState={opticsState} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} />
       </Canvas>
     </div>
   );
