@@ -8,6 +8,7 @@ import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS } from "../utils/constants";
+import { FocusFundamentalsSubject } from "./FocusFundamentalsSubjectFactory";
 import { UI_COPY } from "../ui/copy";
 import { getRenderQualitySettings } from "./renderQuality";
 
@@ -230,7 +231,7 @@ const LegendUpdater = ({
 }: {
   containerRef: RefObject<HTMLDivElement | null>;
   opticsState: DerivedOpticsState;
-  setLegendPositions: React.Dispatch<React.SetStateAction<Record<string, { left: number; top: number; visible: boolean }>>>;
+  setLegendPositions: React.Dispatch<React.SetStateAction<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>>;
 }) => {
   const { camera, gl } = useThree();
   const tmpV = useMemo(() => new Vector3(), []);
@@ -251,7 +252,10 @@ const LegendUpdater = ({
       fov: vecToWorld({ x: opticsState.lensCenterWorld.x + 0.001, y: opticsState.lensCenterWorld.y + 0.001, z: opticsState.lensCenterWorld.z + 0.001 }),
       axis: vecToWorld({ x: opticsState.lensCenterWorld.x, y: opticsState.lensCenterWorld.y, z: opticsState.lensCenterWorld.z }),
     };
-    const next: Record<string, { left: number; top: number; visible: boolean }> = {};
+
+    const margin = 8;
+    const nextEntries: { key: string; left: number; top: number; visible: boolean }[] = [];
+
     Object.entries(anchors).forEach(([k, v]) => {
       tmpV.set(v[0], v[1], v[2]);
       tmpV.project(camera);
@@ -264,14 +268,35 @@ const LegendUpdater = ({
       let top = canvasRect.top - containerRect.top + yCanvas;
 
       // clamp to canvas bounds with margin so labels never render outside
-      const margin = 8;
       left = Math.min(Math.max(left, canvasRect.left - containerRect.left + margin), canvasRect.right - containerRect.left - margin);
       top = Math.min(Math.max(top, canvasRect.top - containerRect.top + margin), canvasRect.bottom - containerRect.top - margin);
 
       const inFrustum = tmpV.z > -1 && tmpV.z < 1;
-      next[k] = { left, top, visible: inFrustum };
+      nextEntries.push({ key: k, left, top, visible: inFrustum });
     });
-    // update state in one go
+
+    // Simple collision avoidance: sort by top and push overlapping labels downward
+    const minSpacing = 24; // px
+    nextEntries.sort((a, b) => a.top - b.top);
+    for (let i = 1; i < nextEntries.length; i++) {
+      const prev = nextEntries[i - 1];
+      const cur = nextEntries[i];
+      const dy = cur.top - prev.top;
+      const dx = Math.abs(cur.left - prev.left);
+      if (dy < minSpacing && dx < 80) {
+        // push current down to avoid overlap
+        cur.top = prev.top + minSpacing;
+        // ensure we don't push beyond canvas bottom
+        const maxTop = canvasRect.bottom - containerRect.top - margin;
+        if (cur.top > maxTop) cur.top = maxTop;
+      }
+    }
+
+    const next: Record<string, { left: number; top: number; visible: boolean; corner?: boolean }> = {};
+    nextEntries.forEach((e) => {
+      next[e.key] = { left: e.left, top: e.top, visible: e.visible, corner: false };
+    });
+
     setLegendPositions(next);
   });
 
@@ -545,12 +570,19 @@ const SceneContent = ({
         )}
       </>
     )}
-    {scene.focusTargets.map((target) => (
-      <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
-        <sphereGeometry args={[toWorld(50), 16, 16]} />
-        <meshStandardMaterial color="#ef4444" />
-      </mesh>
-    ))}
+    {scene.id === "focus-fundamentals-two-targets" ? (
+      // Use shared scene subject for Focus Fundamentals
+      <>
+        <FocusFundamentalsSubject />
+      </>
+    ) : (
+      scene.focusTargets.map((target) => (
+        <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
+          <sphereGeometry args={[toWorld(50), 16, 16]} />
+          <meshStandardMaterial color="#ef4444" />
+        </mesh>
+      ))
+    )}
   </>
 );
 
@@ -616,7 +648,7 @@ export const SceneRenderer = ({
   const defaultContainerStyle: React.CSSProperties = { height: 320, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" };
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [legendPositions, setLegendPositions] = useState<Record<string, { left: number; top: number; visible: boolean }>>({});
+  const [legendPositions, setLegendPositions] = useState<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>({});
   const [showLegends, setShowLegends] = useState(true);
   const [showDebugOverlay, setShowDebugOverlay] = useState(true);
 
@@ -700,7 +732,8 @@ export const SceneRenderer = ({
               position: "absolute",
               left: pos.left,
               top: pos.top,
-              transform: "translate(-50%, -60%)",
+              // If this position was explicitly placed in a corner, don't apply centering transform
+              transform: pos.corner ? "none" : "translate(-50%, -60%)",
               pointerEvents: "none",
               color: "#0f172a",
               background: "rgba(255,255,255,0.9)",

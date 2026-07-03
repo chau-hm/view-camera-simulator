@@ -85,7 +85,7 @@ export const GroundGlassRenderer = ({
       const imageDistanceMm = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
       return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality, {
         useThinLens: true,
-        focalLengthMm: opticsState.filmPlane.distance ?? 150,
+        focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
         imageDistanceMm,
         sensorWidthMm: 127,
         sensorHeightMm: 101.6,
@@ -485,24 +485,28 @@ export const GroundGlassRenderer = ({
               </>
             )}
           </div>
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              borderLeft: "1px solid rgba(255,255,255,0.35)",
-              left: "50%",
-              transform: "translateX(-0.5px)",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              borderTop: "1px solid rgba(255,255,255,0.35)",
-              top: "50%",
-              transform: "translateY(-0.5px)",
-            }}
-          />
+          {!rawRttDebug && (
+            <>
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderLeft: "1px solid rgba(255,255,255,0.35)",
+                  left: "50%",
+                  transform: "translateX(-0.5px)",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderTop: "1px solid rgba(255,255,255,0.35)",
+                  top: "50%",
+                  transform: "translateY(-0.5px)",
+                }}
+              />
+            </>
+          )}
           {gridEnabled && !rawRttDebug && (
             <div
               style={{
@@ -528,7 +532,7 @@ export const GroundGlassRenderer = ({
         <div
           style={{
             position: "absolute",
-            top: 8,
+            bottom: 8,
             left: 8,
             padding: "2px 6px",
             borderRadius: 4,
