@@ -99,9 +99,12 @@ export function createFocusFundamentalsGroup(): THREE.Group {
   const far = new THREE.Mesh(boardGeometry!, farMaterial!);
   far.position.set(toWorld(FAR_CENTER.x), toWorld(FAR_CENTER.y), toWorld(FAR_CENTER.z));
   far.rotation.y = Math.PI;
-  // small pedestal: simple box
-  const pedestal = new THREE.Mesh(new THREE.BoxGeometry(toWorld(40), toWorld(40), toWorld(40)), new THREE.MeshStandardMaterial({ color: "#111827" }));
-  pedestal.position.set(toWorld(FAR_CENTER.x), toWorld(FAR_CENTER.y - (BOARD_H / 2 + 20)), toWorld(FAR_CENTER.z));
+  // Pedestal sized to touch floor and board bottom exactly
+  const boardBottomY = FAR_CENTER.y - BOARD_H / 2;
+  const pedestalHeightMm = boardBottomY - FLOOR_Y; // positive
+  const pedestalCenterY = FLOOR_Y + pedestalHeightMm / 2;
+  const pedestal = new THREE.Mesh(new THREE.BoxGeometry(toWorld(40), toWorld(pedestalHeightMm), toWorld(40)), new THREE.MeshStandardMaterial({ color: "#111827" }));
+  pedestal.position.set(toWorld(FAR_CENTER.x), toWorld(pedestalCenterY), toWorld(FAR_CENTER.z));
   group.add(pedestal);
   group.add(far);
 
@@ -130,10 +133,18 @@ export const FocusFundamentalsSubject: React.FC = () => {
         <boxGeometry args={[toWorld(BOARD_W), toWorld(BOARD_H), toWorld(BOARD_THICK)]} />
         <meshBasicMaterial attach="material" map={farCanvasTexture ?? makeCheckerTexture(undefined, true)} side={THREE.DoubleSide} />
       </mesh>
-      <mesh position={[toWorld(FAR_CENTER.x), toWorld(FAR_CENTER.y - (BOARD_H / 2 + 20)), toWorld(FAR_CENTER.z)]}>
-        <boxGeometry args={[toWorld(40), toWorld(40), toWorld(40)]} />
-        <meshStandardMaterial attach="material" color="#111827" />
-      </mesh>
+      {/* Pedestal computed to touch floor and board bottom */}
+      {(() => {
+        const boardBottomY = FAR_CENTER.y - BOARD_H / 2;
+        const pedestalHeightMm = boardBottomY - FLOOR_Y;
+        const pedestalCenterY = FLOOR_Y + pedestalHeightMm / 2;
+        return (
+          <mesh position={[toWorld(FAR_CENTER.x), toWorld(pedestalCenterY), toWorld(FAR_CENTER.z)]}>
+            <boxGeometry args={[toWorld(40), toWorld(pedestalHeightMm), toWorld(40)]} />
+            <meshStandardMaterial attach="material" color="#111827" />
+          </mesh>
+        );
+      })()}
 
       {/* Floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toWorld(FLOOR_Y), 0]}>
