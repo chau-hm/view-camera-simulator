@@ -135,7 +135,9 @@ export const GroundGlassRenderer = ({
   const sceneBackground = `radial-gradient(circle at ${50 + clamp(riseMm * 0.75, -18, 18)}% ${
     48 - clamp(tiltDeg * 2.2, -18, 18)
   }%, rgba(96,165,250,0.34), rgba(30,41,59,0.9) 42%, rgba(15,23,42,0.97) 100%)`;
-  const focusDistanceLabel = `${formatMillimeter(focusDistanceMm)} focus / ${dofSample.distanceToFocusPlaneMm.toFixed(1)} mm delta`;
+  const focusDistanceLabel = opticsState.diagnostics?.isInfinityFocus
+    ? `Focus: ∞`
+    : `${formatMillimeter(focusDistanceMm)} focus / ${dofSample.distanceToFocusPlaneMm.toFixed(1)} mm delta`;
 
   // Project scene focus targets (if available) into ground-glass UV coordinates for positioning overlays
   const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
@@ -686,9 +688,11 @@ export const GroundGlassRenderer = ({
               DOF near Z: {Number.isFinite(nearZ) ? `${nearZ.toFixed(2)} mm` : '—'} | DOF far Z: {Number.isFinite(farZ) ? `${farZ.toFixed(2)} mm` : '∞'}
             </span>
             {sceneDef?.focusTargets.map((t) => {
-              const coc = cocDiameterMm(CAMERA_CONSTANTS.focalLengthMm, aperture as number, imgDist, t.worldPosition.z);
+              // compute axial distance U from lens center along optical axis — do NOT use world Z directly
+              const U = Math.max(1e-6, dot(subtract(t.worldPosition, opticsState.lensCenterWorld), opticsState.opticalAxis.direction));
+              const coc = cocDiameterMm(CAMERA_CONSTANTS.focalLengthMm, aperture as number, imgDist, U);
               return (
-                <span key={t.id}>{t.id}: axial depth {t.worldPosition.z} mm | CoC {coc.toFixed(3)} mm</span>
+                <span key={t.id}>{t.id}: axial depth {U.toFixed(2)} mm | CoC {coc.toFixed(3)} mm</span>
               );
             })}
           </div>
