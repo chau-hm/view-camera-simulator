@@ -398,8 +398,11 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
                 const x2 = depthToX(diagramMaxDepthMm);
                 return (
                   <g>
-                    <line x1={x1} y1={axisY} x2={x2} y2={axisY} stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="6 4" opacity={0.95} />
-                    <text x={x1 + 8} y={axisY - 6} fontSize={11} fill="#f59e0b">Optical axis</text>
+                    <line x1={x1} y1={axisY} x2={x2} y2={axisY} stroke="#f59e0b" strokeWidth={1.2} strokeDasharray="6 4" opacity={0.95} />
+                    {/* Optical axis label: for Focus Fundamentals we render a single fixed axis label in the annotations block; for other scenes render it here */}
+                    {!(scene.id && scene.id.includes('focus-fundamentals')) ? (
+                      <text x={x1 + 8} y={axisY - 6} fontSize={11} fill="#f59e0b">Optical axis</text>
+                    ) : null}
                   </g>
                 );
               })()}
@@ -474,16 +477,16 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
                     </g>
                   );
                 }
-                // top view: thin card
+              // top view: vertical card glyph (narrow plate)
                 return (
                   <g key={t.id}>
-                    <rect x={x - 8} y={y - 3} width={16} height={6} fill="#0f766e" />
-                  </g>
-                );
+                   <rect x={x - 3} y={y - 9} width={6} height={18} fill="#0f766e" />
+                   <line x1={x} y1={y + 9} x2={x} y2={y + 13} stroke="#0b5e54" strokeWidth={1} />
+                 </g>
+               );
               })}
-
-              {/* 8) Focus point marker */}
-              {!isInfinity && opticsState.focusPlane && (() => {
+ 
+              {/* 8) Focus point marker */}              {!isInfinity && opticsState.focusPlane && (() => {
                 const fp = opticsState.focusPlane.point;
                 const depth = vecDot(vecSub(fp, sectionOrigin), sectionDepthDir);
                 const x = depthToX(depth);
@@ -505,50 +508,126 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
 
         {/* Annotations layer */}
         <g pointerEvents="none">
-          {placed.map((p) => (
-            <g key={p.ann.id}>
-              {/* routed leader line with elbow to nearest label edge */}
-              {
-                (() => {
-                  const ax = p.ann.anchor.x; const ay = p.ann.anchor.y;
-                  const lx = p.x; const ly = p.y; const lw = p.w; const lh = p.h;
-                  // determine label edge point
-                  let edgeX = lx + lw / 2; let edgeY = ly + lh / 2;
-                  // if label is mostly right of anchor -> use left edge
-                  if (lx > ax) { edgeX = lx; edgeY = ly + lh / 2; }
-                  // if label is mostly left of anchor -> use right edge
-                  else if (lx + lw < ax) { edgeX = lx + lw; edgeY = ly + lh / 2; }
-                  // if label above anchor -> use bottom edge
-                  if (ly + lh < ay) { edgeX = lx + lw / 2; edgeY = ly + lh; }
-                  // if label below anchor -> use top edge
-                  else if (ly > ay) { edgeX = lx + lw / 2; edgeY = ly; }
+          {scene.id && scene.id.includes('focus-fundamentals') ? (
+            <g>
+              {/* Single fixed Optical axis label (lower-left) */}
+              <text x={16} y={SVG_H - 12} fontSize={11} fill="#f59e0b">Optical axis</text>
 
-                  // choose elbow point (offset from anchor toward label direction)
-                  let mx = ax; let my = ay;
-                  const gap = 8;
-                  if (edgeY < ay) {
-                    // label is above anchor -> go vertically up then to label bottom
-                    mx = ax; my = edgeY + gap;
-                  } else if (edgeY > ay) {
-                    // label is below anchor
-                    mx = ax; my = edgeY - gap;
-                  } else if (edgeX > ax) {
-                    // label right
-                    mx = edgeX - gap; my = ay;
-                  } else {
-                    // label left
-                    mx = edgeX + gap; my = ay;
-                  }
-                  return <polyline points={`${ax},${ay} ${mx},${my} ${edgeX},${edgeY}`} stroke={p.ann.color} strokeWidth={1} fill="none" strokeLinecap="round" strokeLinejoin="round" />;
-                })()
-              }
-              {/* label background */}
-              <rect x={p.x} y={p.y} width={p.w} height={p.h} rx={4} ry={4} fill="#ffffff" stroke="rgba(0,0,0,0.06)" />
-              <text x={p.x + 8} y={p.y + p.h - 4} fontSize={11} fill={p.ann.color}>{p.ann.text}</text>
+              {/* Only simple Near/Far board labels placed close to their glyphs (no leader lines, no cards) */}
+              {scene.focusTargets.map((t) => {
+                const depth = vecDot(vecSub(t.worldPosition, sectionOrigin), sectionDepthDir);
+                const x = depthToX(depth);
+                const y = geometryView === 'side' ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
+                const isNear = /near/i.test(t.id);
+                const text = isNear ? 'Near board' : /far/i.test(t.id) ? 'Far board' : 'Target';
+                // default placement: right and slightly above
+                let lx = x + 10;
+                let ly = y - 10;
+                let anchorEnd: 'start' | 'end' = 'start';
+                // if label would overflow right edge, flip to left
+                const APPROX_MAX_W = 90;
+                if (lx + APPROX_MAX_W > SVG_W - SAFE_MARGIN) { lx = x - 10; anchorEnd = 'end'; }
+                // clamp vertically into safe margin
+                if (ly < SAFE_MARGIN) ly = SAFE_MARGIN + 4;
+                if (ly > SVG_H - SAFE_MARGIN) ly = SVG_H - SAFE_MARGIN - 4;
+                return (
+                  <text key={`lbl-${t.id}`} x={lx} y={ly} fontSize={12} fill="#064e3b" textAnchor={anchorEnd}>{text}</text>
+                );
+              })}
             </g>
-          ))}
+          ) : (
+            // generic annotations (existing placed cards + leaders)
+            placed.map((p) => (
+              <g key={p.ann.id}>
+                {/* routed leader line with elbow to nearest label edge */}
+                {
+                  (() => {
+                    const ax = p.ann.anchor.x; const ay = p.ann.anchor.y;
+                    const lx = p.x; const ly = p.y; const lw = p.w; const lh = p.h;
+                    // determine label edge point
+                    let edgeX = lx + lw / 2; let edgeY = ly + lh / 2;
+                    // if label is mostly right of anchor -> use left edge
+                    if (lx > ax) { edgeX = lx; edgeY = ly + lh / 2; }
+                    // if label is mostly left of anchor -> use right edge
+                    else if (lx + lw < ax) { edgeX = lx + lw; edgeY = ly + lh / 2; }
+                    // if label above anchor -> use bottom edge
+                    if (ly + lh < ay) { edgeX = lx + lw / 2; edgeY = ly + lh; }
+                    // if label below anchor -> use top edge
+                    else if (ly > ay) { edgeX = lx + lw / 2; edgeY = ly; }
+
+                    // choose elbow point (offset from anchor toward label direction)
+                    let mx = ax; let my = ay;
+                    const gap = 8;
+                    if (edgeY < ay) {
+                      // label is above anchor -> go vertically up then to label bottom
+                      mx = ax; my = edgeY + gap;
+                    } else if (edgeY > ay) {
+                      // label is below anchor
+                      mx = ax; my = edgeY - gap;
+                    } else if (edgeX > ax) {
+                      // label right
+                      mx = edgeX - gap; my = ay;
+                    } else {
+                      // label left
+                      mx = edgeX + gap; my = ay;
+                    }
+                    return <polyline points={`${ax},${ay} ${mx},${my} ${edgeX},${edgeY}`} stroke={p.ann.color} strokeWidth={1} fill="none" strokeLinecap="round" strokeLinejoin="round" />;
+                  })()
+                }
+                {/* label background */}
+                <rect x={p.x} y={p.y} width={p.w} height={p.h} rx={4} ry={4} fill="#ffffff" stroke="rgba(0,0,0,0.06)" />
+                <text x={p.x + 8} y={p.y + p.h - 4} fontSize={11} fill={p.ann.color}>{p.ann.text}</text>
+              </g>
+            ))
+          )}
         </g>
       </svg>
+
+      {/* Optical depth strip for Focus Fundamentals: authoritative plane list */}
+      {scene.id && scene.id.includes('focus-fundamentals') ? (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8, marginBottom: 8 }}>
+          {/* helper to format depth */}
+          {(() => {
+            const chips: { key: string; label: string; color: string }[] = [];
+            const fmt = (d: number | null) => {
+              if (d === null) return '∞';
+              if (d < 1000) return `${Math.round(d)} mm`;
+              return `${(d/1000).toFixed(1)} m`;
+            };
+            // Film (datum at 0 mm)
+            chips.push({ key: 'film', label: `Film 0 mm`, color: '#0284c7' });
+            // lens
+            const lensDepth = vecDot(vecSub(opticsState.lensCenterWorld, sectionOrigin), sectionDepthDir);
+            chips.push({ key: 'lens', label: `Lens ${fmt(lensDepth)}`, color: '#475569' });
+            // near DOF
+            if (opticsState.depthOfFieldNearPlane) {
+              const d = vecDot(vecSub(opticsState.depthOfFieldNearPlane.point, sectionOrigin), sectionDepthDir);
+              chips.push({ key: 'nearDof', label: `Near DOF ${fmt(d)}`, color: '#8b5cf6' });
+            }
+            // focus
+            if (opticsState.focusPlane) {
+              const d = vecDot(vecSub(opticsState.focusPlane.point, sectionOrigin), sectionDepthDir);
+              chips.push({ key: 'focus', label: `Focus ${isInfinity ? '∞' : fmt(d)}`, color: '#16a34a' });
+            } else if (isInfinity) {
+              chips.push({ key: 'focus', label: `Focus ∞`, color: '#16a34a' });
+            }
+            // far DOF
+            if (opticsState.depthOfFieldFarPlane && !isInfinity) {
+              const d = vecDot(vecSub(opticsState.depthOfFieldFarPlane.point, sectionOrigin), sectionDepthDir);
+              chips.push({ key: 'farDof', label: `Far DOF ${fmt(d)}`, color: '#8b5cf6' });
+            } else if (isInfinity && opticsState.depthOfFieldFarPlane) {
+              chips.push({ key: 'farDof', label: `Far DOF ∞`, color: '#8b5cf6' });
+            }
+            return chips.map((c) => (
+              <div key={c.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 0 rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.03)' }}>
+                <span style={{ width: 12, height: 12, borderRadius: 3, background: c.color, display: 'inline-block' }} />
+                <span style={{ fontSize: 12, color: '#0f172a' }}>{c.label}</span>
+              </div>
+            ));
+          })()}
+        </div>
+      ) : null}
+
       <DiagramLegend isInfinity={isInfinity} hasNearDof={!!opticsState.depthOfFieldNearPlane} hasFarDof={!!opticsState.depthOfFieldFarPlane && !isInfinity} hasTargets={scene.focusTargets.length > 0} />
     </section>
   );
