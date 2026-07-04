@@ -36,7 +36,6 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
   };
 
   const lensCenter = opticsState.lensCenterWorld;
-  const opticalDir = opticsState.opticalAxis.direction;
   const filmCorners = opticsState.filmPlaneCornersWorld;
 
   const topMid = { x: (filmCorners.topLeft.x + filmCorners.topRight.x) / 2, y: (filmCorners.topLeft.y + filmCorners.topRight.y) / 2, z: (filmCorners.topLeft.z + filmCorners.topRight.z) / 2 };
@@ -62,26 +61,27 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
     return vecAdd(o, vecScale(d, t));
   };
 
-  const fovDirFromFilmPoint = (filmPoint: Vec3) => vecNorm(vecSub(lensCenter, filmPoint));
-  const axialDepthU = (pt: Vec3) => Math.max(1e-6, vecDot(vecSub(pt, lensCenter), opticalDir));
+  // Optical sections: side uses top/bottom film midpoints, top uses left/right
+  type OpticalSection = {
+    id: "side" | "top";
+    filmA: Vec3;
+    filmB: Vec3;
+    lateral: (p: Vec3) => number;
+  };
+  const sectionOrigin = opticsState.filmCenterWorld;
+  const sectionDepthDir = opticsState.filmNormalWorld;
 
+  const sections: OpticalSection[] = [
+    { id: "side", filmA: topMid, filmB: bottomMid, lateral: (p) => p.y },
+    { id: "top", filmA: leftMid, filmB: rightMid, lateral: (p) => p.x },
+  ];
+
+  const diagramMinDepthMm = -250;
+  const diagramMaxDepthMm = 4000;
   const padding = 24;
-  const candidateDepths: number[] = [];
-  const filmU = axialDepthU(opticsState.filmCenterWorld);
-  candidateDepths.push(filmU);
-  if (opticsState.focusPlane) candidateDepths.push(axialDepthU(opticsState.focusPlane.point));
-  if (opticsState.depthOfFieldNearPlane) candidateDepths.push(axialDepthU(opticsState.depthOfFieldNearPlane.point));
-  if (opticsState.depthOfFieldFarPlane) candidateDepths.push(axialDepthU(opticsState.depthOfFieldFarPlane.point));
-  for (const t of scene.focusTargets) candidateDepths.push(axialDepthU(t.worldPosition));
-  candidateDepths.push(0);
 
-  const minDepth = Math.min(...candidateDepths) - 50;
-  let maxDepth = Math.max(...candidateDepths);
-  if (opticsState.sceneVisualCapDepthMm) maxDepth = Math.max(maxDepth, opticsState.sceneVisualCapDepthMm);
-  maxDepth += 50;
-
-  const depthToX = (U: number) => {
-    const t = (U - minDepth) / (maxDepth - minDepth);
+  const depthToX = (depthMm: number) => {
+    const t = (depthMm - diagramMinDepthMm) / (diagramMaxDepthMm - diagramMinDepthMm);
     return padding + t * (SVG_WIDTH - padding * 2);
   };
 
@@ -103,67 +103,62 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
   const sideSegments: PlaneSegment[] = [];
   const topSegments: PlaneSegment[] = [];
 
-  const addPlaneSegment = (plane: Plane, color: string, id: string, filmA: Vec3, filmB: Vec3) => {
-    const dirA = fovDirFromFilmPoint(filmA);
-    const dirB = fovDirFromFilmPoint(filmB);
-    const o = lensCenter;
-    const pa = intersectRayPlane(o, dirA, plane);
-    const pb = intersectRayPlane(o, dirB, plane);
+  const projectPlaneIntoSection = (plane: Plane, section: OpticalSection): PlaneSegment | null => {
+    const dirA = vecNorm(vecSub(lensCenter, section.filmA));
+    const dirB = vecNorm(vecSub(lensCenter, section.filmB));
+    const pa = intersectRayPlane(lensCenter, dirA, plane);
+    const pb = intersectRayPlane(lensCenter, dirB, plane);
     if (!pa || !pb) return null;
-    const Ua = axialDepthU(pa);
-    const Ub = axialDepthU(pb);
-    const ya = mapLateralToY(pa.y);
-    const yb = mapLateralToY(pb.y);
-    const xA = depthToX(Ua);
-    const xB = depthToX(Ub);
-
-    // enforce a minimum visible length for educational clarity while preserving center
-    const MIN_LEN = 28;
-    let outXA = xA;
-    let outXB = xB;
-    if (Math.abs(xB - xA) < MIN_LEN) {
-      const center = (xA + xB) / 2;
-      outXA = center - MIN_LEN / 2;
-      outXB = center + MIN_LEN / 2;
-    }
-
-    sideSegments.push({ id, p1: { x: outXA, y: ya }, p2: { x: outXB, y: yb }, color });
-    const yta = mapLateralToYTop(pa.x);
-    const ytb = mapLateralToYTop(pb.x);
-    const xAt = depthToX(Ua);
-    const xBt = depthToX(Ub);
-    let outXAt = xAt;
-    let outXBt = xBt;
-    if (Math.abs(xBt - xAt) < MIN_LEN) {
-      const center = (xAt + xBt) / 2;
-      outXAt = center - MIN_LEN / 2;
-      outXBt = center + MIN_LEN / 2;
-    }
-    topSegments.push({ id, p1: { x: outXAt, y: yta }, p2: { x: outXBt, y: ytb }, color });
-    return true;
+    const depthA = vecDot(vecSub(pa, sectionOrigin), sectionDepthDir);
+    const depthB = vecDot(vecSub(pb, sectionOrigin), sectionDepthDir);
+    const xA = depthToX(depthA);
+    const xB = depthToX(depthB);
+    const yA = section.id === "side" ? mapLateralToY(pa.y) : mapLateralToYTop(pa.x);
+    const yB = section.id === "side" ? mapLateralToY(pb.y) : mapLateralToYTop(pb.x);
+    return { id: plane.distance !== undefined ? String(plane.distance) : "plane", p1: { x: xA, y: yA }, p2: { x: xB, y: yB }, color: "" };
   };
 
-  addPlaneSegment(opticsState.filmPlane, "#0284c7", "film", topMid, bottomMid);
-  addPlaneSegment(opticsState.lensPlane, "#475569", "lens", topMid, bottomMid);
-  if (opticsState.focusPlane) addPlaneSegment(opticsState.focusPlane, "#16a34a", "focus", topMid, bottomMid);
-  if (opticsState.depthOfFieldNearPlane) addPlaneSegment(opticsState.depthOfFieldNearPlane, "#8b5cf6", "nearDof", topMid, bottomMid);
-  if (opticsState.depthOfFieldFarPlane) addPlaneSegment(opticsState.depthOfFieldFarPlane, "#8b5cf6", "farDof", topMid, bottomMid);
+  // Populate segments for both sections independently
+  const pushIf = (seg: PlaneSegment | null, target: PlaneSegment[], id: string, color: string) => {
+    if (seg) {
+      seg.id = id;
+      seg.color = color;
+      target.push(seg);
+    }
+  };
 
-  const sideFovDirs = [fovDirFromFilmPoint(topMid), fovDirFromFilmPoint(bottomMid)];
-  const topFovDirs = [fovDirFromFilmPoint(leftMid), fovDirFromFilmPoint(rightMid)];
+  pushIf(projectPlaneIntoSection(opticsState.filmPlane, sections[0]), sideSegments, "film", "#0284c7");
+  pushIf(projectPlaneIntoSection(opticsState.filmPlane, sections[1]), topSegments, "film", "#0284c7");
+  pushIf(projectPlaneIntoSection(opticsState.lensPlane, sections[0]), sideSegments, "lens", "#475569");
+  pushIf(projectPlaneIntoSection(opticsState.lensPlane, sections[1]), topSegments, "lens", "#475569");
+  if (opticsState.focusPlane) {
+    pushIf(projectPlaneIntoSection(opticsState.focusPlane, sections[0]), sideSegments, "focus", "#16a34a");
+    pushIf(projectPlaneIntoSection(opticsState.focusPlane, sections[1]), topSegments, "focus", "#16a34a");
+  }
+  if (opticsState.depthOfFieldNearPlane) {
+    pushIf(projectPlaneIntoSection(opticsState.depthOfFieldNearPlane, sections[0]), sideSegments, "nearDof", "#8b5cf6");
+    pushIf(projectPlaneIntoSection(opticsState.depthOfFieldNearPlane, sections[1]), topSegments, "nearDof", "#8b5cf6");
+  }
+  if (opticsState.depthOfFieldFarPlane) {
+    pushIf(projectPlaneIntoSection(opticsState.depthOfFieldFarPlane, sections[0]), sideSegments, "farDof", "#8b5cf6");
+    pushIf(projectPlaneIntoSection(opticsState.depthOfFieldFarPlane, sections[1]), topSegments, "farDof", "#8b5cf6");
+  }
+
+  // FOV dirs per section
+  const sideFovDirs = [vecNorm(vecSub(lensCenter, topMid)), vecNorm(vecSub(lensCenter, bottomMid))];
+  const topFovDirs = [vecNorm(vecSub(lensCenter, leftMid)), vecNorm(vecSub(lensCenter, rightMid))];
 
   const annotations: Annotation[] = [];
   const addAnnotation = (id: string, text: string, color: string, anchorWorld: Vec3, priority: number) => {
-    const U = axialDepthU(anchorWorld);
-    const x = depthToX(U);
+    const depth = vecDot(vecSub(anchorWorld, sectionOrigin), sectionDepthDir);
+    const x = depthToX(depth);
     const y = geometryView === "side" ? mapLateralToY(anchorWorld.y) : mapLateralToYTop(anchorWorld.x);
     annotations.push({ id, text, color, anchor: { x, y }, priority, preferred: ["top-right", "bottom-right", "top-left", "bottom-left"] });
   };
 
   addAnnotation("film", "Film", "#0284c7", opticsState.filmCenterWorld, 6);
   addAnnotation("lens", "Lens", "#475569", opticsState.lensCenterWorld, 1);
-  // optical axis anchor near lens center
-  addAnnotation("opticalAxis", "Optical axis", "#f59e0b", opticsState.lensCenterWorld, 4);
+  // NOTE: Optical axis has a dedicated fixed label rendered beside the axis; do not add it to annotations to avoid duplication.
   if (opticsState.depthOfFieldNearPlane) addAnnotation("nearDof", "Near DOF", "#8b5cf6", opticsState.depthOfFieldNearPlane.point, 3);
   if (opticsState.focusPlane) addAnnotation("focusPlane", "Focus", "#16a34a", opticsState.focusPlane.point, 2);
   if (opticsState.depthOfFieldFarPlane) addAnnotation("farDof", "Far DOF", "#8b5cf6", opticsState.depthOfFieldFarPlane.point, 3);
@@ -175,6 +170,36 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
 
   annotations.sort((a, b) => a.priority - b.priority);
 
+  // Build exclusion boxes for camera glyphs, boards, focus point so annotations don't cover them
+  const exclusionBoxes: { id: string; x: number; y: number; w: number; h: number }[] = [];
+  // active segments for current view
+  const activeSegments = geometryView === "side" ? sideSegments : topSegments;
+  const filmSegActive = activeSegments.find((s) => s.id === "film");
+  const filmCenterActive = filmSegActive ? { x: (filmSegActive.p1.x + filmSegActive.p2.x) / 2, y: (filmSegActive.p1.y + filmSegActive.p2.y) / 2 } : { x: depthToX(vecDot(vecSub(opticsState.filmCenterWorld, sectionOrigin), sectionDepthDir)), y: geometryView === "side" ? mapLateralToY(opticsState.filmCenterWorld.y) : mapLateralToYTop(opticsState.filmCenterWorld.x) };
+  const lensDepthActive = vecDot(vecSub(lensCenter, sectionOrigin), sectionDepthDir);
+  const lensXActive = depthToX(lensDepthActive);
+  const lensYActive = geometryView === "side" ? mapLateralToY(lensCenter.y) : mapLateralToYTop(lensCenter.x);
+  // camera glyph boxes
+  exclusionBoxes.push({ id: "rear-standard", x: filmCenterActive.x - 14, y: filmCenterActive.y - 18, w: 28, h: 36 });
+  exclusionBoxes.push({ id: "front-standard", x: lensXActive - 16, y: lensYActive - 20, w: 32, h: 40 });
+  // lens disc
+  exclusionBoxes.push({ id: "lens-disc", x: lensXActive - 6, y: lensYActive - 6, w: 12, h: 12 });
+  // targets exclusion boxes (approx)
+  for (const t of scene.focusTargets) {
+    const depth = vecDot(vecSub(t.worldPosition, sectionOrigin), sectionDepthDir);
+    const tx = depthToX(depth);
+    const ty = geometryView === "side" ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
+    exclusionBoxes.push({ id: `target-${t.id}`, x: tx - 12, y: ty - 22, w: 24, h: 40 });
+  }
+  // focus point
+  if (opticsState.focusPlane) {
+    const fp = opticsState.focusPlane.point;
+    const depth = vecDot(vecSub(fp, sectionOrigin), sectionDepthDir);
+    const fx = depthToX(depth);
+    const fy = geometryView === "side" ? mapLateralToY(fp.y) : mapLateralToYTop(fp.x);
+    exclusionBoxes.push({ id: "focus-point", x: fx - 8, y: fy - 8, w: 16, h: 16 });
+  }
+
   const placed = (() => {
     const occupied: { x: number; y: number; w: number; h: number }[] = [];
     const results: { ann: Annotation; x: number; y: number; w: number; h: number; side?: "left" | "right" }[] = [];
@@ -183,6 +208,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
 
     const insideSafe = (x: number, y: number, w: number, h: number) => x >= SAFE_MARGIN && y >= SAFE_MARGIN && x + w <= SVG_W - SAFE_MARGIN && y + h <= SVG_H - SAFE_MARGIN;
     const intersects = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) => !(a.x + a.w + LABEL_GAP < b.x || b.x + b.w + LABEL_GAP < a.x || a.y + a.h + LABEL_GAP < b.y || b.y + b.h + LABEL_GAP < a.y);
+    const containsPoint = (box: { x: number; y: number; w: number; h: number }, pt: { x: number; y: number }) => pt.x >= box.x && pt.x <= box.x + box.w && pt.y >= box.y && pt.y <= box.y + box.h;
 
     for (const ann of annotations) {
       const textLen = ann.text.length;
@@ -205,12 +231,25 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
             break;
           }
         }
-        if (ok) {
-          placedBox = { x: box.x, y: box.y };
-          occupied.push(box);
-          results.push({ ann, x: box.x, y: box.y, w, h });
-          break;
+        if (!ok) continue;
+        // check exclusion boxes
+        for (const ex of exclusionBoxes) {
+          if (intersects(box, ex) || containsPoint(box, { x: ex.x + ex.w / 2, y: ex.y + ex.h / 2 })) {
+            ok = false; break;
+          }
         }
+        if (!ok) continue;
+        // ensure not covering any other annotation anchor
+        for (const other of annotations) {
+          if (other.id === ann.id) continue;
+          if (containsPoint(box, other.anchor)) { ok = false; break; }
+        }
+        if (!ok) continue;
+
+        placedBox = { x: box.x, y: box.y };
+        occupied.push(box);
+        results.push({ ann, x: box.x, y: box.y, w, h });
+        break;
       }
       if (!placedBox) {
         // put in right lane stacked
@@ -249,7 +288,35 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
           const segments = geometryView === "side" ? sideSegments : topSegments;
           return (
             <g>
-              {/* DOF region polygon when both near and far planes exist */}
+              {/* 1) FOV rays (thin, visually secondary) */}
+              {(() => {
+                const dirs = geometryView === 'side' ? sideFovDirs : topFovDirs;
+                return dirs.map((d, i) => {
+                  const farPointWorld = vecAdd(lensCenter, vecScale(d, diagramMaxDepthMm * 1.2));
+                  const depthFar = vecDot(vecSub(farPointWorld, sectionOrigin), sectionDepthDir);
+                  const xFar = depthToX(depthFar);
+                  const yFar = geometryView === 'side' ? mapLateralToY(farPointWorld.y) : mapLateralToYTop(farPointWorld.x);
+                  const depthLens = vecDot(vecSub(lensCenter, sectionOrigin), sectionDepthDir);
+                  const xLens = depthToX(depthLens);
+                  const yLens = geometryView === 'side' ? mapLateralToY(lensCenter.y) : mapLateralToYTop(lensCenter.x);
+                  return <line key={`fov-${i}`} x1={xLens} y1={yLens} x2={xFar} y2={yFar} stroke="#f59e0b" strokeWidth={1} opacity={0.85} />;
+                });
+              })()}
+
+              {/* 2) Optical axis (dashed amber) */}
+              {(() => {
+                const axisY = geometryView === 'side' ? mapLateralToY(lensCenter.y) : mapLateralToYTop(lensCenter.x);
+                const x1 = depthToX(diagramMinDepthMm);
+                const x2 = depthToX(diagramMaxDepthMm);
+                return (
+                  <g>
+                    <line x1={x1} y1={axisY} x2={x2} y2={axisY} stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="6 4" opacity={0.95} />
+                    <text x={x1 + 8} y={axisY - 6} fontSize={11} fill="#f59e0b">Optical axis</text>
+                  </g>
+                );
+              })()}
+
+              {/* 3) DOF region polygon when both near and far planes exist */}
               {(!isInfinity && opticsState.depthOfFieldNearPlane && opticsState.depthOfFieldFarPlane) && (() => {
                 const segs = geometryView === 'side' ? sideSegments : topSegments;
                 const near = segs.find((s) => s.id === 'nearDof');
@@ -261,115 +328,89 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
                 return null;
               })()}
 
+              {/* 4) Film and lens segments */}
               {segments.map((s) => (
                 <line key={s.id} x1={s.p1.x} y1={s.p1.y} x2={s.p2.x} y2={s.p2.y} stroke={s.color} strokeWidth={s.id === 'film' ? 2 : 2} strokeDasharray={s.id === 'focus' ? '6 4' : undefined} data-testid={s.id === 'film' ? 'plane-line-film' : s.id === 'lens' ? 'plane-line-lens' : s.id === 'focus' ? 'plane-line-focus' : undefined} />
               ))}
-              {/* FOV rays: draw two primary rays for active view */}
-                {/* FOV rays: draw two primary rays for active view (thin, visually secondary) */}
-                {(() => {
-                  const dirs = geometryView === 'side' ? sideFovDirs : topFovDirs;
-                  return dirs.map((d, i) => {
-                  const farPointWorld = vecAdd(lensCenter, vecScale(d, maxDepth * 1.2));
-                  const U = axialDepthU(farPointWorld);
-                  const x = depthToX(U);
-                  const y = geometryView === 'side' ? mapLateralToY(farPointWorld.y) : mapLateralToYTop(farPointWorld.x);
-                  const lensX = depthToX(0);
-                  const lensY = geometryView === 'side' ? mapLateralToY(lensCenter.y) : mapLateralToYTop(lensCenter.x);
-                    return <line key={`fov-${i}`} x1={lensX} y1={lensY} x2={x} y2={y} stroke="#f59e0b" strokeWidth={1} opacity={0.85} />;
-                });
-              })()}
 
-                {/* Camera schematic: rear standard (film) and front standard (lens) */}
-                {(() => {
-                  const filmSeg = sideSegments.find((s) => s.id === 'film');
-                  const filmCenter = filmSeg ? { x: (filmSeg.p1.x + filmSeg.p2.x) / 2, y: (filmSeg.p1.y + filmSeg.p2.y) / 2 } : { x: depthToX(filmU), y: mapLateralToY(opticsState.filmCenterWorld.y) };
-                  const lensX = depthToX(0);
-                  const lensY = geometryView === 'side' ? mapLateralToY(lensCenter.y) : mapLateralToYTop(lensCenter.x);
+              {/* 6) Camera schematic: rear standard (film) and front standard (lens) */}
+              {(() => {
+              const activeSegments = geometryView === 'side' ? sideSegments : topSegments;
+              const filmSeg = activeSegments.find((s) => s.id === 'film');
+              const filmCenter = filmSeg ? { x: (filmSeg.p1.x + filmSeg.p2.x) / 2, y: (filmSeg.p1.y + filmSeg.p2.y) / 2 } : { x: depthToX(vecDot(vecSub(opticsState.filmCenterWorld, sectionOrigin), sectionDepthDir)), y: geometryView === 'side' ? mapLateralToY(opticsState.filmCenterWorld.y) : mapLateralToYTop(opticsState.filmCenterWorld.x) };
+              const depthLens = vecDot(vecSub(lensCenter, sectionOrigin), sectionDepthDir);
+              const lensX = depthToX(depthLens);
+              const lensY = geometryView === 'side' ? mapLateralToY(lensCenter.y) : mapLateralToYTop(lensCenter.x);
 
-                  // rear standard (side: vertical plate)
-                  if (geometryView === 'side') {
-                    // rear standard at filmCenter
-                    const rw = 12; const rh = 28;
-                    const rx = filmCenter.x - rw / 2; const ry = filmCenter.y - rh / 2;
-                    // front standard at lens
-                    const fw = 14; const fh = 32;
-                    const fx = lensX - fw / 2; const fy = lensY - fh / 2;
-                    return (
-                      <g>
-                        <rect x={rx} y={ry} width={rw} height={rh} fill="#1f2937" opacity={0.9} />
-                        <rect x={fx} y={fy} width={fw} height={fh} fill="#475569" opacity={0.95} />
-                      </g>
-                    );
-                  } else {
-                    // top view: small horizontal plates
-                    const rw = 18; const rh = 8;
-                    const rx = filmCenter.x - rw / 2; const ry = filmCenter.y - rh / 2;
-                    const fw = 20; const fh = 10;
-                    const fx = lensX - fw / 2; const fy = lensY - fh / 2;
-                    return (
-                      <g>
-                        <rect x={rx} y={ry} width={rw} height={rh} fill="#1f2937" opacity={0.9} />
-                        <rect x={fx} y={fy} width={fw} height={fh} fill="#475569" opacity={0.95} />
-                      </g>
-                    );
-                  }
-                })()}
-
-                {/* Targets: schematic board icons */}
-                {scene.focusTargets.map((t) => {
-                  const U = axialDepthU(t.worldPosition);
-                  const x = depthToX(U);
-                  const y = geometryView === 'side' ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
-                  if (geometryView === 'side') {
-                    // small vertical board with base
-                    return (
-                      <g key={t.id}>
-                        <rect x={x - 6} y={y - 20} width={12} height={16} fill="#0f766e" />
-                        <rect x={x - 2} y={y - 4} width={4} height={8} fill="#6b7280" />
-                      </g>
-                    );
-                  }
-                  // top view: thin card
-                  return (
-                    <g key={t.id}>
-                      <rect x={x - 8} y={y - 3} width={16} height={6} fill="#0f766e" />
-                    </g>
-                  );
-                })}
-
-                {/* Focus point marker */}
-                {!isInfinity && opticsState.focusPlane && (() => {
-                  const fp = opticsState.focusPlane.point;
-                  const U = axialDepthU(fp);
-                  const x = depthToX(U);
-                  const y = geometryView === 'side' ? mapLateralToY(fp.y) : mapLateralToYTop(fp.x);
-                  return <circle cx={x} cy={y} r={4} fill="#dc2626" />;
-                })()}
-
-                {/* hinge point */}
-                {opticsState.lensFilmHingeLine && (() => {
-                  const h = opticsState.lensFilmHingeLine.point;
-                  const U = axialDepthU(h);
-                  const x = depthToX(U);
-                  const y = geometryView === 'side' ? mapLateralToY(h.y) : mapLateralToYTop(h.x);
-                  return <circle cx={x} cy={y} r={3} fill="#7c3aed" />;
-                })()}
-
-                {/* Optical axis: single dashed amber line left-to-right through lens center */}
-                {(() => {
-                  const axisY = geometryView === 'side' ? mapLateralToY(lensCenter.y) : mapLateralToYTop(lensCenter.x);
-                  const x1 = depthToX(minDepth);
-                  const x2 = depthToX(maxDepth);
+                // rear standard (side: vertical plate)
+                if (geometryView === 'side') {
+                  // rear standard at filmCenter
+                  const rw = 12; const rh = 28;
+                  const rx = filmCenter.x - rw / 2; const ry = filmCenter.y - rh / 2;
+                  // front standard at lens
+                  const fw = 14; const fh = 32;
+                  const fx = lensX - fw / 2; const fy = lensY - fh / 2;
                   return (
                     <g>
-                      <line x1={x1} y1={axisY} x2={x2} y2={axisY} stroke="#f59e0b" strokeWidth={1.6} strokeDasharray="6 4" opacity={0.95} />
-                      {/* compact optical axis label at left side */}
-                      <text x={x1 + 8} y={axisY - 6} fontSize={11} fill="#f59e0b">Optical axis</text>
+                      <rect x={rx} y={ry} width={rw} height={rh} fill="#1f2937" opacity={0.9} />
+                      <rect x={fx} y={fy} width={fw} height={fh} fill="#475569" opacity={0.95} />
                     </g>
                   );
-                })()}
-                </g>
-              );
+                }
+                // top view: small horizontal plates
+                const rw = 18; const rh = 8;
+                const rx = filmCenter.x - rw / 2; const ry = filmCenter.y - rh / 2;
+                const fw = 20; const fh = 10;
+                const fx = lensX - fw / 2; const fy = lensY - fh / 2;
+                return (
+                  <g>
+                    <rect x={rx} y={ry} width={rw} height={rh} fill="#1f2937" opacity={0.9} />
+                    <rect x={fx} y={fy} width={fw} height={fh} fill="#475569" opacity={0.95} />
+                  </g>
+                );
+              })()}
+
+              {/* 7) Targets: schematic board icons */}
+              {scene.focusTargets.map((t) => {
+                const depth = vecDot(vecSub(t.worldPosition, sectionOrigin), sectionDepthDir);
+                const x = depthToX(depth);
+                const y = geometryView === 'side' ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
+                if (geometryView === 'side') {
+                  // small vertical board with base
+                  return (
+                    <g key={t.id}>
+                      <rect x={x - 6} y={y - 20} width={12} height={16} fill="#0f766e" />
+                      <rect x={x - 2} y={y - 4} width={4} height={8} fill="#6b7280" />
+                    </g>
+                  );
+                }
+                // top view: thin card
+                return (
+                  <g key={t.id}>
+                    <rect x={x - 8} y={y - 3} width={16} height={6} fill="#0f766e" />
+                  </g>
+                );
+              })}
+
+              {/* 8) Focus point marker */}
+              {!isInfinity && opticsState.focusPlane && (() => {
+                const fp = opticsState.focusPlane.point;
+                const depth = vecDot(vecSub(fp, sectionOrigin), sectionDepthDir);
+                const x = depthToX(depth);
+                const y = geometryView === 'side' ? mapLateralToY(fp.y) : mapLateralToYTop(fp.x);
+                return <circle cx={x} cy={y} r={4} fill="#dc2626" />;
+              })()}
+
+              {/* 9) hinge point */}
+              {opticsState.lensFilmHingeLine && (() => {
+                const h = opticsState.lensFilmHingeLine.point;
+                const depth = vecDot(vecSub(h, sectionOrigin), sectionDepthDir);
+                const x = depthToX(depth);
+                const y = geometryView === 'side' ? mapLateralToY(h.y) : mapLateralToYTop(h.x);
+                return <circle cx={x} cy={y} r={3} fill="#7c3aed" />;
+              })()}
+            </g>
+          );
         })()}
 
         {/* Annotations layer */}
