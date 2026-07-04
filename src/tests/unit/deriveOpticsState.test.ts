@@ -55,7 +55,7 @@ describe("deriveOpticsState", () => {
 
   it("keeps focus plane parallel to film for zero tilt and swing", () => {
     const result = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
-    expect(result.focusPlane.normal).toEqual(result.filmPlane.normal);
+    expect(result.focusPlane!.normal).toEqual(result.filmPlane.normal);
   });
 
   it("changes focus plane direction when tilt changes", () => {
@@ -68,7 +68,7 @@ describe("deriveOpticsState", () => {
       architectureRiseScene,
     );
 
-    expect(tilted.focusPlane.normal).not.toEqual(base.focusPlane.normal);
+    expect(tilted.focusPlane!.normal).not.toEqual(base.focusPlane!.normal);
   });
 
   it("changes focus plane direction when swing changes", () => {
@@ -81,7 +81,7 @@ describe("deriveOpticsState", () => {
       architectureRiseScene,
     );
 
-    expect(swung.focusPlane.normal).not.toEqual(base.focusPlane.normal);
+    expect(swung.focusPlane!.normal).not.toEqual(base.focusPlane!.normal);
   });
 
   it("keeps focus plane direction unchanged across aperture changes", () => {
@@ -94,8 +94,8 @@ describe("deriveOpticsState", () => {
       architectureRiseScene,
     );
 
-    expect(widerDof.focusPlane.normal).toEqual(base.focusPlane.normal);
-    expect(widerDof.depthOfFieldFarPlane.distance).toBeGreaterThan(base.depthOfFieldFarPlane.distance);
+    expect(widerDof.focusPlane!.normal).toEqual(base.focusPlane!.normal);
+    expect(widerDof.depthOfFieldFarPlane!.distance).toBeGreaterThan(base.depthOfFieldFarPlane!.distance);
   });
 
   it("widens DOF at f/32 versus f/5.6", () => {
@@ -114,8 +114,8 @@ describe("deriveOpticsState", () => {
       architectureRiseScene,
     );
 
-    const narrowWidth = narrowDof.depthOfFieldFarPlane.distance - narrowDof.depthOfFieldNearPlane.distance;
-    const wideWidth = wideDof.depthOfFieldFarPlane.distance - wideDof.depthOfFieldNearPlane.distance;
+    const narrowWidth = narrowDof.depthOfFieldFarPlane!.distance - narrowDof.depthOfFieldNearPlane!.distance;
+    const wideWidth = wideDof.depthOfFieldFarPlane!.distance - wideDof.depthOfFieldNearPlane!.distance;
     expect(wideWidth).toBeGreaterThan(narrowWidth);
   });
 
@@ -202,7 +202,7 @@ describe("deriveOpticsState", () => {
     expect(result.diagnostics.fallbackApplied).toBe(false);
     expect(result.diagnostics.isParallelLensFilm).toBe(true);
     expect(result.diagnostics.focusPlaneModel).toBe("parallel");
-    expect(Number.isFinite(result.focusPlane.distance)).toBe(true);
+    expect(Number.isFinite(result.focusPlane!.distance)).toBe(true);
   });
 
   it("falls back safely on invalid focus distance", () => {

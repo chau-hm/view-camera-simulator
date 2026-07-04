@@ -38,6 +38,8 @@ const buildDerivedCameraKey = (camera: CameraState) =>
     camera.focalLengthMm,
     camera.aperture,
     camera.focusDistanceMm,
+    camera.focusMode ?? 'finite',
+    camera.lastFiniteFocusDepthMm ?? '',
     camera.frontRiseMm,
     camera.frontTiltDeg,
     camera.frontSwingDeg,

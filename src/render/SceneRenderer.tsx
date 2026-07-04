@@ -1,4 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { add, scale } from "../core/math/vec";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { DoubleSide, Vector3 } from "three";
@@ -133,7 +134,11 @@ const OpticalAxisOverlay = ({ opticsState }: { opticsState: DerivedOpticsState }
   // Build a single continuous line passing through film datum center, lens center, focus point and extending forward
   const filmCenter = vecToWorld(opticsState.filmCenterWorld);
   const lensCenter = vecToWorld(opticsState.lensCenterWorld);
-  const focusCenter = vecToWorld(opticsState.focusPlane.point);
+  // Use physical focus plane if present; otherwise fall back to a visual cap along optical axis
+  const focusPlanePointFallback = opticsState.sceneVisualCapDepthMm
+    ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm))
+    : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000));
+  const focusCenter = vecToWorld((opticsState.focusPlane && opticsState.focusPlane.point) || focusPlanePointFallback);
   const dir = {
     x: focusCenter[0] - lensCenter[0],
     y: focusCenter[1] - lensCenter[1],
@@ -246,9 +251,9 @@ const LegendUpdater = ({
     const anchors: Record<string, [number, number, number]> = {
       film: vecToWorld(opticsState.filmCenterWorld),
       lens: vecToWorld(opticsState.lensCenterWorld),
-      focus: vecToWorld(opticsState.focusPlane.point),
-      nearDof: vecToWorld(opticsState.depthOfFieldNearPlane.point),
-      farDof: vecToWorld(opticsState.depthOfFieldFarPlane.point),
+      focus: vecToWorld((opticsState.focusPlane && opticsState.focusPlane.point) || (opticsState.sceneVisualCapDepthMm ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm)) : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000)))),
+      nearDof: vecToWorld((opticsState.depthOfFieldNearPlane && opticsState.depthOfFieldNearPlane.point) || (opticsState.sceneVisualCapDepthMm ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm)) : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000)))),
+      farDof: vecToWorld((opticsState.depthOfFieldFarPlane && opticsState.depthOfFieldFarPlane.point) || (opticsState.sceneVisualCapDepthMm ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm)) : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000)))),
       fov: vecToWorld({ x: opticsState.lensCenterWorld.x + 0.001, y: opticsState.lensCenterWorld.y + 0.001, z: opticsState.lensCenterWorld.z + 0.001 }),
       axis: vecToWorld({ x: opticsState.lensCenterWorld.x, y: opticsState.lensCenterWorld.y, z: opticsState.lensCenterWorld.z }),
     };
@@ -510,13 +515,13 @@ const SceneContent = ({
          });
 
          // compute intersections
-         const focusPlanePointWorld = vecToWorld(opticsState.focusPlane.point);
-         const nearPlanePointWorld = vecToWorld(opticsState.depthOfFieldNearPlane.point);
-         const farPlanePointWorld = vecToWorld(opticsState.depthOfFieldFarPlane.point);
+         const focusPlanePointWorld = vecToWorld(opticsState.focusPlane!.point);
+         const nearPlanePointWorld = vecToWorld(opticsState.depthOfFieldNearPlane!.point);
+         const farPlanePointWorld = vecToWorld(opticsState.depthOfFieldFarPlane!.point);
 
-         const focusCorners = rayDirs.map((d) => intersectRayPlane(lens, d, focusPlanePointWorld, opticsState.focusPlane.normal));
-         const nearCorners = rayDirs.map((d) => intersectRayPlane(lens, d, nearPlanePointWorld, opticsState.depthOfFieldNearPlane.normal));
-         const farCorners = rayDirs.map((d) => intersectRayPlane(lens, d, farPlanePointWorld, opticsState.depthOfFieldFarPlane.normal));
+         const focusCorners = rayDirs.map((d) => intersectRayPlane(lens, d, focusPlanePointWorld, opticsState.focusPlane!.normal));
+         const nearCorners = rayDirs.map((d) => intersectRayPlane(lens, d, nearPlanePointWorld, opticsState.depthOfFieldNearPlane!.normal));
+         const farCorners = rayDirs.map((d) => intersectRayPlane(lens, d, farPlanePointWorld, opticsState.depthOfFieldFarPlane!.normal));
 
          const lensZ = lens[2];
 
@@ -561,13 +566,13 @@ const SceneContent = ({
       </>
     ) : (
       <>
-        {showFocusPlaneOverlay && !opticsState.diagnostics?.isInfinityFocus && (
-          <PlaneOverlay color="#22c55e" point={vecToWorld(opticsState.focusPlane.point)} />
+        {showFocusPlaneOverlay && opticsState.focusPlane && !opticsState.diagnostics?.isInfinityFocus && (
+          <PlaneOverlay color="#22c55e" point={vecToWorld(opticsState.focusPlane!.point)} />
         )}
-        {showDofOverlay && (
+        {showDofOverlay && opticsState.depthOfFieldNearPlane && opticsState.depthOfFieldFarPlane && !opticsState.diagnostics?.isInfinityFocus && (
           <>
-            <PlaneOverlay color="#60a5fa" point={vecToWorld(opticsState.depthOfFieldNearPlane.point)} />
-            <PlaneOverlay color="#a78bfa" point={vecToWorld(opticsState.depthOfFieldFarPlane.point)} />
+            <PlaneOverlay color="#60a5fa" point={vecToWorld(opticsState.depthOfFieldNearPlane!.point)} />
+            <PlaneOverlay color="#a78bfa" point={vecToWorld(opticsState.depthOfFieldFarPlane!.point)} />
           </>
         )}
       </>
@@ -759,6 +764,26 @@ export const SceneRenderer = ({
         // compute basic assertion values in mm
         const filmDatumZ = opticsState.filmCenterWorld.z;
         const lensZ = opticsState.lensCenterWorld.z;
+
+        // If we are in infinity mode or planes are absent, show a reduced debug panel
+        if (opticsState.diagnostics?.isInfinityFocus || !opticsState.focusPlane || !opticsState.depthOfFieldNearPlane || !opticsState.depthOfFieldFarPlane) {
+          return (
+            showDebugOverlay ? (
+              <div style={{ position: "absolute", right: 8, top: 8, zIndex: 210, background: "rgba(15,23,42,0.9)", padding: 8, borderRadius: 6, color: "#e5e7eb", fontSize: 11, pointerEvents: 'auto', maxWidth: 260 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <div style={{ fontWeight: 700 }}>Optical debug</div>
+                  <button onClick={() => setShowDebugOverlay(false)} style={{ marginLeft: 8, background: "transparent", border: "none", color: "#e5e7eb", cursor: "pointer" }} aria-label="Close debug">✕</button>
+                </div>
+                <div style={{ fontSize: 11 }}>
+                  <div>filmDatumZ: {filmDatumZ.toFixed(2)} mm</div>
+                  <div>lensZ: {lensZ.toFixed(2)} mm</div>
+                  <div>Focus: ∞ or missing planes</div>
+                </div>
+              </div>
+            ) : null
+          );
+        }
+
         const nearDofZ = opticsState.depthOfFieldNearPlane.point.z;
         const focusZ = opticsState.focusPlane.point.z;
         const farDofZ = opticsState.depthOfFieldFarPlane.point.z;
@@ -782,10 +807,10 @@ export const SceneRenderer = ({
           if (!Number.isFinite(t) || t <= 1e-6) return null;
           return { x: origin.x + dir.x * t, y: origin.y + dir.y * t, z: origin.z + dir.z * t };
         };
-        const focusIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.focusPlane.point, opticsState.focusPlane.normal));
+        const focusIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.focusPlane!.point, opticsState.focusPlane!.normal));
         const allFovHitFocus = focusIntersections.every((p) => p !== null && p.z > lensZ + 1e-6);
-        const nearIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.depthOfFieldNearPlane.point, opticsState.depthOfFieldNearPlane.normal));
-        const farIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.depthOfFieldFarPlane.point, opticsState.depthOfFieldFarPlane.normal));
+        const nearIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.depthOfFieldNearPlane!.point, opticsState.depthOfFieldNearPlane!.normal));
+        const farIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.depthOfFieldFarPlane!.point, opticsState.depthOfFieldFarPlane!.normal));
         const allNearInFront = nearIntersections.every((p) => p !== null && p.z > lensZ + 1e-6);
         const allFarInFront = farIntersections.every((p) => p !== null && p.z > lensZ + 1e-6);
 

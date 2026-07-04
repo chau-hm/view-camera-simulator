@@ -67,13 +67,17 @@ export type DerivedOpticsState = {
   opticalAxis: Ray;
   lensFilmHingeLine: Line3 | null;
   focusPointWorld: Vec3;
-  focusPlane: Plane;
-  depthOfFieldNearPlane: Plane;
-  depthOfFieldFarPlane: Plane;
+  // In infinity focus mode the physical focusPlane may be absent (null)
+  focusPlane: Plane | null;
+  // depth-of-field planes may be absent in infinity mode
+  depthOfFieldNearPlane?: Plane | null;
+  depthOfFieldFarPlane?: Plane | null;
   offAxisProjectionInput: OffAxisProjectionInput;
   offAxisProjectionMatrix: number[];
   groundGlassProjection: ProjectionData;
   focusTargets: FocusTargetSharpness[];
+  // optional scene visual cap depth (non-physical, for debug rendering)
+  sceneVisualCapDepthMm?: number;
   diagnostics: {
     isParallelLensFilm: boolean;
     tiltAngleDeg: number;

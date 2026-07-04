@@ -100,11 +100,11 @@ export const deriveOpticsState = (
     const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
     const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
 
-    // For Infinity focus, we do not create a literal focus plane at infinity; instead represent a visual cap
+    // For Infinity focus we do NOT provide a physical focus plane or a finite far DOF plane.
+    // Provide an optional visual cap for debugging/display only (not used as physical focusPlane)
     const visualCapMm = 12000;
-    const focusPlane = planeFromPointNormal(add(lensCenterWorld, scale(opticalAxis.direction, visualCapMm)), opticalAxis.direction);
 
-    // Use imageDistance = f and simulate very large object distance to get farIsInfinite
+    // Use imageDistance = f and simulate very large object distance to compute near DOF limit
     const dofResult = calculateDepthOfField({
       focalLengthMm: f,
       apertureFNumber: cameraState.aperture,
@@ -127,14 +127,19 @@ export const deriveOpticsState = (
       filmPlaneCornersWorld,
       opticalAxis,
       lensFilmHingeLine: null,
+      // physical focus plane is absent in infinity mode
       focusPointWorld: add(lensCenterWorld, scale(opticalAxis.direction, visualCapMm)),
-      focusPlane,
+      focusPlane: null,
+      // near plane may be finite — keep it as physical near DOF if the solver produced one inside scene bounds
       depthOfFieldNearPlane: dofResult.depthOfFieldNearPlane,
-      depthOfFieldFarPlane: dofResult.depthOfFieldFarPlane,
+      // far plane is infinite in infinity focus — do not provide a finite far plane
+      depthOfFieldFarPlane: null,
       offAxisProjectionInput,
       offAxisProjectionMatrix: calculateOffAxisProjectionMatrix(offAxisProjectionInput),
       groundGlassProjection: calculateGroundGlassProjection(cameraState.groundGlassAssistEnabled),
       focusTargets: [],
+      // expose a scene visual cap depth for renderers that need a non-physical render endpoint
+      sceneVisualCapDepthMm: visualCapMm,
       diagnostics: {
         isParallelLensFilm: true,
         tiltAngleDeg: cameraState.frontTiltDeg,

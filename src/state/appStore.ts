@@ -123,8 +123,9 @@ export const useAppStore = create<AppStore>((set) => ({
         focusDistanceMm: Number.isFinite(value)
           ? clampFocusDistanceForScene(state.camera.activeSceneId, value)
           : value,
-        // If user selects a finite focus distance, ensure we exit infinity focus mode
-        focusMode: Number.isFinite(value) ? (state.camera.focusMode === undefined ? 'finite' : 'finite') : state.camera.focusMode,
+        // If user selects a finite focus distance, ensure we exit infinity focus mode and remember the last finite focus
+        focusMode: Number.isFinite(value) ? 'finite' : state.camera.focusMode,
+        lastFiniteFocusDepthMm: Number.isFinite(value) ? clampFocusDistanceForScene(state.camera.activeSceneId, value) : state.camera.lastFiniteFocusDepthMm,
       },
     })),
 
@@ -133,6 +134,8 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: {
         ...state.camera,
         focusMode: 'infinity',
+        // preserve current finite focus distance for later restoration
+        lastFiniteFocusDepthMm: Number.isFinite(state.camera.focusDistanceMm) ? state.camera.focusDistanceMm : state.camera.lastFiniteFocusDepthMm ?? state.camera.focusDistanceMm,
         // reset front-standard movements but do NOT overwrite focusDistanceMm with a finite default
         frontRiseMm: 0,
         frontTiltDeg: 0,

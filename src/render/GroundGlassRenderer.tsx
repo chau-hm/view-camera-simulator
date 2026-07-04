@@ -13,6 +13,7 @@ import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
 import { calculateFocusPlaneDistanceMm, calculateApertureBlurStrength } from "./groundGlassPipeline";
+import { pointToPlaneDistance } from "../core/math/plane";
 import { focusPlaneWidthMm, focusPlaneHeightMm, verticalFovDegreesFromImageDistance, cocDiameterMm } from "../core/optics/thinLensModel";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { getSceneById } from "../scenes/definitions";
@@ -147,7 +148,16 @@ export const GroundGlassRenderer = ({
     const orientedV = previewMode === "upright" ? 1 - p.vRaw : p.vRaw;
     const leftPercent = p.visible ? clamp(orientedU * 100, 0, 100) : -999; // off-screen sentinel
     const topPercent = p.visible ? clamp(orientedV * 100, 0, 100) : -999;
-    const distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(t.worldPosition, opticsState.focusPlane);
+    // If a physical focus plane exists, measure distance to it; otherwise, for infinity mode, use a large value so blur is maximal
+    let distanceToFocusPlaneMm: number;
+    if (opticsState.focusPlane) {
+      distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(t.worldPosition, opticsState.focusPlane);
+    } else if (opticsState.depthOfFieldNearPlane) {
+      // compare distance to the near DOF plane as an approximation for infinity-mode blur
+      distanceToFocusPlaneMm = Math.abs(pointToPlaneDistance(t.worldPosition, opticsState.depthOfFieldNearPlane));
+    } else {
+      distanceToFocusPlaneMm = Number.POSITIVE_INFINITY;
+    }
     const blurStrengthAtTarget = calculateApertureBlurStrength(distanceToFocusPlaneMm, aperture as unknown as number);
     return { id: t.id, leftPercent, topPercent, blurStrengthAtTarget, visible: p.visible };
   });
@@ -298,7 +308,14 @@ export const GroundGlassRenderer = ({
                   const v = spanY === 0 ? 0.5 : (topLeft.y - w.y) / spanY;
                   const leftPercent = clamp(u * 100, 0, 100);
                   const topPercent = clamp(v * 100, 0, 100);
-                  const distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(w, opticsState.focusPlane);
+                  let distanceToFocusPlaneMm: number;
+                  if (opticsState.focusPlane) {
+                    distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(w, opticsState.focusPlane);
+                  } else if (opticsState.depthOfFieldNearPlane) {
+                    distanceToFocusPlaneMm = Math.abs(pointToPlaneDistance(w, opticsState.depthOfFieldNearPlane));
+                  } else {
+                    distanceToFocusPlaneMm = Number.POSITIVE_INFINITY;
+                  }
                   const blurStrengthAtTarget = calculateApertureBlurStrength(distanceToFocusPlaneMm, aperture as unknown as number);
                   return { id: t.id, leftPercent, topPercent, blurStrengthAtTarget };
                 });
@@ -624,22 +641,38 @@ export const GroundGlassRenderer = ({
         const focusW = focusPlaneWidthMm(127, focusDistanceMm, imgDist);
         const focusH = focusPlaneHeightMm(101.6, focusDistanceMm, imgDist);
 
-        const nearZ = opticsState.depthOfFieldNearPlane.point.z;
-        const farZ = opticsState.depthOfFieldFarPlane.point.z;
-
         const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
+
+        const nearZ = opticsState.depthOfFieldNearPlane ? opticsState.depthOfFieldNearPlane.point.z : NaN;
+        const farZ = opticsState.depthOfFieldFarPlane ? opticsState.depthOfFieldFarPlane.point.z : Number.POSITIVE_INFINITY;
 
         return (
           <div style={{ display: "grid", gap: "0.125rem", fontSize: 12, borderTop: "1px dashed #e5e7eb", paddingTop: "0.5rem" }}>
             <strong>Focus Fundamentals Debug</strong>
             <span>Focal length: {CAMERA_CONSTANTS.focalLengthMm} mm</span>
             <span>Aperture: f/{aperture}</span>
-            <span>Focus distance: {formatMillimeter(focusDistanceMm)}</span>
+            {opticsState.diagnostics?.isInfinityFocus ? (
+              <div style={{ color: '#e5e7eb', fontSize: 13 }}>
+                <div>Focus: ∞</div>
+                <div>Last finite focus: {formatMillimeter(focusDistanceMm)}</div>
+                <div>Lens extension: {formatMillimeter(Math.abs(opticsState.lensCenterWorld.z))}</div>
+                <div>Extension beyond infinity: 0.00 mm</div>
+                <div>Focus plane: ∞</div>
+                <div>
+                  Near DOF: {opticsState.depthOfFieldNearPlane ? `${(opticsState.depthOfFieldNearPlane.point.z / 1000).toFixed(1)} m` : '—'}, outside current visual cap
+                </div>
+                <div>Far DOF: ∞</div>
+              </div>
+            ) : (
+              <span>Focus distance: {formatMillimeter(focusDistanceMm)}</span>
+            )}
             <span>Image distance: {imgDist.toFixed(2)} mm</span>
             <span>Sensor: {CAMERA_CONSTANTS.filmWidthMm} × {CAMERA_CONSTANTS.filmHeightMm} mm</span>
             <span>Vertical FOV: {vFov.toFixed(3)}° | Horizontal FOV: {hFov.toFixed(3)}°</span>
             <span>Focus plane dims: {focusW.toFixed(2)} × {focusH.toFixed(2)} mm</span>
-            <span>DOF near Z: {nearZ.toFixed(2)} mm | DOF far Z: {farZ.toFixed(2)} mm</span>
+            <span>
+              DOF near Z: {Number.isFinite(nearZ) ? `${nearZ.toFixed(2)} mm` : '—'} | DOF far Z: {Number.isFinite(farZ) ? `${farZ.toFixed(2)} mm` : '∞'}
+            </span>
             {sceneDef?.focusTargets.map((t) => {
               const coc = cocDiameterMm(CAMERA_CONSTANTS.focalLengthMm, aperture as number, imgDist, t.worldPosition.z);
               return (

@@ -39,9 +39,17 @@ export const createDepthOfFieldPass = (
   const worldPosition = config.enabled
     ? reconstructWorldPosition(config.sampleUv.u, config.sampleUv.v, linearDepthMm, opticsState)
     : null;
-  const distanceToFocusPlaneMm = worldPosition
-    ? calculateFocusPlaneDistanceMm(worldPosition, opticsState.focusPlane)
-    : 0;
+  let distanceToFocusPlaneMm = 0;
+  if (worldPosition) {
+    if (opticsState.focusPlane) {
+      distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(worldPosition, opticsState.focusPlane);
+    } else if (opticsState.depthOfFieldNearPlane) {
+      // In infinity mode, approximate distance to the 'focus' as distance to near DOF plane
+      distanceToFocusPlaneMm = Math.abs((worldPosition.z as number) - opticsState.depthOfFieldNearPlane.point.z);
+    } else {
+      distanceToFocusPlaneMm = Number.POSITIVE_INFINITY;
+    }
+  }
   const blurStrength = config.enabled ? calculateApertureBlurStrength(distanceToFocusPlaneMm, config.aperture) : 0;
 
   return {

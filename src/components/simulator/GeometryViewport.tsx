@@ -27,16 +27,19 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
       width="100%"
       style={{ border: "1px solid #d1d5db", borderRadius: 8, background: "#f8fafc" }}
     >
-      <Region
-        view={geometryView}
-        bounds={scene.bounds}
-        width={SVG_WIDTH}
-        height={SVG_HEIGHT}
-        nearPlane={opticsState.depthOfFieldNearPlane}
-        farPlane={opticsState.depthOfFieldFarPlane}
-        fill="#8b5cf6"
-        label="DOF"
-      />
+      {/* DOF region only when finite DOF planes exist and not in infinity focus mode */}
+      {opticsState.depthOfFieldNearPlane && opticsState.depthOfFieldFarPlane && !opticsState.diagnostics?.isInfinityFocus && (
+        <Region
+          view={geometryView}
+          bounds={scene.bounds}
+          width={SVG_WIDTH}
+          height={SVG_HEIGHT}
+          nearPlane={opticsState.depthOfFieldNearPlane}
+          farPlane={opticsState.depthOfFieldFarPlane}
+          fill="#8b5cf6"
+          label="DOF"
+        />
+      )}
       <PlaneLine
         view={geometryView}
         bounds={scene.bounds}
@@ -55,16 +58,20 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
         label="Lens"
         stroke="#475569"
       />
-      <PlaneLine
-        view={geometryView}
-        bounds={scene.bounds}
-        width={SVG_WIDTH}
-        height={SVG_HEIGHT}
-        plane={opticsState.focusPlane}
-        label="Focus"
-        stroke="#16a34a"
-        dashed
-      />
+      {/* Focus plane only when a physical focusPlane exists (not in infinity mode) */}
+      {opticsState.focusPlane && !opticsState.diagnostics?.isInfinityFocus && (
+        <PlaneLine
+          view={geometryView}
+          bounds={scene.bounds}
+          width={SVG_WIDTH}
+          height={SVG_HEIGHT}
+          plane={opticsState.focusPlane}
+          label="Focus"
+          stroke="#16a34a"
+          dashed
+        />
+      )}
+      {/* Optical axis / focus point: hide focus point when infinity focus is active */}
       <RayLine
         view={geometryView}
         bounds={scene.bounds}
@@ -75,15 +82,17 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
         label="Optical axis"
         stroke="#f59e0b"
       />
-      <PointMarker
-        view={geometryView}
-        bounds={scene.bounds}
-        width={SVG_WIDTH}
-        height={SVG_HEIGHT}
-        point={opticsState.focusPointWorld}
-        label="Focus point"
-        fill="#dc2626"
-      />
+      { !opticsState.diagnostics?.isInfinityFocus && (
+        <PointMarker
+          view={geometryView}
+          bounds={scene.bounds}
+          width={SVG_WIDTH}
+          height={SVG_HEIGHT}
+          point={opticsState.focusPointWorld}
+          label="Focus point"
+          fill="#dc2626"
+        />
+      ) }
       {opticsState.lensFilmHingeLine && (
         <PointMarker
           view={geometryView}
