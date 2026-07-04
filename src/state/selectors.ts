@@ -19,6 +19,7 @@ export const selectFocusControlState = (state: AppStore) => ({
   focusDistanceMaxMm: getSceneFocusDistanceRange(state.camera.activeSceneId).max,
   focusMode: state.camera.focusMode,
   lastFiniteFocusDepthMm: state.camera.lastFiniteFocusDepthMm,
+  activeSceneId: state.camera.activeSceneId,
 });
 
 export const selectApertureControlState = (state: AppStore) => ({

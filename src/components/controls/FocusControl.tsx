@@ -2,6 +2,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "../../state/appStore";
 import { selectFocusControlState } from "../../state/selectors";
 import { UI_COPY } from "../../ui/copy";
+import { focusTargetsDefs } from "../../scenes/focusFundamentalsTargets";
 import { formatMillimeter } from "../../utils/formatters";
 import { handleRangeInputKeyboard } from "../../utils/rangeInputKeyboard";
 
@@ -49,6 +50,23 @@ export const FocusControl = ({ focusEnabled, lockReason }: FocusControlProps) =>
           <small>Last finite focus — drag to exit ∞</small>
         ) : (
           !focusEnabled && <small>{lockReason}</small>
+        )}
+        {focusControl.activeSceneId === "focus-fundamentals-two-targets" && (
+          <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+            {focusTargetsDefs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => {
+                  if (typeof t.focusReferenceDepthFromRearDatumMm === "number") {
+                    setFocusDistance(t.focusReferenceDepthFromRearDatumMm);
+                  }
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         )}
       </label>
     </section>

@@ -6,6 +6,19 @@ export const floorYmm = -150;
 
 // Canonical focus targets used across Focus Fundamentals: IDs and labels are authoritative
 export const focusTargetsDefs = [
-  { id: "focus-near-board", label: "Focus Near Board", worldPosition: nearBoardCenterMm, weight: 1 },
-  { id: "focus-far-board", label: "Focus Far Board", worldPosition: farBoardCenterMm, weight: 1 },
+  {
+    id: "focus-near-board",
+    label: "Focus Near Board",
+    worldPosition: nearBoardCenterMm,
+    weight: 1,
+    // focus reference depth S measured from rear/film datum in mm
+    focusReferenceDepthFromRearDatumMm: 1000,
+  },
+  {
+    id: "focus-far-board",
+    label: "Focus Far Board",
+    worldPosition: farBoardCenterMm,
+    weight: 1,
+    focusReferenceDepthFromRearDatumMm: 3000,
+  },
 ];
