@@ -189,7 +189,12 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
     const depth = vecDot(vecSub(t.worldPosition, sectionOrigin), sectionDepthDir);
     const tx = depthToX(depth);
     const ty = geometryView === "side" ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
-    exclusionBoxes.push({ id: `target-${t.id}`, x: tx - 12, y: ty - 22, w: 24, h: 40 });
+    if (geometryView === "side") {
+      exclusionBoxes.push({ id: `target-${t.id}`, x: tx - 12, y: ty - 22, w: 24, h: 40 });
+    } else {
+      // top view: narrow vertical plate exclusion
+      exclusionBoxes.push({ id: `target-${t.id}`, x: tx - 3, y: ty - 9, w: 6, h: 18 });
+    }
   }
   // focus point
   if (opticsState.focusPlane) {
@@ -200,69 +205,152 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
     exclusionBoxes.push({ id: "focus-point", x: fx - 8, y: fy - 8, w: 16, h: 16 });
   }
 
-  const placed = (() => {
-    const occupied: { x: number; y: number; w: number; h: number }[] = [];
-    const results: { ann: Annotation; x: number; y: number; w: number; h: number; side?: "left" | "right" }[] = [];
-    let rightLaneY = SAFE_MARGIN;
-    const rightLaneX = SVG_W - 140; // gutter
+  // Focus Fundamentals: deterministic, semantic layout
+  const layoutFocusFundamentalsAnnotations = () => {
+    const results: { ann: Annotation; x: number; y: number; w: number; h: number }[] = [];
+    const occupied: { x: number; y: number; w: number; h: number }[] = [...exclusionBoxes];
 
     const insideSafe = (x: number, y: number, w: number, h: number) => x >= SAFE_MARGIN && y >= SAFE_MARGIN && x + w <= SVG_W - SAFE_MARGIN && y + h <= SVG_H - SAFE_MARGIN;
     const intersects = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) => !(a.x + a.w + LABEL_GAP < b.x || b.x + b.w + LABEL_GAP < a.x || a.y + a.h + LABEL_GAP < b.y || b.y + b.h + LABEL_GAP < a.y);
     const containsPoint = (box: { x: number; y: number; w: number; h: number }, pt: { x: number; y: number }) => pt.x >= box.x && pt.x <= box.x + box.w && pt.y >= box.y && pt.y <= box.y + box.h;
 
-    for (const ann of annotations) {
-      const textLen = ann.text.length;
-      const w = textLen * 6.5 + 16;
+    const tryPlace = (ann: Annotation, x: number, y: number, w: number, h: number) => {
+      const box = { x, y, w, h };
+      if (!insideSafe(x, y, w, h)) return false;
+      for (const occ of occupied) if (intersects(box, occ)) return false;
+      for (const other of annotations) if (other.id !== ann.id && containsPoint(box, other.anchor)) return false;
+      occupied.push(box);
+      results.push({ ann, x, y, w, h });
+      return true;
+    };
+
+    const fallbackToLane = (ann: Annotation) => {
       const h = 18;
+      const lanes: { [k: string]: { x1: number; x2: number; curY: number } } = {
+        topLeft: { x1: 12, x2: 145, curY: SAFE_MARGIN },
+        topCenter: { x1: 155, x2: 300, curY: SAFE_MARGIN },
+        topRight: { x1: 315, x2: SVG_W - 12, curY: SAFE_MARGIN },
+        bottomLeft: { x1: 12, x2: 145, curY: SVG_H - SAFE_MARGIN - h },
+        bottomCenter: { x1: 155, x2: 300, curY: SVG_H - SAFE_MARGIN - h },
+        bottomRight: { x1: 315, x2: SVG_W - 12, curY: SVG_H - SAFE_MARGIN - h },
+      };
+      const sidePref = ann.anchor.x < SVG_W * 0.33 ? 'Left' : (ann.anchor.x > SVG_W * 0.67 ? 'Right' : 'Center');
+      const vert = ann.anchor.y < SVG_H / 2 ? 'top' : 'bottom';
+      const candidates = [`${vert}${sidePref}`, `${vert}Center`, `${vert}Left`, `${vert}Right`];
+      for (const k of candidates) {
+        const lane = lanes[k as string];
+        const laneWidth = lane.x2 - lane.x1 - 8;
+        const px = lane.x1 + 8;
+        const py = lane.curY;
+        if (!insideSafe(px, py, Math.min(132, laneWidth), h)) { lane.curY += h + 4; continue; }
+        const box = { x: px, y: py, w: Math.min(132, laneWidth), h };
+        let collide = false; for (const occ of occupied) if (intersects(box, occ)) { collide = true; break; }
+        if (collide) { lane.curY += h + 4; continue; }
+        occupied.push(box); results.push({ ann, x: box.x, y: box.y, w: box.w, h: box.h }); lane.curY += h + 4; return true;
+      }
+      return false;
+    };
+
+    // Semantic order: camera (film, lens), targets (near, far), focus/DOF (nearDof, focusPlane, farDof)
+    const filmAnn = annotations.find((a) => a.id === 'film');
+    if (filmAnn) {
+      const w = filmAnn.text.length * 6.5 + 16; const h = 18;
+      const x = filmAnn.anchor.x - w - 6; const y = filmAnn.anchor.y + 6;
+      if (!tryPlace(filmAnn, x, y, w, h)) fallbackToLane(filmAnn);
+    }
+    const lensAnn = annotations.find((a) => a.id === 'lens');
+    if (lensAnn) {
+      const w = lensAnn.text.length * 6.5 + 16; const h = 18;
+      const x = lensAnn.anchor.x + 6; const y = lensAnn.anchor.y - h - 6;
+      if (!tryPlace(lensAnn, x, y, w, h)) fallbackToLane(lensAnn);
+    }
+
+    const nearTarget = annotations.find((a) => /near/i.test(a.text));
+    const farTarget = annotations.find((a) => /far/i.test(a.text));
+    if (nearTarget) {
+      const w = nearTarget.text.length * 6.5 + 16; const h = 18;
+      const x = nearTarget.anchor.x + 6; const y = nearTarget.anchor.y - h - 6;
+      if (!tryPlace(nearTarget, x, y, w, h)) { const x2 = nearTarget.anchor.x + 6; const y2 = nearTarget.anchor.y + 6; if (!tryPlace(nearTarget, x2, y2, w, h)) fallbackToLane(nearTarget); }
+    }
+    if (farTarget) {
+      const w = farTarget.text.length * 6.5 + 16; const h = 18;
+      const x = farTarget.anchor.x + 6; const y = farTarget.anchor.y - h - 6;
+      if (!tryPlace(farTarget, x, y, w, h)) { const x2 = farTarget.anchor.x + 6; const y2 = farTarget.anchor.y + 6; if (!tryPlace(farTarget, x2, y2, w, h)) fallbackToLane(farTarget); }
+    }
+
+    const nearDofAnn = annotations.find((a) => a.id === 'nearDof');
+    const focusAnn = annotations.find((a) => a.id === 'focusPlane');
+    const farDofAnn = annotations.find((a) => a.id === 'farDof');
+    if (nearDofAnn) {
+      const w = nearDofAnn.text.length * 6.5 + 16; const h = 18;
+      const x = nearDofAnn.anchor.x - w / 2; const y = nearDofAnn.anchor.y + 6;
+      if (!tryPlace(nearDofAnn, x, y, w, h)) fallbackToLane(nearDofAnn);
+    }
+    if (focusAnn) {
+      const w = focusAnn.text.length * 6.5 + 16; const h = 18;
+      const x = focusAnn.anchor.x + 6; const y = focusAnn.anchor.y - h - 6;
+      if (!tryPlace(focusAnn, x, y, w, h)) fallbackToLane(focusAnn);
+    }
+    if (farDofAnn) {
+      const w = farDofAnn.text.length * 6.5 + 16; const h = 18;
+      const x = farDofAnn.anchor.x - w / 2; const y = farDofAnn.anchor.y - h - 6;
+      if (!tryPlace(farDofAnn, x, y, w, h)) fallbackToLane(farDofAnn);
+    }
+
+    return results;
+  };
+
+  const genericPlace = () => {
+    const occupied: { x: number; y: number; w: number; h: number }[] = [];
+    const results: { ann: Annotation; x: number; y: number; w: number; h: number }[] = [];
+    const insideSafe = (x: number, y: number, w: number, h: number) => x >= SAFE_MARGIN && y >= SAFE_MARGIN && x + w <= SVG_W - SAFE_MARGIN && y + h <= SVG_H - SAFE_MARGIN;
+    const intersects = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) => !(a.x + a.w + LABEL_GAP < b.x || b.x + b.w + LABEL_GAP < a.x || a.y + a.h + LABEL_GAP < b.y || b.y + b.h + LABEL_GAP < a.y);
+    const containsPoint = (box: { x: number; y: number; w: number; h: number }, pt: { x: number; y: number }) => pt.x >= box.x && pt.x <= box.x + box.w && pt.y >= box.y && pt.y <= box.y + box.h;
+
+    for (const ann of annotations) {
+      const textLen = ann.text.length; const w = textLen * 6.5 + 16; const h = 18;
       const candidates = [
-        { x: ann.anchor.x + 6, y: ann.anchor.y - h - 6 }, // top-right
-        { x: ann.anchor.x + 6, y: ann.anchor.y + 6 }, // bottom-right
-        { x: ann.anchor.x - w - 6, y: ann.anchor.y - h - 6 }, // top-left
-        { x: ann.anchor.x - w - 6, y: ann.anchor.y + 6 }, // bottom-left
+        { x: ann.anchor.x + 6, y: ann.anchor.y - h - 6 },
+        { x: ann.anchor.x + 6, y: ann.anchor.y + 6 },
+        { x: ann.anchor.x - w - 6, y: ann.anchor.y - h - 6 },
+        { x: ann.anchor.x - w - 6, y: ann.anchor.y + 6 },
       ];
-      let placedBox = null as null | { x: number; y: number };
+      let placed = false;
       for (const c of candidates) {
         const box = { x: c.x, y: c.y, w, h };
         if (!insideSafe(box.x, box.y, box.w, box.h)) continue;
-        let ok = true;
-        for (const occ of occupied) {
-          if (intersects(box, occ)) {
-            ok = false;
-            break;
-          }
-        }
+        let ok = true; for (const occ of occupied) if (intersects(box, occ)) { ok = false; break; }
         if (!ok) continue;
-        // check exclusion boxes
-        for (const ex of exclusionBoxes) {
-          if (intersects(box, ex) || containsPoint(box, { x: ex.x + ex.w / 2, y: ex.y + ex.h / 2 })) {
-            ok = false; break;
-          }
-        }
-        if (!ok) continue;
-        // ensure not covering any other annotation anchor
-        for (const other of annotations) {
-          if (other.id === ann.id) continue;
-          if (containsPoint(box, other.anchor)) { ok = false; break; }
-        }
-        if (!ok) continue;
-
-        placedBox = { x: box.x, y: box.y };
-        occupied.push(box);
-        results.push({ ann, x: box.x, y: box.y, w, h });
-        break;
+        let blocked = false; for (const ex of exclusionBoxes) if (intersects(box, ex) || containsPoint(box, { x: ex.x + ex.w / 2, y: ex.y + ex.h / 2 })) { blocked = true; break; }
+        if (blocked) continue;
+        for (const other of annotations) if (other.id !== ann.id && containsPoint(box, other.anchor)) { blocked = true; break; }
+        if (blocked) continue;
+        occupied.push(box); results.push({ ann, x: box.x, y: box.y, w, h }); placed = true; break;
       }
-      if (!placedBox) {
-        // put in right lane stacked
-        const x = rightLaneX + 8;
-        const y = rightLaneY;
-        rightLaneY += h + 4;
-        const box = { x, y, w: 132, h };
-        occupied.push(box);
-        results.push({ ann, x: box.x, y: box.y, w: box.w, h: box.h, side: "right" });
+      if (!placed) {
+        // simple lane fallback
+        const lanes: { [k: string]: { x1: number; x2: number; curY: number } } = {
+          topLeft: { x1: 12, x2: 145, curY: SAFE_MARGIN }, topCenter: { x1: 155, x2: 300, curY: SAFE_MARGIN }, topRight: { x1: 315, x2: SVG_W - 12, curY: SAFE_MARGIN },
+          bottomLeft: { x1: 12, x2: 145, curY: SVG_H - SAFE_MARGIN - h }, bottomCenter: { x1: 155, x2: 300, curY: SVG_H - SAFE_MARGIN - h }, bottomRight: { x1: 315, x2: SVG_W - 12, curY: SVG_H - SAFE_MARGIN - h },
+        };
+        const vert = ann.anchor.y < SVG_H / 2 ? 'top' : 'bottom';
+        const sidePref = ann.anchor.x < SVG_W * 0.33 ? 'Left' : (ann.anchor.x > SVG_W * 0.67 ? 'Right' : 'Center');
+        const candidates = [`${vert}${sidePref}`, `${vert}Center`, `${vert}Left`, `${vert}Right`];
+        let placed2 = false;
+        for (const k of candidates) {
+          const lane = lanes[k as string]; const laneWidth = lane.x2 - lane.x1 - 8; const px = lane.x1 + 8; const py = lane.curY;
+          const box = { x: px, y: py, w: Math.min(132, laneWidth), h };
+          let collide = false; for (const occ of occupied) if (intersects(box, occ)) { collide = true; break; }
+          if (collide) { lane.curY += h + 4; continue; }
+          occupied.push(box); results.push({ ann, x: box.x, y: box.y, w: box.w, h: box.h }); lane.curY += h + 4; placed2 = true; break;
+        }
+        if (!placed2) { /* give up — place off to right */ const px = SVG_W - 140; const py = SAFE_MARGIN; const box = { x: px, y: py, w: 132, h }; occupied.push(box); results.push({ ann, x: box.x, y: box.y, w: box.w, h: box.h }); }
       }
     }
     return results;
-  })();
+  };
+
+  const placed = (scene.id && scene.id.includes('focus-fundamentals')) ? layoutFocusFundamentalsAnnotations() : genericPlace();
 
   return (
     <section>
@@ -357,15 +445,17 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
                     </g>
                   );
                 }
-                // top view: small horizontal plates
-                const rw = 18; const rh = 8;
+                // top view: vertical plates (same visual language as side view)
+                const rw = 8; const rh = 24;
                 const rx = filmCenter.x - rw / 2; const ry = filmCenter.y - rh / 2;
-                const fw = 20; const fh = 10;
+                const fw = 10; const fh = 28;
                 const fx = lensX - fw / 2; const fy = lensY - fh / 2;
                 return (
                   <g>
                     <rect x={rx} y={ry} width={rw} height={rh} fill="#1f2937" opacity={0.9} />
                     <rect x={fx} y={fy} width={fw} height={fh} fill="#475569" opacity={0.95} />
+                    {/* small lens disc at lens center */}
+                    <circle cx={lensX} cy={lensY} r={4} fill="#111827" opacity={0.9} />
                   </g>
                 );
               })()}
@@ -417,8 +507,41 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
         <g pointerEvents="none">
           {placed.map((p) => (
             <g key={p.ann.id}>
-              {/* leader line */}
-              <line x1={p.ann.anchor.x} y1={p.ann.anchor.y} x2={p.x} y2={p.y + p.h / 2} stroke={p.ann.color} strokeWidth={1} />
+              {/* routed leader line with elbow to nearest label edge */}
+              {
+                (() => {
+                  const ax = p.ann.anchor.x; const ay = p.ann.anchor.y;
+                  const lx = p.x; const ly = p.y; const lw = p.w; const lh = p.h;
+                  // determine label edge point
+                  let edgeX = lx + lw / 2; let edgeY = ly + lh / 2;
+                  // if label is mostly right of anchor -> use left edge
+                  if (lx > ax) { edgeX = lx; edgeY = ly + lh / 2; }
+                  // if label is mostly left of anchor -> use right edge
+                  else if (lx + lw < ax) { edgeX = lx + lw; edgeY = ly + lh / 2; }
+                  // if label above anchor -> use bottom edge
+                  if (ly + lh < ay) { edgeX = lx + lw / 2; edgeY = ly + lh; }
+                  // if label below anchor -> use top edge
+                  else if (ly > ay) { edgeX = lx + lw / 2; edgeY = ly; }
+
+                  // choose elbow point (offset from anchor toward label direction)
+                  let mx = ax; let my = ay;
+                  const gap = 8;
+                  if (edgeY < ay) {
+                    // label is above anchor -> go vertically up then to label bottom
+                    mx = ax; my = edgeY + gap;
+                  } else if (edgeY > ay) {
+                    // label is below anchor
+                    mx = ax; my = edgeY - gap;
+                  } else if (edgeX > ax) {
+                    // label right
+                    mx = edgeX - gap; my = ay;
+                  } else {
+                    // label left
+                    mx = edgeX + gap; my = ay;
+                  }
+                  return <polyline points={`${ax},${ay} ${mx},${my} ${edgeX},${edgeY}`} stroke={p.ann.color} strokeWidth={1} fill="none" strokeLinecap="round" strokeLinejoin="round" />;
+                })()
+              }
               {/* label background */}
               <rect x={p.x} y={p.y} width={p.w} height={p.h} rx={4} ry={4} fill="#ffffff" stroke="rgba(0,0,0,0.06)" />
               <text x={p.x + 8} y={p.y + p.h - 4} fontSize={11} fill={p.ann.color}>{p.ann.text}</text>
