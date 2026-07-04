@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { useAppStore } from "../state/appStore";
 import { GroundGlassRTT } from "./GroundGlassRTT";
 import { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { ApertureValue } from "../types/camera";
@@ -66,18 +67,35 @@ export const GroundGlassRenderer = ({
   sceneId,
 }: GroundGlassRendererProps) => {
   const [zoomEnabled, setZoomEnabled] = useState(false);
-  const [zoomOrigin, setZoomOrigin] = useState<{ xPercent: number; yPercent: number }>({
-    xPercent: 50,
-    yPercent: 50,
-  });
+  const [zoomPan, setZoomPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ pointerId: number | null; startX: number; startY: number; startPanX: number; startPanY: number }>({ pointerId: null, startX: 0, startY: 0, startPanX: 0, startPanY: 0 });
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({ width: PANEL_WIDTH_PX, height: PANEL_HEIGHT_PX });
+
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    const update = () => {
+      const r = el.getBoundingClientRect();
+      setViewportSize({ width: r.width, height: r.height });
+    };
+    update();
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => update());
+      ro.observe(el);
+    }
+    return () => {
+      if (ro) ro.disconnect();
+    };
+  }, [panelRef]);
+
   // Explicit preview modes for Focus Fundamentals: 'raw' (invert both axes) or 'upright' (correct both axes)
   const [previewMode, setPreviewMode] = useState<"raw" | "upright">(sceneId === "focus-fundamentals-two-targets" ? "raw" : assistEnabled ? "upright" : "raw");
   const [rawRttDebug, setRawRttDebug] = useState(false);
-  const invertHorizontal = previewMode === "raw" ? true : false;
-  const invertVertical = previewMode === "raw" ? true : false;
-  const scaleX = invertHorizontal ? -1 : 1;
-  const scaleY = invertVertical ? -1 : 1;
-  const transform = `scale(${scaleX}, ${scaleY})`;
+  const zoomScale = zoomEnabled ? 1.9 : 1;
+  const transform = `translate3d(${zoomPan.x}px, ${zoomPan.y}px, 0) scale(${zoomScale})`;
   const pipeline = useMemo(() => {
     // For the dedicated Focus Fundamentals scene use the thin-lens optical projection
     const useThinLens = sceneId === "focus-fundamentals-two-targets";
@@ -122,7 +140,6 @@ export const GroundGlassRenderer = ({
   const blurOpacity = Math.min(0.85, dofSample.blurStrength * 1.2);
   const blurRadiusPx = Math.max(0, dofSample.blurStrength * (qualitySettings.groundGlassScale > 0.8 ? 9 : 6));
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
-  const zoomScale = zoomEnabled ? 1.9 : 1;
   // For Focus Fundamentals scene, ignore rise/tilt/swing to maintain a strict no-movement baseline
   const isFocusFundamentals = sceneId === "focus-fundamentals-two-targets";
   const sceneShiftX = isFocusFundamentals ? 0 : clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
@@ -135,9 +152,11 @@ export const GroundGlassRenderer = ({
   const sceneBackground = `radial-gradient(circle at ${50 + clamp(riseMm * 0.75, -18, 18)}% ${
     48 - clamp(tiltDeg * 2.2, -18, 18)
   }%, rgba(96,165,250,0.34), rgba(30,41,59,0.9) 42%, rgba(15,23,42,0.97) 100%)`;
-  const focusDistanceLabel = opticsState.diagnostics?.isInfinityFocus
-    ? `Focus: ∞`
+  const isInfinityFocus = opticsState.diagnostics?.isInfinityFocus === true;
+  const focusDistanceLabel = isInfinityFocus
+    ? `∞ focus`
     : `${formatMillimeter(focusDistanceMm)} focus / ${dofSample.distanceToFocusPlaneMm.toFixed(1)} mm delta`;
+  const lastFiniteFocusDepthMm = useAppStore((s) => s.camera.lastFiniteFocusDepthMm);
 
   // Project scene focus targets (if available) into ground-glass UV coordinates for positioning overlays
   const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
@@ -173,11 +192,27 @@ export const GroundGlassRenderer = ({
     <div style={{ display: "grid", gap: "0.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
         <strong>{UI_COPY.simulator.groundGlassRenderPipeline}</strong>
-        <button type="button" onClick={() => setZoomEnabled((value) => !value)}>
+        <button
+          type="button"
+          onClick={() => {
+            setZoomEnabled((value) => {
+              const next = !value;
+              if (!next) {
+                // zoom out: reset pan
+                setZoomPan({ x: 0, y: 0 });
+              } else {
+                // zoom in: start centred
+                setZoomPan({ x: 0, y: 0 });
+              }
+              return next;
+            });
+          }}
+        >
           {zoomEnabled ? UI_COPY.simulator.groundGlassZoomOut : UI_COPY.simulator.groundGlassZoomIn}
         </button>
       </div>
       <div
+        ref={panelRef}
         style={{
           position: "relative",
           width: "100%",
@@ -186,16 +221,60 @@ export const GroundGlassRenderer = ({
           border: "1px solid #d1d5db",
           borderRadius: 8,
           overflow: "hidden",
-          cursor: zoomEnabled ? "zoom-out" : "zoom-in",
+          cursor: zoomEnabled ? (isDragging ? "grabbing" : "grab") : "zoom-in",
         }}
-        onClick={(event) => {
-          if (!zoomEnabled) {
-            return;
+        // pointer handlers for pan when zoomed
+        onPointerDown={(e) => {
+          // only start pan if zoom is enabled and primary button
+          if (!zoomEnabled || e.button !== 0) return;
+          // do not start pan when interacting with controls layered above
+          const target = e.target as HTMLElement;
+          if (target.closest("button")) return;
+          const el = e.currentTarget as HTMLElement;
+          try {
+            el.setPointerCapture(e.pointerId);
+          } catch (captureErr) {
+            // ignore pointer capture errors
+            void captureErr;
           }
-          const rect = event.currentTarget.getBoundingClientRect();
-          const xPercent = ((event.clientX - rect.left) / rect.width) * 100;
-          const yPercent = ((event.clientY - rect.top) / rect.height) * 100;
-          setZoomOrigin({ xPercent, yPercent });
+          dragRef.current = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, startPanX: zoomPan.x, startPanY: zoomPan.y };
+          setIsDragging(true);
+        }}
+        onPointerMove={(e) => {
+          if (!zoomEnabled) return;
+          if (!isDragging || dragRef.current.pointerId !== e.pointerId) return;
+          const dx = e.clientX - dragRef.current.startX;
+          const dy = e.clientY - dragRef.current.startY;
+          const desiredX = dragRef.current.startPanX + dx;
+          const desiredY = dragRef.current.startPanY + dy;
+          const maxPanX = (viewportSize.width * (zoomScale - 1)) / 2;
+          const maxPanY = (viewportSize.height * (zoomScale - 1)) / 2;
+          const clampedX = Math.max(-maxPanX, Math.min(maxPanX, desiredX));
+          const clampedY = Math.max(-maxPanY, Math.min(maxPanY, desiredY));
+          setZoomPan({ x: clampedX, y: clampedY });
+        }}
+        onPointerUp={(e) => {
+          if (!zoomEnabled) return;
+          const el = e.currentTarget as HTMLElement;
+          try {
+            el.releasePointerCapture(e.pointerId);
+        } catch (releaseErr) {
+          // ignore release errors
+          void releaseErr;
+        }
+        dragRef.current.pointerId = null;
+        setIsDragging(false);
+        }}
+        onPointerCancel={(e) => {
+        if (!zoomEnabled) return;
+        const el = e.currentTarget as HTMLElement;
+        try {
+          el.releasePointerCapture(e.pointerId);
+        } catch (cancelErr) {
+          void cancelErr;
+        }
+        dragRef.current.pointerId = null;
+        setIsDragging(false);
         }}
       >
         {/* Decorative background; hide for Focus Fundamentals (RTT) or when Raw RTT Debug is enabled */}
@@ -219,6 +298,7 @@ export const GroundGlassRenderer = ({
               <span style={{ fontSize: 11, color: "#94a3b8" }}>Preview:</span>
               <button
                 type="button"
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => setPreviewMode(previewMode === "raw" ? "upright" : "raw")}
                 style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#fff", padding: "4px 8px", borderRadius: 6 }}
               >
@@ -230,6 +310,7 @@ export const GroundGlassRenderer = ({
               <span style={{ fontSize: 11, color: "#94a3b8" }}>RTT Debug:</span>
               <button
                 type="button"
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => setRawRttDebug((s) => !s)}
                 style={{ background: rawRttDebug ? "#ef4444" : "rgba(255,255,255,0.06)", border: "none", color: "#fff", padding: "4px 8px", borderRadius: 6 }}
               >
@@ -242,8 +323,8 @@ export const GroundGlassRenderer = ({
           style={{
             position: "absolute",
             inset: 0,
-            transform: `scale(${zoomScale})`,
-            transformOrigin: `${zoomOrigin.xPercent}% ${zoomOrigin.yPercent}%`,
+            transform: transform,
+            transformOrigin: "center",
           }}
         >
         {/* For focus fundamentals show the RTT instead of the legacy canvas */}
@@ -288,6 +369,7 @@ export const GroundGlassRenderer = ({
             filter: `blur(${blurRadiusPx}px)`,
             transform: `translate(${sceneShiftX}px, ${sceneShiftY}px) rotate(${sceneRotationDeg}deg) scale(${focusScale})`,
             transformOrigin: "center",
+            willChange: "transform",
           }}
         >
             {(() => {
@@ -576,7 +658,16 @@ export const GroundGlassRenderer = ({
             color: "#e2e8f0",
           }}
         >
-          {focusDistanceLabel}
+          {isInfinityFocus ? (
+            <div>
+              <div>∞ focus</div>
+              {lastFiniteFocusDepthMm && (
+                <div style={{ fontSize: 10, color: "#94a3b8" }}>Last finite focus: {formatMillimeter(lastFiniteFocusDepthMm)}</div>
+              )}
+            </div>
+          ) : (
+            <div>{focusDistanceLabel}</div>
+          )}
         </div>
         {sceneId !== "focus-fundamentals-two-targets" && (
           <div
@@ -595,6 +686,7 @@ export const GroundGlassRenderer = ({
               boxShadow: `0 0 0 10px rgba(59,130,246,${focusRingOpacity * 0.25})`,
               opacity: focusRingOpacity,
               pointerEvents: "none",
+              // ring is positioned inside the image-stage which already applies the pan/zoom transform
             }}
           />
         )}
@@ -621,7 +713,11 @@ export const GroundGlassRenderer = ({
           Rise {formatMillimeter(riseMm)} | Tilt {formatDegrees(tiltDeg)} | Swing {formatDegrees(swingDeg)}
         </span>
         <span>
-          Focus {formatMillimeter(focusDistanceMm)} | Aperture f/{aperture}
+          {isInfinityFocus ? (
+            <span>Focus ∞ | Aperture f/{aperture} <span style={{ fontSize: 11, color: '#94a3b8' }}> (Last finite: {lastFiniteFocusDepthMm ? formatMillimeter(lastFiniteFocusDepthMm) : '—'})</span></span>
+          ) : (
+            <span>Focus {formatMillimeter(focusDistanceMm)} | Aperture f/{aperture}</span>
+          )}
         </span>
         <span>
           Quality {renderQuality} | Color target: {pipeline.colorTarget.widthPx}×{pipeline.colorTarget.heightPx} | Blur
