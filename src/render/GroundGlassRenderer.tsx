@@ -247,6 +247,7 @@ export const GroundGlassRenderer = ({
               focusRingRadiusPx={focusRingSize}
               focusRingOpacity={focusRingOpacity}
               rawDebug={rawRttDebug}
+              focusAssistEnabled={focusAssistEnabled}
             />
           </div>
         ) : (

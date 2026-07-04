@@ -19,7 +19,7 @@ import {
   createOffAxisProjectionInput,
 } from "./calculateOffAxisProjection";
 import { calculateSharpness } from "./calculateSharpness";
-import { isFiniteVec3, vec, subtract, dot } from "../math/vec";
+import { isFiniteVec3, vec, subtract, dot, add, scale } from "../math/vec";
 
 const isFiniteCameraInput = (cameraState: CameraState): boolean =>
   [
@@ -85,6 +85,67 @@ export const deriveOpticsState = (
   cameraState: CameraState,
   scene: SceneDefinition,
 ): DerivedOpticsState => {
+  // Special handling for Infinity focus mode: branch early and produce a stable state
+  if (cameraState.focusMode === "infinity") {
+    if (!Number.isFinite(cameraState.focalLengthMm) || cameraState.focalLengthMm <= 0) {
+      return baseFallbackState(cameraState, "Invalid focal length for infinity focus");
+    }
+    const f = cameraState.focalLengthMm;
+    const lensCenterWorld = vec(0, 0, f);
+    const lensNormalWorld = vec(0, 0, 1);
+    const filmCenterWorld = vec(0, 0, 0);
+    const filmNormalWorld = vec(0, 0, 1);
+    const filmPlane = planeFromPointNormal(filmCenterWorld, filmNormalWorld);
+    const lensPlane = planeFromPointNormal(lensCenterWorld, lensNormalWorld);
+    const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
+    const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
+
+    // For Infinity focus, we do not create a literal focus plane at infinity; instead represent a visual cap
+    const visualCapMm = 12000;
+    const focusPlane = planeFromPointNormal(add(lensCenterWorld, scale(opticalAxis.direction, visualCapMm)), opticalAxis.direction);
+
+    // Use imageDistance = f and simulate very large object distance to get farIsInfinite
+    const dofResult = calculateDepthOfField({
+      focalLengthMm: f,
+      apertureFNumber: cameraState.aperture,
+      circleOfConfusionMm: 0.1,
+      lensCenterWorld,
+      opticalAxis,
+      focusObjectDistanceMm: 1e9,
+      visualCapMm,
+    });
+
+    const offAxisProjectionInput = createOffAxisProjectionInput(lensCenterWorld, filmPlaneCornersWorld);
+
+    return {
+      lensCenterWorld,
+      lensNormalWorld,
+      lensPlane,
+      filmCenterWorld,
+      filmNormalWorld,
+      filmPlane,
+      filmPlaneCornersWorld,
+      opticalAxis,
+      lensFilmHingeLine: null,
+      focusPointWorld: add(lensCenterWorld, scale(opticalAxis.direction, visualCapMm)),
+      focusPlane,
+      depthOfFieldNearPlane: dofResult.depthOfFieldNearPlane,
+      depthOfFieldFarPlane: dofResult.depthOfFieldFarPlane,
+      offAxisProjectionInput,
+      offAxisProjectionMatrix: calculateOffAxisProjectionMatrix(offAxisProjectionInput),
+      groundGlassProjection: calculateGroundGlassProjection(cameraState.groundGlassAssistEnabled),
+      focusTargets: [],
+      diagnostics: {
+        isParallelLensFilm: true,
+        tiltAngleDeg: cameraState.frontTiltDeg,
+        swingAngleDeg: cameraState.frontSwingDeg,
+        focusPlaneModel: "parallel",
+        fallbackApplied: false,
+        errorMessage: "Infinity focus",
+      },
+    };
+  }
+
   if (!isFiniteCameraInput(cameraState)) {
     return baseFallbackState(cameraState, "Invalid camera input");
   }

@@ -18,4 +18,6 @@ export type CameraState = {
   focusAssistEnabled: boolean;
   gridEnabled: boolean;
   geometryView: GeometryView;
+  // Optional focus mode: 'finite' (default) or 'infinity'
+  focusMode?: "finite" | "infinity";
 };

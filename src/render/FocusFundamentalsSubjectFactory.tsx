@@ -2,19 +2,20 @@
 import * as THREE from "three";
 import React from "react";
 import { toWorld } from "./rttUtils";
+import { nearBoardCenterMm, farBoardCenterMm, boardWidthMm, boardHeightMm, floorYmm } from "../scenes/focusFundamentalsTargets";
 
 // Shared colors
 const FLOOR_COLOR = new THREE.Color("#9aa6b5");
 
 // Shared sizes in mm
-const BOARD_W = 120;
-const BOARD_H = 180;
+const BOARD_W = boardWidthMm;
+const BOARD_H = boardHeightMm;
 const BOARD_THICK = 10;
 
 // Positions in mm (as specified)
-const NEAR_CENTER = { x: -180, y: -60, z: 1000 };
-const FAR_CENTER = { x: 180, y: 40, z: 3000 };
-const FLOOR_Y = -150;
+const NEAR_CENTER = nearBoardCenterMm;
+const FAR_CENTER = farBoardCenterMm;
+const FLOOR_Y = floorYmm;
 
 let nearCanvasTexture: THREE.Texture | null = null;
 let farCanvasTexture: THREE.Texture | null = null;
