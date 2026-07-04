@@ -81,5 +81,6 @@ export type DerivedOpticsState = {
     focusPlaneModel: "parallel" | "scheimpflug";
     fallbackApplied: boolean;
     errorMessage?: string;
+    isInfinityFocus?: boolean;
   };
 };

@@ -90,9 +90,8 @@ export const SceneViewport = ({
         <button
           type="button"
           onClick={() => {
-            // Infinity reset: set focus distance to Infinity and reset front standard movements
-            useAppStore.getState().setFocusDistance(Infinity);
-            useAppStore.getState().resetMovements();
+            // Infinity reset: use dedicated action that enters infinity focus mode atomically
+            useAppStore.getState().setInfinityFocus();
           }}
         >
           Infinity Reset

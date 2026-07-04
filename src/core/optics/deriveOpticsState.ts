@@ -142,6 +142,7 @@ export const deriveOpticsState = (
         focusPlaneModel: "parallel",
         fallbackApplied: false,
         errorMessage: "Infinity focus",
+        isInfinityFocus: true,
       },
     };
   }
@@ -278,6 +279,7 @@ export const deriveOpticsState = (
       swingAngleDeg: cameraState.frontSwingDeg,
       focusPlaneModel,
       fallbackApplied: false,
+      isInfinityFocus: false,
     },
   };
 };

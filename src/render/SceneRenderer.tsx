@@ -475,7 +475,7 @@ const SceneContent = ({
         </group>
 
         {/* Focus plane and DOF planes derived from intersections of object-side FOV rays with each plane */}
-        {showFocusPlaneOverlay && (() => {
+        {showFocusPlaneOverlay && !opticsState.diagnostics?.isInfinityFocus && (() => {
          // helper: intersect ray (origin + t*dir) with plane where planePoint is a world-space triplet array
          const intersectRayPlane = (
            origin: [number, number, number],
@@ -561,7 +561,9 @@ const SceneContent = ({
       </>
     ) : (
       <>
-        {showFocusPlaneOverlay && <PlaneOverlay color="#22c55e" point={vecToWorld(opticsState.focusPlane.point)} />}
+        {showFocusPlaneOverlay && !opticsState.diagnostics?.isInfinityFocus && (
+          <PlaneOverlay color="#22c55e" point={vecToWorld(opticsState.focusPlane.point)} />
+        )}
         {showDofOverlay && (
           <>
             <PlaneOverlay color="#60a5fa" point={vecToWorld(opticsState.depthOfFieldNearPlane.point)} />
