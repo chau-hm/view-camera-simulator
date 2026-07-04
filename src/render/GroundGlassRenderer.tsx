@@ -14,6 +14,7 @@ import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
 import { calculateFocusPlaneDistanceMm, calculateApertureBlurStrength } from "./groundGlassPipeline";
 import { pointToPlaneDistance } from "../core/math/plane";
+import { subtract, dot } from "../core/math/vec";
 import { focusPlaneWidthMm, focusPlaneHeightMm, verticalFovDegreesFromImageDistance, cocDiameterMm } from "../core/optics/thinLensModel";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { getSceneById } from "../scenes/definitions";
@@ -659,9 +660,18 @@ export const GroundGlassRenderer = ({
                 <div>Extension beyond infinity: 0.00 mm</div>
                 <div>Focus plane: ∞</div>
                 <div>
-                  Near DOF: {opticsState.depthOfFieldNearPlane ? `${(opticsState.depthOfFieldNearPlane.point.z / 1000).toFixed(1)} m` : '—'}, outside current visual cap
+                  Near DOF: {opticsState.depthOfFieldNearPlane ? `${(opticsState.depthOfFieldNearPlane.point.z / 1000).toFixed(2)} m` : '—'}
+                  {opticsState.depthOfFieldNearPlane ? (
+                    (() => {
+                      const nearDist = dot(subtract(opticsState.depthOfFieldNearPlane!.point, opticsState.lensCenterWorld), opticsState.opticalAxis.direction);
+                      const cap = opticsState.sceneVisualCapDepthMm ?? 12000;
+                      const visible = Number.isFinite(nearDist) && nearDist <= cap;
+                      return <span> — {visible ? 'visible in current visual cap' : 'outside current visual cap'}</span>;
+                    })()
+                  ) : null}
                 </div>
                 <div>Far DOF: ∞</div>
+                <div>Visual cap: {(opticsState.sceneVisualCapDepthMm ? (opticsState.sceneVisualCapDepthMm / 1000).toFixed(2) : '12.00')} m</div>
               </div>
             ) : (
               <span>Focus distance: {formatMillimeter(focusDistanceMm)}</span>
@@ -669,7 +679,9 @@ export const GroundGlassRenderer = ({
             <span>Image distance: {imgDist.toFixed(2)} mm</span>
             <span>Sensor: {CAMERA_CONSTANTS.filmWidthMm} × {CAMERA_CONSTANTS.filmHeightMm} mm</span>
             <span>Vertical FOV: {vFov.toFixed(3)}° | Horizontal FOV: {hFov.toFixed(3)}°</span>
-            <span>Focus plane dims: {focusW.toFixed(2)} × {focusH.toFixed(2)} mm</span>
+            {!opticsState.diagnostics?.isInfinityFocus && (
+              <span>Focus plane dims: {focusW.toFixed(2)} × {focusH.toFixed(2)} mm</span>
+            )}
             <span>
               DOF near Z: {Number.isFinite(nearZ) ? `${nearZ.toFixed(2)} mm` : '—'} | DOF far Z: {Number.isFinite(farZ) ? `${farZ.toFixed(2)} mm` : '∞'}
             </span>

@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { add, scale } from "../core/math/vec";
+import { add, scale, subtract, dot } from "../core/math/vec";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { DoubleSide, Vector3 } from "three";
@@ -480,87 +480,98 @@ const SceneContent = ({
         </group>
 
         {/* Focus plane and DOF planes derived from intersections of object-side FOV rays with each plane */}
-        {showFocusPlaneOverlay && !opticsState.diagnostics?.isInfinityFocus && (() => {
-         // helper: intersect ray (origin + t*dir) with plane where planePoint is a world-space triplet array
-         const intersectRayPlane = (
-           origin: [number, number, number],
-           dir: { x: number; y: number; z: number },
-           planePointArr: [number, number, number],
-           planeNormal: { x: number; y: number; z: number },
-         ): [number, number, number] | null => {
-           const o = { x: origin[0], y: origin[1], z: origin[2] };
-           const p0 = { x: planePointArr[0], y: planePointArr[1], z: planePointArr[2] };
-           const n = planeNormal;
-           const denom = dir.x * n.x + dir.y * n.y + dir.z * n.z;
-           if (Math.abs(denom) < 1e-6) return null; // parallel
-           const t = ((p0.x - o.x) * n.x + (p0.y - o.y) * n.y + (p0.z - o.z) * n.z) / denom;
-           if (!Number.isFinite(t) || t <= 1e-6) return null; // intersection behind or at origin
-           return [o.x + dir.x * t, o.y + dir.y * t, o.z + dir.z * t];
-         };
+        {(() => {
+          // helper: intersect ray (origin + t*dir) with plane where planePoint is a world-space triplet array
+          const intersectRayPlane = (
+            origin: [number, number, number],
+            dir: { x: number; y: number; z: number },
+            planePointArr: [number, number, number],
+            planeNormal: { x: number; y: number; z: number },
+          ): [number, number, number] | null => {
+            const o = { x: origin[0], y: origin[1], z: origin[2] };
+            const p0 = { x: planePointArr[0], y: planePointArr[1], z: planePointArr[2] };
+            const n = planeNormal;
+            const denom = dir.x * n.x + dir.y * n.y + dir.z * n.z;
+            if (Math.abs(denom) < 1e-6) return null; // parallel
+            const t = ((p0.x - o.x) * n.x + (p0.y - o.y) * n.y + (p0.z - o.z) * n.z) / denom;
+            if (!Number.isFinite(t) || t <= 1e-6) return null; // intersection behind or at origin
+            return [o.x + dir.x * t, o.y + dir.y * t, o.z + dir.z * t];
+          };
 
-         const lens = vecToWorld(opticsState.lensCenterWorld);
-         const filmCorners = [
-           opticsState.filmPlaneCornersWorld.topLeft,
-           opticsState.filmPlaneCornersWorld.topRight,
-           opticsState.filmPlaneCornersWorld.bottomRight,
-           opticsState.filmPlaneCornersWorld.bottomLeft,
-         ];
+          const lens = vecToWorld(opticsState.lensCenterWorld);
+          const filmCorners = [
+            opticsState.filmPlaneCornersWorld.topLeft,
+            opticsState.filmPlaneCornersWorld.topRight,
+            opticsState.filmPlaneCornersWorld.bottomRight,
+            opticsState.filmPlaneCornersWorld.bottomLeft,
+          ];
 
-         const filmCornersW = filmCorners.map((c) => vecToWorld(c));
+          const filmCornersW = filmCorners.map((c) => vecToWorld(c));
 
-         const rayDirs = filmCornersW.map((cornerW) => {
-           const dir = { x: lens[0] - cornerW[0], y: lens[1] - cornerW[1], z: lens[2] - cornerW[2] };
-           const len = Math.hypot(dir.x, dir.y, dir.z) || 1;
-           return { x: dir.x / len, y: dir.y / len, z: dir.z / len };
-         });
+          const rayDirs = filmCornersW.map((cornerW) => {
+            const dir = { x: lens[0] - cornerW[0], y: lens[1] - cornerW[1], z: lens[2] - cornerW[2] };
+            const len = Math.hypot(dir.x, dir.y, dir.z) || 1;
+            return { x: dir.x / len, y: dir.y / len, z: dir.z / len };
+          });
 
-         // compute intersections
-         const focusPlanePointWorld = vecToWorld(opticsState.focusPlane!.point);
-         const nearPlanePointWorld = vecToWorld(opticsState.depthOfFieldNearPlane!.point);
-         const farPlanePointWorld = vecToWorld(opticsState.depthOfFieldFarPlane!.point);
+          const isInfinityFocus = !!opticsState.diagnostics?.isInfinityFocus;
+          const sceneVisualCapDepth = opticsState.sceneVisualCapDepthMm ?? 12000;
 
-         const focusCorners = rayDirs.map((d) => intersectRayPlane(lens, d, focusPlanePointWorld, opticsState.focusPlane!.normal));
-         const nearCorners = rayDirs.map((d) => intersectRayPlane(lens, d, nearPlanePointWorld, opticsState.depthOfFieldNearPlane!.normal));
-         const farCorners = rayDirs.map((d) => intersectRayPlane(lens, d, farPlanePointWorld, opticsState.depthOfFieldFarPlane!.normal));
+          const focusPlaneObj = opticsState.focusPlane;
+          const nearPlaneObj = opticsState.depthOfFieldNearPlane;
+          const farPlaneObj = opticsState.depthOfFieldFarPlane;
 
-         const lensZ = lens[2];
+          const nearDistanceFromLensMm = nearPlaneObj ? dot(subtract(nearPlaneObj.point, opticsState.lensCenterWorld), opticsState.opticalAxis.direction) : NaN;
+          const farDistanceFromLensMm = farPlaneObj ? dot(subtract(farPlaneObj.point, opticsState.lensCenterWorld), opticsState.opticalAxis.direction) : NaN;
 
-         const allFocusValid = focusCorners.every((p) => p !== null && p[2] > lensZ + 1e-6);
-         const allNearValid = nearCorners.every((p) => p !== null && p[2] > lensZ + 1e-6);
-         const allFarValid = farCorners.every((p) => p !== null && p[2] > lensZ + 1e-6);
+          const canRenderFocusPlane = showFocusPlaneOverlay && !isInfinityFocus && !!focusPlaneObj;
+          const canRenderNearDofPlane = showDofOverlay && !!nearPlaneObj && Number.isFinite(nearDistanceFromLensMm) && nearDistanceFromLensMm > 0 && nearDistanceFromLensMm <= sceneVisualCapDepth;
+          const canRenderFarDofPlane = showDofOverlay && !isInfinityFocus && !!farPlaneObj && Number.isFinite(farDistanceFromLensMm) && farDistanceFromLensMm > 0 && farDistanceFromLensMm <= sceneVisualCapDepth;
 
-         const makeQuadMesh = (pts: (null | [number, number, number])[], color: string, opacity = 0.35) => {
-           if (pts.some((p) => p === null)) return null;
-           // positions: p0,p1,p2,p3 -> triangles [0,1,2] and [0,2,3]
-           const p0 = pts[0] as [number, number, number];
-           const p1 = pts[1] as [number, number, number];
-           const p2 = pts[2] as [number, number, number];
-           const p3 = pts[3] as [number, number, number];
-           const positions = new Float32Array([
-             p0[0], p0[1], p0[2],
-             p1[0], p1[1], p1[2],
-             p2[0], p2[1], p2[2],
-             p3[0], p3[1], p3[2],
-           ]);
-           const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
-           return (
-             <mesh>
-               <bufferGeometry>
-                 <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-                 <bufferAttribute attach="index" args={[indices, 1]} />
-               </bufferGeometry>
-               <meshBasicMaterial color={color} transparent opacity={opacity} side={DoubleSide} />
-             </mesh>
-           );
-         };
+          // compute intersections only for planes we intend to render
+          const focusCorners = canRenderFocusPlane ? rayDirs.map((d) => intersectRayPlane(lens, d, vecToWorld(focusPlaneObj!.point), focusPlaneObj!.normal)) : [];
+          const nearCorners = canRenderNearDofPlane ? rayDirs.map((d) => intersectRayPlane(lens, d, vecToWorld(nearPlaneObj!.point), nearPlaneObj!.normal)) : [];
+          const farCorners = canRenderFarDofPlane ? rayDirs.map((d) => intersectRayPlane(lens, d, vecToWorld(farPlaneObj!.point), farPlaneObj!.normal)) : [];
 
-         return (
-           <>
-             {allFocusValid && makeQuadMesh(focusCorners, "#16a34a", 0.35)}
-             {showDofOverlay && allNearValid && makeQuadMesh(nearCorners, "#a78bfa", 0.25)}
-             {showDofOverlay && allFarValid && makeQuadMesh(farCorners, "#a78bfa", 0.2)}
-           </>
-         );
+          const lensZ = lens[2];
+
+          const allFocusValid = canRenderFocusPlane ? focusCorners.every((p) => p !== null && p[2] > lensZ + 1e-6) : false;
+          const allNearValid = canRenderNearDofPlane ? nearCorners.every((p) => p !== null && p[2] > lensZ + 1e-6) : false;
+          const allFarValid = canRenderFarDofPlane ? farCorners.every((p) => p !== null && p[2] > lensZ + 1e-6) : false;
+
+          const makeQuadMesh = (pts: (null | [number, number, number])[], color: string, opacity = 0.35) => {
+            if (pts.length === 0) return null;
+            if (pts.some((p) => p === null)) return null;
+            // positions: p0,p1,p2,p3 -> triangles [0,1,2] and [0,2,3]
+            const p0 = pts[0] as [number, number, number];
+            const p1 = pts[1] as [number, number, number];
+            const p2 = pts[2] as [number, number, number];
+            const p3 = pts[3] as [number, number, number];
+            const positions = new Float32Array([
+              p0[0], p0[1], p0[2],
+              p1[0], p1[1], p1[2],
+              p2[0], p2[1], p2[2],
+              p3[0], p3[1], p3[2],
+            ]);
+            const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+            return (
+              <mesh>
+                <bufferGeometry>
+                  <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+                  <bufferAttribute attach="index" args={[indices, 1]} />
+                </bufferGeometry>
+                <meshBasicMaterial color={color} transparent opacity={opacity} side={DoubleSide} />
+              </mesh>
+            );
+          };
+
+          return (
+            <>
+              {allFocusValid && makeQuadMesh(focusCorners, "#16a34a", 0.35)}
+              {showDofOverlay && allNearValid && makeQuadMesh(nearCorners, "#a78bfa", 0.25)}
+              {showDofOverlay && allFarValid && makeQuadMesh(farCorners, "#a78bfa", 0.2)}
+            </>
+          );
         })()}
 
       </>

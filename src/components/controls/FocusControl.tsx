@@ -18,7 +18,14 @@ export const FocusControl = ({ focusEnabled, lockReason }: FocusControlProps) =>
     <section aria-label={UI_COPY.controls.focusTitle}>
       <h3>{UI_COPY.controls.focusTitle}</h3>
       <label>
-        {UI_COPY.controls.focusDistanceLabel} ({formatMillimeter(focusControl.focusDistanceMm)})
+        {focusControl.focusMode === "infinity" ? (
+          <>
+            <div>Focus: ∞</div>
+            <div>Last finite focus: {formatMillimeter(focusControl.lastFiniteFocusDepthMm ?? focusControl.focusDistanceMm)}</div>
+          </>
+        ) : (
+          <>{UI_COPY.controls.focusDistanceLabel} ({formatMillimeter(focusControl.focusDistanceMm)})</>
+        )}
         <input
           aria-label={UI_COPY.controls.focusDistanceLabel}
           type="range"
@@ -38,7 +45,11 @@ export const FocusControl = ({ focusEnabled, lockReason }: FocusControlProps) =>
           }
           onChange={(event) => setFocusDistance(Number(event.target.value))}
         />
-        {!focusEnabled && <small>{lockReason}</small>}
+        {focusControl.focusMode === "infinity" ? (
+          <small>Last finite focus — drag to exit ∞</small>
+        ) : (
+          !focusEnabled && <small>{lockReason}</small>
+        )}
       </label>
     </section>
   );
