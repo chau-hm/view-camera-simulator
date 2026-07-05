@@ -58,8 +58,9 @@ export const GroundGlassRenderer = ({
   sceneId,
   previewMode,
   rawDebug,
-}: GroundGlassRendererProps) => {
-  const [zoomEnabled, setZoomEnabled] = useState(false);
+  zoomEnabled,
+}: GroundGlassRendererProps & { zoomEnabled?: boolean }) => {
+  const _zoomEnabled = !!zoomEnabled;
   const [zoomPan, setZoomPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ pointerId: number | null; startX: number; startY: number; startPanX: number; startPanY: number }>({ pointerId: null, startX: 0, startY: 0, startPanX: 0, startPanY: 0 });
@@ -83,6 +84,13 @@ export const GroundGlassRenderer = ({
       if (ro) ro.disconnect();
     };
   }, [panelRef]);
+
+  // reset pan when zoom is turned off by parent
+  useEffect(() => {
+    if (!_zoomEnabled) {
+      setZoomPan({ x: 0, y: 0 });
+    }
+  }, [_zoomEnabled]);
 
   // previewMode is controlled by parent (GroundGlassViewport)
   // rawDebug is controlled at workspace and passed down
@@ -183,37 +191,16 @@ export const GroundGlassRenderer = ({
 
   return (
     <div style={{ display: "grid", gap: "0.5rem" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "0.5rem" }}>
-        <button
-          type="button"
-          onClick={() => {
-            setZoomEnabled((value) => {
-              const next = !value;
-              if (!next) {
-                // zoom out: reset pan
-                setZoomPan({ x: 0, y: 0 });
-              } else {
-                // zoom in: start centred
-                setZoomPan({ x: 0, y: 0 });
-              }
-              return next;
-            });
-          }}
-        >
-          {zoomEnabled ? UI_COPY.simulator.groundGlassZoomOut : UI_COPY.simulator.groundGlassZoomIn}
-        </button>
-      </div>
       <div
         ref={panelRef}
         style={{
           position: "relative",
           width: "100%",
-          maxWidth: 500,
           aspectRatio: "5 / 4",
           border: "1px solid #d1d5db",
           borderRadius: 8,
           overflow: "hidden",
-          cursor: zoomEnabled ? (isDragging ? "grabbing" : "grab") : "zoom-in",
+          cursor: _zoomEnabled ? (isDragging ? "grabbing" : "grab") : "zoom-in",
         }}
         // pointer handlers for pan when zoomed
         onPointerDown={(e) => {

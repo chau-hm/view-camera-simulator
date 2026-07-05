@@ -66,6 +66,8 @@ export const GroundGlassViewport = ({
   const focusAssist = createFocusAssistPass({ enabled: focusAssistEnabled, targets: opticsState.focusTargets });
   const lastFiniteFocusDepthMm = useAppStore((s) => s.camera.lastFiniteFocusDepthMm);
 
+  const [zoomEnabled, setZoomEnabled] = useState(false);
+
   return (
     <section>
       <h2>{UI_COPY.simulator.groundGlassTitle}</h2>
@@ -84,11 +86,19 @@ export const GroundGlassViewport = ({
           sceneId={sceneId}
           previewMode={previewMode}
           rawDebug={rawRttDebug}
+          zoomEnabled={zoomEnabled}
         />
+
+        {/* Zoom control visually belongs below the viewport */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button type="button" onClick={() => setZoomEnabled((s) => !s)}>
+            {zoomEnabled ? UI_COPY.simulator.groundGlassZoomOut : UI_COPY.simulator.groundGlassZoomIn}
+          </button>
+        </div>
 
         {/* Preview selector placed adjacent to the Ground Glass view */}
         <section aria-label={UI_COPY.render.groundGlassPreview}>
-          <h4>{UI_COPY.render.groundGlassPreview}</h4>
+          <h3>{UI_COPY.render.groundGlassPreview}</h3>
           <label>
             <input
               type="radio"
@@ -111,8 +121,8 @@ export const GroundGlassViewport = ({
 
         {/* View Options grouped near the Ground Glass view */}
         <ViewOptions
-          canToggleGroundGlassAssist={canToggleGroundGlassAssist ?? orientationAssistEnabled}
-          showGroundGlassAssist={true}
+          canToggleGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets" ? (canToggleGroundGlassAssist ?? orientationAssistEnabled) : false}
+          showGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets"}
           canToggleFocusAssist={canToggleFocusAssist ?? true}
           canToggleGrid={canToggleGrid ?? true}
           lockReason={lockReason ?? ""}

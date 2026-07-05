@@ -26,10 +26,10 @@ export const ViewOptions = ({
   const toggleGrid = useAppStore((state) => state.toggleGrid);
 
   return (
-    <section aria-label={UI_COPY.controls.viewOptionsTitle}>
+    <section aria-label={UI_COPY.controls.viewOptionsTitle} style={{ display: 'grid', gap: '0.5rem' }}>
       <h3>{UI_COPY.controls.viewOptionsTitle}</h3>
       {showGroundGlassAssist && (
-        <label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <input
             aria-label={UI_COPY.controls.groundGlassAssistLabel}
             type="checkbox"
@@ -37,11 +37,11 @@ export const ViewOptions = ({
             disabled={!canToggleGroundGlassAssist}
             onChange={toggleGroundGlassAssist}
           />
-          {UI_COPY.controls.groundGlassAssistLabel}
-          {!canToggleGroundGlassAssist && <small>{lockReason}</small>}
+          <span>{UI_COPY.controls.groundGlassAssistLabel}</span>
+          {!canToggleGroundGlassAssist && <small style={{ color: '#94a3b8' }}>{lockReason}</small>}
         </label>
       )}
-      <label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <input
           aria-label={UI_COPY.controls.focusAssistLabel}
           type="checkbox"
@@ -49,10 +49,10 @@ export const ViewOptions = ({
           disabled={!canToggleFocusAssist}
           onChange={toggleFocusAssist}
         />
-        {UI_COPY.controls.focusAssistLabel}
-        {!canToggleFocusAssist && <small>{lockReason}</small>}
+        <span>{UI_COPY.controls.focusAssistLabel}</span>
+        {!canToggleFocusAssist && <small style={{ color: '#94a3b8' }}>{lockReason}</small>}
       </label>
-      <label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <input
           aria-label={UI_COPY.controls.gridLabel}
           type="checkbox"
@@ -60,8 +60,8 @@ export const ViewOptions = ({
           disabled={!canToggleGrid}
           onChange={toggleGrid}
         />
-        {UI_COPY.controls.gridLabel}
-        {!canToggleGrid && <small>{lockReason}</small>}
+        <span>{UI_COPY.controls.gridLabel}</span>
+        {!canToggleGrid && <small style={{ color: '#94a3b8' }}>{lockReason}</small>}
       </label>
     </section>
   );
