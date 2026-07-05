@@ -19,6 +19,8 @@ type GroundGlassViewportProps = {
   renderQuality: RenderQualityProfile;
   sceneId: string;
   lockReason?: string;
+  rawRttDebug?: boolean;
+  onRawRttDebugChange?: (v: boolean) => void;
 };
 
 export const GroundGlassViewport = ({
@@ -34,6 +36,8 @@ export const GroundGlassViewport = ({
   renderQuality,
   sceneId,
   lockReason,
+  rawRttDebug,
+  onRawRttDebugChange,
 }: GroundGlassViewportProps) => {
   // Preview mode control local to the Ground Glass panel. Default to 'raw'.
   const [previewMode, setPreviewMode] = useState<"raw" | "upright">("raw");
@@ -56,6 +60,8 @@ export const GroundGlassViewport = ({
           sceneId={sceneId}
           previewMode={previewMode}
           onPreviewModeChange={setPreviewMode}
+          rawDebug={rawRttDebug}
+          onRawDebugChange={onRawRttDebugChange}
         />
 
         {/* Preview selector placed adjacent to the Ground Glass view */}

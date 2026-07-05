@@ -58,6 +58,8 @@ export const SimulatorWorkspace = ({
 
   const opticsState = selectDerivedOpticsState(camera);
   const lockReason = UI_COPY.controls.guidedControlLockedReason;
+  // RTT debug flag — lifted to workspace so the debug control can be placed in the Scene controls area
+  const [rawRttDebug, setRawRttDebug] = useState(false);
   const enabledControls = useMemo(() => {
     // For the Focus Fundamentals scene, lock movement controls to only focusDistance and aperture
     const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
@@ -114,6 +116,8 @@ export const SimulatorWorkspace = ({
           renderQuality={renderQuality}
           setRenderQuality={setRenderQuality}
           simulateAssetFailure={simulateAssetFailure}
+          rawRttDebug={rawRttDebug}
+          onRawRttDebugChange={setRawRttDebug}
         />
         <GroundGlassViewport
           opticsState={opticsState}
@@ -128,6 +132,8 @@ export const SimulatorWorkspace = ({
           renderQuality={renderQuality}
           sceneId={camera.activeSceneId}
           lockReason={lockReason}
+          rawRttDebug={rawRttDebug}
+          onRawRttDebugChange={setRawRttDebug}
         />
         <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
       </div>

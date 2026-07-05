@@ -35,6 +35,9 @@ type GroundGlassRendererProps = {
   // optional external preview control (kept local by default)
   previewMode?: "raw" | "upright";
   onPreviewModeChange?: (mode: "raw" | "upright") => void;
+  // optional external raw RTT debug control (moved to a debug area). When provided, controls RTT raw mode.
+  rawDebug?: boolean;
+  onRawDebugChange?: (v: boolean) => void;
 };
 
 const PANEL_WIDTH_PX = 500;
@@ -68,6 +71,10 @@ export const GroundGlassRenderer = ({
   aperture,
   renderQuality,
   sceneId,
+  previewMode: previewModeProp,
+  onPreviewModeChange,
+  rawDebug: rawDebugProp,
+  onRawDebugChange,
 }: GroundGlassRendererProps) => {
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [zoomPan, setZoomPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -96,8 +103,15 @@ export const GroundGlassRenderer = ({
 
   // Explicit preview modes for Focus Fundamentals: 'raw' (invert both axes) or 'upright' (correct both axes)
   // Default to `raw` so Raw Ground Glass is the initial preview mode.
-  const [previewMode, setPreviewMode] = useState<"raw" | "upright">("raw");
-  const [rawRttDebug, setRawRttDebug] = useState(false);
+  const [internalPreviewMode, setInternalPreviewMode] = useState<"raw" | "upright">("raw");
+  const previewMode = previewModeProp ?? internalPreviewMode;
+  const setPreviewMode = onPreviewModeChange ?? setInternalPreviewMode;
+
+  // Allow external control of raw RTT debug mode via props; default to local state when not provided
+  const [internalRawRttDebug, setInternalRawRttDebug] = useState(false);
+  const rawRttDebug = rawDebugProp ?? internalRawRttDebug;
+  const setRawRttDebug = onRawDebugChange ?? setInternalRawRttDebug;
+
   const zoomScale = zoomEnabled ? 1.9 : 1;
   const transform = `translate3d(${zoomPan.x}px, ${zoomPan.y}px, 0) scale(${zoomScale})`;
   const pipeline = useMemo(() => {
@@ -306,18 +320,6 @@ export const GroundGlassRenderer = ({
                 style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#fff", padding: "4px 8px", borderRadius: 6 }}
               >
                 {previewMode === "raw" ? "Raw ground glass" : "Upright assist"}
-              </button>
-            </label>
-            {/* Raw RTT Debug toggle */}
-            <label style={{ color: "#e5e7eb", fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
-              <span style={{ fontSize: 11, color: "#94a3b8" }}>RTT Debug:</span>
-              <button
-                type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => setRawRttDebug((s) => !s)}
-                style={{ background: rawRttDebug ? "#ef4444" : "rgba(255,255,255,0.06)", border: "none", color: "#fff", padding: "4px 8px", borderRadius: 6 }}
-              >
-                {rawRttDebug ? "Raw ON" : "Raw OFF"}
               </button>
             </label>
           </div>
