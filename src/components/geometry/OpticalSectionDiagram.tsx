@@ -1,4 +1,3 @@
-import React from 'react';
 import type { OpticalSectionData } from './opticalSectionProjection';
 import type { GeometryPresentationProfile } from './geometryPresentationProfiles';
 import type { SceneDefinition } from '../../types/scene';

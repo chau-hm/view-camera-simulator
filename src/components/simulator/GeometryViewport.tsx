@@ -4,7 +4,7 @@ import { getGeometryPresentationProfile } from "../geometry/geometryPresentation
 import { OpticalDepthStrip } from "../geometry/OpticalDepthStrip";
 import OpticalSectionDiagram from "../geometry/OpticalSectionDiagram";
 import type { GeometryView } from "../../types/camera";
-import type { DerivedOpticsState, Vec3 } from "../../types/optics";
+import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
 import { UI_COPY } from "../../ui/copy";
 
@@ -23,8 +23,6 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
   const setGeometryView = useAppStore((s) => s.setGeometryView);
 
 
-  const SAFE_MARGIN = 10;
-  const LABEL_GAP = 5;
   const SVG_W = SVG_WIDTH;
   const SVG_H = SVG_HEIGHT;
 
@@ -43,8 +41,9 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
   }
 
   // Delegate projection to shared opticalSectionProjection helper (pass depth window)
-  const projection = computeOpticalSectionData(opticsState, scene, SVG_W, SVG_H, depthWindow);
-  const { sectionOrigin, sectionDepthDir, lensCenter, sideSegments, topSegments, sideFovDirs, topFovDirs, depthToX, mapLateralToY, mapLateralToYTop, isInfinity, diagramMinDepthMm, diagramMaxDepthMm } = projection;
+  const projection = computeOpticalSectionData({ opticsState, scene, svgWidth: SVG_W, svgHeight: SVG_H, depthWindow });
+  // projection is passed to OpticalSectionDiagram which consumes all needed fields
+  const { sectionOrigin, sectionDepthDir, isInfinity } = projection;
 
 
 
@@ -64,7 +63,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
 
       {/* Optical depth strip (controlled by presentation profile) */}
       {profile.showDepthStrip ? (
-        <OpticalDepthStrip opticsState={opticsState} sectionOrigin={sectionOrigin} sectionDepthDir={sectionDepthDir} />
+        <OpticalDepthStrip opticsState={opticsState} sectionOrigin={sectionOrigin} sectionDepthDir={sectionDepthDir} depthWindow={depthWindow} profile={profile} />
       ) : null}
 
       {/* optional small explanatory caption under depth strip when profile requests it */}

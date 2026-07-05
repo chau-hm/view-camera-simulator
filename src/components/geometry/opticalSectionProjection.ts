@@ -51,16 +51,10 @@ export const intersectRayPlane = (o: Vec3, d: Vec3, plane: Plane) => {
   return vecAdd(o, vecScale(d, t));
 };
 
-export function computeOpticalSectionData(
-  opticsState: DerivedOpticsState,
-  scene: SceneDefinition,
-  svgWidth: number,
-  svgHeight: number,
-  depthWindow?: { minMm: number; maxMm: number },
-): OpticalSectionData {
+export function computeOpticalSectionData({ opticsState, scene, svgWidth, svgHeight, depthWindow }: { opticsState: DerivedOpticsState; scene: SceneDefinition; svgWidth: number; svgHeight: number; depthWindow: { minMm: number; maxMm: number }; }): OpticalSectionData {
   const lensCenter = opticsState.lensCenterWorld;
   const filmCorners = opticsState.filmPlaneCornersWorld;
-
+  
   const topMid = {
     x: (filmCorners.topLeft.x + filmCorners.topRight.x) / 2,
     y: (filmCorners.topLeft.y + filmCorners.topRight.y) / 2,
@@ -81,20 +75,20 @@ export function computeOpticalSectionData(
     y: (filmCorners.topRight.y + filmCorners.bottomRight.y) / 2,
     z: (filmCorners.topRight.z + filmCorners.bottomRight.z) / 2,
   };
-
+  
   const sectionOrigin = opticsState.filmCenterWorld;
   const sectionDepthDir = opticsState.filmNormalWorld;
-
+  
   const sections: OpticalSection[] = [
     { id: "side", filmA: topMid, filmB: bottomMid, lateral: (p: Vec3) => p.y },
     { id: "top", filmA: leftMid, filmB: rightMid, lateral: (p: Vec3) => p.x },
   ];
-
-  // allow caller to control the depth window (teaching fixed window or scene-bounds window)
+  
+  // caller-provided depth window (profile authoritative)
   const padding = 24;
-  const diagramMinDepthMm = depthWindow ? depthWindow.minMm : -250;
-  const diagramMaxDepthMm = depthWindow ? depthWindow.maxMm : 4000;
-
+  const diagramMinDepthMm = depthWindow.minMm;
+  const diagramMaxDepthMm = depthWindow.maxMm;
+  
   const depthToX = (depthMm: number) => {
     const t = (depthMm - diagramMinDepthMm) / (diagramMaxDepthMm - diagramMinDepthMm);
     return padding + t * (svgWidth - padding * 2);
