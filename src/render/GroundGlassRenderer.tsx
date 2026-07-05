@@ -92,7 +92,8 @@ export const GroundGlassRenderer = ({
   }, [panelRef]);
 
   // Explicit preview modes for Focus Fundamentals: 'raw' (invert both axes) or 'upright' (correct both axes)
-  const [previewMode, setPreviewMode] = useState<"raw" | "upright">(sceneId === "focus-fundamentals-two-targets" ? "raw" : assistEnabled ? "upright" : "raw");
+  // Default to `raw` so Raw Ground Glass is the initial preview mode.
+  const [previewMode, setPreviewMode] = useState<"raw" | "upright">("raw");
   const [rawRttDebug, setRawRttDebug] = useState(false);
   const zoomScale = zoomEnabled ? 1.9 : 1;
   const transform = `translate3d(${zoomPan.x}px, ${zoomPan.y}px, 0) scale(${zoomScale})`;
@@ -190,8 +191,7 @@ export const GroundGlassRenderer = ({
 
   return (
     <div style={{ display: "grid", gap: "0.5rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-        <strong>{UI_COPY.simulator.groundGlassRenderPipeline}</strong>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "0.5rem" }}>
         <button
           type="button"
           onClick={() => {
