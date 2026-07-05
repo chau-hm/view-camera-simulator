@@ -1,16 +1,10 @@
 import { useState } from "react";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { ViewOptions } from "../controls/ViewOptions";
-import { createGroundGlassDofPipeline } from "../../render/groundGlassPipeline";
-import { getRenderQualitySettings } from "../../render/renderQuality";
-import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
 import { UI_COPY } from "../../ui/copy";
-import { useAppStore } from "../../state/appStore";
 import type { ApertureValue } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { RenderQualityProfile } from "../../types/ui";
-import { GroundGlassReadouts } from "./GroundGlassReadouts";
-import { FocusFundamentalsDebugPanel } from "./FocusFundamentalsDebugPanel";
 
 type GroundGlassViewportProps = {
   opticsState: DerivedOpticsState;
@@ -54,14 +48,6 @@ export const GroundGlassViewport = ({
 }: GroundGlassViewportProps) => {
   // Preview mode control local to the Ground Glass panel. Default to 'raw'.
   const [previewMode, setPreviewMode] = useState<"raw" | "upright">("raw");
-
-  // Derived parameters for readout (match GroundGlassRenderer pipeline settings)
-  const PANEL_WIDTH_PX = 500;
-  const PANEL_HEIGHT_PX = 400;
-  const pipeline = createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality);
-  const qualitySettings = getRenderQualitySettings(renderQuality);
-  const focusAssist = createFocusAssistPass({ enabled: focusAssistEnabled, targets: opticsState.focusTargets });
-  const lastFiniteFocusDepthMm = useAppStore((s) => s.camera.lastFiniteFocusDepthMm);
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
 
@@ -130,24 +116,6 @@ export const GroundGlassViewport = ({
           />
         </div>
 
-        {/* GroundGlassReadouts component: Current Settings and Focus targets */}
-        <GroundGlassReadouts
-          riseMm={riseMm}
-          tiltDeg={tiltDeg}
-          swingDeg={swingDeg}
-          focusDistanceMm={focusDistanceMm}
-          aperture={aperture as unknown as number}
-          renderQuality={renderQuality}
-          pipeline={pipeline}
-          qualitySettings={qualitySettings}
-          lastFiniteFocusDepthMm={lastFiniteFocusDepthMm}
-          focusTargets={focusAssist.targets}
-        />
-
-        {/* FocusFundamentalsDebugPanel: separate section for focus fundamentals debug */}
-        {sceneId === "focus-fundamentals-two-targets" && (
-          <FocusFundamentalsDebugPanel sceneId={sceneId} opticsState={opticsState} focusDistanceMm={focusDistanceMm} aperture={aperture as number} />
-        )}
       </div>
     </section>
   );

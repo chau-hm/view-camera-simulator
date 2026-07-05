@@ -15,8 +15,13 @@ import { ResetControls } from "../controls/ResetControls";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
+import { GroundGlassReadouts } from "../simulator/GroundGlassReadouts";
+import { FocusFundamentalsDebugPanel } from "../simulator/FocusFundamentalsDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
+import { createGroundGlassDofPipeline } from "../../render/groundGlassPipeline";
+import { getRenderQualitySettings } from "../../render/renderQuality";
+import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
 
 type SimulatorWorkspaceProps = {
   mode: SimulatorMode;
@@ -117,24 +122,47 @@ export const SimulatorWorkspace = ({
           setRenderQuality={setRenderQuality}
           simulateAssetFailure={simulateAssetFailure}
         />
-        <GroundGlassViewport
-          opticsState={opticsState}
-          orientationAssistEnabled={mode === "free"}
-          focusAssistEnabled={camera.focusAssistEnabled}
-          gridEnabled={camera.gridEnabled}
-          canToggleFocusAssist={enabledControls.has("focusAssist")}
-          canToggleGrid={enabledControls.has("grid")}
-          canToggleGroundGlassAssist={enabledControls.has("groundGlassAssist")}
-          riseMm={camera.frontRiseMm}
-          tiltDeg={camera.frontTiltDeg}
-          swingDeg={camera.frontSwingDeg}
-          focusDistanceMm={camera.focusDistanceMm}
-          aperture={camera.aperture}
-          renderQuality={renderQuality}
-          sceneId={camera.activeSceneId}
-          lockReason={lockReason}
-          rawRttDebug={rawRttDebug}
-        />
+
+        {/* GroundGlassColumn: GroundGlassViewport + Readouts + FocusFundamentalsDebugPanel as siblings */}
+        <div style={{ display: 'grid', gap: '0.75rem' }} aria-label="GroundGlassColumn">
+          <GroundGlassViewport
+            opticsState={opticsState}
+            orientationAssistEnabled={mode === "free"}
+            focusAssistEnabled={camera.focusAssistEnabled}
+            gridEnabled={camera.gridEnabled}
+            canToggleFocusAssist={enabledControls.has("focusAssist")}
+            canToggleGrid={enabledControls.has("grid")}
+            canToggleGroundGlassAssist={enabledControls.has("groundGlassAssist")}
+            riseMm={camera.frontRiseMm}
+            tiltDeg={camera.frontTiltDeg}
+            swingDeg={camera.frontSwingDeg}
+            focusDistanceMm={camera.focusDistanceMm}
+            aperture={camera.aperture}
+            renderQuality={renderQuality}
+            sceneId={camera.activeSceneId}
+            lockReason={lockReason}
+            rawRttDebug={rawRttDebug}
+          />
+
+          {/* Compute pipeline and derived settings for readouts at workspace level to avoid making readouts descendants of the viewport */}
+          <GroundGlassReadouts
+            riseMm={camera.frontRiseMm}
+            tiltDeg={camera.frontTiltDeg}
+            swingDeg={camera.frontSwingDeg}
+            focusDistanceMm={camera.focusDistanceMm}
+            aperture={camera.aperture}
+            renderQuality={renderQuality}
+            pipeline={createGroundGlassDofPipeline(opticsState, 500, 400, renderQuality)}
+            qualitySettings={getRenderQualitySettings(renderQuality)}
+            lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
+            focusTargets={createFocusAssistPass({ enabled: camera.focusAssistEnabled, targets: opticsState.focusTargets }).targets}
+          />
+
+          {camera.activeSceneId === "focus-fundamentals-two-targets" && (
+            <FocusFundamentalsDebugPanel sceneId={camera.activeSceneId} opticsState={opticsState} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
+          )}
+        </div>
+
         <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
       </div>
       <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
