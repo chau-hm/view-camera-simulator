@@ -32,3 +32,5 @@ test-results/
 .DS_Store
 .idea/
 .vscode/
+tsc
+view-camera-simulator@0.0.0

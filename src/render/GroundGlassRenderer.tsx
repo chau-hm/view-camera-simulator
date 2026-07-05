@@ -359,20 +359,22 @@ export const GroundGlassRenderer = ({
           />
         )}
 
-        <div
-          data-testid="ground-glass-scene"
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02) 48%, rgba(0,0,0,0.14) 100%)",
-            filter: `blur(${blurRadiusPx}px)`,
-            transform: `translate(${sceneShiftX}px, ${sceneShiftY}px) rotate(${sceneRotationDeg}deg) scale(${focusScale})`,
-            transformOrigin: "center",
-            willChange: "transform",
-          }}
-        >
-            {(() => {
+        {/* Legacy mock overlay: do not render for Focus Fundamentals (RTT) */}
+        {!isFocusFundamentals && (
+          <div
+            data-testid="ground-glass-scene"
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02) 48%, rgba(0,0,0,0.14) 100%)",
+              filter: `blur(${blurRadiusPx}px)`,
+              transform: `translate(${sceneShiftX}px, ${sceneShiftY}px) rotate(${sceneRotationDeg}deg) scale(${focusScale})`,
+              transformOrigin: "center",
+              willChange: "transform",
+            }}
+          >
+          {(() => {
               const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
               // If we have a scene definition with focus targets, project those into film UV and render placeholders anchored to them.
               // IMPORTANT: Do not render DOM placeholder target elements for the Focus Fundamentals scene — the RTT pipeline provides the ground-glass imagery.
@@ -588,27 +590,28 @@ export const GroundGlassRenderer = ({
               </>
             )}
           </div>
+          )}
           {!rawRttDebug && (
-            <>
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderLeft: "1px solid rgba(255,255,255,0.35)",
-                  left: "50%",
-                  transform: "translateX(-0.5px)",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderTop: "1px solid rgba(255,255,255,0.35)",
-                  top: "50%",
-                  transform: "translateY(-0.5px)",
-                }}
-              />
-            </>
+          <>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderLeft: "1px solid rgba(255,255,255,0.35)",
+                left: "50%",
+                transform: "translateX(-0.5px)",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderTop: "1px solid rgba(255,255,255,0.35)",
+                top: "50%",
+                transform: "translateY(-0.5px)",
+              }}
+            />
+          </>
           )}
           {gridEnabled && !rawRttDebug && (
             <div

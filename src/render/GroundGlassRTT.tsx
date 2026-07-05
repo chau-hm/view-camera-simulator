@@ -175,14 +175,35 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     const vertFovDeg = (vertFovRad * 180) / Math.PI;
 
     if (!groundGlassCamera.current) {
-      const cam = new THREE.PerspectiveCamera(vertFovDeg, widthPx / heightPx, 0.1, 10000);
+      const cam = new THREE.PerspectiveCamera(vertFovDeg, widthPx / heightPx, 0.01, 100.0);
       groundGlassCamera.current = cam;
     }
 
     const cam = groundGlassCamera.current as THREE.PerspectiveCamera;
     cam.fov = vertFovDeg;
     cam.aspect = widthPx / heightPx;
+
+    // Scene-aware clipping for Focus Fundamentals
+    const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
+    let nearWorld = 0.01;
+    let farWorld = 10000;
+    if (sceneDef && sceneId === "focus-fundamentals-two-targets") {
+      // compute far plane from scene bounds and lens center; convert mm -> meters and add margin
+      const sceneMaxDepthMm = sceneDef.bounds?.max?.z ?? 12000;
+      farWorld = Math.max(4, (sceneMaxDepthMm - opticsState.lensCenterWorld.z) / 1000 + 1);
+      nearWorld = 0.01;
+    }
+    cam.near = nearWorld;
+    cam.far = farWorld;
     cam.updateProjectionMatrix();
+
+    // expose last cam far for debug / unit assertions
+    try {
+      (globalThis as unknown as { __GROUNDGLASS_RTT_LAST_CAM_FAR?: number }).__GROUNDGLASS_RTT_LAST_CAM_FAR = cam.far;
+    } catch {
+      // ignore assignment failures in some environments
+    }
+
     const lensPos = new THREE.Vector3(opticsState.lensCenterWorld.x * 0.001, opticsState.lensCenterWorld.y * 0.001, opticsState.lensCenterWorld.z * 0.001);
     cam.position.copy(lensPos);
     const dir = new THREE.Vector3(opticsState.opticalAxis.direction.x, opticsState.opticalAxis.direction.y, opticsState.opticalAxis.direction.z);
