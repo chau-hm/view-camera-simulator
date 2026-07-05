@@ -16,6 +16,52 @@ describe('GeometryViewport matrix', () => {
 
   for (const scene of SCENES) {
     for (const view of VIEWS) {
+      // movement semantics: table-tilt should affect Side more than Top
+      if (scene.id === 'table-tilt' && view === 'side') {
+        it(`${scene.id} movement: tilt affects Side geometry`, () => {
+          const base = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
+          const tilted = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, frontTiltDeg: 5 }, scene);
+          const { container: c1 } = render(<GeometryViewport opticsState={base} geometryView={view} scene={scene} />);
+          const { container: c2 } = render(<GeometryViewport opticsState={tilted} geometryView={view} scene={scene} />);
+          const l1 = c1.querySelector('line[data-testid="plane-line-focus"]');
+          const l2 = c2.querySelector('line[data-testid="plane-line-focus"]');
+          if (!l1 || !l2) return; // no focus segment to compare
+          const x11 = parseFloat(l1.getAttribute('x1') || '0');
+          const y11 = parseFloat(l1.getAttribute('y1') || '0');
+          const x12 = parseFloat(l1.getAttribute('x2') || '0');
+          const y12 = parseFloat(l1.getAttribute('y2') || '0');
+          const x21 = parseFloat(l2.getAttribute('x1') || '0');
+          const y21 = parseFloat(l2.getAttribute('y1') || '0');
+          const x22 = parseFloat(l2.getAttribute('x2') || '0');
+          const y22 = parseFloat(l2.getAttribute('y2') || '0');
+          const slope1 = (y12 - y11) / (x12 - x11 || 1);
+          const slope2 = (y22 - y21) / (x22 - x21 || 1);
+          expect(Math.abs(slope1 - slope2)).toBeGreaterThan(0.001);
+        });
+      }
+
+      if (scene.id === 'shelf-swing' && view === 'top') {
+        it(`${scene.id} movement: swing affects Top geometry`, () => {
+          const base = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
+          const swung = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, frontSwingDeg: 5 }, scene);
+          const { container: c1 } = render(<GeometryViewport opticsState={base} geometryView={view} scene={scene} />);
+          const { container: c2 } = render(<GeometryViewport opticsState={swung} geometryView={view} scene={scene} />);
+          const l1 = c1.querySelector('line[data-testid="plane-line-focus"]');
+          const l2 = c2.querySelector('line[data-testid="plane-line-focus"]');
+          if (!l1 || !l2) return;
+          const x11 = parseFloat(l1.getAttribute('x1') || '0');
+          const y11 = parseFloat(l1.getAttribute('y1') || '0');
+          const x12 = parseFloat(l1.getAttribute('x2') || '0');
+          const y12 = parseFloat(l1.getAttribute('y2') || '0');
+          const x21 = parseFloat(l2.getAttribute('x1') || '0');
+          const y21 = parseFloat(l2.getAttribute('y1') || '0');
+          const x22 = parseFloat(l2.getAttribute('x2') || '0');
+          const y22 = parseFloat(l2.getAttribute('y2') || '0');
+          const slope1 = (y12 - y11) / (x12 - x11 || 1);
+          const slope2 = (y22 - y21) / (x22 - x21 || 1);
+          expect(Math.abs(slope1 - slope2)).toBeGreaterThan(0.001);
+        });
+      }
       it(`${scene.id} renders (${view}) primitives, depth strip, and minimal annotations`, () => {
         const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
         const { container } = render(<GeometryViewport opticsState={optics} geometryView={view} scene={scene} />);
