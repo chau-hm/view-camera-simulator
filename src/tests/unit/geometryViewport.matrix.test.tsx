@@ -58,16 +58,31 @@ describe('GeometryViewport matrix', () => {
         const fovLines = Array.from(svg!.querySelectorAll('line')).filter((l) => l.getAttribute('stroke') === '#f59e0b');
         expect(fovLines.length).toBeGreaterThanOrEqual(1);
 
-        // Camera glyphs (rear and front standards) present as dark rects
+        // camera glyphs: ensure vertical plates (height > width)
         const rearRect = Array.from(svg!.querySelectorAll('rect')).find((r) => r.getAttribute('fill') === '#1f2937');
         const frontRect = Array.from(svg!.querySelectorAll('rect')).find((r) => r.getAttribute('fill') === '#475569');
         expect(rearRect).toBeTruthy();
         expect(frontRect).toBeTruthy();
+        if (rearRect) {
+          const w = parseFloat(rearRect.getAttribute('width') || '0');
+          const h = parseFloat(rearRect.getAttribute('height') || '0');
+          expect(h).toBeGreaterThan(w);
+        }
+        if (frontRect) {
+          const w = parseFloat(frontRect.getAttribute('width') || '0');
+          const h = parseFloat(frontRect.getAttribute('height') || '0');
+          expect(h).toBeGreaterThan(w);
+        }
 
-        // Target glyphs render if scene has targets
+        // Target glyphs render if scene has targets and are vertical plates
         if (scene.focusTargets && scene.focusTargets.length > 0) {
           const targetRects = Array.from(svg!.querySelectorAll('rect')).filter((r) => r.getAttribute('fill') === '#0f766e');
           expect(targetRects.length).toBeGreaterThanOrEqual(1);
+          for (const tr of targetRects) {
+            const w = parseFloat(tr.getAttribute('width') || '0');
+            const h = parseFloat(tr.getAttribute('height') || '0');
+            expect(h).toBeGreaterThanOrEqual(w);
+          }
         }
       });
 
@@ -112,5 +127,6 @@ describe('GeometryViewport matrix', () => {
     // Focus Fundamentals should not show hinge marker
     const hinge = container.querySelector('circle[fill="#7c3aed"]');
     expect(hinge).toBeNull();
+
   });
 });

@@ -21,12 +21,17 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
 
   const SAFE_MARGIN = 10;
   const APPROX_CHAR_WIDTH = 6.5;
+  const LABEL_OFFSET_X = 10;
+  const LABEL_OFFSET_Y = 10;
+  const FONT_SIZE = 12;
 
-  const getLocalTargetLabelPlacement = ({ targetX, targetY, text, svgWidth, safeMargin }: { targetX: number; targetY: number; text: string; svgWidth: number; safeMargin: number; }) => {
+  const getLocalTargetLabelPlacement = ({ targetX, targetY, text, svgWidth, svgHeight, safeMargin }: { targetX: number; targetY: number; text: string; svgWidth: number; svgHeight: number; safeMargin: number; }) => {
     const approxW = Math.min(132, text.length * APPROX_CHAR_WIDTH);
+    const approxH = FONT_SIZE;
+
     // default: right and slightly above
-    let lx = targetX + 10;
-    let ly = targetY - 10;
+    let lx = targetX + LABEL_OFFSET_X;
+    let ly = targetY - LABEL_OFFSET_Y;
     let anchor: 'start' | 'end' = 'start';
 
     const overflowRight = lx + approxW > svgWidth - safeMargin;
@@ -34,17 +39,45 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
 
     if (overflowRight && !overflowTop) {
       // place left and slightly above
-      lx = targetX - 10;
+      lx = targetX - LABEL_OFFSET_X - approxW;
       anchor = 'end';
     } else if (!overflowRight && overflowTop) {
       // place right and below
-      ly = targetY + 14;
+      ly = targetY + LABEL_OFFSET_Y + (approxH / 2);
     } else if (overflowRight && overflowTop) {
       // left and below
-      lx = targetX - 10;
-      ly = targetY + 14;
+      lx = targetX - LABEL_OFFSET_X - approxW;
+      ly = targetY + LABEL_OFFSET_Y + (approxH / 2);
       anchor = 'end';
     }
+
+    // Ensure vertical fit: if the chosen below position exceeds svgHeight - safeMargin, prefer above
+    if (ly + approxH > svgHeight - safeMargin) {
+      // try the corresponding above position
+      const altLy = targetY - LABEL_OFFSET_Y;
+      if (altLy >= safeMargin) {
+        ly = altLy;
+      } else {
+        // neither above nor below fits fully; clamp within safe bounds
+        const minY = safeMargin + FONT_SIZE;
+        const maxY = svgHeight - safeMargin;
+        ly = Math.min(Math.max(ly, minY), maxY);
+      }
+    }
+
+    // Clamp horizontally to SVG edges
+    if (anchor === 'start') {
+      if (lx < safeMargin) lx = safeMargin;
+      if (lx + approxW > svgWidth - safeMargin) lx = svgWidth - safeMargin - approxW;
+    } else {
+      // end-anchored text: lx is the left edge because we used lx that already accounts for width
+      if (lx < safeMargin) lx = safeMargin;
+      if (lx + approxW > svgWidth - safeMargin) lx = svgWidth - safeMargin - approxW;
+    }
+
+    // Final clamp vertically
+    if (ly < safeMargin) ly = safeMargin + FONT_SIZE;
+    if (ly > svgHeight - safeMargin) ly = svgHeight - safeMargin;
 
     return { x: lx, y: ly, anchor };
   };
@@ -130,7 +163,7 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
           const y = geometryView === 'side' ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
           const labelText = /near/i.test(t.id) ? 'Near board' : /far/i.test(t.id) ? 'Far board' : 'Target';
           if (geometryView === 'side') {
-            const placement = getLocalTargetLabelPlacement({ targetX: x, targetY: y, text: labelText, svgWidth, safeMargin: SAFE_MARGIN });
+            const placement = getLocalTargetLabelPlacement({ targetX: x, targetY: y, text: labelText, svgWidth, svgHeight, safeMargin: SAFE_MARGIN });
             return (
               <g key={t.id}>
                 <rect x={x - 6} y={y - 20} width={12} height={16} fill="#0f766e" />
@@ -141,7 +174,7 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
               </g>
             );
           }
-          const placementTop = getLocalTargetLabelPlacement({ targetX: x, targetY: y, text: labelText, svgWidth, safeMargin: SAFE_MARGIN });
+          const placementTop = getLocalTargetLabelPlacement({ targetX: x, targetY: y, text: labelText, svgWidth, svgHeight, safeMargin: SAFE_MARGIN });
           return (
             <g key={t.id}>
               <rect x={x - 3} y={y - 9} width={6} height={18} fill="#0f766e" />
