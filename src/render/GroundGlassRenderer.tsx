@@ -32,6 +32,9 @@ type GroundGlassRendererProps = {
   aperture: ApertureValue;
   renderQuality: RenderQualityProfile;
   sceneId?: string;
+  // optional external preview control (kept local by default)
+  previewMode?: "raw" | "upright";
+  onPreviewModeChange?: (mode: "raw" | "upright") => void;
 };
 
 const PANEL_WIDTH_PX = 500;
