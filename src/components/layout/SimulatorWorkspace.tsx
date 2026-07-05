@@ -166,15 +166,40 @@ export const SimulatorWorkspace = ({
         <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
       </div>
       <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-        <MovementControls
-          riseEnabled={enabledControls.has("rise")}
-          tiltEnabled={enabledControls.has("tilt")}
-          swingEnabled={enabledControls.has("swing")}
-          lockReason={lockReason}
-        />
-        <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
-        <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
-        <ResetControls />
+        <section aria-label="Camera Controls">
+          <h3>Camera Controls</h3>
+          <div style={{ display: 'grid', gap: '0.5rem' }}>
+            {/* Infinity Reset */}
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  useAppStore.getState().setInfinityFocus();
+                }}
+              >
+                Infinity Reset
+              </button>
+            </div>
+
+            {/* Movement controls */}
+            <MovementControls
+              riseEnabled={enabledControls.has("rise")}
+              tiltEnabled={enabledControls.has("tilt")}
+              swingEnabled={enabledControls.has("swing")}
+              lockReason={lockReason}
+            />
+
+            {/* Focus control */}
+            <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
+
+            {/* Aperture control */}
+            <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
+
+            {/* Reset controls (scene/camera reset group) */}
+            <ResetControls />
+          </div>
+        </section>
+
         <section aria-label="Developer Tools">
           <h3>Developer Tools</h3>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

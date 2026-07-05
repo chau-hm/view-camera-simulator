@@ -1,6 +1,5 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { SceneRenderer } from "../../render/SceneRenderer";
-import { useAppStore } from "../../state/appStore";
 import { getLazySceneAssets, getPreloadSceneAssets, getRequiredSceneAssets } from "../../scenes/definitions";
 import { isWebGLAvailable } from "../../utils/webgl";
 import type { UiErrorState } from "../../types/ui";
@@ -87,15 +86,6 @@ export const SceneViewport = ({
           <input type="checkbox" checked={showDofOverlay} onChange={(event) => setShowDofOverlay(event.target.checked)} />
           {UI_COPY.simulator.dofOverlayLabel}
         </label>
-        <button
-          type="button"
-          onClick={() => {
-            // Infinity reset: use dedicated action that enters infinity focus mode atomically
-            useAppStore.getState().setInfinityFocus();
-          }}
-        >
-          Infinity Reset
-        </button>
         <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
           <span>{UI_COPY.simulator.renderQualityLabel}</span>
           <select
