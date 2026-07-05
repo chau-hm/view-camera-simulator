@@ -17,7 +17,7 @@ export const OpticalDepthStrip = ({ opticsState, sectionOrigin, sectionDepthDir,
   };
 
   // Build items with their physical rear-datum depth values (in mm)
-  const items: { key: string; label: string; color: string; depth: number | null }[] = [];
+  const items: { key: string; label: string; color: string; depth: number | null; isInfinity?: boolean }[] = [];
 
   // Film datum: by definition at section origin depth = 0
   items.push({ key: 'film', label: 'Film', color: '#0284c7', depth: 0 });
@@ -31,13 +31,13 @@ export const OpticalDepthStrip = ({ opticsState, sectionOrigin, sectionDepthDir,
   }
 
   if (opticsState.diagnostics?.isInfinityFocus) {
-    items.push({ key: 'focus', label: 'Focus ∞', color: '#16a34a', depth: null });
+    items.push({ key: 'focus', label: 'Focus', color: '#16a34a', depth: null, isInfinity: true });
   } else if (opticsState.focusPlane) {
     items.push({ key: 'focus', label: 'Focus', color: '#16a34a', depth: depthAlong(opticsState.focusPlane.point) });
   }
 
   if (opticsState.depthOfFieldFarPlane) {
-    if (opticsState.diagnostics?.isInfinityFocus) items.push({ key: 'farDof', label: 'Far DOF ∞', color: '#8b5cf6', depth: null });
+    if (opticsState.diagnostics?.isInfinityFocus) items.push({ key: 'farDof', label: 'Far DOF', color: '#8b5cf6', depth: null, isInfinity: true });
     else items.push({ key: 'farDof', label: 'Far DOF', color: '#8b5cf6', depth: depthAlong(opticsState.depthOfFieldFarPlane.point) });
   }
 
@@ -56,7 +56,8 @@ export const OpticalDepthStrip = ({ opticsState, sectionOrigin, sectionDepthDir,
   // Render chips; if an item's finite depth lies outside the current depth window, show continuation text
   const chips = items.map((it) => {
     if (it.depth === null) {
-      return { key: it.key, color: it.color, text: it.label + ' ∞' };
+      // explicit infinity item
+      return { key: it.key, color: it.color, text: `${it.label} ∞` };
     }
     if (it.depth < depthWindow.minMm) {
       return { key: it.key, color: it.color, text: `${it.label} < ${fmt(depthWindow.minMm)}` };

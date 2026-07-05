@@ -19,6 +19,36 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
   const segments = geometryView === 'side' ? sideSegments : topSegments;
   const fovDirs = geometryView === 'side' ? sideFovDirs : topFovDirs;
 
+  const SAFE_MARGIN = 10;
+  const APPROX_CHAR_WIDTH = 6.5;
+
+  const getLocalTargetLabelPlacement = ({ targetX, targetY, text, svgWidth, safeMargin }: { targetX: number; targetY: number; text: string; svgWidth: number; safeMargin: number; }) => {
+    const approxW = Math.min(132, text.length * APPROX_CHAR_WIDTH);
+    // default: right and slightly above
+    let lx = targetX + 10;
+    let ly = targetY - 10;
+    let anchor: 'start' | 'end' = 'start';
+
+    const overflowRight = lx + approxW > svgWidth - safeMargin;
+    const overflowTop = ly < safeMargin;
+
+    if (overflowRight && !overflowTop) {
+      // place left and slightly above
+      lx = targetX - 10;
+      anchor = 'end';
+    } else if (!overflowRight && overflowTop) {
+      // place right and below
+      ly = targetY + 14;
+    } else if (overflowRight && overflowTop) {
+      // left and below
+      lx = targetX - 10;
+      ly = targetY + 14;
+      anchor = 'end';
+    }
+
+    return { x: lx, y: ly, anchor };
+  };
+
   return (
     <svg data-testid={`geometry-svg-${geometryView}`} viewBox={`0 0 ${svgWidth} ${svgHeight}`} width="100%" style={{ border: '1px solid #d1d5db', borderRadius: 8, background: '#f8fafc' }}>
       <g>
@@ -98,23 +128,26 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
           const depth = ((t.worldPosition.x - sectionOrigin.x) * sectionDepthDir.x) + ((t.worldPosition.y - sectionOrigin.y) * sectionDepthDir.y) + ((t.worldPosition.z - sectionOrigin.z) * sectionDepthDir.z);
           const x = depthToX(depth);
           const y = geometryView === 'side' ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
+          const labelText = /near/i.test(t.id) ? 'Near board' : /far/i.test(t.id) ? 'Far board' : 'Target';
           if (geometryView === 'side') {
+            const placement = getLocalTargetLabelPlacement({ targetX: x, targetY: y, text: labelText, svgWidth, safeMargin: SAFE_MARGIN });
             return (
               <g key={t.id}>
                 <rect x={x - 6} y={y - 20} width={12} height={16} fill="#0f766e" />
                 <rect x={x - 2} y={y - 4} width={4} height={8} fill="#6b7280" />
                 {profile.targetLabelMode === 'short-local' ? (
-                  <text x={x + 10} y={y - 10} fontSize={12} fill="#064e3b">{/near/i.test(t.id) ? 'Near board' : /far/i.test(t.id) ? 'Far board' : 'Target'}</text>
+                  <text x={placement.x} y={placement.y} fontSize={12} fill="#064e3b" textAnchor={placement.anchor}>{labelText}</text>
                 ) : null}
               </g>
             );
           }
+          const placementTop = getLocalTargetLabelPlacement({ targetX: x, targetY: y, text: labelText, svgWidth, safeMargin: SAFE_MARGIN });
           return (
             <g key={t.id}>
               <rect x={x - 3} y={y - 9} width={6} height={18} fill="#0f766e" />
               <line x1={x} y1={y + 9} x2={x} y2={y + 13} stroke="#0b5e54" strokeWidth={1} />
               {profile.targetLabelMode === 'short-local' ? (
-                <text x={x + 10} y={y - 10} fontSize={12} fill="#064e3b">{/near/i.test(t.id) ? 'Near board' : /far/i.test(t.id) ? 'Far board' : 'Target'}</text>
+                <text x={placementTop.x} y={placementTop.y} fontSize={12} fill="#064e3b" textAnchor={placementTop.anchor}>{labelText}</text>
               ) : null}
             </g>
           );
@@ -130,7 +163,7 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
         })()}
 
         {/* hinge */}
-        {opticsState.lensFilmHingeLine && (() => {
+        {profile.showHingeMarker && opticsState.lensFilmHingeLine && (() => {
           const h = opticsState.lensFilmHingeLine.point;
           const depth = ((h.x - sectionOrigin.x) * sectionDepthDir.x) + ((h.y - sectionOrigin.y) * sectionDepthDir.y) + ((h.z - sectionOrigin.z) * sectionDepthDir.z);
           const x = depthToX(depth);
