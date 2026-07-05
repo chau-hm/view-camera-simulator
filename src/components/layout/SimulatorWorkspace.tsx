@@ -116,8 +116,6 @@ export const SimulatorWorkspace = ({
           renderQuality={renderQuality}
           setRenderQuality={setRenderQuality}
           simulateAssetFailure={simulateAssetFailure}
-          rawRttDebug={rawRttDebug}
-          onRawRttDebugChange={setRawRttDebug}
         />
         <GroundGlassViewport
           opticsState={opticsState}
@@ -133,7 +131,6 @@ export const SimulatorWorkspace = ({
           sceneId={camera.activeSceneId}
           lockReason={lockReason}
           rawRttDebug={rawRttDebug}
-          onRawRttDebugChange={setRawRttDebug}
         />
         <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
       </div>
@@ -147,6 +144,17 @@ export const SimulatorWorkspace = ({
         <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
         <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
         <ResetControls />
+        <section aria-label="Developer Tools">
+          <h3>Developer Tools</h3>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input
+              type="checkbox"
+              checked={rawRttDebug}
+              onChange={(e) => setRawRttDebug(e.target.checked)}
+            />
+            RTT Debug: Raw ON/OFF
+          </label>
+        </section>
       </div>
       <TaskPanel task={task} />
       <FeedbackPanel evaluation={evaluation} />

@@ -8,15 +8,13 @@ import type { DerivedOpticsState } from "../types/optics";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
 import { UI_COPY } from "../ui/copy";
-import { formatDegrees, formatMillimeter } from "../utils/formatters";
+import { formatMillimeter } from "../utils/formatters";
 import { createFocusAssistPass } from "./postprocessing/FocusAssistPass";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
 import { calculateFocusPlaneDistanceMm, calculateApertureBlurStrength } from "./groundGlassPipeline";
 import { pointToPlaneDistance } from "../core/math/plane";
-import { subtract, dot } from "../core/math/vec";
-import { focusPlaneWidthMm, focusPlaneHeightMm, verticalFovDegreesFromImageDistance, cocDiameterMm } from "../core/optics/thinLensModel";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { getSceneById } from "../scenes/definitions";
 
@@ -32,28 +30,15 @@ type GroundGlassRendererProps = {
   aperture: ApertureValue;
   renderQuality: RenderQualityProfile;
   sceneId?: string;
-  // optional external preview control (kept local by default)
-  previewMode?: "raw" | "upright";
-  onPreviewModeChange?: (mode: "raw" | "upright") => void;
-  // optional external raw RTT debug control (moved to a debug area). When provided, controls RTT raw mode.
+  // previewMode is controlled by the parent GroundGlassViewport and REQUIRED
+  previewMode: "raw" | "upright";
+  // rawDebug (developer-only) is controlled at workspace and passed down
   rawDebug?: boolean;
-  onRawDebugChange?: (v: boolean) => void;
 };
 
 const PANEL_WIDTH_PX = 500;
 const PANEL_HEIGHT_PX = 400;
 
-const statusLabelMap = {
-  sharp: UI_COPY.render.focusStatusSharp,
-  acceptable: UI_COPY.render.focusStatusAcceptable,
-  soft: UI_COPY.render.focusStatusSoft,
-} as const;
-
-const statusPatternGlyph = {
-  solid: "■",
-  hatch: "▒",
-  cross: "✕",
-} as const;
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
@@ -71,10 +56,8 @@ export const GroundGlassRenderer = ({
   aperture,
   renderQuality,
   sceneId,
-  previewMode: previewModeProp,
-  onPreviewModeChange,
-  rawDebug: rawDebugProp,
-  onRawDebugChange,
+  previewMode,
+  rawDebug,
 }: GroundGlassRendererProps) => {
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [zoomPan, setZoomPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -101,17 +84,8 @@ export const GroundGlassRenderer = ({
     };
   }, [panelRef]);
 
-  // Explicit preview modes for Focus Fundamentals: 'raw' (invert both axes) or 'upright' (correct both axes)
-  // Default to `raw` so Raw Ground Glass is the initial preview mode.
-  const [internalPreviewMode, setInternalPreviewMode] = useState<"raw" | "upright">("raw");
-  const previewMode = previewModeProp ?? internalPreviewMode;
-  const setPreviewMode = onPreviewModeChange ?? setInternalPreviewMode;
-
-  // Allow external control of raw RTT debug mode via props; default to local state when not provided
-  const [internalRawRttDebug, setInternalRawRttDebug] = useState(false);
-  const rawRttDebug = rawDebugProp ?? internalRawRttDebug;
-  const setRawRttDebug = onRawDebugChange ?? setInternalRawRttDebug;
-
+  // previewMode is controlled by parent (GroundGlassViewport)
+  // rawDebug is controlled at workspace and passed down
   const zoomScale = zoomEnabled ? 1.9 : 1;
   const transform = `translate3d(${zoomPan.x}px, ${zoomPan.y}px, 0) scale(${zoomScale})`;
   const pipeline = useMemo(() => {
@@ -295,7 +269,7 @@ export const GroundGlassRenderer = ({
         }}
       >
         {/* Decorative background; hide for Focus Fundamentals (RTT) or when Raw RTT Debug is enabled */}
-        {!(isFocusFundamentals || rawRttDebug) && (
+        {!(isFocusFundamentals || rawDebug) && (
           <div
             style={{
               position: "absolute",
@@ -307,22 +281,6 @@ export const GroundGlassRenderer = ({
               transformOrigin: "center",
             }}
           />
-        )}
-        {/* Preview mode toggle for Focus Fundamentals */}
-        {sceneId === "focus-fundamentals-two-targets" && (
-          <div style={{ position: "absolute", left: 8, top: 8, zIndex: 10, display: "flex", gap: 8 }}>
-            <label style={{ color: "#e5e7eb", fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
-              <span style={{ fontSize: 11, color: "#94a3b8" }}>Preview:</span>
-              <button
-                type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => setPreviewMode(previewMode === "raw" ? "upright" : "raw")}
-                style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#fff", padding: "4px 8px", borderRadius: 6 }}
-              >
-                {previewMode === "raw" ? "Raw ground glass" : "Upright assist"}
-              </button>
-            </label>
-          </div>
         )}
         <div
           style={{
@@ -345,7 +303,7 @@ export const GroundGlassRenderer = ({
               previewMode={previewMode}
               focusRingRadiusPx={focusRingSize}
               focusRingOpacity={focusRingOpacity}
-              rawDebug={rawRttDebug}
+              rawDebug={rawDebug}
               focusAssistEnabled={focusAssistEnabled}
             />
           </div>
@@ -596,7 +554,7 @@ export const GroundGlassRenderer = ({
             )}
           </div>
           )}
-          {!rawRttDebug && (
+          {!rawDebug && (
           <>
             <div
               style={{
@@ -618,7 +576,7 @@ export const GroundGlassRenderer = ({
             />
           </>
           )}
-          {gridEnabled && !rawRttDebug && (
+          {gridEnabled && !rawDebug && (
             <div
               style={{
                 position: "absolute",
@@ -630,7 +588,7 @@ export const GroundGlassRenderer = ({
             />
           )}
           {/* radial vignette / blur overlay; hide for RTT focus fundamentals or raw RTT debug */}
-          {!(isFocusFundamentals || rawRttDebug) && (
+          {!(isFocusFundamentals || rawDebug) && (
             <div
               style={{
                 position: "absolute",
@@ -698,7 +656,7 @@ export const GroundGlassRenderer = ({
             }}
           />
         )}
-        {focusAssist.enabled && !rawRttDebug && (
+        {focusAssist.enabled && !rawDebug && (
           <span
             style={{
               position: "absolute",
@@ -715,104 +673,8 @@ export const GroundGlassRenderer = ({
           </span>
         )}
       </div>
-      <div style={{ display: "grid", gap: "0.25rem", fontSize: 12 }}>
-        <strong>{UI_COPY.simulator.groundGlassCurrentSettings}</strong>
-        <span>
-          Rise {formatMillimeter(riseMm)} | Tilt {formatDegrees(tiltDeg)} | Swing {formatDegrees(swingDeg)}
-        </span>
-        <span>
-          {isInfinityFocus ? (
-            <span>Focus ∞ | Aperture f/{aperture} <span style={{ fontSize: 11, color: '#94a3b8' }}> (Last finite: {lastFiniteFocusDepthMm ? formatMillimeter(lastFiniteFocusDepthMm) : '—'})</span></span>
-          ) : (
-            <span>Focus {formatMillimeter(focusDistanceMm)} | Aperture f/{aperture}</span>
-          )}
-        </span>
-        <span>
-          Quality {renderQuality} | Color target: {pipeline.colorTarget.widthPx}×{pipeline.colorTarget.heightPx} | Blur
-          pass: {pipeline.blurPass.widthPx}×{pipeline.blurPass.heightPx}
-        </span>
-        <span>
-          Color target: {pipeline.colorTarget.textureId}, Depth target: {pipeline.depthTarget.depthTextureId}
-        </span>
-        <span>
-          Camera source: {pipeline.camera.source}, Blur pass: {pipeline.blurPass.widthPx}×
-          {pipeline.blurPass.heightPx}, Scale {qualitySettings.groundGlassScale}
-        </span>
-      </div>
+    {/* Current Settings & Focus Fundamentals Debug and Focus Targets are rendered by the parent GroundGlassViewport to allow controls to appear immediately after the canvas. */}
+  </div>
 
-      {/* Thin-lens debug readout for the Focus Fundamentals scene */}
-      {sceneId === "focus-fundamentals-two-targets" && (() => {
-        const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
-        const vFov = verticalFovDegreesFromImageDistance(101.6, imgDist);
-        const hFov = (2 * Math.atan(127 / (2 * imgDist))) * (180 / Math.PI);
-        const focusW = focusPlaneWidthMm(127, focusDistanceMm, imgDist);
-        const focusH = focusPlaneHeightMm(101.6, focusDistanceMm, imgDist);
-
-        const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
-
-        const nearZ = opticsState.depthOfFieldNearPlane ? opticsState.depthOfFieldNearPlane.point.z : NaN;
-        const farZ = opticsState.depthOfFieldFarPlane ? opticsState.depthOfFieldFarPlane.point.z : Number.POSITIVE_INFINITY;
-
-        return (
-          <div style={{ display: "grid", gap: "0.125rem", fontSize: 12, borderTop: "1px dashed #e5e7eb", paddingTop: "0.5rem" }}>
-            <strong>Focus Fundamentals Debug</strong>
-            <span>Focal length: {CAMERA_CONSTANTS.focalLengthMm} mm</span>
-            <span>Aperture: f/{aperture}</span>
-            {opticsState.diagnostics?.isInfinityFocus ? (
-              <div style={{ color: '#e5e7eb', fontSize: 13 }}>
-                <div>Focus: ∞</div>
-                <div>Last finite focus: {formatMillimeter(focusDistanceMm)}</div>
-                <div>Lens extension: {formatMillimeter(Math.abs(opticsState.lensCenterWorld.z))}</div>
-                <div>Extension beyond infinity: 0.00 mm</div>
-                <div>Focus plane: ∞</div>
-                <div>
-                  Near DOF: {opticsState.depthOfFieldNearPlane ? `${(opticsState.depthOfFieldNearPlane.point.z / 1000).toFixed(2)} m` : '—'}
-                  {opticsState.depthOfFieldNearPlane ? (
-                    (() => {
-                      const nearDist = dot(subtract(opticsState.depthOfFieldNearPlane!.point, opticsState.lensCenterWorld), opticsState.opticalAxis.direction);
-                      const cap = opticsState.sceneVisualCapDepthMm ?? 12000;
-                      const visible = Number.isFinite(nearDist) && nearDist <= cap;
-                      return <span> — {visible ? 'visible in current visual cap' : 'outside current visual cap'}</span>;
-                    })()
-                  ) : null}
-                </div>
-                <div>Far DOF: ∞</div>
-                <div>Visual cap: {(opticsState.sceneVisualCapDepthMm ? (opticsState.sceneVisualCapDepthMm / 1000).toFixed(2) : '12.00')} m</div>
-              </div>
-            ) : (
-              <span>Focus distance: {formatMillimeter(focusDistanceMm)}</span>
-            )}
-            <span>Image distance: {imgDist.toFixed(2)} mm</span>
-            <span>Sensor: {CAMERA_CONSTANTS.filmWidthMm} × {CAMERA_CONSTANTS.filmHeightMm} mm</span>
-            <span>Vertical FOV: {vFov.toFixed(3)}° | Horizontal FOV: {hFov.toFixed(3)}°</span>
-            {!opticsState.diagnostics?.isInfinityFocus && (
-              <span>Focus plane dims: {focusW.toFixed(2)} × {focusH.toFixed(2)} mm</span>
-            )}
-            <span>
-              DOF near Z: {Number.isFinite(nearZ) ? `${nearZ.toFixed(2)} mm` : '—'} | DOF far Z: {Number.isFinite(farZ) ? `${farZ.toFixed(2)} mm` : '∞'}
-            </span>
-            {sceneDef?.focusTargets.map((t) => {
-              // compute axial distance U from lens center along optical axis — do NOT use world Z directly
-              const U = Math.max(1e-6, dot(subtract(t.worldPosition, opticsState.lensCenterWorld), opticsState.opticalAxis.direction));
-              const coc = cocDiameterMm(CAMERA_CONSTANTS.focalLengthMm, aperture as number, imgDist, U);
-              return (
-                <span key={t.id}>{t.id}: axial depth {U.toFixed(2)} mm | CoC {coc.toFixed(3)} mm</span>
-              );
-            })}
-          </div>
-        );
-      })()}
-      {focusAssist.enabled && (
-        <div style={{ display: "grid", gap: "0.25rem", fontSize: 12 }}>
-          <strong>{UI_COPY.simulator.groundGlassFocusTargets}</strong>
-          {focusAssist.targets.map((target) => (
-            <span key={target.id}>
-              {statusPatternGlyph[target.pattern]} {target.id} — {target.sharpnessPercent}% ({statusLabelMap[target.status]
-              })
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
   );
 };

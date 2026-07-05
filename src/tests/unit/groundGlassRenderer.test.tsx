@@ -25,14 +25,13 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={DEFAULT_CAMERA_STATE.focusDistanceMm}
         aperture={DEFAULT_CAMERA_STATE.aperture}
         renderQuality="standard"
+        previewMode="raw"
       />,
     );
 
-    // Pipeline title removed from UI; keep checking the overlays and assist labels remain
-    expect(screen.getByText("Current settings")).toBeInTheDocument();
-    expect(screen.getByText("Focus targets")).toBeInTheDocument();
+    // Pipeline title removed from UI; ensure assist labels remain
+    expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
     expect(screen.getByText("Focus assist")).toBeInTheDocument();
-    expect(screen.getByText(/Sharp|Near-sharp|Blurred/)).toBeInTheDocument();
   });
 
   it("supports zoom mode without changing camera state", () => {
@@ -49,6 +48,7 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={2500}
         aperture={11}
         renderQuality="low"
+        previewMode="raw"
       />,
     );
 
@@ -71,6 +71,7 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={2000}
         aperture={11}
         renderQuality="standard"
+        previewMode="raw"
       />,
     );
 
@@ -91,6 +92,7 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={4200}
         aperture={32}
         renderQuality="standard"
+        previewMode="raw"
       />,
     );
 
@@ -195,6 +197,7 @@ describe("GroundGlassRenderer", () => {
         aperture={11}
         renderQuality="standard"
         sceneId={focusFundamentalsTwoTargets.id}
+        previewMode="raw"
       />,
     );
 

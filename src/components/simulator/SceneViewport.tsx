@@ -15,8 +15,6 @@ type SceneViewportProps = {
   renderQuality: RenderQualityProfile;
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
   simulateAssetFailure: boolean;
-  rawRttDebug?: boolean;
-  onRawRttDebugChange?: (v: boolean) => void;
 };
 
 const parseRenderQuality = (value: string): RenderQualityProfile => {
@@ -32,8 +30,6 @@ export const SceneViewport = ({
   renderQuality,
   setRenderQuality,
   simulateAssetFailure,
-  rawRttDebug,
-  onRawRttDebugChange,
 }: SceneViewportProps) => {
   const [attempt, setAttempt] = useState(0);
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
@@ -120,15 +116,6 @@ export const SceneViewport = ({
           style={{ marginLeft: "auto", background: bigView ? "#ef4444" : undefined, color: bigView ? "#fff" : undefined }}
         >
           {bigView ? "Exit Big View" : "Big View"}
-        </button>
-        {/* RTT debug toggle (developer-oriented) */}
-        <button
-          type="button"
-          onClick={() => onRawRttDebugChange?.(!rawRttDebug)}
-          aria-pressed={rawRttDebug ? "true" : "false"}
-          style={{ background: rawRttDebug ? "#ef4444" : undefined, color: rawRttDebug ? "#fff" : undefined }}
-        >
-          {rawRttDebug ? "RTT Debug: Raw ON" : "RTT Debug: Raw OFF"}
         </button>
       </div>
       <p style={{ fontSize: 12, color: "#4b5563", marginTop: 0 }}>
