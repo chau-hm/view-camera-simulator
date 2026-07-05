@@ -286,7 +286,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // honor raw debug mode (bypass DOF) or fallback depth
       matV.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
       // apply final display orientation only here (final blit)
-      matV.uniforms.displayUpright.value = previewMode === "upright" ? 1.0 : 0.0;
+      // map previewMode to display orientation: raw = physical inversion, upright = no inversion
+      matV.uniforms.displayUpright.value = previewMode === "raw" ? 1.0 : 0.0;
       // hide focus ring in raw debug mode
       if (rawDebug) matV.uniforms.showRing.value = 0.0;
 

@@ -158,8 +158,9 @@ export const GroundGlassRenderer = ({
   const projectedTargets = (sceneDef?.focusTargets ?? []).map((t) => {
     // Use the canonical thin-lens projection helper so canvas/DOM overlays match the RTT rendering
     const p = projectWorldPointToGroundGlass(t.worldPosition, opticsState.lensCenterWorld, imageDistanceMm, CAMERA_CONSTANTS.filmWidthMm, CAMERA_CONSTANTS.filmHeightMm);
-    const orientedU = previewMode === "upright" ? 1 - p.uRaw : p.uRaw;
-    const orientedV = previewMode === "upright" ? 1 - p.vRaw : p.vRaw;
+    // Map previewMode to final display coordinates: raw => physical inversion (1 - u/v), upright => no inversion
+    const orientedU = previewMode === "raw" ? 1 - p.uRaw : p.uRaw;
+    const orientedV = previewMode === "raw" ? 1 - p.vRaw : p.vRaw;
     const leftPercent = p.visible ? clamp(orientedU * 100, 0, 100) : -999; // off-screen sentinel
     const topPercent = p.visible ? clamp(orientedV * 100, 0, 100) : -999;
     // If a physical focus plane exists, measure distance to it; otherwise, for infinity mode, use a large value so blur is maximal
