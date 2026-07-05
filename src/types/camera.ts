@@ -18,4 +18,8 @@ export type CameraState = {
   focusAssistEnabled: boolean;
   gridEnabled: boolean;
   geometryView: GeometryView;
+  // Optional focus mode: 'finite' (default) or 'infinity'
+  focusMode?: "finite" | "infinity";
+  // Store last finite focus value so infinity mode can remember and restore
+  lastFiniteFocusDepthMm?: number;
 };

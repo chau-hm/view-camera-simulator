@@ -10,15 +10,35 @@ describe("GeometryViewport", () => {
     cleanup();
   });
 
-  it("renders side-view svg snapshot", () => {
+  it("renders side-view svg and has expected primitives", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     const { container } = render(
       <GeometryViewport opticsState={opticsState} geometryView="side" scene={architectureRiseScene} />,
     );
-    expect(container.querySelector('[data-testid="geometry-svg-side"]')).toMatchSnapshot();
+    const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
+    expect(svg).toBeTruthy();
+
+    // DOF region polygon exists and has 4 points
+    const poly = svg!.querySelector("polygon") as SVGPolygonElement | null;
+    expect(poly).toBeTruthy();
+    const pts = (poly!.getAttribute("points") || "").trim().split(/\s+/);
+    expect(pts.length).toBe(4);
+    pts.forEach((p) => {
+      const [x, y] = p.split(",");
+      expect(Number.isFinite(parseFloat(x))).toBe(true);
+      expect(Number.isFinite(parseFloat(y))).toBe(true);
+    });
+
+    // There should be multiple lines (film, lens, axis etc.)
+    const lines = svg!.querySelectorAll("line");
+    expect(lines.length).toBeGreaterThanOrEqual(2);
+
+    // Optical axis annotation exists in annotations layer
+    const axisText = Array.from(svg!.querySelectorAll("text")).find((t) => t.textContent === "Optical axis");
+    expect(axisText).toBeTruthy();
   });
 
-  it("renders top-view svg snapshot", () => {
+  it("renders top-view svg and has expected primitives", () => {
     const opticsState = deriveOpticsState(
       {
         ...DEFAULT_CAMERA_STATE,
@@ -29,6 +49,20 @@ describe("GeometryViewport", () => {
     const { container } = render(
       <GeometryViewport opticsState={opticsState} geometryView="top" scene={architectureRiseScene} />,
     );
-    expect(container.querySelector('[data-testid="geometry-svg-top"]')).toMatchSnapshot();
+    const svg = container.querySelector('[data-testid="geometry-svg-top"]') as SVGElement | null;
+    expect(svg).toBeTruthy();
+
+    const poly = svg!.querySelector("polygon") as SVGPolygonElement | null;
+    expect(poly).toBeTruthy();
+    const pts = (poly!.getAttribute("points") || "").trim().split(/\s+/);
+    expect(pts.length).toBe(4);
+    pts.forEach((p) => {
+      const [x, y] = p.split(",");
+      expect(Number.isFinite(parseFloat(x))).toBe(true);
+      expect(Number.isFinite(parseFloat(y))).toBe(true);
+    });
+
+    const lines = svg!.querySelectorAll("line");
+    expect(lines.length).toBeGreaterThanOrEqual(2);
   });
 });

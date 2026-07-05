@@ -68,8 +68,8 @@ describe("phase 12 integration", () => {
     const apertureSelect = screen.getAllByRole("combobox", { name: "Aperture" })[0];
     fireEvent.change(apertureSelect, { target: { value: "32" } });
     const after = selectDerivedOpticsState(useAppStore.getState().camera);
-    const beforeWidth = before.depthOfFieldFarPlane.distance - before.depthOfFieldNearPlane.distance;
-    const afterWidth = after.depthOfFieldFarPlane.distance - after.depthOfFieldNearPlane.distance;
+    const beforeWidth = before.depthOfFieldFarPlane!.distance - before.depthOfFieldNearPlane!.distance;
+    const afterWidth = after.depthOfFieldFarPlane!.distance - after.depthOfFieldNearPlane!.distance;
     expect(afterWidth).toBeGreaterThan(beforeWidth);
   });
 

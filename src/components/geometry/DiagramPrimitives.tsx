@@ -11,23 +11,21 @@ type PrimitiveSharedProps = {
 
 type PlaneLineProps = PrimitiveSharedProps & {
   plane: Plane;
-  label: string;
   stroke: string;
   dashed?: boolean;
+  testId?: string;
 };
 
-export const PlaneLine = ({ plane, label, stroke, dashed = false, ...shared }: PlaneLineProps) => {
+export const PlaneLine = ({ plane, stroke, dashed = false, testId, ...shared }: PlaneLineProps) => {
   const line = planeLineWorldEndpoints(plane, shared.view, shared.bounds);
   const start = worldToDiagramPoint(line.start, shared.view, shared.bounds, shared.width, shared.height);
   const end = worldToDiagramPoint(line.end, shared.view, shared.bounds, shared.width, shared.height);
-  const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
-
-  const testId = `plane-line-${label.toLowerCase().replace(/\s+/g, "-")}`;
+  const tid = testId ?? `plane-line`;
 
   return (
     <g>
       <line
-        data-testid={testId}
+        data-testid={tid}
         x1={start.x}
         y1={start.y}
         x2={end.x}
@@ -36,9 +34,6 @@ export const PlaneLine = ({ plane, label, stroke, dashed = false, ...shared }: P
         strokeWidth={2}
         strokeDasharray={dashed ? "6 4" : undefined}
       />
-      <text x={mid.x + 6} y={mid.y - 6} fontSize={11} fill={stroke}>
-        {label}
-      </text>
     </g>
   );
 };
@@ -46,39 +41,30 @@ export const PlaneLine = ({ plane, label, stroke, dashed = false, ...shared }: P
 type RayLineProps = PrimitiveSharedProps & {
   start: Vec3;
   end: Vec3;
-  label: string;
   stroke: string;
 };
 
-export const RayLine = ({ start, end, label, stroke, ...shared }: RayLineProps) => {
+export const RayLine = ({ start, end, stroke, ...shared }: RayLineProps) => {
   const startPoint = worldToDiagramPoint(start, shared.view, shared.bounds, shared.width, shared.height);
   const endPoint = worldToDiagramPoint(end, shared.view, shared.bounds, shared.width, shared.height);
-  const mid = { x: (startPoint.x + endPoint.x) / 2, y: (startPoint.y + endPoint.y) / 2 };
 
   return (
     <g>
       <line x1={startPoint.x} y1={startPoint.y} x2={endPoint.x} y2={endPoint.y} stroke={stroke} strokeWidth={1.5} />
-      <text x={mid.x + 6} y={mid.y + 10} fontSize={10} fill={stroke}>
-        {label}
-      </text>
     </g>
   );
 };
 
 type PointMarkerProps = PrimitiveSharedProps & {
   point: Vec3;
-  label: string;
   fill: string;
 };
 
-export const PointMarker = ({ point, label, fill, ...shared }: PointMarkerProps) => {
+export const PointMarker = ({ point, fill, ...shared }: PointMarkerProps) => {
   const p = worldToDiagramPoint(point, shared.view, shared.bounds, shared.width, shared.height);
   return (
     <g>
       <circle cx={p.x} cy={p.y} r={4} fill={fill} />
-      <text x={p.x + 6} y={p.y - 6} fontSize={10} fill={fill}>
-        {label}
-      </text>
     </g>
   );
 };
@@ -87,10 +73,9 @@ type RegionProps = PrimitiveSharedProps & {
   nearPlane: Plane;
   farPlane: Plane;
   fill: string;
-  label: string;
 };
 
-export const Region = ({ nearPlane, farPlane, fill, label, ...shared }: RegionProps) => {
+export const Region = ({ nearPlane, farPlane, fill, ...shared }: RegionProps) => {
   const near = planeLineWorldEndpoints(nearPlane, shared.view, shared.bounds);
   const far = planeLineWorldEndpoints(farPlane, shared.view, shared.bounds);
   const points = [
@@ -100,27 +85,58 @@ export const Region = ({ nearPlane, farPlane, fill, label, ...shared }: RegionPr
     worldToDiagramPoint(far.start, shared.view, shared.bounds, shared.width, shared.height),
   ];
   const pointString = points.map((point) => `${point.x},${point.y}`).join(" ");
-  const center = points.reduce(
-    (acc, point) => ({ x: acc.x + point.x / points.length, y: acc.y + point.y / points.length }),
-    { x: 0, y: 0 },
-  );
 
   return (
     <g>
       <polygon points={pointString} fill={fill} fillOpacity={0.15} stroke={fill} strokeDasharray="4 3" />
-      <text x={center.x + 4} y={center.y} fontSize={10} fill={fill}>
-        {label}
-      </text>
     </g>
   );
 };
 
-export const DiagramLegend = () => (
-  <ul style={{ margin: 0, paddingLeft: "1rem", fontSize: 12 }}>
-    <li>Film plane (blue)</li>
-    <li>Lens plane (slate)</li>
-    <li>Focus plane (green)</li>
-    <li>DOF region (violet area)</li>
-    <li>Optical axis (amber ray)</li>
-  </ul>
+type DiagramLegendProps = {
+  isInfinity?: boolean;
+  hasNearDof?: boolean;
+  hasFarDof?: boolean;
+  hasTargets?: boolean;
+};
+
+export const DiagramLegend = ({ isInfinity = false, hasNearDof = false, hasFarDof = false, hasTargets = false }: DiagramLegendProps) => (
+  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 12 }}>
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <span style={{ width: 12, height: 12, background: "#0284c7", display: "inline-block", borderRadius: 2 }} />
+      <span>Film datum</span>
+    </div>
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <span style={{ width: 12, height: 12, background: "#475569", display: "inline-block", borderRadius: 2 }} />
+      <span>Lens plane</span>
+    </div>
+    {!isInfinity && (
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <span style={{ width: 12, height: 12, background: "#16a34a", display: "inline-block", borderRadius: 2 }} />
+        <span>Focus plane</span>
+      </div>
+    )}
+    {hasNearDof && (
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <span style={{ width: 12, height: 12, background: "#8b5cf6", display: "inline-block", borderRadius: 2 }} />
+        <span>DOF boundary</span>
+      </div>
+    )}
+    {hasFarDof && !isInfinity && (
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <span style={{ width: 12, height: 12, background: "#8b5cf6", display: "inline-block", borderRadius: 2 }} />
+        <span>Far DOF</span>
+      </div>
+    )}
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <span style={{ width: 12, height: 12, background: "#f59e0b", display: "inline-block", borderRadius: 2 }} />
+      <span>Optical axis</span>
+    </div>
+    {hasTargets && (
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <span style={{ width: 12, height: 12, background: "#0f766e", display: "inline-block", borderRadius: 2 }} />
+        <span>Focus targets</span>
+      </div>
+    )}
+  </div>
 );

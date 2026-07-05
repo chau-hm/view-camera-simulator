@@ -49,6 +49,7 @@ export type AppStore = {
   setTilt: (value: number) => void;
   setSwing: (value: number) => void;
   setFocusDistance: (value: number) => void;
+  setInfinityFocus: () => void;
   setAperture: (value: ApertureValue) => void;
   setGeometryView: (value: GeometryView) => void;
   toggleGroundGlassAssist: () => void;
@@ -122,6 +123,23 @@ export const useAppStore = create<AppStore>((set) => ({
         focusDistanceMm: Number.isFinite(value)
           ? clampFocusDistanceForScene(state.camera.activeSceneId, value)
           : value,
+        // If user selects a finite focus distance, ensure we exit infinity focus mode and remember the last finite focus
+        focusMode: Number.isFinite(value) ? 'finite' : state.camera.focusMode,
+        lastFiniteFocusDepthMm: Number.isFinite(value) ? clampFocusDistanceForScene(state.camera.activeSceneId, value) : state.camera.lastFiniteFocusDepthMm,
+      },
+    })),
+
+  setInfinityFocus: () =>
+    set((state) => ({
+      camera: {
+        ...state.camera,
+        focusMode: 'infinity',
+        // preserve current finite focus distance for later restoration
+        lastFiniteFocusDepthMm: Number.isFinite(state.camera.focusDistanceMm) ? state.camera.focusDistanceMm : state.camera.lastFiniteFocusDepthMm ?? state.camera.focusDistanceMm,
+        // reset front-standard movements but do NOT overwrite focusDistanceMm with a finite default
+        frontRiseMm: 0,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
       },
     })),
 
@@ -132,6 +150,7 @@ export const useAppStore = create<AppStore>((set) => ({
         aperture: isApertureValue(value) ? value : state.camera.aperture,
       },
     })),
+
   setGeometryView: (value) =>
     set((state) => ({ camera: { ...state.camera, geometryView: value }, ui: { ...state.ui, geometryView: value } })),
   toggleGroundGlassAssist: () =>

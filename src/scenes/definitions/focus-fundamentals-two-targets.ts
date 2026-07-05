@@ -1,4 +1,5 @@
 import type { SceneDefinition } from "../../types/scene";
+import { focusTargetsDefs } from "../focusFundamentalsTargets";
 
 export const focusFundamentalsTwoTargets: SceneDefinition = {
   id: "focus-fundamentals-two-targets",
@@ -22,19 +23,6 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
     min: { x: -2000, y: -1000, z: 200 },
     max: { x: 2000, y: 2000, z: 12000 },
   },
-  focusTargets: [
-    {
-      id: "near-target",
-      label: "Near target",
-      worldPosition: { x: -200, y: 0, z: 1000 },
-      weight: 1,
-    },
-    {
-      id: "far-target",
-      label: "Far target",
-      worldPosition: { x: 200, y: 0, z: 3000 },
-      weight: 1,
-    },
-  ],
+  focusTargets: focusTargetsDefs,
   compositionTargets: [],
 };

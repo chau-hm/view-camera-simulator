@@ -19,9 +19,6 @@ export const HomePage = () => (
       <Link data-testid="free-entry" to="/simulator/free/architecture-rise">
         Start free mode
       </Link>
-      <Link data-testid="debug-simple-dof" to="/simulator/free/debug-simple-dof">
-        Debug: Simple DOF test
-      </Link>
     </div>
   </AppShell>
 );

@@ -6,6 +6,8 @@ export type FocusTarget = {
   label: string;
   worldPosition: Vec3;
   weight: number;
+  // optional explicit reference depth from the rear/film datum for deterministic focus presets (S)
+  focusReferenceDepthFromRearDatumMm?: number;
 };
 
 export type CompositionTarget = {

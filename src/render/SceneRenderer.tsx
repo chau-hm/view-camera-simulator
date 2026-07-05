@@ -1,4 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { add, scale, subtract, dot } from "../core/math/vec";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { DoubleSide, Vector3 } from "three";
@@ -8,6 +9,7 @@ import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS } from "../utils/constants";
+import { FocusFundamentalsSubject } from "./FocusFundamentalsSubjectFactory";
 import { UI_COPY } from "../ui/copy";
 import { getRenderQualitySettings } from "./renderQuality";
 
@@ -132,7 +134,11 @@ const OpticalAxisOverlay = ({ opticsState }: { opticsState: DerivedOpticsState }
   // Build a single continuous line passing through film datum center, lens center, focus point and extending forward
   const filmCenter = vecToWorld(opticsState.filmCenterWorld);
   const lensCenter = vecToWorld(opticsState.lensCenterWorld);
-  const focusCenter = vecToWorld(opticsState.focusPlane.point);
+  // Use physical focus plane if present; otherwise fall back to a visual cap along optical axis
+  const focusPlanePointFallback = opticsState.sceneVisualCapDepthMm
+    ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm))
+    : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000));
+  const focusCenter = vecToWorld((opticsState.focusPlane && opticsState.focusPlane.point) || focusPlanePointFallback);
   const dir = {
     x: focusCenter[0] - lensCenter[0],
     y: focusCenter[1] - lensCenter[1],
@@ -230,7 +236,7 @@ const LegendUpdater = ({
 }: {
   containerRef: RefObject<HTMLDivElement | null>;
   opticsState: DerivedOpticsState;
-  setLegendPositions: React.Dispatch<React.SetStateAction<Record<string, { left: number; top: number; visible: boolean }>>>;
+  setLegendPositions: React.Dispatch<React.SetStateAction<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>>;
 }) => {
   const { camera, gl } = useThree();
   const tmpV = useMemo(() => new Vector3(), []);
@@ -245,13 +251,16 @@ const LegendUpdater = ({
     const anchors: Record<string, [number, number, number]> = {
       film: vecToWorld(opticsState.filmCenterWorld),
       lens: vecToWorld(opticsState.lensCenterWorld),
-      focus: vecToWorld(opticsState.focusPlane.point),
-      nearDof: vecToWorld(opticsState.depthOfFieldNearPlane.point),
-      farDof: vecToWorld(opticsState.depthOfFieldFarPlane.point),
+      focus: vecToWorld((opticsState.focusPlane && opticsState.focusPlane.point) || (opticsState.sceneVisualCapDepthMm ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm)) : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000)))),
+      nearDof: vecToWorld((opticsState.depthOfFieldNearPlane && opticsState.depthOfFieldNearPlane.point) || (opticsState.sceneVisualCapDepthMm ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm)) : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000)))),
+      farDof: vecToWorld((opticsState.depthOfFieldFarPlane && opticsState.depthOfFieldFarPlane.point) || (opticsState.sceneVisualCapDepthMm ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm)) : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000)))),
       fov: vecToWorld({ x: opticsState.lensCenterWorld.x + 0.001, y: opticsState.lensCenterWorld.y + 0.001, z: opticsState.lensCenterWorld.z + 0.001 }),
       axis: vecToWorld({ x: opticsState.lensCenterWorld.x, y: opticsState.lensCenterWorld.y, z: opticsState.lensCenterWorld.z }),
     };
-    const next: Record<string, { left: number; top: number; visible: boolean }> = {};
+
+    const margin = 8;
+    const nextEntries: { key: string; left: number; top: number; visible: boolean }[] = [];
+
     Object.entries(anchors).forEach(([k, v]) => {
       tmpV.set(v[0], v[1], v[2]);
       tmpV.project(camera);
@@ -264,14 +273,35 @@ const LegendUpdater = ({
       let top = canvasRect.top - containerRect.top + yCanvas;
 
       // clamp to canvas bounds with margin so labels never render outside
-      const margin = 8;
       left = Math.min(Math.max(left, canvasRect.left - containerRect.left + margin), canvasRect.right - containerRect.left - margin);
       top = Math.min(Math.max(top, canvasRect.top - containerRect.top + margin), canvasRect.bottom - containerRect.top - margin);
 
       const inFrustum = tmpV.z > -1 && tmpV.z < 1;
-      next[k] = { left, top, visible: inFrustum };
+      nextEntries.push({ key: k, left, top, visible: inFrustum });
     });
-    // update state in one go
+
+    // Simple collision avoidance: sort by top and push overlapping labels downward
+    const minSpacing = 24; // px
+    nextEntries.sort((a, b) => a.top - b.top);
+    for (let i = 1; i < nextEntries.length; i++) {
+      const prev = nextEntries[i - 1];
+      const cur = nextEntries[i];
+      const dy = cur.top - prev.top;
+      const dx = Math.abs(cur.left - prev.left);
+      if (dy < minSpacing && dx < 80) {
+        // push current down to avoid overlap
+        cur.top = prev.top + minSpacing;
+        // ensure we don't push beyond canvas bottom
+        const maxTop = canvasRect.bottom - containerRect.top - margin;
+        if (cur.top > maxTop) cur.top = maxTop;
+      }
+    }
+
+    const next: Record<string, { left: number; top: number; visible: boolean; corner?: boolean }> = {};
+    nextEntries.forEach((e) => {
+      next[e.key] = { left: e.left, top: e.top, visible: e.visible, corner: false };
+    });
+
     setLegendPositions(next);
   });
 
@@ -450,107 +480,127 @@ const SceneContent = ({
         </group>
 
         {/* Focus plane and DOF planes derived from intersections of object-side FOV rays with each plane */}
-        {showFocusPlaneOverlay && (() => {
-         // helper: intersect ray (origin + t*dir) with plane where planePoint is a world-space triplet array
-         const intersectRayPlane = (
-           origin: [number, number, number],
-           dir: { x: number; y: number; z: number },
-           planePointArr: [number, number, number],
-           planeNormal: { x: number; y: number; z: number },
-         ): [number, number, number] | null => {
-           const o = { x: origin[0], y: origin[1], z: origin[2] };
-           const p0 = { x: planePointArr[0], y: planePointArr[1], z: planePointArr[2] };
-           const n = planeNormal;
-           const denom = dir.x * n.x + dir.y * n.y + dir.z * n.z;
-           if (Math.abs(denom) < 1e-6) return null; // parallel
-           const t = ((p0.x - o.x) * n.x + (p0.y - o.y) * n.y + (p0.z - o.z) * n.z) / denom;
-           if (!Number.isFinite(t) || t <= 1e-6) return null; // intersection behind or at origin
-           return [o.x + dir.x * t, o.y + dir.y * t, o.z + dir.z * t];
-         };
+        {(() => {
+          // helper: intersect ray (origin + t*dir) with plane where planePoint is a world-space triplet array
+          const intersectRayPlane = (
+            origin: [number, number, number],
+            dir: { x: number; y: number; z: number },
+            planePointArr: [number, number, number],
+            planeNormal: { x: number; y: number; z: number },
+          ): [number, number, number] | null => {
+            const o = { x: origin[0], y: origin[1], z: origin[2] };
+            const p0 = { x: planePointArr[0], y: planePointArr[1], z: planePointArr[2] };
+            const n = planeNormal;
+            const denom = dir.x * n.x + dir.y * n.y + dir.z * n.z;
+            if (Math.abs(denom) < 1e-6) return null; // parallel
+            const t = ((p0.x - o.x) * n.x + (p0.y - o.y) * n.y + (p0.z - o.z) * n.z) / denom;
+            if (!Number.isFinite(t) || t <= 1e-6) return null; // intersection behind or at origin
+            return [o.x + dir.x * t, o.y + dir.y * t, o.z + dir.z * t];
+          };
 
-         const lens = vecToWorld(opticsState.lensCenterWorld);
-         const filmCorners = [
-           opticsState.filmPlaneCornersWorld.topLeft,
-           opticsState.filmPlaneCornersWorld.topRight,
-           opticsState.filmPlaneCornersWorld.bottomRight,
-           opticsState.filmPlaneCornersWorld.bottomLeft,
-         ];
+          const lens = vecToWorld(opticsState.lensCenterWorld);
+          const filmCorners = [
+            opticsState.filmPlaneCornersWorld.topLeft,
+            opticsState.filmPlaneCornersWorld.topRight,
+            opticsState.filmPlaneCornersWorld.bottomRight,
+            opticsState.filmPlaneCornersWorld.bottomLeft,
+          ];
 
-         const filmCornersW = filmCorners.map((c) => vecToWorld(c));
+          const filmCornersW = filmCorners.map((c) => vecToWorld(c));
 
-         const rayDirs = filmCornersW.map((cornerW) => {
-           const dir = { x: lens[0] - cornerW[0], y: lens[1] - cornerW[1], z: lens[2] - cornerW[2] };
-           const len = Math.hypot(dir.x, dir.y, dir.z) || 1;
-           return { x: dir.x / len, y: dir.y / len, z: dir.z / len };
-         });
+          const rayDirs = filmCornersW.map((cornerW) => {
+            const dir = { x: lens[0] - cornerW[0], y: lens[1] - cornerW[1], z: lens[2] - cornerW[2] };
+            const len = Math.hypot(dir.x, dir.y, dir.z) || 1;
+            return { x: dir.x / len, y: dir.y / len, z: dir.z / len };
+          });
 
-         // compute intersections
-         const focusPlanePointWorld = vecToWorld(opticsState.focusPlane.point);
-         const nearPlanePointWorld = vecToWorld(opticsState.depthOfFieldNearPlane.point);
-         const farPlanePointWorld = vecToWorld(opticsState.depthOfFieldFarPlane.point);
+          const isInfinityFocus = !!opticsState.diagnostics?.isInfinityFocus;
+          const sceneVisualCapDepth = opticsState.sceneVisualCapDepthMm ?? 12000;
 
-         const focusCorners = rayDirs.map((d) => intersectRayPlane(lens, d, focusPlanePointWorld, opticsState.focusPlane.normal));
-         const nearCorners = rayDirs.map((d) => intersectRayPlane(lens, d, nearPlanePointWorld, opticsState.depthOfFieldNearPlane.normal));
-         const farCorners = rayDirs.map((d) => intersectRayPlane(lens, d, farPlanePointWorld, opticsState.depthOfFieldFarPlane.normal));
+          const focusPlaneObj = opticsState.focusPlane;
+          const nearPlaneObj = opticsState.depthOfFieldNearPlane;
+          const farPlaneObj = opticsState.depthOfFieldFarPlane;
 
-         const lensZ = lens[2];
+          const nearDistanceFromLensMm = nearPlaneObj ? dot(subtract(nearPlaneObj.point, opticsState.lensCenterWorld), opticsState.opticalAxis.direction) : NaN;
+          const farDistanceFromLensMm = farPlaneObj ? dot(subtract(farPlaneObj.point, opticsState.lensCenterWorld), opticsState.opticalAxis.direction) : NaN;
 
-         const allFocusValid = focusCorners.every((p) => p !== null && p[2] > lensZ + 1e-6);
-         const allNearValid = nearCorners.every((p) => p !== null && p[2] > lensZ + 1e-6);
-         const allFarValid = farCorners.every((p) => p !== null && p[2] > lensZ + 1e-6);
+          const canRenderFocusPlane = showFocusPlaneOverlay && !isInfinityFocus && !!focusPlaneObj;
+          const canRenderNearDofPlane = showDofOverlay && !!nearPlaneObj && Number.isFinite(nearDistanceFromLensMm) && nearDistanceFromLensMm > 0 && nearDistanceFromLensMm <= sceneVisualCapDepth;
+          const canRenderFarDofPlane = showDofOverlay && !isInfinityFocus && !!farPlaneObj && Number.isFinite(farDistanceFromLensMm) && farDistanceFromLensMm > 0 && farDistanceFromLensMm <= sceneVisualCapDepth;
 
-         const makeQuadMesh = (pts: (null | [number, number, number])[], color: string, opacity = 0.35) => {
-           if (pts.some((p) => p === null)) return null;
-           // positions: p0,p1,p2,p3 -> triangles [0,1,2] and [0,2,3]
-           const p0 = pts[0] as [number, number, number];
-           const p1 = pts[1] as [number, number, number];
-           const p2 = pts[2] as [number, number, number];
-           const p3 = pts[3] as [number, number, number];
-           const positions = new Float32Array([
-             p0[0], p0[1], p0[2],
-             p1[0], p1[1], p1[2],
-             p2[0], p2[1], p2[2],
-             p3[0], p3[1], p3[2],
-           ]);
-           const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
-           return (
-             <mesh>
-               <bufferGeometry>
-                 <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-                 <bufferAttribute attach="index" args={[indices, 1]} />
-               </bufferGeometry>
-               <meshBasicMaterial color={color} transparent opacity={opacity} side={DoubleSide} />
-             </mesh>
-           );
-         };
+          // compute intersections only for planes we intend to render
+          const focusCorners = canRenderFocusPlane ? rayDirs.map((d) => intersectRayPlane(lens, d, vecToWorld(focusPlaneObj!.point), focusPlaneObj!.normal)) : [];
+          const nearCorners = canRenderNearDofPlane ? rayDirs.map((d) => intersectRayPlane(lens, d, vecToWorld(nearPlaneObj!.point), nearPlaneObj!.normal)) : [];
+          const farCorners = canRenderFarDofPlane ? rayDirs.map((d) => intersectRayPlane(lens, d, vecToWorld(farPlaneObj!.point), farPlaneObj!.normal)) : [];
 
-         return (
-           <>
-             {allFocusValid && makeQuadMesh(focusCorners, "#16a34a", 0.35)}
-             {showDofOverlay && allNearValid && makeQuadMesh(nearCorners, "#a78bfa", 0.25)}
-             {showDofOverlay && allFarValid && makeQuadMesh(farCorners, "#a78bfa", 0.2)}
-           </>
-         );
+          const lensZ = lens[2];
+
+          const allFocusValid = canRenderFocusPlane ? focusCorners.every((p) => p !== null && p[2] > lensZ + 1e-6) : false;
+          const allNearValid = canRenderNearDofPlane ? nearCorners.every((p) => p !== null && p[2] > lensZ + 1e-6) : false;
+          const allFarValid = canRenderFarDofPlane ? farCorners.every((p) => p !== null && p[2] > lensZ + 1e-6) : false;
+
+          const makeQuadMesh = (pts: (null | [number, number, number])[], color: string, opacity = 0.35) => {
+            if (pts.length === 0) return null;
+            if (pts.some((p) => p === null)) return null;
+            // positions: p0,p1,p2,p3 -> triangles [0,1,2] and [0,2,3]
+            const p0 = pts[0] as [number, number, number];
+            const p1 = pts[1] as [number, number, number];
+            const p2 = pts[2] as [number, number, number];
+            const p3 = pts[3] as [number, number, number];
+            const positions = new Float32Array([
+              p0[0], p0[1], p0[2],
+              p1[0], p1[1], p1[2],
+              p2[0], p2[1], p2[2],
+              p3[0], p3[1], p3[2],
+            ]);
+            const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+            return (
+              <mesh>
+                <bufferGeometry>
+                  <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+                  <bufferAttribute attach="index" args={[indices, 1]} />
+                </bufferGeometry>
+                <meshBasicMaterial color={color} transparent opacity={opacity} side={DoubleSide} />
+              </mesh>
+            );
+          };
+
+          return (
+            <>
+              {allFocusValid && makeQuadMesh(focusCorners, "#16a34a", 0.35)}
+              {showDofOverlay && allNearValid && makeQuadMesh(nearCorners, "#a78bfa", 0.25)}
+              {showDofOverlay && allFarValid && makeQuadMesh(farCorners, "#a78bfa", 0.2)}
+            </>
+          );
         })()}
 
       </>
     ) : (
       <>
-        {showFocusPlaneOverlay && <PlaneOverlay color="#22c55e" point={vecToWorld(opticsState.focusPlane.point)} />}
-        {showDofOverlay && (
+        {showFocusPlaneOverlay && opticsState.focusPlane && !opticsState.diagnostics?.isInfinityFocus && (
+          <PlaneOverlay color="#22c55e" point={vecToWorld(opticsState.focusPlane!.point)} />
+        )}
+        {showDofOverlay && opticsState.depthOfFieldNearPlane && opticsState.depthOfFieldFarPlane && !opticsState.diagnostics?.isInfinityFocus && (
           <>
-            <PlaneOverlay color="#60a5fa" point={vecToWorld(opticsState.depthOfFieldNearPlane.point)} />
-            <PlaneOverlay color="#a78bfa" point={vecToWorld(opticsState.depthOfFieldFarPlane.point)} />
+            <PlaneOverlay color="#60a5fa" point={vecToWorld(opticsState.depthOfFieldNearPlane!.point)} />
+            <PlaneOverlay color="#a78bfa" point={vecToWorld(opticsState.depthOfFieldFarPlane!.point)} />
           </>
         )}
       </>
     )}
-    {scene.focusTargets.map((target) => (
-      <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
-        <sphereGeometry args={[toWorld(50), 16, 16]} />
-        <meshStandardMaterial color="#ef4444" />
-      </mesh>
-    ))}
+    {scene.id === "focus-fundamentals-two-targets" ? (
+      // Use shared scene subject for Focus Fundamentals
+      <>
+        <FocusFundamentalsSubject />
+      </>
+    ) : (
+      scene.focusTargets.map((target) => (
+        <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
+          <sphereGeometry args={[toWorld(50), 16, 16]} />
+          <meshStandardMaterial color="#ef4444" />
+        </mesh>
+      ))
+    )}
   </>
 );
 
@@ -616,7 +666,7 @@ export const SceneRenderer = ({
   const defaultContainerStyle: React.CSSProperties = { height: 320, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" };
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [legendPositions, setLegendPositions] = useState<Record<string, { left: number; top: number; visible: boolean }>>({});
+  const [legendPositions, setLegendPositions] = useState<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>({});
   const [showLegends, setShowLegends] = useState(true);
   const [showDebugOverlay, setShowDebugOverlay] = useState(true);
 
@@ -700,7 +750,8 @@ export const SceneRenderer = ({
               position: "absolute",
               left: pos.left,
               top: pos.top,
-              transform: "translate(-50%, -60%)",
+              // If this position was explicitly placed in a corner, don't apply centering transform
+              transform: pos.corner ? "none" : "translate(-50%, -60%)",
               pointerEvents: "none",
               color: "#0f172a",
               background: "rgba(255,255,255,0.9)",
@@ -724,6 +775,26 @@ export const SceneRenderer = ({
         // compute basic assertion values in mm
         const filmDatumZ = opticsState.filmCenterWorld.z;
         const lensZ = opticsState.lensCenterWorld.z;
+
+        // If we are in infinity mode or planes are absent, show a reduced debug panel
+        if (opticsState.diagnostics?.isInfinityFocus || !opticsState.focusPlane || !opticsState.depthOfFieldNearPlane || !opticsState.depthOfFieldFarPlane) {
+          return (
+            showDebugOverlay ? (
+              <div style={{ position: "absolute", right: 8, top: 8, zIndex: 210, background: "rgba(15,23,42,0.9)", padding: 8, borderRadius: 6, color: "#e5e7eb", fontSize: 11, pointerEvents: 'auto', maxWidth: 260 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <div style={{ fontWeight: 700 }}>Optical debug</div>
+                  <button onClick={() => setShowDebugOverlay(false)} style={{ marginLeft: 8, background: "transparent", border: "none", color: "#e5e7eb", cursor: "pointer" }} aria-label="Close debug">✕</button>
+                </div>
+                <div style={{ fontSize: 11 }}>
+                  <div>filmDatumZ: {filmDatumZ.toFixed(2)} mm</div>
+                  <div>lensZ: {lensZ.toFixed(2)} mm</div>
+                  <div>Focus: ∞ or missing planes</div>
+                </div>
+              </div>
+            ) : null
+          );
+        }
+
         const nearDofZ = opticsState.depthOfFieldNearPlane.point.z;
         const focusZ = opticsState.focusPlane.point.z;
         const farDofZ = opticsState.depthOfFieldFarPlane.point.z;
@@ -747,10 +818,10 @@ export const SceneRenderer = ({
           if (!Number.isFinite(t) || t <= 1e-6) return null;
           return { x: origin.x + dir.x * t, y: origin.y + dir.y * t, z: origin.z + dir.z * t };
         };
-        const focusIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.focusPlane.point, opticsState.focusPlane.normal));
+        const focusIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.focusPlane!.point, opticsState.focusPlane!.normal));
         const allFovHitFocus = focusIntersections.every((p) => p !== null && p.z > lensZ + 1e-6);
-        const nearIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.depthOfFieldNearPlane.point, opticsState.depthOfFieldNearPlane.normal));
-        const farIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.depthOfFieldFarPlane.point, opticsState.depthOfFieldFarPlane.normal));
+        const nearIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.depthOfFieldNearPlane!.point, opticsState.depthOfFieldNearPlane!.normal));
+        const farIntersections = rayDirs.map((d) => intersectPlane(lens, d, opticsState.depthOfFieldFarPlane!.point, opticsState.depthOfFieldFarPlane!.normal));
         const allNearInFront = nearIntersections.every((p) => p !== null && p.z > lensZ + 1e-6);
         const allFarInFront = farIntersections.every((p) => p !== null && p.z > lensZ + 1e-6);
 

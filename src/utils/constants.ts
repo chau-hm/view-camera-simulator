@@ -29,6 +29,8 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
   focusAssistEnabled: false,
   gridEnabled: true,
   geometryView: "side",
+  focusMode: "finite",
+  lastFiniteFocusDepthMm: CAMERA_CONSTANTS.defaultFocusDistanceMm,
 };
 
 export const isApertureValue = (value: number): value is ApertureValue =>

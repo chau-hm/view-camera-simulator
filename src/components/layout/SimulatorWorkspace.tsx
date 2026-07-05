@@ -140,7 +140,6 @@ export const SimulatorWorkspace = ({
         <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
         <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
         <ViewOptions
-          geometryViewEnabled={enabledControls.has("geometryView")}
           orientationAssistEnabled={mode === "free"}
           focusAssistEnabled={mode === "free"}
           gridEnabled={mode === "free"}

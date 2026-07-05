@@ -2,22 +2,27 @@ import type { SceneDefinition } from "../../types/scene";
 import { architectureRiseScene } from "./architecture-rise";
 import { shelfSwingScene } from "./shelf-swing";
 import { tableTiltScene } from "./table-tilt";
-import { debugSimpleDofScene } from "./debug-simple-dof";
 import { focusFundamentalsTwoTargets } from "./focus-fundamentals-two-targets";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
   [architectureRiseScene.id]: architectureRiseScene,
   [tableTiltScene.id]: tableTiltScene,
   [shelfSwingScene.id]: shelfSwingScene,
-  [debugSimpleDofScene.id]: debugSimpleDofScene,
   [focusFundamentalsTwoTargets.id]: focusFundamentalsTwoTargets,
 };
 
-export const sceneOrder = [architectureRiseScene.id, tableTiltScene.id, shelfSwingScene.id, debugSimpleDofScene.id, focusFundamentalsTwoTargets.id] as const;
+export const sceneOrder = [
+  architectureRiseScene.id,
+  tableTiltScene.id,
+  shelfSwingScene.id,
+  focusFundamentalsTwoTargets.id,
+] as const;
 
-export const getSceneById = (sceneId: string): SceneDefinition | undefined => sceneRegistry[sceneId];
+export const getSceneById = (sceneId: string): SceneDefinition | undefined =>
+  sceneRegistry[sceneId];
 
-export const getAllScenes = (): SceneDefinition[] => sceneOrder.map((sceneId) => sceneRegistry[sceneId]);
+export const getAllScenes = (): SceneDefinition[] =>
+  sceneOrder.map((sceneId) => sceneRegistry[sceneId]);
 
 export const getNextSceneId = (sceneId: string): string | null => {
   const index = sceneOrder.indexOf(sceneId as (typeof sceneOrder)[number]);
