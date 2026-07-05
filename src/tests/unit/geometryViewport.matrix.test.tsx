@@ -154,25 +154,38 @@ describe('GeometryViewport matrix', () => {
     }
   }
 
-  it('Focus Fundamentals: depth strip infinity chips appear once when diagnostics.isInfinityFocus', () => {
+  it('Focus Fundamentals: depth strip shows Focus ∞ and Far DOF ∞ for real infinity focus mode', () => {
     const scene = focusFundamentalsTwoTargets;
-    const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
-    const origDiag = (optics as unknown as { diagnostics?: Record<string, unknown> }).diagnostics ?? {};
-    const opticsInf = { ...(optics as unknown as Record<string, unknown>), diagnostics: { ...(origDiag as Record<string, unknown>), isInfinityFocus: true } } as unknown as typeof optics;
-    const { container } = render(<GeometryViewport opticsState={opticsInf} geometryView="side" scene={scene} />);
+    const infinityState = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, focusMode: 'infinity' }, scene);
+    // physical state assertions
+    expect(infinityState.focusPlane).toBeNull();
+    expect(infinityState.depthOfFieldFarPlane).toBeNull();
+
+    const { container } = render(<GeometryViewport opticsState={infinityState} geometryView="side" scene={scene} />);
     const depthStrip = container.querySelector('[aria-label="Optical depth order"]');
     expect(depthStrip).toBeTruthy();
     const txt = depthStrip?.textContent || '';
+
     // Focus ∞ once
     const focusMatches = (txt.match(/Focus\s*∞/g) || []);
     expect(focusMatches.length).toBe(1);
-    // Far DOF ∞ once (if present)
+    // Far DOF ∞ once
     const farMatches = (txt.match(/Far DOF\s*∞/g) || []);
     expect(farMatches.length).toBe(1);
+
+    // No finite Focus or Far DOF chip should exist
+    const finiteFocus = (txt.match(/Focus\s*\d+/g) || []);
+    expect(finiteFocus.length).toBe(0);
+    const finiteFar = (txt.match(/Far DOF\s*\d+/g) || []);
+    expect(finiteFar.length).toBe(0);
 
     // Focus Fundamentals should not show hinge marker
     const hinge = container.querySelector('circle[fill="#7c3aed"]');
     expect(hinge).toBeNull();
 
+    // Ensure no green finite focus-point marker exists in the SVG (finite focus would render a numeric chip only)
+    // We assert that the depth strip does not include any numeric focus label as above; additionally ensure no focus circle with green fill exists
+    const greenFocus = container.querySelector('circle[fill="#16a34a"]');
+    expect(greenFocus).toBeNull();
   });
 });

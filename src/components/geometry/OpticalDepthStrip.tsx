@@ -30,15 +30,21 @@ export const OpticalDepthStrip = ({ opticsState, sectionOrigin, sectionDepthDir,
     items.push({ key: 'nearDof', label: 'Near DOF', color: '#8b5cf6', depth: depthAlong(opticsState.depthOfFieldNearPlane.point) });
   }
 
-  if (opticsState.diagnostics?.isInfinityFocus) {
-    items.push({ key: 'focus', label: 'Focus', color: '#16a34a', depth: null, isInfinity: true });
-  } else if (opticsState.focusPlane) {
-    items.push({ key: 'focus', label: 'Focus', color: '#16a34a', depth: depthAlong(opticsState.focusPlane.point) });
-  }
+  const isInfinityFocus = !!opticsState.diagnostics?.isInfinityFocus;
 
-  if (opticsState.depthOfFieldFarPlane) {
-    if (opticsState.diagnostics?.isInfinityFocus) items.push({ key: 'farDof', label: 'Far DOF', color: '#8b5cf6', depth: null, isInfinity: true });
-    else items.push({ key: 'farDof', label: 'Far DOF', color: '#8b5cf6', depth: depthAlong(opticsState.depthOfFieldFarPlane.point) });
+  if (isInfinityFocus) {
+    // In real infinity focus mode, focusPlane and far DOF are physically infinite/absent
+    // but the depth strip should explicitly show the infinity chips for Focus and Far DOF.
+    items.push({ key: 'focus', label: 'Focus', color: '#16a34a', depth: null, isInfinity: true });
+    items.push({ key: 'farDof', label: 'Far DOF', color: '#8b5cf6', depth: null, isInfinity: true });
+  } else {
+    if (opticsState.focusPlane) {
+      items.push({ key: 'focus', label: 'Focus', color: '#16a34a', depth: depthAlong(opticsState.focusPlane.point) });
+    }
+
+    if (opticsState.depthOfFieldFarPlane) {
+      items.push({ key: 'farDof', label: 'Far DOF', color: '#8b5cf6', depth: depthAlong(opticsState.depthOfFieldFarPlane.point) });
+    }
   }
 
   // optionally include hinge into depth strip if profile requests it and hinge exists
