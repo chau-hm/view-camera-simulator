@@ -56,6 +56,7 @@ export function computeOpticalSectionData(
   scene: SceneDefinition,
   svgWidth: number,
   svgHeight: number,
+  depthWindow?: { minMm: number; maxMm: number },
 ): OpticalSectionData {
   const lensCenter = opticsState.lensCenterWorld;
   const filmCorners = opticsState.filmPlaneCornersWorld;
@@ -89,9 +90,10 @@ export function computeOpticalSectionData(
     { id: "top", filmA: leftMid, filmB: rightMid, lateral: (p: Vec3) => p.x },
   ];
 
-  const diagramMinDepthMm = -250;
-  const diagramMaxDepthMm = 4000;
+  // allow caller to control the depth window (teaching fixed window or scene-bounds window)
   const padding = 24;
+  const diagramMinDepthMm = depthWindow ? depthWindow.minMm : -250;
+  const diagramMaxDepthMm = depthWindow ? depthWindow.maxMm : 4000;
 
   const depthToX = (depthMm: number) => {
     const t = (depthMm - diagramMinDepthMm) / (diagramMaxDepthMm - diagramMinDepthMm);
