@@ -28,7 +28,7 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    expect(screen.getByText("Ground glass pipeline")).toBeInTheDocument();
+    // Pipeline title removed from UI; keep checking the overlays and assist labels remain
     expect(screen.getByText("Current settings")).toBeInTheDocument();
     expect(screen.getByText("Focus targets")).toBeInTheDocument();
     expect(screen.getByText("Focus assist")).toBeInTheDocument();

@@ -12,7 +12,6 @@ import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
 import { MovementControls } from "../controls/MovementControls";
 import { ResetControls } from "../controls/ResetControls";
-import { ViewOptions } from "../controls/ViewOptions";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
@@ -118,6 +117,7 @@ export const SimulatorWorkspace = ({
         />
         <GroundGlassViewport
           opticsState={opticsState}
+          orientationAssistEnabled={mode === "free"}
           focusAssistEnabled={camera.focusAssistEnabled}
           gridEnabled={camera.gridEnabled}
           riseMm={camera.frontRiseMm}
@@ -127,6 +127,7 @@ export const SimulatorWorkspace = ({
           aperture={camera.aperture}
           renderQuality={renderQuality}
           sceneId={camera.activeSceneId}
+          lockReason={lockReason}
         />
         <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
       </div>
@@ -139,12 +140,6 @@ export const SimulatorWorkspace = ({
         />
         <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
         <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
-        <ViewOptions
-          orientationAssistEnabled={mode === "free"}
-          focusAssistEnabled={mode === "free"}
-          gridEnabled={mode === "free"}
-          lockReason={lockReason}
-        />
         <ResetControls />
       </div>
       <TaskPanel task={task} />
