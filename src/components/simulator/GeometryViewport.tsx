@@ -584,8 +584,8 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
       </svg>
 
       {/* Optical depth strip for Focus Fundamentals: authoritative plane list */}
-      {scene.id && scene.id.includes('focus-fundamentals') ? (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8, marginBottom: 8 }}>
+      {scene.id && scene.id === 'focus-fundamentals-two-targets' ? (
+        <div aria-label="Optical depth order" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8, marginBottom: 4 }}>
           {/* helper to format depth */}
           {(() => {
             const chips: { key: string; label: string; color: string }[] = [];
@@ -605,18 +605,18 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
               chips.push({ key: 'nearDof', label: `Near DOF ${fmt(d)}`, color: '#8b5cf6' });
             }
             // focus
-            if (opticsState.focusPlane) {
-              const d = vecDot(vecSub(opticsState.focusPlane.point, sectionOrigin), sectionDepthDir);
-              chips.push({ key: 'focus', label: `Focus ${isInfinity ? '∞' : fmt(d)}`, color: '#16a34a' });
-            } else if (isInfinity) {
+            if (isInfinity) {
               chips.push({ key: 'focus', label: `Focus ∞`, color: '#16a34a' });
+            } else if (opticsState.focusPlane) {
+              const d = vecDot(vecSub(opticsState.focusPlane.point, sectionOrigin), sectionDepthDir);
+              chips.push({ key: 'focus', label: `Focus ${fmt(d)}`, color: '#16a34a' });
             }
             // far DOF
-            if (opticsState.depthOfFieldFarPlane && !isInfinity) {
+            if (isInfinity && opticsState.depthOfFieldFarPlane) {
+              chips.push({ key: 'farDof', label: `Far DOF ∞`, color: '#8b5cf6' });
+            } else if (!isInfinity && opticsState.depthOfFieldFarPlane) {
               const d = vecDot(vecSub(opticsState.depthOfFieldFarPlane.point, sectionOrigin), sectionDepthDir);
               chips.push({ key: 'farDof', label: `Far DOF ${fmt(d)}`, color: '#8b5cf6' });
-            } else if (isInfinity && opticsState.depthOfFieldFarPlane) {
-              chips.push({ key: 'farDof', label: `Far DOF ∞`, color: '#8b5cf6' });
             }
             return chips.map((c) => (
               <div key={c.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 0 rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.03)' }}>
@@ -626,9 +626,22 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
             ));
           })()}
         </div>
+      ) : (
+        // non-Focus Fundamentals scenes render nothing here
+        null
+      )}
+
+      {/* Focus Fundamentals: short explanatory caption under depth strip */}
+      {scene.id && scene.id === 'focus-fundamentals-two-targets' ? (
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)' }}>Amber lines: optical axis and FOV boundary rays.</div>
+        </div>
       ) : null}
 
-      <DiagramLegend isInfinity={isInfinity} hasNearDof={!!opticsState.depthOfFieldNearPlane} hasFarDof={!!opticsState.depthOfFieldFarPlane && !isInfinity} hasTargets={scene.focusTargets.length > 0} />
+      {/* Render DiagramLegend for other scenes only */}
+      {!(scene.id && scene.id === 'focus-fundamentals-two-targets') ? (
+        <DiagramLegend isInfinity={isInfinity} hasNearDof={!!opticsState.depthOfFieldNearPlane} hasFarDof={!!opticsState.depthOfFieldFarPlane && !isInfinity} hasTargets={scene.focusTargets.length > 0} />
+      ) : null}
     </section>
   );
 };
