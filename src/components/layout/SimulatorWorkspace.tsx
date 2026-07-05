@@ -122,6 +122,9 @@ export const SimulatorWorkspace = ({
           orientationAssistEnabled={mode === "free"}
           focusAssistEnabled={camera.focusAssistEnabled}
           gridEnabled={camera.gridEnabled}
+          canToggleFocusAssist={enabledControls.has("focusAssist")}
+          canToggleGrid={enabledControls.has("grid")}
+          canToggleGroundGlassAssist={enabledControls.has("groundGlassAssist")}
           riseMm={camera.frontRiseMm}
           tiltDeg={camera.frontTiltDeg}
           swingDeg={camera.frontSwingDeg}

@@ -4,16 +4,20 @@ import { selectViewOptionState } from "../../state/selectors";
 import { UI_COPY } from "../../ui/copy";
 
 type ViewOptionsProps = {
-  orientationAssistEnabled: boolean;
-  focusAssistEnabled: boolean;
-  gridEnabled: boolean;
+  // permissions: whether the user is allowed to toggle each option in the current mode/task
+  canToggleFocusAssist: boolean;
+  canToggleGrid: boolean;
+  canToggleGroundGlassAssist?: boolean;
+  // show/hide the ground glass assist control if needed (optional)
+  showGroundGlassAssist?: boolean;
   lockReason: string;
 };
 
 export const ViewOptions = ({
-  orientationAssistEnabled,
-  focusAssistEnabled,
-  gridEnabled,
+  canToggleFocusAssist,
+  canToggleGrid,
+  canToggleGroundGlassAssist = false,
+  showGroundGlassAssist = true,
   lockReason,
 }: ViewOptionsProps) => {
   const viewOptions = useAppStore(useShallow(selectViewOptionState));
@@ -24,38 +28,40 @@ export const ViewOptions = ({
   return (
     <section aria-label={UI_COPY.controls.viewOptionsTitle}>
       <h3>{UI_COPY.controls.viewOptionsTitle}</h3>
-      <label>
-        <input
-          aria-label={UI_COPY.controls.groundGlassAssistLabel}
-          type="checkbox"
-          checked={viewOptions.groundGlassAssistEnabled}
-          disabled={!orientationAssistEnabled}
-          onChange={toggleGroundGlassAssist}
-        />
-        {UI_COPY.controls.groundGlassAssistLabel}
-        {!orientationAssistEnabled && <small>{lockReason}</small>}
-      </label>
+      {showGroundGlassAssist && (
+        <label>
+          <input
+            aria-label={UI_COPY.controls.groundGlassAssistLabel}
+            type="checkbox"
+            checked={viewOptions.groundGlassAssistEnabled}
+            disabled={!canToggleGroundGlassAssist}
+            onChange={toggleGroundGlassAssist}
+          />
+          {UI_COPY.controls.groundGlassAssistLabel}
+          {!canToggleGroundGlassAssist && <small>{lockReason}</small>}
+        </label>
+      )}
       <label>
         <input
           aria-label={UI_COPY.controls.focusAssistLabel}
           type="checkbox"
           checked={viewOptions.focusAssistEnabled}
-          disabled={!focusAssistEnabled}
+          disabled={!canToggleFocusAssist}
           onChange={toggleFocusAssist}
         />
         {UI_COPY.controls.focusAssistLabel}
-        {!focusAssistEnabled && <small>{lockReason}</small>}
+        {!canToggleFocusAssist && <small>{lockReason}</small>}
       </label>
       <label>
         <input
           aria-label={UI_COPY.controls.gridLabel}
           type="checkbox"
           checked={viewOptions.gridEnabled}
-          disabled={!gridEnabled}
+          disabled={!canToggleGrid}
           onChange={toggleGrid}
         />
         {UI_COPY.controls.gridLabel}
-        {!gridEnabled && <small>{lockReason}</small>}
+        {!canToggleGrid && <small>{lockReason}</small>}
       </label>
     </section>
   );

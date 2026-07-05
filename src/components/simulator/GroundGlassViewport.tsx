@@ -17,9 +17,15 @@ import type { RenderQualityProfile } from "../../types/ui";
 
 type GroundGlassViewportProps = {
   opticsState: DerivedOpticsState;
+  // permission: whether orientation assist controls can be toggled in this mode
   orientationAssistEnabled: boolean;
+  // current state (from camera)
   focusAssistEnabled: boolean;
   gridEnabled: boolean;
+  // permissions (from enabledControls) — whether the control is allowed in current mode/task
+  canToggleFocusAssist?: boolean;
+  canToggleGrid?: boolean;
+  canToggleGroundGlassAssist?: boolean;
   riseMm: number;
   tiltDeg: number;
   swingDeg: number;
@@ -36,6 +42,9 @@ export const GroundGlassViewport = ({
   orientationAssistEnabled,
   focusAssistEnabled,
   gridEnabled,
+  canToggleFocusAssist,
+  canToggleGrid,
+  canToggleGroundGlassAssist,
   riseMm,
   tiltDeg,
   swingDeg,
@@ -102,9 +111,10 @@ export const GroundGlassViewport = ({
 
         {/* View Options grouped near the Ground Glass view */}
         <ViewOptions
-          orientationAssistEnabled={orientationAssistEnabled}
-          focusAssistEnabled={focusAssistEnabled}
-          gridEnabled={gridEnabled}
+          canToggleGroundGlassAssist={canToggleGroundGlassAssist ?? orientationAssistEnabled}
+          showGroundGlassAssist={true}
+          canToggleFocusAssist={canToggleFocusAssist ?? true}
+          canToggleGrid={canToggleGrid ?? true}
           lockReason={lockReason ?? ""}
         />
 
