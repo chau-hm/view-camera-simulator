@@ -1,6 +1,9 @@
 import { DiagramLegend } from "../geometry/DiagramPrimitives";
+import { computeOpticalSectionData, vecDot, vecSub, vecAdd, vecScale } from "../geometry/opticalSectionProjection";
+import { getGeometryPresentationProfile } from "../geometry/geometryPresentationProfiles";
+import { OpticalDepthStrip } from "../geometry/OpticalDepthStrip";
 import type { GeometryView } from "../../types/camera";
-import type { DerivedOpticsState, Vec3, Plane } from "../../types/optics";
+import type { DerivedOpticsState, Vec3 } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
 import { UI_COPY } from "../../ui/copy";
 
@@ -18,14 +21,16 @@ import { useAppStore } from "../../state/appStore";
 export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryViewportProps) => {
   const setGeometryView = useAppStore((s) => s.setGeometryView);
 
-  const isInfinity = !!opticsState.diagnostics?.isInfinityFocus;
 
   const SAFE_MARGIN = 10;
   const LABEL_GAP = 5;
   const SVG_W = SVG_WIDTH;
   const SVG_H = SVG_HEIGHT;
 
-  // === Optical-section projection utilities ===
+  // Delegate projection to shared opticalSectionProjection helper
+  const projection = computeOpticalSectionData(opticsState, scene, SVG_W, SVG_H);
+  const { sectionOrigin, sectionDepthDir, lensCenter, sideSegments, topSegments, sideFovDirs, topFovDirs, depthToX, mapLateralToY, mapLateralToYTop, isInfinity, diagramMinDepthMm, diagramMaxDepthMm } = projection;
+
   type Annotation = {
     id: string;
     text: string;
@@ -35,119 +40,8 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
     preferred?: string[];
   };
 
-  const lensCenter = opticsState.lensCenterWorld;
-  const filmCorners = opticsState.filmPlaneCornersWorld;
-
-  const topMid = { x: (filmCorners.topLeft.x + filmCorners.topRight.x) / 2, y: (filmCorners.topLeft.y + filmCorners.topRight.y) / 2, z: (filmCorners.topLeft.z + filmCorners.topRight.z) / 2 };
-  const bottomMid = { x: (filmCorners.bottomLeft.x + filmCorners.bottomRight.x) / 2, y: (filmCorners.bottomLeft.y + filmCorners.bottomRight.y) / 2, z: (filmCorners.bottomLeft.z + filmCorners.bottomRight.z) / 2 };
-  const leftMid = { x: (filmCorners.topLeft.x + filmCorners.bottomLeft.x) / 2, y: (filmCorners.topLeft.y + filmCorners.bottomLeft.y) / 2, z: (filmCorners.topLeft.z + filmCorners.bottomLeft.z) / 2 };
-  const rightMid = { x: (filmCorners.topRight.x + filmCorners.bottomRight.x) / 2, y: (filmCorners.topRight.y + filmCorners.bottomRight.y) / 2, z: (filmCorners.topRight.z + filmCorners.bottomRight.z) / 2 };
-
-  const vecSub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
-  const vecAdd = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
-  const vecDot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
-  const vecScale = (a: Vec3, s: number): Vec3 => ({ x: a.x * s, y: a.y * s, z: a.z * s });
-  const vecLen = (a: Vec3) => Math.hypot(a.x, a.y, a.z) || 1;
-  const vecNorm = (a: Vec3): Vec3 => {
-    const l = vecLen(a);
-    return { x: a.x / l, y: a.y / l, z: a.z / l };
-  };
-
-  const intersectRayPlane = (o: Vec3, d: Vec3, plane: Plane) => {
-    const denom = vecDot(d, plane.normal);
-    if (Math.abs(denom) < 1e-6) return null;
-    const t = vecDot(vecSub(plane.point, o), plane.normal) / denom;
-    if (!Number.isFinite(t) || t <= 0) return null;
-    return vecAdd(o, vecScale(d, t));
-  };
-
-  // Optical sections: side uses top/bottom film midpoints, top uses left/right
-  type OpticalSection = {
-    id: "side" | "top";
-    filmA: Vec3;
-    filmB: Vec3;
-    lateral: (p: Vec3) => number;
-  };
-  const sectionOrigin = opticsState.filmCenterWorld;
-  const sectionDepthDir = opticsState.filmNormalWorld;
-
-  const sections: OpticalSection[] = [
-    { id: "side", filmA: topMid, filmB: bottomMid, lateral: (p) => p.y },
-    { id: "top", filmA: leftMid, filmB: rightMid, lateral: (p) => p.x },
-  ];
-
-  const diagramMinDepthMm = -250;
-  const diagramMaxDepthMm = 4000;
-  const padding = 24;
-
-  const depthToX = (depthMm: number) => {
-    const t = (depthMm - diagramMinDepthMm) / (diagramMaxDepthMm - diagramMinDepthMm);
-    return padding + t * (SVG_WIDTH - padding * 2);
-  };
-
-  const bounds = scene.bounds;
-  const mapLateralToY = (value: number) => {
-    const min = bounds.min.y;
-    const max = bounds.max.y;
-    const v = (value - min) / (max - min || 1);
-    return SVG_HEIGHT - (padding + v * (SVG_HEIGHT - padding * 2));
-  };
-  const mapLateralToYTop = (value: number) => {
-    const min = bounds.min.x;
-    const max = bounds.max.x;
-    const v = (value - min) / (max - min || 1);
-    return SVG_HEIGHT - (padding + v * (SVG_HEIGHT - padding * 2));
-  };
-
-  type PlaneSegment = { id: string; p1: { x: number; y: number }; p2: { x: number; y: number }; color: string };
-  const sideSegments: PlaneSegment[] = [];
-  const topSegments: PlaneSegment[] = [];
-
-  const projectPlaneIntoSection = (plane: Plane, section: OpticalSection): PlaneSegment | null => {
-    const dirA = vecNorm(vecSub(lensCenter, section.filmA));
-    const dirB = vecNorm(vecSub(lensCenter, section.filmB));
-    const pa = intersectRayPlane(lensCenter, dirA, plane);
-    const pb = intersectRayPlane(lensCenter, dirB, plane);
-    if (!pa || !pb) return null;
-    const depthA = vecDot(vecSub(pa, sectionOrigin), sectionDepthDir);
-    const depthB = vecDot(vecSub(pb, sectionOrigin), sectionDepthDir);
-    const xA = depthToX(depthA);
-    const xB = depthToX(depthB);
-    const yA = section.id === "side" ? mapLateralToY(pa.y) : mapLateralToYTop(pa.x);
-    const yB = section.id === "side" ? mapLateralToY(pb.y) : mapLateralToYTop(pb.x);
-    return { id: plane.distance !== undefined ? String(plane.distance) : "plane", p1: { x: xA, y: yA }, p2: { x: xB, y: yB }, color: "" };
-  };
-
-  // Populate segments for both sections independently
-  const pushIf = (seg: PlaneSegment | null, target: PlaneSegment[], id: string, color: string) => {
-    if (seg) {
-      seg.id = id;
-      seg.color = color;
-      target.push(seg);
-    }
-  };
-
-  pushIf(projectPlaneIntoSection(opticsState.filmPlane, sections[0]), sideSegments, "film", "#0284c7");
-  pushIf(projectPlaneIntoSection(opticsState.filmPlane, sections[1]), topSegments, "film", "#0284c7");
-  pushIf(projectPlaneIntoSection(opticsState.lensPlane, sections[0]), sideSegments, "lens", "#475569");
-  pushIf(projectPlaneIntoSection(opticsState.lensPlane, sections[1]), topSegments, "lens", "#475569");
-  if (opticsState.focusPlane) {
-    pushIf(projectPlaneIntoSection(opticsState.focusPlane, sections[0]), sideSegments, "focus", "#16a34a");
-    pushIf(projectPlaneIntoSection(opticsState.focusPlane, sections[1]), topSegments, "focus", "#16a34a");
-  }
-  if (opticsState.depthOfFieldNearPlane) {
-    pushIf(projectPlaneIntoSection(opticsState.depthOfFieldNearPlane, sections[0]), sideSegments, "nearDof", "#8b5cf6");
-    pushIf(projectPlaneIntoSection(opticsState.depthOfFieldNearPlane, sections[1]), topSegments, "nearDof", "#8b5cf6");
-  }
-  if (opticsState.depthOfFieldFarPlane) {
-    pushIf(projectPlaneIntoSection(opticsState.depthOfFieldFarPlane, sections[0]), sideSegments, "farDof", "#8b5cf6");
-    pushIf(projectPlaneIntoSection(opticsState.depthOfFieldFarPlane, sections[1]), topSegments, "farDof", "#8b5cf6");
-  }
-
-  // FOV dirs per section
-  const sideFovDirs = [vecNorm(vecSub(lensCenter, topMid)), vecNorm(vecSub(lensCenter, bottomMid))];
-  const topFovDirs = [vecNorm(vecSub(lensCenter, leftMid)), vecNorm(vecSub(lensCenter, rightMid))];
-
+  // Use presentation profile to control rendering choices (replace scattered scene-id checks)
+  const profile = getGeometryPresentationProfile(scene);
   const annotations: Annotation[] = [];
   const addAnnotation = (id: string, text: string, color: string, anchorWorld: Vec3, priority: number) => {
     const depth = vecDot(vecSub(anchorWorld, sectionOrigin), sectionDepthDir);
@@ -350,7 +244,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
     return results;
   };
 
-  const placed = (scene.id && scene.id.includes('focus-fundamentals')) ? layoutFocusFundamentalsAnnotations() : genericPlace();
+  const placed = profile.annotationMode === 'minimal' ? layoutFocusFundamentalsAnnotations() : genericPlace();
 
   return (
     <section>
@@ -400,7 +294,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
                   <g>
                     <line x1={x1} y1={axisY} x2={x2} y2={axisY} stroke="#f59e0b" strokeWidth={1.2} strokeDasharray="6 4" opacity={0.95} />
                     {/* Optical axis label: for Focus Fundamentals we render a single fixed axis label in the annotations block; for other scenes render it here */}
-                    {!(scene.id && scene.id.includes('focus-fundamentals')) ? (
+                    {profile.showOpticalAxisLabel ? (
                       <text x={x1 + 8} y={axisY - 6} fontSize={11} fill="#f59e0b">Optical axis</text>
                     ) : null}
                   </g>
@@ -508,32 +402,34 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
 
         {/* Annotations layer */}
         <g pointerEvents="none">
-          {scene.id && scene.id.includes('focus-fundamentals') ? (
+          {profile.annotationMode === 'minimal' ? (
             <g>
-              {/* Single fixed Optical axis label (lower-left) */}
-              <text x={16} y={SVG_H - 12} fontSize={11} fill="#f59e0b">Optical axis</text>
+              {/* Single fixed Optical axis label (lower-left) if profile requests it */}
+              {profile.showOpticalAxisLabel ? <text x={16} y={SVG_H - 12} fontSize={11} fill="#f59e0b">Optical axis</text> : null}
 
-              {/* Only simple Near/Far board labels placed close to their glyphs (no leader lines, no cards) */}
-              {scene.focusTargets.map((t) => {
-                const depth = vecDot(vecSub(t.worldPosition, sectionOrigin), sectionDepthDir);
-                const x = depthToX(depth);
-                const y = geometryView === 'side' ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
-                const isNear = /near/i.test(t.id);
-                const text = isNear ? 'Near board' : /far/i.test(t.id) ? 'Far board' : 'Target';
-                // default placement: right and slightly above
-                let lx = x + 10;
-                let ly = y - 10;
-                let anchorEnd: 'start' | 'end' = 'start';
-                // if label would overflow right edge, flip to left
-                const APPROX_MAX_W = 90;
-                if (lx + APPROX_MAX_W > SVG_W - SAFE_MARGIN) { lx = x - 10; anchorEnd = 'end'; }
-                // clamp vertically into safe margin
-                if (ly < SAFE_MARGIN) ly = SAFE_MARGIN + 4;
-                if (ly > SVG_H - SAFE_MARGIN) ly = SVG_H - SAFE_MARGIN - 4;
-                return (
-                  <text key={`lbl-${t.id}`} x={lx} y={ly} fontSize={12} fill="#064e3b" textAnchor={anchorEnd}>{text}</text>
-                );
-              })}
+              {/* Only simple Near/Far board labels placed close to their glyphs (no leader lines, no cards) if requested */}
+              {profile.targetLabelMode === 'short-local' ? (
+                scene.focusTargets.map((t) => {
+                  const depth = vecDot(vecSub(t.worldPosition, sectionOrigin), sectionDepthDir);
+                  const x = depthToX(depth);
+                  const y = geometryView === 'side' ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
+                  const isNear = /near/i.test(t.id);
+                  const text = isNear ? 'Near board' : /far/i.test(t.id) ? 'Far board' : 'Target';
+                  // default placement: right and slightly above
+                  let lx = x + 10;
+                  let ly = y - 10;
+                  let anchorEnd: 'start' | 'end' = 'start';
+                  // if label would overflow right edge, flip to left
+                  const APPROX_MAX_W = 90;
+                  if (lx + APPROX_MAX_W > SVG_W - SAFE_MARGIN) { lx = x - 10; anchorEnd = 'end'; }
+                  // clamp vertically into safe margin
+                  if (ly < SAFE_MARGIN) ly = SAFE_MARGIN + 4;
+                  if (ly > SVG_H - SAFE_MARGIN) ly = SVG_H - SAFE_MARGIN - 4;
+                  return (
+                    <text key={`lbl-${t.id}`} x={lx} y={ly} fontSize={12} fill="#064e3b" textAnchor={anchorEnd}>{text}</text>
+                  );
+                })
+              ) : null}
             </g>
           ) : (
             // generic annotations (existing placed cards + leaders)
@@ -583,63 +479,20 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
         </g>
       </svg>
 
-      {/* Optical depth strip for Focus Fundamentals: authoritative plane list */}
-      {scene.id && scene.id === 'focus-fundamentals-two-targets' ? (
-        <div aria-label="Optical depth order" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8, marginBottom: 4 }}>
-          {/* helper to format depth */}
-          {(() => {
-            const chips: { key: string; label: string; color: string }[] = [];
-            const fmt = (d: number | null) => {
-              if (d === null) return '∞';
-              if (d < 1000) return `${Math.round(d)} mm`;
-              return `${(d/1000).toFixed(1)} m`;
-            };
-            // Film (datum at 0 mm)
-            chips.push({ key: 'film', label: `Film 0 mm`, color: '#0284c7' });
-            // lens
-            const lensDepth = vecDot(vecSub(opticsState.lensCenterWorld, sectionOrigin), sectionDepthDir);
-            chips.push({ key: 'lens', label: `Lens ${fmt(lensDepth)}`, color: '#475569' });
-            // near DOF
-            if (opticsState.depthOfFieldNearPlane) {
-              const d = vecDot(vecSub(opticsState.depthOfFieldNearPlane.point, sectionOrigin), sectionDepthDir);
-              chips.push({ key: 'nearDof', label: `Near DOF ${fmt(d)}`, color: '#8b5cf6' });
-            }
-            // focus
-            if (isInfinity) {
-              chips.push({ key: 'focus', label: `Focus ∞`, color: '#16a34a' });
-            } else if (opticsState.focusPlane) {
-              const d = vecDot(vecSub(opticsState.focusPlane.point, sectionOrigin), sectionDepthDir);
-              chips.push({ key: 'focus', label: `Focus ${fmt(d)}`, color: '#16a34a' });
-            }
-            // far DOF
-            if (isInfinity && opticsState.depthOfFieldFarPlane) {
-              chips.push({ key: 'farDof', label: `Far DOF ∞`, color: '#8b5cf6' });
-            } else if (!isInfinity && opticsState.depthOfFieldFarPlane) {
-              const d = vecDot(vecSub(opticsState.depthOfFieldFarPlane.point, sectionOrigin), sectionDepthDir);
-              chips.push({ key: 'farDof', label: `Far DOF ${fmt(d)}`, color: '#8b5cf6' });
-            }
-            return chips.map((c) => (
-              <div key={c.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 0 rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.03)' }}>
-                <span style={{ width: 12, height: 12, borderRadius: 3, background: c.color, display: 'inline-block' }} />
-                <span style={{ fontSize: 12, color: '#0f172a' }}>{c.label}</span>
-              </div>
-            ));
-          })()}
-        </div>
-      ) : (
-        // non-Focus Fundamentals scenes render nothing here
-        null
-      )}
+      {/* Optical depth strip (controlled by presentation profile) */}
+      {profile.showDepthStrip ? (
+        <OpticalDepthStrip opticsState={opticsState} sectionOrigin={sectionOrigin} sectionDepthDir={sectionDepthDir} />
+      ) : null}
 
-      {/* Focus Fundamentals: short explanatory caption under depth strip */}
-      {scene.id && scene.id === 'focus-fundamentals-two-targets' ? (
+      {/* optional small explanatory caption under depth strip when profile requests it */}
+      {profile.showDepthStrip ? (
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)' }}>Amber lines: optical axis and FOV boundary rays.</div>
         </div>
       ) : null}
 
-      {/* Render DiagramLegend for other scenes only */}
-      {!(scene.id && scene.id === 'focus-fundamentals-two-targets') ? (
+      {/* Render DiagramLegend only when the profile requests it */}
+      {profile.showSwatchLegend ? (
         <DiagramLegend isInfinity={isInfinity} hasNearDof={!!opticsState.depthOfFieldNearPlane} hasFarDof={!!opticsState.depthOfFieldFarPlane && !isInfinity} hasTargets={scene.focusTargets.length > 0} />
       ) : null}
     </section>
