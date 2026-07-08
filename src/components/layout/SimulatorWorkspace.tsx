@@ -157,8 +157,8 @@ export const SimulatorWorkspace = ({
             <p role="alert">{UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}</p>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "1rem", alignItems: "start" }}>
-            <div>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "1rem", alignItems: "stretch" }}>
+            <div style={{ height: '100%' }}>
               <SceneViewport
                 scene={safeScene}
                 opticsState={opticsState}
@@ -168,7 +168,7 @@ export const SimulatorWorkspace = ({
               />
             </div>
 
-            <div aria-label="GroundGlassColumn" style={{ display: "grid", gap: "0.75rem" }}>
+            <div aria-label="GroundGlassColumn" style={{ display: "grid", gap: "0.75rem", height: '100%' }}>
               <GroundGlassViewport
                 opticsState={opticsState}
                 orientationAssistEnabled={mode === "free"}

@@ -35,6 +35,7 @@ export const FocusControl = ({ focusEnabled, lockReason }: FocusControlProps) =>
           step={10}
           value={focusControl.focusDistanceMm}
           disabled={!focusEnabled}
+          style={{ width: "100%" }}
           onKeyDown={(event) =>
             handleRangeInputKeyboard(event, {
               value: focusControl.focusDistanceMm,

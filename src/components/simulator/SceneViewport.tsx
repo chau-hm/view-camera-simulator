@@ -73,40 +73,45 @@ export const SceneViewport = ({
     <section>
       <h2>{UI_COPY.simulator.sceneTitle}</h2>
       <p data-testid="scene-front-y-mm">Front standard Y: {opticsState.lensCenterWorld.y.toFixed(1)} mm</p>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-          <input
-            type="checkbox"
-            checked={showFocusPlaneOverlay}
-            onChange={(event) => setShowFocusPlaneOverlay(event.target.checked)}
-          />
-          {UI_COPY.simulator.focusPlaneOverlayLabel}
-        </label>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-          <input type="checkbox" checked={showDofOverlay} onChange={(event) => setShowDofOverlay(event.target.checked)} />
-          {UI_COPY.simulator.dofOverlayLabel}
-        </label>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-          <span>{UI_COPY.simulator.renderQualityLabel}</span>
-          <select
-            value={renderQuality}
-            onChange={(event) => setRenderQuality(parseRenderQuality(event.target.value))}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.5rem" }}>
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+            <input
+              type="checkbox"
+              checked={showFocusPlaneOverlay}
+              onChange={(event) => setShowFocusPlaneOverlay(event.target.checked)}
+            />
+            {UI_COPY.simulator.focusPlaneOverlayLabel}
+          </label>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+            <input type="checkbox" checked={showDofOverlay} onChange={(event) => setShowDofOverlay(event.target.checked)} />
+            {UI_COPY.simulator.dofOverlayLabel}
+          </label>
+        </div>
+
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+            <span>{UI_COPY.simulator.renderQualityLabel}</span>
+            <select
+              value={renderQuality}
+              onChange={(event) => setRenderQuality(parseRenderQuality(event.target.value))}
+            >
+              <option value="high">{UI_COPY.simulator.renderQualityHigh}</option>
+              <option value="standard">{UI_COPY.simulator.renderQualityStandard}</option>
+              <option value="low">{UI_COPY.simulator.renderQualityLow}</option>
+            </select>
+          </label>
+          <button type="button" onClick={() => setViewResetNonce((value) => value + 1)}>
+            {UI_COPY.simulator.sceneViewReset}
+          </button>
+          <button
+            type="button"
+            onClick={() => setBigView((v) => !v)}
+            style={{ marginLeft: "auto", background: bigView ? "#ef4444" : undefined, color: bigView ? "#fff" : undefined }}
           >
-            <option value="high">{UI_COPY.simulator.renderQualityHigh}</option>
-            <option value="standard">{UI_COPY.simulator.renderQualityStandard}</option>
-            <option value="low">{UI_COPY.simulator.renderQualityLow}</option>
-          </select>
-        </label>
-        <button type="button" onClick={() => setViewResetNonce((value) => value + 1)}>
-          {UI_COPY.simulator.sceneViewReset}
-        </button>
-        <button
-          type="button"
-          onClick={() => setBigView((v) => !v)}
-          style={{ marginLeft: "auto", background: bigView ? "#ef4444" : undefined, color: bigView ? "#fff" : undefined }}
-        >
-          {bigView ? "Exit Big View" : "Big View"}
-        </button>
+            {bigView ? "Exit Big View" : "Big View"}
+          </button>
+        </div>
       </div>
       <p style={{ fontSize: 12, color: "#4b5563", marginTop: 0 }}>
         Loaded assets: {requiredAssets.length} required, {lazyAssets.length} lazy for current scene,{" "}
@@ -158,19 +163,24 @@ export const SceneViewport = ({
           </div>
         </div>
       ) : (
-        <SceneRenderer
-          scene={scene}
-          opticsState={opticsState}
-          attempt={attempt}
-          showFocusPlaneOverlay={showFocusPlaneOverlay}
-          showDofOverlay={showDofOverlay}
-          showOpticalDebugPlanes={false}
-          renderQuality={renderQuality}
-          viewResetNonce={viewResetNonce}
-          simulateAssetFailure={simulateAssetFailure}
-          onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
-          containerStyle={{ height: 320, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
-        />
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: '0 0 auto' }} />
+          <div style={{ flex: '1 1 auto', minHeight: 0 }}>
+            <SceneRenderer
+              scene={scene}
+              opticsState={opticsState}
+              attempt={attempt}
+              showFocusPlaneOverlay={showFocusPlaneOverlay}
+              showDofOverlay={showDofOverlay}
+              showOpticalDebugPlanes={false}
+              renderQuality={renderQuality}
+              viewResetNonce={viewResetNonce}
+              simulateAssetFailure={simulateAssetFailure}
+              onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
+            containerStyle={{ width: '100%', aspectRatio: '5 / 4', border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
+            />
+          </div>
+        </div>
       )}
     </section>
   );

@@ -57,7 +57,65 @@ export const GroundGlassViewport = ({
 
       {/* GroundGlassColumn */}
       <div style={{ display: "grid", gap: "0.75rem" }}>
-        {/* GroundGlassViewport block: canvas, zoom, preview, view options */}
+        {/* Controls row: Preview, View Options, and Zoom controls side-by-side under the title */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', alignItems: 'start' }}>
+          <section aria-label={UI_COPY.render.groundGlassPreview} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <h3>Preview</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label>
+                  <input
+                    type="radio"
+                    name={`gg-preview-${sceneId}`}
+                    checked={previewMode === "raw"}
+                    onChange={() => setPreviewMode("raw")}
+                  />
+                  Raw Ground Glass
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name={`gg-preview-${sceneId}`}
+                    checked={previewMode === "upright"}
+                    onChange={() => setPreviewMode("upright")}
+                  />
+                  Upright Assist
+                </label>
+              </div>
+          </section>
+
+          {/* View Options grouped near the Ground Glass view */}
+          <div>
+            <ViewOptions
+              canToggleGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets" ? (canToggleGroundGlassAssist ?? orientationAssistEnabled) : false}
+              showGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets"}
+              canToggleFocusAssist={canToggleFocusAssist ?? true}
+              canToggleGrid={canToggleGrid ?? true}
+              lockReason={lockReason ?? ""}
+            />
+          </div>
+
+          {/* Zoom controls placed to the right of View Options */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setZoomEnabled((s) => !s)}
+              aria-pressed={zoomEnabled}
+              style={{
+                background: zoomEnabled ? '#0f172a' : '#ffffff',
+                color: zoomEnabled ? '#ffffff' : '#0f172a',
+                border: '1px solid rgba(2,6,23,0.08)',
+                padding: '6px 10px',
+                borderRadius: 6,
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              {zoomEnabled ? UI_COPY.simulator.groundGlassZoomOut : UI_COPY.simulator.groundGlassZoomIn}
+            </button>
+          </div>
+        </div>
+
+        {/* GroundGlassViewport block: canvas and zoom (below controls) */}
         <div aria-label="GroundGlassViewport" style={{ display: 'grid', gap: '0.5rem' }}>
           <GroundGlassRenderer
             opticsState={opticsState}
@@ -76,44 +134,6 @@ export const GroundGlassViewport = ({
             zoomEnabled={zoomEnabled}
           />
 
-          {/* Zoom control visually belongs below the viewport */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button type="button" onClick={() => setZoomEnabled((s) => !s)}>
-              {zoomEnabled ? UI_COPY.simulator.groundGlassZoomOut : UI_COPY.simulator.groundGlassZoomIn}
-            </button>
-          </div>
-
-          {/* Preview selector placed adjacent to the Ground Glass view */}
-          <section aria-label={UI_COPY.render.groundGlassPreview}>
-            <h3>{UI_COPY.render.groundGlassPreview}</h3>
-            <label>
-              <input
-                type="radio"
-                name={`gg-preview-${sceneId}`}
-                checked={previewMode === "raw"}
-                onChange={() => setPreviewMode("raw")}
-              />
-              Raw Ground Glass
-            </label>
-            <label>
-              <input
-                type="radio"
-                name={`gg-preview-${sceneId}`}
-                checked={previewMode === "upright"}
-                onChange={() => setPreviewMode("upright")}
-              />
-              Upright Assist
-            </label>
-          </section>
-
-          {/* View Options grouped near the Ground Glass view */}
-          <ViewOptions
-            canToggleGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets" ? (canToggleGroundGlassAssist ?? orientationAssistEnabled) : false}
-            showGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets"}
-            canToggleFocusAssist={canToggleFocusAssist ?? true}
-            canToggleGrid={canToggleGrid ?? true}
-            lockReason={lockReason ?? ""}
-          />
         </div>
 
       </div>
