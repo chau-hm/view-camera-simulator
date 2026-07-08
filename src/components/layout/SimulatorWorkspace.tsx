@@ -142,12 +142,12 @@ export const SimulatorWorkspace = ({
         )}
       </header>
 
-      {/* Middle content: main + aside. header is fixed so set explicit height for the content area so children can scroll independently. */}
-      <main style={{ height: mainContentHeight, overflow: 'hidden' }}>
-        {/* layout grid with two columns; each column has its own scroll */}
-        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1fr 320px', height: mainContentHeight }}>
+      {/* Middle content: main + aside. header is fixed so set explicit height and offset for the content area so children can scroll independently. */}
+      <main style={{ height: mainContentHeight, marginTop: `${HEADER_HEIGHT}px`, marginBottom: `${FOOTER_HEIGHT}px`, overflow: 'hidden' }}>
+        {/* layout grid with two columns; each column has its own scroll and sits within the main content box */}
+        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1fr 320px', height: '100%' }}>
           {/* Main area (left) */}
-          <div style={{ display: 'grid', gap: '1rem', height: mainContentHeight, overflow: 'auto', padding: '1rem' }}>
+          <div style={{ display: 'grid', gap: '1rem', height: '100%', overflow: 'auto', padding: '1rem', boxSizing: 'border-box' }}>
             {opticsState.diagnostics.fallbackApplied && (
               <p role="alert">
                 {UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}

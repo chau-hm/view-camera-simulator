@@ -4,10 +4,11 @@ type AppShellProps = {
   title: string;
   children: ReactNode;
   globalErrorMessage?: string | null;
+  fullBleed?: boolean;
 };
 
-export const AppShell = ({ title, children, globalErrorMessage = null }: AppShellProps) => (
-  <div className="page">
+export const AppShell = ({ title, children, globalErrorMessage = null, fullBleed = false }: AppShellProps) => (
+  <div className="page" style={fullBleed ? { padding: 0 } : undefined}>
     {title ? (
       <header>
         <h1>{title}</h1>
