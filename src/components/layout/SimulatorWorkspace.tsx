@@ -155,7 +155,7 @@ export const SimulatorWorkspace = ({
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', height: '100%' }}>
-              <div style={{ display: 'block', overflow: 'auto', height: '100%' }}>
+              <div style={{ display: 'block' }}>
                 <SceneViewport
                   scene={safeScene}
                   opticsState={opticsState}
@@ -165,7 +165,7 @@ export const SimulatorWorkspace = ({
                 />
               </div>
 
-              <div style={{ display: 'grid', gap: '0.75rem', height: '100%', overflow: 'auto' }} aria-label="GroundGlassColumn">
+              <div style={{ display: 'grid', gap: '0.75rem' }} aria-label="GroundGlassColumn">
                 <GroundGlassViewport
                   opticsState={opticsState}
                   orientationAssistEnabled={mode === 'free'}
