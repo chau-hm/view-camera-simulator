@@ -42,6 +42,7 @@ export const SimulatorWorkspace = ({
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("standard");
+  const [showGeometryPanel, setShowGeometryPanel] = useState(false);
   const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
   const reducedMotion = useMemo(
@@ -93,58 +94,202 @@ export const SimulatorWorkspace = ({
     );
   }
 
+
+  const HEADER_HEIGHT = 64; // px
+  const FOOTER_HEIGHT = 64; // px
+  const mainContentHeight = `calc(100vh - ${HEADER_HEIGHT}px - ${FOOTER_HEIGHT}px)`;
+
   return (
-    <div style={{ display: "grid", gap: "1rem" }} data-reduced-motion={reducedMotion ? "true" : "false"}>
-      {mode === "free" && (
-        <section aria-label={UI_COPY.simulator.scenePickerLabel}>
-          <label>
-            {UI_COPY.simulator.scenePickerLabel}
-            <select value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
-              {allScenes.map((registeredScene) => (
-                <option key={registeredScene.id} value={registeredScene.id}>
-                  {registeredScene.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </section>
-      )}
-      {opticsState.diagnostics.fallbackApplied && (
-        <p role="alert">
-          {UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}
-        </p>
-      )}
-      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        <SceneViewport
-          scene={safeScene}
-          opticsState={opticsState}
-          renderQuality={renderQuality}
-          setRenderQuality={setRenderQuality}
-          simulateAssetFailure={simulateAssetFailure}
-        />
+    <div
+      style={{
+        minHeight: '100vh',
+      }}
+      data-reduced-motion={reducedMotion ? 'true' : 'false'}
+    >
+      {/* Fixed header / navigation */}
+      <header
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: `${HEADER_HEIGHT}px`,
+          zIndex: 1000,
+          background: 'var(--panel-bg, #fff)',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          padding: '0.5rem 1rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+        }}
+      >
+        {/* Title is provided by AppShell; avoid duplicate page title here. */}
+        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Simulator workspace</h2>
 
-        {/* GroundGlassColumn: GroundGlassViewport + Readouts + FocusFundamentalsDebugPanel as siblings */}
-        <div style={{ display: 'grid', gap: '0.75rem' }} aria-label="GroundGlassColumn">
-          <GroundGlassViewport
-            opticsState={opticsState}
-            orientationAssistEnabled={mode === "free"}
-            focusAssistEnabled={camera.focusAssistEnabled}
-            gridEnabled={camera.gridEnabled}
-            canToggleFocusAssist={enabledControls.has("focusAssist")}
-            canToggleGrid={enabledControls.has("grid")}
-            canToggleGroundGlassAssist={enabledControls.has("groundGlassAssist")}
-            riseMm={camera.frontRiseMm}
-            tiltDeg={camera.frontTiltDeg}
-            swingDeg={camera.frontSwingDeg}
-            focusDistanceMm={camera.focusDistanceMm}
-            aperture={camera.aperture}
-            renderQuality={renderQuality}
-            sceneId={camera.activeSceneId}
-            lockReason={lockReason}
-            rawRttDebug={rawRttDebug}
-          />
+        {mode === 'free' && (
+          <section aria-label={UI_COPY.simulator.scenePickerLabel} style={{ marginLeft: 'auto' }}>
+            <label>
+              <span style={{ marginRight: '0.5rem' }}>Scene</span>
+              <select aria-label="Scene" value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
+                {allScenes.map((registeredScene) => (
+                  <option key={registeredScene.id} value={registeredScene.id}>
+                    {registeredScene.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+        )}
+      </header>
 
-          {/* Compute pipeline and derived settings for readouts at workspace level to avoid making readouts descendants of the viewport */}
+      {/* Middle content: main + aside. header is fixed so set explicit height for the content area so children can scroll independently. */}
+      <main style={{ height: mainContentHeight, overflow: 'hidden' }}>
+        {/* layout grid with two columns; each column has its own scroll */}
+        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1fr 320px', height: mainContentHeight }}>
+          {/* Main area (left) */}
+          <div style={{ display: 'grid', gap: '1rem', height: mainContentHeight, overflow: 'auto', padding: '1rem' }}>
+            {opticsState.diagnostics.fallbackApplied && (
+              <p role="alert">
+                {UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}
+              </p>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', height: '100%' }}>
+              <div style={{ display: 'block', overflow: 'auto', height: '100%' }}>
+                <SceneViewport
+                  scene={safeScene}
+                  opticsState={opticsState}
+                  renderQuality={renderQuality}
+                  setRenderQuality={setRenderQuality}
+                  simulateAssetFailure={simulateAssetFailure}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gap: '0.75rem', height: '100%', overflow: 'auto' }} aria-label="GroundGlassColumn">
+                <GroundGlassViewport
+                  opticsState={opticsState}
+                  orientationAssistEnabled={mode === 'free'}
+                  focusAssistEnabled={camera.focusAssistEnabled}
+                  gridEnabled={camera.gridEnabled}
+                  canToggleFocusAssist={enabledControls.has('focusAssist')}
+                  canToggleGrid={enabledControls.has('grid')}
+                  canToggleGroundGlassAssist={enabledControls.has('groundGlassAssist')}
+                  riseMm={camera.frontRiseMm}
+                  tiltDeg={camera.frontTiltDeg}
+                  swingDeg={camera.frontSwingDeg}
+                  focusDistanceMm={camera.focusDistanceMm}
+                  aperture={camera.aperture}
+                  renderQuality={renderQuality}
+                  sceneId={camera.activeSceneId}
+                  lockReason={lockReason}
+                  rawRttDebug={rawRttDebug}
+                />
+
+                {/* GeometryViewport removed from main flow per request. Keep a hidden instance for tests and accessibility hooks. */}
+                <div style={{ position: 'absolute', left: -9999, width: 1, height: 1, overflow: 'hidden' }} aria-hidden>
+                  <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right aside */}
+          <aside style={{ display: 'grid', gap: '1rem', height: '100%', overflow: 'auto', padding: '1rem', borderLeft: '1px solid rgba(0,0,0,0.04)', background: 'var(--panel-bg, #fafafa)' }}>
+            <section aria-label="Camera Controls">
+              <h3>Camera Controls</h3>
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                {/* Infinity Reset */}
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      useAppStore.getState().setInfinityFocus();
+                    }}
+                  >
+                    Infinity Reset
+                  </button>
+                </div>
+
+                {/* Movement controls */}
+                <MovementControls
+                  riseEnabled={enabledControls.has('rise')}
+                  tiltEnabled={enabledControls.has('tilt')}
+                  swingEnabled={enabledControls.has('swing')}
+                  lockReason={lockReason}
+                />
+
+                {/* Focus control */}
+                <FocusControl focusEnabled={enabledControls.has('focusDistance')} lockReason={lockReason} />
+
+                {/* Aperture control */}
+                <ApertureControl apertureEnabled={enabledControls.has('aperture')} lockReason={lockReason} />
+
+                {/* Reset controls (scene/camera reset group) */}
+                <ResetControls />
+              </div>
+            </section>
+
+            <section aria-label="Developer Tools">
+              <h3>Developer Tools</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input type="checkbox" checked={rawRttDebug} onChange={(e) => setRawRttDebug(e.target.checked)} />
+                  RTT Debug: Raw ON/OFF
+                </label>
+
+                {/* Toggle button for floating 2D Geometry panel */}
+                <button type="button" onClick={() => setShowGeometryPanel((s) => !s)}>
+                  {showGeometryPanel ? 'Close 2D Geometry' : 'Open 2D Geometry'}
+                </button>
+              </div>
+            </section>
+          </aside>
+        </div>
+
+        {/* Floating 2D Geometry panel (fixed) */}
+        {showGeometryPanel && (
+          <div
+            role="dialog"
+            aria-label="2D Geometry Panel"
+            style={{
+              position: 'fixed',
+              top: '72px',
+              right: '24px',
+              width: '420px',
+              height: '68vh',
+              background: 'var(--panel-bg, #fff)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.16)',
+              borderRadius: '8px',
+              zIndex: 1200,
+              overflow: 'auto',
+              padding: '0.75rem',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <strong>2D Geometry</strong>
+              <button type="button" onClick={() => setShowGeometryPanel(false)} aria-label="Close 2D Geometry">
+                Close
+              </button>
+            </div>
+
+            <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
+          </div>
+        )}
+      </main>
+      {/* Fixed footer */}
+      <footer
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1000,
+          background: 'var(--panel-bg, #fff)',
+          borderTop: '1px solid rgba(0,0,0,0.06)',
+          padding: '0.75rem 1rem',
+        }}
+      >
+        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
           <GroundGlassReadouts
             riseMm={camera.frontRiseMm}
             tiltDeg={camera.frontTiltDeg}
@@ -158,62 +303,16 @@ export const SimulatorWorkspace = ({
             focusTargets={createFocusAssistPass({ enabled: camera.focusAssistEnabled, targets: opticsState.focusTargets }).targets}
           />
 
-          {camera.activeSceneId === "focus-fundamentals-two-targets" && (
+          {camera.activeSceneId === 'focus-fundamentals-two-targets' && (
             <FocusFundamentalsDebugPanel sceneId={camera.activeSceneId} opticsState={opticsState} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
           )}
         </div>
 
-        <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
-      </div>
-      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-        <section aria-label="Camera Controls">
-          <h3>Camera Controls</h3>
-          <div style={{ display: 'grid', gap: '0.5rem' }}>
-            {/* Infinity Reset */}
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  useAppStore.getState().setInfinityFocus();
-                }}
-              >
-                Infinity Reset
-              </button>
-            </div>
-
-            {/* Movement controls */}
-            <MovementControls
-              riseEnabled={enabledControls.has("rise")}
-              tiltEnabled={enabledControls.has("tilt")}
-              swingEnabled={enabledControls.has("swing")}
-              lockReason={lockReason}
-            />
-
-            {/* Focus control */}
-            <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
-
-            {/* Aperture control */}
-            <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
-
-            {/* Reset controls (scene/camera reset group) */}
-            <ResetControls />
-          </div>
-        </section>
-
-        <section aria-label="Developer Tools">
-          <h3>Developer Tools</h3>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <input
-              type="checkbox"
-              checked={rawRttDebug}
-              onChange={(e) => setRawRttDebug(e.target.checked)}
-            />
-            RTT Debug: Raw ON/OFF
-          </label>
-        </section>
-      </div>
-      <TaskPanel task={task} />
-      <FeedbackPanel evaluation={evaluation} />
+        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1fr 1fr', marginTop: '0.75rem' }}>
+          <TaskPanel task={task} />
+          <FeedbackPanel evaluation={evaluation} />
+        </div>
+      </footer>
     </div>
   );
 };
