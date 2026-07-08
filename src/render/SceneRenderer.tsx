@@ -667,8 +667,9 @@ export const SceneRenderer = ({
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [legendPositions, setLegendPositions] = useState<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>({});
-  const [showLegends, setShowLegends] = useState(true);
-  const [showDebugOverlay, setShowDebugOverlay] = useState(true);
+  // Default legends and debug overlays hidden by default
+  const [showLegends, setShowLegends] = useState(false);
+  const [showDebugOverlay, setShowDebugOverlay] = useState(false);
 
   // ensure the wrapper is positioned so absolute children (legends, button) are positioned relative to it
   const wrapperStyle: React.CSSProperties = containerStyle

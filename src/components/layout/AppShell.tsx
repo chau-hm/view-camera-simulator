@@ -8,7 +8,7 @@ type AppShellProps = {
 };
 
 export const AppShell = ({ title, children, globalErrorMessage = null, fullBleed = false }: AppShellProps) => (
-  <div className="page" style={fullBleed ? { padding: 0 } : undefined}>
+  <div className={fullBleed ? 'page page--full-bleed' : 'page'}>
     {title ? (
       <header>
         <h1>{title}</h1>

@@ -23,3 +23,16 @@ button {
 .page {
   padding: 1rem;
 }
+
+/* Full-bleed mode for pages that own the viewport (e.g., simulator) */
+.page--full-bleed {
+  padding: 0;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.page--full-bleed > main {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
