@@ -1,5 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useMemo, useState, useRef, useEffect } from "react";
+import { GroundGlassStage } from "./GroundGlassStage";
+import { GroundGlassRenderSurface } from "./GroundGlassRenderSurface";
+import { LegacyGroundGlassScene } from "./LegacyGroundGlassScene";
+import { GroundGlassTransformedOverlays, GroundGlassFixedOverlays } from "./GroundGlassOverlays";
+import { GroundGlassFocusRing } from "./GroundGlassFocusRing";
 import { useAppStore } from "../state/appStore";
 import { GroundGlassRTT } from "./GroundGlassRTT";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
@@ -37,10 +42,7 @@ type GroundGlassRendererProps = {
 const PANEL_WIDTH_PX = 500;
 const PANEL_HEIGHT_PX = 400;
 
-
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
-
-
 
 export const GroundGlassRenderer = ({
   opticsState,
@@ -58,48 +60,11 @@ export const GroundGlassRenderer = ({
   rawDebug,
   zoomEnabled,
 }: GroundGlassRendererProps & { zoomEnabled?: boolean }) => {
+  // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
   const _zoomEnabled = !!zoomEnabled;
-  const [zoomPan, setZoomPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ pointerId: number | null; startX: number; startY: number; startPanX: number; startPanY: number }>({ pointerId: null, startX: 0, startY: 0, startPanX: 0, startPanY: 0 });
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({ width: PANEL_WIDTH_PX, height: PANEL_HEIGHT_PX });
-
-  useEffect(() => {
-    const el = panelRef.current;
-    if (!el) return;
-    const update = () => {
-      const r = el.getBoundingClientRect();
-      setViewportSize({ width: r.width, height: r.height });
-    };
-    update();
-    let ro: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(() => update());
-      ro.observe(el);
-    }
-    return () => {
-      if (ro) ro.disconnect();
-    };
-  }, [panelRef]);
-
-  // reset pan when zoom is turned off by parent
-  useEffect(() => {
-    if (!_zoomEnabled) {
-      setZoomPan({ x: 0, y: 0 });
-    }
-  }, [_zoomEnabled]);
-
-  // previewMode is controlled by parent (GroundGlassViewport)
-  // rawDebug is controlled at workspace and passed down
-  const zoomScale = zoomEnabled ? 1.9 : 1;
-  const transform = `translate3d(${zoomPan.x}px, ${zoomPan.y}px, 0) scale(${zoomScale})`;
   const pipeline = useMemo(() => {
-    // For the dedicated Focus Fundamentals scene use the thin-lens optical projection
     const useThinLens = sceneId === "focus-fundamentals-two-targets";
     if (useThinLens) {
-      // derive image distance from opticsState: filmPlane.distance is the canonical imageDistance when lens fixed
-      // However deriveOpticsState does not currently expose imageDistance directly; use distance from lens center to film center
       const imageDistanceMm = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
       return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality, {
         useThinLens: true,
@@ -112,6 +77,7 @@ export const GroundGlassRenderer = ({
 
     return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality);
   }, [opticsState, renderQuality, sceneId]);
+
   const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const focusAssist = useMemo(
@@ -138,7 +104,6 @@ export const GroundGlassRenderer = ({
   const blurOpacity = Math.min(0.85, dofSample.blurStrength * 1.2);
   const blurRadiusPx = Math.max(0, dofSample.blurStrength * (qualitySettings.groundGlassScale > 0.8 ? 9 : 6));
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
-  // For Focus Fundamentals scene, ignore rise/tilt/swing to maintain a strict no-movement baseline
   const isFocusFundamentals = sceneId === "focus-fundamentals-two-targets";
   const sceneShiftX = isFocusFundamentals ? 0 : clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
   const sceneShiftY = isFocusFundamentals ? 0 : clamp(-riseMm * 2 + tiltDeg * 4 - pipeline.verticalFrameOffsetPx * 0.15, -80, 80);
@@ -158,352 +123,63 @@ export const GroundGlassRenderer = ({
 
   // Project scene focus targets (if available) into ground-glass UV coordinates for positioning overlays
   const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
-
-  // Use shared helper to compute projected targets for both focus-ring and legacy DOM placeholders
   const projectedTargets = projectSceneFocusTargetsToGroundGlass({ sceneDef, opticsState, aperture, previewMode });
-
-  // Primary projected target (first entry) — kept explicit so focus-ring logic is clear.
   const primaryProjectedTarget = projectedTargets.length > 0 ? projectedTargets[0] : null;
+  const apertureNumber = typeof aperture === "number" ? aperture : Number(aperture as unknown as number);
 
-  // GroundGlassRTT is used for RTT rendering in the Focus Fundamentals scene.
-  const apertureNumber = typeof aperture === 'number' ? aperture : Number(aperture as unknown as number);
-
-  return (
-    <div style={{ display: "grid", gap: "0.5rem" }}>
-      <div
-        ref={panelRef}
-        style={{
-          position: "relative",
-          width: "100%",
-          aspectRatio: "5 / 4",
-          border: "1px solid #d1d5db",
-          borderRadius: 8,
-          overflow: "hidden",
-          cursor: _zoomEnabled ? (isDragging ? "grabbing" : "grab") : "zoom-in",
-        }}
-        // pointer handlers for pan when zoomed
-        // TODO: consider adding keyboard and touch gesture support for panning while zoomed.
-        // The current check (target.closest("button")) intentionally avoids starting pan on button clicks but may be too broad; refine if needed.
-        onPointerDown={(e) => {
-          // only start pan if zoom is enabled and primary button
-          if (!zoomEnabled || e.button !== 0) return;
-          // do not start pan when interacting with controls layered above
-          const target = e.target as HTMLElement;
-          if (target.closest("button")) return;
-          const el = e.currentTarget as HTMLElement;
-          try {
-            el.setPointerCapture(e.pointerId);
-          } catch (captureErr) {
-            // ignore pointer capture errors
-            void captureErr;
-          }
-          dragRef.current = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, startPanX: zoomPan.x, startPanY: zoomPan.y };
-          setIsDragging(true);
-        }}
-        onPointerMove={(e) => {
-          if (!zoomEnabled) return;
-          if (!isDragging || dragRef.current.pointerId !== e.pointerId) return;
-          const dx = e.clientX - dragRef.current.startX;
-          const dy = e.clientY - dragRef.current.startY;
-          const desiredX = dragRef.current.startPanX + dx;
-          const desiredY = dragRef.current.startPanY + dy;
-          const maxPanX = (viewportSize.width * (zoomScale - 1)) / 2;
-          const maxPanY = (viewportSize.height * (zoomScale - 1)) / 2;
-          const clampedX = Math.max(-maxPanX, Math.min(maxPanX, desiredX));
-          const clampedY = Math.max(-maxPanY, Math.min(maxPanY, desiredY));
-          setZoomPan({ x: clampedX, y: clampedY });
-        }}
-        onPointerUp={(e) => {
-          if (!zoomEnabled) return;
-          const el = e.currentTarget as HTMLElement;
-          try {
-            el.releasePointerCapture(e.pointerId);
-        } catch (releaseErr) {
-          // ignore release errors
-          void releaseErr;
-        }
-        dragRef.current.pointerId = null;
-        setIsDragging(false);
-        }}
-        onPointerCancel={(e) => {
-        if (!zoomEnabled) return;
-        const el = e.currentTarget as HTMLElement;
-        try {
-          el.releasePointerCapture(e.pointerId);
-        } catch (cancelErr) {
-          void cancelErr;
-        }
-        dragRef.current.pointerId = null;
-        setIsDragging(false);
-        }}
-      >
-        {/* Decorative background; hide for Focus Fundamentals (RTT) or when Raw RTT Debug is enabled */}
-        {!(isFocusFundamentals || rawDebug) && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage: sceneBackground,
-              backgroundPosition: `center ${backgroundPositionY}`,
-              backgroundRepeat: "no-repeat",
-              transform,
-              transformOrigin: "center",
-            }}
-          />
-        )}
+  const transformedImageLayer = (
+    <>
+      {/* Decorative background; hide for Focus Fundamentals (RTT) or when Raw RTT Debug is enabled */}
+      {!(isFocusFundamentals || rawDebug) && (
         <div
           style={{
             position: "absolute",
             inset: 0,
-            transform: transform,
-            transformOrigin: "center",
+            backgroundImage: sceneBackground,
+            backgroundPosition: `center ${backgroundPositionY}`,
+            backgroundRepeat: "no-repeat",
           }}
-        >
-        {/* For focus fundamentals show the RTT instead of the legacy canvas */}
-        {sceneId === "focus-fundamentals-two-targets" ? (
-          <div data-testid="ground-glass-rtt" style={{ position: "absolute", inset: 0 }}>
-            {/* GroundGlassRTT renders the real 3D scene to a texture and displays it */}
-            <GroundGlassRTT
-              opticsState={opticsState}
-              sceneId={sceneId}
-              widthPx={PANEL_WIDTH_PX}
-              heightPx={PANEL_HEIGHT_PX}
-              aperture={apertureNumber}
-              previewMode={previewMode}
-              focusRingRadiusPx={focusRingSize}
-              focusRingOpacity={focusRingOpacity}
-              rawDebug={rawDebug}
-              focusAssistEnabled={focusAssistEnabled}
-            />
-          </div>
-        ) : (
-          <>
-            {/* TODO: legacy canvas fallback — rendering occurs elsewhere or is intentionally mocked; wire up or document if this becomes the primary rendering path */}
-            <canvas
-              ref={canvasRef}
-            aria-hidden
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              transform: `translate(${sceneShiftX}px, ${sceneShiftY}px) rotate(${sceneRotationDeg}deg) scale(${focusScale})`,
-              transformOrigin: "center",
-            }}
+        />
+      )}
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+        }}
+      >
+        <GroundGlassRenderSurface
+          opticsState={opticsState}
+          sceneId={sceneId}
+          apertureNumber={apertureNumber}
+          previewMode={previewMode}
+          rawDebug={rawDebug}
+          focusAssistEnabled={focusAssistEnabled}
+          focusRingSize={focusRingSize}
+          focusRingOpacity={focusRingOpacity}
+          sceneShiftX={sceneShiftX}
+          sceneShiftY={sceneShiftY}
+          sceneRotationDeg={sceneRotationDeg}
+          focusScale={focusScale}
+        />
+
+        {!isFocusFundamentals && (
+          <LegacyGroundGlassScene
+            sceneId={sceneId}
+            sceneHasFocusTargets={!!(sceneDef && sceneDef.focusTargets && sceneDef.focusTargets.length)}
+            projectedTargets={projectedTargets}
+            blurRadiusPx={blurRadiusPx}
+            sceneShiftX={sceneShiftX}
+            sceneShiftY={sceneShiftY}
+            sceneRotationDeg={sceneRotationDeg}
+            focusScale={focusScale}
+            riseMm={riseMm}
+            tiltDeg={tiltDeg}
+            swingDeg={swingDeg}
           />
-            </>
         )}
 
-        {/* Legacy mock overlay: do not render for Focus Fundamentals (RTT) */}
-        {!isFocusFundamentals && (
-          <div
-            data-testid="ground-glass-scene"
-            style={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02) 48%, rgba(0,0,0,0.14) 100%)",
-              filter: `blur(${blurRadiusPx}px)`,
-              transform: `translate(${sceneShiftX}px, ${sceneShiftY}px) rotate(${sceneRotationDeg}deg) scale(${focusScale})`,
-              transformOrigin: "center",
-              willChange: "transform",
-            }}
-          >
-          {(() => {
-              // If we have a scene definition with focus targets, project those into film UV and render placeholders anchored to them.
-              // Do not render DOM placeholder target elements for the Focus Fundamentals scene — the RTT pipeline provides the ground-glass imagery.
-              if (sceneDef && sceneDef.focusTargets && sceneDef.focusTargets.length > 0) {
-                if (sceneId === "focus-fundamentals-two-targets") {
-                  return null;
-                }
-
-                // Use the shared projectedTargets computed above for both focus ring and legacy DOM placeholders
-                return (
-                  <>
-                    {projectedTargets.map((pt) => (
-                      <div
-                        key={pt.id}
-                        data-testid={`ground-glass-target-${pt.id}`}
-                        style={{
-                          position: "absolute",
-                          left: `${pt.leftPercent}%`,
-                          top: `${pt.topPercent}%`,
-                          width: sceneId === "architecture-rise" ? "18%" : "10%",
-                          height: sceneId === "architecture-rise" ? "48%" : "14%",
-                          marginLeft: sceneId === "architecture-rise" ? "-9%" : "-5%",
-                          marginTop: sceneId === "architecture-rise" ? "-24%" : "-7%",
-                          borderRadius: sceneId === "architecture-rise" ? 10 : 4,
-                          background:
-                            sceneId === "architecture-rise"
-                              ? "linear-gradient(180deg, rgba(148,163,184,0.95), rgba(71,85,105,0.92) 30%, rgba(15,23,42,0.9))"
-                              : "rgba(255,255,255,0.9)",
-                          boxShadow: pt.blurStrengthAtTarget < 0.35 ? "0 0 18px rgba(255,255,255,0.28)" : "0 4px 8px rgba(0,0,0,0.45)",
-                          opacity: 1 - clamp(pt.blurStrengthAtTarget, 0, 1) * 0.7,
-                        }}
-                      />
-                    ))}
-                  </>
-                );
-              }
-
-              // Fallback: previous hard-coded visuals for scenes without targets
-              if (!sceneId || sceneId === "architecture-rise") {
-                return (
-                  <>
-                    <div
-                      style={{
-                        position: "absolute",
-                        left: "18%",
-                        top: "20%",
-                        width: "20%",
-                        height: "58%",
-                        borderRadius: 8,
-                        background:
-                          "linear-gradient(180deg, rgba(148,163,184,0.95), rgba(71,85,105,0.92) 30%, rgba(15,23,42,0.9))",
-                        boxShadow: "0 0 0 1px rgba(255,255,255,0.08)",
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: "absolute",
-                        right: "16%",
-                        bottom: "18%",
-                        width: "22%",
-                        height: "18%",
-                        borderRadius: 999,
-                        background: "rgba(17,24,39,0.75)",
-                        boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.1)",
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: "absolute",
-                        left: `${46 + riseMm * 0.4 + swingDeg * 0.5}%`,
-                        top: `${36 - tiltDeg * 1.2}%`,
-                        width: "10%",
-                        height: "28%",
-                        borderRadius: 6,
-                        background: "rgba(248,250,252,0.92)",
-                        boxShadow: "0 0 18px rgba(255,255,255,0.28)",
-                      }}
-                    />
-                  </>
-                );
-              }
-
-              return null;
-            })()}
-            {sceneId === "table-tilt" && (
-              <>
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "linear-gradient(0deg, #78350f 0%, #b45309 60%, transparent 60%)",
-                    opacity: 0.85,
-                  }}
-                />
-                {/* Near Cup */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "22%",
-                    bottom: "22%",
-                    width: "12%",
-                    height: "22%",
-                    borderRadius: "4px",
-                    background: "linear-gradient(90deg, #60a5fa, #2563eb)",
-                    boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
-                  }}
-                />
-                {/* Middle Notebook */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "46%",
-                    bottom: "34%",
-                    width: "18%",
-                    height: "14%",
-                    transform: "rotate(-12deg)",
-                    background: "#f59e0b",
-                    borderRadius: "2px",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
-                  }}
-                />
-                {/* Far Book */}
-                <div
-                  style={{
-                    position: "absolute",
-                    right: "26%",
-                    bottom: "44%",
-                    width: "14%",
-                    height: "10%",
-                    background: "#a855f7",
-                    borderRadius: "1px",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                  }}
-                />
-              </>
-            )}
-            {sceneId === "shelf-swing" && (
-              <>
-                {/* Diagonal shelf line representing the perspective board */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "10%",
-                    top: "52%",
-                    width: "80%",
-                    height: "4%",
-                    transform: "rotate(14deg)",
-                    background: "#475569",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.4)",
-                  }}
-                />
-                {/* Near shelf item (orange block) */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "22%",
-                    top: "32%",
-                    width: "11%",
-                    height: "16%",
-                    background: "#f97316",
-                    borderRadius: "3px",
-                    boxShadow: "0 3px 5px rgba(0,0,0,0.25)",
-                  }}
-                />
-                {/* Middle shelf item (green block) */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "48%",
-                    top: "40%",
-                    width: "9%",
-                    height: "13%",
-                    background: "#22c55e",
-                    borderRadius: "3px",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                  }}
-                />
-                {/* Back shelf item (cyan block) */}
-                <div
-                  style={{
-                    position: "absolute",
-                    right: "26%",
-                    top: "46%",
-                    width: "7%",
-                    height: "10%",
-                    background: "#06b6d4",
-                    borderRadius: "3px",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
-                  }}
-                />
-              </>
-            )}
-          </div>
-          )}
-          {!rawDebug && (
+        {!rawDebug && (
           <>
             <div
               style={{
@@ -524,106 +200,109 @@ export const GroundGlassRenderer = ({
               }}
             />
           </>
-          )}
-          {gridEnabled && !rawDebug && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                backgroundImage:
-                  "linear-gradient(to right, rgba(59,130,246,0.2) 1px, transparent 1px), linear-gradient(to bottom, rgba(59,130,246,0.2) 1px, transparent 1px)",
-                backgroundSize: "20px 20px",
-              }}
-            />
-          )}
-          {/* radial vignette / blur overlay; hide for RTT focus fundamentals or raw RTT debug */}
-          {!(isFocusFundamentals || rawDebug) && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(0,0,0,${blurOpacity}) 100%)`,
-              }}
-            />
-          )}
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            bottom: 8,
-            left: 8,
-            padding: "2px 6px",
-            borderRadius: 4,
-            fontSize: 11,
-            background: "rgba(15,23,42,0.72)",
-            color: "#e2e8f0",
-          }}
-        >
-          {UI_COPY.render.groundGlassPreview}
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            padding: "2px 6px",
-            borderRadius: 4,
-            fontSize: 11,
-            background: "rgba(15,23,42,0.72)",
-            color: "#e2e8f0",
-          }}
-        >
-          {isInfinityFocus ? (
-            <div>
-              <div>∞ focus</div>
-              {lastFiniteFocusDepthMm && (
-                <div style={{ fontSize: 10, color: "#94a3b8" }}>Last finite focus: {formatMillimeter(lastFiniteFocusDepthMm)}</div>
-              )}
-            </div>
-          ) : (
-            <div>{focusDistanceLabel}</div>
-          )}
-        </div>
-        {sceneId !== "focus-fundamentals-two-targets" && (
+        )}
+
+        {gridEnabled && !rawDebug && (
           <div
-            data-testid="ground-glass-focus-ring"
             style={{
               position: "absolute",
-              left: `${primaryProjectedTarget && primaryProjectedTarget.visible ? primaryProjectedTarget.leftPercent : 50 + swingDeg * 0.5}%`,
-              top: `${primaryProjectedTarget && primaryProjectedTarget.visible ? primaryProjectedTarget.topPercent : 50 - tiltDeg * 0.5}%`,
-              display: primaryProjectedTarget && primaryProjectedTarget.visible ? "block" : "none",
-              width: focusRingSize,
-              height: focusRingSize,
-              marginLeft: -focusRingSize / 2,
-              marginTop: -focusRingSize / 2,
-              borderRadius: "50%",
-              border: "2px solid rgba(59,130,246,0.7)",
-              boxShadow: `0 0 0 10px rgba(59,130,246,${focusRingOpacity * 0.25})`,
-              opacity: focusRingOpacity,
-              pointerEvents: "none",
-              // ring is positioned inside the image-stage which already applies the pan/zoom transform
+              inset: 0,
+              backgroundImage:
+                "linear-gradient(to right, rgba(59,130,246,0.2) 1px, transparent 1px), linear-gradient(to bottom, rgba(59,130,246,0.2) 1px, transparent 1px)",
+              backgroundSize: "20px 20px",
             }}
           />
         )}
-        {focusAssist.enabled && !rawDebug && (
-          <span
+
+        {/* radial vignette / blur overlay; hide for RTT focus fundamentals or raw RTT debug */}
+        {!(isFocusFundamentals || rawDebug) && (
+          <div
             style={{
               position: "absolute",
-              bottom: 8,
-              right: 8,
-              fontSize: 12,
-              color: "#1d4ed8",
-              background: "rgba(255,255,255,0.85)",
-              borderRadius: 4,
-              padding: "2px 6px",
+              inset: 0,
+              background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(0,0,0,${blurOpacity}) 100%)`,
             }}
-          >
-            {UI_COPY.render.focusAssistBadge}
-          </span>
+          />
         )}
       </div>
-    {/* Current Settings & Focus Fundamentals Debug and Focus Targets are rendered by the parent GroundGlassViewport to allow controls to appear immediately after the canvas. */}
-  </div>
+    </>
+  );
 
+  const fixedOverlayLayer = (
+    <>
+      <div
+        style={{
+          position: "absolute",
+          bottom: 8,
+          left: 8,
+          padding: "2px 6px",
+          borderRadius: 4,
+          fontSize: 11,
+          background: "rgba(15,23,42,0.72)",
+          color: "#e2e8f0",
+        }}
+      >
+        {UI_COPY.render.groundGlassPreview}
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          padding: "2px 6px",
+          borderRadius: 4,
+          fontSize: 11,
+          background: "rgba(15,23,42,0.72)",
+          color: "#e2e8f0",
+        }}
+      >
+        {isInfinityFocus ? (
+          <div>
+            <div>∞ focus</div>
+            {lastFiniteFocusDepthMm && (
+              <div style={{ fontSize: 10, color: "#94a3b8" }}>Last finite focus: {formatMillimeter(lastFiniteFocusDepthMm)}</div>
+            )}
+          </div>
+        ) : (
+          <div>{focusDistanceLabel}</div>
+        )}
+      </div>
+
+      {sceneId !== "focus-fundamentals-two-targets" && (
+        <GroundGlassFocusRing
+          sceneId={sceneId}
+          primaryProjectedTarget={primaryProjectedTarget}
+          focusRingSize={focusRingSize}
+          focusRingOpacity={focusRingOpacity}
+          swingDeg={swingDeg}
+          tiltDeg={tiltDeg}
+        />
+      )}
+
+      {focusAssist.enabled && !rawDebug && (
+        <span
+          style={{
+            position: "absolute",
+            bottom: 8,
+            right: 8,
+            fontSize: 12,
+            color: "#1d4ed8",
+            background: "rgba(255,255,255,0.85)",
+            borderRadius: 4,
+            padding: "2px 6px",
+          }}
+        >
+          {UI_COPY.render.focusAssistBadge}
+        </span>
+      )}
+    </>
+  );
+
+  return (
+    <div style={{ display: "grid", gap: "0.5rem" }}>
+      <GroundGlassStage zoomEnabled={zoomEnabled} imageLayer={transformedImageLayer} fixedOverlayLayer={fixedOverlayLayer} />
+      {/* Current Settings & Focus Fundamentals Debug and Focus Targets are rendered by the parent GroundGlassViewport to allow controls to appear immediately after the canvas. */}
+    </div>
   );
 };
