@@ -162,6 +162,7 @@ const OpticalAxisOverlay = ({ opticsState }: { opticsState: DerivedOpticsState }
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       {/* optical axis color updated to be visually distinct from FOV rays */}
+      {/* Note: WebGL lineBasicMaterial linewidth is ignored by many browser/GPU combinations. */}
       <lineBasicMaterial attach="material" color="#06b6d4" linewidth={2} transparent opacity={0.95} />
     </line>
   );

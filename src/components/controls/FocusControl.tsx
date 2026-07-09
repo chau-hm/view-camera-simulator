@@ -16,6 +16,8 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
   const focusControl = useAppStore(useShallow(selectFocusControlState));
   const setFocusDistance = useAppStore((state) => state.setFocusDistance);
 
+  const formatLastFiniteFocus = (value: number | null | undefined) => (typeof value === 'number' && Number.isFinite(value) ? formatMillimeter(value) : '—');
+
   return (
     <section aria-label={UI_COPY.controls.focusTitle}>
       {showTitle && <h3>{UI_COPY.controls.focusTitle}</h3>}
@@ -23,7 +25,7 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
         {focusControl.focusMode === "infinity" ? (
           <>
             <div>Focus: ∞</div>
-            <div>Last finite focus: {formatMillimeter(focusControl.lastFiniteFocusDepthMm ?? focusControl.focusDistanceMm)}</div>
+            <div>Last finite focus: {formatLastFiniteFocus(focusControl.lastFiniteFocusDepthMm)}</div>
           </>
         ) : (
           <>{UI_COPY.controls.focusDistanceLabel} ({formatMillimeter(focusControl.focusDistanceMm)})</>

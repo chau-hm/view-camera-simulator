@@ -65,6 +65,9 @@ export const SimulatorWorkspace = ({
   const opticsState = selectDerivedOpticsState(camera);
   const lockReason = UI_COPY.controls.guidedControlLockedReason;
   const [rawRttDebug, setRawRttDebug] = useState(false);
+
+  // enabled controls currently depend only on mode, task metadata, and active scene.
+  // Avoid depending on the entire camera object because movement/focus changes should not recompute this set.
   const enabledControls = useMemo(() => {
     const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
     if (focusFundamentals) {
@@ -81,6 +84,25 @@ export const SimulatorWorkspace = ({
   useEffect(() => {
     setCurrentTaskEvaluation(evaluation);
   }, [evaluation, setCurrentTaskEvaluation]);
+
+  // memoized render pipeline & settings to avoid re-creating expensive pipeline objects on every render
+  const groundGlassPipeline = useMemo(
+    () => createGroundGlassDofPipeline(opticsState, 500, 400, renderQuality),
+    [opticsState, renderQuality],
+  );
+
+  const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
+
+  const focusAssistTargets = useMemo(
+    () =>
+      createFocusAssistPass({
+        enabled: camera.focusAssistEnabled,
+        targets: opticsState.focusTargets,
+      }).targets,
+    [camera.focusAssistEnabled, opticsState.focusTargets],
+  );
+
+  const setInfinityFocus = useAppStore((state) => state.setInfinityFocus);
 
   if (!scene) {
     return (
@@ -185,14 +207,12 @@ export const SimulatorWorkspace = ({
               focusDistanceMm={camera.focusDistanceMm}
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
-              pipeline={createGroundGlassDofPipeline(opticsState, 500, 400, renderQuality)}
-              qualitySettings={getRenderQualitySettings(renderQuality)}
+              pipeline={groundGlassPipeline}
+              qualitySettings={qualitySettings}
               lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
             />
 
-            <FocusTargetsReadout focusTargets={
-              createFocusAssistPass({ enabled: camera.focusAssistEnabled, targets: opticsState.focusTargets }).targets
-            } />
+            <FocusTargetsReadout focusTargets={focusAssistTargets} />
 
             <div className="simulator-info-card" aria-label="Focus Fundamentals">
               <h4>Focus Fundamentals Debug</h4>
@@ -224,7 +244,7 @@ export const SimulatorWorkspace = ({
           <section aria-label="Camera Controls">
             <div className="aside-header">
               <h3 style={{ margin: 0 }}>Camera Controls</h3>
-              <button className="btn btn--secondary" type="button" onClick={() => useAppStore.getState().setInfinityFocus()}>Infinity Reset</button>
+              <button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>Infinity Reset</button>
             </div>
 
             <div style={{ marginTop: 8 }}>

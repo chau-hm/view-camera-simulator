@@ -39,7 +39,7 @@ export const ViewOptions = ({
               type="checkbox"
               checked={viewOptions.groundGlassAssistEnabled}
               disabled={!canToggleGroundGlassAssist}
-              onChange={toggleGroundGlassAssist}
+              onChange={() => toggleGroundGlassAssist()}
             />
             <span>{UI_COPY.controls.groundGlassAssistLabel}</span>
             {!canToggleGroundGlassAssist && <small className="control-help">{lockReason}</small>}
@@ -53,7 +53,7 @@ export const ViewOptions = ({
             type="checkbox"
             checked={viewOptions.focusAssistEnabled}
             disabled={!canToggleFocusAssist}
-            onChange={toggleFocusAssist}
+            onChange={() => toggleFocusAssist()}
           />
           <span>{UI_COPY.controls.focusAssistLabel}</span>
           {!canToggleFocusAssist && <small className="control-help">{lockReason}</small>}
@@ -66,7 +66,7 @@ export const ViewOptions = ({
             type="checkbox"
             checked={viewOptions.gridEnabled}
             disabled={!canToggleGrid}
-            onChange={toggleGrid}
+            onChange={() => toggleGrid()}
           />
           <span>{UI_COPY.controls.gridLabel}</span>
           {!canToggleGrid && <small className="control-help">{lockReason}</small>}

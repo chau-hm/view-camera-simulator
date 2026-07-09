@@ -9,6 +9,8 @@ export const MaterialIcon = ({ name, size = 20, className, title }: MaterialIcon
   <span
     className={["material-symbols-outlined", className].filter(Boolean).join(" ")}
     aria-hidden={title ? undefined : "true"}
+    role={title ? "img" : undefined}
+    aria-label={title ?? undefined}
     title={title}
     style={{ fontSize: size, lineHeight: 1 }}
   >

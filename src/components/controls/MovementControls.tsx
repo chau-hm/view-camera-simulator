@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { selectMovementControlState } from "../../state/selectors";
 import { UI_COPY } from "../../ui/copy";
@@ -21,19 +21,40 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
   const setTilt = useAppStore((state) => state.setTilt);
   const setSwing = useAppStore((state) => state.setSwing);
   const [helpOpen, setHelpOpen] = useState(false);
+  const helpButtonRef = useRef<HTMLButtonElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!helpOpen) return;
+    // move focus to the dialog's close button when opened
+    closeButtonRef.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setHelpOpen(false);
+        // restore focus to the help button after dialog closes
+        requestAnimationFrame(() => helpButtonRef.current?.focus());
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [helpOpen]);
 
   return (
     <section aria-label={UI_COPY.controls.movementTitle}>
       {showTitle && <h3>{UI_COPY.controls.movementTitle}</h3>}
-      <button type="button" onClick={() => setHelpOpen(true)} aria-label={UI_COPY.controls.helpButton} className="btn btn--compact btn--secondary">
+      <button ref={helpButtonRef} type="button" onClick={() => setHelpOpen(true)} aria-label={UI_COPY.controls.helpButton} className="btn btn--compact btn--secondary">
         {UI_COPY.controls.helpButton}
       </button>
       {helpOpen && (
-        <div role="dialog" aria-label={UI_COPY.controls.helpTitle}>
+        <div role="dialog" aria-modal="true" aria-labelledby="movement-help-title">
+          <h4 id="movement-help-title" style={{ marginTop: 0 }}>{UI_COPY.controls.helpTitle}</h4>
           <p>{UI_COPY.controls.helpRise}</p>
           <p>{UI_COPY.controls.helpTilt}</p>
           <p>{UI_COPY.controls.helpSwing}</p>
-          <button type="button" onClick={() => setHelpOpen(false)} className="btn btn--compact btn--secondary">
+          <button ref={closeButtonRef} type="button" onClick={() => { setHelpOpen(false); requestAnimationFrame(() => helpButtonRef.current?.focus()); }} className="btn btn--compact btn--secondary">
             {UI_COPY.controls.closeHelpButton}
           </button>
         </div>

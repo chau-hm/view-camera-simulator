@@ -185,6 +185,9 @@ export const GroundGlassRenderer = ({
     return { id: t.id, leftPercent, topPercent, blurStrengthAtTarget, visible: p.visible };
   });
 
+  // Primary projected target (first entry) — kept explicit so focus-ring logic is clear.
+  const primaryProjectedTarget = projectedTargets.length > 0 ? projectedTargets[0] : null;
+
   // GroundGlassRTT prototype (offscreen three.js render) removed from this file for now.
   // Phase 1 RTT implementation will be moved to src/render/GroundGlassRTT.tsx in a follow-up commit.
   const apertureNumber = typeof aperture === 'number' ? aperture : Number(aperture as unknown as number);
@@ -203,6 +206,8 @@ export const GroundGlassRenderer = ({
           cursor: _zoomEnabled ? (isDragging ? "grabbing" : "grab") : "zoom-in",
         }}
         // pointer handlers for pan when zoomed
+        // TODO: consider adding keyboard and touch gesture support for panning while zoomed.
+        // The current check (target.closest("button")) intentionally avoids starting pan on button clicks but may be too broad; refine if needed.
         onPointerDown={(e) => {
           // only start pan if zoom is enabled and primary button
           if (!zoomEnabled || e.button !== 0) return;
@@ -296,8 +301,10 @@ export const GroundGlassRenderer = ({
             />
           </div>
         ) : (
-          <canvas
-            ref={canvasRef}
+          <>
+            {/* TODO: legacy canvas fallback — rendering occurs elsewhere or is intentionally mocked; wire up or document if this becomes the primary rendering path */}
+            <canvas
+              ref={canvasRef}
             aria-hidden
             style={{
               position: "absolute",
@@ -308,6 +315,7 @@ export const GroundGlassRenderer = ({
               transformOrigin: "center",
             }}
           />
+            </>
         )}
 
         {/* Legacy mock overlay: do not render for Focus Fundamentals (RTT) */}
@@ -328,6 +336,8 @@ export const GroundGlassRenderer = ({
           {(() => {
               const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
               // If we have a scene definition with focus targets, project those into film UV and render placeholders anchored to them.
+              // NOTE: RTT-based projection and this legacy DOM projection are currently implemented separately which may cause drift.
+              // TODO: Consolidate projection logic into a single helper (e.g. projectWorldPointToGroundGlass) to ensure overlays remain consistent.
               // IMPORTANT: Do not render DOM placeholder target elements for the Focus Fundamentals scene — the RTT pipeline provides the ground-glass imagery.
               if (sceneDef && sceneDef.focusTargets && sceneDef.focusTargets.length > 0) {
                 if (sceneId === "focus-fundamentals-two-targets") {
@@ -628,9 +638,9 @@ export const GroundGlassRenderer = ({
             data-testid="ground-glass-focus-ring"
             style={{
               position: "absolute",
-              left: `${projectedTargets[0] && projectedTargets[0].visible ? projectedTargets[0].leftPercent : 50 + swingDeg * 0.5}%`,
-              top: `${projectedTargets[0] && projectedTargets[0].visible ? projectedTargets[0].topPercent : 50 - tiltDeg * 0.5}%`,
-              display: projectedTargets[0] && projectedTargets[0].visible ? "block" : "none",
+              left: `${primaryProjectedTarget && primaryProjectedTarget.visible ? primaryProjectedTarget.leftPercent : 50 + swingDeg * 0.5}%`,
+              top: `${primaryProjectedTarget && primaryProjectedTarget.visible ? primaryProjectedTarget.topPercent : 50 - tiltDeg * 0.5}%`,
+              display: primaryProjectedTarget && primaryProjectedTarget.visible ? "block" : "none",
               width: focusRingSize,
               height: focusRingSize,
               marginLeft: -focusRingSize / 2,
