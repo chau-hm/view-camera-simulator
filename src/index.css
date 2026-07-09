@@ -122,14 +122,20 @@ button {
   display: grid;
  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
 /* Make the two viewport cards match height and layout */
 .simulator-viewport-grid > .simulator-card {
- min-height: 480px; /* both cards match height */
- display: flex;
- flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.simulator-viewport-grid > .simulator-card > section {
+  flex: 1;
+  min-height: 0;
 }
 
 /* panel icon used in card headers */

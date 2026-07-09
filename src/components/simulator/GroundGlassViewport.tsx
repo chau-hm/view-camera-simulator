@@ -54,54 +54,55 @@ export const GroundGlassViewport = ({
   const [zoomEnabled, setZoomEnabled] = useState(false);
 
   return (
-    <section>
+    <section className="groundglass-panel">
       {showHeader !== false && <h2 className="simulator-card-title">{UI_COPY.simulator.groundGlassTitle}</h2>}
 
-      <div className="ground-glass-panel-body">
-        <div className="ground-glass-control-bar">
-          <section aria-label={UI_COPY.render.groundGlassPreview} className="ground-glass-control-group">
-            <h3 className="control-group-title">Preview</h3>
-            <div className="choice-list choice-list--compact">
-              <label className="choice-label">
-                <input
-                  className="form-radio"
-                  type="radio"
-                  name={`gg-preview-${sceneId}`}
-                  checked={previewMode === "raw"}
-                  onChange={() => setPreviewMode("raw")}
-                />
-                <span>Raw Ground Glass</span>
-              </label>
+      <div className="groundglass-controls">
+        <section aria-label={UI_COPY.render.groundGlassPreview} className="groundglass-preview-row">
+          <h3 className="control-group-title">Preview</h3>
+          <div className="choice-list choice-list--inline">
+            <label className="choice-label">
+              <input
+                className="form-radio"
+                type="radio"
+                name={`gg-preview-${sceneId}`}
+                checked={previewMode === "raw"}
+                onChange={() => setPreviewMode("raw")}
+              />
+              <span>Raw Ground Glass</span>
+            </label>
 
-              <label className="choice-label">
-                <input
-                  className="form-radio"
-                  type="radio"
-                  name={`gg-preview-${sceneId}`}
-                  checked={previewMode === "upright"}
-                  onChange={() => setPreviewMode("upright")}
-                />
-                <span>Upright Assist</span>
-              </label>
-            </div>
-          </section>
+            <label className="choice-label">
+              <input
+                className="form-radio"
+                type="radio"
+                name={`gg-preview-${sceneId}`}
+                checked={previewMode === "upright"}
+                onChange={() => setPreviewMode("upright")}
+              />
+              <span>Upright Assist</span>
+            </label>
+          </div>
+        </section>
 
-          <section className="ground-glass-control-group">
+        <div className="groundglass-options-row">
+          <div className="groundglass-options">
             <ViewOptions
               canToggleGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets" ? (canToggleGroundGlassAssist ?? orientationAssistEnabled) : false}
               showGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets"}
               canToggleFocusAssist={canToggleFocusAssist ?? true}
               canToggleGrid={canToggleGrid ?? true}
               lockReason={lockReason ?? ""}
+              compact
             />
-          </section>
+          </div>
 
-          <div className="ground-glass-control-actions">
+          <div className="groundglass-zoom">
             <button
               type="button"
               onClick={() => setZoomEnabled((s) => !s)}
               aria-pressed={zoomEnabled}
-              className={`btn btn--compact ${zoomEnabled ? 'btn--primary' : 'btn--secondary'}`}
+              className={`btn btn--compact btn--nowrap ${zoomEnabled ? 'btn--primary' : 'btn--secondary'}`}
             >
               <span className="material-symbols-outlined" aria-hidden="true">{zoomEnabled ? 'zoom_out' : 'zoom_in'}</span>
               <span style={{ marginLeft: 6 }}>{zoomEnabled ? UI_COPY.simulator.groundGlassZoomOut : UI_COPY.simulator.groundGlassZoomIn}</span>
@@ -109,24 +110,25 @@ export const GroundGlassViewport = ({
           </div>
         </div>
 
-        <div className="ground-glass-viewport-frame">
-          <GroundGlassRenderer
-            opticsState={opticsState}
-            assistEnabled={opticsState.groundGlassProjection.assistModeEnabled}
-            focusAssistEnabled={focusAssistEnabled}
-            gridEnabled={gridEnabled}
-            riseMm={riseMm}
-            tiltDeg={tiltDeg}
-            swingDeg={swingDeg}
-            focusDistanceMm={focusDistanceMm}
-            aperture={aperture}
-            renderQuality={renderQuality}
-            sceneId={sceneId}
-            previewMode={previewMode}
-            rawDebug={rawRttDebug}
-            zoomEnabled={zoomEnabled}
-          />
-        </div>
+      </div>
+
+      <div className="groundglass-viewport-frame" aria-label="GroundGlassViewport">
+        <GroundGlassRenderer
+          opticsState={opticsState}
+          assistEnabled={opticsState.groundGlassProjection.assistModeEnabled}
+          focusAssistEnabled={focusAssistEnabled}
+          gridEnabled={gridEnabled}
+          riseMm={riseMm}
+          tiltDeg={tiltDeg}
+          swingDeg={swingDeg}
+          focusDistanceMm={focusDistanceMm}
+          aperture={aperture}
+          renderQuality={renderQuality}
+          sceneId={sceneId}
+          previewMode={previewMode}
+          rawDebug={rawRttDebug}
+          zoomEnabled={zoomEnabled}
+        />
       </div>
     </section>
   );

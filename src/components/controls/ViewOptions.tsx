@@ -11,6 +11,7 @@ type ViewOptionsProps = {
   // show/hide the ground glass assist control if needed (optional)
   showGroundGlassAssist?: boolean;
   lockReason: string;
+  compact?: boolean;
 };
 
 export const ViewOptions = ({
@@ -19,6 +20,7 @@ export const ViewOptions = ({
   canToggleGroundGlassAssist = false,
   showGroundGlassAssist = true,
   lockReason,
+  compact = false,
 }: ViewOptionsProps) => {
   const viewOptions = useAppStore(useShallow(selectViewOptionState));
   const toggleGroundGlassAssist = useAppStore((state) => state.toggleGroundGlassAssist);
@@ -26,46 +28,50 @@ export const ViewOptions = ({
   const toggleGrid = useAppStore((state) => state.toggleGrid);
 
   return (
-    <section aria-label={UI_COPY.controls.viewOptionsTitle} className="control-stack">
-      <h3>{UI_COPY.controls.viewOptionsTitle}</h3>
-      {showGroundGlassAssist && (
+    <section aria-label={UI_COPY.controls.viewOptionsTitle} className={compact ? 'view-options view-options--compact' : 'view-options'}>
+      <h3 className="control-group-title">{UI_COPY.controls.viewOptionsTitle}</h3>
+      <div className={compact ? 'choice-list choice-list--inline' : 'choice-list'}>
+        {showGroundGlassAssist && (
+          <label className="choice-label">
+            <input
+              className="form-checkbox"
+              aria-label={UI_COPY.controls.groundGlassAssistLabel}
+              type="checkbox"
+              checked={viewOptions.groundGlassAssistEnabled}
+              disabled={!canToggleGroundGlassAssist}
+              onChange={toggleGroundGlassAssist}
+            />
+            <span>{UI_COPY.controls.groundGlassAssistLabel}</span>
+            {!canToggleGroundGlassAssist && <small className="control-help">{lockReason}</small>}
+          </label>
+        )}
+
         <label className="choice-label">
           <input
             className="form-checkbox"
-            aria-label={UI_COPY.controls.groundGlassAssistLabel}
+            aria-label={UI_COPY.controls.focusAssistLabel}
             type="checkbox"
-            checked={viewOptions.groundGlassAssistEnabled}
-            disabled={!canToggleGroundGlassAssist}
-            onChange={toggleGroundGlassAssist}
+            checked={viewOptions.focusAssistEnabled}
+            disabled={!canToggleFocusAssist}
+            onChange={toggleFocusAssist}
           />
-          <span>{UI_COPY.controls.groundGlassAssistLabel}</span>
-          {!canToggleGroundGlassAssist && <small className="control-help">{lockReason}</small>}
+          <span>{UI_COPY.controls.focusAssistLabel}</span>
+          {!canToggleFocusAssist && <small className="control-help">{lockReason}</small>}
         </label>
-      )}
-      <label className="choice-label">
-        <input
-          className="form-checkbox"
-          aria-label={UI_COPY.controls.focusAssistLabel}
-          type="checkbox"
-          checked={viewOptions.focusAssistEnabled}
-          disabled={!canToggleFocusAssist}
-          onChange={toggleFocusAssist}
-        />
-        <span>{UI_COPY.controls.focusAssistLabel}</span>
-        {!canToggleFocusAssist && <small className="control-help">{lockReason}</small>}
-      </label>
-      <label className="choice-label">
-        <input
-          className="form-checkbox"
-          aria-label={UI_COPY.controls.gridLabel}
-          type="checkbox"
-          checked={viewOptions.gridEnabled}
-          disabled={!canToggleGrid}
-          onChange={toggleGrid}
-        />
-        <span>{UI_COPY.controls.gridLabel}</span>
-        {!canToggleGrid && <small className="control-help">{lockReason}</small>}
-      </label>
+
+        <label className="choice-label">
+          <input
+            className="form-checkbox"
+            aria-label={UI_COPY.controls.gridLabel}
+            type="checkbox"
+            checked={viewOptions.gridEnabled}
+            disabled={!canToggleGrid}
+            onChange={toggleGrid}
+          />
+          <span>{UI_COPY.controls.gridLabel}</span>
+          {!canToggleGrid && <small className="control-help">{lockReason}</small>}
+        </label>
+      </div>
     </section>
   );
 };
