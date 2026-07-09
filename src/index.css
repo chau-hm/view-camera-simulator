@@ -1,7 +1,21 @@
 :root {
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  color: #111827;
-  background: #f9fafb;
+  --app-bg: #f5f7fb;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --border: #dbe3ef;
+  --border-soft: #e8eef6;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-soft: #eff6ff;
+  --success-soft: #ecfdf5;
+  --danger: #ef4444;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
+  color: var(--text);
+  background: var(--app-bg);
 }
 
 * {
@@ -13,7 +27,7 @@ body {
 }
 
 a {
-  color: #2563eb;
+  color: var(--primary);
 }
 
 button {
@@ -35,4 +49,134 @@ button {
   height: 100%;
   min-height: 0;
   overflow: hidden;
+}
+
+/* Simulator layout classes */
+.simulator-shell {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.simulator-header {
+  height: 72px;
+  background: var(--surface);
+  border-bottom: 1px solid rgba(15,23,42,0.06);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.simulator-header .title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.simulator-header .subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.simulator-body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(500px, 1.15fr) 360px;
+  gap: 16px;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.simulator-main {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.simulator-viewport-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.simulator-card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.simulator-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.simulator-card-header h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.simulator-control-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.simulator-aside {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 16px;
+  border-left: 1px solid rgba(15,23,42,0.06);
+  background: var(--surface-muted);
+}
+
+.btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(2,6,23,0.08);
+  background: #fff;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.btn-outline-primary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.footer-cards {
+  padding: 12px 16px;
+  background: var(--surface);
+  border-top: 1px solid rgba(15,23,42,0.06);
+}
+
+.footer-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.info-card {
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
 }

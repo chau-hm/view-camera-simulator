@@ -91,74 +91,48 @@ export const SimulatorWorkspace = ({
   }
 
   return (
-    <div
-      style={{
-        height: "100%",
-        minHeight: 0,
-        display: "grid",
-        gridTemplateRows: "auto minmax(0, 1fr) auto",
-        overflow: "hidden",
-      }}
-      data-reduced-motion={reducedMotion ? "true" : "false"}
-    >
+    <div className="simulator-shell" data-reduced-motion={reducedMotion ? "true" : "false"}>
       {/* Header */}
-      <header
-        style={{
-          background: "var(--panel-bg, #fff)",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
-          padding: "0.5rem 1rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "1rem",
-        }}
-      >
-        <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>Simulator workspace</h2>
+      <header className="simulator-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 8, background: 'linear-gradient(135deg, #eef2ff, #e6f0ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--primary)' }}>CV</div>
+          <div>
+            <div className="title">Simulator Workspace</div>
+            <div className="subtitle">View Camera Focus & Movements Trainer</div>
+          </div>
+        </div>
 
         {mode === "free" && (
-          <section aria-label={UI_COPY.simulator.scenePickerLabel} style={{ marginLeft: "auto" }}>
-            <label>
-              <span style={{ marginRight: "0.5rem" }}>Scene</span>
-              <select aria-label="Scene" value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
-                {allScenes.map((registeredScene) => (
-                  <option key={registeredScene.id} value={registeredScene.id}>
-                    {registeredScene.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <section aria-label={UI_COPY.simulator.scenePickerLabel} style={{ marginLeft: "auto", display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label style={{ color: 'var(--text-muted)' }}>Scene</label>
+            <select aria-label="Scene" value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
+              {allScenes.map((registeredScene) => (
+                <option key={registeredScene.id} value={registeredScene.id}>
+                  {registeredScene.name}
+                </option>
+              ))}
+            </select>
           </section>
         )}
       </header>
 
       {/* Body: main (scrollable) + aside (scrollable) */}
-      <div
-        role="region"
-        aria-label="Simulator body"
-        style={{
-          minHeight: 0,
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) 340px",
-          gap: "1rem",
-          overflow: "hidden",
-        }}
-      >
+      <div role="region" aria-label="Simulator body" className="simulator-body">
         {/* Main area: single scroll container for 3D Scene + Ground Glass */}
-        <main
-          style={{
-            minHeight: 0,
-            overflowY: "auto",
-            overflowX: "hidden",
-            overscrollBehavior: "contain",
-            padding: "1rem",
-            boxSizing: "border-box",
-          }}
-        >
+        <main className="simulator-main">
           {opticsState.diagnostics.fallbackApplied && (
             <p role="alert">{UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}</p>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "1rem", alignItems: "start" }}>
-            <div>
+          <div className="simulator-viewport-grid">
+            <div className="simulator-card">
+              <div className="simulator-card-header">
+                <h2>3D Scene</h2>
+              </div>
+              <div className="simulator-control-strip">
+                {/* SceneViewport includes its own controls; keep it as-is inside card */}
+              </div>
+
               <SceneViewport
                 scene={safeScene}
                 opticsState={opticsState}
@@ -169,7 +143,11 @@ export const SimulatorWorkspace = ({
               />
             </div>
 
-            <div aria-label="GroundGlassColumn" style={{ display: "grid", gap: "0.75rem" }}>
+            <div className="simulator-card" aria-label="GroundGlassColumn">
+              <div className="simulator-card-header">
+                <h2>Ground Glass</h2>
+              </div>
+
               <GroundGlassViewport
                 opticsState={opticsState}
                 orientationAssistEnabled={mode === "free"}
@@ -193,32 +171,14 @@ export const SimulatorWorkspace = ({
         </main>
 
         {/* Right aside: independent scroll */}
-        <aside
-          style={{
-            minHeight: 0,
-            overflowY: "auto",
-            overflowX: "hidden",
-            overscrollBehavior: "contain",
-            padding: "1rem",
-            borderLeft: "1px solid rgba(0,0,0,0.06)",
-            background: "var(--panel-bg, #fafafa)",
-            boxSizing: "border-box",
-          }}
-        >
+        <aside className="simulator-aside">
           <section aria-label="Camera Controls">
-            <h3>Camera Controls</h3>
-            <div style={{ display: "grid", gap: "0.5rem" }}>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    useAppStore.getState().setInfinityFocus();
-                  }}
-                >
-                  Infinity Reset
-                </button>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>Camera Controls</h3>
+              <button className="btn" type="button" onClick={() => useAppStore.getState().setInfinityFocus()}>Infinity Reset</button>
+            </div>
 
+            <div style={{ display: "grid", gap: "0.75rem", marginTop: 12 }}>
               <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} />
 
               <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
@@ -227,18 +187,18 @@ export const SimulatorWorkspace = ({
 
               <ResetControls />
             </div>
+
           </section>
 
-          <section aria-label="Developer Tools" style={{ marginTop: "1rem" }}>
-            <h3>Developer Tools</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <section aria-label="Developer Tools" style={{ marginTop: "1rem", padding: 8 }}>
+            <h3 style={{ margin: 0 }}>Developer Tools</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: 8 }}>
               <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <input type="checkbox" checked={rawRttDebug} onChange={(e) => setRawRttDebug(e.target.checked)} />
                 RTT Debug: Raw ON/OFF
               </label>
 
-              {/* Open 2D Geometry moved to SceneViewport controls */}
-              <div style={{ fontSize: 12, color: '#6b7280' }}>2D Geometry panel: use the Scene controls to open</div>
+              <div style={{ fontSize: 12, color: '#6b7280' }}>2D Geometry: use the Scene controls</div>
             </div>
           </section>
         </aside>

@@ -109,7 +109,7 @@ export const SceneViewport = ({
 
           {/* Geometry panel toggle moved into Scene controls */}
           {onToggleGeometryPanel && (
-            <button type="button" onClick={onToggleGeometryPanel} style={{ padding: '6px 10px', borderRadius: 6 }}>
+            <button type="button" onClick={onToggleGeometryPanel} className="btn-outline-primary">
               Open 2D Geometry
             </button>
           )}
