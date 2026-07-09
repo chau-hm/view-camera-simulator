@@ -58,8 +58,9 @@ export const GroundGlassViewport = ({
       {showHeader !== false && <h2 className="simulator-card-title">{UI_COPY.simulator.groundGlassTitle}</h2>}
 
       <div className="groundglass-controls">
-        <section aria-label={UI_COPY.render.groundGlassPreview} className="groundglass-preview-row">
-          <h3 className="control-group-title">Preview</h3>
+        {/* Row 1: Preview label + radio choices inline */}
+        <div className="groundglass-row">
+          <div className="groundglass-label"><h3 className="control-group-title">Preview</h3></div>
           <div className="choice-list choice-list--inline">
             <label className="choice-label">
               <input
@@ -83,10 +84,12 @@ export const GroundGlassViewport = ({
               <span>Upright Assist</span>
             </label>
           </div>
-        </section>
+        </div>
 
-        <div className="groundglass-options-row">
-          <div className="groundglass-options">
+        {/* Row 2: View Options label + inline checkboxes */}
+        <div className="groundglass-row">
+          <div className="groundglass-label"><h3 className="control-group-title">View Options</h3></div>
+          <div className="choice-list choice-list--inline">
             <ViewOptions
               canToggleGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets" ? (canToggleGroundGlassAssist ?? orientationAssistEnabled) : false}
               showGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets"}
@@ -96,7 +99,11 @@ export const GroundGlassViewport = ({
               compact
             />
           </div>
+        </div>
 
+        {/* Row 3: Zoom button right-aligned */}
+        <div className="groundglass-row groundglass-zoom-row">
+          <div />
           <div className="groundglass-zoom">
             <button
               type="button"

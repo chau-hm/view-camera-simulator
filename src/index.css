@@ -178,37 +178,48 @@ button {
  align-items: stretch;
 }
 
-/* Ground glass compact control bar */
-.ground-glass-panel-body {
+/* Ground glass compact control bar (updated to row-based layout) */
+.groundglass-panel {
   display: grid;
   gap: 10px;
 }
 
-.ground-glass-control-bar {
+.groundglass-controls {
   display: grid;
-  grid-template-columns: minmax(180px, 0.85fr) minmax(180px, 0.85fr) auto;
-  gap: 18px;
-  align-items: start;
-  margin-bottom: 8px;
+  gap: 8px;
 }
 
-.ground-glass-control-group {
+.groundglass-row {
   display: grid;
-  gap: 6px;
-  min-width: 0;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+  align-items: center;
 }
+
+.groundglass-zoom-row {
+  grid-template-columns: 1fr auto;
+}
+
+.groundglass-label { min-width: 0; }
+
+.groundglass-options { min-width: 0; }
+
+.groundglass-zoom { display: flex; justify-content: flex-end; align-items: center; }
+
+.groundglass-viewport-frame { min-width: 0; }
 
 .control-group-title { margin: 0; font-size: 16px; line-height: 1.2; font-weight: 700; }
 
-.choice-list--compact { gap: 4px; }
+.choice-list--inline { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
 
-.ground-glass-control-actions { display: flex; justify-content: flex-end; align-items: start; padding-top: 2px; }
+.btn--nowrap { white-space: nowrap; flex-shrink: 0; }
 
-.ground-glass-viewport-frame { min-width: 0; }
+.view-options { display: grid; gap: 6px; }
+.view-options--compact { gap: 6px; }
 
 @media (max-width: 900px) {
-  .ground-glass-control-bar { grid-template-columns: 1fr 1fr; }
-  .ground-glass-control-actions { grid-column: 1 / -1; justify-content: flex-start; }
+  .groundglass-row { grid-template-columns: 1fr; }
+  .groundglass-zoom { justify-content: flex-start; }
 }
 
 .simulator-task-feedback-grid {
