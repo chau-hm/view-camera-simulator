@@ -173,24 +173,89 @@ export const SimulatorWorkspace = ({
               />
             </div>
           </div>
+
+          {/* Info grid: current settings, focus targets, debug */}
+          <div className="simulator-info-grid">
+            <div className="simulator-info-card" aria-label="Current Settings">
+              <h4>Current Settings</h4>
+              <div style={{ display: 'grid', gap: 6 }}>
+                <div>Rise: {camera.frontRiseMm} mm</div>
+                <div>Tilt: {camera.frontTiltDeg}°</div>
+                <div>Swing: {camera.frontSwingDeg}°</div>
+                <div>Focus Distance: {camera.focusDistanceMm} mm</div>
+                <div>Aperture: {camera.aperture}</div>
+              </div>
+            </div>
+
+            <div className="simulator-info-card" aria-label="Focus Targets">
+              <h4>Focus Targets</h4>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {opticsState.focusTargets && opticsState.focusTargets.length > 0 ? (
+                  opticsState.focusTargets.map((t, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: 1 }}>{t.name}</div>
+                      <div style={{ width: 100, height: 8, background: '#eef2ff', borderRadius: 4, overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.min(100, Math.round(t.weight * 100))}%`, height: '100%', background: 'var(--primary)' }} />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ color: 'var(--text-muted)' }}>No focus targets</div>
+                )}
+              </div>
+            </div>
+
+            <div className="simulator-info-card" aria-label="Focus Fundamentals">
+              <h4>Focus Fundamentals Debug</h4>
+              {camera.activeSceneId === 'focus-fundamentals-two-targets' ? (
+                <FocusFundamentalsDebugPanel sceneId={camera.activeSceneId} opticsState={opticsState} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
+              ) : (
+                <div style={{ color: 'var(--text-muted)' }}>Debug info not available for this scene.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="simulator-task-feedback-grid">
+            <div className="simulator-info-card simulator-info-card--task">
+              <h4>Task</h4>
+              <TaskPanel task={task} />
+            </div>
+            <div className="simulator-info-card simulator-info-card--feedback">
+              <h4>Feedback</h4>
+              <FeedbackPanel evaluation={evaluation} />
+            </div>
+          </div>
+
         </main>
 
         {/* Right aside: independent scroll */}
         <aside className="simulator-aside">
           <section aria-label="Camera Controls">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="aside-header">
               <h3 style={{ margin: 0 }}>Camera Controls</h3>
               <button className="btn" type="button" onClick={() => useAppStore.getState().setInfinityFocus()}>Infinity Reset</button>
             </div>
 
-            <div style={{ display: "grid", gap: "0.75rem", marginTop: 12 }}>
-              <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} />
+            <div style={{ marginTop: 8 }}>
+              <div className="sim-section">
+                <div className="sim-section-label">Movement</div>
+                <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} />
+              </div>
 
-              <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
+              <div className="sim-section">
+                <div className="sim-section-label">Focus</div>
+                <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
+              </div>
 
-              <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
+              <div className="sim-section">
+                <div className="sim-section-label">Aperture</div>
+                <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
+              </div>
 
-              <ResetControls />
+              <div className="sim-section reset" style={{ paddingBottom: 0 }}>
+                <div className="sim-section-label">Reset</div>
+                <ResetControls />
+              </div>
             </div>
 
           </section>
@@ -245,43 +310,6 @@ export const SimulatorWorkspace = ({
         </div>
       )}
 
-      {/* Footer as normal grid row */}
-      <footer
-        style={{
-          minHeight: 0,
-          maxHeight: "32dvh",
-          overflowY: "auto",
-          overflowX: "hidden",
-          borderTop: "1px solid rgba(0,0,0,0.06)",
-          padding: "0.75rem 1rem",
-          boxSizing: "border-box",
-          background: "var(--panel-bg, #fff)",
-        }}
-      >
-        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-          <GroundGlassReadouts
-            riseMm={camera.frontRiseMm}
-            tiltDeg={camera.frontTiltDeg}
-            swingDeg={camera.frontSwingDeg}
-            focusDistanceMm={camera.focusDistanceMm}
-            aperture={camera.aperture}
-            renderQuality={renderQuality}
-            pipeline={createGroundGlassDofPipeline(opticsState, 500, 400, renderQuality)}
-            qualitySettings={getRenderQualitySettings(renderQuality)}
-            lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
-            focusTargets={createFocusAssistPass({ enabled: camera.focusAssistEnabled, targets: opticsState.focusTargets }).targets}
-          />
-
-          {camera.activeSceneId === "focus-fundamentals-two-targets" && (
-            <FocusFundamentalsDebugPanel sceneId={camera.activeSceneId} opticsState={opticsState} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
-          )}
-        </div>
-
-        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1fr", marginTop: "0.75rem" }}>
-          <TaskPanel task={task} />
-          <FeedbackPanel evaluation={evaluation} />
-        </div>
-      </footer>
     </div>
   );
 };
