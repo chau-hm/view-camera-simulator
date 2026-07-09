@@ -132,7 +132,7 @@ export const SimulatorWorkspace = ({
                 <div className="panel-icon" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
                 </div>
-                <h2 style={{ margin: 0 }}>3D Scene</h2>
+                <h2 className="simulator-card-title">3D Scene</h2>
               </div>
 
               <SceneViewport
@@ -151,7 +151,7 @@ export const SimulatorWorkspace = ({
                 <div className="panel-icon panel-icon--muted" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
                 </div>
-                <h2 style={{ margin: 0 }}>Ground Glass</h2>
+                <h2 className="simulator-card-title">Ground Glass</h2>
               </div>
 
               <GroundGlassViewport
@@ -255,11 +255,9 @@ export const SimulatorWorkspace = ({
             <h3 style={{ margin: 0 }}>Developer Tools</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: 8 }}>
               <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <input type="checkbox" checked={rawRttDebug} onChange={(e) => setRawRttDebug(e.target.checked)} />
+                <input className="form-checkbox" type="checkbox" checked={rawRttDebug} onChange={(e) => setRawRttDebug(e.target.checked)} />
                 RTT Debug: Raw ON/OFF
               </label>
-
-              <div style={{ fontSize: 12, color: '#6b7280' }}>2D Geometry: use the Scene controls</div>
             </div>
           </section>
         </aside>

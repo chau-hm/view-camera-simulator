@@ -134,18 +134,35 @@ button {
 
 /* panel icon used in card headers */
 .panel-icon {
- width: 28px;
- height: 28px;
+ width: 30px;
+ height: 30px;
  border-radius: 6px;
  background: #eef2ff;
  display: inline-flex;
  align-items: center;
  justify-content: center;
  color: var(--primary);
- flex: 0 0 auto;
+ flex: 0 0 30px;
 }
 
 .panel-icon--muted { background: #f1f5f9; color: #0f172a; }
+
+/* Card header: icon and title horizontally aligned */
+.simulator-card-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.simulator-card-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.15;
+  font-weight: 700;
+}
 
 /* info grid below the viewports */
 .simulator-info-grid {
@@ -153,6 +170,39 @@ button {
  grid-template-columns: minmax(260px, 0.8fr) minmax(260px, 0.8fr) minmax(420px, 1.4fr);
  gap: 16px;
  align-items: stretch;
+}
+
+/* Ground glass compact control bar */
+.ground-glass-panel-body {
+  display: grid;
+  gap: 10px;
+}
+
+.ground-glass-control-bar {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.85fr) minmax(180px, 0.85fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 8px;
+}
+
+.ground-glass-control-group {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.control-group-title { margin: 0; font-size: 16px; line-height: 1.2; font-weight: 700; }
+
+.choice-list--compact { gap: 4px; }
+
+.ground-glass-control-actions { display: flex; justify-content: flex-end; align-items: start; padding-top: 2px; }
+
+.ground-glass-viewport-frame { min-width: 0; }
+
+@media (max-width: 900px) {
+  .ground-glass-control-bar { grid-template-columns: 1fr 1fr; }
+  .ground-glass-control-actions { grid-column: 1 / -1; justify-content: flex-start; }
 }
 
 .simulator-task-feedback-grid {
