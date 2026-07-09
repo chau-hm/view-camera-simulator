@@ -1,5 +1,3 @@
-import React from 'react';
-
 type MaterialIconProps = {
   name: string;
   size?: number;
