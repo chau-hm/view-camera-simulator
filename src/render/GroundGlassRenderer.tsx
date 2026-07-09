@@ -1,18 +1,16 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useMemo } from "react";
 import { GroundGlassStage } from "./GroundGlassStage";
 import { GroundGlassRenderSurface } from "./GroundGlassRenderSurface";
 import { LegacyGroundGlassScene } from "./LegacyGroundGlassScene";
 import { GroundGlassTransformedOverlays, GroundGlassFixedOverlays } from "./GroundGlassOverlays";
 import { GroundGlassFocusRing } from "./GroundGlassFocusRing";
 import { useAppStore } from "../state/appStore";
-import { GroundGlassRTT } from "./GroundGlassRTT";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import type { ApertureValue } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
-import { UI_COPY } from "../ui/copy";
 import { formatMillimeter } from "../utils/formatters";
 import { createFocusAssistPass } from "./postprocessing/FocusAssistPass";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
@@ -61,7 +59,6 @@ export const GroundGlassRenderer = ({
   zoomEnabled,
 }: GroundGlassRendererProps & { zoomEnabled?: boolean }) => {
   // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
-  const _zoomEnabled = !!zoomEnabled;
   const pipeline = useMemo(() => {
     const useThinLens = sceneId === "focus-fundamentals-two-targets";
     if (useThinLens) {
@@ -79,7 +76,6 @@ export const GroundGlassRenderer = ({
   }, [opticsState, renderQuality, sceneId]);
 
   const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const focusAssist = useMemo(
     () => createFocusAssistPass({ enabled: focusAssistEnabled, targets: opticsState.focusTargets }),
     [focusAssistEnabled, opticsState.focusTargets],
@@ -161,6 +157,8 @@ export const GroundGlassRenderer = ({
           sceneShiftY={sceneShiftY}
           sceneRotationDeg={sceneRotationDeg}
           focusScale={focusScale}
+          widthPx={PANEL_WIDTH_PX}
+          heightPx={PANEL_HEIGHT_PX}
         />
 
         {!isFocusFundamentals && (
@@ -179,95 +177,19 @@ export const GroundGlassRenderer = ({
           />
         )}
 
-        {!rawDebug && (
-          <>
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                borderLeft: "1px solid rgba(255,255,255,0.35)",
-                left: "50%",
-                transform: "translateX(-0.5px)",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                borderTop: "1px solid rgba(255,255,255,0.35)",
-                top: "50%",
-                transform: "translateY(-0.5px)",
-              }}
-            />
-          </>
-        )}
-
-        {gridEnabled && !rawDebug && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage:
-                "linear-gradient(to right, rgba(59,130,246,0.2) 1px, transparent 1px), linear-gradient(to bottom, rgba(59,130,246,0.2) 1px, transparent 1px)",
-              backgroundSize: "20px 20px",
-            }}
-          />
-        )}
-
-        {/* radial vignette / blur overlay; hide for RTT focus fundamentals or raw RTT debug */}
-        {!(isFocusFundamentals || rawDebug) && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(0,0,0,${blurOpacity}) 100%)`,
-            }}
-          />
-        )}
+        <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} isFocusFundamentals={isFocusFundamentals} blurOpacity={blurOpacity} />
       </div>
     </>
   );
 
   const fixedOverlayLayer = (
     <>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 8,
-          left: 8,
-          padding: "2px 6px",
-          borderRadius: 4,
-          fontSize: 11,
-          background: "rgba(15,23,42,0.72)",
-          color: "#e2e8f0",
-        }}
-      >
-        {UI_COPY.render.groundGlassPreview}
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          top: 8,
-          right: 8,
-          padding: "2px 6px",
-          borderRadius: 4,
-          fontSize: 11,
-          background: "rgba(15,23,42,0.72)",
-          color: "#e2e8f0",
-        }}
-      >
-        {isInfinityFocus ? (
-          <div>
-            <div>∞ focus</div>
-            {lastFiniteFocusDepthMm && (
-              <div style={{ fontSize: 10, color: "#94a3b8" }}>Last finite focus: {formatMillimeter(lastFiniteFocusDepthMm)}</div>
-            )}
-          </div>
-        ) : (
-          <div>{focusDistanceLabel}</div>
-        )}
-      </div>
+      <GroundGlassFixedOverlays
+        isInfinityFocus={isInfinityFocus}
+        lastFiniteFocusDepthMm={lastFiniteFocusDepthMm}
+        focusDistanceLabel={focusDistanceLabel}
+        focusAssistVisible={focusAssist.enabled && !rawDebug}
+      />
 
       {sceneId !== "focus-fundamentals-two-targets" && (
         <GroundGlassFocusRing
@@ -278,23 +200,6 @@ export const GroundGlassRenderer = ({
           swingDeg={swingDeg}
           tiltDeg={tiltDeg}
         />
-      )}
-
-      {focusAssist.enabled && !rawDebug && (
-        <span
-          style={{
-            position: "absolute",
-            bottom: 8,
-            right: 8,
-            fontSize: 12,
-            color: "#1d4ed8",
-            background: "rgba(255,255,255,0.85)",
-            borderRadius: 4,
-            padding: "2px 6px",
-          }}
-        >
-          {UI_COPY.render.focusAssistBadge}
-        </span>
       )}
     </>
   );

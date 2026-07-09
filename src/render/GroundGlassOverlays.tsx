@@ -1,5 +1,6 @@
-import React from "react";
+import type { ReactNode } from "react";
 import { UI_COPY } from "../ui/copy";
+import { formatMillimeter } from "../utils/formatters";
 
 export type GroundGlassOverlaysProps = {
   gridEnabled: boolean;
@@ -12,7 +13,7 @@ export type GroundGlassOverlaysProps = {
   focusAssistVisible: boolean;
 };
 
-export const GroundGlassTransformedOverlays = ({ gridEnabled, rawDebug, isFocusFundamentals, blurOpacity }: { gridEnabled: boolean; rawDebug?: boolean; isFocusFundamentals: boolean; blurOpacity: number }) => {
+export const GroundGlassTransformedOverlays = ({ gridEnabled, rawDebug, isFocusFundamentals, blurOpacity }: { gridEnabled: boolean; rawDebug?: boolean; isFocusFundamentals: boolean; blurOpacity: number }): ReactNode | null => {
   return (
     <>
       {!rawDebug && (
@@ -73,7 +74,7 @@ export const GroundGlassFixedOverlays = ({
   lastFiniteFocusDepthMm?: number;
   focusDistanceLabel: string;
   focusAssistVisible: boolean;
-}) => {
+}): ReactNode | null => {
   return (
     <>
       <div
@@ -106,7 +107,9 @@ export const GroundGlassFixedOverlays = ({
         {isInfinityFocus ? (
           <div>
             <div>∞ focus</div>
-            {lastFiniteFocusDepthMm && <div style={{ fontSize: 10, color: "#94a3b8" }}>Last finite focus: {lastFiniteFocusDepthMm}</div>}
+            {lastFiniteFocusDepthMm && (
+              <div style={{ fontSize: 10, color: "#94a3b8" }}>Last finite focus: {formatMillimeter(lastFiniteFocusDepthMm)}</div>
+            )}
           </div>
         ) : (
           <div>{focusDistanceLabel}</div>

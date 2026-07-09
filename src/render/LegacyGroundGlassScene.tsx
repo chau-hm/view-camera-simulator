@@ -1,4 +1,3 @@
-import React from "react";
 import type { ProjectedGroundGlassTarget } from "./groundGlassTargetProjection";
 
 export type LegacyGroundGlassSceneProps = {

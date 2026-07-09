@@ -1,4 +1,3 @@
-import React from "react";
 import type { DerivedOpticsState } from "../types/optics";
 import { GroundGlassRTT } from "./GroundGlassRTT";
 
@@ -15,6 +14,8 @@ export type GroundGlassRenderSurfaceProps = {
   sceneShiftY: number;
   sceneRotationDeg: number;
   focusScale: number;
+  widthPx: number;
+  heightPx: number;
 };
 
 export const GroundGlassRenderSurface = ({
@@ -30,6 +31,8 @@ export const GroundGlassRenderSurface = ({
   sceneShiftY,
   sceneRotationDeg,
   focusScale,
+  widthPx,
+  heightPx,
 }: GroundGlassRenderSurfaceProps) => {
   if (sceneId === "focus-fundamentals-two-targets") {
     return (
@@ -37,8 +40,8 @@ export const GroundGlassRenderSurface = ({
         <GroundGlassRTT
           opticsState={opticsState}
           sceneId={sceneId}
-          widthPx={500}
-          heightPx={400}
+          widthPx={widthPx}
+          heightPx={heightPx}
           aperture={apertureNumber}
           previewMode={previewMode}
           focusRingRadiusPx={focusRingSize}
