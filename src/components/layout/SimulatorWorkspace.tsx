@@ -127,10 +127,10 @@ export const SimulatorWorkspace = ({
           <div className="simulator-viewport-grid">
             <div className="simulator-card">
               <div className="simulator-card-header">
-                <h2>3D Scene</h2>
-              </div>
-              <div className="simulator-control-strip">
-                {/* SceneViewport includes its own controls; keep it as-is inside card */}
+                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  📦
+                </div>
+                <h2 style={{ margin: 0 }}>3D Scene</h2>
               </div>
 
               <SceneViewport
@@ -140,12 +140,16 @@ export const SimulatorWorkspace = ({
                 setRenderQuality={setRenderQuality}
                 simulateAssetFailure={simulateAssetFailure}
                 onToggleGeometryPanel={() => setShowGeometryPanel((s) => !s)}
+                showHeader={false}
               />
             </div>
 
             <div className="simulator-card" aria-label="GroundGlassColumn">
               <div className="simulator-card-header">
-                <h2>Ground Glass</h2>
+                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  🔍
+                </div>
+                <h2 style={{ margin: 0 }}>Ground Glass</h2>
               </div>
 
               <GroundGlassViewport
@@ -165,6 +169,7 @@ export const SimulatorWorkspace = ({
                 sceneId={camera.activeSceneId}
                 lockReason={lockReason}
                 rawRttDebug={rawRttDebug}
+                showHeader={false}
               />
             </div>
           </div>

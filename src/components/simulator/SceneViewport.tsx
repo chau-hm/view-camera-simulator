@@ -15,6 +15,7 @@ type SceneViewportProps = {
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
   simulateAssetFailure: boolean;
   onToggleGeometryPanel?: () => void;
+  showHeader?: boolean;
 };
 
 const parseRenderQuality = (value: string): RenderQualityProfile => {
@@ -31,6 +32,7 @@ export const SceneViewport = ({
   setRenderQuality,
   simulateAssetFailure,
   onToggleGeometryPanel,
+  showHeader,
 }: SceneViewportProps) => {
   const [attempt, setAttempt] = useState(0);
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
@@ -73,7 +75,7 @@ export const SceneViewport = ({
 
   return (
     <section>
-      <h2>{UI_COPY.simulator.sceneTitle}</h2>
+      {showHeader !== false && <h2>{UI_COPY.simulator.sceneTitle}</h2>}
       <p data-testid="scene-front-y-mm">Front standard Y: {opticsState.lensCenterWorld.y.toFixed(1)} mm</p>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.5rem" }}>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>

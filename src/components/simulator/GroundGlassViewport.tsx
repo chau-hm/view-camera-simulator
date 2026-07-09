@@ -26,6 +26,7 @@ type GroundGlassViewportProps = {
   sceneId: string;
   lockReason?: string;
   rawRttDebug?: boolean;
+  showHeader?: boolean;
 };
 
 export const GroundGlassViewport = ({
@@ -45,6 +46,7 @@ export const GroundGlassViewport = ({
   sceneId,
   lockReason,
   rawRttDebug,
+  showHeader,
 }: GroundGlassViewportProps) => {
   // Preview mode control local to the Ground Glass panel. Default to 'raw'.
   const [previewMode, setPreviewMode] = useState<"raw" | "upright">("raw");
@@ -53,7 +55,7 @@ export const GroundGlassViewport = ({
 
   return (
     <section>
-      <h2>{UI_COPY.simulator.groundGlassTitle}</h2>
+      {showHeader !== false && <h2>{UI_COPY.simulator.groundGlassTitle}</h2>}
 
       {/* GroundGlassColumn */}
       <div style={{ display: "grid", gap: "0.75rem" }}>
