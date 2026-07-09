@@ -134,8 +134,12 @@ export const SimulatorWorkspace = ({
           <div className="simulator-viewport-grid">
             <div className="simulator-card">
               <div className="simulator-card-header">
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  📦
+                <div className="panel-icon" aria-hidden="true">
+                  {/* cube icon */}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2l7 4v8l-7 4-7-4V6l7-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" fill="none" />
+                    <path d="M12 22v-10" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+                  </svg>
                 </div>
                 <h2 style={{ margin: 0 }}>3D Scene</h2>
               </div>
@@ -153,8 +157,12 @@ export const SimulatorWorkspace = ({
 
             <div className="simulator-card" aria-label="GroundGlassColumn">
               <div className="simulator-card-header">
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  🔍
+                <div className="panel-icon panel-icon--muted" aria-hidden="true">
+                  {/* magnifier / groundglass icon */}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </div>
                 <h2 style={{ margin: 0 }}>Ground Glass</h2>
               </div>

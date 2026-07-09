@@ -80,49 +80,38 @@ export const SceneViewport = ({
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.5rem" }}>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
           <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-            <input
-              type="checkbox"
-              checked={showFocusPlaneOverlay}
-              onChange={(event) => setShowFocusPlaneOverlay(event.target.checked)}
-            />
+            <input className="form-checkbox" type="checkbox" checked={showFocusPlaneOverlay} onChange={(event) => setShowFocusPlaneOverlay(event.target.checked)} />
             {UI_COPY.simulator.focusPlaneOverlayLabel}
           </label>
           <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-            <input type="checkbox" checked={showDofOverlay} onChange={(event) => setShowDofOverlay(event.target.checked)} />
+            <input className="form-checkbox" type="checkbox" checked={showDofOverlay} onChange={(event) => setShowDofOverlay(event.target.checked)} />
             {UI_COPY.simulator.dofOverlayLabel}
           </label>
-        </div>
 
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+          {/* move render quality up into this row */}
           <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
             <span>{UI_COPY.simulator.renderQualityLabel}</span>
-            <select
-              value={renderQuality}
-              onChange={(event) => setRenderQuality(parseRenderQuality(event.target.value))}
-            >
+            <select className="form-select" value={renderQuality} onChange={(event) => setRenderQuality(parseRenderQuality(event.target.value))}>
               <option value="high">{UI_COPY.simulator.renderQualityHigh}</option>
               <option value="standard">{UI_COPY.simulator.renderQualityStandard}</option>
               <option value="low">{UI_COPY.simulator.renderQualityLow}</option>
             </select>
           </label>
-          <button type="button" onClick={() => setViewResetNonce((value) => value + 1)}>
+        </div>
+
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+          <button type="button" className="btn" onClick={() => setViewResetNonce((value) => value + 1)}>
             {UI_COPY.simulator.sceneViewReset}
           </button>
 
           {/* Geometry panel toggle moved into Scene controls */}
           {onToggleGeometryPanel && (
-            <button type="button" onClick={onToggleGeometryPanel} className="btn-outline-primary">
+            <button type="button" onClick={onToggleGeometryPanel} className="btn btn--secondary">
               Open 2D Geometry
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => setBigView((v) => !v)}
-            style={{ marginLeft: "auto", background: bigView ? "#ef4444" : undefined, color: bigView ? "#fff" : undefined }}
-          >
-            {bigView ? "Exit Big View" : "Big View"}
-          </button>
+          {/* Big view toggle removed from this row; replaced by overlay icon in the renderer container */}
         </div>
       </div>
       <p style={{ fontSize: 12, color: "#4b5563", marginTop: 0 }}>
@@ -151,9 +140,9 @@ export const SceneViewport = ({
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-            <strong>{UI_COPY.simulator.sceneTitle} — Big View</strong>
+            <strong>{UI_COPY.simulator.sceneTitle}</strong>
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button type="button" onClick={() => setBigView(false)}>
+              <button className="btn btn--compact" type="button" onClick={() => setBigView(false)}>
                 Close
               </button>
             </div>
@@ -175,7 +164,7 @@ export const SceneViewport = ({
           </div>
         </div>
       ) : (
-        <div>
+        <div style={{ position: 'relative' }}>
           <div>
             <SceneRenderer
               scene={scene}
@@ -191,6 +180,23 @@ export const SceneViewport = ({
               containerStyle={{ width: '100%', aspectRatio: '5 / 4', border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
             />
           </div>
+
+          {/* fullscreen icon button at top-right of the scene renderer */}
+          <button
+            aria-label={bigView ? 'Exit full screen' : 'Open full screen'}
+            title={bigView ? 'Exit full screen' : 'Open full screen'}
+            className="btn btn--ghost"
+            style={{ position: 'absolute', top: 8, right: 8, padding: 8, borderRadius: 6 }}
+            onClick={() => setBigView(true)}
+          >
+            {/* bolder maximize icon */}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 9V3h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M21 15v6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M21 3h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3 21h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
       )}
     </section>

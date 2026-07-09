@@ -125,6 +125,28 @@ button {
   align-items: start;
 }
 
+/* Make the two viewport cards match height and layout */
+.simulator-viewport-grid > .simulator-card {
+ min-height: 480px; /* both cards match height */
+ display: flex;
+ flex-direction: column;
+}
+
+/* panel icon used in card headers */
+.panel-icon {
+ width: 28px;
+ height: 28px;
+ border-radius: 6px;
+ background: #eef2ff;
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ color: var(--primary);
+ flex: 0 0 auto;
+}
+
+.panel-icon--muted { background: #f1f5f9; color: #0f172a; }
+
 /* info grid below the viewports */
 .simulator-info-grid {
  display: grid;
