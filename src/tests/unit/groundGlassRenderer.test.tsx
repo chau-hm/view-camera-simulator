@@ -221,7 +221,6 @@ describe("GroundGlassRenderer", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     const projected = projectSceneFocusTargetsToGroundGlass({ sceneDef: architectureRiseScene, opticsState, aperture: DEFAULT_CAMERA_STATE.aperture, previewMode: "raw" });
     expect(projected.length).toBeGreaterThan(0);
-    const first = projected[0];
 
     render(
       <GroundGlassRenderer
@@ -247,10 +246,8 @@ describe("GroundGlassRenderer", () => {
     // If the projected target is visible, the focus ring should match its position; otherwise focus ring should be hidden and placeholder off-screen
     if (firstPlaceholder) {
       if (firstPlaceholder.style.left === "-999%" && firstPlaceholder.style.top === "-999%") {
-        const focusRing = screen.getByTestId("ground-glass-focus-ring");
         expect(focusRing.style.display).toBe("none");
       } else {
-        const focusRing = screen.getByTestId("ground-glass-focus-ring");
         expect(focusRing.style.left).toBe(firstPlaceholder.style.left);
         expect(focusRing.style.top).toBe(firstPlaceholder.style.top);
       }
