@@ -1,7 +1,7 @@
 import { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import type { ApertureValue } from "../types/camera";
-import type { DerivedOpticsState, Vec3 } from "../types/optics";
+import type { DerivedOpticsState } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
 import { calculateFocusPlaneDistanceMm, calculateApertureBlurStrength } from "./groundGlassPipeline";
 import { pointToPlaneDistance } from "../core/math/plane";
@@ -47,7 +47,7 @@ export function projectSceneFocusTargetsToGroundGlass(params: {
 
   return sceneDef.focusTargets.map((t) => {
     const p = projectWorldPointToGroundGlass(
-      t.worldPosition as Vec3,
+      t.worldPosition,
       opticsState.lensCenterWorld,
       imageDistanceMm,
       CAMERA_CONSTANTS.filmWidthMm,

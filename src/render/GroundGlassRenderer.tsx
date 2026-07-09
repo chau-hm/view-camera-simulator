@@ -165,8 +165,7 @@ export const GroundGlassRenderer = ({
   // Primary projected target (first entry) — kept explicit so focus-ring logic is clear.
   const primaryProjectedTarget = projectedTargets.length > 0 ? projectedTargets[0] : null;
 
-  // GroundGlassRTT prototype (offscreen three.js render) removed from this file for now.
-  // Phase 1 RTT implementation will be moved to src/render/GroundGlassRTT.tsx in a follow-up commit.
+  // GroundGlassRTT is used for RTT rendering in the Focus Fundamentals scene.
   const apertureNumber = typeof aperture === 'number' ? aperture : Number(aperture as unknown as number);
 
   return (
@@ -312,9 +311,7 @@ export const GroundGlassRenderer = ({
           >
           {(() => {
               // If we have a scene definition with focus targets, project those into film UV and render placeholders anchored to them.
-              // NOTE: RTT-based projection and this legacy DOM projection are currently implemented separately which may cause drift.
-              // TODO: Consolidate projection logic into a single helper (e.g. projectWorldPointToGroundGlass) to ensure overlays remain consistent.
-              // IMPORTANT: Do not render DOM placeholder target elements for the Focus Fundamentals scene — the RTT pipeline provides the ground-glass imagery.
+              // Do not render DOM placeholder target elements for the Focus Fundamentals scene — the RTT pipeline provides the ground-glass imagery.
               if (sceneDef && sceneDef.focusTargets && sceneDef.focusTargets.length > 0) {
                 if (sceneId === "focus-fundamentals-two-targets") {
                   return null;
