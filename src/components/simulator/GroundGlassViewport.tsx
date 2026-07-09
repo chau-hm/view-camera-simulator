@@ -58,12 +58,12 @@ export const GroundGlassViewport = ({
       {showHeader !== false && <h2>{UI_COPY.simulator.groundGlassTitle}</h2>}
 
       {/* GroundGlassColumn */}
-      <div style={{ display: "flex", gap: "0.75rem", flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      <div className="groundglass-control-row">
         {/* Preview block */}
-        <section aria-label={UI_COPY.render.groundGlassPreview} style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 200 }}>
+        <section aria-label={UI_COPY.render.groundGlassPreview} className="control-stack" style={{ minWidth: 200 }}>
           <h3>Preview</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label>
+          <div className="choice-list">
+            <label className="choice-label">
               <input
                 className="form-radio"
                 type="radio"
@@ -71,9 +71,9 @@ export const GroundGlassViewport = ({
                 checked={previewMode === "raw"}
                 onChange={() => setPreviewMode("raw")}
               />
-              Raw Ground Glass
+              <span>Raw Ground Glass</span>
             </label>
-            <label>
+            <label className="choice-label">
               <input
                 className="form-radio"
                 type="radio"
@@ -81,7 +81,7 @@ export const GroundGlassViewport = ({
                 checked={previewMode === "upright"}
                 onChange={() => setPreviewMode("upright")}
               />
-              Upright Assist
+              <span>Upright Assist</span>
             </label>
           </div>
         </section>
@@ -105,7 +105,8 @@ export const GroundGlassViewport = ({
             aria-pressed={zoomEnabled}
             className={`btn btn--compact ${zoomEnabled ? 'btn--primary' : 'btn--secondary'}`}
           >
-            {zoomEnabled ? UI_COPY.simulator.groundGlassZoomOut : UI_COPY.simulator.groundGlassZoomIn}
+            <span className="material-symbols-outlined" aria-hidden="true">{zoomEnabled ? 'zoom_out' : 'zoom_in'}</span>
+            <span style={{ marginLeft: 6 }}>{zoomEnabled ? UI_COPY.simulator.groundGlassZoomOut : UI_COPY.simulator.groundGlassZoomIn}</span>
           </button>
         </div>
 

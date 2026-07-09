@@ -183,19 +183,12 @@ export const SceneViewport = ({
 
           {/* fullscreen icon button at top-right of the scene renderer */}
           <button
-            aria-label={bigView ? 'Exit full screen' : 'Open full screen'}
-            title={bigView ? 'Exit full screen' : 'Open full screen'}
-            className="btn btn--ghost"
-            style={{ position: 'absolute', top: 8, right: 8, padding: 8, borderRadius: 6 }}
+            aria-label={bigView ? 'Exit full screen' : 'Open big view'}
+            title={bigView ? 'Exit full screen' : 'Open big view'}
+            className="btn btn--icon btn--viewport-action"
             onClick={() => setBigView(true)}
           >
-            {/* bolder maximize icon */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 9V3h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M21 15v6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M21 3h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M3 21h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
           </button>
         </div>
       )}

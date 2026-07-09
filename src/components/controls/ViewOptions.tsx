@@ -26,11 +26,12 @@ export const ViewOptions = ({
   const toggleGrid = useAppStore((state) => state.toggleGrid);
 
   return (
-    <section aria-label={UI_COPY.controls.viewOptionsTitle} style={{ display: 'grid', gap: '0.5rem' }}>
+    <section aria-label={UI_COPY.controls.viewOptionsTitle} className="control-stack">
       <h3>{UI_COPY.controls.viewOptionsTitle}</h3>
       {showGroundGlassAssist && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <label className="choice-label">
           <input
+            className="form-checkbox"
             aria-label={UI_COPY.controls.groundGlassAssistLabel}
             type="checkbox"
             checked={viewOptions.groundGlassAssistEnabled}
@@ -38,11 +39,12 @@ export const ViewOptions = ({
             onChange={toggleGroundGlassAssist}
           />
           <span>{UI_COPY.controls.groundGlassAssistLabel}</span>
-          {!canToggleGroundGlassAssist && <small style={{ color: '#94a3b8' }}>{lockReason}</small>}
+          {!canToggleGroundGlassAssist && <small className="control-help">{lockReason}</small>}
         </label>
       )}
-      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <label className="choice-label">
         <input
+          className="form-checkbox"
           aria-label={UI_COPY.controls.focusAssistLabel}
           type="checkbox"
           checked={viewOptions.focusAssistEnabled}
@@ -50,10 +52,11 @@ export const ViewOptions = ({
           onChange={toggleFocusAssist}
         />
         <span>{UI_COPY.controls.focusAssistLabel}</span>
-        {!canToggleFocusAssist && <small style={{ color: '#94a3b8' }}>{lockReason}</small>}
+        {!canToggleFocusAssist && <small className="control-help">{lockReason}</small>}
       </label>
-      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <label className="choice-label">
         <input
+          className="form-checkbox"
           aria-label={UI_COPY.controls.gridLabel}
           type="checkbox"
           checked={viewOptions.gridEnabled}
@@ -61,7 +64,7 @@ export const ViewOptions = ({
           onChange={toggleGrid}
         />
         <span>{UI_COPY.controls.gridLabel}</span>
-        {!canToggleGrid && <small style={{ color: '#94a3b8' }}>{lockReason}</small>}
+        {!canToggleGrid && <small className="control-help">{lockReason}</small>}
       </label>
     </section>
   );

@@ -96,12 +96,7 @@ export const SimulatorWorkspace = ({
       <header className="simulator-header">
         <div className="app-brand">
           <div className="app-icon" aria-hidden="true">
-            {/* simple SVG camera icon */}
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" fill="none" />
-              <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.2" fill="none" />
-              <rect x="7" y="4" width="3" height="2" rx="0.5" fill="currentColor" />
-            </svg>
+            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 22 }}>photo_camera</span>
           </div>
           <div className="app-title-block">
             <div className="app-title">Simulator Workspace</div>
@@ -135,11 +130,7 @@ export const SimulatorWorkspace = ({
             <div className="simulator-card">
               <div className="simulator-card-header">
                 <div className="panel-icon" aria-hidden="true">
-                  {/* cube icon */}
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2l7 4v8l-7 4-7-4V6l7-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" fill="none" />
-                    <path d="M12 22v-10" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
-                  </svg>
+                  <span className="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
                 </div>
                 <h2 style={{ margin: 0 }}>3D Scene</h2>
               </div>
@@ -158,11 +149,7 @@ export const SimulatorWorkspace = ({
             <div className="simulator-card" aria-label="GroundGlassColumn">
               <div className="simulator-card-header">
                 <div className="panel-icon panel-icon--muted" aria-hidden="true">
-                  {/* magnifier / groundglass icon */}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                    <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <span className="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
                 </div>
                 <h2 style={{ margin: 0 }}>Ground Glass</h2>
               </div>
@@ -243,22 +230,22 @@ export const SimulatorWorkspace = ({
             <div style={{ marginTop: 8 }}>
               <div className="sim-section">
                 <div className="sim-section-label">Movement</div>
-                <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} />
+                <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
               </div>
 
               <div className="sim-section">
                 <div className="sim-section-label">Focus</div>
-                <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
+                <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} showTitle={false} />
               </div>
 
               <div className="sim-section">
                 <div className="sim-section-label">Aperture</div>
-                <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
+                <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} showTitle={false} />
               </div>
 
               <div className="sim-section reset" style={{ paddingBottom: 0 }}>
                 <div className="sim-section-label">Reset</div>
-                <ResetControls />
+                <ResetControls showTitle={false} />
               </div>
             </div>
 

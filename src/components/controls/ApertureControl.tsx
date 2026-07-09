@@ -7,9 +7,10 @@ import { CAMERA_CONSTANTS, isApertureValue } from "../../utils/constants";
 type ApertureControlProps = {
   apertureEnabled: boolean;
   lockReason: string;
+  showTitle?: boolean;
 };
 
-export const ApertureControl = ({ apertureEnabled, lockReason }: ApertureControlProps) => {
+export const ApertureControl = ({ apertureEnabled, lockReason, showTitle = true }: ApertureControlProps) => {
   const { aperture } = useAppStore(useShallow(selectApertureControlState));
   const setAperture = useAppStore((state) => state.setAperture);
 

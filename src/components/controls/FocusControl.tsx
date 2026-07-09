@@ -9,9 +9,10 @@ import { handleRangeInputKeyboard } from "../../utils/rangeInputKeyboard";
 type FocusControlProps = {
   focusEnabled: boolean;
   lockReason: string;
+  showTitle?: boolean;
 };
 
-export const FocusControl = ({ focusEnabled, lockReason }: FocusControlProps) => {
+export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: FocusControlProps) => {
   const focusControl = useAppStore(useShallow(selectFocusControlState));
   const setFocusDistance = useAppStore((state) => state.setFocusDistance);
 
