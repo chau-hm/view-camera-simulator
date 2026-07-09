@@ -29,7 +29,7 @@ export const ViewOptions = ({
 
   return (
     <section aria-label={UI_COPY.controls.viewOptionsTitle} className={compact ? 'view-options view-options--compact' : 'view-options'}>
-      <h3 className="control-group-title">{UI_COPY.controls.viewOptionsTitle}</h3>
+      {!compact && <h3 className="control-group-title">{UI_COPY.controls.viewOptionsTitle}</h3>}
       <div className={compact ? 'choice-list choice-list--inline' : 'choice-list'}>
         {showGroundGlassAssist && (
           <label className="choice-label">
