@@ -18,7 +18,7 @@ export const FocusControl = ({ focusEnabled, lockReason }: FocusControlProps) =>
   return (
     <section aria-label={UI_COPY.controls.focusTitle}>
       <h3>{UI_COPY.controls.focusTitle}</h3>
-      <label>
+      <label className="control-label">
         {focusControl.focusMode === "infinity" ? (
           <>
             <div>Focus: ∞</div>
@@ -35,7 +35,7 @@ export const FocusControl = ({ focusEnabled, lockReason }: FocusControlProps) =>
           step={10}
           value={focusControl.focusDistanceMm}
           disabled={!focusEnabled}
-          style={{ width: "100%" }}
+          className="range-slider"
           onKeyDown={(event) =>
             handleRangeInputKeyboard(event, {
               value: focusControl.focusDistanceMm,
@@ -48,16 +48,17 @@ export const FocusControl = ({ focusEnabled, lockReason }: FocusControlProps) =>
           onChange={(event) => setFocusDistance(Number(event.target.value))}
         />
         {focusControl.focusMode === "infinity" ? (
-          <small>Last finite focus — drag to exit ∞</small>
+          <small className="control-help">Last finite focus — drag to exit ∞</small>
         ) : (
-          !focusEnabled && <small>{lockReason}</small>
+          !focusEnabled && <small className="control-help">{lockReason}</small>
         )}
         {focusControl.activeSceneId === "focus-fundamentals-two-targets" && (
-          <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+          <div className="control-row" style={{ marginTop: 8 }}>
             {focusTargetsDefs.map((t) => (
               <button
                 key={t.id}
                 type="button"
+                className="btn btn--secondary btn--compact"
                 onClick={() => {
                   if (typeof t.focusReferenceDepthFromRearDatumMm === "number") {
                     setFocusDistance(t.focusReferenceDepthFromRearDatumMm);

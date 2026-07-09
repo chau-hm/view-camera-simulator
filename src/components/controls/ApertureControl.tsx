@@ -20,6 +20,7 @@ export const ApertureControl = ({ apertureEnabled, lockReason }: ApertureControl
         aria-label={UI_COPY.controls.apertureTitle}
         value={aperture}
         disabled={!apertureEnabled}
+        className="form-select"
         onChange={(event) => {
           const parsed = Number(event.target.value);
           if (isApertureValue(parsed)) {
@@ -33,7 +34,7 @@ export const ApertureControl = ({ apertureEnabled, lockReason }: ApertureControl
           </option>
         ))}
       </select>
-      {!apertureEnabled && <small>{lockReason}</small>}
+      {!apertureEnabled && <small className="control-help">{lockReason}</small>}
     </section>
   );
 };
