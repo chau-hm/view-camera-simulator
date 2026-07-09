@@ -1,4 +1,5 @@
 import { projectWorldPointToGroundGlass } from "./groundGlassProjection";
+import { projectWorldPointToFilmPlaneGroundGlass } from "./groundGlassFilmPlaneProjection";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import type { ApertureValue } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
@@ -48,14 +49,41 @@ export function projectSceneFocusTargetsToGroundGlass(params: {
 
   const imageDistanceMm = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
 
+  const useThinLensBaselineProjection =
+    !!sceneDef && sceneDef.id === "focus-fundamentals-two-targets";
+
   return sceneDef.focusTargets.map((t) => {
-    const p = projectWorldPointToGroundGlass(
-      t.worldPosition,
-      opticsState.lensCenterWorld,
-      imageDistanceMm,
-      CAMERA_CONSTANTS.filmWidthMm,
-      CAMERA_CONSTANTS.filmHeightMm,
-    );
+    let p: { visible: boolean; uRaw: number; vRaw: number };
+
+    if (useThinLensBaselineProjection) {
+      // Preserve the baseline thin-lens projection for Focus Fundamentals
+      p = projectWorldPointToGroundGlass(
+        t.worldPosition,
+        opticsState.lensCenterWorld,
+        imageDistanceMm,
+        CAMERA_CONSTANTS.filmWidthMm,
+        CAMERA_CONSTANTS.filmHeightMm,
+      );
+    } else if (
+      opticsState.filmPlaneCornersWorld &&
+      opticsState.lensCenterWorld
+    ) {
+      const filmRes = projectWorldPointToFilmPlaneGroundGlass({
+        worldPoint: t.worldPosition,
+        lensCenterWorld: opticsState.lensCenterWorld,
+        filmPlaneCornersWorld: opticsState.filmPlaneCornersWorld,
+      });
+      p = { visible: filmRes.visible, uRaw: filmRes.uRaw, vRaw: filmRes.vRaw };
+    } else {
+      // Fallback to original projection if film plane geometry absent
+      p = projectWorldPointToGroundGlass(
+        t.worldPosition,
+        opticsState.lensCenterWorld,
+        imageDistanceMm,
+        CAMERA_CONSTANTS.filmWidthMm,
+        CAMERA_CONSTANTS.filmHeightMm,
+      );
+    }
 
     const rawUv = { u: p.uRaw, v: p.vRaw };
     const displayUv = mapGroundGlassUvToDisplayUv(rawUv, previewMode);
