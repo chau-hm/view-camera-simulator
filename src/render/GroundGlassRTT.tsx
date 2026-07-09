@@ -7,9 +7,10 @@ const SKY_COLOR = new THREE.Color("#dfe5ec");
 const FLOOR_COLOR = new THREE.Color("#9aa6b5");
 import { vecToWorld, toWorld } from "./rttUtils";
 import { getSceneById } from "../scenes/definitions";
-import { projectWorldPointToGroundGlass } from "./groundGlassProjection";
+import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import { createFocusFundamentalsGroup } from "./FocusFundamentalsSubjectFactory";
 import type { DerivedOpticsState } from "../types/optics";
+import type { ApertureValue } from "../types/camera";
 
 type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
@@ -291,22 +292,23 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // hide focus ring in raw debug mode
       if (rawDebug) matV.uniforms.showRing.value = 0.0;
 
-      // compute focus ring projection for first focus target (if available)
-      const sceneDef2 = sceneId ? getSceneById(sceneId) : undefined;
-      if (sceneDef2 && sceneDef2.focusTargets && sceneDef2.focusTargets.length > 0) {
-        const t = sceneDef2.focusTargets[0];
-        const imgDistMm = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
-        const p = projectWorldPointToGroundGlass(t.worldPosition, opticsState.lensCenterWorld, imgDistMm, CAMERA_CONSTANTS.filmWidthMm, CAMERA_CONSTANTS.filmHeightMm);
-        const shouldShow = Boolean(focusAssistEnabled) && !rawDebug && p.visible;
-        if (shouldShow) {
-          // always pass raw uRaw/vRaw to shader; shader will apply display orientation when sampling
-          matV.uniforms.ringCenter.value.set(p.uRaw, p.vRaw);
-          matV.uniforms.ringRadiusPx.value = focusRingRadiusPx ?? 68;
-          matV.uniforms.ringOpacity.value = focusRingOpacity ?? 0.8;
-          matV.uniforms.showRing.value = 1.0;
-        } else {
-          matV.uniforms.showRing.value = 0.0;
-        }
+      // compute focus ring projection using the shared projection helper
+      const sceneDefForProjection = sceneId ? getSceneById(sceneId) : undefined;
+      const projectedTargets = projectSceneFocusTargetsToGroundGlass({
+        sceneDef: sceneDefForProjection,
+        opticsState,
+        aperture: aperture as unknown as ApertureValue,
+        previewMode,
+      });
+      const primaryProjectedTarget = projectedTargets.length > 0 ? projectedTargets[0] : null;
+
+      const shouldShow = Boolean(focusAssistEnabled) && !rawDebug && Boolean(primaryProjectedTarget?.visible);
+      if (shouldShow && primaryProjectedTarget) {
+        // pass raw uRaw/vRaw to shader; shader applies display orientation when sampling
+        matV.uniforms.ringCenter.value.set(primaryProjectedTarget.rawUv.u, primaryProjectedTarget.rawUv.v);
+        matV.uniforms.ringRadiusPx.value = focusRingRadiusPx ?? 68;
+        matV.uniforms.ringOpacity.value = focusRingOpacity ?? 0.8;
+        matV.uniforms.showRing.value = 1.0;
       } else {
         matV.uniforms.showRing.value = 0.0;
       }
