@@ -16,7 +16,7 @@ export const ApertureControl = ({ apertureEnabled, lockReason, showTitle = true 
 
   return (
     <section aria-label={UI_COPY.controls.apertureTitle}>
-      <h3>{UI_COPY.controls.apertureTitle}</h3>
+      {showTitle && <h3>{UI_COPY.controls.apertureTitle}</h3>}
       <select
         aria-label={UI_COPY.controls.apertureTitle}
         value={aperture}

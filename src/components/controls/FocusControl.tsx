@@ -18,7 +18,7 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
 
   return (
     <section aria-label={UI_COPY.controls.focusTitle}>
-      <h3>{UI_COPY.controls.focusTitle}</h3>
+      {showTitle && <h3>{UI_COPY.controls.focusTitle}</h3>}
       <label className="control-label">
         {focusControl.focusMode === "infinity" ? (
           <>
