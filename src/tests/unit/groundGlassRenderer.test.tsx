@@ -200,6 +200,31 @@ describe("GroundGlassRenderer", () => {
     expect(moved1 || moved2).toBe(true);
   });
 
+  // New Test: shared projection returns valid raw UV for Focus Fundamentals RTT target
+  it("shared projection returns valid raw UV for Focus Fundamentals RTT target", () => {
+    const cameraState = {
+      ...DEFAULT_CAMERA_STATE,
+      focalLengthMm: 150,
+      focusDistanceMm: 680,
+    };
+
+    const opticsState = deriveOpticsState(cameraState, focusFundamentalsTwoTargets);
+
+    const projected = projectSceneFocusTargetsToGroundGlass({
+      sceneDef: focusFundamentalsTwoTargets,
+      opticsState,
+      aperture: cameraState.aperture,
+      previewMode: "raw",
+    });
+
+    expect(projected.length).toBeGreaterThan(0);
+    expect(projected[0].visible).toBe(true);
+    expect(projected[0].rawUv.u).toBeGreaterThanOrEqual(0);
+    expect(projected[0].rawUv.u).toBeLessThanOrEqual(1);
+    expect(projected[0].rawUv.v).toBeGreaterThanOrEqual(0);
+    expect(projected[0].rawUv.v).toBeLessThanOrEqual(1);
+  });
+
   // Test B: projected targets expose rawUv and displayUv
   it("projected targets include rawUv and displayUv fields", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
