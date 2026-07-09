@@ -265,6 +265,14 @@ button {
 }
 
 /* Camera controls polish */
+
+/* Scene picker and developer tools small helper classes */
+.scene-picker { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.scene-picker__label { color: var(--text-muted); margin-right: 8px; }
+.developer-tools { margin-top: 1rem; padding: 8px; }
+.developer-tools__control { display: flex; align-items: center; gap: 8px; }
+
+
 .simulator-aside .aside-header {
  display: flex;
  justify-content: space-between;

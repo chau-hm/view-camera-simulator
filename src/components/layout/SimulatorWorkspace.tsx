@@ -127,8 +127,8 @@ export const SimulatorWorkspace = ({
         </div>
 
         {mode === "free" && (
-          <section aria-label={UI_COPY.simulator.scenePickerLabel} style={{ marginLeft: "auto", display: 'flex', alignItems: 'center', gap: 8 }}>
-            <label style={{ color: 'var(--text-muted)' }}>Scene</label>
+          <section aria-label={UI_COPY.simulator.scenePickerLabel} className="scene-picker">
+            <label className="scene-picker__label">Scene</label>
             <select className="form-select" aria-label="Scene" value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
               {allScenes.map((registeredScene) => (
                 <option key={registeredScene.id} value={registeredScene.id}>
@@ -271,10 +271,10 @@ export const SimulatorWorkspace = ({
 
           </section>
 
-          <section aria-label="Developer Tools" style={{ marginTop: "1rem", padding: 8 }}>
+          <section aria-label="Developer Tools" className="developer-tools">
             <h3 style={{ margin: 0 }}>Developer Tools</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: 8 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <label className="developer-tools__control">
                 <input className="form-checkbox" type="checkbox" checked={rawRttDebug} onChange={(e) => setRawRttDebug(e.target.checked)} />
                 RTT Debug: Raw ON/OFF
               </label>

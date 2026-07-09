@@ -473,6 +473,8 @@ const SceneContent = ({
                   <bufferGeometry>
                     <bufferAttribute attach="attributes-position" args={[positions, 3]} />
                   </bufferGeometry>
+                  {/* Note: WebGL lineBasicMaterial linewidth is ignored by many browser/GPU combinations.
+                       These lines are visual guides only; use mesh/shader-based lines if consistent thickness becomes required. */}
                   <lineBasicMaterial attach="material" color="#f59e0b" linewidth={2} transparent opacity={0.98} />
                 </line>
               );
