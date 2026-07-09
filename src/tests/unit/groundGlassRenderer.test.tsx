@@ -242,18 +242,14 @@ describe("GroundGlassRenderer", () => {
 
     const focusRing = screen.getByTestId("ground-glass-focus-ring");
     const placeholder = screen.getByTestId(`ground-glass-target-${first.id}`);
-    const focusLeft = focusRing.style.left;
-    const focusTop = focusRing.style.top;
-    const placeholderLeft = placeholder.getAttribute("style")?.match(/left: ([^;]+);?/);
-    const placeholderTop = placeholder.getAttribute("style")?.match(/top: ([^;]+);?/);
 
-    // focus ring is positioned using percent values; ensure basis equals placeholder's percent
-    expect(focusLeft).toContain(`${first.leftPercent}%`);
-    expect(focusTop).toContain(`${first.topPercent}%`);
-    if (placeholderLeft && placeholderTop) {
-      expect(placeholderLeft[1]).toContain(`${first.leftPercent}%`);
-      expect(placeholderTop[1]).toContain(`${first.topPercent}%`);
-    }
+    // strict style equality assertions
+    expect(focusRing.style.left).toBe(`${first.leftPercent}%`);
+    expect(focusRing.style.top).toBe(`${first.topPercent}%`);
+    expect(placeholder.style.left).toBe(`${first.leftPercent}%`);
+    expect(placeholder.style.top).toBe(`${first.topPercent}%`);
+    expect(focusRing.style.left).toBe(placeholder.style.left);
+    expect(focusRing.style.top).toBe(placeholder.style.top);
   });
 
   it("does not render white DOM placeholder targets for Focus Fundamentals", () => {
@@ -280,5 +276,55 @@ describe("GroundGlassRenderer", () => {
     const divs = Array.from(container.querySelectorAll("div"));
     const hasWhitePlaceholder = divs.some((d) => d.getAttribute("style")?.includes("rgba(255,255,255,0.9)"));
     expect(hasWhitePlaceholder).toBe(false);
+  });
+
+  it('extracted renderer structure preserves visible renderer pieces', () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        focusAssistEnabled={false}
+        gridEnabled={false}
+        riseMm={0}
+        tiltDeg={0}
+        swingDeg={0}
+        focusDistanceMm={DEFAULT_CAMERA_STATE.focusDistanceMm}
+        aperture={DEFAULT_CAMERA_STATE.aperture}
+        renderQuality="standard"
+        previewMode="raw"
+        sceneId={architectureRiseScene.id}
+      />,
+    );
+
+    expect(screen.getByTestId("ground-glass-scene")).toBeInTheDocument();
+    expect(screen.getByTestId("ground-glass-focus-ring")).toBeInTheDocument();
+    expect(screen.getByTestId(`ground-glass-target-${architectureRiseScene.focusTargets[0].id}`)).toBeInTheDocument();
+    expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
+  });
+
+  it('focus fundamentals still routes to RTT only', () => {
+    const cameraState = { ...DEFAULT_CAMERA_STATE, focalLengthMm: 150, focusDistanceMm: 680 };
+    const opticsState = deriveOpticsState(cameraState, focusFundamentalsTwoTargets);
+    render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        focusAssistEnabled={false}
+        gridEnabled={false}
+        riseMm={0}
+        tiltDeg={0}
+        swingDeg={0}
+        focusDistanceMm={680}
+        aperture={11}
+        renderQuality="standard"
+        sceneId={focusFundamentalsTwoTargets.id}
+        previewMode="raw"
+      />,
+    );
+
+    expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
   });
 });

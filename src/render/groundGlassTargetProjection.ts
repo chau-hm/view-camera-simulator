@@ -3,7 +3,10 @@ import { CAMERA_CONSTANTS } from "../utils/constants";
 import type { ApertureValue } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
-import { calculateFocusPlaneDistanceMm, calculateApertureBlurStrength } from "./groundGlassPipeline";
+import {
+  calculateFocusPlaneDistanceMm,
+  calculateApertureBlurStrength,
+} from "./groundGlassPipeline";
 import { pointToPlaneDistance } from "../core/math/plane";
 
 export type GroundGlassPreviewMode = "raw" | "upright";
@@ -62,14 +65,22 @@ export function projectSceneFocusTargetsToGroundGlass(params: {
 
     let distanceToFocusPlaneMm: number;
     if (opticsState.focusPlane) {
-      distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(t.worldPosition, opticsState.focusPlane);
+      distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(
+        t.worldPosition,
+        opticsState.focusPlane,
+      );
     } else if (opticsState.depthOfFieldNearPlane) {
-      distanceToFocusPlaneMm = Math.abs(pointToPlaneDistance(t.worldPosition, opticsState.depthOfFieldNearPlane));
+      distanceToFocusPlaneMm = Math.abs(
+        pointToPlaneDistance(t.worldPosition, opticsState.depthOfFieldNearPlane),
+      );
     } else {
       distanceToFocusPlaneMm = Number.POSITIVE_INFINITY;
     }
 
-    const blurStrengthAtTarget = calculateApertureBlurStrength(distanceToFocusPlaneMm, aperture as unknown as number);
+    const blurStrengthAtTarget = calculateApertureBlurStrength(
+      distanceToFocusPlaneMm,
+      aperture as unknown as number,
+    );
 
     return {
       id: t.id,
