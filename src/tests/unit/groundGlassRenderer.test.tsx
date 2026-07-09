@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { GroundGlassRenderer, projectWorldPointToGroundGlass } from "../../render/GroundGlassRenderer";
+import { projectSceneFocusTargetsToGroundGlass, mapGroundGlassUvToDisplayUv } from "../../render/groundGlassTargetProjection";
 import { GroundGlassViewport } from "../../components/simulator/GroundGlassViewport";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
@@ -134,6 +135,16 @@ describe("GroundGlassRenderer", () => {
   });
 
   it("display mapping: raw applies physical inversion; upright uses non-inverted coordinates", () => {
+    // Test A: mapGroundGlassUvToDisplayUv produces expected raw/upright mapping
+    const raw = { u: 0.25, v: 0.4 };
+    const mappedRaw = mapGroundGlassUvToDisplayUv(raw, "raw");
+    expect(mappedRaw.u).toBeCloseTo(0.75);
+    expect(mappedRaw.v).toBeCloseTo(0.6);
+    const mappedUpright = mapGroundGlassUvToDisplayUv(raw, "upright");
+    expect(mappedUpright.u).toBeCloseTo(0.25);
+    expect(mappedUpright.v).toBeCloseTo(0.4);
+
+    // Legacy assertions for backward compatibility using projectWorldPointToGroundGlass
     const cameraState = { ...DEFAULT_CAMERA_STATE, focalLengthMm: 150, focusDistanceMm: 2000 };
     const opticsState = deriveOpticsState(cameraState, focusFundamentalsTwoTargets);
     const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
@@ -187,6 +198,62 @@ describe("GroundGlassRenderer", () => {
     const moved1 = pA1.uRaw !== pB1.uRaw || pA1.vRaw !== pB1.vRaw;
     const moved2 = pA2.uRaw !== pB2.uRaw || pA2.vRaw !== pB2.vRaw;
     expect(moved1 || moved2).toBe(true);
+  });
+
+  // Test B: projected targets expose rawUv and displayUv
+  it("projected targets include rawUv and displayUv fields", () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    const projected = projectSceneFocusTargetsToGroundGlass({ sceneDef: architectureRiseScene, opticsState, aperture: DEFAULT_CAMERA_STATE.aperture, previewMode: "upright" });
+    expect(projected.length).toBeGreaterThan(0);
+    for (const pt of projected) {
+      expect(pt).toHaveProperty("id");
+      expect(pt).toHaveProperty("visible");
+      expect(pt).toHaveProperty("rawUv");
+      expect(pt).toHaveProperty("displayUv");
+      expect(pt).toHaveProperty("leftPercent");
+      expect(pt).toHaveProperty("topPercent");
+      expect(pt).toHaveProperty("blurStrengthAtTarget");
+    }
+  });
+
+  // Test C: legacy placeholder and focus ring use the same projected coordinates
+  it("legacy placeholder targets and focus ring share the same coordinates", () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    const projected = projectSceneFocusTargetsToGroundGlass({ sceneDef: architectureRiseScene, opticsState, aperture: DEFAULT_CAMERA_STATE.aperture, previewMode: "raw" });
+    expect(projected.length).toBeGreaterThan(0);
+    const first = projected[0];
+
+    render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        focusAssistEnabled={false}
+        gridEnabled={false}
+        riseMm={0}
+        tiltDeg={0}
+        swingDeg={0}
+        focusDistanceMm={2000}
+        aperture={DEFAULT_CAMERA_STATE.aperture}
+        renderQuality="standard"
+        previewMode="raw"
+        sceneId={architectureRiseScene.id}
+      />,
+    );
+
+    const focusRing = screen.getByTestId("ground-glass-focus-ring");
+    const placeholder = screen.getByTestId(`ground-glass-target-${first.id}`);
+    const focusLeft = focusRing.style.left;
+    const focusTop = focusRing.style.top;
+    const placeholderLeft = placeholder.getAttribute("style")?.match(/left: ([^;]+);?/);
+    const placeholderTop = placeholder.getAttribute("style")?.match(/top: ([^;]+);?/);
+
+    // focus ring is positioned using percent values; ensure basis equals placeholder's percent
+    expect(focusLeft).toContain(`${first.leftPercent}%`);
+    expect(focusTop).toContain(`${first.topPercent}%`);
+    if (placeholderLeft && placeholderTop) {
+      expect(placeholderLeft[1]).toContain(`${first.leftPercent}%`);
+      expect(placeholderTop[1]).toContain(`${first.topPercent}%`);
+    }
   });
 
   it("does not render white DOM placeholder targets for Focus Fundamentals", () => {

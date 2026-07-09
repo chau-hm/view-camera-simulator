@@ -2,7 +2,7 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useAppStore } from "../state/appStore";
 import { GroundGlassRTT } from "./GroundGlassRTT";
-import { projectWorldPointToGroundGlass } from "./groundGlassProjection";
+import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import type { ApertureValue } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
@@ -13,8 +13,6 @@ import { createFocusAssistPass } from "./postprocessing/FocusAssistPass";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
-import { calculateFocusPlaneDistanceMm, calculateApertureBlurStrength } from "./groundGlassPipeline";
-import { pointToPlaneDistance } from "../core/math/plane";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { getSceneById } from "../scenes/definitions";
 
@@ -160,36 +158,14 @@ export const GroundGlassRenderer = ({
 
   // Project scene focus targets (if available) into ground-glass UV coordinates for positioning overlays
   const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
-  // Compute image distance from lens center to film center (used by thin-lens projection)
-  const imageDistanceMm = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
 
-  const projectedTargets = (sceneDef?.focusTargets ?? []).map((t) => {
-    // Use the canonical thin-lens projection helper so canvas/DOM overlays match the RTT rendering
-    const p = projectWorldPointToGroundGlass(t.worldPosition, opticsState.lensCenterWorld, imageDistanceMm, CAMERA_CONSTANTS.filmWidthMm, CAMERA_CONSTANTS.filmHeightMm);
-    // Map previewMode to final display coordinates: raw => physical inversion (1 - u/v), upright => no inversion
-    const orientedU = previewMode === "raw" ? 1 - p.uRaw : p.uRaw;
-    const orientedV = previewMode === "raw" ? 1 - p.vRaw : p.vRaw;
-    const leftPercent = p.visible ? clamp(orientedU * 100, 0, 100) : -999; // off-screen sentinel
-    const topPercent = p.visible ? clamp(orientedV * 100, 0, 100) : -999;
-    // If a physical focus plane exists, measure distance to it; otherwise, for infinity mode, use a large value so blur is maximal
-    let distanceToFocusPlaneMm: number;
-    if (opticsState.focusPlane) {
-      distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(t.worldPosition, opticsState.focusPlane);
-    } else if (opticsState.depthOfFieldNearPlane) {
-      // compare distance to the near DOF plane as an approximation for infinity-mode blur
-      distanceToFocusPlaneMm = Math.abs(pointToPlaneDistance(t.worldPosition, opticsState.depthOfFieldNearPlane));
-    } else {
-      distanceToFocusPlaneMm = Number.POSITIVE_INFINITY;
-    }
-    const blurStrengthAtTarget = calculateApertureBlurStrength(distanceToFocusPlaneMm, aperture as unknown as number);
-    return { id: t.id, leftPercent, topPercent, blurStrengthAtTarget, visible: p.visible };
-  });
+  // Use shared helper to compute projected targets for both focus-ring and legacy DOM placeholders
+  const projectedTargets = projectSceneFocusTargetsToGroundGlass({ sceneDef, opticsState, aperture, previewMode });
 
   // Primary projected target (first entry) — kept explicit so focus-ring logic is clear.
   const primaryProjectedTarget = projectedTargets.length > 0 ? projectedTargets[0] : null;
 
-  // GroundGlassRTT prototype (offscreen three.js render) removed from this file for now.
-  // Phase 1 RTT implementation will be moved to src/render/GroundGlassRTT.tsx in a follow-up commit.
+  // GroundGlassRTT is used for RTT rendering in the Focus Fundamentals scene.
   const apertureNumber = typeof aperture === 'number' ? aperture : Number(aperture as unknown as number);
 
   return (
@@ -334,45 +310,20 @@ export const GroundGlassRenderer = ({
             }}
           >
           {(() => {
-              const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
               // If we have a scene definition with focus targets, project those into film UV and render placeholders anchored to them.
-              // NOTE: RTT-based projection and this legacy DOM projection are currently implemented separately which may cause drift.
-              // TODO: Consolidate projection logic into a single helper (e.g. projectWorldPointToGroundGlass) to ensure overlays remain consistent.
-              // IMPORTANT: Do not render DOM placeholder target elements for the Focus Fundamentals scene — the RTT pipeline provides the ground-glass imagery.
+              // Do not render DOM placeholder target elements for the Focus Fundamentals scene — the RTT pipeline provides the ground-glass imagery.
               if (sceneDef && sceneDef.focusTargets && sceneDef.focusTargets.length > 0) {
                 if (sceneId === "focus-fundamentals-two-targets") {
                   return null;
                 }
 
-                const topLeft = opticsState.filmPlaneCornersWorld.topLeft;
-                const topRight = opticsState.filmPlaneCornersWorld.topRight;
-                const bottomLeft = opticsState.filmPlaneCornersWorld.bottomLeft;
-                const spanX = topRight.x - topLeft.x;
-                const spanY = topLeft.y - bottomLeft.y;
-
-                const projectedTargets = sceneDef.focusTargets.map((t) => {
-                  const w = t.worldPosition;
-                  const u = spanX === 0 ? 0.5 : (w.x - topLeft.x) / spanX;
-                  const v = spanY === 0 ? 0.5 : (topLeft.y - w.y) / spanY;
-                  const leftPercent = clamp(u * 100, 0, 100);
-                  const topPercent = clamp(v * 100, 0, 100);
-                  let distanceToFocusPlaneMm: number;
-                  if (opticsState.focusPlane) {
-                    distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(w, opticsState.focusPlane);
-                  } else if (opticsState.depthOfFieldNearPlane) {
-                    distanceToFocusPlaneMm = Math.abs(pointToPlaneDistance(w, opticsState.depthOfFieldNearPlane));
-                  } else {
-                    distanceToFocusPlaneMm = Number.POSITIVE_INFINITY;
-                  }
-                  const blurStrengthAtTarget = calculateApertureBlurStrength(distanceToFocusPlaneMm, aperture as unknown as number);
-                  return { id: t.id, leftPercent, topPercent, blurStrengthAtTarget };
-                });
-
+                // Use the shared projectedTargets computed above for both focus ring and legacy DOM placeholders
                 return (
                   <>
                     {projectedTargets.map((pt) => (
                       <div
                         key={pt.id}
+                        data-testid={`ground-glass-target-${pt.id}`}
                         style={{
                           position: "absolute",
                           left: `${pt.leftPercent}%`,
