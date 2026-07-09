@@ -14,6 +14,7 @@ type SceneViewportProps = {
   renderQuality: RenderQualityProfile;
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
   simulateAssetFailure: boolean;
+  onToggleGeometryPanel?: () => void;
 };
 
 const parseRenderQuality = (value: string): RenderQualityProfile => {
@@ -29,6 +30,7 @@ export const SceneViewport = ({
   renderQuality,
   setRenderQuality,
   simulateAssetFailure,
+  onToggleGeometryPanel,
 }: SceneViewportProps) => {
   const [attempt, setAttempt] = useState(0);
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
@@ -104,6 +106,14 @@ export const SceneViewport = ({
           <button type="button" onClick={() => setViewResetNonce((value) => value + 1)}>
             {UI_COPY.simulator.sceneViewReset}
           </button>
+
+          {/* Geometry panel toggle moved into Scene controls */}
+          {onToggleGeometryPanel && (
+            <button type="button" onClick={onToggleGeometryPanel} style={{ padding: '6px 10px', borderRadius: 6 }}>
+              Open 2D Geometry
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setBigView((v) => !v)}

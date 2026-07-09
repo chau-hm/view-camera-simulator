@@ -165,6 +165,7 @@ export const SimulatorWorkspace = ({
                 renderQuality={renderQuality}
                 setRenderQuality={setRenderQuality}
                 simulateAssetFailure={simulateAssetFailure}
+                onToggleGeometryPanel={() => setShowGeometryPanel((s) => !s)}
               />
             </div>
 
@@ -236,9 +237,8 @@ export const SimulatorWorkspace = ({
                 RTT Debug: Raw ON/OFF
               </label>
 
-              <button type="button" onClick={() => setShowGeometryPanel((s) => !s)}>
-                {showGeometryPanel ? "Close 2D Geometry" : "Open 2D Geometry"}
-              </button>
+              {/* Open 2D Geometry moved to SceneViewport controls */}
+              <div style={{ fontSize: 12, color: '#6b7280' }}>2D Geometry panel: use the Scene controls to open</div>
             </div>
           </section>
         </aside>
@@ -251,14 +251,15 @@ export const SimulatorWorkspace = ({
           aria-label="2D Geometry Panel"
           style={{
             position: "fixed",
-            top: "72px",
-            right: "24px",
-            width: "420px",
-            height: "68vh",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "70vw",
+            height: "70vh",
             maxWidth: "90vw",
             maxHeight: "90vh",
-            minWidth: "320px",
-            minHeight: "200px",
+            minWidth: "420px",
+            minHeight: "320px",
             background: "var(--panel-bg, #fff)",
             boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
             borderRadius: "8px",
