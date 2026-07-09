@@ -163,9 +163,8 @@ export const SceneViewport = ({
           </div>
         </div>
       ) : (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: '0 0 auto' }} />
-          <div style={{ flex: '1 1 auto', minHeight: 0 }}>
+        <div>
+          <div>
             <SceneRenderer
               scene={scene}
               opticsState={opticsState}
@@ -177,7 +176,7 @@ export const SceneViewport = ({
               viewResetNonce={viewResetNonce}
               simulateAssetFailure={simulateAssetFailure}
               onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
-            containerStyle={{ width: '100%', aspectRatio: '5 / 4', border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
+              containerStyle={{ width: '100%', aspectRatio: '5 / 4', border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
             />
           </div>
         </div>

@@ -96,7 +96,7 @@ export const SimulatorWorkspace = ({
         height: "100%",
         minHeight: 0,
         display: "grid",
-        gridTemplateRows: "auto minmax(0, 1fr) minmax(0, auto)",
+        gridTemplateRows: "auto minmax(0, 1fr) auto",
         overflow: "hidden",
       }}
       data-reduced-motion={reducedMotion ? "true" : "false"}
@@ -137,7 +137,7 @@ export const SimulatorWorkspace = ({
         style={{
           minHeight: 0,
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) 320px",
+          gridTemplateColumns: "minmax(0, 1fr) 340px",
           gap: "1rem",
           overflow: "hidden",
         }}
@@ -157,8 +157,8 @@ export const SimulatorWorkspace = ({
             <p role="alert">{UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}</p>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "1rem", alignItems: "stretch" }}>
-            <div style={{ height: '100%' }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "1rem", alignItems: "start" }}>
+            <div>
               <SceneViewport
                 scene={safeScene}
                 opticsState={opticsState}
@@ -168,7 +168,7 @@ export const SimulatorWorkspace = ({
               />
             </div>
 
-            <div aria-label="GroundGlassColumn" style={{ display: "grid", gap: "0.75rem", height: '100%' }}>
+            <div aria-label="GroundGlassColumn" style={{ display: "grid", gap: "0.75rem" }}>
               <GroundGlassViewport
                 opticsState={opticsState}
                 orientationAssistEnabled={mode === "free"}
@@ -187,11 +187,6 @@ export const SimulatorWorkspace = ({
                 lockReason={lockReason}
                 rawRttDebug={rawRttDebug}
               />
-
-              {/* Hidden GeometryViewport instance for tests that expect geometry SVG in DOM. Will be removed when tests open the floating panel instead. */}
-              <div style={{ position: 'absolute', left: -9999, width: 1, height: 1, overflow: 'hidden' }} aria-hidden>
-                <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
-              </div>
             </div>
           </div>
         </main>
@@ -231,20 +226,20 @@ export const SimulatorWorkspace = ({
 
               <ResetControls />
             </div>
+          </section>
 
-            <section aria-label="Developer Tools" style={{ marginTop: "1rem" }}>
-              <h3>Developer Tools</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <input type="checkbox" checked={rawRttDebug} onChange={(e) => setRawRttDebug(e.target.checked)} />
-                  RTT Debug: Raw ON/OFF
-                </label>
+          <section aria-label="Developer Tools" style={{ marginTop: "1rem" }}>
+            <h3>Developer Tools</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <input type="checkbox" checked={rawRttDebug} onChange={(e) => setRawRttDebug(e.target.checked)} />
+                RTT Debug: Raw ON/OFF
+              </label>
 
-                <button type="button" onClick={() => setShowGeometryPanel((s) => !s)}>
-                  {showGeometryPanel ? "Close 2D Geometry" : "Open 2D Geometry"}
-                </button>
-              </div>
-            </section>
+              <button type="button" onClick={() => setShowGeometryPanel((s) => !s)}>
+                {showGeometryPanel ? "Close 2D Geometry" : "Open 2D Geometry"}
+              </button>
+            </div>
           </section>
         </aside>
       </div>
@@ -260,12 +255,17 @@ export const SimulatorWorkspace = ({
             right: "24px",
             width: "420px",
             height: "68vh",
+            maxWidth: "90vw",
+            maxHeight: "90vh",
+            minWidth: "320px",
+            minHeight: "200px",
             background: "var(--panel-bg, #fff)",
             boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
             borderRadius: "8px",
             zIndex: 1200,
             overflow: "auto",
             padding: "0.75rem",
+            resize: 'both',
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
