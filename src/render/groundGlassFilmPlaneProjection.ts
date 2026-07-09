@@ -56,7 +56,10 @@ export function projectWorldPointToFilmPlaneGroundGlass(
   const planeNormal = normalize(cross(uAxis, vAxis));
 
   const rayOrigin = lensCenterWorld;
-  const rayDir = normalize(sub(worldPoint, lensCenterWorld));
+  // Scene points are in front of the lens (positive Z), while the film plane is behind it (negative Z).
+  // Project by extending the object ray through the lens toward the film side: trace from the lens
+  // center back toward the film by using (lensCenter - worldPoint) as the ray direction.
+  const rayDir = normalize(sub(lensCenterWorld, worldPoint));
 
   const denom = dot(rayDir, planeNormal);
   if (Math.abs(denom) < EPSILON) {
