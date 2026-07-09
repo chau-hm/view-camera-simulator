@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { DiagramLegend } from "../geometry/DiagramPrimitives";
 import { computeOpticalSectionData } from "../geometry/opticalSectionProjection";
 import { getGeometryPresentationProfile } from "../geometry/geometryPresentationProfiles";
@@ -22,9 +23,39 @@ import { useAppStore } from "../../state/appStore";
 export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryViewportProps) => {
   const setGeometryView = useAppStore((s) => s.setGeometryView);
 
+  // Responsive diagram sizing: measure the diagram container and auto-fit SVG to available space
+  const diagramRef = useRef<HTMLDivElement | null>(null);
+  const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
 
-  const SVG_W = SVG_WIDTH;
-  const SVG_H = SVG_HEIGHT;
+  useEffect(() => {
+    const el = diagramRef.current;
+    if (!el) return;
+
+    const updateSize = () => {
+      const rect = el.getBoundingClientRect();
+      // maintain aspect ratio from defaults
+      const aspect = SVG_HEIGHT / SVG_WIDTH;
+      const w = Math.max(200, Math.floor(rect.width));
+      const h = Math.max(120, Math.floor(rect.height));
+
+      // Prefer filling available width and limiting height by container, preserving aspect
+      const computedH = Math.min(h, Math.round(w * aspect));
+      setSvgSize({ width: w, height: computedH });
+    };
+
+    // Initial
+    updateSize();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(() => updateSize());
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+
+    // Fallback: window resize
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, [diagramRef, scene]);
 
   // Use presentation profile to control rendering choices (replace scattered scene-id checks)
   const profile = getGeometryPresentationProfile(scene);
@@ -41,14 +72,12 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
   }
 
   // Delegate projection to shared opticalSectionProjection helper (pass depth window)
-  const projection = computeOpticalSectionData({ opticsState, scene, svgWidth: SVG_W, svgHeight: SVG_H, depthWindow });
+  const projection = computeOpticalSectionData({ opticsState, scene, svgWidth: svgSize.width, svgHeight: svgSize.height, depthWindow });
   // projection is passed to OpticalSectionDiagram which consumes all needed fields
   const { sectionOrigin, sectionDepthDir, isInfinity } = projection;
 
-
-
   return (
-    <section>
+    <section style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h2 style={{ margin: 0 }}>{UI_COPY.simulator.geometryTitle}</h2>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -59,7 +88,11 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
       <p style={{ marginTop: 6, marginBottom: 8 }}>
         {geometryView === "side" ? "Side view" : "Top view"} | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
       </p>
-      <OpticalSectionDiagram projection={projection} geometryView={geometryView} profile={profile} scene={scene} opticsState={opticsState} svgWidth={SVG_WIDTH} svgHeight={SVG_HEIGHT} />
+
+      {/* Diagram container: this will expand to available space in floating panel */}
+      <div ref={diagramRef} style={{ flex: 1, minHeight: 0 }}>
+        <OpticalSectionDiagram projection={projection} geometryView={geometryView} profile={profile} scene={scene} opticsState={opticsState} svgWidth={svgSize.width} svgHeight={svgSize.height} />
+      </div>
 
       {/* Optical depth strip (controlled by presentation profile) */}
       {profile.showDepthStrip ? (
