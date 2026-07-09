@@ -12,12 +12,16 @@ import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
 import { MovementControls } from "../controls/MovementControls";
 import { ResetControls } from "../controls/ResetControls";
-import { ViewOptions } from "../controls/ViewOptions";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
+import { CurrentSettingsReadout, FocusTargetsReadout } from "../simulator/GroundGlassReadouts";
+import { FocusFundamentalsDebugPanel } from "../simulator/FocusFundamentalsDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
+import { createGroundGlassDofPipeline } from "../../render/groundGlassPipeline";
+import { getRenderQualitySettings } from "../../render/renderQuality";
+import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
 
 type SimulatorWorkspaceProps = {
   mode: SimulatorMode;
@@ -38,6 +42,7 @@ export const SimulatorWorkspace = ({
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("standard");
+  const [showGeometryPanel, setShowGeometryPanel] = useState(false);
   const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
   const reducedMotion = useMemo(
@@ -59,8 +64,11 @@ export const SimulatorWorkspace = ({
 
   const opticsState = selectDerivedOpticsState(camera);
   const lockReason = UI_COPY.controls.guidedControlLockedReason;
+  const [rawRttDebug, setRawRttDebug] = useState(false);
+
+  // enabled controls currently depend only on mode, task metadata, and active scene.
+  // Avoid depending on the entire camera object because movement/focus changes should not recompute this set.
   const enabledControls = useMemo(() => {
-    // For the Focus Fundamentals scene, lock movement controls to only focusDistance and aperture
     const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
     if (focusFundamentals) {
       return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid", "groundGlassAssist"]);
@@ -71,13 +79,30 @@ export const SimulatorWorkspace = ({
     }
     return new Set([...task.enabledControls]);
   }, [mode, task, camera.activeSceneId]);
-  const evaluation = useMemo(
-    () => (task ? evaluateTask(task, safeScene, camera, opticsState) : null),
-    [camera, opticsState, safeScene, task],
-  );
+
+  const evaluation = useMemo(() => (task ? evaluateTask(task, safeScene, camera, opticsState) : null), [camera, opticsState, safeScene, task]);
   useEffect(() => {
     setCurrentTaskEvaluation(evaluation);
   }, [evaluation, setCurrentTaskEvaluation]);
+
+  // memoized render pipeline & settings to avoid re-creating expensive pipeline objects on every render
+  const groundGlassPipeline = useMemo(
+    () => createGroundGlassDofPipeline(opticsState, 500, 400, renderQuality),
+    [opticsState, renderQuality],
+  );
+
+  const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
+
+  const focusAssistTargets = useMemo(
+    () =>
+      createFocusAssistPass({
+        enabled: camera.focusAssistEnabled,
+        targets: opticsState.focusTargets,
+      }).targets,
+    [camera.focusAssistEnabled, opticsState.focusTargets],
+  );
+
+  const setInfinityFocus = useAppStore((state) => state.setInfinityFocus);
 
   if (!scene) {
     return (
@@ -88,67 +113,212 @@ export const SimulatorWorkspace = ({
   }
 
   return (
-    <div style={{ display: "grid", gap: "1rem" }} data-reduced-motion={reducedMotion ? "true" : "false"}>
-      {mode === "free" && (
-        <section aria-label={UI_COPY.simulator.scenePickerLabel}>
-          <label>
-            {UI_COPY.simulator.scenePickerLabel}
-            <select value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
+    <div className="simulator-shell" data-reduced-motion={reducedMotion ? "true" : "false"}>
+      {/* Header */}
+      <header className="simulator-header">
+        <div className="app-brand">
+          <div className="app-icon" aria-hidden="true">
+            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 22 }}>photo_camera</span>
+          </div>
+          <div className="app-title-block">
+            <div className="app-title">Simulator Workspace</div>
+            <div className="app-subtitle">View Camera Focus & Movements Trainer</div>
+          </div>
+        </div>
+
+        {mode === "free" && (
+          <section aria-label={UI_COPY.simulator.scenePickerLabel} className="scene-picker">
+            <label className="scene-picker__label">Scene</label>
+            <select className="form-select" aria-label="Scene" value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
               {allScenes.map((registeredScene) => (
                 <option key={registeredScene.id} value={registeredScene.id}>
                   {registeredScene.name}
                 </option>
               ))}
             </select>
-          </label>
-        </section>
-      )}
-      {opticsState.diagnostics.fallbackApplied && (
-        <p role="alert">
-          {UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}
-        </p>
-      )}
-      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        <SceneViewport
-          scene={safeScene}
-          opticsState={opticsState}
-          renderQuality={renderQuality}
-          setRenderQuality={setRenderQuality}
-          simulateAssetFailure={simulateAssetFailure}
-        />
-        <GroundGlassViewport
-          opticsState={opticsState}
-          focusAssistEnabled={camera.focusAssistEnabled}
-          gridEnabled={camera.gridEnabled}
-          riseMm={camera.frontRiseMm}
-          tiltDeg={camera.frontTiltDeg}
-          swingDeg={camera.frontSwingDeg}
-          focusDistanceMm={camera.focusDistanceMm}
-          aperture={camera.aperture}
-          renderQuality={renderQuality}
-          sceneId={camera.activeSceneId}
-        />
-        <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
+          </section>
+        )}
+      </header>
+
+      {/* Body: main (scrollable) + aside (scrollable) */}
+      <div role="region" aria-label="Simulator body" className="simulator-body">
+        {/* Main area: single scroll container for 3D Scene + Ground Glass */}
+        <main className="simulator-main">
+          {opticsState.diagnostics.fallbackApplied && (
+            <p role="alert">{UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}</p>
+          )}
+
+          <div className="simulator-viewport-grid">
+            <div className="simulator-card">
+              <div className="simulator-card-header">
+                <div className="panel-icon" aria-hidden="true">
+                  <span className="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
+                </div>
+                <h2 className="simulator-card-title">3D Scene</h2>
+              </div>
+
+              <SceneViewport
+                scene={safeScene}
+                opticsState={opticsState}
+                renderQuality={renderQuality}
+                setRenderQuality={setRenderQuality}
+                simulateAssetFailure={simulateAssetFailure}
+                onToggleGeometryPanel={() => setShowGeometryPanel((s) => !s)}
+                showHeader={false}
+              />
+            </div>
+
+            <div className="simulator-card" aria-label="GroundGlassColumn">
+              <div className="simulator-card-header">
+                <div className="panel-icon panel-icon--muted" aria-hidden="true">
+                  <span className="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
+                </div>
+                <h2 className="simulator-card-title">Ground Glass</h2>
+              </div>
+
+              <GroundGlassViewport
+                opticsState={opticsState}
+                orientationAssistEnabled={mode === "free"}
+                focusAssistEnabled={camera.focusAssistEnabled}
+                gridEnabled={camera.gridEnabled}
+                canToggleFocusAssist={enabledControls.has("focusAssist")}
+                canToggleGrid={enabledControls.has("grid")}
+                canToggleGroundGlassAssist={enabledControls.has("groundGlassAssist")}
+                riseMm={camera.frontRiseMm}
+                tiltDeg={camera.frontTiltDeg}
+                swingDeg={camera.frontSwingDeg}
+                focusDistanceMm={camera.focusDistanceMm}
+                aperture={camera.aperture}
+                renderQuality={renderQuality}
+                sceneId={camera.activeSceneId}
+                lockReason={lockReason}
+                rawRttDebug={rawRttDebug}
+                showHeader={false}
+              />
+            </div>
+          </div>
+
+          {/* Info grid: current settings, focus targets, debug */}
+          <div className="simulator-info-grid">
+              <CurrentSettingsReadout
+              riseMm={camera.frontRiseMm}
+              tiltDeg={camera.frontTiltDeg}
+              swingDeg={camera.frontSwingDeg}
+              focusDistanceMm={camera.focusDistanceMm}
+              aperture={camera.aperture as number}
+              renderQuality={renderQuality}
+              pipeline={groundGlassPipeline}
+              qualitySettings={qualitySettings}
+              lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
+            />
+
+            <FocusTargetsReadout focusTargets={focusAssistTargets} />
+
+            <div className="simulator-info-card" aria-label="Focus Fundamentals">
+              <h4>Focus Fundamentals Debug</h4>
+              {camera.activeSceneId === 'focus-fundamentals-two-targets' ? (
+                <div style={{ paddingTop: 8 }}>
+                  <FocusFundamentalsDebugPanel sceneId={camera.activeSceneId} opticsState={opticsState} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
+                </div>
+              ) : (
+                <div style={{ color: 'var(--text-muted)' }}>Debug info not available for this scene.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="simulator-task-feedback-grid">
+            <div className="simulator-info-card simulator-info-card--task">
+              <h4>Task</h4>
+              <TaskPanel task={task} />
+            </div>
+            <div className="simulator-info-card simulator-info-card--feedback">
+              <h4>Feedback</h4>
+              <FeedbackPanel evaluation={evaluation} />
+            </div>
+          </div>
+
+        </main>
+
+        {/* Right aside: independent scroll */}
+        <aside className="simulator-aside">
+          <section aria-label="Camera Controls">
+            <div className="aside-header">
+              <h3 style={{ margin: 0 }}>Camera Controls</h3>
+              <button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>Infinity Reset</button>
+            </div>
+
+            <div style={{ marginTop: 8 }}>
+              <div className="sim-section">
+                <div className="sim-section-label">Movement</div>
+                <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
+              </div>
+
+              <div className="sim-section">
+                <div className="sim-section-label">Focus</div>
+                <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} showTitle={false} />
+              </div>
+
+              <div className="sim-section">
+                <div className="sim-section-label">Aperture</div>
+                <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} showTitle={false} />
+              </div>
+
+              <div className="sim-section reset" style={{ paddingBottom: 0 }}>
+                <div className="sim-section-label">Reset</div>
+                <ResetControls showTitle={false} />
+              </div>
+            </div>
+
+          </section>
+
+          <section aria-label="Developer Tools" className="developer-tools">
+            <h3 style={{ margin: 0 }}>Developer Tools</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: 8 }}>
+              <label className="developer-tools__control">
+                <input className="form-checkbox" type="checkbox" checked={rawRttDebug} onChange={(e) => setRawRttDebug(e.target.checked)} />
+                RTT Debug: Raw ON/OFF
+              </label>
+            </div>
+          </section>
+        </aside>
       </div>
-      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-        <MovementControls
-          riseEnabled={enabledControls.has("rise")}
-          tiltEnabled={enabledControls.has("tilt")}
-          swingEnabled={enabledControls.has("swing")}
-          lockReason={lockReason}
-        />
-        <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} />
-        <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} />
-        <ViewOptions
-          orientationAssistEnabled={mode === "free"}
-          focusAssistEnabled={mode === "free"}
-          gridEnabled={mode === "free"}
-          lockReason={lockReason}
-        />
-        <ResetControls />
-      </div>
-      <TaskPanel task={task} />
-      <FeedbackPanel evaluation={evaluation} />
+
+      {/* Floating 2D Geometry panel (fixed) */}
+      {showGeometryPanel && (
+        <div
+          role="dialog"
+          aria-label="2D Geometry Panel"
+          style={{
+            position: "fixed",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "70vw",
+            height: "70vh",
+            maxWidth: "90vw",
+            maxHeight: "90vh",
+            minWidth: "420px",
+            minHeight: "320px",
+            background: "var(--panel-bg, #fff)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
+            borderRadius: "8px",
+            zIndex: 1200,
+            overflow: "auto",
+            padding: "0.75rem",
+            resize: 'both',
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+            <strong>2D Geometry</strong>
+            <button className="btn btn--compact" type="button" onClick={() => setShowGeometryPanel(false)} aria-label="Close 2D Geometry">
+              Close
+            </button>
+          </div>
+
+          <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
+        </div>
+      )}
+
     </div>
   );
 };

@@ -7,19 +7,21 @@ import { CAMERA_CONSTANTS, isApertureValue } from "../../utils/constants";
 type ApertureControlProps = {
   apertureEnabled: boolean;
   lockReason: string;
+  showTitle?: boolean;
 };
 
-export const ApertureControl = ({ apertureEnabled, lockReason }: ApertureControlProps) => {
+export const ApertureControl = ({ apertureEnabled, lockReason, showTitle = true }: ApertureControlProps) => {
   const { aperture } = useAppStore(useShallow(selectApertureControlState));
   const setAperture = useAppStore((state) => state.setAperture);
 
   return (
     <section aria-label={UI_COPY.controls.apertureTitle}>
-      <h3>{UI_COPY.controls.apertureTitle}</h3>
+      {showTitle && <h3>{UI_COPY.controls.apertureTitle}</h3>}
       <select
         aria-label={UI_COPY.controls.apertureTitle}
         value={aperture}
         disabled={!apertureEnabled}
+        className="form-select"
         onChange={(event) => {
           const parsed = Number(event.target.value);
           if (isApertureValue(parsed)) {
@@ -33,7 +35,7 @@ export const ApertureControl = ({ apertureEnabled, lockReason }: ApertureControl
           </option>
         ))}
       </select>
-      {!apertureEnabled && <small>{lockReason}</small>}
+      {!apertureEnabled && <small className="control-help">{lockReason}</small>}
     </section>
   );
 };

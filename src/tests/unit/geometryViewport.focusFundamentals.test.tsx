@@ -146,6 +146,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
         aperture={11}
         renderQuality="low"
         sceneId={scene.id}
+        previewMode="raw"
       />,
     );
 

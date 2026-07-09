@@ -1,6 +1,5 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { SceneRenderer } from "../../render/SceneRenderer";
-import { useAppStore } from "../../state/appStore";
 import { getLazySceneAssets, getPreloadSceneAssets, getRequiredSceneAssets } from "../../scenes/definitions";
 import { isWebGLAvailable } from "../../utils/webgl";
 import type { UiErrorState } from "../../types/ui";
@@ -15,6 +14,8 @@ type SceneViewportProps = {
   renderQuality: RenderQualityProfile;
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
   simulateAssetFailure: boolean;
+  onToggleGeometryPanel?: () => void;
+  showHeader?: boolean;
 };
 
 const parseRenderQuality = (value: string): RenderQualityProfile => {
@@ -30,6 +31,8 @@ export const SceneViewport = ({
   renderQuality,
   setRenderQuality,
   simulateAssetFailure,
+  onToggleGeometryPanel,
+  showHeader,
 }: SceneViewportProps) => {
   const [attempt, setAttempt] = useState(0);
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
@@ -72,51 +75,44 @@ export const SceneViewport = ({
 
   return (
     <section>
-      <h2>{UI_COPY.simulator.sceneTitle}</h2>
+      {showHeader !== false && <h2>{UI_COPY.simulator.sceneTitle}</h2>}
       <p data-testid="scene-front-y-mm">Front standard Y: {opticsState.lensCenterWorld.y.toFixed(1)} mm</p>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-          <input
-            type="checkbox"
-            checked={showFocusPlaneOverlay}
-            onChange={(event) => setShowFocusPlaneOverlay(event.target.checked)}
-          />
-          {UI_COPY.simulator.focusPlaneOverlayLabel}
-        </label>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-          <input type="checkbox" checked={showDofOverlay} onChange={(event) => setShowDofOverlay(event.target.checked)} />
-          {UI_COPY.simulator.dofOverlayLabel}
-        </label>
-        <button
-          type="button"
-          onClick={() => {
-            // Infinity reset: use dedicated action that enters infinity focus mode atomically
-            useAppStore.getState().setInfinityFocus();
-          }}
-        >
-          Infinity Reset
-        </button>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-          <span>{UI_COPY.simulator.renderQualityLabel}</span>
-          <select
-            value={renderQuality}
-            onChange={(event) => setRenderQuality(parseRenderQuality(event.target.value))}
-          >
-            <option value="high">{UI_COPY.simulator.renderQualityHigh}</option>
-            <option value="standard">{UI_COPY.simulator.renderQualityStandard}</option>
-            <option value="low">{UI_COPY.simulator.renderQualityLow}</option>
-          </select>
-        </label>
-        <button type="button" onClick={() => setViewResetNonce((value) => value + 1)}>
-          {UI_COPY.simulator.sceneViewReset}
-        </button>
-        <button
-          type="button"
-          onClick={() => setBigView((v) => !v)}
-          style={{ marginLeft: "auto", background: bigView ? "#ef4444" : undefined, color: bigView ? "#fff" : undefined }}
-        >
-          {bigView ? "Exit Big View" : "Big View"}
-        </button>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.5rem" }}>
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+            <input className="form-checkbox" type="checkbox" checked={showFocusPlaneOverlay} onChange={(event) => setShowFocusPlaneOverlay(event.target.checked)} />
+            {UI_COPY.simulator.focusPlaneOverlayLabel}
+          </label>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+            <input className="form-checkbox" type="checkbox" checked={showDofOverlay} onChange={(event) => setShowDofOverlay(event.target.checked)} />
+            {UI_COPY.simulator.dofOverlayLabel}
+          </label>
+
+          {/* move render quality up into this row */}
+          <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+            <span>{UI_COPY.simulator.renderQualityLabel}</span>
+            <select className="form-select" value={renderQuality} onChange={(event) => setRenderQuality(parseRenderQuality(event.target.value))}>
+              <option value="high">{UI_COPY.simulator.renderQualityHigh}</option>
+              <option value="standard">{UI_COPY.simulator.renderQualityStandard}</option>
+              <option value="low">{UI_COPY.simulator.renderQualityLow}</option>
+            </select>
+          </label>
+        </div>
+
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+          <button type="button" className="btn" onClick={() => setViewResetNonce((value) => value + 1)}>
+            {UI_COPY.simulator.sceneViewReset}
+          </button>
+
+          {/* Geometry panel toggle moved into Scene controls */}
+          {onToggleGeometryPanel && (
+            <button type="button" onClick={onToggleGeometryPanel} className="btn btn--secondary">
+              Open 2D Geometry
+            </button>
+          )}
+
+          {/* Big view toggle removed from this row; replaced by overlay icon in the renderer container */}
+        </div>
       </div>
       <p style={{ fontSize: 12, color: "#4b5563", marginTop: 0 }}>
         Loaded assets: {requiredAssets.length} required, {lazyAssets.length} lazy for current scene,{" "}
@@ -144,9 +140,9 @@ export const SceneViewport = ({
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-            <strong>{UI_COPY.simulator.sceneTitle} — Big View</strong>
+            <strong>{UI_COPY.simulator.sceneTitle}</strong>
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button type="button" onClick={() => setBigView(false)}>
+              <button className="btn btn--compact" type="button" onClick={() => setBigView(false)}>
                 Close
               </button>
             </div>
@@ -168,19 +164,33 @@ export const SceneViewport = ({
           </div>
         </div>
       ) : (
-        <SceneRenderer
-          scene={scene}
-          opticsState={opticsState}
-          attempt={attempt}
-          showFocusPlaneOverlay={showFocusPlaneOverlay}
-          showDofOverlay={showDofOverlay}
-          showOpticalDebugPlanes={false}
-          renderQuality={renderQuality}
-          viewResetNonce={viewResetNonce}
-          simulateAssetFailure={simulateAssetFailure}
-          onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
-          containerStyle={{ height: 320, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
-        />
+        <div style={{ position: 'relative' }}>
+          <div>
+            <SceneRenderer
+              scene={scene}
+              opticsState={opticsState}
+              attempt={attempt}
+              showFocusPlaneOverlay={showFocusPlaneOverlay}
+              showDofOverlay={showDofOverlay}
+              showOpticalDebugPlanes={false}
+              renderQuality={renderQuality}
+              viewResetNonce={viewResetNonce}
+              simulateAssetFailure={simulateAssetFailure}
+              onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
+              containerStyle={{ width: '100%', aspectRatio: '5 / 4', border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
+            />
+          </div>
+
+          {/* fullscreen icon button at top-right of the scene renderer */}
+          <button
+            aria-label={bigView ? 'Exit full screen' : 'Open big view'}
+            title={bigView ? 'Exit full screen' : 'Open big view'}
+            className="btn btn--icon btn--viewport-action"
+            onClick={() => setBigView(true)}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+          </button>
+        </div>
       )}
     </section>
   );

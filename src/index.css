@@ -1,7 +1,21 @@
 :root {
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  color: #111827;
-  background: #f9fafb;
+  --app-bg: #f5f7fb;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --border: #dbe3ef;
+  --border-soft: #e8eef6;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-soft: #eff6ff;
+  --success-soft: #ecfdf5;
+  --danger: #ef4444;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
+  color: var(--text);
+  background: var(--app-bg);
 }
 
 * {
@@ -13,7 +27,7 @@ body {
 }
 
 a {
-  color: #2563eb;
+  color: var(--primary);
 }
 
 button {
@@ -23,3 +37,404 @@ button {
 .page {
   padding: 1rem;
 }
+
+/* Full-bleed mode for pages that own the viewport (e.g., simulator) */
+.page--full-bleed {
+  padding: 0;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.page--full-bleed > main {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Simulator layout classes */
+.simulator-shell {
+  height: 100dvh;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+/* Body should be main + aside columns */
+.simulator-body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 16px;
+  overflow: hidden;
+  padding: 16px;
+}
+
+/* Main owns vertical scrolling and contains viewport grid + info grid */
+.simulator-main {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 16px;
+  padding-right: 0;
+}
+
+/* Aside should fill the body's height */
+.simulator-aside {
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 20px;
+  border-left: 1px solid rgba(15,23,42,0.06);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.simulator-header {
+  height: 72px;
+  background: var(--surface);
+  border-bottom: 1px solid rgba(15,23,42,0.06);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.simulator-header .title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.simulator-header .subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+
+.simulator-viewport-grid {
+  display: grid;
+ grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* Make the two viewport cards match height and layout */
+.simulator-viewport-grid > .simulator-card {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.simulator-viewport-grid > .simulator-card > section {
+  flex: 1;
+  min-height: 0;
+}
+
+/* panel icon used in card headers */
+.panel-icon {
+ width: 30px;
+ height: 30px;
+ border-radius: 6px;
+ background: #eef2ff;
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ color: var(--primary);
+ flex: 0 0 30px;
+}
+
+.panel-icon--muted { background: #f1f5f9; color: #0f172a; }
+
+/* Card header: icon and title horizontally aligned */
+.simulator-card-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.simulator-card-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+/* info grid below the viewports */
+.simulator-info-grid {
+ display: grid;
+ grid-template-columns: minmax(260px, 0.8fr) minmax(260px, 0.8fr) minmax(420px, 1.4fr);
+ gap: 16px;
+ align-items: stretch;
+}
+
+/* Ground glass compact control bar (updated to row-based layout) */
+.groundglass-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.groundglass-controls {
+  display: grid;
+  gap: 8px;
+}
+
+.groundglass-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.groundglass-zoom-row {
+  grid-template-columns: 1fr auto;
+}
+
+.groundglass-label { min-width: 0; }
+
+.groundglass-options { min-width: 0; }
+
+.groundglass-zoom { display: flex; justify-content: flex-end; align-items: center; }
+
+.groundglass-viewport-frame { min-width: 0; }
+
+.control-group-title { margin: 0; font-size: 16px; line-height: 1.2; font-weight: 700; }
+
+.choice-list--inline { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+
+.btn--nowrap { white-space: nowrap; flex-shrink: 0; }
+
+.view-options { display: grid; gap: 6px; }
+.view-options--compact { gap: 6px; }
+
+@media (max-width: 900px) {
+  .groundglass-row { grid-template-columns: 1fr; }
+  .groundglass-zoom { justify-content: flex-start; }
+}
+
+.simulator-task-feedback-grid {
+ grid-column: 1 / -1;
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 16px;
+}
+
+/* allow cards to shrink inside grid columns to avoid overflow */
+.simulator-card {
+ background: var(--surface);
+ border: 1px solid var(--border-soft);
+ border-radius: var(--radius-md);
+ padding: 12px;
+ box-shadow: var(--shadow-card);
+ min-width: 0;
+}
+
+.simulator-info-card {
+ background: var(--surface);
+ border: 1px solid var(--border-soft);
+ border-radius: var(--radius-md);
+ padding: 12px;
+ box-shadow: var(--shadow-card);
+ min-width: 0;
+}
+
+.simulator-info-card--task {
+ background: linear-gradient(180deg, rgba(239,246,255,0.6), rgba(239,246,255,0.4));
+}
+
+.simulator-info-card--feedback {
+ background: linear-gradient(180deg, rgba(236,252,245,0.6), rgba(236,252,245,0.4));
+}
+
+.simulator-info-card h4 {
+ margin: 0 0 8px 0;
+ font-size: 13px;
+ letter-spacing: 0.02em;
+ text-transform: uppercase;
+ color: var(--text-muted);
+}
+
+/* Camera controls polish */
+
+/* Scene picker and developer tools small helper classes */
+.scene-picker { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.scene-picker__label { color: var(--text-muted); margin-right: 8px; }
+.developer-tools { margin-top: 1rem; padding: 8px; }
+.developer-tools__control { display: flex; align-items: center; gap: 8px; }
+
+
+.simulator-aside .aside-header {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ margin-bottom: 12px;
+}
+
+.sim-section-label {
+ font-size: 11px;
+ text-transform: uppercase;
+ color: var(--text-muted);
+ margin-bottom: 8px;
+ letter-spacing: 0.04em;
+}
+
+.sim-section {
+ padding: 10px 0;
+ border-bottom: 1px solid rgba(15,23,42,0.04);
+}
+
+.sim-control-row {
+ display: flex;
+ align-items: center;
+ gap: 8px;
+}
+
+.value-box {
+ min-width: 56px;
+ padding: 6px 8px;
+ border-radius: 6px;
+ border: 1px solid rgba(2,6,23,0.06);
+ background: #fff;
+ text-align: right;
+ font-size: 13px;
+}
+
+.btn-outline-danger {
+ background: transparent;
+ color: var(--danger);
+ border: 1px solid var(--danger);
+}
+
+/* Make reset section buttons appear as danger outlines */
+.sim-section.reset .btn {
+ border-color: var(--danger);
+ color: var(--danger);
+ background: transparent;
+}
+
+/* App brand */
+.app-brand {
+ display: flex;
+ align-items: center;
+ gap: 12px;
+}
+
+.app-icon {
+ width: 40px;
+ height: 40px;
+ border-radius: 8px;
+ background: linear-gradient(135deg, #eef2ff, #e6f0ff);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ color: var(--primary);
+}
+
+.app-title-block {
+ display: flex;
+ flex-direction: column;
+}
+
+.app-title {
+ font-size: 16px;
+ font-weight: 700;
+}
+
+.app-subtitle {
+ font-size: 12px;
+ color: var(--text-muted);
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Buttons and form controls (design system) */
+.btn {
+ padding: 6px 10px;
+ border-radius: 8px;
+ border: 1px solid rgba(2,6,23,0.08);
+ background: #fff;
+ cursor: pointer;
+ height: 32px;
+ display: inline-flex;
+ align-items: center;
+ gap: 8px;
+}
+
+.btn--primary {
+ background: var(--primary);
+ color: white;
+ border-color: var(--primary);
+}
+
+.btn--secondary {
+ background: #f8fafc;
+ color: var(--text);
+ border-color: rgba(2,6,23,0.06);
+}
+
+.btn--ghost {
+ background: transparent;
+ border-color: transparent;
+}
+
+.btn--danger {
+ background: transparent;
+ color: var(--danger);
+ border-color: var(--danger);
+}
+
+.btn--compact { padding: 4px 8px; height: 28px; font-size: 13px; }
+
+.btn--icon { width: 34px; height: 34px; padding: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
+
+.btn--viewport-action { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.9); border-color: rgba(148,163,184,0.18); backdrop-filter: blur(6px); z-index: 10; }
+
+.control-label { display: grid; gap: 6px; font-size: 14px; color: var(--text); }
+.control-help { color: var(--text-muted); font-size: 12px; }
+.control-stack { display: grid; gap: 8px; }
+.choice-list { display: grid; gap: 6px; }
+.choice-label { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.range-slider { width: 100%; accent-color: var(--primary); }
+
+.form-select, .form-input {
+ height: 32px;
+ padding: 6px 8px;
+ border-radius: 8px;
+ border: 1px solid rgba(2,6,23,0.08);
+ background: #fff;
+}
+
+.form-checkbox, .form-radio { width: 16px; height: 16px; }
+
+.slider { height: 28px; }
+
+.control-row { display: flex; align-items: center; gap: 8px; }
+.control-group { display: grid; gap: 8px; }

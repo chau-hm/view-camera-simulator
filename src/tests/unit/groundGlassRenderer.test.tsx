@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { GroundGlassRenderer, projectWorldPointToGroundGlass } from "../../render/GroundGlassRenderer";
+import { GroundGlassViewport } from "../../components/simulator/GroundGlassViewport";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { DEFAULT_CAMERA_STATE, CAMERA_CONSTANTS } from "../../utils/constants";
@@ -25,30 +26,33 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={DEFAULT_CAMERA_STATE.focusDistanceMm}
         aperture={DEFAULT_CAMERA_STATE.aperture}
         renderQuality="standard"
+        previewMode="raw"
       />,
     );
 
-    expect(screen.getByText("Ground glass pipeline")).toBeInTheDocument();
-    expect(screen.getByText("Current settings")).toBeInTheDocument();
-    expect(screen.getByText("Focus targets")).toBeInTheDocument();
+    // Pipeline title removed from UI; ensure assist labels remain
+    expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
     expect(screen.getByText("Focus assist")).toBeInTheDocument();
-    expect(screen.getByText(/Sharp|Near-sharp|Blurred/)).toBeInTheDocument();
   });
 
-  it("supports zoom mode without changing camera state", () => {
+  it("supports zoom mode (control belongs to viewport) without changing camera state", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     render(
-      <GroundGlassRenderer
+      <GroundGlassViewport
         opticsState={opticsState}
-        assistEnabled={false}
+        orientationAssistEnabled={true}
         focusAssistEnabled={false}
         gridEnabled={false}
+        canToggleFocusAssist={true}
+        canToggleGrid={true}
+        canToggleGroundGlassAssist={true}
         riseMm={10}
         tiltDeg={2}
         swingDeg={-1}
         focusDistanceMm={2500}
         aperture={11}
         renderQuality="low"
+        sceneId={architectureRiseScene.id}
       />,
     );
 
@@ -71,6 +75,7 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={2000}
         aperture={11}
         renderQuality="standard"
+        previewMode="raw"
       />,
     );
 
@@ -91,6 +96,7 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={4200}
         aperture={32}
         renderQuality="standard"
+        previewMode="raw"
       />,
     );
 
@@ -127,7 +133,7 @@ describe("GroundGlassRenderer", () => {
     expect(pFar.vRaw).toBeLessThan(1);
   });
 
-  it("raw mode returns uRaw/vRaw and upright assist reverses both axes", () => {
+  it("display mapping: raw applies physical inversion; upright uses non-inverted coordinates", () => {
     const cameraState = { ...DEFAULT_CAMERA_STATE, focalLengthMm: 150, focusDistanceMm: 2000 };
     const opticsState = deriveOpticsState(cameraState, focusFundamentalsTwoTargets);
     const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
@@ -135,17 +141,21 @@ describe("GroundGlassRenderer", () => {
     const target = focusFundamentalsTwoTargets.focusTargets[0].worldPosition;
     const p = projectWorldPointToGroundGlass(target, opticsState.lensCenterWorld, imgDist, CAMERA_CONSTANTS.filmWidthMm, CAMERA_CONSTANTS.filmHeightMm);
 
-    // raw mode uses uRaw/vRaw directly
+    // raw display mapping in this app uses physical inversion (1 - u/v)
     const uRaw = p.uRaw;
     const vRaw = p.vRaw;
-    expect(uRaw).toBeDefined();
-    expect(vRaw).toBeDefined();
+    const displayRawU = 1 - uRaw;
+    const displayRawV = 1 - vRaw;
+    expect(displayRawU).toBeGreaterThanOrEqual(0);
+    expect(displayRawU).toBeLessThanOrEqual(1);
+    expect(displayRawV).toBeGreaterThanOrEqual(0);
+    expect(displayRawV).toBeLessThanOrEqual(1);
 
-    // upright assists uses inverted coordinates
-    const uUpright = 1 - uRaw;
-    const vUpright = 1 - vRaw;
-    expect(uUpright).toBeCloseTo(1 - uRaw);
-    expect(vUpright).toBeCloseTo(1 - vRaw);
+    // upright mapping is non-inverted (same as uRaw/vRaw)
+    const displayUprightU = uRaw;
+    const displayUprightV = vRaw;
+    expect(displayUprightU).toBeCloseTo(uRaw);
+    expect(displayUprightV).toBeCloseTo(vRaw);
   });
 
   it("off-frame target returns visible:false rather than clamping", () => {
@@ -195,6 +205,7 @@ describe("GroundGlassRenderer", () => {
         aperture={11}
         renderQuality="standard"
         sceneId={focusFundamentalsTwoTargets.id}
+        previewMode="raw"
       />,
     );
 

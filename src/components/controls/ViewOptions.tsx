@@ -4,17 +4,23 @@ import { selectViewOptionState } from "../../state/selectors";
 import { UI_COPY } from "../../ui/copy";
 
 type ViewOptionsProps = {
-  orientationAssistEnabled: boolean;
-  focusAssistEnabled: boolean;
-  gridEnabled: boolean;
+  // permissions: whether the user is allowed to toggle each option in the current mode/task
+  canToggleFocusAssist: boolean;
+  canToggleGrid: boolean;
+  canToggleGroundGlassAssist?: boolean;
+  // show/hide the ground glass assist control if needed (optional)
+  showGroundGlassAssist?: boolean;
   lockReason: string;
+  compact?: boolean;
 };
 
 export const ViewOptions = ({
-  orientationAssistEnabled,
-  focusAssistEnabled,
-  gridEnabled,
+  canToggleFocusAssist,
+  canToggleGrid,
+  canToggleGroundGlassAssist = false,
+  showGroundGlassAssist = true,
   lockReason,
+  compact = false,
 }: ViewOptionsProps) => {
   const viewOptions = useAppStore(useShallow(selectViewOptionState));
   const toggleGroundGlassAssist = useAppStore((state) => state.toggleGroundGlassAssist);
@@ -22,41 +28,50 @@ export const ViewOptions = ({
   const toggleGrid = useAppStore((state) => state.toggleGrid);
 
   return (
-    <section aria-label={UI_COPY.controls.viewOptionsTitle}>
-      <h3>{UI_COPY.controls.viewOptionsTitle}</h3>
-      <label>
-        <input
-          aria-label={UI_COPY.controls.groundGlassAssistLabel}
-          type="checkbox"
-          checked={viewOptions.groundGlassAssistEnabled}
-          disabled={!orientationAssistEnabled}
-          onChange={toggleGroundGlassAssist}
-        />
-        {UI_COPY.controls.groundGlassAssistLabel}
-        {!orientationAssistEnabled && <small>{lockReason}</small>}
-      </label>
-      <label>
-        <input
-          aria-label={UI_COPY.controls.focusAssistLabel}
-          type="checkbox"
-          checked={viewOptions.focusAssistEnabled}
-          disabled={!focusAssistEnabled}
-          onChange={toggleFocusAssist}
-        />
-        {UI_COPY.controls.focusAssistLabel}
-        {!focusAssistEnabled && <small>{lockReason}</small>}
-      </label>
-      <label>
-        <input
-          aria-label={UI_COPY.controls.gridLabel}
-          type="checkbox"
-          checked={viewOptions.gridEnabled}
-          disabled={!gridEnabled}
-          onChange={toggleGrid}
-        />
-        {UI_COPY.controls.gridLabel}
-        {!gridEnabled && <small>{lockReason}</small>}
-      </label>
+    <section aria-label={UI_COPY.controls.viewOptionsTitle} className={compact ? 'view-options view-options--compact' : 'view-options'}>
+      {!compact && <h3 className="control-group-title">{UI_COPY.controls.viewOptionsTitle}</h3>}
+      <div className={compact ? 'choice-list choice-list--inline' : 'choice-list'}>
+        {showGroundGlassAssist && (
+          <label className="choice-label">
+            <input
+              className="form-checkbox"
+              aria-label={UI_COPY.controls.groundGlassAssistLabel}
+              type="checkbox"
+              checked={viewOptions.groundGlassAssistEnabled}
+              disabled={!canToggleGroundGlassAssist}
+              onChange={() => toggleGroundGlassAssist()}
+            />
+            <span>{UI_COPY.controls.groundGlassAssistLabel}</span>
+            {!canToggleGroundGlassAssist && <small className="control-help">{lockReason}</small>}
+          </label>
+        )}
+
+        <label className="choice-label">
+          <input
+            className="form-checkbox"
+            aria-label={UI_COPY.controls.focusAssistLabel}
+            type="checkbox"
+            checked={viewOptions.focusAssistEnabled}
+            disabled={!canToggleFocusAssist}
+            onChange={() => toggleFocusAssist()}
+          />
+          <span>{UI_COPY.controls.focusAssistLabel}</span>
+          {!canToggleFocusAssist && <small className="control-help">{lockReason}</small>}
+        </label>
+
+        <label className="choice-label">
+          <input
+            className="form-checkbox"
+            aria-label={UI_COPY.controls.gridLabel}
+            type="checkbox"
+            checked={viewOptions.gridEnabled}
+            disabled={!canToggleGrid}
+            onChange={() => toggleGrid()}
+          />
+          <span>{UI_COPY.controls.gridLabel}</span>
+          {!canToggleGrid && <small className="control-help">{lockReason}</small>}
+        </label>
+      </div>
     </section>
   );
 };

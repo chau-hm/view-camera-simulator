@@ -52,7 +52,7 @@ export const SimulatorRoutePage = () => {
   }
 
   return (
-    <AppShell title="Simulator workspace">
+    <AppShell title="" fullBleed>
       <Suspense fallback={<p>Loading simulator workspace…</p>}>
         <SimulatorWorkspace
           mode={parsedMode}

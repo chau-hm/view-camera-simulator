@@ -162,6 +162,7 @@ const OpticalAxisOverlay = ({ opticsState }: { opticsState: DerivedOpticsState }
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       {/* optical axis color updated to be visually distinct from FOV rays */}
+      {/* Note: WebGL lineBasicMaterial linewidth is ignored by many browser/GPU combinations. */}
       <lineBasicMaterial attach="material" color="#06b6d4" linewidth={2} transparent opacity={0.95} />
     </line>
   );
@@ -472,6 +473,8 @@ const SceneContent = ({
                   <bufferGeometry>
                     <bufferAttribute attach="attributes-position" args={[positions, 3]} />
                   </bufferGeometry>
+                  {/* Note: WebGL lineBasicMaterial linewidth is ignored by many browser/GPU combinations.
+                       These lines are visual guides only; use mesh/shader-based lines if consistent thickness becomes required. */}
                   <lineBasicMaterial attach="material" color="#f59e0b" linewidth={2} transparent opacity={0.98} />
                 </line>
               );
@@ -667,8 +670,9 @@ export const SceneRenderer = ({
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [legendPositions, setLegendPositions] = useState<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>({});
-  const [showLegends, setShowLegends] = useState(true);
-  const [showDebugOverlay, setShowDebugOverlay] = useState(true);
+  // Default legends and debug overlays hidden by default
+  const [showLegends, setShowLegends] = useState(false);
+  const [showDebugOverlay, setShowDebugOverlay] = useState(false);
 
   // ensure the wrapper is positioned so absolute children (legends, button) are positioned relative to it
   const wrapperStyle: React.CSSProperties = containerStyle
