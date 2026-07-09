@@ -225,71 +225,88 @@ button {
  background: transparent;
 }
 
-
-.simulator-card {
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  padding: 12px;
-  box-shadow: var(--shadow-card);
+/* App brand */
+.app-brand {
+ display: flex;
+ align-items: center;
+ gap: 12px;
 }
 
-.simulator-card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
+.app-icon {
+ width: 40px;
+ height: 40px;
+ border-radius: 8px;
+ background: linear-gradient(135deg, #eef2ff, #e6f0ff);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ color: var(--primary);
 }
 
-.simulator-card-header h2 {
-  font-size: 16px;
-  margin: 0;
+.app-title-block {
+ display: flex;
+ flex-direction: column;
 }
 
-.simulator-control-strip {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-bottom: 8px;
+.app-title {
+ font-size: 16px;
+ font-weight: 700;
 }
 
+.app-subtitle {
+ font-size: 12px;
+ color: var(--text-muted);
+}
 
+/* Buttons and form controls (design system) */
 .btn {
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(2,6,23,0.08);
-  background: #fff;
-  cursor: pointer;
+ padding: 6px 10px;
+ border-radius: 8px;
+ border: 1px solid rgba(2,6,23,0.08);
+ background: #fff;
+ cursor: pointer;
+ height: 32px;
+ display: inline-flex;
+ align-items: center;
+ gap: 8px;
 }
 
-.btn-primary {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
+.btn--primary {
+ background: var(--primary);
+ color: white;
+ border-color: var(--primary);
 }
 
-.btn-outline-primary {
-  background: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
+.btn--secondary {
+ background: #f8fafc;
+ color: var(--text);
+ border-color: rgba(2,6,23,0.06);
 }
 
-.footer-cards {
-  padding: 12px 16px;
-  background: var(--surface);
-  border-top: 1px solid rgba(15,23,42,0.06);
+.btn--ghost {
+ background: transparent;
+ border-color: transparent;
 }
 
-.footer-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+.btn--danger {
+ background: transparent;
+ color: var(--danger);
+ border-color: var(--danger);
 }
 
-.info-card {
-  padding: 12px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
-  border-radius: 10px;
-  border: 1px solid var(--border-soft);
+.btn--compact { padding: 4px 8px; height: 28px; font-size: 13px; }
+
+.form-select, .form-input {
+ height: 32px;
+ padding: 6px 8px;
+ border-radius: 8px;
+ border: 1px solid rgba(2,6,23,0.08);
+ background: #fff;
 }
+
+.form-checkbox, .form-radio { width: 16px; height: 16px; }
+
+.slider { height: 28px; }
+
+.control-row { display: flex; align-items: center; gap: 8px; }
+.control-group { display: grid; gap: 8px; }

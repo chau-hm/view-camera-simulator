@@ -65,6 +65,7 @@ export const GroundGlassViewport = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label>
               <input
+                className="form-radio"
                 type="radio"
                 name={`gg-preview-${sceneId}`}
                 checked={previewMode === "raw"}
@@ -74,6 +75,7 @@ export const GroundGlassViewport = ({
             </label>
             <label>
               <input
+                className="form-radio"
                 type="radio"
                 name={`gg-preview-${sceneId}`}
                 checked={previewMode === "upright"}
@@ -101,15 +103,7 @@ export const GroundGlassViewport = ({
             type="button"
             onClick={() => setZoomEnabled((s) => !s)}
             aria-pressed={zoomEnabled}
-            style={{
-              background: zoomEnabled ? '#0f172a' : '#ffffff',
-              color: zoomEnabled ? '#ffffff' : '#0f172a',
-              border: '1px solid rgba(2,6,23,0.08)',
-              padding: '6px 10px',
-              borderRadius: 6,
-              fontSize: 12,
-              cursor: 'pointer',
-            }}
+            className={`btn btn--compact ${zoomEnabled ? 'btn--primary' : 'btn--secondary'}`}
           >
             {zoomEnabled ? UI_COPY.simulator.groundGlassZoomOut : UI_COPY.simulator.groundGlassZoomIn}
           </button>

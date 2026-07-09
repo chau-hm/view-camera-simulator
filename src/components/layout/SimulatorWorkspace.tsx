@@ -15,7 +15,7 @@ import { ResetControls } from "../controls/ResetControls";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
-import { GroundGlassReadouts } from "../simulator/GroundGlassReadouts";
+import { CurrentSettingsReadout, FocusTargetsReadout } from "../simulator/GroundGlassReadouts";
 import { FocusFundamentalsDebugPanel } from "../simulator/FocusFundamentalsDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
@@ -94,18 +94,25 @@ export const SimulatorWorkspace = ({
     <div className="simulator-shell" data-reduced-motion={reducedMotion ? "true" : "false"}>
       {/* Header */}
       <header className="simulator-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 8, background: 'linear-gradient(135deg, #eef2ff, #e6f0ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--primary)' }}>CV</div>
-          <div>
-            <div className="title">Simulator Workspace</div>
-            <div className="subtitle">View Camera Focus & Movements Trainer</div>
+        <div className="app-brand">
+          <div className="app-icon" aria-hidden="true">
+            {/* simple SVG camera icon */}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" fill="none" />
+              <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.2" fill="none" />
+              <rect x="7" y="4" width="3" height="2" rx="0.5" fill="currentColor" />
+            </svg>
+          </div>
+          <div className="app-title-block">
+            <div className="app-title">Simulator Workspace</div>
+            <div className="app-subtitle">View Camera Focus & Movements Trainer</div>
           </div>
         </div>
 
         {mode === "free" && (
           <section aria-label={UI_COPY.simulator.scenePickerLabel} style={{ marginLeft: "auto", display: 'flex', alignItems: 'center', gap: 8 }}>
             <label style={{ color: 'var(--text-muted)' }}>Scene</label>
-            <select aria-label="Scene" value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
+            <select className="form-select" aria-label="Scene" value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
               {allScenes.map((registeredScene) => (
                 <option key={registeredScene.id} value={registeredScene.id}>
                   {registeredScene.name}
@@ -176,39 +183,28 @@ export const SimulatorWorkspace = ({
 
           {/* Info grid: current settings, focus targets, debug */}
           <div className="simulator-info-grid">
-            <div className="simulator-info-card" aria-label="Current Settings">
-              <h4>Current Settings</h4>
-              <div style={{ display: 'grid', gap: 6 }}>
-                <div>Rise: {camera.frontRiseMm} mm</div>
-                <div>Tilt: {camera.frontTiltDeg}°</div>
-                <div>Swing: {camera.frontSwingDeg}°</div>
-                <div>Focus Distance: {camera.focusDistanceMm} mm</div>
-                <div>Aperture: {camera.aperture}</div>
-              </div>
-            </div>
+              <CurrentSettingsReadout
+              riseMm={camera.frontRiseMm}
+              tiltDeg={camera.frontTiltDeg}
+              swingDeg={camera.frontSwingDeg}
+              focusDistanceMm={camera.focusDistanceMm}
+              aperture={camera.aperture as number}
+              renderQuality={renderQuality}
+              pipeline={createGroundGlassDofPipeline(opticsState, 500, 400, renderQuality)}
+              qualitySettings={getRenderQualitySettings(renderQuality)}
+              lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
+            />
 
-            <div className="simulator-info-card" aria-label="Focus Targets">
-              <h4>Focus Targets</h4>
-              <div style={{ display: 'grid', gap: 8 }}>
-                {opticsState.focusTargets && opticsState.focusTargets.length > 0 ? (
-                  opticsState.focusTargets.map((t, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1 }}>{t.name}</div>
-                      <div style={{ width: 100, height: 8, background: '#eef2ff', borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ width: `${Math.min(100, Math.round(t.weight * 100))}%`, height: '100%', background: 'var(--primary)' }} />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ color: 'var(--text-muted)' }}>No focus targets</div>
-                )}
-              </div>
-            </div>
+            <FocusTargetsReadout focusTargets={
+              createFocusAssistPass({ enabled: camera.focusAssistEnabled, targets: opticsState.focusTargets }).targets
+            } />
 
             <div className="simulator-info-card" aria-label="Focus Fundamentals">
               <h4>Focus Fundamentals Debug</h4>
               {camera.activeSceneId === 'focus-fundamentals-two-targets' ? (
-                <FocusFundamentalsDebugPanel sceneId={camera.activeSceneId} opticsState={opticsState} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
+                <div style={{ paddingTop: 8 }}>
+                  <FocusFundamentalsDebugPanel sceneId={camera.activeSceneId} opticsState={opticsState} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
+                </div>
               ) : (
                 <div style={{ color: 'var(--text-muted)' }}>Debug info not available for this scene.</div>
               )}
@@ -233,7 +229,7 @@ export const SimulatorWorkspace = ({
           <section aria-label="Camera Controls">
             <div className="aside-header">
               <h3 style={{ margin: 0 }}>Camera Controls</h3>
-              <button className="btn" type="button" onClick={() => useAppStore.getState().setInfinityFocus()}>Infinity Reset</button>
+              <button className="btn btn--secondary" type="button" onClick={() => useAppStore.getState().setInfinityFocus()}>Infinity Reset</button>
             </div>
 
             <div style={{ marginTop: 8 }}>
@@ -301,7 +297,7 @@ export const SimulatorWorkspace = ({
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <strong>2D Geometry</strong>
-            <button type="button" onClick={() => setShowGeometryPanel(false)} aria-label="Close 2D Geometry">
+            <button className="btn btn--compact" type="button" onClick={() => setShowGeometryPanel(false)} aria-label="Close 2D Geometry">
               Close
             </button>
           </div>
