@@ -106,18 +106,6 @@ button {
   gap: 16px;
 }
 
-.simulator-header .title {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.simulator-header .subtitle {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-left: 8px;
-}
-
-
 .simulator-viewport-grid {
   display: grid;
  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -161,6 +149,14 @@ button {
   justify-content: flex-start;
   gap: 10px;
   margin-bottom: 14px;
+}
+
+/* Right-aligned header actions for simulator */
+.sim-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .simulator-card-title {
@@ -267,8 +263,6 @@ button {
 /* Camera controls polish */
 
 /* Scene picker and developer tools small helper classes */
-.scene-picker { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.scene-picker__label { color: var(--text-muted); margin-right: 8px; }
 .developer-tools { margin-top: 1rem; padding: 8px; }
 .developer-tools__control { display: flex; align-items: center; gap: 8px; }
 
@@ -326,33 +320,27 @@ button {
 .app-brand {
  display: flex;
  align-items: center;
- gap: 12px;
+ min-width: 0;
 }
 
-.app-icon {
- width: 40px;
- height: 40px;
- border-radius: 8px;
- background: linear-gradient(135deg, #eef2ff, #e6f0ff);
- display: flex;
+.app-brand__link {
+ display: inline-flex;
  align-items: center;
- justify-content: center;
- color: var(--primary);
-}
-
-.app-title-block {
- display: flex;
- flex-direction: column;
-}
-
-.app-title {
- font-size: 16px;
+ gap: 10px;
+ color: var(--text);
+ text-decoration: none;
  font-weight: 700;
 }
 
-.app-subtitle {
- font-size: 12px;
- color: var(--text-muted);
+.app-brand__icon {
+ flex: 0 0 auto;
+ font-size: 24px;
+ color: var(--text);
+}
+
+.app-brand__title {
+ min-width: 0;
+ white-space: nowrap;
 }
 
 /* Material Symbols */
@@ -386,8 +374,8 @@ button {
  display: inline-flex;
  align-items: center;
  gap: 8px;
+ text-decoration: none;
 }
-
 .btn--primary {
  background: var(--primary);
  color: white;
@@ -397,12 +385,175 @@ button {
 .btn--secondary {
  background: #f8fafc;
  color: var(--text);
- border-color: rgba(2,6,23,0.06);
+ border-color: rgba(2, 6, 23, 0.06);
 }
 
+/* Site-wide shell and marketing layout (top-level) */
+.site-shell {
+ min-height: 100dvh;
+ display: flex;
+ flex-direction: column;
+}
+
+.site-header {
+ width: 100%;
+ background: var(--surface);
+ border-bottom: 1px solid var(--border-soft);
+}
+
+.site-header__inner {
+ width: 100%;
+ max-width: 1100px;
+ margin: 0 auto;
+ padding: 12px 16px;
+ display: flex;
+ align-items: center;
+ gap: 16px;
+}
+
+.site-nav {
+ margin-left: auto;
+ display: flex;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: 12px;
+}
+
+.site-nav__link { text-decoration: none; color: var(--text); padding: 8px; border-radius: 8px; }
+.site-nav__link--active { background: var(--primary-soft); color: var(--primary); }
+
+.site-main {
+ flex: 1;
+ width: 100%;
+ padding: 24px 16px;
+ display: flex;
+ justify-content: center;
+}
+
+.marketing-container {
+ width: 100%;
+ max-width: 1100px;
+ margin: 0 auto;
+}
+
+.site-footer { width: 100%; border-top: 1px solid var(--border); }
+
+.site-footer__inner {
+ width: 100%;
+ max-width: 1100px;
+ margin: 0 auto;
+ padding: 16px;
+ display: flex;
+ justify-content: space-between;
+ align-items: flex-start;
+ flex-wrap: wrap;
+ gap: 12px;
+}
+
+/* Hero: single column intro */
+.hero {
+ padding: 64px 0;
+}
+
+.hero__content { max-width: 760px; }
+
+.hero h1 {
+ margin: 0;
+ max-width: 760px;
+ font-size: clamp(2rem, 4vw, 3.5rem);
+ line-height: 1.08;
+ letter-spacing: -0.03em;
+}
+
+.hero p { max-width: 760px; font-size: 1.05rem; line-height: 1.7; color: var(--text-muted); }
+
+.eyebrow {
+ margin-bottom: 12px;
+ color: var(--primary);
+ font-size: 0.875rem;
+ font-weight: 700;
+ letter-spacing: 0.06em;
+ text-transform: uppercase;
+}
+
+.content-section { padding: 36px 0; border-top: 1px solid var(--border-soft); }
+.content-section h2, .content-section h3 { margin-top: 0; }
+.content-section p { max-width: 850px; line-height: 1.7; color: var(--text-muted); }
+
+.scene-grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+ gap: 16px;
+ margin-top: 24px;
+}
+
+.scene-card {
+ min-width: 0;
+ padding: 20px;
+ background: var(--surface);
+ border: 1px solid var(--border-soft);
+ border-radius: var(--radius-md);
+ box-shadow: var(--shadow-card);
+}
+
+.scene-card h2, .scene-card h3 { margin-top: 0; }
+.scene-card p { line-height: 1.6; color: var(--text-muted); }
+.scene-card__meta { margin-top: 8px; color: var(--text-muted); font-size: 13px; }
+
+/* small utility actions spacing */
+.hero__actions,
+.content-section__actions,
+.scene-card__actions,
+.page-actions {
+ display: flex;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: 8px;
+}
+
+.hero__actions { margin-top: 16px; }
+.content-section__actions, .scene-card__actions { margin-top: 12px; }
+.content-note { margin-top: 16px; color: var(--text-muted); }
+
+#why { scroll-margin-top: 88px; }
+
+@media (max-width: 720px) {
+ .site-header__inner { align-items: flex-start; flex-wrap: wrap; }
+ .site-nav { width: 100%; margin-left: 0; }
+ .hero { padding: 32px 0; }
+ .scene-grid { grid-template-columns: 1fr; }
+ .site-footer__inner { flex-direction: column; }
+}
+
+
+
+/* Buttons and form controls (design system) */
 .btn--ghost {
  background: transparent;
  border-color: transparent;
+}
+
+@media (max-width: 480px) {
+  .simulator-header {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+
+  .simulator-header .app-brand__link {
+    gap: 8px;
+  }
+
+  .simulator-header .app-brand__icon {
+    font-size: 20px;
+  }
+
+  .simulator-header .app-brand__title {
+    font-size: 14px;
+  }
+
+  .sim-header-actions .btn {
+    padding-inline: 8px;
+  }
 }
 
 .btn--danger {

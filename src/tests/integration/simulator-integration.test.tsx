@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
@@ -7,10 +8,14 @@ import { getSceneById } from "../../scenes/definitions";
 import { selectDerivedOpticsState } from "../../state/selectors";
 import { useAppStore } from "../../state/appStore";
 
-const renderWorkspace = (mode: "guided" | "free", sceneId: string, taskId: string | null) =>
-  render(
-    <SimulatorWorkspace mode={mode} sceneId={sceneId} taskId={taskId} simulateAssetFailure={false} />,
+const renderWorkspace = (mode: "guided" | "free", sceneId: string, taskId: string | null) => {
+  const route = taskId ? `/simulator/${mode}/${sceneId}/${taskId}` : `/simulator/${mode}/${sceneId}`;
+  return render(
+    <MemoryRouter initialEntries={[route]}>
+      <SimulatorWorkspace mode={mode} sceneId={sceneId} taskId={taskId} simulateAssetFailure={false} />
+    </MemoryRouter>,
   );
+};
 
 describe("phase 12 integration", () => {
   afterEach(() => {
@@ -182,7 +187,6 @@ describe("phase 12 integration", () => {
     expect(screen.getByLabelText("Swing")).toBeInTheDocument();
     expect(screen.getByLabelText("Focus distance")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Scene" })).toBeInTheDocument();
     expect(screen.getByLabelText("Ground glass assist")).toBeInTheDocument();
     expect(screen.getByLabelText("Focus assist")).toBeInTheDocument();
     expect(screen.getByLabelText("Grid")).toBeInTheDocument();
