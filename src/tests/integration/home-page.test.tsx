@@ -8,7 +8,10 @@ describe("home page", () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/"] });
     render(<RouterProvider router={memoryRouter} />);
 
-    expect(await screen.findByText("See how a view camera changes the image before the shutter is pressed.")).toBeInTheDocument();
+    // landing should have exactly one H1 and it should be the hero heading
+    const h1s = await screen.findAllByRole('heading', { level: 1 });
+    expect(h1s.length).toBe(1);
+    expect(h1s[0]).toHaveTextContent("See how a view camera changes the image before the shutter is pressed.");
 
     expect(await screen.findByText("Explore the Simulator")).toBeInTheDocument();
     expect(await screen.findByText("Open Focus Fundamentals")).toBeInTheDocument();

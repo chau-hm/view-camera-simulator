@@ -11,6 +11,7 @@
     "test:e2e": "playwright test",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -b",
+    "check:css": "node ./scripts/check-css-structure.mjs",
     "ci:local": "node ./scripts/ci-local.mjs",
     "ci:local:e2e": "node ./scripts/ci-local.mjs --with-e2e",
     "preview": "vite preview"

@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 const includeE2E = process.argv.includes("--with-e2e");
 
 const steps = [
+  { name: "CSS structure check", command: "npm", args: ["run", "check:css"] },
   { name: "Lint", command: "npm", args: ["run", "lint"] },
   { name: "Type-check", command: "npm", args: ["run", "typecheck"] },
   { name: "Unit and integration tests", command: "npm", args: ["run", "test"] },

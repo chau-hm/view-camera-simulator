@@ -10,7 +10,7 @@ const SimulatorWorkspace = lazy(() =>
 );
 
 export const HomePage = () => (
-  <AppShell title="View Camera Simulator">
+  <AppShell title="">
     <section className="hero">
       <div className="hero__content">
         <div className="eyebrow">Interactive View Camera Learning</div>
@@ -19,7 +19,7 @@ export const HomePage = () => (
           Move the camera, adjust focus and aperture, and compare the 3D scene with the image formed on the
           ground glass.
         </p>
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", flexWrap: "wrap" }}>
+        <div className="hero__actions">
           <Link className="btn btn--primary" to="/scenes">
             Explore the Simulator
           </Link>
@@ -65,7 +65,7 @@ export const HomePage = () => (
     <section className="content-section">
       <h3>Start with focus</h3>
       <p>Use two targets at different distances to see how focus distance and aperture affect the ground-glass image.</p>
-      <div style={{ marginTop: 8 }}>
+      <div className="content-section__actions">
         <Link className="btn btn--primary" to="/simulator/free/focus-fundamentals-two-targets">
           Open Focus Fundamentals
         </Link>
@@ -77,7 +77,7 @@ export const HomePage = () => (
 export const ScenesPage = () => {
   const scenes = getPublicScenes();
   return (
-    <AppShell title="Scenes">
+    <AppShell title="Scenes" useSiteShell>
       <p>Choose a scene to explore how focus, perspective and camera movements affect the image on the ground glass.</p>
 
       <div className="scene-grid">
@@ -86,19 +86,18 @@ export const ScenesPage = () => {
             <h3>{s.name}</h3>
             <p>Compare two targets at different distances. Adjust focus and aperture to see how the plane of focus and depth of field change.</p>
             <div className="scene-card__meta">Focus · Aperture · Depth of field</div>
-            <div style={{ marginTop: 8 }}>
+            <div className="scene-card__actions">
               <Link className="btn btn--primary" to={`/simulator/free/${s.id}`}>Open Scene</Link>
             </div>
           </article>
         ))}
       </div>
 
-      <div className="content-note" style={{ marginTop: 16 }}>
-        Additional lessons for rise, tilt and swing are being rebuilt.
-      </div>
+      <div className="content-note">Additional lessons for rise, tilt and swing are being rebuilt.</div>
     </AppShell>
   );
 };
+
 
 export const ModeSelectionPage = () => {
   const navigate = useNavigate();
@@ -143,16 +142,16 @@ export const SimulatorRoutePage = () => {
 };
 
 export const ResultPage = () => (
-  <AppShell title="Task result">
+  <AppShell title="Task result" useSiteShell>
     <p>This route is reserved for final task summaries and debrief text.</p>
     <Link to="/">Back to home</Link>
   </AppShell>
 );
 
 export const NotFoundPage = () => (
-  <AppShell title="Not found">
+  <AppShell title="Not found" useSiteShell>
     <p>Route not found. Please return to the homepage.</p>
-    <div style={{ display: "flex", gap: "0.5rem" }}>
+    <div className="page-actions">
       <Link to="/">Back to Home</Link>
       <Link to="/scenes">Browse Scenes</Link>
     </div>
