@@ -9,7 +9,7 @@ export const AppBrand = ({ className = "" }: AppBrandProps) => (
     <Link to="/" className="app-brand__link" aria-label="View Camera Simulator home">
       <img
         className="app-brand__icon"
-        src="/assets/view-camera-app-icon.svg"
+        src="/assets/view-camera-app-icon-32.png"
         alt=""
         width="28"
         height="28"
