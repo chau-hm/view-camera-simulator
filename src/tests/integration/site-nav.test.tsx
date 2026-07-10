@@ -20,6 +20,18 @@ describe("site navigation", () => {
     const brandImg = document.querySelector('.app-brand__icon') as HTMLImageElement | null;
     expect(brandImg).toBeTruthy();
     expect(brandImg?.getAttribute('src')).toContain('view-camera-app-icon');
+
+    // The app asset URL should be built with Vite's BASE_URL rather than hard-coded root-relative '/assets/'
+    const base = import.meta.env.BASE_URL ?? '/';
+    const srcVal = brandImg?.getAttribute('src') ?? '';
+    if (base === '/') {
+      // local dev may have BASE_URL='/' so the URL will start with '/assets/' — accept that case
+      expect(srcVal).toContain('view-camera-app-icon');
+    } else {
+      expect(srcVal.startsWith('/assets/')).toBe(false);
+      expect(srcVal.startsWith(base)).toBe(true);
+    }
+
     // ensure old material-symbol text is no longer inside the brand link
     expect(brandLink.querySelector('.material-symbols-outlined')).toBeNull();
   });

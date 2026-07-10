@@ -38,7 +38,17 @@ describe("home page", () => {
     // hero illustration should render the supplied image asset
     const heroImg = document.querySelector('.hero__illustration img') as HTMLImageElement | null;
     expect(heroImg).toBeTruthy();
-    expect(heroImg?.getAttribute('src')).toContain('view-camera-hero-illustration.png');
+    const heroSrc = heroImg?.getAttribute('src') ?? '';
+    expect(heroSrc).toContain('view-camera-hero-illustration.png');
+
+    // Ensure BASE_URL is respected and no hard-coded root-relative '/assets/' is used unless BASE_URL is '/'
+    const base = import.meta.env.BASE_URL ?? '/';
+    if (base === '/') {
+      expect(heroSrc.startsWith('/assets/')).toBe(true);
+    } else {
+      expect(heroSrc.startsWith('/assets/')).toBe(false);
+      expect(heroSrc.startsWith(base)).toBe(true);
+    }
 
     // info cards: headings should be h2 and present exactly once each
     const cardHeadings = [

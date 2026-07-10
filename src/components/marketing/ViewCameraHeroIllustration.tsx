@@ -1,11 +1,13 @@
+import { publicAssetUrl } from "../../utils/publicAssetUrl";
+
 export const ViewCameraHeroIllustration = () => (
   <div className="hero__illustration" aria-hidden="true">
     <picture>
       <img
-        src="/assets/view-camera-hero-illustration.png"
+        src={publicAssetUrl("assets/view-camera-hero-illustration.png")}
         alt=""
-        width="1600"
-        height="1200"
+        width="1196"
+        height="958"
         decoding="async"
         fetchPriority="high"
       />
