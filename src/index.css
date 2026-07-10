@@ -333,9 +333,11 @@ button {
 }
 
 .app-brand__icon {
- flex: 0 0 auto;
- font-size: 24px;
- color: var(--text);
+ display: block;
+ width: 28px;
+ height: 28px;
+ flex: 0 0 28px;
+ border-radius: 7px;
 }
 
 .app-brand__title {
@@ -555,6 +557,8 @@ button {
     padding-inline: 8px;
   }
 }
+
+/* site marketing import - already included via main.tsx; keep this safe in index.css for older builds */
 
 .btn--danger {
  background: transparent;

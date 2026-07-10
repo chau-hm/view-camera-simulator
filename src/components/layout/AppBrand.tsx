@@ -7,7 +7,14 @@ type AppBrandProps = {
 export const AppBrand = ({ className = "" }: AppBrandProps) => (
   <div className={`app-brand ${className}`.trim()}>
     <Link to="/" className="app-brand__link" aria-label="View Camera Simulator home">
-      <span className="material-symbols-outlined app-brand__icon" aria-hidden="true">photo_camera</span>
+      <img
+        className="app-brand__icon"
+        src="/assets/view-camera-app-icon-32.png"
+        alt=""
+        width="28"
+        height="28"
+        aria-hidden="true"
+      />
       <span className="app-brand__title">View Camera Simulator</span>
     </Link>
   </div>

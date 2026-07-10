@@ -13,8 +13,10 @@ describe("scenes page", () => {
 
     // verify description and topics are rendered from the public catalog
     expect(screen.getByText(/Compare two targets at different distances/)).toBeInTheDocument();
-    expect(screen.getByText(/Focus · Aperture · Depth of field/)).toBeInTheDocument();
-
+    // topics are rendered as individual pills
+    expect(screen.getByText('Focus')).toBeInTheDocument();
+    expect(screen.getByText('Aperture')).toBeInTheDocument();
+    expect(screen.getByText('Depth of field')).toBeInTheDocument();
     // Legacy scenes should not be present in public listing
     expect(screen.queryByText("Architecture Rise")).toBeNull();
     expect(screen.queryByText("Table Tilt")).toBeNull();
