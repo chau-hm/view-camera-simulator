@@ -1,10 +1,9 @@
 import { Navigate, createBrowserRouter } from "react-router-dom";
 import { HomePage, NotFoundPage, ResultPage, SimulatorRoutePage, ScenesPage } from "./pages";
-import { ModeRedirect } from "./ModeRedirect";
 
 export const routes = [
   { path: "/", element: <HomePage /> },
-  { path: "/mode", element: <ModeRedirect /> },
+  { path: "/mode", element: <Navigate to="/scenes" replace /> },
   { path: "/scenes", element: <ScenesPage /> },
   { path: "/simulator/:mode/:sceneId", element: <SimulatorRoutePage /> },
   { path: "/simulator/:mode/:sceneId/:taskId", element: <SimulatorRoutePage /> },

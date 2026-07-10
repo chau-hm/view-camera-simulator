@@ -16,6 +16,9 @@ describe("home page", () => {
     expect(await screen.findByText("Explore the Simulator")).toBeInTheDocument();
     expect(await screen.findByText("Open Focus Fundamentals")).toBeInTheDocument();
 
+    // landing should have Start with focus as an h2
+    expect(await screen.findByRole('heading', { name: 'Start with focus', level: 2 })).toBeInTheDocument();
+
     // preview card removed from the landing hero
     expect(screen.queryByText("Focus Fundamentals — Two Targets")).toBeNull();
     expect(screen.queryByText("Focus · Aperture · Depth of field")).toBeNull();

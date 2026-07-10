@@ -8,7 +8,7 @@ describe("scenes page", () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
 
-    expect(await screen.findByText("Focus Fundamentals — Two Targets")).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Focus Fundamentals — Two Targets', level: 2 })).toBeInTheDocument();
     expect(screen.getByText(/Open Scene/)).toBeInTheDocument();
 
     // verify description and topics are rendered from the public catalog

@@ -374,6 +374,7 @@ button {
  display: inline-flex;
  align-items: center;
  gap: 8px;
+ text-decoration: none;
 }
 .btn--primary {
  background: var(--primary);
@@ -519,18 +520,40 @@ button {
 @media (max-width: 720px) {
  .site-header__inner { align-items: flex-start; flex-wrap: wrap; }
  .site-nav { width: 100%; margin-left: 0; }
- .hero { grid-template-columns: 1fr; padding: 32px 0; }
+ .hero { padding: 32px 0; }
  .scene-grid { grid-template-columns: 1fr; }
  .site-footer__inner { flex-direction: column; }
 }
 
-@media (max-width: 360px) {
-}
+
 
 /* Buttons and form controls (design system) */
 .btn--ghost {
  background: transparent;
  border-color: transparent;
+}
+
+@media (max-width: 480px) {
+  .simulator-header {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+
+  .simulator-header .app-brand__link {
+    gap: 8px;
+  }
+
+  .simulator-header .app-brand__icon {
+    font-size: 20px;
+  }
+
+  .simulator-header .app-brand__title {
+    font-size: 14px;
+  }
+
+  .sim-header-actions .btn {
+    padding-inline: 8px;
+  }
 }
 
 .btn--danger {

@@ -1,12 +1,3 @@
-import { useEffect } from "react";
-import { ScenesPage } from "./pages";
-
-export const ModeRedirect = () => {
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", "/scenes");
-    }
-  }, []);
-
-  return <ScenesPage />;
-};
+// ModeRedirect removed: router now uses React Router <Navigate /> for the /mode route.
+// This file is retained only for historic reference and should not be used.
+export default null;

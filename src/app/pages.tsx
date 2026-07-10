@@ -57,7 +57,7 @@ export const HomePage = () => (
     </section>
 
     <section className="content-section">
-      <h3>Start with focus</h3>
+      <h2>Start with focus</h2>
       <p>Use two targets at different distances to see how focus distance and aperture affect the ground-glass image.</p>
       <div className="content-section__actions">
         <Link className="btn btn--primary" to="/simulator/free/focus-fundamentals-two-targets">
@@ -77,7 +77,7 @@ export const ScenesPage = () => {
       <div className="scene-grid">
         {entries.map(({ scene, meta }) => (
           <article key={scene.id} className="scene-card">
-            <h3>{scene.name}</h3>
+            <h2>{scene.name}</h2>
             <p>{meta.description}</p>
             <div className="scene-card__meta">{meta.topics.join(" · ")}</div>
             <div className="scene-card__actions">
