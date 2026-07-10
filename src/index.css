@@ -556,6 +556,8 @@ button {
   }
 }
 
+/* site marketing import - already included via main.tsx; keep this safe in index.css for older builds */
+
 .btn--danger {
  background: transparent;
  color: var(--danger);

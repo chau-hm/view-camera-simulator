@@ -1,0 +1,221 @@
+/* Site marketing styles and tokens - scoped under .site-shell where possible */
+
+:root {
+  --site-bg: #f7f8fc;
+  --site-surface: #ffffff;
+  --site-surface-soft: #f4f5ff;
+  --site-border: #e4e7f0;
+  --site-text: #111827;
+  --site-text-muted: #5f6f89;
+  --site-accent: #5b4ee8;
+  --site-accent-hover: #493bd2;
+  --site-accent-soft: #efedff;
+  --site-radius-lg: 18px;
+  --site-radius-md: 14px;
+  --site-shadow: 0 12px 32px rgba(30, 41, 59, 0.07);
+
+  --site-max-width: 1180px;
+  --site-gap-lg: 48px;
+  --site-gap-md: 32px;
+  --site-gap-sm: 20px;
+}
+
+/* Only apply these visuals inside the site shell so simulator is unaffected */
+.site-shell {
+  background: var(--site-bg);
+  color: var(--site-text);
+}
+
+.site-shell .site-header {
+  background: var(--site-surface);
+  border-bottom: 1px solid var(--site-border);
+  height: 72px;
+}
+
+.site-header__inner {
+  max-width: var(--site-max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 72px;
+}
+
+.site-nav {
+  margin-left: auto;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.site-nav__link {
+  color: var(--site-text-muted);
+  text-decoration: none;
+  padding: 6px 2px;
+  font-weight: 600;
+}
+
+.site-nav__link:focus {
+  outline: 3px solid rgba(91,78,232,0.12);
+  outline-offset: 3px;
+}
+
+.site-nav__link--active {
+  color: var(--site-accent);
+  position: relative;
+}
+
+.site-nav__link--active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -8px;
+  height: 2px;
+  background: var(--site-accent);
+  border-radius: 2px;
+  width: 40%;
+  margin: 0 auto;
+}
+
+/* Marketing container central width */
+.marketing-container {
+  max-width: var(--site-max-width);
+  margin: 0 auto;
+  padding: 24px;
+  display: block;
+}
+
+/* Hero */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  gap: var(--site-gap-lg);
+  align-items: center;
+  padding: 72px 0;
+}
+
+.hero__content {
+  max-width: 640px;
+}
+
+.hero .eyebrow {
+  color: var(--site-accent-hover);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  margin-bottom: 12px;
+}
+
+.hero h1 {
+  font-weight: 800;
+  font-size: clamp(2.8rem, 5vw, 4.5rem);
+  line-height: 1.06;
+  margin: 0 0 18px 0;
+  color: var(--site-text);
+  letter-spacing: -0.02em;
+}
+
+.hero p { color: var(--site-text-muted); font-size: 1.05rem; margin-bottom: 18px; }
+
+.hero__actions { display: flex; gap: 12px; align-items: center; }
+.hero__illustration { display: block; }
+
+/* Info cards */
+.info-cards { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); margin-top: 36px; }
+
+.info-card {
+  display: flex;
+  gap: 16px;
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius-md);
+  padding: 18px;
+  align-items: center;
+  box-shadow: var(--site-shadow);
+}
+
+.info-card__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--site-accent-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--site-accent);
+  font-size: 28px;
+}
+
+.info-card h3 { margin: 0; font-size: 1.05rem; }
+.info-card p { margin: 6px 0 0 0; color: var(--site-text-muted); }
+
+/* Focus CTA panel */
+.focus-cta {
+  margin-top: 48px;
+  background: linear-gradient(180deg, var(--site-surface) 0%, var(--site-surface) 100%);
+  border-radius: var(--site-radius-lg);
+  padding: 28px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  border: 1px solid var(--site-border);
+  box-shadow: var(--site-shadow);
+  background-color: var(--site-accent-soft);
+}
+
+.focus-cta__content { flex: 1; }
+.focus-cta h2 { margin: 0 0 8px 0; }
+.focus-cta p { margin: 0 0 12px 0; color: var(--site-text-muted); }
+
+/* Scenes page */
+.scenes-header { margin-top: 12px; margin-bottom: 16px; display: flex; gap: 16px; align-items: center; }
+.scenes-search { margin-top: 12px; }
+.scenes-grid { margin-top: 24px; display: grid; gap: 24px; }
+
+.scene-feature-card {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius-lg);
+  padding: 20px;
+  box-shadow: var(--site-shadow);
+  align-items: center;
+}
+
+.scene-thumb { width: 100%; height: 240px; border-radius: 12px; background: linear-gradient(180deg, rgba(235,236,255,0.8), rgba(245,245,255,0.8)); display: flex; align-items: center; justify-content: center; }
+
+.scene-meta { display: flex; flex-direction: column; gap: 12px; }
+.scene-badge { background: var(--site-accent); color: white; padding: 6px 10px; border-radius: 12px; font-weight: 700; width: max-content; }
+
+.topic-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.topic-pill { background: var(--site-accent-soft); color: var(--site-accent); padding: 6px 10px; border-radius: 999px; font-size: 13px; }
+
+.rebuild-notice { margin-top: 20px; background: var(--site-surface-soft); border: 1px solid var(--site-border); padding: 12px; border-radius: 12px; color: var(--site-text-muted); display:flex; gap:12px; align-items:center; }
+
+/* Footer */
+.site-footer { background: transparent; border-top: 1px solid var(--site-border); padding: 28px 0; }
+.site-footer__inner { max-width: var(--site-max-width); margin: 0 auto; padding: 0 24px; display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
+.site-footer a { color: var(--site-text-muted); }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .hero { grid-template-columns: 1fr 360px; padding: 64px 0; }
+}
+@media (max-width: 880px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero__illustration { order: 2; }
+  .info-cards { grid-template-columns: 1fr; }
+  .scene-feature-card { grid-template-columns: 1fr; }
+  .scene-thumb { height: 180px; }
+  .site-header__inner { padding: 0 20px; }
+  .marketing-container { padding: 20px; }
+}
+@media (max-width: 480px) {
+  .site-header__inner { padding: 0 16px; gap:8px; }
+  .site-footer__inner { flex-direction: column; align-items:flex-start; padding: 0 16px; }
+  .hero { padding: 40px 0; }
+  .marketing-container { padding: 16px; }
+}

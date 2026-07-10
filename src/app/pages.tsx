@@ -1,9 +1,14 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { getSceneById } from "../scenes/definitions";
 import { getPublicSceneEntries } from "./publicScenes";
 import type { SimulatorMode } from "../types/camera";
+
+import { ViewCameraHeroIllustration } from "../components/marketing/ViewCameraHeroIllustration";
+import { InfoCard } from "../components/marketing/InfoCard";
+import { FocusCtaPanel } from "../components/marketing/FocusCtaPanel";
+import { SceneCard } from "../components/marketing/SceneCard";
 
 const SimulatorWorkspace = lazy(() =>
   import("../components/layout/SimulatorWorkspace").then((module) => ({ default: module.SimulatorWorkspace })),
@@ -25,69 +30,102 @@ export const HomePage = () => (
           </Link>
           <a className="btn" href="#why">Learn Why</a>
         </div>
+
+        <div className="info-cards">
+          <InfoCard icon={<span className="material-symbols-outlined">apartment</span>} title="Why use a view camera?">
+            Photoshop can reshape an image after it has been captured, but it cannot replace every decision made at the
+            camera.
+          </InfoCard>
+
+          <InfoCard icon={<span className="material-symbols-outlined">transform</span>} title="When is the camera simpler?">
+            For architecture, interiors and product photography, careful movements can solve perspective and focus in one shot.
+          </InfoCard>
+
+          <InfoCard icon={<span className="material-symbols-outlined">brush</span>} title="Why artists still use it">
+            The upside-down ground glass encourages careful looking and deliberate choices when composing an image.
+          </InfoCard>
+        </div>
+
       </div>
 
+      <ViewCameraHeroIllustration />
     </section>
 
     <section id="why" className="content-section">
-      <h2>Why use a view camera when Photoshop can correct perspective?</h2>
-      <p>
-        Photoshop can reshape an image after it has been captured, but it cannot replace every decision made at the
-        camera. A view camera lets the photographer keep vertical lines straight, place the plane of focus and compose
-        the final geometry before exposure—often with less cropping and fewer compromises.
-      </p>
-    </section>
-
-    <section className="content-section">
-      <h2>When is the camera simpler than post-processing?</h2>
-      <p>
-        For architecture, interiors, still life and product photography, a carefully applied rise, tilt or swing can
-        solve perspective and focus in one exposure. The alternative may require perspective correction, heavy
-        cropping, focus stacking and repeated retouching.
-      </p>
-    </section>
-
-    <section className="content-section">
-      <h2>Why do artists still use view cameras?</h2>
-      <p>
-        A view camera slows the process down. The upside-down image on the ground glass encourages careful looking,
-        and every movement becomes a deliberate choice. Artists use it not only for image quality, but because the
-        method changes how a photograph is seen and made.
-      </p>
-    </section>
-
-    <section className="content-section">
-      <h2>Start with focus</h2>
-      <p>Use two targets at different distances to see how focus distance and aperture affect the ground-glass image.</p>
-      <div className="content-section__actions">
-        <Link className="btn btn--primary" to="/simulator/free/focus-fundamentals-two-targets">
-          Open Focus Fundamentals
-        </Link>
+      <div className="content-section__inner">
+        <h2>Why use a view camera when Photoshop can correct perspective?</h2>
+        <p>
+          Photoshop can reshape an image after it has been captured, but it cannot replace every decision made at the
+          camera. A view camera lets the photographer keep vertical lines straight, place the plane of focus and compose
+          the final geometry before exposure—often with less cropping and fewer compromises.
+        </p>
       </div>
     </section>
+
+    <section className="content-section">
+      <div className="content-section__inner">
+        <h2>When is the camera simpler than post-processing?</h2>
+        <p>
+          For architecture, interiors, still life and product photography, a carefully applied rise, tilt or swing can
+          solve perspective and focus in one exposure. The alternative may require perspective correction, heavy
+          cropping, focus stacking and repeated retouching.
+        </p>
+      </div>
+    </section>
+
+    <section className="content-section">
+      <div className="content-section__inner">
+        <h2>Why do artists still use view cameras?</h2>
+        <p>
+          A view camera slows the process down. The upside-down image on the ground glass encourages careful looking,
+          and every movement becomes a deliberate choice. Artists use it not only for image quality, but because the
+          method changes how a photograph is seen and made.
+        </p>
+      </div>
+    </section>
+
+    <FocusCtaPanel />
   </AppShell>
 );
 
 export const ScenesPage = () => {
   const entries = getPublicSceneEntries();
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return entries;
+    return entries.filter(({ scene, meta }) => {
+      const hay = `${scene.name} ${meta.description} ${meta.topics.join(" ")}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [entries, query]);
+
   return (
     <AppShell title="Scenes" useSiteShell>
       <p>Choose a scene to explore how focus, perspective and camera movements affect the image on the ground glass.</p>
 
-      <div className="scene-grid">
-        {entries.map(({ scene, meta }) => (
-          <article key={scene.id} className="scene-card">
-            <h2>{scene.name}</h2>
-            <p>{meta.description}</p>
-            <div className="scene-card__meta">{meta.topics.join(" · ")}</div>
-            <div className="scene-card__actions">
-              <Link className="btn btn--primary" to={`/simulator/free/${scene.id}`}>Open Scene</Link>
-            </div>
-          </article>
-        ))}
+      <div className="scenes-header">
+        <div className="scenes-search">
+          <label htmlFor="scene-search" className="visually-hidden">Search scenes</label>
+          <input id="scene-search" className="form-input" placeholder="Search scenes…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        </div>
       </div>
 
-      <div className="content-note">Additional lessons for rise, tilt and swing are being rebuilt.</div>
+      <div className="scenes-grid">
+        {filtered.length === 0 ? (
+          <div className="content-note">No scenes match your search.</div>
+        ) : (
+          filtered.map(({ scene, meta }) => (
+            <SceneCard key={scene.id} sceneId={scene.id} title={scene.name} description={meta.description} topics={meta.topics} badge={meta.badge ?? null} />
+          ))
+        )}
+      </div>
+
+      <div className="rebuild-notice">
+        <span className="material-symbols-outlined">info</span>
+        <div>Additional lessons for rise, tilt and swing are being rebuilt.</div>
+      </div>
     </AppShell>
   );
 };

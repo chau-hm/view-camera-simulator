@@ -8,6 +8,7 @@ export type PublicSceneEntry = {
   id: PublicSceneId;
   description: string;
   topics: readonly string[];
+  badge?: string | null;
 };
 
 export const publicSceneCatalog: readonly PublicSceneEntry[] = [
@@ -16,6 +17,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     description:
       "Compare two targets at different distances. Adjust focus and aperture to see how the plane of focus and depth of field change.",
     topics: ["Focus", "Aperture", "Depth of field"],
+    badge: "Recommended",
   },
 ];
 
