@@ -32,7 +32,13 @@ describe("home page", () => {
     expect(await screen.findByRole('heading', { name: 'Understand focus first', level: 2 })).toBeInTheDocument();
 
     // hero illustration wrapper present (decorative, aria-hidden)
-    expect(document.querySelector('.hero__illustration')).toBeTruthy();
+    const heroWrap = document.querySelector('.hero__illustration');
+    expect(heroWrap).toBeTruthy();
+
+    // hero illustration should render the supplied image asset
+    const heroImg = document.querySelector('.hero__illustration img') as HTMLImageElement | null;
+    expect(heroImg).toBeTruthy();
+    expect(heroImg?.getAttribute('src')).toContain('view-camera-hero-illustration.png');
 
     // info cards: headings should be h2 and present exactly once each
     const cardHeadings = [
