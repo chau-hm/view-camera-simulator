@@ -4,11 +4,13 @@ import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { routes } from "../../app/router";
 
 describe("home page", () => {
-  it("renders guided and free mode entry links", async () => {
+  it("renders hero heading and CTAs", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/"] });
     render(<RouterProvider router={memoryRouter} />);
 
-    expect(await screen.findByTestId("guided-entry")).toBeInTheDocument();
-    expect(await screen.findByTestId("free-entry")).toBeInTheDocument();
+    expect(await screen.findByText("See how a view camera changes the image before the shutter is pressed.")).toBeInTheDocument();
+
+    expect(await screen.findByText("Explore the Simulator")).toBeInTheDocument();
+    expect(await screen.findByText("Open Focus Fundamentals")).toBeInTheDocument();
   });
 });

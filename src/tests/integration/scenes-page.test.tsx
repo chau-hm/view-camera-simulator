@@ -1,0 +1,19 @@
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { RouterProvider, createMemoryRouter } from "react-router-dom";
+import { routes } from "../../app/router";
+
+describe("scenes page", () => {
+  it("shows public Two Targets scene and hides legacy scenes", async () => {
+    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
+    render(<RouterProvider router={memoryRouter} />);
+
+    expect(await screen.findByText("Focus Fundamentals — Two Targets")).toBeInTheDocument();
+    expect(screen.getByText(/Open Scene/)).toBeInTheDocument();
+
+    // Legacy scenes should not be present in public listing
+    expect(screen.queryByText("Architecture Rise")).toBeNull();
+    expect(screen.queryByText("Table Tilt")).toBeNull();
+    expect(screen.queryByText("Shelf Swing")).toBeNull();
+  });
+});

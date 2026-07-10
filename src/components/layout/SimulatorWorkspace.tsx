@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
-import { getAllScenes, getSceneById } from "../../scenes/definitions";
+import { getSceneById } from "../../scenes/definitions";
+import { getPublicScenes } from "../../app/publicScenes";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { useAppStore } from "../../state/appStore";
 import { selectDerivedOpticsState } from "../../state/selectors";
@@ -43,7 +44,8 @@ export const SimulatorWorkspace = ({
   const camera = useAppStore((state) => state.camera);
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("standard");
   const [showGeometryPanel, setShowGeometryPanel] = useState(false);
-  const allScenes = getAllScenes();
+  // All registered scenes still available through engine registry
+  // const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
   const reducedMotion = useMemo(
     () =>
@@ -117,20 +119,26 @@ export const SimulatorWorkspace = ({
       {/* Header */}
       <header className="simulator-header">
         <div className="app-brand">
-          <div className="app-icon" aria-hidden="true">
-            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 22 }}>photo_camera</span>
-          </div>
-          <div className="app-title-block">
-            <div className="app-title">Simulator Workspace</div>
-            <div className="app-subtitle">View Camera Focus & Movements Trainer</div>
-          </div>
+          <a className="app-brand__link" href="/" aria-label="View Camera Simulator home">
+            <div className="app-icon" aria-hidden="true">
+              <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 22 }}>photo_camera</span>
+            </div>
+            <div className="app-title-block">
+              <div className="app-title">View Camera Simulator</div>
+              <div className="app-subtitle">Focus, perspective and camera movements</div>
+            </div>
+          </a>
         </div>
-
+ 
+        <div className="sim-header-actions">
+          <a className="btn btn--ghost" href="/scenes">All Scenes</a>
+        </div>
+ 
         {mode === "free" && (
           <section aria-label={UI_COPY.simulator.scenePickerLabel} className="scene-picker">
             <label className="scene-picker__label">Scene</label>
             <select className="form-select" aria-label="Scene" value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
-              {allScenes.map((registeredScene) => (
+              {getPublicScenes().map((registeredScene) => (
                 <option key={registeredScene.id} value={registeredScene.id}>
                   {registeredScene.name}
                 </option>

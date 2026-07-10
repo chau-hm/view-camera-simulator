@@ -1,9 +1,10 @@
 import { Navigate, createBrowserRouter } from "react-router-dom";
-import { HomePage, ModeSelectionPage, NotFoundPage, ResultPage, SimulatorRoutePage } from "./pages";
+import { HomePage, NotFoundPage, ResultPage, SimulatorRoutePage, ScenesPage } from "./pages";
 
 export const routes = [
   { path: "/", element: <HomePage /> },
-  { path: "/mode", element: <ModeSelectionPage /> },
+  { path: "/mode", element: <ScenesPage /> },
+  { path: "/scenes", element: <ScenesPage /> },
   { path: "/simulator/:mode/:sceneId", element: <SimulatorRoutePage /> },
   { path: "/simulator/:mode/:sceneId/:taskId", element: <SimulatorRoutePage /> },
   { path: "/result/:taskId?", element: <ResultPage /> },
