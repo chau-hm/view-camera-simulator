@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { getSceneById } from "../scenes/definitions";
@@ -58,34 +58,17 @@ export const HomePage = () => (
 
 export const ScenesPage = () => {
   const entries = getPublicSceneEntries();
-  const [query, setQuery] = useState("");
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return entries;
-    return entries.filter(({ scene, meta }) => {
-      const hay = `${scene.name} ${meta.description} ${meta.topics.join(" ")}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }, [entries, query]);
 
   return (
     <AppShell title="Scenes" useSiteShell>
       <p>Choose a scene to explore how focus, perspective and camera movements affect the image on the ground glass.</p>
 
-      <div className="scenes-header">
-        <div className="scenes-search">
-          <label htmlFor="scene-search" className="visually-hidden">Search scenes</label>
-          <input id="scene-search" className="form-input" placeholder="Search scenes…" value={query} onChange={(e) => setQuery(e.target.value)} />
-        </div>
-      </div>
-
       <div className="scenes-grid">
-        {filtered.length === 0 ? (
-          <div className="content-note">No scenes match your search.</div>
+        {entries.length === 0 ? (
+          <div className="content-note">No scenes available.</div>
         ) : (
-          filtered.map(({ scene, meta }) => (
-            <SceneCard key={scene.id} sceneId={scene.id} title={scene.name} description={meta.description} topics={meta.topics} badge={meta.badge ?? null} />
+          entries.map(({ scene, meta }) => (
+            <SceneCard key={scene.id} sceneId={scene.id} title={scene.name} description={meta.description} topics={meta.topics} />
           ))
         )}
       </div>

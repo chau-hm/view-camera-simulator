@@ -6,14 +6,12 @@ type SceneCardProps = {
   title: string;
   description: string;
   topics: readonly string[];
-  badge?: string | null;
 };
 
-export const SceneCard = ({ sceneId, title, description, topics, badge }: SceneCardProps) => (
+export const SceneCard = ({ sceneId, title, description, topics }: SceneCardProps) => (
   <article className="scene-feature-card">
     <TwoTargetsThumbnail />
     <div className="scene-meta">
-      {badge ? <div className="scene-badge">{badge}</div> : null}
       <h2>{title}</h2>
       <p>{description}</p>
       <div className="topic-pills" aria-hidden>

@@ -17,9 +17,6 @@ describe("scenes page", () => {
     expect(screen.getByText('Focus')).toBeInTheDocument();
     expect(screen.getByText('Aperture')).toBeInTheDocument();
     expect(screen.getByText('Depth of field')).toBeInTheDocument();
-    // badge
-    expect(screen.getByText(/Recommended/)).toBeInTheDocument();
-
     // Legacy scenes should not be present in public listing
     expect(screen.queryByText("Architecture Rise")).toBeNull();
     expect(screen.queryByText("Table Tilt")).toBeNull();
