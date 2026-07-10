@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { TwoTargetsThumbnail } from "./TwoTargetsThumbnail";
 
@@ -6,7 +5,7 @@ type SceneCardProps = {
   sceneId: string;
   title: string;
   description: string;
-  topics: string[];
+  topics: readonly string[];
   badge?: string | null;
 };
 

@@ -1,5 +1,3 @@
-import React from "react";
-
 export const TwoTargetsThumbnail = () => (
   <div className="scene-thumb" aria-hidden="true">
     <svg width="100%" height="100%" viewBox="0 0 360 240" xmlns="http://www.w3.org/2000/svg">

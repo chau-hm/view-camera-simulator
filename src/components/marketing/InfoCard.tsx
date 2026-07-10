@@ -1,5 +1,3 @@
-import React from "react";
-
 type InfoCardProps = {
   icon?: React.ReactNode;
   title: string;

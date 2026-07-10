@@ -1,5 +1,3 @@
-import React from "react";
-
 export const ViewCameraHeroIllustration = () => (
   <div className="hero__illustration" aria-hidden="true">
     <svg width="100%" height="320" viewBox="0 0 720 320" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
