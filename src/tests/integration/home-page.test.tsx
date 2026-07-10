@@ -31,8 +31,8 @@ describe("home page", () => {
     // landing should have Understand focus first as an h2 in the CTA panel
     expect(await screen.findByRole('heading', { name: 'Understand focus first', level: 2 })).toBeInTheDocument();
 
-    // hero illustration wrapper present
-    expect(screen.getByRole('region', { name: /hero illustration/i }) || document.querySelector('.hero__illustration')).toBeTruthy();
+    // hero illustration wrapper present (decorative, aria-hidden)
+    expect(document.querySelector('.hero__illustration')).toBeTruthy();
 
     // info cards: headings should be h2 and present exactly once each
     const cardHeadings = [
