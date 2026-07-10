@@ -182,7 +182,6 @@ describe("phase 12 integration", () => {
     expect(screen.getByLabelText("Swing")).toBeInTheDocument();
     expect(screen.getByLabelText("Focus distance")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Scene" })).toBeInTheDocument();
     expect(screen.getByLabelText("Ground glass assist")).toBeInTheDocument();
     expect(screen.getByLabelText("Focus assist")).toBeInTheDocument();
     expect(screen.getByLabelText("Grid")).toBeInTheDocument();

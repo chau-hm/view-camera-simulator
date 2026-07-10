@@ -15,5 +15,9 @@ describe("home page", () => {
 
     expect(await screen.findByText("Explore the Simulator")).toBeInTheDocument();
     expect(await screen.findByText("Open Focus Fundamentals")).toBeInTheDocument();
+
+    // preview card removed from the landing hero
+    expect(screen.queryByText("Focus Fundamentals — Two Targets")).toBeNull();
+    expect(screen.queryByText("Focus · Aperture · Depth of field")).toBeNull();
   });
 });

@@ -27,12 +27,6 @@ export const HomePage = () => (
         </div>
       </div>
 
-      <div className="hero__visual" aria-hidden="true">
-        <div className="preview-card">
-          <div className="preview-card__title">Focus Fundamentals — Two Targets</div>
-          <div className="preview-card__meta">Focus · Aperture · Depth of field</div>
-        </div>
-      </div>
     </section>
 
     <section id="why" className="content-section">

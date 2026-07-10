@@ -267,8 +267,6 @@ button {
 /* Camera controls polish */
 
 /* Scene picker and developer tools small helper classes */
-.scene-picker { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.scene-picker__label { color: var(--text-muted); margin-right: 8px; }
 .developer-tools { margin-top: 1rem; padding: 8px; }
 .developer-tools__control { display: flex; align-items: center; gap: 8px; }
 
@@ -326,33 +324,27 @@ button {
 .app-brand {
  display: flex;
  align-items: center;
- gap: 12px;
+ min-width: 0;
 }
 
-.app-icon {
- width: 40px;
- height: 40px;
- border-radius: 8px;
- background: linear-gradient(135deg, #eef2ff, #e6f0ff);
- display: flex;
+.app-brand__link {
+ display: inline-flex;
  align-items: center;
- justify-content: center;
- color: var(--primary);
-}
-
-.app-title-block {
- display: flex;
- flex-direction: column;
-}
-
-.app-title {
- font-size: 16px;
+ gap: 10px;
+ color: var(--text);
+ text-decoration: none;
  font-weight: 700;
 }
 
-.app-subtitle {
- font-size: 12px;
- color: var(--text-muted);
+.app-brand__icon {
+ flex: 0 0 auto;
+ font-size: 24px;
+ color: var(--text);
+}
+
+.app-brand__title {
+ min-width: 0;
+ white-space: nowrap;
 }
 
 /* Material Symbols */
@@ -422,17 +414,6 @@ button {
  gap: 16px;
 }
 
-.site-brand__link {
- display: flex;
- gap: 12px;
- align-items: center;
- text-decoration: none;
- color: inherit;
-}
-
-.site-brand__icon { font-size: 28px; }
-.site-brand__title { font-weight: 700; }
-
 .site-nav {
  margin-left: auto;
  display: flex;
@@ -472,15 +453,12 @@ button {
  gap: 12px;
 }
 
+/* Hero: single column intro */
 .hero {
- display: grid;
- grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
- gap: 32px;
- align-items: center;
- padding: 48px 0;
+ padding: 64px 0;
 }
 
-.hero__content { max-width: 680px; }
+.hero__content { max-width: 760px; }
 
 .hero h1 {
  margin: 0;
@@ -490,7 +468,7 @@ button {
  letter-spacing: -0.03em;
 }
 
-.hero p { max-width: 680px; font-size: 1.05rem; line-height: 1.7; color: var(--text-muted); }
+.hero p { max-width: 760px; font-size: 1.05rem; line-height: 1.7; color: var(--text-muted); }
 
 .eyebrow {
  margin-bottom: 12px;
@@ -499,15 +477,6 @@ button {
  font-weight: 700;
  letter-spacing: 0.06em;
  text-transform: uppercase;
-}
-
-.preview-card {
- width: 100%;
- padding: 24px;
- background: var(--surface);
- border: 1px solid var(--border-soft);
- border-radius: var(--radius-lg);
- box-shadow: var(--shadow-card);
 }
 
 .content-section { padding: 36px 0; border-top: 1px solid var(--border-soft); }

@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
-import { getPublicScenes } from "../../app/publicScenes";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { useAppStore } from "../../state/appStore";
 import { selectDerivedOpticsState } from "../../state/selectors";
 import type { SimulatorMode } from "../../types/camera";
 import type { RenderQualityProfile } from "../../types/ui";
 import { UI_COPY } from "../../ui/copy";
+import { AppBrand } from "./AppBrand";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
 import { MovementControls } from "../controls/MovementControls";
@@ -118,34 +118,11 @@ export const SimulatorWorkspace = ({
     <div className="simulator-shell" data-reduced-motion={reducedMotion ? "true" : "false"}>
       {/* Header */}
       <header className="simulator-header">
-        <div className="app-brand">
-          <a className="app-brand__link" href="/" aria-label="View Camera Simulator home">
-            <div className="app-icon" aria-hidden="true">
-              <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 22 }}>photo_camera</span>
-            </div>
-            <div className="app-title-block">
-              <div className="app-title">View Camera Simulator</div>
-              <div className="app-subtitle">Focus, perspective and camera movements</div>
-            </div>
-          </a>
-        </div>
- 
+        <AppBrand useRouterLink={false} />
+
         <div className="sim-header-actions">
           <a className="btn btn--ghost" href="/scenes">All Scenes</a>
         </div>
- 
-        {mode === "free" && (
-          <section aria-label={UI_COPY.simulator.scenePickerLabel} className="scene-picker">
-            <label className="scene-picker__label">Scene</label>
-            <select className="form-select" aria-label="Scene" value={camera.activeSceneId} onChange={(event) => setActiveScene(event.target.value)}>
-              {getPublicScenes().map((registeredScene) => (
-                <option key={registeredScene.id} value={registeredScene.id}>
-                  {registeredScene.name}
-                </option>
-              ))}
-            </select>
-          </section>
-        )}
       </header>
 
       {/* Body: main (scrollable) + aside (scrollable) */}
