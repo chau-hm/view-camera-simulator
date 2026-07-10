@@ -11,6 +11,10 @@ describe("scenes page", () => {
     expect(await screen.findByText("Focus Fundamentals — Two Targets")).toBeInTheDocument();
     expect(screen.getByText(/Open Scene/)).toBeInTheDocument();
 
+    // verify description and topics are rendered from the public catalog
+    expect(screen.getByText(/Compare two targets at different distances/)).toBeInTheDocument();
+    expect(screen.getByText(/Focus · Aperture · Depth of field/)).toBeInTheDocument();
+
     // Legacy scenes should not be present in public listing
     expect(screen.queryByText("Architecture Rise")).toBeNull();
     expect(screen.queryByText("Table Tilt")).toBeNull();

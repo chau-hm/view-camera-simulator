@@ -1,12 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { RouterProvider, createMemoryRouter } from "react-router-dom";
-import { routes } from "../../app/router";
+import { MemoryRouter } from "react-router-dom";
+import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 
 describe("simulator header", () => {
   it("renders shared brand and All Scenes and removes scene selector/subtitle", async () => {
-    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/simulator/free/focus-fundamentals-two-targets"] });
-    render(<RouterProvider router={memoryRouter} />);
+    render(
+      <MemoryRouter initialEntries={["/simulator/free/focus-fundamentals-two-targets"]}>
+        <SimulatorWorkspace mode="free" sceneId="focus-fundamentals-two-targets" taskId={null} simulateAssetFailure={false} />
+      </MemoryRouter>,
+    );
 
     // Brand link present and links to /
     const brandLink = await screen.findByRole("link", { name: /View Camera Simulator home/i });

@@ -1,8 +1,8 @@
 import { lazy, Suspense } from "react";
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { getSceneById } from "../scenes/definitions";
-import { getPublicScenes } from "./publicScenes";
+import { getPublicSceneEntries } from "./publicScenes";
 import type { SimulatorMode } from "../types/camera";
 
 const SimulatorWorkspace = lazy(() =>
@@ -69,19 +69,19 @@ export const HomePage = () => (
 );
 
 export const ScenesPage = () => {
-  const scenes = getPublicScenes();
+  const entries = getPublicSceneEntries();
   return (
     <AppShell title="Scenes" useSiteShell>
       <p>Choose a scene to explore how focus, perspective and camera movements affect the image on the ground glass.</p>
 
       <div className="scene-grid">
-        {scenes.map((s) => (
-          <article key={s.id} className="scene-card">
-            <h3>{s.name}</h3>
-            <p>Compare two targets at different distances. Adjust focus and aperture to see how the plane of focus and depth of field change.</p>
-            <div className="scene-card__meta">Focus · Aperture · Depth of field</div>
+        {entries.map(({ scene, meta }) => (
+          <article key={scene.id} className="scene-card">
+            <h3>{scene.name}</h3>
+            <p>{meta.description}</p>
+            <div className="scene-card__meta">{meta.topics.join(" · ")}</div>
             <div className="scene-card__actions">
-              <Link className="btn btn--primary" to={`/simulator/free/${s.id}`}>Open Scene</Link>
+              <Link className="btn btn--primary" to={`/simulator/free/${scene.id}`}>Open Scene</Link>
             </div>
           </article>
         ))}
@@ -93,19 +93,6 @@ export const ScenesPage = () => {
 };
 
 
-export const ModeSelectionPage = () => {
-  const navigate = useNavigate();
-  return (
-    <AppShell title="Select mode">
-      <button type="button" onClick={() => navigate("/simulator/guided/architecture-rise/task-rise-basics")}>
-        Guided mode
-      </button>
-      <button type="button" onClick={() => navigate("/simulator/free/architecture-rise")}>
-        Free mode
-      </button>
-    </AppShell>
-  );
-};
 
 export const SimulatorRoutePage = () => {
   const { mode, sceneId, taskId } = useParams<{

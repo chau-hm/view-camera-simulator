@@ -9,6 +9,7 @@ import type { SimulatorMode } from "../../types/camera";
 import type { RenderQualityProfile } from "../../types/ui";
 import { UI_COPY } from "../../ui/copy";
 import { AppBrand } from "./AppBrand";
+import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
 import { MovementControls } from "../controls/MovementControls";
@@ -118,10 +119,10 @@ export const SimulatorWorkspace = ({
     <div className="simulator-shell" data-reduced-motion={reducedMotion ? "true" : "false"}>
       {/* Header */}
       <header className="simulator-header">
-        <AppBrand useRouterLink={false} />
+        <AppBrand />
 
         <div className="sim-header-actions">
-          <a className="btn btn--ghost" href="/scenes">All Scenes</a>
+          <Link className="btn btn--ghost" to="/scenes">All Scenes</Link>
         </div>
       </header>
 

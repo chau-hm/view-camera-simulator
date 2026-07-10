@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 
 vi.mock("../../core/tasks/evaluateTask", async () => {
@@ -34,7 +35,11 @@ vi.mock("../../core/tasks/evaluateTask", async () => {
 
 describe("phase 12 completion overlay", () => {
   it("TST-INT-013 shows completion overlay when task passes", () => {
-    render(<SimulatorWorkspace mode="guided" sceneId="architecture-rise" taskId="task-rise-basics" simulateAssetFailure={false} />);
+    render(
+      <MemoryRouter initialEntries={["/simulator/guided/architecture-rise/task-rise-basics"]}>
+        <SimulatorWorkspace mode="guided" sceneId="architecture-rise" taskId="task-rise-basics" simulateAssetFailure={false} />
+      </MemoryRouter>,
+    );
     expect(screen.getByText("Task completed")).toBeInTheDocument();
   });
 });

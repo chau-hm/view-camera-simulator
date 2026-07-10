@@ -106,18 +106,6 @@ button {
   gap: 16px;
 }
 
-.simulator-header .title {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.simulator-header .subtitle {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-left: 8px;
-}
-
-
 .simulator-viewport-grid {
   display: grid;
  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -161,6 +149,14 @@ button {
   justify-content: flex-start;
   gap: 10px;
   margin-bottom: 14px;
+}
+
+/* Right-aligned header actions for simulator */
+.sim-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .simulator-card-title {
@@ -529,7 +525,6 @@ button {
 }
 
 @media (max-width: 360px) {
- .preview-card { padding: 12px; }
 }
 
 /* Buttons and form controls (design system) */
