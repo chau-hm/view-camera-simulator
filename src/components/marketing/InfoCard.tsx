@@ -1,19 +1,22 @@
+import type { ReactNode } from "react";
+
 type InfoCardProps = {
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   title: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 };
 
 export const InfoCard = ({ icon, title, children }: InfoCardProps) => (
-  <div className="info-card" role="article">
-    <div className="info-card__icon" aria-hidden>
+  <article className="info-card">
+    <div className="info-card__icon" aria-hidden="true">
       {icon}
     </div>
-    <div>
-      <h3>{title}</h3>
+
+    <div className="info-card__content">
+      <h2>{title}</h2>
       <p>{children}</p>
     </div>
-  </div>
+  </article>
 );
 
 export default InfoCard;

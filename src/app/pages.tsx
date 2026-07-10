@@ -31,56 +31,24 @@ export const HomePage = () => (
           <a className="btn" href="#why">Learn Why</a>
         </div>
 
-        <div className="info-cards">
-          <InfoCard icon={<span className="material-symbols-outlined">apartment</span>} title="Why use a view camera?">
-            Photoshop can reshape an image after it has been captured, but it cannot replace every decision made at the
-            camera.
-          </InfoCard>
-
-          <InfoCard icon={<span className="material-symbols-outlined">transform</span>} title="When is the camera simpler?">
-            For architecture, interiors and product photography, careful movements can solve perspective and focus in one shot.
-          </InfoCard>
-
-          <InfoCard icon={<span className="material-symbols-outlined">brush</span>} title="Why artists still use it">
-            The upside-down ground glass encourages careful looking and deliberate choices when composing an image.
-          </InfoCard>
-        </div>
-
       </div>
 
       <ViewCameraHeroIllustration />
     </section>
 
-    <section id="why" className="content-section">
-      <div className="content-section__inner">
-        <h2>Why use a view camera when Photoshop can correct perspective?</h2>
-        <p>
-          Photoshop can reshape an image after it has been captured, but it cannot replace every decision made at the
-          camera. A view camera lets the photographer keep vertical lines straight, place the plane of focus and compose
-          the final geometry before exposure—often with less cropping and fewer compromises.
-        </p>
-      </div>
-    </section>
+    <section id="why" className="landing-info-section" aria-label="Why use a view camera">
+      <div className="landing-info-list">
+        <InfoCard icon={<span className="material-symbols-outlined">architecture</span>} title={"Why use a view camera when Photoshop can correct perspective?"}>
+          Photoshop can reshape an image after it has been captured, but it cannot replace every decision made at the camera. A view camera lets the photographer keep vertical lines straight, place the plane of focus and compose the final geometry before exposure—often with less cropping and fewer compromises.
+        </InfoCard>
 
-    <section className="content-section">
-      <div className="content-section__inner">
-        <h2>When is the camera simpler than post-processing?</h2>
-        <p>
-          For architecture, interiors, still life and product photography, a carefully applied rise, tilt or swing can
-          solve perspective and focus in one exposure. The alternative may require perspective correction, heavy
-          cropping, focus stacking and repeated retouching.
-        </p>
-      </div>
-    </section>
+        <InfoCard icon={<span className="material-symbols-outlined">open_with</span>} title={"When is the camera simpler than post-processing?"}>
+          For architecture, interiors, still life and product photography, a carefully applied rise, tilt or swing can solve perspective and focus in one exposure. The alternative may require perspective correction, heavy cropping, focus stacking and repeated retouching.
+        </InfoCard>
 
-    <section className="content-section">
-      <div className="content-section__inner">
-        <h2>Why do artists still use view cameras?</h2>
-        <p>
-          A view camera slows the process down. The upside-down image on the ground glass encourages careful looking,
-          and every movement becomes a deliberate choice. Artists use it not only for image quality, but because the
-          method changes how a photograph is seen and made.
-        </p>
+        <InfoCard icon={<span className="material-symbols-outlined">person</span>} title={"Why do artists still use view cameras?"}>
+          A view camera slows the process down. The upside-down image on the ground glass encourages careful looking, and every movement becomes a deliberate choice. Artists use it not only for image quality, but because the method changes how a photograph is seen and made.
+        </InfoCard>
       </div>
     </section>
 

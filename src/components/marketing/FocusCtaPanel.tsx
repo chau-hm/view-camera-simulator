@@ -8,17 +8,27 @@ export const FocusCtaPanel = () => (
       <p>
         Use two targets at different distances to see how focus distance and aperture affect the ground-glass image.
       </p>
-      <div>
-        <Link className="btn btn--primary" to="/simulator/free/focus-fundamentals-two-targets">
+      <div className="focus-cta__actions">
+        <Link className="btn" to="/simulator/free/focus-fundamentals-two-targets">
           Open Focus Fundamentals
         </Link>
       </div>
     </div>
-    <div aria-hidden className="focus-cta__art">
-      <svg width="140" height="140" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="70" cy="70" r="64" fill="#fff" stroke="#e8e7ff" />
-        <circle cx="90" cy="70" r="8" fill="#5b4ee8" />
-        <rect x="40" y="60" width="40" height="4" fill="#cfcfff" transform="rotate(-12 60 62)" />
+
+    <div className="focus-cta__art" aria-hidden="true">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid">
+        <defs>
+          <radialGradient id="fg" cx="50%" cy="50%">
+            <stop offset="0%" stop-color="#fff" stop-opacity="0.9" />
+            <stop offset="100%" stop-color="#efeaff" stop-opacity="0.7" />
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="100" height="100" rx="6" fill="url(#fg)" />
+        <g transform="translate(50,50)" fill="none" stroke="#cfc8ff" stroke-width="2">
+          <circle r="34" />
+          <circle r="22" />
+          <circle r="10" />
+        </g>
       </svg>
     </div>
   </section>
