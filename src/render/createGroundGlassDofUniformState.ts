@@ -20,18 +20,38 @@ export type GroundGlassDofUniformState = {
   renderWidth: number;
   renderHeight: number;
   maximumBlurRadiusPx: number;
+  // Physical CoC / calibration values
+  circleOfConfusionMm: number;
+  boundaryCoCDiameterPx: number;
+  boundaryBlurRadiusPx: number;
+  filmWidthMm: number;
+  filmHeightMm: number;
+  displayBlurScale: number;
 };
 
 export function createGroundGlassDofUniformState(
   opticsState: DerivedOpticsState,
   camera: THREE.PerspectiveCamera,
+  focalLengthMm: number,
+  filmWidthMm: number,
+  filmHeightMm: number,
+  circleOfConfusionMm: number,
   aperture: number,
   width: number,
   height: number,
-  maxCoC: number,
+  maximumBlurRadiusPx: number,
+  displayBlurScale = 1,
 ): GroundGlassDofUniformState {
   const dofModel = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
   const mode = dofModel === "scheimpflug-wedge" ? 1 : 0;
+
+  // Validate physical constants
+  if (!Number.isFinite(focalLengthMm) || focalLengthMm <= 0) throw new Error("Invalid focalLengthMm");
+  if (!Number.isFinite(filmWidthMm) || filmWidthMm <= 0) throw new Error("Invalid filmWidthMm");
+  if (!Number.isFinite(filmHeightMm) || filmHeightMm <= 0) throw new Error("Invalid filmHeightMm");
+  if (!Number.isFinite(circleOfConfusionMm) || circleOfConfusionMm <= 0) throw new Error("Invalid circleOfConfusionMm");
+  if (!Number.isFinite(width) || width <= 0) throw new Error("Invalid render width");
+  if (!Number.isFinite(height) || height <= 0) throw new Error("Invalid render height");
 
   const lens = opticsState.lensCenterWorld;
   const focusPlane = opticsState.focusPlane;
@@ -45,9 +65,12 @@ export function createGroundGlassDofUniformState(
   const invProj = camera.projectionMatrixInverse.elements.slice();
   const camWorld = camera.matrixWorld.elements.slice();
 
+  const boundaryCoCDiameterPx = (circleOfConfusionMm * width) / filmWidthMm;
+  const boundaryBlurRadiusPx = boundaryCoCDiameterPx / 2;
+
   return {
     mode: mode as 0 | 1,
-    lensCenterWorld: toMeters(lens as any) ?? [0,0,0],
+    lensCenterWorld: toMeters(lens) ?? [0, 0, 0],
     focusPlanePoint: focusPlane ? toMeters(focusPlane.point) as [number, number, number] : [0, 0, 0],
     focusPlaneNormal: focusPlane ? [focusPlane.normal.x, focusPlane.normal.y, focusPlane.normal.z] : [0, 0, 1],
     nearPlanePoint: nearPlane ? toMeters(nearPlane.point) : null,
@@ -58,11 +81,17 @@ export function createGroundGlassDofUniformState(
     inverseProjectionMatrix: invProj,
     cameraMatrixWorld: camWorld,
     imageDistanceMm: Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z),
-    focalLengthMm: camera.getFocalLength ? camera.getFocalLength() : 50,
+    focalLengthMm: focalLengthMm,
     fNumber: aperture,
-    sensorWidthMm: 36, // fallback; shader also receives literal CAMERA_CONSTANTS where used
+    sensorWidthMm: filmWidthMm,
     renderWidth: width,
     renderHeight: height,
-    maximumBlurRadiusPx: maxCoC,
+    maximumBlurRadiusPx,
+    circleOfConfusionMm,
+    boundaryCoCDiameterPx,
+    boundaryBlurRadiusPx,
+    filmWidthMm,
+    filmHeightMm,
+    displayBlurScale,
   };
 }

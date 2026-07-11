@@ -117,24 +117,27 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // map plane distances to positive along ray
       float focusDist = tFocus > 0.0 ? tFocus : targetDist;
       float nearDist = tNear > 0.0 ? tNear : (focusDist - 1.0);
-      float farDist = (tFar > 0.0 && hasFiniteFar > 0.5) ? tFar : 1.0/0.0; // infinity
+      float farDist = (tFar > 0.0 && hasFiniteFar > 0.5) ? tFar : -1.0; // -1 signals open far
       float normalizedDef;
       if (targetDist < nearDist){
         float denom = max(1e-6, focusDist - nearDist);
         normalizedDef = 1.0 + (nearDist - targetDist) / denom;
-      } else if (targetDist > focusDist){
-        if (hasFiniteFar < 0.5){
-          float denom = max(1e-6, focusDist - nearDist);
-          normalizedDef = (targetDist - focusDist) / denom;
-        } else {
-          float denom = max(1e-6, farDist - focusDist);
-          normalizedDef = (targetDist - focusDist) / denom;
-        }
-      } else {
+      } else if (targetDist <= focusDist){
         float denom = max(1e-6, focusDist - nearDist);
-        normalizedDef = (abs(targetDist - focusDist)) / denom;
+        normalizedDef = (focusDist - targetDist) / denom;
+      } else if (hasFiniteFar < 0.5){
+        // open-ended far
+        float denom = max(1e-6, focusDist - nearDist);
+        normalizedDef = (targetDist - focusDist) / denom;
+      } else if (targetDist <= farDist){
+        float denom = max(1e-6, farDist - focusDist);
+        normalizedDef = (targetDist - focusDist) / denom;
+      } else {
+        float denom = max(1e-6, farDist - focusDist);
+        normalizedDef = 1.0 + (targetDist - farDist) / denom;
       }
-      float radius = clamp(normalizedDef * maxCoC, 0.0, maxCoC);
+      // map normalized defocus to boundary blur radius (physical CoC -> pixels) and apply display scale
+      float radius = clamp(normalizedDef * boundaryBlurRadiusPx * displayBlurScale, 0.0, maximumBlurRadiusPx);
       return radius;
     }
 
@@ -159,10 +162,10 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     gl_FragColor = vec4(color,1.0); }`;
 
     const matH = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragH, uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, near: { value: 0.01 }, far: { value: 12.0 }, imageDistanceMm: { value: 100.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, useRaw: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }
+      tColor: { value: null }, tDepth: { value: null }, near: { value: 0.01 }, far: { value: 12.0 }, imageDistanceMm: { value: 100.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, useRaw: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, boundaryBlurRadiusPx: { value: 0.0 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
     }});
     const matV = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragV, uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, imageDistanceMm: { value: 100.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, near: { value: 0.01 }, far: { value: 12.0 }, ringCenter: { value: new THREE.Vector2(-1, -1) }, ringRadiusPx: { value: 0.0 }, ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) }, ringOpacity: { value: 0.8 }, showRing: { value: 0.0 }, useRaw: { value: 0.0 }, displayUpright: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }
+      tColor: { value: null }, tDepth: { value: null }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, imageDistanceMm: { value: 100.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, near: { value: 0.01 }, far: { value: 12.0 }, ringCenter: { value: new THREE.Vector2(-1, -1) }, ringRadiusPx: { value: 0.0 }, ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) }, ringOpacity: { value: 0.8 }, showRing: { value: 0.0 }, useRaw: { value: 0.0 }, displayUpright: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, boundaryBlurRadiusPx: { value: 0.0 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
     }});
 
     const quadH = new THREE.Mesh(quadGeo, matH);
@@ -357,23 +360,53 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // For Architecture Rise, temporarily bypass DOF and show raw color to ensure subject is visible
       matH.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
 
-      // prepare typed DOF uniform state and populate shader uniforms
+      // prepare typed DOF uniform state and populate shader uniforms (single state applied to both passes)
+      let uniformPreparationError: string | null = null;
+      let preparedDofState: ReturnType<typeof createGroundGlassDofUniformState> | null = null;
       try {
-        const dofState = createGroundGlassDofUniformState(opticsState, cam, aperture, widthPx, heightPx, matH.uniforms.maxCoC.value as number);
-        matH.uniforms.dofMode.value = dofState.mode;
-        matH.uniforms.lensCenterWorld.value.set(dofState.lensCenterWorld[0], dofState.lensCenterWorld[1], dofState.lensCenterWorld[2]);
-        matH.uniforms.focusPlanePoint.value.set(dofState.focusPlanePoint[0], dofState.focusPlanePoint[1], dofState.focusPlanePoint[2]);
-        matH.uniforms.focusPlaneNormal.value.set(dofState.focusPlaneNormal[0], dofState.focusPlaneNormal[1], dofState.focusPlaneNormal[2]);
-        if (dofState.nearPlanePoint) matH.uniforms.nearPlanePoint.value.set(dofState.nearPlanePoint[0], dofState.nearPlanePoint[1], dofState.nearPlanePoint[2]);
-        if (dofState.nearPlaneNormal) matH.uniforms.nearPlaneNormal.value.set(dofState.nearPlaneNormal[0], dofState.nearPlaneNormal[1], dofState.nearPlaneNormal[2]);
-        if (dofState.farPlanePoint) matH.uniforms.farPlanePoint.value.set(dofState.farPlanePoint[0], dofState.farPlanePoint[1], dofState.farPlanePoint[2]);
-        if (dofState.farPlaneNormal) matH.uniforms.farPlaneNormal.value.set(dofState.farPlaneNormal[0], dofState.farPlaneNormal[1], dofState.farPlaneNormal[2]);
-        matH.uniforms.hasFiniteFar.value = dofState.hasFiniteFarPlane ? 1.0 : 0.0;
-        matH.uniforms.inverseProjectionMatrix.value.copy(new THREE.Matrix4().fromArray(dofState.inverseProjectionMatrix));
-        matH.uniforms.cameraMatrixWorld.value.copy(new THREE.Matrix4().fromArray(dofState.cameraMatrixWorld));
-        matH.uniforms.maximumBlurRadiusPx.value = dofState.maximumBlurRadiusPx;
-      } catch (e) {
-        // ignore failures to prepare DOF state — shader will fallback to parallel path
+        preparedDofState = createGroundGlassDofUniformState(
+          opticsState,
+          cam,
+          CAMERA_CONSTANTS.focalLengthMm,
+          CAMERA_CONSTANTS.filmWidthMm,
+          CAMERA_CONSTANTS.filmHeightMm,
+          0.1, // circleOfConfusionMm (must match core optics)
+          aperture,
+          widthPx,
+          heightPx,
+          matH.uniforms.maximumBlurRadiusPx.value as number,
+          1.0, // displayBlurScale
+        );
+      } catch (err) {
+        uniformPreparationError = err instanceof Error ? err.message : String(err);
+      }
+
+      if (preparedDofState) {
+        matH.uniforms.dofMode.value = preparedDofState.mode;
+        matH.uniforms.lensCenterWorld.value.set(preparedDofState.lensCenterWorld[0], preparedDofState.lensCenterWorld[1], preparedDofState.lensCenterWorld[2]);
+        matH.uniforms.focusPlanePoint.value.set(preparedDofState.focusPlanePoint[0], preparedDofState.focusPlanePoint[1], preparedDofState.focusPlanePoint[2]);
+        matH.uniforms.focusPlaneNormal.value.set(preparedDofState.focusPlaneNormal[0], preparedDofState.focusPlaneNormal[1], preparedDofState.focusPlaneNormal[2]);
+        if (preparedDofState.nearPlanePoint) matH.uniforms.nearPlanePoint.value.set(preparedDofState.nearPlanePoint[0], preparedDofState.nearPlanePoint[1], preparedDofState.nearPlanePoint[2]);
+        if (preparedDofState.nearPlaneNormal) matH.uniforms.nearPlaneNormal.value.set(preparedDofState.nearPlaneNormal[0], preparedDofState.nearPlaneNormal[1], preparedDofState.nearPlaneNormal[2]);
+        if (preparedDofState.farPlanePoint) matH.uniforms.farPlanePoint.value.set(preparedDofState.farPlanePoint[0], preparedDofState.farPlanePoint[1], preparedDofState.farPlanePoint[2]);
+        if (preparedDofState.farPlaneNormal) matH.uniforms.farPlaneNormal.value.set(preparedDofState.farPlaneNormal[0], preparedDofState.farPlaneNormal[1], preparedDofState.farPlaneNormal[2]);
+        matH.uniforms.hasFiniteFar.value = preparedDofState.hasFiniteFarPlane ? 1.0 : 0.0;
+        matH.uniforms.inverseProjectionMatrix.value.copy(new THREE.Matrix4().fromArray(preparedDofState.inverseProjectionMatrix));
+        matH.uniforms.cameraMatrixWorld.value.copy(new THREE.Matrix4().fromArray(preparedDofState.cameraMatrixWorld));
+        matH.uniforms.maximumBlurRadiusPx.value = preparedDofState.maximumBlurRadiusPx;
+        // physical CoC / boundary values
+        matH.uniforms.circleOfConfusionMm.value = preparedDofState.circleOfConfusionMm;
+        matH.uniforms.boundaryBlurRadiusPx.value = preparedDofState.boundaryBlurRadiusPx;
+        matH.uniforms.filmWidthMm.value = preparedDofState.filmWidthMm;
+        matH.uniforms.displayBlurScale.value = preparedDofState.displayBlurScale;
+      } else {
+        // Uniform preparation failed — when the core model expected scheimpflug-wedge, be explicit: bypass DOF and record reason
+        const coreModel = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
+        if (coreModel === "scheimpflug-wedge") {
+          matH.uniforms.useRaw.value = 1.0; // bypass DOF visually
+          matH.uniforms.dofMode.value = 0.0; // force parallel in shader to avoid uninitialized planes
+          console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
+        }
       }
 
       gl.setRenderTarget(tempRT);
@@ -395,23 +428,32 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matV.uniforms.far.value = cam.far;
       // honor raw debug mode (bypass DOF) or fallback depth
       matV.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
-      // prepare DOF uniforms for vertical pass as well
-      try {
-        const dofStateV = createGroundGlassDofUniformState(opticsState, cam, aperture, widthPx, heightPx, matV.uniforms.maxCoC.value as number);
-        matV.uniforms.dofMode.value = dofStateV.mode;
-        matV.uniforms.lensCenterWorld.value.set(dofStateV.lensCenterWorld[0], dofStateV.lensCenterWorld[1], dofStateV.lensCenterWorld[2]);
-        matV.uniforms.focusPlanePoint.value.set(dofStateV.focusPlanePoint[0], dofStateV.focusPlanePoint[1], dofStateV.focusPlanePoint[2]);
-        matV.uniforms.focusPlaneNormal.value.set(dofStateV.focusPlaneNormal[0], dofStateV.focusPlaneNormal[1], dofStateV.focusPlaneNormal[2]);
-        if (dofStateV.nearPlanePoint) matV.uniforms.nearPlanePoint.value.set(dofStateV.nearPlanePoint[0], dofStateV.nearPlanePoint[1], dofStateV.nearPlanePoint[2]);
-        if (dofStateV.nearPlaneNormal) matV.uniforms.nearPlaneNormal.value.set(dofStateV.nearPlaneNormal[0], dofStateV.nearPlaneNormal[1], dofStateV.nearPlaneNormal[2]);
-        if (dofStateV.farPlanePoint) matV.uniforms.farPlanePoint.value.set(dofStateV.farPlanePoint[0], dofStateV.farPlanePoint[1], dofStateV.farPlanePoint[2]);
-        if (dofStateV.farPlaneNormal) matV.uniforms.farPlaneNormal.value.set(dofStateV.farPlaneNormal[0], dofStateV.farPlaneNormal[1], dofStateV.farPlaneNormal[2]);
-        matV.uniforms.hasFiniteFar.value = dofStateV.hasFiniteFarPlane ? 1.0 : 0.0;
-        matV.uniforms.inverseProjectionMatrix.value.copy(new THREE.Matrix4().fromArray(dofStateV.inverseProjectionMatrix));
-        matV.uniforms.cameraMatrixWorld.value.copy(new THREE.Matrix4().fromArray(dofStateV.cameraMatrixWorld));
-        matV.uniforms.maximumBlurRadiusPx.value = dofStateV.maximumBlurRadiusPx;
-      } catch (e) {
-        // ignore — fallback will be used
+      // apply previously prepared DOF uniform state to vertical pass
+      if (preparedDofState) {
+        matV.uniforms.dofMode.value = preparedDofState.mode;
+        matV.uniforms.lensCenterWorld.value.set(preparedDofState.lensCenterWorld[0], preparedDofState.lensCenterWorld[1], preparedDofState.lensCenterWorld[2]);
+        matV.uniforms.focusPlanePoint.value.set(preparedDofState.focusPlanePoint[0], preparedDofState.focusPlanePoint[1], preparedDofState.focusPlanePoint[2]);
+        matV.uniforms.focusPlaneNormal.value.set(preparedDofState.focusPlaneNormal[0], preparedDofState.focusPlaneNormal[1], preparedDofState.focusPlaneNormal[2]);
+        if (preparedDofState.nearPlanePoint) matV.uniforms.nearPlanePoint.value.set(preparedDofState.nearPlanePoint[0], preparedDofState.nearPlanePoint[1], preparedDofState.nearPlanePoint[2]);
+        if (preparedDofState.nearPlaneNormal) matV.uniforms.nearPlaneNormal.value.set(preparedDofState.nearPlaneNormal[0], preparedDofState.nearPlaneNormal[1], preparedDofState.nearPlaneNormal[2]);
+        if (preparedDofState.farPlanePoint) matV.uniforms.farPlanePoint.value.set(preparedDofState.farPlanePoint[0], preparedDofState.farPlanePoint[1], preparedDofState.farPlanePoint[2]);
+        if (preparedDofState.farPlaneNormal) matV.uniforms.farPlaneNormal.value.set(preparedDofState.farPlaneNormal[0], preparedDofState.farPlaneNormal[1], preparedDofState.farPlaneNormal[2]);
+        matV.uniforms.hasFiniteFar.value = preparedDofState.hasFiniteFarPlane ? 1.0 : 0.0;
+        matV.uniforms.inverseProjectionMatrix.value.copy(new THREE.Matrix4().fromArray(preparedDofState.inverseProjectionMatrix));
+        matV.uniforms.cameraMatrixWorld.value.copy(new THREE.Matrix4().fromArray(preparedDofState.cameraMatrixWorld));
+        matV.uniforms.maximumBlurRadiusPx.value = preparedDofState.maximumBlurRadiusPx;
+        // physical CoC / boundary values
+        matV.uniforms.circleOfConfusionMm.value = preparedDofState.circleOfConfusionMm;
+        matV.uniforms.boundaryBlurRadiusPx.value = preparedDofState.boundaryBlurRadiusPx;
+        matV.uniforms.filmWidthMm.value = preparedDofState.filmWidthMm;
+        matV.uniforms.displayBlurScale.value = preparedDofState.displayBlurScale;
+      } else {
+        const coreModel = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
+        if (coreModel === "scheimpflug-wedge") {
+          matV.uniforms.useRaw.value = 1.0;
+          matV.uniforms.dofMode.value = 0.0;
+          console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
+        }
       }
 
       // For Architecture we still allow final display inversion to be applied (displayUpright)
