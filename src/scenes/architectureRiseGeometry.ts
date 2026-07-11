@@ -78,6 +78,66 @@ export const focusTarget = {
   worldPosition: { x: 0, y: building.center.y, z: facade.frontFacadeZ - 10 },
 };
 
+// Reference objects to aid depth reading in Ground Glass: placed in front/side/far positions
+// Units are millimetres and positions are in world coordinates.
+export type ReferenceObjectDef = {
+  id: string;
+  x: number; // world X(mm)
+  z: number; // world Z(mm)
+  width: number; // mm
+  depth: number; // mm
+  height: number; // mm
+  color?: string;
+  band?: boolean; // include a lighter top band for high-frequency cue
+};
+
+export const referenceObjects: ReferenceObjectDef[] = [
+  // A: front-left, clearly in front of façade
+  {
+    id: "plinth-front-left",
+    x: -800,
+    z: facade.frontFacadeZ - 600,
+    width: 320,
+    depth: 320,
+    height: 300,
+    color: "#9aa6b2",
+    band: true,
+  },
+  // B: front-right, slightly different depth
+  {
+    id: "plinth-front-right",
+    x: 700,
+    z: facade.frontFacadeZ - 420,
+    width: 260,
+    depth: 260,
+    height: 240,
+    color: "#8f98a3",
+    band: false,
+  },
+  // C: side object near left building edge, near façade depth but offset laterally
+  {
+    id: "plinth-side-left",
+    x: -building.width / 2 - 120,
+    z: facade.frontFacadeZ + 120,
+    width: 220,
+    depth: 220,
+    height: 360,
+    color: "#a3adb7",
+    band: true,
+  },
+  // D: optional farther object — slightly behind building back plane
+  {
+    id: "plinth-far-right",
+    x: building.width / 2 + 600,
+    z: facade.backFacadeZ + 700,
+    width: 280,
+    depth: 280,
+    height: 200,
+    color: "#b0bcc6",
+    band: false,
+  },
+];
+
 // canonical façade focus distance measured from lens centre (0,0,0) to focus target along +Z
 export const architectureFacadeFocusDistanceMm = focusTarget.worldPosition.z;
 

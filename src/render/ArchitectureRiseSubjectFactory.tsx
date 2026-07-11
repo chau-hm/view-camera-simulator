@@ -98,6 +98,29 @@ export function createArchitectureRiseGroup(): THREE.Group {
   focusGroup.add(crosshair);
   g.add(focusGroup);
 
+  // small reference objects (plinths) around the building to aid depth reading
+  if ((geometry as any).referenceObjects && Array.isArray((geometry as any).referenceObjects)) {
+    const rots: any[] = (geometry as any).referenceObjects;
+    rots.forEach((def: any) => {
+      const grp = new THREE.Group();
+      const bw = toWorld(def.width);
+      const bd = toWorld(def.depth);
+      const bh = toWorld(def.height);
+      const baseMat = new THREE.MeshStandardMaterial({ color: def.color || "#9aa6b2", roughness: 0.95, metalness: 0 });
+      const base = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), baseMat);
+      base.position.set(toWorld(def.x), toWorld(geometry.ground.y + def.height / 2), toWorld(def.z));
+      grp.add(base);
+      // optional subtle top band for high-frequency cue
+      if (def.band) {
+        const bandH = toWorld(Math.min(10, def.height * 0.08));
+        const band = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.92, bandH, bd * 0.95), new THREE.MeshStandardMaterial({ color: "#f1f5f9", roughness: 0.98 }));
+        band.position.set(toWorld(def.x), toWorld(geometry.ground.y + def.height - bandH / 2), toWorld(def.z));
+        grp.add(band);
+      }
+      g.add(grp);
+    });
+  }
+
   return g;
 }
 
@@ -170,6 +193,33 @@ export const ArchitectureRiseSubject: React.FC = () => {
           return elems;
         })()}
       </group>
+
+      {/* reference objects (plinths) */}
+      {(() => {
+        const objs = geometry.referenceObjects || [];
+        return objs.map((def) => {
+          const x = def.x;
+          const z = def.z;
+          const w = def.width;
+          const d = def.depth;
+          const h = def.height;
+          const band = def.band;
+          return (
+            <group key={def.id}>
+              <mesh position={[toW(x), toW(geometry.ground.y + h / 2), toW(z)]}>
+                <boxGeometry args={[toW(w), toW(h), toW(d)]} />
+                <meshStandardMaterial color={def.color || "#9aa6b2"} roughness={0.95} metalness={0} />
+              </mesh>
+              {band ? (
+                <mesh position={[toW(x), toW(geometry.ground.y + h - Math.min(10, h * 0.08) / 2), toW(z)]}>
+                  <boxGeometry args={[toW(w * 0.92), toW(Math.min(10, h * 0.08)), toW(d * 0.95)]} />
+                  <meshStandardMaterial color="#f1f5f9" roughness={0.98} />
+                </mesh>
+              ) : null}
+            </group>
+          );
+        });
+      })()}
     </group>
   );
 };
