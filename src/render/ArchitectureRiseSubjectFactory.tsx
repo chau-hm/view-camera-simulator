@@ -208,8 +208,8 @@ export const ArchitectureRiseSubject: React.FC = () => {
       {/* focus-detail patch */}
       <group>
         {(() => {
-          const patchSize = 200; // mm
-          const cells = 8;
+          const patchSize = geometry.focusChartSizeMm; // mm
+          const cells = geometry.focusChartCells;
           const cellSize = patchSize / cells;
           const zPos = geometry.facade.frontFacadeZ - 20; // slightly in front
           const elems = [] as React.ReactNode[];

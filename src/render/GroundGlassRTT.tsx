@@ -28,6 +28,8 @@ type GroundGlassRTTProps = {
   focusRingOpacity?: number;
   rawDebug?: boolean;
   focusAssistEnabled?: boolean;
+  renderQuality?: import("../types/ui").RenderQualityProfile;
+  zoomEnabled?: boolean;
 };
 
 type PostResources = {
@@ -37,21 +39,31 @@ type PostResources = {
   tempRT: THREE.WebGLRenderTarget;
 };
 
-function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, }: GroundGlassRTTProps) {
+import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
+
+function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, }: GroundGlassRTTProps) {
   const renderTarget = useRef<THREE.WebGLRenderTarget | null>(null);
   const offscreenScene = useRef<THREE.Scene | null>(null);
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
 
   const { gl } = useThree();
+
+  // RTT dimensions reference so both effect and frame loop can access current internal sizes
+  const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1, zoomEnabled }));
   // expose preview/ring hints on the function object so runtime code inside useFrame can access them
 
   useEffect(() => {
-    const rt = new THREE.WebGLRenderTarget(widthPx, heightPx);
+    // resolve desired internal RTT dimensions from quality profile, DPR and zoom state
+    const deviceDpr = (gl && typeof gl.getPixelRatio === 'function') ? gl.getPixelRatio() : (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+    const dims = resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: deviceDpr, zoomEnabled });
+    dimsRef.current = dims;
+
+    const rt = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
     // attach a depth texture so we can do depth-aware DOF
     // DepthTexture constructor typing varies across three.js versions; access via unknown and a conservative factory
     type UnknownCtor = new (...args: unknown[]) => unknown;
     const DepthTextureCtor = (THREE as unknown as { DepthTexture?: UnknownCtor }).DepthTexture;
-    const depthTex = DepthTextureCtor ? new DepthTextureCtor(widthPx, heightPx) : undefined;
+    const depthTex = DepthTextureCtor ? new DepthTextureCtor(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx) : undefined;
     if (depthTex) {
       (depthTex as unknown as { type?: number }).type = (THREE as unknown as { UnsignedShortType?: number }).UnsignedShortType ?? (THREE as unknown as { UnsignedIntType?: number }).UnsignedIntType;
       (rt as unknown as { depthTexture?: unknown }).depthTexture = depthTex as unknown;
@@ -79,7 +91,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     const postSceneH = new THREE.Scene();
     const postSceneV = new THREE.Scene();
     const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const tempRT = new THREE.WebGLRenderTarget(widthPx, heightPx);
+    const tempRT = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
 
     // fallback 1x1 depth texture (depth=1.0) for builds without DepthTexture support
     const depthFallbackData = new Uint8Array([255, 255, 255, 255]);
@@ -131,6 +143,22 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       } else {
         vec3 worldPos = reconstructWorldPosition(uv, centerDepth, inverseProjectionMatrix, cameraMatrixWorld);
         radius = computeWedgeCoCPx(worldPos);
+      }
+
+      // fast-path: exact in-focus, avoid costly sampling for tiny radii
+      float zeroBlurThreshold = 0.125; // px threshold in internal-target pixels
+      if (radius <= zeroBlurThreshold) {
+        gl_FragColor = texture2D(tColor, uv);
+        return;
+      }
+      // continuous sub-pixel handling for small radii (<1 px)
+      if (radius < 1.0) {
+        float frac = radius; // smoothly blend between center and single offset
+        vec3 c0 = texture2D(tColor, uv).rgb;
+        vec3 c1 = texture2D(tColor, uv + vec2(radius / renderWidth, 0.0)).rgb;
+        vec3 color = mix(c0, c1, frac);
+        gl_FragColor = vec4(color, 1.0);
+        return;
       }
 
       float sampleStep = 1.0; // px step
@@ -197,6 +225,25 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         radius = computeWedgeCoCPx(worldPos);
       }
 
+      // fast-path: exact in-focus, avoid costly sampling for tiny radii
+      float zeroBlurThreshold = 0.125; // px threshold in internal-target pixels
+      if (radius <= zeroBlurThreshold) {
+        vec3 color = texture2D(tColor, sampleUv).rgb;
+        if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
+        gl_FragColor = vec4(color,1.0);
+        return;
+      }
+
+      if (radius < 1.0) {
+        float frac = radius;
+        vec3 c0 = texture2D(tColor, sampleUv).rgb;
+        vec3 c1 = texture2D(tColor, sampleUv + vec2(0.0, radius / renderHeight)).rgb;
+        vec3 color = mix(c0, c1, frac);
+        if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
+        gl_FragColor = vec4(color,1.0);
+        return;
+      }
+
       float sampleStep = 1.0;
       float sampleCountF = clamp(floor(radius / sampleStep) * 2.0 + 1.0, 1.0, 15.0);
       float halfSamples = floor((sampleCountF - 1.0) * 0.5);
@@ -231,10 +278,10 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     }`;
 
     const matH = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragH, uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, near: { value: 0.01 }, far: { value: 12.0 }, imageDistanceMm: { value: 100.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, useRaw: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, boundaryBlurRadiusPx: { value: 0.0 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
+      tColor: { value: null }, tDepth: { value: null }, near: { value: 0.01 }, far: { value: 12.0 }, imageDistanceMm: { value: 100.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, renderWidth: { value: dimsRef.current.internalWidthPx }, renderHeight: { value: dimsRef.current.internalHeightPx }, maxCoC: { value: 60.0 }, useRaw: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, boundaryBlurRadiusPx: { value: 0.0 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
     }});
     const matV = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragV, uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, imageDistanceMm: { value: 100.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, near: { value: 0.01 }, far: { value: 12.0 }, ringCenter: { value: new THREE.Vector2(-1, -1) }, ringRadiusPx: { value: 0.0 }, ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) }, ringOpacity: { value: 0.8 }, showRing: { value: 0.0 }, useRaw: { value: 0.0 }, displayUpright: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, boundaryBlurRadiusPx: { value: 0.0 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
+      tColor: { value: null }, tDepth: { value: null }, renderWidth: { value: dimsRef.current.internalWidthPx }, renderHeight: { value: dimsRef.current.internalHeightPx }, maxCoC: { value: 60.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, imageDistanceMm: { value: 100.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, near: { value: 0.01 }, far: { value: 12.0 }, ringCenter: { value: new THREE.Vector2(-1, -1) }, ringRadiusPx: { value: 0.0 }, ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) }, ringOpacity: { value: 0.8 }, showRing: { value: 0.0 }, useRaw: { value: 0.0 }, displayUpright: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, boundaryBlurRadiusPx: { value: 0.0 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
     }});
 
     const quadH = new THREE.Mesh(quadGeo, matH);
@@ -312,7 +359,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // clear post resources
       (OffscreenRenderer as unknown as { _post?: PostResources })._post = undefined;
     };
-  }, [gl, widthPx, heightPx, sceneId]);
+  }, [gl, widthPx, heightPx, sceneId, renderQuality, zoomEnabled]);
 
   useFrame(() => {
     if (!renderTarget.current || !offscreenScene.current) return;
@@ -416,8 +463,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matH.uniforms.imageDistanceMm.value = imgDist;
       matH.uniforms.focalLengthMm.value = CAMERA_CONSTANTS.focalLengthMm;
       matH.uniforms.fNumber.value = aperture;
-      matH.uniforms.renderWidth.value = widthPx;
-      matH.uniforms.renderHeight.value = heightPx;
+      matH.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
+      matH.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
       matH.uniforms.near.value = cam.near;
       matH.uniforms.far.value = cam.far;
       // displayUpright is applied only in the final vertical pass (matV) so DOF and horizontal pass are identical for both preview modes
@@ -441,8 +488,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           CAMERA_CONSTANTS.filmHeightMm,
           0.1, // circleOfConfusionMm (must match core optics)
           aperture,
-          widthPx,
-          heightPx,
+          dimsRef.current.internalWidthPx,
+          dimsRef.current.internalHeightPx,
           matH.uniforms.maximumBlurRadiusPx.value as number,
           1.0, // displayBlurScale
         );
@@ -494,8 +541,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       const matV = meshV.material as THREE.ShaderMaterial;
       matV.uniforms.tColor.value = (tempRT as THREE.WebGLRenderTarget).texture;
       matV.uniforms.tDepth.value = depthTex;
-      matV.uniforms.renderWidth.value = widthPx;
-      matV.uniforms.renderHeight.value = heightPx;
+      matV.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
+      matV.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
       matV.uniforms.imageDistanceMm.value = imgDist;
       matV.uniforms.focalLengthMm.value = CAMERA_CONSTANTS.focalLengthMm;
       matV.uniforms.fNumber.value = aperture;

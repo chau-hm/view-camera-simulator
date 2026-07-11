@@ -17,6 +17,8 @@ export type GroundGlassRenderSurfaceProps = {
   focusScale: number;
   widthPx: number;
   heightPx: number;
+  renderQuality: import("../types/ui").RenderQualityProfile;
+  zoomEnabled?: boolean;
 };
 
 export const GroundGlassRenderSurface = ({
@@ -34,6 +36,8 @@ export const GroundGlassRenderSurface = ({
   focusScale,
   widthPx,
   heightPx,
+  renderQuality,
+  zoomEnabled,
 }: GroundGlassRenderSurfaceProps) => {
   if (isGroundGlassRttScene(sceneId)) {
     return (
@@ -49,6 +53,8 @@ export const GroundGlassRenderSurface = ({
           focusRingOpacity={focusRingOpacity}
           rawDebug={rawDebug}
           focusAssistEnabled={focusAssistEnabled}
+          renderQuality={renderQuality}
+          zoomEnabled={zoomEnabled}
         />
       </div>
     );

@@ -164,6 +164,8 @@ export const GroundGlassRenderer = ({
           focusScale={focusScale}
           widthPx={PANEL_WIDTH_PX}
           heightPx={PANEL_HEIGHT_PX}
+          renderQuality={renderQuality}
+          zoomEnabled={zoomEnabled}
         />
 
         {!isRttSceneFinal && (
