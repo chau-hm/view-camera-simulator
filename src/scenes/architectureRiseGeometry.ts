@@ -305,4 +305,7 @@ export default {
   horizontalStripeHeightMm,
   focusChartSizeMm,
   focusChartCells,
+  // helper exports for consumers that import the default geometry object
+  getArchitectureFocusChartCells,
+  getArchitectureFocusChartBars,
 };
