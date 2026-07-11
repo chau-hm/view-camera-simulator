@@ -82,6 +82,7 @@ export const focusTarget = {
 // Units are millimetres and positions are in world coordinates.
 export type ReferenceObjectDef = {
   id: string;
+  role?: "foreground" | "midground" | "near-façade" | "side" | "far";
   x: number; // world X(mm)
   z: number; // world Z(mm)
   width: number; // mm
@@ -91,32 +92,36 @@ export type ReferenceObjectDef = {
   band?: boolean; // include a lighter top band for high-frequency cue
 };
 
+// Repositioned reference objects to create clear camera -> near -> mid -> building depth separation.
 export const referenceObjects: ReferenceObjectDef[] = [
-  // A: front-left, clearly in front of façade
+  // A: near foreground — moved significantly closer to camera
   {
-    id: "plinth-front-left",
-    x: -800,
-    z: facade.frontFacadeZ - 600,
-    width: 320,
-    depth: 320,
-    height: 300,
+    id: "plinth-foreground-left",
+    role: "foreground",
+    x: -700,
+    z: 3000, // much closer than façade (~8900mm)
+    width: 240,
+    depth: 240,
+    height: 160,
     color: "#9aa6b2",
     band: true,
   },
-  // B: front-right, slightly different depth
+  // B: midground — in front of façade but not as close as A
   {
-    id: "plinth-front-right",
-    x: 700,
-    z: facade.frontFacadeZ - 420,
-    width: 260,
+    id: "plinth-mid-right",
+    role: "midground",
+    x: 650,
+    z: 5400, // between camera and façade
+    width: 300,
     depth: 260,
-    height: 240,
+    height: 220,
     color: "#8f98a3",
     band: false,
   },
-  // C: side object near left building edge, near façade depth but offset laterally
+  // C: near-façade object — kept close to the building plane
   {
-    id: "plinth-side-left",
+    id: "plinth-near-facade-left",
+    role: "near-façade",
     x: -building.width / 2 - 120,
     z: facade.frontFacadeZ + 120,
     width: 220,
@@ -125,9 +130,10 @@ export const referenceObjects: ReferenceObjectDef[] = [
     color: "#a3adb7",
     band: true,
   },
-  // D: optional farther object — slightly behind building back plane
+  // D: optional far/side object — slightly behind the building back plane for depth contrast
   {
     id: "plinth-far-right",
+    role: "far",
     x: building.width / 2 + 600,
     z: facade.backFacadeZ + 700,
     width: 280,
