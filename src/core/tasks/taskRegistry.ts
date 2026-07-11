@@ -1,4 +1,5 @@
 import type { TaskDefinition } from "../../types/task";
+import geometry from "../../scenes/architectureRiseGeometry";
 
 const riseTask: TaskDefinition = {
   id: "rise-01",
@@ -61,7 +62,7 @@ const riseTask: TaskDefinition = {
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
-    focusDistanceMm: 7200,
+    focusDistanceMm: geometry.architectureFacadeFocusDistanceMm,
     aperture: 11,
     geometryView: "side",
     groundGlassAssistEnabled: false,

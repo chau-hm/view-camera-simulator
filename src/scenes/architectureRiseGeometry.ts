@@ -2,22 +2,26 @@
 // Define unambiguous coordinate anchors so everything (subject, targets, bounds)
 // derives from the same canonical values.
 
-// Canonical ground and camera datum (millimetres)
-// camera datum (lens centre y=0) remains the scene's vertical origin
-
-export const ground = {
-  // vertical ground plane level (world Y)
-  y: -1200,
-  // front-most Z at the near side of the ground plane (relative to camera datum)
-  nearZ: -2000,
-  // farthest Z so the ground extends well beyond the building
-  farZ: 13000,
-  // width across X axis
-  width: 16000,
+export type ArchitectureGroundGeometry = {
+  y: number;
+  nearZ: number;
+  farZ: number;
+  width: number;
+  depth: number;
+  centerZ: number;
 };
-// derived
-ground.centerZ = (ground.nearZ + ground.farZ) / 2;
-ground.depth = ground.farZ - ground.nearZ;
+
+const groundNearZ = -2000;
+const groundFarZ = 13000;
+
+export const ground: ArchitectureGroundGeometry = {
+  y: -1200,
+  nearZ: groundNearZ,
+  farZ: groundFarZ,
+  width: 16000,
+  depth: groundFarZ - groundNearZ,
+  centerZ: (groundNearZ + groundFarZ) / 2,
+};
 
 export const building = {
   // centre.x and z chosen so building sits forward in scene; centre.y computed below
@@ -59,8 +63,8 @@ export const sceneBounds = {
 export const compositionTargets = {
   buildingTop: {
     // region around roofline — expressed in world mm
-    min: { x: -900, y: facade.parapetBottomY - 120, z: facade.frontFacadeZ - 400 },
-    max: { x: 900, y: facade.parapetTopY + 120, z: facade.backFacadeZ + 400 },
+    min: { x: -900, y: facade.parapetBottomY - 80, z: facade.frontFacadeZ - 400 },
+    max: { x: 900, y: facade.parapetTopY + 80, z: facade.backFacadeZ + 400 },
   },
   buildingMain: {
     // focus main-body on a central lower-to-middle band to satisfy coverage at rise
@@ -74,8 +78,8 @@ export const focusTarget = {
   worldPosition: { x: 0, y: building.center.y, z: facade.frontFacadeZ - 10 },
 };
 
-// canonical façade focus distance measured later via projection helpers
-export const architectureFacadeFocusDistanceMm = null as unknown as number;
+// canonical façade focus distance measured from lens centre (0,0,0) to focus target along +Z
+export const architectureFacadeFocusDistanceMm = focusTarget.worldPosition.z;
 
 export default {
   ground,

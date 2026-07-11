@@ -69,15 +69,35 @@ const vecToWorld = (value: { x: number; y: number; z: number }): [number, number
   toWorld(value.z),
 ];
 
-const RearStandard = ({ isFocusFundamentals }: { isFocusFundamentals?: boolean }) => {
-  const rearZ = isFocusFundamentals ? 0 : -CAMERA_CONSTANTS.focalLengthMm;
+const RearStandard = ({ opticsState, isFocusFundamentals }: { opticsState?: DerivedOpticsState; isFocusFundamentals?: boolean }) => {
+  // For Focus Fundamentals keep the original datum (film at z=0)
+  if (isFocusFundamentals || !opticsState) {
+    const rearZ = isFocusFundamentals ? 0 : -CAMERA_CONSTANTS.focalLengthMm;
+    return (
+      <>
+        <mesh position={[0, 0, toWorld(rearZ)]}>
+          <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
+          <meshStandardMaterial color="#4b5563" />
+        </mesh>
+      </>
+    );
+  }
+
+  // For architecture and other scene-aware optics, position the rear standard at the film center
+  const filmPos = vecToWorld(opticsState.filmCenterWorld);
+  const filmNormal = opticsState.filmNormalWorld ?? { x: 0, y: 0, z: 1 };
+
   return (
-    <>
-      <mesh position={[0, 0, toWorld(rearZ)]}>
+    <group position={filmPos} ref={(g) => {
+      if (!g) return;
+      // orient so the group's +Z axis aligns with the film normal
+      g.lookAt(filmPos[0] + filmNormal.x, filmPos[1] + filmNormal.y, filmPos[2] + filmNormal.z);
+    }}>
+      <mesh>
         <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
         <meshStandardMaterial color="#4b5563" />
       </mesh>
-    </>
+    </group>
   );
 };
 
@@ -118,16 +138,32 @@ const FilmPlane = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
 };
 
 const Bellows = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
-  const rearZ = toWorld(-CAMERA_CONSTANTS.focalLengthMm);
+  // Use film center (rear) and lens center (front) from opticsState so bellows follow focusing
+  const rear = vecToWorld(opticsState.filmCenterWorld);
   const front = vecToWorld(opticsState.lensCenterWorld);
-  const center: [number, number, number] = [front[0] / 2, front[1] / 2, (rearZ + front[2]) / 2];
-  const depth = Math.max(Math.abs(front[2] - rearZ), toWorld(20));
+
+  // midpoint between rear and front
+  const center: [number, number, number] = [
+    (rear[0] + front[0]) / 2,
+    (rear[1] + front[1]) / 2,
+    (rear[2] + front[2]) / 2,
+  ];
+
+  // depth is the Euclidean distance between front and rear
+  const dz = Math.hypot(front[0] - rear[0], front[1] - rear[1], front[2] - rear[2]);
+  const depth = Math.max(dz, toWorld(20));
 
   return (
-    <mesh position={center}>
-      <boxGeometry args={[toWorld(120), toWorld(90), depth]} />
-      <meshStandardMaterial color="#111827" transparent opacity={0.25} />
-    </mesh>
+    <group position={center} ref={(g) => {
+      if (!g) return;
+      // orient the bellows so its local +Z points towards the front (lens)
+      g.lookAt(front[0], front[1], front[2]);
+    }}>
+      <mesh>
+        <boxGeometry args={[toWorld(120), toWorld(90), depth]} />
+        <meshStandardMaterial color="#111827" transparent opacity={0.25} />
+      </mesh>
+    </group>
   );
 };
 
@@ -426,7 +462,7 @@ const SceneContent = ({
     <directionalLight position={[2, 4, 2]} intensity={0.7} />
     <hemisphereLight args={["#ffffff", "#d1d5db", 0.45]} />
     <SceneAssets assets={scene.assets} />
-    <RearStandard isFocusFundamentals={scene.id === "focus-fundamentals-two-targets"} />
+    <RearStandard opticsState={opticsState} isFocusFundamentals={scene.id === "focus-fundamentals-two-targets"} />
     <FrontStandard opticsState={opticsState} />
     {showOpticalDebugPlanes && <FilmPlane opticsState={opticsState} />}
     {scene.id !== "focus-fundamentals-two-targets" && <Bellows opticsState={opticsState} />}
