@@ -22,7 +22,7 @@ const SVG_HEIGHT = 280;
 
 import { useAppStore } from "../../state/appStore";
 
-export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryViewportProps) => {
+export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, showHeader }: GeometryViewportProps) => {
   const setGeometryView = useAppStore((s) => s.setGeometryView);
 
   // Responsive diagram sizing: measure the diagram container and auto-fit SVG to available space
@@ -91,7 +91,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
       ) : null}
 
       <p style={{ marginTop: 6, marginBottom: 8 }}>
-        {geometryView === "side" ? "Side view" : "Top view"} | Rise: {(riseMm ?? opticsState.diagnostics.frontRiseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
+        {geometryView === "side" ? "Side view" : "Top view"} | Rise: {(riseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
       </p>
 
       {/* Diagram container: this will expand to available space in floating panel */}

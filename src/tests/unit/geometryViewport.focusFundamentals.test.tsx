@@ -25,7 +25,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
 
     // rerender at focus 3000
     const state3000 = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, focusDistanceMm: 3000 }, scene);
-    rerender(<GeometryViewport opticsState={state3000} geometryView="side" scene={scene} />);
+    rerender(<GeometryViewport opticsState={state3000} geometryView="side" scene={scene} riseMm={0} />);
     const rects2 = Array.from(svg!.querySelectorAll('rect')).filter((r) => r.getAttribute('width') === '12' && r.getAttribute('height') === '16' && r.getAttribute('fill') === '#0f766e');
     const centres2 = rects2.map((r) => ({ cx: parseFloat(r.getAttribute('x') || '0') + 6 }));
 

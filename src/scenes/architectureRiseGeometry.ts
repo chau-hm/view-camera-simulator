@@ -106,13 +106,3 @@ export default {
   focusChartSizeMm,
   focusChartCells,
 };
-
-export default {
-  ground,
-  building,
-  facade,
-  sceneBounds,
-  compositionTargets,
-  focusTarget,
-  architectureFacadeFocusDistanceMm,
-};
