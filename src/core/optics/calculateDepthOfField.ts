@@ -59,7 +59,8 @@ export const calculateDepthOfField = ({
   depthOfFieldModel: "parallel" | "scheimpflug-wedge";
   fallbackApplied?: boolean;
   fallbackReason?: string | null;
-} => {  const f = focalLengthMm;
+} => {
+  const f = focalLengthMm;
   const N = apertureFNumber;
   const c = circleOfConfusionMm;
   const U = focusObjectDistanceMm;

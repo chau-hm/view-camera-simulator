@@ -328,7 +328,14 @@ export const deriveOpticsState = (
     offAxisProjectionInput,
     offAxisProjectionMatrix,
     groundGlassProjection: calculateGroundGlassProjection(cameraState.groundGlassAssistEnabled),
-    focusTargets: calculateSharpness(scene, focusPlane ?? null, cameraState.aperture, lensCenterWorld, depthOfFieldNearPlane ?? null, depthOfFieldFarPlane ?? null),
+    focusTargets: calculateSharpness(
+      scene,
+      focusPlane ?? null,
+      cameraState.aperture,
+      lensCenterWorld,
+      depthOfFieldNearPlane ?? null,
+      depthOfFieldFarPlane ?? null,
+    ),
     diagnostics: {
       isParallelLensFilm,
       tiltAngleDeg: cameraState.frontTiltDeg,

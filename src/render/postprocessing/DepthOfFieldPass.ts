@@ -45,22 +45,29 @@ export const createDepthOfFieldPass = (
       distanceToFocusPlaneMm = calculateFocusPlaneDistanceMm(worldPosition, opticsState.focusPlane);
     } else if (opticsState.depthOfFieldNearPlane) {
       // In infinity mode, approximate distance to the 'focus' as distance to near DOF plane
-      distanceToFocusPlaneMm = Math.abs((worldPosition.z as number) - opticsState.depthOfFieldNearPlane.point.z);
+      distanceToFocusPlaneMm = Math.abs(
+        (worldPosition.z as number) - opticsState.depthOfFieldNearPlane.point.z,
+      );
     } else {
       distanceToFocusPlaneMm = Number.POSITIVE_INFINITY;
     }
   }
-  const blurStrength = config.enabled ? calculateApertureBlurStrength(distanceToFocusPlaneMm, config.aperture) : 0;
+  const blurStrength = config.enabled
+    ? calculateApertureBlurStrength(distanceToFocusPlaneMm, config.aperture)
+    : 0;
 
   return {
     enabled: config.enabled,
     linearDepthMm,
     distanceToFocusPlaneMm,
     blurStrength,
-    blurPass: createScaledBlurPass({
-      widthPx: config.widthPx,
-      heightPx: config.heightPx,
-      textureId: "dof-source",
-    }, qualitySettings.blurPassScale),
+    blurPass: createScaledBlurPass(
+      {
+        widthPx: config.widthPx,
+        heightPx: config.heightPx,
+        textureId: "dof-source",
+      },
+      qualitySettings.blurPassScale,
+    ),
   };
 };

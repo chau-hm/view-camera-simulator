@@ -7,11 +7,12 @@ import { clamp } from "../math/clamps";
 import { intersectRayPlane } from "../math/ray";
 import type { Ray, Vec3 } from "../../types/optics";
 import { safeNormalize, subtract, dot } from "../math/vec";
-import { calculateDofWedgeDefocus } from "./dofWedge";
+import { sampleDofWedge } from "./dofWedge";
 export const calculateSharpness = (
   scene: SceneDefinition,
   focusPlane: Plane | null,
-  _aperture: number,  lensCenterWorld: Vec3,
+  _aperture: number,
+  lensCenterWorld: Vec3,
   nearPlane: Plane | null,
   farPlane: Plane | null,
 ): FocusTargetSharpness[] => {
@@ -24,27 +25,19 @@ export const calculateSharpness = (
     });
     const ray = { origin: lensCenterWorld, direction: dir } as Ray;
 
-    // Intersect with focus/near/far planes to get distances
-    const focusHit = focusPlane ? intersectRayPlane(ray, focusPlane) : null;
-    const nearHit = nearPlane ? intersectRayPlane(ray, nearPlane) : null;
-    const farHit = farPlane ? intersectRayPlane(ray, farPlane) : null;
-
     const toTarget = subtract(target.worldPosition, lensCenterWorld);
     const targetDist = Math.max(0, dot(toTarget, dir));
 
-    const focusDist = focusHit ? focusHit.distance : targetDist;
-    const nearDist = nearHit ? nearHit.distance : null;
-    const farDist = farHit ? farHit.distance : null;
+    // Sample wedge
+    const sample = sampleDofWedge({
+      ray,
+      targetDistanceMm: targetDist,
+      nearPlane,
+      focusPlane,
+      farPlane,
+    });
 
-    // Compute normalized defocus using DOF wedge intervals
-    const { insideDepthOfField, normalizedDefocus } = calculateDofWedgeDefocus(
-      targetDist,
-      nearDist,
-      focusDist,
-      farDist,
-    );
-
-    const sharpness = clamp(1 - normalizedDefocus, 0, 1);
+    const sharpness = clamp(1 - sample.normalizedDefocus, 0, 1);
     const status: FocusTargetSharpness["status"] =
       sharpness >= 0.8 ? "sharp" : sharpness >= 0.5 ? "acceptable" : "soft";
 
@@ -55,12 +48,12 @@ export const calculateSharpness = (
         : 0,
       sharpness,
       status,
-      insideDepthOfField,
-      targetRayDistanceMm: targetDist,
-      nearBoundaryDistanceMm: nearDist,
-      focusBoundaryDistanceMm: focusDist,
-      farBoundaryDistanceMm: farDist,
-      normalizedDefocus,
+      insideDepthOfField: sample.insideDepthOfField,
+      targetRayDistanceMm: sample.targetDistanceMm,
+      nearBoundaryDistanceMm: sample.nearDistanceMm,
+      focusBoundaryDistanceMm: sample.focusDistanceMm,
+      farBoundaryDistanceMm: sample.farDistanceMm,
+      normalizedDefocus: sample.normalizedDefocus,
     };
   });
 };
