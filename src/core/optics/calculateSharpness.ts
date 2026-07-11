@@ -7,13 +7,11 @@ import { clamp } from "../math/clamps";
 import { intersectRayPlane } from "../math/ray";
 import type { Ray, Vec3 } from "../../types/optics";
 import { safeNormalize, subtract, dot } from "../math/vec";
-import { sampleDofWedge, calculateDofWedgeDefocus } from "./dofWedge";
-
+import { calculateDofWedgeDefocus } from "./dofWedge";
 export const calculateSharpness = (
   scene: SceneDefinition,
   focusPlane: Plane | null,
-  aperture: number,
-  lensCenterWorld: Vec3,
+  _aperture: number,  lensCenterWorld: Vec3,
   nearPlane: Plane | null,
   farPlane: Plane | null,
 ): FocusTargetSharpness[] => {

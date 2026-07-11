@@ -1,6 +1,5 @@
 import type { Plane, Ray } from "../../types/optics";
 import { intersectRayPlane } from "../math/ray";
-import { clamp } from "../math/clamps";
 
 const EPS = 1e-6;
 
