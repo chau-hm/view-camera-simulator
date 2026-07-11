@@ -53,7 +53,6 @@ export const calculateSharpness = (
       distanceToFocusPlaneMm: focusPlane
         ? pointToPlaneDistance(target.worldPosition, focusPlane)
         : 0,
-      acceptableRangeMm: undefined as any,
       sharpness,
       status,
       insideDepthOfField,

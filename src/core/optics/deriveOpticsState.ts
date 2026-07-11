@@ -338,7 +338,8 @@ export const deriveOpticsState = (
       nearU: dofResultGlobal?.nearU ?? null,
       farU: dofResultGlobal?.farU ?? null,
       farIsInfinite: dofResultGlobal?.farIsInfinite ?? false,
-      fallbackApplied: false,
+      fallbackApplied: dofResultGlobal?.fallbackApplied ?? false,
+      fallbackReason: dofResultGlobal?.fallbackReason ?? null,
       isInfinityFocus: false,
     },
   };

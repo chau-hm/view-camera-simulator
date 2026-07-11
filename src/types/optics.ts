@@ -98,6 +98,7 @@ export type DerivedOpticsState = {
     farU?: number | null;
     farIsInfinite?: boolean;
     fallbackApplied: boolean;
+    fallbackReason?: string | null;
     errorMessage?: string;
     isInfinityFocus?: boolean;
   };
