@@ -51,17 +51,64 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
   const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1, zoomEnabled }));
+
+  // clear RTT runtime diagnostics when this renderer unmounts or is recreated
+  React.useEffect(() => {
+    return () => {
+      try {
+        const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
+        if (setInfo) setInfo(null);
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
+
   // expose preview/ring hints on the function object so runtime code inside useFrame can access them
 
   useEffect(() => {
     // resolve desired internal RTT dimensions from quality profile, DPR and zoom state
-    const deviceDpr = (gl && typeof gl.getPixelRatio === 'function') ? gl.getPixelRatio() : (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
-    const dims = resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: deviceDpr, zoomEnabled });
+    const rendererPixelRatio = (gl && typeof gl.getPixelRatio === 'function') ? gl.getPixelRatio() : (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+
+    // collect canvas DOM and size info. Canvas DPR is authoritative from parent Canvas dpr prop
+    const canvas = (gl && (gl as any).domElement) as HTMLCanvasElement | undefined;
+    const canvasRect = canvas ? canvas.getBoundingClientRect() : { width: widthPx, height: heightPx };
+    const canvasCssWidth = Math.round(canvasRect.width);
+    const canvasCssHeight = Math.round(canvasRect.height);
+    const drawingBufferWidth = canvas ? canvas.width : Math.round(widthPx * rendererPixelRatio);
+    const drawingBufferHeight = canvas ? canvas.height : Math.round(heightPx * rendererPixelRatio);
+
+    const dims = resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: rendererPixelRatio, zoomEnabled });
     dimsRef.current = dims;
+
     try {
-      // store runtime RTT dims for UI readouts
+      // store runtime RTT dims for UI readouts (single authoritative source for RTT scenes)
       const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
-      if (setInfo) setInfo(dimsRef.current);
+      if (setInfo) {
+        setInfo({
+          profile: renderQuality || "standard",
+          logicalWidthPx: dims.logicalWidthPx,
+          logicalHeightPx: dims.logicalHeightPx,
+          internalWidthPx: dims.internalWidthPx,
+          internalHeightPx: dims.internalHeightPx,
+          resolutionScale: dims.resolutionScale,
+          effectiveDevicePixelRatio: dims.effectiveDevicePixelRatio,
+          zoomRenderScale: dims.zoomRenderScale,
+          wasClamped: dims.wasClamped,
+          configuredCanvasDpr: rendererPixelRatio,
+          rendererPixelRatio: rendererPixelRatio,
+          canvasCssWidthPx: canvasCssWidth,
+          canvasCssHeightPx: canvasCssHeight,
+          drawingBufferWidthPx: drawingBufferWidth,
+          drawingBufferHeightPx: drawingBufferHeight,
+          colorTargetWidthPx: dims.internalWidthPx,
+          colorTargetHeightPx: dims.internalHeightPx,
+          depthTargetWidthPx: dims.internalWidthPx,
+          depthTargetHeightPx: dims.internalHeightPx,
+          blurTargetWidthPx: dims.internalWidthPx,
+          blurTargetHeightPx: dims.internalHeightPx,
+        });
+      }
     } catch {
       // best-effort only; ignore failures
     }
@@ -424,8 +471,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
 
     // expose last cam far for debug / unit assertions
-    // expose last cam far for debug via console; avoid global state
-    console.debug("GroundGlass camera far:", cam.far);
+    // expose last cam far for debug via diagnostics (not logged per-frame)
 
     // update dynamic mesh positions created earlier
     try {
@@ -614,9 +660,12 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
 export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
+  const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
+  const qualitySettings = require("./renderQuality").getRenderQualitySettings(resolvedProfile);
+
   return (
     <div style={{ width: "100%", height: "100%" }}>
-      <Canvas style={{ width: "100%", height: "100%" }} gl={{ preserveDrawingBuffer: false }} orthographic={false}>
+      <Canvas dpr={qualitySettings.dpr} style={{ width: "100%", height: "100%" }} gl={{ preserveDrawingBuffer: false }} orthographic={false}>
         <OffscreenRenderer opticsState={opticsState} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} />
       </Canvas>
     </div>

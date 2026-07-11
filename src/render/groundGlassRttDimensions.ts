@@ -12,6 +12,22 @@ export type GroundGlassRttDimensions = {
   wasClamped: boolean;
 };
 
+export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
+  profile: RenderQualityProfile;
+  configuredCanvasDpr: number;
+  rendererPixelRatio: number;
+  canvasCssWidthPx: number;
+  canvasCssHeightPx: number;
+  drawingBufferWidthPx: number;
+  drawingBufferHeightPx: number;
+  colorTargetWidthPx: number;
+  colorTargetHeightPx: number;
+  depthTargetWidthPx: number;
+  depthTargetHeightPx: number;
+  blurTargetWidthPx: number;
+  blurTargetHeightPx: number;
+};
+
 const MAX_INTERNAL_WIDTH = 1600;
 const MAX_INTERNAL_HEIGHT = 1280;
 

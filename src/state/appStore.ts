@@ -36,7 +36,7 @@ type UIState = {
   gridEnabled: boolean;
 };
 
-import type { GroundGlassRttDimensions } from "../render/groundGlassRttDimensions";
+import type { GroundGlassRttRuntimeInfo } from "../render/groundGlassRttDimensions";
 
 export type AppStore = {
   camera: CameraState;
@@ -46,8 +46,8 @@ export type AppStore = {
   // lastInitializedRouteKey for route-based initialization (mode:sceneId:taskId)
   lastInitializedRouteKey?: string | null;
   // optional runtime diagnostics for RTT scenes
-  groundGlassRttRuntimeInfo?: GroundGlassRttDimensions | null;
-  setGroundGlassRttRuntimeInfo: (info: GroundGlassRttDimensions | null) => void;
+  groundGlassRttRuntimeInfo?: GroundGlassRttRuntimeInfo | null;
+  setGroundGlassRttRuntimeInfo: (info: GroundGlassRttRuntimeInfo | null) => void;
   setCurrentTaskEvaluation: (evaluation: TaskEvaluation | null) => void;
   setMode: (mode: SimulatorMode) => void;
   setActiveScene: (sceneId: string) => void;
