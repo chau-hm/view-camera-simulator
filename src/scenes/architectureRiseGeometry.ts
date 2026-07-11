@@ -98,23 +98,24 @@ export const referenceObjects: ReferenceObjectDef[] = [
   {
     id: "plinth-foreground-left",
     role: "foreground",
-    x: -700,
-    z: 3000, // much closer than façade (~8900mm)
-    width: 240,
-    depth: 240,
-    height: 160,
+    x: -600,
+    // move much closer to camera so it's a clear foreground cue
+    z: 1800, // foreground (near camera)
+    width: 180,
+    depth: 180,
+    height: 120,
     color: "#9aa6b2",
     band: true,
   },
-  // B: midground — in front of façade but not as close as A
+  // B: midground — between foreground and façade
   {
     id: "plinth-mid-right",
     role: "midground",
-    x: 650,
-    z: 5400, // between camera and façade
-    width: 300,
-    depth: 260,
-    height: 220,
+    x: 700,
+    z: 4200, // mid distance between foreground and façade
+    width: 260,
+    depth: 220,
+    height: 180,
     color: "#8f98a3",
     band: false,
   },
