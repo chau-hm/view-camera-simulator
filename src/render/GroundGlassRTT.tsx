@@ -202,10 +202,17 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     cam.far = farWorld;
 
     // configure an off-axis projection matrix that matches opticsState.filmPlaneCornersWorld and lens center
-    try {
-      configureGroundGlassCamera(cam, opticsState, nearWorld, farWorld);
-    } catch {
-      // fallback to symmetric perspective if helper fails
+    // configure an off-axis projection matrix that matches opticsState.filmPlaneCornersWorld and lens center
+    const cfg = configureGroundGlassCamera(cam, opticsState, nearWorld, farWorld);
+    if (!cfg.ok) {
+      // Do not silently swallow errors — record diagnostic and fall back to symmetric perspective
+      const reason = cfg.reason;
+      try {
+        (globalThis as unknown as { __GROUNDGLASS_RTT_LAST_ERROR?: string }).__GROUNDGLASS_RTT_LAST_ERROR = reason;
+      } catch {
+        // ignore
+      }
+      // fallback symmetric camera
       const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
       const vertFovRad = 2 * Math.atan(CAMERA_CONSTANTS.filmHeightMm / (2 * imgDist));
       const vertFovDeg2 = (vertFovRad * 180) / Math.PI;
@@ -217,7 +224,15 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       const dir = new THREE.Vector3(opticsState.opticalAxis.direction.x, opticsState.opticalAxis.direction.y, opticsState.opticalAxis.direction.z);
       const lookAt = new THREE.Vector3().copy(lensPos).add(dir.multiplyScalar(1000));
       cam.lookAt(lookAt);
+    } else {
+      // success — optionally expose last cam frustum for debug
+      try {
+        (globalThis as unknown as { __GROUNDGLASS_RTT_LAST_FRUSTUM?: Record<string, number> }).__GROUNDGLASS_RTT_LAST_FRUSTUM = { left: cfg.left, right: cfg.right, top: cfg.top, bottom: cfg.bottom, near: cfg.near, far: cfg.far };
+      } catch {
+        // ignore
+      }
     }
+
 
     // expose last cam far for debug / unit assertions
     try {
@@ -280,7 +295,9 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // if depthTex is the 1x1 fallback we should bypass DOF and show raw color for debugging
       const isFallbackDepth = depthTex === (OffscreenRenderer as unknown as { _fallbackDepth?: THREE.DataTexture })._fallbackDepth;
       // honor raw debug mode (bypass DOF) or fallback depth
-      matH.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
+      // For Architecture Rise, temporarily bypass DOF and show raw color to ensure subject is visible
+      const isArchitecture = sceneId === "architecture-rise";
+      matH.uniforms.useRaw.value = (isFallbackDepth || rawDebug || isArchitecture) ? 1.0 : 0.0;
 
       gl.setRenderTarget(tempRT);
       gl.setClearColor(SKY_COLOR.getHex(), 1);
@@ -300,7 +317,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matV.uniforms.near.value = cam.near;
       matV.uniforms.far.value = cam.far;
       // honor raw debug mode (bypass DOF) or fallback depth
-      matV.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
+      matV.uniforms.useRaw.value = (isFallbackDepth || rawDebug || isArchitecture) ? 1.0 : 0.0;
+      // For Architecture we still allow final display inversion to be applied (displayUpright)
       // apply final display orientation only here (final blit)
       // map previewMode to display orientation: raw = physical inversion, upright = no inversion
       matV.uniforms.displayUpright.value = previewMode === "raw" ? 1.0 : 0.0;
