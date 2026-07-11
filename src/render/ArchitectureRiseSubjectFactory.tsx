@@ -111,12 +111,47 @@ export function createArchitectureRiseGroup(): THREE.Group {
       const base = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), baseMat);
       base.position.set(toWorld(def.x), toWorld(geometry.ground.y + def.height / 2), toWorld(def.z));
       grp.add(base);
-      // optional subtle top band for high-frequency cue
-      if (def.band) {
-        const bandH = toWorld(Math.min(10, def.height * 0.08));
-        const band = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.92, bandH, bd * 0.95), new THREE.MeshStandardMaterial({ color: "#f1f5f9", roughness: 0.98 }));
-        band.position.set(toWorld(def.x), toWorld(geometry.ground.y + def.height - bandH / 2), toWorld(def.z));
-        grp.add(band);
+      // optional detail patterns rendered as simple geometry on the plinth front face
+      const frontZ = def.z - def.depth / 2 - 4; // small offset forward in mm
+      const stripeDepth = 10; // mm thickness for detail geometry
+      if (def.detail === "vertical-stripes") {
+        const stripeW = Math.min(80, def.width * 0.22);
+        const gap = stripeW * 0.5;
+        const count = 3;
+        for (let i = 0; i < count; i++) {
+          const offsetX = -((count - 1) * (stripeW + gap)) / 2 + i * (stripeW + gap);
+          const stripe = new THREE.Mesh(new THREE.BoxGeometry(toWorld(stripeW), toWorld(def.height * 0.7), toWorld(stripeDepth)), new THREE.MeshStandardMaterial({ color: "#f1f5f9", roughness: 0.98 }));
+          stripe.position.set(toWorld(def.x + offsetX), toWorld(geometry.ground.y + def.height * 0.35), toWorld(frontZ));
+          grp.add(stripe);
+        }
+      } else if (def.detail === "horizontal-bands") {
+        const bandH = Math.min(80, def.height * 0.18);
+        const bandCount = 2;
+        for (let i = 0; i < bandCount; i++) {
+          const offsetY = (i - (bandCount - 1) / 2) * (bandH + 20);
+          const band = new THREE.Mesh(new THREE.BoxGeometry(toWorld(def.width * 0.92), toWorld(bandH), toWorld(stripeDepth)), new THREE.MeshStandardMaterial({ color: "#f1f5f9", roughness: 0.98 }));
+          band.position.set(toWorld(def.x), toWorld(geometry.ground.y + def.height * 0.5 + offsetY), toWorld(frontZ));
+          grp.add(band);
+        }
+      } else if (def.detail === "checker") {
+        const panelW = Math.min(320, def.width * 0.9);
+        const panelH = Math.min(320, def.height * 0.9);
+        const cols = 4;
+        const rows = 4;
+        const cellW = panelW / cols;
+        const cellH = panelH / rows;
+        const panelLeft = def.x - panelW / 2;
+        const panelBottom = geometry.ground.y + def.height * 0.5 - panelH / 2;
+        for (let cx = 0; cx < cols; cx++) {
+          for (let cy = 0; cy < rows; cy++) {
+            const isDark = (cx + cy) % 2 === 0;
+            const cell = new THREE.Mesh(new THREE.BoxGeometry(toWorld(cellW), toWorld(cellH), toWorld(stripeDepth)), new THREE.MeshStandardMaterial({ color: isDark ? "#1f2937" : "#e6eef7", roughness: 0.95 }));
+            const px = panelLeft + cx * cellW + cellW / 2;
+            const py = panelBottom + cy * cellH + cellH / 2;
+            cell.position.set(toWorld(px), toWorld(py), toWorld(frontZ));
+            grp.add(cell);
+          }
+        }
       }
       g.add(grp);
     });
@@ -204,21 +239,81 @@ export const ArchitectureRiseSubject: React.FC = () => {
           const w = def.width;
           const d = def.depth;
           const h = def.height;
-          const band = def.band;
-          return (
-            <group key={def.id}>
-              <mesh position={[toW(x), toW(geometry.ground.y + h / 2), toW(z)]}>
-                <boxGeometry args={[toW(w), toW(h), toW(d)]} />
-                <meshStandardMaterial color={def.color || "#9aa6b2"} roughness={0.95} metalness={0} />
-              </mesh>
-              {band ? (
-                <mesh position={[toW(x), toW(geometry.ground.y + h - Math.min(10, h * 0.08) / 2), toW(z)]}>
-                  <boxGeometry args={[toW(w * 0.92), toW(Math.min(10, h * 0.08)), toW(d * 0.95)]} />
-                  <meshStandardMaterial color="#f1f5f9" roughness={0.98} />
-                </mesh>
-              ) : null}
-            </group>
-          );
+        return (
+          <group key={def.id}>
+            <mesh position={[toW(x), toW(geometry.ground.y + h / 2), toW(z)]}>
+              <boxGeometry args={[toW(w), toW(h), toW(d)]} />
+              <meshStandardMaterial color={def.color || "#9aa6b2"} roughness={0.95} metalness={0} />
+            </mesh>
+            {def.detail === "vertical-stripes" ? (
+              (() => {
+                const stripes = [] as React.ReactNode[];
+                const stripeW = Math.min(80, w * 0.22);
+                const gap = stripeW * 0.5;
+                const count = 3;
+                const frontZ = toW(z - d / 2 - 4);
+                for (let i = 0; i < count; i++) {
+                  const offsetX = -((count - 1) * (stripeW + gap)) / 2 + i * (stripeW + gap);
+                  stripes.push(
+                    <mesh key={`vs-${def.id}-${i}`} position={[toW(x + offsetX), toW(geometry.ground.y + h * 0.35), frontZ]}>
+                      <boxGeometry args={[toW(stripeW), toW(h * 0.7), toW(10)]} />
+                      <meshStandardMaterial color="#f1f5f9" roughness={0.98} />
+                    </mesh>,
+                  );
+                }
+                return <group>{stripes}</group>;
+              })()
+            ) : null}
+
+            {def.detail === "horizontal-bands" ? (
+              (() => {
+                const bands = [] as React.ReactNode[];
+                const bandH = Math.min(80, h * 0.18);
+                const bandCount = 2;
+                const frontZ = toW(z - d / 2 - 4);
+                for (let i = 0; i < bandCount; i++) {
+                  const offsetY = (i - (bandCount - 1) / 2) * (bandH + 20);
+                  bands.push(
+                    <mesh key={`hb-${def.id}-${i}`} position={[toW(x), toW(geometry.ground.y + h * 0.5 + offsetY), frontZ]}>
+                      <boxGeometry args={[toW(w * 0.92), toW(bandH), toW(10)]} />
+                      <meshStandardMaterial color="#f1f5f9" roughness={0.98} />
+                    </mesh>,
+                  );
+                }
+                return <group>{bands}</group>;
+              })()
+            ) : null}
+
+            {def.detail === "checker" ? (
+              (() => {
+                const cells: React.ReactNode[] = [];
+                const panelW = Math.min(320, w * 0.9);
+                const panelH = Math.min(320, h * 0.9);
+                const cols = 4;
+                const rows = 4;
+                const cellW = panelW / cols;
+                const cellH = panelH / rows;
+                const panelLeft = x - panelW / 2;
+                const panelBottom = geometry.ground.y + h * 0.5 - panelH / 2;
+                const frontZ = toW(z - d / 2 - 4);
+                for (let cx = 0; cx < cols; cx++) {
+                  for (let cy = 0; cy < rows; cy++) {
+                    const isDark = (cx + cy) % 2 === 0;
+                    const px = panelLeft + cx * cellW + cellW / 2;
+                    const py = panelBottom + cy * cellH + cellH / 2;
+                    cells.push(
+                      <mesh key={`ch-${def.id}-${cx}-${cy}`} position={[toW(px), toW(py), frontZ]}>
+                        <boxGeometry args={[toW(cellW), toW(cellH), toW(10)]} />
+                        <meshStandardMaterial color={isDark ? "#1f2937" : "#e6eef7"} roughness={0.95} />
+                      </mesh>,
+                    );
+                  }
+                }
+                return <group>{cells}</group>;
+              })()
+            ) : null}
+          </group>
+        );
         });
       })()}
     </group>

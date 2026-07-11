@@ -54,11 +54,6 @@ export const facade = {
 facade.parapetBottomY = facade.mainBodyTopY;
 facade.parapetTopY = facade.parapetBottomY + building.topHeight;
 
-// scene bounds should contain ground and parapet top
-export const sceneBounds = {
-  min: { x: -building.width / 2 - 200, y: ground.y - 200, z: ground.nearZ + 200 },
-  max: { x: building.width / 2 + 200, y: facade.parapetTopY + 400, z: Math.max(building.center.z + 2000, ground.farZ) },
-};
 
 export const compositionTargets = {
   buildingTop: {
@@ -89,61 +84,86 @@ export type ReferenceObjectDef = {
   depth: number; // mm
   height: number; // mm
   color?: string;
-  band?: boolean; // include a lighter top band for high-frequency cue
+  // simple front-face detail pattern to aid blur perception
+  detail?: "none" | "vertical-stripes" | "horizontal-bands" | "checker";
 };
 
 // Repositioned reference objects to create clear camera -> near -> mid -> building depth separation.
 export const referenceObjects: ReferenceObjectDef[] = [
-  // A: near foreground — moved significantly closer to camera
+  // A: foreground-near — move back from extreme close so it's fully visible
   {
     id: "plinth-foreground-left",
     role: "foreground",
-    x: -600,
-    // move much closer to camera so it's a clear foreground cue
-    z: 1800, // foreground (near camera)
-    width: 180,
-    depth: 180,
-    height: 120,
+    x: -520,
+    z: 3200, // foreground near camera but not clipped
+    width: 220,
+    depth: 220,
+    height: 220,
     color: "#9aa6b2",
-    band: true,
+    detail: "vertical-stripes",
   },
-  // B: midground — between foreground and façade
+  // B: foreground-mid / midground
   {
     id: "plinth-mid-right",
     role: "midground",
-    x: 700,
-    z: 4200, // mid distance between foreground and façade
-    width: 260,
-    depth: 220,
-    height: 180,
+    x: 760,
+    z: 5200, // mid distance
+    width: 380,
+    depth: 300,
+    height: 300,
     color: "#8f98a3",
-    band: false,
+    detail: "checker",
   },
-  // C: near-façade object — kept close to the building plane
+  // C: façade-near — move out from building edge so it's mostly visible
   {
     id: "plinth-near-facade-left",
     role: "near-façade",
-    x: -building.width / 2 - 120,
-    z: facade.frontFacadeZ + 120,
-    width: 220,
-    depth: 220,
+    x: - (building.width / 2) - 420,
+    z: facade.frontFacadeZ + 80,
+    width: 260,
+    depth: 240,
     height: 360,
     color: "#a3adb7",
-    band: true,
+    detail: "horizontal-bands",
   },
-  // D: optional far/side object — slightly behind the building back plane for depth contrast
+  // D: far-side — bring within bounds, subtle size
   {
     id: "plinth-far-right",
     role: "far",
-    x: building.width / 2 + 600,
-    z: facade.backFacadeZ + 700,
-    width: 280,
-    depth: 280,
+    x: building.width / 2 + 400,
+    z: facade.backFacadeZ + 500,
+    width: 300,
+    depth: 300,
     height: 200,
     color: "#b0bcc6",
-    band: false,
+    detail: "none",
   },
 ];
+
+// recompute scene bounds to include reference objects extents and ensure no geometry falls outside
+const padding = 300; // mm padding around extents
+let minX = -building.width / 2 - 200;
+let maxX = building.width / 2 + 200;
+let minY = ground.y - 200;
+let maxY = facade.parapetTopY + 400;
+let minZ = ground.nearZ + 200;
+let maxZ = Math.max(building.center.z + 2000, ground.farZ);
+
+referenceObjects.forEach((r) => {
+  const halfW = r.width / 2;
+  const halfD = r.depth / 2;
+  minX = Math.min(minX, r.x - halfW - padding);
+  maxX = Math.max(maxX, r.x + halfW + padding);
+  minY = Math.min(minY, ground.y - padding);
+  maxY = Math.max(maxY, ground.y + r.height + padding);
+  minZ = Math.min(minZ, r.z - halfD - padding);
+  maxZ = Math.max(maxZ, r.z + halfD + padding);
+});
+
+export const sceneBounds = {
+  min: { x: minX, y: minY, z: minZ },
+  max: { x: maxX, y: maxY, z: maxZ },
+};
 
 // canonical façade focus distance measured from lens centre (0,0,0) to focus target along +Z
 export const architectureFacadeFocusDistanceMm = focusTarget.worldPosition.z;
