@@ -4,7 +4,6 @@ import { pointToPlaneDistance } from "../math/plane";
 import type { Plane } from "../../types/optics";
 import { clamp } from "../math/clamps";
 
-import { intersectRayPlane } from "../math/ray";
 import type { Ray, Vec3 } from "../../types/optics";
 import { safeNormalize, subtract, dot } from "../math/vec";
 import { sampleDofWedge } from "./dofWedge";
