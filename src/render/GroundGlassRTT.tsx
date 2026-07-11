@@ -17,6 +17,8 @@ import { groundGlassSharedGlsl, groundGlassUniformDecls } from "./groundGlassDof
 import type { DerivedOpticsState } from "../types/optics";
 import type { ApertureValue } from "../types/camera";
 import { useAppStore } from "../state/appStore";
+import type { WebGLRenderer } from "three";
+import { getRenderQualitySettings } from "./renderQuality";
 
 type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
@@ -71,7 +73,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     const rendererPixelRatio = (gl && typeof gl.getPixelRatio === 'function') ? gl.getPixelRatio() : (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
 
     // collect canvas DOM and size info. Canvas DPR is authoritative from parent Canvas dpr prop
-    const canvas = (gl && (gl as any).domElement) as HTMLCanvasElement | undefined;
+    const canvas = (gl && (gl as unknown as WebGLRenderer).domElement) as HTMLCanvasElement | undefined;
     const canvasRect = canvas ? canvas.getBoundingClientRect() : { width: widthPx, height: heightPx };
     const canvasCssWidth = Math.round(canvasRect.width);
     const canvasCssHeight = Math.round(canvasRect.height);
@@ -661,7 +663,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
-  const qualitySettings = require("./renderQuality").getRenderQualitySettings(resolvedProfile);
+  const qualitySettings = getRenderQualitySettings(resolvedProfile);
 
   return (
     <div style={{ width: "100%", height: "100%" }}>

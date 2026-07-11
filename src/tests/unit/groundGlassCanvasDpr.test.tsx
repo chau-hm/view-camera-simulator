@@ -4,8 +4,10 @@ import { Canvas } from "@react-three/fiber";
 import { GroundGlassRTT } from "../../render/GroundGlassRTT";
 import { getRenderQualitySettings } from "../../render/renderQuality";
 
+import type { DerivedOpticsState } from "../../types/optics";
+
 // Provide a minimal opticsState stub that satisfies DerivedOpticsState shape where required by the component
-const minimalOpticsState: any = {
+const minimalOpticsState = {
   filmPlaneCornersWorld: { topLeft: { x: 0, y: 0 }, topRight: { x: 1, y: 0 }, bottomLeft: { x: 0, y: 1 } },
   filmPlane: { point: { z: 1000 } },
   lensCenterWorld: { x: 0, y: 0, z: 0 },
@@ -13,7 +15,7 @@ const minimalOpticsState: any = {
   focusTargets: [],
   offAxisProjectionMatrix: [],
   diagnostics: {},
-};
+} as unknown as DerivedOpticsState;
 
 describe("GroundGlassRTT Canvas DPR prop", () => {
   it("passes the profile DPR to Canvas for High/Standard/Low", () => {
