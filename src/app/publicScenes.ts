@@ -1,10 +1,7 @@
 import type { SceneDefinition } from "../types/scene";
 import { getSceneById } from "../scenes/definitions";
 
-export const publicSceneIds = [
-  "focus-fundamentals-two-targets",
-  "architecture-rise",
-] as const;
+export const publicSceneIds = ["focus-fundamentals-two-targets", "architecture-rise"] as const;
 export type PublicSceneId = (typeof publicSceneIds)[number];
 
 export type PublicSceneEntry = {
@@ -34,7 +31,9 @@ export const getPublicSceneEntries = (): Array<{
 }> =>
   publicSceneCatalog
     .map((entry) => ({ scene: getSceneById(entry.id), meta: entry }))
-    .filter((e): e is { scene: SceneDefinition; meta: PublicSceneEntry } => typeof e.scene !== "undefined");
+    .filter(
+      (e): e is { scene: SceneDefinition; meta: PublicSceneEntry } =>
+        typeof e.scene !== "undefined",
+    );
 
-export const getPublicScenes = (): SceneDefinition[] =>
-  getPublicSceneEntries().map((e) => e.scene);
+export const getPublicScenes = (): SceneDefinition[] => getPublicSceneEntries().map((e) => e.scene);
