@@ -17,6 +17,8 @@ import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
+import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
+import { createGroundGlassRenderTarget, createGroundGlassDepthTarget, createGroundGlassCamera } from "./groundGlassPipeline";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { getSceneById } from "../scenes/definitions";
 
@@ -62,6 +64,24 @@ export const GroundGlassRenderer = ({
   // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
   const isRttScene = isGroundGlassRttScene(sceneId);
   const pipeline = useMemo(() => {
+    const isRtt = isGroundGlassRttScene(sceneId);
+    if (isRtt) {
+      // For RTT scenes, present a pipeline-like descriptor matching the resolved RTT dimensions used by GroundGlassRTT
+      const deviceDpr = typeof window !== "undefined" && window.devicePixelRatio ? window.devicePixelRatio : 1;
+      const dims = resolveGroundGlassRttDimensions({ logicalWidth: PANEL_WIDTH_PX, logicalHeight: PANEL_HEIGHT_PX, renderQuality, devicePixelRatio: deviceDpr, zoomEnabled });
+      const colorTarget = createGroundGlassRenderTarget(dims.internalWidthPx, dims.internalHeightPx);
+      const depthTarget = createGroundGlassDepthTarget(colorTarget);
+      const camera = createGroundGlassCamera(opticsState.offAxisProjectionMatrix);
+      const blurPass = { widthPx: dims.internalWidthPx, heightPx: dims.internalHeightPx };
+      return {
+        colorTarget,
+        depthTarget,
+        camera,
+        blurPass,
+        verticalFrameOffsetPx: 0,
+      } as const;
+    }
+
     const useThinLens = sceneId === "focus-fundamentals-two-targets";
     if (useThinLens) {
       const imageDistanceMm = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
@@ -75,7 +95,7 @@ export const GroundGlassRenderer = ({
     }
 
     return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality);
-  }, [opticsState, renderQuality, sceneId]);
+  }, [opticsState, renderQuality, sceneId, zoomEnabled]);
 
   const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const focusAssist = useMemo(

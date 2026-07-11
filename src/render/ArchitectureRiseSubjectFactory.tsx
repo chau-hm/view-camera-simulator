@@ -85,12 +85,13 @@ export function createArchitectureRiseGroup(): THREE.Group {
   });
 
   // crosshair bars: horizontal and vertical
-  const crossMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  const crossMat = new THREE.MeshBasicMaterial({ color: 0xff0000, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   bars.forEach((b) => {
     const geom = new THREE.BoxGeometry(toWorld(b.width), toWorld(b.height), toWorld(b.depth));
     const mesh = new THREE.Mesh(geom, crossMat);
     mesh.position.set(toWorld(b.x), toWorld(b.y), toWorld(b.z));
     mesh.name = `architecture-focus-crosshair-${b.id}`;
+    mesh.renderOrder = 1000; // render last to avoid z-fighting
     focusGroup.add(mesh);
   });
 
@@ -220,9 +221,9 @@ export const ArchitectureRiseSubject: React.FC = () => {
           // render crosshair bars
           bars.forEach((b) => {
             elems.push(
-              <mesh key={`bar-${b.id}`} position={[toW(b.x), toW(b.y), toW(b.z)]} name={`architecture-focus-crosshair-${b.id}`}>
+              <mesh key={`bar-${b.id}`} position={[toW(b.x), toW(b.y), toW(b.z)]} name={`architecture-focus-crosshair-${b.id}`} renderOrder={1000}>
                 <boxGeometry args={[toW(b.width), toW(b.height), toW(b.depth)]} />
-                <meshBasicMaterial color="#ff0000" />
+                <meshBasicMaterial color="#ff0000" polygonOffset={true} polygonOffsetFactor={1} polygonOffsetUnits={1} />
               </mesh>,
             );
           });

@@ -196,18 +196,20 @@ export const focusChart = {
   markerCenterWorld: {
     x: focusTarget.worldPosition.x,
     y: focusTarget.worldPosition.y,
-    z: (facade.frontFacadeZ - facadeDetailThicknessMm / 2 - facadeDetailSmallGapMm - 2) - 2,
+    // marker placed in front of surface by markerOffsetMm (see markerOffsetMm below)
+    z: (facade.frontFacadeZ - facadeDetailThicknessMm / 2 - facadeDetailSmallGapMm - 2) - 3,
   },
   // size and grid
   sizeMm: focusChartSizeMm,
   cells: focusChartCells,
   cellDepthMm: 2,
   // crosshair dimensions
-  crosshairLengthMm: Math.round(focusChartSizeMm * 0.2),
-  crosshairThicknessMm: 4,
-  crosshairDepthMm: 2,
+  // increase crosshair physical size so it remains visible at typical camera distances
+  crosshairLengthMm: 180,
+  crosshairThicknessMm: 16,
+  crosshairDepthMm: 3,
   // small marker offset from surface (mm)
-  markerOffsetMm: 2,
+  markerOffsetMm: 3,
 } as const;
 
 // Pure helpers to produce absolute world-space geometry definitions for the focus chart

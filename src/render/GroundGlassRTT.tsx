@@ -16,6 +16,7 @@ import { createGroundGlassDofUniformState } from "./createGroundGlassDofUniformS
 import { groundGlassSharedGlsl, groundGlassUniformDecls } from "./groundGlassDofShaders";
 import type { DerivedOpticsState } from "../types/optics";
 import type { ApertureValue } from "../types/camera";
+import { useAppStore } from "../state/appStore";
 
 type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
@@ -57,6 +58,13 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     const deviceDpr = (gl && typeof gl.getPixelRatio === 'function') ? gl.getPixelRatio() : (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
     const dims = resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: deviceDpr, zoomEnabled });
     dimsRef.current = dims;
+    try {
+      // store runtime RTT dims for UI readouts
+      const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
+      if (setInfo) setInfo(dimsRef.current);
+    } catch {
+      // best-effort only; ignore failures
+    }
 
     const rt = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
     // attach a depth texture so we can do depth-aware DOF
@@ -604,12 +612,12 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <Canvas style={{ width: "100%", height: "100%" }} gl={{ preserveDrawingBuffer: false }} orthographic={false}>
-        <OffscreenRenderer opticsState={opticsState} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} />
+        <OffscreenRenderer opticsState={opticsState} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} />
       </Canvas>
     </div>
   );

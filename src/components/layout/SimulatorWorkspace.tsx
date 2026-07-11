@@ -21,7 +21,8 @@ import { CurrentSettingsReadout, FocusTargetsReadout } from "../simulator/Ground
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
-import { createGroundGlassDofPipeline } from "../../render/groundGlassPipeline";
+import { createGroundGlassDofPipeline, createGroundGlassRenderTarget, createGroundGlassDepthTarget, createGroundGlassCamera } from "../../render/groundGlassPipeline";
+import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import { getRenderQualitySettings } from "../../render/renderQuality";
 import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
 
@@ -100,10 +101,26 @@ export const SimulatorWorkspace = ({
   }, [evaluation, setCurrentTaskEvaluation]);
 
   // memoized render pipeline & settings to avoid re-creating expensive pipeline objects on every render
-  const groundGlassPipeline = useMemo(
-    () => createGroundGlassDofPipeline(opticsState, 500, 400, renderQuality),
-    [opticsState, renderQuality],
-  );
+  const rttRuntimeInfo = useAppStore((s) => s.groundGlassRttRuntimeInfo);
+  const groundGlassPipeline = useMemo(() => {
+    const isRtt = isGroundGlassRttScene(camera.activeSceneId);
+    if (isRtt && rttRuntimeInfo) {
+      // construct a pipeline-like descriptor from the actual RTT runtime info
+      const colorTarget = createGroundGlassRenderTarget(rttRuntimeInfo.internalWidthPx, rttRuntimeInfo.internalHeightPx);
+      const depthTarget = createGroundGlassDepthTarget(colorTarget);
+      const cameraDesc = createGroundGlassCamera(opticsState.offAxisProjectionMatrix);
+      const blurPass = { widthPx: rttRuntimeInfo.internalWidthPx, heightPx: rttRuntimeInfo.internalHeightPx };
+      return {
+        colorTarget,
+        depthTarget,
+        camera: cameraDesc,
+        blurPass,
+        verticalFrameOffsetPx: 0,
+      } as const;
+    }
+
+    return createGroundGlassDofPipeline(opticsState, 500, 400, renderQuality);
+  }, [opticsState, renderQuality, rttRuntimeInfo, camera.activeSceneId]);
 
   const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
 

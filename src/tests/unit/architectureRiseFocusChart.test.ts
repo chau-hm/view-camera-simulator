@@ -44,13 +44,29 @@ describe("Architecture Rise focus chart canonicalization and helpers", () => {
       expect(Number.isFinite(c.width) && c.width > 0).toBe(true);
       expect(Number.isFinite(c.height) && c.height > 0).toBe(true);
     });
-    // verify crosshair bars intersect at marker centre
+    // verify crosshair bars intersect at marker centre and size constraints
+    expect(bars[0].width).toBe(bars[1].height); // orthogonal sizes correspond
+    const thickness = geometry.focusChart.crosshairThicknessMm;
+    const length = geometry.focusChart.crosshairLengthMm;
+    const depth = geometry.focusChart.crosshairDepthMm;
+
+    // visibility / sanity checks
+    expect(thickness).toBeGreaterThan(0);
+    expect(thickness).toBeGreaterThanOrEqual(10); // practical visibility threshold
+    expect(length).toBeGreaterThan(thickness);
+    expect(length).toBeLessThan(geometry.focusChart.sizeMm);
+    expect(depth).toBeGreaterThan(0);
+    expect(bars.length).toBe(2);
+
     bars.forEach((b) => {
       expect(Number.isFinite(b.x)).toBe(true);
       expect(Number.isFinite(b.y)).toBe(true);
       expect(Number.isFinite(b.z)).toBe(true);
       expect(b.x).toBeCloseTo(geometry.focusChart.markerCenterWorld.x, 6);
       expect(b.y).toBeCloseTo(geometry.focusChart.markerCenterWorld.y, 6);
+      // both bars share identical thickness and depth
+      expect(Math.abs(Math.abs(b.width) - thickness) <= 0.001 || Math.abs(Math.abs(b.height) - thickness) <= 0.001).toBe(true);
+      expect(b.depth).toBeCloseTo(depth, 6);
     });
   });
 });
