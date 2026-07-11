@@ -175,4 +175,15 @@ describe("app store STA-001", () => {
     expect(camera.gridEnabled).toBe(false);
     expect(ui.gridEnabled).toBe(false);
   });
+
+  it("initializeSimulatorRoute applies scene preset on direct route entry", () => {
+    const { initializeSimulatorRoute, resetCamera } = useAppStore.getState();
+    resetCamera();
+    // simulate direct free route to architecture-rise
+    initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    const { camera } = useAppStore.getState();
+    // architecture preset focusDistanceMm must equal scene-specified preset (non-default)
+    expect(camera.focusDistanceMm).not.toBe(2000);
+    expect(camera.activeSceneId).toBe("architecture-rise");
+  });
 });

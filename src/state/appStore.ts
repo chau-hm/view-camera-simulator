@@ -42,6 +42,8 @@ export type AppStore = {
   scene: SceneRuntimeState;
   task: TaskRuntimeState;
   ui: UIState;
+  // lastInitializedRouteKey for route-based initialization (mode:sceneId:taskId)
+  lastInitializedRouteKey?: string | null;
   setCurrentTaskEvaluation: (evaluation: TaskEvaluation | null) => void;
   setMode: (mode: SimulatorMode) => void;
   setActiveScene: (sceneId: string) => void;
@@ -55,6 +57,7 @@ export type AppStore = {
   setAperture: (value: ApertureValue) => void;
   setGeometryView: (value: GeometryView) => void;
   toggleGroundGlassAssist: () => void;
+  setGroundGlassAssistEnabled: (enabled: boolean) => void;
   toggleFocusAssist: () => void;
   toggleGrid: () => void;
   resetMovements: () => void;
@@ -76,6 +79,7 @@ export const useAppStore = create<AppStore>((set) => ({
     focusAssistEnabled: DEFAULT_CAMERA_STATE.focusAssistEnabled,
     gridEnabled: DEFAULT_CAMERA_STATE.gridEnabled,
   },
+  lastInitializedRouteKey: null,
   setCurrentTaskEvaluation: (evaluation) =>
     set((state) => ({
       task: { ...state.task, currentTaskEvaluation: evaluation },
@@ -100,25 +104,33 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) => {
       // init: { mode, sceneId, taskId }
       const { mode, sceneId, taskId } = init;
-      // apply scene or task presets only if sceneId differs from current
-      let nextCamera: CameraState = { ...state.camera };
-      if (sceneId && sceneId !== state.camera.activeSceneId) {
-        // attempt to apply scene preset
-        try {
-          const scene = getSceneById(sceneId);
-          if (scene && !taskId) {
-            const preset = scene.cameraPreset ?? {};
-            nextCamera = { ...nextCamera, ...preset, activeSceneId: sceneId };
-          } else {
-            // still set activeSceneId
-            nextCamera.activeSceneId = sceneId;
-          }
-        } catch {
-          nextCamera.activeSceneId = sceneId;
-        }
+      const routeKey = `${mode}:${sceneId}:${taskId ?? ''}`;
+      // If we've already initialized this exact route, do nothing
+      if (state.lastInitializedRouteKey === routeKey) {
+        // only ensure mode/scene/task ids are set without overwriting user controls
+        return {
+          scene: { ...state.scene, activeSceneId: sceneId },
+          task: { ...state.task, activeTaskId: taskId ?? null },
+          ui: { ...state.ui, mode },
+        };
       }
 
-      if (taskId && taskId !== state.task.activeTaskId) {
+      // Otherwise apply presets and remember the routeKey
+      let nextCamera: CameraState = { ...state.camera };
+
+      try {
+        const scene = getSceneById(sceneId);
+        if (scene && !taskId) {
+          const preset = scene.cameraPreset ?? {};
+          nextCamera = { ...nextCamera, ...preset, activeSceneId: sceneId };
+        } else {
+          nextCamera.activeSceneId = sceneId;
+        }
+      } catch {
+        nextCamera.activeSceneId = sceneId;
+      }
+
+      if (taskId) {
         try {
           const task = getTaskById(taskId);
           if (task && task.initialCameraState) {
@@ -138,6 +150,7 @@ export const useAppStore = create<AppStore>((set) => ({
         scene: { ...state.scene, activeSceneId: sceneId },
         task: { ...state.task, activeTaskId: taskId ?? null, currentTaskEvaluation: null },
         ui: nextUi,
+        lastInitializedRouteKey: routeKey,
       };
     }),
   setRise: (value) =>
@@ -208,6 +221,17 @@ export const useAppStore = create<AppStore>((set) => ({
       ui: {
         ...state.ui,
         groundGlassAssistEnabled: !state.ui.groundGlassAssistEnabled,
+      },
+    })),
+  setGroundGlassAssistEnabled: (enabled: boolean) =>
+    set((state) => ({
+      camera: {
+        ...state.camera,
+        groundGlassAssistEnabled: enabled,
+      },
+      ui: {
+        ...state.ui,
+        groundGlassAssistEnabled: enabled,
       },
     })),
   toggleFocusAssist: () =>

@@ -18,7 +18,7 @@ import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
 import { CurrentSettingsReadout, FocusTargetsReadout } from "../simulator/GroundGlassReadouts";
-import { FocusFundamentalsDebugPanel } from "../simulator/FocusFundamentalsDebugPanel";
+import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
 import { createGroundGlassDofPipeline } from "../../render/groundGlassPipeline";
@@ -85,11 +85,11 @@ export const SimulatorWorkspace = ({
   const enabledControls = useMemo(() => {
     const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
     if (focusFundamentals) {
-      return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid", "groundGlassAssist"]);
+    return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
     }
 
     if (mode === "free" || !task) {
-      return new Set(["rise", "tilt", "swing", "focusDistance", "aperture", "geometryView", "focusAssist", "grid", "groundGlassAssist"]);
+    return new Set(["rise", "tilt", "swing", "focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
     }
     return new Set([...task.enabledControls]);
   }, [mode, task, camera.activeSceneId]);
@@ -180,7 +180,6 @@ export const SimulatorWorkspace = ({
                 gridEnabled={camera.gridEnabled}
                 canToggleFocusAssist={enabledControls.has("focusAssist")}
                 canToggleGrid={enabledControls.has("grid")}
-                canToggleGroundGlassAssist={enabledControls.has("groundGlassAssist")}
                 riseMm={camera.frontRiseMm}
                 tiltDeg={camera.frontTiltDeg}
                 swingDeg={camera.frontSwingDeg}
@@ -211,15 +210,11 @@ export const SimulatorWorkspace = ({
 
             <FocusTargetsReadout focusTargets={focusAssistTargets} />
 
-            <div className="simulator-info-card" aria-label="Focus Fundamentals">
-              <h4>Focus Fundamentals Debug</h4>
-              {camera.activeSceneId === 'focus-fundamentals-two-targets' ? (
-                <div style={{ paddingTop: 8 }}>
-                  <FocusFundamentalsDebugPanel sceneId={camera.activeSceneId} opticsState={opticsState} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
-                </div>
-              ) : (
-                <div style={{ color: 'var(--text-muted)' }}>Debug info not available for this scene.</div>
-              )}
+            <div className="simulator-info-card" aria-label="Optical Debug">
+              <h4>Optical Debug</h4>
+              <div style={{ paddingTop: 8 }}>
+                <OpticalDebugPanel sceneId={camera.activeSceneId} mode={camera.mode} taskId={camera.activeTaskId} opticsState={opticsState} focalLengthMm={camera.focalLengthMm} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
+              </div>
             </div>
           </div>
 

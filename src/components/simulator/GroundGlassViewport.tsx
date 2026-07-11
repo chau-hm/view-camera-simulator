@@ -2,6 +2,7 @@ import { useState } from "react";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { ViewOptions } from "../controls/ViewOptions";
 import { UI_COPY } from "../../ui/copy";
+import { useAppStore } from "../../state/appStore";
 import type { ApertureValue } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { RenderQualityProfile } from "../../types/ui";
@@ -16,7 +17,6 @@ type GroundGlassViewportProps = {
   // permissions (from enabledControls) — whether the control is allowed in current mode/task
   canToggleFocusAssist?: boolean;
   canToggleGrid?: boolean;
-  canToggleGroundGlassAssist?: boolean;
   riseMm: number;
   tiltDeg: number;
   swingDeg: number;
@@ -31,12 +31,10 @@ type GroundGlassViewportProps = {
 
 export const GroundGlassViewport = ({
   opticsState,
-  orientationAssistEnabled,
   focusAssistEnabled,
   gridEnabled,
   canToggleFocusAssist,
   canToggleGrid,
-  canToggleGroundGlassAssist,
   riseMm,
   tiltDeg,
   swingDeg,
@@ -48,8 +46,10 @@ export const GroundGlassViewport = ({
   rawRttDebug,
   showHeader,
 }: GroundGlassViewportProps) => {
-  // Preview mode control local to the Ground Glass panel. Default to 'raw'.
-  const [previewMode, setPreviewMode] = useState<"raw" | "upright">("raw");
+  // Preview mode control local to the Ground Glass panel. Default to camera state
+  const groundGlassAssistEnabled = useAppStore((s) => s.camera.groundGlassAssistEnabled);
+  const setGroundGlassAssistEnabled = useAppStore((s) => s.setGroundGlassAssistEnabled);
+  const [previewMode, setPreviewMode] = useState<"raw" | "upright">(groundGlassAssistEnabled ? "upright" : "raw");
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
 
@@ -68,7 +68,7 @@ export const GroundGlassViewport = ({
                 type="radio"
                 name={`gg-preview-${sceneId}`}
                 checked={previewMode === "raw"}
-                onChange={() => setPreviewMode("raw")}
+                onChange={() => { setPreviewMode("raw"); setGroundGlassAssistEnabled(false); }}
               />
               <span>Raw Ground Glass</span>
             </label>
@@ -79,7 +79,7 @@ export const GroundGlassViewport = ({
                 type="radio"
                 name={`gg-preview-${sceneId}`}
                 checked={previewMode === "upright"}
-                onChange={() => setPreviewMode("upright")}
+                onChange={() => { setPreviewMode("upright"); setGroundGlassAssistEnabled(true); }}
               />
               <span>Upright Assist</span>
             </label>
@@ -91,8 +91,6 @@ export const GroundGlassViewport = ({
           <div className="groundglass-label"><h3 className="control-group-title">View Options</h3></div>
           <div className="choice-list choice-list--inline">
             <ViewOptions
-              canToggleGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets" ? (canToggleGroundGlassAssist ?? orientationAssistEnabled) : false}
-              showGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets"}
               canToggleFocusAssist={canToggleFocusAssist ?? true}
               canToggleGrid={canToggleGrid ?? true}
               lockReason={lockReason ?? ""}

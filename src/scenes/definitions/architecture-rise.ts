@@ -30,7 +30,8 @@ export const architectureRiseScene: SceneDefinition = {
   ],
   cameraPreset: {
     // initial focus distance set to the distance from the camera placement to the facade focus target
-    focusDistanceMm: Math.abs( (0) - geometry.focusTarget.worldPosition.z ) + Math.abs( (0) - geometry.focusTarget.worldPosition.y ),
+    // focus distance along optical axis from camera placement to front façade focus target
+    focusDistanceMm: geometry.focusTarget.worldPosition.z - (-1200),
     aperture: 11,
     frontRiseMm: 0,
     frontTiltDeg: 0,

@@ -46,7 +46,6 @@ describe("GroundGlassRenderer", () => {
         gridEnabled={false}
         canToggleFocusAssist={true}
         canToggleGrid={true}
-        canToggleGroundGlassAssist={true}
         riseMm={10}
         tiltDeg={2}
         swingDeg={-1}

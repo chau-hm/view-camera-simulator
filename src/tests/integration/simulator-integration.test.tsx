@@ -85,7 +85,8 @@ describe("phase 12 integration", () => {
   it("TST-INT-008 orientation assist toggle updates flip state", () => {
     renderWorkspace("free", "architecture-rise", null);
     const before = selectDerivedOpticsState(useAppStore.getState().camera);
-    fireEvent.click(screen.getByLabelText("Ground glass assist"));
+    // Use the Preview control (Upright Assist) which now drives groundGlassAssistEnabled
+    fireEvent.click(screen.getByText("Upright Assist"));
     const after = selectDerivedOpticsState(useAppStore.getState().camera);
     expect(before.groundGlassProjection.invertHorizontal).toBe(true);
     expect(after.groundGlassProjection.invertHorizontal).toBe(false);
@@ -187,7 +188,7 @@ describe("phase 12 integration", () => {
     expect(screen.getByLabelText("Swing")).toBeInTheDocument();
     expect(screen.getByLabelText("Focus distance")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Ground glass assist")).toBeInTheDocument();
+    // Ground glass assist control removed; preview mode (Raw/Upright) is now used instead
     expect(screen.getByLabelText("Focus assist")).toBeInTheDocument();
     expect(screen.getByLabelText("Grid")).toBeInTheDocument();
   });
