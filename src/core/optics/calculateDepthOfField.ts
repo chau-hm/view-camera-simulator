@@ -54,10 +54,12 @@ export const calculateDepthOfField = ({
   depthOfFieldFarPlane: Plane | null;
   farIsInfinite: boolean;
   nearU: number;
+  focusU?: number;
   farU: number;
   depthOfFieldModel: "parallel" | "scheimpflug-wedge";
-} => {
-  const f = focalLengthMm;
+  fallbackApplied?: boolean;
+  fallbackReason?: string | null;
+} => {  const f = focalLengthMm;
   const N = apertureFNumber;
   const c = circleOfConfusionMm;
   const U = focusObjectDistanceMm;
@@ -107,7 +109,7 @@ export const calculateDepthOfField = ({
       // intersect with lens plane to get hinge lines
       const nearScheimpflugLine = intersectPlanes(lensPlane, nearImagePlane);
       if (!nearScheimpflugLine) {
-        // fallback
+        // fallback: invalid near image plane intersection
         return {
           depthOfFieldNearPlane: parallelNearPlane,
           depthOfFieldFarPlane: parallelFarPlane,
@@ -115,17 +117,14 @@ export const calculateDepthOfField = ({
           nearU,
           farU,
           depthOfFieldModel: "parallel",
+          fallbackApplied: true,
+          fallbackReason: "invalid near image plane intersection",
         };
       }
 
-      // far image plane
+      // far image plane: do NOT fabricate an image-plane for infinite far. Keep farImagePlane null when farIsInfinite.
       let farImagePlane: Plane | null = null;
-      if (farIsInfinite) {
-        // use a virtual image offset along film normal using visualCapMm as proxy
-        const farOffset = visualCapMm * sign;
-        const farImagePlanePoint = add(filmPlane.point, scale(filmPlane.normal, farOffset));
-        farImagePlane = planeFromPointNormal(farImagePlanePoint, filmPlane.normal);
-      } else if (farV !== null) {
+      if (!farIsInfinite && farV !== null) {
         const farOffset = (farV - focusV) * sign;
         const farImagePlanePoint = add(filmPlane.point, scale(filmPlane.normal, farOffset));
         farImagePlane = planeFromPointNormal(farImagePlanePoint, filmPlane.normal);
@@ -154,6 +153,8 @@ export const calculateDepthOfField = ({
           nearU,
           farU,
           depthOfFieldModel: "parallel",
+          fallbackApplied: true,
+          fallbackReason: "plane-through-line construction failed for near plane",
         };
 
       let farPlane: Plane | null = null;
@@ -167,6 +168,7 @@ export const calculateDepthOfField = ({
         // keep far plane null to indicate infinite
         farPlane = null;
       } else {
+        // if we couldn't form a far Scheimpflug line but far is finite, fallback and report reason
         farPlane = parallelFarPlane;
       }
 
@@ -175,11 +177,15 @@ export const calculateDepthOfField = ({
         depthOfFieldFarPlane: farPlane,
         farIsInfinite,
         nearU,
+        focusU: U,
         farU,
         depthOfFieldModel: "scheimpflug-wedge",
+        fallbackApplied: false,
+        fallbackReason: null,
       };
-    } catch {
-      // on any failure, fall back to parallel model
+    } catch (e) {
+      // on any failure, fall back to parallel model and surface reason
+      const reason = e instanceof Error ? e.message : String(e);
       return {
         depthOfFieldNearPlane: parallelNearPlane,
         depthOfFieldFarPlane: parallelFarPlane,
@@ -187,11 +193,13 @@ export const calculateDepthOfField = ({
         nearU,
         farU,
         depthOfFieldModel: "parallel",
+        fallbackApplied: true,
+        fallbackReason: `exception: ${reason}`,
       };
     }
   }
 
-  // default return
+  // default return (parallel model)
   return {
     depthOfFieldNearPlane: parallelNearPlane,
     depthOfFieldFarPlane: parallelFarPlane,
@@ -199,5 +207,7 @@ export const calculateDepthOfField = ({
     nearU,
     farU,
     depthOfFieldModel: "parallel",
+    fallbackApplied: false,
+    fallbackReason: null,
   };
 };

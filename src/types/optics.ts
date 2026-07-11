@@ -33,9 +33,17 @@ export type Bounds3 = {
 export type FocusTargetSharpness = {
   id: string;
   distanceToFocusPlaneMm: number;
-  acceptableRangeMm: number;
+  // legacy field kept for compatibility; may be undefined for wedge model
+  acceptableRangeMm?: number | undefined;
   sharpness: number;
   status: "sharp" | "acceptable" | "soft";
+  // extended diagnostics
+  insideDepthOfField?: boolean;
+  targetRayDistanceMm?: number;
+  nearBoundaryDistanceMm?: number | null;
+  focusBoundaryDistanceMm?: number | null;
+  farBoundaryDistanceMm?: number | null;
+  normalizedDefocus?: number;
 };
 
 export type ProjectionData = {
