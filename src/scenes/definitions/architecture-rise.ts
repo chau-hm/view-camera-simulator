@@ -6,9 +6,27 @@ export const architectureRiseScene: SceneDefinition = {
   name: "Architecture Rise",
   description: "Use rise to include building top without tilting camera body.",
   assets: [
-    { id: "architecture-ground", kind: "model", source: "placeholder://architecture-ground.webp", textureFormat: "webp", loadStrategy: "eager" },
-    { id: "architecture-building-facade", kind: "model", source: "placeholder://architecture-facade.ktx2", textureFormat: "ktx2", loadStrategy: "eager" },
-    { id: "architecture-sky", kind: "helper", source: "placeholder://architecture-sky.webp", textureFormat: "webp", loadStrategy: "lazy" },
+    {
+      id: "architecture-ground",
+      kind: "model",
+      source: "placeholder://architecture-ground.webp",
+      textureFormat: "webp",
+      loadStrategy: "eager",
+    },
+    {
+      id: "architecture-building-facade",
+      kind: "model",
+      source: "placeholder://architecture-facade.ktx2",
+      textureFormat: "ktx2",
+      loadStrategy: "eager",
+    },
+    {
+      id: "architecture-sky",
+      kind: "helper",
+      source: "placeholder://architecture-sky.webp",
+      textureFormat: "webp",
+      loadStrategy: "lazy",
+    },
   ],
   cameraPreset: {
     focusDistanceMm: 7200,
