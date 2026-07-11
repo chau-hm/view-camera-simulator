@@ -13,7 +13,7 @@ describe("GeometryViewport", () => {
   it("renders side-view svg and has expected primitives", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     const { container } = render(
-      <GeometryViewport opticsState={opticsState} geometryView="side" scene={architectureRiseScene} />,
+      <GeometryViewport opticsState={opticsState} geometryView="side" scene={architectureRiseScene} riseMm={0} />,
     );
     const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svg).toBeTruthy();
@@ -47,7 +47,7 @@ describe("GeometryViewport", () => {
       architectureRiseScene,
     );
     const { container } = render(
-      <GeometryViewport opticsState={opticsState} geometryView="top" scene={architectureRiseScene} />,
+      <GeometryViewport opticsState={opticsState} geometryView="top" scene={architectureRiseScene} riseMm={0} />,
     );
     const svg = container.querySelector('[data-testid="geometry-svg-top"]') as SVGElement | null;
     expect(svg).toBeTruthy();

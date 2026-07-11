@@ -268,8 +268,11 @@ export const SimulatorWorkspace = ({
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: 8 }}>
               <label className="developer-tools__control">
                 <input className="form-checkbox" type="checkbox" checked={rawRttDebug} onChange={(e) => setRawRttDebug(e.target.checked)} />
-                RTT Debug: Raw ON/OFF
+                Raw RTT — bypass DOF
               </label>
+              {rawRttDebug ? (
+                <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)', marginTop: 6 }}>Depth-of-field and focus blur are disabled in Raw RTT mode.</div>
+              ) : null}
             </div>
           </section>
         </aside>
@@ -307,7 +310,7 @@ export const SimulatorWorkspace = ({
             </button>
           </div>
 
-          <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
+          <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} riseMm={camera.frontRiseMm} />
         </div>
       )}
 

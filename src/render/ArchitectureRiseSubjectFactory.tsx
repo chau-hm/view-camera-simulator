@@ -13,7 +13,7 @@ let groundMaterial: THREE.MeshStandardMaterial | null = null;
 
 function ensureResources() {
   if (!buildingGeom) buildingGeom = new THREE.BoxGeometry(toWorld(geometry.building.width), toWorld(geometry.building.height), toWorld(geometry.building.depth));
-  if (!mullionGeom) mullionGeom = new THREE.BoxGeometry(toWorld(40), toWorld(geometry.building.height - 80), toWorld(geometry.building.depth + 40));
+  if (!mullionGeom) mullionGeom = new THREE.BoxGeometry(toWorld(geometry.mullionWidthMm), toWorld(geometry.building.height - 80), toWorld(geometry.facadeDetailThicknessMm));
   if (!floorPlaneGeom) floorPlaneGeom = new THREE.PlaneGeometry(toWorld(geometry.ground.width), toWorld(geometry.ground.depth));
   if (!buildingMaterial) buildingMaterial = new THREE.MeshStandardMaterial({ color: "#94a3b8", roughness: 0.9, metalness: 0.05 });
   if (!mullionMaterial) mullionMaterial = new THREE.MeshStandardMaterial({ color: "#334155", roughness: 0.92, metalness: 0 });
@@ -43,20 +43,23 @@ export function createArchitectureRiseGroup(): THREE.Group {
 
   // vertical mullions
   const divisions = geometry.building.facadeVerticalDivisionCount;
+  // vertical mullions placed just in front of the front façade so their front faces are coplanar
   for (let i = 0; i < divisions; i++) {
     const x = (-geometry.building.width / 2) + (i / (divisions - 1)) * geometry.building.width;
     const mull = new THREE.Mesh(mullionGeom!, mullionMaterial!);
-    mull.position.set(toWorld(x), toWorld(geometry.building.center.y), toWorld(geometry.building.center.z - 200));
+    const detailZ = geometry.facade.frontFacadeZ - geometry.facadeDetailThicknessMm / 2 - geometry.facadeDetailSmallGapMm;
+    mull.position.set(toWorld(x), toWorld(geometry.building.center.y), toWorld(detailZ));
     g.add(mull);
   }
 
-  // horizontal floor/window divisions produced as thin planes
+  // horizontal floor/window divisions produced as thin boxes placed just in front of the façade
   const floors = geometry.building.facadeHorizontalDivisionCount;
   const stripeMat = new THREE.MeshStandardMaterial({ color: "#c7d2fe", roughness: 0.95 });
   for (let f = 0; f < floors; f++) {
     const y = geometry.facade.mainBodyBottomY + ((f + 0.5) / floors) * geometry.building.height;
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(toWorld(geometry.building.width + 40), toWorld(12), toWorld(geometry.building.depth + 40)), stripeMat);
-    stripe.position.set(toWorld(geometry.building.center.x), toWorld(y), toWorld(geometry.building.center.z));
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(toWorld(geometry.building.width + 40), toWorld(geometry.horizontalStripeHeightMm), toWorld(geometry.facadeDetailThicknessMm)), stripeMat);
+    const detailZ = geometry.facade.frontFacadeZ - geometry.facadeDetailThicknessMm / 2 - geometry.facadeDetailSmallGapMm;
+    stripe.position.set(toWorld(geometry.building.center.x), toWorld(y), toWorld(detailZ));
     g.add(stripe);
   }
 
@@ -66,23 +69,33 @@ export function createArchitectureRiseGroup(): THREE.Group {
   ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   g.add(ground);
 
-  // small focus-detail patch: procedural checker/stripe panel slightly in front of facade
+  // focus-detail patch: larger procedural checker/stripe panel slightly in front of facade
   const focusGroup = new THREE.Group();
-  const patchSize = 200; // mm
-  const cells = 8;
+  const patchSize = geometry.focusChartSizeMm; // mm
+  const cells = geometry.focusChartCells;
   const cellSize = patchSize / cells;
-  const zPos = geometry.facade.frontFacadeZ - 20; // slightly in front to avoid z-fighting
+  const detailZ = geometry.facade.frontFacadeZ - geometry.facadeDetailThicknessMm / 2 - (geometry.facadeDetailSmallGapMm + 2);
   for (let ix = 0; ix < cells; ix++) {
     for (let iy = 0; iy < cells; iy++) {
       const isDark = (ix + iy) % 2 === 0;
-      const mat = new THREE.MeshStandardMaterial({ color: isDark ? 0x1f2937 : 0xe6eef7, roughness: 0.9 });
+      const mat = new THREE.MeshBasicMaterial({ color: isDark ? 0x0f1724 : 0xf8fafc });
       const box = new THREE.Mesh(new THREE.BoxGeometry(toWorld(cellSize), toWorld(cellSize), toWorld(2)), mat);
       const x = (-patchSize / 2) + ix * cellSize + cellSize / 2;
       const y = geometry.building.center.y - patchSize / 2 + iy * cellSize + cellSize / 2;
-      box.position.set(toWorld(x), toWorld(y), toWorld(zPos));
+      box.position.set(toWorld(x), toWorld(y), toWorld(detailZ));
       focusGroup.add(box);
     }
   }
+  // add a crosshair centre marker
+  const crosshair = new THREE.Group();
+  const crossLen = patchSize * 0.2;
+  const crossMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  const h = new THREE.Mesh(new THREE.BoxGeometry(toWorld(crossLen), toWorld(4), toWorld(2)), crossMat);
+  const v = new THREE.Mesh(new THREE.BoxGeometry(toWorld(4), toWorld(crossLen), toWorld(2)), crossMat);
+  h.position.set(toWorld(0), toWorld(0), toWorld(detailZ));
+  v.position.set(toWorld(0), toWorld(0), toWorld(detailZ));
+  crosshair.add(h, v);
+  focusGroup.add(crosshair);
   g.add(focusGroup);
 
   return g;
@@ -109,8 +122,8 @@ export const ArchitectureRiseSubject: React.FC = () => {
       {Array.from({ length: geometry.building.facadeVerticalDivisionCount }).map((_, i) => {
         const x = (-geometry.building.width / 2) + (i / (geometry.building.facadeVerticalDivisionCount - 1)) * geometry.building.width;
         return (
-          <mesh key={i} position={[toW(x), toW(geometry.building.center.y), toW(geometry.building.center.z - 200)]}>
-            <boxGeometry args={[toW(40), toW(geometry.building.height - 80), toW(geometry.building.depth + 40)]} />
+          <mesh key={i} position={[toW(x), toW(geometry.building.center.y), toW(geometry.facade.frontFacadeZ - geometry.facadeDetailThicknessMm / 2 - geometry.facadeDetailSmallGapMm)]}>
+            <boxGeometry args={[toW(geometry.mullionWidthMm), toW(geometry.building.height - 80), toW(geometry.facadeDetailThicknessMm)]} />
             <meshStandardMaterial color="#334155" roughness={0.92} />
           </mesh>
         );

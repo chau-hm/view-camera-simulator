@@ -54,10 +54,16 @@ export function configureGroundGlassCamera(
   filmUp.normalize();
   filmRight.normalize();
 
-  // objectForward: lens - filmCenter (points from film towards lens / object)
-  const objectForward = new THREE.Vector3().subVectors(lensPos, filmCenter);
-  if (objectForward.lengthSq() < 1e-9) return { ok: false, reason: "degenerate lens/film geometry" };
-  objectForward.normalize();
+  // film normal derived from filmRight and filmUp (object-facing)
+  const filmNormal = new THREE.Vector3().crossVectors(filmRight, filmUp);
+  if (filmNormal.lengthSq() < 1e-9) return { ok: false, reason: "degenerate film normal" };
+  filmNormal.normalize();
+  // Ensure filmNormal points toward the object side (toward the lens). Use sign only, not as the projection basis.
+  const lensVec = new THREE.Vector3().subVectors(lensPos, filmCenter);
+  if (filmNormal.dot(lensVec) < 0) filmNormal.negate();
+
+  // objectForward: use object-facing film-plane normal (prevents camera tilt when lens shifts due to rise)
+  const objectForward = filmNormal.clone();
 
   // Configure camera transform using real API: position at lens, up=filmUp, look towards lens + objectForward
   camera.position.set(lensPos.x, lensPos.y, lensPos.z);

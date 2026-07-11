@@ -14,7 +14,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
   it("A: Stable board positions when changing focus (side view)", () => {
     const scene = focusFundamentalsTwoTargets;
     const state1000 = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, focusDistanceMm: 1000 }, scene);
-    const { container, rerender } = render(<GeometryViewport opticsState={state1000} geometryView="side" scene={scene} />);
+    const { container, rerender } = render(<GeometryViewport opticsState={state1000} geometryView="side" scene={scene} riseMm={0} />);
     const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svg).toBeTruthy();
 
@@ -41,7 +41,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
 
     // side view
-    const { container: c1 } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} />);
+    const { container: c1 } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} riseMm={0} />);
     const svgSide = c1.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svgSide).toBeTruthy();
 
@@ -59,7 +59,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     if (frontRect) expect(parseFloat(frontRect.getAttribute('height') || '0')).toBeGreaterThan(parseFloat(frontRect.getAttribute('width') || '0'));
 
     // top view
-    const { container: c2 } = render(<GeometryViewport opticsState={optics} geometryView="top" scene={scene} />);
+    const { container: c2 } = render(<GeometryViewport opticsState={optics} geometryView="top" scene={scene} riseMm={0} />);
     const svgTop = c2.querySelector('[data-testid="geometry-svg-top"]') as SVGElement | null;
     expect(svgTop).toBeTruthy();
 
@@ -74,7 +74,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
   it("C: FOV rays intersect visible plane segments", () => {
     const scene = focusFundamentalsTwoTargets;
     const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
-    const { container } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} />);
+    const { container } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} riseMm={0} />);
     const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svg).toBeTruthy();
 
@@ -102,7 +102,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
   it("E: Depth strip shows expected chips and DiagramLegend is not present; Infinity mode shows ∞", () => {
     const scene = focusFundamentalsTwoTargets;
     const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
-    const { container, rerender } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} />);
+    const { container, rerender } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} riseMm={0} />);
 
     // depth strip exists and has aria-label
     const depthStrip = container.querySelector('[aria-label="Optical depth order"]');
@@ -122,7 +122,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     // build a shallow copy and set diagnostics.isInfinityFocus without using `any`
     const origDiag = (optics as unknown as { diagnostics?: Record<string, unknown> }).diagnostics ?? {};
     const opticsInf = { ...(optics as unknown as Record<string, unknown>), diagnostics: { ...(origDiag as Record<string, unknown>), isInfinityFocus: true } } as unknown as typeof optics;
-    rerender(<GeometryViewport opticsState={opticsInf} geometryView="side" scene={scene} />);
+    rerender(<GeometryViewport opticsState={opticsInf} geometryView="side" scene={scene} riseMm={0} />);
     const depthStrip2 = container.querySelector('[aria-label="Optical depth order"]');
     expect(depthStrip2).toBeTruthy();
     const txt2 = depthStrip2?.textContent || '';

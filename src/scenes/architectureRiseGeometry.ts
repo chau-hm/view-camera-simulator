@@ -81,6 +81,32 @@ export const focusTarget = {
 // canonical façade focus distance measured from lens centre (0,0,0) to focus target along +Z
 export const architectureFacadeFocusDistanceMm = focusTarget.worldPosition.z;
 
+// Façade detail canonical thickness & sizes (mm). Details are thin panels placed immediately in front of the front façade.
+export const facadeDetailThicknessMm = 20; // 10-30 recommended
+export const facadeDetailSmallGapMm = 2; // small gap to avoid z-fighting
+export const mullionWidthMm = 40;
+export const horizontalStripeHeightMm = 12;
+
+// Focus chart canonical size and grid
+export const focusChartSizeMm = 750; // ~700-800mm
+export const focusChartCells = 8; // 6 or 8 recommended
+
+export default {
+  ground,
+  building,
+  facade,
+  sceneBounds,
+  compositionTargets,
+  focusTarget,
+  architectureFacadeFocusDistanceMm,
+  facadeDetailThicknessMm,
+  facadeDetailSmallGapMm,
+  mullionWidthMm,
+  horizontalStripeHeightMm,
+  focusChartSizeMm,
+  focusChartCells,
+};
+
 export default {
   ground,
   building,
