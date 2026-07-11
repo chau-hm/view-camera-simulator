@@ -246,7 +246,7 @@ export const deriveOpticsState = (
   // For Focus Fundamentals, compute DOF via thin-lens formula using solved lens extension and object distance U
   let depthOfFieldNearPlane;
   let depthOfFieldFarPlane;
-  let dofResultGlobal: any = null;
+  let dofResultGlobal: ReturnType<typeof calculateDepthOfField> | null = null;
   if (scene.id === "focus-fundamentals-two-targets") {
     const S = cameraState.focusDistanceMm;
     const f = cameraState.focalLengthMm;

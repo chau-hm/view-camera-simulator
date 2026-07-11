@@ -178,7 +178,7 @@ export const calculateDepthOfField = ({
         farU,
         depthOfFieldModel: "scheimpflug-wedge",
       };
-    } catch (err) {
+    } catch {
       // on any failure, fall back to parallel model
       return {
         depthOfFieldNearPlane: parallelNearPlane,
