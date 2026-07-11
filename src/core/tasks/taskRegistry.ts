@@ -244,11 +244,6 @@ const swingTask: TaskDefinition = {
   },
 };
 
-const cloneTaskWithId = (task: TaskDefinition, id: string): TaskDefinition => ({
-  ...task,
-  id,
-});
-
 export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
   "tilt-01": tiltTask,
