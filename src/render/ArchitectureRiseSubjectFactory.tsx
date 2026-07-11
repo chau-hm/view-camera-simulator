@@ -70,40 +70,30 @@ export function createArchitectureRiseGroup(): THREE.Group {
   ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   g.add(ground);
 
-  // focus-detail patch: larger procedural checker/stripe panel slightly in front of facade
+  // focus-detail patch: use canonical pure helpers to construct checkerboard and crosshair
   const focusGroup = new THREE.Group();
-  const patchSize = geometry.focusChart.sizeMm; // mm
-  const cells = geometry.focusChart.cells;
-  const cellSize = patchSize / cells;
-  const surfaceZ = geometry.focusChart.surfaceZ; // world Z for the chart surface
-  const chartCenter = geometry.focusChart.center;
-  // generate checker cells relative to canonical chart centre
-  for (let ix = 0; ix < cells; ix++) {
-    for (let iy = 0; iy < cells; iy++) {
-      const isDark = (ix + iy) % 2 === 0;
-      const mat = new THREE.MeshBasicMaterial({ color: isDark ? 0x0f1724 : 0xf8fafc });
-      const box = new THREE.Mesh(new THREE.BoxGeometry(toWorld(cellSize), toWorld(cellSize), toWorld(2)), mat);
-      const localX = (-patchSize / 2) + ix * cellSize + cellSize / 2;
-      const localY = (-patchSize / 2) + iy * cellSize + cellSize / 2;
-      const x = chartCenter.x + localX;
-      const y = chartCenter.y + localY;
-      box.position.set(toWorld(x), toWorld(y), toWorld(surfaceZ));
-      focusGroup.add(box);
-    }
-  }
-  // add a crosshair centre marker positioned at canonical chart centre
-  const crosshair = new THREE.Group();
-  const crossLen = geometry.focusChart.crosshairLengthMm;
+  const cells = geometry.getArchitectureFocusChartCells();
+  const bars = geometry.getArchitectureFocusChartBars();
+
+  // checker cells: use MeshBasicMaterial for stable high-contrast appearance in both RTT and R3F
+  cells.forEach((c) => {
+    const mat = new THREE.MeshBasicMaterial({ color: c.dark ? 0x0f1724 : 0xf8fafc });
+    const box = new THREE.Mesh(new THREE.BoxGeometry(toWorld(c.width), toWorld(c.height), toWorld(c.depth)), mat);
+    box.position.set(toWorld(c.x), toWorld(c.y), toWorld(c.z));
+    box.name = c.id;
+    focusGroup.add(box);
+  });
+
+  // crosshair bars: horizontal and vertical
   const crossMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-  const h = new THREE.Mesh(new THREE.BoxGeometry(toWorld(crossLen), toWorld(geometry.focusChart.crosshairThicknessMm), toWorld(2)), crossMat);
-  const v = new THREE.Mesh(new THREE.BoxGeometry(toWorld(geometry.focusChart.crosshairThicknessMm), toWorld(crossLen), toWorld(2)), crossMat);
-  // position bars at local origin of the crosshair group
-  h.position.set(0, 0, 0);
-  v.position.set(0, 0, 0);
-  crosshair.add(h, v);
-  // place crosshair group at canonical center with small marker offset to avoid z-fighting
-  crosshair.position.set(toWorld(chartCenter.x), toWorld(chartCenter.y), toWorld(surfaceZ - geometry.focusChart.markerOffsetMm));
-  focusGroup.add(crosshair);
+  bars.forEach((b) => {
+    const geom = new THREE.BoxGeometry(toWorld(b.width), toWorld(b.height), toWorld(b.depth));
+    const mesh = new THREE.Mesh(geom, crossMat);
+    mesh.position.set(toWorld(b.x), toWorld(b.y), toWorld(b.z));
+    mesh.name = `architecture-focus-crosshair-${b.id}`;
+    focusGroup.add(mesh);
+  });
+
   g.add(focusGroup);
 
   // small reference objects (plinths) around the building to aid depth reading
@@ -215,27 +205,27 @@ export const ArchitectureRiseSubject: React.FC = () => {
       {/* focus-detail patch */}
       <group>
         {(() => {
-          const patchSize = geometry.focusChart.sizeMm; // mm
-          const cells = geometry.focusChart.cells;
-          const cellSize = patchSize / cells;
-          const surfaceZ = geometry.focusChart.surfaceZ;
-          const center = geometry.focusChart.center;
+          const cells = geometry.getArchitectureFocusChartCells();
+          const bars = geometry.getArchitectureFocusChartBars();
           const elems = [] as React.ReactNode[];
-          for (let ix = 0; ix < cells; ix++) {
-            for (let iy = 0; iy < cells; iy++) {
-              const isDark = (ix + iy) % 2 === 0;
-              const localX = (-patchSize / 2) + ix * cellSize + cellSize / 2;
-              const localY = (-patchSize / 2) + iy * cellSize + cellSize / 2;
-              const x = center.x + localX;
-              const y = center.y + localY;
-              elems.push(
-                <mesh key={`fd-${ix}-${iy}`} position={[toW(x), toW(y), toW(surfaceZ)]}>
-                  <boxGeometry args={[toW(cellSize), toW(cellSize), toW(2)]} />
-                  <meshStandardMaterial color={isDark ? "#1f2937" : "#e6eef7"} roughness={0.9} />
-                </mesh>,
-              );
-            }
-          }
+          // render checker cells using MeshBasicMaterial for parity with RTT
+          cells.forEach((c) => {
+            elems.push(
+              <mesh key={c.id} position={[toW(c.x), toW(c.y), toW(c.z)]} name={c.id}>
+                <boxGeometry args={[toW(c.width), toW(c.height), toW(c.depth)]} />
+                <meshBasicMaterial color={c.dark ? "#1f2937" : "#e6eef7"} />
+              </mesh>,
+            );
+          });
+          // render crosshair bars
+          bars.forEach((b) => {
+            elems.push(
+              <mesh key={`bar-${b.id}`} position={[toW(b.x), toW(b.y), toW(b.z)]} name={`architecture-focus-crosshair-${b.id}`}>
+                <boxGeometry args={[toW(b.width), toW(b.height), toW(b.depth)]} />
+                <meshBasicMaterial color="#ff0000" />
+              </mesh>,
+            );
+          });
           return elems;
         })()}
       </group>

@@ -178,26 +178,117 @@ export const horizontalStripeHeightMm = 12;
 export const focusChartSizeMm = 750; // ~700-800mm
 export const focusChartCells = 8; // 6 or 8 recommended
 
-// Canonical focus chart definition: central source-of-truth for checkerboard and crosshair
+// Canonical focus chart definition: explicit semantic fields and helpers
 export const focusChart = {
-  // centre aligns with the canonical scene focus target
-  center: {
+  // physical task/focus target (world point used by tasks and optics)
+  targetWorldPosition: {
     x: focusTarget.worldPosition.x,
     y: focusTarget.worldPosition.y,
     z: focusTarget.worldPosition.z,
   },
+  // checkerboard surface centre (slightly in front of the façade detail)
+  surfaceCenterWorld: {
+    x: focusTarget.worldPosition.x,
+    y: focusTarget.worldPosition.y,
+    z: facade.frontFacadeZ - facadeDetailThicknessMm / 2 - facadeDetailSmallGapMm - 2,
+  },
+  // marker centre (red crosshair) placed a tiny amount in front of the surface to avoid z-fighting
+  markerCenterWorld: {
+    x: focusTarget.worldPosition.x,
+    y: focusTarget.worldPosition.y,
+    z: (facade.frontFacadeZ - facadeDetailThicknessMm / 2 - facadeDetailSmallGapMm - 2) - 2,
+  },
   // size and grid
   sizeMm: focusChartSizeMm,
   cells: focusChartCells,
+  cellDepthMm: 2,
   // crosshair dimensions
   crosshairLengthMm: Math.round(focusChartSizeMm * 0.2),
   crosshairThicknessMm: 4,
-  // explicit surface placement relative to the façade front detail
-  // place the chart slightly in front of façade-detail panels to avoid z-fighting
-  surfaceZ: facade.frontFacadeZ - facadeDetailThicknessMm / 2 - facadeDetailSmallGapMm - 2,
-  // tiny additional offset used for marker geometry to avoid z-fighting when rendering atop the surface
+  crosshairDepthMm: 2,
+  // small marker offset from surface (mm)
   markerOffsetMm: 2,
+} as const;
+
+// Pure helpers to produce absolute world-space geometry definitions for the focus chart
+export type ArchitectureFocusChartCell = {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  width: number;
+  height: number;
+  depth: number;
+  dark: boolean;
 };
+
+export type ArchitectureFocusChartBar = {
+  id: "horizontal" | "vertical";
+  x: number; // centre x
+  y: number; // centre y
+  z: number; // centre z
+  width: number;
+  height: number;
+  depth: number;
+};
+
+export function getArchitectureFocusChartCells(): ArchitectureFocusChartCell[] {
+  const cells: ArchitectureFocusChartCell[] = [];
+  const patchSize = focusChart.sizeMm;
+  const count = focusChart.cells;
+  const cellSize = patchSize / count;
+  const center = focusChart.surfaceCenterWorld;
+  const half = patchSize / 2;
+  let id = 0;
+  for (let ix = 0; ix < count; ix++) {
+    for (let iy = 0; iy < count; iy++) {
+      const localX = -half + ix * cellSize + cellSize / 2;
+      const localY = -half + iy * cellSize + cellSize / 2;
+      const x = center.x + localX;
+      const y = center.y + localY;
+      const z = center.z;
+      const dark = (ix + iy) % 2 === 0;
+      cells.push({
+        id: `cell-${id++}`,
+        x,
+        y,
+        z,
+        width: cellSize,
+        height: cellSize,
+        depth: focusChart.cellDepthMm,
+        dark,
+      });
+    }
+  }
+  return cells;
+}
+
+export function getArchitectureFocusChartBars(): ArchitectureFocusChartBar[] {
+  const marker = focusChart.markerCenterWorld;
+  const hLen = focusChart.crosshairLengthMm;
+  const t = focusChart.crosshairThicknessMm;
+  const d = focusChart.crosshairDepthMm;
+  return [
+    {
+      id: "horizontal",
+      x: marker.x,
+      y: marker.y,
+      z: marker.z,
+      width: hLen,
+      height: t,
+      depth: d,
+    },
+    {
+      id: "vertical",
+      x: marker.x,
+      y: marker.y,
+      z: marker.z,
+      width: t,
+      height: hLen,
+      depth: d,
+    },
+  ];
+}
 
 export default {
   ground,

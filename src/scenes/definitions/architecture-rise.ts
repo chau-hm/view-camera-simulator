@@ -51,7 +51,7 @@ export const architectureRiseScene: SceneDefinition = {
       id: "building-mid-facade",
       label: "Building mid facade",
       // Use canonical focus-chart centre so RTT, 3D and tasks share the same world point
-      worldPosition: geometry.focusChart.center,
+      worldPosition: geometry.focusChart.targetWorldPosition,
       weight: 1,
     },
   ],
