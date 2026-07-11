@@ -13,6 +13,7 @@ import { createFocusFundamentalsGroup } from "./FocusFundamentalsSubjectFactory"
 import { createArchitectureRiseGroup } from "./ArchitectureRiseSubjectFactory";
 import { configureGroundGlassCamera } from "./configureGroundGlassCamera";
 import { createGroundGlassDofUniformState } from "./createGroundGlassDofUniformState";
+import { groundGlassSharedGlsl, groundGlassUniformDecls } from "./groundGlassDofShaders";
 import type { DerivedOpticsState } from "../types/optics";
 import type { ApertureValue } from "../types/camera";
 
@@ -99,67 +100,135 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       tempRT: THREE.WebGLRenderTarget;
     };
     const vertexShader = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position,1.0); }`;
-    const fragH = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; uniform float near; uniform float far; uniform float imageDistanceMm; uniform float focalLengthMm; uniform float fNumber; uniform float sensorWidthMm; uniform float renderWidth; uniform float renderHeight; uniform float maxCoC; uniform float useRaw; uniform float dofMode; uniform vec3 lensCenterWorld; uniform vec3 focusPlanePoint; uniform vec3 focusPlaneNormal; uniform vec3 nearPlanePoint; uniform vec3 nearPlaneNormal; uniform vec3 farPlanePoint; uniform vec3 farPlaneNormal; uniform float hasFiniteFar; uniform mat4 inverseProjectionMatrix; uniform mat4 cameraMatrixWorld;
-    float viewZFromDepth(float depth){ float z_n = depth * 2.0 - 1.0; return (2.0 * near * far) / (far + near - z_n * (far - near)); }
-    float computeCoCPx(float depth){ float viewZ = viewZFromDepth(depth); float U = abs(viewZ) * 1000.0; float f = focalLengthMm; float vObject = (f * U) / max(0.0001, (U - f)); float apertureDiameter = f / max(1.0, fNumber); float cocMm = apertureDiameter * abs(1.0 - (imageDistanceMm / vObject)); float pixelsPerMm = renderWidth / sensorWidthMm; return clamp(cocMm * pixelsPerMm, 0.0, maxCoC); }
 
-    vec3 reconstructWorldPosition(vec2 uv, float depth){ vec4 clip = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0); vec4 viewPos = inverseProjectionMatrix * clip; viewPos /= viewPos.w; vec4 worldPos = cameraMatrixWorld * viewPos; return worldPos.xyz; }
+    // Horizontal pass shader: includes shared uniform declarations and shared helper functions
+    const fragH = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; ${groundGlassUniformDecls} ${groundGlassSharedGlsl}
 
-    float intersectRayPlaneDist(vec3 ro, vec3 rd, vec3 planePoint, vec3 planeNormal){ float denom = dot(rd, planeNormal); if (abs(denom) < 1e-6) return -1.0; return dot(planePoint - ro, planeNormal) / denom; }
+    float computeCoCPx(float depth){ float viewZ = viewZFromDepth(depth, near, far); float U = abs(viewZ) * 1000.0; float f = focalLengthMm; float vObject = (f * U) / max(0.0001, (U - f)); float apertureDiameter = f / max(1.0, fNumber); float cocMm = apertureDiameter * abs(1.0 - (imageDistanceMm / vObject)); float pixelsPerMm = renderWidth / sensorWidthMm; return clamp(cocMm * pixelsPerMm, 0.0, maxCoC); }
 
     float computeWedgeCoCPx(vec3 worldPos){
-      // build ray from lens centre to world point
       vec3 rd = normalize(worldPos - lensCenterWorld);
       float tFocus = intersectRayPlaneDist(lensCenterWorld, rd, focusPlanePoint, focusPlaneNormal);
       float tNear = intersectRayPlaneDist(lensCenterWorld, rd, nearPlanePoint, nearPlaneNormal);
       float tFar = hasFiniteFar > 0.5 ? intersectRayPlaneDist(lensCenterWorld, rd, farPlanePoint, farPlaneNormal) : -1.0;
       float targetDist = length(worldPos - lensCenterWorld);
-      // map plane distances to positive along ray
       float focusDist = tFocus > 0.0 ? tFocus : targetDist;
       float nearDist = tNear > 0.0 ? tNear : (focusDist - 1.0);
-      float farDist = (tFar > 0.0 && hasFiniteFar > 0.5) ? tFar : -1.0; // -1 signals open far
-      float normalizedDef;
-      if (targetDist < nearDist){
-        float denom = max(1e-6, focusDist - nearDist);
-        normalizedDef = 1.0 + (nearDist - targetDist) / denom;
-      } else if (targetDist <= focusDist){
-        float denom = max(1e-6, focusDist - nearDist);
-        normalizedDef = (focusDist - targetDist) / denom;
-      } else if (hasFiniteFar < 0.5){
-        // open-ended far
-        float denom = max(1e-6, focusDist - nearDist);
-        normalizedDef = (targetDist - focusDist) / denom;
-      } else if (targetDist <= farDist){
-        float denom = max(1e-6, farDist - focusDist);
-        normalizedDef = (targetDist - focusDist) / denom;
-      } else {
-        float denom = max(1e-6, farDist - focusDist);
-        normalizedDef = 1.0 + (targetDist - farDist) / denom;
-      }
-      // map normalized defocus to boundary blur radius (physical CoC -> pixels) and apply display scale
-      float radius = clamp(normalizedDef * boundaryBlurRadiusPx * displayBlurScale, 0.0, maximumBlurRadiusPx);
-      return radius;
+      float farDist = (tFar > 0.0 && hasFiniteFar > 0.5) ? tFar : -1.0;
+      float nd = calculateNormalizedWedgeDefocus(targetDist, nearDist, focusDist, farDist, hasFiniteFar);
+      return calculateWedgeBlurRadiusPx(nd, boundaryBlurRadiusPx, displayBlurScale, maximumBlurRadiusPx);
     }
 
-    void main(){ vec2 uv = vUv; if(useRaw > 0.5){ gl_FragColor = texture2D(tColor, uv); return; } float centerDepth = texture2D(tDepth, uv).x; float radius = 0.0; if (dofMode < 0.5) { float centerUmm = abs(viewZFromDepth(centerDepth)) * 1000.0; float centerCoC = computeCoCPx(centerDepth); radius = min(maxCoC, centerCoC); } else { vec3 worldPos = reconstructWorldPosition(uv, centerDepth); radius = computeWedgeCoCPx(worldPos); }
-    float sampleStep = 1.0; // px step
-    float sampleCountF = clamp(floor(radius / sampleStep) * 2.0 + 1.0, 1.0, 15.0);
-    float halfSamples = floor((sampleCountF - 1.0) * 0.5);
-    float sigma = max(0.5, radius * 0.35);
-    vec3 accum = vec3(0.0); float total = 0.0; for(int i=0;i<15;i++){ float idx = float(i) - halfSamples; if(abs(idx) > halfSamples) continue; float offsetPx = (halfSamples < 0.5) ? 0.0 : idx * (radius / max(halfSamples, 1.0)); vec2 o = vec2(offsetPx / renderWidth, 0.0); float sampleDepth = texture2D(tDepth, uv + o).x; float sampleUmm = abs(viewZFromDepth(sampleDepth)) * 1000.0; if(dofMode >= 0.5){ vec3 worldSample = reconstructWorldPosition(uv + o, sampleDepth); float sampleRadius = computeWedgeCoCPx(worldSample); if(abs(sampleRadius - radius) > max(2.0, radius * 0.5)) continue; }
-    float sampleUmm2 = sampleUmm; float depthDeltaMm = abs(sampleUmm2 - (abs(viewZFromDepth(centerDepth)) * 1000.0)); float depthRejectMm = max(20.0, (abs(viewZFromDepth(centerDepth)) * 1000.0) * 0.015); float depthWeight = 1.0 - smoothstep(depthRejectMm * 0.5, depthRejectMm, depthDeltaMm); vec3 c = texture2D(tColor, uv + o).rgb; float gaussW = exp(-0.5 * (offsetPx*offsetPx) / (sigma*sigma)); float w = gaussW * depthWeight; if(w < 1e-3) continue; accum += c * w; total += w; } gl_FragColor = vec4(accum / max(total, 1e-6), 1.0); }`;
-    const fragV = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; uniform float renderWidth; uniform float renderHeight; uniform float maxCoC; uniform float focalLengthMm; uniform float fNumber; uniform float imageDistanceMm; uniform float sensorWidthMm; uniform float near; uniform float far; uniform vec2 ringCenter; uniform float ringRadiusPx; uniform vec3 ringColor; uniform float ringOpacity; uniform float showRing; uniform float useRaw; uniform float displayUpright; uniform float dofMode; uniform vec3 lensCenterWorld; uniform vec3 focusPlanePoint; uniform vec3 focusPlaneNormal; uniform vec3 nearPlanePoint; uniform vec3 nearPlaneNormal; uniform vec3 farPlanePoint; uniform vec3 farPlaneNormal; uniform float hasFiniteFar; uniform mat4 inverseProjectionMatrix; uniform mat4 cameraMatrixWorld;
-    float viewZFromDepth(float depth){ float z_n = depth * 2.0 - 1.0; return (2.0 * near * far) / (far + near - z_n * (far - near)); }
-    float computeCoCPx(float depth){ float viewZ = viewZFromDepth(depth); float U = abs(viewZ) * 1000.0; float f = focalLengthMm; float vObject = (f * U) / max(0.0001, (U - f)); float apertureDiameter = f / max(1.0, fNumber); float cocMm = apertureDiameter * abs(1.0 - (imageDistanceMm / vObject)); float pixelsPerMm = renderWidth / sensorWidthMm; return clamp(cocMm * pixelsPerMm, 0.0, maxCoC); }
-    vec3 reconstructWorldPosition(vec2 uv, float depth){ vec4 clip = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0); vec4 viewPos = inverseProjectionMatrix * clip; viewPos /= viewPos.w; vec4 worldPos = cameraMatrixWorld * viewPos; return worldPos.xyz; }
-    float intersectRayPlaneDist(vec3 ro, vec3 rd, vec3 planePoint, vec3 planeNormal){ float denom = dot(rd, planeNormal); if (abs(denom) < 1e-6) return -1.0; return dot(planePoint - ro, planeNormal) / denom; }
-    float computeWedgeCoCPx(vec3 worldPos){ vec3 rd = normalize(worldPos - lensCenterWorld); float tFocus = intersectRayPlaneDist(lensCenterWorld, rd, focusPlanePoint, focusPlaneNormal); float tNear = intersectRayPlaneDist(lensCenterWorld, rd, nearPlanePoint, nearPlaneNormal); float tFar = hasFiniteFar > 0.5 ? intersectRayPlaneDist(lensCenterWorld, rd, farPlanePoint, farPlaneNormal) : -1.0; float targetDist = length(worldPos - lensCenterWorld); float focusDist = tFocus > 0.0 ? tFocus : targetDist; float nearDist = tNear > 0.0 ? tNear : (focusDist - 1.0); float farDist = (tFar > 0.0 && hasFiniteFar > 0.5) ? tFar : 1.0/0.0; float normalizedDef; if (targetDist < nearDist){ float denom = max(1e-6, focusDist - nearDist); normalizedDef = 1.0 + (nearDist - targetDist) / denom; } else if (targetDist > focusDist){ if (hasFiniteFar < 0.5){ float denom = max(1e-6, focusDist - nearDist); normalizedDef = (targetDist - focusDist) / denom; } else { float denom = max(1e-6, farDist - focusDist); normalizedDef = (targetDist - focusDist) / denom; } } else { float denom = max(1e-6, focusDist - nearDist); normalizedDef = (abs(targetDist - focusDist)) / denom; } float radius = clamp(normalizedDef * maxCoC, 0.0, maxCoC); return radius; }
-    void main(){ vec2 screenUv = vUv; vec2 sampleUv = (displayUpright > 0.5) ? vec2(1.0 - screenUv.x, 1.0 - screenUv.y) : screenUv; if(useRaw > 0.5){ vec3 colorRaw = texture2D(tColor, sampleUv).rgb; vec3 color = colorRaw; if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); } gl_FragColor = vec4(color,1.0); return; }
-    float centerDepth = texture2D(tDepth, sampleUv).x; float radius = 0.0; if (dofMode < 0.5) { float centerUmm = abs(viewZFromDepth(centerDepth)) * 1000.0; float centerCoC = computeCoCPx(centerDepth); radius = min(maxCoC, centerCoC); } else { vec3 worldPos = reconstructWorldPosition(sampleUv, centerDepth); radius = computeWedgeCoCPx(worldPos); }
-    float sampleStep = 1.0; float sampleCountF = clamp(floor(radius / sampleStep) * 2.0 + 1.0, 1.0, 15.0); float halfSamples = floor((sampleCountF - 1.0) * 0.5); float sigma = max(0.5, radius * 0.35); vec3 accum = vec3(0.0); float total = 0.0; for(int i=0;i<15;i++){ float idx = float(i) - halfSamples; if(abs(idx) > halfSamples) continue; float offsetPx = (halfSamples < 0.5) ? 0.0 : idx * (radius / max(halfSamples, 1.0)); vec2 o = vec2(0.0, offsetPx / renderHeight); float sampleDepth = texture2D(tDepth, sampleUv + o).x; if(dofMode >= 0.5){ vec3 worldSample = reconstructWorldPosition(sampleUv + o, sampleDepth); float sampleRadius = computeWedgeCoCPx(worldSample); if(abs(sampleRadius - radius) > max(2.0, radius * 0.5)) continue; }
-    float sampleUmm = abs(viewZFromDepth(sampleDepth)) * 1000.0; float depthDeltaMm = abs(sampleUmm - (abs(viewZFromDepth(centerDepth)) * 1000.0)); float depthRejectMm = max(20.0, (abs(viewZFromDepth(centerDepth)) * 1000.0) * 0.015); float depthWeight = 1.0 - smoothstep(depthRejectMm * 0.5, depthRejectMm, depthDeltaMm); vec3 c = texture2D(tColor, sampleUv + o).rgb; float gaussW = exp(-0.5 * (offsetPx*offsetPx) / (sigma*sigma)); float w = gaussW * depthWeight; if(w < 1e-3) continue; accum += c * w; total += w; } vec3 color = accum / max(total, 1e-6);
-    if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
-    gl_FragColor = vec4(color,1.0); }`;
+    void main(){
+      vec2 uv = vUv;
+      if(useRaw > 0.5){ gl_FragColor = texture2D(tColor, uv); return; }
+      float centerDepth = texture2D(tDepth, uv).x;
+      float radius = 0.0;
+      if (dofMode < 0.5) {
+        float centerUmm = abs(viewZFromDepth(centerDepth, near, far)) * 1000.0;
+        float centerCoC = computeCoCPx(centerDepth);
+        radius = min(maxCoC, centerCoC);
+      } else {
+        vec3 worldPos = reconstructWorldPosition(uv, centerDepth, inverseProjectionMatrix, cameraMatrixWorld);
+        radius = computeWedgeCoCPx(worldPos);
+      }
+
+      float sampleStep = 1.0; // px step
+      float sampleCountF = clamp(floor(radius / sampleStep) * 2.0 + 1.0, 1.0, 15.0);
+      float halfSamples = floor((sampleCountF - 1.0) * 0.5);
+      float sigma = max(0.5, radius * 0.35);
+      vec3 accum = vec3(0.0);
+      float total = 0.0;
+      for(int i=0;i<15;i++){
+        float idx = float(i) - halfSamples;
+        if(abs(idx) > halfSamples) continue;
+        float offsetPx = (halfSamples < 0.5) ? 0.0 : idx * (radius / max(halfSamples, 1.0));
+        vec2 o = vec2(offsetPx / renderWidth, 0.0);
+        float sampleDepth = texture2D(tDepth, uv + o).x;
+        if(dofMode >= 0.5){
+          vec3 worldSample = reconstructWorldPosition(uv + o, sampleDepth, inverseProjectionMatrix, cameraMatrixWorld);
+          float sampleRadius = computeWedgeCoCPx(worldSample);
+          if(abs(sampleRadius - radius) > max(2.0, radius * 0.5)) continue;
+        }
+        float sampleUmm = abs(viewZFromDepth(sampleDepth, near, far)) * 1000.0;
+        float depthDeltaMm = abs(sampleUmm - (abs(viewZFromDepth(centerDepth, near, far)) * 1000.0));
+        float depthRejectMm = max(20.0, (abs(viewZFromDepth(centerDepth, near, far)) * 1000.0) * 0.015);
+        float depthWeight = 1.0 - smoothstep(depthRejectMm * 0.5, depthRejectMm, depthDeltaMm);
+        vec3 c = texture2D(tColor, uv + o).rgb;
+        float gaussW = exp(-0.5 * (offsetPx*offsetPx) / (sigma*sigma));
+        float w = gaussW * depthWeight;
+        if(w < 1e-3) continue;
+        accum += c * w;
+        total += w;
+      }
+      gl_FragColor = vec4(accum / max(total, 1e-6), 1.0);
+    }`;
+
+    // Vertical pass shader: uses same shared helpers and uniforms, plus ring UI uniforms
+    const fragV = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; ${groundGlassUniformDecls} ${groundGlassSharedGlsl} uniform vec2 ringCenter; uniform float ringRadiusPx; uniform vec3 ringColor; uniform float ringOpacity; uniform float showRing; uniform float displayUpright;
+
+    float computeCoCPx(float depth){ float viewZ = viewZFromDepth(depth, near, far); float U = abs(viewZ) * 1000.0; float f = focalLengthMm; float vObject = (f * U) / max(0.0001, (U - f)); float apertureDiameter = f / max(1.0, fNumber); float cocMm = apertureDiameter * abs(1.0 - (imageDistanceMm / vObject)); float pixelsPerMm = renderWidth / sensorWidthMm; return clamp(cocMm * pixelsPerMm, 0.0, maxCoC); }
+
+    float computeWedgeCoCPx(vec3 worldPos){
+      vec3 rd = normalize(worldPos - lensCenterWorld);
+      float tFocus = intersectRayPlaneDist(lensCenterWorld, rd, focusPlanePoint, focusPlaneNormal);
+      float tNear = intersectRayPlaneDist(lensCenterWorld, rd, nearPlanePoint, nearPlaneNormal);
+      float tFar = hasFiniteFar > 0.5 ? intersectRayPlaneDist(lensCenterWorld, rd, farPlanePoint, farPlaneNormal) : -1.0;
+      float targetDist = length(worldPos - lensCenterWorld);
+      float focusDist = tFocus > 0.0 ? tFocus : targetDist;
+      float nearDist = tNear > 0.0 ? tNear : (focusDist - 1.0);
+      float farDist = (tFar > 0.0 && hasFiniteFar > 0.5) ? tFar : -1.0;
+      float nd = calculateNormalizedWedgeDefocus(targetDist, nearDist, focusDist, farDist, hasFiniteFar);
+      return calculateWedgeBlurRadiusPx(nd, boundaryBlurRadiusPx, displayBlurScale, maximumBlurRadiusPx);
+    }
+
+    void main(){
+      vec2 screenUv = vUv;
+      vec2 sampleUv = (displayUpright > 0.5) ? vec2(1.0 - screenUv.x, 1.0 - screenUv.y) : screenUv;
+      if(useRaw > 0.5){ vec3 colorRaw = texture2D(tColor, sampleUv).rgb; vec3 color = colorRaw; if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); } gl_FragColor = vec4(color,1.0); return; }
+      float centerDepth = texture2D(tDepth, sampleUv).x;
+      float radius = 0.0;
+      if (dofMode < 0.5) {
+        float centerUmm = abs(viewZFromDepth(centerDepth, near, far)) * 1000.0;
+        float centerCoC = computeCoCPx(centerDepth);
+        radius = min(maxCoC, centerCoC);
+      } else {
+        vec3 worldPos = reconstructWorldPosition(sampleUv, centerDepth, inverseProjectionMatrix, cameraMatrixWorld);
+        radius = computeWedgeCoCPx(worldPos);
+      }
+
+      float sampleStep = 1.0;
+      float sampleCountF = clamp(floor(radius / sampleStep) * 2.0 + 1.0, 1.0, 15.0);
+      float halfSamples = floor((sampleCountF - 1.0) * 0.5);
+      float sigma = max(0.5, radius * 0.35);
+      vec3 accum = vec3(0.0);
+      float total = 0.0;
+      for(int i=0;i<15;i++){
+        float idx = float(i) - halfSamples;
+        if(abs(idx) > halfSamples) continue;
+        float offsetPx = (halfSamples < 0.5) ? 0.0 : idx * (radius / max(halfSamples, 1.0));
+        vec2 o = vec2(0.0, offsetPx / renderHeight);
+        float sampleDepth = texture2D(tDepth, sampleUv + o).x;
+        if(dofMode >= 0.5){
+          vec3 worldSample = reconstructWorldPosition(sampleUv + o, sampleDepth, inverseProjectionMatrix, cameraMatrixWorld);
+          float sampleRadius = computeWedgeCoCPx(worldSample);
+          if(abs(sampleRadius - radius) > max(2.0, radius * 0.5)) continue;
+        }
+        float sampleUmm = abs(viewZFromDepth(sampleDepth, near, far)) * 1000.0;
+        float depthDeltaMm = abs(sampleUmm - (abs(viewZFromDepth(centerDepth, near, far)) * 1000.0));
+        float depthRejectMm = max(20.0, (abs(viewZFromDepth(centerDepth, near, far)) * 1000.0) * 0.015);
+        float depthWeight = 1.0 - smoothstep(depthRejectMm * 0.5, depthRejectMm, depthDeltaMm);
+        vec3 c = texture2D(tColor, sampleUv + o).rgb;
+        float gaussW = exp(-0.5 * (offsetPx*offsetPx) / (sigma*sigma));
+        float w = gaussW * depthWeight;
+        if(w < 1e-3) continue;
+        accum += c * w;
+        total += w;
+      }
+      vec3 color = accum / max(total, 1e-6);
+      if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
+      gl_FragColor = vec4(color,1.0);
+    }`;
 
     const matH = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragH, uniforms: {
       tColor: { value: null }, tDepth: { value: null }, near: { value: 0.01 }, far: { value: 12.0 }, imageDistanceMm: { value: 100.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, renderWidth: { value: widthPx }, renderHeight: { value: heightPx }, maxCoC: { value: 60.0 }, useRaw: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, boundaryBlurRadiusPx: { value: 0.0 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
@@ -381,26 +450,32 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         uniformPreparationError = err instanceof Error ? err.message : String(err);
       }
 
+      function applyDofStateToMaterial(mat: THREE.ShaderMaterial, state: ReturnType<typeof createGroundGlassDofUniformState>) {
+        mat.uniforms.dofMode.value = state.mode;
+        mat.uniforms.lensCenterWorld.value.set(state.lensCenterWorld[0], state.lensCenterWorld[1], state.lensCenterWorld[2]);
+        mat.uniforms.focusPlanePoint.value.set(state.focusPlanePoint[0], state.focusPlanePoint[1], state.focusPlanePoint[2]);
+        mat.uniforms.focusPlaneNormal.value.set(state.focusPlaneNormal[0], state.focusPlaneNormal[1], state.focusPlaneNormal[2]);
+        if (state.nearPlanePoint) mat.uniforms.nearPlanePoint.value.set(state.nearPlanePoint[0], state.nearPlanePoint[1], state.nearPlanePoint[2]);
+        if (state.nearPlaneNormal) mat.uniforms.nearPlaneNormal.value.set(state.nearPlaneNormal[0], state.nearPlaneNormal[1], state.nearPlaneNormal[2]);
+        if (state.farPlanePoint) mat.uniforms.farPlanePoint.value.set(state.farPlanePoint[0], state.farPlanePoint[1], state.farPlanePoint[2]);
+        if (state.farPlaneNormal) mat.uniforms.farPlaneNormal.value.set(state.farPlaneNormal[0], state.farPlaneNormal[1], state.farPlaneNormal[2]);
+        mat.uniforms.hasFiniteFar.value = state.hasFiniteFarPlane ? 1.0 : 0.0;
+        mat.uniforms.inverseProjectionMatrix.value.copy(new THREE.Matrix4().fromArray(state.inverseProjectionMatrix));
+        mat.uniforms.cameraMatrixWorld.value.copy(new THREE.Matrix4().fromArray(state.cameraMatrixWorld));
+        mat.uniforms.maximumBlurRadiusPx.value = state.maximumBlurRadiusPx;
+        mat.uniforms.boundaryBlurRadiusPx.value = state.boundaryBlurRadiusPx;
+        mat.uniforms.displayBlurScale.value = state.displayBlurScale;
+        mat.uniforms.focalLengthMm.value = state.focalLengthMm;
+        mat.uniforms.sensorWidthMm.value = state.sensorWidthMm;
+        mat.uniforms.fNumber.value = state.fNumber;
+        mat.uniforms.imageDistanceMm.value = state.imageDistanceMm;
+        mat.uniforms.renderWidth.value = state.renderWidth;
+        mat.uniforms.renderHeight.value = state.renderHeight;
+      }
+
       if (preparedDofState) {
-        matH.uniforms.dofMode.value = preparedDofState.mode;
-        matH.uniforms.lensCenterWorld.value.set(preparedDofState.lensCenterWorld[0], preparedDofState.lensCenterWorld[1], preparedDofState.lensCenterWorld[2]);
-        matH.uniforms.focusPlanePoint.value.set(preparedDofState.focusPlanePoint[0], preparedDofState.focusPlanePoint[1], preparedDofState.focusPlanePoint[2]);
-        matH.uniforms.focusPlaneNormal.value.set(preparedDofState.focusPlaneNormal[0], preparedDofState.focusPlaneNormal[1], preparedDofState.focusPlaneNormal[2]);
-        if (preparedDofState.nearPlanePoint) matH.uniforms.nearPlanePoint.value.set(preparedDofState.nearPlanePoint[0], preparedDofState.nearPlanePoint[1], preparedDofState.nearPlanePoint[2]);
-        if (preparedDofState.nearPlaneNormal) matH.uniforms.nearPlaneNormal.value.set(preparedDofState.nearPlaneNormal[0], preparedDofState.nearPlaneNormal[1], preparedDofState.nearPlaneNormal[2]);
-        if (preparedDofState.farPlanePoint) matH.uniforms.farPlanePoint.value.set(preparedDofState.farPlanePoint[0], preparedDofState.farPlanePoint[1], preparedDofState.farPlanePoint[2]);
-        if (preparedDofState.farPlaneNormal) matH.uniforms.farPlaneNormal.value.set(preparedDofState.farPlaneNormal[0], preparedDofState.farPlaneNormal[1], preparedDofState.farPlaneNormal[2]);
-        matH.uniforms.hasFiniteFar.value = preparedDofState.hasFiniteFarPlane ? 1.0 : 0.0;
-        matH.uniforms.inverseProjectionMatrix.value.copy(new THREE.Matrix4().fromArray(preparedDofState.inverseProjectionMatrix));
-        matH.uniforms.cameraMatrixWorld.value.copy(new THREE.Matrix4().fromArray(preparedDofState.cameraMatrixWorld));
-        matH.uniforms.maximumBlurRadiusPx.value = preparedDofState.maximumBlurRadiusPx;
-        // physical CoC / boundary values
-        matH.uniforms.circleOfConfusionMm.value = preparedDofState.circleOfConfusionMm;
-        matH.uniforms.boundaryBlurRadiusPx.value = preparedDofState.boundaryBlurRadiusPx;
-        matH.uniforms.filmWidthMm.value = preparedDofState.filmWidthMm;
-        matH.uniforms.displayBlurScale.value = preparedDofState.displayBlurScale;
+        applyDofStateToMaterial(matH, preparedDofState);
       } else {
-        // Uniform preparation failed — when the core model expected scheimpflug-wedge, be explicit: bypass DOF and record reason
         const coreModel = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
         if (coreModel === "scheimpflug-wedge") {
           matH.uniforms.useRaw.value = 1.0; // bypass DOF visually
@@ -430,23 +505,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matV.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
       // apply previously prepared DOF uniform state to vertical pass
       if (preparedDofState) {
-        matV.uniforms.dofMode.value = preparedDofState.mode;
-        matV.uniforms.lensCenterWorld.value.set(preparedDofState.lensCenterWorld[0], preparedDofState.lensCenterWorld[1], preparedDofState.lensCenterWorld[2]);
-        matV.uniforms.focusPlanePoint.value.set(preparedDofState.focusPlanePoint[0], preparedDofState.focusPlanePoint[1], preparedDofState.focusPlanePoint[2]);
-        matV.uniforms.focusPlaneNormal.value.set(preparedDofState.focusPlaneNormal[0], preparedDofState.focusPlaneNormal[1], preparedDofState.focusPlaneNormal[2]);
-        if (preparedDofState.nearPlanePoint) matV.uniforms.nearPlanePoint.value.set(preparedDofState.nearPlanePoint[0], preparedDofState.nearPlanePoint[1], preparedDofState.nearPlanePoint[2]);
-        if (preparedDofState.nearPlaneNormal) matV.uniforms.nearPlaneNormal.value.set(preparedDofState.nearPlaneNormal[0], preparedDofState.nearPlaneNormal[1], preparedDofState.nearPlaneNormal[2]);
-        if (preparedDofState.farPlanePoint) matV.uniforms.farPlanePoint.value.set(preparedDofState.farPlanePoint[0], preparedDofState.farPlanePoint[1], preparedDofState.farPlanePoint[2]);
-        if (preparedDofState.farPlaneNormal) matV.uniforms.farPlaneNormal.value.set(preparedDofState.farPlaneNormal[0], preparedDofState.farPlaneNormal[1], preparedDofState.farPlaneNormal[2]);
-        matV.uniforms.hasFiniteFar.value = preparedDofState.hasFiniteFarPlane ? 1.0 : 0.0;
-        matV.uniforms.inverseProjectionMatrix.value.copy(new THREE.Matrix4().fromArray(preparedDofState.inverseProjectionMatrix));
-        matV.uniforms.cameraMatrixWorld.value.copy(new THREE.Matrix4().fromArray(preparedDofState.cameraMatrixWorld));
-        matV.uniforms.maximumBlurRadiusPx.value = preparedDofState.maximumBlurRadiusPx;
-        // physical CoC / boundary values
-        matV.uniforms.circleOfConfusionMm.value = preparedDofState.circleOfConfusionMm;
-        matV.uniforms.boundaryBlurRadiusPx.value = preparedDofState.boundaryBlurRadiusPx;
-        matV.uniforms.filmWidthMm.value = preparedDofState.filmWidthMm;
-        matV.uniforms.displayBlurScale.value = preparedDofState.displayBlurScale;
+        applyDofStateToMaterial(matV, preparedDofState);
       } else {
         const coreModel = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
         if (coreModel === "scheimpflug-wedge") {
