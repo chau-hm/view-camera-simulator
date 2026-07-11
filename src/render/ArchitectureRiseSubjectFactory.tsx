@@ -2,7 +2,7 @@
 import * as THREE from "three";
 import React from "react";
 import { toWorld } from "./rttUtils";
-import geometry from "../scenes/architectureRiseGeometry";
+import geometry, { ReferenceObjectDef, referenceObjects } from "../scenes/architectureRiseGeometry";
 
 let buildingGeom: THREE.BoxGeometry | null = null;
 let mullionGeom: THREE.BoxGeometry | null = null;
@@ -99,9 +99,9 @@ export function createArchitectureRiseGroup(): THREE.Group {
   g.add(focusGroup);
 
   // small reference objects (plinths) around the building to aid depth reading
-  if ((geometry as any).referenceObjects && Array.isArray((geometry as any).referenceObjects)) {
-    const rots: any[] = (geometry as any).referenceObjects;
-    rots.forEach((def: any) => {
+  if (Array.isArray(referenceObjects) && referenceObjects.length > 0) {
+    const rots: ReferenceObjectDef[] = referenceObjects;
+    rots.forEach((def) => {
       const grp = new THREE.Group();
       const bw = toWorld(def.width);
       const bd = toWorld(def.depth);
@@ -196,7 +196,7 @@ export const ArchitectureRiseSubject: React.FC = () => {
 
       {/* reference objects (plinths) */}
       {(() => {
-        const objs = geometry.referenceObjects || [];
+        const objs: ReferenceObjectDef[] = referenceObjects || [];
         return objs.map((def) => {
           const x = def.x;
           const z = def.z;
