@@ -223,6 +223,7 @@ export const SimulatorWorkspace = ({
               pipeline={groundGlassPipeline}
               qualitySettings={qualitySettings}
               lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
+              rttRuntimeInfo={rttRuntimeInfo}
             />
 
             <FocusTargetsReadout focusTargets={focusAssistTargets} />

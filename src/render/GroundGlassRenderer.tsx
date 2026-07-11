@@ -19,6 +19,7 @@ import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
 import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 import { createGroundGlassRenderTarget, createGroundGlassDepthTarget, createGroundGlassCamera } from "./groundGlassPipeline";
+import { formatGroundGlassFocusLabel } from "./groundGlassFocusLabel";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { getSceneById } from "../scenes/definitions";
 
@@ -137,10 +138,23 @@ export const GroundGlassRenderer = ({
   const isInfinityFocus = opticsState.diagnostics?.isInfinityFocus === true;
   // consider RTT scenes when hiding decorative background overlay
   const hideDecorativeBackground = isRttSceneFinal || rawDebug;
-  const focusDistanceLabel = isInfinityFocus
-    ? `∞ focus`
-    : `${formatMillimeter(focusDistanceMm)} focus / ${dofSample.distanceToFocusPlaneMm.toFixed(1)} mm delta`;
   const lastFiniteFocusDepthMm = useAppStore((s) => s.camera.lastFiniteFocusDepthMm);
+  const primaryTarget = opticsState.focusTargets && opticsState.focusTargets.length > 0 ? opticsState.focusTargets[0] : null;
+
+  const focusDistanceLabel = formatGroundGlassFocusLabel({
+    isRttScene: isRttSceneFinal,
+    isInfinityFocus,
+    focusDistanceMm,
+    lastFiniteFocusDepthMm,
+    primaryTarget: primaryTarget
+      ? {
+          sharpness: primaryTarget.sharpness,
+          normalizedDefocus: primaryTarget.normalizedDefocus,
+          distanceToFocusPlaneMm: primaryTarget.distanceToFocusPlaneMm,
+        }
+      : null,
+    legacyDistanceToFocusPlaneMm: dofSample.distanceToFocusPlaneMm,
+  });
 
   // Project scene focus targets (if available) into ground-glass UV coordinates for positioning overlays
   const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
