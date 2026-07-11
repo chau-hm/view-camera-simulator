@@ -1,5 +1,6 @@
 import type { DerivedOpticsState } from "../types/optics";
 import { GroundGlassRTT } from "./GroundGlassRTT";
+import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
@@ -34,7 +35,7 @@ export const GroundGlassRenderSurface = ({
   widthPx,
   heightPx,
 }: GroundGlassRenderSurfaceProps) => {
-  if (sceneId === "focus-fundamentals-two-targets") {
+  if (isGroundGlassRttScene(sceneId)) {
     return (
       <div data-testid="ground-glass-rtt" style={{ position: "absolute", inset: 0 }}>
         <GroundGlassRTT

@@ -9,6 +9,7 @@ import { vecToWorld, toWorld } from "./rttUtils";
 import { getSceneById } from "../scenes/definitions";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import { createFocusFundamentalsGroup } from "./FocusFundamentalsSubjectFactory";
+import { createArchitectureRiseGroup } from "./ArchitectureRiseSubjectFactory";
 import type { DerivedOpticsState } from "../types/optics";
 import type { ApertureValue } from "../types/camera";
 
@@ -134,6 +135,9 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     if (sceneDef && sceneId === "focus-fundamentals-two-targets") {
       subjectGroup = createFocusFundamentalsGroup();
       scene.add(subjectGroup);
+    } else if (sceneDef && sceneId === "architecture-rise") {
+      subjectGroup = createArchitectureRiseGroup();
+      scene.add(subjectGroup);
     } else {
       // Simple rear/front standards and a lens block for other scenes
       let rear: THREE.Mesh | null = null;
@@ -192,6 +196,12 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // compute far plane from scene bounds and lens center; convert mm -> meters and add margin
       const sceneMaxDepthMm = sceneDef.bounds?.max?.z ?? 12000;
       farWorld = Math.max(4, (sceneMaxDepthMm - opticsState.lensCenterWorld.z) / 1000 + 1);
+      nearWorld = 0.01;
+    } else if (sceneDef && sceneId === "architecture-rise") {
+      // compute far plane from scene bounds for architecture rise
+      const sceneMaxDepthMm = sceneDef.bounds?.max?.z ?? 12000;
+      const computed = Math.max(4, (sceneMaxDepthMm - opticsState.lensCenterWorld.z) / 1000 + 1);
+      farWorld = computed;
       nearWorld = 0.01;
     }
     cam.near = nearWorld;

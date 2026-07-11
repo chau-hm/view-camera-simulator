@@ -10,6 +10,7 @@ import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { FocusFundamentalsSubject } from "./FocusFundamentalsSubjectFactory";
+import { ArchitectureRiseSubject } from "./ArchitectureRiseSubjectFactory";
 import { UI_COPY } from "../ui/copy";
 import { getRenderQualitySettings } from "./renderQuality";
 
@@ -312,27 +313,11 @@ const LegendUpdater = ({
 const SceneAssetMesh = ({ assetId }: { assetId: string }) => {
   switch (assetId) {
     case "architecture-ground":
-      return (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -toWorld(60), 0]}>
-          <planeGeometry args={[toWorld(12000), toWorld(12000)]} />
-          <meshStandardMaterial color="#e5e7eb" />
-        </mesh>
-      );
+      // Architecture Rise uses a shared Three.js subject; skip legacy per-asset meshes to avoid duplication.
+      return null;
     case "architecture-building-facade":
-      return (
-        <group>
-          <mesh position={[0, toWorld(5000), toWorld(9500)]}>
-            <boxGeometry args={[toWorld(2500), toWorld(10000), toWorld(1200)]} />
-            <meshStandardMaterial color="#94a3b8" />
-          </mesh>
-          {[-800, -300, 300, 800].map((offsetX) => (
-            <mesh key={offsetX} position={[toWorld(offsetX), toWorld(5000), toWorld(8900)]}>
-              <boxGeometry args={[toWorld(70), toWorld(9800), toWorld(80)]} />
-              <meshStandardMaterial color="#64748b" />
-            </mesh>
-          ))}
-        </group>
-      );
+      // ArchitectureRiseSubject renders the building geometry; skip legacy placeholder to avoid duplicate geometry.
+      return null;
     case "table-floor":
       return (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toWorld(620), 0]}>
@@ -595,6 +580,17 @@ const SceneContent = ({
       // Use shared scene subject for Focus Fundamentals
       <>
         <FocusFundamentalsSubject />
+      </>
+    ) : scene.id === "architecture-rise" ? (
+      // Architecture Rise uses a dedicated React subject component for the main building
+      <>
+        <ArchitectureRiseSubject />
+        {scene.focusTargets.map((target) => (
+          <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
+            <sphereGeometry args={[toWorld(50), 16, 16]} />
+            <meshStandardMaterial color="#ef4444" />
+          </mesh>
+        ))}
       </>
     ) : (
       scene.focusTargets.map((target) => (
