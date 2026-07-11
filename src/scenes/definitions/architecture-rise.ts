@@ -29,15 +29,17 @@ export const architectureRiseScene: SceneDefinition = {
     },
   ],
   cameraPreset: {
-    focusDistanceMm: 7200,
+    // initial focus distance set to the distance from the camera placement to the facade focus target
+    focusDistanceMm: Math.abs( (0) - geometry.focusTarget.worldPosition.z ) + Math.abs( (0) - geometry.focusTarget.worldPosition.y ),
     aperture: 11,
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
   },
   cameraPlacement: {
-    position: { x: 0, y: 1550, z: -1200 },
-    target: { x: 0, y: 2600, z: 6500 },
+    // camera datum is near y = 0 for optics model; place camera behind the film at z = -1200
+    position: { x: 0, y: 0, z: -1200 },
+    target: { x: 0, y: geometry.building.center.y + 100, z: geometry.building.center.z - 1200 },
   },
   bounds: {
     min: geometry.sceneBounds.min,

@@ -185,28 +185,40 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     }
 
     const cam = groundGlassCamera.current as THREE.PerspectiveCamera;
-    cam.fov = vertFovDeg;
-    cam.aspect = widthPx / heightPx;
 
-    // Scene-aware clipping for Focus Fundamentals
+    // Scene-aware clipping for Focus Fundamentals and Architecture Rise
     const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
     let nearWorld = 0.01;
     let farWorld = 10000;
-    if (sceneDef && sceneId === "focus-fundamentals-two-targets") {
-      // compute far plane from scene bounds and lens center; convert mm -> meters and add margin
-      const sceneMaxDepthMm = sceneDef.bounds?.max?.z ?? 12000;
-      farWorld = Math.max(4, (sceneMaxDepthMm - opticsState.lensCenterWorld.z) / 1000 + 1);
-      nearWorld = 0.01;
-    } else if (sceneDef && sceneId === "architecture-rise") {
-      // compute far plane from scene bounds for architecture rise
+    if (sceneDef && (sceneId === "focus-fundamentals-two-targets" || sceneId === "architecture-rise")) {
       const sceneMaxDepthMm = sceneDef.bounds?.max?.z ?? 12000;
       const computed = Math.max(4, (sceneMaxDepthMm - opticsState.lensCenterWorld.z) / 1000 + 1);
       farWorld = computed;
       nearWorld = 0.01;
     }
+
     cam.near = nearWorld;
     cam.far = farWorld;
-    cam.updateProjectionMatrix();
+
+    // configure an off-axis projection matrix that matches opticsState.filmPlaneCornersWorld and lens center
+    try {
+      // lazy import to avoid circular deps
+      const { configureGroundGlassCamera } = require("./configureGroundGlassCamera");
+      configureGroundGlassCamera(cam, opticsState, nearWorld, farWorld);
+    } catch (e) {
+      // fallback to symmetric perspective if helper fails
+      const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
+      const vertFovRad = 2 * Math.atan(CAMERA_CONSTANTS.filmHeightMm / (2 * imgDist));
+      const vertFovDeg2 = (vertFovRad * 180) / Math.PI;
+      cam.fov = vertFovDeg2;
+      cam.aspect = widthPx / heightPx;
+      cam.updateProjectionMatrix();
+      const lensPos = new THREE.Vector3(opticsState.lensCenterWorld.x * 0.001, opticsState.lensCenterWorld.y * 0.001, opticsState.lensCenterWorld.z * 0.001);
+      cam.position.copy(lensPos);
+      const dir = new THREE.Vector3(opticsState.opticalAxis.direction.x, opticsState.opticalAxis.direction.y, opticsState.opticalAxis.direction.z);
+      const lookAt = new THREE.Vector3().copy(lensPos).add(dir.multiplyScalar(1000));
+      cam.lookAt(lookAt);
+    }
 
     // expose last cam far for debug / unit assertions
     try {
@@ -214,12 +226,6 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     } catch {
       // ignore assignment failures in some environments
     }
-
-    const lensPos = new THREE.Vector3(opticsState.lensCenterWorld.x * 0.001, opticsState.lensCenterWorld.y * 0.001, opticsState.lensCenterWorld.z * 0.001);
-    cam.position.copy(lensPos);
-    const dir = new THREE.Vector3(opticsState.opticalAxis.direction.x, opticsState.opticalAxis.direction.y, opticsState.opticalAxis.direction.z);
-    const lookAt = new THREE.Vector3().copy(lensPos).add(dir.multiplyScalar(1000));
-    cam.lookAt(lookAt);
 
     // update dynamic mesh positions created earlier
     try {

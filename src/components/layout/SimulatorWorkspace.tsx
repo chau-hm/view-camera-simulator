@@ -57,9 +57,20 @@ export const SimulatorWorkspace = ({
   );
 
   useEffect(() => {
-    setMode(mode);
-    setActiveScene(sceneId);
-    setActiveTask(taskId);
+    // initialize route: apply scene presets (free) or task initialCameraState (guided) once when route changes
+    const initRoute = (modeParam: SimulatorMode, sceneParam: string, taskParam: string | null | undefined) => {
+      const initializeSimulatorRoute = useAppStore.getState().initializeSimulatorRoute;
+      if (initializeSimulatorRoute) {
+        initializeSimulatorRoute({ mode: modeParam, sceneId: sceneParam, taskId: taskParam ?? null });
+      } else {
+        // fall back to individual setters if the initialize action isn't available
+        setMode(modeParam);
+        setActiveScene(sceneParam);
+        setActiveTask(taskParam ?? null);
+      }
+    };
+
+    initRoute(mode, sceneId, taskId);
   }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId]);
 
   const scene = getSceneById(camera.activeSceneId);

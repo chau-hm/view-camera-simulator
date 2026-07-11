@@ -19,6 +19,7 @@ const clampFocusDistanceForScene = (sceneId: string, value: number) => {
   return clamp(value, range.min, range.max);
 };
 
+
 type SceneRuntimeState = {
   activeSceneId: string;
 };
@@ -45,6 +46,7 @@ export type AppStore = {
   setMode: (mode: SimulatorMode) => void;
   setActiveScene: (sceneId: string) => void;
   setActiveTask: (taskId: string | null) => void;
+  initializeSimulatorRoute: (init: { mode: SimulatorMode; sceneId: string; taskId?: string | null }) => void;
   setRise: (value: number) => void;
   setTilt: (value: number) => void;
   setSwing: (value: number) => void;
@@ -94,6 +96,55 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: { ...state.camera, activeTaskId: taskId },
       task: { ...state.task, activeTaskId: taskId, currentTaskEvaluation: null },
     })),
+  initializeSimulatorRoute: (init: { mode: SimulatorMode; sceneId: string; taskId?: string | null }) =>
+    set((state) => {
+      // init: { mode, sceneId, taskId }
+      const { mode, sceneId, taskId } = init;
+      // apply scene or task presets only if sceneId differs from current
+      let nextCamera = { ...state.camera } as any;
+      if (sceneId && sceneId !== state.camera.activeSceneId) {
+        // attempt to apply scene preset
+        try {
+          // lazy import to avoid circular dependency
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { getSceneById } = require("../scenes/definitions");
+          const scene = getSceneById(sceneId);
+          if (scene && !taskId) {
+            const preset = scene.cameraPreset ?? {};
+            nextCamera = { ...nextCamera, ...preset, activeSceneId: sceneId };
+          } else {
+            // still set activeSceneId
+            nextCamera.activeSceneId = sceneId;
+          }
+        } catch (e) {
+          nextCamera.activeSceneId = sceneId;
+        }
+      }
+
+      if (taskId && taskId !== state.task.activeTaskId) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { getTaskById } = require("../core/tasks/taskRegistry");
+          const task = getTaskById(taskId);
+          if (task && task.initialCameraState) {
+            nextCamera = { ...nextCamera, ...task.initialCameraState, activeTaskId: taskId };
+          } else {
+            nextCamera.activeTaskId = taskId;
+          }
+        } catch (e) {
+          nextCamera.activeTaskId = taskId;
+        }
+      }
+
+      // set mode
+      const nextUi = { ...state.ui, mode };
+      return {
+        camera: nextCamera,
+        scene: { ...state.scene, activeSceneId: sceneId },
+        task: { ...state.task, activeTaskId: taskId ?? null, currentTaskEvaluation: null },
+        ui: nextUi,
+      };
+    }),
   setRise: (value) =>
     set((state) => ({
       camera: {

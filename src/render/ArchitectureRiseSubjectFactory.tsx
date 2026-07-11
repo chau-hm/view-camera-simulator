@@ -29,9 +29,16 @@ export function createArchitectureRiseGroup(): THREE.Group {
   b.position.set(toWorld(geometry.building.center.x), toWorld(geometry.building.center.y), toWorld(geometry.building.center.z));
   g.add(b);
 
-  // roof/parapet as thin box sitting on top
-  const parapet = new THREE.Mesh(new THREE.BoxGeometry(toWorld(geometry.building.width + 80), toWorld(geometry.building.topHeight), toWorld(geometry.building.depth + 80)), new THREE.MeshStandardMaterial({ color: "#cbd5e1", roughness: 0.85 }));
-  parapet.position.set(toWorld(geometry.building.center.x), toWorld(geometry.facade.roofTopY + geometry.building.topHeight / 2), toWorld(geometry.building.center.z));
+  // roof/parapet as thin box sitting on top — center computed so parapet touches main body
+  const parapetHeight = geometry.building.topHeight;
+  const parapetGeom = new THREE.BoxGeometry(
+    toWorld(geometry.building.width + 80),
+    toWorld(parapetHeight),
+    toWorld(geometry.building.depth + 80),
+  );
+  const parapet = new THREE.Mesh(parapetGeom, new THREE.MeshStandardMaterial({ color: "#cbd5e1", roughness: 0.85 }));
+  const parapetCenterY = geometry.facade.mainBodyTopY + parapetHeight / 2; // mainBodyTopY + topHeight/2
+  parapet.position.set(toWorld(geometry.building.center.x), toWorld(parapetCenterY), toWorld(geometry.building.center.z));
   g.add(parapet);
 
   // vertical mullions
@@ -74,7 +81,7 @@ export const ArchitectureRiseSubject: React.FC = () => {
       </mesh>
 
       {/* parapet */}
-      <mesh position={[toW(geometry.building.center.x), toW(geometry.facade.roofTopY + geometry.building.topHeight / 2), toW(geometry.building.center.z)]}>
+      <mesh position={[toW(geometry.building.center.x), toW(geometry.facade.mainBodyTopY + geometry.building.topHeight / 2), toW(geometry.building.center.z)]}>
         <boxGeometry args={[toW(geometry.building.width + 80), toW(geometry.building.topHeight), toW(geometry.building.depth + 80)]} />
         <meshStandardMaterial color="#cbd5e1" roughness={0.85} />
       </mesh>
