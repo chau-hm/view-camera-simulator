@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { getRenderQualitySettings } from "../../render/renderQuality";
 
 describe("GroundGlass render quality settings", () => {
