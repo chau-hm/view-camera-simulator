@@ -37,9 +37,10 @@ export const architectureRiseScene: SceneDefinition = {
     frontSwingDeg: 0,
   },
   cameraPlacement: {
-    // camera datum is near y = 0 for optics model; place camera behind the film at z = -1200
-    position: { x: 0, y: 0, z: -1200 },
-    target: { x: 0, y: geometry.building.center.y + 100, z: geometry.building.center.z - 1200 },
+    // Observer camera is intentionally separate from the physical camera datum.
+    // This three-quarter view keeps the full camera, ground, and building visible.
+    position: { x: 6500, y: 3000, z: -6500 },
+    target: { x: 0, y: 900, z: 5600 },
   },
   bounds: {
     min: geometry.sceneBounds.min,

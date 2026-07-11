@@ -34,4 +34,6 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
 };
 
 export const isApertureValue = (value: number): value is ApertureValue =>
-  CAMERA_CONSTANTS.apertureOptions.includes(value as (typeof CAMERA_CONSTANTS.apertureOptions)[number]);
+  CAMERA_CONSTANTS.apertureOptions.includes(
+    value as (typeof CAMERA_CONSTANTS.apertureOptions)[number],
+  );
