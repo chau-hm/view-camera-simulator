@@ -47,7 +47,8 @@ const riseTask: TaskDefinition = {
     defaultFailPrimary: "Increase rise while keeping tilt and swing at 0°.",
     failPrimaryByCriterionId: {
       "rise-building-top-visible": "Building top is still clipped. Increase rise further.",
-      "rise-building-main-visible": "Main building coverage is too low. Reduce excessive rise slightly.",
+      "rise-building-main-visible":
+        "Main building coverage is too low. Reduce excessive rise slightly.",
       "rise-movement-used": "Rise is too low for this composition task.",
       "rise-movement-range": "Keep rise between 12mm and 35mm for this exercise.",
     },
@@ -225,7 +226,8 @@ const swingTask: TaskDefinition = {
     },
     failSecondaryByCriterionId: {
       "swing-allowed-aperture": "Use f/22 or wider and solve with geometry.",
-      "swing-front-sharp": "Top-view diagram should show focus plane crossing front and mid targets.",
+      "swing-front-sharp":
+        "Top-view diagram should show focus plane crossing front and mid targets.",
       "swing-middle-sharp": "Keep swing direction consistent with the shelf diagonal.",
       "swing-back-sharp": "Top-view focus plane should extend through the back shelf marker.",
       "swing-movement-used": "Start around 2° swing and tune focus distance.",

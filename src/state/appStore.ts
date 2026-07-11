@@ -19,7 +19,6 @@ const clampFocusDistanceForScene = (sceneId: string, value: number) => {
   return clamp(value, range.min, range.max);
 };
 
-
 type SceneRuntimeState = {
   activeSceneId: string;
 };
@@ -48,7 +47,11 @@ export type AppStore = {
   setMode: (mode: SimulatorMode) => void;
   setActiveScene: (sceneId: string) => void;
   setActiveTask: (taskId: string | null) => void;
-  initializeSimulatorRoute: (init: { mode: SimulatorMode; sceneId: string; taskId?: string | null }) => void;
+  initializeSimulatorRoute: (init: {
+    mode: SimulatorMode;
+    sceneId: string;
+    taskId?: string | null;
+  }) => void;
   setRise: (value: number) => void;
   setTilt: (value: number) => void;
   setSwing: (value: number) => void;
@@ -84,7 +87,8 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) => ({
       task: { ...state.task, currentTaskEvaluation: evaluation },
     })),
-  setMode: (mode) => set((state) => ({ camera: { ...state.camera, mode }, ui: { ...state.ui, mode } })),
+  setMode: (mode) =>
+    set((state) => ({ camera: { ...state.camera, mode }, ui: { ...state.ui, mode } })),
   setActiveScene: (sceneId) =>
     set((state) => ({
       camera: {
@@ -100,11 +104,15 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: { ...state.camera, activeTaskId: taskId },
       task: { ...state.task, activeTaskId: taskId, currentTaskEvaluation: null },
     })),
-  initializeSimulatorRoute: (init: { mode: SimulatorMode; sceneId: string; taskId?: string | null }) =>
+  initializeSimulatorRoute: (init: {
+    mode: SimulatorMode;
+    sceneId: string;
+    taskId?: string | null;
+  }) =>
     set((state) => {
       // init: { mode, sceneId, taskId }
       const { mode, sceneId, taskId } = init;
-      const routeKey = `${mode}:${sceneId}:${taskId ?? ''}`;
+      const routeKey = `${mode}:${sceneId}:${taskId ?? ""}`;
       // If we've already initialized this exact route, do nothing
       if (state.lastInitializedRouteKey === routeKey) {
         // only ensure mode/scene/task ids are set without overwriting user controls
@@ -183,8 +191,10 @@ export const useAppStore = create<AppStore>((set) => ({
           ? clampFocusDistanceForScene(state.camera.activeSceneId, value)
           : value,
         // If user selects a finite focus distance, ensure we exit infinity focus mode and remember the last finite focus
-        focusMode: Number.isFinite(value) ? 'finite' : state.camera.focusMode,
-        lastFiniteFocusDepthMm: Number.isFinite(value) ? clampFocusDistanceForScene(state.camera.activeSceneId, value) : state.camera.lastFiniteFocusDepthMm,
+        focusMode: Number.isFinite(value) ? "finite" : state.camera.focusMode,
+        lastFiniteFocusDepthMm: Number.isFinite(value)
+          ? clampFocusDistanceForScene(state.camera.activeSceneId, value)
+          : state.camera.lastFiniteFocusDepthMm,
       },
     })),
 
@@ -192,9 +202,11 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) => ({
       camera: {
         ...state.camera,
-        focusMode: 'infinity',
+        focusMode: "infinity",
         // preserve current finite focus distance for later restoration
-        lastFiniteFocusDepthMm: Number.isFinite(state.camera.focusDistanceMm) ? state.camera.focusDistanceMm : state.camera.lastFiniteFocusDepthMm ?? state.camera.focusDistanceMm,
+        lastFiniteFocusDepthMm: Number.isFinite(state.camera.focusDistanceMm)
+          ? state.camera.focusDistanceMm
+          : (state.camera.lastFiniteFocusDepthMm ?? state.camera.focusDistanceMm),
         // reset front-standard movements but do NOT overwrite focusDistanceMm with a finite default
         frontRiseMm: 0,
         frontTiltDeg: 0,
@@ -211,7 +223,10 @@ export const useAppStore = create<AppStore>((set) => ({
     })),
 
   setGeometryView: (value) =>
-    set((state) => ({ camera: { ...state.camera, geometryView: value }, ui: { ...state.ui, geometryView: value } })),
+    set((state) => ({
+      camera: { ...state.camera, geometryView: value },
+      ui: { ...state.ui, geometryView: value },
+    })),
   toggleGroundGlassAssist: () =>
     set((state) => ({
       camera: {
@@ -268,13 +283,19 @@ export const useAppStore = create<AppStore>((set) => ({
       const nextSceneId = activeTask?.sceneId ?? state.scene.activeSceneId;
       const nextMode = activeTask?.mode ?? state.ui.mode;
       const nextControlState = activeTask?.initialCameraState ?? defaultControlState;
-      const focusDistanceMm = clampFocusDistanceForScene(nextSceneId, nextControlState.focusDistanceMm);
-      const nextGeometryView = activeTask?.initialCameraState?.geometryView ?? state.camera.geometryView;
+      const focusDistanceMm = clampFocusDistanceForScene(
+        nextSceneId,
+        nextControlState.focusDistanceMm,
+      );
+      const nextGeometryView =
+        activeTask?.initialCameraState?.geometryView ?? state.camera.geometryView;
       const nextGroundGlassAssistEnabled =
-        activeTask?.initialCameraState?.groundGlassAssistEnabled ?? state.camera.groundGlassAssistEnabled;
+        activeTask?.initialCameraState?.groundGlassAssistEnabled ??
+        state.camera.groundGlassAssistEnabled;
       const nextFocusAssistEnabled =
         activeTask?.initialCameraState?.focusAssistEnabled ?? state.camera.focusAssistEnabled;
-      const nextGridEnabled = activeTask?.initialCameraState?.gridEnabled ?? state.camera.gridEnabled;
+      const nextGridEnabled =
+        activeTask?.initialCameraState?.gridEnabled ?? state.camera.gridEnabled;
 
       return {
         camera: {

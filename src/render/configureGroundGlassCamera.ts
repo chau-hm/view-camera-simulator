@@ -39,11 +39,21 @@ export function configureGroundGlassCamera(
   const fTL = toW(film.topLeft);
   const fTR = toW(film.topRight);
   const fBL = toW(film.bottomLeft);
-  const fBR = toW(film.bottomRight ?? { x: (film.topLeft.x + film.topRight.x + film.bottomLeft.x) / 3, y: (film.topLeft.y + film.topRight.y + film.bottomLeft.y) / 3, z: (film.topLeft.z + film.topRight.z + film.bottomLeft.z) / 3 });
+  const fBR = toW(
+    film.bottomRight ?? {
+      x: (film.topLeft.x + film.topRight.x + film.bottomLeft.x) / 3,
+      y: (film.topLeft.y + film.topRight.y + film.bottomLeft.y) / 3,
+      z: (film.topLeft.z + film.topRight.z + film.bottomLeft.z) / 3,
+    },
+  );
   const lensPos = toW(lens);
 
   // compute film center
-  const filmCenter = new THREE.Vector3().addVectors(fTL, fTR).add(fBL).add(fBR).multiplyScalar(0.25);
+  const filmCenter = new THREE.Vector3()
+    .addVectors(fTL, fTR)
+    .add(fBL)
+    .add(fBR)
+    .multiplyScalar(0.25);
 
   // filmUp: topLeft - bottomLeft
   const filmUp = new THREE.Vector3().subVectors(fTL, fBL);
@@ -76,7 +86,9 @@ export function configureGroundGlassCamera(
   camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
 
   // Reflect film corners through lens to get virtual object-side corners
-  const virtual = [fTL, fTR, fBL, fBR].map((fc) => new THREE.Vector3().subVectors(lensPos, fc).add(lensPos)); // lens + (lens - fc)
+  const virtual = [fTL, fTR, fBL, fBR].map((fc) =>
+    new THREE.Vector3().subVectors(lensPos, fc).add(lensPos),
+  ); // lens + (lens - fc)
 
   // Transform each virtual corner into camera-local coords
   const local = virtual.map((v) => v.clone().applyMatrix4(camera.matrixWorldInverse));
@@ -92,8 +104,8 @@ export function configureGroundGlassCamera(
   const far = farWorld;
 
   // compute near-plane extents: xNear = x * near / depth (depth = -local.z)
-  const xp = local.map((p) => (p.x * near) / (-p.z));
-  const yp = local.map((p) => (p.y * near) / (-p.z));
+  const xp = local.map((p) => (p.x * near) / -p.z);
+  const yp = local.map((p) => (p.y * near) / -p.z);
 
   const left = Math.min(...xp);
   const right = Math.max(...xp);

@@ -49,7 +49,8 @@ describe("app store STA-001", () => {
   });
 
   it("resets only movement values with resetMovements", () => {
-    const { setRise, setTilt, setSwing, setFocusDistance, setAperture, resetMovements } = useAppStore.getState();
+    const { setRise, setTilt, setSwing, setFocusDistance, setAperture, resetMovements } =
+      useAppStore.getState();
 
     setRise(20);
     setTilt(4);

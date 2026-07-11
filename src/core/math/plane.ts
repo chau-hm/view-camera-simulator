@@ -51,3 +51,23 @@ export const arePlanesNearlyParallel = (
   const acuteAngle = Math.min(angle, 180 - angle);
   return acuteAngle < thresholdDeg;
 };
+
+/**
+ * Construct a plane that contains the provided infinite line and the given point.
+ * If the construction numerically fails (colinear), returns null.
+ */
+export const planeFromLineAndPoint = (
+  line: PlaneIntersectionLine,
+  point: Vec3,
+  fallbackNormal?: Vec3,
+): Plane | null => {
+  // normal is cross(line.direction, point - line.point)
+  const v = subtract(point, line.point);
+  const n = cross(line.direction, v);
+  const nLenSq = dot(n, n);
+  if (nLenSq <= 1e-12) {
+    if (fallbackNormal) return planeFromPointNormal(point, fallbackNormal);
+    return null;
+  }
+  return planeFromPointNormal(point, normalize(n));
+};

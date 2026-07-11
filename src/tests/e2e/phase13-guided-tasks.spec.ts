@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
-const completedHeading = (page: Page): Locator => page.getByRole("heading", { name: "Task completed" });
+const completedHeading = (page: Page): Locator =>
+  page.getByRole("heading", { name: "Task completed" });
 
 const setRangeValue = async (page: Page, label: string, value: number): Promise<void> => {
   const slider = page.getByLabel(label);
@@ -97,12 +98,20 @@ test("TST-E2E-010: free mode allows switching all scenes", async ({ page }) => {
   await sceneSelect.selectOption("table-tilt");
   await expect(sceneSelect).toHaveValue("table-tilt");
   await expect(focusSlider).toHaveAttribute("max", "4200");
-  await expect(page.getByText("Loaded assets: 2 required, 1 lazy for current scene, 2 preload for next scene.")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Loaded assets: 2 required, 1 lazy for current scene, 2 preload for next scene.",
+    ),
+  ).toBeVisible();
 
   await sceneSelect.selectOption("shelf-swing");
   await expect(sceneSelect).toHaveValue("shelf-swing");
   await expect(focusSlider).toHaveAttribute("max", "6200");
-  await expect(page.getByText("Loaded assets: 2 required, 1 lazy for current scene, 0 preload for next scene.")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Loaded assets: 2 required, 1 lazy for current scene, 0 preload for next scene.",
+    ),
+  ).toBeVisible();
 });
 
 test("TST-E2E-011: shows webgl fallback when WebGL is unavailable", async ({ page }) => {
@@ -117,6 +126,10 @@ test("TST-E2E-011: shows webgl fallback when WebGL is unavailable", async ({ pag
   });
 
   await page.goto("/simulator/guided/architecture-rise/rise-01");
-  await expect(page.getByText("WebGL is unavailable in this browser. Please use a WebGL-capable browser on desktop.")).toBeVisible();
+  await expect(
+    page.getByText(
+      "WebGL is unavailable in this browser. Please use a WebGL-capable browser on desktop.",
+    ),
+  ).toBeVisible();
   await expect(page.getByTestId("scene-front-y-mm")).toBeVisible();
 });

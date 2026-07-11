@@ -83,6 +83,12 @@ export type DerivedOpticsState = {
     tiltAngleDeg: number;
     swingAngleDeg: number;
     focusPlaneModel: "parallel" | "scheimpflug";
+    // which DOF model is currently used
+    depthOfFieldModel?: "parallel" | "scheimpflug-wedge";
+    // near/far distances along optical axis from lens centre
+    nearU?: number | null;
+    farU?: number | null;
+    farIsInfinite?: boolean;
     fallbackApplied: boolean;
     errorMessage?: string;
     isInfinityFocus?: boolean;
