@@ -2,7 +2,8 @@
 import * as THREE from "three";
 import React from "react";
 import { toWorld } from "./rttUtils";
-import geometry, { ReferenceObjectDef, referenceObjects } from "../scenes/architectureRiseGeometry";
+import geometry, { referenceObjects } from "../scenes/architectureRiseGeometry";
+import type { ReferenceObjectDef } from "../scenes/architectureRiseGeometry";
 
 let buildingGeom: THREE.BoxGeometry | null = null;
 let mullionGeom: THREE.BoxGeometry | null = null;
