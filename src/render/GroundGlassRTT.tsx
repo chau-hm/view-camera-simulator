@@ -6,6 +6,7 @@ import { CAMERA_CONSTANTS } from "../utils/constants";
 const SKY_COLOR = new THREE.Color("#dfe5ec");
 const FLOOR_COLOR = new THREE.Color("#9aa6b5");
 import { vecToWorld, toWorld } from "./rttUtils";
+import geometry from "../scenes/architectureRiseGeometry";
 import { getSceneById } from "../scenes/definitions";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import { createFocusFundamentalsGroup } from "./FocusFundamentalsSubjectFactory";
@@ -154,14 +155,39 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     }
 
     // Lighting: standardized studio lights for visibility
-    const hemi = new THREE.HemisphereLight(new THREE.Color("#ffffff"), new THREE.Color("#64748b"), 1.0);
+    const hemi = new THREE.HemisphereLight(new THREE.Color("#ffffff"), new THREE.Color("#64748b"), 0.9);
     scene.add(hemi);
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
-    keyLight.position.set(-2, 4, 3);
-    scene.add(keyLight);
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.35);
-    fillLight.position.set(2, 1, 1);
-    scene.add(fillLight);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.45);
+
+    // If architecture scene, aim lights at the facade center for readable illumination
+    if (sceneDef && sceneId === "architecture-rise") {
+      const facadeCenter = new THREE.Vector3(
+        geometry.building.center.x * 0.001,
+        geometry.building.center.y * 0.001,
+        geometry.facade.frontFacadeZ * 0.001,
+      );
+      const lightTarget = new THREE.Object3D();
+      lightTarget.position.copy(facadeCenter);
+      scene.add(lightTarget);
+
+      // Key light: camera-left, above, slightly forward
+      keyLight.position.set(facadeCenter.x - 2.5, facadeCenter.y + 3.5, facadeCenter.z - 2.0);
+      keyLight.target = lightTarget;
+      scene.add(keyLight);
+
+      // Fill light: camera-right, lower intensity
+      fillLight.position.set(facadeCenter.x + 2.0, facadeCenter.y + 1.5, facadeCenter.z - 3.0);
+      fillLight.target = lightTarget;
+      scene.add(fillLight);
+    } else {
+      // default key/fill positions for other scenes
+      keyLight.position.set(-2, 4, 3);
+      scene.add(keyLight);
+      fillLight.position.set(2, 1, 1);
+      scene.add(fillLight);
+    }
+
     return () => {
       rt.dispose();
       tempRT.dispose();
@@ -207,11 +233,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     if (!cfg.ok) {
       // Do not silently swallow errors — record diagnostic and fall back to symmetric perspective
       const reason = cfg.reason;
-      try {
-        (globalThis as unknown as { __GROUNDGLASS_RTT_LAST_ERROR?: string }).__GROUNDGLASS_RTT_LAST_ERROR = reason;
-      } catch {
-        // ignore
-      }
+      console.warn("GroundGlass camera configuration failed:", reason);
       // fallback symmetric camera
       const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
       const vertFovRad = 2 * Math.atan(CAMERA_CONSTANTS.filmHeightMm / (2 * imgDist));
@@ -226,20 +248,15 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       cam.lookAt(lookAt);
     } else {
       // success — optionally expose last cam frustum for debug
-      try {
-        (globalThis as unknown as { __GROUNDGLASS_RTT_LAST_FRUSTUM?: Record<string, number> }).__GROUNDGLASS_RTT_LAST_FRUSTUM = { left: cfg.left, right: cfg.right, top: cfg.top, bottom: cfg.bottom, near: cfg.near, far: cfg.far };
-      } catch {
-        // ignore
-      }
+      // configuration successful; frustum extents available for debug via developer tools if needed
+      // TODO: surface typed diagnostics through component state or callback in future
+      // (avoid global state).
     }
 
 
     // expose last cam far for debug / unit assertions
-    try {
-      (globalThis as unknown as { __GROUNDGLASS_RTT_LAST_CAM_FAR?: number }).__GROUNDGLASS_RTT_LAST_CAM_FAR = cam.far;
-    } catch {
-      // ignore assignment failures in some environments
-    }
+    // expose last cam far for debug via console; avoid global state
+    console.debug("GroundGlass camera far:", cam.far);
 
     // update dynamic mesh positions created earlier
     try {

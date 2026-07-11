@@ -66,6 +66,25 @@ export function createArchitectureRiseGroup(): THREE.Group {
   ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   g.add(ground);
 
+  // small focus-detail patch: procedural checker/stripe panel slightly in front of facade
+  const focusGroup = new THREE.Group();
+  const patchSize = 200; // mm
+  const cells = 8;
+  const cellSize = patchSize / cells;
+  const zPos = geometry.facade.frontFacadeZ - 20; // slightly in front to avoid z-fighting
+  for (let ix = 0; ix < cells; ix++) {
+    for (let iy = 0; iy < cells; iy++) {
+      const isDark = (ix + iy) % 2 === 0;
+      const mat = new THREE.MeshStandardMaterial({ color: isDark ? 0x1f2937 : 0xe6eef7, roughness: 0.9 });
+      const box = new THREE.Mesh(new THREE.BoxGeometry(toWorld(cellSize), toWorld(cellSize), toWorld(2)), mat);
+      const x = (-patchSize / 2) + ix * cellSize + cellSize / 2;
+      const y = geometry.building.center.y - patchSize / 2 + iy * cellSize + cellSize / 2;
+      box.position.set(toWorld(x), toWorld(y), toWorld(zPos));
+      focusGroup.add(box);
+    }
+  }
+  g.add(focusGroup);
+
   return g;
 }
 
@@ -113,6 +132,31 @@ export const ArchitectureRiseSubject: React.FC = () => {
         <planeGeometry args={[toW(geometry.ground.width), toW(geometry.ground.depth)]} />
         <meshStandardMaterial color="#e6eef7" roughness={1} metalness={0} />
       </mesh>
+
+      {/* focus-detail patch */}
+      <group>
+        {(() => {
+          const patchSize = 200; // mm
+          const cells = 8;
+          const cellSize = patchSize / cells;
+          const zPos = geometry.facade.frontFacadeZ - 20; // slightly in front
+          const elems = [] as React.ReactNode[];
+          for (let ix = 0; ix < cells; ix++) {
+            for (let iy = 0; iy < cells; iy++) {
+              const isDark = (ix + iy) % 2 === 0;
+              const x = (-patchSize / 2) + ix * cellSize + cellSize / 2;
+              const y = geometry.building.center.y - patchSize / 2 + iy * cellSize + cellSize / 2;
+              elems.push(
+                <mesh key={`fd-${ix}-${iy}`} position={[toW(x), toW(y), toW(zPos)]}>
+                  <boxGeometry args={[toW(cellSize), toW(cellSize), toW(2)]} />
+                  <meshStandardMaterial color={isDark ? "#1f2937" : "#e6eef7"} roughness={0.9} />
+                </mesh>,
+              );
+            }
+          }
+          return elems;
+        })()}
+      </group>
     </group>
   );
 };
