@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-const basePath = process.env.VITE_BASE_PATH ?? '/view-camera-simulator/';
+const basePath = process.env.VITE_BASE_PATH ?? "/view-camera-simulator/";
 
 export default defineConfig({
   base: basePath,
@@ -32,7 +32,11 @@ export default defineConfig({
           if (id.includes("react-dom") || id.includes("react-router-dom")) {
             return "react-runtime";
           }
-          if (id.endsWith("/react/index.js") || id.endsWith("/react/jsx-runtime.js") || id.includes("/react/")) {
+          if (
+            id.endsWith("/react/index.js") ||
+            id.endsWith("/react/jsx-runtime.js") ||
+            id.includes("/react/")
+          ) {
             return "react";
           }
           return "vendor";

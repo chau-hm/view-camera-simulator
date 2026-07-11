@@ -22,24 +22,24 @@ const setAperture = async (page: Page, value: "5.6" | "11" | "22" | "32"): Promi
 test("TST-E2E-002: user can enter guided mode from home page", async ({ page }) => {
   await page.goto("/");
   await page.getByTestId("guided-entry").click();
-  await expect(page).toHaveURL(/\/simulator\/guided\/architecture-rise\/task-rise-basics$/);
+  await expect(page).toHaveURL(/\/simulator\/guided\/architecture-rise\/rise-01$/);
 });
 
 test("TST-E2E-003: rise task starts in failed state", async ({ page }) => {
-  await page.goto("/simulator/guided/architecture-rise/task-rise-basics");
+  await page.goto("/simulator/guided/architecture-rise/rise-01");
   await expect(completedHeading(page)).not.toBeVisible();
   await expect(page.getByRole("heading", { name: "Feedback", exact: true })).toBeVisible();
   await expect(page.getByText(/^Score:/)).toBeVisible();
 });
 
 test("TST-E2E-004: rise task can be completed with valid rise", async ({ page }) => {
-  await page.goto("/simulator/guided/architecture-rise/task-rise-basics");
+  await page.goto("/simulator/guided/architecture-rise/rise-01");
   await setRangeValue(page, "Rise", 12);
   await expect(completedHeading(page)).toBeVisible();
 });
 
 test("TST-E2E-005: tilt task cannot complete when aperture is f/32", async ({ page }) => {
-  await page.goto("/simulator/guided/table-tilt/task-tilt-basics");
+  await page.goto("/simulator/guided/table-tilt/tilt-01");
   await setAperture(page, "32");
   await setRangeValue(page, "Tilt", 3.5);
   await setRangeValue(page, "Focus distance", 3510);
@@ -49,7 +49,7 @@ test("TST-E2E-005: tilt task cannot complete when aperture is f/32", async ({ pa
 });
 
 test("TST-E2E-006: tilt task can be completed with valid settings", async ({ page }) => {
-  await page.goto("/simulator/guided/table-tilt/task-tilt-basics");
+  await page.goto("/simulator/guided/table-tilt/tilt-01");
   await setAperture(page, "22");
   await setRangeValue(page, "Tilt", 3.5);
   await setRangeValue(page, "Focus distance", 3510);
@@ -57,14 +57,14 @@ test("TST-E2E-006: tilt task can be completed with valid settings", async ({ pag
 });
 
 test("TST-E2E-007: swing task starts in failed state at zero swing", async ({ page }) => {
-  await page.goto("/simulator/guided/shelf-swing/task-swing-basics");
+  await page.goto("/simulator/guided/shelf-swing/swing-01");
   await expect(completedHeading(page)).not.toBeVisible();
   await expect(page.getByRole("heading", { name: "Feedback", exact: true })).toBeVisible();
   await expect(page.getByText(/^Score:/)).toBeVisible();
 });
 
 test("TST-E2E-008: swing task can be completed with valid settings", async ({ page }) => {
-  await page.goto("/simulator/guided/shelf-swing/task-swing-basics");
+  await page.goto("/simulator/guided/shelf-swing/swing-01");
   await setAperture(page, "5.6");
   await setRangeValue(page, "Swing", 3.5);
   await setRangeValue(page, "Focus distance", 3590);
@@ -72,7 +72,7 @@ test("TST-E2E-008: swing task can be completed with valid settings", async ({ pa
 });
 
 test("TST-E2E-009: restart task resets to initial guided state", async ({ page }) => {
-  await page.goto("/simulator/guided/table-tilt/task-tilt-basics");
+  await page.goto("/simulator/guided/table-tilt/tilt-01");
   await setAperture(page, "22");
   await setRangeValue(page, "Tilt", 3.5);
   await setRangeValue(page, "Focus distance", 3510);
@@ -116,7 +116,7 @@ test("TST-E2E-011: shows webgl fallback when WebGL is unavailable", async ({ pag
     });
   });
 
-  await page.goto("/simulator/guided/architecture-rise/task-rise-basics");
+  await page.goto("/simulator/guided/architecture-rise/rise-01");
   await expect(page.getByText("WebGL is unavailable in this browser. Please use a WebGL-capable browser on desktop.")).toBeVisible();
   await expect(page.getByTestId("scene-front-y-mm")).toBeVisible();
 });

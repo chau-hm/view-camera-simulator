@@ -253,9 +253,6 @@ export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
   "tilt-01": tiltTask,
   "swing-01": swingTask,
-  "task-rise-basics": cloneTaskWithId(riseTask, "task-rise-basics"),
-  "task-tilt-basics": cloneTaskWithId(tiltTask, "task-tilt-basics"),
-  "task-swing-basics": cloneTaskWithId(swingTask, "task-swing-basics"),
 };
 
 export const getTaskById = (taskId: string): TaskDefinition | undefined => taskRegistry[taskId];

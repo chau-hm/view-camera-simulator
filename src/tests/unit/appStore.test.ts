@@ -39,13 +39,13 @@ describe("app store STA-001", () => {
     const { setActiveScene, setActiveTask } = useAppStore.getState();
 
     setActiveScene("table-tilt");
-    setActiveTask("task-tilt-basics");
+    setActiveTask("tilt-01");
 
     const { camera, scene, task } = useAppStore.getState();
     expect(camera.activeSceneId).toBe("table-tilt");
-    expect(camera.activeTaskId).toBe("task-tilt-basics");
+    expect(camera.activeTaskId).toBe("tilt-01");
     expect(scene.activeSceneId).toBe("table-tilt");
-    expect(task.activeTaskId).toBe("task-tilt-basics");
+    expect(task.activeTaskId).toBe("tilt-01");
   });
 
   it("resets only movement values with resetMovements", () => {
@@ -80,14 +80,14 @@ describe("app store STA-001", () => {
     } = useAppStore.getState();
 
     setActiveScene("shelf-swing");
-    setActiveTask("task-swing-basics");
+    setActiveTask("swing-01");
     setRise(30);
     setTilt(3);
     setSwing(7);
     setFocusDistance(6000);
     setAperture(22);
     setCurrentTaskEvaluation({
-      taskId: "task-swing-basics",
+      taskId: "swing-01",
       status: "failed",
       score: 40,
       criteria: [
@@ -107,7 +107,7 @@ describe("app store STA-001", () => {
 
     const { camera, scene, ui, task } = useAppStore.getState();
     expect(camera.activeSceneId).toBe("shelf-swing");
-    expect(camera.activeTaskId).toBe("task-swing-basics");
+    expect(camera.activeTaskId).toBe("swing-01");
     expect(camera.frontRiseMm).toBe(DEFAULT_CAMERA_STATE.frontRiseMm);
     expect(camera.frontTiltDeg).toBe(DEFAULT_CAMERA_STATE.frontTiltDeg);
     expect(camera.frontSwingDeg).toBe(DEFAULT_CAMERA_STATE.frontSwingDeg);
@@ -122,11 +122,11 @@ describe("app store STA-001", () => {
   it("uses guided-task default geometry view for rise and tilt as side view", () => {
     const { setActiveTask, restartTask } = useAppStore.getState();
 
-    setActiveTask("task-rise-basics");
+    setActiveTask("rise-01");
     restartTask();
     expect(useAppStore.getState().camera.geometryView).toBe("side");
 
-    setActiveTask("task-tilt-basics");
+    setActiveTask("tilt-01");
     restartTask();
     expect(useAppStore.getState().camera.geometryView).toBe("side");
   });

@@ -8,7 +8,7 @@ vi.mock("../../core/tasks/evaluateTask", async () => {
   return {
     ...actual,
     evaluateTask: () => ({
-      taskId: "task-rise-basics",
+      taskId: "rise-01",
       status: "passed" as const,
       score: 1,
       primaryFeedback: "Great work.",
@@ -36,8 +36,8 @@ vi.mock("../../core/tasks/evaluateTask", async () => {
 describe("phase 12 completion overlay", () => {
   it("TST-INT-013 shows completion overlay when task passes", () => {
     render(
-      <MemoryRouter initialEntries={["/simulator/guided/architecture-rise/task-rise-basics"]}>
-        <SimulatorWorkspace mode="guided" sceneId="architecture-rise" taskId="task-rise-basics" simulateAssetFailure={false} />
+      <MemoryRouter initialEntries={["/simulator/guided/architecture-rise/rise-01"]}>
+        <SimulatorWorkspace mode="guided" sceneId="architecture-rise" taskId="rise-01" simulateAssetFailure={false} />
       </MemoryRouter>,
     );
     expect(screen.getByText("Task completed")).toBeInTheDocument();

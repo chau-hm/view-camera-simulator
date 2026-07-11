@@ -14,7 +14,7 @@ let groundMaterial: THREE.MeshStandardMaterial | null = null;
 function ensureResources() {
   if (!buildingGeom) buildingGeom = new THREE.BoxGeometry(toWorld(geometry.building.width), toWorld(geometry.building.height), toWorld(geometry.building.depth));
   if (!mullionGeom) mullionGeom = new THREE.BoxGeometry(toWorld(40), toWorld(geometry.building.height - 80), toWorld(geometry.building.depth + 40));
-  if (!floorPlaneGeom) floorPlaneGeom = new THREE.PlaneGeometry(toWorld(12000), toWorld(12000));
+  if (!floorPlaneGeom) floorPlaneGeom = new THREE.PlaneGeometry(toWorld(geometry.ground.width), toWorld(geometry.ground.depth));
   if (!buildingMaterial) buildingMaterial = new THREE.MeshStandardMaterial({ color: "#94a3b8", roughness: 0.9, metalness: 0.05 });
   if (!mullionMaterial) mullionMaterial = new THREE.MeshStandardMaterial({ color: "#334155", roughness: 0.92, metalness: 0 });
   if (!groundMaterial) groundMaterial = new THREE.MeshStandardMaterial({ color: "#e6eef7", roughness: 1, metalness: 0 });
@@ -63,7 +63,7 @@ export function createArchitectureRiseGroup(): THREE.Group {
   // ground plane
   const ground = new THREE.Mesh(floorPlaneGeom!, groundMaterial!);
   ground.rotation.x = -Math.PI / 2;
-  ground.position.set(0, toWorld(geometry.groundHeightMm - 60), 0);
+  ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   g.add(ground);
 
   return g;
@@ -109,8 +109,8 @@ export const ArchitectureRiseSubject: React.FC = () => {
       })}
 
       {/* ground plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toW(geometry.groundHeightMm - 60), 0]}>
-        <planeGeometry args={[toW(12000), toW(12000)]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toW(geometry.ground.y), toW(geometry.ground.centerZ)]}>
+        <planeGeometry args={[toW(geometry.ground.width), toW(geometry.ground.depth)]} />
         <meshStandardMaterial color="#e6eef7" roughness={1} metalness={0} />
       </mesh>
     </group>

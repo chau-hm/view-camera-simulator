@@ -4,7 +4,7 @@ import type { SceneDefinition } from "../../types/scene";
 import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
-import { solveLensExtensionForRearDatumFocusDepth } from "./thinLensModel";
+import { solveLensExtensionForRearDatumFocusDepth, imageDistanceMm } from "./thinLensModel";
 import { planeFromPointNormal } from "../math/plane";
 import {
   calculateLensFilmHingeLine,
@@ -172,6 +172,17 @@ export const deriveOpticsState = (
 
   let { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(cameraState.focalLengthMm);
 
+  // For Architecture Rise use rear-standard focusing: interpret focusDistanceMm as lens-to-subject distance U
+  // and place film at image distance v from the lens (filmCenterWorld.z = -v)
+  if (scene.id === "architecture-rise") {
+    const U = cameraState.focusDistanceMm; // lens-to-subject distance in mm (object side)
+    const f = cameraState.focalLengthMm;
+    const v = Number.isFinite(U) && U > f ? imageDistanceMm(f, U) : cameraState.focalLengthMm;
+    filmCenterWorld = vec(0, 0, -v);
+    filmNormalWorld = vec(0, 0, 1);
+    filmPlane = planeFromPointNormal(filmCenterWorld, filmNormalWorld);
+  }
+
   // Prepare to store solved extension for Focus Fundamentals so we don't call solver twice
   let solvedLensExtensionV: number | null = null;
   let solvedObjectDistanceU: number | null = null;
@@ -235,6 +246,20 @@ export const deriveOpticsState = (
       apertureFNumber: cameraState.aperture,
       circleOfConfusionMm: 0.1,
       lensCenterWorld: lensCenterWorld,
+      opticalAxis,
+      focusObjectDistanceMm: U,
+      visualCapMm: 12000,
+    });
+    depthOfFieldNearPlane = dofResult.depthOfFieldNearPlane;
+    depthOfFieldFarPlane = dofResult.depthOfFieldFarPlane;
+  } else if (scene.id === "architecture-rise") {
+    // For Architecture, interpret cameraState.focusDistanceMm as lens-to-subject object distance U
+    const U = cameraState.focusDistanceMm;
+    const dofResult = calculateDepthOfField({
+      focalLengthMm: cameraState.focalLengthMm,
+      apertureFNumber: cameraState.aperture,
+      circleOfConfusionMm: 0.1,
+      lensCenterWorld,
       opticalAxis,
       focusObjectDistanceMm: U,
       visualCapMm: 12000,

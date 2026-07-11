@@ -296,8 +296,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       const isFallbackDepth = depthTex === (OffscreenRenderer as unknown as { _fallbackDepth?: THREE.DataTexture })._fallbackDepth;
       // honor raw debug mode (bypass DOF) or fallback depth
       // For Architecture Rise, temporarily bypass DOF and show raw color to ensure subject is visible
-      const isArchitecture = sceneId === "architecture-rise";
-      matH.uniforms.useRaw.value = (isFallbackDepth || rawDebug || isArchitecture) ? 1.0 : 0.0;
+      matH.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
 
       gl.setRenderTarget(tempRT);
       gl.setClearColor(SKY_COLOR.getHex(), 1);
@@ -317,7 +316,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matV.uniforms.near.value = cam.near;
       matV.uniforms.far.value = cam.far;
       // honor raw debug mode (bypass DOF) or fallback depth
-      matV.uniforms.useRaw.value = (isFallbackDepth || rawDebug || isArchitecture) ? 1.0 : 0.0;
+      matV.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
       // For Architecture we still allow final display inversion to be applied (displayUpright)
       // apply final display orientation only here (final blit)
       // map previewMode to display orientation: raw = physical inversion, upright = no inversion
