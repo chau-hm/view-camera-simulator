@@ -589,20 +589,21 @@ const SceneContent = ({
       // Architecture Rise uses a dedicated React subject component for the main building
       <>
         <ArchitectureRiseSubject />
-        {scene.focusTargets.map((target) => (
-          <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
-            <sphereGeometry args={[toWorld(50), 16, 16]} />
-            <meshStandardMaterial color="#ef4444" />
-          </mesh>
-        ))}
-      </>
-    ) : (
-      scene.focusTargets.map((target) => (
+      {/* render the debug focus sphere only when debug overlay is enabled to avoid showing two different permanent markers */}
+      {showDebug ? scene.focusTargets.map((target) => (
         <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
           <sphereGeometry args={[toWorld(50), 16, 16]} />
           <meshStandardMaterial color="#ef4444" />
         </mesh>
-      ))
+      )) : null}
+    </>
+    ) : (
+    scene.focusTargets.map((target) => (
+      <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
+        <sphereGeometry args={[toWorld(50), 16, 16]} />
+        <meshStandardMaterial color="#ef4444" />
+      </mesh>
+    ))
     )}
   </>
 );

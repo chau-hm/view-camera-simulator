@@ -72,30 +72,37 @@ export function createArchitectureRiseGroup(): THREE.Group {
 
   // focus-detail patch: larger procedural checker/stripe panel slightly in front of facade
   const focusGroup = new THREE.Group();
-  const patchSize = geometry.focusChartSizeMm; // mm
-  const cells = geometry.focusChartCells;
+  const patchSize = geometry.focusChart.sizeMm; // mm
+  const cells = geometry.focusChart.cells;
   const cellSize = patchSize / cells;
-  const detailZ = geometry.facade.frontFacadeZ - geometry.facadeDetailThicknessMm / 2 - (geometry.facadeDetailSmallGapMm + 2);
+  const surfaceZ = geometry.focusChart.surfaceZ; // world Z for the chart surface
+  const chartCenter = geometry.focusChart.center;
+  // generate checker cells relative to canonical chart centre
   for (let ix = 0; ix < cells; ix++) {
     for (let iy = 0; iy < cells; iy++) {
       const isDark = (ix + iy) % 2 === 0;
       const mat = new THREE.MeshBasicMaterial({ color: isDark ? 0x0f1724 : 0xf8fafc });
       const box = new THREE.Mesh(new THREE.BoxGeometry(toWorld(cellSize), toWorld(cellSize), toWorld(2)), mat);
-      const x = (-patchSize / 2) + ix * cellSize + cellSize / 2;
-      const y = geometry.building.center.y - patchSize / 2 + iy * cellSize + cellSize / 2;
-      box.position.set(toWorld(x), toWorld(y), toWorld(detailZ));
+      const localX = (-patchSize / 2) + ix * cellSize + cellSize / 2;
+      const localY = (-patchSize / 2) + iy * cellSize + cellSize / 2;
+      const x = chartCenter.x + localX;
+      const y = chartCenter.y + localY;
+      box.position.set(toWorld(x), toWorld(y), toWorld(surfaceZ));
       focusGroup.add(box);
     }
   }
-  // add a crosshair centre marker
+  // add a crosshair centre marker positioned at canonical chart centre
   const crosshair = new THREE.Group();
-  const crossLen = patchSize * 0.2;
+  const crossLen = geometry.focusChart.crosshairLengthMm;
   const crossMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-  const h = new THREE.Mesh(new THREE.BoxGeometry(toWorld(crossLen), toWorld(4), toWorld(2)), crossMat);
-  const v = new THREE.Mesh(new THREE.BoxGeometry(toWorld(4), toWorld(crossLen), toWorld(2)), crossMat);
-  h.position.set(toWorld(0), toWorld(0), toWorld(detailZ));
-  v.position.set(toWorld(0), toWorld(0), toWorld(detailZ));
+  const h = new THREE.Mesh(new THREE.BoxGeometry(toWorld(crossLen), toWorld(geometry.focusChart.crosshairThicknessMm), toWorld(2)), crossMat);
+  const v = new THREE.Mesh(new THREE.BoxGeometry(toWorld(geometry.focusChart.crosshairThicknessMm), toWorld(crossLen), toWorld(2)), crossMat);
+  // position bars at local origin of the crosshair group
+  h.position.set(0, 0, 0);
+  v.position.set(0, 0, 0);
   crosshair.add(h, v);
+  // place crosshair group at canonical center with small marker offset to avoid z-fighting
+  crosshair.position.set(toWorld(chartCenter.x), toWorld(chartCenter.y), toWorld(surfaceZ - geometry.focusChart.markerOffsetMm));
   focusGroup.add(crosshair);
   g.add(focusGroup);
 
@@ -208,18 +215,21 @@ export const ArchitectureRiseSubject: React.FC = () => {
       {/* focus-detail patch */}
       <group>
         {(() => {
-          const patchSize = geometry.focusChartSizeMm; // mm
-          const cells = geometry.focusChartCells;
+          const patchSize = geometry.focusChart.sizeMm; // mm
+          const cells = geometry.focusChart.cells;
           const cellSize = patchSize / cells;
-          const zPos = geometry.facade.frontFacadeZ - 20; // slightly in front
+          const surfaceZ = geometry.focusChart.surfaceZ;
+          const center = geometry.focusChart.center;
           const elems = [] as React.ReactNode[];
           for (let ix = 0; ix < cells; ix++) {
             for (let iy = 0; iy < cells; iy++) {
               const isDark = (ix + iy) % 2 === 0;
-              const x = (-patchSize / 2) + ix * cellSize + cellSize / 2;
-              const y = geometry.building.center.y - patchSize / 2 + iy * cellSize + cellSize / 2;
+              const localX = (-patchSize / 2) + ix * cellSize + cellSize / 2;
+              const localY = (-patchSize / 2) + iy * cellSize + cellSize / 2;
+              const x = center.x + localX;
+              const y = center.y + localY;
               elems.push(
-                <mesh key={`fd-${ix}-${iy}`} position={[toW(x), toW(y), toW(zPos)]}>
+                <mesh key={`fd-${ix}-${iy}`} position={[toW(x), toW(y), toW(surfaceZ)]}>
                   <boxGeometry args={[toW(cellSize), toW(cellSize), toW(2)]} />
                   <meshStandardMaterial color={isDark ? "#1f2937" : "#e6eef7"} roughness={0.9} />
                 </mesh>,

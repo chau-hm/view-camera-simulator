@@ -178,6 +178,27 @@ export const horizontalStripeHeightMm = 12;
 export const focusChartSizeMm = 750; // ~700-800mm
 export const focusChartCells = 8; // 6 or 8 recommended
 
+// Canonical focus chart definition: central source-of-truth for checkerboard and crosshair
+export const focusChart = {
+  // centre aligns with the canonical scene focus target
+  center: {
+    x: focusTarget.worldPosition.x,
+    y: focusTarget.worldPosition.y,
+    z: focusTarget.worldPosition.z,
+  },
+  // size and grid
+  sizeMm: focusChartSizeMm,
+  cells: focusChartCells,
+  // crosshair dimensions
+  crosshairLengthMm: Math.round(focusChartSizeMm * 0.2),
+  crosshairThicknessMm: 4,
+  // explicit surface placement relative to the façade front detail
+  // place the chart slightly in front of façade-detail panels to avoid z-fighting
+  surfaceZ: facade.frontFacadeZ - facadeDetailThicknessMm / 2 - facadeDetailSmallGapMm - 2,
+  // tiny additional offset used for marker geometry to avoid z-fighting when rendering atop the surface
+  markerOffsetMm: 2,
+};
+
 export default {
   ground,
   building,
@@ -185,6 +206,7 @@ export default {
   sceneBounds,
   compositionTargets,
   focusTarget,
+  focusChart,
   architectureFacadeFocusDistanceMm,
   facadeDetailThicknessMm,
   facadeDetailSmallGapMm,
