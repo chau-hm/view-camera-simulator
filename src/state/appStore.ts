@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { getTaskById } from "../core/tasks/taskRegistry";
 import { clamp } from "../core/math/clamps";
-import { getSceneFocusDistanceRange } from "../scenes/definitions";
+import { getSceneById, getSceneFocusDistanceRange } from "../scenes/definitions";
 import type { ApertureValue, CameraState, GeometryView, SimulatorMode } from "../types/camera";
 import type { TaskEvaluation } from "../types/task";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE, isApertureValue } from "../utils/constants";
@@ -101,13 +101,10 @@ export const useAppStore = create<AppStore>((set) => ({
       // init: { mode, sceneId, taskId }
       const { mode, sceneId, taskId } = init;
       // apply scene or task presets only if sceneId differs from current
-      let nextCamera = { ...state.camera } as any;
+      let nextCamera: CameraState = { ...state.camera };
       if (sceneId && sceneId !== state.camera.activeSceneId) {
         // attempt to apply scene preset
         try {
-          // lazy import to avoid circular dependency
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const { getSceneById } = require("../scenes/definitions");
           const scene = getSceneById(sceneId);
           if (scene && !taskId) {
             const preset = scene.cameraPreset ?? {};
@@ -116,22 +113,20 @@ export const useAppStore = create<AppStore>((set) => ({
             // still set activeSceneId
             nextCamera.activeSceneId = sceneId;
           }
-        } catch (e) {
+        } catch {
           nextCamera.activeSceneId = sceneId;
         }
       }
 
       if (taskId && taskId !== state.task.activeTaskId) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const { getTaskById } = require("../core/tasks/taskRegistry");
           const task = getTaskById(taskId);
           if (task && task.initialCameraState) {
             nextCamera = { ...nextCamera, ...task.initialCameraState, activeTaskId: taskId };
           } else {
             nextCamera.activeTaskId = taskId;
           }
-        } catch (e) {
+        } catch {
           nextCamera.activeTaskId = taskId;
         }
       }

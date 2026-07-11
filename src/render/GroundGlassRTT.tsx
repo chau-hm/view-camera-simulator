@@ -10,6 +10,7 @@ import { getSceneById } from "../scenes/definitions";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import { createFocusFundamentalsGroup } from "./FocusFundamentalsSubjectFactory";
 import { createArchitectureRiseGroup } from "./ArchitectureRiseSubjectFactory";
+import { configureGroundGlassCamera } from "./configureGroundGlassCamera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { ApertureValue } from "../types/camera";
 
@@ -202,10 +203,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
     // configure an off-axis projection matrix that matches opticsState.filmPlaneCornersWorld and lens center
     try {
-      // lazy import to avoid circular deps
-      const { configureGroundGlassCamera } = require("./configureGroundGlassCamera");
       configureGroundGlassCamera(cam, opticsState, nearWorld, farWorld);
-    } catch (e) {
+    } catch {
       // fallback to symmetric perspective if helper fails
       const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
       const vertFovRad = 2 * Math.atan(CAMERA_CONSTANTS.filmHeightMm / (2 * imgDist));
