@@ -389,8 +389,6 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           depthTargetHeightPx: actualDepthH,
           blurTargetWidthPx: tempW,
           blurTargetHeightPx: tempH,
-          internalWidthPx: actualColorW,
-          internalHeightPx: actualColorH,
           resourceGeneration: resourceGenerationRef.current,
         });
       }
