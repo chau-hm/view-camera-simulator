@@ -72,7 +72,12 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, m
                 <div key={d.id} style={{ marginBottom: 6 }}>
                   <div><strong>{d.id}</strong> ({d.role ?? 'unknown'})</div>
                   <div>Probe: {d.probe.x.toFixed(1)}, {d.probe.y.toFixed(1)}, {d.probe.z.toFixed(1)} mm</div>
-                  <div>Region: {d.sample.insideDepthOfField ? 'inside DOF' : 'outside DOF'}</div>
+                  <div>Region: {d.sample.region}</div>
+                  <div>Target ray: {d.sample.targetRayDistanceMm.toFixed(1)} mm</div>
+                  <div>Near ray: {d.sample.nearRayDistanceMm !== null ? d.sample.nearRayDistanceMm.toFixed(1) + ' mm' : '—'}</div>
+                  <div>Focus ray: {d.sample.focusRayDistanceMm !== null ? d.sample.focusRayDistanceMm.toFixed(1) + ' mm' : '—'}</div>
+                  <div>Far ray: {d.sample.farRayDistanceMm !== null ? d.sample.farRayDistanceMm.toFixed(1) + ' mm' : (d.sample.depthOfFieldModel === 'parallel' ? '—' : '∞')}</div>
+                  <div>Inside DOF: {d.sample.insideDepthOfField ? 'yes' : 'no'}</div>
                   <div>Normalized defocus: {Number.isFinite(d.sample.normalizedDefocus) ? d.sample.normalizedDefocus.toFixed(3) : 'NaN'}</div>
                   <div>CoC: {d.sample.circleOfConfusionDiameterMm.toFixed(4)} mm ({d.sample.circleOfConfusionDiameterPx.toFixed(3)} px)</div>
                   <div>Blur radius: {d.sample.blurRadiusPx.toFixed(3)} internal px, {d.logicalBlurRadiusPx.toFixed(3)} display px</div>
