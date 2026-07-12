@@ -77,13 +77,18 @@ export const SceneViewport = ({
   }
 
   return (
-    <section>
+    <section className="scene-panel">
       {showHeader !== false && <h2>{UI_COPY.simulator.sceneTitle}</h2>}
-      <p data-testid="scene-front-y-mm">Front standard Y: {opticsState.lensCenterWorld.y.toFixed(1)} mm</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.5rem" }}>
+
+      <div className="scene-status-row">
+        <p data-testid="scene-front-y-mm">Front standard Y: {opticsState.lensCenterWorld.y.toFixed(1)} mm</p>
+        <p className="scene-assets">Loaded assets: {requiredAssets.length} required, {lazyAssets.length} lazy for current scene, {preloadAssets.length} preload for next scene.</p>
+      </div>
+
+      <div className="scene-panel__controls">
         {/* Toolbar: left actions and right quality control */}
-        <div className="scene-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-          <div className="scene-toolbar__actions" style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+        <div className="scene-toolbar">
+          <div className="scene-toolbar__actions">
             <button type="button" className="btn" onClick={() => setViewResetNonce((value) => value + 1)}>
               {UI_COPY.simulator.sceneViewReset}
             </button>
@@ -94,7 +99,7 @@ export const SceneViewport = ({
             )}
           </div>
 
-          <label className="scene-toolbar__quality" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+          <label className="scene-toolbar__quality">
             <span>{UI_COPY.simulator.renderQualityLabel}</span>
             <select className="form-select" value={renderQuality} onChange={(event) => setRenderQuality(parseRenderQuality(event.target.value))}>
               <option value="high">{UI_COPY.simulator.renderQualityHigh}</option>
@@ -103,12 +108,7 @@ export const SceneViewport = ({
             </select>
           </label>
         </div>
-
       </div>
-      <p style={{ fontSize: 12, color: "#4b5563", marginTop: 0 }}>
-        Loaded assets: {requiredAssets.length} required, {lazyAssets.length} lazy for current scene,{" "}
-        {preloadAssets.length} preload for next scene.
-      </p>
       {/* Scene renderer container - either inline or shown as an overlay when bigView is true. */}
       {bigView ? (
         <div
@@ -156,7 +156,7 @@ export const SceneViewport = ({
             />
 
             {/* overlay controls inside enlarged view */}
-            <div style={{ position: 'absolute', left: 12, top: 12, zIndex: 10 }}>
+            <div className="scene-overlay-controls-wrap">
               {/* lazy-load control component to avoid circular imports */}
               <div>
                 {/* We'll import dynamically to avoid bundling complexity; component is available synchronously */}
@@ -194,7 +194,7 @@ export const SceneViewport = ({
           </div>
 
           {/* overlay controls inside inline viewport */}
-          <div style={{ position: 'absolute', left: 12, top: 12, zIndex: 10 }}>
+          <div className="scene-overlay-controls-wrap">
             <SceneOverlayControls
               showFocusPlane={showFocusPlaneOverlay}
               showDofRegion={showDofOverlay}

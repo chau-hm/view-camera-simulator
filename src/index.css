@@ -14,6 +14,13 @@
   --radius-lg: 14px;
   --radius-md: 10px;
   --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
+
+  /* Simulator spacing scale */
+  --sim-control-gap: 8px; /* spacing between controls in same group */
+  --sim-control-group-gap: 16px; /* spacing between distinct control groups */
+  --sim-panel-section-gap: 12px; /* spacing between major rows or controls and viewport */
+  --sim-control-height: 32px; /* standard button/select height */
+
   color: var(--text);
   background: var(--app-bg);
 }
@@ -126,6 +133,10 @@ button {
   min-height: 0;
 }
 
+/* Scene panel vertical rhythm */
+.scene-panel { display: grid; gap: var(--sim-panel-section-gap); }
+.scene-panel__controls { display: block; }
+
 /* panel icon used in card headers */
 .panel-icon {
  width: 30px;
@@ -177,53 +188,48 @@ button {
 /* Ground glass compact control bar (updated to row-based layout) */
 .groundglass-panel {
   display: grid;
-  gap: 10px;
+  gap: var(--sim-panel-section-gap);
 }
 
 .groundglass-controls {
-  display: grid;
-  gap: 8px;
+  display: block;
+  margin: 0;
+  padding: 0;
 }
 
 /* New compact two-group horizontal layout for preview and view options */
 .groundglass-control-groups {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--sim-control-group-gap);
+  row-gap: var(--sim-panel-section-gap);
+  align-items: start;
 }
 
 .groundglass-control-group {
   border: none;
   padding: 0;
   margin: 0;
-  min-width: 220px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sim-control-gap);
 }
 
 .groundglass-control-group__options {
   min-width: 0;
-}
-
-/* legacy grid rows retained for fallback but not used in new layout */
-.groundglass-row {
   display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 12px;
-  align-items: center;
+  gap: var(--sim-control-gap);
 }
-
-.groundglass-label { min-width: 0; }
-
-.groundglass-options { min-width: 0; }
 
 .groundglass-viewport-frame { min-width: 0; }
 
 .control-group-title { margin: 0; font-size: 16px; line-height: 1.2; font-weight: 700; }
 
 .choice-list--inline { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+
+/* stacked choice list: vertical stack used inside control groups */
+.choice-list--stacked { display: grid; gap: var(--sim-control-gap); }
 
 .btn--nowrap { white-space: nowrap; flex-shrink: 0; }
 
@@ -237,11 +243,8 @@ button {
   outline-offset: 2px;
 }
 
-.groundglass-stage { }
-.groundglass-stage--zoomed { }
-
 @media (max-width: 700px) {
-  .groundglass-control-groups { flex-direction: column; }
+  .groundglass-control-groups { grid-template-columns: 1fr; }
 }
 
 .simulator-task-feedback-grid {
@@ -602,7 +605,7 @@ button {
 .control-help { color: var(--text-muted); font-size: 12px; }
 .control-stack { display: grid; gap: 8px; }
 .choice-list { display: grid; gap: 6px; }
-.choice-label { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.choice-label { display: inline-flex; align-items: center; gap: var(--sim-control-gap); font-size: 14px; min-height: 24px; }
 .range-slider { width: 100%; accent-color: var(--primary); }
 
 .form-select, .form-input {
@@ -622,16 +625,43 @@ button {
 
 
 /* Scene toolbar and overlay controls */
-.scene-toolbar { padding: 6px 8px; background: transparent; }
-.scene-toolbar__actions { display: flex; gap: 8px; align-items: center; }
-.scene-toolbar__quality { display: inline-flex; align-items: center; gap: 8px; }
+.scene-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sim-control-group-gap);
+  padding: 0;
+  background: transparent;
+}
+.scene-toolbar__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sim-control-gap);
+}
+.scene-toolbar__quality { display: inline-flex; align-items: center; gap: var(--sim-control-gap); }
 
 .scene-viewport-shell { position: relative; }
 
-.scene-overlay-controls { display: flex; gap: 6px; align-items: center; background: rgba(255,255,255,0.85); padding: 6px; border-radius: 8px; box-shadow: 0 6px 18px rgba(2,6,23,0.06); backdrop-filter: blur(4px); }
-.scene-overlay-controls__button { font-size: 13px; }
+.scene-overlay-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sim-control-gap);
+  padding: 8px;
+  background: rgba(255,255,255,0.85);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+  backdrop-filter: blur(4px);
+}
+.scene-overlay-controls__button { font-size: 13px; height: var(--sim-control-height); padding: 0 8px; }
 
-.scene-status { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+/* wrapper used to position overlay controls inside viewports */
+.scene-overlay-controls-wrap { position: absolute; left: var(--sim-panel-section-gap); top: var(--sim-panel-section-gap); z-index: 10; }
+
+.scene-status-row { display: flex; gap: var(--sim-control-group-gap); align-items: center; justify-content: space-between; }
+.scene-status-row p { margin: 0; font-size: 12px; color: var(--text-muted); }
 
 .scene-enlarged-view { z-index: 2000; }
 .scene-enlarged-view__viewport { position: relative; }

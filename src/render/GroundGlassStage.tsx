@@ -74,7 +74,7 @@ export const GroundGlassStage = ({ zoomEnabled, imageLayer, fixedOverlayLayer, o
         cursor: zoomEnabled ? (isDragging ? "grabbing" : "zoom-out") : "zoom-in",
         outline: 'none',
       }}
-      onClick={(e) => {
+      onClick={() => {
         // Only toggle via click when not dragging (drag handled via pointer events)
         if (isDragging) return;
         onToggleZoom?.();
@@ -96,7 +96,7 @@ export const GroundGlassStage = ({ zoomEnabled, imageLayer, fixedOverlayLayer, o
         // If zoom is enabled, capture pointer to receive moves outside element
         const el = e.currentTarget as HTMLElement;
         if (zoomEnabled) {
-          try { el.setPointerCapture(e.pointerId); dragRef.current.captured = true; } catch (err) { dragRef.current.captured = false; }
+          try { el.setPointerCapture(e.pointerId); dragRef.current.captured = true; } catch { dragRef.current.captured = false; }
         }
 
         // prepare dragging state only when movement exceeds threshold

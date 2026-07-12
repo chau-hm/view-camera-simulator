@@ -24,7 +24,7 @@ export const ViewOptions = ({
   return (
     <section aria-label={UI_COPY.controls.viewOptionsTitle} className={compact ? 'view-options view-options--compact' : 'view-options'}>
       {!compact && <h3 className="control-group-title">{UI_COPY.controls.viewOptionsTitle}</h3>}
-      <div className={compact ? 'choice-list choice-list--inline' : 'choice-list'}>
+      <div className={compact ? 'choice-list choice-list--stacked' : 'choice-list'}>
         <label className="choice-label">
           <input
             className="form-checkbox"

@@ -62,7 +62,7 @@ export const GroundGlassViewport = ({
           <fieldset className="groundglass-control-group">
             <legend className="control-group-title">Preview</legend>
             <div className="groundglass-control-group__options">
-              <div className="choice-list choice-list--inline">
+              <div className="choice-list choice-list--stacked">
                 <label className="choice-label">
                   <input
                     className="form-radio"
