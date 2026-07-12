@@ -110,7 +110,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     const text = depthStrip?.textContent || '';
     expect(text).toContain('Film');
     expect(text).toContain('Lens');
-    expect(text).toContain('Near DOF');
+    expect(text).toContain('DOF limit');
     expect(text).toContain('Focus');
     expect(text).toContain('Far DOF');
 

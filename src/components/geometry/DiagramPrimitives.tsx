@@ -118,8 +118,8 @@ export const DiagramLegend = ({ isInfinity = false, hasNearDof = false, hasFarDo
     )}
     {hasNearDof && (
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <span style={{ width: 12, height: 12, background: "#8b5cf6", display: "inline-block", borderRadius: 2 }} />
-        <span>DOF boundary</span>
+        <span style={{ width: 12, height: 12, background: "#0284c7", display: "inline-block", borderRadius: 2 }} />
+        <span>DOF limit</span>
       </div>
     )}
     {hasFarDof && !isInfinity && (

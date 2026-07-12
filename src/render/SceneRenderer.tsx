@@ -252,11 +252,17 @@ const renderLegendText = (key: string) => {
         </>
       );
     case "nearDof":
+      return (
+        <>
+          {swatch("#0284c7")}
+          <span>DOF limit (blue)</span>
+        </>
+      );
     case "farDof":
       return (
         <>
           {swatch("#a78bfa")}
-          <span>DOF limit (violet)</span>
+          <span>Far DOF (violet)</span>
         </>
       );
     case "fov":

@@ -27,7 +27,8 @@ export const OpticalDepthStrip = ({ opticsState, sectionOrigin, sectionDepthDir,
   items.push({ key: 'lens', label: 'Lens', color: '#475569', depth: depthAlong(opticsState.lensCenterWorld) });
 
   if (opticsState.depthOfFieldNearPlane) {
-    items.push({ key: 'nearDof', label: 'Near DOF', color: '#8b5cf6', depth: depthAlong(opticsState.depthOfFieldNearPlane.point) });
+    // Near DOF shown as a DOF limit (blue)
+    items.push({ key: 'nearDof', label: 'DOF limit', color: '#0284c7', depth: depthAlong(opticsState.depthOfFieldNearPlane.point) });
   }
 
   const isInfinityFocus = !!opticsState.diagnostics?.isInfinityFocus;
