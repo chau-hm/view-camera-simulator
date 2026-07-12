@@ -99,9 +99,6 @@ export const GroundGlassReadouts = ({
   focusDistanceMm,
   aperture,
   renderQuality,
-  pipeline,
-  qualitySettings,
-  lastFiniteFocusDepthMm,
   focusTargets,
 }: GroundGlassReadoutsProps) => {
   return (
@@ -113,9 +110,6 @@ export const GroundGlassReadouts = ({
         focusDistanceMm={focusDistanceMm}
         aperture={aperture}
         renderQuality={renderQuality}
-        pipeline={pipeline}
-        qualitySettings={qualitySettings}
-        lastFiniteFocusDepthMm={lastFiniteFocusDepthMm}
       />
 
       <FocusTargetsReadout focusTargets={focusTargets} />

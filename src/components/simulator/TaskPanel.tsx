@@ -46,7 +46,8 @@ export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) =
           <span className="task-status task-status--progress">Guided task</span>
         </div>
         <h3 className="task-summary__title">{task.title}</h3>
-        <p className="task-summary__objective">{task['objective'] ?? objectiveNote}</p>
+        {/* objective may be an optional presentation field on some task definitions */}
+        <p className="task-summary__objective">{(task as any).objective ?? objectiveNote}</p>
 
         <div className="task-summary__controls">
           <strong>{UI_COPY.simulator.allowedControlsLabel}:</strong>{' '}
