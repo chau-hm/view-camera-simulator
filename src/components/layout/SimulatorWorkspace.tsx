@@ -239,11 +239,11 @@ export const SimulatorWorkspace = ({
           <div className="simulator-task-feedback-grid">
             <div className="simulator-info-card simulator-info-card--task">
               <h4>Task</h4>
-              <TaskPanel task={task} />
+              <TaskPanel task={task} showTitle={false} />
             </div>
             <div className="simulator-info-card simulator-info-card--feedback">
               <h4>Feedback</h4>
-              <FeedbackPanel evaluation={evaluation} />
+              <FeedbackPanel evaluation={evaluation} showTitle={false} />
             </div>
           </div>
 

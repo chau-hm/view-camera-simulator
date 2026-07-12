@@ -3,11 +3,12 @@ import { UI_COPY } from "../../ui/copy";
 
 type FeedbackPanelProps = {
   evaluation: TaskEvaluation | null;
+  showTitle?: boolean;
 };
 
-export const FeedbackPanel = ({ evaluation }: FeedbackPanelProps) => (
+export const FeedbackPanel = ({ evaluation, showTitle = true }: FeedbackPanelProps) => (
   <section aria-label={UI_COPY.simulator.feedbackTitle}>
-    <h2>{UI_COPY.simulator.feedbackTitle}</h2>
+    {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
     {evaluation ? (
       <>
         <p>

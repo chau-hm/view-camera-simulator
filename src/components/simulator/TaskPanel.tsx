@@ -3,11 +3,12 @@ import { UI_COPY } from "../../ui/copy";
 
 type TaskPanelProps = {
   task: TaskDefinition | null;
+  showTitle?: boolean;
 };
 
-export const TaskPanel = ({ task }: TaskPanelProps) => (
+export const TaskPanel = ({ task, showTitle = true }: TaskPanelProps) => (
   <section aria-label={UI_COPY.simulator.taskTitle}>
-    <h2>{UI_COPY.simulator.taskTitle}</h2>
+    {showTitle ? <h2>{UI_COPY.simulator.taskTitle}</h2> : null}
     {task ? (
       <>
         <p>{task.title}</p>
