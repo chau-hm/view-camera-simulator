@@ -384,6 +384,8 @@
   .scene-thumb { height: 180px; }
   .site-header__inner { padding: 0 20px; }
   .marketing-container { padding: 20px; }
+  /* Prevent accidental horizontal overflow on narrow viewports */
+  html, body { overflow-x: hidden; }
 }
 @media (max-width: 480px) {
   .site-header__inner { padding: 0 16px; gap:8px; }
