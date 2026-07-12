@@ -40,7 +40,7 @@ export function formatGroundGlassFocusLabel(input: GroundGlassFocusLabelInput): 
     return "Focus ∞";
   }
 
-  const base = Number.isFinite(focusDistanceMm) ? formatMillimeter(focusDistanceMm) : "—";
+  const base = Number.isFinite(focusDistanceMm) ? `${formatMillimeter(focusDistanceMm)} focus` : "—";
 
   if (primaryTarget && typeof primaryTarget.sharpness === "number") {
     const sharpPct = Math.round((primaryTarget.sharpness ?? 0) * 100);
