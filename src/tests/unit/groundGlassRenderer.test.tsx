@@ -56,9 +56,9 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    const zoomIn = screen.getByRole("button", { name: "Zoom in" });
+    const zoomIn = screen.getByRole("button", { name: "Zoom in Ground Glass" });
     fireEvent.click(zoomIn);
-    expect(screen.getByRole("button", { name: "Zoom out" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toBeInTheDocument();
   });
 
   it("updates the preview when focus and movement controls change", () => {

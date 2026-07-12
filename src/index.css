@@ -185,6 +185,29 @@ button {
   gap: 8px;
 }
 
+/* New compact two-group horizontal layout for preview and view options */
+.groundglass-control-groups {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.groundglass-control-group {
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.groundglass-control-group__options {
+  min-width: 0;
+}
+
+/* legacy grid rows retained for fallback but not used in new layout */
 .groundglass-row {
   display: grid;
   grid-template-columns: 160px 1fr;
@@ -192,15 +215,9 @@ button {
   align-items: center;
 }
 
-.groundglass-zoom-row {
-  grid-template-columns: 1fr auto;
-}
-
 .groundglass-label { min-width: 0; }
 
 .groundglass-options { min-width: 0; }
-
-.groundglass-zoom { display: flex; justify-content: flex-end; align-items: center; }
 
 .groundglass-viewport-frame { min-width: 0; }
 
@@ -213,9 +230,18 @@ button {
 .view-options { display: grid; gap: 6px; }
 .view-options--compact { gap: 6px; }
 
-@media (max-width: 900px) {
-  .groundglass-row { grid-template-columns: 1fr; }
-  .groundglass-zoom { justify-content: flex-start; }
+/* groundglass stage focus styling */
+.groundglass-stage:focus-visible,
+.groundglass-stage:focus-visible * {
+  outline: 3px solid rgba(37,99,235,0.25);
+  outline-offset: 2px;
+}
+
+.groundglass-stage { }
+.groundglass-stage--zoomed { }
+
+@media (max-width: 700px) {
+  .groundglass-control-groups { flex-direction: column; }
 }
 
 .simulator-task-feedback-grid {

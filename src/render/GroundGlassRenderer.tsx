@@ -60,7 +60,8 @@ export const GroundGlassRenderer = ({
   previewMode,
   rawDebug,
   zoomEnabled,
-}: GroundGlassRendererProps & { zoomEnabled?: boolean }) => {
+  onToggleZoom,
+}: GroundGlassRendererProps & { zoomEnabled?: boolean; onToggleZoom?: () => void }) => {
   // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
   const isRttScene = isGroundGlassRttScene(sceneId);
   const pipeline = useMemo(() => {
@@ -246,7 +247,7 @@ export const GroundGlassRenderer = ({
 
   return (
     <div style={{ display: "grid", gap: "0.5rem" }}>
-      <GroundGlassStage zoomEnabled={zoomEnabled} imageLayer={transformedImageLayer} fixedOverlayLayer={fixedOverlayLayer} />
+      <GroundGlassStage zoomEnabled={zoomEnabled} onToggleZoom={onToggleZoom} imageLayer={transformedImageLayer} fixedOverlayLayer={fixedOverlayLayer} />
       {/* Current Settings & Focus Fundamentals Debug and Focus Targets are rendered by the parent GroundGlassViewport to allow controls to appear immediately after the canvas. */}
     </div>
   );
