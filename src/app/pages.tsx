@@ -37,6 +37,8 @@ export const HomePage = () => (
       <ViewCameraHeroIllustration />
     </section>
 
+    <DesktopExperienceNotice />
+
     <section id="why" className="landing-info-section" aria-label="Why use a view camera">
       <div className="landing-info-list">
         <InfoCard icon={<span className="material-symbols-outlined">architecture</span>} title={"Why use a view camera when Photoshop can correct perspective?"}>
@@ -54,9 +56,6 @@ export const HomePage = () => (
     </section>
 
     <FocusCtaPanel />
-
-    {/* Desktop experience recommendation for narrow or mobile-like environments */}
-    <DesktopExperienceNotice />
   </AppShell>
 );
 

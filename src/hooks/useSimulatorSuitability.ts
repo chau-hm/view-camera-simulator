@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 
 export type SimulatorSuitability = {
@@ -7,6 +6,33 @@ export type SimulatorSuitability = {
   isLikelyMobileOrTablet: boolean;
   viewportWidth: number | null;
 };
+
+// Legacy support for older MediaQueryList implementations
+type LegacyMediaQueryList = MediaQueryList & {
+  addListener?: (listener: (ev: MediaQueryListEvent) => void) => void;
+  removeListener?: (listener: (ev: MediaQueryListEvent) => void) => void;
+};
+
+export function calculateSimulatorSuitability(input: {
+  viewportWidth: number | null;
+  narrowViewportMatches?: boolean;
+  coarsePointerMatches?: boolean;
+  userAgentMobile?: boolean;
+}): SimulatorSuitability {
+  const { viewportWidth, narrowViewportMatches, coarsePointerMatches, userAgentMobile } = input;
+
+  const isNarrowViewport = typeof narrowViewportMatches === "boolean"
+    ? narrowViewportMatches
+    : (viewportWidth !== null ? viewportWidth < 900 : false);
+
+  const isLikelyMobileOrTablet = typeof coarsePointerMatches === "boolean"
+    ? coarsePointerMatches
+    : !!(userAgentMobile ?? false);
+
+  const shouldWarn = isNarrowViewport || (isLikelyMobileOrTablet && viewportWidth !== null && viewportWidth < 1024);
+
+  return { shouldWarn, isNarrowViewport, isLikelyMobileOrTablet, viewportWidth };
+}
 
 export function useSimulatorSuitability(): SimulatorSuitability {
   const safeMatchMedia = (query: string): MediaQueryList | null => {
@@ -18,69 +44,74 @@ export function useSimulatorSuitability(): SimulatorSuitability {
     }
   };
 
+  const readUserAgentMobile = (): boolean => {
+    if (typeof navigator === "undefined") return false;
+    const nav = navigator as unknown as { userAgentData?: { mobile?: boolean } };
+    return !!(nav.userAgentData?.mobile ?? false);
+  };
+
   const getInitial = (): SimulatorSuitability => {
     const mqNarrow = safeMatchMedia("(max-width: 899px)");
     const mqCoarse = safeMatchMedia("(pointer: coarse)");
     const viewportWidth = typeof window !== "undefined" && typeof window.innerWidth === "number" ? window.innerWidth : null;
-    const isNarrowViewport = mqNarrow ? mqNarrow.matches : (viewportWidth !== null ? viewportWidth < 900 : false);
-    const navigatorUA = typeof navigator !== "undefined" ? (navigator as unknown as { userAgentData?: { mobile?: boolean } }) : undefined;
-    const isLikelyMobileOrTablet = mqCoarse ? mqCoarse.matches : !!(navigatorUA?.userAgentData?.mobile ?? false);
 
-    const shouldWarn = isNarrowViewport || (isLikelyMobileOrTablet && viewportWidth !== null && viewportWidth < 1024);
-
-    return { shouldWarn, isNarrowViewport, isLikelyMobileOrTablet, viewportWidth };
+    return calculateSimulatorSuitability({
+      viewportWidth,
+      narrowViewportMatches: mqNarrow ? mqNarrow.matches : undefined,
+      coarsePointerMatches: mqCoarse ? mqCoarse.matches : undefined,
+      userAgentMobile: readUserAgentMobile(),
+    });
   };
 
   const [state, setState] = useState<SimulatorSuitability>(getInitial);
 
   useEffect(() => {
-    const mqNarrow = safeMatchMedia("(max-width: 899px)");
-    const mqCoarse = safeMatchMedia("(pointer: coarse)");
+    const mqNarrow = safeMatchMedia("(max-width: 899px)") as LegacyMediaQueryList | null;
+    const mqCoarse = safeMatchMedia("(pointer: coarse)") as LegacyMediaQueryList | null;
 
-    const handle = (e?: { matches?: boolean }) => {
+    const recalc = () => {
       const viewportWidth = typeof window !== "undefined" && typeof window.innerWidth === "number" ? window.innerWidth : null;
-      const mqNarrowMatches = typeof e?.matches === "boolean" ? e!.matches : (mqNarrow ? mqNarrow.matches : undefined);
-      const isNarrowViewport = typeof mqNarrowMatches === "boolean" ? mqNarrowMatches : (viewportWidth !== null ? viewportWidth < 900 : false);
-      const mqCoarseMatches = typeof e?.matches === "boolean" ? e!.matches : (mqCoarse ? mqCoarse.matches : undefined);
-      const navigatorUA = typeof navigator !== "undefined" ? (navigator as unknown as { userAgentData?: { mobile?: boolean } }) : undefined;
-      const isLikelyMobileOrTablet = typeof mqCoarseMatches === "boolean" ? mqCoarseMatches : !!(navigatorUA?.userAgentData?.mobile ?? false);
-      const shouldWarn = isNarrowViewport || (isLikelyMobileOrTablet && viewportWidth !== null && viewportWidth < 1024);
-      setState({ shouldWarn, isNarrowViewport, isLikelyMobileOrTablet, viewportWidth });
+      const narrowMatches = mqNarrow ? mqNarrow.matches : undefined;
+      const coarseMatches = mqCoarse ? mqCoarse.matches : undefined;
+      setState(calculateSimulatorSuitability({
+        viewportWidth,
+        narrowViewportMatches: narrowMatches === undefined ? undefined : narrowMatches,
+        coarsePointerMatches: coarseMatches === undefined ? undefined : coarseMatches,
+        userAgentMobile: readUserAgentMobile(),
+      }));
     };
 
-    // listener for media queries
-    if (mqNarrow && typeof mqNarrow.addEventListener === "function") {
-      mqNarrow.addEventListener("change", handle);
-    } else if (mqNarrow && typeof (mqNarrow as any).addListener === "function") {
-      (mqNarrow as any).addListener(handle);
-    }
+    // Attach change listeners — use addEventListener when available, fallback to legacy addListener
+    const attach = (mql: LegacyMediaQueryList | null, listener: () => void) => {
+      if (!mql) return;
+      if (typeof mql.addEventListener === "function") {
+        mql.addEventListener("change", listener as EventListener);
+      } else if (typeof mql.addListener === "function") {
+        mql.addListener(listener as any);
+      }
+    };
 
-    if (mqCoarse && typeof mqCoarse.addEventListener === "function") {
-      mqCoarse.addEventListener("change", handle);
-    } else if (mqCoarse && typeof (mqCoarse as any).addListener === "function") {
-      (mqCoarse as any).addListener(handle);
-    }
+    const detach = (mql: LegacyMediaQueryList | null, listener: () => void) => {
+      if (!mql) return;
+      if (typeof mql.removeEventListener === "function") {
+        mql.removeEventListener("change", listener as EventListener);
+      } else if (typeof mql.removeListener === "function") {
+        mql.removeListener(listener as any);
+      }
+    };
 
-    // window resize fallback
-    const onResize = () => handle();
+    attach(mqNarrow, recalc);
+    attach(mqCoarse, recalc);
+
+    const onResize = () => recalc();
     if (typeof window !== "undefined") window.addEventListener("resize", onResize);
 
-    // initial
-    handle();
+    // run initial calculation
+    recalc();
 
     return () => {
-      if (mqNarrow && typeof mqNarrow.removeEventListener === "function") {
-        mqNarrow.removeEventListener("change", handle);
-      } else if (mqNarrow && typeof (mqNarrow as any).removeListener === "function") {
-        (mqNarrow as any).removeListener(handle);
-      }
-
-      if (mqCoarse && typeof mqCoarse.removeEventListener === "function") {
-        mqCoarse.removeEventListener("change", handle);
-      } else if (mqCoarse && typeof (mqCoarse as any).removeListener === "function") {
-        (mqCoarse as any).removeListener(handle);
-      }
-
+      detach(mqNarrow, recalc);
+      detach(mqCoarse, recalc);
       if (typeof window !== "undefined") window.removeEventListener("resize", onResize);
     };
   }, []);

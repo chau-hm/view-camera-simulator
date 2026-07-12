@@ -2,36 +2,74 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { useSimulatorSuitability } from "../../hooks/useSimulatorSuitability";
 
-// Helper to mock matchMedia
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
-function mockMatchMedia(matchesMap: Record<string, boolean>) {
-  const listeners: Record<string, ((e: any) => void)[]> = {};
+// Stable matchMedia mock that returns the same MQL object per query and
+// exposes listener registries for assertions.
+function createMockMatchMedia(initial: Record<string, boolean>) {
+  const registry: Record<
+    string,
+    {
+      matches: boolean;
+      listeners: ((e: MediaQueryListEvent) => void)[];
+      addEventListener?: (ev: string, fn: (e: MediaQueryListEvent) => void) => void;
+      removeEventListener?: (ev: string, fn: (e: MediaQueryListEvent) => void) => void;
+      addListener?: (fn: (e: MediaQueryListEvent) => void) => void;
+      removeListener?: (fn: (e: MediaQueryListEvent) => void) => void;
+    }
+  > = {};
+
   const mm = (query: string) => {
+    if (!registry[query]) {
+      registry[query] = {
+        matches: !!initial[query],
+        listeners: [],
+        addEventListener(ev: string, fn: (e: MediaQueryListEvent) => void) {
+          registry[query].listeners.push(fn);
+        },
+        removeEventListener(ev: string, fn: (e: MediaQueryListEvent) => void) {
+          registry[query].listeners = registry[query].listeners.filter((l) => l !== fn);
+        },
+        addListener(fn: (e: MediaQueryListEvent) => void) {
+          registry[query].listeners.push(fn);
+        },
+        removeListener(fn: (e: MediaQueryListEvent) => void) {
+          registry[query].listeners = registry[query].listeners.filter((l) => l !== fn);
+        },
+      } as any;
+    }
+
     const obj: any = {
       media: query,
-      matches: !!matchesMap[query],
-      addEventListener: (_ev: string, fn: (e: any) => void) => {
-        listeners[query] = listeners[query] || [];
-        listeners[query].push(fn);
+      get matches() {
+        return registry[query].matches;
       },
-      removeEventListener: (_ev: string, fn: (e: any) => void) => {
-        listeners[query] = (listeners[query] || []).filter((f) => f !== fn);
+      set matches(v: boolean) {
+        registry[query].matches = v;
       },
-      dispatch: (matches: boolean) => {
-        obj.matches = matches;
-        (listeners[query] || []).forEach((fn) => fn({ matches }));
+      addEventListener: registry[query].addEventListener,
+      removeEventListener: registry[query].removeEventListener,
+      addListener: registry[query].addListener,
+      removeListener: registry[query].removeListener,
+      dispatch(matches: boolean) {
+        registry[query].matches = matches;
+        const event = { matches } as MediaQueryListEvent;
+        registry[query].listeners.forEach((fn) => fn(event));
       },
     };
-    return obj;
+
+    return obj as MediaQueryList & { dispatch: (m: boolean) => void };
   };
 
-  // @ts-ignore
+  // @ts-expect-error - replace global for testing
   window.matchMedia = mm;
-  return { listeners, mm };
+
+  return {
+    mm,
+    registry,
+  };
 }
 
 describe("useSimulatorSuitability", () => {
-  let origInnerWidth: number;
+  let origInnerWidth: number | undefined;
   let origMatchMedia: any;
 
   beforeEach(() => {
@@ -40,79 +78,143 @@ describe("useSimulatorSuitability", () => {
   });
 
   afterEach(() => {
-    (window as any).innerWidth = origInnerWidth;
+    if (typeof origInnerWidth !== "undefined") (window as any).innerWidth = origInnerWidth;
+    else delete (window as any).innerWidth;
+    // restore original
     (window as any).matchMedia = origMatchMedia;
     vi.restoreAllMocks();
   });
 
-  it("returns no warning for wide desktop (1280, fine pointer)", () => {
+  it("A: coarse-pointer change on wide viewport updates pointer state only", async () => {
     (window as any).innerWidth = 1280;
-    mockMatchMedia({ "(max-width: 899px)": false, "(pointer: coarse)": false });
+    const { mm, registry } = createMockMatchMedia({ "(max-width: 899px)": false, "(pointer: coarse)": false });
 
-    const { result } = renderHook(() => useSimulatorSuitability());
-    expect(result.current.shouldWarn).toBe(false);
+    const { result, unmount } = renderHook(() => useSimulatorSuitability());
+
     expect(result.current.isNarrowViewport).toBe(false);
-  });
-
-  it("warns for narrow desktop window (800, fine pointer)", () => {
-    (window as any).innerWidth = 800;
-    mockMatchMedia({ "(max-width: 899px)": true, "(pointer: coarse)": false });
-
-    const { result } = renderHook(() => useSimulatorSuitability());
-    expect(result.current.shouldWarn).toBe(true);
-    expect(result.current.isNarrowViewport).toBe(true);
-  });
-
-  it("warns for mobile/tablet like device (390, coarse pointer)", () => {
-    (window as any).innerWidth = 390;
-    mockMatchMedia({ "(max-width: 899px)": true, "(pointer: coarse)": true });
-
-    const { result } = renderHook(() => useSimulatorSuitability());
-    expect(result.current.shouldWarn).toBe(true);
-    expect(result.current.isLikelyMobileOrTablet).toBe(true);
-  });
-
-  it("does not warn for wide touch-capable desktop (1280, coarse pointer)", () => {
-    (window as any).innerWidth = 1280;
-    mockMatchMedia({ "(max-width: 899px)": false, "(pointer: coarse)": true });
-
-    const { result } = renderHook(() => useSimulatorSuitability());
+    expect(result.current.isLikelyMobileOrTablet).toBe(false);
     expect(result.current.shouldWarn).toBe(false);
-    expect(result.current.isLikelyMobileOrTablet).toBe(true);
+
+    // Dispatch coarse pointer true
+    act(() => {
+      (mm("(pointer: coarse)") as any).dispatch(true);
+    });
+
+    // pointer state should update; narrow remains false and shouldWarn remains false at wide width
+    await waitFor(() => {
+      expect(result.current.isLikelyMobileOrTablet).toBe(true);
+      expect(result.current.isNarrowViewport).toBe(false);
+      expect(result.current.shouldWarn).toBe(false);
+    });
+
+    unmount();
+    // listeners cleaned
+    expect(Object.values(registry).every((r) => r.listeners.length === 0)).toBe(true);
   });
 
-  it("is safe when matchMedia is missing", () => {
-    (window as any).innerWidth = 1024;
-    // remove matchMedia
-    // @ts-ignore
-    delete window.matchMedia;
-
-    const { result } = renderHook(() => useSimulatorSuitability());
-    expect(typeof result.current.shouldWarn).toBe("boolean");
-  });
-
-  it("updates on resize and cleans listeners", async () => {
-    (window as any).innerWidth = 1000;
-    const { mm } = mockMatchMedia({ "(max-width: 899px)": false, "(pointer: coarse)": false });
+  it("B: narrow-query change with fine pointer triggers warning", async () => {
+    (window as any).innerWidth = 1280;
+    const { mm, registry } = createMockMatchMedia({ "(max-width: 899px)": false, "(pointer: coarse)": false });
 
     const { result, unmount } = renderHook(() => useSimulatorSuitability());
     expect(result.current.shouldWarn).toBe(false);
 
-    // simulate narrow
+    // change width and dispatch narrow true
     (window as any).innerWidth = 800;
     act(() => {
-      // when underlying media query changes, dispatch the change
-      mm("(max-width: 899px)").dispatch(true);
+      (mm("(max-width: 899px)") as any).dispatch(true);
       window.dispatchEvent(new Event("resize"));
     });
 
-    // allow effect to run
-    // wait for the hook to update
     await waitFor(() => {
-      expect(result.current.viewportWidth).toBe(800);
+      expect(result.current.isNarrowViewport).toBe(true);
+      expect(result.current.isLikelyMobileOrTablet).toBe(false);
+      expect(result.current.shouldWarn).toBe(true);
     });
 
     unmount();
-    // ensure no errors when unmounted
+    expect(Object.values(registry).every((r) => r.listeners.length === 0)).toBe(true);
+  });
+
+  it("C: narrow query clears when returning to wide width and coarse remains", async () => {
+    (window as any).innerWidth = 800;
+    const { mm, registry } = createMockMatchMedia({ "(max-width: 899px)": true, "(pointer: coarse)": false });
+
+    const { result, unmount } = renderHook(() => useSimulatorSuitability());
+    expect(result.current.isNarrowViewport).toBe(true);
+
+    // go back wide
+    (window as any).innerWidth = 1280;
+    act(() => {
+      (mm("(max-width: 899px)") as any).dispatch(false);
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    await waitFor(() => {
+      expect(result.current.isNarrowViewport).toBe(false);
+      expect(result.current.shouldWarn).toBe(false);
+    });
+
+    // coarse remains unchanged (false)
+    expect(result.current.isLikelyMobileOrTablet).toBe(false);
+
+    unmount();
+    expect(Object.values(registry).every((r) => r.listeners.length === 0)).toBe(true);
+  });
+
+  it("D: coarse pointer at tablet width triggers warning", async () => {
+    (window as any).innerWidth = 1000;
+    const { mm, registry } = createMockMatchMedia({ "(max-width: 899px)": false, "(pointer: coarse)": false });
+
+    const { result, unmount } = renderHook(() => useSimulatorSuitability());
+
+    // coarse turns on
+    act(() => {
+      (mm("(pointer: coarse)") as any).dispatch(true);
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLikelyMobileOrTablet).toBe(true);
+      expect(result.current.shouldWarn).toBe(true);
+    });
+
+    unmount();
+    expect(Object.values(registry).every((r) => r.listeners.length === 0)).toBe(true);
+  });
+
+  it("E: coarse pointer on wide desktop does not warn", async () => {
+    (window as any).innerWidth = 1280;
+    const { mm, registry } = createMockMatchMedia({ "(max-width: 899px)": false, "(pointer: coarse)": false });
+
+    const { result, unmount } = renderHook(() => useSimulatorSuitability());
+
+    act(() => {
+      (mm("(pointer: coarse)") as any).dispatch(true);
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLikelyMobileOrTablet).toBe(true);
+      expect(result.current.shouldWarn).toBe(false);
+    });
+
+    unmount();
+    expect(Object.values(registry).every((r) => r.listeners.length === 0)).toBe(true);
+  });
+
+  it("F: listener cleanup removes all registered handlers on unmount", async () => {
+    (window as any).innerWidth = 1024;
+    const { mm, registry } = createMockMatchMedia({ "(max-width: 899px)": false, "(pointer: coarse)": false });
+
+    const { unmount } = renderHook(() => useSimulatorSuitability());
+
+    // listeners were attached
+    expect(Object.values(registry).some((r) => r.listeners.length > 0)).toBe(true);
+
+    unmount();
+
+    // now all listener lists should be empty
+    expect(Object.values(registry).every((r) => r.listeners.length === 0)).toBe(true);
   });
 });
