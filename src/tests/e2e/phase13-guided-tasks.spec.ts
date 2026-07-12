@@ -16,11 +16,6 @@ const setRangeValue = async (page: Page, label: string, value: number): Promise<
   }
 };
 
-// Keep generic aperture helper for tests that need it
-const setAperture = async (page: Page, value: "5.6" | "11" | "22" | "32"): Promise<void> => {
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption(value);
-};
-
 test("TST-E2E-002: user can open Architecture Rise from the Scenes page", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "Explore the Simulator" }).click();
