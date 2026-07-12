@@ -1,7 +1,7 @@
 import { UI_COPY } from "../../ui/copy";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import type { RenderQualityProfile } from "../../types/ui";
-import { calculateFocusTargetDisplaySharpness } from './focusTargetDisplay';
+// focus display mapping is handled by createFocusAssistPass; keep helper available for lower-level tests
 
 type GroundGlassReadoutsProps = {
   riseMm: number;
@@ -54,16 +54,17 @@ export const CurrentSettingsReadout = ({
     </div>
   );
 };
-export const FocusTargetsReadout = ({ focusTargets }: { focusTargets?: { id: string; sharpnessPercent: number }[] }) => {
+export const FocusTargetsReadout = ({ focusTargets }: { focusTargets?: { id: string; status?: string; sharpnessPercent: number }[] }) => {
   return (
     <div aria-label="FocusTargetsReadout" className="simulator-info-card simulator-info-card--focus-targets">
       <h4>{UI_COPY.simulator.groundGlassFocusTargets}</h4>
       <div className="focus-target-list">
         {focusTargets && focusTargets.length > 0 ? (
           focusTargets.map((target) => {
-            const display = calculateFocusTargetDisplaySharpness({ sharpness: target.sharpnessPercent / 100, id: target.id });
-            const statusText = display === 100 ? 'Sharp' : display >= 65 ? 'Acceptable' : 'Soft';
-            const cls = `focus-target-row ${display === 100 ? 'focus-target-row--sharp' : display >= 65 ? 'focus-target-row--acceptable' : 'focus-target-row--soft'}`;
+            // use the already-computed percentage and status from the focus assist pass
+            const display = Math.max(0, Math.min(100, Math.round(target.sharpnessPercent ?? 0)));
+            const statusText = target.status === 'sharp' ? 'Sharp' : target.status === 'acceptable' ? 'Acceptable' : 'Soft';
+            const cls = `focus-target-row ${target.status === 'sharp' ? 'focus-target-row--sharp' : target.status === 'acceptable' ? 'focus-target-row--acceptable' : 'focus-target-row--soft'}`;
             return (
               <div key={target.id} className={cls}>
                 <div className="focus-target-row__header">

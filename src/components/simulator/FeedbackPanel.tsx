@@ -49,7 +49,7 @@ export const FeedbackPanel = ({ mode, sceneId, evaluation, showTitle = true }: F
   const primaryText = evaluation?.primaryFeedback ?? '';
 
   return (
-    <section aria-label={UI_COPY.simulator.feedbackTitle} className={`simulator-info-card simulator-info-card--feedback feedback-panel ${evaluation && evaluation.status === 'passed' ? 'feedback-panel--complete' : 'feedback-panel--progress'}`}>
+    <section aria-label={UI_COPY.simulator.feedbackTitle} className={`feedback-panel ${evaluation && evaluation.status === 'passed' ? 'feedback-panel--complete' : 'feedback-panel--progress'}`}>
       {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
 
       <div className="feedback-summary">

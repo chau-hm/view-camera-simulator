@@ -348,6 +348,11 @@ button {
 .task-status--progress { background: rgba(250,204,21,0.08); color: #92400e; }
 .chip { background: rgba(0,0,0,0.04); padding: 4px 8px; border-radius: 999px; font-size: 13px; }
 
+/* task requirements smaller helper classes */
+.task-requirements { margin-top: 8px; }
+.task-requirements__list { margin: 0; padding-left: 16px; }
+.task-requirements__empty { color: var(--text-muted); }
+
 .feedback-status { font-weight:700; }
 .feedback-panel--progress { border-left: 4px solid #f59e0b; }
 .feedback-panel--complete { border-left: 4px solid #16a34a; }

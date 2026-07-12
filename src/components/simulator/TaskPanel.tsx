@@ -60,21 +60,16 @@ export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) =
 
         <details>
           <summary>{UI_COPY.simulator.viewRequirementsLabel}</summary>
-          <div style={{ marginTop: 8 }}>
+          <div className="task-requirements" style={{ marginTop: 8 }}>
             {remainingNotes.length > 0 ? (
-              <ul>
+              <ul className="task-requirements__list">
                 {remainingNotes.map((note) => (
                   <li key={note}>{note}</li>
                 ))}
               </ul>
             ) : (
-              <div>{UI_COPY.simulator.noAdjustmentNeeded}</div>
+              <div className="task-requirements__empty">{UI_COPY.simulator.noAdjustmentNeeded}</div>
             )}
-
-            {/* show requirement notes only; do not repeat allowed-controls here */}
-            <div style={{ marginTop: 8 }}>
-              {remainingNotes.length > 0 ? null : <div style={{ color: 'var(--text-muted)' }}>{UI_COPY.simulator.noAdjustmentNeeded}</div>}
-            </div>
           </div>
         </details>
       </div>
