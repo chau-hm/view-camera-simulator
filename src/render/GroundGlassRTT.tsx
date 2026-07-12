@@ -578,7 +578,6 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         // On failure to prepare typed DOF uniforms, force visual DOF bypass (Raw RTT)
         matH.uniforms.useRaw.value = 1.0;
         matH.uniforms.dofMode.value = 0.0;
-        const coreModel = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
         // Log and surface the first error only to avoid per-frame noise
         if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
           console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
