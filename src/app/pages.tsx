@@ -9,6 +9,7 @@ import { ViewCameraHeroIllustration } from "../components/marketing/ViewCameraHe
 import { InfoCard } from "../components/marketing/InfoCard";
 import { FocusCtaPanel } from "../components/marketing/FocusCtaPanel";
 import { SceneCard } from "../components/marketing/SceneCard";
+import { DesktopExperienceNotice } from "../components/marketing/DesktopExperienceNotice";
 
 const SimulatorWorkspace = lazy(() =>
   import("../components/layout/SimulatorWorkspace").then((module) => ({ default: module.SimulatorWorkspace })),
@@ -53,6 +54,9 @@ export const HomePage = () => (
     </section>
 
     <FocusCtaPanel />
+
+    {/* Desktop experience recommendation for narrow or mobile-like environments */}
+    <DesktopExperienceNotice />
   </AppShell>
 );
 
@@ -62,6 +66,8 @@ export const ScenesPage = () => {
   return (
     <AppShell title="Scenes" useSiteShell>
       <p>Choose a scene to explore how focus, perspective and camera movements affect the image on the ground glass.</p>
+
+      <DesktopExperienceNotice />
 
       <div className="scenes-grid">
         {entries.length === 0 ? (

@@ -178,19 +178,19 @@
 
 /* Focus CTA panel (stronger) */
 .focus-cta {
-  position: relative;
-  min-height: 210px;
-  margin: 56px 0 80px;
-  padding: 36px 40px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 280px);
-  gap: 32px;
-  align-items: center;
-  overflow: hidden;
-  background: linear-gradient(135deg, #f2f0ff 0%, #fafaff 58%, #eeefff 100%);
-  border: 1px solid rgba(91, 78, 232, 0.16);
-  border-radius: var(--site-radius-lg);
-  box-shadow: var(--site-shadow);
+ position: relative;
+ min-height: 210px;
+ margin: 56px 0 80px;
+ padding: 36px 40px;
+ display: grid;
+ grid-template-columns: minmax(0, 1fr) minmax(180px, 280px);
+ gap: 32px;
+ align-items: center;
+ overflow: hidden;
+ background: linear-gradient(135deg, #f2f0ff 0%, #fafaff 58%, #eeefff 100%);
+ border: 1px solid rgba(91, 78, 232, 0.16);
+ border-radius: var(--site-radius-lg);
+ box-shadow: var(--site-shadow);
 }
 
 .focus-cta__content { position: relative; z-index: 1; max-width: 680px; }
@@ -200,6 +200,62 @@
 .focus-cta p { max-width: 620px; line-height: 1.65; color: var(--site-text-muted); }
 
 .focus-cta__art { justify-self: end; }
+
+/* Responsive behavior for Focus CTA - single column on narrower viewports */
+@media (max-width: 880px) {
+ .focus-cta {
+   grid-template-columns: minmax(0, 1fr);
+   gap: 24px;
+   padding: 28px;
+   margin: 36px 0 48px;
+ }
+
+ .focus-cta__content {
+   max-width: none;
+   min-width: 0;
+ }
+
+ .focus-cta__art {
+   justify-self: center;
+   width: min(220px, 60%);
+ }
+}
+
+@media (max-width: 480px) {
+ .focus-cta {
+   padding: 24px 20px;
+   margin: 36px 0 48px;
+ }
+
+ .focus-cta h2 { font-size: clamp(1.5rem, 8vw, 2rem); }
+ .focus-cta p { line-height: 1.6; }
+
+ .focus-cta__actions { width: 100%; }
+ .focus-cta__actions .btn { width: 100%; }
+}
+
+/* Desktop experience notice */
+.desktop-experience-notice {
+ margin: 18px 0;
+ padding: 12px 14px;
+ display: flex;
+ gap: 12px;
+ align-items: flex-start;
+ background: var(--site-surface-soft);
+ border: 1px solid var(--site-border);
+ border-radius: 10px;
+ color: var(--site-text-muted);
+}
+
+.desktop-experience-notice__icon {
+ font-size: 28px;
+ color: var(--site-accent);
+ flex: 0 0 36px;
+}
+
+.desktop-experience-notice__content { min-width: 0; }
+.desktop-experience-notice__title { font-weight: 700; color: var(--site-text); margin-bottom: 6px; }
+.desktop-experience-notice__text { margin: 0; color: var(--site-text-muted); line-height: 1.45; }
 
 /* Site-scoped button sizing for landing */
 .site-shell .hero__actions .btn,
