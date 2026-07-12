@@ -34,7 +34,7 @@ test("TST-E2E-002: user can open Architecture Rise from the Scenes page", async 
 test("TST-E2E-003: rise task starts in failed state", async ({ page }) => {
   await page.goto("/simulator/guided/architecture-rise/rise-01");
   await expect(completedHeading(page)).not.toBeVisible();
-  await expect(page.getByRole("heading", { name: "Feedback" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Feedback", exact: true })).toBeVisible();
   await expect(page.getByText(/^Score:/)).toBeVisible();
 });
 
