@@ -47,7 +47,7 @@ export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) =
         </div>
         <h3 className="task-summary__title">{task.title}</h3>
         {/* objective may be an optional presentation field on some task definitions */}
-        <p className="task-summary__objective">{(task as any).objective ?? objectiveNote}</p>
+        <p className="task-summary__objective">{task.objective ?? objectiveNote}</p>
 
         <div className="task-summary__controls">
           <strong>{UI_COPY.simulator.allowedControlsLabel}:</strong>{' '}

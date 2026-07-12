@@ -19,6 +19,8 @@ export type TaskDefinition = {
   id: string;
   sceneId: string;
   title: string;
+  /** Optional presentation-only objective/summary for UI cards */
+  objective?: string;
   mode: "guided" | "free";
   enabledControls: Array<"rise" | "tilt" | "swing" | "focusDistance" | "aperture" | "geometryView">;
   constraints: {
