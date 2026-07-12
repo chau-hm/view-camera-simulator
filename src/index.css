@@ -320,6 +320,22 @@ button {
  background: linear-gradient(180deg, rgba(236,252,245,0.6), rgba(236,252,245,0.4));
 }
 
+/* Task / Feedback panels */
+.task-panel { padding: 6px; }
+.task-summary__header { display:flex; gap:8px; align-items:center; }
+.task-status { font-weight:700; padding:4px 8px; border-radius:999px; font-size:12px; }
+.task-status--free { background: rgba(59,130,246,0.08); color: #0d47a1; }
+.task-status--progress { background: rgba(250,204,21,0.08); color: #92400e; }
+.chip { background: rgba(0,0,0,0.04); padding: 4px 8px; border-radius: 999px; font-size: 13px; }
+
+.feedback-status { font-weight:700; }
+.feedback-panel--progress { border-left: 4px solid #f59e0b; }
+.feedback-panel--complete { border-left: 4px solid #16a34a; }
+.feedback-criteria { display: flex; flex-direction: column; gap: 8px; }
+.feedback-criterion--passed { background: rgba(16,185,129,0.06); }
+.feedback-criterion--failed { background: rgba(245,158,11,0.06); }
+
+
 .simulator-info-card h4 {
  margin: 0 0 8px 0;
  font-size: 13px;

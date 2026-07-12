@@ -1,59 +1,101 @@
-import type { TaskEvaluation } from "../../types/task";
+import type { TaskEvaluation, TaskDefinition } from "../../types/task";
 import { UI_COPY } from "../../ui/copy";
+import { getFeedbackStatus, getPassedCriteriaCount, getPrimaryFailedCriterion, formatFinalCameraState } from './taskHelpers';
 
 type FeedbackPanelProps = {
+  mode: string;
+  task: TaskDefinition | null;
   evaluation: TaskEvaluation | null;
   showTitle?: boolean;
 };
 
-export const FeedbackPanel = ({ evaluation, showTitle = true }: FeedbackPanelProps) => (
-  <section aria-label={UI_COPY.simulator.feedbackTitle}>
-    {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
-    {evaluation ? (
-      <>
-        <p>
-          {UI_COPY.simulator.scoreLabel}: {evaluation.score}
-        </p>
-        <p>
-          {UI_COPY.simulator.primaryFeedbackLabel}: {evaluation.primaryFeedback}
-        </p>
-        <h3>{UI_COPY.simulator.criteriaLabel}</h3>
-        <ul>
-          {evaluation.criteria.map((criterion) => (
-            <li key={criterion.criterionId}>
-              <strong>{criterion.label}</strong>: {criterion.passed ? "pass" : "fail"} |{" "}
-              {UI_COPY.simulator.criterionCurrentLabel} {(criterion.score * 100).toFixed(0)}% |{" "}
-              {UI_COPY.simulator.criterionExpectedLabel} pass | {criterion.message}
-            </li>
-          ))}
-        </ul>
-        {evaluation.secondaryFeedback.length > 0 && (
-          <>
-            <h3>{UI_COPY.simulator.secondaryFeedbackLabel}</h3>
-            <ul>
-              {evaluation.secondaryFeedback.map((message) => (
-                <li key={message}>{message}</li>
+export const FeedbackPanel = ({ mode, task, evaluation, showTitle = true }: FeedbackPanelProps) => {
+  const status = getFeedbackStatus(mode, evaluation);
+  const { passed, total } = getPassedCriteriaCount(evaluation);
+  const primaryFailed = getPrimaryFailedCriterion(evaluation);
+
+  if (!evaluation && mode !== 'guided') {
+    // Free mode neutral observation
+    return (
+      <section aria-label={UI_COPY.simulator.feedbackTitle} className="simulator-info-card simulator-info-card--feedback feedback-panel feedback-panel--idle">
+        {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
+        <div>
+          <div className="feedback-status">{UI_COPY.simulator.noScoredTask}</div>
+          <p style={{ marginTop: 8 }}>{UI_COPY.simulator.freePracticeIntro}</p>
+          {task?.sceneId === 'architecture-rise' && (
+            <p style={{ marginTop: 6, color: 'var(--text-muted)' }}>Watch the building framing as Rise changes. Vertical lines should remain parallel while Tilt and Swing stay at zero.</p>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  if (!evaluation && mode === 'guided') {
+    return (
+      <section aria-label={UI_COPY.simulator.feedbackTitle} className="simulator-info-card simulator-info-card--feedback feedback-panel feedback-panel--idle">
+        {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
+        <div>
+          <div className="feedback-status">{UI_COPY.simulator.notStarted}</div>
+          <p style={{ marginTop: 8 }}>{UI_COPY.simulator.freePracticeIntro}</p>
+        </div>
+      </section>
+    );
+  }
+
+  // With an evaluation
+  const progressLabel = `${passed} of ${total} requirements met`;
+  const primaryText = evaluation?.primaryFeedback ?? '';
+
+  return (
+    <section aria-label={UI_COPY.simulator.feedbackTitle} className={`simulator-info-card simulator-info-card--feedback feedback-panel ${evaluation && evaluation.status === 'passed' ? 'feedback-panel--complete' : 'feedback-panel--progress'}`}>
+      {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
+
+      <div className="feedback-summary">
+        <div className="feedback-summary__header">
+          <span className="feedback-status">{status}</span>
+          <span style={{ marginLeft: 8 }}>{UI_COPY.simulator.scoreLabel}: {evaluation?.score}</span>
+        </div>
+
+        <h3 style={{ marginTop: 8 }}>{primaryText}</h3>
+
+        <div style={{ marginTop: 8 }}>
+          <div><strong>{UI_COPY.simulator.nextAdjustmentLabel}</strong></div>
+          <div style={{ marginTop: 6, fontWeight: 600 }}>{primaryFailed ? primaryFailed.message : UI_COPY.simulator.noAdjustmentNeeded}</div>
+        </div>
+
+        <div style={{ marginTop: 12 }}>
+          <div><strong>{UI_COPY.simulator.requirementsMetLabel}</strong></div>
+          <div role="progressbar" aria-label="Task requirements completed" aria-valuemin={0} aria-valuemax={total} aria-valuenow={passed} style={{ height: 10, background: 'rgba(0,0,0,0.06)', borderRadius: 6, overflow: 'hidden', marginTop: 6 }}>
+            <div style={{ height: '100%', width: `${total === 0 ? 0 : (passed/total)*100}%`, background: 'var(--primary)' }} />
+          </div>
+          <div style={{ marginTop: 6 }}>{progressLabel}</div>
+        </div>
+
+        <details style={{ marginTop: 12 }}>
+          <summary>{UI_COPY.simulator.viewRequirementsLabel}</summary>
+          <div style={{ marginTop: 8 }}>
+            <div className="feedback-criteria">
+              {evaluation?.criteria.map((c) => (
+                <div key={c.criterionId} className={`feedback-criterion ${c.passed ? 'feedback-criterion--passed' : 'feedback-criterion--failed'}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, borderRadius: 6 }}>
+                  <span aria-hidden>{c.passed ? '✔' : '⚠'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600 }}>{c.label}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{c.message}</div>
+                  </div>
+                  <div style={{ fontWeight: 700 }}>{c.passed ? 'Passed' : 'Needs adjustment'}</div>
+                </div>
               ))}
-            </ul>
-          </>
-        )}
-        {evaluation.status === "passed" && (
-          <div role="status" style={{ border: "1px solid #16a34a", borderRadius: 8, padding: "0.75rem" }}>
+            </div>
+          </div>
+        </details>
+
+        {evaluation?.status === 'passed' && (
+          <div style={{ marginTop: 12 }}>
             <h3>{UI_COPY.simulator.taskCompletedTitle}</h3>
-            <p>
-              {UI_COPY.simulator.scoreLabel}: {evaluation.score}
-            </p>
-            <p>
-              {UI_COPY.simulator.taskCompletedSummaryLabel}: rise {evaluation.finalCameraState?.frontRiseMm ?? 0}mm, tilt{" "}
-              {evaluation.finalCameraState?.frontTiltDeg ?? 0}°, swing {evaluation.finalCameraState?.frontSwingDeg ?? 0}°,
-              focus {evaluation.finalCameraState?.focusDistanceMm ?? 0}mm, aperture f/
-              {evaluation.finalCameraState?.aperture ?? 11}.
-            </p>
+            <div style={{ marginTop: 6 }}>{formatFinalCameraState(evaluation.finalCameraState)}</div>
           </div>
         )}
-      </>
-    ) : (
-      <p>{UI_COPY.simulator.noEvaluationYet}</p>
-    )}
-  </section>
-);
+      </div>
+    </section>
+  );
+};
