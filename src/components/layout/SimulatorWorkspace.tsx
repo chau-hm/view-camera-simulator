@@ -21,9 +21,6 @@ import { CurrentSettingsReadout, FocusTargetsReadout } from "../simulator/Ground
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
-import { createGroundGlassDofPipeline, createGroundGlassRenderTarget, createGroundGlassDepthTarget, createGroundGlassCamera } from "../../render/groundGlassPipeline";
-import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
-import { getRenderQualitySettings } from "../../render/renderQuality";
 import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
 
 type SimulatorWorkspaceProps = {
@@ -100,29 +97,8 @@ export const SimulatorWorkspace = ({
     setCurrentTaskEvaluation(evaluation);
   }, [evaluation, setCurrentTaskEvaluation]);
 
-  // memoized render pipeline & settings to avoid re-creating expensive pipeline objects on every render
+  // RTT runtime info
   const rttRuntimeInfo = useAppStore((s) => s.groundGlassRttRuntimeInfo);
-  const groundGlassPipeline = useMemo(() => {
-    const isRtt = isGroundGlassRttScene(camera.activeSceneId);
-    if (isRtt && rttRuntimeInfo) {
-      // construct a pipeline-like descriptor from the actual RTT runtime info
-      const colorTarget = createGroundGlassRenderTarget(rttRuntimeInfo.internalWidthPx, rttRuntimeInfo.internalHeightPx);
-      const depthTarget = createGroundGlassDepthTarget(colorTarget);
-      const cameraDesc = createGroundGlassCamera(opticsState.offAxisProjectionMatrix);
-      const blurPass = { widthPx: rttRuntimeInfo.internalWidthPx, heightPx: rttRuntimeInfo.internalHeightPx };
-      return {
-        colorTarget,
-        depthTarget,
-        camera: cameraDesc,
-        blurPass,
-        verticalFrameOffsetPx: 0,
-      } as const;
-    }
-
-    return createGroundGlassDofPipeline(opticsState, 500, 400, renderQuality);
-  }, [opticsState, renderQuality, rttRuntimeInfo, camera.activeSceneId]);
-
-  const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
 
   const focusAssistTargets = useMemo(
     () =>
@@ -214,44 +190,38 @@ export const SimulatorWorkspace = ({
           {/* Info grid: current settings, focus targets, debug */}
           <div className="simulator-info-grid">
               <CurrentSettingsReadout
-              riseMm={camera.frontRiseMm}
-              tiltDeg={camera.frontTiltDeg}
-              swingDeg={camera.frontSwingDeg}
-              focusDistanceMm={camera.focusDistanceMm}
-              aperture={camera.aperture as number}
-              renderQuality={renderQuality}
-              pipeline={groundGlassPipeline}
-              qualitySettings={qualitySettings}
-              lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
-              rttRuntimeInfo={rttRuntimeInfo}
-            />
+                riseMm={camera.frontRiseMm}
+                tiltDeg={camera.frontTiltDeg}
+                swingDeg={camera.frontSwingDeg}
+                focusDistanceMm={camera.focusDistanceMm}
+                aperture={camera.aperture as number}
+                renderQuality={renderQuality}
+              />
 
-            <FocusTargetsReadout focusTargets={focusAssistTargets} />
+              <FocusTargetsReadout focusTargets={focusAssistTargets} />
 
-            <div className="simulator-info-card" aria-label="Optical Debug">
-              <h4>Optical Debug</h4>
-              <div style={{ paddingTop: 8 }}>
-                <OpticalDebugPanel
-                  sceneId={camera.activeSceneId}
-                  mode={camera.mode}
-                  taskId={camera.activeTaskId}
-                  opticsState={opticsState}
-                  focalLengthMm={camera.focalLengthMm}
-                  focusDistanceMm={camera.focusDistanceMm}
-                  aperture={camera.aperture as number}
-                  renderQuality={renderQuality}
-                  qualitySettings={qualitySettings}
-                  rttRuntimeInfo={rttRuntimeInfo}
-                  pipeline={groundGlassPipeline}
-                />
+              <div className="simulator-info-card" aria-label="Optical Debug">
+                <h4>Optical Debug</h4>
+                <div style={{ paddingTop: 8 }}>
+                  <OpticalDebugPanel
+                    sceneId={camera.activeSceneId}
+                    mode={camera.mode}
+                    taskId={camera.activeTaskId}
+                    opticsState={opticsState}
+                    focalLengthMm={camera.focalLengthMm}
+                    focusDistanceMm={camera.focusDistanceMm}
+                    aperture={camera.aperture as number}
+                    renderQuality={renderQuality}
+                    rttRuntimeInfo={rttRuntimeInfo}
+                  />
+                </div>
               </div>
-            </div>
           </div>
 
           <div className="simulator-task-feedback-grid">
             <div className="simulator-info-card simulator-info-card--task">
               <h4>Task</h4>
-              <TaskPanel task={task} mode={mode} sceneId={safeScene.id} showTitle={false} />
+              <TaskPanel task={task} sceneId={safeScene.id} showTitle={false} />
             </div>
             <div className="simulator-info-card simulator-info-card--feedback">
               <h4>Feedback</h4>

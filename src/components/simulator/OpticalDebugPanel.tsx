@@ -4,6 +4,7 @@ import { getArchitectureReferenceObjectProbePoint, referenceObjects, type Refere
 import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur";
 import type { GroundGlassWorldBlurSample } from "../../render/groundGlassBlur";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
+import type { GroundGlassRttRuntimeInfo } from "../../render/groundGlassRttDimensions";
 
 type OpticalDebugPanelProps = {
   sceneId: string;
@@ -14,12 +15,10 @@ type OpticalDebugPanelProps = {
   focusDistanceMm: number;
   aperture: number;
   renderQuality?: string;
-  qualitySettings?: any;
-  rttRuntimeInfo?: any;
-  pipeline?: any;
+  rttRuntimeInfo?: GroundGlassRttRuntimeInfo | null;
 };
 
-export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, mode, taskId, opticsState, focalLengthMm, focusDistanceMm, aperture, renderQuality, qualitySettings, rttRuntimeInfo, pipeline }) => {
+export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, mode, taskId, opticsState, focalLengthMm, focusDistanceMm, aperture, renderQuality, rttRuntimeInfo }) => {
   const lens = opticsState.lensCenterWorld;
   const film = opticsState.filmPlane.point;
   const filmNormal = opticsState.filmPlane.normal;

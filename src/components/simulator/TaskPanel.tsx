@@ -4,12 +4,11 @@ import { formatControlLabel, getFreePracticeGuidance } from './taskHelpers';
 
 type TaskPanelProps = {
   task: TaskDefinition | null;
-  mode: string;
   sceneId?: string;
   showTitle?: boolean;
 };
 
-export const TaskPanel = ({ task, mode, sceneId, showTitle = true }: TaskPanelProps) => {
+export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) => {
   const freeGuidance = getFreePracticeGuidance(sceneId);
 
   if (!task) {

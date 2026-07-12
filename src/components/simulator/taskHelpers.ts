@@ -1,5 +1,5 @@
 import { UI_COPY } from "../../ui/copy";
-import type { TaskEvaluation, TaskDefinition, TaskCriteriaEvaluation } from "../../types/task";
+import type { TaskEvaluation, TaskCriteriaEvaluation } from "../../types/task";
 
 export function formatControlLabel(controlId: string): string {
   const map: Record<string, string> = {
@@ -66,7 +66,7 @@ export function getPrimaryFailedCriterion(
   return failed ?? null;
 }
 
-export function formatFinalCameraState(finalState: any): string {
+export function formatFinalCameraState(finalState?: { frontRiseMm?: number; frontTiltDeg?: number; frontSwingDeg?: number; focusDistanceMm?: number; aperture?: number } | null): string {
   if (!finalState) return "";
   return `Rise ${finalState.frontRiseMm ?? 0} mm · Tilt ${finalState.frontTiltDeg ?? 0}° · Swing ${finalState.frontSwingDeg ?? 0}° · Focus ${finalState.focusDistanceMm ?? 0} mm · Aperture f/${finalState.aperture ?? 11}`;
 }

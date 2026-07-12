@@ -1,8 +1,6 @@
 import { UI_COPY } from "../../ui/copy";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import type { RenderQualityProfile } from "../../types/ui";
-import type { GroundGlassDofPipeline } from "../../render/groundGlassPipeline";
-import { getRenderQualitySettings } from "../../render/renderQuality";
 import { calculateFocusTargetDisplaySharpness } from './focusTargetDisplay';
 
 type GroundGlassReadoutsProps = {
@@ -12,9 +10,6 @@ type GroundGlassReadoutsProps = {
   focusDistanceMm: number;
   aperture: number | string;
   renderQuality: RenderQualityProfile;
-  pipeline: GroundGlassDofPipeline;
-  qualitySettings: ReturnType<typeof getRenderQualitySettings>;
-  lastFiniteFocusDepthMm?: number | null;
   focusTargets?: { id: string; sharpnessPercent: number }[];
   // new: RTT runtime info for RTT-capable scenes
   rttRuntimeInfo?: import("../../render/groundGlassRttDimensions").GroundGlassRttRuntimeInfo | null;
@@ -27,7 +22,6 @@ export const CurrentSettingsReadout = ({
   focusDistanceMm,
   aperture,
   renderQuality,
-  lastFiniteFocusDepthMm,
 }: GroundGlassReadoutsProps) => {
   return (
     <div aria-label="CurrentSettingsReadout" className="simulator-info-card simulator-info-card--settings">
@@ -60,9 +54,6 @@ export const CurrentSettingsReadout = ({
     </div>
   );
 };
-
-import { calculateFocusTargetDisplaySharpness } from './focusTargetDisplay';
-
 export const FocusTargetsReadout = ({ focusTargets }: { focusTargets?: { id: string; sharpnessPercent: number }[] }) => {
   return (
     <div aria-label="FocusTargetsReadout" className="simulator-info-card simulator-info-card--focus-targets">
@@ -70,7 +61,7 @@ export const FocusTargetsReadout = ({ focusTargets }: { focusTargets?: { id: str
       <div className="focus-target-list">
         {focusTargets && focusTargets.length > 0 ? (
           focusTargets.map((target) => {
-            const display = calculateFocusTargetDisplaySharpness({ id: target.id, sharpness: target.sharpnessPercent / 100 } as any);
+            const display = calculateFocusTargetDisplaySharpness({ sharpness: target.sharpnessPercent / 100, id: target.id });
             const statusText = display === 100 ? 'Sharp' : display >= 65 ? 'Acceptable' : 'Soft';
             const cls = `focus-target-row ${display === 100 ? 'focus-target-row--sharp' : display >= 65 ? 'focus-target-row--acceptable' : 'focus-target-row--soft'}`;
             return (
