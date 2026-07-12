@@ -83,7 +83,7 @@ test("TST-E2E-007: shows webgl fallback when WebGL is unavailable", async ({ pag
       if (contextId === "webgl" || contextId === "webgl2" || contextId === "experimental-webgl") {
         return null;
       }
-      // @ts-ignore - forward to original
+      // @ts-expect-error - forward to original (typing not important in test harness)
       return original.call(this, contextId, ...args);
     } as typeof HTMLCanvasElement.prototype.getContext;
   });
