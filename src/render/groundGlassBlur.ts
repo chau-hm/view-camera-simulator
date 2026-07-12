@@ -154,7 +154,7 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
     try {
       const val = cocDiameterMm(focalLengthMm, aperture, imageDistance as number, U);
       return Number.isFinite(val) ? Math.abs(val) : 0;
-    } catch (e) {
+    } catch {
       return 0;
     }
   })();

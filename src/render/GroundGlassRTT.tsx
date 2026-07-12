@@ -13,7 +13,6 @@ import { createFocusFundamentalsGroup } from "./FocusFundamentalsSubjectFactory"
 import { createArchitectureRiseGroup } from "./ArchitectureRiseSubjectFactory";
 import { configureGroundGlassCamera } from "./configureGroundGlassCamera";
 import { createGroundGlassDofUniformState } from "./createGroundGlassDofUniformState";
-import { groundGlassSharedGlsl, groundGlassUniformDecls } from "./groundGlassDofShaders";
 import { groundGlassVertexShader, groundGlassHorizontalFragmentShader, groundGlassVerticalFragmentShader } from "./groundGlassDofShaderSources";
 import type { DerivedOpticsState } from "../types/optics";
 import type { ApertureValue } from "../types/camera";
@@ -186,12 +185,75 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
 
 
-    const matH = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragH, uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, near: { value: 0.01 }, far: { value: 12.0 }, imageDistanceMm: { value: 100.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, renderWidth: { value: dimsRef.current.internalWidthPx }, renderHeight: { value: dimsRef.current.internalHeightPx }, useRaw: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 } }
-    }});
-    const matV = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragV, uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, renderWidth: { value: dimsRef.current.internalWidthPx }, renderHeight: { value: dimsRef.current.internalHeightPx }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, imageDistanceMm: { value: 100.0 }, near: { value: 0.01 }, far: { value: 12.0 }, ringCenter: { value: new THREE.Vector2(-1, -1) }, ringRadiusPx: { value: 0.0 }, ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) }, ringOpacity: { value: 0.8 }, showRing: { value: 0.0 }, useRaw: { value: 0.0 }, displayUpright: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
-    }});
+    const matH = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader: fragH,
+      uniforms: {
+        tColor: { value: null },
+        tDepth: { value: null },
+        near: { value: 0.01 },
+        far: { value: 12.0 },
+        imageDistanceMm: { value: 100.0 },
+        focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm },
+        fNumber: { value: 11.0 },
+        renderWidth: { value: dimsRef.current.internalWidthPx },
+        renderHeight: { value: dimsRef.current.internalHeightPx },
+        useRaw: { value: 0.0 },
+        dofMode: { value: 0.0 },
+        lensCenterWorld: { value: new THREE.Vector3() },
+        focusPlanePoint: { value: new THREE.Vector3() },
+        focusPlaneNormal: { value: new THREE.Vector3() },
+        nearPlanePoint: { value: new THREE.Vector3() },
+        nearPlaneNormal: { value: new THREE.Vector3() },
+        farPlanePoint: { value: new THREE.Vector3() },
+        farPlaneNormal: { value: new THREE.Vector3() },
+        hasFiniteFar: { value: 0.0 },
+        inverseProjectionMatrix: { value: new THREE.Matrix4() },
+        cameraMatrixWorld: { value: new THREE.Matrix4() },
+        maximumBlurRadiusPx: { value: 60.0 },
+        circleOfConfusionMm: { value: 0.1 },
+        filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
+        displayBlurScale: { value: 1.0 },
+      },
+    });
+
+    const matV = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader: fragV,
+      uniforms: {
+        tColor: { value: null },
+        tDepth: { value: null },
+        renderWidth: { value: dimsRef.current.internalWidthPx },
+        renderHeight: { value: dimsRef.current.internalHeightPx },
+        focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm },
+        fNumber: { value: 11.0 },
+        imageDistanceMm: { value: 100.0 },
+        near: { value: 0.01 },
+        far: { value: 12.0 },
+        ringCenter: { value: new THREE.Vector2(-1, -1) },
+        ringRadiusPx: { value: 0.0 },
+        ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) },
+        ringOpacity: { value: 0.8 },
+        showRing: { value: 0.0 },
+        useRaw: { value: 0.0 },
+        displayUpright: { value: 0.0 },
+        dofMode: { value: 0.0 },
+        lensCenterWorld: { value: new THREE.Vector3() },
+        focusPlanePoint: { value: new THREE.Vector3() },
+        focusPlaneNormal: { value: new THREE.Vector3() },
+        nearPlanePoint: { value: new THREE.Vector3() },
+        nearPlaneNormal: { value: new THREE.Vector3() },
+        farPlanePoint: { value: new THREE.Vector3() },
+        farPlaneNormal: { value: new THREE.Vector3() },
+        hasFiniteFar: { value: 0.0 },
+        inverseProjectionMatrix: { value: new THREE.Matrix4() },
+        cameraMatrixWorld: { value: new THREE.Matrix4() },
+        maximumBlurRadiusPx: { value: 60.0 },
+        circleOfConfusionMm: { value: 0.1 },
+        filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
+        displayBlurScale: { value: 1.0 },
+      },
+    });
 
     const quadH = new THREE.Mesh(quadGeo, matH);
     const quadV = new THREE.Mesh(quadGeo, matV);

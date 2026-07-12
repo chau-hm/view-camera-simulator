@@ -19,7 +19,6 @@ export type GroundGlassDofUniformState = {
   fNumber: number;
   renderWidth: number;
   renderHeight: number;
-  renderHeight: number;
   maximumBlurRadiusPx: number;
   // Physical CoC / calibration values
   circleOfConfusionMm: number;

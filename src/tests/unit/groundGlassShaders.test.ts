@@ -3,9 +3,9 @@ import { groundGlassSharedGlsl, groundGlassUniformDecls } from "../../render/gro
 
 describe("GroundGlass DOF shader source", () => {
   test("shared uniform decls include required uniforms", () => {
-    expect(groundGlassUniformDecls).toContain("boundaryBlurRadiusPx");
     expect(groundGlassUniformDecls).toContain("displayBlurScale");
     expect(groundGlassUniformDecls).toContain("maximumBlurRadiusPx");
+    expect(groundGlassUniformDecls).toContain("filmWidthMm");
   });
 
   test("shared GLSL helpers do not contain GLSL Infinity hacks or old formula", () => {
@@ -15,7 +15,7 @@ describe("GroundGlass DOF shader source", () => {
   });
 
   test("shared GLSL helpers contain wedge blur mapping helper", () => {
-    expect(groundGlassSharedGlsl).toContain("calculateWedgeBlurRadiusPx");
+    expect(groundGlassSharedGlsl).toContain("calculateWedgeBlurRadiusPxFromWorldPosition");
     expect(groundGlassSharedGlsl).toContain("calculateNormalizedWedgeDefocus");
   });
 });
