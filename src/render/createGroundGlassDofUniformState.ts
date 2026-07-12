@@ -75,6 +75,11 @@ export function createGroundGlassDofUniformState(
     opticalAxisDirection: opticsState.opticalAxis.direction,
   });
 
+  // If the image distance cannot be computed, treat this as a preparation error.
+  if (imageDistanceComputed === null) {
+    throw new Error("Unable to calculate image distance along the optical axis");
+  }
+
   return {
     mode: mode as 0 | 1,
     lensCenterWorld: toMeters(lens) ?? [0, 0, 0],
@@ -87,7 +92,7 @@ export function createGroundGlassDofUniformState(
     hasFiniteFarPlane: !!farPlane,
     inverseProjectionMatrix: invProj,
     cameraMatrixWorld: camWorld,
-    imageDistanceMm: imageDistanceComputed ?? 0,
+    imageDistanceMm: imageDistanceComputed,
     focalLengthMm: focalLengthMm,
     fNumber: aperture,
     renderWidth: width,

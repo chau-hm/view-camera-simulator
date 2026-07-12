@@ -39,6 +39,8 @@ type GroundGlassRTTProps = {
 import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 
 function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, }: GroundGlassRTTProps) {
+  // single-frame flag to avoid repeating uniform-preparation warnings every frame
+  const reportedUniformPreparationErrorRef = React.useRef<string | null>(null);
   const renderTarget = useRef<THREE.WebGLRenderTarget | null>(null);
   const offscreenScene = useRef<THREE.Scene | null>(null);
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
@@ -510,7 +512,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // prefer the renderTarget.depthTexture when available, otherwise use a 1.0 depth fallback
       const depthTex = (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture ?? fallbackDepthRef.current ?? null;
       matH.uniforms.tDepth.value = depthTex;
-      matH.uniforms.imageDistanceMm.value = imgDist;
+      // ensure imageDistance uniform is never zero; use small positive fallback if necessary
+      matH.uniforms.imageDistanceMm.value = Math.max(1e-6, imgDist);
       matH.uniforms.focalLengthMm.value = CAMERA_CONSTANTS.focalLengthMm;
       matH.uniforms.fNumber.value = aperture;
       matH.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
@@ -572,11 +575,14 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       if (preparedDofState) {
         applyDofStateToMaterial(matH, preparedDofState);
       } else {
+        // On failure to prepare typed DOF uniforms, force visual DOF bypass (Raw RTT)
+        matH.uniforms.useRaw.value = 1.0;
+        matH.uniforms.dofMode.value = 0.0;
         const coreModel = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
-        if (coreModel === "scheimpflug-wedge") {
-          matH.uniforms.useRaw.value = 1.0; // bypass DOF visually
-          matH.uniforms.dofMode.value = 0.0; // force parallel in shader to avoid uninitialized planes
+        // Log and surface the first error only to avoid per-frame noise
+        if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
           console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
+          reportedUniformPreparationErrorRef.current = uniformPreparationError ?? "unknown";
         }
       }
 
@@ -592,7 +598,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matV.uniforms.tDepth.value = depthTex;
       matV.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       matV.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
-      matV.uniforms.imageDistanceMm.value = imgDist;
+      // ensure imageDistance uniform is never zero; use small positive fallback if necessary
+      matV.uniforms.imageDistanceMm.value = Math.max(1e-6, imgDist);
       matV.uniforms.focalLengthMm.value = CAMERA_CONSTANTS.focalLengthMm;
       matV.uniforms.fNumber.value = aperture;
       matV.uniforms.near.value = cam.near;
@@ -603,11 +610,12 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       if (preparedDofState) {
         applyDofStateToMaterial(matV, preparedDofState);
       } else {
-        const coreModel = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
-        if (coreModel === "scheimpflug-wedge") {
-          matV.uniforms.useRaw.value = 1.0;
-          matV.uniforms.dofMode.value = 0.0;
+        // Force raw render if uniform preparation failed
+        matV.uniforms.useRaw.value = 1.0;
+        matV.uniforms.dofMode.value = 0.0;
+        if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
           console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
+          reportedUniformPreparationErrorRef.current = uniformPreparationError ?? "unknown";
         }
       }
 

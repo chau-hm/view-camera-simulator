@@ -68,21 +68,27 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, m
           <div style={{ marginTop: 8 }}>
             <div><strong>Reference object DOF diagnostics</strong></div>
             <div style={{ fontSize: 12, marginTop: 6 }}>
-              {refDiagnostics.map((d: { id: string; role?: string; probe: { x: number; y: number; z: number }; sample: GroundGlassWorldBlurSample; logicalBlurRadiusPx: number }) => (
-                <div key={d.id} style={{ marginBottom: 6 }}>
-                  <div><strong>{d.id}</strong> ({d.role ?? 'unknown'})</div>
-                  <div>Probe: {d.probe.x.toFixed(1)}, {d.probe.y.toFixed(1)}, {d.probe.z.toFixed(1)} mm</div>
-                  <div>Region: {d.sample.region}</div>
-                  <div>Target ray: {d.sample.targetRayDistanceMm.toFixed(1)} mm</div>
-                  <div>Near ray: {d.sample.nearRayDistanceMm !== null ? d.sample.nearRayDistanceMm.toFixed(1) + ' mm' : '—'}</div>
-                  <div>Focus ray: {d.sample.focusRayDistanceMm !== null ? d.sample.focusRayDistanceMm.toFixed(1) + ' mm' : '—'}</div>
-                  <div>Far ray: {d.sample.farRayDistanceMm !== null ? d.sample.farRayDistanceMm.toFixed(1) + ' mm' : (d.sample.depthOfFieldModel === 'parallel' ? '—' : '∞')}</div>
-                  <div>Inside DOF: {d.sample.insideDepthOfField ? 'yes' : 'no'}</div>
-                  <div>Normalized defocus: {Number.isFinite(d.sample.normalizedDefocus) ? d.sample.normalizedDefocus.toFixed(3) : 'NaN'}</div>
-                  <div>CoC: {d.sample.circleOfConfusionDiameterMm.toFixed(4)} mm ({d.sample.circleOfConfusionDiameterPx.toFixed(3)} px)</div>
-                  <div>Blur radius: {d.sample.blurRadiusPx.toFixed(3)} internal px, {d.logicalBlurRadiusPx.toFixed(3)} display px</div>
-                </div>
-              ))}
+              {refDiagnostics.map((d: { id: string; role?: string; probe: { x: number; y: number; z: number }; sample: GroundGlassWorldBlurSample; logicalBlurRadiusPx: number }) => {
+                const fmt = (n: number | null | undefined, digits = 1) => (n === null || n === undefined || !Number.isFinite(n) ? '—' : Number(n).toFixed(digits));
+                const fmtNormalized = (n: number | null | undefined) => (n === null || n === undefined || !Number.isFinite(n) ? '—' : Number(n).toFixed(3));
+                const insideDofText = d.sample.region === 'unresolved' ? 'Unresolved' : (d.sample.insideDepthOfField ? 'Yes' : 'No');
+                return (
+                  <div key={d.id} style={{ marginBottom: 6 }}>
+                    <div><strong>{d.id}</strong> ({d.role ?? 'unknown'})</div>
+                    <div>Probe: {d.probe.x.toFixed(1)}, {d.probe.y.toFixed(1)}, {d.probe.z.toFixed(1)} mm</div>
+                    <div>Region: {d.sample.region}</div>
+                    <div>Target ray: {fmt(d.sample.targetRayDistanceMm, 1)} mm</div>
+                    <div>Near ray: {d.sample.nearRayDistanceMm !== null ? fmt(d.sample.nearRayDistanceMm, 1) + ' mm' : '—'}</div>
+                    <div>Focus ray: {d.sample.focusRayDistanceMm !== null ? fmt(d.sample.focusRayDistanceMm, 1) + ' mm' : '—'}</div>
+                    <div>Far ray: {d.sample.farRayDistanceMm !== null ? fmt(d.sample.farRayDistanceMm, 1) + ' mm' : (d.sample.depthOfFieldModel === 'parallel' ? '—' : '∞')}</div>
+                    <div>Inside DOF: {insideDofText}</div>
+                    <div>Normalized defocus: {fmtNormalized(d.sample.normalizedDefocus)}</div>
+                    <div>CoC: {d.sample.circleOfConfusionDiameterMm ? d.sample.circleOfConfusionDiameterMm.toFixed(4) : '—'} mm ({d.sample.circleOfConfusionDiameterPx ? d.sample.circleOfConfusionDiameterPx.toFixed(3) : '—'} px)</div>
+                    <div>Blur radius: {d.sample.blurRadiusPx ? d.sample.blurRadiusPx.toFixed(3) : '—'} internal px, {d.logicalBlurRadiusPx ? d.logicalBlurRadiusPx.toFixed(3) : '—'} display px</div>
+                    {d.sample.diagnosticReason ? <div style={{ color: '#b91c1c' }}>Reason: {d.sample.diagnosticReason}</div> : null}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : null}

@@ -24,14 +24,37 @@ export type GroundGlassWorldBlurSample = {
 
   region: GroundGlassDofRegion;
   insideDepthOfField: boolean;
-  normalizedDefocus: number;
+  // normalizedDefocus may be null when unresolved
+  normalizedDefocus: number | null;
 
   circleOfConfusionDiameterMm: number;
   circleOfConfusionDiameterPx: number;
   blurRadiusPx: number;
 
   depthOfFieldModel: "parallel" | "scheimpflug-wedge";
+
+  // optional diagnostic reason when the sample could not be resolved
+  diagnosticReason?: string;
 };
+
+function createUnresolvedGroundGlassBlurSample(worldPoint: { x: number; y: number; z: number }, objectDistanceAlongAxisMm: number, targetRayDistanceMm: number, reason: string): GroundGlassWorldBlurSample {
+  return {
+    worldPoint,
+    objectDistanceAlongAxisMm,
+    targetRayDistanceMm,
+    nearRayDistanceMm: null,
+    focusRayDistanceMm: null,
+    farRayDistanceMm: null,
+    region: "unresolved",
+    insideDepthOfField: false,
+    normalizedDefocus: null,
+    circleOfConfusionDiameterMm: 0,
+    circleOfConfusionDiameterPx: 0,
+    blurRadiusPx: 0,
+    depthOfFieldModel: "parallel",
+    diagnosticReason: reason,
+  };
+}
 
 export function sampleGroundGlassBlurAtWorldPoint(input: {
   worldPoint: { x: number; y: number; z: number };
@@ -73,6 +96,29 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
 
   const model = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
 
+  // Basic input validation — return unresolved if any fundamental optical parameter is invalid
+  if (!Number.isFinite(focalLengthMm) || focalLengthMm <= 0) {
+    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid focal length");
+  }
+  if (!Number.isFinite(aperture) || aperture <= 0) {
+    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid aperture");
+  }
+  if (!Number.isFinite(circleOfConfusionMm) || circleOfConfusionMm <= 0) {
+    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid circleOfConfusionMm");
+  }
+  if (!Number.isFinite(filmWidthMm) || filmWidthMm <= 0) {
+    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid filmWidthMm");
+  }
+  if (!Number.isFinite(renderWidthPx) || renderWidthPx <= 0) {
+    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid renderWidthPx");
+  }
+  if (!Number.isFinite(maximumBlurRadiusPx) || maximumBlurRadiusPx < 0) {
+    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid maximumBlurRadiusPx");
+  }
+  if (!Number.isFinite(displayBlurScale) || displayBlurScale <= 0) {
+    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid displayBlurScale");
+  }
+
   if (model === "scheimpflug-wedge") {
     // form ray and sample wedge
     const ray = {
@@ -91,11 +137,26 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
       farPlane: opticsState.depthOfFieldFarPlane ?? null,
     });
 
+    // Basic validation: wedge must return finite distances and normalizedDefocus
+    if (!Number.isFinite(wedge.targetDistanceMm) || wedge.targetDistanceMm <= 0 || !Number.isFinite(wedge.normalizedDefocus)) {
+      return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid wedge sample from DOF wedge evaluator");
+    }
+
     const normalizedDefocus = wedge.normalizedDefocus;
     const insideDepthOfField = wedge.insideDepthOfField;
+
+    if (!Number.isFinite(normalizedDefocus)) {
+      return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Non-finite normalized defocus in wedge path");
+    }
+
     const cocDiameterMm = normalizedDefocus * circleOfConfusionMm;
+    // validate numeric conversions
+    if (!Number.isFinite(cocDiameterMm)) {
+      return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Non-finite CoC in wedge path");
+    }
+
     const cocDiameterPx = dofBlurModel.calculateBoundaryCoCDiameterPx(
-      circleOfConfusionMm * normalizedDefocus,
+      cocDiameterMm,
       filmWidthMm,
       renderWidthPx,
     );
@@ -149,15 +210,21 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
     opticalAxisDirection: opticsState.opticalAxis.direction,
   });
 
-  const cocDiameterMmFinal = (function () {
-    if (imageDistance === null) return 0;
-    try {
-      const val = cocDiameterMm(focalLengthMm, aperture, imageDistance as number, U);
-      return Number.isFinite(val) ? Math.abs(val) : 0;
-    } catch {
-      return 0;
-    }
-  })();
+  if (imageDistance === null) {
+    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Unable to compute image distance");
+  }
+
+  let cocDiameterMmFinal: number;
+  try {
+    const val = cocDiameterMm(focalLengthMm, aperture, imageDistance as number, U);
+    cocDiameterMmFinal = Number.isFinite(val) ? Math.abs(val) : NaN;
+  } catch {
+    cocDiameterMmFinal = NaN;
+  }
+
+  if (!Number.isFinite(cocDiameterMmFinal) || cocDiameterMmFinal <= 0) {
+    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Computed CoC invalid or non-positive");
+  }
 
   // convert to pixels and radius
   const circleOfConfusionDiameterPx = (cocDiameterMmFinal * renderWidthPx) / filmWidthMm;
@@ -185,10 +252,10 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   // normalized defocus: physical CoC diameter divided by acceptable CoC (circleOfConfusionMm)
   const normalizedDefocus = Number.isFinite(cocDiameterMmFinal) && Number.isFinite(circleOfConfusionMm) && circleOfConfusionMm > 0
     ? cocDiameterMmFinal / circleOfConfusionMm
-    : Number.NaN;
+    : null;
 
   const numericTolerance = 1e-6;
-  const insideDepthOfField = Number.isFinite(normalizedDefocus) ? (normalizedDefocus <= (1.0 + numericTolerance)) : false;
+  const insideDepthOfField = normalizedDefocus !== null ? (normalizedDefocus <= (1.0 + numericTolerance)) : false;
 
   // region classification for parallel
   const region: GroundGlassDofRegion = (() => {
