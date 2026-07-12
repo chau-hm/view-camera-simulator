@@ -292,6 +292,18 @@ export function getArchitectureFocusChartBars(): ArchitectureFocusChartBar[] {
   ];
 }
 
+// Derive a canonical probe point that targets the visible front-face detail of a reference object.
+export function getArchitectureReferenceObjectProbePoint(obj: ReferenceObjectDef) {
+  // X: object centre
+  const x = obj.x;
+  // Y: centre of visible detail panel — assume placed on canonical ground + half object height
+  const y = ground.y + obj.height / 2;
+  // Z: use front surface (nearer to camera) of the object's bounding box and nudge slightly forward to hit detail surface
+  const frontZ = obj.z - obj.depth / 2;
+  const probeZ = frontZ - 4.0; // small offset to ensure probing the visible detail surface
+  return { x, y, z: probeZ };
+}
+
 export default {
   ground,
   building,
@@ -310,4 +322,5 @@ export default {
   // helper exports for consumers that import the default geometry object
   getArchitectureFocusChartCells,
   getArchitectureFocusChartBars,
+  getArchitectureReferenceObjectProbePoint,
 };

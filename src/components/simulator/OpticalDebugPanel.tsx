@@ -1,5 +1,9 @@
 import React from "react";
 import type { DerivedOpticsState } from "../../types/optics";
+import { useAppStore } from "../../state/appStore";
+import geometry, { getArchitectureReferenceObjectProbePoint } from "../../scenes/architectureRiseGeometry";
+import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur";
+import { CAMERA_CONSTANTS } from "../../utils/constants";
 
 type OpticalDebugPanelProps = {
   sceneId: string;
@@ -17,6 +21,31 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, m
   const filmNormal = opticsState.filmPlane.normal;
   const axis = opticsState.opticalAxis.direction;
 
+  const rttInfo = useAppStore((s) => s.groundGlassRttRuntimeInfo);
+  const internalWidth = rttInfo?.internalWidthPx ?? 1024;
+  const logicalWidth = rttInfo?.logicalWidthPx ?? 800;
+
+  // If architecture scene, compute per-reference-object blur diagnostics
+  const refDiagnostics = React.useMemo(() => {
+    if (sceneId !== "architecture-rise") return null;
+    return geometry.referenceObjects.map((obj) => {
+      const probe = getArchitectureReferenceObjectProbePoint(obj);
+      const sample = sampleGroundGlassBlurAtWorldPoint({
+        worldPoint: probe,
+        opticsState,
+        focalLengthMm,
+        aperture,
+        circleOfConfusionMm: 0.1,
+        filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+        renderWidthPx: internalWidth,
+        maximumBlurRadiusPx: 60,
+        displayBlurScale: 1,
+      });
+      const logicalBlurRadiusPx = sample.blurRadiusPx * (logicalWidth / Math.max(1, internalWidth));
+      return { id: obj.id, role: obj.role, probe, sample, logicalBlurRadiusPx };
+    });
+  }, [sceneId, opticsState, focalLengthMm, aperture, internalWidth, logicalWidth]);
+
   return (
     <div style={{ paddingTop: 8 }}>
       <div style={{ fontSize: 13 }}>
@@ -33,6 +62,24 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, m
         <div style={{ marginTop: 6 }}><strong>Normals</strong></div>
         <div>Film normal: {filmNormal.x.toFixed(3)}, {filmNormal.y.toFixed(3)}, {filmNormal.z.toFixed(3)}</div>
         <div>Optical axis: {axis.x.toFixed(3)}, {axis.y.toFixed(3)}, {axis.z.toFixed(3)}</div>
+
+        {refDiagnostics ? (
+          <div style={{ marginTop: 8 }}>
+            <div><strong>Reference object DOF diagnostics</strong></div>
+            <div style={{ fontSize: 12, marginTop: 6 }}>
+              {refDiagnostics.map((d) => (
+                <div key={d.id} style={{ marginBottom: 6 }}>
+                  <div><strong>{d.id}</strong> ({d.role ?? 'unknown'})</div>
+                  <div>Probe: {d.probe.x.toFixed(1)}, {d.probe.y.toFixed(1)}, {d.probe.z.toFixed(1)} mm</div>
+                  <div>Region: {d.sample.insideDepthOfField ? 'inside DOF' : 'outside DOF'}</div>
+                  <div>Normalized defocus: {Number.isFinite(d.sample.normalizedDefocus) ? d.sample.normalizedDefocus.toFixed(3) : 'NaN'}</div>
+                  <div>CoC: {d.sample.circleOfConfusionDiameterMm.toFixed(4)} mm ({d.sample.circleOfConfusionDiameterPx.toFixed(3)} px)</div>
+                  <div>Blur radius: {d.sample.blurRadiusPx.toFixed(3)} internal px, {d.logicalBlurRadiusPx.toFixed(3)} display px</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

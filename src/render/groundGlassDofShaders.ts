@@ -44,6 +44,38 @@ float calculateNormalizedWedgeDefocus(float targetDist, float nearDist, float fo
 float calculateWedgeBlurRadiusPx(float normalizedDef, float boundaryBlurRadiusPx, float displayBlurScale, float maximumBlurRadiusPx){
   return clamp(normalizedDef * boundaryBlurRadiusPx * displayBlurScale, 0.0, maximumBlurRadiusPx);
 }
+
+// Convert a physical CoC diameter in mm to a kernel blur radius in internal pixels
+float cocDiameterMmToBlurRadiusPx(float cocDiameterMm){
+  float diameterPx = cocDiameterMm * renderWidth / sensorWidthMm;
+  return clamp(diameterPx * 0.5 * displayBlurScale, 0.0, maximumBlurRadiusPx);
+}
+
+// Parallel thin-lens path that takes a depth buffer value (non-linear) and returns blur radius in px
+float calculateParallelBlurRadiusPxFromDepth(float depth){
+  float viewZ = viewZFromDepth(depth, near, far);
+  float U = abs(viewZ) * 1000.0;
+  float f = focalLengthMm;
+  float vObject = (f * U) / max(0.0001, (U - f));
+  float apertureDiameter = f / max(1.0, fNumber);
+  float cocMm = apertureDiameter * abs(1.0 - (imageDistanceMm / vObject));
+  return cocDiameterMmToBlurRadiusPx(cocMm);
+}
+
+// Wedge path that computes normalized defocus from a world position then converts to blur radius
+float calculateWedgeBlurRadiusPxFromWorldPosition(vec3 worldPos){
+  vec3 rd = normalize(worldPos - lensCenterWorld);
+  float tFocus = intersectRayPlaneDist(lensCenterWorld, rd, focusPlanePoint, focusPlaneNormal);
+  float tNear = intersectRayPlaneDist(lensCenterWorld, rd, nearPlanePoint, nearPlaneNormal);
+  float tFar = hasFiniteFar > 0.5 ? intersectRayPlaneDist(lensCenterWorld, rd, farPlanePoint, farPlaneNormal) : -1.0;
+  float targetDist = length(worldPos - lensCenterWorld);
+  float focusDist = tFocus > 0.0 ? tFocus : targetDist;
+  float nearDist = tNear > 0.0 ? tNear : (focusDist - 1.0);
+  float farDist = (tFar > 0.0 && hasFiniteFar > 0.5) ? tFar : -1.0;
+  float nd = calculateNormalizedWedgeDefocus(targetDist, nearDist, focusDist, farDist, hasFiniteFar);
+  float cocMm = nd * circleOfConfusionMm;
+  return cocDiameterMmToBlurRadiusPx(cocMm);
+}
 `;
 
 // Shared declarations for uniforms used by both shaders
@@ -73,4 +105,6 @@ uniform mat4 cameraMatrixWorld;
 uniform float boundaryBlurRadiusPx;
 uniform float displayBlurScale;
 uniform float maximumBlurRadiusPx;
+uniform float circleOfConfusionMm;
+uniform float filmWidthMm;
 `;

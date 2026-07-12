@@ -178,33 +178,16 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     // Horizontal pass shader: includes shared uniform declarations and shared helper functions
     const fragH = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; ${groundGlassUniformDecls} ${groundGlassSharedGlsl}
 
-    float computeCoCPx(float depth){ float viewZ = viewZFromDepth(depth, near, far); float U = abs(viewZ) * 1000.0; float f = focalLengthMm; float vObject = (f * U) / max(0.0001, (U - f)); float apertureDiameter = f / max(1.0, fNumber); float cocMm = apertureDiameter * abs(1.0 - (imageDistanceMm / vObject)); float pixelsPerMm = renderWidth / sensorWidthMm; return clamp(cocMm * pixelsPerMm, 0.0, maxCoC); }
-
-    float computeWedgeCoCPx(vec3 worldPos){
-      vec3 rd = normalize(worldPos - lensCenterWorld);
-      float tFocus = intersectRayPlaneDist(lensCenterWorld, rd, focusPlanePoint, focusPlaneNormal);
-      float tNear = intersectRayPlaneDist(lensCenterWorld, rd, nearPlanePoint, nearPlaneNormal);
-      float tFar = hasFiniteFar > 0.5 ? intersectRayPlaneDist(lensCenterWorld, rd, farPlanePoint, farPlaneNormal) : -1.0;
-      float targetDist = length(worldPos - lensCenterWorld);
-      float focusDist = tFocus > 0.0 ? tFocus : targetDist;
-      float nearDist = tNear > 0.0 ? tNear : (focusDist - 1.0);
-      float farDist = (tFar > 0.0 && hasFiniteFar > 0.5) ? tFar : -1.0;
-      float nd = calculateNormalizedWedgeDefocus(targetDist, nearDist, focusDist, farDist, hasFiniteFar);
-      return calculateWedgeBlurRadiusPx(nd, boundaryBlurRadiusPx, displayBlurScale, maximumBlurRadiusPx);
-    }
-
     void main(){
       vec2 uv = vUv;
       if(useRaw > 0.5){ gl_FragColor = texture2D(tColor, uv); return; }
       float centerDepth = texture2D(tDepth, uv).x;
       float radius = 0.0;
       if (dofMode < 0.5) {
-        float centerUmm = abs(viewZFromDepth(centerDepth, near, far)) * 1000.0;
-        float centerCoC = computeCoCPx(centerDepth);
-        radius = min(maxCoC, centerCoC);
+        radius = calculateParallelBlurRadiusPxFromDepth(centerDepth);
       } else {
         vec3 worldPos = reconstructWorldPosition(uv, centerDepth, inverseProjectionMatrix, cameraMatrixWorld);
-        radius = computeWedgeCoCPx(worldPos);
+        radius = calculateWedgeBlurRadiusPxFromWorldPosition(worldPos);
       }
 
       // fast-path: exact in-focus, avoid costly sampling for tiny radii
@@ -213,31 +196,34 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         gl_FragColor = texture2D(tColor, uv);
         return;
       }
-      // continuous sub-pixel handling for small radii (<1 px)
+      // symmetric sub-pixel handling for small radii (<1 px)
       if (radius < 1.0) {
-        float frac = radius; // smoothly blend between center and single offset
+        float frac = smoothstep(zeroBlurThreshold, 1.0, radius);
+        float neighbourWeight = 0.25 * frac;
+        float centreWeight = 1.0 - 2.0 * neighbourWeight;
         vec3 c0 = texture2D(tColor, uv).rgb;
-        vec3 c1 = texture2D(tColor, uv + vec2(radius / renderWidth, 0.0)).rgb;
-        vec3 color = mix(c0, c1, frac);
+        vec3 c1 = texture2D(tColor, uv + vec2(1.0 / renderWidth, 0.0)).rgb;
+        vec3 cm1 = texture2D(tColor, uv - vec2(1.0 / renderWidth, 0.0)).rgb;
+        vec3 color = cm1 * neighbourWeight + c0 * centreWeight + c1 * neighbourWeight;
         gl_FragColor = vec4(color, 1.0);
         return;
       }
 
-      float sampleStep = 1.0; // px step
-      float sampleCountF = clamp(floor(radius / sampleStep) * 2.0 + 1.0, 1.0, 15.0);
-      float halfSamples = floor((sampleCountF - 1.0) * 0.5);
-      float sigma = max(0.5, radius * 0.35);
+      // multi-tap symmetric kernel
+      float halfSampleCount = clamp(ceil(radius), 1.0, 7.0);
+      float sigma = max(0.5, radius * 0.5);
       vec3 accum = vec3(0.0);
       float total = 0.0;
       for(int i=0;i<15;i++){
-        float idx = float(i) - halfSamples;
-        if(abs(idx) > halfSamples) continue;
-        float offsetPx = (halfSamples < 0.5) ? 0.0 : idx * (radius / max(halfSamples, 1.0));
+        float idx = float(i) - (halfSampleCount);
+        // valid indices are -halfSampleCount .. +halfSampleCount
+        if(idx < -halfSampleCount || idx > halfSampleCount) continue;
+        float offsetPx = idx * (radius / halfSampleCount);
         vec2 o = vec2(offsetPx / renderWidth, 0.0);
         float sampleDepth = texture2D(tDepth, uv + o).x;
         if(dofMode >= 0.5){
           vec3 worldSample = reconstructWorldPosition(uv + o, sampleDepth, inverseProjectionMatrix, cameraMatrixWorld);
-          float sampleRadius = computeWedgeCoCPx(worldSample);
+          float sampleRadius = calculateWedgeBlurRadiusPxFromWorldPosition(worldSample);
           if(abs(sampleRadius - radius) > max(2.0, radius * 0.5)) continue;
         }
         float sampleUmm = abs(viewZFromDepth(sampleDepth, near, far)) * 1000.0;
@@ -257,21 +243,6 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     // Vertical pass shader: uses same shared helpers and uniforms, plus ring UI uniforms
     const fragV = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; ${groundGlassUniformDecls} ${groundGlassSharedGlsl} uniform vec2 ringCenter; uniform float ringRadiusPx; uniform vec3 ringColor; uniform float ringOpacity; uniform float showRing; uniform float displayUpright;
 
-    float computeCoCPx(float depth){ float viewZ = viewZFromDepth(depth, near, far); float U = abs(viewZ) * 1000.0; float f = focalLengthMm; float vObject = (f * U) / max(0.0001, (U - f)); float apertureDiameter = f / max(1.0, fNumber); float cocMm = apertureDiameter * abs(1.0 - (imageDistanceMm / vObject)); float pixelsPerMm = renderWidth / sensorWidthMm; return clamp(cocMm * pixelsPerMm, 0.0, maxCoC); }
-
-    float computeWedgeCoCPx(vec3 worldPos){
-      vec3 rd = normalize(worldPos - lensCenterWorld);
-      float tFocus = intersectRayPlaneDist(lensCenterWorld, rd, focusPlanePoint, focusPlaneNormal);
-      float tNear = intersectRayPlaneDist(lensCenterWorld, rd, nearPlanePoint, nearPlaneNormal);
-      float tFar = hasFiniteFar > 0.5 ? intersectRayPlaneDist(lensCenterWorld, rd, farPlanePoint, farPlaneNormal) : -1.0;
-      float targetDist = length(worldPos - lensCenterWorld);
-      float focusDist = tFocus > 0.0 ? tFocus : targetDist;
-      float nearDist = tNear > 0.0 ? tNear : (focusDist - 1.0);
-      float farDist = (tFar > 0.0 && hasFiniteFar > 0.5) ? tFar : -1.0;
-      float nd = calculateNormalizedWedgeDefocus(targetDist, nearDist, focusDist, farDist, hasFiniteFar);
-      return calculateWedgeBlurRadiusPx(nd, boundaryBlurRadiusPx, displayBlurScale, maximumBlurRadiusPx);
-    }
-
     void main(){
       vec2 screenUv = vUv;
       vec2 sampleUv = (displayUpright > 0.5) ? vec2(1.0 - screenUv.x, 1.0 - screenUv.y) : screenUv;
@@ -279,12 +250,10 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       float centerDepth = texture2D(tDepth, sampleUv).x;
       float radius = 0.0;
       if (dofMode < 0.5) {
-        float centerUmm = abs(viewZFromDepth(centerDepth, near, far)) * 1000.0;
-        float centerCoC = computeCoCPx(centerDepth);
-        radius = min(maxCoC, centerCoC);
+        radius = calculateParallelBlurRadiusPxFromDepth(centerDepth);
       } else {
         vec3 worldPos = reconstructWorldPosition(sampleUv, centerDepth, inverseProjectionMatrix, cameraMatrixWorld);
-        radius = computeWedgeCoCPx(worldPos);
+        radius = calculateWedgeBlurRadiusPxFromWorldPosition(worldPos);
       }
 
       // fast-path: exact in-focus, avoid costly sampling for tiny radii
@@ -297,30 +266,31 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       }
 
       if (radius < 1.0) {
-        float frac = radius;
+        float frac = smoothstep(zeroBlurThreshold, 1.0, radius);
+        float neighbourWeight = 0.25 * frac;
+        float centreWeight = 1.0 - 2.0 * neighbourWeight;
         vec3 c0 = texture2D(tColor, sampleUv).rgb;
-        vec3 c1 = texture2D(tColor, sampleUv + vec2(0.0, radius / renderHeight)).rgb;
-        vec3 color = mix(c0, c1, frac);
+        vec3 c1 = texture2D(tColor, sampleUv + vec2(0.0, 1.0 / renderHeight)).rgb;
+        vec3 cm1 = texture2D(tColor, sampleUv - vec2(0.0, 1.0 / renderHeight)).rgb;
+        vec3 color = cm1 * neighbourWeight + c0 * centreWeight + c1 * neighbourWeight;
         if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
         gl_FragColor = vec4(color,1.0);
         return;
       }
 
-      float sampleStep = 1.0;
-      float sampleCountF = clamp(floor(radius / sampleStep) * 2.0 + 1.0, 1.0, 15.0);
-      float halfSamples = floor((sampleCountF - 1.0) * 0.5);
-      float sigma = max(0.5, radius * 0.35);
+      float halfSampleCount = clamp(ceil(radius), 1.0, 7.0);
+      float sigma = max(0.5, radius * 0.5);
       vec3 accum = vec3(0.0);
       float total = 0.0;
       for(int i=0;i<15;i++){
-        float idx = float(i) - halfSamples;
-        if(abs(idx) > halfSamples) continue;
-        float offsetPx = (halfSamples < 0.5) ? 0.0 : idx * (radius / max(halfSamples, 1.0));
+        float idx = float(i) - (halfSampleCount);
+        if(idx < -halfSampleCount || idx > halfSampleCount) continue;
+        float offsetPx = idx * (radius / halfSampleCount);
         vec2 o = vec2(0.0, offsetPx / renderHeight);
         float sampleDepth = texture2D(tDepth, sampleUv + o).x;
         if(dofMode >= 0.5){
           vec3 worldSample = reconstructWorldPosition(sampleUv + o, sampleDepth, inverseProjectionMatrix, cameraMatrixWorld);
-          float sampleRadius = computeWedgeCoCPx(worldSample);
+          float sampleRadius = calculateWedgeBlurRadiusPxFromWorldPosition(worldSample);
           if(abs(sampleRadius - radius) > max(2.0, radius * 0.5)) continue;
         }
         float sampleUmm = abs(viewZFromDepth(sampleDepth, near, far)) * 1000.0;
