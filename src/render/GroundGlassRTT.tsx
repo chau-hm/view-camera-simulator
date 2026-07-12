@@ -49,6 +49,12 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1, zoomEnabled }));
 
   // refs for instance-owned resources (avoid storing on function object)
+  type PostResources = {
+    postSceneH: THREE.Scene;
+    postSceneV: THREE.Scene;
+    orthoCam: THREE.OrthographicCamera;
+    tempRT: THREE.WebGLRenderTarget;
+  };
   const postResourcesRef = React.useRef<PostResources | null>(null);
   const fallbackDepthRef = React.useRef<THREE.DataTexture | null>(null);
   const resourceGenerationRef = React.useRef<number>(0);
@@ -59,9 +65,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       try {
         const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
         if (setInfo) setInfo(null);
-      } catch (err) {
-        /* ignore - best effort cleanup */
-      }
+      } catch (err) { void err; }
     };
   }, []);
 
@@ -114,9 +118,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         });
       }
     } catch (err) {
-      // best-effort only; ignore failures
-      // eslint-disable-next-line no-console
-      console.info("GroundGlassRTT: runtime info set failed", err instanceof Error ? err.message : err);
+      void err;
     }
 
     // create main render target at the resolved internal size
@@ -171,12 +173,6 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     // create full-screen quad geometry and placeholder materials
     const quadGeo = new THREE.PlaneGeometry(2, 2);
 
-    type PostResources = {
-      postSceneH: THREE.Scene;
-      postSceneV: THREE.Scene;
-      orthoCam: THREE.OrthographicCamera;
-      tempRT: THREE.WebGLRenderTarget;
-    };
     const vertexShader = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position,1.0); }`;
 
     // Horizontal pass shader: includes shared uniform declarations and shared helper functions
@@ -398,9 +394,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           resourceGeneration: resourceGenerationRef.current,
         });
       }
-    } catch (err) {
-      /* ignore - best-effort runtime info update */
-    }
+    } catch (err) { void err; }
 
     // For Focus Fundamentals use the shared subject factory (boards, floor)
     const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
@@ -463,15 +457,15 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       try {
         // dispose main color target
         if (renderTarget.current) {
-          try { (renderTarget.current as THREE.WebGLRenderTarget).dispose(); } catch (err) { /* ignore */ }
+          try { (renderTarget.current as THREE.WebGLRenderTarget).dispose(); } catch (err) { void err; }
           renderTarget.current = null;
         }
         // dispose temporary blur target
-        try { tempRT.dispose(); } catch (err) { /* ignore */ }
+        try { tempRT.dispose(); } catch (err) { void err; }
 
         // dispose fallback depth
         if (fallbackDepthRef.current) {
-          try { fallbackDepthRef.current.dispose(); } catch (err) { /* ignore */ }
+          try { fallbackDepthRef.current.dispose(); } catch (err) { void err; }
           fallbackDepthRef.current = null;
         }
 
@@ -484,10 +478,10 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
               s.children.forEach((c) => {
                 const m = c as THREE.Mesh;
                 if (m.material) {
-                  try { (m.material as THREE.Material).dispose(); } catch (err) { /* ignore */ }
+                  try { (m.material as THREE.Material).dispose(); } catch (err) { void err; }
                 }
                 if (m.geometry) {
-                  try { (m.geometry as THREE.BufferGeometry).dispose(); } catch (err) { /* ignore */ }
+                  try { (m.geometry as THREE.BufferGeometry).dispose(); } catch (err) { void err; }
                 }
               });
             });
@@ -495,7 +489,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
             // remove scenes
             post.postSceneH.clear();
             post.postSceneV.clear();
-          } catch (err) { /* ignore */ }
+          } catch (err) { void err; }
           postResourcesRef.current = null;
         }
 
@@ -508,7 +502,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         try {
           const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
           if (setInfo) setInfo(null);
-        } catch (err) { /* ignore */ }
+        } catch (err) { void err; }
       }
     };
   }, [gl, widthPx, heightPx, sceneId, renderQuality, zoomEnabled]);
@@ -589,9 +583,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           // no-op here
         }
       });
-    } catch (err) {
-      /* ignore - non-fatal frame update error */
-    }
+    } catch (err) { void err; }
 
     // 1) render scene to color+depth renderTarget
     const prev = gl.getRenderTarget();
