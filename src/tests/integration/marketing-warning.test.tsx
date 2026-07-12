@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, cleanup } from '@testing-library/react';
 import { describe, it, afterEach, expect, beforeEach } from 'vitest';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
@@ -22,7 +23,6 @@ describe('marketing desktop experience notice', () => {
     cleanup();
     if (typeof origInnerWidth !== 'undefined') (window as any).innerWidth = origInnerWidth;
     else delete (window as any).innerWidth;
-    // @ts-expect-error - cleanup mock
     (window as any).matchMedia = origMatchMedia;
   });
 

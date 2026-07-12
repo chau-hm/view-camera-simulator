@@ -82,26 +82,29 @@ export function useSimulatorSuitability(): SimulatorSuitability {
     };
 
     // Attach change listeners — use addEventListener when available, fallback to legacy addListener
-    const attach = (mql: LegacyMediaQueryList | null, listener: () => void) => {
+    const attach = (mql: LegacyMediaQueryList | null, listener: (e: MediaQueryListEvent) => void) => {
       if (!mql) return;
       if (typeof mql.addEventListener === "function") {
         mql.addEventListener("change", listener as EventListener);
       } else if (typeof mql.addListener === "function") {
-        mql.addListener(listener as any);
+        mql.addListener(listener);
       }
     };
 
-    const detach = (mql: LegacyMediaQueryList | null, listener: () => void) => {
+    const detach = (mql: LegacyMediaQueryList | null, listener: (e: MediaQueryListEvent) => void) => {
       if (!mql) return;
       if (typeof mql.removeEventListener === "function") {
         mql.removeEventListener("change", listener as EventListener);
       } else if (typeof mql.removeListener === "function") {
-        mql.removeListener(listener as any);
+        mql.removeListener(listener);
       }
     };
 
-    attach(mqNarrow, recalc);
-    attach(mqCoarse, recalc);
+    // listener wrapper that matches the expected legacy signature
+    const listenerWrapper = () => { recalc(); };
+
+    attach(mqNarrow, listenerWrapper as (e: MediaQueryListEvent) => void);
+    attach(mqCoarse, listenerWrapper as (e: MediaQueryListEvent) => void);
 
     const onResize = () => recalc();
     if (typeof window !== "undefined") window.addEventListener("resize", onResize);

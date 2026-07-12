@@ -14,7 +14,9 @@ test.describe('Marketing responsive', () => {
     await expect(page.locator('role=note')).toHaveCount(0);
     await expect(page.locator('text=Focus Fundamentals')).toBeVisible();
     await expect(page.locator('text=Architecture Rise')).toBeVisible();
-    await expect(page.locator('role=button[name="Open Scene"]')).toHaveCount(/\d+/);
+    // ensure at least one Open Scene button exists
+    const openSceneCount = await page.locator('role=button[name="Open Scene"]').count();
+    expect(openSceneCount).toBeGreaterThan(0);
   });
 
   test('Narrow Home (390x844) shows warning and retains CTA without overflow', async ({ page }) => {
@@ -44,7 +46,9 @@ test.describe('Marketing responsive', () => {
     await expect(page.locator('role=note')).toBeVisible();
     await expect(page.locator('text=Focus Fundamentals')).toBeVisible();
     await expect(page.locator('text=Architecture Rise')).toBeVisible();
-    await expect(page.locator('role=button[name="Open Scene"]')).toHaveCount(/\d+/);
+    // ensure at least one Open Scene button exists
+    const openSceneCount2 = await page.locator('role=button[name="Open Scene"]').count();
+    expect(openSceneCount2).toBeGreaterThan(0);
 
     const pageHasHorizontalOverflow = await page.evaluate(() => {
       const root = document.documentElement;

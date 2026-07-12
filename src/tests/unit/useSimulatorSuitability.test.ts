@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { useSimulatorSuitability } from "../../hooks/useSimulatorSuitability";
@@ -22,10 +23,10 @@ function createMockMatchMedia(initial: Record<string, boolean>) {
       registry[query] = {
         matches: !!initial[query],
         listeners: [],
-        addEventListener(ev: string, fn: (e: MediaQueryListEvent) => void) {
+        addEventListener(_ev: string, fn: (e: MediaQueryListEvent) => void) {
           registry[query].listeners.push(fn);
         },
-        removeEventListener(ev: string, fn: (e: MediaQueryListEvent) => void) {
+        removeEventListener(_ev: string, fn: (e: MediaQueryListEvent) => void) {
           registry[query].listeners = registry[query].listeners.filter((l) => l !== fn);
         },
         addListener(fn: (e: MediaQueryListEvent) => void) {
@@ -59,8 +60,7 @@ function createMockMatchMedia(initial: Record<string, boolean>) {
     return obj as MediaQueryList & { dispatch: (m: boolean) => void };
   };
 
-  // @ts-expect-error - replace global for testing
-  window.matchMedia = mm;
+  (window as any).matchMedia = mm;
 
   return {
     mm,
@@ -205,7 +205,7 @@ describe("useSimulatorSuitability", () => {
 
   it("F: listener cleanup removes all registered handlers on unmount", async () => {
     (window as any).innerWidth = 1024;
-    const { mm, registry } = createMockMatchMedia({ "(max-width: 899px)": false, "(pointer: coarse)": false });
+    const { registry } = createMockMatchMedia({ "(max-width: 899px)": false, "(pointer: coarse)": false });
 
     const { unmount } = renderHook(() => useSimulatorSuitability());
 
