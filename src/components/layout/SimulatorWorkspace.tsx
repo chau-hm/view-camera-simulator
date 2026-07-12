@@ -231,7 +231,19 @@ export const SimulatorWorkspace = ({
             <div className="simulator-info-card" aria-label="Optical Debug">
               <h4>Optical Debug</h4>
               <div style={{ paddingTop: 8 }}>
-                <OpticalDebugPanel sceneId={camera.activeSceneId} mode={camera.mode} taskId={camera.activeTaskId} opticsState={opticsState} focalLengthMm={camera.focalLengthMm} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
+                <OpticalDebugPanel
+                  sceneId={camera.activeSceneId}
+                  mode={camera.mode}
+                  taskId={camera.activeTaskId}
+                  opticsState={opticsState}
+                  focalLengthMm={camera.focalLengthMm}
+                  focusDistanceMm={camera.focusDistanceMm}
+                  aperture={camera.aperture as number}
+                  renderQuality={renderQuality}
+                  qualitySettings={qualitySettings}
+                  rttRuntimeInfo={rttRuntimeInfo}
+                  pipeline={groundGlassPipeline}
+                />
               </div>
             </div>
           </div>
