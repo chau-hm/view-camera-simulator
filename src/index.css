@@ -177,16 +177,36 @@ button {
   font-weight: 700;
 }
 
-/* info grid below the viewports */
-.simulator-info-grid {
+/* primary info row: current settings + focus targets */
+.simulator-primary-info-grid {
  display: grid;
- grid-template-columns: minmax(260px, 0.8fr) minmax(260px, 0.8fr) minmax(420px, 1.4fr);
+ grid-template-columns: repeat(2, minmax(0, 1fr));
  gap: 16px;
  align-items: start;
 }
 
-.simulator-info-grid > .simulator-info-card {
-  align-self: start;
+/* task + feedback grid: two equal columns */
+.simulator-task-feedback-grid {
+ grid-column: 1 / -1;
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 16px;
+ align-items: start;
+}
+
+/* debug row full width */
+.simulator-debug-row {
+ grid-column: 1 / -1;
+ display: block;
+}
+
+.simulator-debug-row > * { width: 100%; }
+
+@media (max-width: 900px) {
+ .simulator-primary-info-grid,
+ .simulator-task-feedback-grid {
+   grid-template-columns: 1fr;
+ }
 }
 
 /* Readout card modifiers */

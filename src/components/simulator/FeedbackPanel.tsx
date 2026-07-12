@@ -1,30 +1,32 @@
 import type { TaskEvaluation, TaskDefinition } from "../../types/task";
 import { UI_COPY } from "../../ui/copy";
-import { getFeedbackStatus, getPassedCriteriaCount, getPrimaryFailedCriterion, formatFinalCameraState } from './taskHelpers';
+import { getFeedbackStatus, getPassedCriteriaCount, getPrimaryFailedCriterion, formatFinalCameraState, getFreePracticeFeedback } from './taskHelpers';
 
 type FeedbackPanelProps = {
   mode: string;
+  sceneId: string;
   task: TaskDefinition | null;
   evaluation: TaskEvaluation | null;
   showTitle?: boolean;
 };
 
-export const FeedbackPanel = ({ mode, task, evaluation, showTitle = true }: FeedbackPanelProps) => {
+export const FeedbackPanel = ({ mode, sceneId, evaluation, showTitle = true }: FeedbackPanelProps) => {
   const status = getFeedbackStatus(mode, evaluation);
   const { passed, total } = getPassedCriteriaCount(evaluation);
   const primaryFailed = getPrimaryFailedCriterion(evaluation);
 
   if (!evaluation && mode !== 'guided') {
-    // Free mode neutral observation
+    // Free mode neutral observation: use scene-specific observation and a single live badge
+    const freeObs = getFreePracticeFeedback(sceneId);
     return (
-      <section aria-label={UI_COPY.simulator.feedbackTitle} className="simulator-info-card simulator-info-card--feedback feedback-panel feedback-panel--idle">
+      <section aria-label={UI_COPY.simulator.feedbackTitle} className="feedback-panel feedback-panel--idle">
         {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
-        <div>
-          <div className="feedback-status">{UI_COPY.simulator.noScoredTask}</div>
-          <p style={{ marginTop: 8 }}>{UI_COPY.simulator.freePracticeIntro}</p>
-          {task?.sceneId === 'architecture-rise' && (
-            <p style={{ marginTop: 6, color: 'var(--text-muted)' }}>Watch the building framing as Rise changes. Vertical lines should remain parallel while Tilt and Swing stay at zero.</p>
-          )}
+        <div className="feedback-summary">
+          <div className="feedback-summary__header">
+            <span className="feedback-status">{UI_COPY.simulator.liveObservation}</span>
+          </div>
+          <p style={{ marginTop: 8 }}>{UI_COPY.simulator.changesReflected}</p>
+          <p style={{ marginTop: 6, color: 'var(--text-muted)' }}>{freeObs.observation}</p>
         </div>
       </section>
     );
@@ -32,7 +34,7 @@ export const FeedbackPanel = ({ mode, task, evaluation, showTitle = true }: Feed
 
   if (!evaluation && mode === 'guided') {
     return (
-      <section aria-label={UI_COPY.simulator.feedbackTitle} className="simulator-info-card simulator-info-card--feedback feedback-panel feedback-panel--idle">
+      <section aria-label={UI_COPY.simulator.feedbackTitle} className="feedback-panel feedback-panel--idle">
         {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
         <div>
           <div className="feedback-status">{UI_COPY.simulator.notStarted}</div>

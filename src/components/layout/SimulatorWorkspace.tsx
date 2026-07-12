@@ -187,37 +187,21 @@ export const SimulatorWorkspace = ({
             </div>
           </div>
 
-          {/* Info grid: current settings, focus targets, debug */}
-          <div className="simulator-info-grid">
-              <CurrentSettingsReadout
-                riseMm={camera.frontRiseMm}
-                tiltDeg={camera.frontTiltDeg}
-                swingDeg={camera.frontSwingDeg}
-                focusDistanceMm={camera.focusDistanceMm}
-                aperture={camera.aperture as number}
-                renderQuality={renderQuality}
-              />
+          {/* Row 1: Current Settings | Focus Targets */}
+          <div className="simulator-primary-info-grid">
+            <CurrentSettingsReadout
+              riseMm={camera.frontRiseMm}
+              tiltDeg={camera.frontTiltDeg}
+              swingDeg={camera.frontSwingDeg}
+              focusDistanceMm={camera.focusDistanceMm}
+              aperture={camera.aperture as number}
+              renderQuality={renderQuality}
+            />
 
-              <FocusTargetsReadout focusTargets={focusAssistTargets} />
-
-              <div className="simulator-info-card" aria-label="Optical Debug">
-                <h4>Optical Debug</h4>
-                <div style={{ paddingTop: 8 }}>
-                  <OpticalDebugPanel
-                    sceneId={camera.activeSceneId}
-                    mode={camera.mode}
-                    taskId={camera.activeTaskId}
-                    opticsState={opticsState}
-                    focalLengthMm={camera.focalLengthMm}
-                    focusDistanceMm={camera.focusDistanceMm}
-                    aperture={camera.aperture as number}
-                    renderQuality={renderQuality}
-                    rttRuntimeInfo={rttRuntimeInfo}
-                  />
-                </div>
-              </div>
+            <FocusTargetsReadout focusTargets={focusAssistTargets} />
           </div>
 
+          {/* Row 2: Task | Feedback (each wrapped in a card shell provided by Workspace) */}
           <div className="simulator-task-feedback-grid">
             <div className="simulator-info-card simulator-info-card--task">
               <h4>Task</h4>
@@ -225,8 +209,23 @@ export const SimulatorWorkspace = ({
             </div>
             <div className="simulator-info-card simulator-info-card--feedback">
               <h4>Feedback</h4>
-              <FeedbackPanel mode={mode} task={task} evaluation={evaluation} showTitle={false} />
+              <FeedbackPanel mode={mode} sceneId={safeScene.id} task={task} evaluation={evaluation} showTitle={false} />
             </div>
+          </div>
+
+          {/* Row 3: Optical Debug, full width (component owns its single card shell) */}
+          <div className="simulator-debug-row">
+            <OpticalDebugPanel
+              sceneId={camera.activeSceneId}
+              mode={camera.mode}
+              taskId={camera.activeTaskId}
+              opticsState={opticsState}
+              focalLengthMm={camera.focalLengthMm}
+              focusDistanceMm={camera.focusDistanceMm}
+              aperture={camera.aperture as number}
+              renderQuality={renderQuality}
+              rttRuntimeInfo={rttRuntimeInfo}
+            />
           </div>
 
         </main>

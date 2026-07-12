@@ -15,30 +15,44 @@ export function formatControlLabel(controlId: string): string {
   return map[controlId] ?? controlId;
 }
 
-export function getFreePracticeGuidance(sceneId: string | undefined): {
-  heading: string;
-  intro: string;
+export type FreePracticeGuidance = {
+  objective: string;
   bullets: string[];
-} {
-  const intro = UI_COPY.simulator.freePracticeIntro || "Explore the scene without a scored task.";
-  const defaults = {
-    "architecture-rise": [
-      "Raise the front standard to include more of the building.",
-      "Keep tilt and swing at zero to preserve parallel verticals.",
-      "Adjust focus and aperture to compare sharpness and depth of field.",
-    ],
-    "focus-fundamentals-two-targets": [
-      "Move focus between the near and far target.",
-      "Change aperture to compare depth of field.",
-      "Use Focus Assist to compare target sharpness.",
-    ],
-  } as Record<string, string[]>;
+};
 
-  return {
-    heading: UI_COPY.simulator.freePractice || "Free practice",
-    intro,
-    bullets: sceneId && defaults[sceneId] ? defaults[sceneId] : [],
+export function getFreePracticeGuidance(sceneId: string | undefined): FreePracticeGuidance {
+  const genericObjective = UI_COPY.simulator.freePracticeIntro || "Explore the scene without a scored task.";
+  const defaults: Record<string, FreePracticeGuidance> = {
+    "architecture-rise": {
+      objective: "Explore how front rise changes the framing while the camera remains level.",
+      bullets: [
+        "Increase Rise to include more of the building.",
+        "Keep Tilt and Swing at 0° to preserve parallel vertical lines.",
+        "Adjust Focus and Aperture to compare sharpness and depth of field.",
+      ],
+    },
+    "focus-fundamentals-two-targets": {
+      objective: "Explore how focus distance and aperture affect two targets at different distances.",
+      bullets: [
+        "Move focus between the near and far target.",
+        "Change Aperture to compare depth of field.",
+        "Use Focus Assist to compare target sharpness.",
+      ],
+    },
   };
+
+  if (sceneId && defaults[sceneId]) return defaults[sceneId];
+  return { objective: genericObjective, bullets: [] };
+}
+
+export function getFreePracticeFeedback(sceneId: string | undefined): { observation: string } {
+  const generic = { observation: UI_COPY.simulator.changesReflected || 'Changes are reflected immediately in the 3D Scene, Ground Glass, Current Settings, and Focus Targets.' };
+  const map: Record<string, { observation: string }> = {
+    "architecture-rise": { observation: 'Watch the top of the building as Rise changes. The framing should move upward while the vertical edges remain parallel.' },
+    "focus-fundamentals-two-targets": { observation: 'Watch the target sharpness bars as Focus distance and Aperture change.' },
+  };
+
+  return (sceneId && map[sceneId]) ? map[sceneId] : generic;
 }
 
 export function getFeedbackStatus(mode: string, evaluation: TaskEvaluation | null): string {

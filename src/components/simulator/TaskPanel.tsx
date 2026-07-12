@@ -12,18 +12,20 @@ export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) =
   const freeGuidance = getFreePracticeGuidance(sceneId);
 
   if (!task) {
-    // Free mode guidance
+    // Free mode guidance (content-only; outer card shell and heading provided by Workspace)
     return (
-      <section aria-label={UI_COPY.simulator.taskTitle} className="simulator-info-card simulator-info-card--task task-panel task-panel--free">
+      <section aria-label={UI_COPY.simulator.taskTitle} className="task-panel task-panel--free">
         {showTitle ? <h2>{UI_COPY.simulator.taskTitle}</h2> : null}
         <div className="task-summary">
           <div className="task-summary__header">
             <span className="task-status task-status--free">{UI_COPY.simulator.freePractice}</span>
           </div>
-          <h3 className="task-summary__title">{freeGuidance.heading}</h3>
-          <p className="task-summary__objective">{freeGuidance.intro}</p>
+
+          {/* single objective paragraph (scene-specific) */}
+          <p className="task-summary__objective">{freeGuidance.objective}</p>
+
           {freeGuidance.bullets.length > 0 && (
-            <ul>
+            <ul className="task-summary__guidance">
               {freeGuidance.bullets.map((b) => (
                 <li key={b}>{b}</li>
               ))}
@@ -39,7 +41,7 @@ export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) =
   const remainingNotes = task.constraints.notes && task.constraints.notes.length > 1 ? task.constraints.notes.slice(1) : [];
 
   return (
-    <section aria-label={UI_COPY.simulator.taskTitle} className="simulator-info-card simulator-info-card--task task-panel task-panel--guided">
+    <section aria-label={UI_COPY.simulator.taskTitle} className="task-panel task-panel--guided">
       {showTitle ? <h2>{UI_COPY.simulator.taskTitle}</h2> : null}
       <div className="task-summary">
         <div className="task-summary__header">
@@ -69,11 +71,9 @@ export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) =
               <div>{UI_COPY.simulator.noAdjustmentNeeded}</div>
             )}
 
-            <h4 style={{ marginTop: 8 }}>{UI_COPY.simulator.taskAllowedControlsLabel}</h4>
-            <div>
-              {task.enabledControls.map((c) => (
-                <span key={c} className="chip" style={{ marginRight: 6 }}>{formatControlLabel(c)}</span>
-              ))}
+            {/* show requirement notes only; do not repeat allowed-controls here */}
+            <div style={{ marginTop: 8 }}>
+              {remainingNotes.length > 0 ? null : <div style={{ color: 'var(--text-muted)' }}>{UI_COPY.simulator.noAdjustmentNeeded}</div>}
             </div>
           </div>
         </details>
