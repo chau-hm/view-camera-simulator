@@ -18,7 +18,6 @@ export function formatGroundGlassFocusLabel(input: GroundGlassFocusLabelInput): 
     isRttScene,
     isInfinityFocus,
     focusDistanceMm,
-    lastFiniteFocusDepthMm,
     primaryTarget,
     legacyDistanceToFocusPlaneMm,
   } = input;

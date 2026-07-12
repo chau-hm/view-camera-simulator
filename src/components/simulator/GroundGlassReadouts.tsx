@@ -15,6 +15,8 @@ type GroundGlassReadoutsProps = {
   qualitySettings: ReturnType<typeof getRenderQualitySettings>;
   lastFiniteFocusDepthMm?: number | null;
   focusTargets?: { id: string; sharpnessPercent: number }[];
+  // new: RTT runtime info for RTT-capable scenes
+  rttRuntimeInfo?: import("../../render/groundGlassRttDimensions").GroundGlassRttRuntimeInfo | null;
 };
 
 export const CurrentSettingsReadout = ({
@@ -27,7 +29,39 @@ export const CurrentSettingsReadout = ({
   pipeline,
   qualitySettings,
   lastFiniteFocusDepthMm,
+  rttRuntimeInfo,
 }: GroundGlassReadoutsProps) => {
+  // RTT-specific compact readout when runtime info is available
+  if (rttRuntimeInfo) {
+    return (
+      <div aria-label="CurrentSettingsReadout" className="simulator-info-card" style={{ display: 'grid', gap: '0.5rem' }}>
+        <h4>{UI_COPY.simulator.groundGlassCurrentSettings}</h4>
+        <div style={{ display: "grid", gap: "0.25rem", fontSize: 13 }}>
+          <div>Rise {formatMillimeter(riseMm)} | Tilt {formatDegrees(tiltDeg)} | Swing {formatDegrees(swingDeg)}</div>
+          <div>
+            {typeof focusDistanceMm === 'number' && isFinite(focusDistanceMm) ? (
+              <span>Focus {formatMillimeter(focusDistanceMm)} | Aperture f/{aperture}</span>
+            ) : (
+              <span>Focus ∞ | Aperture f/{aperture} <span style={{ fontSize: 12, color: 'var(--text-muted)' }}> (Last finite: {lastFiniteFocusDepthMm ? formatMillimeter(lastFiniteFocusDepthMm) : '—'})</span></span>
+            )}
+          </div>
+          <div>Quality: {renderQuality}</div>
+          <div>Display: {rttRuntimeInfo.logicalWidthPx}×{rttRuntimeInfo.logicalHeightPx}</div>
+          <div>Canvas DPR: configured {rttRuntimeInfo.configuredCanvasDpr} / actual {rttRuntimeInfo.rendererPixelRatio}</div>
+          <div>Drawing buffer: {rttRuntimeInfo.drawingBufferWidthPx}×{rttRuntimeInfo.drawingBufferHeightPx}</div>
+          <div>RTT color: {rttRuntimeInfo.colorTargetWidthPx}×{rttRuntimeInfo.colorTargetHeightPx}</div>
+          <div>RTT depth: {rttRuntimeInfo.depthTargetWidthPx}×{rttRuntimeInfo.depthTargetHeightPx}</div>
+          <div>RTT blur: {rttRuntimeInfo.blurTargetWidthPx}×{rttRuntimeInfo.blurTargetHeightPx}</div>
+          <div>Resolution scale: {rttRuntimeInfo.resolutionScale.toFixed(2)}×</div>
+          <div>Zoom scale: {rttRuntimeInfo.zoomRenderScale.toFixed(2)}×</div>
+          <div>Clamped: {rttRuntimeInfo.wasClamped ? 'Yes' : 'No'}</div>
+          <div>Generation: {rttRuntimeInfo.resourceGeneration}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // fallback: legacy pipeline-shaped readout
   return (
     <div aria-label="CurrentSettingsReadout" className="simulator-info-card" style={{ display: 'grid', gap: '0.5rem' }}>
       <h4>{UI_COPY.simulator.groundGlassCurrentSettings}</h4>

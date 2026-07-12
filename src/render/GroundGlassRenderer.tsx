@@ -11,7 +11,6 @@ import type { ApertureValue } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
-import { formatMillimeter } from "../utils/formatters";
 import { createFocusAssistPass } from "./postprocessing/FocusAssistPass";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";

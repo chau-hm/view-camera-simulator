@@ -5,7 +5,7 @@ describe("formatGroundGlassFocusLabel", () => {
   it("shows focus and sharpness for RTT target", () => {
     const s = formatGroundGlassFocusLabel({ isRttScene: true, isInfinityFocus: false, focusDistanceMm: 8890, primaryTarget: { sharpness: 0.997, normalizedDefocus: 0.01 } });
     expect(s).toContain('8890');
-    expect(s).toContain('target') || expect(s).toContain('defocus');
+    expect(s).toMatch(/target|defocus/);
   });
 
   it("shows infinity for RTT infinite focus", () => {

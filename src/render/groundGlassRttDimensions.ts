@@ -14,18 +14,32 @@ export type GroundGlassRttDimensions = {
 
 export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   profile: RenderQualityProfile;
-  configuredCanvasDpr: number;
-  rendererPixelRatio: number;
+
+  configuredCanvasDpr: number; // the DPR configured by the selected quality profile
+  rendererPixelRatio: number; // actual renderer pixel ratio from gl.getPixelRatio()
+
   canvasCssWidthPx: number;
   canvasCssHeightPx: number;
-  drawingBufferWidthPx: number;
-  drawingBufferHeightPx: number;
+
+  drawingBufferWidthPx: number; // canvas.width
+  drawingBufferHeightPx: number; // canvas.height
+
+  internalWidthPx: number;
+  internalHeightPx: number;
+
   colorTargetWidthPx: number;
   colorTargetHeightPx: number;
+
   depthTargetWidthPx: number;
   depthTargetHeightPx: number;
+
   blurTargetWidthPx: number;
   blurTargetHeightPx: number;
+
+  cameraNearWorld?: number;
+  cameraFarWorld?: number;
+
+  resourceGeneration: number; // increments when RTT resources are recreated
 };
 
 const MAX_INTERNAL_WIDTH = 1600;

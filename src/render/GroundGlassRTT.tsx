@@ -35,12 +35,6 @@ type GroundGlassRTTProps = {
   zoomEnabled?: boolean;
 };
 
-type PostResources = {
-  postSceneH: THREE.Scene;
-  postSceneV: THREE.Scene;
-  orthoCam: THREE.OrthographicCamera;
-  tempRT: THREE.WebGLRenderTarget;
-};
 
 import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 
@@ -54,14 +48,19 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
   const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1, zoomEnabled }));
 
+  // refs for instance-owned resources (avoid storing on function object)
+  const postResourcesRef = React.useRef<PostResources | null>(null);
+  const fallbackDepthRef = React.useRef<THREE.DataTexture | null>(null);
+  const resourceGenerationRef = React.useRef<number>(0);
+
   // clear RTT runtime diagnostics when this renderer unmounts or is recreated
   React.useEffect(() => {
     return () => {
       try {
         const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
         if (setInfo) setInfo(null);
-      } catch {
-        // ignore
+      } catch (err) {
+        /* ignore - best effort cleanup */
       }
     };
   }, []);
@@ -84,11 +83,13 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     dimsRef.current = dims;
 
     try {
-      // store runtime RTT dims for UI readouts (single authoritative source for RTT scenes)
+      // store initial runtime RTT dims for UI readouts (best-effort placeholder until resources created)
       const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
       if (setInfo) {
+        const resolvedProfile = (renderQuality as import("../types/ui").RenderQualityProfile) || ("standard" as import("../types/ui").RenderQualityProfile);
+        const configuredCanvasDpr = getRenderQualitySettings(resolvedProfile).dpr;
         setInfo({
-          profile: renderQuality || "standard",
+          profile: resolvedProfile,
           logicalWidthPx: dims.logicalWidthPx,
           logicalHeightPx: dims.logicalHeightPx,
           internalWidthPx: dims.internalWidthPx,
@@ -97,7 +98,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           effectiveDevicePixelRatio: dims.effectiveDevicePixelRatio,
           zoomRenderScale: dims.zoomRenderScale,
           wasClamped: dims.wasClamped,
-          configuredCanvasDpr: rendererPixelRatio,
+          configuredCanvasDpr,
           rendererPixelRatio: rendererPixelRatio,
           canvasCssWidthPx: canvasCssWidth,
           canvasCssHeightPx: canvasCssHeight,
@@ -109,12 +110,16 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           depthTargetHeightPx: dims.internalHeightPx,
           blurTargetWidthPx: dims.internalWidthPx,
           blurTargetHeightPx: dims.internalHeightPx,
+          resourceGeneration: resourceGenerationRef.current,
         });
       }
-    } catch {
+    } catch (err) {
       // best-effort only; ignore failures
+      // eslint-disable-next-line no-console
+      console.info("GroundGlassRTT: runtime info set failed", err instanceof Error ? err.message : err);
     }
 
+    // create main render target at the resolved internal size
     const rt = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
     // attach a depth texture so we can do depth-aware DOF
     // DepthTexture constructor typing varies across three.js versions; access via unknown and a conservative factory
@@ -133,6 +138,16 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     // and static bundlers warn. Rely on default texture encoding for safety.
     renderTarget.current = rt;
 
+    // create a tiny 1x1 depth fallback texture used when the renderer/build does not supply a depthTexture
+    const depthFallbackData = new Uint8Array([255, 255, 255, 255]);
+    const fallbackDepth = new THREE.DataTexture(depthFallbackData, 1, 1, THREE.RGBAFormat);
+    fallbackDepth.needsUpdate = true;
+    fallbackDepthRef.current = fallbackDepth;
+
+    // increment resource generation — used for diagnostics to detect recreations
+    resourceGenerationRef.current += 1;
+
+
     const scene = new THREE.Scene();
     offscreenScene.current = scene;
 
@@ -150,12 +165,6 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const tempRT = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
 
-    // fallback 1x1 depth texture (depth=1.0) for builds without DepthTexture support
-    const depthFallbackData = new Uint8Array([255, 255, 255, 255]);
-    const fallbackDepth = new THREE.DataTexture(depthFallbackData, 1, 1, THREE.RGBAFormat);
-    fallbackDepth.needsUpdate = true;
-    // expose fallback for cleanup if needed
-    (OffscreenRenderer as unknown as { _fallbackDepth?: THREE.DataTexture })._fallbackDepth = fallbackDepth;
 
     // set scene background to a neutral studio sky for better visibility
     scene.background = SKY_COLOR;
@@ -346,8 +355,52 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     postSceneH.add(quadH);
     postSceneV.add(quadV);
 
-    // store post resources
-    (OffscreenRenderer as unknown as { _post?: PostResources })._post = { postSceneH, postSceneV, orthoCam, tempRT };
+    // store post resources (per-instance ref)
+    postResourcesRef.current = { postSceneH, postSceneV, orthoCam, tempRT };
+
+    // After resources are created, update runtime info with actual resource sizes
+    try {
+      const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
+      if (setInfo) {
+        const resolvedProfile = (renderQuality as import("../types/ui").RenderQualityProfile) || ("standard" as import("../types/ui").RenderQualityProfile);
+        const configuredCanvasDpr = getRenderQualitySettings(resolvedProfile).dpr;
+        const actualColorW = (renderTarget.current as THREE.WebGLRenderTarget).width;
+        const actualColorH = (renderTarget.current as THREE.WebGLRenderTarget).height;
+        const actualDepthW = (renderTarget.current as unknown as { depthTexture?: { image?: { width?: number; height?: number } } }).depthTexture?.image?.width ?? actualColorW;
+        const actualDepthH = (renderTarget.current as unknown as { depthTexture?: { image?: { width?: number; height?: number } } }).depthTexture?.image?.height ?? actualColorH;
+        const tempW = tempRT.width;
+        const tempH = tempRT.height;
+
+        setInfo({
+          profile: resolvedProfile,
+          logicalWidthPx: dims.logicalWidthPx,
+          logicalHeightPx: dims.logicalHeightPx,
+          internalWidthPx: dims.internalWidthPx,
+          internalHeightPx: dims.internalHeightPx,
+          resolutionScale: dims.resolutionScale,
+          effectiveDevicePixelRatio: dims.effectiveDevicePixelRatio,
+          zoomRenderScale: dims.zoomRenderScale,
+          wasClamped: dims.wasClamped,
+          configuredCanvasDpr,
+          rendererPixelRatio: rendererPixelRatio,
+          canvasCssWidthPx: canvasCssWidth,
+          canvasCssHeightPx: canvasCssHeight,
+          drawingBufferWidthPx: drawingBufferWidth,
+          drawingBufferHeightPx: drawingBufferHeight,
+          colorTargetWidthPx: actualColorW,
+          colorTargetHeightPx: actualColorH,
+          depthTargetWidthPx: actualDepthW,
+          depthTargetHeightPx: actualDepthH,
+          blurTargetWidthPx: tempW,
+          blurTargetHeightPx: tempH,
+          internalWidthPx: actualColorW,
+          internalHeightPx: actualColorH,
+          resourceGeneration: resourceGenerationRef.current,
+        });
+      }
+    } catch (err) {
+      /* ignore - best-effort runtime info update */
+    }
 
     // For Focus Fundamentals use the shared subject factory (boards, floor)
     const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
@@ -407,14 +460,56 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     }
 
     return () => {
-      rt.dispose();
-      tempRT.dispose();
-      // remove subject group if it was added
-      if (subjectGroup && scene) {
-        scene.remove(subjectGroup);
+      try {
+        // dispose main color target
+        if (renderTarget.current) {
+          try { (renderTarget.current as THREE.WebGLRenderTarget).dispose(); } catch (err) { /* ignore */ }
+          renderTarget.current = null;
+        }
+        // dispose temporary blur target
+        try { tempRT.dispose(); } catch (err) { /* ignore */ }
+
+        // dispose fallback depth
+        if (fallbackDepthRef.current) {
+          try { fallbackDepthRef.current.dispose(); } catch (err) { /* ignore */ }
+          fallbackDepthRef.current = null;
+        }
+
+        // remove and dispose post resources
+        const post = postResourcesRef.current;
+        if (post) {
+          try {
+            // dispose quad materials and geometry
+            [post.postSceneH, post.postSceneV].forEach((s) => {
+              s.children.forEach((c) => {
+                const m = c as THREE.Mesh;
+                if (m.material) {
+                  try { (m.material as THREE.Material).dispose(); } catch (err) { /* ignore */ }
+                }
+                if (m.geometry) {
+                  try { (m.geometry as THREE.BufferGeometry).dispose(); } catch (err) { /* ignore */ }
+                }
+              });
+            });
+            // dispose tempRT already done above
+            // remove scenes
+            post.postSceneH.clear();
+            post.postSceneV.clear();
+          } catch (err) { /* ignore */ }
+          postResourcesRef.current = null;
+        }
+
+        // remove subject group if it was added
+        if (subjectGroup && scene) {
+          scene.remove(subjectGroup);
+        }
+      } finally {
+        // update diagnostics to indicate resources cleared
+        try {
+          const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
+          if (setInfo) setInfo(null);
+        } catch (err) { /* ignore */ }
       }
-      // clear post resources
-      (OffscreenRenderer as unknown as { _post?: PostResources })._post = undefined;
     };
   }, [gl, widthPx, heightPx, sceneId, renderQuality, zoomEnabled]);
 
@@ -494,8 +589,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           // no-op here
         }
       });
-    } catch {
-      // ignore
+    } catch (err) {
+      /* ignore - non-fatal frame update error */
     }
 
     // 1) render scene to color+depth renderTarget
@@ -506,7 +601,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     gl.render(offscreenScene.current, cam);
 
     // 2) horizontal separable pass -> tempRT
-    const post = (OffscreenRenderer as unknown as { _post?: PostResources })._post;
+    const post = postResourcesRef.current;
     if (post) {
       const { postSceneH, postSceneV, orthoCam, tempRT } = post;
       // update H uniforms
@@ -514,7 +609,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       const matH = meshH.material as THREE.ShaderMaterial;
       matH.uniforms.tColor.value = (renderTarget.current as THREE.WebGLRenderTarget).texture;
       // prefer the renderTarget.depthTexture when available, otherwise use a 1.0 depth fallback
-      const depthTex = (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture ?? (OffscreenRenderer as unknown as { _fallbackDepth?: THREE.DataTexture })._fallbackDepth ?? null;
+      const depthTex = (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture ?? fallbackDepthRef.current ?? null;
       matH.uniforms.tDepth.value = depthTex;
       matH.uniforms.imageDistanceMm.value = imgDist;
       matH.uniforms.focalLengthMm.value = CAMERA_CONSTANTS.focalLengthMm;
@@ -527,7 +622,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // matH remains orientation-agnostic to ensure identical processing for raw/upright
       // matH.uniforms.displayUpright.value = previewMode === "upright" ? 1.0 : 0.0;
       // if depthTex is the 1x1 fallback we should bypass DOF and show raw color for debugging
-      const isFallbackDepth = depthTex === (OffscreenRenderer as unknown as { _fallbackDepth?: THREE.DataTexture })._fallbackDepth;
+      const isFallbackDepth = depthTex === fallbackDepthRef.current;
       // honor raw debug mode (bypass DOF) or fallback depth
       // For Architecture Rise, temporarily bypass DOF and show raw color to ensure subject is visible
       matH.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
