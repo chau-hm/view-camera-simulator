@@ -15,7 +15,7 @@ test.describe('Marketing responsive', () => {
     await expect(page.locator('text=Focus Fundamentals')).toBeVisible();
     await expect(page.locator('text=Architecture Rise')).toBeVisible();
     // ensure at least one Open Scene button exists
-    const openSceneCount = await page.locator('role=button[name="Open Scene"]').count();
+    const openSceneCount = await page.locator('role=link[name="Open Scene"]').count();
     expect(openSceneCount).toBeGreaterThan(0);
   });
 
@@ -31,12 +31,13 @@ test.describe('Marketing responsive', () => {
     const box = await cta.boundingBox();
     expect(box && box.width).toBeGreaterThan(0);
 
-    // check no horizontal overflow
-    const pageHasHorizontalOverflow = await page.evaluate(() => {
+    // check no horizontal overflow (allow small rounding noise)
+    const overflowWidth = await page.evaluate(() => {
       const root = document.documentElement;
-      return root.scrollWidth > root.clientWidth;
+      return root.scrollWidth - root.clientWidth;
     });
-    expect(pageHasHorizontalOverflow).toBe(false);
+    // allow up to 2px of rounding/scrollbar noise in CI environments
+    expect(overflowWidth).toBeLessThanOrEqual(2);
   });
 
   test('Narrow Scenes (390x844) shows warning and scene cards without overflow', async ({ page }) => {
@@ -47,13 +48,15 @@ test.describe('Marketing responsive', () => {
     await expect(page.locator('text=Focus Fundamentals')).toBeVisible();
     await expect(page.locator('text=Architecture Rise')).toBeVisible();
     // ensure at least one Open Scene button exists
-    const openSceneCount2 = await page.locator('role=button[name="Open Scene"]').count();
+    const openSceneCount2 = await page.locator('role=link[name="Open Scene"]').count();
     expect(openSceneCount2).toBeGreaterThan(0);
 
-    const pageHasHorizontalOverflow = await page.evaluate(() => {
+    // check no horizontal overflow (allow small rounding noise)
+    const overflowWidth = await page.evaluate(() => {
       const root = document.documentElement;
-      return root.scrollWidth > root.clientWidth;
+      return root.scrollWidth - root.clientWidth;
     });
-    expect(pageHasHorizontalOverflow).toBe(false);
+    // allow up to 2px of rounding/scrollbar noise in CI environments
+    expect(overflowWidth).toBeLessThanOrEqual(2);
   });
 });

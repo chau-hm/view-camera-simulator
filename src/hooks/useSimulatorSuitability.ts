@@ -113,8 +113,8 @@ export function useSimulatorSuitability(): SimulatorSuitability {
     recalc();
 
     return () => {
-      detach(mqNarrow, recalc);
-      detach(mqCoarse, recalc);
+      detach(mqNarrow, listenerWrapper as (e: MediaQueryListEvent) => void);
+      detach(mqCoarse, listenerWrapper as (e: MediaQueryListEvent) => void);
       if (typeof window !== "undefined") window.removeEventListener("resize", onResize);
     };
   }, []);
