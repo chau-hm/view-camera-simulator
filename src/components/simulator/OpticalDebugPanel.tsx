@@ -1,8 +1,9 @@
 import React from "react";
 import type { DerivedOpticsState } from "../../types/optics";
 import { useAppStore } from "../../state/appStore";
-import geometry, { getArchitectureReferenceObjectProbePoint } from "../../scenes/architectureRiseGeometry";
+import { getArchitectureReferenceObjectProbePoint, referenceObjects, type ReferenceObjectDef } from "../../scenes/architectureRiseGeometry";
 import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur";
+import type { GroundGlassWorldBlurSample } from "../../render/groundGlassBlur";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 
 type OpticalDebugPanelProps = {
@@ -28,7 +29,7 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, m
   // If architecture scene, compute per-reference-object blur diagnostics
   const refDiagnostics = React.useMemo(() => {
     if (sceneId !== "architecture-rise") return null;
-    return geometry.referenceObjects.map((obj) => {
+    return referenceObjects.map((obj: ReferenceObjectDef) => {
       const probe = getArchitectureReferenceObjectProbePoint(obj);
       const sample = sampleGroundGlassBlurAtWorldPoint({
         worldPoint: probe,
@@ -67,7 +68,7 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, m
           <div style={{ marginTop: 8 }}>
             <div><strong>Reference object DOF diagnostics</strong></div>
             <div style={{ fontSize: 12, marginTop: 6 }}>
-              {refDiagnostics.map((d) => (
+              {refDiagnostics.map((d: { id: string; role?: string; probe: { x: number; y: number; z: number }; sample: GroundGlassWorldBlurSample; logicalBlurRadiusPx: number }) => (
                 <div key={d.id} style={{ marginBottom: 6 }}>
                   <div><strong>{d.id}</strong> ({d.role ?? 'unknown'})</div>
                   <div>Probe: {d.probe.x.toFixed(1)}, {d.probe.y.toFixed(1)}, {d.probe.z.toFixed(1)} mm</div>
