@@ -14,6 +14,7 @@ import { createArchitectureRiseGroup } from "./ArchitectureRiseSubjectFactory";
 import { configureGroundGlassCamera } from "./configureGroundGlassCamera";
 import { createGroundGlassDofUniformState } from "./createGroundGlassDofUniformState";
 import { groundGlassSharedGlsl, groundGlassUniformDecls } from "./groundGlassDofShaders";
+import { groundGlassVertexShader, groundGlassHorizontalFragmentShader, groundGlassVerticalFragmentShader } from "./groundGlassDofShaderSources";
 import type { DerivedOpticsState } from "../types/optics";
 import type { ApertureValue } from "../types/camera";
 import { useAppStore } from "../state/appStore";
@@ -173,190 +174,23 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     // create full-screen quad geometry and placeholder materials
     const quadGeo = new THREE.PlaneGeometry(2, 2);
 
-    const vertexShader = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position,1.0); }`;
+    const vertexShader = groundGlassVertexShader;
 
-    // Horizontal pass shader: includes shared uniform declarations and shared helper functions
-    const fragH = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; ${groundGlassUniformDecls} ${groundGlassSharedGlsl}
+    // Horizontal/Vertical fragment shaders are imported from groundGlassDofShaderSources
+    const fragH = groundGlassHorizontalFragmentShader;
 
-    void main(){
-      vec2 uv = vUv;
-      if(useRaw > 0.5){ gl_FragColor = texture2D(tColor, uv); return; }
-      float centerDepth = texture2D(tDepth, uv).x;
-      float radius = 0.0;
-      if (dofMode < 0.5) {
-        radius = calculateParallelBlurRadiusPxFromDepth(centerDepth);
-      } else {
-        vec3 worldPos = reconstructWorldPosition(uv, centerDepth, inverseProjectionMatrix, cameraMatrixWorld);
-        radius = calculateWedgeBlurRadiusPxFromWorldPosition(worldPos);
-      }
+    // Vertical pass shader: uses the imported vertical fragment shader
+    const fragV = groundGlassVerticalFragmentShader;
 
-      // fast-path: exact in-focus, avoid costly sampling for tiny radii
-      float zeroBlurThreshold = 0.125; // px threshold in internal-target pixels
-      if (radius <= zeroBlurThreshold) {
-        gl_FragColor = texture2D(tColor, uv);
-        return;
-      }
-      // continuous sub-pixel handling for small radii (<1 px): use same gaussian family with depth-weighting
-      if (radius < 1.0) {
-        // sigma mapping keeps continuity across radius=1
-        float sigma = max(0.35, radius * 0.5);
-        float offsetPx = 1.0; // neighbour offset in pixels
-        vec2 off = vec2(offsetPx / renderWidth, 0.0);
-        // sample depths
-        float centerDepth = texture2D(tDepth, uv).x;
-        float dL = texture2D(tDepth, uv - off).x;
-        float dR = texture2D(tDepth, uv + off).x;
-        float centerUmm = abs(viewZFromDepth(centerDepth, near, far)) * 1000.0;
-        float leftUmm = abs(viewZFromDepth(dL, near, far)) * 1000.0;
-        float rightUmm = abs(viewZFromDepth(dR, near, far)) * 1000.0;
-        float deltaL = abs(leftUmm - centerUmm);
-        float deltaR = abs(rightUmm - centerUmm);
-        float rejectMm = max(20.0, centerUmm * 0.015);
-        float wDepthL = 1.0 - smoothstep(rejectMm * 0.5, rejectMm, deltaL);
-        float wDepthR = 1.0 - smoothstep(rejectMm * 0.5, rejectMm, deltaR);
-        // gaussian weights
-        float g0 = exp(-0.5 * 0.0 / (sigma * sigma));
-        float g1 = exp(-0.5 * (offsetPx*offsetPx) / (sigma * sigma));
-        float wL = g1 * wDepthL;
-        float wC = g0 * 1.0; // center depth weight is effectively 1.0
-        float wR = g1 * wDepthR;
-        float total = wL + wC + wR;
-        if(total <= 1e-6){
-          gl_FragColor = texture2D(tColor, uv);
-          return;
-        }
-        vec3 c0 = texture2D(tColor, uv).rgb;
-        vec3 cL = texture2D(tColor, uv - off).rgb;
-        vec3 cR = texture2D(tColor, uv + off).rgb;
-        vec3 color = (cL * wL + c0 * wC + cR * wR) / total;
-        gl_FragColor = vec4(color, 1.0);
-        return;
-      }
+    // NOTE: fragH and fragV now import shared GLSL helpers and uniform decls from groundGlassDofShaders.
 
-      // multi-tap symmetric kernel
-      float halfSampleCount = clamp(ceil(radius), 1.0, 7.0);
-      float sigma = max(0.5, radius * 0.5);
-      vec3 accum = vec3(0.0);
-      float total = 0.0;
-      for(int i=0;i<15;i++){
-        float idx = float(i) - (halfSampleCount);
-        // valid indices are -halfSampleCount .. +halfSampleCount
-        if(idx < -halfSampleCount || idx > halfSampleCount) continue;
-        float offsetPx = idx * (radius / halfSampleCount);
-        vec2 o = vec2(offsetPx / renderWidth, 0.0);
-        float sampleDepth = texture2D(tDepth, uv + o).x;
-        if(dofMode >= 0.5){
-          vec3 worldSample = reconstructWorldPosition(uv + o, sampleDepth, inverseProjectionMatrix, cameraMatrixWorld);
-          float sampleRadius = calculateWedgeBlurRadiusPxFromWorldPosition(worldSample);
-          if(abs(sampleRadius - radius) > max(2.0, radius * 0.5)) continue;
-        }
-        float sampleUmm = abs(viewZFromDepth(sampleDepth, near, far)) * 1000.0;
-        float depthDeltaMm = abs(sampleUmm - (abs(viewZFromDepth(centerDepth, near, far)) * 1000.0));
-        float depthRejectMm = max(20.0, (abs(viewZFromDepth(centerDepth, near, far)) * 1000.0) * 0.015);
-        float depthWeight = 1.0 - smoothstep(depthRejectMm * 0.5, depthRejectMm, depthDeltaMm);
-        vec3 c = texture2D(tColor, uv + o).rgb;
-        float gaussW = exp(-0.5 * (offsetPx*offsetPx) / (sigma*sigma));
-        float w = gaussW * depthWeight;
-        if(w < 1e-3) continue;
-        accum += c * w;
-        total += w;
-      }
-      gl_FragColor = vec4(accum / max(total, 1e-6), 1.0);
-    }`;
 
-    // Vertical pass shader: uses same shared helpers and uniforms, plus ring UI uniforms
-    const fragV = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; ${groundGlassUniformDecls} ${groundGlassSharedGlsl} uniform vec2 ringCenter; uniform float ringRadiusPx; uniform vec3 ringColor; uniform float ringOpacity; uniform float showRing; uniform float displayUpright;
-
-    void main(){
-      vec2 screenUv = vUv;
-      vec2 sampleUv = (displayUpright > 0.5) ? vec2(1.0 - screenUv.x, 1.0 - screenUv.y) : screenUv;
-      if(useRaw > 0.5){ vec3 colorRaw = texture2D(tColor, sampleUv).rgb; vec3 color = colorRaw; if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); } gl_FragColor = vec4(color,1.0); return; }
-      float centerDepth = texture2D(tDepth, sampleUv).x;
-      float radius = 0.0;
-      if (dofMode < 0.5) {
-        radius = calculateParallelBlurRadiusPxFromDepth(centerDepth);
-      } else {
-        vec3 worldPos = reconstructWorldPosition(sampleUv, centerDepth, inverseProjectionMatrix, cameraMatrixWorld);
-        radius = calculateWedgeBlurRadiusPxFromWorldPosition(worldPos);
-      }
-
-      // fast-path: exact in-focus, avoid costly sampling for tiny radii
-      float zeroBlurThreshold = 0.125; // px threshold in internal-target pixels
-      if (radius <= zeroBlurThreshold) {
-        vec3 color = texture2D(tColor, sampleUv).rgb;
-        if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
-        gl_FragColor = vec4(color,1.0);
-        return;
-      }
-
-      if (radius < 1.0) {
-        float sigma = max(0.35, radius * 0.5);
-        float offsetPx = 1.0;
-        vec2 off = vec2(0.0, offsetPx / renderHeight);
-        float centerDepth = texture2D(tDepth, sampleUv).x;
-        float d0 = texture2D(tDepth, sampleUv).x;
-        float d1 = texture2D(tDepth, sampleUv + off).x;
-        float dm1 = texture2D(tDepth, sampleUv - off).x;
-        float centerUmm = abs(viewZFromDepth(d0, near, far)) * 1000.0;
-        float rightUmm = abs(viewZFromDepth(d1, near, far)) * 1000.0;
-        float leftUmm = abs(viewZFromDepth(dm1, near, far)) * 1000.0;
-        float deltaR = abs(rightUmm - centerUmm);
-        float deltaL = abs(leftUmm - centerUmm);
-        float rejectMm = max(20.0, centerUmm * 0.015);
-        float wDepthR = 1.0 - smoothstep(rejectMm * 0.5, rejectMm, deltaR);
-        float wDepthL = 1.0 - smoothstep(rejectMm * 0.5, rejectMm, deltaL);
-        float g0 = exp(-0.5 * 0.0 / (sigma * sigma));
-        float g1 = exp(-0.5 * (offsetPx*offsetPx) / (sigma * sigma));
-        float wR = g1 * wDepthR;
-        float wC = g0 * 1.0;
-        float wL = g1 * wDepthL;
-        float total = wR + wC + wL;
-        if(total <= 1e-6){ vec3 color = texture2D(tColor, sampleUv).rgb; if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); } gl_FragColor = vec4(color,1.0); return; }
-        vec3 c0 = texture2D(tColor, sampleUv).rgb;
-        vec3 c1 = texture2D(tColor, sampleUv + off).rgb;
-        vec3 cm1 = texture2D(tColor, sampleUv - off).rgb;
-        vec3 color = (cm1 * wL + c0 * wC + c1 * wR) / total;
-        if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
-        gl_FragColor = vec4(color,1.0);
-        return;
-      }
-
-      float halfSampleCount = clamp(ceil(radius), 1.0, 7.0);
-      float sigma = max(0.5, radius * 0.5);
-      vec3 accum = vec3(0.0);
-      float total = 0.0;
-      for(int i=0;i<15;i++){
-        float idx = float(i) - (halfSampleCount);
-        if(idx < -halfSampleCount || idx > halfSampleCount) continue;
-        float offsetPx = idx * (radius / halfSampleCount);
-        vec2 o = vec2(0.0, offsetPx / renderHeight);
-        float sampleDepth = texture2D(tDepth, sampleUv + o).x;
-        if(dofMode >= 0.5){
-          vec3 worldSample = reconstructWorldPosition(sampleUv + o, sampleDepth, inverseProjectionMatrix, cameraMatrixWorld);
-          float sampleRadius = calculateWedgeBlurRadiusPxFromWorldPosition(worldSample);
-          if(abs(sampleRadius - radius) > max(2.0, radius * 0.5)) continue;
-        }
-        float sampleUmm = abs(viewZFromDepth(sampleDepth, near, far)) * 1000.0;
-        float depthDeltaMm = abs(sampleUmm - (abs(viewZFromDepth(centerDepth, near, far)) * 1000.0));
-        float depthRejectMm = max(20.0, (abs(viewZFromDepth(centerDepth, near, far)) * 1000.0) * 0.015);
-        float depthWeight = 1.0 - smoothstep(depthRejectMm * 0.5, depthRejectMm, depthDeltaMm);
-        vec3 c = texture2D(tColor, sampleUv + o).rgb;
-        float gaussW = exp(-0.5 * (offsetPx*offsetPx) / (sigma*sigma));
-        float w = gaussW * depthWeight;
-        if(w < 1e-3) continue;
-        accum += c * w;
-        total += w;
-      }
-      vec3 color = accum / max(total, 1e-6);
-      if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
-      gl_FragColor = vec4(color,1.0);
-    }`;
 
     const matH = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragH, uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, near: { value: 0.01 }, far: { value: 12.0 }, imageDistanceMm: { value: 100.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, renderWidth: { value: dimsRef.current.internalWidthPx }, renderHeight: { value: dimsRef.current.internalHeightPx }, maxCoC: { value: 60.0 }, useRaw: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, boundaryBlurRadiusPx: { value: 0.0 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
+      tColor: { value: null }, tDepth: { value: null }, near: { value: 0.01 }, far: { value: 12.0 }, imageDistanceMm: { value: 100.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, renderWidth: { value: dimsRef.current.internalWidthPx }, renderHeight: { value: dimsRef.current.internalHeightPx }, useRaw: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 } }
     }});
     const matV = new THREE.ShaderMaterial({ vertexShader, fragmentShader: fragV, uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, renderWidth: { value: dimsRef.current.internalWidthPx }, renderHeight: { value: dimsRef.current.internalHeightPx }, maxCoC: { value: 60.0 }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, imageDistanceMm: { value: 100.0 }, sensorWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, near: { value: 0.01 }, far: { value: 12.0 }, ringCenter: { value: new THREE.Vector2(-1, -1) }, ringRadiusPx: { value: 0.0 }, ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) }, ringOpacity: { value: 0.8 }, showRing: { value: 0.0 }, useRaw: { value: 0.0 }, displayUpright: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, boundaryBlurRadiusPx: { value: 0.0 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
+      tColor: { value: null }, tDepth: { value: null }, renderWidth: { value: dimsRef.current.internalWidthPx }, renderHeight: { value: dimsRef.current.internalHeightPx }, focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm }, fNumber: { value: 11.0 }, imageDistanceMm: { value: 100.0 }, near: { value: 0.01 }, far: { value: 12.0 }, ringCenter: { value: new THREE.Vector2(-1, -1) }, ringRadiusPx: { value: 0.0 }, ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) }, ringOpacity: { value: 0.8 }, showRing: { value: 0.0 }, useRaw: { value: 0.0 }, displayUpright: { value: 0.0 }, dofMode: { value: 0.0 }, lensCenterWorld: { value: new THREE.Vector3() }, focusPlanePoint: { value: new THREE.Vector3() }, focusPlaneNormal: { value: new THREE.Vector3() }, nearPlanePoint: { value: new THREE.Vector3() }, nearPlaneNormal: { value: new THREE.Vector3() }, farPlanePoint: { value: new THREE.Vector3() }, farPlaneNormal: { value: new THREE.Vector3() }, hasFiniteFar: { value: 0.0 }, inverseProjectionMatrix: { value: new THREE.Matrix4() }, cameraMatrixWorld: { value: new THREE.Matrix4() }, maximumBlurRadiusPx: { value: 60.0 }, circleOfConfusionMm: { value: 0.1 }, filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm }, displayBlurScale: { value: 1.0 }
     }});
 
     const quadH = new THREE.Mesh(quadGeo, matH);
@@ -664,10 +498,9 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         mat.uniforms.inverseProjectionMatrix.value.copy(new THREE.Matrix4().fromArray(state.inverseProjectionMatrix));
         mat.uniforms.cameraMatrixWorld.value.copy(new THREE.Matrix4().fromArray(state.cameraMatrixWorld));
         mat.uniforms.maximumBlurRadiusPx.value = state.maximumBlurRadiusPx;
-        mat.uniforms.boundaryBlurRadiusPx.value = state.boundaryBlurRadiusPx;
         mat.uniforms.displayBlurScale.value = state.displayBlurScale;
         mat.uniforms.focalLengthMm.value = state.focalLengthMm;
-        mat.uniforms.sensorWidthMm.value = state.sensorWidthMm;
+        mat.uniforms.filmWidthMm.value = state.filmWidthMm;
         mat.uniforms.fNumber.value = state.fNumber;
         mat.uniforms.imageDistanceMm.value = state.imageDistanceMm;
         mat.uniforms.renderWidth.value = state.renderWidth;

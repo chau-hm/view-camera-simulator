@@ -3,6 +3,7 @@ import { sampleDofWedge } from "../core/optics/dofWedge";
 import { cocDiameterMm } from "../core/optics/thinLensModel";
 import * as dofBlurModel from "../core/optics/dofBlurModel";
 import { intersectRayPlane } from "../core/math/ray";
+import { calculateImageDistanceAlongOpticalAxisMm } from "../core/optics/calculateImageDistance";
 
 export type GroundGlassDofRegion =
   | "before-near"
@@ -142,30 +143,22 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   // object distance along axis is used as U
   const U = objectDistanceAlongAxisMm;
   // use thin-lens model helper to compute physical CoC diameter in mm
-  // compute image distance along the optical axis: project vector from lens center to filmPlane.point onto optical axis
-  const filmPoint = opticsState.filmPlane.point;
-  const axis = opticsState.opticalAxis.direction; // assumed normalized
-  let imageDistance = Number.NaN;
-  if (
-    Number.isFinite(filmPoint.x) &&
-    Number.isFinite(filmPoint.y) &&
-    Number.isFinite(filmPoint.z) &&
-    Number.isFinite(lensCenter.x) &&
-    Number.isFinite(lensCenter.y) &&
-    Number.isFinite(lensCenter.z) &&
-    Number.isFinite(axis.x) &&
-    Number.isFinite(axis.y) &&
-    Number.isFinite(axis.z)
-  ) {
-    const dx = filmPoint.x - lensCenter.x;
-    const dy = filmPoint.y - lensCenter.y;
-    const dz = filmPoint.z - lensCenter.z;
-    imageDistance = Math.abs(dx * axis.x + dy * axis.y + dz * axis.z);
-  }
-  const cocMmPhysical = Number.isFinite(imageDistance)
-    ? cocDiameterMm(focalLengthMm, aperture, imageDistance, U)
-    : Number.NaN;
-  const cocDiameterMmFinal = Math.abs(cocMmPhysical);
+  const imageDistance = calculateImageDistanceAlongOpticalAxisMm({
+    lensCenterWorld: opticsState.lensCenterWorld,
+    filmPlanePointWorld: opticsState.filmPlane.point,
+    opticalAxisDirection: opticsState.opticalAxis.direction,
+  });
+
+  const cocDiameterMmFinal = (function () {
+    if (imageDistance === null) return 0;
+    try {
+      const val = cocDiameterMm(focalLengthMm, aperture, imageDistance as number, U);
+      return Number.isFinite(val) ? Math.abs(val) : 0;
+    } catch (e) {
+      return 0;
+    }
+  })();
+
   // convert to pixels and radius
   const circleOfConfusionDiameterPx = (cocDiameterMmFinal * renderWidthPx) / filmWidthMm;
   const blurRadiusPxRaw = circleOfConfusionDiameterPx * 0.5 * displayBlurScale;

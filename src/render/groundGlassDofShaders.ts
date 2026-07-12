@@ -41,14 +41,19 @@ float calculateNormalizedWedgeDefocus(float targetDist, float nearDist, float fo
   }
 }
 
-float calculateWedgeBlurRadiusPx(float normalizedDef, float boundaryBlurRadiusPx, float displayBlurScale, float maximumBlurRadiusPx){
-  return clamp(normalizedDef * boundaryBlurRadiusPx * displayBlurScale, 0.0, maximumBlurRadiusPx);
-}
-
 // Convert a physical CoC diameter in mm to a kernel blur radius in internal pixels
 float cocDiameterMmToBlurRadiusPx(float cocDiameterMm){
-  float diameterPx = cocDiameterMm * renderWidth / sensorWidthMm;
+  float diameterPx = cocDiameterMm * renderWidth / filmWidthMm;
   return clamp(diameterPx * 0.5 * displayBlurScale, 0.0, maximumBlurRadiusPx);
+}
+
+// Shared depth sample weight helper
+float calculateDepthSampleWeight(float centerDepth, float sampleDepth){
+  float centerUmm = abs(viewZFromDepth(centerDepth, near, far)) * 1000.0;
+  float sampleUmm = abs(viewZFromDepth(sampleDepth, near, far)) * 1000.0;
+  float deltaMm = abs(sampleUmm - centerUmm);
+  float rejectMm = max(20.0, centerUmm * 0.015);
+  return 1.0 - smoothstep(rejectMm * 0.5, rejectMm, deltaMm);
 }
 
 // Parallel thin-lens path that takes a depth buffer value (non-linear) and returns blur radius in px
@@ -82,11 +87,9 @@ float calculateWedgeBlurRadiusPxFromWorldPosition(vec3 worldPos){
 export const groundGlassUniformDecls = `
 uniform float renderWidth;
 uniform float renderHeight;
-uniform float maxCoC;
 uniform float focalLengthMm;
 uniform float fNumber;
 uniform float imageDistanceMm;
-uniform float sensorWidthMm;
 uniform float near;
 uniform float far;
 uniform float useRaw;
@@ -102,7 +105,6 @@ uniform float hasFiniteFar;
 uniform mat4 inverseProjectionMatrix;
 uniform mat4 cameraMatrixWorld;
 // physical blur calibration shared between passes
-uniform float boundaryBlurRadiusPx;
 uniform float displayBlurScale;
 uniform float maximumBlurRadiusPx;
 uniform float circleOfConfusionMm;

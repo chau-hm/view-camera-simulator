@@ -1,5 +1,6 @@
 import type { DerivedOpticsState } from "../types/optics";
 import * as THREE from "three";
+import { calculateImageDistanceAlongOpticalAxisMm } from "../core/optics/calculateImageDistance";
 
 export type GroundGlassDofUniformState = {
   mode: 0 | 1;
@@ -16,8 +17,8 @@ export type GroundGlassDofUniformState = {
   imageDistanceMm: number;
   focalLengthMm: number;
   fNumber: number;
-  sensorWidthMm: number;
   renderWidth: number;
+  renderHeight: number;
   renderHeight: number;
   maximumBlurRadiusPx: number;
   // Physical CoC / calibration values
@@ -68,6 +69,13 @@ export function createGroundGlassDofUniformState(
   const boundaryCoCDiameterPx = (circleOfConfusionMm * width) / filmWidthMm;
   const boundaryBlurRadiusPx = boundaryCoCDiameterPx / 2;
 
+  // compute image distance along optical axis using shared helper
+  const imageDistanceComputed = calculateImageDistanceAlongOpticalAxisMm({
+    lensCenterWorld: opticsState.lensCenterWorld,
+    filmPlanePointWorld: opticsState.filmPlane.point,
+    opticalAxisDirection: opticsState.opticalAxis.direction,
+  });
+
   return {
     mode: mode as 0 | 1,
     lensCenterWorld: toMeters(lens) ?? [0, 0, 0],
@@ -80,10 +88,9 @@ export function createGroundGlassDofUniformState(
     hasFiniteFarPlane: !!farPlane,
     inverseProjectionMatrix: invProj,
     cameraMatrixWorld: camWorld,
-    imageDistanceMm: Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z),
+    imageDistanceMm: imageDistanceComputed ?? 0,
     focalLengthMm: focalLengthMm,
     fNumber: aperture,
-    sensorWidthMm: filmWidthMm,
     renderWidth: width,
     renderHeight: height,
     maximumBlurRadiusPx,
