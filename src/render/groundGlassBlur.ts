@@ -142,8 +142,29 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   // object distance along axis is used as U
   const U = objectDistanceAlongAxisMm;
   // use thin-lens model helper to compute physical CoC diameter in mm
-  const imageDistance = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
-  const cocMmPhysical = cocDiameterMm(focalLengthMm, aperture, imageDistance, U);
+  // compute image distance along the optical axis: project vector from lens center to filmPlane.point onto optical axis
+  const filmPoint = opticsState.filmPlane.point;
+  const axis = opticsState.opticalAxis.direction; // assumed normalized
+  let imageDistance = Number.NaN;
+  if (
+    Number.isFinite(filmPoint.x) &&
+    Number.isFinite(filmPoint.y) &&
+    Number.isFinite(filmPoint.z) &&
+    Number.isFinite(lensCenter.x) &&
+    Number.isFinite(lensCenter.y) &&
+    Number.isFinite(lensCenter.z) &&
+    Number.isFinite(axis.x) &&
+    Number.isFinite(axis.y) &&
+    Number.isFinite(axis.z)
+  ) {
+    const dx = filmPoint.x - lensCenter.x;
+    const dy = filmPoint.y - lensCenter.y;
+    const dz = filmPoint.z - lensCenter.z;
+    imageDistance = Math.abs(dx * axis.x + dy * axis.y + dz * axis.z);
+  }
+  const cocMmPhysical = Number.isFinite(imageDistance)
+    ? cocDiameterMm(focalLengthMm, aperture, imageDistance, U)
+    : Number.NaN;
   const cocDiameterMmFinal = Math.abs(cocMmPhysical);
   // convert to pixels and radius
   const circleOfConfusionDiameterPx = (cocDiameterMmFinal * renderWidthPx) / filmWidthMm;

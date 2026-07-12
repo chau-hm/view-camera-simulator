@@ -196,15 +196,39 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         gl_FragColor = texture2D(tColor, uv);
         return;
       }
-      // symmetric sub-pixel handling for small radii (<1 px)
+      // continuous sub-pixel handling for small radii (<1 px): use same gaussian family with depth-weighting
       if (radius < 1.0) {
-        float frac = smoothstep(zeroBlurThreshold, 1.0, radius);
-        float neighbourWeight = 0.25 * frac;
-        float centreWeight = 1.0 - 2.0 * neighbourWeight;
+        // sigma mapping keeps continuity across radius=1
+        float sigma = max(0.35, radius * 0.5);
+        float offsetPx = 1.0; // neighbour offset in pixels
+        vec2 off = vec2(offsetPx / renderWidth, 0.0);
+        // sample depths
+        float centerDepth = texture2D(tDepth, uv).x;
+        float dL = texture2D(tDepth, uv - off).x;
+        float dR = texture2D(tDepth, uv + off).x;
+        float centerUmm = abs(viewZFromDepth(centerDepth, near, far)) * 1000.0;
+        float leftUmm = abs(viewZFromDepth(dL, near, far)) * 1000.0;
+        float rightUmm = abs(viewZFromDepth(dR, near, far)) * 1000.0;
+        float deltaL = abs(leftUmm - centerUmm);
+        float deltaR = abs(rightUmm - centerUmm);
+        float rejectMm = max(20.0, centerUmm * 0.015);
+        float wDepthL = 1.0 - smoothstep(rejectMm * 0.5, rejectMm, deltaL);
+        float wDepthR = 1.0 - smoothstep(rejectMm * 0.5, rejectMm, deltaR);
+        // gaussian weights
+        float g0 = exp(-0.5 * 0.0 / (sigma * sigma));
+        float g1 = exp(-0.5 * (offsetPx*offsetPx) / (sigma * sigma));
+        float wL = g1 * wDepthL;
+        float wC = g0 * 1.0; // center depth weight is effectively 1.0
+        float wR = g1 * wDepthR;
+        float total = wL + wC + wR;
+        if(total <= 1e-6){
+          gl_FragColor = texture2D(tColor, uv);
+          return;
+        }
         vec3 c0 = texture2D(tColor, uv).rgb;
-        vec3 c1 = texture2D(tColor, uv + vec2(1.0 / renderWidth, 0.0)).rgb;
-        vec3 cm1 = texture2D(tColor, uv - vec2(1.0 / renderWidth, 0.0)).rgb;
-        vec3 color = cm1 * neighbourWeight + c0 * centreWeight + c1 * neighbourWeight;
+        vec3 cL = texture2D(tColor, uv - off).rgb;
+        vec3 cR = texture2D(tColor, uv + off).rgb;
+        vec3 color = (cL * wL + c0 * wC + cR * wR) / total;
         gl_FragColor = vec4(color, 1.0);
         return;
       }
@@ -266,13 +290,32 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       }
 
       if (radius < 1.0) {
-        float frac = smoothstep(zeroBlurThreshold, 1.0, radius);
-        float neighbourWeight = 0.25 * frac;
-        float centreWeight = 1.0 - 2.0 * neighbourWeight;
+        float sigma = max(0.35, radius * 0.5);
+        float offsetPx = 1.0;
+        vec2 off = vec2(0.0, offsetPx / renderHeight);
+        float centerDepth = texture2D(tDepth, sampleUv).x;
+        float d0 = texture2D(tDepth, sampleUv).x;
+        float d1 = texture2D(tDepth, sampleUv + off).x;
+        float dm1 = texture2D(tDepth, sampleUv - off).x;
+        float centerUmm = abs(viewZFromDepth(d0, near, far)) * 1000.0;
+        float rightUmm = abs(viewZFromDepth(d1, near, far)) * 1000.0;
+        float leftUmm = abs(viewZFromDepth(dm1, near, far)) * 1000.0;
+        float deltaR = abs(rightUmm - centerUmm);
+        float deltaL = abs(leftUmm - centerUmm);
+        float rejectMm = max(20.0, centerUmm * 0.015);
+        float wDepthR = 1.0 - smoothstep(rejectMm * 0.5, rejectMm, deltaR);
+        float wDepthL = 1.0 - smoothstep(rejectMm * 0.5, rejectMm, deltaL);
+        float g0 = exp(-0.5 * 0.0 / (sigma * sigma));
+        float g1 = exp(-0.5 * (offsetPx*offsetPx) / (sigma * sigma));
+        float wR = g1 * wDepthR;
+        float wC = g0 * 1.0;
+        float wL = g1 * wDepthL;
+        float total = wR + wC + wL;
+        if(total <= 1e-6){ vec3 color = texture2D(tColor, sampleUv).rgb; if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); } gl_FragColor = vec4(color,1.0); return; }
         vec3 c0 = texture2D(tColor, sampleUv).rgb;
-        vec3 c1 = texture2D(tColor, sampleUv + vec2(0.0, 1.0 / renderHeight)).rgb;
-        vec3 cm1 = texture2D(tColor, sampleUv - vec2(0.0, 1.0 / renderHeight)).rgb;
-        vec3 color = cm1 * neighbourWeight + c0 * centreWeight + c1 * neighbourWeight;
+        vec3 c1 = texture2D(tColor, sampleUv + off).rgb;
+        vec3 cm1 = texture2D(tColor, sampleUv - off).rgb;
+        vec3 color = (cm1 * wL + c0 * wC + c1 * wR) / total;
         if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
         gl_FragColor = vec4(color,1.0);
         return;
