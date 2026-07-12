@@ -91,7 +91,6 @@ void main(){
   float sigma = max(0.35, radius * 0.6);
   vec3 accum = vec3(0.0);
   float total = 0.0;
-  float centerDepth = texture2D(tDepth, sampleUv).x;
 
   for(int i = -${maximumHalfSamples}; i <= ${maximumHalfSamples}; ++i){
     float idx = float(i);
