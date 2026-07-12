@@ -1,5 +1,6 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { SceneRenderer } from "../../render/SceneRenderer";
+import { SceneOverlayControls } from "./SceneOverlayControls";
 import { getLazySceneAssets, getPreloadSceneAssets, getRequiredSceneAssets } from "../../scenes/definitions";
 import { isWebGLAvailable } from "../../utils/webgl";
 import type { UiErrorState } from "../../types/ui";
@@ -22,7 +23,7 @@ const parseRenderQuality = (value: string): RenderQualityProfile => {
   if (value === "high" || value === "standard" || value === "low") {
     return value;
   }
-  return "standard";
+return "high";
 };
 
 export const SceneViewport = ({
@@ -38,6 +39,8 @@ export const SceneViewport = ({
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
   const [showFocusPlaneOverlay, setShowFocusPlaneOverlay] = useState(true);
   const [showDofOverlay, setShowDofOverlay] = useState(true);
+  const [showLegends, setShowLegends] = useState(false);
+  const [showOpticalGeometry, setShowOpticalGeometry] = useState(false);
   const [viewResetNonce, setViewResetNonce] = useState(0);
   const [bigView, setBigView] = useState(false);
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
@@ -78,18 +81,20 @@ export const SceneViewport = ({
       {showHeader !== false && <h2>{UI_COPY.simulator.sceneTitle}</h2>}
       <p data-testid="scene-front-y-mm">Front standard Y: {opticsState.lensCenterWorld.y.toFixed(1)} mm</p>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.5rem" }}>
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-            <input className="form-checkbox" type="checkbox" checked={showFocusPlaneOverlay} onChange={(event) => setShowFocusPlaneOverlay(event.target.checked)} />
-            {UI_COPY.simulator.focusPlaneOverlayLabel}
-          </label>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-            <input className="form-checkbox" type="checkbox" checked={showDofOverlay} onChange={(event) => setShowDofOverlay(event.target.checked)} />
-            {UI_COPY.simulator.dofOverlayLabel}
-          </label>
+        {/* Toolbar: left actions and right quality control */}
+        <div className="scene-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+          <div className="scene-toolbar__actions" style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <button type="button" className="btn" onClick={() => setViewResetNonce((value) => value + 1)}>
+              {UI_COPY.simulator.sceneViewReset}
+            </button>
+            {onToggleGeometryPanel && (
+              <button type="button" onClick={onToggleGeometryPanel} className="btn btn--secondary">
+                Open 2D Geometry
+              </button>
+            )}
+          </div>
 
-          {/* move render quality up into this row */}
-          <label style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+          <label className="scene-toolbar__quality" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
             <span>{UI_COPY.simulator.renderQualityLabel}</span>
             <select className="form-select" value={renderQuality} onChange={(event) => setRenderQuality(parseRenderQuality(event.target.value))}>
               <option value="high">{UI_COPY.simulator.renderQualityHigh}</option>
@@ -99,20 +104,6 @@ export const SceneViewport = ({
           </label>
         </div>
 
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
-          <button type="button" className="btn" onClick={() => setViewResetNonce((value) => value + 1)}>
-            {UI_COPY.simulator.sceneViewReset}
-          </button>
-
-          {/* Geometry panel toggle moved into Scene controls */}
-          {onToggleGeometryPanel && (
-            <button type="button" onClick={onToggleGeometryPanel} className="btn btn--secondary">
-              Open 2D Geometry
-            </button>
-          )}
-
-          {/* Big view toggle removed from this row; replaced by overlay icon in the renderer container */}
-        </div>
       </div>
       <p style={{ fontSize: 12, color: "#4b5563", marginTop: 0 }}>
         Loaded assets: {requiredAssets.length} required, {lazyAssets.length} lazy for current scene,{" "}
@@ -123,6 +114,7 @@ export const SceneViewport = ({
         <div
           role="dialog"
           aria-modal="true"
+          className="scene-enlarged-view"
           style={{
             position: "fixed",
             left: "50%",
@@ -147,23 +139,43 @@ export const SceneViewport = ({
               </button>
             </div>
           </div>
-          <div style={{ flex: 1, marginTop: "0.5rem" }}>
+          <div style={{ flex: 1, marginTop: "0.5rem", position: 'relative' }}>
             <SceneRenderer
               scene={scene}
               opticsState={opticsState}
               attempt={attempt}
               showFocusPlaneOverlay={showFocusPlaneOverlay}
               showDofOverlay={showDofOverlay}
+              showLegends={showLegends}
+              showOpticalGeometry={showOpticalGeometry}
               renderQuality={renderQuality}
               viewResetNonce={viewResetNonce}
               simulateAssetFailure={simulateAssetFailure}
               onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
               containerStyle={{ width: "100%", height: "100%" }}
             />
+
+            {/* overlay controls inside enlarged view */}
+            <div style={{ position: 'absolute', left: 12, top: 12, zIndex: 10 }}>
+              {/* lazy-load control component to avoid circular imports */}
+              <div>
+                {/* We'll import dynamically to avoid bundling complexity; component is available synchronously */}
+                <SceneOverlayControls
+                  showFocusPlane={showFocusPlaneOverlay}
+                  showDofRegion={showDofOverlay}
+                  showLegends={showLegends}
+                  showOpticalGeometry={showOpticalGeometry}
+                  onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
+                  onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
+                  onToggleLegends={() => setShowLegends((s) => !s)}
+                  onToggleOpticalGeometry={() => setShowOpticalGeometry((s) => !s)}
+                />
+              </div>
+            </div>
           </div>
         </div>
       ) : (
-        <div style={{ position: 'relative' }}>
+        <div className="scene-viewport-shell" style={{ position: 'relative' }}>
           <div>
             <SceneRenderer
               scene={scene}
@@ -171,11 +183,27 @@ export const SceneViewport = ({
               attempt={attempt}
               showFocusPlaneOverlay={showFocusPlaneOverlay}
               showDofOverlay={showDofOverlay}
+              showLegends={showLegends}
+              showOpticalGeometry={showOpticalGeometry}
               renderQuality={renderQuality}
               viewResetNonce={viewResetNonce}
               simulateAssetFailure={simulateAssetFailure}
               onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
               containerStyle={{ width: '100%', aspectRatio: '5 / 4', border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
+            />
+          </div>
+
+          {/* overlay controls inside inline viewport */}
+          <div style={{ position: 'absolute', left: 12, top: 12, zIndex: 10 }}>
+            <SceneOverlayControls
+              showFocusPlane={showFocusPlaneOverlay}
+              showDofRegion={showDofOverlay}
+              showLegends={showLegends}
+              showOpticalGeometry={showOpticalGeometry}
+              onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
+              onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
+              onToggleLegends={() => setShowLegends((s) => !s)}
+              onToggleOpticalGeometry={() => setShowOpticalGeometry((s) => !s)}
             />
           </div>
 

@@ -14,6 +14,7 @@ import { FocusFundamentalsSubject } from "./FocusFundamentalsSubjectFactory";
 import { ArchitectureRiseSubject } from "./ArchitectureRiseSubjectFactory";
 import { UI_COPY } from "../ui/copy";
 import { getRenderQualitySettings } from "./renderQuality";
+import { getVisibleSceneLegendKeys } from "./sceneLegendHelpers";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -21,6 +22,8 @@ type SceneRendererProps = {
   attempt: number;
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
+  showLegends?: boolean;
+  showOpticalGeometry?: boolean;
   renderQuality: RenderQualityProfile;
   viewResetNonce: number;
   simulateAssetFailure: boolean;
@@ -280,22 +283,29 @@ const LegendUpdater = ({
   containerRef,
   opticsState,
   setLegendPositions,
+  visibleKeys,
+  showLegends,
 }: {
   containerRef: RefObject<HTMLDivElement | null>;
   opticsState: DerivedOpticsState;
   setLegendPositions: React.Dispatch<React.SetStateAction<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>>;
+  visibleKeys?: string[];
+  showLegends?: boolean;
 }) => {
   const { camera, gl } = useThree();
   const tmpV = useMemo(() => new Vector3(), []);
 
   useFrame(() => {
     if (!containerRef.current) return;
+    if (!showLegends) return; // nothing to do when legends are disabled
+    if (!visibleKeys || visibleKeys.length === 0) return;
+
     // prefer the actual canvas element bounds for projection math
     const canvasEl = gl.domElement as HTMLCanvasElement;
     const canvasRect = canvasEl.getBoundingClientRect();
     const containerRect = containerRef.current.getBoundingClientRect();
 
-    const anchors: Record<string, [number, number, number]> = {
+    const allAnchors: Record<string, [number, number, number]> = {
       film: vecToWorld(opticsState.filmCenterWorld),
       lens: vecToWorld(opticsState.lensCenterWorld),
       focus: vecToWorld((opticsState.focusPlane && opticsState.focusPlane.point) || (opticsState.sceneVisualCapDepthMm ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm)) : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000)))),
@@ -308,7 +318,9 @@ const LegendUpdater = ({
     const margin = 8;
     const nextEntries: { key: string; left: number; top: number; visible: boolean }[] = [];
 
-    Object.entries(anchors).forEach(([k, v]) => {
+    visibleKeys.forEach((k) => {
+      const v = allAnchors[k];
+      if (!v) return;
       tmpV.set(v[0], v[1], v[2]);
       tmpV.project(camera);
       // projection within canvas coordinate space
@@ -456,12 +468,12 @@ const OpticalGeometryOverlays = ({
   opticsState,
   showFocusPlaneOverlay,
   showDofOverlay,
-  showDebug,
+  showOpticalGeometry,
 }: {
   opticsState: DerivedOpticsState;
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
-  showDebug: boolean;
+  showOpticalGeometry: boolean;
 }) => {
   const lens = vecToWorld(opticsState.lensCenterWorld);
   const filmCorners = [
@@ -518,7 +530,7 @@ const OpticalGeometryOverlays = ({
 
   return (
     <>
-      {showDebug && (
+      {showOpticalGeometry && (
         <>
           {filmCorners.map((_, index) => {
             const direction = rayDirections[index];
@@ -557,13 +569,13 @@ const SceneContent = ({
   opticsState,
   showFocusPlaneOverlay,
   showDofOverlay,
-  showDebug,
+  showOpticalGeometry,
 }: {
   scene: SceneDefinition;
   opticsState: DerivedOpticsState;
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
-  showDebug: boolean;
+  showOpticalGeometry: boolean;
 }) => (
   <>
     <color attach="background" args={["#f8fafc"]} />
@@ -578,7 +590,7 @@ const SceneContent = ({
       opticsState={opticsState}
       showFocusPlaneOverlay={showFocusPlaneOverlay}
       showDofOverlay={showDofOverlay}
-      showDebug={showDebug}
+      showOpticalGeometry={showOpticalGeometry}
     />
     {scene.id === "focus-fundamentals-two-targets" ? (
       // Use shared scene subject for Focus Fundamentals
@@ -589,14 +601,14 @@ const SceneContent = ({
       // Architecture Rise uses a dedicated React subject component for the main building
       <>
         <ArchitectureRiseSubject />
-      {/* render the debug focus sphere only when debug overlay is enabled to avoid showing two different permanent markers */}
-      {showDebug ? scene.focusTargets.map((target) => (
-        <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
-          <sphereGeometry args={[toWorld(50), 16, 16]} />
-          <meshStandardMaterial color="#ef4444" />
-        </mesh>
-      )) : null}
-    </>
+        {/* render canonical focus targets only; avoid toggling developer focus markers with optical-geometry control */}
+        {scene.focusTargets.map((target) => (
+          <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
+            <sphereGeometry args={[toWorld(50), 16, 16]} />
+            <meshStandardMaterial color="#ef4444" />
+          </mesh>
+        ))}
+      </>
     ) : (
     scene.focusTargets.map((target) => (
       <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
@@ -614,6 +626,8 @@ export const SceneRenderer = ({
   attempt,
   showFocusPlaneOverlay,
   showDofOverlay,
+  showLegends,
+  showOpticalGeometry,
   renderQuality,
   viewResetNonce,
   simulateAssetFailure,
@@ -670,9 +684,8 @@ export const SceneRenderer = ({
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [legendPositions, setLegendPositions] = useState<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>({});
-  // Default legends and debug overlays hidden by default
-  const [showLegends, setShowLegends] = useState(false);
-  const [showDebugOverlay, setShowDebugOverlay] = useState(false);
+  // legends and optical geometry controlled by parent (SceneViewport)
+  // showLegends and showOpticalGeometry are received as props
 
   // ensure the wrapper is positioned so absolute children (legends, button) are positioned relative to it
   const wrapperStyle: React.CSSProperties = containerStyle
@@ -684,48 +697,17 @@ export const SceneRenderer = ({
     return null;
   }
 
+  // compute legend visibility keys based on parent-controlled overlay states
+  const visibleLegendKeys = getVisibleSceneLegendKeys({
+    showFocusPlane: Boolean(showFocusPlaneOverlay),
+    showDofRegion: Boolean(showDofOverlay),
+    showOpticalGeometry: Boolean(showOpticalGeometry),
+    isInfinityFocus: Boolean(opticsState.diagnostics.isInfinityFocus),
+    hasFiniteFarPlane: Boolean(opticsState.depthOfFieldFarPlane),
+  });
+
   return (
     <div ref={containerRef} data-testid="scene-canvas" style={wrapperStyle}>
-      {/* Legends toggle */}
-      <button
-        onClick={() => setShowLegends((s) => !s)}
-        aria-pressed={showLegends}
-        style={{
-          position: "absolute",
-          left: 8,
-          top: 8,
-          zIndex: 220,
-          background: showLegends ? "#0f172a" : "#ffffff",
-          color: showLegends ? "#ffffff" : "#0f172a",
-          border: "1px solid rgba(2,6,23,0.08)",
-          padding: "4px 8px",
-          borderRadius: 6,
-          fontSize: 12,
-          cursor: "pointer",
-        }}
-      >
-        {showLegends ? "Hide legends" : "Show legends"}
-      </button>
-      {/* Debug overlay toggle */}
-      <button
-        onClick={() => setShowDebugOverlay((s) => !s)}
-        aria-pressed={showDebugOverlay}
-        style={{
-          position: "absolute",
-          left: 8,
-          top: 44,
-          zIndex: 220,
-          background: showDebugOverlay ? "#374151" : "#ffffff",
-          color: showDebugOverlay ? "#ffffff" : "#0f172a",
-          border: "1px solid rgba(2,6,23,0.08)",
-          padding: "4px 8px",
-          borderRadius: 6,
-          fontSize: 12,
-          cursor: "pointer",
-        }}
-      >
-        {showDebugOverlay ? "Hide debug" : "Show debug"}
-      </button>
       <Canvas
         style={{ width: "100%", height: "100%" }}
         dpr={qualityConfig.dpr}
@@ -734,19 +716,19 @@ export const SceneRenderer = ({
       >
         {/* LegendUpdater runs inside the r3f context so it can access camera and gl */}
         {/**/}
-        <LegendUpdater containerRef={containerRef} opticsState={opticsState} setLegendPositions={setLegendPositions} />
+        <LegendUpdater containerRef={containerRef} opticsState={opticsState} setLegendPositions={setLegendPositions} visibleKeys={visibleLegendKeys} showLegends={showLegends} />
         <SceneContent
           scene={{ ...scene, assets: activeAssets }}
           opticsState={opticsState}
           showFocusPlaneOverlay={showFocusPlaneOverlay}
           showDofOverlay={showDofOverlay}
-          showDebug={showDebugOverlay}
+          showOpticalGeometry={Boolean(showOpticalGeometry)}
         />
         <OrbitControls ref={controlsRef} enablePan={false} enableZoom enableRotate />
       </Canvas>
 
       {/* Legends overlay stuck to elements */}
-      {showLegends && Object.entries(legendPositions).map(([key, pos]) =>
+      {showLegends && Object.entries(legendPositions).filter(([k]) => visibleLegendKeys.includes(k)).map(([key, pos]) =>
         pos.visible ? (
           <div
             key={key}

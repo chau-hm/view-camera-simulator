@@ -44,7 +44,7 @@ export const SimulatorWorkspace = ({
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
-  const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("standard");
+  const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
   const [showGeometryPanel, setShowGeometryPanel] = useState(false);
   // All registered scenes still available through engine registry
   // const allScenes = getAllScenes();
