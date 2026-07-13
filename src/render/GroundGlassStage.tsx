@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+// Zoom and gesture constants (stable references)
+const ZOOM_SCALE = 1.9;
+const CLICK_THRESHOLD_PX = 5; // movement threshold to distinguish click vs drag
+
+type PanOffset = { x: number; y: number };
+const ZERO_PAN: PanOffset = { x: 0, y: 0 };
+
+const PANEL_WIDTH_PX = 500;
+const PANEL_HEIGHT_PX = 400;
+
 type GroundGlassStageProps = {
   zoomEnabled?: boolean;
   imageLayer: ReactNode; // content that should receive the zoom/pan transform
@@ -9,14 +19,6 @@ type GroundGlassStageProps = {
 };
 
 export const GroundGlassStage = ({ zoomEnabled, imageLayer, fixedOverlayLayer, onToggleZoom }: GroundGlassStageProps) => {
-  const ZOOM_SCALE = 1.9;
-  const CLICK_THRESHOLD_PX = 5; // movement threshold to distinguish click vs drag
-
-  type PanOffset = { x: number; y: number };
-  const ZERO_PAN: PanOffset = { x: 0, y: 0 };
-
-  const PANEL_WIDTH_PX = 500;
-  const PANEL_HEIGHT_PX = 400;
   const [zoomPan, setZoomPan] = useState<PanOffset>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ pointerId: number | null; startX: number; startY: number; startPanX: number; startPanY: number; moved: boolean; captured: boolean }>({ pointerId: null, startX: 0, startY: 0, startPanX: 0, startPanY: 0, moved: false, captured: false });
@@ -65,15 +67,13 @@ export const GroundGlassStage = ({ zoomEnabled, imageLayer, fixedOverlayLayer, o
     };
   };
 
-  const hasPointerCoordinates = (event: MouseEvent | React.MouseEvent | React.PointerEvent) => {
+  const hasPointerCoordinates = (event: { detail?: number; clientX?: number; clientY?: number }) => {
     // event.detail === 0 for synthetic activations; clientX/Y may be 0
-    // Use finite checks and require detail > 0 for pointer-derived clicks
-    // For pointer events coming from testing library, detail may be undefined; treat finite client coords as valid
-    return (
-      (typeof (event as any).detail === 'number' ? (event as any).detail > 0 : true) &&
-      Number.isFinite((event as any).clientX) &&
-      Number.isFinite((event as any).clientY)
-    );
+    // Treat events with finite client coordinates as valid pointer activations.
+    const detail = typeof event.detail === 'number' ? event.detail : undefined;
+    const cx = event.clientX;
+    const cy = event.clientY;
+    return (typeof detail === 'number' ? detail > 0 : true) && Number.isFinite(cx as number) && Number.isFinite(cy as number);
   };
 
   const calculateAnchoredPan = (clientX: number, clientY: number, rect: DOMRect): PanOffset => {

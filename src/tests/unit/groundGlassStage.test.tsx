@@ -1,5 +1,5 @@
 import { render, fireEvent, cleanup } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { useState } from "react";
 import { GroundGlassStage } from "../../render/GroundGlassStage";
 
