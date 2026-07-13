@@ -6,6 +6,7 @@ import {
   getNextSceneId,
   getPreloadSceneAssets,
   getRequiredSceneAssets,
+  sceneOrder,
   sceneRegistry,
 } from "../../scenes/definitions";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
@@ -19,6 +20,8 @@ describe("scene definitions", () => {
     expect(Object.keys(sceneRegistry)).toEqual(
       expect.arrayContaining(["architecture-rise", "table-tilt", "shelf-swing"]),
     );
+    expect(sceneRegistry["table-tilt"]).toBe(tableTiltScene);
+    expect(sceneOrder).toContain("table-tilt");
     expect(getAllScenes().length).toBeGreaterThanOrEqual(3);
   });
 

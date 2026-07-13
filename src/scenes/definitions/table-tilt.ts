@@ -1,4 +1,5 @@
 import type { SceneDefinition } from "../../types/scene";
+import geometry from "../tableTiltGeometry";
 
 export const tableTiltScene: SceneDefinition = {
   id: "table-tilt",
@@ -28,32 +29,28 @@ export const tableTiltScene: SceneDefinition = {
     },
   ],
   cameraPreset: {
-    focusDistanceMm: 2400,
+    focusDistanceMm: geometry.canonicalFocusDistanceMm,
     aperture: 11,
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
   },
   cameraPlacement: {
-    position: { x: 0, y: 1350, z: -500 },
-    target: { x: 0, y: 860, z: 2600 },
+    position: geometry.observerCamera.position,
+    target: geometry.observerCamera.target,
   },
   bounds: {
-    min: { x: -1800, y: 650, z: 900 },
-    max: { x: 1800, y: 1300, z: 4200 },
+    min: geometry.sceneBounds.min,
+    max: geometry.sceneBounds.max,
   },
-  focusTargets: [
-    { id: "near-cup", label: "Near cup", worldPosition: { x: -650, y: 840, z: 1200 }, weight: 1 },
-    { id: "mid-notebook", label: "Middle notebook", worldPosition: { x: 50, y: 840, z: 2400 }, weight: 1 },
-    { id: "far-book", label: "Far book", worldPosition: { x: 450, y: 840, z: 3200 }, weight: 1 },
-  ],
+  focusTargets: geometry.focusTargets,
   compositionTargets: [
     {
       id: "table-surface",
       label: "Table surface alignment",
       worldBounds: {
-        min: { x: -1400, y: 760, z: 1000 },
-        max: { x: 1400, y: 980, z: 3800 },
+        min: geometry.compositionTargetBounds.min,
+        max: geometry.compositionTargetBounds.max,
       },
     },
   ],

@@ -12,6 +12,7 @@ import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { FocusFundamentalsSubject } from "./FocusFundamentalsSubjectFactory";
 import { ArchitectureRiseSubject } from "./ArchitectureRiseSubjectFactory";
+import { TableTiltSubject } from "./TableTiltSubjectFactory";
 import { UI_COPY } from "../ui/copy";
 import { getRenderQualitySettings } from "./renderQuality";
 import { getVisibleSceneLegendKeys } from "./sceneLegendHelpers";
@@ -38,10 +39,11 @@ type OrbitControlsProps = {
   enablePan?: boolean;
   enableZoom?: boolean;
   enableRotate?: boolean;
+  target?: [number, number, number];
 };
 
 const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function OrbitControls(
-  { enablePan = false, enableZoom = true, enableRotate = true },
+  { enablePan = false, enableZoom = true, enableRotate = true, target },
   ref,
 ) {
   const { camera, gl } = useThree();
@@ -60,6 +62,12 @@ const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function
     controls.enableZoom = enableZoom;
     controls.enableRotate = enableRotate;
   }, [controls, enablePan, enableRotate, enableZoom]);
+
+  useEffect(() => {
+    if (!target) return;
+    controls.target.set(...target);
+    controls.update();
+  }, [controls, target]);
 
   return null;
 });
@@ -382,36 +390,11 @@ const SceneAssetMesh = ({ assetId }: { assetId: string }) => {
       // ArchitectureRiseSubject renders the building geometry; skip legacy placeholder to avoid duplicate geometry.
       return null;
     case "table-floor":
-      return (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toWorld(620), 0]}>
-          <planeGeometry args={[toWorld(9000), toWorld(9000)]} />
-          <meshStandardMaterial color="#ece7e1" />
-        </mesh>
-      );
     case "table-top":
-      return (
-        <mesh position={[0, toWorld(800), toWorld(2400)]} rotation={[0.12, 0, 0]}>
-          <boxGeometry args={[toWorld(2800), toWorld(80), toWorld(3600)]} />
-          <meshStandardMaterial color="#b45309" />
-        </mesh>
-      );
     case "table-props":
-      return (
-        <group>
-          <mesh position={[toWorld(-650), toWorld(860), toWorld(1200)]}>
-            <cylinderGeometry args={[toWorld(90), toWorld(90), toWorld(140), 20]} />
-            <meshStandardMaterial color="#60a5fa" />
-          </mesh>
-          <mesh position={[toWorld(50), toWorld(850), toWorld(2400)]}>
-            <boxGeometry args={[toWorld(260), toWorld(40), toWorld(180)]} />
-            <meshStandardMaterial color="#f59e0b" />
-          </mesh>
-          <mesh position={[toWorld(550), toWorld(845), toWorld(3600)]}>
-            <boxGeometry args={[toWorld(280), toWorld(30), toWorld(220)]} />
-            <meshStandardMaterial color="#a855f7" />
-          </mesh>
-        </group>
-      );
+      // Preserve placeholder metadata for existing preload/failure contracts, but
+      // the canonical TableTiltSubject now owns all visible Table Tilt geometry.
+      return null;
     case "shelf-floor":
       return (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toWorld(640), 0]}>
@@ -615,6 +598,16 @@ const SceneContent = ({
           </mesh>
         ))}
       </>
+    ) : scene.id === "table-tilt" ? (
+      <>
+        <TableTiltSubject />
+        {scene.focusTargets.map((target) => (
+          <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
+            <sphereGeometry args={[toWorld(50), 16, 16]} />
+            <meshStandardMaterial color="#ef4444" />
+          </mesh>
+        ))}
+      </>
     ) : (
     scene.focusTargets.map((target) => (
       <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
@@ -730,7 +723,13 @@ export const SceneRenderer = ({
           showDofOverlay={showDofOverlay}
           showOpticalGeometry={Boolean(showOpticalGeometry)}
         />
-        <OrbitControls ref={controlsRef} enablePan={false} enableZoom enableRotate />
+        <OrbitControls
+          ref={controlsRef}
+          enablePan={false}
+          enableZoom
+          enableRotate
+          target={observerCameraTarget}
+        />
       </Canvas>
 
       {/* Legends overlay stuck to elements */}

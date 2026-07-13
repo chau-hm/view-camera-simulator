@@ -1,7 +1,11 @@
 import type { SceneDefinition } from "../types/scene";
 import { getSceneById } from "../scenes/definitions";
 
-export const publicSceneIds = ["focus-fundamentals-two-targets", "architecture-rise"] as const;
+export const publicSceneIds = [
+  "focus-fundamentals-two-targets",
+  "architecture-rise",
+  "table-tilt",
+] as const;
 export type PublicSceneId = (typeof publicSceneIds)[number];
 
 export type PublicSceneEntry = {
@@ -22,6 +26,12 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     description:
       "Use front rise to include the top of a building while keeping the camera level and vertical lines parallel.",
     topics: ["Rise", "Architecture", "Perspective control"],
+  },
+  {
+    id: "table-tilt",
+    description:
+      "Use front tilt to align the plane of focus with a tabletop extending from near to far.",
+    topics: ["Tilt", "Plane of focus", "Scheimpflug principle"],
   },
 ];
 
