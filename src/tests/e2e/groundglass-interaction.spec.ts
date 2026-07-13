@@ -26,6 +26,19 @@ const readStageTransform = async (locator: Locator) => {
   }
 };
 
+// helper to wait for stage attribute changes (avoids Playwright locator flakiness when nodes are remounted)
+const waitForStageAttribute = async (stage: Locator, attr: string, expected: string, timeout = 10000) => {
+  const deadline = Date.now() + timeout;
+  // eslint-disable-next-line no-await-in-loop
+  while (Date.now() < deadline) {
+    const v = await stage.getAttribute(attr);
+    if (v === expected) return;
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error(`Timed out waiting for stage attribute ${attr}=${expected}`);
+};
+
 test.describe('Ground Glass interaction', () => {
   test('Architecture Rise: off-center anchor, drag pan, zoom-out centering, and immediate re-zoom', async ({ page }) => {
     await page.goto('/simulator/free/architecture-rise');
@@ -46,7 +59,7 @@ test.describe('Ground Glass interaction', () => {
     // perform real click with offset coordinates relative to stage
     await stage.click({ position: { x: clickX, y: clickY } });
 
-    await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
+    await waitForStageAttribute(stage, 'data-zoomed', 'true', 10000);
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
     const t1 = await readStageTransform(viewport.locator('.groundglass-stage'));
@@ -68,7 +81,7 @@ test.describe('Ground Glass interaction', () => {
     await page.mouse.up();
 
     // should remain zoomed and aria label unchanged
-    await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
+    await waitForStageAttribute(stage, 'data-zoomed', 'true', 10000);
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
     const postDrag = await readStageTransform(viewport.locator('.groundglass-stage'));
@@ -81,7 +94,7 @@ test.describe('Ground Glass interaction', () => {
     // click to zoom out (ordinary click at center)
     await page.mouse.click(centerX, centerY);
 
-    await expect(stage).toHaveAttribute('data-zoomed', 'false');
+    await waitForStageAttribute(stage, 'data-zoomed', 'false', 10000);
     await expect(stage).toHaveAttribute('aria-label', 'Zoom in Ground Glass');
 
     const outTransform = await readStageTransform(viewport.locator('.groundglass-stage'));
@@ -96,7 +109,7 @@ test.describe('Ground Glass interaction', () => {
     // Use absolute page coordinates for re-zoom click to avoid element-relative race conditions
     await page.mouse.click(box.x + reX, box.y + reY);
 
-    await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
+    await waitForStageAttribute(stage, 'data-zoomed', 'true', 10000);
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
     const reTransform = await readStageTransform(viewport.locator('.groundglass-stage'));
@@ -109,14 +122,14 @@ test.describe('Ground Glass interaction', () => {
     for (let i = 0; i < 3; i++) {
       // zoom out
       await page.mouse.click(centerX, centerY);
-      await expect(stage).toHaveAttribute('data-zoomed', 'false', { timeout: 10000 });
+      await waitForStageAttribute(stage, 'data-zoomed', 'false', 10000);
       const outT = await readStageTransform(viewport.locator('.groundglass-stage'));
       expect(outT.scaleX).toBeCloseTo(1, 2);
       expect(Math.abs(outT.translateX)).toBeLessThanOrEqual(0.5);
 
       // zoom in centered
       await page.mouse.click(centerX, centerY);
-      await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
+      await waitForStageAttribute(stage, 'data-zoomed', 'true', 10000);
       // retry reading the transform a few times to tolerate scheduling delays in parallel runs
       let inT = await readStageTransform(viewport.locator('.groundglass-stage'));
       let attempts = 0;
@@ -143,26 +156,24 @@ test.describe('Ground Glass interaction', () => {
     const cy = Math.round(box.height / 2);
 
     // initial
-    await expect(stage).toHaveAttribute('data-zoomed', 'false');
+    await waitForStageAttribute(stage, 'data-zoomed', 'false', 10000);
 
     // click 1
     await stage.click({ position: { x: cx, y: cy } });
-    await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
+    await waitForStageAttribute(stage, 'data-zoomed', 'true', 10000);
     const t1 = await readStageTransform(viewport.locator('.groundglass-stage'));
     expect(t1.scaleX).toBeCloseTo(1.9, 1);
 
     // click 2 -> zoom out
     await stage.click({ position: { x: cx, y: cy } });
-    await expect(stage).toHaveAttribute('data-zoomed', 'false');
+    await waitForStageAttribute(stage, 'data-zoomed', 'false', 10000);
     const t2 = await readStageTransform(viewport.locator('.groundglass-stage'));
     expect(t2.scaleX).toBeCloseTo(1, 2);
     expect(Math.abs(t2.translateX)).toBeLessThanOrEqual(0.5);
 
     // click 3 -> zoom in
     await stage.click({ position: { x: cx, y: cy } });
-    await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
+    await waitForStageAttribute(stage, 'data-zoomed', 'true', 10000);
     const t3 = await readStageTransform(viewport.locator('.groundglass-stage'));
     expect(t3.scaleX).toBeCloseTo(1.9, 1);
   });
