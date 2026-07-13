@@ -122,14 +122,35 @@ test.describe('Ground Glass interaction', () => {
     for (let i = 0; i < 3; i++) {
       // zoom out
       // click via element-relative click to avoid page mouse timeouts if layout changes
-      await stage.click({ position: { x: Math.round(box.width / 2), y: Math.round(box.height / 2) } });
+      // dispatch DOM events at the stage center to avoid Playwright actionability timeouts
+      await stage.evaluate((el, pos) => {
+        const rect = (el as HTMLElement).getBoundingClientRect();
+        const x = rect.left + pos.x;
+        const y = rect.top + pos.y;
+        const down = new MouseEvent('pointerdown', { bubbles: true, clientX: x, clientY: y });
+        const up = new MouseEvent('pointerup', { bubbles: true, clientX: x, clientY: y });
+        const click = new MouseEvent('click', { bubbles: true, clientX: x, clientY: y });
+        el.dispatchEvent(down);
+        el.dispatchEvent(up);
+        el.dispatchEvent(click);
+      }, { x: Math.round(box.width / 2), y: Math.round(box.height / 2) });
       await waitForStageAttribute(stage, 'data-zoomed', 'false', 10000);
       const outT = await readStageTransform(viewport.locator('.groundglass-stage'));
       expect(outT.scaleX).toBeCloseTo(1, 2);
       expect(Math.abs(outT.translateX)).toBeLessThanOrEqual(0.5);
 
       // zoom in centered
-      await stage.click({ position: { x: Math.round(box.width / 2), y: Math.round(box.height / 2) } });
+      await stage.evaluate((el, pos) => {
+        const rect = (el as HTMLElement).getBoundingClientRect();
+        const x = rect.left + pos.x;
+        const y = rect.top + pos.y;
+        const down = new MouseEvent('pointerdown', { bubbles: true, clientX: x, clientY: y });
+        const up = new MouseEvent('pointerup', { bubbles: true, clientX: x, clientY: y });
+        const click = new MouseEvent('click', { bubbles: true, clientX: x, clientY: y });
+        el.dispatchEvent(down);
+        el.dispatchEvent(up);
+        el.dispatchEvent(click);
+      }, { x: Math.round(box.width / 2), y: Math.round(box.height / 2) });
       await waitForStageAttribute(stage, 'data-zoomed', 'true', 10000);
       // retry reading the transform a few times to tolerate scheduling delays in parallel runs
       let inT = await readStageTransform(viewport.locator('.groundglass-stage'));
