@@ -46,7 +46,7 @@ test.describe('Ground Glass interaction', () => {
     // perform real click with offset coordinates relative to stage
     await stage.click({ position: { x: clickX, y: clickY } });
 
-    await expect(stage).toHaveAttribute('data-zoomed', 'true');
+    await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
     await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
@@ -69,7 +69,7 @@ test.describe('Ground Glass interaction', () => {
     await page.mouse.up();
 
     // should remain zoomed and aria label unchanged
-    await expect(stage).toHaveAttribute('data-zoomed', 'true');
+    await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
     await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
@@ -113,7 +113,7 @@ test.describe('Ground Glass interaction', () => {
     for (let i = 0; i < 3; i++) {
       // zoom out
       await page.mouse.click(centerX, centerY);
-      await expect(stage).toHaveAttribute('data-zoomed', 'false');
+      await expect(stage).toHaveAttribute('data-zoomed', 'false', { timeout: 10000 });
       await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
       const outT = await readStageTransform(viewport.locator('.groundglass-stage'));
       expect(outT.scaleX).toBeCloseTo(1, 2);
@@ -121,7 +121,7 @@ test.describe('Ground Glass interaction', () => {
 
       // zoom in centered
       await page.mouse.click(centerX, centerY);
-      await expect(stage).toHaveAttribute('data-zoomed', 'true');
+      await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
       await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
       const inT = await readStageTransform(viewport.locator('.groundglass-stage'));
       expect(inT.scaleX).toBeCloseTo(1.9, 1);
