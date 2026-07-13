@@ -121,18 +121,16 @@ test.describe('Ground Glass interaction', () => {
     await expect.poll(async () => Math.abs((await readStageTransform(transformedLayer())).translateX)).toBeLessThanOrEqual(0.5);
     await expect.poll(async () => Math.abs((await readStageTransform(transformedLayer())).translateY)).toBeLessThanOrEqual(0.5);
 
-    // immediate re-zoom: click at 70% left, 65% top
-    await clickStageAt(page, stage, 0.7, 0.65);
+    // immediate re-zoom: click at 70% left, 65% top — obtain fresh geometry and use absolute page click
+    const freshBox = await stage.boundingBox();
+    if (!freshBox) throw new Error('Ground Glass stage bounding box not found');
+    await page.mouse.click(freshBox.x + freshBox.width * 0.7, freshBox.y + freshBox.height * 0.65);
 
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
     // scale and translate sign checks
     await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX, { timeout: 8000 }).toBeCloseTo(1.9, 1);
-    // capture and log transform for diagnostics
-    const reTdiag = await readStageTransform(transformedLayer());
-    // eslint-disable-next-line no-console
-    console.log('re-zoom transform:', reTdiag);
     await expect.poll(async () => (await readStageTransform(transformedLayer())).translateX, { timeout: 8000 }).toBeLessThan(-1);
     await expect.poll(async () => (await readStageTransform(transformedLayer())).translateY, { timeout: 8000 }).toBeLessThan(-1);
 
