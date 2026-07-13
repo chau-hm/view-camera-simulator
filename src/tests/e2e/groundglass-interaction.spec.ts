@@ -96,7 +96,8 @@ test.describe('Ground Glass interaction', () => {
     // immediate re-zoom: click at 70% left, 65% top
     const reX = Math.round(box.width * 0.7);
     const reY = Math.round(box.height * 0.65);
-    await stage.click({ position: { x: reX, y: reY } });
+    // Use absolute page coordinates for re-zoom click to avoid element-relative race conditions
+    await page.mouse.click(box.x + reX, box.y + reY);
 
     await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
