@@ -1,16 +1,23 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 
 // helper to read the computed transform of the transformed stage element
-const readStageTransform = async (locator: any) => {
-  return locator.evaluate((element: Element) => {
-    const style = getComputedStyle(element as Element);
-    const transform = style.transform;
-    if (!transform || transform === 'none') {
-      return { translateX: 0, translateY: 0, scaleX: 1, scaleY: 1 };
+const readStageTransform = async (locator: Locator) => {
+  return locator.evaluate(async (element: Element) => {
+    // wait up to ~2s for the computed transform to become available (helps under load)
+    const deadline = Date.now() + 2000;
+    while (Date.now() < deadline) {
+      const style = getComputedStyle(element as Element);
+      const transform = style.transform;
+      if (transform && transform !== 'none') {
+        const m = new DOMMatrixReadOnly(transform);
+        return { translateX: m.m41, translateY: m.m42, scaleX: m.a, scaleY: m.d };
+      }
+      // small sleep
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, 50));
     }
-    // DOMMatrixReadOnly is available in browser context
-    const m = new (window as any).DOMMatrixReadOnly(transform);
-    return { translateX: m.m41, translateY: m.m42, scaleX: m.a, scaleY: m.d };
+    // fallback to identity
+    return { translateX: 0, translateY: 0, scaleX: 1, scaleY: 1 };
   });
 };
 
