@@ -117,7 +117,16 @@ test.describe('Ground Glass interaction', () => {
       // zoom in centered
       await page.mouse.click(centerX, centerY);
       await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
-      const inT = await readStageTransform(viewport.locator('.groundglass-stage'));
+      // retry reading the transform a few times to tolerate scheduling delays in parallel runs
+      let inT = await readStageTransform(viewport.locator('.groundglass-stage'));
+      let attempts = 0;
+      while (Math.abs(inT.scaleX - 1.9) > 0.5 && attempts < 3) {
+        // small backoff
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((r) => setTimeout(r, 200));
+        inT = await readStageTransform(viewport.locator('.groundglass-stage'));
+        attempts += 1;
+      }
       expect(inT.scaleX).toBeCloseTo(1.9, 1);
     }
   });
