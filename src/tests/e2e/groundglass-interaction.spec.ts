@@ -131,10 +131,15 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
-    // scale and translate sign checks
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX, { timeout: 8000 }).toBeCloseTo(1.9, 1);
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).translateX, { timeout: 8000 }).toBeLessThan(-1);
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).translateY, { timeout: 8000 }).toBeLessThan(-1);
+    // scale and translate sign checks — poll once for all conditions to reduce overhead
+    await expect.poll(async () => {
+      const t = await readStageTransform(transformedLayer());
+      // scale near expected and both translates negative (right-bottom click should push image left/up)
+      const scaleOk = Math.abs(t.scaleX - 1.9) < 0.6; // tolerant window
+      const txOk = t.translateX < -1;
+      const tyOk = t.translateY < -1;
+      return scaleOk && txOk && tyOk;
+    }, { timeout: 8000 }).toBeTruthy();
 
     // repeated centered cycles (3x) using real Playwright clicks
     for (let i = 0; i < 3; i++) {
