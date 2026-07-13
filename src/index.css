@@ -14,6 +14,13 @@
   --radius-lg: 14px;
   --radius-md: 10px;
   --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
+
+  /* Simulator spacing scale */
+  --sim-control-gap: 8px; /* spacing between controls in same group */
+  --sim-control-group-gap: 16px; /* spacing between distinct control groups */
+  --sim-panel-section-gap: 12px; /* spacing between major rows or controls and viewport */
+  --sim-control-height: 32px; /* standard button/select height */
+
   color: var(--text);
   background: var(--app-bg);
 }
@@ -126,6 +133,10 @@ button {
   min-height: 0;
 }
 
+/* Scene panel vertical rhythm */
+.scene-panel { display: grid; gap: var(--sim-panel-section-gap); }
+.scene-panel__controls { display: block; }
+
 /* panel icon used in card headers */
 .panel-icon {
  width: 30px;
@@ -166,41 +177,109 @@ button {
   font-weight: 700;
 }
 
-/* info grid below the viewports */
-.simulator-info-grid {
+/* primary info row: current settings + focus targets */
+.simulator-primary-info-grid {
  display: grid;
- grid-template-columns: minmax(260px, 0.8fr) minmax(260px, 0.8fr) minmax(420px, 1.4fr);
+ grid-template-columns: repeat(2, minmax(0, 1fr));
  gap: 16px;
- align-items: stretch;
+ align-items: start;
 }
+
+/* task + feedback grid: two equal columns */
+.simulator-task-feedback-grid {
+ grid-column: 1 / -1;
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 16px;
+ align-items: start;
+}
+
+/* debug row full width */
+.simulator-debug-row {
+ grid-column: 1 / -1;
+ display: block;
+}
+
+.simulator-debug-row > * { width: 100%; }
+
+@media (max-width: 900px) {
+ .simulator-primary-info-grid,
+ .simulator-task-feedback-grid {
+   grid-template-columns: 1fr;
+ }
+}
+
+/* Readout card modifiers */
+.simulator-info-card--settings {}
+.simulator-info-card--focus-targets {}
+.simulator-info-card--debug {}
+
+/* Current settings */
+.current-settings-groups { display: grid; gap: 8px; font-size: 13px; }
+.current-settings-group dt { font-weight: 600; }
+.current-settings-row { line-height: 1.2; }
+
+/* Focus targets */
+.focus-target-list { display: flex; flex-direction: column; gap: 8px; }
+.focus-target-row { padding: 8px 6px; border-radius: 6px; background: var(--panel-bg, #fff); }
+.focus-target-row__header { display:flex; justify-content:space-between; align-items:center; }
+.focus-target-row__name { font-weight:600; }
+.focus-target-row__value { font-weight:700; }
+.focus-target-progress { height: 10px; background: rgba(0,0,0,0.06); border-radius: 6px; overflow: hidden; margin-top:6px; }
+.focus-target-progress__fill { height:100%; background: var(--primary); transition: width 200ms ease; }
+.focus-target-row__meta { margin-top:6px; font-size:12px; color: var(--text-muted); }
+.focus-target-row--sharp { border-left: 4px solid var(--success, #16a34a); }
+.focus-target-row--acceptable { border-left: 4px solid #f59e0b; }
+.focus-target-row--soft { border-left: 4px solid #ef4444; }
+
+/* Optical debug */
+.optical-debug__details { width: 100%; }
+.optical-debug__summary { display:flex; justify-content:space-between; align-items:center; cursor: pointer; padding: 8px 6px; }
+.optical-debug__summary:focus { outline: 2px solid rgba(59,130,246,0.6); }
+.optical-debug__summary-meta { font-size: 12px; color: var(--text-muted); margin-left: 8px; }
+.optical-debug__content { padding: 8px 6px; display: block; }
+.optical-debug__group { margin-bottom: 8px; }
+.optical-debug__group summary { cursor: pointer; font-weight:600; }
+.optical-debug__group-content { padding: 6px 0 0 6px; font-size: 13px; line-height:1.3; }
+.optical-debug-reference-list details { margin-bottom: 8px; }
+
 
 /* Ground glass compact control bar (updated to row-based layout) */
 .groundglass-panel {
   display: grid;
-  gap: 10px;
+  gap: var(--sim-panel-section-gap);
 }
 
 .groundglass-controls {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+/* New compact two-group horizontal layout for preview and view options */
+.groundglass-control-groups {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--sim-control-group-gap);
+  row-gap: var(--sim-panel-section-gap);
+  align-items: start;
 }
 
-.groundglass-row {
+.groundglass-control-group {
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sim-control-gap);
+}
+
+.groundglass-control-group__options {
+  min-width: 0;
   display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 12px;
-  align-items: center;
+  gap: var(--sim-control-gap);
 }
-
-.groundglass-zoom-row {
-  grid-template-columns: 1fr auto;
-}
-
-.groundglass-label { min-width: 0; }
-
-.groundglass-options { min-width: 0; }
-
-.groundglass-zoom { display: flex; justify-content: flex-end; align-items: center; }
 
 .groundglass-viewport-frame { min-width: 0; }
 
@@ -208,14 +287,23 @@ button {
 
 .choice-list--inline { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
 
+/* stacked choice list: vertical stack used inside control groups */
+.choice-list--stacked { display: grid; gap: var(--sim-control-gap); }
+
 .btn--nowrap { white-space: nowrap; flex-shrink: 0; }
 
 .view-options { display: grid; gap: 6px; }
 .view-options--compact { gap: 6px; }
 
-@media (max-width: 900px) {
-  .groundglass-row { grid-template-columns: 1fr; }
-  .groundglass-zoom { justify-content: flex-start; }
+/* groundglass stage focus styling */
+.groundglass-stage:focus-visible,
+.groundglass-stage:focus-visible * {
+  outline: 3px solid rgba(37,99,235,0.25);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .groundglass-control-groups { grid-template-columns: 1fr; }
 }
 
 .simulator-task-feedback-grid {
@@ -251,6 +339,27 @@ button {
 .simulator-info-card--feedback {
  background: linear-gradient(180deg, rgba(236,252,245,0.6), rgba(236,252,245,0.4));
 }
+
+/* Task / Feedback panels */
+.task-panel { padding: 6px; }
+.task-summary__header { display:flex; gap:8px; align-items:center; }
+.task-status { font-weight:700; padding:4px 8px; border-radius:999px; font-size:12px; }
+.task-status--free { background: rgba(59,130,246,0.08); color: #0d47a1; }
+.task-status--progress { background: rgba(250,204,21,0.08); color: #92400e; }
+.chip { background: rgba(0,0,0,0.04); padding: 4px 8px; border-radius: 999px; font-size: 13px; }
+
+/* task requirements smaller helper classes */
+.task-requirements { margin-top: 8px; }
+.task-requirements__list { margin: 0; padding-left: 16px; }
+.task-requirements__empty { color: var(--text-muted); }
+
+.feedback-status { font-weight:700; }
+.feedback-panel--progress { border-left: 4px solid #f59e0b; }
+.feedback-panel--complete { border-left: 4px solid #16a34a; }
+.feedback-criteria { display: flex; flex-direction: column; gap: 8px; }
+.feedback-criterion--passed { background: rgba(16,185,129,0.06); }
+.feedback-criterion--failed { background: rgba(245,158,11,0.06); }
+
 
 .simulator-info-card h4 {
  margin: 0 0 8px 0;
@@ -576,7 +685,7 @@ button {
 .control-help { color: var(--text-muted); font-size: 12px; }
 .control-stack { display: grid; gap: 8px; }
 .choice-list { display: grid; gap: 6px; }
-.choice-label { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.choice-label { display: inline-flex; align-items: center; gap: var(--sim-control-gap); font-size: 14px; min-height: 24px; }
 .range-slider { width: 100%; accent-color: var(--primary); }
 
 .form-select, .form-input {
@@ -593,3 +702,46 @@ button {
 
 .control-row { display: flex; align-items: center; gap: 8px; }
 .control-group { display: grid; gap: 8px; }
+
+
+/* Scene toolbar and overlay controls */
+.scene-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sim-control-group-gap);
+  padding: 0;
+  background: transparent;
+}
+.scene-toolbar__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sim-control-gap);
+}
+.scene-toolbar__quality { display: inline-flex; align-items: center; gap: var(--sim-control-gap); }
+
+.scene-viewport-shell { position: relative; }
+
+.scene-overlay-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sim-control-gap);
+  padding: 8px;
+  background: rgba(255,255,255,0.85);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+  backdrop-filter: blur(4px);
+}
+.scene-overlay-controls__button { font-size: 13px; height: var(--sim-control-height); padding: 0 8px; }
+
+/* wrapper used to position overlay controls inside viewports */
+.scene-overlay-controls-wrap { position: absolute; left: var(--sim-panel-section-gap); top: var(--sim-panel-section-gap); z-index: 10; }
+
+.scene-status-row { display: flex; gap: var(--sim-control-group-gap); align-items: center; justify-content: space-between; }
+.scene-status-row p { margin: 0; font-size: 12px; color: var(--text-muted); }
+
+.scene-enlarged-view { z-index: 2000; }
+.scene-enlarged-view__viewport { position: relative; }

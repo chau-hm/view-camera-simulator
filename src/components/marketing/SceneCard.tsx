@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { TwoTargetsThumbnail } from "./TwoTargetsThumbnail";
+import { publicAssetUrl } from "../../utils/publicAssetUrl";
 
 type SceneCardProps = {
   sceneId: string;
@@ -10,7 +10,22 @@ type SceneCardProps = {
 
 export const SceneCard = ({ sceneId, title, description, topics }: SceneCardProps) => (
   <article className="scene-feature-card">
-    <TwoTargetsThumbnail />
+    <div className="scene-thumb" aria-hidden="true">
+      <picture>
+        <img
+          src={
+            sceneId === "architecture-rise"
+              ? publicAssetUrl("assets/architecture-rise.png")
+              : publicAssetUrl("assets/two-targets-illustration.png")
+          }
+          alt=""
+          width="360"
+          height="240"
+          decoding="async"
+        />
+      </picture>
+    </div>
+
     <div className="scene-meta">
       <h2>{title}</h2>
       <p>{description}</p>

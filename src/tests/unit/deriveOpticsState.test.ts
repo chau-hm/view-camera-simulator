@@ -95,7 +95,9 @@ describe("deriveOpticsState", () => {
     );
 
     expect(widerDof.focusPlane!.normal).toEqual(base.focusPlane!.normal);
-    expect(widerDof.depthOfFieldFarPlane!.distance).toBeGreaterThan(base.depthOfFieldFarPlane!.distance);
+    expect(widerDof.depthOfFieldFarPlane!.distance).toBeGreaterThan(
+      base.depthOfFieldFarPlane!.distance,
+    );
   });
 
   it("widens DOF at f/32 versus f/5.6", () => {
@@ -114,8 +116,10 @@ describe("deriveOpticsState", () => {
       architectureRiseScene,
     );
 
-    const narrowWidth = narrowDof.depthOfFieldFarPlane!.distance - narrowDof.depthOfFieldNearPlane!.distance;
-    const wideWidth = wideDof.depthOfFieldFarPlane!.distance - wideDof.depthOfFieldNearPlane!.distance;
+    const narrowWidth =
+      narrowDof.depthOfFieldFarPlane!.distance - narrowDof.depthOfFieldNearPlane!.distance;
+    const wideWidth =
+      wideDof.depthOfFieldFarPlane!.distance - wideDof.depthOfFieldNearPlane!.distance;
     expect(wideWidth).toBeGreaterThan(narrowWidth);
   });
 
@@ -172,7 +176,9 @@ describe("deriveOpticsState", () => {
     };
 
     const result = deriveOpticsState(DEFAULT_CAMERA_STATE, customScene);
-    expect(result.focusTargets[0].distanceToFocusPlaneMm).toBeLessThan(result.focusTargets[1].distanceToFocusPlaneMm);
+    expect(result.focusTargets[0].distanceToFocusPlaneMm).toBeLessThan(
+      result.focusTargets[1].distanceToFocusPlaneMm,
+    );
     expect(result.focusTargets[0].sharpness).toBeGreaterThan(result.focusTargets[1].sharpness);
   });
 

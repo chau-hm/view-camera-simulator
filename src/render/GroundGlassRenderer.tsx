@@ -11,11 +11,14 @@ import type { ApertureValue } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
-import { formatMillimeter } from "../utils/formatters";
 import { createFocusAssistPass } from "./postprocessing/FocusAssistPass";
+import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
+import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
+import { createGroundGlassRenderTarget, createGroundGlassDepthTarget, createGroundGlassCamera } from "./groundGlassPipeline";
+import { formatGroundGlassFocusLabel } from "./groundGlassFocusLabel";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { getSceneById } from "../scenes/definitions";
 
@@ -57,9 +60,29 @@ export const GroundGlassRenderer = ({
   previewMode,
   rawDebug,
   zoomEnabled,
-}: GroundGlassRendererProps & { zoomEnabled?: boolean }) => {
+  onToggleZoom,
+}: GroundGlassRendererProps & { zoomEnabled?: boolean; onToggleZoom?: () => void }) => {
   // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
+  const isRttScene = isGroundGlassRttScene(sceneId);
   const pipeline = useMemo(() => {
+    const isRtt = isGroundGlassRttScene(sceneId);
+    if (isRtt) {
+      // For RTT scenes, present a pipeline-like descriptor matching the resolved RTT dimensions used by GroundGlassRTT
+      const deviceDpr = typeof window !== "undefined" && window.devicePixelRatio ? window.devicePixelRatio : 1;
+      const dims = resolveGroundGlassRttDimensions({ logicalWidth: PANEL_WIDTH_PX, logicalHeight: PANEL_HEIGHT_PX, renderQuality, devicePixelRatio: deviceDpr, zoomEnabled });
+      const colorTarget = createGroundGlassRenderTarget(dims.internalWidthPx, dims.internalHeightPx);
+      const depthTarget = createGroundGlassDepthTarget(colorTarget);
+      const camera = createGroundGlassCamera(opticsState.offAxisProjectionMatrix);
+      const blurPass = { widthPx: dims.internalWidthPx, heightPx: dims.internalHeightPx };
+      return {
+        colorTarget,
+        depthTarget,
+        camera,
+        blurPass,
+        verticalFrameOffsetPx: 0,
+      } as const;
+    }
+
     const useThinLens = sceneId === "focus-fundamentals-two-targets";
     if (useThinLens) {
       const imageDistanceMm = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
@@ -73,7 +96,7 @@ export const GroundGlassRenderer = ({
     }
 
     return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality);
-  }, [opticsState, renderQuality, sceneId]);
+  }, [opticsState, renderQuality, sceneId, zoomEnabled]);
 
   const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const focusAssist = useMemo(
@@ -101,9 +124,10 @@ export const GroundGlassRenderer = ({
   const blurRadiusPx = Math.max(0, dofSample.blurStrength * (qualitySettings.groundGlassScale > 0.8 ? 9 : 6));
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
   const isFocusFundamentals = sceneId === "focus-fundamentals-two-targets";
-  const sceneShiftX = isFocusFundamentals ? 0 : clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
-  const sceneShiftY = isFocusFundamentals ? 0 : clamp(-riseMm * 2 + tiltDeg * 4 - pipeline.verticalFrameOffsetPx * 0.15, -80, 80);
-  const sceneRotationDeg = isFocusFundamentals ? 0 : clamp(tiltDeg * 1.25 + swingDeg * 0.75, -18, 18);
+  const isRttSceneFinal = isRttScene;
+  const sceneShiftX = isRttSceneFinal ? 0 : clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
+  const sceneShiftY = isRttSceneFinal ? 0 : clamp(-riseMm * 2 + tiltDeg * 4 - pipeline.verticalFrameOffsetPx * 0.15, -80, 80);
+  const sceneRotationDeg = isRttSceneFinal ? 0 : clamp(tiltDeg * 1.25 + swingDeg * 0.75, -18, 18);
   const focusShift = clamp((focusDistanceMm - 2000) / 4000, -1, 1);
   const focusScale = 1 + focusShift * 0.04;
   const focusRingSize = 68 + dofSample.blurStrength * 56;
@@ -112,10 +136,25 @@ export const GroundGlassRenderer = ({
     48 - clamp(tiltDeg * 2.2, -18, 18)
   }%, rgba(96,165,250,0.34), rgba(30,41,59,0.9) 42%, rgba(15,23,42,0.97) 100%)`;
   const isInfinityFocus = opticsState.diagnostics?.isInfinityFocus === true;
-  const focusDistanceLabel = isInfinityFocus
-    ? `∞ focus`
-    : `${formatMillimeter(focusDistanceMm)} focus / ${dofSample.distanceToFocusPlaneMm.toFixed(1)} mm delta`;
+  // consider RTT scenes when hiding decorative background overlay
+  const hideDecorativeBackground = isRttSceneFinal || rawDebug;
   const lastFiniteFocusDepthMm = useAppStore((s) => s.camera.lastFiniteFocusDepthMm);
+  const primaryTarget = opticsState.focusTargets && opticsState.focusTargets.length > 0 ? opticsState.focusTargets[0] : null;
+
+  const focusDistanceLabel = formatGroundGlassFocusLabel({
+    isRttScene: isRttSceneFinal,
+    isInfinityFocus,
+    focusDistanceMm,
+    lastFiniteFocusDepthMm,
+    primaryTarget: primaryTarget
+      ? {
+          sharpness: primaryTarget.sharpness,
+          normalizedDefocus: primaryTarget.normalizedDefocus,
+          distanceToFocusPlaneMm: primaryTarget.distanceToFocusPlaneMm,
+        }
+      : null,
+    legacyDistanceToFocusPlaneMm: dofSample.distanceToFocusPlaneMm,
+  });
 
   // Project scene focus targets (if available) into ground-glass UV coordinates for positioning overlays
   const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
@@ -125,8 +164,8 @@ export const GroundGlassRenderer = ({
 
   const transformedImageLayer = (
     <>
-      {/* Decorative background; hide for Focus Fundamentals (RTT) or when Raw RTT Debug is enabled */}
-      {!(isFocusFundamentals || rawDebug) && (
+      {/* Decorative background; hide for RTT scenes or when Raw RTT Debug is enabled */}
+      {!hideDecorativeBackground && (
         <div
           style={{
             position: "absolute",
@@ -159,22 +198,24 @@ export const GroundGlassRenderer = ({
           focusScale={focusScale}
           widthPx={PANEL_WIDTH_PX}
           heightPx={PANEL_HEIGHT_PX}
+          renderQuality={renderQuality}
+          zoomEnabled={zoomEnabled}
         />
 
-        {!isFocusFundamentals && (
-          <LegacyGroundGlassScene
-            sceneId={sceneId}
-            sceneHasFocusTargets={!!(sceneDef && sceneDef.focusTargets && sceneDef.focusTargets.length)}
-            projectedTargets={projectedTargets}
-            blurRadiusPx={blurRadiusPx}
-            sceneShiftX={sceneShiftX}
-            sceneShiftY={sceneShiftY}
-            sceneRotationDeg={sceneRotationDeg}
-            focusScale={focusScale}
-            riseMm={riseMm}
-            tiltDeg={tiltDeg}
-            swingDeg={swingDeg}
-          />
+        {!isRttSceneFinal && (
+         <LegacyGroundGlassScene
+           sceneId={sceneId}
+           sceneHasFocusTargets={!!(sceneDef && sceneDef.focusTargets && sceneDef.focusTargets.length)}
+           projectedTargets={projectedTargets}
+           blurRadiusPx={blurRadiusPx}
+           sceneShiftX={sceneShiftX}
+           sceneShiftY={sceneShiftY}
+           sceneRotationDeg={sceneRotationDeg}
+           focusScale={focusScale}
+           riseMm={riseMm}
+           tiltDeg={tiltDeg}
+           swingDeg={swingDeg}
+         />
         )}
 
         <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} isFocusFundamentals={isFocusFundamentals} blurOpacity={blurOpacity} />
@@ -191,7 +232,7 @@ export const GroundGlassRenderer = ({
         focusAssistVisible={focusAssist.enabled && !rawDebug}
       />
 
-      {sceneId !== "focus-fundamentals-two-targets" && (
+      {!isRttSceneFinal && (
         <GroundGlassFocusRing
           sceneId={sceneId}
           primaryProjectedTarget={primaryProjectedTarget}
@@ -206,7 +247,7 @@ export const GroundGlassRenderer = ({
 
   return (
     <div style={{ display: "grid", gap: "0.5rem" }}>
-      <GroundGlassStage zoomEnabled={zoomEnabled} imageLayer={transformedImageLayer} fixedOverlayLayer={fixedOverlayLayer} />
+      <GroundGlassStage zoomEnabled={zoomEnabled} onToggleZoom={onToggleZoom} imageLayer={transformedImageLayer} fixedOverlayLayer={fixedOverlayLayer} />
       {/* Current Settings & Focus Fundamentals Debug and Focus Targets are rendered by the parent GroundGlassViewport to allow controls to appear immediately after the canvas. */}
     </div>
   );

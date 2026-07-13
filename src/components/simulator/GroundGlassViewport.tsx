@@ -2,6 +2,7 @@ import { useState } from "react";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { ViewOptions } from "../controls/ViewOptions";
 import { UI_COPY } from "../../ui/copy";
+import { useAppStore } from "../../state/appStore";
 import type { ApertureValue } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { RenderQualityProfile } from "../../types/ui";
@@ -16,7 +17,6 @@ type GroundGlassViewportProps = {
   // permissions (from enabledControls) — whether the control is allowed in current mode/task
   canToggleFocusAssist?: boolean;
   canToggleGrid?: boolean;
-  canToggleGroundGlassAssist?: boolean;
   riseMm: number;
   tiltDeg: number;
   swingDeg: number;
@@ -31,12 +31,10 @@ type GroundGlassViewportProps = {
 
 export const GroundGlassViewport = ({
   opticsState,
-  orientationAssistEnabled,
   focusAssistEnabled,
   gridEnabled,
   canToggleFocusAssist,
   canToggleGrid,
-  canToggleGroundGlassAssist,
   riseMm,
   tiltDeg,
   swingDeg,
@@ -48,8 +46,10 @@ export const GroundGlassViewport = ({
   rawRttDebug,
   showHeader,
 }: GroundGlassViewportProps) => {
-  // Preview mode control local to the Ground Glass panel. Default to 'raw'.
-  const [previewMode, setPreviewMode] = useState<"raw" | "upright">("raw");
+  // Preview mode control local to the Ground Glass panel. Default to camera state
+  const groundGlassAssistEnabled = useAppStore((s) => s.camera.groundGlassAssistEnabled);
+  const setGroundGlassAssistEnabled = useAppStore((s) => s.setGroundGlassAssistEnabled);
+  const [previewMode, setPreviewMode] = useState<"raw" | "upright">(groundGlassAssistEnabled ? "upright" : "raw");
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
 
@@ -58,65 +58,48 @@ export const GroundGlassViewport = ({
       {showHeader !== false && <h2 className="simulator-card-title">{UI_COPY.simulator.groundGlassTitle}</h2>}
 
       <div className="groundglass-controls">
-        {/* Row 1: Preview label + radio choices inline */}
-        <div className="groundglass-row">
-          <div className="groundglass-label"><h3 className="control-group-title">Preview</h3></div>
-          <div className="choice-list choice-list--inline">
-            <label className="choice-label">
-              <input
-                className="form-radio"
-                type="radio"
-                name={`gg-preview-${sceneId}`}
-                checked={previewMode === "raw"}
-                onChange={() => setPreviewMode("raw")}
+        <div className="groundglass-control-groups">
+          <fieldset className="groundglass-control-group">
+            <legend className="control-group-title">Preview</legend>
+            <div className="groundglass-control-group__options">
+              <div className="choice-list choice-list--stacked">
+                <label className="choice-label">
+                  <input
+                    className="form-radio"
+                    type="radio"
+                    name={`gg-preview-${sceneId}`}
+                    checked={previewMode === "raw"}
+                    onChange={() => { setPreviewMode("raw"); setGroundGlassAssistEnabled(false); }}
+                  />
+                  <span>Raw Ground Glass</span>
+                </label>
+
+                <label className="choice-label">
+                  <input
+                    className="form-radio"
+                    type="radio"
+                    name={`gg-preview-${sceneId}`}
+                    checked={previewMode === "upright"}
+                    onChange={() => { setPreviewMode("upright"); setGroundGlassAssistEnabled(true); }}
+                  />
+                  <span>Upright Assist</span>
+                </label>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="groundglass-control-group">
+            <legend className="control-group-title">View Options</legend>
+            <div className="groundglass-control-group__options">
+              <ViewOptions
+                canToggleFocusAssist={canToggleFocusAssist ?? true}
+                canToggleGrid={canToggleGrid ?? true}
+                lockReason={lockReason ?? ""}
+                compact
               />
-              <span>Raw Ground Glass</span>
-            </label>
-
-            <label className="choice-label">
-              <input
-                className="form-radio"
-                type="radio"
-                name={`gg-preview-${sceneId}`}
-                checked={previewMode === "upright"}
-                onChange={() => setPreviewMode("upright")}
-              />
-              <span>Upright Assist</span>
-            </label>
-          </div>
+            </div>
+          </fieldset>
         </div>
-
-        {/* Row 2: View Options label + inline checkboxes */}
-        <div className="groundglass-row">
-          <div className="groundglass-label"><h3 className="control-group-title">View Options</h3></div>
-          <div className="choice-list choice-list--inline">
-            <ViewOptions
-              canToggleGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets" ? (canToggleGroundGlassAssist ?? orientationAssistEnabled) : false}
-              showGroundGlassAssist={sceneId !== "focus-fundamentals-two-targets"}
-              canToggleFocusAssist={canToggleFocusAssist ?? true}
-              canToggleGrid={canToggleGrid ?? true}
-              lockReason={lockReason ?? ""}
-              compact
-            />
-          </div>
-        </div>
-
-        {/* Row 3: Zoom button right-aligned */}
-        <div className="groundglass-row groundglass-zoom-row">
-          <div />
-          <div className="groundglass-zoom">
-            <button
-              type="button"
-              onClick={() => setZoomEnabled((s) => !s)}
-              aria-pressed={zoomEnabled}
-              className={`btn btn--compact btn--nowrap ${zoomEnabled ? 'btn--primary' : 'btn--secondary'}`}
-            >
-              <span className="material-symbols-outlined" aria-hidden="true">{zoomEnabled ? 'zoom_out' : 'zoom_in'}</span>
-              <span style={{ marginLeft: 6 }}>{zoomEnabled ? UI_COPY.simulator.groundGlassZoomOut : UI_COPY.simulator.groundGlassZoomIn}</span>
-            </button>
-          </div>
-        </div>
-
       </div>
 
       <div className="groundglass-viewport-frame" aria-label="GroundGlassViewport">
@@ -135,6 +118,7 @@ export const GroundGlassViewport = ({
           previewMode={previewMode}
           rawDebug={rawRttDebug}
           zoomEnabled={zoomEnabled}
+          onToggleZoom={() => setZoomEnabled((s) => !s)}
         />
       </div>
     </section>

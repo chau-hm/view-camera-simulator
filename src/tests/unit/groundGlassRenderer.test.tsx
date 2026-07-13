@@ -46,7 +46,6 @@ describe("GroundGlassRenderer", () => {
         gridEnabled={false}
         canToggleFocusAssist={true}
         canToggleGrid={true}
-        canToggleGroundGlassAssist={true}
         riseMm={10}
         tiltDeg={2}
         swingDeg={-1}
@@ -57,9 +56,9 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    const zoomIn = screen.getByRole("button", { name: "Zoom in" });
+    const zoomIn = screen.getByRole("button", { name: "Zoom in Ground Glass" });
     fireEvent.click(zoomIn);
-    expect(screen.getByRole("button", { name: "Zoom out" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toBeInTheDocument();
   });
 
   it("updates the preview when focus and movement controls change", () => {
@@ -77,13 +76,14 @@ describe("GroundGlassRenderer", () => {
         aperture={11}
         renderQuality="standard"
         previewMode="raw"
+        sceneId={architectureRiseScene.id}
       />,
     );
 
-    const scene = screen.getByTestId("ground-glass-scene");
-    const focusRing = screen.getByTestId("ground-glass-focus-ring");
-    const beforeSceneTransform = scene.getAttribute("style");
-    const beforeFocusRing = focusRing.getAttribute("style");
+    // Architecture Rise now uses RTT — ensure RTT canvas exists and DOM focus overlays are not rendered
+    expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
 
     rerender(
       <GroundGlassRenderer
@@ -98,11 +98,11 @@ describe("GroundGlassRenderer", () => {
         aperture={32}
         renderQuality="standard"
         previewMode="raw"
+        sceneId={architectureRiseScene.id}
       />,
     );
 
-    expect(screen.getByTestId("ground-glass-scene").getAttribute("style")).not.toBe(beforeSceneTransform);
-    expect(screen.getByTestId("ground-glass-focus-ring").getAttribute("style")).not.toBe(beforeFocusRing);
+    expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
     expect(screen.getByText(/4200\.0 mm focus/)).toBeInTheDocument();
   });
 
@@ -242,7 +242,7 @@ describe("GroundGlassRenderer", () => {
   });
 
   // Test C: legacy placeholder and focus ring use the same projected coordinates
-  it("legacy placeholder targets and focus ring share the same coordinates", () => {
+  it("legacy placeholder targets are removed for Architecture RTT and projection still available", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     const projected = projectSceneFocusTargetsToGroundGlass({ sceneDef: architectureRiseScene, opticsState, aperture: DEFAULT_CAMERA_STATE.aperture, previewMode: "raw" });
     expect(projected.length).toBeGreaterThan(0);
@@ -264,22 +264,11 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    const focusRing = screen.getByTestId("ground-glass-focus-ring");
+    // Architecture Rise should route to RTT — no DOM placeholders or focus ring
+    expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
     const placeholders = Array.from(document.querySelectorAll('[data-testid^="ground-glass-target-"]')) as HTMLElement[];
-
-    const firstPlaceholder = placeholders.find((ph) => ph.dataset.testid?.endsWith(architectureRiseScene.focusTargets[0].id));
-    // If the projected target is visible, the focus ring should match its position; otherwise focus ring should be hidden and placeholder off-screen
-    if (firstPlaceholder) {
-      if (firstPlaceholder.style.left === "-999%" && firstPlaceholder.style.top === "-999%") {
-        expect(focusRing.style.display).toBe("none");
-      } else {
-        expect(focusRing.style.left).toBe(firstPlaceholder.style.left);
-        expect(focusRing.style.top).toBe(firstPlaceholder.style.top);
-      }
-    } else {
-      // fail safe: ensure at least the focus ring exists in DOM
-      expect(screen.getByTestId("ground-glass-focus-ring")).toBeTruthy();
-    }
+    expect(placeholders.length).toBe(0);
   });
 
   it("does not render white DOM placeholder targets for Focus Fundamentals", () => {
@@ -327,9 +316,10 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    expect(screen.getByTestId("ground-glass-scene")).toBeInTheDocument();
-    expect(screen.getByTestId("ground-glass-focus-ring")).toBeInTheDocument();
-    expect(screen.getByTestId(`ground-glass-target-${architectureRiseScene.focusTargets[0].id}`)).toBeInTheDocument();
+    // Architecture Rise now uses RTT
+    expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
     expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
   });
 

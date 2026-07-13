@@ -1,4 +1,5 @@
 import type { TaskDefinition } from "../../types/task";
+import geometry from "../../scenes/architectureRiseGeometry";
 
 const riseTask: TaskDefinition = {
   id: "rise-01",
@@ -46,7 +47,8 @@ const riseTask: TaskDefinition = {
     defaultFailPrimary: "Increase rise while keeping tilt and swing at 0°.",
     failPrimaryByCriterionId: {
       "rise-building-top-visible": "Building top is still clipped. Increase rise further.",
-      "rise-building-main-visible": "Main building coverage is too low. Reduce excessive rise slightly.",
+      "rise-building-main-visible":
+        "Main building coverage is too low. Reduce excessive rise slightly.",
       "rise-movement-used": "Rise is too low for this composition task.",
       "rise-movement-range": "Keep rise between 12mm and 35mm for this exercise.",
     },
@@ -61,7 +63,7 @@ const riseTask: TaskDefinition = {
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
-    focusDistanceMm: 7200,
+    focusDistanceMm: geometry.architectureFacadeFocusDistanceMm,
     aperture: 11,
     geometryView: "side",
     groundGlassAssistEnabled: false,
@@ -224,7 +226,8 @@ const swingTask: TaskDefinition = {
     },
     failSecondaryByCriterionId: {
       "swing-allowed-aperture": "Use f/22 or wider and solve with geometry.",
-      "swing-front-sharp": "Top-view diagram should show focus plane crossing front and mid targets.",
+      "swing-front-sharp":
+        "Top-view diagram should show focus plane crossing front and mid targets.",
       "swing-middle-sharp": "Keep swing direction consistent with the shelf diagonal.",
       "swing-back-sharp": "Top-view focus plane should extend through the back shelf marker.",
       "swing-movement-used": "Start around 2° swing and tune focus distance.",
@@ -244,18 +247,10 @@ const swingTask: TaskDefinition = {
   },
 };
 
-const cloneTaskWithId = (task: TaskDefinition, id: string): TaskDefinition => ({
-  ...task,
-  id,
-});
-
 export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
   "tilt-01": tiltTask,
   "swing-01": swingTask,
-  "task-rise-basics": cloneTaskWithId(riseTask, "task-rise-basics"),
-  "task-tilt-basics": cloneTaskWithId(tiltTask, "task-tilt-basics"),
-  "task-swing-basics": cloneTaskWithId(swingTask, "task-swing-basics"),
 };
 
 export const getTaskById = (taskId: string): TaskDefinition | undefined => taskRegistry[taskId];

@@ -33,9 +33,17 @@ export type Bounds3 = {
 export type FocusTargetSharpness = {
   id: string;
   distanceToFocusPlaneMm: number;
-  acceptableRangeMm: number;
+  // legacy field kept for compatibility; may be undefined for wedge model
+  acceptableRangeMm?: number | undefined;
   sharpness: number;
   status: "sharp" | "acceptable" | "soft";
+  // extended diagnostics
+  insideDepthOfField?: boolean;
+  targetRayDistanceMm?: number;
+  nearBoundaryDistanceMm?: number | null;
+  focusBoundaryDistanceMm?: number | null;
+  farBoundaryDistanceMm?: number | null;
+  normalizedDefocus?: number;
 };
 
 export type ProjectionData = {
@@ -83,7 +91,14 @@ export type DerivedOpticsState = {
     tiltAngleDeg: number;
     swingAngleDeg: number;
     focusPlaneModel: "parallel" | "scheimpflug";
+    // which DOF model is currently used
+    depthOfFieldModel?: "parallel" | "scheimpflug-wedge";
+    // near/far distances along optical axis from lens centre
+    nearU?: number | null;
+    farU?: number | null;
+    farIsInfinite?: boolean;
     fallbackApplied: boolean;
+    fallbackReason?: string | null;
     errorMessage?: string;
     isInfinityFocus?: boolean;
   };

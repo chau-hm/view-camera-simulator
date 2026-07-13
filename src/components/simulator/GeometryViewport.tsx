@@ -13,6 +13,8 @@ type GeometryViewportProps = {
   opticsState: DerivedOpticsState;
   geometryView: GeometryView;
   scene: SceneDefinition;
+  riseMm?: number;
+  showHeader?: boolean;
 };
 
 const SVG_WIDTH = 460;
@@ -20,7 +22,7 @@ const SVG_HEIGHT = 280;
 
 import { useAppStore } from "../../state/appStore";
 
-export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryViewportProps) => {
+export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, showHeader }: GeometryViewportProps) => {
   const setGeometryView = useAppStore((s) => s.setGeometryView);
 
   // Responsive diagram sizing: measure the diagram container and auto-fit SVG to available space
@@ -78,15 +80,18 @@ export const GeometryViewport = ({ opticsState, geometryView, scene }: GeometryV
 
   return (
     <section style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h2 style={{ margin: 0 }}>{UI_COPY.simulator.geometryTitle}</h2>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button aria-pressed={geometryView === "side"} onClick={() => setGeometryView("side")}>Side</button>
-          <button aria-pressed={geometryView === "top"} onClick={() => setGeometryView("top")}>Top</button>
+      {showHeader !== false ? (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <h2 style={{ margin: 0 }}>{UI_COPY.simulator.geometryTitle}</h2>
+          <div role="group" aria-label="Geometry view" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button className={geometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={geometryView === "side"} onClick={() => setGeometryView("side")}>Side</button>
+            <button className={geometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={geometryView === "top"} onClick={() => setGeometryView("top")}>Top</button>
+          </div>
         </div>
-      </div>
+      ) : null}
+
       <p style={{ marginTop: 6, marginBottom: 8 }}>
-        {geometryView === "side" ? "Side view" : "Top view"} | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
+        {geometryView === "side" ? "Side view" : "Top view"} | Rise: {(riseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
       </p>
 
       {/* Diagram container: this will expand to available space in floating panel */}

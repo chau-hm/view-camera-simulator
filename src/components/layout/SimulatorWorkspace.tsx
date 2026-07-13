@@ -18,11 +18,9 @@ import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
 import { CurrentSettingsReadout, FocusTargetsReadout } from "../simulator/GroundGlassReadouts";
-import { FocusFundamentalsDebugPanel } from "../simulator/FocusFundamentalsDebugPanel";
+import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
-import { createGroundGlassDofPipeline } from "../../render/groundGlassPipeline";
-import { getRenderQualitySettings } from "../../render/renderQuality";
 import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
 
 type SimulatorWorkspaceProps = {
@@ -43,7 +41,7 @@ export const SimulatorWorkspace = ({
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
-  const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("standard");
+  const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
   const [showGeometryPanel, setShowGeometryPanel] = useState(false);
   // All registered scenes still available through engine registry
   // const allScenes = getAllScenes();
@@ -57,9 +55,20 @@ export const SimulatorWorkspace = ({
   );
 
   useEffect(() => {
-    setMode(mode);
-    setActiveScene(sceneId);
-    setActiveTask(taskId);
+    // initialize route: apply scene presets (free) or task initialCameraState (guided) once when route changes
+    const initRoute = (modeParam: SimulatorMode, sceneParam: string, taskParam: string | null | undefined) => {
+      const initializeSimulatorRoute = useAppStore.getState().initializeSimulatorRoute;
+      if (initializeSimulatorRoute) {
+        initializeSimulatorRoute({ mode: modeParam, sceneId: sceneParam, taskId: taskParam ?? null });
+      } else {
+        // fall back to individual setters if the initialize action isn't available
+        setMode(modeParam);
+        setActiveScene(sceneParam);
+        setActiveTask(taskParam ?? null);
+      }
+    };
+
+    initRoute(mode, sceneId, taskId);
   }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId]);
 
   const scene = getSceneById(camera.activeSceneId);
@@ -74,11 +83,11 @@ export const SimulatorWorkspace = ({
   const enabledControls = useMemo(() => {
     const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
     if (focusFundamentals) {
-      return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid", "groundGlassAssist"]);
+    return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
     }
 
     if (mode === "free" || !task) {
-      return new Set(["rise", "tilt", "swing", "focusDistance", "aperture", "geometryView", "focusAssist", "grid", "groundGlassAssist"]);
+    return new Set(["rise", "tilt", "swing", "focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
     }
     return new Set([...task.enabledControls]);
   }, [mode, task, camera.activeSceneId]);
@@ -88,13 +97,8 @@ export const SimulatorWorkspace = ({
     setCurrentTaskEvaluation(evaluation);
   }, [evaluation, setCurrentTaskEvaluation]);
 
-  // memoized render pipeline & settings to avoid re-creating expensive pipeline objects on every render
-  const groundGlassPipeline = useMemo(
-    () => createGroundGlassDofPipeline(opticsState, 500, 400, renderQuality),
-    [opticsState, renderQuality],
-  );
-
-  const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
+  // RTT runtime info
+  const rttRuntimeInfo = useAppStore((s) => s.groundGlassRttRuntimeInfo);
 
   const focusAssistTargets = useMemo(
     () =>
@@ -169,7 +173,6 @@ export const SimulatorWorkspace = ({
                 gridEnabled={camera.gridEnabled}
                 canToggleFocusAssist={enabledControls.has("focusAssist")}
                 canToggleGrid={enabledControls.has("grid")}
-                canToggleGroundGlassAssist={enabledControls.has("groundGlassAssist")}
                 riseMm={camera.frontRiseMm}
                 tiltDeg={camera.frontTiltDeg}
                 swingDeg={camera.frontSwingDeg}
@@ -184,43 +187,45 @@ export const SimulatorWorkspace = ({
             </div>
           </div>
 
-          {/* Info grid: current settings, focus targets, debug */}
-          <div className="simulator-info-grid">
-              <CurrentSettingsReadout
+          {/* Row 1: Current Settings | Focus Targets */}
+          <div className="simulator-primary-info-grid">
+            <CurrentSettingsReadout
               riseMm={camera.frontRiseMm}
               tiltDeg={camera.frontTiltDeg}
               swingDeg={camera.frontSwingDeg}
               focusDistanceMm={camera.focusDistanceMm}
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
-              pipeline={groundGlassPipeline}
-              qualitySettings={qualitySettings}
-              lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
             />
 
             <FocusTargetsReadout focusTargets={focusAssistTargets} />
-
-            <div className="simulator-info-card" aria-label="Focus Fundamentals">
-              <h4>Focus Fundamentals Debug</h4>
-              {camera.activeSceneId === 'focus-fundamentals-two-targets' ? (
-                <div style={{ paddingTop: 8 }}>
-                  <FocusFundamentalsDebugPanel sceneId={camera.activeSceneId} opticsState={opticsState} focusDistanceMm={camera.focusDistanceMm} aperture={camera.aperture as number} />
-                </div>
-              ) : (
-                <div style={{ color: 'var(--text-muted)' }}>Debug info not available for this scene.</div>
-              )}
-            </div>
           </div>
 
+          {/* Row 2: Task | Feedback (each wrapped in a card shell provided by Workspace) */}
           <div className="simulator-task-feedback-grid">
             <div className="simulator-info-card simulator-info-card--task">
               <h4>Task</h4>
-              <TaskPanel task={task} />
+              <TaskPanel task={task} sceneId={safeScene.id} showTitle={false} />
             </div>
             <div className="simulator-info-card simulator-info-card--feedback">
               <h4>Feedback</h4>
-              <FeedbackPanel evaluation={evaluation} />
+              <FeedbackPanel mode={mode} sceneId={safeScene.id} task={task} evaluation={evaluation} showTitle={false} />
             </div>
+          </div>
+
+          {/* Row 3: Optical Debug, full width (component owns its single card shell) */}
+          <div className="simulator-debug-row">
+            <OpticalDebugPanel
+              sceneId={camera.activeSceneId}
+              mode={camera.mode}
+              taskId={camera.activeTaskId}
+              opticsState={opticsState}
+              focalLengthMm={camera.focalLengthMm}
+              focusDistanceMm={camera.focusDistanceMm}
+              aperture={camera.aperture as number}
+              renderQuality={renderQuality}
+              rttRuntimeInfo={rttRuntimeInfo}
+            />
           </div>
 
         </main>
@@ -262,8 +267,11 @@ export const SimulatorWorkspace = ({
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: 8 }}>
               <label className="developer-tools__control">
                 <input className="form-checkbox" type="checkbox" checked={rawRttDebug} onChange={(e) => setRawRttDebug(e.target.checked)} />
-                RTT Debug: Raw ON/OFF
+                Raw RTT — bypass DOF
               </label>
+              {rawRttDebug ? (
+                <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)', marginTop: 6 }}>Depth-of-field and focus blur are disabled in Raw RTT mode.</div>
+              ) : null}
             </div>
           </section>
         </aside>
@@ -301,7 +309,7 @@ export const SimulatorWorkspace = ({
             </button>
           </div>
 
-          <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} />
+          <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} riseMm={camera.frontRiseMm} />
         </div>
       )}
 

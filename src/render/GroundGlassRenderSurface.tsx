@@ -1,5 +1,6 @@
 import type { DerivedOpticsState } from "../types/optics";
 import { GroundGlassRTT } from "./GroundGlassRTT";
+import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
@@ -16,6 +17,8 @@ export type GroundGlassRenderSurfaceProps = {
   focusScale: number;
   widthPx: number;
   heightPx: number;
+  renderQuality: import("../types/ui").RenderQualityProfile;
+  zoomEnabled?: boolean;
 };
 
 export const GroundGlassRenderSurface = ({
@@ -33,8 +36,10 @@ export const GroundGlassRenderSurface = ({
   focusScale,
   widthPx,
   heightPx,
+  renderQuality,
+  zoomEnabled,
 }: GroundGlassRenderSurfaceProps) => {
-  if (sceneId === "focus-fundamentals-two-targets") {
+  if (isGroundGlassRttScene(sceneId)) {
     return (
       <div data-testid="ground-glass-rtt" style={{ position: "absolute", inset: 0 }}>
         <GroundGlassRTT
@@ -48,6 +53,8 @@ export const GroundGlassRenderSurface = ({
           focusRingOpacity={focusRingOpacity}
           rawDebug={rawDebug}
           focusAssistEnabled={focusAssistEnabled}
+          renderQuality={renderQuality}
+          zoomEnabled={zoomEnabled}
         />
       </div>
     );

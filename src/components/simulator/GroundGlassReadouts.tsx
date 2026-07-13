@@ -1,8 +1,7 @@
 import { UI_COPY } from "../../ui/copy";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import type { RenderQualityProfile } from "../../types/ui";
-import type { GroundGlassDofPipeline } from "../../render/groundGlassPipeline";
-import { getRenderQualitySettings } from "../../render/renderQuality";
+// focus display mapping is handled by createFocusAssistPass; keep helper available for lower-level tests
 
 type GroundGlassReadoutsProps = {
   riseMm: number;
@@ -11,10 +10,9 @@ type GroundGlassReadoutsProps = {
   focusDistanceMm: number;
   aperture: number | string;
   renderQuality: RenderQualityProfile;
-  pipeline: GroundGlassDofPipeline;
-  qualitySettings: ReturnType<typeof getRenderQualitySettings>;
-  lastFiniteFocusDepthMm?: number | null;
   focusTargets?: { id: string; sharpnessPercent: number }[];
+  // new: RTT runtime info for RTT-capable scenes
+  rttRuntimeInfo?: import("../../render/groundGlassRttDimensions").GroundGlassRttRuntimeInfo | null;
 };
 
 export const CurrentSettingsReadout = ({
@@ -24,47 +22,64 @@ export const CurrentSettingsReadout = ({
   focusDistanceMm,
   aperture,
   renderQuality,
-  pipeline,
-  qualitySettings,
-  lastFiniteFocusDepthMm,
 }: GroundGlassReadoutsProps) => {
   return (
-    <div aria-label="CurrentSettingsReadout" className="simulator-info-card" style={{ display: 'grid', gap: '0.5rem' }}>
+    <div aria-label="CurrentSettingsReadout" className="simulator-info-card simulator-info-card--settings">
       <h4>{UI_COPY.simulator.groundGlassCurrentSettings}</h4>
-      <div style={{ display: "grid", gap: "0.25rem", fontSize: 13 }}>
-        <div>Rise {formatMillimeter(riseMm)} | Tilt {formatDegrees(tiltDeg)} | Swing {formatDegrees(swingDeg)}</div>
-        <div>
-          {typeof focusDistanceMm === 'number' && isFinite(focusDistanceMm) ? (
-            <span>Focus {formatMillimeter(focusDistanceMm)} | Aperture f/{aperture}</span>
-          ) : (
-            <span>Focus ∞ | Aperture f/{aperture} <span style={{ fontSize: 12, color: 'var(--text-muted)' }}> (Last finite: {lastFiniteFocusDepthMm ? formatMillimeter(lastFiniteFocusDepthMm) : '—'})</span></span>
-          )}
+      <dl className="current-settings-groups">
+        <div className="current-settings-group">
+          <dt>Movement</dt>
+          <dd>
+            <div className="current-settings-row">Rise {formatMillimeter(riseMm)}</div>
+            <div className="current-settings-row">Tilt {formatDegrees(tiltDeg)}</div>
+            <div className="current-settings-row">Swing {formatDegrees(swingDeg)}</div>
+          </dd>
         </div>
-        <div>Quality {renderQuality}</div>
-        <div>Color target: {pipeline.colorTarget.widthPx}×{pipeline.colorTarget.heightPx}</div>
-        <div>Blur pass: {pipeline.blurPass.widthPx}×{pipeline.blurPass.heightPx}</div>
-        <div>Color target: {pipeline.colorTarget.textureId}, Depth target: {pipeline.depthTarget.depthTextureId}</div>
-        <div>Camera source: {pipeline.camera.source}, Scale {qualitySettings.groundGlassScale}</div>
-      </div>
+
+        <div className="current-settings-group">
+          <dt>Exposure &amp; focus</dt>
+          <dd>
+            <div className="current-settings-row">Focus {typeof focusDistanceMm === 'number' && isFinite(focusDistanceMm) ? formatMillimeter(focusDistanceMm) : '∞'}</div>
+            <div className="current-settings-row">Aperture f/{aperture}</div>
+          </dd>
+        </div>
+
+        <div className="current-settings-group">
+          <dt>Display</dt>
+          <dd>
+            <div className="current-settings-row">Quality {String(renderQuality).charAt(0).toUpperCase() + String(renderQuality).slice(1)}</div>
+          </dd>
+        </div>
+      </dl>
     </div>
   );
 };
-
-export const FocusTargetsReadout = ({ focusTargets }: { focusTargets?: { id: string; sharpnessPercent: number }[] }) => {
+export const FocusTargetsReadout = ({ focusTargets }: { focusTargets?: { id: string; status?: string; sharpnessPercent: number }[] }) => {
   return (
-    <div aria-label="FocusTargetsReadout" className="simulator-info-card" style={{ display: 'grid', gap: '0.5rem' }}>
+    <div aria-label="FocusTargetsReadout" className="simulator-info-card simulator-info-card--focus-targets">
       <h4>{UI_COPY.simulator.groundGlassFocusTargets}</h4>
-      <div style={{ display: "grid", gap: "0.25rem", fontSize: 13 }}>
+      <div className="focus-target-list">
         {focusTargets && focusTargets.length > 0 ? (
-          focusTargets.map((target) => (
-            <div key={target.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ flex: 1 }}>{target.id}</div>
-              <div style={{ width: 100, height: 8, background: '#eef2ff', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ width: `${target.sharpnessPercent}%`, height: '100%', background: 'var(--primary)' }} />
+          focusTargets.map((target) => {
+            // use the already-computed percentage and status from the focus assist pass
+            const display = Math.max(0, Math.min(100, Math.round(target.sharpnessPercent ?? 0)));
+            const statusText = target.status === 'sharp' ? 'Sharp' : target.status === 'acceptable' ? 'Acceptable' : 'Soft';
+            const cls = `focus-target-row ${target.status === 'sharp' ? 'focus-target-row--sharp' : target.status === 'acceptable' ? 'focus-target-row--acceptable' : 'focus-target-row--soft'}`;
+            return (
+              <div key={target.id} className={cls}>
+                <div className="focus-target-row__header">
+                  <span className="focus-target-row__name" title={target.id}>{formatTargetId(target.id)}</span>
+                  <span className="focus-target-row__value">{display}%</span>
+                </div>
+
+                <div className="focus-target-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={display} aria-label={`${target.id} sharpness`}>
+                  <div className="focus-target-progress__fill" style={{ width: `${display}%` }} />
+                </div>
+
+                <div className="focus-target-row__meta">{statusText}</div>
               </div>
-              <div style={{ width: 46, textAlign: 'right' }}>{target.sharpnessPercent}%</div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div style={{ color: 'var(--text-muted)' }}>No focus targets</div>
         )}
@@ -73,6 +88,11 @@ export const FocusTargetsReadout = ({ focusTargets }: { focusTargets?: { id: str
   );
 };
 
+function formatTargetId(id: string) {
+  // simple presentation cleanup: replace dashes with spaces and capitalize
+  return id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export const GroundGlassReadouts = ({
   riseMm,
   tiltDeg,
@@ -80,9 +100,6 @@ export const GroundGlassReadouts = ({
   focusDistanceMm,
   aperture,
   renderQuality,
-  pipeline,
-  qualitySettings,
-  lastFiniteFocusDepthMm,
   focusTargets,
 }: GroundGlassReadoutsProps) => {
   return (
@@ -94,9 +111,6 @@ export const GroundGlassReadouts = ({
         focusDistanceMm={focusDistanceMm}
         aperture={aperture}
         renderQuality={renderQuality}
-        pipeline={pipeline}
-        qualitySettings={qualitySettings}
-        lastFiniteFocusDepthMm={lastFiniteFocusDepthMm}
       />
 
       <FocusTargetsReadout focusTargets={focusTargets} />

@@ -1,4 +1,5 @@
 import type { SceneDefinition } from "../../types/scene";
+import geometry from "../architectureRiseGeometry";
 
 export const architectureRiseScene: SceneDefinition = {
   id: "architecture-rise",
@@ -28,25 +29,29 @@ export const architectureRiseScene: SceneDefinition = {
     },
   ],
   cameraPreset: {
-    focusDistanceMm: 7200,
+    // initial focus distance set to the canonical façade focus distance
+    focusDistanceMm: geometry.architectureFacadeFocusDistanceMm,
     aperture: 11,
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
   },
   cameraPlacement: {
-    position: { x: 0, y: 1550, z: -1200 },
-    target: { x: 0, y: 2600, z: 6500 },
+    // Observer camera is intentionally separate from the physical camera datum.
+    // This three-quarter view keeps the full camera, ground, and building visible.
+    position: { x: 6500, y: 3000, z: -6500 },
+    target: { x: 0, y: 900, z: 5600 },
   },
   bounds: {
-    min: { x: -2600, y: 0, z: 800 },
-    max: { x: 2600, y: 2600, z: 13200 },
+    min: geometry.sceneBounds.min,
+    max: geometry.sceneBounds.max,
   },
   focusTargets: [
     {
       id: "building-mid-facade",
       label: "Building mid facade",
-      worldPosition: { x: 0, y: 1200, z: 9000 },
+      // Use canonical focus-chart centre so RTT, 3D and tasks share the same world point
+      worldPosition: geometry.focusChart.targetWorldPosition,
       weight: 1,
     },
   ],
@@ -55,16 +60,16 @@ export const architectureRiseScene: SceneDefinition = {
       id: "building-top",
       label: "Building top should be visible",
       worldBounds: {
-        min: { x: -900, y: 1800, z: 9000 },
-        max: { x: 900, y: 2400, z: 9800 },
+        min: geometry.compositionTargets.buildingTop.min,
+        max: geometry.compositionTargets.buildingTop.max,
       },
     },
     {
       id: "building-main-body",
       label: "Main building body should stay framed",
       worldBounds: {
-        min: { x: -1400, y: 200, z: 8600 },
-        max: { x: 1400, y: 1800, z: 10100 },
+        min: geometry.compositionTargets.buildingMain.min,
+        max: geometry.compositionTargets.buildingMain.max,
       },
     },
   ],

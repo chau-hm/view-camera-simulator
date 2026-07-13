@@ -24,31 +24,31 @@ describe("phase 12 integration", () => {
   });
 
   it("TST-INT-001 rise slider updates store", () => {
-    renderWorkspace("guided", "architecture-rise", "task-rise-basics");
+    renderWorkspace("guided", "architecture-rise", "rise-01");
     fireEvent.change(screen.getByLabelText("Rise"), { target: { value: "18" } });
     expect(useAppStore.getState().camera.frontRiseMm).toBe(18);
   });
 
   it("TST-INT-002 tilt slider updates store", () => {
-    renderWorkspace("guided", "table-tilt", "task-tilt-basics");
+    renderWorkspace("guided", "table-tilt", "tilt-01");
     fireEvent.change(screen.getByLabelText("Tilt"), { target: { value: "3.2" } });
     expect(useAppStore.getState().camera.frontTiltDeg).toBeCloseTo(3.2, 8);
   });
 
   it("TST-INT-003 swing slider updates store", () => {
-    renderWorkspace("guided", "shelf-swing", "task-swing-basics");
+    renderWorkspace("guided", "shelf-swing", "swing-01");
     fireEvent.change(screen.getByLabelText("Swing"), { target: { value: "2.7" } });
     expect(useAppStore.getState().camera.frontSwingDeg).toBeCloseTo(2.7, 8);
   });
 
   it("TST-INT-004 rise sync updates 3D front Y readout", () => {
-    renderWorkspace("guided", "architecture-rise", "task-rise-basics");
+    renderWorkspace("guided", "architecture-rise", "rise-01");
     fireEvent.change(screen.getByLabelText("Rise"), { target: { value: "20" } });
     expect(screen.getByTestId("scene-front-y-mm")).toHaveTextContent("20.0 mm");
   });
 
   it("TST-INT-005 tilt sync updates side diagram focus line", () => {
-    renderWorkspace("guided", "table-tilt", "task-tilt-basics");
+    renderWorkspace("guided", "table-tilt", "tilt-01");
     // open the floating 2D Geometry panel to expose the geometry SVG
     fireEvent.click(screen.getByText(/Open 2D Geometry/i));
     const focusLine = screen.getByTestId("plane-line-focus");
@@ -60,7 +60,7 @@ describe("phase 12 integration", () => {
   });
 
   it("TST-INT-006 swing sync updates top diagram focus line", () => {
-    renderWorkspace("guided", "shelf-swing", "task-swing-basics");
+    renderWorkspace("guided", "shelf-swing", "swing-01");
     // open the floating 2D Geometry panel to expose the geometry SVG
     fireEvent.click(screen.getByText(/Open 2D Geometry/i));
     const focusLine = screen.getByTestId("plane-line-focus");
@@ -85,14 +85,15 @@ describe("phase 12 integration", () => {
   it("TST-INT-008 orientation assist toggle updates flip state", () => {
     renderWorkspace("free", "architecture-rise", null);
     const before = selectDerivedOpticsState(useAppStore.getState().camera);
-    fireEvent.click(screen.getByLabelText("Ground glass assist"));
+    // Use the Preview control (Upright Assist) which now drives groundGlassAssistEnabled
+    fireEvent.click(screen.getByText("Upright Assist"));
     const after = selectDerivedOpticsState(useAppStore.getState().camera);
     expect(before.groundGlassProjection.invertHorizontal).toBe(true);
     expect(after.groundGlassProjection.invertHorizontal).toBe(false);
   });
 
   it("TST-INT-009 guided mode disables non-task controls", () => {
-    renderWorkspace("guided", "architecture-rise", "task-rise-basics");
+    renderWorkspace("guided", "architecture-rise", "rise-01");
     expect(screen.getByLabelText("Tilt")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeDisabled();
   });
@@ -114,20 +115,20 @@ describe("phase 12 integration", () => {
   });
 
   it("TST-INT-011 restart task resets scene/task/movement baseline", () => {
-    renderWorkspace("guided", "shelf-swing", "task-swing-basics");
+    renderWorkspace("guided", "shelf-swing", "swing-01");
     fireEvent.change(screen.getByLabelText("Swing"), { target: { value: "6" } });
     fireEvent.change(screen.getByLabelText("Focus distance"), { target: { value: "5000" } });
     fireEvent.click(screen.getByLabelText("Restart task"));
     const camera = useAppStore.getState().camera;
     expect(camera.activeSceneId).toBe("shelf-swing");
-    expect(camera.activeTaskId).toBe("task-swing-basics");
+    expect(camera.activeTaskId).toBe("swing-01");
     expect(camera.frontSwingDeg).toBe(0);
     expect(camera.focusDistanceMm).toBe(3200);
   });
 
   it("TST-INT-012 task evaluation display matches evaluator result", () => {
-    renderWorkspace("guided", "architecture-rise", "task-rise-basics");
-    const task = getTaskById("task-rise-basics");
+    renderWorkspace("guided", "architecture-rise", "rise-01");
+    const task = getTaskById("rise-01");
     const scene = getSceneById("architecture-rise");
     if (!task || !scene) {
       throw new Error("Missing task or scene");
@@ -157,7 +158,7 @@ describe("phase 12 integration", () => {
       }),
     });
 
-    const { container } = renderWorkspace("guided", "architecture-rise", "task-rise-basics");
+    const { container } = renderWorkspace("guided", "architecture-rise", "rise-01");
 
     expect(container.querySelector('[data-reduced-motion="true"]')).toBeInTheDocument();
 
@@ -168,7 +169,7 @@ describe("phase 12 integration", () => {
   });
 
   it("TST-INT-014 supports keyboard-only rise task completion", () => {
-    renderWorkspace("guided", "architecture-rise", "task-rise-basics");
+    renderWorkspace("guided", "architecture-rise", "rise-01");
     const riseInput = screen.getByLabelText("Rise");
     riseInput.focus();
 
@@ -187,7 +188,7 @@ describe("phase 12 integration", () => {
     expect(screen.getByLabelText("Swing")).toBeInTheDocument();
     expect(screen.getByLabelText("Focus distance")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Ground glass assist")).toBeInTheDocument();
+    // Ground glass assist control removed; preview mode (Raw/Upright) is now used instead
     expect(screen.getByLabelText("Focus assist")).toBeInTheDocument();
     expect(screen.getByLabelText("Grid")).toBeInTheDocument();
   });

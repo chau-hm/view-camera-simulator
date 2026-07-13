@@ -4,7 +4,7 @@ import type { SceneDefinition } from "../../types/scene";
 import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
-import { solveLensExtensionForRearDatumFocusDepth } from "./thinLensModel";
+import { solveLensExtensionForRearDatumFocusDepth, imageDistanceMm } from "./thinLensModel";
 import { planeFromPointNormal } from "../math/plane";
 import {
   calculateLensFilmHingeLine,
@@ -33,7 +33,9 @@ const isFiniteCameraInput = (cameraState: CameraState): boolean =>
 const baseFallbackState = (cameraState: CameraState, errorMessage: string): DerivedOpticsState => {
   const lensCenterWorld = vec(0, cameraState.frontRiseMm, 0);
   const lensNormalWorld = vec(0, 0, 1);
-  const { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(cameraState.focalLengthMm);
+  const { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(
+    cameraState.focalLengthMm,
+  );
   const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
   const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
   const focusPointWorld = vec(0, 0, cameraState.focusDistanceMm);
@@ -42,7 +44,10 @@ const baseFallbackState = (cameraState: CameraState, errorMessage: string): Deri
     normal: filmNormalWorld,
     distance: focusPointWorld.z,
   };
-  const offAxisProjectionInput = createOffAxisProjectionInput(lensCenterWorld, filmPlaneCornersWorld);
+  const offAxisProjectionInput = createOffAxisProjectionInput(
+    lensCenterWorld,
+    filmPlaneCornersWorld,
+  );
 
   return {
     lensCenterWorld,
@@ -115,7 +120,10 @@ export const deriveOpticsState = (
       visualCapMm,
     });
 
-    const offAxisProjectionInput = createOffAxisProjectionInput(lensCenterWorld, filmPlaneCornersWorld);
+    const offAxisProjectionInput = createOffAxisProjectionInput(
+      lensCenterWorld,
+      filmPlaneCornersWorld,
+    );
 
     return {
       lensCenterWorld,
@@ -172,6 +180,17 @@ export const deriveOpticsState = (
 
   let { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(cameraState.focalLengthMm);
 
+  // For Architecture Rise use rear-standard focusing: interpret focusDistanceMm as lens-to-subject distance U
+  // and place film at image distance v from the lens (filmCenterWorld.z = -v)
+  if (scene.id === "architecture-rise") {
+    const U = cameraState.focusDistanceMm; // lens-to-subject distance in mm (object side)
+    const f = cameraState.focalLengthMm;
+    const v = Number.isFinite(U) && U > f ? imageDistanceMm(f, U) : cameraState.focalLengthMm;
+    filmCenterWorld = vec(0, 0, -v);
+    filmNormalWorld = vec(0, 0, 1);
+    filmPlane = planeFromPointNormal(filmCenterWorld, filmNormalWorld);
+  }
+
   // Prepare to store solved extension for Focus Fundamentals so we don't call solver twice
   let solvedLensExtensionV: number | null = null;
   let solvedObjectDistanceU: number | null = null;
@@ -214,7 +233,9 @@ export const deriveOpticsState = (
   }
 
   const isParallelLensFilm = isLensFilmNearlyParallel(lensPlane, filmPlane);
-  const lensFilmHingeLine = isParallelLensFilm ? null : calculateLensFilmHingeLine(lensPlane, filmPlane);
+  const lensFilmHingeLine = isParallelLensFilm
+    ? null
+    : calculateLensFilmHingeLine(lensPlane, filmPlane);
   const { focusPlane, focusPlaneModel } = calculateFocusPlaneWithFallback(
     focusPointWorld,
     filmPlane,
@@ -225,12 +246,13 @@ export const deriveOpticsState = (
   // For Focus Fundamentals, compute DOF via thin-lens formula using solved lens extension and object distance U
   let depthOfFieldNearPlane;
   let depthOfFieldFarPlane;
+  let dofResultGlobal: ReturnType<typeof calculateDepthOfField> | null = null;
   if (scene.id === "focus-fundamentals-two-targets") {
     const S = cameraState.focusDistanceMm;
     const f = cameraState.focalLengthMm;
     // use previously solved U (should be available)
     const U = solvedObjectDistanceU ?? solveLensExtensionForRearDatumFocusDepth(S, f).U;
-    const dofResult = calculateDepthOfField({
+    dofResultGlobal = calculateDepthOfField({
       focalLengthMm: f,
       apertureFNumber: cameraState.aperture,
       circleOfConfusionMm: 0.1,
@@ -238,14 +260,17 @@ export const deriveOpticsState = (
       opticalAxis,
       focusObjectDistanceMm: U,
       visualCapMm: 12000,
+      filmPlane,
+      lensPlane,
+      hingeLine: lensFilmHingeLine,
+      filmCenterWorld,
     });
-    depthOfFieldNearPlane = dofResult.depthOfFieldNearPlane;
-    depthOfFieldFarPlane = dofResult.depthOfFieldFarPlane;
-  } else {
-    // Compute object distance U from lens center to focus plane along optical axis
-    const lensToFocus = subtract(focusPlane.point, lensCenterWorld);
-    const U = dot(lensToFocus, opticalAxis.direction);
-    const dofResult = calculateDepthOfField({
+    depthOfFieldNearPlane = dofResultGlobal.depthOfFieldNearPlane;
+    depthOfFieldFarPlane = dofResultGlobal.depthOfFieldFarPlane;
+  } else if (scene.id === "architecture-rise") {
+    // For Architecture, interpret cameraState.focusDistanceMm as lens-to-subject object distance U
+    const U = cameraState.focusDistanceMm;
+    dofResultGlobal = calculateDepthOfField({
       focalLengthMm: cameraState.focalLengthMm,
       apertureFNumber: cameraState.aperture,
       circleOfConfusionMm: 0.1,
@@ -253,11 +278,37 @@ export const deriveOpticsState = (
       opticalAxis,
       focusObjectDistanceMm: U,
       visualCapMm: 12000,
+      filmPlane,
+      lensPlane,
+      hingeLine: lensFilmHingeLine,
+      filmCenterWorld,
     });
-    depthOfFieldNearPlane = dofResult.depthOfFieldNearPlane;
-    depthOfFieldFarPlane = dofResult.depthOfFieldFarPlane;
+    depthOfFieldNearPlane = dofResultGlobal.depthOfFieldNearPlane;
+    depthOfFieldFarPlane = dofResultGlobal.depthOfFieldFarPlane;
+  } else {
+    // Compute object distance U from lens center to focus plane along optical axis
+    const lensToFocus = subtract(focusPlane.point, lensCenterWorld);
+    const U = dot(lensToFocus, opticalAxis.direction);
+    dofResultGlobal = calculateDepthOfField({
+      focalLengthMm: cameraState.focalLengthMm,
+      apertureFNumber: cameraState.aperture,
+      circleOfConfusionMm: 0.1,
+      lensCenterWorld,
+      opticalAxis,
+      focusObjectDistanceMm: U,
+      visualCapMm: 12000,
+      filmPlane,
+      lensPlane,
+      hingeLine: lensFilmHingeLine,
+      filmCenterWorld,
+    });
+    depthOfFieldNearPlane = dofResultGlobal.depthOfFieldNearPlane;
+    depthOfFieldFarPlane = dofResultGlobal.depthOfFieldFarPlane;
   }
-  const offAxisProjectionInput = createOffAxisProjectionInput(lensCenterWorld, filmPlaneCornersWorld);
+  const offAxisProjectionInput = createOffAxisProjectionInput(
+    lensCenterWorld,
+    filmPlaneCornersWorld,
+  );
   const offAxisProjectionMatrix = calculateOffAxisProjectionMatrix(offAxisProjectionInput);
 
   return {
@@ -277,13 +328,25 @@ export const deriveOpticsState = (
     offAxisProjectionInput,
     offAxisProjectionMatrix,
     groundGlassProjection: calculateGroundGlassProjection(cameraState.groundGlassAssistEnabled),
-    focusTargets: calculateSharpness(scene, focusPlane, cameraState.aperture),
+    focusTargets: calculateSharpness(
+      scene,
+      focusPlane ?? null,
+      cameraState.aperture,
+      lensCenterWorld,
+      depthOfFieldNearPlane ?? null,
+      depthOfFieldFarPlane ?? null,
+    ),
     diagnostics: {
       isParallelLensFilm,
       tiltAngleDeg: cameraState.frontTiltDeg,
       swingAngleDeg: cameraState.frontSwingDeg,
       focusPlaneModel,
-      fallbackApplied: false,
+      depthOfFieldModel: dofResultGlobal?.depthOfFieldModel ?? "parallel",
+      nearU: dofResultGlobal?.nearU ?? null,
+      farU: dofResultGlobal?.farU ?? null,
+      farIsInfinite: dofResultGlobal?.farIsInfinite ?? false,
+      fallbackApplied: dofResultGlobal?.fallbackApplied ?? false,
+      fallbackReason: dofResultGlobal?.fallbackReason ?? null,
       isInfinityFocus: false,
     },
   };

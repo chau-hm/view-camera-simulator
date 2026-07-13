@@ -21,8 +21,8 @@ describe('GeometryViewport matrix', () => {
         it(`${scene.id} movement: tilt affects Side geometry`, () => {
           const base = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
           const tilted = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, frontTiltDeg: 5 }, scene);
-          const { container: c1 } = render(<GeometryViewport opticsState={base} geometryView={view} scene={scene} />);
-          const { container: c2 } = render(<GeometryViewport opticsState={tilted} geometryView={view} scene={scene} />);
+          const { container: c1 } = render(<GeometryViewport opticsState={base} geometryView={view} scene={scene} riseMm={0} />);
+          const { container: c2 } = render(<GeometryViewport opticsState={tilted} geometryView={view} scene={scene} riseMm={0} />);
           const l1 = c1.querySelector('line[data-testid="plane-line-focus"]');
           const l2 = c2.querySelector('line[data-testid="plane-line-focus"]');
           if (!l1 || !l2) return; // no focus segment to compare
@@ -44,8 +44,8 @@ describe('GeometryViewport matrix', () => {
         it(`${scene.id} movement: swing affects Top geometry`, () => {
           const base = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
           const swung = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, frontSwingDeg: 5 }, scene);
-          const { container: c1 } = render(<GeometryViewport opticsState={base} geometryView={view} scene={scene} />);
-          const { container: c2 } = render(<GeometryViewport opticsState={swung} geometryView={view} scene={scene} />);
+          const { container: c1 } = render(<GeometryViewport opticsState={base} geometryView={view} scene={scene} riseMm={0} />);
+          const { container: c2 } = render(<GeometryViewport opticsState={swung} geometryView={view} scene={scene} riseMm={0} />);
           const l1 = c1.querySelector('line[data-testid="plane-line-focus"]');
           const l2 = c2.querySelector('line[data-testid="plane-line-focus"]');
           if (!l1 || !l2) return;
@@ -64,7 +64,7 @@ describe('GeometryViewport matrix', () => {
       }
       it(`${scene.id} renders (${view}) primitives, depth strip, and minimal annotations`, () => {
         const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
-        const { container } = render(<GeometryViewport opticsState={optics} geometryView={view} scene={scene} />);
+        const { container } = render(<GeometryViewport opticsState={optics} geometryView={view} scene={scene} riseMm={0} />);
 
         const svg = container.querySelector(`[data-testid="geometry-svg-${view}"]`) as SVGElement | null;
         expect(svg).toBeTruthy();
@@ -134,7 +134,7 @@ describe('GeometryViewport matrix', () => {
 
       it(`${scene.id} stability: target Xs stable under focus change (${view})`, () => {
         const state1 = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, focusDistanceMm: 1000 }, scene);
-        const { container, rerender } = render(<GeometryViewport opticsState={state1} geometryView={view} scene={scene} />);
+        const { container, rerender } = render(<GeometryViewport opticsState={state1} geometryView={view} scene={scene} riseMm={0} />);
         const svg = container.querySelector(`[data-testid="geometry-svg-${view}"]`) as SVGElement | null;
         expect(svg).toBeTruthy();
         const targetRects1 = Array.from(svg!.querySelectorAll('rect')).filter((r) => r.getAttribute('fill') === '#0f766e');
@@ -142,7 +142,7 @@ describe('GeometryViewport matrix', () => {
         const centres1 = targetRects1.map((r) => parseFloat(r.getAttribute('x') || '0'));
 
         const state2 = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, focusDistanceMm: 3000 }, scene);
-        rerender(<GeometryViewport opticsState={state2} geometryView={view} scene={scene} />);
+        rerender(<GeometryViewport opticsState={state2} geometryView={view} scene={scene} riseMm={0} />);
         const targetRects2 = Array.from(svg!.querySelectorAll('rect')).filter((r) => r.getAttribute('fill') === '#0f766e');
         const centres2 = targetRects2.map((r) => parseFloat(r.getAttribute('x') || '0'));
 
@@ -161,7 +161,7 @@ describe('GeometryViewport matrix', () => {
     expect(infinityState.focusPlane).toBeNull();
     expect(infinityState.depthOfFieldFarPlane).toBeNull();
 
-    const { container } = render(<GeometryViewport opticsState={infinityState} geometryView="side" scene={scene} />);
+    const { container } = render(<GeometryViewport opticsState={infinityState} geometryView="side" scene={scene} riseMm={0} />);
     const depthStrip = container.querySelector('[aria-label="Optical depth order"]');
     expect(depthStrip).toBeTruthy();
     const txt = depthStrip?.textContent || '';
