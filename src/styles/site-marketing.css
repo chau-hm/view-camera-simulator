@@ -345,6 +345,16 @@
 .scenes-search { margin-top: 12px; }
 .scenes-grid { margin-top: 24px; display: grid; gap: 24px; }
 
+.scene-feature-card,
+.scene-thumb,
+.scene-thumb picture,
+.scene-thumb img,
+.scene-meta {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .scene-feature-card {
   display: grid;
   grid-template-columns: 360px 1fr;
@@ -357,13 +367,34 @@
   align-items: center;
 }
 
-.scene-thumb { width: 100%; height: 240px; border-radius: 12px; background: linear-gradient(180deg, rgba(235,236,255,0.8), rgba(245,245,255,0.8)); display: flex; align-items: center; justify-content: center; }
+.scene-thumb {
+  width: 100%;
+  height: 240px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(235,236,255,0.8), rgba(245,245,255,0.8));
+  display: block;
+  overflow: hidden;
+}
+
+.scene-thumb picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.scene-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: cover;
+}
 
 .scene-meta { display: flex; flex-direction: column; gap: 12px; }
 .scene-badge { background: var(--site-accent); color: white; padding: 6px 10px; border-radius: 12px; font-weight: 700; width: max-content; }
 
-.topic-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-.topic-pill { background: var(--site-accent-soft); color: var(--site-accent); padding: 6px 10px; border-radius: 999px; font-size: 13px; }
+.topic-pills { display: flex; gap: 8px; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.topic-pill { background: var(--site-accent-soft); color: var(--site-accent); padding: 6px 10px; border-radius: 999px; font-size: 13px; max-width: 100%; }
 
 .rebuild-notice { margin-top: 20px; background: var(--site-surface-soft); border: 1px solid var(--site-border); padding: 12px; border-radius: 12px; color: var(--site-text-muted); display:flex; gap:12px; align-items:center; }
 
@@ -380,15 +411,34 @@
   .hero { grid-template-columns: 1fr; }
   .hero__illustration { order: 2; }
   .info-cards { grid-template-columns: 1fr; }
-  .scene-feature-card { grid-template-columns: 1fr; }
+  /* Use minmax(0, 1fr) so content can shrink below intrinsic widths */
+  .scene-feature-card { grid-template-columns: minmax(0, 1fr); }
   .scene-thumb { height: 180px; }
   .site-header__inner { padding: 0 20px; }
   .marketing-container { padding: 20px; }
-  /* Prevent accidental horizontal overflow on narrow viewports */
-  html, body { overflow-x: hidden; }
+  /* Removed global overflow masking — layout should fit without hiding overflow */
 }
 @media (max-width: 480px) {
-  .site-header__inner { padding: 0 16px; gap:8px; }
+  /* Make the marketing/site header resilient to wrapped nav and small widths */
+  .site-shell .site-header { height: auto; }
+  .site-header__inner {
+    padding: 0 16px;
+    gap: 8px;
+    min-height: 72px;
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .site-nav {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
   .site-footer__inner { flex-direction: column; align-items:flex-start; padding: 0 16px; }
   .hero { padding: 40px 0; }
   .marketing-container { padding: 16px; }
