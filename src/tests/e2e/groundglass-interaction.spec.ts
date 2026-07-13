@@ -40,8 +40,16 @@ const readStageTransform = async (locator: Locator): Promise<StageTransform> => 
 // Helper: click the stage at a relative x/y ratio (0..1) using fresh geometry and real Playwright input.
 const clickStageAt = async (page: Page, stage: Locator, xRatio: number, yRatio: number) => {
   await expect(stage).toBeVisible();
-  const box = await stage.boundingBox();
-  if (!box) throw new Error('Ground Glass stage bounding box not found');
+  // Use in-page bounding client rect evaluation to obtain fresh geometry even if Playwright boundingBox is null
+  const box = await stage.evaluate((el) => {
+    const r = (el as HTMLElement).getBoundingClientRect();
+    return { x: r.left, y: r.top, width: r.width, height: r.height } as { x: number; y: number; width: number; height: number };
+  });
+
+  if (!box || typeof box.width !== 'number' || box.width === 0) {
+    throw new Error('Ground Glass stage bounding box not found');
+  }
+
   await page.mouse.click(box.x + box.width * xRatio, box.y + box.height * yRatio);
 };
 
