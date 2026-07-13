@@ -129,6 +129,10 @@ test.describe('Ground Glass interaction', () => {
 
     // scale and translate sign checks
     await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX, { timeout: 8000 }).toBeCloseTo(1.9, 1);
+    // capture and log transform for diagnostics
+    const reTdiag = await readStageTransform(transformedLayer());
+    // eslint-disable-next-line no-console
+    console.log('re-zoom transform:', reTdiag);
     await expect.poll(async () => (await readStageTransform(transformedLayer())).translateX, { timeout: 8000 }).toBeLessThan(-1);
     await expect.poll(async () => (await readStageTransform(transformedLayer())).translateY, { timeout: 8000 }).toBeLessThan(-1);
 
