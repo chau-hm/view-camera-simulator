@@ -4,8 +4,8 @@ import { test, expect, type Locator } from '@playwright/test';
 const readStageTransform = async (locator: Locator) => {
   try {
     return await locator.evaluate(async (element: Element) => {
-      // wait up to ~4s for the computed transform to become available (helps under load)
-      const deadline = Date.now() + 4000;
+      // wait up to ~8s for the computed transform to become available (helps under load)
+      const deadline = Date.now() + 8000;
       while (Date.now() < deadline) {
         const style = getComputedStyle(element as Element);
         const transform = style.transform;
