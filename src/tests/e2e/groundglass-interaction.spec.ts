@@ -107,6 +107,8 @@ test.describe('Ground Glass interaction', () => {
     // assert fixed overlay visibility (preview label)
     const previewOverlay = viewport.getByText('Ground glass preview');
     await expect(previewOverlay).toBeVisible();
+    // Ensure exactly one overlay exists before inspecting ancestry to avoid detached-element races
+    await expect(previewOverlay).toHaveCount(1);
     const isInside = await previewOverlay.evaluate((el) => Boolean((el as Element).closest('.groundglass-stage')));
     expect(isInside).toBe(false);
 
