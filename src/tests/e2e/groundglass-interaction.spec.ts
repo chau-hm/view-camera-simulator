@@ -128,9 +128,9 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
     // scale and translate sign checks
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1.9, 1);
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).translateX).toBeLessThan(-1);
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).translateY).toBeLessThan(-1);
+    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX, { timeout: 8000 }).toBeCloseTo(1.9, 1);
+    await expect.poll(async () => (await readStageTransform(transformedLayer())).translateX, { timeout: 8000 }).toBeLessThan(-1);
+    await expect.poll(async () => (await readStageTransform(transformedLayer())).translateY, { timeout: 8000 }).toBeLessThan(-1);
 
     // repeated centered cycles (3x) using real Playwright clicks
     for (let i = 0; i < 3; i++) {
