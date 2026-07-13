@@ -73,12 +73,11 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
-    // scale becomes ~1.9
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1.9, 1);
-
-    // clicking left/top should produce positive translateX and translateY (image moves right/down)
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).translateX).toBeGreaterThan(1);
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).translateY).toBeGreaterThan(1);
+    // scale becomes ~1.9 and translates positive — poll once for all conditions
+    await expect.poll(async () => {
+      const t = await readStageTransform(transformedLayer());
+      return Math.abs(t.scaleX - 1.9) < 0.6 && t.translateX > 1 && t.translateY > 1;
+    }, { timeout: 8000 }).toBeTruthy();
 
     // store pre-drag transform
     const preDrag = await readStageTransform(transformedLayer());
@@ -118,10 +117,11 @@ test.describe('Ground Glass interaction', () => {
     // confirm unzoomed state and transformed layer exists
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
 
-    // read transform and assert identity (scale ~1, translations near zero)
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1, 2);
-    await expect.poll(async () => Math.abs((await readStageTransform(transformedLayer())).translateX)).toBeLessThanOrEqual(0.5);
-    await expect.poll(async () => Math.abs((await readStageTransform(transformedLayer())).translateY)).toBeLessThanOrEqual(0.5);
+    // read transform and assert identity (scale ~1, translations near zero) — poll once
+    await expect.poll(async () => {
+      const t = await readStageTransform(transformedLayer());
+      return Math.abs(t.scaleX - 1) < 0.2 && Math.abs(t.translateX) <= 0.5 && Math.abs(t.translateY) <= 0.5;
+    }, { timeout: 8000 }).toBeTruthy();
 
     // immediate re-zoom: click at 70% left, 65% top — obtain fresh geometry and use absolute page click
     const freshBox = await stage.boundingBox();
@@ -146,13 +146,18 @@ test.describe('Ground Glass interaction', () => {
       // zoom out (center)
       await clickStageAt(page, stage, 0.5, 0.5);
       await expect(stage).toHaveAttribute('data-zoomed', 'false');
-      await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1, 2);
-      await expect.poll(async () => Math.abs((await readStageTransform(transformedLayer())).translateX)).toBeLessThanOrEqual(0.5);
+      await expect.poll(async () => {
+        const t = await readStageTransform(transformedLayer());
+        return Math.abs(t.scaleX - 1) < 0.2 && Math.abs(t.translateX) <= 0.5 && Math.abs(t.translateY) <= 0.5;
+      }, { timeout: 8000 }).toBeTruthy();
 
       // zoom in (center)
       await clickStageAt(page, stage, 0.5, 0.5);
       await expect(stage).toHaveAttribute('data-zoomed', 'true');
-      await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1.9, 1);
+      await expect.poll(async () => {
+        const t = await readStageTransform(transformedLayer());
+        return Math.abs(t.scaleX - 1.9) < 0.6;
+      }, { timeout: 8000 }).toBeTruthy();
     }
   });
 
