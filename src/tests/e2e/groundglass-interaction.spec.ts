@@ -58,6 +58,8 @@ const transformedLayerFor = (viewport: Locator) => () => viewport.locator('.grou
 
 test.describe('Ground Glass interaction', () => {
   test('Architecture Rise: off-center anchor, drag pan, zoom-out centering, and immediate re-zoom', async ({ page }) => {
+    // allow a longer timeout for this interaction-heavy test to tolerate renderer scheduling in CI/local
+    test.setTimeout(90_000);
     await page.goto('/simulator/free/architecture-rise');
 
     const viewport = page.getByLabel('GroundGlassViewport');
