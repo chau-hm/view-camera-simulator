@@ -46,6 +46,7 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
+    await transformedLayer.waitFor({ state: 'attached', timeout: 5000 });
     const t1 = await readStageTransform(transformedLayer);
     // scale should be approximately ZOOM_SCALE (1.9)
     expect(t1.scaleX).toBeCloseTo(1.9, 1);
@@ -68,6 +69,7 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
+    await transformedLayer.waitFor({ state: 'attached', timeout: 5000 });
     const postDrag = await readStageTransform(transformedLayer);
     expect(postDrag.scaleX).toBeCloseTo(1.9, 1);
     // at least one of the translate axes should change (pan applied)
@@ -81,6 +83,7 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
     await expect(stage).toHaveAttribute('aria-label', 'Zoom in Ground Glass');
 
+    await transformedLayer.waitFor({ state: 'attached', timeout: 5000 });
     const outTransform = await readStageTransform(transformedLayer);
     // scale returns to 1 and translation near zero
     expect(outTransform.scaleX).toBeCloseTo(1, 2);
@@ -95,6 +98,7 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
+    await transformedLayer.waitFor({ state: 'attached', timeout: 5000 });
     const reTransform = await readStageTransform(transformedLayer);
     expect(reTransform.scaleX).toBeCloseTo(1.9, 1);
     // clicking right/bottom should produce negative translateX/Y (image moves left/up)
@@ -106,6 +110,7 @@ test.describe('Ground Glass interaction', () => {
       // zoom out
       await page.mouse.click(centerX, centerY);
       await expect(stage).toHaveAttribute('data-zoomed', 'false');
+      await transformedLayer.waitFor({ state: 'attached', timeout: 5000 });
       const outT = await readStageTransform(transformedLayer);
       expect(outT.scaleX).toBeCloseTo(1, 2);
       expect(Math.abs(outT.translateX)).toBeLessThanOrEqual(0.5);
@@ -113,6 +118,7 @@ test.describe('Ground Glass interaction', () => {
       // zoom in centered
       await page.mouse.click(centerX, centerY);
       await expect(stage).toHaveAttribute('data-zoomed', 'true');
+      await transformedLayer.waitFor({ state: 'attached', timeout: 5000 });
       const inT = await readStageTransform(transformedLayer);
       expect(inT.scaleX).toBeCloseTo(1.9, 1);
     }
@@ -138,6 +144,7 @@ test.describe('Ground Glass interaction', () => {
     // click 1
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
+    await transformedLayer.waitFor({ state: 'attached', timeout: 5000 });
     const t1 = await readStageTransform(transformedLayer);
     expect(t1.scaleX).toBeCloseTo(1.9, 1);
 
