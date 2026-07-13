@@ -7,6 +7,12 @@ import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
 import { createGroundGlassDofUniformState } from "../../render/createGroundGlassDofUniformState";
+import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur";
+import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
+import {
+  createScenePlaneOverlayGeometry,
+  getScenePlaneOverlayBounds,
+} from "../../render/scenePlaneOverlayGeometry";
 import {
   getGroundGlassClipRangeWorld,
   isGroundGlassRttScene,
@@ -126,6 +132,46 @@ describe("Table Tilt optics calibration", () => {
     });
   });
 
+  it("amplifies real zero-tilt detail defocus without changing the physical optics", () => {
+    const camera = cameraFor({ frontTiltDeg: 0, aperture: 11 });
+    const optics = deriveOpticsState(camera, tableTiltScene);
+    const visual = getGroundGlassDofVisualSettings(tableTiltScene.id);
+    const samples = geometry.subjects.map((subject) =>
+      sampleGroundGlassBlurAtWorldPoint({
+        worldPoint: subject.focusDetailProbeWorld,
+        opticsState: optics,
+        focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
+        aperture: camera.aperture,
+        circleOfConfusionMm: 0.1,
+        filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+        renderWidthPx: 1000,
+        maximumBlurRadiusPx: visual.maximumBlurRadiusPx,
+        displayBlurScale: visual.displayBlurScale,
+      }),
+    );
+    const [near, middle, far] = samples;
+    const physicalScaleSamples = geometry.subjects.map((subject) =>
+      sampleGroundGlassBlurAtWorldPoint({
+        worldPoint: subject.focusDetailProbeWorld,
+        opticsState: optics,
+        focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
+        aperture: camera.aperture,
+        circleOfConfusionMm: 0.1,
+        filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+        renderWidthPx: 1000,
+        maximumBlurRadiusPx: visual.maximumBlurRadiusPx,
+        displayBlurScale: 1,
+      }),
+    );
+
+    expect(visual.displayBlurScale).toBeGreaterThan(1);
+    [near, middle, far].forEach((sample, index) => {
+      expect(sample.normalizedDefocus).toBe(physicalScaleSamples[index].normalizedDefocus);
+      expect(sample.blurRadiusPx).toBeGreaterThan(physicalScaleSamples[index].blurRadiusPx);
+    });
+    expect(Math.max(near.blurRadiusPx, far.blurRadiusPx)).toBeGreaterThan(1);
+  });
+
   it("brackets the focus plane at every probe and widens the wedge at f/32", () => {
     const f11 = deriveOpticsState(calibratedCamera({ aperture: 11 }), tableTiltScene);
     const f32 = deriveOpticsState(calibratedCamera({ aperture: 32 }), tableTiltScene);
@@ -137,6 +183,41 @@ describe("Table Tilt optics calibration", () => {
       expect(target32.nearBoundaryDistanceMm).toBeLessThan(target11.nearBoundaryDistanceMm!);
       expect(target32.farBoundaryDistanceMm).toBeGreaterThan(target11.farBoundaryDistanceMm!);
     }
+  });
+
+  it("builds finite scene-clipped overlays at both the current calibration and 5780 mm", () => {
+    const bounds = getScenePlaneOverlayBounds(tableTiltScene);
+    [geometry.tableTiltCalibration.focusDistanceMm, 5780].forEach((focusDistanceMm) => {
+      const optics = deriveOpticsState(
+        calibratedCamera({ focusDistanceMm }),
+        tableTiltScene,
+      );
+      const planes = [
+        optics.focusPlane,
+        optics.depthOfFieldNearPlane,
+        optics.depthOfFieldFarPlane,
+      ];
+
+      planes.forEach((plane) => {
+        expect(plane).not.toBeNull();
+        const overlay = createScenePlaneOverlayGeometry(plane!, bounds, {
+          extendToPlanePoint: false,
+        });
+        expect(overlay).not.toBeNull();
+        expect(overlay!.verticesMm.length).toBeGreaterThanOrEqual(4);
+        expect(overlay!.triangleIndices.length).toBeGreaterThanOrEqual(6);
+        overlay!.verticesMm.forEach((vertex) => {
+          expect(vertex.x).toBeGreaterThanOrEqual(bounds.min.x - 1e-5);
+          expect(vertex.x).toBeLessThanOrEqual(bounds.max.x + 1e-5);
+          expect(vertex.z).toBeGreaterThanOrEqual(bounds.min.z - 1e-5);
+          expect(vertex.z).toBeLessThanOrEqual(bounds.max.z + 1e-5);
+        });
+      });
+    });
+
+    expect(bounds.max.x - bounds.min.x).toBeLessThan(
+      tableTiltScene.bounds.max.x - tableTiltScene.bounds.min.x,
+    );
   });
 
   it("updates focus and DOF planes immediately when tilt, focus, or aperture changes", () => {

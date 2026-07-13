@@ -126,7 +126,7 @@ export const detailGeometry = {
     bottomRadiusRatio: 0.92,
     stripes: {
       anglesDeg: [-48, -24, 0, 24, 48],
-      width: 12,
+      width: 18,
       heightRatio: 0.68,
       depth: 4,
       surfaceGap: 3,
@@ -160,7 +160,7 @@ export const detailGeometry = {
       centerHeight: focusProbeHeightAboveTabletopMm,
       lineCount: 7,
       lineWidthRatio: 0.82,
-      lineHeight: 4,
+      lineHeight: 7,
       lineDepth: 3,
       lineGap: 1,
     },
@@ -186,7 +186,7 @@ export const detailGeometry = {
       columns: 5,
       rows: 5,
       cellDepth: 3,
-      cellGap: 1,
+      cellGap: 2,
     },
   },
 } as const;

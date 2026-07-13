@@ -43,13 +43,35 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
           const axisY = geometryView === 'side' ? mapLateralToY(lensCenter.y) : mapLateralToYTop(lensCenter.x);
           const x1 = depthToX(diagramMinDepthMm);
           const x2 = depthToX(diagramMaxDepthMm);
+          const labelX = scene.id === "table-tilt" ? x1 + (x2 - x1) * 0.12 : x1 + 8;
           return (
             <g>
               <line x1={x1} y1={axisY} x2={x2} y2={axisY} stroke="#f59e0b" strokeWidth={1.2} strokeDasharray="6 4" opacity={0.95} />
-              {profile.showOpticalAxisLabel ? <text x={x1 + 8} y={axisY - 6} fontSize={11} fill="#f59e0b">Optical axis</text> : null}
+              {profile.showOpticalAxisLabel ? <text x={labelX} y={axisY - 8} fontSize={11} fill="#b45309">Optical axis</text> : null}
             </g>
           );
         })()}
+
+        {/* Table Tilt teaching reference: the physical tabletop span anchors the
+            focus/DOF helpers to the subject instead of the floor-sized bounds. */}
+        {profile.showTabletopGuide && geometryView === 'side' && scene.compositionTargets[0] ? (() => {
+          const subjectBounds = scene.compositionTargets[0].worldBounds;
+          const tabletopY = (subjectBounds.min.y + subjectBounds.max.y) / 2;
+          const depthForZ = (z: number) => (
+            ((-sectionOrigin.x) * sectionDepthDir.x) +
+            ((tabletopY - sectionOrigin.y) * sectionDepthDir.y) +
+            ((z - sectionOrigin.z) * sectionDepthDir.z)
+          );
+          const x1 = depthToX(depthForZ(subjectBounds.min.z));
+          const x2 = depthToX(depthForZ(subjectBounds.max.z));
+          const y = mapLateralToY(tabletopY);
+          return (
+            <g data-testid="tabletop-guide">
+              <line x1={x1} y1={y} x2={x2} y2={y} stroke="#92400e" strokeWidth={3} />
+              <text x={x2 - 4} y={y + 18} fontSize={12} fill="#78350f" textAnchor="end">Tabletop</text>
+            </g>
+          );
+        })() : null}
 
         {/* DOF region */}
         {(!isInfinity && opticsState.depthOfFieldNearPlane && opticsState.depthOfFieldFarPlane) && (() => {
@@ -57,15 +79,25 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
           const far = segments.find((s) => s.id === 'farDof');
           if (near && far) {
             const points = `${near.p1.x},${near.p1.y} ${near.p2.x},${near.p2.y} ${far.p2.x},${far.p2.y} ${far.p1.x},${far.p1.y}`;
-            return <polygon points={points} fill="#8b5cf6" opacity={0.12} stroke="#8b5cf6" />;
+            return <polygon data-testid="dof-region" points={points} fill="#8b5cf6" opacity={profile.dofFillOpacity} stroke="#8b5cf6" />;
           }
           return null;
         })()}
 
         {/* Film and lens segments */}
         {segments.map((s) => (
-          <line key={s.id} x1={s.p1.x} y1={s.p1.y} x2={s.p2.x} y2={s.p2.y} stroke={s.color} strokeWidth={2} strokeDasharray={s.id === 'focus' ? '6 4' : undefined} data-testid={s.id === 'film' ? 'plane-line-film' : s.id === 'lens' ? 'plane-line-lens' : s.id === 'focus' ? 'plane-line-focus' : undefined} />
+          <line key={s.id} x1={s.p1.x} y1={s.p1.y} x2={s.p2.x} y2={s.p2.y} stroke={s.color} strokeWidth={2} strokeDasharray={s.id === 'focus' ? '6 4' : undefined} aria-label={`${s.id} plane`} data-testid={s.id === 'film' ? 'plane-line-film' : s.id === 'lens' ? 'plane-line-lens' : s.id === 'focus' ? 'plane-line-focus' : undefined} />
         ))}
+
+        {scene.id === "table-tilt" && geometryView === "side" && (() => {
+          const focus = segments.find((segment) => segment.id === "focus");
+          if (!focus) return null;
+          const minX = Math.min(focus.p1.x, focus.p2.x);
+          const maxX = Math.max(focus.p1.x, focus.p2.x);
+          const labelX = minX + Math.min(120, (maxX - minX) * 0.15);
+          const labelY = focus.p1.x < focus.p2.x ? focus.p1.y : focus.p2.y;
+          return <text x={labelX} y={labelY - 10} fontSize={12} fontWeight={600} fill="#15803d">Focus plane</text>;
+        })()}
 
         {/* Camera glyphs */}
         {(() => {
@@ -103,7 +135,11 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
           const x = depthToX(depth);
           const y = geometryView === 'side' ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
           const labelText = scene.id === "table-tilt"
-            ? t.label
+            ? t.id === "near-cup"
+              ? "Near stripe"
+              : t.id === "mid-notebook"
+                ? "Middle lines"
+                : "Far chart"
             : /near/i.test(t.id)
               ? "Near board"
               : /far/i.test(t.id)
@@ -112,7 +148,7 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
           if (geometryView === 'side') {
             const placement = getLocalTargetLabelPlacement({ targetX: x, targetY: y, text: labelText, svgWidth, svgHeight, safeMargin: SAFE_MARGIN });
             return (
-              <g key={t.id}>
+              <g key={t.id} data-testid={`geometry-target-${t.id}`}>
                 <rect x={x - 6} y={y - 20} width={12} height={16} fill="#0f766e" />
                 <rect x={x - 2} y={y - 4} width={4} height={8} fill="#6b7280" />
                 {profile.targetLabelMode === 'short-local' ? (
@@ -123,7 +159,7 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
           }
           const placementTop = getLocalTargetLabelPlacement({ targetX: x, targetY: y, text: labelText, svgWidth, svgHeight, safeMargin: SAFE_MARGIN });
           return (
-            <g key={t.id}>
+            <g key={t.id} data-testid={`geometry-target-${t.id}`}>
               <rect x={x - 3} y={y - 9} width={6} height={18} fill="#0f766e" />
               <line x1={x} y1={y + 9} x2={x} y2={y + 13} stroke="#0b5e54" strokeWidth={1} />
               {profile.targetLabelMode === 'short-local' ? (

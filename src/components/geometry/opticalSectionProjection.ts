@@ -57,12 +57,19 @@ export function computeOpticalSectionData({
   svgWidth,
   svgHeight,
   depthWindow,
+  lateralWindow,
+  paddingPx,
 }: {
   opticsState: DerivedOpticsState;
   scene: SceneDefinition;
   svgWidth: number;
   svgHeight: number;
   depthWindow: { minMm: number; maxMm: number };
+  lateralWindow?: {
+    side: { minMm: number; maxMm: number };
+    top: { minMm: number; maxMm: number };
+  };
+  paddingPx?: number;
 }): OpticalSectionData {
   const lensCenter = opticsState.lensCenterWorld;
   const filmCorners = opticsState.filmPlaneCornersWorld;
@@ -97,7 +104,7 @@ export function computeOpticalSectionData({
   ];
 
   // caller-provided depth window (profile authoritative)
-  const padding = 24;
+  const padding = paddingPx ?? 24;
   const diagramMinDepthMm = depthWindow.minMm;
   const diagramMaxDepthMm = depthWindow.maxMm;
 
@@ -108,14 +115,14 @@ export function computeOpticalSectionData({
 
   const bounds = scene.bounds;
   const mapLateralToY = (value: number) => {
-    const min = bounds.min.y;
-    const max = bounds.max.y;
+    const min = lateralWindow?.side.minMm ?? bounds.min.y;
+    const max = lateralWindow?.side.maxMm ?? bounds.max.y;
     const v = (value - min) / (max - min || 1);
     return svgHeight - (padding + v * (svgHeight - padding * 2));
   };
   const mapLateralToYTop = (value: number) => {
-    const min = bounds.min.x;
-    const max = bounds.max.x;
+    const min = lateralWindow?.top.minMm ?? bounds.min.x;
+    const max = lateralWindow?.top.maxMm ?? bounds.max.x;
     const v = (value - min) / (max - min || 1);
     return svgHeight - (padding + v * (svgHeight - padding * 2));
   };
@@ -124,8 +131,12 @@ export function computeOpticalSectionData({
     const lateralAxis = section.id === "side"
       ? { x: 0, y: 1, z: 0 }
       : { x: 1, y: 0, z: 0 };
-    const lateralMin = section.id === "side" ? bounds.min.y : bounds.min.x;
-    const lateralMax = section.id === "side" ? bounds.max.y : bounds.max.x;
+    const lateralMin = section.id === "side"
+      ? lateralWindow?.side.minMm ?? bounds.min.y
+      : lateralWindow?.top.minMm ?? bounds.min.x;
+    const lateralMax = section.id === "side"
+      ? lateralWindow?.side.maxMm ?? bounds.max.y
+      : lateralWindow?.top.maxMm ?? bounds.max.x;
     const depthCoefficient = vecDot(plane.normal, sectionDepthDir);
     const lateralCoefficient = vecDot(plane.normal, lateralAxis);
     const planeOffset = vecDot(plane.normal, vecSub(plane.point, sectionOrigin));

@@ -25,6 +25,7 @@ import { useAppStore } from "../state/appStore";
 import type { WebGLRenderer } from "three";
 import { getRenderQualitySettings } from "./renderQuality";
 import { getGroundGlassClipRangeWorld } from "./groundGlassRttScenes";
+import { getGroundGlassDofVisualSettings } from "./groundGlassVisualSettings";
 
 type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
@@ -52,6 +53,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
 
   const { gl } = useThree();
+  const { maximumBlurRadiusPx, displayBlurScale } = getGroundGlassDofVisualSettings(sceneId);
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
   const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1, zoomEnabled }));
@@ -218,10 +220,10 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         hasFiniteFar: { value: 0.0 },
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
-        maximumBlurRadiusPx: { value: 60.0 },
+        maximumBlurRadiusPx: { value: maximumBlurRadiusPx },
         circleOfConfusionMm: { value: 0.1 },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
-        displayBlurScale: { value: 1.0 },
+        displayBlurScale: { value: displayBlurScale },
       },
     });
 
@@ -256,10 +258,10 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         hasFiniteFar: { value: 0.0 },
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
-        maximumBlurRadiusPx: { value: 60.0 },
+        maximumBlurRadiusPx: { value: maximumBlurRadiusPx },
         circleOfConfusionMm: { value: 0.1 },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
-        displayBlurScale: { value: 1.0 },
+        displayBlurScale: { value: displayBlurScale },
       },
     });
 
@@ -441,7 +443,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         } catch (err) { void err; }
       }
     };
-  }, [gl, widthPx, heightPx, sceneId, renderQuality, zoomEnabled]);
+  }, [displayBlurScale, gl, heightPx, maximumBlurRadiusPx, renderQuality, sceneId, widthPx, zoomEnabled]);
 
   useFrame(() => {
     if (!renderTarget.current || !offscreenScene.current) return;
@@ -566,7 +568,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           dimsRef.current.internalWidthPx,
           dimsRef.current.internalHeightPx,
           matH.uniforms.maximumBlurRadiusPx.value as number,
-          1.0, // displayBlurScale
+          displayBlurScale,
         );
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);

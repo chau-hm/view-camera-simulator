@@ -1,5 +1,6 @@
 import { getRenderQualitySettings } from "./renderQuality";
 import type { RenderQualityProfile } from "../types/ui";
+import { GROUND_GLASS_ZOOM_SCALE } from "./groundGlassStageTransform";
 
 export type GroundGlassRttDimensions = {
   logicalWidthPx: number;
@@ -55,9 +56,10 @@ export function resolveGroundGlassRttDimensions(opts: {
   const { logicalWidth, logicalHeight, renderQuality, devicePixelRatio, zoomEnabled } = opts;
   const quality = getRenderQualitySettings(renderQuality);
   // map zoomEnabled -> zoomScale used by stage
-  const stageZoomScale = zoomEnabled ? 1.9 : 1.0;
-  // conservative zoom render scale mapping (sqrt) clamped
-  const zoomRenderScale = Math.min(1.5, Math.max(1.0, Math.sqrt(stageZoomScale)));
+  const stageZoomScale = zoomEnabled ? GROUND_GLASS_ZOOM_SCALE : 1.0;
+  // Match the CSS magnification so zooming does not upscale a lower-resolution
+  // RTT. Hard texture caps below still protect memory on large/high-DPR panels.
+  const zoomRenderScale = stageZoomScale;
   const resolutionScale = quality.groundGlassScale * zoomRenderScale;
   // effective DPR limited by profile dpr
   const effectiveDevicePixelRatio = Math.min(devicePixelRatio || 1, quality.dpr);

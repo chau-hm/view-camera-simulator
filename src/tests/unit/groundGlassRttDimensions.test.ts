@@ -57,7 +57,17 @@ describe("resolveGroundGlassRttDimensions", () => {
     expect(low.internalWidthPx).toBe(Math.round(500 * 0.65 * 1));
   });
 
-  it("applies zoom scaling via sqrt mapping and clamps to max dimensions", () => {
+  it("matches the stage zoom scale and clamps to max dimensions", () => {
+    const zoomed = resolveGroundGlassRttDimensions({
+      logicalWidth: 500,
+      logicalHeight: 400,
+      renderQuality: "standard",
+      devicePixelRatio: 1,
+      zoomEnabled: true,
+    });
+    expect(zoomed.zoomRenderScale).toBe(1.9);
+    expect(zoomed.internalWidthPx).toBe(Math.round(500 * 0.85 * 1.9));
+
     const logicalW = 1000;
     const logicalH = 800;
     // high quality with DPR 2 would produce 2000x1600; clamp to 1600x1280

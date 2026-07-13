@@ -74,7 +74,15 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   }
 
   // Delegate projection to shared opticalSectionProjection helper (pass depth window)
-  const projection = computeOpticalSectionData({ opticsState, scene, svgWidth: svgSize.width, svgHeight: svgSize.height, depthWindow });
+  const projection = computeOpticalSectionData({
+    opticsState,
+    scene,
+    svgWidth: svgSize.width,
+    svgHeight: svgSize.height,
+    depthWindow,
+    lateralWindow: profile.lateralWindow,
+    paddingPx: profile.diagramPaddingPx,
+  });
   // projection is passed to OpticalSectionDiagram which consumes all needed fields
   const { sectionOrigin, sectionDepthDir, isInfinity } = projection;
 

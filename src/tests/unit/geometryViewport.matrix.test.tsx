@@ -182,7 +182,19 @@ describe('GeometryViewport matrix', () => {
       5,
     );
     const labels = Array.from(container.querySelectorAll("text")).map((node) => node.textContent);
-    tableTiltScene.focusTargets.forEach((target) => expect(labels).toContain(target.label));
+    ["Near stripe", "Middle lines", "Far chart", "Tabletop", "Focus plane"].forEach((label) =>
+      expect(labels).toContain(label),
+    );
+
+    const targetXs = ["near-cup", "mid-notebook", "far-book"].map((id) => {
+      const target = container.querySelector(`[data-testid="geometry-target-${id}"] rect`);
+      expect(target).not.toBeNull();
+      return Number(target?.getAttribute("x"));
+    });
+    expect(targetXs[1] - targetXs[0]).toBeGreaterThan(15);
+    expect(targetXs[2] - targetXs[1]).toBeGreaterThan(15);
+    expect(container.querySelector('[data-testid="tabletop-guide"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="dof-region"]')).toHaveAttribute("opacity", "0.08");
   });
 
   it('Focus Fundamentals: depth strip shows Focus ∞ and Far DOF ∞ for real infinity focus mode', () => {

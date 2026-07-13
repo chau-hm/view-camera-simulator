@@ -2,6 +2,11 @@ import { render, fireEvent, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { useState } from "react";
 import { GroundGlassStage } from "../../render/GroundGlassStage";
+import {
+  calculateGroundGlassAnchoredPan,
+  denormalizeGroundGlassPan,
+  normalizeGroundGlassPan,
+} from "../../render/groundGlassStageTransform";
 
 afterEach(() => cleanup());
 
@@ -24,6 +29,17 @@ function parseTransform(transform: string) {
 }
 
 describe("GroundGlassStage zoom anchoring and pan state", () => {
+  it("normalizes anchored pan and clamps it to the current viewport bounds", () => {
+    const anchored = calculateGroundGlassAnchoredPan(RECT.left, RECT.top, RECT);
+    expect(anchored).toEqual({ x: 1, y: 1 });
+
+    const normalized = normalizeGroundGlassPan({ x: 999, y: -999 }, RECT, 1.9);
+    expect(normalized).toEqual({ x: 1, y: -1 });
+    const denormalized = denormalizeGroundGlassPan(normalized, RECT, 1.9);
+    expect(denormalized.x).toBeCloseTo(225, 8);
+    expect(denormalized.y).toBeCloseTo(-180, 8);
+  });
+
   // Controlled harness to toggle zoom state
   const ControlledGroundGlassStage = () => {
     const [zoomed, setZoomed] = useState(false);

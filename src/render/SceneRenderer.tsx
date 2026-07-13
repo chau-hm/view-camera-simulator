@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { add, scale, subtract, dot } from "../core/math/vec";
+import { add, scale } from "../core/math/vec";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { Camera, DoubleSide, Vector3 } from "three";
@@ -16,6 +16,10 @@ import { TableTiltSubject } from "./TableTiltSubjectFactory";
 import { UI_COPY } from "../ui/copy";
 import { getRenderQualitySettings } from "./renderQuality";
 import { getVisibleSceneLegendKeys } from "./sceneLegendHelpers";
+import {
+  createScenePlaneOverlayGeometry,
+  getScenePlaneOverlayBounds,
+} from "./scenePlaneOverlayGeometry";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -454,11 +458,13 @@ const SceneAssets = ({ assets }: { assets: SceneAsset[] }) => (
 );
 
 const OpticalGeometryOverlays = ({
+  scene,
   opticsState,
   showFocusPlaneOverlay,
   showDofOverlay,
   showOpticalGeometry,
 }: {
+  scene: SceneDefinition;
   opticsState: DerivedOpticsState;
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
@@ -476,44 +482,59 @@ const OpticalGeometryOverlays = ({
     const length = Math.hypot(direction.x, direction.y, direction.z) || 1;
     return { x: direction.x / length, y: direction.y / length, z: direction.z / length };
   });
-  const intersect = (
-    direction: { x: number; y: number; z: number },
-    plane: { point: { x: number; y: number; z: number }; normal: { x: number; y: number; z: number } },
-  ): [number, number, number] | null => {
-    const denominator = dot(direction, plane.normal);
-    if (Math.abs(denominator) < 1e-8) return null;
-    const t = dot(subtract(plane.point, opticsState.lensCenterWorld), plane.normal) / denominator;
-    if (!Number.isFinite(t) || t <= 0) return null;
-    return [
-      lens[0] + direction.x * t * WORLD_SCALE,
-      lens[1] + direction.y * t * WORLD_SCALE,
-      lens[2] + direction.z * t * WORLD_SCALE,
-    ];
-  };
-  const makeQuad = (points: ([number, number, number] | null)[], color: string, opacity: number) => {
-    if (points.length !== 4 || points.some((point) => point === null)) return null;
-    const valid = points as [number, number, number][];
-    const positions = new Float32Array(valid.flat());
-    return (
-      <mesh>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-          <bufferAttribute attach="index" args={[new Uint16Array([0, 1, 2, 0, 2, 3]), 1]} />
-        </bufferGeometry>
-        <meshBasicMaterial color={color} transparent opacity={opacity} side={DoubleSide} />
-      </mesh>
-    );
-  };
+  const overlayBounds = getScenePlaneOverlayBounds(scene);
   const renderPlane = (
     plane: typeof opticsState.focusPlane,
     enabled: boolean,
     color: string,
     opacity: number,
+    name: string,
+    renderOrder: number,
   ) => {
     if (!enabled || !plane) return null;
-    const points = rayDirections.map((direction) => intersect(direction, plane));
-    const allInFront = points.every((point) => point !== null && point[2] > lens[2]);
-    return allInFront ? makeQuad(points, color, opacity) : null;
+    const geometry = createScenePlaneOverlayGeometry(plane, overlayBounds, {
+      extendToPlanePoint: scene.id !== "table-tilt",
+    });
+    if (!geometry) return null;
+    const vertices = geometry.verticesMm.map(vecToWorld);
+    const positions = new Float32Array(vertices.flat());
+    const outlinePositions = new Float32Array([...vertices, vertices[0]].flat());
+    return (
+      <group name={name} renderOrder={renderOrder}>
+        <mesh renderOrder={renderOrder}>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+            <bufferAttribute
+              attach="index"
+              args={[new Uint16Array(geometry.triangleIndices), 1]}
+            />
+          </bufferGeometry>
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={opacity}
+            side={DoubleSide}
+            depthTest={false}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+        <line>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[outlinePositions, 3]} />
+          </bufferGeometry>
+          <lineBasicMaterial
+            attach="material"
+            color={color}
+            transparent
+            opacity={Math.min(1, opacity + 0.45)}
+            depthTest={false}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </line>
+      </group>
+    );
   };
   const rayLength = toWorld(opticsState.sceneVisualCapDepthMm ?? 12000);
 
@@ -546,9 +567,9 @@ const OpticalGeometryOverlays = ({
           <OpticalAxisOverlay opticsState={opticsState} />
         </>
       )}
-      {renderPlane(opticsState.focusPlane ?? null, showFocusPlaneOverlay && !opticsState.diagnostics.isInfinityFocus, "#16a34a", 0.35)}
-      {renderPlane(opticsState.depthOfFieldNearPlane ?? null, showDofOverlay, "#60a5fa", 0.25)}
-      {renderPlane(opticsState.depthOfFieldFarPlane ?? null, showDofOverlay && !opticsState.diagnostics.isInfinityFocus, "#a78bfa", 0.2)}
+      {renderPlane(opticsState.focusPlane ?? null, showFocusPlaneOverlay && !opticsState.diagnostics.isInfinityFocus, "#16a34a", 0.42, "focus-plane-overlay", 30)}
+      {renderPlane(opticsState.depthOfFieldNearPlane ?? null, showDofOverlay, "#60a5fa", 0.24, "near-dof-overlay", 20)}
+      {renderPlane(opticsState.depthOfFieldFarPlane ?? null, showDofOverlay && !opticsState.diagnostics.isInfinityFocus, "#a78bfa", 0.22, "far-dof-overlay", 21)}
     </>
   );
 };
@@ -576,6 +597,7 @@ const SceneContent = ({
     <FrontStandard opticsState={opticsState} />
     {scene.id !== "focus-fundamentals-two-targets" && <Bellows opticsState={opticsState} />}
     <OpticalGeometryOverlays
+      scene={scene}
       opticsState={opticsState}
       showFocusPlaneOverlay={showFocusPlaneOverlay}
       showDofOverlay={showDofOverlay}
@@ -696,9 +718,26 @@ export const SceneRenderer = ({
     isInfinityFocus: Boolean(opticsState.diagnostics.isInfinityFocus),
     hasFiniteFarPlane: Boolean(opticsState.depthOfFieldFarPlane),
   });
+  const overlayBounds = getScenePlaneOverlayBounds(scene);
+  const focusOverlayVertexCount = opticsState.focusPlane
+    ? createScenePlaneOverlayGeometry(opticsState.focusPlane, overlayBounds, { extendToPlanePoint: scene.id !== "table-tilt" })?.verticesMm.length ?? 0
+    : 0;
+  const nearDofOverlayVertexCount = opticsState.depthOfFieldNearPlane
+    ? createScenePlaneOverlayGeometry(opticsState.depthOfFieldNearPlane, overlayBounds, { extendToPlanePoint: scene.id !== "table-tilt" })?.verticesMm.length ?? 0
+    : 0;
+  const farDofOverlayVertexCount = opticsState.depthOfFieldFarPlane
+    ? createScenePlaneOverlayGeometry(opticsState.depthOfFieldFarPlane, overlayBounds, { extendToPlanePoint: scene.id !== "table-tilt" })?.verticesMm.length ?? 0
+    : 0;
 
   return (
-    <div ref={containerRef} data-testid="scene-canvas" style={wrapperStyle}>
+    <div
+      ref={containerRef}
+      data-testid="scene-canvas"
+      data-focus-overlay-vertices={focusOverlayVertexCount}
+      data-near-dof-overlay-vertices={nearDofOverlayVertexCount}
+      data-far-dof-overlay-vertices={farDofOverlayVertexCount}
+      style={wrapperStyle}
+    >
       <Canvas
         style={{ width: "100%", height: "100%" }}
         dpr={qualityConfig.dpr}
