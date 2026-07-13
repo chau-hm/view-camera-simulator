@@ -599,15 +599,7 @@ const SceneContent = ({
         ))}
       </>
     ) : scene.id === "table-tilt" ? (
-      <>
-        <TableTiltSubject />
-        {scene.focusTargets.map((target) => (
-          <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
-            <sphereGeometry args={[toWorld(50), 16, 16]} />
-            <meshStandardMaterial color="#ef4444" />
-          </mesh>
-        ))}
-      </>
+      <TableTiltSubject />
     ) : (
     scene.focusTargets.map((target) => (
       <mesh key={target.id} position={vecToWorld(target.worldPosition)}>

@@ -73,7 +73,14 @@ export const ScenesPage = () => {
           <div className="content-note">No scenes available.</div>
         ) : (
           entries.map(({ scene, meta }) => (
-            <SceneCard key={scene.id} sceneId={scene.id} title={scene.name} description={meta.description} topics={meta.topics} />
+            <SceneCard
+              key={scene.id}
+              sceneId={scene.id}
+              title={scene.name}
+              description={meta.description}
+              topics={meta.topics}
+              guidedTaskId={meta.guidedTaskId}
+            />
           ))
         )}
       </div>

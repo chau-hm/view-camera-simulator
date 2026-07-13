@@ -11,6 +11,11 @@ import { getSceneById } from "../scenes/definitions";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import { createFocusFundamentalsGroup } from "./FocusFundamentalsSubjectFactory";
 import { createArchitectureRiseGroup } from "./ArchitectureRiseSubjectFactory";
+import {
+  createTableTiltGroup,
+  disposeTableTiltGroup,
+} from "./TableTiltSubjectFactory";
+import tableTiltGeometry from "../scenes/tableTiltGeometry";
 import { configureGroundGlassCamera } from "./configureGroundGlassCamera";
 import { createGroundGlassDofUniformState } from "./createGroundGlassDofUniformState";
 import { groundGlassVertexShader, groundGlassHorizontalFragmentShader, groundGlassVerticalFragmentShader } from "./groundGlassDofShaderSources";
@@ -19,6 +24,7 @@ import type { ApertureValue } from "../types/camera";
 import { useAppStore } from "../state/appStore";
 import type { WebGLRenderer } from "three";
 import { getRenderQualitySettings } from "./renderQuality";
+import { getGroundGlassClipRangeWorld } from "./groundGlassRttScenes";
 
 type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
@@ -314,6 +320,9 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     } else if (sceneDef && sceneId === "architecture-rise") {
       subjectGroup = createArchitectureRiseGroup();
       scene.add(subjectGroup);
+    } else if (sceneDef && sceneId === "table-tilt") {
+      subjectGroup = createTableTiltGroup();
+      scene.add(subjectGroup);
     } else {
       // Simple rear/front standards and a lens block for other scenes
       let rear: THREE.Mesh | null = null;
@@ -352,6 +361,23 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
       // Fill light: camera-right, lower intensity
       fillLight.position.set(facadeCenter.x + 2.0, facadeCenter.y + 1.5, facadeCenter.z - 3.0);
+      fillLight.target = lightTarget;
+      scene.add(fillLight);
+    } else if (sceneDef && sceneId === "table-tilt") {
+      const tabletopCenter = new THREE.Vector3(
+        tableTiltGeometry.tabletop.center.x * 0.001,
+        tableTiltGeometry.tabletopTopSurfacePlane.point.y * 0.001,
+        tableTiltGeometry.tabletop.center.z * 0.001,
+      );
+      const lightTarget = new THREE.Object3D();
+      lightTarget.position.copy(tabletopCenter);
+      scene.add(lightTarget);
+
+      keyLight.position.set(tabletopCenter.x - 2.5, tabletopCenter.y + 3.5, tabletopCenter.z - 2.5);
+      keyLight.target = lightTarget;
+      scene.add(keyLight);
+
+      fillLight.position.set(tabletopCenter.x + 2.5, tabletopCenter.y + 1.5, tabletopCenter.z - 1.5);
       fillLight.target = lightTarget;
       scene.add(fillLight);
     } else {
@@ -405,6 +431,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         // remove subject group if it was added
         if (subjectGroup && scene) {
           scene.remove(subjectGroup);
+          if (sceneId === "table-tilt") disposeTableTiltGroup(subjectGroup);
         }
       } finally {
         // update diagnostics to indicate resources cleared
@@ -429,16 +456,11 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
     const cam = groundGlassCamera.current as THREE.PerspectiveCamera;
 
-    // Scene-aware clipping for Focus Fundamentals and Architecture Rise
+    // Scene-aware clipping from the canonical bounds of every RTT scene.
     const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
-    let nearWorld = 0.01;
-    let farWorld = 10000;
-    if (sceneDef && (sceneId === "focus-fundamentals-two-targets" || sceneId === "architecture-rise")) {
-      const sceneMaxDepthMm = sceneDef.bounds?.max?.z ?? 12000;
-      const computed = Math.max(4, (sceneMaxDepthMm - opticsState.lensCenterWorld.z) / 1000 + 1);
-      farWorld = computed;
-      nearWorld = 0.01;
-    }
+    const clipRange = getGroundGlassClipRangeWorld(sceneDef, opticsState.lensCenterWorld);
+    const nearWorld = clipRange.near;
+    const farWorld = clipRange.far;
 
     cam.near = nearWorld;
     cam.far = farWorld;

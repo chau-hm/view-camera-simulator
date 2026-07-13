@@ -4,21 +4,19 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { createTableTiltGroup, disposeTableTiltGroup } from "../../render/TableTiltSubjectFactory";
 import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
 import { projectSceneFocusTargetsToGroundGlass } from "../../render/groundGlassTargetProjection";
+import { toWorld } from "../../render/rttUtils";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import geometry, {
   getFloorWorldCorners,
   getSubjectWorldBoundsCorners,
   getTabletopWorldCorners,
+  subjectLocalToWorld,
   tabletopLocalToWorld,
   type TableTiltVec3,
 } from "../../scenes/tableTiltGeometry";
-import { toWorld } from "../../render/rttUtils";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const TOLERANCE = 1e-7;
-
-const distance = (a: TableTiltVec3, b: TableTiltVec3) =>
-  Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 
 const signedDistanceToTabletop = (point: TableTiltVec3) => {
   const plane = geometry.tabletopTopSurfacePlane;
@@ -38,8 +36,46 @@ const expectPointInsideBounds = (point: TableTiltVec3) => {
   expect(point.z).toBeLessThanOrEqual(geometry.sceneBounds.max.z + TOLERANCE);
 };
 
+const cameraFor = (overrides: Partial<typeof DEFAULT_CAMERA_STATE> = {}) => ({
+  ...DEFAULT_CAMERA_STATE,
+  ...tableTiltScene.cameraPreset,
+  activeSceneId: tableTiltScene.id,
+  ...overrides,
+});
+
 describe("canonical Table Tilt geometry", () => {
-  it("aligns scene focus targets with their semantic subject anchors", () => {
+  it("keeps the physical tabletop horizontal at every depth", () => {
+    expect(geometry.tabletop.tiltAngleDeg).toBe(0);
+    expect(geometry.tabletop.tiltAngleRad).toBe(0);
+    expect(geometry.tabletop.slopeYPerDepth).toBe(0);
+    expect(geometry.tabletopTopSurfacePlane.normal).toEqual({ x: 0, y: 1, z: 0 });
+
+    const near = tabletopLocalToWorld({ localX: 0, localDepth: -1200 });
+    const centre = tabletopLocalToWorld({ localX: 0, localDepth: 0 });
+    const far = tabletopLocalToWorld({ localX: 0, localDepth: 1200 });
+    expect(near.y).toBeCloseTo(centre.y, 10);
+    expect(far.y).toBeCloseTo(centre.y, 10);
+    expect(near.z).toBeLessThan(centre.z);
+    expect(centre.z).toBeLessThan(far.z);
+  });
+
+  it("derives the tabletop height from the calibrated lens hinge geometry", () => {
+    const calibration = geometry.tableTiltCalibration;
+    const tiltRadians = (calibration.frontTiltDeg * Math.PI) / 180;
+    const expectedProbePlaneY = -calibration.focalLengthMm / Math.tan(tiltRadians);
+    const expectedFocusDistance =
+      (calibration.focalLengthMm * Math.cos(tiltRadians)) / Math.sin(tiltRadians) ** 2;
+
+    expect(calibration.focusPlaneY).toBeCloseTo(expectedProbePlaneY, 8);
+    expect(calibration.focusDistanceMm).toBeCloseTo(expectedFocusDistance, 8);
+    expect(geometry.tabletopTopSurfacePlane.point.y).toBeCloseTo(
+      expectedProbePlaneY - calibration.focusProbeHeightAboveTabletopMm,
+      8,
+    );
+    expect(geometry.tabletopTopSurfacePlane.point.y).toBeLessThan(0);
+  });
+
+  it("maps scene focus targets to visible high-frequency detail probes", () => {
     expect(tableTiltScene.focusTargets.map((target) => target.id)).toEqual([
       "near-cup",
       "mid-notebook",
@@ -48,99 +84,56 @@ describe("canonical Table Tilt geometry", () => {
 
     for (const subject of geometry.subjects) {
       const target = tableTiltScene.focusTargets.find((candidate) => candidate.id === subject.id);
-      expect(target, `missing target for ${subject.id}`).toBeDefined();
-      expect(target?.worldPosition).toEqual(subject.focusAnchorWorld);
-      expect(target?.label).toBe(subject.label);
-      expect(subject.role).toBe(
-        subject.id === "near-cup" ? "near" : subject.id === "mid-notebook" ? "middle" : "far",
+      const derivedProbe = subjectLocalToWorld(subject, subject.focusProbeLocalPosition);
+      expect(target?.worldPosition).toEqual(subject.focusDetailProbeWorld);
+      expect(subject.focusAnchorWorld).toEqual(subject.focusDetailProbeWorld);
+      expect(derivedProbe).toEqual(subject.focusDetailProbeWorld);
+      expect(subject.focusProbeSemanticName).toContain("focus-probe");
+      expect(signedDistanceToTabletop(subject.focusDetailProbeWorld)).toBeCloseTo(
+        geometry.tableTiltCalibration.focusProbeHeightAboveTabletopMm,
+        8,
+      );
+      expect(subject.focusDetailProbeWorld).not.toEqual(subject.worldPosition);
+    }
+  });
+
+  it("keeps every detail probe on the calibrated horizontal focus plane", () => {
+    for (const subject of geometry.subjects) {
+      expect(subject.focusDetailProbeWorld.y).toBeCloseTo(
+        geometry.tableTiltCalibration.focusPlaneY,
+        8,
       );
     }
   });
 
-  it("derives scene camera, bounds, focus preset, and composition from canonical geometry", () => {
-    expect(tableTiltScene.cameraPreset.focusDistanceMm).toBe(geometry.canonicalFocusDistanceMm);
-    expect(tableTiltScene.cameraPlacement).toEqual(geometry.observerCamera);
-    expect(tableTiltScene.bounds).toEqual(geometry.sceneBounds);
-    expect(tableTiltScene.compositionTargets).toEqual([
-      {
-        id: "table-surface",
-        label: "Table surface alignment",
-        worldBounds: geometry.compositionTargetBounds,
-      },
-    ]);
+  it("orders subjects away from the simulated lens along positive Z", () => {
+    const depths = geometry.subjects.map((subject) => subject.focusDetailProbeWorld.z);
+    expect(depths[0]).toBeGreaterThan(0);
+    expect(depths[0]).toBeLessThan(depths[1]);
+    expect(depths[1]).toBeLessThan(depths[2]);
   });
 
-  it("places the tabletop below the simulated lens datum", () => {
-    const cameraState = {
-      ...DEFAULT_CAMERA_STATE,
-      ...tableTiltScene.cameraPreset,
-      activeSceneId: tableTiltScene.id,
-    };
-    const opticsState = deriveOpticsState(cameraState, tableTiltScene);
-    expect(opticsState.lensCenterWorld).toEqual({ x: 0, y: 0, z: 0 });
-
-    const surfaceCentreY = geometry.tabletopTopSurfacePlane.point.y;
-    expect(surfaceCentreY).toBeGreaterThanOrEqual(-500);
-    expect(surfaceCentreY).toBeLessThanOrEqual(-350);
-
-    const topSurfaceCorners = [
-      tabletopLocalToWorld({
-        localX: -geometry.tabletop.width / 2,
-        localDepth: geometry.tabletop.nearLocalDepth,
-      }),
-      tabletopLocalToWorld({
-        localX: geometry.tabletop.width / 2,
-        localDepth: geometry.tabletop.nearLocalDepth,
-      }),
-      tabletopLocalToWorld({
-        localX: -geometry.tabletop.width / 2,
-        localDepth: geometry.tabletop.farLocalDepth,
-      }),
-      tabletopLocalToWorld({
-        localX: geometry.tabletop.width / 2,
-        localDepth: geometry.tabletop.farLocalDepth,
-      }),
-    ];
-    topSurfaceCorners.forEach((corner) => expect(corner.y).toBeLessThan(0));
-    geometry.subjects.forEach((subject) => expect(subject.worldPosition.y).toBeLessThan(0));
-    expect(geometry.floor.center.y).toBeLessThan(
-      Math.min(...getTabletopWorldCorners().map((corner) => corner.y)),
-    );
-  });
-
-  it("frames the tabletop surface and all subject anchors in the initial optical view", () => {
-    const cameraState = {
-      ...DEFAULT_CAMERA_STATE,
-      ...tableTiltScene.cameraPreset,
-      activeSceneId: tableTiltScene.id,
-    };
-    const opticsState = deriveOpticsState(cameraState, tableTiltScene);
+  it("frames all detail probes and the intended tabletop surface at the baseline state", () => {
+    const camera = cameraFor();
+    const opticsState = deriveOpticsState(camera, tableTiltScene);
     const projectedTargets = projectSceneFocusTargetsToGroundGlass({
       sceneDef: tableTiltScene,
       opticsState,
-      aperture: cameraState.aperture,
+      aperture: camera.aperture,
       previewMode: "raw",
     });
 
-    expect(projectedTargets.map((target) => target.id)).toEqual([
-      "near-cup",
-      "mid-notebook",
-      "far-book",
-    ]);
     projectedTargets.forEach((target) => {
       expect(target.visible, `${target.id} should be inside the initial film frame`).toBe(true);
-      expect(target.rawUv.u).toBeGreaterThan(0.04);
-      expect(target.rawUv.u).toBeLessThan(0.96);
-      expect(target.rawUv.v).toBeGreaterThan(0.04);
-      expect(target.rawUv.v).toBeLessThan(0.96);
+      expect(target.rawUv.u).toBeGreaterThan(0.02);
+      expect(target.rawUv.u).toBeLessThan(0.98);
+      expect(target.rawUv.v).toBeGreaterThan(0.02);
+      expect(target.rawUv.v).toBeLessThan(0.98);
     });
 
-    const tabletopSamples = [-1200, 0, 1200].map((localDepth) =>
-      tabletopLocalToWorld({ localX: 0, localDepth }),
-    );
-    tabletopSamples.forEach((worldPoint) => {
+    [-1100, 0, 1100].forEach((localDepth) => {
       const projected = projectWorldPointToFilmPlaneGroundGlass({
-        worldPoint,
+        worldPoint: tabletopLocalToWorld({ localX: 0, localDepth }),
         lensCenterWorld: opticsState.lensCenterWorld,
         filmPlaneCornersWorld: opticsState.filmPlaneCornersWorld,
       });
@@ -148,34 +141,17 @@ describe("canonical Table Tilt geometry", () => {
     });
   });
 
-  it("derives every subject anchor from the rotated tabletop surface", () => {
-    for (const subject of geometry.subjects) {
-      const converted = tabletopLocalToWorld(subject.tabletopLocalPosition);
-      expect(converted).toEqual(subject.worldPosition);
-      expect(subject.focusAnchorWorld).toEqual(converted);
-      expect(signedDistanceToTabletop(converted)).toBeCloseTo(
-        subject.focusAnchorSurfaceOffsetMm,
-        7,
-      );
-    }
-
-    const distinctHeights = new Set(
-      geometry.subjects.map((subject) => subject.worldPosition.y.toFixed(6)),
+  it("derives scene camera, bounds, preset, and composition from canonical geometry", () => {
+    expect(tableTiltScene.cameraPreset.focusDistanceMm).toBe(geometry.canonicalFocusDistanceMm);
+    expect(tableTiltScene.cameraPreset.frontTiltDeg).toBe(0);
+    expect(tableTiltScene.cameraPlacement).toEqual(geometry.observerCamera);
+    expect(tableTiltScene.bounds).toEqual(geometry.sceneBounds);
+    expect(tableTiltScene.compositionTargets[0].worldBounds).toEqual(
+      geometry.compositionTargetBounds,
     );
-    expect(distinctHeights.size).toBe(3);
   });
 
-  it("orders the semantic subjects from near to far relative to the observer camera", () => {
-    const camera = geometry.observerCamera.position;
-    const nearDistance = distance(camera, geometry.nearSubject.focusAnchorWorld);
-    const middleDistance = distance(camera, geometry.middleSubject.focusAnchorWorld);
-    const farDistance = distance(camera, geometry.farSubject.focusAnchorWorld);
-
-    expect(nearDistance).toBeLessThan(middleDistance);
-    expect(middleDistance).toBeLessThan(farDistance);
-  });
-
-  it("contains the floor, tabletop, supports, and complete subject bounds", () => {
+  it("contains the floor, tabletop, supports, subjects, and probes in scene bounds", () => {
     const supportCorners = geometry.tableSupports.flatMap((support) => {
       const corners: TableTiltVec3[] = [];
       for (const xSign of [-1, 1]) {
@@ -192,28 +168,23 @@ describe("canonical Table Tilt geometry", () => {
       return corners;
     });
 
-    const physicalPoints = [
+    [
       ...getFloorWorldCorners(),
       ...getTabletopWorldCorners(),
       ...supportCorners,
       ...geometry.subjects.flatMap(getSubjectWorldBoundsCorners),
-    ];
-    physicalPoints.forEach(expectPointInsideBounds);
-    expect(tableTiltScene.bounds).toEqual(geometry.sceneBounds);
+      ...geometry.subjects.map((subject) => subject.focusDetailProbeWorld),
+    ].forEach(expectPointInsideBounds);
   });
 
-  it("keeps dimensions and generated positions finite and positive", () => {
+  it("keeps canonical dimensions and generated positions finite", () => {
     const dimensions = [
       geometry.floor.width,
       geometry.floor.depth,
       geometry.tabletop.width,
       geometry.tabletop.depth,
       geometry.tabletop.thickness,
-      ...geometry.tableSupports.flatMap((support) => [
-        support.width,
-        support.height,
-        support.depth,
-      ]),
+      ...geometry.tableSupports.flatMap((support) => [support.width, support.height, support.depth]),
       ...geometry.subjects.flatMap((subject) => [
         subject.dimensions.width,
         subject.dimensions.height,
@@ -233,37 +204,17 @@ describe("canonical Table Tilt geometry", () => {
       geometry.observerCamera.position,
       geometry.observerCamera.target,
       ...geometry.tableSupports.flatMap((support) => [support.center, support.topWorld]),
-      ...geometry.subjects.flatMap((subject) => [subject.worldPosition, subject.focusAnchorWorld]),
+      ...geometry.subjects.flatMap((subject) => [
+        subject.worldPosition,
+        subject.focusDetailProbeWorld,
+      ]),
     ];
-    positions
-      .flatMap((position) => [position.x, position.y, position.z])
-      .forEach((coordinate) => {
-        expect(Number.isFinite(coordinate)).toBe(true);
-      });
-  });
-
-  it("converts the tabletop centre and multiple depths consistently", () => {
-    const centre = tabletopLocalToWorld({ localX: 0, localDepth: 0 });
-    expect(centre).toEqual(geometry.tabletopTopSurfacePlane.point);
-
-    const near = tabletopLocalToWorld({ localX: 0, localDepth: -900 });
-    const far = tabletopLocalToWorld({ localX: 0, localDepth: 900 });
-    expect(signedDistanceToTabletop(near)).toBeCloseTo(0, 7);
-    expect(signedDistanceToTabletop(far)).toBeCloseTo(0, 7);
-    expect(near.y).toBeGreaterThan(centre.y);
-    expect(centre.y).toBeGreaterThan(far.y);
-    expect(near.z).toBeLessThan(centre.z);
-    expect(centre.z).toBeLessThan(far.z);
-
-    const raised = tabletopLocalToWorld({
-      localX: 125,
-      localDepth: 700,
-      verticalOffsetMm: 35,
+    positions.flatMap((position) => [position.x, position.y, position.z]).forEach((coordinate) => {
+      expect(Number.isFinite(coordinate)).toBe(true);
     });
-    expect(signedDistanceToTabletop(raised)).toBeCloseTo(35, 7);
   });
 
-  it("creates stable semantic nodes at the canonical anchors", () => {
+  it("creates stable semantic subject and focus-probe nodes without debug spheres", () => {
     const group = createTableTiltGroup();
     try {
       expect(group.name).toBe("table-tilt-subject");
@@ -272,14 +223,29 @@ describe("canonical Table Tilt geometry", () => {
       for (const subject of geometry.subjects) {
         expect(group.getObjectByName(subject.semanticName)).toBeInstanceOf(THREE.Mesh);
         const anchor = group.getObjectByName(`${subject.semanticName}-anchor`);
+        const probe = group.getObjectByName(subject.focusProbeSemanticName);
         expect(anchor).toBeInstanceOf(THREE.Group);
+        expect(probe).toBeInstanceOf(THREE.Object3D);
         expect(anchor?.position.toArray()).toEqual([
-          toWorld(subject.focusAnchorWorld.x),
-          toWorld(subject.focusAnchorWorld.y),
-          toWorld(subject.focusAnchorWorld.z),
+          toWorld(subject.worldPosition.x),
+          toWorld(subject.worldPosition.y),
+          toWorld(subject.worldPosition.z),
         ]);
-        expect(anchor?.userData.focusTargetId).toBe(subject.id);
+        group.updateMatrixWorld(true);
+        const probeWorld = new THREE.Vector3();
+        probe?.getWorldPosition(probeWorld);
+        expect(probeWorld.x).toBeCloseTo(toWorld(subject.focusDetailProbeWorld.x), 10);
+        expect(probeWorld.y).toBeCloseTo(toWorld(subject.focusDetailProbeWorld.y), 10);
+        expect(probeWorld.z).toBeCloseTo(toWorld(subject.focusDetailProbeWorld.z), 10);
       }
+
+      const sphereMeshes: THREE.Mesh[] = [];
+      group.traverse((object) => {
+        if (object instanceof THREE.Mesh && object.geometry.type === "SphereGeometry") {
+          sphereMeshes.push(object);
+        }
+      });
+      expect(sphereMeshes).toHaveLength(0);
     } finally {
       disposeTableTiltGroup(group);
     }

@@ -27,6 +27,8 @@ export const LegacyGroundGlassScene = ({
   tiltDeg,
   swingDeg,
 }: LegacyGroundGlassSceneProps) => {
+  if (sceneId === "table-tilt") return null;
+
   return (
     <div
       data-testid="ground-glass-scene"
@@ -107,56 +109,6 @@ export const LegacyGroundGlassScene = ({
           />
         </>
       ) : null}
-
-      {sceneId === "table-tilt" && (
-        <>
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(0deg, #78350f 0%, #b45309 60%, transparent 60%)",
-              opacity: 0.85,
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              left: "22%",
-              bottom: "22%",
-              width: "12%",
-              height: "22%",
-              borderRadius: "4px",
-              background: "linear-gradient(90deg, #60a5fa, #2563eb)",
-              boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              left: "46%",
-              bottom: "34%",
-              width: "18%",
-              height: "14%",
-              transform: "rotate(-12deg)",
-              background: "#f59e0b",
-              borderRadius: "2px",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              right: "26%",
-              bottom: "44%",
-              width: "14%",
-              height: "10%",
-              background: "#a855f7",
-              borderRadius: "1px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-            }}
-          />
-        </>
-      )}
 
       {sceneId === "shelf-swing" && (
         <>

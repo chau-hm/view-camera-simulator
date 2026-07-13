@@ -6,9 +6,10 @@ type SceneCardProps = {
   title: string;
   description: string;
   topics: readonly string[];
+  guidedTaskId?: string;
 };
 
-export const SceneCard = ({ sceneId, title, description, topics }: SceneCardProps) => (
+export const SceneCard = ({ sceneId, title, description, topics, guidedTaskId }: SceneCardProps) => (
   <article className="scene-feature-card">
     <div className="scene-thumb" aria-hidden="true">
       <picture>
@@ -36,6 +37,14 @@ export const SceneCard = ({ sceneId, title, description, topics }: SceneCardProp
       </div>
       <div className="scene-card__actions">
         <Link className="btn btn--primary" to={`/simulator/free/${sceneId}`}>Open Scene</Link>
+        {guidedTaskId ? (
+          <Link
+            className="btn btn--secondary"
+            to={`/simulator/guided/${sceneId}/${guidedTaskId}`}
+          >
+            Start Guided Task
+          </Link>
+        ) : null}
       </div>
     </div>
   </article>

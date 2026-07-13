@@ -32,8 +32,11 @@ export const intersectPlanes = (
     return null;
   }
 
-  const firstPart = scale(cross(direction, second.normal), first.distance);
-  const secondPart = scale(cross(first.normal, direction), second.distance);
+  // For planes n1·x=d1 and n2·x=d2 with direction n1×n2, a point on the
+  // intersection is (d1(n2×direction) + d2(direction×n1)) / |direction|².
+  // Reversing both cross products mirrors the hinge point through the origin.
+  const firstPart = scale(cross(second.normal, direction), first.distance);
+  const secondPart = scale(cross(direction, first.normal), second.distance);
   const point = scale(add(firstPart, secondPart), 1 / denominator);
 
   return {

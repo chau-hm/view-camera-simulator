@@ -102,7 +102,13 @@ export const OpticalSectionDiagram = ({ projection, geometryView, profile, scene
           const depth = ((t.worldPosition.x - sectionOrigin.x) * sectionDepthDir.x) + ((t.worldPosition.y - sectionOrigin.y) * sectionDepthDir.y) + ((t.worldPosition.z - sectionOrigin.z) * sectionDepthDir.z);
           const x = depthToX(depth);
           const y = geometryView === 'side' ? mapLateralToY(t.worldPosition.y) : mapLateralToYTop(t.worldPosition.x);
-          const labelText = /near/i.test(t.id) ? 'Near board' : /far/i.test(t.id) ? 'Far board' : 'Target';
+          const labelText = scene.id === "table-tilt"
+            ? t.label
+            : /near/i.test(t.id)
+              ? "Near board"
+              : /far/i.test(t.id)
+                ? "Far board"
+                : "Target";
           if (geometryView === 'side') {
             const placement = getLocalTargetLabelPlacement({ targetX: x, targetY: y, text: labelText, svgWidth, svgHeight, safeMargin: SAFE_MARGIN });
             return (

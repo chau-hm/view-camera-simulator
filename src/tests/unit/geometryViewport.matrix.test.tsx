@@ -7,6 +7,7 @@ import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 
 const SCENES = [architectureRiseScene, tableTiltScene, shelfSwingScene, focusFundamentalsTwoTargets];
 const VIEWS: Array<'side' | 'top'> = ['side', 'top'];
@@ -153,6 +154,36 @@ describe('GeometryViewport matrix', () => {
       });
     }
   }
+
+  it("Table Tilt calibrated side view uses canonical probes and a horizontal focus plane", () => {
+    const optics = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        activeSceneId: tableTiltScene.id,
+        frontTiltDeg: tableTiltGeometry.tableTiltCalibration.frontTiltDeg,
+        focusDistanceMm: tableTiltGeometry.tableTiltCalibration.focusDistanceMm,
+      },
+      tableTiltScene,
+    );
+    const { container } = render(
+      <GeometryViewport
+        opticsState={optics}
+        geometryView="side"
+        scene={tableTiltScene}
+        riseMm={0}
+      />,
+    );
+    const focusLine = container.querySelector(
+      'line[data-testid="plane-line-focus"]',
+    ) as SVGLineElement | null;
+    expect(focusLine).not.toBeNull();
+    expect(Number(focusLine?.getAttribute("y1"))).toBeCloseTo(
+      Number(focusLine?.getAttribute("y2")),
+      5,
+    );
+    const labels = Array.from(container.querySelectorAll("text")).map((node) => node.textContent);
+    tableTiltScene.focusTargets.forEach((target) => expect(labels).toContain(target.label));
+  });
 
   it('Focus Fundamentals: depth strip shows Focus ∞ and Far DOF ∞ for real infinity focus mode', () => {
     const scene = focusFundamentalsTwoTargets;

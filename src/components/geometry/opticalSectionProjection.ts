@@ -121,17 +121,82 @@ export function computeOpticalSectionData({
   };
 
   const projectPlaneIntoSection = (plane: Plane, section: OpticalSection): PlaneSegment | null => {
-    const dirA = vecNorm(vecSub(lensCenter, section.filmA));
-    const dirB = vecNorm(vecSub(lensCenter, section.filmB));
-    const pa = intersectRayPlane(lensCenter, dirA, plane);
-    const pb = intersectRayPlane(lensCenter, dirB, plane);
-    if (!pa || !pb) return null;
-    const depthA = vecDot(vecSub(pa, sectionOrigin), sectionDepthDir);
-    const depthB = vecDot(vecSub(pb, sectionOrigin), sectionDepthDir);
-    const xA = depthToX(depthA);
-    const xB = depthToX(depthB);
-    const yA = section.id === "side" ? mapLateralToY(pa.y) : mapLateralToYTop(pa.x);
-    const yB = section.id === "side" ? mapLateralToY(pb.y) : mapLateralToYTop(pb.x);
+    const lateralAxis = section.id === "side"
+      ? { x: 0, y: 1, z: 0 }
+      : { x: 1, y: 0, z: 0 };
+    const lateralMin = section.id === "side" ? bounds.min.y : bounds.min.x;
+    const lateralMax = section.id === "side" ? bounds.max.y : bounds.max.x;
+    const depthCoefficient = vecDot(plane.normal, sectionDepthDir);
+    const lateralCoefficient = vecDot(plane.normal, lateralAxis);
+    const planeOffset = vecDot(plane.normal, vecSub(plane.point, sectionOrigin));
+    const candidates: Array<{ depth: number; lateral: number }> = [];
+    const epsilon = 1e-7;
+
+    const addCandidate = (depth: number, lateral: number) => {
+      if (
+        !Number.isFinite(depth) ||
+        !Number.isFinite(lateral) ||
+        depth < diagramMinDepthMm - epsilon ||
+        depth > diagramMaxDepthMm + epsilon ||
+        lateral < lateralMin - epsilon ||
+        lateral > lateralMax + epsilon
+      ) {
+        return;
+      }
+      if (
+        candidates.some(
+          (candidate) =>
+            Math.abs(candidate.depth - depth) < epsilon &&
+            Math.abs(candidate.lateral - lateral) < epsilon,
+        )
+      ) {
+        return;
+      }
+      candidates.push({ depth, lateral });
+    };
+
+    if (Math.abs(lateralCoefficient) > epsilon) {
+      for (const depth of [diagramMinDepthMm, diagramMaxDepthMm]) {
+        addCandidate(
+          depth,
+          (planeOffset - depthCoefficient * depth) / lateralCoefficient,
+        );
+      }
+    }
+    if (Math.abs(depthCoefficient) > epsilon) {
+      for (const lateral of [lateralMin, lateralMax]) {
+        addCandidate(
+          (planeOffset - lateralCoefficient * lateral) / depthCoefficient,
+          lateral,
+        );
+      }
+    }
+    if (candidates.length < 2) return null;
+
+    let first = candidates[0];
+    let second = candidates[1];
+    let greatestDistanceSquared = -1;
+    for (let firstIndex = 0; firstIndex < candidates.length; firstIndex += 1) {
+      for (let secondIndex = firstIndex + 1; secondIndex < candidates.length; secondIndex += 1) {
+        const depthDelta = candidates[firstIndex].depth - candidates[secondIndex].depth;
+        const lateralDelta = candidates[firstIndex].lateral - candidates[secondIndex].lateral;
+        const distanceSquared = depthDelta ** 2 + lateralDelta ** 2;
+        if (distanceSquared > greatestDistanceSquared) {
+          greatestDistanceSquared = distanceSquared;
+          first = candidates[firstIndex];
+          second = candidates[secondIndex];
+        }
+      }
+    }
+
+    const xA = depthToX(first.depth);
+    const xB = depthToX(second.depth);
+    const yA = section.id === "side"
+      ? mapLateralToY(first.lateral)
+      : mapLateralToYTop(first.lateral);
+    const yB = section.id === "side"
+      ? mapLateralToY(second.lateral)
+      : mapLateralToYTop(second.lateral);
     return {
       id: plane.distance !== undefined ? String(plane.distance) : "plane",
       p1: { x: xA, y: yA },

@@ -42,6 +42,10 @@ describe("scenes page", () => {
       "href",
       "/simulator/free/table-tilt",
     );
+    expect(scopedTableCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/table-tilt/tilt-01",
+    );
 
     expect(publicSceneIds).toEqual([
       "focus-fundamentals-two-targets",

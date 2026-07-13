@@ -14,6 +14,7 @@ test.describe('Marketing responsive', () => {
     await expect(page.locator('role=note')).toHaveCount(0);
     await expect(page.locator('text=Focus Fundamentals')).toBeVisible();
     await expect(page.locator('text=Architecture Rise')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Table Tilt' })).toBeVisible();
     // ensure at least one Open Scene button exists
     const openSceneCount = await page.locator('role=link[name="Open Scene"]').count();
     expect(openSceneCount).toBeGreaterThan(0);
@@ -62,6 +63,7 @@ test.describe('Marketing responsive', () => {
     await expect(page.locator('role=note')).toBeVisible();
     await expect(page.locator('text=Focus Fundamentals')).toBeVisible();
     await expect(page.locator('text=Architecture Rise')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Table Tilt' })).toBeVisible();
     // ensure at least one Open Scene button exists
     const openSceneCount2 = await page.locator('role=link[name="Open Scene"]').count();
     expect(openSceneCount2).toBeGreaterThan(0);
@@ -100,6 +102,15 @@ test.describe('Marketing responsive', () => {
     const archCardBox = await archCard.boundingBox();
     expect(archCardBox).not.toBeNull();
     expect(archCardBox!.x + archCardBox!.width).toBeLessThanOrEqual(391);
+
+    const tableCard = page
+      .getByRole('article')
+      .filter({ has: page.getByRole('heading', { name: 'Table Tilt' }) });
+    await expect(tableCard.getByRole('link', { name: 'Open Scene' })).toBeVisible();
+    await expect(tableCard.getByRole('link', { name: 'Start Guided Task' })).toBeVisible();
+    const tableCardBox = await tableCard.boundingBox();
+    expect(tableCardBox).not.toBeNull();
+    expect(tableCardBox!.x + tableCardBox!.width).toBeLessThanOrEqual(391);
 
     // check no horizontal overflow (allow small rounding noise)
     const overflowWidth = await page.evaluate(() => {

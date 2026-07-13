@@ -39,6 +39,16 @@ export function getFreePracticeGuidance(sceneId: string | undefined): FreePracti
         "Use Focus Assist to compare target sharpness.",
       ],
     },
+    "table-tilt": {
+      objective:
+        "Use front tilt and focus to bring the near cup, middle notebook and far book into a shared plane of focus.",
+      bullets: [
+        "Start by focusing on the middle notebook.",
+        "Apply positive front tilt and watch the focus plane move toward the tabletop.",
+        "Refine focus until all three visible detail targets improve.",
+        "Compare f/11 and f/22, but do not rely on f/32 to solve the exercise.",
+      ],
+    },
   };
 
   if (sceneId && defaults[sceneId]) return defaults[sceneId];
@@ -50,6 +60,10 @@ export function getFreePracticeFeedback(sceneId: string | undefined): { observat
   const map: Record<string, { observation: string }> = {
     "architecture-rise": { observation: 'Watch the top of the building as Rise changes. The framing should move upward while the vertical edges remain parallel.' },
     "focus-fundamentals-two-targets": { observation: 'Watch the target sharpness bars as Focus distance and Aperture change.' },
+    "table-tilt": {
+      observation:
+        "In 3D and the side-view diagram, watch the green focus plane rotate toward the horizontal probe height and the blue depth-of-field region widen at f/22. On Ground Glass, compare blur in the cup stripe, notebook lines and book checker chart; the Focus Targets readout should improve for all three together.",
+    },
   };
 
   return (sceneId && map[sceneId]) ? map[sceneId] : generic;
