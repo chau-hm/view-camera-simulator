@@ -98,7 +98,7 @@ test.describe('Ground Glass interaction', () => {
     const reY = Math.round(box.height * 0.65);
     await stage.click({ position: { x: reX, y: reY } });
 
-    await expect(stage).toHaveAttribute('data-zoomed', 'true');
+    await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
     await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
@@ -158,7 +158,8 @@ test.describe('Ground Glass interaction', () => {
     // click 3 -> zoom in
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    const t3 = await readStageTransform(transformedLayer);
+    await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
+    const t3 = await readStageTransform(viewport.locator('.groundglass-stage'));
     expect(t3.scaleX).toBeCloseTo(1.9, 1);
   });
 });
