@@ -49,7 +49,6 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
-    await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
     const t1 = await readStageTransform(viewport.locator('.groundglass-stage'));
     // scale should be approximately ZOOM_SCALE (1.9)
     expect(t1.scaleX).toBeCloseTo(1.9, 1);
@@ -72,7 +71,6 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
-    await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
     const postDrag = await readStageTransform(viewport.locator('.groundglass-stage'));
     expect(postDrag.scaleX).toBeCloseTo(1.9, 1);
     // at least one of the translate axes should change (pan applied)
@@ -86,7 +84,6 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
     await expect(stage).toHaveAttribute('aria-label', 'Zoom in Ground Glass');
 
-    await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
     const outTransform = await readStageTransform(viewport.locator('.groundglass-stage'));
     // scale returns to 1 and translation near zero
     expect(outTransform.scaleX).toBeCloseTo(1, 2);
@@ -102,7 +99,6 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
     await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
 
-    await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
     const reTransform = await readStageTransform(viewport.locator('.groundglass-stage'));
     expect(reTransform.scaleX).toBeCloseTo(1.9, 1);
     // clicking right/bottom should produce negative translateX/Y (image moves left/up)
@@ -114,7 +110,6 @@ test.describe('Ground Glass interaction', () => {
       // zoom out
       await page.mouse.click(centerX, centerY);
       await expect(stage).toHaveAttribute('data-zoomed', 'false', { timeout: 10000 });
-      await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
       const outT = await readStageTransform(viewport.locator('.groundglass-stage'));
       expect(outT.scaleX).toBeCloseTo(1, 2);
       expect(Math.abs(outT.translateX)).toBeLessThanOrEqual(0.5);
@@ -122,7 +117,6 @@ test.describe('Ground Glass interaction', () => {
       // zoom in centered
       await page.mouse.click(centerX, centerY);
       await expect(stage).toHaveAttribute('data-zoomed', 'true', { timeout: 10000 });
-      await viewport.locator('.groundglass-stage').waitFor({ state: 'attached', timeout: 5000 });
       const inT = await readStageTransform(viewport.locator('.groundglass-stage'));
       expect(inT.scaleX).toBeCloseTo(1.9, 1);
     }
