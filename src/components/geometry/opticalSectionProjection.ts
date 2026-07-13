@@ -128,15 +128,15 @@ export function computeOpticalSectionData({
   };
 
   const projectPlaneIntoSection = (plane: Plane, section: OpticalSection): PlaneSegment | null => {
-    const lateralAxis = section.id === "side"
-      ? { x: 0, y: 1, z: 0 }
-      : { x: 1, y: 0, z: 0 };
-    const lateralMin = section.id === "side"
-      ? lateralWindow?.side.minMm ?? bounds.min.y
-      : lateralWindow?.top.minMm ?? bounds.min.x;
-    const lateralMax = section.id === "side"
-      ? lateralWindow?.side.maxMm ?? bounds.max.y
-      : lateralWindow?.top.maxMm ?? bounds.max.x;
+    const lateralAxis = section.id === "side" ? { x: 0, y: 1, z: 0 } : { x: 1, y: 0, z: 0 };
+    const lateralMin =
+      section.id === "side"
+        ? (lateralWindow?.side.minMm ?? bounds.min.y)
+        : (lateralWindow?.top.minMm ?? bounds.min.x);
+    const lateralMax =
+      section.id === "side"
+        ? (lateralWindow?.side.maxMm ?? bounds.max.y)
+        : (lateralWindow?.top.maxMm ?? bounds.max.x);
     const depthCoefficient = vecDot(plane.normal, sectionDepthDir);
     const lateralCoefficient = vecDot(plane.normal, lateralAxis);
     const planeOffset = vecDot(plane.normal, vecSub(plane.point, sectionOrigin));
@@ -168,18 +168,12 @@ export function computeOpticalSectionData({
 
     if (Math.abs(lateralCoefficient) > epsilon) {
       for (const depth of [diagramMinDepthMm, diagramMaxDepthMm]) {
-        addCandidate(
-          depth,
-          (planeOffset - depthCoefficient * depth) / lateralCoefficient,
-        );
+        addCandidate(depth, (planeOffset - depthCoefficient * depth) / lateralCoefficient);
       }
     }
     if (Math.abs(depthCoefficient) > epsilon) {
       for (const lateral of [lateralMin, lateralMax]) {
-        addCandidate(
-          (planeOffset - lateralCoefficient * lateral) / depthCoefficient,
-          lateral,
-        );
+        addCandidate((planeOffset - lateralCoefficient * lateral) / depthCoefficient, lateral);
       }
     }
     if (candidates.length < 2) return null;
@@ -202,12 +196,10 @@ export function computeOpticalSectionData({
 
     const xA = depthToX(first.depth);
     const xB = depthToX(second.depth);
-    const yA = section.id === "side"
-      ? mapLateralToY(first.lateral)
-      : mapLateralToYTop(first.lateral);
-    const yB = section.id === "side"
-      ? mapLateralToY(second.lateral)
-      : mapLateralToYTop(second.lateral);
+    const yA =
+      section.id === "side" ? mapLateralToY(first.lateral) : mapLateralToYTop(first.lateral);
+    const yB =
+      section.id === "side" ? mapLateralToY(second.lateral) : mapLateralToYTop(second.lateral);
     return {
       id: plane.distance !== undefined ? String(plane.distance) : "plane",
       p1: { x: xA, y: yA },
