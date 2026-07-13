@@ -121,14 +121,15 @@ test.describe('Ground Glass interaction', () => {
     // repeat cycle a couple times quickly
     for (let i = 0; i < 3; i++) {
       // zoom out
-      await page.mouse.click(centerX, centerY);
+      // click via element-relative click to avoid page mouse timeouts if layout changes
+      await stage.click({ position: { x: Math.round(box.width / 2), y: Math.round(box.height / 2) } });
       await waitForStageAttribute(stage, 'data-zoomed', 'false', 10000);
       const outT = await readStageTransform(viewport.locator('.groundglass-stage'));
       expect(outT.scaleX).toBeCloseTo(1, 2);
       expect(Math.abs(outT.translateX)).toBeLessThanOrEqual(0.5);
 
       // zoom in centered
-      await page.mouse.click(centerX, centerY);
+      await stage.click({ position: { x: Math.round(box.width / 2), y: Math.round(box.height / 2) } });
       await waitForStageAttribute(stage, 'data-zoomed', 'true', 10000);
       // retry reading the transform a few times to tolerate scheduling delays in parallel runs
       let inT = await readStageTransform(viewport.locator('.groundglass-stage'));
