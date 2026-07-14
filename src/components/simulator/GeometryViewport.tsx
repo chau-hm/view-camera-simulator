@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { DiagramLegend } from "../geometry/DiagramPrimitives";
-import { computeOpticalSectionData, getScheimpflugConstructionWindow } from "../geometry/opticalSectionProjection";
+import {
+  computeOpticalSectionData,
+  getScheimpflugConstructionWindow,
+} from "../geometry/opticalSectionProjection";
 import { getGeometryPresentationProfile } from "../geometry/geometryPresentationProfiles";
 import { OpticalDepthStrip } from "../geometry/OpticalDepthStrip";
 import OpticalSectionDiagram from "../geometry/OpticalSectionDiagram";
@@ -9,6 +12,7 @@ import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
 import { UI_COPY } from "../../ui/copy";
 import { supportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
+import { useAppStore } from "../../state/appStore";
 
 type GeometryViewportProps = {
   opticsState: DerivedOpticsState;
@@ -21,19 +25,14 @@ type GeometryViewportProps = {
 const SVG_WIDTH = 460;
 const SVG_HEIGHT = 280;
 
-import { useAppStore } from "../../state/appStore";
-
 export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, showHeader }: GeometryViewportProps) => {
-  const setGeometryView = useAppStore((s) => s.setGeometryView);
-
-  // Responsive diagram sizing: measure the diagram container and auto-fit SVG to available space
+  const setGeometryView = useAppStore((state) => state.setGeometryView);
   const diagramRef = useRef<HTMLDivElement | null>(null);
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
   const [fitMode, setFitMode] = useState<"scene" | "construction">("scene");
   const supportsConstruction = supportsScheimpflugConstruction(scene.id);
   const effectiveGeometryView =
     !supportsConstruction && geometryView === "scheimpflug" ? "side" : geometryView;
-  const effectiveFitMode = supportsConstruction ? fitMode : "scene";
 
   useEffect(() => {
     if (!supportsConstruction) {
@@ -43,82 +42,92 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   }, [fitMode, geometryView, setGeometryView, supportsConstruction]);
 
   useEffect(() => {
-    const el = diagramRef.current;
-    if (!el) return;
-
+    const element = diagramRef.current;
+    if (!element) return;
     const updateSize = () => {
-      const rect = el.getBoundingClientRect();
-      // maintain aspect ratio from defaults
+      const rect = element.getBoundingClientRect();
       const aspect = SVG_HEIGHT / SVG_WIDTH;
-      const w = Math.max(200, Math.floor(rect.width));
-      const h = Math.max(120, Math.floor(rect.height));
-
-      // Prefer filling available width and limiting height by container, preserving aspect
-      const computedH = Math.min(h, Math.round(w * aspect));
-      setSvgSize({ width: w, height: computedH });
+      const width = Math.max(200, Math.floor(rect.width));
+      const height = Math.max(120, Math.floor(rect.height));
+      setSvgSize({ width, height: Math.min(height, Math.round(width * aspect)) });
     };
-
-    // Initial
     updateSize();
-
     if (typeof ResizeObserver !== "undefined") {
-      const ro = new ResizeObserver(() => updateSize());
-      ro.observe(el);
-      return () => ro.disconnect();
+      const observer = new ResizeObserver(updateSize);
+      observer.observe(element);
+      return () => observer.disconnect();
     }
-
-    // Fallback: window resize
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
-  }, [diagramRef, scene]);
+  }, [scene.id]);
 
-  // Use presentation profile to control rendering choices (replace scattered scene-id checks)
   const profile = getGeometryPresentationProfile(scene);
   const constructionWindow = getScheimpflugConstructionWindow(opticsState);
 
-  // derive stable depth window for projection from profile
-  let depthWindow: { minMm: number; maxMm: number };
-  if (profile.depthWindow.mode === 'fixed') {
-    depthWindow = { minMm: profile.depthWindow.minMm, maxMm: profile.depthWindow.maxMm };
-  } else {
-    const m = profile.depthWindow.marginMm;
-    const minDepth = Math.min(-250, scene.bounds.min.z - m);
-    const maxDepth = scene.bounds.max.z + m;
-    depthWindow = { minMm: minDepth, maxMm: maxDepth };
-  }
-  if (effectiveFitMode === "construction" && constructionWindow) {
-    depthWindow = {
-      minMm: constructionWindow.depth.minMm,
-      maxMm: constructionWindow.depth.maxMm,
-    };
-  }
+  useEffect(() => {
+    if (fitMode === "construction" && !constructionWindow) setFitMode("scene");
+  }, [constructionWindow, fitMode]);
 
-  const lateralWindow =
-    effectiveFitMode === "construction" && constructionWindow
-      ? {
-          ...profile.lateralWindow,
-          scheimpflug: {
-            minMm: constructionWindow.lateral.minMm,
-            maxMm: constructionWindow.lateral.maxMm,
-          },
-        }
-      : profile.lateralWindow;
+  const sceneDepthWindow =
+    profile.depthWindow.mode === "fixed"
+      ? { minMm: profile.depthWindow.minMm, maxMm: profile.depthWindow.maxMm }
+      : {
+          minMm: Math.min(-250, scene.bounds.min.z - profile.depthWindow.marginMm),
+          maxMm: scene.bounds.max.z + profile.depthWindow.marginMm,
+        };
 
-  // Delegate projection to shared opticalSectionProjection helper (pass depth window)
-  const projection = computeOpticalSectionData({
+  const sceneProjection = computeOpticalSectionData({
     opticsState,
     scene,
     svgWidth: svgSize.width,
     svgHeight: svgSize.height,
-    depthWindow,
-    lateralWindow,
+    depthWindow: sceneDepthWindow,
+    lateralWindow: profile.lateralWindow,
     paddingPx: profile.diagramPaddingPx,
   });
-  // projection is passed to OpticalSectionDiagram which consumes all needed fields
-  const { sectionOrigin, sectionDepthDir, isInfinity } = projection;
+
+  const splitSvgWidth = Math.max(280, Math.floor((svgSize.width - 72) / 2));
+  const splitSvgHeight = Math.max(190, Math.min(250, svgSize.height));
+  const cameraProjection = constructionWindow
+    ? computeOpticalSectionData({
+        opticsState,
+        scene,
+        svgWidth: splitSvgWidth,
+        svgHeight: splitSvgHeight,
+        depthWindow: constructionWindow.depth,
+        lateralWindow: {
+          ...profile.lateralWindow,
+          scheimpflug: constructionWindow.lateral,
+        },
+        paddingPx: 28,
+      })
+    : null;
+  const subjectProjection = computeOpticalSectionData({
+    opticsState,
+    scene,
+    svgWidth: splitSvgWidth,
+    svgHeight: splitSvgHeight,
+    depthWindow: sceneDepthWindow,
+    lateralWindow: profile.lateralWindow,
+    paddingPx: profile.diagramPaddingPx,
+  });
+  const subjectGeometryView: GeometryView =
+    Math.abs(opticsState.diagnostics.swingAngleDeg) > Math.abs(opticsState.diagnostics.tiltAngleDeg)
+      ? "top"
+      : "side";
+  const constructionLayoutActive = fitMode === "construction" && Boolean(cameraProjection);
+  const effectiveFitMode = constructionLayoutActive ? "construction" : "scene";
+  const { sectionOrigin, sectionDepthDir, isInfinity } = sceneProjection;
 
   return (
-    <section data-geometry-fit={effectiveFitMode} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <section
+      className="geometry-viewport"
+      data-geometry-fit={effectiveFitMode}
+      data-construction-layout={constructionLayoutActive ? "split" : "single"}
+      data-camera-construction-visible={constructionLayoutActive ? "true" : "false"}
+      data-subject-field-visible={constructionLayoutActive ? "true" : "false"}
+      style={{ display: "flex", flexDirection: "column", height: "100%" }}
+    >
       {showHeader !== false ? (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <h2 style={{ margin: 0 }}>{UI_COPY.simulator.geometryTitle}</h2>
@@ -141,40 +150,93 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
         >
           Fit Scene
         </button>
-        {supportsConstruction ? <button
-          type="button"
-          className={effectiveFitMode === "construction" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
-          aria-pressed={effectiveFitMode === "construction"}
-          disabled={!constructionWindow}
-          onClick={() => {
-            setFitMode("construction");
-            setGeometryView("scheimpflug");
-          }}
-        >
-          Fit Construction
-        </button> : null}
+        {supportsConstruction ? (
+          <button
+            type="button"
+            className={effectiveFitMode === "construction" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
+            aria-pressed={effectiveFitMode === "construction"}
+            disabled={!constructionWindow}
+            onClick={() => {
+              setFitMode("construction");
+              setGeometryView("scheimpflug");
+            }}
+          >
+            Fit Construction
+          </button>
+        ) : null}
       </div>
 
       <p style={{ marginTop: 6, marginBottom: 8 }}>
-        {effectiveGeometryView === "side" ? "Side view" : effectiveGeometryView === "top" ? "Top view" : "Perpendicular Scheimpflug section"} | Rise: {(riseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
+        {constructionLayoutActive
+          ? "Scheimpflug construction and subject relationship"
+          : effectiveGeometryView === "side"
+            ? "Side view"
+            : effectiveGeometryView === "top"
+              ? "Top view"
+              : "Perpendicular Scheimpflug section"} | Rise: {(riseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
       </p>
 
-      {/* Diagram container: this will expand to available space in floating panel */}
-      <div ref={diagramRef} style={{ flex: 1, minHeight: 0 }}>
-        <OpticalSectionDiagram projection={projection} geometryView={effectiveGeometryView} profile={profile} scene={scene} opticsState={opticsState} svgWidth={svgSize.width} svgHeight={svgSize.height} />
+      <div ref={diagramRef} className="geometry-diagram-container" style={{ flex: 1, minHeight: 0 }}>
+        {constructionLayoutActive && cameraProjection ? (
+          <div className="geometry-construction-split" data-testid="geometry-construction-split">
+            <section className="geometry-construction-region" data-testid="camera-construction-region">
+              <h3>Camera construction — enlarged</h3>
+              <OpticalSectionDiagram
+                projection={cameraProjection}
+                geometryView="scheimpflug"
+                profile={profile}
+                scene={scene}
+                opticsState={opticsState}
+                svgWidth={splitSvgWidth}
+                svgHeight={splitSvgHeight}
+                displayMode="camera-construction"
+              />
+            </section>
+            <div className="geometry-construction-continuation" aria-label="Continues to subject field">
+              <span aria-hidden="true">⋯</span>
+              <span>continues to subject field</span>
+              <span aria-hidden="true">››</span>
+            </div>
+            <section className="geometry-construction-region" data-testid="subject-field-region">
+              <h3>Subject field</h3>
+              <OpticalSectionDiagram
+                projection={subjectProjection}
+                geometryView={subjectGeometryView}
+                profile={profile}
+                scene={scene}
+                opticsState={opticsState}
+                svgWidth={splitSvgWidth}
+                svgHeight={splitSvgHeight}
+                displayMode="subject-field"
+              />
+            </section>
+          </div>
+        ) : (
+          <OpticalSectionDiagram
+            projection={sceneProjection}
+            geometryView={effectiveGeometryView}
+            profile={profile}
+            scene={scene}
+            opticsState={opticsState}
+            svgWidth={svgSize.width}
+            svgHeight={svgSize.height}
+          />
+        )}
       </div>
 
-      {/* Optical depth strip (controlled by presentation profile) */}
       {profile.showDepthStrip ? (
-        <OpticalDepthStrip opticsState={opticsState} sectionOrigin={sectionOrigin} sectionDepthDir={sectionDepthDir} depthWindow={depthWindow} profile={profile} />
+        <OpticalDepthStrip opticsState={opticsState} sectionOrigin={sectionOrigin} sectionDepthDir={sectionDepthDir} depthWindow={sceneDepthWindow} profile={profile} />
       ) : null}
 
-      {/* optional small explanatory caption under depth strip when profile requests it */}
       {profile.showDepthStrip ? (
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)' }}>Amber lines: optical axis and FOV boundary rays.</div>
-          {effectiveGeometryView === "scheimpflug" ? (
-            <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)' }}>
+          <div style={{ fontSize: 12, color: "rgba(15,23,42,0.7)" }}>Amber lines: optical axis and FOV boundary rays.</div>
+          {constructionLayoutActive ? (
+            <div style={{ fontSize: 12, color: "rgba(15,23,42,0.7)" }}>
+              Each labelled region uses its own linear scale. The enlarged camera construction continues to the true-distance subject field.
+            </div>
+          ) : effectiveGeometryView === "scheimpflug" ? (
+            <div style={{ fontSize: 12, color: "rgba(15,23,42,0.7)" }}>
               {opticsState.lensFilmHingeLine
                 ? "Film, lens and focus planes meet along one line. This section views that line end-on."
                 : "At zero tilt and swing the film and lens planes are parallel. Apply a movement to reveal their common Scheimpflug line and perpendicular section."}
@@ -183,9 +245,8 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
         </div>
       ) : null}
 
-      {/* Render DiagramLegend only when the profile requests it */}
       {profile.showSwatchLegend ? (
-        <DiagramLegend isInfinity={isInfinity} hasNearDof={!!opticsState.depthOfFieldNearPlane} hasFarDof={!!opticsState.depthOfFieldFarPlane && !isInfinity} hasTargets={scene.focusTargets.length > 0} />
+        <DiagramLegend isInfinity={isInfinity} hasNearDof={Boolean(opticsState.depthOfFieldNearPlane)} hasFarDof={Boolean(opticsState.depthOfFieldFarPlane && !isInfinity)} hasTargets={scene.focusTargets.length > 0} />
       ) : null}
     </section>
   );

@@ -76,14 +76,14 @@ const riseTask: TaskDefinition = {
 const tiltTask: TaskDefinition = {
   id: "tilt-01",
   sceneId: "table-tilt",
-  title: "Align tabletop focus with tilt",
+  title: "Align the tabletop focus cards with tilt",
   mode: "guided",
   enabledControls: ["tilt", "focusDistance", "aperture", "geometryView"],
   constraints: {
     movement: "tilt-only",
     notes: [
-      "Focus near the middle notebook first, then use positive front tilt to align the focus plane with the tabletop.",
-      "Keep rise and swing at zero; solve the lesson at f/11 or f/22.",
+      "Focus near the middle card first. Then use positive front tilt to rotate the plane of sharp focus until it is parallel to the tabletop and passes through all three coplanar focus cards.",
+      "Keep rise and swing at zero. Solve the lesson at f/11 or f/22.",
     ],
   },
   criteria: [
@@ -141,9 +141,9 @@ const tiltTask: TaskDefinition = {
   ],
   feedbackRules: {
     passPrimary:
-      "Great. Positive front tilt aligned the focus plane with all three visible tabletop detail probes.",
+      "Great. Positive front tilt made the plane of sharp focus parallel to the tabletop and aligned it with all three focus cards.",
     defaultFailPrimary:
-      "Focus on the middle notebook, apply positive front tilt, then refine focus across all three detail probes.",
+      "Focus on the middle card, apply positive front tilt, then refine focus across all three focus cards.",
     failPrimaryByCriterionId: {
       "tilt-allowed-aperture": "Do not use f/32. Solve this at f/11 or f/22 with tilt and focus.",
       "tilt-rise-zero": "Return Rise to 0 mm; this lesson is solved with front tilt and focus.",
@@ -160,7 +160,7 @@ const tiltTask: TaskDefinition = {
       "tilt-movement-range": "In the side view, the green focus plane should become nearly horizontal across the probe height.",
       "tilt-near-sharp": "Watch the cup focus card in Ground Glass and the near target sharpness readout.",
       "tilt-mid-sharp": "Use the notebook line chart as the initial focusing reference.",
-      "tilt-far-sharp": "The far checker chart should sharpen as the focus plane reaches the tabletop.",
+      "tilt-far-sharp": "The far checker chart should sharpen as the focus plane reaches the far focus-card surface.",
     },
   },
   initialCameraState: {

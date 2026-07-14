@@ -129,6 +129,17 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(onZoomChange.mock.calls).toEqual([[false], [false]]);
   });
 
+  it("preserves focus on the fixed view-control button when its zoom label changes", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const button = view.getByRole("button", { name: "Zoom in Ground Glass view" });
+    button.focus();
+    expect(button).toHaveFocus();
+    fireEvent.click(button);
+    const resetButton = view.getByRole("button", { name: "Reset Ground Glass view" });
+    expect(resetButton).toBe(button);
+    expect(resetButton).toHaveFocus();
+  });
+
   it("treats 3-5 px mouse jitter as a zoom-out click and resets atomically", () => {
     const view = render(<ControlledGroundGlassStage />);
     const stage = getStage(view.getByRole);

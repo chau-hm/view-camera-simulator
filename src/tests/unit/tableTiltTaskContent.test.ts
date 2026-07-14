@@ -8,7 +8,7 @@ import { getTaskById } from "../../core/tasks/taskRegistry";
 describe("Table Tilt lesson content", () => {
   it("provides scene-specific free-practice guidance", () => {
     const guidance = getFreePracticeGuidance("table-tilt");
-    expect(guidance.objective).toContain("near cup, middle notebook and far book");
+    expect(guidance.objective).toContain("three coplanar focus cards");
     expect(guidance.bullets).toEqual(
       expect.arrayContaining([
         expect.stringContaining("middle notebook"),
@@ -36,6 +36,9 @@ describe("Table Tilt lesson content", () => {
       ...Object.values(task.feedbackRules.failSecondaryByCriterionId),
     ].join(" ");
     expect(allCopy).toContain("positive front tilt");
+    expect(task.title).toBe("Align the tabletop focus cards with tilt");
+    expect(allCopy).toContain("parallel to the tabletop");
+    expect(allCopy).toContain("all three focus cards");
     expect(allCopy).toContain("9°");
     expect(allCopy).not.toContain("1.5° to 8°");
   });

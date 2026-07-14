@@ -32,7 +32,7 @@ describe("scenes page", () => {
     const scopedTableCard = within(tableCard!);
     expect(
       scopedTableCard.getByText(
-        "Use front tilt to align the plane of focus with a tabletop extending from near to far.",
+        "Use front tilt to align the plane of sharp focus with three coplanar focus cards above the tabletop.",
       ),
     ).toBeInTheDocument();
     expect(scopedTableCard.getByText("Tilt")).toBeInTheDocument();

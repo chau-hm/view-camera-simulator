@@ -185,12 +185,13 @@ export const SceneViewport = ({
               <div>
                 {/* We'll import dynamically to avoid bundling complexity; component is available synchronously */}
                 <SceneOverlayControls
+                  sceneId={scene.id}
                   showFocusPlane={showFocusPlaneOverlay}
                   showDofRegion={showDofOverlay}
                   showLegends={showLegends}
                   showOpticalGeometry={showOpticalGeometry}
                   showScheimpflugConstruction={requestedScheimpflugConstruction}
-                  scheimpflugConstructionAvailable={supportsScheimpflugConstruction}
+                  scheimpflugConstructionAvailable={scheimpflugConstruction.isValid}
                   onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
                   onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
                   onToggleLegends={() => setShowLegends((s) => !s)}
@@ -224,12 +225,13 @@ export const SceneViewport = ({
           {/* overlay controls inside inline viewport */}
           <div className="scene-overlay-controls-wrap">
             <SceneOverlayControls
+              sceneId={scene.id}
               showFocusPlane={showFocusPlaneOverlay}
               showDofRegion={showDofOverlay}
               showLegends={showLegends}
               showOpticalGeometry={showOpticalGeometry}
               showScheimpflugConstruction={requestedScheimpflugConstruction}
-              scheimpflugConstructionAvailable={supportsScheimpflugConstruction}
+              scheimpflugConstructionAvailable={scheimpflugConstruction.isValid}
               onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
               onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
               onToggleLegends={() => setShowLegends((s) => !s)}

@@ -319,7 +319,6 @@ export const GroundGlassStage = ({
       </div>
 
       <button
-        key={zoomEnabled ? "reset-view" : "zoom-in"}
         type="button"
         className="btn btn--compact btn--secondary groundglass-view-control"
         aria-label={zoomEnabled ? "Reset Ground Glass view" : "Zoom in Ground Glass view"}
@@ -327,7 +326,7 @@ export const GroundGlassStage = ({
         style={{
           position: "absolute",
           top: 8,
-          right: 8,
+          left: 8,
           zIndex: 4,
           boxShadow: "0 1px 4px rgba(15, 23, 42, 0.25)",
         }}

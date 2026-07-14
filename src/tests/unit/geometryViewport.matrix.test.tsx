@@ -184,7 +184,7 @@ describe('GeometryViewport matrix', () => {
       5,
     );
     const labels = Array.from(container.querySelectorAll("text")).map((node) => node.textContent);
-    ["Near card", "Middle lines", "Far chart", "Tabletop", "Focus plane"].forEach((label) =>
+    ["Near card", "Middle notebook", "Far chart", "Tabletop", "Focus plane"].forEach((label) =>
       expect(labels).toContain(label),
     );
 
@@ -229,6 +229,25 @@ describe('GeometryViewport matrix', () => {
     }
     expect(container.querySelector('[data-testid="plane-line-physical-film"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="plane-line-physical-lens"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="generic-camera-glyphs"]')).toBeNull();
+    expect(container.querySelector('[data-testid="scheimpflug-film-centre"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="scheimpflug-lens-centre"]')).not.toBeNull();
+    const expectCollinear = (physicalTestId: string, extensionTestId: string) => {
+      const physical = container.querySelector(`[data-testid="${physicalTestId}"]`) as SVGLineElement;
+      const extension = container.querySelector(`[data-testid="${extensionTestId}"] line`) as SVGLineElement;
+      expect(physical).not.toBeNull();
+      expect(extension).not.toBeNull();
+      const vector = (line: SVGLineElement) => ({
+        x: Number(line.getAttribute("x2")) - Number(line.getAttribute("x1")),
+        y: Number(line.getAttribute("y2")) - Number(line.getAttribute("y1")),
+      });
+      const a = vector(physical);
+      const b = vector(extension);
+      const normalizedCross = Math.abs(a.x * b.y - a.y * b.x) / (Math.hypot(a.x, a.y) * Math.hypot(b.x, b.y));
+      expect(normalizedCross).toBeLessThan(1e-10);
+    };
+    expectCollinear("scheimpflug-physical-film-segment", "scheimpflug-film-extension");
+    expectCollinear("scheimpflug-physical-lens-segment", "scheimpflug-lens-extension");
     const labels = Array.from(container.querySelectorAll("text")).map((node) => node.textContent);
     expect(labels).toEqual(
       expect.arrayContaining([
@@ -243,6 +262,26 @@ describe('GeometryViewport matrix', () => {
     expect(geometrySection).toHaveAttribute("data-geometry-fit", "scene");
     fireEvent.click(getByRole("button", { name: "Fit Construction" }));
     expect(geometrySection).toHaveAttribute("data-geometry-fit", "construction");
+    expect(geometrySection).toHaveAttribute("data-construction-layout", "split");
+    expect(geometrySection).toHaveAttribute("data-camera-construction-visible", "true");
+    expect(geometrySection).toHaveAttribute("data-subject-field-visible", "true");
+    const cameraRegion = container.querySelector('[data-testid="camera-construction-region"]');
+    const subjectRegion = container.querySelector('[data-testid="subject-field-region"]');
+    expect(cameraRegion).not.toBeNull();
+    expect(subjectRegion).not.toBeNull();
+    expect(cameraRegion?.textContent).toContain("Camera construction — enlarged");
+    expect(subjectRegion?.textContent).toContain("Subject field");
+    for (const targetId of ["near-cup", "mid-notebook", "far-book"]) {
+      expect(subjectRegion?.querySelector(`[data-testid="geometry-target-${targetId}"]`)).not.toBeNull();
+    }
+    expect(subjectRegion?.querySelector('[data-testid="plane-line-focus"]')).not.toBeNull();
+    const splitSvgs = Array.from(container.querySelectorAll('[data-projection-linear="true"]'));
+    expect(splitSvgs).toHaveLength(2);
+    splitSvgs.forEach((svg) => {
+      expect(Number.isFinite(Number(svg.getAttribute("data-depth-min-mm")))).toBe(true);
+      expect(Number.isFinite(Number(svg.getAttribute("data-depth-max-mm")))).toBe(true);
+      expect(Number(svg.getAttribute("data-depth-max-mm"))).toBeGreaterThan(Number(svg.getAttribute("data-depth-min-mm")));
+    });
     fireEvent.click(getByRole("button", { name: "Fit Scene" }));
     expect(geometrySection).toHaveAttribute("data-geometry-fit", "scene");
   });

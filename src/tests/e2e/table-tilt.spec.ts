@@ -5,27 +5,6 @@ const tableTiltCard = (page: import("@playwright/test").Page) =>
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: "Table Tilt" }) });
 
-const setRangeValue = async (
-  page: import("@playwright/test").Page,
-  label: string,
-  target: number,
-) => {
-  const slider = page.getByLabel(label);
-  const current = Number(await slider.inputValue());
-  const step = Number((await slider.getAttribute("step")) ?? "1");
-  const direction = target >= current ? "ArrowRight" : "ArrowLeft";
-  const coarseStep = step * 10;
-  const coarsePresses = Math.floor(Math.abs(target - current) / coarseStep);
-  for (let index = 0; index < coarsePresses; index += 1) {
-    await slider.press(`Shift+${direction}`);
-  }
-  const afterCoarse = Number(await slider.inputValue());
-  const finePresses = Math.round(Math.abs(target - afterCoarse) / step);
-  for (let index = 0; index < finePresses; index += 1) {
-    await slider.press(direction);
-  }
-};
-
 const setRangeDirect = async (
   page: import("@playwright/test").Page,
   label: string,
@@ -69,7 +48,7 @@ test("Table Tilt card exposes free and guided navigation", async ({ page }) => {
 
   await card.getByRole("link", { name: "Start Guided Task" }).click();
   await expect(page).toHaveURL(/\/simulator\/guided\/table-tilt\/tilt-01$/);
-  await expect(page.getByText("Align tabletop focus with tilt")).toBeVisible();
+  await expect(page.getByText("Align the tabletop focus cards with tilt")).toBeVisible();
 });
 
 test("Table Tilt Ground Glass uses one RTT surface and no legacy artifacts", async ({ page }) => {
@@ -222,12 +201,12 @@ test("Table Tilt calibrated controls complete the guided task", async ({ page })
   await page.goto("/simulator/guided/table-tilt/tilt-01");
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
 
-  await setRangeValue(page, "Tilt", 9);
-  await setRangeValue(page, "Focus distance", 6054);
+  await setRangeDirect(page, "Tilt", 9);
+  await setRangeDirect(page, "Focus distance", 6054);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
 
   await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await expect(page.getByText(/Positive front tilt aligned/)).toBeVisible();
+  await expect(page.getByText(/Positive front tilt made the plane of sharp focus parallel/)).toBeVisible();
 
   const sceneCanvas = page.getByTestId("scene-canvas");
   for (const attribute of [
@@ -242,8 +221,8 @@ test("Table Tilt calibrated controls complete the guided task", async ({ page })
 test("Table Tilt focus and DOF overlays stay renderable at 9 degrees and 5780 mm", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/simulator/free/table-tilt");
-  await setRangeValue(page, "Tilt", 9);
-  await setRangeValue(page, "Focus distance", 5780);
+  await setRangeDirect(page, "Tilt", 9);
+  await setRangeDirect(page, "Focus distance", 5780);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
 
   const sceneCanvas = page.getByTestId("scene-canvas");
@@ -259,8 +238,8 @@ test("Table Tilt focus and DOF overlays stay renderable at 9 degrees and 5780 mm
 test("Table Tilt calibrated side geometry keeps the table, targets, focus, and DOF readable", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/simulator/free/table-tilt");
-  await setRangeValue(page, "Tilt", 9);
-  await setRangeValue(page, "Focus distance", 6054);
+  await setRangeDirect(page, "Tilt", 9);
+  await setRangeDirect(page, "Focus distance", 6054);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
   await page.getByRole("button", { name: "Open 2D Geometry" }).click();
 
@@ -287,7 +266,7 @@ test("Table Tilt calibrated side geometry keeps the table, targets, focus, and D
   expect(targetCenters[1] - targetCenters[0]).toBeGreaterThan(40);
   expect(targetCenters[2] - targetCenters[1]).toBeGreaterThan(40);
   await expect(svg.getByText("Near card")).toBeVisible();
-  await expect(svg.getByText("Middle lines")).toBeVisible();
+  await expect(svg.getByText("Middle notebook")).toBeVisible();
   await expect(svg.getByText("Far chart")).toBeVisible();
   const focusLabelBox = await svg.getByText("Focus plane").boundingBox();
   const farLabelBox = await svg.getByText("Far chart").boundingBox();
@@ -303,13 +282,20 @@ test("Table Tilt calibrated side geometry keeps the table, targets, focus, and D
 
 test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", async ({ page }) => {
   test.setTimeout(60_000);
+  await page.setViewportSize({ width: 1024, height: 900 });
   await page.goto("/simulator/free/table-tilt");
   const sceneCanvas = page.getByTestId("scene-canvas");
   const zeroTiltNormal = await sceneCanvas.getAttribute("data-lens-plane-normal");
-  await setRangeValue(page, "Tilt", 9);
-  await setRangeValue(page, "Focus distance", 6054);
+  const overlayTrigger = page.getByRole("button", { name: "View overlays" });
+  await expect(overlayTrigger).toBeVisible();
+  await overlayTrigger.click();
+  await expect(page.getByRole("button", { name: "Show Scheimpflug construction" })).toBeDisabled();
+  await expect(sceneCanvas).toHaveAttribute("data-focus-overlay-visible", "true");
+  await setRangeDirect(page, "Tilt", 9);
+  await setRangeDirect(page, "Focus distance", 6054);
   await expect.poll(() => sceneCanvas.getAttribute("data-lens-plane-normal")).not.toBe(zeroTiltNormal);
 
+  await expect(page.getByRole("button", { name: "Show Scheimpflug construction" })).toBeEnabled();
   await page.getByRole("button", { name: "Hide DOF region" }).click();
   await expect(sceneCanvas).toHaveAttribute("data-dof-overlay-visible", "false");
   await page.getByRole("button", { name: "Show Scheimpflug construction" }).click();
@@ -338,6 +324,18 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   await expect(section.getByText("Film plane (extended)")).toBeVisible();
   await expect(section.getByText("Lens plane (extended)")).toBeVisible();
   await expect(section.getByText("Plane of sharp focus (extended)")).toBeVisible();
+  await expect(section.getByTestId("generic-camera-glyphs")).toHaveCount(0);
+  await expect(section.getByTestId("scheimpflug-physical-film-segment")).toHaveCount(1);
+  await expect.poll(() => section.getByTestId("scheimpflug-physical-film-segment").evaluate((line) => {
+    const x1 = Number(line.getAttribute("x1"));
+    const y1 = Number(line.getAttribute("y1"));
+    const x2 = Number(line.getAttribute("x2"));
+    const y2 = Number(line.getAttribute("y2"));
+    return Math.hypot(x2 - x1, y2 - y1);
+  })).toBeGreaterThan(5);
+  await expect(section.getByTestId("scheimpflug-physical-lens-segment")).toBeVisible();
+  await expect(section.getByTestId("scheimpflug-film-centre")).toBeVisible();
+  await expect(section.getByTestId("scheimpflug-lens-centre")).toBeVisible();
   await expect(page.getByText("Film, lens and focus planes meet along one line. This section views that line end-on.")).toBeVisible();
 
   const concurrence = await section.evaluate((svg) => {
@@ -361,19 +359,84 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   const geometryPanel = page.locator('section[data-geometry-fit]');
   await page.getByRole("button", { name: "Fit Construction" }).click();
   await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "construction");
+  await expect(geometryPanel).toHaveAttribute("data-construction-layout", "split");
+  await expect(geometryPanel).toHaveAttribute("data-camera-construction-visible", "true");
+  await expect(geometryPanel).toHaveAttribute("data-subject-field-visible", "true");
+  const cameraRegion = page.getByTestId("camera-construction-region");
+  const subjectRegion = page.getByTestId("subject-field-region");
+  await expect(cameraRegion.getByText("Camera construction — enlarged")).toBeVisible();
+  await expect(subjectRegion.getByText("Subject field")).toBeVisible();
+  await expect(subjectRegion.getByText("Near card")).toBeVisible();
+  await expect(subjectRegion.getByText("Middle notebook")).toBeVisible();
+  await expect(subjectRegion.getByText("Far chart")).toBeVisible();
+  await expect(subjectRegion.getByTestId("plane-line-focus")).toBeVisible();
+  await expect(subjectRegion.getByTestId("geometry-target-near-cup")).toBeVisible();
+  await expect(subjectRegion.getByTestId("geometry-target-mid-notebook")).toBeVisible();
+  await expect(subjectRegion.getByTestId("geometry-target-far-book")).toBeVisible();
+  await expect(cameraRegion.locator('[data-projection-linear="true"]')).toHaveAttribute("data-projection-linear", "true");
+  await expect(subjectRegion.locator('[data-projection-linear="true"]')).toHaveAttribute("data-projection-linear", "true");
   await expect(section.getByTestId("scheimpflug-intersection")).toBeVisible();
   await page.getByRole("button", { name: "Fit Scene" }).click();
   await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
 
   // Returning to parallel standards makes the requested construction invalid,
   // but must restore the normal focus overlay and leave an enabled off action.
-  await setRangeValue(page, "Tilt", 0);
+  await setRangeDirect(page, "Tilt", 0);
   await expect(sceneCanvas).toHaveAttribute("data-scheimpflug-construction", "false");
   await expect(sceneCanvas).toHaveAttribute("data-focus-overlay-visible", "true");
+  await setRangeDirect(page, "Tilt", 9);
+  await expect(sceneCanvas).toHaveAttribute("data-scheimpflug-construction", "true");
+  await setRangeDirect(page, "Tilt", 0);
+  await expect(sceneCanvas).toHaveAttribute("data-scheimpflug-construction", "false");
+  await expect(sceneCanvas).toHaveAttribute("data-focus-overlay-visible", "true");
+  await page.getByRole("button", { name: "View overlays" }).click();
   const hideConstruction = page.getByRole("button", { name: "Hide Scheimpflug construction" });
   await expect(hideConstruction).toBeEnabled();
   await hideConstruction.click();
   await expect(page.getByTestId("scheimpflug-construction-note")).toHaveCount(0);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(2);
+});
+
+test("3D overlay controls switch responsively without wrapping or blocking the scene", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto("/simulator/free/table-tilt");
+  const responsive = page.locator(".scene-overlay-responsive").first();
+  const sceneShell = page.locator(".scene-viewport-shell");
+  await expect(responsive).toHaveAttribute("data-overlay-presentation", "collapsed");
+  const trigger = page.getByRole("button", { name: "View overlays" });
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  const menu = page.getByTestId("scene-overlay-collapsed");
+  await expect(menu).toBeVisible();
+  const triggerBox = await trigger.boundingBox();
+  const menuBox = await menu.boundingBox();
+  const shellBox = await sceneShell.boundingBox();
+  if (!triggerBox || !menuBox || !shellBox) throw new Error("Overlay menu bounds were unavailable");
+  expect(menuBox.y).toBeGreaterThanOrEqual(triggerBox.y + triggerBox.height);
+  expect(menuBox.x).toBeGreaterThanOrEqual(shellBox.x);
+  expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(shellBox.x + shellBox.width + 1);
+  expect(menuBox.height).toBeLessThan(shellBox.height * 0.8);
+  await page.getByRole("button", { name: "Show Legends" }).click();
+  await expect(page.getByRole("button", { name: "Hide Legends" })).toBeVisible();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Escape");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toHaveCount(0);
+  await expect(responsive).toHaveCSS("pointer-events", "none");
+  await expect(trigger).toHaveCSS("pointer-events", "auto");
+
+  await page.setViewportSize({ width: 1920, height: 1000 });
+  await expect(responsive).toHaveAttribute("data-overlay-presentation", "inline");
+  await expect(page.getByTestId("scene-overlay-inline")).toBeVisible();
+  await expect(page.getByRole("button", { name: "View overlays" })).toHaveCount(0);
+  const inline = page.getByTestId("scene-overlay-inline");
+  const inlineButtons = inline.getByRole("button");
+  const firstBox = await inlineButtons.first().boundingBox();
+  const lastBox = await inlineButtons.last().boundingBox();
+  if (!firstBox || !lastBox) throw new Error("Inline overlay controls were not measurable");
+  expect(Math.abs(firstBox.y - lastBox.y)).toBeLessThan(2);
 });
 
 test("Table Tilt RTT zoom reset survives realistic jitter and UI state changes", async ({ page }) => {
@@ -405,6 +468,25 @@ test("Table Tilt RTT zoom reset survives realistic jitter and UI state changes",
   };
   await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();
   await expect(stage).toHaveAttribute("data-zoomed", "false");
+
+  const viewControl = viewport.locator(".groundglass-view-control");
+  await viewControl.focus();
+  await viewControl.press("Enter");
+  await expect(viewControl).toHaveAttribute("aria-label", "Reset Ground Glass view");
+  expect(await viewControl.evaluate((element) => document.activeElement === element)).toBe(true);
+  const focusLabel = viewport.getByTestId("ground-glass-focus-label");
+  const controlBox = await viewControl.boundingBox();
+  const focusLabelBox = await focusLabel.boundingBox();
+  if (!controlBox || !focusLabelBox) throw new Error("Ground Glass overlay bounds were unavailable");
+  const overlaps = !(
+    controlBox.x + controlBox.width <= focusLabelBox.x ||
+    focusLabelBox.x + focusLabelBox.width <= controlBox.x ||
+    controlBox.y + controlBox.height <= focusLabelBox.y ||
+    focusLabelBox.y + focusLabelBox.height <= controlBox.y
+  );
+  expect(overlaps).toBe(false);
+  await viewControl.click();
+  await expectIdentity();
 
   const box = await zoomAt(0.25, 0.25);
   const centerX = box.x + box.width / 2;
@@ -467,11 +549,11 @@ test("Table Tilt RTT zoom reset survives realistic jitter and UI state changes",
   await dispatchInterruptedDrag("lostpointercapture");
 
   // Focus and Tilt updates do not poison the interaction state.
-  await page.getByLabel("Focus distance").fill("5000");
+  await setRangeDirect(page, "Focus distance", 5000);
   await zoomAt();
   await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
   await expectIdentity();
-  await page.getByLabel("Tilt").fill("3");
+  await setRangeDirect(page, "Tilt", 3);
   await zoomAt();
   await page.keyboard.press("Escape");
   await expectIdentity();
@@ -493,6 +575,16 @@ test("Table Tilt RTT zoom reset survives realistic jitter and UI state changes",
   await expect(viewport.getByTestId("ground-glass-rtt")).toHaveCount(1);
   await expectIdentity();
   await expect(page.getByRole("heading", { name: "Ground Glass" })).toBeVisible();
+  const mobileControlBox = await viewControl.boundingBox();
+  const mobileLabelBox = await focusLabel.boundingBox();
+  if (!mobileControlBox || !mobileLabelBox) throw new Error("Mobile Ground Glass overlays were unavailable");
+  const mobileOverlaps = !(
+    mobileControlBox.x + mobileControlBox.width <= mobileLabelBox.x ||
+    mobileLabelBox.x + mobileLabelBox.width <= mobileControlBox.x ||
+    mobileControlBox.y + mobileControlBox.height <= mobileLabelBox.y ||
+    mobileLabelBox.y + mobileLabelBox.height <= mobileControlBox.y
+  );
+  expect(mobileOverlaps).toBe(false);
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
@@ -518,6 +610,20 @@ test("Ground Glass zoom state resets across free/guided and scene navigation", a
   await expect(stage).toHaveAttribute("data-zoomed", "false");
   await expect(stage).toHaveAttribute("data-pan-y", "0");
   await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();
+  await page.getByRole("button", { name: "View overlays" }).click();
+  await page.getByRole("button", { name: "Show Legends" }).click();
+  await expect(page.getByRole("button", { name: "Hide Legends" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Scheimpflug construction/ })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  await expect(page.getByRole("button", { name: "Scheimpflug Section" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Fit Construction" })).toHaveCount(0);
+  await page.goto("/simulator/free/focus-fundamentals-two-targets");
+  await page.getByRole("button", { name: "View overlays" }).click();
+  await page.getByRole("button", { name: "Show Optical geometry" }).click();
+  await expect(page.getByRole("button", { name: "Hide Optical geometry" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Scheimpflug construction/ })).toHaveCount(0);
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Open 2D Geometry" }).click();
   await expect(page.getByRole("button", { name: "Scheimpflug Section" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Fit Construction" })).toHaveCount(0);

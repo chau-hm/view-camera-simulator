@@ -17,6 +17,7 @@ type Props = {
   opticsState: DerivedOpticsState;
   svgWidth: number;
   svgHeight: number;
+  displayMode?: "full" | "camera-construction" | "subject-field";
 };
 
 const planeTeachingLabel = (segment: PlaneSegment): string | null => {
@@ -34,15 +35,26 @@ export const OpticalSectionDiagram = ({
   opticsState,
   svgWidth,
   svgHeight,
+  displayMode = "full",
 }: Props) => {
   const view = projection.views[geometryView];
   const segments = view.planeSegments;
+  const visibleSegments =
+    displayMode === "subject-field"
+      ? segments.filter((segment) => ["focus", "nearDof", "farDof"].includes(segment.id))
+      : segments;
+  const showCameraConstruction = displayMode !== "subject-field";
+  const showSubjectTargets = displayMode === "subject-field" || geometryView !== "scheimpflug";
   const { isInfinity } = projection;
   const safeMargin = 10;
 
   return (
     <svg
       data-testid={`geometry-svg-${geometryView}`}
+      data-display-mode={displayMode}
+      data-projection-linear="true"
+      data-depth-min-mm={projection.diagramMinDepthMm}
+      data-depth-max-mm={projection.diagramMaxDepthMm}
       viewBox={`0 0 ${svgWidth} ${svgHeight}`}
       width="100%"
       style={{
@@ -52,7 +64,7 @@ export const OpticalSectionDiagram = ({
       }}
     >
       <g>
-        {view.fovSegments.map((segment, index) => (
+        {showCameraConstruction ? view.fovSegments.map((segment, index) => (
           <line
             key={`fov-${index}`}
             x1={segment.p1.x}
@@ -63,7 +75,7 @@ export const OpticalSectionDiagram = ({
             strokeWidth={1}
             opacity={0.85}
           />
-        ))}
+        )) : null}
 
         {view.opticalAxisSegment ? (() => {
           const { p1, p2 } = view.opticalAxisSegment;
@@ -141,52 +153,84 @@ export const OpticalSectionDiagram = ({
             })()
           : null}
 
-        {segments.map((segment) => (
-          <line
-            key={segment.id}
-            x1={segment.p1.x}
-            y1={segment.p1.y}
-            x2={segment.p2.x}
-            y2={segment.p2.y}
-            stroke={segment.color}
-            strokeWidth={geometryView === "scheimpflug" && ["film", "lens", "focus"].includes(segment.id) ? 2.5 : 2}
-            strokeDasharray={
-              geometryView === "scheimpflug" && ["film", "lens", "focus"].includes(segment.id)
-                ? "7 5"
-                : segment.id === "focus"
-                  ? "6 4"
-                  : undefined
-            }
-            aria-label={`${segment.id} plane`}
-            data-testid={
-              segment.id === "film"
-                ? "plane-line-film"
-                : segment.id === "lens"
-                  ? "plane-line-lens"
-                  : segment.id === "focus"
-                    ? "plane-line-focus"
-                    : undefined
-            }
-          />
-        ))}
-
-        {geometryView === "scheimpflug"
-          ? view.physicalPlaneSegments.map((segment) => (
+        {visibleSegments.map((segment) => {
+          const extensionTestId =
+            geometryView === "scheimpflug" && segment.id === "film"
+              ? "scheimpflug-film-extension"
+              : geometryView === "scheimpflug" && segment.id === "lens"
+                ? "scheimpflug-lens-extension"
+                : undefined;
+          return (
+            <g key={segment.id} data-testid={extensionTestId}>
               <line
-                key={segment.id}
-                data-testid={`plane-line-${segment.id}`}
                 x1={segment.p1.x}
                 y1={segment.p1.y}
                 x2={segment.p2.x}
                 y2={segment.p2.y}
                 stroke={segment.color}
-                strokeWidth={4}
+                strokeWidth={geometryView === "scheimpflug" && ["film", "lens", "focus"].includes(segment.id) ? 2.5 : 2}
+                strokeDasharray={
+                  geometryView === "scheimpflug" && ["film", "lens", "focus"].includes(segment.id)
+                    ? "7 5"
+                    : segment.id === "focus"
+                      ? "6 4"
+                      : undefined
+                }
+                aria-label={`${segment.id} plane`}
+                data-testid={
+                  segment.id === "film"
+                    ? "plane-line-film"
+                    : segment.id === "lens"
+                      ? "plane-line-lens"
+                      : segment.id === "focus"
+                        ? "plane-line-focus"
+                        : undefined
+                }
               />
+            </g>
+          );
+        })}
+
+        {geometryView === "scheimpflug" && showCameraConstruction
+          ? view.physicalPlaneSegments.map((segment) => (
+              <g key={segment.id} data-testid={`plane-line-${segment.id}`}>
+                <line
+                  data-testid={`scheimpflug-${segment.id}-segment`}
+                  x1={segment.p1.x}
+                  y1={segment.p1.y}
+                  x2={segment.p2.x}
+                  y2={segment.p2.y}
+                  stroke={segment.color}
+                  strokeWidth={5}
+                  strokeLinecap="round"
+                />
+              </g>
             ))
           : null}
 
-        {geometryView === "scheimpflug"
-          ? segments.map((segment) => {
+        {geometryView === "scheimpflug" && showCameraConstruction ? (() => {
+          const filmCenter = view.projectWorldPoint(opticsState.filmCenterWorld);
+          const lensCenter = view.projectWorldPoint(opticsState.lensCenterWorld);
+          return (
+            <g data-testid="scheimpflug-camera-construction">
+              <line
+                x1={filmCenter.x}
+                y1={filmCenter.y}
+                x2={lensCenter.x}
+                y2={lensCenter.y}
+                stroke="#94a3b8"
+                strokeWidth={2}
+                strokeDasharray="4 3"
+                aria-label="Simplified bellows connector"
+              />
+              <circle data-testid="scheimpflug-film-centre" cx={filmCenter.x} cy={filmCenter.y} r={4} fill="#0284c7" />
+              <circle data-testid="scheimpflug-lens-centre" cx={lensCenter.x} cy={lensCenter.y} r={4} fill="#334155" />
+            </g>
+          );
+        })() : null}
+
+        {geometryView === "scheimpflug" && showCameraConstruction
+          ? visibleSegments.map((segment) => {
               const label = planeTeachingLabel(segment);
               if (!label) return null;
               const right = segment.p1.x >= segment.p2.x ? segment.p1 : segment.p2;
@@ -230,7 +274,7 @@ export const OpticalSectionDiagram = ({
             })()
           : null}
 
-        {(() => {
+        {geometryView !== "scheimpflug" && displayMode !== "subject-field" ? (() => {
           const filmSegment = segments.find((segment) => segment.id === "film");
           const filmCenter = filmSegment
             ? {
@@ -244,7 +288,7 @@ export const OpticalSectionDiagram = ({
           const frontWidth = geometryView === "top" ? 10 : 14;
           const frontHeight = geometryView === "top" ? 28 : 32;
           return (
-            <g>
+            <g data-testid="generic-camera-glyphs">
               <rect
                 x={filmCenter.x - rearWidth / 2}
                 y={filmCenter.y - rearHeight / 2}
@@ -266,16 +310,16 @@ export const OpticalSectionDiagram = ({
               ) : null}
             </g>
           );
-        })()}
+        })() : null}
 
-        {geometryView !== "scheimpflug" ? scene.focusTargets.map((target) => {
+        {showSubjectTargets ? scene.focusTargets.map((target) => {
           const position = view.projectWorldPoint(target.worldPosition);
           const labelText =
             scene.id === "table-tilt"
               ? target.id === "near-cup"
                 ? "Near card"
                 : target.id === "mid-notebook"
-                  ? "Middle lines"
+                  ? "Middle notebook"
                   : "Far chart"
               : /near/i.test(target.id)
                 ? "Near board"
