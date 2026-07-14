@@ -198,6 +198,7 @@ export const SimulatorWorkspace = ({
                 rawRttDebug={rawRttDebug}
                 focusMetric={tableTiltFocusMetric}
                 showHeader={false}
+                interactionResetKey={`${mode}:${sceneId}:${taskId ?? "free"}`}
               />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { ViewOptions } from "../controls/ViewOptions";
 import { UI_COPY } from "../../ui/copy";
@@ -28,6 +28,7 @@ type GroundGlassViewportProps = {
   rawRttDebug?: boolean;
   focusMetric?: "point" | "patch";
   showHeader?: boolean;
+  interactionResetKey?: string;
 };
 
 export const GroundGlassViewport = ({
@@ -47,6 +48,7 @@ export const GroundGlassViewport = ({
   rawRttDebug,
   focusMetric,
   showHeader,
+  interactionResetKey,
 }: GroundGlassViewportProps) => {
   // Preview mode control local to the Ground Glass panel. Default to camera state
   const groundGlassAssistEnabled = useAppStore((s) => s.camera.groundGlassAssistEnabled);
@@ -54,6 +56,9 @@ export const GroundGlassViewport = ({
   const [previewMode, setPreviewMode] = useState<"raw" | "upright">(groundGlassAssistEnabled ? "upright" : "raw");
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
+  const handleZoomChange = useCallback((nextZoomed: boolean) => {
+    setZoomEnabled(nextZoomed);
+  }, []);
 
   return (
     <section className="groundglass-panel">
@@ -121,7 +126,8 @@ export const GroundGlassViewport = ({
           rawDebug={rawRttDebug}
           focusMetric={focusMetric}
           zoomEnabled={zoomEnabled}
-          onToggleZoom={() => setZoomEnabled((s) => !s)}
+          onZoomChange={handleZoomChange}
+          interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}`}
         />
       </div>
     </section>

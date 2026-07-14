@@ -43,6 +43,10 @@ export type FocusTargetSharpness = {
   /** Conservative worst-sample score used for whole-patch task coverage. */
   patchSharpness?: number;
   patchStatus?: "sharp" | "acceptable" | "soft";
+  /** Centre-sample defocus paired with pointSharpness. */
+  pointNormalizedDefocus?: number;
+  /** Worst-sample defocus paired with patchSharpness. */
+  patchNormalizedDefocus?: number;
   // extended diagnostics
   insideDepthOfField?: boolean;
   targetRayDistanceMm?: number;

@@ -159,6 +159,48 @@ describe("GroundGlassRenderer", () => {
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
   });
 
+  it("uses matching point and patch defocus metrics in Table Tilt labels", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...tableTiltScene.cameraPreset,
+      activeSceneId: tableTiltScene.id,
+    };
+    const derived = deriveOpticsState(camera, tableTiltScene);
+    const opticsState = {
+      ...derived,
+      focusTargets: derived.focusTargets.map((target, index) =>
+        index === 0
+          ? {
+              ...target,
+              pointSharpness: 1,
+              pointNormalizedDefocus: 0,
+              patchSharpness: 0,
+              patchNormalizedDefocus: 2,
+              normalizedDefocus: 2,
+            }
+          : target,
+      ),
+    };
+    const props = {
+      opticsState,
+      assistEnabled: false,
+      focusAssistEnabled: false,
+      gridEnabled: false,
+      riseMm: camera.frontRiseMm,
+      tiltDeg: camera.frontTiltDeg,
+      swingDeg: camera.frontSwingDeg,
+      focusDistanceMm: camera.focusDistanceMm,
+      aperture: camera.aperture,
+      renderQuality: "standard" as const,
+      previewMode: "raw" as const,
+      sceneId: tableTiltScene.id,
+    };
+    const view = render(<GroundGlassRenderer {...props} focusMetric="point" />);
+    expect(screen.getByText(/defocus 0\.00 \(100%\)/)).toBeInTheDocument();
+    view.rerender(<GroundGlassRenderer {...props} focusMetric="patch" />);
+    expect(screen.getByText(/defocus 2\.00 \(0%\)/)).toBeInTheDocument();
+  });
+
   // Regression tests for thin-lens projection and DOM placeholder removal
   it("projects near and far targets within the film frame for a 150 mm lens focused at 680 mm", () => {
     const cameraState = { ...DEFAULT_CAMERA_STATE, focalLengthMm: 150, focusDistanceMm: 680 };

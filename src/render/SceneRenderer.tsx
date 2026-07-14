@@ -827,7 +827,7 @@ export const SceneRenderer = ({
       data-near-dof-overlay-vertices={nearDofOverlayVertexCount}
       data-far-dof-overlay-vertices={farDofOverlayVertexCount}
       data-dof-overlay-visible={showDofOverlay ? "true" : "false"}
-      data-focus-overlay-visible={showFocusPlaneOverlay ? "true" : "false"}
+      data-focus-overlay-visible={showFocusPlaneOverlay && !showScheimpflugConstruction ? "true" : "false"}
       data-scheimpflug-construction={
         scheimpflugConstructionGeometry ? "true" : "false"
       }

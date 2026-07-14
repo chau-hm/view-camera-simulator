@@ -163,7 +163,7 @@ test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource s
   await page.goto("/simulator/free/table-tilt");
   const viewport = page.getByLabel("GroundGlassViewport");
   const rtt = viewport.getByTestId("ground-glass-rtt");
-  const stage = viewport.getByRole("button");
+  const stage = viewport.getByRole("button", { name: /Ground Glass$/ });
   const assertLiveCanvas = async () => {
     const canvas = rtt.locator("canvas");
     await expect(canvas).toBeVisible();
@@ -364,25 +364,51 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   await expect(section.getByTestId("scheimpflug-intersection")).toBeVisible();
   await page.getByRole("button", { name: "Fit Scene" }).click();
   await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
+
+  // Returning to parallel standards makes the requested construction invalid,
+  // but must restore the normal focus overlay and leave an enabled off action.
+  await setRangeValue(page, "Tilt", 0);
+  await expect(sceneCanvas).toHaveAttribute("data-scheimpflug-construction", "false");
+  await expect(sceneCanvas).toHaveAttribute("data-focus-overlay-visible", "true");
+  const hideConstruction = page.getByRole("button", { name: "Hide Scheimpflug construction" });
+  await expect(hideConstruction).toBeEnabled();
+  await hideConstruction.click();
+  await expect(page.getByTestId("scheimpflug-construction-note")).toHaveCount(0);
 });
 
-test("Table Tilt RTT supports zoom, pan, and a mobile smoke viewport", async ({ page }) => {
-  test.setTimeout(60_000);
+test("Table Tilt RTT zoom reset survives realistic jitter and UI state changes", async ({ page }) => {
+  test.setTimeout(90_000);
   await page.goto("/simulator/free/table-tilt");
   const viewport = page.getByLabel("GroundGlassViewport");
-  const stage = viewport.getByRole("button");
+  const stage = viewport.getByRole("button", { name: /Ground Glass$/ });
   const transformedLayer = viewport.locator(".groundglass-stage");
   const readTransform = () => transformedLayer.evaluate((element) => {
     const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform);
     return { x: matrix.m41, y: matrix.m42, scale: matrix.a };
   });
+  const expectIdentity = async () => {
+    await expect(stage).toHaveAttribute("data-zoomed", "false");
+    await expect(stage).toHaveAttribute("data-pan-x", "0");
+    await expect(stage).toHaveAttribute("data-pan-y", "0");
+    await expect(stage).toHaveAttribute("data-scale", "1");
+    await expect.poll(async () => {
+      const value = await readTransform();
+      return Math.abs(value.x) <= 0.5 && Math.abs(value.y) <= 0.5 && Math.abs(value.scale - 1) <= 0.01;
+    }).toBe(true);
+  };
+  const zoomAt = async (xRatio = 0.25, yRatio = 0.25) => {
+    const bounds = await stage.boundingBox();
+    if (!bounds) throw new Error("Ground Glass stage bounding box not found");
+    await page.mouse.click(bounds.x + bounds.width * xRatio, bounds.y + bounds.height * yRatio);
+    await expect(stage).toHaveAttribute("data-zoomed", "true");
+    return bounds;
+  };
   await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();
   await expect(stage).toHaveAttribute("data-zoomed", "false");
 
-  await stage.click({ position: { x: 100, y: 100 } });
-  await expect(stage).toHaveAttribute("data-zoomed", "true");
-  const box = await stage.boundingBox();
-  if (!box) throw new Error("Ground Glass stage bounding box not found");
+  const box = await zoomAt(0.25, 0.25);
+  const centerX = box.x + box.width / 2;
+  const centerY = box.y + box.height / 2;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2 + 20, {
@@ -395,31 +421,104 @@ test("Table Tilt RTT supports zoom, pan, and a mobile smoke viewport", async ({ 
   expect(Math.abs(panned.x)).toBeLessThanOrEqual((box.width * (panned.scale - 1)) / 2 + 1);
   expect(Math.abs(panned.y)).toBeLessThanOrEqual((box.height * (panned.scale - 1)) / 2 + 1);
 
-  // Regression: after a drag, the next deliberate activation must zoom out
-  // instead of being swallowed by stale drag-click suppression.
-  await stage.click({ position: { x: box.width / 2, y: box.height / 2 } });
-  await expect(stage).toHaveAttribute("data-zoomed", "false");
-  await expect.poll(async () => {
-    const value = await readTransform();
-    return Math.abs(value.x) <= 0.5 && Math.abs(value.y) <= 0.5 && Math.abs(value.scale - 1) <= 0.01;
-  }).toBe(true);
+  // Regression: realistic 4x3 px release jitter is still a click, not a pan.
+  await page.mouse.move(centerX, centerY);
+  await page.mouse.down();
+  await page.mouse.move(centerX + 4, centerY + 3);
+  await page.mouse.up();
+  await expectIdentity();
 
   // A fresh off-centre zoom starts from a valid anchor, and zooming out again
   // always returns to an identity transform.
-  await stage.click({ position: { x: box.width * 0.8, y: box.height * 0.7 } });
-  await expect(stage).toHaveAttribute("data-zoomed", "true");
+  await zoomAt(0.8, 0.7);
   const rezoomed = await readTransform();
   expect(rezoomed.x).toBeLessThan(0);
   expect(rezoomed.y).toBeLessThan(0);
-  await stage.click({ position: { x: box.width / 2, y: box.height / 2 } });
-  await expect(stage).toHaveAttribute("data-zoomed", "false");
+  await page.mouse.move(centerX, centerY);
+  await page.mouse.down();
+  await page.mouse.move(centerX - 35, centerY + 20, { steps: 4 });
+  await page.mouse.up();
+  await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
+  await expectIdentity();
+
+  // Browser-level cancellation paths recover without leaving capture or pan.
+  const dispatchInterruptedDrag = async (terminalEvent: "pointercancel" | "lostpointercapture") => {
+    const bounds = await zoomAt();
+    const start = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+    await stage.dispatchEvent("pointerdown", {
+      pointerId: 91,
+      pointerType: "mouse",
+      button: 0,
+      clientX: start.x,
+      clientY: start.y,
+    });
+    await stage.dispatchEvent("pointermove", {
+      pointerId: 91,
+      pointerType: "mouse",
+      clientX: start.x + 30,
+      clientY: start.y + 20,
+    });
+    await stage.dispatchEvent(terminalEvent, { pointerId: 91, pointerType: "mouse" });
+    await expectIdentity();
+    await expect(stage).toHaveAttribute("data-pointer-active", "false");
+    await expect(stage).toHaveAttribute("data-pointer-captured", "false");
+  };
+  await dispatchInterruptedDrag("pointercancel");
+  await dispatchInterruptedDrag("lostpointercapture");
+
+  // Focus and Tilt updates do not poison the interaction state.
+  await page.getByLabel("Focus distance").fill("5000");
+  await zoomAt();
+  await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
+  await expectIdentity();
+  await page.getByLabel("Tilt").fill("3");
+  await zoomAt();
+  await page.keyboard.press("Escape");
+  await expectIdentity();
+
+  // Preview changes explicitly reset; quality recreation retains a valid view
+  // that can still be reset without waiting for the RTT to rebuild.
+  await zoomAt();
+  await page.getByLabel("Upright Assist").check();
+  await expectIdentity();
+  await zoomAt();
+  await page.getByLabel("Render quality").selectOption("low");
+  await expect(stage).toHaveAttribute("data-zoomed", "true");
+  await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
+  await expectIdentity();
+  await page.getByLabel("Raw Ground Glass").check();
+  await expectIdentity();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.reload();
-  await expect(page.getByLabel("GroundGlassViewport").getByTestId("ground-glass-rtt")).toHaveCount(1);
+  await expect(viewport.getByTestId("ground-glass-rtt")).toHaveCount(1);
+  await expectIdentity();
   await expect(page.getByRole("heading", { name: "Ground Glass" })).toBeVisible();
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBeLessThanOrEqual(2);
+});
+
+test("Ground Glass zoom state resets across free/guided and scene navigation", async ({ page }) => {
+  await page.goto("/simulator/free/table-tilt");
+  let viewport = page.getByLabel("GroundGlassViewport");
+  let stage = viewport.getByRole("button", { name: /Ground Glass$/ });
+  await stage.click({ position: { x: 90, y: 80 } });
+  await expect(stage).toHaveAttribute("data-zoomed", "true");
+
+  await page.goto("/simulator/guided/table-tilt/tilt-01");
+  viewport = page.getByLabel("GroundGlassViewport");
+  stage = viewport.getByRole("button", { name: /Ground Glass$/ });
+  await expect(stage).toHaveAttribute("data-zoomed", "false");
+  await expect(stage).toHaveAttribute("data-pan-x", "0");
+
+  await page.goto("/simulator/free/architecture-rise");
+  viewport = page.getByLabel("GroundGlassViewport");
+  stage = viewport.getByRole("button", { name: /Ground Glass$/ });
+  await expect(stage).toHaveAttribute("data-zoomed", "false");
+  await expect(stage).toHaveAttribute("data-pan-y", "0");
+  await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();
+  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  await expect(page.getByRole("button", { name: "Scheimpflug Section" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Fit Construction" })).toHaveCount(0);
 });

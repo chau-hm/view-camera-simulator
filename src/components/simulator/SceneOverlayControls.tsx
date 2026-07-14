@@ -73,7 +73,7 @@ export const SceneOverlayControls = ({
           type="button"
           className="scene-overlay-controls__button btn btn--compact"
           aria-pressed={Boolean(showScheimpflugConstruction)}
-          disabled={scheimpflugConstructionAvailable === false}
+          disabled={scheimpflugConstructionAvailable === false && !showScheimpflugConstruction}
           onClick={onToggleScheimpflugConstruction}
         >
           {showScheimpflugConstruction

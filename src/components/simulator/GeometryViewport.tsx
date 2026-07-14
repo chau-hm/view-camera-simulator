@@ -8,6 +8,7 @@ import type { GeometryView } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
 import { UI_COPY } from "../../ui/copy";
+import { supportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
 
 type GeometryViewportProps = {
   opticsState: DerivedOpticsState;
@@ -29,6 +30,17 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   const diagramRef = useRef<HTMLDivElement | null>(null);
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
   const [fitMode, setFitMode] = useState<"scene" | "construction">("scene");
+  const supportsConstruction = supportsScheimpflugConstruction(scene.id);
+  const effectiveGeometryView =
+    !supportsConstruction && geometryView === "scheimpflug" ? "side" : geometryView;
+  const effectiveFitMode = supportsConstruction ? fitMode : "scene";
+
+  useEffect(() => {
+    if (!supportsConstruction) {
+      if (geometryView === "scheimpflug") setGeometryView("side");
+      if (fitMode === "construction") setFitMode("scene");
+    }
+  }, [fitMode, geometryView, setGeometryView, supportsConstruction]);
 
   useEffect(() => {
     const el = diagramRef.current;
@@ -74,7 +86,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
     const maxDepth = scene.bounds.max.z + m;
     depthWindow = { minMm: minDepth, maxMm: maxDepth };
   }
-  if (fitMode === "construction" && constructionWindow) {
+  if (effectiveFitMode === "construction" && constructionWindow) {
     depthWindow = {
       minMm: constructionWindow.depth.minMm,
       maxMm: constructionWindow.depth.maxMm,
@@ -82,7 +94,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   }
 
   const lateralWindow =
-    fitMode === "construction" && constructionWindow
+    effectiveFitMode === "construction" && constructionWindow
       ? {
           ...profile.lateralWindow,
           scheimpflug: {
@@ -106,14 +118,16 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   const { sectionOrigin, sectionDepthDir, isInfinity } = projection;
 
   return (
-    <section data-geometry-fit={fitMode} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <section data-geometry-fit={effectiveFitMode} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {showHeader !== false ? (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <h2 style={{ margin: 0 }}>{UI_COPY.simulator.geometryTitle}</h2>
           <div role="group" aria-label="Geometry view" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button className={geometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={geometryView === "side"} onClick={() => setGeometryView("side")}>Side</button>
-            <button className={geometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={geometryView === "top"} onClick={() => setGeometryView("top")}>Top</button>
-            <button className={geometryView === "scheimpflug" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={geometryView === "scheimpflug"} onClick={() => setGeometryView("scheimpflug")}>Scheimpflug Section</button>
+            <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => setGeometryView("side")}>Side</button>
+            <button className={effectiveGeometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "top"} onClick={() => setGeometryView("top")}>Top</button>
+            {supportsConstruction ? (
+              <button className={effectiveGeometryView === "scheimpflug" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "scheimpflug"} onClick={() => setGeometryView("scheimpflug")}>Scheimpflug Section</button>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -121,16 +135,16 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
       <div role="group" aria-label="Geometry framing" style={{ display: "flex", gap: 8, marginTop: 6 }}>
         <button
           type="button"
-          className={fitMode === "scene" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
-          aria-pressed={fitMode === "scene"}
+          className={effectiveFitMode === "scene" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
+          aria-pressed={effectiveFitMode === "scene"}
           onClick={() => setFitMode("scene")}
         >
           Fit Scene
         </button>
-        <button
+        {supportsConstruction ? <button
           type="button"
-          className={fitMode === "construction" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
-          aria-pressed={fitMode === "construction"}
+          className={effectiveFitMode === "construction" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
+          aria-pressed={effectiveFitMode === "construction"}
           disabled={!constructionWindow}
           onClick={() => {
             setFitMode("construction");
@@ -138,16 +152,16 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
           }}
         >
           Fit Construction
-        </button>
+        </button> : null}
       </div>
 
       <p style={{ marginTop: 6, marginBottom: 8 }}>
-        {geometryView === "side" ? "Side view" : geometryView === "top" ? "Top view" : "Perpendicular Scheimpflug section"} | Rise: {(riseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
+        {effectiveGeometryView === "side" ? "Side view" : effectiveGeometryView === "top" ? "Top view" : "Perpendicular Scheimpflug section"} | Rise: {(riseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
       </p>
 
       {/* Diagram container: this will expand to available space in floating panel */}
       <div ref={diagramRef} style={{ flex: 1, minHeight: 0 }}>
-        <OpticalSectionDiagram projection={projection} geometryView={geometryView} profile={profile} scene={scene} opticsState={opticsState} svgWidth={svgSize.width} svgHeight={svgSize.height} />
+        <OpticalSectionDiagram projection={projection} geometryView={effectiveGeometryView} profile={profile} scene={scene} opticsState={opticsState} svgWidth={svgSize.width} svgHeight={svgSize.height} />
       </div>
 
       {/* Optical depth strip (controlled by presentation profile) */}
@@ -159,7 +173,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
       {profile.showDepthStrip ? (
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)' }}>Amber lines: optical axis and FOV boundary rays.</div>
-          {geometryView === "scheimpflug" ? (
+          {effectiveGeometryView === "scheimpflug" ? (
             <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)' }}>
               {opticsState.lensFilmHingeLine
                 ? "Film, lens and focus planes meet along one line. This section views that line end-on."

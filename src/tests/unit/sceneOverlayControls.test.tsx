@@ -34,4 +34,21 @@ describe("SceneOverlayControls", () => {
     const { queryByRole } = render(<SceneOverlayControls {...baseProps} />);
     expect(queryByRole("button", { name: /Scheimpflug construction/ })).toBeNull();
   });
+
+  it("keeps an invalid requested construction enabled so it can be turned off", () => {
+    const onToggle = vi.fn();
+    const { getByRole } = render(
+      <SceneOverlayControls
+        {...baseProps}
+        showScheimpflugConstruction
+        scheimpflugConstructionAvailable={false}
+        onToggleScheimpflugConstruction={onToggle}
+      />,
+    );
+    const button = getByRole("button", { name: "Hide Scheimpflug construction" });
+    expect(button).toBeEnabled();
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(button);
+    expect(onToggle).toHaveBeenCalledOnce();
+  });
 });

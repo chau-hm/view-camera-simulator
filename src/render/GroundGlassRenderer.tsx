@@ -39,6 +39,9 @@ type GroundGlassRendererProps = {
   // rawDebug (developer-only) is controlled at workspace and passed down
   rawDebug?: boolean;
   focusMetric?: "point" | "patch";
+  zoomEnabled?: boolean;
+  onZoomChange?: (nextZoomed: boolean) => void;
+  interactionResetKey?: string;
 };
 
 const PANEL_WIDTH_PX = 500;
@@ -62,8 +65,9 @@ export const GroundGlassRenderer = ({
   rawDebug,
   focusMetric = "patch",
   zoomEnabled,
-  onToggleZoom,
-}: GroundGlassRendererProps & { zoomEnabled?: boolean; onToggleZoom?: () => void }) => {
+  onZoomChange,
+  interactionResetKey,
+}: GroundGlassRendererProps) => {
   // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
   const isRttScene = isGroundGlassRttScene(sceneId);
   const pipeline = useMemo(() => {
@@ -154,7 +158,10 @@ export const GroundGlassRenderer = ({
             focusMetric === "point"
               ? (primaryTarget.pointSharpness ?? primaryTarget.sharpness)
               : (primaryTarget.patchSharpness ?? primaryTarget.sharpness),
-          normalizedDefocus: primaryTarget.normalizedDefocus,
+          normalizedDefocus:
+            focusMetric === "point"
+              ? (primaryTarget.pointNormalizedDefocus ?? primaryTarget.normalizedDefocus)
+              : (primaryTarget.patchNormalizedDefocus ?? primaryTarget.normalizedDefocus),
           distanceToFocusPlaneMm: primaryTarget.distanceToFocusPlaneMm,
         }
       : null,
@@ -252,7 +259,13 @@ export const GroundGlassRenderer = ({
 
   return (
     <div style={{ display: "grid", gap: "0.5rem" }}>
-      <GroundGlassStage zoomEnabled={zoomEnabled} onToggleZoom={onToggleZoom} imageLayer={transformedImageLayer} fixedOverlayLayer={fixedOverlayLayer} />
+      <GroundGlassStage
+        zoomEnabled={zoomEnabled}
+        onZoomChange={onZoomChange}
+        interactionResetKey={interactionResetKey}
+        imageLayer={transformedImageLayer}
+        fixedOverlayLayer={fixedOverlayLayer}
+      />
       {/* Current Settings & Focus Fundamentals Debug and Focus Targets are rendered by the parent GroundGlassViewport to allow controls to appear immediately after the canvas. */}
     </div>
   );

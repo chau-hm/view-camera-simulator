@@ -67,6 +67,8 @@ export const calculateSharpness = (
       pointStatus: statusFor(pointSharpness),
       patchSharpness,
       patchStatus: statusFor(patchSharpness),
+      pointNormalizedDefocus: point.wedge.normalizedDefocus,
+      patchNormalizedDefocus: worst.wedge.normalizedDefocus,
       insideDepthOfField: evaluatedSamples.every((sample) => sample.wedge.insideDepthOfField),
       targetRayDistanceMm: worst.wedge.targetDistanceMm,
       nearBoundaryDistanceMm: worst.wedge.nearDistanceMm,

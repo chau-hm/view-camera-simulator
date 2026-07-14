@@ -281,4 +281,42 @@ describe('GeometryViewport matrix', () => {
     const greenFocus = container.querySelector('circle[fill="#16a34a"]');
     expect(greenFocus).toBeNull();
   });
+
+  it("gates Scheimpflug view and construction framing from unsupported scenes", () => {
+    const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    const { container, queryByRole, getByText } = render(
+      <GeometryViewport
+        opticsState={optics}
+        geometryView="scheimpflug"
+        scene={architectureRiseScene}
+        riseMm={0}
+      />,
+    );
+    expect(queryByRole("button", { name: "Scheimpflug Section" })).toBeNull();
+    expect(queryByRole("button", { name: "Fit Construction" })).toBeNull();
+    expect(getByText("Side view", { exact: false })).toBeInTheDocument();
+    expect(container.querySelector('[data-testid="geometry-svg-side"]')).not.toBeNull();
+    expect(container.querySelector('section[data-geometry-fit]')).toHaveAttribute("data-geometry-fit", "scene");
+  });
+
+  it("resets construction framing when changing to an unsupported scene", () => {
+    const tableOptics = deriveOpticsState(
+      { ...DEFAULT_CAMERA_STATE, ...tableTiltScene.cameraPreset, frontTiltDeg: 9 },
+      tableTiltScene,
+    );
+    const view = render(
+      <GeometryViewport opticsState={tableOptics} geometryView="scheimpflug" scene={tableTiltScene} riseMm={0} />,
+    );
+    fireEvent.click(view.getByRole("button", { name: "Fit Construction" }));
+    expect(view.container.querySelector('section[data-geometry-fit]')).toHaveAttribute("data-geometry-fit", "construction");
+
+    const architectureOptics = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    view.rerender(
+      <GeometryViewport opticsState={architectureOptics} geometryView="scheimpflug" scene={architectureRiseScene} riseMm={0} />,
+    );
+    expect(view.queryByRole("button", { name: "Scheimpflug Section" })).toBeNull();
+    expect(view.queryByRole("button", { name: "Fit Construction" })).toBeNull();
+    expect(view.container.querySelector('section[data-geometry-fit]')).toHaveAttribute("data-geometry-fit", "scene");
+    expect(view.container.querySelector('[data-testid="geometry-svg-side"]')).not.toBeNull();
+  });
 });

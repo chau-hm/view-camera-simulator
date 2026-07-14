@@ -1,4 +1,4 @@
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import { SceneOverlayControls } from "./SceneOverlayControls";
 import { getLazySceneAssets, getPreloadSceneAssets, getRequiredSceneAssets } from "../../scenes/definitions";
@@ -43,7 +43,7 @@ export const SceneViewport = ({
   const [showDofOverlay, setShowDofOverlay] = useState(true);
   const [showLegends, setShowLegends] = useState(false);
   const [showOpticalGeometry, setShowOpticalGeometry] = useState(false);
-  const [showScheimpflugConstruction, setShowScheimpflugConstruction] = useState(false);
+  const [requestedScheimpflugConstruction, setRequestedScheimpflugConstruction] = useState(false);
   const [viewResetNonce, setViewResetNonce] = useState(0);
   const [bigView, setBigView] = useState(false);
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
@@ -60,6 +60,16 @@ export const SceneViewport = ({
     [opticsState.filmPlane, opticsState.focusPlane, opticsState.lensPlane],
   );
   const supportsScheimpflugConstruction = sceneSupportsScheimpflugConstruction(scene.id);
+  const constructionActive =
+    supportsScheimpflugConstruction &&
+    requestedScheimpflugConstruction &&
+    scheimpflugConstruction.isValid;
+
+  useEffect(() => {
+    if (!supportsScheimpflugConstruction) {
+      setRequestedScheimpflugConstruction(false);
+    }
+  }, [supportsScheimpflugConstruction]);
 
   if (!webglAvailable) {
     return (
@@ -161,7 +171,7 @@ export const SceneViewport = ({
               showDofOverlay={showDofOverlay}
               showLegends={showLegends}
               showOpticalGeometry={showOpticalGeometry}
-              showScheimpflugConstruction={showScheimpflugConstruction}
+              showScheimpflugConstruction={constructionActive}
               renderQuality={renderQuality}
               viewResetNonce={viewResetNonce}
               simulateAssetFailure={simulateAssetFailure}
@@ -179,13 +189,13 @@ export const SceneViewport = ({
                   showDofRegion={showDofOverlay}
                   showLegends={showLegends}
                   showOpticalGeometry={showOpticalGeometry}
-                  showScheimpflugConstruction={showScheimpflugConstruction}
-                  scheimpflugConstructionAvailable={scheimpflugConstruction.isValid}
+                  showScheimpflugConstruction={requestedScheimpflugConstruction}
+                  scheimpflugConstructionAvailable={supportsScheimpflugConstruction}
                   onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
                   onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
                   onToggleLegends={() => setShowLegends((s) => !s)}
                   onToggleOpticalGeometry={() => setShowOpticalGeometry((s) => !s)}
-                  onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setShowScheimpflugConstruction((state) => !state) : undefined}
+                  onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setRequestedScheimpflugConstruction((state) => !state) : undefined}
                 />
               </div>
             </div>
@@ -202,7 +212,7 @@ export const SceneViewport = ({
               showDofOverlay={showDofOverlay}
               showLegends={showLegends}
               showOpticalGeometry={showOpticalGeometry}
-              showScheimpflugConstruction={showScheimpflugConstruction}
+              showScheimpflugConstruction={constructionActive}
               renderQuality={renderQuality}
               viewResetNonce={viewResetNonce}
               simulateAssetFailure={simulateAssetFailure}
@@ -218,17 +228,17 @@ export const SceneViewport = ({
               showDofRegion={showDofOverlay}
               showLegends={showLegends}
               showOpticalGeometry={showOpticalGeometry}
-              showScheimpflugConstruction={showScheimpflugConstruction}
-              scheimpflugConstructionAvailable={scheimpflugConstruction.isValid}
+              showScheimpflugConstruction={requestedScheimpflugConstruction}
+              scheimpflugConstructionAvailable={supportsScheimpflugConstruction}
               onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
               onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
               onToggleLegends={() => setShowLegends((s) => !s)}
               onToggleOpticalGeometry={() => setShowOpticalGeometry((s) => !s)}
-              onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setShowScheimpflugConstruction((state) => !state) : undefined}
+              onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setRequestedScheimpflugConstruction((state) => !state) : undefined}
             />
           </div>
 
-          {supportsScheimpflugConstruction && showScheimpflugConstruction ? (
+          {supportsScheimpflugConstruction && requestedScheimpflugConstruction ? (
             <p className="scene-construction-note" data-testid="scheimpflug-construction-note">
               {scheimpflugConstruction.isValid
                 ? "Film (blue), lens (slate), and sharp-focus (green) planes contain the violet Scheimpflug line. Open the Scheimpflug Section to view that line end-on."

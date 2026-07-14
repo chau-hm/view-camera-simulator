@@ -65,7 +65,7 @@ test.describe('Ground Glass interaction', () => {
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
 
-    const stage = viewport.getByRole('button');
+    const stage = viewport.getByRole('button', { name: /Ground Glass$/ });
     await expect(stage).toBeVisible();
 
     const transformedLayer = transformedLayerFor(viewport);
@@ -175,7 +175,7 @@ test.describe('Ground Glass interaction', () => {
     await page.goto('/simulator/free/focus-fundamentals-two-targets');
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
-    const stage = viewport.getByRole('button');
+    const stage = viewport.getByRole('button', { name: /Ground Glass$/ });
     await expect(stage).toBeVisible();
 
     const transformedLayer = transformedLayerFor(viewport);
