@@ -17,6 +17,8 @@ export const SceneCard = ({ sceneId, title, description, topics, guidedTaskId }:
           src={
             sceneId === "architecture-rise"
               ? publicAssetUrl("assets/architecture-rise.png")
+              : sceneId === "table-tilt"
+                ? publicAssetUrl("assets/table-tilt.png")
               : publicAssetUrl("assets/two-targets-illustration.png")
           }
           alt=""
