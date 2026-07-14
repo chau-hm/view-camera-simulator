@@ -129,7 +129,7 @@ test("Table Tilt calibrated side geometry keeps the table, targets, focus, and D
   }
   expect(targetCenters[1] - targetCenters[0]).toBeGreaterThan(40);
   expect(targetCenters[2] - targetCenters[1]).toBeGreaterThan(40);
-  await expect(svg.getByText("Near stripe")).toBeVisible();
+  await expect(svg.getByText("Near card")).toBeVisible();
   await expect(svg.getByText("Middle lines")).toBeVisible();
   await expect(svg.getByText("Far chart")).toBeVisible();
   const focusLabelBox = await svg.getByText("Focus plane").boundingBox();
@@ -142,6 +142,71 @@ test("Table Tilt calibrated side geometry keeps the table, targets, focus, and D
     farLabelBox.y + farLabelBox.height <= focusLabelBox.y
   );
   expect(labelsOverlap).toBe(false);
+});
+
+test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto("/simulator/free/table-tilt");
+  const sceneCanvas = page.getByTestId("scene-canvas");
+  const zeroTiltNormal = await sceneCanvas.getAttribute("data-lens-plane-normal");
+  await setRangeValue(page, "Tilt", 9);
+  await setRangeValue(page, "Focus distance", 6054);
+  await expect.poll(() => sceneCanvas.getAttribute("data-lens-plane-normal")).not.toBe(zeroTiltNormal);
+
+  await page.getByRole("button", { name: "Hide DOF region" }).click();
+  await expect(sceneCanvas).toHaveAttribute("data-dof-overlay-visible", "false");
+  await page.getByRole("button", { name: "Show Scheimpflug construction" }).click();
+  await expect(sceneCanvas).toHaveAttribute(
+    "data-scheimpflug-construction",
+    "true",
+  );
+  for (const attribute of [
+    "data-scheimpflug-film-vertices",
+    "data-scheimpflug-lens-vertices",
+    "data-scheimpflug-focus-vertices",
+  ]) {
+    await expect.poll(async () => Number(await sceneCanvas.getAttribute(attribute))).toBeGreaterThanOrEqual(3);
+  }
+  await expect(sceneCanvas).toHaveAttribute("data-scheimpflug-line-points", "2");
+  await expect(sceneCanvas).toHaveAttribute("data-dof-overlay-visible", "false");
+  await expect(page.getByTestId("scheimpflug-construction-note")).toContainText(
+    "violet Scheimpflug line",
+  );
+
+  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  await page.getByRole("button", { name: "Scheimpflug Section", exact: true }).click();
+  const section = page.getByTestId("geometry-svg-scheimpflug");
+  await expect(section).toBeVisible();
+  await expect(section.getByTestId("scheimpflug-intersection")).toBeVisible();
+  await expect(section.getByText("Film plane (extended)")).toBeVisible();
+  await expect(section.getByText("Lens plane (extended)")).toBeVisible();
+  await expect(section.getByText("Plane of sharp focus (extended)")).toBeVisible();
+  await expect(page.getByText("Film, lens and focus planes meet along one line. This section views that line end-on.")).toBeVisible();
+
+  const concurrence = await section.evaluate((svg) => {
+    const point = svg.querySelector('[data-testid="scheimpflug-intersection"] circle');
+    if (!point) throw new Error("Missing Scheimpflug intersection point");
+    const px = Number(point.getAttribute("cx"));
+    const py = Number(point.getAttribute("cy"));
+    return ["film", "lens", "focus"].map((id) => {
+      const line = svg.querySelector(`[data-testid="plane-line-${id}"]`);
+      if (!line) throw new Error(`Missing ${id} trace`);
+      const x1 = Number(line.getAttribute("x1"));
+      const y1 = Number(line.getAttribute("y1"));
+      const x2 = Number(line.getAttribute("x2"));
+      const y2 = Number(line.getAttribute("y2"));
+      const denominator = Math.hypot(x2 - x1, y2 - y1);
+      return Math.abs((x2 - x1) * (y1 - py) - (x1 - px) * (y2 - y1)) / denominator;
+    });
+  });
+  concurrence.forEach((distance) => expect(distance).toBeLessThan(0.5));
+
+  const geometryPanel = page.locator('section[data-geometry-fit]');
+  await page.getByRole("button", { name: "Fit Construction" }).click();
+  await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "construction");
+  await expect(section.getByTestId("scheimpflug-intersection")).toBeVisible();
+  await page.getByRole("button", { name: "Fit Scene" }).click();
+  await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
 });
 
 test("Table Tilt RTT supports zoom, pan, and a mobile smoke viewport", async ({ page }) => {

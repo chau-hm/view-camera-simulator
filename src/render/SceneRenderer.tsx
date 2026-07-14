@@ -19,7 +19,10 @@ import { getVisibleSceneLegendKeys } from "./sceneLegendHelpers";
 import {
   createScenePlaneOverlayGeometry,
   getScenePlaneOverlayBounds,
+  type ScenePlaneOverlayGeometry,
 } from "./scenePlaneOverlayGeometry";
+import { createScheimpflugConstructionGeometry } from "./scheimpflugConstructionGeometry";
+import { quaternionForPlaneNormal } from "./planeOrientation";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -29,6 +32,7 @@ type SceneRendererProps = {
   showDofOverlay: boolean;
   showLegends?: boolean;
   showOpticalGeometry?: boolean;
+  showScheimpflugConstruction?: boolean;
   renderQuality: RenderQualityProfile;
   viewResetNonce: number;
   simulateAssetFailure: boolean;
@@ -100,6 +104,14 @@ const vecToWorld = (value: { x: number; y: number; z: number }): [number, number
   toWorld(value.z),
 ];
 
+export const OCCLUDED_PLANE_MATERIAL_SETTINGS = {
+  depthTest: true,
+  depthWrite: false,
+  polygonOffset: true,
+  polygonOffsetFactor: -1,
+  polygonOffsetUnits: -1,
+} as const;
+
 const RearStandard = ({ opticsState, isFocusFundamentals }: { opticsState?: DerivedOpticsState; isFocusFundamentals?: boolean }) => {
   // For Focus Fundamentals keep the original datum (film at z=0)
   if (isFocusFundamentals || !opticsState) {
@@ -143,7 +155,7 @@ const FrontStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => 
   return (
     <group position={frontPosition} rotation={frontRotation}>
       <mesh>
-        <boxGeometry args={[toWorld(180), toWorld(140), toWorld(12)]} />
+        <boxGeometry args={[toWorld(CAMERA_CONSTANTS.frontStandardWidthMm), toWorld(CAMERA_CONSTANTS.frontStandardHeightMm), toWorld(12)]} />
         <meshStandardMaterial color="#6b7280" />
       </mesh>
       <mesh position={[0, 0, toWorld(8)]}>
@@ -159,9 +171,9 @@ const FrontStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => 
 };
 
 const FilmPlane = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
-  const filmPosition = vecToWorld(opticsState.filmCenterWorld);
+  const filmPosition = vecToWorld(opticsState.filmPlane.point);
   return (
-    <mesh position={filmPosition}>
+    <mesh position={filmPosition} quaternion={quaternionForPlaneNormal(opticsState.filmPlane.normal)}>
       <planeGeometry args={[toWorld(CAMERA_CONSTANTS.filmWidthMm), toWorld(CAMERA_CONSTANTS.filmHeightMm)]} />
       <meshStandardMaterial color="#38bdf8" transparent opacity={0.35} side={DoubleSide} />
     </mesh>
@@ -463,12 +475,14 @@ const OpticalGeometryOverlays = ({
   showFocusPlaneOverlay,
   showDofOverlay,
   showOpticalGeometry,
+  showScheimpflugConstruction,
 }: {
   scene: SceneDefinition;
   opticsState: DerivedOpticsState;
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
   showOpticalGeometry: boolean;
+  showScheimpflugConstruction: boolean;
 }) => {
   const lens = vecToWorld(opticsState.lensCenterWorld);
   const filmCorners = [
@@ -483,6 +497,56 @@ const OpticalGeometryOverlays = ({
     return { x: direction.x / length, y: direction.y / length, z: direction.z / length };
   });
   const overlayBounds = getScenePlaneOverlayBounds(scene);
+  const renderOverlayGeometry = (
+    geometry: ScenePlaneOverlayGeometry,
+    color: string,
+    opacity: number,
+    name: string,
+    renderOrder: number,
+  ) => {
+    const vertices = geometry.verticesMm.map(vecToWorld);
+    const positions = new Float32Array(vertices.flat());
+    const outlinePositions = new Float32Array([...vertices, vertices[0]].flat());
+    return (
+      <group name={name} renderOrder={renderOrder}>
+        <mesh name={`${name}-fill`} renderOrder={renderOrder}>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+            <bufferAttribute
+              attach="index"
+              args={[new Uint16Array(geometry.triangleIndices), 1]}
+            />
+          </bufferGeometry>
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={opacity}
+            side={DoubleSide}
+            depthTest={OCCLUDED_PLANE_MATERIAL_SETTINGS.depthTest}
+            depthWrite={OCCLUDED_PLANE_MATERIAL_SETTINGS.depthWrite}
+            polygonOffset={OCCLUDED_PLANE_MATERIAL_SETTINGS.polygonOffset}
+            polygonOffsetFactor={OCCLUDED_PLANE_MATERIAL_SETTINGS.polygonOffsetFactor}
+            polygonOffsetUnits={OCCLUDED_PLANE_MATERIAL_SETTINGS.polygonOffsetUnits}
+            toneMapped={false}
+          />
+        </mesh>
+        <line name={`${name}-outline`}>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[outlinePositions, 3]} />
+          </bufferGeometry>
+          <lineBasicMaterial
+            attach="material"
+            color={color}
+            transparent
+            opacity={Math.min(1, opacity + 0.45)}
+            depthTest={false}
+            depthWrite={OCCLUDED_PLANE_MATERIAL_SETTINGS.depthWrite}
+            toneMapped={false}
+          />
+        </line>
+      </group>
+    );
+  };
   const renderPlane = (
     plane: typeof opticsState.focusPlane,
     enabled: boolean,
@@ -496,47 +560,12 @@ const OpticalGeometryOverlays = ({
       extendToPlanePoint: scene.id !== "table-tilt",
     });
     if (!geometry) return null;
-    const vertices = geometry.verticesMm.map(vecToWorld);
-    const positions = new Float32Array(vertices.flat());
-    const outlinePositions = new Float32Array([...vertices, vertices[0]].flat());
-    return (
-      <group name={name} renderOrder={renderOrder}>
-        <mesh renderOrder={renderOrder}>
-          <bufferGeometry>
-            <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-            <bufferAttribute
-              attach="index"
-              args={[new Uint16Array(geometry.triangleIndices), 1]}
-            />
-          </bufferGeometry>
-          <meshBasicMaterial
-            color={color}
-            transparent
-            opacity={opacity}
-            side={DoubleSide}
-            depthTest={false}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-        <line>
-          <bufferGeometry>
-            <bufferAttribute attach="attributes-position" args={[outlinePositions, 3]} />
-          </bufferGeometry>
-          <lineBasicMaterial
-            attach="material"
-            color={color}
-            transparent
-            opacity={Math.min(1, opacity + 0.45)}
-            depthTest={false}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </line>
-      </group>
-    );
+    return renderOverlayGeometry(geometry, color, opacity, name, renderOrder);
   };
   const rayLength = toWorld(opticsState.sceneVisualCapDepthMm ?? 12000);
+  const constructionGeometry = showScheimpflugConstruction
+    ? createScheimpflugConstructionGeometry(opticsState, scene)
+    : null;
 
   return (
     <>
@@ -560,14 +589,68 @@ const OpticalGeometryOverlays = ({
             );
           })}
           <FilmPlane opticsState={opticsState} />
-          <mesh position={lens} rotation={[0, 0, 0]}>
+          <mesh
+            name="lens-plane-helper"
+            position={vecToWorld(opticsState.lensPlane.point)}
+            quaternion={quaternionForPlaneNormal(opticsState.lensPlane.normal)}
+          >
             <planeGeometry args={[toWorld(220), toWorld(180)]} />
             <meshBasicMaterial color="#1f2937" transparent opacity={0.35} side={DoubleSide} />
+          </mesh>
+          <mesh
+            name="lens-plane-helper-grid"
+            position={vecToWorld(opticsState.lensPlane.point)}
+            quaternion={quaternionForPlaneNormal(opticsState.lensPlane.normal)}
+          >
+            <planeGeometry args={[toWorld(220), toWorld(180), 5, 4]} />
+            <meshBasicMaterial color="#0f172a" wireframe transparent opacity={0.7} side={DoubleSide} />
           </mesh>
           <OpticalAxisOverlay opticsState={opticsState} />
         </>
       )}
-      {renderPlane(opticsState.focusPlane ?? null, showFocusPlaneOverlay && !opticsState.diagnostics.isInfinityFocus, "#16a34a", 0.42, "focus-plane-overlay", 30)}
+      {constructionGeometry ? (
+        <group name="scheimpflug-construction">
+          {renderOverlayGeometry(constructionGeometry.filmPlane, "#38bdf8", 0.12, "scheimpflug-film-plane", 10)}
+          {renderOverlayGeometry(constructionGeometry.lensPlane, "#475569", 0.16, "scheimpflug-lens-plane", 11)}
+          {renderOverlayGeometry(constructionGeometry.focusPlane, "#16a34a", 0.16, "scheimpflug-focus-plane", 12)}
+          <line name="scheimpflug-common-line">
+            <bufferGeometry>
+              <bufferAttribute
+                attach="attributes-position"
+                args={[
+                  new Float32Array([
+                    ...vecToWorld(constructionGeometry.commonLine.start),
+                    ...vecToWorld(constructionGeometry.commonLine.end),
+                  ]),
+                  3,
+                ]}
+              />
+            </bufferGeometry>
+            <lineBasicMaterial
+              attach="material"
+              color="#7c3aed"
+              transparent
+              opacity={0.95}
+              depthTest={false}
+              depthWrite={OCCLUDED_PLANE_MATERIAL_SETTINGS.depthWrite}
+              toneMapped={false}
+            />
+          </line>
+          {[constructionGeometry.commonLine.start, constructionGeometry.commonLine.end].map(
+            (point, index) => (
+              <mesh
+                key={`scheimpflug-line-end-${index}`}
+                name={`scheimpflug-common-line-end-${index + 1}`}
+                position={vecToWorld(point)}
+              >
+                <sphereGeometry args={[toWorld(32), 12, 12]} />
+                <meshBasicMaterial color="#7c3aed" depthTest={false} depthWrite={false} />
+              </mesh>
+            ),
+          )}
+        </group>
+      ) : null}
+      {renderPlane(opticsState.focusPlane ?? null, showFocusPlaneOverlay && !showScheimpflugConstruction && !opticsState.diagnostics.isInfinityFocus, "#16a34a", 0.42, "focus-plane-overlay", 30)}
       {renderPlane(opticsState.depthOfFieldNearPlane ?? null, showDofOverlay, "#60a5fa", 0.24, "near-dof-overlay", 20)}
       {renderPlane(opticsState.depthOfFieldFarPlane ?? null, showDofOverlay && !opticsState.diagnostics.isInfinityFocus, "#a78bfa", 0.22, "far-dof-overlay", 21)}
     </>
@@ -580,12 +663,14 @@ const SceneContent = ({
   showFocusPlaneOverlay,
   showDofOverlay,
   showOpticalGeometry,
+  showScheimpflugConstruction,
 }: {
   scene: SceneDefinition;
   opticsState: DerivedOpticsState;
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
   showOpticalGeometry: boolean;
+  showScheimpflugConstruction: boolean;
 }) => (
   <>
     <color attach="background" args={["#f8fafc"]} />
@@ -602,6 +687,7 @@ const SceneContent = ({
       showFocusPlaneOverlay={showFocusPlaneOverlay}
       showDofOverlay={showDofOverlay}
       showOpticalGeometry={showOpticalGeometry}
+      showScheimpflugConstruction={showScheimpflugConstruction}
     />
     {scene.id === "focus-fundamentals-two-targets" ? (
       // Use shared scene subject for Focus Fundamentals
@@ -641,6 +727,7 @@ export const SceneRenderer = ({
   showDofOverlay,
   showLegends,
   showOpticalGeometry,
+  showScheimpflugConstruction,
   renderQuality,
   viewResetNonce,
   simulateAssetFailure,
@@ -728,6 +815,9 @@ export const SceneRenderer = ({
   const farDofOverlayVertexCount = opticsState.depthOfFieldFarPlane
     ? createScenePlaneOverlayGeometry(opticsState.depthOfFieldFarPlane, overlayBounds, { extendToPlanePoint: scene.id !== "table-tilt" })?.verticesMm.length ?? 0
     : 0;
+  const scheimpflugConstructionGeometry = showScheimpflugConstruction
+    ? createScheimpflugConstructionGeometry(opticsState, scene)
+    : null;
 
   return (
     <div
@@ -736,6 +826,16 @@ export const SceneRenderer = ({
       data-focus-overlay-vertices={focusOverlayVertexCount}
       data-near-dof-overlay-vertices={nearDofOverlayVertexCount}
       data-far-dof-overlay-vertices={farDofOverlayVertexCount}
+      data-dof-overlay-visible={showDofOverlay ? "true" : "false"}
+      data-focus-overlay-visible={showFocusPlaneOverlay ? "true" : "false"}
+      data-scheimpflug-construction={
+        scheimpflugConstructionGeometry ? "true" : "false"
+      }
+      data-scheimpflug-film-vertices={scheimpflugConstructionGeometry?.filmPlane.verticesMm.length ?? 0}
+      data-scheimpflug-lens-vertices={scheimpflugConstructionGeometry?.lensPlane.verticesMm.length ?? 0}
+      data-scheimpflug-focus-vertices={scheimpflugConstructionGeometry?.focusPlane.verticesMm.length ?? 0}
+      data-scheimpflug-line-points={scheimpflugConstructionGeometry ? 2 : 0}
+      data-lens-plane-normal={`${opticsState.lensPlane.normal.x.toFixed(6)},${opticsState.lensPlane.normal.y.toFixed(6)},${opticsState.lensPlane.normal.z.toFixed(6)}`}
       style={wrapperStyle}
     >
       <Canvas
@@ -753,6 +853,7 @@ export const SceneRenderer = ({
           showFocusPlaneOverlay={showFocusPlaneOverlay}
           showDofOverlay={showDofOverlay}
           showOpticalGeometry={Boolean(showOpticalGeometry)}
+          showScheimpflugConstruction={Boolean(showScheimpflugConstruction)}
         />
         <OrbitControls
           ref={controlsRef}

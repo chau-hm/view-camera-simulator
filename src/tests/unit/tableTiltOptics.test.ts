@@ -132,6 +132,41 @@ describe("Table Tilt optics calibration", () => {
     });
   });
 
+  it("validates centre and edge samples across every horizontal focus patch", () => {
+    const sampleScene = {
+      ...tableTiltScene,
+      focusTargets: geometry.subjects.flatMap((subject) =>
+        subject.focusSamples.map((sample) => ({
+          id: `${subject.id}:${sample.id}`,
+          label: `${subject.label} ${sample.id}`,
+          worldPosition: sample.worldPosition,
+          weight: 1,
+        })),
+      ),
+    };
+    const calibrated = deriveOpticsState(calibratedCamera(), sampleScene);
+    const zeroTilt = deriveOpticsState(cameraFor({ frontTiltDeg: 0, aperture: 11 }), sampleScene);
+
+    expect(calibrated.focusTargets).toHaveLength(geometry.subjects.length * 5);
+    calibrated.focusTargets.forEach((sample) => {
+      expect(sample.distanceToFocusPlaneMm).toBeLessThan(1e-6);
+      expect(sample.insideDepthOfField).toBe(true);
+      expect(sample.sharpness).toBeGreaterThanOrEqual(
+        geometry.tableTiltCalibration.targetSharpnessMinimum,
+      );
+    });
+    const passingSubjectsAtZeroTilt = geometry.subjects.filter((subject) =>
+      subject.focusSamples.every((sample) => {
+        const result = zeroTilt.focusTargets.find(
+          (candidate) => candidate.id === `${subject.id}:${sample.id}`,
+        );
+        expect(result).toBeDefined();
+        return result!.sharpness >= geometry.tableTiltCalibration.targetSharpnessMinimum;
+      }),
+    );
+    expect(passingSubjectsAtZeroTilt.length).toBeLessThan(geometry.subjects.length);
+  });
+
   it("amplifies real zero-tilt detail defocus without changing the physical optics", () => {
     const camera = cameraFor({ frontTiltDeg: 0, aperture: 11 });
     const optics = deriveOpticsState(camera, tableTiltScene);

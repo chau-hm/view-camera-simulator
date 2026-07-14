@@ -5,6 +5,7 @@ import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur"
 import type { GroundGlassWorldBlurSample } from "../../render/groundGlassBlur";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 import type { GroundGlassRttRuntimeInfo } from "../../render/groundGlassRttDimensions";
+import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugConstruction";
 
 type OpticalDebugPanelProps = {
   sceneId: string;
@@ -23,6 +24,15 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, m
   const film = opticsState.filmPlane.point;
   const filmNormal = opticsState.filmPlane.normal;
   const axis = opticsState.opticalAxis.direction;
+  const scheimpflug = React.useMemo(
+    () =>
+      deriveScheimpflugConstruction({
+        filmPlane: opticsState.filmPlane,
+        lensPlane: opticsState.lensPlane,
+        focusPlane: opticsState.focusPlane,
+      }),
+    [opticsState.filmPlane, opticsState.focusPlane, opticsState.lensPlane],
+  );
 
   const internalWidth = rttRuntimeInfo?.internalWidthPx ?? 1024;
   const logicalWidth = rttRuntimeInfo?.logicalWidthPx ?? 800;
@@ -71,6 +81,48 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, m
               <div><strong>Optical axis:</strong> {axis.x.toFixed(3)}, {axis.y.toFixed(3)}, {axis.z.toFixed(3)}</div>
               <div><strong>Focus plane model:</strong> {opticsState.diagnostics.focusPlaneModel}</div>
               <div><strong>DOF model:</strong> {opticsState.diagnostics.depthOfFieldModel ?? '—'}</div>
+            </div>
+          </details>
+
+          <details className="optical-debug__group">
+            <summary>Scheimpflug construction</summary>
+            <div className="optical-debug__group-content">
+              <div>
+                <strong>Construction valid:</strong> {scheimpflug.isValid ? "Yes" : "No"}
+              </div>
+              {scheimpflug.commonLine ? (
+                <>
+                  <div>
+                    <strong>Scheimpflug line point:</strong>{" "}
+                    {scheimpflug.commonLine.point.x.toFixed(3)},{" "}
+                    {scheimpflug.commonLine.point.y.toFixed(3)},{" "}
+                    {scheimpflug.commonLine.point.z.toFixed(3)} mm
+                  </div>
+                  <div>
+                    <strong>Scheimpflug line direction:</strong>{" "}
+                    {scheimpflug.commonLine.direction.x.toFixed(6)},{" "}
+                    {scheimpflug.commonLine.direction.y.toFixed(6)},{" "}
+                    {scheimpflug.commonLine.direction.z.toFixed(6)}
+                  </div>
+                </>
+              ) : null}
+              <div>
+                <strong>Scheimpflug point residual:</strong>{" "}
+                {scheimpflug.pointResidualMm === null
+                  ? "—"
+                  : `${scheimpflug.pointResidualMm.toFixed(6)} mm`}
+              </div>
+              <div>
+                <strong>Scheimpflug direction residual:</strong>{" "}
+                {scheimpflug.directionResidual === null
+                  ? "—"
+                  : scheimpflug.directionResidual.toFixed(9)}
+              </div>
+              {scheimpflug.unavailableReason ? (
+                <div>
+                  <strong>Unavailable reason:</strong> {scheimpflug.unavailableReason}
+                </div>
+              ) : null}
             </div>
           </details>
 

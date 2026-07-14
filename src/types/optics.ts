@@ -73,6 +73,7 @@ export type DerivedOpticsState = {
   filmPlane: Plane;
   filmPlaneCornersWorld: FilmPlaneCorners;
   opticalAxis: Ray;
+  /** Legacy compatibility name: this is the film/lens Scheimpflug common line, not the Hinge Rule line. */
   lensFilmHingeLine: Line3 | null;
   focusPointWorld: Vec3;
   // In infinity focus mode the physical focusPlane may be absent (null)

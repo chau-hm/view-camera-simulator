@@ -86,6 +86,9 @@ describe("canonical Table Tilt geometry", () => {
       const target = tableTiltScene.focusTargets.find((candidate) => candidate.id === subject.id);
       const derivedProbe = subjectLocalToWorld(subject, subject.focusProbeLocalPosition);
       expect(target?.worldPosition).toEqual(subject.focusDetailProbeWorld);
+      expect(target?.sampleWorldPositions).toEqual(
+        subject.focusSamples.map((sample) => sample.worldPosition),
+      );
       expect(subject.focusAnchorWorld).toEqual(subject.focusDetailProbeWorld);
       expect(derivedProbe).toEqual(subject.focusDetailProbeWorld);
       expect(subject.focusProbeSemanticName).toContain("focus-probe");
@@ -94,6 +97,21 @@ describe("canonical Table Tilt geometry", () => {
         8,
       );
       expect(subject.focusDetailProbeWorld).not.toEqual(subject.worldPosition);
+      expect(subject.focusSamples.map((sample) => sample.id)).toEqual([
+        "centre",
+        "near-edge",
+        "far-edge",
+        "left-edge",
+        "right-edge",
+      ]);
+      expect(subject.focusSamples[0].worldPosition).toEqual(subject.focusDetailProbeWorld);
+      subject.focusSamples.forEach((sample) => {
+        expect(sample.worldPosition.y).toBeCloseTo(
+          geometry.tableTiltCalibration.focusPlaneY,
+          8,
+        );
+      });
+      expect(subject.focusPatch.normalLocal).toEqual({ x: 0, y: 1, z: 0 });
     }
   });
 
@@ -237,6 +255,17 @@ describe("canonical Table Tilt geometry", () => {
         expect(probeWorld.x).toBeCloseTo(toWorld(subject.focusDetailProbeWorld.x), 10);
         expect(probeWorld.y).toBeCloseTo(toWorld(subject.focusDetailProbeWorld.y), 10);
         expect(probeWorld.z).toBeCloseTo(toWorld(subject.focusDetailProbeWorld.z), 10);
+        for (const sample of subject.focusSamples) {
+          const sampleNode = group.getObjectByName(
+            `${subject.semanticName}-focus-sample-${sample.id}`,
+          );
+          expect(sampleNode).toBeInstanceOf(THREE.Object3D);
+          const sampleWorld = new THREE.Vector3();
+          sampleNode!.getWorldPosition(sampleWorld);
+          expect(sampleWorld.x).toBeCloseTo(toWorld(sample.worldPosition.x), 10);
+          expect(sampleWorld.y).toBeCloseTo(toWorld(sample.worldPosition.y), 10);
+          expect(sampleWorld.z).toBeCloseTo(toWorld(sample.worldPosition.z), 10);
+        }
       }
 
       const sphereMeshes: THREE.Mesh[] = [];
@@ -246,6 +275,50 @@ describe("canonical Table Tilt geometry", () => {
         }
       });
       expect(sphereMeshes).toHaveLength(0);
+    } finally {
+      disposeTableTiltGroup(group);
+    }
+  });
+
+  it("lays notebook lines and the far checker chart parallel to the calibrated focus plane", () => {
+    const group = createTableTiltGroup();
+    try {
+      group.updateMatrixWorld(true);
+      const assertHorizontalDetailSurface = (prefix: string, expectedCount: number) => {
+        const meshes: THREE.Mesh[] = [];
+        group.traverse((object) => {
+          if (object instanceof THREE.Mesh && new RegExp(`^${prefix}\\d+(?:-\\d+)?$`).test(object.name)) meshes.push(object);
+        });
+        expect(meshes).toHaveLength(expectedCount);
+        const surfaceYs = meshes.map((mesh) => {
+          expect(mesh.geometry).toBeInstanceOf(THREE.BoxGeometry);
+          const parameters = (mesh.geometry as THREE.BoxGeometry).parameters;
+          expect(parameters.height).toBeLessThan(parameters.depth);
+          const center = new THREE.Vector3();
+          mesh.getWorldPosition(center);
+          return center.y + parameters.height / 2;
+        });
+        surfaceYs.forEach((surfaceY) => {
+          expect(
+            toWorld(geometry.tableTiltCalibration.focusPlaneY) - surfaceY,
+          ).toBeCloseTo(toWorld(geometry.detailGeometry.focusProbeSurfaceGap), 10);
+        });
+        expect(Math.max(...surfaceYs) - Math.min(...surfaceYs)).toBeLessThan(1e-10);
+      };
+
+      assertHorizontalDetailSurface(
+        `${geometry.nearSubject.semanticName}-focus-card-band-`,
+        geometry.detailGeometry.cup.focusCard.bandCount,
+      );
+      assertHorizontalDetailSurface(
+        `${geometry.middleSubject.semanticName}-line-`,
+        geometry.detailGeometry.notebook.focusPanel.lineCount,
+      );
+      assertHorizontalDetailSurface(
+        `${geometry.farSubject.semanticName}-chart-`,
+        geometry.detailGeometry.book.focusChart.columns *
+          geometry.detailGeometry.book.focusChart.rows,
+      );
     } finally {
       disposeTableTiltGroup(group);
     }

@@ -48,9 +48,9 @@ export const OpticalDepthStrip = ({ opticsState, sectionOrigin, sectionDepthDir,
     }
   }
 
-  // optionally include hinge into depth strip if profile requests it and hinge exists
-  if (profile.showHingeMarker && opticsState.lensFilmHingeLine) {
-    items.push({ key: 'hinge', label: 'Hinge', color: '#7c3aed', depth: depthAlong(opticsState.lensFilmHingeLine.point) });
+  // This is the film-plane / lens-plane common line, not the Hinge Rule line.
+  if (profile.showScheimpflugIntersection && opticsState.lensFilmHingeLine) {
+    items.push({ key: 'scheimpflug', label: 'Scheimpflug intersection', color: '#7c3aed', depth: depthAlong(opticsState.lensFilmHingeLine.point) });
   }
 
   // Sort finite items by increasing depth (null/infinite go last)

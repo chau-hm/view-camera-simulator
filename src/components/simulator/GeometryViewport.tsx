@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { DiagramLegend } from "../geometry/DiagramPrimitives";
-import { computeOpticalSectionData } from "../geometry/opticalSectionProjection";
+import { computeOpticalSectionData, getScheimpflugConstructionWindow } from "../geometry/opticalSectionProjection";
 import { getGeometryPresentationProfile } from "../geometry/geometryPresentationProfiles";
 import { OpticalDepthStrip } from "../geometry/OpticalDepthStrip";
 import OpticalSectionDiagram from "../geometry/OpticalSectionDiagram";
@@ -28,6 +28,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   // Responsive diagram sizing: measure the diagram container and auto-fit SVG to available space
   const diagramRef = useRef<HTMLDivElement | null>(null);
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
+  const [fitMode, setFitMode] = useState<"scene" | "construction">("scene");
 
   useEffect(() => {
     const el = diagramRef.current;
@@ -61,6 +62,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
 
   // Use presentation profile to control rendering choices (replace scattered scene-id checks)
   const profile = getGeometryPresentationProfile(scene);
+  const constructionWindow = getScheimpflugConstructionWindow(opticsState);
 
   // derive stable depth window for projection from profile
   let depthWindow: { minMm: number; maxMm: number };
@@ -72,6 +74,23 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
     const maxDepth = scene.bounds.max.z + m;
     depthWindow = { minMm: minDepth, maxMm: maxDepth };
   }
+  if (fitMode === "construction" && constructionWindow) {
+    depthWindow = {
+      minMm: constructionWindow.depth.minMm,
+      maxMm: constructionWindow.depth.maxMm,
+    };
+  }
+
+  const lateralWindow =
+    fitMode === "construction" && constructionWindow
+      ? {
+          ...profile.lateralWindow,
+          scheimpflug: {
+            minMm: constructionWindow.lateral.minMm,
+            maxMm: constructionWindow.lateral.maxMm,
+          },
+        }
+      : profile.lateralWindow;
 
   // Delegate projection to shared opticalSectionProjection helper (pass depth window)
   const projection = computeOpticalSectionData({
@@ -80,26 +99,50 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
     svgWidth: svgSize.width,
     svgHeight: svgSize.height,
     depthWindow,
-    lateralWindow: profile.lateralWindow,
+    lateralWindow,
     paddingPx: profile.diagramPaddingPx,
   });
   // projection is passed to OpticalSectionDiagram which consumes all needed fields
   const { sectionOrigin, sectionDepthDir, isInfinity } = projection;
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <section data-geometry-fit={fitMode} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {showHeader !== false ? (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <h2 style={{ margin: 0 }}>{UI_COPY.simulator.geometryTitle}</h2>
           <div role="group" aria-label="Geometry view" style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button className={geometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={geometryView === "side"} onClick={() => setGeometryView("side")}>Side</button>
             <button className={geometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={geometryView === "top"} onClick={() => setGeometryView("top")}>Top</button>
+            <button className={geometryView === "scheimpflug" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={geometryView === "scheimpflug"} onClick={() => setGeometryView("scheimpflug")}>Scheimpflug Section</button>
           </div>
         </div>
       ) : null}
 
+      <div role="group" aria-label="Geometry framing" style={{ display: "flex", gap: 8, marginTop: 6 }}>
+        <button
+          type="button"
+          className={fitMode === "scene" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
+          aria-pressed={fitMode === "scene"}
+          onClick={() => setFitMode("scene")}
+        >
+          Fit Scene
+        </button>
+        <button
+          type="button"
+          className={fitMode === "construction" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
+          aria-pressed={fitMode === "construction"}
+          disabled={!constructionWindow}
+          onClick={() => {
+            setFitMode("construction");
+            setGeometryView("scheimpflug");
+          }}
+        >
+          Fit Construction
+        </button>
+      </div>
+
       <p style={{ marginTop: 6, marginBottom: 8 }}>
-        {geometryView === "side" ? "Side view" : "Top view"} | Rise: {(riseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
+        {geometryView === "side" ? "Side view" : geometryView === "top" ? "Top view" : "Perpendicular Scheimpflug section"} | Rise: {(riseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
       </p>
 
       {/* Diagram container: this will expand to available space in floating panel */}
@@ -116,6 +159,13 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
       {profile.showDepthStrip ? (
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)' }}>Amber lines: optical axis and FOV boundary rays.</div>
+          {geometryView === "scheimpflug" ? (
+            <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)' }}>
+              {opticsState.lensFilmHingeLine
+                ? "Film, lens and focus planes meet along one line. This section views that line end-on."
+                : "At zero tilt and swing the film and lens planes are parallel. Apply a movement to reveal their common Scheimpflug line and perpendicular section."}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

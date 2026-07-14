@@ -3,6 +3,8 @@ import type { ApertureValue, CameraState } from "../types/camera";
 export const CAMERA_CONSTANTS = {
   filmWidthMm: 127,
   filmHeightMm: 101.6,
+  frontStandardWidthMm: 180,
+  frontStandardHeightMm: 140,
   focalLengthMm: 150,
   riseMinMm: 0,
   riseMaxMm: 40,

@@ -79,6 +79,49 @@ const addCup = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
     0,
   );
   parent.add(handle);
+
+  const card = detail.focusCard;
+  const focusCard = new THREE.Mesh(
+    new THREE.BoxGeometry(toWorld(card.width), toWorld(card.thickness), toWorld(card.depth)),
+    standardMaterial(subject.materialHints.secondary, 0.9),
+  );
+  focusCard.name = `${subject.semanticName}-focus-card-surface`;
+  focusCard.position.set(0, toWorld(card.centerHeight), toWorld(card.centerZ));
+  parent.add(focusCard);
+
+  const cardBottom = card.centerHeight - card.thickness / 2;
+  for (const x of [-card.width * 0.4, card.width * 0.4]) {
+    const support = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toWorld(card.supportWidth),
+        toWorld(cardBottom),
+        toWorld(card.supportWidth),
+      ),
+      standardMaterial(subject.materialHints.primary, 0.82),
+    );
+    support.name = `${subject.semanticName}-focus-card-support`;
+    support.position.set(toWorld(x), toWorld(cardBottom / 2), toWorld(card.centerZ));
+    parent.add(support);
+  }
+
+  const bandDepth = card.depth / card.bandCount;
+  for (let index = 0; index < card.bandCount; index += 1) {
+    const band = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toWorld(card.width * 0.86),
+        toWorld(card.bandThickness),
+        toWorld(bandDepth * 0.56),
+      ),
+      basicMaterial(index % 2 === 0 ? subject.materialHints.detail : "#1e3a8a"),
+    );
+    band.name = `${subject.semanticName}-focus-card-band-${index + 1}`;
+    band.position.set(
+      0,
+      toWorld(card.centerHeight + card.thickness / 2 + card.bandGap + card.bandThickness / 2),
+      toWorld(card.centerZ - card.depth / 2 + bandDepth / 2 + index * bandDepth),
+    );
+    parent.add(band);
+  }
 };
 
 const addNotebook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
@@ -112,21 +155,36 @@ const addNotebook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) =
   parent.add(topCover);
 
   const panel = detail.focusPanel;
-  const panelCenterZ = -depth / 2 - panel.frontGap - panel.thickness / 2;
   const focusPanel = new THREE.Mesh(
-    new THREE.BoxGeometry(toWorld(panel.width), toWorld(panel.height), toWorld(panel.thickness)),
+    new THREE.BoxGeometry(toWorld(panel.width), toWorld(panel.thickness), toWorld(panel.depth)),
     standardMaterial(subject.materialHints.secondary, 0.9),
   );
   focusPanel.name = `${subject.semanticName}-line-pattern-surface`;
-  focusPanel.position.set(0, toWorld(panel.centerHeight), toWorld(panelCenterZ));
+  focusPanel.position.set(0, toWorld(panel.centerHeight), 0);
   parent.add(focusPanel);
+
+  const panelBottom = panel.centerHeight - panel.thickness / 2;
+  const supportHeight = Math.max(0, panelBottom - height);
+  for (const x of [-panel.width * 0.4, panel.width * 0.4]) {
+    const support = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toWorld(panel.supportWidth),
+        toWorld(supportHeight),
+        toWorld(panel.supportWidth),
+      ),
+      standardMaterial(subject.materialHints.primary, 0.82),
+    );
+    support.name = `${subject.semanticName}-focus-panel-support`;
+    support.position.set(toWorld(x), toWorld(height + supportHeight / 2), 0);
+    parent.add(support);
+  }
 
   const lineMaterial = basicMaterial(subject.materialHints.detail);
   for (let index = 0; index < panel.lineCount; index += 1) {
     const line = new THREE.Mesh(
       new THREE.BoxGeometry(
         toWorld(panel.width * panel.lineWidthRatio),
-        toWorld(panel.lineHeight),
+        toWorld(panel.lineThickness),
         toWorld(panel.lineDepth),
       ),
       lineMaterial,
@@ -134,11 +192,11 @@ const addNotebook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) =
     line.name = `${subject.semanticName}-line-${index + 1}`;
     line.position.set(
       0,
+      toWorld(panel.centerHeight + panel.thickness / 2 + panel.lineGap + panel.lineThickness / 2),
       toWorld(
-        panel.centerHeight - panel.height / 2 +
-          ((index + 1) * panel.height) / (panel.lineCount + 1),
+        -panel.depth / 2 +
+          ((index + 1) * panel.depth) / (panel.lineCount + 1),
       ),
-      toWorld(panelCenterZ - panel.thickness / 2 - panel.lineGap - panel.lineDepth / 2),
     );
     parent.add(line);
   }
@@ -191,36 +249,51 @@ const addBook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
   parent.add(topCover);
 
   const chart = detail.focusChart;
-  const chartCenterZ = -depth / 2 - chart.frontGap - chart.thickness / 2;
   const chartPanel = new THREE.Mesh(
-    new THREE.BoxGeometry(toWorld(chart.width), toWorld(chart.height), toWorld(chart.thickness)),
+    new THREE.BoxGeometry(toWorld(chart.width), toWorld(chart.thickness), toWorld(chart.depth)),
     standardMaterial(subject.materialHints.secondary, 0.9),
   );
   chartPanel.name = `${subject.semanticName}-focus-chart-surface`;
-  chartPanel.position.set(0, toWorld(chart.centerHeight), toWorld(chartCenterZ));
+  chartPanel.position.set(0, toWorld(chart.centerHeight), 0);
   parent.add(chartPanel);
 
+  const chartBottom = chart.centerHeight - chart.thickness / 2;
+  const supportHeight = Math.max(0, chartBottom - height);
+  for (const x of [-chart.width * 0.4, chart.width * 0.4]) {
+    const support = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toWorld(chart.supportWidth),
+        toWorld(supportHeight),
+        toWorld(chart.supportWidth),
+      ),
+      standardMaterial(subject.materialHints.primary, 0.82),
+    );
+    support.name = `${subject.semanticName}-focus-chart-support`;
+    support.position.set(toWorld(x), toWorld(height + supportHeight / 2), 0);
+    parent.add(support);
+  }
+
   const chartWidth = chart.width;
-  const chartHeight = chart.height;
+  const chartDepth = chart.depth;
   const columns = detail.focusChart.columns;
   const rows = detail.focusChart.rows;
   const cellWidth = chartWidth / columns;
-  const cellHeight = chartHeight / rows;
+  const cellDepth = chartDepth / rows;
   for (let column = 0; column < columns; column += 1) {
     for (let row = 0; row < rows; row += 1) {
       const cell = new THREE.Mesh(
         new THREE.BoxGeometry(
           toWorld(cellWidth),
-          toWorld(cellHeight),
-          toWorld(chart.cellDepth),
+          toWorld(chart.cellThickness),
+          toWorld(cellDepth),
         ),
         basicMaterial((column + row) % 2 === 0 ? subject.materialHints.detail : "#f8fafc"),
       );
       cell.name = `${subject.semanticName}-chart-${column}-${row}`;
       cell.position.set(
         toWorld(-chartWidth / 2 + cellWidth / 2 + column * cellWidth),
-        toWorld(-chartHeight / 2 + cellHeight / 2 + row * cellHeight + chart.centerHeight),
-        toWorld(chartCenterZ - chart.thickness / 2 - chart.cellGap - chart.cellDepth / 2),
+        toWorld(chart.centerHeight + chart.thickness / 2 + chart.cellGap + chart.cellThickness / 2),
+        toWorld(-chartDepth / 2 + cellDepth / 2 + row * cellDepth),
       );
       parent.add(cell);
     }
@@ -264,6 +337,22 @@ const createSemanticSubject = (subject: TableTiltSubjectDefinition): THREE.Group
     focusProbeWorldMm: { ...subject.focusDetailProbeWorld },
   };
   yawGroup.add(focusProbe);
+
+  subject.focusSamples.forEach((sample) => {
+    const sampleNode = new THREE.Object3D();
+    sampleNode.name = `${subject.semanticName}-focus-sample-${sample.id}`;
+    sampleNode.position.set(
+      toWorld(sample.localPosition.x),
+      toWorld(sample.localPosition.y),
+      toWorld(sample.localPosition.z),
+    );
+    sampleNode.userData = {
+      focusTargetId: subject.id,
+      focusSampleId: sample.id,
+      focusSampleWorldMm: { ...sample.worldPosition },
+    };
+    yawGroup.add(sampleNode);
+  });
 
   return surfaceAnchor;
 };

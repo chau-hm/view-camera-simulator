@@ -62,7 +62,7 @@ export function getFreePracticeFeedback(sceneId: string | undefined): { observat
     "focus-fundamentals-two-targets": { observation: 'Watch the target sharpness bars as Focus distance and Aperture change.' },
     "table-tilt": {
       observation:
-        "In 3D and the side-view diagram, watch the green focus plane rotate toward the horizontal probe height and the blue depth-of-field region widen at f/22. On Ground Glass, compare blur in the cup stripe, notebook lines and book checker chart; the Focus Targets readout should improve for all three together.",
+        "In 3D and the side-view diagram, watch the green focus plane rotate toward the horizontal probe height and the blue depth-of-field region widen at f/22. On Ground Glass, compare blur in the cup focus card, notebook lines and book checker chart; the Focus Targets readout should improve for all three together.",
     },
   };
 

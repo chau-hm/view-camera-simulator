@@ -20,7 +20,13 @@ export type SubjectLocalPosition = {
 };
 
 export type TableTiltSubjectRole = "near" | "middle" | "far";
-export type TableTiltDetailType = "vertical-stripes" | "line-pattern" | "focus-chart";
+export type TableTiltDetailType = "horizontal-focus-card" | "line-pattern" | "focus-chart";
+
+export type TableTiltFocusSample = {
+  id: "centre" | "near-edge" | "far-edge" | "left-edge" | "right-edge";
+  localPosition: SubjectLocalPosition;
+  worldPosition: TableTiltVec3;
+};
 
 export type TableTiltSubjectDefinition = {
   id: "near-cup" | "mid-notebook" | "far-book";
@@ -32,6 +38,16 @@ export type TableTiltSubjectDefinition = {
   worldPosition: TableTiltVec3;
   focusProbeLocalPosition: SubjectLocalPosition;
   focusDetailProbeWorld: TableTiltVec3;
+  focusPatch: {
+    width: number;
+    depth: number;
+    centerLocal: SubjectLocalPosition;
+    normalLocal: TableTiltVec3;
+    visibleSurfaceHeightLocalMm: number;
+    sampleOffsetX: number;
+    sampleOffsetZ: number;
+  };
+  focusSamples: TableTiltFocusSample[];
   /** Compatibility alias used by scene/task consumers; always the visible detail probe. */
   focusAnchorWorld: TableTiltVec3;
   focusAnchorSurfaceOffsetMm: number;
@@ -71,6 +87,12 @@ const calibratedFocusPlaneY = -150 / Math.tan(calibrationTiltRad);
 const calibratedFocusDistanceMm =
   (150 * Math.cos(calibrationTiltRad)) / Math.sin(calibrationTiltRad) ** 2;
 const tabletopTopSurfaceY = calibratedFocusPlaneY - focusProbeHeightAboveTabletopMm;
+const focusProbeSurfaceGapMm = 1;
+const detailPanelThicknessMm = 4;
+const notebookLineThicknessMm = 3;
+const notebookLineGapMm = 1;
+const bookCellThicknessMm = 3;
+const bookCellGapMm = 2;
 
 export const tableTiltCalibration = {
   focalLengthMm: 150,
@@ -113,7 +135,7 @@ export const tabletop = {
 // Procedural detail dimensions remain canonical so both R3F and RTT consume
 // identical geometry at the millimetre-to-world render boundary.
 export const detailGeometry = {
-  focusProbeSurfaceGap: 1,
+  focusProbeSurfaceGap: focusProbeSurfaceGapMm,
   tabletopGuides: {
     count: 9,
     width: 5,
@@ -147,6 +169,22 @@ export const detailGeometry = {
       centerXOffsetFromBodyRadius: 45,
       centerHeightRatio: 0.56,
     },
+    focusCard: {
+      width: 160,
+      depth: 110,
+      thickness: detailPanelThicknessMm,
+      centerZ: -152,
+      centerHeight:
+        focusProbeHeightAboveTabletopMm -
+        focusProbeSurfaceGapMm -
+        notebookLineThicknessMm -
+        notebookLineGapMm -
+        detailPanelThicknessMm / 2,
+      bandCount: 7,
+      bandThickness: notebookLineThicknessMm,
+      bandGap: notebookLineGapMm,
+      supportWidth: 8,
+    },
   },
   notebook: {
     pageInset: 8,
@@ -154,15 +192,20 @@ export const detailGeometry = {
     coverThickness: 4,
     focusPanel: {
       width: 260,
-      height: 112,
-      thickness: 4,
-      frontGap: 3,
-      centerHeight: focusProbeHeightAboveTabletopMm,
+      depth: 112,
+      thickness: detailPanelThicknessMm,
+      centerHeight:
+        focusProbeHeightAboveTabletopMm -
+        focusProbeSurfaceGapMm -
+        notebookLineThicknessMm -
+        notebookLineGapMm -
+        detailPanelThicknessMm / 2,
       lineCount: 7,
       lineWidthRatio: 0.82,
-      lineHeight: 7,
-      lineDepth: 3,
-      lineGap: 1,
+      lineDepth: 7,
+      lineThickness: notebookLineThicknessMm,
+      lineGap: notebookLineGapMm,
+      supportWidth: 8,
     },
     binding: {
       width: 18,
@@ -179,14 +222,19 @@ export const detailGeometry = {
     coverThickness: 6,
     focusChart: {
       width: 240,
-      height: 112,
-      thickness: 4,
-      frontGap: 3,
-      centerHeight: focusProbeHeightAboveTabletopMm,
+      depth: 112,
+      thickness: detailPanelThicknessMm,
+      centerHeight:
+        focusProbeHeightAboveTabletopMm -
+        focusProbeSurfaceGapMm -
+        bookCellThicknessMm -
+        bookCellGapMm -
+        detailPanelThicknessMm / 2,
       columns: 5,
       rows: 5,
-      cellDepth: 3,
-      cellGap: 2,
+      cellThickness: bookCellThicknessMm,
+      cellGap: bookCellGapMm,
+      supportWidth: 8,
     },
   },
 } as const;
@@ -258,55 +306,45 @@ export const tabletopExtents = {
   },
 } as const;
 
-const cupRadius = 95;
 const cupProbeLocal: SubjectLocalPosition = {
   x: 0,
   y: focusProbeHeightAboveTabletopMm,
-  z:
-    -(cupRadius + detailGeometry.cup.stripes.surfaceGap) -
-    detailGeometry.cup.stripes.depth / 2 -
-    detailGeometry.focusProbeSurfaceGap,
+  z: detailGeometry.cup.focusCard.centerZ,
 };
-const notebookPanelCenterZ =
-  -300 / 2 -
-  detailGeometry.notebook.focusPanel.frontGap -
-  detailGeometry.notebook.focusPanel.thickness / 2;
 const notebookProbeLocal: SubjectLocalPosition = {
   x: 0,
   y: focusProbeHeightAboveTabletopMm,
-  z:
-    notebookPanelCenterZ -
-    detailGeometry.notebook.focusPanel.thickness / 2 -
-    detailGeometry.notebook.focusPanel.lineDepth -
-    detailGeometry.notebook.focusPanel.lineGap -
-    detailGeometry.focusProbeSurfaceGap,
+  z: 0,
 };
-const bookPanelCenterZ =
-  -250 / 2 - detailGeometry.book.focusChart.frontGap - detailGeometry.book.focusChart.thickness / 2;
 const bookProbeLocal: SubjectLocalPosition = {
   x: 0,
   y: focusProbeHeightAboveTabletopMm,
-  z:
-    bookPanelCenterZ -
-    detailGeometry.book.focusChart.thickness / 2 -
-    detailGeometry.book.focusChart.cellDepth -
-    detailGeometry.book.focusChart.cellGap -
-    detailGeometry.focusProbeSurfaceGap,
+  z: 0,
 };
 
 const subjectInputs = [
   {
     id: "near-cup",
     role: "near",
-    label: "Near cup stripe",
+    label: "Near cup focus card",
     semanticName: "table-tilt-near-cup",
     focusProbeSemanticName: "table-tilt-near-cup-focus-probe",
     tabletopLocalPosition: { localX: -350, localDepth: -1300, verticalOffsetMm: 0 },
     focusProbeLocalPosition: cupProbeLocal,
+    focusPatch: {
+      width: detailGeometry.cup.focusCard.width,
+      depth: detailGeometry.cup.focusCard.depth,
+      centerLocal: { x: 0, y: focusProbeHeightAboveTabletopMm, z: detailGeometry.cup.focusCard.centerZ },
+      sampleOffsetX: detailGeometry.cup.focusCard.width * 0.38,
+      sampleOffsetZ:
+        (detailGeometry.cup.focusCard.depth *
+          (detailGeometry.cup.focusCard.bandCount - 1)) /
+        (2 * detailGeometry.cup.focusCard.bandCount),
+    },
     dimensions: { width: 190, height: 180, depth: 190 },
-    bounds: { centerLocal: { x: 55, y: 100, z: 0 }, size: { x: 320, y: 210, z: 220 } },
+    bounds: { centerLocal: { x: 55, y: 100, z: -50 }, size: { x: 320, y: 210, z: 330 } },
     yawDeg: 0,
-    detailType: "vertical-stripes",
+    detailType: "horizontal-focus-card",
     materialHints: { primary: "#3b82f6", secondary: "#dbeafe", detail: "#f8fafc" },
   },
   {
@@ -317,6 +355,16 @@ const subjectInputs = [
     focusProbeSemanticName: "table-tilt-mid-notebook-focus-probe",
     tabletopLocalPosition: { localX: 0, localDepth: 0, verticalOffsetMm: 0 },
     focusProbeLocalPosition: notebookProbeLocal,
+    focusPatch: {
+      width: detailGeometry.notebook.focusPanel.width,
+      depth: detailGeometry.notebook.focusPanel.depth,
+      centerLocal: { x: 0, y: focusProbeHeightAboveTabletopMm, z: 0 },
+      sampleOffsetX: detailGeometry.notebook.focusPanel.width * 0.38,
+      sampleOffsetZ:
+        (detailGeometry.notebook.focusPanel.depth *
+          (detailGeometry.notebook.focusPanel.lineCount - 1)) /
+        (2 * (detailGeometry.notebook.focusPanel.lineCount + 1)),
+    },
     dimensions: { width: 420, height: 28, depth: 300 },
     bounds: { centerLocal: { x: 0, y: 70, z: -25 }, size: { x: 430, y: 140, z: 340 } },
     yawDeg: -5,
@@ -331,6 +379,19 @@ const subjectInputs = [
     focusProbeSemanticName: "table-tilt-far-book-focus-probe",
     tabletopLocalPosition: { localX: 350, localDepth: 1300, verticalOffsetMm: 0 },
     focusProbeLocalPosition: bookProbeLocal,
+    focusPatch: {
+      width: detailGeometry.book.focusChart.width,
+      depth: detailGeometry.book.focusChart.depth,
+      centerLocal: { x: 0, y: focusProbeHeightAboveTabletopMm, z: 0 },
+      sampleOffsetX:
+        (detailGeometry.book.focusChart.width *
+          (detailGeometry.book.focusChart.columns - 1)) /
+        (2 * detailGeometry.book.focusChart.columns),
+      sampleOffsetZ:
+        (detailGeometry.book.focusChart.depth *
+          (detailGeometry.book.focusChart.rows - 1)) /
+        (2 * detailGeometry.book.focusChart.rows),
+    },
     dimensions: { width: 340, height: 72, depth: 250 },
     bounds: { centerLocal: { x: 0, y: 70, z: -20 }, size: { x: 350, y: 140, z: 290 } },
     yawDeg: 5,
@@ -346,12 +407,39 @@ export const subjects: TableTiltSubjectDefinition[] = subjectInputs.map((input) 
     subjectForTransform,
     input.focusProbeLocalPosition,
   );
+  const focusSampleInputs = [
+    { id: "centre", x: 0, z: 0 },
+    { id: "near-edge", x: 0, z: -input.focusPatch.sampleOffsetZ },
+    { id: "far-edge", x: 0, z: input.focusPatch.sampleOffsetZ },
+    { id: "left-edge", x: -input.focusPatch.sampleOffsetX, z: 0 },
+    { id: "right-edge", x: input.focusPatch.sampleOffsetX, z: 0 },
+  ] as const;
+  const focusSamples: TableTiltFocusSample[] = focusSampleInputs.map((sample) => {
+    const localPosition = {
+      x: input.focusPatch.centerLocal.x + sample.x,
+      y: input.focusPatch.centerLocal.y,
+      z: input.focusPatch.centerLocal.z + sample.z,
+    };
+    return {
+      id: sample.id,
+      localPosition,
+      worldPosition: subjectLocalToWorld(subjectForTransform, localPosition),
+    };
+  });
   return {
     ...input,
     tabletopLocalPosition: { ...input.tabletopLocalPosition },
     worldPosition,
     focusProbeLocalPosition: { ...input.focusProbeLocalPosition },
     focusDetailProbeWorld,
+    focusPatch: {
+      ...input.focusPatch,
+      centerLocal: { ...input.focusPatch.centerLocal },
+      normalLocal: { x: 0, y: 1, z: 0 },
+      visibleSurfaceHeightLocalMm:
+        input.focusPatch.centerLocal.y - detailGeometry.focusProbeSurfaceGap,
+    },
+    focusSamples,
     focusAnchorWorld: { ...focusDetailProbeWorld },
     focusAnchorSurfaceOffsetMm: input.focusProbeLocalPosition.y,
     dimensions: { ...input.dimensions },
@@ -405,6 +493,7 @@ export const focusTargets = subjects.map((subject) => ({
   id: subject.id,
   label: subject.label,
   worldPosition: subject.focusDetailProbeWorld,
+  sampleWorldPositions: subject.focusSamples.map((sample) => sample.worldPosition),
   weight: 1,
 }));
 

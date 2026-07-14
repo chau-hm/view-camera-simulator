@@ -8,6 +8,7 @@ export type GeometryPresentationProfile = {
   lateralWindow?: {
     side: { minMm: number; maxMm: number };
     top: { minMm: number; maxMm: number };
+    scheimpflug?: { minMm: number; maxMm: number };
   };
   diagramPaddingPx: number;
   showDepthStrip: boolean;
@@ -15,7 +16,7 @@ export type GeometryPresentationProfile = {
 
   targetLabelMode: "none" | "short-local";
   showOpticalAxisLabel: boolean;
-  showHingeMarker: boolean;
+  showScheimpflugIntersection: boolean;
   showTabletopGuide: boolean;
   dofFillOpacity: number;
 };
@@ -33,7 +34,7 @@ export function getGeometryPresentationProfile(
       showSwatchLegend: false,
       targetLabelMode: "short-local",
       showOpticalAxisLabel: true,
-      showHingeMarker: false,
+      showScheimpflugIntersection: false,
       showTabletopGuide: false,
       dofFillOpacity: 0.12,
     };
@@ -52,7 +53,7 @@ export function getGeometryPresentationProfile(
       showSwatchLegend: false,
       targetLabelMode: "short-local",
       showOpticalAxisLabel: true,
-      showHingeMarker: true,
+      showScheimpflugIntersection: true,
       showTabletopGuide: true,
       dofFillOpacity: 0.08,
     };
@@ -67,7 +68,7 @@ export function getGeometryPresentationProfile(
     showSwatchLegend: false,
     targetLabelMode: "short-local",
     showOpticalAxisLabel: true,
-    showHingeMarker: true,
+    showScheimpflugIntersection: true,
     showTabletopGuide: false,
     dofFillOpacity: 0.12,
   };
