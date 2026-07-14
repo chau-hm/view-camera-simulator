@@ -81,6 +81,7 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, m
               <div><strong>Optical axis:</strong> {axis.x.toFixed(3)}, {axis.y.toFixed(3)}, {axis.z.toFixed(3)}</div>
               <div><strong>Focus plane model:</strong> {opticsState.diagnostics.focusPlaneModel}</div>
               <div><strong>DOF model:</strong> {opticsState.diagnostics.depthOfFieldModel ?? '—'}</div>
+              <div><strong>Ground Glass DOF:</strong> {opticsState.diagnostics.groundGlassDofModel ?? '—'}</div>
             </div>
           </details>
 
@@ -138,6 +139,13 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({ sceneId, m
               <div><strong>RTT color:</strong> {rttRuntimeInfo?.colorTargetWidthPx ?? '—'}×{rttRuntimeInfo?.colorTargetHeightPx ?? '—'}</div>
               <div><strong>RTT depth:</strong> {rttRuntimeInfo?.depthTargetWidthPx ?? '—'}×{rttRuntimeInfo?.depthTargetHeightPx ?? '—'}</div>
               <div><strong>RTT blur:</strong> {rttRuntimeInfo?.blurTargetWidthPx ?? '—'}×{rttRuntimeInfo?.blurTargetHeightPx ?? '—'}</div>
+              <div><strong>Camera configured:</strong> {rttRuntimeInfo?.cameraConfigurationOk === undefined ? '—' : rttRuntimeInfo.cameraConfigurationOk ? 'Yes' : 'No'}</div>
+              <div><strong>Clip range:</strong> {typeof rttRuntimeInfo?.cameraNearWorld === 'number' ? rttRuntimeInfo.cameraNearWorld.toFixed(3) : '—'}–{typeof rttRuntimeInfo?.cameraFarWorld === 'number' ? rttRuntimeInfo.cameraFarWorld.toFixed(3) : '—'} world</div>
+              <div><strong>Projection determinant:</strong> {typeof rttRuntimeInfo?.projectionDeterminant === 'number' ? rttRuntimeInfo.projectionDeterminant.toExponential(3) : '—'}</div>
+              <div><strong>Depth texture:</strong> {rttRuntimeInfo?.depthTextureAvailable === undefined ? '—' : rttRuntimeInfo.depthTextureAvailable ? 'Available' : 'Fallback'}</div>
+              <div><strong>DOF uniforms:</strong> {rttRuntimeInfo?.uniformsFinite === undefined ? '—' : rttRuntimeInfo.uniformsFinite ? 'Finite' : `Invalid (${rttRuntimeInfo.uniformPreparationError ?? 'unknown'})`}</div>
+              <div><strong>Raw RTT sanity:</strong> {rttRuntimeInfo?.rawContentful === undefined ? '—' : `${rttRuntimeInfo.rawContentful ? 'Content' : 'Background only'} · variance ${rttRuntimeInfo.rawColorVariance?.toFixed(1) ?? '—'} · ${rttRuntimeInfo.rawNonBackgroundPixelCount ?? '—'} pixels`}</div>
+              <div><strong>Final RTT sanity:</strong> {rttRuntimeInfo?.finalContentful === undefined ? '—' : `${rttRuntimeInfo.finalContentful ? 'Content' : 'Background only'} · variance ${rttRuntimeInfo.finalColorVariance?.toFixed(1) ?? '—'} · ${rttRuntimeInfo.finalNonBackgroundPixelCount ?? '—'} pixels`}</div>
               <div><strong>Resolution scale:</strong> {typeof rttRuntimeInfo?.resolutionScale === 'number' ? rttRuntimeInfo.resolutionScale.toFixed(2) + '×' : '—'}</div>
               <div><strong>Zoom render scale:</strong> {typeof rttRuntimeInfo?.zoomRenderScale === 'number' ? rttRuntimeInfo.zoomRenderScale.toFixed(2) + '×' : '—'}</div>
               <div><strong>Clamped:</strong> {rttRuntimeInfo?.wasClamped ? 'Yes' : 'No'}</div>

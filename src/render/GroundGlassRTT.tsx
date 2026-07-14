@@ -5,6 +5,7 @@ import { CAMERA_CONSTANTS } from "../utils/constants";
 
 const SKY_COLOR = new THREE.Color("#dfe5ec");
 const FLOOR_COLOR = new THREE.Color("#9aa6b5");
+const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
 import { vecToWorld, toWorld } from "./rttUtils";
 import geometry from "../scenes/architectureRiseGeometry";
 import { getSceneById } from "../scenes/definitions";
@@ -26,6 +27,7 @@ import type { WebGLRenderer } from "three";
 import { getRenderQualitySettings } from "./renderQuality";
 import { getGroundGlassClipRangeWorld } from "./groundGlassRttScenes";
 import { getGroundGlassDofVisualSettings } from "./groundGlassVisualSettings";
+import { analyzeGroundGlassRenderSanity } from "./groundGlassRenderSanity";
 
 type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
@@ -48,6 +50,8 @@ import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, }: GroundGlassRTTProps) {
   // single-frame flag to avoid repeating uniform-preparation warnings every frame
   const reportedUniformPreparationErrorRef = React.useRef<string | null>(null);
+  const reportedCameraConfigurationErrorRef = React.useRef<string | null>(null);
+  const lastRenderSanityStateKeyRef = React.useRef<string | null>(null);
   const renderTarget = useRef<THREE.WebGLRenderTarget | null>(null);
   const offscreenScene = useRef<THREE.Scene | null>(null);
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
@@ -64,6 +68,11 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     postSceneV: THREE.Scene;
     orthoCam: THREE.OrthographicCamera;
     tempRT: THREE.WebGLRenderTarget;
+    finalRT: THREE.WebGLRenderTarget;
+    rawDiagnosticRT: THREE.WebGLRenderTarget;
+    finalDiagnosticRT: THREE.WebGLRenderTarget;
+    displayScene: THREE.Scene;
+    copyMaterial: THREE.ShaderMaterial;
   };
   const postResourcesRef = React.useRef<PostResources | null>(null);
   const fallbackDepthRef = React.useRef<THREE.DataTexture | null>(null);
@@ -162,6 +171,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
     const scene = new THREE.Scene();
     offscreenScene.current = scene;
+    const camera = new THREE.PerspectiveCamera(45, widthPx / heightPx, 0.01, 100);
+    groundGlassCamera.current = camera;
 
     // set a light, sky and floor that match the studio look for Focus Fundamentals
     // We'll add a Hemisphere + key + fill lighting setup below so materials look natural;
@@ -176,6 +187,14 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     const postSceneV = new THREE.Scene();
     const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const tempRT = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
+    tempRT.depthBuffer = false;
+    const finalRT = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
+    finalRT.depthBuffer = false;
+    const rawDiagnosticRT = new THREE.WebGLRenderTarget(32, 32);
+    rawDiagnosticRT.depthBuffer = false;
+    const finalDiagnosticRT = new THREE.WebGLRenderTarget(32, 32);
+    finalDiagnosticRT.depthBuffer = false;
+    const displayScene = new THREE.Scene();
 
 
     // set scene background to a neutral studio sky for better visibility
@@ -267,11 +286,31 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
     const quadH = new THREE.Mesh(quadGeo, matH);
     const quadV = new THREE.Mesh(quadGeo, matV);
+    const copyMaterial = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader: `precision highp float; varying vec2 vUv; uniform sampler2D tColor; void main(){ gl_FragColor = texture2D(tColor, vUv); }`,
+      uniforms: { tColor: { value: finalRT.texture } },
+      depthTest: false,
+      depthWrite: false,
+    });
+    const displayQuad = new THREE.Mesh(quadGeo, copyMaterial);
     postSceneH.add(quadH);
     postSceneV.add(quadV);
+    displayScene.add(displayQuad);
 
     // store post resources (per-instance ref)
-    postResourcesRef.current = { postSceneH, postSceneV, orthoCam, tempRT };
+    const postResources: PostResources = {
+      postSceneH,
+      postSceneV,
+      orthoCam,
+      tempRT,
+      finalRT,
+      rawDiagnosticRT,
+      finalDiagnosticRT,
+      displayScene,
+      copyMaterial,
+    };
+    postResourcesRef.current = postResources;
 
     // After resources are created, update runtime info with actual resource sizes
     try {
@@ -308,6 +347,9 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           depthTargetHeightPx: actualDepthH,
           blurTargetWidthPx: tempW,
           blurTargetHeightPx: tempH,
+          depthTextureAvailable: Boolean(
+            (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture,
+          ),
           resourceGeneration: resourceGenerationRef.current,
         });
       }
@@ -393,39 +435,39 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     return () => {
       try {
         // dispose main color target
-        if (renderTarget.current) {
-          try { (renderTarget.current as THREE.WebGLRenderTarget).dispose(); } catch (err) { void err; }
-          renderTarget.current = null;
-        }
+        try { rt.dispose(); } catch (err) { void err; }
+        if (renderTarget.current === rt) renderTarget.current = null;
         // dispose temporary blur target
         try { tempRT.dispose(); } catch (err) { void err; }
+        try { finalRT.dispose(); } catch (err) { void err; }
+        try { rawDiagnosticRT.dispose(); } catch (err) { void err; }
+        try { finalDiagnosticRT.dispose(); } catch (err) { void err; }
 
         // dispose fallback depth
-        if (fallbackDepthRef.current) {
-          try { fallbackDepthRef.current.dispose(); } catch (err) { void err; }
-          fallbackDepthRef.current = null;
-        }
+        try { fallbackDepth.dispose(); } catch (err) { void err; }
+        if (fallbackDepthRef.current === fallbackDepth) fallbackDepthRef.current = null;
 
         // remove and dispose post resources
-        const post = postResourcesRef.current;
-        if (post) {
+        const post = postResources;
+        if (postResourcesRef.current === post) {
           try {
             // dispose quad materials and geometry
-            [post.postSceneH, post.postSceneV].forEach((s) => {
+            const geometries = new Set<THREE.BufferGeometry>();
+            const materials = new Set<THREE.Material>();
+            [post.postSceneH, post.postSceneV, post.displayScene].forEach((s) => {
               s.children.forEach((c) => {
                 const m = c as THREE.Mesh;
-                if (m.material) {
-                  try { (m.material as THREE.Material).dispose(); } catch (err) { void err; }
-                }
-                if (m.geometry) {
-                  try { (m.geometry as THREE.BufferGeometry).dispose(); } catch (err) { void err; }
-                }
+                if (m.material) materials.add(m.material as THREE.Material);
+                if (m.geometry) geometries.add(m.geometry as THREE.BufferGeometry);
               });
             });
+            materials.forEach((material) => material.dispose());
+            geometries.forEach((geometryResource) => geometryResource.dispose());
             // dispose tempRT already done above
             // remove scenes
             post.postSceneH.clear();
             post.postSceneV.clear();
+            post.displayScene.clear();
           } catch (err) { void err; }
           postResourcesRef.current = null;
         }
@@ -435,6 +477,9 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           scene.remove(subjectGroup);
           if (sceneId === "table-tilt") disposeTableTiltGroup(subjectGroup);
         }
+        if (offscreenScene.current === scene) offscreenScene.current = null;
+        if (groundGlassCamera.current === camera) groundGlassCamera.current = null;
+        lastRenderSanityStateKeyRef.current = null;
       } finally {
         // update diagnostics to indicate resources cleared
         try {
@@ -448,15 +493,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   useFrame(() => {
     if (!renderTarget.current || !offscreenScene.current) return;
     const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
-    const vertFovRad = 2 * Math.atan(CAMERA_CONSTANTS.filmHeightMm / (2 * imgDist));
-    const vertFovDeg = (vertFovRad * 180) / Math.PI;
-
-    if (!groundGlassCamera.current) {
-      const cam = new THREE.PerspectiveCamera(vertFovDeg, widthPx / heightPx, 0.01, 100.0);
-      groundGlassCamera.current = cam;
-    }
-
-    const cam = groundGlassCamera.current as THREE.PerspectiveCamera;
+    const cam = groundGlassCamera.current;
+    if (!cam) return;
 
     // Scene-aware clipping from the canonical bounds of every RTT scene.
     const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
@@ -468,12 +506,14 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     cam.far = farWorld;
 
     // configure an off-axis projection matrix that matches opticsState.filmPlaneCornersWorld and lens center
-    // configure an off-axis projection matrix that matches opticsState.filmPlaneCornersWorld and lens center
     const cfg = configureGroundGlassCamera(cam, opticsState, nearWorld, farWorld);
     if (!cfg.ok) {
       // Do not silently swallow errors — record diagnostic and fall back to symmetric perspective
       const reason = cfg.reason;
-      console.warn("GroundGlass camera configuration failed:", reason);
+      if (reportedCameraConfigurationErrorRef.current !== reason) {
+        console.warn("GroundGlass camera configuration failed:", reason);
+        reportedCameraConfigurationErrorRef.current = reason;
+      }
       // fallback symmetric camera
       const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
       const vertFovRad = 2 * Math.atan(CAMERA_CONSTANTS.filmHeightMm / (2 * imgDist));
@@ -486,11 +526,10 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       const dir = new THREE.Vector3(opticsState.opticalAxis.direction.x, opticsState.opticalAxis.direction.y, opticsState.opticalAxis.direction.z);
       const lookAt = new THREE.Vector3().copy(lensPos).add(dir.multiplyScalar(1000));
       cam.lookAt(lookAt);
+      cam.updateMatrixWorld(true);
+      cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
     } else {
-      // success — optionally expose last cam frustum for debug
-      // configuration successful; frustum extents available for debug via developer tools if needed
-      // TODO: surface typed diagnostics through component state or callback in future
-      // (avoid global state).
+      reportedCameraConfigurationErrorRef.current = null;
     }
 
 
@@ -528,7 +567,17 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     // 2) horizontal separable pass -> tempRT
     const post = postResourcesRef.current;
     if (post) {
-      const { postSceneH, postSceneV, orthoCam, tempRT } = post;
+      const {
+        postSceneH,
+        postSceneV,
+        orthoCam,
+        tempRT,
+        finalRT,
+        rawDiagnosticRT,
+        finalDiagnosticRT,
+        displayScene,
+        copyMaterial,
+      } = post;
       // update H uniforms
       const meshH = postSceneH.children[0] as THREE.Mesh;
       const matH = meshH.material as THREE.ShaderMaterial;
@@ -547,11 +596,11 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       // displayUpright is applied only in the final vertical pass (matV) so DOF and horizontal pass are identical for both preview modes
       // matH remains orientation-agnostic to ensure identical processing for raw/upright
       // matH.uniforms.displayUpright.value = previewMode === "upright" ? 1.0 : 0.0;
-      // if depthTex is the 1x1 fallback we should bypass DOF and show raw color for debugging
+      // A missing depth texture is surfaced through diagnostics. Keep the DOF
+      // path active with the explicit far-depth texture instead of silently
+      // changing the user's preview to Raw RTT.
       const isFallbackDepth = depthTex === fallbackDepthRef.current;
-      // honor raw debug mode (bypass DOF) or fallback depth
-      // For Architecture Rise, temporarily bypass DOF and show raw color to ensure subject is visible
-      matH.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
+      matH.uniforms.useRaw.value = rawDebug ? 1.0 : 0.0;
 
       // prepare typed DOF uniform state and populate shader uniforms (single state applied to both passes)
       let uniformPreparationError: string | null = null;
@@ -598,11 +647,10 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
       if (preparedDofState) {
         applyDofStateToMaterial(matH, preparedDofState);
+        reportedUniformPreparationErrorRef.current = null;
       } else {
-        // On failure to prepare typed DOF uniforms, force visual DOF bypass (Raw RTT)
-        matH.uniforms.useRaw.value = 1.0;
-        matH.uniforms.dofMode.value = 0.0;
-        // Log and surface the first error only to avoid per-frame noise
+        // Keep the last valid shader state. Do not conceal configuration errors
+        // by silently switching the user to Raw RTT.
         if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
           console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
           reportedUniformPreparationErrorRef.current = uniformPreparationError ?? "unknown";
@@ -627,15 +675,12 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matV.uniforms.fNumber.value = aperture;
       matV.uniforms.near.value = cam.near;
       matV.uniforms.far.value = cam.far;
-      // honor raw debug mode (bypass DOF) or fallback depth
-      matV.uniforms.useRaw.value = (isFallbackDepth || rawDebug) ? 1.0 : 0.0;
+      // Only the explicit developer toggle bypasses DOF.
+      matV.uniforms.useRaw.value = rawDebug ? 1.0 : 0.0;
       // apply previously prepared DOF uniform state to vertical pass
       if (preparedDofState) {
         applyDofStateToMaterial(matV, preparedDofState);
       } else {
-        // Force raw render if uniform preparation failed
-        matV.uniforms.useRaw.value = 1.0;
-        matV.uniforms.dofMode.value = 0.0;
         if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
           console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
           reportedUniformPreparationErrorRef.current = uniformPreparationError ?? "unknown";
@@ -670,10 +715,104 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         matV.uniforms.showRing.value = 0.0;
       }
 
-      gl.setRenderTarget(null);
+      // Keep the final DOF result in an owned target. Besides enabling a
+      // deterministic render sanity readback, this prevents a transient empty
+      // default framebuffer from becoming the Ground Glass source of truth.
+      gl.setRenderTarget(finalRT);
       gl.setClearColor(SKY_COLOR.getHex(), 1);
       gl.clear(true, true, true);
       gl.render(postSceneV, orthoCam);
+
+      const sanityStateKey = [
+        resourceGenerationRef.current,
+        sceneId,
+        previewMode,
+        rawDebug ? 1 : 0,
+        zoomEnabled ? 1 : 0,
+        aperture,
+        dimsRef.current.internalWidthPx,
+        dimsRef.current.internalHeightPx,
+        opticsState.focusPlane?.point.x,
+        opticsState.focusPlane?.point.y,
+        opticsState.focusPlane?.point.z,
+        opticsState.focusPlane?.normal.x,
+        opticsState.focusPlane?.normal.y,
+        opticsState.focusPlane?.normal.z,
+        opticsState.depthOfFieldNearPlane?.point.z,
+        opticsState.depthOfFieldFarPlane?.point.z,
+      ].join(":");
+
+      const renderSanityEnabled =
+        import.meta.env.DEV &&
+        typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).get("rttDiagnostics") === "1";
+      if (renderSanityEnabled && lastRenderSanityStateKeyRef.current !== sanityStateKey) {
+        const rawPixels = new Uint8Array(32 * 32 * 4);
+        const finalPixels = new Uint8Array(32 * 32 * 4);
+        lastRenderSanityStateKeyRef.current = sanityStateKey;
+        try {
+          copyMaterial.uniforms.tColor.value = renderTarget.current.texture;
+          gl.setRenderTarget(rawDiagnosticRT);
+          gl.setClearColor(SKY_COLOR.getHex(), 1);
+          gl.clear(true, true, true);
+          gl.render(displayScene, orthoCam);
+          gl.readRenderTargetPixels(rawDiagnosticRT, 0, 0, 32, 32, rawPixels);
+
+          copyMaterial.uniforms.tColor.value = finalRT.texture;
+          gl.setRenderTarget(finalDiagnosticRT);
+          gl.setClearColor(SKY_COLOR.getHex(), 1);
+          gl.clear(true, true, true);
+          gl.render(displayScene, orthoCam);
+          gl.readRenderTargetPixels(finalDiagnosticRT, 0, 0, 32, 32, finalPixels);
+
+          const rawSanity = analyzeGroundGlassRenderSanity(rawPixels);
+          const finalSanity = analyzeGroundGlassRenderSanity(finalPixels);
+          const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+          if (currentInfo) {
+            useAppStore.getState().setGroundGlassRttRuntimeInfo({
+              ...currentInfo,
+              cameraNearWorld: cam.near,
+              cameraFarWorld: cam.far,
+              cameraConfigurationOk: cfg.ok,
+              cameraConfigurationError: cfg.ok ? null : cfg.reason,
+              projectionDeterminant: cfg.ok ? cfg.determinant : cam.projectionMatrix.determinant(),
+              depthTextureAvailable: !isFallbackDepth,
+              dofMode:
+                preparedDofState?.mode === 1
+                  ? "derived-planes"
+                  : opticsState.diagnostics.groundGlassDofModel ?? "parallel-thin-lens",
+              uniformsFinite: Boolean(preparedDofState),
+              uniformPreparationError,
+              rawColorVariance: rawSanity.luminanceVariance,
+              rawNonBackgroundPixelCount: rawSanity.nonBackgroundPixelCount,
+              rawContentful: rawSanity.contentful,
+              finalColorVariance: finalSanity.luminanceVariance,
+              finalNonBackgroundPixelCount: finalSanity.nonBackgroundPixelCount,
+              finalContentful: finalSanity.contentful,
+              renderSanitySampleCount: rawSanity.sampleCount,
+              renderSanityStateKey: sanityStateKey,
+              renderSanityError: null,
+            });
+          }
+        } catch (error) {
+          const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+          if (currentInfo) {
+            useAppStore.getState().setGroundGlassRttRuntimeInfo({
+              ...currentInfo,
+              renderSanityStateKey: sanityStateKey,
+              renderSanityError: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+        copyMaterial.uniforms.tColor.value = finalRT.texture;
+      }
+
+      // Final blit always samples the owned composited target.
+      copyMaterial.uniforms.tColor.value = finalRT.texture;
+      gl.setRenderTarget(null);
+      gl.setClearColor(SKY_COLOR.getHex(), 1);
+      gl.clear(true, true, true);
+      gl.render(displayScene, orthoCam);
     } else {
       gl.setRenderTarget(null);
     }
@@ -691,7 +830,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sce
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
-      <Canvas dpr={qualitySettings.dpr} style={{ width: "100%", height: "100%" }} gl={{ preserveDrawingBuffer: false }} orthographic={false}>
+      <Canvas dpr={qualitySettings.dpr} style={{ width: "100%", height: "100%" }} gl={GROUND_GLASS_GL_OPTIONS} orthographic={false}>
         <OffscreenRenderer opticsState={opticsState} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} />
       </Canvas>
     </div>

@@ -43,9 +43,9 @@ export function getFreePracticeGuidance(sceneId: string | undefined): FreePracti
       objective:
         "Use front tilt and focus to bring the near cup, middle notebook and far book into a shared plane of focus.",
       bullets: [
-        "Start by focusing on the middle notebook.",
+        "At 0° tilt, move focus from the near card through the middle notebook to the far chart.",
         "Apply positive front tilt and watch the focus plane move toward the tabletop.",
-        "Refine focus until all three visible detail targets improve.",
+        "Refine focus until all three patches—not only their centre points—are covered.",
         "Compare f/11 and f/22, but do not rely on f/32 to solve the exercise.",
       ],
     },
@@ -62,7 +62,7 @@ export function getFreePracticeFeedback(sceneId: string | undefined): { observat
     "focus-fundamentals-two-targets": { observation: 'Watch the target sharpness bars as Focus distance and Aperture change.' },
     "table-tilt": {
       observation:
-        "In 3D and the side-view diagram, watch the green focus plane rotate toward the horizontal probe height and the blue depth-of-field region widen at f/22. On Ground Glass, compare blur in the cup focus card, notebook lines and book checker chart; the Focus Targets readout should improve for all three together.",
+        "Without tilt, focus can move from near to far, but only one depth region is sharp at a time. Tilt rotates the plane of sharp focus so all three tabletop cards can become sharp together. Compare the plane in 3D, the depth-of-field bounds, real blur on Ground Glass, and the Focus Targets readout: Free Mode reports centre-point focus while the guided task requires full patch coverage.",
     },
   };
 

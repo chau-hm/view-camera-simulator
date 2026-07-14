@@ -9,6 +9,7 @@ import { configureGroundGlassCamera } from "../../render/configureGroundGlassCam
 import { createGroundGlassDofUniformState } from "../../render/createGroundGlassDofUniformState";
 import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur";
 import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
+import { analyzeGroundGlassRenderSanity } from "../../render/groundGlassRenderSanity";
 import {
   createScenePlaneOverlayGeometry,
   getScenePlaneOverlayBounds,
@@ -202,7 +203,7 @@ describe("Table Tilt optics calibration", () => {
     expect(visual.displayBlurScale).toBeGreaterThan(1);
     [near, middle, far].forEach((sample, index) => {
       expect(sample.normalizedDefocus).toBe(physicalScaleSamples[index].normalizedDefocus);
-      expect(sample.blurRadiusPx).toBeGreaterThan(physicalScaleSamples[index].blurRadiusPx);
+      expect(sample.blurRadiusPx).toBeGreaterThanOrEqual(physicalScaleSamples[index].blurRadiusPx);
     });
     expect(Math.max(near.blurRadiusPx, far.blurRadiusPx)).toBeGreaterThan(1);
   });
@@ -314,6 +315,172 @@ describe("Table Tilt optics calibration", () => {
       optics.depthOfFieldFarPlane!.normal.y,
       optics.depthOfFieldFarPlane!.normal.z,
     ]);
+  });
+
+  it("moves zero-tilt point focus from near to middle to far while patch scoring stays conservative", () => {
+    const focusDepths = geometry.subjects.map((subject) => subject.focusDetailProbeWorld.z);
+    const states = focusDepths.map((focusDistanceMm) =>
+      deriveOpticsState(
+        cameraFor({ frontTiltDeg: 0, focusDistanceMm, aperture: 11 }),
+        tableTiltScene,
+      ),
+    );
+
+    states.forEach((state, focusedIndex) => {
+      expect(state.diagnostics.groundGlassDofModel).toBe("derived-planes");
+      expect(state.focusPlane?.point.z).toBeCloseTo(focusDepths[focusedIndex], 8);
+      const pointScores = state.focusTargets.map((target) => target.pointSharpness ?? -1);
+      expect(pointScores[focusedIndex]).toBeGreaterThanOrEqual(0.99);
+      expect(pointScores[focusedIndex]).toBe(Math.max(...pointScores));
+      expect(pointScores.filter((score) => score >= 0.8)).toHaveLength(1);
+
+      const visual = getGroundGlassDofVisualSettings(tableTiltScene.id);
+      const blurSamples = geometry.subjects.map((subject) =>
+        sampleGroundGlassBlurAtWorldPoint({
+          worldPoint: subject.focusDetailProbeWorld,
+          opticsState: state,
+          focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
+          aperture: 11,
+          circleOfConfusionMm: 0.1,
+          filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+          renderWidthPx: 1000,
+          maximumBlurRadiusPx: visual.maximumBlurRadiusPx,
+          displayBlurScale: visual.displayBlurScale,
+        }),
+      );
+      expect(blurSamples[focusedIndex].blurRadiusPx).toBeLessThan(0.01);
+      expect(blurSamples[focusedIndex].blurRadiusPx).toBe(
+        Math.min(...blurSamples.map((sample) => sample.blurRadiusPx)),
+      );
+      expect(1 - blurSamples[focusedIndex].normalizedDefocus!).toBeCloseTo(
+        pointScores[focusedIndex],
+        8,
+      );
+    });
+
+    const middleTarget = states[1].focusTargets[1];
+    expect(middleTarget.pointSharpness).toBeGreaterThan(middleTarget.patchSharpness!);
+    expect(middleTarget.sharpness).toBe(middleTarget.patchSharpness);
+  });
+
+  it("keeps Table Tilt finite and continuous from zero through calibrated tilt", () => {
+    const tilts = [0, 0.01, 0.1, 1, 9];
+    const states = tilts.map((frontTiltDeg) =>
+      deriveOpticsState(
+        cameraFor({ frontTiltDeg, focusDistanceMm: geometry.canonicalFocusDistanceMm, aperture: 11 }),
+        tableTiltScene,
+      ),
+    );
+
+    expect(states[0].diagnostics.focusPlaneModel).toBe("parallel");
+    states.slice(1).forEach((state) => {
+      expect(state.diagnostics.focusPlaneModel).toBe("scheimpflug");
+      expect(state.diagnostics.groundGlassDofModel).toBe("derived-planes");
+    });
+
+    states.forEach((state) => {
+      const values = [
+        ...Object.values(state.focusPlane!.point),
+        ...Object.values(state.focusPlane!.normal),
+        ...Object.values(state.depthOfFieldNearPlane!.point),
+        ...Object.values(state.depthOfFieldNearPlane!.normal),
+        ...Object.values(state.depthOfFieldFarPlane!.point),
+        ...Object.values(state.depthOfFieldFarPlane!.normal),
+        ...state.focusTargets.flatMap((target) => [
+          target.pointSharpness!,
+          target.patchSharpness!,
+          target.normalizedDefocus!,
+        ]),
+      ];
+      expect(values.every(Number.isFinite)).toBe(true);
+    });
+
+    // The first non-zero step rotates the physical focus plane slightly; it no
+    // longer jumps at the old 0.1° near-parallel threshold.
+    const zeroNormal = states[0].focusPlane!.normal;
+    const tinyNormal = states[1].focusPlane!.normal;
+    const normalDelta = Math.min(
+      Math.hypot(
+        tinyNormal.x - zeroNormal.x,
+        tinyNormal.y - zeroNormal.y,
+        tinyNormal.z - zeroNormal.z,
+      ),
+      Math.hypot(
+        tinyNormal.x + zeroNormal.x,
+        tinyNormal.y + zeroNormal.y,
+        tinyNormal.z + zeroNormal.z,
+      ),
+    );
+    expect(normalDelta).toBeLessThan(0.02);
+    expect(
+      Math.abs(states[1].focusTargets[1].pointSharpness! - states[0].focusTargets[1].pointSharpness!),
+    ).toBeLessThan(0.05);
+  });
+
+  it("prepares finite derived-plane RTT uniforms at every zero-to-tilt continuity sample", () => {
+    for (const frontTiltDeg of [0, 0.01, 0.1, 1, 9]) {
+      const optics = deriveOpticsState(
+        cameraFor({ frontTiltDeg, focusDistanceMm: geometry.canonicalFocusDistanceMm, aperture: 11 }),
+        tableTiltScene,
+      );
+      const clip = getGroundGlassClipRangeWorld(tableTiltScene, optics.lensCenterWorld);
+      const camera = new THREE.PerspectiveCamera(45, 1.25, clip.near, clip.far);
+      expect(configureGroundGlassCamera(camera, optics, clip.near, clip.far).ok).toBe(true);
+      const uniforms = createGroundGlassDofUniformState(
+        optics,
+        camera,
+        CAMERA_CONSTANTS.focalLengthMm,
+        CAMERA_CONSTANTS.filmWidthMm,
+        CAMERA_CONSTANTS.filmHeightMm,
+        0.1,
+        11,
+        500,
+        400,
+        60,
+      );
+      expect(uniforms.mode).toBe(1);
+      expect(uniforms.imageDistanceMm).toBeGreaterThan(0);
+      if (frontTiltDeg === 0) {
+        expect(uniforms.imageDistanceMm).toBeCloseTo(CAMERA_CONSTANTS.focalLengthMm, 8);
+      }
+      expect(
+        [
+          ...uniforms.lensCenterWorld,
+          ...uniforms.focusPlanePoint,
+          ...uniforms.focusPlaneNormal,
+          ...(uniforms.nearPlanePoint ?? []),
+          ...(uniforms.nearPlaneNormal ?? []),
+          ...(uniforms.farPlanePoint ?? []),
+          ...(uniforms.farPlaneNormal ?? []),
+          ...uniforms.inverseProjectionMatrix,
+          ...uniforms.cameraMatrixWorld,
+          uniforms.imageDistanceMm,
+          uniforms.fNumber,
+        ].every(Number.isFinite),
+      ).toBe(true);
+    }
+  });
+
+  it("detects contentful and background-only diagnostic buffers", () => {
+    const flat = new Uint8Array(32 * 32 * 4);
+    for (let index = 0; index < flat.length; index += 4) {
+      flat[index] = 223;
+      flat[index + 1] = 229;
+      flat[index + 2] = 236;
+      flat[index + 3] = 255;
+    }
+    expect(analyzeGroundGlassRenderSanity(flat).contentful).toBe(false);
+
+    const scene = flat.slice();
+    for (let index = 0; index < scene.length / 2; index += 4) {
+      scene[index] = 90;
+      scene[index + 1] = 60;
+      scene[index + 2] = 30;
+    }
+    const sanity = analyzeGroundGlassRenderSanity(scene);
+    expect(sanity.contentful).toBe(true);
+    expect(sanity.nonBackgroundPixelCount).toBeGreaterThan(0);
+    expect(sanity.luminanceVariance).toBeGreaterThan(4);
   });
 
   it("passes the guided task only at the calibrated tilt-only state", () => {

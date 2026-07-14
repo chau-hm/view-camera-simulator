@@ -535,6 +535,8 @@ Focus assist 不可只用顏色。
 * Geometry UI 應提供垂直於 Scheimpflug common line 的 section；在此 section 中，延伸的 film、lens 與 sharp-focus planes 顯示為交於同一點的三條直線。
 * 3D Scene 應提供明確的 Scheimpflug construction mode，以目前 derived planes 顯示三個延伸平面及其 common line。
 * Learner-facing UI 應稱此處為 `Scheimpflug line` 或 `Scheimpflug intersection`，不可誤稱為 Hinge Rule line。
+* Table Tilt 的多點 target 必須同時輸出 centre point sharpness 與 conservative patch coverage。Free Mode 顯示 centre point focus；guided task 仍以五個 patch samples 的最差值判定。
+* Table Tilt 在 0° 時必須可由 Focus 依序對焦近、中、遠 centre points，且 Ground Glass blur 必須使用 derived focus / near / far planes，不能使用與 Focus 無關的固定 image distance。
 
 ---
 

@@ -26,6 +26,34 @@ const setRangeValue = async (
   }
 };
 
+const setRangeDirect = async (
+  page: import("@playwright/test").Page,
+  label: string,
+  target: number,
+) => {
+  await page.getByLabel(label).evaluate((element, value) => {
+    const input = element as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (!setter) throw new Error("Range input value setter unavailable");
+    setter.call(input, String(value));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, target);
+};
+
+const readPointScores = async (page: import("@playwright/test").Page) =>
+  Object.fromEntries(
+    await Promise.all(
+      ["near-cup", "mid-notebook", "far-book"].map(async (id) => [
+        id,
+        Number(
+          await page
+            .getByRole("progressbar", { name: `${id} sharpness` })
+            .getAttribute("aria-valuenow"),
+        ),
+      ] as const),
+    ),
+  );
+
 test("Table Tilt card exposes free and guided navigation", async ({ page }) => {
   await page.goto("/scenes");
   const card = tableTiltCard(page);
@@ -58,6 +86,135 @@ test("Table Tilt Ground Glass uses one RTT surface and no legacy artifacts", asy
   await focusAssist.check();
   await expect(focusAssist).toBeChecked();
   await expect(viewport.getByTestId("ground-glass-focus-ring")).toHaveCount(0);
+});
+
+test("Table Tilt zero-tilt point focus moves from near to middle to far", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/table-tilt");
+  await setRangeDirect(page, "Tilt", 0);
+  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await expect(page.getByRole("heading", { name: /Focus targets · Point focus/i })).toBeVisible();
+  await expect(page.getByText(/Without tilt, focus can move from near to far/)).toBeVisible();
+
+  const focusCases = [
+    { focus: 3150, expected: "near-cup" },
+    { focus: 4600, expected: "mid-notebook" },
+    { focus: 5900, expected: "far-book" },
+  ] as const;
+
+  for (const focusCase of focusCases) {
+    await setRangeDirect(page, "Focus distance", focusCase.focus);
+    await expect
+      .poll(async () => (await readPointScores(page))[focusCase.expected])
+      .toBeGreaterThanOrEqual(95);
+    const scores = await readPointScores(page);
+    expect(scores[focusCase.expected]).toBe(Math.max(...Object.values(scores)));
+    expect(Object.values(scores).filter((score) => score >= 80)).toHaveLength(1);
+    const canvas = page.getByTestId("ground-glass-rtt").locator("canvas");
+    await expect(canvas).toBeVisible();
+    expect((await canvas.screenshot()).byteLength).toBeGreaterThan(5_000);
+  }
+
+  await setRangeDirect(page, "Tilt", 9);
+  await setRangeDirect(page, "Focus distance", 6050);
+  await setRangeDirect(page, "Tilt", 0);
+  await setRangeDirect(page, "Focus distance", 4600);
+  await expect.poll(async () => (await readPointScores(page))["mid-notebook"]).toBeGreaterThanOrEqual(95);
+  await expect(page.getByTestId("ground-glass-rtt").locator("canvas")).toBeVisible();
+});
+
+test("Table Tilt raw and final RTT diagnostics contain scene pixels before and after refocus", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("/simulator/free/table-tilt?rttDiagnostics=1");
+  const rtt = page.getByTestId("ground-glass-rtt");
+  const expectContent = async () => {
+    await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 120_000 });
+    await expect(rtt).toHaveAttribute("data-rtt-depth-available", "true");
+    await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true");
+    await expect(rtt).toHaveAttribute("data-rtt-dof-mode", "derived-planes");
+    await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true");
+    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
+    expect(Number(await rtt.getAttribute("data-rtt-raw-variance"))).toBeGreaterThan(4);
+    expect(Number(await rtt.getAttribute("data-rtt-final-variance"))).toBeGreaterThan(4);
+    expect(Number(await rtt.getAttribute("data-rtt-raw-non-background"))).toBeGreaterThan(0);
+    expect(Number(await rtt.getAttribute("data-rtt-final-non-background"))).toBeGreaterThan(0);
+  };
+
+  await expectContent();
+  const initialStateKey = await rtt.getAttribute("data-rtt-sanity-state");
+  const initialGeneration = await rtt.getAttribute("data-rtt-resource-generation");
+  await page.getByLabel("Focus distance").evaluate((element) => {
+    const input = element as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (!setter) throw new Error("Range input value setter unavailable");
+    for (const value of [3200, 4600, 5900]) {
+      setter.call(input, String(value));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
+  await expect.poll(() => page.getByLabel("Focus distance").inputValue()).toBe("5900");
+  await expect.poll(() => rtt.getAttribute("data-rtt-sanity-state"), { timeout: 120_000 }).not.toBe(initialStateKey);
+  await expectContent();
+  expect(await rtt.getAttribute("data-rtt-resource-generation")).toBe(initialGeneration);
+});
+
+test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/simulator/free/table-tilt");
+  const viewport = page.getByLabel("GroundGlassViewport");
+  const rtt = viewport.getByTestId("ground-glass-rtt");
+  const stage = viewport.getByRole("button");
+  const assertLiveCanvas = async () => {
+    const canvas = rtt.locator("canvas");
+    await expect(canvas).toBeVisible();
+    const state = await canvas.evaluate((element) => {
+      const surface = element as HTMLCanvasElement;
+      const context = surface.getContext("webgl2") ?? surface.getContext("webgl");
+      return {
+        width: surface.width,
+        height: surface.height,
+        contextLost: context?.isContextLost() ?? true,
+      };
+    });
+    expect(state.width).toBeGreaterThan(0);
+    expect(state.height).toBeGreaterThan(0);
+    expect(state.contextLost).toBe(false);
+    expect((await canvas.screenshot()).byteLength).toBeGreaterThan(5_000);
+  };
+
+  for (const focus of [3200, 4600, 5900, 6050]) {
+    await setRangeDirect(page, "Focus distance", focus);
+    await assertLiveCanvas();
+  }
+  await page.getByText("Upright Assist").click();
+  await assertLiveCanvas();
+  await page.getByText("Raw Ground Glass").click();
+  await assertLiveCanvas();
+  await page.getByText("Raw RTT — bypass DOF").click();
+  await assertLiveCanvas();
+  await page.getByText("Raw RTT — bypass DOF").click();
+  await assertLiveCanvas();
+
+  await stage.click({ position: { x: 110, y: 100 } });
+  await expect(stage).toHaveAttribute("data-zoomed", "true");
+  const box = await stage.boundingBox();
+  if (!box) throw new Error("Ground Glass stage bounding box not found");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 25, box.y + box.height / 2 + 15);
+  await page.mouse.up();
+  await assertLiveCanvas();
+  await stage.click({ position: { x: box.width / 2, y: box.height / 2 } });
+  await expect(stage).toHaveAttribute("data-zoomed", "false");
+  await assertLiveCanvas();
+
+  await page.getByRole("combobox", { name: "Render quality" }).selectOption("low");
+  await assertLiveCanvas();
+  await setRangeDirect(page, "Tilt", 9);
+  await assertLiveCanvas();
+  await setRangeDirect(page, "Tilt", 0);
+  await page.getByRole("combobox", { name: "Render quality" }).selectOption("high");
+  await assertLiveCanvas();
 });
 
 test("Table Tilt calibrated controls complete the guided task", async ({ page }) => {

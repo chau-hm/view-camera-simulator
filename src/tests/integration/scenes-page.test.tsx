@@ -38,6 +38,7 @@ describe("scenes page", () => {
     expect(scopedTableCard.getByText("Tilt")).toBeInTheDocument();
     expect(scopedTableCard.getByText("Plane of focus")).toBeInTheDocument();
     expect(scopedTableCard.getByText("Scheimpflug principle")).toBeInTheDocument();
+    expect(tableCard!.querySelector("img")).toHaveAttribute("src", "/assets/table-tilt.png");
     expect(scopedTableCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
       "/simulator/free/table-tilt",

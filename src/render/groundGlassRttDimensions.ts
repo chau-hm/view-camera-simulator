@@ -39,6 +39,22 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
 
   cameraNearWorld?: number;
   cameraFarWorld?: number;
+  cameraConfigurationOk?: boolean;
+  cameraConfigurationError?: string | null;
+  projectionDeterminant?: number | null;
+  depthTextureAvailable?: boolean;
+  dofMode?: "parallel-thin-lens" | "derived-planes";
+  uniformsFinite?: boolean;
+  uniformPreparationError?: string | null;
+  rawColorVariance?: number;
+  rawNonBackgroundPixelCount?: number;
+  rawContentful?: boolean;
+  finalColorVariance?: number;
+  finalNonBackgroundPixelCount?: number;
+  finalContentful?: boolean;
+  renderSanitySampleCount?: number;
+  renderSanityStateKey?: string;
+  renderSanityError?: string | null;
 
   resourceGeneration: number; // increments when RTT resources are recreated
 };

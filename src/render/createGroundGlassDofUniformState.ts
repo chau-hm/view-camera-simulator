@@ -42,8 +42,12 @@ export function createGroundGlassDofUniformState(
   maximumBlurRadiusPx: number,
   displayBlurScale = 1,
 ): GroundGlassDofUniformState {
-  const dofModel = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
-  const mode = dofModel === "scheimpflug-wedge" ? 1 : 0;
+  const groundGlassDofModel =
+    opticsState.diagnostics.groundGlassDofModel ??
+    (opticsState.diagnostics.depthOfFieldModel === "scheimpflug-wedge"
+      ? "derived-planes"
+      : "parallel-thin-lens");
+  const mode = groundGlassDofModel === "derived-planes" ? 1 : 0;
 
   // Validate physical constants
   if (!Number.isFinite(focalLengthMm) || focalLengthMm <= 0) throw new Error("Invalid focalLengthMm");
@@ -52,6 +56,13 @@ export function createGroundGlassDofUniformState(
   if (!Number.isFinite(circleOfConfusionMm) || circleOfConfusionMm <= 0) throw new Error("Invalid circleOfConfusionMm");
   if (!Number.isFinite(width) || width <= 0) throw new Error("Invalid render width");
   if (!Number.isFinite(height) || height <= 0) throw new Error("Invalid render height");
+  if (!Number.isFinite(aperture) || aperture <= 0) throw new Error("Invalid aperture");
+  if (!Number.isFinite(maximumBlurRadiusPx) || maximumBlurRadiusPx < 0) {
+    throw new Error("Invalid maximumBlurRadiusPx");
+  }
+  if (!Number.isFinite(displayBlurScale) || displayBlurScale <= 0) {
+    throw new Error("Invalid displayBlurScale");
+  }
 
   const lens = opticsState.lensCenterWorld;
   const focusPlane = opticsState.focusPlane;
@@ -64,6 +75,25 @@ export function createGroundGlassDofUniformState(
   // flatten matrices to column-major arrays for GLSL uniform mat4
   const invProj = camera.projectionMatrixInverse.elements.slice();
   const camWorld = camera.matrixWorld.elements.slice();
+  if (![...invProj, ...camWorld].every(Number.isFinite)) {
+    throw new Error("Ground Glass camera matrices contain non-finite values");
+  }
+
+  const finiteVec = (value: { x: number; y: number; z: number } | null | undefined) =>
+    Boolean(value && [value.x, value.y, value.z].every(Number.isFinite));
+  if (!finiteVec(lens)) throw new Error("Lens centre contains non-finite values");
+  if (mode === 1 && (!focusPlane || !nearPlane)) {
+    throw new Error("Derived-plane DOF requires finite focus and near planes");
+  }
+  for (const [name, plane] of [
+    ["focus", focusPlane],
+    ["near", nearPlane],
+    ["far", farPlane],
+  ] as const) {
+    if (plane && (!finiteVec(plane.point) || !finiteVec(plane.normal))) {
+      throw new Error(`${name} DOF plane contains non-finite values`);
+    }
+  }
 
   const boundaryCoCDiameterPx = (circleOfConfusionMm * width) / filmWidthMm;
   const boundaryBlurRadiusPx = boundaryCoCDiameterPx / 2;

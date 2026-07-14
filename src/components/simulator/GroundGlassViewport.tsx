@@ -26,6 +26,7 @@ type GroundGlassViewportProps = {
   sceneId: string;
   lockReason?: string;
   rawRttDebug?: boolean;
+  focusMetric?: "point" | "patch";
   showHeader?: boolean;
 };
 
@@ -44,6 +45,7 @@ export const GroundGlassViewport = ({
   sceneId,
   lockReason,
   rawRttDebug,
+  focusMetric,
   showHeader,
 }: GroundGlassViewportProps) => {
   // Preview mode control local to the Ground Glass panel. Default to camera state
@@ -117,6 +119,7 @@ export const GroundGlassViewport = ({
           sceneId={sceneId}
           previewMode={previewMode}
           rawDebug={rawRttDebug}
+          focusMetric={focusMetric}
           zoomEnabled={zoomEnabled}
           onToggleZoom={() => setZoomEnabled((s) => !s)}
         />

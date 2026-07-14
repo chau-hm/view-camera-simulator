@@ -22,7 +22,7 @@ void main(){
     radius = calculateWedgeBlurRadiusPxFromWorldPosition(worldPos);
   }
 
-  if (radius <= ${zeroBlurThreshold}){
+  if (!(radius > ${zeroBlurThreshold})){
     gl_FragColor = texture2D(tColor, uv);
     return;
   }
@@ -55,13 +55,13 @@ void main(){
     float s2 = sigma * sigma;
     float g = exp(-0.5 * offset2 / s2);
     float w = g * depthWeight * radiusCompatibility;
-    if(w <= 1e-6) continue;
+    if(!(w > 1e-6)) continue;
     vec3 c = texture2D(tColor, uv + off).rgb;
     accum += c * w;
     total += w;
   }
 
-  if(total <= 1e-6){ gl_FragColor = texture2D(tColor, uv); return; }
+  if(!(total > 1e-6)){ gl_FragColor = texture2D(tColor, uv); return; }
   gl_FragColor = vec4(accum / total, 1.0);
 }
 `;
@@ -81,7 +81,7 @@ void main(){
     radius = calculateWedgeBlurRadiusPxFromWorldPosition(worldPos);
   }
 
-  if (radius <= ${zeroBlurThreshold}){
+  if (!(radius > ${zeroBlurThreshold})){
     vec3 color = texture2D(tColor, sampleUv).rgb;
     if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
     gl_FragColor = vec4(color,1.0);
@@ -113,13 +113,14 @@ void main(){
     float s2 = sigma * sigma;
     float g = exp(-0.5 * offset2 / s2);
     float w = g * depthWeight * radiusCompatibility;
-    if(w <= 1e-6) continue;
+    if(!(w > 1e-6)) continue;
     vec3 c = texture2D(tColor, sampleUv + off).rgb;
     accum += c * w;
     total += w;
   }
 
-  vec3 color = accum / max(total, 1e-6);
+  vec3 color = texture2D(tColor, sampleUv).rgb;
+  if(total > 1e-6){ color = accum / total; }
   if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
   gl_FragColor = vec4(color,1.0);
 }

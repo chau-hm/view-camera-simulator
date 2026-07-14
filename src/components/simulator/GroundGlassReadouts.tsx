@@ -54,10 +54,18 @@ export const CurrentSettingsReadout = ({
     </div>
   );
 };
-export const FocusTargetsReadout = ({ focusTargets }: { focusTargets?: { id: string; status?: string; sharpnessPercent: number }[] }) => {
+export const FocusTargetsReadout = ({
+  focusTargets,
+  metricLabel = "Focus",
+  closestTargetId,
+}: {
+  focusTargets?: { id: string; status?: string; sharpnessPercent: number }[];
+  metricLabel?: "Point focus" | "Patch coverage" | "Focus";
+  closestTargetId?: string;
+}) => {
   return (
     <div aria-label="FocusTargetsReadout" className="simulator-info-card simulator-info-card--focus-targets">
-      <h4>{UI_COPY.simulator.groundGlassFocusTargets}</h4>
+      <h4>{UI_COPY.simulator.groundGlassFocusTargets} · {metricLabel}</h4>
       <div className="focus-target-list">
         {focusTargets && focusTargets.length > 0 ? (
           focusTargets.map((target) => {
@@ -76,7 +84,10 @@ export const FocusTargetsReadout = ({ focusTargets }: { focusTargets?: { id: str
                   <div className="focus-target-progress__fill" style={{ width: `${display}%` }} />
                 </div>
 
-                <div className="focus-target-row__meta">{statusText}</div>
+                <div className="focus-target-row__meta">
+                  {metricLabel} · {statusText}
+                  {target.id === closestTargetId ? " · Closest point" : ""}
+                </div>
               </div>
             );
           })
