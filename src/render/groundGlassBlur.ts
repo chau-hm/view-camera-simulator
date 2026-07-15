@@ -94,7 +94,12 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
     toPoint.x * toPoint.x + toPoint.y * toPoint.y + toPoint.z * toPoint.z,
   );
 
-  const model = opticsState.diagnostics.depthOfFieldModel ?? "parallel";
+  const groundGlassModel =
+    opticsState.diagnostics.groundGlassDofModel ??
+    (opticsState.diagnostics.depthOfFieldModel === "scheimpflug-wedge"
+      ? "derived-planes"
+      : "parallel-thin-lens");
+  const model = groundGlassModel === "derived-planes" ? "scheimpflug-wedge" : "parallel";
 
   // Basic input validation — return unresolved if any fundamental optical parameter is invalid
   if (!Number.isFinite(focalLengthMm) || focalLengthMm <= 0) {

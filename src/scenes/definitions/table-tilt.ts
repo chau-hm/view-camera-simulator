@@ -4,7 +4,7 @@ import geometry from "../tableTiltGeometry";
 export const tableTiltScene: SceneDefinition = {
   id: "table-tilt",
   name: "Table Tilt",
-  description: "Use tilt to align focus plane with the table surface.",
+  description: "Use front tilt to align the plane of sharp focus with three coplanar focus cards above the tabletop.",
   assets: [
     {
       id: "table-floor",

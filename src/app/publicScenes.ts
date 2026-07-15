@@ -12,6 +12,7 @@ export type PublicSceneEntry = {
   id: PublicSceneId;
   description: string;
   topics: readonly string[];
+  guidedTaskId?: string;
 };
 
 export const publicSceneCatalog: readonly PublicSceneEntry[] = [
@@ -30,8 +31,9 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
     id: "table-tilt",
     description:
-      "Use front tilt to align the plane of focus with a tabletop extending from near to far.",
+      "Use front tilt to align the plane of sharp focus with three coplanar focus cards above the tabletop.",
     topics: ["Tilt", "Plane of focus", "Scheimpflug principle"],
+    guidedTaskId: "tilt-01",
   },
 ];
 

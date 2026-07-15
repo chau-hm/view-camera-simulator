@@ -1,271 +1,338 @@
-import { useEffect, useRef, useState } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import {
+  calculateGroundGlassAnchoredPan,
+  denormalizeGroundGlassPan,
+  GROUND_GLASS_ZOOM_SCALE,
+  normalizeGroundGlassPan,
+  type GroundGlassPanOffset,
+} from "./groundGlassStageTransform";
 
-// Zoom and gesture constants (stable references)
-const ZOOM_SCALE = 1.9;
-const CLICK_THRESHOLD_PX = 5; // movement threshold to distinguish click vs drag
+const ZOOM_SCALE = GROUND_GLASS_ZOOM_SCALE;
 
-type PanOffset = { x: number; y: number };
+export const GROUND_GLASS_POINTER_THRESHOLDS_PX = {
+  mouse: 8,
+  pen: 10,
+  touch: 12,
+} as const;
+
+export const getGroundGlassPointerThresholdPx = (pointerType?: string): number => {
+  if (pointerType === "touch") return GROUND_GLASS_POINTER_THRESHOLDS_PX.touch;
+  if (pointerType === "pen") return GROUND_GLASS_POINTER_THRESHOLDS_PX.pen;
+  return GROUND_GLASS_POINTER_THRESHOLDS_PX.mouse;
+};
+
+type PanOffset = GroundGlassPanOffset;
 const ZERO_PAN: PanOffset = { x: 0, y: 0 };
 
 const PANEL_WIDTH_PX = 500;
 const PANEL_HEIGHT_PX = 400;
 
-type GroundGlassStageProps = {
-  zoomEnabled?: boolean;
-  imageLayer: ReactNode; // content that should receive the zoom/pan transform
-  fixedOverlayLayer?: ReactNode; // content that stays fixed (labels, focus ring)
-  onToggleZoom?: () => void;
+type DragState = {
+  pointerId: number | null;
+  pointerType: string;
+  startX: number;
+  startY: number;
+  startPanX: number;
+  startPanY: number;
+  moved: boolean;
+  captured: boolean;
 };
 
-export const GroundGlassStage = ({ zoomEnabled, imageLayer, fixedOverlayLayer, onToggleZoom }: GroundGlassStageProps) => {
-  const [zoomPan, setZoomPan] = useState<PanOffset>({ x: 0, y: 0 });
+const createIdleDragState = (): DragState => ({
+  pointerId: null,
+  pointerType: "mouse",
+  startX: 0,
+  startY: 0,
+  startPanX: 0,
+  startPanY: 0,
+  moved: false,
+  captured: false,
+});
+
+type GroundGlassStageProps = {
+  zoomEnabled?: boolean;
+  imageLayer: ReactNode;
+  fixedOverlayLayer?: ReactNode;
+  onZoomChange?: (nextZoomed: boolean) => void;
+  /** Changes when navigation or preview state must discard the current interaction. */
+  interactionResetKey?: string;
+};
+
+export const GroundGlassStage = ({
+  zoomEnabled = false,
+  imageLayer,
+  fixedOverlayLayer,
+  onZoomChange,
+  interactionResetKey,
+}: GroundGlassStageProps) => {
+  // Pan is normalized to the current viewport, so resize only needs to update
+  // the viewport bounds; denormalization always produces a newly clamped value.
+  const [normalizedPan, setNormalizedPan] = useState<PanOffset>(ZERO_PAN);
   const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ pointerId: number | null; startX: number; startY: number; startPanX: number; startPanY: number; moved: boolean; captured: boolean }>({ pointerId: null, startX: 0, startY: 0, startPanX: 0, startPanY: 0, moved: false, captured: false });
-  // suppression: true when a completed drag happened and the following browser click should be suppressed
-  const suppressNextClickRef = useRef(false);
+  const dragRef = useRef<DragState>(createIdleDragState());
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({ width: PANEL_WIDTH_PX, height: PANEL_HEIGHT_PX });
+  const [viewportSize, setViewportSize] = useState({
+    width: PANEL_WIDTH_PX,
+    height: PANEL_HEIGHT_PX,
+  });
 
   useEffect(() => {
-    const el = panelRef.current;
-    if (!el) return;
+    const element = panelRef.current;
+    if (!element) return;
     const update = () => {
-      const r = el.getBoundingClientRect();
-      setViewportSize({ width: r.width, height: r.height });
+      const rect = element.getBoundingClientRect();
+      setViewportSize({ width: rect.width, height: rect.height });
     };
     update();
-    let ro: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(() => update());
-      ro.observe(el);
-    }
-    return () => {
-      if (ro) ro.disconnect();
-    };
-  }, [panelRef]);
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
-  // reset pan when zoom is turned off (defensive cleanup)
-  useEffect(() => {
+  const releaseCurrentPointerCapture = useCallback(() => {
+    const gesture = dragRef.current;
+    const pointerId = gesture.pointerId;
+    const wasCaptured = gesture.captured;
+
+    // Clear first: releasePointerCapture can synchronously emit
+    // lostpointercapture, which must not operate on stale gesture state.
+    dragRef.current = createIdleDragState();
+    if (wasCaptured && pointerId !== null && panelRef.current) {
+      try {
+        panelRef.current.releasePointerCapture(pointerId);
+      } catch {
+        // Capture can already be gone after a browser-level cancellation.
+      }
+    }
+  }, []);
+
+  const resetGroundGlassInteraction = useCallback(() => {
+    releaseCurrentPointerCapture();
+    setIsDragging(false);
+    setNormalizedPan(ZERO_PAN);
+    onZoomChange?.(false);
+  }, [onZoomChange, releaseCurrentPointerCapture]);
+
+  // Navigation/preview changes reset synchronously before paint. Zoom-out does
+  // not depend on this effect; all user reset paths call the same function.
+  useLayoutEffect(() => {
+    resetGroundGlassInteraction();
+  }, [interactionResetKey, resetGroundGlassInteraction]);
+
+  // Keep externally controlled unzoomed state internally centered too.
+  useLayoutEffect(() => {
     if (!zoomEnabled) {
-      setZoomPan({ ...ZERO_PAN });
+      releaseCurrentPointerCapture();
+      setIsDragging(false);
+      setNormalizedPan(ZERO_PAN);
     }
-  }, [zoomEnabled]);
+  }, [releaseCurrentPointerCapture, zoomEnabled]);
 
-  // Use effective pan so unzoomed rendering never shows a non-zero translation
-  const effectivePan = zoomEnabled ? zoomPan : ZERO_PAN;
+  useEffect(
+    () => () => {
+      releaseCurrentPointerCapture();
+    },
+    [releaseCurrentPointerCapture],
+  );
+
   const zoomScale = zoomEnabled ? ZOOM_SCALE : 1;
+  const effectivePan = zoomEnabled
+    ? denormalizeGroundGlassPan(normalizedPan, viewportSize, zoomScale)
+    : ZERO_PAN;
   const transform = `translate3d(${effectivePan.x}px, ${effectivePan.y}px, 0) scale(${zoomScale})`;
-
-  // helper: clamp pan based on viewport and scale
-  const clampPan = (pan: PanOffset, viewport: { width: number; height: number }, scale: number): PanOffset => {
-    const maxPanX = Math.max(0, (viewport.width * (scale - 1)) / 2);
-    const maxPanY = Math.max(0, (viewport.height * (scale - 1)) / 2);
-    return {
-      x: Math.max(-maxPanX, Math.min(maxPanX, pan.x)),
-      y: Math.max(-maxPanY, Math.min(maxPanY, pan.y)),
-    };
-  };
-
-  const hasPointerCoordinates = (event: { detail?: number; clientX?: number; clientY?: number }) => {
-    // event.detail === 0 for synthetic activations; clientX/Y may be 0
-    // Treat events with finite client coordinates as valid pointer activations.
-    const detail = typeof event.detail === 'number' ? event.detail : undefined;
-    const cx = event.clientX;
-    const cy = event.clientY;
-    return (typeof detail === 'number' ? detail > 0 : true) && Number.isFinite(cx as number) && Number.isFinite(cy as number);
-  };
-
-  const calculateAnchoredPan = (clientX: number, clientY: number, rect: DOMRect): PanOffset => {
-    const offsetX = clientX - (rect.left + rect.width / 2);
-    const offsetY = clientY - (rect.top + rect.height / 2);
-    const desiredPan = {
-      x: -(ZOOM_SCALE - 1) * offsetX,
-      y: -(ZOOM_SCALE - 1) * offsetY,
-    };
-    return clampPan(desiredPan, { width: rect.width, height: rect.height }, ZOOM_SCALE);
-  };
 
   const isInteractiveDescendant = (target: EventTarget | null, root: Element | null): boolean => {
     if (!(target instanceof Element)) return false;
-    const found = target.closest(
-      "button, a, input, select, textarea, summary, [role='button']",
-    );
-    // If the closest interactive element is the root itself, it's not a descendant control.
-    if (!found) return false;
-    if (root && found === root) return false;
-    return true;
+    const found = target.closest("button, a, input, select, textarea, summary, [role='button']");
+    return Boolean(found && (!root || found !== root));
   };
 
-  // Single activation function used for click and keyboard
-  const activateZoom = (anchor?: { clientX: number; clientY: number }) => {
-    if (zoomEnabled) {
-      // reset pan immediately for a clean zoom-out visual
-      setZoomPan({ ...ZERO_PAN });
-      onToggleZoom?.();
-      return;
-    }
-
-    // zooming in
+  const requestZoomIn = (anchor?: { clientX: number; clientY: number }) => {
+    releaseCurrentPointerCapture();
+    setIsDragging(false);
     if (anchor && panelRef.current) {
       const rect = panelRef.current.getBoundingClientRect();
-      const anchored = calculateAnchoredPan(anchor.clientX, anchor.clientY, rect);
-      setZoomPan(anchored);
+      setViewportSize({ width: rect.width, height: rect.height });
+      setNormalizedPan(calculateGroundGlassAnchoredPan(anchor.clientX, anchor.clientY, rect));
     } else {
-      // centered zoom
-      setZoomPan({ ...ZERO_PAN });
+      setNormalizedPan(ZERO_PAN);
     }
-
-    onToggleZoom?.();
+    onZoomChange?.(true);
   };
 
-  // keyboard handlers
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
-      // Space or Enter toggles zoom when focused — centered anchor
-      e.preventDefault();
-      e.stopPropagation();
-      activateZoom();
-    }
+  const activateCurrentZoomAction = (anchor?: { clientX: number; clientY: number }) => {
+    if (zoomEnabled) resetGroundGlassInteraction();
+    else requestZoomIn(anchor);
   };
 
-  // click handler is the single activation path for mouse
-  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (isInteractiveDescendant(event.target, event.currentTarget as Element)) return;
-
-    if (suppressNextClickRef.current) {
-      // consume suppression set by a completed drag gesture
-      suppressNextClickRef.current = false;
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape" && zoomEnabled) {
+      event.preventDefault();
+      event.stopPropagation();
+      resetGroundGlassInteraction();
       return;
     }
-
-    // determine whether click has meaningful pointer coordinates
-    if (hasPointerCoordinates(event)) {
-      const me = event as React.MouseEvent<HTMLDivElement>;
-      activateZoom({ clientX: me.clientX, clientY: me.clientY });
-    } else {
-      // synthetic click or keyboard-like activation: center
-      activateZoom();
+    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+      event.preventDefault();
+      event.stopPropagation();
+      activateCurrentZoomAction();
     }
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return; // only primary
-    if (isInteractiveDescendant(e.target, e.currentTarget as Element)) return;
+  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (isInteractiveDescendant(event.target, event.currentTarget)) return;
+    // Physical pointer activation is handled once, on pointer-up. Retain the
+    // detail=0 path for assistive-technology/synthetic keyboard activation.
+    if (event.detail > 0) return;
+    activateCurrentZoomAction();
+  };
 
-    // beginning a new gesture clears any stale suppression
-    suppressNextClickRef.current = false;
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    if (isInteractiveDescendant(event.target, event.currentTarget)) return;
 
-    // record start coords
-    dragRef.current.pointerId = e.pointerId;
-    dragRef.current.startX = e.clientX;
-    dragRef.current.startY = e.clientY;
-    dragRef.current.startPanX = zoomPan.x;
-    dragRef.current.startPanY = zoomPan.y;
-    dragRef.current.moved = false;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      pointerType: event.pointerType || "mouse",
+      startX: event.clientX,
+      startY: event.clientY,
+      startPanX: normalizedPan.x,
+      startPanY: normalizedPan.y,
+      moved: false,
+      captured: false,
+    };
 
-    // If zoom is enabled, capture pointer to receive moves outside element
-    const el = e.currentTarget as HTMLElement;
     if (zoomEnabled) {
-      try { el.setPointerCapture(e.pointerId); dragRef.current.captured = true; } catch { dragRef.current.captured = false; }
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+        dragRef.current.captured = true;
+      } catch {
+        dragRef.current.captured = false;
+      }
     }
-
-    // prepare dragging state only when movement exceeds threshold
     setIsDragging(false);
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (dragRef.current.pointerId !== e.pointerId) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    const dist = Math.hypot(dx, dy);
-    if (!dragRef.current.moved && dist > CLICK_THRESHOLD_PX) {
-      dragRef.current.moved = true;
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const gesture = dragRef.current;
+    if (gesture.pointerId !== event.pointerId) return;
+    const dx = event.clientX - gesture.startX;
+    const dy = event.clientY - gesture.startY;
+    if (
+      !gesture.moved &&
+      Math.hypot(dx, dy) > getGroundGlassPointerThresholdPx(gesture.pointerType)
+    ) {
+      gesture.moved = true;
     }
 
-    if (zoomEnabled && dragRef.current.moved) {
-      // begin actual pan
-      if (!isDragging) setIsDragging(true);
-      const desiredX = dragRef.current.startPanX + dx;
-      const desiredY = dragRef.current.startPanY + dy;
-      const clamped = clampPan({ x: desiredX, y: desiredY }, viewportSize, ZOOM_SCALE);
-      setZoomPan(clamped);
+    if (!zoomEnabled || !gesture.moved) return;
+    setIsDragging(true);
+    const startPanPx = denormalizeGroundGlassPan(
+      { x: gesture.startPanX, y: gesture.startPanY },
+      viewportSize,
+      ZOOM_SCALE,
+    );
+    setNormalizedPan(
+      normalizeGroundGlassPan(
+        { x: startPanPx.x + dx, y: startPanPx.y + dy },
+        viewportSize,
+        ZOOM_SCALE,
+      ),
+    );
+  };
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const gesture = dragRef.current;
+    if (gesture.pointerId !== event.pointerId) return;
+    const wasMoved =
+      gesture.moved ||
+      Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) >
+        getGroundGlassPointerThresholdPx(gesture.pointerType);
+    releaseCurrentPointerCapture();
+    setIsDragging(false);
+    if (!wasMoved) {
+      activateCurrentZoomAction({ clientX: event.clientX, clientY: event.clientY });
     }
   };
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (dragRef.current.pointerId !== e.pointerId) return;
-    const el = e.currentTarget as HTMLElement;
-    if (dragRef.current.captured) {
-      try { el.releasePointerCapture(e.pointerId); } catch (err) { void err; }
-      dragRef.current.captured = false;
-    }
-
-    // if the gesture moved, mark suppression so the following synthetic click is consumed
-    if (dragRef.current.moved) {
-      suppressNextClickRef.current = true;
-    }
-
-    // finish drag
-    dragRef.current.pointerId = null;
-    dragRef.current.moved = false;
-    setIsDragging(false);
+  const handlePointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (dragRef.current.pointerId !== event.pointerId) return;
+    resetGroundGlassInteraction();
   };
 
-  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (dragRef.current.pointerId !== e.pointerId) return;
-    const el = e.currentTarget as HTMLElement;
-    if (dragRef.current.captured) {
-      try { el.releasePointerCapture(e.pointerId); } catch (err) { void err; }
-      dragRef.current.captured = false;
-    }
-    // cancelled gesture should not create a suppression for next click
-    suppressNextClickRef.current = false;
-
-    dragRef.current.pointerId = null;
-    dragRef.current.moved = false;
-    setIsDragging(false);
-  };
-
-  const handleLostPointerCapture = (e: React.PointerEvent<HTMLDivElement>) => {
-    // lost capture should only clear gesture state, not any deliberate suppression set by a completed drag
-    if (dragRef.current.pointerId !== e.pointerId) return;
-    dragRef.current.pointerId = null;
-    dragRef.current.moved = false;
-    dragRef.current.captured = false;
-    setIsDragging(false);
-    // DO NOT clear suppressNextClickRef here — it may be set to suppress the imminent synthetic click
+  const handleLostPointerCapture = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (dragRef.current.pointerId !== event.pointerId) return;
+    resetGroundGlassInteraction();
   };
 
   return (
-    <div
-      ref={panelRef}
-      role="button"
-      tabIndex={0}
-      data-zoomed={zoomEnabled ? 'true' : 'false'}
-      aria-label={zoomEnabled ? 'Zoom out Ground Glass' : 'Zoom in Ground Glass'}
-      onKeyDown={onKeyDown}
-      style={{
-        position: "relative",
-        width: "100%",
-        aspectRatio: "5 / 4",
-        border: "1px solid #d1d5db",
-        borderRadius: 8,
-        overflow: "hidden",
-        cursor: zoomEnabled ? (isDragging ? "grabbing" : "zoom-out") : "zoom-in",
-        outline: 'none',
-      }}
-      onClick={handleClick}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
-      onLostPointerCapture={handleLostPointerCapture}
-    >
-      {/* image stage (transformed by pan/zoom) */}
-      <div style={{ position: "absolute", inset: 0, transform, transformOrigin: "center", pointerEvents: 'none' }} className={zoomEnabled ? 'groundglass-stage groundglass-stage--zoomed' : 'groundglass-stage'}>{imageLayer}</div>
-      {/* fixed overlays that don't receive pan/zoom */}
-      <div style={{ pointerEvents: 'none' }}>{fixedOverlayLayer}</div>
+    <div style={{ position: "relative" }}>
+      <div
+        ref={panelRef}
+        role="button"
+        tabIndex={0}
+        data-zoomed={zoomEnabled ? "true" : "false"}
+        data-pan-x={effectivePan.x}
+        data-pan-y={effectivePan.y}
+        data-scale={zoomScale}
+        data-normalized-pan-x={normalizedPan.x}
+        data-normalized-pan-y={normalizedPan.y}
+        data-dragging={isDragging ? "true" : "false"}
+        data-pointer-active={dragRef.current.pointerId === null ? "false" : "true"}
+        data-pointer-captured={dragRef.current.captured ? "true" : "false"}
+        aria-label={zoomEnabled ? "Zoom out Ground Glass" : "Zoom in Ground Glass"}
+        onKeyDown={handleKeyDown}
+        style={{
+          position: "relative",
+          width: "100%",
+          aspectRatio: "5 / 4",
+          border: "1px solid #d1d5db",
+          borderRadius: 8,
+          overflow: "hidden",
+          cursor: zoomEnabled ? (isDragging ? "grabbing" : "zoom-out") : "zoom-in",
+          outline: "none",
+        }}
+        onClick={handleClick}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onLostPointerCapture={handleLostPointerCapture}
+      >
+        <div
+          data-testid="ground-glass-image-layer"
+          style={{
+            position: "absolute",
+            inset: 0,
+            transform,
+            transformOrigin: "center",
+            pointerEvents: "none",
+          }}
+          className={zoomEnabled ? "groundglass-stage groundglass-stage--zoomed" : "groundglass-stage"}
+        >
+          {imageLayer}
+        </div>
+        <div style={{ pointerEvents: "none" }}>{fixedOverlayLayer}</div>
+      </div>
+
+      <button
+        type="button"
+        className="btn btn--compact btn--secondary groundglass-view-control"
+        aria-label={zoomEnabled ? "Reset Ground Glass view" : "Zoom in Ground Glass view"}
+        onClick={zoomEnabled ? resetGroundGlassInteraction : () => requestZoomIn()}
+        style={{
+          position: "absolute",
+          top: 8,
+          left: 8,
+          zIndex: 4,
+          boxShadow: "0 1px 4px rgba(15, 23, 42, 0.25)",
+        }}
+      >
+        {zoomEnabled ? "Reset view" : "Zoom in"}
+      </button>
     </div>
   );
 };

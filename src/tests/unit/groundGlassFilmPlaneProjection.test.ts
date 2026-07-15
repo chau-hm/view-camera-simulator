@@ -18,7 +18,11 @@ describe("projectWorldPointToFilmPlaneGroundGlass", () => {
     // world point is in front of the lens (positive Z) in repo convention
     const worldPoint = { x: 0, y: 0, z: 1000 };
 
-    const res = projectWorldPointToFilmPlaneGroundGlass({ worldPoint, lensCenterWorld, filmPlaneCornersWorld });
+    const res = projectWorldPointToFilmPlaneGroundGlass({
+      worldPoint,
+      lensCenterWorld,
+      filmPlaneCornersWorld,
+    });
     expect(res.visible).toBe(true);
     expect(res.filmPointWorld).not.toBeNull();
     expect(res.uRaw).toBeCloseTo(0.5, 2);
@@ -34,7 +38,11 @@ describe("projectWorldPointToFilmPlaneGroundGlass", () => {
       bottomRight: { x: 50, y: -40, z: -100 },
     };
     const worldPoint = { x: 1000, y: 1000, z: 1000 };
-    const res = projectWorldPointToFilmPlaneGroundGlass({ worldPoint, lensCenterWorld, filmPlaneCornersWorld });
+    const res = projectWorldPointToFilmPlaneGroundGlass({
+      worldPoint,
+      lensCenterWorld,
+      filmPlaneCornersWorld,
+    });
     expect(res.visible).toBe(false);
   });
 
@@ -49,7 +57,11 @@ describe("projectWorldPointToFilmPlaneGroundGlass", () => {
     };
     // worldPoint placed so ray direction has no Z component -> parallel
     const worldPoint = { x: 10, y: 0, z: 0 };
-    const res = projectWorldPointToFilmPlaneGroundGlass({ worldPoint, lensCenterWorld, filmPlaneCornersWorld });
+    const res = projectWorldPointToFilmPlaneGroundGlass({
+      worldPoint,
+      lensCenterWorld,
+      filmPlaneCornersWorld,
+    });
     expect(res.visible).toBe(false);
     expect(res.filmPointWorld).toBeNull();
   });
@@ -64,7 +76,11 @@ describe("projectWorldPointToFilmPlaneGroundGlass", () => {
     };
     // worldPoint placed on the film side (behind the lens) so the traced ray points away from the film
     const worldPoint = { x: 0, y: 0, z: -1000 };
-    const res = projectWorldPointToFilmPlaneGroundGlass({ worldPoint, lensCenterWorld, filmPlaneCornersWorld });
+    const res = projectWorldPointToFilmPlaneGroundGlass({
+      worldPoint,
+      lensCenterWorld,
+      filmPlaneCornersWorld,
+    });
     expect(res.visible).toBe(false);
     expect(res.filmPointWorld).toBeNull();
   });
@@ -79,8 +95,18 @@ describe("movement-aware projection", () => {
     const opticsA = deriveOpticsState(camA, architectureRiseScene);
     const opticsB = deriveOpticsState(camB, architectureRiseScene);
 
-    const projectedA = projectSceneFocusTargetsToGroundGlass({ sceneDef: architectureRiseScene, opticsState: opticsA, aperture: camA.aperture, previewMode: "raw" });
-    const projectedB = projectSceneFocusTargetsToGroundGlass({ sceneDef: architectureRiseScene, opticsState: opticsB, aperture: camB.aperture, previewMode: "raw" });
+    const projectedA = projectSceneFocusTargetsToGroundGlass({
+      sceneDef: architectureRiseScene,
+      opticsState: opticsA,
+      aperture: camA.aperture,
+      previewMode: "raw",
+    });
+    const projectedB = projectSceneFocusTargetsToGroundGlass({
+      sceneDef: architectureRiseScene,
+      opticsState: opticsB,
+      aperture: camB.aperture,
+      previewMode: "raw",
+    });
 
     expect(projectedA.length).toBeGreaterThan(0);
     expect(projectedB.length).toBeGreaterThan(0);

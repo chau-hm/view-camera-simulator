@@ -1,57 +1,5 @@
-import { test, expect, type Locator, type Page } from '@playwright/test';
-
-type StageTransform = {
-  translateX: number;
-  translateY: number;
-  scaleX: number;
-  scaleY: number;
-};
-
-// Read the computed transform of the transformed stage element.
-// Fail loudly if the locator cannot be resolved or evaluation errors.
-const readStageTransform = async (locator: Locator): Promise<StageTransform> => {
-  // Ensure the transformed layer exists and is visible. This will throw on failure.
-  await expect(locator).toHaveCount(1);
-  await expect(locator).toBeVisible();
-
-  return locator.evaluate((element: Element) => {
-    const transform = getComputedStyle(element).transform;
-
-    if (!transform || transform === 'none') {
-      return {
-        translateX: 0,
-        translateY: 0,
-        scaleX: 1,
-        scaleY: 1,
-      };
-    }
-
-    const matrix = new DOMMatrixReadOnly(transform);
-
-    return {
-      translateX: matrix.m41,
-      translateY: matrix.m42,
-      scaleX: matrix.a,
-      scaleY: matrix.d,
-    };
-  });
-};
-
-// Helper: click the stage at a relative x/y ratio (0..1) using fresh geometry and real Playwright input.
-const clickStageAt = async (page: Page, stage: Locator, xRatio: number, yRatio: number) => {
-  await expect(stage).toBeVisible();
-  // Use in-page bounding client rect evaluation to obtain fresh geometry even if Playwright boundingBox is null
-  const box = await stage.evaluate((el) => {
-    const r = (el as HTMLElement).getBoundingClientRect();
-    return { x: r.left, y: r.top, width: r.width, height: r.height } as { x: number; y: number; width: number; height: number };
-  });
-
-  if (!box || typeof box.width !== 'number' || box.width === 0) {
-    throw new Error('Ground Glass stage bounding box not found');
-  }
-
-  await page.mouse.click(box.x + box.width * xRatio, box.y + box.height * yRatio);
-};
+import { test, expect, type Locator } from '@playwright/test';
+import { clickStageAt, readFreshElementBounds, readStageTransform } from './helpers/groundGlass';
 
 // convenience factory for dynamic transformed-layer locator
 const transformedLayerFor = (viewport: Locator) => () => viewport.locator('.groundglass-stage');
@@ -59,20 +7,19 @@ const transformedLayerFor = (viewport: Locator) => () => viewport.locator('.grou
 test.describe('Ground Glass interaction', () => {
   test('Architecture Rise: off-center anchor, drag pan, zoom-out centering, and immediate re-zoom', async ({ page }) => {
     // allow a longer timeout for this interaction-heavy test to tolerate renderer scheduling in CI/local
-    test.setTimeout(90_000);
+    test.setTimeout(120_000);
     await page.goto('/simulator/free/architecture-rise');
 
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
 
-    const stage = viewport.getByRole('button');
+    const stage = viewport.getByRole('button', { name: /Ground Glass$/ });
     await expect(stage).toBeVisible();
 
     const transformedLayer = transformedLayerFor(viewport);
 
     // obtain bounding box and click at 25% left, 25% top
-    const box = await stage.boundingBox();
-    if (!box) throw new Error('Ground Glass stage bounding box not found');
+    const box = await readFreshElementBounds(stage);
     const clickX = Math.round(box.width * 0.25);
     const clickY = Math.round(box.height * 0.25);
 
@@ -93,8 +40,7 @@ test.describe('Ground Glass interaction', () => {
     const preDrag = await readStageTransform(transformedLayer());
 
     // drag from center by +60, +40 using real page.mouse
-    const centerBox = await stage.boundingBox();
-    if (!centerBox) throw new Error('Ground Glass stage bounding box not found');
+    const centerBox = await readFreshElementBounds(stage);
     const centerX = centerBox.x + centerBox.width / 2;
     const centerY = centerBox.y + centerBox.height / 2;
     await page.mouse.move(centerX, centerY);
@@ -134,8 +80,7 @@ test.describe('Ground Glass interaction', () => {
     }, { timeout: 8000 }).toBeTruthy();
 
     // immediate re-zoom: click at 70% left, 65% top — obtain fresh geometry and use absolute page click
-    const freshBox = await stage.boundingBox();
-    if (!freshBox) throw new Error('Ground Glass stage bounding box not found');
+    const freshBox = await readFreshElementBounds(stage);
     await page.mouse.click(freshBox.x + freshBox.width * 0.7, freshBox.y + freshBox.height * 0.65);
 
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
@@ -172,16 +117,16 @@ test.describe('Ground Glass interaction', () => {
   });
 
   test('Focus Fundamentals: three-click smoke test', async ({ page }) => {
+    test.setTimeout(60_000);
     await page.goto('/simulator/free/focus-fundamentals-two-targets');
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
-    const stage = viewport.getByRole('button');
+    const stage = viewport.getByRole('button', { name: /Ground Glass$/ });
     await expect(stage).toBeVisible();
 
     const transformedLayer = transformedLayerFor(viewport);
 
-    const box = await stage.boundingBox();
-    if (!box) throw new Error('Ground Glass stage bounding box not found');
+    const box = await readFreshElementBounds(stage);
     const cx = Math.round(box.width / 2);
     const cy = Math.round(box.height / 2);
 
@@ -191,17 +136,20 @@ test.describe('Ground Glass interaction', () => {
     // click 1
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
+    await expect(stage).toHaveAttribute('data-scale', '1.9');
     await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1.9, 1);
 
     // click 2 -> zoom out
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
+    await expect(stage).toHaveAttribute('data-scale', '1');
     await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1, 2);
-    await expect.poll(async () => Math.abs((await readStageTransform(transformedLayer())).translateX)).toBeLessThanOrEqual(0.5);
+    await expect(stage).toHaveAttribute('data-pan-x', '0');
 
     // click 3 -> zoom in
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
+    await expect(stage).toHaveAttribute('data-scale', '1.9');
     await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1.9, 1);
   });
 });

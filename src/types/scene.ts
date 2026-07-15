@@ -5,6 +5,8 @@ export type FocusTarget = {
   id: string;
   label: string;
   worldPosition: Vec3;
+  /** Optional visible-surface samples aggregated conservatively under this semantic target id. */
+  sampleWorldPositions?: Vec3[];
   weight: number;
   // optional explicit reference depth from the rear/film datum for deterministic focus presets (S)
   focusReferenceDepthFromRearDatumMm?: number;

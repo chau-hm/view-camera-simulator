@@ -132,6 +132,12 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera.geometryView).toBe("side");
   });
 
+  it("keeps the Scheimpflug Section selection synchronized across camera and UI state", () => {
+    useAppStore.getState().setGeometryView("scheimpflug");
+    expect(useAppStore.getState().camera.geometryView).toBe("scheimpflug");
+    expect(useAppStore.getState().ui.geometryView).toBe("scheimpflug");
+  });
+
   it("clamps focus distance to current scene range", () => {
     const { setActiveScene, setFocusDistance } = useAppStore.getState();
     setActiveScene("table-tilt");

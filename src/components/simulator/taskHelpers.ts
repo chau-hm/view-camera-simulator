@@ -39,6 +39,16 @@ export function getFreePracticeGuidance(sceneId: string | undefined): FreePracti
         "Use Focus Assist to compare target sharpness.",
       ],
     },
+    "table-tilt": {
+      objective:
+        "Use front tilt and focus to align the three coplanar focus cards above the tabletop.",
+      bullets: [
+        "At 0° tilt, move focus from the near card through the middle notebook to the far chart.",
+        "Apply positive front tilt and watch the focus plane rotate parallel to the tabletop through the focus-card surfaces.",
+        "Refine focus until all three patches—not only their centre points—are covered.",
+        "Compare f/11 and f/22, but do not rely on f/32 to solve the exercise.",
+      ],
+    },
   };
 
   if (sceneId && defaults[sceneId]) return defaults[sceneId];
@@ -50,6 +60,10 @@ export function getFreePracticeFeedback(sceneId: string | undefined): { observat
   const map: Record<string, { observation: string }> = {
     "architecture-rise": { observation: 'Watch the top of the building as Rise changes. The framing should move upward while the vertical edges remain parallel.' },
     "focus-fundamentals-two-targets": { observation: 'Watch the target sharpness bars as Focus distance and Aperture change.' },
+    "table-tilt": {
+      observation:
+        "Without tilt, focus can move from near to far, but only one depth region is sharp at a time. Front tilt rotates the plane of sharp focus so the three tabletop focus cards can become sharp together. Compare the plane in 3D, the depth-of-field bounds, real blur on Ground Glass, and the Focus Targets readout: Free Mode reports centre-point focus while the guided task requires full patch coverage.",
+    },
   };
 
   return (sceneId && map[sceneId]) ? map[sceneId] : generic;

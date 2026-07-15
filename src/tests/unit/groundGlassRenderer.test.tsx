@@ -6,6 +6,7 @@ import { projectSceneFocusTargetsToGroundGlass, mapGroundGlassUvToDisplayUv } fr
 import { GroundGlassViewport } from "../../components/simulator/GroundGlassViewport";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { DEFAULT_CAMERA_STATE, CAMERA_CONSTANTS } from "../../utils/constants";
 
 describe("GroundGlassRenderer", () => {
@@ -104,6 +105,100 @@ describe("GroundGlassRenderer", () => {
 
     expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
     expect(screen.getByText(/4200\.0 mm focus/)).toBeInTheDocument();
+  });
+
+  it("routes Table Tilt exclusively through RTT without legacy DOM artifacts", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...tableTiltScene.cameraPreset,
+      activeSceneId: tableTiltScene.id,
+      focusAssistEnabled: false,
+    };
+    const opticsState = deriveOpticsState(camera, tableTiltScene);
+    const { rerender } = render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        focusAssistEnabled={false}
+        gridEnabled={false}
+        riseMm={camera.frontRiseMm}
+        tiltDeg={camera.frontTiltDeg}
+        swingDeg={camera.frontSwingDeg}
+        focusDistanceMm={camera.focusDistanceMm}
+        aperture={camera.aperture}
+        renderQuality="standard"
+        previewMode="raw"
+        sceneId={tableTiltScene.id}
+      />,
+    );
+
+    expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
+    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
+    tableTiltScene.focusTargets.forEach((target) => {
+      expect(screen.queryByTestId(`ground-glass-target-${target.id}`)).not.toBeInTheDocument();
+    });
+
+    rerender(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        focusAssistEnabled
+        gridEnabled={false}
+        riseMm={camera.frontRiseMm}
+        tiltDeg={camera.frontTiltDeg}
+        swingDeg={camera.frontSwingDeg}
+        focusDistanceMm={camera.focusDistanceMm}
+        aperture={camera.aperture}
+        renderQuality="standard"
+        previewMode="upright"
+        sceneId={tableTiltScene.id}
+      />,
+    );
+    expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
+    expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
+  });
+
+  it("uses matching point and patch defocus metrics in Table Tilt labels", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...tableTiltScene.cameraPreset,
+      activeSceneId: tableTiltScene.id,
+    };
+    const derived = deriveOpticsState(camera, tableTiltScene);
+    const opticsState = {
+      ...derived,
+      focusTargets: derived.focusTargets.map((target, index) =>
+        index === 0
+          ? {
+              ...target,
+              pointSharpness: 1,
+              pointNormalizedDefocus: 0,
+              patchSharpness: 0,
+              patchNormalizedDefocus: 2,
+              normalizedDefocus: 2,
+            }
+          : target,
+      ),
+    };
+    const props = {
+      opticsState,
+      assistEnabled: false,
+      focusAssistEnabled: false,
+      gridEnabled: false,
+      riseMm: camera.frontRiseMm,
+      tiltDeg: camera.frontTiltDeg,
+      swingDeg: camera.frontSwingDeg,
+      focusDistanceMm: camera.focusDistanceMm,
+      aperture: camera.aperture,
+      renderQuality: "standard" as const,
+      previewMode: "raw" as const,
+      sceneId: tableTiltScene.id,
+    };
+    const view = render(<GroundGlassRenderer {...props} focusMetric="point" />);
+    expect(screen.getByText(/defocus 0\.00 \(100%\)/)).toBeInTheDocument();
+    view.rerender(<GroundGlassRenderer {...props} focusMetric="patch" />);
+    expect(screen.getByText(/defocus 2\.00 \(0%\)/)).toBeInTheDocument();
   });
 
   // Regression tests for thin-lens projection and DOM placeholder removal

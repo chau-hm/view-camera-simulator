@@ -38,6 +38,10 @@ type GroundGlassRendererProps = {
   previewMode: "raw" | "upright";
   // rawDebug (developer-only) is controlled at workspace and passed down
   rawDebug?: boolean;
+  focusMetric?: "point" | "patch";
+  zoomEnabled?: boolean;
+  onZoomChange?: (nextZoomed: boolean) => void;
+  interactionResetKey?: string;
 };
 
 const PANEL_WIDTH_PX = 500;
@@ -59,9 +63,11 @@ export const GroundGlassRenderer = ({
   sceneId,
   previewMode,
   rawDebug,
+  focusMetric = "patch",
   zoomEnabled,
-  onToggleZoom,
-}: GroundGlassRendererProps & { zoomEnabled?: boolean; onToggleZoom?: () => void }) => {
+  onZoomChange,
+  interactionResetKey,
+}: GroundGlassRendererProps) => {
   // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
   const isRttScene = isGroundGlassRttScene(sceneId);
   const pipeline = useMemo(() => {
@@ -100,8 +106,8 @@ export const GroundGlassRenderer = ({
 
   const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const focusAssist = useMemo(
-    () => createFocusAssistPass({ enabled: focusAssistEnabled, targets: opticsState.focusTargets }),
-    [focusAssistEnabled, opticsState.focusTargets],
+    () => createFocusAssistPass({ enabled: focusAssistEnabled, targets: opticsState.focusTargets, metric: focusMetric }),
+    [focusAssistEnabled, focusMetric, opticsState.focusTargets],
   );
   const dofSample = useMemo(
     () =>
@@ -148,8 +154,14 @@ export const GroundGlassRenderer = ({
     lastFiniteFocusDepthMm,
     primaryTarget: primaryTarget
       ? {
-          sharpness: primaryTarget.sharpness,
-          normalizedDefocus: primaryTarget.normalizedDefocus,
+          sharpness:
+            focusMetric === "point"
+              ? (primaryTarget.pointSharpness ?? primaryTarget.sharpness)
+              : (primaryTarget.patchSharpness ?? primaryTarget.sharpness),
+          normalizedDefocus:
+            focusMetric === "point"
+              ? (primaryTarget.pointNormalizedDefocus ?? primaryTarget.normalizedDefocus)
+              : (primaryTarget.patchNormalizedDefocus ?? primaryTarget.normalizedDefocus),
           distanceToFocusPlaneMm: primaryTarget.distanceToFocusPlaneMm,
         }
       : null,
@@ -247,7 +259,13 @@ export const GroundGlassRenderer = ({
 
   return (
     <div style={{ display: "grid", gap: "0.5rem" }}>
-      <GroundGlassStage zoomEnabled={zoomEnabled} onToggleZoom={onToggleZoom} imageLayer={transformedImageLayer} fixedOverlayLayer={fixedOverlayLayer} />
+      <GroundGlassStage
+        zoomEnabled={zoomEnabled}
+        onZoomChange={onZoomChange}
+        interactionResetKey={interactionResetKey}
+        imageLayer={transformedImageLayer}
+        fixedOverlayLayer={fixedOverlayLayer}
+      />
       {/* Current Settings & Focus Fundamentals Debug and Focus Targets are rendered by the parent GroundGlassViewport to allow controls to appear immediately after the canvas. */}
     </div>
   );

@@ -32,15 +32,20 @@ describe("scenes page", () => {
     const scopedTableCard = within(tableCard!);
     expect(
       scopedTableCard.getByText(
-        "Use front tilt to align the plane of focus with a tabletop extending from near to far.",
+        "Use front tilt to align the plane of sharp focus with three coplanar focus cards above the tabletop.",
       ),
     ).toBeInTheDocument();
     expect(scopedTableCard.getByText("Tilt")).toBeInTheDocument();
     expect(scopedTableCard.getByText("Plane of focus")).toBeInTheDocument();
     expect(scopedTableCard.getByText("Scheimpflug principle")).toBeInTheDocument();
+    expect(tableCard!.querySelector("img")).toHaveAttribute("src", "/assets/table-tilt.png");
     expect(scopedTableCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
       "/simulator/free/table-tilt",
+    );
+    expect(scopedTableCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/table-tilt/tilt-01",
     );
 
     expect(publicSceneIds).toEqual([

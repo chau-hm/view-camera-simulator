@@ -1,4 +1,4 @@
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import { SceneOverlayControls } from "./SceneOverlayControls";
 import { getLazySceneAssets, getPreloadSceneAssets, getRequiredSceneAssets } from "../../scenes/definitions";
@@ -8,6 +8,8 @@ import type { SceneDefinition } from "../../types/scene";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { RenderQualityProfile } from "../../types/ui";
 import { UI_COPY } from "../../ui/copy";
+import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugConstruction";
+import { supportsScheimpflugConstruction as sceneSupportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
 
 type SceneViewportProps = {
   scene: SceneDefinition;
@@ -41,12 +43,33 @@ export const SceneViewport = ({
   const [showDofOverlay, setShowDofOverlay] = useState(true);
   const [showLegends, setShowLegends] = useState(false);
   const [showOpticalGeometry, setShowOpticalGeometry] = useState(false);
+  const [requestedScheimpflugConstruction, setRequestedScheimpflugConstruction] = useState(false);
   const [viewResetNonce, setViewResetNonce] = useState(0);
   const [bigView, setBigView] = useState(false);
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
   const requiredAssets = useMemo(() => getRequiredSceneAssets(scene.id), [scene.id]);
   const lazyAssets = useMemo(() => getLazySceneAssets(scene.id), [scene.id]);
   const preloadAssets = useMemo(() => getPreloadSceneAssets(scene.id), [scene.id]);
+  const scheimpflugConstruction = useMemo(
+    () =>
+      deriveScheimpflugConstruction({
+        filmPlane: opticsState.filmPlane,
+        lensPlane: opticsState.lensPlane,
+        focusPlane: opticsState.focusPlane,
+      }),
+    [opticsState.filmPlane, opticsState.focusPlane, opticsState.lensPlane],
+  );
+  const supportsScheimpflugConstruction = sceneSupportsScheimpflugConstruction(scene.id);
+  const constructionActive =
+    supportsScheimpflugConstruction &&
+    requestedScheimpflugConstruction &&
+    scheimpflugConstruction.isValid;
+
+  useEffect(() => {
+    if (!supportsScheimpflugConstruction) {
+      setRequestedScheimpflugConstruction(false);
+    }
+  }, [supportsScheimpflugConstruction]);
 
   if (!webglAvailable) {
     return (
@@ -148,6 +171,7 @@ export const SceneViewport = ({
               showDofOverlay={showDofOverlay}
               showLegends={showLegends}
               showOpticalGeometry={showOpticalGeometry}
+              showScheimpflugConstruction={constructionActive}
               renderQuality={renderQuality}
               viewResetNonce={viewResetNonce}
               simulateAssetFailure={simulateAssetFailure}
@@ -161,14 +185,18 @@ export const SceneViewport = ({
               <div>
                 {/* We'll import dynamically to avoid bundling complexity; component is available synchronously */}
                 <SceneOverlayControls
+                  sceneId={scene.id}
                   showFocusPlane={showFocusPlaneOverlay}
                   showDofRegion={showDofOverlay}
                   showLegends={showLegends}
                   showOpticalGeometry={showOpticalGeometry}
+                  showScheimpflugConstruction={requestedScheimpflugConstruction}
+                  scheimpflugConstructionAvailable={scheimpflugConstruction.isValid}
                   onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
                   onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
                   onToggleLegends={() => setShowLegends((s) => !s)}
                   onToggleOpticalGeometry={() => setShowOpticalGeometry((s) => !s)}
+                  onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setRequestedScheimpflugConstruction((state) => !state) : undefined}
                 />
               </div>
             </div>
@@ -185,6 +213,7 @@ export const SceneViewport = ({
               showDofOverlay={showDofOverlay}
               showLegends={showLegends}
               showOpticalGeometry={showOpticalGeometry}
+              showScheimpflugConstruction={constructionActive}
               renderQuality={renderQuality}
               viewResetNonce={viewResetNonce}
               simulateAssetFailure={simulateAssetFailure}
@@ -196,16 +225,28 @@ export const SceneViewport = ({
           {/* overlay controls inside inline viewport */}
           <div className="scene-overlay-controls-wrap">
             <SceneOverlayControls
+              sceneId={scene.id}
               showFocusPlane={showFocusPlaneOverlay}
               showDofRegion={showDofOverlay}
               showLegends={showLegends}
               showOpticalGeometry={showOpticalGeometry}
+              showScheimpflugConstruction={requestedScheimpflugConstruction}
+              scheimpflugConstructionAvailable={scheimpflugConstruction.isValid}
               onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
               onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
               onToggleLegends={() => setShowLegends((s) => !s)}
               onToggleOpticalGeometry={() => setShowOpticalGeometry((s) => !s)}
+              onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setRequestedScheimpflugConstruction((state) => !state) : undefined}
             />
           </div>
+
+          {supportsScheimpflugConstruction && requestedScheimpflugConstruction ? (
+            <p className="scene-construction-note" data-testid="scheimpflug-construction-note">
+              {scheimpflugConstruction.isValid
+                ? "Film (blue), lens (slate), and sharp-focus (green) planes contain the violet Scheimpflug line. Open the Scheimpflug Section to view that line end-on."
+                : scheimpflugConstruction.unavailableReason}
+            </p>
+          ) : null}
 
           {/* fullscreen icon button at top-right of the scene renderer */}
           <button

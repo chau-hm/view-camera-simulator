@@ -36,7 +36,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     }
   });
 
-  it("B/D: Plane and glyph orientation (side & top): planes vertical and glyphs vertical plates", () => {
+  it("B/D: Plane and projected camera orientation stay vertical in zero-movement Side and Top", () => {
     const scene = focusFundamentalsTwoTargets;
     const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
 
@@ -50,18 +50,38 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     const verticalPlane = planeLinesAll.find((ln) => Math.abs(parseFloat(ln.getAttribute('x1') || '0') - parseFloat(ln.getAttribute('x2') || '0')) < 1);
     expect(verticalPlane).toBeTruthy();
 
-    // glyph orientation: rear/front standards are vertical plates (height > width)
-    const rearRect = Array.from(svgSide!.querySelectorAll('rect')).find((r) => r.getAttribute('fill') === '#1f2937');
-    const frontRect = Array.from(svgSide!.querySelectorAll('rect')).find((r) => r.getAttribute('fill') === '#475569');
-    expect(rearRect).toBeTruthy();
-    expect(frontRect).toBeTruthy();
-    if (rearRect) expect(parseFloat(rearRect.getAttribute('height') || '0')).toBeGreaterThan(parseFloat(rearRect.getAttribute('width') || '0'));
-    if (frontRect) expect(parseFloat(frontRect.getAttribute('height') || '0')).toBeGreaterThan(parseFloat(frontRect.getAttribute('width') || '0'));
+    const assertProjectedStandards = (svg: SVGElement) => {
+      expect(svg.querySelector('[data-testid="generic-camera-glyphs"]')).toBeNull();
+      for (const id of ["film", "lens"]) {
+        const physical = svg.querySelector(
+          `[data-testid="physical-${id}-segment"]`,
+        ) as SVGLineElement | null;
+        const trace = svg.querySelector(
+          `[data-testid="plane-line-${id}"]`,
+        ) as SVGLineElement | null;
+        expect(physical).not.toBeNull();
+        expect(trace).not.toBeNull();
+        const vector = (line: SVGLineElement) => ({
+          x: Number(line.getAttribute("x2")) - Number(line.getAttribute("x1")),
+          y: Number(line.getAttribute("y2")) - Number(line.getAttribute("y1")),
+        });
+        const physicalVector = vector(physical!);
+        const traceVector = vector(trace!);
+        expect(Math.abs(physicalVector.x)).toBeLessThan(1e-8);
+        const residual = Math.abs(
+          physicalVector.x * traceVector.y - physicalVector.y * traceVector.x,
+        ) / (Math.hypot(physicalVector.x, physicalVector.y) * Math.hypot(traceVector.x, traceVector.y));
+        expect(Number.isFinite(residual)).toBe(true);
+        expect(residual).toBeLessThan(1e-10);
+      }
+    };
+    assertProjectedStandards(svgSide!);
 
     // top view
     const { container: c2 } = render(<GeometryViewport opticsState={optics} geometryView="top" scene={scene} riseMm={0} />);
     const svgTop = c2.querySelector('[data-testid="geometry-svg-top"]') as SVGElement | null;
     expect(svgTop).toBeTruthy();
+    assertProjectedStandards(svgTop!);
 
     // in top view, target glyphs should be vertical plates
     const targetRectsTop = Array.from(svgTop!.querySelectorAll('rect')).filter((r) => r.getAttribute('fill') === '#0f766e');

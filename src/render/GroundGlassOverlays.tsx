@@ -93,9 +93,11 @@ export const GroundGlassFixedOverlays = ({
       </div>
 
       <div
+        data-testid="ground-glass-focus-label"
+        className="groundglass-focus-label"
         style={{
           position: "absolute",
-          top: 8,
+          top: 48,
           right: 8,
           padding: "2px 6px",
           borderRadius: 4,

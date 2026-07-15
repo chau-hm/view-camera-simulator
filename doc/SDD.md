@@ -547,6 +547,8 @@ else:
 epsilon = 0.1 degree
 ```
 
+`table-tilt` 為連續性例外：只有 tilt 與 swing 精確為 0 的狀態使用平行焦平面；任何有限的非零角度（包括 0.01° 測試點）均直接建立 Scheimpflug 平面。這避免在 0.1° 閾值出現焦平面與模糊模型跳變。
+
 ---
 
 # 11. 地面玻璃投影設計
@@ -623,6 +625,10 @@ Ground glass renderer 需要：
 * Camera world matrix。
 * Focus plane。
 * Aperture。
+
+Table Tilt 的 Ground Glass 在零 tilt 與非零 tilt 均以同一組 derived focus / near / far planes 計算模糊；固定在一個焦距的 film datum 不得另行控制零 tilt 的焦點。Focus Fundamentals 保留其專用 thin-lens image-distance path。
+
+開發／測試模式可用明確的 RTT diagnostic 開關，對 Raw color target 與最終 DOF target 作小尺寸 WebGL readback，記錄非背景像素、亮度變異、depth texture、camera clipping、projection determinant 與 uniform finite 狀態。正常使用不得逐幀 readback。
 * Focus distance。
 
 ## 12.3 每像素清晰度估算

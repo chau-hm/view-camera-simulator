@@ -100,14 +100,28 @@ export const SimulatorWorkspace = ({
   // RTT runtime info
   const rttRuntimeInfo = useAppStore((s) => s.groundGlassRttRuntimeInfo);
 
+  const tableTiltFocusMetric =
+    safeScene.id === "table-tilt" && mode === "free" ? "point" : "patch";
   const focusAssistTargets = useMemo(
     () =>
       createFocusAssistPass({
         enabled: camera.focusAssistEnabled,
         targets: opticsState.focusTargets,
+        metric: tableTiltFocusMetric,
       }).targets,
-    [camera.focusAssistEnabled, opticsState.focusTargets],
+    [camera.focusAssistEnabled, opticsState.focusTargets, tableTiltFocusMetric],
   );
+  const closestPointTargetId = useMemo(() => {
+    if (safeScene.id !== "table-tilt" || mode !== "free") return undefined;
+    return opticsState.focusTargets.reduce<string | undefined>((closestId, target) => {
+      if (!closestId) return target.id;
+      const closest = opticsState.focusTargets.find((candidate) => candidate.id === closestId);
+      return (target.pointSharpness ?? target.sharpness) >
+        (closest?.pointSharpness ?? closest?.sharpness ?? -1)
+        ? target.id
+        : closestId;
+    }, undefined);
+  }, [mode, opticsState.focusTargets, safeScene.id]);
 
   const setInfinityFocus = useAppStore((state) => state.setInfinityFocus);
 
@@ -182,7 +196,9 @@ export const SimulatorWorkspace = ({
                 sceneId={camera.activeSceneId}
                 lockReason={lockReason}
                 rawRttDebug={rawRttDebug}
+                focusMetric={tableTiltFocusMetric}
                 showHeader={false}
+                interactionResetKey={`${mode}:${sceneId}:${taskId ?? "free"}`}
               />
             </div>
           </div>
@@ -198,7 +214,11 @@ export const SimulatorWorkspace = ({
               renderQuality={renderQuality}
             />
 
-            <FocusTargetsReadout focusTargets={focusAssistTargets} />
+            <FocusTargetsReadout
+              focusTargets={focusAssistTargets}
+              metricLabel={tableTiltFocusMetric === "point" ? "Point focus" : safeScene.id === "table-tilt" ? "Patch coverage" : "Focus"}
+              closestTargetId={closestPointTargetId}
+            />
           </div>
 
           {/* Row 2: Task | Feedback (each wrapped in a card shell provided by Workspace) */}

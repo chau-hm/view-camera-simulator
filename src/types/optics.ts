@@ -37,6 +37,16 @@ export type FocusTargetSharpness = {
   acceptableRangeMm?: number | undefined;
   sharpness: number;
   status: "sharp" | "acceptable" | "soft";
+  /** Centre-sample focus used for point-focusing feedback in Free Mode. */
+  pointSharpness?: number;
+  pointStatus?: "sharp" | "acceptable" | "soft";
+  /** Conservative worst-sample score used for whole-patch task coverage. */
+  patchSharpness?: number;
+  patchStatus?: "sharp" | "acceptable" | "soft";
+  /** Centre-sample defocus paired with pointSharpness. */
+  pointNormalizedDefocus?: number;
+  /** Worst-sample defocus paired with patchSharpness. */
+  patchNormalizedDefocus?: number;
   // extended diagnostics
   insideDepthOfField?: boolean;
   targetRayDistanceMm?: number;
@@ -73,6 +83,7 @@ export type DerivedOpticsState = {
   filmPlane: Plane;
   filmPlaneCornersWorld: FilmPlaneCorners;
   opticalAxis: Ray;
+  /** Legacy compatibility name: this is the film/lens Scheimpflug common line, not the Hinge Rule line. */
   lensFilmHingeLine: Line3 | null;
   focusPointWorld: Vec3;
   // In infinity focus mode the physical focusPlane may be absent (null)
@@ -93,6 +104,8 @@ export type DerivedOpticsState = {
     focusPlaneModel: "parallel" | "scheimpflug";
     // which DOF model is currently used
     depthOfFieldModel?: "parallel" | "scheimpflug-wedge";
+    /** Ground Glass blur source. Table Tilt deliberately uses its derived planes at every tilt. */
+    groundGlassDofModel?: "parallel-thin-lens" | "derived-planes";
     // near/far distances along optical axis from lens centre
     nearU?: number | null;
     farU?: number | null;

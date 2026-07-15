@@ -1,11 +1,22 @@
-import { render, fireEvent, cleanup } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { useState } from "react";
-import { GroundGlassStage } from "../../render/GroundGlassStage";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  getGroundGlassPointerThresholdPx,
+  GroundGlassStage,
+} from "../../render/GroundGlassStage";
+import {
+  calculateGroundGlassAnchoredPan,
+  denormalizeGroundGlassPan,
+  normalizeGroundGlassPan,
+} from "../../render/groundGlassStageTransform";
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
-const RECT = {
+let currentRect = {
   left: 100,
   top: 50,
   width: 500,
@@ -14,232 +25,276 @@ const RECT = {
   bottom: 450,
   x: 100,
   y: 50,
-  toJSON: () => {},
+  toJSON: () => ({}),
 };
 
-function parseTransform(transform: string) {
-  const m = /translate3d\(([-0-9.]+)px,\s*([-0-9.]+)px,\s*0\)\s*scale\(([-0-9.]+)\)/.exec(transform);
-  if (!m) return null;
-  return { x: parseFloat(m[1]), y: parseFloat(m[2]), scale: parseFloat(m[3]) };
-}
+const getStage = (getByRole: ReturnType<typeof render>["getByRole"]) =>
+  getByRole("button", { name: /Ground Glass$/ });
 
-describe("GroundGlassStage zoom anchoring and pan state", () => {
-  // Controlled harness to toggle zoom state
-  const ControlledGroundGlassStage = () => {
-    const [zoomed, setZoomed] = useState(false);
-    return (
-      <GroundGlassStage
-        zoomEnabled={zoomed}
-        onToggleZoom={() => setZoomed((s) => !s)}
-        imageLayer={<div data-testid="image-content" />}
-        fixedOverlayLayer={<div data-testid="overlay" />}
-      />
+const configureStage = (stage: HTMLElement) => {
+  Object.defineProperty(stage, "getBoundingClientRect", {
+    configurable: true,
+    value: () => currentRect,
+  });
+  Object.defineProperty(stage, "setPointerCapture", {
+    configurable: true,
+    value: vi.fn(),
+  });
+  Object.defineProperty(stage, "releasePointerCapture", {
+    configurable: true,
+    value: vi.fn(),
+  });
+};
+
+const pointerGesture = (
+  stage: HTMLElement,
+  options: {
+    pointerId: number;
+    pointerType?: "mouse" | "pen" | "touch";
+    startX: number;
+    startY: number;
+    endX?: number;
+    endY?: number;
+  },
+) => {
+  const {
+    pointerId,
+    pointerType = "mouse",
+    startX,
+    startY,
+    endX = startX,
+    endY = startY,
+  } = options;
+  fireEvent.pointerDown(stage, { pointerId, pointerType, button: 0, clientX: startX, clientY: startY });
+  if (endX !== startX || endY !== startY) {
+    fireEvent.pointerMove(stage, { pointerId, pointerType, clientX: endX, clientY: endY });
+  }
+  fireEvent.pointerUp(stage, { pointerId, pointerType, button: 0, clientX: endX, clientY: endY });
+  // Browsers commonly emit this after pointer-up. It must never activate twice.
+  fireEvent.click(stage, { detail: 1, clientX: endX, clientY: endY });
+};
+
+const ControlledGroundGlassStage = ({ resetKey = "route-a" }: { resetKey?: string }) => {
+  const [zoomed, setZoomed] = useState(false);
+  return (
+    <GroundGlassStage
+      zoomEnabled={zoomed}
+      onZoomChange={setZoomed}
+      interactionResetKey={resetKey}
+      imageLayer={<div data-testid="image-content" />}
+      fixedOverlayLayer={<div data-testid="overlay" />}
+    />
+  );
+};
+
+describe("GroundGlassStage explicit zoom interaction", () => {
+  it("normalizes anchored pan and clamps it to viewport bounds", () => {
+    const anchored = calculateGroundGlassAnchoredPan(currentRect.left, currentRect.top, currentRect);
+    expect(anchored).toEqual({ x: 1, y: 1 });
+    const normalized = normalizeGroundGlassPan({ x: 999, y: -999 }, currentRect, 1.9);
+    expect(normalized).toEqual({ x: 1, y: -1 });
+    const denormalized = denormalizeGroundGlassPan(normalized, currentRect, 1.9);
+    expect(denormalized.x).toBeCloseTo(225, 8);
+    expect(denormalized.y).toBeCloseTo(-180, 8);
+  });
+
+  it("uses pointer-type-aware displacement thresholds", () => {
+    expect(getGroundGlassPointerThresholdPx("mouse")).toBe(8);
+    expect(getGroundGlassPointerThresholdPx("pen")).toBe(10);
+    expect(getGroundGlassPointerThresholdPx("touch")).toBe(12);
+    expect(getGroundGlassPointerThresholdPx()).toBe(8);
+  });
+
+  it("requests explicit zoom-in and ignores duplicate pointer/click activation", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    pointerGesture(stage, { pointerId: 1, startX: 350, startY: 250 });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
+    expect(stage).toHaveAttribute("data-scale", "1.9");
+    // A duplicate pointer-up for the completed gesture is inert.
+    fireEvent.pointerUp(stage, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 350, clientY: 250 });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
+  });
+
+  it("keeps repeated explicit zoom-out requests false", () => {
+    const onZoomChange = vi.fn();
+    const view = render(
+      <GroundGlassStage zoomEnabled onZoomChange={onZoomChange} imageLayer={<div />} />,
     );
-  };
-
-  it('center click zooms in centered', () => {
-    const { getByRole, getByTestId } = render(<ControlledGroundGlassStage />);
-    const stage = getByRole('button');
-    // mock geometry
-    Object.defineProperty(stage, 'getBoundingClientRect', { value: () => RECT });
-
-    const img = getByTestId('image-content');
-
-    // click at center
-    const cx = RECT.left + RECT.width / 2;
-    const cy = RECT.top + RECT.height / 2;
-
-    fireEvent.pointerDown(stage, { pointerId: 1, button: 0, clientX: cx, clientY: cy });
-    fireEvent.pointerUp(stage, { pointerId: 1, button: 0, clientX: cx, clientY: cy });
-    fireEvent.click(stage, { clientX: cx, clientY: cy, detail: 1 });
-
-    // now zoomed
-    expect(stage.getAttribute('data-zoomed')).toBe('true');
-    const transformed = img.parentElement as HTMLElement;
-    const parsed = parseTransform(transformed.style.transform || '');
-    expect(parsed).not.toBeNull();
-    expect(parsed!.scale).toBeCloseTo(1.9, 6);
-    // centered => translation approximately zero
-    expect(parsed!.x).toBeCloseTo(0, 1);
-    expect(parsed!.y).toBeCloseTo(0, 1);
+    onZoomChange.mockClear();
+    const reset = view.getByRole("button", { name: "Reset Ground Glass view" });
+    fireEvent.click(reset);
+    fireEvent.click(reset);
+    expect(onZoomChange.mock.calls).toEqual([[false], [false]]);
   });
 
-  it('off-center clicks produce anchored pan and are clamped', () => {
-    const { getByRole, getByTestId } = render(<ControlledGroundGlassStage />);
-    const stage = getByRole('button');
-    Object.defineProperty(stage, 'getBoundingClientRect', { value: () => RECT });
-    const img = getByTestId('image-content');
-
-    const leftX = RECT.left + RECT.width * 0.25;
-    const topY = RECT.top + RECT.height * 0.25;
-
-    // left-top click
-    fireEvent.pointerDown(stage, { pointerId: 2, button: 0, clientX: leftX, clientY: topY });
-    fireEvent.pointerUp(stage, { pointerId: 2, button: 0, clientX: leftX, clientY: topY });
-    fireEvent.click(stage, { clientX: leftX, clientY: topY, detail: 1 });
-
-    expect(stage.getAttribute('data-zoomed')).toBe('true');
-    const parsed1 = parseTransform(img.parentElement!.style.transform || '');
-    expect(parsed1).not.toBeNull();
-    // click left of center => positive pan.x
-    expect(parsed1!.x).toBeGreaterThan(0);
-    // click above center => positive pan.y
-    expect(parsed1!.y).toBeGreaterThan(0);
-
-    // reset by zooming out
-    fireEvent.pointerDown(stage, { pointerId: 3, button: 0, clientX: RECT.left + 10, clientY: RECT.top + 10 });
-    fireEvent.pointerUp(stage, { pointerId: 3, button: 0, clientX: RECT.left + 10, clientY: RECT.top + 10 });
-    fireEvent.click(stage, { clientX: RECT.left + 10, clientY: RECT.top + 10, detail: 1 });
-    expect(stage.getAttribute('data-zoomed')).toBe('false');
-
-    // right-bottom click
-    const rightX = RECT.left + RECT.width * 0.75;
-    const bottomY = RECT.top + RECT.height * 0.75;
-    fireEvent.pointerDown(stage, { pointerId: 4, button: 0, clientX: rightX, clientY: bottomY });
-    fireEvent.pointerUp(stage, { pointerId: 4, button: 0, clientX: rightX, clientY: bottomY });
-    fireEvent.click(stage, { clientX: rightX, clientY: bottomY, detail: 1 });
-    expect(stage.getAttribute('data-zoomed')).toBe('true');
-    const parsed2 = parseTransform(img.parentElement!.style.transform || '');
-    expect(parsed2).not.toBeNull();
-    expect(parsed2!.x).toBeLessThan(0);
-    expect(parsed2!.y).toBeLessThan(0);
-
-    // extreme click clamp test: ensure we are unzoomed first, then click far beyond right-bottom
-    // zoom out first
-    fireEvent.pointerDown(stage, { pointerId: 5, button: 0, clientX: RECT.left + 10, clientY: RECT.top + 10 });
-    fireEvent.pointerUp(stage, { pointerId: 5, button: 0, clientX: RECT.left + 10, clientY: RECT.top + 10 });
-    fireEvent.click(stage, { clientX: RECT.left + 10, clientY: RECT.top + 10, detail: 1 });
-    expect(stage.getAttribute('data-zoomed')).toBe('false');
-
-    // now click extremely far beyond corner to test clamping
-    fireEvent.pointerDown(stage, { pointerId: 6, button: 0, clientX: RECT.left + RECT.width * 10, clientY: RECT.top + RECT.height * 10 });
-    fireEvent.pointerUp(stage, { pointerId: 6, button: 0, clientX: RECT.left + RECT.width * 10, clientY: RECT.top + RECT.height * 10 });
-    fireEvent.click(stage, { clientX: RECT.left + RECT.width * 10, clientY: RECT.top + RECT.height * 10, detail: 1 });
-    expect(stage.getAttribute('data-zoomed')).toBe('true');
-    const parsed3 = parseTransform(img.parentElement!.style.transform || '');
-    expect(parsed3).not.toBeNull();
-    const maxPanX = (RECT.width * (1.9 - 1)) / 2;
-    const maxPanY = (RECT.height * (1.9 - 1)) / 2;
-    expect(Math.abs(parsed3!.x)).toBeLessThanOrEqual(maxPanX + 0.1);
-    expect(Math.abs(parsed3!.y)).toBeLessThanOrEqual(maxPanY + 0.1);
+  it("preserves focus on the fixed view-control button when its zoom label changes", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const button = view.getByRole("button", { name: "Zoom in Ground Glass view" });
+    button.focus();
+    expect(button).toHaveFocus();
+    fireEvent.click(button);
+    const resetButton = view.getByRole("button", { name: "Reset Ground Glass view" });
+    expect(resetButton).toBe(button);
+    expect(resetButton).toHaveFocus();
   });
 
-  it('zooming out after anchored zoom and pan returns directly to centered transform', () => {
-    const { getByRole, getByTestId } = render(<ControlledGroundGlassStage />);
-    const stage = getByRole('button');
-    Object.defineProperty(stage, 'getBoundingClientRect', { value: () => RECT });
-    const img = getByTestId('image-content');
+  it("treats 3-5 px mouse jitter as a zoom-out click and resets atomically", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    pointerGesture(stage, { pointerId: 2, startX: 180, startY: 120 });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
 
-    const clickX = RECT.left + RECT.width * 0.2;
-    const clickY = RECT.top + RECT.height * 0.2;
-
-    // zoom in anchored
-    fireEvent.pointerDown(stage, { pointerId: 10, button: 0, clientX: clickX, clientY: clickY });
-    fireEvent.pointerUp(stage, { pointerId: 10, button: 0, clientX: clickX, clientY: clickY });
-    fireEvent.click(stage, { clientX: clickX, clientY: clickY, detail: 1 });
-
-    expect(stage.getAttribute('data-zoomed')).toBe('true');
-    const parsedIn = parseTransform(img.parentElement!.style.transform || '');
-    expect(parsedIn!.scale).toBeCloseTo(1.9, 6);
-    expect(parsedIn!.x).not.toBeCloseTo(0, 1);
-
-    // drag to change pan
-    fireEvent.pointerDown(stage, { pointerId: 11, button: 0, clientX: RECT.left + 250, clientY: RECT.top + 200 });
-    fireEvent.pointerMove(stage, { pointerId: 11, button: 0, clientX: RECT.left + 300, clientY: RECT.top + 240 });
-    fireEvent.pointerUp(stage, { pointerId: 11, button: 0, clientX: RECT.left + 300, clientY: RECT.top + 240 });
-
-    const parsedAfterDrag = parseTransform(img.parentElement!.style.transform || '');
-    expect(parsedAfterDrag!.x).not.toBe(parsedIn!.x);
-
-    // click to zoom out
-    fireEvent.pointerDown(stage, { pointerId: 12, button: 0, clientX: RECT.left + 10, clientY: RECT.top + 10 });
-    fireEvent.pointerUp(stage, { pointerId: 12, button: 0, clientX: RECT.left + 10, clientY: RECT.top + 10 });
-    fireEvent.click(stage, { clientX: RECT.left + 10, clientY: RECT.top + 10, detail: 1 });
-
-    // should immediately show centered unzoomed transform
-    expect(stage.getAttribute('data-zoomed')).toBe('false');
-    const parsedOut = parseTransform(img.parentElement!.style.transform || '');
-    expect(parsedOut).not.toBeNull();
-    expect(parsedOut!.scale).toBeCloseTo(1, 6);
-    expect(parsedOut!.x).toBeCloseTo(0, 1);
-    expect(parsedOut!.y).toBeCloseTo(0, 1);
+    pointerGesture(stage, {
+      pointerId: 3,
+      startX: 350,
+      startY: 250,
+      endX: 354,
+      endY: 253,
+    });
+    expect(stage).toHaveAttribute("data-zoomed", "false");
+    expect(stage).toHaveAttribute("data-pan-x", "0");
+    expect(stage).toHaveAttribute("data-pan-y", "0");
+    expect(stage).toHaveAttribute("data-normalized-pan-x", "0");
+    expect(stage).toHaveAttribute("data-normalized-pan-y", "0");
+    expect(stage).toHaveAttribute("data-scale", "1");
+    expect(stage).toHaveAttribute("data-dragging", "false");
+    expect(stage).toHaveAttribute("data-pointer-active", "false");
+    expect(stage).toHaveAttribute("data-pointer-captured", "false");
+    expect(view.getByTestId("ground-glass-image-layer")).toHaveStyle({
+      transform: "translate3d(0px, 0px, 0) scale(1)",
+    });
   });
 
-  it('can zoom in immediately after zooming out (no lost clicks)', () => {
-    const { getByRole, getByTestId } = render(<ControlledGroundGlassStage />);
-    const stage = getByRole('button');
-    Object.defineProperty(stage, 'getBoundingClientRect', { value: () => RECT });
-    const img = getByTestId('image-content');
-
-    // zoom in centered
-    fireEvent.pointerDown(stage, { pointerId: 20, button: 0, clientX: RECT.left + 10, clientY: RECT.top + 10 });
-    fireEvent.pointerUp(stage, { pointerId: 20, button: 0, clientX: RECT.left + 10, clientY: RECT.top + 10 });
-    fireEvent.click(stage, { clientX: RECT.left + 10, clientY: RECT.top + 10, detail: 1 });
-    expect(stage.getAttribute('data-zoomed')).toBe('true');
-
-    // click to zoom out
-    fireEvent.pointerDown(stage, { pointerId: 21, button: 0, clientX: 100, clientY: 80 });
-    fireEvent.pointerUp(stage, { pointerId: 21, button: 0, clientX: 100, clientY: 80 });
-    fireEvent.click(stage, { clientX: 100, clientY: 80, detail: 1 });
-    expect(stage.getAttribute('data-zoomed')).toBe('false');
-
-    // immediately click to zoom in again (off-center)
-    const offX = RECT.left + RECT.width * 0.3;
-    const offY = RECT.top + RECT.height * 0.3;
-    fireEvent.pointerDown(stage, { pointerId: 22, button: 0, clientX: offX, clientY: offY });
-    fireEvent.pointerUp(stage, { pointerId: 22, button: 0, clientX: offX, clientY: offY });
-    fireEvent.click(stage, { clientX: offX, clientY: offY, detail: 1 });
-
-    expect(stage.getAttribute('data-zoomed')).toBe('true');
-    const parsed = parseTransform(img.parentElement!.style.transform || '');
-    expect(parsed!.scale).toBeCloseTo(1.9, 6);
+  it.each([
+    ["mouse", 9],
+    ["pen", 11],
+    ["touch", 13],
+  ] as const)("movement above the %s threshold pans without zooming out", (pointerType, movement) => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    pointerGesture(stage, { pointerId: 10, pointerType, startX: 350, startY: 250 });
+    pointerGesture(stage, {
+      pointerId: 11,
+      pointerType,
+      startX: 350,
+      startY: 250,
+      endX: 350 + movement,
+      endY: 250,
+    });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
+    expect(Number(stage.getAttribute("data-pan-x"))).not.toBe(0);
   });
 
-  it('drag suppression is deterministic and does not rely on timers', () => {
-    const { getByRole } = render(<ControlledGroundGlassStage />);
-    const stage = getByRole('button');
-    Object.defineProperty(stage, 'getBoundingClientRect', { value: () => RECT });
-
-    // drag sequence where browser emits a click after drag
-    fireEvent.pointerDown(stage, { pointerId: 30, button: 0, clientX: 120, clientY: 120 });
-    fireEvent.pointerMove(stage, { pointerId: 30, button: 0, clientX: 200, clientY: 160 });
-    fireEvent.pointerUp(stage, { pointerId: 30, button: 0, clientX: 200, clientY: 160 });
-    // synthetic click should be suppressed
-    fireEvent.click(stage, { clientX: 200, clientY: 160, detail: 1 });
-    expect(stage.getAttribute('data-zoomed')).toBe('false');
-
-    // Now simulate browser that does not emit click; start new gesture which must clear suppression
-    fireEvent.pointerDown(stage, { pointerId: 31, button: 0, clientX: 100, clientY: 100 });
-    fireEvent.pointerUp(stage, { pointerId: 31, button: 0, clientX: 100, clientY: 100 });
-    fireEvent.click(stage, { clientX: 100, clientY: 100, detail: 1 });
-    // click should now toggle
-    expect(stage.getAttribute('data-zoomed')).toBe('true');
+  it("a drag-generated click is inert and the next independent click works immediately", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    pointerGesture(stage, { pointerId: 20, startX: 350, startY: 250 });
+    pointerGesture(stage, { pointerId: 21, startX: 350, startY: 250, endX: 390, endY: 275 });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
+    pointerGesture(stage, { pointerId: 22, startX: 350, startY: 250, endX: 354, endY: 252 });
+    expect(stage).toHaveAttribute("data-zoomed", "false");
   });
 
-  it('keyboard toggles use centered anchor', () => {
-    const { getByRole, getByTestId } = render(<ControlledGroundGlassStage />);
-    const stage = getByRole('button');
-    Object.defineProperty(stage, 'getBoundingClientRect', { value: () => RECT });
-    const img = getByTestId('image-content');
+  it("classifies total pointer-up displacement even when no move event was delivered", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    pointerGesture(stage, { pointerId: 25, startX: 350, startY: 250 });
+    fireEvent.pointerDown(stage, { pointerId: 26, pointerType: "mouse", button: 0, clientX: 350, clientY: 250 });
+    fireEvent.pointerUp(stage, { pointerId: 26, pointerType: "mouse", button: 0, clientX: 370, clientY: 250 });
+    fireEvent.click(stage, { detail: 1, clientX: 370, clientY: 250 });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
+  });
 
-    // zoom in using off-center click
-    fireEvent.pointerDown(stage, { pointerId: 40, button: 0, clientX: RECT.left + RECT.width * 0.2, clientY: RECT.top + RECT.height * 0.2 });
-    fireEvent.pointerUp(stage, { pointerId: 40, button: 0, clientX: RECT.left + RECT.width * 0.2, clientY: RECT.top + RECT.height * 0.2 });
-    fireEvent.click(stage, { clientX: RECT.left + RECT.width * 0.2, clientY: RECT.top + RECT.height * 0.2, detail: 1 });
-    expect(stage.getAttribute('data-zoomed')).toBe('true');
+  it("the fixed Reset view control clears pan, capture, and the transform", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    pointerGesture(stage, { pointerId: 30, startX: 180, startY: 120 });
+    fireEvent.pointerDown(stage, { pointerId: 31, pointerType: "mouse", button: 0, clientX: 350, clientY: 250 });
+    fireEvent.pointerMove(stage, { pointerId: 31, pointerType: "mouse", clientX: 410, clientY: 285 });
+    expect(stage).toHaveAttribute("data-dragging", "true");
+    expect(stage).toHaveAttribute("data-pointer-captured", "true");
+    fireEvent.click(view.getByRole("button", { name: "Reset Ground Glass view" }));
+    expect(stage).toHaveAttribute("data-zoomed", "false");
+    expect(stage).toHaveAttribute("data-pointer-active", "false");
+    expect(stage).toHaveAttribute("data-pointer-captured", "false");
+    expect(stage).toHaveAttribute("data-normalized-pan-x", "0");
+    expect(view.getByTestId("ground-glass-image-layer")).toHaveStyle({
+      transform: "translate3d(0px, 0px, 0) scale(1)",
+    });
+    expect(stage.releasePointerCapture).toHaveBeenCalledWith(31);
+  });
 
-    // Enter to zoom out
-    fireEvent.keyDown(stage, { key: 'Enter' });
-    expect(stage.getAttribute('data-zoomed')).toBe('false');
-    const parsedOut = parseTransform(img.parentElement!.style.transform || '');
-    expect(parsedOut!.scale).toBeCloseTo(1, 6);
-    expect(parsedOut!.x).toBeCloseTo(0, 1);
+  it.each(["pointerCancel", "lostPointerCapture"] as const)("%s resets a captured gesture", (eventName) => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    pointerGesture(stage, { pointerId: 40, startX: 350, startY: 250 });
+    fireEvent.pointerDown(stage, { pointerId: 41, pointerType: "mouse", button: 0, clientX: 350, clientY: 250 });
+    fireEvent.pointerMove(stage, { pointerId: 41, pointerType: "mouse", clientX: 390, clientY: 270 });
+    fireEvent[eventName](stage, { pointerId: 41, pointerType: "mouse" });
+    expect(stage).toHaveAttribute("data-zoomed", "false");
+    expect(stage).toHaveAttribute("data-pointer-active", "false");
+    expect(stage).toHaveAttribute("data-dragging", "false");
+    expect(stage).toHaveAttribute("data-pan-x", "0");
+  });
 
-    // Enter to zoom in centered
-    fireEvent.keyDown(stage, { key: 'Enter' });
-    expect(stage.getAttribute('data-zoomed')).toBe('true');
-    const parsedIn = parseTransform(img.parentElement!.style.transform || '');
-    expect(parsedIn!.scale).toBeCloseTo(1.9, 6);
-    expect(parsedIn!.x).toBeCloseTo(0, 1);
+  it("Escape resets while Enter uses the same explicit centered path", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    fireEvent.keyDown(stage, { key: "Enter" });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
+    expect(stage).toHaveAttribute("data-pan-x", "0");
+    fireEvent.keyDown(stage, { key: "Escape" });
+    expect(stage).toHaveAttribute("data-zoomed", "false");
+    expect(stage).toHaveAttribute("data-scale", "1");
+  });
+
+  it("scene/route reset keys discard zoom and pan", () => {
+    const view = render(<ControlledGroundGlassStage resetKey="free:table-tilt" />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    pointerGesture(stage, { pointerId: 50, startX: 180, startY: 120 });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
+    view.rerender(<ControlledGroundGlassStage resetKey="guided:table-tilt" />);
+    expect(stage).toHaveAttribute("data-zoomed", "false");
+    expect(stage).toHaveAttribute("data-normalized-pan-x", "0");
+    expect(stage).toHaveAttribute("data-normalized-pan-y", "0");
+  });
+
+  it("resize re-clamps zoomed pan and leaves unzoomed state exactly centered", () => {
+    let resizeCallback: ResizeObserverCallback | undefined;
+    class ResizeObserverMock {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+      }
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+    }
+    vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+    currentRect = { ...currentRect, width: 500, height: 400, right: 600, bottom: 450 };
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    pointerGesture(stage, { pointerId: 60, startX: 100, startY: 50 });
+    pointerGesture(stage, { pointerId: 61, startX: 350, startY: 250, endX: 900, endY: 700 });
+    currentRect = { ...currentRect, width: 200, height: 160, right: 300, bottom: 210 };
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(Math.abs(Number(stage.getAttribute("data-pan-x")))).toBeLessThanOrEqual(90);
+    expect(Math.abs(Number(stage.getAttribute("data-pan-y")))).toBeLessThanOrEqual(72);
+
+    fireEvent.click(view.getByRole("button", { name: "Reset Ground Glass view" }));
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(stage).toHaveAttribute("data-pan-x", "0");
+    expect(stage).toHaveAttribute("data-pan-y", "0");
+    expect(stage).toHaveAttribute("data-scale", "1");
   });
 });

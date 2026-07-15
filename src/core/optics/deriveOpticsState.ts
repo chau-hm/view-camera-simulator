@@ -80,6 +80,7 @@ const baseFallbackState = (cameraState: CameraState, errorMessage: string): Deri
       tiltAngleDeg: cameraState.frontTiltDeg,
       swingAngleDeg: cameraState.frontSwingDeg,
       focusPlaneModel: "parallel",
+      groundGlassDofModel: "parallel-thin-lens",
       fallbackApplied: true,
       errorMessage,
     },
@@ -153,6 +154,7 @@ export const deriveOpticsState = (
         tiltAngleDeg: cameraState.frontTiltDeg,
         swingAngleDeg: cameraState.frontSwingDeg,
         focusPlaneModel: "parallel",
+        groundGlassDofModel: "parallel-thin-lens",
         fallbackApplied: false,
         errorMessage: "Infinity focus",
         isInfinityFocus: true,
@@ -232,7 +234,16 @@ export const deriveOpticsState = (
     focusPointWorld = vec(0, 0, cameraState.focusDistanceMm);
   }
 
-  const isParallelLensFilm = isLensFilmNearlyParallel(lensPlane, filmPlane);
+  // Table Tilt needs a continuous transition from exactly zero movement to the
+  // smallest meaningful non-zero movement. The shared near-parallel tolerance
+  // is useful elsewhere, but would introduce an artificial 0.1° model switch
+  // here. Only the exact zero-movement state is parallel for this scene.
+  const isTableTilt = scene.id === "table-tilt";
+  const hasTableTiltAngularMovement =
+    Math.abs(cameraState.frontTiltDeg) > 1e-9 || Math.abs(cameraState.frontSwingDeg) > 1e-9;
+  const isParallelLensFilm = isTableTilt
+    ? !hasTableTiltAngularMovement
+    : isLensFilmNearlyParallel(lensPlane, filmPlane);
   const lensFilmHingeLine = isParallelLensFilm
     ? null
     : calculateLensFilmHingeLine(lensPlane, filmPlane);
@@ -342,6 +353,13 @@ export const deriveOpticsState = (
       swingAngleDeg: cameraState.frontSwingDeg,
       focusPlaneModel,
       depthOfFieldModel: dofResultGlobal?.depthOfFieldModel ?? "parallel",
+      // The Table Tilt RTT uses the already-derived focus/near/far planes at
+      // zero and non-zero tilt alike. This keeps the Focus slider semantics
+      // identical to CPU sharpness without changing Focus Fundamentals.
+      groundGlassDofModel:
+        isTableTilt || dofResultGlobal?.depthOfFieldModel === "scheimpflug-wedge"
+          ? "derived-planes"
+          : "parallel-thin-lens",
       nearU: dofResultGlobal?.nearU ?? null,
       farU: dofResultGlobal?.farU ?? null,
       farIsInfinite: dofResultGlobal?.farIsInfinite ?? false,

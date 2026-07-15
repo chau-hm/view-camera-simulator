@@ -2,7 +2,7 @@ export type SimulatorMode = "guided" | "free";
 
 export type ApertureValue = 5.6 | 11 | 22 | 32;
 
-export type GeometryView = "side" | "top";
+export type GeometryView = "side" | "top" | "scheimpflug";
 
 export type CameraState = {
   focalLengthMm: number;
