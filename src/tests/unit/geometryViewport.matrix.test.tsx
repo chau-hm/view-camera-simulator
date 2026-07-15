@@ -356,7 +356,7 @@ describe('GeometryViewport matrix', () => {
     expect(view.getByText("Far chart")).toBeInTheDocument();
   });
 
-  it("falls back to the subject view when an active construction becomes invalid", async () => {
+  it("falls Table Tilt back to Side without reopening construction after movement is restored", async () => {
     useAppStore.getState().setGeometryView("side");
     const validOptics = deriveOpticsState(
       {
@@ -392,6 +392,108 @@ describe('GeometryViewport matrix', () => {
       expect(viewport).toHaveAttribute("data-geometry-view", "side");
       expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
       expect(viewport).toHaveAttribute("data-construction-layout", "single");
+    });
+  });
+
+  it("falls Shelf Swing back to Top without reopening construction after movement is restored", async () => {
+    useAppStore.getState().setGeometryView("top");
+    const validOptics = deriveOpticsState(
+      { ...DEFAULT_CAMERA_STATE, ...shelfSwingScene.cameraPreset, frontSwingDeg: 7 },
+      shelfSwingScene,
+    );
+    const zeroMovementOptics = deriveOpticsState(
+      { ...DEFAULT_CAMERA_STATE, ...shelfSwingScene.cameraPreset, frontTiltDeg: 0, frontSwingDeg: 0 },
+      shelfSwingScene,
+    );
+    const view = render(
+      <StoreBackedGeometryViewport opticsState={validOptics} scene={shelfSwingScene} />,
+    );
+    const viewport = view.container.querySelector("section[data-geometry-fit]");
+    expect(viewport).not.toBeNull();
+
+    fireEvent.click(view.getByRole("button", { name: "Fit Construction" }));
+    expect(viewport).toHaveAttribute("data-geometry-view", "scheimpflug");
+    expect(viewport).toHaveAttribute("data-geometry-fit", "construction");
+    expect(viewport).toHaveAttribute("data-construction-layout", "split");
+
+    view.rerender(
+      <StoreBackedGeometryViewport opticsState={zeroMovementOptics} scene={shelfSwingScene} />,
+    );
+    await waitFor(() => {
+      expect(viewport).toHaveAttribute("data-geometry-view", "top");
+      expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+      expect(viewport).toHaveAttribute("data-construction-layout", "single");
+    });
+    for (const targetId of ["shelf-front", "shelf-middle", "shelf-back"]) {
+      expect(view.container.querySelector(`[data-testid="geometry-target-${targetId}"]`)).not.toBeNull();
+    }
+
+    view.rerender(
+      <StoreBackedGeometryViewport opticsState={validOptics} scene={shelfSwingScene} />,
+    );
+    await waitFor(() => {
+      expect(viewport).toHaveAttribute("data-geometry-view", "top");
+      expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+      expect(viewport).toHaveAttribute("data-construction-layout", "single");
+    });
+
+    fireEvent.click(view.getByRole("button", { name: "Fit Construction" }));
+    fireEvent.click(view.getByRole("button", { name: "Fit Scene" }));
+    await waitFor(() => {
+      expect(viewport).toHaveAttribute("data-geometry-view", "top");
+      expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+    });
+  });
+
+  it.each([
+    [6, 3, "side"],
+    [3, 6, "top"],
+    [5, 5, "side"],
+  ] as const)(
+    "selects the movement-aware Table Tilt Fit Scene view for tilt %s and swing %s",
+    async (frontTiltDeg, frontSwingDeg, expectedView) => {
+      useAppStore.getState().setGeometryView("scheimpflug");
+      const optics = deriveOpticsState(
+        {
+          ...DEFAULT_CAMERA_STATE,
+          ...tableTiltScene.cameraPreset,
+          frontTiltDeg,
+          frontSwingDeg,
+        },
+        tableTiltScene,
+      );
+      const view = render(<StoreBackedGeometryViewport opticsState={optics} />);
+      const viewport = view.container.querySelector("section[data-geometry-fit]");
+      expect(viewport).not.toBeNull();
+
+      fireEvent.click(view.getByRole("button", { name: "Fit Scene" }));
+      await waitFor(() => {
+        expect(viewport).toHaveAttribute("data-geometry-view", expectedView);
+        expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+      });
+    },
+  );
+
+  it("does not continuously override a direct subject-view choice", async () => {
+    useAppStore.getState().setGeometryView("side");
+    const baseOptics = deriveOpticsState(
+      { ...DEFAULT_CAMERA_STATE, ...tableTiltScene.cameraPreset, frontTiltDeg: 7 },
+      tableTiltScene,
+    );
+    const changedOptics = deriveOpticsState(
+      { ...DEFAULT_CAMERA_STATE, ...tableTiltScene.cameraPreset, frontTiltDeg: 0 },
+      tableTiltScene,
+    );
+    const view = render(<StoreBackedGeometryViewport opticsState={baseOptics} />);
+    const viewport = view.container.querySelector("section[data-geometry-fit]");
+    expect(viewport).not.toBeNull();
+
+    fireEvent.click(view.getByRole("button", { name: "Top" }));
+    expect(viewport).toHaveAttribute("data-geometry-view", "top");
+    view.rerender(<StoreBackedGeometryViewport opticsState={changedOptics} />);
+    await waitFor(() => {
+      expect(viewport).toHaveAttribute("data-geometry-view", "top");
+      expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
     });
   });
 

@@ -5,6 +5,7 @@ import {
   getScheimpflugConstructionWindow,
 } from "../geometry/opticalSectionProjection";
 import { getGeometryPresentationProfile } from "../geometry/geometryPresentationProfiles";
+import { getPreferredSubjectGeometryView } from "../geometry/getPreferredSubjectGeometryView";
 import { OpticalDepthStrip } from "../geometry/OpticalDepthStrip";
 import OpticalSectionDiagram from "../geometry/OpticalSectionDiagram";
 import type { GeometryView } from "../../types/camera";
@@ -31,19 +32,20 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
   const [fitMode, setFitMode] = useState<"scene" | "construction">("scene");
   const supportsConstruction = supportsScheimpflugConstruction(scene.id);
+  const subjectGeometryView = getPreferredSubjectGeometryView({
+    sceneId: scene.id,
+    tiltDeg: opticsState.diagnostics.tiltAngleDeg,
+    swingDeg: opticsState.diagnostics.swingAngleDeg,
+  });
   const effectiveGeometryView =
-    !supportsConstruction && geometryView === "scheimpflug" ? "side" : geometryView;
-  const subjectGeometryView: GeometryView =
-    Math.abs(opticsState.diagnostics.swingAngleDeg) > Math.abs(opticsState.diagnostics.tiltAngleDeg)
-      ? "top"
-      : "side";
+    !supportsConstruction && geometryView === "scheimpflug" ? subjectGeometryView : geometryView;
 
   useEffect(() => {
     if (!supportsConstruction) {
-      if (geometryView === "scheimpflug") setGeometryView("side");
+      if (geometryView === "scheimpflug") setGeometryView(subjectGeometryView);
       if (fitMode === "construction") setFitMode("scene");
     }
-  }, [fitMode, geometryView, setGeometryView, supportsConstruction]);
+  }, [fitMode, geometryView, setGeometryView, subjectGeometryView, supportsConstruction]);
 
   useEffect(() => {
     const element = diagramRef.current;

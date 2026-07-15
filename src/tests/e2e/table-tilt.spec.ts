@@ -1,23 +1,15 @@
 import { expect, test } from "@playwright/test";
+import {
+  clickStageAt,
+  readFreshElementBounds,
+  readStageTransform,
+} from "./helpers/groundGlass";
+import { setRangeDirect } from "./helpers/rangeInput";
 
 const tableTiltCard = (page: import("@playwright/test").Page) =>
   page
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: "Table Tilt" }) });
-
-const setRangeDirect = async (
-  page: import("@playwright/test").Page,
-  label: string,
-  target: number,
-) => {
-  await page.getByLabel(label).evaluate((element, value) => {
-    const input = element as HTMLInputElement;
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-    if (!setter) throw new Error("Range input value setter unavailable");
-    setter.call(input, String(value));
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  }, target);
-};
 
 const readPointScores = async (page: import("@playwright/test").Page) =>
   Object.fromEntries(
@@ -603,156 +595,197 @@ test("3D overlay controls switch responsively without wrapping or blocking the s
   expect(Math.abs(firstBox.y - lastBox.y)).toBeLessThan(2);
 });
 
-test("Table Tilt RTT zoom reset survives realistic jitter and UI state changes", async ({ page }) => {
-  test.setTimeout(360_000);
-  await page.goto("/simulator/free/table-tilt");
+const groundGlassLocators = (page: import("@playwright/test").Page) => {
   const viewport = page.getByLabel("GroundGlassViewport");
-  const stage = viewport.getByRole("button", { name: /Ground Glass$/ });
-  const transformedLayer = viewport.locator(".groundglass-stage");
-  const readTransform = () => transformedLayer.evaluate((element) => {
-    const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform);
-    return { x: matrix.m41, y: matrix.m42, scale: matrix.a };
-  });
-  const readInlineTransform = () => transformedLayer.evaluate((element) => {
-    const matrix = new DOMMatrixReadOnly((element as HTMLElement).style.transform);
-    return { x: matrix.m41, y: matrix.m42, scale: matrix.a };
-  });
-  const expectIdentity = async () => {
-    await expect(stage).toHaveAttribute("data-zoomed", "false");
-    await expect(stage).toHaveAttribute("data-pan-x", "0");
-    await expect(stage).toHaveAttribute("data-pan-y", "0");
-    await expect(stage).toHaveAttribute("data-scale", "1");
-    await expect.poll(async () => {
-      const value = await readInlineTransform();
-      return Math.abs(value.x) <= 0.5 && Math.abs(value.y) <= 0.5 && Math.abs(value.scale - 1) <= 0.01;
-    }).toBe(true);
+  return {
+    viewport,
+    stage: viewport.getByRole("button", { name: /Ground Glass$/ }),
+    transformedLayer: viewport.locator(".groundglass-stage"),
   };
-  const zoomAt = async (xRatio = 0.25, yRatio = 0.25) => {
-    const bounds = await stage.boundingBox();
-    if (!bounds) throw new Error("Ground Glass stage bounding box not found");
-    await page.mouse.click(bounds.x + bounds.width * xRatio, bounds.y + bounds.height * yRatio);
-    await expect(stage).toHaveAttribute("data-zoomed", "true");
-    return bounds;
-  };
-  await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();
+};
+
+const expectGroundGlassIdentity = async (
+  stage: import("@playwright/test").Locator,
+  transformedLayer: import("@playwright/test").Locator,
+) => {
   await expect(stage).toHaveAttribute("data-zoomed", "false");
+  await expect(stage).toHaveAttribute("data-pan-x", "0");
+  await expect(stage).toHaveAttribute("data-pan-y", "0");
+  await expect(stage).toHaveAttribute("data-scale", "1");
+  await expect.poll(async () => {
+    const transform = await readStageTransform(transformedLayer);
+    return (
+      Math.abs(transform.translateX) <= 0.5 &&
+      Math.abs(transform.translateY) <= 0.5 &&
+      Math.abs(transform.scaleX - 1) <= 0.01 &&
+      Math.abs(transform.scaleY - 1) <= 0.01
+    );
+  }).toBe(true);
+};
 
-  const viewControl = viewport.locator(".groundglass-view-control");
-  await viewControl.focus();
-  await viewControl.press("Enter");
-  await expect(viewControl).toHaveAttribute("aria-label", "Reset Ground Glass view");
-  expect(await viewControl.evaluate((element) => document.activeElement === element)).toBe(true);
-  const focusLabel = viewport.getByTestId("ground-glass-focus-label");
-  const controlBox = await viewControl.boundingBox();
-  const focusLabelBox = await focusLabel.boundingBox();
-  if (!controlBox || !focusLabelBox) throw new Error("Ground Glass overlay bounds were unavailable");
-  const overlaps = !(
-    controlBox.x + controlBox.width <= focusLabelBox.x ||
-    focusLabelBox.x + focusLabelBox.width <= controlBox.x ||
-    controlBox.y + controlBox.height <= focusLabelBox.y ||
-    focusLabelBox.y + focusLabelBox.height <= controlBox.y
-  );
-  expect(overlaps).toBe(false);
-  await viewControl.click();
-  await expectIdentity();
+const zoomGroundGlassAt = async (
+  page: import("@playwright/test").Page,
+  stage: import("@playwright/test").Locator,
+  xRatio = 0.25,
+  yRatio = 0.25,
+) => {
+  const bounds = await clickStageAt(page, stage, xRatio, yRatio);
+  await expect(stage).toHaveAttribute("data-zoomed", "true");
+  return bounds;
+};
 
-  const box = await zoomAt(0.25, 0.25);
-  const centerX = box.x + box.width / 2;
-  const centerY = box.y + box.height / 2;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+const boxesOverlap = (
+  first: Awaited<ReturnType<typeof readFreshElementBounds>>,
+  second: Awaited<ReturnType<typeof readFreshElementBounds>>,
+) => !(
+  first.x + first.width <= second.x ||
+  second.x + second.width <= first.x ||
+  first.y + first.height <= second.y ||
+  second.y + second.height <= first.y
+);
+
+test("Table Tilt Ground Glass zoom, pan, jitter, and reset stay deterministic", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/table-tilt");
+  const { viewport, stage, transformedLayer } = groundGlassLocators(page);
+  await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();
+  await expectGroundGlassIdentity(stage, transformedLayer);
+
+  const bounds = await zoomGroundGlassAt(page, stage, 0.25, 0.25);
+  const centerX = bounds.x + bounds.width / 2;
+  const centerY = bounds.y + bounds.height / 2;
+  await page.mouse.move(centerX, centerY);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2 + 20, {
-    steps: 4,
-  });
+  await page.mouse.move(centerX + 30, centerY + 20, { steps: 4 });
   await page.mouse.up();
   await expect(stage).toHaveAttribute("data-zoomed", "true");
+  const panned = await readStageTransform(transformedLayer);
+  expect(Math.abs(panned.translateX)).toBeLessThanOrEqual(
+    (bounds.width * (panned.scaleX - 1)) / 2 + 1,
+  );
+  expect(Math.abs(panned.translateY)).toBeLessThanOrEqual(
+    (bounds.height * (panned.scaleY - 1)) / 2 + 1,
+  );
 
-  const panned = await readTransform();
-  expect(Math.abs(panned.x)).toBeLessThanOrEqual((box.width * (panned.scale - 1)) / 2 + 1);
-  expect(Math.abs(panned.y)).toBeLessThanOrEqual((box.height * (panned.scale - 1)) / 2 + 1);
-
-  // Regression: realistic 4x3 px release jitter is still a click, not a pan.
   await page.mouse.move(centerX, centerY);
   await page.mouse.down();
   await page.mouse.move(centerX + 4, centerY + 3);
   await page.mouse.up();
-  await expectIdentity();
+  await expectGroundGlassIdentity(stage, transformedLayer);
 
-  // A fresh off-centre zoom starts from a valid anchor, and zooming out again
-  // always returns to an identity transform.
-  await zoomAt(0.8, 0.7);
-  const rezoomed = await readTransform();
-  expect(rezoomed.x).toBeLessThan(0);
-  expect(rezoomed.y).toBeLessThan(0);
-  await page.mouse.move(centerX, centerY);
+  await zoomGroundGlassAt(page, stage, 0.8, 0.7);
+  const rezoomed = await readStageTransform(transformedLayer);
+  expect(rezoomed.translateX).toBeLessThan(0);
+  expect(rezoomed.translateY).toBeLessThan(0);
+  const freshBounds = await readFreshElementBounds(stage);
+  const freshCenterX = freshBounds.x + freshBounds.width / 2;
+  const freshCenterY = freshBounds.y + freshBounds.height / 2;
+  await page.mouse.move(freshCenterX, freshCenterY);
   await page.mouse.down();
-  await page.mouse.move(centerX - 35, centerY + 20, { steps: 4 });
+  await page.mouse.move(freshCenterX - 35, freshCenterY + 20, { steps: 4 });
   await page.mouse.up();
   await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
-  await expectIdentity();
+  await expectGroundGlassIdentity(stage, transformedLayer);
 
-  // Browser-level cancellation paths recover without leaving capture or pan.
-  const dispatchInterruptedDrag = async (terminalEvent: "pointercancel" | "lostpointercapture") => {
-    const bounds = await zoomAt();
+  await zoomGroundGlassAt(page, stage);
+  await page.keyboard.press("Escape");
+  await expectGroundGlassIdentity(stage, transformedLayer);
+});
+
+test("Table Tilt Ground Glass recovers from interrupted pointer gestures", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/table-tilt");
+  const { stage, transformedLayer } = groundGlassLocators(page);
+
+  for (const [index, terminalEvent] of ["pointercancel", "lostpointercapture"].entries()) {
+    const bounds = await zoomGroundGlassAt(page, stage);
     const start = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+    const pointerId = 91 + index;
     await stage.dispatchEvent("pointerdown", {
-      pointerId: 91,
+      pointerId,
       pointerType: "mouse",
       button: 0,
       clientX: start.x,
       clientY: start.y,
     });
     await stage.dispatchEvent("pointermove", {
-      pointerId: 91,
+      pointerId,
       pointerType: "mouse",
       clientX: start.x + 30,
       clientY: start.y + 20,
     });
-    await stage.dispatchEvent(terminalEvent, { pointerId: 91, pointerType: "mouse" });
-    await expectIdentity();
+    await stage.dispatchEvent(terminalEvent, { pointerId, pointerType: "mouse" });
+    await expectGroundGlassIdentity(stage, transformedLayer);
     await expect(stage).toHaveAttribute("data-pointer-active", "false");
     await expect(stage).toHaveAttribute("data-pointer-captured", "false");
-  };
-  await dispatchInterruptedDrag("pointercancel");
-  await dispatchInterruptedDrag("lostpointercapture");
+  }
+});
 
-  // Focus and Tilt updates do not poison the interaction state.
+test("Table Tilt Ground Glass survives optics, preview, and quality changes", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/simulator/free/table-tilt");
+  const { viewport, stage, transformedLayer } = groundGlassLocators(page);
+  const rtt = viewport.getByTestId("ground-glass-rtt");
+  await expect(rtt).toBeVisible();
+
   await setRangeDirect(page, "Focus distance", 5000);
-  await zoomAt();
+  await zoomGroundGlassAt(page, stage);
   await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
-  await expectIdentity();
-  await setRangeDirect(page, "Tilt", 3);
-  await zoomAt();
-  await page.keyboard.press("Escape");
-  await expectIdentity();
+  await expectGroundGlassIdentity(stage, transformedLayer);
+  await expect(rtt).toBeVisible();
 
-  // Preview changes explicitly reset; quality recreation retains a valid view
-  // that can still be reset without waiting for the RTT to rebuild.
-  await zoomAt();
+  await setRangeDirect(page, "Tilt", 3);
+  await zoomGroundGlassAt(page, stage);
+  await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
+  await expectGroundGlassIdentity(stage, transformedLayer);
+  await expect(rtt).toBeVisible();
+
+  await zoomGroundGlassAt(page, stage);
   await page.getByLabel("Upright Assist").check();
-  await expectIdentity();
-  await zoomAt();
+  await expectGroundGlassIdentity(stage, transformedLayer);
+  await expect(rtt).toBeVisible();
+
+  await zoomGroundGlassAt(page, stage);
   await page.getByLabel("Render quality").selectOption("low");
   await expect(stage).toHaveAttribute("data-zoomed", "true");
+  await expect(rtt).toBeVisible();
   await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
-  await expectIdentity();
+  await expectGroundGlassIdentity(stage, transformedLayer);
   await page.getByLabel("Raw Ground Glass").check();
-  await expectIdentity();
+  await expectGroundGlassIdentity(stage, transformedLayer);
+  await expect(rtt).toBeVisible();
+});
+
+test("Table Tilt Ground Glass responsive overlays remain separate and centered", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/table-tilt");
+  const { viewport, stage, transformedLayer } = groundGlassLocators(page);
+  const viewControl = viewport.locator(".groundglass-view-control");
+  const focusLabel = viewport.getByTestId("ground-glass-focus-label");
+
+  await viewControl.focus();
+  await viewControl.press("Enter");
+  await expect(viewControl).toHaveAttribute("aria-label", "Reset Ground Glass view");
+  expect(await viewControl.evaluate((element) => document.activeElement === element)).toBe(true);
+  expect(
+    boxesOverlap(
+      await readFreshElementBounds(viewControl),
+      await readFreshElementBounds(focusLabel),
+    ),
+  ).toBe(false);
+  await viewControl.click();
+  await expectGroundGlassIdentity(stage, transformedLayer);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(viewport.getByTestId("ground-glass-rtt")).toHaveCount(1);
-  await expectIdentity();
+  await expectGroundGlassIdentity(stage, transformedLayer);
   await expect(page.getByRole("heading", { name: "Ground Glass" })).toBeVisible();
-  const mobileControlBox = await viewControl.boundingBox();
-  const mobileLabelBox = await focusLabel.boundingBox();
-  if (!mobileControlBox || !mobileLabelBox) throw new Error("Mobile Ground Glass overlays were unavailable");
-  const mobileOverlaps = !(
-    mobileControlBox.x + mobileControlBox.width <= mobileLabelBox.x ||
-    mobileLabelBox.x + mobileLabelBox.width <= mobileControlBox.x ||
-    mobileControlBox.y + mobileControlBox.height <= mobileLabelBox.y ||
-    mobileLabelBox.y + mobileLabelBox.height <= mobileControlBox.y
-  );
-  expect(mobileOverlaps).toBe(false);
+  expect(
+    boxesOverlap(
+      await readFreshElementBounds(viewControl),
+      await readFreshElementBounds(focusLabel),
+    ),
+  ).toBe(false);
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
