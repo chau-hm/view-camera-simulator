@@ -141,6 +141,46 @@ export const orderSegmentLeftToRight = <T extends { p1: ScreenPoint; p2: ScreenP
     ? { left: segment.p1, right: segment.p2 }
     : { left: segment.p2, right: segment.p1 };
 
+/** Maximum normalized 2D cross-product residual used for projected collinearity. */
+export const PROJECTED_COLLINEARITY_TOLERANCE = 1e-9;
+
+/**
+ * Returns zero for parallel projected segments and Infinity for invalid or
+ * degenerate input, so missing geometry cannot silently pass a test.
+ */
+export const normalizedSegmentCrossResidual = (
+  first: Pick<PlaneSegment, "p1" | "p2">,
+  second: Pick<PlaneSegment, "p1" | "p2">,
+): number => {
+  const firstVector = {
+    x: first.p2.x - first.p1.x,
+    y: first.p2.y - first.p1.y,
+  };
+  const secondVector = {
+    x: second.p2.x - second.p1.x,
+    y: second.p2.y - second.p1.y,
+  };
+  const denominator =
+    Math.hypot(firstVector.x, firstVector.y) *
+    Math.hypot(secondVector.x, secondVector.y);
+  const coordinates = [
+    first.p1.x,
+    first.p1.y,
+    first.p2.x,
+    first.p2.y,
+    second.p1.x,
+    second.p1.y,
+    second.p2.x,
+    second.p2.y,
+  ];
+  if (!coordinates.every(Number.isFinite) || denominator <= 1e-12) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return Math.abs(
+    firstVector.x * secondVector.y - firstVector.y * secondVector.x,
+  ) / denominator;
+};
+
 /** Build a stable, perimeter-ordered DOF quadrilateral. */
 export const buildDofPolygonPoints = (
   near: Pick<PlaneSegment, "p1" | "p2">,

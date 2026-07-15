@@ -533,6 +533,8 @@ Focus assist 不可只用顏色。
 * 3D focus / DOF 輔助平面應使用有限、場景裁切的幾何，並避免因 depth test、depth write 或 z-fighting 在有效校準狀態消失。
 * Optical axis 必須由 `DerivedOpticsState.lensCenterWorld` 與 `opticalAxis.direction` 投影，不可假設為水平線。
 * Geometry UI 應提供垂直於 Scheimpflug common line 的 section；在此 section 中，延伸的 film、lens 與 sharp-focus planes 顯示為交於同一點的三條直線。
+* Side、Top 與 Scheimpflug Section 必須共用由 projected physical film/lens segments、centres 與 bellows connector 組成的相機表示，不可另畫固定直立的 generic camera glyph。
+* Split Fit Construction 左側標題使用 `Camera-side Scheimpflug construction — enlarged`，並且只有在 Scheimpflug construction 有效且目前 view 為 Scheimpflug Section 時顯示。
 * 3D Scene 應提供明確的 Scheimpflug construction mode，以目前 derived planes 顯示三個延伸平面及其 common line。
 * Learner-facing UI 應稱此處為 `Scheimpflug line` 或 `Scheimpflug intersection`，不可誤稱為 Hinge Rule line。
 * Table Tilt 的多點 target 必須同時輸出 centre point sharpness 與 conservative patch coverage。Free Mode 顯示 centre point focus；guided task 仍以五個 patch samples 的最差值判定。

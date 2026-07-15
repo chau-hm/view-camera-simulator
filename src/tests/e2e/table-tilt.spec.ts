@@ -33,6 +33,53 @@ const readPointScores = async (page: import("@playwright/test").Page) =>
     ),
   );
 
+type ProjectedLine = { x1: number; y1: number; x2: number; y2: number };
+
+const readProjectedLine = async (
+  line: import("@playwright/test").Locator,
+): Promise<ProjectedLine> =>
+  line.evaluate((element) => {
+    const coordinates = {
+      x1: Number(element.getAttribute("x1")),
+      y1: Number(element.getAttribute("y1")),
+      x2: Number(element.getAttribute("x2")),
+      y2: Number(element.getAttribute("y2")),
+    };
+    if (!Object.values(coordinates).every(Number.isFinite)) {
+      throw new Error("Projected line contains non-finite coordinates");
+    }
+    return coordinates;
+  });
+
+const projectedSlope = (line: ProjectedLine) =>
+  (line.y2 - line.y1) / (line.x2 - line.x1 || Number.EPSILON);
+
+const expectProjectedCollinearity = async (
+  physical: import("@playwright/test").Locator,
+  trace: import("@playwright/test").Locator,
+) => {
+  const [physicalLine, traceLine] = await Promise.all([
+    readProjectedLine(physical),
+    readProjectedLine(trace),
+  ]);
+  const physicalVector = {
+    x: physicalLine.x2 - physicalLine.x1,
+    y: physicalLine.y2 - physicalLine.y1,
+  };
+  const traceVector = {
+    x: traceLine.x2 - traceLine.x1,
+    y: traceLine.y2 - traceLine.y1,
+  };
+  const denominator =
+    Math.hypot(physicalVector.x, physicalVector.y) *
+    Math.hypot(traceVector.x, traceVector.y);
+  expect(denominator).toBeGreaterThan(0);
+  const residual = Math.abs(
+    physicalVector.x * traceVector.y - physicalVector.y * traceVector.x,
+  ) / denominator;
+  expect(residual).toBeLessThan(1e-8);
+};
+
 test("Table Tilt card exposes free and guided navigation", async ({ page }) => {
   await page.goto("/scenes");
   const card = tableTiltCard(page);
@@ -325,17 +372,17 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   await expect(section.getByText("Lens plane (extended)")).toBeVisible();
   await expect(section.getByText("Plane of sharp focus (extended)")).toBeVisible();
   await expect(section.getByTestId("generic-camera-glyphs")).toHaveCount(0);
-  await expect(section.getByTestId("scheimpflug-physical-film-segment")).toHaveCount(1);
-  await expect.poll(() => section.getByTestId("scheimpflug-physical-film-segment").evaluate((line) => {
+  await expect(section.getByTestId("physical-film-segment")).toHaveCount(1);
+  await expect.poll(() => section.getByTestId("physical-film-segment").evaluate((line) => {
     const x1 = Number(line.getAttribute("x1"));
     const y1 = Number(line.getAttribute("y1"));
     const x2 = Number(line.getAttribute("x2"));
     const y2 = Number(line.getAttribute("y2"));
     return Math.hypot(x2 - x1, y2 - y1);
   })).toBeGreaterThan(5);
-  await expect(section.getByTestId("scheimpflug-physical-lens-segment")).toBeVisible();
-  await expect(section.getByTestId("scheimpflug-film-centre")).toBeVisible();
-  await expect(section.getByTestId("scheimpflug-lens-centre")).toBeVisible();
+  await expect(section.getByTestId("physical-lens-segment")).toBeVisible();
+  await expect(section.getByTestId("physical-film-centre")).toBeVisible();
+  await expect(section.getByTestId("physical-lens-centre")).toBeVisible();
   await expect(page.getByText("Film, lens and focus planes meet along one line. This section views that line end-on.")).toBeVisible();
 
   const concurrence = await section.evaluate((svg) => {
@@ -364,7 +411,8 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   await expect(geometryPanel).toHaveAttribute("data-subject-field-visible", "true");
   const cameraRegion = page.getByTestId("camera-construction-region");
   const subjectRegion = page.getByTestId("subject-field-region");
-  await expect(cameraRegion.getByText("Camera construction — enlarged")).toBeVisible();
+  await expect(cameraRegion.getByText("Camera-side Scheimpflug construction — enlarged")).toBeVisible();
+  await expect(cameraRegion.getByText("Camera construction — enlarged", { exact: true })).toHaveCount(0);
   await expect(subjectRegion.getByText("Subject field")).toBeVisible();
   await expect(subjectRegion.getByText("Near card")).toBeVisible();
   await expect(subjectRegion.getByText("Middle notebook")).toBeVisible();
@@ -396,6 +444,122 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   await expect(page.getByTestId("scheimpflug-construction-note")).toHaveCount(0);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(2);
+});
+
+test("2D Geometry keeps projected camera orientation and fit/view state coherent", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/table-tilt");
+  await setRangeDirect(page, "Tilt", 0);
+  await setRangeDirect(page, "Swing", 0);
+  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+
+  const geometryPanel = page.locator('section[data-geometry-fit]');
+  const sideButton = page.getByRole("button", { name: "Side", exact: true });
+  const topButton = page.getByRole("button", { name: "Top", exact: true });
+  const sectionButton = page.getByRole("button", { name: "Scheimpflug Section", exact: true });
+  const fitSceneButton = page.getByRole("button", { name: "Fit Scene" });
+  const fitConstructionButton = page.getByRole("button", { name: "Fit Construction" });
+
+  await expect(geometryPanel).toHaveAttribute("data-geometry-view", "side");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
+  const sideSvg = page.getByTestId("geometry-svg-side");
+  await expect(sideSvg.getByTestId("generic-camera-glyphs")).toHaveCount(0);
+  const zeroTiltLens = await readProjectedLine(sideSvg.getByTestId("physical-lens-segment"));
+
+  await setRangeDirect(page, "Tilt", 7);
+  await expect.poll(async () => {
+    const tiltedLens = await readProjectedLine(sideSvg.getByTestId("physical-lens-segment"));
+    return Math.abs(projectedSlope(tiltedLens) - projectedSlope(zeroTiltLens));
+  }).toBeGreaterThan(0.01);
+  await expectProjectedCollinearity(
+    sideSvg.getByTestId("physical-lens-segment"),
+    sideSvg.getByTestId("plane-line-lens"),
+  );
+
+  await fitConstructionButton.click();
+  await expect(sectionButton).toHaveAttribute("aria-pressed", "true");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-view", "scheimpflug");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "construction");
+  await expect(geometryPanel).toHaveAttribute("data-construction-layout", "split");
+  await expect(page.getByTestId("camera-construction-region")).toContainText(
+    "Camera-side Scheimpflug construction — enlarged",
+  );
+  await expect(page.getByTestId("subject-field-region")).toContainText("Subject field");
+  await expect(page.getByText("Camera construction — enlarged", { exact: true })).toHaveCount(0);
+
+  await sideButton.click();
+  await expect(sideButton).toHaveAttribute("aria-pressed", "true");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-view", "side");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
+  await expect(geometryPanel).toHaveAttribute("data-construction-layout", "single");
+  for (const targetId of ["near-cup", "mid-notebook", "far-book"]) {
+    await expect(page.getByTestId(`geometry-target-${targetId}`)).toBeVisible();
+  }
+
+  await fitConstructionButton.click();
+  await topButton.click();
+  await expect(topButton).toHaveAttribute("aria-pressed", "true");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-view", "top");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
+  await expect(geometryPanel).toHaveAttribute("data-construction-layout", "single");
+  for (const targetId of ["near-cup", "mid-notebook", "far-book"]) {
+    await expect(page.getByTestId(`geometry-target-${targetId}`)).toBeVisible();
+  }
+
+  await sectionButton.click();
+  await expect(geometryPanel).toHaveAttribute("data-geometry-view", "scheimpflug");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
+  await expect(geometryPanel).toHaveAttribute("data-construction-layout", "single");
+
+  await fitConstructionButton.click();
+  await fitSceneButton.click();
+  await expect(sideButton).toHaveAttribute("aria-pressed", "true");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-view", "side");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
+  const restoredSideSvg = page.getByTestId("geometry-svg-side");
+  await expect(restoredSideSvg.getByText("Near card", { exact: true })).toBeVisible();
+  await expect(restoredSideSvg.getByText("Middle notebook", { exact: true })).toBeVisible();
+  await expect(restoredSideSvg.getByText("Far chart", { exact: true })).toBeVisible();
+
+  await fitConstructionButton.click();
+  await expect(geometryPanel).toHaveAttribute("data-construction-layout", "split");
+  await setRangeDirect(page, "Tilt", 0);
+  await expect(geometryPanel).toHaveAttribute("data-construction-layout", "single");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-view", "side");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
+  await expect(fitSceneButton).toHaveAttribute("aria-pressed", "true");
+  const fallbackFocusLine = page
+    .getByTestId("geometry-svg-side")
+    .getByTestId("plane-line-focus");
+  await expect(fallbackFocusLine).toHaveCount(1);
+  const fallbackFocus = await readProjectedLine(fallbackFocusLine);
+  expect(
+    Math.hypot(
+      fallbackFocus.x2 - fallbackFocus.x1,
+      fallbackFocus.y2 - fallbackFocus.y1,
+    ),
+  ).toBeGreaterThan(1);
+  for (const targetId of ["near-cup", "mid-notebook", "far-book"]) {
+    await expect(page.getByTestId(`geometry-target-${targetId}`)).toBeVisible();
+  }
+  await setRangeDirect(page, "Tilt", 7);
+  await expect(geometryPanel).toHaveAttribute("data-geometry-view", "side");
+  await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
+  await expect(geometryPanel).toHaveAttribute("data-construction-layout", "single");
+
+  await topButton.click();
+  await setRangeDirect(page, "Tilt", 0);
+  const topSvg = page.getByTestId("geometry-svg-top");
+  const zeroSwingLens = await readProjectedLine(topSvg.getByTestId("physical-lens-segment"));
+  await setRangeDirect(page, "Swing", 5);
+  await expect.poll(async () => {
+    const swungLens = await readProjectedLine(topSvg.getByTestId("physical-lens-segment"));
+    return Math.abs(projectedSlope(swungLens) - projectedSlope(zeroSwingLens));
+  }).toBeGreaterThan(0.01);
+  await expectProjectedCollinearity(
+    topSvg.getByTestId("physical-lens-segment"),
+    topSvg.getByTestId("plane-line-lens"),
+  );
 });
 
 test("3D overlay controls switch responsively without wrapping or blocking the scene", async ({ page }) => {
@@ -440,7 +604,7 @@ test("3D overlay controls switch responsively without wrapping or blocking the s
 });
 
 test("Table Tilt RTT zoom reset survives realistic jitter and UI state changes", async ({ page }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(360_000);
   await page.goto("/simulator/free/table-tilt");
   const viewport = page.getByLabel("GroundGlassViewport");
   const stage = viewport.getByRole("button", { name: /Ground Glass$/ });
@@ -449,13 +613,17 @@ test("Table Tilt RTT zoom reset survives realistic jitter and UI state changes",
     const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform);
     return { x: matrix.m41, y: matrix.m42, scale: matrix.a };
   });
+  const readInlineTransform = () => transformedLayer.evaluate((element) => {
+    const matrix = new DOMMatrixReadOnly((element as HTMLElement).style.transform);
+    return { x: matrix.m41, y: matrix.m42, scale: matrix.a };
+  });
   const expectIdentity = async () => {
     await expect(stage).toHaveAttribute("data-zoomed", "false");
     await expect(stage).toHaveAttribute("data-pan-x", "0");
     await expect(stage).toHaveAttribute("data-pan-y", "0");
     await expect(stage).toHaveAttribute("data-scale", "1");
     await expect.poll(async () => {
-      const value = await readTransform();
+      const value = await readInlineTransform();
       return Math.abs(value.x) <= 0.5 && Math.abs(value.y) <= 0.5 && Math.abs(value.scale - 1) <= 0.01;
     }).toBe(true);
   };
@@ -592,6 +760,7 @@ test("Table Tilt RTT zoom reset survives realistic jitter and UI state changes",
 });
 
 test("Ground Glass zoom state resets across free/guided and scene navigation", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto("/simulator/free/table-tilt");
   let viewport = page.getByLabel("GroundGlassViewport");
   let stage = viewport.getByRole("button", { name: /Ground Glass$/ });

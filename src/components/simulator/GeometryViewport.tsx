@@ -33,6 +33,10 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   const supportsConstruction = supportsScheimpflugConstruction(scene.id);
   const effectiveGeometryView =
     !supportsConstruction && geometryView === "scheimpflug" ? "side" : geometryView;
+  const subjectGeometryView: GeometryView =
+    Math.abs(opticsState.diagnostics.swingAngleDeg) > Math.abs(opticsState.diagnostics.tiltAngleDeg)
+      ? "top"
+      : "side";
 
   useEffect(() => {
     if (!supportsConstruction) {
@@ -65,8 +69,14 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   const constructionWindow = getScheimpflugConstructionWindow(opticsState);
 
   useEffect(() => {
-    if (fitMode === "construction" && !constructionWindow) setFitMode("scene");
-  }, [constructionWindow, fitMode]);
+    if (fitMode !== "construction") return;
+    if (!constructionWindow) {
+      setFitMode("scene");
+      if (geometryView === "scheimpflug") setGeometryView(subjectGeometryView);
+      return;
+    }
+    if (geometryView !== "scheimpflug") setFitMode("scene");
+  }, [constructionWindow, fitMode, geometryView, setGeometryView, subjectGeometryView]);
 
   const sceneDepthWindow =
     profile.depthWindow.mode === "fixed"
@@ -111,11 +121,12 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
     lateralWindow: profile.lateralWindow,
     paddingPx: profile.diagramPaddingPx,
   });
-  const subjectGeometryView: GeometryView =
-    Math.abs(opticsState.diagnostics.swingAngleDeg) > Math.abs(opticsState.diagnostics.tiltAngleDeg)
-      ? "top"
-      : "side";
-  const constructionLayoutActive = fitMode === "construction" && Boolean(cameraProjection);
+  const constructionLayoutActive =
+    supportsConstruction &&
+    fitMode === "construction" &&
+    effectiveGeometryView === "scheimpflug" &&
+    Boolean(cameraProjection) &&
+    Boolean(constructionWindow);
   const effectiveFitMode = constructionLayoutActive ? "construction" : "scene";
   const { sectionOrigin, sectionDepthDir, isInfinity } = sceneProjection;
 
@@ -123,6 +134,8 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
     <section
       className="geometry-viewport"
       data-geometry-fit={effectiveFitMode}
+      data-geometry-view={effectiveGeometryView}
+      data-construction-valid={constructionWindow ? "true" : "false"}
       data-construction-layout={constructionLayoutActive ? "split" : "single"}
       data-camera-construction-visible={constructionLayoutActive ? "true" : "false"}
       data-subject-field-visible={constructionLayoutActive ? "true" : "false"}
@@ -132,10 +145,19 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <h2 style={{ margin: 0 }}>{UI_COPY.simulator.geometryTitle}</h2>
           <div role="group" aria-label="Geometry view" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => setGeometryView("side")}>Side</button>
-            <button className={effectiveGeometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "top"} onClick={() => setGeometryView("top")}>Top</button>
+            <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => {
+              setFitMode("scene");
+              setGeometryView("side");
+            }}>Side</button>
+            <button className={effectiveGeometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "top"} onClick={() => {
+              setFitMode("scene");
+              setGeometryView("top");
+            }}>Top</button>
             {supportsConstruction ? (
-              <button className={effectiveGeometryView === "scheimpflug" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "scheimpflug"} onClick={() => setGeometryView("scheimpflug")}>Scheimpflug Section</button>
+              <button className={effectiveGeometryView === "scheimpflug" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "scheimpflug"} onClick={() => {
+                setFitMode("scene");
+                setGeometryView("scheimpflug");
+              }}>Scheimpflug Section</button>
             ) : null}
           </div>
         </div>
@@ -146,7 +168,10 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
           type="button"
           className={effectiveFitMode === "scene" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
           aria-pressed={effectiveFitMode === "scene"}
-          onClick={() => setFitMode("scene")}
+          onClick={() => {
+            setFitMode("scene");
+            setGeometryView(subjectGeometryView);
+          }}
         >
           Fit Scene
         </button>
@@ -180,7 +205,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
         {constructionLayoutActive && cameraProjection ? (
           <div className="geometry-construction-split" data-testid="geometry-construction-split">
             <section className="geometry-construction-region" data-testid="camera-construction-region">
-              <h3>Camera construction — enlarged</h3>
+              <h3>Camera-side Scheimpflug construction — enlarged</h3>
               <OpticalSectionDiagram
                 projection={cameraProjection}
                 geometryView="scheimpflug"

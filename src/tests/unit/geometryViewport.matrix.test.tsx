@@ -1,4 +1,4 @@
-import { render, cleanup, fireEvent } from "@testing-library/react";
+import { render, cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { GeometryViewport } from "../../components/simulator/GeometryViewport";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
@@ -8,12 +8,35 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
+import { useAppStore } from "../../state/appStore";
+import type { SceneDefinition } from "../../types/scene";
 
 const SCENES = [architectureRiseScene, tableTiltScene, shelfSwingScene, focusFundamentalsTwoTargets];
 const VIEWS: Array<'side' | 'top'> = ['side', 'top'];
 
+const StoreBackedGeometryViewport = ({
+  opticsState,
+  scene = tableTiltScene,
+}: {
+  opticsState: ReturnType<typeof deriveOpticsState>;
+  scene?: SceneDefinition;
+}) => {
+  const geometryView = useAppStore((state) => state.camera.geometryView);
+  return (
+    <GeometryViewport
+      opticsState={opticsState}
+      geometryView={geometryView}
+      scene={scene}
+      riseMm={0}
+    />
+  );
+};
+
 describe('GeometryViewport matrix', () => {
-  afterEach(() => { cleanup(); });
+  afterEach(() => {
+    cleanup();
+    useAppStore.getState().setGeometryView("side");
+  });
 
   for (const scene of SCENES) {
     for (const view of VIEWS) {
@@ -107,20 +130,17 @@ describe('GeometryViewport matrix', () => {
         const fovLines = Array.from(svg!.querySelectorAll('line')).filter((l) => l.getAttribute('stroke') === '#f59e0b');
         expect(fovLines.length).toBeGreaterThanOrEqual(1);
 
-        // camera glyphs: ensure vertical plates (height > width)
-        const rearRect = Array.from(svg!.querySelectorAll('rect')).find((r) => r.getAttribute('fill') === '#1f2937');
-        const frontRect = Array.from(svg!.querySelectorAll('rect')).find((r) => r.getAttribute('fill') === '#475569');
-        expect(rearRect).toBeTruthy();
-        expect(frontRect).toBeTruthy();
-        if (rearRect) {
-          const w = parseFloat(rearRect.getAttribute('width') || '0');
-          const h = parseFloat(rearRect.getAttribute('height') || '0');
-          expect(h).toBeGreaterThan(w);
-        }
-        if (frontRect) {
-          const w = parseFloat(frontRect.getAttribute('width') || '0');
-          const h = parseFloat(frontRect.getAttribute('height') || '0');
-          expect(h).toBeGreaterThan(w);
+        // Camera geometry is projection-derived in every view; no fixed upright
+        // camera rectangles remain.
+        expect(svg!.querySelector('[data-testid="generic-camera-glyphs"]')).toBeNull();
+        for (const testId of [
+          "physical-film-segment",
+          "physical-lens-segment",
+          "physical-film-centre",
+          "physical-lens-centre",
+          "physical-bellows-connector",
+        ]) {
+          expect(svg!.querySelector(`[data-testid="${testId}"]`)).not.toBeNull();
         }
 
         // Target glyphs render if scene has targets and are vertical plates
@@ -227,11 +247,11 @@ describe('GeometryViewport matrix', () => {
         "7 5",
       );
     }
-    expect(container.querySelector('[data-testid="plane-line-physical-film"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="plane-line-physical-lens"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="physical-film-segment"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="physical-lens-segment"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="generic-camera-glyphs"]')).toBeNull();
-    expect(container.querySelector('[data-testid="scheimpflug-film-centre"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="scheimpflug-lens-centre"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="physical-film-centre"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="physical-lens-centre"]')).not.toBeNull();
     const expectCollinear = (physicalTestId: string, extensionTestId: string) => {
       const physical = container.querySelector(`[data-testid="${physicalTestId}"]`) as SVGLineElement;
       const extension = container.querySelector(`[data-testid="${extensionTestId}"] line`) as SVGLineElement;
@@ -246,8 +266,8 @@ describe('GeometryViewport matrix', () => {
       const normalizedCross = Math.abs(a.x * b.y - a.y * b.x) / (Math.hypot(a.x, a.y) * Math.hypot(b.x, b.y));
       expect(normalizedCross).toBeLessThan(1e-10);
     };
-    expectCollinear("scheimpflug-physical-film-segment", "scheimpflug-film-extension");
-    expectCollinear("scheimpflug-physical-lens-segment", "scheimpflug-lens-extension");
+    expectCollinear("physical-film-segment", "scheimpflug-film-extension");
+    expectCollinear("physical-lens-segment", "scheimpflug-lens-extension");
     const labels = Array.from(container.querySelectorAll("text")).map((node) => node.textContent);
     expect(labels).toEqual(
       expect.arrayContaining([
@@ -269,7 +289,8 @@ describe('GeometryViewport matrix', () => {
     const subjectRegion = container.querySelector('[data-testid="subject-field-region"]');
     expect(cameraRegion).not.toBeNull();
     expect(subjectRegion).not.toBeNull();
-    expect(cameraRegion?.textContent).toContain("Camera construction — enlarged");
+    expect(cameraRegion?.textContent).toContain("Camera-side Scheimpflug construction — enlarged");
+    expect(cameraRegion?.textContent).not.toContain("Camera construction — enlarged");
     expect(subjectRegion?.textContent).toContain("Subject field");
     for (const targetId of ["near-cup", "mid-notebook", "far-book"]) {
       expect(subjectRegion?.querySelector(`[data-testid="geometry-target-${targetId}"]`)).not.toBeNull();
@@ -284,6 +305,115 @@ describe('GeometryViewport matrix', () => {
     });
     fireEvent.click(getByRole("button", { name: "Fit Scene" }));
     expect(geometrySection).toHaveAttribute("data-geometry-fit", "scene");
+  });
+
+  it("enforces view and fit-mode transitions while keeping scene targets visible", async () => {
+    useAppStore.getState().setGeometryView("side");
+    const optics = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...tableTiltScene.cameraPreset,
+        frontTiltDeg: tableTiltGeometry.tableTiltCalibration.frontTiltDeg,
+      },
+      tableTiltScene,
+    );
+    const view = render(<StoreBackedGeometryViewport opticsState={optics} />);
+    const viewport = view.container.querySelector("section[data-geometry-fit]");
+    expect(viewport).not.toBeNull();
+
+    fireEvent.click(view.getByRole("button", { name: "Scheimpflug Section" }));
+    expect(viewport).toHaveAttribute("data-geometry-view", "scheimpflug");
+    expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+    expect(viewport).toHaveAttribute("data-construction-layout", "single");
+
+    fireEvent.click(view.getByRole("button", { name: "Fit Construction" }));
+    expect(viewport).toHaveAttribute("data-geometry-view", "scheimpflug");
+    expect(viewport).toHaveAttribute("data-geometry-fit", "construction");
+    expect(viewport).toHaveAttribute("data-construction-layout", "split");
+
+    fireEvent.click(view.getByRole("button", { name: "Side" }));
+    expect(viewport).toHaveAttribute("data-geometry-view", "side");
+    expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+    expect(viewport).toHaveAttribute("data-construction-layout", "single");
+    for (const targetId of ["near-cup", "mid-notebook", "far-book"]) {
+      expect(view.container.querySelector(`[data-testid="geometry-target-${targetId}"]`)).not.toBeNull();
+    }
+
+    fireEvent.click(view.getByRole("button", { name: "Fit Construction" }));
+    fireEvent.click(view.getByRole("button", { name: "Top" }));
+    expect(viewport).toHaveAttribute("data-geometry-view", "top");
+    expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+    expect(viewport).toHaveAttribute("data-construction-layout", "single");
+
+    fireEvent.click(view.getByRole("button", { name: "Fit Construction" }));
+    fireEvent.click(view.getByRole("button", { name: "Fit Scene" }));
+    await waitFor(() => {
+      expect(viewport).toHaveAttribute("data-geometry-view", "side");
+      expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+    });
+    expect(view.getByText("Near card")).toBeInTheDocument();
+    expect(view.getByText("Middle notebook")).toBeInTheDocument();
+    expect(view.getByText("Far chart")).toBeInTheDocument();
+  });
+
+  it("falls back to the subject view when an active construction becomes invalid", async () => {
+    useAppStore.getState().setGeometryView("side");
+    const validOptics = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...tableTiltScene.cameraPreset,
+        frontTiltDeg: tableTiltGeometry.tableTiltCalibration.frontTiltDeg,
+      },
+      tableTiltScene,
+    );
+    const zeroMovementOptics = deriveOpticsState(
+      { ...DEFAULT_CAMERA_STATE, ...tableTiltScene.cameraPreset, frontTiltDeg: 0, frontSwingDeg: 0 },
+      tableTiltScene,
+    );
+    const view = render(<StoreBackedGeometryViewport opticsState={validOptics} />);
+    const viewport = view.container.querySelector("section[data-geometry-fit]");
+    expect(viewport).not.toBeNull();
+    fireEvent.click(view.getByRole("button", { name: "Fit Construction" }));
+    expect(viewport).toHaveAttribute("data-construction-layout", "split");
+
+    view.rerender(<StoreBackedGeometryViewport opticsState={zeroMovementOptics} />);
+    await waitFor(() => {
+      expect(viewport).toHaveAttribute("data-geometry-view", "side");
+      expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+      expect(viewport).toHaveAttribute("data-construction-layout", "single");
+    });
+    expect(view.container.querySelector('[data-testid="plane-line-focus"]')).not.toBeNull();
+    for (const targetId of ["near-cup", "mid-notebook", "far-book"]) {
+      expect(view.container.querySelector(`[data-testid="geometry-target-${targetId}"]`)).not.toBeNull();
+    }
+
+    view.rerender(<StoreBackedGeometryViewport opticsState={validOptics} />);
+    await waitFor(() => {
+      expect(viewport).toHaveAttribute("data-geometry-view", "side");
+      expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+      expect(viewport).toHaveAttribute("data-construction-layout", "single");
+    });
+  });
+
+  it("returns Fit Scene to Top for a swing-dominant Shelf Swing state", async () => {
+    useAppStore.getState().setGeometryView("side");
+    const optics = deriveOpticsState(
+      { ...DEFAULT_CAMERA_STATE, ...shelfSwingScene.cameraPreset, frontSwingDeg: 7 },
+      shelfSwingScene,
+    );
+    const view = render(
+      <StoreBackedGeometryViewport opticsState={optics} scene={shelfSwingScene} />,
+    );
+    const viewport = view.container.querySelector("section[data-geometry-fit]");
+    expect(viewport).not.toBeNull();
+    fireEvent.click(view.getByRole("button", { name: "Fit Construction" }));
+    expect(viewport).toHaveAttribute("data-geometry-view", "scheimpflug");
+    expect(viewport).toHaveAttribute("data-construction-layout", "split");
+    fireEvent.click(view.getByRole("button", { name: "Fit Scene" }));
+    await waitFor(() => {
+      expect(viewport).toHaveAttribute("data-geometry-view", "top");
+      expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
+    });
   });
 
   it('Focus Fundamentals: depth strip shows Focus ∞ and Far DOF ∞ for real infinity focus mode', () => {

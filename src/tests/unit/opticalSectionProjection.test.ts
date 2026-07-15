@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildDofPolygonPoints,
   computeOpticalSectionData,
+  normalizedSegmentCrossResidual,
+  PROJECTED_COLLINEARITY_TOLERANCE,
   type ScreenPoint,
 } from "../../components/geometry/opticalSectionProjection";
 import { getGeometryPresentationProfile } from "../../components/geometry/geometryPresentationProfiles";
@@ -9,6 +11,7 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import type { CameraState, GeometryView } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
@@ -110,6 +113,29 @@ const assertValidDofPolygon = (
   expect(properIntersection(points[1], points[2], points[3], points[0])).toBe(false);
 };
 
+const assertPhysicalCameraCollinear = (
+  opticsState: DerivedOpticsState,
+  scene: SceneDefinition,
+  viewId: GeometryView,
+) => {
+  const view = projectionFor(opticsState, scene).views[viewId];
+  for (const id of ["film", "lens"] as const) {
+    const physical = view.physicalPlaneSegments.find(
+      (segment) => segment.id === `physical-${id}`,
+    );
+    const trace = view.planeSegments.find((segment) => segment.id === id);
+    expect(physical, `${scene.id} ${viewId} physical ${id}`).toBeDefined();
+    expect(trace, `${scene.id} ${viewId} ${id} trace`).toBeDefined();
+    for (const point of [physical!.p1, physical!.p2, trace!.p1, trace!.p2]) {
+      expect(Number.isFinite(point.x)).toBe(true);
+      expect(Number.isFinite(point.y)).toBe(true);
+    }
+    const residual = normalizedSegmentCrossResidual(physical!, trace!);
+    expect(Number.isFinite(residual)).toBe(true);
+    expect(residual).toBeLessThan(PROJECTED_COLLINEARITY_TOLERANCE);
+  }
+};
+
 describe("optical section projection", () => {
   it("projects front tilt into the real Side optical-axis slope", () => {
     const zero = deriveOpticsState(cameraFor(tableTiltScene, { frontTiltDeg: 0 }), tableTiltScene);
@@ -127,6 +153,37 @@ describe("optical section projection", () => {
     const swungDirection = assertAxisMatchesDerivedDirection(swung, architectureRiseScene, "top");
     expect(Math.abs(zeroDirection.y)).toBeLessThan(1e-8);
     expect(Math.abs(swungDirection.y)).toBeGreaterThan(1);
+  });
+
+  it("keeps Side physical film/lens segments collinear at zero and signed Tilt", () => {
+    for (const frontTiltDeg of [0, 7, -7]) {
+      const optics = deriveOpticsState(
+        cameraFor(tableTiltScene, { frontTiltDeg }),
+        tableTiltScene,
+      );
+      assertPhysicalCameraCollinear(optics, tableTiltScene, "side");
+    }
+  });
+
+  it("keeps Top physical film/lens segments collinear at zero and signed Swing", () => {
+    for (const frontSwingDeg of [0, 7, -7]) {
+      const optics = deriveOpticsState(
+        cameraFor(shelfSwingScene, { frontSwingDeg }),
+        shelfSwingScene,
+      );
+      assertPhysicalCameraCollinear(optics, shelfSwingScene, "top");
+    }
+  });
+
+  it("keeps the calibrated Scheimpflug physical camera collinear and finite", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, {
+        frontTiltDeg: tableTiltGeometry.tableTiltCalibration.frontTiltDeg,
+        focusDistanceMm: tableTiltGeometry.tableTiltCalibration.focusDistanceMm,
+      }),
+      tableTiltScene,
+    );
+    assertPhysicalCameraCollinear(optics, tableTiltScene, "scheimpflug");
   });
 
   it("builds non-self-crossing DOF regions for both tilt signs and the calibrated state", () => {

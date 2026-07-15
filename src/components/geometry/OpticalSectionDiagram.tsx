@@ -8,6 +8,7 @@ import {
   type PlaneSegment,
 } from "./opticalSectionProjection";
 import { getLocalTargetLabelPlacement } from "./labelPlacement";
+import { ProjectedCameraConstruction } from "./ProjectedCameraConstruction";
 
 type Props = {
   projection: OpticalSectionData;
@@ -47,6 +48,8 @@ export const OpticalSectionDiagram = ({
   const showSubjectTargets = displayMode === "subject-field" || geometryView !== "scheimpflug";
   const { isInfinity } = projection;
   const safeMargin = 10;
+  const filmCenter = view.projectWorldPoint(opticsState.filmCenterWorld);
+  const lensCenter = view.projectWorldPoint(opticsState.lensCenterWorld);
 
   return (
     <svg
@@ -191,43 +194,14 @@ export const OpticalSectionDiagram = ({
           );
         })}
 
-        {geometryView === "scheimpflug" && showCameraConstruction
-          ? view.physicalPlaneSegments.map((segment) => (
-              <g key={segment.id} data-testid={`plane-line-${segment.id}`}>
-                <line
-                  data-testid={`scheimpflug-${segment.id}-segment`}
-                  x1={segment.p1.x}
-                  y1={segment.p1.y}
-                  x2={segment.p2.x}
-                  y2={segment.p2.y}
-                  stroke={segment.color}
-                  strokeWidth={5}
-                  strokeLinecap="round"
-                />
-              </g>
-            ))
-          : null}
-
-        {geometryView === "scheimpflug" && showCameraConstruction ? (() => {
-          const filmCenter = view.projectWorldPoint(opticsState.filmCenterWorld);
-          const lensCenter = view.projectWorldPoint(opticsState.lensCenterWorld);
-          return (
-            <g data-testid="scheimpflug-camera-construction">
-              <line
-                x1={filmCenter.x}
-                y1={filmCenter.y}
-                x2={lensCenter.x}
-                y2={lensCenter.y}
-                stroke="#94a3b8"
-                strokeWidth={2}
-                strokeDasharray="4 3"
-                aria-label="Simplified bellows connector"
-              />
-              <circle data-testid="scheimpflug-film-centre" cx={filmCenter.x} cy={filmCenter.y} r={4} fill="#0284c7" />
-              <circle data-testid="scheimpflug-lens-centre" cx={lensCenter.x} cy={lensCenter.y} r={4} fill="#334155" />
-            </g>
-          );
-        })() : null}
+        {showCameraConstruction ? (
+          <ProjectedCameraConstruction
+            physicalPlaneSegments={view.physicalPlaneSegments}
+            filmCenter={filmCenter}
+            lensCenter={lensCenter}
+            displayMode={geometryView === "scheimpflug" ? "construction" : "compact"}
+          />
+        ) : null}
 
         {geometryView === "scheimpflug" && showCameraConstruction
           ? visibleSegments.map((segment) => {
@@ -273,44 +247,6 @@ export const OpticalSectionDiagram = ({
               );
             })()
           : null}
-
-        {geometryView !== "scheimpflug" && displayMode !== "subject-field" ? (() => {
-          const filmSegment = segments.find((segment) => segment.id === "film");
-          const filmCenter = filmSegment
-            ? {
-                x: (filmSegment.p1.x + filmSegment.p2.x) / 2,
-                y: (filmSegment.p1.y + filmSegment.p2.y) / 2,
-              }
-            : view.projectWorldPoint(opticsState.filmCenterWorld);
-          const lensCenter = view.projectWorldPoint(opticsState.lensCenterWorld);
-          const rearWidth = geometryView === "top" ? 8 : 12;
-          const rearHeight = geometryView === "top" ? 24 : 28;
-          const frontWidth = geometryView === "top" ? 10 : 14;
-          const frontHeight = geometryView === "top" ? 28 : 32;
-          return (
-            <g data-testid="generic-camera-glyphs">
-              <rect
-                x={filmCenter.x - rearWidth / 2}
-                y={filmCenter.y - rearHeight / 2}
-                width={rearWidth}
-                height={rearHeight}
-                fill="#1f2937"
-                opacity={0.9}
-              />
-              <rect
-                x={lensCenter.x - frontWidth / 2}
-                y={lensCenter.y - frontHeight / 2}
-                width={frontWidth}
-                height={frontHeight}
-                fill="#475569"
-                opacity={0.95}
-              />
-              {geometryView === "top" ? (
-                <circle cx={lensCenter.x} cy={lensCenter.y} r={4} fill="#111827" opacity={0.9} />
-              ) : null}
-            </g>
-          );
-        })() : null}
 
         {showSubjectTargets ? scene.focusTargets.map((target) => {
           const position = view.projectWorldPoint(target.worldPosition);

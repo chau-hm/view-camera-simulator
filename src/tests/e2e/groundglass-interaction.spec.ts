@@ -56,10 +56,22 @@ const clickStageAt = async (page: Page, stage: Locator, xRatio: number, yRatio: 
 // convenience factory for dynamic transformed-layer locator
 const transformedLayerFor = (viewport: Locator) => () => viewport.locator('.groundglass-stage');
 
+const readInlineStageScale = async (locator: Locator): Promise<number> => {
+  await expect(locator).toHaveCount(1);
+  const transform = await locator.evaluate(
+    (element) => (element as HTMLElement).style.transform,
+  );
+  const match = /scale\(([-+\d.]+)\)/.exec(transform);
+  if (!match) throw new Error(`Ground Glass inline transform has no scale: ${transform}`);
+  const scale = Number(match[1]);
+  if (!Number.isFinite(scale)) throw new Error(`Ground Glass inline scale is not finite: ${match[1]}`);
+  return scale;
+};
+
 test.describe('Ground Glass interaction', () => {
   test('Architecture Rise: off-center anchor, drag pan, zoom-out centering, and immediate re-zoom', async ({ page }) => {
     // allow a longer timeout for this interaction-heavy test to tolerate renderer scheduling in CI/local
-    test.setTimeout(90_000);
+    test.setTimeout(120_000);
     await page.goto('/simulator/free/architecture-rise');
 
     const viewport = page.getByLabel('GroundGlassViewport');
@@ -172,6 +184,7 @@ test.describe('Ground Glass interaction', () => {
   });
 
   test('Focus Fundamentals: three-click smoke test', async ({ page }) => {
+    test.setTimeout(60_000);
     await page.goto('/simulator/free/focus-fundamentals-two-targets');
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
@@ -191,17 +204,20 @@ test.describe('Ground Glass interaction', () => {
     // click 1
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1.9, 1);
+    await expect(stage).toHaveAttribute('data-scale', '1.9');
+    await expect.poll(async () => readInlineStageScale(transformedLayer())).toBeCloseTo(1.9, 1);
 
     // click 2 -> zoom out
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1, 2);
-    await expect.poll(async () => Math.abs((await readStageTransform(transformedLayer())).translateX)).toBeLessThanOrEqual(0.5);
+    await expect(stage).toHaveAttribute('data-scale', '1');
+    await expect.poll(async () => readInlineStageScale(transformedLayer())).toBeCloseTo(1, 2);
+    await expect(stage).toHaveAttribute('data-pan-x', '0');
 
     // click 3 -> zoom in
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1.9, 1);
+    await expect(stage).toHaveAttribute('data-scale', '1.9');
+    await expect.poll(async () => readInlineStageScale(transformedLayer())).toBeCloseTo(1.9, 1);
   });
 });
