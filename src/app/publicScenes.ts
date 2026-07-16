@@ -57,7 +57,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     topics: ["Swing", "Plane of focus", "Scheimpflug principle"],
     availability: "available",
     availableModes: ["free"],
-    thumbnailAsset: "assets/shelf-swing.svg",
+    thumbnailAsset: "assets/shelf-swing.png",
   },
 ];
 

@@ -69,7 +69,7 @@ describe("scenes page", () => {
     expect(scopedShelfCard.getByText("Swing")).toBeInTheDocument();
     expect(scopedShelfCard.getByText("Plane of focus")).toBeInTheDocument();
     expect(scopedShelfCard.getByText("Scheimpflug principle")).toBeInTheDocument();
-    expect(shelfCard!.querySelector("img")).toHaveAttribute("src", "/assets/shelf-swing.svg");
+    expect(shelfCard!.querySelector("img")).toHaveAttribute("src", "/assets/shelf-swing.png");
     expect(scopedShelfCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
       "/simulator/free/shelf-swing",
