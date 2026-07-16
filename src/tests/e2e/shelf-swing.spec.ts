@@ -46,7 +46,7 @@ test("Shelf Swing card exposes free mode without a guided action", async ({ page
   const card = shelfCard(page);
   await expect(card).toBeVisible();
   const thumbnail = card.locator("img");
-  await expect(thumbnail).toHaveAttribute("src", /assets\/shelf-swing\.svg$/);
+  await expect(thumbnail).toHaveAttribute("src", /assets\/shelf-swing\.png$/);
   await expect.poll(() => thumbnail.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   await expect(card.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
     "href",
