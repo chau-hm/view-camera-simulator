@@ -70,12 +70,11 @@ describe("scenes page", () => {
     expect(scopedShelfCard.getByText("Plane of focus")).toBeInTheDocument();
     expect(scopedShelfCard.getByText("Scheimpflug principle")).toBeInTheDocument();
     expect(shelfCard!.querySelector("img")).toHaveAttribute("src", "/assets/shelf-swing.svg");
-    expect(scopedShelfCard.getByRole("status")).toHaveTextContent("In development");
-    expect(scopedShelfCard.getByRole("status")).toHaveAttribute(
-      "data-scene-availability",
-      "in-development",
+    expect(scopedShelfCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
+      "href",
+      "/simulator/free/shelf-swing",
     );
-    expect(scopedShelfCard.queryByRole("link", { name: "Open Scene" })).toBeNull();
+    expect(scopedShelfCard.queryByText("In development")).toBeNull();
     expect(scopedShelfCard.queryByRole("link", { name: "Start Guided Task" })).toBeNull();
 
     expect(publicSceneIds).toEqual([
@@ -93,12 +92,17 @@ describe("scenes page", () => {
       "Table Tilt",
       "Shelf Swing",
     ]);
-    expect(getPublicScenes().map((scene) => scene.id)).not.toContain("shelf-swing");
-    expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("in-development");
+    expect(getPublicScenes().map((scene) => scene.id)).toContain("shelf-swing");
+    expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("available");
+    expect(getPublicSceneEntryById("shelf-swing")?.availableModes).toEqual(["free"]);
     expect(getPublicSceneEntryById("table-tilt")?.availability).toBe("available");
+    expect(getPublicSceneEntryById("table-tilt")?.availableModes).toEqual([
+      "free",
+      "guided",
+    ]);
     expect(getPublicSceneEntryById("unknown-scene")).toBeUndefined();
     expect(
-      screen.getByText("Shelf Swing is currently being rebuilt and will become interactive soon."),
+      screen.getByText("The guided Shelf Swing lesson is still being prepared."),
     ).toBeInTheDocument();
   });
 });
