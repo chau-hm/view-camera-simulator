@@ -60,6 +60,51 @@ describe("Shelf Swing subject factory", () => {
     }
   });
 
+  it("keeps chart planes canonical and offsets each backing behind by the configured gap", () => {
+    const group = createShelfSwingGroup();
+    try {
+      group.updateMatrixWorld(true);
+
+      geometry.subjects.forEach((subject) => {
+        const chart = group.getObjectByName(subject.focusChart.semanticName);
+        const backing = group.getObjectByName(`${subject.semanticName}-chart-backing`);
+        expect(chart).toBeInstanceOf(THREE.Group);
+        expect(backing).toBeInstanceOf(THREE.Mesh);
+
+        const chartTile = chart!.children.find((child) => child instanceof THREE.Mesh);
+        expect(chartTile).toBeInstanceOf(THREE.Mesh);
+        const chartNormal = new THREE.Vector3(0, 0, 1).transformDirection(
+          chartTile!.matrixWorld,
+        );
+        const chartWorld = new THREE.Vector3();
+        chart!.getWorldPosition(chartWorld);
+        expect(chartWorld.x).toBeCloseTo(toWorld(subject.focusDetailProbeWorld.x), 10);
+        expect(chartWorld.y).toBeCloseTo(toWorld(subject.focusDetailProbeWorld.y), 10);
+        expect(chartWorld.z).toBeCloseTo(toWorld(subject.focusDetailProbeWorld.z), 10);
+
+        const backingWorld = new THREE.Vector3();
+        backing!.getWorldPosition(backingWorld);
+        const backingFrontWorld = backingWorld.clone().addScaledVector(
+          chartNormal,
+          toWorld(geometry.detailGeometry.backingThickness / 2),
+        );
+        const signedSeparationTowardChartFace = backingFrontWorld
+          .clone()
+          .sub(chartWorld)
+          .dot(chartNormal);
+
+        expect(signedSeparationTowardChartFace).toBeLessThan(0);
+        expect(-signedSeparationTowardChartFace).toBeCloseTo(
+          toWorld(geometry.detailGeometry.chartBackingGap),
+          10,
+        );
+        expect(backingFrontWorld.distanceTo(chartWorld)).toBeGreaterThan(0);
+      });
+    } finally {
+      disposeShelfSwingGroup(group);
+    }
+  });
+
   it("disposes each unique geometry and material exactly once", () => {
     const group = createShelfSwingGroup();
     const geometries = new Set<THREE.BufferGeometry>();

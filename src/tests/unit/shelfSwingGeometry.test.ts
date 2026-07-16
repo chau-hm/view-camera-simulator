@@ -71,6 +71,19 @@ describe("canonical Shelf Swing geometry", () => {
     expect(geometry.calibrationSolution.collinearityErrorMm).toBeLessThan(STRICT_EPSILON);
   });
 
+  it("uses the optical axis as the vertical datum above a derived floor height", () => {
+    expect(geometry.floor.center.y).toBeLessThan(0);
+    expect(-geometry.floor.center.y).toBe(geometry.opticalAxisHeightAboveFloorMm);
+    expect(geometry.opticalAxisHeightAboveFloorMm).toBe(
+      geometry.detailGeometry.chart.centerY,
+    );
+    expect(geometry.opticalAxisHeightAboveFloorMm).toBeGreaterThanOrEqual(400);
+    geometry.subjects.forEach((subject) => {
+      expect(subject.worldPosition.y).toBe(geometry.floor.center.y);
+      expect(subject.focusDetailProbeWorld.y).toBeCloseTo(0, 10);
+    });
+  });
+
   it("keeps every focus sample on its visible chart surface", () => {
     geometry.subjects.forEach((subject) => {
       expect(subject.focusSamples.map((sample) => sample.id)).toEqual([
@@ -146,6 +159,8 @@ describe("canonical Shelf Swing geometry", () => {
     expect(Math.abs(calibration.frontSwingDeg)).toBeLessThanOrEqual(5);
     expect(calibration.focusDistanceMm).toBeGreaterThanOrEqual(3000);
     expect(calibration.focusDistanceMm).toBeLessThanOrEqual(3500);
+    expect(calibration.frontSwingDeg).toBeCloseTo(-3.802, 3);
+    expect(calibration.focusDistanceMm).toBeCloseTo(3411.62, 1);
   });
 
   it("places the hinge on the film plane and the top-view subject trace", () => {
