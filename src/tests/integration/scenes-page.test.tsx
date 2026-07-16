@@ -1,7 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
-import { getPublicScenes, publicSceneCatalog, publicSceneIds } from "../../app/publicScenes";
+import {
+  getPublicSceneEntryById,
+  getPublicScenes,
+  publicSceneCatalog,
+  publicSceneIds,
+} from "../../app/publicScenes";
 import { routes } from "../../app/router";
 
 describe("scenes page", () => {
@@ -89,6 +94,9 @@ describe("scenes page", () => {
       "Shelf Swing",
     ]);
     expect(getPublicScenes().map((scene) => scene.id)).not.toContain("shelf-swing");
+    expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("in-development");
+    expect(getPublicSceneEntryById("table-tilt")?.availability).toBe("available");
+    expect(getPublicSceneEntryById("unknown-scene")).toBeUndefined();
     expect(
       screen.getByText("Shelf Swing is currently being rebuilt and will become interactive soon."),
     ).toBeInTheDocument();

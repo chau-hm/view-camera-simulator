@@ -55,6 +55,9 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
 ];
 
+export const getPublicSceneEntryById = (sceneId: string): PublicSceneEntry | undefined =>
+  publicSceneCatalog.find((entry) => entry.id === sceneId);
+
 export const getPublicSceneEntries = (): Array<{
   scene: SceneDefinition;
   meta: PublicSceneEntry;
