@@ -1,9 +1,11 @@
 import type { SceneDefinition } from "../../types/scene";
+import geometry from "../shelfSwingGeometry";
 
 export const shelfSwingScene: SceneDefinition = {
   id: "shelf-swing",
   name: "Shelf Swing",
-  description: "Use swing to align focus plane with diagonal subject layout.",
+  description:
+    "Use front swing to rotate the vertical plane of sharp focus through three subjects arranged diagonally from front-left to back-right.",
   assets: [
     {
       id: "shelf-floor",
@@ -28,32 +30,28 @@ export const shelfSwingScene: SceneDefinition = {
     },
   ],
   cameraPreset: {
-    focusDistanceMm: 3200,
+    focusDistanceMm: geometry.canonicalFocusDistanceMm,
     aperture: 11,
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
   },
   cameraPlacement: {
-    position: { x: -800, y: 1450, z: -450 },
-    target: { x: 0, y: 1250, z: 3400 },
+    position: geometry.observerCamera.position,
+    target: geometry.observerCamera.target,
   },
   bounds: {
-    min: { x: -2400, y: 700, z: 1100 },
-    max: { x: 2400, y: 2600, z: 6200 },
+    min: geometry.sceneBounds.min,
+    max: geometry.sceneBounds.max,
   },
-  focusTargets: [
-    { id: "shelf-front", label: "Front shelf item", worldPosition: { x: -1100, y: 1250, z: 1700 }, weight: 1 },
-    { id: "shelf-middle", label: "Middle shelf item", worldPosition: { x: 0, y: 1250, z: 3300 }, weight: 1 },
-    { id: "shelf-back", label: "Back shelf item", worldPosition: { x: 1200, y: 1250, z: 5100 }, weight: 1 },
-  ],
+  focusTargets: geometry.focusTargets,
   compositionTargets: [
     {
       id: "shelf-diagonal",
       label: "Diagonal shelf coverage",
       worldBounds: {
-        min: { x: -1300, y: 980, z: 1500 },
-        max: { x: 1300, y: 1650, z: 5400 },
+        min: geometry.compositionTargetBounds.min,
+        max: geometry.compositionTargetBounds.max,
       },
     },
   ],

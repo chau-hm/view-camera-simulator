@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480" role="img" aria-labelledby="title desc">
+  <title id="title">Shelf Swing lesson preview</title>
+  <desc id="desc">Three display stations arranged diagonally from front-left to back-right, each with a distinct focus chart.</desc>
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <pattern id="front-stripes" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="8" height="16" fill="#172554"/>
+      <rect x="8" width="8" height="16" fill="#dbeafe"/>
+    </pattern>
+    <pattern id="middle-checker" width="20" height="20" patternUnits="userSpaceOnUse">
+      <rect width="20" height="20" fill="#fef3c7"/>
+      <rect width="10" height="10" fill="#451a03"/>
+      <rect x="10" y="10" width="10" height="10" fill="#451a03"/>
+    </pattern>
+    <pattern id="back-lines" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="16" height="8" fill="#2e1065"/>
+      <rect y="8" width="16" height="8" fill="#ede9fe"/>
+    </pattern>
+  </defs>
+  <rect width="720" height="480" fill="#f8fafc"/>
+  <path d="M30 407 292 230 690 318 427 472Z" fill="url(#ground)" stroke="#cbd5e1" stroke-width="4"/>
+
+  <g transform="translate(88 215)">
+    <path d="M0 25 112 0 150 18 38 44Z" fill="#93c5fd"/>
+    <path d="M0 25v150l38 23V44Z" fill="#1d4ed8"/>
+    <path d="M38 44v154l112-28V18Z" fill="#2563eb"/>
+    <rect x="56" y="63" width="75" height="72" rx="2" fill="url(#front-stripes)" stroke="#eff6ff" stroke-width="6"/>
+    <path d="M52 151h84" stroke="#bfdbfe" stroke-width="10"/>
+  </g>
+
+  <g transform="translate(300 125)">
+    <path d="M0 25 112 0 150 18 38 44Z" fill="#fcd34d"/>
+    <path d="M0 25v150l38 23V44Z" fill="#b45309"/>
+    <path d="M38 44v154l112-28V18Z" fill="#d97706"/>
+    <rect x="56" y="63" width="75" height="72" rx="2" fill="url(#middle-checker)" stroke="#fffbeb" stroke-width="6"/>
+    <path d="M52 151h84" stroke="#fde68a" stroke-width="10"/>
+  </g>
+
+  <g transform="translate(510 38)">
+    <path d="M0 25 112 0 150 18 38 44Z" fill="#c4b5fd"/>
+    <path d="M0 25v150l38 23V44Z" fill="#6d28d9"/>
+    <path d="M38 44v154l112-28V18Z" fill="#7c3aed"/>
+    <rect x="56" y="63" width="75" height="72" rx="2" fill="url(#back-lines)" stroke="#f5f3ff" stroke-width="6"/>
+    <path d="M52 151h84" stroke="#ddd6fe" stroke-width="10"/>
+  </g>
+</svg>

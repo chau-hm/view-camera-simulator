@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { getSceneById } from "../scenes/definitions";
-import { getPublicSceneEntries } from "./publicScenes";
+import { getPublicSceneEntries, getPublicSceneEntryById } from "./publicScenes";
 import type { SimulatorMode } from "../types/camera";
 
 import { ViewCameraHeroIllustration } from "../components/marketing/ViewCameraHeroIllustration";
@@ -79,6 +79,8 @@ export const ScenesPage = () => {
               title={scene.name}
               description={meta.description}
               topics={meta.topics}
+              availability={meta.availability}
+              thumbnailAsset={meta.thumbnailAsset}
               guidedTaskId={meta.guidedTaskId}
             />
           ))
@@ -87,7 +89,7 @@ export const ScenesPage = () => {
 
       <div className="rebuild-notice">
         <span className="material-symbols-outlined">info</span>
-        <div>Additional lessons for rise, tilt and swing are being rebuilt.</div>
+        <div>Shelf Swing is currently being rebuilt and will become interactive soon.</div>
       </div>
     </AppShell>
   );
@@ -104,9 +106,11 @@ export const SimulatorRoutePage = () => {
   const [searchParams] = useSearchParams();
   const parsedMode: SimulatorMode = mode === "free" ? "free" : "guided";
   const resolvedSceneId = sceneId ?? "architecture-rise";
+  const scene = getSceneById(resolvedSceneId);
+  const publicEntry = getPublicSceneEntryById(resolvedSceneId);
 
-  if (!getSceneById(resolvedSceneId)) {
-    return <Navigate to="/not-found" replace />;
+  if (!scene || !publicEntry || publicEntry.availability !== "available") {
+    return <Navigate to="/scenes" replace />;
   }
 
   return (
