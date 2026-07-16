@@ -5,6 +5,7 @@ export const RTT_SCENES = [
   "focus-fundamentals-two-targets",
   "architecture-rise",
   "table-tilt",
+  "shelf-swing",
 ] as const;
 export type RttSceneId = (typeof RTT_SCENES)[number];
 
