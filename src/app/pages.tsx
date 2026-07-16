@@ -79,6 +79,8 @@ export const ScenesPage = () => {
               title={scene.name}
               description={meta.description}
               topics={meta.topics}
+              availability={meta.availability}
+              thumbnailAsset={meta.thumbnailAsset}
               guidedTaskId={meta.guidedTaskId}
             />
           ))
@@ -87,7 +89,7 @@ export const ScenesPage = () => {
 
       <div className="rebuild-notice">
         <span className="material-symbols-outlined">info</span>
-        <div>Additional lessons for rise, tilt and swing are being rebuilt.</div>
+        <div>Shelf Swing is currently being rebuilt and will become interactive soon.</div>
       </div>
     </AppShell>
   );
