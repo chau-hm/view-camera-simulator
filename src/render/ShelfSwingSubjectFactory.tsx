@@ -78,7 +78,8 @@ const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
     focusProbeWorldMm: { ...subject.focusDetailProbeWorld },
   };
 
-  const { frameThickness, backingThickness, shelfThickness } = geometry.detailGeometry;
+  const { frameThickness, backingThickness, chartBackingGap, shelfThickness } =
+    geometry.detailGeometry;
   const chart = subject.focusChart;
   const frameMaterial = standardMaterial(subject.materialHints.primary, 0.82);
   const backing = new THREE.Mesh(
@@ -90,10 +91,12 @@ const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
     standardMaterial(subject.materialHints.secondary, 0.94),
   );
   backing.name = `${subject.semanticName}-chart-backing`;
+  // The chart and semantic samples stay on the canonical subject plane. Only
+  // the physical backing moves behind it to avoid coplanar WebGL rendering.
   backing.position.set(
     toWorld(chart.centerLocal.x),
     toWorld(chart.centerLocal.y),
-    toWorld(chart.centerLocal.z + backingThickness / 2),
+    toWorld(chart.centerLocal.z + chartBackingGap + backingThickness / 2),
   );
   station.add(backing);
 

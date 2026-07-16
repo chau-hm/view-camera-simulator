@@ -223,15 +223,6 @@ export function calibrateShelfSwing({
   };
 }
 
-export const floor = {
-  center: { x: 0, y: 0, z: 3850 },
-  width: 6200,
-  depth: 6500,
-  nearZ: 600,
-  farZ: 7100,
-  color: "#e7e5e4",
-} as const;
-
 const stationDimensions = {
   width: 560,
   height: 1050,
@@ -241,6 +232,7 @@ const stationDimensions = {
 export const detailGeometry = {
   frameThickness: 45,
   backingThickness: 35,
+  chartBackingGap: 1,
   shelfThickness: 38,
   chart: {
     width: 420,
@@ -251,6 +243,17 @@ export const detailGeometry = {
     sampleOffsetX: 147,
     sampleOffsetY: 105,
   },
+} as const;
+
+export const opticalAxisHeightAboveFloorMm = detailGeometry.chart.centerY;
+
+export const floor = {
+  center: { x: 0, y: -opticalAxisHeightAboveFloorMm, z: 3850 },
+  width: 6200,
+  depth: 6500,
+  nearZ: 600,
+  farZ: 7100,
+  color: "#e7e5e4",
 } as const;
 
 const stationOrigins = [
@@ -478,8 +481,8 @@ export const shelfSwingCalibration = {
 export const canonicalFocusDistanceMm = shelfSwingCalibration.focusDistanceMm;
 
 export const observerCamera = {
-  position: { x: -2500, y: 1850, z: -450 },
-  target: { x: 0, y: 520, z: 3850 },
+  position: { x: -2500, y: 1850 - opticalAxisHeightAboveFloorMm, z: -450 },
+  target: { x: 0, y: 520 - opticalAxisHeightAboveFloorMm, z: 3850 },
 } as const;
 
 export const focusTargets = subjects.map((subject) => ({
@@ -560,6 +563,7 @@ if (!canonicalFiniteValues.every(Number.isFinite)) {
 export default {
   floor,
   detailGeometry,
+  opticalAxisHeightAboveFloorMm,
   subjects,
   frontSubject,
   middleSubject,
