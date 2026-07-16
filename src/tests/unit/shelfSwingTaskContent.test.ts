@@ -77,6 +77,7 @@ describe("Shelf Swing guided task", () => {
       min: calibration.allowedSwingMinDeg,
       max: calibration.allowedSwingMaxDeg,
     });
+    expect(range?.label).toBe("Swing remains within -4.2° to -3.4°");
     expect(task.criteria.some((criterion) => criterion.id === "swing-movement-used")).toBe(false);
     expect(
       task.criteria
@@ -87,6 +88,23 @@ describe("Shelf Swing guided task", () => {
       expect(task.feedbackRules.failPrimaryByCriterionId[criterion.id]).toBeTruthy();
       expect(task.feedbackRules.failSecondaryByCriterionId[criterion.id]).toBeTruthy();
     });
+  });
+
+  it.each([
+    [-4.2, true],
+    [-3.8, true],
+    [-3.4, true],
+    [-4.3, false],
+    [-3.3, false],
+    [3.8, false],
+    [0, false],
+  ])("matches the signed movement criterion to public Swing value %s", (swing, passed) => {
+    const { result } = evaluate({ swing });
+    const movementRange = result.criteria.find(
+      (criterion) => criterion.criterionId === "swing-movement-range",
+    );
+    expect(movementRange?.passed).toBe(passed);
+    expect(Number.isFinite(movementRange?.score)).toBe(true);
   });
 
   it("starts from a clear zero-swing failure focused most sharply on the middle chart", () => {

@@ -11,6 +11,8 @@ import {
   subtract,
   vec,
 } from "../core/math/vec";
+import { CAMERA_CONTROL_STEPS } from "../utils/constants";
+import { roundToStep } from "../utils/roundToStep";
 
 export type ShelfSwingVec3 = {
   x: number;
@@ -468,6 +470,15 @@ export const focusChartSurfaces = subjects.map((subject) => ({
 }));
 
 const swingToleranceDeg = 0.4;
+const swingControlStepDeg = CAMERA_CONTROL_STEPS.swingDeg;
+const allowedSwingMinDeg = roundToStep(
+  calibrationSolution.frontSwingDeg - swingToleranceDeg,
+  swingControlStepDeg,
+);
+const allowedSwingMaxDeg = roundToStep(
+  calibrationSolution.frontSwingDeg + swingToleranceDeg,
+  swingControlStepDeg,
+);
 
 export const shelfSwingCalibration = {
   focalLengthMm: 150,
@@ -478,8 +489,9 @@ export const shelfSwingCalibration = {
   aperture: 11 as const,
   targetSharpnessMinimum: 0.8,
   swingToleranceDeg,
-  allowedSwingMinDeg: calibrationSolution.frontSwingDeg - swingToleranceDeg,
-  allowedSwingMaxDeg: calibrationSolution.frontSwingDeg + swingToleranceDeg,
+  swingControlStepDeg,
+  allowedSwingMinDeg,
+  allowedSwingMaxDeg,
   collinearityEpsilonMm: 1e-6,
   planeIntersectionToleranceMm: 1e-6,
 } as const;

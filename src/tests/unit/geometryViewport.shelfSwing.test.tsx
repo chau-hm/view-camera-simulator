@@ -6,6 +6,55 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { useAppStore } from "../../state/appStore";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { getApproximateSvgTextBounds } from "../../components/geometry/labelPlacement";
+
+type ApproximateBounds = ReturnType<typeof getApproximateSvgTextBounds>;
+
+const intersects = (first: ApproximateBounds, second: ApproximateBounds): boolean =>
+  first.left < second.right &&
+  first.right > second.left &&
+  first.top < second.bottom &&
+  first.bottom > second.top;
+
+const textBounds = (element: Element): ApproximateBounds =>
+  getApproximateSvgTextBounds({
+    x: Number(element.getAttribute("x")),
+    y: Number(element.getAttribute("y")),
+    text: element.textContent ?? "",
+    anchor: (element.getAttribute("text-anchor") ?? "start") as "start" | "middle" | "end",
+  });
+
+const markerBounds = (element: Element): ApproximateBounds => {
+  const left = Number(element.getAttribute("x"));
+  const top = Number(element.getAttribute("y"));
+  const width = Number(element.getAttribute("width"));
+  const height = Number(element.getAttribute("height"));
+  return { left, top, right: left + width, bottom: top + height, width, height };
+};
+
+const expectGuideLabelClearOfMiddleTarget = (svg: Element): void => {
+  const guideLabel = svg.querySelector('[data-testid="shelf-swing-subject-trace-label"]');
+  const middleGroup = svg.querySelector('[data-testid="geometry-target-shelf-middle"]');
+  const middleMarker = middleGroup?.querySelector("rect");
+  const middleLabel = Array.from(middleGroup?.querySelectorAll("text") ?? []).find(
+    (element) => element.textContent === "Middle chart",
+  );
+  expect(guideLabel).not.toBeNull();
+  expect(middleMarker).not.toBeNull();
+  expect(middleLabel).not.toBeUndefined();
+
+  const guideBounds = textBounds(guideLabel!);
+  expect(intersects(guideBounds, markerBounds(middleMarker!))).toBe(false);
+  expect(intersects(guideBounds, textBounds(middleLabel!))).toBe(false);
+
+  const [, , svgWidth, svgHeight] = (svg.getAttribute("viewBox") ?? "0 0 0 0")
+    .split(/\s+/)
+    .map(Number);
+  expect(guideBounds.left).toBeGreaterThanOrEqual(0);
+  expect(guideBounds.top).toBeGreaterThanOrEqual(0);
+  expect(guideBounds.right).toBeLessThanOrEqual(svgWidth);
+  expect(guideBounds.bottom).toBeLessThanOrEqual(svgHeight);
+};
 
 const createOptics = (frontSwingDeg: number, focusDistanceMm: number) =>
   deriveOpticsState(
@@ -50,6 +99,7 @@ describe("Shelf Swing geometry viewport", () => {
     expect(topSvg?.querySelector('[data-testid="shelf-swing-subject-trace"]')).not.toBeNull();
     expect(topSvg?.querySelector('[data-testid="plane-line-focus"]')).not.toBeNull();
     expect(topSvg?.querySelector('[data-testid="dof-region"]')).not.toBeNull();
+    expectGuideLabelClearOfMiddleTarget(topSvg!);
     for (const [targetId, label] of [
       ["shelf-front", "Front chart"],
       ["shelf-middle", "Middle chart"],
@@ -77,6 +127,9 @@ describe("Shelf Swing geometry viewport", () => {
     const subjectRegion = view.getByTestId("subject-field-region");
     expect(within(cameraRegion).queryByTestId("shelf-swing-subject-trace")).toBeNull();
     expect(within(subjectRegion).getByTestId("shelf-swing-subject-trace")).toBeInTheDocument();
+    expectGuideLabelClearOfMiddleTarget(
+      within(subjectRegion).getByTestId("geometry-svg-top"),
+    );
     expect(within(cameraRegion).getByTestId("scheimpflug-intersection")).toBeInTheDocument();
     for (const targetId of ["shelf-front", "shelf-middle", "shelf-back"]) {
       expect(within(subjectRegion).getByTestId(`geometry-target-${targetId}`)).toBeInTheDocument();

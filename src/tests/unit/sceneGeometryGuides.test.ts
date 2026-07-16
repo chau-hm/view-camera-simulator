@@ -72,6 +72,9 @@ describe("scene geometry guides", () => {
       label: "Diagonal subject plane",
       view: "top",
       testId: "shelf-swing-subject-trace",
+      labelPositionT: 0.72,
+      labelOffsetPx: { x: 0, y: -20 },
+      labelAnchor: "middle",
     });
     expect(guides[0].startWorld).toEqual(
       shelfSwingGeometry.frontSubject.focusDetailProbeWorld,
@@ -80,6 +83,11 @@ describe("scene geometry guides", () => {
       shelfSwingGeometry.backSubject.focusDetailProbeWorld,
     );
     expect(getSceneGeometryGuides("unknown-scene")).toEqual([]);
+    expect(getSceneGeometryGuides("table-tilt")[0]).toMatchObject({
+      labelPositionT: 1,
+      labelOffsetPx: { x: -4, y: 18 },
+      labelAnchor: "end",
+    });
   });
 
   it("uses explicit scene target labels while preserving generic fallbacks", () => {
@@ -102,7 +110,6 @@ describe("scene geometry guides", () => {
     expect(profile.lateralWindow?.top).toEqual({ minMm: -1500, maxMm: 1500 });
     expect(profile.diagramPaddingPx).toBe(36);
     expect(profile.dofFillOpacity).toBe(0.08);
-    expect(profile.showTabletopGuide).toBe(false);
   });
 
   it("projects the calibrated focus plane collinearly with every canonical chart centre", () => {

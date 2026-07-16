@@ -7,7 +7,10 @@ import {
   type OpticalSectionData,
   type PlaneSegment,
 } from "./opticalSectionProjection";
-import { getLocalTargetLabelPlacement } from "./labelPlacement";
+import {
+  getGeometryGuideLabelPlacement,
+  getLocalTargetLabelPlacement,
+} from "./labelPlacement";
 import { ProjectedCameraConstruction } from "./ProjectedCameraConstruction";
 import {
   getSceneGeometryGuides,
@@ -117,7 +120,17 @@ export const OpticalSectionDiagram = ({
         {subjectGuides.map((guide) => {
           const start = view.projectWorldPoint(guide.startWorld);
           const end = view.projectWorldPoint(guide.endWorld);
-          const labelAtEnd = guide.id === "table-tilt-tabletop";
+          const labelPlacement = getGeometryGuideLabelPlacement({
+            start,
+            end,
+            positionT: guide.labelPositionT,
+            offsetPx: guide.labelOffsetPx,
+            anchor: guide.labelAnchor,
+            text: guide.label,
+            svgWidth,
+            svgHeight,
+            safeMargin,
+          });
           return (
             <g key={guide.id} data-testid={guide.testId} data-geometry-guide-id={guide.id}>
               <line
@@ -129,12 +142,14 @@ export const OpticalSectionDiagram = ({
                 strokeWidth={3}
               />
               <text
-                x={labelAtEnd ? end.x - 4 : (start.x + end.x) / 2}
-                y={labelAtEnd ? end.y + 18 : (start.y + end.y) / 2 - 12}
+                data-testid={`${guide.testId}-label`}
+                data-guide-label-position-t={labelPlacement.positionT}
+                x={labelPlacement.x}
+                y={labelPlacement.y}
                 fontSize={12}
                 fontWeight={600}
                 fill={guide.color}
-                textAnchor={labelAtEnd ? "end" : "middle"}
+                textAnchor={labelPlacement.anchor}
               >
                 {guide.label}
               </text>

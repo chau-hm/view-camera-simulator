@@ -192,5 +192,8 @@ describe("phase 12 integration", () => {
     // Ground glass assist control removed; preview mode (Raw/Upright) is now used instead
     expect(screen.getByLabelText("Focus assist")).toBeInTheDocument();
     expect(screen.getByLabelText("Grid")).toBeInTheDocument();
+    expect(screen.getByLabelText("Rise")).toHaveAttribute("step", "1");
+    expect(screen.getByLabelText("Tilt")).toHaveAttribute("step", "0.1");
+    expect(screen.getByLabelText("Swing")).toHaveAttribute("step", "0.1");
   });
 });

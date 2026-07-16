@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   clickStageAt,
   readFreshElementBounds,
@@ -24,6 +24,41 @@ const readSharpness = async (page: Page) =>
       ] as const),
     ),
   );
+
+const expectGuideLabelClearOfMiddleTarget = async (svg: Locator) => {
+  const guideLabel = svg.getByTestId("shelf-swing-subject-trace-label");
+  const middleTarget = svg.getByTestId("geometry-target-shelf-middle");
+  const middleMarker = middleTarget.locator("rect").first();
+  const middleLabel = middleTarget.getByText("Middle chart", { exact: true });
+  const [svgBox, guideBox, markerBox, middleLabelBox] = await Promise.all([
+    svg.boundingBox(),
+    guideLabel.boundingBox(),
+    middleMarker.boundingBox(),
+    middleLabel.boundingBox(),
+  ]);
+  if (!svgBox || !guideBox || !markerBox || !middleLabelBox) {
+    throw new Error("Shelf Swing geometry label bounds were unavailable");
+  }
+
+  const overlapsWithGap = (
+    first: { x: number; y: number; width: number; height: number },
+    second: { x: number; y: number; width: number; height: number },
+    gapPx: number,
+  ) =>
+    !(
+      first.x + first.width + gapPx <= second.x ||
+      second.x + second.width + gapPx <= first.x ||
+      first.y + first.height + gapPx <= second.y ||
+      second.y + second.height + gapPx <= first.y
+    );
+
+  expect(overlapsWithGap(guideBox, markerBox, 4)).toBe(false);
+  expect(overlapsWithGap(guideBox, middleLabelBox, 4)).toBe(false);
+  expect(guideBox.x).toBeGreaterThanOrEqual(svgBox.x);
+  expect(guideBox.y).toBeGreaterThanOrEqual(svgBox.y);
+  expect(guideBox.x + guideBox.width).toBeLessThanOrEqual(svgBox.x + svgBox.width);
+  expect(guideBox.y + guideBox.height).toBeLessThanOrEqual(svgBox.y + svgBox.height);
+};
 
 const expectRttContent = async (page: Page) => {
   const rtt = page.getByTestId("ground-glass-rtt");
@@ -155,6 +190,7 @@ test("Shelf Swing Ground Glass zoom, pan, reset, orientation, and quality stay l
 
 test("Shelf Swing guided task teaches negative swing and restores its initial state", async ({ page }) => {
   test.setTimeout(180_000);
+  await page.setViewportSize({ width: 1024, height: 900 });
   await page.goto("/scenes");
   await shelfCard(page).getByRole("link", { name: "Start Guided Task" }).click();
   await expect(page).toHaveURL(/\/simulator\/guided\/shelf-swing\/swing-01$/);
@@ -191,6 +227,24 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
   await expect(page.getByRole("button", { name: "Fit Construction" })).toBeDisabled();
   await page.getByRole("button", { name: "Close 2D Geometry" }).click();
 
+  const movementCriterion = page
+    .locator(".feedback-criterion")
+    .filter({ hasText: "Swing remains within -4.2° to -3.4°" });
+  for (const [swing, passes] of [
+    [-4.2, true],
+    [-3.8, true],
+    [-3.4, true],
+    [-4.3, false],
+    [-3.3, false],
+    [3.8, false],
+  ] as const) {
+    await setRangeDirect(page, "Swing", swing);
+    await expect(page.getByLabel("Swing")).toHaveValue(String(swing));
+    await expect(movementCriterion).toHaveClass(
+      passes ? /feedback-criterion--passed/ : /feedback-criterion--failed/,
+    );
+  }
+
   await setRangeDirect(page, "Swing", 3.802);
   await setRangeDirect(page, "Focus distance", 3411.62);
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
@@ -215,6 +269,7 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
 
   await page.getByRole("button", { name: "Open 2D Geometry" }).click();
   const calibratedTop = page.getByTestId("geometry-svg-top");
+  await expectGuideLabelClearOfMiddleTarget(calibratedTop);
   const subjectLine = calibratedTop.getByTestId("shelf-swing-subject-trace").locator("line");
   const focusLine = calibratedTop.getByTestId("plane-line-focus");
   const residual = await Promise.all([subjectLine, focusLine].map(async (line) =>
@@ -236,6 +291,7 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
   await page.getByRole("button", { name: "Fit Construction" }).click();
   const subjectField = page.getByTestId("subject-field-region");
   await expect(subjectField.getByTestId("shelf-swing-subject-trace")).toBeVisible();
+  await expectGuideLabelClearOfMiddleTarget(subjectField.getByTestId("geometry-svg-top"));
   await expect(
     page.getByTestId("camera-construction-region").getByTestId("shelf-swing-subject-trace"),
   ).toHaveCount(0);

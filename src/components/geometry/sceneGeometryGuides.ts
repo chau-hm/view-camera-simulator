@@ -10,6 +10,12 @@ export type SceneGeometryGuide = {
   endWorld: Vec3;
   color: string;
   testId: string;
+  labelPositionT?: number;
+  labelOffsetPx?: {
+    x: number;
+    y: number;
+  };
+  labelAnchor?: "start" | "middle" | "end";
 };
 
 export type SceneGeometryTargetLabelMap = Readonly<Record<string, string>>;
@@ -24,6 +30,9 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
       endWorld: tableTiltGeometry.tabletopExtents.far.topSurfaceCenterWorld,
       color: "#92400e",
       testId: "tabletop-guide",
+      labelPositionT: 1,
+      labelOffsetPx: { x: -4, y: 18 },
+      labelAnchor: "end",
     },
   ],
   "shelf-swing": [
@@ -35,6 +44,9 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
       endWorld: shelfSwingGeometry.backSubject.focusDetailProbeWorld,
       color: "#115e59",
       testId: "shelf-swing-subject-trace",
+      labelPositionT: 0.72,
+      labelOffsetPx: { x: 0, y: -20 },
+      labelAnchor: "middle",
     },
   ],
 };

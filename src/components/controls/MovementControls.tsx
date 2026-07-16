@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { selectMovementControlState } from "../../state/selectors";
 import { UI_COPY } from "../../ui/copy";
-import { CAMERA_CONSTANTS } from "../../utils/constants";
+import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS } from "../../utils/constants";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import { useAppStore } from "../../state/appStore";
 import { handleRangeInputKeyboard } from "../../utils/rangeInputKeyboard";
@@ -68,6 +68,7 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
             type="range"
             min={CAMERA_CONSTANTS.riseMinMm}
             max={CAMERA_CONSTANTS.riseMaxMm}
+            step={CAMERA_CONTROL_STEPS.riseMm}
             value={movement.frontRiseMm}
             disabled={!riseEnabled}
             className="range-slider"
@@ -76,7 +77,7 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
                 value: movement.frontRiseMm,
                 min: CAMERA_CONSTANTS.riseMinMm,
                 max: CAMERA_CONSTANTS.riseMaxMm,
-                step: 1,
+                step: CAMERA_CONTROL_STEPS.riseMm,
                 onChangeValue: setRise,
               })
             }
@@ -92,7 +93,7 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
             type="range"
             min={CAMERA_CONSTANTS.tiltMinDeg}
             max={CAMERA_CONSTANTS.tiltMaxDeg}
-            step={0.1}
+            step={CAMERA_CONTROL_STEPS.tiltDeg}
             value={movement.frontTiltDeg}
             disabled={!tiltEnabled}
             className="range-slider"
@@ -101,7 +102,7 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
                 value: movement.frontTiltDeg,
                 min: CAMERA_CONSTANTS.tiltMinDeg,
                 max: CAMERA_CONSTANTS.tiltMaxDeg,
-                step: 0.1,
+                step: CAMERA_CONTROL_STEPS.tiltDeg,
                 onChangeValue: setTilt,
               })
             }
@@ -117,7 +118,7 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
             type="range"
             min={CAMERA_CONSTANTS.swingMinDeg}
             max={CAMERA_CONSTANTS.swingMaxDeg}
-            step={0.1}
+            step={CAMERA_CONTROL_STEPS.swingDeg}
             value={movement.frontSwingDeg}
             disabled={!swingEnabled}
             className="range-slider"
@@ -126,7 +127,7 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
                 value: movement.frontSwingDeg,
                 min: CAMERA_CONSTANTS.swingMinDeg,
                 max: CAMERA_CONSTANTS.swingMaxDeg,
-                step: 0.1,
+                step: CAMERA_CONTROL_STEPS.swingDeg,
                 onChangeValue: setSwing,
               })
             }

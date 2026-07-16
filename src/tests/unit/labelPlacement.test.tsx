@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { getLocalTargetLabelPlacement } from '../../components/geometry/labelPlacement';
+import {
+  getApproximateSvgTextBounds,
+  getGeometryGuideLabelPlacement,
+  getLocalTargetLabelPlacement,
+} from '../../components/geometry/labelPlacement';
 
 describe('getLocalTargetLabelPlacement', () => {
   const svgWidth = 200;
@@ -55,5 +59,91 @@ describe('getLocalTargetLabelPlacement', () => {
     expect(right).toBeLessThanOrEqual(svgWidth - safeMargin);
     expect(res.y).toBeGreaterThanOrEqual(safeMargin);
     expect(res.y).toBeLessThanOrEqual(svgHeight - safeMargin);
+  });
+});
+
+describe('getGeometryGuideLabelPlacement', () => {
+  const svgWidth = 240;
+  const svgHeight = 160;
+  const safeMargin = 8;
+
+  it('interpolates a diagonal guide away from its midpoint and stays inside the SVG', () => {
+    const placement = getGeometryGuideLabelPlacement({
+      start: { x: 20, y: 130 },
+      end: { x: 220, y: 30 },
+      positionT: 0.72,
+      offsetPx: { x: 0, y: -20 },
+      text: 'Diagonal subject plane',
+      svgWidth,
+      svgHeight,
+      safeMargin,
+    });
+    const midpoint = { x: 120, y: 80 };
+    expect(placement.positionT).toBe(0.72);
+    expect(placement.x).not.toBe(midpoint.x);
+    expect(placement.y).not.toBe(midpoint.y);
+    expect([placement.x, placement.y].every(Number.isFinite)).toBe(true);
+    const bounds = getApproximateSvgTextBounds({
+      ...placement,
+      text: 'Diagonal subject plane',
+    });
+    expect(bounds.left).toBeGreaterThanOrEqual(safeMargin);
+    expect(bounds.top).toBeGreaterThanOrEqual(safeMargin);
+    expect(bounds.right).toBeLessThanOrEqual(svgWidth - safeMargin);
+    expect(bounds.bottom).toBeLessThanOrEqual(svgHeight - safeMargin);
+  });
+
+  it('applies positive and negative offsets to a vertical guide', () => {
+    const base = {
+      start: { x: 100, y: 20 },
+      end: { x: 100, y: 140 },
+      positionT: 0.5,
+      text: 'Guide',
+      svgWidth,
+      svgHeight,
+      safeMargin,
+    };
+    const negative = getGeometryGuideLabelPlacement({
+      ...base,
+      offsetPx: { x: -12, y: -8 },
+    });
+    const positive = getGeometryGuideLabelPlacement({
+      ...base,
+      offsetPx: { x: 12, y: 8 },
+    });
+    expect(negative.x).toBeLessThan(positive.x);
+    expect(negative.y).toBeLessThan(positive.y);
+  });
+
+  it.each(['start', 'middle', 'end'] as const)('keeps the %s anchor inside bounds', (anchor) => {
+    const placement = getGeometryGuideLabelPlacement({
+      start: { x: 0, y: 40 },
+      end: { x: 240, y: 40 },
+      positionT: anchor === 'start' ? 0 : anchor === 'end' ? 1 : 0.5,
+      anchor,
+      text: 'Guide label',
+      svgWidth,
+      svgHeight,
+      safeMargin,
+    });
+    const bounds = getApproximateSvgTextBounds({ ...placement, text: 'Guide label' });
+    expect(bounds.left).toBeGreaterThanOrEqual(safeMargin);
+    expect(bounds.right).toBeLessThanOrEqual(svgWidth - safeMargin);
+  });
+
+  it('clamps out-of-range positions and rejects non-finite input', () => {
+    const input = {
+      start: { x: 20, y: 20 },
+      end: { x: 220, y: 140 },
+      text: 'Guide',
+      svgWidth,
+      svgHeight,
+      safeMargin,
+    };
+    expect(getGeometryGuideLabelPlacement({ ...input, positionT: -1 }).positionT).toBe(0);
+    expect(getGeometryGuideLabelPlacement({ ...input, positionT: 2 }).positionT).toBe(1);
+    expect(() =>
+      getGeometryGuideLabelPlacement({ ...input, positionT: Number.NaN }),
+    ).toThrow(/finite values/);
   });
 });

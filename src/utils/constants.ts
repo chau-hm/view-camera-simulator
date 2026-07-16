@@ -17,6 +17,12 @@ export const CAMERA_CONSTANTS = {
   defaultFocusDistanceMm: 2000,
 } as const;
 
+export const CAMERA_CONTROL_STEPS = {
+  riseMm: 1,
+  tiltDeg: 0.1,
+  swingDeg: 0.1,
+} as const;
+
 export const DEFAULT_CAMERA_STATE: CameraState = {
   focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
   aperture: 11,

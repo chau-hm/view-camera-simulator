@@ -17,7 +17,6 @@ export type GeometryPresentationProfile = {
   targetLabelMode: "none" | "short-local";
   showOpticalAxisLabel: boolean;
   showScheimpflugIntersection: boolean;
-  showTabletopGuide: boolean;
   dofFillOpacity: number;
 };
 
@@ -35,7 +34,6 @@ export function getGeometryPresentationProfile(
       targetLabelMode: "short-local",
       showOpticalAxisLabel: true,
       showScheimpflugIntersection: false,
-      showTabletopGuide: false,
       dofFillOpacity: 0.12,
     };
   }
@@ -54,7 +52,6 @@ export function getGeometryPresentationProfile(
       targetLabelMode: "short-local",
       showOpticalAxisLabel: true,
       showScheimpflugIntersection: true,
-      showTabletopGuide: true,
       dofFillOpacity: 0.08,
     };
   }
@@ -73,7 +70,6 @@ export function getGeometryPresentationProfile(
       targetLabelMode: "short-local",
       showOpticalAxisLabel: true,
       showScheimpflugIntersection: true,
-      showTabletopGuide: false,
       dofFillOpacity: 0.08,
     };
   }
@@ -88,7 +84,6 @@ export function getGeometryPresentationProfile(
     targetLabelMode: "short-local",
     showOpticalAxisLabel: true,
     showScheimpflugIntersection: true,
-    showTabletopGuide: false,
     dofFillOpacity: 0.12,
   };
 }
