@@ -32,6 +32,23 @@ const collectNumbers = (value: unknown): number[] => {
 };
 
 describe("canonical Shelf Swing geometry", () => {
+  it("views across the diagonal station trace instead of stacking the stations", () => {
+    const stationTrace = {
+      x: geometry.backSubject.focusDetailProbeWorld.x - geometry.frontSubject.focusDetailProbeWorld.x,
+      z: geometry.backSubject.focusDetailProbeWorld.z - geometry.frontSubject.focusDetailProbeWorld.z,
+    };
+    const sightline = {
+      x: geometry.observerCamera.target.x - geometry.observerCamera.position.x,
+      z: geometry.observerCamera.target.z - geometry.observerCamera.position.z,
+    };
+    const normalizedDot = Math.abs(
+      (stationTrace.x * sightline.x + stationTrace.z * sightline.z) /
+        (Math.hypot(stationTrace.x, stationTrace.z) * Math.hypot(sightline.x, sightline.z)),
+    );
+    expect(normalizedDot).toBeLessThan(0.15);
+    expect(geometry.observerCamera.position.y).toBeGreaterThan(geometry.floor.center.y);
+  });
+
   it("keeps every canonical numeric value finite", () => {
     const numbers = collectNumbers({
       floor: geometry.floor,
