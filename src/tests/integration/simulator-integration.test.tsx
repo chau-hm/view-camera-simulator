@@ -7,6 +7,7 @@ import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
 import { selectDerivedOpticsState } from "../../state/selectors";
 import { useAppStore } from "../../state/appStore";
+import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 
 const renderWorkspace = (mode: "guided" | "free", sceneId: string, taskId: string | null) => {
   const route = taskId ? `/simulator/${mode}/${sceneId}/${taskId}` : `/simulator/${mode}/${sceneId}`;
@@ -123,7 +124,7 @@ describe("phase 12 integration", () => {
     expect(camera.activeSceneId).toBe("shelf-swing");
     expect(camera.activeTaskId).toBe("swing-01");
     expect(camera.frontSwingDeg).toBe(0);
-    expect(camera.focusDistanceMm).toBe(3200);
+    expect(camera.focusDistanceMm).toBe(shelfSwingGeometry.middleSubject.focusDetailProbeWorld.z);
   });
 
   it("TST-INT-012 task evaluation display matches evaluator result", () => {

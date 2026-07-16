@@ -75,7 +75,10 @@ describe("scenes page", () => {
       "/simulator/free/shelf-swing",
     );
     expect(scopedShelfCard.queryByText("In development")).toBeNull();
-    expect(scopedShelfCard.queryByRole("link", { name: "Start Guided Task" })).toBeNull();
+    expect(scopedShelfCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/shelf-swing/swing-01",
+    );
 
     expect(publicSceneIds).toEqual([
       "focus-fundamentals-two-targets",
@@ -94,7 +97,11 @@ describe("scenes page", () => {
     ]);
     expect(getPublicScenes().map((scene) => scene.id)).toContain("shelf-swing");
     expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("available");
-    expect(getPublicSceneEntryById("shelf-swing")?.availableModes).toEqual(["free"]);
+    expect(getPublicSceneEntryById("shelf-swing")?.availableModes).toEqual([
+      "free",
+      "guided",
+    ]);
+    expect(getPublicSceneEntryById("shelf-swing")?.guidedTaskId).toBe("swing-01");
     expect(getPublicSceneEntryById("table-tilt")?.availability).toBe("available");
     expect(getPublicSceneEntryById("table-tilt")?.availableModes).toEqual([
       "free",
@@ -102,7 +109,7 @@ describe("scenes page", () => {
     ]);
     expect(getPublicSceneEntryById("unknown-scene")).toBeUndefined();
     expect(
-      screen.getByText("The guided Shelf Swing lesson is still being prepared."),
-    ).toBeInTheDocument();
+      screen.queryByText("The guided Shelf Swing lesson is still being prepared."),
+    ).not.toBeInTheDocument();
   });
 });

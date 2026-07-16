@@ -62,9 +62,26 @@ export const evaluateTask = (
         };
       }
       case "movement-range": {
-        const value = Math.abs(movementValue(camera, criterion.movement));
+        const rawValue = movementValue(camera, criterion.movement);
+        const value = criterion.valueMode === "signed" ? rawValue : Math.abs(rawValue);
         const passed = value >= criterion.min && value <= criterion.max;
-        const inRangeScore = passed ? 1 : value < criterion.min ? value / Math.max(criterion.min, 1e-9) : criterion.max / value;
+        const inRangeScore =
+          criterion.valueMode === "signed"
+            ? (() => {
+                const rangeSpan = Math.max(Math.abs(criterion.max - criterion.min), 1e-9);
+                const distanceToRange =
+                  value < criterion.min
+                    ? criterion.min - value
+                    : value > criterion.max
+                      ? value - criterion.max
+                      : 0;
+                return passed ? 1 : 1 - distanceToRange / rangeSpan;
+              })()
+            : passed
+              ? 1
+              : value < criterion.min
+                ? value / Math.max(criterion.min, 1e-9)
+                : criterion.max / value;
         return {
           criterionId: criterion.id,
           label: criterion.label,

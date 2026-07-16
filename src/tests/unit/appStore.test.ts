@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { useAppStore } from "../../state/appStore";
 import { getSceneFocusDistanceRange } from "../../scenes/definitions";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 
 describe("app store STA-001", () => {
   afterEach(() => {
@@ -112,7 +113,7 @@ describe("app store STA-001", () => {
     expect(camera.frontRiseMm).toBe(DEFAULT_CAMERA_STATE.frontRiseMm);
     expect(camera.frontTiltDeg).toBe(DEFAULT_CAMERA_STATE.frontTiltDeg);
     expect(camera.frontSwingDeg).toBe(DEFAULT_CAMERA_STATE.frontSwingDeg);
-    expect(camera.focusDistanceMm).toBe(3200);
+    expect(camera.focusDistanceMm).toBe(shelfSwingGeometry.middleSubject.focusDetailProbeWorld.z);
     expect(camera.aperture).toBe(DEFAULT_CAMERA_STATE.aperture);
     expect(camera.geometryView).toBe("top");
     expect(scene.activeSceneId).toBe("shelf-swing");

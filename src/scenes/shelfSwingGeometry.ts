@@ -467,6 +467,8 @@ export const focusChartSurfaces = subjects.map((subject) => ({
   plane: subjectPlane,
 }));
 
+const swingToleranceDeg = 0.4;
+
 export const shelfSwingCalibration = {
   focalLengthMm: 150,
   frontRiseMm: 0,
@@ -475,7 +477,9 @@ export const shelfSwingCalibration = {
   focusDistanceMm: calibrationSolution.focusDistanceMm,
   aperture: 11 as const,
   targetSharpnessMinimum: 0.8,
-  swingToleranceDeg: 0.4,
+  swingToleranceDeg,
+  allowedSwingMinDeg: calibrationSolution.frontSwingDeg - swingToleranceDeg,
+  allowedSwingMaxDeg: calibrationSolution.frontSwingDeg + swingToleranceDeg,
   collinearityEpsilonMm: 1e-6,
   planeIntersectionToleranceMm: 1e-6,
 } as const;

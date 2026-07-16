@@ -59,6 +59,25 @@ export function getGeometryPresentationProfile(
     };
   }
 
+  if (scene.id === "shelf-swing") {
+    return {
+      depthWindow: { mode: "fixed", minMm: -250, maxMm: 6100 },
+      lateralWindow: {
+        side: { minMm: -900, maxMm: 900 },
+        top: { minMm: -1500, maxMm: 1500 },
+      },
+      diagramPaddingPx: 36,
+      annotationMode: "minimal",
+      showDepthStrip: true,
+      showSwatchLegend: false,
+      targetLabelMode: "short-local",
+      showOpticalAxisLabel: true,
+      showScheimpflugIntersection: true,
+      showTabletopGuide: false,
+      dofFillOpacity: 0.08,
+    };
+  }
+
   // Default: scene-bounds profile with minimal annotations
   return {
     depthWindow: { mode: "scene-bounds", marginMm: 300 },

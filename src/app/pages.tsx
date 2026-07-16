@@ -86,11 +86,6 @@ export const ScenesPage = () => {
           ))
         )}
       </div>
-
-      <div className="rebuild-notice">
-        <span className="material-symbols-outlined">info</span>
-        <div>The guided Shelf Swing lesson is still being prepared.</div>
-      </div>
     </AppShell>
   );
 };

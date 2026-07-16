@@ -56,8 +56,9 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       "Use front swing to rotate the plane of sharp focus through three subjects arranged diagonally from front-left to back-right.",
     topics: ["Swing", "Plane of focus", "Scheimpflug principle"],
     availability: "available",
-    availableModes: ["free"],
+    availableModes: ["free", "guided"],
     thumbnailAsset: "assets/shelf-swing.png",
+    guidedTaskId: "swing-01",
   },
 ];
 
