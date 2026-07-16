@@ -7,6 +7,7 @@ import { GroundGlassViewport } from "../../components/simulator/GroundGlassViewp
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { DEFAULT_CAMERA_STATE, CAMERA_CONSTANTS } from "../../utils/constants";
 
 describe("GroundGlassRenderer", () => {
@@ -157,6 +158,38 @@ describe("GroundGlassRenderer", () => {
     );
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
+  });
+
+  it("routes Shelf Swing exclusively through RTT without legacy DOM artifacts", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...shelfSwingScene.cameraPreset,
+      activeSceneId: shelfSwingScene.id,
+    };
+    const opticsState = deriveOpticsState(camera, shelfSwingScene);
+    render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        focusAssistEnabled={false}
+        gridEnabled={false}
+        riseMm={camera.frontRiseMm}
+        tiltDeg={camera.frontTiltDeg}
+        swingDeg={camera.frontSwingDeg}
+        focusDistanceMm={camera.focusDistanceMm}
+        aperture={camera.aperture}
+        renderQuality="standard"
+        previewMode="raw"
+        sceneId={shelfSwingScene.id}
+      />,
+    );
+
+    expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
+    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
+    shelfSwingScene.focusTargets.forEach((target) => {
+      expect(screen.queryByTestId(`ground-glass-target-${target.id}`)).not.toBeInTheDocument();
+    });
   });
 
   it("uses matching point and patch defocus metrics in Table Tilt labels", () => {

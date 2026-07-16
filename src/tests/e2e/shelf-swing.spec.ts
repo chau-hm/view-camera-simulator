@@ -1,24 +1,157 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import {
+  clickStageAt,
+  readFreshElementBounds,
+  readStageTransform,
+} from "./helpers/groundGlass";
+import { setRangeDirect } from "./helpers/rangeInput";
 
-for (const route of [
-  "/simulator/free/shelf-swing",
-  "/simulator/guided/shelf-swing/swing-01",
-]) {
-  test(`redirects unavailable Shelf Swing route ${route} to Scenes`, async ({ page }) => {
-    await page.goto(route);
+const shelfCard = (page: Page) =>
+  page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Shelf Swing" }) });
 
-    await expect(page).toHaveURL(/\/scenes$/);
-    await expect(page.getByRole("heading", { name: "Scenes", level: 1 })).toBeVisible();
-    const shelfCard = page.getByRole("heading", { name: "Shelf Swing", level: 2 }).locator("../..");
-    await expect(shelfCard.getByText("In development")).toBeVisible();
-    await expect(shelfCard.getByRole("link", { name: "Open Scene" })).toHaveCount(0);
-    await expect(shelfCard.getByRole("link", { name: "Start Guided Task" })).toHaveCount(0);
+const readSharpness = async (page: Page) =>
+  Object.fromEntries(
+    await Promise.all(
+      ["shelf-front", "shelf-middle", "shelf-back"].map(async (id) => [
+        id,
+        Number(
+          await page
+            .getByRole("progressbar", { name: `${id} sharpness` })
+            .getAttribute("aria-valuenow"),
+        ),
+      ] as const),
+    ),
+  );
+
+const expectRttContent = async (page: Page) => {
+  const rtt = page.getByTestId("ground-glass-rtt");
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 120_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-depth-available", "true");
+  await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true");
+  await expect(rtt).toHaveAttribute("data-rtt-dof-mode", "derived-planes");
+  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true");
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
+  expect(Number(await rtt.getAttribute("data-rtt-raw-variance"))).toBeGreaterThan(4);
+  expect(Number(await rtt.getAttribute("data-rtt-final-variance"))).toBeGreaterThan(4);
+  expect(Number(await rtt.getAttribute("data-rtt-raw-non-background"))).toBeGreaterThan(0);
+  expect(Number(await rtt.getAttribute("data-rtt-final-non-background"))).toBeGreaterThan(0);
+  await expect(rtt.locator("canvas")).toBeVisible();
+  expect((await rtt.locator("canvas").screenshot()).byteLength).toBeGreaterThan(5_000);
+};
+
+test("Shelf Swing card exposes free mode without a guided action", async ({ page }) => {
+  await page.goto("/scenes");
+  const card = shelfCard(page);
+  await expect(card).toBeVisible();
+  const thumbnail = card.locator("img");
+  await expect(thumbnail).toHaveAttribute("src", /assets\/shelf-swing\.png$/);
+  await expect.poll(() => thumbnail.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await expect(card.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
+    "href",
+    "/simulator/free/shelf-swing",
+  );
+  await expect(card.getByRole("link", { name: "Start Guided Task" })).toHaveCount(0);
+  await expect(card.getByText("In development")).toHaveCount(0);
+
+  await card.getByRole("link", { name: "Open Scene" }).click();
+  await expect(page).toHaveURL(/\/simulator\/free\/shelf-swing$/);
+});
+
+test("Shelf Swing free scene uses canonical R3F and contentful RTT rendering", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("/simulator/free/shelf-swing?rttDiagnostics=1");
+
+  await expect(page.getByRole("heading", { name: "3D Scene", level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ground Glass", level: 2 })).toBeVisible();
+  await expect(page.getByTestId("scene-canvas")).toHaveAttribute(
+    "data-scene-subject-id",
+    "shelf-swing",
+  );
+  await expect(page.getByText(/WebGL is unavailable/)).toHaveCount(0);
+  await expect(page.getByTestId("ground-glass-rtt")).toHaveCount(1);
+  await expect(page.getByTestId("ground-glass-scene")).toHaveCount(0);
+  await expectRttContent(page);
+});
+
+test("Shelf Swing negative calibration sharpens all targets and the opposite sign worsens them", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("/simulator/free/shelf-swing?rttDiagnostics=1");
+  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+
+  await setRangeDirect(page, "Swing", 0);
+  await setRangeDirect(page, "Focus distance", 3800);
+  const zero = await readSharpness(page);
+  expect(zero["shelf-middle"]).toBe(Math.max(...Object.values(zero)));
+  expect(Object.values(zero).every((score) => score >= 80)).toBe(false);
+
+  await setRangeDirect(page, "Swing", -3.802);
+  await setRangeDirect(page, "Focus distance", 3411.619);
+  await expect.poll(async () => Object.values(await readSharpness(page)).every((score) => score >= 80)).toBe(true);
+  const calibrated = await readSharpness(page);
+  await expectRttContent(page);
+  const calibratedStateKey = await page
+    .getByTestId("ground-glass-rtt")
+    .getAttribute("data-rtt-sanity-state");
+
+  await setRangeDirect(page, "Swing", 3.802);
+  await expect.poll(async () => Object.values(await readSharpness(page)).every((score) => score >= 80)).toBe(false);
+  const opposite = await readSharpness(page);
+  expect(Math.min(opposite["shelf-front"], opposite["shelf-back"])).toBeLessThan(
+    Math.min(calibrated["shelf-front"], calibrated["shelf-back"]),
+  );
+  await expect
+    .poll(() => page.getByTestId("ground-glass-rtt").getAttribute("data-rtt-sanity-state"))
+    .not.toBe(calibratedStateKey);
+
+  const f11 = Math.min(...Object.values(opposite));
+  await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
+  await expect.poll(async () => Math.min(...Object.values(await readSharpness(page)))).toBeGreaterThanOrEqual(f11);
+});
+
+test("Shelf Swing Ground Glass zoom, pan, reset, orientation, and quality stay live", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("/simulator/free/shelf-swing?rttDiagnostics=1");
+  await expectRttContent(page);
+  const viewport = page.getByLabel("GroundGlassViewport");
+  const stage = viewport.getByRole("button", { name: /Ground Glass$/ });
+  const layer = viewport.getByTestId("ground-glass-image-layer");
+
+  await clickStageAt(page, stage, 0.25, 0.25);
+  await expect(stage).toHaveAttribute("data-zoomed", "true");
+  const zoomed = await readStageTransform(layer);
+  expect(zoomed.scaleX).toBeGreaterThan(1);
+
+  const bounds = await readFreshElementBounds(stage);
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width / 2 + 45, bounds.y + bounds.height / 2 + 30, { steps: 4 });
+  await page.mouse.up();
+  const panned = await readStageTransform(layer);
+  expect(Math.abs(panned.translateX - zoomed.translateX) + Math.abs(panned.translateY - zoomed.translateY)).toBeGreaterThan(1);
+
+  await viewport.getByRole("button", { name: "Reset Ground Glass view" }).click();
+  await expect(stage).toHaveAttribute("data-zoomed", "false");
+  expect(await readStageTransform(layer)).toEqual({
+    translateX: 0,
+    translateY: 0,
+    scaleX: 1,
+    scaleY: 1,
   });
-}
 
-test("keeps the available Table Tilt route open", async ({ page }) => {
-  await page.goto("/simulator/free/table-tilt");
+  await page.getByText("Upright Assist").click();
+  await expectRttContent(page);
+  await page.getByText("Raw Ground Glass").click();
+  await expectRttContent(page);
+  await page.getByLabel("Render quality").selectOption("low");
+  await expectRttContent(page);
+  await page.getByLabel("Render quality").selectOption("high");
+  await expectRttContent(page);
+});
 
-  await expect(page).toHaveURL(/\/simulator\/free\/table-tilt$/);
-  await expect(page.getByRole("link", { name: /All Scenes/i })).toBeVisible();
+test("Shelf Swing guided task remains unavailable", async ({ page }) => {
+  await page.goto("/simulator/guided/shelf-swing/swing-01");
+  await expect(page).toHaveURL(/\/scenes$/);
+  await expect(page.getByRole("heading", { name: "Scenes", level: 1 })).toBeVisible();
 });

@@ -1,4 +1,5 @@
 import type { SceneDefinition } from "../types/scene";
+import type { SimulatorMode } from "../types/camera";
 import { getSceneById } from "../scenes/definitions";
 
 export const publicSceneIds = [
@@ -15,6 +16,7 @@ export type PublicSceneEntry = {
   description: string;
   topics: readonly string[];
   availability: SceneAvailability;
+  availableModes: readonly SimulatorMode[];
   thumbnailAsset: string;
   guidedTaskId?: string;
 };
@@ -26,6 +28,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       "Compare two targets at different distances. Adjust focus and aperture to see how the plane of focus and depth of field change.",
     topics: ["Focus", "Aperture", "Depth of field"],
     availability: "available",
+    availableModes: ["free", "guided"],
     thumbnailAsset: "assets/two-targets-illustration.png",
   },
   {
@@ -34,6 +37,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       "Use front rise to include the top of a building while keeping the camera level and vertical lines parallel.",
     topics: ["Rise", "Architecture", "Perspective control"],
     availability: "available",
+    availableModes: ["free", "guided"],
     thumbnailAsset: "assets/architecture-rise.png",
   },
   {
@@ -42,6 +46,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       "Use front tilt to align the plane of sharp focus with three coplanar focus cards above the tabletop.",
     topics: ["Tilt", "Plane of focus", "Scheimpflug principle"],
     availability: "available",
+    availableModes: ["free", "guided"],
     thumbnailAsset: "assets/table-tilt.png",
     guidedTaskId: "tilt-01",
   },
@@ -50,8 +55,9 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     description:
       "Use front swing to rotate the plane of sharp focus through three subjects arranged diagonally from front-left to back-right.",
     topics: ["Swing", "Plane of focus", "Scheimpflug principle"],
-    availability: "in-development",
-    thumbnailAsset: "assets/shelf-swing.svg",
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/shelf-swing.png",
   },
 ];
 

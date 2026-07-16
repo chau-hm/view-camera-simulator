@@ -7,16 +7,13 @@ const SKY_COLOR = new THREE.Color("#dfe5ec");
 const FLOOR_COLOR = new THREE.Color("#9aa6b5");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
 import { vecToWorld, toWorld } from "./rttUtils";
-import geometry from "../scenes/architectureRiseGeometry";
 import { getSceneById } from "../scenes/definitions";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
-import { createFocusFundamentalsGroup } from "./FocusFundamentalsSubjectFactory";
-import { createArchitectureRiseGroup } from "./ArchitectureRiseSubjectFactory";
 import {
-  createTableTiltGroup,
-  disposeTableTiltGroup,
-} from "./TableTiltSubjectFactory";
-import tableTiltGeometry from "../scenes/tableTiltGeometry";
+  createRegisteredRttSubject,
+  disposeRegisteredRttSubject,
+  getSceneSubjectRegistration,
+} from "./sceneSubjectRegistry";
 import { configureGroundGlassCamera } from "./configureGroundGlassCamera";
 import { createGroundGlassDofUniformState } from "./createGroundGlassDofUniformState";
 import { groundGlassVertexShader, groundGlassHorizontalFragmentShader, groundGlassVerticalFragmentShader } from "./groundGlassDofShaderSources";
@@ -26,7 +23,10 @@ import { useAppStore } from "../state/appStore";
 import type { WebGLRenderer } from "three";
 import { getRenderQualitySettings } from "./renderQuality";
 import { getGroundGlassClipRangeWorld } from "./groundGlassRttScenes";
-import { getGroundGlassDofVisualSettings } from "./groundGlassVisualSettings";
+import {
+  getGroundGlassDofVisualSettings,
+  resolveGroundGlassDisplayOpticsState,
+} from "./groundGlassVisualSettings";
 import { analyzeGroundGlassRenderSanity } from "./groundGlassRenderSanity";
 
 type GroundGlassRTTProps = {
@@ -355,17 +355,11 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       }
     } catch (err) { void err; }
 
-    // For Focus Fundamentals use the shared subject factory (boards, floor)
+    // Build the offscreen subject through the same registry used by R3F.
     const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
-    let subjectGroup: THREE.Group | null = null;
-    if (sceneDef && sceneId === "focus-fundamentals-two-targets") {
-      subjectGroup = createFocusFundamentalsGroup();
-      scene.add(subjectGroup);
-    } else if (sceneDef && sceneId === "architecture-rise") {
-      subjectGroup = createArchitectureRiseGroup();
-      scene.add(subjectGroup);
-    } else if (sceneDef && sceneId === "table-tilt") {
-      subjectGroup = createTableTiltGroup();
+    const registration = sceneId ? getSceneSubjectRegistration(sceneId) : undefined;
+    const subjectGroup = sceneDef && sceneId ? createRegisteredRttSubject(sceneId) : null;
+    if (subjectGroup) {
       scene.add(subjectGroup);
     } else {
       // Simple rear/front standards and a lens block for other scenes
@@ -387,41 +381,27 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
     const fillLight = new THREE.DirectionalLight(0xffffff, 0.45);
 
-    // If architecture scene, aim lights at the facade center for readable illumination
-    if (sceneDef && sceneId === "architecture-rise") {
-      const facadeCenter = new THREE.Vector3(
-        geometry.building.center.x * 0.001,
-        geometry.building.center.y * 0.001,
-        geometry.facade.frontFacadeZ * 0.001,
-      );
+    const lighting = registration?.rttLighting;
+    if (sceneDef && lighting) {
+      const targetWorld = vecToWorld(lighting.targetMm);
+      const lightingTarget = new THREE.Vector3(...targetWorld);
       const lightTarget = new THREE.Object3D();
-      lightTarget.position.copy(facadeCenter);
+      lightTarget.position.copy(lightingTarget);
       scene.add(lightTarget);
 
-      // Key light: camera-left, above, slightly forward
-      keyLight.position.set(facadeCenter.x - 2.5, facadeCenter.y + 3.5, facadeCenter.z - 2.0);
+      keyLight.position.set(
+        lightingTarget.x + lighting.keyOffsetWorld.x,
+        lightingTarget.y + lighting.keyOffsetWorld.y,
+        lightingTarget.z + lighting.keyOffsetWorld.z,
+      );
       keyLight.target = lightTarget;
       scene.add(keyLight);
 
-      // Fill light: camera-right, lower intensity
-      fillLight.position.set(facadeCenter.x + 2.0, facadeCenter.y + 1.5, facadeCenter.z - 3.0);
-      fillLight.target = lightTarget;
-      scene.add(fillLight);
-    } else if (sceneDef && sceneId === "table-tilt") {
-      const tabletopCenter = new THREE.Vector3(
-        tableTiltGeometry.tabletop.center.x * 0.001,
-        tableTiltGeometry.tabletopTopSurfacePlane.point.y * 0.001,
-        tableTiltGeometry.tabletop.center.z * 0.001,
+      fillLight.position.set(
+        lightingTarget.x + lighting.fillOffsetWorld.x,
+        lightingTarget.y + lighting.fillOffsetWorld.y,
+        lightingTarget.z + lighting.fillOffsetWorld.z,
       );
-      const lightTarget = new THREE.Object3D();
-      lightTarget.position.copy(tabletopCenter);
-      scene.add(lightTarget);
-
-      keyLight.position.set(tabletopCenter.x - 2.5, tabletopCenter.y + 3.5, tabletopCenter.z - 2.5);
-      keyLight.target = lightTarget;
-      scene.add(keyLight);
-
-      fillLight.position.set(tabletopCenter.x + 2.5, tabletopCenter.y + 1.5, tabletopCenter.z - 1.5);
       fillLight.target = lightTarget;
       scene.add(fillLight);
     } else {
@@ -475,7 +455,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         // remove subject group if it was added
         if (subjectGroup && scene) {
           scene.remove(subjectGroup);
-          if (sceneId === "table-tilt") disposeTableTiltGroup(subjectGroup);
+          if (sceneId) disposeRegisteredRttSubject(sceneId, subjectGroup);
         }
         if (offscreenScene.current === scene) offscreenScene.current = null;
         if (groundGlassCamera.current === camera) groundGlassCamera.current = null;
@@ -606,8 +586,9 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       let uniformPreparationError: string | null = null;
       let preparedDofState: ReturnType<typeof createGroundGlassDofUniformState> | null = null;
       try {
+        const displayOpticsState = resolveGroundGlassDisplayOpticsState(sceneId, opticsState);
         preparedDofState = createGroundGlassDofUniformState(
-          opticsState,
+          displayOpticsState,
           cam,
           CAMERA_CONSTANTS.focalLengthMm,
           CAMERA_CONSTANTS.filmWidthMm,

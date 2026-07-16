@@ -224,7 +224,9 @@ export function calibrateShelfSwing({
 }
 
 const stationDimensions = {
-  width: 560,
+  // Keep the complete front station inside the 4x5 film frame while retaining
+  // the canonical chart, sample, and centre-probe coordinates.
+  width: 510,
   height: 1050,
   depth: 420,
 } as const;
@@ -481,7 +483,9 @@ export const shelfSwingCalibration = {
 export const canonicalFocusDistanceMm = shelfSwingCalibration.focusDistanceMm;
 
 export const observerCamera = {
-  position: { x: -2500, y: 1850 - opticalAxisHeightAboveFloorMm, z: -450 },
+  // View across the station trace rather than along it so the three canonical
+  // stations remain visually distinct in the initial 3D overview.
+  position: { x: 4200, y: 2010 - opticalAxisHeightAboveFloorMm, z: 1400 },
   target: { x: 0, y: 520 - opticalAxisHeightAboveFloorMm, z: 3850 },
 } as const;
 

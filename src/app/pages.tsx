@@ -89,7 +89,7 @@ export const ScenesPage = () => {
 
       <div className="rebuild-notice">
         <span className="material-symbols-outlined">info</span>
-        <div>Shelf Swing is currently being rebuilt and will become interactive soon.</div>
+        <div>The guided Shelf Swing lesson is still being prepared.</div>
       </div>
     </AppShell>
   );
@@ -104,12 +104,19 @@ export const SimulatorRoutePage = () => {
     taskId?: string;
   }>();
   const [searchParams] = useSearchParams();
-  const parsedMode: SimulatorMode = mode === "free" ? "free" : "guided";
+  const parsedMode: SimulatorMode | null =
+    mode === "free" || mode === "guided" ? mode : null;
   const resolvedSceneId = sceneId ?? "architecture-rise";
   const scene = getSceneById(resolvedSceneId);
   const publicEntry = getPublicSceneEntryById(resolvedSceneId);
 
-  if (!scene || !publicEntry || publicEntry.availability !== "available") {
+  if (
+    !scene ||
+    !publicEntry ||
+    publicEntry.availability !== "available" ||
+    !parsedMode ||
+    !publicEntry.availableModes.includes(parsedMode)
+  ) {
     return <Navigate to="/scenes" replace />;
   }
 

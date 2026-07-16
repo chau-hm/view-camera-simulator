@@ -10,9 +10,6 @@ import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS } from "../utils/constants";
-import { FocusFundamentalsSubject } from "./FocusFundamentalsSubjectFactory";
-import { ArchitectureRiseSubject } from "./ArchitectureRiseSubjectFactory";
-import { TableTiltSubject } from "./TableTiltSubjectFactory";
 import { UI_COPY } from "../ui/copy";
 import { getRenderQualitySettings } from "./renderQuality";
 import { getVisibleSceneLegendKeys } from "./sceneLegendHelpers";
@@ -23,6 +20,7 @@ import {
 } from "./scenePlaneOverlayGeometry";
 import { createScheimpflugConstructionGeometry } from "./scheimpflugConstructionGeometry";
 import { quaternionForPlaneNormal } from "./planeOrientation";
+import { getRegisteredSceneSubject } from "./sceneSubjectRegistry";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -397,7 +395,7 @@ const LegendUpdater = ({
   return null;
 };
 
-const SceneAssetMesh = ({ assetId }: { assetId: string }) => {
+export const SceneAssetMesh = ({ assetId }: { assetId: string }) => {
   switch (assetId) {
     case "architecture-ground":
       // Architecture Rise uses a shared Three.js subject; skip legacy per-asset meshes to avoid duplication.
@@ -412,50 +410,11 @@ const SceneAssetMesh = ({ assetId }: { assetId: string }) => {
       // the canonical TableTiltSubject now owns all visible Table Tilt geometry.
       return null;
     case "shelf-floor":
-      return (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toWorld(640), 0]}>
-          <planeGeometry args={[toWorld(10000), toWorld(10000)]} />
-          <meshStandardMaterial color="#e2e8f0" />
-        </mesh>
-      );
     case "shelf-diagonal-structure":
-      return (
-        <group>
-          <mesh position={[0, toWorld(1200), toWorld(3400)]} rotation={[0, -0.35, 0]}>
-            <boxGeometry args={[toWorld(3000), toWorld(120), toWorld(6000)]} />
-            <meshStandardMaterial color="#64748b" />
-          </mesh>
-          <mesh position={[toWorld(-1100), toWorld(1350), toWorld(1700)]}>
-            <boxGeometry args={[toWorld(120), toWorld(700), toWorld(120)]} />
-            <meshStandardMaterial color="#334155" />
-          </mesh>
-          <mesh position={[toWorld(0), toWorld(1350), toWorld(3300)]}>
-            <boxGeometry args={[toWorld(120), toWorld(700), toWorld(120)]} />
-            <meshStandardMaterial color="#334155" />
-          </mesh>
-          <mesh position={[toWorld(1200), toWorld(1350), toWorld(5100)]}>
-            <boxGeometry args={[toWorld(120), toWorld(700), toWorld(120)]} />
-            <meshStandardMaterial color="#334155" />
-          </mesh>
-        </group>
-      );
     case "shelf-decor":
-      return (
-        <group>
-          <mesh position={[toWorld(-1100), toWorld(1230), toWorld(1700)]}>
-            <boxGeometry args={[toWorld(180), toWorld(180), toWorld(120)]} />
-            <meshStandardMaterial color="#f97316" />
-          </mesh>
-          <mesh position={[toWorld(0), toWorld(1230), toWorld(3300)]}>
-            <boxGeometry args={[toWorld(180), toWorld(180), toWorld(120)]} />
-            <meshStandardMaterial color="#22c55e" />
-          </mesh>
-          <mesh position={[toWorld(1200), toWorld(1230), toWorld(5100)]}>
-            <boxGeometry args={[toWorld(180), toWorld(180), toWorld(120)]} />
-            <meshStandardMaterial color="#06b6d4" />
-          </mesh>
-        </group>
-      );
+      // Shelf Swing keeps these metadata entries for preload/error contracts;
+      // its canonical registered subject owns every visible mesh.
+      return null;
     default:
       return null;
   }
@@ -671,8 +630,11 @@ const SceneContent = ({
   showDofOverlay: boolean;
   showOpticalGeometry: boolean;
   showScheimpflugConstruction: boolean;
-}) => (
-  <>
+}) => {
+  const RegisteredSubject = getRegisteredSceneSubject(scene.id);
+
+  return (
+    <>
     <color attach="background" args={["#f8fafc"]} />
     <ambientLight intensity={0.65} />
     <directionalLight position={[2, 4, 2]} intensity={0.7} />
@@ -689,35 +651,19 @@ const SceneContent = ({
       showOpticalGeometry={showOpticalGeometry}
       showScheimpflugConstruction={showScheimpflugConstruction}
     />
-    {scene.id === "focus-fundamentals-two-targets" ? (
-      // Use shared scene subject for Focus Fundamentals
-      <>
-        <FocusFundamentalsSubject />
-      </>
-    ) : scene.id === "architecture-rise" ? (
-      // Architecture Rise uses a dedicated React subject component for the main building
-      <>
-        <ArchitectureRiseSubject />
-        {/* render canonical focus targets only; avoid toggling developer focus markers with optical-geometry control */}
-        {scene.focusTargets.map((target) => (
-          <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
-            <sphereGeometry args={[toWorld(50), 16, 16]} />
-            <meshStandardMaterial color="#ef4444" />
-          </mesh>
-        ))}
-      </>
-    ) : scene.id === "table-tilt" ? (
-      <TableTiltSubject />
+    {RegisteredSubject ? (
+      <RegisteredSubject scene={scene} />
     ) : (
-    scene.focusTargets.map((target) => (
-      <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
-        <sphereGeometry args={[toWorld(50), 16, 16]} />
-        <meshStandardMaterial color="#ef4444" />
-      </mesh>
-    ))
+      scene.focusTargets.map((target) => (
+        <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
+          <sphereGeometry args={[toWorld(50), 16, 16]} />
+          <meshStandardMaterial color="#ef4444" />
+        </mesh>
+      ))
     )}
-  </>
-);
+    </>
+  );
+};
 
 export const SceneRenderer = ({
   scene,
@@ -823,6 +769,7 @@ export const SceneRenderer = ({
     <div
       ref={containerRef}
       data-testid="scene-canvas"
+      data-scene-subject-id={getRegisteredSceneSubject(scene.id) ? scene.id : "fallback"}
       data-focus-overlay-vertices={focusOverlayVertexCount}
       data-near-dof-overlay-vertices={nearDofOverlayVertexCount}
       data-far-dof-overlay-vertices={farDofOverlayVertexCount}

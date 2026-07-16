@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { ScenesPage, SimulatorRoutePage } from "../../app/pages";
@@ -36,16 +36,30 @@ const renderRoute = (initialEntry: string) =>
   );
 
 describe("simulator route availability", () => {
-  it.each([
-    "/simulator/free/shelf-swing",
-    "/simulator/guided/shelf-swing/swing-01",
-  ])("redirects unavailable Shelf Swing route %s to Scenes", async (route) => {
-    renderRoute(route);
+  it("opens Shelf Swing in free mode", async () => {
+    renderRoute("/simulator/free/shelf-swing");
+
+    expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(
+      "free:shelf-swing:none",
+    );
+    expect(screen.getByTestId("route-location")).toHaveTextContent(
+      "/simulator/free/shelf-swing",
+    );
+  });
+
+  it("keeps the unfinished Shelf Swing guided route blocked", async () => {
+    renderRoute("/simulator/guided/shelf-swing/swing-01");
 
     await waitFor(() => expect(screen.getByTestId("route-location")).toHaveTextContent("/scenes"));
     expect(await screen.findByRole("heading", { name: "Scenes", level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Shelf Swing", level: 2 })).toBeInTheDocument();
-    expect(screen.getByText("In development")).toBeInTheDocument();
+    const shelfCard = screen
+      .getByRole("heading", { name: "Shelf Swing", level: 2 })
+      .closest("article");
+    expect(shelfCard).not.toBeNull();
+    expect(within(shelfCard!).getByRole("link", { name: "Open Scene" })).toBeInTheDocument();
+    expect(
+      within(shelfCard!).queryByRole("link", { name: "Start Guided Task" }),
+    ).not.toBeInTheDocument();
   });
 
   it.each([
