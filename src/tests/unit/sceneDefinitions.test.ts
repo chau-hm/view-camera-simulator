@@ -12,6 +12,7 @@ import {
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("scene definitions", () => {
@@ -42,6 +43,15 @@ describe("scene definitions", () => {
   it("defines near/mid/far shelf focus targets", () => {
     const focusTargetIds = shelfSwingScene.focusTargets.map((target) => target.id);
     expect(focusTargetIds).toEqual(["shelf-front", "shelf-middle", "shelf-back"]);
+    expect(shelfSwingScene.cameraPreset.focusDistanceMm).toBe(
+      shelfSwingGeometry.canonicalFocusDistanceMm,
+    );
+    expect(shelfSwingScene.cameraPlacement).toEqual(shelfSwingGeometry.observerCamera);
+    expect(shelfSwingScene.bounds).toEqual(shelfSwingGeometry.sceneBounds);
+    expect(shelfSwingScene.focusTargets).toEqual(shelfSwingGeometry.focusTargets);
+    expect(shelfSwingScene.compositionTargets[0].worldBounds).toEqual(
+      shelfSwingGeometry.compositionTargetBounds,
+    );
   });
 
   it("keeps three table targets not all sharp at zero tilt and f/22", () => {
