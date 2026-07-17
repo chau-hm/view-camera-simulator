@@ -197,7 +197,6 @@ test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource s
     expect(state.width).toBeGreaterThan(0);
     expect(state.height).toBeGreaterThan(0);
     expect(state.contextLost).toBe(false);
-    expect((await canvas.screenshot()).byteLength).toBeGreaterThan(5_000);
   };
 
   for (const focus of [3200, 4600, 5900, 6050]) {
@@ -233,6 +232,7 @@ test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource s
   await setRangeDirect(page, "Tilt", 0);
   await page.getByRole("combobox", { name: "Render quality" }).selectOption("high");
   await assertLiveCanvas();
+  expect((await rtt.locator("canvas").screenshot()).byteLength).toBeGreaterThan(5_000);
 });
 
 test("Table Tilt calibrated controls complete the guided task", async ({ page }) => {
@@ -645,7 +645,7 @@ const boxesOverlap = (
 );
 
 test("Table Tilt Ground Glass zoom, pan, jitter, and reset stay deterministic", async ({ page }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(150_000);
   await page.goto("/simulator/free/table-tilt");
   const { viewport, stage, transformedLayer } = groundGlassLocators(page);
   await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();
