@@ -39,6 +39,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/architecture-rise.png",
+    guidedTaskId: "rise-01",
   },
   {
     id: "table-tilt",

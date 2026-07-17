@@ -97,6 +97,20 @@ test("Shelf Swing card exposes free and guided modes", async ({ page }) => {
   await expect(page).toHaveURL(/\/simulator\/free\/shelf-swing$/);
 });
 
+test("Shelf Swing routes reject mismatched and free-mode task IDs", async ({ page }) => {
+  await page.goto("/simulator/guided/shelf-swing/tilt-01");
+  await expect(page).toHaveURL(/\/scenes$/);
+  await expect(page.getByText("Align the tabletop focus cards with tilt")).toHaveCount(0);
+
+  await page.goto("/simulator/free/shelf-swing/swing-01");
+  await expect(page).toHaveURL(/\/scenes$/);
+  await expect(page.getByText("Align the diagonal focus plane with swing")).toHaveCount(0);
+
+  await page.goto("/simulator/guided/shelf-swing/swing-01");
+  await expect(page).toHaveURL(/\/simulator\/guided\/shelf-swing\/swing-01$/);
+  await expect(page.getByText("Align the diagonal focus plane with swing")).toBeVisible();
+});
+
 test("Shelf Swing free scene uses canonical R3F and contentful RTT rendering", async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto("/simulator/free/shelf-swing?rttDiagnostics=1");
