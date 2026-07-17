@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
@@ -43,6 +43,8 @@ export const SimulatorWorkspace = ({
   const camera = useAppStore((state) => state.camera);
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
   const [showGeometryPanel, setShowGeometryPanel] = useState(false);
+  const geometryTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const geometryCloseRef = useRef<HTMLButtonElement | null>(null);
   // All registered scenes still available through engine registry
   // const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
@@ -70,6 +72,31 @@ export const SimulatorWorkspace = ({
 
     initRoute(mode, sceneId, taskId);
   }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId]);
+
+  const closeGeometryPanel = useCallback((restoreFocus = true) => {
+    setShowGeometryPanel(false);
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => geometryTriggerRef.current?.focus());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showGeometryPanel) return;
+
+    geometryCloseRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeGeometryPanel();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [closeGeometryPanel, showGeometryPanel]);
+
+  useEffect(() => {
+    setShowGeometryPanel(false);
+  }, [mode, sceneId, taskId]);
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
@@ -167,7 +194,10 @@ export const SimulatorWorkspace = ({
                 renderQuality={renderQuality}
                 setRenderQuality={setRenderQuality}
                 simulateAssetFailure={simulateAssetFailure}
-                onToggleGeometryPanel={() => setShowGeometryPanel((s) => !s)}
+                onToggleGeometryPanel={(trigger) => {
+                  geometryTriggerRef.current = trigger;
+                  setShowGeometryPanel(true);
+                }}
                 showHeader={false}
               />
             </div>
@@ -301,30 +331,19 @@ export const SimulatorWorkspace = ({
       {showGeometryPanel && (
         <div
           role="dialog"
-          aria-label="2D Geometry Panel"
-          style={{
-            position: "fixed",
-            left: "50%",
-            top: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "70vw",
-            height: "70vh",
-            maxWidth: "90vw",
-            maxHeight: "90vh",
-            minWidth: "420px",
-            minHeight: "320px",
-            background: "var(--panel-bg, #fff)",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
-            borderRadius: "8px",
-            zIndex: 1200,
-            overflow: "auto",
-            padding: "0.75rem",
-            resize: 'both',
-          }}
+          aria-modal="true"
+          aria-labelledby="geometry-dialog-title"
+          className="geometry-dialog"
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-            <strong>2D Geometry</strong>
-            <button className="btn btn--compact" type="button" onClick={() => setShowGeometryPanel(false)} aria-label="Close 2D Geometry">
+          <div className="geometry-dialog__header">
+            <strong id="geometry-dialog-title">2D Geometry</strong>
+            <button
+              ref={geometryCloseRef}
+              className="btn btn--compact"
+              type="button"
+              onClick={() => closeGeometryPanel()}
+              aria-label="Close 2D Geometry"
+            >
               Close
             </button>
           </div>
