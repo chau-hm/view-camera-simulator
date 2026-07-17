@@ -28,7 +28,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       "Compare two targets at different distances. Adjust focus and aperture to see how the plane of focus and depth of field change.",
     topics: ["Focus", "Aperture", "Depth of field"],
     availability: "available",
-    availableModes: ["free", "guided"],
+    availableModes: ["free"],
     thumbnailAsset: "assets/two-targets-illustration.png",
   },
   {
