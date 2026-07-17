@@ -43,4 +43,26 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
     expect(getSceneSubjectRegistration("table-tilt")?.disposeRttGroup).toBeDefined();
     expect(getSceneSubjectRegistration("architecture-rise")?.disposeRttGroup).toBeUndefined();
   });
+
+  it("removes and disposes a Shelf group before creating a fresh replacement", () => {
+    const scene = new THREE.Scene();
+    const first = createRegisteredRttSubject("shelf-swing")!;
+    const firstFloor = first.getObjectByName("shelf-swing-floor") as THREE.Mesh;
+    const disposeFirstFloor = vi.spyOn(firstFloor.geometry, "dispose");
+    scene.add(first);
+
+    scene.remove(first);
+    disposeRegisteredRttSubject("shelf-swing", first);
+    const replacement = createRegisteredRttSubject("shelf-swing")!;
+    scene.add(replacement);
+
+    expect(first.parent).toBeNull();
+    expect(disposeFirstFloor).toHaveBeenCalledTimes(1);
+    expect(replacement).not.toBe(first);
+    expect(replacement.parent).toBe(scene);
+    expect(replacement.getObjectByName("shelf-swing-floor")).toBeInstanceOf(THREE.Mesh);
+
+    scene.remove(replacement);
+    disposeRegisteredRttSubject("shelf-swing", replacement);
+  });
 });

@@ -9,6 +9,7 @@ import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fund
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { DEFAULT_CAMERA_STATE, CAMERA_CONSTANTS } from "../../utils/constants";
+import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 
 describe("GroundGlassRenderer", () => {
   afterEach(() => {
@@ -184,6 +185,7 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
+    expect(isGroundGlassRttScene(shelfSwingScene.id)).toBe(true);
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
