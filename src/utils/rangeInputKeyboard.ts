@@ -1,4 +1,5 @@
 import type { KeyboardEvent } from "react";
+import { roundToStep } from "./roundToStep";
 
 export const handleRangeInputKeyboard = (
   event: KeyboardEvent<HTMLInputElement>,
@@ -12,7 +13,8 @@ export const handleRangeInputKeyboard = (
 ) => {
   const { value, min, max, step, onChangeValue } = options;
   const coarseStep = step * 10;
-  const clamp = (next: number) => Math.min(max, Math.max(min, next));
+  const clampToStep = (next: number) =>
+    Math.min(max, Math.max(min, roundToStep(next, step)));
 
   if (event.key === "Home") {
     event.preventDefault();
@@ -28,12 +30,12 @@ export const handleRangeInputKeyboard = (
 
   if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
     event.preventDefault();
-    onChangeValue(clamp(value - (event.shiftKey ? coarseStep : step)));
+    onChangeValue(clampToStep(value - (event.shiftKey ? coarseStep : step)));
     return;
   }
 
   if (event.key === "ArrowRight" || event.key === "ArrowUp") {
     event.preventDefault();
-    onChangeValue(clamp(value + (event.shiftKey ? coarseStep : step)));
+    onChangeValue(clampToStep(value + (event.shiftKey ? coarseStep : step)));
   }
 };

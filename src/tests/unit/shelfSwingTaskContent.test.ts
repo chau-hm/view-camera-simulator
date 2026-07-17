@@ -6,7 +6,7 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import type { ApertureValue, CameraState } from "../../types/camera";
 import type { MovementRangeCriterion, TaskDefinition } from "../../types/task";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { CAMERA_CONTROL_STEPS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const task = getTaskById("swing-01") as TaskDefinition;
 const calibration = shelfSwingGeometry.shelfSwingCalibration;
@@ -133,6 +133,67 @@ describe("Shelf Swing guided task", () => {
     expect(result.criteria.every((criterion) => criterion.passed)).toBe(true);
     expect(result.primaryFeedback).toContain("Negative front swing");
   });
+
+  it("keeps the raw physical solution separate from the public control solution", () => {
+    expect(calibration.frontSwingDeg).toBeCloseTo(-3.802040434, 8);
+    expect(calibration.focusDistanceMm).toBeCloseTo(3411.619, 3);
+    expect(calibration.controlSolution).toEqual({
+      frontSwingDeg: -3.8,
+      focusDistanceMm: 3410,
+      aperture: 11,
+    });
+    expect(
+      calibration.controlSolution.frontSwingDeg / CAMERA_CONTROL_STEPS.swingDeg,
+    ).toBeCloseTo(
+      Math.round(calibration.controlSolution.frontSwingDeg / CAMERA_CONTROL_STEPS.swingDeg),
+      10,
+    );
+    expect(
+      calibration.controlSolution.focusDistanceMm / CAMERA_CONTROL_STEPS.focusDistanceMm,
+    ).toBeCloseTo(
+      Math.round(
+        calibration.controlSolution.focusDistanceMm / CAMERA_CONTROL_STEPS.focusDistanceMm,
+      ),
+      10,
+    );
+  });
+
+  it.each([11, 22] as const)("passes the public control solution at f/%s", (aperture) => {
+    const { optics, result } = evaluate({
+      swing: calibration.controlSolution.frontSwingDeg,
+      focus: calibration.controlSolution.focusDistanceMm,
+      aperture,
+    });
+
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expect(optics.focusTargets.every((target) => target.sharpness >= 0.8)).toBe(true);
+    expect(result.status).toBe("passed");
+    expect(result.criteria.every((criterion) => criterion.passed)).toBe(true);
+  });
+
+  it("evaluates one Swing step toward zero without discontinuity or fallback", () => {
+    const { optics, result } = evaluate({
+      swing: calibration.controlSolution.frontSwingDeg + CAMERA_CONTROL_STEPS.swingDeg,
+      focus: calibration.controlSolution.focusDistanceMm,
+    });
+
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expect(optics.focusTargets.every((target) => Number.isFinite(target.sharpness))).toBe(true);
+    expect(result.criteria.every((criterion) => Number.isFinite(criterion.score))).toBe(true);
+  });
+
+  it.each([-10, 0, 10])(
+    "keeps nearby public Focus offset %s mm finite and continuous",
+    (focusOffsetMm) => {
+      const { optics } = evaluate({
+        swing: calibration.controlSolution.frontSwingDeg,
+        focus: calibration.controlSolution.focusDistanceMm + focusOffsetMm,
+      });
+
+      expect(optics.diagnostics.fallbackApplied).toBe(false);
+      expect(optics.focusTargets.every((target) => Number.isFinite(target.sharpness))).toBe(true);
+    },
+  );
 
   it("rejects the opposite sign and explicitly directs the learner to negative swing", () => {
     const canonical = evaluate();

@@ -5,7 +5,7 @@ import { useAppStore } from "../../state/appStore";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { cocDiameterMm } from "../../core/optics/thinLensModel";
-import { CAMERA_CONSTANTS } from "../../utils/constants";
+import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS } from "../../utils/constants";
 import { subtract, dot } from "../../core/math/vec";
 
 describe("FocusControl presets for Focus Fundamentals", () => {
@@ -109,5 +109,18 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     expect(useAppStore.getState().camera.frontSwingDeg).toBe(swingBefore);
     expect(useAppStore.getState().camera.focusAssistEnabled).toBe(focusAssistBefore);
     expect(useAppStore.getState().camera.gridEnabled).toBe(gridBefore);
+  });
+
+  it("uses the shared focus step for range and keyboard movement", () => {
+    render(<FocusControl focusEnabled={true} lockReason="" />);
+    const slider = screen.getByLabelText("Focus distance");
+    const before = useAppStore.getState().camera.focusDistanceMm;
+
+    expect(slider).toHaveAttribute("step", String(CAMERA_CONTROL_STEPS.focusDistanceMm));
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(
+      before + CAMERA_CONTROL_STEPS.focusDistanceMm,
+    );
   });
 });

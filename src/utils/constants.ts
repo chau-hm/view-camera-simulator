@@ -21,6 +21,7 @@ export const CAMERA_CONTROL_STEPS = {
   riseMm: 1,
   tiltDeg: 0.1,
   swingDeg: 0.1,
+  focusDistanceMm: 10,
 } as const;
 
 export const DEFAULT_CAMERA_STATE: CameraState = {
