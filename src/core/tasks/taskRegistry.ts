@@ -1,6 +1,7 @@
 import type { TaskDefinition } from "../../types/task";
 import architectureGeometry from "../../scenes/architectureRiseGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
+import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 
 const riseTask: TaskDefinition = {
   id: "rise-01",
@@ -179,83 +180,113 @@ const tiltTask: TaskDefinition = {
 const swingTask: TaskDefinition = {
   id: "swing-01",
   sceneId: "shelf-swing",
-  title: "Align diagonal focus with swing",
+  title: "Align the diagonal focus plane with swing",
+  objective:
+    "Use negative front swing and focus to align the plane of sharp focus through all three diagonal charts.",
   mode: "guided",
   enabledControls: ["swing", "focusDistance", "aperture", "geometryView"],
   constraints: {
     movement: "swing-only",
-    notes: ["Use front swing to align focus along the diagonal shelf."],
+    notes: [
+      "Focus on the middle chart first, then apply negative front swing to rotate the plane of sharp focus through the front, middle and back charts.",
+      "Keep rise and tilt at zero. Solve the lesson at f/11 or f/22 rather than relying on f/32.",
+    ],
   },
   criteria: [
     {
       id: "swing-allowed-aperture",
-      label: "Aperture is one of f/5.6, f/11, f/22",
+      label: "Aperture is f/11 or f/22",
       type: "allowed-aperture",
-      allowedApertures: [5.6, 11, 22],
+      allowedApertures: [11, 22],
+    },
+    {
+      id: "swing-rise-zero",
+      label: "Rise remains at 0 mm",
+      type: "movement-range",
+      movement: "rise",
+      min: 0,
+      max: 0,
+    },
+    {
+      id: "swing-tilt-zero",
+      label: "Tilt remains at 0°",
+      type: "movement-range",
+      movement: "tilt",
+      min: 0,
+      max: 0,
+    },
+    {
+      id: "swing-movement-range",
+      label: `Swing remains within ${shelfSwingGeometry.shelfSwingCalibration.allowedSwingMinDeg.toFixed(1)}° to ${shelfSwingGeometry.shelfSwingCalibration.allowedSwingMaxDeg.toFixed(1)}°`,
+      type: "movement-range",
+      movement: "swing",
+      min: shelfSwingGeometry.shelfSwingCalibration.allowedSwingMinDeg,
+      max: shelfSwingGeometry.shelfSwingCalibration.allowedSwingMaxDeg,
+      valueMode: "signed",
     },
     {
       id: "swing-front-sharp",
       label: "Front target is sharp",
       type: "focus-targets-sharp",
       targetIds: ["shelf-front"],
-      minimumSharpness: 0.8,
+      minimumSharpness: shelfSwingGeometry.shelfSwingCalibration.targetSharpnessMinimum,
     },
     {
       id: "swing-middle-sharp",
       label: "Middle target is sharp",
       type: "focus-targets-sharp",
       targetIds: ["shelf-middle"],
-      minimumSharpness: 0.8,
+      minimumSharpness: shelfSwingGeometry.shelfSwingCalibration.targetSharpnessMinimum,
     },
     {
       id: "swing-back-sharp",
       label: "Back target is sharp",
       type: "focus-targets-sharp",
       targetIds: ["shelf-back"],
-      minimumSharpness: 0.8,
-    },
-    {
-      id: "swing-movement-used",
-      label: "Swing is used",
-      type: "movement-used",
-      movement: "swing",
-      minimumAbs: 1.5,
-    },
-    {
-      id: "swing-movement-range",
-      label: "Swing remains within 1.5° to 8°",
-      type: "movement-range",
-      movement: "swing",
-      min: 1.5,
-      max: 8,
+      minimumSharpness: shelfSwingGeometry.shelfSwingCalibration.targetSharpnessMinimum,
     },
   ],
   feedbackRules: {
-    passPrimary: "Great. You used swing to align focus across the diagonal subject layout.",
-    defaultFailPrimary: "Adjust swing direction and focus until all shelf targets are sharp.",
+    passPrimary:
+      "Great. Negative front swing rotated the plane of sharp focus through all three diagonal charts.",
+    defaultFailPrimary:
+      "Focus on the middle chart, apply negative front swing, then refine focus until all three charts are sharp.",
     failPrimaryByCriterionId: {
-      "swing-allowed-aperture": "Do not use f/32. Solve this with swing and focus.",
-      "swing-front-sharp": "Front shelf target is soft. Recheck swing direction and focus.",
-      "swing-middle-sharp": "Middle shelf target is soft. Fine-tune swing and focus balance.",
-      "swing-back-sharp": "Back shelf target is soft. Increase swing magnitude slightly.",
-      "swing-movement-used": "Swing is too small. Increase swing to at least 1.5°.",
-      "swing-movement-range": "Swing is outside the guided range (1.5° to 8°).",
+      "swing-allowed-aperture":
+        "Solve this at f/11 or f/22. Do not rely on f/32 to hide an incorrect focus plane.",
+      "swing-rise-zero": "Return Rise to 0 mm; this lesson is solved with swing and focus.",
+      "swing-tilt-zero":
+        "Return Tilt to 0°; tilt changes the vertical focus relationship and is not part of this lesson.",
+      "swing-movement-range": `Use negative front swing near ${shelfSwingGeometry.shelfSwingCalibration.frontSwingDeg.toFixed(1)}°. Positive swing rotates the focus plane in the opposite direction.`,
+      "swing-front-sharp":
+        "The focus plane has not reached the front chart. Keep negative swing and refine focus.",
+      "swing-middle-sharp":
+        "Establish sharp focus on the middle chart before refining negative swing.",
+      "swing-back-sharp":
+        "The focus plane has not extended through the back chart. Refine negative swing and focus.",
     },
     failSecondaryByCriterionId: {
-      "swing-allowed-aperture": "Use f/22 or wider and solve with geometry.",
+      "swing-allowed-aperture":
+        "Use the Top view to judge plane alignment instead of stopping down farther.",
+      "swing-rise-zero":
+        "In Top view, keep the lens centre on the canonical optical-axis datum.",
+      "swing-tilt-zero":
+        "This lesson uses the horizontal Top-view relationship; keep Tilt at zero.",
+      "swing-movement-range":
+        "In Top view, the green focus plane should align with the diagonal subject trace through all three chart markers.",
       "swing-front-sharp":
-        "Top-view diagram should show focus plane crossing front and mid targets.",
-      "swing-middle-sharp": "Keep swing direction consistent with the shelf diagonal.",
-      "swing-back-sharp": "Top-view focus plane should extend through the back shelf marker.",
-      "swing-movement-used": "Start around 2° swing and tune focus distance.",
-      "swing-movement-range": "Excess swing often softens one end of the diagonal.",
+        "In Top view, check that the green focus plane crosses the Front chart marker.",
+      "swing-middle-sharp":
+        "Use the Middle chart marker as the initial focusing reference in Top view.",
+      "swing-back-sharp":
+        "In Top view, extend the green focus plane through the Back chart marker.",
     },
   },
   initialCameraState: {
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
-    focusDistanceMm: 3200,
+    focusDistanceMm: shelfSwingGeometry.middleSubject.focusDetailProbeWorld.z,
     aperture: 11,
     geometryView: "top",
     groundGlassAssistEnabled: false,

@@ -62,6 +62,7 @@ export type MovementRangeCriterion = {
   movement: MovementAxis;
   min: number;
   max: number;
+  valueMode?: "absolute" | "signed";
 };
 
 export type AllowedApertureCriterion = {

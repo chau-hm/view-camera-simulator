@@ -6,6 +6,7 @@ import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { evaluateFocusTargets } from "../../core/tasks/evaluateFocusTargets";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import type { CameraState } from "../../types/camera";
 import type { SceneDefinition } from "../../types/scene";
 import type { TaskDefinition } from "../../types/task";
@@ -137,6 +138,80 @@ describe("task engine", () => {
     expect(failing.status).toBe("failed");
     expect(failing.score).toBeLessThan(100);
   });
+
+  it.each([
+    [-3.8, true],
+    [3.8, false],
+    [0, false],
+    [-5, false],
+  ])("evaluates signed movement ranges without losing the movement direction (%s)", (swing, passed) => {
+    const task: TaskDefinition = {
+      ...buildCustomTask(),
+      sceneId: shelfSwingScene.id,
+      criteria: [
+        {
+          id: "signed-swing",
+          label: "Signed swing range",
+          type: "movement-range",
+          movement: "swing",
+          min: -4.2,
+          max: -3.4,
+          valueMode: "signed",
+        },
+      ],
+      feedbackRules: {
+        passPrimary: "Pass",
+        defaultFailPrimary: "Fail",
+        failPrimaryByCriterionId: { "signed-swing": "Signed range fail" },
+        failSecondaryByCriterionId: { "signed-swing": "Signed range hint" },
+      },
+    };
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      activeSceneId: shelfSwingScene.id,
+      frontSwingDeg: swing,
+    };
+    const result = evaluateTask(task, shelfSwingScene, camera, deriveOpticsState(camera, shelfSwingScene));
+    expect(result.criteria[0].passed).toBe(passed);
+    expect(result.criteria[0].score).toBeGreaterThanOrEqual(0);
+    expect(result.criteria[0].score).toBeLessThanOrEqual(1);
+    expect(Number.isFinite(result.criteria[0].score)).toBe(true);
+  });
+
+  it.each([-3.8, 3.8])(
+    "preserves absolute movement-range behaviour for either sign (%s)",
+    (swing) => {
+      const task: TaskDefinition = {
+        ...buildCustomTask(),
+        sceneId: shelfSwingScene.id,
+        criteria: [
+          {
+            id: "absolute-swing",
+            label: "Absolute swing range",
+            type: "movement-range",
+            movement: "swing",
+            min: 1.5,
+            max: 8,
+          },
+        ],
+        feedbackRules: {
+          passPrimary: "Pass",
+          defaultFailPrimary: "Fail",
+          failPrimaryByCriterionId: { "absolute-swing": "Absolute range fail" },
+          failSecondaryByCriterionId: { "absolute-swing": "Absolute range hint" },
+        },
+      };
+      const camera = {
+        ...DEFAULT_CAMERA_STATE,
+        activeSceneId: shelfSwingScene.id,
+        frontSwingDeg: swing,
+      };
+      expect(
+        evaluateTask(task, shelfSwingScene, camera, deriveOpticsState(camera, shelfSwingScene))
+          .criteria[0].passed,
+      ).toBe(true);
+    },
+  );
 
   it("prioritizes first failed criterion for primary feedback and only one secondary hint", () => {
     const task = buildCustomTask();

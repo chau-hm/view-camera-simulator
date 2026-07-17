@@ -7,8 +7,15 @@ import {
   type OpticalSectionData,
   type PlaneSegment,
 } from "./opticalSectionProjection";
-import { getLocalTargetLabelPlacement } from "./labelPlacement";
+import {
+  getGeometryGuideLabelPlacement,
+  getLocalTargetLabelPlacement,
+} from "./labelPlacement";
 import { ProjectedCameraConstruction } from "./ProjectedCameraConstruction";
+import {
+  getSceneGeometryGuides,
+  getSceneGeometryTargetLabel,
+} from "./sceneGeometryGuides";
 
 type Props = {
   projection: OpticalSectionData;
@@ -50,6 +57,10 @@ export const OpticalSectionDiagram = ({
   const safeMargin = 10;
   const filmCenter = view.projectWorldPoint(opticsState.filmCenterWorld);
   const lensCenter = view.projectWorldPoint(opticsState.lensCenterWorld);
+  const subjectGuides =
+    displayMode === "camera-construction"
+      ? []
+      : getSceneGeometryGuides(scene.id).filter((guide) => guide.view === geometryView);
 
   return (
     <svg
@@ -106,35 +117,45 @@ export const OpticalSectionDiagram = ({
           );
         })() : null}
 
-        {profile.showTabletopGuide && geometryView === "side" && scene.compositionTargets[0]
-          ? (() => {
-              const subjectBounds = scene.compositionTargets[0].worldBounds;
-              const tabletopY = (subjectBounds.min.y + subjectBounds.max.y) / 2;
-              const near = view.projectWorldPoint({ x: 0, y: tabletopY, z: subjectBounds.min.z });
-              const far = view.projectWorldPoint({ x: 0, y: tabletopY, z: subjectBounds.max.z });
-              return (
-                <g data-testid="tabletop-guide">
-                  <line
-                    x1={near.x}
-                    y1={near.y}
-                    x2={far.x}
-                    y2={far.y}
-                    stroke="#92400e"
-                    strokeWidth={3}
-                  />
-                  <text
-                    x={far.x - 4}
-                    y={far.y + 18}
-                    fontSize={12}
-                    fill="#78350f"
-                    textAnchor="end"
-                  >
-                    Tabletop
-                  </text>
-                </g>
-              );
-            })()
-          : null}
+        {subjectGuides.map((guide) => {
+          const start = view.projectWorldPoint(guide.startWorld);
+          const end = view.projectWorldPoint(guide.endWorld);
+          const labelPlacement = getGeometryGuideLabelPlacement({
+            start,
+            end,
+            positionT: guide.labelPositionT,
+            offsetPx: guide.labelOffsetPx,
+            anchor: guide.labelAnchor,
+            text: guide.label,
+            svgWidth,
+            svgHeight,
+            safeMargin,
+          });
+          return (
+            <g key={guide.id} data-testid={guide.testId} data-geometry-guide-id={guide.id}>
+              <line
+                x1={start.x}
+                y1={start.y}
+                x2={end.x}
+                y2={end.y}
+                stroke={guide.color}
+                strokeWidth={3}
+              />
+              <text
+                data-testid={`${guide.testId}-label`}
+                data-guide-label-position-t={labelPlacement.positionT}
+                x={labelPlacement.x}
+                y={labelPlacement.y}
+                fontSize={12}
+                fontWeight={600}
+                fill={guide.color}
+                textAnchor={labelPlacement.anchor}
+              >
+                {guide.label}
+              </text>
+            </g>
+          );
+        })}
 
         {!isInfinity && opticsState.depthOfFieldNearPlane && opticsState.depthOfFieldFarPlane
           ? (() => {
@@ -250,18 +271,7 @@ export const OpticalSectionDiagram = ({
 
         {showSubjectTargets ? scene.focusTargets.map((target) => {
           const position = view.projectWorldPoint(target.worldPosition);
-          const labelText =
-            scene.id === "table-tilt"
-              ? target.id === "near-cup"
-                ? "Near card"
-                : target.id === "mid-notebook"
-                  ? "Middle notebook"
-                  : "Far chart"
-              : /near/i.test(target.id)
-                ? "Near board"
-                : /far/i.test(target.id)
-                  ? "Far board"
-                  : "Target";
+          const labelText = getSceneGeometryTargetLabel(scene.id, target.id);
           const placement = getLocalTargetLabelPlacement({
             targetX: position.x,
             targetY: position.y,

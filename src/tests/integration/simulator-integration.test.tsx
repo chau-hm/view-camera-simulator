@@ -1,12 +1,14 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { SimulatorRoutePage } from "../../app/pages";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
 import { selectDerivedOpticsState } from "../../state/selectors";
 import { useAppStore } from "../../state/appStore";
+import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 
 const renderWorkspace = (mode: "guided" | "free", sceneId: string, taskId: string | null) => {
   const route = taskId ? `/simulator/${mode}/${sceneId}/${taskId}` : `/simulator/${mode}/${sceneId}`;
@@ -16,6 +18,17 @@ const renderWorkspace = (mode: "guided" | "free", sceneId: string, taskId: strin
     </MemoryRouter>,
   );
 };
+
+const renderWorkspaceRoute = (initialEntry: string) =>
+  render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <Routes>
+        <Route path="/scenes" element={<div>Scenes route</div>} />
+        <Route path="/simulator/:mode/:sceneId" element={<SimulatorRoutePage />} />
+        <Route path="/simulator/:mode/:sceneId/:taskId" element={<SimulatorRoutePage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
 
 describe("phase 12 integration", () => {
   afterEach(() => {
@@ -123,7 +136,7 @@ describe("phase 12 integration", () => {
     expect(camera.activeSceneId).toBe("shelf-swing");
     expect(camera.activeTaskId).toBe("swing-01");
     expect(camera.frontSwingDeg).toBe(0);
-    expect(camera.focusDistanceMm).toBe(3200);
+    expect(camera.focusDistanceMm).toBe(shelfSwingGeometry.middleSubject.focusDetailProbeWorld.z);
   });
 
   it("TST-INT-012 task evaluation display matches evaluator result", () => {
@@ -191,5 +204,32 @@ describe("phase 12 integration", () => {
     // Ground glass assist control removed; preview mode (Raw/Upright) is now used instead
     expect(screen.getByLabelText("Focus assist")).toBeInTheDocument();
     expect(screen.getByLabelText("Grid")).toBeInTheDocument();
+    expect(screen.getByLabelText("Rise")).toHaveAttribute("step", "1");
+    expect(screen.getByLabelText("Tilt")).toHaveAttribute("step", "0.1");
+    expect(screen.getByLabelText("Swing")).toHaveAttribute("step", "0.1");
+  });
+
+  it("keeps Shelf Swing task identity intact across guided and free routes", async () => {
+    renderWorkspaceRoute("/simulator/guided/shelf-swing/swing-01");
+    expect(await screen.findByText("Align the diagonal focus plane with swing")).toBeInTheDocument();
+    expect(useAppStore.getState().camera.activeSceneId).toBe("shelf-swing");
+    expect(useAppStore.getState().camera.activeTaskId).toBe("swing-01");
+
+    cleanup();
+    useAppStore.getState().resetCamera();
+    useAppStore.getState().setActiveTask(null);
+    renderWorkspaceRoute("/simulator/guided/shelf-swing/tilt-01");
+    expect(await screen.findByText("Scenes route")).toBeInTheDocument();
+    expect(screen.queryByText("Align the tabletop focus cards with tilt")).not.toBeInTheDocument();
+    expect(useAppStore.getState().task.activeTaskId).toBeNull();
+
+    cleanup();
+    useAppStore.getState().resetCamera();
+    useAppStore.getState().setActiveTask(null);
+    renderWorkspaceRoute("/simulator/free/shelf-swing");
+    expect(await screen.findByRole("heading", { name: "3D Scene", level: 2 })).toBeInTheDocument();
+    expect(screen.queryByText("Align the diagonal focus plane with swing")).not.toBeInTheDocument();
+    expect(useAppStore.getState().camera.activeSceneId).toBe("shelf-swing");
+    expect(useAppStore.getState().task.activeTaskId).toBeNull();
   });
 });

@@ -1,8 +1,10 @@
 import { lazy, Suspense } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
+import { getTaskById } from "../core/tasks/taskRegistry";
 import { getSceneById } from "../scenes/definitions";
 import { getPublicSceneEntries, getPublicSceneEntryById } from "./publicScenes";
+import { isValidSimulatorRoute } from "./simulatorRouteValidation";
 import type { SimulatorMode } from "../types/camera";
 
 import { ViewCameraHeroIllustration } from "../components/marketing/ViewCameraHeroIllustration";
@@ -86,11 +88,6 @@ export const ScenesPage = () => {
           ))
         )}
       </div>
-
-      <div className="rebuild-notice">
-        <span className="material-symbols-outlined">info</span>
-        <div>The guided Shelf Swing lesson is still being prepared.</div>
-      </div>
     </AppShell>
   );
 };
@@ -109,13 +106,20 @@ export const SimulatorRoutePage = () => {
   const resolvedSceneId = sceneId ?? "architecture-rise";
   const scene = getSceneById(resolvedSceneId);
   const publicEntry = getPublicSceneEntryById(resolvedSceneId);
+  const resolvedTask = taskId ? getTaskById(taskId) : undefined;
 
   if (
     !scene ||
     !publicEntry ||
     publicEntry.availability !== "available" ||
     !parsedMode ||
-    !publicEntry.availableModes.includes(parsedMode)
+    !isValidSimulatorRoute({
+      mode: parsedMode,
+      taskId,
+      sceneId: resolvedSceneId,
+      publicEntry,
+      task: resolvedTask,
+    })
   ) {
     return <Navigate to="/scenes" replace />;
   }
