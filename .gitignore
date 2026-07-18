@@ -34,3 +34,5 @@ test-results/
 .vscode/
 tsc
 view-camera-simulator@0.0.0
+
+AGENTS.md.backup

@@ -1,0 +1,4 @@
+interface:
+  display_name: "VCS Optics & Geometry"
+  short_description: "Handle camera optics and canonical geometry"
+  default_prompt: "Use $vcs-optics-geometry to analyze this camera movement or geometry issue, establish the physical invariants, and implement only the bounded optics changes."

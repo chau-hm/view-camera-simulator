@@ -1,0 +1,4 @@
+interface:
+  display_name: "VCS PR Orchestrator"
+  short_description: "Split simulator work into bounded agent packets"
+  default_prompt: "Use $vcs-orchestrate-pr to decompose this View Camera Simulator task into scoped work packets, model recommendations, dependencies, and merge gates."

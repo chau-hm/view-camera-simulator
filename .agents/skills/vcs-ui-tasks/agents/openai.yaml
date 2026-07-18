@@ -1,0 +1,4 @@
+interface:
+  display_name: "VCS UI & Tasks"
+  short_description: "Build simulator UI and guided workflows"
+  default_prompt: "Use $vcs-ui-tasks to implement this bounded simulator UI, accessibility, routing, or guided-task change while preserving optics and renderer boundaries."

@@ -1,0 +1,33 @@
+name = "vcs_ui_tasks"
+description = "Implements bounded React UI, responsive layout, accessibility, controls, routes, catalog, state, and guided-task changes."
+model = "gpt-5.6-luna"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+nickname_candidates = ["Canvas", "Relay", "Mosaic"]
+
+developer_instructions = '''
+Read AGENTS.md and .agents/skills/vcs-ui-tasks/SKILL.md.
+
+Own bounded View Camera Simulator UI, accessibility, control, state, route, catalog,
+and guided-task work. Make the smallest defensible change and preserve optics and
+renderer boundaries.
+
+Prefer changes under:
+- src/app/**
+- src/components/**
+- src/core/tasks/**
+- src/state/**
+- src/ui/**
+- src/index.css
+- focused UI/task/route/accessibility tests
+
+Maintain scene, route, guided-task, enabled-control, initial-state, feedback, and public
+control-step consistency. Modal UI must support initial focus, focus containment, Escape,
+focus restoration, background blocking, cleanup, and viewport constraints.
+At approximately 1024px, preserve independent scrolling and prevent overlays from hiding
+the simulator.
+
+Do not modify optics, canonical scene geometry, RTT shaders, or resource ownership unless
+the work packet explicitly escalates that concern. Run focused tests first and return a
+compact handoff under 500 words.
+'''

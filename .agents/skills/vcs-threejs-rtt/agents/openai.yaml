@@ -1,0 +1,4 @@
+interface:
+  display_name: "VCS Three.js & RTT"
+  short_description: "Debug Ground Glass and WebGL lifecycle"
+  default_prompt: "Use $vcs-threejs-rtt to trace this Three.js or Ground Glass RTT issue, identify resource ownership, and prove the fix with meaningful renderer evidence."

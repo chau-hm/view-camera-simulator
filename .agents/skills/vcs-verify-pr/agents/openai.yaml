@@ -1,0 +1,4 @@
+interface:
+  display_name: "VCS PR Verification"
+  short_description: "Independently gate simulator pull requests"
+  default_prompt: "Use $vcs-verify-pr to inspect this View Camera Simulator PR, challenge its test evidence, and issue a precise merge verdict."
