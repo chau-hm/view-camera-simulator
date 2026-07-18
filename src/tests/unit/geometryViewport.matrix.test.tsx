@@ -8,11 +8,24 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
+import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { useAppStore } from "../../state/appStore";
 import type { SceneDefinition } from "../../types/scene";
 
 const SCENES = [architectureRiseScene, tableTiltScene, shelfSwingScene, focusFundamentalsTwoTargets];
 const VIEWS: Array<'side' | 'top'> = ['side', 'top'];
+
+const expectDepthPlaneGeometry = (svg: Element, visible: boolean): void => {
+  for (const selector of [
+    '[data-testid="plane-line-focus"]',
+    'line[aria-label="nearDof plane"]',
+    'line[aria-label="farDof plane"]',
+    '[data-testid="dof-region"]',
+  ]) {
+    if (visible) expect(svg.querySelector(selector)).not.toBeNull();
+    else expect(svg.querySelector(selector)).toBeNull();
+  }
+};
 
 const StoreBackedGeometryViewport = ({
   opticsState,
@@ -176,6 +189,64 @@ describe('GeometryViewport matrix', () => {
       });
     }
   }
+
+  it("applies the Table Tilt and Shelf Swing depth-plane profile matrix", () => {
+    for (const [scene, movementDeg, focusDistanceMm, geometryView, visible] of [
+      [
+        tableTiltScene,
+        tableTiltGeometry.tableTiltCalibration.frontTiltDeg,
+        tableTiltGeometry.tableTiltCalibration.focusDistanceMm,
+        "side",
+        true,
+      ],
+      [
+        tableTiltScene,
+        tableTiltGeometry.tableTiltCalibration.frontTiltDeg,
+        tableTiltGeometry.tableTiltCalibration.focusDistanceMm,
+        "top",
+        false,
+      ],
+      [
+        shelfSwingScene,
+        shelfSwingGeometry.shelfSwingCalibration.frontSwingDeg,
+        shelfSwingGeometry.shelfSwingCalibration.focusDistanceMm,
+        "top",
+        true,
+      ],
+      [
+        shelfSwingScene,
+        shelfSwingGeometry.shelfSwingCalibration.frontSwingDeg,
+        shelfSwingGeometry.shelfSwingCalibration.focusDistanceMm,
+        "side",
+        false,
+      ],
+    ] as const) {
+      const optics = deriveOpticsState(
+        {
+          ...DEFAULT_CAMERA_STATE,
+          ...scene.cameraPreset,
+          activeSceneId: scene.id,
+          frontTiltDeg: scene.id === tableTiltScene.id ? movementDeg : 0,
+          frontSwingDeg: scene.id === shelfSwingScene.id ? movementDeg : 0,
+          focusDistanceMm,
+        },
+        scene,
+      );
+      const { container } = render(
+        <GeometryViewport
+          opticsState={optics}
+          geometryView={geometryView}
+          scene={scene}
+          riseMm={0}
+        />,
+      );
+      const svg = container.querySelector(`[data-testid="geometry-svg-${geometryView}"]`);
+      expect(svg).not.toBeNull();
+      expectDepthPlaneGeometry(svg!, visible);
+      expect(svg?.querySelector('circle[fill="#dc2626"]')).not.toBeNull();
+      expect(container.querySelector('[aria-label="Optical depth order"]')).not.toBeNull();
+    }
+  });
 
   it("Table Tilt calibrated side view uses canonical probes and a horizontal focus plane", () => {
     const optics = deriveOpticsState(

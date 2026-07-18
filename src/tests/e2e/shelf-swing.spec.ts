@@ -293,6 +293,50 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
 });
 
+test("Shelf Swing geometry limits projected depth planes to the movement-relevant Top view", async ({ page }) => {
+  await page.goto("/simulator/free/shelf-swing");
+  await setStepRangeInput(page, "Swing", -3.8);
+  await setStepRangeInput(page, "Focus distance", 3410);
+
+  const trigger = page.getByRole("button", { name: "Open 2D Geometry" });
+  await trigger.click();
+  await page.getByRole("button", { name: "Side", exact: true }).click();
+  const side = page.getByTestId("geometry-svg-side");
+  for (const locator of [
+    side.getByTestId("plane-line-focus"),
+    side.locator('line[aria-label="nearDof plane"]'),
+    side.locator('line[aria-label="farDof plane"]'),
+    side.getByTestId("dof-region"),
+  ]) {
+    await expect(locator).toHaveCount(0);
+  }
+  for (const testId of ["physical-film-segment", "physical-lens-segment"]) {
+    await expect(side.getByTestId(testId)).toHaveCount(1);
+  }
+  for (const testId of [
+    "geometry-target-shelf-front",
+    "geometry-target-shelf-middle",
+    "geometry-target-shelf-back",
+  ]) {
+    await expect(side.getByTestId(testId)).toBeVisible();
+  }
+
+  await page.getByRole("button", { name: "Top", exact: true }).click();
+  const top = page.getByTestId("geometry-svg-top");
+  for (const locator of [
+    top.getByTestId("plane-line-focus"),
+    top.locator('line[aria-label="nearDof plane"]'),
+    top.locator('line[aria-label="farDof plane"]'),
+    top.getByTestId("dof-region"),
+  ]) {
+    await expect(locator).toBeVisible();
+  }
+
+  await page.getByRole("button", { name: "Close 2D Geometry" }).click();
+  await expect(page.getByRole("dialog", { name: "2D Geometry" })).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
 test("Shelf Swing solved geometry and RTT remain coherent at the public solution", async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 1024, height: 900 });
