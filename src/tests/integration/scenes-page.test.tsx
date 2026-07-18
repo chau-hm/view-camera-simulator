@@ -24,6 +24,13 @@ describe("scenes page", () => {
     expect(screen.getByText("Focus")).toBeInTheDocument();
     expect(screen.getByText("Aperture")).toBeInTheDocument();
     expect(screen.getByText("Depth of field")).toBeInTheDocument();
+    const focusHeading = await screen.findByRole("heading", {
+      name: "Focus Fundamentals — Two Targets",
+      level: 2,
+    });
+    const focusCard = focusHeading.closest("article");
+    expect(focusCard).not.toBeNull();
+    expect(within(focusCard!).queryByRole("link", { name: "Start Guided Task" })).not.toBeInTheDocument();
 
     // Architecture Rise card should be present with its description and topics
     expect(
@@ -87,6 +94,10 @@ describe("scenes page", () => {
       "shelf-swing",
     ]);
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual(publicSceneIds);
+    expect(getPublicSceneEntryById("focus-fundamentals-two-targets")?.availableModes).toEqual([
+      "free",
+    ]);
+    expect(getPublicSceneEntryById("focus-fundamentals-two-targets")?.guidedTaskId).toBeUndefined();
     expect(
       screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
     ).toEqual([

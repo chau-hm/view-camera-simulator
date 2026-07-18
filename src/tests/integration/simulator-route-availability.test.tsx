@@ -59,6 +59,8 @@ describe("simulator route availability", () => {
     "/simulator/free/shelf-swing/swing-01",
     "/simulator/guided/table-tilt/swing-01",
     "/simulator/free/table-tilt/tilt-01",
+    "/simulator/guided/focus-fundamentals-two-targets",
+    "/simulator/guided/focus-fundamentals-two-targets/rise-01",
   ])("redirects invalid simulator route %s to Scenes", async (route) => {
     renderRoute(route);
 

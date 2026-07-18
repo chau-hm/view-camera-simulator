@@ -5,6 +5,7 @@ import { UI_COPY } from "../../ui/copy";
 import { focusTargetsDefs } from "../../scenes/focusFundamentalsTargets";
 import { formatMillimeter } from "../../utils/formatters";
 import { handleRangeInputKeyboard } from "../../utils/rangeInputKeyboard";
+import { CAMERA_CONTROL_STEPS } from "../../utils/constants";
 
 type FocusControlProps = {
   focusEnabled: boolean;
@@ -35,7 +36,7 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
           type="range"
           min={focusControl.focusDistanceMinMm}
           max={focusControl.focusDistanceMaxMm}
-          step={10}
+          step={CAMERA_CONTROL_STEPS.focusDistanceMm}
           value={focusControl.focusDistanceMm}
           disabled={!focusEnabled}
           className="range-slider"
@@ -44,7 +45,7 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
               value: focusControl.focusDistanceMm,
               min: focusControl.focusDistanceMinMm,
               max: focusControl.focusDistanceMaxMm,
-              step: 10,
+              step: CAMERA_CONTROL_STEPS.focusDistanceMm,
               onChangeValue: setFocusDistance,
             })
           }

@@ -16,7 +16,12 @@ describe("CAMERA_CONSTANTS", () => {
     expect(CAMERA_CONSTANTS.swingMaxDeg).toBe(10);
   });
 
-  it("shares the public movement-control precision", () => {
-    expect(CAMERA_CONTROL_STEPS).toEqual({ riseMm: 1, tiltDeg: 0.1, swingDeg: 0.1 });
+  it("shares the public camera-control precision", () => {
+    expect(CAMERA_CONTROL_STEPS).toEqual({
+      riseMm: 1,
+      tiltDeg: 0.1,
+      swingDeg: 0.1,
+      focusDistanceMm: 10,
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
@@ -43,6 +43,9 @@ export const SimulatorWorkspace = ({
   const camera = useAppStore((state) => state.camera);
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
   const [showGeometryPanel, setShowGeometryPanel] = useState(false);
+  const [geometryDialogStyle, setGeometryDialogStyle] = useState<CSSProperties | undefined>();
+  const geometryTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const geometryCloseRef = useRef<HTMLButtonElement | null>(null);
   // All registered scenes still available through engine registry
   // const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
@@ -70,6 +73,66 @@ export const SimulatorWorkspace = ({
 
     initRoute(mode, sceneId, taskId);
   }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId]);
+
+  const closeGeometryPanel = useCallback((restoreFocus = true) => {
+    setShowGeometryPanel(false);
+    setGeometryDialogStyle(undefined);
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => geometryTriggerRef.current?.focus());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showGeometryPanel) return;
+
+    geometryCloseRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeGeometryPanel();
+        return;
+      }
+      if (event.key === "Tab") {
+        const dialog = document.querySelector<HTMLElement>(".geometry-dialog");
+        if (!dialog) return;
+        const focusable = Array.from(
+          dialog.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+        ).filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true");
+        if (focusable.length === 0) {
+          event.preventDefault();
+          dialog.focus();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    const handleFocusIn = (event: FocusEvent) => {
+      const dialog = document.querySelector<HTMLElement>(".geometry-dialog");
+      if (dialog && event.target instanceof Node && !dialog.contains(event.target)) {
+        event.preventDefault();
+        geometryCloseRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("focusin", handleFocusIn);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("focusin", handleFocusIn);
+    };
+  }, [closeGeometryPanel, showGeometryPanel]);
+
+  useEffect(() => {
+    setShowGeometryPanel(false);
+    setGeometryDialogStyle(undefined);
+  }, [mode, sceneId, taskId]);
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
@@ -145,7 +208,7 @@ export const SimulatorWorkspace = ({
       </header>
 
       {/* Body: main (scrollable) + aside (scrollable) */}
-      <div role="region" aria-label="Simulator body" className="simulator-body">
+      <div role="region" aria-label="Simulator body" className={`simulator-body${showGeometryPanel ? " simulator-body--modal-open" : ""}`}>
         {/* Main area: single scroll container for 3D Scene + Ground Glass */}
         <main className="simulator-main">
           {opticsState.diagnostics.fallbackApplied && (
@@ -167,7 +230,22 @@ export const SimulatorWorkspace = ({
                 renderQuality={renderQuality}
                 setRenderQuality={setRenderQuality}
                 simulateAssetFailure={simulateAssetFailure}
-                onToggleGeometryPanel={() => setShowGeometryPanel((s) => !s)}
+                onToggleGeometryPanel={(trigger) => {
+                  geometryTriggerRef.current = trigger;
+                  const viewportWidth = typeof window === "undefined" ? 1024 : window.innerWidth;
+                  const viewportHeight = typeof window === "undefined" ? 768 : window.innerHeight;
+                  const width = Math.max(Math.min(viewportWidth * 0.7, viewportWidth - 32), Math.min(420, viewportWidth - 32));
+                  const height = Math.max(Math.min(viewportHeight * 0.7, viewportHeight - 32), Math.min(320, viewportHeight - 32));
+                  setGeometryDialogStyle({
+                    left: `${Math.max(16, (viewportWidth - width) / 2)}px`,
+                    top: `${Math.max(16, (viewportHeight - height) / 2)}px`,
+                    width: `${width}px`,
+                    height: `${height}px`,
+                    maxWidth: `${Math.max(0, viewportWidth - Math.max(16, (viewportWidth - width) / 2) - 16)}px`,
+                    maxHeight: `${Math.max(0, viewportHeight - Math.max(16, (viewportHeight - height) / 2) - 16)}px`,
+                  });
+                  setShowGeometryPanel(true);
+                }}
                 showHeader={false}
               />
             </div>
@@ -299,32 +377,26 @@ export const SimulatorWorkspace = ({
 
       {/* Floating 2D Geometry panel (fixed) */}
       {showGeometryPanel && (
+        <div className="geometry-dialog__backdrop" aria-hidden="true" />
+      )}
+      {showGeometryPanel && (
         <div
           role="dialog"
-          aria-label="2D Geometry Panel"
-          style={{
-            position: "fixed",
-            left: "50%",
-            top: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "70vw",
-            height: "70vh",
-            maxWidth: "90vw",
-            maxHeight: "90vh",
-            minWidth: "420px",
-            minHeight: "320px",
-            background: "var(--panel-bg, #fff)",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
-            borderRadius: "8px",
-            zIndex: 1200,
-            overflow: "auto",
-            padding: "0.75rem",
-            resize: 'both',
-          }}
+          aria-modal="true"
+          aria-labelledby="geometry-dialog-title"
+          className="geometry-dialog"
+          style={geometryDialogStyle}
+          tabIndex={-1}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-            <strong>2D Geometry</strong>
-            <button className="btn btn--compact" type="button" onClick={() => setShowGeometryPanel(false)} aria-label="Close 2D Geometry">
+          <div className="geometry-dialog__header">
+            <strong id="geometry-dialog-title">2D Geometry</strong>
+            <button
+              ref={geometryCloseRef}
+              className="btn btn--compact"
+              type="button"
+              onClick={() => closeGeometryPanel()}
+              aria-label="Close 2D Geometry"
+            >
               Close
             </button>
           </div>

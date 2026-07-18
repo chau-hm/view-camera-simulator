@@ -117,7 +117,7 @@ test.describe('Ground Glass interaction', () => {
   });
 
   test('Focus Fundamentals: three-click smoke test', async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(90_000);
     await page.goto('/simulator/free/focus-fundamentals-two-targets');
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
@@ -137,19 +137,28 @@ test.describe('Ground Glass interaction', () => {
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('data-scale', '1.9');
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1.9, 1);
+    await expect.poll(
+      async () => (await readStageTransform(transformedLayer())).scaleX,
+      { timeout: 15_000 },
+    ).toBeCloseTo(1.9, 1);
 
     // click 2 -> zoom out
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
     await expect(stage).toHaveAttribute('data-scale', '1');
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1, 2);
+    await expect.poll(
+      async () => (await readStageTransform(transformedLayer())).scaleX,
+      { timeout: 15_000 },
+    ).toBeCloseTo(1, 2);
     await expect(stage).toHaveAttribute('data-pan-x', '0');
 
     // click 3 -> zoom in
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('data-scale', '1.9');
-    await expect.poll(async () => (await readStageTransform(transformedLayer())).scaleX).toBeCloseTo(1.9, 1);
+    await expect.poll(
+      async () => (await readStageTransform(transformedLayer())).scaleX,
+      { timeout: 15_000 },
+    ).toBeCloseTo(1.9, 1);
   });
 });

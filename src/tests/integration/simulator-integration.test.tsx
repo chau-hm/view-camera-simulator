@@ -207,6 +207,7 @@ describe("phase 12 integration", () => {
     expect(screen.getByLabelText("Rise")).toHaveAttribute("step", "1");
     expect(screen.getByLabelText("Tilt")).toHaveAttribute("step", "0.1");
     expect(screen.getByLabelText("Swing")).toHaveAttribute("step", "0.1");
+    expect(screen.getByLabelText("Focus distance")).toHaveAttribute("step", "10");
   });
 
   it("keeps Shelf Swing task identity intact across guided and free routes", async () => {

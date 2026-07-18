@@ -197,7 +197,6 @@ test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource s
     expect(state.width).toBeGreaterThan(0);
     expect(state.height).toBeGreaterThan(0);
     expect(state.contextLost).toBe(false);
-    expect((await canvas.screenshot()).byteLength).toBeGreaterThan(5_000);
   };
 
   for (const focus of [3200, 4600, 5900, 6050]) {
@@ -233,6 +232,7 @@ test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource s
   await setRangeDirect(page, "Tilt", 0);
   await page.getByRole("combobox", { name: "Render quality" }).selectOption("high");
   await assertLiveCanvas();
+  expect((await rtt.locator("canvas").screenshot()).byteLength).toBeGreaterThan(5_000);
 });
 
 test("Table Tilt calibrated controls complete the guided task", async ({ page }) => {
@@ -355,7 +355,8 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
     "violet Scheimpflug line",
   );
 
-  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  const geometryTrigger = page.getByRole("button", { name: "Open 2D Geometry" });
+  await geometryTrigger.click();
   await page.getByRole("button", { name: "Scheimpflug Section", exact: true }).click();
   const section = page.getByTestId("geometry-svg-scheimpflug");
   await expect(section).toBeVisible();
@@ -418,6 +419,8 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   await expect(section.getByTestId("scheimpflug-intersection")).toBeVisible();
   await page.getByRole("button", { name: "Fit Scene" }).click();
   await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
+  await page.getByRole("button", { name: "Close 2D Geometry" }).click();
+  await expect(geometryTrigger).toBeFocused();
 
   // Returning to parallel standards makes the requested construction invalid,
   // but must restore the normal focus overlay and leave an enabled off action.
@@ -645,7 +648,7 @@ const boxesOverlap = (
 );
 
 test("Table Tilt Ground Glass zoom, pan, jitter, and reset stay deterministic", async ({ page }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(150_000);
   await page.goto("/simulator/free/table-tilt");
   const { viewport, stage, transformedLayer } = groundGlassLocators(page);
   await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();

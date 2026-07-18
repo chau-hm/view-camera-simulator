@@ -480,6 +480,18 @@ const allowedSwingMaxDeg = roundToStep(
   swingControlStepDeg,
 );
 
+export const controlSolution = {
+  frontSwingDeg: roundToStep(
+    calibrationSolution.frontSwingDeg,
+    CAMERA_CONTROL_STEPS.swingDeg,
+  ),
+  focusDistanceMm: roundToStep(
+    calibrationSolution.focusDistanceMm,
+    CAMERA_CONTROL_STEPS.focusDistanceMm,
+  ),
+  aperture: 11 as const,
+} as const;
+
 export const shelfSwingCalibration = {
   focalLengthMm: 150,
   frontRiseMm: 0,
@@ -492,6 +504,7 @@ export const shelfSwingCalibration = {
   swingControlStepDeg,
   allowedSwingMinDeg,
   allowedSwingMaxDeg,
+  controlSolution,
   collinearityEpsilonMm: 1e-6,
   planeIntersectionToleranceMm: 1e-6,
 } as const;
@@ -593,6 +606,7 @@ export default {
   focusSamples,
   subjectPlane,
   calibrationSolution,
+  controlSolution,
   shelfSwingCalibration,
   canonicalFocusDistanceMm,
   observerCamera,

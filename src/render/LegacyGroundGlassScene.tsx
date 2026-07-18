@@ -109,59 +109,6 @@ export const LegacyGroundGlassScene = ({
           />
         </>
       ) : null}
-
-      {sceneId === "shelf-swing" && (
-        <>
-          <div
-            style={{
-              position: "absolute",
-              left: "10%",
-              top: "52%",
-              width: "80%",
-              height: "4%",
-              transform: "rotate(14deg)",
-              background: "#475569",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.4)",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              left: "22%",
-              top: "32%",
-              width: "11%",
-              height: "16%",
-              background: "#f97316",
-              borderRadius: "3px",
-              boxShadow: "0 3px 5px rgba(0,0,0,0.25)",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              left: "48%",
-              top: "40%",
-              width: "9%",
-              height: "13%",
-              background: "#22c55e",
-              borderRadius: "3px",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              right: "26%",
-              top: "46%",
-              width: "7%",
-              height: "10%",
-              background: "#06b6d4",
-              borderRadius: "3px",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
-            }}
-          />
-        </>
-      )}
     </div>
   );
 };

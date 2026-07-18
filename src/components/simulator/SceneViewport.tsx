@@ -17,7 +17,7 @@ type SceneViewportProps = {
   renderQuality: RenderQualityProfile;
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
   simulateAssetFailure: boolean;
-  onToggleGeometryPanel?: () => void;
+  onToggleGeometryPanel?: (trigger: HTMLButtonElement) => void;
   showHeader?: boolean;
 };
 
@@ -116,7 +116,11 @@ export const SceneViewport = ({
               {UI_COPY.simulator.sceneViewReset}
             </button>
             {onToggleGeometryPanel && (
-              <button type="button" onClick={onToggleGeometryPanel} className="btn btn--secondary">
+              <button
+                type="button"
+                onClick={(event) => onToggleGeometryPanel(event.currentTarget)}
+                className="btn btn--secondary"
+              >
                 Open 2D Geometry
               </button>
             )}

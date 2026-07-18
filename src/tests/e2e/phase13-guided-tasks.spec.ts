@@ -1,20 +1,8 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const completedHeading = (page: Page): Locator =>
   page.getByRole("heading", { name: "Task completed" });
-
-const setRangeValue = async (page: Page, label: string, value: number): Promise<void> => {
-  const slider = page.getByLabel(label);
-  await slider.focus();
-  const current = Number(await slider.inputValue());
-  const step = Number((await slider.getAttribute("step")) ?? "1");
-  const delta = value - current;
-  const presses = Math.max(0, Math.round(Math.abs(delta) / step));
-  const key = delta >= 0 ? "ArrowRight" : "ArrowLeft";
-  for (let i = 0; i < presses; i += 1) {
-    await slider.press(key);
-  }
-};
 
 test("TST-E2E-002: user can open Architecture Rise from the Scenes page", async ({ page }) => {
   await page.goto("/");
@@ -40,13 +28,13 @@ test("TST-E2E-003: rise task starts in failed state", async ({ page }) => {
 
 test("TST-E2E-004: rise task can be completed with valid rise", async ({ page }) => {
   await page.goto("/simulator/guided/architecture-rise/rise-01");
-  await setRangeValue(page, "Rise", 12);
+  await setStepRangeInput(page, "Rise", 12);
   await expect(completedHeading(page)).toBeVisible();
 });
 
 test("TST-E2E-005: restart resets Architecture Rise guided task", async ({ page }) => {
   await page.goto("/simulator/guided/architecture-rise/rise-01");
-  await setRangeValue(page, "Rise", 12);
+  await setStepRangeInput(page, "Rise", 12);
   await expect(completedHeading(page)).toBeVisible();
 
   await page.getByRole("button", { name: "Restart task" }).click();
