@@ -355,7 +355,8 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
     "violet Scheimpflug line",
   );
 
-  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  const geometryTrigger = page.getByRole("button", { name: "Open 2D Geometry" });
+  await geometryTrigger.click();
   await page.getByRole("button", { name: "Scheimpflug Section", exact: true }).click();
   const section = page.getByTestId("geometry-svg-scheimpflug");
   await expect(section).toBeVisible();
@@ -418,6 +419,8 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   await expect(section.getByTestId("scheimpflug-intersection")).toBeVisible();
   await page.getByRole("button", { name: "Fit Scene" }).click();
   await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
+  await page.getByRole("button", { name: "Close 2D Geometry" }).click();
+  await expect(geometryTrigger).toBeFocused();
 
   // Returning to parallel standards makes the requested construction invalid,
   // but must restore the normal focus overlay and leave an enabled off action.
