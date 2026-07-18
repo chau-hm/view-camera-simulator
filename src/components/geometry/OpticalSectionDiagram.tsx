@@ -47,10 +47,12 @@ export const OpticalSectionDiagram = ({
 }: Props) => {
   const view = projection.views[geometryView];
   const segments = view.planeSegments;
-  const visibleSegments =
-    displayMode === "subject-field"
-      ? segments.filter((segment) => ["focus", "nearDof", "farDof"].includes(segment.id))
-      : segments;
+  const showDepthPlaneGeometry = profile.depthPlaneGeometryViews?.includes(geometryView) ?? true;
+  const visibleSegments = segments.filter((segment) => {
+    const isDepthPlane = ["focus", "nearDof", "farDof"].includes(segment.id);
+    if (isDepthPlane && !showDepthPlaneGeometry) return false;
+    return displayMode !== "subject-field" || isDepthPlane;
+  });
   const showCameraConstruction = displayMode !== "subject-field";
   const showSubjectTargets = displayMode === "subject-field" || geometryView !== "scheimpflug";
   const { isInfinity } = projection;
@@ -157,7 +159,10 @@ export const OpticalSectionDiagram = ({
           );
         })}
 
-        {!isInfinity && opticsState.depthOfFieldNearPlane && opticsState.depthOfFieldFarPlane
+        {showDepthPlaneGeometry &&
+        !isInfinity &&
+        opticsState.depthOfFieldNearPlane &&
+        opticsState.depthOfFieldFarPlane
           ? (() => {
               const near = segments.find((segment) => segment.id === "nearDof");
               const far = segments.find((segment) => segment.id === "farDof");

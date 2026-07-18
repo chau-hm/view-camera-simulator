@@ -32,6 +32,18 @@ const markerBounds = (element: Element): ApproximateBounds => {
   return { left, top, right: left + width, bottom: top + height, width, height };
 };
 
+const expectDepthPlaneGeometry = (svg: Element, visible: boolean): void => {
+  for (const selector of [
+    '[data-testid="plane-line-focus"]',
+    'line[aria-label="nearDof plane"]',
+    'line[aria-label="farDof plane"]',
+    '[data-testid="dof-region"]',
+  ]) {
+    if (visible) expect(svg.querySelector(selector)).not.toBeNull();
+    else expect(svg.querySelector(selector)).toBeNull();
+  }
+};
+
 const expectGuideLabelClearOfMiddleTarget = (svg: Element): void => {
   const guideLabel = svg.querySelector('[data-testid="shelf-swing-subject-trace-label"]');
   const middleGroup = svg.querySelector('[data-testid="geometry-target-shelf-middle"]');
@@ -97,8 +109,7 @@ describe("Shelf Swing geometry viewport", () => {
     const topSvg = view.container.querySelector('[data-testid="geometry-svg-top"]');
     expect(topSvg).not.toBeNull();
     expect(topSvg?.querySelector('[data-testid="shelf-swing-subject-trace"]')).not.toBeNull();
-    expect(topSvg?.querySelector('[data-testid="plane-line-focus"]')).not.toBeNull();
-    expect(topSvg?.querySelector('[data-testid="dof-region"]')).not.toBeNull();
+    expectDepthPlaneGeometry(topSvg!, true);
     expectGuideLabelClearOfMiddleTarget(topSvg!);
     for (const [targetId, label] of [
       ["shelf-front", "Front chart"],
@@ -110,6 +121,32 @@ describe("Shelf Swing geometry viewport", () => {
     }
     expect(view.getByRole("button", { name: "Fit Construction" })).toBeDisabled();
     expect(view.container.querySelector('[data-testid="scheimpflug-intersection"]')).toBeNull();
+  });
+
+  it("hides depth-plane geometry in calibrated Side view while preserving physical context", () => {
+    const optics = createOptics(
+      shelfSwingGeometry.shelfSwingCalibration.frontSwingDeg,
+      shelfSwingGeometry.shelfSwingCalibration.focusDistanceMm,
+    );
+    const view = render(
+      <GeometryViewport
+        opticsState={optics}
+        geometryView="side"
+        scene={shelfSwingScene}
+        riseMm={0}
+      />,
+    );
+    const sideSvg = view.container.querySelector('[data-testid="geometry-svg-side"]');
+    expect(sideSvg).not.toBeNull();
+    expectDepthPlaneGeometry(sideSvg!, false);
+    for (const testId of ["physical-film-segment", "physical-lens-segment"]) {
+      expect(sideSvg?.querySelector(`[data-testid="${testId}"]`)).not.toBeNull();
+    }
+    for (const targetId of ["shelf-front", "shelf-middle", "shelf-back"]) {
+      expect(sideSvg?.querySelector(`[data-testid="geometry-target-${targetId}"]`)).not.toBeNull();
+    }
+    expect(sideSvg?.querySelector('circle[fill="#dc2626"]')).not.toBeNull();
+    expect(view.container.querySelector('[aria-label="Optical depth order"]')).not.toBeNull();
   });
 
   it("shows the trace only in the subject field and restores Top view after construction", async () => {
@@ -130,7 +167,12 @@ describe("Shelf Swing geometry viewport", () => {
     expectGuideLabelClearOfMiddleTarget(
       within(subjectRegion).getByTestId("geometry-svg-top"),
     );
+    expectDepthPlaneGeometry(within(subjectRegion).getByTestId("geometry-svg-top"), true);
     expect(within(cameraRegion).getByTestId("scheimpflug-intersection")).toBeInTheDocument();
+    expectDepthPlaneGeometry(
+      within(cameraRegion).getByTestId("geometry-svg-scheimpflug"),
+      true,
+    );
     for (const targetId of ["shelf-front", "shelf-middle", "shelf-back"]) {
       expect(within(subjectRegion).getByTestId(`geometry-target-${targetId}`)).toBeInTheDocument();
     }

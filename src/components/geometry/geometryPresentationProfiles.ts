@@ -1,3 +1,4 @@
+import type { GeometryView } from "../../types/camera";
 import type { SceneDefinition } from "../../types/scene";
 
 export type GeometryPresentationProfile = {
@@ -18,6 +19,7 @@ export type GeometryPresentationProfile = {
   showOpticalAxisLabel: boolean;
   showScheimpflugIntersection: boolean;
   dofFillOpacity: number;
+  depthPlaneGeometryViews?: readonly GeometryView[];
 };
 
 export function getGeometryPresentationProfile(
@@ -53,6 +55,7 @@ export function getGeometryPresentationProfile(
       showOpticalAxisLabel: true,
       showScheimpflugIntersection: true,
       dofFillOpacity: 0.08,
+      depthPlaneGeometryViews: ["side", "scheimpflug"],
     };
   }
 
@@ -71,6 +74,7 @@ export function getGeometryPresentationProfile(
       showOpticalAxisLabel: true,
       showScheimpflugIntersection: true,
       dofFillOpacity: 0.08,
+      depthPlaneGeometryViews: ["top", "scheimpflug"],
     };
   }
 
