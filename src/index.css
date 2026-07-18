@@ -115,11 +115,8 @@ button {
 
 .geometry-dialog {
   position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   width: min(70vw, calc(100vw - 32px));
-  height: min(70vh, calc(100dvh - 32px));
+  height: min(70dvh, calc(100dvh - 32px));
   min-width: min(420px, calc(100vw - 32px));
   min-height: min(320px, calc(100dvh - 32px));
   max-width: calc(100vw - 32px);
@@ -131,6 +128,19 @@ button {
   box-shadow: 0 8px 24px rgba(0,0,0,0.16);
   border-radius: 8px;
   z-index: 1200;
+}
+
+.geometry-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1190;
+  background: rgba(15, 23, 42, 0.18);
+  pointer-events: auto;
+}
+
+.simulator-body--modal-open {
+  pointer-events: none;
+  user-select: none;
 }
 
 .geometry-dialog__header {

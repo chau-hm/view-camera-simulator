@@ -390,6 +390,22 @@ test("Shelf Swing geometry dialog stays keyboard-accessible and bounded at 1024p
     expect(bounds.y).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(1024);
     expect(bounds.y + bounds.height).toBeLessThanOrEqual(height);
+    const beforeResize = { ...bounds };
+    await page.mouse.move(bounds.x + bounds.width - 3, bounds.y + bounds.height - 3);
+    await page.mouse.down();
+    await page.mouse.move(bounds.x + bounds.width + 90, bounds.y + bounds.height + 70, { steps: 5 });
+    await page.mouse.up();
+    const resized = await dialog.boundingBox();
+    if (!resized) throw new Error("Resized dialog bounds were unavailable");
+    expect(resized.width).toBeGreaterThan(beforeResize.width + 20);
+    expect(resized.height).toBeGreaterThan(beforeResize.height + 20);
+    expect(Math.abs(resized.x - beforeResize.x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(resized.y - beforeResize.y)).toBeLessThanOrEqual(2);
+    expect(resized.x).toBeGreaterThanOrEqual(16);
+    expect(resized.y).toBeGreaterThanOrEqual(16);
+    expect(resized.x + resized.width).toBeLessThanOrEqual(1024 - 16);
+    expect(resized.y + resized.height).toBeLessThanOrEqual(height - 16);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);

@@ -38,6 +38,36 @@ describe("SimulatorWorkspace geometry dialog accessibility", () => {
     await waitFor(() => expect(trigger).toHaveFocus());
   });
 
+  it("wraps keyboard focus and blocks focus behind the modal", async () => {
+    render(workspace());
+    const trigger = screen.getByRole("button", { name: "Open 2D Geometry" });
+    fireEvent.click(trigger);
+    const close = screen.getByRole("button", { name: "Close 2D Geometry" });
+    const fitScene = screen.getByRole("button", { name: "Fit Scene" });
+    const backgroundLink = screen.getByRole("link", { name: "All Scenes" });
+
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(fitScene).toHaveFocus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(close).toHaveFocus();
+
+    backgroundLink.focus();
+    expect(close).toHaveFocus();
+  });
+
+  it("restores focus after Close and closes safely on route changes", async () => {
+    const { rerender } = render(workspace());
+    const trigger = screen.getByRole("button", { name: "Open 2D Geometry" });
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole("button", { name: "Close 2D Geometry" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+
+    fireEvent.click(trigger);
+    rerender(workspace("table-tilt"));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "2D Geometry" })).not.toBeInTheDocument());
+    expect(document.activeElement).not.toBe(trigger);
+  });
+
   it("closes the dialog when the routed scene changes", async () => {
     const { rerender } = render(workspace());
     fireEvent.click(screen.getByRole("button", { name: "Open 2D Geometry" }));
