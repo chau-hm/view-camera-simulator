@@ -62,6 +62,8 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-scale', '1.9');
     await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).not.toBe(initialSanityState);
     await expectContentfulRtt();
+    const stableZoomedSanityState = await rtt.getAttribute('data-rtt-sanity-state');
+    expect(stableZoomedSanityState).toBeTruthy();
 
     const box = await readFreshElementBounds(stage);
     const centerX = box.x + box.width / 2;
@@ -76,7 +78,6 @@ test.describe('Ground Glass interaction', () => {
       return Math.abs(panX) > 0 || Math.abs(panY) > 0;
     }).toBe(true);
 
-    const zoomedSanityState = await rtt.getAttribute('data-rtt-sanity-state');
     await viewport
       .getByRole('button', { name: 'Reset Ground Glass view', exact: true })
       .click();
@@ -88,22 +89,20 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-pointer-active', 'false');
     await expect(stage).toHaveAttribute('data-pointer-captured', 'false');
     await expect(transformedLayer).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
-    await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).not.toBe(zoomedSanityState);
+    await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(initialSanityState);
     expect(await rtt.getAttribute('data-rtt-resource-generation')).toBe(initialGeneration);
     await expectSameCanvas(canvasHandle);
     await expectContentfulRtt();
 
     for (let cycle = 0; cycle < 5; cycle += 1) {
-      const beforeZoomSanityState = await rtt.getAttribute('data-rtt-sanity-state');
       await viewport
         .getByRole('button', { name: 'Zoom in Ground Glass view', exact: true })
         .click();
       await expect(stage).toHaveAttribute('data-zoomed', 'true');
       await expect(stage).toHaveAttribute('data-scale', '1.9');
-      await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).not.toBe(beforeZoomSanityState);
+      await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(stableZoomedSanityState);
       await expectContentfulRtt();
 
-      const beforeResetSanityState = await rtt.getAttribute('data-rtt-sanity-state');
       await viewport
         .getByRole('button', { name: 'Reset Ground Glass view', exact: true })
         .click();
@@ -112,7 +111,7 @@ test.describe('Ground Glass interaction', () => {
       await expect(stage).toHaveAttribute('data-pan-x', '0');
       await expect(stage).toHaveAttribute('data-pan-y', '0');
       await expect(transformedLayer).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
-      await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).not.toBe(beforeResetSanityState);
+      await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(initialSanityState);
       expect(await rtt.getAttribute('data-rtt-resource-generation')).toBe(initialGeneration);
       await expectSameCanvas(canvasHandle);
       await expectContentfulRtt();

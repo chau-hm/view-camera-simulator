@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CAMERA_CONSTANTS } from "../utils/constants";
@@ -508,7 +508,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   // Zoom changes affect only internal RTT resolution. Keep the scene subject,
   // camera, materials, post-processing scenes, and Canvas mounted while the
   // owned size-dependent targets are resized as one synchronous transaction.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const rt = renderTarget.current;
     const post = postResourcesRef.current;
     if (!rt || !post) return;

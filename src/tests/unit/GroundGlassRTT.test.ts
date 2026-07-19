@@ -58,7 +58,7 @@ vi.mock("../../render/sceneSubjectRegistry", async (importOriginal) => {
 
 afterEach(() => {
   cleanup();
-  vi.clearAllMocks();
+  vi.restoreAllMocks();
   useAppStore.getState().setGroundGlassRttRuntimeInfo(null);
 });
 
