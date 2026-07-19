@@ -10,6 +10,8 @@ import type { RenderQualityProfile } from "../../types/ui";
 import { UI_COPY } from "../../ui/copy";
 import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugConstruction";
 import { supportsScheimpflugConstruction as sceneSupportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
+import type { SceneViewFocus } from "../../render/sceneViewFraming";
+import { useAppStore } from "../../state/appStore";
 
 type SceneViewportProps = {
   scene: SceneDefinition;
@@ -42,10 +44,16 @@ export const SceneViewport = ({
   const [showFocusPlaneOverlay, setShowFocusPlaneOverlay] = useState(true);
   const [showDofOverlay, setShowDofOverlay] = useState(true);
   const [showLegends, setShowLegends] = useState(false);
-  const [showOpticalGeometry, setShowOpticalGeometry] = useState(false);
+  const showOpticalGeometry = useAppStore((state) => state.ui.showOpticalGeometry);
+  const setShowOpticalGeometry = useAppStore((state) => state.setShowOpticalGeometry);
   const [requestedScheimpflugConstruction, setRequestedScheimpflugConstruction] = useState(false);
   const [viewResetNonce, setViewResetNonce] = useState(0);
+  const [viewFocusState, setViewFocusState] = useState<{
+    sceneId: string;
+    focus: SceneViewFocus;
+  }>({ sceneId: scene.id, focus: "scene" });
   const [bigView, setBigView] = useState(false);
+  const viewFocus = viewFocusState.sceneId === scene.id ? viewFocusState.focus : "scene";
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
   const requiredAssets = useMemo(() => getRequiredSceneAssets(scene.id), [scene.id]);
   const lazyAssets = useMemo(() => getLazySceneAssets(scene.id), [scene.id]);
@@ -70,6 +78,10 @@ export const SceneViewport = ({
       setRequestedScheimpflugConstruction(false);
     }
   }, [supportsScheimpflugConstruction]);
+
+  useEffect(() => {
+    setViewFocusState({ sceneId: scene.id, focus: "scene" });
+  }, [scene.id]);
 
   if (!webglAvailable) {
     return (
@@ -115,6 +127,24 @@ export const SceneViewport = ({
             <button type="button" className="btn" onClick={() => setViewResetNonce((value) => value + 1)}>
               {UI_COPY.simulator.sceneViewReset}
             </button>
+            <fieldset className="scene-view-focus" aria-label={UI_COPY.simulator.sceneViewFocusLabel}>
+              <legend>{UI_COPY.simulator.sceneViewFocusLabel}</legend>
+              <div className="scene-view-focus__options">
+                {(["scene", "camera"] as const).map((focus) => (
+                  <button
+                    key={focus}
+                    type="button"
+                    className="btn btn--compact"
+                    aria-pressed={viewFocus === focus}
+                    onClick={() => setViewFocusState({ sceneId: scene.id, focus })}
+                  >
+                    {focus === "scene"
+                      ? UI_COPY.simulator.sceneViewFocusScene
+                      : UI_COPY.simulator.sceneViewFocusCamera}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
             {onToggleGeometryPanel && (
               <button
                 type="button"
@@ -178,6 +208,7 @@ export const SceneViewport = ({
               showScheimpflugConstruction={constructionActive}
               renderQuality={renderQuality}
               viewResetNonce={viewResetNonce}
+              viewFocus={viewFocus}
               simulateAssetFailure={simulateAssetFailure}
               onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
               containerStyle={{ width: "100%", height: "100%" }}
@@ -199,7 +230,7 @@ export const SceneViewport = ({
                   onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
                   onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
                   onToggleLegends={() => setShowLegends((s) => !s)}
-                  onToggleOpticalGeometry={() => setShowOpticalGeometry((s) => !s)}
+                  onToggleOpticalGeometry={() => setShowOpticalGeometry(!showOpticalGeometry)}
                   onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setRequestedScheimpflugConstruction((state) => !state) : undefined}
                 />
               </div>
@@ -220,6 +251,7 @@ export const SceneViewport = ({
               showScheimpflugConstruction={constructionActive}
               renderQuality={renderQuality}
               viewResetNonce={viewResetNonce}
+              viewFocus={viewFocus}
               simulateAssetFailure={simulateAssetFailure}
               onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
               containerStyle={{ width: '100%', aspectRatio: '5 / 4', border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
@@ -239,7 +271,7 @@ export const SceneViewport = ({
               onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
               onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
               onToggleLegends={() => setShowLegends((s) => !s)}
-              onToggleOpticalGeometry={() => setShowOpticalGeometry((s) => !s)}
+              onToggleOpticalGeometry={() => setShowOpticalGeometry(!showOpticalGeometry)}
               onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setRequestedScheimpflugConstruction((state) => !state) : undefined}
             />
           </div>

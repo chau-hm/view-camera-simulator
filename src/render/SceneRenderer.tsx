@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { add, scale } from "../core/math/vec";
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { Camera, DoubleSide, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -21,6 +21,13 @@ import {
 import { createScheimpflugConstructionGeometry } from "./scheimpflugConstructionGeometry";
 import { quaternionForPlaneNormal } from "./planeOrientation";
 import { getRegisteredSceneSubject } from "./sceneSubjectRegistry";
+import {
+  createCameraInspectionView,
+  resolveStableCameraInspectionTarget,
+  translateObserverViewToTarget,
+  type ObserverViewState,
+  type SceneViewFocus,
+} from "./sceneViewFraming";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -33,6 +40,7 @@ type SceneRendererProps = {
   showScheimpflugConstruction?: boolean;
   renderQuality: RenderQualityProfile;
   viewResetNonce: number;
+  viewFocus: SceneViewFocus;
   simulateAssetFailure: boolean;
   onAssetError: (message: string) => void;
   // optional container style allows embedding the renderer in different sized containers
@@ -45,15 +53,52 @@ type OrbitControlsProps = {
   enablePan?: boolean;
   enableZoom?: boolean;
   enableRotate?: boolean;
-  target?: [number, number, number];
+  sceneId: string;
+  viewFocus: SceneViewFocus;
+  sceneView: ObserverViewState;
+  cameraView: ObserverViewState;
+  viewResetNonce: number;
+  onViewStateChange: (state: ObserverViewState) => void;
 };
 
+const captureObserverView = (
+  camera: Camera,
+  controls: OrbitControlsImpl,
+): ObserverViewState => ({
+  position: camera.position.toArray() as [number, number, number],
+  target: controls.target.toArray() as [number, number, number],
+});
+
+const targetsMatch = (
+  a: [number, number, number],
+  b: [number, number, number],
+): boolean => a.every((value, index) => Math.abs(value - b[index]) < 1e-9);
+
 const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function OrbitControls(
-  { enablePan = false, enableZoom = true, enableRotate = true, target },
+  {
+    enablePan = false,
+    enableZoom = true,
+    enableRotate = true,
+    sceneId,
+    viewFocus,
+    sceneView,
+    cameraView,
+    viewResetNonce,
+    onViewStateChange,
+  },
   ref,
 ) {
   const { camera, gl } = useThree();
   const controls = useMemo(() => new OrbitControlsController(camera, gl.domElement), [camera, gl.domElement]);
+  const savedViewsRef = useRef<Record<SceneViewFocus, ObserverViewState | null>>({
+    scene: null,
+    camera: null,
+  });
+  const activeFocusRef = useRef(viewFocus);
+  const activeSceneIdRef = useRef(sceneId);
+  const previousCameraTargetRef = useRef<[number, number, number]>([...cameraView.target]);
+  const lastResetNonceRef = useRef(viewResetNonce);
+  const initializedRef = useRef(false);
 
   useFrame(() => {
     controls.update();
@@ -70,10 +115,61 @@ const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function
   }, [controls, enablePan, enableRotate, enableZoom]);
 
   useEffect(() => {
-    if (!target) return;
-    controls.target.set(...target);
-    controls.update();
-  }, [controls, target]);
+    const publish = () => onViewStateChange(captureObserverView(camera, controls));
+    controls.addEventListener("end", publish);
+    return () => controls.removeEventListener("end", publish);
+  }, [camera, controls, onViewStateChange]);
+
+  useLayoutEffect(() => {
+    const applyView = (view: ObserverViewState) => {
+      applyObserverCameraReset(camera, controls, view.position, view.target);
+      onViewStateChange(captureObserverView(camera, controls));
+    };
+    const presetFor = (focus: SceneViewFocus) =>
+      focus === "scene" ? sceneView : cameraView;
+
+    if (!initializedRef.current || activeSceneIdRef.current !== sceneId) {
+      savedViewsRef.current = { scene: null, camera: null };
+      activeFocusRef.current = viewFocus;
+      activeSceneIdRef.current = sceneId;
+      previousCameraTargetRef.current = [...cameraView.target];
+      lastResetNonceRef.current = viewResetNonce;
+      initializedRef.current = true;
+      applyView(presetFor(viewFocus));
+      return;
+    }
+
+    if (!targetsMatch(previousCameraTargetRef.current, cameraView.target)) {
+      const savedCameraView = savedViewsRef.current.camera;
+      if (savedCameraView) {
+        savedViewsRef.current.camera = translateObserverViewToTarget(
+          savedCameraView,
+          cameraView.target,
+        );
+      }
+      if (activeFocusRef.current === "camera") {
+        applyView(
+          translateObserverViewToTarget(
+            captureObserverView(camera, controls),
+            cameraView.target,
+          ),
+        );
+      }
+      previousCameraTargetRef.current = [...cameraView.target];
+    }
+
+    if (activeFocusRef.current !== viewFocus) {
+      savedViewsRef.current[activeFocusRef.current] = captureObserverView(camera, controls);
+      applyView(savedViewsRef.current[viewFocus] ?? presetFor(viewFocus));
+      activeFocusRef.current = viewFocus;
+    }
+
+    if (lastResetNonceRef.current !== viewResetNonce) {
+      applyView(presetFor(activeFocusRef.current));
+      savedViewsRef.current[activeFocusRef.current] = captureObserverView(camera, controls);
+      lastResetNonceRef.current = viewResetNonce;
+    }
+  }, [camera, cameraView, controls, onViewStateChange, sceneId, sceneView, viewFocus, viewResetNonce]);
 
   return null;
 });
@@ -676,6 +772,7 @@ export const SceneRenderer = ({
   showScheimpflugConstruction,
   renderQuality,
   viewResetNonce,
+  viewFocus,
   simulateAssetFailure,
   onAssetError,
   containerStyle,
@@ -691,6 +788,19 @@ export const SceneRenderer = ({
     () => vecToWorld(scene.cameraPlacement.target),
     [scene.cameraPlacement.target],
   );
+  const sceneObserverView = useMemo<ObserverViewState>(
+    () => ({ position: observerCameraPosition, target: observerCameraTarget }),
+    [observerCameraPosition, observerCameraTarget],
+  );
+  const cameraInspectionTarget = useMemo(
+    () => resolveStableCameraInspectionTarget(scene.id, CAMERA_CONSTANTS.focalLengthMm),
+    [scene.id],
+  );
+  const cameraObserverView = useMemo(
+    () => createCameraInspectionView(sceneObserverView, cameraInspectionTarget),
+    [cameraInspectionTarget, sceneObserverView],
+  );
+  const [observerViewState, setObserverViewState] = useState<ObserverViewState>(sceneObserverView);
   const activeAssets = useMemo(
     () =>
       scene.assets.filter((asset) =>
@@ -698,21 +808,6 @@ export const SceneRenderer = ({
       ),
     [loadLazyAssets, scene.assets],
   );
-
-  useEffect(() => {
-    if (controlsRef.current) {
-      controlsRef.current.target.set(...observerCameraTarget);
-      controlsRef.current.update();
-    }
-  }, [observerCameraTarget]);
-
-  useEffect(() => {
-    if (controlsRef.current) {
-      controlsRef.current.reset();
-      controlsRef.current.target.set(...observerCameraTarget);
-      controlsRef.current.update();
-    }
-  }, [observerCameraTarget, viewResetNonce]);
 
   useEffect(() => {
     setLoadLazyAssets(false);
@@ -775,6 +870,7 @@ export const SceneRenderer = ({
       data-far-dof-overlay-vertices={farDofOverlayVertexCount}
       data-dof-overlay-visible={showDofOverlay ? "true" : "false"}
       data-focus-overlay-visible={showFocusPlaneOverlay && !showScheimpflugConstruction ? "true" : "false"}
+      data-optical-geometry-visible={showOpticalGeometry ? "true" : "false"}
       data-scheimpflug-construction={
         scheimpflugConstructionGeometry ? "true" : "false"
       }
@@ -783,6 +879,9 @@ export const SceneRenderer = ({
       data-scheimpflug-focus-vertices={scheimpflugConstructionGeometry?.focusPlane.verticesMm.length ?? 0}
       data-scheimpflug-line-points={scheimpflugConstructionGeometry ? 2 : 0}
       data-lens-plane-normal={`${opticsState.lensPlane.normal.x.toFixed(6)},${opticsState.lensPlane.normal.y.toFixed(6)},${opticsState.lensPlane.normal.z.toFixed(6)}`}
+      data-view-focus={viewFocus}
+      data-orbit-target={observerViewState.target.map((value) => value.toFixed(6)).join(",")}
+      data-observer-camera-position={observerViewState.position.map((value) => value.toFixed(6)).join(",")}
       style={wrapperStyle}
     >
       <Canvas
@@ -807,7 +906,12 @@ export const SceneRenderer = ({
           enablePan={false}
           enableZoom
           enableRotate
-          target={observerCameraTarget}
+          sceneId={scene.id}
+          viewFocus={viewFocus}
+          sceneView={sceneObserverView}
+          cameraView={cameraObserverView}
+          viewResetNonce={viewResetNonce}
+          onViewStateChange={setObserverViewState}
         />
       </Canvas>
 
