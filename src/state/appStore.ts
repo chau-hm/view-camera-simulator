@@ -5,6 +5,10 @@ import { getSceneById, getSceneFocusDistanceRange } from "../scenes/definitions"
 import type { ApertureValue, CameraState, GeometryView, SimulatorMode } from "../types/camera";
 import type { TaskEvaluation } from "../types/task";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE, isApertureValue } from "../utils/constants";
+import {
+  DEFAULT_SHOW_OPTICAL_GEOMETRY,
+  resolveInitialOpticalGeometryVisibility,
+} from "./sceneViewDefaults";
 
 const defaultControlState = {
   frontRiseMm: DEFAULT_CAMERA_STATE.frontRiseMm,
@@ -34,6 +38,7 @@ type UIState = {
   groundGlassAssistEnabled: boolean;
   focusAssistEnabled: boolean;
   gridEnabled: boolean;
+  showOpticalGeometry: boolean;
 };
 
 import type { GroundGlassRttRuntimeInfo } from "../render/groundGlassRttDimensions";
@@ -68,6 +73,7 @@ export type AppStore = {
   setGroundGlassAssistEnabled: (enabled: boolean) => void;
   toggleFocusAssist: () => void;
   toggleGrid: () => void;
+  setShowOpticalGeometry: (enabled: boolean) => void;
   resetMovements: () => void;
   restartTask: () => void;
   resetCamera: () => void;
@@ -86,6 +92,7 @@ export const useAppStore = create<AppStore>((set) => ({
     groundGlassAssistEnabled: DEFAULT_CAMERA_STATE.groundGlassAssistEnabled,
     focusAssistEnabled: DEFAULT_CAMERA_STATE.focusAssistEnabled,
     gridEnabled: DEFAULT_CAMERA_STATE.gridEnabled,
+    showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY,
   },
   lastInitializedRouteKey: null,
   groundGlassRttRuntimeInfo: null,
@@ -105,6 +112,7 @@ export const useAppStore = create<AppStore>((set) => ({
       },
       scene: { ...state.scene, activeSceneId: sceneId },
       task: { ...state.task, currentTaskEvaluation: null },
+      ui: { ...state.ui, showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY },
     })),
   setActiveTask: (taskId) =>
     set((state) => ({
@@ -132,6 +140,7 @@ export const useAppStore = create<AppStore>((set) => ({
 
       // Otherwise apply presets and remember the routeKey
       let nextCamera: CameraState = { ...state.camera };
+      const routeTask = taskId ? getTaskById(taskId) : undefined;
 
       try {
         const scene = getSceneById(sceneId);
@@ -147,7 +156,7 @@ export const useAppStore = create<AppStore>((set) => ({
 
       if (taskId) {
         try {
-          const task = getTaskById(taskId);
+          const task = routeTask;
           if (task && task.initialCameraState) {
             nextCamera = { ...nextCamera, ...task.initialCameraState, activeTaskId: taskId };
           } else {
@@ -159,7 +168,11 @@ export const useAppStore = create<AppStore>((set) => ({
       }
 
       // set mode
-      const nextUi = { ...state.ui, mode };
+      const nextUi = {
+        ...state.ui,
+        mode,
+        showOpticalGeometry: resolveInitialOpticalGeometryVisibility(routeTask),
+      };
       return {
         camera: nextCamera,
         scene: { ...state.scene, activeSceneId: sceneId },
@@ -272,6 +285,10 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: { ...state.camera, gridEnabled: !state.camera.gridEnabled },
       ui: { ...state.ui, gridEnabled: !state.ui.gridEnabled },
     })),
+  setShowOpticalGeometry: (enabled) =>
+    set((state) => ({
+      ui: { ...state.ui, showOpticalGeometry: enabled },
+    })),
   resetMovements: () =>
     set((state) => ({
       camera: {
@@ -303,6 +320,7 @@ export const useAppStore = create<AppStore>((set) => ({
         activeTask?.initialCameraState?.focusAssistEnabled ?? state.camera.focusAssistEnabled;
       const nextGridEnabled =
         activeTask?.initialCameraState?.gridEnabled ?? state.camera.gridEnabled;
+      const nextShowOpticalGeometry = resolveInitialOpticalGeometryVisibility(activeTask);
 
       return {
         camera: {
@@ -325,6 +343,7 @@ export const useAppStore = create<AppStore>((set) => ({
           groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
           focusAssistEnabled: nextFocusAssistEnabled,
           gridEnabled: nextGridEnabled,
+          showOpticalGeometry: nextShowOpticalGeometry,
         },
       };
     }),
@@ -342,6 +361,7 @@ export const useAppStore = create<AppStore>((set) => ({
         groundGlassAssistEnabled: DEFAULT_CAMERA_STATE.groundGlassAssistEnabled,
         focusAssistEnabled: DEFAULT_CAMERA_STATE.focusAssistEnabled,
         gridEnabled: DEFAULT_CAMERA_STATE.gridEnabled,
+        showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY,
       },
     }),
 }));

@@ -3,6 +3,8 @@ import { useAppStore } from "../../state/appStore";
 import { getSceneFocusDistanceRange } from "../../scenes/definitions";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
+import { resolveInitialOpticalGeometryVisibility } from "../../state/sceneViewDefaults";
+import { getTaskById } from "../../core/tasks/taskRegistry";
 
 describe("app store STA-001", () => {
   afterEach(() => {
@@ -22,6 +24,7 @@ describe("app store STA-001", () => {
     expect(typeof store.setActiveTask).toBe("function");
     expect(typeof store.resetMovements).toBe("function");
     expect(typeof store.restartTask).toBe("function");
+    expect(typeof store.setShowOpticalGeometry).toBe("function");
   });
 
   it("contains camera scene task ui state groups", () => {
@@ -182,6 +185,30 @@ describe("app store STA-001", () => {
     expect(ui.focusAssistEnabled).toBe(true);
     expect(camera.gridEnabled).toBe(false);
     expect(ui.gridEnabled).toBe(false);
+  });
+
+  it("defaults Optical Geometry on, allows a session override, and restores it on restart", () => {
+    const { setShowOpticalGeometry, restartTask } = useAppStore.getState();
+    expect(useAppStore.getState().ui.showOpticalGeometry).toBe(true);
+
+    setShowOpticalGeometry(false);
+    expect(useAppStore.getState().ui.showOpticalGeometry).toBe(false);
+
+    restartTask();
+    expect(useAppStore.getState().ui.showOpticalGeometry).toBe(true);
+  });
+
+  it("uses an explicit guided-task view override and otherwise keeps the shared default", () => {
+    const task = getTaskById("rise-01");
+    if (!task) throw new Error("rise-01 task missing");
+
+    expect(resolveInitialOpticalGeometryVisibility(task)).toBe(true);
+    expect(
+      resolveInitialOpticalGeometryVisibility({
+        ...task,
+        initialViewState: { showOpticalGeometry: false },
+      }),
+    ).toBe(false);
   });
 
   it("initializeSimulatorRoute applies scene preset on direct route entry", () => {

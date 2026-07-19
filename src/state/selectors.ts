@@ -31,6 +31,7 @@ export const selectViewOptionState = (state: AppStore) => ({
   groundGlassAssistEnabled: state.camera.groundGlassAssistEnabled,
   focusAssistEnabled: state.camera.focusAssistEnabled,
   gridEnabled: state.camera.gridEnabled,
+  showOpticalGeometry: state.ui.showOpticalGeometry,
 });
 
 let lastCameraKey = "";

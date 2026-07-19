@@ -35,6 +35,9 @@ export type TaskDefinition = {
     failSecondaryByCriterionId: Record<string, string>;
   };
   initialCameraState?: TaskInitialCameraState;
+  initialViewState?: {
+    showOpticalGeometry?: boolean;
+  };
 };
 
 export type MovementAxis = "rise" | "tilt" | "swing";

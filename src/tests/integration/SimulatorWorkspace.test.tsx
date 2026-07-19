@@ -92,4 +92,61 @@ describe("SimulatorWorkspace geometry dialog accessibility", () => {
     expect(screen.getByTestId("geometry-svg-top")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Fit Construction" })).toBeDisabled();
   });
+
+  it("defaults View Focus to Scene and restores Optical Geometry on Restart", () => {
+    render(workspace());
+
+    const sceneFocus = screen.getByRole("button", { name: "Scene" });
+    const cameraFocus = screen.getByRole("button", { name: "Camera" });
+    expect(sceneFocus).toHaveAttribute("aria-pressed", "true");
+    expect(cameraFocus).toHaveAttribute("aria-pressed", "false");
+
+    cameraFocus.focus();
+    fireEvent.keyDown(cameraFocus, { key: "Enter" });
+    fireEvent.click(cameraFocus);
+    expect(cameraFocus).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(sceneFocus);
+    expect(sceneFocus).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "View overlays" }));
+    const hideOpticalGeometry = screen.getByRole("button", { name: "Hide Optical geometry" });
+    expect(hideOpticalGeometry).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(hideOpticalGeometry);
+    expect(screen.getByRole("button", { name: "Show Optical geometry" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Restart task" }));
+    fireEvent.click(screen.getByRole("button", { name: "View overlays" }));
+    expect(screen.getByRole("button", { name: "Hide Optical geometry" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("discards stale Camera focus across an in-place scene round trip", () => {
+    const view = render(workspace("shelf-swing"));
+    fireEvent.click(screen.getByRole("button", { name: "Camera" }));
+    expect(screen.getByRole("button", { name: "Camera" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    view.rerender(workspace("table-tilt"));
+    expect(screen.getByRole("button", { name: "Scene" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    view.rerender(workspace("shelf-swing"));
+    expect(screen.getByRole("button", { name: "Scene" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Camera" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
 });
