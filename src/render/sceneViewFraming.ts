@@ -1,5 +1,3 @@
-import type { DerivedOpticsState } from "../types/optics";
-
 export type SceneViewFocus = "scene" | "camera";
 
 export type ObserverViewState = {
@@ -19,13 +17,17 @@ const normalize = (value: [number, number, number]): [number, number, number] =>
   return [value[0] / length, value[1] / length, value[2] / length];
 };
 
-export const resolvePhysicalCameraCenter = (
-  opticsState: Pick<DerivedOpticsState, "filmCenterWorld" | "lensCenterWorld">,
-): [number, number, number] => [
-  ((opticsState.filmCenterWorld.x + opticsState.lensCenterWorld.x) / 2) * WORLD_SCALE,
-  ((opticsState.filmCenterWorld.y + opticsState.lensCenterWorld.y) / 2) * WORLD_SCALE,
-  ((opticsState.filmCenterWorld.z + opticsState.lensCenterWorld.z) / 2) * WORLD_SCALE,
-];
+export const resolveStableCameraInspectionTarget = (
+  sceneId: string,
+  focalLengthMm: number,
+): [number, number, number] => {
+  // No scene currently exposes a whole-camera transform. Anchor to the nominal
+  // body midpoint instead of either standard, whose positions are simulation state.
+  const nominalBodyCenterZMm =
+    sceneId === "focus-fundamentals-two-targets" ? focalLengthMm / 2 : -focalLengthMm / 2;
+
+  return [0, 0, nominalBodyCenterZMm * WORLD_SCALE];
+};
 
 export const createCameraInspectionView = (
   sceneView: ObserverViewState,
@@ -37,7 +39,7 @@ export const createCameraInspectionView = (
     sceneView.position[2] - sceneView.target[2],
   ];
 
-  // A head-on scene observer hides the bellows and rail. Give that one case a
+  // A head-on scene observer hides the depth between the standards. Give that one case a
   // stable three-quarter inspection angle while preserving scene-specific
   // observer directions everywhere else.
   if (Math.hypot(direction[0], direction[1]) < Math.abs(direction[2]) * 0.08) {
@@ -57,10 +59,10 @@ export const createCameraInspectionView = (
 
 export const createObserverViewPresets = (
   sceneView: ObserverViewState,
-  opticsState: Pick<DerivedOpticsState, "filmCenterWorld" | "lensCenterWorld">,
+  cameraTarget: [number, number, number],
 ): ObserverViewPresets => ({
   scene: sceneView,
-  camera: createCameraInspectionView(sceneView, resolvePhysicalCameraCenter(opticsState)),
+  camera: createCameraInspectionView(sceneView, cameraTarget),
 });
 
 export const translateObserverViewToTarget = (

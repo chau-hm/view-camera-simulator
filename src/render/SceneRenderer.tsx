@@ -23,7 +23,7 @@ import { quaternionForPlaneNormal } from "./planeOrientation";
 import { getRegisteredSceneSubject } from "./sceneSubjectRegistry";
 import {
   createCameraInspectionView,
-  resolvePhysicalCameraCenter,
+  resolveStableCameraInspectionTarget,
   translateObserverViewToTarget,
   type ObserverViewState,
   type SceneViewFocus,
@@ -301,20 +301,6 @@ const Bellows = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
         <meshStandardMaterial color="#111827" transparent opacity={0.25} />
       </mesh>
     </group>
-  );
-};
-
-const CameraRail = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
-  const rear = vecToWorld(opticsState.filmCenterWorld);
-  const front = vecToWorld(opticsState.lensCenterWorld);
-  const centerZ = (rear[2] + front[2]) / 2;
-  const length = Math.max(Math.abs(front[2] - rear[2]) + toWorld(220), toWorld(360));
-
-  return (
-    <mesh position={[rear[0], rear[1] - toWorld(105), centerZ]}>
-      <boxGeometry args={[toWorld(34), toWorld(18), length]} />
-      <meshStandardMaterial color="#334155" />
-    </mesh>
   );
 };
 
@@ -752,8 +738,7 @@ const SceneContent = ({
     <SceneAssets assets={scene.assets} />
     <RearStandard opticsState={opticsState} isFocusFundamentals={scene.id === "focus-fundamentals-two-targets"} />
     <FrontStandard opticsState={opticsState} />
-    <Bellows opticsState={opticsState} />
-    <CameraRail opticsState={opticsState} />
+    {scene.id !== "focus-fundamentals-two-targets" && <Bellows opticsState={opticsState} />}
     <OpticalGeometryOverlays
       scene={scene}
       opticsState={opticsState}
@@ -807,13 +792,13 @@ export const SceneRenderer = ({
     () => ({ position: observerCameraPosition, target: observerCameraTarget }),
     [observerCameraPosition, observerCameraTarget],
   );
-  const physicalCameraCenter = useMemo(
-    () => resolvePhysicalCameraCenter(opticsState),
-    [opticsState],
+  const cameraInspectionTarget = useMemo(
+    () => resolveStableCameraInspectionTarget(scene.id, CAMERA_CONSTANTS.focalLengthMm),
+    [scene.id],
   );
   const cameraObserverView = useMemo(
-    () => createCameraInspectionView(sceneObserverView, physicalCameraCenter),
-    [physicalCameraCenter, sceneObserverView],
+    () => createCameraInspectionView(sceneObserverView, cameraInspectionTarget),
+    [cameraInspectionTarget, sceneObserverView],
   );
   const [observerViewState, setObserverViewState] = useState<ObserverViewState>(sceneObserverView);
   const activeAssets = useMemo(

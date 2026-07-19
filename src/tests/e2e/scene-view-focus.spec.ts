@@ -97,17 +97,16 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   await expect.poll(async () => viewDistance(await readViewState(sceneCanvas))).toBeCloseTo(0.72, 4);
 
   const beforeRise = await readStableViewState(sceneCanvas);
+  const beforeRiseGeometry = await page.getByTestId("scene-front-y-mm").textContent();
   await page.getByLabel("Rise").press("ArrowRight");
-  await expect.poll(async () => (await readViewState(sceneCanvas)).target[1]).toBeGreaterThan(
-    beforeRise.target[1],
-  );
-  const afterRise = await readStableViewState(sceneCanvas);
-  afterRise.position.forEach((coordinate, index) => {
-    expect(coordinate - afterRise.target[index]).toBeCloseTo(
-      beforeRise.position[index] - beforeRise.target[index],
-      4,
-    );
-  });
+  await expect(page.getByTestId("scene-front-y-mm")).not.toHaveText(beforeRiseGeometry ?? "");
+  await expect.poll(async () => (await readViewState(sceneCanvas)).target).toEqual(beforeRise.target);
+
+  for (const movementControl of ["Focus distance", "Tilt", "Swing"]) {
+    await page.getByLabel(movementControl).press("ArrowRight");
+    await expect.poll(async () => (await readViewState(sceneCanvas)).target).toEqual(beforeRise.target);
+  }
+  const afterMovements = await readStableViewState(sceneCanvas);
 
   const sceneButton = page.getByRole("button", { name: "Scene" });
   await sceneButton.focus();
@@ -119,7 +118,7 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   await expect.poll(() => readViewState(sceneCanvas)).toEqual(scenePreset);
 
   await cameraButton.click();
-  await expect.poll(() => readViewState(sceneCanvas)).toEqual(afterRise);
+  await expect.poll(() => readViewState(sceneCanvas)).toEqual(afterMovements);
   await page.getByRole("button", { name: "Reset 3D view" }).click();
   await expect.poll(async () => viewDistance(await readViewState(sceneCanvas))).toBeCloseTo(0.72, 4);
   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");
@@ -173,15 +172,9 @@ test("all public scenes start with Scene focus, Camera framing, and default Opti
             : "Swing";
     const beforeMovementTarget = (await readStableViewState(sceneCanvas)).target;
     await page.getByLabel(movementControl).press("Shift+ArrowRight");
-    if (sceneId === "focus-fundamentals-two-targets" || sceneId === "architecture-rise") {
-      await expect.poll(async () => (await readViewState(sceneCanvas)).target).not.toEqual(
-        beforeMovementTarget,
-      );
-    } else {
-      await expect.poll(async () => (await readViewState(sceneCanvas)).target).toEqual(
-        beforeMovementTarget,
-      );
-    }
+    await expect.poll(async () => (await readViewState(sceneCanvas)).target).toEqual(
+      beforeMovementTarget,
+    );
   }
 
   for (const viewport of [

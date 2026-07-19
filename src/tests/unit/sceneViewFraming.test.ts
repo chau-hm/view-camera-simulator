@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   createObserverViewPresets,
-  resolvePhysicalCameraCenter,
+  resolveStableCameraInspectionTarget,
   translateObserverViewToTarget,
   type ObserverViewState,
 } from "../../render/sceneViewFraming";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import type { CameraState } from "../../types/camera";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const sceneView: ObserverViewState = {
   position: [6.5, 3, -6.5],
@@ -25,13 +25,16 @@ const cameraState = (overrides: Partial<CameraState> = {}): CameraState => ({
 });
 
 describe("3D observer view framing", () => {
-  it("preserves the canonical scene view and frames the camera around the standards midpoint", () => {
-    const optics = deriveOpticsState(cameraState(), architectureRiseScene);
-    const presets = createObserverViewPresets(sceneView, optics);
-    const expectedCenter = resolvePhysicalCameraCenter(optics);
+  it("preserves the canonical scene view and frames the camera around its stable body anchor", () => {
+    const expectedCenter = resolveStableCameraInspectionTarget(
+      architectureRiseScene.id,
+      CAMERA_CONSTANTS.focalLengthMm,
+    );
+    const presets = createObserverViewPresets(sceneView, expectedCenter);
 
     expect(presets.scene).toBe(sceneView);
     expect(presets.camera.target).toEqual(expectedCenter);
+    expect(expectedCenter).toEqual([0, 0, -0.075]);
     expect(Math.hypot(
       presets.camera.position[0] - expectedCenter[0],
       presets.camera.position[1] - expectedCenter[1],
@@ -39,21 +42,18 @@ describe("3D observer view framing", () => {
     )).toBeCloseTo(0.72, 8);
   });
 
-  it("keeps tilt and swing target-stable while rise follows the physical camera smoothly", () => {
-    const baseline = resolvePhysicalCameraCenter(
-      deriveOpticsState(cameraState(), architectureRiseScene),
-    );
-    const rotated = resolvePhysicalCameraCenter(
-      deriveOpticsState(cameraState({ frontTiltDeg: 7, frontSwingDeg: -6 }), architectureRiseScene),
-    );
-    const risen = resolvePhysicalCameraCenter(
-      deriveOpticsState(cameraState({ frontRiseMm: 40 }), architectureRiseScene),
+  it("keeps the inspection anchor stable when front geometry and focus change", () => {
+    const baselineOptics = deriveOpticsState(cameraState(), architectureRiseScene);
+    const risenOptics = deriveOpticsState(cameraState({ frontRiseMm: 40 }), architectureRiseScene);
+    const focusedOptics = deriveOpticsState(cameraState({ focusDistanceMm: 5000 }), architectureRiseScene);
+    const stableTarget = resolveStableCameraInspectionTarget(
+      architectureRiseScene.id,
+      CAMERA_CONSTANTS.focalLengthMm,
     );
 
-    expect(rotated).toEqual(baseline);
-    expect(risen[0]).toBe(baseline[0]);
-    expect(risen[1] - baseline[1]).toBeCloseTo(0.02, 8);
-    expect(risen[2]).toBe(baseline[2]);
+    expect(risenOptics.lensCenterWorld.y).not.toBe(baselineOptics.lensCenterWorld.y);
+    expect(focusedOptics.filmCenterWorld.z).not.toBe(baselineOptics.filmCenterWorld.z);
+    expect(stableTarget).toEqual([0, 0, -0.075]);
   });
 
   it("moves a saved camera view with a new camera center without changing its orbit offset", () => {
@@ -67,4 +67,3 @@ describe("3D observer view framing", () => {
     expect(translated.position).toEqual([0.4, 0.32, -0.61]);
   });
 });
-
