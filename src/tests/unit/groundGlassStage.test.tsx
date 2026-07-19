@@ -222,9 +222,14 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(stage).toHaveAttribute("data-pointer-captured", "true");
     fireEvent.click(view.getByRole("button", { name: "Reset Ground Glass view" }));
     expect(stage).toHaveAttribute("data-zoomed", "false");
+    expect(stage).toHaveAttribute("data-scale", "1");
+    expect(stage).toHaveAttribute("data-pan-x", "0");
+    expect(stage).toHaveAttribute("data-pan-y", "0");
+    expect(stage).toHaveAttribute("data-dragging", "false");
     expect(stage).toHaveAttribute("data-pointer-active", "false");
     expect(stage).toHaveAttribute("data-pointer-captured", "false");
     expect(stage).toHaveAttribute("data-normalized-pan-x", "0");
+    expect(stage).toHaveAttribute("data-normalized-pan-y", "0");
     expect(view.getByTestId("ground-glass-image-layer")).toHaveStyle({
       transform: "translate3d(0px, 0px, 0) scale(1)",
     });
