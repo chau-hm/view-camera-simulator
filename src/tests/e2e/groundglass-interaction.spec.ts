@@ -5,6 +5,122 @@ import { clickStageAt, readFreshElementBounds, readStageTransform } from './help
 const transformedLayerFor = (viewport: Locator) => () => viewport.locator('.groundglass-stage');
 
 test.describe('Ground Glass interaction', () => {
+  test('Architecture Rise: Reset view preserves the contentful RTT resource graph', async ({ page }) => {
+    test.setTimeout(180_000);
+    const pageErrors: string[] = [];
+    const rendererWarnings: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('console', (message) => {
+      const text = message.text();
+      if (/GL Driver Message .*GPU stall due to ReadPixels/.test(text)) return;
+      if (
+        message.type() === 'error' ||
+        (message.type() === 'warning' && /React|Three(?:\.js)?|WebGL|render target|disposed|context lost/i.test(text))
+      ) {
+        rendererWarnings.push(text);
+      }
+    });
+
+    await page.goto('/simulator/free/architecture-rise?rttDiagnostics=1');
+    const viewport = page.getByLabel('GroundGlassViewport');
+    const stage = viewport.getByRole('button', { name: /Ground Glass$/ });
+    const rtt = viewport.getByTestId('ground-glass-rtt');
+    const canvas = rtt.locator('canvas');
+    const transformedLayer = viewport.locator('.groundglass-stage');
+    const expectContentfulRtt = async () => {
+      await expect(rtt).toHaveAttribute('data-rtt-raw-contentful', 'true', { timeout: 120_000 });
+      await expect(rtt).toHaveAttribute('data-rtt-final-contentful', 'true', { timeout: 120_000 });
+      expect(await rtt.getAttribute('data-rtt-sanity-error')).toBeNull();
+    };
+    const expectSameCanvas = async (canvasHandle: NonNullable<Awaited<ReturnType<typeof canvas.elementHandle>>>) => {
+      await expect
+        .poll(() =>
+          page.evaluate(
+            (node) =>
+              node.isConnected &&
+              document.querySelector('[data-testid="ground-glass-rtt"] canvas') === node,
+            canvasHandle,
+          ),
+        )
+        .toBe(true);
+    };
+
+    await expect(viewport).toBeVisible();
+    await expect(canvas).toHaveCount(1);
+    await expectContentfulRtt();
+    const canvasHandle = await canvas.elementHandle();
+    if (!canvasHandle) throw new Error('Ground Glass Canvas element was not mounted');
+    const initialGeneration = await rtt.getAttribute('data-rtt-resource-generation');
+    const initialSanityState = await rtt.getAttribute('data-rtt-sanity-state');
+    expect(initialGeneration).toBeTruthy();
+    expect(initialSanityState).toBeTruthy();
+
+    await viewport
+      .getByRole('button', { name: 'Zoom in Ground Glass view', exact: true })
+      .click();
+    await expect(stage).toHaveAttribute('data-zoomed', 'true');
+    await expect(stage).toHaveAttribute('data-scale', '1.9');
+    await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).not.toBe(initialSanityState);
+    await expectContentfulRtt();
+    const stableZoomedSanityState = await rtt.getAttribute('data-rtt-sanity-state');
+    expect(stableZoomedSanityState).toBeTruthy();
+
+    const box = await readFreshElementBounds(stage);
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+    await page.mouse.move(centerX, centerY);
+    await page.mouse.down();
+    await page.mouse.move(centerX + 60, centerY + 40, { steps: 6 });
+    await page.mouse.up();
+    await expect.poll(async () => {
+      const panX = Number(await stage.getAttribute('data-pan-x'));
+      const panY = Number(await stage.getAttribute('data-pan-y'));
+      return Math.abs(panX) > 0 || Math.abs(panY) > 0;
+    }).toBe(true);
+
+    await viewport
+      .getByRole('button', { name: 'Reset Ground Glass view', exact: true })
+      .click();
+    await expect(stage).toHaveAttribute('data-zoomed', 'false');
+    await expect(stage).toHaveAttribute('data-scale', '1');
+    await expect(stage).toHaveAttribute('data-pan-x', '0');
+    await expect(stage).toHaveAttribute('data-pan-y', '0');
+    await expect(stage).toHaveAttribute('data-dragging', 'false');
+    await expect(stage).toHaveAttribute('data-pointer-active', 'false');
+    await expect(stage).toHaveAttribute('data-pointer-captured', 'false');
+    await expect(transformedLayer).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+    await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(initialSanityState);
+    expect(await rtt.getAttribute('data-rtt-resource-generation')).toBe(initialGeneration);
+    await expectSameCanvas(canvasHandle);
+    await expectContentfulRtt();
+
+    for (let cycle = 0; cycle < 5; cycle += 1) {
+      await viewport
+        .getByRole('button', { name: 'Zoom in Ground Glass view', exact: true })
+        .click();
+      await expect(stage).toHaveAttribute('data-zoomed', 'true');
+      await expect(stage).toHaveAttribute('data-scale', '1.9');
+      await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(stableZoomedSanityState);
+      await expectContentfulRtt();
+
+      await viewport
+        .getByRole('button', { name: 'Reset Ground Glass view', exact: true })
+        .click();
+      await expect(stage).toHaveAttribute('data-zoomed', 'false');
+      await expect(stage).toHaveAttribute('data-scale', '1');
+      await expect(stage).toHaveAttribute('data-pan-x', '0');
+      await expect(stage).toHaveAttribute('data-pan-y', '0');
+      await expect(transformedLayer).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+      await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(initialSanityState);
+      expect(await rtt.getAttribute('data-rtt-resource-generation')).toBe(initialGeneration);
+      await expectSameCanvas(canvasHandle);
+      await expectContentfulRtt();
+    }
+
+    expect(pageErrors, `Uncaught page errors: ${pageErrors.join('\n')}`).toEqual([]);
+    expect(rendererWarnings, `React/Three.js/WebGL warnings: ${rendererWarnings.join('\n')}`).toEqual([]);
+  });
+
   test('Architecture Rise: off-center anchor, drag pan, zoom-out centering, and immediate re-zoom', async ({ page }) => {
     // allow a longer timeout for this interaction-heavy test to tolerate renderer scheduling in CI/local
     test.setTimeout(120_000);
