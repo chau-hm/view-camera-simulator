@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("expanded 3D Scene stays inside simulator main and preserves its canvas", async ({ page }) => {
+test("3D Scene expansion restores a contained 5:4 viewport without replacing its canvas", async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto("/simulator/free/architecture-rise");
 
@@ -11,29 +11,7 @@ test("expanded 3D Scene stays inside simulator main and preserves its canvas", a
   const originalCameraPosition = await sceneRenderer.getAttribute("data-observer-camera-position");
   const originalOrbitTarget = await sceneRenderer.getAttribute("data-orbit-target");
 
-  await page.getByRole("button", { name: "Expand 3D Scene" }).click();
-  await expect(page.getByRole("button", { name: "Restore 3D Scene" })).toBeFocused();
-  await expect(sceneRenderer).toHaveCount(1);
-  await expect(sceneRenderer.locator("canvas")).toHaveCount(1);
-  expect(
-    await page.evaluate(
-      (node) => node === document.querySelector('[data-testid="scene-canvas"]'),
-      originalRenderer,
-    ),
-  ).toBe(true);
-  await expect(sceneRenderer).toHaveAttribute(
-    "data-observer-camera-position",
-    originalCameraPosition ?? "",
-  );
-  await expect(sceneRenderer).toHaveAttribute("data-orbit-target", originalOrbitTarget ?? "");
-
-  await expect(page.getByLabel("GroundGlassColumn")).toHaveCount(0);
-  await expect(page.getByLabel("CurrentSettingsReadout")).toHaveCount(0);
-  await expect(page.getByLabel("FocusTargetsReadout")).toHaveCount(0);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "Camera Controls" })).toBeVisible();
-
-  const layout = await page.evaluate(() => {
+  const readExpandedLayout = () => page.evaluate(() => {
     const main = document.querySelector<HTMLElement>(".simulator-main");
     const aside = document.querySelector<HTMLElement>(".simulator-aside");
     const card = document.querySelector<HTMLElement>(".simulator-card--expanded");
@@ -52,27 +30,74 @@ test("expanded 3D Scene stays inside simulator main and preserves its canvas", a
     };
   });
 
-  expect(layout.card.left).toBeGreaterThanOrEqual(layout.main.left - 1);
-  expect(layout.card.right).toBeLessThanOrEqual(layout.main.right + 1);
-  expect(layout.card.right).toBeLessThan(layout.aside.left);
-  expect(layout.card.height).toBeGreaterThan(0);
-  expect(layout.renderer.width).toBeGreaterThan(0);
-  expect(layout.renderer.height).toBeGreaterThan(200);
-  expect(layout.mainOverflowY).toBe("hidden");
-  expect(layout.aside.overflowY).toBe("auto");
+  const readRestoredLayout = () => page.evaluate(() => {
+    const sceneCard = document.querySelector<HTMLElement>(".simulator-viewport-grid > .simulator-card:first-child");
+    const groundGlassCard = document.querySelector<HTMLElement>('[aria-label="GroundGlassColumn"]');
+    const renderer = document.querySelector<HTMLElement>('[data-testid="scene-canvas"]');
+    if (!sceneCard || !groundGlassCard || !renderer) throw new Error("Normal viewport layout is incomplete");
+    const sceneCardRect = sceneCard.getBoundingClientRect();
+    const groundGlassCardRect = groundGlassCard.getBoundingClientRect();
+    const rendererRect = renderer.getBoundingClientRect();
+    return {
+      sceneCard: { left: sceneCardRect.left, right: sceneCardRect.right, bottom: sceneCardRect.bottom },
+      groundGlassCard: { left: groundGlassCardRect.left, right: groundGlassCardRect.right },
+      renderer: {
+        left: rendererRect.left,
+        right: rendererRect.right,
+        bottom: rendererRect.bottom,
+        width: rendererRect.width,
+        height: rendererRect.height,
+      },
+    };
+  });
 
-  const rise = page.getByLabel("Rise");
-  const beforeRise = await rise.inputValue();
-  await rise.press("ArrowRight");
-  await expect(rise).not.toHaveValue(beforeRise);
+  for (let cycle = 0; cycle < 3; cycle += 1) {
+    await page.getByRole("button", { name: "Expand 3D Scene" }).click();
+    await expect(page.getByRole("button", { name: "Restore 3D Scene" })).toBeFocused();
+    await expect(sceneRenderer).toHaveCount(1);
+    await expect(sceneRenderer.locator("canvas")).toHaveCount(1);
+    expect(
+      await page.evaluate(
+        (node) => node === document.querySelector('[data-testid="scene-canvas"]'),
+        originalRenderer,
+      ),
+    ).toBe(true);
+    await expect(sceneRenderer).toHaveAttribute(
+      "data-observer-camera-position",
+      originalCameraPosition ?? "",
+    );
+    await expect(sceneRenderer).toHaveAttribute("data-orbit-target", originalOrbitTarget ?? "");
+    await expect(page.getByLabel("GroundGlassColumn")).toHaveCount(0);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Camera Controls" })).toBeVisible();
 
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("button", { name: "Expand 3D Scene" })).toBeFocused();
-  await expect(page.getByLabel("GroundGlassColumn")).toBeVisible();
-  expect(
-    await page.evaluate(
-      (node) => node === document.querySelector('[data-testid="scene-canvas"]'),
-      originalRenderer,
-    ),
-  ).toBe(true);
+    const expandedLayout = await readExpandedLayout();
+    expect(expandedLayout.card.left).toBeGreaterThanOrEqual(expandedLayout.main.left - 1);
+    expect(expandedLayout.card.right).toBeLessThanOrEqual(expandedLayout.main.right + 1);
+    expect(expandedLayout.card.right).toBeLessThan(expandedLayout.aside.left);
+    expect(expandedLayout.card.height).toBeGreaterThan(0);
+    expect(expandedLayout.renderer.width).toBeGreaterThan(0);
+    expect(expandedLayout.renderer.height).toBeGreaterThan(200);
+    expect(expandedLayout.mainOverflowY).toBe("hidden");
+    expect(expandedLayout.aside.overflowY).toBe("auto");
+
+    await page.getByRole("button", { name: "Restore 3D Scene" }).click();
+    await expect(page.getByRole("button", { name: "Expand 3D Scene" })).toBeFocused();
+    await expect(page.getByLabel("GroundGlassColumn")).toBeVisible();
+    await expect(page.getByRole("region", { name: "Camera Controls" })).toBeVisible();
+    expect(
+      await page.evaluate(
+        (node) => node === document.querySelector('[data-testid="scene-canvas"]'),
+        originalRenderer,
+      ),
+    ).toBe(true);
+
+    const restoredLayout = await readRestoredLayout();
+    expect(restoredLayout.renderer.width / restoredLayout.renderer.height).toBeCloseTo(5 / 4, 2);
+    expect(restoredLayout.renderer.left).toBeGreaterThanOrEqual(restoredLayout.sceneCard.left);
+    expect(restoredLayout.renderer.right).toBeLessThanOrEqual(restoredLayout.sceneCard.right);
+    expect(restoredLayout.renderer.bottom).toBeLessThanOrEqual(restoredLayout.sceneCard.bottom);
+    expect(restoredLayout.renderer.right).toBeLessThanOrEqual(restoredLayout.groundGlassCard.left);
+    expect(restoredLayout.sceneCard.right).toBeLessThanOrEqual(restoredLayout.groundGlassCard.left);
+  }
 });

@@ -190,7 +190,7 @@ export const SceneViewport = ({
         </div>
       </div>
       <div className={`scene-viewport-shell${expanded ? " scene-viewport-shell--expanded" : ""}`}>
-        <div className="scene-renderer-stage">
+        <div className={`scene-viewport-host${expanded ? " scene-viewport-host--expanded" : ""}`}>
           <SceneRenderer
             scene={scene}
             opticsState={opticsState}

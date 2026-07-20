@@ -174,15 +174,20 @@ describe("SimulatorWorkspace 3D Scene expansion", () => {
   });
 
   it("keeps one SceneRenderer mounted while the workspace hides and restores other main content", async () => {
-    render(workspace());
+    const { container } = render(workspace());
     const originalSceneRenderer = screen.getByTestId("scene-canvas");
     const expand = screen.getByRole("button", { name: "Expand 3D Scene" });
+    const normalHost = container.querySelector(".scene-viewport-host");
 
     expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
+    expect(normalHost).toBeInTheDocument();
+    expect(normalHost).not.toHaveClass("scene-viewport-host--expanded");
     fireEvent.click(expand);
 
     const restore = screen.getByRole("button", { name: "Restore 3D Scene" });
     await waitFor(() => expect(restore).toHaveFocus());
+    expect(container.querySelector(".scene-viewport-host")).toBe(normalHost);
+    expect(normalHost).toHaveClass("scene-viewport-host--expanded");
     expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
     expect(screen.getByTestId("scene-canvas")).toBe(originalSceneRenderer);
     expect(screen.queryByLabelText("GroundGlassColumn")).not.toBeInTheDocument();
@@ -201,9 +206,35 @@ describe("SimulatorWorkspace 3D Scene expansion", () => {
 
     fireEvent.click(restore);
     await waitFor(() => expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toHaveFocus());
+    expect(container.querySelector(".scene-viewport-host")).toBe(normalHost);
+    expect(normalHost).not.toHaveClass("scene-viewport-host--expanded");
     expect(screen.getByTestId("scene-canvas")).toBe(originalSceneRenderer);
     expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
     expect(screen.getByLabelText("CurrentSettingsReadout")).toBeInTheDocument();
+  });
+
+  it("removes every expanded sizing class after repeated restore cycles", async () => {
+    const { container } = render(workspace());
+    const host = container.querySelector(".scene-viewport-host");
+
+    for (let cycle = 0; cycle < 3; cycle += 1) {
+      fireEvent.click(screen.getByRole("button", { name: "Expand 3D Scene" }));
+      await waitFor(() => expect(screen.getByRole("button", { name: "Restore 3D Scene" })).toHaveFocus());
+      expect(host).toHaveClass("scene-viewport-host--expanded");
+      expect(container.querySelector(".scene-panel")).toHaveClass("scene-panel--expanded");
+      expect(container.querySelector(".scene-viewport-shell")).toHaveClass("scene-viewport-shell--expanded");
+
+      fireEvent.click(screen.getByRole("button", { name: "Restore 3D Scene" }));
+      await waitFor(() => expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toHaveFocus());
+      expect(host).not.toHaveClass("scene-viewport-host--expanded");
+      expect(container.querySelector(".scene-panel")).not.toHaveClass("scene-panel--expanded");
+      expect(container.querySelector(".scene-viewport-shell")).not.toHaveClass("scene-viewport-shell--expanded");
+      expect(container.querySelector(".simulator-main")).not.toHaveClass("simulator-main--viewport-expanded");
+      expect(container.querySelector(".simulator-viewport-grid")).not.toHaveClass("simulator-viewport-grid--expanded");
+      expect(container.querySelector(".simulator-card--expanded")).not.toBeInTheDocument();
+      expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
+      expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
+    }
   });
 
   it("restores normal layout with Escape without trapping focus in the 3D Scene", async () => {
