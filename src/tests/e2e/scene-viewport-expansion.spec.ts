@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-test("3D Scene expansion restores a contained 5:4 viewport without replacing its canvas", async ({ page }) => {
+test("simulator viewports expand in main without replacing their active canvases", async ({ page }) => {
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto("/simulator/free/architecture-rise");
 
@@ -11,11 +12,11 @@ test("3D Scene expansion restores a contained 5:4 viewport without replacing its
   const originalCameraPosition = await sceneRenderer.getAttribute("data-observer-camera-position");
   const originalOrbitTarget = await sceneRenderer.getAttribute("data-orbit-target");
 
-  const readExpandedLayout = () => page.evaluate(() => {
+  const readExpandedLayout = (activeViewportSelector: string) => page.evaluate((selector) => {
     const main = document.querySelector<HTMLElement>(".simulator-main");
     const aside = document.querySelector<HTMLElement>(".simulator-aside");
     const card = document.querySelector<HTMLElement>(".simulator-card--expanded");
-    const renderer = document.querySelector<HTMLElement>('[data-testid="scene-canvas"]');
+    const renderer = document.querySelector<HTMLElement>(selector);
     if (!main || !aside || !card || !renderer) throw new Error("Expanded layout is incomplete");
     const mainRect = main.getBoundingClientRect();
     const asideRect = aside.getBoundingClientRect();
@@ -28,7 +29,7 @@ test("3D Scene expansion restores a contained 5:4 viewport without replacing its
       renderer: { width: rendererRect.width, height: rendererRect.height },
       mainOverflowY: getComputedStyle(main).overflowY,
     };
-  });
+  }, activeViewportSelector);
 
   const readRestoredLayout = () => page.evaluate(() => {
     const sceneCard = document.querySelector<HTMLElement>(".simulator-viewport-grid > .simulator-card:first-child");
@@ -71,7 +72,7 @@ test("3D Scene expansion restores a contained 5:4 viewport without replacing its
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Camera Controls" })).toBeVisible();
 
-    const expandedLayout = await readExpandedLayout();
+    const expandedLayout = await readExpandedLayout('[data-testid="scene-canvas"]');
     expect(expandedLayout.card.left).toBeGreaterThanOrEqual(expandedLayout.main.left - 1);
     expect(expandedLayout.card.right).toBeLessThanOrEqual(expandedLayout.main.right + 1);
     expect(expandedLayout.card.right).toBeLessThan(expandedLayout.aside.left);
@@ -100,4 +101,70 @@ test("3D Scene expansion restores a contained 5:4 viewport without replacing its
     expect(restoredLayout.renderer.right).toBeLessThanOrEqual(restoredLayout.groundGlassCard.left);
     expect(restoredLayout.sceneCard.right).toBeLessThanOrEqual(restoredLayout.groundGlassCard.left);
   }
+
+  const groundGlassRenderer = page.getByTestId("ground-glass-rtt");
+  await expect(groundGlassRenderer.locator("canvas")).toHaveCount(1);
+  await expect(groundGlassRenderer).toHaveAttribute("data-rtt-resource-generation", /\d+/);
+  const originalGroundGlassRenderer = await groundGlassRenderer.elementHandle();
+  const originalGroundGlassCanvas = await groundGlassRenderer.locator("canvas").elementHandle();
+  const originalResourceGeneration = await groundGlassRenderer.getAttribute("data-rtt-resource-generation");
+  expect(originalGroundGlassRenderer).toBeTruthy();
+  expect(originalGroundGlassCanvas).toBeTruthy();
+
+  await page.getByRole("button", { name: "Expand Ground Glass" }).click();
+  await expect(page.getByRole("button", { name: "Restore Ground Glass" })).toBeFocused();
+  await expect(page.getByTestId("scene-canvas")).toHaveCount(0);
+  await expect(groundGlassRenderer).toHaveCount(1);
+  await expect(groundGlassRenderer.locator("canvas")).toHaveCount(1);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Camera Controls" })).toBeVisible();
+  expect(
+    await page.evaluate(
+      (node) => node === document.querySelector('[data-testid="ground-glass-rtt"]'),
+      originalGroundGlassRenderer,
+    ),
+  ).toBe(true);
+  expect(
+    await page.evaluate(
+      (node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'),
+      originalGroundGlassCanvas,
+    ),
+  ).toBe(true);
+  await expect(groundGlassRenderer).toHaveAttribute(
+    "data-rtt-resource-generation",
+    originalResourceGeneration ?? "",
+  );
+
+  const groundGlassLayout = await readExpandedLayout(".groundglass-renderer-host--expanded");
+  expect(groundGlassLayout.card.left).toBeGreaterThanOrEqual(groundGlassLayout.main.left - 1);
+  expect(groundGlassLayout.card.right).toBeLessThanOrEqual(groundGlassLayout.main.right + 1);
+  expect(groundGlassLayout.card.right).toBeLessThan(groundGlassLayout.aside.left);
+  expect(groundGlassLayout.renderer.width).toBeGreaterThan(0);
+  expect(groundGlassLayout.renderer.height).toBeGreaterThan(0);
+  expect(groundGlassLayout.renderer.width / groundGlassLayout.renderer.height).toBeCloseTo(5 / 4, 2);
+  expect(groundGlassLayout.mainOverflowY).toBe("hidden");
+  expect(groundGlassLayout.aside.overflowY).toBe("auto");
+
+  const tilt = page.getByLabel("Tilt");
+  const tiltBefore = await tilt.inputValue();
+  await tilt.press("ArrowRight");
+  await expect(tilt).not.toHaveValue(tiltBefore);
+
+  await page.getByRole("button", { name: "Restore Ground Glass" }).click();
+  await expect(page.getByRole("button", { name: "Expand Ground Glass" })).toBeFocused();
+  await expect(page.getByTestId("scene-canvas")).toHaveCount(1);
+  await expect(page.getByLabel("GroundGlassColumn")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Camera Controls" })).toBeVisible();
+  expect(
+    await page.evaluate(
+      (node) => node === document.querySelector('[data-testid="ground-glass-rtt"]'),
+      originalGroundGlassRenderer,
+    ),
+  ).toBe(true);
+  expect(
+    await page.evaluate(
+      (node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'),
+      originalGroundGlassCanvas,
+    ),
+  ).toBe(true);
 });

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { ViewOptions } from "../controls/ViewOptions";
 import { UI_COPY } from "../../ui/copy";
@@ -29,6 +29,10 @@ type GroundGlassViewportProps = {
   focusMetric?: "point" | "patch";
   showHeader?: boolean;
   interactionResetKey?: string;
+  expanded: boolean;
+  restoreFocusOnCollapse: boolean;
+  onRequestExpand: () => void;
+  onRequestRestore: () => void;
 };
 
 export const GroundGlassViewport = ({
@@ -49,6 +53,10 @@ export const GroundGlassViewport = ({
   focusMetric,
   showHeader,
   interactionResetKey,
+  expanded,
+  restoreFocusOnCollapse,
+  onRequestExpand,
+  onRequestRestore,
 }: GroundGlassViewportProps) => {
   // Preview mode control local to the Ground Glass panel. Default to camera state
   const groundGlassAssistEnabled = useAppStore((s) => s.camera.groundGlassAssistEnabled);
@@ -56,12 +64,30 @@ export const GroundGlassViewport = ({
   const [previewMode, setPreviewMode] = useState<"raw" | "upright">(groundGlassAssistEnabled ? "upright" : "raw");
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
+  const expandTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const restoreTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const previouslyExpandedRef = useRef(expanded);
   const handleZoomChange = useCallback((nextZoomed: boolean) => {
     setZoomEnabled(nextZoomed);
   }, []);
 
+  useEffect(() => {
+    const wasExpanded = previouslyExpandedRef.current;
+    previouslyExpandedRef.current = expanded;
+    if (!expanded && !wasExpanded) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      if (expanded) {
+        restoreTriggerRef.current?.focus();
+      } else if (restoreFocusOnCollapse) {
+        expandTriggerRef.current?.focus();
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [expanded, restoreFocusOnCollapse]);
+
   return (
-    <section className="groundglass-panel">
+    <section className={`groundglass-panel${expanded ? " simulator-viewport-panel--expanded groundglass-panel--expanded" : ""}`}>
       {showHeader !== false && <h2 className="simulator-card-title">{UI_COPY.simulator.groundGlassTitle}</h2>}
 
       <div className="groundglass-controls">
@@ -109,26 +135,52 @@ export const GroundGlassViewport = ({
         </div>
       </div>
 
-      <div className="groundglass-viewport-frame" aria-label="GroundGlassViewport">
-        <GroundGlassRenderer
-          opticsState={opticsState}
-          assistEnabled={opticsState.groundGlassProjection.assistModeEnabled}
-          focusAssistEnabled={focusAssistEnabled}
-          gridEnabled={gridEnabled}
-          riseMm={riseMm}
-          tiltDeg={tiltDeg}
-          swingDeg={swingDeg}
-          focusDistanceMm={focusDistanceMm}
-          aperture={aperture}
-          renderQuality={renderQuality}
-          sceneId={sceneId}
-          previewMode={previewMode}
-          rawDebug={rawRttDebug}
-          focusMetric={focusMetric}
-          zoomEnabled={zoomEnabled}
-          onZoomChange={handleZoomChange}
-          interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}`}
-        />
+      <div
+        className={`groundglass-viewport-frame${expanded ? " groundglass-viewport-frame--expanded" : ""}`}
+        aria-label="GroundGlassViewport"
+        onKeyDownCapture={(event) => {
+          if (expanded && event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            onRequestRestore();
+          }
+        }}
+      >
+        <div className={`groundglass-renderer-host${expanded ? " groundglass-renderer-host--expanded" : ""}`}>
+          {/* Expanded presentation intentionally keeps the existing logical RTT size; container-aware RTT sizing is a renderer-focused follow-up. */}
+          <GroundGlassRenderer
+            opticsState={opticsState}
+            assistEnabled={opticsState.groundGlassProjection.assistModeEnabled}
+            focusAssistEnabled={focusAssistEnabled}
+            gridEnabled={gridEnabled}
+            riseMm={riseMm}
+            tiltDeg={tiltDeg}
+            swingDeg={swingDeg}
+            focusDistanceMm={focusDistanceMm}
+            aperture={aperture}
+            renderQuality={renderQuality}
+            sceneId={sceneId}
+            previewMode={previewMode}
+            rawDebug={rawRttDebug}
+            focusMetric={focusMetric}
+            zoomEnabled={zoomEnabled}
+            onZoomChange={handleZoomChange}
+            interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}`}
+          />
+        </div>
+
+        <button
+          ref={expanded ? restoreTriggerRef : expandTriggerRef}
+          type="button"
+          aria-label={expanded ? "Restore Ground Glass" : "Expand Ground Glass"}
+          title={expanded ? "Restore Ground Glass" : "Expand Ground Glass"}
+          className="btn btn--icon btn--viewport-action"
+          onClick={expanded ? onRequestRestore : onRequestExpand}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">
+            {expanded ? "close_fullscreen" : "open_in_new"}
+          </span>
+        </button>
       </div>
     </section>
   );

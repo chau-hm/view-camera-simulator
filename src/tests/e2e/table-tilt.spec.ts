@@ -181,7 +181,7 @@ test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource s
   await page.goto("/simulator/free/table-tilt");
   const viewport = page.getByLabel("GroundGlassViewport");
   const rtt = viewport.getByTestId("ground-glass-rtt");
-  const stage = viewport.getByRole("button", { name: /Ground Glass$/ });
+  const stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
   const assertLiveCanvas = async () => {
     const canvas = rtt.locator("canvas");
     await expect(canvas).toBeVisible();
@@ -602,7 +602,7 @@ const groundGlassLocators = (page: import("@playwright/test").Page) => {
   const viewport = page.getByLabel("GroundGlassViewport");
   return {
     viewport,
-    stage: viewport.getByRole("button", { name: /Ground Glass$/ }),
+    stage: viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ }),
     transformedLayer: viewport.locator(".groundglass-stage"),
   };
 };
@@ -799,19 +799,19 @@ test("Ground Glass zoom state resets across free/guided and scene navigation", a
   test.setTimeout(60_000);
   await page.goto("/simulator/free/table-tilt");
   let viewport = page.getByLabel("GroundGlassViewport");
-  let stage = viewport.getByRole("button", { name: /Ground Glass$/ });
+  let stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
   await stage.click({ position: { x: 90, y: 80 } });
   await expect(stage).toHaveAttribute("data-zoomed", "true");
 
   await page.goto("/simulator/guided/table-tilt/tilt-01");
   viewport = page.getByLabel("GroundGlassViewport");
-  stage = viewport.getByRole("button", { name: /Ground Glass$/ });
+  stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
   await expect(stage).toHaveAttribute("data-zoomed", "false");
   await expect(stage).toHaveAttribute("data-pan-x", "0");
 
   await page.goto("/simulator/free/architecture-rise");
   viewport = page.getByLabel("GroundGlassViewport");
-  stage = viewport.getByRole("button", { name: /Ground Glass$/ });
+  stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
   await expect(stage).toHaveAttribute("data-zoomed", "false");
   await expect(stage).toHaveAttribute("data-pan-y", "0");
   await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();

@@ -166,7 +166,7 @@ describe("SimulatorWorkspace geometry dialog accessibility", () => {
   });
 });
 
-describe("SimulatorWorkspace 3D Scene expansion", () => {
+describe("SimulatorWorkspace viewport expansion", () => {
   afterEach(() => {
     cleanup();
     useAppStore.getState().resetCamera();
@@ -267,5 +267,89 @@ describe("SimulatorWorkspace 3D Scene expansion", () => {
     view.rerender(workspaceRoute("guided", "table-tilt", "tilt-01"));
     await waitFor(() => expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toBeInTheDocument());
     expect(screen.getByLabelText("Task")).toBeInTheDocument();
+  });
+
+  it("keeps one Ground Glass renderer and its interaction state through expansion", async () => {
+    render(workspace());
+    const originalGroundGlassRenderer = screen.getByTestId("ground-glass-rtt");
+
+    expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
+    expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
+    fireEvent.click(screen.getByLabelText("Upright Assist"));
+    fireEvent.click(screen.getByRole("button", { name: "Zoom in Ground Glass view" }));
+    expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toHaveAttribute("data-zoomed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand Ground Glass" }));
+
+    const restore = screen.getByRole("button", { name: "Restore Ground Glass" });
+    await waitFor(() => expect(restore).toHaveFocus());
+    expect(screen.queryByTestId("scene-canvas")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Expand 3D Scene" })).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
+    expect(screen.getByTestId("ground-glass-rtt")).toBe(originalGroundGlassRenderer);
+    expect(screen.getByLabelText("Upright Assist")).toBeChecked();
+    expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toHaveAttribute("data-zoomed", "true");
+    expect(screen.queryByLabelText("CurrentSettingsReadout")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("FocusTargetsReadout")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Task")).not.toBeInTheDocument();
+    expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    const controls = screen.getByRole("region", { name: "Camera Controls" });
+    const swing = screen.getByLabelText("Swing");
+    expect(controls).toContainElement(swing);
+    expect(swing).toBeEnabled();
+    fireEvent.change(swing, { target: { value: "2" } });
+    expect(useAppStore.getState().camera.frontSwingDeg).toBe(2);
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "Zoom out Ground Glass" }), { key: "Escape" });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand Ground Glass" })).toHaveFocus());
+    expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
+    expect(screen.getByTestId("ground-glass-rtt")).toBe(originalGroundGlassRenderer);
+    expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
+    expect(screen.getByLabelText("CurrentSettingsReadout")).toBeInTheDocument();
+    expect(screen.getByLabelText("Upright Assist")).toBeChecked();
+    expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toHaveAttribute("data-zoomed", "true");
+  });
+
+  it("restores Ground Glass expansion with Escape and on route identity changes", async () => {
+    const view = render(workspaceRoute("guided", "shelf-swing", "swing-01"));
+    fireEvent.click(screen.getByRole("button", { name: "Expand Ground Glass" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Restore Ground Glass" })).toHaveFocus());
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand Ground Glass" })).toHaveFocus());
+    expect(screen.getByTestId("scene-canvas")).toBeInTheDocument();
+    expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand Ground Glass" }));
+    view.rerender(workspaceRoute("guided", "table-tilt", "tilt-01"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand Ground Glass" })).toBeInTheDocument());
+    expect(screen.getByTestId("scene-canvas")).toBeInTheDocument();
+    expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
+  });
+
+  it("lets nested expanded-view UI finish its own Escape cleanup", async () => {
+    render(workspace());
+    fireEvent.click(screen.getByRole("button", { name: "Expand Ground Glass" }));
+    fireEvent.click(screen.getByRole("button", { name: "Help" }));
+    const closeHelp = screen.getByRole("button", { name: "Close help" });
+    expect(closeHelp).toHaveFocus();
+
+    fireEvent.keyDown(closeHelp, { key: "Escape" });
+
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Movement help" })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Help" })).toHaveFocus());
+    expect(screen.getByRole("button", { name: "Expand Ground Glass" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand 3D Scene" }));
+    const overlayMenu = screen.getByRole("button", { name: "View overlays" });
+    fireEvent.click(overlayMenu);
+    expect(overlayMenu).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.keyDown(overlayMenu, { key: "Escape" });
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "View overlays" })).toHaveAttribute("aria-expanded", "false");
   });
 });

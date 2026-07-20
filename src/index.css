@@ -188,6 +188,12 @@ button {
   overflow: hidden;
 }
 
+.simulator-viewport-panel--expanded {
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
 /* Scene panel vertical rhythm */
 .scene-panel {
   min-width: 0;
@@ -195,8 +201,6 @@ button {
   gap: var(--sim-panel-section-gap);
 }
 .scene-panel--expanded {
-  height: 100%;
-  min-height: 0;
   grid-template-rows: auto auto minmax(0, 1fr);
 }
 .scene-panel__controls { display: block; }
@@ -310,8 +314,13 @@ button {
 
 /* Ground glass compact control bar (updated to row-based layout) */
 .groundglass-panel {
+  min-width: 0;
   display: grid;
   gap: var(--sim-panel-section-gap);
+}
+
+.groundglass-panel--expanded {
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .groundglass-controls {
@@ -345,7 +354,23 @@ button {
   gap: var(--sim-control-gap);
 }
 
-.groundglass-viewport-frame { min-width: 0; }
+.groundglass-viewport-frame {
+  position: relative;
+  min-width: 0;
+}
+.groundglass-viewport-frame--expanded {
+  min-height: 0;
+  overflow: hidden;
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+.groundglass-renderer-host { width: 100%; min-width: 0; }
+.groundglass-renderer-host--expanded {
+  width: min(100%, 125cqh);
+  max-width: 100%;
+  max-height: 100%;
+}
 .groundglass-view-control { max-width: 104px; }
 .groundglass-focus-label {
   max-width: calc(100% - 128px);

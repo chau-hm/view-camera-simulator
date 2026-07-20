@@ -20,6 +20,7 @@ type SceneViewportProps = {
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
   simulateAssetFailure: boolean;
   expanded: boolean;
+  restoreFocusOnCollapse: boolean;
   onRequestExpand: () => void;
   onRequestRestore: () => void;
   onToggleGeometryPanel?: (trigger: HTMLButtonElement) => void;
@@ -40,6 +41,7 @@ export const SceneViewport = ({
   setRenderQuality,
   simulateAssetFailure,
   expanded,
+  restoreFocusOnCollapse,
   onRequestExpand,
   onRequestRestore,
   onToggleGeometryPanel,
@@ -99,12 +101,12 @@ export const SceneViewport = ({
     const frame = window.requestAnimationFrame(() => {
       if (expanded) {
         restoreTriggerRef.current?.focus();
-      } else {
+      } else if (restoreFocusOnCollapse) {
         expandTriggerRef.current?.focus();
       }
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [expanded]);
+  }, [expanded, restoreFocusOnCollapse]);
 
   if (!webglAvailable) {
     return (
@@ -135,7 +137,7 @@ export const SceneViewport = ({
   }
 
   return (
-    <section className={`scene-panel${expanded ? " scene-panel--expanded" : ""}`}>
+    <section className={`scene-panel${expanded ? " simulator-viewport-panel--expanded scene-panel--expanded" : ""}`}>
       {showHeader !== false && <h2>{UI_COPY.simulator.sceneTitle}</h2>}
 
       <div className="scene-status-row">

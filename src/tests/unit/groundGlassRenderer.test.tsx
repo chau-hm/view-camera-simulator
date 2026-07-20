@@ -56,6 +56,10 @@ describe("GroundGlassRenderer", () => {
         aperture={11}
         renderQuality="low"
         sceneId={architectureRiseScene.id}
+        expanded={false}
+        restoreFocusOnCollapse={true}
+        onRequestExpand={() => undefined}
+        onRequestRestore={() => undefined}
       />,
     );
 

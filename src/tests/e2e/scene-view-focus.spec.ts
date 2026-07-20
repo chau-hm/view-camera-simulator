@@ -108,7 +108,7 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   }
   const afterMovements = await readStableViewState(sceneCanvas);
 
-  const sceneButton = page.getByRole("button", { name: "Scene" });
+  const sceneButton = page.getByRole("button", { name: "Scene", exact: true });
   await sceneButton.focus();
   await page.keyboard.press("Space");
   await expect(sceneButton).toHaveAttribute("aria-pressed", "true");
@@ -210,7 +210,7 @@ test("SPA scene switching discards the previous Camera target and returns to Sce
   await page.getByRole("link", { name: "All Scenes" }).click();
   await openScene("Table Tilt");
   const tableCanvas = page.getByTestId("scene-canvas");
-  await expect(page.getByRole("button", { name: "Scene" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Scene", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(tableCanvas).toHaveAttribute("data-view-focus", "scene");
   await expect(tableCanvas).toHaveAttribute("data-optical-geometry-visible", "true");
   expect((await readStableViewState(tableCanvas)).target).not.toEqual(architectureCameraTarget);

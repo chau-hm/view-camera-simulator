@@ -45,6 +45,7 @@ export const SimulatorWorkspace = ({
   const camera = useAppStore((state) => state.camera);
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
   const [expandedViewport, setExpandedViewport] = useState<ExpandedViewport>(null);
+  const [restoreViewportFocus, setRestoreViewportFocus] = useState(true);
   const [showGeometryPanel, setShowGeometryPanel] = useState(false);
   const [geometryDialogStyle, setGeometryDialogStyle] = useState<CSSProperties | undefined>();
   const geometryTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -141,12 +142,24 @@ export const SimulatorWorkspace = ({
     setExpandedViewport(null);
   }, [mode, sceneId, taskId]);
 
+  const requestViewportExpansion = useCallback((viewport: Exclude<ExpandedViewport, null>) => {
+    setRestoreViewportFocus(true);
+    setExpandedViewport(viewport);
+  }, []);
+
+  const requestViewportRestore = useCallback(() => {
+    setRestoreViewportFocus(true);
+    setExpandedViewport(null);
+  }, []);
+
   useEffect(() => {
     if (expandedViewport === null || showGeometryPanel) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
+        const eventTarget = event.target instanceof Element ? event.target : document.activeElement;
+        setRestoreViewportFocus(!eventTarget?.closest('[role="dialog"]'));
         setExpandedViewport(null);
       }
     };
@@ -208,6 +221,8 @@ export const SimulatorWorkspace = ({
 
   const setInfinityFocus = useAppStore((state) => state.setInfinityFocus);
   const sceneExpanded = expandedViewport === "scene";
+  const groundGlassExpanded = expandedViewport === "groundGlass";
+  const viewportExpanded = expandedViewport !== null;
 
   if (!scene) {
     return (
@@ -231,13 +246,13 @@ export const SimulatorWorkspace = ({
       {/* Body: main (scrollable) + aside (scrollable) */}
       <div role="region" aria-label="Simulator body" className={`simulator-body${showGeometryPanel ? " simulator-body--modal-open" : ""}`}>
         {/* Main area: single scroll container for 3D Scene + Ground Glass */}
-        <main className={`simulator-main${sceneExpanded ? " simulator-main--viewport-expanded" : ""}`}>
-          {!sceneExpanded && opticsState.diagnostics.fallbackApplied && (
+        <main className={`simulator-main${viewportExpanded ? " simulator-main--viewport-expanded" : ""}`}>
+          {!viewportExpanded && opticsState.diagnostics.fallbackApplied && (
             <p role="alert">{UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}</p>
           )}
 
-          <div className={`simulator-viewport-grid${sceneExpanded ? " simulator-viewport-grid--expanded" : ""}`}>
-            <div className={`simulator-card${sceneExpanded ? " simulator-card--expanded" : ""}`}>
+          <div className={`simulator-viewport-grid${viewportExpanded ? " simulator-viewport-grid--expanded" : ""}`}>
+            {!groundGlassExpanded && <div className={`simulator-card${sceneExpanded ? " simulator-card--expanded" : ""}`}>
               <div className="simulator-card-header">
                 <div className="panel-icon" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
@@ -252,8 +267,9 @@ export const SimulatorWorkspace = ({
                 setRenderQuality={setRenderQuality}
                 simulateAssetFailure={simulateAssetFailure}
                 expanded={sceneExpanded}
-                onRequestExpand={() => setExpandedViewport("scene")}
-                onRequestRestore={() => setExpandedViewport(null)}
+                restoreFocusOnCollapse={restoreViewportFocus}
+                onRequestExpand={() => requestViewportExpansion("scene")}
+                onRequestRestore={requestViewportRestore}
                 onToggleGeometryPanel={(trigger) => {
                   geometryTriggerRef.current = trigger;
                   const viewportWidth = typeof window === "undefined" ? 1024 : window.innerWidth;
@@ -272,9 +288,9 @@ export const SimulatorWorkspace = ({
                 }}
                 showHeader={false}
               />
-            </div>
+            </div>}
 
-            {!sceneExpanded && <div className="simulator-card" aria-label="GroundGlassColumn">
+            {!sceneExpanded && <div className={`simulator-card${groundGlassExpanded ? " simulator-card--expanded" : ""}`} aria-label="GroundGlassColumn">
               <div className="simulator-card-header">
                 <div className="panel-icon panel-icon--muted" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
@@ -301,11 +317,15 @@ export const SimulatorWorkspace = ({
                 focusMetric={tableTiltFocusMetric}
                 showHeader={false}
                 interactionResetKey={`${mode}:${sceneId}:${taskId ?? "free"}`}
+                expanded={groundGlassExpanded}
+                restoreFocusOnCollapse={restoreViewportFocus}
+                onRequestExpand={() => requestViewportExpansion("groundGlass")}
+                onRequestRestore={requestViewportRestore}
               />
             </div>}
           </div>
 
-          {!sceneExpanded && <>
+          {!viewportExpanded && <>
             {/* Row 1: Current Settings | Focus Targets */}
             <div className="simulator-primary-info-grid">
             <CurrentSettingsReadout

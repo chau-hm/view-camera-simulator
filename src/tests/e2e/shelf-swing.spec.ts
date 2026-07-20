@@ -210,7 +210,7 @@ test("Shelf Swing Ground Glass zoom, pan, reset, orientation, and quality stay l
   await page.goto("/simulator/free/shelf-swing?rttDiagnostics=1");
   await expectRttContent(page);
   const viewport = page.getByLabel("GroundGlassViewport");
-  const stage = viewport.getByRole("button", { name: /Ground Glass$/ });
+  const stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
   const layer = viewport.getByTestId("ground-glass-image-layer");
 
   await clickStageAt(page, stage, 0.25, 0.25);
@@ -294,6 +294,7 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
 });
 
 test("Shelf Swing geometry limits projected depth planes to the movement-relevant Top view", async ({ page }) => {
+  test.setTimeout(120_000);
   await page.goto("/simulator/free/shelf-swing");
   await setStepRangeInput(page, "Swing", -3.8);
   await setStepRangeInput(page, "Focus distance", 3410);

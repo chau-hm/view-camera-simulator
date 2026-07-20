@@ -23,7 +23,7 @@ test.describe('Ground Glass interaction', () => {
 
     await page.goto('/simulator/free/architecture-rise?rttDiagnostics=1');
     const viewport = page.getByLabel('GroundGlassViewport');
-    const stage = viewport.getByRole('button', { name: /Ground Glass$/ });
+    const stage = viewport.getByRole('button', { name: /^Zoom (?:in|out) Ground Glass$/ });
     const rtt = viewport.getByTestId('ground-glass-rtt');
     const canvas = rtt.locator('canvas');
     const transformedLayer = viewport.locator('.groundglass-stage');
@@ -129,7 +129,7 @@ test.describe('Ground Glass interaction', () => {
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
 
-    const stage = viewport.getByRole('button', { name: /Ground Glass$/ });
+    const stage = viewport.getByRole('button', { name: /^Zoom (?:in|out) Ground Glass$/ });
     await expect(stage).toBeVisible();
 
     const transformedLayer = transformedLayerFor(viewport);
@@ -237,7 +237,7 @@ test.describe('Ground Glass interaction', () => {
     await page.goto('/simulator/free/focus-fundamentals-two-targets');
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
-    const stage = viewport.getByRole('button', { name: /Ground Glass$/ });
+    const stage = viewport.getByRole('button', { name: /^Zoom (?:in|out) Ground Glass$/ });
     await expect(stage).toBeVisible();
 
     const transformedLayer = transformedLayerFor(viewport);
