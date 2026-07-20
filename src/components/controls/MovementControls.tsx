@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { selectMovementControlState } from "../../state/selectors";
 import { UI_COPY } from "../../ui/copy";
@@ -28,10 +28,22 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
     if (helpOpen) closeButtonRef.current?.focus();
   }, [helpOpen]);
 
-  const closeHelp = () => {
+  const closeHelp = useCallback(() => {
     setHelpOpen(false);
     requestAnimationFrame(() => helpButtonRef.current?.focus());
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!helpOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeHelp();
+    };
+    document.addEventListener("keydown", handleEscape, true);
+    return () => document.removeEventListener("keydown", handleEscape, true);
+  }, [helpOpen, closeHelp]);
 
   return (
     <section aria-label={UI_COPY.controls.movementTitle}>
@@ -44,12 +56,6 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
           role="dialog"
           aria-modal="true"
           aria-labelledby="movement-help-title"
-          onKeyDown={(event) => {
-            if (event.key !== "Escape") return;
-            event.preventDefault();
-            event.stopPropagation();
-            closeHelp();
-          }}
         >
           <h4 id="movement-help-title" style={{ marginTop: 0 }}>{UI_COPY.controls.helpTitle}</h4>
           <p>{UI_COPY.controls.helpRise}</p>

@@ -354,8 +354,11 @@ describe("SimulatorWorkspace viewport expansion", () => {
     fireEvent.click(screen.getByRole("button", { name: "Help" }));
     const closeHelp = screen.getByRole("button", { name: "Close help" });
     expect(closeHelp).toHaveFocus();
+    const swing = screen.getByLabelText("Swing");
+    swing.focus();
+    expect(swing).toHaveFocus();
 
-    fireEvent.keyDown(closeHelp, { key: "Escape" });
+    fireEvent.keyDown(swing, { key: "Escape" });
 
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Movement help" })).not.toBeInTheDocument());
     await waitFor(() => expect(screen.getByRole("button", { name: "Help" })).toHaveFocus());

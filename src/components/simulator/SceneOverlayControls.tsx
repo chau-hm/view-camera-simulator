@@ -87,6 +87,7 @@ const OverlayChoices = ({
 
 export const SceneOverlayControls = (props: SceneOverlayControlsProps) => {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [presentation, setPresentation] = useState<SceneOverlayPresentation>("collapsed");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
@@ -137,6 +138,7 @@ export const SceneOverlayControls = (props: SceneOverlayControlsProps) => {
         event.preventDefault();
         event.stopPropagation();
         setMenuOpen(false);
+        requestAnimationFrame(() => triggerRef.current?.focus());
       }}
     >
       {presentation === "inline" ? (
@@ -144,6 +146,7 @@ export const SceneOverlayControls = (props: SceneOverlayControlsProps) => {
       ) : (
         <div className="scene-overlay-menu">
           <button
+            ref={triggerRef}
             id={triggerId}
             type="button"
             className="scene-overlay-menu__trigger btn btn--compact"

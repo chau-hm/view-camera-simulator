@@ -106,8 +106,11 @@ test("simulator viewports expand in main without replacing their active canvases
   const overlayMenu = page.getByRole("button", { name: "View overlays" });
   await overlayMenu.click();
   await expect(overlayMenu).toHaveAttribute("aria-expanded", "true");
+  const overlayChoice = page.getByRole("button", { name: "Hide Focus plane" });
+  await overlayChoice.focus();
   await page.keyboard.press("Escape");
   await expect(overlayMenu).toHaveAttribute("aria-expanded", "false");
+  await expect(overlayMenu).toBeFocused();
   await expect(page.getByRole("button", { name: "Restore 3D Scene" })).toBeVisible();
   await expect(sceneRenderer).toHaveCount(1);
   await expect(sceneRenderer.locator("canvas")).toHaveCount(1);
@@ -124,6 +127,7 @@ test("simulator viewports expand in main without replacing their active canvases
   await page.getByRole("button", { name: "Help" }).click();
   await expect(page.getByRole("dialog", { name: "Movement help" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Close help" })).toBeFocused();
+  await page.getByLabel("Tilt").focus();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog", { name: "Movement help" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Help" })).toBeFocused();
