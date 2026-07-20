@@ -30,6 +30,8 @@ type SimulatorWorkspaceProps = {
   simulateAssetFailure: boolean;
 };
 
+export type ExpandedViewport = "scene" | "groundGlass" | null;
+
 export const SimulatorWorkspace = ({
   mode,
   sceneId,
@@ -42,6 +44,7 @@ export const SimulatorWorkspace = ({
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
+  const [expandedViewport, setExpandedViewport] = useState<ExpandedViewport>(null);
   const [showGeometryPanel, setShowGeometryPanel] = useState(false);
   const [geometryDialogStyle, setGeometryDialogStyle] = useState<CSSProperties | undefined>();
   const geometryTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -134,6 +137,23 @@ export const SimulatorWorkspace = ({
     setGeometryDialogStyle(undefined);
   }, [mode, sceneId, taskId]);
 
+  useEffect(() => {
+    setExpandedViewport(null);
+  }, [mode, sceneId, taskId]);
+
+  useEffect(() => {
+    if (expandedViewport === null || showGeometryPanel) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setExpandedViewport(null);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [expandedViewport, showGeometryPanel]);
+
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
 
@@ -187,6 +207,7 @@ export const SimulatorWorkspace = ({
   }, [mode, opticsState.focusTargets, safeScene.id]);
 
   const setInfinityFocus = useAppStore((state) => state.setInfinityFocus);
+  const sceneExpanded = expandedViewport === "scene";
 
   if (!scene) {
     return (
@@ -210,13 +231,13 @@ export const SimulatorWorkspace = ({
       {/* Body: main (scrollable) + aside (scrollable) */}
       <div role="region" aria-label="Simulator body" className={`simulator-body${showGeometryPanel ? " simulator-body--modal-open" : ""}`}>
         {/* Main area: single scroll container for 3D Scene + Ground Glass */}
-        <main className="simulator-main">
-          {opticsState.diagnostics.fallbackApplied && (
+        <main className={`simulator-main${sceneExpanded ? " simulator-main--viewport-expanded" : ""}`}>
+          {!sceneExpanded && opticsState.diagnostics.fallbackApplied && (
             <p role="alert">{UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}</p>
           )}
 
-          <div className="simulator-viewport-grid">
-            <div className="simulator-card">
+          <div className={`simulator-viewport-grid${sceneExpanded ? " simulator-viewport-grid--expanded" : ""}`}>
+            <div className={`simulator-card${sceneExpanded ? " simulator-card--expanded" : ""}`}>
               <div className="simulator-card-header">
                 <div className="panel-icon" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
@@ -230,6 +251,9 @@ export const SimulatorWorkspace = ({
                 renderQuality={renderQuality}
                 setRenderQuality={setRenderQuality}
                 simulateAssetFailure={simulateAssetFailure}
+                expanded={sceneExpanded}
+                onRequestExpand={() => setExpandedViewport("scene")}
+                onRequestRestore={() => setExpandedViewport(null)}
                 onToggleGeometryPanel={(trigger) => {
                   geometryTriggerRef.current = trigger;
                   const viewportWidth = typeof window === "undefined" ? 1024 : window.innerWidth;
@@ -250,7 +274,7 @@ export const SimulatorWorkspace = ({
               />
             </div>
 
-            <div className="simulator-card" aria-label="GroundGlassColumn">
+            {!sceneExpanded && <div className="simulator-card" aria-label="GroundGlassColumn">
               <div className="simulator-card-header">
                 <div className="panel-icon panel-icon--muted" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
@@ -278,11 +302,12 @@ export const SimulatorWorkspace = ({
                 showHeader={false}
                 interactionResetKey={`${mode}:${sceneId}:${taskId ?? "free"}`}
               />
-            </div>
+            </div>}
           </div>
 
-          {/* Row 1: Current Settings | Focus Targets */}
-          <div className="simulator-primary-info-grid">
+          {!sceneExpanded && <>
+            {/* Row 1: Current Settings | Focus Targets */}
+            <div className="simulator-primary-info-grid">
             <CurrentSettingsReadout
               riseMm={camera.frontRiseMm}
               tiltDeg={camera.frontTiltDeg}
@@ -297,10 +322,10 @@ export const SimulatorWorkspace = ({
               metricLabel={tableTiltFocusMetric === "point" ? "Point focus" : safeScene.id === "table-tilt" ? "Patch coverage" : "Focus"}
               closestTargetId={closestPointTargetId}
             />
-          </div>
+            </div>
 
-          {/* Row 2: Task | Feedback (each wrapped in a card shell provided by Workspace) */}
-          <div className="simulator-task-feedback-grid">
+            {/* Row 2: Task | Feedback (each wrapped in a card shell provided by Workspace) */}
+            <div className="simulator-task-feedback-grid">
             <div className="simulator-info-card simulator-info-card--task">
               <h4>Task</h4>
               <TaskPanel task={task} sceneId={safeScene.id} showTitle={false} />
@@ -309,10 +334,10 @@ export const SimulatorWorkspace = ({
               <h4>Feedback</h4>
               <FeedbackPanel mode={mode} sceneId={safeScene.id} task={task} evaluation={evaluation} showTitle={false} />
             </div>
-          </div>
+            </div>
 
-          {/* Row 3: Optical Debug, full width (component owns its single card shell) */}
-          <div className="simulator-debug-row">
+            {/* Row 3: Optical Debug, full width (component owns its single card shell) */}
+            <div className="simulator-debug-row">
             <OpticalDebugPanel
               sceneId={camera.activeSceneId}
               mode={camera.mode}
@@ -324,7 +349,8 @@ export const SimulatorWorkspace = ({
               renderQuality={renderQuality}
               rttRuntimeInfo={rttRuntimeInfo}
             />
-          </div>
+            </div>
+          </>}
 
         </main>
 

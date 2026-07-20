@@ -15,6 +15,21 @@ const workspace = (sceneId = "shelf-swing") => (
   </MemoryRouter>
 );
 
+const workspaceRoute = (
+  mode: "guided" | "free",
+  sceneId: string,
+  taskId: string | null,
+) => (
+  <MemoryRouter>
+    <SimulatorWorkspace
+      mode={mode}
+      sceneId={sceneId}
+      taskId={taskId}
+      simulateAssetFailure={false}
+    />
+  </MemoryRouter>
+);
+
 describe("SimulatorWorkspace geometry dialog accessibility", () => {
   afterEach(() => {
     cleanup();
@@ -148,5 +163,78 @@ describe("SimulatorWorkspace geometry dialog accessibility", () => {
       "aria-pressed",
       "false",
     );
+  });
+});
+
+describe("SimulatorWorkspace 3D Scene expansion", () => {
+  afterEach(() => {
+    cleanup();
+    useAppStore.getState().resetCamera();
+    useAppStore.getState().setActiveTask(null);
+  });
+
+  it("keeps one SceneRenderer mounted while the workspace hides and restores other main content", async () => {
+    render(workspace());
+    const originalSceneRenderer = screen.getByTestId("scene-canvas");
+    const expand = screen.getByRole("button", { name: "Expand 3D Scene" });
+
+    expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
+    fireEvent.click(expand);
+
+    const restore = screen.getByRole("button", { name: "Restore 3D Scene" });
+    await waitFor(() => expect(restore).toHaveFocus());
+    expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
+    expect(screen.getByTestId("scene-canvas")).toBe(originalSceneRenderer);
+    expect(screen.queryByLabelText("GroundGlassColumn")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("CurrentSettingsReadout")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("FocusTargetsReadout")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Task")).not.toBeInTheDocument();
+    expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    const controls = screen.getByRole("region", { name: "Camera Controls" });
+    const swing = screen.getByLabelText("Swing");
+    expect(controls).toContainElement(swing);
+    expect(swing).toBeEnabled();
+    fireEvent.change(swing, { target: { value: "2" } });
+    expect(useAppStore.getState().camera.frontSwingDeg).toBe(2);
+
+    fireEvent.click(restore);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toHaveFocus());
+    expect(screen.getByTestId("scene-canvas")).toBe(originalSceneRenderer);
+    expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
+    expect(screen.getByLabelText("CurrentSettingsReadout")).toBeInTheDocument();
+  });
+
+  it("restores normal layout with Escape without trapping focus in the 3D Scene", async () => {
+    render(workspace());
+    fireEvent.click(screen.getByRole("button", { name: "Expand 3D Scene" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Restore 3D Scene" })).toHaveFocus());
+
+    screen.getByRole("button", { name: "Infinity Reset" }).focus();
+    expect(screen.getByRole("button", { name: "Infinity Reset" })).toHaveFocus();
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toHaveFocus());
+    expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
+  });
+
+  it("restores normal layout when scene, mode, or task route identity changes", async () => {
+    const view = render(workspaceRoute("guided", "shelf-swing", "swing-01"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand 3D Scene" }));
+    view.rerender(workspaceRoute("guided", "table-tilt", "tilt-01"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toBeInTheDocument());
+    expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand 3D Scene" }));
+    view.rerender(workspaceRoute("free", "table-tilt", null));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toBeInTheDocument());
+    expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand 3D Scene" }));
+    view.rerender(workspaceRoute("guided", "table-tilt", "tilt-01"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toBeInTheDocument());
+    expect(screen.getByLabelText("Task")).toBeInTheDocument();
   });
 });

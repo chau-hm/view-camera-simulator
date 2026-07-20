@@ -88,6 +88,11 @@ button {
   padding-right: 0;
 }
 
+.simulator-main--viewport-expanded {
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
 /* Aside should fill the body's height */
 .simulator-aside {
   min-height: 0;
@@ -158,6 +163,12 @@ button {
   align-items: stretch;
 }
 
+.simulator-viewport-grid--expanded {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
 /* Make the two viewport cards match height and layout */
 .simulator-viewport-grid > .simulator-card {
   height: 100%;
@@ -171,8 +182,17 @@ button {
   min-height: 0;
 }
 
+.simulator-card--expanded {
+  overflow: hidden;
+}
+
 /* Scene panel vertical rhythm */
 .scene-panel { display: grid; gap: var(--sim-panel-section-gap); }
+.scene-panel--expanded {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
 .scene-panel__controls { display: block; }
 
 /* panel icon used in card headers */
@@ -791,7 +811,22 @@ button {
   border-color: var(--primary);
 }
 
-.scene-viewport-shell { position: relative; }
+.scene-viewport-shell {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  gap: var(--sim-panel-section-gap);
+}
+.scene-viewport-shell--expanded { grid-template-rows: minmax(0, 1fr) auto; }
+.scene-renderer-stage {
+  position: relative;
+  min-height: 0;
+  aspect-ratio: 5 / 4;
+}
+.scene-viewport-shell--expanded .scene-renderer-stage {
+  height: 100%;
+  aspect-ratio: auto;
+}
 
 .scene-overlay-controls {
   display: flex;
@@ -865,9 +900,6 @@ button {
 
 .scene-status-row { display: flex; gap: var(--sim-control-group-gap); align-items: center; justify-content: space-between; }
 .scene-status-row p { margin: 0; font-size: 12px; color: var(--text-muted); }
-
-.scene-enlarged-view { z-index: 2000; }
-.scene-enlarged-view__viewport { position: relative; }
 
 .geometry-viewport { container-type: inline-size; }
 .geometry-construction-split {

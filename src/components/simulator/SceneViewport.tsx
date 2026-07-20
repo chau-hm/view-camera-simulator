@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import { SceneOverlayControls } from "./SceneOverlayControls";
 import { getLazySceneAssets, getPreloadSceneAssets, getRequiredSceneAssets } from "../../scenes/definitions";
@@ -19,6 +19,9 @@ type SceneViewportProps = {
   renderQuality: RenderQualityProfile;
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
   simulateAssetFailure: boolean;
+  expanded: boolean;
+  onRequestExpand: () => void;
+  onRequestRestore: () => void;
   onToggleGeometryPanel?: (trigger: HTMLButtonElement) => void;
   showHeader?: boolean;
 };
@@ -36,6 +39,9 @@ export const SceneViewport = ({
   renderQuality,
   setRenderQuality,
   simulateAssetFailure,
+  expanded,
+  onRequestExpand,
+  onRequestRestore,
   onToggleGeometryPanel,
   showHeader,
 }: SceneViewportProps) => {
@@ -52,7 +58,9 @@ export const SceneViewport = ({
     sceneId: string;
     focus: SceneViewFocus;
   }>({ sceneId: scene.id, focus: "scene" });
-  const [bigView, setBigView] = useState(false);
+  const expandTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const restoreTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const previouslyExpandedRef = useRef(expanded);
   const viewFocus = viewFocusState.sceneId === scene.id ? viewFocusState.focus : "scene";
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
   const requiredAssets = useMemo(() => getRequiredSceneAssets(scene.id), [scene.id]);
@@ -83,6 +91,21 @@ export const SceneViewport = ({
     setViewFocusState({ sceneId: scene.id, focus: "scene" });
   }, [scene.id]);
 
+  useEffect(() => {
+    const wasExpanded = previouslyExpandedRef.current;
+    previouslyExpandedRef.current = expanded;
+    if (!expanded && !wasExpanded) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      if (expanded) {
+        restoreTriggerRef.current?.focus();
+      } else {
+        expandTriggerRef.current?.focus();
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [expanded]);
+
   if (!webglAvailable) {
     return (
       <section>
@@ -112,7 +135,7 @@ export const SceneViewport = ({
   }
 
   return (
-    <section className="scene-panel">
+    <section className={`scene-panel${expanded ? " scene-panel--expanded" : ""}`}>
       {showHeader !== false && <h2>{UI_COPY.simulator.sceneTitle}</h2>}
 
       <div className="scene-status-row">
@@ -166,99 +189,25 @@ export const SceneViewport = ({
           </label>
         </div>
       </div>
-      {/* Scene renderer container - either inline or shown as an overlay when bigView is true. */}
-      {bigView ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="scene-enlarged-view"
-          style={{
-            position: "fixed",
-            left: "50%",
-            top: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "70vw",
-            height: "70vh",
-            background: "white",
-            zIndex: 2000,
-            boxShadow: "0 20px 60px rgba(2,6,23,0.5)",
-            borderRadius: 8,
-            padding: "0.5rem",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-            <strong>{UI_COPY.simulator.sceneTitle}</strong>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button className="btn btn--compact" type="button" onClick={() => setBigView(false)}>
-                Close
-              </button>
-            </div>
-          </div>
-          <div style={{ flex: 1, marginTop: "0.5rem", position: 'relative' }}>
-            <SceneRenderer
-              scene={scene}
-              opticsState={opticsState}
-              attempt={attempt}
-              showFocusPlaneOverlay={showFocusPlaneOverlay}
-              showDofOverlay={showDofOverlay}
-              showLegends={showLegends}
-              showOpticalGeometry={showOpticalGeometry}
-              showScheimpflugConstruction={constructionActive}
-              renderQuality={renderQuality}
-              viewResetNonce={viewResetNonce}
-              viewFocus={viewFocus}
-              simulateAssetFailure={simulateAssetFailure}
-              onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
-              containerStyle={{ width: "100%", height: "100%" }}
-            />
+      <div className={`scene-viewport-shell${expanded ? " scene-viewport-shell--expanded" : ""}`}>
+        <div className="scene-renderer-stage">
+          <SceneRenderer
+            scene={scene}
+            opticsState={opticsState}
+            attempt={attempt}
+            showFocusPlaneOverlay={showFocusPlaneOverlay}
+            showDofOverlay={showDofOverlay}
+            showLegends={showLegends}
+            showOpticalGeometry={showOpticalGeometry}
+            showScheimpflugConstruction={constructionActive}
+            renderQuality={renderQuality}
+            viewResetNonce={viewResetNonce}
+            viewFocus={viewFocus}
+            simulateAssetFailure={simulateAssetFailure}
+            onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
+            containerStyle={{ width: "100%", height: "100%", border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
+          />
 
-            {/* overlay controls inside enlarged view */}
-            <div className="scene-overlay-controls-wrap">
-              {/* lazy-load control component to avoid circular imports */}
-              <div>
-                {/* We'll import dynamically to avoid bundling complexity; component is available synchronously */}
-                <SceneOverlayControls
-                  sceneId={scene.id}
-                  showFocusPlane={showFocusPlaneOverlay}
-                  showDofRegion={showDofOverlay}
-                  showLegends={showLegends}
-                  showOpticalGeometry={showOpticalGeometry}
-                  showScheimpflugConstruction={requestedScheimpflugConstruction}
-                  scheimpflugConstructionAvailable={scheimpflugConstruction.isValid}
-                  onToggleFocusPlane={() => setShowFocusPlaneOverlay((s) => !s)}
-                  onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
-                  onToggleLegends={() => setShowLegends((s) => !s)}
-                  onToggleOpticalGeometry={() => setShowOpticalGeometry(!showOpticalGeometry)}
-                  onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setRequestedScheimpflugConstruction((state) => !state) : undefined}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="scene-viewport-shell" style={{ position: 'relative' }}>
-          <div>
-            <SceneRenderer
-              scene={scene}
-              opticsState={opticsState}
-              attempt={attempt}
-              showFocusPlaneOverlay={showFocusPlaneOverlay}
-              showDofOverlay={showDofOverlay}
-              showLegends={showLegends}
-              showOpticalGeometry={showOpticalGeometry}
-              showScheimpflugConstruction={constructionActive}
-              renderQuality={renderQuality}
-              viewResetNonce={viewResetNonce}
-              viewFocus={viewFocus}
-              simulateAssetFailure={simulateAssetFailure}
-              onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
-              containerStyle={{ width: '100%', aspectRatio: '5 / 4', border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
-            />
-          </div>
-
-          {/* overlay controls inside inline viewport */}
           <div className="scene-overlay-controls-wrap">
             <SceneOverlayControls
               sceneId={scene.id}
@@ -276,25 +225,28 @@ export const SceneViewport = ({
             />
           </div>
 
-          {supportsScheimpflugConstruction && requestedScheimpflugConstruction ? (
-            <p className="scene-construction-note" data-testid="scheimpflug-construction-note">
-              {scheimpflugConstruction.isValid
-                ? "Film (blue), lens (slate), and sharp-focus (green) planes contain the violet Scheimpflug line. Open the Scheimpflug Section to view that line end-on."
-                : scheimpflugConstruction.unavailableReason}
-            </p>
-          ) : null}
-
-          {/* fullscreen icon button at top-right of the scene renderer */}
           <button
-            aria-label={bigView ? 'Exit full screen' : 'Open big view'}
-            title={bigView ? 'Exit full screen' : 'Open big view'}
+            ref={expanded ? restoreTriggerRef : expandTriggerRef}
+            type="button"
+            aria-label={expanded ? "Restore 3D Scene" : "Expand 3D Scene"}
+            title={expanded ? "Restore 3D Scene" : "Expand 3D Scene"}
             className="btn btn--icon btn--viewport-action"
-            onClick={() => setBigView(true)}
+            onClick={expanded ? onRequestRestore : onRequestExpand}
           >
-            <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {expanded ? "close_fullscreen" : "open_in_new"}
+            </span>
           </button>
         </div>
-      )}
+
+        {supportsScheimpflugConstruction && requestedScheimpflugConstruction ? (
+          <p className="scene-construction-note" data-testid="scheimpflug-construction-note">
+            {scheimpflugConstruction.isValid
+              ? "Film (blue), lens (slate), and sharp-focus (green) planes contain the violet Scheimpflug line. Open the Scheimpflug Section to view that line end-on."
+              : scheimpflugConstruction.unavailableReason}
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 };

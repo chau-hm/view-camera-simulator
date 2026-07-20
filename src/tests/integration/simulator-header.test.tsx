@@ -25,6 +25,6 @@ describe("simulator header", () => {
     expect(allScenes.getAttribute("href")).toBe("/scenes");
 
     // Scene selector should be removed (there may be other selects on the page; ensure there's no Scene combobox)
-    expect(screen.queryByLabelText(/Scene/i)).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Scene" })).toBeNull();
   });
 });
