@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { selectMovementControlState } from "../../state/selectors";
 import { UI_COPY } from "../../ui/copy";
@@ -25,22 +25,25 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    if (!helpOpen) return;
-    // move focus to the dialog's close button when opened
-    closeButtonRef.current?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        setHelpOpen(false);
-        // restore focus to the help button after dialog closes
-        requestAnimationFrame(() => helpButtonRef.current?.focus());
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    if (helpOpen) closeButtonRef.current?.focus();
   }, [helpOpen]);
+
+  const closeHelp = useCallback(() => {
+    setHelpOpen(false);
+    requestAnimationFrame(() => helpButtonRef.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    if (!helpOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeHelp();
+    };
+    document.addEventListener("keydown", handleEscape, true);
+    return () => document.removeEventListener("keydown", handleEscape, true);
+  }, [helpOpen, closeHelp]);
 
   return (
     <section aria-label={UI_COPY.controls.movementTitle}>
@@ -49,12 +52,16 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
         {UI_COPY.controls.helpButton}
       </button>
       {helpOpen && (
-        <div role="dialog" aria-modal="true" aria-labelledby="movement-help-title">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="movement-help-title"
+        >
           <h4 id="movement-help-title" style={{ marginTop: 0 }}>{UI_COPY.controls.helpTitle}</h4>
           <p>{UI_COPY.controls.helpRise}</p>
           <p>{UI_COPY.controls.helpTilt}</p>
           <p>{UI_COPY.controls.helpSwing}</p>
-          <button ref={closeButtonRef} type="button" onClick={() => { setHelpOpen(false); requestAnimationFrame(() => helpButtonRef.current?.focus()); }} className="btn btn--compact btn--secondary">
+          <button ref={closeButtonRef} type="button" onClick={closeHelp} className="btn btn--compact btn--secondary">
             {UI_COPY.controls.closeHelpButton}
           </button>
         </div>

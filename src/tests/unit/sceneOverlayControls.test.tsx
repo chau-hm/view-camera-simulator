@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SceneOverlayControls } from "../../components/simulator/SceneOverlayControls";
 import {
@@ -40,8 +40,19 @@ describe("SceneOverlayControls", () => {
     fireEvent.click(legends);
     expect(props.onToggleLegends).toHaveBeenCalledOnce();
     expect(trigger).toHaveAttribute("aria-expanded", "true");
-    fireEvent.keyDown(document, { key: "Escape" });
+    expect(fireEvent.keyDown(trigger, { key: "Escape" })).toBe(false);
     expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("restores focus to the trigger when Escape closes from an overlay choice", async () => {
+    const view = render(<SceneOverlayControls {...createBaseProps()} />);
+    const trigger = view.getByRole("button", { name: "View overlays" });
+    fireEvent.click(trigger);
+    const legends = view.getByRole("button", { name: "Show Legends" });
+    legends.focus();
+    fireEvent.keyDown(legends, { key: "Escape" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 
   it("closes the constrained menu on outside pointer interaction and scene change", () => {

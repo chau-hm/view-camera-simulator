@@ -139,6 +139,14 @@ export const SimulatorWorkspace = ({
   }, [mode, sceneId, taskId]);
 
   useEffect(() => {
+    setRestoreViewportFocus(false);
+    const activeElement = document.activeElement;
+    if (
+      activeElement instanceof HTMLElement &&
+      activeElement.matches('.btn--viewport-action[aria-label^="Restore "]')
+    ) {
+      activeElement.blur();
+    }
     setExpandedViewport(null);
   }, [mode, sceneId, taskId]);
 
@@ -156,10 +164,9 @@ export const SimulatorWorkspace = ({
     if (expandedViewport === null || showGeometryPanel) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && !event.defaultPrevented) {
         event.preventDefault();
-        const eventTarget = event.target instanceof Element ? event.target : document.activeElement;
-        setRestoreViewportFocus(!eventTarget?.closest('[role="dialog"]'));
+        setRestoreViewportFocus(true);
         setExpandedViewport(null);
       }
     };

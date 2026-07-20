@@ -138,13 +138,6 @@ export const GroundGlassViewport = ({
       <div
         className={`groundglass-viewport-frame${expanded ? " groundglass-viewport-frame--expanded" : ""}`}
         aria-label="GroundGlassViewport"
-        onKeyDownCapture={(event) => {
-          if (expanded && event.key === "Escape") {
-            event.preventDefault();
-            event.stopPropagation();
-            onRequestRestore();
-          }
-        }}
       >
         <div className={`groundglass-renderer-host${expanded ? " groundglass-renderer-host--expanded" : ""}`}>
           {/* Expanded presentation intentionally keeps the existing logical RTT size; container-aware RTT sizing is a renderer-focused follow-up. */}
