@@ -102,6 +102,43 @@ test("simulator viewports expand in main without replacing their active canvases
     expect(restoredLayout.sceneCard.right).toBeLessThanOrEqual(restoredLayout.groundGlassCard.left);
   }
 
+  await page.getByRole("button", { name: "Expand 3D Scene" }).click();
+  const overlayMenu = page.getByRole("button", { name: "View overlays" });
+  await overlayMenu.click();
+  await expect(overlayMenu).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Escape");
+  await expect(overlayMenu).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("button", { name: "Restore 3D Scene" })).toBeVisible();
+  await expect(sceneRenderer).toHaveCount(1);
+  await expect(sceneRenderer.locator("canvas")).toHaveCount(1);
+  expect(
+    await page.evaluate(
+      (node) => node === document.querySelector('[data-testid="scene-canvas"]'),
+      originalRenderer,
+    ),
+  ).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Expand 3D Scene" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Expand 3D Scene" }).click();
+  await page.getByRole("button", { name: "Help" }).click();
+  await expect(page.getByRole("dialog", { name: "Movement help" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Close help" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Movement help" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Help" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Restore 3D Scene" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Camera Controls" })).toBeVisible();
+  await expect(sceneRenderer).toHaveCount(1);
+  expect(
+    await page.evaluate(
+      (node) => node === document.querySelector('[data-testid="scene-canvas"]'),
+      originalRenderer,
+    ),
+  ).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Expand 3D Scene" })).toBeFocused();
+
   const groundGlassRenderer = page.getByTestId("ground-glass-rtt");
   await expect(groundGlassRenderer.locator("canvas")).toHaveCount(1);
   await expect(groundGlassRenderer).toHaveAttribute("data-rtt-resource-generation", /\d+/);
@@ -150,7 +187,27 @@ test("simulator viewports expand in main without replacing their active canvases
   await tilt.press("ArrowRight");
   await expect(tilt).not.toHaveValue(tiltBefore);
 
-  await page.getByRole("button", { name: "Restore Ground Glass" }).click();
+  await page.getByRole("button", { name: "Zoom in Ground Glass view" }).click();
+  const zoomedGroundGlass = page.getByRole("button", { name: "Zoom out Ground Glass" });
+  await expect(zoomedGroundGlass).toHaveAttribute("data-zoomed", "true");
+  await zoomedGroundGlass.focus();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Zoom in Ground Glass", exact: true })).toHaveAttribute(
+    "data-zoomed",
+    "false",
+  );
+  await expect(page.getByRole("button", { name: "Restore Ground Glass" })).toBeVisible();
+  await expect(page.getByTestId("scene-canvas")).toHaveCount(0);
+  await expect(groundGlassRenderer).toHaveCount(1);
+  await expect(groundGlassRenderer.locator("canvas")).toHaveCount(1);
+  expect(
+    await page.evaluate(
+      (node) => node === document.querySelector('[data-testid="ground-glass-rtt"]'),
+      originalGroundGlassRenderer,
+    ),
+  ).toBe(true);
+
+  await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: "Expand Ground Glass" })).toBeFocused();
   await expect(page.getByTestId("scene-canvas")).toHaveCount(1);
   await expect(page.getByLabel("GroundGlassColumn")).toBeVisible();

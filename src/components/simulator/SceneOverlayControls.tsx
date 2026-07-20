@@ -120,14 +120,9 @@ export const SceneOverlayControls = (props: SceneOverlayControlsProps) => {
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setMenuOpen(false);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
     document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown);
     };
   }, [menuOpen]);
 
@@ -137,6 +132,12 @@ export const SceneOverlayControls = (props: SceneOverlayControlsProps) => {
       className="scene-overlay-responsive"
       data-overlay-presentation={presentation}
       onPointerDown={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        if (!menuOpen || event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        setMenuOpen(false);
+      }}
     >
       {presentation === "inline" ? (
         <OverlayChoices {...props} presentation="inline" />

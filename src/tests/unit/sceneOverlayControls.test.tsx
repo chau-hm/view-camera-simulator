@@ -40,7 +40,7 @@ describe("SceneOverlayControls", () => {
     fireEvent.click(legends);
     expect(props.onToggleLegends).toHaveBeenCalledOnce();
     expect(trigger).toHaveAttribute("aria-expanded", "true");
-    fireEvent.keyDown(document, { key: "Escape" });
+    expect(fireEvent.keyDown(trigger, { key: "Escape" })).toBe(false);
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
