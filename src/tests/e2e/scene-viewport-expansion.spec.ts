@@ -22,6 +22,9 @@ type RttSnapshot = {
   generation: string | null;
 };
 
+// ResizeObserver reports integer CSS pixels while layout can settle on fractional bounds.
+const LOGICAL_SIZE_TOLERANCE_PX = 3;
+
 const readRttSnapshot = async (page: import("@playwright/test").Page): Promise<RttSnapshot> =>
   page.evaluate(() => {
     const rtt = document.querySelector<HTMLElement>('[data-testid="ground-glass-rtt"]');
@@ -309,8 +312,8 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   expect(normal.stageWidth / normal.stageHeight).toBeCloseTo(5 / 4, 2);
   expect(normal.logicalWidth).toBeGreaterThan(0);
   expect(normal.logicalWidth).toBeLessThan(900);
-  expect(Math.abs(normal.logicalWidth - normal.stageWidth)).toBeLessThanOrEqual(2);
-  expect(Math.abs(normal.logicalHeight - normal.stageHeight)).toBeLessThanOrEqual(2);
+  expect(Math.abs(normal.logicalWidth - normal.stageWidth)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
+  expect(Math.abs(normal.logicalHeight - normal.stageHeight)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
   expect(normal.internalWidth).toBe(normal.colorWidth);
   expect(normal.internalHeight).toBe(normal.colorHeight);
   expect(normal.colorWidth).toBe(normal.depthWidth);
@@ -329,8 +332,8 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   await expect.poll(async () => (await readRttSnapshot(page)).logicalWidth, { timeout: 30_000 }).toBeGreaterThan(normal.logicalWidth);
   const expanded = await readRttSnapshot(page);
   expect(expanded.stageWidth / expanded.stageHeight).toBeCloseTo(5 / 4, 2);
-  expect(Math.abs(expanded.logicalWidth - expanded.stageWidth)).toBeLessThanOrEqual(2);
-  expect(Math.abs(expanded.logicalHeight - expanded.stageHeight)).toBeLessThanOrEqual(2);
+  expect(Math.abs(expanded.logicalWidth - expanded.stageWidth)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
+  expect(Math.abs(expanded.logicalHeight - expanded.stageHeight)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
   expect(expanded.horizontalShaderWidth).toBe(expanded.internalWidth);
   expect(expanded.verticalShaderWidth).toBe(expanded.internalWidth);
   expect(expanded.generation).toBe(normal.generation);
@@ -342,7 +345,8 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   await expect.poll(async () => (await readRttSnapshot(page)).logicalWidth, { timeout: 30_000 }).not.toBe(expanded.logicalWidth);
   const resized = await readRttSnapshot(page);
   expect(resized.stageWidth / resized.stageHeight).toBeCloseTo(5 / 4, 2);
-  expect(Math.abs(resized.logicalWidth - resized.stageWidth)).toBeLessThanOrEqual(2);
+  expect(Math.abs(resized.logicalWidth - resized.stageWidth)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
+  expect(Math.abs(resized.logicalHeight - resized.stageHeight)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
   expect(resized.generation).toBe(normal.generation);
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
 
@@ -351,7 +355,8 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   await expect.poll(async () => (await readRttSnapshot(page)).logicalWidth, { timeout: 30_000 }).not.toBe(resized.logicalWidth);
   const restored = await readRttSnapshot(page);
   expect(restored.stageWidth / restored.stageHeight).toBeCloseTo(5 / 4, 2);
-  expect(Math.abs(restored.logicalWidth - restored.stageWidth)).toBeLessThanOrEqual(2);
+  expect(Math.abs(restored.logicalWidth - restored.stageWidth)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
+  expect(Math.abs(restored.logicalHeight - restored.stageHeight)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
   expect(restored.generation).toBe(normal.generation);
   expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"]'), rttHandle)).toBe(true);
   expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'), canvasHandle)).toBe(true);
