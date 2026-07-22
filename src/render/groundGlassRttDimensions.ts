@@ -37,6 +37,14 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   blurTargetWidthPx: number;
   blurTargetHeightPx: number;
 
+  finalTargetWidthPx: number;
+  finalTargetHeightPx: number;
+
+  horizontalShaderRenderWidthPx: number;
+  horizontalShaderRenderHeightPx: number;
+  verticalShaderRenderWidthPx: number;
+  verticalShaderRenderHeightPx: number;
+
   cameraNearWorld?: number;
   cameraFarWorld?: number;
   cameraConfigurationOk?: boolean;
@@ -70,6 +78,14 @@ export function resolveGroundGlassRttDimensions(opts: {
   zoomEnabled?: boolean;
 }): GroundGlassRttDimensions {
   const { logicalWidth, logicalHeight, renderQuality, devicePixelRatio, zoomEnabled } = opts;
+  const logicalWidthPx = Math.max(
+    1,
+    Math.round(Number.isFinite(logicalWidth) ? logicalWidth : 1),
+  );
+  const logicalHeightPx = Math.max(
+    1,
+    Math.round(Number.isFinite(logicalHeight) ? logicalHeight : 1),
+  );
   const quality = getRenderQualitySettings(renderQuality);
   // map zoomEnabled -> zoomScale used by stage
   const stageZoomScale = zoomEnabled ? GROUND_GLASS_ZOOM_SCALE : 1.0;
@@ -82,11 +98,11 @@ export function resolveGroundGlassRttDimensions(opts: {
 
   let internalWidth = Math.max(
     1,
-    Math.round(logicalWidth * resolutionScale * effectiveDevicePixelRatio),
+    Math.round(logicalWidthPx * resolutionScale * effectiveDevicePixelRatio),
   );
   let internalHeight = Math.max(
     1,
-    Math.round(logicalHeight * resolutionScale * effectiveDevicePixelRatio),
+    Math.round(logicalHeightPx * resolutionScale * effectiveDevicePixelRatio),
   );
 
   let wasClamped = false;
@@ -104,8 +120,8 @@ export function resolveGroundGlassRttDimensions(opts: {
   }
 
   return {
-    logicalWidthPx: logicalWidth,
-    logicalHeightPx: logicalHeight,
+    logicalWidthPx,
+    logicalHeightPx,
     internalWidthPx: internalWidth,
     internalHeightPx: internalHeight,
     resolutionScale,

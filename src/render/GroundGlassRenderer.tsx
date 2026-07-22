@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { GroundGlassStage } from "./GroundGlassStage";
 import { GroundGlassRenderSurface } from "./GroundGlassRenderSurface";
 import { LegacyGroundGlassScene } from "./LegacyGroundGlassScene";
@@ -68,6 +68,15 @@ export const GroundGlassRenderer = ({
 }: GroundGlassRendererProps) => {
   // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
   const isRttScene = isGroundGlassRttScene(sceneId);
+  const [rttLogicalSize, setRttLogicalSize] = useState({
+    width: PANEL_WIDTH_PX,
+    height: PANEL_HEIGHT_PX,
+  });
+  const handleViewportSizeChange = useCallback((size: { width: number; height: number }) => {
+    setRttLogicalSize((current) =>
+      current.width === size.width && current.height === size.height ? current : size,
+    );
+  }, []);
   const pipeline = useMemo(() => {
     const isRtt = isGroundGlassRttScene(sceneId);
     if (isRtt) {
@@ -195,8 +204,8 @@ export const GroundGlassRenderer = ({
           sceneShiftY={sceneShiftY}
           sceneRotationDeg={sceneRotationDeg}
           focusScale={focusScale}
-          widthPx={PANEL_WIDTH_PX}
-          heightPx={PANEL_HEIGHT_PX}
+          widthPx={isRttSceneFinal ? rttLogicalSize.width : PANEL_WIDTH_PX}
+          heightPx={isRttSceneFinal ? rttLogicalSize.height : PANEL_HEIGHT_PX}
           renderQuality={renderQuality}
           zoomEnabled={zoomEnabled}
         />
@@ -249,6 +258,7 @@ export const GroundGlassRenderer = ({
       <GroundGlassStage
         zoomEnabled={zoomEnabled}
         onZoomChange={onZoomChange}
+        onViewportSizeChange={handleViewportSizeChange}
         interactionResetKey={interactionResetKey}
         imageLayer={transformedImageLayer}
         fixedOverlayLayer={fixedOverlayLayer}
