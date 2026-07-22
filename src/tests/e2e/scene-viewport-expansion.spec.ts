@@ -1,5 +1,57 @@
 import { expect, test } from "@playwright/test";
 
+type RttSnapshot = {
+  stageWidth: number;
+  stageHeight: number;
+  logicalWidth: number;
+  logicalHeight: number;
+  internalWidth: number;
+  internalHeight: number;
+  colorWidth: number;
+  colorHeight: number;
+  depthWidth: number;
+  depthHeight: number;
+  blurWidth: number;
+  blurHeight: number;
+  finalWidth: number;
+  finalHeight: number;
+  horizontalShaderWidth: number;
+  horizontalShaderHeight: number;
+  verticalShaderWidth: number;
+  verticalShaderHeight: number;
+  generation: string | null;
+};
+
+const readRttSnapshot = async (page: import("@playwright/test").Page): Promise<RttSnapshot> =>
+  page.evaluate(() => {
+    const rtt = document.querySelector<HTMLElement>('[data-testid="ground-glass-rtt"]');
+    const stage = document.querySelector<HTMLElement>('.groundglass-stage');
+    if (!rtt || !stage) throw new Error("Ground Glass RTT diagnostics are unavailable");
+    const rect = stage.getBoundingClientRect();
+    const number = (name: string) => Number(rtt.dataset[name]);
+    return {
+      stageWidth: rect.width,
+      stageHeight: rect.height,
+      logicalWidth: number("rttLogicalWidth"),
+      logicalHeight: number("rttLogicalHeight"),
+      internalWidth: number("rttInternalWidth"),
+      internalHeight: number("rttInternalHeight"),
+      colorWidth: number("rttColorTargetWidth"),
+      colorHeight: number("rttColorTargetHeight"),
+      depthWidth: number("rttDepthTargetWidth"),
+      depthHeight: number("rttDepthTargetHeight"),
+      blurWidth: number("rttBlurTargetWidth"),
+      blurHeight: number("rttBlurTargetHeight"),
+      finalWidth: number("rttFinalTargetWidth"),
+      finalHeight: number("rttFinalTargetHeight"),
+      horizontalShaderWidth: number("rttHorizontalShaderWidth"),
+      horizontalShaderHeight: number("rttHorizontalShaderHeight"),
+      verticalShaderWidth: number("rttVerticalShaderWidth"),
+      verticalShaderHeight: number("rttVerticalShaderHeight"),
+      generation: rtt.getAttribute("data-rtt-resource-generation"),
+    };
+  });
+
 test("simulator viewports expand in main without replacing their active canvases", async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1024, height: 768 });
@@ -228,4 +280,91 @@ test("simulator viewports expand in main without replacing their active canvases
       originalGroundGlassCanvas,
     ),
   ).toBe(true);
+});
+
+test("Ground Glass RTT follows expanded and live browser sizes without reallocating", async ({ page }) => {
+  test.setTimeout(180_000);
+  const pageErrors: string[] = [];
+  const rendererWarnings: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    const text = message.text();
+    if (/GPU stall due to ReadPixels/i.test(text)) return;
+    if (message.type() === "error" || (message.type() === "warning" && /React|Three|WebGL|render target|disposed|context lost/i.test(text))) {
+      rendererWarnings.push(text);
+    }
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/simulator/free/architecture-rise");
+
+  const rtt = page.getByTestId("ground-glass-rtt");
+  const canvas = rtt.locator("canvas");
+  await expect(rtt).toBeVisible();
+  await expect(canvas).toHaveCount(1);
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 120_000 });
+  const rttHandle = await rtt.elementHandle();
+  const canvasHandle = await canvas.elementHandle();
+  if (!rttHandle || !canvasHandle) throw new Error("RTT identity handles unavailable");
+  const normal = await readRttSnapshot(page);
+  expect(normal.stageWidth / normal.stageHeight).toBeCloseTo(5 / 4, 2);
+  expect(normal.logicalWidth).toBeGreaterThan(0);
+  expect(normal.logicalWidth).toBeLessThan(900);
+  expect(Math.abs(normal.logicalWidth - normal.stageWidth)).toBeLessThanOrEqual(2);
+  expect(Math.abs(normal.logicalHeight - normal.stageHeight)).toBeLessThanOrEqual(2);
+  expect(normal.internalWidth).toBe(normal.colorWidth);
+  expect(normal.internalHeight).toBe(normal.colorHeight);
+  expect(normal.colorWidth).toBe(normal.depthWidth);
+  expect(normal.colorHeight).toBe(normal.depthHeight);
+  expect(normal.colorWidth).toBe(normal.blurWidth);
+  expect(normal.colorHeight).toBe(normal.blurHeight);
+  expect(normal.colorWidth).toBe(normal.finalWidth);
+  expect(normal.colorHeight).toBe(normal.finalHeight);
+  expect(normal.horizontalShaderWidth).toBe(normal.internalWidth);
+  expect(normal.horizontalShaderHeight).toBe(normal.internalHeight);
+  expect(normal.verticalShaderWidth).toBe(normal.internalWidth);
+  expect(normal.verticalShaderHeight).toBe(normal.internalHeight);
+
+  await page.getByRole("button", { name: "Expand Ground Glass" }).click();
+  await expect(page.getByRole("button", { name: "Restore Ground Glass" })).toBeVisible();
+  await expect.poll(async () => (await readRttSnapshot(page)).logicalWidth, { timeout: 30_000 }).toBeGreaterThan(normal.logicalWidth);
+  const expanded = await readRttSnapshot(page);
+  expect(expanded.stageWidth / expanded.stageHeight).toBeCloseTo(5 / 4, 2);
+  expect(Math.abs(expanded.logicalWidth - expanded.stageWidth)).toBeLessThanOrEqual(2);
+  expect(Math.abs(expanded.logicalHeight - expanded.stageHeight)).toBeLessThanOrEqual(2);
+  expect(expanded.horizontalShaderWidth).toBe(expanded.internalWidth);
+  expect(expanded.verticalShaderWidth).toBe(expanded.internalWidth);
+  expect(expanded.generation).toBe(normal.generation);
+  expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"]'), rttHandle)).toBe(true);
+  expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'), canvasHandle)).toBe(true);
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
+
+  await page.setViewportSize({ width: 1180, height: 900 });
+  await expect.poll(async () => (await readRttSnapshot(page)).logicalWidth, { timeout: 30_000 }).not.toBe(expanded.logicalWidth);
+  const resized = await readRttSnapshot(page);
+  expect(resized.stageWidth / resized.stageHeight).toBeCloseTo(5 / 4, 2);
+  expect(Math.abs(resized.logicalWidth - resized.stageWidth)).toBeLessThanOrEqual(2);
+  expect(resized.generation).toBe(normal.generation);
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
+
+  await page.getByRole("button", { name: "Restore Ground Glass" }).click();
+  await expect(page.getByRole("button", { name: "Expand Ground Glass" })).toBeVisible();
+  await expect.poll(async () => (await readRttSnapshot(page)).logicalWidth, { timeout: 30_000 }).not.toBe(resized.logicalWidth);
+  const restored = await readRttSnapshot(page);
+  expect(restored.stageWidth / restored.stageHeight).toBeCloseTo(5 / 4, 2);
+  expect(Math.abs(restored.logicalWidth - restored.stageWidth)).toBeLessThanOrEqual(2);
+  expect(restored.generation).toBe(normal.generation);
+  expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"]'), rttHandle)).toBe(true);
+  expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'), canvasHandle)).toBe(true);
+
+  await page.getByRole("button", { name: "Expand Ground Glass" }).click();
+  const beforeZoom = await readRttSnapshot(page);
+  await page.getByRole("button", { name: "Zoom in Ground Glass view" }).click();
+  await expect.poll(async () => (await readRttSnapshot(page)).internalWidth, { timeout: 30_000 }).toBeGreaterThan(beforeZoom.internalWidth);
+  const zoomed = await readRttSnapshot(page);
+  expect(zoomed.generation).toBe(normal.generation);
+  await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
+  await expect.poll(async () => (await readRttSnapshot(page)).internalWidth, { timeout: 30_000 }).toBe(beforeZoom.internalWidth);
+  expect((await readRttSnapshot(page)).generation).toBe(normal.generation);
+  expect(pageErrors, pageErrors.join("\n")).toEqual([]);
+  expect(rendererWarnings, rendererWarnings.join("\n")).toEqual([]);
 });
