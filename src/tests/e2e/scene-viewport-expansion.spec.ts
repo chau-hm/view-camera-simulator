@@ -401,3 +401,66 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
   expect(rendererWarnings, rendererWarnings.join("\n")).toEqual([]);
 });
+
+test("Ground Glass RTT quality changes resize targets in place", async ({ page }) => {
+  test.setTimeout(180_000);
+  const pageErrors: string[] = [];
+  const rendererWarnings: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    const text = message.text();
+    if (/GPU stall due to ReadPixels/i.test(text)) return;
+    if (message.type() === "error" || (message.type() === "warning" && /React|Three|WebGL|render target|disposed|context lost/i.test(text))) {
+      rendererWarnings.push(text);
+    }
+  });
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
+  const rtt = page.getByTestId("ground-glass-rtt");
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 120_000 });
+  const wrapper = await rtt.elementHandle();
+  const canvas = await rtt.locator("canvas").elementHandle();
+  if (!wrapper || !canvas) throw new Error("Ground Glass identities unavailable");
+  const quality = page.getByLabel("Render quality");
+  const initial = await readRttSnapshot(page);
+  const assertSnapshot = async (snapshot: RttSnapshot) => {
+    expect(snapshot.stageWidth / snapshot.stageHeight).toBeCloseTo(5 / 4, 2);
+    expect(Math.abs(snapshot.logicalWidth - snapshot.stageWidth)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
+    expect(Math.abs(snapshot.logicalHeight - snapshot.stageHeight)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
+    expect(snapshot.internalWidth).toBe(snapshot.colorWidth);
+    expect(snapshot.internalHeight).toBe(snapshot.colorHeight);
+    expect(snapshot.colorWidth).toBe(snapshot.depthWidth);
+    expect(snapshot.colorHeight).toBe(snapshot.depthHeight);
+    expect(snapshot.colorWidth).toBe(snapshot.blurWidth);
+    expect(snapshot.colorHeight).toBe(snapshot.blurHeight);
+    expect(snapshot.colorWidth).toBe(snapshot.finalWidth);
+    expect(snapshot.colorHeight).toBe(snapshot.finalHeight);
+    expect(snapshot.horizontalShaderWidth).toBe(snapshot.internalWidth);
+    expect(snapshot.horizontalShaderHeight).toBe(snapshot.internalHeight);
+    expect(snapshot.verticalShaderWidth).toBe(snapshot.internalWidth);
+    expect(snapshot.verticalShaderHeight).toBe(snapshot.internalHeight);
+    expect(snapshot.generation).toBe(initial.generation);
+    expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"]'), wrapper)).toBe(true);
+    expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'), canvas)).toBe(true);
+    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
+  };
+  const settle = async (profile: "low" | "standard" | "high") => {
+    await quality.selectOption(profile);
+    await expect(quality).toHaveValue(profile);
+    await expect.poll(() => rtt.getAttribute("data-rtt-final-contentful"), { timeout: 120_000 }).toBe("true");
+    await expect.poll(() => rtt.getAttribute("data-rtt-internal-width"), { timeout: 120_000 }).not.toBe(String(previousInternalWidth));
+    const snapshot = await readRttSnapshot(page);
+    await assertSnapshot(snapshot);
+    previousInternalWidth = snapshot.internalWidth;
+    return snapshot;
+  };
+
+  let previousInternalWidth = initial.internalWidth;
+  const low = await settle("low");
+  const standard = await settle("standard");
+  const high = await settle("high");
+  expect(low.internalWidth).toBeLessThan(standard.internalWidth);
+  expect(standard.internalWidth).toBeLessThanOrEqual(high.internalWidth);
+  expect(pageErrors, pageErrors.join("\n")).toEqual([]);
+  expect(rendererWarnings, rendererWarnings.join("\n")).toEqual([]);
+});
