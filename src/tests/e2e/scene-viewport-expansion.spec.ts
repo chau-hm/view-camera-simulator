@@ -395,8 +395,9 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
   await expect.poll(async () => (await readRttSnapshot(page)).internalWidth, { timeout: 30_000 }).toBe(beforeZoom.internalWidth);
   expect((await readRttSnapshot(page)).generation).toBe(normal.generation);
-  await expect(page.locator('.groundglass-stage')).toHaveAttribute("data-pan-x", "0");
-  await expect(page.locator('.groundglass-stage')).toHaveAttribute("data-pan-y", "0");
+  const groundGlassStage = page.getByLabel("GroundGlassViewport").getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
+  await expect(groundGlassStage).toHaveAttribute("data-pan-x", "0");
+  await expect(groundGlassStage).toHaveAttribute("data-pan-y", "0");
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
   expect(rendererWarnings, rendererWarnings.join("\n")).toEqual([]);
 });
