@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getGroundGlassPointerThresholdPx,
   GroundGlassStage,
@@ -13,10 +13,11 @@ import {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
-let currentRect = {
+const initialRect = {
   left: 100,
   top: 50,
   width: 500,
@@ -27,6 +28,11 @@ let currentRect = {
   y: 50,
   toJSON: () => ({}),
 };
+let currentRect = { ...initialRect };
+
+beforeEach(() => {
+  currentRect = { ...initialRect };
+});
 
 const getStage = (getByRole: ReturnType<typeof render>["getByRole"]) =>
   getByRole("button", { name: /Ground Glass$/ });
@@ -88,6 +94,46 @@ const ControlledGroundGlassStage = ({ resetKey = "route-a" }: { resetKey?: strin
 };
 
 describe("GroundGlassStage explicit zoom interaction", () => {
+  it("reports initial and changed integer viewport sizes without duplicates or invalid replacements", () => {
+    let resizeCallback: ResizeObserverCallback | undefined;
+    class ResizeObserverMock {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+      }
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+    }
+    vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+    currentRect = { ...currentRect, width: 641.4, height: 513.2, right: 741.4, bottom: 563.2 };
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+      () => currentRect,
+    );
+    const onViewportSizeChange = vi.fn();
+
+    render(
+      <GroundGlassStage
+        imageLayer={<div />}
+        onViewportSizeChange={onViewportSizeChange}
+      />,
+    );
+    expect(onViewportSizeChange).toHaveBeenLastCalledWith({ width: 641, height: 513 });
+
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(onViewportSizeChange).toHaveBeenCalledTimes(1);
+
+    currentRect = { ...currentRect, width: 0, height: 0 };
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    currentRect = { ...currentRect, width: Number.NaN, height: 640 };
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(onViewportSizeChange).toHaveBeenCalledTimes(1);
+
+    currentRect = { ...currentRect, width: 800.2, height: 640.2, right: 900.2, bottom: 690.2 };
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(onViewportSizeChange).toHaveBeenLastCalledWith({ width: 800, height: 640 });
+    expect(onViewportSizeChange).toHaveBeenCalledTimes(2);
+  });
+
   it("normalizes anchored pan and clamps it to viewport bounds", () => {
     const anchored = calculateGroundGlassAnchoredPan(currentRect.left, currentRect.top, currentRect);
     expect(anchored).toEqual({ x: 1, y: 1 });

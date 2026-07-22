@@ -56,6 +56,7 @@ type GroundGlassStageProps = {
   imageLayer: ReactNode;
   fixedOverlayLayer?: ReactNode;
   onZoomChange?: (nextZoomed: boolean) => void;
+  onViewportSizeChange?: (size: { width: number; height: number }) => void;
   /** Changes when navigation or preview state must discard the current interaction. */
   interactionResetKey?: string;
 };
@@ -65,6 +66,7 @@ export const GroundGlassStage = ({
   imageLayer,
   fixedOverlayLayer,
   onZoomChange,
+  onViewportSizeChange,
   interactionResetKey,
 }: GroundGlassStageProps) => {
   // Pan is normalized to the current viewport, so resize only needs to update
@@ -77,20 +79,44 @@ export const GroundGlassStage = ({
     width: PANEL_WIDTH_PX,
     height: PANEL_HEIGHT_PX,
   });
+  const lastViewportSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const onViewportSizeChangeRef = useRef(onViewportSizeChange);
+  onViewportSizeChangeRef.current = onViewportSizeChange;
+
+  const measureViewport = useCallback(() => {
+    const element = panelRef.current;
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    if (
+      !Number.isFinite(rect.width) ||
+      !Number.isFinite(rect.height) ||
+      rect.width <= 0 ||
+      rect.height <= 0
+    ) {
+      return;
+    }
+
+    const nextSize = {
+      width: Math.max(1, Math.round(rect.width)),
+      height: Math.max(1, Math.round(rect.height)),
+    };
+    const previousSize = lastViewportSizeRef.current;
+    if (previousSize?.width === nextSize.width && previousSize.height === nextSize.height) return;
+
+    lastViewportSizeRef.current = nextSize;
+    setViewportSize(nextSize);
+    onViewportSizeChangeRef.current?.(nextSize);
+  }, []);
 
   useEffect(() => {
     const element = panelRef.current;
     if (!element) return;
-    const update = () => {
-      const rect = element.getBoundingClientRect();
-      setViewportSize({ width: rect.width, height: rect.height });
-    };
-    update();
+    measureViewport();
     if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(update);
+    const observer = new ResizeObserver(measureViewport);
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [measureViewport]);
 
   const releaseCurrentPointerCapture = useCallback(() => {
     const gesture = dragRef.current;
@@ -155,7 +181,7 @@ export const GroundGlassStage = ({
     setIsDragging(false);
     if (anchor && panelRef.current) {
       const rect = panelRef.current.getBoundingClientRect();
-      setViewportSize({ width: rect.width, height: rect.height });
+      measureViewport();
       setNormalizedPan(calculateGroundGlassAnchoredPan(anchor.clientX, anchor.clientY, rect));
     } else {
       setNormalizedPan(ZERO_PAN);

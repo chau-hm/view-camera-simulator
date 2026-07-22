@@ -176,6 +176,59 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
     unsubscribe();
   });
 
+  it("resizes responsive and quality-derived targets without reallocating the RTT graph", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+    };
+    const opticsState = deriveOpticsState(camera, architectureRiseScene);
+    const createSubject = vi.mocked(createRegisteredRttSubject);
+    const setSize = vi.spyOn(THREE.WebGLRenderTarget.prototype, "setSize");
+    const props = {
+      opticsState,
+      sceneId: architectureRiseScene.id,
+      widthPx: 500,
+      heightPx: 400,
+      renderQuality: "standard" as const,
+      zoomEnabled: false,
+    };
+    const view = render(React.createElement(GroundGlassRTT, props));
+    const initialGeneration = useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration;
+
+    setSize.mockClear();
+    view.rerender(
+      React.createElement(GroundGlassRTT, { ...props, widthPx: 750, heightPx: 600 }),
+    );
+    const resizedInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    expect(createSubject).toHaveBeenCalledTimes(1);
+    expect(resizedInfo?.resourceGeneration).toBe(initialGeneration);
+    expect(resizedInfo?.logicalWidthPx).toBe(750);
+    expect(resizedInfo?.logicalHeightPx).toBe(600);
+    expect(resizedInfo?.colorTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
+    expect(resizedInfo?.depthTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
+    expect(resizedInfo?.blurTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
+    expect(resizedInfo?.finalTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
+    expect(resizedInfo?.horizontalShaderRenderWidthPx).toBe(resizedInfo?.internalWidthPx);
+    expect(resizedInfo?.verticalShaderRenderWidthPx).toBe(resizedInfo?.internalWidthPx);
+    expect(setSize).toHaveBeenCalledTimes(3);
+
+    setSize.mockClear();
+    view.rerender(
+      React.createElement(GroundGlassRTT, {
+        ...props,
+        widthPx: 750,
+        heightPx: 600,
+        renderQuality: "high",
+      }),
+    );
+    expect(createSubject).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
+      initialGeneration,
+    );
+    expect(setSize).toHaveBeenCalledTimes(3);
+  });
+
   it("creates a fresh subject and resource generation when the RTT scene changes", () => {
     const architectureCamera = {
       ...DEFAULT_CAMERA_STATE,

@@ -28,6 +28,8 @@ import {
   resolveGroundGlassDisplayOpticsState,
 } from "./groundGlassVisualSettings";
 import { analyzeGroundGlassRenderSanity } from "./groundGlassRenderSanity";
+import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
+import { resizeGroundGlassRttResources } from "./groundGlassRttResources";
 
 type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
@@ -42,42 +44,6 @@ type GroundGlassRTTProps = {
   focusAssistEnabled?: boolean;
   renderQuality?: import("../types/ui").RenderQualityProfile;
   zoomEnabled?: boolean;
-};
-
-import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
-
-type SizeDependentRttResources = {
-  renderTarget: THREE.WebGLRenderTarget;
-  tempTarget: THREE.WebGLRenderTarget;
-  finalTarget: THREE.WebGLRenderTarget;
-  horizontalMaterial: THREE.ShaderMaterial;
-  verticalMaterial: THREE.ShaderMaterial;
-};
-
-const resizeGroundGlassRttResources = (
-  resources: SizeDependentRttResources,
-  widthPx: number,
-  heightPx: number,
-): void => {
-  resources.renderTarget.setSize(widthPx, heightPx);
-
-  // RenderTarget.setSize updates the color attachment but Three.js updates an
-  // attached DepthTexture lazily during the next render. Keep its observable
-  // dimensions synchronized before publishing the new RTT dimensions.
-  const depthTexture = resources.renderTarget.depthTexture;
-  if (depthTexture) {
-    const depthImage = depthTexture.image as { width: number; height: number };
-    depthImage.width = widthPx;
-    depthImage.height = heightPx;
-    depthTexture.needsUpdate = true;
-  }
-
-  resources.tempTarget.setSize(widthPx, heightPx);
-  resources.finalTarget.setSize(widthPx, heightPx);
-  resources.horizontalMaterial.uniforms.renderWidth.value = widthPx;
-  resources.horizontalMaterial.uniforms.renderHeight.value = heightPx;
-  resources.verticalMaterial.uniforms.renderWidth.value = widthPx;
-  resources.verticalMaterial.uniforms.renderHeight.value = heightPx;
 };
 
 function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, }: GroundGlassRTTProps) {
@@ -110,8 +76,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   const postResourcesRef = React.useRef<PostResources | null>(null);
   const fallbackDepthRef = React.useRef<THREE.DataTexture | null>(null);
   const resourceGenerationRef = React.useRef<number>(0);
-  const zoomEnabledRef = React.useRef(zoomEnabled);
-  zoomEnabledRef.current = zoomEnabled;
+  const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality, zoomEnabled });
+  sizeInputsRef.current = { widthPx, heightPx, renderQuality, zoomEnabled };
 
   // clear RTT runtime diagnostics when this renderer unmounts or is recreated
   React.useEffect(() => {
@@ -126,54 +92,26 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   // expose preview/ring hints on the function object so runtime code inside useFrame can access them
 
   useEffect(() => {
+    const sizeInputs = sizeInputsRef.current;
     // resolve desired internal RTT dimensions from quality profile, DPR and zoom state
     const rendererPixelRatio = (gl && typeof gl.getPixelRatio === 'function') ? gl.getPixelRatio() : (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
 
     // collect canvas DOM and size info. Canvas DPR is authoritative from parent Canvas dpr prop
     const canvas = (gl && (gl as unknown as WebGLRenderer).domElement) as HTMLCanvasElement | undefined;
-    const canvasRect = canvas ? canvas.getBoundingClientRect() : { width: widthPx, height: heightPx };
+    const canvasRect = canvas ? canvas.getBoundingClientRect() : { width: sizeInputs.widthPx, height: sizeInputs.heightPx };
     const canvasCssWidth = Math.round(canvasRect.width);
     const canvasCssHeight = Math.round(canvasRect.height);
-    const drawingBufferWidth = canvas ? canvas.width : Math.round(widthPx * rendererPixelRatio);
-    const drawingBufferHeight = canvas ? canvas.height : Math.round(heightPx * rendererPixelRatio);
+    const drawingBufferWidth = canvas ? canvas.width : Math.round(sizeInputs.widthPx * rendererPixelRatio);
+    const drawingBufferHeight = canvas ? canvas.height : Math.round(sizeInputs.heightPx * rendererPixelRatio);
 
-    const dims = resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: rendererPixelRatio, zoomEnabled: zoomEnabledRef.current });
+    const dims = resolveGroundGlassRttDimensions({
+      logicalWidth: sizeInputs.widthPx,
+      logicalHeight: sizeInputs.heightPx,
+      renderQuality: sizeInputs.renderQuality || "standard",
+      devicePixelRatio: rendererPixelRatio,
+      zoomEnabled: sizeInputs.zoomEnabled,
+    });
     dimsRef.current = dims;
-
-    try {
-      // store initial runtime RTT dims for UI readouts (best-effort placeholder until resources created)
-      const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
-      if (setInfo) {
-        const resolvedProfile = (renderQuality as import("../types/ui").RenderQualityProfile) || ("standard" as import("../types/ui").RenderQualityProfile);
-        const configuredCanvasDpr = getRenderQualitySettings(resolvedProfile).dpr;
-        setInfo({
-          profile: resolvedProfile,
-          logicalWidthPx: dims.logicalWidthPx,
-          logicalHeightPx: dims.logicalHeightPx,
-          internalWidthPx: dims.internalWidthPx,
-          internalHeightPx: dims.internalHeightPx,
-          resolutionScale: dims.resolutionScale,
-          effectiveDevicePixelRatio: dims.effectiveDevicePixelRatio,
-          zoomRenderScale: dims.zoomRenderScale,
-          wasClamped: dims.wasClamped,
-          configuredCanvasDpr,
-          rendererPixelRatio: rendererPixelRatio,
-          canvasCssWidthPx: canvasCssWidth,
-          canvasCssHeightPx: canvasCssHeight,
-          drawingBufferWidthPx: drawingBufferWidth,
-          drawingBufferHeightPx: drawingBufferHeight,
-          colorTargetWidthPx: dims.internalWidthPx,
-          colorTargetHeightPx: dims.internalHeightPx,
-          depthTargetWidthPx: dims.internalWidthPx,
-          depthTargetHeightPx: dims.internalHeightPx,
-          blurTargetWidthPx: dims.internalWidthPx,
-          blurTargetHeightPx: dims.internalHeightPx,
-          resourceGeneration: resourceGenerationRef.current,
-        });
-      }
-    } catch (err) {
-      void err;
-    }
 
     // create main render target at the resolved internal size
     const rt = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
@@ -206,7 +144,12 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
 
     const scene = new THREE.Scene();
     offscreenScene.current = scene;
-    const camera = new THREE.PerspectiveCamera(45, widthPx / heightPx, 0.01, 100);
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      dims.logicalWidthPx / dims.logicalHeightPx,
+      0.01,
+      100,
+    );
     groundGlassCamera.current = camera;
 
     // set a light, sky and floor that match the studio look for Focus Fundamentals
@@ -351,7 +294,9 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     try {
       const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
       if (setInfo) {
-        const resolvedProfile = (renderQuality as import("../types/ui").RenderQualityProfile) || ("standard" as import("../types/ui").RenderQualityProfile);
+        const resolvedProfile =
+          (sizeInputs.renderQuality as import("../types/ui").RenderQualityProfile) ||
+          ("standard" as import("../types/ui").RenderQualityProfile);
         const configuredCanvasDpr = getRenderQualitySettings(resolvedProfile).dpr;
         const actualColorW = (renderTarget.current as THREE.WebGLRenderTarget).width;
         const actualColorH = (renderTarget.current as THREE.WebGLRenderTarget).height;
@@ -382,6 +327,12 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
           depthTargetHeightPx: actualDepthH,
           blurTargetWidthPx: tempW,
           blurTargetHeightPx: tempH,
+          finalTargetWidthPx: finalRT.width,
+          finalTargetHeightPx: finalRT.height,
+          horizontalShaderRenderWidthPx: matH.uniforms.renderWidth.value as number,
+          horizontalShaderRenderHeightPx: matH.uniforms.renderHeight.value as number,
+          verticalShaderRenderWidthPx: matV.uniforms.renderWidth.value as number,
+          verticalShaderRenderHeightPx: matV.uniforms.renderHeight.value as number,
           depthTextureAvailable: Boolean(
             (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture,
           ),
@@ -503,11 +454,11 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         } catch (err) { void err; }
       }
     };
-  }, [displayBlurScale, gl, heightPx, maximumBlurRadiusPx, renderQuality, sceneId, widthPx]);
+  }, [displayBlurScale, gl, maximumBlurRadiusPx, sceneId]);
 
-  // Zoom changes affect only internal RTT resolution. Keep the scene subject,
-  // camera, materials, post-processing scenes, and Canvas mounted while the
-  // owned size-dependent targets are resized as one synchronous transaction.
+  // Logical size, quality, DPR, and zoom affect only internal RTT resolution.
+  // Keep the scene subject, camera, materials, post-processing scenes, and
+  // Canvas mounted while owned targets resize as one synchronous transaction.
   useLayoutEffect(() => {
     const rt = renderTarget.current;
     const post = postResourcesRef.current;
@@ -572,6 +523,12 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       depthTargetHeightPx: depthImage?.height ?? rt.height,
       blurTargetWidthPx: post.tempRT.width,
       blurTargetHeightPx: post.tempRT.height,
+      finalTargetWidthPx: post.finalRT.width,
+      finalTargetHeightPx: post.finalRT.height,
+      horizontalShaderRenderWidthPx: horizontalMaterial.uniforms.renderWidth.value as number,
+      horizontalShaderRenderHeightPx: horizontalMaterial.uniforms.renderHeight.value as number,
+      verticalShaderRenderWidthPx: verticalMaterial.uniforms.renderWidth.value as number,
+      verticalShaderRenderHeightPx: verticalMaterial.uniforms.renderHeight.value as number,
       resourceGeneration: resourceGenerationRef.current,
     });
   }, [gl, heightPx, renderQuality, widthPx, zoomEnabled]);

@@ -2,6 +2,25 @@ import { describe, it, expect } from 'vitest';
 import { resolveGroundGlassRttDimensions } from "../../render/groundGlassRttDimensions";
 
 describe("resolveGroundGlassRttDimensions", () => {
+  it("resolves responsive logical dimensions across every quality profile", () => {
+    const profiles = ["low", "standard", "high"] as const;
+    const dimensions = profiles.map((renderQuality) =>
+      resolveGroundGlassRttDimensions({
+        logicalWidth: 731,
+        logicalHeight: 585,
+        renderQuality,
+        devicePixelRatio: 1,
+      }),
+    );
+
+    dimensions.forEach((dims) => {
+      expect(dims.logicalWidthPx).toBe(731);
+      expect(dims.logicalHeightPx).toBe(585);
+    });
+    expect(dimensions[0].internalWidthPx).toBeLessThan(dimensions[1].internalWidthPx);
+    expect(dimensions[1].internalWidthPx).toBeLessThan(dimensions[2].internalWidthPx);
+  });
+
   it("computes expected sizes at DPR=1", () => {
     const logicalW = 500;
     const logicalH = 400;
@@ -81,5 +100,20 @@ describe("resolveGroundGlassRttDimensions", () => {
     expect(dims.internalWidthPx).toBeLessThanOrEqual(1600);
     expect(dims.internalHeightPx).toBeLessThanOrEqual(1280);
     expect(dims.wasClamped).toBe(true);
+    expect(dims.internalWidthPx / dims.internalHeightPx).toBeCloseTo(logicalW / logicalH, 2);
+  });
+
+  it("normalizes invalid logical dimensions to positive integer pixels", () => {
+    const dims = resolveGroundGlassRttDimensions({
+      logicalWidth: Number.NaN,
+      logicalHeight: 0,
+      renderQuality: "standard",
+      devicePixelRatio: 1,
+    });
+
+    expect(dims.logicalWidthPx).toBe(1);
+    expect(dims.logicalHeightPx).toBe(1);
+    expect(dims.internalWidthPx).toBe(1);
+    expect(dims.internalHeightPx).toBe(1);
   });
 });
