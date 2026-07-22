@@ -423,6 +423,8 @@ test("Ground Glass RTT quality changes resize targets in place", async ({ page }
   if (!wrapper || !canvas) throw new Error("Ground Glass identities unavailable");
   const quality = page.getByLabel("Render quality");
   const initial = await readRttSnapshot(page);
+  const initialSanityState = await rtt.getAttribute("data-rtt-sanity-state");
+  await expect(quality).toHaveValue("high");
   const assertSnapshot = async (snapshot: RttSnapshot) => {
     expect(snapshot.stageWidth / snapshot.stageHeight).toBeCloseTo(5 / 4, 2);
     expect(Math.abs(snapshot.logicalWidth - snapshot.stageWidth)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
@@ -444,11 +446,14 @@ test("Ground Glass RTT quality changes resize targets in place", async ({ page }
     expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'), canvas)).toBe(true);
     await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
   };
+  await assertSnapshot(initial);
   const settle = async (profile: "low" | "standard" | "high") => {
+    const previousSanityState = await rtt.getAttribute("data-rtt-sanity-state");
     await quality.selectOption(profile);
     await expect(quality).toHaveValue(profile);
-    await expect.poll(() => rtt.getAttribute("data-rtt-final-contentful"), { timeout: 120_000 }).toBe("true");
     await expect.poll(() => rtt.getAttribute("data-rtt-internal-width"), { timeout: 120_000 }).not.toBe(String(previousInternalWidth));
+    await expect.poll(() => rtt.getAttribute("data-rtt-sanity-state"), { timeout: 120_000 }).not.toBe(previousSanityState);
+    await expect.poll(() => rtt.getAttribute("data-rtt-final-contentful"), { timeout: 120_000 }).toBe("true");
     const snapshot = await readRttSnapshot(page);
     await assertSnapshot(snapshot);
     previousInternalWidth = snapshot.internalWidth;
@@ -461,6 +466,9 @@ test("Ground Glass RTT quality changes resize targets in place", async ({ page }
   const high = await settle("high");
   expect(low.internalWidth).toBeLessThan(standard.internalWidth);
   expect(standard.internalWidth).toBeLessThanOrEqual(high.internalWidth);
+  expect(high.internalWidth).toBe(initial.internalWidth);
+  expect(high.internalHeight).toBe(initial.internalHeight);
+  expect(initialSanityState).toBeTruthy();
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);
   expect(rendererWarnings, rendererWarnings.join("\n")).toEqual([]);
 });
