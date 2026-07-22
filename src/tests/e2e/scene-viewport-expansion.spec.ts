@@ -350,6 +350,30 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   expect(resized.generation).toBe(normal.generation);
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
 
+  // Resize back while still expanded; the same resource graph and DOM nodes must survive.
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect.poll(async () => (await readRttSnapshot(page)).logicalWidth, { timeout: 30_000 }).not.toBe(resized.logicalWidth);
+  const resizedBack = await readRttSnapshot(page);
+  expect(resizedBack.stageWidth / resizedBack.stageHeight).toBeCloseTo(5 / 4, 2);
+  expect(Math.abs(resizedBack.logicalWidth - resizedBack.stageWidth)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
+  expect(Math.abs(resizedBack.logicalHeight - resizedBack.stageHeight)).toBeLessThanOrEqual(LOGICAL_SIZE_TOLERANCE_PX);
+  expect(resizedBack.internalWidth).toBe(resizedBack.colorWidth);
+  expect(resizedBack.internalHeight).toBe(resizedBack.colorHeight);
+  expect(resizedBack.colorWidth).toBe(resizedBack.depthWidth);
+  expect(resizedBack.colorHeight).toBe(resizedBack.depthHeight);
+  expect(resizedBack.colorWidth).toBe(resizedBack.blurWidth);
+  expect(resizedBack.colorHeight).toBe(resizedBack.blurHeight);
+  expect(resizedBack.colorWidth).toBe(resizedBack.finalWidth);
+  expect(resizedBack.colorHeight).toBe(resizedBack.finalHeight);
+  expect(resizedBack.horizontalShaderWidth).toBe(resizedBack.internalWidth);
+  expect(resizedBack.horizontalShaderHeight).toBe(resizedBack.internalHeight);
+  expect(resizedBack.verticalShaderWidth).toBe(resizedBack.internalWidth);
+  expect(resizedBack.verticalShaderHeight).toBe(resizedBack.internalHeight);
+  expect(resizedBack.generation).toBe(normal.generation);
+  expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"]'), rttHandle)).toBe(true);
+  expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'), canvasHandle)).toBe(true);
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
+
   await page.getByRole("button", { name: "Restore Ground Glass" }).click();
   await expect(page.getByRole("button", { name: "Expand Ground Glass" })).toBeVisible();
   await expect.poll(async () => (await readRttSnapshot(page)).logicalWidth, { timeout: 30_000 }).not.toBe(resized.logicalWidth);
