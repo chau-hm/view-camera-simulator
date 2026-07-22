@@ -295,7 +295,7 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
     }
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/simulator/free/architecture-rise");
+  await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
 
   const rtt = page.getByTestId("ground-glass-rtt");
   const canvas = rtt.locator("canvas");
