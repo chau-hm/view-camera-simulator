@@ -31,11 +31,13 @@ export const architectureRiseScene: SceneDefinition = {
   cameraPreset: {
     // initial focus distance set to the canonical façade focus distance
     focusDistanceMm: geometry.architectureFacadeFocusDistanceMm,
-    aperture: 11,
-    frontRiseMm: 0,
-    frontTiltDeg: 0,
-    frontSwingDeg: 0,
-  },
+   aperture: 11,
+   frontRiseMm: 0,
+   frontTiltDeg: 0,
+   frontSwingDeg: 0,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+ },
   cameraPlacement: {
     // Observer camera is intentionally separate from the physical camera datum.
     // This three-quarter view keeps the full camera, ground, and building visible.

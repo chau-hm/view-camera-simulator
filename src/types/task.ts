@@ -4,10 +4,12 @@ import type { SceneDefinition } from "./scene";
 
 export type TaskInitialCameraState = Pick<
   CameraState,
-  | "frontRiseMm"
-  | "frontTiltDeg"
-  | "frontSwingDeg"
-  | "focusDistanceMm"
+ | "frontRiseMm"
+ | "frontTiltDeg"
+ | "frontSwingDeg"
+  | "rearRiseMm"
+  | "rearTiltDeg"
+ | "focusDistanceMm"
   | "aperture"
   | "geometryView"
   | "groundGlassAssistEnabled"

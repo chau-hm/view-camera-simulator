@@ -14,10 +14,10 @@ import {
   isLensFilmNearlyParallel,
 } from "./calculateLensPlane";
 import {
-  calculateFilmPlaneCorners,
   calculateOffAxisProjectionMatrix,
   createOffAxisProjectionInput,
 } from "./calculateOffAxisProjection";
+import { calculateRearStandardFrame } from "./calculateRearStandardFrame";
 import { calculateSharpness } from "./calculateSharpness";
 import { isFiniteVec3, vec, subtract, dot, add, scale } from "../math/vec";
 
@@ -28,15 +28,24 @@ const isFiniteCameraInput = (cameraState: CameraState): boolean =>
     cameraState.frontRiseMm,
     cameraState.frontTiltDeg,
     cameraState.frontSwingDeg,
+    cameraState.rearRiseMm,
+    cameraState.rearTiltDeg,
   ].every((value) => Number.isFinite(value));
 
 const baseFallbackState = (cameraState: CameraState, errorMessage: string): DerivedOpticsState => {
   const lensCenterWorld = vec(0, cameraState.frontRiseMm, 0);
   const lensNormalWorld = vec(0, 0, 1);
-  const { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(
+  const { filmCenterWorld: baselineFilmCenter } = createFilmPlane(
     cameraState.focalLengthMm,
   );
-  const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
+  const { frame: rearFrame, corners: filmPlaneCornersWorld } = calculateRearStandardFrame(
+    baselineFilmCenter,
+    cameraState.rearRiseMm ?? 0,
+    cameraState.rearTiltDeg ?? 0,
+  );
+  const filmCenterWorld = rearFrame.centerWorld;
+  const filmNormalWorld = rearFrame.normalWorld;
+  const filmPlane = rearFrame.plane;
   const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
   const focusPointWorld = vec(0, 0, cameraState.focusDistanceMm);
   const focusPlane = {
@@ -57,6 +66,7 @@ const baseFallbackState = (cameraState: CameraState, errorMessage: string): Deri
     filmNormalWorld,
     filmPlane,
     filmPlaneCornersWorld,
+    rearStandardFrame: rearFrame,
     opticalAxis,
     lensFilmHingeLine: null,
     focusPointWorld,
@@ -99,11 +109,16 @@ export const deriveOpticsState = (
     const f = cameraState.focalLengthMm;
     const lensCenterWorld = vec(0, 0, f);
     const lensNormalWorld = vec(0, 0, 1);
-    const filmCenterWorld = vec(0, 0, 0);
-    const filmNormalWorld = vec(0, 0, 1);
-    const filmPlane = planeFromPointNormal(filmCenterWorld, filmNormalWorld);
+    const baselineFilmCenter = vec(0, 0, 0);
+    const { frame: rearFrame, corners: filmPlaneCornersWorld } = calculateRearStandardFrame(
+      baselineFilmCenter,
+      cameraState.rearRiseMm ?? 0,
+      cameraState.rearTiltDeg ?? 0,
+    );
+    const filmCenterWorld = rearFrame.centerWorld;
+    const filmNormalWorld = rearFrame.normalWorld;
+    const filmPlane = rearFrame.plane;
     const lensPlane = planeFromPointNormal(lensCenterWorld, lensNormalWorld);
-    const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
     const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
 
     // For Infinity focus we do NOT provide a physical focus plane or a finite far DOF plane.
@@ -134,6 +149,7 @@ export const deriveOpticsState = (
       filmNormalWorld,
       filmPlane,
       filmPlaneCornersWorld,
+      rearStandardFrame: rearFrame,
       opticalAxis,
       lensFilmHingeLine: null,
       // physical focus plane is absent in infinity mode
@@ -224,7 +240,14 @@ export const deriveOpticsState = (
     // focus plane world point is at z = S
   }
 
-  const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
+  const { frame: rearFrame, corners: filmPlaneCornersWorld } = calculateRearStandardFrame(
+    filmCenterWorld,
+    cameraState.rearRiseMm ?? 0,
+    cameraState.rearTiltDeg ?? 0,
+  );
+  filmCenterWorld = rearFrame.centerWorld;
+  filmNormalWorld = rearFrame.normalWorld;
+  filmPlane = rearFrame.plane;
   const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
 
   // Determine focus point / plane
@@ -330,6 +353,7 @@ export const deriveOpticsState = (
     filmNormalWorld,
     filmPlane,
     filmPlaneCornersWorld,
+    rearStandardFrame: rearFrame,
     opticalAxis,
     lensFilmHingeLine,
     focusPointWorld,

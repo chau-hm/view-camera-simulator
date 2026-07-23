@@ -11,6 +11,8 @@ export const selectMovementControlState = (state: AppStore) => ({
   frontRiseMm: state.camera.frontRiseMm,
   frontTiltDeg: state.camera.frontTiltDeg,
   frontSwingDeg: state.camera.frontSwingDeg,
+  rearRiseMm: state.camera.rearRiseMm,
+  rearTiltDeg: state.camera.rearTiltDeg,
 });
 
 export const selectFocusControlState = (state: AppStore) => ({
@@ -47,6 +49,8 @@ const buildDerivedCameraKey = (camera: CameraState) =>
     camera.frontRiseMm,
     camera.frontTiltDeg,
     camera.frontSwingDeg,
+    camera.rearRiseMm,
+    camera.rearTiltDeg,
     camera.activeSceneId,
     camera.groundGlassAssistEnabled,
   ].join("|");
