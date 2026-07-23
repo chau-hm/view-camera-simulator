@@ -31,6 +31,8 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
   frontRiseMm: 0,
   frontTiltDeg: 0,
   frontSwingDeg: 0,
+  rearRiseMm: 0,
+  rearTiltDeg: 0,
   activeSceneId: "architecture-rise",
   activeTaskId: "rise-01",
   mode: "guided",

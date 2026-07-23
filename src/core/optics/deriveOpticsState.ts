@@ -26,9 +26,11 @@ const isFiniteCameraInput = (cameraState: CameraState): boolean =>
     cameraState.focalLengthMm,
     cameraState.focusDistanceMm,
     cameraState.frontRiseMm,
-    cameraState.frontTiltDeg,
-    cameraState.frontSwingDeg,
-  ].every((value) => Number.isFinite(value));
+   cameraState.frontTiltDeg,
+   cameraState.frontSwingDeg,
+    cameraState.rearRiseMm,
+    cameraState.rearTiltDeg,
+ ].every((value) => Number.isFinite(value));
 
 const baseFallbackState = (cameraState: CameraState, errorMessage: string): DerivedOpticsState => {
   const lensCenterWorld = vec(0, cameraState.frontRiseMm, 0);

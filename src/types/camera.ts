@@ -11,6 +11,8 @@ export type CameraState = {
   frontRiseMm: number;
   frontTiltDeg: number;
   frontSwingDeg: number;
+  rearRiseMm: number;
+  rearTiltDeg: number;
   activeSceneId: string;
   activeTaskId: string | null;
   mode: SimulatorMode;

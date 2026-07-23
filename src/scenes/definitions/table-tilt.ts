@@ -30,11 +30,13 @@ export const tableTiltScene: SceneDefinition = {
   ],
   cameraPreset: {
     focusDistanceMm: geometry.canonicalFocusDistanceMm,
-    aperture: 11,
-    frontRiseMm: 0,
-    frontTiltDeg: 0,
-    frontSwingDeg: 0,
-  },
+   aperture: 11,
+   frontRiseMm: 0,
+   frontTiltDeg: 0,
+   frontSwingDeg: 0,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+ },
   cameraPlacement: {
     position: geometry.observerCamera.position,
     target: geometry.observerCamera.target,
