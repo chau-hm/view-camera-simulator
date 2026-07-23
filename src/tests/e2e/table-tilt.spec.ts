@@ -584,6 +584,8 @@ test("3D overlay controls switch responsively without wrapping or blocking the s
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await expect(menu).toHaveCount(0);
   await expect(responsive).toHaveCSS("pointer-events", "none");
+  const overlayMenu = page.locator(".scene-overlay-menu");
+  await expect(overlayMenu).toHaveCSS("pointer-events", "none");
   await expect(trigger).toHaveCSS("pointer-events", "auto");
 
   await page.setViewportSize({ width: 1920, height: 1000 });
@@ -824,7 +826,19 @@ test("Ground Glass zoom state resets across free/guided and scene navigation", a
   await expect(page.getByRole("button", { name: "Scheimpflug Section" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Fit Construction" })).toHaveCount(0);
   await page.goto("/simulator/free/focus-fundamentals-two-targets");
+  await expect(page).toHaveURL(/\/simulator\/free\/focus-fundamentals-two-targets$/);
+  viewport = page.getByLabel("GroundGlassViewport");
+  stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
+  await expect(stage).toHaveAttribute("data-zoomed", "false");
+  await expect(stage).toHaveAttribute("data-pan-x", "0");
+  await expect(stage).toHaveAttribute("data-pan-y", "0");
+  await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();
   await page.getByRole("button", { name: "View overlays" }).click();
+  await expect(page.getByRole("button", { name: "Hide Optical geometry" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show Optical geometry" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Hide Optical geometry" }).click();
+  await expect(page.getByRole("button", { name: "Show Optical geometry" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Hide Optical geometry" })).toHaveCount(0);
   await page.getByRole("button", { name: "Show Optical geometry" }).click();
   await expect(page.getByRole("button", { name: "Hide Optical geometry" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Scheimpflug construction/ })).toHaveCount(0);
