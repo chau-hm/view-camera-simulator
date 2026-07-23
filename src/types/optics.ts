@@ -82,6 +82,7 @@ export type DerivedOpticsState = {
   filmNormalWorld: Vec3;
   filmPlane: Plane;
   filmPlaneCornersWorld: FilmPlaneCorners;
+  rearStandardFrame?: StandardFrame;
   opticalAxis: Ray;
   /** Legacy compatibility name: this is the film/lens Scheimpflug common line, not the Hinge Rule line. */
   lensFilmHingeLine: Line3 | null;
@@ -115,4 +116,12 @@ export type DerivedOpticsState = {
     errorMessage?: string;
     isInfinityFocus?: boolean;
   };
+};
+
+export type StandardFrame = {
+  centerWorld: Vec3;
+  rightWorld: Vec3;
+  upWorld: Vec3;
+  normalWorld: Vec3;
+  plane: Plane;
 };
