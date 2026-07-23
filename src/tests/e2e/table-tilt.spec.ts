@@ -584,6 +584,8 @@ test("3D overlay controls switch responsively without wrapping or blocking the s
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await expect(menu).toHaveCount(0);
   await expect(responsive).toHaveCSS("pointer-events", "none");
+  const overlayMenu = page.locator(".scene-overlay-menu");
+  await expect(overlayMenu).toHaveCSS("pointer-events", "none");
   await expect(trigger).toHaveCSS("pointer-events", "auto");
 
   await page.setViewportSize({ width: 1920, height: 1000 });

@@ -905,9 +905,10 @@ button {
   width: 100%;
   pointer-events: none;
 }
-.scene-overlay-controls,
-.scene-overlay-menu { pointer-events: auto; }
-.scene-overlay-menu { position: relative; width: 100%; max-width: 100%; }
+.scene-overlay-controls { pointer-events: auto; }
+.scene-overlay-menu { position: relative; width: 100%; max-width: 100%; pointer-events: none; }
+.scene-overlay-menu__trigger,
+.scene-overlay-menu__panel { pointer-events: auto; }
 .scene-overlay-menu__trigger {
   display: inline-flex;
   align-items: center;

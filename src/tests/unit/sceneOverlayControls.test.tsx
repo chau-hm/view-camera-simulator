@@ -117,4 +117,20 @@ describe("SceneOverlayControls", () => {
     fireEvent.click(view.getByRole("button", { name: "View overlays" }));
     expect(view.queryByRole("button", { name: /Scheimpflug construction/ })).toBeNull();
   });
+
+  it("keeps the menu trigger and panel interactive while the wrapper is transparent", () => {
+    const view = render(<SceneOverlayControls {...createBaseProps()} />);
+    const trigger = view.getByRole("button", { name: "View overlays" });
+    const menu = view.container.querySelector(".scene-overlay-menu");
+    expect(menu).not.toBeNull();
+    expect(menu).toHaveClass("scene-overlay-menu");
+    expect(trigger).toHaveClass("scene-overlay-menu__trigger");
+    fireEvent.click(trigger);
+    const panel = view.container.querySelector(".scene-overlay-menu__panel");
+    expect(panel).not.toBeNull();
+    expect(panel).toHaveClass("scene-overlay-menu__panel");
+    const legends = view.getByRole("button", { name: "Show Legends" });
+    fireEvent.click(legends);
+    expect(view.container.querySelector(".scene-overlay-menu__panel")).not.toBeNull();
+  });
 });
