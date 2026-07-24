@@ -461,9 +461,9 @@ export function computeOpticalSectionData({
         ? { p1: mapToScreen(clippedAxis[0]), p2: mapToScreen(clippedAxis[1]) }
         : null;
 
-      const rearFrame = opticsState.rearStandardFrame!;
-      const filmHeightMm = 101.6;
-      const filmWidthMm = 127;
+      const rearFrame = opticsState.rearStandardFrame;
+      const filmHeightMm = CAMERA_CONSTANTS.filmHeightMm;
+      const filmWidthMm = CAMERA_CONSTANTS.filmWidthMm;
       const isSideView = section.id === "side";
       const isTopView = section.id === "top";
       let filmSectionEndpoints: Vec3[];

@@ -291,4 +291,110 @@ describe("optical section projection", () => {
     expect(second.lateralAxis).toEqual(first.lateralAxis);
     expect(second.normal).toEqual(first.normal);
   });
+
+describe("computeOpticalSectionData rear-movement consumer tests", () => {
+  const tableTiltDepth = { minMm: -2000, maxMm: 8000 };
+
+  it("rear tilt Side view physical film has non-zero slope and is collinear with trace", () => {
+    const cam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: 8 });
+    const optics = deriveOpticsState(cam, tableTiltScene);
+    const data = computeOpticalSectionData({
+      opticsState: optics, scene: tableTiltScene,
+      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
+    });
+    const view = data.views.side;
+    const physical = view.physicalPlaneSegments.find((s) => s.id === "physical-film");
+    const trace = view.planeSegments.find((s) => s.id === "film");
+    expect(physical).toBeDefined();
+    expect(trace).toBeDefined();
+    expect(Math.abs(physical!.p2.x - physical!.p1.x)).toBeGreaterThan(0);
+    const residual = normalizedSegmentCrossResidual(physical!, trace!);
+    expect(residual).toBeLessThan(PROJECTED_COLLINEARITY_TOLERANCE);
+    const projectedCentre = view.projectWorldPoint(optics.filmCenterWorld);
+    const mid = { x: (physical!.p1.x + physical!.p2.x) / 2, y: (physical!.p1.y + physical!.p2.y) / 2 };
+    expect(Math.abs(mid.x - projectedCentre.x)).toBeLessThan(2);
+    expect(Math.abs(mid.y - projectedCentre.y)).toBeLessThan(2);
+  });
+
+  it("negative rear tilt Side view physical film slope changes sign", () => {
+    const neg = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: -8 });
+    const pos = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: 8 });
+    const dn = computeOpticalSectionData({
+      opticsState: deriveOpticsState(neg, tableTiltScene), scene: tableTiltScene,
+      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
+    });
+    const dp = computeOpticalSectionData({
+      opticsState: deriveOpticsState(pos, tableTiltScene), scene: tableTiltScene,
+      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
+    });
+    const pn = dn.views.side.physicalPlaneSegments.find((s) => s.id === "physical-film");
+    const pp = dp.views.side.physicalPlaneSegments.find((s) => s.id === "physical-film");
+    expect(pn).toBeDefined(); expect(pp).toBeDefined();
+    const sn = (pn!.p2.y - pn!.p1.y) / (pn!.p2.x - pn!.p1.x || 1);
+    const sp = (pp!.p2.y - pp!.p1.y) / (pp!.p2.x - pp!.p1.x || 1);
+    expect(sn * sp).toBeLessThan(0);
+  });
+
+  it("rear tilt Top view remains consistent with right axis", () => {
+    const cam = cameraFor(tableTiltScene, { rearTiltDeg: 8 });
+    const optics = deriveOpticsState(cam, tableTiltScene);
+    const data = computeOpticalSectionData({
+      opticsState: optics, scene: tableTiltScene,
+      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
+    });
+    const physical = data.views.top.physicalPlaneSegments.find((s) => s.id === "physical-film");
+    const trace = data.views.top.planeSegments.find((s) => s.id === "film");
+    expect(physical).toBeDefined(); expect(trace).toBeDefined();
+    const residual = normalizedSegmentCrossResidual(physical!, trace!);
+    expect(residual).toBeLessThan(PROJECTED_COLLINEARITY_TOLERANCE);
+  });
+
+  it("matching front/rear tilt Side has parallel lens and film traces", () => {
+    const cam = cameraFor(tableTiltScene, { frontTiltDeg: 5, rearTiltDeg: 5 });
+    const optics = deriveOpticsState(cam, tableTiltScene);
+    const data = computeOpticalSectionData({
+      opticsState: optics, scene: tableTiltScene,
+      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
+    });
+    const filmTrace = data.views.side.planeSegments.find((s) => s.id === "film");
+    const lensTrace = data.views.side.planeSegments.find((s) => s.id === "lens");
+    expect(filmTrace).toBeDefined(); expect(lensTrace).toBeDefined();
+    expect(normalizedSegmentCrossResidual(filmTrace!, lensTrace!)).toBeLessThan(PROJECTED_COLLINEARITY_TOLERANCE);
+    expect(data.views.side.scheimpflugIntersection).toBeNull();
+    const phys = data.views.side.physicalPlaneSegments.find((s) => s.id === "physical-film");
+    expect(phys).toBeDefined();
+    expect(normalizedSegmentCrossResidual(phys!, filmTrace!)).toBeLessThan(PROJECTED_COLLINEARITY_TOLERANCE);
+  });
+
+  it("FOV rays project from lens to physical film endpoints", () => {
+    const cam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: 8 });
+    const optics = deriveOpticsState(cam, tableTiltScene);
+    const data = computeOpticalSectionData({
+      opticsState: optics, scene: tableTiltScene,
+      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
+    });
+    expect(data.views.side.fovSegments.length).toBeGreaterThanOrEqual(2);
+    for (const seg of data.views.side.fovSegments) {
+      expect(Number.isFinite(seg.p1.x) && Number.isFinite(seg.p1.y)).toBe(true);
+      expect(Number.isFinite(seg.p2.x) && Number.isFinite(seg.p2.y)).toBe(true);
+    }
+  });
+
+  it("Scheimpflug view physical-film remains on canonical film plane", () => {
+    const cam = cameraFor(tableTiltScene, {
+      frontTiltDeg: tableTiltGeometry.tableTiltCalibration.frontTiltDeg,
+      focusDistanceMm: tableTiltGeometry.tableTiltCalibration.focusDistanceMm,
+    });
+    const optics = deriveOpticsState(cam, tableTiltScene);
+    const data = computeOpticalSectionData({
+      opticsState: optics, scene: tableTiltScene,
+      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
+    });
+    const phys = data.views.scheimpflug.physicalPlaneSegments.find((s) => s.id === "physical-film");
+    const trace = data.views.scheimpflug.planeSegments.find((s) => s.id === "film");
+    expect(phys).toBeDefined(); expect(trace).toBeDefined();
+    expect(normalizedSegmentCrossResidual(phys!, trace!)).toBeLessThan(PROJECTED_COLLINEARITY_TOLERANCE);
+  });
+});
+
 });

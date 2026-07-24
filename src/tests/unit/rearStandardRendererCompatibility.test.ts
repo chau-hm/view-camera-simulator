@@ -112,9 +112,9 @@ describe("C2: 3D camera model consumes transformed film centre and normal", () =
       tableTiltScene,
     );
     // filmPlane.point should equal rearStandardFrame.centerWorld
-    expect(optics.filmPlane.point).toEqual(optics.rearStandardFrame!.centerWorld);
+    expect(optics.filmPlane.point).toEqual(optics.rearStandardFrame.centerWorld);
     // filmPlane.normal should equal rearStandardFrame.normalWorld
-    expect(optics.filmPlane.normal).toEqual(optics.rearStandardFrame!.normalWorld);
+    expect(optics.filmPlane.normal).toEqual(optics.rearStandardFrame.normalWorld);
   });
 });
 

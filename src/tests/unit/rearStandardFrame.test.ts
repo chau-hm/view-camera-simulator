@@ -31,10 +31,9 @@ describe("Case 1: zero rear movement preserves current optics", () => {
       const optics = deriveOpticsState(cam, scene);
 
       // Verify rearStandardFrame exists
-      expect(optics.rearStandardFrame).toBeDefined();
 
       // Verify frame orthonormality at zero tilt
-      const frame = optics.rearStandardFrame!;
+      const frame = optics.rearStandardFrame;
       expect(frame.rightWorld).toEqual(vec(1, 0, 0));
       expect(frame.upWorld).toEqual(vec(0, 1, 0));
       expect(frame.normalWorld).toEqual(vec(0, 0, 1));
@@ -340,7 +339,7 @@ describe("film corner invariants", () => {
     const optics = deriveOpticsState(cameraFor(architectureRiseScene), architectureRiseScene);
     const result = validateFilmCorners(
       optics.filmPlaneCornersWorld,
-      optics.rearStandardFrame!,
+      optics.rearStandardFrame,
       CAMERA_CONSTANTS.filmWidthMm,
       CAMERA_CONSTANTS.filmHeightMm,
     );
@@ -354,7 +353,7 @@ describe("film corner invariants", () => {
     );
     const result = validateFilmCorners(
       optics.filmPlaneCornersWorld,
-      optics.rearStandardFrame!,
+      optics.rearStandardFrame,
       CAMERA_CONSTANTS.filmWidthMm,
       CAMERA_CONSTANTS.filmHeightMm,
     );
@@ -368,7 +367,7 @@ describe("film corner invariants", () => {
     );
     const result = validateFilmCorners(
       optics.filmPlaneCornersWorld,
-      optics.rearStandardFrame!,
+      optics.rearStandardFrame,
       CAMERA_CONSTANTS.filmWidthMm,
       CAMERA_CONSTANTS.filmHeightMm,
     );

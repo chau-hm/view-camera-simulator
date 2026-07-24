@@ -87,7 +87,7 @@ export type DerivedOpticsState = {
   filmNormalWorld: Vec3;
   filmPlane: Plane;
   filmPlaneCornersWorld: FilmPlaneCorners;
-  rearStandardFrame?: StandardFrame;
+  rearStandardFrame: StandardFrame;
   opticalAxis: Ray;
   /** Legacy compatibility name: this is the film/lens Scheimpflug common line, not the Hinge Rule line. */
   lensFilmHingeLine: Line3 | null;
