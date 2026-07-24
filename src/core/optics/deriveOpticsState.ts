@@ -5,7 +5,7 @@ import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
 import { solveLensExtensionForRearDatumFocusDepth, imageDistanceMm } from "./thinLensModel";
-import { planeFromPointNormal } from "../math/plane";
+import { arePlanesNearlyParallel, planeFromPointNormal } from "../math/plane";
 import {
   calculateLensFilmHingeLine,
   calculateLensPlane,
@@ -40,8 +40,8 @@ const baseFallbackState = (cameraState: CameraState, errorMessage: string): Deri
   );
   const { frame: rearFrame, corners: filmPlaneCornersWorld } = calculateRearStandardFrame(
     baselineFilmCenter,
-    cameraState.rearRiseMm ?? 0,
-    cameraState.rearTiltDeg ?? 0,
+    Number.isFinite(cameraState.rearRiseMm) ? cameraState.rearRiseMm : 0,
+    Number.isFinite(cameraState.rearTiltDeg) ? cameraState.rearTiltDeg : 0,
   );
   const filmCenterWorld = rearFrame.centerWorld;
   const filmNormalWorld = rearFrame.normalWorld;
@@ -109,12 +109,17 @@ export const deriveOpticsState = (
     const f = cameraState.focalLengthMm;
     const lensCenterWorld = vec(0, 0, f);
     const lensNormalWorld = vec(0, 0, 1);
+    const hasValidRearInput =
+      Number.isFinite(cameraState.rearRiseMm) && Number.isFinite(cameraState.rearTiltDeg);
+    if (!hasValidRearInput) {
+      return baseFallbackState(
+        cameraState,
+        "Invalid rear movement values for infinity focus",
+      );
+    }
     const baselineFilmCenter = vec(0, 0, 0);
-    const { frame: rearFrame, corners: filmPlaneCornersWorld } = calculateRearStandardFrame(
-      baselineFilmCenter,
-      cameraState.rearRiseMm ?? 0,
-      cameraState.rearTiltDeg ?? 0,
-    );
+    const { frame: rearFrame, corners: filmPlaneCornersWorld } =
+      calculateRearStandardFrame(baselineFilmCenter, cameraState.rearRiseMm, cameraState.rearTiltDeg);
     const filmCenterWorld = rearFrame.centerWorld;
     const filmNormalWorld = rearFrame.normalWorld;
     const filmPlane = rearFrame.plane;
@@ -240,11 +245,11 @@ export const deriveOpticsState = (
     // focus plane world point is at z = S
   }
 
-  const { frame: rearFrame, corners: filmPlaneCornersWorld } = calculateRearStandardFrame(
-    filmCenterWorld,
-    cameraState.rearRiseMm ?? 0,
-    cameraState.rearTiltDeg ?? 0,
-  );
+  if (!Number.isFinite(cameraState.rearRiseMm) || !Number.isFinite(cameraState.rearTiltDeg)) {
+    return baseFallbackState(cameraState, 'Invalid rear movement');
+  }
+  const { frame: rearFrame, corners: filmPlaneCornersWorld } =
+    calculateRearStandardFrame(filmCenterWorld, cameraState.rearRiseMm, cameraState.rearTiltDeg);
   filmCenterWorld = rearFrame.centerWorld;
   filmNormalWorld = rearFrame.normalWorld;
   filmPlane = rearFrame.plane;
@@ -263,9 +268,12 @@ export const deriveOpticsState = (
   // here. Only the exact zero-movement state is parallel for this scene.
   const isTableTilt = scene.id === "table-tilt";
   const hasTableTiltAngularMovement =
-    Math.abs(cameraState.frontTiltDeg) > 1e-9 || Math.abs(cameraState.frontSwingDeg) > 1e-9;
+    Math.abs(cameraState.frontTiltDeg) > 1e-12 ||
+    Math.abs(cameraState.frontSwingDeg) > 1e-12 ||
+    Math.abs(cameraState.rearTiltDeg) > 1e-12;
   const isParallelLensFilm = isTableTilt
-    ? !hasTableTiltAngularMovement
+    ? !hasTableTiltAngularMovement &&
+      arePlanesNearlyParallel(lensPlane, filmPlane, 1e-6)
     : isLensFilmNearlyParallel(lensPlane, filmPlane);
   const lensFilmHingeLine = isParallelLensFilm
     ? null
