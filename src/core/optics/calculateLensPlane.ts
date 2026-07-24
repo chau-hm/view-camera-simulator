@@ -49,6 +49,39 @@ export const calculateLensFilmHingeLine = (lensPlane: Plane, filmPlane: Plane): 
   };
 };
 
+
+/**
+ * Derive the lens/film relationship purely from the physical planes.
+ * Uses the stricter Table Tilt tolerance for that scene and the shared
+ * near-parallel tolerance for all other scenes.
+ */
+export type LensFilmRelationship = {
+  isParallel: boolean;
+  commonLine: Line3 | null;
+};
+
+export const deriveLensFilmRelationship = (
+  lensPlane: Plane,
+  filmPlane: Plane,
+  isTableTilt: boolean,
+  calculateCommonLine = true,
+): LensFilmRelationship => {
+  const thresholdDeg = isTableTilt
+    ? CAMERA_CONSTANTS.tableTiltParallelThresholdDeg
+    : CAMERA_CONSTANTS.tiltParallelThresholdDeg;
+  const isParallel = arePlanesNearlyParallel(lensPlane, filmPlane, thresholdDeg);
+
+  if (isParallel || !calculateCommonLine) {
+    return { isParallel, commonLine: null };
+  }
+
+  const commonLine = intersectPlanes(lensPlane, filmPlane);
+  return {
+    isParallel,
+    commonLine: commonLine || null,
+  };
+};
+
 export const calculateLensPlane = (
   cameraState: CameraState,
 ): { lensCenterWorld: Vec3; lensNormalWorld: Vec3; lensPlane: Plane } => {

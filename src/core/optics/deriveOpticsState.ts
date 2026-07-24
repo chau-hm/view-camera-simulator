@@ -5,13 +5,12 @@ import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
 import { solveLensExtensionForRearDatumFocusDepth, imageDistanceMm } from "./thinLensModel";
-import { arePlanesNearlyParallel, planeFromPointNormal } from "../math/plane";
+import { planeFromPointNormal } from "../math/plane";
 import {
-  calculateLensFilmHingeLine,
   calculateLensPlane,
   createFilmPlane,
   createOpticalAxis,
-  isLensFilmNearlyParallel,
+  deriveLensFilmRelationship,
 } from "./calculateLensPlane";
 import {
   calculateOffAxisProjectionMatrix,
@@ -141,6 +140,14 @@ export const deriveOpticsState = (
       visualCapMm,
     });
 
+    // Derive the actual physical lens/film relationship from the constructed
+    // planes.  Rear tilt can make the planes non-parallel in infinity mode.
+    const infinityLensFilmRel = deriveLensFilmRelationship(
+      lensPlane,
+      filmPlane,
+      scene.id === "table-tilt",
+    );
+
     const offAxisProjectionInput = createOffAxisProjectionInput(
       lensCenterWorld,
       filmPlaneCornersWorld,
@@ -156,7 +163,7 @@ export const deriveOpticsState = (
       filmPlaneCornersWorld,
       rearStandardFrame: rearFrame,
       opticalAxis,
-      lensFilmHingeLine: null,
+      lensFilmHingeLine: infinityLensFilmRel.commonLine,
       // physical focus plane is absent in infinity mode
       focusPointWorld: add(lensCenterWorld, scale(opticalAxis.direction, visualCapMm)),
       focusPlane: null,
@@ -171,10 +178,10 @@ export const deriveOpticsState = (
       // expose a scene visual cap depth for renderers that need a non-physical render endpoint
       sceneVisualCapDepthMm: visualCapMm,
       diagnostics: {
-        isParallelLensFilm: true,
+        isParallelLensFilm: infinityLensFilmRel.isParallel,
         tiltAngleDeg: cameraState.frontTiltDeg,
         swingAngleDeg: cameraState.frontSwingDeg,
-        focusPlaneModel: "parallel",
+        focusPlaneModel: infinityLensFilmRel.isParallel ? "parallel" : "scheimpflug",
         groundGlassDofModel: "parallel-thin-lens",
         fallbackApplied: false,
         errorMessage: "Infinity focus",
@@ -262,22 +269,17 @@ export const deriveOpticsState = (
     focusPointWorld = vec(0, 0, cameraState.focusDistanceMm);
   }
 
-  // Table Tilt needs a continuous transition from exactly zero movement to the
-  // smallest meaningful non-zero movement. The shared near-parallel tolerance
-  // is useful elsewhere, but would introduce an artificial 0.1° model switch
-  // here. Only the exact zero-movement state is parallel for this scene.
+  // Derive lens/film relationship from actual geometry.
+  // Table Tilt uses a strict 1e-6° tolerance so 0.01° relative tilt is not collapsed.
+  // All other scenes use the shared 0.1° near-parallel threshold.
   const isTableTilt = scene.id === "table-tilt";
-  const hasTableTiltAngularMovement =
-    Math.abs(cameraState.frontTiltDeg) > 1e-12 ||
-    Math.abs(cameraState.frontSwingDeg) > 1e-12 ||
-    Math.abs(cameraState.rearTiltDeg) > 1e-12;
-  const isParallelLensFilm = isTableTilt
-    ? !hasTableTiltAngularMovement &&
-      arePlanesNearlyParallel(lensPlane, filmPlane, 1e-6)
-    : isLensFilmNearlyParallel(lensPlane, filmPlane);
-  const lensFilmHingeLine = isParallelLensFilm
-    ? null
-    : calculateLensFilmHingeLine(lensPlane, filmPlane);
+  const lensFilmRel = deriveLensFilmRelationship(
+    lensPlane,
+    filmPlane,
+    isTableTilt,
+  );
+  const isParallelLensFilm = lensFilmRel.isParallel;
+  const lensFilmHingeLine = lensFilmRel.commonLine;
   const { focusPlane, focusPlaneModel } = calculateFocusPlaneWithFallback(
     focusPointWorld,
     filmPlane,

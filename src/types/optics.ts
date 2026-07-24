@@ -74,6 +74,11 @@ export type OffAxisProjectionInput = {
   filmCornersWorld: FilmPlaneCorners;
 };
 
+
+export type LensFilmRelationship = {
+  isParallel: boolean;
+  commonLine: Line3 | null;
+};
 export type DerivedOpticsState = {
   lensCenterWorld: Vec3;
   lensNormalWorld: Vec3;

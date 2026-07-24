@@ -210,14 +210,11 @@ describe("Case 5: matching front and rear tilt", () => {
       tableTiltScene,
     );
 
-    // When front and rear tilt match, lens and film normals should be parallel
-    const lensNormal = optics.lensNormalWorld;
-    const filmNormal = optics.filmNormalWorld;
-    const dot = lensNormal.x * filmNormal.x + lensNormal.y * filmNormal.y + lensNormal.z * filmNormal.z;
-    expect(Math.abs(Math.abs(dot) - 1)).toBeLessThan(0.001);
-
-    // No Scheimpflug common line when parallel
+    // Matching front and rear tilt: planes are genuinely parallel
+    expect(optics.diagnostics.isParallelLensFilm).toBe(true);
     expect(optics.lensFilmHingeLine).toBeNull();
+    expect(optics.diagnostics.focusPlaneModel).toBe("parallel");
+    expect(optics.diagnostics.depthOfFieldModel).toBe("parallel");
   });
 });
 
@@ -265,6 +262,76 @@ describe("Case 7: invalid rear values", () => {
     expect(optics.diagnostics.fallbackApplied).toBe(true);
     expect(optics.offAxisProjectionMatrix.every(Number.isFinite)).toBe(true);
     expect(Number.isFinite(optics.filmPlaneCornersWorld.topLeft.x)).toBe(true);
+  });
+});
+
+
+describe("Case 8: geometry-based Table Tilt parallelism", () => {
+  it("rear tilt only is non-parallel with finite common line", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: 8 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    expect(optics.lensFilmHingeLine).not.toBeNull();
+    expect(optics.diagnostics.focusPlaneModel).toBe("scheimpflug");
+    expect(optics.focusPlane).not.toBeNull();
+  });
+
+  it("0.01-degree relative tilt is non-parallel", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { frontTiltDeg: 0.01, rearTiltDeg: 0 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    expect(optics.diagnostics.focusPlaneModel).toBe("scheimpflug");
+  });
+
+  it("matching front tilt plus front swing is non-parallel", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { frontTiltDeg: 5, frontSwingDeg: 3, rearTiltDeg: 5 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    expect(optics.lensFilmHingeLine).not.toBeNull();
+  });
+});
+
+describe("Case 9: infinity focus lens/film relationship", () => {
+  it("zero rear movement is parallel with null common line", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusMode: "infinity" }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.isParallelLensFilm).toBe(true);
+    expect(optics.lensFilmHingeLine).toBeNull();
+    expect(optics.focusPlane).toBeNull();
+    expect(optics.depthOfFieldFarPlane).toBeNull();
+    expect(optics.diagnostics.focusPlaneModel).toBe("parallel");
+    expect(optics.diagnostics.isInfinityFocus).toBe(true);
+  });
+
+  it("rear tilt makes planes non-parallel with finite common line", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusMode: "infinity", rearTiltDeg: 8 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    expect(optics.lensFilmHingeLine).not.toBeNull();
+    const line = optics.lensFilmHingeLine!;
+    expect(Number.isFinite(line.point.x)).toBe(true);
+    expect(Number.isFinite(line.point.y)).toBe(true);
+    expect(Number.isFinite(line.point.z)).toBe(true);
+  });
+
+  it("infinity rear tilt focusPlane remains null", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusMode: "infinity", rearTiltDeg: 8 }),
+      tableTiltScene,
+    );
+    expect(optics.focusPlane).toBeNull();
+    expect(optics.depthOfFieldFarPlane).toBeNull();
+    expect(optics.diagnostics.focusPlaneModel).toBe("scheimpflug");
   });
 });
 
