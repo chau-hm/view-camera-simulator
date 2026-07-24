@@ -34,3 +34,36 @@ export const quaternionForPlaneNormal = (normal: Vec3): Quaternion => {
     ),
   );
 };
+
+/**
+ * Derive the rear-standard render transform from the canonical frame.
+ *
+ * Uses the full frame (right, up, normal, centre) to preserve roll
+ * information that would be lost when reconstructing an orthonormal
+ * basis from normal alone.
+ *
+ * Basis mapping: local +X → rightWorld, +Y → upWorld, +Z → normalWorld.
+ * All inputs are in millimetre world space; the position is scaled to
+ * render world units.
+ */
+export const resolveRearStandardRenderTransform = (frame: {
+  centerWorld: Vec3;
+  rightWorld: Vec3;
+  upWorld: Vec3;
+  normalWorld: Vec3;
+}): { position: [number, number, number]; quaternion: Quaternion } => {
+  const s = 0.001; // WORLD_SCALE
+  const position: [number, number, number] = [
+    frame.centerWorld.x * s,
+    frame.centerWorld.y * s,
+    frame.centerWorld.z * s,
+  ];
+  const quaternion = new Quaternion().setFromRotationMatrix(
+    new Matrix4().makeBasis(
+      new Vector3(frame.rightWorld.x, frame.rightWorld.y, frame.rightWorld.z),
+      new Vector3(frame.upWorld.x, frame.upWorld.y, frame.upWorld.z),
+      new Vector3(frame.normalWorld.x, frame.normalWorld.y, frame.normalWorld.z),
+    ),
+  );
+  return { position, quaternion };
+};

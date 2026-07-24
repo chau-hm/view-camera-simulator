@@ -19,7 +19,7 @@ import {
   type ScenePlaneOverlayGeometry,
 } from "./scenePlaneOverlayGeometry";
 import { createScheimpflugConstructionGeometry } from "./scheimpflugConstructionGeometry";
-import { quaternionForPlaneNormal } from "./planeOrientation";
+import { quaternionForPlaneNormal, resolveRearStandardRenderTransform } from "./planeOrientation";
 import { getRegisteredSceneSubject } from "./sceneSubjectRegistry";
 import {
   createCameraInspectionView,
@@ -219,11 +219,11 @@ const RearStandard = ({ opticsState }: { opticsState?: DerivedOpticsState }) => 
     );
   }
 
-  // Use canonical film centre and orientation from opticsState.
-  // At zero rear movement this produces the same datum as before.
-  const filmPos = vecToWorld(opticsState.filmCenterWorld);
+  // Use the canonical frame transform so that the orientation
+  // preserves right/up/normal axes without reconstruction from normal alone.
+  const renderTransform = resolveRearStandardRenderTransform(opticsState.rearStandardFrame);
   return (
-    <group position={filmPos} quaternion={quaternionForPlaneNormal(opticsState.filmPlane.normal)}>
+    <group position={renderTransform.position} quaternion={renderTransform.quaternion}>
       <mesh>
         <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
         <meshStandardMaterial color="#4b5563" />
