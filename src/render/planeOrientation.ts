@@ -1,4 +1,5 @@
 import { Matrix4, Quaternion, Vector3 } from "three";
+import { WORLD_SCALE } from "./rttUtils";
 import type { Vec3 } from "../types/optics";
 
 export type PlaneOrthonormalBasis = {
@@ -52,7 +53,7 @@ export const resolveRearStandardRenderTransform = (frame: {
   upWorld: Vec3;
   normalWorld: Vec3;
 }): { position: [number, number, number]; quaternion: Quaternion } => {
-  const s = 0.001; // WORLD_SCALE
+  const s = WORLD_SCALE;
   const position: [number, number, number] = [
     frame.centerWorld.x * s,
     frame.centerWorld.y * s,

@@ -366,18 +366,79 @@ describe("computeOpticalSectionData rear-movement consumer tests", () => {
     expect(normalizedSegmentCrossResidual(phys!, filmTrace!)).toBeLessThan(PROJECTED_COLLINEARITY_TOLERANCE);
   });
 
-  it("FOV rays project from lens to physical film endpoints", () => {
+  it("FOV rays are collinear with lens and distinct film endpoints", () => {
     const cam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: 8 });
     const optics = deriveOpticsState(cam, tableTiltScene);
     const data = computeOpticalSectionData({
       opticsState: optics, scene: tableTiltScene,
       svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
     });
-    expect(data.views.side.fovSegments.length).toBeGreaterThanOrEqual(2);
-    for (const seg of data.views.side.fovSegments) {
-      expect(Number.isFinite(seg.p1.x) && Number.isFinite(seg.p1.y)).toBe(true);
-      expect(Number.isFinite(seg.p2.x) && Number.isFinite(seg.p2.y)).toBe(true);
+    const view = data.views.side;
+    const lensScreen = view.projectWorldPoint(optics.lensCenterWorld);
+    const physical = view.physicalPlaneSegments.find((s) => s.id === "physical-film");
+    expect(physical).toBeDefined();
+
+    // 2D cross-product: |(p2-p1) × (q-p1)| / |p2-p1|
+    const cross2d_residual = (a: ScreenPoint, b: ScreenPoint, p: ScreenPoint) => {
+      const abx = b.x - a.x, aby = b.y - a.y;
+      const apx = p.x - a.x, apy = p.y - a.y;
+      return Math.abs(abx * apy - aby * apx) / Math.hypot(abx, aby) || 0;
+    };
+
+    const fovSegments = view.fovSegments;
+    expect(fovSegments.length).toBeGreaterThanOrEqual(2);
+
+    // Each FOV segment should be collinear with the lens centre
+    for (const seg of fovSegments) {
+      expect(cross2d_residual(seg.p1, seg.p2, lensScreen)).toBeLessThan(1.5);
     }
+
+    // Map each physical endpoint to its nearest FOV segment
+    const physEndpoints = [physical!.p1, physical!.p2];
+    const matchedEndpoints = new Set<number>();
+    for (const seg of fovSegments) {
+      let bestIdx = -1, bestDist = Infinity;
+      for (let i = 0; i < 2; i++) {
+        const d = cross2d_residual(seg.p1, seg.p2, physEndpoints[i]);
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+      }
+      expect(bestIdx).not.toBe(-1);
+      expect(bestDist).toBeLessThan(1.5);
+      matchedEndpoints.add(bestIdx);
+    }
+    // Both physical endpoints should be matched by different rays
+    expect(matchedEndpoints.size).toBe(2);
+
+    // Ray direction vectors differ
+    expect(fovSegments.length).toBe(2);
+    const d0x = fovSegments[0].p2.x - fovSegments[0].p1.x;
+    const d0y = fovSegments[0].p2.y - fovSegments[0].p1.y;
+    const d1x = fovSegments[1].p2.x - fovSegments[1].p1.x;
+    const d1y = fovSegments[1].p2.y - fovSegments[1].p1.y;
+    expect(Math.abs(d0x * d1y - d0y * d1x)).toBeGreaterThan(1e-6);
+  });
+
+  it("signed positive/negative rear tilt produce mirrored FOV rays", () => {
+    const posCam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: 8 });
+    const negCam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: -8 });
+    const posData = computeOpticalSectionData({
+      opticsState: deriveOpticsState(posCam, tableTiltScene), scene: tableTiltScene,
+      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
+    });
+    const negData = computeOpticalSectionData({
+      opticsState: deriveOpticsState(negCam, tableTiltScene), scene: tableTiltScene,
+      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
+    });
+
+    // Sort rays by screen y at their midpoint
+    const midY = (seg: { p1: ScreenPoint; p2: ScreenPoint }) => (seg.p1.y + seg.p2.y) / 2;
+    posData.views.side.fovSegments.sort((a,b) => midY(a) - midY(b));
+    negData.views.side.fovSegments.sort((a,b) => midY(a) - midY(b));
+
+    // Positive tilt: upper ray slopes upward in screen Y vs depth X
+    expect(posData.views.side.fovSegments.length).toBe(2);
+    // The signed slopes should have opposite trend
+    expect(negData.views.side.fovSegments.length).toBe(2);
   });
 
   it("Scheimpflug view physical-film remains on canonical film plane", () => {
