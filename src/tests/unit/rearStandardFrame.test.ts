@@ -478,6 +478,78 @@ describe("Case 10: fallback state remains self-consistent and finite", () => {
   });
 });
 
+
+describe("Case 11: scene-aware fallback policy", () => {
+  it("Table Tilt 0.01° tilt fallback uses strict threshold", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusDistanceMm: -1, frontTiltDeg: 0.01 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    // 0.01° relative tilt: strict Table Tilt threshold should report non-parallel
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    expect(optics.lensFilmHingeLine).not.toBeNull();
+    expect(optics.diagnostics.focusPlaneModel).toBe("scheimpflug");
+    expect(optics.offAxisProjectionMatrix.every(Number.isFinite)).toBe(true);
+  });
+
+  it("matching front/rear tilt fallback is parallel", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusDistanceMm: -1, frontTiltDeg: 5, rearTiltDeg: 5 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expect(optics.diagnostics.isParallelLensFilm).toBe(true);
+    expect(optics.lensFilmHingeLine).toBeNull();
+    expect(optics.diagnostics.focusPlaneModel).toBe("parallel");
+    expect(optics.offAxisProjectionMatrix.every(Number.isFinite)).toBe(true);
+  });
+
+  it("fallback DOF planes satisfy plane distance invariant", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusDistanceMm: -1, rearTiltDeg: 8 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    if (optics.depthOfFieldNearPlane) {
+      const n = optics.depthOfFieldNearPlane;
+      expect(n.distance).toBeCloseTo(n.normal.x * n.point.x + n.normal.y * n.point.y + n.normal.z * n.point.z, 10);
+    }
+    if (optics.depthOfFieldFarPlane) {
+      const f = optics.depthOfFieldFarPlane;
+      expect(f.distance).toBeCloseTo(f.normal.x * f.point.x + f.normal.y * f.point.y + f.normal.z * f.point.z, 10);
+    }
+    // Near/far normals align with focusPlane.normal
+    if (optics.focusPlane && optics.depthOfFieldNearPlane && optics.depthOfFieldFarPlane) {
+      const fpNorm = optics.focusPlane.normal;
+      const nearNorm = optics.depthOfFieldNearPlane.normal;
+      const farNorm = optics.depthOfFieldFarPlane.normal;
+      const dotNear = fpNorm.x * nearNorm.x + fpNorm.y * nearNorm.y + fpNorm.z * nearNorm.z;
+      const dotFar = fpNorm.x * farNorm.x + fpNorm.y * farNorm.y + fpNorm.z * farNorm.z;
+      expect(Math.abs(dotNear)).toBeGreaterThan(0.999);
+      expect(Math.abs(dotFar)).toBeGreaterThan(0.999);
+    }
+  });
+
+  it("all Plane objects satisfy distance = dot(normal, point)", () => {
+    const assertPlaneDist = (label: string, p: { point: {x:number;y:number;z:number}; normal: {x:number;y:number;z:number}; distance: number }) => {
+      expect(p.distance, label).toBeCloseTo(
+        p.normal.x * p.point.x + p.normal.y * p.point.y + p.normal.z * p.point.z, 10,
+      );
+    };
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusDistanceMm: -1, rearTiltDeg: 8 }),
+      architectureRiseScene,
+    );
+    assertPlaneDist("lensPlane", optics.lensPlane);
+    assertPlaneDist("filmPlane", optics.filmPlane);
+    assertPlaneDist("rearFrame.plane", optics.rearStandardFrame.plane);
+    if (optics.focusPlane) assertPlaneDist("focusPlane", optics.focusPlane);
+    if (optics.depthOfFieldNearPlane) assertPlaneDist("nearDof", optics.depthOfFieldNearPlane);
+    if (optics.depthOfFieldFarPlane) assertPlaneDist("farDof", optics.depthOfFieldFarPlane);
+  });
+});
+
 describe("calculateRearStandardFrame direct tests", () => {
   it("returns world-aligned axes at zero movement", () => {
     const { frame } = calculateRearStandardFrame(vec(0, 0, -150), 0, 0);
