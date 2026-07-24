@@ -7,7 +7,7 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { vec } from "../../core/math/vec";
-import type { CameraState } from "../../types/camera";
+import type { ApertureValue, CameraState } from "../../types/camera";
 
 
 const cameraFor = (scene: typeof architectureRiseScene, overrides: Partial<CameraState> = {}): CameraState => ({
@@ -547,6 +547,98 @@ describe("Case 11: scene-aware fallback policy", () => {
     if (optics.focusPlane) assertPlaneDist("focusPlane", optics.focusPlane);
     if (optics.depthOfFieldNearPlane) assertPlaneDist("nearDof", optics.depthOfFieldNearPlane);
     if (optics.depthOfFieldFarPlane) assertPlaneDist("farDof", optics.depthOfFieldFarPlane);
+  });
+});
+
+
+describe("Case 12: infinity input validation", () => {
+  const expectFiniteDiagnostics = (optics: ReturnType<typeof deriveOpticsState>) => {
+    expect(Number.isFinite(optics.diagnostics.tiltAngleDeg)).toBe(true);
+    expect(Number.isFinite(optics.diagnostics.swingAngleDeg)).toBe(true);
+    expect(optics.offAxisProjectionMatrix.every(Number.isFinite)).toBe(true);
+  };
+
+  it("NaN frontTiltDeg in infinity falls back with finite diagnostics", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontTiltDeg: NaN as unknown as number }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expectFiniteDiagnostics(optics);
+    expect(optics.diagnostics.tiltAngleDeg).not.toBeNaN();
+  });
+
+  it("Infinity frontSwingDeg in infinity falls back with finite diagnostics", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontSwingDeg: Infinity as unknown as number }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expectFiniteDiagnostics(optics);
+    expect(optics.diagnostics.swingAngleDeg).not.toBe(Infinity);
+  });
+
+  it("NaN frontRiseMm in infinity falls back", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontRiseMm: NaN }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expectFiniteDiagnostics(optics);
+  });
+
+  it("invalid aperture in infinity falls back", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", aperture: 99 as unknown as ApertureValue }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expectFiniteDiagnostics(optics);
+  });
+});
+
+describe("Case 13: positive fallback focus distance", () => {
+  it("negative focusDistance produces positive sanitized focusPointWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusDistanceMm: -1, rearTiltDeg: 8 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expect(optics.focusPointWorld.z).toBeGreaterThan(0);
+    // Non-parallel relationship preserved
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    // Plane distance invariant
+    if (optics.depthOfFieldNearPlane) {
+      const n = optics.depthOfFieldNearPlane;
+      expect(n.distance).toBeCloseTo(n.normal.x * n.point.x + n.normal.y * n.point.y + n.normal.z * n.point.z, 10);
+    }
+  });
+
+  it("zero focusDistance produces positive sanitized focusPointWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusDistanceMm: 0 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expect(optics.focusPointWorld.z).toBeGreaterThan(0);
+  });
+
+  it("NaN focusDistance produces positive sanitized focusPointWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusDistanceMm: NaN }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expect(optics.focusPointWorld.z).toBeGreaterThan(0);
+  });
+
+  it("-Infinity focusDistance produces positive sanitized focusPointWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusDistanceMm: -Infinity as unknown as number }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expect(optics.focusPointWorld.z).toBeGreaterThan(0);
   });
 });
 

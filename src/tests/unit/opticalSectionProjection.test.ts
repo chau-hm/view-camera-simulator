@@ -418,56 +418,76 @@ describe("computeOpticalSectionData rear-movement consumer tests", () => {
     expect(Math.abs(d0x * d1y - d0y * d1x)).toBeGreaterThan(1e-6);
   });
 
-  it("signed positive/negative rear tilt produce mirrored FOV rays", () => {
-    const zeroCam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: 0 });
-    const posCam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: 8 });
-    const negCam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: -8 });
-
-    const computeView = (cam: typeof zeroCam) => {
+  it("signed positive/negative rear tilt produce mirrored FOV rays via actual segments", () => {
+    const computeState = (tilt: number) => {
+      const cam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: tilt });
       const optics = deriveOpticsState(cam, tableTiltScene);
-      return computeOpticalSectionData({
+      const data = computeOpticalSectionData({
         opticsState: optics, scene: tableTiltScene,
         svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
-      }).views.side;
+      });
+      return { view: data.views.side, optics, cam };
     };
 
-    const zero = computeView(zeroCam);
-    const pos = computeView(posCam);
-    const neg = computeView(negCam);
+    const cross2d_resid = (a: ScreenPoint, b: ScreenPoint, p: ScreenPoint) => {
+      const abx = b.x - a.x, aby = b.y - a.y;
+      const apx = p.x - a.x, apy = p.y - a.y;
+      return Math.abs(abx * apy - aby * apx) / Math.hypot(abx, aby) || 0;
+    };
 
-    const getFovAngles = (view: typeof zero) => {
-      const lens = view.projectWorldPoint(deriveOpticsState(zeroCam, tableTiltScene).lensCenterWorld);
+    const getActualFovAngles = (tilt: number) => {
+      const { view, optics } = computeState(tilt);
+      view.projectWorldPoint(optics.lensCenterWorld);
       const physical = view.physicalPlaneSegments.find((s) => s.id === "physical-film")!;
-      const endpoints = [physical.p1, physical.p2];
-      return endpoints.map((ep) => {
-        const dx = ep.x - lens.x;
-        const dy = ep.y - lens.y;
-        return Math.atan2(dy, dx);
-      }).sort((a, b) => a - b);
+      const fovs = [...view.fovSegments];  // copy: do not mutate production
+
+      // Pair each FOV segment to the nearest physical-film endpoint
+      const paired: { segment: typeof fovs[0]; endpoint: ScreenPoint; angle: number }[] = [];
+      const usedEndpoints = new Set<string>();
+      for (const seg of fovs) {
+        let bestEp = physical.p1, bestDist = Infinity;
+        for (const ep of [physical.p1, physical.p2]) {
+          if (usedEndpoints.has(`${ep.x},${ep.y}`)) continue;
+          const d = cross2d_resid(seg.p1, seg.p2, ep);
+          if (d < bestDist) { bestDist = d; bestEp = ep; }
+        }
+        usedEndpoints.add(`${bestEp.x},${bestEp.y}`);
+        // Angle of the FOV line direction
+        const dx = seg.p2.x - seg.p1.x;
+        const dy = seg.p2.y - seg.p1.y;
+        paired.push({ segment: seg, endpoint: bestEp, angle: Math.atan2(dy, dx) });
+      }
+      return paired.sort((a, b) => a.endpoint.y - b.endpoint.y);
     };
 
-    const zeroAngles = getFovAngles(zero);
-    const posAngles = getFovAngles(pos);
-    const negAngles = getFovAngles(neg);
+    const zeroAngles = getActualFovAngles(0);
+    const posAngles = getActualFovAngles(8);
+    const negAngles = getActualFovAngles(-8);
 
     expect(posAngles.length).toBe(2);
     expect(negAngles.length).toBe(2);
 
-    const posDeltas = [posAngles[0] - zeroAngles[0], posAngles[1] - zeroAngles[1]];
-    const negDeltas = [negAngles[0] - zeroAngles[0], negAngles[1] - zeroAngles[1]];
+    // Opposite-signed tilts produce opposite angular deltas
+    const posDeltas = [posAngles[0].angle - zeroAngles[0].angle, posAngles[1].angle - zeroAngles[1].angle];
+    const negDeltas = [negAngles[0].angle - zeroAngles[0].angle, negAngles[1].angle - zeroAngles[1].angle];
 
-    // Opposite-signed tilts produce opposite-signed angular changes for
-    // corresponding endpoints
     expect(posDeltas[0] * negDeltas[0]).toBeLessThan(0);
     expect(posDeltas[1] * negDeltas[1]).toBeLessThan(0);
 
-    // Magnitudes should be approximately symmetric
+    // Magnitudes approximately symmetric
     expect(Math.abs(posDeltas[0] + negDeltas[0])).toBeLessThan(0.01);
     expect(Math.abs(posDeltas[1] + negDeltas[1])).toBeLessThan(0.01);
 
-    // Positive and negative states are not numerically identical
-    expect(posDeltas.some((d) => Math.abs(d) > 1e-6)).toBe(true);
-    expect(negDeltas.some((d) => Math.abs(d) > 1e-6)).toBe(true);
+    // FOV direction vectors from positive vs negative are not identical
+    const posVec = [
+      posAngles[0].segment.p2.x - posAngles[0].segment.p1.x,
+      posAngles[0].segment.p2.y - posAngles[0].segment.p1.y,
+    ];
+    const negVec = [
+      negAngles[0].segment.p2.x - negAngles[0].segment.p1.x,
+      negAngles[0].segment.p2.y - negAngles[0].segment.p1.y,
+    ];
+    expect(Math.abs(posVec[0] - negVec[0]) + Math.abs(posVec[1] - negVec[1])).toBeGreaterThan(1e-6);
   });
 
   it("Scheimpflug view physical-film remains on canonical film plane", () => {

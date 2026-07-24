@@ -38,7 +38,7 @@ const baseFallbackState = (cameraState: CameraState, scene: SceneDefinition, err
   const safeFocalLength = Number.isFinite(cameraState.focalLengthMm) && cameraState.focalLengthMm > 0
     ? cameraState.focalLengthMm
     : CAMERA_CONSTANTS.focalLengthMm;
-  const safeFocusDistance = Number.isFinite(cameraState.focusDistanceMm)
+  const safeFocusDistance = Number.isFinite(cameraState.focusDistanceMm) && cameraState.focusDistanceMm > 0
     ? cameraState.focusDistanceMm
     : CAMERA_CONSTANTS.defaultFocusDistanceMm;
   const safeFrontRise = Number.isFinite(cameraState.frontRiseMm) ? cameraState.frontRiseMm : 0;
@@ -126,17 +126,24 @@ export const deriveOpticsState = (
     if (!Number.isFinite(cameraState.focalLengthMm) || cameraState.focalLengthMm <= 0) {
       return baseFallbackState(cameraState, scene, "Invalid focal length for infinity focus");
     }
+    // Validate every input consumed by infinity geometry construction,
+    // passed to solvers, or returned through diagnostics consumed by renderers.
+    const infinityInputsValid =
+      Number.isFinite(cameraState.frontRiseMm) &&
+      Number.isFinite(cameraState.frontTiltDeg) &&
+      Number.isFinite(cameraState.frontSwingDeg) &&
+      Number.isFinite(cameraState.rearRiseMm) &&
+      Number.isFinite(cameraState.rearTiltDeg) &&
+      CAMERA_CONSTANTS.apertureOptions.includes(cameraState.aperture as typeof CAMERA_CONSTANTS.apertureOptions[number]);
+    if (!infinityInputsValid) {
+      return baseFallbackState(
+        cameraState, scene,
+        "Invalid input values for infinity focus",
+      );
+    }
     const f = cameraState.focalLengthMm;
     const lensCenterWorld = vec(0, 0, f);
     const lensNormalWorld = vec(0, 0, 1);
-    const hasValidRearInput =
-      Number.isFinite(cameraState.rearRiseMm) && Number.isFinite(cameraState.rearTiltDeg);
-    if (!hasValidRearInput) {
-      return baseFallbackState(
-        cameraState, scene,
-        "Invalid rear movement values for infinity focus",
-      );
-    }
     const baselineFilmCenter = vec(0, 0, 0);
     const { frame: rearFrame, corners: filmPlaneCornersWorld } =
       calculateRearStandardFrame(baselineFilmCenter, cameraState.rearRiseMm, cameraState.rearTiltDeg);
