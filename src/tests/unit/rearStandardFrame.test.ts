@@ -375,6 +375,109 @@ describe("film corner invariants", () => {
   });
 });
 
+
+describe("Case 10: fallback state remains self-consistent and finite", () => {
+  const expectVec3Finite = (label: string, v: { x: number; y: number; z: number }) => {
+    expect(Number.isFinite(v.x), `${label}.x`).toBe(true);
+    expect(Number.isFinite(v.y), `${label}.y`).toBe(true);
+    expect(Number.isFinite(v.z), `${label}.z`).toBe(true);
+  };
+  const expectPlaneFinite = (label: string, p: { point: { x: number; y: number; z: number }; normal: { x: number; y: number; z: number }; distance: number }) => {
+    expect(Number.isFinite(p.point.x), `${label}.point.x`).toBe(true);
+    expect(Number.isFinite(p.point.y), `${label}.point.y`).toBe(true);
+    expect(Number.isFinite(p.point.z), `${label}.point.z`).toBe(true);
+    expect(Number.isFinite(p.normal.x), `${label}.normal.x`).toBe(true);
+    expect(Number.isFinite(p.normal.y), `${label}.normal.y`).toBe(true);
+    expect(Number.isFinite(p.normal.z), `${label}.normal.z`).toBe(true);
+    expect(Number.isFinite(p.distance), `${label}.distance`).toBe(true);
+  };
+
+  const expectAllDerivedFinite = (optics: ReturnType<typeof deriveOpticsState>, scene: string) => {
+    expectVec3Finite(`${scene} lensCenterWorld`, optics.lensCenterWorld);
+    expectVec3Finite(`${scene} lensNormalWorld`, optics.lensNormalWorld);
+    expectPlaneFinite(`${scene} lensPlane`, optics.lensPlane);
+    expectVec3Finite(`${scene} rearStd.centerWorld`, optics.rearStandardFrame.centerWorld);
+    expectVec3Finite(`${scene} rearStd.rightWorld`, optics.rearStandardFrame.rightWorld);
+    expectVec3Finite(`${scene} rearStd.upWorld`, optics.rearStandardFrame.upWorld);
+    expectVec3Finite(`${scene} rearStd.normalWorld`, optics.rearStandardFrame.normalWorld);
+    expectPlaneFinite(`${scene} rearStd.plane`, optics.rearStandardFrame.plane);
+    expectVec3Finite(`${scene} filmCenterWorld`, optics.filmCenterWorld);
+    expectVec3Finite(`${scene} filmNormalWorld`, optics.filmNormalWorld);
+    expectPlaneFinite(`${scene} filmPlane`, optics.filmPlane);
+    for (const key of ["topLeft","topRight","bottomLeft","bottomRight"] as const) {
+      expectVec3Finite(`${scene} ${key}`, optics.filmPlaneCornersWorld[key]);
+    }
+    expect(optics.offAxisProjectionMatrix.every(Number.isFinite)).toBe(true);
+    if (optics.lensFilmHingeLine) {
+      expectVec3Finite(`${scene} commonLine.point`, optics.lensFilmHingeLine.point);
+      expectVec3Finite(`${scene} commonLine.dir`, optics.lensFilmHingeLine.direction);
+    }
+    if (optics.focusPlane) expectPlaneFinite(`${scene} focusPlane`, optics.focusPlane);
+    if (optics.depthOfFieldNearPlane) expectPlaneFinite(`${scene} nearDof`, optics.depthOfFieldNearPlane);
+    if (optics.depthOfFieldFarPlane) expectPlaneFinite(`${scene} farDof`, optics.depthOfFieldFarPlane);
+  };
+
+  it("invalid focusDistance with rear tilt produces non-parallel fallback", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusDistanceMm: -1, rearTiltDeg: 8 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    expect(optics.lensFilmHingeLine).not.toBeNull();
+    expect(optics.diagnostics.focusPlaneModel).toBe("scheimpflug");
+    expectAllDerivedFinite(optics, "case1");
+  });
+
+  it("NaN focusDistance with rear tilt produces non-parallel fallback", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusDistanceMm: NaN, rearTiltDeg: 8 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    expect(optics.lensFilmHingeLine).not.toBeNull();
+    expectAllDerivedFinite(optics, "case2");
+  });
+
+  it("NaN focalLength with rearRise produces safe fallback", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focalLengthMm: NaN, rearRiseMm: 20 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    // rearRise is finite so it should be preserved
+    expect(optics.filmCenterWorld.y).not.toBeCloseTo(0, 6);
+    expectAllDerivedFinite(optics, "case3");
+  });
+
+  it("all invalid movements replaced by safe neutral values", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, {
+        frontRiseMm: Infinity,
+        frontTiltDeg: NaN,
+        rearTiltDeg: Infinity,
+      }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expect(optics.diagnostics.isParallelLensFilm).toBe(true);
+    expect(optics.lensFilmHingeLine).toBeNull();
+    expectAllDerivedFinite(optics, "case4");
+  });
+
+  it("invalid infinity input produces finite parallel fallback", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", rearRiseMm: NaN, rearTiltDeg: Infinity }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(true);
+    expect(optics.diagnostics.isParallelLensFilm).toBe(true);
+    expect(optics.lensFilmHingeLine).toBeNull();
+    expectAllDerivedFinite(optics, "case5");
+  });
+});
+
 describe("calculateRearStandardFrame direct tests", () => {
   it("returns world-aligned axes at zero movement", () => {
     const { frame } = calculateRearStandardFrame(vec(0, 0, -150), 0, 0);

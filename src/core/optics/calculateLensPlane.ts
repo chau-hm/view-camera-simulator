@@ -1,5 +1,5 @@
 import type { CameraState } from "../../types/camera";
-import type { Line3, Plane, Ray, Vec3 } from "../../types/optics";
+import type { LensFilmRelationship, Line3, Plane, Ray, Vec3 } from "../../types/optics";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { arePlanesNearlyParallel, intersectPlanes, planeFromPointNormal } from "../math/plane";
 import { rotateAroundX, rotateAroundY, safeNormalize, vec } from "../math/vec";
@@ -55,11 +55,6 @@ export const calculateLensFilmHingeLine = (lensPlane: Plane, filmPlane: Plane): 
  * Uses the stricter Table Tilt tolerance for that scene and the shared
  * near-parallel tolerance for all other scenes.
  */
-export type LensFilmRelationship = {
-  isParallel: boolean;
-  commonLine: Line3 | null;
-};
-
 export const deriveLensFilmRelationship = (
   lensPlane: Plane,
   filmPlane: Plane,
