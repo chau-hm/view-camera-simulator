@@ -419,26 +419,55 @@ describe("computeOpticalSectionData rear-movement consumer tests", () => {
   });
 
   it("signed positive/negative rear tilt produce mirrored FOV rays", () => {
+    const zeroCam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: 0 });
     const posCam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: 8 });
     const negCam = cameraFor(tableTiltScene, { frontTiltDeg: 0, rearTiltDeg: -8 });
-    const posData = computeOpticalSectionData({
-      opticsState: deriveOpticsState(posCam, tableTiltScene), scene: tableTiltScene,
-      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
-    });
-    const negData = computeOpticalSectionData({
-      opticsState: deriveOpticsState(negCam, tableTiltScene), scene: tableTiltScene,
-      svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
-    });
 
-    // Sort rays by screen y at their midpoint
-    const midY = (seg: { p1: ScreenPoint; p2: ScreenPoint }) => (seg.p1.y + seg.p2.y) / 2;
-    posData.views.side.fovSegments.sort((a,b) => midY(a) - midY(b));
-    negData.views.side.fovSegments.sort((a,b) => midY(a) - midY(b));
+    const computeView = (cam: typeof zeroCam) => {
+      const optics = deriveOpticsState(cam, tableTiltScene);
+      return computeOpticalSectionData({
+        opticsState: optics, scene: tableTiltScene,
+        svgWidth: WIDTH, svgHeight: HEIGHT, depthWindow: tableTiltDepth,
+      }).views.side;
+    };
 
-    // Positive tilt: upper ray slopes upward in screen Y vs depth X
-    expect(posData.views.side.fovSegments.length).toBe(2);
-    // The signed slopes should have opposite trend
-    expect(negData.views.side.fovSegments.length).toBe(2);
+    const zero = computeView(zeroCam);
+    const pos = computeView(posCam);
+    const neg = computeView(negCam);
+
+    const getFovAngles = (view: typeof zero) => {
+      const lens = view.projectWorldPoint(deriveOpticsState(zeroCam, tableTiltScene).lensCenterWorld);
+      const physical = view.physicalPlaneSegments.find((s) => s.id === "physical-film")!;
+      const endpoints = [physical.p1, physical.p2];
+      return endpoints.map((ep) => {
+        const dx = ep.x - lens.x;
+        const dy = ep.y - lens.y;
+        return Math.atan2(dy, dx);
+      }).sort((a, b) => a - b);
+    };
+
+    const zeroAngles = getFovAngles(zero);
+    const posAngles = getFovAngles(pos);
+    const negAngles = getFovAngles(neg);
+
+    expect(posAngles.length).toBe(2);
+    expect(negAngles.length).toBe(2);
+
+    const posDeltas = [posAngles[0] - zeroAngles[0], posAngles[1] - zeroAngles[1]];
+    const negDeltas = [negAngles[0] - zeroAngles[0], negAngles[1] - zeroAngles[1]];
+
+    // Opposite-signed tilts produce opposite-signed angular changes for
+    // corresponding endpoints
+    expect(posDeltas[0] * negDeltas[0]).toBeLessThan(0);
+    expect(posDeltas[1] * negDeltas[1]).toBeLessThan(0);
+
+    // Magnitudes should be approximately symmetric
+    expect(Math.abs(posDeltas[0] + negDeltas[0])).toBeLessThan(0.01);
+    expect(Math.abs(posDeltas[1] + negDeltas[1])).toBeLessThan(0.01);
+
+    // Positive and negative states are not numerically identical
+    expect(posDeltas.some((d) => Math.abs(d) > 1e-6)).toBe(true);
+    expect(negDeltas.some((d) => Math.abs(d) > 1e-6)).toBe(true);
   });
 
   it("Scheimpflug view physical-film remains on canonical film plane", () => {

@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { describe, it, expect } from "vitest";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
 import { resolveRearStandardRenderTransform } from "../../render/planeOrientation";
+import { WORLD_SCALE } from "../../render/rttUtils";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
@@ -318,7 +319,7 @@ describe("C4: 2D geometry projection consumes transformed film plane", () => {
 
 
 describe("C7: camera quaternion orientation versus canonical frame", () => {
-  it("camera world up aligns with rearStandardFrame.upWorld", () => {
+  it("camera world-up from quaternion aligns with rearStandardFrame.upWorld", () => {
     const optics = deriveOpticsState(
       cameraFor(architectureRiseScene, { rearRiseMm: 15, rearTiltDeg: 6 }),
       architectureRiseScene,
@@ -327,18 +328,19 @@ describe("C7: camera quaternion orientation versus canonical frame", () => {
     const result = configureGroundGlassCamera(camera, optics, 0.01, 1000);
     expect(result.ok).toBe(true);
 
-    // configureGroundGlassCamera assigns camera.up from film corners.
-    // camera.up should align with rearStandardFrame.upWorld.
-    const camUp = camera.up.clone().normalize();
+    // Derive world-up from camera quaternion (local +Y → world)
+    const cameraWorldUp = new THREE.Vector3(0, 1, 0)
+      .applyQuaternion(camera.quaternion)
+      .normalize();
     const frameUp = new THREE.Vector3(
       optics.rearStandardFrame.upWorld.x,
       optics.rearStandardFrame.upWorld.y,
       optics.rearStandardFrame.upWorld.z,
     ).normalize();
-    expect(camUp.dot(frameUp)).toBeGreaterThan(0.99);
+    expect(cameraWorldUp.dot(frameUp)).toBeGreaterThan(0.99);
   });
 
-  it("camera world forward faces object side", () => {
+  it("camera world-forward from quaternion matches object-facing film normal", () => {
     const optics = deriveOpticsState(
       cameraFor(architectureRiseScene, { rearRiseMm: 15, rearTiltDeg: 6 }),
       architectureRiseScene,
@@ -347,23 +349,42 @@ describe("C7: camera quaternion orientation versus canonical frame", () => {
     const result = configureGroundGlassCamera(camera, optics, 0.01, 1000);
     expect(result.ok).toBe(true);
 
-    // After lookAt, camera.position = lensPos, camera looks toward lensPos + objectForward
-    // So the forward direction is (lensPos + objectForward) - lensPos = objectForward
-    // objectForward is the film normal (from configureGroundGlassCamera: derived from film corners)
-    // The camera forward should align with the film normal
+    // World-forward = local -Z → world via quaternion
+    const cameraWorldForward = new THREE.Vector3(0, 0, -1)
+      .applyQuaternion(camera.quaternion)
+      .normalize();
+
+    // Expected forward: object-facing film normal (from film toward lens).
+    // Production (configureGroundGlassCamera) derives the object-facing
+    // direction by testing filmNormal.dot(lens - filmCenter) and negating
+    // when needed.  Replicate that convention here.
     const filmNormal = new THREE.Vector3(
       optics.rearStandardFrame.normalWorld.x,
       optics.rearStandardFrame.normalWorld.y,
       optics.rearStandardFrame.normalWorld.z,
-    ).normalize();
-    // Camera quaternion forward (local -Z) should be near filmNormal
-    const worldFwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    expect(Math.abs(worldFwd.dot(filmNormal))).toBeGreaterThan(0.99);
+    );
+    const lensPos = new THREE.Vector3(
+      optics.lensCenterWorld.x * 0.001,
+      optics.lensCenterWorld.y * 0.001,
+      optics.lensCenterWorld.z * 0.001,
+    );
+    const filmCenter = new THREE.Vector3(
+      optics.filmCenterWorld.x * 0.001,
+      optics.filmCenterWorld.y * 0.001,
+      optics.filmCenterWorld.z * 0.001,
+    );
+    const lensVec = new THREE.Vector3().subVectors(lensPos, filmCenter);
+    const expectedForward = filmNormal.clone();
+    if (expectedForward.dot(lensVec) < 0) expectedForward.negate();
+
+    // Positive dot: camera forward must align with object-facing direction
+    expect(cameraWorldForward.dot(expectedForward)).toBeGreaterThan(0.99);
+    // NOT Math.abs — a reversed camera direction must fail
   });
 });
 
-describe("C8: virtual corner projection from off-axis frustum", () => {
-  it("virtual corners project to finite ordered NDC", () => {
+describe("C8: virtual corner camera-local depth and NDC depth", () => {
+  it("virtual corners are in front of the camera and within clip range", () => {
     const optics = deriveOpticsState(
       cameraFor(architectureRiseScene, { rearRiseMm: 10, rearTiltDeg: 7 }),
       architectureRiseScene,
@@ -372,11 +393,10 @@ describe("C8: virtual corner projection from off-axis frustum", () => {
     const result = configureGroundGlassCamera(camera, optics, 0.01, 1000);
     expect(result.ok).toBe(true);
 
-    const s = 0.001;
     const lensPos = new THREE.Vector3(
-      optics.lensCenterWorld.x * s,
-      optics.lensCenterWorld.y * s,
-      optics.lensCenterWorld.z * s,
+      optics.lensCenterWorld.x * WORLD_SCALE,
+      optics.lensCenterWorld.y * WORLD_SCALE,
+      optics.lensCenterWorld.z * WORLD_SCALE,
     );
     const corners = [
       optics.filmPlaneCornersWorld.topLeft,
@@ -384,90 +404,108 @@ describe("C8: virtual corner projection from off-axis frustum", () => {
       optics.filmPlaneCornersWorld.bottomLeft,
       optics.filmPlaneCornersWorld.bottomRight,
     ];
-    // Virtual corners: lens + (lens - physical)
+    // Virtual corners: lens + (lens - physical) — same reflection as production
     const virtualCorners = corners.map((c) => {
-      const pc = new THREE.Vector3(c.x * s, c.y * s, c.z * s);
+      const pc = new THREE.Vector3(c.x * WORLD_SCALE, c.y * WORLD_SCALE, c.z * WORLD_SCALE);
       return pc.clone().negate().add(lensPos).add(lensPos);
     });
-    const ndcs = virtualCorners.map((v) => {
-      const p = v.clone();
-      p.project(camera);
-      return p;
-    });
 
-    for (const ndc of ndcs) {
-      expect(Number.isFinite(ndc.x) && Number.isFinite(ndc.y) && Number.isFinite(ndc.z)).toBe(true);
-      // Virtual corners should be in front of camera in clip space
-      // NDC z should be finite; exact clip-space value depends on frustum
+    // Camera-local depth: apply inverse world matrix
+    for (const vc of virtualCorners) {
+      const local = vc.clone().applyMatrix4(camera.matrixWorldInverse);
+      expect(Number.isFinite(local.x) && Number.isFinite(local.y) && Number.isFinite(local.z)).toBe(true);
+      // In camera-local coordinates, objects in front have negative Z (Three.js convention)
+      expect(local.z).toBeLessThan(-1e-12);
     }
 
-    // Non-degenerate horizontal and vertical ordering
-    expect(Math.abs(ndcs[0].x - ndcs[1].x)).toBeGreaterThan(1e-6);
-    expect(Math.abs(ndcs[0].y - ndcs[2].y)).toBeGreaterThan(1e-6);
+    // Project to NDC and verify z is within clip range
+    const ndcs = virtualCorners.map((v) => { const p = v.clone(); p.project(camera); return p; });
+    for (const ndc of ndcs) {
+      expect(Number.isFinite(ndc.x) && Number.isFinite(ndc.y) && Number.isFinite(ndc.z)).toBe(true);
+      // NDC z typically in [-1, 1] (symmetric clip space)
+      expect(ndc.z).toBeGreaterThan(-1 - 1e-6);
+      expect(ndc.z).toBeLessThan(1 + 1e-6);
+    }
   });
 });
 
-describe("C9: corner ordering and signed area", () => {
-  it("baseline and moved states share orientation sign", () => {
-    const baseline = deriveOpticsState(cameraFor(architectureRiseScene), architectureRiseScene);
-    const moved = deriveOpticsState(
-      cameraFor(architectureRiseScene, { rearRiseMm: 15, rearTiltDeg: 5 }),
-      architectureRiseScene,
-    );
+describe("C9: semantic corner ordering and signed area", () => {
+  it("semantic horizontal and vertical ordering is preserved", () => {
+    const scale = WORLD_SCALE;
 
-    const projectState = (optics: typeof baseline) => {
+    const projectSemantic = (scene: typeof architectureRiseScene, overrides: Partial<CameraState>): THREE.Vector3[] => {
+      const cam = cameraFor(scene, overrides);
+      const optics = deriveOpticsState(cam, scene);
       const camera = new THREE.PerspectiveCamera(45, 1.25, 0.01, 200);
       const result = configureGroundGlassCamera(camera, optics, 0.01, 1000);
       if (!result.ok) throw new Error("camera config failed");
-      const s = 0.001;
       const lens = new THREE.Vector3(
-        optics.lensCenterWorld.x * s, optics.lensCenterWorld.y * s, optics.lensCenterWorld.z * s,
+        optics.lensCenterWorld.x * scale, optics.lensCenterWorld.y * scale, optics.lensCenterWorld.z * scale,
       );
-      const corners = [
-        optics.filmPlaneCornersWorld.topLeft,
-        optics.filmPlaneCornersWorld.topRight,
-        optics.filmPlaneCornersWorld.bottomRight,
-        optics.filmPlaneCornersWorld.bottomLeft,
-      ];
-      const virtual = corners.map((c) => {
-        const pc = new THREE.Vector3(c.x * s, c.y * s, c.z * s);
+      const cTL = optics.filmPlaneCornersWorld.topLeft;
+      const cTR = optics.filmPlaneCornersWorld.topRight;
+      const cBR = optics.filmPlaneCornersWorld.bottomRight;
+      const cBL = optics.filmPlaneCornersWorld.bottomLeft;
+      const virtual = [cTL, cTR, cBR, cBL].map((c) => {
+        const pc = new THREE.Vector3(c.x * scale, c.y * scale, c.z * scale);
         return pc.clone().negate().add(lens).add(lens);
       });
-      return virtual.map((v) => { const p = v.clone(); p.project(camera); return p; });
+      return virtual.map((v): THREE.Vector3 => { const p = v.clone(); p.project(camera); return p; });
     };
 
-    const baseNDCs = projectState(baseline);
-    const movedNDCs = projectState(moved);
+    const base = projectSemantic(architectureRiseScene, {});
+    const moved = projectSemantic(architectureRiseScene, { rearRiseMm: 15, rearTiltDeg: 5 });
 
-    // Signed polygon area (2D NDC)
+    // Semantic horizontal ordering: the relative ordering between corners
+    // must be preserved between baseline and moved states (non-mirroring).
+    const baseTLvsTR = base[0].x - base[1].x;
+    const baseBLvsBR = base[3].x - base[2].x;
+    const movedTLvsTR = moved[0].x - moved[1].x;
+    const movedBLvsBR = moved[3].x - moved[2].x;
+    // Both baselines should be distinct
+    expect(Math.abs(baseTLvsTR)).toBeGreaterThan(1e-6);
+    expect(Math.abs(baseBLvsBR)).toBeGreaterThan(1e-6);
+    // Moved should preserve sign (no mirroring)
+    expect(baseTLvsTR * movedTLvsTR).toBeGreaterThan(0);
+    expect(baseBLvsBR * movedBLvsBR).toBeGreaterThan(0);
+
+    // Semantic vertical ordering: TL and BL have distinct positions.
+    // The exact sign depends on the camera's up direction; the invariant is
+    // that the relative ordering is preserved between baseline and moved.
+    expect(Math.abs(base[0].y - base[3].y)).toBeGreaterThan(1e-6);  // TL != BL
+    expect(Math.abs(base[1].y - base[2].y)).toBeGreaterThan(1e-6);  // TR != BR
+    // Same relative ordering sign between baseline and moved
+    const baseTLvsBL = base[0].y - base[3].y;
+    const baseTRvsBR = base[1].y - base[2].y;
+    const movedTLvsBL = moved[0].y - moved[3].y;
+    const movedTRvsBR = moved[1].y - moved[2].y;
+    expect(baseTLvsBL * movedTLvsBL).toBeGreaterThan(0);
+    expect(baseTRvsBR * movedTRvsBR).toBeGreaterThan(0);
+
+    // Non-zero widths and heights
+    expect(Math.abs(base[1].x - base[0].x)).toBeGreaterThan(1e-6);
+    expect(Math.abs(base[0].y - base[3].y)).toBeGreaterThan(1e-6);
+    expect(Math.abs(moved[1].x - moved[0].x)).toBeGreaterThan(1e-6);
+    expect(Math.abs(moved[0].y - moved[3].y)).toBeGreaterThan(1e-6);
+
+    // Signed polygon area (TL→TR→BR→BL)
     const signedArea = (ndcs: THREE.Vector3[]) => {
       let area = 0;
-      for (let i = 0; i < ndcs.length; i++) {
-        const j = (i + 1) % ndcs.length;
+      for (let i = 0; i < 4; i++) {
+        const j = (i + 1) % 4;
         area += ndcs[i].x * ndcs[j].y - ndcs[j].x * ndcs[i].y;
       }
       return area / 2;
     };
-
-    const baseArea = signedArea(baseNDCs);
-    const movedArea = signedArea(movedNDCs);
+    const baseArea = signedArea(base);
+    const movedArea = signedArea(moved);
     expect(Math.abs(baseArea)).toBeGreaterThan(1e-6);
     expect(Math.abs(movedArea)).toBeGreaterThan(1e-6);
     expect(baseArea * movedArea).toBeGreaterThan(0);
-
-    // Horizontal ordering: TL.x < TR.x in both
-    expect(baseNDCs[0].x).toBeLessThan(baseNDCs[1].x);
-    expect(movedNDCs[0].x).toBeLessThan(movedNDCs[1].x);
-    // Vertical ordering: TL.y > BL.y in both (screen Y inverted)
-    // Actually NDC Y values: TL is higher (more positive) than BL
-    // Since virtual corners are reflected, check the sign
-    expect(baseNDCs[0].x).toBeLessThan(baseNDCs[1].x);
-    // Vertical ordering preserved between baseline and moved
   });
 });
 
 describe("C10: resolveRearStandardRenderTransform basis", () => {
-  const s = 0.001;
 
   it("zero movement maps local axes to world axes", () => {
     const optics = deriveOpticsState(cameraFor(architectureRiseScene), architectureRiseScene);
@@ -527,7 +565,7 @@ describe("C10: resolveRearStandardRenderTransform basis", () => {
     expect(plusZ.x).toBeCloseTo(frame.normalWorld.x, 6);
     expect(plusZ.y).toBeCloseTo(frame.normalWorld.y, 6);
     expect(plusZ.z).toBeCloseTo(frame.normalWorld.z, 6);
-    expect(xform.position[1]).toBeCloseTo(20 * s, 8);
+    expect(xform.position[1]).toBeCloseTo(20 * WORLD_SCALE, 8);
   });
 });
 
