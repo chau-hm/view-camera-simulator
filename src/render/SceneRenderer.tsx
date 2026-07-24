@@ -206,13 +206,12 @@ export const OCCLUDED_PLANE_MATERIAL_SETTINGS = {
   polygonOffsetUnits: -1,
 } as const;
 
-const RearStandard = ({ opticsState, isFocusFundamentals }: { opticsState?: DerivedOpticsState; isFocusFundamentals?: boolean }) => {
-  // For Focus Fundamentals keep the original datum (film at z=0)
-  if (isFocusFundamentals || !opticsState) {
-    const rearZ = isFocusFundamentals ? 0 : -CAMERA_CONSTANTS.focalLengthMm;
+const RearStandard = ({ opticsState }: { opticsState?: DerivedOpticsState }) => {
+  // Fallback only when no valid opticsState exists
+  if (!opticsState) {
     return (
       <>
-        <mesh position={[0, 0, toWorld(rearZ)]}>
+        <mesh position={[0, 0, toWorld(-CAMERA_CONSTANTS.focalLengthMm)]}>
           <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
           <meshStandardMaterial color="#4b5563" />
         </mesh>
@@ -220,16 +219,11 @@ const RearStandard = ({ opticsState, isFocusFundamentals }: { opticsState?: Deri
     );
   }
 
-  // For architecture and other scene-aware optics, position the rear standard at the film center
+  // Use canonical film centre and orientation from opticsState.
+  // At zero rear movement this produces the same datum as before.
   const filmPos = vecToWorld(opticsState.filmCenterWorld);
-  const filmNormal = opticsState.filmNormalWorld ?? { x: 0, y: 0, z: 1 };
-
   return (
-    <group position={filmPos} ref={(g) => {
-      if (!g) return;
-      // orient so the group's +Z axis aligns with the film normal
-      g.lookAt(filmPos[0] + filmNormal.x, filmPos[1] + filmNormal.y, filmPos[2] + filmNormal.z);
-    }}>
+    <group position={filmPos} quaternion={quaternionForPlaneNormal(opticsState.filmPlane.normal)}>
       <mesh>
         <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
         <meshStandardMaterial color="#4b5563" />
@@ -736,7 +730,7 @@ const SceneContent = ({
     <directionalLight position={[2, 4, 2]} intensity={0.7} />
     <hemisphereLight args={["#ffffff", "#d1d5db", 0.45]} />
     <SceneAssets assets={scene.assets} />
-    <RearStandard opticsState={opticsState} isFocusFundamentals={scene.id === "focus-fundamentals-two-targets"} />
+    <RearStandard opticsState={opticsState} />
     <FrontStandard opticsState={opticsState} />
     {scene.id !== "focus-fundamentals-two-targets" && <Bellows opticsState={opticsState} />}
     <OpticalGeometryOverlays
