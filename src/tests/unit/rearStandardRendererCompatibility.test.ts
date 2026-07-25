@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { describe, it, expect } from "vitest";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
-import { resolveRearStandardRenderTransform } from "../../render/planeOrientation";
+import { resolveFrontStandardRenderTransform, resolveRearStandardRenderTransform } from "../../render/planeOrientation";
 import { WORLD_SCALE } from "../../render/rttUtils";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
@@ -572,6 +572,135 @@ describe("C11: FrontStandard render transform consistency", () => {
       optics.lensNormalWorld.z * optics.filmNormalWorld.z
     );
     expect(lensDot).toBeLessThan(0.9999);
+  });
+});
+
+
+describe("C12: resolveFrontStandardRenderTransform canonical basis", () => {
+  const expectNormalAligns = (label: string, optics: ReturnType<typeof deriveOpticsState>) => {
+    const xform = resolveFrontStandardRenderTransform(optics.lensCenterWorld, optics.lensNormalWorld);
+    const renderedNormal = new THREE.Vector3(0, 0, 1).applyQuaternion(xform.quaternion);
+    const canonical = new THREE.Vector3(
+      optics.lensNormalWorld.x,
+      optics.lensNormalWorld.y,
+      optics.lensNormalWorld.z,
+    ).normalize();
+    expect(renderedNormal.dot(canonical), label).toBeGreaterThan(0.999999);
+    return { xform, renderedNormal, canonical };
+  };
+
+  it("zero movement maps local axes to world axes", () => {
+    const optics = deriveOpticsState(cameraFor(architectureRiseScene), architectureRiseScene);
+    const xform = resolveFrontStandardRenderTransform(optics.lensCenterWorld, optics.lensNormalWorld);
+    const pX = new THREE.Vector3(1, 0, 0).applyQuaternion(xform.quaternion);
+    const pY = new THREE.Vector3(0, 1, 0).applyQuaternion(xform.quaternion);
+    const pZ = new THREE.Vector3(0, 0, 1).applyQuaternion(xform.quaternion);
+    expect(pX.x).toBeCloseTo(1, 6); expect(pX.y).toBeCloseTo(0, 6); expect(pX.z).toBeCloseTo(0, 6);
+    expect(pY.x).toBeCloseTo(0, 6); expect(pY.y).toBeCloseTo(1, 6); expect(pY.z).toBeCloseTo(0, 6);
+    expect(pZ.x).toBeCloseTo(0, 6); expect(pZ.y).toBeCloseTo(0, 6); expect(pZ.z).toBeCloseTo(1, 6);
+    // Position uses WORLD_SCALE
+    expect(xform.position[0]).toBeCloseTo(0, 6);
+    expect(xform.position[1]).toBeCloseTo(0, 6);
+  });
+
+  it("tilt only renders normal matching canonical lensNormalWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { frontTiltDeg: 8 }),
+      architectureRiseScene,
+    );
+    expectNormalAligns("tilt8", optics);
+  });
+
+  it("swing only renders normal matching canonical lensNormalWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { frontSwingDeg: 8 }),
+      architectureRiseScene,
+    );
+    expectNormalAligns("swing8", optics);
+  });
+
+  it("positive tilt+swing renders normal matching canonical lensNormalWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { frontTiltDeg: 8, frontSwingDeg: 8 }),
+      architectureRiseScene,
+    );
+    expectNormalAligns("tilt8swing8", optics);
+  });
+
+  it("positive tilt + negative swing renders normal matching canonical lensNormalWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { frontTiltDeg: 8, frontSwingDeg: -8 }),
+      architectureRiseScene,
+    );
+    expectNormalAligns("tilt8swing_8", optics);
+  });
+
+  it("negative tilt + positive swing renders normal matching canonical lensNormalWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { frontTiltDeg: -8, frontSwingDeg: 8 }),
+      architectureRiseScene,
+    );
+    expectNormalAligns("tilt_8swing8", optics);
+  });
+
+  it("finite combined movement renders normal matching canonical lensNormalWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { frontTiltDeg: 7, frontSwingDeg: 6 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expectNormalAligns("finiteT7S6", optics);
+  });
+
+  it("infinity combined movement renders normal matching canonical lensNormalWorld", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusMode: "infinity", frontTiltDeg: 7, frontSwingDeg: 6 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expectNormalAligns("infT7S6", optics);
+  });
+
+  it("combined front+rear infinity preserves independent transforms", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusMode: "infinity", frontTiltDeg: 7, frontSwingDeg: 5, rearTiltDeg: 3 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    // Front transform
+    const ft = resolveFrontStandardRenderTransform(optics.lensCenterWorld, optics.lensNormalWorld);
+    const fZ = new THREE.Vector3(0, 0, 1).applyQuaternion(ft.quaternion);
+    // Rear transform
+    const rt = resolveRearStandardRenderTransform(optics.rearStandardFrame);
+    const rZ = new THREE.Vector3(0, 0, 1).applyQuaternion(rt.quaternion);
+    // Front and rear normals should be distinct
+    const frontN = new THREE.Vector3(optics.lensNormalWorld.x, optics.lensNormalWorld.y, optics.lensNormalWorld.z);
+    const rearN = new THREE.Vector3(optics.rearStandardFrame.normalWorld.x, optics.rearStandardFrame.normalWorld.y, optics.rearStandardFrame.normalWorld.z);
+    expect(fZ.dot(frontN)).toBeGreaterThan(0.999999);
+    expect(rZ.dot(rearN)).toBeGreaterThan(0.999999);
+    // Front and rear normals differ
+    expect(Math.abs(frontN.dot(rearN))).toBeLessThan(0.9999);
+  });
+
+  it("front rise changes position Y correctly", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { frontRiseMm: 20 }),
+      architectureRiseScene,
+    );
+    const xform = resolveFrontStandardRenderTransform(optics.lensCenterWorld, optics.lensNormalWorld);
+    expect(xform.position[1]).toBeCloseTo(20 * WORLD_SCALE, 8);
+  });
+
+  it("infinity front rise changes position Z to focalLengthMm", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontRiseMm: 20 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    const xform = resolveFrontStandardRenderTransform(optics.lensCenterWorld, optics.lensNormalWorld);
+    expect(xform.position[1]).toBeCloseTo(20 * WORLD_SCALE, 8);
+    // Infinity lens sits at z = f in mm
+    expect(optics.lensCenterWorld.z).toBeCloseTo(150, 8);
   });
 });
 

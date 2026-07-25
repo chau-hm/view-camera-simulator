@@ -68,3 +68,28 @@ export const resolveRearStandardRenderTransform = (frame: {
   );
   return { position, quaternion };
 };
+
+/**
+ * Derive the front-standard render transform from canonical lens geometry.
+ *
+ * Position comes directly from lensCenterWorld (mm → render units via WORLD_SCALE).
+ * Orientation comes from lensNormalWorld using quaternionForPlaneNormal to avoid
+ * Euler-order divergence for combined tilt and swing.  Diagnostics tilt/swing values
+ * must not be used as the geometry source.
+ *
+ * Local +Z represents the lens-plane normal, local +X/+Y follow the deterministic
+ * orthonormal basis produced by createPlaneOrthonormalBasis.
+ */
+export const resolveFrontStandardRenderTransform = (
+  lensCenterWorld: Vec3,
+  lensNormalWorld: Vec3,
+): { position: [number, number, number]; quaternion: Quaternion } => {
+  const s = WORLD_SCALE;
+  const position: [number, number, number] = [
+    lensCenterWorld.x * s,
+    lensCenterWorld.y * s,
+    lensCenterWorld.z * s,
+  ];
+  const quaternion = quaternionForPlaneNormal(lensNormalWorld);
+  return { position, quaternion };
+};

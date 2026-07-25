@@ -19,7 +19,7 @@ import {
   type ScenePlaneOverlayGeometry,
 } from "./scenePlaneOverlayGeometry";
 import { createScheimpflugConstructionGeometry } from "./scheimpflugConstructionGeometry";
-import { quaternionForPlaneNormal, resolveRearStandardRenderTransform } from "./planeOrientation";
+import { quaternionForPlaneNormal, resolveFrontStandardRenderTransform, resolveRearStandardRenderTransform } from "./planeOrientation";
 import { getRegisteredSceneSubject } from "./sceneSubjectRegistry";
 import {
   createCameraInspectionView,
@@ -233,15 +233,13 @@ const RearStandard = ({ opticsState }: { opticsState?: DerivedOpticsState }) => 
 };
 
 const FrontStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
-  const frontPosition = vecToWorld(opticsState.lensCenterWorld);
-  const frontRotation: [number, number, number] = [
-    (opticsState.diagnostics.tiltAngleDeg * Math.PI) / 180,
-    (opticsState.diagnostics.swingAngleDeg * Math.PI) / 180,
-    0,
-  ];
+  const transform = resolveFrontStandardRenderTransform(
+    opticsState.lensCenterWorld,
+    opticsState.lensNormalWorld,
+  );
 
   return (
-    <group position={frontPosition} rotation={frontRotation}>
+    <group position={transform.position} quaternion={transform.quaternion}>
       <mesh>
         <boxGeometry args={[toWorld(CAMERA_CONSTANTS.frontStandardWidthMm), toWorld(CAMERA_CONSTANTS.frontStandardHeightMm), toWorld(12)]} />
         <meshStandardMaterial color="#6b7280" />
