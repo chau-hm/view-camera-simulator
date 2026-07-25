@@ -1,7 +1,7 @@
 import type { Bounds3, Vec3 } from "../types/optics";
 
-const cubeCenter: Vec3 = { x: 0, y: 0, z: 4000 };
-const cubeSizeMm = 400;
+const cubeCenter: Vec3 = { x: 0, y: 0, z: 2000 };
+const cubeSizeMm = 600;
 
 const geometry = {
   cube: {
@@ -11,19 +11,19 @@ const geometry = {
   },
   grid: {
     /** Grid lies on the XZ plane, centred under the cube */
-    center: { x: 0, y: -cubeSizeMm / 2 - 100, z: cubeCenter.z } as Vec3,
+    center: { x: 0, y: -cubeSizeMm / 2 - 150, z: cubeCenter.z } as Vec3,
     /** Half-extent of the grid quad in X and Z directions */
-    halfExtentMm: 1000,
+    halfExtentMm: 1200,
     /** Grid cell size */
     cellSizeMm: 200,
   },
   subjectBounds: {
-    min: { x: -1500, y: -1000, z: cubeCenter.z - 1000 },
-    max: { x: 1500, y: 1000, z: cubeCenter.z + 1000 },
+    min: { x: -1800, y: -1500, z: cubeCenter.z - 1500 },
+    max: { x: 1800, y: 1500, z: cubeCenter.z + 1500 },
   } as Bounds3,
   /** Camera preset values */
   cameraPreset: {
-    focusDistanceMm: 4000,
+    focusDistanceMm: 2000,
     aperture: 11 as const,
     frontRiseMm: 0,
     frontTiltDeg: 0,

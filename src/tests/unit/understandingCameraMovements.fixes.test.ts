@@ -98,7 +98,7 @@ describe("Fix 3: Infinity Reset preserves movement selector", () => {
 describe("Fix 5: Reset from scene preset", () => {
   beforeEach(initScene);
 
-  it("resetMovements restores scene preset values (4000mm focus, f/11)", () => {
+  it("resetMovements restores scene preset values (2000mm focus, f/11)", () => {
     useAppStore.getState().setSelectedMovement("rearRiseMm");
     useAppStore.getState().setRearRise(25);
     useAppStore.getState().setFocusDistance(3000);
@@ -110,7 +110,7 @@ describe("Fix 5: Reset from scene preset", () => {
     expect(state.camera.rearRiseMm).toBe(0);
     expect(state.camera.frontTiltDeg).toBe(0);
     expect(state.camera.rearTiltDeg).toBe(0);
-    expect(state.camera.focusDistanceMm).toBe(4000);
+    expect(state.camera.focusDistanceMm).toBe(2000);
     expect(state.camera.aperture).toBe(11);
     expect(state.selectedMovement).toBe("frontRiseMm");
     expect(state.camera.focusMode).toBe("finite");

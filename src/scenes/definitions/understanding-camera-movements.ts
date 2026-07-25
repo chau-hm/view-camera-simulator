@@ -18,8 +18,8 @@ export const understandingCameraMovementsScene: SceneDefinition = {
   },
   cameraPlacement: {
     /** Three-quarter view to show cube, grid, and full camera assembly */
-    position: { x: 1200, y: 800, z: -1200 },
-    target: { x: 0, y: 0, z: 4000 },
+    position: { x: 700, y: 500, z: -700 },
+    target: { x: 0, y: 0, z: 2000 },
   },
   bounds: {
     min: geometry.subjectBounds.min,

@@ -36,12 +36,12 @@ describe("Store-enforced cameraControlPolicy", () => {
       expect(useAppStore.getState().camera.focusMode).not.toBe("infinity");
     });
 
-    it("restartTask (no task) restores scene preset (4000mm, f/11)", () => {
+    it("restartTask (no task) restores scene preset (2000mm, f/11)", () => {
       useAppStore.getState().setSelectedMovement("rearRiseMm");
       useAppStore.getState().setRearRise(20);
       useAppStore.getState().restartTask();
       const s = useAppStore.getState();
-      expect(s.camera.focusDistanceMm).toBe(4000);
+      expect(s.camera.focusDistanceMm).toBe(2000);
       expect(s.camera.aperture).toBe(11);
       expect(s.camera.frontRiseMm).toBe(0);
       expect(s.camera.rearRiseMm).toBe(0);

@@ -15,107 +15,180 @@ export function createCameraMovementsGroup(): THREE.Group {
   const cy = toWorld(cube.center.y);
   const cz = toWorld(cube.center.z);
 
-  // --- Cube group (semi-transparent faces, edges, vertex markers) ---
+  // --- Cube group ---
   const cubeGroup = new THREE.Group();
   cubeGroup.name = "camera-movements-cube";
 
-  // Each face is a separate Mesh so front/back can have different opacity
+  // Semi-transparent faces
   const faceGeo = new THREE.PlaneGeometry(s, s);
-  const frontMat = new THREE.MeshStandardMaterial({
-    color: "#818cf8",
-    roughness: 0.3,
-    metalness: 0.05,
-    transparent: true,
-    opacity: 0.55,
-    side: THREE.FrontSide,
-    depthWrite: true,
-  });
-  const backMat = new THREE.MeshStandardMaterial({
-    color: "#6366f1",
-    roughness: 0.3,
-    metalness: 0.05,
-    transparent: true,
-    opacity: 0.35,
-    side: THREE.FrontSide,
-    depthWrite: true,
-  });
-  const sideMat = new THREE.MeshStandardMaterial({
+  const frontFaceMat = new THREE.MeshStandardMaterial({
     color: "#a5b4fc",
-    roughness: 0.3,
+    roughness: 0.25,
     metalness: 0.05,
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.50,
+    side: THREE.FrontSide,
+    depthWrite: true,
+  });
+  const backFaceMat = new THREE.MeshStandardMaterial({
+    color: "#6366f1",
+    roughness: 0.25,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.30,
+    side: THREE.FrontSide,
+    depthWrite: true,
+  });
+  const sideFaceMat = new THREE.MeshStandardMaterial({
+    color: "#818cf8",
+    roughness: 0.25,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.40,
     side: THREE.FrontSide,
     depthWrite: true,
   });
 
   // +Z (front)
-  const front = new THREE.Mesh(faceGeo, frontMat);
-  front.position.set(cx, cy, cz + hs);
-  cubeGroup.add(front);
+  const faceFront = new THREE.Mesh(faceGeo, frontFaceMat);
+  faceFront.position.set(cx, cy, cz + hs);
+  cubeGroup.add(faceFront);
 
   // -Z (back)
-  const back = new THREE.Mesh(faceGeo, backMat);
-  back.position.set(cx, cy, cz - hs);
-  back.rotation.y = Math.PI;
-  cubeGroup.add(back);
+  const faceBack = new THREE.Mesh(faceGeo, backFaceMat);
+  faceBack.position.set(cx, cy, cz - hs);
+  faceBack.rotation.y = Math.PI;
+  cubeGroup.add(faceBack);
 
-  // +X
-  const right = new THREE.Mesh(faceGeo, sideMat);
-  right.position.set(cx + hs, cy, cz);
-  right.rotation.y = Math.PI / 2;
-  cubeGroup.add(right);
+  // +X (right)
+  const faceRight = new THREE.Mesh(faceGeo, sideFaceMat);
+  faceRight.position.set(cx + hs, cy, cz);
+  faceRight.rotation.y = Math.PI / 2;
+  cubeGroup.add(faceRight);
 
-  // -X
-  const left = new THREE.Mesh(faceGeo, sideMat);
-  left.position.set(cx - hs, cy, cz);
-  left.rotation.y = -Math.PI / 2;
-  cubeGroup.add(left);
+  // -X (left)
+  const faceLeft = new THREE.Mesh(faceGeo, sideFaceMat);
+  faceLeft.position.set(cx - hs, cy, cz);
+  faceLeft.rotation.y = -Math.PI / 2;
+  cubeGroup.add(faceLeft);
 
   // +Y (top)
-  const top = new THREE.Mesh(faceGeo, sideMat);
-  top.position.set(cx, cy + hs, cz);
-  top.rotation.x = -Math.PI / 2;
-  cubeGroup.add(top);
+  const faceTop = new THREE.Mesh(faceGeo, sideFaceMat);
+  faceTop.position.set(cx, cy + hs, cz);
+  faceTop.rotation.x = -Math.PI / 2;
+  cubeGroup.add(faceTop);
 
   // -Y (bottom)
-  const bottom = new THREE.Mesh(faceGeo, sideMat);
-  bottom.position.set(cx, cy - hs, cz);
-  bottom.rotation.x = Math.PI / 2;
-  cubeGroup.add(bottom);
+  const faceBottom = new THREE.Mesh(faceGeo, sideFaceMat);
+  faceBottom.position.set(cx, cy - hs, cz);
+  faceBottom.rotation.x = Math.PI / 2;
+  cubeGroup.add(faceBottom);
 
-  // --- Contrasting edges (wireframe) ---
-  const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(s, s, s));
-  const edgeMat = new THREE.LineBasicMaterial({
-    color: "#4338ca",
-    linewidth: 1,
-    transparent: true,
-    opacity: 0.85,
-    depthTest: true,
-  });
-  const edges = new THREE.LineSegments(edgeGeo, edgeMat);
-  edges.position.set(cx, cy, cz);
-  edges.renderOrder = 3;
-  cubeGroup.add(edges);
+  // --- Near/front edges (all edges touching +Z face, warmer highlight) ---
+  // Edges are drawn as individual line segments for the 12 edges,
+  // with the 4 front-Z edges colored differently from the 4 back-Z edges.
+  const nearEdgeColor = "#f59e0b";  // amber
+  const farEdgeColor  = "#a855f7";  // violet
+  const midEdgeColor  = "#6366f1";  // indigo (edges connecting near to far)
 
-  // --- Vertex markers (small spheres at corners) ---
-  const cornerRadius = toWorld(12);
-  const cornerGeo = new THREE.SphereGeometry(cornerRadius, 8, 8);
-  const cornerMat = new THREE.MeshStandardMaterial({
-    color: "#4f46e5",
-    roughness: 0.2,
-    metalness: 0.3,
+  // Helper: create a world-space line between two corners
+  function addEdgeLine(
+    x1: number, y1: number, z1: number,
+    x2: number, y2: number, z2: number,
+    color: string,
+  ) {
+    const pts = new Float32Array([x1, y1, z1, x2, y2, z2]);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pts, 3));
+    const mat = new THREE.LineBasicMaterial({
+      color,
+      linewidth: 1,
+      depthTest: true,
+      transparent: true,
+      opacity: 0.95,
+    });
+    const line = new THREE.LineSegments(geo, mat);
+    line.renderOrder = 3;
+    cubeGroup.add(line);
+  }
+
+  const c = (axis: number, sign: number) => (axis === 0 ? cx + sign * hs : axis === 1 ? cy + sign * hs : cz + sign * hs);
+  const corner = (sx: number, sy: number, sz: number) => [c(0, sx), c(1, sy), c(2, sz)] as const;
+
+  // 12 edges of the cube
+  const edgeDefs: Array<[number, number, number, number, number, number, string]> = [
+    // Front face edges (+Z) — near, amber
+    [-1, -1, 1,  1, -1, 1],
+    [ 1, -1, 1,  1,  1, 1],
+    [ 1,  1, 1, -1,  1, 1],
+    [-1,  1, 1, -1, -1, 1],
+  ].map((quad) => {
+    const [sx1, sy1, sz1, sx2, sy2, sz2] = quad;
+    const [x1, y1, z1] = corner(sx1, sy1, sz1);
+    const [x2, y2, z2] = corner(sx2, sy2, sz2);
+    return [x1, y1, z1, x2, y2, z2, nearEdgeColor] as [number, number, number, number, number, number, string];
   });
-  const corners = [
-    [-hs, -hs, -hs], [hs, -hs, -hs], [-hs, hs, -hs], [hs, hs, -hs],
-    [-hs, -hs,  hs], [hs, -hs,  hs], [-hs, hs,  hs], [hs, hs,  hs],
-  ];
-  corners.forEach(([dx, dy, dz]) => {
-    const marker = new THREE.Mesh(cornerGeo, cornerMat);
-    marker.position.set(cx + dx, cy + dy, cz + dz);
+
+  const backEdges: Array<[number, number, number, number, number, number, string]> = [
+    // Back face edges (-Z) — far, violet
+    [-1, -1, -1,  1, -1, -1],
+    [ 1, -1, -1,  1,  1, -1],
+    [ 1,  1, -1, -1,  1, -1],
+    [-1,  1, -1, -1, -1, -1],
+  ].map((quad) => {
+    const [sx1, sy1, sz1, sx2, sy2, sz2] = quad;
+    const [x1, y1, z1] = corner(sx1, sy1, sz1);
+    const [x2, y2, z2] = corner(sx2, sy2, sz2);
+    return [x1, y1, z1, x2, y2, z2, farEdgeColor] as [number, number, number, number, number, number, string];
+  });
+
+  const midEdges: Array<[number, number, number, number, number, number, string]> = [
+    // Connecting edges (near-to-far) — indigo
+    [-1, -1, 1, -1, -1, -1],
+    [ 1, -1, 1,  1, -1, -1],
+    [-1,  1, 1, -1,  1, -1],
+    [ 1,  1, 1,  1,  1, -1],
+  ].map(([sx1, sy1, sz1, sx2, sy2, sz2]) => {
+    const [x1, y1, z1] = corner(sx1, sy1, sz1);
+    const [x2, y2, z2] = corner(sx2, sy2, sz2);
+    return [x1, y1, z1, x2, y2, z2, midEdgeColor] as [number, number, number, number, number, number, string];
+  });
+
+  [...edgeDefs, ...backEdges, ...midEdges].forEach(([x1, y1, z1, x2, y2, z2, color]) => {
+    addEdgeLine(x1, y1, z1, x2, y2, z2, color);
+  });
+
+  // --- Vertex markers: near (amber), far (violet) ---
+  const vertexRadius = toWorld(14);
+  const nearVertexGeo = new THREE.SphereGeometry(vertexRadius, 10, 10);
+  const nearVertexMat = new THREE.MeshStandardMaterial({
+    color: nearEdgeColor,
+    roughness: 0.15,
+    metalness: 0.35,
+  });
+  const farVertexGeo = new THREE.SphereGeometry(vertexRadius, 10, 10);
+  const farVertexMat = new THREE.MeshStandardMaterial({
+    color: farEdgeColor,
+    roughness: 0.15,
+    metalness: 0.35,
+  });
+
+  // Near vertices (+Z)
+  for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const [vx, vy, vz] = corner(sx, sy, 1);
+    const marker = new THREE.Mesh(nearVertexGeo, nearVertexMat);
+    marker.position.set(vx, vy, vz);
     marker.renderOrder = 4;
     cubeGroup.add(marker);
-  });
+  }
+  // Far vertices (-Z)
+  for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const [vx, vy, vz] = corner(sx, sy, -1);
+    const marker = new THREE.Mesh(farVertexGeo, farVertexMat);
+    marker.position.set(vx, vy, vz);
+    marker.renderOrder = 4;
+    cubeGroup.add(marker);
+  }
 
   group.add(cubeGroup);
 
