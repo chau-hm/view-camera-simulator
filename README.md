@@ -119,12 +119,10 @@ npm run dev
 This repository includes `.github/workflows/pages.yml`:
 
 * CI on pull requests and pushes to all branches (`lint`, `typecheck`, `test`)
-* CD on pushes or manual runs for the `production` branch (build + deploy to GitHub Pages)
+* CD on pushes to the repository default branch (build + deploy to GitHub Pages)
 
 Deployment uses the repository name as the Vite base path and publishes `dist/` to Pages.
 For SPA deep-link fallback on GitHub Pages, the workflow also copies `dist/index.html` to `dist/404.html`.
-
-See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the reviewed release, freeze, and rollback procedures.
 
 ### Run CI checks locally
 
