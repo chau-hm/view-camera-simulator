@@ -148,11 +148,12 @@ describe("Understanding Camera Movements store invariants", () => {
     expect(state.camera.frontTiltDeg).toBe(0);
   });
 
-  it("setFocusDistance exits infinity mode", () => {
+  it("setFocusDistance exits infinity mode in non-locked scene", () => {
+    // Use a scene without cameraControlPolicy to test infinity focus
     const store = useAppStore.getState();
     store.initializeSimulatorRoute({
       mode: "free",
-      sceneId: "understanding-camera-movements",
+      sceneId: "architecture-rise",
     });
     useAppStore.getState().setInfinityFocus();
     expect(useAppStore.getState().camera.focusMode).toBe("infinity");

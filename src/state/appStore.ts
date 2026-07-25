@@ -101,6 +101,25 @@ type UIState = {
   showOpticalGeometry: boolean;
 };
 
+
+/** Check if focusDistance is locked by the active scene's cameraControlPolicy. */
+const isFocusDistanceLocked = (sceneId: string): boolean => {
+  const scene = getSceneById(sceneId);
+  return scene?.cameraControlPolicy?.focusDistance === "fixed";
+};
+
+/** Check if aperture is locked by the active scene's cameraControlPolicy. */
+const isApertureLocked = (sceneId: string): boolean => {
+  const scene = getSceneById(sceneId);
+  return scene?.cameraControlPolicy?.aperture === "fixed";
+};
+
+/** Check if infinity reset is disallowed by the active scene. */
+const isInfinityResetDisallowed = (sceneId: string): boolean => {
+  const scene = getSceneById(sceneId);
+  return scene?.cameraControlPolicy?.infinityReset === false;
+};
+
 import type { GroundGlassRttRuntimeInfo } from "../render/groundGlassRttDimensions";
 
 export type AppStore = {
@@ -385,16 +404,18 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) => ({
       camera: {
         ...state.camera,
-        focusDistanceMm: clampFocusDistanceForScene(
-          state.camera.activeSceneId,
-          value,
-        ),
-        focusMode: "finite",
+        focusDistanceMm: isFocusDistanceLocked(state.camera.activeSceneId)
+          ? state.camera.focusDistanceMm
+          : clampFocusDistanceForScene(state.camera.activeSceneId, value),
+        focusMode: isFocusDistanceLocked(state.camera.activeSceneId)
+          ? state.camera.focusMode
+          : "finite",
       },
     })),
 
   setInfinityFocus: () =>
     set((state) => {
+      if (isInfinityResetDisallowed(state.camera.activeSceneId)) return {};
       const defaultMovement = resolveDefaultMovement(state.camera.activeSceneId);
       return {
         camera: {
@@ -418,7 +439,9 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) => ({
       camera: {
         ...state.camera,
-        aperture: isApertureValue(value) ? value : state.camera.aperture,
+        aperture: isApertureLocked(state.camera.activeSceneId)
+          ? state.camera.aperture
+          : isApertureValue(value) ? value : state.camera.aperture,
       },
     })),
 
@@ -509,10 +532,15 @@ export const useAppStore = create<AppStore>((set) => ({
         activeTask?.sceneId ?? state.scene.activeSceneId;
       const nextMode = activeTask?.mode ?? state.ui.mode;
       const nextControlState =
-        activeTask?.initialCameraState ?? defaultControlState;
+        activeTask?.initialCameraState
+          ?? (Object.keys(resolveScenePresetReset(nextSceneId)).length > 0
+            ? resolveScenePresetReset(nextSceneId)
+            : defaultControlState);
+      const presetFocusDistanceMm = (nextControlState as Partial<Record<string, number>>).focusDistanceMm
+        ?? defaultControlState.focusDistanceMm;
       const focusDistanceMm = clampFocusDistanceForScene(
         nextSceneId,
-        nextControlState.focusDistanceMm,
+        presetFocusDistanceMm,
       );
       const nextGeometryView =
         activeTask?.initialCameraState?.geometryView ??

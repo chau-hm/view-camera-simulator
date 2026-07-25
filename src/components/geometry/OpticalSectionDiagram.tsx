@@ -28,6 +28,8 @@ type Props = {
   displayMode?: "full" | "camera-construction" | "subject-field";
   /** Optional zero-movement reference projection for comparison scenes. */
   referenceProjection?: OpticalSectionData | null;
+  /** Optional zero-movement reference optics state (must match referenceProjection). */
+  referenceOpticsState?: DerivedOpticsState | null;
 };
 
 const planeTeachingLabel = (segment: PlaneSegment): string | null => {
@@ -56,6 +58,8 @@ type ConstructionLayerLayerProps = {
   style: ConstructionLayerStyle;
   /** Override which projection data to use (default to projection) */
   layerProjection?: OpticalSectionData;
+  /** Override which opticsState to use. */
+  layerOpticsState?: DerivedOpticsState;
 };
 
 const ConstructionLayer = ({
@@ -70,8 +74,10 @@ const ConstructionLayer = ({
   displayMode = "full",
   style,
   layerProjection,
+  layerOpticsState,
 }: ConstructionLayerLayerProps) => {
   const projection = layerProjection ?? baseProjection;
+  const effectiveOpticsState = layerOpticsState ?? opticsState;
   const view = projection.views[geometryView];
   const segments = view.planeSegments;
   const showDepthPlaneGeometry =
@@ -86,8 +92,8 @@ const ConstructionLayer = ({
     displayMode === "subject-field" || geometryView !== "scheimpflug";
   const { isInfinity } = projection;
   const safeMargin = 10;
-  const filmCenter = view.projectWorldPoint(opticsState.filmCenterWorld);
-  const lensCenter = view.projectWorldPoint(opticsState.lensCenterWorld);
+  const filmCenter = view.projectWorldPoint(effectiveOpticsState.filmCenterWorld);
+  const lensCenter = view.projectWorldPoint(effectiveOpticsState.lensCenterWorld);
   const subjectGuides =
     displayMode === "camera-construction"
       ? []
@@ -200,8 +206,8 @@ const ConstructionLayer = ({
 
       {showDepthPlaneGeometry &&
       !isInfinity &&
-      opticsState.depthOfFieldNearPlane &&
-      opticsState.depthOfFieldFarPlane
+      effectiveOpticsState.depthOfFieldNearPlane &&
+      effectiveOpticsState.depthOfFieldFarPlane
         ? (() => {
             const near = segments.find(
               (segment) => segment.id === "nearDof",
@@ -466,6 +472,7 @@ const ConstructionLayer = ({
 export const OpticalSectionDiagram = ({
   projection,
   referenceProjection,
+  referenceOpticsState,
   geometryView,
   profile,
   scene,
@@ -520,6 +527,7 @@ export const OpticalSectionDiagram = ({
           displayMode={undefined}
           style={originalStyle}
           layerProjection={referenceProjection}
+          layerOpticsState={referenceOpticsState ?? undefined}
         />
       )}
 

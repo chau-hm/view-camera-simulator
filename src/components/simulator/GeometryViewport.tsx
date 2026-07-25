@@ -105,8 +105,8 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   const splitSvgWidth = Math.max(280, Math.floor((svgSize.width - 72) / 2));
   const splitSvgHeight = Math.max(190, Math.min(250, svgSize.height));
 
-  // Original (zero-movement) projection for camera-movement comparison scenes
-  const originalProjection = useMemo<typeof sceneProjection | null>(() => {
+  // Original (zero-movement) optics and projection for camera-movement comparison scenes
+  const originalRef = useMemo<{ optics: DerivedOpticsState; projection: typeof sceneProjection } | null>(() => {
     if (!scene.movementCapabilities) return null;
     const originalCamera = {
       ...DEFAULT_CAMERA_STATE,
@@ -119,7 +119,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
       activeSceneId: scene.id,
     };
     const originalOptics = deriveOpticsState(originalCamera, scene);
-    return computeOpticalSectionData({
+    const originalProjection = computeOpticalSectionData({
       opticsState: originalOptics,
       scene,
       svgWidth: svgSize.width,
@@ -128,6 +128,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
       lateralWindow: profile.lateralWindow,
       paddingPx: profile.diagramPaddingPx,
     });
+    return { optics: originalOptics, projection: originalProjection };
   }, [scene, svgSize.width, svgSize.height, sceneDepthWindow, profile.lateralWindow, profile.diagramPaddingPx]);
 
 const cameraProjection = constructionWindow
@@ -277,7 +278,8 @@ const cameraProjection = constructionWindow
             opticsState={opticsState}
             svgWidth={svgSize.width}
             svgHeight={svgSize.height}
-            referenceProjection={originalProjection}
+            referenceProjection={originalRef?.projection ?? null}
+              referenceOpticsState={originalRef?.optics ?? null}
           />
         )}
       </div>

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry from "../scenes/understandingCameraMovementsGeometry";
 import { toWorld } from "./rttUtils";
@@ -79,22 +79,35 @@ export function createCameraMovementsGroup(): THREE.Group {
 
 export const CameraMovementsSubject: React.FC = () => {
   const group = useMemo(() => createCameraMovementsGroup(), []);
-  return <primitive object={group} />;
+
+  useEffect(() => {
+    return () => {
+      disposeCameraMovementsGroup(group);
+    };
+  }, [group]);
+
+  return <primitive object={group} dispose={null} />;
 };
 
 /** Dispose all owned Three.js resources in the given group. */
 export function disposeCameraMovementsGroup(group: THREE.Group): void {
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+
   group.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
     const mesh = object;
     if (mesh.geometry) {
-      mesh.geometry.dispose();
+      geometries.add(mesh.geometry);
     }
-    const materials = Array.isArray(mesh.material)
+    const meshMaterials = Array.isArray(mesh.material)
       ? mesh.material
       : [mesh.material];
-    materials.forEach((material) => {
-      if (material) material.dispose();
+    meshMaterials.forEach((material) => {
+      if (material) materials.add(material);
     });
   });
+
+  geometries.forEach((geometry) => geometry.dispose());
+  materials.forEach((material) => material.dispose());
 }

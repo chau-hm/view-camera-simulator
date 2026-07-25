@@ -80,15 +80,18 @@ describe("Fix 2: Single-active movement invariant enforced in store", () => {
 describe("Fix 3: Infinity Reset preserves movement selector", () => {
   beforeEach(initScene);
 
-  it("Infinity Reset restores defaultMovement instead of null", () => {
+  it("Infinity Reset is disallowed by cameraControlPolicy", () => {
     useAppStore.getState().setSelectedMovement("rearTiltDeg");
     useAppStore.getState().setRearTilt(8);
 
+    // Infinity Reset should be a no-op for this scene
     useAppStore.getState().setInfinityFocus();
     const state = useAppStore.getState();
-    expect(state.selectedMovement).toBe("frontRiseMm");
-    expect(state.camera.frontRiseMm).toBe(0);
-    expect(state.camera.rearTiltDeg).toBe(0);
+    // focusMode must stay finite (not infinity)
+    expect(state.camera.focusMode).not.toBe("infinity");
+    // selected movement and camera values unchanged
+    expect(state.selectedMovement).toBe("rearTiltDeg");
+    expect(state.camera.rearTiltDeg).toBe(8);
   });
 });
 
@@ -117,7 +120,7 @@ describe("Fix 5: Reset from scene preset", () => {
   it("after reset, Original and Current optics completely overlap", () => {
     useAppStore.getState().setSelectedMovement("frontTiltDeg");
     useAppStore.getState().setTilt(5);
-    useAppStore.getState().setFocusDistance(3000);
+    // Focus is locked, so just change tilt for the test
     useAppStore.getState().resetMovements();
 
     const current = { ...useAppStore.getState().camera };
