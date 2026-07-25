@@ -35,6 +35,54 @@ const clampFocusDistanceForScene = (sceneId: string, value: number) => {
   return clamp(value, range.min, range.max);
 };
 
+/** Resolve the default movement for a scene, if any. */
+const resolveDefaultMovement = (sceneId: string): CameraMovementField | null => {
+  const scene = getSceneById(sceneId);
+  return scene?.movementCapabilities?.defaultMovement ?? null;
+};
+
+/** Whether the scene enforces at-most-one active movement. */
+const isSingleMovementScene = (sceneId: string): boolean => {
+  const scene = getSceneById(sceneId);
+  return scene?.movementCapabilities?.selectionMode === "single";
+};
+
+/** Zero other supported movement fields when a single-movement scene sets one. */
+const enforceSingleMovement = (
+  camera: CameraState,
+  sceneId: string,
+  field: CameraMovementField,
+): CameraState => {
+  if (!isSingleMovementScene(sceneId)) return camera;
+  return {
+    ...camera,
+    frontRiseMm: field === "frontRiseMm" ? camera.frontRiseMm : 0,
+    rearRiseMm: field === "rearRiseMm" ? camera.rearRiseMm : 0,
+    frontTiltDeg: field === "frontTiltDeg" ? camera.frontTiltDeg : 0,
+    rearTiltDeg: field === "rearTiltDeg" ? camera.rearTiltDeg : 0,
+    frontSwingDeg: 0,
+  };
+};
+
+/** Restore camera state from the active scene preset for movement-comparison scenes. */
+const resolveScenePresetReset = (
+  sceneId: string,
+): Partial<CameraState> => {
+  const scene = getSceneById(sceneId);
+  if (!scene?.movementCapabilities) return {};
+  const preset = scene.cameraPreset;
+  return {
+    frontRiseMm: preset.frontRiseMm,
+    frontTiltDeg: preset.frontTiltDeg,
+    frontSwingDeg: preset.frontSwingDeg,
+    rearRiseMm: preset.rearRiseMm,
+    rearTiltDeg: preset.rearTiltDeg,
+    focusDistanceMm: preset.focusDistanceMm,
+    aperture: preset.aperture,
+    focusMode: "finite",
+  };
+};
+
 type SceneRuntimeState = {
   activeSceneId: string;
 };
@@ -203,10 +251,7 @@ export const useAppStore = create<AppStore>((set) => ({
         }
       }
 
-      // Resolve default selected movement from scene capabilities
-      const scene = getSceneById(sceneId);
-      const defaultMovement =
-        scene?.movementCapabilities?.defaultMovement ?? null;
+      const defaultMovement = resolveDefaultMovement(sceneId);
 
       const nextUi = {
         ...state.ui,
@@ -243,62 +288,97 @@ export const useAppStore = create<AppStore>((set) => ({
 
   setRise: (value) =>
     set((state) => ({
-      camera: {
-        ...state.camera,
-        frontRiseMm: clamp(
-          value,
-          CAMERA_CONSTANTS.riseMinMm,
-          CAMERA_CONSTANTS.riseMaxMm,
-        ),
-      },
+      camera: enforceSingleMovement(
+        {
+          ...state.camera,
+          frontRiseMm: clamp(
+            value,
+            CAMERA_CONSTANTS.riseMinMm,
+            CAMERA_CONSTANTS.riseMaxMm,
+          ),
+        },
+        state.camera.activeSceneId,
+        "frontRiseMm",
+      ),
+      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+        ? "frontRiseMm"
+        : state.selectedMovement,
     })),
 
   setTilt: (value) =>
     set((state) => ({
-      camera: {
-        ...state.camera,
-        frontTiltDeg: clamp(
-          value,
-          CAMERA_CONSTANTS.tiltMinDeg,
-          CAMERA_CONSTANTS.tiltMaxDeg,
-        ),
-      },
+      camera: enforceSingleMovement(
+        {
+          ...state.camera,
+          frontTiltDeg: clamp(
+            value,
+            CAMERA_CONSTANTS.tiltMinDeg,
+            CAMERA_CONSTANTS.tiltMaxDeg,
+          ),
+        },
+        state.camera.activeSceneId,
+        "frontTiltDeg",
+      ),
+      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+        ? "frontTiltDeg"
+        : state.selectedMovement,
     })),
 
   setSwing: (value) =>
     set((state) => ({
-      camera: {
-        ...state.camera,
-        frontSwingDeg: clamp(
-          value,
-          CAMERA_CONSTANTS.swingMinDeg,
-          CAMERA_CONSTANTS.swingMaxDeg,
-        ),
-      },
+      camera: enforceSingleMovement(
+        {
+          ...state.camera,
+          frontSwingDeg: clamp(
+            value,
+            CAMERA_CONSTANTS.swingMinDeg,
+            CAMERA_CONSTANTS.swingMaxDeg,
+          ),
+        },
+        state.camera.activeSceneId,
+        "frontSwingDeg",
+      ),
+      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+        ? "frontSwingDeg"
+        : state.selectedMovement,
     })),
 
   setRearRise: (value) =>
     set((state) => ({
-      camera: {
-        ...state.camera,
-        rearRiseMm: clamp(
-          value,
-          CAMERA_CONSTANTS.riseMinMm,
-          CAMERA_CONSTANTS.riseMaxMm,
-        ),
-      },
+      camera: enforceSingleMovement(
+        {
+          ...state.camera,
+          rearRiseMm: clamp(
+            value,
+            CAMERA_CONSTANTS.riseMinMm,
+            CAMERA_CONSTANTS.riseMaxMm,
+          ),
+        },
+        state.camera.activeSceneId,
+        "rearRiseMm",
+      ),
+      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+        ? "rearRiseMm"
+        : state.selectedMovement,
     })),
 
   setRearTilt: (value) =>
     set((state) => ({
-      camera: {
-        ...state.camera,
-        rearTiltDeg: clamp(
-          value,
-          CAMERA_CONSTANTS.tiltMinDeg,
-          CAMERA_CONSTANTS.tiltMaxDeg,
-        ),
-      },
+      camera: enforceSingleMovement(
+        {
+          ...state.camera,
+          rearTiltDeg: clamp(
+            value,
+            CAMERA_CONSTANTS.tiltMinDeg,
+            CAMERA_CONSTANTS.tiltMaxDeg,
+          ),
+        },
+        state.camera.activeSceneId,
+        "rearTiltDeg",
+      ),
+      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+        ? "rearTiltDeg"
+        : state.selectedMovement,
     })),
 
   setFocusDistance: (value) =>
@@ -314,22 +394,25 @@ export const useAppStore = create<AppStore>((set) => ({
     })),
 
   setInfinityFocus: () =>
-    set((state) => ({
-      camera: {
-        ...state.camera,
-        focusMode: "infinity",
-        lastFiniteFocusDepthMm: Number.isFinite(state.camera.focusDistanceMm)
-          ? state.camera.focusDistanceMm
-          : (state.camera.lastFiniteFocusDepthMm ??
-            state.camera.focusDistanceMm),
-        frontRiseMm: 0,
-        frontTiltDeg: 0,
-        frontSwingDeg: 0,
-        rearRiseMm: 0,
-        rearTiltDeg: 0,
-      },
-      selectedMovement: null,
-    })),
+    set((state) => {
+      const defaultMovement = resolveDefaultMovement(state.camera.activeSceneId);
+      return {
+        camera: {
+          ...state.camera,
+          focusMode: "infinity",
+          lastFiniteFocusDepthMm: Number.isFinite(state.camera.focusDistanceMm)
+            ? state.camera.focusDistanceMm
+            : (state.camera.lastFiniteFocusDepthMm ??
+              state.camera.focusDistanceMm),
+          frontRiseMm: 0,
+          frontTiltDeg: 0,
+          frontSwingDeg: 0,
+          rearRiseMm: 0,
+          rearTiltDeg: 0,
+        },
+        selectedMovement: defaultMovement,
+      };
+    }),
 
   setAperture: (value) =>
     set((state) => ({
@@ -394,17 +477,23 @@ export const useAppStore = create<AppStore>((set) => ({
 
   resetMovements: () =>
     set((state) => {
-      const scene = getSceneById(state.camera.activeSceneId);
-      const defaultMovement =
-        scene?.movementCapabilities?.defaultMovement ?? null;
+      const sceneId = state.camera.activeSceneId;
+      const defaultMovement = resolveDefaultMovement(sceneId);
+      const scenePreset = resolveScenePresetReset(sceneId);
+      // For movement-comparison scenes, use the scene preset
+      // For all other scenes, use the global defaultControlState
+      const resetValues = Object.keys(scenePreset).length > 0
+        ? scenePreset
+        : defaultControlState;
       return {
         camera: {
           ...state.camera,
-          ...defaultControlState,
+          ...resetValues,
           focusDistanceMm: clampFocusDistanceForScene(
-            state.camera.activeSceneId,
-            defaultControlState.focusDistanceMm,
+            sceneId,
+            resetValues.focusDistanceMm ?? defaultControlState.focusDistanceMm,
           ),
+          aperture: (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
         },
         task: { ...state.task, currentTaskEvaluation: null },
         selectedMovement: defaultMovement,
@@ -440,10 +529,7 @@ export const useAppStore = create<AppStore>((set) => ({
       const nextShowOpticalGeometry =
         resolveInitialOpticalGeometryVisibility(activeTask);
 
-      // Resolve default movement from the target scene
-      const nextScene = getSceneById(nextSceneId);
-      const defaultMovement =
-        nextScene?.movementCapabilities?.defaultMovement ?? null;
+      const defaultMovement = resolveDefaultMovement(nextSceneId);
 
       return {
         camera: {

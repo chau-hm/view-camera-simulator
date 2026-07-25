@@ -27,6 +27,7 @@ import {
 import {
   CameraMovementsSubject,
   createCameraMovementsGroup,
+  disposeCameraMovementsGroup,
 } from "./CameraMovementsSubjectFactory";
 import { toWorld } from "./rttUtils";
 
@@ -95,6 +96,7 @@ export const sceneSubjectRegistry = {
   "understanding-camera-movements": {
     SceneSubject: CameraMovementsSubject,
     createRttGroup: createCameraMovementsGroup,
+    disposeRttGroup: disposeCameraMovementsGroup,
     rttLighting: {
       targetMm: cameraMovementsLightingTargetMm,
       keyOffsetWorld: { x: -2, y: 2.5, z: -2 },

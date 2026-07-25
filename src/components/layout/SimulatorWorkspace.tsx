@@ -182,6 +182,10 @@ export const SimulatorWorkspace = ({
 
   const opticsState = selectDerivedOpticsState(camera);
   const lockReason = UI_COPY.controls.guidedControlLockedReason;
+  const controlPolicy = safeScene.cameraControlPolicy ?? {};
+  const focusLocked = controlPolicy.focusDistance === "fixed";
+  const apertureLocked = controlPolicy.aperture === "fixed";
+  const infinityResetHidden = controlPolicy.infinityReset === false;
   const [rawRttDebug, setRawRttDebug] = useState(false);
 
   // enabled controls currently depend only on mode, task metadata, and active scene.
@@ -345,6 +349,15 @@ export const SimulatorWorkspace = ({
               focusDistanceMm={camera.focusDistanceMm}
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
+              activeMovement={selectedMovement ? { field: selectedMovement, value: (() => {
+                switch (selectedMovement) {
+                  case "frontRiseMm": return camera.frontRiseMm;
+                  case "rearRiseMm": return camera.rearRiseMm;
+                  case "frontTiltDeg": return camera.frontTiltDeg;
+                  case "rearTiltDeg": return camera.rearTiltDeg;
+                  case "frontSwingDeg": return camera.frontSwingDeg;
+                }
+              })() } : null}
             />
 
             <FocusTargetsReadout
@@ -389,7 +402,7 @@ export const SimulatorWorkspace = ({
           <section aria-label="Camera Controls">
             <div className="aside-header">
               <h3 style={{ margin: 0 }}>Camera Controls</h3>
-              <button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>Infinity Reset</button>
+              {!infinityResetHidden && (<button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>Infinity Reset</button>)}
             </div>
 
             <div style={{ marginTop: 8 }}>
@@ -414,12 +427,12 @@ export const SimulatorWorkspace = ({
 
               <div className="sim-section">
                 <div className="sim-section-label">Focus</div>
-                <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} showTitle={false} />
+                <FocusControl focusEnabled={enabledControls.has("focusDistance") && !focusLocked} lockReason={focusLocked ? "Focus is fixed for this lesson" : lockReason} showTitle={false} />
               </div>
 
               <div className="sim-section">
                 <div className="sim-section-label">Aperture</div>
-                <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} showTitle={false} />
+                <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? "Aperture is fixed for this lesson" : lockReason} showTitle={false} />
               </div>
 
               <div className="sim-section reset" style={{ paddingBottom: 0 }}>

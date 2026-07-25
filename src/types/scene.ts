@@ -64,4 +64,13 @@ export type SceneDefinition = {
   movementCapabilities?: SceneMovementCapabilities;
   /** Optional camera-inspection observer framing. When absent, the default fallback applies. */
   cameraInspectionPlacement?: CameraPlacement;
+  /** Optional per-scene control policy. When absent, all controls are available. */
+  cameraControlPolicy?: CameraControlPolicy;
+};
+
+/** Per-scene control policy for locking controls in instructional scenes. */
+export type CameraControlPolicy = {
+  focusDistance?: "fixed";
+  aperture?: "fixed";
+  infinityReset?: false;
 };

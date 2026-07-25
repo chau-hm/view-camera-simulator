@@ -32,6 +32,11 @@ export const understandingCameraMovementsScene: SceneDefinition = {
     selectionMode: "single",
     defaultMovement: "frontRiseMm",
   },
+  cameraControlPolicy: {
+    focusDistance: "fixed",
+    aperture: "fixed",
+    infinityReset: false,
+  },
   cameraInspectionPlacement: {
     /** Three-quarter angle centred on the camera body midpoint */
     position: { x: 800, y: 600, z: -600 },

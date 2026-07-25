@@ -81,3 +81,20 @@ export const CameraMovementsSubject: React.FC = () => {
   const group = useMemo(() => createCameraMovementsGroup(), []);
   return <primitive object={group} />;
 };
+
+/** Dispose all owned Three.js resources in the given group. */
+export function disposeCameraMovementsGroup(group: THREE.Group): void {
+  group.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const mesh = object;
+    if (mesh.geometry) {
+      mesh.geometry.dispose();
+    }
+    const materials = Array.isArray(mesh.material)
+      ? mesh.material
+      : [mesh.material];
+    materials.forEach((material) => {
+      if (material) material.dispose();
+    });
+  });
+}
