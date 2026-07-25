@@ -330,7 +330,7 @@ export function computeOpticalSectionData({
   const diagramMinDepthMm = depthWindow.minMm;
   const diagramMaxDepthMm = depthWindow.maxMm;
   const sectionOrigin = opticsState.filmCenterWorld;
-  const sectionDepthDir = vecNorm(opticsState.filmNormalWorld);
+  const sectionDepthDir = { x: 0, y: 0, z: 1 };
   const construction = deriveScheimpflugConstruction({
     filmPlane: opticsState.filmPlane,
     lensPlane: opticsState.lensPlane,
@@ -341,14 +341,14 @@ export function computeOpticalSectionData({
     {
       id: "side",
       origin: sectionOrigin,
-      depthAxis: sectionDepthDir,
+      depthAxis: { x: 0, y: 0, z: 1 },
       lateralAxis: { x: 0, y: 1, z: 0 },
       normal: { x: 1, y: 0, z: 0 },
     },
     {
       id: "top",
       origin: sectionOrigin,
-      depthAxis: sectionDepthDir,
+      depthAxis: { x: 0, y: 0, z: 1 },
       lateralAxis: { x: 1, y: 0, z: 0 },
       normal: { x: 0, y: 1, z: 0 },
     },
@@ -387,7 +387,6 @@ export function computeOpticalSectionData({
     };
   });
 
-  const filmCorners = Object.values(opticsState.filmPlaneCornersWorld);
   const planeDefinitions: Array<{ id: string; plane: Plane | null | undefined; color: string }> = [
     { id: "film", plane: opticsState.filmPlane, color: "#0284c7" },
     { id: "lens", plane: opticsState.lensPlane, color: "#475569" },
@@ -462,14 +461,29 @@ export function computeOpticalSectionData({
         ? { p1: mapToScreen(clippedAxis[0]), p2: mapToScreen(clippedAxis[1]) }
         : null;
 
-      const filmHalfSpan = Math.max(
-        ...filmCorners.map((point) =>
-          Math.abs(vecDot(vecSub(point, opticsState.filmCenterWorld), section.lateralAxis)),
-        ),
-      );
-      const filmSectionEndpoints = [-filmHalfSpan, filmHalfSpan].map((offset) =>
-        vecAdd(opticsState.filmCenterWorld, vecScale(section.lateralAxis, offset)),
-      );
+      const rearFrame = opticsState.rearStandardFrame;
+      const filmHeightMm = CAMERA_CONSTANTS.filmHeightMm;
+      const filmWidthMm = CAMERA_CONSTANTS.filmWidthMm;
+      const isSideView = section.id === "side";
+      const isTopView = section.id === "top";
+      let filmSectionEndpoints: Vec3[];
+      if (isSideView || isTopView) {
+        const filmLateralAxis = isSideView ? rearFrame.upWorld : rearFrame.rightWorld;
+        const filmHalfLengthMm = (isSideView ? filmHeightMm : filmWidthMm) / 2;
+        filmSectionEndpoints = [-filmHalfLengthMm, filmHalfLengthMm].map((offset) =>
+          vecAdd(opticsState.filmCenterWorld, vecScale(filmLateralAxis, offset)),
+        );
+      } else {
+        // Scheimpflug view: use the section lateral axis for the physical segment
+        const filmHalfSpan = Math.max(
+          ...Object.values(opticsState.filmPlaneCornersWorld).map((point) =>
+            Math.abs(vecDot(vecSub(point, opticsState.filmCenterWorld), section.lateralAxis)),
+          ),
+        );
+        filmSectionEndpoints = [-filmHalfSpan, filmHalfSpan].map((offset) =>
+          vecAdd(opticsState.filmCenterWorld, vecScale(section.lateralAxis, offset)),
+        );
+      }
       const lensTrace = planeTraceDirection(opticsState.lensPlane);
       const lensTraceLength = Math.hypot(lensTrace.depth, lensTrace.lateral) || 1;
       const lensPhysicalHalfLengthMm = CAMERA_CONSTANTS.frontStandardWidthMm / 2;

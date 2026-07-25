@@ -1,5 +1,5 @@
 import type { CameraState } from "../../types/camera";
-import type { Line3, Plane, Ray, Vec3 } from "../../types/optics";
+import type { LensFilmRelationship, Line3, Plane, Ray, Vec3 } from "../../types/optics";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { arePlanesNearlyParallel, intersectPlanes, planeFromPointNormal } from "../math/plane";
 import { rotateAroundX, rotateAroundY, safeNormalize, vec } from "../math/vec";
@@ -46,6 +46,34 @@ export const calculateLensFilmHingeLine = (lensPlane: Plane, filmPlane: Plane): 
   return {
     point: intersection.point,
     direction: intersection.direction,
+  };
+};
+
+
+/**
+ * Derive the lens/film relationship purely from the physical planes.
+ * Uses the stricter Table Tilt tolerance for that scene and the shared
+ * near-parallel tolerance for all other scenes.
+ */
+export const deriveLensFilmRelationship = (
+  lensPlane: Plane,
+  filmPlane: Plane,
+  isTableTilt: boolean,
+  calculateCommonLine = true,
+): LensFilmRelationship => {
+  const thresholdDeg = isTableTilt
+    ? CAMERA_CONSTANTS.tableTiltParallelThresholdDeg
+    : CAMERA_CONSTANTS.tiltParallelThresholdDeg;
+  const isParallel = arePlanesNearlyParallel(lensPlane, filmPlane, thresholdDeg);
+
+  if (isParallel || !calculateCommonLine) {
+    return { isParallel, commonLine: null };
+  }
+
+  const commonLine = intersectPlanes(lensPlane, filmPlane);
+  return {
+    isParallel,
+    commonLine: commonLine || null,
   };
 };
 

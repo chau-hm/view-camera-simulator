@@ -36,10 +36,10 @@ export type SceneDefinition = {
   name: string;
   description: string;
   assets: SceneAsset[];
-  cameraPreset: Pick<
-    CameraState,
-    "focusDistanceMm" | "aperture" | "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg"
-  >;
+ cameraPreset: Pick<
+   CameraState,
+    "focusDistanceMm" | "aperture" | "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "rearRiseMm" | "rearTiltDeg"
+ >;
   cameraPlacement: CameraPlacement;
   bounds: Bounds3;
   focusTargets: FocusTarget[];

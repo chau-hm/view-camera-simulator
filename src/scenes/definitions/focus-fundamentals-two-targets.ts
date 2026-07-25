@@ -9,11 +9,13 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
   assets: [],
   cameraPreset: {
     focusDistanceMm: 2000,
-    aperture: 11,
-    frontRiseMm: 0,
-    frontTiltDeg: 0,
-    frontSwingDeg: 0,
-  },
+   aperture: 11,
+   frontRiseMm: 0,
+   frontTiltDeg: 0,
+   frontSwingDeg: 0,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+ },
   cameraPlacement: {
     // observer camera placed behind the lens looking forward along +Z
     position: { x: 0, y: 0, z: -800 },

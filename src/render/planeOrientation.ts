@@ -1,4 +1,5 @@
 import { Matrix4, Quaternion, Vector3 } from "three";
+import { WORLD_SCALE } from "./rttUtils";
 import type { Vec3 } from "../types/optics";
 
 export type PlaneOrthonormalBasis = {
@@ -33,4 +34,62 @@ export const quaternionForPlaneNormal = (normal: Vec3): Quaternion => {
       new Vector3(basis.normal.x, basis.normal.y, basis.normal.z),
     ),
   );
+};
+
+/**
+ * Derive the rear-standard render transform from the canonical frame.
+ *
+ * Uses the full frame (right, up, normal, centre) to preserve roll
+ * information that would be lost when reconstructing an orthonormal
+ * basis from normal alone.
+ *
+ * Basis mapping: local +X → rightWorld, +Y → upWorld, +Z → normalWorld.
+ * All inputs are in millimetre world space; the position is scaled to
+ * render world units.
+ */
+export const resolveRearStandardRenderTransform = (frame: {
+  centerWorld: Vec3;
+  rightWorld: Vec3;
+  upWorld: Vec3;
+  normalWorld: Vec3;
+}): { position: [number, number, number]; quaternion: Quaternion } => {
+  const s = WORLD_SCALE;
+  const position: [number, number, number] = [
+    frame.centerWorld.x * s,
+    frame.centerWorld.y * s,
+    frame.centerWorld.z * s,
+  ];
+  const quaternion = new Quaternion().setFromRotationMatrix(
+    new Matrix4().makeBasis(
+      new Vector3(frame.rightWorld.x, frame.rightWorld.y, frame.rightWorld.z),
+      new Vector3(frame.upWorld.x, frame.upWorld.y, frame.upWorld.z),
+      new Vector3(frame.normalWorld.x, frame.normalWorld.y, frame.normalWorld.z),
+    ),
+  );
+  return { position, quaternion };
+};
+
+/**
+ * Derive the front-standard render transform from canonical lens geometry.
+ *
+ * Position comes directly from lensCenterWorld (mm → render units via WORLD_SCALE).
+ * Orientation comes from lensNormalWorld using quaternionForPlaneNormal to avoid
+ * Euler-order divergence for combined tilt and swing.  Diagnostics tilt/swing values
+ * must not be used as the geometry source.
+ *
+ * Local +Z represents the lens-plane normal, local +X/+Y follow the deterministic
+ * orthonormal basis produced by createPlaneOrthonormalBasis.
+ */
+export const resolveFrontStandardRenderTransform = (
+  lensCenterWorld: Vec3,
+  lensNormalWorld: Vec3,
+): { position: [number, number, number]; quaternion: Quaternion } => {
+  const s = WORLD_SCALE;
+  const position: [number, number, number] = [
+    lensCenterWorld.x * s,
+    lensCenterWorld.y * s,
+    lensCenterWorld.z * s,
+  ];
+  const quaternion = quaternionForPlaneNormal(lensNormalWorld);
+  return { position, quaternion };
 };

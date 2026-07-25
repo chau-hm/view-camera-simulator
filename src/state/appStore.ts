@@ -13,8 +13,10 @@ import {
 const defaultControlState = {
   frontRiseMm: DEFAULT_CAMERA_STATE.frontRiseMm,
   frontTiltDeg: DEFAULT_CAMERA_STATE.frontTiltDeg,
-  frontSwingDeg: DEFAULT_CAMERA_STATE.frontSwingDeg,
-  focusDistanceMm: DEFAULT_CAMERA_STATE.focusDistanceMm,
+ frontSwingDeg: DEFAULT_CAMERA_STATE.frontSwingDeg,
+  rearRiseMm: DEFAULT_CAMERA_STATE.rearRiseMm,
+  rearTiltDeg: DEFAULT_CAMERA_STATE.rearTiltDeg,
+ focusDistanceMm: DEFAULT_CAMERA_STATE.focusDistanceMm,
   aperture: DEFAULT_CAMERA_STATE.aperture,
 };
 
@@ -228,13 +230,15 @@ export const useAppStore = create<AppStore>((set) => ({
           ? state.camera.focusDistanceMm
           : (state.camera.lastFiniteFocusDepthMm ?? state.camera.focusDistanceMm),
         // reset front-standard movements but do NOT overwrite focusDistanceMm with a finite default
-        frontRiseMm: 0,
-        frontTiltDeg: 0,
-        frontSwingDeg: 0,
-      },
-    })),
+       frontRiseMm: 0,
+       frontTiltDeg: 0,
+       frontSwingDeg: 0,
+        rearRiseMm: 0,
+        rearTiltDeg: 0,
+     },
+   })),
 
-  setAperture: (value) =>
+ setAperture: (value) =>
     set((state) => ({
       camera: {
         ...state.camera,

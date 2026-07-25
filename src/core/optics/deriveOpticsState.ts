@@ -5,19 +5,20 @@ import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
 import { solveLensExtensionForRearDatumFocusDepth, imageDistanceMm } from "./thinLensModel";
+import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { planeFromPointNormal } from "../math/plane";
 import {
-  calculateLensFilmHingeLine,
+  calculateLensNormal,
   calculateLensPlane,
   createFilmPlane,
   createOpticalAxis,
-  isLensFilmNearlyParallel,
+  deriveLensFilmRelationship,
 } from "./calculateLensPlane";
 import {
-  calculateFilmPlaneCorners,
   calculateOffAxisProjectionMatrix,
   createOffAxisProjectionInput,
 } from "./calculateOffAxisProjection";
+import { calculateRearStandardFrame } from "./calculateRearStandardFrame";
 import { calculateSharpness } from "./calculateSharpness";
 import { isFiniteVec3, vec, subtract, dot, add, scale } from "../math/vec";
 
@@ -28,58 +29,87 @@ const isFiniteCameraInput = (cameraState: CameraState): boolean =>
     cameraState.frontRiseMm,
     cameraState.frontTiltDeg,
     cameraState.frontSwingDeg,
+    cameraState.rearRiseMm,
+    cameraState.rearTiltDeg,
   ].every((value) => Number.isFinite(value));
 
-const baseFallbackState = (cameraState: CameraState, errorMessage: string): DerivedOpticsState => {
-  const lensCenterWorld = vec(0, cameraState.frontRiseMm, 0);
-  const lensNormalWorld = vec(0, 0, 1);
-  const { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(
-    cameraState.focalLengthMm,
+const baseFallbackState = (cameraState: CameraState, scene: SceneDefinition, errorMessage: string): DerivedOpticsState => {
+  // Sanitize every input before constructing any geometry.
+  const safeFocalLength = Number.isFinite(cameraState.focalLengthMm) && cameraState.focalLengthMm > 0
+    ? cameraState.focalLengthMm
+    : CAMERA_CONSTANTS.focalLengthMm;
+  const safeFocusDistance = Number.isFinite(cameraState.focusDistanceMm) && cameraState.focusDistanceMm > 0
+    ? cameraState.focusDistanceMm
+    : CAMERA_CONSTANTS.defaultFocusDistanceMm;
+  const safeFrontRise = Number.isFinite(cameraState.frontRiseMm) ? cameraState.frontRiseMm : 0;
+  const safeFrontTilt = Number.isFinite(cameraState.frontTiltDeg) ? cameraState.frontTiltDeg : 0;
+  const safeFrontSwing = Number.isFinite(cameraState.frontSwingDeg) ? cameraState.frontSwingDeg : 0;
+  const safeRearRise = Number.isFinite(cameraState.rearRiseMm) ? cameraState.rearRiseMm : 0;
+  const safeRearTilt = Number.isFinite(cameraState.rearTiltDeg) ? cameraState.rearTiltDeg : 0;
+
+  // Use canonical helpers for lens and film geometry
+  const lensCenterWorld = vec(0, safeFrontRise, 0);
+  const lensNormalWorld = calculateLensNormal(safeFrontTilt, safeFrontSwing);
+  const lensPlane = planeFromPointNormal(lensCenterWorld, lensNormalWorld);
+  const { filmCenterWorld: baselineFilmCenter } = createFilmPlane(safeFocalLength);
+  const { frame: rearFrame, corners: filmPlaneCornersWorld } =
+    calculateRearStandardFrame(baselineFilmCenter, safeRearRise, safeRearTilt);
+  const filmCenterWorld = rearFrame.centerWorld;
+  const filmNormalWorld = rearFrame.normalWorld;
+  const filmPlane = rearFrame.plane;
+
+  // Derive the physical lens/film relationship from the constructed planes
+  const lensFilmRel = deriveLensFilmRelationship(
+    lensPlane, filmPlane, scene.id === "table-tilt",
   );
-  const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
+
   const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
-  const focusPointWorld = vec(0, 0, cameraState.focusDistanceMm);
-  const focusPlane = {
-    point: focusPointWorld,
-    normal: filmNormalWorld,
-    distance: focusPointWorld.z,
-  };
+  const focusPointWorld = vec(0, 0, safeFocusDistance);
+  const { focusPlane } = calculateFocusPlaneWithFallback(
+    focusPointWorld,
+    filmPlane,
+    lensFilmRel.commonLine,
+    lensFilmRel.isParallel || !lensFilmRel.commonLine,
+  );
   const offAxisProjectionInput = createOffAxisProjectionInput(
     lensCenterWorld,
     filmPlaneCornersWorld,
   );
 
+  // Conservative synthetic DOF planes derived from the fallback focus plane.
+  // Use the canonical plane constructor so Plane.distance is correct for
+  // tilted normals rather than manually set to point.z.
+  const dofNormal = focusPlane ? focusPlane.normal : filmNormalWorld;
+  const dofRefPoint = focusPlane ? focusPlane.point : focusPointWorld;
+  const nearPoint = add(dofRefPoint, scale(dofNormal, -16));
+  const farPoint = add(dofRefPoint, scale(dofNormal, 16));
+  const nearPlane = planeFromPointNormal(nearPoint, dofNormal);
+  const farPlane = planeFromPointNormal(farPoint, dofNormal);
+
   return {
     lensCenterWorld,
     lensNormalWorld,
-    lensPlane: { point: lensCenterWorld, normal: lensNormalWorld, distance: lensCenterWorld.z },
+    lensPlane,
     filmCenterWorld,
     filmNormalWorld,
     filmPlane,
     filmPlaneCornersWorld,
+    rearStandardFrame: rearFrame,
     opticalAxis,
-    lensFilmHingeLine: null,
+    lensFilmHingeLine: lensFilmRel.commonLine,
     focusPointWorld,
     focusPlane,
-    depthOfFieldNearPlane: {
-      point: { x: 0, y: 0, z: cameraState.focusDistanceMm - 16 },
-      normal: filmNormalWorld,
-      distance: cameraState.focusDistanceMm - 16,
-    },
-    depthOfFieldFarPlane: {
-      point: { x: 0, y: 0, z: cameraState.focusDistanceMm + 16 },
-      normal: filmNormalWorld,
-      distance: cameraState.focusDistanceMm + 16,
-    },
+    depthOfFieldNearPlane: nearPlane,
+    depthOfFieldFarPlane: farPlane,
     offAxisProjectionInput,
     offAxisProjectionMatrix: calculateOffAxisProjectionMatrix(offAxisProjectionInput),
     groundGlassProjection: calculateGroundGlassProjection(cameraState.groundGlassAssistEnabled),
     focusTargets: [],
     diagnostics: {
-      isParallelLensFilm: true,
-      tiltAngleDeg: cameraState.frontTiltDeg,
-      swingAngleDeg: cameraState.frontSwingDeg,
-      focusPlaneModel: "parallel",
+      isParallelLensFilm: lensFilmRel.isParallel,
+      tiltAngleDeg: safeFrontTilt,
+      swingAngleDeg: safeFrontSwing,
+      focusPlaneModel: lensFilmRel.isParallel ? "parallel" : "scheimpflug",
       groundGlassDofModel: "parallel-thin-lens",
       fallbackApplied: true,
       errorMessage,
@@ -94,16 +124,40 @@ export const deriveOpticsState = (
   // Special handling for Infinity focus mode: branch early and produce a stable state
   if (cameraState.focusMode === "infinity") {
     if (!Number.isFinite(cameraState.focalLengthMm) || cameraState.focalLengthMm <= 0) {
-      return baseFallbackState(cameraState, "Invalid focal length for infinity focus");
+      return baseFallbackState(cameraState, scene, "Invalid focal length for infinity focus");
+    }
+    // Validate every input consumed by infinity geometry construction,
+    // passed to solvers, or returned through diagnostics consumed by renderers.
+    const infinityInputsValid =
+      Number.isFinite(cameraState.frontRiseMm) &&
+      Number.isFinite(cameraState.frontTiltDeg) &&
+      Number.isFinite(cameraState.frontSwingDeg) &&
+      Number.isFinite(cameraState.rearRiseMm) &&
+      Number.isFinite(cameraState.rearTiltDeg) &&
+      CAMERA_CONSTANTS.apertureOptions.includes(cameraState.aperture as typeof CAMERA_CONSTANTS.apertureOptions[number]);
+    if (!infinityInputsValid) {
+      return baseFallbackState(
+        cameraState, scene,
+        "Invalid input values for infinity focus",
+      );
     }
     const f = cameraState.focalLengthMm;
-    const lensCenterWorld = vec(0, 0, f);
-    const lensNormalWorld = vec(0, 0, 1);
-    const filmCenterWorld = vec(0, 0, 0);
-    const filmNormalWorld = vec(0, 0, 1);
-    const filmPlane = planeFromPointNormal(filmCenterWorld, filmNormalWorld);
+    const lensCenterWorld = vec(
+      0,
+      cameraState.frontRiseMm,
+      f,
+    );
+    const lensNormalWorld = calculateLensNormal(
+      cameraState.frontTiltDeg,
+      cameraState.frontSwingDeg,
+    );
+    const baselineFilmCenter = vec(0, 0, 0);
+    const { frame: rearFrame, corners: filmPlaneCornersWorld } =
+      calculateRearStandardFrame(baselineFilmCenter, cameraState.rearRiseMm, cameraState.rearTiltDeg);
+    const filmCenterWorld = rearFrame.centerWorld;
+    const filmNormalWorld = rearFrame.normalWorld;
+    const filmPlane = rearFrame.plane;
     const lensPlane = planeFromPointNormal(lensCenterWorld, lensNormalWorld);
-    const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
     const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
 
     // For Infinity focus we do NOT provide a physical focus plane or a finite far DOF plane.
@@ -121,6 +175,14 @@ export const deriveOpticsState = (
       visualCapMm,
     });
 
+    // Derive the actual physical lens/film relationship from the constructed
+    // planes.  Rear tilt can make the planes non-parallel in infinity mode.
+    const infinityLensFilmRel = deriveLensFilmRelationship(
+      lensPlane,
+      filmPlane,
+      scene.id === "table-tilt",
+    );
+
     const offAxisProjectionInput = createOffAxisProjectionInput(
       lensCenterWorld,
       filmPlaneCornersWorld,
@@ -134,8 +196,9 @@ export const deriveOpticsState = (
       filmNormalWorld,
       filmPlane,
       filmPlaneCornersWorld,
+      rearStandardFrame: rearFrame,
       opticalAxis,
-      lensFilmHingeLine: null,
+      lensFilmHingeLine: infinityLensFilmRel.commonLine,
       // physical focus plane is absent in infinity mode
       focusPointWorld: add(lensCenterWorld, scale(opticalAxis.direction, visualCapMm)),
       focusPlane: null,
@@ -150,10 +213,10 @@ export const deriveOpticsState = (
       // expose a scene visual cap depth for renderers that need a non-physical render endpoint
       sceneVisualCapDepthMm: visualCapMm,
       diagnostics: {
-        isParallelLensFilm: true,
+        isParallelLensFilm: infinityLensFilmRel.isParallel,
         tiltAngleDeg: cameraState.frontTiltDeg,
         swingAngleDeg: cameraState.frontSwingDeg,
-        focusPlaneModel: "parallel",
+        focusPlaneModel: infinityLensFilmRel.isParallel ? "parallel" : "scheimpflug",
         groundGlassDofModel: "parallel-thin-lens",
         fallbackApplied: false,
         errorMessage: "Infinity focus",
@@ -163,13 +226,13 @@ export const deriveOpticsState = (
   }
 
   if (!isFiniteCameraInput(cameraState)) {
-    return baseFallbackState(cameraState, "Invalid camera input");
+    return baseFallbackState(cameraState, scene, "Invalid camera input");
   }
   if (cameraState.focusDistanceMm <= 0) {
-    return baseFallbackState(cameraState, "Invalid focus distance");
+    return baseFallbackState(cameraState, scene, "Invalid focus distance");
   }
   if (cameraState.focalLengthMm <= 0) {
-    return baseFallbackState(cameraState, "Invalid focal length");
+    return baseFallbackState(cameraState, scene, "Invalid focal length");
   }
 
   const _lensResult = calculateLensPlane(cameraState);
@@ -177,7 +240,7 @@ export const deriveOpticsState = (
   const lensNormalWorld = _lensResult.lensNormalWorld;
   let lensPlane = _lensResult.lensPlane;
   if (!isFiniteVec3(lensCenterWorld) || !isFiniteVec3(lensNormalWorld)) {
-    return baseFallbackState(cameraState, "Invalid lens geometry");
+    return baseFallbackState(cameraState, scene, "Invalid lens geometry");
   }
 
   let { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(cameraState.focalLengthMm);
@@ -224,7 +287,14 @@ export const deriveOpticsState = (
     // focus plane world point is at z = S
   }
 
-  const filmPlaneCornersWorld = calculateFilmPlaneCorners(filmPlane);
+  if (!Number.isFinite(cameraState.rearRiseMm) || !Number.isFinite(cameraState.rearTiltDeg)) {
+    return baseFallbackState(cameraState, scene, 'Invalid rear movement');
+  }
+  const { frame: rearFrame, corners: filmPlaneCornersWorld } =
+    calculateRearStandardFrame(filmCenterWorld, cameraState.rearRiseMm, cameraState.rearTiltDeg);
+  filmCenterWorld = rearFrame.centerWorld;
+  filmNormalWorld = rearFrame.normalWorld;
+  filmPlane = rearFrame.plane;
   const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
 
   // Determine focus point / plane
@@ -234,19 +304,17 @@ export const deriveOpticsState = (
     focusPointWorld = vec(0, 0, cameraState.focusDistanceMm);
   }
 
-  // Table Tilt needs a continuous transition from exactly zero movement to the
-  // smallest meaningful non-zero movement. The shared near-parallel tolerance
-  // is useful elsewhere, but would introduce an artificial 0.1° model switch
-  // here. Only the exact zero-movement state is parallel for this scene.
+  // Derive lens/film relationship from actual geometry.
+  // Table Tilt uses a strict 1e-6° tolerance so 0.01° relative tilt is not collapsed.
+  // All other scenes use the shared 0.1° near-parallel threshold.
   const isTableTilt = scene.id === "table-tilt";
-  const hasTableTiltAngularMovement =
-    Math.abs(cameraState.frontTiltDeg) > 1e-9 || Math.abs(cameraState.frontSwingDeg) > 1e-9;
-  const isParallelLensFilm = isTableTilt
-    ? !hasTableTiltAngularMovement
-    : isLensFilmNearlyParallel(lensPlane, filmPlane);
-  const lensFilmHingeLine = isParallelLensFilm
-    ? null
-    : calculateLensFilmHingeLine(lensPlane, filmPlane);
+  const lensFilmRel = deriveLensFilmRelationship(
+    lensPlane,
+    filmPlane,
+    isTableTilt,
+  );
+  const isParallelLensFilm = lensFilmRel.isParallel;
+  const lensFilmHingeLine = lensFilmRel.commonLine;
   const { focusPlane, focusPlaneModel } = calculateFocusPlaneWithFallback(
     focusPointWorld,
     filmPlane,
@@ -330,6 +398,7 @@ export const deriveOpticsState = (
     filmNormalWorld,
     filmPlane,
     filmPlaneCornersWorld,
+    rearStandardFrame: rearFrame,
     opticalAxis,
     lensFilmHingeLine,
     focusPointWorld,

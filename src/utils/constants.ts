@@ -14,6 +14,7 @@ export const CAMERA_CONSTANTS = {
   swingMaxDeg: 10,
   apertureOptions: [5.6, 11, 22, 32] as const,
   tiltParallelThresholdDeg: 0.1,
+  tableTiltParallelThresholdDeg: 1e-6,
   defaultFocusDistanceMm: 2000,
 } as const;
 
@@ -31,6 +32,8 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
   frontRiseMm: 0,
   frontTiltDeg: 0,
   frontSwingDeg: 0,
+  rearRiseMm: 0,
+  rearTiltDeg: 0,
   activeSceneId: "architecture-rise",
   activeTaskId: "rise-01",
   mode: "guided",

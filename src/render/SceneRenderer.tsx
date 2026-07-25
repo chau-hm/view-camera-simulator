@@ -19,7 +19,7 @@ import {
   type ScenePlaneOverlayGeometry,
 } from "./scenePlaneOverlayGeometry";
 import { createScheimpflugConstructionGeometry } from "./scheimpflugConstructionGeometry";
-import { quaternionForPlaneNormal } from "./planeOrientation";
+import { quaternionForPlaneNormal, resolveFrontStandardRenderTransform, resolveRearStandardRenderTransform } from "./planeOrientation";
 import { getRegisteredSceneSubject } from "./sceneSubjectRegistry";
 import {
   createCameraInspectionView,
@@ -206,13 +206,12 @@ export const OCCLUDED_PLANE_MATERIAL_SETTINGS = {
   polygonOffsetUnits: -1,
 } as const;
 
-const RearStandard = ({ opticsState, isFocusFundamentals }: { opticsState?: DerivedOpticsState; isFocusFundamentals?: boolean }) => {
-  // For Focus Fundamentals keep the original datum (film at z=0)
-  if (isFocusFundamentals || !opticsState) {
-    const rearZ = isFocusFundamentals ? 0 : -CAMERA_CONSTANTS.focalLengthMm;
+const RearStandard = ({ opticsState }: { opticsState?: DerivedOpticsState }) => {
+  // Fallback only when no valid opticsState exists
+  if (!opticsState) {
     return (
       <>
-        <mesh position={[0, 0, toWorld(rearZ)]}>
+        <mesh position={[0, 0, toWorld(-CAMERA_CONSTANTS.focalLengthMm)]}>
           <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
           <meshStandardMaterial color="#4b5563" />
         </mesh>
@@ -220,16 +219,11 @@ const RearStandard = ({ opticsState, isFocusFundamentals }: { opticsState?: Deri
     );
   }
 
-  // For architecture and other scene-aware optics, position the rear standard at the film center
-  const filmPos = vecToWorld(opticsState.filmCenterWorld);
-  const filmNormal = opticsState.filmNormalWorld ?? { x: 0, y: 0, z: 1 };
-
+  // Use the canonical frame transform so that the orientation
+  // preserves right/up/normal axes without reconstruction from normal alone.
+  const renderTransform = resolveRearStandardRenderTransform(opticsState.rearStandardFrame);
   return (
-    <group position={filmPos} ref={(g) => {
-      if (!g) return;
-      // orient so the group's +Z axis aligns with the film normal
-      g.lookAt(filmPos[0] + filmNormal.x, filmPos[1] + filmNormal.y, filmPos[2] + filmNormal.z);
-    }}>
+    <group position={renderTransform.position} quaternion={renderTransform.quaternion}>
       <mesh>
         <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
         <meshStandardMaterial color="#4b5563" />
@@ -239,15 +233,13 @@ const RearStandard = ({ opticsState, isFocusFundamentals }: { opticsState?: Deri
 };
 
 const FrontStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
-  const frontPosition = vecToWorld(opticsState.lensCenterWorld);
-  const frontRotation: [number, number, number] = [
-    (opticsState.diagnostics.tiltAngleDeg * Math.PI) / 180,
-    (opticsState.diagnostics.swingAngleDeg * Math.PI) / 180,
-    0,
-  ];
+  const transform = resolveFrontStandardRenderTransform(
+    opticsState.lensCenterWorld,
+    opticsState.lensNormalWorld,
+  );
 
   return (
-    <group position={frontPosition} rotation={frontRotation}>
+    <group position={transform.position} quaternion={transform.quaternion}>
       <mesh>
         <boxGeometry args={[toWorld(CAMERA_CONSTANTS.frontStandardWidthMm), toWorld(CAMERA_CONSTANTS.frontStandardHeightMm), toWorld(12)]} />
         <meshStandardMaterial color="#6b7280" />
@@ -736,7 +728,7 @@ const SceneContent = ({
     <directionalLight position={[2, 4, 2]} intensity={0.7} />
     <hemisphereLight args={["#ffffff", "#d1d5db", 0.45]} />
     <SceneAssets assets={scene.assets} />
-    <RearStandard opticsState={opticsState} isFocusFundamentals={scene.id === "focus-fundamentals-two-targets"} />
+    <RearStandard opticsState={opticsState} />
     <FrontStandard opticsState={opticsState} />
     {scene.id !== "focus-fundamentals-two-targets" && <Bellows opticsState={opticsState} />}
     <OpticalGeometryOverlays
