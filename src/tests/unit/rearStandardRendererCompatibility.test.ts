@@ -505,6 +505,76 @@ describe("C9: semantic corner ordering and signed area", () => {
   });
 });
 
+
+
+describe("C11: FrontStandard render transform consistency", () => {
+  it("infinity front rise moves front-standard lens centre", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontRiseMm: 20 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    // lensCenterWorld.y should be 20
+    expect(optics.lensCenterWorld.y).toBeCloseTo(20, 10);
+    // rear standard unchanged
+    expect(optics.filmCenterWorld.y).toBeCloseTo(0, 8);
+  });
+
+  it("infinity front tilt rotates front-standard lens normal", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontTiltDeg: 5 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    // lens normal should not be world-Z
+    expect(Math.abs(optics.lensNormalWorld.z - 1)).toBeGreaterThan(1e-6);
+    // diagnostics must agree with lens geometry
+    expect(optics.diagnostics.tiltAngleDeg).toBeCloseTo(5, 8);
+    expect(optics.diagnostics.swingAngleDeg).toBeCloseTo(0, 8);
+    expect(optics.offAxisProjectionMatrix.every(Number.isFinite)).toBe(true);
+  });
+
+  it("infinity front swing rotates front-standard lens normal", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontSwingDeg: 5 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expect(Math.abs(optics.lensNormalWorld.x)).toBeGreaterThan(1e-6);
+    expect(optics.diagnostics.swingAngleDeg).toBeCloseTo(5, 8);
+  });
+
+  it("FrontStandard lens matches Ground Glass camera position", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontRiseMm: 10, frontTiltDeg: 4 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    const camera = new THREE.PerspectiveCamera(45, 1.25, 0.01, 200);
+    const result = configureGroundGlassCamera(camera, optics, 0.01, 1000);
+    expect(result.ok).toBe(true);
+    const s = WORLD_SCALE;
+    expect(camera.position.x).toBeCloseTo(optics.lensCenterWorld.x * s, 8);
+    expect(camera.position.y).toBeCloseTo(optics.lensCenterWorld.y * s, 8);
+    expect(camera.position.z).toBeCloseTo(optics.lensCenterWorld.z * s, 8);
+  });
+
+  it("combined front/rear infinity tilt preserves distinct transforms", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusMode: "infinity", frontTiltDeg: 5, rearTiltDeg: 3 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    // Front and rear normals are distinct
+    const lensDot = Math.abs(
+      optics.lensNormalWorld.x * optics.filmNormalWorld.x +
+      optics.lensNormalWorld.y * optics.filmNormalWorld.y +
+      optics.lensNormalWorld.z * optics.filmNormalWorld.z
+    );
+    expect(lensDot).toBeLessThan(0.9999);
+  });
+});
+
 describe("C10: resolveRearStandardRenderTransform basis", () => {
 
   it("zero movement maps local axes to world axes", () => {
