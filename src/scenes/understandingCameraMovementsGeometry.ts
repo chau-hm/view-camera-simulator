@@ -24,7 +24,7 @@ const geometry = {
   /** Camera preset values */
   cameraPreset: {
     focusDistanceMm: 2000,
-    aperture: 11 as const,
+    aperture: 32 as const,
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
