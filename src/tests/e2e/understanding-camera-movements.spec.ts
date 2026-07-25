@@ -9,11 +9,8 @@ test("camera movements scene loads and renders valid Ground Glass content", asyn
   await expect(rtt).toHaveCount(1);
   await expect(rtt).toBeVisible({ timeout: 15000 });
 
-  // Wait for camera + uniforms to be valid
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
   await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 5000 });
-
-  // RTT content diagnostics: pixel readback must show content (non-background pixels > 0)
   await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15000 });
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
 
@@ -22,11 +19,9 @@ test("camera movements scene loads and renders valid Ground Glass content", asyn
   expect(Number.isFinite(rawNonBg) && rawNonBg > 0).toBe(true);
   expect(Number.isFinite(finalNonBg) && finalNonBg > 0).toBe(true);
 
-  // No sanity error
   const sanityError = await rtt.getAttribute("data-rtt-sanity-error");
   expect(sanityError === null || sanityError === "" || sanityError === "null").toBe(true);
 
-  // Four movement radio options
   const movementRadio = page.locator('fieldset.movement-selector');
   await expect(movementRadio.first()).toBeVisible();
   await expect(movementRadio.first().locator('input[type="radio"]')).toHaveCount(4);
@@ -36,29 +31,54 @@ test("camera movements scene loads and renders valid Ground Glass content", asyn
 });
 
 test("all four movements change Ground Glass without breaking", async ({ page }) => {
+  test.setTimeout(120_000);
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   const rtt = page.locator('[data-testid="ground-glass-rtt"]');
   await expect(rtt).toBeVisible({ timeout: 15000 });
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
 
-  const movements: Array<{ label: string; slider: string }> = [
-    { label: "Front Rise", slider: "20" },
-    { label: "Rear Rise", slider: "20" },
-    { label: "Front Tilt", slider: "-3" },
-    { label: "Rear Tilt", slider: "-3" },
+  const movements: Array<{ label: string }> = [
+    { label: "Front Rise" },
+    { label: "Rear Rise" },
+    { label: "Front Tilt" },
+    { label: "Rear Tilt" },
   ];
 
-  for (const { label, slider: sliderVal } of movements) {
+  for (const { label } of movements) {
     // Select the movement radio
-    await page.locator('fieldset.movement-selector').first()
-      .locator('label').filter({ hasText: label }).first().click();
-    await expect(rtt).toBeVisible({ timeout: 5000 });
+    const labelEl = page.locator('fieldset.movement-selector').first()
+      .locator('label').filter({ hasText: label }).first();
+    await labelEl.click();
 
-    // Find and set the movement slider
+    // Verify radio is checked
+    await expect(labelEl.locator('input[type="radio"]')).toBeChecked();
+
+    // Exactly one movement slider visible
     const slider = page.getByRole("slider", { name: label });
     await expect(slider).toBeVisible({ timeout: 3000 });
-    await slider.fill(sliderVal);
-    await page.waitForTimeout(2000);
+
+    // Capture current sanity state before changing
+    const prevState = await rtt.getAttribute("data-rtt-sanity-state");
+
+    // Change slider using keyboard for deterministic input
+    await slider.focus();
+    await slider.press("Home"); // reset to min
+    if (label.includes("Tilt")) {
+      await slider.press("ArrowDown");
+      await slider.press("ArrowDown");
+      await slider.press("ArrowDown");
+    } else {
+      for (let i = 0; i < 10; i++) {
+        await slider.press("ArrowRight");
+      }
+    }
+
+    // Wait for a new RTT frame (sanity state differs from previous)
+    await expect.poll(async () => {
+      const state = await rtt.getAttribute("data-rtt-sanity-state");
+      if (state && state !== prevState && state.length > 0) return true;
+      return false;
+    }, { timeout: 15000, intervals: [500, 1000, 2000] }).toBe(true);
 
     // RTT stays valid
     await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5000 });
@@ -69,6 +89,7 @@ test("all four movements change Ground Glass without breaking", async ({ page })
 });
 
 test("Reset Movements restores zero state and keeps Ground Glass valid", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   const rtt = page.locator('[data-testid="ground-glass-rtt"]');
   await expect(rtt).toBeVisible({ timeout: 15000 });
@@ -79,15 +100,40 @@ test("Reset Movements restores zero state and keeps Ground Glass valid", async (
     .locator('label').filter({ hasText: "Front Rise" }).first().click();
   const slider = page.getByRole("slider", { name: "Front Rise" });
   await expect(slider).toBeVisible({ timeout: 3000 });
-  await slider.fill("25");
-  await page.waitForTimeout(2000);
+  await slider.focus();
+  for (let i = 0; i < 15; i++) {
+    await slider.press("ArrowRight");
+  }
 
-  // Reset
+  const sliderValue = await slider.inputValue();
+  expect(Number(sliderValue)).toBeGreaterThan(0);
+
+  const prevState = await rtt.getAttribute("data-rtt-sanity-state");
+
+  // Reset Movements
   await page.getByRole("button", { name: "Reset Movements" }).click();
-  await page.waitForTimeout(1500);
 
+  // Verify slider returned to zero
+  const resetSlider = page.getByRole("slider", { name: "Front Rise" });
+  await expect(resetSlider).toBeVisible({ timeout: 3000 });
+  await expect(resetSlider).toHaveValue("0");
+
+  // Wait for a new RTT frame after reset
+  await expect.poll(async () => {
+    const state = await rtt.getAttribute("data-rtt-sanity-state");
+    if (state && state !== prevState && state.length > 0) return true;
+    return false;
+  }, { timeout: 10000, intervals: [500, 1000] }).toBe(true);
+
+  // Ground Glass stays valid
   await expect(rtt).toBeVisible({ timeout: 5000 });
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5000 });
   await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10000 });
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
+
+  // Default movement (Front Rise) should be selected
+  const frontRiseRadio = page.locator('fieldset.movement-selector').first()
+    .locator('label').filter({ hasText: "Front Rise" }).first()
+    .locator('input[type="radio"]');
+  await expect(frontRiseRadio).toBeChecked();
 });

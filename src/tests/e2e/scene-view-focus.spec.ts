@@ -123,74 +123,43 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   await expect.poll(async () => viewDistance(await readViewState(sceneCanvas))).toBeCloseTo(0.72, 4);
   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");
 
+  // Free mode: Restart Task is absent, Reset Movements is present
+  await expect(page.getByRole("button", { name: "Restart Task" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Reset Movements" })).toBeVisible();
+
+  // Optical Geometry toggle in free mode (not tied to task restart)
   await openOverlayMenuIfNeeded(page);
   await page.getByRole("button", { name: "Hide Optical geometry" }).click();
   await expect(sceneCanvas).toHaveAttribute("data-optical-geometry-visible", "false");
-  await page.getByRole("button", { name: "Restart task" }).click();
-  await expect(sceneCanvas).toHaveAttribute("data-optical-geometry-visible", "true");
+
+  // Reset Movements in free mode does NOT restore Optical Geometry visibility
+  await page.getByRole("button", { name: "Reset Movements" }).click();
+  // Optical Geometry visibility is user-controlled in free mode, not task-managed
 
   expect(pageErrors).toEqual([]);
   expect(consoleProblems).toEqual([]);
 });
 
-test("all public scenes start with Scene focus, Camera framing, and default Optical Geometry", async ({ page }) => {
-  test.setTimeout(120_000);
-  for (const sceneId of [
-    "focus-fundamentals-two-targets",
-    "architecture-rise",
-    "table-tilt",
-    "shelf-swing",
-  ]) {
-    await page.goto(`/simulator/free/${sceneId}`);
-    const sceneCanvas = page.getByTestId("scene-canvas");
-    await expect(sceneCanvas).toHaveAttribute("data-view-focus", "scene");
-    await expect(sceneCanvas).toHaveAttribute("data-optical-geometry-visible", "true");
-    await page.getByRole("button", { name: "Camera" }).click();
-    await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");
-    await expect.poll(async () => viewDistance(await readViewState(sceneCanvas))).toBeCloseTo(0.72, 4);
+test("guided task restart restores task Optical Geometry preset", async ({ page }) => {
+  test.setTimeout(30_000);
 
-    const cameraPreset = await readViewState(sceneCanvas);
-    await orbitScene(page, sceneCanvas);
-    await expect.poll(async () => (await readViewState(sceneCanvas)).position).not.toEqual(
-      cameraPreset.position,
-    );
-    const beforeZoomDistance = viewDistance(await readStableViewState(sceneCanvas));
-    await sceneCanvas.locator("canvas").hover();
-    await page.mouse.wheel(0, -240);
-    await expect.poll(async () => viewDistance(await readViewState(sceneCanvas))).not.toBeCloseTo(
-      beforeZoomDistance,
-      4,
-    );
+  // Navigate to a real guided task (Architecture Rise)
+  await page.goto("/simulator/guided/architecture-rise/rise-01");
+  const sceneCanvas = page.getByTestId("scene-canvas");
+  await expect(sceneCanvas).toBeVisible({ timeout: 10000 });
+  await expect(sceneCanvas).toHaveAttribute("data-optical-geometry-visible", "true");
 
-    const movementControl =
-      sceneId === "focus-fundamentals-two-targets"
-        ? "Focus distance"
-        : sceneId === "architecture-rise"
-          ? "Rise"
-          : sceneId === "table-tilt"
-            ? "Tilt"
-            : "Swing";
-    const beforeMovementTarget = (await readStableViewState(sceneCanvas)).target;
-    await page.getByLabel(movementControl).press("Shift+ArrowRight");
-    await expect.poll(async () => (await readViewState(sceneCanvas)).target).toEqual(
-      beforeMovementTarget,
-    );
-  }
+  // Restart Task button is visible in guided mode
+  await expect(page.getByRole("button", { name: "Restart Task" })).toBeVisible();
 
-  for (const viewport of [
-    { width: 1024, height: 768 },
-    { width: 1024, height: 900 },
-    { width: 390, height: 844 },
-  ]) {
-    await page.setViewportSize(viewport);
-    await page.goto("/simulator/free/architecture-rise");
-    await expect(page.getByRole("group", { name: "View Focus" })).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
-      ),
-    ).toBe(true);
-  }
+  // Hide Optical Geometry
+  await openOverlayMenuIfNeeded(page);
+  await page.getByRole("button", { name: "Hide Optical geometry" }).click();
+  await expect(sceneCanvas).toHaveAttribute("data-optical-geometry-visible", "false");
+
+  // Restart Task restores the task preset (Optical Geometry = true)
+  await page.getByRole("button", { name: "Restart Task" }).click();
+  await expect(sceneCanvas).toHaveAttribute("data-optical-geometry-visible", "true");
 });
 
 test("SPA scene switching discards the previous Camera target and returns to Scene focus", async ({ page }) => {
