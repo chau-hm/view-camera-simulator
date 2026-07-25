@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/production' }}
 
 jobs:
   ci:
@@ -40,8 +40,14 @@ jobs:
         run: npm run test
 
   deploy:
-    if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    # Main and feature branches run CI only; production is the sole Pages branch.
+    if: >-
+      github.ref == 'refs/heads/production' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: ci
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
