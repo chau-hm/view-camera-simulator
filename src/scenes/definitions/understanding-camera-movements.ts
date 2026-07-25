@@ -18,7 +18,7 @@ export const understandingCameraMovementsScene: SceneDefinition = {
   },
   cameraPlacement: {
     /** Three-quarter view to show cube, grid, and full camera assembly */
-    position: { x: 2500, y: 1800, z: -2500 },
+    position: { x: 1200, y: 800, z: -1200 },
     target: { x: 0, y: 0, z: 4000 },
   },
   bounds: {

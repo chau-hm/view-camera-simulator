@@ -9,25 +9,115 @@ const { cube, grid } = geometry;
 export function createCameraMovementsGroup(): THREE.Group {
   const group = new THREE.Group();
 
-  // --- Cube ---
-  const cubeGeo = new THREE.BoxGeometry(
-    toWorld(cube.sizeMm),
-    toWorld(cube.sizeMm),
-    toWorld(cube.sizeMm),
-  );
-  const cubeMat = new THREE.MeshStandardMaterial({
-    color: "#6366f1",
-    roughness: 0.4,
-    metalness: 0.1,
+  const s = toWorld(cube.sizeMm);
+  const hs = toWorld(cube.halfSizeMm);
+  const cx = toWorld(cube.center.x);
+  const cy = toWorld(cube.center.y);
+  const cz = toWorld(cube.center.z);
+
+  // --- Cube group (semi-transparent faces, edges, vertex markers) ---
+  const cubeGroup = new THREE.Group();
+  cubeGroup.name = "camera-movements-cube";
+
+  // Each face is a separate Mesh so front/back can have different opacity
+  const faceGeo = new THREE.PlaneGeometry(s, s);
+  const frontMat = new THREE.MeshStandardMaterial({
+    color: "#818cf8",
+    roughness: 0.3,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.55,
+    side: THREE.FrontSide,
+    depthWrite: true,
   });
-  const cubeMesh = new THREE.Mesh(cubeGeo, cubeMat);
-  cubeMesh.position.set(
-    toWorld(cube.center.x),
-    toWorld(cube.center.y),
-    toWorld(cube.center.z),
-  );
-  cubeMesh.name = "camera-movements-cube";
-  group.add(cubeMesh);
+  const backMat = new THREE.MeshStandardMaterial({
+    color: "#6366f1",
+    roughness: 0.3,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.35,
+    side: THREE.FrontSide,
+    depthWrite: true,
+  });
+  const sideMat = new THREE.MeshStandardMaterial({
+    color: "#a5b4fc",
+    roughness: 0.3,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.45,
+    side: THREE.FrontSide,
+    depthWrite: true,
+  });
+
+  // +Z (front)
+  const front = new THREE.Mesh(faceGeo, frontMat);
+  front.position.set(cx, cy, cz + hs);
+  cubeGroup.add(front);
+
+  // -Z (back)
+  const back = new THREE.Mesh(faceGeo, backMat);
+  back.position.set(cx, cy, cz - hs);
+  back.rotation.y = Math.PI;
+  cubeGroup.add(back);
+
+  // +X
+  const right = new THREE.Mesh(faceGeo, sideMat);
+  right.position.set(cx + hs, cy, cz);
+  right.rotation.y = Math.PI / 2;
+  cubeGroup.add(right);
+
+  // -X
+  const left = new THREE.Mesh(faceGeo, sideMat);
+  left.position.set(cx - hs, cy, cz);
+  left.rotation.y = -Math.PI / 2;
+  cubeGroup.add(left);
+
+  // +Y (top)
+  const top = new THREE.Mesh(faceGeo, sideMat);
+  top.position.set(cx, cy + hs, cz);
+  top.rotation.x = -Math.PI / 2;
+  cubeGroup.add(top);
+
+  // -Y (bottom)
+  const bottom = new THREE.Mesh(faceGeo, sideMat);
+  bottom.position.set(cx, cy - hs, cz);
+  bottom.rotation.x = Math.PI / 2;
+  cubeGroup.add(bottom);
+
+  // --- Contrasting edges (wireframe) ---
+  const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(s, s, s));
+  const edgeMat = new THREE.LineBasicMaterial({
+    color: "#4338ca",
+    linewidth: 1,
+    transparent: true,
+    opacity: 0.85,
+    depthTest: true,
+  });
+  const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+  edges.position.set(cx, cy, cz);
+  edges.renderOrder = 3;
+  cubeGroup.add(edges);
+
+  // --- Vertex markers (small spheres at corners) ---
+  const cornerRadius = toWorld(12);
+  const cornerGeo = new THREE.SphereGeometry(cornerRadius, 8, 8);
+  const cornerMat = new THREE.MeshStandardMaterial({
+    color: "#4f46e5",
+    roughness: 0.2,
+    metalness: 0.3,
+  });
+  const corners = [
+    [-hs, -hs, -hs], [hs, -hs, -hs], [-hs, hs, -hs], [hs, hs, -hs],
+    [-hs, -hs,  hs], [hs, -hs,  hs], [-hs, hs,  hs], [hs, hs,  hs],
+  ];
+  corners.forEach(([dx, dy, dz]) => {
+    const marker = new THREE.Mesh(cornerGeo, cornerMat);
+    marker.position.set(cx + dx, cy + dy, cz + dz);
+    marker.renderOrder = 4;
+    cubeGroup.add(marker);
+  });
+
+  group.add(cubeGroup);
 
   // --- Grid (wireframe) ---
   const gridSize = grid.halfExtentMm * 2;
@@ -95,19 +185,17 @@ export function disposeCameraMovementsGroup(group: THREE.Group): void {
   const materials = new Set<THREE.Material>();
 
   group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    const mesh = object;
-    if (mesh.geometry) {
-      geometries.add(mesh.geometry);
+    if (!(object instanceof THREE.Mesh) && !(object instanceof THREE.LineSegments)) return;
+    if (object instanceof THREE.Mesh) {
+      if (object.geometry) geometries.add(object.geometry);
+      const mats = Array.isArray(object.material) ? object.material : [object.material];
+      mats.forEach((m) => { if (m) materials.add(m); });
+    } else if (object instanceof THREE.LineSegments) {
+      if (object.geometry) geometries.add(object.geometry);
+      if (object.material) materials.add(object.material as THREE.Material);
     }
-    const meshMaterials = Array.isArray(mesh.material)
-      ? mesh.material
-      : [mesh.material];
-    meshMaterials.forEach((material) => {
-      if (material) materials.add(material);
-    });
   });
 
-  geometries.forEach((geometry) => geometry.dispose());
-  materials.forEach((material) => material.dispose());
+  geometries.forEach((g) => g.dispose());
+  materials.forEach((m) => m.dispose());
 }
