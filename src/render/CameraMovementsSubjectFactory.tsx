@@ -26,7 +26,7 @@ export function createCameraMovementsGroup(): THREE.Group {
     roughness: 0.25,
     metalness: 0.05,
     transparent: true,
-    opacity: 0.50,
+    opacity: 0.22,
     side: THREE.FrontSide,
     depthWrite: true,
   });
@@ -35,7 +35,7 @@ export function createCameraMovementsGroup(): THREE.Group {
     roughness: 0.25,
     metalness: 0.05,
     transparent: true,
-    opacity: 0.30,
+    opacity: 0.15,
     side: THREE.FrontSide,
     depthWrite: true,
   });
@@ -44,7 +44,7 @@ export function createCameraMovementsGroup(): THREE.Group {
     roughness: 0.25,
     metalness: 0.05,
     transparent: true,
-    opacity: 0.40,
+    opacity: 0.18,
     side: THREE.FrontSide,
     depthWrite: true,
   });
@@ -103,12 +103,13 @@ export function createCameraMovementsGroup(): THREE.Group {
     const mat = new THREE.LineBasicMaterial({
       color,
       linewidth: 1,
-      depthTest: true,
+      depthTest: false,
+      depthWrite: false,
       transparent: true,
-      opacity: 0.95,
+      opacity: 1.0,
     });
     const line = new THREE.LineSegments(geo, mat);
-    line.renderOrder = 3;
+    line.renderOrder = 10;
     cubeGroup.add(line);
   }
 
@@ -178,7 +179,7 @@ export function createCameraMovementsGroup(): THREE.Group {
     const [vx, vy, vz] = corner(sx, sy, 1);
     const marker = new THREE.Mesh(nearVertexGeo, nearVertexMat);
     marker.position.set(vx, vy, vz);
-    marker.renderOrder = 4;
+    marker.renderOrder = 10;
     cubeGroup.add(marker);
   }
   // Far vertices (-Z)
