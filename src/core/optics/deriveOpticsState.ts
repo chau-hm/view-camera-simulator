@@ -142,8 +142,15 @@ export const deriveOpticsState = (
       );
     }
     const f = cameraState.focalLengthMm;
-    const lensCenterWorld = vec(0, 0, f);
-    const lensNormalWorld = vec(0, 0, 1);
+    const lensCenterWorld = vec(
+      0,
+      cameraState.frontRiseMm,
+      f,
+    );
+    const lensNormalWorld = calculateLensNormal(
+      cameraState.frontTiltDeg,
+      cameraState.frontSwingDeg,
+    );
     const baselineFilmCenter = vec(0, 0, 0);
     const { frame: rearFrame, corners: filmPlaneCornersWorld } =
       calculateRearStandardFrame(baselineFilmCenter, cameraState.rearRiseMm, cameraState.rearTiltDeg);

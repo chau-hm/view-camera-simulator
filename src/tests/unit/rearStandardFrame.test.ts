@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { calculateLensNormal } from "../../core/optics/calculateLensPlane";
 import { calculateRearStandardFrame, validateFilmCorners } from "../../core/optics/calculateRearStandardFrame";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
@@ -639,6 +640,86 @@ describe("Case 13: positive fallback focus distance", () => {
     );
     expect(optics.diagnostics.fallbackApplied).toBe(true);
     expect(optics.focusPointWorld.z).toBeGreaterThan(0);
+  });
+});
+
+
+describe("Case 14: infinity front movements drive lens geometry", () => {
+  it("infinity front rise moves lens centre Y", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontRiseMm: 20 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expect(optics.lensCenterWorld.y).toBeCloseTo(20, 10);
+    expect(optics.lensCenterWorld.z).toBeCloseTo(CAMERA_CONSTANTS.focalLengthMm, 10);
+    expect(optics.opticalAxis.origin).toEqual(optics.lensCenterWorld);
+    // Film centre unchanged by front rise
+    expect(optics.filmCenterWorld.y).toBeCloseTo(0, 8);
+  });
+
+  it("infinity front tilt rotates lens normal", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontTiltDeg: 5 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    const expected = calculateLensNormal(5, 0);
+    expect(optics.lensNormalWorld.x).toBeCloseTo(expected.x, 10);
+    expect(optics.lensNormalWorld.y).toBeCloseTo(expected.y, 10);
+    expect(optics.lensNormalWorld.z).toBeCloseTo(expected.z, 10);
+    expect(optics.opticalAxis.direction).toEqual(optics.lensNormalWorld);
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    expect(optics.lensFilmHingeLine).not.toBeNull();
+    expect(optics.focusPlane).toBeNull();
+    expect(optics.depthOfFieldFarPlane).toBeNull();
+  });
+
+  it("infinity front swing rotates lens normal", () => {
+    const optics = deriveOpticsState(
+      cameraFor(architectureRiseScene, { focusMode: "infinity", frontSwingDeg: 5 }),
+      architectureRiseScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    const expected = calculateLensNormal(0, 5);
+    expect(optics.lensNormalWorld.x).toBeCloseTo(expected.x, 10);
+    expect(optics.lensNormalWorld.z).toBeCloseTo(expected.z, 10);
+    expect(optics.opticalAxis.direction).toEqual(optics.lensNormalWorld);
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+  });
+
+  it("infinity matching front/rear tilt is parallel (Table Tilt)", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusMode: "infinity", frontTiltDeg: 5, rearTiltDeg: 5 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expect(optics.diagnostics.isParallelLensFilm).toBe(true);
+    expect(optics.lensFilmHingeLine).toBeNull();
+    expect(optics.diagnostics.focusPlaneModel).toBe("parallel");
+    expect(optics.focusPlane).toBeNull();
+  });
+
+  it("infinity different front/rear tilt is non-parallel", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusMode: "infinity", frontTiltDeg: 5, rearTiltDeg: 3 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    expect(optics.lensFilmHingeLine).not.toBeNull();
+    expect(optics.diagnostics.focusPlaneModel).toBe("scheimpflug");
+    expect(optics.focusPlane).toBeNull();
+  });
+
+  it("infinity matching tilt plus swing is non-parallel", () => {
+    const optics = deriveOpticsState(
+      cameraFor(tableTiltScene, { focusMode: "infinity", frontTiltDeg: 5, rearTiltDeg: 5, frontSwingDeg: 3 }),
+      tableTiltScene,
+    );
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expect(optics.diagnostics.isParallelLensFilm).toBe(false);
+    expect(optics.lensFilmHingeLine).not.toBeNull();
   });
 });
 
