@@ -430,6 +430,7 @@ const ConstructionLayer = ({
             );
             return (
               <circle
+                data-testid="focus-marker"
                 cx={point.x}
                 cy={point.y}
                 r={4}

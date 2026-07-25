@@ -80,7 +80,7 @@ describe("2D Original vs Current geometry data assertions", () => {
     const { currentOptics, originalOptics } = computeBoth({ rearTiltDeg: 5 });
 
     expect(currentOptics.filmNormalWorld).not.toEqual(originalOptics.filmNormalWorld);
-    expect(currentOptics.lensCenterWorld).toEqual(originalOptics.lensCenterWorld);
+    expect(currentOptics.filmCenterWorld).toEqual(originalOptics.filmCenterWorld);
   });
 
   it("Reset: complete overlap after movement then reset", () => {
