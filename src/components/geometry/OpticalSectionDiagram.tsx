@@ -423,10 +423,10 @@ const ConstructionLayer = ({
           })
         : null}
 
-      {!isInfinity && opticsState.focusPlane
+      {!isInfinity && effectiveOpticsState.focusPlane
         ? (() => {
             const point = view.projectWorldPoint(
-              opticsState.focusPlane.point,
+              effectiveOpticsState.focusPlane.point,
             );
             return (
               <circle

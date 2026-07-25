@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { isGroundGlassRttScene, RTT_SCENES } from "../../render/groundGlassRttScenes";
 import { createRegisteredRttSubject, getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
 import { useAppStore } from "../../state/appStore";

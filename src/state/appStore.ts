@@ -401,17 +401,21 @@ export const useAppStore = create<AppStore>((set) => ({
     })),
 
   setFocusDistance: (value) =>
-    set((state) => ({
-      camera: {
-        ...state.camera,
-        focusDistanceMm: isFocusDistanceLocked(state.camera.activeSceneId)
-          ? state.camera.focusDistanceMm
-          : clampFocusDistanceForScene(state.camera.activeSceneId, value),
-        focusMode: isFocusDistanceLocked(state.camera.activeSceneId)
-          ? state.camera.focusMode
-          : "finite",
-      },
-    })),
+    set((state) => {
+      if (isFocusDistanceLocked(state.camera.activeSceneId)) return {};
+      return {
+        camera: {
+          ...state.camera,
+          focusDistanceMm: Number.isFinite(value)
+            ? clampFocusDistanceForScene(state.camera.activeSceneId, value)
+            : value,
+          focusMode: Number.isFinite(value) ? "finite" : state.camera.focusMode,
+          lastFiniteFocusDepthMm: Number.isFinite(value)
+            ? clampFocusDistanceForScene(state.camera.activeSceneId, value)
+            : state.camera.lastFiniteFocusDepthMm,
+        },
+      };
+    }),
 
   setInfinityFocus: () =>
     set((state) => {
