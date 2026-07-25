@@ -1,3 +1,5 @@
+import type { SceneDefinition } from "../types/scene";
+
 export type SceneViewFocus = "scene" | "camera";
 
 export type ObserverViewState = {
@@ -11,50 +13,91 @@ const WORLD_SCALE = 0.001;
 const CAMERA_INSPECTION_DISTANCE_WORLD = 0.72;
 const CAMERA_INSPECTION_FALLBACK_DIRECTION: [number, number, number] = [0.68, 0.42, -1];
 
-const normalize = (value: [number, number, number]): [number, number, number] => {
+const normalize = (
+  value: [number, number, number],
+): [number, number, number] => {
   const length = Math.hypot(...value);
   if (length < 1e-6) return [0, 0, -1];
   return [value[0] / length, value[1] / length, value[2] / length];
 };
 
-export const resolveStableCameraInspectionTarget = (
-  sceneId: string,
+const toWorld = (mm: number) => mm * WORLD_SCALE;
+
+const resolveInspectionTarget = (
+  scene: Pick<SceneDefinition, "id" | "cameraInspectionPlacement">,
   focalLengthMm: number,
 ): [number, number, number] => {
-  // No scene currently exposes a whole-camera transform. Anchor to the nominal
-  // body midpoint instead of either standard, whose positions are simulation state.
+  // Prefer scene-specific cameraInspectionPlacement
+  if (scene.cameraInspectionPlacement) {
+    return [
+      toWorld(scene.cameraInspectionPlacement.target.x),
+      toWorld(scene.cameraInspectionPlacement.target.y),
+      toWorld(scene.cameraInspectionPlacement.target.z),
+    ];
+  }
+
+  // Legacy fallback: nominal body midpoint
   const nominalBodyCenterZMm =
-    sceneId === "focus-fundamentals-two-targets" ? focalLengthMm / 2 : -focalLengthMm / 2;
+    scene.id === "focus-fundamentals-two-targets"
+      ? focalLengthMm / 2
+      : -focalLengthMm / 2;
 
   return [0, 0, nominalBodyCenterZMm * WORLD_SCALE];
 };
 
-export const createCameraInspectionView = (
+const resolveInspectionPosition = (
+  scene: Pick<SceneDefinition, "id" | "cameraInspectionPlacement">,
   sceneView: ObserverViewState,
-  cameraTarget: [number, number, number],
-): ObserverViewState => {
+  target: [number, number, number],
+): [number, number, number] => {
+  // Prefer scene-specific cameraInspectionPlacement
+  if (scene.cameraInspectionPlacement) {
+    return [
+      toWorld(scene.cameraInspectionPlacement.position.x),
+      toWorld(scene.cameraInspectionPlacement.position.y),
+      toWorld(scene.cameraInspectionPlacement.position.z),
+    ];
+  }
+
+  // Fallback: compute direction from scene observer
   let direction: [number, number, number] = [
     sceneView.position[0] - sceneView.target[0],
     sceneView.position[1] - sceneView.target[1],
     sceneView.position[2] - sceneView.target[2],
   ];
 
-  // A head-on scene observer hides the depth between the standards. Give that one case a
-  // stable three-quarter inspection angle while preserving scene-specific
-  // observer directions everywhere else.
   if (Math.hypot(direction[0], direction[1]) < Math.abs(direction[2]) * 0.08) {
     direction = CAMERA_INSPECTION_FALLBACK_DIRECTION;
   }
 
   const unitDirection = normalize(direction);
-  return {
-    target: [...cameraTarget],
-    position: [
-      cameraTarget[0] + unitDirection[0] * CAMERA_INSPECTION_DISTANCE_WORLD,
-      cameraTarget[1] + unitDirection[1] * CAMERA_INSPECTION_DISTANCE_WORLD,
-      cameraTarget[2] + unitDirection[2] * CAMERA_INSPECTION_DISTANCE_WORLD,
-    ],
-  };
+  return [
+    target[0] + unitDirection[0] * CAMERA_INSPECTION_DISTANCE_WORLD,
+    target[1] + unitDirection[1] * CAMERA_INSPECTION_DISTANCE_WORLD,
+    target[2] + unitDirection[2] * CAMERA_INSPECTION_DISTANCE_WORLD,
+  ];
+};
+
+export const resolveStableCameraInspectionTarget = (
+  sceneId: string,
+  focalLengthMm: number,
+): [number, number, number] => {
+  // For generic access, use the legacy midpoint
+  const nominalBodyCenterZMm =
+    sceneId === "focus-fundamentals-two-targets"
+      ? focalLengthMm / 2
+      : -focalLengthMm / 2;
+  return [0, 0, nominalBodyCenterZMm * WORLD_SCALE];
+};
+
+export const createCameraInspectionView = (
+  scene: Pick<SceneDefinition, "id" | "cameraInspectionPlacement">,
+  sceneView: ObserverViewState,
+  focalLengthMm: number,
+): ObserverViewState => {
+  const target = resolveInspectionTarget(scene, focalLengthMm);
+  const position = resolveInspectionPosition(scene, sceneView, target);
+  return { target, position };
 };
 
 export const createObserverViewPresets = (
@@ -62,7 +105,28 @@ export const createObserverViewPresets = (
   cameraTarget: [number, number, number],
 ): ObserverViewPresets => ({
   scene: sceneView,
-  camera: createCameraInspectionView(sceneView, cameraTarget),
+  camera: {
+    target: [...cameraTarget] as [number, number, number],
+    position: (() => {
+      let direction: [number, number, number] = [
+        sceneView.position[0] - sceneView.target[0],
+        sceneView.position[1] - sceneView.target[1],
+        sceneView.position[2] - sceneView.target[2],
+      ];
+      if (
+        Math.hypot(direction[0], direction[1]) <
+        Math.abs(direction[2]) * 0.08
+      ) {
+        direction = CAMERA_INSPECTION_FALLBACK_DIRECTION;
+      }
+      const unitDirection = normalize(direction);
+      return [
+        cameraTarget[0] + unitDirection[0] * CAMERA_INSPECTION_DISTANCE_WORLD,
+        cameraTarget[1] + unitDirection[1] * CAMERA_INSPECTION_DISTANCE_WORLD,
+        cameraTarget[2] + unitDirection[2] * CAMERA_INSPECTION_DISTANCE_WORLD,
+      ] as [number, number, number];
+    })(),
+  },
 });
 
 export const translateObserverViewToTarget = (
@@ -76,6 +140,10 @@ export const translateObserverViewToTarget = (
   ];
   return {
     target: [...target],
-    position: [target[0] + offset[0], target[1] + offset[1], target[2] + offset[2]],
+    position: [
+      target[0] + offset[0],
+      target[1] + offset[1],
+      target[2] + offset[2],
+    ],
   };
 };

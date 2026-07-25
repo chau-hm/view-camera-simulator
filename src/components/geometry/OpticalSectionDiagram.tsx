@@ -26,6 +26,8 @@ type Props = {
   svgWidth: number;
   svgHeight: number;
   displayMode?: "full" | "camera-construction" | "subject-field";
+  /** Optional zero-movement reference projection for comparison scenes. */
+  referenceProjection?: OpticalSectionData | null;
 };
 
 const planeTeachingLabel = (segment: PlaneSegment): string | null => {
@@ -37,6 +39,7 @@ const planeTeachingLabel = (segment: PlaneSegment): string | null => {
 
 export const OpticalSectionDiagram = ({
   projection,
+  referenceProjection,
   geometryView,
   profile,
   scene,
@@ -351,7 +354,18 @@ export const OpticalSectionDiagram = ({
             })()
           : null}
       </g>
-    </svg>
+
+      {/* Original / Current legend */}
+      {referenceProjection && !displayMode && (
+        <g transform="translate(10, 10)">
+          <rect x="0" y="0" width="150" height="36" rx="4" fill="rgba(255,255,255,0.85)" />
+          <line x1="12" y1="12" x2="36" y2="12" stroke="#374151" strokeWidth={2} />
+          <text x="44" y="16" fontSize="11" fill="#1e293b" fontWeight="500">Current</text>
+          <line x1="12" y1="28" x2="36" y2="28" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="6 4" />
+          <text x="44" y="32" fontSize="11" fill="#64748b">Original</text>
+        </g>
+      )}
+</svg>
   );
 };
 

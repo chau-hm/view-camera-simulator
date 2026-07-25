@@ -24,6 +24,10 @@ import {
   createShelfSwingGroup,
   disposeShelfSwingGroup,
 } from "./ShelfSwingSubjectFactory";
+import {
+  CameraMovementsSubject,
+  createCameraMovementsGroup,
+} from "./CameraMovementsSubjectFactory";
 import { toWorld } from "./rttUtils";
 
 export type RegisteredSceneSubjectProps = {
@@ -77,11 +81,26 @@ const tableTiltLightingTargetMm = {
   z: tableTiltGeometry.tabletop.center.z,
 } as const;
 
+const cameraMovementsLightingTargetMm = {
+  x: 0,
+  y: 0,
+  z: 4000,
+} as const;
+
 const shelfSwingLightingTargetMm = {
   ...shelfSwingGeometry.middleSubject.focusDetailProbeWorld,
 };
 
 export const sceneSubjectRegistry = {
+  "understanding-camera-movements": {
+    SceneSubject: CameraMovementsSubject,
+    createRttGroup: createCameraMovementsGroup,
+    rttLighting: {
+      targetMm: cameraMovementsLightingTargetMm,
+      keyOffsetWorld: { x: -2, y: 2.5, z: -2 },
+      fillOffsetWorld: { x: 1.5, y: 1, z: -2.5 },
+    },
+  },
   "focus-fundamentals-two-targets": {
     SceneSubject: FocusFundamentalsSubject,
     createRttGroup: createFocusFundamentalsGroup,

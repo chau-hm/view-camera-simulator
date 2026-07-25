@@ -13,6 +13,8 @@ import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
 import { MovementControls } from "../controls/MovementControls";
+import { MovementSelector } from "../controls/MovementSelector";
+import { SingleMovementControl } from "../controls/SingleMovementControl";
 import { ResetControls } from "../controls/ResetControls";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
@@ -43,6 +45,7 @@ export const SimulatorWorkspace = ({
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
+  const selectedMovement = useAppStore((state) => state.selectedMovement);
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
   const [expandedViewport, setExpandedViewport] = useState<ExpandedViewport>(null);
   const [restoreViewportFocus, setRestoreViewportFocus] = useState(true);
@@ -390,10 +393,24 @@ export const SimulatorWorkspace = ({
             </div>
 
             <div style={{ marginTop: 8 }}>
-              <div className="sim-section">
-                <div className="sim-section-label">Movement</div>
-                <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
-              </div>
+              {(safeScene.movementCapabilities && selectedMovement) ? (
+                <>
+                  <div className="sim-section">
+                    <MovementSelector
+                      available={safeScene.movementCapabilities.available}
+                      selected={selectedMovement}
+                    />
+                  </div>
+                  <div className="sim-section">
+                    <SingleMovementControl movement={selectedMovement} />
+                  </div>
+                </>
+              ) : (
+                <div className="sim-section">
+                  <div className="sim-section-label">Movement</div>
+                  <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
+                </div>
+              )}
 
               <div className="sim-section">
                 <div className="sim-section-label">Focus</div>

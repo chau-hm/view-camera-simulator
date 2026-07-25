@@ -6,10 +6,11 @@ import type { RefObject } from "react";
 import { Camera, DoubleSide, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { OrbitControls as OrbitControlsController } from "three-stdlib";
+import type { CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
-import { CAMERA_CONSTANTS } from "../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../utils/constants";
 import { UI_COPY } from "../ui/copy";
 import { getRenderQualitySettings } from "./renderQuality";
 import { getVisibleSceneLegendKeys } from "./sceneLegendHelpers";
@@ -20,10 +21,10 @@ import {
 } from "./scenePlaneOverlayGeometry";
 import { createScheimpflugConstructionGeometry } from "./scheimpflugConstructionGeometry";
 import { quaternionForPlaneNormal, resolveFrontStandardRenderTransform, resolveRearStandardRenderTransform } from "./planeOrientation";
+import { deriveOpticsState } from "../core/optics/deriveOpticsState";
 import { getRegisteredSceneSubject } from "./sceneSubjectRegistry";
 import {
   createCameraInspectionView,
-  resolveStableCameraInspectionTarget,
   translateObserverViewToTarget,
   type ObserverViewState,
   type SceneViewFocus,
@@ -749,7 +750,116 @@ const SceneContent = ({
         </mesh>
       ))
     )}
+    <OriginalGhostCamera scene={scene} />
     </>
+  );
+};
+
+const OriginalGhostCamera = ({
+  scene,
+}: {
+  scene: SceneDefinition;
+}) => {
+  const hasCapabilities = Boolean(scene.movementCapabilities);
+
+  // Always derive original (zero-movement) optics from the scene preset
+  const originalOptics = useMemo(() => {
+    if (!hasCapabilities) return null;
+    const cameraState: CameraState = {
+      ...DEFAULT_CAMERA_STATE,
+      ...scene.cameraPreset,
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      rearRiseMm: 0,
+      rearTiltDeg: 0,
+      activeSceneId: scene.id,
+    };
+    return deriveOpticsState(cameraState, scene);
+  }, [hasCapabilities, scene]);
+
+  if (!hasCapabilities || !originalOptics) return null;
+
+  return (
+    <group name="original-ghost-camera">
+      <GhostRearStandard opticsState={originalOptics} />
+      <GhostFrontStandard opticsState={originalOptics} />
+      {scene.id !== "focus-fundamentals-two-targets" && (
+        <GhostBellows opticsState={originalOptics} />
+      )}
+    </group>
+  );
+};
+
+const GhostRearStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
+  const renderTransform = resolveRearStandardRenderTransform(opticsState.rearStandardFrame);
+  return (
+    <group position={renderTransform.position} quaternion={renderTransform.quaternion}>
+      <mesh renderOrder={10}>
+        <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
+        <meshStandardMaterial
+          color="#94a3b8"
+          transparent
+          opacity={0.35}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  );
+};
+
+const GhostFrontStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
+  const transform = resolveFrontStandardRenderTransform(
+    opticsState.lensCenterWorld,
+    opticsState.lensNormalWorld,
+  );
+  return (
+    <group position={transform.position} quaternion={transform.quaternion} renderOrder={10}>
+      <mesh>
+        <boxGeometry args={[toWorld(CAMERA_CONSTANTS.frontStandardWidthMm), toWorld(CAMERA_CONSTANTS.frontStandardHeightMm), toWorld(12)]} />
+        <meshStandardMaterial color="#94a3b8" transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0, toWorld(8)]}>
+        <boxGeometry args={[toWorld(100), toWorld(100), toWorld(8)]} />
+        <meshStandardMaterial color="#cbd5e1" transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0, toWorld(16)]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[toWorld(18), toWorld(18), toWorld(18), 24]} />
+        <meshStandardMaterial color="#6b7280" transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+};
+
+const GhostBellows = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
+  const film = vecToWorld(opticsState.filmCenterWorld);
+  const lens = vecToWorld(opticsState.lensCenterWorld);
+
+  return (
+    <group name="original-ghost-bellows">
+      <mesh
+        position={[
+          (film[0] + lens[0]) / 2,
+          (film[1] + lens[1]) / 2,
+          (film[2] + lens[2]) / 2,
+        ]}
+        renderOrder={10}
+      >
+        <boxGeometry
+          args={[
+            toWorld(CAMERA_CONSTANTS.frontStandardWidthMm) * 0.85,
+            toWorld(CAMERA_CONSTANTS.frontStandardHeightMm) * 0.85,
+            Math.hypot(lens[0] - film[0], lens[1] - film[1], lens[2] - film[2]),
+          ]}
+        />
+        <meshStandardMaterial
+          color="#94a3b8"
+          transparent
+          opacity={0.2}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
   );
 };
 
@@ -784,13 +894,9 @@ export const SceneRenderer = ({
     () => ({ position: observerCameraPosition, target: observerCameraTarget }),
     [observerCameraPosition, observerCameraTarget],
   );
-  const cameraInspectionTarget = useMemo(
-    () => resolveStableCameraInspectionTarget(scene.id, CAMERA_CONSTANTS.focalLengthMm),
-    [scene.id],
-  );
   const cameraObserverView = useMemo(
-    () => createCameraInspectionView(sceneObserverView, cameraInspectionTarget),
-    [cameraInspectionTarget, sceneObserverView],
+    () => createCameraInspectionView(scene, sceneObserverView, CAMERA_CONSTANTS.focalLengthMm),
+    [scene, sceneObserverView],
   );
   const [observerViewState, setObserverViewState] = useState<ObserverViewState>(sceneObserverView);
   const activeAssets = useMemo(

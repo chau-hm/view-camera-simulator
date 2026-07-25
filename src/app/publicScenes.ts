@@ -3,6 +3,7 @@ import type { SimulatorMode } from "../types/camera";
 import { getSceneById } from "../scenes/definitions";
 
 export const publicSceneIds = [
+  "understanding-camera-movements",
   "focus-fundamentals-two-targets",
   "architecture-rise",
   "table-tilt",
@@ -22,6 +23,15 @@ export type PublicSceneEntry = {
 };
 
 export const publicSceneCatalog: readonly PublicSceneEntry[] = [
+  {
+    id: "understanding-camera-movements",
+    description:
+      "Compare front and rear camera movements against a fixed reference camera and observe how each movement changes the camera geometry and image.",
+    topics: ["Camera movements", "Front standard", "Rear standard", "Comparative geometry"],
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/understanding-camera-movements.png",
+  },
   {
     id: "focus-fundamentals-two-targets",
     description:

@@ -88,6 +88,7 @@ describe("scenes page", () => {
     );
 
     expect(publicSceneIds).toEqual([
+      "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
       "table-tilt",
@@ -101,6 +102,7 @@ describe("scenes page", () => {
     expect(
       screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
     ).toEqual([
+      "Understanding Camera Movements",
       "Focus Fundamentals — Two Targets",
       "Architecture Rise",
       "Table Tilt",

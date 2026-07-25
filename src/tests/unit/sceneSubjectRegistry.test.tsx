@@ -33,6 +33,7 @@ const collectDisposableSpies = (group: THREE.Group) => {
 describe("scene subject registry", () => {
   it("registers every canonical rendered scene and rejects unknown IDs", () => {
     expect(Object.keys(sceneSubjectRegistry)).toEqual([
+      "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
       "table-tilt",

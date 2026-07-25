@@ -31,17 +31,37 @@ export type CameraPlacement = {
   target: Vec3;
 };
 
+export type CameraMovementField =
+  | "frontRiseMm"
+  | "frontTiltDeg"
+  | "frontSwingDeg"
+  | "rearRiseMm"
+  | "rearTiltDeg";
+
+export type SceneMovementCapabilities = {
+  /** Movement field names available for this scene. */
+  available: readonly CameraMovementField[];
+  /** How many movements may be active simultaneously. */
+  selectionMode: "single";
+  /** Default selected movement on scene entry. */
+  defaultMovement: CameraMovementField;
+};
+
 export type SceneDefinition = {
   id: string;
   name: string;
   description: string;
   assets: SceneAsset[];
- cameraPreset: Pick<
-   CameraState,
+  cameraPreset: Pick<
+    CameraState,
     "focusDistanceMm" | "aperture" | "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "rearRiseMm" | "rearTiltDeg"
- >;
+  >;
   cameraPlacement: CameraPlacement;
   bounds: Bounds3;
   focusTargets: FocusTarget[];
   compositionTargets: CompositionTarget[];
+  /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
+  movementCapabilities?: SceneMovementCapabilities;
+  /** Optional camera-inspection observer framing. When absent, the default fallback applies. */
+  cameraInspectionPlacement?: CameraPlacement;
 };
