@@ -30,7 +30,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     topics: ["Camera movements", "Front standard", "Rear standard", "Comparative geometry"],
     availability: "available",
     availableModes: ["free"],
-    thumbnailAsset: "assets/understanding-camera-movements.svg",
+    thumbnailAsset: "assets/understanding-camera-movements.png",
   },
   {
     id: "focus-fundamentals-two-targets",
