@@ -29,6 +29,7 @@ import {
   DEFAULT_CAMERA_CONFIGURATION_MODE,
   neutralCameraConfigurationFields,
   resolveCameraConfigurationPreset,
+  resolveSceneRiseRangeMm,
   type CameraConfigurationMode,
   type VerticalDirection,
 } from "../scenes/cameraConfigurationPresets";
@@ -170,8 +171,8 @@ export type AppStore = {
   ui: UIState;
   /** The currently selected movement for single-active scenes. */
   selectedMovement: CameraMovementField | null;
-  /** Last-applied configuration preset mode (Understanding Camera Movements). */
-  configurationMode: CameraConfigurationMode;
+  /** Last-applied configuration preset mode, or null when no complete preset is active. */
+  configurationMode: CameraConfigurationMode | null;
   /** Last-applied configuration preset direction (Understanding Camera Movements). */
   configurationDirection: VerticalDirection;
   /** Route-based initialization key. */
@@ -430,29 +431,28 @@ export const useAppStore = create<AppStore>((set) => ({
     })),
 
   setRise: (value) =>
-    set((state) => ({
-      camera: enforceSingleMovement(
-        {
-          ...state.camera,
-          frontRiseMm: clamp(
-            value,
-            CAMERA_CONSTANTS.riseMinMm,
-            CAMERA_CONSTANTS.riseMaxMm,
-          ),
-          ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
-            ? { cameraBodyPitchDeg: 0 }
-            : {}),
-        },
-        state.camera.activeSceneId,
-        "frontRiseMm",
-      ),
-      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
-        ? "frontRiseMm"
-        : state.selectedMovement,
-      ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
-        ? defaultConfigurationState()
-        : {}),
-    })),
+    set((state) => {
+      const riseRange = resolveSceneRiseRangeMm(state.camera.activeSceneId);
+      return {
+        camera: enforceSingleMovement(
+          {
+            ...state.camera,
+            frontRiseMm: clamp(value, riseRange.minMm, riseRange.maxMm),
+            ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+              ? { cameraBodyPitchDeg: 0 }
+              : {}),
+          },
+          state.camera.activeSceneId,
+          "frontRiseMm",
+        ),
+        selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+          ? "frontRiseMm"
+          : state.selectedMovement,
+        ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+          ? defaultConfigurationState()
+          : {}),
+      };
+    }),
 
   setTilt: (value) =>
     set((state) => ({
@@ -505,29 +505,28 @@ export const useAppStore = create<AppStore>((set) => ({
     })),
 
   setRearRise: (value) =>
-    set((state) => ({
-      camera: enforceSingleMovement(
-        {
-          ...state.camera,
-          rearRiseMm: clamp(
-            value,
-            CAMERA_CONSTANTS.riseMinMm,
-            CAMERA_CONSTANTS.riseMaxMm,
-          ),
-          ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
-            ? { cameraBodyPitchDeg: 0 }
-            : {}),
-        },
-        state.camera.activeSceneId,
-        "rearRiseMm",
-      ),
-      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
-        ? "rearRiseMm"
-        : state.selectedMovement,
-      ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
-        ? defaultConfigurationState()
-        : {}),
-    })),
+    set((state) => {
+      const riseRange = resolveSceneRiseRangeMm(state.camera.activeSceneId);
+      return {
+        camera: enforceSingleMovement(
+          {
+            ...state.camera,
+            rearRiseMm: clamp(value, riseRange.minMm, riseRange.maxMm),
+            ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+              ? { cameraBodyPitchDeg: 0 }
+              : {}),
+          },
+          state.camera.activeSceneId,
+          "rearRiseMm",
+        ),
+        selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+          ? "rearRiseMm"
+          : state.selectedMovement,
+        ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+          ? defaultConfigurationState()
+          : {}),
+      };
+    }),
 
   setRearTilt: (value) =>
     set((state) => ({

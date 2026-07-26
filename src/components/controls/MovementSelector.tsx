@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { resolveSceneRiseRangeMm } from "../../scenes/cameraConfigurationPresets";
 import { useAppStore } from "../../state/appStore";
 import type { CameraMovementField } from "../../types/scene";
 
@@ -8,6 +9,11 @@ const MOVEMENT_LABELS: Record<CameraMovementField, string> = {
   frontTiltDeg: "Front Tilt",
   rearTiltDeg: "Rear Tilt",
   frontSwingDeg: "Front Swing",
+};
+
+const SIGNED_RISE_LABELS: Partial<Record<CameraMovementField, string>> = {
+  frontRiseMm: "Front Rise / Fall",
+  rearRiseMm: "Rear Rise / Fall",
 };
 
 type MovementSelectorProps = {
@@ -22,6 +28,8 @@ export const MovementSelector = ({
   const setSelectedMovement = useAppStore(
     (state) => state.setSelectedMovement,
   );
+  const sceneId = useAppStore((state) => state.camera.activeSceneId);
+  const signedRise = resolveSceneRiseRangeMm(sceneId).minMm < 0;
 
   const handleChange = useCallback(
     (movement: CameraMovementField) => {
@@ -29,6 +37,13 @@ export const MovementSelector = ({
     },
     [setSelectedMovement],
   );
+
+  const labelFor = (movement: CameraMovementField): string => {
+    if (signedRise && SIGNED_RISE_LABELS[movement]) {
+      return SIGNED_RISE_LABELS[movement] as string;
+    }
+    return MOVEMENT_LABELS[movement] ?? movement;
+  };
 
   return (
     <fieldset className="movement-selector">
@@ -43,7 +58,7 @@ export const MovementSelector = ({
               checked={movement === selected}
               onChange={() => handleChange(movement)}
             />
-            <span>{MOVEMENT_LABELS[movement] ?? movement}</span>
+            <span>{labelFor(movement)}</span>
           </label>
         ))}
       </div>

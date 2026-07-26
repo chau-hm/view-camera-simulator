@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { resolveSceneRiseRangeMm } from "../../scenes/cameraConfigurationPresets";
 import { useAppStore } from "../../state/appStore";
 import type { CameraMovementField } from "../../types/scene";
 
@@ -22,6 +23,11 @@ const MOVEMENT_LABELS: Record<CameraMovementField, string> = {
   frontSwingDeg: "Front Swing",
 };
 
+const SIGNED_RISE_LABELS: Partial<Record<CameraMovementField, string>> = {
+  frontRiseMm: "Front Rise / Fall",
+  rearRiseMm: "Rear Rise / Fall",
+};
+
 export const SingleMovementControl = ({
   movement,
 }: SingleMovementControlProps) => {
@@ -41,18 +47,23 @@ export const SingleMovementControl = ({
       }
     }),
   );
+  const sceneId = useAppStore((state) => state.camera.activeSceneId);
 
   const setFrontRise = useAppStore((s) => s.setRise);
   const setRearRise = useAppStore((s) => s.setRearRise);
   const setFrontTilt = useAppStore((s) => s.setTilt);
   const setRearTilt = useAppStore((s) => s.setRearTilt);
 
-  const label = MOVEMENT_LABELS[movement] ?? movement;
-
   const isRise = movement === "frontRiseMm" || movement === "rearRiseMm";
+  const riseRange = resolveSceneRiseRangeMm(sceneId);
+  const usesSignedRise = isRise && riseRange.minMm < 0;
+  const label =
+    (usesSignedRise ? SIGNED_RISE_LABELS[movement] : undefined) ??
+    MOVEMENT_LABELS[movement] ??
+    movement;
 
-  const min = isRise ? CAMERA_CONSTANTS.riseMinMm : CAMERA_CONSTANTS.tiltMinDeg;
-  const max = isRise ? CAMERA_CONSTANTS.riseMaxMm : CAMERA_CONSTANTS.tiltMaxDeg;
+  const min = isRise ? riseRange.minMm : CAMERA_CONSTANTS.tiltMinDeg;
+  const max = isRise ? riseRange.maxMm : CAMERA_CONSTANTS.tiltMaxDeg;
   const step = isRise
     ? CAMERA_CONTROL_STEPS.riseMm
     : CAMERA_CONTROL_STEPS.tiltDeg;

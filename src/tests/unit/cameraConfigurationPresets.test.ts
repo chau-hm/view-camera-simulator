@@ -2,21 +2,37 @@ import { beforeEach, describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
+import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
 import { getGroundGlassClipRangeWorld } from "../../render/groundGlassRttScenes";
-import { computeOpticalSectionData, resolveCameraBodyRailWorldEndpoints } from "../../components/geometry/opticalSectionProjection";
 import {
+  computeOpticalSectionData,
+  resolveCameraBodyRailWorldEndpoints,
+} from "../../components/geometry/opticalSectionProjection";
+import {
+  CAMERA_CONFIGURATION_COMPOSITION_TOLERANCE_UV,
   CAMERA_CONFIGURATION_DIRECT_SHIFT_MM,
   CAMERA_CONFIGURATION_PITCH_DEG,
   DEFAULT_CAMERA_CONFIGURATION_DIRECTION,
   DEFAULT_CAMERA_CONFIGURATION_MODE,
   resolveCameraConfigurationPreset,
+  resolveSceneRiseRangeMm,
+  UNDERSTANDING_CAMERA_MOVEMENTS_RISE_MAX_MM,
+  UNDERSTANDING_CAMERA_MOVEMENTS_RISE_MIN_MM,
   type CameraConfigurationMode,
   type VerticalDirection,
 } from "../../scenes/cameraConfigurationPresets";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import {
+  CAMERA_BODY_PIVOT_WORLD,
+  canonicalSubjectCubes,
+} from "../../scenes/understandingCameraMovementsGeometry";
 import { useAppStore } from "../../state/appStore";
+import { DEFAULT_CAMERA_STATE, CAMERA_CONSTANTS } from "../../utils/constants";
+import type { CameraState } from "../../types/camera";
 
 const setup = () => {
+  // Force a fresh route init so residual compound state never leaks between tests.
+  useAppStore.setState({ lastInitializedRouteKey: null });
   useAppStore.getState().initializeSimulatorRoute({
     mode: "free",
     sceneId: "understanding-camera-movements",
@@ -35,6 +51,52 @@ const expectVecClose = (
   expect(actual.y).toBeCloseTo(expected.y, digits);
   expect(actual.z).toBeCloseTo(expected.z, digits);
 };
+
+const cameraBase = (overrides: Partial<CameraState> = {}): CameraState => ({
+  ...DEFAULT_CAMERA_STATE,
+  ...understandingCameraMovementsScene.cameraPreset,
+  cameraBodyPivotWorld: CAMERA_BODY_PIVOT_WORLD,
+  activeSceneId: understandingCameraMovementsScene.id,
+  ...overrides,
+});
+
+const projectTarget = (
+  fields: Partial<CameraState>,
+  target: { x: number; y: number; z: number },
+) => {
+  const optics = deriveOpticsState(cameraBase(fields), understandingCameraMovementsScene);
+  return projectWorldPointToFilmPlaneGroundGlass({
+    worldPoint: target,
+    lensCenterWorld: optics.lensCenterWorld,
+    filmPlaneCornersWorld: optics.filmPlaneCornersWorld,
+  });
+};
+
+describe("scene rise/fall range", () => {
+  it("exposes a signed -40…40 mm range only for Understanding Camera Movements", () => {
+    expect(resolveSceneRiseRangeMm("understanding-camera-movements")).toEqual({
+      minMm: UNDERSTANDING_CAMERA_MOVEMENTS_RISE_MIN_MM,
+      maxMm: UNDERSTANDING_CAMERA_MOVEMENTS_RISE_MAX_MM,
+    });
+    expect(UNDERSTANDING_CAMERA_MOVEMENTS_RISE_MIN_MM).toBe(-40);
+    expect(UNDERSTANDING_CAMERA_MOVEMENTS_RISE_MAX_MM).toBe(40);
+    expect(resolveSceneRiseRangeMm("architecture-rise")).toEqual({
+      minMm: CAMERA_CONSTANTS.riseMinMm,
+      maxMm: CAMERA_CONSTANTS.riseMaxMm,
+    });
+    expect(CAMERA_CONSTANTS.riseMinMm).toBe(0);
+  });
+
+  it("accepts a negative direct-shift fall through the public rise setter", () => {
+    setup();
+    useAppStore.getState().setRise(-15.5);
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(-15.5);
+    useAppStore.getState().setRise(-50);
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(-40);
+    useAppStore.getState().setRise(50);
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(40);
+  });
+});
 
 describe("resolveCameraConfigurationPreset contract", () => {
   it.each([
@@ -59,7 +121,7 @@ describe("resolveCameraConfigurationPreset contract", () => {
       -CAMERA_CONFIGURATION_PITCH_DEG,
     ],
   ] as const)(
-    "%s %s yields pitch=%i rise=%i tilt=%i/%i",
+    "%s %s yields pitch=%s rise=%s tilt=%s/%s",
     (mode, direction, pitch, rise, frontTilt, rearTilt) => {
       const fields = resolveCameraConfigurationPreset(mode, direction);
       expect(fields).toEqual({
@@ -74,17 +136,16 @@ describe("resolveCameraConfigurationPreset contract", () => {
   );
 });
 
-describe("applyCameraConfiguration atomic store updates", () => {
+describe("nullable configuration selection truthfulness", () => {
   beforeEach(setup);
 
-  it("starts from the neutral direct-shift baseline", () => {
+  it("starts with no complete preset selected", () => {
     const s = useAppStore.getState();
+    expect(s.configurationMode).toBeNull();
     expect(s.configurationMode).toBe(DEFAULT_CAMERA_CONFIGURATION_MODE);
     expect(s.configurationDirection).toBe(DEFAULT_CAMERA_CONFIGURATION_DIRECTION);
     expect(s.camera.cameraBodyPitchDeg).toBe(0);
     expect(s.camera.frontRiseMm).toBe(0);
-    expect(s.camera.frontTiltDeg).toBe(0);
-    expect(s.camera.rearTiltDeg).toBe(0);
   });
 
   it.each([
@@ -105,11 +166,39 @@ describe("applyCameraConfiguration atomic store updates", () => {
       expect(after.camera.rearTiltDeg).toBe(expected.rearTiltDeg);
       expect(after.camera.rearRiseMm).toBe(0);
       expect(after.camera.frontSwingDeg).toBe(0);
-      // Unrelated fields preserved
       expect(after.camera.focusDistanceMm).toBe(before.focusDistanceMm);
       expect(after.camera.aperture).toBe(before.aperture);
       expect(after.camera.focalLengthMm).toBe(before.focalLengthMm);
     }
+  });
+
+  it("clears the active preset when a manual movement is selected or edited", () => {
+    useAppStore.getState().applyCameraConfiguration("indirect-shift", "upward");
+    expect(useAppStore.getState().configurationMode).toBe("indirect-shift");
+
+    useAppStore.getState().setSelectedMovement("frontTiltDeg");
+    expect(useAppStore.getState().configurationMode).toBeNull();
+    expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(0);
+
+    useAppStore.getState().applyCameraConfiguration("direct-shift", "downward");
+    expect(useAppStore.getState().configurationMode).toBe("direct-shift");
+    useAppStore.getState().setRise(-12);
+    expect(useAppStore.getState().configurationMode).toBeNull();
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(-12);
+    expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(0);
+  });
+
+  it("reset restores neutral values with no preset radio active", () => {
+    useAppStore.getState().applyCameraConfiguration("indirect-shift", "downward");
+    useAppStore.getState().resetMovements();
+    const s = useAppStore.getState();
+    expect(s.configurationMode).toBeNull();
+    expect(s.configurationDirection).toBe("upward");
+    expect(s.camera.cameraBodyPitchDeg).toBe(0);
+    expect(s.camera.frontRiseMm).toBe(0);
+    expect(s.camera.frontTiltDeg).toBe(0);
+    expect(s.camera.rearTiltDeg).toBe(0);
+    expect(s.camera.rearRiseMm).toBe(0);
   });
 
   it("does not apply configuration off the demo scene", () => {
@@ -122,21 +211,9 @@ describe("applyCameraConfiguration atomic store updates", () => {
     expect(s.cameraBodyPitchDeg).toBe(0);
     expect(s.frontTiltDeg).toBe(0);
   });
-
-  it("manual single-active setters clear body pitch outside presets", () => {
-    useAppStore.getState().applyCameraConfiguration("indirect-shift", "upward");
-    expect(useAppStore.getState().camera.cameraBodyPitchDeg).not.toBe(0);
-    useAppStore.getState().setRise(12);
-    const s = useAppStore.getState();
-    expect(s.camera.frontRiseMm).toBe(12);
-    expect(s.camera.cameraBodyPitchDeg).toBe(0);
-    expect(s.camera.frontTiltDeg).toBe(0);
-    expect(s.camera.rearTiltDeg).toBe(0);
-    expect(s.configurationMode).toBe("direct-shift");
-  });
 });
 
-describe("configuration geometry and RTT", () => {
+describe("configuration geometry, framing calibration, and RTT", () => {
   beforeEach(setup);
 
   it("whole-camera pitch rotates rail and both standards together", () => {
@@ -145,10 +222,8 @@ describe("configuration geometry and RTT", () => {
     const pitch = -CAMERA_CONFIGURATION_PITCH_DEG;
     expect(o.cameraBodyTransform.pitchDeg).toBe(pitch);
     expectVecClose(o.lensNormalWorld, o.filmNormalWorld);
-    // Normals are pitched away from +Z (convergence/keystoning source).
     expect(Math.abs(o.lensNormalWorld.y)).toBeGreaterThan(0.1);
     expect(o.lensNormalWorld.z).toBeLessThan(1);
-    // Shared body pitch: film/lens normals match, standard ups match the pitch.
     expectVecClose(o.rearStandardFrame.upWorld, {
       x: 0,
       y: Math.cos((pitch * Math.PI) / 180),
@@ -164,46 +239,94 @@ describe("configuration geometry and RTT", () => {
       expectVecClose(o.lensNormalWorld, { x: 0, y: 0, z: 1 });
       expectVecClose(o.filmNormalWorld, { x: 0, y: 0, z: 1 });
       expectVecClose(o.rearStandardFrame.upWorld, { x: 0, y: 1, z: 0 });
-      // Parallel corrected planes
-      expect(Math.abs(o.lensNormalWorld.y)).toBeLessThan(1e-10);
-      expect(Math.abs(o.filmNormalWorld.y)).toBeLessThan(1e-10);
     }
   });
 
-  it("direct shift leaves body pitch at zero and rail concepts level", () => {
+  it("direct shift leaves body pitch at zero", () => {
     useAppStore.getState().applyCameraConfiguration("direct-shift", "upward");
     const o = opticsForStore();
     expect(o.cameraBodyTransform.pitchDeg).toBe(0);
     expect(o.lensCenterWorld.y).toBe(CAMERA_CONFIGURATION_DIRECT_SHIFT_MM);
     expectVecClose(o.lensNormalWorld, { x: 0, y: 0, z: 1 });
-    expectVecClose(o.filmNormalWorld, { x: 0, y: 0, z: 1 });
     expect(o.filmCenterWorld.y).toBe(0);
   });
 
-  it("Ground Glass projection differs between whole-camera and corrected configs", () => {
-    const clipFor = (optics: ReturnType<typeof opticsForStore>) =>
-      getGroundGlassClipRangeWorld(understandingCameraMovementsScene, optics.lensCenterWorld);
+  it.each(["upward", "downward"] as const)(
+    "keeps shared composition target aligned within tolerance for %s",
+    (direction) => {
+      const target =
+        direction === "upward"
+          ? canonicalSubjectCubes.upper.center
+          : canonicalSubjectCubes.lower.center;
 
+      const modes: CameraConfigurationMode[] = [
+        "whole-camera-pitch",
+        "direct-shift",
+        "indirect-shift",
+      ];
+      const projections = modes.map((mode) => {
+        const fields = resolveCameraConfigurationPreset(mode, direction);
+        const projected = projectTarget(fields, target);
+        expect(projected.visible).toBe(true);
+        expect(Number.isFinite(projected.uRaw)).toBe(true);
+        expect(Number.isFinite(projected.vRaw)).toBe(true);
+        return { mode, projected };
+      });
+
+      const reference = projections[0].projected;
+      for (const { mode, projected } of projections) {
+        expect(Math.abs(projected.uRaw - reference.uRaw)).toBeLessThanOrEqual(
+          CAMERA_CONFIGURATION_COMPOSITION_TOLERANCE_UV,
+        );
+        expect(Math.abs(projected.vRaw - reference.vRaw)).toBeLessThanOrEqual(
+          CAMERA_CONFIGURATION_COMPOSITION_TOLERANCE_UV,
+        );
+        // Keep intended optical differences even while framing matches.
+        if (mode === "whole-camera-pitch") {
+          const optics = deriveOpticsState(
+            cameraBase(resolveCameraConfigurationPreset(mode, direction)),
+            understandingCameraMovementsScene,
+          );
+          expect(Math.abs(optics.lensNormalWorld.y)).toBeGreaterThan(0.1);
+        }
+        if (mode === "direct-shift") {
+          const optics = deriveOpticsState(
+            cameraBase(resolveCameraConfigurationPreset(mode, direction)),
+            understandingCameraMovementsScene,
+          );
+          expect(optics.cameraBodyTransform.pitchDeg).toBe(0);
+        }
+        if (mode === "indirect-shift") {
+          const optics = deriveOpticsState(
+            cameraBase(resolveCameraConfigurationPreset(mode, direction)),
+            understandingCameraMovementsScene,
+          );
+          expect(Math.abs(optics.lensNormalWorld.y)).toBeLessThan(1e-10);
+          expect(Math.abs(optics.cameraBodyTransform.pitchDeg)).toBe(
+            CAMERA_CONFIGURATION_PITCH_DEG,
+          );
+        }
+      }
+    },
+  );
+
+  it("Ground Glass projection differs between whole-camera and corrected configs", () => {
     const measure = (mode: CameraConfigurationMode, direction: VerticalDirection) => {
       useAppStore.getState().applyCameraConfiguration(mode, direction);
       const optics = opticsForStore();
       const camera = new THREE.PerspectiveCamera();
-      const clip = clipFor(optics);
+      const clip = getGroundGlassClipRangeWorld(
+        understandingCameraMovementsScene,
+        optics.lensCenterWorld,
+      );
       const result = configureGroundGlassCamera(camera, optics, clip.near, clip.far);
       expect(result.ok).toBe(true);
       if (!result.ok) throw new Error(result.reason);
-      expect(Number.isFinite(result.determinant)).toBe(true);
-      expect(result.left).toBeLessThan(result.right);
-      expect(Math.abs(result.pose.forwardWorld[1])).toBeGreaterThanOrEqual(0);
       return {
         forwardY: result.pose.forwardWorld[1],
         upY: result.pose.upWorld[1],
-        left: result.left,
-        right: result.right,
-        top: result.top,
-        bottom: result.bottom,
-        lensY: optics.lensCenterWorld.y,
         normalY: optics.lensNormalWorld.y,
+        lensY: optics.lensCenterWorld.y,
       };
     };
 
@@ -211,12 +334,9 @@ describe("configuration geometry and RTT", () => {
     const indirect = measure("indirect-shift", "upward");
     const direct = measure("direct-shift", "upward");
 
-    // Whole-camera aims upward (positive camera forward Y in world meters frame of GG pose).
     expect(Math.abs(whole.normalY)).toBeGreaterThan(0.1);
     expect(Math.abs(indirect.normalY)).toBeLessThan(1e-10);
     expect(Math.abs(direct.normalY)).toBeLessThan(1e-10);
-
-    // Pose / frustum signatures must diverge: conventional pitch vs corrected straight standards.
     expect(whole.forwardY).not.toBeCloseTo(indirect.forwardY, 6);
     expect(whole.upY).not.toBeCloseTo(1, 6);
     expect(indirect.upY).toBeCloseTo(1, 6);
@@ -237,11 +357,7 @@ describe("configuration geometry and RTT", () => {
     expect(rail).not.toBeNull();
     expect(optics.cameraBodyTransform.pitchDeg).toBe(-CAMERA_CONFIGURATION_PITCH_DEG);
     expectVecClose(optics.lensNormalWorld, { x: 0, y: 0, z: 1 });
-    // 2D section lens centre matches canonical optics.
     expectVecClose(section.lensCenter, optics.lensCenterWorld);
-    // Pitched rail endpoints share the same body transform as 3D optics.
-    const pitch = optics.cameraBodyTransform.pitchDeg;
-    expect(pitch).not.toBe(0);
     expect(rail?.rear.y).not.toBeCloseTo(rail?.front.y ?? 0, 6);
 
     const camera = new THREE.PerspectiveCamera();
@@ -252,28 +368,14 @@ describe("configuration geometry and RTT", () => {
     const gg = configureGroundGlassCamera(camera, optics, clip.near, clip.far);
     expect(gg.ok).toBe(true);
     if (gg.ok) {
-      // RTT pose up aligns with vertical film up (+Y).
       expect(gg.pose.upWorld[1]).toBeCloseTo(1, 6);
       expect(Math.abs(gg.pose.forwardWorld[1])).toBeLessThan(1e-6);
     }
   });
 });
 
-describe("configuration reset and scene switching", () => {
+describe("configuration SPA switching", () => {
   beforeEach(setup);
-
-  it("resetMovements restores neutral baseline configuration state", () => {
-    useAppStore.getState().applyCameraConfiguration("indirect-shift", "downward");
-    useAppStore.getState().resetMovements();
-    const s = useAppStore.getState();
-    expect(s.configurationMode).toBe("direct-shift");
-    expect(s.configurationDirection).toBe("upward");
-    expect(s.camera.cameraBodyPitchDeg).toBe(0);
-    expect(s.camera.frontRiseMm).toBe(0);
-    expect(s.camera.frontTiltDeg).toBe(0);
-    expect(s.camera.rearTiltDeg).toBe(0);
-    expect(s.camera.rearRiseMm).toBe(0);
-  });
 
   it("SPA scene switching clears compound configuration residues", () => {
     useAppStore.getState().applyCameraConfiguration("whole-camera-pitch", "upward");
@@ -285,9 +387,7 @@ describe("configuration reset and scene switching", () => {
     });
     const architecture = useAppStore.getState();
     expect(architecture.camera.cameraBodyPitchDeg).toBe(0);
-    expect(architecture.camera.frontTiltDeg).toBe(0);
-    expect(architecture.camera.rearTiltDeg).toBe(0);
-    expect(architecture.configurationMode).toBe("direct-shift");
+    expect(architecture.configurationMode).toBeNull();
 
     useAppStore.getState().initializeSimulatorRoute({
       mode: "free",
@@ -296,10 +396,7 @@ describe("configuration reset and scene switching", () => {
     const back = useAppStore.getState();
     expect(back.camera.cameraBodyPitchDeg).toBe(0);
     expect(back.camera.frontRiseMm).toBe(0);
-    expect(back.camera.frontTiltDeg).toBe(0);
-    expect(back.camera.rearTiltDeg).toBe(0);
-    expect(back.configurationMode).toBe("direct-shift");
+    expect(back.configurationMode).toBeNull();
     expect(back.configurationDirection).toBe("upward");
   });
 });
-

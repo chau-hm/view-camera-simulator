@@ -1,4 +1,5 @@
 import type { CameraState } from "../types/camera";
+import { CAMERA_CONSTANTS } from "../utils/constants";
 
 /** Preset modes comparing conventional pitch vs corrected shift techniques. */
 export type CameraConfigurationMode =
@@ -13,21 +14,37 @@ export type VerticalDirection = "upward" | "downward";
  * Demo pitch magnitude for Understanding Camera Movements presets.
  * Stays inside the public tilt control range ([-10°, 10°]) so compensated
  * front/rear tilts remain within the manual UI envelope.
+ *
+ * Calibrated with {@link CAMERA_CONFIGURATION_DIRECT_SHIFT_MM} so the shared
+ * composition target (upper cube centre for upward, lower for downward) lands
+ * at nearly the same Ground Glass location across the three configurations.
  */
 export const CAMERA_CONFIGURATION_PITCH_DEG = 8;
 
 /**
- * Direct front rise/fall magnitude for the parallel comparison preset.
- * Stays inside the actable rise range magnitude (0–40 mm). Fall is stored as
- * signed frontRiseMm only through the atomic configuration action.
+ * Direct front rise/fall magnitude matched to {@link CAMERA_CONFIGURATION_PITCH_DEG}.
+ * Film-plane UV residual versus whole-camera pitch on the shared composition
+ * target is well below {@link CAMERA_CONFIGURATION_COMPOSITION_TOLERANCE_UV}.
+ * Fall is represented as negative frontRiseMm.
  */
-export const CAMERA_CONFIGURATION_DIRECT_SHIFT_MM = 30;
+export const CAMERA_CONFIGURATION_DIRECT_SHIFT_MM = 15.5;
 
-export const DEFAULT_CAMERA_CONFIGURATION_MODE: CameraConfigurationMode =
-  "direct-shift";
+/**
+ * Maximum allowed |ΔvRaw| on the shared composition target between the three
+ * configurations in one direction. Documented film height is 101.6 mm, so
+ * 0.015 ≈ 1.5 mm on the ground glass (~1.5% of film height).
+ */
+export const CAMERA_CONFIGURATION_COMPOSITION_TOLERANCE_UV = 0.015;
 
-export const DEFAULT_CAMERA_CONFIGURATION_DIRECTION: VerticalDirection =
-  "upward";
+/** Scene-local signed vertical movement range for Understanding Camera Movements. */
+export const UNDERSTANDING_CAMERA_MOVEMENTS_RISE_MIN_MM = -40;
+export const UNDERSTANDING_CAMERA_MOVEMENTS_RISE_MAX_MM = 40;
+
+export const DEFAULT_CAMERA_CONFIGURATION_MODE: CameraConfigurationMode | null = null;
+
+export const DEFAULT_CAMERA_CONFIGURATION_DIRECTION: VerticalDirection = "upward";
+
+export const CAMERA_CONFIGURATION_SCENE_ID = "understanding-camera-movements" as const;
 
 export type CameraConfigurationPresetFields = Pick<
   CameraState,
@@ -38,6 +55,25 @@ export type CameraConfigurationPresetFields = Pick<
   | "rearRiseMm"
   | "rearTiltDeg"
 >;
+
+export type RiseRangeMm = {
+  minMm: number;
+  maxMm: number;
+};
+
+/** Resolve public rise/fall clamp bounds for a scene. Other scenes stay 0…40. */
+export const resolveSceneRiseRangeMm = (sceneId: string): RiseRangeMm => {
+  if (sceneId === CAMERA_CONFIGURATION_SCENE_ID) {
+    return {
+      minMm: UNDERSTANDING_CAMERA_MOVEMENTS_RISE_MIN_MM,
+      maxMm: UNDERSTANDING_CAMERA_MOVEMENTS_RISE_MAX_MM,
+    };
+  }
+  return {
+    minMm: CAMERA_CONSTANTS.riseMinMm,
+    maxMm: CAMERA_CONSTANTS.riseMaxMm,
+  };
+};
 
 /**
  * Resolve the atomic camera fields for a configuration preset.
@@ -79,6 +115,8 @@ export const resolveCameraConfigurationPreset = (
     case "indirect-shift":
       return {
         cameraBodyPitchDeg: bodyPitchDeg,
+        // Rail pitch alone already places the shared composition near the
+        // whole-camera target; no additional front rise/fall is required.
         frontRiseMm: 0,
         frontTiltDeg: compensatingTiltDeg,
         frontSwingDeg: 0,

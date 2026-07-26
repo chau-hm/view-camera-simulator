@@ -38,8 +38,8 @@ test("all four movements change Ground Glass without breaking", async ({ page })
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
 
   const movements: Array<{ label: string }> = [
-    { label: "Front Rise" },
-    { label: "Rear Rise" },
+    { label: "Front Rise / Fall" },
+    { label: "Rear Rise / Fall" },
     { label: "Front Tilt" },
     { label: "Rear Tilt" },
   ];
@@ -97,8 +97,8 @@ test("Reset Movements restores zero state and keeps Ground Glass valid", async (
 
   // Select and change Front Rise
   await page.locator('fieldset.movement-selector').first()
-    .locator('label').filter({ hasText: "Front Rise" }).first().click();
-  const slider = page.getByRole("slider", { name: "Front Rise" });
+    .locator('label').filter({ hasText: "Front Rise / Fall" }).first().click();
+  const slider = page.getByRole("slider", { name: "Front Rise / Fall" });
   await expect(slider).toBeVisible({ timeout: 3000 });
   await slider.focus();
   for (let i = 0; i < 15; i++) {
@@ -114,7 +114,7 @@ test("Reset Movements restores zero state and keeps Ground Glass valid", async (
   await page.getByRole("button", { name: "Reset Movements" }).click();
 
   // Verify slider returned to zero
-  const resetSlider = page.getByRole("slider", { name: "Front Rise" });
+  const resetSlider = page.getByRole("slider", { name: "Front Rise / Fall" });
   await expect(resetSlider).toBeVisible({ timeout: 3000 });
   await expect(resetSlider).toHaveValue("0");
 
@@ -133,7 +133,7 @@ test("Reset Movements restores zero state and keeps Ground Glass valid", async (
 
   // Default movement (Front Rise) should be selected
   const frontRiseRadio = page.locator('fieldset.movement-selector').first()
-    .locator('label').filter({ hasText: "Front Rise" }).first()
+    .locator('label').filter({ hasText: "Front Rise / Fall" }).first()
     .locator('input[type="radio"]');
   await expect(frontRiseRadio).toBeChecked();
 });
@@ -168,7 +168,7 @@ test("subject presentation control stays synchronized across calibration and SPA
   // Reset must only clear camera movements, not the selected presentation count.
   const twoSubjects = subjects.getByRole("radio", { name: "2 subjects" });
   await twoSubjects.check();
-  const frontRise = page.getByRole("slider", { name: "Front Rise" });
+  const frontRise = page.getByRole("slider", { name: "Front Rise / Fall" });
   await frontRise.focus();
   await frontRise.press("ArrowRight");
   await expect(frontRise).not.toHaveValue("0");
@@ -239,14 +239,53 @@ test("configuration presets: whole camera, indirect shift, then reset", async ({
   await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10_000 });
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5_000 });
 
-  // Reset → neutral state restored
+  // Reset → neutral state restored with no complete preset selected
   await page.getByRole("button", { name: "Reset Movements" }).click();
-  await expect(config.getByRole("radio", { name: "Direct shift", exact: true })).toBeChecked();
-  await expect(config.getByRole("radio", { name: "Upward", exact: true })).toBeChecked();
+  await expect(config.getByRole("radio", { name: "Whole camera", exact: true })).not.toBeChecked();
+  await expect(config.getByRole("radio", { name: "Direct shift", exact: true })).not.toBeChecked();
+  await expect(config.getByRole("radio", { name: "Indirect shift", exact: true })).not.toBeChecked();
+  await expect(config.getByRole("radio", { name: "Upward", exact: true })).not.toBeChecked();
+  await expect(config.getByRole("radio", { name: "Downward", exact: true })).not.toBeChecked();
 
-  const frontRise = page.getByRole("slider", { name: "Front Rise" });
+  const frontRise = page.getByRole("slider", { name: "Front Rise / Fall" });
   await expect(frontRise).toHaveValue("0");
 
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5_000 });
   await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10_000 });
+});
+
+
+test("configuration presets: direct shift downward then reset", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
+
+  const rtt = page.locator('[data-testid="ground-glass-rtt"]');
+  const config = page.locator('[data-testid="camera-configuration-control"]');
+  await expect(rtt).toBeVisible({ timeout: 15_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15_000 });
+  await expect(config).toBeVisible({ timeout: 5_000 });
+
+  const baselineSanity = await rtt.getAttribute("data-rtt-sanity-state");
+
+  await config.getByRole("radio", { name: "Direct shift", exact: true }).check();
+  await config.getByRole("radio", { name: "Downward", exact: true }).check();
+  await expect(config.getByRole("radio", { name: "Direct shift", exact: true })).toBeChecked();
+  await expect(config.getByRole("radio", { name: "Downward", exact: true })).toBeChecked();
+
+  const frontRise = page.getByRole("slider", { name: "Front Rise / Fall" });
+  await expect(frontRise).toBeVisible({ timeout: 3_000 });
+  await expect.poll(async () => Number(await frontRise.inputValue())).toBeLessThan(0);
+
+  await expect.poll(async () => {
+    const state = await rtt.getAttribute("data-rtt-sanity-state");
+    return Boolean(state && state !== baselineSanity && state.length > 0);
+  }, { timeout: 15_000, intervals: [500, 1000, 2000] }).toBe(true);
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10_000 });
+
+  await page.getByRole("button", { name: "Reset Movements" }).click();
+  await expect(config.getByRole("radio", { name: "Direct shift", exact: true })).not.toBeChecked();
+  await expect(config.getByRole("radio", { name: "Downward", exact: true })).not.toBeChecked();
+  await expect(frontRise).toHaveValue("0");
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5_000 });
 });

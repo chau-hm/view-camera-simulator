@@ -65,8 +65,15 @@ export const CameraConfigurationControl = () => {
                 type="radio"
                 name="camera-configuration-direction"
                 value={direction}
-                checked={configurationDirection === direction}
-                onChange={() => applyCameraConfiguration(configurationMode, direction)}
+                checked={
+                  configurationMode !== null && configurationDirection === direction
+                }
+                onChange={() => {
+                  // Direction alone is not a complete preset; require or reuse a mode.
+                  // If no mode is active, pick Direct shift as the applies starting point.
+                  const mode = configurationMode ?? "direct-shift";
+                  applyCameraConfiguration(mode, direction);
+                }}
                 aria-label={label}
               />
               <span>{label}</span>
