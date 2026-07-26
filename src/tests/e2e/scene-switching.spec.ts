@@ -8,13 +8,13 @@ type SceneVisit = {
 const visits: SceneVisit[] = [
   { heading: "Focus Fundamentals — Two Targets", sceneId: "focus-fundamentals-two-targets" },
   { heading: "Architecture Rise", sceneId: "architecture-rise" },
+  { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
   { heading: "Table Tilt", sceneId: "table-tilt" },
   { heading: "Shelf Swing", sceneId: "shelf-swing" },
+  { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
   { heading: "Architecture Rise", sceneId: "architecture-rise" },
-  { heading: "Shelf Swing", sceneId: "shelf-swing" },
 ];
 
-// Chromium may emit this driver-only performance diagnostic around RTT readback.
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
@@ -37,7 +37,6 @@ test("public SPA scene switching keeps one current scene and one RTT renderer wi
     }
   });
 
-  // This runs before the one initial document load. SPA links below must keep it.
   await page.addInitScript(() => {
     (window as Window & { __sceneSwitchDocumentToken?: string }).__sceneSwitchDocumentToken =
       `${Date.now()}-${Math.random()}`;
@@ -59,7 +58,7 @@ test("public SPA scene switching keeps one current scene and one RTT renderer wi
       .poll(() => page.evaluate(() => (window as Window & { __sceneSwitchDocumentToken?: string }).__sceneSwitchDocumentToken))
       .toBe(documentToken);
 
-    // Opt-in diagnostics without navigation: this must be a history mutation in the same document.
+    // Opt-in diagnostics without navigation
     await page.evaluate(() => {
       const url = new URL(window.location.href);
       url.searchParams.set("rttDiagnostics", "1");
@@ -76,11 +75,13 @@ test("public SPA scene switching keeps one current scene and one RTT renderer wi
     await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
     await expect(groundGlass).toHaveCount(1);
     await expect(groundGlass.locator("canvas")).toHaveCount(1);
+
+    // Use dedicated scene-id attribute instead of parsing internal cache key
+    await expect(groundGlass).toHaveAttribute("data-rtt-scene-id", visit.sceneId, { timeout: 60_000 });
     await expect(groundGlass).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 60_000 });
     await expect(groundGlass).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 60_000 });
     await expect(groundGlass).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 60_000 });
     await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
-    await expect(groundGlass).toHaveAttribute("data-rtt-sanity-state", new RegExp(`(^|:)${visit.sceneId}(:|$)`), { timeout: 60_000 });
     await expect(page.getByTestId("ground-glass-scene")).toHaveCount(0);
 
     const sanityState = await groundGlass.getAttribute("data-rtt-sanity-state");

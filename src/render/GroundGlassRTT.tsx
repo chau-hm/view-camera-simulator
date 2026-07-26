@@ -29,6 +29,7 @@ import {
 } from "./groundGlassVisualSettings";
 import { analyzeGroundGlassRenderSanity } from "./groundGlassRenderSanity";
 import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
+import { createGroundGlassRenderSanityStateKey } from "./groundGlassRenderSanityKey";
 import { resizeGroundGlassRttResources } from "./groundGlassRttResources";
 
 type GroundGlassRTTProps = {
@@ -767,24 +768,17 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       gl.clear(true, true, true);
       gl.render(postSceneV, orthoCam);
 
-      const sanityStateKey = [
-        resourceGenerationRef.current,
+      const sanityStateKey = createGroundGlassRenderSanityStateKey({
+        resourceGeneration: resourceGenerationRef.current,
         sceneId,
         previewMode,
-        rawDebug ? 1 : 0,
-        zoomEnabled ? 1 : 0,
-        aperture,
-        dimsRef.current.internalWidthPx,
-        dimsRef.current.internalHeightPx,
-        opticsState.focusPlane?.point.x,
-        opticsState.focusPlane?.point.y,
-        opticsState.focusPlane?.point.z,
-        opticsState.focusPlane?.normal.x,
-        opticsState.focusPlane?.normal.y,
-        opticsState.focusPlane?.normal.z,
-        opticsState.depthOfFieldNearPlane?.point.z,
-        opticsState.depthOfFieldFarPlane?.point.z,
-      ].join(":");
+        rawDebug: rawDebug,
+        zoomEnabled: zoomEnabled,
+        aperture: aperture,
+        internalWidthPx: dimsRef.current.internalWidthPx,
+        internalHeightPx: dimsRef.current.internalHeightPx,
+        opticsState,
+      });
 
       const renderSanityEnabled =
         import.meta.env.DEV &&

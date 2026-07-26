@@ -6,6 +6,7 @@ export const RTT_SCENES = [
   "architecture-rise",
   "table-tilt",
   "shelf-swing",
+  "understanding-camera-movements",
 ] as const;
 export type RttSceneId = (typeof RTT_SCENES)[number];
 

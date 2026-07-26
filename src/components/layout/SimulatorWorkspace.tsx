@@ -13,6 +13,8 @@ import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
 import { MovementControls } from "../controls/MovementControls";
+import { MovementSelector } from "../controls/MovementSelector";
+import { SingleMovementControl } from "../controls/SingleMovementControl";
 import { ResetControls } from "../controls/ResetControls";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
@@ -43,6 +45,7 @@ export const SimulatorWorkspace = ({
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
+  const selectedMovement = useAppStore((state) => state.selectedMovement);
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
   const [expandedViewport, setExpandedViewport] = useState<ExpandedViewport>(null);
   const [restoreViewportFocus, setRestoreViewportFocus] = useState(true);
@@ -179,6 +182,10 @@ export const SimulatorWorkspace = ({
 
   const opticsState = selectDerivedOpticsState(camera);
   const lockReason = UI_COPY.controls.guidedControlLockedReason;
+  const controlPolicy = safeScene.cameraControlPolicy ?? {};
+  const focusLocked = controlPolicy.focusDistance === "fixed";
+  const apertureLocked = controlPolicy.aperture === "fixed";
+  const infinityResetHidden = controlPolicy.infinityReset === false;
   const [rawRttDebug, setRawRttDebug] = useState(false);
 
   // enabled controls currently depend only on mode, task metadata, and active scene.
@@ -342,6 +349,15 @@ export const SimulatorWorkspace = ({
               focusDistanceMm={camera.focusDistanceMm}
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
+              activeMovement={selectedMovement ? { field: selectedMovement, value: (() => {
+                switch (selectedMovement) {
+                  case "frontRiseMm": return camera.frontRiseMm;
+                  case "rearRiseMm": return camera.rearRiseMm;
+                  case "frontTiltDeg": return camera.frontTiltDeg;
+                  case "rearTiltDeg": return camera.rearTiltDeg;
+                  case "frontSwingDeg": return camera.frontSwingDeg;
+                }
+              })() } : null}
             />
 
             <FocusTargetsReadout
@@ -386,23 +402,37 @@ export const SimulatorWorkspace = ({
           <section aria-label="Camera Controls">
             <div className="aside-header">
               <h3 style={{ margin: 0 }}>Camera Controls</h3>
-              <button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>Infinity Reset</button>
+              {!infinityResetHidden && (<button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>Infinity Reset</button>)}
             </div>
 
             <div style={{ marginTop: 8 }}>
-              <div className="sim-section">
-                <div className="sim-section-label">Movement</div>
-                <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
-              </div>
+              {(safeScene.movementCapabilities && selectedMovement) ? (
+                <>
+                  <div className="sim-section">
+                    <MovementSelector
+                      available={safeScene.movementCapabilities.available}
+                      selected={selectedMovement}
+                    />
+                  </div>
+                  <div className="sim-section">
+                    <SingleMovementControl movement={selectedMovement} />
+                  </div>
+                </>
+              ) : (
+                <div className="sim-section">
+                  <div className="sim-section-label">Movement</div>
+                  <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
+                </div>
+              )}
 
               <div className="sim-section">
                 <div className="sim-section-label">Focus</div>
-                <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} showTitle={false} />
+                <FocusControl focusEnabled={enabledControls.has("focusDistance") && !focusLocked} lockReason={focusLocked ? "Focus is fixed for this lesson" : lockReason} showTitle={false} />
               </div>
 
               <div className="sim-section">
                 <div className="sim-section-label">Aperture</div>
-                <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} showTitle={false} />
+                <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? "Aperture is fixed for this lesson" : lockReason} showTitle={false} />
               </div>
 
               <div className="sim-section reset" style={{ paddingBottom: 0 }}>

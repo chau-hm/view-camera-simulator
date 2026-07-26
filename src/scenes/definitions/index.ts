@@ -3,8 +3,10 @@ import { architectureRiseScene } from "./architecture-rise";
 import { shelfSwingScene } from "./shelf-swing";
 import { tableTiltScene } from "./table-tilt";
 import { focusFundamentalsTwoTargets } from "./focus-fundamentals-two-targets";
+import { understandingCameraMovementsScene } from "./understanding-camera-movements";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
+  [understandingCameraMovementsScene.id]: understandingCameraMovementsScene,
   [architectureRiseScene.id]: architectureRiseScene,
   [tableTiltScene.id]: tableTiltScene,
   [shelfSwingScene.id]: shelfSwingScene,
@@ -12,6 +14,7 @@ export const sceneRegistry: Record<string, SceneDefinition> = {
 };
 
 export const sceneOrder = [
+  understandingCameraMovementsScene.id,
   architectureRiseScene.id,
   tableTiltScene.id,
   shelfSwingScene.id,
