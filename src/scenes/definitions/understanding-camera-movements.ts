@@ -8,6 +8,7 @@ export const understandingCameraMovementsScene: SceneDefinition = {
     "Compare front and rear camera movements against a fixed reference camera and observe how each movement changes the camera geometry and image.",
   assets: [],
   cameraPreset: {
+    focalLengthMm: geometry.cameraPreset.focalLengthMm,
     focusDistanceMm: geometry.cameraPreset.focusDistanceMm,
     aperture: geometry.cameraPreset.aperture,
     frontRiseMm: geometry.cameraPreset.frontRiseMm,

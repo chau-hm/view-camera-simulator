@@ -32,11 +32,7 @@ export type CameraPlacement = {
 };
 
 export type CameraMovementField =
-  | "frontRiseMm"
-  | "frontTiltDeg"
-  | "frontSwingDeg"
-  | "rearRiseMm"
-  | "rearTiltDeg";
+  "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "rearRiseMm" | "rearTiltDeg";
 
 export type SceneMovementCapabilities = {
   /** Movement field names available for this scene. */
@@ -54,8 +50,15 @@ export type SceneDefinition = {
   assets: SceneAsset[];
   cameraPreset: Pick<
     CameraState,
-    "focusDistanceMm" | "aperture" | "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "rearRiseMm" | "rearTiltDeg"
-  >;
+    | "focusDistanceMm"
+    | "aperture"
+    | "frontRiseMm"
+    | "frontTiltDeg"
+    | "frontSwingDeg"
+    | "rearRiseMm"
+    | "rearTiltDeg"
+  > &
+    Partial<Pick<CameraState, "focalLengthMm">>;
   cameraPlacement: CameraPlacement;
   bounds: Bounds3;
   focusTargets: FocusTarget[];
