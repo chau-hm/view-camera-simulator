@@ -53,6 +53,10 @@ export type SceneFiniteFocusStrategy = {
   focusDistanceReference: "lens-to-focus-plane";
 };
 
+export type SceneCameraBodyPitchCapability = {
+  enabled: true;
+};
+
 export type SceneDefinition = {
   id: string;
   name: string;
@@ -68,13 +72,15 @@ export type SceneDefinition = {
     | "rearRiseMm"
     | "rearTiltDeg"
   > &
-    Partial<Pick<CameraState, "focalLengthMm">>;
+    Partial<Pick<CameraState, "focalLengthMm" | "cameraBodyPitchDeg" | "cameraBodyPivotWorld">>;
   cameraPlacement: CameraPlacement;
   bounds: Bounds3;
   focusTargets: FocusTarget[];
   compositionTargets: CompositionTarget[];
   /** Optional physical film-placement strategy. The legacy Z=-f baseline applies when absent. */
   finiteFocusStrategy?: SceneFiniteFocusStrategy;
+  /** Enables the canonical rigid body-pitch transform for this scene. */
+  cameraBodyPitchCapability?: SceneCameraBodyPitchCapability;
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
   movementCapabilities?: SceneMovementCapabilities;
   /** Optional camera-inspection observer framing. When absent, the default fallback applies. */

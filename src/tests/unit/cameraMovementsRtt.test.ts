@@ -13,6 +13,7 @@ import {
 } from "../../render/createGroundGlassDofUniformState";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { getSubjectLayout } from "../../scenes/understandingCameraMovementsGeometry";
+import { resolveGroundGlassImageDistanceMm } from "../../render/groundGlassRttScenes";
 
 function setupCamera() {
   useAppStore.getState().initializeSimulatorRoute({
@@ -170,6 +171,29 @@ describe("Camera Movements RTT focal uniforms", () => {
     horizontal.dispose();
     vertical.dispose();
   });
+
+  it("keeps RTT image distance invariant under rigid camera body pitch", () => {
+    const baseState = {
+      ...DEFAULT_CAMERA_STATE,
+      ...understandingCameraMovementsScene.cameraPreset,
+      cameraBodyPitchDeg: 0,
+      activeSceneId: understandingCameraMovementsScene.id,
+    };
+    const base = deriveOpticsState(baseState, understandingCameraMovementsScene);
+    const pitched = deriveOpticsState(
+      { ...baseState, cameraBodyPitchDeg: 8 },
+      understandingCameraMovementsScene,
+    );
+
+    expect(resolveGroundGlassImageDistanceMm(pitched)).toBeCloseTo(
+      resolveGroundGlassImageDistanceMm(base),
+      8,
+    );
+    expect(Math.abs(pitched.filmPlane.point.z - pitched.lensCenterWorld.z)).not.toBeCloseTo(
+      resolveGroundGlassImageDistanceMm(pitched),
+      4,
+    );
+  });
 });
 
 describe("RTT camera configuration", () => {
@@ -202,11 +226,57 @@ describe("RTT camera configuration", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("clip range includes the cube at ~4000mm", () => {
+  it("reports finite configured extrinsics that follow camera body pitch", () => {
+    const state = useAppStore.getState().camera;
+    const zero = deriveOpticsState(
+      { ...state, cameraBodyPitchDeg: 0 },
+      understandingCameraMovementsScene,
+    );
+    const pitched = deriveOpticsState(
+      { ...state, cameraBodyPitchDeg: 8 },
+      understandingCameraMovementsScene,
+    );
+    const zeroCamera = new THREE.PerspectiveCamera();
+    const pitchedCamera = new THREE.PerspectiveCamera();
+    const zeroClip = getGroundGlassClipRangeWorld(
+      understandingCameraMovementsScene,
+      zero.lensCenterWorld,
+    );
+    const pitchedClip = getGroundGlassClipRangeWorld(
+      understandingCameraMovementsScene,
+      pitched.lensCenterWorld,
+    );
+    const zeroResult = configureGroundGlassCamera(
+      zeroCamera,
+      zero,
+      zeroClip.near,
+      zeroClip.far,
+    );
+    const pitchedResult = configureGroundGlassCamera(
+      pitchedCamera,
+      pitched,
+      pitchedClip.near,
+      pitchedClip.far,
+    );
+
+    expect(zeroResult.ok).toBe(true);
+    expect(pitchedResult.ok).toBe(true);
+    if (zeroResult.ok && pitchedResult.ok) {
+      expect([
+        ...pitchedResult.pose.positionWorld,
+        ...pitchedResult.pose.upWorld,
+        ...pitchedResult.pose.forwardWorld,
+      ].every(Number.isFinite)).toBe(true);
+      expect(pitchedResult.pose.positionWorld).not.toEqual(zeroResult.pose.positionWorld);
+      expect(pitchedResult.pose.forwardWorld).not.toEqual(zeroResult.pose.forwardWorld);
+    }
+  });
+
+  it("clip range includes the canonical camera-movements subject bounds", () => {
     const s = useAppStore.getState().camera;
     const optics = deriveOpticsState(s, understandingCameraMovementsScene);
     const clip = getGroundGlassClipRangeWorld(understandingCameraMovementsScene, optics.lensCenterWorld);
-    // The cube is at z=4000mm (4m in world units). far should be >= 5m
+    // Scene bounds extend past the 2 m cube plane to keep overlays visible.
     expect(clip.far).toBeGreaterThan(4);
     expect(clip.near).toBeLessThan(0.1);
   });

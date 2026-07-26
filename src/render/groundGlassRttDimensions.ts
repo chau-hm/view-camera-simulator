@@ -50,6 +50,10 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   cameraConfigurationOk?: boolean;
   cameraConfigurationError?: string | null;
   projectionDeterminant?: number | null;
+  /** Extrinsics read from the configured Three.js camera, in render-world units. */
+  cameraPositionWorld?: [number, number, number];
+  cameraUpWorld?: [number, number, number];
+  cameraForwardWorld?: [number, number, number];
   depthTextureAvailable?: boolean;
   dofMode?: "parallel-thin-lens" | "derived-planes";
   uniformsFinite?: boolean;

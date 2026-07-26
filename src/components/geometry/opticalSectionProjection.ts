@@ -5,6 +5,8 @@ import {
   deriveScheimpflugConstruction,
   type ScheimpflugConstruction,
 } from "../../core/optics/scheimpflugConstruction";
+import { rotatePointAroundX } from "../../core/math/vec";
+import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 
 export type ScreenPoint = { x: number; y: number };
@@ -36,6 +38,11 @@ export type OpticalSectionViewData = {
   projectWorldPoint: (point: Vec3) => ScreenPoint;
 };
 
+export type CameraBodyRailWorldEndpoints = {
+  rear: Vec3;
+  front: Vec3;
+};
+
 export type OpticalSectionData = {
   sectionOrigin: Vec3;
   sectionDepthDir: Vec3;
@@ -58,6 +65,23 @@ type SectionWindow = {
   maxDepth: number;
   minLateral: number;
   maxLateral: number;
+};
+
+/**
+ * Resolve the capable scene's fixed rail from the same canonical body
+ * transform consumed by the 3D hierarchy.
+ */
+export const resolveCameraBodyRailWorldEndpoints = (
+  opticsState: DerivedOpticsState,
+  scene: SceneDefinition,
+): CameraBodyRailWorldEndpoints | null => {
+  if (!scene.cameraBodyPitchCapability?.enabled) return null;
+  const rail = cameraMovementsGeometry.cameraBody.rail;
+  const { pivotWorld, pitchDeg } = opticsState.cameraBodyTransform;
+  return {
+    rear: rotatePointAroundX(rail.rearEndpointWorld, pivotWorld, pitchDeg),
+    front: rotatePointAroundX(rail.frontEndpointWorld, pivotWorld, pitchDeg),
+  };
 };
 
 // Pure geometry helpers (no React and no scene-specific coordinate shortcuts).
@@ -337,6 +361,7 @@ export function computeOpticalSectionData({
     focusPlane: opticsState.focusPlane,
   });
   const constructionBasis = createConstructionBasis(opticsState, construction);
+  const cameraBodyRailWorld = resolveCameraBodyRailWorldEndpoints(opticsState, scene);
   const baseSections: Array<Omit<OpticalSection, "lateralMinMm" | "lateralMaxMm">> = [
     {
       id: "side",
@@ -364,6 +389,8 @@ export function computeOpticalSectionData({
     opticsState.filmCenterWorld,
     opticsState.lensCenterWorld,
     opticsState.focusPlane?.point,
+    cameraBodyRailWorld?.rear,
+    cameraBodyRailWorld?.front,
   ].filter((point): point is Vec3 => Boolean(point));
   const sections = baseSections.map((section): OpticalSection => {
     const configured = lateralWindow?.[section.id];
@@ -514,6 +541,16 @@ export function computeOpticalSectionData({
               (lensTrace.lateral / lensTraceLength) * lensPhysicalHalfLengthMm,
           }),
         },
+        ...(cameraBodyRailWorld
+          ? [
+              {
+                id: "camera-body-rail",
+                color: "#334155",
+                p1: mapToScreen(projectPointIntoSection(cameraBodyRailWorld.rear, section)),
+                p2: mapToScreen(projectPointIntoSection(cameraBodyRailWorld.front, section)),
+              },
+            ]
+          : []),
       ];
       const fovSegments = filmSectionEndpoints.flatMap((filmPoint) => {
         const directionWorld = vecNorm(vecSub(opticsState.lensCenterWorld, filmPoint));

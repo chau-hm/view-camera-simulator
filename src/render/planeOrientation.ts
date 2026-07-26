@@ -1,11 +1,17 @@
 import { Matrix4, Quaternion, Vector3 } from "three";
 import { WORLD_SCALE } from "./rttUtils";
-import type { Vec3 } from "../types/optics";
+import type { CameraBodyTransform, Vec3 } from "../types/optics";
 
 export type PlaneOrthonormalBasis = {
   tangent: Vec3;
   bitangent: Vec3;
   normal: Vec3;
+};
+
+export type CameraBodyRenderTransform = {
+  position: [number, number, number];
+  quaternion: Quaternion;
+  localOffset: [number, number, number];
 };
 
 const fromVector3 = (value: Vector3): Vec3 => ({ x: value.x, y: value.y, z: value.z });
@@ -92,4 +98,34 @@ export const resolveFrontStandardRenderTransform = (
   ];
   const quaternion = quaternionForPlaneNormal(lensNormalWorld);
   return { position, quaternion };
+};
+
+/**
+ * Build the two-level render transform for a rigid camera body.
+ *
+ * The outer group translates to the fixed world pivot and rotates around +X.
+ * The inner group translates canonical body-local millimetre coordinates back
+ * by that pivot. Standards and the rail can therefore keep their canonical
+ * zero-body coordinates and receive body pitch exactly once.
+ */
+export const resolveCameraBodyRenderTransform = (
+  transform: CameraBodyTransform,
+): CameraBodyRenderTransform => {
+  const pivot = transform.pivotWorld;
+  return {
+    position: [
+      pivot.x * WORLD_SCALE,
+      pivot.y * WORLD_SCALE,
+      pivot.z * WORLD_SCALE,
+    ],
+    quaternion: new Quaternion().setFromAxisAngle(
+      new Vector3(1, 0, 0),
+      (transform.pitchDeg * Math.PI) / 180,
+    ),
+    localOffset: [
+      -pivot.x * WORLD_SCALE,
+      -pivot.y * WORLD_SCALE,
+      -pivot.z * WORLD_SCALE,
+    ],
+  };
 };

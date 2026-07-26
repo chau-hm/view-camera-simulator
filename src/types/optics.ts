@@ -74,12 +74,13 @@ export type OffAxisProjectionInput = {
   filmCornersWorld: FilmPlaneCorners;
 };
 
-
 export type LensFilmRelationship = {
   isParallel: boolean;
   commonLine: Line3 | null;
 };
 export type DerivedOpticsState = {
+  cameraBodyTransform: CameraBodyTransform;
+  cameraBodyLocalGeometry: CameraBodyLocalGeometry;
   lensCenterWorld: Vec3;
   lensNormalWorld: Vec3;
   lensPlane: Plane;
@@ -129,4 +130,27 @@ export type StandardFrame = {
   upWorld: Vec3;
   normalWorld: Vec3;
   plane: Plane;
+};
+
+export type CameraBodyTransform = {
+  /** Right-handed rotation around world +X. Positive pitch sends +Z toward -Y. */
+  pitchDeg: number;
+  /** Fixed world-space tripod/rail pivot. */
+  pivotWorld: Vec3;
+};
+
+/**
+ * Standard geometry after local rise/tilt/swing, before the rigid body pitch.
+ * Renderers may parent these values under cameraBodyTransform without
+ * inverse-transforming the canonical world result.
+ */
+export type CameraBodyLocalGeometry = {
+  lensCenterLocal: Vec3;
+  lensNormalLocal: Vec3;
+  lensPlaneLocal: Plane;
+  filmCenterLocal: Vec3;
+  filmNormalLocal: Vec3;
+  filmPlaneLocal: Plane;
+  filmPlaneCornersLocal: FilmPlaneCorners;
+  rearStandardFrameLocal: StandardFrame;
 };
