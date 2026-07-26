@@ -15,7 +15,10 @@ import {
   getSceneSubjectRegistration,
 } from "./sceneSubjectRegistry";
 import { configureGroundGlassCamera } from "./configureGroundGlassCamera";
-import { createGroundGlassDofUniformState } from "./createGroundGlassDofUniformState";
+import {
+  applyGroundGlassDofUniformState,
+  createGroundGlassDofUniformState,
+} from "./createGroundGlassDofUniformState";
 import { groundGlassVertexShader, groundGlassHorizontalFragmentShader, groundGlassVerticalFragmentShader } from "./groundGlassDofShaderSources";
 import type { DerivedOpticsState } from "../types/optics";
 import type { ApertureValue } from "../types/camera";
@@ -34,6 +37,7 @@ import { resizeGroundGlassRttResources } from "./groundGlassRttResources";
 
 type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
+  focalLengthMm: number;
   sceneId?: string;
   widthPx: number;
   heightPx: number;
@@ -47,7 +51,7 @@ type GroundGlassRTTProps = {
   zoomEnabled?: boolean;
 };
 
-function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, }: GroundGlassRTTProps) {
+function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, }: GroundGlassRTTProps) {
   // single-frame flag to avoid repeating uniform-preparation warnings every frame
   const reportedUniformPreparationErrorRef = React.useRef<string | null>(null);
   const reportedCameraConfigurationErrorRef = React.useRef<string | null>(null);
@@ -57,6 +61,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
 
   const { gl } = useThree();
+  const configuredSubjectCount = useAppStore((state) => state.scene.subjectCount);
   const { maximumBlurRadiusPx, displayBlurScale } = getGroundGlassDofVisualSettings(sceneId);
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
@@ -202,7 +207,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         near: { value: 0.01 },
         far: { value: 12.0 },
         imageDistanceMm: { value: 100.0 },
-        focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm },
+        focalLengthMm: { value: focalLengthMm },
         fNumber: { value: 11.0 },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
@@ -233,7 +238,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         tDepth: { value: null },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
-        focalLengthMm: { value: CAMERA_CONSTANTS.focalLengthMm },
+        focalLengthMm: { value: focalLengthMm },
         fNumber: { value: 11.0 },
         imageDistanceMm: { value: 100.0 },
         near: { value: 0.01 },
@@ -345,9 +350,26 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
     // Build the offscreen subject through the same registry used by R3F.
     const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
     const registration = sceneId ? getSceneSubjectRegistration(sceneId) : undefined;
-    const subjectGroup = sceneDef && sceneId ? createRegisteredRttSubject(sceneId) : null;
+    const subjectGroup = sceneDef && sceneId
+      ? createRegisteredRttSubject(
+          sceneId,
+          sceneId === "understanding-camera-movements"
+            ? { subjectCount: configuredSubjectCount }
+            : undefined,
+        )
+      : null;
     if (subjectGroup) {
       scene.add(subjectGroup);
+      const consumedSubjectCount = subjectGroup.userData.subjectCount;
+      if (typeof consumedSubjectCount === "number") {
+        const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+        if (currentInfo) {
+          useAppStore.getState().setGroundGlassRttRuntimeInfo({
+            ...currentInfo,
+            subjectCount: consumedSubjectCount,
+          });
+        }
+      }
     } else {
       // Simple rear/front standards and a lens block for other scenes
       let rear: THREE.Mesh | null = null;
@@ -455,7 +477,14 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         } catch (err) { void err; }
       }
     };
-  }, [displayBlurScale, gl, maximumBlurRadiusPx, sceneId]);
+  }, [
+    configuredSubjectCount,
+    displayBlurScale,
+    focalLengthMm,
+    gl,
+    maximumBlurRadiusPx,
+    sceneId,
+  ]);
 
   // Logical size, quality, DPR, and zoom affect only internal RTT resolution.
   // Keep the scene subject, camera, materials, post-processing scenes, and
@@ -631,7 +660,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matH.uniforms.tDepth.value = depthTex;
       // ensure imageDistance uniform is never zero; use small positive fallback if necessary
       matH.uniforms.imageDistanceMm.value = Math.max(1e-6, imgDist);
-      matH.uniforms.focalLengthMm.value = CAMERA_CONSTANTS.focalLengthMm;
+      matH.uniforms.focalLengthMm.value = focalLengthMm;
       matH.uniforms.fNumber.value = aperture;
       matH.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       matH.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
@@ -654,7 +683,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         preparedDofState = createGroundGlassDofUniformState(
           displayOpticsState,
           cam,
-          CAMERA_CONSTANTS.focalLengthMm,
+          focalLengthMm,
           CAMERA_CONSTANTS.filmWidthMm,
           CAMERA_CONSTANTS.filmHeightMm,
           0.1, // circleOfConfusionMm (must match core optics)
@@ -668,30 +697,8 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
         uniformPreparationError = err instanceof Error ? err.message : String(err);
       }
 
-      function applyDofStateToMaterial(mat: THREE.ShaderMaterial, state: ReturnType<typeof createGroundGlassDofUniformState>) {
-        mat.uniforms.dofMode.value = state.mode;
-        mat.uniforms.lensCenterWorld.value.set(state.lensCenterWorld[0], state.lensCenterWorld[1], state.lensCenterWorld[2]);
-        mat.uniforms.focusPlanePoint.value.set(state.focusPlanePoint[0], state.focusPlanePoint[1], state.focusPlanePoint[2]);
-        mat.uniforms.focusPlaneNormal.value.set(state.focusPlaneNormal[0], state.focusPlaneNormal[1], state.focusPlaneNormal[2]);
-        if (state.nearPlanePoint) mat.uniforms.nearPlanePoint.value.set(state.nearPlanePoint[0], state.nearPlanePoint[1], state.nearPlanePoint[2]);
-        if (state.nearPlaneNormal) mat.uniforms.nearPlaneNormal.value.set(state.nearPlaneNormal[0], state.nearPlaneNormal[1], state.nearPlaneNormal[2]);
-        if (state.farPlanePoint) mat.uniforms.farPlanePoint.value.set(state.farPlanePoint[0], state.farPlanePoint[1], state.farPlanePoint[2]);
-        if (state.farPlaneNormal) mat.uniforms.farPlaneNormal.value.set(state.farPlaneNormal[0], state.farPlaneNormal[1], state.farPlaneNormal[2]);
-        mat.uniforms.hasFiniteFar.value = state.hasFiniteFarPlane ? 1.0 : 0.0;
-        mat.uniforms.inverseProjectionMatrix.value.copy(new THREE.Matrix4().fromArray(state.inverseProjectionMatrix));
-        mat.uniforms.cameraMatrixWorld.value.copy(new THREE.Matrix4().fromArray(state.cameraMatrixWorld));
-        mat.uniforms.maximumBlurRadiusPx.value = state.maximumBlurRadiusPx;
-        mat.uniforms.displayBlurScale.value = state.displayBlurScale;
-        mat.uniforms.focalLengthMm.value = state.focalLengthMm;
-        mat.uniforms.filmWidthMm.value = state.filmWidthMm;
-        mat.uniforms.fNumber.value = state.fNumber;
-        mat.uniforms.imageDistanceMm.value = state.imageDistanceMm;
-        mat.uniforms.renderWidth.value = state.renderWidth;
-        mat.uniforms.renderHeight.value = state.renderHeight;
-      }
-
       if (preparedDofState) {
-        applyDofStateToMaterial(matH, preparedDofState);
+        applyGroundGlassDofUniformState(matH, preparedDofState);
         reportedUniformPreparationErrorRef.current = null;
       } else {
         // Keep the last valid shader state. Do not conceal configuration errors
@@ -716,7 +723,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matV.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
       // ensure imageDistance uniform is never zero; use small positive fallback if necessary
       matV.uniforms.imageDistanceMm.value = Math.max(1e-6, imgDist);
-      matV.uniforms.focalLengthMm.value = CAMERA_CONSTANTS.focalLengthMm;
+      matV.uniforms.focalLengthMm.value = focalLengthMm;
       matV.uniforms.fNumber.value = aperture;
       matV.uniforms.near.value = cam.near;
       matV.uniforms.far.value = cam.far;
@@ -724,7 +731,21 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
       matV.uniforms.useRaw.value = rawDebug ? 1.0 : 0.0;
       // apply previously prepared DOF uniform state to vertical pass
       if (preparedDofState) {
-        applyDofStateToMaterial(matV, preparedDofState);
+        applyGroundGlassDofUniformState(matV, preparedDofState);
+        const horizontalFocalLengthMm = matH.uniforms.focalLengthMm.value as number;
+        const verticalFocalLengthMm = matV.uniforms.focalLengthMm.value as number;
+        if (
+          horizontalFocalLengthMm === verticalFocalLengthMm &&
+          Number.isFinite(horizontalFocalLengthMm)
+        ) {
+          const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+          if (currentInfo && currentInfo.focalLengthMm !== horizontalFocalLengthMm) {
+            useAppStore.getState().setGroundGlassRttRuntimeInfo({
+              ...currentInfo,
+              focalLengthMm: horizontalFocalLengthMm,
+            });
+          }
+        }
       } else {
         if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
           console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
@@ -821,6 +842,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
                   : opticsState.diagnostics.groundGlassDofModel ?? "parallel-thin-lens",
               uniformsFinite: Boolean(preparedDofState),
               uniformPreparationError,
+              focalLengthMm: preparedDofState?.focalLengthMm,
               rawColorVariance: rawSanity.luminanceVariance,
               rawNonBackgroundPixelCount: rawSanity.nonBackgroundPixelCount,
               rawContentful: rawSanity.contentful,
@@ -861,7 +883,7 @@ function OffscreenRenderer({ opticsState, sceneId, widthPx, heightPx, aperture =
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
@@ -869,7 +891,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, sce
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <Canvas dpr={qualitySettings.dpr} style={{ width: "100%", height: "100%" }} gl={GROUND_GLASS_GL_OPTIONS} orthographic={false}>
-        <OffscreenRenderer opticsState={opticsState} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} />
+        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} />
       </Canvas>
     </div>
   );

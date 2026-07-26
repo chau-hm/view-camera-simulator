@@ -1,23 +1,37 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import geometry from "../scenes/understandingCameraMovementsGeometry";
+import geometry, {
+  DEFAULT_SUBJECT_COUNT,
+  getSubjectLayout,
+  type SubjectCount,
+} from "../scenes/understandingCameraMovementsGeometry";
+import { useAppStore } from "../state/appStore";
 import { toWorld } from "./rttUtils";
 
-const { cube, grid } = geometry;
+const { grid } = geometry;
 
-export function createCameraMovementsGroup(): THREE.Group {
+export function createCameraMovementsGroup(
+  subjectCount: SubjectCount = DEFAULT_SUBJECT_COUNT,
+): THREE.Group {
   const group = new THREE.Group();
+  const layout = getSubjectLayout(subjectCount);
+  group.name = "camera-movements-subject";
+  group.userData.subjectCount = layout.count;
+  group.userData.resourceOwnership = "owned";
 
-  const s = toWorld(cube.sizeMm);
-  const hs = toWorld(cube.halfSizeMm);
-  const cx = toWorld(cube.center.x);
-  const cy = toWorld(cube.center.y);
-  const cz = toWorld(cube.center.z);
+  layout.cubes.forEach((cube) => {
+    const s = toWorld(cube.sizeMm);
+    const hs = toWorld(cube.halfSizeMm);
+    const cx = toWorld(cube.center.x);
+    const cy = toWorld(cube.center.y);
+    const cz = toWorld(cube.center.z);
 
-  // --- Cube group ---
-  const cubeGroup = new THREE.Group();
-  cubeGroup.name = "camera-movements-cube";
+    // Each cube owns a fresh resource set. Resources shared by faces or vertex
+    // markers are disposed once by the root group's unique-resource disposer.
+    const cubeGroup = new THREE.Group();
+    cubeGroup.name = cube.id;
+    cubeGroup.userData.subjectRole = cube.role;
 
   // Semi-transparent faces
   const faceGeo = new THREE.PlaneGeometry(s, s);
@@ -191,7 +205,8 @@ export function createCameraMovementsGroup(): THREE.Group {
     cubeGroup.add(marker);
   }
 
-  group.add(cubeGroup);
+    group.add(cubeGroup);
+  });
 
   // --- Grid (wireframe) ---
   const gridSize = grid.halfExtentMm * 2;
@@ -242,7 +257,8 @@ export function createCameraMovementsGroup(): THREE.Group {
 }
 
 export const CameraMovementsSubject: React.FC = () => {
-  const group = useMemo(() => createCameraMovementsGroup(), []);
+  const subjectCount = useAppStore((state) => state.scene.subjectCount);
+  const group = useMemo(() => createCameraMovementsGroup(subjectCount), [subjectCount]);
 
   useEffect(() => {
     return () => {
@@ -255,6 +271,9 @@ export const CameraMovementsSubject: React.FC = () => {
 
 /** Dispose all owned Three.js resources in the given group. */
 export function disposeCameraMovementsGroup(group: THREE.Group): void {
+  if (group.userData.resourcesDisposed === true) return;
+  group.userData.resourcesDisposed = true;
+
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
 

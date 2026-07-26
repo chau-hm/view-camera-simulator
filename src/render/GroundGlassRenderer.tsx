@@ -17,7 +17,6 @@ import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
 import { formatGroundGlassFocusLabel } from "./groundGlassFocusLabel";
-import { CAMERA_CONSTANTS } from "../utils/constants";
 import { getSceneById } from "../scenes/definitions";
 
 type GroundGlassRendererProps = {
@@ -66,6 +65,7 @@ export const GroundGlassRenderer = ({
   onZoomChange,
   interactionResetKey,
 }: GroundGlassRendererProps) => {
+  const focalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
   const isRttScene = isGroundGlassRttScene(sceneId);
   const [rttLogicalSize, setRttLogicalSize] = useState({
@@ -90,7 +90,7 @@ export const GroundGlassRenderer = ({
       const imageDistanceMm = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
       return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality, {
         useThinLens: true,
-        focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
+        focalLengthMm,
         imageDistanceMm,
         sensorWidthMm: 127,
         sensorHeightMm: 101.6,
@@ -98,7 +98,7 @@ export const GroundGlassRenderer = ({
     }
 
     return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality);
-  }, [opticsState, renderQuality, sceneId]);
+  }, [focalLengthMm, opticsState, renderQuality, sceneId]);
 
   const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const focusAssist = useMemo(
@@ -193,6 +193,7 @@ export const GroundGlassRenderer = ({
       >
         <GroundGlassRenderSurface
           opticsState={opticsState}
+          focalLengthMm={focalLengthMm}
           sceneId={sceneId}
           apertureNumber={apertureNumber}
           previewMode={previewMode}

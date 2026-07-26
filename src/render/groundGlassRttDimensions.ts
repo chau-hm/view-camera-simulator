@@ -63,6 +63,9 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   renderSanitySampleCount?: number;
   renderSanityStateKey?: string;
   renderSanityError?: string | null;
+  /** Values actually consumed by the current owned RTT subject/shader graph. */
+  focalLengthMm?: number;
+  subjectCount?: number;
 
   resourceGeneration: number; // increments when RTT resources are recreated
 };
