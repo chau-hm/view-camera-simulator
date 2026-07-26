@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import {
@@ -8,7 +8,10 @@ import {
 } from "../../render/CameraMovementsSubjectFactory";
 import { getSubjectLayout } from "../../scenes/understandingCameraMovementsGeometry";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe("Camera Movements subject factory", () => {
   it.each([1, 2, 3] as const)("creates the canonical %i-cube layout", (count) => {
@@ -88,6 +91,67 @@ describe("Camera Movements subject factory", () => {
     ).toHaveLength(3);
     scene.remove(replacement);
     disposeCameraMovementsGroup(replacement);
+  });
+
+  it("replaces the mounted subject group for each store-driven count change", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+    });
+    useAppStore.getState().setSubjectCount(1);
+    const mountedGroups: THREE.Group[] = [];
+    const onGroupChange = vi.fn((group: THREE.Group | null) => {
+      if (group) mountedGroups.push(group);
+    });
+    const view = render(<CameraMovementsSubject onGroupChange={onGroupChange} />);
+
+    const assertCanonicalGroup = (group: THREE.Group, count: 1 | 2 | 3) => {
+      expect(group.userData.subjectCount).toBe(count);
+      expect(
+        getSubjectLayout(count).cubes.filter((cube) => group.getObjectByName(cube.id)),
+      ).toHaveLength(count);
+    };
+    const first = mountedGroups[0];
+    assertCanonicalGroup(first, 1);
+    const firstGeometry = (
+      first.getObjectByName("camera-movements-cube-middle") as THREE.Group
+    ).children.find((child) => child instanceof THREE.Mesh)?.geometry;
+    const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
+
+    act(() => useAppStore.getState().setSubjectCount(2));
+
+    const second = mountedGroups[1];
+    expect(second).not.toBe(first);
+    expect(first.userData.resourcesDisposed).toBe(true);
+    expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
+    assertCanonicalGroup(second, 2);
+    const secondGeometry = (
+      second.getObjectByName("camera-movements-cube-upper") as THREE.Group
+    ).children.find((child) => child instanceof THREE.Mesh)?.geometry;
+    const disposeSecondGeometry = vi.spyOn(secondGeometry!, "dispose");
+
+    act(() => useAppStore.getState().setSubjectCount(3));
+
+    const third = mountedGroups[2];
+    expect(third).not.toBe(second);
+    expect(second.userData.resourcesDisposed).toBe(true);
+    expect(disposeSecondGeometry).toHaveBeenCalledTimes(1);
+    assertCanonicalGroup(third, 3);
+
+    const thirdGeometry = (
+      third.getObjectByName("camera-movements-cube-middle") as THREE.Group
+    ).children.find((child) => child instanceof THREE.Mesh)?.geometry;
+    const disposeThirdGeometry = vi.spyOn(thirdGeometry!, "dispose");
+    view.unmount();
+    expect(third.userData.resourcesDisposed).toBe(true);
+    expect(disposeThirdGeometry).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalledTimes(1);
+    expect(String(consoleError.mock.calls[0]?.[0])).toContain(
+      "The tag <%s> is unrecognized",
+    );
+    expect(consoleError.mock.calls[0]?.[1]).toBe("primitive");
+    consoleError.mockRestore();
   });
 
   it("renders the subject component without errors", () => {

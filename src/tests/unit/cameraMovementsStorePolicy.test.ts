@@ -66,13 +66,13 @@ describe("Store-enforced cameraControlPolicy", () => {
       store.setSubjectCount(1);
       store.restartTask();
       expect(useAppStore.getState().scene.subjectCount).toBe(3);
-      expect(useAppStore.getState().camera.focalLengthMm).toBe(120);
+      expect(useAppStore.getState().camera.focalLengthMm).toBe(105);
       store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise" });
       expect(useAppStore.getState().scene.subjectCount).toBe(3);
       expect(useAppStore.getState().camera.focalLengthMm).toBe(150);
       store.initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements" });
       expect(useAppStore.getState().scene.subjectCount).toBe(3);
-      expect(useAppStore.getState().camera.focalLengthMm).toBe(120);
+      expect(useAppStore.getState().camera.focalLengthMm).toBe(105);
     });
   });
 

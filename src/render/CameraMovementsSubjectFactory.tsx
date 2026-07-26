@@ -7,6 +7,7 @@ import geometry, {
   type SubjectCount,
 } from "../scenes/understandingCameraMovementsGeometry";
 import { useAppStore } from "../state/appStore";
+import type { SceneDefinition } from "../types/scene";
 import { toWorld } from "./rttUtils";
 
 const { grid } = geometry;
@@ -256,15 +257,24 @@ export function createCameraMovementsGroup(
   return group;
 }
 
-export const CameraMovementsSubject: React.FC = () => {
+export type CameraMovementsSubjectProps = {
+  scene?: SceneDefinition;
+  onGroupChange?: (group: THREE.Group | null) => void;
+};
+
+export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
+  onGroupChange,
+}) => {
   const subjectCount = useAppStore((state) => state.scene.subjectCount);
   const group = useMemo(() => createCameraMovementsGroup(subjectCount), [subjectCount]);
 
   useEffect(() => {
+    onGroupChange?.(group);
     return () => {
       disposeCameraMovementsGroup(group);
+      onGroupChange?.(null);
     };
-  }, [group]);
+  }, [group, onGroupChange]);
 
   return <primitive object={group} dispose={null} />;
 };

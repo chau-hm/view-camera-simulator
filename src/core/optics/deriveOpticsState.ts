@@ -10,7 +10,6 @@ import { planeFromPointNormal } from "../math/plane";
 import {
   calculateLensNormal,
   calculateLensPlane,
-  createFilmPlane,
   createOpticalAxis,
   deriveLensFilmRelationship,
 } from "./calculateLensPlane";
@@ -21,6 +20,7 @@ import {
 import { calculateRearStandardFrame } from "./calculateRearStandardFrame";
 import { calculateSharpness } from "./calculateSharpness";
 import { isFiniteVec3, vec, subtract, dot, add, scale } from "../math/vec";
+import { calculateFiniteFocusFilmPlane } from "./calculateFiniteFocusFilmPlane";
 
 const isFiniteCameraInput = (cameraState: CameraState): boolean =>
   [
@@ -33,14 +33,20 @@ const isFiniteCameraInput = (cameraState: CameraState): boolean =>
     cameraState.rearTiltDeg,
   ].every((value) => Number.isFinite(value));
 
-const baseFallbackState = (cameraState: CameraState, scene: SceneDefinition, errorMessage: string): DerivedOpticsState => {
+const baseFallbackState = (
+  cameraState: CameraState,
+  scene: SceneDefinition,
+  errorMessage: string,
+): DerivedOpticsState => {
   // Sanitize every input before constructing any geometry.
-  const safeFocalLength = Number.isFinite(cameraState.focalLengthMm) && cameraState.focalLengthMm > 0
-    ? cameraState.focalLengthMm
-    : CAMERA_CONSTANTS.focalLengthMm;
-  const safeFocusDistance = Number.isFinite(cameraState.focusDistanceMm) && cameraState.focusDistanceMm > 0
-    ? cameraState.focusDistanceMm
-    : CAMERA_CONSTANTS.defaultFocusDistanceMm;
+  const safeFocalLength =
+    Number.isFinite(cameraState.focalLengthMm) && cameraState.focalLengthMm > 0
+      ? cameraState.focalLengthMm
+      : CAMERA_CONSTANTS.focalLengthMm;
+  const safeFocusDistance =
+    Number.isFinite(cameraState.focusDistanceMm) && cameraState.focusDistanceMm > 0
+      ? cameraState.focusDistanceMm
+      : CAMERA_CONSTANTS.defaultFocusDistanceMm;
   const safeFrontRise = Number.isFinite(cameraState.frontRiseMm) ? cameraState.frontRiseMm : 0;
   const safeFrontTilt = Number.isFinite(cameraState.frontTiltDeg) ? cameraState.frontTiltDeg : 0;
   const safeFrontSwing = Number.isFinite(cameraState.frontSwingDeg) ? cameraState.frontSwingDeg : 0;
@@ -51,17 +57,22 @@ const baseFallbackState = (cameraState: CameraState, scene: SceneDefinition, err
   const lensCenterWorld = vec(0, safeFrontRise, 0);
   const lensNormalWorld = calculateLensNormal(safeFrontTilt, safeFrontSwing);
   const lensPlane = planeFromPointNormal(lensCenterWorld, lensNormalWorld);
-  const { filmCenterWorld: baselineFilmCenter } = createFilmPlane(safeFocalLength);
-  const { frame: rearFrame, corners: filmPlaneCornersWorld } =
-    calculateRearStandardFrame(baselineFilmCenter, safeRearRise, safeRearTilt);
+  const { filmCenterWorld: baselineFilmCenter } = calculateFiniteFocusFilmPlane({
+    focalLengthMm: safeFocalLength,
+    focusDistanceMm: safeFocusDistance,
+    strategy: scene.finiteFocusStrategy,
+  });
+  const { frame: rearFrame, corners: filmPlaneCornersWorld } = calculateRearStandardFrame(
+    baselineFilmCenter,
+    safeRearRise,
+    safeRearTilt,
+  );
   const filmCenterWorld = rearFrame.centerWorld;
   const filmNormalWorld = rearFrame.normalWorld;
   const filmPlane = rearFrame.plane;
 
   // Derive the physical lens/film relationship from the constructed planes
-  const lensFilmRel = deriveLensFilmRelationship(
-    lensPlane, filmPlane, scene.id === "table-tilt",
-  );
+  const lensFilmRel = deriveLensFilmRelationship(lensPlane, filmPlane, scene.id === "table-tilt");
 
   const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
   const focusPointWorld = vec(0, 0, safeFocusDistance);
@@ -134,26 +145,24 @@ export const deriveOpticsState = (
       Number.isFinite(cameraState.frontSwingDeg) &&
       Number.isFinite(cameraState.rearRiseMm) &&
       Number.isFinite(cameraState.rearTiltDeg) &&
-      CAMERA_CONSTANTS.apertureOptions.includes(cameraState.aperture as typeof CAMERA_CONSTANTS.apertureOptions[number]);
-    if (!infinityInputsValid) {
-      return baseFallbackState(
-        cameraState, scene,
-        "Invalid input values for infinity focus",
+      CAMERA_CONSTANTS.apertureOptions.includes(
+        cameraState.aperture as (typeof CAMERA_CONSTANTS.apertureOptions)[number],
       );
+    if (!infinityInputsValid) {
+      return baseFallbackState(cameraState, scene, "Invalid input values for infinity focus");
     }
     const f = cameraState.focalLengthMm;
-    const lensCenterWorld = vec(
-      0,
-      cameraState.frontRiseMm,
-      f,
-    );
+    const lensCenterWorld = vec(0, cameraState.frontRiseMm, f);
     const lensNormalWorld = calculateLensNormal(
       cameraState.frontTiltDeg,
       cameraState.frontSwingDeg,
     );
     const baselineFilmCenter = vec(0, 0, 0);
-    const { frame: rearFrame, corners: filmPlaneCornersWorld } =
-      calculateRearStandardFrame(baselineFilmCenter, cameraState.rearRiseMm, cameraState.rearTiltDeg);
+    const { frame: rearFrame, corners: filmPlaneCornersWorld } = calculateRearStandardFrame(
+      baselineFilmCenter,
+      cameraState.rearRiseMm,
+      cameraState.rearTiltDeg,
+    );
     const filmCenterWorld = rearFrame.centerWorld;
     const filmNormalWorld = rearFrame.normalWorld;
     const filmPlane = rearFrame.plane;
@@ -243,7 +252,15 @@ export const deriveOpticsState = (
     return baseFallbackState(cameraState, scene, "Invalid lens geometry");
   }
 
-  let { filmCenterWorld, filmNormalWorld, filmPlane } = createFilmPlane(cameraState.focalLengthMm);
+  const baselineFilm = calculateFiniteFocusFilmPlane({
+    focalLengthMm: cameraState.focalLengthMm,
+    focusDistanceMm: cameraState.focusDistanceMm,
+    strategy: scene.finiteFocusStrategy,
+  });
+  if (baselineFilm.fallbackApplied && scene.finiteFocusStrategy) {
+    return baseFallbackState(cameraState, scene, "Invalid finite-focus image distance");
+  }
+  let { filmCenterWorld, filmNormalWorld, filmPlane } = baselineFilm;
 
   // For Architecture Rise use rear-standard focusing: interpret focusDistanceMm as lens-to-subject distance U
   // and place film at image distance v from the lens (filmCenterWorld.z = -v)
@@ -288,10 +305,13 @@ export const deriveOpticsState = (
   }
 
   if (!Number.isFinite(cameraState.rearRiseMm) || !Number.isFinite(cameraState.rearTiltDeg)) {
-    return baseFallbackState(cameraState, scene, 'Invalid rear movement');
+    return baseFallbackState(cameraState, scene, "Invalid rear movement");
   }
-  const { frame: rearFrame, corners: filmPlaneCornersWorld } =
-    calculateRearStandardFrame(filmCenterWorld, cameraState.rearRiseMm, cameraState.rearTiltDeg);
+  const { frame: rearFrame, corners: filmPlaneCornersWorld } = calculateRearStandardFrame(
+    filmCenterWorld,
+    cameraState.rearRiseMm,
+    cameraState.rearTiltDeg,
+  );
   filmCenterWorld = rearFrame.centerWorld;
   filmNormalWorld = rearFrame.normalWorld;
   filmPlane = rearFrame.plane;
@@ -308,11 +328,7 @@ export const deriveOpticsState = (
   // Table Tilt uses a strict 1e-6° tolerance so 0.01° relative tilt is not collapsed.
   // All other scenes use the shared 0.1° near-parallel threshold.
   const isTableTilt = scene.id === "table-tilt";
-  const lensFilmRel = deriveLensFilmRelationship(
-    lensPlane,
-    filmPlane,
-    isTableTilt,
-  );
+  const lensFilmRel = deriveLensFilmRelationship(lensPlane, filmPlane, isTableTilt);
   const isParallelLensFilm = lensFilmRel.isParallel;
   const lensFilmHingeLine = lensFilmRel.commonLine;
   const { focusPlane, focusPlaneModel } = calculateFocusPlaneWithFallback(

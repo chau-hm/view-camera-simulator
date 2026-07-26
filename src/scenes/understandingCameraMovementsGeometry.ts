@@ -4,7 +4,8 @@ import type { Bounds3, Vec3 } from "../types/optics";
  * Canonical coordinate contract for Understanding Camera Movements:
  * - all values are millimetres;
  * - +X is camera-right, +Y is up, and +Z runs from the lens toward the subject;
- * - the zero-movement lens centre is the origin and the rear/film datum is at Z = -f;
+ * - the zero-movement lens centre is the origin and finite-focus film datum is
+ *   Z = -v, where v = fU / (U - f);
  * - front and rear rise are positive along +Y;
  * - positive tilt rotates a standard normal about +X, around the standard centre;
  * - every cube shares the Z = 2000 mm centre plane so count changes do not alter focus.
@@ -161,8 +162,9 @@ export const getSubjectLayout = (
  * Raw scene calibration. The fixed three-cube layout is evaluated longest
  * lens first on 4×5 film using every physical cube vertex. A candidate must
  * be fully finite and contained at zero movement and retain at least 10%
- * margin at every film edge. 150 mm contains the stack but leaves only about
- * 2.1%; 120 mm is the longest candidate that retains useful margin (~11.7%).
+ * margin at every film edge. With the physical finite-focus extension,
+ * 150 mm clips the nearest vertices and 120 mm leaves only about 9.2%;
+ * 105 mm is the longest candidate that retains useful margin (~14.6%).
  *
  * Rise deliberately moves framing: at the supported +40 mm endpoint, full
  * stack containment is physically incompatible with useful cube dimensions.
@@ -171,7 +173,7 @@ export const getSubjectLayout = (
  */
 export const CAMERA_MOVEMENTS_FOCAL_CALIBRATION = {
   candidateFocalLengthsMm: [150, 120, 105, 90] as const,
-  selectedFocalLengthMm: 120,
+  selectedFocalLengthMm: 105,
   minimumBaselineEdgeMarginFraction: 0.1,
   targetBaselineEdgeMarginFractionRange: [0.1, 0.15] as const,
 } as const;
@@ -187,7 +189,7 @@ const geometry = {
       z: "lens-to-subject",
     },
     zeroMovementLensCenter: { x: 0, y: 0, z: 0 } as Vec3,
-    filmDatum: "Z = -focalLengthMm",
+    filmDatum: "Z = -(focalLengthMm * focusDistanceMm) / (focusDistanceMm - focalLengthMm)",
     standardPivot: "standard-centre",
   },
   defaultSubjectCount: DEFAULT_SUBJECT_COUNT,

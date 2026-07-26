@@ -4,8 +4,10 @@ import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { arePlanesNearlyParallel, intersectPlanes, planeFromPointNormal } from "../math/plane";
 import { rotateAroundX, rotateAroundY, safeNormalize, vec } from "../math/vec";
 
-export const createFilmPlane = (focalLengthMm: number): { filmCenterWorld: Vec3; filmNormalWorld: Vec3; filmPlane: Plane } => {
-  const filmCenterWorld = vec(0, 0, -focalLengthMm);
+export const createFilmPlane = (
+  lensToFilmDistanceMm: number,
+): { filmCenterWorld: Vec3; filmNormalWorld: Vec3; filmPlane: Plane } => {
+  const filmCenterWorld = vec(0, 0, -lensToFilmDistanceMm);
   const filmNormalWorld = vec(0, 0, 1);
   return {
     filmCenterWorld,
@@ -19,7 +21,8 @@ export const calculateBaseLensCenter = (): Vec3 => vec(0, 0, 0);
 export const calculateLensCenter = (baseLensCenter: Vec3, riseMm: number): Vec3 =>
   vec(baseLensCenter.x, baseLensCenter.y + riseMm, baseLensCenter.z);
 
-export const calculateTiltRotation = (tiltDeg: number): Vec3 => rotateAroundX(vec(0, 0, 1), tiltDeg);
+export const calculateTiltRotation = (tiltDeg: number): Vec3 =>
+  rotateAroundX(vec(0, 0, 1), tiltDeg);
 
 export const calculateSwingRotation = (tiltRotatedNormal: Vec3, swingDeg: number): Vec3 =>
   rotateAroundY(tiltRotatedNormal, swingDeg);
@@ -48,7 +51,6 @@ export const calculateLensFilmHingeLine = (lensPlane: Plane, filmPlane: Plane): 
     direction: intersection.direction,
   };
 };
-
 
 /**
  * Derive the lens/film relationship purely from the physical planes.

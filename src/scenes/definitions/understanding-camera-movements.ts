@@ -28,6 +28,11 @@ export const understandingCameraMovementsScene: SceneDefinition = {
   },
   focusTargets: [],
   compositionTargets: [],
+  finiteFocusStrategy: {
+    kind: "rear-standard-thin-lens",
+    lensDatum: "baseline-origin",
+    focusDistanceReference: "lens-to-focus-plane",
+  },
   movementCapabilities: {
     available: ["frontRiseMm", "rearRiseMm", "frontTiltDeg", "rearTiltDeg"],
     selectionMode: "single",

@@ -6,6 +6,7 @@ import { createGroundGlassDofUniformState } from "../../render/createGroundGlass
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { getGroundGlassClipRangeWorld } from "../../render/groundGlassRttScenes";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { imageDistanceMm } from "../../core/optics/thinLensModel";
 
 const FOCAL_LENGTHS_MM = [90, 105, 120, 150] as const;
 
@@ -19,16 +20,15 @@ describe("scene focal length propagation", () => {
         activeSceneId: understandingCameraMovementsScene.id,
         focalLengthMm,
       };
-      const optics = deriveOpticsState(
-        cameraState,
-        understandingCameraMovementsScene,
-      );
+      const optics = deriveOpticsState(cameraState, understandingCameraMovementsScene);
 
-      expect(optics.filmCenterWorld.z).toBeCloseTo(-focalLengthMm, 8);
+      const expectedImageDistanceMm = imageDistanceMm(focalLengthMm, cameraState.focusDistanceMm);
+      expect(optics.lensCenterWorld).toEqual({ x: 0, y: 0, z: 0 });
+      expect(optics.filmCenterWorld.z).toBeCloseTo(-expectedImageDistanceMm, 8);
       expect(
-        Object.values(optics.filmPlaneCornersWorld).flatMap((point) =>
-          point ? [point.x, point.y, point.z] : [],
-        ).every(Number.isFinite),
+        Object.values(optics.filmPlaneCornersWorld)
+          .flatMap((point) => (point ? [point.x, point.y, point.z] : []))
+          .every(Number.isFinite),
       ).toBe(true);
 
       const camera = new THREE.PerspectiveCamera();
@@ -36,12 +36,7 @@ describe("scene focal length propagation", () => {
         understandingCameraMovementsScene,
         optics.lensCenterWorld,
       );
-      const projection = configureGroundGlassCamera(
-        camera,
-        optics,
-        clip.near,
-        clip.far,
-      );
+      const projection = configureGroundGlassCamera(camera, optics, clip.near, clip.far);
       expect(projection.ok).toBe(true);
       expect(camera.projectionMatrix.elements.every(Number.isFinite)).toBe(true);
 
@@ -59,7 +54,7 @@ describe("scene focal length propagation", () => {
       );
       expect(uniforms.focalLengthMm).toBe(focalLengthMm);
       expect(Number.isFinite(uniforms.imageDistanceMm)).toBe(true);
-      expect(uniforms.imageDistanceMm).toBeCloseTo(focalLengthMm, 8);
+      expect(uniforms.imageDistanceMm).toBeCloseTo(expectedImageDistanceMm, 8);
       expect(uniforms.inverseProjectionMatrix.every(Number.isFinite)).toBe(true);
     },
   );

@@ -154,7 +154,7 @@ test("subject presentation control stays synchronized across calibration and SPA
   const rtt = page.locator('[data-testid="ground-glass-rtt"]');
   const subjects = page.locator('fieldset.subject-count-control');
   await expect(scene).toHaveAttribute("data-scene-subject-count", "3", { timeout: 15_000 });
-  await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", "120", { timeout: 15_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", "105", { timeout: 15_000 });
   await expect(rtt).toHaveAttribute("data-rtt-subject-count", "3", { timeout: 15_000 });
 
   for (const count of [1, 2, 3]) {
@@ -165,9 +165,23 @@ test("subject presentation control stays synchronized across calibration and SPA
     await expect(rtt).toHaveAttribute("data-rtt-subject-count", String(count));
   }
 
+  // Reset must only clear camera movements, not the selected presentation count.
+  const twoSubjects = subjects.getByRole("radio", { name: "2 subjects" });
+  await twoSubjects.check();
+  const frontRise = page.getByRole("slider", { name: "Front Rise" });
+  await frontRise.focus();
+  await frontRise.press("ArrowRight");
+  await expect(frontRise).not.toHaveValue("0");
+  await expect(scene).toHaveAttribute("data-scene-subject-count", "2");
+  await expect(rtt).toHaveAttribute("data-rtt-subject-count", "2");
+
   await page.getByRole("button", { name: "Reset Movements" }).click();
-  await expect(scene).toHaveAttribute("data-scene-subject-count", "3");
-  await expect(rtt).toHaveAttribute("data-rtt-subject-count", "3");
+  await expect(frontRise).toHaveValue("0");
+  await expect(scene).toHaveAttribute("data-scene-subject-count", "2");
+  await expect(rtt).toHaveAttribute("data-rtt-subject-count", "2");
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5000 });
+  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10000 });
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
 
   await page.getByRole("link", { name: "All Scenes" }).click();
   await page
@@ -184,7 +198,7 @@ test("subject presentation control stays synchronized across calibration and SPA
     .getByRole("link", { name: "Open Scene" })
     .click();
   await expect(page.locator('[data-testid="scene-canvas"]')).toHaveAttribute("data-scene-subject-count", "3", { timeout: 15_000 });
-  await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-focal-length-mm", "120", { timeout: 15_000 });
+  await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-focal-length-mm", "105", { timeout: 15_000 });
   await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-subject-count", "3", { timeout: 15_000 });
 
   expect(pageErrors).toEqual([]);

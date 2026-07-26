@@ -19,6 +19,7 @@ import { understandingCameraMovementsScene } from "../../scenes/definitions/unde
 import type { CameraState } from "../../types/camera";
 import type { Bounds3, Vec3 } from "../../types/optics";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { cocDiameterMm, imageDistanceMm } from "../../core/optics/thinLensModel";
 
 const isFinitePoint = (point: Vec3): boolean => [point.x, point.y, point.z].every(Number.isFinite);
 
@@ -158,13 +159,14 @@ describe("Understanding Camera Movements focal calibration", () => {
     );
 
     expect(evidence.map(({ focalLengthMm }) => focalLengthMm)).toEqual([150, 120, 105, 90]);
-    expect(evidence.every(({ finite, contained }) => finite && contained)).toBe(true);
+    expect(evidence.every(({ finite }) => finite)).toBe(true);
+    expect(evidence.map(({ contained }) => contained)).toEqual([false, true, true, true]);
 
     const accepted = evidence.filter(
-      ({ minimumEdgeMargin: margin }) =>
-        margin >= CAMERA_MOVEMENTS_FOCAL_CALIBRATION.minimumBaselineEdgeMarginFraction,
+      ({ contained, minimumEdgeMargin: margin }) =>
+        contained && margin >= CAMERA_MOVEMENTS_FOCAL_CALIBRATION.minimumBaselineEdgeMarginFraction,
     );
-    expect(accepted.map(({ focalLengthMm }) => focalLengthMm)).toEqual([120, 105, 90]);
+    expect(accepted.map(({ focalLengthMm }) => focalLengthMm)).toEqual([105, 90]);
     expect(Math.max(...accepted.map(({ focalLengthMm }) => focalLengthMm))).toBe(
       CAMERA_MOVEMENTS_FOCAL_CALIBRATION.selectedFocalLengthMm,
     );
@@ -175,7 +177,68 @@ describe("Understanding Camera Movements focal calibration", () => {
     );
     expect(selected?.minimumEdgeMargin).toBeGreaterThanOrEqual(0.1);
     expect(selected?.minimumEdgeMargin).toBeLessThanOrEqual(0.15);
-    expect(evidence[0].minimumEdgeMargin).toBeLessThan(0.1);
+    expect(evidence[0].minimumEdgeMargin).toBeLessThan(0);
+    expect(evidence[1].minimumEdgeMargin).toBeGreaterThan(0);
+    expect(evidence[1].minimumEdgeMargin).toBeLessThan(0.1);
+  });
+
+  it.each(CAMERA_MOVEMENTS_FOCAL_CALIBRATION.candidateFocalLengthsMm)(
+    "places the finite-focus film at thin-lens image distance for %i mm",
+    (focalLengthMm) => {
+      const optics = deriveOpticsState(
+        cameraAtFocalLength(focalLengthMm),
+        understandingCameraMovementsScene,
+      );
+      const expectedImageDistanceMm = imageDistanceMm(
+        focalLengthMm,
+        geometry.focusReferenceWorld.z,
+      );
+      expect(optics.lensCenterWorld).toEqual({ x: 0, y: 0, z: 0 });
+      expect(-optics.filmCenterWorld.z).toBeCloseTo(expectedImageDistanceMm, 10);
+      expect(optics.focusPlane).not.toBeNull();
+      expect(optics.focusPlane?.point.z).toBeCloseTo(geometry.focusReferenceWorld.z, 10);
+      expect(
+        cocDiameterMm(
+          focalLengthMm,
+          geometry.cameraPreset.aperture,
+          -optics.filmCenterWorld.z,
+          geometry.focusReferenceWorld.z,
+        ),
+      ).toBeCloseTo(0, 12);
+    },
+  );
+
+  it("covers the canonical cube depth at f/32 using the physical 0.1 mm circle of confusion", () => {
+    const focalLengthMm = CAMERA_MOVEMENTS_FOCAL_CALIBRATION.selectedFocalLengthMm;
+    const optics = deriveOpticsState(
+      cameraAtFocalLength(focalLengthMm),
+      understandingCameraMovementsScene,
+    );
+    const nearSubjectSurfaceMm = getSubjectLayout().bounds.min.z;
+    const farSubjectSurfaceMm = getSubjectLayout().bounds.max.z;
+    const physicalCircleOfConfusionMm = 0.1;
+    const focusImageDistanceMm = imageDistanceMm(focalLengthMm, geometry.focusReferenceWorld.z);
+
+    expect(optics.diagnostics.nearU).not.toBeNull();
+    expect(optics.diagnostics.farU).not.toBeNull();
+    expect(optics.diagnostics.nearU as number).toBeLessThan(nearSubjectSurfaceMm);
+    expect(optics.diagnostics.farU as number).toBeGreaterThan(farSubjectSurfaceMm);
+    expect(
+      cocDiameterMm(
+        focalLengthMm,
+        geometry.cameraPreset.aperture,
+        focusImageDistanceMm,
+        nearSubjectSurfaceMm,
+      ),
+    ).toBeLessThanOrEqual(physicalCircleOfConfusionMm);
+    expect(
+      cocDiameterMm(
+        focalLengthMm,
+        geometry.cameraPreset.aperture,
+        focusImageDistanceMm,
+        farSubjectSurfaceMm,
+      ),
+    ).toBeLessThanOrEqual(physicalCircleOfConfusionMm);
   });
 
   it("keeps every vertex projection finite at each supported single-movement endpoint", () => {

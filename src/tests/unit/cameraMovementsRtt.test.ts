@@ -75,8 +75,10 @@ describe("Camera Movements RTT focal uniforms", () => {
     });
 
   it.each([90, 105, 120, 150])(
-    "applies supplied %imm focal length identically to horizontal and vertical passes",
+    "applies supplied %imm focal and finite-focus image distance to both shader passes",
     (focalLengthMm) => {
+      const focusDistanceMm =
+        understandingCameraMovementsScene.cameraPreset.focusDistanceMm;
       const cameraState = {
         ...DEFAULT_CAMERA_STATE,
         ...understandingCameraMovementsScene.cameraPreset,
@@ -107,13 +109,67 @@ describe("Camera Movements RTT focal uniforms", () => {
       applyGroundGlassDofUniformState(horizontal, state);
       applyGroundGlassDofUniformState(vertical, state);
 
+      const expectedImageDistanceMm =
+        (focalLengthMm * focusDistanceMm) /
+        (focusDistanceMm - focalLengthMm);
       expect(state.focalLengthMm).toBe(focalLengthMm);
+      expect(state.imageDistanceMm).toBeCloseTo(expectedImageDistanceMm, 8);
+      expect(state.imageDistanceMm).not.toBe(focalLengthMm);
       expect(horizontal.uniforms.focalLengthMm.value).toBe(focalLengthMm);
       expect(vertical.uniforms.focalLengthMm.value).toBe(focalLengthMm);
+      expect(horizontal.uniforms.imageDistanceMm.value).toBeCloseTo(
+        expectedImageDistanceMm,
+        8,
+      );
+      expect(vertical.uniforms.imageDistanceMm.value).toBeCloseTo(
+        expectedImageDistanceMm,
+        8,
+      );
       horizontal.dispose();
       vertical.dispose();
     },
   );
+
+  it("uses f=105mm and v=110.81794195mm for the corrected scene preset", () => {
+    const cameraState = {
+      ...DEFAULT_CAMERA_STATE,
+      ...understandingCameraMovementsScene.cameraPreset,
+      activeSceneId: understandingCameraMovementsScene.id,
+    };
+    const optics = deriveOpticsState(cameraState, understandingCameraMovementsScene);
+    const camera = new THREE.PerspectiveCamera();
+    const clip = getGroundGlassClipRangeWorld(
+      understandingCameraMovementsScene,
+      optics.lensCenterWorld,
+    );
+    expect(configureGroundGlassCamera(camera, optics, clip.near, clip.far).ok).toBe(true);
+    const state = createGroundGlassDofUniformState(
+      optics,
+      camera,
+      cameraState.focalLengthMm,
+      CAMERA_CONSTANTS.filmWidthMm,
+      CAMERA_CONSTANTS.filmHeightMm,
+      0.1,
+      cameraState.aperture,
+      500,
+      400,
+      24,
+    );
+    const horizontal = createUniformMaterial();
+    const vertical = createUniformMaterial();
+    applyGroundGlassDofUniformState(horizontal, state);
+    applyGroundGlassDofUniformState(vertical, state);
+
+    expect(horizontal.uniforms.focalLengthMm.value).toBe(105);
+    expect(vertical.uniforms.focalLengthMm.value).toBe(105);
+    expect(horizontal.uniforms.imageDistanceMm.value).toBeCloseTo(110.81794195, 8);
+    expect(vertical.uniforms.imageDistanceMm.value).toBeCloseTo(110.81794195, 8);
+    expect(horizontal.uniforms.imageDistanceMm.value).not.toBe(
+      horizontal.uniforms.focalLengthMm.value,
+    );
+    horizontal.dispose();
+    vertical.dispose();
+  });
 });
 
 describe("RTT camera configuration", () => {

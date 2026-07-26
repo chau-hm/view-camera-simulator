@@ -43,6 +43,16 @@ export type SceneMovementCapabilities = {
   defaultMovement: CameraMovementField;
 };
 
+/**
+ * Declarative finite-focus placement for scenes whose lens remains at the
+ * baseline origin while the rear standard supplies the thin-lens extension.
+ */
+export type SceneFiniteFocusStrategy = {
+  kind: "rear-standard-thin-lens";
+  lensDatum: "baseline-origin";
+  focusDistanceReference: "lens-to-focus-plane";
+};
+
 export type SceneDefinition = {
   id: string;
   name: string;
@@ -63,6 +73,8 @@ export type SceneDefinition = {
   bounds: Bounds3;
   focusTargets: FocusTarget[];
   compositionTargets: CompositionTarget[];
+  /** Optional physical film-placement strategy. The legacy Z=-f baseline applies when absent. */
+  finiteFocusStrategy?: SceneFiniteFocusStrategy;
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
   movementCapabilities?: SceneMovementCapabilities;
   /** Optional camera-inspection observer framing. When absent, the default fallback applies. */
