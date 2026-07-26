@@ -8,6 +8,7 @@ export const understandingCameraMovementsScene: SceneDefinition = {
     "Compare front and rear camera movements against a fixed reference camera and observe how each movement changes the camera geometry and image.",
   assets: [],
   cameraPreset: {
+    focalLengthMm: geometry.cameraPreset.focalLengthMm,
     focusDistanceMm: geometry.cameraPreset.focusDistanceMm,
     aperture: geometry.cameraPreset.aperture,
     frontRiseMm: geometry.cameraPreset.frontRiseMm,
@@ -27,6 +28,11 @@ export const understandingCameraMovementsScene: SceneDefinition = {
   },
   focusTargets: [],
   compositionTargets: [],
+  finiteFocusStrategy: {
+    kind: "rear-standard-thin-lens",
+    lensDatum: "baseline-origin",
+    focusDistanceReference: "lens-to-focus-plane",
+  },
   movementCapabilities: {
     available: ["frontRiseMm", "rearRiseMm", "frontTiltDeg", "rearTiltDeg"],
     selectionMode: "single",

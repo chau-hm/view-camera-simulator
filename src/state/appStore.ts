@@ -19,8 +19,13 @@ import {
   DEFAULT_SHOW_OPTICAL_GEOMETRY,
   resolveInitialOpticalGeometryVisibility,
 } from "./sceneViewDefaults";
+import {
+  DEFAULT_SUBJECT_COUNT,
+  type SubjectCount,
+} from "../scenes/understandingCameraMovementsGeometry";
 
 const defaultControlState = {
+  focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
   frontRiseMm: DEFAULT_CAMERA_STATE.frontRiseMm,
   frontTiltDeg: DEFAULT_CAMERA_STATE.frontTiltDeg,
   frontSwingDeg: DEFAULT_CAMERA_STATE.frontSwingDeg,
@@ -72,6 +77,7 @@ const resolveScenePresetReset = (
   if (!scene?.movementCapabilities) return {};
   const preset = scene.cameraPreset;
   return {
+    ...(preset.focalLengthMm === undefined ? {} : { focalLengthMm: preset.focalLengthMm }),
     frontRiseMm: preset.frontRiseMm,
     frontTiltDeg: preset.frontTiltDeg,
     frontSwingDeg: preset.frontSwingDeg,
@@ -85,6 +91,8 @@ const resolveScenePresetReset = (
 
 type SceneRuntimeState = {
   activeSceneId: string;
+  /** Presentation-only subject count for Understanding Camera Movements. */
+  subjectCount: SubjectCount;
 };
 
 type TaskRuntimeState = {
@@ -139,6 +147,7 @@ export type AppStore = {
   setMode: (mode: SimulatorMode) => void;
   setActiveScene: (sceneId: string) => void;
   setActiveTask: (taskId: string | null) => void;
+  setSubjectCount: (count: SubjectCount | number) => void;
   initializeSimulatorRoute: (init: {
     mode: SimulatorMode;
     sceneId: string;
@@ -170,7 +179,10 @@ export type AppStore = {
 
 export const useAppStore = create<AppStore>((set) => ({
   camera: DEFAULT_CAMERA_STATE,
-  scene: { activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId },
+  scene: {
+    activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId,
+    subjectCount: DEFAULT_SUBJECT_COUNT,
+  },
   task: {
     activeTaskId: DEFAULT_CAMERA_STATE.activeTaskId,
     currentTaskEvaluation: null,
@@ -202,19 +214,28 @@ export const useAppStore = create<AppStore>((set) => ({
     })),
 
   setActiveScene: (sceneId) =>
-    set((state) => ({
-      camera: {
-        ...state.camera,
-        activeSceneId: sceneId,
-        focusDistanceMm: clampFocusDistanceForScene(
-          sceneId,
-          state.camera.focusDistanceMm,
-        ),
-      },
-      scene: { ...state.scene, activeSceneId: sceneId },
-      task: { ...state.task, currentTaskEvaluation: null },
-      ui: { ...state.ui, showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY },
-    })),
+    set((state) => {
+      const scene = getSceneById(sceneId);
+      return {
+        camera: {
+          ...state.camera,
+          activeSceneId: sceneId,
+          focalLengthMm:
+            scene?.cameraPreset.focalLengthMm ??
+            DEFAULT_CAMERA_STATE.focalLengthMm,
+          focusDistanceMm: clampFocusDistanceForScene(
+            sceneId,
+            state.camera.focusDistanceMm,
+          ),
+        },
+        scene: {
+          activeSceneId: sceneId,
+          subjectCount: DEFAULT_SUBJECT_COUNT,
+        },
+        task: { ...state.task, currentTaskEvaluation: null },
+        ui: { ...state.ui, showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY },
+      };
+    }),
 
   setActiveTask: (taskId) =>
     set((state) => ({
@@ -225,6 +246,13 @@ export const useAppStore = create<AppStore>((set) => ({
         currentTaskEvaluation: null,
       },
     })),
+
+  setSubjectCount: (count) =>
+    set((state) => {
+      if (state.scene.activeSceneId !== "understanding-camera-movements") return {};
+      if (count !== 1 && count !== 2 && count !== 3) return {};
+      return { scene: { ...state.scene, subjectCount: count } };
+    }),
 
   initializeSimulatorRoute: (init) =>
     set((state) => {
@@ -243,9 +271,15 @@ export const useAppStore = create<AppStore>((set) => ({
 
       try {
         const scene = getSceneById(sceneId);
-        if (scene && !taskId) {
+        if (scene) {
           const preset = scene.cameraPreset ?? {};
-          nextCamera = { ...nextCamera, ...preset, activeSceneId: sceneId };
+          nextCamera = {
+            ...nextCamera,
+            focalLengthMm:
+              preset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm,
+            ...preset,
+            activeSceneId: sceneId,
+          };
         } else {
           nextCamera.activeSceneId = sceneId;
         }
@@ -280,7 +314,10 @@ export const useAppStore = create<AppStore>((set) => ({
 
       return {
         camera: nextCamera,
-        scene: { ...state.scene, activeSceneId: sceneId },
+        scene: {
+          activeSceneId: sceneId,
+          subjectCount: DEFAULT_SUBJECT_COUNT,
+        },
         task: {
           ...state.task,
           activeTaskId: taskId ?? null,
@@ -575,7 +612,10 @@ export const useAppStore = create<AppStore>((set) => ({
           gridEnabled: nextGridEnabled,
           focusDistanceMm,
         },
-        scene: { ...state.scene, activeSceneId: nextSceneId },
+        scene: {
+          activeSceneId: nextSceneId,
+          subjectCount: DEFAULT_SUBJECT_COUNT,
+        },
         task: { ...state.task, currentTaskEvaluation: null },
         selectedMovement: defaultMovement,
         ui: {
@@ -593,7 +633,10 @@ export const useAppStore = create<AppStore>((set) => ({
   resetCamera: () =>
     set({
       camera: DEFAULT_CAMERA_STATE,
-      scene: { activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId },
+      scene: {
+        activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId,
+        subjectCount: DEFAULT_SUBJECT_COUNT,
+      },
       task: {
         activeTaskId: DEFAULT_CAMERA_STATE.activeTaskId,
         currentTaskEvaluation: null,

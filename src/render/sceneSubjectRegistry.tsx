@@ -30,6 +30,7 @@ import {
   disposeCameraMovementsGroup,
 } from "./CameraMovementsSubjectFactory";
 import { toWorld } from "./rttUtils";
+import type { SubjectCount } from "../scenes/understandingCameraMovementsGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -43,9 +44,13 @@ export type SceneSubjectRttLighting = {
 
 export type SceneSubjectRegistration = {
   SceneSubject: ComponentType<RegisteredSceneSubjectProps>;
-  createRttGroup: () => THREE.Group;
+  createRttGroup: (options?: SceneSubjectRttOptions) => THREE.Group;
   disposeRttGroup?: (group: THREE.Group) => void;
   rttLighting?: SceneSubjectRttLighting;
+};
+
+export type SceneSubjectRttOptions = {
+  subjectCount?: SubjectCount;
 };
 
 export const ArchitectureRiseRegisteredSubject = ({
@@ -95,7 +100,8 @@ const shelfSwingLightingTargetMm = {
 export const sceneSubjectRegistry = {
   "understanding-camera-movements": {
     SceneSubject: CameraMovementsSubject,
-    createRttGroup: createCameraMovementsGroup,
+    createRttGroup: (options) =>
+      createCameraMovementsGroup(options?.subjectCount),
     disposeRttGroup: disposeCameraMovementsGroup,
     rttLighting: {
       targetMm: cameraMovementsLightingTargetMm,
@@ -146,8 +152,11 @@ export const getSceneSubjectRegistration = (
 export const getRegisteredSceneSubject = (sceneId: string) =>
   getSceneSubjectRegistration(sceneId)?.SceneSubject;
 
-export const createRegisteredRttSubject = (sceneId: string): THREE.Group | null =>
-  getSceneSubjectRegistration(sceneId)?.createRttGroup() ?? null;
+export const createRegisteredRttSubject = (
+  sceneId: string,
+  options?: SceneSubjectRttOptions,
+): THREE.Group | null =>
+  getSceneSubjectRegistration(sceneId)?.createRttGroup(options) ?? null;
 
 export const disposeRegisteredRttSubject = (
   sceneId: string,

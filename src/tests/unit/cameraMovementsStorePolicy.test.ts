@@ -47,6 +47,33 @@ describe("Store-enforced cameraControlPolicy", () => {
       expect(s.camera.rearRiseMm).toBe(0);
       expect(s.selectedMovement).toBe("frontRiseMm");
     });
+
+    it("validates subject count and preserves it through movement reset", () => {
+      const store = useAppStore.getState();
+      expect(useAppStore.getState().scene.subjectCount).toBe(3);
+      store.setSubjectCount(1);
+      store.setSelectedMovement("rearRiseMm");
+      store.setSubjectCount(2);
+      expect(useAppStore.getState().scene.subjectCount).toBe(2);
+      store.resetMovements();
+      expect(useAppStore.getState().scene.subjectCount).toBe(2);
+      store.setSubjectCount(4);
+      expect(useAppStore.getState().scene.subjectCount).toBe(2);
+    });
+
+    it("restores default count and focal preset on restart and route changes", () => {
+      const store = useAppStore.getState();
+      store.setSubjectCount(1);
+      store.restartTask();
+      expect(useAppStore.getState().scene.subjectCount).toBe(3);
+      expect(useAppStore.getState().camera.focalLengthMm).toBe(105);
+      store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise" });
+      expect(useAppStore.getState().scene.subjectCount).toBe(3);
+      expect(useAppStore.getState().camera.focalLengthMm).toBe(150);
+      store.initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements" });
+      expect(useAppStore.getState().scene.subjectCount).toBe(3);
+      expect(useAppStore.getState().camera.focalLengthMm).toBe(105);
+    });
   });
 
   describe("Architecture Rise (no policy)", () => {

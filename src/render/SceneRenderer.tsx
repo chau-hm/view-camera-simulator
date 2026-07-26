@@ -29,6 +29,8 @@ import {
   type ObserverViewState,
   type SceneViewFocus,
 } from "./sceneViewFraming";
+import { useAppStore } from "../state/appStore";
+import { getSubjectLayout } from "../scenes/understandingCameraMovementsGeometry";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -879,6 +881,8 @@ export const SceneRenderer = ({
   onAssetError,
   containerStyle,
 }: SceneRendererProps) => {
+  const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
+  const configuredSubjectCount = useAppStore((state) => state.scene.subjectCount);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
@@ -895,8 +899,8 @@ export const SceneRenderer = ({
     [observerCameraPosition, observerCameraTarget],
   );
   const cameraObserverView = useMemo(
-    () => createCameraInspectionView(scene, sceneObserverView, CAMERA_CONSTANTS.focalLengthMm),
-    [scene, sceneObserverView],
+    () => createCameraInspectionView(scene, sceneObserverView, activeFocalLengthMm),
+    [activeFocalLengthMm, scene, sceneObserverView],
   );
   const [observerViewState, setObserverViewState] = useState<ObserverViewState>(sceneObserverView);
   const activeAssets = useMemo(
@@ -963,6 +967,11 @@ export const SceneRenderer = ({
       ref={containerRef}
       data-testid="scene-canvas"
       data-scene-subject-id={getRegisteredSceneSubject(scene.id) ? scene.id : "fallback"}
+      data-scene-subject-count={
+        scene.id === "understanding-camera-movements"
+          ? getSubjectLayout(configuredSubjectCount).cubes.length
+          : undefined
+      }
       data-focus-overlay-vertices={focusOverlayVertexCount}
       data-near-dof-overlay-vertices={nearDofOverlayVertexCount}
       data-far-dof-overlay-vertices={farDofOverlayVertexCount}

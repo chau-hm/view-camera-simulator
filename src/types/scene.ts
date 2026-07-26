@@ -32,11 +32,7 @@ export type CameraPlacement = {
 };
 
 export type CameraMovementField =
-  | "frontRiseMm"
-  | "frontTiltDeg"
-  | "frontSwingDeg"
-  | "rearRiseMm"
-  | "rearTiltDeg";
+  "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "rearRiseMm" | "rearTiltDeg";
 
 export type SceneMovementCapabilities = {
   /** Movement field names available for this scene. */
@@ -47,6 +43,16 @@ export type SceneMovementCapabilities = {
   defaultMovement: CameraMovementField;
 };
 
+/**
+ * Declarative finite-focus placement for scenes whose lens remains at the
+ * baseline origin while the rear standard supplies the thin-lens extension.
+ */
+export type SceneFiniteFocusStrategy = {
+  kind: "rear-standard-thin-lens";
+  lensDatum: "baseline-origin";
+  focusDistanceReference: "lens-to-focus-plane";
+};
+
 export type SceneDefinition = {
   id: string;
   name: string;
@@ -54,12 +60,21 @@ export type SceneDefinition = {
   assets: SceneAsset[];
   cameraPreset: Pick<
     CameraState,
-    "focusDistanceMm" | "aperture" | "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "rearRiseMm" | "rearTiltDeg"
-  >;
+    | "focusDistanceMm"
+    | "aperture"
+    | "frontRiseMm"
+    | "frontTiltDeg"
+    | "frontSwingDeg"
+    | "rearRiseMm"
+    | "rearTiltDeg"
+  > &
+    Partial<Pick<CameraState, "focalLengthMm">>;
   cameraPlacement: CameraPlacement;
   bounds: Bounds3;
   focusTargets: FocusTarget[];
   compositionTargets: CompositionTarget[];
+  /** Optional physical film-placement strategy. The legacy Z=-f baseline applies when absent. */
+  finiteFocusStrategy?: SceneFiniteFocusStrategy;
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
   movementCapabilities?: SceneMovementCapabilities;
   /** Optional camera-inspection observer framing. When absent, the default fallback applies. */

@@ -5,6 +5,7 @@ import { useAppStore } from "../state/appStore";
 
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
+  focalLengthMm: number;
   sceneId?: string;
   apertureNumber: number;
   previewMode: "raw" | "upright";
@@ -24,6 +25,7 @@ export type GroundGlassRenderSurfaceProps = {
 
 export const GroundGlassRenderSurface = ({
   opticsState,
+  focalLengthMm,
   sceneId,
   apertureNumber,
   previewMode,
@@ -57,6 +59,8 @@ export const GroundGlassRenderSurface = ({
         data-rtt-raw-non-background={rttRuntimeInfo?.rawNonBackgroundPixelCount}
         data-rtt-final-non-background={rttRuntimeInfo?.finalNonBackgroundPixelCount}
         data-rtt-resource-generation={rttRuntimeInfo?.resourceGeneration}
+        data-rtt-focal-length-mm={rttRuntimeInfo?.focalLengthMm}
+        data-rtt-subject-count={rttRuntimeInfo?.subjectCount}
         data-rtt-logical-width={rttRuntimeInfo?.logicalWidthPx}
         data-rtt-logical-height={rttRuntimeInfo?.logicalHeightPx}
         data-rtt-internal-width={rttRuntimeInfo?.internalWidthPx}
@@ -82,6 +86,7 @@ export const GroundGlassRenderSurface = ({
       >
         <GroundGlassRTT
           opticsState={opticsState}
+          focalLengthMm={focalLengthMm}
           sceneId={sceneId}
           widthPx={widthPx}
           heightPx={heightPx}
