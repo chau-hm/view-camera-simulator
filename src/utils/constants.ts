@@ -1,4 +1,8 @@
 import type { ApertureValue, CameraState } from "../types/camera";
+import type { Vec3 } from "../types/optics";
+
+/** Neutral body-pitch pivot used by scenes without the camera-body-pitch capability. */
+export const DEFAULT_CAMERA_BODY_PIVOT_WORLD: Vec3 = { x: 0, y: 0, z: 0 };
 
 export const CAMERA_CONSTANTS = {
   filmWidthMm: 127,
@@ -34,6 +38,8 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
   frontSwingDeg: 0,
   rearRiseMm: 0,
   rearTiltDeg: 0,
+  cameraBodyPitchDeg: 0,
+  cameraBodyPivotWorld: DEFAULT_CAMERA_BODY_PIVOT_WORLD,
   activeSceneId: "architecture-rise",
   activeTaskId: "rise-01",
   mode: "guided",

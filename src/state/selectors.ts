@@ -51,6 +51,10 @@ const buildDerivedCameraKey = (camera: CameraState) =>
     camera.frontSwingDeg,
     camera.rearRiseMm,
     camera.rearTiltDeg,
+    camera.cameraBodyPitchDeg,
+    camera.cameraBodyPivotWorld.x,
+    camera.cameraBodyPivotWorld.y,
+    camera.cameraBodyPivotWorld.z,
     camera.activeSceneId,
     camera.groundGlassAssistEnabled,
   ].join("|");

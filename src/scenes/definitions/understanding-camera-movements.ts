@@ -16,6 +16,8 @@ export const understandingCameraMovementsScene: SceneDefinition = {
     frontSwingDeg: geometry.cameraPreset.frontSwingDeg,
     rearRiseMm: geometry.cameraPreset.rearRiseMm,
     rearTiltDeg: geometry.cameraPreset.rearTiltDeg,
+    cameraBodyPitchDeg: geometry.cameraPreset.cameraBodyPitchDeg,
+    cameraBodyPivotWorld: geometry.cameraPreset.cameraBodyPivotWorld,
   },
   cameraPlacement: {
     /** Three-quarter view to show cube, grid, and full camera assembly */
@@ -32,6 +34,9 @@ export const understandingCameraMovementsScene: SceneDefinition = {
     kind: "rear-standard-thin-lens",
     lensDatum: "baseline-origin",
     focusDistanceReference: "lens-to-focus-plane",
+  },
+  cameraBodyPitchCapability: {
+    enabled: true,
   },
   movementCapabilities: {
     available: ["frontRiseMm", "rearRiseMm", "frontTiltDeg", "rearTiltDeg"],

@@ -63,6 +63,32 @@ describe("groundGlassRenderSanityKey", () => {
     expect(makeKey(moved)).not.toBe(makeKey(zero));
   });
 
+  it("camera body pose changes the key", () => {
+    const zero = buildOptics({ cameraBodyPitchDeg: 0 });
+    const pitched = buildOptics({ cameraBodyPitchDeg: 8 });
+    expect(makeKey(pitched)).not.toBe(makeKey(zero));
+  });
+
+  it("configured camera extrinsics change the key and remain finite", () => {
+    const optics = buildOptics();
+    const basePose = {
+      positionWorld: [0, 0, 0] as [number, number, number],
+      upWorld: [0, 1, 0] as [number, number, number],
+      forwardWorld: [0, 0, 1] as [number, number, number],
+    };
+    const pitchedPose = {
+      ...basePose,
+      positionWorld: [0, -0.01, 0.02] as [number, number, number],
+      forwardWorld: [0, -0.139173, 0.990268] as [number, number, number],
+    };
+    const baseKey = makeKey(optics, { configuredCameraPose: basePose });
+    const pitchedKey = makeKey(optics, { configuredCameraPose: pitchedPose });
+
+    expect(pitchedKey).not.toBe(baseKey);
+    expect(baseKey).not.toContain("NaN");
+    expect(pitchedKey).not.toContain("Infinity");
+  });
+
   it("changing aperture changes the key", () => {
     const o = buildOptics();
     expect(makeKey(o)).not.toBe(makeKey(o, { aperture: 22 }));

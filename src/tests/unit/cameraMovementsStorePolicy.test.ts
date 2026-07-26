@@ -36,6 +36,28 @@ describe("Store-enforced cameraControlPolicy", () => {
       expect(useAppStore.getState().camera.focusMode).not.toBe("infinity");
     });
 
+    it("keeps body pitch internal and restores the calibrated pivot on reset", () => {
+      const store = useAppStore.getState();
+      const pivot = useAppStore.getState().camera.cameraBodyPivotWorld;
+      store.setCameraBodyPitchDeg(4);
+      expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(4);
+      store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise" });
+      expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(0);
+      expect(useAppStore.getState().camera.cameraBodyPivotWorld).toEqual({ x: 0, y: 0, z: 0 });
+      store.initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements" });
+      expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(0);
+      expect(useAppStore.getState().camera.cameraBodyPivotWorld).toEqual(pivot);
+      store.setCameraBodyPitchDeg(3);
+      store.initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements" });
+      expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(3);
+      store.resetMovements();
+      expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(0);
+      expect(useAppStore.getState().camera.cameraBodyPivotWorld).toEqual(pivot);
+      store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise" });
+      expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(0);
+      expect(useAppStore.getState().camera.cameraBodyPivotWorld).toEqual({ x: 0, y: 0, z: 0 });
+    });
+
     it("restartTask (no task) restores scene preset (2000mm, f/32)", () => {
       useAppStore.getState().setSelectedMovement("rearRiseMm");
       useAppStore.getState().setRearRise(20);

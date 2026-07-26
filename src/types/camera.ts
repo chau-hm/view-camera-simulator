@@ -1,3 +1,5 @@
+import type { Vec3 } from "./optics";
+
 export type SimulatorMode = "guided" | "free";
 
 export type ApertureValue = 5.6 | 11 | 22 | 32;
@@ -13,6 +15,10 @@ export type CameraState = {
   frontSwingDeg: number;
   rearRiseMm: number;
   rearTiltDeg: number;
+  /** Rigid camera-body pitch about world +X, in degrees. */
+  cameraBodyPitchDeg: number;
+  /** Fixed tripod/rail pivot for camera-body pitch, in world millimetres. */
+  cameraBodyPivotWorld: Vec3;
   activeSceneId: string;
   activeTaskId: string | null;
   mode: SimulatorMode;

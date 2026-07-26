@@ -1,4 +1,5 @@
 import type { DerivedOpticsState } from "../types/optics";
+import type { GroundGlassCameraPose } from "./configureGroundGlassCamera";
 
 const finiteOrNull = (value: number): string =>
   Number.isFinite(value) ? value.toFixed(6) : "null";
@@ -25,6 +26,7 @@ export type RenderSanityKeyInputs = {
   internalWidthPx: number;
   internalHeightPx: number;
   opticsState: DerivedOpticsState;
+  configuredCameraPose?: GroundGlassCameraPose;
 };
 
 /**
@@ -32,6 +34,8 @@ export type RenderSanityKeyInputs = {
  * that can change the rendered Ground Glass output.
  *
  * This MUST invalidate when any of the following changes:
+ * - canonical rigid camera-body pose
+ * - configured Three.js camera extrinsics
  * - lens centre or normal
  * - film centre, normal, or corners
  * - optical axis
@@ -43,7 +47,7 @@ export function createGroundGlassRenderSanityStateKey(
   inputs: RenderSanityKeyInputs,
 ): string {
   const { resourceGeneration, sceneId, previewMode, rawDebug, zoomEnabled, aperture,
-    internalWidthPx, internalHeightPx, opticsState: o } = inputs;
+    internalWidthPx, internalHeightPx, opticsState: o, configuredCameraPose } = inputs;
 
   const parts: string[] = [
     String(resourceGeneration),
@@ -54,6 +58,22 @@ export function createGroundGlassRenderSanityStateKey(
     String(aperture),
     String(internalWidthPx),
     String(internalHeightPx),
+
+    // Rigid body pose is an explicit renderer input even when other derived
+    // world points happen to be numerically unchanged.
+    finiteOrNull(o.cameraBodyTransform.pitchDeg),
+    vec3Key(o.cameraBodyTransform.pivotWorld),
+
+    // Extrinsics actually consumed by the configured Three.js camera.
+    configuredCameraPose
+      ? configuredCameraPose.positionWorld.map(finiteOrNull).join(":")
+      : "null",
+    configuredCameraPose
+      ? configuredCameraPose.upWorld.map(finiteOrNull).join(":")
+      : "null",
+    configuredCameraPose
+      ? configuredCameraPose.forwardWorld.map(finiteOrNull).join(":")
+      : "null",
 
     // Lens geometry
     vec3Key(o.lensCenterWorld),

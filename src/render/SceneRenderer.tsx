@@ -31,6 +31,7 @@ import {
 } from "./sceneViewFraming";
 import { useAppStore } from "../state/appStore";
 import { getSubjectLayout } from "../scenes/understandingCameraMovementsGeometry";
+import { CameraBodyAssembly } from "./CameraBodyAssembly";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -731,9 +732,18 @@ const SceneContent = ({
     <directionalLight position={[2, 4, 2]} intensity={0.7} />
     <hemisphereLight args={["#ffffff", "#d1d5db", 0.45]} />
     <SceneAssets assets={scene.assets} />
-    <RearStandard opticsState={opticsState} />
-    <FrontStandard opticsState={opticsState} />
-    {scene.id !== "focus-fundamentals-two-targets" && <Bellows opticsState={opticsState} />}
+    {scene.cameraBodyPitchCapability?.enabled ? (
+      <CameraBodyAssembly
+        opticsState={opticsState}
+        showBellows={scene.id !== "focus-fundamentals-two-targets"}
+      />
+    ) : (
+      <>
+        <RearStandard opticsState={opticsState} />
+        <FrontStandard opticsState={opticsState} />
+        {scene.id !== "focus-fundamentals-two-targets" && <Bellows opticsState={opticsState} />}
+      </>
+    )}
     <OpticalGeometryOverlays
       scene={scene}
       opticsState={opticsState}
@@ -775,12 +785,25 @@ const OriginalGhostCamera = ({
       frontSwingDeg: 0,
       rearRiseMm: 0,
       rearTiltDeg: 0,
+      cameraBodyPitchDeg: 0,
       activeSceneId: scene.id,
     };
     return deriveOpticsState(cameraState, scene);
   }, [hasCapabilities, scene]);
 
   if (!hasCapabilities || !originalOptics) return null;
+
+  if (scene.cameraBodyPitchCapability?.enabled) {
+    return (
+      <group name="original-ghost-camera">
+        <CameraBodyAssembly
+          opticsState={originalOptics}
+          ghost
+          showBellows={scene.id !== "focus-fundamentals-two-targets"}
+        />
+      </group>
+    );
+  }
 
   return (
     <group name="original-ghost-camera">

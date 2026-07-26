@@ -64,6 +64,49 @@ afterEach(() => {
 });
 
 describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
+  it("keeps the owned RTT resource generation stable across camera body pitch", () => {
+    const baseCamera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...understandingCameraMovementsScene.cameraPreset,
+      cameraBodyPitchDeg: 0,
+      activeSceneId: understandingCameraMovementsScene.id,
+    };
+    const createSubject = vi.mocked(createRegisteredRttSubject);
+    const props = {
+      focalLengthMm: baseCamera.focalLengthMm,
+      sceneId: understandingCameraMovementsScene.id,
+      widthPx: 500,
+      heightPx: 400,
+      renderQuality: "standard" as const,
+    };
+    const view = render(
+      React.createElement(GroundGlassRTT, {
+        ...props,
+        opticsState: deriveOpticsState(
+          baseCamera,
+          understandingCameraMovementsScene,
+        ),
+      }),
+    );
+    const initialGeneration =
+      useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration;
+
+    view.rerender(
+      React.createElement(GroundGlassRTT, {
+        ...props,
+        opticsState: deriveOpticsState(
+          { ...baseCamera, cameraBodyPitchDeg: 8 },
+          understandingCameraMovementsScene,
+        ),
+      }),
+    );
+
+    expect(createSubject).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
+      initialGeneration,
+    );
+  });
+
   it("creates the canonical charts without the generic fallback subject", () => {
     const group = createRegisteredRttSubject("shelf-swing")!;
     try {

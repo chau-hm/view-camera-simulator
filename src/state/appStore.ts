@@ -13,6 +13,7 @@ import type { TaskEvaluation } from "../types/task";
 import {
   CAMERA_CONSTANTS,
   DEFAULT_CAMERA_STATE,
+  DEFAULT_CAMERA_BODY_PIVOT_WORLD,
   isApertureValue,
 } from "../utils/constants";
 import {
@@ -44,6 +45,20 @@ const clampFocusDistanceForScene = (sceneId: string, value: number) => {
 const resolveDefaultMovement = (sceneId: string): CameraMovementField | null => {
   const scene = getSceneById(sceneId);
   return scene?.movementCapabilities?.defaultMovement ?? null;
+};
+
+const resolveCameraBodyReset = (sceneId: string): Pick<CameraState, "cameraBodyPitchDeg" | "cameraBodyPivotWorld"> => {
+  const scene = getSceneById(sceneId);
+  return {
+    cameraBodyPitchDeg:
+      scene?.cameraBodyPitchCapability?.enabled && Number.isFinite(scene.cameraPreset.cameraBodyPitchDeg)
+        ? (scene.cameraPreset.cameraBodyPitchDeg as number)
+        : 0,
+    cameraBodyPivotWorld:
+      scene?.cameraBodyPitchCapability?.enabled && scene.cameraPreset.cameraBodyPivotWorld
+        ? scene.cameraPreset.cameraBodyPivotWorld
+        : DEFAULT_CAMERA_BODY_PIVOT_WORLD,
+  };
 };
 
 /** Whether the scene enforces at-most-one active movement. */
@@ -147,6 +162,7 @@ export type AppStore = {
   setMode: (mode: SimulatorMode) => void;
   setActiveScene: (sceneId: string) => void;
   setActiveTask: (taskId: string | null) => void;
+  setCameraBodyPitchDeg: (value: number) => void;
   setSubjectCount: (count: SubjectCount | number) => void;
   initializeSimulatorRoute: (init: {
     mode: SimulatorMode;
@@ -219,6 +235,7 @@ export const useAppStore = create<AppStore>((set) => ({
       return {
         camera: {
           ...state.camera,
+          ...resolveCameraBodyReset(sceneId),
           activeSceneId: sceneId,
           focalLengthMm:
             scene?.cameraPreset.focalLengthMm ??
@@ -254,6 +271,12 @@ export const useAppStore = create<AppStore>((set) => ({
       return { scene: { ...state.scene, subjectCount: count } };
     }),
 
+  setCameraBodyPitchDeg: (value) =>
+    set((state) => {
+      if (state.camera.activeSceneId !== "understanding-camera-movements" || !Number.isFinite(value)) return {};
+      return { camera: { ...state.camera, cameraBodyPitchDeg: value } };
+    }),
+
   initializeSimulatorRoute: (init) =>
     set((state) => {
       const { mode, sceneId, taskId } = init;
@@ -275,6 +298,7 @@ export const useAppStore = create<AppStore>((set) => ({
           const preset = scene.cameraPreset ?? {};
           nextCamera = {
             ...nextCamera,
+            ...resolveCameraBodyReset(sceneId),
             focalLengthMm:
               preset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm,
             ...preset,
@@ -552,6 +576,7 @@ export const useAppStore = create<AppStore>((set) => ({
       return {
         camera: {
           ...state.camera,
+          ...resolveCameraBodyReset(sceneId),
           ...resetValues,
           focusDistanceMm: clampFocusDistanceForScene(
             sceneId,
@@ -605,6 +630,7 @@ export const useAppStore = create<AppStore>((set) => ({
           ...state.camera,
           activeSceneId: nextSceneId,
           mode: nextMode,
+          ...resolveCameraBodyReset(nextSceneId),
           ...nextControlState,
           geometryView: nextGeometryView,
           groundGlassAssistEnabled: nextGroundGlassAssistEnabled,

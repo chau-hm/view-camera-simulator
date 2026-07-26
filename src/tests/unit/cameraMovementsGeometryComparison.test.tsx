@@ -121,6 +121,7 @@ describe("2D Original vs Current geometry data assertions", () => {
     );
     expect(r.getByTestId("geometry-construction-original")).toBeDefined();
     expect(r.getByTestId("geometry-construction-current")).toBeDefined();
+    expect(r.getAllByTestId("camera-body-rail")).toHaveLength(2);
   });
 
   it("no reference produces no Original layer", () => {

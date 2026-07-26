@@ -23,6 +23,9 @@ export const ProjectedCameraConstruction = ({
 }: ProjectedCameraConstructionProps) => {
   const filmSegment = segmentFor(physicalPlaneSegments, "physical-film");
   const lensSegment = segmentFor(physicalPlaneSegments, "physical-lens");
+  const cameraBodyRailSegment = physicalPlaneSegments.find(
+    (segment) => segment.id === "camera-body-rail",
+  );
   if (!filmSegment || !lensSegment) return null;
 
   const segmentWidth = displayMode === "construction" ? 5 : 4;
@@ -33,6 +36,19 @@ export const ProjectedCameraConstruction = ({
       data-testid="projected-camera-construction"
       data-camera-display-mode={displayMode}
     >
+      {cameraBodyRailSegment ? (
+        <line
+          data-testid="camera-body-rail"
+          x1={cameraBodyRailSegment.p1.x}
+          y1={cameraBodyRailSegment.p1.y}
+          x2={cameraBodyRailSegment.p2.x}
+          y2={cameraBodyRailSegment.p2.y}
+          stroke={cameraBodyRailSegment.color}
+          strokeWidth={displayMode === "construction" ? 5 : 4}
+          strokeLinecap="round"
+          aria-label="Camera body rail"
+        />
+      ) : null}
       <line
         data-testid="physical-bellows-connector"
         x1={filmCenter.x}

@@ -14,7 +14,10 @@ import {
   disposeRegisteredRttSubject,
   getSceneSubjectRegistration,
 } from "./sceneSubjectRegistry";
-import { configureGroundGlassCamera } from "./configureGroundGlassCamera";
+import {
+  configureGroundGlassCamera,
+  readGroundGlassCameraPose,
+} from "./configureGroundGlassCamera";
 import {
   applyGroundGlassDofUniformState,
   createGroundGlassDofUniformState,
@@ -25,7 +28,10 @@ import type { ApertureValue } from "../types/camera";
 import { useAppStore } from "../state/appStore";
 import type { WebGLRenderer } from "three";
 import { getRenderQualitySettings } from "./renderQuality";
-import { getGroundGlassClipRangeWorld } from "./groundGlassRttScenes";
+import {
+  getGroundGlassClipRangeWorld,
+  resolveGroundGlassImageDistanceMm,
+} from "./groundGlassRttScenes";
 import {
   getGroundGlassDofVisualSettings,
   resolveGroundGlassDisplayOpticsState,
@@ -50,6 +56,12 @@ type GroundGlassRTTProps = {
   renderQuality?: import("../types/ui").RenderQualityProfile;
   zoomEnabled?: boolean;
 };
+
+const tupleMatches = (
+  left: [number, number, number] | undefined,
+  right: [number, number, number],
+): boolean =>
+  Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
 function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, }: GroundGlassRTTProps) {
   // single-frame flag to avoid repeating uniform-preparation warnings every frame
@@ -565,21 +577,38 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
   useFrame(() => {
     if (!renderTarget.current || !offscreenScene.current) return;
-    const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
+    const imgDist = resolveGroundGlassImageDistanceMm(opticsState);
     const cam = groundGlassCamera.current;
     if (!cam) return;
 
-    // Scene-aware clipping from the canonical bounds of every RTT scene.
+    // Configure once with a conservative preliminary range so the actual
+    // Three.js camera forward vector can drive the final pitch-safe range.
     const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
-    const clipRange = getGroundGlassClipRangeWorld(sceneDef, opticsState.lensCenterWorld);
-    const nearWorld = clipRange.near;
-    const farWorld = clipRange.far;
+    const preliminaryClipRange = getGroundGlassClipRangeWorld(
+      sceneDef,
+      opticsState.lensCenterWorld,
+    );
+    let nearWorld = preliminaryClipRange.near;
+    let farWorld = preliminaryClipRange.far;
 
     cam.near = nearWorld;
     cam.far = farWorld;
 
     // configure an off-axis projection matrix that matches opticsState.filmPlaneCornersWorld and lens center
-    const cfg = configureGroundGlassCamera(cam, opticsState, nearWorld, farWorld);
+    let cfg = configureGroundGlassCamera(cam, opticsState, nearWorld, farWorld);
+    if (cfg.ok) {
+      const [forwardX, forwardY, forwardZ] = cfg.pose.forwardWorld;
+      const finalClipRange = getGroundGlassClipRangeWorld(
+        sceneDef,
+        opticsState.lensCenterWorld,
+        { x: forwardX, y: forwardY, z: forwardZ },
+      );
+      nearWorld = finalClipRange.near;
+      farWorld = finalClipRange.far;
+      cam.near = nearWorld;
+      cam.far = farWorld;
+      cfg = configureGroundGlassCamera(cam, opticsState, nearWorld, farWorld);
+    }
     if (!cfg.ok) {
       // Do not silently swallow errors — record diagnostic and fall back to symmetric perspective
       const reason = cfg.reason;
@@ -588,7 +617,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         reportedCameraConfigurationErrorRef.current = reason;
       }
       // fallback symmetric camera
-      const imgDist = Math.abs(opticsState.filmPlane.point.z - opticsState.lensCenterWorld.z);
       const vertFovRad = 2 * Math.atan(CAMERA_CONSTANTS.filmHeightMm / (2 * imgDist));
       const vertFovDeg2 = (vertFovRad * 180) / Math.PI;
       cam.fov = vertFovDeg2;
@@ -603,6 +631,37 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
     } else {
       reportedCameraConfigurationErrorRef.current = null;
+    }
+
+    const configuredPose = cfg.ok ? cfg.pose : readGroundGlassCameraPose(cam);
+    const projectionDeterminant = cfg.ok
+      ? cfg.determinant
+      : cam.projectionMatrix.determinant();
+    const currentCameraInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    if (
+      currentCameraInfo &&
+      (
+        currentCameraInfo.cameraNearWorld !== cam.near ||
+        currentCameraInfo.cameraFarWorld !== cam.far ||
+        currentCameraInfo.cameraConfigurationOk !== cfg.ok ||
+        currentCameraInfo.cameraConfigurationError !== (cfg.ok ? null : cfg.reason) ||
+        currentCameraInfo.projectionDeterminant !== projectionDeterminant ||
+        !tupleMatches(currentCameraInfo.cameraPositionWorld, configuredPose.positionWorld) ||
+        !tupleMatches(currentCameraInfo.cameraUpWorld, configuredPose.upWorld) ||
+        !tupleMatches(currentCameraInfo.cameraForwardWorld, configuredPose.forwardWorld)
+      )
+    ) {
+      useAppStore.getState().setGroundGlassRttRuntimeInfo({
+        ...currentCameraInfo,
+        cameraNearWorld: cam.near,
+        cameraFarWorld: cam.far,
+        cameraConfigurationOk: cfg.ok,
+        cameraConfigurationError: cfg.ok ? null : cfg.reason,
+        projectionDeterminant,
+        cameraPositionWorld: configuredPose.positionWorld,
+        cameraUpWorld: configuredPose.upWorld,
+        cameraForwardWorld: configuredPose.forwardWorld,
+      });
     }
 
 
@@ -799,6 +858,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         internalWidthPx: dimsRef.current.internalWidthPx,
         internalHeightPx: dimsRef.current.internalHeightPx,
         opticsState,
+        configuredCameraPose: configuredPose,
       });
 
       const renderSanityEnabled =
@@ -834,7 +894,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
               cameraFarWorld: cam.far,
               cameraConfigurationOk: cfg.ok,
               cameraConfigurationError: cfg.ok ? null : cfg.reason,
-              projectionDeterminant: cfg.ok ? cfg.determinant : cam.projectionMatrix.determinant(),
+              projectionDeterminant,
+              cameraPositionWorld: configuredPose.positionWorld,
+              cameraUpWorld: configuredPose.upWorld,
+              cameraForwardWorld: configuredPose.forwardWorld,
               depthTextureAvailable: !isFallbackDepth,
               dofMode:
                 preparedDofState?.mode === 1
