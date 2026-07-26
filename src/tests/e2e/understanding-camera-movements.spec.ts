@@ -267,6 +267,7 @@ test("configuration presets: direct shift downward then reset", async ({ page })
 
   const baselineSanity = await rtt.getAttribute("data-rtt-sanity-state");
 
+  // Select Direct Shift Downward preset
   await config.getByRole("radio", { name: "Direct shift", exact: true }).check();
   await config.getByRole("radio", { name: "Downward", exact: true }).check();
   await expect(config.getByRole("radio", { name: "Direct shift", exact: true })).toBeChecked();
@@ -274,8 +275,21 @@ test("configuration presets: direct shift downward then reset", async ({ page })
 
   const frontRise = page.getByRole("slider", { name: "Front Rise / Fall" });
   await expect(frontRise).toBeVisible({ timeout: 3_000 });
-  await expect.poll(async () => Number(await frontRise.inputValue())).toBeLessThan(0);
 
+  // Assert slider range and step attributes
+  await expect(frontRise).toHaveAttribute("min", "-40");
+  await expect(frontRise).toHaveAttribute("max", "40");
+  await expect(frontRise).toHaveAttribute("step", "1");
+
+  // Assert the exact calibrated negative value
+  await expect(frontRise).toHaveValue("-15");
+
+  // Value lies on the 1 mm step grid (exact integer)
+  const sliderValue = Number(await frontRise.inputValue());
+  expect(sliderValue).toBe(-15);
+  expect(sliderValue % 1).toBe(0);
+
+  // RTT sanity state changed after applying the preset
   await expect.poll(async () => {
     const state = await rtt.getAttribute("data-rtt-sanity-state");
     return Boolean(state && state !== baselineSanity && state.length > 0);
@@ -283,9 +297,13 @@ test("configuration presets: direct shift downward then reset", async ({ page })
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5_000 });
   await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10_000 });
 
+  // Reset → value back to 0 and all preset radio selections cleared
   await page.getByRole("button", { name: "Reset Movements" }).click();
   await expect(config.getByRole("radio", { name: "Direct shift", exact: true })).not.toBeChecked();
   await expect(config.getByRole("radio", { name: "Downward", exact: true })).not.toBeChecked();
+  await expect(config.getByRole("radio", { name: "Whole camera", exact: true })).not.toBeChecked();
+  await expect(config.getByRole("radio", { name: "Indirect shift", exact: true })).not.toBeChecked();
+  await expect(config.getByRole("radio", { name: "Upward", exact: true })).not.toBeChecked();
   await expect(frontRise).toHaveValue("0");
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5_000 });
 });

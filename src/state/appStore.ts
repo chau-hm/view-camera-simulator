@@ -306,7 +306,10 @@ export const useAppStore = create<AppStore>((set) => ({
   setCameraBodyPitchDeg: (value) =>
     set((state) => {
       if (state.camera.activeSceneId !== "understanding-camera-movements" || !Number.isFinite(value)) return {};
-      return { camera: { ...state.camera, cameraBodyPitchDeg: value } };
+      return {
+        camera: { ...state.camera, cameraBodyPitchDeg: value },
+        configurationMode: null,
+      };
     }),
 
   applyCameraConfiguration: (mode, direction) =>

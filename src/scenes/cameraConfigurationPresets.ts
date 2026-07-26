@@ -27,7 +27,7 @@ export const CAMERA_CONFIGURATION_PITCH_DEG = 8;
  * target is well below {@link CAMERA_CONFIGURATION_COMPOSITION_TOLERANCE_UV}.
  * Fall is represented as negative frontRiseMm.
  */
-export const CAMERA_CONFIGURATION_DIRECT_SHIFT_MM = 15.5;
+export const CAMERA_CONFIGURATION_DIRECT_SHIFT_MM = 15;
 
 /**
  * Maximum allowed |ΔvRaw| on the shared composition target between the three

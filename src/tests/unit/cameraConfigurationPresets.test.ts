@@ -179,7 +179,20 @@ describe("nullable configuration selection truthfulness", () => {
     useAppStore.getState().setSelectedMovement("frontTiltDeg");
     expect(useAppStore.getState().configurationMode).toBeNull();
     expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(0);
+  });
 
+  it('manual body pitch invalidates active preset', () => {
+    useAppStore.getState().applyCameraConfiguration('whole-camera-pitch', 'upward');
+    expect(useAppStore.getState().configurationMode).toBe('whole-camera-pitch');
+    expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(-8);
+
+    useAppStore.getState().setCameraBodyPitchDeg(-4);
+    expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(-4);
+    expect(useAppStore.getState().configurationMode).toBeNull();
+    expect(useAppStore.getState().configurationDirection).toBe('upward');
+  });
+
+  it('clears the active preset when a manual movement is edited', () => {
     useAppStore.getState().applyCameraConfiguration("direct-shift", "downward");
     expect(useAppStore.getState().configurationMode).toBe("direct-shift");
     useAppStore.getState().setRise(-12);
