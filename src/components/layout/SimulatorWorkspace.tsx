@@ -17,6 +17,7 @@ import { MovementSelector } from "../controls/MovementSelector";
 import { SingleMovementControl } from "../controls/SingleMovementControl";
 import { ResetControls } from "../controls/ResetControls";
 import { SubjectCountControl } from "../controls/SubjectCountControl";
+import { CameraConfigurationControl } from "../controls/CameraConfigurationControl";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
@@ -441,9 +442,14 @@ export const SimulatorWorkspace = ({
                 <ResetControls showTitle={false} />
               </div>
               {safeScene.id === "understanding-camera-movements" && (
-                <div className="sim-section" data-testid="subject-count-control">
-                  <SubjectCountControl />
-                </div>
+                <>
+                  <div className="sim-section" data-testid="camera-configuration-control-section">
+                    <CameraConfigurationControl />
+                  </div>
+                  <div className="sim-section" data-testid="subject-count-control">
+                    <SubjectCountControl />
+                  </div>
+                </>
               )}
             </div>
 

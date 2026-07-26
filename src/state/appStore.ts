@@ -24,6 +24,14 @@ import {
   DEFAULT_SUBJECT_COUNT,
   type SubjectCount,
 } from "../scenes/understandingCameraMovementsGeometry";
+import {
+  DEFAULT_CAMERA_CONFIGURATION_DIRECTION,
+  DEFAULT_CAMERA_CONFIGURATION_MODE,
+  neutralCameraConfigurationFields,
+  resolveCameraConfigurationPreset,
+  type CameraConfigurationMode,
+  type VerticalDirection,
+} from "../scenes/cameraConfigurationPresets";
 
 const defaultControlState = {
   focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
@@ -125,6 +133,16 @@ type UIState = {
 };
 
 
+/** Whether the scene supports demo camera-configuration presets. */
+const supportsCameraConfigurationPresets = (sceneId: string): boolean =>
+  sceneId === "understanding-camera-movements";
+
+/** Default configuration UI state for scene entry and reset. */
+const defaultConfigurationState = () => ({
+  configurationMode: DEFAULT_CAMERA_CONFIGURATION_MODE,
+  configurationDirection: DEFAULT_CAMERA_CONFIGURATION_DIRECTION,
+});
+
 /** Check if focusDistance is locked by the active scene's cameraControlPolicy. */
 const isFocusDistanceLocked = (sceneId: string): boolean => {
   const scene = getSceneById(sceneId);
@@ -152,6 +170,10 @@ export type AppStore = {
   ui: UIState;
   /** The currently selected movement for single-active scenes. */
   selectedMovement: CameraMovementField | null;
+  /** Last-applied configuration preset mode (Understanding Camera Movements). */
+  configurationMode: CameraConfigurationMode;
+  /** Last-applied configuration preset direction (Understanding Camera Movements). */
+  configurationDirection: VerticalDirection;
   /** Route-based initialization key. */
   lastInitializedRouteKey?: string | null;
   /** Optional runtime diagnostics for RTT scenes. */
@@ -164,6 +186,11 @@ export type AppStore = {
   setActiveTask: (taskId: string | null) => void;
   setCameraBodyPitchDeg: (value: number) => void;
   setSubjectCount: (count: SubjectCount | number) => void;
+  /** Atomically apply a conventional/corrected configuration preset. */
+  applyCameraConfiguration: (
+    mode: CameraConfigurationMode,
+    direction: VerticalDirection,
+  ) => void;
   initializeSimulatorRoute: (init: {
     mode: SimulatorMode;
     sceneId: string;
@@ -212,6 +239,8 @@ export const useAppStore = create<AppStore>((set) => ({
     showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY,
   },
   selectedMovement: null,
+  configurationMode: DEFAULT_CAMERA_CONFIGURATION_MODE,
+  configurationDirection: DEFAULT_CAMERA_CONFIGURATION_DIRECTION,
   lastInitializedRouteKey: null,
   groundGlassRttRuntimeInfo: null,
 
@@ -236,6 +265,7 @@ export const useAppStore = create<AppStore>((set) => ({
         camera: {
           ...state.camera,
           ...resolveCameraBodyReset(sceneId),
+          ...neutralCameraConfigurationFields(),
           activeSceneId: sceneId,
           focalLengthMm:
             scene?.cameraPreset.focalLengthMm ??
@@ -251,6 +281,7 @@ export const useAppStore = create<AppStore>((set) => ({
         },
         task: { ...state.task, currentTaskEvaluation: null },
         ui: { ...state.ui, showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY },
+        ...defaultConfigurationState(),
       };
     }),
 
@@ -275,6 +306,26 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) => {
       if (state.camera.activeSceneId !== "understanding-camera-movements" || !Number.isFinite(value)) return {};
       return { camera: { ...state.camera, cameraBodyPitchDeg: value } };
+    }),
+
+  applyCameraConfiguration: (mode, direction) =>
+    set((state) => {
+      if (!supportsCameraConfigurationPresets(state.camera.activeSceneId)) return {};
+      if (
+        (mode !== "whole-camera-pitch" && mode !== "direct-shift" && mode !== "indirect-shift") ||
+        (direction !== "upward" && direction !== "downward")
+      ) {
+        return {};
+      }
+      const fields = resolveCameraConfigurationPreset(mode, direction);
+      return {
+        camera: {
+          ...state.camera,
+          ...fields,
+        },
+        configurationMode: mode,
+        configurationDirection: direction,
+      };
     }),
 
   initializeSimulatorRoute: (init) =>
@@ -337,7 +388,12 @@ export const useAppStore = create<AppStore>((set) => ({
       };
 
       return {
-        camera: nextCamera,
+        camera: {
+          ...nextCamera,
+          ...neutralCameraConfigurationFields(),
+          ...resolveCameraBodyReset(sceneId),
+          activeSceneId: sceneId,
+        },
         scene: {
           activeSceneId: sceneId,
           subjectCount: DEFAULT_SUBJECT_COUNT,
@@ -349,6 +405,7 @@ export const useAppStore = create<AppStore>((set) => ({
         },
         ui: nextUi,
         selectedMovement: defaultMovement,
+        ...defaultConfigurationState(),
         lastInitializedRouteKey: routeKey,
       };
     }),
@@ -362,8 +419,14 @@ export const useAppStore = create<AppStore>((set) => ({
         frontSwingDeg: 0,
         rearRiseMm: 0,
         rearTiltDeg: 0,
+        ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+          ? { cameraBodyPitchDeg: 0 }
+          : {}),
       },
       selectedMovement: movement,
+      ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+        ? defaultConfigurationState()
+        : {}),
     })),
 
   setRise: (value) =>
@@ -376,6 +439,9 @@ export const useAppStore = create<AppStore>((set) => ({
             CAMERA_CONSTANTS.riseMinMm,
             CAMERA_CONSTANTS.riseMaxMm,
           ),
+          ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+            ? { cameraBodyPitchDeg: 0 }
+            : {}),
         },
         state.camera.activeSceneId,
         "frontRiseMm",
@@ -383,6 +449,9 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
         ? "frontRiseMm"
         : state.selectedMovement,
+      ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+        ? defaultConfigurationState()
+        : {}),
     })),
 
   setTilt: (value) =>
@@ -395,6 +464,9 @@ export const useAppStore = create<AppStore>((set) => ({
             CAMERA_CONSTANTS.tiltMinDeg,
             CAMERA_CONSTANTS.tiltMaxDeg,
           ),
+          ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+            ? { cameraBodyPitchDeg: 0 }
+            : {}),
         },
         state.camera.activeSceneId,
         "frontTiltDeg",
@@ -402,6 +474,9 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
         ? "frontTiltDeg"
         : state.selectedMovement,
+      ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+        ? defaultConfigurationState()
+        : {}),
     })),
 
   setSwing: (value) =>
@@ -414,6 +489,9 @@ export const useAppStore = create<AppStore>((set) => ({
             CAMERA_CONSTANTS.swingMinDeg,
             CAMERA_CONSTANTS.swingMaxDeg,
           ),
+          ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+            ? { cameraBodyPitchDeg: 0 }
+            : {}),
         },
         state.camera.activeSceneId,
         "frontSwingDeg",
@@ -421,6 +499,9 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
         ? "frontSwingDeg"
         : state.selectedMovement,
+      ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+        ? defaultConfigurationState()
+        : {}),
     })),
 
   setRearRise: (value) =>
@@ -433,6 +514,9 @@ export const useAppStore = create<AppStore>((set) => ({
             CAMERA_CONSTANTS.riseMinMm,
             CAMERA_CONSTANTS.riseMaxMm,
           ),
+          ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+            ? { cameraBodyPitchDeg: 0 }
+            : {}),
         },
         state.camera.activeSceneId,
         "rearRiseMm",
@@ -440,6 +524,9 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
         ? "rearRiseMm"
         : state.selectedMovement,
+      ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+        ? defaultConfigurationState()
+        : {}),
     })),
 
   setRearTilt: (value) =>
@@ -452,6 +539,9 @@ export const useAppStore = create<AppStore>((set) => ({
             CAMERA_CONSTANTS.tiltMinDeg,
             CAMERA_CONSTANTS.tiltMaxDeg,
           ),
+          ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+            ? { cameraBodyPitchDeg: 0 }
+            : {}),
         },
         state.camera.activeSceneId,
         "rearTiltDeg",
@@ -459,6 +549,9 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
         ? "rearTiltDeg"
         : state.selectedMovement,
+      ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+        ? defaultConfigurationState()
+        : {}),
     })),
 
   setFocusDistance: (value) =>
@@ -495,8 +588,14 @@ export const useAppStore = create<AppStore>((set) => ({
           frontSwingDeg: 0,
           rearRiseMm: 0,
           rearTiltDeg: 0,
+          ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+            ? { cameraBodyPitchDeg: 0 }
+            : {}),
         },
         selectedMovement: defaultMovement,
+        ...(supportsCameraConfigurationPresets(state.camera.activeSceneId)
+          ? defaultConfigurationState()
+          : {}),
       };
     }),
 
@@ -577,6 +676,7 @@ export const useAppStore = create<AppStore>((set) => ({
         camera: {
           ...state.camera,
           ...resolveCameraBodyReset(sceneId),
+          ...neutralCameraConfigurationFields(),
           ...resetValues,
           focusDistanceMm: clampFocusDistanceForScene(
             sceneId,
@@ -586,6 +686,7 @@ export const useAppStore = create<AppStore>((set) => ({
         },
         task: { ...state.task, currentTaskEvaluation: null },
         selectedMovement: defaultMovement,
+        ...defaultConfigurationState(),
       };
     }),
 
@@ -631,6 +732,7 @@ export const useAppStore = create<AppStore>((set) => ({
           activeSceneId: nextSceneId,
           mode: nextMode,
           ...resolveCameraBodyReset(nextSceneId),
+          ...neutralCameraConfigurationFields(),
           ...nextControlState,
           geometryView: nextGeometryView,
           groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
@@ -644,6 +746,7 @@ export const useAppStore = create<AppStore>((set) => ({
         },
         task: { ...state.task, currentTaskEvaluation: null },
         selectedMovement: defaultMovement,
+        ...defaultConfigurationState(),
         ui: {
           ...state.ui,
           mode: nextMode,
@@ -668,6 +771,7 @@ export const useAppStore = create<AppStore>((set) => ({
         currentTaskEvaluation: null,
       },
       selectedMovement: null,
+      ...defaultConfigurationState(),
       ui: {
         mode: DEFAULT_CAMERA_STATE.mode,
         geometryView: DEFAULT_CAMERA_STATE.geometryView,

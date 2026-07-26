@@ -204,3 +204,49 @@ test("subject presentation control stays synchronized across calibration and SPA
   expect(pageErrors).toEqual([]);
   expect(unexpectedGraphicsWarnings).toEqual([]);
 });
+
+test("configuration presets: whole camera, indirect shift, then reset", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
+
+  const rtt = page.locator('[data-testid="ground-glass-rtt"]');
+  const config = page.locator('[data-testid="camera-configuration-control"]');
+  await expect(rtt).toBeVisible({ timeout: 15_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15_000 });
+  await expect(config).toBeVisible({ timeout: 5_000 });
+
+  const baselineSanity = await rtt.getAttribute("data-rtt-sanity-state");
+
+  // Whole camera upward → Ground Glass changes
+  await config.getByRole("radio", { name: "Whole camera", exact: true }).check();
+  await config.getByRole("radio", { name: "Upward", exact: true }).check();
+  await expect.poll(async () => {
+    const state = await rtt.getAttribute("data-rtt-sanity-state");
+    return Boolean(state && state !== baselineSanity && state.length > 0);
+  }, { timeout: 15_000, intervals: [500, 1000, 2000] }).toBe(true);
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5_000 });
+  const wholeSanity = await rtt.getAttribute("data-rtt-sanity-state");
+
+  // Indirect shift upward → corrected geometry (new GG state, still valid)
+  await config.getByRole("radio", { name: "Indirect shift", exact: true }).check();
+  await expect.poll(async () => {
+    const state = await rtt.getAttribute("data-rtt-sanity-state");
+    return Boolean(state && state !== wholeSanity && state.length > 0);
+  }, { timeout: 15_000, intervals: [500, 1000, 2000] }).toBe(true);
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5_000 });
+
+  // Reset → neutral state restored
+  await page.getByRole("button", { name: "Reset Movements" }).click();
+  await expect(config.getByRole("radio", { name: "Direct shift", exact: true })).toBeChecked();
+  await expect(config.getByRole("radio", { name: "Upward", exact: true })).toBeChecked();
+
+  const frontRise = page.getByRole("slider", { name: "Front Rise" });
+  await expect(frontRise).toHaveValue("0");
+
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10_000 });
+});
