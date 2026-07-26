@@ -137,3 +137,56 @@ test("Reset Movements restores zero state and keeps Ground Glass valid", async (
     .locator('input[type="radio"]');
   await expect(frontRiseRadio).toBeChecked();
 });
+
+test("subject presentation control stays synchronized across calibration and SPA routes", async ({ page }) => {
+  test.setTimeout(120_000);
+  const pageErrors: string[] = [];
+  const unexpectedGraphicsWarnings: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() !== "warning" || !/(WebGL|THREE)/i.test(message.text())) return;
+    if (/GPU stall due to ReadPixels/i.test(message.text())) return;
+    unexpectedGraphicsWarnings.push(message.text());
+  });
+
+  await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
+  const scene = page.locator('[data-testid="scene-canvas"]');
+  const rtt = page.locator('[data-testid="ground-glass-rtt"]');
+  const subjects = page.locator('fieldset.subject-count-control');
+  await expect(scene).toHaveAttribute("data-scene-subject-count", "3", { timeout: 15_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", "120", { timeout: 15_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-subject-count", "3", { timeout: 15_000 });
+
+  for (const count of [1, 2, 3]) {
+    const radio = subjects.getByRole("radio", { name: `${count} subject${count === 1 ? "" : "s"}` });
+    await radio.check();
+    await expect(radio).toBeChecked();
+    await expect(scene).toHaveAttribute("data-scene-subject-count", String(count));
+    await expect(rtt).toHaveAttribute("data-rtt-subject-count", String(count));
+  }
+
+  await page.getByRole("button", { name: "Reset Movements" }).click();
+  await expect(scene).toHaveAttribute("data-scene-subject-count", "3");
+  await expect(rtt).toHaveAttribute("data-rtt-subject-count", "3");
+
+  await page.getByRole("link", { name: "All Scenes" }).click();
+  await page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Architecture Rise" }) })
+    .getByRole("link", { name: "Open Scene" })
+    .click();
+  const legacyRtt = page.locator('[data-testid="ground-glass-rtt"]');
+  await expect(legacyRtt).toHaveAttribute("data-rtt-focal-length-mm", "150", { timeout: 15_000 });
+  await page.getByRole("link", { name: "All Scenes" }).click();
+  await page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Understanding Camera Movements" }) })
+    .getByRole("link", { name: "Open Scene" })
+    .click();
+  await expect(page.locator('[data-testid="scene-canvas"]')).toHaveAttribute("data-scene-subject-count", "3", { timeout: 15_000 });
+  await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-focal-length-mm", "120", { timeout: 15_000 });
+  await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-subject-count", "3", { timeout: 15_000 });
+
+  expect(pageErrors).toEqual([]);
+  expect(unexpectedGraphicsWarnings).toEqual([]);
+});

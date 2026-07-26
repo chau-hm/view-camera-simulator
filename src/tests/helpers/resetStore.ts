@@ -1,6 +1,7 @@
 import { useAppStore } from "../../state/appStore";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { DEFAULT_SHOW_OPTICAL_GEOMETRY } from "../../state/sceneViewDefaults";
+import { DEFAULT_SUBJECT_COUNT } from "../../scenes/understandingCameraMovementsGeometry";
 
 /**
  * Reset the Zustand store to a clean state before each test.
@@ -10,7 +11,10 @@ import { DEFAULT_SHOW_OPTICAL_GEOMETRY } from "../../state/sceneViewDefaults";
 export function resetStoreForTest() {
   useAppStore.setState({
     camera: DEFAULT_CAMERA_STATE,
-    scene: { activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId },
+    scene: {
+      activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId,
+      subjectCount: DEFAULT_SUBJECT_COUNT,
+    },
     task: {
       activeTaskId: DEFAULT_CAMERA_STATE.activeTaskId,
       currentTaskEvaluation: null,

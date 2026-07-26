@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import React from "react";
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
@@ -18,6 +18,7 @@ import {
 import { useAppStore } from "../../state/appStore";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import geometry from "../../scenes/shelfSwingGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -137,6 +138,7 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
 
     const props = {
       opticsState,
+      focalLengthMm: camera.focalLengthMm,
       sceneId: architectureRiseScene.id,
       widthPx: 500,
       heightPx: 400,
@@ -187,6 +189,7 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
     const setSize = vi.spyOn(THREE.WebGLRenderTarget.prototype, "setSize");
     const props = {
       opticsState,
+      focalLengthMm: camera.focalLengthMm,
       sceneId: architectureRiseScene.id,
       widthPx: 500,
       heightPx: 400,
@@ -244,6 +247,7 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
     const view = render(
       React.createElement(GroundGlassRTT, {
         opticsState: deriveOpticsState(architectureCamera, architectureRiseScene),
+        focalLengthMm: architectureCamera.focalLengthMm,
         sceneId: architectureRiseScene.id,
         widthPx: 500,
         heightPx: 400,
@@ -255,6 +259,7 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
     view.rerender(
       React.createElement(GroundGlassRTT, {
         opticsState: deriveOpticsState(shelfCamera, shelfSwingScene),
+        focalLengthMm: shelfCamera.focalLengthMm,
         sceneId: shelfSwingScene.id,
         widthPx: 500,
         heightPx: 400,
@@ -266,6 +271,47 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
     expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
       (initialGeneration ?? 0) + 1,
     );
+  });
+
+  it("replaces and disposes the owned RTT subject when subject count changes", () => {
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+    });
+    useAppStore.getState().setSubjectCount(1);
+    const camera = useAppStore.getState().camera;
+    const createSubject = vi.mocked(createRegisteredRttSubject);
+    createSubject.mockClear();
+    const view = render(
+      React.createElement(GroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, understandingCameraMovementsScene),
+        focalLengthMm: camera.focalLengthMm,
+        sceneId: understandingCameraMovementsScene.id,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+      }),
+    );
+    const firstGeneration = useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration;
+    const firstGroup = createSubject.mock.results[0]?.value as THREE.Group;
+    const firstGeometry = (
+      firstGroup.getObjectByName("camera-movements-cube-middle") as THREE.Group
+    ).children.find((child) => child instanceof THREE.Mesh)?.geometry;
+    const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
+
+    act(() => useAppStore.getState().setSubjectCount(3));
+
+    expect(createSubject).toHaveBeenCalledTimes(2);
+    expect(createSubject).toHaveBeenLastCalledWith(
+      understandingCameraMovementsScene.id,
+      { subjectCount: 3 },
+    );
+    expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
+      (firstGeneration ?? 0) + 1,
+    );
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.subjectCount).toBe(3);
+    view.unmount();
   });
 
   it("does not construct placeholder pipeline targets or cameras for an RTT renderer", () => {
