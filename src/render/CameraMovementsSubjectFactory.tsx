@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useEffect, useMemo } from "react";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineSegments2 } from "three/addons/lines/LineSegments2.js";
@@ -14,6 +15,7 @@ import type { SceneDefinition } from "../types/scene";
 import {
   nextInteractiveLatticeGeneration,
   readInteractiveLatticeRuntimeInfo,
+  type InteractiveLatticeRuntimeInfo,
 } from "./cameraMovementLatticeRuntime";
 import { toWorld } from "./rttUtils";
 
@@ -160,31 +162,58 @@ export type CameraMovementsSubjectProps = {
   onGroupChange?: (group: THREE.Group | null) => void;
 };
 
+const belongsToScene = (group: THREE.Group, scene: THREE.Scene): boolean => {
+  let current: THREE.Object3D | null = group;
+  while (current) {
+    if (current === scene) return true;
+    current = current.parent;
+  }
+  return false;
+};
+
+export const publishAttachedInteractiveLatticeRuntime = (
+  group: THREE.Group,
+  scene: THREE.Scene,
+): InteractiveLatticeRuntimeInfo | null => {
+  if (!belongsToScene(group, scene)) return null;
+  group.userData.interactiveMountGeneration =
+    nextInteractiveLatticeGeneration();
+  const runtimeInfo = readInteractiveLatticeRuntimeInfo(group);
+  useAppStore.getState().setInteractiveLatticeRuntimeInfo(runtimeInfo);
+  return runtimeInfo;
+};
+
+export const clearInteractiveLatticeRuntime = (
+  runtimeInfo: InteractiveLatticeRuntimeInfo | null,
+): void => {
+  if (!runtimeInfo) return;
+  const currentRuntime =
+    useAppStore.getState().interactiveLatticeRuntimeInfo;
+  if (currentRuntime?.generation === runtimeInfo.generation) {
+    useAppStore.getState().setInteractiveLatticeRuntimeInfo(null);
+  }
+};
+
 export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
   onGroupChange,
 }) => {
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
+  const r3fScene = useThree((state) => state.scene);
   const group = useMemo(
     () => createCameraMovementsGroup(targetRegion),
     [targetRegion],
   );
 
   useEffect(() => {
-    group.userData.interactiveMountGeneration =
-      nextInteractiveLatticeGeneration();
-    const runtimeInfo = readInteractiveLatticeRuntimeInfo(group);
-    useAppStore.getState().setInteractiveLatticeRuntimeInfo(runtimeInfo);
+    const runtimeInfo =
+      publishAttachedInteractiveLatticeRuntime(group, r3fScene);
     onGroupChange?.(group);
     return () => {
       disposeCameraMovementsGroup(group);
-      const currentRuntime =
-        useAppStore.getState().interactiveLatticeRuntimeInfo;
-      if (currentRuntime?.generation === runtimeInfo.generation) {
-        useAppStore.getState().setInteractiveLatticeRuntimeInfo(null);
-      }
+      clearInteractiveLatticeRuntime(runtimeInfo);
       onGroupChange?.(null);
     };
-  }, [group, onGroupChange]);
+  }, [group, onGroupChange, r3fScene]);
 
   return <primitive object={group} dispose={null} />;
 };

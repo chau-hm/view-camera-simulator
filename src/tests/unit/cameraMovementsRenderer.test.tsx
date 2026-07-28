@@ -4,12 +4,22 @@ import * as THREE from "three";
 import {
   CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   CameraMovementsSubject,
+  clearInteractiveLatticeRuntime,
   createCameraMovementsGroup,
   disposeCameraMovementsGroup,
+  publishAttachedInteractiveLatticeRuntime,
 } from "../../render/CameraMovementsSubjectFactory";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
+
+const fiberTestState = vi.hoisted(() => ({ scene: undefined as unknown }));
+
+vi.mock("@react-three/fiber", () => ({
+  useThree: <T,>(
+    selector: (state: { scene: THREE.Scene }) => T,
+  ): T => selector({ scene: fiberTestState.scene as THREE.Scene }),
+}));
 
 afterEach(() => {
   cleanup();
@@ -29,6 +39,52 @@ describe("Camera Movements subject factory", () => {
     } finally {
       disposeCameraMovementsGroup(group);
     }
+  });
+
+  it("publishes only scene-attached groups and advances generation across replacements", () => {
+    useAppStore.getState().setInteractiveLatticeRuntimeInfo(null);
+    const scene = new THREE.Scene();
+    const unattached = createCameraMovementsGroup("upper");
+    expect(
+      publishAttachedInteractiveLatticeRuntime(unattached, scene),
+    ).toBeNull();
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
+
+    scene.add(unattached);
+    const first = publishAttachedInteractiveLatticeRuntime(unattached, scene);
+    expect(first).toEqual({
+      mounted: true,
+      geometryId: unattached.userData.canonicalGeometryId,
+      edgeCount: unattached.userData.canonicalEdgeCount,
+      targetRegion: "upper",
+      generation: unattached.userData.interactiveMountGeneration,
+    });
+
+    scene.remove(unattached);
+    clearInteractiveLatticeRuntime(first);
+    disposeCameraMovementsGroup(unattached);
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
+
+    const replacement = createCameraMovementsGroup("middle");
+    scene.add(replacement);
+    const second = publishAttachedInteractiveLatticeRuntime(
+      replacement,
+      scene,
+    );
+    expect(second?.targetRegion).toBe("middle");
+    expect(second?.generation).toBeGreaterThan(first!.generation);
+    scene.remove(replacement);
+    clearInteractiveLatticeRuntime(second);
+    disposeCameraMovementsGroup(replacement);
+
+    const remount = createCameraMovementsGroup("middle");
+    scene.add(remount);
+    const third = publishAttachedInteractiveLatticeRuntime(remount, scene);
+    expect(third?.generation).toBeGreaterThan(second!.generation);
+    scene.remove(remount);
+    clearInteractiveLatticeRuntime(third);
+    disposeCameraMovementsGroup(remount);
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
   });
 
   it.each(["upper", "middle", "lower"] as const)(
@@ -154,7 +210,7 @@ describe("Camera Movements subject factory", () => {
     disposeCameraMovementsGroup(replacement);
   });
 
-  it("replaces the mounted subject group for a store-driven target-region change", () => {
+  it("replaces and disposes component-owned groups for a target-region change", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
     useAppStore.getState().initializeSimulatorRoute({
       mode: "free",
@@ -163,6 +219,7 @@ describe("Camera Movements subject factory", () => {
     useAppStore.setState((state) => ({
       scene: { ...state.scene, targetRegion: "upper" },
     }));
+    fiberTestState.scene = new THREE.Scene();
     const mountedGroups: THREE.Group[] = [];
     const onGroupChange = vi.fn((group: THREE.Group | null) => {
       if (group) mountedGroups.push(group);
@@ -180,14 +237,7 @@ describe("Camera Movements subject factory", () => {
     };
     const first = mountedGroups[0];
     assertCanonicalGroup(first, "upper");
-    const firstRuntime = useAppStore.getState().interactiveLatticeRuntimeInfo;
-    expect(firstRuntime).toEqual({
-      mounted: true,
-      geometryId: first.userData.canonicalGeometryId,
-      edgeCount: first.userData.canonicalEdgeCount,
-      targetRegion: first.userData.targetRegion,
-      generation: first.userData.interactiveMountGeneration,
-    });
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     const firstGeometry = (first.children[0] as THREE.Mesh).geometry;
     const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
 
@@ -202,11 +252,7 @@ describe("Camera Movements subject factory", () => {
     expect(first.userData.resourcesDisposed).toBe(true);
     expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
     assertCanonicalGroup(second, "middle");
-    const secondRuntime = useAppStore.getState().interactiveLatticeRuntimeInfo;
-    expect(secondRuntime?.geometryId).toBe(second.userData.canonicalGeometryId);
-    expect(secondRuntime?.edgeCount).toBe(second.userData.canonicalEdgeCount);
-    expect(secondRuntime?.targetRegion).toBe("middle");
-    expect(secondRuntime?.generation).toBeGreaterThan(firstRuntime!.generation);
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     const secondGeometry = (second.children[0] as THREE.Mesh).geometry;
     const disposeSecondGeometry = vi.spyOn(secondGeometry!, "dispose");
 
@@ -221,9 +267,7 @@ describe("Camera Movements subject factory", () => {
     expect(second.userData.resourcesDisposed).toBe(true);
     expect(disposeSecondGeometry).toHaveBeenCalledTimes(1);
     assertCanonicalGroup(third, "lower");
-    const thirdRuntime = useAppStore.getState().interactiveLatticeRuntimeInfo;
-    expect(thirdRuntime?.targetRegion).toBe("lower");
-    expect(thirdRuntime?.generation).toBeGreaterThan(secondRuntime!.generation);
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
 
     const thirdGeometry = (third.children[0] as THREE.Mesh).geometry;
     const disposeThirdGeometry = vi.spyOn(thirdGeometry!, "dispose");
@@ -239,26 +283,19 @@ describe("Camera Movements subject factory", () => {
     consoleError.mockRestore();
   });
 
-  it("clears on unmount and publishes a fresh generation on remount", () => {
+  it("does not publish when React mounts the component without R3F attachment", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    fiberTestState.scene = new THREE.Scene();
     const first = render(<CameraMovementsSubject />);
-    const firstGeneration =
-      useAppStore.getState().interactiveLatticeRuntimeInfo?.generation;
-    expect(firstGeneration).toBeGreaterThan(0);
-    first.unmount();
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
-
-    const second = render(<CameraMovementsSubject />);
-    const secondGeneration =
-      useAppStore.getState().interactiveLatticeRuntimeInfo?.generation;
-    expect(secondGeneration).toBeGreaterThan(firstGeneration!);
-    second.unmount();
+    first.unmount();
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     consoleError.mockRestore();
   });
 
   it("renders the subject component without errors", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    fiberTestState.scene = new THREE.Scene();
     const view = render(<CameraMovementsSubject />);
     consoleError.mockRestore();
     expect(view.container).toBeDefined();
