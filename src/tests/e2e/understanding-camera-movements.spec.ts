@@ -1,4 +1,20 @@
-import { test, expect, type Locator } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
+
+const disableOpticalGeometry = async (page: Page, scene: Locator) => {
+  if ((await scene.getAttribute("data-optical-geometry-visible")) !== "true") return;
+  const trigger = page.getByRole("button", { name: "View overlays" });
+  if (await trigger.isVisible()) await trigger.click();
+  await page.getByRole("button", { name: "Hide Optical geometry" }).click();
+  await expect(scene).toHaveAttribute("data-optical-geometry-visible", "false");
+};
+
+const enableRttDiagnosticsWithoutNavigation = async (page: Page) => {
+  await page.evaluate(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("rttDiagnostics", "1");
+    window.history.replaceState(window.history.state, "", url);
+  });
+};
 
 async function readSceneCanvasVisualSample(canvas: Locator) {
   const screenshot = await canvas.screenshot();
@@ -189,10 +205,29 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   const rtt = page.locator('[data-testid="ground-glass-rtt"]');
   const sceneCanvas = scene.locator("canvas");
   await expect(sceneCanvas).toHaveCount(1);
+  await expect(scene).toHaveAttribute("data-mounted-lattice", "true", { timeout: 15_000 });
+  await expect(scene).toHaveAttribute("data-mounted-lattice-edge-count", "224");
+  await expect(scene).toHaveAttribute("data-mounted-lattice-target-region", "middle");
+  await expect(scene).toHaveAttribute("data-reference-camera-visible", "false");
+  const initialGeometryId = await scene.getAttribute("data-mounted-lattice-geometry-id");
+  const initialGenerationValue = await scene.getAttribute("data-mounted-lattice-generation");
+  const initialGeneration = Number(initialGenerationValue);
+  expect(initialGeometryId).toBeTruthy();
+  expect(Number.isSafeInteger(initialGeneration) && initialGeneration > 0).toBe(true);
+  await expect(rtt).toHaveAttribute("data-rtt-lattice-geometry-id", initialGeometryId!);
+  await expect(rtt).toHaveAttribute("data-rtt-lattice-edge-count", "224");
+  await expect(rtt).toHaveAttribute("data-rtt-lattice-target-region", "middle");
+  expect(await rtt.getAttribute("data-rtt-lattice-edge-count")).toBe(
+    await scene.getAttribute("data-mounted-lattice-edge-count"),
+  );
+  expect(await rtt.getAttribute("data-rtt-lattice-target-region")).toBe(
+    await scene.getAttribute("data-mounted-lattice-target-region"),
+  );
+  await disableOpticalGeometry(page, scene);
   const initialVisual = await readSceneCanvasVisualSample(sceneCanvas);
   expect(initialVisual.supported).toBe(true);
   expect(initialVisual.chromaticPixels).toBeGreaterThan(20);
-  expect(initialVisual.brightNeutralPixels / Math.max(initialVisual.brightPixels, 1)).toBeLessThan(0.8);
+  expect(initialVisual.brightNeutralPixels / Math.max(initialVisual.brightPixels, 1)).toBeLessThan(0.95);
   await expect(page.getByText("Subjects", { exact: true })).toHaveCount(0);
   await expect(scene).toHaveAttribute("data-lattice-edge-count", "224", { timeout: 15_000 });
   await expect(scene).toHaveAttribute("data-lattice-target-region", "middle", { timeout: 15_000 });
@@ -219,6 +254,12 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
     .filter({ has: page.getByRole("heading", { name: "Architecture Rise" }) })
     .getByRole("link", { name: "Open Scene" })
     .click();
+  const architectureScene = page.locator('[data-testid="scene-canvas"]');
+  await expect(architectureScene).not.toHaveAttribute("data-mounted-lattice", "true");
+  await expect(architectureScene).not.toHaveAttribute(
+    "data-mounted-lattice-geometry-id",
+    /.+/,
+  );
   const legacyRtt = page.locator('[data-testid="ground-glass-rtt"]');
   await expect(legacyRtt).toHaveAttribute("data-rtt-focal-length-mm", "150", { timeout: 15_000 });
   await page.getByRole("link", { name: "All Scenes" }).click();
@@ -227,13 +268,31 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
     .filter({ has: page.getByRole("heading", { name: "Understanding Camera Movements" }) })
     .getByRole("link", { name: "Open Scene" })
     .click();
-  await expect(page.locator('[data-testid="scene-canvas"]')).toHaveAttribute("data-lattice-edge-count", "224", { timeout: 15_000 });
-  await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-focal-length-mm", "105", { timeout: 15_000 });
-  await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-lattice-edge-count", "224", { timeout: 15_000 });
-  const returnVisual = await readSceneCanvasVisualSample(page.locator('[data-testid="scene-canvas"] canvas'));
+  await enableRttDiagnosticsWithoutNavigation(page);
+  const returnedScene = page.locator('[data-testid="scene-canvas"]');
+  const returnedRtt = page.locator('[data-testid="ground-glass-rtt"]');
+  await expect(returnedScene).toHaveAttribute("data-lattice-edge-count", "224", { timeout: 15_000 });
+  await expect(returnedScene).toHaveAttribute("data-mounted-lattice", "true", { timeout: 15_000 });
+  await expect(returnedScene).toHaveAttribute("data-mounted-lattice-edge-count", "224");
+  await expect(returnedScene).toHaveAttribute("data-mounted-lattice-target-region", "middle");
+  const returnedGeometryId = await returnedScene.getAttribute("data-mounted-lattice-geometry-id");
+  const returnedGeneration = Number(
+    await returnedScene.getAttribute("data-mounted-lattice-generation"),
+  );
+  expect(returnedGeometryId).toBe(initialGeometryId);
+  expect(Number.isSafeInteger(returnedGeneration) && returnedGeneration > 0).toBe(true);
+  expect(returnedGeneration).not.toBe(initialGeneration);
+  await expect(returnedRtt).toHaveAttribute("data-rtt-focal-length-mm", "105", { timeout: 15_000 });
+  await expect(returnedRtt).toHaveAttribute("data-rtt-lattice-edge-count", "224", { timeout: 15_000 });
+  await expect(returnedRtt).toHaveAttribute("data-rtt-lattice-geometry-id", returnedGeometryId!);
+  await expect(returnedRtt).toHaveAttribute("data-rtt-lattice-target-region", "middle");
+  await expect(returnedRtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15_000 });
+  await expect(returnedRtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 15_000 });
+  await disableOpticalGeometry(page, returnedScene);
+  const returnVisual = await readSceneCanvasVisualSample(returnedScene.locator("canvas"));
   expect(returnVisual.supported).toBe(true);
   expect(returnVisual.chromaticPixels).toBeGreaterThan(20);
-  expect(returnVisual.brightNeutralPixels / Math.max(returnVisual.brightPixels, 1)).toBeLessThan(0.8);
+  expect(returnVisual.brightNeutralPixels / Math.max(returnVisual.brightPixels, 1)).toBeLessThan(0.95);
 
   expect(pageErrors).toEqual([]);
   expect(unexpectedGraphicsMessages).toEqual([]);

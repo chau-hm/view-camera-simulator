@@ -30,5 +30,6 @@ export function resetStoreForTest() {
     selectedMovement: null,
     lastInitializedRouteKey: null,
     groundGlassRttRuntimeInfo: null,
+    interactiveLatticeRuntimeInfo: null,
   });
 }

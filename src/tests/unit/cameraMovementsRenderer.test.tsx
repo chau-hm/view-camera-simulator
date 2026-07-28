@@ -9,6 +9,7 @@ import {
 } from "../../render/CameraMovementsSubjectFactory";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
 
 afterEach(() => {
   cleanup();
@@ -16,6 +17,20 @@ afterEach(() => {
 });
 
 describe("Camera Movements subject factory", () => {
+  it("does not publish mounted runtime state from registry metadata or factory creation", () => {
+    useAppStore.getState().setInteractiveLatticeRuntimeInfo(null);
+    expect(
+      getSceneSubjectRegistration("understanding-camera-movements")
+        ?.canonicalLattice?.edgeCount,
+    ).toBe(CAMERA_MOVEMENT_LATTICE.edges.length);
+    const group = createCameraMovementsGroup("middle");
+    try {
+      expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
+    } finally {
+      disposeCameraMovementsGroup(group);
+    }
+  });
+
   it.each(["upper", "middle", "lower"] as const)(
     "renders every canonical edge exactly once for the %s target region",
     (targetRegion) => {
@@ -165,6 +180,14 @@ describe("Camera Movements subject factory", () => {
     };
     const first = mountedGroups[0];
     assertCanonicalGroup(first, "upper");
+    const firstRuntime = useAppStore.getState().interactiveLatticeRuntimeInfo;
+    expect(firstRuntime).toEqual({
+      mounted: true,
+      geometryId: first.userData.canonicalGeometryId,
+      edgeCount: first.userData.canonicalEdgeCount,
+      targetRegion: first.userData.targetRegion,
+      generation: first.userData.interactiveMountGeneration,
+    });
     const firstGeometry = (first.children[0] as THREE.Mesh).geometry;
     const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
 
@@ -179,6 +202,11 @@ describe("Camera Movements subject factory", () => {
     expect(first.userData.resourcesDisposed).toBe(true);
     expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
     assertCanonicalGroup(second, "middle");
+    const secondRuntime = useAppStore.getState().interactiveLatticeRuntimeInfo;
+    expect(secondRuntime?.geometryId).toBe(second.userData.canonicalGeometryId);
+    expect(secondRuntime?.edgeCount).toBe(second.userData.canonicalEdgeCount);
+    expect(secondRuntime?.targetRegion).toBe("middle");
+    expect(secondRuntime?.generation).toBeGreaterThan(firstRuntime!.generation);
     const secondGeometry = (second.children[0] as THREE.Mesh).geometry;
     const disposeSecondGeometry = vi.spyOn(secondGeometry!, "dispose");
 
@@ -193,17 +221,39 @@ describe("Camera Movements subject factory", () => {
     expect(second.userData.resourcesDisposed).toBe(true);
     expect(disposeSecondGeometry).toHaveBeenCalledTimes(1);
     assertCanonicalGroup(third, "lower");
+    const thirdRuntime = useAppStore.getState().interactiveLatticeRuntimeInfo;
+    expect(thirdRuntime?.targetRegion).toBe("lower");
+    expect(thirdRuntime?.generation).toBeGreaterThan(secondRuntime!.generation);
 
     const thirdGeometry = (third.children[0] as THREE.Mesh).geometry;
     const disposeThirdGeometry = vi.spyOn(thirdGeometry!, "dispose");
     view.unmount();
     expect(third.userData.resourcesDisposed).toBe(true);
     expect(disposeThirdGeometry).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     expect(consoleError).toHaveBeenCalledTimes(1);
     expect(String(consoleError.mock.calls[0]?.[0])).toContain(
       "The tag <%s> is unrecognized",
     );
     expect(consoleError.mock.calls[0]?.[1]).toBe("primitive");
+    consoleError.mockRestore();
+  });
+
+  it("clears on unmount and publishes a fresh generation on remount", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const first = render(<CameraMovementsSubject />);
+    const firstGeneration =
+      useAppStore.getState().interactiveLatticeRuntimeInfo?.generation;
+    expect(firstGeneration).toBeGreaterThan(0);
+    first.unmount();
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
+
+    const second = render(<CameraMovementsSubject />);
+    const secondGeneration =
+      useAppStore.getState().interactiveLatticeRuntimeInfo?.generation;
+    expect(secondGeneration).toBeGreaterThan(firstGeneration!);
+    second.unmount();
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     consoleError.mockRestore();
   });
 

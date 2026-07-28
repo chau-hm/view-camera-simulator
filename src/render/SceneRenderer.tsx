@@ -916,6 +916,9 @@ export const SceneRenderer = ({
 }: SceneRendererProps) => {
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const configuredTargetRegion = useAppStore((state) => state.scene.targetRegion);
+  const interactiveLatticeRuntimeInfo = useAppStore(
+    (state) => state.interactiveLatticeRuntimeInfo,
+  );
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
@@ -1005,6 +1008,31 @@ export const SceneRenderer = ({
       data-lattice-edge-count={subjectRegistration?.canonicalLattice?.edgeCount}
       data-lattice-target-region={
         subjectRegistration?.canonicalLattice ? configuredTargetRegion : undefined
+      }
+      data-mounted-lattice={
+        scene.id === "understanding-camera-movements"
+          ? String(interactiveLatticeRuntimeInfo?.mounted === true)
+          : undefined
+      }
+      data-mounted-lattice-geometry-id={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.geometryId
+          : undefined
+      }
+      data-mounted-lattice-edge-count={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.edgeCount
+          : undefined
+      }
+      data-mounted-lattice-target-region={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.targetRegion
+          : undefined
+      }
+      data-mounted-lattice-generation={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.generation
+          : undefined
       }
       data-reference-camera-visible={String(referenceCameraVisible)}
       data-focus-overlay-vertices={focusOverlayVertexCount}

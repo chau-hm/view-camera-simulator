@@ -11,6 +11,10 @@ import {
 } from "../scenes/cameraMovementSceneCalibration";
 import { useAppStore } from "../state/appStore";
 import type { SceneDefinition } from "../types/scene";
+import {
+  nextInteractiveLatticeGeneration,
+  readInteractiveLatticeRuntimeInfo,
+} from "./cameraMovementLatticeRuntime";
 import { toWorld } from "./rttUtils";
 
 const { presentation } = CAMERA_MOVEMENT_SCENE_CALIBRATION;
@@ -166,9 +170,18 @@ export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
   );
 
   useEffect(() => {
+    group.userData.interactiveMountGeneration =
+      nextInteractiveLatticeGeneration();
+    const runtimeInfo = readInteractiveLatticeRuntimeInfo(group);
+    useAppStore.getState().setInteractiveLatticeRuntimeInfo(runtimeInfo);
     onGroupChange?.(group);
     return () => {
       disposeCameraMovementsGroup(group);
+      const currentRuntime =
+        useAppStore.getState().interactiveLatticeRuntimeInfo;
+      if (currentRuntime?.generation === runtimeInfo.generation) {
+        useAppStore.getState().setInteractiveLatticeRuntimeInfo(null);
+      }
       onGroupChange?.(null);
     };
   }, [group, onGroupChange]);

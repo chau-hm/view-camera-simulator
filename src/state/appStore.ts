@@ -144,6 +144,7 @@ const isInfinityResetDisallowed = (sceneId: string): boolean => {
 };
 
 import type { GroundGlassRttRuntimeInfo } from "../render/groundGlassRttDimensions";
+import type { InteractiveLatticeRuntimeInfo } from "../render/cameraMovementLatticeRuntime";
 
 export type AppStore = {
   camera: CameraState;
@@ -156,8 +157,11 @@ export type AppStore = {
   lastInitializedRouteKey?: string | null;
   /** Optional runtime diagnostics for RTT scenes. */
   groundGlassRttRuntimeInfo?: GroundGlassRttRuntimeInfo | null;
+  /** Actual mounted interactive lattice diagnostics; null when not mounted. */
+  interactiveLatticeRuntimeInfo?: InteractiveLatticeRuntimeInfo | null;
 
   setGroundGlassRttRuntimeInfo: (info: GroundGlassRttRuntimeInfo | null) => void;
+  setInteractiveLatticeRuntimeInfo: (info: InteractiveLatticeRuntimeInfo | null) => void;
   setCurrentTaskEvaluation: (evaluation: TaskEvaluation | null) => void;
   setMode: (mode: SimulatorMode) => void;
   setActiveScene: (sceneId: string) => void;
@@ -213,9 +217,12 @@ export const useAppStore = create<AppStore>((set) => ({
   selectedMovement: null,
   lastInitializedRouteKey: null,
   groundGlassRttRuntimeInfo: null,
+  interactiveLatticeRuntimeInfo: null,
 
   setGroundGlassRttRuntimeInfo: (info) =>
     set(() => ({ groundGlassRttRuntimeInfo: info })),
+  setInteractiveLatticeRuntimeInfo: (info) =>
+    set(() => ({ interactiveLatticeRuntimeInfo: info })),
 
   setCurrentTaskEvaluation: (evaluation) =>
     set((state) => ({
