@@ -1,6 +1,10 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { isGroundGlassRttScene, RTT_SCENES } from "../../render/groundGlassRttScenes";
-import { createRegisteredRttSubject, getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
+import {
+  createRegisteredRttSubject,
+  disposeRegisteredRttSubject,
+  getSceneSubjectRegistration,
+} from "../../render/sceneSubjectRegistry";
 import { useAppStore } from "../../state/appStore";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
@@ -12,8 +16,13 @@ import {
   createGroundGlassDofUniformState,
 } from "../../render/createGroundGlassDofUniformState";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
-import { getSubjectLayout } from "../../scenes/understandingCameraMovementsGeometry";
 import { resolveGroundGlassImageDistanceMm } from "../../render/groundGlassRttScenes";
+import {
+  CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
+  createCameraMovementsGroup,
+  disposeCameraMovementsGroup,
+} from "../../render/CameraMovementsSubjectFactory";
+import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 
 function setupCamera() {
   useAppStore.getState().initializeSimulatorRoute({
@@ -34,17 +43,37 @@ describe("RTT scene registration", () => {
     expect(reg?.createRttGroup).toBeDefined();
   });
 
-  it.each([1, 2, 3] as const)(
-    "createRegisteredRttSubject returns the canonical %i-cube group",
-    (subjectCount) => {
-      const group = createRegisteredRttSubject(
+  it.each(["upper", "middle", "lower"] as const)(
+    "3D and RTT resolve the identical canonical lattice for the %s target region",
+    (targetRegion) => {
+      const rttGroup = createRegisteredRttSubject(
         "understanding-camera-movements",
-        { subjectCount },
+        { targetRegion },
       );
-      expect(group?.userData.subjectCount).toBe(subjectCount);
-      getSubjectLayout(subjectCount).cubes.forEach((cube) => {
-        expect(group?.getObjectByName(cube.id)).not.toBeNull();
-      });
+      const interactiveGroup = createCameraMovementsGroup(targetRegion);
+      try {
+        expect(rttGroup?.userData.targetRegion).toBe(targetRegion);
+        expect(rttGroup?.userData.canonicalGeometryId).toBe(
+          CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
+        );
+        expect(rttGroup?.userData.canonicalGeometryId).toBe(
+          interactiveGroup.userData.canonicalGeometryId,
+        );
+        expect(rttGroup?.userData.canonicalEdgeIds).toEqual(
+          interactiveGroup.userData.canonicalEdgeIds,
+        );
+        expect(rttGroup?.userData.canonicalEdgeIds).toEqual(
+          CAMERA_MOVEMENT_LATTICE.edges.map(({ id }) => id),
+        );
+      } finally {
+        if (rttGroup) {
+          disposeRegisteredRttSubject(
+            "understanding-camera-movements",
+            rttGroup,
+          );
+        }
+        disposeCameraMovementsGroup(interactiveGroup);
+      }
     },
   );
 });
@@ -276,8 +305,12 @@ describe("RTT camera configuration", () => {
     const s = useAppStore.getState().camera;
     const optics = deriveOpticsState(s, understandingCameraMovementsScene);
     const clip = getGroundGlassClipRangeWorld(understandingCameraMovementsScene, optics.lensCenterWorld);
-    // Scene bounds extend past the 2 m cube plane to keep overlays visible.
-    expect(clip.far).toBeGreaterThan(4);
+    const farthestSubjectDepthWorld =
+      (understandingCameraMovementsScene.bounds.max.z -
+        optics.lensCenterWorld.z) *
+      0.001;
+    expect(Number.isFinite(clip.far)).toBe(true);
+    expect(clip.far).toBeGreaterThan(farthestSubjectDepthWorld);
     expect(clip.near).toBeLessThan(0.1);
   });
 });

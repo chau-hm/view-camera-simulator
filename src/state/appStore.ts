@@ -21,9 +21,9 @@ import {
   resolveInitialOpticalGeometryVisibility,
 } from "./sceneViewDefaults";
 import {
-  DEFAULT_SUBJECT_COUNT,
-  type SubjectCount,
-} from "../scenes/understandingCameraMovementsGeometry";
+  DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
+  type CameraMovementTargetRegion,
+} from "../scenes/cameraMovementSceneCalibration";
 
 const defaultControlState = {
   focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
@@ -106,8 +106,8 @@ const resolveScenePresetReset = (
 
 type SceneRuntimeState = {
   activeSceneId: string;
-  /** Presentation-only subject count for Understanding Camera Movements. */
-  subjectCount: SubjectCount;
+  /** Presentation-only target region for Understanding Camera Movements. */
+  targetRegion: CameraMovementTargetRegion;
 };
 
 type TaskRuntimeState = {
@@ -144,6 +144,7 @@ const isInfinityResetDisallowed = (sceneId: string): boolean => {
 };
 
 import type { GroundGlassRttRuntimeInfo } from "../render/groundGlassRttDimensions";
+import type { InteractiveLatticeRuntimeInfo } from "../render/cameraMovementLatticeRuntime";
 
 export type AppStore = {
   camera: CameraState;
@@ -156,14 +157,16 @@ export type AppStore = {
   lastInitializedRouteKey?: string | null;
   /** Optional runtime diagnostics for RTT scenes. */
   groundGlassRttRuntimeInfo?: GroundGlassRttRuntimeInfo | null;
+  /** Actual mounted interactive lattice diagnostics; null when not mounted. */
+  interactiveLatticeRuntimeInfo?: InteractiveLatticeRuntimeInfo | null;
 
   setGroundGlassRttRuntimeInfo: (info: GroundGlassRttRuntimeInfo | null) => void;
+  setInteractiveLatticeRuntimeInfo: (info: InteractiveLatticeRuntimeInfo | null) => void;
   setCurrentTaskEvaluation: (evaluation: TaskEvaluation | null) => void;
   setMode: (mode: SimulatorMode) => void;
   setActiveScene: (sceneId: string) => void;
   setActiveTask: (taskId: string | null) => void;
   setCameraBodyPitchDeg: (value: number) => void;
-  setSubjectCount: (count: SubjectCount | number) => void;
   initializeSimulatorRoute: (init: {
     mode: SimulatorMode;
     sceneId: string;
@@ -197,7 +200,7 @@ export const useAppStore = create<AppStore>((set) => ({
   camera: DEFAULT_CAMERA_STATE,
   scene: {
     activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId,
-    subjectCount: DEFAULT_SUBJECT_COUNT,
+    targetRegion: DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
   },
   task: {
     activeTaskId: DEFAULT_CAMERA_STATE.activeTaskId,
@@ -214,9 +217,12 @@ export const useAppStore = create<AppStore>((set) => ({
   selectedMovement: null,
   lastInitializedRouteKey: null,
   groundGlassRttRuntimeInfo: null,
+  interactiveLatticeRuntimeInfo: null,
 
   setGroundGlassRttRuntimeInfo: (info) =>
     set(() => ({ groundGlassRttRuntimeInfo: info })),
+  setInteractiveLatticeRuntimeInfo: (info) =>
+    set(() => ({ interactiveLatticeRuntimeInfo: info })),
 
   setCurrentTaskEvaluation: (evaluation) =>
     set((state) => ({
@@ -247,7 +253,7 @@ export const useAppStore = create<AppStore>((set) => ({
         },
         scene: {
           activeSceneId: sceneId,
-          subjectCount: DEFAULT_SUBJECT_COUNT,
+          targetRegion: DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
         },
         task: { ...state.task, currentTaskEvaluation: null },
         ui: { ...state.ui, showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY },
@@ -263,13 +269,6 @@ export const useAppStore = create<AppStore>((set) => ({
         currentTaskEvaluation: null,
       },
     })),
-
-  setSubjectCount: (count) =>
-    set((state) => {
-      if (state.scene.activeSceneId !== "understanding-camera-movements") return {};
-      if (count !== 1 && count !== 2 && count !== 3) return {};
-      return { scene: { ...state.scene, subjectCount: count } };
-    }),
 
   setCameraBodyPitchDeg: (value) =>
     set((state) => {
@@ -340,7 +339,7 @@ export const useAppStore = create<AppStore>((set) => ({
         camera: nextCamera,
         scene: {
           activeSceneId: sceneId,
-          subjectCount: DEFAULT_SUBJECT_COUNT,
+          targetRegion: DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
         },
         task: {
           ...state.task,
@@ -640,7 +639,7 @@ export const useAppStore = create<AppStore>((set) => ({
         },
         scene: {
           activeSceneId: nextSceneId,
-          subjectCount: DEFAULT_SUBJECT_COUNT,
+          targetRegion: DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
         },
         task: { ...state.task, currentTaskEvaluation: null },
         selectedMovement: defaultMovement,
@@ -661,7 +660,7 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: DEFAULT_CAMERA_STATE,
       scene: {
         activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId,
-        subjectCount: DEFAULT_SUBJECT_COUNT,
+        targetRegion: DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
       },
       task: {
         activeTaskId: DEFAULT_CAMERA_STATE.activeTaskId,

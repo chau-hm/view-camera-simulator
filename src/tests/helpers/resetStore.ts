@@ -1,7 +1,7 @@
 import { useAppStore } from "../../state/appStore";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { DEFAULT_SHOW_OPTICAL_GEOMETRY } from "../../state/sceneViewDefaults";
-import { DEFAULT_SUBJECT_COUNT } from "../../scenes/understandingCameraMovementsGeometry";
+import { DEFAULT_CAMERA_MOVEMENT_TARGET_REGION } from "../../scenes/cameraMovementSceneCalibration";
 
 /**
  * Reset the Zustand store to a clean state before each test.
@@ -13,7 +13,7 @@ export function resetStoreForTest() {
     camera: DEFAULT_CAMERA_STATE,
     scene: {
       activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId,
-      subjectCount: DEFAULT_SUBJECT_COUNT,
+      targetRegion: DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
     },
     task: {
       activeTaskId: DEFAULT_CAMERA_STATE.activeTaskId,
@@ -30,5 +30,6 @@ export function resetStoreForTest() {
     selectedMovement: null,
     lastInitializedRouteKey: null,
     groundGlassRttRuntimeInfo: null,
+    interactiveLatticeRuntimeInfo: null,
   });
 }

@@ -5,7 +5,7 @@ export const understandingCameraMovementsScene: SceneDefinition = {
   id: "understanding-camera-movements",
   name: "Understanding Camera Movements",
   description:
-    "Compare front and rear camera movements against a fixed reference camera and observe how each movement changes the camera geometry and image.",
+    "Observe front and rear camera movements and how each movement changes the camera geometry and image.",
   assets: [],
   cameraPreset: {
     focalLengthMm: geometry.cameraPreset.focalLengthMm,

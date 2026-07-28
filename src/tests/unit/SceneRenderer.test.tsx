@@ -5,13 +5,25 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import {
   applyObserverCameraReset,
   SceneAssetMesh,
+  shouldRenderReferenceCamera,
 } from "../../render/SceneRenderer";
 import { createShelfSwingGroup, disposeShelfSwingGroup } from "../../render/ShelfSwingSubjectFactory";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import geometry from "../../scenes/shelfSwingGeometry";
 import { toWorld } from "../../render/rttUtils";
+import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 
 describe("SceneRenderer Shelf Swing integration", () => {
+  it("derives the camera-movements ghost visibility from scene calibration", () => {
+    expect(
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.showReferenceCamera,
+    ).toBe(false);
+    expect(
+      shouldRenderReferenceCamera(understandingCameraMovementsScene),
+    ).toBe(false);
+  });
+
   it.each(["shelf-floor", "shelf-diagonal-structure", "shelf-decor"])(
     "keeps legacy asset metadata %s non-rendering",
     (assetId) => {
