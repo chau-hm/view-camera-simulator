@@ -283,6 +283,45 @@ describe("Camera Movements subject factory", () => {
     consoleError.mockRestore();
   });
 
+  it("keeps the mounted lattice group stable across viewpoint and body-pitch optics changes", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+    });
+    fiberTestState.scene = new THREE.Scene();
+    const mountedGroups: THREE.Group[] = [];
+    const view = render(
+      <CameraMovementsSubject
+        onGroupChange={(group) => {
+          if (group) mountedGroups.push(group);
+        }}
+      />,
+    );
+    const initialGroup = mountedGroups[0];
+    const initialGeneration = initialGroup.userData.interactiveMountGeneration;
+    const initialGeometryId = initialGroup.userData.canonicalGeometryId;
+    const initialGeometry = (initialGroup.children[0] as THREE.Mesh).geometry;
+    const disposeGeometry = vi.spyOn(initialGeometry, "dispose");
+
+    act(() => {
+      useAppStore.getState().setCameraMovementViewpointAnchor("high");
+      useAppStore.getState().setCameraBodyPitchDeg(8);
+    });
+
+    expect(mountedGroups).toEqual([initialGroup]);
+    expect(initialGroup.userData.interactiveMountGeneration).toBe(
+      initialGeneration,
+    );
+    expect(initialGroup.userData.canonicalGeometryId).toBe(initialGeometryId);
+    expect(initialGroup.userData.resourcesDisposed).not.toBe(true);
+    expect(disposeGeometry).not.toHaveBeenCalled();
+
+    view.unmount();
+    expect(disposeGeometry).toHaveBeenCalledTimes(1);
+    consoleError.mockRestore();
+  });
+
   it("does not publish when React mounts the component without R3F attachment", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
     fiberTestState.scene = new THREE.Scene();

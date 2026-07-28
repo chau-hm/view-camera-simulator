@@ -10,6 +10,7 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import geometry, {
+  CAMERA_BODY_PIVOT_RIG_LOCAL,
   CAMERA_BODY_PIVOT_WORLD,
   CAMERA_BODY_RAIL_GEOMETRY,
   CAMERA_MOVEMENTS_FOCAL_CALIBRATION,
@@ -35,6 +36,8 @@ const cameraAtFocalLength = (
 ): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
   ...understandingCameraMovementsScene.cameraPreset,
+  viewpointAnchor: "mid",
+  cameraRigPlacement: geometry.cameraRig.defaultViewpoint,
   focalLengthMm,
   activeSceneId: understandingCameraMovementsScene.id,
   ...overrides,
@@ -226,13 +229,14 @@ describe("Understanding Camera Movements body-pitch foundation", () => {
       y: -(CAMERA_CONSTANTS.frontStandardHeightMm / 2) - 20,
       z: -expectedImageDistanceMm / 2,
     });
+    expect(CAMERA_BODY_PIVOT_WORLD).toBe(CAMERA_BODY_PIVOT_RIG_LOCAL);
     expect(CAMERA_BODY_RAIL_GEOMETRY.centerWorld).toBe(CAMERA_BODY_PIVOT_WORLD);
     expect(CAMERA_BODY_RAIL_GEOMETRY.dimensionsMm.z).toBeCloseTo(expectedImageDistanceMm + 120, 12);
     expect(geometry.coordinateContract.bodyPitch).toMatchObject({
-      axis: "world +X",
-      positiveDirection: "+Z rotates toward -Y",
-      hierarchy: "local standard movements, then rigid body pitch",
-      pivotWorld: CAMERA_BODY_PIVOT_WORLD,
+      axis: "rig-local +X",
+      positiveDirection: "rig-local +Z rotates toward rig-local -Y",
+      hierarchy: "local standard movements, then local body pitch, then outer rig placement",
+      pivotRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
     });
   });
 });

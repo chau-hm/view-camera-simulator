@@ -5,7 +5,7 @@ import {
   deriveScheimpflugConstruction,
   type ScheimpflugConstruction,
 } from "../../core/optics/scheimpflugConstruction";
-import { rotatePointAroundX } from "../../core/math/vec";
+import { transformRigLocalPointToWorld } from "../../core/optics/applyCameraBodyPitch";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 
@@ -77,10 +77,15 @@ export const resolveCameraBodyRailWorldEndpoints = (
 ): CameraBodyRailWorldEndpoints | null => {
   if (!scene.cameraBodyPitchCapability?.enabled) return null;
   const rail = cameraMovementsGeometry.cameraBody.rail;
-  const { pivotWorld, pitchDeg } = opticsState.cameraBodyTransform;
   return {
-    rear: rotatePointAroundX(rail.rearEndpointWorld, pivotWorld, pitchDeg),
-    front: rotatePointAroundX(rail.frontEndpointWorld, pivotWorld, pitchDeg),
+    rear: transformRigLocalPointToWorld(
+      rail.rearEndpointRigLocal,
+      opticsState.cameraRigTransform,
+    ),
+    front: transformRigLocalPointToWorld(
+      rail.frontEndpointRigLocal,
+      opticsState.cameraRigTransform,
+    ),
   };
 };
 

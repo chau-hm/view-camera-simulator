@@ -14,6 +14,7 @@ import {
   CAMERA_CONSTANTS,
   DEFAULT_CAMERA_STATE,
   DEFAULT_CAMERA_BODY_PIVOT_WORLD,
+  DEFAULT_CAMERA_RIG_PLACEMENT,
   isApertureValue,
 } from "../utils/constants";
 import {
@@ -24,6 +25,11 @@ import {
   DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
   type CameraMovementTargetRegion,
 } from "../scenes/cameraMovementSceneCalibration";
+import {
+  resolveCameraRigViewpointAnchor,
+} from "../scenes/cameraRigViewpointGeometry";
+import type { CameraRigViewpointAnchor } from "../types/optics";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../scenes/cameraMovementSceneCalibration";
 
 const defaultControlState = {
   focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
@@ -60,6 +66,27 @@ const resolveCameraBodyReset = (sceneId: string): Pick<CameraState, "cameraBodyP
         : DEFAULT_CAMERA_BODY_PIVOT_WORLD,
   };
 };
+
+const isCameraMovementsScene = (sceneId: string) => sceneId === "understanding-camera-movements";
+
+const resolveRigPlacement = (
+  sceneId: string,
+  anchor: CameraRigViewpointAnchor = "mid",
+): CameraState["cameraRigPlacement"] => {
+  if (!isCameraMovementsScene(sceneId)) return { ...DEFAULT_CAMERA_RIG_PLACEMENT };
+  const resolved = resolveCameraRigViewpointAnchor(CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig, anchor);
+  return { ...resolved, rigOriginWorld: { ...resolved.rigOriginWorld } };
+};
+
+const zeroStandardMovements = (camera: CameraState): CameraState => ({
+  ...camera,
+  frontRiseMm: 0,
+  frontTiltDeg: 0,
+  frontSwingDeg: 0,
+  rearRiseMm: 0,
+  rearTiltDeg: 0,
+  cameraBodyPitchDeg: 0,
+});
 
 /** Whether the scene enforces at-most-one active movement. */
 const isSingleMovementScene = (sceneId: string): boolean => {
@@ -167,6 +194,7 @@ export type AppStore = {
   setActiveScene: (sceneId: string) => void;
   setActiveTask: (taskId: string | null) => void;
   setCameraBodyPitchDeg: (value: number) => void;
+  setCameraMovementViewpointAnchor: (anchor: CameraRigViewpointAnchor) => void;
   initializeSimulatorRoute: (init: {
     mode: SimulatorMode;
     sceneId: string;
@@ -242,6 +270,8 @@ export const useAppStore = create<AppStore>((set) => ({
         camera: {
           ...state.camera,
           ...resolveCameraBodyReset(sceneId),
+          viewpointAnchor: "mid",
+          cameraRigPlacement: resolveRigPlacement(sceneId),
           activeSceneId: sceneId,
           focalLengthMm:
             scene?.cameraPreset.focalLengthMm ??
@@ -273,7 +303,27 @@ export const useAppStore = create<AppStore>((set) => ({
   setCameraBodyPitchDeg: (value) =>
     set((state) => {
       if (state.camera.activeSceneId !== "understanding-camera-movements" || !Number.isFinite(value)) return {};
-      return { camera: { ...state.camera, cameraBodyPitchDeg: value } };
+      return {
+        camera: {
+          ...state.camera,
+          cameraBodyPitchDeg: value,
+        },
+      };
+    }),
+
+  setCameraMovementViewpointAnchor: (anchor) =>
+    set((state) => {
+      if (!isCameraMovementsScene(state.camera.activeSceneId)) return {};
+      if (anchor !== "mid" && anchor !== "high" && anchor !== "low") return {};
+      const camera = zeroStandardMovements(state.camera);
+      return {
+        camera: {
+          ...camera,
+          viewpointAnchor: anchor,
+          cameraRigPlacement: resolveRigPlacement(state.camera.activeSceneId, anchor),
+        },
+        selectedMovement: resolveDefaultMovement(state.camera.activeSceneId),
+      };
     }),
 
   initializeSimulatorRoute: (init) =>
@@ -327,6 +377,13 @@ export const useAppStore = create<AppStore>((set) => ({
         }
       }
 
+      nextCamera = {
+        ...nextCamera,
+        viewpointAnchor: "mid",
+        cameraRigPlacement: resolveRigPlacement(sceneId, "mid"),
+        cameraBodyPitchDeg: 0,
+      };
+
       const defaultMovement = resolveDefaultMovement(sceneId);
 
       const nextUi = {
@@ -367,6 +424,9 @@ export const useAppStore = create<AppStore>((set) => ({
 
   setRise: (value) =>
     set((state) => ({
+      ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+        ? {}
+        : {
       camera: enforceSingleMovement(
         {
           ...state.camera,
@@ -382,10 +442,14 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
         ? "frontRiseMm"
         : state.selectedMovement,
+        }),
     })),
 
   setTilt: (value) =>
     set((state) => ({
+      ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+        ? {}
+        : {
       camera: enforceSingleMovement(
         {
           ...state.camera,
@@ -401,10 +465,14 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
         ? "frontTiltDeg"
         : state.selectedMovement,
+        }),
     })),
 
   setSwing: (value) =>
     set((state) => ({
+      ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+        ? {}
+        : {
       camera: enforceSingleMovement(
         {
           ...state.camera,
@@ -420,10 +488,14 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
         ? "frontSwingDeg"
         : state.selectedMovement,
+        }),
     })),
 
   setRearRise: (value) =>
     set((state) => ({
+      ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+        ? {}
+        : {
       camera: enforceSingleMovement(
         {
           ...state.camera,
@@ -439,10 +511,14 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
         ? "rearRiseMm"
         : state.selectedMovement,
+        }),
     })),
 
   setRearTilt: (value) =>
     set((state) => ({
+      ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+        ? {}
+        : {
       camera: enforceSingleMovement(
         {
           ...state.camera,
@@ -458,6 +534,7 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
         ? "rearTiltDeg"
         : state.selectedMovement,
+        }),
     })),
 
   setFocusDistance: (value) =>
@@ -582,6 +659,8 @@ export const useAppStore = create<AppStore>((set) => ({
             resetValues.focusDistanceMm ?? defaultControlState.focusDistanceMm,
           ),
           aperture: (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
+          cameraBodyPitchDeg: 0,
+          cameraRigPlacement: state.camera.cameraRigPlacement,
         },
         task: { ...state.task, currentTaskEvaluation: null },
         selectedMovement: defaultMovement,
@@ -631,6 +710,8 @@ export const useAppStore = create<AppStore>((set) => ({
           mode: nextMode,
           ...resolveCameraBodyReset(nextSceneId),
           ...nextControlState,
+          viewpointAnchor: "mid",
+          cameraRigPlacement: resolveRigPlacement(nextSceneId, "mid"),
           geometryView: nextGeometryView,
           groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
           focusAssistEnabled: nextFocusAssistEnabled,

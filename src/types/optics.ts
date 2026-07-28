@@ -4,6 +4,27 @@ export type Vec3 = {
   z: number;
 };
 
+export type CameraRigViewpointAnchor = "mid" | "high" | "low";
+export type CameraRigViewpointArcPlane = "yz";
+export type CameraRigViewpointRelativeHeight = "at-mid" | "above-mid" | "below-mid";
+
+export type CameraRigViewpointAnchorMetadata = Readonly<{
+  identity: CameraRigViewpointAnchor;
+  relativeHeight: CameraRigViewpointRelativeHeight;
+}>;
+
+/** Resolved outer rig placement. Body pitch and its pivot are deliberately separate. */
+export type CameraRigPlacement = Readonly<{
+  anchor: CameraRigViewpointAnchor;
+  metadata: CameraRigViewpointAnchorMetadata;
+  arcPlane: CameraRigViewpointArcPlane;
+  arcCenterWorld: Vec3;
+  rigOriginWorld: Vec3;
+  basePitchDeg: number;
+  arcAngleDeg: number;
+  radiusMm: number;
+}>;
+
 export type Ray = {
   origin: Vec3;
   direction: Vec3;
@@ -79,8 +100,18 @@ export type LensFilmRelationship = {
   commonLine: Line3 | null;
 };
 export type DerivedOpticsState = {
+  /** Validated resolved outer placement consumed by every downstream view. */
+  cameraRigPlacement: CameraRigPlacement;
+  /** Canonical local-body-pitch then outer-rig placement transform. */
+  cameraRigTransform: CameraRigTransform;
+  /**
+   * @deprecated Compatibility adapter for renderer/state consumers that only
+   * understand the original zero-origin, zero-base-pitch body transform.
+   */
   cameraBodyTransform: CameraBodyTransform;
   cameraBodyLocalGeometry: CameraBodyLocalGeometry;
+  /** Body-pitch pivot resolved into world coordinates. */
+  cameraBodyPivotWorld: Vec3;
   lensCenterWorld: Vec3;
   lensNormalWorld: Vec3;
   lensPlane: Plane;
@@ -133,16 +164,37 @@ export type StandardFrame = {
 };
 
 export type CameraBodyTransform = {
-  /** Right-handed rotation around world +X. Positive pitch sends +Z toward -Y. */
+  /** Legacy rig-local +X pitch. Positive sends rig-local +Z toward rig-local -Y. */
   pitchDeg: number;
-  /** Fixed world-space tripod/rail pivot. */
+  /**
+   * @deprecated Despite the legacy name, this value is the rig-local pivot.
+   * Use CameraRigTransform.bodyPitchPivotRigLocal in canonical calculations.
+   */
   pivotWorld: Vec3;
 };
 
 /**
+ * Canonical camera-rig composition.
+ *
+ * Local standard geometry is first pitched around bodyPitchPivotRigLocal.
+ * The complete result is then rotated by basePitchDeg around the rig-local
+ * origin and translated so that the zero-movement lens datum lands at
+ * rigOriginWorld.
+ */
+export type CameraRigTransform = {
+  /** World position of the zero-movement rig-local lens datum, in millimetres. */
+  rigOriginWorld: Vec3;
+  /** Outer rig rotation about rig-local +X, in degrees. */
+  basePitchDeg: number;
+  /** Body rotation about rig-local +X. Positive sends local +Z toward local -Y. */
+  bodyPitchDeg: number;
+  /** Fixed tripod/rail pivot expressed in rig-local millimetres. */
+  bodyPitchPivotRigLocal: Vec3;
+};
+
+/**
  * Standard geometry after local rise/tilt/swing, before the rigid body pitch.
- * Renderers may parent these values under cameraBodyTransform without
- * inverse-transforming the canonical world result.
+ * These values are expressed in rig-local millimetres.
  */
 export type CameraBodyLocalGeometry = {
   lensCenterLocal: Vec3;

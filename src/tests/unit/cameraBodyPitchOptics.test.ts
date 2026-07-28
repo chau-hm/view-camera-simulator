@@ -38,6 +38,8 @@ const cameraFor = (pitchDeg: number, overrides: Partial<CameraState> = {}): Came
   ...understandingCameraMovementsScene.cameraPreset,
   cameraBodyPitchDeg: pitchDeg,
   cameraBodyPivotWorld: CAMERA_BODY_PIVOT_WORLD,
+  viewpointAnchor: "mid",
+  cameraRigPlacement: geometry.cameraRig.defaultViewpoint,
   activeSceneId: understandingCameraMovementsScene.id,
   ...overrides,
 });

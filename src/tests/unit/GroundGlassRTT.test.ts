@@ -20,6 +20,7 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import geometry from "../../scenes/shelfSwingGeometry";
+import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const fiberTestState = vi.hoisted(() => ({
@@ -63,8 +64,12 @@ afterEach(() => {
   useAppStore.getState().setGroundGlassRttRuntimeInfo(null);
 });
 
-describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
-  it("keeps the owned RTT resource generation stable across camera body pitch", () => {
+describe("GroundGlassRTT ownership and lifecycle", () => {
+  it("keeps the owned lattice and RTT generation stable across canonical optics changes", () => {
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+    });
     const baseCamera = {
       ...DEFAULT_CAMERA_STATE,
       ...understandingCameraMovementsScene.cameraPreset,
@@ -90,6 +95,10 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
     );
     const initialGeneration =
       useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration;
+    const initialGeometryId =
+      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeGeometryId;
+    const initialEdgeCount =
+      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeEdgeCount;
 
     view.rerender(
       React.createElement(GroundGlassRTT, {
@@ -101,9 +110,34 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
       }),
     );
 
+    const placedCamera = {
+      ...baseCamera,
+      cameraBodyPitchDeg: -8,
+      viewpointAnchor: "high" as const,
+      cameraRigPlacement: {
+        ...cameraMovementsGeometry.cameraRig.viewpointAnchors.high,
+        basePitchDeg: 12,
+      },
+    };
+    view.rerender(
+      React.createElement(GroundGlassRTT, {
+        ...props,
+        opticsState: deriveOpticsState(
+          placedCamera,
+          understandingCameraMovementsScene,
+        ),
+      }),
+    );
+
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
       initialGeneration,
+    );
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.latticeGeometryId).toBe(
+      initialGeometryId,
+    );
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.latticeEdgeCount).toBe(
+      initialEdgeCount,
     );
   });
 

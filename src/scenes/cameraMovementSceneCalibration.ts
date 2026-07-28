@@ -1,4 +1,5 @@
 import type { Vec3 } from "../types/optics";
+import type { CameraRigViewpointArcCalibration } from "./cameraRigViewpointGeometry";
 
 export type CameraMovementTargetRegion = "upper" | "middle" | "lower";
 export type CameraMovementLatticeRegion = CameraMovementTargetRegion | "neutral";
@@ -46,8 +47,11 @@ export type CameraMovementSceneCalibration = Readonly<{
   geometryAndOpticsUnits: "millimetres";
   subject: CameraMovementSubjectCalibration;
   optics: CameraMovementOpticsCalibration;
+  cameraRig: CameraRigViewpointArcCalibration;
   presentation: CameraMovementPresentationCalibration;
 }>;
+
+const cameraMovementLatticeOriginWorld: Readonly<Vec3> = { x: 0, y: 0, z: 2000 };
 
 /**
  * Scene-specific tuning scaffold for Understanding Camera Movements.
@@ -68,7 +72,7 @@ export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration =
     cubeSizeMm: 260,
     horizontalGapMm: 0,
     verticalGapMm: 0,
-    originWorld: { x: 0, y: 0, z: 2000 },
+    originWorld: cameraMovementLatticeOriginWorld,
     upperTargetLevel: 4,
     middleTargetLevel: 2,
     lowerTargetLevel: 0,
@@ -77,6 +81,21 @@ export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration =
     focalLengthCandidatesMm: [150, 120, 105, 90],
     provisionalFocalLengthMm: 105,
     provisionalFocusDistanceMm: 2000,
+  },
+  cameraRig: {
+    arcPlane: "yz",
+    arcCenterWorld: cameraMovementLatticeOriginWorld,
+    midRigOriginWorld: { x: 0, y: 0, z: 0 },
+    arcRadiusMm: 2000,
+    highArcAngleDeg: 15,
+    lowArcAngleDeg: -15,
+    provisionalBasePitchDeg: 0,
+    defaultAnchor: "mid",
+    anchorMetadata: {
+      mid: { identity: "mid", relativeHeight: "at-mid" },
+      high: { identity: "high", relativeHeight: "above-mid" },
+      low: { identity: "low", relativeHeight: "below-mid" },
+    },
   },
   presentation: {
     outerVerticalWeight: 3,
