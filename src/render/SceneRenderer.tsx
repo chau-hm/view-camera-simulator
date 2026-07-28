@@ -22,7 +22,10 @@ import {
 import { createScheimpflugConstructionGeometry } from "./scheimpflugConstructionGeometry";
 import { quaternionForPlaneNormal, resolveFrontStandardRenderTransform, resolveRearStandardRenderTransform } from "./planeOrientation";
 import { deriveOpticsState } from "../core/optics/deriveOpticsState";
-import { getRegisteredSceneSubject } from "./sceneSubjectRegistry";
+import {
+  getRegisteredSceneSubject,
+  getSceneSubjectRegistration,
+} from "./sceneSubjectRegistry";
 import {
   createCameraInspectionView,
   translateObserverViewToTarget,
@@ -30,7 +33,6 @@ import {
   type SceneViewFocus,
 } from "./sceneViewFraming";
 import { useAppStore } from "../state/appStore";
-import { getSubjectLayout } from "../scenes/understandingCameraMovementsGeometry";
 import { CameraBodyAssembly } from "./CameraBodyAssembly";
 
 type SceneRendererProps = {
@@ -50,6 +52,12 @@ type SceneRendererProps = {
   // optional container style allows embedding the renderer in different sized containers
   containerStyle?: React.CSSProperties;
 };
+
+export const shouldRenderReferenceCamera = (
+  scene: SceneDefinition,
+): boolean =>
+  Boolean(scene.movementCapabilities) &&
+  (getSceneSubjectRegistration(scene.id)?.showReferenceCamera ?? true);
 
 const WORLD_SCALE = 0.001;
 
@@ -723,7 +731,9 @@ const SceneContent = ({
   showOpticalGeometry: boolean;
   showScheimpflugConstruction: boolean;
 }) => {
-  const RegisteredSubject = getRegisteredSceneSubject(scene.id);
+  const registration = getSceneSubjectRegistration(scene.id);
+  const RegisteredSubject = registration?.SceneSubject;
+  const referenceCameraVisible = shouldRenderReferenceCamera(scene);
 
   return (
     <>
@@ -762,7 +772,7 @@ const SceneContent = ({
         </mesh>
       ))
     )}
-    <OriginalGhostCamera scene={scene} />
+    {referenceCameraVisible ? <OriginalGhostCamera scene={scene} /> : null}
     </>
   );
 };
@@ -905,7 +915,7 @@ export const SceneRenderer = ({
   containerStyle,
 }: SceneRendererProps) => {
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
-  const configuredSubjectCount = useAppStore((state) => state.scene.subjectCount);
+  const configuredTargetRegion = useAppStore((state) => state.scene.targetRegion);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
@@ -984,17 +994,19 @@ export const SceneRenderer = ({
   const scheimpflugConstructionGeometry = showScheimpflugConstruction
     ? createScheimpflugConstructionGeometry(opticsState, scene)
     : null;
+  const subjectRegistration = getSceneSubjectRegistration(scene.id);
+  const referenceCameraVisible = shouldRenderReferenceCamera(scene);
 
   return (
     <div
       ref={containerRef}
       data-testid="scene-canvas"
       data-scene-subject-id={getRegisteredSceneSubject(scene.id) ? scene.id : "fallback"}
-      data-scene-subject-count={
-        scene.id === "understanding-camera-movements"
-          ? getSubjectLayout(configuredSubjectCount).cubes.length
-          : undefined
+      data-lattice-edge-count={subjectRegistration?.canonicalLattice?.edgeCount}
+      data-lattice-target-region={
+        subjectRegistration?.canonicalLattice ? configuredTargetRegion : undefined
       }
+      data-reference-camera-visible={String(referenceCameraVisible)}
       data-focus-overlay-vertices={focusOverlayVertexCount}
       data-near-dof-overlay-vertices={nearDofOverlayVertexCount}
       data-far-dof-overlay-vertices={farDofOverlayVertexCount}

@@ -1,43 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { cocDiameterMm, imageDistanceMm } from "../../core/optics/thinLensModel";
 import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
-import {
-  CAMERA_MOVEMENTS_FOCAL_CALIBRATION,
-  DEFAULT_SUBJECT_COUNT,
-  canonicalSubjectCubes,
-  getSubjectLayout,
-  subjectLayouts,
-  type CanonicalSubjectCube,
-  type SubjectCount,
-} from "../../scenes/understandingCameraMovementsGeometry";
-import geometry from "../../scenes/understandingCameraMovementsGeometry";
+import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import geometry, {
+  CAMERA_BODY_PIVOT_WORLD,
+  CAMERA_BODY_RAIL_GEOMETRY,
+  CAMERA_MOVEMENTS_FOCAL_CALIBRATION,
+} from "../../scenes/understandingCameraMovementsGeometry";
 import type { CameraState } from "../../types/camera";
 import type { Bounds3, Vec3 } from "../../types/optics";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
-import { cocDiameterMm, imageDistanceMm } from "../../core/optics/thinLensModel";
 
-const isFinitePoint = (point: Vec3): boolean => [point.x, point.y, point.z].every(Number.isFinite);
+const isFinitePoint = (point: Readonly<Vec3>): boolean =>
+  [point.x, point.y, point.z].every(Number.isFinite);
 
-const containsPoint = (bounds: Bounds3, point: Vec3): boolean =>
+const containsPoint = (bounds: Readonly<Bounds3>, point: Readonly<Vec3>): boolean =>
   point.x >= bounds.min.x &&
   point.x <= bounds.max.x &&
   point.y >= bounds.min.y &&
   point.y <= bounds.max.y &&
   point.z >= bounds.min.z &&
   point.z <= bounds.max.z;
-
-const cubesIntersect = (first: CanonicalSubjectCube, second: CanonicalSubjectCube): boolean =>
-  first.bounds.min.x < second.bounds.max.x &&
-  first.bounds.max.x > second.bounds.min.x &&
-  first.bounds.min.y < second.bounds.max.y &&
-  first.bounds.max.y > second.bounds.min.y &&
-  first.bounds.min.z < second.bounds.max.z &&
-  first.bounds.max.z > second.bounds.min.z;
 
 const cameraAtFocalLength = (
   focalLengthMm: number,
@@ -50,137 +40,79 @@ const cameraAtFocalLength = (
   ...overrides,
 });
 
-const projectDefaultLayout = (focalLengthMm: number, overrides: Partial<CameraState> = {}) => {
+const projectCanonicalLattice = (focalLengthMm: number, overrides: Partial<CameraState> = {}) => {
   const optics = deriveOpticsState(
     cameraAtFocalLength(focalLengthMm, overrides),
     understandingCameraMovementsScene,
   );
-  return getSubjectLayout().cubes.flatMap((cube) =>
-    cube.vertices.map((worldPoint) =>
-      projectWorldPointToFilmPlaneGroundGlass({
-        worldPoint,
-        lensCenterWorld: optics.lensCenterWorld,
-        filmPlaneCornersWorld: optics.filmPlaneCornersWorld,
-      }),
-    ),
+  return CAMERA_MOVEMENT_LATTICE.vertices.map(({ positionWorld: worldPoint }) =>
+    projectWorldPointToFilmPlaneGroundGlass({
+      worldPoint,
+      lensCenterWorld: optics.lensCenterWorld,
+      filmPlaneCornersWorld: optics.filmPlaneCornersWorld,
+    }),
   );
 };
 
-const minimumEdgeMargin = (projections: ReturnType<typeof projectDefaultLayout>): number =>
-  Math.min(...projections.flatMap(({ uRaw, vRaw }) => [uRaw, 1 - uRaw, vRaw, 1 - vRaw]));
-
-describe("Understanding Camera Movements canonical subject layouts", () => {
-  it.each([1, 2, 3] as const)(
-    "provides the canonical %i-cube variant with stable roles",
-    (count) => {
-      const layout = getSubjectLayout(count);
-      expect(layout).toBe(subjectLayouts[count]);
-      expect(layout.count).toBe(count);
-      expect(layout.cubes).toHaveLength(count);
-      expect(new Set(layout.cubes.map((cube) => cube.id)).size).toBe(count);
-    },
-  );
-
-  it("defaults to the upper/middle/lower three-cube stack", () => {
-    expect(DEFAULT_SUBJECT_COUNT).toBe(3);
-    expect(getSubjectLayout().cubes).toEqual([
-      canonicalSubjectCubes.upper,
-      canonicalSubjectCubes.middle,
-      canonicalSubjectCubes.lower,
-    ]);
-    expect(getSubjectLayout(2).cubes).toEqual([
-      canonicalSubjectCubes.upper,
-      canonicalSubjectCubes.lower,
-    ]);
-    expect(getSubjectLayout(1).cubes).toEqual([canonicalSubjectCubes.middle]);
-  });
-
-  it("keeps every cube finite, on the common depth plane, and non-interpenetrating", () => {
-    const cubes = getSubjectLayout().cubes;
-    for (const cube of cubes) {
-      expect(isFinitePoint(cube.center)).toBe(true);
-      expect(cube.center.z).toBe(geometry.focusReferenceWorld.z);
-      expect(cube.vertices).toHaveLength(8);
-      expect(cube.vertices.every(isFinitePoint)).toBe(true);
-      expect(cube.vertices.every((vertex) => containsPoint(cube.bounds, vertex))).toBe(true);
-    }
-
-    for (let firstIndex = 0; firstIndex < cubes.length; firstIndex += 1) {
-      for (let secondIndex = firstIndex + 1; secondIndex < cubes.length; secondIndex += 1) {
-        expect(cubesIntersect(cubes[firstIndex], cubes[secondIndex])).toBe(false);
-      }
-    }
-  });
-
-  it.each([1, 2, 3] as SubjectCount[])(
-    "derives finite layout bounds containing every vertex for count %i",
-    (count) => {
-      const layout = getSubjectLayout(count);
-      expect(isFinitePoint(layout.bounds.min)).toBe(true);
-      expect(isFinitePoint(layout.bounds.max)).toBe(true);
-      expect(
-        layout.cubes
-          .flatMap((cube) => cube.vertices)
-          .every((vertex) => containsPoint(layout.bounds, vertex)),
-      ).toBe(true);
-      expect(containsPoint(layout.bounds, layout.focusReferenceWorld)).toBe(true);
-    },
-  );
-
-  it("keeps all default cube vertices inside the scene subject bounds", () => {
+describe("Understanding Camera Movements canonical lattice integration", () => {
+  it("publishes the central lattice and exact finite subject bounds", () => {
+    expect(geometry.lattice).toBe(CAMERA_MOVEMENT_LATTICE);
+    expect(geometry.subjectBounds).toBe(CAMERA_MOVEMENT_LATTICE.bounds);
+    expect(isFinitePoint(geometry.subjectBounds.min)).toBe(true);
+    expect(isFinitePoint(geometry.subjectBounds.max)).toBe(true);
     expect(
-      getSubjectLayout()
-        .cubes.flatMap((cube) => cube.vertices)
-        .every((vertex) => containsPoint(geometry.subjectBounds, vertex)),
+      CAMERA_MOVEMENT_LATTICE.vertices.every(({ positionWorld }) =>
+        containsPoint(geometry.subjectBounds, positionWorld),
+      ),
     ).toBe(true);
+  });
+
+  it("derives focus and provisional grid placement from central calibration", () => {
+    const { subject, optics } = CAMERA_MOVEMENT_SCENE_CALIBRATION;
+    expect(geometry.calibration).toBe(CAMERA_MOVEMENT_SCENE_CALIBRATION);
+    expect(geometry.focusReferenceWorld).toEqual({
+      x: subject.originWorld.x,
+      y: subject.originWorld.y,
+      z: optics.provisionalFocusDistanceMm,
+    });
+    expect(geometry.grid.center.x).toBe(subject.originWorld.x);
+    expect(geometry.grid.center.z).toBe(subject.originWorld.z);
+    expect(geometry.grid.center.y).toBeLessThan(CAMERA_MOVEMENT_LATTICE.bounds.min.y);
+    expect(geometry.grid.cellSizeMm).toBe(subject.cubeSizeMm);
+    expect(geometry.grid.halfExtentMm).toBeGreaterThan(
+      (CAMERA_MOVEMENT_LATTICE.bounds.max.x - CAMERA_MOVEMENT_LATTICE.bounds.min.x) / 2,
+    );
   });
 });
 
 describe("Understanding Camera Movements focal calibration", () => {
-  it("selects the longest candidate with full containment and at least 10% edge margin", () => {
-    const evidence = CAMERA_MOVEMENTS_FOCAL_CALIBRATION.candidateFocalLengthsMm.map(
-      (focalLengthMm) => {
-        const projections = projectDefaultLayout(focalLengthMm);
-        const finite = projections.every(
+  it("sources provisional focal candidates and preset values from central calibration", () => {
+    const { optics } = CAMERA_MOVEMENT_SCENE_CALIBRATION;
+    expect(CAMERA_MOVEMENTS_FOCAL_CALIBRATION.candidateFocalLengthsMm).toBe(
+      optics.focalLengthCandidatesMm,
+    );
+    expect(CAMERA_MOVEMENTS_FOCAL_CALIBRATION.selectedFocalLengthMm).toBe(
+      optics.provisionalFocalLengthMm,
+    );
+    expect(geometry.cameraPreset.focalLengthMm).toBe(optics.provisionalFocalLengthMm);
+    expect(geometry.cameraPreset.focusDistanceMm).toBe(optics.provisionalFocusDistanceMm);
+  });
+
+  it.each(CAMERA_MOVEMENTS_FOCAL_CALIBRATION.candidateFocalLengthsMm)(
+    "keeps every lattice projection finite for provisional candidate %i mm",
+    (focalLengthMm) => {
+      const projections = projectCanonicalLattice(focalLengthMm);
+      expect(
+        projections.every(
           ({ uRaw, vRaw, filmPointWorld }) =>
             Number.isFinite(uRaw) &&
             Number.isFinite(vRaw) &&
             filmPointWorld !== null &&
             isFinitePoint(filmPointWorld),
-        );
-        const contained = projections.every(({ visible }) => visible);
-        return {
-          focalLengthMm,
-          finite,
-          contained,
-          minimumEdgeMargin: minimumEdgeMargin(projections),
-        };
-      },
-    );
-
-    expect(evidence.map(({ focalLengthMm }) => focalLengthMm)).toEqual([150, 120, 105, 90]);
-    expect(evidence.every(({ finite }) => finite)).toBe(true);
-    expect(evidence.map(({ contained }) => contained)).toEqual([false, true, true, true]);
-
-    const accepted = evidence.filter(
-      ({ contained, minimumEdgeMargin: margin }) =>
-        contained && margin >= CAMERA_MOVEMENTS_FOCAL_CALIBRATION.minimumBaselineEdgeMarginFraction,
-    );
-    expect(accepted.map(({ focalLengthMm }) => focalLengthMm)).toEqual([105, 90]);
-    expect(Math.max(...accepted.map(({ focalLengthMm }) => focalLengthMm))).toBe(
-      CAMERA_MOVEMENTS_FOCAL_CALIBRATION.selectedFocalLengthMm,
-    );
-
-    const selected = evidence.find(
-      ({ focalLengthMm }) =>
-        focalLengthMm === CAMERA_MOVEMENTS_FOCAL_CALIBRATION.selectedFocalLengthMm,
-    );
-    expect(selected?.minimumEdgeMargin).toBeGreaterThanOrEqual(0.1);
-    expect(selected?.minimumEdgeMargin).toBeLessThanOrEqual(0.15);
-    expect(evidence[0].minimumEdgeMargin).toBeLessThan(0);
-    expect(evidence[1].minimumEdgeMargin).toBeGreaterThan(0);
-    expect(evidence[1].minimumEdgeMargin).toBeLessThan(0.1);
-  });
+        ),
+      ).toBe(true);
+    },
+  );
 
   it.each(CAMERA_MOVEMENTS_FOCAL_CALIBRATION.candidateFocalLengthsMm)(
     "places the finite-focus film at thin-lens image distance for %i mm",
@@ -191,7 +123,7 @@ describe("Understanding Camera Movements focal calibration", () => {
       );
       const expectedImageDistanceMm = imageDistanceMm(
         focalLengthMm,
-        geometry.focusReferenceWorld.z,
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocusDistanceMm,
       );
       expect(optics.lensCenterWorld).toEqual({ x: 0, y: 0, z: 0 });
       expect(-optics.filmCenterWorld.z).toBeCloseTo(expectedImageDistanceMm, 10);
@@ -208,14 +140,14 @@ describe("Understanding Camera Movements focal calibration", () => {
     },
   );
 
-  it("covers the canonical cube depth at f/32 using the physical 0.1 mm circle of confusion", () => {
-    const focalLengthMm = CAMERA_MOVEMENTS_FOCAL_CALIBRATION.selectedFocalLengthMm;
+  it("keeps the provisional lattice depth within the selected f/32 depth of field", () => {
+    const focalLengthMm = CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm;
     const optics = deriveOpticsState(
       cameraAtFocalLength(focalLengthMm),
       understandingCameraMovementsScene,
     );
-    const nearSubjectSurfaceMm = getSubjectLayout().bounds.min.z;
-    const farSubjectSurfaceMm = getSubjectLayout().bounds.max.z;
+    const nearSubjectSurfaceMm = CAMERA_MOVEMENT_LATTICE.bounds.min.z;
+    const farSubjectSurfaceMm = CAMERA_MOVEMENT_LATTICE.bounds.max.z;
     const physicalCircleOfConfusionMm = 0.1;
     const focusImageDistanceMm = imageDistanceMm(focalLengthMm, geometry.focusReferenceWorld.z);
 
@@ -241,7 +173,7 @@ describe("Understanding Camera Movements focal calibration", () => {
     ).toBeLessThanOrEqual(physicalCircleOfConfusionMm);
   });
 
-  it("keeps every vertex projection finite at each supported single-movement endpoint", () => {
+  it("keeps every lattice projection finite at supported movement endpoints", () => {
     const endpoints: Partial<CameraState>[] = [
       { frontRiseMm: CAMERA_CONSTANTS.riseMinMm },
       { frontRiseMm: CAMERA_CONSTANTS.riseMaxMm },
@@ -254,8 +186,8 @@ describe("Understanding Camera Movements focal calibration", () => {
     ];
 
     for (const endpoint of endpoints) {
-      const projections = projectDefaultLayout(
-        CAMERA_MOVEMENTS_FOCAL_CALIBRATION.selectedFocalLengthMm,
+      const projections = projectCanonicalLattice(
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
         endpoint,
       );
       expect(
@@ -270,9 +202,9 @@ describe("Understanding Camera Movements focal calibration", () => {
     }
   });
 
-  it("publishes the selected focal length only for this scene", () => {
+  it("publishes the provisional focal length only for this scene", () => {
     expect(understandingCameraMovementsScene.cameraPreset.focalLengthMm).toBe(
-      CAMERA_MOVEMENTS_FOCAL_CALIBRATION.selectedFocalLengthMm,
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
     );
     expect(architectureRiseScene.cameraPreset.focalLengthMm).toBeUndefined();
     expect(tableTiltScene.cameraPreset.focalLengthMm).toBeUndefined();
@@ -280,5 +212,27 @@ describe("Understanding Camera Movements focal calibration", () => {
     expect(focusFundamentalsTwoTargets.cameraPreset.focalLengthMm).toBeUndefined();
     expect(DEFAULT_CAMERA_STATE.focalLengthMm).toBe(CAMERA_CONSTANTS.focalLengthMm);
     expect(CAMERA_CONSTANTS.focalLengthMm).toBe(150);
+  });
+});
+
+describe("Understanding Camera Movements body-pitch foundation", () => {
+  it("preserves the calibrated pivot, rail, and local-then-rigid hierarchy", () => {
+    const expectedImageDistanceMm = imageDistanceMm(
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocusDistanceMm,
+    );
+    expect(CAMERA_BODY_PIVOT_WORLD).toEqual({
+      x: 0,
+      y: -(CAMERA_CONSTANTS.frontStandardHeightMm / 2) - 20,
+      z: -expectedImageDistanceMm / 2,
+    });
+    expect(CAMERA_BODY_RAIL_GEOMETRY.centerWorld).toBe(CAMERA_BODY_PIVOT_WORLD);
+    expect(CAMERA_BODY_RAIL_GEOMETRY.dimensionsMm.z).toBeCloseTo(expectedImageDistanceMm + 120, 12);
+    expect(geometry.coordinateContract.bodyPitch).toMatchObject({
+      axis: "world +X",
+      positiveDirection: "+Z rotates toward -Y",
+      hierarchy: "local standard movements, then rigid body pitch",
+      pivotWorld: CAMERA_BODY_PIVOT_WORLD,
+    });
   });
 });

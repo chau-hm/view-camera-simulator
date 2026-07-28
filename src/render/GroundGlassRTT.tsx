@@ -73,7 +73,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
 
   const { gl } = useThree();
-  const configuredSubjectCount = useAppStore((state) => state.scene.subjectCount);
+  const configuredTargetRegion = useAppStore((state) => state.scene.targetRegion);
   const { maximumBlurRadiusPx, displayBlurScale } = getGroundGlassDofVisualSettings(sceneId);
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
@@ -365,20 +365,26 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     const subjectGroup = sceneDef && sceneId
       ? createRegisteredRttSubject(
           sceneId,
-          sceneId === "understanding-camera-movements"
-            ? { subjectCount: configuredSubjectCount }
-            : undefined,
+          { targetRegion: configuredTargetRegion },
         )
       : null;
     if (subjectGroup) {
       scene.add(subjectGroup);
-      const consumedSubjectCount = subjectGroup.userData.subjectCount;
-      if (typeof consumedSubjectCount === "number") {
+      const canonicalEdgeCount = subjectGroup.userData.canonicalEdgeCount;
+      const canonicalGeometryId = subjectGroup.userData.canonicalGeometryId;
+      const consumedTargetRegion = subjectGroup.userData.targetRegion;
+      if (
+        typeof canonicalEdgeCount === "number" &&
+        typeof canonicalGeometryId === "string" &&
+        typeof consumedTargetRegion === "string"
+      ) {
         const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
         if (currentInfo) {
           useAppStore.getState().setGroundGlassRttRuntimeInfo({
             ...currentInfo,
-            subjectCount: consumedSubjectCount,
+            latticeEdgeCount: canonicalEdgeCount,
+            latticeGeometryId: canonicalGeometryId,
+            latticeTargetRegion: consumedTargetRegion,
           });
         }
       }
@@ -490,7 +496,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       }
     };
   }, [
-    configuredSubjectCount,
+    configuredTargetRegion,
     displayBlurScale,
     focalLengthMm,
     gl,

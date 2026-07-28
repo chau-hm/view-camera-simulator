@@ -70,30 +70,26 @@ describe("Store-enforced cameraControlPolicy", () => {
       expect(s.selectedMovement).toBe("frontRiseMm");
     });
 
-    it("validates subject count and preserves it through movement reset", () => {
+    it("defaults target region to middle and preserves it through movement reset", () => {
       const store = useAppStore.getState();
-      expect(useAppStore.getState().scene.subjectCount).toBe(3);
-      store.setSubjectCount(1);
+      expect(store.scene.targetRegion).toBe("middle");
+      useAppStore.setState((state) => ({ scene: { ...state.scene, targetRegion: "upper" } }));
       store.setSelectedMovement("rearRiseMm");
-      store.setSubjectCount(2);
-      expect(useAppStore.getState().scene.subjectCount).toBe(2);
       store.resetMovements();
-      expect(useAppStore.getState().scene.subjectCount).toBe(2);
-      store.setSubjectCount(4);
-      expect(useAppStore.getState().scene.subjectCount).toBe(2);
+      expect(useAppStore.getState().scene.targetRegion).toBe("upper");
     });
 
-    it("restores default count and focal preset on restart and route changes", () => {
+    it("restores default target region and focal preset on restart and route changes", () => {
       const store = useAppStore.getState();
-      store.setSubjectCount(1);
+      useAppStore.setState((state) => ({ scene: { ...state.scene, targetRegion: "lower" } }));
       store.restartTask();
-      expect(useAppStore.getState().scene.subjectCount).toBe(3);
+      expect(useAppStore.getState().scene.targetRegion).toBe("middle");
       expect(useAppStore.getState().camera.focalLengthMm).toBe(105);
       store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise" });
-      expect(useAppStore.getState().scene.subjectCount).toBe(3);
+      expect(useAppStore.getState().scene.targetRegion).toBe("middle");
       expect(useAppStore.getState().camera.focalLengthMm).toBe(150);
       store.initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements" });
-      expect(useAppStore.getState().scene.subjectCount).toBe(3);
+      expect(useAppStore.getState().scene.targetRegion).toBe("middle");
       expect(useAppStore.getState().camera.focalLengthMm).toBe(105);
     });
   });

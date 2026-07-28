@@ -316,12 +316,14 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
     );
   });
 
-  it("replaces and disposes the owned RTT subject when subject count changes", () => {
+  it("replaces and disposes the owned RTT lattice when target region changes", () => {
     useAppStore.getState().initializeSimulatorRoute({
       mode: "free",
       sceneId: understandingCameraMovementsScene.id,
     });
-    useAppStore.getState().setSubjectCount(1);
+    useAppStore.setState((state) => ({
+      scene: { ...state.scene, targetRegion: "upper" },
+    }));
     const camera = useAppStore.getState().camera;
     const createSubject = vi.mocked(createRegisteredRttSubject);
     createSubject.mockClear();
@@ -337,23 +339,33 @@ describe("GroundGlassRTT registered Shelf Swing lifecycle", () => {
     );
     const firstGeneration = useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration;
     const firstGroup = createSubject.mock.results[0]?.value as THREE.Group;
-    const firstGeometry = (
-      firstGroup.getObjectByName("camera-movements-cube-middle") as THREE.Group
-    ).children.find((child) => child instanceof THREE.Mesh)?.geometry;
+    const firstGeometry = (firstGroup.children[0] as THREE.Mesh).geometry;
     const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
 
-    act(() => useAppStore.getState().setSubjectCount(3));
+    act(() =>
+      useAppStore.setState((state) => ({
+        scene: { ...state.scene, targetRegion: "middle" },
+      })),
+    );
 
     expect(createSubject).toHaveBeenCalledTimes(2);
     expect(createSubject).toHaveBeenLastCalledWith(
       understandingCameraMovementsScene.id,
-      { subjectCount: 3 },
+      { targetRegion: "middle" },
     );
     expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
     expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
       (firstGeneration ?? 0) + 1,
     );
-    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.subjectCount).toBe(3);
+    expect(
+      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeEdgeCount,
+    ).toBe(firstGroup.userData.canonicalEdgeCount);
+    expect(
+      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeGeometryId,
+    ).toBe(firstGroup.userData.canonicalGeometryId);
+    expect(
+      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeTargetRegion,
+    ).toBe("middle");
     view.unmount();
   });
 

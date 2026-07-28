@@ -2,11 +2,13 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import {
+  CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   CameraMovementsSubject,
   createCameraMovementsGroup,
   disposeCameraMovementsGroup,
 } from "../../render/CameraMovementsSubjectFactory";
-import { getSubjectLayout } from "../../scenes/understandingCameraMovementsGeometry";
+import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 
 afterEach(() => {
   cleanup();
@@ -14,30 +16,74 @@ afterEach(() => {
 });
 
 describe("Camera Movements subject factory", () => {
-  it.each([1, 2, 3] as const)("creates the canonical %i-cube layout", (count) => {
-    const countedGroup = createCameraMovementsGroup(count);
+  it.each(["upper", "middle", "lower"] as const)(
+    "renders every canonical edge exactly once for the %s target region",
+    (targetRegion) => {
+      const group = createCameraMovementsGroup(targetRegion);
+      try {
+        const renderedEdgeIds = group.children.flatMap(
+          (child) => child.userData.canonicalEdgeIds as string[],
+        );
+        expect(group.userData.targetRegion).toBe(targetRegion);
+        expect(group.userData.canonicalGeometryId).toBe(
+          CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
+        );
+        expect(group.userData.canonicalEdgeCount).toBe(
+          CAMERA_MOVEMENT_LATTICE.edges.length,
+        );
+        expect(renderedEdgeIds).toHaveLength(CAMERA_MOVEMENT_LATTICE.edges.length);
+        expect(new Set(renderedEdgeIds).size).toBe(renderedEdgeIds.length);
+        expect([...renderedEdgeIds].sort()).toEqual(
+          CAMERA_MOVEMENT_LATTICE.edges.map(({ id }) => id).sort(),
+        );
+      } finally {
+        disposeCameraMovementsGroup(group);
+      }
+    },
+  );
+
+  it("uses calibrated role weights, internal opacity, and selected-region colour", () => {
+    const group = createCameraMovementsGroup("middle");
     try {
-      const layout = getSubjectLayout(count);
-      expect(countedGroup.userData.subjectCount).toBe(count);
-      expect(countedGroup.getObjectByName("camera-movements-grid")).not.toBeNull();
-      layout.cubes.forEach((cube) => {
-        const renderedCube = countedGroup.getObjectByName(cube.id) as THREE.Group;
-        expect(renderedCube).toBeInstanceOf(THREE.Group);
-        expect(renderedCube.children.filter((child) => child instanceof THREE.LineSegments)).toHaveLength(12);
-        expect(
-          renderedCube.children.filter(
-            (child) => child instanceof THREE.Mesh && child.geometry.type === "SphereGeometry",
-          ),
-        ).toHaveLength(8);
+      const roleWeights = new Map<string, Set<number>>();
+      group.children.forEach((child) => {
+        const role = child.userData.edgeRole as string;
+        const weights = roleWeights.get(role) ?? new Set<number>();
+        weights.add(child.userData.lineWeight as number);
+        roleWeights.set(role, weights);
+        if (role === "internal") {
+          expect(child.userData.lineOpacity).toBe(
+            CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.internalEdgeOpacity,
+          );
+        }
       });
+      expect([...roleWeights.get("outer-vertical")!]).toEqual([
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.outerVerticalWeight,
+      ]);
+      expect([...roleWeights.get("outer-horizontal")!]).toEqual([
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.outerHorizontalWeight,
+      ]);
+      expect([...roleWeights.get("internal")!]).toEqual([
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.internalEdgeWeight,
+      ]);
+      expect(
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.outerVerticalWeight,
+      ).toBeGreaterThan(
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.outerHorizontalWeight,
+      );
+      expect(
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.outerHorizontalWeight,
+      ).toBeGreaterThan(
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.internalEdgeWeight,
+      );
     } finally {
-      disposeCameraMovementsGroup(countedGroup);
+      disposeCameraMovementsGroup(group);
     }
   });
 
   it("owns fresh resource sets and disposes every unique resource exactly once", () => {
-    const first = createCameraMovementsGroup(3);
-    const second = createCameraMovementsGroup(3);
+    const first = createCameraMovementsGroup("middle");
+    const second = createCameraMovementsGroup("middle");
     const collect = (group: THREE.Group) => {
       const geometries = new Set<THREE.BufferGeometry>();
       const materials = new Set<THREE.Material>();
@@ -72,76 +118,83 @@ describe("Camera Movements subject factory", () => {
     disposeCameraMovementsGroup(second);
   });
 
-  it("replaces a count-specific group with a fresh owned generation", () => {
+  it("replaces a region-specific group with a fresh owned generation", () => {
     const scene = new THREE.Scene();
-    const first = createCameraMovementsGroup(1);
+    const first = createCameraMovementsGroup("upper");
     scene.add(first);
     scene.remove(first);
     disposeCameraMovementsGroup(first);
-    const replacement = createCameraMovementsGroup(3);
+    const replacement = createCameraMovementsGroup("middle");
     scene.add(replacement);
 
     expect(first.parent).toBeNull();
     expect(first.userData.resourcesDisposed).toBe(true);
     expect(replacement).not.toBe(first);
     expect(replacement.parent).toBe(scene);
-    expect(replacement.userData.subjectCount).toBe(3);
-    expect(
-      getSubjectLayout(3).cubes.filter((cube) => replacement.getObjectByName(cube.id)),
-    ).toHaveLength(3);
+    expect(replacement.userData.targetRegion).toBe("middle");
+    expect(replacement.userData.canonicalEdgeIds).toEqual(
+      first.userData.canonicalEdgeIds,
+    );
     scene.remove(replacement);
     disposeCameraMovementsGroup(replacement);
   });
 
-  it("replaces the mounted subject group for each store-driven count change", () => {
+  it("replaces the mounted subject group for a store-driven target-region change", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
     useAppStore.getState().initializeSimulatorRoute({
       mode: "free",
       sceneId: understandingCameraMovementsScene.id,
     });
-    useAppStore.getState().setSubjectCount(1);
+    useAppStore.setState((state) => ({
+      scene: { ...state.scene, targetRegion: "upper" },
+    }));
     const mountedGroups: THREE.Group[] = [];
     const onGroupChange = vi.fn((group: THREE.Group | null) => {
       if (group) mountedGroups.push(group);
     });
     const view = render(<CameraMovementsSubject onGroupChange={onGroupChange} />);
 
-    const assertCanonicalGroup = (group: THREE.Group, count: 1 | 2 | 3) => {
-      expect(group.userData.subjectCount).toBe(count);
-      expect(
-        getSubjectLayout(count).cubes.filter((cube) => group.getObjectByName(cube.id)),
-      ).toHaveLength(count);
+    const assertCanonicalGroup = (
+      group: THREE.Group,
+      targetRegion: "upper" | "middle" | "lower",
+    ) => {
+      expect(group.userData.targetRegion).toBe(targetRegion);
+      expect(group.userData.canonicalEdgeIds).toEqual(
+        CAMERA_MOVEMENT_LATTICE.edges.map(({ id }) => id),
+      );
     };
     const first = mountedGroups[0];
-    assertCanonicalGroup(first, 1);
-    const firstGeometry = (
-      first.getObjectByName("camera-movements-cube-middle") as THREE.Group
-    ).children.find((child) => child instanceof THREE.Mesh)?.geometry;
+    assertCanonicalGroup(first, "upper");
+    const firstGeometry = (first.children[0] as THREE.Mesh).geometry;
     const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
 
-    act(() => useAppStore.getState().setSubjectCount(2));
+    act(() =>
+      useAppStore.setState((state) => ({
+        scene: { ...state.scene, targetRegion: "middle" },
+      })),
+    );
 
     const second = mountedGroups[1];
     expect(second).not.toBe(first);
     expect(first.userData.resourcesDisposed).toBe(true);
     expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
-    assertCanonicalGroup(second, 2);
-    const secondGeometry = (
-      second.getObjectByName("camera-movements-cube-upper") as THREE.Group
-    ).children.find((child) => child instanceof THREE.Mesh)?.geometry;
+    assertCanonicalGroup(second, "middle");
+    const secondGeometry = (second.children[0] as THREE.Mesh).geometry;
     const disposeSecondGeometry = vi.spyOn(secondGeometry!, "dispose");
 
-    act(() => useAppStore.getState().setSubjectCount(3));
+    act(() =>
+      useAppStore.setState((state) => ({
+        scene: { ...state.scene, targetRegion: "lower" },
+      })),
+    );
 
     const third = mountedGroups[2];
     expect(third).not.toBe(second);
     expect(second.userData.resourcesDisposed).toBe(true);
     expect(disposeSecondGeometry).toHaveBeenCalledTimes(1);
-    assertCanonicalGroup(third, 3);
+    assertCanonicalGroup(third, "lower");
 
-    const thirdGeometry = (
-      third.getObjectByName("camera-movements-cube-middle") as THREE.Group
-    ).children.find((child) => child instanceof THREE.Mesh)?.geometry;
+    const thirdGeometry = (third.children[0] as THREE.Mesh).geometry;
     const disposeThirdGeometry = vi.spyOn(thirdGeometry!, "dispose");
     view.unmount();
     expect(third.userData.resourcesDisposed).toBe(true);

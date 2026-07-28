@@ -25,12 +25,17 @@ import {
   disposeShelfSwingGroup,
 } from "./ShelfSwingSubjectFactory";
 import {
+  CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   CameraMovementsSubject,
   createCameraMovementsGroup,
   disposeCameraMovementsGroup,
 } from "./CameraMovementsSubjectFactory";
 import { toWorld } from "./rttUtils";
-import type { SubjectCount } from "../scenes/understandingCameraMovementsGeometry";
+import {
+  CAMERA_MOVEMENT_SCENE_CALIBRATION,
+  type CameraMovementTargetRegion,
+} from "../scenes/cameraMovementSceneCalibration";
+import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -47,10 +52,15 @@ export type SceneSubjectRegistration = {
   createRttGroup: (options?: SceneSubjectRttOptions) => THREE.Group;
   disposeRttGroup?: (group: THREE.Group) => void;
   rttLighting?: SceneSubjectRttLighting;
+  showReferenceCamera?: boolean;
+  canonicalLattice?: {
+    geometryId: string;
+    edgeCount: number;
+  };
 };
 
 export type SceneSubjectRttOptions = {
-  subjectCount?: SubjectCount;
+  targetRegion?: CameraMovementTargetRegion;
 };
 
 export const ArchitectureRiseRegisteredSubject = ({
@@ -88,9 +98,7 @@ const tableTiltLightingTargetMm = {
 } as const;
 
 const cameraMovementsLightingTargetMm = {
-  x: 0,
-  y: 0,
-  z: 4000,
+  ...CAMERA_MOVEMENT_SCENE_CALIBRATION.subject.originWorld,
 } as const;
 
 const shelfSwingLightingTargetMm = {
@@ -101,8 +109,14 @@ export const sceneSubjectRegistry = {
   "understanding-camera-movements": {
     SceneSubject: CameraMovementsSubject,
     createRttGroup: (options) =>
-      createCameraMovementsGroup(options?.subjectCount),
+      createCameraMovementsGroup(options?.targetRegion),
     disposeRttGroup: disposeCameraMovementsGroup,
+    showReferenceCamera:
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.showReferenceCamera,
+    canonicalLattice: {
+      geometryId: CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
+      edgeCount: CAMERA_MOVEMENT_LATTICE.edges.length,
+    },
     rttLighting: {
       targetMm: cameraMovementsLightingTargetMm,
       keyOffsetWorld: { x: -2, y: 2.5, z: -2 },

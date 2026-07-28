@@ -138,7 +138,7 @@ test("Reset Movements restores zero state and keeps Ground Glass valid", async (
   await expect(frontRiseRadio).toBeChecked();
 });
 
-test("subject presentation control stays synchronized across calibration and SPA routes", async ({ page }) => {
+test("canonical lattice remains stable across controls and SPA routes", async ({ page }) => {
   test.setTimeout(120_000);
   const pageErrors: string[] = [];
   const unexpectedGraphicsWarnings: string[] = [];
@@ -152,33 +152,22 @@ test("subject presentation control stays synchronized across calibration and SPA
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   const scene = page.locator('[data-testid="scene-canvas"]');
   const rtt = page.locator('[data-testid="ground-glass-rtt"]');
-  const subjects = page.locator('fieldset.subject-count-control');
-  await expect(scene).toHaveAttribute("data-scene-subject-count", "3", { timeout: 15_000 });
+  await expect(page.getByText("Subjects", { exact: true })).toHaveCount(0);
+  await expect(scene).toHaveAttribute("data-lattice-edge-count", "224", { timeout: 15_000 });
+  await expect(scene).toHaveAttribute("data-lattice-target-region", "middle", { timeout: 15_000 });
+  await expect(scene).toHaveAttribute("data-reference-camera-visible", "false", { timeout: 15_000 });
   await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", "105", { timeout: 15_000 });
-  await expect(rtt).toHaveAttribute("data-rtt-subject-count", "3", { timeout: 15_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-lattice-edge-count", "224", { timeout: 15_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-lattice-target-region", "middle", { timeout: 15_000 });
 
-  for (const count of [1, 2, 3]) {
-    const radio = subjects.getByRole("radio", { name: `${count} subject${count === 1 ? "" : "s"}` });
-    await radio.check();
-    await expect(radio).toBeChecked();
-    await expect(scene).toHaveAttribute("data-scene-subject-count", String(count));
-    await expect(rtt).toHaveAttribute("data-rtt-subject-count", String(count));
-  }
-
-  // Reset must only clear camera movements, not the selected presentation count.
-  const twoSubjects = subjects.getByRole("radio", { name: "2 subjects" });
-  await twoSubjects.check();
   const frontRise = page.getByRole("slider", { name: "Front Rise" });
   await frontRise.focus();
   await frontRise.press("ArrowRight");
   await expect(frontRise).not.toHaveValue("0");
-  await expect(scene).toHaveAttribute("data-scene-subject-count", "2");
-  await expect(rtt).toHaveAttribute("data-rtt-subject-count", "2");
-
   await page.getByRole("button", { name: "Reset Movements" }).click();
   await expect(frontRise).toHaveValue("0");
-  await expect(scene).toHaveAttribute("data-scene-subject-count", "2");
-  await expect(rtt).toHaveAttribute("data-rtt-subject-count", "2");
+  await expect(scene).toHaveAttribute("data-lattice-target-region", "middle");
+  await expect(rtt).toHaveAttribute("data-rtt-lattice-target-region", "middle");
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5000 });
   await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10000 });
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
@@ -197,9 +186,9 @@ test("subject presentation control stays synchronized across calibration and SPA
     .filter({ has: page.getByRole("heading", { name: "Understanding Camera Movements" }) })
     .getByRole("link", { name: "Open Scene" })
     .click();
-  await expect(page.locator('[data-testid="scene-canvas"]')).toHaveAttribute("data-scene-subject-count", "3", { timeout: 15_000 });
+  await expect(page.locator('[data-testid="scene-canvas"]')).toHaveAttribute("data-lattice-edge-count", "224", { timeout: 15_000 });
   await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-focal-length-mm", "105", { timeout: 15_000 });
-  await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-subject-count", "3", { timeout: 15_000 });
+  await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-lattice-edge-count", "224", { timeout: 15_000 });
 
   expect(pageErrors).toEqual([]);
   expect(unexpectedGraphicsWarnings).toEqual([]);
