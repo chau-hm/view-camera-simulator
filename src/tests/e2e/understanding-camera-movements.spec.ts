@@ -1,4 +1,38 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
+
+async function readSceneCanvasVisualSample(canvas: Locator) {
+  const screenshot = await canvas.screenshot();
+  return canvas.evaluate(async (_element, screenshotBase64) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${screenshotBase64}`;
+    await image.decode();
+    const width = Math.min(image.width, 640);
+    const height = Math.min(image.height, 480);
+    const sampleCanvas = document.createElement("canvas");
+    sampleCanvas.width = width;
+    sampleCanvas.height = height;
+    const context = sampleCanvas.getContext("2d");
+    if (!context) return { supported: false, chromaticPixels: 0, brightNeutralPixels: 0, brightPixels: 0 };
+    context.drawImage(image, 0, 0, width, height);
+    const pixels = context.getImageData(0, 0, width, height).data;
+    let chromaticPixels = 0;
+    let brightNeutralPixels = 0;
+    let brightPixels = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index] ?? 0;
+      const green = pixels[index + 1] ?? 0;
+      const blue = pixels[index + 2] ?? 0;
+      const maximum = Math.max(red, green, blue);
+      const minimum = Math.min(red, green, blue);
+      if (maximum > 55) {
+        brightPixels += 1;
+        if (maximum - minimum < 18) brightNeutralPixels += 1;
+      }
+      if (maximum > 55 && maximum - minimum > 24) chromaticPixels += 1;
+    }
+    return { supported: true, chromaticPixels, brightNeutralPixels, brightPixels };
+  }, screenshot.toString("base64"));
+}
 
 test("camera movements scene loads and renders valid Ground Glass content", async ({ page }) => {
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
@@ -141,17 +175,24 @@ test("Reset Movements restores zero state and keeps Ground Glass valid", async (
 test("canonical lattice remains stable across controls and SPA routes", async ({ page }) => {
   test.setTimeout(120_000);
   const pageErrors: string[] = [];
-  const unexpectedGraphicsWarnings: string[] = [];
+  const unexpectedGraphicsMessages: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
-    if (message.type() !== "warning" || !/(WebGL|THREE)/i.test(message.text())) return;
-    if (/GPU stall due to ReadPixels/i.test(message.text())) return;
-    unexpectedGraphicsWarnings.push(message.text());
+    const text = message.text();
+    if (!(message.type() === "warning" || message.type() === "error") || !/(WebGL|THREE|GPU)/i.test(text)) return;
+    if (/GPU stall due to ReadPixels/i.test(text)) return;
+    unexpectedGraphicsMessages.push(`${message.type()}: ${text}`);
   });
 
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   const scene = page.locator('[data-testid="scene-canvas"]');
   const rtt = page.locator('[data-testid="ground-glass-rtt"]');
+  const sceneCanvas = scene.locator("canvas");
+  await expect(sceneCanvas).toHaveCount(1);
+  const initialVisual = await readSceneCanvasVisualSample(sceneCanvas);
+  expect(initialVisual.supported).toBe(true);
+  expect(initialVisual.chromaticPixels).toBeGreaterThan(20);
+  expect(initialVisual.brightNeutralPixels / Math.max(initialVisual.brightPixels, 1)).toBeLessThan(0.8);
   await expect(page.getByText("Subjects", { exact: true })).toHaveCount(0);
   await expect(scene).toHaveAttribute("data-lattice-edge-count", "224", { timeout: 15_000 });
   await expect(scene).toHaveAttribute("data-lattice-target-region", "middle", { timeout: 15_000 });
@@ -189,7 +230,11 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   await expect(page.locator('[data-testid="scene-canvas"]')).toHaveAttribute("data-lattice-edge-count", "224", { timeout: 15_000 });
   await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-focal-length-mm", "105", { timeout: 15_000 });
   await expect(page.locator('[data-testid="ground-glass-rtt"]')).toHaveAttribute("data-rtt-lattice-edge-count", "224", { timeout: 15_000 });
+  const returnVisual = await readSceneCanvasVisualSample(page.locator('[data-testid="scene-canvas"] canvas'));
+  expect(returnVisual.supported).toBe(true);
+  expect(returnVisual.chromaticPixels).toBeGreaterThan(20);
+  expect(returnVisual.brightNeutralPixels / Math.max(returnVisual.brightPixels, 1)).toBeLessThan(0.8);
 
   expect(pageErrors).toEqual([]);
-  expect(unexpectedGraphicsWarnings).toEqual([]);
+  expect(unexpectedGraphicsMessages).toEqual([]);
 });
