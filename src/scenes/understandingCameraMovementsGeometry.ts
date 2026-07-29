@@ -3,6 +3,7 @@ import { imageDistanceMm } from "../core/optics/thinLensModel";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { CAMERA_MOVEMENT_LATTICE } from "./cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "./cameraMovementSceneCalibration";
+import { resolveCameraRigViewpointAnchors } from "./cameraRigViewpointGeometry";
 
 /**
  * Canonical coordinate contract for Understanding Camera Movements:
@@ -48,11 +49,23 @@ const cameraBodyImageDistanceMm = imageDistanceMm(
  * between the finite-focus film datum (-v) and lens datum (0). This pivot is
  * calibrated once and does not follow front/rear rise, tilt, swing, or focus.
  */
-export const CAMERA_BODY_PIVOT_WORLD: Vec3 = {
+export const CAMERA_BODY_PIVOT_RIG_LOCAL: Vec3 = {
   x: 0,
   y: -(CAMERA_CONSTANTS.frontStandardHeightMm / 2) - CAMERA_BODY_RAIL_CLEARANCE_MM,
   z: -cameraBodyImageDistanceMm / 2,
 };
+
+/**
+ * @deprecated Compatibility adapter for state/render consumers predating
+ * explicit rig placement. The value is rig-local, not resolved world space.
+ */
+export const CAMERA_BODY_PIVOT_WORLD = CAMERA_BODY_PIVOT_RIG_LOCAL;
+
+export const CAMERA_RIG_VIEWPOINT_ANCHORS = resolveCameraRigViewpointAnchors(
+  CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig,
+);
+export const DEFAULT_CAMERA_RIG_VIEWPOINT =
+  CAMERA_RIG_VIEWPOINT_ANCHORS[CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.defaultAnchor];
 
 /**
  * Canonical fixed rail spans 60 mm beyond both zero-movement standards,
@@ -61,20 +74,34 @@ export const CAMERA_BODY_PIVOT_WORLD: Vec3 = {
  * standards as one rigid assembly.
  */
 export const CAMERA_BODY_RAIL_GEOMETRY = {
-  centerWorld: CAMERA_BODY_PIVOT_WORLD,
+  centerRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
   dimensionsMm: {
     x: CAMERA_BODY_RAIL_WIDTH_MM,
     y: CAMERA_BODY_RAIL_HEIGHT_MM,
     z: cameraBodyImageDistanceMm + CAMERA_BODY_RAIL_OVERHANG_MM * 2,
   } as Vec3,
-  rearEndpointWorld: {
-    x: CAMERA_BODY_PIVOT_WORLD.x,
-    y: CAMERA_BODY_PIVOT_WORLD.y,
+  rearEndpointRigLocal: {
+    x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
+    y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
     z: -cameraBodyImageDistanceMm - CAMERA_BODY_RAIL_OVERHANG_MM,
   } as Vec3,
+  frontEndpointRigLocal: {
+    x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
+    y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
+    z: CAMERA_BODY_RAIL_OVERHANG_MM,
+  } as Vec3,
+  /** @deprecated Rig-local compatibility name for existing renderer consumers. */
+  centerWorld: CAMERA_BODY_PIVOT_RIG_LOCAL,
+  /** @deprecated Rig-local compatibility name for existing 2D consumers. */
+  rearEndpointWorld: {
+    x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
+    y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
+    z: -cameraBodyImageDistanceMm - CAMERA_BODY_RAIL_OVERHANG_MM,
+  } as Vec3,
+  /** @deprecated Rig-local compatibility name for existing 2D consumers. */
   frontEndpointWorld: {
-    x: CAMERA_BODY_PIVOT_WORLD.x,
-    y: CAMERA_BODY_PIVOT_WORLD.y,
+    x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
+    y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
     z: CAMERA_BODY_RAIL_OVERHANG_MM,
   } as Vec3,
   standardOverhangMm: CAMERA_BODY_RAIL_OVERHANG_MM,
@@ -98,18 +125,22 @@ const geometry = {
     filmDatum: "Z = -(focalLengthMm * focusDistanceMm) / (focusDistanceMm - focalLengthMm)",
     standardPivot: "standard-centre",
     bodyPitch: {
-      axis: "world +X",
-      positiveDirection: "+Z rotates toward -Y",
-      hierarchy: "local standard movements, then rigid body pitch",
-      pivotWorld: CAMERA_BODY_PIVOT_WORLD,
+      axis: "rig-local +X",
+      positiveDirection: "rig-local +Z rotates toward rig-local -Y",
+      hierarchy: "local standard movements, then local body pitch, then outer rig placement",
+      pivotRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
       pivotBasis: "tripod/rail point below the standards at the zero-body lens-film midpoint",
     },
   },
   calibration: CAMERA_MOVEMENT_SCENE_CALIBRATION,
   lattice: CAMERA_MOVEMENT_LATTICE,
   cameraBody: {
-    pivotWorld: CAMERA_BODY_PIVOT_WORLD,
+    pivotRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
     rail: CAMERA_BODY_RAIL_GEOMETRY,
+  },
+  cameraRig: {
+    viewpointAnchors: CAMERA_RIG_VIEWPOINT_ANCHORS,
+    defaultViewpoint: DEFAULT_CAMERA_RIG_VIEWPOINT,
   },
   focusReferenceWorld: canonicalFocusReferenceWorld,
   grid: {
@@ -138,7 +169,8 @@ const geometry = {
     rearRiseMm: 0,
     rearTiltDeg: 0,
     cameraBodyPitchDeg: 0,
-    cameraBodyPivotWorld: CAMERA_BODY_PIVOT_WORLD,
+    /** Legacy state boundary; value is the canonical rig-local pivot. */
+    cameraBodyPivotWorld: CAMERA_BODY_PIVOT_RIG_LOCAL,
   },
 } as const;
 

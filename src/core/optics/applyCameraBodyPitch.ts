@@ -1,14 +1,24 @@
 import type {
   CameraBodyLocalGeometry,
   CameraBodyTransform,
+  CameraRigTransform,
   FilmPlaneCorners,
   StandardFrame,
   Vec3,
 } from "../../types/optics";
 import { planeFromPointNormal } from "../math/plane";
-import { rotateAroundX, rotatePointAroundX, safeNormalize } from "../math/vec";
+import {
+  add,
+  isFiniteVec3,
+  magnitude,
+  rotateAroundX,
+  rotatePointAroundX,
+  safeNormalize,
+  vec,
+} from "../math/vec";
 
 export type CameraBodyWorldGeometry = {
+  cameraBodyPivotWorld: Vec3;
   lensCenterWorld: Vec3;
   lensNormalWorld: Vec3;
   lensPlane: ReturnType<typeof planeFromPointNormal>;
@@ -19,22 +29,96 @@ export type CameraBodyWorldGeometry = {
   rearStandardFrame: StandardFrame;
 };
 
-const rotateDirection = (direction: Vec3, pitchDeg: number): Vec3 =>
-  safeNormalize(rotateAroundX(direction, pitchDeg), direction);
+const assertFiniteDirection = (label: string, direction: Vec3): void => {
+  if (!isFiniteVec3(direction) || magnitude(direction) === 0) {
+    throw new Error(`${label} must be a finite, non-zero direction`);
+  }
+};
+
+const assertValidRigTransform = (transform: CameraRigTransform): void => {
+  if (!isFiniteVec3(transform.rigOriginWorld)) {
+    throw new Error("Camera rig origin must be finite");
+  }
+  if (!isFiniteVec3(transform.bodyPitchPivotRigLocal)) {
+    throw new Error("Camera body pitch pivot must be finite in rig-local coordinates");
+  }
+  if (!Number.isFinite(transform.basePitchDeg) || !Number.isFinite(transform.bodyPitchDeg)) {
+    throw new Error("Camera rig base pitch and body pitch must be finite");
+  }
+};
+
+const assertValidLocalGeometry = (local: CameraBodyLocalGeometry): void => {
+  const points: ReadonlyArray<readonly [string, Vec3]> = [
+    ["lens centre", local.lensCenterLocal],
+    ["film centre", local.filmCenterLocal],
+    ["film top-left corner", local.filmPlaneCornersLocal.topLeft],
+    ["film top-right corner", local.filmPlaneCornersLocal.topRight],
+    ["film bottom-left corner", local.filmPlaneCornersLocal.bottomLeft],
+    ["film bottom-right corner", local.filmPlaneCornersLocal.bottomRight],
+  ];
+  for (const [label, point] of points) {
+    if (!isFiniteVec3(point)) {
+      throw new Error(`Camera body ${label} must be finite in rig-local coordinates`);
+    }
+  }
+  assertFiniteDirection("Camera body lens normal", local.lensNormalLocal);
+  assertFiniteDirection("Camera body film normal", local.filmNormalLocal);
+  assertFiniteDirection("Camera body rear-standard right", local.rearStandardFrameLocal.rightWorld);
+  assertFiniteDirection("Camera body rear-standard up", local.rearStandardFrameLocal.upWorld);
+};
+
+const rotateDirection = (
+  direction: Vec3,
+  bodyPitchDeg: number,
+  basePitchDeg: number,
+): Vec3 =>
+  safeNormalize(
+    rotateAroundX(rotateAroundX(direction, bodyPitchDeg), basePitchDeg),
+    direction,
+  );
+
+export const transformRigLocalPointToWorld = (
+  pointRigLocal: Vec3,
+  transform: CameraRigTransform,
+): Vec3 => {
+  assertValidRigTransform(transform);
+  if (!isFiniteVec3(pointRigLocal)) {
+    throw new Error("Camera rig local point must be finite");
+  }
+  const bodyPitchedRigLocal = rotatePointAroundX(
+    pointRigLocal,
+    transform.bodyPitchPivotRigLocal,
+    transform.bodyPitchDeg,
+  );
+  return add(
+    transform.rigOriginWorld,
+    rotateAroundX(bodyPitchedRigLocal, transform.basePitchDeg),
+  );
+};
 
 /**
- * Apply camera-body pitch after all local standard movements.
+ * Apply local camera-body pitch after standard movements, then place the
+ * complete rig in world space.
  *
- * A zero pitch returns the original local values exactly. Non-zero pitch is
- * one rigid transform: points rotate around the fixed tripod/rail pivot while
- * direction vectors rotate around +X without translation.
+ * The identity midpoint transform returns the original local object references
+ * exactly, preserving the PR27/PR29 zero-movement contract.
  */
-export const applyCameraBodyPitch = (
+export const applyCameraRigTransform = (
   local: CameraBodyLocalGeometry,
-  transform: CameraBodyTransform,
+  transform: CameraRigTransform,
 ): CameraBodyWorldGeometry => {
-  if (transform.pitchDeg === 0) {
+  assertValidRigTransform(transform);
+  assertValidLocalGeometry(local);
+
+  const isIdentityPlacement =
+    transform.bodyPitchDeg === 0 &&
+    transform.basePitchDeg === 0 &&
+    transform.rigOriginWorld.x === 0 &&
+    transform.rigOriginWorld.y === 0 &&
+    transform.rigOriginWorld.z === 0;
+  if (isIdentityPlacement) {
     return {
+      cameraBodyPivotWorld: transform.bodyPitchPivotRigLocal,
       lensCenterWorld: local.lensCenterLocal,
       lensNormalWorld: local.lensNormalLocal,
       lensPlane: local.lensPlaneLocal,
@@ -47,13 +131,29 @@ export const applyCameraBodyPitch = (
   }
 
   const rotatePoint = (point: Vec3): Vec3 =>
-    rotatePointAroundX(point, transform.pivotWorld, transform.pitchDeg);
+    transformRigLocalPointToWorld(point, transform);
   const lensCenterWorld = rotatePoint(local.lensCenterLocal);
-  const lensNormalWorld = rotateDirection(local.lensNormalLocal, transform.pitchDeg);
+  const lensNormalWorld = rotateDirection(
+    local.lensNormalLocal,
+    transform.bodyPitchDeg,
+    transform.basePitchDeg,
+  );
   const filmCenterWorld = rotatePoint(local.filmCenterLocal);
-  const filmNormalWorld = rotateDirection(local.filmNormalLocal, transform.pitchDeg);
-  const rightWorld = rotateDirection(local.rearStandardFrameLocal.rightWorld, transform.pitchDeg);
-  const upWorld = rotateDirection(local.rearStandardFrameLocal.upWorld, transform.pitchDeg);
+  const filmNormalWorld = rotateDirection(
+    local.filmNormalLocal,
+    transform.bodyPitchDeg,
+    transform.basePitchDeg,
+  );
+  const rightWorld = rotateDirection(
+    local.rearStandardFrameLocal.rightWorld,
+    transform.bodyPitchDeg,
+    transform.basePitchDeg,
+  );
+  const upWorld = rotateDirection(
+    local.rearStandardFrameLocal.upWorld,
+    transform.bodyPitchDeg,
+    transform.basePitchDeg,
+  );
   const filmPlaneCornersWorld: FilmPlaneCorners = {
     topLeft: rotatePoint(local.filmPlaneCornersLocal.topLeft),
     topRight: rotatePoint(local.filmPlaneCornersLocal.topRight),
@@ -63,6 +163,10 @@ export const applyCameraBodyPitch = (
   const filmPlane = planeFromPointNormal(filmCenterWorld, filmNormalWorld);
 
   return {
+    cameraBodyPivotWorld: transformRigLocalPointToWorld(
+      transform.bodyPitchPivotRigLocal,
+      transform,
+    ),
     lensCenterWorld,
     lensNormalWorld,
     lensPlane: planeFromPointNormal(lensCenterWorld, lensNormalWorld),
@@ -79,3 +183,18 @@ export const applyCameraBodyPitch = (
     },
   };
 };
+
+/**
+ * @deprecated Compatibility adapter for legacy zero-origin, zero-base-pitch
+ * consumers. Canonical optics must call applyCameraRigTransform.
+ */
+export const applyCameraBodyPitch = (
+  local: CameraBodyLocalGeometry,
+  transform: CameraBodyTransform,
+): CameraBodyWorldGeometry =>
+  applyCameraRigTransform(local, {
+    rigOriginWorld: vec(0, 0, 0),
+    basePitchDeg: 0,
+    bodyPitchDeg: transform.pitchDeg,
+    bodyPitchPivotRigLocal: transform.pivotWorld,
+  });

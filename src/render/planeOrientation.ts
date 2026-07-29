@@ -1,6 +1,10 @@
 import { Matrix4, Quaternion, Vector3 } from "three";
 import { WORLD_SCALE } from "./rttUtils";
-import type { CameraBodyTransform, Vec3 } from "../types/optics";
+import type {
+  CameraBodyTransform,
+  CameraRigTransform,
+  Vec3,
+} from "../types/optics";
 
 export type PlaneOrthonormalBasis = {
   tangent: Vec3;
@@ -8,9 +12,18 @@ export type PlaneOrthonormalBasis = {
   normal: Vec3;
 };
 
-export type CameraBodyRenderTransform = {
+export type RenderGroupTransform = {
   position: [number, number, number];
   quaternion: Quaternion;
+};
+
+export type CameraRigRenderTransform = {
+  rigPlacement: RenderGroupTransform;
+  bodyPitch: RenderGroupTransform;
+  localOffset: [number, number, number];
+};
+
+export type CameraBodyRenderTransform = RenderGroupTransform & {
   localOffset: [number, number, number];
 };
 
@@ -101,31 +114,63 @@ export const resolveFrontStandardRenderTransform = (
 };
 
 /**
- * Build the two-level render transform for a rigid camera body.
+ * Build the canonical render hierarchy for a rigid camera rig.
  *
- * The outer group translates to the fixed world pivot and rotates around +X.
- * The inner group translates canonical body-local millimetre coordinates back
- * by that pivot. Standards and the rail can therefore keep their canonical
- * zero-body coordinates and receive body pitch exactly once.
+ * The outer group applies rig placement once. The body-pitch child translates
+ * to the fixed rig-local pivot and rotates around rig-local +X. The local
+ * geometry child translates back by that pivot, so standards, bellows, and
+ * rail remain in rig-local coordinates and receive each transform exactly once.
  */
-export const resolveCameraBodyRenderTransform = (
-  transform: CameraBodyTransform,
-): CameraBodyRenderTransform => {
-  const pivot = transform.pivotWorld;
+export const resolveCameraRigRenderTransform = (
+  transform: CameraRigTransform,
+): CameraRigRenderTransform => {
+  const pivot = transform.bodyPitchPivotRigLocal;
   return {
-    position: [
-      pivot.x * WORLD_SCALE,
-      pivot.y * WORLD_SCALE,
-      pivot.z * WORLD_SCALE,
-    ],
-    quaternion: new Quaternion().setFromAxisAngle(
-      new Vector3(1, 0, 0),
-      (transform.pitchDeg * Math.PI) / 180,
-    ),
+    rigPlacement: {
+      position: [
+        transform.rigOriginWorld.x * WORLD_SCALE,
+        transform.rigOriginWorld.y * WORLD_SCALE,
+        transform.rigOriginWorld.z * WORLD_SCALE,
+      ],
+      quaternion: new Quaternion().setFromAxisAngle(
+        new Vector3(1, 0, 0),
+        (transform.basePitchDeg * Math.PI) / 180,
+      ),
+    },
+    bodyPitch: {
+      position: [
+        pivot.x * WORLD_SCALE,
+        pivot.y * WORLD_SCALE,
+        pivot.z * WORLD_SCALE,
+      ],
+      quaternion: new Quaternion().setFromAxisAngle(
+        new Vector3(1, 0, 0),
+        (transform.bodyPitchDeg * Math.PI) / 180,
+      ),
+    },
     localOffset: [
       -pivot.x * WORLD_SCALE,
       -pivot.y * WORLD_SCALE,
       -pivot.z * WORLD_SCALE,
     ],
+  };
+};
+
+/**
+ * @deprecated Compatibility adapter for the former zero-origin,
+ * zero-base-pitch renderer contract.
+ */
+export const resolveCameraBodyRenderTransform = (
+  transform: CameraBodyTransform,
+): CameraBodyRenderTransform => {
+  const canonical = resolveCameraRigRenderTransform({
+    rigOriginWorld: { x: 0, y: 0, z: 0 },
+    basePitchDeg: 0,
+    bodyPitchDeg: transform.pitchDeg,
+    bodyPitchPivotRigLocal: transform.pivotWorld,
+  });
+  return {
+    ...canonical.bodyPitch,
+    localOffset: canonical.localOffset,
   };
 };

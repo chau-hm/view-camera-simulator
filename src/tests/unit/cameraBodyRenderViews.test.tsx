@@ -7,7 +7,7 @@ import {
 } from "../../components/geometry/opticalSectionProjection";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { CameraBodyAssembly } from "../../render/CameraBodyAssembly";
-import { resolveCameraBodyRenderTransform } from "../../render/planeOrientation";
+import { resolveCameraRigRenderTransform } from "../../render/planeOrientation";
 import { WORLD_SCALE } from "../../render/rttUtils";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
@@ -32,13 +32,15 @@ const cameraFor = (pitchDeg: number): CameraState => ({
 
 const applyRenderHierarchy = (
   pointMm: Vec3,
-  transform: ReturnType<typeof resolveCameraBodyRenderTransform>,
+  transform: ReturnType<typeof resolveCameraRigRenderTransform>,
 ): Vec3 => {
   const point = new Vector3(pointMm.x, pointMm.y, pointMm.z)
     .multiplyScalar(WORLD_SCALE)
     .add(new Vector3(...transform.localOffset))
-    .applyQuaternion(transform.quaternion)
-    .add(new Vector3(...transform.position))
+    .applyQuaternion(transform.bodyPitch.quaternion)
+    .add(new Vector3(...transform.bodyPitch.position))
+    .applyQuaternion(transform.rigPlacement.quaternion)
+    .add(new Vector3(...transform.rigPlacement.position))
     .multiplyScalar(1 / WORLD_SCALE);
   return { x: point.x, y: point.y, z: point.z };
 };
@@ -78,8 +80,8 @@ describe("canonical camera-body render views", () => {
         cameraFor(pitchDeg),
         understandingCameraMovementsScene,
       );
-      const transform = resolveCameraBodyRenderTransform(
-        pitched.cameraBodyTransform,
+      const transform = resolveCameraRigRenderTransform(
+        pitched.cameraRigTransform,
       );
 
       expect(pitched.cameraBodyLocalGeometry).toEqual(
@@ -103,13 +105,19 @@ describe("canonical camera-body render views", () => {
       const tree = CameraBodyAssembly({
         opticsState: pitched,
       }) as ReactElement<GroupProps>;
-      expect(tree.props.name).toBe("camera-body");
-      expect(tree.props.position).toEqual(transform.position);
+      expect(tree.props.name).toBe("camera-rig-placement");
+      expect(tree.props.position).toEqual(transform.rigPlacement.position);
       expect((tree.props.quaternion as Quaternion).toArray()).toEqual(
-        transform.quaternion.toArray(),
+        transform.rigPlacement.quaternion.toArray(),
       );
 
-      const localGroup = Children.only(tree.props.children) as ReactElement<GroupProps>;
+      const pitchGroup = Children.only(tree.props.children) as ReactElement<GroupProps>;
+      expect(pitchGroup.props.name).toBe("camera-body-pitch");
+      expect(pitchGroup.props.position).toEqual(transform.bodyPitch.position);
+      expect((pitchGroup.props.quaternion as Quaternion).toArray()).toEqual(
+        transform.bodyPitch.quaternion.toArray(),
+      );
+      const localGroup = Children.only(pitchGroup.props.children) as ReactElement<GroupProps>;
       expect(localGroup.props.name).toBe("camera-body-local-geometry");
       expect(localGroup.props.position).toEqual(transform.localOffset);
       expect(
@@ -133,8 +141,10 @@ describe("canonical camera-body render views", () => {
       opticsState: baseline,
       ghost: true,
     }) as ReactElement<GroupProps>;
-    const localGroup = Children.only(tree.props.children) as ReactElement<GroupProps>;
-    expect(tree.props.name).toBe("original-ghost-camera-body");
+    const pitchGroup = Children.only(tree.props.children) as ReactElement<GroupProps>;
+    const localGroup = Children.only(pitchGroup.props.children) as ReactElement<GroupProps>;
+    expect(tree.props.name).toBe("original-ghost-camera-rig-placement");
+    expect(pitchGroup.props.name).toBe("original-ghost-camera-body-pitch");
     expect(
       Children.toArray(localGroup.props.children).some(
         (child) =>
@@ -146,12 +156,53 @@ describe("canonical camera-body render views", () => {
     ).toBe(true);
   });
 
+  it("applies outer rig placement after body pitch and matches resolved world standards", () => {
+    const camera: CameraState = {
+      ...cameraFor(8),
+      viewpointAnchor: "high",
+      cameraRigPlacement: geometry.cameraRig.viewpointAnchors.high,
+    };
+    const opticsState = deriveOpticsState(
+      camera,
+      understandingCameraMovementsScene,
+    );
+    const transform = resolveCameraRigRenderTransform(
+      opticsState.cameraRigTransform,
+    );
+
+    expectVecClose(
+      applyRenderHierarchy(
+        opticsState.cameraBodyLocalGeometry.lensCenterLocal,
+        transform,
+      ),
+      opticsState.lensCenterWorld,
+    );
+    expectVecClose(
+      applyRenderHierarchy(
+        opticsState.cameraBodyLocalGeometry.filmCenterLocal,
+        transform,
+      ),
+      opticsState.filmCenterWorld,
+    );
+    expectVecClose(
+      applyRenderHierarchy(
+        opticsState.cameraRigTransform.bodyPitchPivotRigLocal,
+        transform,
+      ),
+      opticsState.cameraBodyPivotWorld,
+    );
+    expectVecClose(
+      applyRenderHierarchy(geometry.cameraBody.rail.centerRigLocal, transform),
+      opticsState.cameraBodyPivotWorld,
+    );
+  });
+
   it.each([-8, 8])(
     "projects the same canonical rail used by the 3D hierarchy at %i°",
     (pitchDeg) => {
       const { opticsState, projection } = projectionFor(pitchDeg);
-      const transform = resolveCameraBodyRenderTransform(
-        opticsState.cameraBodyTransform,
+      const transform = resolveCameraRigRenderTransform(
+        opticsState.cameraRigTransform,
       );
       const railWorld = resolveCameraBodyRailWorldEndpoints(
         opticsState,
@@ -160,11 +211,11 @@ describe("canonical camera-body render views", () => {
       expect(railWorld).not.toBeNull();
       expectVecClose(
         railWorld!.rear,
-        applyRenderHierarchy(geometry.cameraBody.rail.rearEndpointWorld, transform),
+        applyRenderHierarchy(geometry.cameraBody.rail.rearEndpointRigLocal, transform),
       );
       expectVecClose(
         railWorld!.front,
-        applyRenderHierarchy(geometry.cameraBody.rail.frontEndpointWorld, transform),
+        applyRenderHierarchy(geometry.cameraBody.rail.frontEndpointRigLocal, transform),
       );
 
       for (const viewId of ["side", "top", "scheimpflug"] as GeometryView[]) {

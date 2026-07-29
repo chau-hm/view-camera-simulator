@@ -3,7 +3,7 @@ import geometry from "../scenes/understandingCameraMovementsGeometry";
 import type { DerivedOpticsState, StandardFrame, Vec3 } from "../types/optics";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import {
-  resolveCameraBodyRenderTransform,
+  resolveCameraRigRenderTransform,
   resolveFrontStandardRenderTransform,
   resolveRearStandardRenderTransform,
 } from "./planeOrientation";
@@ -161,49 +161,55 @@ export const CameraBodyAssembly = ({
   ghost = false,
   showBellows = true,
 }: CameraBodyAssemblyProps) => {
-  const body = resolveCameraBodyRenderTransform(opticsState.cameraBodyTransform);
+  const transform = resolveCameraRigRenderTransform(opticsState.cameraRigTransform);
   const local = opticsState.cameraBodyLocalGeometry;
   const rail = geometry.cameraBody.rail;
 
   return (
     <group
-      name={ghost ? "original-ghost-camera-body" : "camera-body"}
-      position={body.position}
-      quaternion={body.quaternion}
+      name={ghost ? "original-ghost-camera-rig-placement" : "camera-rig-placement"}
+      position={transform.rigPlacement.position}
+      quaternion={transform.rigPlacement.quaternion}
     >
-      <group name="camera-body-local-geometry" position={body.localOffset}>
-        <RearStandardFrame frame={local.rearStandardFrameLocal} ghost={ghost} />
-        <FrontStandardGeometry
-          lensCenter={local.lensCenterLocal}
-          lensNormal={local.lensNormalLocal}
-          ghost={ghost}
-        />
-        {showBellows ? (
-          <BellowsBetween
-            rearMm={local.filmCenterLocal}
-            frontMm={local.lensCenterLocal}
+      <group
+        name={ghost ? "original-ghost-camera-body-pitch" : "camera-body-pitch"}
+        position={transform.bodyPitch.position}
+        quaternion={transform.bodyPitch.quaternion}
+      >
+        <group name="camera-body-local-geometry" position={transform.localOffset}>
+          <RearStandardFrame frame={local.rearStandardFrameLocal} ghost={ghost} />
+          <FrontStandardGeometry
+            lensCenter={local.lensCenterLocal}
+            lensNormal={local.lensNormalLocal}
             ghost={ghost}
           />
-        ) : null}
-        <mesh
-          name={ghost ? "original-ghost-camera-rail" : "camera-body-rail"}
-          position={vecToWorld(rail.centerWorld)}
-          renderOrder={ghost ? 10 : 0}
-        >
-          <boxGeometry
-            args={[
-              toWorld(rail.dimensionsMm.x),
-              toWorld(rail.dimensionsMm.y),
-              toWorld(rail.dimensionsMm.z),
-            ]}
-          />
-          <meshStandardMaterial
-            color={ghost ? "#94a3b8" : "#334155"}
-            transparent={ghost}
-            opacity={ghost ? 0.28 : 1}
-            depthWrite={!ghost}
-          />
-        </mesh>
+          {showBellows ? (
+            <BellowsBetween
+              rearMm={local.filmCenterLocal}
+              frontMm={local.lensCenterLocal}
+              ghost={ghost}
+            />
+          ) : null}
+          <mesh
+            name={ghost ? "original-ghost-camera-rail" : "camera-body-rail"}
+            position={vecToWorld(rail.centerRigLocal)}
+            renderOrder={ghost ? 10 : 0}
+          >
+            <boxGeometry
+              args={[
+                toWorld(rail.dimensionsMm.x),
+                toWorld(rail.dimensionsMm.y),
+                toWorld(rail.dimensionsMm.z),
+              ]}
+            />
+            <meshStandardMaterial
+              color={ghost ? "#94a3b8" : "#334155"}
+              transparent={ghost}
+              opacity={ghost ? 0.28 : 1}
+              depthWrite={!ghost}
+            />
+          </mesh>
+        </group>
       </group>
     </group>
   );

@@ -5,6 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import {
   applyObserverCameraReset,
   SceneAssetMesh,
+  serializeFiniteRenderVector,
   shouldRenderReferenceCamera,
 } from "../../render/SceneRenderer";
 import { createShelfSwingGroup, disposeShelfSwingGroup } from "../../render/ShelfSwingSubjectFactory";
@@ -15,6 +16,15 @@ import { understandingCameraMovementsScene } from "../../scenes/definitions/unde
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 
 describe("SceneRenderer Shelf Swing integration", () => {
+  it("serializes only finite resolved renderer vectors", () => {
+    expect(serializeFiniteRenderVector({ x: 0, y: -12.5, z: 42 })).toBe(
+      "0.000000,-12.500000,42.000000",
+    );
+    expect(
+      serializeFiniteRenderVector({ x: 0, y: Number.NaN, z: 42 }),
+    ).toBeUndefined();
+  });
+
   it("derives the camera-movements ghost visibility from scene calibration", () => {
     expect(
       CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.showReferenceCamera,

@@ -23,6 +23,7 @@ import {
   disposeCameraMovementsGroup,
 } from "../../render/CameraMovementsSubjectFactory";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
+import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 
 function setupCamera() {
   useAppStore.getState().initializeSimulatorRoute({
@@ -298,6 +299,58 @@ describe("RTT camera configuration", () => {
       ].every(Number.isFinite)).toBe(true);
       expect(pitchedResult.pose.positionWorld).not.toEqual(zeroResult.pose.positionWorld);
       expect(pitchedResult.pose.forwardWorld).not.toEqual(zeroResult.pose.forwardWorld);
+    }
+  });
+
+  it("reports finite configured extrinsics that follow outer rig placement", () => {
+    const state = useAppStore.getState().camera;
+    const placedState = {
+      ...state,
+      viewpointAnchor: "high" as const,
+      cameraRigPlacement: cameraMovementsGeometry.cameraRig.viewpointAnchors.high,
+    };
+    const midpoint = deriveOpticsState(state, understandingCameraMovementsScene);
+    const placed = deriveOpticsState(
+      placedState,
+      understandingCameraMovementsScene,
+    );
+    const midpointCamera = new THREE.PerspectiveCamera();
+    const placedCamera = new THREE.PerspectiveCamera();
+    const midpointClip = getGroundGlassClipRangeWorld(
+      understandingCameraMovementsScene,
+      midpoint.lensCenterWorld,
+    );
+    const placedClip = getGroundGlassClipRangeWorld(
+      understandingCameraMovementsScene,
+      placed.lensCenterWorld,
+    );
+    const midpointResult = configureGroundGlassCamera(
+      midpointCamera,
+      midpoint,
+      midpointClip.near,
+      midpointClip.far,
+    );
+    const placedResult = configureGroundGlassCamera(
+      placedCamera,
+      placed,
+      placedClip.near,
+      placedClip.far,
+    );
+
+    expect(midpointResult.ok).toBe(true);
+    expect(placedResult.ok).toBe(true);
+    if (midpointResult.ok && placedResult.ok) {
+      expect([
+        ...placedResult.pose.positionWorld,
+        ...placedResult.pose.upWorld,
+        ...placedResult.pose.forwardWorld,
+      ].every(Number.isFinite)).toBe(true);
+      expect(placedResult.pose.positionWorld).not.toEqual(
+        midpointResult.pose.positionWorld,
+      );
+      expect(placedResult.pose.forwardWorld).toEqual(
+        midpointResult.pose.forwardWorld,
+      );
     }
   });
 

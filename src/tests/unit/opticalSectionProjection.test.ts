@@ -4,17 +4,26 @@ import {
   computeOpticalSectionData,
   normalizedSegmentCrossResidual,
   PROJECTED_COLLINEARITY_TOLERANCE,
+  resolveCameraBodyRailWorldEndpoints,
   type ScreenPoint,
 } from "../../components/geometry/opticalSectionProjection";
 import { getGeometryPresentationProfile } from "../../components/geometry/geometryPresentationProfiles";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { transformRigLocalPointToWorld } from "../../core/optics/applyCameraBodyPitch";
+import { distance } from "../../core/math/vec";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
+import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import type { CameraState, GeometryView } from "../../types/camera";
-import type { DerivedOpticsState } from "../../types/optics";
+import type {
+  CameraRigViewpointAnchor,
+  DerivedOpticsState,
+  Vec3,
+} from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -51,6 +60,22 @@ const cameraFor = (scene: SceneDefinition, overrides: Partial<CameraState> = {})
   activeSceneId: scene.id,
   ...overrides,
 });
+
+const cameraMovementsCameraFor = (
+  anchor: CameraRigViewpointAnchor,
+  bodyPitchDeg = 0,
+): CameraState => ({
+  ...cameraFor(understandingCameraMovementsScene),
+  cameraBodyPitchDeg: bodyPitchDeg,
+  viewpointAnchor: anchor,
+  cameraRigPlacement: cameraMovementsGeometry.cameraRig.viewpointAnchors[anchor],
+});
+
+const expectVecClose = (actual: Vec3, expected: Vec3): void => {
+  expect(actual.x).toBeCloseTo(expected.x, 10);
+  expect(actual.y).toBeCloseTo(expected.y, 10);
+  expect(actual.z).toBeCloseTo(expected.z, 10);
+};
 
 const cross2d = (a: ScreenPoint, b: ScreenPoint) => a.x * b.y - a.y * b.x;
 
@@ -137,6 +162,116 @@ const assertPhysicalCameraCollinear = (
 };
 
 describe("optical section projection", () => {
+  it("keeps the midpoint rail exactly compatible at zero body pitch", () => {
+    const optics = deriveOpticsState(
+      cameraMovementsCameraFor("mid"),
+      understandingCameraMovementsScene,
+    );
+    const railWorld = resolveCameraBodyRailWorldEndpoints(
+      optics,
+      understandingCameraMovementsScene,
+    );
+
+    expect(railWorld).toEqual({
+      rear: cameraMovementsGeometry.cameraBody.rail.rearEndpointRigLocal,
+      front: cameraMovementsGeometry.cameraBody.rail.frontEndpointRigLocal,
+    });
+
+    const projection = projectionFor(optics, understandingCameraMovementsScene);
+    for (const viewId of ["side", "top", "scheimpflug"] as const) {
+      const view = projection.views[viewId];
+      const segment = view.physicalPlaneSegments.find(
+        ({ id }) => id === "camera-body-rail",
+      );
+      expect(segment).toEqual({
+        id: "camera-body-rail",
+        color: "#334155",
+        p1: view.projectWorldPoint(railWorld!.rear),
+        p2: view.projectWorldPoint(railWorld!.front),
+      });
+    }
+  });
+
+  it.each([
+    ["high", 0],
+    ["low", 0],
+    ["high", 8],
+    ["low", -8],
+  ] as const)(
+    "derives %s rail world endpoints with body pitch %i°",
+    (anchor, bodyPitchDeg) => {
+      const optics = deriveOpticsState(
+        cameraMovementsCameraFor(anchor, bodyPitchDeg),
+        understandingCameraMovementsScene,
+      );
+      const railWorld = resolveCameraBodyRailWorldEndpoints(
+        optics,
+        understandingCameraMovementsScene,
+      );
+      expect(railWorld).not.toBeNull();
+
+      expectVecClose(
+        railWorld!.rear,
+        transformRigLocalPointToWorld(
+          cameraMovementsGeometry.cameraBody.rail.rearEndpointRigLocal,
+          optics.cameraRigTransform,
+        ),
+      );
+      expectVecClose(
+        railWorld!.front,
+        transformRigLocalPointToWorld(
+          cameraMovementsGeometry.cameraBody.rail.frontEndpointRigLocal,
+          optics.cameraRigTransform,
+        ),
+      );
+      expectVecClose(
+        {
+          x: (railWorld!.rear.x + railWorld!.front.x) / 2,
+          y: (railWorld!.rear.y + railWorld!.front.y) / 2,
+          z: (railWorld!.rear.z + railWorld!.front.z) / 2,
+        },
+        optics.cameraBodyPivotWorld,
+      );
+      expect(distance(railWorld!.rear, railWorld!.front)).toBeCloseTo(
+        cameraMovementsGeometry.cameraBody.rail.dimensionsMm.z,
+        10,
+      );
+
+      const projection = projectionFor(optics, understandingCameraMovementsScene);
+      for (const viewId of ["side", "top", "scheimpflug"] as const) {
+        const view = projection.views[viewId];
+        const segment = view.physicalPlaneSegments.find(
+          ({ id }) => id === "camera-body-rail",
+        );
+        expect(segment?.p1).toEqual(view.projectWorldPoint(railWorld!.rear));
+        expect(segment?.p2).toEqual(view.projectWorldPoint(railWorld!.front));
+      }
+    },
+  );
+
+  it("moves the zero-pitch 2D rail above and below midpoint with the signed anchors", () => {
+    const endpointsFor = (anchor: CameraRigViewpointAnchor) => {
+      const optics = deriveOpticsState(
+        cameraMovementsCameraFor(anchor),
+        understandingCameraMovementsScene,
+      );
+      return resolveCameraBodyRailWorldEndpoints(
+        optics,
+        understandingCameraMovementsScene,
+      )!;
+    };
+    const mid = endpointsFor("mid");
+    const high = endpointsFor("high");
+    const low = endpointsFor("low");
+
+    expect(high.rear.y).toBeGreaterThan(mid.rear.y);
+    expect(high.front.y).toBeGreaterThan(mid.front.y);
+    expect(low.rear.y).toBeLessThan(mid.rear.y);
+    expect(low.front.y).toBeLessThan(mid.front.y);
+    expect(high.rear.z).toBeCloseTo(low.rear.z, 10);
+    expect(high.front.z).toBeCloseTo(low.front.z, 10);
+  });
+
   it("projects front tilt into the real Side optical-axis slope", () => {
     const zero = deriveOpticsState(cameraFor(tableTiltScene, { frontTiltDeg: 0 }), tableTiltScene);
     const tilted = deriveOpticsState(cameraFor(tableTiltScene, { frontTiltDeg: 7 }), tableTiltScene);

@@ -61,6 +61,18 @@ export const shouldRenderReferenceCamera = (
 
 const WORLD_SCALE = 0.001;
 
+export const serializeFiniteRenderVector = (
+  value: { x: number; y: number; z: number },
+): string | undefined => {
+  const components = [value.x, value.y, value.z];
+  return components.every(Number.isFinite)
+    ? components.map((component) => component.toFixed(6)).join(",")
+    : undefined;
+};
+
+const serializeFiniteRenderNumber = (value: number): string | undefined =>
+  Number.isFinite(value) ? value.toFixed(6) : undefined;
+
 type OrbitControlsProps = {
   enablePan?: boolean;
   enableZoom?: boolean;
@@ -1049,6 +1061,30 @@ export const SceneRenderer = ({
       data-scheimpflug-focus-vertices={scheimpflugConstructionGeometry?.focusPlane.verticesMm.length ?? 0}
       data-scheimpflug-line-points={scheimpflugConstructionGeometry ? 2 : 0}
       data-lens-plane-normal={`${opticsState.lensPlane.normal.x.toFixed(6)},${opticsState.lensPlane.normal.y.toFixed(6)},${opticsState.lensPlane.normal.z.toFixed(6)}`}
+      data-camera-rig-origin={serializeFiniteRenderVector(
+        opticsState.cameraRigTransform.rigOriginWorld,
+      )}
+      data-camera-rig-placement-kind={opticsState.cameraRigPlacement.kind}
+      data-camera-rig-anchor={
+        opticsState.cameraRigPlacement.kind === "arc-anchor"
+          ? opticsState.cameraRigPlacement.anchor
+          : undefined
+      }
+      data-camera-rig-base-pitch-deg={serializeFiniteRenderNumber(
+        opticsState.cameraRigTransform.basePitchDeg,
+      )}
+      data-camera-body-pitch-deg={serializeFiniteRenderNumber(
+        opticsState.cameraRigTransform.bodyPitchDeg,
+      )}
+      data-camera-body-pivot-world={serializeFiniteRenderVector(
+        opticsState.cameraBodyPivotWorld,
+      )}
+      data-camera-lens-center-world={serializeFiniteRenderVector(
+        opticsState.lensCenterWorld,
+      )}
+      data-camera-film-center-world={serializeFiniteRenderVector(
+        opticsState.filmCenterWorld,
+      )}
       data-view-focus={viewFocus}
       data-orbit-target={observerViewState.target.map((value) => value.toFixed(6)).join(",")}
       data-observer-camera-position={observerViewState.position.map((value) => value.toFixed(6)).join(",")}

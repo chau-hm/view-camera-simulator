@@ -4,6 +4,7 @@ import { useAppStore } from "../../state/appStore";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import type { DerivedOpticsState } from "../../types/optics";
+import geometry from "../../scenes/understandingCameraMovementsGeometry";
 
 function buildOptics(overrides: Partial<ReturnType<typeof useAppStore.getState>['camera']> = {}): DerivedOpticsState {
   const base = useAppStore.getState().camera;
@@ -67,6 +68,25 @@ describe("groundGlassRenderSanityKey", () => {
     const zero = buildOptics({ cameraBodyPitchDeg: 0 });
     const pitched = buildOptics({ cameraBodyPitchDeg: 8 });
     expect(makeKey(pitched)).not.toBe(makeKey(zero));
+  });
+
+  it("outer rig placement changes the key", () => {
+    const camera = useAppStore.getState().camera;
+    const placedCamera = {
+      ...camera,
+      viewpointAnchor: "high" as const,
+      cameraRigPlacement: geometry.cameraRig.viewpointAnchors.high,
+    };
+    const midpoint = deriveOpticsState(
+      camera,
+      understandingCameraMovementsScene,
+    );
+    const placed = deriveOpticsState(
+      placedCamera,
+      understandingCameraMovementsScene,
+    );
+
+    expect(makeKey(placed)).not.toBe(makeKey(midpoint));
   });
 
   it("configured camera extrinsics change the key and remain finite", () => {

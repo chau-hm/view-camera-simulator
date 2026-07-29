@@ -2,6 +2,8 @@ import type { CameraState } from "../../types/camera";
 import type {
   CameraBodyLocalGeometry,
   CameraBodyTransform,
+  CameraRigPlacement,
+  CameraRigTransform,
   DerivedOpticsState,
   FilmPlaneCorners,
   Plane,
@@ -13,7 +15,10 @@ import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
 import { solveLensExtensionForRearDatumFocusDepth, imageDistanceMm } from "./thinLensModel";
-import { CAMERA_CONSTANTS } from "../../utils/constants";
+import {
+  CAMERA_CONSTANTS,
+  DEFAULT_CAMERA_RIG_PLACEMENT,
+} from "../../utils/constants";
 import { planeFromPointNormal } from "../math/plane";
 import {
   calculateLensNormal,
@@ -29,29 +34,69 @@ import { calculateRearStandardFrame } from "./calculateRearStandardFrame";
 import { calculateSharpness } from "./calculateSharpness";
 import { isFiniteVec3, vec, subtract, dot, add, scale } from "../math/vec";
 import { calculateFiniteFocusFilmPlane } from "./calculateFiniteFocusFilmPlane";
-import { applyCameraBodyPitch } from "./applyCameraBodyPitch";
+import { applyCameraRigTransform } from "./applyCameraBodyPitch";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import {
+  isCanonicalCameraRigViewpointPlacement,
+  resolveCameraRigViewpointAnchor,
+} from "../../scenes/cameraRigViewpointGeometry";
 
-const neutralCameraBodyTransform = (): CameraBodyTransform => ({
-  pitchDeg: 0,
-  pivotWorld: vec(0, 0, 0),
+const neutralCameraRigTransform = (): CameraRigTransform => ({
+  rigOriginWorld: vec(0, 0, 0),
+  basePitchDeg: 0,
+  bodyPitchDeg: 0,
+  bodyPitchPivotRigLocal: vec(0, 0, 0),
 });
 
-const resolveCameraBodyTransform = (
+const resolveCameraRigPlacement = (
   cameraState: CameraState,
   scene: SceneDefinition,
-): CameraBodyTransform => {
+): CameraRigPlacement => {
   if (!scene.cameraBodyPitchCapability?.enabled) {
-    return neutralCameraBodyTransform();
+    return DEFAULT_CAMERA_RIG_PLACEMENT;
+  }
+  const calibration = CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig;
+  return isCanonicalCameraRigViewpointPlacement(
+    cameraState.cameraRigPlacement,
+    calibration,
+    cameraState.viewpointAnchor,
+  )
+    ? resolveCameraRigViewpointAnchor(calibration, cameraState.viewpointAnchor)
+    : resolveCameraRigViewpointAnchor(calibration, calibration.defaultAnchor);
+};
+
+const hasCanonicalCameraRigPlacement = (
+  cameraState: CameraState,
+  scene: SceneDefinition,
+): boolean =>
+  !scene.cameraBodyPitchCapability?.enabled ||
+  isCanonicalCameraRigViewpointPlacement(
+    cameraState.cameraRigPlacement,
+    CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig,
+    cameraState.viewpointAnchor,
+  );
+
+const resolveCameraRigTransform = (
+  cameraState: CameraState,
+  scene: SceneDefinition,
+  placement: CameraRigPlacement,
+): CameraRigTransform => {
+  if (!scene.cameraBodyPitchCapability?.enabled) {
+    return neutralCameraRigTransform();
   }
   const presetPitch = scene.cameraPreset.cameraBodyPitchDeg;
   const presetPivot = scene.cameraPreset.cameraBodyPivotWorld;
   return {
-    pitchDeg: Number.isFinite(cameraState.cameraBodyPitchDeg)
+    rigOriginWorld: placement.rigOriginWorld,
+    basePitchDeg: placement.basePitchDeg,
+    bodyPitchDeg: Number.isFinite(cameraState.cameraBodyPitchDeg)
       ? cameraState.cameraBodyPitchDeg
       : Number.isFinite(presetPitch)
         ? (presetPitch as number)
         : 0,
-    pivotWorld:
+    // cameraBodyPivotWorld is a legacy state boundary. Its calibrated value
+    // has always been rig-local because the pre-3C-B rig origin was zero.
+    bodyPitchPivotRigLocal:
       cameraState.cameraBodyPivotWorld && isFiniteVec3(cameraState.cameraBodyPivotWorld)
         ? cameraState.cameraBodyPivotWorld
         : presetPivot && isFiniteVec3(presetPivot)
@@ -59,6 +104,13 @@ const resolveCameraBodyTransform = (
           : vec(0, 0, 0),
   };
 };
+
+const toLegacyCameraBodyTransform = (
+  transform: CameraRigTransform,
+): CameraBodyTransform => ({
+  pitchDeg: transform.bodyPitchDeg,
+  pivotWorld: transform.bodyPitchPivotRigLocal,
+});
 
 const createCameraBodyLocalGeometry = ({
   lensCenterLocal,
@@ -96,6 +148,7 @@ const isFiniteCameraInput = (cameraState: CameraState, scene: SceneDefinition): 
   if (!standardInputsFinite) return false;
   if (!scene.cameraBodyPitchCapability?.enabled) return true;
   return (
+    hasCanonicalCameraRigPlacement(cameraState, scene) &&
     Number.isFinite(cameraState.cameraBodyPitchDeg) &&
     Boolean(cameraState.cameraBodyPivotWorld) &&
     isFiniteVec3(cameraState.cameraBodyPivotWorld)
@@ -140,8 +193,15 @@ const baseFallbackState = (
     rearStandardFrameLocal,
     filmPlaneCornersLocal,
   });
-  const cameraBodyTransform = resolveCameraBodyTransform(cameraState, scene);
+  const cameraRigPlacement = resolveCameraRigPlacement(cameraState, scene);
+  const cameraRigTransform = resolveCameraRigTransform(
+    cameraState,
+    scene,
+    cameraRigPlacement,
+  );
+  const cameraBodyTransform = toLegacyCameraBodyTransform(cameraRigTransform);
   const {
+    cameraBodyPivotWorld,
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,
@@ -150,7 +210,7 @@ const baseFallbackState = (
     filmPlane,
     filmPlaneCornersWorld,
     rearStandardFrame: rearFrame,
-  } = applyCameraBodyPitch(cameraBodyLocalGeometry, cameraBodyTransform);
+  } = applyCameraRigTransform(cameraBodyLocalGeometry, cameraRigTransform);
 
   // Derive the physical lens/film relationship from the constructed planes
   const lensFilmRel = deriveLensFilmRelationship(lensPlane, filmPlane, scene.id === "table-tilt");
@@ -181,8 +241,11 @@ const baseFallbackState = (
   const farPlane = planeFromPointNormal(farPoint, dofNormal);
 
   return {
+    cameraRigPlacement,
+    cameraRigTransform,
     cameraBodyTransform,
     cameraBodyLocalGeometry,
+    cameraBodyPivotWorld,
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,
@@ -231,7 +294,8 @@ export const deriveOpticsState = (
       Number.isFinite(cameraState.rearRiseMm) &&
       Number.isFinite(cameraState.rearTiltDeg) &&
       (!scene.cameraBodyPitchCapability?.enabled ||
-        (Number.isFinite(cameraState.cameraBodyPitchDeg) &&
+        (hasCanonicalCameraRigPlacement(cameraState, scene) &&
+          Number.isFinite(cameraState.cameraBodyPitchDeg) &&
           Boolean(cameraState.cameraBodyPivotWorld) &&
           isFiniteVec3(cameraState.cameraBodyPivotWorld))) &&
       CAMERA_CONSTANTS.apertureOptions.includes(
@@ -261,8 +325,15 @@ export const deriveOpticsState = (
       rearStandardFrameLocal,
       filmPlaneCornersLocal,
     });
-    const cameraBodyTransform = resolveCameraBodyTransform(cameraState, scene);
+    const cameraRigPlacement = resolveCameraRigPlacement(cameraState, scene);
+    const cameraRigTransform = resolveCameraRigTransform(
+      cameraState,
+      scene,
+      cameraRigPlacement,
+    );
+    const cameraBodyTransform = toLegacyCameraBodyTransform(cameraRigTransform);
     const {
+      cameraBodyPivotWorld,
       lensCenterWorld,
       lensNormalWorld,
       lensPlane,
@@ -271,7 +342,7 @@ export const deriveOpticsState = (
       filmPlane,
       filmPlaneCornersWorld,
       rearStandardFrame: rearFrame,
-    } = applyCameraBodyPitch(cameraBodyLocalGeometry, cameraBodyTransform);
+    } = applyCameraRigTransform(cameraBodyLocalGeometry, cameraRigTransform);
     const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
 
     // For Infinity focus we do NOT provide a physical focus plane or a finite far DOF plane.
@@ -303,8 +374,11 @@ export const deriveOpticsState = (
     );
 
     return {
+      cameraRigPlacement,
+      cameraRigTransform,
       cameraBodyTransform,
       cameraBodyLocalGeometry,
+      cameraBodyPivotWorld,
       lensCenterWorld,
       lensNormalWorld,
       lensPlane,
@@ -419,8 +493,15 @@ export const deriveOpticsState = (
     rearStandardFrameLocal,
     filmPlaneCornersLocal,
   });
-  const cameraBodyTransform = resolveCameraBodyTransform(cameraState, scene);
+  const cameraRigPlacement = resolveCameraRigPlacement(cameraState, scene);
+  const cameraRigTransform = resolveCameraRigTransform(
+    cameraState,
+    scene,
+    cameraRigPlacement,
+  );
+  const cameraBodyTransform = toLegacyCameraBodyTransform(cameraRigTransform);
   const {
+    cameraBodyPivotWorld,
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,
@@ -429,7 +510,7 @@ export const deriveOpticsState = (
     filmPlane,
     filmPlaneCornersWorld,
     rearStandardFrame: rearFrame,
-  } = applyCameraBodyPitch(cameraBodyLocalGeometry, cameraBodyTransform);
+  } = applyCameraRigTransform(cameraBodyLocalGeometry, cameraRigTransform);
   const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
 
   // Determine focus point / plane
@@ -522,8 +603,11 @@ export const deriveOpticsState = (
   const offAxisProjectionMatrix = calculateOffAxisProjectionMatrix(offAxisProjectionInput);
 
   return {
+    cameraRigPlacement,
+    cameraRigTransform,
     cameraBodyTransform,
     cameraBodyLocalGeometry,
+    cameraBodyPivotWorld,
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,

@@ -59,10 +59,13 @@ export function createGroundGlassRenderSanityStateKey(
     String(internalWidthPx),
     String(internalHeightPx),
 
-    // Rigid body pose is an explicit renderer input even when other derived
-    // world points happen to be numerically unchanged.
-    finiteOrNull(o.cameraBodyTransform.pitchDeg),
-    vec3Key(o.cameraBodyTransform.pivotWorld),
+    // Canonical rigid rig pose is an explicit renderer input even when other
+    // derived world points happen to be numerically unchanged.
+    vec3Key(o.cameraRigTransform.rigOriginWorld),
+    finiteOrNull(o.cameraRigTransform.basePitchDeg),
+    finiteOrNull(o.cameraRigTransform.bodyPitchDeg),
+    vec3Key(o.cameraRigTransform.bodyPitchPivotRigLocal),
+    vec3Key(o.cameraBodyPivotWorld),
 
     // Extrinsics actually consumed by the configured Three.js camera.
     configuredCameraPose

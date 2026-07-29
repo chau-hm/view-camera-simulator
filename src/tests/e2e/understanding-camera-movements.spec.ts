@@ -50,6 +50,18 @@ async function readSceneCanvasVisualSample(canvas: Locator) {
   }, screenshot.toString("base64"));
 }
 
+const expectFiniteVectorAttribute = async (
+  locator: Locator,
+  attribute: string,
+): Promise<number[]> => {
+  const serialized = await locator.getAttribute(attribute);
+  expect(serialized, attribute).toBeTruthy();
+  const components = serialized!.split(",").map(Number);
+  expect(components, attribute).toHaveLength(3);
+  expect(components.every(Number.isFinite), attribute).toBe(true);
+  return components;
+};
+
 test("camera movements scene loads and renders valid Ground Glass content", async ({ page }) => {
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   await expect(page.locator('[data-testid="scene-canvas"]')).toBeVisible({ timeout: 15000 });
@@ -214,6 +226,16 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   const initialGeneration = Number(initialGenerationValue);
   expect(initialGeometryId).toBeTruthy();
   expect(Number.isSafeInteger(initialGeneration) && initialGeneration > 0).toBe(true);
+  await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
+  await expect(scene).toHaveAttribute("data-camera-rig-origin", "0.000000,0.000000,0.000000");
+  await expect(scene).toHaveAttribute("data-camera-rig-base-pitch-deg", "0.000000");
+  await expect(scene).toHaveAttribute("data-camera-body-pitch-deg", "0.000000");
+  await expectFiniteVectorAttribute(scene, "data-camera-body-pivot-world");
+  await expect(scene).toHaveAttribute(
+    "data-camera-lens-center-world",
+    "0.000000,0.000000,0.000000",
+  );
+  await expectFiniteVectorAttribute(scene, "data-camera-film-center-world");
   await expect(rtt).toHaveAttribute("data-rtt-lattice-geometry-id", initialGeometryId!);
   await expect(rtt).toHaveAttribute("data-rtt-lattice-edge-count", "224");
   await expect(rtt).toHaveAttribute("data-rtt-lattice-target-region", "middle");
@@ -235,20 +257,65 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", "105", { timeout: 15_000 });
   await expect(rtt).toHaveAttribute("data-rtt-lattice-edge-count", "224", { timeout: 15_000 });
   await expect(rtt).toHaveAttribute("data-rtt-lattice-target-region", "middle", { timeout: 15_000 });
+  const initialRttGeneration = await rtt.getAttribute(
+    "data-rtt-resource-generation",
+  );
+  const initialRttCameraPosition = await rtt.getAttribute(
+    "data-rtt-camera-position",
+  );
+  expect(initialRttGeneration).toBeTruthy();
+  expect(initialRttCameraPosition).toBeTruthy();
 
   const frontRise = page.getByRole("slider", { name: "Front Rise" });
   await frontRise.focus();
   await frontRise.press("ArrowRight");
   await expect(frontRise).not.toHaveValue("0");
+  await expect
+    .poll(() => rtt.getAttribute("data-rtt-camera-position"))
+    .not.toBe(initialRttCameraPosition);
+  await expect(rtt).toHaveAttribute(
+    "data-rtt-resource-generation",
+    initialRttGeneration!,
+  );
+  await expect(scene).toHaveAttribute(
+    "data-mounted-lattice-generation",
+    initialGenerationValue!,
+  );
+  await expect(scene).toHaveAttribute(
+    "data-mounted-lattice-geometry-id",
+    initialGeometryId!,
+  );
   await page.getByRole("button", { name: "Reset Movements" }).click();
   await expect(frontRise).toHaveValue("0");
+  await expect(rtt).toHaveAttribute(
+    "data-rtt-camera-position",
+    initialRttCameraPosition!,
+  );
+  await expect(rtt).toHaveAttribute(
+    "data-rtt-resource-generation",
+    initialRttGeneration!,
+  );
+  await expect(scene).toHaveAttribute(
+    "data-mounted-lattice-generation",
+    initialGenerationValue!,
+  );
   await expect(scene).toHaveAttribute("data-lattice-target-region", "middle");
   await expect(rtt).toHaveAttribute("data-rtt-lattice-target-region", "middle");
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5000 });
   await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10000 });
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
 
+  const initialSceneHandle = await scene.elementHandle();
+  const initialRttHandle = await rtt.elementHandle();
+  expect(initialSceneHandle).toBeTruthy();
+  expect(initialRttHandle).toBeTruthy();
   await page.getByRole("link", { name: "All Scenes" }).click();
+  await expect
+    .poll(() => page.evaluate((node) => !node.isConnected, initialSceneHandle!))
+    .toBe(true);
+  await expect
+    .poll(() => page.evaluate((node) => !node.isConnected, initialRttHandle!))
+    .toBe(true);
   await page
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: "Architecture Rise" }) })
@@ -262,7 +329,21 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   );
   const legacyRtt = page.locator('[data-testid="ground-glass-rtt"]');
   await expect(legacyRtt).toHaveAttribute("data-rtt-focal-length-mm", "150", { timeout: 15_000 });
+  await expect(legacyRtt).not.toHaveAttribute("data-rtt-lattice-edge-count", /.+/);
+  await expect(legacyRtt).not.toHaveAttribute("data-rtt-lattice-geometry-id", /.+/);
+  const architectureSceneHandle = await architectureScene.elementHandle();
+  const architectureRttHandle = await legacyRtt.elementHandle();
+  expect(architectureSceneHandle).toBeTruthy();
+  expect(architectureRttHandle).toBeTruthy();
   await page.getByRole("link", { name: "All Scenes" }).click();
+  await expect
+    .poll(() =>
+      page.evaluate((node) => !node.isConnected, architectureSceneHandle!),
+    )
+    .toBe(true);
+  await expect
+    .poll(() => page.evaluate((node) => !node.isConnected, architectureRttHandle!))
+    .toBe(true);
   await page
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: "Understanding Camera Movements" }) })
@@ -275,6 +356,22 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   await expect(returnedScene).toHaveAttribute("data-mounted-lattice", "true", { timeout: 15_000 });
   await expect(returnedScene).toHaveAttribute("data-mounted-lattice-edge-count", "224");
   await expect(returnedScene).toHaveAttribute("data-mounted-lattice-target-region", "middle");
+  await expect(returnedScene).toHaveAttribute(
+    "data-camera-rig-anchor",
+    "mid",
+  );
+  await expect(returnedScene).toHaveAttribute(
+    "data-camera-rig-origin",
+    "0.000000,0.000000,0.000000",
+  );
+  await expect(returnedScene).toHaveAttribute(
+    "data-camera-rig-base-pitch-deg",
+    "0.000000",
+  );
+  await expect(returnedScene).toHaveAttribute(
+    "data-camera-body-pitch-deg",
+    "0.000000",
+  );
   const returnedGeometryId = await returnedScene.getAttribute("data-mounted-lattice-geometry-id");
   const returnedGeneration = Number(
     await returnedScene.getAttribute("data-mounted-lattice-generation"),
