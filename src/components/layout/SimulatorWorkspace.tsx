@@ -52,6 +52,9 @@ export const SimulatorWorkspace = ({
   const setActiveScene = useAppStore((state) => state.setActiveScene);
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
+  const clearCameraMovementCalibrationSession = useAppStore(
+    (state) => state.clearCameraMovementCalibrationSession,
+  );
   const camera = useAppStore((state) => state.camera);
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
   const calibrationSession = useAppStore(
@@ -98,6 +101,13 @@ export const SimulatorWorkspace = ({
 
     initRoute(mode, sceneId, taskId);
   }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId, calibrationEnabled]);
+
+  useEffect(
+    () => () => {
+      if (calibrationEnabled) clearCameraMovementCalibrationSession();
+    },
+    [calibrationEnabled, clearCameraMovementCalibrationSession],
+  );
 
   const closeGeometryPanel = useCallback((restoreFocus = true) => {
     setShowGeometryPanel(false);

@@ -28,4 +28,22 @@ describe("camera movement calibration session", () => {
     store.setCameraMovementCalibrationActive(false);
     expect(selectEffectiveCameraMovementCalibration(useAppStore.getState()).subject.levels).toBe(5);
   });
+
+  it("clears overrides and the route cache when the calibration route exits", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "understanding-camera-movements",
+      calibrationEnabled: true,
+    });
+    store.updateCameraMovementCalibration({ geometry: { levels: 7 } });
+
+    store.clearCameraMovementCalibrationSession();
+
+    const cleared = useAppStore.getState();
+    expect(cleared.cameraMovementCalibrationSession.active).toBe(false);
+    expect(cleared.cameraMovementCalibrationSession.revision).toBe(0);
+    expect(cleared.cameraMovementCalibrationSession.overrides).toEqual({});
+    expect(cleared.lastInitializedRouteKey).toBeNull();
+  });
 });

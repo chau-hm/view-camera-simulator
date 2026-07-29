@@ -99,6 +99,14 @@ test("session calibration separates geometry, optics, rig, reset, and SPA lifecy
   await expect(reset.rtt).toHaveAttribute("data-rtt-focal-length-mm", "105");
   await expect(workbench.getByLabel("Focus distance (mm)")).toHaveValue("2000");
 
+  await workbench.getByLabel("Levels").fill("7");
+  await expect(workbench.getByText(/Session revision 1/)).toBeVisible();
+  await page.getByRole("link", { name: "All Scenes" }).click();
+  await page.goBack();
+  await expect(workbench).toBeVisible();
+  await expect(workbench.getByText(/Session revision 0/)).toBeVisible();
+  await expect(workbench.getByLabel("Levels")).toHaveValue("5");
+
   await page.getByRole("link", { name: "All Scenes" }).click();
   await page
     .getByRole("article")

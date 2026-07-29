@@ -256,6 +256,7 @@ export type AppStore = {
   setCameraMovementCalibrationActive: (active: boolean) => void;
   updateCameraMovementCalibration: (overrides: CameraMovementCalibrationOverrides) => boolean;
   resetCameraMovementCalibration: () => void;
+  clearCameraMovementCalibrationSession: () => void;
   setCameraMovementTargetRegion: (region: CameraMovementTargetRegion) => void;
 };
 
@@ -394,6 +395,12 @@ export const useAppStore = create<AppStore>((set) => ({
       selectedMovement: resolveDefaultMovement("understanding-camera-movements"),
       cameraMovementCalibrationSession: createCalibrationSession(true),
       };
+    }),
+
+  clearCameraMovementCalibrationSession: () =>
+    set({
+      cameraMovementCalibrationSession: createCalibrationSession(false),
+      lastInitializedRouteKey: null,
     }),
 
   setCameraMovementTargetRegion: (region) =>
