@@ -39,6 +39,30 @@ export const selectViewOptionState = (state: AppStore) => ({
 let lastCameraKey = "";
 let lastDerivedOpticsState: DerivedOpticsState | null = null;
 
+const buildCameraRigPlacementKey = (camera: CameraState): ReadonlyArray<string | number> => {
+  const placement = camera.cameraRigPlacement;
+  const common = [
+    placement.kind,
+    placement.rigOriginWorld.x,
+    placement.rigOriginWorld.y,
+    placement.rigOriginWorld.z,
+    placement.basePitchDeg,
+  ];
+  if (placement.kind === "identity") return common;
+  return [
+    ...common,
+    placement.anchor,
+    placement.metadata.identity,
+    placement.metadata.relativeHeight,
+    placement.arcPlane,
+    placement.arcCenterWorld.x,
+    placement.arcCenterWorld.y,
+    placement.arcCenterWorld.z,
+    placement.arcAngleDeg,
+    placement.radiusMm,
+  ];
+};
+
 const buildDerivedCameraKey = (camera: CameraState) =>
   [
     camera.focalLengthMm,
@@ -56,16 +80,7 @@ const buildDerivedCameraKey = (camera: CameraState) =>
     camera.cameraBodyPivotWorld.y,
     camera.cameraBodyPivotWorld.z,
     camera.viewpointAnchor,
-    camera.cameraRigPlacement.anchor,
-    camera.cameraRigPlacement.rigOriginWorld.x,
-    camera.cameraRigPlacement.rigOriginWorld.y,
-    camera.cameraRigPlacement.rigOriginWorld.z,
-    camera.cameraRigPlacement.arcCenterWorld.x,
-    camera.cameraRigPlacement.arcCenterWorld.y,
-    camera.cameraRigPlacement.arcCenterWorld.z,
-    camera.cameraRigPlacement.basePitchDeg,
-    camera.cameraRigPlacement.arcAngleDeg,
-    camera.cameraRigPlacement.radiusMm,
+    ...buildCameraRigPlacementKey(camera),
     camera.activeSceneId,
     camera.groundGlassAssistEnabled,
   ].join("|");

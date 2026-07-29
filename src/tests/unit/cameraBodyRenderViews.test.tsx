@@ -160,10 +160,7 @@ describe("canonical camera-body render views", () => {
     const camera: CameraState = {
       ...cameraFor(8),
       viewpointAnchor: "high",
-      cameraRigPlacement: {
-        ...geometry.cameraRig.viewpointAnchors.high,
-        basePitchDeg: 12,
-      },
+      cameraRigPlacement: geometry.cameraRig.viewpointAnchors.high,
     };
     const opticsState = deriveOpticsState(
       camera,

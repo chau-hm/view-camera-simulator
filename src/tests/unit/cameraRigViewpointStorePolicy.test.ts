@@ -11,11 +11,17 @@ describe("camera-rig viewpoint store policy", () => {
   it("starts and restarts at the mid resolved anchor", () => {
     init();
     expect(useAppStore.getState().camera.viewpointAnchor).toBe("mid");
-    expect(useAppStore.getState().camera.cameraRigPlacement.anchor).toBe("mid");
+    expect(useAppStore.getState().camera.cameraRigPlacement).toMatchObject({
+      kind: "arc-anchor",
+      anchor: "mid",
+    });
     useAppStore.getState().setCameraMovementViewpointAnchor("high");
     useAppStore.getState().restartTask();
     expect(useAppStore.getState().camera.viewpointAnchor).toBe("mid");
-    expect(useAppStore.getState().camera.cameraRigPlacement.anchor).toBe("mid");
+    expect(useAppStore.getState().camera.cameraRigPlacement).toMatchObject({
+      kind: "arc-anchor",
+      anchor: "mid",
+    });
   });
 
   it("resets on away/back and keeps target region independent", () => {
@@ -25,7 +31,10 @@ describe("camera-rig viewpoint store policy", () => {
     init("architecture-rise");
     init();
     expect(useAppStore.getState().camera.viewpointAnchor).toBe("mid");
-    expect(useAppStore.getState().camera.cameraRigPlacement.anchor).toBe("mid");
+    expect(useAppStore.getState().camera.cameraRigPlacement).toMatchObject({
+      kind: "arc-anchor",
+      anchor: "mid",
+    });
     expect(useAppStore.getState().scene.targetRegion).toBe("middle");
   });
 

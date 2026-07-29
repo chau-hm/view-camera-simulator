@@ -19,13 +19,29 @@ import {
   CAMERA_RIG_VIEWPOINT_ANCHORS,
 } from "../../scenes/understandingCameraMovementsGeometry";
 import type { CameraState } from "../../types/camera";
-import type { CameraRigTransform, Plane, Vec3 } from "../../types/optics";
+import type {
+  ArcAnchorCameraRigPlacement,
+  CameraRigTransform,
+  Plane,
+  Vec3,
+} from "../../types/optics";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const expectVecClose = (actual: Vec3, expected: Vec3, digits = 10): void => {
   expect(actual.x).toBeCloseTo(expected.x, digits);
   expect(actual.y).toBeCloseTo(expected.y, digits);
   expect(actual.z).toBeCloseTo(expected.z, digits);
+};
+
+const expectArcPlacement = (
+  placement: ReturnType<typeof deriveOpticsState>["cameraRigPlacement"],
+  anchor: ArcAnchorCameraRigPlacement["anchor"],
+): ArcAnchorCameraRigPlacement => {
+  expect(placement).toMatchObject({ kind: "arc-anchor", anchor });
+  if (placement.kind !== "arc-anchor") {
+    throw new Error("Expected canonical arc-anchor placement");
+  }
+  return placement;
 };
 
 const finiteCamera = (overrides: Partial<CameraState> = {}): CameraState => ({
@@ -248,18 +264,16 @@ describe("canonical camera rig transform", () => {
       ...localMovements,
       cameraBodyPitchDeg: 8,
       viewpointAnchor: "high",
-      cameraRigPlacement: {
-        ...CAMERA_RIG_VIEWPOINT_ANCHORS.high,
-        basePitchDeg: 12,
-      },
+      cameraRigPlacement: CAMERA_RIG_VIEWPOINT_ANCHORS.high,
     });
     const transformed = deriveOpticsState(camera, understandingCameraMovementsScene);
     const transform = transformed.cameraRigTransform;
 
-    expect(transformed.cameraRigPlacement).toBe(camera.cameraRigPlacement);
+    expect(transformed.cameraRigPlacement).toEqual(CAMERA_RIG_VIEWPOINT_ANCHORS.high);
+    expect(transformed.cameraRigPlacement).not.toBe(camera.cameraRigPlacement);
     expect(transform).toEqual({
       rigOriginWorld: CAMERA_RIG_VIEWPOINT_ANCHORS.high.rigOriginWorld,
-      basePitchDeg: 12,
+      basePitchDeg: 0,
       bodyPitchDeg: 8,
       bodyPitchPivotRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
     });
@@ -296,10 +310,7 @@ describe("canonical camera rig transform", () => {
       finiteCamera({
         cameraBodyPitchDeg: -5,
         viewpointAnchor: "low",
-        cameraRigPlacement: {
-          ...CAMERA_RIG_VIEWPOINT_ANCHORS.low,
-          basePitchDeg: -7,
-        },
+        cameraRigPlacement: CAMERA_RIG_VIEWPOINT_ANCHORS.low,
         ...overrides,
       }),
       understandingCameraMovementsScene,
@@ -318,21 +329,24 @@ describe("canonical camera rig transform", () => {
         .every(Number.isFinite),
     ).toBe(true);
     expect(optics.offAxisProjectionMatrix.every(Number.isFinite)).toBe(true);
-    expect(optics.cameraRigPlacement.anchor).toBe("low");
+    expectArcPlacement(optics.cameraRigPlacement, "low");
   });
 
-  it("falls back to identity placement when state anchor and placement do not match", () => {
+  it("rejects a high placement whose metadata and angle conceal canonical low coordinates", () => {
     const optics = deriveOpticsState(
       finiteCamera({
         viewpointAnchor: "high",
-        cameraRigPlacement: CAMERA_RIG_VIEWPOINT_ANCHORS.low,
+        cameraRigPlacement: {
+          ...CAMERA_RIG_VIEWPOINT_ANCHORS.high,
+          rigOriginWorld: CAMERA_RIG_VIEWPOINT_ANCHORS.low.rigOriginWorld,
+        },
       }),
       understandingCameraMovementsScene,
     );
 
     expect(optics.diagnostics.fallbackApplied).toBe(true);
     expect(optics.diagnostics.errorMessage).toBe("Invalid camera input");
-    expect(optics.cameraRigPlacement.anchor).toBe("mid");
+    expectArcPlacement(optics.cameraRigPlacement, "mid");
     expect(optics.cameraRigTransform).toEqual({
       rigOriginWorld: { x: 0, y: 0, z: 0 },
       basePitchDeg: 0,
@@ -340,6 +354,60 @@ describe("canonical camera rig transform", () => {
       bodyPitchPivotRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
     });
   });
+
+  it.each([
+    [
+      "arc angle",
+      (placement: ArcAnchorCameraRigPlacement) => ({
+        ...placement,
+        arcAngleDeg: placement.arcAngleDeg + 1,
+      }),
+    ],
+    [
+      "radius",
+      (placement: ArcAnchorCameraRigPlacement) => ({
+        ...placement,
+        radiusMm: placement.radiusMm + 1,
+      }),
+    ],
+    [
+      "arc centre",
+      (placement: ArcAnchorCameraRigPlacement) => ({
+        ...placement,
+        arcCenterWorld: { ...placement.arcCenterWorld, z: placement.arcCenterWorld.z + 1 },
+      }),
+    ],
+    [
+      "base pitch",
+      (placement: ArcAnchorCameraRigPlacement) => ({
+        ...placement,
+        basePitchDeg: placement.basePitchDeg + 1,
+      }),
+    ],
+    [
+      "metadata",
+      (placement: ArcAnchorCameraRigPlacement) => ({
+        ...placement,
+        metadata: { ...placement.metadata, relativeHeight: "below-mid" as const },
+      }),
+    ],
+  ] as const)(
+    "rejects altered %s and falls back to the real canonical mid anchor",
+    (_label, alter) => {
+      const optics = deriveOpticsState(
+        finiteCamera({
+          viewpointAnchor: "high",
+          cameraRigPlacement: alter(CAMERA_RIG_VIEWPOINT_ANCHORS.high),
+        }),
+        understandingCameraMovementsScene,
+      );
+
+      expect(optics.diagnostics.fallbackApplied).toBe(true);
+      expect(optics.diagnostics.errorMessage).toBe("Invalid camera input");
+      expect(optics.cameraRigPlacement).toEqual(CAMERA_RIG_VIEWPOINT_ANCHORS.mid);
+      expectArcPlacement(optics.cameraRigPlacement, "mid");
+    },
+  );
 
   it("validates explicit placement on the infinity path", () => {
     const optics = deriveOpticsState(
@@ -359,7 +427,7 @@ describe("canonical camera rig transform", () => {
 
     expect(optics.diagnostics.fallbackApplied).toBe(true);
     expect(optics.diagnostics.errorMessage).toBe("Invalid input values for infinity focus");
-    expect(optics.cameraRigPlacement.anchor).toBe("mid");
+    expectArcPlacement(optics.cameraRigPlacement, "mid");
     expect(
       [
         optics.lensCenterWorld,
@@ -382,7 +450,11 @@ describe("canonical camera rig transform", () => {
     };
     const optics = deriveOpticsState(camera, legacyScene);
 
-    expect(optics.cameraRigPlacement.anchor).toBe("mid");
+    expect(optics.cameraRigPlacement).toEqual({
+      kind: "identity",
+      rigOriginWorld: { x: 0, y: 0, z: 0 },
+      basePitchDeg: 0,
+    });
     expect(optics.cameraRigTransform).toEqual({
       rigOriginWorld: { x: 0, y: 0, z: 0 },
       basePitchDeg: 0,

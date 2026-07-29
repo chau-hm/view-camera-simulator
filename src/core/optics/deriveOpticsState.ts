@@ -34,10 +34,12 @@ import { calculateRearStandardFrame } from "./calculateRearStandardFrame";
 import { calculateSharpness } from "./calculateSharpness";
 import { isFiniteVec3, vec, subtract, dot, add, scale } from "../math/vec";
 import { calculateFiniteFocusFilmPlane } from "./calculateFiniteFocusFilmPlane";
+import { applyCameraRigTransform } from "./applyCameraBodyPitch";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import {
-  applyCameraRigTransform,
-  isValidCameraRigPlacement,
-} from "./applyCameraBodyPitch";
+  isCanonicalCameraRigViewpointPlacement,
+  resolveCameraRigViewpointAnchor,
+} from "../../scenes/cameraRigViewpointGeometry";
 
 const neutralCameraRigTransform = (): CameraRigTransform => ({
   rigOriginWorld: vec(0, 0, 0),
@@ -53,13 +55,26 @@ const resolveCameraRigPlacement = (
   if (!scene.cameraBodyPitchCapability?.enabled) {
     return DEFAULT_CAMERA_RIG_PLACEMENT;
   }
-  return isValidCameraRigPlacement(
+  const calibration = CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig;
+  return isCanonicalCameraRigViewpointPlacement(
     cameraState.cameraRigPlacement,
+    calibration,
     cameraState.viewpointAnchor,
   )
-    ? cameraState.cameraRigPlacement
-    : DEFAULT_CAMERA_RIG_PLACEMENT;
+    ? resolveCameraRigViewpointAnchor(calibration, cameraState.viewpointAnchor)
+    : resolveCameraRigViewpointAnchor(calibration, calibration.defaultAnchor);
 };
+
+const hasCanonicalCameraRigPlacement = (
+  cameraState: CameraState,
+  scene: SceneDefinition,
+): boolean =>
+  !scene.cameraBodyPitchCapability?.enabled ||
+  isCanonicalCameraRigViewpointPlacement(
+    cameraState.cameraRigPlacement,
+    CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig,
+    cameraState.viewpointAnchor,
+  );
 
 const resolveCameraRigTransform = (
   cameraState: CameraState,
@@ -133,7 +148,7 @@ const isFiniteCameraInput = (cameraState: CameraState, scene: SceneDefinition): 
   if (!standardInputsFinite) return false;
   if (!scene.cameraBodyPitchCapability?.enabled) return true;
   return (
-    isValidCameraRigPlacement(cameraState.cameraRigPlacement, cameraState.viewpointAnchor) &&
+    hasCanonicalCameraRigPlacement(cameraState, scene) &&
     Number.isFinite(cameraState.cameraBodyPitchDeg) &&
     Boolean(cameraState.cameraBodyPivotWorld) &&
     isFiniteVec3(cameraState.cameraBodyPivotWorld)
@@ -279,10 +294,7 @@ export const deriveOpticsState = (
       Number.isFinite(cameraState.rearRiseMm) &&
       Number.isFinite(cameraState.rearTiltDeg) &&
       (!scene.cameraBodyPitchCapability?.enabled ||
-        (isValidCameraRigPlacement(
-          cameraState.cameraRigPlacement,
-          cameraState.viewpointAnchor,
-        ) &&
+        (hasCanonicalCameraRigPlacement(cameraState, scene) &&
           Number.isFinite(cameraState.cameraBodyPitchDeg) &&
           Boolean(cameraState.cameraBodyPivotWorld) &&
           isFiniteVec3(cameraState.cameraBodyPivotWorld))) &&

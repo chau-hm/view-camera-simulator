@@ -1,5 +1,6 @@
 import { distance, isFiniteVec3, rotatePointAroundX } from "../core/math/vec";
 import type {
+  ArcAnchorCameraRigPlacement,
   CameraRigPlacement,
   CameraRigViewpointAnchor,
   CameraRigViewpointAnchorMetadata,
@@ -35,13 +36,26 @@ export type CameraRigViewpointArcCalibration = Readonly<{
   >;
 }>;
 
-/** Compatibility scene-level name for the canonical resolved placement type. */
-export type ResolvedCameraRigViewpointAnchor = CameraRigPlacement;
+/** Scene-level name for a canonical resolved arc-anchor placement. */
+export type ResolvedCameraRigViewpointAnchor = ArcAnchorCameraRigPlacement;
 
 const approximatelyEqual = (a: number, b: number): boolean => {
   const scale = Math.max(1, Math.abs(a), Math.abs(b));
   return Math.abs(a - b) <= Number.EPSILON * scale * 8;
 };
+
+const placementNumberApproximatelyEqual = (a: number, b: number): boolean => {
+  const scale = Math.max(1, Math.abs(a), Math.abs(b));
+  return Number.isFinite(a) && Math.abs(a - b) <= 1e-9 * scale;
+};
+
+const placementVectorApproximatelyEqual = (
+  a: Readonly<Vec3>,
+  b: Readonly<Vec3>,
+): boolean =>
+  placementNumberApproximatelyEqual(a.x, b.x) &&
+  placementNumberApproximatelyEqual(a.y, b.y) &&
+  placementNumberApproximatelyEqual(a.z, b.z);
 
 const assertValidCalibration = (calibration: CameraRigViewpointArcCalibration): void => {
   if (calibration.arcPlane !== "yz") {
@@ -150,6 +164,7 @@ export const resolveCameraRigViewpointAnchor = (
         );
 
   return {
+    kind: "arc-anchor",
     anchor,
     metadata: calibration.anchorMetadata[anchor],
     arcPlane: calibration.arcPlane,
@@ -159,6 +174,54 @@ export const resolveCameraRigViewpointAnchor = (
     arcAngleDeg,
     radiusMm: calibration.arcRadiusMm,
   };
+};
+
+/**
+ * Validate compatibility state against a freshly resolved canonical anchor.
+ *
+ * The stored numeric placement is never authoritative: callers should consume
+ * the newly resolved placement after this comparison succeeds.
+ */
+export const isCanonicalCameraRigViewpointPlacement = (
+  placement: CameraRigPlacement,
+  calibration: CameraRigViewpointArcCalibration,
+  anchor: CameraRigViewpointAnchor,
+): placement is ArcAnchorCameraRigPlacement => {
+  let expected: ResolvedCameraRigViewpointAnchor;
+  try {
+    expected = resolveCameraRigViewpointAnchor(calibration, anchor);
+  } catch {
+    return false;
+  }
+
+  try {
+    return (
+      placement.kind === "arc-anchor" &&
+      placement.anchor === expected.anchor &&
+      placement.metadata.identity === expected.metadata.identity &&
+      placement.metadata.relativeHeight === expected.metadata.relativeHeight &&
+      placement.arcPlane === expected.arcPlane &&
+      placementVectorApproximatelyEqual(
+        placement.arcCenterWorld,
+        expected.arcCenterWorld,
+      ) &&
+      placementVectorApproximatelyEqual(
+        placement.rigOriginWorld,
+        expected.rigOriginWorld,
+      ) &&
+      placementNumberApproximatelyEqual(placement.radiusMm, expected.radiusMm) &&
+      placementNumberApproximatelyEqual(
+        placement.arcAngleDeg,
+        expected.arcAngleDeg,
+      ) &&
+      placementNumberApproximatelyEqual(
+        placement.basePitchDeg,
+        expected.basePitchDeg,
+      )
+    );
+  } catch {
+    return false;
+  }
 };
 
 export const resolveCameraRigViewpointAnchors = (

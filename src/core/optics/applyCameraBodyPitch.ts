@@ -1,9 +1,7 @@
 import type {
   CameraBodyLocalGeometry,
   CameraBodyTransform,
-  CameraRigPlacement,
   CameraRigTransform,
-  CameraRigViewpointAnchor,
   FilmPlaneCorners,
   StandardFrame,
   Vec3,
@@ -11,7 +9,6 @@ import type {
 import { planeFromPointNormal } from "../math/plane";
 import {
   add,
-  distance,
   isFiniteVec3,
   magnitude,
   rotateAroundX,
@@ -30,57 +27,6 @@ export type CameraBodyWorldGeometry = {
   filmPlane: ReturnType<typeof planeFromPointNormal>;
   filmPlaneCornersWorld: FilmPlaneCorners;
   rearStandardFrame: StandardFrame;
-};
-
-const approximatelyEqual = (a: number, b: number): boolean => {
-  const valueScale = Math.max(1, Math.abs(a), Math.abs(b));
-  return Math.abs(a - b) <= Number.EPSILON * valueScale * 8;
-};
-
-/** Validate a resolved non-identity viewpoint placement at the optics boundary. */
-export const isValidCameraRigPlacement = (
-  placement: CameraRigPlacement,
-  expectedAnchor: CameraRigViewpointAnchor,
-): boolean => {
-  const expectedMetadata = {
-    mid: { identity: "mid", relativeHeight: "at-mid" },
-    high: { identity: "high", relativeHeight: "above-mid" },
-    low: { identity: "low", relativeHeight: "below-mid" },
-  } as const;
-  if (!["mid", "high", "low"].includes(expectedAnchor)) {
-    return false;
-  }
-  if (
-    placement?.anchor !== expectedAnchor ||
-    placement.arcPlane !== "yz" ||
-    placement.metadata?.identity !== expectedMetadata[expectedAnchor].identity ||
-    placement.metadata.relativeHeight !== expectedMetadata[expectedAnchor].relativeHeight ||
-    !isFiniteVec3(placement.arcCenterWorld) ||
-    !isFiniteVec3(placement.rigOriginWorld) ||
-    placement.arcCenterWorld.x !== placement.rigOriginWorld.x ||
-    !Number.isFinite(placement.basePitchDeg) ||
-    !Number.isFinite(placement.arcAngleDeg) ||
-    !Number.isFinite(placement.radiusMm) ||
-    placement.radiusMm <= 0
-  ) {
-    return false;
-  }
-  if (
-    !approximatelyEqual(
-      distance(placement.arcCenterWorld, placement.rigOriginWorld),
-      placement.radiusMm,
-    )
-  ) {
-    return false;
-  }
-  switch (expectedAnchor) {
-    case "mid":
-      return placement.arcAngleDeg === 0;
-    case "high":
-      return placement.arcAngleDeg > 0 && placement.arcAngleDeg < 180;
-    case "low":
-      return placement.arcAngleDeg < 0 && placement.arcAngleDeg > -180;
-  }
 };
 
 const assertFiniteDirection = (label: string, direction: Vec3): void => {

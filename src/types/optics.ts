@@ -13,8 +13,16 @@ export type CameraRigViewpointAnchorMetadata = Readonly<{
   relativeHeight: CameraRigViewpointRelativeHeight;
 }>;
 
-/** Resolved outer rig placement. Body pitch and its pivot are deliberately separate. */
-export type CameraRigPlacement = Readonly<{
+/** Identity placement used by scenes without a calibrated viewpoint arc. */
+export type IdentityCameraRigPlacement = Readonly<{
+  kind: "identity";
+  rigOriginWorld: Vec3;
+  basePitchDeg: 0;
+}>;
+
+/** Resolved calibrated arc anchor. Body pitch and its pivot remain separate. */
+export type ArcAnchorCameraRigPlacement = Readonly<{
+  kind: "arc-anchor";
   anchor: CameraRigViewpointAnchor;
   metadata: CameraRigViewpointAnchorMetadata;
   arcPlane: CameraRigViewpointArcPlane;
@@ -24,6 +32,10 @@ export type CameraRigPlacement = Readonly<{
   arcAngleDeg: number;
   radiusMm: number;
 }>;
+
+export type CameraRigPlacement =
+  | IdentityCameraRigPlacement
+  | ArcAnchorCameraRigPlacement;
 
 export type Ray = {
   origin: Vec3;

@@ -307,10 +307,7 @@ describe("RTT camera configuration", () => {
     const placedState = {
       ...state,
       viewpointAnchor: "high" as const,
-      cameraRigPlacement: {
-        ...cameraMovementsGeometry.cameraRig.viewpointAnchors.high,
-        basePitchDeg: 12,
-      },
+      cameraRigPlacement: cameraMovementsGeometry.cameraRig.viewpointAnchors.high,
     };
     const midpoint = deriveOpticsState(state, understandingCameraMovementsScene);
     const placed = deriveOpticsState(
@@ -351,7 +348,7 @@ describe("RTT camera configuration", () => {
       expect(placedResult.pose.positionWorld).not.toEqual(
         midpointResult.pose.positionWorld,
       );
-      expect(placedResult.pose.forwardWorld).not.toEqual(
+      expect(placedResult.pose.forwardWorld).toEqual(
         midpointResult.pose.forwardWorld,
       );
     }

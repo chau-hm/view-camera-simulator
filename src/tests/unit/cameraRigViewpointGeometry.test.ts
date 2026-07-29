@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { distance } from "../../core/math/vec";
 import {
+  isCanonicalCameraRigViewpointPlacement,
   resolveCameraRigViewpointAnchor,
   resolveCameraRigViewpointAnchors,
   type CameraRigViewpointArcCalibration,
 } from "../../scenes/cameraRigViewpointGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import { DEFAULT_CAMERA_RIG_PLACEMENT } from "../../utils/constants";
 
 const calibration = CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig;
 
@@ -60,6 +62,34 @@ describe("camera rig YZ-arc viewpoint anchors", () => {
     expect(high.rigOriginWorld.z).toBeCloseTo(low.rigOriginWorld.z, 12);
     expect(distance(high.rigOriginWorld, centre)).toBeCloseTo(2000, 12);
     expect(distance(low.rigOriginWorld, centre)).toBeCloseTo(2000, 12);
+  });
+
+  it.each(["mid", "high", "low"] as const)(
+    "accepts the freshly resolved canonical %s placement",
+    (anchor) => {
+      expect(
+        isCanonicalCameraRigViewpointPlacement(
+          resolveCameraRigViewpointAnchor(calibration, anchor),
+          calibration,
+          anchor,
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("does not validate an identity transform as a calibrated arc anchor", () => {
+    expect(DEFAULT_CAMERA_RIG_PLACEMENT).toEqual({
+      kind: "identity",
+      rigOriginWorld: { x: 0, y: 0, z: 0 },
+      basePitchDeg: 0,
+    });
+    expect(
+      isCanonicalCameraRigViewpointPlacement(
+        DEFAULT_CAMERA_RIG_PLACEMENT,
+        calibration,
+        "mid",
+      ),
+    ).toBe(false);
   });
 
   it.each([

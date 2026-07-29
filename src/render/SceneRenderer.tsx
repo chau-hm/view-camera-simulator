@@ -1064,7 +1064,12 @@ export const SceneRenderer = ({
       data-camera-rig-origin={serializeFiniteRenderVector(
         opticsState.cameraRigTransform.rigOriginWorld,
       )}
-      data-camera-rig-anchor={opticsState.cameraRigPlacement.anchor}
+      data-camera-rig-placement-kind={opticsState.cameraRigPlacement.kind}
+      data-camera-rig-anchor={
+        opticsState.cameraRigPlacement.kind === "arc-anchor"
+          ? opticsState.cameraRigPlacement.anchor
+          : undefined
+      }
       data-camera-rig-base-pitch-deg={serializeFiniteRenderNumber(
         opticsState.cameraRigTransform.basePitchDeg,
       )}

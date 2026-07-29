@@ -4,14 +4,9 @@ import type { CameraRigPlacement, Vec3 } from "../types/optics";
 /** Neutral body-pitch pivot used by scenes without the camera-body-pitch capability. */
 export const DEFAULT_CAMERA_BODY_PIVOT_WORLD: Vec3 = { x: 0, y: 0, z: 0 };
 export const DEFAULT_CAMERA_RIG_PLACEMENT: CameraRigPlacement = {
-  anchor: "mid",
-  metadata: { identity: "mid", relativeHeight: "at-mid" },
-  arcPlane: "yz",
-  arcCenterWorld: { x: 0, y: 0, z: 0 },
+  kind: "identity",
   rigOriginWorld: { x: 0, y: 0, z: 0 },
   basePitchDeg: 0,
-  arcAngleDeg: 0,
-  radiusMm: 0,
 };
 
 export const CAMERA_CONSTANTS = {

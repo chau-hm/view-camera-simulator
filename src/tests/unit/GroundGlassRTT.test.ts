@@ -114,10 +114,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       ...baseCamera,
       cameraBodyPitchDeg: -8,
       viewpointAnchor: "high" as const,
-      cameraRigPlacement: {
-        ...cameraMovementsGeometry.cameraRig.viewpointAnchors.high,
-        basePitchDeg: 12,
-      },
+      cameraRigPlacement: cameraMovementsGeometry.cameraRig.viewpointAnchors.high,
     };
     view.rerender(
       React.createElement(GroundGlassRTT, {

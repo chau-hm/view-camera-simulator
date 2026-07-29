@@ -75,10 +75,7 @@ describe("groundGlassRenderSanityKey", () => {
     const placedCamera = {
       ...camera,
       viewpointAnchor: "high" as const,
-      cameraRigPlacement: {
-        ...geometry.cameraRig.viewpointAnchors.high,
-        basePitchDeg: 12,
-      },
+      cameraRigPlacement: geometry.cameraRig.viewpointAnchors.high,
     };
     const midpoint = deriveOpticsState(
       camera,

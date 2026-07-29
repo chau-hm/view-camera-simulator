@@ -64,15 +64,11 @@ const cameraFor = (scene: SceneDefinition, overrides: Partial<CameraState> = {})
 const cameraMovementsCameraFor = (
   anchor: CameraRigViewpointAnchor,
   bodyPitchDeg = 0,
-  basePitchDeg = 0,
 ): CameraState => ({
   ...cameraFor(understandingCameraMovementsScene),
   cameraBodyPitchDeg: bodyPitchDeg,
   viewpointAnchor: anchor,
-  cameraRigPlacement: {
-    ...cameraMovementsGeometry.cameraRig.viewpointAnchors[anchor],
-    basePitchDeg,
-  },
+  cameraRigPlacement: cameraMovementsGeometry.cameraRig.viewpointAnchors[anchor],
 });
 
 const expectVecClose = (actual: Vec3, expected: Vec3): void => {
@@ -197,15 +193,15 @@ describe("optical section projection", () => {
   });
 
   it.each([
-    ["high", 0, 0],
-    ["low", 0, 0],
-    ["high", 8, 12],
-    ["low", -8, -7],
+    ["high", 0],
+    ["low", 0],
+    ["high", 8],
+    ["low", -8],
   ] as const)(
-    "derives %s rail world endpoints with body pitch %i° and base pitch %i°",
-    (anchor, bodyPitchDeg, basePitchDeg) => {
+    "derives %s rail world endpoints with body pitch %i°",
+    (anchor, bodyPitchDeg) => {
       const optics = deriveOpticsState(
-        cameraMovementsCameraFor(anchor, bodyPitchDeg, basePitchDeg),
+        cameraMovementsCameraFor(anchor, bodyPitchDeg),
         understandingCameraMovementsScene,
       );
       const railWorld = resolveCameraBodyRailWorldEndpoints(
