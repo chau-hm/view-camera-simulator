@@ -4,6 +4,11 @@ import { getSceneById, getSceneFocusDistanceRange } from "../scenes/definitions"
 import type { AppStore } from "./appStore";
 import type { CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
+import {
+  CAMERA_MOVEMENT_CALIBRATION_BASELINE,
+  resolveEffectiveCameraMovementCalibration,
+  type EffectiveCameraMovementCalibration,
+} from "../scenes/cameraMovementEffectiveCalibration";
 
 export const selectCameraState = (state: AppStore): CameraState => state.camera;
 
@@ -36,6 +41,16 @@ export const selectViewOptionState = (state: AppStore) => ({
   showOpticalGeometry: state.ui.showOpticalGeometry,
 });
 
+const PRODUCTION_EFFECTIVE_CAMERA_MOVEMENT_CALIBRATION =
+  resolveEffectiveCameraMovementCalibration(CAMERA_MOVEMENT_CALIBRATION_BASELINE);
+
+export const selectEffectiveCameraMovementCalibration = (
+  state: AppStore,
+): EffectiveCameraMovementCalibration =>
+  state.cameraMovementCalibrationSession.active
+    ? state.cameraMovementCalibrationSession.effectiveCalibration
+    : PRODUCTION_EFFECTIVE_CAMERA_MOVEMENT_CALIBRATION;
+
 let lastCameraKey = "";
 let lastDerivedOpticsState: DerivedOpticsState | null = null;
 
@@ -63,7 +78,10 @@ const buildCameraRigPlacementKey = (camera: CameraState): ReadonlyArray<string |
   ];
 };
 
-const buildDerivedCameraKey = (camera: CameraState) =>
+const buildDerivedCameraKey = (
+  camera: CameraState,
+  cameraMovementCalibration?: EffectiveCameraMovementCalibration,
+) =>
   [
     camera.focalLengthMm,
     camera.aperture,
@@ -83,16 +101,25 @@ const buildDerivedCameraKey = (camera: CameraState) =>
     ...buildCameraRigPlacementKey(camera),
     camera.activeSceneId,
     camera.groundGlassAssistEnabled,
+    cameraMovementCalibration?.opticsKey ?? "",
+    cameraMovementCalibration?.rigKey ?? "",
   ].join("|");
 
-export const selectDerivedOpticsState = (camera: CameraState): DerivedOpticsState => {
-  const cameraKey = buildDerivedCameraKey(camera);
+export const selectDerivedOpticsState = (
+  camera: CameraState,
+  cameraMovementCalibration?: EffectiveCameraMovementCalibration,
+): DerivedOpticsState => {
+  const cameraKey = buildDerivedCameraKey(camera, cameraMovementCalibration);
   if (lastDerivedOpticsState && lastCameraKey === cameraKey) {
     return lastDerivedOpticsState;
   }
 
   const scene = getSceneById(camera.activeSceneId) ?? architectureRiseScene;
-  lastDerivedOpticsState = deriveOpticsState(camera, scene);
+  lastDerivedOpticsState = deriveOpticsState(
+    camera,
+    scene,
+    cameraMovementCalibration,
+  );
   lastCameraKey = cameraKey;
   return lastDerivedOpticsState;
 };

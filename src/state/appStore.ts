@@ -23,6 +23,7 @@ import {
 } from "./sceneViewDefaults";
 import {
   DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
+  type CameraMovementSceneCalibration,
   type CameraMovementTargetRegion,
 } from "../scenes/cameraMovementSceneCalibration";
 import {
@@ -30,6 +31,14 @@ import {
 } from "../scenes/cameraRigViewpointGeometry";
 import type { CameraRigViewpointAnchor } from "../types/optics";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../scenes/cameraMovementSceneCalibration";
+import {
+  CAMERA_MOVEMENT_CALIBRATION_BASELINE,
+  resolveEffectiveCameraMovementCalibration,
+  validateEffectiveCameraMovementCalibration,
+  type CameraMovementCalibrationOverrides,
+  type EffectiveCameraMovementCalibration,
+  type CalibrationValidationResult,
+} from "../scenes/cameraMovementEffectiveCalibration";
 
 const defaultControlState = {
   focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
@@ -72,11 +81,22 @@ const isCameraMovementsScene = (sceneId: string) => sceneId === "understanding-c
 const resolveRigPlacement = (
   sceneId: string,
   anchor: CameraRigViewpointAnchor = "mid",
+  calibration: CameraMovementSceneCalibration = CAMERA_MOVEMENT_SCENE_CALIBRATION,
 ): CameraState["cameraRigPlacement"] => {
   if (!isCameraMovementsScene(sceneId)) return { ...DEFAULT_CAMERA_RIG_PLACEMENT };
-  const resolved = resolveCameraRigViewpointAnchor(CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig, anchor);
+  const resolved = resolveCameraRigViewpointAnchor(calibration.cameraRig, anchor);
   return { ...resolved, rigOriginWorld: { ...resolved.rigOriginWorld } };
 };
+
+const mergeCalibrationOverrides = (
+  current: CameraMovementCalibrationOverrides,
+  patch: CameraMovementCalibrationOverrides,
+): CameraMovementCalibrationOverrides => ({
+  geometry: { ...current.geometry, ...patch.geometry },
+  optics: { ...current.optics, ...patch.optics },
+  rig: { ...current.rig, ...patch.rig },
+  presentation: { ...current.presentation, ...patch.presentation },
+});
 
 const zeroStandardMovements = (camera: CameraState): CameraState => ({
   ...camera,
@@ -149,7 +169,16 @@ type UIState = {
   focusAssistEnabled: boolean;
   gridEnabled: boolean;
   showOpticalGeometry: boolean;
+  overlayMenuResetGeneration: number;
 };
+
+export type CameraMovementCalibrationSession = Readonly<{
+  active: boolean;
+  revision: number;
+  overrides: CameraMovementCalibrationOverrides;
+  effectiveCalibration: EffectiveCameraMovementCalibration;
+  validation: CalibrationValidationResult;
+}>;
 
 
 /** Check if focusDistance is locked by the active scene's cameraControlPolicy. */
@@ -186,6 +215,7 @@ export type AppStore = {
   groundGlassRttRuntimeInfo?: GroundGlassRttRuntimeInfo | null;
   /** Actual mounted interactive lattice diagnostics; null when not mounted. */
   interactiveLatticeRuntimeInfo?: InteractiveLatticeRuntimeInfo | null;
+  cameraMovementCalibrationSession: CameraMovementCalibrationSession;
 
   setGroundGlassRttRuntimeInfo: (info: GroundGlassRttRuntimeInfo | null) => void;
   setInteractiveLatticeRuntimeInfo: (info: InteractiveLatticeRuntimeInfo | null) => void;
@@ -199,6 +229,7 @@ export type AppStore = {
     mode: SimulatorMode;
     sceneId: string;
     taskId?: string | null;
+    calibrationEnabled?: boolean;
   }) => void;
 
   /** Set the currently active movement for single-active scenes. Zeros all four supported movements first. */
@@ -222,6 +253,15 @@ export type AppStore = {
   resetMovements: () => void;
   restartTask: () => void;
   resetCamera: () => void;
+  setCameraMovementCalibrationActive: (active: boolean) => void;
+  updateCameraMovementCalibration: (overrides: CameraMovementCalibrationOverrides) => boolean;
+  resetCameraMovementCalibration: () => void;
+  setCameraMovementTargetRegion: (region: CameraMovementTargetRegion) => void;
+};
+
+const createCalibrationSession = (active = false): CameraMovementCalibrationSession => {
+  const effectiveCalibration = resolveEffectiveCameraMovementCalibration(CAMERA_MOVEMENT_CALIBRATION_BASELINE);
+  return { active, revision: 0, overrides: {}, effectiveCalibration, validation: validateEffectiveCameraMovementCalibration(effectiveCalibration) };
 };
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -241,16 +281,128 @@ export const useAppStore = create<AppStore>((set) => ({
     focusAssistEnabled: DEFAULT_CAMERA_STATE.focusAssistEnabled,
     gridEnabled: DEFAULT_CAMERA_STATE.gridEnabled,
     showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY,
+    overlayMenuResetGeneration: 0,
   },
   selectedMovement: null,
   lastInitializedRouteKey: null,
   groundGlassRttRuntimeInfo: null,
   interactiveLatticeRuntimeInfo: null,
+  cameraMovementCalibrationSession: createCalibrationSession(),
 
   setGroundGlassRttRuntimeInfo: (info) =>
     set(() => ({ groundGlassRttRuntimeInfo: info })),
   setInteractiveLatticeRuntimeInfo: (info) =>
     set(() => ({ interactiveLatticeRuntimeInfo: info })),
+
+  setCameraMovementCalibrationActive: (active) =>
+    set((state) => {
+      const mayActivate =
+        state.camera.activeSceneId === "understanding-camera-movements" &&
+        state.ui.mode === "free";
+      if (active && !mayActivate) return {};
+      return {
+        cameraMovementCalibrationSession: {
+          ...state.cameraMovementCalibrationSession,
+          active,
+        },
+      };
+    }),
+
+  updateCameraMovementCalibration: (overrides) => {
+    let accepted = false;
+    set((state) => {
+      if (
+        !state.cameraMovementCalibrationSession.active ||
+        state.camera.activeSceneId !== "understanding-camera-movements" ||
+        state.ui.mode !== "free"
+      ) {
+        return {};
+      }
+      const mergedOverrides = mergeCalibrationOverrides(
+        state.cameraMovementCalibrationSession.overrides,
+        overrides,
+      );
+      const effectiveCalibration = resolveEffectiveCameraMovementCalibration(
+        CAMERA_MOVEMENT_CALIBRATION_BASELINE,
+        mergedOverrides,
+      );
+      const validation = validateEffectiveCameraMovementCalibration(effectiveCalibration);
+      if (!validation.valid) {
+        return {
+          cameraMovementCalibrationSession: {
+            ...state.cameraMovementCalibrationSession,
+            validation,
+          },
+        };
+      }
+      accepted = true;
+      return {
+        camera: {
+          ...state.camera,
+          focalLengthMm: effectiveCalibration.optics.provisionalFocalLengthMm,
+          focusDistanceMm: effectiveCalibration.optics.provisionalFocusDistanceMm,
+          focusMode: "finite",
+          lastFiniteFocusDepthMm:
+            effectiveCalibration.optics.provisionalFocusDistanceMm,
+          cameraRigPlacement: resolveRigPlacement(
+            state.camera.activeSceneId,
+            state.camera.viewpointAnchor,
+            effectiveCalibration,
+          ),
+        },
+        cameraMovementCalibrationSession: {
+          active: true,
+          revision: state.cameraMovementCalibrationSession.revision + 1,
+          overrides: mergedOverrides,
+          effectiveCalibration,
+          validation,
+        },
+      };
+    });
+    return accepted;
+  },
+
+  resetCameraMovementCalibration: () =>
+    set((state) => {
+      const baseline = resolveEffectiveCameraMovementCalibration(
+        CAMERA_MOVEMENT_CALIBRATION_BASELINE,
+      );
+      return {
+      camera: {
+        ...state.camera,
+        focalLengthMm: baseline.optics.provisionalFocalLengthMm,
+        focusDistanceMm: baseline.optics.provisionalFocusDistanceMm,
+        focusMode: "finite",
+        lastFiniteFocusDepthMm: baseline.optics.provisionalFocusDistanceMm,
+        frontRiseMm: 0,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
+        rearRiseMm: 0,
+        rearTiltDeg: 0,
+        cameraBodyPitchDeg: 0,
+        viewpointAnchor: "mid",
+        cameraRigPlacement: resolveRigPlacement(
+          "understanding-camera-movements",
+          "mid",
+          baseline,
+        ),
+      },
+      scene: {
+        ...state.scene,
+        targetRegion: baseline.presentation.defaultTargetRegion,
+      },
+      selectedMovement: resolveDefaultMovement("understanding-camera-movements"),
+      cameraMovementCalibrationSession: createCalibrationSession(true),
+      };
+    }),
+
+  setCameraMovementTargetRegion: (region) =>
+    set((state) =>
+      state.camera.activeSceneId === "understanding-camera-movements" &&
+      (region === "upper" || region === "middle" || region === "lower")
+        ? { scene: { ...state.scene, targetRegion: region } }
+        : {},
+    ),
 
   setCurrentTaskEvaluation: (evaluation) =>
     set((state) => ({
@@ -287,6 +439,7 @@ export const useAppStore = create<AppStore>((set) => ({
         },
         task: { ...state.task, currentTaskEvaluation: null },
         ui: { ...state.ui, showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY },
+        cameraMovementCalibrationSession: createCalibrationSession(false),
       };
     }),
 
@@ -316,11 +469,18 @@ export const useAppStore = create<AppStore>((set) => ({
       if (!isCameraMovementsScene(state.camera.activeSceneId)) return {};
       if (anchor !== "mid" && anchor !== "high" && anchor !== "low") return {};
       const camera = zeroStandardMovements(state.camera);
+      const calibration = state.cameraMovementCalibrationSession.active
+        ? state.cameraMovementCalibrationSession.effectiveCalibration
+        : CAMERA_MOVEMENT_SCENE_CALIBRATION;
       return {
         camera: {
           ...camera,
           viewpointAnchor: anchor,
-          cameraRigPlacement: resolveRigPlacement(state.camera.activeSceneId, anchor),
+          cameraRigPlacement: resolveRigPlacement(
+            state.camera.activeSceneId,
+            anchor,
+            calibration,
+          ),
         },
         selectedMovement: resolveDefaultMovement(state.camera.activeSceneId),
       };
@@ -328,8 +488,8 @@ export const useAppStore = create<AppStore>((set) => ({
 
   initializeSimulatorRoute: (init) =>
     set((state) => {
-      const { mode, sceneId, taskId } = init;
-      const routeKey = `${mode}:${sceneId}:${taskId ?? ""}`;
+      const { mode, sceneId, taskId, calibrationEnabled = false } = init;
+      const routeKey = `${mode}:${sceneId}:${taskId ?? ""}:${calibrationEnabled ? "calibration" : ""}`;
       if (state.lastInitializedRouteKey === routeKey) {
         return {
           scene: { ...state.scene, activeSceneId: sceneId },
@@ -406,6 +566,9 @@ export const useAppStore = create<AppStore>((set) => ({
         ui: nextUi,
         selectedMovement: defaultMovement,
         lastInitializedRouteKey: routeKey,
+        cameraMovementCalibrationSession: createCalibrationSession(
+          mode === "free" && sceneId === "understanding-camera-movements" && calibrationEnabled,
+        ),
       };
     }),
 
@@ -649,6 +812,9 @@ export const useAppStore = create<AppStore>((set) => ({
       const resetValues = Object.keys(scenePreset).length > 0
         ? scenePreset
         : defaultControlState;
+      const preserveCalibrationOptics =
+        state.cameraMovementCalibrationSession.active &&
+        isCameraMovementsScene(sceneId);
       return {
         camera: {
           ...state.camera,
@@ -656,8 +822,14 @@ export const useAppStore = create<AppStore>((set) => ({
           ...resetValues,
           focusDistanceMm: clampFocusDistanceForScene(
             sceneId,
-            resetValues.focusDistanceMm ?? defaultControlState.focusDistanceMm,
+            preserveCalibrationOptics
+              ? state.camera.focusDistanceMm
+              : resetValues.focusDistanceMm ??
+                  defaultControlState.focusDistanceMm,
           ),
+          focalLengthMm: preserveCalibrationOptics
+            ? state.camera.focalLengthMm
+            : resetValues.focalLengthMm ?? state.camera.focalLengthMm,
           aperture: (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
           cameraBodyPitchDeg: 0,
           cameraRigPlacement: state.camera.cameraRigPlacement,
@@ -702,6 +874,13 @@ export const useAppStore = create<AppStore>((set) => ({
         resolveInitialOpticalGeometryVisibility(activeTask);
 
       const defaultMovement = resolveDefaultMovement(nextSceneId);
+      const preserveCalibration =
+        state.cameraMovementCalibrationSession.active &&
+        isCameraMovementsScene(nextSceneId) &&
+        nextMode === "free";
+      const activeCalibration = preserveCalibration
+        ? state.cameraMovementCalibrationSession.effectiveCalibration
+        : CAMERA_MOVEMENT_SCENE_CALIBRATION;
 
       return {
         camera: {
@@ -711,12 +890,22 @@ export const useAppStore = create<AppStore>((set) => ({
           ...resolveCameraBodyReset(nextSceneId),
           ...nextControlState,
           viewpointAnchor: "mid",
-          cameraRigPlacement: resolveRigPlacement(nextSceneId, "mid"),
+          cameraRigPlacement: resolveRigPlacement(
+            nextSceneId,
+            "mid",
+            activeCalibration,
+          ),
           geometryView: nextGeometryView,
           groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
           focusAssistEnabled: nextFocusAssistEnabled,
           gridEnabled: nextGridEnabled,
-          focusDistanceMm,
+          focalLengthMm: preserveCalibration
+            ? activeCalibration.optics.provisionalFocalLengthMm
+            : (nextControlState as Partial<CameraState>).focalLengthMm ??
+              state.camera.focalLengthMm,
+          focusDistanceMm: preserveCalibration
+            ? activeCalibration.optics.provisionalFocusDistanceMm
+            : focusDistanceMm,
         },
         scene: {
           activeSceneId: nextSceneId,
@@ -732,6 +921,7 @@ export const useAppStore = create<AppStore>((set) => ({
           focusAssistEnabled: nextFocusAssistEnabled,
           gridEnabled: nextGridEnabled,
           showOpticalGeometry: nextShowOpticalGeometry,
+          overlayMenuResetGeneration: state.ui.overlayMenuResetGeneration + 1,
         },
       };
     }),
@@ -748,6 +938,8 @@ export const useAppStore = create<AppStore>((set) => ({
         currentTaskEvaluation: null,
       },
       selectedMovement: null,
+      lastInitializedRouteKey: null,
+      cameraMovementCalibrationSession: createCalibrationSession(false),
       ui: {
         mode: DEFAULT_CAMERA_STATE.mode,
         geometryView: DEFAULT_CAMERA_STATE.geometryView,
@@ -756,6 +948,7 @@ export const useAppStore = create<AppStore>((set) => ({
         focusAssistEnabled: DEFAULT_CAMERA_STATE.focusAssistEnabled,
         gridEnabled: DEFAULT_CAMERA_STATE.gridEnabled,
         showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY,
+        overlayMenuResetGeneration: 0,
       },
     }),
 }));

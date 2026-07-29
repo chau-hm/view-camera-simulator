@@ -27,9 +27,14 @@ import {
 import {
   CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   CameraMovementsSubject,
+  cameraMovementsGroupOptionsFromRenderModel,
   createCameraMovementsGroup,
   disposeCameraMovementsGroup,
 } from "./CameraMovementsSubjectFactory";
+import {
+  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+  type CameraMovementLatticeRenderModel,
+} from "./cameraMovementLatticeRenderModel";
 import { toWorld } from "./rttUtils";
 import {
   CAMERA_MOVEMENT_SCENE_CALIBRATION,
@@ -52,15 +57,25 @@ export type SceneSubjectRegistration = {
   createRttGroup: (options?: SceneSubjectRttOptions) => THREE.Group;
   disposeRttGroup?: (group: THREE.Group) => void;
   rttLighting?: SceneSubjectRttLighting;
+  resolveRttLighting?: (options?: SceneSubjectRttOptions) => SceneSubjectRttLighting;
   showReferenceCamera?: boolean;
+  resolveShowReferenceCamera?: (options?: SceneSubjectRttOptions) => boolean;
   canonicalLattice?: {
     geometryId: string;
     edgeCount: number;
+  };
+  resolveCanonicalLattice?: (options?: SceneSubjectRttOptions) => {
+    geometryId: string;
+    geometryKey: string;
+    presentationKey: string;
+    edgeCount: number;
+    bounds: CameraMovementLatticeRenderModel["subjectBounds"];
   };
 };
 
 export type SceneSubjectRttOptions = {
   targetRegion?: CameraMovementTargetRegion;
+  cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
 };
 
 export const ArchitectureRiseRegisteredSubject = ({
@@ -98,7 +113,7 @@ const tableTiltLightingTargetMm = {
 } as const;
 
 const cameraMovementsLightingTargetMm = {
-  ...CAMERA_MOVEMENT_SCENE_CALIBRATION.subject.originWorld,
+  ...CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.lightingTargetMm,
 } as const;
 
 const shelfSwingLightingTargetMm = {
@@ -108,20 +123,56 @@ const shelfSwingLightingTargetMm = {
 export const sceneSubjectRegistry = {
   "understanding-camera-movements": {
     SceneSubject: CameraMovementsSubject,
-    createRttGroup: (options) =>
-      createCameraMovementsGroup(options?.targetRegion),
+    createRttGroup: (options) => {
+      const model =
+        options?.cameraMovementRenderModel ??
+        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
+      return createCameraMovementsGroup(
+        cameraMovementsGroupOptionsFromRenderModel(
+          model,
+          options?.targetRegion,
+        ),
+      );
+    },
     disposeRttGroup: disposeCameraMovementsGroup,
     showReferenceCamera:
       CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.showReferenceCamera,
+    resolveShowReferenceCamera: (options) =>
+      (
+        options?.cameraMovementRenderModel ??
+        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL
+      ).showReferenceCamera,
     canonicalLattice: {
       geometryId: CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
       edgeCount: CAMERA_MOVEMENT_LATTICE.edges.length,
+    },
+    resolveCanonicalLattice: (options) => {
+      const model =
+        options?.cameraMovementRenderModel ??
+        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
+      return {
+        geometryId: model.geometryId,
+        geometryKey: model.geometryKey,
+        presentationKey: model.presentationKey,
+        edgeCount: model.lattice.edges.length,
+        bounds: model.subjectBounds,
+      };
     },
     rttLighting: {
       targetMm: cameraMovementsLightingTargetMm,
       keyOffsetWorld: { x: -2, y: 2.5, z: -2 },
       fillOffsetWorld: { x: 1.5, y: 1, z: -2.5 },
     },
+    resolveRttLighting: (options) => ({
+      targetMm: {
+        ...(
+          options?.cameraMovementRenderModel ??
+          CAMERA_MOVEMENT_BASELINE_RENDER_MODEL
+        ).lightingTargetMm,
+      },
+      keyOffsetWorld: { x: -2, y: 2.5, z: -2 },
+      fillOffsetWorld: { x: 1.5, y: 1, z: -2.5 },
+    }),
   },
   "focus-fundamentals-two-targets": {
     SceneSubject: FocusFundamentalsSubject,

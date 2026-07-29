@@ -4,7 +4,10 @@ import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { useAppStore } from "../../state/appStore";
-import { selectDerivedOpticsState } from "../../state/selectors";
+import {
+  selectDerivedOpticsState,
+  selectEffectiveCameraMovementCalibration,
+} from "../../state/selectors";
 import type { SimulatorMode } from "../../types/camera";
 import type { RenderQualityProfile } from "../../types/ui";
 import { UI_COPY } from "../../ui/copy";
@@ -24,11 +27,15 @@ import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
 import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
+import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
+import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
+import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
 
 type SimulatorWorkspaceProps = {
   mode: SimulatorMode;
   sceneId: string;
   taskId: string | null;
+  calibrationEnabled?: boolean;
   simulateAssetFailure: boolean;
 };
 
@@ -38,6 +45,7 @@ export const SimulatorWorkspace = ({
   mode,
   sceneId,
   taskId,
+  calibrationEnabled = false,
   simulateAssetFailure,
 }: SimulatorWorkspaceProps) => {
   const setMode = useAppStore((state) => state.setMode);
@@ -45,7 +53,17 @@ export const SimulatorWorkspace = ({
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const camera = useAppStore((state) => state.camera);
+  const targetRegion = useAppStore((state) => state.scene.targetRegion);
+  const calibrationSession = useAppStore(
+    (state) => state.cameraMovementCalibrationSession,
+  );
+  const effectiveCameraMovementCalibration = useAppStore(
+    selectEffectiveCameraMovementCalibration,
+  );
   const selectedMovement = useAppStore((state) => state.selectedMovement);
+  const overlayMenuResetGeneration = useAppStore(
+    (state) => state.ui.overlayMenuResetGeneration,
+  );
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
   const [expandedViewport, setExpandedViewport] = useState<ExpandedViewport>(null);
   const [restoreViewportFocus, setRestoreViewportFocus] = useState(true);
@@ -69,7 +87,7 @@ export const SimulatorWorkspace = ({
     const initRoute = (modeParam: SimulatorMode, sceneParam: string, taskParam: string | null | undefined) => {
       const initializeSimulatorRoute = useAppStore.getState().initializeSimulatorRoute;
       if (initializeSimulatorRoute) {
-        initializeSimulatorRoute({ mode: modeParam, sceneId: sceneParam, taskId: taskParam ?? null });
+        initializeSimulatorRoute({ mode: modeParam, sceneId: sceneParam, taskId: taskParam ?? null, calibrationEnabled });
       } else {
         // fall back to individual setters if the initialize action isn't available
         setMode(modeParam);
@@ -79,7 +97,7 @@ export const SimulatorWorkspace = ({
     };
 
     initRoute(mode, sceneId, taskId);
-  }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId]);
+  }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId, calibrationEnabled]);
 
   const closeGeometryPanel = useCallback((restoreFocus = true) => {
     setShowGeometryPanel(false);
@@ -180,7 +198,44 @@ export const SimulatorWorkspace = ({
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
 
-  const opticsState = selectDerivedOpticsState(camera);
+  const opticsState = selectDerivedOpticsState(
+    camera,
+    effectiveCameraMovementCalibration,
+  );
+  const cameraMovementCalibrationDiagnostics = useMemo(() => {
+    if (
+      !calibrationEnabled ||
+      mode !== "free" ||
+      sceneId !== "understanding-camera-movements"
+    ) {
+      return undefined;
+    }
+    const renderModel = resolveCameraMovementLatticeRenderModel(
+      effectiveCameraMovementCalibration,
+    );
+    return calculateCameraMovementProjectionDiagnostics({
+      effectiveCalibration: effectiveCameraMovementCalibration,
+      lattice: renderModel.lattice,
+      calibrationIdentity: {
+        sessionActive: calibrationSession.active,
+        revision: calibrationSession.revision,
+        geometryId: renderModel.geometryId,
+      },
+      currentAnchor: camera.viewpointAnchor,
+      targetRegion,
+      opticsState,
+    });
+  }, [
+    calibrationEnabled,
+    calibrationSession.active,
+    calibrationSession.revision,
+    camera.viewpointAnchor,
+    effectiveCameraMovementCalibration,
+    mode,
+    opticsState,
+    sceneId,
+    targetRegion,
+  ]);
   const lockReason = UI_COPY.controls.guidedControlLockedReason;
   const controlPolicy = safeScene.cameraControlPolicy ?? {};
   const focusLocked = controlPolicy.focusDistance === "fixed";
@@ -275,6 +330,7 @@ export const SimulatorWorkspace = ({
               </div>
 
               <SceneViewport
+                overlayMenuResetGeneration={overlayMenuResetGeneration}
                 scene={safeScene}
                 opticsState={opticsState}
                 renderQuality={renderQuality}
@@ -453,6 +509,7 @@ export const SimulatorWorkspace = ({
               {rawRttDebug ? (
                 <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)', marginTop: 6 }}>Depth-of-field and focus blur are disabled in Raw RTT mode.</div>
               ) : null}
+              {calibrationEnabled && mode === "free" && sceneId === "understanding-camera-movements" ? <CameraMovementCalibrationWorkbench diagnostics={cameraMovementCalibrationDiagnostics} /> : null}
             </div>
           </section>
         </aside>

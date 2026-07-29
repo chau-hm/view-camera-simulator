@@ -108,6 +108,18 @@ button {
   box-shadow: var(--shadow-card);
 }
 
+.camera-calibration-workbench { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); font-size: 12px; }
+.camera-calibration-workbench__header { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.camera-calibration-workbench h4 { margin: 0; font-size: 14px; }
+.camera-calibration-workbench p { margin: 4px 0 8px; color: var(--text-muted); }
+.camera-calibration-workbench fieldset { margin: 10px 0 0; padding: 8px; border: 1px solid var(--border-soft); border-radius: 8px; min-width: 0; }
+.camera-calibration-workbench legend { padding: 0 4px; font-weight: 600; }
+.camera-calibration-workbench__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.camera-calibration-workbench__field { display: grid; gap: 3px; color: var(--text-muted); }
+.camera-calibration-workbench__field input, .camera-calibration-workbench__field select { width: 100%; min-height: 28px; padding: 3px 5px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); }
+.camera-calibration-workbench__status { overflow-wrap: anywhere; }
+@media (max-width: 1024px) { .camera-calibration-workbench__grid { grid-template-columns: 1fr; } }
+
 .simulator-header {
   height: 72px;
   background: var(--surface);

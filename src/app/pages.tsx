@@ -131,6 +131,7 @@ export const SimulatorRoutePage = () => {
           mode={parsedMode}
           sceneId={resolvedSceneId}
           taskId={taskId ?? null}
+          calibrationEnabled={parsedMode === "free" && resolvedSceneId === "understanding-camera-movements" && searchParams.get("cameraCalibration") === "1"}
           simulateAssetFailure={searchParams.get("assetError") === "1"}
         />
       </Suspense>

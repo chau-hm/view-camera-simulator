@@ -4,9 +4,8 @@ import * as THREE from "three";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 
 const SKY_COLOR = new THREE.Color("#dfe5ec");
-const FLOOR_COLOR = new THREE.Color("#9aa6b5");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
-import { vecToWorld, toWorld } from "./rttUtils";
+import { vecToWorld } from "./rttUtils";
 import { getSceneById } from "../scenes/definitions";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import {
@@ -14,6 +13,12 @@ import {
   disposeRegisteredRttSubject,
   getSceneSubjectRegistration,
 } from "./sceneSubjectRegistry";
+import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
+import { resolveCameraMovementLatticeRenderModel } from "./cameraMovementLatticeRenderModel";
+import {
+  mountCameraMovementRttSubject,
+  unmountCameraMovementRttSubject,
+} from "./cameraMovementRttSubjectLifecycle";
 import {
   configureGroundGlassCamera,
   readGroundGlassCameraPose,
@@ -74,6 +79,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
   const { gl } = useThree();
   const configuredTargetRegion = useAppStore((state) => state.scene.targetRegion);
+  const effectiveCameraMovementCalibration = useAppStore(
+    selectEffectiveCameraMovementCalibration,
+  );
+  const cameraMovementRenderModel = resolveCameraMovementLatticeRenderModel(
+    effectiveCameraMovementCalibration,
+  );
   const { maximumBlurRadiusPx, displayBlurScale } = getGroundGlassDofVisualSettings(sceneId);
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
@@ -94,6 +105,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   const postResourcesRef = React.useRef<PostResources | null>(null);
   const fallbackDepthRef = React.useRef<THREE.DataTexture | null>(null);
   const resourceGenerationRef = React.useRef<number>(0);
+  const lightingRigRef = React.useRef<{
+    keyLight: THREE.DirectionalLight;
+    fillLight: THREE.DirectionalLight;
+    target: THREE.Object3D;
+  } | null>(null);
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality, zoomEnabled });
   sizeInputsRef.current = { widthPx, heightPx, renderQuality, zoomEnabled };
 
@@ -219,7 +235,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         near: { value: 0.01 },
         far: { value: 12.0 },
         imageDistanceMm: { value: 100.0 },
-        focalLengthMm: { value: focalLengthMm },
+        focalLengthMm: { value: 1.0 },
         fNumber: { value: 11.0 },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
@@ -250,7 +266,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         tDepth: { value: null },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
-        focalLengthMm: { value: focalLengthMm },
+        focalLengthMm: { value: 1.0 },
         fNumber: { value: 11.0 },
         imageDistanceMm: { value: 100.0 },
         near: { value: 0.01 },
@@ -359,85 +375,20 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       }
     } catch (err) { void err; }
 
-    // Build the offscreen subject through the same registry used by R3F.
-    const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
-    const registration = sceneId ? getSceneSubjectRegistration(sceneId) : undefined;
-    const subjectGroup = sceneDef && sceneId
-      ? createRegisteredRttSubject(
-          sceneId,
-          { targetRegion: configuredTargetRegion },
-        )
-      : null;
-    if (subjectGroup) {
-      scene.add(subjectGroup);
-      const canonicalEdgeCount = subjectGroup.userData.canonicalEdgeCount;
-      const canonicalGeometryId = subjectGroup.userData.canonicalGeometryId;
-      const consumedTargetRegion = subjectGroup.userData.targetRegion;
-      if (
-        typeof canonicalEdgeCount === "number" &&
-        typeof canonicalGeometryId === "string" &&
-        typeof consumedTargetRegion === "string"
-      ) {
-        const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
-        if (currentInfo) {
-          useAppStore.getState().setGroundGlassRttRuntimeInfo({
-            ...currentInfo,
-            latticeEdgeCount: canonicalEdgeCount,
-            latticeGeometryId: canonicalGeometryId,
-            latticeTargetRegion: consumedTargetRegion,
-          });
-        }
-      }
-    } else {
-      // Simple rear/front standards and a lens block for other scenes
-      let rear: THREE.Mesh | null = null;
-      rear = new THREE.Mesh(new THREE.BoxGeometry(toWorld(180), toWorld(140), toWorld(18)), new THREE.MeshStandardMaterial({ color: "#4b5563" }));
-      // initial position — updated each frame using opticsState in useFrame
-      rear.position.set(0, 0, 0);
-      scene.add(rear);
-
-      const floor = new THREE.Mesh(new THREE.PlaneGeometry(toWorld(4000), toWorld(4000)), new THREE.MeshStandardMaterial({ color: FLOOR_COLOR }));
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = -toWorld(200);
-      scene.add(floor);
-    }
-
     // Lighting: standardized studio lights for visibility
     const hemi = new THREE.HemisphereLight(new THREE.Color("#ffffff"), new THREE.Color("#64748b"), 0.9);
     scene.add(hemi);
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
     const fillLight = new THREE.DirectionalLight(0xffffff, 0.45);
-
-    const lighting = registration?.rttLighting;
-    if (sceneDef && lighting) {
-      const targetWorld = vecToWorld(lighting.targetMm);
-      const lightingTarget = new THREE.Vector3(...targetWorld);
-      const lightTarget = new THREE.Object3D();
-      lightTarget.position.copy(lightingTarget);
-      scene.add(lightTarget);
-
-      keyLight.position.set(
-        lightingTarget.x + lighting.keyOffsetWorld.x,
-        lightingTarget.y + lighting.keyOffsetWorld.y,
-        lightingTarget.z + lighting.keyOffsetWorld.z,
-      );
-      keyLight.target = lightTarget;
-      scene.add(keyLight);
-
-      fillLight.position.set(
-        lightingTarget.x + lighting.fillOffsetWorld.x,
-        lightingTarget.y + lighting.fillOffsetWorld.y,
-        lightingTarget.z + lighting.fillOffsetWorld.z,
-      );
-      fillLight.target = lightTarget;
-      scene.add(fillLight);
-    } else {
-      // default key/fill positions for other scenes
-      keyLight.position.set(-2, 4, 3);
-      scene.add(keyLight);
-      fillLight.position.set(2, 1, 1);
-      scene.add(fillLight);
-    }
+    const lightTarget = new THREE.Object3D();
+    scene.add(lightTarget);
+    keyLight.position.set(-2, 4, 3);
+    keyLight.target = lightTarget;
+    scene.add(keyLight);
+    fillLight.position.set(2, 1, 1);
+    fillLight.target = lightTarget;
+    scene.add(fillLight);
+    lightingRigRef.current = { keyLight, fillLight, target: lightTarget };
 
     return () => {
       try {
@@ -479,10 +430,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           postResourcesRef.current = null;
         }
 
-        // remove subject group if it was added
-        if (subjectGroup && scene) {
-          scene.remove(subjectGroup);
-          if (sceneId) disposeRegisteredRttSubject(sceneId, subjectGroup);
+        if (lightingRigRef.current?.keyLight === keyLight) {
+          lightingRigRef.current = null;
         }
         if (offscreenScene.current === scene) offscreenScene.current = null;
         if (groundGlassCamera.current === camera) groundGlassCamera.current = null;
@@ -496,11 +445,97 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       }
     };
   }, [
-    configuredTargetRegion,
     displayBlurScale,
-    focalLengthMm,
     gl,
     maximumBlurRadiusPx,
+    sceneId,
+  ]);
+
+  useEffect(() => {
+    const scene = offscreenScene.current;
+    if (!sceneId || !scene) return;
+
+    const registration = getSceneSubjectRegistration(sceneId);
+    const subjectOptions = {
+      targetRegion: configuredTargetRegion,
+      cameraMovementRenderModel:
+        sceneId === "understanding-camera-movements"
+          ? cameraMovementRenderModel
+          : undefined,
+    };
+    const lighting =
+      registration?.resolveRttLighting?.(subjectOptions) ??
+      registration?.rttLighting;
+    const lightingRig = lightingRigRef.current;
+    if (lighting && lightingRig) {
+      const lightingTarget = new THREE.Vector3(
+        ...vecToWorld(lighting.targetMm),
+      );
+      lightingRig.target.position.copy(lightingTarget);
+      lightingRig.keyLight.position.set(
+        lightingTarget.x + lighting.keyOffsetWorld.x,
+        lightingTarget.y + lighting.keyOffsetWorld.y,
+        lightingTarget.z + lighting.keyOffsetWorld.z,
+      );
+      lightingRig.fillLight.position.set(
+        lightingTarget.x + lighting.fillOffsetWorld.x,
+        lightingTarget.y + lighting.fillOffsetWorld.y,
+        lightingTarget.z + lighting.fillOffsetWorld.z,
+      );
+    }
+
+    if (sceneId === "understanding-camera-movements") {
+      const mounted = mountCameraMovementRttSubject(
+        scene,
+        cameraMovementRenderModel,
+        configuredTargetRegion,
+      );
+      const runtimeInfo = mounted.runtimeInfo;
+      const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+      if (currentInfo) {
+        useAppStore.getState().setGroundGlassRttRuntimeInfo({
+          ...currentInfo,
+          latticeEdgeCount: runtimeInfo.edgeCount,
+          latticeGeometryId: runtimeInfo.geometryId,
+          latticeGeometryKey: runtimeInfo.geometryKey,
+          latticePresentationKey: runtimeInfo.presentationKey,
+          latticeResourceKey: runtimeInfo.resourceKey,
+          latticeTargetRegion: runtimeInfo.targetRegion,
+          latticeSubjectGeneration: runtimeInfo.generation,
+        });
+      }
+
+      return () => {
+        unmountCameraMovementRttSubject(mounted);
+        const latestInfo =
+          useAppStore.getState().groundGlassRttRuntimeInfo;
+        if (
+          latestInfo?.latticeSubjectGeneration === runtimeInfo.generation
+        ) {
+          useAppStore.getState().setGroundGlassRttRuntimeInfo({
+            ...latestInfo,
+            latticeEdgeCount: undefined,
+            latticeGeometryId: undefined,
+            latticeGeometryKey: undefined,
+            latticePresentationKey: undefined,
+            latticeResourceKey: undefined,
+            latticeTargetRegion: undefined,
+            latticeSubjectGeneration: undefined,
+          });
+        }
+      };
+    }
+
+    const subjectGroup = createRegisteredRttSubject(sceneId, subjectOptions);
+    if (!subjectGroup) return;
+    scene.add(subjectGroup);
+    return () => {
+      scene.remove(subjectGroup);
+      disposeRegisteredRttSubject(sceneId, subjectGroup);
+    };
+  }, [
+    cameraMovementRenderModel,
+    configuredTargetRegion,
     sceneId,
   ]);
 
@@ -589,7 +624,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     // Configure once with a conservative preliminary range so the actual
     // Three.js camera forward vector can drive the final pitch-safe range.
-    const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
+    const registeredSceneDef = sceneId ? getSceneById(sceneId) : undefined;
+    const sceneDef =
+      registeredSceneDef?.id === "understanding-camera-movements"
+        ? {
+            ...registeredSceneDef,
+            bounds: cameraMovementRenderModel.subjectBounds,
+          }
+        : registeredSceneDef;
     const preliminaryClipRange = getGroundGlassClipRangeWorld(
       sceneDef,
       opticsState.lensCenterWorld,
