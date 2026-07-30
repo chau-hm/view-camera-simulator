@@ -60,6 +60,7 @@ const NumberField = ({
     if (nextValue === value) {
       setDraft(String(value));
       setError(null);
+      useAppStore.getState().clearCameraMovementCalibrationValidation();
       return;
     }
     const rejection = onCommit(nextValue);
@@ -96,9 +97,7 @@ const NumberField = ({
             event.preventDefault();
             setDraft(String(value));
             setError(null);
-            if (error) {
-              useAppStore.getState().clearCameraMovementCalibrationValidation();
-            }
+            useAppStore.getState().clearCameraMovementCalibrationValidation();
           }
         }}
       />
@@ -140,7 +139,7 @@ export const CameraMovementCalibrationWorkbench = ({
   const overrides = session.overrides;
   const calibration = session.effectiveCalibration;
   const bounds = CAMERA_MOVEMENT_WORKBENCH_BOUNDS;
-  const syncKey = session.revision;
+  const syncKey = session.draftResetGeneration;
   const updateSection = (next: CameraMovementCalibrationOverrides): string | null => {
     const accepted = update({
       geometry: { ...overrides.geometry, ...next.geometry },
@@ -149,10 +148,14 @@ export const CameraMovementCalibrationWorkbench = ({
       presentation: { ...overrides.presentation, ...next.presentation },
     });
     if (accepted) return null;
-    return useAppStore
-      .getState()
-      .cameraMovementCalibrationSession.validation.errors.map((item) => item.message)
-      .join("; ") || "The value was rejected by calibration validation";
+    return (
+      useAppStore
+        .getState()
+        .cameraMovementCalibrationSession.rejectedProposalValidation?.errors.map(
+          (item) => item.message,
+        )
+        .join("; ") || "The value was rejected by calibration validation"
+    );
   };
   const snapshot = useMemo(() => {
     const baselineSnapshot = buildCameraMovementCalibrationSnapshot(calibration);
@@ -178,7 +181,7 @@ export const CameraMovementCalibrationWorkbench = ({
     catch { setCopyStatus("failed"); }
   };
   const copyDiagnostics = async () => {
-    try { await navigator.clipboard.writeText(JSON.stringify(diagnostics ?? { effectiveKey: calibration.effectiveKey, validation: session.validation }, null, 2)); setCopyStatus("copied"); }
+    try { await navigator.clipboard.writeText(JSON.stringify(diagnostics ?? { effectiveKey: calibration.effectiveKey, validation: session.validation, rejectedProposalValidation: session.rejectedProposalValidation }, null, 2)); setCopyStatus("copied"); }
     catch { setCopyStatus("failed"); }
   };
   return (
@@ -214,7 +217,7 @@ export const CameraMovementCalibrationWorkbench = ({
           </table>
         </fieldset>
       ) : null}
-      {!session.validation.valid && <div role="alert">{session.validation.errors.map((error) => <div key={`${error.path}-${error.code}`}>{error.path}: {error.message}</div>)}</div>}
+      {session.rejectedProposalValidation ? <div role="alert">Rejected proposal: {session.rejectedProposalValidation.errors.map((error) => <div key={`${error.path}-${error.code}`}>{error.path}: {error.message}</div>)}</div> : null}
     </section>
   );
 };

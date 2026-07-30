@@ -17,6 +17,8 @@ describe("camera movement calibration session", () => {
     const rejected = useAppStore.getState().cameraMovementCalibrationSession;
     expect(rejected.revision).toBe(1);
     expect(rejected.effectiveCalibration.subject.levels).toBe(7);
+    expect(rejected.validation.valid).toBe(true);
+    expect(rejected.rejectedProposalValidation?.valid).toBe(false);
   });
 
   it("returns production calibration when inactive and preserves overrides on movement reset", () => {
@@ -75,8 +77,48 @@ describe("camera movement calibration session", () => {
     expect(after.cameraMovementCalibrationSession.revision).toBe(before.cameraMovementCalibrationSession.revision);
     expect(after.cameraMovementCalibrationSession.effectiveCalibration).toBe(before.cameraMovementCalibrationSession.effectiveCalibration);
     expect(after.camera).toEqual(before.camera);
-    expect(after.cameraMovementCalibrationSession.validation.valid).toBe(false);
-    expect(after.cameraMovementCalibrationSession.validation.errors.map(({ message: errorMessage }) => errorMessage).join(" ")).toMatch(new RegExp(message, "i"));
+    expect(after.cameraMovementCalibrationSession.overrides).toEqual(
+      before.cameraMovementCalibrationSession.overrides,
+    );
+    expect(after.cameraMovementCalibrationSession.validation.valid).toBe(true);
+    expect(
+      after.cameraMovementCalibrationSession.rejectedProposalValidation?.errors
+        .map(({ message: errorMessage }) => errorMessage)
+        .join(" "),
+    ).toMatch(new RegExp(message, "i"));
+  });
+
+  it("increments draft reset generation for start, reset, clear, and re-entry", () => {
+    const initial = useAppStore.getState().cameraMovementCalibrationSession
+      .draftResetGeneration;
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "understanding-camera-movements",
+      calibrationEnabled: true,
+    });
+    const started = useAppStore.getState().cameraMovementCalibrationSession
+      .draftResetGeneration;
+    expect(started).toBe(initial + 1);
+
+    useAppStore.getState().resetCameraMovementCalibration();
+    const reset = useAppStore.getState().cameraMovementCalibrationSession
+      .draftResetGeneration;
+    expect(reset).toBe(started + 1);
+
+    useAppStore.getState().clearCameraMovementCalibrationSession();
+    const cleared = useAppStore.getState().cameraMovementCalibrationSession
+      .draftResetGeneration;
+    expect(cleared).toBe(reset + 1);
+
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "understanding-camera-movements",
+      calibrationEnabled: true,
+    });
+    expect(
+      useAppStore.getState().cameraMovementCalibrationSession
+        .draftResetGeneration,
+    ).toBe(cleared + 1);
   });
 
   it("rejects out-of-range camera-body pitch at the store boundary", () => {

@@ -176,9 +176,13 @@ type UIState = {
 export type CameraMovementCalibrationSession = Readonly<{
   active: boolean;
   revision: number;
+  draftResetGeneration: number;
   overrides: CameraMovementCalibrationOverrides;
   effectiveCalibration: EffectiveCameraMovementCalibration;
+  /** Validation of the accepted effective calibration only. */
   validation: CalibrationValidationResult;
+  /** Validation from the last rejected proposal; never describes effectiveCalibration. */
+  rejectedProposalValidation: CalibrationValidationResult | null;
 }>;
 
 
@@ -262,9 +266,20 @@ export type AppStore = {
   setCameraMovementTargetRegion: (region: CameraMovementTargetRegion) => void;
 };
 
-const createCalibrationSession = (active = false): CameraMovementCalibrationSession => {
+const createCalibrationSession = (
+  active = false,
+  draftResetGeneration = 0,
+): CameraMovementCalibrationSession => {
   const effectiveCalibration = resolveEffectiveCameraMovementCalibration(CAMERA_MOVEMENT_CALIBRATION_BASELINE);
-  return { active, revision: 0, overrides: {}, effectiveCalibration, validation: validateEffectiveCameraMovementCalibration(effectiveCalibration) };
+  return {
+    active,
+    revision: 0,
+    draftResetGeneration,
+    overrides: {},
+    effectiveCalibration,
+    validation: validateEffectiveCameraMovementCalibration(effectiveCalibration),
+    rejectedProposalValidation: null,
+  };
 };
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -303,10 +318,19 @@ export const useAppStore = create<AppStore>((set) => ({
         state.camera.activeSceneId === "understanding-camera-movements" &&
         state.ui.mode === "free";
       if (active && !mayActivate) return {};
+      if (active && !state.cameraMovementCalibrationSession.active) {
+        return {
+          cameraMovementCalibrationSession: createCalibrationSession(
+            true,
+            state.cameraMovementCalibrationSession.draftResetGeneration + 1,
+          ),
+        };
+      }
       return {
         cameraMovementCalibrationSession: {
           ...state.cameraMovementCalibrationSession,
           active,
+          rejectedProposalValidation: null,
         },
       };
     }),
@@ -334,7 +358,7 @@ export const useAppStore = create<AppStore>((set) => ({
         return {
           cameraMovementCalibrationSession: {
             ...state.cameraMovementCalibrationSession,
-            validation,
+            rejectedProposalValidation: validation,
           },
         };
       }
@@ -356,9 +380,12 @@ export const useAppStore = create<AppStore>((set) => ({
         cameraMovementCalibrationSession: {
           active: true,
           revision: state.cameraMovementCalibrationSession.revision + 1,
+          draftResetGeneration:
+            state.cameraMovementCalibrationSession.draftResetGeneration,
           overrides: mergedOverrides,
           effectiveCalibration,
           validation,
+          rejectedProposalValidation: null,
         },
       };
     });
@@ -372,6 +399,7 @@ export const useAppStore = create<AppStore>((set) => ({
         validation: validateEffectiveCameraMovementCalibration(
           state.cameraMovementCalibrationSession.effectiveCalibration,
         ),
+        rejectedProposalValidation: null,
       },
     })),
 
@@ -405,15 +433,21 @@ export const useAppStore = create<AppStore>((set) => ({
         targetRegion: baseline.presentation.defaultTargetRegion,
       },
       selectedMovement: resolveDefaultMovement("understanding-camera-movements"),
-      cameraMovementCalibrationSession: createCalibrationSession(true),
+      cameraMovementCalibrationSession: createCalibrationSession(
+        true,
+        state.cameraMovementCalibrationSession.draftResetGeneration + 1,
+      ),
       };
     }),
 
   clearCameraMovementCalibrationSession: () =>
-    set({
-      cameraMovementCalibrationSession: createCalibrationSession(false),
+    set((state) => ({
+      cameraMovementCalibrationSession: createCalibrationSession(
+        false,
+        state.cameraMovementCalibrationSession.draftResetGeneration + 1,
+      ),
       lastInitializedRouteKey: null,
-    }),
+    })),
 
   setCameraMovementTargetRegion: (region) =>
     set((state) =>
@@ -458,7 +492,10 @@ export const useAppStore = create<AppStore>((set) => ({
         },
         task: { ...state.task, currentTaskEvaluation: null },
         ui: { ...state.ui, showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY },
-        cameraMovementCalibrationSession: createCalibrationSession(false),
+        cameraMovementCalibrationSession: createCalibrationSession(
+          false,
+          state.cameraMovementCalibrationSession.draftResetGeneration + 1,
+        ),
       };
     }),
 
@@ -593,6 +630,7 @@ export const useAppStore = create<AppStore>((set) => ({
         lastInitializedRouteKey: routeKey,
         cameraMovementCalibrationSession: createCalibrationSession(
           mode === "free" && sceneId === "understanding-camera-movements" && calibrationEnabled,
+          state.cameraMovementCalibrationSession.draftResetGeneration + 1,
         ),
       };
     }),
@@ -952,7 +990,7 @@ export const useAppStore = create<AppStore>((set) => ({
     }),
 
   resetCamera: () =>
-    set({
+    set((state) => ({
       camera: DEFAULT_CAMERA_STATE,
       scene: {
         activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId,
@@ -964,7 +1002,10 @@ export const useAppStore = create<AppStore>((set) => ({
       },
       selectedMovement: null,
       lastInitializedRouteKey: null,
-      cameraMovementCalibrationSession: createCalibrationSession(false),
+      cameraMovementCalibrationSession: createCalibrationSession(
+        false,
+        state.cameraMovementCalibrationSession.draftResetGeneration + 1,
+      ),
       ui: {
         mode: DEFAULT_CAMERA_STATE.mode,
         geometryView: DEFAULT_CAMERA_STATE.geometryView,
@@ -975,5 +1016,5 @@ export const useAppStore = create<AppStore>((set) => ({
         showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY,
         overlayMenuResetGeneration: 0,
       },
-    }),
+    })),
 }));

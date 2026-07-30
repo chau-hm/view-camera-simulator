@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CameraMovementCalibrationWorkbench } from "../../components/simulator/CameraMovementCalibrationWorkbench";
 import { useAppStore } from "../../state/appStore";
@@ -69,6 +69,7 @@ describe("camera calibration workbench", () => {
     expect(focusDistance).toHaveValue("2000");
     expect(focusDistance).not.toHaveAttribute("aria-invalid");
     expect(useAppStore.getState().cameraMovementCalibrationSession.validation.valid).toBe(true);
+    expect(useAppStore.getState().cameraMovementCalibrationSession.rejectedProposalValidation).toBeNull();
 
     fireEvent.change(focusDistance, { target: { value: "3000" } });
     fireEvent.blur(focusDistance);
@@ -76,5 +77,55 @@ describe("camera calibration workbench", () => {
     fireEvent.change(focusDistance, { target: { value: "-" } });
     fireEvent.click(screen.getByRole("button", { name: "Reset calibration" }));
     expect(focusDistance).toHaveValue("2000");
+  });
+
+  it("clears rejected-proposal validation when a draft returns to canonical on blur", () => {
+    useAppStore.getState().initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements", calibrationEnabled: true });
+    render(<CameraMovementCalibrationWorkbench />);
+    const focusDistance = screen.getByLabelText("Focus distance (mm)");
+
+    fireEvent.change(focusDistance, { target: { value: "100" } });
+    fireEvent.blur(focusDistance);
+    expect(useAppStore.getState().cameraMovementCalibrationSession.validation.valid).toBe(true);
+    expect(useAppStore.getState().cameraMovementCalibrationSession.rejectedProposalValidation?.valid).toBe(false);
+
+    fireEvent.change(focusDistance, { target: { value: "2000" } });
+    fireEvent.blur(focusDistance);
+
+    const session = useAppStore.getState().cameraMovementCalibrationSession;
+    expect(focusDistance).toHaveValue("2000");
+    expect(focusDistance).not.toHaveAttribute("aria-invalid");
+    expect(session.validation.valid).toBe(true);
+    expect(session.rejectedProposalValidation).toBeNull();
+    expect(session.revision).toBe(0);
+  });
+
+  it("resets a revision-zero uncommitted draft and route re-entry drafts", () => {
+    useAppStore.getState().initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements", calibrationEnabled: true });
+    render(<CameraMovementCalibrationWorkbench />);
+    const levels = screen.getByLabelText("Levels");
+
+    fireEvent.change(levels, { target: { value: "7" } });
+    expect(useAppStore.getState().cameraMovementCalibrationSession.revision).toBe(0);
+    fireEvent.click(screen.getByRole("button", { name: "Reset calibration" }));
+    expect(levels).toHaveValue("5");
+    expect(useAppStore.getState().cameraMovementCalibrationSession.revision).toBe(0);
+
+    const focusDistance = screen.getByLabelText("Focus distance (mm)");
+    fireEvent.change(focusDistance, { target: { value: "100" } });
+    fireEvent.blur(focusDistance);
+    expect(useAppStore.getState().cameraMovementCalibrationSession.rejectedProposalValidation?.valid).toBe(false);
+    fireEvent.change(levels, { target: { value: "8" } });
+    act(() => {
+      useAppStore.getState().clearCameraMovementCalibrationSession();
+      useAppStore.getState().initializeSimulatorRoute({
+        mode: "free",
+        sceneId: "understanding-camera-movements",
+        calibrationEnabled: true,
+      });
+    });
+    expect(levels).toHaveValue("5");
+    expect(useAppStore.getState().cameraMovementCalibrationSession.validation.valid).toBe(true);
+    expect(useAppStore.getState().cameraMovementCalibrationSession.rejectedProposalValidation).toBeNull();
   });
 });
