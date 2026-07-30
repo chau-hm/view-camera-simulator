@@ -57,14 +57,16 @@ The initial 80/120/160 mm rise set was rejected: even 80 mm moved every
 selected rise/fall target outside the 4 × 5 frame. A bounded visibility
 follow-up tested 20/40/60 mm on the selected physical geometry:
 
-| Rise/fall | Front target ΔV | Rear target ΔV | Targets in frame | Minimum lattice overlap |
+| Rise/fall | Front target ΔV | Rear target ΔV | Targets in frame | Minimum overlap across all nine teaching cases |
 | ---: | ---: | ---: | --- | ---: |
 | 20 mm | ±0.20613 | ±0.19685 | yes | 0.77328 |
 | 40 mm | ±0.41225 | ±0.39370 | yes | 0.61116 |
 | 60 mm | ±0.61838 | ±0.59055 | no | 0.33294 |
 
 Twenty millimetres is the smallest candidate with a clear, signed response,
-in-frame selected targets, and meaningful lattice overlap.
+in-frame selected targets, and meaningful lattice overlap. Its rise/fall-only
+minimum overlap is 0.88937; the lower 0.77328 global minimum belongs to the C3
+high-viewpoint case.
 
 The final physical shortlist was:
 
@@ -72,7 +74,7 @@ The final physical shortlist was:
 | --- | --- | ---: | --- | --- |
 | 200 mm cubes, 90 mm lens | 0.36905; 0.22719 | 1.00000 | 0.04007 / 0.03919 | fully off at 80 mm |
 | 200 mm cubes, 105 mm lens | 0.34601; 0.17920 | 1.00000 | 0.04662 / 0.04559 | mixed full/partial at 80 mm |
-| **260 mm cubes, 90 mm lens** | **0.32025; 0.12552** | **1.00000** | **0.01865 / 0.01895** | **partial, never full, at 80 mm** |
+| **260 mm cubes, 90 mm lens** | **0.32025; 0.12552** | **1.00000** | **0.01865 / 0.01895** | **all four rise/fall cases partially off-frame; minimum overlap 0.05473 at 80 mm** |
 
 The 260 mm / 90 mm candidate was selected because it preserved the strongest
 region extent, best high/low centring, and non-zero lattice overlap under the
