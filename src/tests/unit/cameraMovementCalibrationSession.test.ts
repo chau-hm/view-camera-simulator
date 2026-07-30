@@ -21,6 +21,43 @@ describe("camera movement calibration session", () => {
     expect(rejected.rejectedProposalValidation?.valid).toBe(false);
   });
 
+  it("starts at the production baseline and Reset Calibration restores it", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements", calibrationEnabled: true });
+    const initial = useAppStore.getState();
+    expect(initial.cameraMovementCalibrationSession.revision).toBe(0);
+    expect(initial.cameraMovementCalibrationSession.effectiveCalibration.subject).toMatchObject({
+      columns: 3,
+      rows: 3,
+      levels: 5,
+      cubeSizeMm: 260,
+      horizontalGapMm: 0,
+      verticalGapMm: 0,
+      originWorld: { x: 0, y: 0, z: 2000 },
+    });
+    expect(initial.cameraMovementCalibrationSession.effectiveCalibration.optics).toMatchObject({
+      provisionalFocalLengthMm: 90,
+      provisionalFocusDistanceMm: 2000,
+    });
+    expect(initial.cameraMovementCalibrationSession.effectiveCalibration.cameraRig).toMatchObject({
+      highArcAngleDeg: 20,
+      lowArcAngleDeg: -20,
+      provisionalBasePitchDeg: 0,
+    });
+
+    store.updateCameraMovementCalibration({ geometry: { levels: 7 }, optics: { provisionalFocalLengthMm: 120 } });
+    store.resetCameraMovementCalibration();
+    const reset = useAppStore.getState();
+    expect(reset.cameraMovementCalibrationSession.revision).toBe(0);
+    expect(reset.cameraMovementCalibrationSession.overrides).toEqual({});
+    expect(reset.camera.focalLengthMm).toBe(90);
+    expect(reset.camera.focusDistanceMm).toBe(2000);
+    expect(reset.camera.frontRiseMm).toBe(0);
+    expect(reset.camera.frontTiltDeg).toBe(0);
+    expect(reset.camera.frontSwingDeg).toBe(0);
+    expect(reset.camera.viewpointAnchor).toBe("mid");
+  });
+
   it("returns production calibration when inactive and preserves overrides on movement reset", () => {
     const store = useAppStore.getState();
     store.initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements", calibrationEnabled: true });
@@ -48,6 +85,16 @@ describe("camera movement calibration session", () => {
     expect(cleared.cameraMovementCalibrationSession.revision).toBe(0);
     expect(cleared.cameraMovementCalibrationSession.overrides).toEqual({});
     expect(cleared.lastInitializedRouteKey).toBeNull();
+
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "understanding-camera-movements",
+    });
+    const productionRoute = useAppStore.getState();
+    expect(productionRoute.cameraMovementCalibrationSession.active).toBe(false);
+    expect(productionRoute.cameraMovementCalibrationSession.overrides).toEqual({});
+    expect(productionRoute.camera.focalLengthMm).toBe(90);
+    expect(productionRoute.camera.focusDistanceMm).toBe(2000);
   });
 
   it.each([

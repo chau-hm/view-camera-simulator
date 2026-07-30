@@ -72,7 +72,7 @@ describe("effective camera-movement calibration", () => {
       optics: { provisionalFocalLengthMm: 120 },
     });
     const rig = resolveEffectiveCameraMovementCalibration(baseline, {
-      rig: { arcAngleDeg: 20 },
+      rig: { arcAngleDeg: 18 },
     });
 
     expect(same.subjectGeometryKey).toBe(first.subjectGeometryKey);

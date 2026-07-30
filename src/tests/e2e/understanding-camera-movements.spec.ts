@@ -254,7 +254,7 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   await expect(scene).toHaveAttribute("data-lattice-edge-count", "224", { timeout: 15_000 });
   await expect(scene).toHaveAttribute("data-lattice-target-region", "middle", { timeout: 15_000 });
   await expect(scene).toHaveAttribute("data-reference-camera-visible", "false", { timeout: 15_000 });
-  await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", "105", { timeout: 15_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", "90", { timeout: 15_000 });
   await expect(rtt).toHaveAttribute("data-rtt-lattice-edge-count", "224", { timeout: 15_000 });
   await expect(rtt).toHaveAttribute("data-rtt-lattice-target-region", "middle", { timeout: 15_000 });
   const initialRttGeneration = await rtt.getAttribute(
@@ -379,7 +379,7 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   expect(returnedGeometryId).toBe(initialGeometryId);
   expect(Number.isSafeInteger(returnedGeneration) && returnedGeneration > 0).toBe(true);
   expect(returnedGeneration).not.toBe(initialGeneration);
-  await expect(returnedRtt).toHaveAttribute("data-rtt-focal-length-mm", "105", { timeout: 15_000 });
+  await expect(returnedRtt).toHaveAttribute("data-rtt-focal-length-mm", "90", { timeout: 15_000 });
   await expect(returnedRtt).toHaveAttribute("data-rtt-lattice-edge-count", "224", { timeout: 15_000 });
   await expect(returnedRtt).toHaveAttribute("data-rtt-lattice-geometry-id", returnedGeometryId!);
   await expect(returnedRtt).toHaveAttribute("data-rtt-lattice-target-region", "middle");

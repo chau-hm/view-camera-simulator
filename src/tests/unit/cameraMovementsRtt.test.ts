@@ -161,7 +161,7 @@ describe("Camera Movements RTT focal uniforms", () => {
     },
   );
 
-  it("uses f=105mm and v=110.81794195mm for the corrected scene preset", () => {
+  it("uses f=90mm and v=94.24083770mm for the calibrated scene preset", () => {
     const cameraState = {
       ...DEFAULT_CAMERA_STATE,
       ...understandingCameraMovementsScene.cameraPreset,
@@ -191,10 +191,10 @@ describe("Camera Movements RTT focal uniforms", () => {
     applyGroundGlassDofUniformState(horizontal, state);
     applyGroundGlassDofUniformState(vertical, state);
 
-    expect(horizontal.uniforms.focalLengthMm.value).toBe(105);
-    expect(vertical.uniforms.focalLengthMm.value).toBe(105);
-    expect(horizontal.uniforms.imageDistanceMm.value).toBeCloseTo(110.81794195, 8);
-    expect(vertical.uniforms.imageDistanceMm.value).toBeCloseTo(110.81794195, 8);
+    expect(horizontal.uniforms.focalLengthMm.value).toBe(90);
+    expect(vertical.uniforms.focalLengthMm.value).toBe(90);
+    expect(horizontal.uniforms.imageDistanceMm.value).toBeCloseTo(94.2408377, 8);
+    expect(vertical.uniforms.imageDistanceMm.value).toBeCloseTo(94.2408377, 8);
     expect(horizontal.uniforms.imageDistanceMm.value).not.toBe(
       horizontal.uniforms.focalLengthMm.value,
     );

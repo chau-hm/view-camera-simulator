@@ -18,8 +18,8 @@ describe("camera rig YZ-arc viewpoint anchors", () => {
       arcCenterWorld: { x: 0, y: 0, z: 2000 },
       midRigOriginWorld: { x: 0, y: 0, z: 0 },
       arcRadiusMm: 2000,
-      highArcAngleDeg: 15,
-      lowArcAngleDeg: -15,
+      highArcAngleDeg: 20,
+      lowArcAngleDeg: -20,
       provisionalBasePitchDeg: 0,
       defaultAnchor: "mid",
       anchorMetadata: {
@@ -50,8 +50,8 @@ describe("camera rig YZ-arc viewpoint anchors", () => {
     const { mid, high, low } = resolveCameraRigViewpointAnchors(calibration);
     const centre = calibration.arcCenterWorld;
 
-    expect(high.arcAngleDeg).toBe(15);
-    expect(low.arcAngleDeg).toBe(-15);
+    expect(high.arcAngleDeg).toBe(20);
+    expect(low.arcAngleDeg).toBe(-20);
     expect(high.metadata.identity).toBe("high");
     expect(low.metadata.identity).toBe("low");
     expect(high.rigOriginWorld.x).toBe(mid.rigOriginWorld.x);

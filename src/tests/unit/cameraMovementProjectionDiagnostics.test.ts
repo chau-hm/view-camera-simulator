@@ -110,7 +110,9 @@ describe("camera-movement projection diagnostics", () => {
     );
     expect(metricValue(diagnostics.worldGeometry.lensNormalWorld)).toEqual({ x: 0, y: 0, z: 1 });
     expect(metricValue(diagnostics.worldGeometry.filmNormalWorld)).toEqual({ x: 0, y: 0, z: 1 });
-    expect(metricValue(diagnostics.worldGeometry.lensFilmDistanceMm)).toBeGreaterThan(105);
+    expect(metricValue(diagnostics.worldGeometry.lensFilmDistanceMm)).toBeGreaterThan(
+      effective.optics.provisionalFocalLengthMm,
+    );
     expect(metricValue(diagnostics.worldGeometry.lensTargetDistanceMm)).toBe(2000);
     expect(collectPresentNumbers(diagnostics).every(Number.isFinite)).toBe(true);
   });

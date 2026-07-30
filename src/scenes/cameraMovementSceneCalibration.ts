@@ -57,9 +57,9 @@ const cameraMovementLatticeOriginWorld: Readonly<Vec3> = { x: 0, y: 0, z: 2000 }
  * Scene-specific tuning scaffold for Understanding Camera Movements.
  *
  * Every numerical value here is provisional. The calibration deliberately
- * preserves the scene's existing 105 mm finite-focus architecture while the
- * lattice replaces the former subject-count layouts. Renderers consume the
- * canonical lattice generated from this contract; they must not reproduce
+ * uses the measured provisional 90 mm / 2,000 mm finite-focus selection while
+ * the lattice replaces the former subject-count layouts. Renderers consume
+ * the canonical lattice generated from this contract; they must not reproduce
  * these dimensions or reinterpret these millimetre values.
  */
 export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration = {
@@ -78,8 +78,8 @@ export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration =
     lowerTargetLevel: 0,
   },
   optics: {
-    focalLengthCandidatesMm: [150, 120, 105, 90],
-    provisionalFocalLengthMm: 105,
+    focalLengthCandidatesMm: [90, 105, 120, 150],
+    provisionalFocalLengthMm: 90,
     provisionalFocusDistanceMm: 2000,
   },
   cameraRig: {
@@ -87,8 +87,8 @@ export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration =
     arcCenterWorld: cameraMovementLatticeOriginWorld,
     midRigOriginWorld: { x: 0, y: 0, z: 0 },
     arcRadiusMm: 2000,
-    highArcAngleDeg: 15,
-    lowArcAngleDeg: -15,
+    highArcAngleDeg: 20,
+    lowArcAngleDeg: -20,
     provisionalBasePitchDeg: 0,
     defaultAnchor: "mid",
     anchorMetadata: {
