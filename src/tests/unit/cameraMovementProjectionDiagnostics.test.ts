@@ -166,6 +166,44 @@ describe("camera-movement projection diagnostics", () => {
     expect(collectPresentNumbers(diagnostics).every(Number.isFinite)).toBe(true);
   });
 
+  it("classifies enclosing projected bounds as partial when no vertices are in frame", () => {
+    const enclosing = resolveEffectiveCameraMovementCalibration(
+      CAMERA_MOVEMENT_CALIBRATION_BASELINE,
+      {
+        geometry: {
+          columns: 3,
+          rows: 1,
+          levels: 3,
+          cubeSizeMm: 1000,
+        },
+      },
+    );
+    const generatedLattice = generateCameraMovementLattice(enclosing.subject);
+    const enclosingLattice = {
+      ...generatedLattice,
+      vertices: generatedLattice.vertices.filter(({ positionWorld }) =>
+        (positionWorld.x === generatedLattice.bounds.min.x ||
+          positionWorld.x === generatedLattice.bounds.max.x) &&
+        (positionWorld.y === generatedLattice.bounds.min.y ||
+          positionWorld.y === generatedLattice.bounds.max.y)),
+    };
+    const diagnostics = diagnosticsFor(0, enclosing, enclosingLattice);
+
+    expect(metricValue(diagnostics.coverage.visibleVertexFraction)).toBe(0);
+    expect(metricValue(diagnostics.projectedBoundsUv)).toMatchObject({
+      minU: expect.any(Number),
+      maxU: expect.any(Number),
+      minV: expect.any(Number),
+      maxV: expect.any(Number),
+    });
+    const bounds = metricValue(diagnostics.projectedBoundsUv);
+    expect(bounds.minU).toBeLessThan(0);
+    expect(bounds.maxU).toBeGreaterThan(1);
+    expect(bounds.minV).toBeLessThan(0);
+    expect(bounds.maxV).toBeGreaterThan(1);
+    expect(diagnostics.status.code).toBe("partially-off-frame");
+  });
+
   it("uses the nearest-camera front face and reverses convergence direction with body pitch", () => {
     const negative = diagnosticsFor(-8);
     const zero = diagnosticsFor(0);

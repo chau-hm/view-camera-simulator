@@ -8,6 +8,37 @@ import {
   type CameraMovementTargetRegion,
 } from "./cameraMovementSceneCalibration";
 
+type NumericBounds = Readonly<{ min: number; max: number; minExclusive?: boolean }>;
+
+export const CAMERA_MOVEMENT_WORKBENCH_BOUNDS = {
+  subject: {
+    columns: { min: 1, max: 8 },
+    rows: { min: 1, max: 8 },
+    levels: { min: 3, max: 12 },
+    cubeSizeMm: { min: 50, max: 1000 },
+    horizontalGapMm: { min: 0, max: 1000 },
+    verticalGapMm: { min: 0, max: 1000 },
+    subjectDistanceMm: { min: 500, max: 10000 },
+  },
+  optics: {
+    provisionalFocalLengthMm: { min: 0, max: 1000, minExclusive: true },
+    provisionalFocusDistanceMm: { min: 0, max: 10000, minExclusive: true },
+  },
+  rig: {
+    arcAngleDeg: { min: 0.1, max: 45 },
+    provisionalBasePitchDeg: { min: -20, max: 20 },
+  },
+  movements: {
+    cameraBodyPitchDeg: { min: -45, max: 45 },
+  },
+  presentation: {
+    outerVerticalWeight: { min: 0.1, max: 10 },
+    outerHorizontalWeight: { min: 0.1, max: 10 },
+    internalEdgeWeight: { min: 0.1, max: 10 },
+    internalEdgeOpacity: { min: 0.01, max: 1 },
+  },
+} as const satisfies Record<string, Readonly<Record<string, NumericBounds>>>;
+
 type GeometryOverrides = Readonly<{
   columns?: number;
   rows?: number;
@@ -303,13 +334,14 @@ export const validateEffectiveCameraMovementCalibration = (
   const { subject, optics, cameraRig, presentation } = calibration;
 
   (["columns", "rows"] as const).forEach((field) => {
-    if (!isPositiveInteger(subject[field]) || subject[field] > 8) {
+    const bounds = CAMERA_MOVEMENT_WORKBENCH_BOUNDS.subject[field];
+    if (!isPositiveInteger(subject[field]) || subject[field] > bounds.max) {
       errors.push(
         error(
           "geometry",
           `subject.${field}`,
           "not-positive-integer",
-          `${field} must be an integer from 1 to 8`,
+          `${field} must be an integer from ${bounds.min} to ${bounds.max}`,
         ),
       );
     }
@@ -323,7 +355,10 @@ export const validateEffectiveCameraMovementCalibration = (
         "levels must be a positive integer",
       ),
     );
-  } else if (subject.levels < 3 || subject.levels > 12) {
+  } else if (
+    subject.levels < CAMERA_MOVEMENT_WORKBENCH_BOUNDS.subject.levels.min ||
+    subject.levels > CAMERA_MOVEMENT_WORKBENCH_BOUNDS.subject.levels.max
+  ) {
     errors.push(
       error(
         "geometry",
@@ -335,8 +370,8 @@ export const validateEffectiveCameraMovementCalibration = (
   }
   if (
     !Number.isFinite(subject.cubeSizeMm) ||
-    subject.cubeSizeMm < 50 ||
-    subject.cubeSizeMm > 1000
+    subject.cubeSizeMm < CAMERA_MOVEMENT_WORKBENCH_BOUNDS.subject.cubeSizeMm.min ||
+    subject.cubeSizeMm > CAMERA_MOVEMENT_WORKBENCH_BOUNDS.subject.cubeSizeMm.max
   ) {
     errors.push(
       error(
@@ -350,8 +385,8 @@ export const validateEffectiveCameraMovementCalibration = (
   (["horizontalGapMm", "verticalGapMm"] as const).forEach((field) => {
     if (
       !Number.isFinite(subject[field]) ||
-      subject[field] < 0 ||
-      subject[field] > 1000
+      subject[field] < CAMERA_MOVEMENT_WORKBENCH_BOUNDS.subject[field].min ||
+      subject[field] > CAMERA_MOVEMENT_WORKBENCH_BOUNDS.subject[field].max
     ) {
       errors.push(
         error(
@@ -375,7 +410,8 @@ export const validateEffectiveCameraMovementCalibration = (
   }
   if (
     Number.isFinite(subject.originWorld.z) &&
-    (subject.originWorld.z < 500 || subject.originWorld.z > 10000)
+    (subject.originWorld.z < CAMERA_MOVEMENT_WORKBENCH_BOUNDS.subject.subjectDistanceMm.min ||
+      subject.originWorld.z > CAMERA_MOVEMENT_WORKBENCH_BOUNDS.subject.subjectDistanceMm.max)
   ) {
     errors.push(
       error(
@@ -405,7 +441,10 @@ export const validateEffectiveCameraMovementCalibration = (
   if (
     optics.focalLengthCandidatesMm.length === 0 ||
     !optics.focalLengthCandidatesMm.every(
-      (candidate) => Number.isFinite(candidate) && candidate > 0,
+      (candidate) =>
+        Number.isFinite(candidate) &&
+        candidate > CAMERA_MOVEMENT_WORKBENCH_BOUNDS.optics.provisionalFocalLengthMm.min &&
+        candidate <= CAMERA_MOVEMENT_WORKBENCH_BOUNDS.optics.provisionalFocalLengthMm.max,
     ) ||
     !optics.focalLengthCandidatesMm.includes(optics.provisionalFocalLengthMm)
   ) {
@@ -418,26 +457,35 @@ export const validateEffectiveCameraMovementCalibration = (
       ),
     );
   }
-  if (!Number.isFinite(optics.provisionalFocalLengthMm) || optics.provisionalFocalLengthMm <= 0) {
+  if (
+    !Number.isFinite(optics.provisionalFocalLengthMm) ||
+    optics.provisionalFocalLengthMm <=
+      CAMERA_MOVEMENT_WORKBENCH_BOUNDS.optics.provisionalFocalLengthMm.min ||
+    optics.provisionalFocalLengthMm >
+      CAMERA_MOVEMENT_WORKBENCH_BOUNDS.optics.provisionalFocalLengthMm.max
+  ) {
     errors.push(
       error(
         "optics",
         "optics.provisionalFocalLengthMm",
         "not-positive",
-        "provisional focal length must be finite and positive",
+        "provisional focal length must be greater than 0 and no more than 1000 mm",
       ),
     );
   }
   if (
     !Number.isFinite(optics.provisionalFocusDistanceMm) ||
-    optics.provisionalFocusDistanceMm <= 0
+    optics.provisionalFocusDistanceMm <=
+      CAMERA_MOVEMENT_WORKBENCH_BOUNDS.optics.provisionalFocusDistanceMm.min ||
+    optics.provisionalFocusDistanceMm >
+      CAMERA_MOVEMENT_WORKBENCH_BOUNDS.optics.provisionalFocusDistanceMm.max
   ) {
     errors.push(
       error(
         "optics",
         "optics.provisionalFocusDistanceMm",
         "not-positive",
-        "provisional focus distance must be finite and positive",
+        "provisional focus distance must be greater than 0 and no more than 10000 mm",
       ),
     );
   }
@@ -504,8 +552,8 @@ export const validateEffectiveCameraMovementCalibration = (
   }
   if (
     !Number.isFinite(cameraRig.highArcAngleDeg) ||
-    cameraRig.highArcAngleDeg <= 0 ||
-    cameraRig.highArcAngleDeg > 45
+    cameraRig.highArcAngleDeg < CAMERA_MOVEMENT_WORKBENCH_BOUNDS.rig.arcAngleDeg.min ||
+    cameraRig.highArcAngleDeg > CAMERA_MOVEMENT_WORKBENCH_BOUNDS.rig.arcAngleDeg.max
   ) {
     errors.push(
       error(
@@ -542,8 +590,10 @@ export const validateEffectiveCameraMovementCalibration = (
   }
   if (
     !Number.isFinite(cameraRig.provisionalBasePitchDeg) ||
-    cameraRig.provisionalBasePitchDeg < -20 ||
-    cameraRig.provisionalBasePitchDeg > 20
+    cameraRig.provisionalBasePitchDeg <
+      CAMERA_MOVEMENT_WORKBENCH_BOUNDS.rig.provisionalBasePitchDeg.min ||
+    cameraRig.provisionalBasePitchDeg >
+      CAMERA_MOVEMENT_WORKBENCH_BOUNDS.rig.provisionalBasePitchDeg.max
   ) {
     errors.push(
       error(
@@ -573,18 +623,18 @@ export const validateEffectiveCameraMovementCalibration = (
       "internalEdgeOpacity",
     ] as const
   ).forEach((field) => {
-    const upperBound = field === "internalEdgeOpacity" ? 1 : 10;
+    const bounds = CAMERA_MOVEMENT_WORKBENCH_BOUNDS.presentation[field];
     if (
       !Number.isFinite(presentation[field]) ||
-      presentation[field] <= 0 ||
-      presentation[field] > upperBound
+      presentation[field] < bounds.min ||
+      presentation[field] > bounds.max
     ) {
       errors.push(
         error(
           "presentation",
           `presentation.${field}`,
           "invalid-presentation",
-          `${field} must be greater than 0 and no more than ${upperBound}`,
+          `${field} must be from ${bounds.min} to ${bounds.max}`,
         ),
       );
     }

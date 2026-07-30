@@ -58,6 +58,7 @@ test("session calibration separates geometry, optics, rig, reset, and SPA lifecy
     "data-mounted-lattice-generation",
   );
   await workbench.getByLabel("Levels").fill("7");
+  await workbench.getByLabel("Levels").press("Enter");
   const sevenLevel = await expectSharedLattice(page, "304");
   expect(sevenLevel.geometryId).not.toBe(baseline.geometryId);
   await expect(workbench.getByText(/Session revision 1/)).toBeVisible();
@@ -68,6 +69,7 @@ test("session calibration separates geometry, optics, rig, reset, and SPA lifecy
   expect(geometryGeneration).not.toBe(baselineGeneration);
 
   await workbench.getByLabel("Focal length (mm)").fill("120");
+  await workbench.getByLabel("Focal length (mm)").press("Enter");
   await expect(sevenLevel.rtt).toHaveAttribute("data-rtt-focal-length-mm", "120");
   await expect(sevenLevel.scene).toHaveAttribute(
     "data-mounted-lattice-geometry-id",
@@ -84,6 +86,7 @@ test("session calibration separates geometry, optics, rig, reset, and SPA lifecy
   await expect(workbench.getByLabel("Rear tilt (°)")).toBeDisabled();
   await expect(workbench.getByLabel("Camera body pitch (°)")).toBeEnabled();
   await workbench.getByLabel("Camera body pitch (°)").fill("-8");
+  await workbench.getByLabel("Camera body pitch (°)").press("Enter");
   await expect(sevenLevel.scene).toHaveAttribute("data-camera-body-pitch-deg", "-8.000000");
   await expect(sevenLevel.scene).toHaveAttribute(
     "data-mounted-lattice-generation",
@@ -100,6 +103,7 @@ test("session calibration separates geometry, optics, rig, reset, and SPA lifecy
   await expect(workbench.getByLabel("Focus distance (mm)")).toHaveValue("2000");
 
   await workbench.getByLabel("Levels").fill("7");
+  await workbench.getByLabel("Levels").press("Enter");
   await expect(workbench.getByText(/Session revision 1/)).toBeVisible();
   await page.getByRole("link", { name: "All Scenes" }).click();
   await page.goBack();

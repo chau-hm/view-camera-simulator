@@ -33,6 +33,7 @@ import type { CameraRigViewpointAnchor } from "../types/optics";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../scenes/cameraMovementSceneCalibration";
 import {
   CAMERA_MOVEMENT_CALIBRATION_BASELINE,
+  CAMERA_MOVEMENT_WORKBENCH_BOUNDS,
   resolveEffectiveCameraMovementCalibration,
   validateEffectiveCameraMovementCalibration,
   type CameraMovementCalibrationOverrides,
@@ -255,6 +256,7 @@ export type AppStore = {
   resetCamera: () => void;
   setCameraMovementCalibrationActive: (active: boolean) => void;
   updateCameraMovementCalibration: (overrides: CameraMovementCalibrationOverrides) => boolean;
+  clearCameraMovementCalibrationValidation: () => void;
   resetCameraMovementCalibration: () => void;
   clearCameraMovementCalibrationSession: () => void;
   setCameraMovementTargetRegion: (region: CameraMovementTargetRegion) => void;
@@ -363,6 +365,16 @@ export const useAppStore = create<AppStore>((set) => ({
     return accepted;
   },
 
+  clearCameraMovementCalibrationValidation: () =>
+    set((state) => ({
+      cameraMovementCalibrationSession: {
+        ...state.cameraMovementCalibrationSession,
+        validation: validateEffectiveCameraMovementCalibration(
+          state.cameraMovementCalibrationSession.effectiveCalibration,
+        ),
+      },
+    })),
+
   resetCameraMovementCalibration: () =>
     set((state) => {
       const baseline = resolveEffectiveCameraMovementCalibration(
@@ -462,7 +474,13 @@ export const useAppStore = create<AppStore>((set) => ({
 
   setCameraBodyPitchDeg: (value) =>
     set((state) => {
-      if (state.camera.activeSceneId !== "understanding-camera-movements" || !Number.isFinite(value)) return {};
+      const bounds = CAMERA_MOVEMENT_WORKBENCH_BOUNDS.movements.cameraBodyPitchDeg;
+      if (
+        state.camera.activeSceneId !== "understanding-camera-movements" ||
+        !Number.isFinite(value) ||
+        value < bounds.min ||
+        value > bounds.max
+      ) return {};
       return {
         camera: {
           ...state.camera,

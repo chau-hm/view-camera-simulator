@@ -25,4 +25,56 @@ describe("camera calibration workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Copy Diagnostics JSON" }));
     expect(await screen.findByText("Clipboard copy failed")).toBeInTheDocument();
   });
+
+  it("keeps character-by-character drafts local and commits on Enter or blur", () => {
+    useAppStore.getState().initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements", calibrationEnabled: true });
+    render(<CameraMovementCalibrationWorkbench />);
+    const focalLength = screen.getByLabelText("Focal length (mm)");
+
+    for (const draft of ["", "1", "12", "120", "120.", "120.5"]) {
+      fireEvent.change(focalLength, { target: { value: draft } });
+      expect(focalLength).toHaveValue(draft);
+      expect(useAppStore.getState().cameraMovementCalibrationSession.revision).toBe(0);
+    }
+
+    fireEvent.keyDown(focalLength, { key: "Enter" });
+    expect(useAppStore.getState().cameraMovementCalibrationSession.revision).toBe(1);
+    expect(useAppStore.getState().camera.focalLengthMm).toBe(120.5);
+
+    const pitch = screen.getByLabelText("Camera body pitch (°)");
+    fireEvent.change(pitch, { target: { value: "-" } });
+    expect(pitch).toHaveValue("-");
+    fireEvent.change(pitch, { target: { value: "-8" } });
+    expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(0);
+    fireEvent.blur(pitch);
+    expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(-8);
+  });
+
+  it("preserves rejected drafts, restores on Escape, and resynchronises on reset", () => {
+    useAppStore.getState().initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements", calibrationEnabled: true });
+    render(<CameraMovementCalibrationWorkbench />);
+    const focusDistance = screen.getByLabelText("Focus distance (mm)");
+
+    fireEvent.change(focusDistance, { target: { value: "100" } });
+    fireEvent.keyDown(focusDistance, { key: "Enter" });
+    expect(focusDistance).toHaveValue("100");
+    expect(focusDistance).toHaveAttribute("aria-invalid", "true");
+    const fieldErrorId = focusDistance.getAttribute("aria-describedby");
+    expect(fieldErrorId).toBeTruthy();
+    expect(document.getElementById(fieldErrorId!)).toHaveTextContent(/focus distance greater than focal length/i);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(2000);
+    expect(useAppStore.getState().cameraMovementCalibrationSession.revision).toBe(0);
+
+    fireEvent.keyDown(focusDistance, { key: "Escape" });
+    expect(focusDistance).toHaveValue("2000");
+    expect(focusDistance).not.toHaveAttribute("aria-invalid");
+    expect(useAppStore.getState().cameraMovementCalibrationSession.validation.valid).toBe(true);
+
+    fireEvent.change(focusDistance, { target: { value: "3000" } });
+    fireEvent.blur(focusDistance);
+    expect(focusDistance).toHaveValue("3000");
+    fireEvent.change(focusDistance, { target: { value: "-" } });
+    fireEvent.click(screen.getByRole("button", { name: "Reset calibration" }));
+    expect(focusDistance).toHaveValue("2000");
+  });
 });

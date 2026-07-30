@@ -743,10 +743,11 @@ export const calculateCameraMovementProjectionDiagnostics = (
     projectedArea > CAMERA_MOVEMENT_CONVERGENCE_EPSILON
       ? available(boundedFraction(overlapArea / projectedArea))
       : unavailable<number>(coverageReason);
+  const projectedBoundsInsideFilm = minU >= 0 && maxU <= 1 && minV >= 0 && maxV <= 1;
   const status: CameraMovementProjectionStatus =
-    visibleCount === projectedVertices.length
+    projectedBoundsInsideFilm
       ? { level: "ok", code: "all-in-frame", messages: [] }
-      : visibleCount === 0
+      : overlapWidth === 0 || overlapHeight === 0
         ? {
             level: "warning",
             code: "fully-off-frame",
