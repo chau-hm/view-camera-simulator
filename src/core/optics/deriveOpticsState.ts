@@ -35,7 +35,10 @@ import { calculateSharpness } from "./calculateSharpness";
 import { isFiniteVec3, vec, subtract, dot, add, scale } from "../math/vec";
 import { calculateFiniteFocusFilmPlane } from "./calculateFiniteFocusFilmPlane";
 import { applyCameraRigTransform } from "./applyCameraBodyPitch";
-import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import {
+  CAMERA_MOVEMENT_SCENE_CALIBRATION,
+  type CameraMovementSceneCalibration,
+} from "../../scenes/cameraMovementSceneCalibration";
 import {
   isCanonicalCameraRigViewpointPlacement,
   resolveCameraRigViewpointAnchor,
@@ -51,11 +54,12 @@ const neutralCameraRigTransform = (): CameraRigTransform => ({
 const resolveCameraRigPlacement = (
   cameraState: CameraState,
   scene: SceneDefinition,
+  cameraMovementCalibration: CameraMovementSceneCalibration,
 ): CameraRigPlacement => {
   if (!scene.cameraBodyPitchCapability?.enabled) {
     return DEFAULT_CAMERA_RIG_PLACEMENT;
   }
-  const calibration = CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig;
+  const calibration = cameraMovementCalibration.cameraRig;
   return isCanonicalCameraRigViewpointPlacement(
     cameraState.cameraRigPlacement,
     calibration,
@@ -68,11 +72,12 @@ const resolveCameraRigPlacement = (
 const hasCanonicalCameraRigPlacement = (
   cameraState: CameraState,
   scene: SceneDefinition,
+  cameraMovementCalibration: CameraMovementSceneCalibration,
 ): boolean =>
   !scene.cameraBodyPitchCapability?.enabled ||
   isCanonicalCameraRigViewpointPlacement(
     cameraState.cameraRigPlacement,
-    CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig,
+    cameraMovementCalibration.cameraRig,
     cameraState.viewpointAnchor,
   );
 
@@ -135,7 +140,11 @@ const createCameraBodyLocalGeometry = ({
   rearStandardFrameLocal,
 });
 
-const isFiniteCameraInput = (cameraState: CameraState, scene: SceneDefinition): boolean => {
+const isFiniteCameraInput = (
+  cameraState: CameraState,
+  scene: SceneDefinition,
+  cameraMovementCalibration: CameraMovementSceneCalibration,
+): boolean => {
   const standardInputsFinite = [
     cameraState.focalLengthMm,
     cameraState.focusDistanceMm,
@@ -148,7 +157,7 @@ const isFiniteCameraInput = (cameraState: CameraState, scene: SceneDefinition): 
   if (!standardInputsFinite) return false;
   if (!scene.cameraBodyPitchCapability?.enabled) return true;
   return (
-    hasCanonicalCameraRigPlacement(cameraState, scene) &&
+    hasCanonicalCameraRigPlacement(cameraState, scene, cameraMovementCalibration) &&
     Number.isFinite(cameraState.cameraBodyPitchDeg) &&
     Boolean(cameraState.cameraBodyPivotWorld) &&
     isFiniteVec3(cameraState.cameraBodyPivotWorld)
@@ -159,6 +168,7 @@ const baseFallbackState = (
   cameraState: CameraState,
   scene: SceneDefinition,
   errorMessage: string,
+  cameraMovementCalibration: CameraMovementSceneCalibration,
 ): DerivedOpticsState => {
   // Sanitize every input before constructing any geometry.
   const safeFocalLength =
@@ -193,7 +203,11 @@ const baseFallbackState = (
     rearStandardFrameLocal,
     filmPlaneCornersLocal,
   });
-  const cameraRigPlacement = resolveCameraRigPlacement(cameraState, scene);
+  const cameraRigPlacement = resolveCameraRigPlacement(
+    cameraState,
+    scene,
+    cameraMovementCalibration,
+  );
   const cameraRigTransform = resolveCameraRigTransform(
     cameraState,
     scene,
@@ -279,11 +293,18 @@ const baseFallbackState = (
 export const deriveOpticsState = (
   cameraState: CameraState,
   scene: SceneDefinition,
+  cameraMovementCalibration: CameraMovementSceneCalibration =
+    CAMERA_MOVEMENT_SCENE_CALIBRATION,
 ): DerivedOpticsState => {
   // Special handling for Infinity focus mode: branch early and produce a stable state
   if (cameraState.focusMode === "infinity") {
     if (!Number.isFinite(cameraState.focalLengthMm) || cameraState.focalLengthMm <= 0) {
-      return baseFallbackState(cameraState, scene, "Invalid focal length for infinity focus");
+      return baseFallbackState(
+        cameraState,
+        scene,
+        "Invalid focal length for infinity focus",
+        cameraMovementCalibration,
+      );
     }
     // Validate every input consumed by infinity geometry construction,
     // passed to solvers, or returned through diagnostics consumed by renderers.
@@ -294,7 +315,11 @@ export const deriveOpticsState = (
       Number.isFinite(cameraState.rearRiseMm) &&
       Number.isFinite(cameraState.rearTiltDeg) &&
       (!scene.cameraBodyPitchCapability?.enabled ||
-        (hasCanonicalCameraRigPlacement(cameraState, scene) &&
+        (hasCanonicalCameraRigPlacement(
+          cameraState,
+          scene,
+          cameraMovementCalibration,
+        ) &&
           Number.isFinite(cameraState.cameraBodyPitchDeg) &&
           Boolean(cameraState.cameraBodyPivotWorld) &&
           isFiniteVec3(cameraState.cameraBodyPivotWorld))) &&
@@ -302,7 +327,12 @@ export const deriveOpticsState = (
         cameraState.aperture as (typeof CAMERA_CONSTANTS.apertureOptions)[number],
       );
     if (!infinityInputsValid) {
-      return baseFallbackState(cameraState, scene, "Invalid input values for infinity focus");
+      return baseFallbackState(
+        cameraState,
+        scene,
+        "Invalid input values for infinity focus",
+        cameraMovementCalibration,
+      );
     }
     const f = cameraState.focalLengthMm;
     const lensCenterLocal = vec(0, cameraState.frontRiseMm, f);
@@ -325,7 +355,11 @@ export const deriveOpticsState = (
       rearStandardFrameLocal,
       filmPlaneCornersLocal,
     });
-    const cameraRigPlacement = resolveCameraRigPlacement(cameraState, scene);
+    const cameraRigPlacement = resolveCameraRigPlacement(
+      cameraState,
+      scene,
+      cameraMovementCalibration,
+    );
     const cameraRigTransform = resolveCameraRigTransform(
       cameraState,
       scene,
@@ -415,14 +449,29 @@ export const deriveOpticsState = (
     };
   }
 
-  if (!isFiniteCameraInput(cameraState, scene)) {
-    return baseFallbackState(cameraState, scene, "Invalid camera input");
+  if (!isFiniteCameraInput(cameraState, scene, cameraMovementCalibration)) {
+    return baseFallbackState(
+      cameraState,
+      scene,
+      "Invalid camera input",
+      cameraMovementCalibration,
+    );
   }
   if (cameraState.focusDistanceMm <= 0) {
-    return baseFallbackState(cameraState, scene, "Invalid focus distance");
+    return baseFallbackState(
+      cameraState,
+      scene,
+      "Invalid focus distance",
+      cameraMovementCalibration,
+    );
   }
   if (cameraState.focalLengthMm <= 0) {
-    return baseFallbackState(cameraState, scene, "Invalid focal length");
+    return baseFallbackState(
+      cameraState,
+      scene,
+      "Invalid focal length",
+      cameraMovementCalibration,
+    );
   }
 
   const _lensResult = calculateLensPlane(cameraState);
@@ -430,7 +479,12 @@ export const deriveOpticsState = (
   const lensNormalLocal = _lensResult.lensNormalWorld;
   let lensPlaneLocal = _lensResult.lensPlane;
   if (!isFiniteVec3(lensCenterLocal) || !isFiniteVec3(lensNormalLocal)) {
-    return baseFallbackState(cameraState, scene, "Invalid lens geometry");
+    return baseFallbackState(
+      cameraState,
+      scene,
+      "Invalid lens geometry",
+      cameraMovementCalibration,
+    );
   }
 
   const baselineFilm = calculateFiniteFocusFilmPlane({
@@ -439,7 +493,12 @@ export const deriveOpticsState = (
     strategy: scene.finiteFocusStrategy,
   });
   if (baselineFilm.fallbackApplied && scene.finiteFocusStrategy) {
-    return baseFallbackState(cameraState, scene, "Invalid finite-focus image distance");
+    return baseFallbackState(
+      cameraState,
+      scene,
+      "Invalid finite-focus image distance",
+      cameraMovementCalibration,
+    );
   }
   let { filmCenterWorld: filmCenterLocal } = baselineFilm;
 
@@ -482,7 +541,12 @@ export const deriveOpticsState = (
   }
 
   if (!Number.isFinite(cameraState.rearRiseMm) || !Number.isFinite(cameraState.rearTiltDeg)) {
-    return baseFallbackState(cameraState, scene, "Invalid rear movement");
+    return baseFallbackState(
+      cameraState,
+      scene,
+      "Invalid rear movement",
+      cameraMovementCalibration,
+    );
   }
   const { frame: rearStandardFrameLocal, corners: filmPlaneCornersLocal } =
     calculateRearStandardFrame(filmCenterLocal, cameraState.rearRiseMm, cameraState.rearTiltDeg);
@@ -493,7 +557,11 @@ export const deriveOpticsState = (
     rearStandardFrameLocal,
     filmPlaneCornersLocal,
   });
-  const cameraRigPlacement = resolveCameraRigPlacement(cameraState, scene);
+  const cameraRigPlacement = resolveCameraRigPlacement(
+    cameraState,
+    scene,
+    cameraMovementCalibration,
+  );
   const cameraRigTransform = resolveCameraRigTransform(
     cameraState,
     scene,

@@ -55,6 +55,9 @@ describe("Camera Movements subject factory", () => {
     expect(first).toEqual({
       mounted: true,
       geometryId: unattached.userData.canonicalGeometryId,
+      geometryKey: unattached.userData.canonicalGeometryKey,
+      presentationKey: unattached.userData.presentationKey,
+      resourceKey: unattached.userData.resourceKey,
       edgeCount: unattached.userData.canonicalEdgeCount,
       targetRegion: "upper",
       generation: unattached.userData.interactiveMountGeneration,
@@ -280,6 +283,107 @@ describe("Camera Movements subject factory", () => {
       "The tag <%s> is unrecognized",
     );
     expect(consoleError.mock.calls[0]?.[1]).toBe("primitive");
+    consoleError.mockRestore();
+  });
+
+  it("replaces mounted resources on presentation and geometry calibration keys", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+      calibrationEnabled: true,
+    });
+    fiberTestState.scene = new THREE.Scene();
+    const mountedGroups: THREE.Group[] = [];
+    const view = render(
+      <CameraMovementsSubject
+        onGroupChange={(group) => {
+          if (group) mountedGroups.push(group);
+        }}
+      />,
+    );
+    const baseline = mountedGroups[0];
+    const baselineGeometryId = baseline.userData.canonicalGeometryId;
+    const baselinePresentationKey = baseline.userData.presentationKey;
+    const disposeBaseline = vi.spyOn(
+      (baseline.children[0] as THREE.LineSegments).geometry,
+      "dispose",
+    );
+
+    act(() => {
+      expect(
+        useAppStore.getState().updateCameraMovementCalibration({
+          presentation: { inactiveColour: "#334455" },
+        }),
+      ).toBe(true);
+    });
+
+    const presentationReplacement = mountedGroups[1];
+    expect(presentationReplacement).not.toBe(baseline);
+    expect(presentationReplacement.userData.canonicalGeometryId).toBe(
+      baselineGeometryId,
+    );
+    expect(presentationReplacement.userData.presentationKey).not.toBe(
+      baselinePresentationKey,
+    );
+    expect(disposeBaseline).toHaveBeenCalledTimes(1);
+    const disposePresentation = vi.spyOn(
+      (presentationReplacement.children[0] as THREE.LineSegments).geometry,
+      "dispose",
+    );
+
+    act(() => {
+      expect(
+        useAppStore.getState().updateCameraMovementCalibration({
+          geometry: { columns: 4 },
+        }),
+      ).toBe(true);
+    });
+
+    const geometryReplacement = mountedGroups[2];
+    expect(geometryReplacement.userData.canonicalGeometryId).not.toBe(
+      baselineGeometryId,
+    );
+    expect(geometryReplacement.userData.canonicalEdgeCount).not.toBe(
+      baseline.userData.canonicalEdgeCount,
+    );
+    expect(disposePresentation).toHaveBeenCalledTimes(1);
+
+    view.unmount();
+    expect(geometryReplacement.userData.resourcesDisposed).toBe(true);
+    consoleError.mockRestore();
+  });
+
+  it("keeps the mounted lattice stable across effective optics and rig edits", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+      calibrationEnabled: true,
+    });
+    fiberTestState.scene = new THREE.Scene();
+    const mountedGroups: THREE.Group[] = [];
+    const view = render(
+      <CameraMovementsSubject
+        onGroupChange={(group) => {
+          if (group) mountedGroups.push(group);
+        }}
+      />,
+    );
+    const initialGroup = mountedGroups[0];
+
+    act(() => {
+      expect(
+        useAppStore.getState().updateCameraMovementCalibration({
+          optics: { provisionalFocusDistanceMm: 2400 },
+          rig: { arcAngleDeg: 22 },
+        }),
+      ).toBe(true);
+    });
+
+    expect(mountedGroups).toEqual([initialGroup]);
+    expect(initialGroup.userData.resourcesDisposed).not.toBe(true);
+    view.unmount();
     consoleError.mockRestore();
   });
 

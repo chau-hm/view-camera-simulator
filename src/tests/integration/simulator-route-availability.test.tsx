@@ -8,13 +8,15 @@ vi.mock("../../components/layout/SimulatorWorkspace", () => ({
     mode,
     sceneId,
     taskId,
+    calibrationEnabled,
   }: {
     mode: string;
     sceneId: string;
     taskId: string | null;
+    calibrationEnabled?: boolean;
   }) => (
     <div data-testid="simulator-workspace">
-      {mode}:{sceneId}:{taskId ?? "none"}
+      {mode}:{sceneId}:{taskId ?? "none"}:calibration={String(Boolean(calibrationEnabled))}
     </div>
   ),
 }));
@@ -49,6 +51,17 @@ describe("simulator route availability", () => {
 
     expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(expectedWorkspace);
     expect(screen.getByTestId("route-location")).toHaveTextContent(route);
+  });
+
+  it.each([
+    ["/simulator/free/understanding-camera-movements?cameraCalibration=1", true],
+    ["/simulator/free/understanding-camera-movements", false],
+    ["/simulator/guided/architecture-rise/rise-01?cameraCalibration=1", false],
+    ["/simulator/free/architecture-rise?cameraCalibration=1", false],
+  ])("gates calibration workbench flag for %s", async (route, enabled) => {
+    renderRoute(route);
+    const workspace = await screen.findByTestId("simulator-workspace");
+    expect(workspace).toHaveTextContent(`calibration=${String(enabled)}`);
   });
 
   it.each([

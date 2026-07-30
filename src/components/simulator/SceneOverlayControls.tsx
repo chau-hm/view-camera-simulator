@@ -6,6 +6,7 @@ import {
 } from "./sceneOverlayResponsive";
 
 export type SceneOverlayControlsProps = {
+  resetGeneration?: number;
   sceneId?: string;
   showFocusPlane: boolean;
   showDofRegion: boolean;
@@ -115,6 +116,10 @@ export const SceneOverlayControls = (props: SceneOverlayControlsProps) => {
   useEffect(() => {
     setMenuOpen(false);
   }, [props.sceneId]);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [props.resetGeneration]);
 
   useEffect(() => {
     if (!menuOpen) return;

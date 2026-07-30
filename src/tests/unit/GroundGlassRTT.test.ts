@@ -369,6 +369,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       }),
     );
     const firstGeneration = useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration;
+    const firstSubjectGeneration =
+      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeSubjectGeneration;
     const firstGroup = createSubject.mock.results[0]?.value as THREE.Group;
     const firstGeometry = (firstGroup.children[0] as THREE.Mesh).geometry;
     const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
@@ -382,11 +384,17 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(createSubject).toHaveBeenCalledTimes(2);
     expect(createSubject).toHaveBeenLastCalledWith(
       understandingCameraMovementsScene.id,
-      { targetRegion: "middle" },
+      expect.objectContaining({ targetRegion: "middle" }),
     );
     expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
     expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
-      (firstGeneration ?? 0) + 1,
+      firstGeneration,
+    );
+    expect(
+      useAppStore.getState().groundGlassRttRuntimeInfo
+        ?.latticeSubjectGeneration,
+    ).toBeGreaterThan(
+      firstSubjectGeneration ?? 0,
     );
     expect(
       useAppStore.getState().groundGlassRttRuntimeInfo?.latticeEdgeCount,
@@ -397,6 +405,129 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(
       useAppStore.getState().groundGlassRttRuntimeInfo?.latticeTargetRegion,
     ).toBe("middle");
+    view.unmount();
+  });
+
+  it("replaces presentation resources without reallocating the RTT graph", () => {
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+      calibrationEnabled: true,
+    });
+    const camera = useAppStore.getState().camera;
+    const createSubject = vi.mocked(createRegisteredRttSubject);
+    createSubject.mockClear();
+    const disposeRenderTarget = vi.spyOn(
+      THREE.WebGLRenderTarget.prototype,
+      "dispose",
+    );
+    const view = render(
+      React.createElement(GroundGlassRTT, {
+        opticsState: deriveOpticsState(
+          camera,
+          understandingCameraMovementsScene,
+        ),
+        focalLengthMm: camera.focalLengthMm,
+        sceneId: understandingCameraMovementsScene.id,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+      }),
+    );
+    const firstInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const firstGroup = createSubject.mock.results[0]?.value as THREE.Group;
+    const disposeFirstGeometry = vi.spyOn(
+      (firstGroup.children[0] as THREE.Mesh).geometry,
+      "dispose",
+    );
+
+    act(() => {
+      expect(
+        useAppStore.getState().updateCameraMovementCalibration({
+          presentation: {
+            inactiveColour: "#334455",
+            internalEdgeOpacity: 0.7,
+          },
+        }),
+      ).toBe(true);
+    });
+
+    const replacementInfo =
+      useAppStore.getState().groundGlassRttRuntimeInfo;
+    expect(createSubject).toHaveBeenCalledTimes(2);
+    expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
+    expect(replacementInfo?.resourceGeneration).toBe(
+      firstInfo?.resourceGeneration,
+    );
+    expect(replacementInfo?.latticeSubjectGeneration).toBeGreaterThan(
+      firstInfo?.latticeSubjectGeneration ?? 0,
+    );
+    expect(replacementInfo?.latticeGeometryId).toBe(
+      firstInfo?.latticeGeometryId,
+    );
+    expect(replacementInfo?.latticePresentationKey).not.toBe(
+      firstInfo?.latticePresentationKey,
+    );
+    expect(disposeRenderTarget).not.toHaveBeenCalled();
+
+    view.unmount();
+  });
+
+  it("cleans the camera-movement subject during a client-side scene transition", () => {
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+    });
+    const cameraMovementCamera = useAppStore.getState().camera;
+    const architectureCamera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+    };
+    const createSubject = vi.mocked(createRegisteredRttSubject);
+    createSubject.mockClear();
+    const view = render(
+      React.createElement(GroundGlassRTT, {
+        opticsState: deriveOpticsState(
+          cameraMovementCamera,
+          understandingCameraMovementsScene,
+        ),
+        focalLengthMm: cameraMovementCamera.focalLengthMm,
+        sceneId: understandingCameraMovementsScene.id,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+      }),
+    );
+    const cameraMovementGroup =
+      createSubject.mock.results[0]?.value as THREE.Group;
+    const disposeGeometry = vi.spyOn(
+      (cameraMovementGroup.children[0] as THREE.Mesh).geometry,
+      "dispose",
+    );
+
+    view.rerender(
+      React.createElement(GroundGlassRTT, {
+        opticsState: deriveOpticsState(
+          architectureCamera,
+          architectureRiseScene,
+        ),
+        focalLengthMm: architectureCamera.focalLengthMm,
+        sceneId: architectureRiseScene.id,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+      }),
+    );
+
+    const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    expect(cameraMovementGroup.parent).toBeNull();
+    expect(cameraMovementGroup.userData.resourcesDisposed).toBe(true);
+    expect(disposeGeometry).toHaveBeenCalledTimes(1);
+    expect(createSubject).toHaveBeenCalledTimes(2);
+    expect(currentInfo?.latticeGeometryId).toBeUndefined();
+    expect(currentInfo?.latticeSubjectGeneration).toBeUndefined();
+
     view.unmount();
   });
 

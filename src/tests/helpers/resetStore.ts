@@ -26,6 +26,7 @@ export function resetStoreForTest() {
       focusAssistEnabled: DEFAULT_CAMERA_STATE.focusAssistEnabled,
       gridEnabled: DEFAULT_CAMERA_STATE.gridEnabled,
       showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY,
+      overlayMenuResetGeneration: 0,
     },
     selectedMovement: null,
     lastInitializedRouteKey: null,

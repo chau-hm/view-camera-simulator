@@ -33,7 +33,12 @@ import {
   type SceneViewFocus,
 } from "./sceneViewFraming";
 import { useAppStore } from "../state/appStore";
+import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
 import { CameraBodyAssembly } from "./CameraBodyAssembly";
+import {
+  resolveCameraMovementLatticeRenderModel,
+  type CameraMovementLatticeRenderModel,
+} from "./cameraMovementLatticeRenderModel";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -55,9 +60,16 @@ type SceneRendererProps = {
 
 export const shouldRenderReferenceCamera = (
   scene: SceneDefinition,
+  cameraMovementRenderModel?: CameraMovementLatticeRenderModel,
 ): boolean =>
   Boolean(scene.movementCapabilities) &&
-  (getSceneSubjectRegistration(scene.id)?.showReferenceCamera ?? true);
+  (
+    getSceneSubjectRegistration(scene.id)?.resolveShowReferenceCamera?.({
+      cameraMovementRenderModel,
+    }) ??
+    getSceneSubjectRegistration(scene.id)?.showReferenceCamera ??
+    true
+  );
 
 const WORLD_SCALE = 0.001;
 
@@ -730,6 +742,7 @@ const OpticalGeometryOverlays = ({
 
 const SceneContent = ({
   scene,
+  cameraMovementRenderModel,
   opticsState,
   showFocusPlaneOverlay,
   showDofOverlay,
@@ -737,6 +750,7 @@ const SceneContent = ({
   showScheimpflugConstruction,
 }: {
   scene: SceneDefinition;
+  cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
   opticsState: DerivedOpticsState;
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
@@ -745,7 +759,10 @@ const SceneContent = ({
 }) => {
   const registration = getSceneSubjectRegistration(scene.id);
   const RegisteredSubject = registration?.SceneSubject;
-  const referenceCameraVisible = shouldRenderReferenceCamera(scene);
+  const referenceCameraVisible = shouldRenderReferenceCamera(
+    scene,
+    cameraMovementRenderModel,
+  );
 
   return (
     <>
@@ -928,12 +945,28 @@ export const SceneRenderer = ({
 }: SceneRendererProps) => {
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const configuredTargetRegion = useAppStore((state) => state.scene.targetRegion);
+  const effectiveCameraMovementCalibration = useAppStore(
+    selectEffectiveCameraMovementCalibration,
+  );
   const interactiveLatticeRuntimeInfo = useAppStore(
     (state) => state.interactiveLatticeRuntimeInfo,
   );
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
+  const cameraMovementRenderModel = resolveCameraMovementLatticeRenderModel(
+    effectiveCameraMovementCalibration,
+  );
+  const renderScene = useMemo(
+    () =>
+      scene.id === "understanding-camera-movements"
+        ? {
+            ...scene,
+            bounds: cameraMovementRenderModel.subjectBounds,
+          }
+        : scene,
+    [cameraMovementRenderModel, scene],
+  );
   const observerCameraPosition = useMemo(
     () => vecToWorld(scene.cameraPlacement.position),
     [scene.cameraPlacement.position],
@@ -996,7 +1029,7 @@ export const SceneRenderer = ({
     isInfinityFocus: Boolean(opticsState.diagnostics.isInfinityFocus),
     hasFiniteFarPlane: Boolean(opticsState.depthOfFieldFarPlane),
   });
-  const overlayBounds = getScenePlaneOverlayBounds(scene);
+  const overlayBounds = getScenePlaneOverlayBounds(renderScene);
   const focusOverlayVertexCount = opticsState.focusPlane
     ? createScenePlaneOverlayGeometry(opticsState.focusPlane, overlayBounds, { extendToPlanePoint: scene.id !== "table-tilt" })?.verticesMm.length ?? 0
     : 0;
@@ -1007,17 +1040,24 @@ export const SceneRenderer = ({
     ? createScenePlaneOverlayGeometry(opticsState.depthOfFieldFarPlane, overlayBounds, { extendToPlanePoint: scene.id !== "table-tilt" })?.verticesMm.length ?? 0
     : 0;
   const scheimpflugConstructionGeometry = showScheimpflugConstruction
-    ? createScheimpflugConstructionGeometry(opticsState, scene)
+    ? createScheimpflugConstructionGeometry(opticsState, renderScene)
     : null;
   const subjectRegistration = getSceneSubjectRegistration(scene.id);
-  const referenceCameraVisible = shouldRenderReferenceCamera(scene);
+  const referenceCameraVisible = shouldRenderReferenceCamera(
+    renderScene,
+    cameraMovementRenderModel,
+  );
 
   return (
     <div
       ref={containerRef}
       data-testid="scene-canvas"
       data-scene-subject-id={getRegisteredSceneSubject(scene.id) ? scene.id : "fallback"}
-      data-lattice-edge-count={subjectRegistration?.canonicalLattice?.edgeCount}
+      data-lattice-edge-count={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.edgeCount
+          : subjectRegistration?.canonicalLattice?.edgeCount
+      }
       data-lattice-target-region={
         subjectRegistration?.canonicalLattice ? configuredTargetRegion : undefined
       }
@@ -1029,6 +1069,21 @@ export const SceneRenderer = ({
       data-mounted-lattice-geometry-id={
         scene.id === "understanding-camera-movements"
           ? interactiveLatticeRuntimeInfo?.geometryId
+          : undefined
+      }
+      data-mounted-lattice-geometry-key={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.geometryKey
+          : undefined
+      }
+      data-mounted-lattice-presentation-key={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.presentationKey
+          : undefined
+      }
+      data-mounted-lattice-resource-key={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.resourceKey
           : undefined
       }
       data-mounted-lattice-edge-count={
@@ -1100,7 +1155,8 @@ export const SceneRenderer = ({
         {/**/}
         <LegendUpdater containerRef={containerRef} opticsState={opticsState} setLegendPositions={setLegendPositions} visibleKeys={visibleLegendKeys} showLegends={showLegends} />
         <SceneContent
-          scene={{ ...scene, assets: activeAssets }}
+          scene={{ ...renderScene, assets: activeAssets }}
+          cameraMovementRenderModel={cameraMovementRenderModel}
           opticsState={opticsState}
           showFocusPlaneOverlay={showFocusPlaneOverlay}
           showDofOverlay={showDofOverlay}

@@ -25,6 +25,7 @@ type SceneViewportProps = {
   onRequestRestore: () => void;
   onToggleGeometryPanel?: (trigger: HTMLButtonElement) => void;
   showHeader?: boolean;
+  overlayMenuResetGeneration: number;
 };
 
 const parseRenderQuality = (value: string): RenderQualityProfile => {
@@ -46,6 +47,7 @@ export const SceneViewport = ({
   onRequestRestore,
   onToggleGeometryPanel,
   showHeader,
+  overlayMenuResetGeneration,
 }: SceneViewportProps) => {
   const [attempt, setAttempt] = useState(0);
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
@@ -212,6 +214,7 @@ export const SceneViewport = ({
 
           <div className="scene-overlay-controls-wrap">
             <SceneOverlayControls
+              resetGeneration={overlayMenuResetGeneration}
               sceneId={scene.id}
               showFocusPlane={showFocusPlaneOverlay}
               showDofRegion={showDofOverlay}

@@ -5,13 +5,19 @@ import * as THREE from "three";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineSegments2 } from "three/addons/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry.js";
-import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
-import {
-  CAMERA_MOVEMENT_SCENE_CALIBRATION,
-  type CameraMovementTargetRegion,
+import type { CanonicalCameraMovementLattice } from "../scenes/cameraMovementLatticeGeometry";
+import type {
+  CameraMovementPresentationCalibration,
+  CameraMovementTargetRegion,
 } from "../scenes/cameraMovementSceneCalibration";
 import { useAppStore } from "../state/appStore";
+import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
 import type { SceneDefinition } from "../types/scene";
+import {
+  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+  resolveCameraMovementLatticeRenderModel,
+  type CameraMovementLatticeRenderModel,
+} from "./cameraMovementLatticeRenderModel";
 import {
   nextInteractiveLatticeGeneration,
   readInteractiveLatticeRuntimeInfo,
@@ -19,10 +25,8 @@ import {
 } from "./cameraMovementLatticeRuntime";
 import { toWorld } from "./rttUtils";
 
-const { presentation } = CAMERA_MOVEMENT_SCENE_CALIBRATION;
-
 type LatticeStyleBatch = {
-  role: (typeof CAMERA_MOVEMENT_LATTICE.edges)[number]["role"];
+  role: CanonicalCameraMovementLattice["edges"][number]["role"];
   colour: string;
   opacity: number;
   weight: number;
@@ -32,36 +36,20 @@ type LatticeStyleBatch = {
 
 const edgeWeightForRole = (
   role: LatticeStyleBatch["role"],
+  presentation: CameraMovementPresentationCalibration,
 ): number => {
   if (role === "outer-vertical") return presentation.outerVerticalWeight;
   if (role === "outer-horizontal") return presentation.outerHorizontalWeight;
   return presentation.internalEdgeWeight;
 };
 
-const colourForRegion = (region: CameraMovementTargetRegion): string => {
+const colourForRegion = (
+  region: CameraMovementTargetRegion,
+  presentation: CameraMovementPresentationCalibration,
+): string => {
   if (region === "upper") return presentation.upperRegionColour;
   if (region === "lower") return presentation.lowerRegionColour;
   return presentation.middleRegionColour;
-};
-
-const canonicalLatticeIdentityPayload = JSON.stringify({
-  dimensions: CAMERA_MOVEMENT_LATTICE.dimensions,
-  vertices: CAMERA_MOVEMENT_LATTICE.vertices.map(({ id, positionWorld }) => [
-    id,
-    positionWorld.x,
-    positionWorld.y,
-    positionWorld.z,
-  ]),
-  edgeIds: CAMERA_MOVEMENT_LATTICE.edges.map(({ id }) => id),
-});
-
-const hashIdentityPayload = (payload: string): string => {
-  let hash = 0x811c9dc5;
-  for (let index = 0; index < payload.length; index += 1) {
-    hash ^= payload.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0).toString(16).padStart(8, "0");
 };
 
 /**
@@ -69,21 +57,23 @@ const hashIdentityPayload = (payload: string): string => {
  * consumed by both the interactive R3F subject and Ground Glass RTT.
  */
 export const CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID =
-  `camera-movement-lattice-${hashIdentityPayload(canonicalLatticeIdentityPayload)}`;
+  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.geometryId;
 
 const createStyleBatches = (
+  lattice: CanonicalCameraMovementLattice,
+  presentation: CameraMovementPresentationCalibration,
   targetRegion: CameraMovementTargetRegion,
 ): LatticeStyleBatch[] => {
   const batches = new Map<string, LatticeStyleBatch>();
 
-  CAMERA_MOVEMENT_LATTICE.edges.forEach((edge) => {
+  lattice.edges.forEach((edge) => {
     const selected = edge.targetRegion === targetRegion;
     const colour = selected
-      ? colourForRegion(targetRegion)
+      ? colourForRegion(targetRegion, presentation)
       : presentation.inactiveColour;
     const opacity =
       edge.role === "internal" ? presentation.internalEdgeOpacity : 1;
-    const weight = edgeWeightForRole(edge.role);
+    const weight = edgeWeightForRole(edge.role, presentation);
     const key = `${edge.role}:${colour}:${opacity}:${weight}`;
     let batch = batches.get(key);
     if (!batch) {
@@ -111,6 +101,47 @@ const createStyleBatches = (
   return [...batches.values()];
 };
 
+export type CameraMovementsGroupOptions = Readonly<{
+  lattice: CanonicalCameraMovementLattice;
+  presentation: CameraMovementPresentationCalibration;
+  geometryKey: string;
+  presentationKey: string;
+  geometryId: string;
+  grid: CameraMovementLatticeRenderModel["grid"];
+  targetRegion?: CameraMovementTargetRegion;
+}>;
+
+export const cameraMovementsGroupOptionsFromRenderModel = (
+  model: CameraMovementLatticeRenderModel,
+  targetRegion?: CameraMovementTargetRegion,
+): CameraMovementsGroupOptions => ({
+  lattice: model.lattice,
+  presentation: model.presentation,
+  geometryKey: model.geometryKey,
+  presentationKey: model.presentationKey,
+  geometryId: model.geometryId,
+  grid: model.grid,
+  targetRegion,
+});
+
+const resolveGroupOptions = (
+  optionsOrTarget?: CameraMovementsGroupOptions | CameraMovementTargetRegion,
+): Required<CameraMovementsGroupOptions> => {
+  const baseline = CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
+  const options =
+    typeof optionsOrTarget === "object"
+      ? optionsOrTarget
+      : cameraMovementsGroupOptionsFromRenderModel(
+          baseline,
+          optionsOrTarget,
+        );
+  return {
+    ...options,
+    targetRegion:
+      options.targetRegion ?? options.presentation.defaultTargetRegion,
+  };
+};
+
 /**
  * Create one owned Three.js representation of the canonical lattice.
  *
@@ -119,18 +150,32 @@ const createStyleBatches = (
  * in exactly one style batch; no renderer reconstructs cells or cube faces.
  */
 export function createCameraMovementsGroup(
-  targetRegion: CameraMovementTargetRegion = presentation.defaultTargetRegion,
+  optionsOrTarget?: CameraMovementsGroupOptions | CameraMovementTargetRegion,
 ): THREE.Group {
+  const {
+    lattice,
+    presentation,
+    geometryKey,
+    presentationKey,
+    geometryId,
+    grid,
+    targetRegion,
+  } = resolveGroupOptions(optionsOrTarget);
   const group = new THREE.Group();
   group.name = "camera-movements-lattice-subject";
   group.userData.resourceOwnership = "owned";
   group.userData.targetRegion = targetRegion;
-  group.userData.canonicalGeometryId = CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID;
-  group.userData.canonicalEdgeCount = CAMERA_MOVEMENT_LATTICE.edges.length;
-  group.userData.canonicalEdgeIds = CAMERA_MOVEMENT_LATTICE.edges.map(({ id }) => id);
-  group.userData.canonicalUnits = CAMERA_MOVEMENT_LATTICE.units;
+  group.userData.canonicalGeometryId = geometryId;
+  group.userData.canonicalGeometryKey = geometryKey;
+  group.userData.presentationKey = presentationKey;
+  group.userData.resourceKey =
+    `${geometryKey}|${presentationKey}|target:${targetRegion}`;
+  group.userData.canonicalEdgeCount = lattice.edges.length;
+  group.userData.canonicalEdgeIds = lattice.edges.map(({ id }) => id);
+  group.userData.canonicalUnits = lattice.units;
+  group.userData.canonicalBounds = lattice.bounds;
 
-  createStyleBatches(targetRegion).forEach((batch) => {
+  createStyleBatches(lattice, presentation, targetRegion).forEach((batch) => {
     const lineGeometry = new LineSegmentsGeometry();
     lineGeometry.setPositions(batch.positions);
     lineGeometry.computeBoundingBox();
@@ -153,6 +198,38 @@ export function createCameraMovementsGroup(
     segments.computeLineDistances();
     group.add(segments);
   });
+
+  const gridSizeWorld = toWorld(grid.halfExtentMm * 2);
+  const gridDivisions = Math.max(
+    1,
+    Math.round((grid.halfExtentMm * 2) / grid.cellSizeMm),
+  );
+  const referenceGrid = new THREE.GridHelper(
+    gridSizeWorld,
+    gridDivisions,
+    presentation.inactiveColour,
+    presentation.inactiveColour,
+  );
+  referenceGrid.name = "camera-movements-reference-grid";
+  referenceGrid.position.set(
+    toWorld(grid.center.x),
+    toWorld(grid.center.y),
+    toWorld(grid.center.z),
+  );
+  referenceGrid.userData.geometryKey = geometryKey;
+  referenceGrid.userData.presentationKey = presentationKey;
+  referenceGrid.userData.canonicalEdgeIds = [];
+  referenceGrid.userData.cellSizeMm = grid.cellSizeMm;
+  referenceGrid.userData.halfExtentMm = grid.halfExtentMm;
+  const gridMaterials = Array.isArray(referenceGrid.material)
+    ? referenceGrid.material
+    : [referenceGrid.material];
+  gridMaterials.forEach((material) => {
+    material.transparent = presentation.internalEdgeOpacity < 1;
+    material.opacity = presentation.internalEdgeOpacity;
+    material.depthWrite = false;
+  });
+  group.add(referenceGrid);
 
   return group;
 }
@@ -198,10 +275,22 @@ export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
   onGroupChange,
 }) => {
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
+  const effectiveCalibration = useAppStore(
+    selectEffectiveCameraMovementCalibration,
+  );
   const r3fScene = useThree((state) => state.scene);
+  const renderModel = resolveCameraMovementLatticeRenderModel(
+    effectiveCalibration,
+  );
   const group = useMemo(
-    () => createCameraMovementsGroup(targetRegion),
-    [targetRegion],
+    () =>
+      createCameraMovementsGroup(
+        cameraMovementsGroupOptionsFromRenderModel(
+          renderModel,
+          targetRegion,
+        ),
+      ),
+    [renderModel, targetRegion],
   );
 
   useEffect(() => {
@@ -240,4 +329,6 @@ export function disposeCameraMovementsGroup(group: THREE.Group): void {
 
   geometries.forEach((geometry) => geometry.dispose());
   materials.forEach((material) => material.dispose());
+  group.userData.disposedGeometryCount = geometries.size;
+  group.userData.disposedMaterialCount = materials.size;
 }
