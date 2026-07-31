@@ -98,6 +98,7 @@ export type CameraMovementTeachingCaseMetrics<
   lensCentreWorld: Readonly<Vec3>;
   filmCentreWorld: Readonly<Vec3>;
   rigOriginWorld: Readonly<Vec3>;
+  bodyPitchPivotRigLocal: Readonly<Vec3>;
   lensNormalWorld: Readonly<Vec3>;
   filmNormalWorld: Readonly<Vec3>;
   focusNormalWorld: Readonly<Vec3>;
@@ -364,6 +365,10 @@ const finiteCaseMetrics = <
     lensCentreWorld: assertFiniteVec(lensCentreWorld, `${teaching.id}.lensCentreWorld`),
     filmCentreWorld: assertFiniteVec(filmCentreWorld, `${teaching.id}.filmCentreWorld`),
     rigOriginWorld: assertFiniteVec(rigOriginWorld, `${teaching.id}.rigOriginWorld`),
+    bodyPitchPivotRigLocal: assertFiniteVec(
+      opticsState.cameraRigTransform.bodyPitchPivotRigLocal,
+      `${teaching.id}.bodyPitchPivotRigLocal`,
+    ),
     lensNormalWorld: assertFiniteVec(lensNormalWorld, `${teaching.id}.lensNormalWorld`),
     filmNormalWorld: assertFiniteVec(filmNormalWorld, `${teaching.id}.filmNormalWorld`),
     focusNormalWorld: assertFiniteVec(focusNormalWorld, `${teaching.id}.focusNormalWorld`),

@@ -3,6 +3,7 @@ import { computeOpticalSectionData } from "../../components/geometry/opticalSect
 import { getGeometryPresentationProfile } from "../../components/geometry/geometryPresentationProfiles";
 import { distance, magnitude } from "../../core/math/vec";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { imageDistanceMm } from "../../core/optics/thinLensModel";
 import {
   CAMERA_MOVEMENT_CALIBRATION_SEARCH_SPACE,
   CAMERA_MOVEMENT_FOCUS_DISTANCE_SAFE_EPSILON_MM,
@@ -454,5 +455,31 @@ describe("camera-movement teaching calibration", () => {
     expect(independent.effectiveCalibration.optics.provisionalFocalLengthMm).toBe(105);
     expect(independent.effectiveCalibration.cameraRig.arcRadiusMm).toBe(2100);
     expect(collectNumbers(independent).every(Number.isFinite)).toBe(true);
+
+    const focusOnly = evaluateCameraMovementTeachingCalibrationCandidate({
+      ...selected,
+      focusDistanceMm: 1800,
+    });
+    const subjectOnly = evaluateCameraMovementTeachingCalibrationCandidate({
+      ...selected,
+      subjectDistanceMm: 2400,
+    });
+    const expectedFocusPivotZ =
+      geometry.cameraBody.pivotRigLocal.z +
+      (imageDistanceMm(selected.focalLengthMm, selected.focusDistanceMm) -
+        imageDistanceMm(selected.focalLengthMm, 1800)) /
+        2;
+
+    expect(focusOnly.cases.neutral.bodyPitchPivotRigLocal.z).toBeCloseTo(
+      expectedFocusPivotZ,
+      12,
+    );
+    expect(focusOnly.cases.neutral.bodyPitchPivotRigLocal.z).not.toBeCloseTo(
+      evaluation.cases.neutral.bodyPitchPivotRigLocal.z,
+      12,
+    );
+    expect(subjectOnly.cases.neutral.bodyPitchPivotRigLocal).toEqual(
+      evaluation.cases.neutral.bodyPitchPivotRigLocal,
+    );
   });
 });
