@@ -32,7 +32,6 @@ export type CameraMovementTeachingCalibrationCandidate = Readonly<{
   subjectDistanceMm: number;
   focalLengthMm: number;
   focusDistanceMm: number;
-  arcRadiusMm: number;
   arcAngleDeg: number;
   tiltDeg: number;
   riseMm: number;
@@ -51,8 +50,9 @@ const selectedPhysical = CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION;
 /**
  * Lightweight runtime contract for the selected teaching cases.
  *
- * It derives physical values from the one raw selection while retaining
- * independently named subject, focus, focal, and rig values.
+ * It derives physical values from the one raw selection. The rig arc radius is
+ * not stored on the candidate; it is always derived from the subject distance
+ * and the fixed mid-anchor lens datum through the canonical rig contract.
  */
 export const CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION = Object.freeze({
   subject: Object.freeze({
@@ -66,7 +66,6 @@ export const CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION = Object.freeze({
   subjectDistanceMm: selectedPhysical.subject.subjectDistanceMm,
   focalLengthMm: selectedPhysical.optics.focalLengthMm,
   focusDistanceMm: selectedPhysical.optics.focusDistanceMm,
-  arcRadiusMm: selectedPhysical.cameraRig.arcRadiusMm,
   arcAngleDeg: selectedPhysical.cameraRig.arcAngleDeg,
   ...CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
 }) satisfies CameraMovementTeachingCalibrationCandidate;

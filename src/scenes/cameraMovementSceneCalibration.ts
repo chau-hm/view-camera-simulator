@@ -1,3 +1,4 @@
+import { distance } from "../core/math/vec";
 import type { Vec3 } from "../types/optics";
 import type { CameraRigViewpointArcCalibration } from "./cameraRigViewpointGeometry";
 
@@ -66,7 +67,7 @@ export type CameraMovementSelectedPhysicalCalibration = Readonly<{
     focusDistanceMm: number;
   }>;
   cameraRig: Readonly<{
-    arcRadiusMm: number;
+    /** Positive half-angle of the YZ viewpoint arc; radius is derived. */
     arcAngleDeg: number;
   }>;
 }>;
@@ -74,9 +75,11 @@ export type CameraMovementSelectedPhysicalCalibration = Readonly<{
 /**
  * Raw physical selection produced by the bounded calibration exercise.
  *
- * Subject placement, optical focus, and rig radius are intentionally stored
- * independently even though the selected values are all 2,000 mm. Teaching
- * movements and public-control rounding do not belong to this contract.
+ * Subject placement and optical focus are stored independently. The rig arc
+ * radius is not an independent field: it is always derived as the distance
+ * between the subject centre (arc centre) and the mid-anchor lens datum.
+ * Teaching movements and public-control rounding do not belong to this
+ * contract.
  */
 export const CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION = Object.freeze({
   subject: Object.freeze({
@@ -93,7 +96,6 @@ export const CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION = Object.freeze({
     focusDistanceMm: 2000,
   }),
   cameraRig: Object.freeze({
-    arcRadiusMm: 2000,
     arcAngleDeg: 20,
   }),
 }) satisfies CameraMovementSelectedPhysicalCalibration;
@@ -138,7 +140,10 @@ export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration =
     arcPlane: "yz",
     arcCenterWorld: cameraMovementLatticeOriginWorld,
     midRigOriginWorld: { x: 0, y: 0, z: 0 },
-    arcRadiusMm: selectedPhysical.cameraRig.arcRadiusMm,
+    arcRadiusMm: distance(
+      cameraMovementLatticeOriginWorld,
+      { x: 0, y: 0, z: 0 },
+    ),
     highArcAngleDeg: selectedPhysical.cameraRig.arcAngleDeg,
     lowArcAngleDeg: -selectedPhysical.cameraRig.arcAngleDeg,
     provisionalBasePitchDeg: 0,

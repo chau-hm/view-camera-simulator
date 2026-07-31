@@ -31,13 +31,17 @@ diagnostics. It contains no independent plane or projection calculation.
 
 The immutable `CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION` object is the
 only selected-value source for subject geometry and distance, focal length and
-focus distance, and rig radius and arc angle. Production scene calibration and
-the selected teaching candidate both derive from it. The candidate keeps
-`subjectDistanceMm`, `focusDistanceMm`, `focalLengthMm`, and `arcRadiusMm`
-independent; the current equality of the two distances and radius is a selected
-result, not an evaluator assumption. The lightweight teaching-case module
-contains only case identities and movement states, while the candidate search,
-optics derivation, and projection metrics remain in the development evaluator.
+focus distance, and rig arc angle. Production scene calibration and the
+selected teaching candidate both derive from it through one canonical rig
+relationship: the subject centre is the arc centre, the mid-anchor lens datum
+is the fixed `(0, 0, 0)` origin, and `arcRadiusMm` is always derived as the
+distance between those two points. No candidate stores an independent radius,
+so a centre, origin, and radius can never contradict. The shared
+`isCanonicalCameraRigGeometry` / `resolveCameraRigArcRadiusMm` contract is used
+by the production builder and the calibration evaluator alike. The
+lightweight teaching-case module contains only case identities and movement
+states, while the candidate search, optics derivation, and projection metrics
+remain in the development evaluator.
 
 ## Selected values
 
@@ -138,20 +142,25 @@ harness and captures were not committed.
 | B | Rear-plane change and bottom convergence are visible; target remains centred and the complete lattice remains framed. |
 | C1 | Positive front rise shifts the selected target upward; the target remains readable with 88.94% lattice overlap. |
 | C2 | Positive rear rise produces the opposite Ground Glass shift; the target remains readable with 90.48% overlap. |
-| C3 | Upper target remains readable in raw/final Ground Glass with expected outer crop and bottom convergence; default 3D clips part of the rig at upper-right. |
+| C3 | Upper target remains readable in raw/final Ground Glass with expected outer crop and bottom convergence; the pulled-back default 3D keeps the elevated rig and lattice readable. |
 | D1 | Front fall mirrors C1; the selected target remains readable with 88.94% overlap. |
 | D2 | Rear fall mirrors C2; the selected target remains readable with 90.48% overlap. |
-| D3 | Lower target remains readable with expected outer crop and top convergence; default 3D clips part of the lower rig. |
+| D3 | Lower target remains readable with expected outer crop and top convergence; the pulled-back default 3D keeps the lowered rig and lattice readable. |
 
 Every raw and final RTT was contentful; its camera, uniforms, and depth state
 were finite; color, depth, and final targets agreed at 528 × 422; and no page,
-Three.js, WebGL, or GPU errors were observed. The fixed Camera inspection
-observer does not follow the high/low rig: C3 is nearly blank in that auxiliary
-view and D3 is substantially clipped. This is an external observer-framing
-limitation rather than a physical calibration failure, so the provisional
-subject, optics, rig, and movement values were not changed. The 2D header also
-reports front rise only, so C2/D2 read `Rise: 0.0 mm` even though their rear-rise
-ray geometry is correct.
+Three.js, WebGL, or GPU errors were observed.
+
+Static observer framing was corrected for high and low viewpoints. The default
+3D scene view now pulls back to `(1800, 1100, -1800)` targeting `(0, 300, 1300)`
+so the complete lattice and the mid and low rigs are fully in frame and the
+elevated (C3) rig is substantially visible; the fixed Camera inspection view
+pulls back to `(2200, 1100, -2300)` targeting `(0, 0, 100)` so the full rig arc
+spans the inspection volume at every anchor. C3 is no longer nearly blank in
+the inspection view and D3 is no longer substantially clipped. No calibration
+or teaching movement value was changed to achieve this. The 2D header still
+reports front rise only, so C2/D2 read `Rise: 0.0 mm` even though their
+rear-rise ray geometry is correct.
 
 ## Known boundary
 
@@ -164,16 +173,15 @@ The lattice may remain partially outside the 4 × 5 frame in moved cases even
 when the selected teaching target is visible; the reported overlap is a raw
 projection measurement, not a renderer crop fix. Blur, sharpness, and depth of
 field remain illustrative. Composed-scene inspection confirms the selected
-targets and movement differences are readable, subject to the fixed Camera
-inspection and 2D rear-rise readout limitations above. The calibration remains
-provisional and is not a claim of final lesson composition or metrological
-accuracy.
+targets and movement differences are readable; the 2D rear-rise readout remains
+a known limitation. The calibration remains provisional and is not a claim of
+final lesson composition or metrological accuracy.
 
 ## Validation
 
-- Focused teaching, projection, renderer, RTT, resource, and 2D tests: 104 passed.
+- Focused rig-calibration, teaching, projection, renderer, RTT, resource, and 2D tests pass.
 - Focused Understanding Camera Movements Playwright: 4 passed.
-- Full unit/integration suite: 91 files and 849 tests passed.
+- Full unit/integration suite: 91 files and 855 tests passed.
 - Type-check, lint, CSS structure, and production build passed.
-- Full local E2E merge gate passed, including 53 Playwright tests.
+- Full local E2E merge gate (`npm run ci:local:e2e`) passed.
 - `git diff --check` passed.

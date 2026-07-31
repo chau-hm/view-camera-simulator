@@ -20,9 +20,9 @@ export const understandingCameraMovementsScene: SceneDefinition = {
     cameraBodyPivotWorld: geometry.cameraPreset.cameraBodyPivotWorld,
   },
   cameraPlacement: {
-    /** Three-quarter view to show cube, grid, and full camera assembly */
-    position: { x: 700, y: 500, z: -700 },
-    target: { x: 0, y: 0, z: 2000 },
+    /** Three-quarter view balancing the full rig arc with a prominent lattice */
+    position: { x: 1800, y: 1100, z: -1800 },
+    target: { x: 0, y: 300, z: 1300 },
   },
   bounds: {
     min: geometry.subjectBounds.min,
@@ -49,8 +49,8 @@ export const understandingCameraMovementsScene: SceneDefinition = {
     infinityReset: false,
   },
   cameraInspectionPlacement: {
-    /** Three-quarter angle centred on the camera body midpoint */
-    position: { x: 800, y: 600, z: -600 },
-    target: { x: 0, y: 0, z: -75 },
+    /** Pulled-back three-quarter angle spanning the full rig arc so the camera stays centred and non-clipped at high/low */
+    position: { x: 2200, y: 1100, z: -2300 },
+    target: { x: 0, y: 0, z: 100 },
   },
 };

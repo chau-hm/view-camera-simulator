@@ -17,7 +17,12 @@ import {
   type CameraMovementProjectedUv,
 } from "./cameraMovementProjectionDiagnostics";
 import type { CameraMovementTargetRegion } from "./cameraMovementSceneCalibration";
-import { resolveCameraRigViewpointAnchor } from "./cameraRigViewpointGeometry";
+import {
+  CANONICAL_MID_RIG_ORIGIN_WORLD,
+  isCanonicalCameraRigGeometry,
+  resolveCameraRigArcRadiusMm,
+  resolveCameraRigViewpointAnchor,
+} from "./cameraRigViewpointGeometry";
 import {
   CAMERA_MOVEMENT_TEACHING_CASE_IDS,
   createCameraMovementOppositeRearTiltProbe,
@@ -43,7 +48,6 @@ export const CAMERA_MOVEMENT_CALIBRATION_SEARCH_SPACE = Object.freeze({
   }),
   focalLengthMm: Object.freeze([90, 105, 120, 150] as const),
   focusDistanceMm: Object.freeze([1800, 2000, 2400, 3000] as const),
-  arcRadiusMm: Object.freeze([1800, 2000, 2400, 3000] as const),
   arcAngleDeg: Object.freeze([10, 12, 15, 18, 20] as const),
   tiltDeg: Object.freeze([5, 7.5, 10] as const),
   riseMm: Object.freeze([20, 40, 60, 80, 120, 160] as const),
@@ -440,7 +444,6 @@ export const evaluateCameraMovementTeachingCalibrationCandidate = (
     subjectDistanceMm: candidate.subjectDistanceMm,
     focalLengthMm: candidate.focalLengthMm,
     focusDistanceMm: candidate.focusDistanceMm,
-    arcRadiusMm: candidate.arcRadiusMm,
     arcAngleDeg: candidate.arcAngleDeg,
   })) {
     if (!Number.isFinite(value)) {
@@ -461,9 +464,10 @@ export const evaluateCameraMovementTeachingCalibrationCandidate = (
       `Camera-movement teaching candidate focusDistanceMm must exceed focalLengthMm by more than ${CAMERA_MOVEMENT_FOCUS_DISTANCE_SAFE_EPSILON_MM} mm`,
     );
   }
-  if (candidate.arcRadiusMm <= 0) {
-    throw new Error("Camera-movement teaching candidate arcRadiusMm must be positive");
-  }
+  const arcRadiusMm = resolveCameraRigArcRadiusMm(
+    { x: 0, y: 0, z: candidate.subjectDistanceMm },
+    CANONICAL_MID_RIG_ORIGIN_WORLD,
+  );
 
   const effectiveCalibration = resolveEffectiveCameraMovementCalibration(
     CAMERA_MOVEMENT_CALIBRATION_BASELINE,
@@ -483,15 +487,29 @@ export const evaluateCameraMovementTeachingCalibrationCandidate = (
         provisionalFocusDistanceMm: candidate.focusDistanceMm,
       },
       rig: {
-        midRigOriginWorld: {
-          x: CAMERA_MOVEMENT_CALIBRATION_BASELINE.subject.originWorld.x,
-          y: CAMERA_MOVEMENT_CALIBRATION_BASELINE.subject.originWorld.y,
-          z: candidate.subjectDistanceMm - candidate.arcRadiusMm,
-        },
+        midRigOriginWorld: CANONICAL_MID_RIG_ORIGIN_WORLD,
         arcAngleDeg: candidate.arcAngleDeg,
       },
     },
   );
+  const effectiveRig = effectiveCalibration.cameraRig;
+  if (
+    !isCanonicalCameraRigGeometry(
+      effectiveRig.arcCenterWorld,
+      effectiveRig.midRigOriginWorld,
+      effectiveRig.arcRadiusMm,
+    )
+  ) {
+    throw new Error(
+      "Camera-movement teaching candidate rig geometry is not internally consistent",
+    );
+  }
+  if (effectiveRig.arcRadiusMm !== arcRadiusMm) {
+    throw new Error(
+      "Camera-movement teaching candidate arc radius must equal centre-to-mid distance",
+    );
+  }
+
   const validation = validateEffectiveCameraMovementCalibration(effectiveCalibration);
   if (!validation.valid) {
     throw new Error(

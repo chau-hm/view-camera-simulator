@@ -39,6 +39,48 @@ export type CameraRigViewpointArcCalibration = Readonly<{
 /** Scene-level name for a canonical resolved arc-anchor placement. */
 export type ResolvedCameraRigViewpointAnchor = ArcAnchorCameraRigPlacement;
 
+/**
+ * Canonical mid-anchor lens datum for the camera-movement rig.
+ *
+ * The mid (zero-movement) lens centre is the world origin, and the arc centre
+ * is the subject centre. Every rig candidate resolves its radius through this
+ * shared contract so a candidate can never declare a contradictory centre,
+ * origin, and radius.
+ */
+export const CANONICAL_MID_RIG_ORIGIN_WORLD: Readonly<Vec3> = Object.freeze({
+  x: 0,
+  y: 0,
+  z: 0,
+});
+
+/** Resolve the canonical arc radius from the arc centre and mid-anchor origin. */
+export const resolveCameraRigArcRadiusMm = (
+  arcCenterWorld: Readonly<Vec3>,
+  midRigOriginWorld: Readonly<Vec3>,
+): number => distance(arcCenterWorld, midRigOriginWorld);
+
+/** True when the three rig values agree with the single canonical relationship. */
+export const isCanonicalCameraRigGeometry = (
+  arcCenterWorld: Readonly<Vec3>,
+  midRigOriginWorld: Readonly<Vec3>,
+  arcRadiusMm: number,
+): boolean => {
+  if (!isFiniteVec3(arcCenterWorld) || !isFiniteVec3(midRigOriginWorld)) {
+    return false;
+  }
+  if (arcCenterWorld.x !== midRigOriginWorld.x) {
+    return false;
+  }
+  const measuredRadiusMm = distance(arcCenterWorld, midRigOriginWorld);
+  if (!Number.isFinite(measuredRadiusMm) || measuredRadiusMm <= 0) {
+    return false;
+  }
+  if (!Number.isFinite(arcRadiusMm) || arcRadiusMm <= 0) {
+    return false;
+  }
+  return approximatelyEqual(arcRadiusMm, measuredRadiusMm);
+};
+
 const approximatelyEqual = (a: number, b: number): boolean => {
   const scale = Math.max(1, Math.abs(a), Math.abs(b));
   return Math.abs(a - b) <= Number.EPSILON * scale * 8;
@@ -70,7 +112,7 @@ const assertValidCalibration = (calibration: CameraRigViewpointArcCalibration): 
   if (!Number.isFinite(calibration.arcRadiusMm) || calibration.arcRadiusMm <= 0) {
     throw new Error("Camera rig viewpoint arc radius must be finite and greater than zero");
   }
-  const measuredRadiusMm = distance(
+  const measuredRadiusMm = resolveCameraRigArcRadiusMm(
     calibration.arcCenterWorld,
     calibration.midRigOriginWorld,
   );

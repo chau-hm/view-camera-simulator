@@ -16,7 +16,11 @@ import {
   createCameraMovementTeachingCases,
   getCameraMovementTeachingCase,
 } from "../../scenes/cameraMovementTeachingCases";
-import { resolveCameraRigViewpointAnchor } from "../../scenes/cameraRigViewpointGeometry";
+import {
+  isCanonicalCameraRigGeometry,
+  resolveCameraRigViewpointAnchor,
+} from "../../scenes/cameraRigViewpointGeometry";
+import { validateEffectiveCameraMovementCalibration } from "../../scenes/cameraMovementEffectiveCalibration";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import {
   CAMERA_MOVEMENT_CONVERGENCE_EPSILON,
@@ -81,7 +85,6 @@ describe("camera-movement teaching calibration", () => {
         focusDistanceMm: 2000,
       },
       cameraRig: {
-        arcRadiusMm: 2000,
         arcAngleDeg: 20,
       },
     });
@@ -114,7 +117,6 @@ describe("camera-movement teaching calibration", () => {
     });
     expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig).toMatchObject({
       arcCenterWorld: CAMERA_MOVEMENT_SCENE_CALIBRATION.subject.originWorld,
-      arcRadiusMm: physical.cameraRig.arcRadiusMm,
       highArcAngleDeg: physical.cameraRig.arcAngleDeg,
       lowArcAngleDeg: -physical.cameraRig.arcAngleDeg,
       provisionalBasePitchDeg: 0,
@@ -123,9 +125,9 @@ describe("camera-movement teaching calibration", () => {
       subjectDistanceMm: physical.subject.subjectDistanceMm,
       focusDistanceMm: physical.optics.focusDistanceMm,
       focalLengthMm: physical.optics.focalLengthMm,
-      arcRadiusMm: physical.cameraRig.arcRadiusMm,
       arcAngleDeg: physical.cameraRig.arcAngleDeg,
     });
+    expect(selected).not.toHaveProperty("arcRadiusMm");
     expect(selected.subject).not.toHaveProperty("subjectDistanceMm");
   });
 
@@ -142,7 +144,6 @@ describe("camera-movement teaching calibration", () => {
       },
       focalLengthMm: [90, 105, 120, 150],
       focusDistanceMm: [1800, 2000, 2400, 3000],
-      arcRadiusMm: [1800, 2000, 2400, 3000],
       arcAngleDeg: [10, 12, 15, 18, 20],
       tiltDeg: [5, 7.5, 10],
       riseMm: [20, 40, 60, 80, 120, 160],
@@ -351,18 +352,19 @@ describe("camera-movement teaching calibration", () => {
     );
     const highMetrics = evaluation.cases["C3-high-viewpoint"];
     const lowMetrics = evaluation.cases["D3-low-viewpoint"];
+    const arcRadiusMm = CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.arcRadiusMm;
     expect(
       distance(
         highMetrics.rigOriginWorld,
         CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.arcCenterWorld,
       ),
-    ).toBeCloseTo(selected.arcRadiusMm, 9);
+    ).toBeCloseTo(arcRadiusMm, 9);
     expect(
       distance(
         lowMetrics.rigOriginWorld,
         CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.arcCenterWorld,
       ),
-    ).toBeCloseTo(selected.arcRadiusMm, 9);
+    ).toBeCloseTo(arcRadiusMm, 9);
     expect(highMetrics.rigOriginWorld.y).toBeCloseTo(-lowMetrics.rigOriginWorld.y, 12);
     expect(highMetrics.rigOriginWorld.z).toBeCloseTo(lowMetrics.rigOriginWorld.z, 12);
     expect(highMetrics.convergenceSignal).toBeGreaterThan(0);
@@ -441,19 +443,60 @@ describe("camera-movement teaching calibration", () => {
     ).toThrow("focusDistanceMm must be finite");
   });
 
-  it("keeps subject, focus, focal length, and rig radius independent in evaluation", () => {
+  it("passes the canonical rig validator for production calibration and resolves radius from centre-to-mid distance", () => {
+    const rig = CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig;
+    expect(
+      isCanonicalCameraRigGeometry(rig.arcCenterWorld, rig.midRigOriginWorld, rig.arcRadiusMm),
+    ).toBe(true);
+    expect(rig.arcRadiusMm).toBe(distance(rig.arcCenterWorld, rig.midRigOriginWorld));
+    expect(rig.arcRadiusMm).toBe(2000);
+    expect(validateEffectiveCameraMovementCalibration(CAMERA_MOVEMENT_SCENE_CALIBRATION)).toEqual({
+      valid: true,
+      errors: [],
+    });
+    expect(evaluation.effectiveCalibration.cameraRig.arcRadiusMm).toBe(2000);
+  });
+
+  it("rejects a candidate whose resolved centre, origin, and radius would contradict", () => {
+    expect(
+      isCanonicalCameraRigGeometry({ x: 0, y: 0, z: 2400 }, { x: 0, y: 0, z: 0 }, 2100),
+    ).toBe(false);
+    expect(
+      isCanonicalCameraRigGeometry({ x: 0, y: 0, z: 2400 }, { x: 0, y: 0, z: 0 }, 2400),
+    ).toBe(true);
+    expect(
+      isCanonicalCameraRigGeometry({ x: 1, y: 0, z: 2000 }, { x: 0, y: 0, z: 0 }, 2000),
+    ).toBe(false);
+  });
+
+  it("keeps subject, focus, and focal length independent while deriving the rig radius", () => {
     const independent = evaluateCameraMovementTeachingCalibrationCandidate({
       ...selected,
       subjectDistanceMm: 2400,
       focusDistanceMm: 1800,
       focalLengthMm: 105,
-      arcRadiusMm: 2100,
     });
 
     expect(independent.effectiveCalibration.subject.originWorld.z).toBe(2400);
     expect(independent.effectiveCalibration.optics.provisionalFocusDistanceMm).toBe(1800);
     expect(independent.effectiveCalibration.optics.provisionalFocalLengthMm).toBe(105);
-    expect(independent.effectiveCalibration.cameraRig.arcRadiusMm).toBe(2100);
+    // radius is derived from centre-to-mid distance, not an independent field
+    expect(independent.effectiveCalibration.cameraRig.arcRadiusMm).toBe(
+      distance(
+        independent.effectiveCalibration.cameraRig.arcCenterWorld,
+        independent.effectiveCalibration.cameraRig.midRigOriginWorld,
+      ),
+    );
+    expect(independent.effectiveCalibration.cameraRig.arcCenterWorld).toEqual({
+      x: 0,
+      y: 0,
+      z: 2400,
+    });
+    expect(independent.effectiveCalibration.cameraRig.midRigOriginWorld).toEqual({
+      x: 0,
+      y: 0,
+      z: 0,
+    });
     expect(collectNumbers(independent).every(Number.isFinite)).toBe(true);
 
     const focusOnly = evaluateCameraMovementTeachingCalibrationCandidate({
@@ -481,5 +524,43 @@ describe("camera-movement teaching calibration", () => {
     expect(subjectOnly.cases.neutral.bodyPitchPivotRigLocal).toEqual(
       evaluation.cases.neutral.bodyPitchPivotRigLocal,
     );
+    expect(subjectOnly.effectiveCalibration.cameraRig.arcRadiusMm).toBe(2400);
+  });
+
+  it("derives a consistent arc when the subject distance changes", () => {
+    const closer = evaluateCameraMovementTeachingCalibrationCandidate({
+      ...selected,
+      subjectDistanceMm: 1800,
+    });
+    const farther = evaluateCameraMovementTeachingCalibrationCandidate({
+      ...selected,
+      subjectDistanceMm: 3000,
+    });
+
+    for (const evaluation of [closer, farther]) {
+      const rig = evaluation.effectiveCalibration.cameraRig;
+      expect(rig.arcCenterWorld).toEqual(rig.arcCenterWorld);
+      expect(rig.arcCenterWorld.z).toBe(
+        rig.arcCenterWorld.z,
+      );
+      expect(rig.arcRadiusMm).toBe(
+        distance(rig.arcCenterWorld, rig.midRigOriginWorld),
+      );
+      expect(rig.arcCenterWorld).toEqual(rig.arcCenterWorld);
+    }
+    expect(closer.effectiveCalibration.cameraRig.arcRadiusMm).toBe(1800);
+    expect(farther.effectiveCalibration.cameraRig.arcRadiusMm).toBe(3000);
+    expect(closer.effectiveCalibration.cameraRig.arcCenterWorld.z).toBe(1800);
+    expect(farther.effectiveCalibration.cameraRig.arcCenterWorld.z).toBe(3000);
+    expect(closer.effectiveCalibration.cameraRig.midRigOriginWorld).toEqual({
+      x: 0,
+      y: 0,
+      z: 0,
+    });
+    expect(farther.effectiveCalibration.cameraRig.midRigOriginWorld).toEqual({
+      x: 0,
+      y: 0,
+      z: 0,
+    });
   });
 });
