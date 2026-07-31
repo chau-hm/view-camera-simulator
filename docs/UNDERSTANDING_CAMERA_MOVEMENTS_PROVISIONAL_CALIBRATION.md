@@ -29,6 +29,16 @@ The evaluator calls the existing effective-calibration resolver, lattice
 generator, rig-anchor resolver, `deriveOpticsState`, and canonical projection
 diagnostics. It contains no independent plane or projection calculation.
 
+The immutable `CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION` object is the
+only selected-value source for subject geometry and distance, focal length and
+focus distance, and rig radius and arc angle. Production scene calibration and
+the selected teaching candidate both derive from it. The candidate keeps
+`subjectDistanceMm`, `focusDistanceMm`, `focalLengthMm`, and `arcRadiusMm`
+independent; the current equality of the two distances and radius is a selected
+result, not an evaluator assumption. The lightweight teaching-case module
+contains only case identities and movement states, while the candidate search,
+optics derivation, and projection metrics remain in the development evaluator.
+
 ## Selected values
 
 Physical scene calibration is stored separately from the internal teaching
@@ -107,6 +117,42 @@ planes and B's perspective convergence. Rise/fall pairs have equal-and-opposite
 signed target movement. High/low cases use symmetric anchors and body pitch,
 with opposite convergence.
 
+The canonical `-5°` rear-tilt probe is also finite, projectable, non-fallback,
+and not fully off-frame. It produces convergence `-0.06823`, equal in magnitude
+and opposite in sign to B's `+0.06823`; neutral remains inside the `1e-6`
+parallel epsilon. C3/D3 convergence differs in magnitude by about 1.2%, their
+projected frame coverage differs by about 1.1%, and their lens-film distance is
+invariant.
+
+## Bounded composed-scene inspection
+
+All nine internal cases were inspected at 1024 × 768 through the development
+calibration route in the default 3D view, fixed Camera inspection view, raw
+Ground Glass, final Ground Glass, and 2D Geometry. The temporary inspection
+harness and captures were not committed.
+
+| Case | Composed-scene observation |
+| --- | --- |
+| neutral | Lattice and target are centred and readable; raw/final Ground Glass is fully framed; verticals are parallel. |
+| A | Front-standard and focus-plane rotation is visible in 3D/2D; framing stays neutral and parallel; final DOF differs subtly from raw. |
+| B | Rear-plane change and bottom convergence are visible; target remains centred and the complete lattice remains framed. |
+| C1 | Positive front rise shifts the selected target upward; the target remains readable with 88.94% lattice overlap. |
+| C2 | Positive rear rise produces the opposite Ground Glass shift; the target remains readable with 90.48% overlap. |
+| C3 | Upper target remains readable in raw/final Ground Glass with expected outer crop and bottom convergence; default 3D clips part of the rig at upper-right. |
+| D1 | Front fall mirrors C1; the selected target remains readable with 88.94% overlap. |
+| D2 | Rear fall mirrors C2; the selected target remains readable with 90.48% overlap. |
+| D3 | Lower target remains readable with expected outer crop and top convergence; default 3D clips part of the lower rig. |
+
+Every raw and final RTT was contentful; its camera, uniforms, and depth state
+were finite; color, depth, and final targets agreed at 528 × 422; and no page,
+Three.js, WebGL, or GPU errors were observed. The fixed Camera inspection
+observer does not follow the high/low rig: C3 is nearly blank in that auxiliary
+view and D3 is substantially clipped. This is an external observer-framing
+limitation rather than a physical calibration failure, so the provisional
+subject, optics, rig, and movement values were not changed. The 2D header also
+reports front rise only, so C2/D2 read `Rise: 0.0 mm` even though their rear-rise
+ray geometry is correct.
+
 ## Known boundary
 
 The current public rise controls clamp movement to 0–40 mm. C1/C2 use reachable
@@ -117,7 +163,17 @@ this optical sign contract.
 The lattice may remain partially outside the 4 × 5 frame in moved cases even
 when the selected teaching target is visible; the reported overlap is a raw
 projection measurement, not a renderer crop fix. Blur, sharpness, and depth of
-field remain illustrative. Visual validation of target legibility and overlay
-extent belongs to the renderer/UI follow-up. The calibration remains
-provisional until that review confirms the measured geometry is teachable in
-the composed scene.
+field remain illustrative. Composed-scene inspection confirms the selected
+targets and movement differences are readable, subject to the fixed Camera
+inspection and 2D rear-rise readout limitations above. The calibration remains
+provisional and is not a claim of final lesson composition or metrological
+accuracy.
+
+## Validation
+
+- Focused teaching, projection, renderer, RTT, resource, and 2D tests: 104 passed.
+- Focused Understanding Camera Movements Playwright: 4 passed.
+- Full unit/integration suite: 91 files and 849 tests passed.
+- Type-check, lint, CSS structure, and production build passed.
+- Full local E2E merge gate passed, including 53 Playwright tests.
+- `git diff --check` passed.

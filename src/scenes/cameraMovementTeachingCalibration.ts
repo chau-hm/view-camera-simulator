@@ -18,23 +18,18 @@ import {
 } from "./cameraMovementProjectionDiagnostics";
 import type { CameraMovementTargetRegion } from "./cameraMovementSceneCalibration";
 import { resolveCameraRigViewpointAnchor } from "./cameraRigViewpointGeometry";
+import {
+  CAMERA_MOVEMENT_TEACHING_CASE_IDS,
+  createCameraMovementOppositeRearTiltProbe,
+  createCameraMovementTeachingCases,
+  getCameraMovementTeachingCase,
+  type CameraMovementOppositeRearTiltProbe,
+  type CameraMovementTeachingCalibrationCandidate,
+  type CameraMovementTeachingCase,
+  type CameraMovementTeachingCaseId,
+} from "./cameraMovementTeachingCases";
 import { understandingCameraMovementsScene } from "./definitions/understanding-camera-movements";
 import { CAMERA_BODY_PIVOT_RIG_LOCAL } from "./understandingCameraMovementsGeometry";
-
-export const CAMERA_MOVEMENT_TEACHING_CASE_IDS = [
-  "neutral",
-  "A-front-tilt",
-  "B-rear-tilt",
-  "C1-front-rise",
-  "C2-rear-rise",
-  "C3-high-viewpoint",
-  "D1-front-fall",
-  "D2-rear-fall",
-  "D3-low-viewpoint",
-] as const;
-
-export type CameraMovementTeachingCaseId =
-  (typeof CAMERA_MOVEMENT_TEACHING_CASE_IDS)[number];
 
 export const CAMERA_MOVEMENT_CALIBRATION_SEARCH_SPACE = Object.freeze({
   subject: Object.freeze({
@@ -44,83 +39,27 @@ export const CAMERA_MOVEMENT_CALIBRATION_SEARCH_SPACE = Object.freeze({
     cubeSizeMm: Object.freeze([200, 260, 320] as const),
     horizontalGapMm: Object.freeze([0, 50, 100] as const),
     verticalGapMm: Object.freeze([0, 50, 100] as const),
-    distanceMm: Object.freeze([1800, 2000, 2400, 3000] as const),
+    subjectDistanceMm: Object.freeze([1800, 2000, 2400, 3000] as const),
   }),
   focalLengthMm: Object.freeze([90, 105, 120, 150] as const),
+  focusDistanceMm: Object.freeze([1800, 2000, 2400, 3000] as const),
+  arcRadiusMm: Object.freeze([1800, 2000, 2400, 3000] as const),
   arcAngleDeg: Object.freeze([10, 12, 15, 18, 20] as const),
   tiltDeg: Object.freeze([5, 7.5, 10] as const),
   riseMm: Object.freeze([20, 40, 60, 80, 120, 160] as const),
   bodyPitchDeg: Object.freeze([6, 8, 10, 12] as const),
 });
 
-export type CameraMovementTeachingCalibrationCandidate = Readonly<{
-  subject: Readonly<{
-    columns: number;
-    rows: number;
-    levels: number;
-    cubeSizeMm: number;
-    horizontalGapMm: number;
-    verticalGapMm: number;
-    distanceMm: number;
-  }>;
-  focalLengthMm: number;
-  arcAngleDeg: number;
-  tiltDeg: number;
-  riseMm: number;
-  bodyPitchDeg: number;
-}>;
+/** Minimum finite-focus separation used before evaluating the thin-lens denominator. */
+export const CAMERA_MOVEMENT_FOCUS_DISTANCE_SAFE_EPSILON_MM = 1e-6;
 
-/**
- * Physical scene/rig selection from the bounded candidate evaluation.
- *
- * These values remain separate from the internal teaching movements
- * below: neither the projection measurements nor the scene geometry are
- * rounded into a control value.
- */
-export const CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION = Object.freeze({
-  subject: Object.freeze({
-    columns: 3,
-    rows: 3,
-    levels: 5,
-    cubeSizeMm: 260,
-    horizontalGapMm: 0,
-    verticalGapMm: 0,
-    distanceMm: 2000,
-  }),
-  focalLengthMm: 90,
-  arcAngleDeg: 20,
-});
+type CameraMovementEvaluatedCaseId =
+  CameraMovementTeachingCaseId | CameraMovementOppositeRearTiltProbe["id"];
 
-/** Internal teaching movements selected after the physical scene evaluation. */
-export const CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS = Object.freeze({
-  tiltDeg: 5,
-  riseMm: 20,
-  bodyPitchDeg: 6,
-});
-
-export const CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION =
-  Object.freeze({
-    ...CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION,
-    subject: CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION.subject,
-    ...CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
-  }) satisfies CameraMovementTeachingCalibrationCandidate;
-
-export type CameraMovementTeachingCase = Readonly<{
-  id: CameraMovementTeachingCaseId;
-  anchor: CameraRigViewpointAnchor;
-  targetRegion: CameraMovementTargetRegion;
-  camera: Readonly<{
-    frontRiseMm: number;
-    rearRiseMm: number;
-    frontTiltDeg: number;
-    rearTiltDeg: number;
-    frontSwingDeg: 0;
-    cameraBodyPitchDeg: number;
-  }>;
-}>;
-
-export type CameraMovementTeachingCaseMetrics = Readonly<{
-  id: CameraMovementTeachingCaseId;
+export type CameraMovementTeachingCaseMetrics<
+  Id extends CameraMovementEvaluatedCaseId = CameraMovementEvaluatedCaseId,
+> = Readonly<{
+  id: Id;
   anchor: CameraRigViewpointAnchor;
   targetRegion: CameraMovementTargetRegion;
   camera: CameraMovementTeachingCase["camera"];
@@ -183,10 +122,16 @@ export type CameraMovementTeachingCalibrationEvaluation = Readonly<{
   candidate: CameraMovementTeachingCalibrationCandidate;
   effectiveCalibration: EffectiveCameraMovementCalibration;
   subjectBoundsWorld: Readonly<Bounds3>;
-  cases: Readonly<Record<CameraMovementTeachingCaseId, CameraMovementTeachingCaseMetrics>>;
-  comparisons: Readonly<
-    Record<CameraMovementTeachingCaseId, CameraMovementTeachingCaseComparison>
+  cases: Readonly<
+    Record<
+      CameraMovementTeachingCaseId,
+      CameraMovementTeachingCaseMetrics<CameraMovementTeachingCaseId>
+    >
   >;
+  probes: Readonly<{
+    oppositeRearTilt: CameraMovementTeachingCaseMetrics<CameraMovementOppositeRearTiltProbe["id"]>;
+  }>;
+  comparisons: Readonly<Record<CameraMovementTeachingCaseId, CameraMovementTeachingCaseComparison>>;
   summary: Readonly<{
     minimumMarginUv: number;
     minimumProjectedBoundsCoverage: number;
@@ -195,93 +140,9 @@ export type CameraMovementTeachingCalibrationEvaluation = Readonly<{
   }>;
 }>;
 
-const CASE_ID_SET: ReadonlySet<string> = new Set(CAMERA_MOVEMENT_TEACHING_CASE_IDS);
-
 const freezeVec = (value: Readonly<Vec3>): Readonly<Vec3> =>
   Object.freeze({ x: value.x, y: value.y, z: value.z });
-
-const freezeCamera = (
-  camera: CameraMovementTeachingCase["camera"],
-): CameraMovementTeachingCase["camera"] => Object.freeze({ ...camera });
-
-const teachingCase = (
-  id: CameraMovementTeachingCaseId,
-  anchor: CameraRigViewpointAnchor,
-  targetRegion: CameraMovementTargetRegion,
-  camera: CameraMovementTeachingCase["camera"],
-): CameraMovementTeachingCase =>
-  Object.freeze({
-    id,
-    anchor,
-    targetRegion,
-    camera: freezeCamera(camera),
-  });
-
-const neutralMovements = (): CameraMovementTeachingCase["camera"] => ({
-  frontRiseMm: 0,
-  rearRiseMm: 0,
-  frontTiltDeg: 0,
-  rearTiltDeg: 0,
-  frontSwingDeg: 0,
-  cameraBodyPitchDeg: 0,
-});
-
-export const createCameraMovementTeachingCases = (
-  candidate: CameraMovementTeachingCalibrationCandidate,
-): Readonly<Record<CameraMovementTeachingCaseId, CameraMovementTeachingCase>> => {
-  const neutral = neutralMovements();
-  const cases: Record<CameraMovementTeachingCaseId, CameraMovementTeachingCase> = {
-    neutral: teachingCase("neutral", "mid", "middle", neutral),
-    "A-front-tilt": teachingCase("A-front-tilt", "mid", "middle", {
-      ...neutral,
-      frontTiltDeg: candidate.tiltDeg,
-    }),
-    "B-rear-tilt": teachingCase("B-rear-tilt", "mid", "middle", {
-      ...neutral,
-      rearTiltDeg: candidate.tiltDeg,
-    }),
-    "C1-front-rise": teachingCase("C1-front-rise", "mid", "middle", {
-      ...neutral,
-      frontRiseMm: candidate.riseMm,
-    }),
-    "C2-rear-rise": teachingCase("C2-rear-rise", "mid", "middle", {
-      ...neutral,
-      rearRiseMm: candidate.riseMm,
-    }),
-    "C3-high-viewpoint": teachingCase("C3-high-viewpoint", "high", "upper", {
-      ...neutral,
-      cameraBodyPitchDeg: candidate.bodyPitchDeg,
-    }),
-    "D1-front-fall": teachingCase("D1-front-fall", "mid", "middle", {
-      ...neutral,
-      frontRiseMm: -candidate.riseMm,
-    }),
-    "D2-rear-fall": teachingCase("D2-rear-fall", "mid", "middle", {
-      ...neutral,
-      rearRiseMm: -candidate.riseMm,
-    }),
-    "D3-low-viewpoint": teachingCase("D3-low-viewpoint", "low", "lower", {
-      ...neutral,
-      cameraBodyPitchDeg: -candidate.bodyPitchDeg,
-    }),
-  };
-  return Object.freeze(cases);
-};
-
-export const getCameraMovementTeachingCase = (
-  cases: Readonly<Record<CameraMovementTeachingCaseId, CameraMovementTeachingCase>>,
-  id: string,
-): CameraMovementTeachingCase => {
-  if (!CASE_ID_SET.has(id)) {
-    throw new Error(`Unknown camera-movement teaching case: ${id}`);
-  }
-  return cases[id as CameraMovementTeachingCaseId];
-};
-
-const metricValue = <T>(
-  metric: CameraMovementDiagnosticMetric<T>,
-  name: string,
-): T => {
+const metricValue = <T>(metric: CameraMovementDiagnosticMetric<T>, name: string): T => {
   if (metric.status !== "available") {
     throw new Error(`Camera-movement teaching metric ${name} is unavailable: ${metric.reason}`);
   }
@@ -311,20 +172,18 @@ const bodyPivotForCandidate = (
   );
   const candidateImageDistance = imageDistanceMm(
     candidate.focalLengthMm,
-    candidate.subject.distanceMm,
+    candidate.focusDistanceMm,
   );
   return Object.freeze({
     x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
     y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
-    z:
-      CAMERA_BODY_PIVOT_RIG_LOCAL.z +
-      (baselineImageDistance - candidateImageDistance) / 2,
+    z: CAMERA_BODY_PIVOT_RIG_LOCAL.z + (baselineImageDistance - candidateImageDistance) / 2,
   });
 };
 
 const cameraStateForCase = (
   calibration: EffectiveCameraMovementCalibration,
-  teaching: CameraMovementTeachingCase,
+  teaching: CameraMovementTeachingCase | CameraMovementOppositeRearTiltProbe,
   bodyPitchPivotRigLocal: Readonly<Vec3>,
 ): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
@@ -334,23 +193,22 @@ const cameraStateForCase = (
   ...teaching.camera,
   cameraBodyPivotWorld: { ...bodyPitchPivotRigLocal },
   viewpointAnchor: teaching.anchor,
-  cameraRigPlacement: resolveCameraRigViewpointAnchor(
-    calibration.cameraRig,
-    teaching.anchor,
-  ),
+  cameraRigPlacement: resolveCameraRigViewpointAnchor(calibration.cameraRig, teaching.anchor),
   activeSceneId: understandingCameraMovementsScene.id,
   activeTaskId: null,
   mode: "free",
   focusMode: "finite",
 });
 
-const finiteCaseMetrics = (
+const finiteCaseMetrics = <
+  Teaching extends CameraMovementTeachingCase | CameraMovementOppositeRearTiltProbe,
+>(
   candidate: CameraMovementTeachingCalibrationCandidate,
   calibration: EffectiveCameraMovementCalibration,
-  teaching: CameraMovementTeachingCase,
+  teaching: Teaching,
   subjectBoundsWorld: Readonly<Bounds3>,
   bodyPitchPivotRigLocal: Readonly<Vec3>,
-): CameraMovementTeachingCaseMetrics => {
+): CameraMovementTeachingCaseMetrics<Teaching["id"]> => {
   const lattice = generateCameraMovementLattice(calibration.subject);
   const scene = {
     ...understandingCameraMovementsScene,
@@ -358,7 +216,7 @@ const finiteCaseMetrics = (
     cameraPreset: {
       ...understandingCameraMovementsScene.cameraPreset,
       focalLengthMm: candidate.focalLengthMm,
-      focusDistanceMm: candidate.subject.distanceMm,
+      focusDistanceMm: candidate.focusDistanceMm,
       cameraBodyPivotWorld: { ...bodyPitchPivotRigLocal },
     },
   };
@@ -399,10 +257,7 @@ const finiteCaseMetrics = (
     );
   }
 
-  const targetProjection = metricValue(
-    diagnostics.selectedTarget.uv,
-    `${teaching.id}.targetUv`,
-  );
+  const targetProjection = metricValue(diagnostics.selectedTarget.uv, `${teaching.id}.targetUv`);
   const projectedBoundsUv = metricValue(
     diagnostics.projectedBoundsUv,
     `${teaching.id}.projectedBoundsUv`,
@@ -414,14 +269,8 @@ const finiteCaseMetrics = (
     bottom: metricValue(diagnostics.marginsUv.bottom, `${teaching.id}.margins.bottom`),
   };
   const coverage = {
-    horizontal: metricValue(
-      diagnostics.coverage.horizontal,
-      `${teaching.id}.coverage.horizontal`,
-    ),
-    vertical: metricValue(
-      diagnostics.coverage.vertical,
-      `${teaching.id}.coverage.vertical`,
-    ),
+    horizontal: metricValue(diagnostics.coverage.horizontal, `${teaching.id}.coverage.horizontal`),
+    vertical: metricValue(diagnostics.coverage.vertical, `${teaching.id}.coverage.vertical`),
     projectedBoundsInsideFrame: metricValue(
       diagnostics.coverage.projectedBoundsInsideFrame,
       `${teaching.id}.coverage.projectedBoundsInsideFrame`,
@@ -473,10 +322,7 @@ const finiteCaseMetrics = (
         `${teaching.id}.identity.geometryId`,
       ),
       edgeCount: assertFiniteNumber(
-        metricValue(
-          diagnostics.identity.edgeCount,
-          `${teaching.id}.identity.edgeCount`,
-        ),
+        metricValue(diagnostics.identity.edgeCount, `${teaching.id}.identity.edgeCount`),
         `${teaching.id}.identity.edgeCount`,
       ),
     }),
@@ -486,14 +332,8 @@ const finiteCaseMetrics = (
     }),
     targetInFrame: targetProjection.inFrame,
     targetOffsetFromFilmCentreUv: Object.freeze({
-      u: assertFiniteNumber(
-        targetProjection.uv.u - 0.5,
-        `${teaching.id}.targetOffset.u`,
-      ),
-      v: assertFiniteNumber(
-        targetProjection.uv.v - 0.5,
-        `${teaching.id}.targetOffset.v`,
-      ),
+      u: assertFiniteNumber(targetProjection.uv.u - 0.5, `${teaching.id}.targetOffset.u`),
+      v: assertFiniteNumber(targetProjection.uv.v - 0.5, `${teaching.id}.targetOffset.v`),
     }),
     projectedBoundsUv: Object.freeze({
       minU: assertFiniteNumber(projectedBoundsUv.minU, `${teaching.id}.bounds.minU`),
@@ -518,10 +358,7 @@ const finiteCaseMetrics = (
       ) as CameraMovementTeachingCaseMetrics["coverage"],
     ),
     convergenceSignal: assertFiniteNumber(
-      metricValue(
-        diagnostics.convergence.normalizedSignal,
-        `${teaching.id}.convergenceSignal`,
-      ),
+      metricValue(diagnostics.convergence.normalizedSignal, `${teaching.id}.convergenceSignal`),
       `${teaching.id}.convergenceSignal`,
     ),
     lensCentreWorld: assertFiniteVec(lensCentreWorld, `${teaching.id}.lensCentreWorld`),
@@ -560,8 +397,8 @@ const finiteCaseMetrics = (
 };
 
 const compareWithNeutral = (
-  metrics: CameraMovementTeachingCaseMetrics,
-  neutral: CameraMovementTeachingCaseMetrics,
+  metrics: CameraMovementTeachingCaseMetrics<CameraMovementTeachingCaseId>,
+  neutral: CameraMovementTeachingCaseMetrics<CameraMovementTeachingCaseId>,
 ): CameraMovementTeachingCaseComparison => {
   const deltaU = metrics.targetUv.u - neutral.targetUv.u;
   const deltaV = metrics.targetUv.v - neutral.targetUv.v;
@@ -594,6 +431,35 @@ const compareWithNeutral = (
 export const evaluateCameraMovementTeachingCalibrationCandidate = (
   candidate: CameraMovementTeachingCalibrationCandidate,
 ): CameraMovementTeachingCalibrationEvaluation => {
+  for (const [name, value] of Object.entries({
+    subjectDistanceMm: candidate.subjectDistanceMm,
+    focalLengthMm: candidate.focalLengthMm,
+    focusDistanceMm: candidate.focusDistanceMm,
+    arcRadiusMm: candidate.arcRadiusMm,
+    arcAngleDeg: candidate.arcAngleDeg,
+  })) {
+    if (!Number.isFinite(value)) {
+      throw new Error(`Camera-movement teaching candidate ${name} must be finite`);
+    }
+  }
+  if (candidate.subjectDistanceMm <= 0) {
+    throw new Error("Camera-movement teaching candidate subjectDistanceMm must be positive");
+  }
+  if (candidate.focalLengthMm <= 0) {
+    throw new Error("Camera-movement teaching candidate focalLengthMm must be positive");
+  }
+  if (
+    candidate.focusDistanceMm - candidate.focalLengthMm <=
+    CAMERA_MOVEMENT_FOCUS_DISTANCE_SAFE_EPSILON_MM
+  ) {
+    throw new Error(
+      `Camera-movement teaching candidate focusDistanceMm must exceed focalLengthMm by more than ${CAMERA_MOVEMENT_FOCUS_DISTANCE_SAFE_EPSILON_MM} mm`,
+    );
+  }
+  if (candidate.arcRadiusMm <= 0) {
+    throw new Error("Camera-movement teaching candidate arcRadiusMm must be positive");
+  }
+
   const effectiveCalibration = resolveEffectiveCameraMovementCalibration(
     CAMERA_MOVEMENT_CALIBRATION_BASELINE,
     {
@@ -604,14 +470,19 @@ export const evaluateCameraMovementTeachingCalibrationCandidate = (
         cubeSizeMm: candidate.subject.cubeSizeMm,
         horizontalGapMm: candidate.subject.horizontalGapMm,
         verticalGapMm: candidate.subject.verticalGapMm,
-        subjectDistanceMm: candidate.subject.distanceMm,
+        subjectDistanceMm: candidate.subjectDistanceMm,
       },
       optics: {
         focalLengthCandidatesMm: [...CAMERA_MOVEMENT_CALIBRATION_SEARCH_SPACE.focalLengthMm],
         provisionalFocalLengthMm: candidate.focalLengthMm,
-        provisionalFocusDistanceMm: candidate.subject.distanceMm,
+        provisionalFocusDistanceMm: candidate.focusDistanceMm,
       },
       rig: {
+        midRigOriginWorld: {
+          x: CAMERA_MOVEMENT_CALIBRATION_BASELINE.subject.originWorld.x,
+          y: CAMERA_MOVEMENT_CALIBRATION_BASELINE.subject.originWorld.y,
+          z: candidate.subjectDistanceMm - candidate.arcRadiusMm,
+        },
         arcAngleDeg: candidate.arcAngleDeg,
       },
     },
@@ -641,6 +512,7 @@ export const evaluateCameraMovementTeachingCalibrationCandidate = (
   });
   const bodyPitchPivotRigLocal = bodyPivotForCandidate(candidate);
   const teachingCases = createCameraMovementTeachingCases(candidate);
+  const oppositeRearTiltProbe = createCameraMovementOppositeRearTiltProbe(candidate);
   const caseEntries = CAMERA_MOVEMENT_TEACHING_CASE_IDS.map((id) => {
     const teaching = getCameraMovementTeachingCase(teachingCases, id);
     return [
@@ -657,21 +529,25 @@ export const evaluateCameraMovementTeachingCalibrationCandidate = (
   const cases = Object.freeze(
     Object.fromEntries(caseEntries) as Record<
       CameraMovementTeachingCaseId,
-      CameraMovementTeachingCaseMetrics
+      CameraMovementTeachingCaseMetrics<CameraMovementTeachingCaseId>
     >,
   );
+  const probes = Object.freeze({
+    oppositeRearTilt: finiteCaseMetrics(
+      candidate,
+      effectiveCalibration,
+      oppositeRearTiltProbe,
+      subjectBoundsWorld,
+      bodyPitchPivotRigLocal,
+    ),
+  });
   const neutral = cases.neutral;
   const comparisons = Object.freeze(
     Object.fromEntries(
-      CAMERA_MOVEMENT_TEACHING_CASE_IDS.map((id) => [
-        id,
-        compareWithNeutral(cases[id], neutral),
-      ]),
+      CAMERA_MOVEMENT_TEACHING_CASE_IDS.map((id) => [id, compareWithNeutral(cases[id], neutral)]),
     ) as Record<CameraMovementTeachingCaseId, CameraMovementTeachingCaseComparison>,
   );
-  const allMargins = Object.values(cases).flatMap(({ marginsUv }) =>
-    Object.values(marginsUv),
-  );
+  const allMargins = Object.values(cases).flatMap(({ marginsUv }) => Object.values(marginsUv));
   const nonNeutral = CAMERA_MOVEMENT_TEACHING_CASE_IDS.filter((id) => id !== "neutral");
   const targetOffsets = Object.values(cases).map(({ targetOffsetFromFilmCentreUv }) =>
     Math.hypot(targetOffsetFromFilmCentreUv.u, targetOffsetFromFilmCentreUv.v),
@@ -685,17 +561,13 @@ export const evaluateCameraMovementTeachingCalibrationCandidate = (
     effectiveCalibration,
     subjectBoundsWorld,
     cases,
+    probes,
     comparisons,
     summary: Object.freeze({
-      minimumMarginUv: assertFiniteNumber(
-        Math.min(...allMargins),
-        "summary.minimumMarginUv",
-      ),
+      minimumMarginUv: assertFiniteNumber(Math.min(...allMargins), "summary.minimumMarginUv"),
       minimumProjectedBoundsCoverage: assertFiniteNumber(
         Math.min(
-          ...Object.values(cases).map(
-            ({ coverage }) => coverage.projectedBoundsInsideFrame,
-          ),
+          ...Object.values(cases).map(({ coverage }) => coverage.projectedBoundsInsideFrame),
         ),
         "summary.minimumProjectedBoundsCoverage",
       ),
@@ -704,11 +576,7 @@ export const evaluateCameraMovementTeachingCalibrationCandidate = (
         "summary.maximumTargetOffsetFromFilmCentreUv",
       ),
       minimumNonNeutralTargetDisplacementUv: assertFiniteNumber(
-        Math.min(
-          ...nonNeutral.map(
-            (id) => comparisons[id].targetDisplacementFromNeutralUv,
-          ),
-        ),
+        Math.min(...nonNeutral.map((id) => comparisons[id].targetDisplacementFromNeutralUv)),
         "summary.minimumNonNeutralTargetDisplacementUv",
       ),
     }),

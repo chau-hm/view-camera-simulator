@@ -26,7 +26,7 @@ import {
   CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION,
   CAMERA_MOVEMENT_TEACHING_CASE_IDS,
   createCameraMovementTeachingCases,
-} from "../../scenes/cameraMovementTeachingCalibration";
+} from "../../scenes/cameraMovementTeachingCases";
 
 const resolveModel = (
   overrides: Parameters<typeof resolveEffectiveCameraMovementCalibration>[1] = {},
@@ -60,7 +60,6 @@ const collectOwnedResources = (group: THREE.Group) => {
 afterEach(() => {
   vi.restoreAllMocks();
 });
-
 describe("dynamic camera-movement lattice render model", () => {
   it("changes geometry identity only for geometry-affecting calibration", () => {
     const baseline = resolveModel();

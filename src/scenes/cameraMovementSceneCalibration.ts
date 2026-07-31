@@ -51,7 +51,59 @@ export type CameraMovementSceneCalibration = Readonly<{
   presentation: CameraMovementPresentationCalibration;
 }>;
 
-const cameraMovementLatticeOriginWorld: Readonly<Vec3> = { x: 0, y: 0, z: 2000 };
+export type CameraMovementSelectedPhysicalCalibration = Readonly<{
+  subject: Readonly<{
+    columns: number;
+    rows: number;
+    levels: number;
+    cubeSizeMm: number;
+    horizontalGapMm: number;
+    verticalGapMm: number;
+    subjectDistanceMm: number;
+  }>;
+  optics: Readonly<{
+    focalLengthMm: number;
+    focusDistanceMm: number;
+  }>;
+  cameraRig: Readonly<{
+    arcRadiusMm: number;
+    arcAngleDeg: number;
+  }>;
+}>;
+
+/**
+ * Raw physical selection produced by the bounded calibration exercise.
+ *
+ * Subject placement, optical focus, and rig radius are intentionally stored
+ * independently even though the selected values are all 2,000 mm. Teaching
+ * movements and public-control rounding do not belong to this contract.
+ */
+export const CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION = Object.freeze({
+  subject: Object.freeze({
+    columns: 3,
+    rows: 3,
+    levels: 5,
+    cubeSizeMm: 260,
+    horizontalGapMm: 0,
+    verticalGapMm: 0,
+    subjectDistanceMm: 2000,
+  }),
+  optics: Object.freeze({
+    focalLengthMm: 90,
+    focusDistanceMm: 2000,
+  }),
+  cameraRig: Object.freeze({
+    arcRadiusMm: 2000,
+    arcAngleDeg: 20,
+  }),
+}) satisfies CameraMovementSelectedPhysicalCalibration;
+
+const selectedPhysical = CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION;
+const cameraMovementLatticeOriginWorld: Readonly<Vec3> = Object.freeze({
+  x: 0,
+  y: 0,
+  z: selectedPhysical.subject.subjectDistanceMm,
+});
 
 /**
  * Scene-specific tuning scaffold for Understanding Camera Movements.
@@ -66,29 +118,29 @@ export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration =
   calibrationStatus: "provisional",
   geometryAndOpticsUnits: "millimetres",
   subject: {
-    columns: 3,
-    rows: 3,
-    levels: 5,
-    cubeSizeMm: 260,
-    horizontalGapMm: 0,
-    verticalGapMm: 0,
+    columns: selectedPhysical.subject.columns,
+    rows: selectedPhysical.subject.rows,
+    levels: selectedPhysical.subject.levels,
+    cubeSizeMm: selectedPhysical.subject.cubeSizeMm,
+    horizontalGapMm: selectedPhysical.subject.horizontalGapMm,
+    verticalGapMm: selectedPhysical.subject.verticalGapMm,
     originWorld: cameraMovementLatticeOriginWorld,
-    upperTargetLevel: 4,
-    middleTargetLevel: 2,
+    upperTargetLevel: selectedPhysical.subject.levels - 1,
+    middleTargetLevel: Math.floor((selectedPhysical.subject.levels - 1) / 2),
     lowerTargetLevel: 0,
   },
   optics: {
     focalLengthCandidatesMm: [90, 105, 120, 150],
-    provisionalFocalLengthMm: 90,
-    provisionalFocusDistanceMm: 2000,
+    provisionalFocalLengthMm: selectedPhysical.optics.focalLengthMm,
+    provisionalFocusDistanceMm: selectedPhysical.optics.focusDistanceMm,
   },
   cameraRig: {
     arcPlane: "yz",
     arcCenterWorld: cameraMovementLatticeOriginWorld,
     midRigOriginWorld: { x: 0, y: 0, z: 0 },
-    arcRadiusMm: 2000,
-    highArcAngleDeg: 20,
-    lowArcAngleDeg: -20,
+    arcRadiusMm: selectedPhysical.cameraRig.arcRadiusMm,
+    highArcAngleDeg: selectedPhysical.cameraRig.arcAngleDeg,
+    lowArcAngleDeg: -selectedPhysical.cameraRig.arcAngleDeg,
     provisionalBasePitchDeg: 0,
     defaultAnchor: "mid",
     anchorMetadata: {
