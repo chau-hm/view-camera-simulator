@@ -114,9 +114,18 @@ export const SimulatorWorkspace = ({
   useEffect(
     () => () => {
       if (calibrationEnabled) clearCameraMovementCalibrationSession();
-      clearSimulatorRouteInitialization();
+      // Restore Neutral on leave-and-return for the public teaching route only.
+      // Other free scenes intentionally preserve their in-memory state on
+      // leave-and-return, so the route-init guard is cleared solely here.
+      if (
+        sceneId === "understanding-camera-movements" &&
+        mode === "free" &&
+        !calibrationEnabled
+      ) {
+        clearSimulatorRouteInitialization();
+      }
     },
-    [calibrationEnabled, clearCameraMovementCalibrationSession, clearSimulatorRouteInitialization],
+    [calibrationEnabled, clearCameraMovementCalibrationSession, clearSimulatorRouteInitialization, mode, sceneId],
   );
 
   const closeGeometryPanel = useCallback((restoreFocus = true) => {

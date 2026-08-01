@@ -99,3 +99,26 @@ describe("public camera movement controls in the workspace", () => {
     expect(state.camera.viewpointAnchor).toBe("mid");
   });
 });
+
+describe("non-teaching scene leave-and-return preserves in-memory state", () => {
+  it("architecture-rise free route preserves movement state on unmount/return", () => {
+    const workspace = (
+      <MemoryRouter>
+        <SimulatorWorkspace
+          mode="free"
+          sceneId="architecture-rise"
+          taskId={null}
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>
+    );
+    render(workspace);
+    useAppStore.getState().setRise(20);
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(20);
+
+    cleanup();
+    render(workspace);
+    // Non-teaching free scenes must NOT re-initialize to preset on leave/return.
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(20);
+  });
+});

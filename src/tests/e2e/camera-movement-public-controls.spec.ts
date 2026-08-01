@@ -140,3 +140,40 @@ test("calibration route preserves workbench and hides public controls", async ({
   // Public teaching controls remain absent after a workbench edit.
   await expect(page.getByRole("radio", { name: "A — Front tilt" })).toHaveCount(0);
 });
+
+test("teaching controls stay usable and non-overflowing at 1024px and narrow widths", async ({ page }) => {
+  test.setTimeout(90_000);
+  for (const viewport of [{ width: 1024, height: 768 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/simulator/free/understanding-camera-movements");
+    const aside = page.locator(".simulator-aside");
+    await expect(aside).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("radio", { name: "Neutral" })).toBeVisible();
+
+    const overflow = await page.evaluate(() => {
+      const aside = document.querySelector<HTMLElement>(".simulator-aside");
+      const body = document.body;
+      return {
+        asideOverflow: aside ? aside.scrollWidth - aside.clientWidth : 0,
+        bodyOverflow: body ? body.scrollWidth - body.clientWidth : 0,
+      };
+    });
+    expect(overflow.asideOverflow).toBeLessThanOrEqual(2);
+    expect(overflow.bodyOverflow).toBeLessThanOrEqual(2);
+
+    // All nine cases reachable within the independently scrollable sidebar.
+    for (const label of [
+      "Neutral",
+      "A — Front tilt",
+      "B — Rear tilt",
+      "C1 — Front rise",
+      "C2 — Rear rise",
+      "C3 — Higher viewpoint",
+      "D1 — Front fall",
+      "D2 — Rear fall",
+      "D3 — Lower viewpoint",
+    ]) {
+      await expect(page.getByRole("radio", { name: label })).toBeAttached();
+    }
+  }
+});
