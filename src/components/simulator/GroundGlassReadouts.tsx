@@ -2,6 +2,7 @@ import { UI_COPY } from "../../ui/copy";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import type { RenderQualityProfile } from "../../types/ui";
 import type { CameraMovementField } from "../../types/scene";
+import type { CameraMovementPublicReadout } from "../../scenes/cameraMovementPublicTeaching";
 
 type ActiveMovementInfo = {
   field: CameraMovementField;
@@ -18,6 +19,8 @@ type GroundGlassReadoutsProps = {
   focusTargets?: { id: string; sharpnessPercent: number }[];
   /** Optional active movement info for single-movement scenes. */
   activeMovement?: ActiveMovementInfo | null;
+  /** Optional public teaching readout for Understanding Camera Movements. */
+  teachingReadout?: CameraMovementPublicReadout | null;
   rttRuntimeInfo?: import("../../render/groundGlassRttDimensions").GroundGlassRttRuntimeInfo | null;
 };
 
@@ -42,6 +45,7 @@ export const CurrentSettingsReadout = ({
   aperture,
   renderQuality,
   activeMovement,
+  teachingReadout,
 }: GroundGlassReadoutsProps) => {
   return (
     <div aria-label="CurrentSettingsReadout" className="simulator-info-card simulator-info-card--settings">
@@ -50,7 +54,12 @@ export const CurrentSettingsReadout = ({
         <div className="current-settings-group">
           <dt>Movement</dt>
           <dd>
-            {activeMovement ? (
+            {teachingReadout ? (
+              <div className="current-settings-row">
+                {teachingReadout.label}
+                {teachingReadout.value ? ` · ${teachingReadout.value}` : ""}
+              </div>
+            ) : activeMovement ? (
               <div className="current-settings-row">
                 {MOVEMENT_LABELS[activeMovement.field]}: {formatMovementValue(activeMovement.field, activeMovement.value)}
               </div>

@@ -91,13 +91,17 @@ describe("camera-rig viewpoint store policy", () => {
     expect(useAppStore.getState().camera.frontTiltDeg).toBe(0);
   });
 
-  it("preserves placement on reset, rejects invalid anchors, and ignores other scenes", () => {
+  it("reset restores the mid neutral placement, rejects invalid anchors, and ignores other scenes", () => {
     init();
     const store = useAppStore.getState();
     store.setCameraMovementViewpointAnchor("high");
-    const placement = useAppStore.getState().camera.cameraRigPlacement;
     store.setRise(4); store.setCameraBodyPitchDeg(2); store.resetMovements();
-    expect(useAppStore.getState().camera.cameraRigPlacement).toEqual(placement);
+    // Public route Reset Movements applies complete Neutral: no stale high anchor.
+    expect(useAppStore.getState().camera.cameraRigPlacement).toMatchObject({
+      kind: "arc-anchor",
+      anchor: "mid",
+    });
+    expect(useAppStore.getState().camera.viewpointAnchor).toBe("mid");
     expect(useAppStore.getState().camera.cameraBodyPitchDeg).toBe(0);
     const before = useAppStore.getState().camera;
     store.setCameraMovementViewpointAnchor("bad" as never);

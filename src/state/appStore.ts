@@ -40,6 +40,11 @@ import {
   type EffectiveCameraMovementCalibration,
   type CalibrationValidationResult,
 } from "../scenes/cameraMovementEffectiveCalibration";
+import {
+  buildCameraMovementTeachingCasePatch,
+  CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES,
+  type CameraMovementPublicCaseId,
+} from "../scenes/cameraMovementPublicTeaching";
 
 const defaultControlState = {
   focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
@@ -264,6 +269,10 @@ export type AppStore = {
   resetCameraMovementCalibration: () => void;
   clearCameraMovementCalibrationSession: () => void;
   setCameraMovementTargetRegion: (region: CameraMovementTargetRegion) => void;
+  /** Apply one canonical PR #32 teaching case in a single state transaction. */
+  applyCameraMovementTeachingCase: (caseId: CameraMovementPublicCaseId) => void;
+  /** Clear the route-initialization guard so a remount re-initializes the route. */
+  clearSimulatorRouteInitialization: () => void;
 };
 
 const createCalibrationSession = (
@@ -456,6 +465,28 @@ export const useAppStore = create<AppStore>((set) => ({
         ? { scene: { ...state.scene, targetRegion: region } }
         : {},
     ),
+
+  applyCameraMovementTeachingCase: (caseId) =>
+    set((state) => {
+      if (state.camera.activeSceneId !== "understanding-camera-movements") return {};
+      if (state.cameraMovementCalibrationSession.active) return {};
+      if (!(caseId in CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES)) return {};
+      const patch = buildCameraMovementTeachingCasePatch(caseId);
+      return {
+        camera: {
+          ...state.camera,
+          ...patch.camera,
+          cameraRigPlacement: resolveRigPlacement(
+            state.camera.activeSceneId,
+            patch.camera.viewpointAnchor,
+          ),
+        },
+        scene: { ...state.scene, targetRegion: patch.targetRegion },
+      };
+    }),
+
+  clearSimulatorRouteInitialization: () =>
+    set(() => ({ lastInitializedRouteKey: null })),
 
   setCurrentTaskEvaluation: (evaluation) =>
     set((state) => ({
@@ -870,8 +901,37 @@ export const useAppStore = create<AppStore>((set) => ({
       const sceneId = state.camera.activeSceneId;
       const defaultMovement = resolveDefaultMovement(sceneId);
       const scenePreset = resolveScenePresetReset(sceneId);
-      // For movement-comparison scenes, use the scene preset
-      // For all other scenes, use the global defaultControlState
+      const publicTeachingActive =
+        isCameraMovementsScene(sceneId) &&
+        !state.cameraMovementCalibrationSession.active;
+      // For the public Understanding Camera Movements route, Reset Movements
+      // applies the complete Neutral teaching case (mid anchor, middle target,
+      // zero movements, zero body pitch) and never preserves a stale high/low
+      // anchor or rig placement.
+      if (publicTeachingActive) {
+        const neutral = buildCameraMovementTeachingCasePatch("neutral");
+        return {
+          camera: {
+            ...state.camera,
+            frontRiseMm: neutral.camera.frontRiseMm,
+            rearRiseMm: neutral.camera.rearRiseMm,
+            frontTiltDeg: neutral.camera.frontTiltDeg,
+            rearTiltDeg: neutral.camera.rearTiltDeg,
+            frontSwingDeg: neutral.camera.frontSwingDeg,
+            cameraBodyPitchDeg: neutral.camera.cameraBodyPitchDeg,
+            viewpointAnchor: neutral.camera.viewpointAnchor,
+            cameraRigPlacement: resolveRigPlacement(
+              sceneId,
+              neutral.camera.viewpointAnchor,
+            ),
+          },
+          scene: { ...state.scene, targetRegion: neutral.targetRegion },
+          task: { ...state.task, currentTaskEvaluation: null },
+          selectedMovement: defaultMovement,
+        };
+      }
+      // For all other scenes (and the calibration route), use the scene preset
+      // or global default state.
       const resetValues = Object.keys(scenePreset).length > 0
         ? scenePreset
         : defaultControlState;
