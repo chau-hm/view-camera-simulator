@@ -22,6 +22,11 @@ import {
   CAMERA_MOVEMENT_CALIBRATION_BASELINE,
   resolveEffectiveCameraMovementCalibration,
 } from "../../scenes/cameraMovementEffectiveCalibration";
+import {
+  CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION,
+  CAMERA_MOVEMENT_TEACHING_CASE_IDS,
+  createCameraMovementTeachingCases,
+} from "../../scenes/cameraMovementTeachingCases";
 
 const resolveModel = (
   overrides: Parameters<typeof resolveEffectiveCameraMovementCalibration>[1] = {},
@@ -55,7 +60,6 @@ const collectOwnedResources = (group: THREE.Group) => {
 afterEach(() => {
   vi.restoreAllMocks();
 });
-
 describe("dynamic camera-movement lattice render model", () => {
   it("changes geometry identity only for geometry-affecting calibration", () => {
     const baseline = resolveModel();
@@ -157,6 +161,56 @@ describe("dynamic camera-movement lattice render model", () => {
         "understanding-camera-movements",
         rtt,
       );
+    }
+  });
+
+  it("keeps canonical R3F and RTT geometry stable across every selected teaching case", () => {
+    const model = resolveModel();
+    const teachingCases = createCameraMovementTeachingCases(
+      CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION,
+    );
+
+    for (const caseId of CAMERA_MOVEMENT_TEACHING_CASE_IDS) {
+      const teachingCase = teachingCases[caseId];
+      const interactive = createCameraMovementsGroup(
+        cameraMovementsGroupOptionsFromRenderModel(
+          model,
+          teachingCase.targetRegion,
+        ),
+      );
+      const rtt = createRegisteredRttSubject(
+        "understanding-camera-movements",
+        {
+          targetRegion: teachingCase.targetRegion,
+          cameraMovementRenderModel: model,
+        },
+      )!;
+      try {
+        expect(interactive.userData.canonicalGeometryId, caseId).toBe(
+          model.geometryId,
+        );
+        expect(rtt.userData.canonicalGeometryId, caseId).toBe(
+          model.geometryId,
+        );
+        expect(interactive.userData.canonicalEdgeCount, caseId).toBe(
+          model.lattice.edges.length,
+        );
+        expect(rtt.userData.canonicalEdgeCount, caseId).toBe(
+          model.lattice.edges.length,
+        );
+        expect(rtt.userData.canonicalEdgeIds, caseId).toEqual(
+          interactive.userData.canonicalEdgeIds,
+        );
+        expect(rtt.userData.targetRegion, caseId).toBe(
+          teachingCase.targetRegion,
+        );
+      } finally {
+        disposeCameraMovementsGroup(interactive);
+        disposeRegisteredRttSubject(
+          "understanding-camera-movements",
+          rtt,
+        );
+      }
     }
   });
 

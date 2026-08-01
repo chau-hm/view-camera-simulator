@@ -3,6 +3,15 @@ import { getSceneById } from "../../scenes/definitions";
 import { publicSceneCatalog } from "../../app/publicScenes";
 import { useAppStore } from "../../state/appStore";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import { resolveCameraRigViewpointAnchors } from "../../scenes/cameraRigViewpointGeometry";
+import {
+  CAMERA_BODY_PIVOT_RIG_LOCAL,
+  resolveCameraBodyBoundsWorld,
+} from "../../scenes/understandingCameraMovementsGeometry";
+import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
+import { CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS } from "../../scenes/cameraMovementTeachingCases";
+import type { CameraRigTransform } from "../../types/optics";
 
 describe("Understanding Camera Movements scene definition", () => {
   it("is registered in the scene registry", () => {
@@ -57,6 +66,153 @@ describe("Understanding Camera Movements scene definition", () => {
     expect(scene.bounds.min.z).toBeLessThan(scene.bounds.max.z);
     expect(scene.cameraPreset.focusDistanceMm).toBeGreaterThan(0);
     expect(scene.cameraPreset.aperture).toBeGreaterThan(0);
+  });
+});
+
+describe("Understanding Camera Movements static observer framing", () => {
+  const WORLD_SCALE = 0.001;
+  const FOV_DEG = 45;
+  const ASPECT = 1024 / 768;
+
+  /** Canonical body-pitch for each teaching anchor (0 neutral, +6 high, -6 low). */
+  const bodyPitchForAnchor: Record<"mid" | "high" | "low", number> = {
+    mid: 0,
+    high: CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.bodyPitchDeg,
+    low: -CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.bodyPitchDeg,
+  };
+
+  /**
+   * World-space AABB of the complete camera body for one anchor, after the
+   * canonical anchor placement and body-pitch transforms.
+   */
+  const rigBoundsForAnchor = (
+    anchor: ReturnType<typeof resolveCameraRigViewpointAnchors>["mid"],
+  ): ReturnType<typeof resolveCameraBodyBoundsWorld> => {
+    const transform: CameraRigTransform = {
+      rigOriginWorld: anchor.rigOriginWorld,
+      basePitchDeg: anchor.basePitchDeg,
+      bodyPitchDeg: bodyPitchForAnchor[anchor.anchor],
+      bodyPitchPivotRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
+    };
+    return resolveCameraBodyBoundsWorld(transform);
+  };
+
+  const rigBoundsForEachAnchor = () => {
+    const rig = resolveCameraRigViewpointAnchors(CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig);
+    return [rig.mid, rig.high, rig.low].map(rigBoundsForAnchor);
+  };
+
+  /** True when every corner of the world-space bounds is inside the observer FOV. */
+  const allCornersInView = (
+    bounds: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } },
+    positionWorld: [number, number, number],
+    targetWorld: [number, number, number],
+  ): boolean => {
+    const dir = {
+      x: targetWorld[0] - positionWorld[0],
+      y: targetWorld[1] - positionWorld[1],
+      z: targetWorld[2] - positionWorld[2],
+    };
+    const length = Math.hypot(dir.x, dir.y, dir.z);
+    const unitDir = { x: dir.x / length, y: dir.y / length, z: dir.z / length };
+    const up = { x: 0, y: 1, z: 0 };
+    const right = {
+      x: unitDir.z * up.y - unitDir.y * up.z,
+      y: unitDir.x * up.z - unitDir.z * up.x,
+      z: unitDir.y * up.x - unitDir.x * up.y,
+    };
+    const rightLength = Math.hypot(right.x, right.y, right.z);
+    const unitRight = { x: right.x / rightLength, y: right.y / rightLength, z: right.z / rightLength };
+    const unitUp = {
+      x: unitRight.y * unitDir.z - unitRight.z * unitDir.y,
+      y: unitRight.z * unitDir.x - unitRight.x * unitDir.z,
+      z: unitRight.x * unitDir.y - unitRight.y * unitDir.x,
+    };
+    const halfV = (FOV_DEG / 2) * (Math.PI / 180);
+    const halfH = Math.atan(Math.tan(halfV) * ASPECT);
+    for (const x of [bounds.min.x, bounds.max.x]) {
+      for (const y of [bounds.min.y, bounds.max.y]) {
+        for (const z of [bounds.min.z, bounds.max.z]) {
+          const w = {
+            x: x * WORLD_SCALE - positionWorld[0],
+            y: y * WORLD_SCALE - positionWorld[1],
+            z: z * WORLD_SCALE - positionWorld[2],
+          };
+          const depth = w.x * unitDir.x + w.y * unitDir.y + w.z * unitDir.z;
+          if (depth <= 0) return false;
+          const px = w.x * unitRight.x + w.y * unitRight.y + w.z * unitRight.z;
+          const py = w.x * unitUp.x + w.y * unitUp.y + w.z * unitUp.z;
+          if (Math.abs(py) / depth > Math.tan(halfV)) return false;
+          if (Math.abs(px) / depth > Math.tan(halfH)) return false;
+        }
+      }
+    }
+    return true;
+  };
+
+
+  it("default 3D scene framing keeps the lattice and all three rigs fully in frame", () => {
+    const placement = understandingCameraMovementsScene.cameraPlacement;
+    const positionWorld: [number, number, number] = [
+      placement.position.x * WORLD_SCALE,
+      placement.position.y * WORLD_SCALE,
+      placement.position.z * WORLD_SCALE,
+    ];
+    const targetWorld: [number, number, number] = [
+      placement.target.x * WORLD_SCALE,
+      placement.target.y * WORLD_SCALE,
+      placement.target.z * WORLD_SCALE,
+    ];
+    // The full lattice must be entirely in frame.
+    expect(allCornersInView(CAMERA_MOVEMENT_LATTICE.bounds, positionWorld, targetWorld)).toBe(true);
+    // Every transformed rig bounds corner of the neutral, C3, and D3 rigs must be in frame.
+    for (const bounds of rigBoundsForEachAnchor()) {
+      expect(allCornersInView(bounds, positionWorld, targetWorld)).toBe(true);
+    }
+  });
+
+  it("camera inspection framing keeps the camera centred and non-clipped at high and low anchors", () => {
+    const inspection = understandingCameraMovementsScene.cameraInspectionPlacement!;
+    const positionWorld: [number, number, number] = [
+      inspection.position.x * WORLD_SCALE,
+      inspection.position.y * WORLD_SCALE,
+      inspection.position.z * WORLD_SCALE,
+    ];
+    const targetWorld: [number, number, number] = [
+      inspection.target.x * WORLD_SCALE,
+      inspection.target.y * WORLD_SCALE,
+      inspection.target.z * WORLD_SCALE,
+    ];
+    for (const bounds of rigBoundsForEachAnchor()) {
+      expect(
+        allCornersInView(bounds, positionWorld, targetWorld),
+        "inspection framing must contain every transformed rig corner",
+      ).toBe(true);
+    }
+  });
+
+  it("fails when the high or low rig is only half visible in the default 3D view", () => {
+    const placement = understandingCameraMovementsScene.cameraPlacement;
+    const positionWorld: [number, number, number] = [
+      placement.position.x * WORLD_SCALE,
+      placement.position.y * WORLD_SCALE,
+      placement.position.z * WORLD_SCALE,
+    ];
+    const targetWorld: [number, number, number] = [
+      placement.target.x * WORLD_SCALE,
+      placement.target.y * WORLD_SCALE,
+      placement.target.z * WORLD_SCALE,
+    ];
+    const rig = resolveCameraRigViewpointAnchors(CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig);
+    // The transformed high/low rigs must be entirely in view. A rig that is
+    // only half visible (e.g. clipped along the bottom of the frustum) would
+    // leave at least one transformed corner outside the observer FOV.
+    for (const anchor of [rig.high, rig.low]) {
+      expect(
+        allCornersInView(rigBoundsForAnchor(anchor), positionWorld, targetWorld),
+        `default 3D framing must contain the complete ${anchor.metadata.identity} rig`,
+      ).toBe(true);
+    }
   });
 });
 

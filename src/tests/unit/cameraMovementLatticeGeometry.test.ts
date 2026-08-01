@@ -40,7 +40,7 @@ const expectedContiguousGridEdgeCount = (columns: number, rows: number, levels: 
   rows * (columns + 1) * (levels + 1);
 
 describe("camera movement scene calibration", () => {
-  it("defines the provisional 3 × 3 × 5 lattice and preserves 105 mm finite focus", () => {
+  it("defines the provisional 3 × 3 × 5 lattice and preserves 90 mm finite focus", () => {
     expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.calibrationStatus).toBe("provisional");
     expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.geometryAndOpticsUnits).toBe("millimetres");
     expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.subject).toMatchObject({
@@ -49,7 +49,7 @@ describe("camera movement scene calibration", () => {
       levels: 5,
     });
     expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.optics).toMatchObject({
-      provisionalFocalLengthMm: 105,
+      provisionalFocalLengthMm: 90,
       provisionalFocusDistanceMm: 2000,
     });
   });

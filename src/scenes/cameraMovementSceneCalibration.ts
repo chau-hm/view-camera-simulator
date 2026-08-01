@@ -1,5 +1,9 @@
 import type { Vec3 } from "../types/optics";
-import type { CameraRigViewpointArcCalibration } from "./cameraRigViewpointGeometry";
+import {
+  CANONICAL_MID_RIG_ORIGIN_WORLD,
+  resolveCameraRigArcRadiusMm,
+  type CameraRigViewpointArcCalibration,
+} from "./cameraRigViewpointGeometry";
 
 export type CameraMovementTargetRegion = "upper" | "middle" | "lower";
 export type CameraMovementLatticeRegion = CameraMovementTargetRegion | "neutral";
@@ -51,44 +55,104 @@ export type CameraMovementSceneCalibration = Readonly<{
   presentation: CameraMovementPresentationCalibration;
 }>;
 
-const cameraMovementLatticeOriginWorld: Readonly<Vec3> = { x: 0, y: 0, z: 2000 };
+export type CameraMovementSelectedPhysicalCalibration = Readonly<{
+  subject: Readonly<{
+    columns: number;
+    rows: number;
+    levels: number;
+    cubeSizeMm: number;
+    horizontalGapMm: number;
+    verticalGapMm: number;
+    subjectDistanceMm: number;
+  }>;
+  optics: Readonly<{
+    focalLengthMm: number;
+    focusDistanceMm: number;
+  }>;
+  cameraRig: Readonly<{
+    /** Positive half-angle of the YZ viewpoint arc; radius is derived. */
+    arcAngleDeg: number;
+  }>;
+}>;
 
 /**
- * Scene-specific tuning scaffold for Understanding Camera Movements.
+ * Raw physical selection produced by the bounded calibration exercise.
  *
- * Every numerical value here is provisional. The calibration deliberately
- * preserves the scene's existing 105 mm finite-focus architecture while the
- * lattice replaces the former subject-count layouts. Renderers consume the
- * canonical lattice generated from this contract; they must not reproduce
- * these dimensions or reinterpret these millimetre values.
+ * Subject placement and optical focus are stored independently. The rig arc
+ * radius is not an independent field: it is always derived as the distance
+ * between the subject centre (arc centre) and the mid-anchor lens datum.
+ * Teaching movements and public-control rounding do not belong to this
+ * contract.
  */
-export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration = {
-  calibrationStatus: "provisional",
-  geometryAndOpticsUnits: "millimetres",
-  subject: {
+export const CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION = Object.freeze({
+  subject: Object.freeze({
     columns: 3,
     rows: 3,
     levels: 5,
     cubeSizeMm: 260,
     horizontalGapMm: 0,
     verticalGapMm: 0,
+    subjectDistanceMm: 2000,
+  }),
+  optics: Object.freeze({
+    focalLengthMm: 90,
+    focusDistanceMm: 2000,
+  }),
+  cameraRig: Object.freeze({
+    arcAngleDeg: 20,
+  }),
+}) satisfies CameraMovementSelectedPhysicalCalibration;
+
+const selectedPhysical = CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION;
+const cameraMovementLatticeOriginWorld: Readonly<Vec3> = Object.freeze({
+  x: 0,
+  y: 0,
+  z: selectedPhysical.subject.subjectDistanceMm,
+});
+
+const cameraMovementMidRigOriginWorld: Readonly<Vec3> =
+  CANONICAL_MID_RIG_ORIGIN_WORLD;
+const cameraMovementArcRadiusMm = resolveCameraRigArcRadiusMm(
+  cameraMovementLatticeOriginWorld,
+  cameraMovementMidRigOriginWorld,
+);
+
+/**
+ * Scene-specific tuning scaffold for Understanding Camera Movements.
+ *
+ * Every numerical value here is provisional. The calibration deliberately
+ * uses the measured provisional 90 mm / 2,000 mm finite-focus selection while
+ * the lattice replaces the former subject-count layouts. Renderers consume
+ * the canonical lattice generated from this contract; they must not reproduce
+ * these dimensions or reinterpret these millimetre values.
+ */
+export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration = {
+  calibrationStatus: "provisional",
+  geometryAndOpticsUnits: "millimetres",
+  subject: {
+    columns: selectedPhysical.subject.columns,
+    rows: selectedPhysical.subject.rows,
+    levels: selectedPhysical.subject.levels,
+    cubeSizeMm: selectedPhysical.subject.cubeSizeMm,
+    horizontalGapMm: selectedPhysical.subject.horizontalGapMm,
+    verticalGapMm: selectedPhysical.subject.verticalGapMm,
     originWorld: cameraMovementLatticeOriginWorld,
-    upperTargetLevel: 4,
-    middleTargetLevel: 2,
+    upperTargetLevel: selectedPhysical.subject.levels - 1,
+    middleTargetLevel: Math.floor((selectedPhysical.subject.levels - 1) / 2),
     lowerTargetLevel: 0,
   },
   optics: {
-    focalLengthCandidatesMm: [150, 120, 105, 90],
-    provisionalFocalLengthMm: 105,
-    provisionalFocusDistanceMm: 2000,
+    focalLengthCandidatesMm: [90, 105, 120, 150],
+    provisionalFocalLengthMm: selectedPhysical.optics.focalLengthMm,
+    provisionalFocusDistanceMm: selectedPhysical.optics.focusDistanceMm,
   },
   cameraRig: {
     arcPlane: "yz",
     arcCenterWorld: cameraMovementLatticeOriginWorld,
-    midRigOriginWorld: { x: 0, y: 0, z: 0 },
-    arcRadiusMm: 2000,
-    highArcAngleDeg: 15,
-    lowArcAngleDeg: -15,
+    midRigOriginWorld: cameraMovementMidRigOriginWorld,
+    arcRadiusMm: cameraMovementArcRadiusMm,
+    highArcAngleDeg: selectedPhysical.cameraRig.arcAngleDeg,
+    lowArcAngleDeg: -selectedPhysical.cameraRig.arcAngleDeg,
     provisionalBasePitchDeg: 0,
     defaultAnchor: "mid",
     anchorMetadata: {

@@ -55,9 +55,10 @@ describe("camera calibration workbench", () => {
     render(<CameraMovementCalibrationWorkbench />);
     const focusDistance = screen.getByLabelText("Focus distance (mm)");
 
-    fireEvent.change(focusDistance, { target: { value: "100" } });
+    // 50 mm is below the selected 90 mm focal length and must fail thin-lens validation.
+    fireEvent.change(focusDistance, { target: { value: "50" } });
     fireEvent.keyDown(focusDistance, { key: "Enter" });
-    expect(focusDistance).toHaveValue("100");
+    expect(focusDistance).toHaveValue("50");
     expect(focusDistance).toHaveAttribute("aria-invalid", "true");
     const fieldErrorId = focusDistance.getAttribute("aria-describedby");
     expect(fieldErrorId).toBeTruthy();
@@ -84,7 +85,7 @@ describe("camera calibration workbench", () => {
     render(<CameraMovementCalibrationWorkbench />);
     const focusDistance = screen.getByLabelText("Focus distance (mm)");
 
-    fireEvent.change(focusDistance, { target: { value: "100" } });
+    fireEvent.change(focusDistance, { target: { value: "50" } });
     fireEvent.blur(focusDistance);
     expect(useAppStore.getState().cameraMovementCalibrationSession.validation.valid).toBe(true);
     expect(useAppStore.getState().cameraMovementCalibrationSession.rejectedProposalValidation?.valid).toBe(false);
@@ -112,7 +113,7 @@ describe("camera calibration workbench", () => {
     expect(useAppStore.getState().cameraMovementCalibrationSession.revision).toBe(0);
 
     const focusDistance = screen.getByLabelText("Focus distance (mm)");
-    fireEvent.change(focusDistance, { target: { value: "100" } });
+    fireEvent.change(focusDistance, { target: { value: "50" } });
     fireEvent.blur(focusDistance);
     expect(useAppStore.getState().cameraMovementCalibrationSession.rejectedProposalValidation?.valid).toBe(false);
     fireEvent.change(levels, { target: { value: "8" } });

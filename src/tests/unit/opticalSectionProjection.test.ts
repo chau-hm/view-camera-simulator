@@ -172,10 +172,15 @@ describe("optical section projection", () => {
       understandingCameraMovementsScene,
     );
 
-    expect(railWorld).toEqual({
-      rear: cameraMovementsGeometry.cameraBody.rail.rearEndpointRigLocal,
-      front: cameraMovementsGeometry.cameraBody.rail.frontEndpointRigLocal,
-    });
+    expect(railWorld).not.toBeNull();
+    expectVecClose(
+      railWorld!.rear,
+      cameraMovementsGeometry.cameraBody.rail.rearEndpointRigLocal,
+    );
+    expectVecClose(
+      railWorld!.front,
+      cameraMovementsGeometry.cameraBody.rail.frontEndpointRigLocal,
+    );
 
     const projection = projectionFor(optics, understandingCameraMovementsScene);
     for (const viewId of ["side", "top", "scheimpflug"] as const) {

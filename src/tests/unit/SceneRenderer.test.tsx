@@ -81,4 +81,74 @@ describe("SceneRenderer Shelf Swing integration", () => {
     expect(target.toArray()).toEqual(targetWorld);
     expect(shelfSwingScene.cameraPlacement).toEqual(geometry.observerCamera);
   });
+
+  it("Reset View restores the understanding-camera-movements scene and inspection presets", () => {
+    const scene = understandingCameraMovementsScene;
+    const resetScene = () => {
+      const camera = new PerspectiveCamera();
+      const target = new Vector3();
+      const controls = {
+        target,
+        update: () => undefined,
+      } as unknown as OrbitControlsImpl;
+      const positionWorld = [
+        toWorld(scene.cameraPlacement.position.x),
+        toWorld(scene.cameraPlacement.position.y),
+        toWorld(scene.cameraPlacement.position.z),
+      ] as [number, number, number];
+      const targetWorld = [
+        toWorld(scene.cameraPlacement.target.x),
+        toWorld(scene.cameraPlacement.target.y),
+        toWorld(scene.cameraPlacement.target.z),
+      ] as [number, number, number];
+      applyObserverCameraReset(camera, controls, positionWorld, targetWorld);
+      return { position: camera.position.toArray(), target: target.toArray() };
+    };
+
+    const resetInspection = () => {
+      const camera = new PerspectiveCamera();
+      const target = new Vector3();
+      const controls = {
+        target,
+        update: () => undefined,
+      } as unknown as OrbitControlsImpl;
+      const inspection = scene.cameraInspectionPlacement!;
+      const positionWorld = [
+        toWorld(inspection.position.x),
+        toWorld(inspection.position.y),
+        toWorld(inspection.position.z),
+      ] as [number, number, number];
+      const targetWorld = [
+        toWorld(inspection.target.x),
+        toWorld(inspection.target.y),
+        toWorld(inspection.target.z),
+      ] as [number, number, number];
+      applyObserverCameraReset(camera, controls, positionWorld, targetWorld);
+      return { position: camera.position.toArray(), target: target.toArray() };
+    };
+
+    const sceneReset = resetScene();
+    expect(sceneReset.position).toEqual([
+      toWorld(scene.cameraPlacement.position.x),
+      toWorld(scene.cameraPlacement.position.y),
+      toWorld(scene.cameraPlacement.position.z),
+    ]);
+    expect(sceneReset.target).toEqual([
+      toWorld(scene.cameraPlacement.target.x),
+      toWorld(scene.cameraPlacement.target.y),
+      toWorld(scene.cameraPlacement.target.z),
+    ]);
+
+    const inspectionReset = resetInspection();
+    expect(inspectionReset.position).toEqual([
+      toWorld(scene.cameraInspectionPlacement!.position.x),
+      toWorld(scene.cameraInspectionPlacement!.position.y),
+      toWorld(scene.cameraInspectionPlacement!.position.z),
+    ]);
+    expect(inspectionReset.target).toEqual([
+      toWorld(scene.cameraInspectionPlacement!.target.x),
+      toWorld(scene.cameraInspectionPlacement!.target.y),
+      toWorld(scene.cameraInspectionPlacement!.target.z),
+    ]);
+  });
 });

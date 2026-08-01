@@ -38,7 +38,7 @@ test("calibration workbench is hidden on the production route", async ({ page })
   await expect(page.getByRole("region", { name: "Camera movement calibration workbench" })).toHaveCount(0);
   const { scene, rtt } = await expectSharedLattice(page, "224");
   await expect(scene).toHaveAttribute("data-camera-rig-origin", "0.000000,0.000000,0.000000");
-  await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", "105");
+  await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", "90");
 });
 
 test("session calibration separates geometry, optics, rig, reset, and SPA lifecycle", async ({ page }) => {
@@ -99,13 +99,15 @@ test("session calibration separates geometry, optics, rig, reset, and SPA lifecy
   await expect(reset.scene).toHaveAttribute("data-camera-rig-anchor", "mid");
   await expect(reset.scene).toHaveAttribute("data-camera-body-pitch-deg", "0.000000");
   await expect(reset.scene).toHaveAttribute("data-mounted-lattice-target-region", "middle");
-  await expect(reset.rtt).toHaveAttribute("data-rtt-focal-length-mm", "105");
+  await expect(reset.rtt).toHaveAttribute("data-rtt-focal-length-mm", "90");
   await expect(workbench.getByLabel("Focus distance (mm)")).toHaveValue("2000");
 
   await workbench.getByLabel("Levels").fill("7");
   await workbench.getByLabel("Levels").press("Enter");
   await expect(workbench.getByText(/Session revision 1/)).toBeVisible();
   await page.getByRole("link", { name: "All Scenes" }).click();
+  await expect(page).toHaveURL(/\/scenes$/);
+  await expect(workbench).toHaveCount(0);
   await page.goBack();
   await expect(workbench).toBeVisible();
   await expect(workbench.getByText(/Session revision 0/)).toBeVisible();
@@ -126,7 +128,12 @@ test("session calibration separates geometry, optics, rig, reset, and SPA lifecy
     .click();
   await expect(page).not.toHaveURL(/cameraCalibration=1/);
   await expect(page.getByRole("region", { name: "Camera movement calibration workbench" })).toHaveCount(0);
-  await expectSharedLattice(page, "224", false);
+  await page.evaluate(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("rttDiagnostics", "1");
+    window.history.replaceState(window.history.state, "", url);
+  });
+  await expectSharedLattice(page, "224");
   expect(errors.pageErrors).toEqual([]);
   expect(errors.graphicsErrors).toEqual([]);
 });
