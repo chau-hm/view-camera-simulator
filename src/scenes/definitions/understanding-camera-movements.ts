@@ -20,9 +20,9 @@ export const understandingCameraMovementsScene: SceneDefinition = {
     cameraBodyPivotWorld: geometry.cameraPreset.cameraBodyPivotWorld,
   },
   cameraPlacement: {
-    /** Three-quarter view balancing the full rig arc with a prominent lattice */
-    position: { x: 1800, y: 1100, z: -1800 },
-    target: { x: 0, y: 300, z: 1300 },
+    /** Pulled-back three-quarter view containing the lattice and the full neutral/high/low rig arc */
+    position: { x: 2300, y: 600, z: -600 },
+    target: { x: 0, y: 0, z: 1100 },
   },
   bounds: {
     min: geometry.subjectBounds.min,

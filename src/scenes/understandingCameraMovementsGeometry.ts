@@ -1,5 +1,6 @@
-import type { Vec3 } from "../types/optics";
+import { transformRigLocalPointToWorld } from "../core/optics/applyCameraBodyPitch";
 import { imageDistanceMm } from "../core/optics/thinLensModel";
+import type { Bounds3, CameraRigTransform, Vec3 } from "../types/optics";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { CAMERA_MOVEMENT_LATTICE } from "./cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "./cameraMovementSceneCalibration";
@@ -112,6 +113,124 @@ const latticeDepthMm = CAMERA_MOVEMENT_LATTICE.bounds.max.z - CAMERA_MOVEMENT_LA
 const gridHalfExtentMm =
   Math.max(latticeWidthMm, latticeDepthMm) / 2 +
   CAMERA_MOVEMENT_SCENE_CALIBRATION.subject.cubeSizeMm;
+
+/**
+ * Conservative rig-local AABB of the complete camera body before body pitch.
+ *
+ * This is a static framing proxy, not renderer geometry. It conservatively
+ * covers the front standard, rear standard, rail, bellows, and the fixed
+ * tripod/rail pivot. All values are derived from the canonical body constants
+ * so a framing change can never drift from the rendered assembly.
+ */
+const CAMERA_BODY_RIG_LOCAL_BOUNDS: Bounds3 = (() => {
+  const { frontStandardWidthMm, frontStandardHeightMm } = CAMERA_CONSTANTS;
+  const frontStandardHalfWidthMm = frontStandardWidthMm / 2;
+  const frontStandardHalfHeightMm = frontStandardHeightMm / 2;
+  const frontStandardHalfDepthMm = 6;
+  const rearStandardHalfDepthMm = 9;
+  const railHalfWidthMm = CAMERA_BODY_RAIL_WIDTH_MM / 2;
+  const railHalfHeightMm = CAMERA_BODY_RAIL_HEIGHT_MM / 2;
+  const railRearZ = -cameraBodyImageDistanceMm - CAMERA_BODY_RAIL_OVERHANG_MM;
+  const railFrontZ = CAMERA_BODY_RAIL_OVERHANG_MM;
+  const bellowsHalfWidthMm = 60;
+  const bellowsHalfHeightMm = 45;
+
+  const points: Vec3[] = [
+    // Front standard (centred on the lens datum).
+    {
+      x: -frontStandardHalfWidthMm,
+      y: -frontStandardHalfHeightMm,
+      z: -frontStandardHalfDepthMm,
+    },
+    {
+      x: frontStandardHalfWidthMm,
+      y: frontStandardHalfHeightMm,
+      z: frontStandardHalfDepthMm,
+    },
+    // Rear standard (centred on the finite-focus film datum at Z = -v).
+    {
+      x: -frontStandardHalfWidthMm,
+      y: -frontStandardHalfHeightMm,
+      z: -cameraBodyImageDistanceMm - rearStandardHalfDepthMm,
+    },
+    {
+      x: frontStandardHalfWidthMm,
+      y: frontStandardHalfHeightMm,
+      z: -cameraBodyImageDistanceMm + rearStandardHalfDepthMm,
+    },
+    // Rail (spans rear overhang to front overhang at the pivot Y level).
+    {
+      x: -railHalfWidthMm,
+      y: CAMERA_BODY_PIVOT_RIG_LOCAL.y - railHalfHeightMm,
+      z: railRearZ,
+    },
+    {
+      x: railHalfWidthMm,
+      y: CAMERA_BODY_PIVOT_RIG_LOCAL.y + railHalfHeightMm,
+      z: railFrontZ,
+    },
+    // Bellows (between the rear film datum and the front lens datum).
+    {
+      x: -bellowsHalfWidthMm,
+      y: -bellowsHalfHeightMm,
+      z: -cameraBodyImageDistanceMm,
+    },
+    {
+      x: bellowsHalfWidthMm,
+      y: bellowsHalfHeightMm,
+      z: 0,
+    },
+    // Fixed tripod/rail pivot (anchor placement).
+    CAMERA_BODY_PIVOT_RIG_LOCAL,
+  ];
+
+  return {
+    min: {
+      x: Math.min(...points.map((point) => point.x)),
+      y: Math.min(...points.map((point) => point.y)),
+      z: Math.min(...points.map((point) => point.z)),
+    },
+    max: {
+      x: Math.max(...points.map((point) => point.x)),
+      y: Math.max(...points.map((point) => point.y)),
+      z: Math.max(...points.map((point) => point.z)),
+    },
+  };
+})();
+
+/**
+ * Resolve the world-space AABB of the complete camera body for a rig transform.
+ *
+ * The rig-local body AABB corners are passed through the canonical
+ * `transformRigLocalPointToWorld` helper so body pitch and outer rig placement
+ * are applied exactly once. This is the shared canonical framing proxy used by
+ * the scene framing tests and the static observer presets; it never duplicates
+ * renderer transforms or hand-writes anchor-only bounds.
+ */
+export const resolveCameraBodyBoundsWorld = (
+  transform: CameraRigTransform,
+): Bounds3 => {
+  const corners: Vec3[] = [];
+  for (const x of [CAMERA_BODY_RIG_LOCAL_BOUNDS.min.x, CAMERA_BODY_RIG_LOCAL_BOUNDS.max.x]) {
+    for (const y of [CAMERA_BODY_RIG_LOCAL_BOUNDS.min.y, CAMERA_BODY_RIG_LOCAL_BOUNDS.max.y]) {
+      for (const z of [CAMERA_BODY_RIG_LOCAL_BOUNDS.min.z, CAMERA_BODY_RIG_LOCAL_BOUNDS.max.z]) {
+        corners.push(transformRigLocalPointToWorld({ x, y, z }, transform));
+      }
+    }
+  }
+  return {
+    min: {
+      x: Math.min(...corners.map((point) => point.x)),
+      y: Math.min(...corners.map((point) => point.y)),
+      z: Math.min(...corners.map((point) => point.z)),
+    },
+    max: {
+      x: Math.max(...corners.map((point) => point.x)),
+      y: Math.max(...corners.map((point) => point.y)),
+      z: Math.max(...corners.map((point) => point.z)),
+    },
+  };
+};
 
 const geometry = {
   coordinateContract: {

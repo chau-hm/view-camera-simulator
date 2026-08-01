@@ -151,16 +151,22 @@ Every raw and final RTT was contentful; its camera, uniforms, and depth state
 were finite; color, depth, and final targets agreed at 528 × 422; and no page,
 Three.js, WebGL, or GPU errors were observed.
 
-Static observer framing was corrected for high and low viewpoints. The default
-3D scene view now pulls back to `(1800, 1100, -1800)` targeting `(0, 300, 1300)`
-so the complete lattice and the mid and low rigs are fully in frame and the
-elevated (C3) rig is substantially visible; the fixed Camera inspection view
-pulls back to `(2200, 1100, -2300)` targeting `(0, 0, 100)` so the full rig arc
-spans the inspection volume at every anchor. C3 is no longer nearly blank in
-the inspection view and D3 is no longer substantially clipped. No calibration
-or teaching movement value was changed to achieve this. The 2D header still
-reports front rise only, so C2/D2 read `Rise: 0.0 mm` even though their
-rear-rise ray geometry is correct.
+Static observer framing is derived from canonical transformed camera-body
+bounds. The framing tests pass the rig-local body AABB (front standard, rear
+standard, rail, bellows, and tripod pivot) through the shared
+`transformRigLocalPointToWorld` helper for the neutral, C3 (+6° body pitch),
+and D3 (−6° body pitch) rigs, then require every transformed bounds corner to
+lie inside the actual 45° observer frustum at 1024 × 768. The default 3D scene
+view pulls back to `(2300, 600, -600)` targeting `(0, 0, 1100)` so the complete
+lattice and the full neutral, high, and low rigs are all in frame with margin;
+the fixed Camera inspection view stays at `(2200, 1100, -2300)` targeting
+`(0, 0, 100)` so the full rig arc spans the inspection volume at every anchor.
+The previous `visibleFraction >= 0.5` acceptance and hand-written unrotated
+rig-body bounds were removed: a high/low rig that is only half visible now
+fails the framing test. Reset View restores the selected scene and inspection
+presets. No calibration or teaching movement value was changed to achieve this.
+The 2D header still reports front rise only, so C2/D2 read `Rise: 0.0 mm` even
+though their rear-rise ray geometry is correct.
 
 ## Known boundary
 

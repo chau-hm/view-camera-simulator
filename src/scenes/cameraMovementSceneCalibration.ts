@@ -1,6 +1,9 @@
-import { distance } from "../core/math/vec";
 import type { Vec3 } from "../types/optics";
-import type { CameraRigViewpointArcCalibration } from "./cameraRigViewpointGeometry";
+import {
+  CANONICAL_MID_RIG_ORIGIN_WORLD,
+  resolveCameraRigArcRadiusMm,
+  type CameraRigViewpointArcCalibration,
+} from "./cameraRigViewpointGeometry";
 
 export type CameraMovementTargetRegion = "upper" | "middle" | "lower";
 export type CameraMovementLatticeRegion = CameraMovementTargetRegion | "neutral";
@@ -107,6 +110,13 @@ const cameraMovementLatticeOriginWorld: Readonly<Vec3> = Object.freeze({
   z: selectedPhysical.subject.subjectDistanceMm,
 });
 
+const cameraMovementMidRigOriginWorld: Readonly<Vec3> =
+  CANONICAL_MID_RIG_ORIGIN_WORLD;
+const cameraMovementArcRadiusMm = resolveCameraRigArcRadiusMm(
+  cameraMovementLatticeOriginWorld,
+  cameraMovementMidRigOriginWorld,
+);
+
 /**
  * Scene-specific tuning scaffold for Understanding Camera Movements.
  *
@@ -139,11 +149,8 @@ export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration =
   cameraRig: {
     arcPlane: "yz",
     arcCenterWorld: cameraMovementLatticeOriginWorld,
-    midRigOriginWorld: { x: 0, y: 0, z: 0 },
-    arcRadiusMm: distance(
-      cameraMovementLatticeOriginWorld,
-      { x: 0, y: 0, z: 0 },
-    ),
+    midRigOriginWorld: cameraMovementMidRigOriginWorld,
+    arcRadiusMm: cameraMovementArcRadiusMm,
     highArcAngleDeg: selectedPhysical.cameraRig.arcAngleDeg,
     lowArcAngleDeg: -selectedPhysical.cameraRig.arcAngleDeg,
     provisionalBasePitchDeg: 0,
