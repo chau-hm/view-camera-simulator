@@ -7,7 +7,7 @@ import { GroundGlassTransformedOverlays, GroundGlassFixedOverlays } from "./Grou
 import { GroundGlassFocusRing } from "./GroundGlassFocusRing";
 import { useAppStore } from "../state/appStore";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
-import type { ApertureValue } from "../types/camera";
+import type { ApertureValue, CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
@@ -18,6 +18,8 @@ import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { getRenderQualitySettings } from "./renderQuality";
 import { formatGroundGlassFocusLabel } from "./groundGlassFocusLabel";
 import { getSceneById } from "../scenes/definitions";
+import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
+import type { CameraMovementTargetRegion } from "../scenes/cameraMovementSceneCalibration";
 
 type GroundGlassRendererProps = {
   opticsState: DerivedOpticsState;
@@ -39,6 +41,15 @@ type GroundGlassRendererProps = {
   zoomEnabled?: boolean;
   onZoomChange?: (nextZoomed: boolean) => void;
   interactionResetKey?: string;
+  /** Explicit camera input for comparison panes; defaults to the store camera. */
+  cameraState?: CameraState;
+  /** Explicit focal length input for comparison panes; defaults to the store camera. */
+  focalLengthMm?: number;
+  channel?: GroundGlassRttChannel;
+  targetRegion?: CameraMovementTargetRegion;
+  accessibleLabel?: string;
+  stageLabel?: string;
+  lastFiniteFocusDepthMm?: number;
 };
 
 const PANEL_WIDTH_PX = 500;
@@ -64,8 +75,20 @@ export const GroundGlassRenderer = ({
   zoomEnabled,
   onZoomChange,
   interactionResetKey,
+  cameraState,
+  focalLengthMm: explicitFocalLengthMm,
+  channel = "default",
+  targetRegion,
+  accessibleLabel,
+  stageLabel,
+  lastFiniteFocusDepthMm: explicitLastFiniteFocusDepthMm,
 }: GroundGlassRendererProps) => {
-  const focalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
+  const storeFocalLengthMm = useAppStore((state) =>
+    explicitFocalLengthMm === undefined ? state.camera.focalLengthMm : undefined,
+  );
+  const focalLengthMm = explicitFocalLengthMm ?? cameraState?.focalLengthMm ?? storeFocalLengthMm ?? 1;
+  const resolvedFocusDistanceMm = cameraState?.focusDistanceMm ?? focusDistanceMm;
+  const resolvedAperture = cameraState?.aperture ?? aperture;
   // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
   const isRttScene = isGroundGlassRttScene(sceneId);
   const [rttLogicalSize, setRttLogicalSize] = useState({
@@ -114,12 +137,12 @@ export const GroundGlassRenderer = ({
           heightPx: PANEL_HEIGHT_PX,
           sampleDepth: 0.55,
           sampleUv: { u: 0.5, v: 0.5 },
-          aperture,
+          aperture: resolvedAperture,
           renderQuality,
         },
         opticsState,
       ),
-    [aperture, opticsState, renderQuality],
+    [opticsState, renderQuality, resolvedAperture],
   );
 
   const blurOpacity = Math.min(0.85, dofSample.blurStrength * 1.2);
@@ -130,7 +153,7 @@ export const GroundGlassRenderer = ({
   const sceneShiftX = isRttSceneFinal ? 0 : clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
   const sceneShiftY = isRttSceneFinal ? 0 : clamp(-riseMm * 2 + tiltDeg * 4 - pipeline.verticalFrameOffsetPx * 0.15, -80, 80);
   const sceneRotationDeg = isRttSceneFinal ? 0 : clamp(tiltDeg * 1.25 + swingDeg * 0.75, -18, 18);
-  const focusShift = clamp((focusDistanceMm - 2000) / 4000, -1, 1);
+  const focusShift = clamp((resolvedFocusDistanceMm - 2000) / 4000, -1, 1);
   const focusScale = 1 + focusShift * 0.04;
   const focusRingSize = 68 + dofSample.blurStrength * 56;
   const focusRingOpacity = 0.35 + (1 - dofSample.blurStrength) * 0.45;
@@ -140,13 +163,18 @@ export const GroundGlassRenderer = ({
   const isInfinityFocus = opticsState.diagnostics?.isInfinityFocus === true;
   // consider RTT scenes when hiding decorative background overlay
   const hideDecorativeBackground = isRttSceneFinal || rawDebug;
-  const lastFiniteFocusDepthMm = useAppStore((s) => s.camera.lastFiniteFocusDepthMm);
+  const storeLastFiniteFocusDepthMm = useAppStore((s) =>
+    explicitLastFiniteFocusDepthMm === undefined
+      ? s.camera.lastFiniteFocusDepthMm
+      : undefined,
+  );
+  const lastFiniteFocusDepthMm = explicitLastFiniteFocusDepthMm ?? storeLastFiniteFocusDepthMm;
   const primaryTarget = opticsState.focusTargets && opticsState.focusTargets.length > 0 ? opticsState.focusTargets[0] : null;
 
   const focusDistanceLabel = formatGroundGlassFocusLabel({
     isRttScene: isRttSceneFinal,
     isInfinityFocus,
-    focusDistanceMm,
+    focusDistanceMm: resolvedFocusDistanceMm,
     lastFiniteFocusDepthMm,
     primaryTarget: primaryTarget
       ? {
@@ -166,9 +194,9 @@ export const GroundGlassRenderer = ({
 
   // Project scene focus targets (if available) into ground-glass UV coordinates for positioning overlays
   const sceneDef = sceneId ? getSceneById(sceneId) : undefined;
-  const projectedTargets = projectSceneFocusTargetsToGroundGlass({ sceneDef, opticsState, aperture, previewMode });
+  const projectedTargets = projectSceneFocusTargetsToGroundGlass({ sceneDef, opticsState, aperture: resolvedAperture, previewMode });
   const primaryProjectedTarget = projectedTargets.length > 0 ? projectedTargets[0] : null;
-  const apertureNumber = typeof aperture === "number" ? aperture : Number(aperture as unknown as number);
+  const apertureNumber = typeof resolvedAperture === "number" ? resolvedAperture : Number(resolvedAperture as unknown as number);
 
   const transformedImageLayer = (
     <>
@@ -209,6 +237,8 @@ export const GroundGlassRenderer = ({
           heightPx={isRttSceneFinal ? rttLogicalSize.height : PANEL_HEIGHT_PX}
           renderQuality={renderQuality}
           zoomEnabled={zoomEnabled}
+          channel={channel}
+          targetRegion={targetRegion}
         />
 
         {!isRttSceneFinal && (
@@ -261,6 +291,8 @@ export const GroundGlassRenderer = ({
         onZoomChange={onZoomChange}
         onViewportSizeChange={handleViewportSizeChange}
         interactionResetKey={interactionResetKey}
+        accessibleLabel={accessibleLabel}
+        stageLabel={stageLabel}
         imageLayer={transformedImageLayer}
         fixedOverlayLayer={fixedOverlayLayer}
       />

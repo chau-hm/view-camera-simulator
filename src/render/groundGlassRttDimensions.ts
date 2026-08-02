@@ -2,6 +2,11 @@ import { getRenderQualitySettings } from "./renderQuality";
 import type { RenderQualityProfile } from "../types/ui";
 import { GROUND_GLASS_ZOOM_SCALE } from "./groundGlassStageTransform";
 
+export type GroundGlassRttChannel =
+  | "default"
+  | "camera-movement-original"
+  | "camera-movement-current";
+
 export type GroundGlassRttDimensions = {
   logicalWidthPx: number;
   logicalHeightPx: number;
@@ -14,6 +19,9 @@ export type GroundGlassRttDimensions = {
 };
 
 export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
+  /** Mounted renderer that currently owns this diagnostics record. */
+  ownerId?: string;
+  channel?: GroundGlassRttChannel;
   profile: RenderQualityProfile;
 
   configuredCanvasDpr: number; // the DPR configured by the selected quality profile

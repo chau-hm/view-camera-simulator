@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
@@ -38,8 +38,65 @@ describe("public camera movement controls in the workspace", () => {
   it("renders teaching controls and no workbench on the public route", () => {
     render(publicWorkspace());
     expect(screen.getByRole("radio", { name: "A — Front tilt" })).toBeInTheDocument();
+    const comparison = screen.getByRole("region", { name: "Original and Current Ground Glass comparison" });
+    expect(within(comparison).getByRole("heading", { name: "Original", level: 3 })).toBeVisible();
+    expect(within(comparison).getByRole("heading", { name: "Current", level: 3 })).toBeVisible();
+    expect(screen.getAllByRole("button", { name: /^Zoom in (?:Original|Current) Ground Glass view$/ })).toHaveLength(2);
     expect(screen.queryByRole("radiogroup", { name: "Camera movement calibration workbench" })).not.toBeInTheDocument();
     expect(screen.queryByText("Camera Movement Calibration")).not.toBeInTheDocument();
+  });
+
+  it("keeps Original and Current zoom controls independent while sharing preview controls", () => {
+    render(publicWorkspace());
+    const comparison = screen.getByRole("region", { name: "Original and Current Ground Glass comparison" });
+    const currentPanel = within(comparison).getByRole("heading", { name: "Current", level: 3 }).closest("section");
+    expect(currentPanel).not.toBeNull();
+    expect(currentPanel!).toHaveTextContent("Neutral · No movement");
+
+    fireEvent.click(screen.getByRole("radio", { name: "A — Front tilt" }));
+    expect(currentPanel!).toHaveTextContent("A · Front tilt");
+
+    const zoomButtons = screen.getAllByRole("button", { name: /^Zoom in (?:Original|Current) Ground Glass view$/ });
+    fireEvent.click(zoomButtons[0]);
+
+    expect(screen.getAllByRole("button", { name: /^Reset (?:Original|Current) Ground Glass view$/ })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /^Zoom in (?:Original|Current) Ground Glass view$/ })).toHaveLength(1);
+    expect(screen.getByLabelText("Original and Current Ground Glass comparison")).toBeInTheDocument();
+  });
+
+  it("labels the comparison region and exposes channel-specific optical diagnostics", () => {
+    const view = render(publicWorkspace());
+    const comparison = screen.getByRole("region", { name: "Original and Current Ground Glass comparison" });
+    const comparisonLabelId = comparison.getAttribute("aria-labelledby");
+    const comparisonDescriptionId = comparison.getAttribute("aria-describedby");
+
+    expect(comparisonLabelId).toBeTruthy();
+    expect(comparisonDescriptionId).toBeTruthy();
+    expect(comparison).toHaveAttribute("aria-label", "Original and Current Ground Glass comparison");
+    expect(document.getElementById(comparisonLabelId!)).toHaveTextContent(
+      "Original and Current Ground Glass comparison",
+    );
+    expect(document.getElementById(comparisonDescriptionId!)).toHaveTextContent(
+      "Compare the neutral camera with the selected movement.",
+    );
+
+    fireEvent.click(screen.getByText("Optical Debug", { exact: true }));
+    const debugLayers = view.container.querySelectorAll(".optical-debug__layer");
+    expect(debugLayers).toHaveLength(2);
+    expect(debugLayers[0]).toHaveAttribute("aria-labelledby");
+    expect(debugLayers[0]).toHaveAttribute("aria-describedby");
+    expect(debugLayers[0]).toHaveTextContent("camera-movement-original");
+    expect(debugLayers[1]).toHaveTextContent("camera-movement-current");
+  });
+
+  it("preserves both comparison panels when Ground Glass expands", () => {
+    render(publicWorkspace());
+    fireEvent.click(screen.getByRole("button", { name: "Expand Ground Glass" }));
+
+    const comparison = screen.getByRole("region", { name: "Original and Current Ground Glass comparison" });
+    expect(within(comparison).getByRole("heading", { name: "Original", level: 3 })).toBeVisible();
+    expect(within(comparison).getByRole("heading", { name: "Current", level: 3 })).toBeVisible();
+    expect(screen.getAllByRole("button", { name: /(?:Zoom in|Reset) (?:Original|Current) Ground Glass view$/ })).toHaveLength(2);
   });
 
   it("hides teaching controls and preserves the workbench on the calibration route", () => {
@@ -47,6 +104,9 @@ describe("public camera movement controls in the workspace", () => {
     expect(screen.getByText("Camera Movement Calibration")).toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "A — Front tilt" })).not.toBeInTheDocument();
     expect(screen.queryByText("Movement examples")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Original", level: 3 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Current", level: 3 })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Zoom in Ground Glass view" })).toHaveLength(1);
   });
 
   it("keeps Neutral selected after rerender and applies a case", async () => {

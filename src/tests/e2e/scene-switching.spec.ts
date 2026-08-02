@@ -26,7 +26,7 @@ const openPublicScene = async (page: Page, visit: SceneVisit) => {
   await expect(page).toHaveURL(new RegExp(`/simulator/free/${visit.sceneId}$`));
 };
 
-test("public SPA scene switching keeps one current scene and one RTT renderer without reloads", async ({ page }) => {
+test("public SPA scene switching keeps one current scene and its RTT renderer channels without reloads", async ({ page }) => {
   test.setTimeout(240_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
@@ -48,7 +48,7 @@ test("public SPA scene switching keeps one current scene and one RTT renderer wi
   expect(documentToken).toBeTruthy();
 
   let previousSceneCanvas: ElementHandle<Element> | null = null;
-  let previousGroundGlass: ElementHandle<Element> | null = null;
+  let previousGroundGlasses: ElementHandle<Node>[] = [];
   let previousSanityState: string | null = null;
   let previousSceneId: string | null = null;
 
@@ -69,19 +69,26 @@ test("public SPA scene switching keeps one current scene and one RTT renderer wi
       .toBe(documentToken);
 
     const sceneCanvas = page.getByTestId("scene-canvas");
-    const groundGlass = page.getByTestId("ground-glass-rtt");
+    const groundGlassPanes = visit.sceneId === "understanding-camera-movements"
+      ? page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel^="camera-movement-"]')
+      : page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
+    const groundGlass = visit.sceneId === "understanding-camera-movements"
+      ? page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="camera-movement-current"]')
+      : page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
     await expect(sceneCanvas).toHaveCount(1);
     await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", visit.sceneId);
     await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
-    await expect(groundGlass).toHaveCount(1);
-    await expect(groundGlass.locator("canvas")).toHaveCount(1);
+    await expect(groundGlassPanes).toHaveCount(visit.sceneId === "understanding-camera-movements" ? 2 : 1);
+    await expect(groundGlassPanes.locator("canvas")).toHaveCount(visit.sceneId === "understanding-camera-movements" ? 2 : 1);
 
     // Use dedicated scene-id attribute instead of parsing internal cache key
-    await expect(groundGlass).toHaveAttribute("data-rtt-scene-id", visit.sceneId, { timeout: 60_000 });
-    await expect(groundGlass).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 60_000 });
-    await expect(groundGlass).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 60_000 });
-    await expect(groundGlass).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 60_000 });
-    await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+    for (const pane of await groundGlassPanes.all()) {
+      await expect(pane).toHaveAttribute("data-rtt-scene-id", visit.sceneId, { timeout: 60_000 });
+      await expect(pane).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 60_000 });
+      await expect(pane).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 60_000 });
+      await expect(pane).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 60_000 });
+      await expect(pane).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+    }
     await expect(page.getByTestId("ground-glass-scene")).toHaveCount(0);
 
     const sanityState = await groundGlass.getAttribute("data-rtt-sanity-state");
@@ -90,19 +97,17 @@ test("public SPA scene switching keeps one current scene and one RTT renderer wi
       expect(sanityState).not.toBe(previousSanityState);
     }
     const priorSceneCanvas = previousSceneCanvas;
-    const priorGroundGlass = previousGroundGlass;
     if (priorSceneCanvas) {
       await expect.poll(() => page.evaluate((node) => !node.isConnected, priorSceneCanvas)).toBe(true);
     }
-    if (priorGroundGlass) {
-      await expect.poll(() => page.evaluate((node) => !node.isConnected, priorGroundGlass)).toBe(true);
+    for (const priorPane of previousGroundGlasses) {
+      await expect.poll(() => page.evaluate((node) => !node.isConnected, priorPane)).toBe(true);
     }
     previousSanityState = sanityState;
     previousSceneId = visit.sceneId;
     previousSceneCanvas = await sceneCanvas.elementHandle();
-    previousGroundGlass = await groundGlass.elementHandle();
+    previousGroundGlasses = await groundGlassPanes.elementHandles();
     expect(previousSceneCanvas).toBeTruthy();
-    expect(previousGroundGlass).toBeTruthy();
 
     await page.getByRole("link", { name: "All Scenes" }).click();
     await expect(page).toHaveURL(/\/scenes$/);
@@ -110,12 +115,11 @@ test("public SPA scene switching keeps one current scene and one RTT renderer wi
       .poll(() => page.evaluate(() => (window as Window & { __sceneSwitchDocumentToken?: string }).__sceneSwitchDocumentToken))
       .toBe(documentToken);
     const detachedSceneCanvas = previousSceneCanvas;
-    const detachedGroundGlass = previousGroundGlass;
     if (detachedSceneCanvas) {
       await expect.poll(() => page.evaluate((node) => !node.isConnected, detachedSceneCanvas)).toBe(true);
     }
-    if (detachedGroundGlass) {
-      await expect.poll(() => page.evaluate((node) => !node.isConnected, detachedGroundGlass)).toBe(true);
+    for (const detachedPane of previousGroundGlasses) {
+      await expect.poll(() => page.evaluate((node) => !node.isConnected, detachedPane)).toBe(true);
     }
   }
 

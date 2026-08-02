@@ -234,7 +234,10 @@ const isInfinityResetDisallowed = (sceneId: string): boolean => {
   return scene?.cameraControlPolicy?.infinityReset === false;
 };
 
-import type { GroundGlassRttRuntimeInfo } from "../render/groundGlassRttDimensions";
+import type {
+  GroundGlassRttChannel,
+  GroundGlassRttRuntimeInfo,
+} from "../render/groundGlassRttDimensions";
 import type { InteractiveLatticeRuntimeInfo } from "../render/cameraMovementLatticeRuntime";
 
 export type AppStore = {
@@ -248,11 +251,26 @@ export type AppStore = {
   lastInitializedRouteKey?: string | null;
   /** Optional runtime diagnostics for RTT scenes. */
   groundGlassRttRuntimeInfo?: GroundGlassRttRuntimeInfo | null;
+  groundGlassRttRuntimeInfoByChannel?: Partial<
+    Record<GroundGlassRttChannel, GroundGlassRttRuntimeInfo | null>
+  >;
   /** Actual mounted interactive lattice diagnostics; null when not mounted. */
   interactiveLatticeRuntimeInfo?: InteractiveLatticeRuntimeInfo | null;
   cameraMovementCalibrationSession: CameraMovementCalibrationSession;
 
-  setGroundGlassRttRuntimeInfo: (info: GroundGlassRttRuntimeInfo | null) => void;
+  /**
+   * Publish or clear default-channel RTT diagnostics. When ownerId is given,
+   * a clear only succeeds if that owner still owns the channel.
+   */
+  setGroundGlassRttRuntimeInfo: (
+    info: GroundGlassRttRuntimeInfo | null,
+    ownerId?: string,
+  ) => void;
+  setGroundGlassRttRuntimeInfoForChannel: (
+    channel: GroundGlassRttChannel,
+    info: GroundGlassRttRuntimeInfo | null,
+    ownerId?: string,
+  ) => void;
   setInteractiveLatticeRuntimeInfo: (info: InteractiveLatticeRuntimeInfo | null) => void;
   setCurrentTaskEvaluation: (evaluation: TaskEvaluation | null) => void;
   setMode: (mode: SimulatorMode) => void;
@@ -338,11 +356,55 @@ export const useAppStore = create<AppStore>((set) => ({
   selectedMovement: null,
   lastInitializedRouteKey: null,
   groundGlassRttRuntimeInfo: null,
+  groundGlassRttRuntimeInfoByChannel: {},
   interactiveLatticeRuntimeInfo: null,
   cameraMovementCalibrationSession: createCalibrationSession(),
 
-  setGroundGlassRttRuntimeInfo: (info) =>
-    set(() => ({ groundGlassRttRuntimeInfo: info })),
+  setGroundGlassRttRuntimeInfo: (info, ownerId) =>
+    set((state) => {
+      const current = state.groundGlassRttRuntimeInfo;
+      const requestedOwnerId = ownerId ?? info?.ownerId;
+      // A cleanup from an older renderer must not clear a replacement that
+      // has already published into the shared default channel.
+      if (
+        info === null &&
+        requestedOwnerId !== undefined &&
+        current?.ownerId !== undefined &&
+        current.ownerId !== requestedOwnerId
+      ) {
+        return {};
+      }
+      const nextInfo =
+        info === null || requestedOwnerId === undefined
+          ? info
+          : { ...info, ownerId: requestedOwnerId };
+      return { groundGlassRttRuntimeInfo: nextInfo };
+    }),
+  setGroundGlassRttRuntimeInfoForChannel: (channel, info, ownerId) =>
+    set((state) => {
+      const current = state.groundGlassRttRuntimeInfoByChannel?.[channel];
+      const requestedOwnerId = ownerId ?? info?.ownerId;
+      // Apply the same compare-before-clear rule independently per channel so
+      // Original and Current panes cannot tear down one another's diagnostics.
+      if (
+        info === null &&
+        requestedOwnerId !== undefined &&
+        current?.ownerId !== undefined &&
+        current.ownerId !== requestedOwnerId
+      ) {
+        return {};
+      }
+      const nextInfo =
+        info === null || requestedOwnerId === undefined
+          ? info
+          : { ...info, ownerId: requestedOwnerId };
+      return {
+        groundGlassRttRuntimeInfoByChannel: {
+          ...state.groundGlassRttRuntimeInfoByChannel,
+          [channel]: nextInfo,
+        },
+      };
+    }),
   setInteractiveLatticeRuntimeInfo: (info) =>
     set(() => ({ interactiveLatticeRuntimeInfo: info })),
 

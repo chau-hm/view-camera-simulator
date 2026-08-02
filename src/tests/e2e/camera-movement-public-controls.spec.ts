@@ -10,12 +10,21 @@ const disableOpticalGeometry = async (page: Page) => {
 };
 
 const expectGroundGlassValid = async (page: Page) => {
-  const rtt = page.locator('[data-testid="ground-glass-rtt"]');
-  await expect(rtt).toBeVisible({ timeout: 15000 });
-  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 10000 });
-  await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 5000 });
-  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10000 });
-  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
+  const rtts = page.locator(
+    '[data-testid="ground-glass-rtt"][data-rtt-channel="camera-movement-original"], ' +
+      '[data-testid="ground-glass-rtt"][data-rtt-channel="camera-movement-current"]',
+  );
+  await expect(rtts).toHaveCount(2);
+  for (const channel of ["camera-movement-original", "camera-movement-current"] as const) {
+    const rtt = page.locator(
+      `[data-testid="ground-glass-rtt"][data-rtt-channel="${channel}"]`,
+    );
+    await expect(rtt).toBeVisible({ timeout: 15000 });
+    await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 10000 });
+    await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 5000 });
+    await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10000 });
+    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
+  }
 };
 
 test("public camera movement controls on the normal route", async ({ page }) => {
@@ -149,6 +158,9 @@ test("teaching controls stay usable and non-overflowing at 1024px and narrow wid
     const aside = page.locator(".simulator-aside");
     await expect(aside).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole("radio", { name: "Neutral" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Original", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Current", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Zoom in (?:Original|Current) Ground Glass view$/ })).toHaveCount(2);
 
     const overflow = await page.evaluate(() => {
       const aside = document.querySelector<HTMLElement>(".simulator-aside");
@@ -160,6 +172,13 @@ test("teaching controls stay usable and non-overflowing at 1024px and narrow wid
     });
     expect(overflow.asideOverflow).toBeLessThanOrEqual(2);
     expect(overflow.bodyOverflow).toBeLessThanOrEqual(2);
+
+    const comparisonPanels = page.locator(".groundglass-comparison__panel");
+    await expect(comparisonPanels).toHaveCount(2);
+    const comparisonColumns = await page.locator(".groundglass-comparison").evaluate((element) =>
+      getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).filter(Boolean).length,
+    );
+    expect(comparisonColumns).toBe(1);
 
     // All nine cases reachable within the independently scrollable sidebar.
     for (const label of [

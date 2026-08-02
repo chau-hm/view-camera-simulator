@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef } from "react";
+import React, { useEffect, useId, useLayoutEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CAMERA_CONSTANTS } from "../utils/constants";
@@ -47,8 +47,9 @@ import { analyzeGroundGlassRenderSanity } from "./groundGlassRenderSanity";
 import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 import { createGroundGlassRenderSanityStateKey } from "./groundGlassRenderSanityKey";
 import { resizeGroundGlassRttResources } from "./groundGlassRttResources";
+import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
 
-type GroundGlassRTTProps = {
+export type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
   focalLengthMm: number;
   sceneId?: string;
@@ -62,6 +63,10 @@ type GroundGlassRTTProps = {
   focusAssistEnabled?: boolean;
   renderQuality?: import("../types/ui").RenderQualityProfile;
   zoomEnabled?: boolean;
+  /** Independent RTT resource/diagnostic channel for comparison panes. */
+  channel?: GroundGlassRttChannel;
+  /** Explicit target label for comparison panes; defaults to the app store. */
+  targetRegion?: import("../scenes/cameraMovementSceneCalibration").CameraMovementTargetRegion;
 };
 
 const tupleMatches = (
@@ -70,7 +75,11 @@ const tupleMatches = (
 ): boolean =>
   Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
-function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, }: GroundGlassRTTProps) {
+function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, channel = "default", targetRegion: explicitTargetRegion, }: GroundGlassRTTProps) {
+  // React gives each mounted renderer a stable identity without a module-level
+  // mutable registry. It survives ordinary prop changes and is replaced only
+  // when this OffscreenRenderer instance is actually remounted.
+  const runtimeOwnerId = `ground-glass-rtt-owner-${useId()}`;
   // single-frame flag to avoid repeating uniform-preparation warnings every frame
   const reportedUniformPreparationErrorRef = React.useRef<string | null>(null);
   const reportedCameraConfigurationErrorRef = React.useRef<string | null>(null);
@@ -80,7 +89,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
 
   const { gl } = useThree();
-  const configuredTargetRegion = useAppStore((state) => state.scene.targetRegion);
+  const configuredTargetRegion = useAppStore((state) =>
+    explicitTargetRegion === undefined ? state.scene.targetRegion : undefined,
+  );
+  const targetRegion = explicitTargetRegion ?? configuredTargetRegion ?? "middle";
   const effectiveCameraMovementCalibration = useAppStore(
     selectEffectiveCameraMovementCalibration,
   );
@@ -117,15 +129,38 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality, zoomEnabled });
   sizeInputsRef.current = { widthPx, heightPx, renderQuality, zoomEnabled };
 
+  const readRuntimeInfo = React.useCallback(() => {
+    const state = useAppStore.getState();
+    return channel === "default"
+      ? state.groundGlassRttRuntimeInfo
+      : state.groundGlassRttRuntimeInfoByChannel?.[channel] ?? null;
+  }, [channel]);
+  const setRuntimeInfo = React.useCallback(
+    (info: import("./groundGlassRttDimensions").GroundGlassRttRuntimeInfo | null) => {
+      const enriched = info
+        ? { ...info, channel, ownerId: runtimeOwnerId }
+        : null;
+      if (channel === "default") {
+        useAppStore.getState().setGroundGlassRttRuntimeInfo(enriched, runtimeOwnerId);
+      } else {
+        useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel(
+          channel,
+          enriched,
+          runtimeOwnerId,
+        );
+      }
+    },
+    [channel, runtimeOwnerId],
+  );
+
   // clear RTT runtime diagnostics when this renderer unmounts or is recreated
   React.useEffect(() => {
     return () => {
       try {
-        const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
-        if (setInfo) setInfo(null);
+        setRuntimeInfo(null);
       } catch (err) { void err; }
     };
-  }, []);
+  }, [setRuntimeInfo]);
 
   // expose preview/ring hints on the function object so runtime code inside useFrame can access them
 
@@ -330,8 +365,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     // After resources are created, update runtime info with actual resource sizes
     try {
-      const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
-      if (setInfo) {
+      if (setRuntimeInfo) {
         const resolvedProfile =
           (sizeInputs.renderQuality as import("../types/ui").RenderQualityProfile) ||
           ("standard" as import("../types/ui").RenderQualityProfile);
@@ -343,7 +377,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         const tempW = tempRT.width;
         const tempH = tempRT.height;
 
-        setInfo({
+        setRuntimeInfo({
           profile: resolvedProfile,
           logicalWidthPx: dims.logicalWidthPx,
           logicalHeightPx: dims.logicalHeightPx,
@@ -443,8 +477,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       } finally {
         // update diagnostics to indicate resources cleared
         try {
-          const setInfo = useAppStore.getState().setGroundGlassRttRuntimeInfo;
-          if (setInfo) setInfo(null);
+          setRuntimeInfo(null);
         } catch (err) { void err; }
       }
     };
@@ -453,6 +486,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     gl,
     maximumBlurRadiusPx,
     sceneId,
+    setRuntimeInfo,
   ]);
 
   useEffect(() => {
@@ -496,9 +530,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       );
       mountedCameraMovementRttSubjectRef.current = mounted;
       const runtimeInfo = mounted.runtimeInfo;
-      const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+      const currentInfo = readRuntimeInfo();
       if (currentInfo) {
-        useAppStore.getState().setGroundGlassRttRuntimeInfo({
+        setRuntimeInfo({
           ...currentInfo,
           latticeEdgeCount: runtimeInfo.edgeCount,
           latticeGeometryId: runtimeInfo.geometryId,
@@ -515,12 +549,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           mountedCameraMovementRttSubjectRef.current = null;
         }
         unmountCameraMovementRttSubject(mounted);
-        const latestInfo =
-          useAppStore.getState().groundGlassRttRuntimeInfo;
+        const latestInfo = readRuntimeInfo();
         if (
           latestInfo?.latticeSubjectGeneration === runtimeInfo.generation
         ) {
-          useAppStore.getState().setGroundGlassRttRuntimeInfo({
+          setRuntimeInfo({
             ...latestInfo,
             latticeEdgeCount: undefined,
             latticeGeometryId: undefined,
@@ -544,6 +577,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   }, [
     cameraMovementRenderModel,
     sceneId,
+    readRuntimeInfo,
+    setRuntimeInfo,
   ]);
 
   // Target teaching steps are presentation-only. Keep the mounted subject and
@@ -555,17 +590,17 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     updateCameraMovementRttSubjectTarget(
       mounted,
       cameraMovementRenderModel,
-      configuredTargetRegion,
+      targetRegion,
     );
-    const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const currentInfo = readRuntimeInfo();
     if (currentInfo?.latticeSubjectGeneration !== mounted.runtimeInfo.generation) {
       return;
     }
-    useAppStore.getState().setGroundGlassRttRuntimeInfo({
+    setRuntimeInfo({
       ...currentInfo,
-      latticeTargetRegion: configuredTargetRegion,
+      latticeTargetRegion: targetRegion,
     });
-  }, [cameraMovementRenderModel, configuredTargetRegion, sceneId]);
+  }, [cameraMovementRenderModel, readRuntimeInfo, sceneId, setRuntimeInfo, targetRegion]);
 
   // Logical size, quality, DPR, and zoom affect only internal RTT resolution.
   // Keep the scene subject, camera, materials, post-processing scenes, and
@@ -608,7 +643,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     // Preserve content and sanity diagnostics until the next frame publishes a
     // sample for the resized targets. A normal view zoom/reset is not teardown.
-    const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const currentInfo = readRuntimeInfo();
     if (!currentInfo) return;
     const canvas = (gl as unknown as WebGLRenderer).domElement;
     const canvasRect = canvas?.getBoundingClientRect();
@@ -618,7 +653,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     const depthImage = rt.depthTexture?.image as
       | { width?: number; height?: number }
       | undefined;
-    useAppStore.getState().setGroundGlassRttRuntimeInfo({
+    setRuntimeInfo({
       ...currentInfo,
       ...dims,
       profile: resolvedProfile,
@@ -642,7 +677,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       verticalShaderRenderHeightPx: verticalMaterial.uniforms.renderHeight.value as number,
       resourceGeneration: resourceGenerationRef.current,
     });
-  }, [gl, heightPx, renderQuality, widthPx, zoomEnabled]);
+  }, [gl, heightPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
 
   useFrame(() => {
     if (!renderTarget.current || !offscreenScene.current) return;
@@ -713,7 +748,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     const projectionDeterminant = cfg.ok
       ? cfg.determinant
       : cam.projectionMatrix.determinant();
-    const currentCameraInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const currentCameraInfo = readRuntimeInfo();
     if (
       currentCameraInfo &&
       (
@@ -727,7 +762,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         !tupleMatches(currentCameraInfo.cameraForwardWorld, configuredPose.forwardWorld)
       )
     ) {
-      useAppStore.getState().setGroundGlassRttRuntimeInfo({
+      setRuntimeInfo({
         ...currentCameraInfo,
         cameraNearWorld: cam.near,
         cameraFarWorld: cam.far,
@@ -873,9 +908,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           horizontalFocalLengthMm === verticalFocalLengthMm &&
           Number.isFinite(horizontalFocalLengthMm)
         ) {
-          const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+          const currentInfo = readRuntimeInfo();
           if (currentInfo && currentInfo.focalLengthMm !== horizontalFocalLengthMm) {
-            useAppStore.getState().setGroundGlassRttRuntimeInfo({
+            setRuntimeInfo({
               ...currentInfo,
               focalLengthMm: horizontalFocalLengthMm,
             });
@@ -962,9 +997,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
           const rawSanity = analyzeGroundGlassRenderSanity(rawPixels);
           const finalSanity = analyzeGroundGlassRenderSanity(finalPixels);
-          const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+          const currentInfo = readRuntimeInfo();
           if (currentInfo) {
-            useAppStore.getState().setGroundGlassRttRuntimeInfo({
+            setRuntimeInfo({
               ...currentInfo,
               cameraNearWorld: cam.near,
               cameraFarWorld: cam.far,
@@ -994,9 +1029,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
             });
           }
         } catch (error) {
-          const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+          const currentInfo = readRuntimeInfo();
           if (currentInfo) {
-            useAppStore.getState().setGroundGlassRttRuntimeInfo({
+            setRuntimeInfo({
               ...currentInfo,
               renderSanityStateKey: sanityStateKey,
               renderSanityError: error instanceof Error ? error.message : String(error),
@@ -1022,15 +1057,15 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled, channel = "default", targetRegion }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
 
   return (
-    <div style={{ width: "100%", height: "100%" }}>
+    <div data-rtt-resource-channel={channel} style={{ width: "100%", height: "100%" }}>
       <Canvas dpr={qualitySettings.dpr} style={{ width: "100%", height: "100%" }} gl={GROUND_GLASS_GL_OPTIONS} orthographic={false}>
-        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} />
+        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} targetRegion={targetRegion} />
       </Canvas>
     </div>
   );
