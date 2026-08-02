@@ -18,6 +18,8 @@ import { resolveCameraMovementLatticeRenderModel } from "./cameraMovementLattice
 import {
   mountCameraMovementRttSubject,
   unmountCameraMovementRttSubject,
+  updateCameraMovementRttSubjectTarget,
+  type MountedCameraMovementRttSubject,
 } from "./cameraMovementRttSubjectLifecycle";
 import {
   configureGroundGlassCamera,
@@ -110,6 +112,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     fillLight: THREE.DirectionalLight;
     target: THREE.Object3D;
   } | null>(null);
+  const mountedCameraMovementRttSubjectRef =
+    useRef<MountedCameraMovementRttSubject | null>(null);
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality, zoomEnabled });
   sizeInputsRef.current = { widthPx, heightPx, renderQuality, zoomEnabled };
 
@@ -457,7 +461,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     const registration = getSceneSubjectRegistration(sceneId);
     const subjectOptions = {
-      targetRegion: configuredTargetRegion,
+      targetRegion: undefined,
       cameraMovementRenderModel:
         sceneId === "understanding-camera-movements"
           ? cameraMovementRenderModel
@@ -488,8 +492,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       const mounted = mountCameraMovementRttSubject(
         scene,
         cameraMovementRenderModel,
-        configuredTargetRegion,
+        cameraMovementRenderModel.presentation.defaultTargetRegion,
       );
+      mountedCameraMovementRttSubjectRef.current = mounted;
       const runtimeInfo = mounted.runtimeInfo;
       const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
       if (currentInfo) {
@@ -506,6 +511,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       }
 
       return () => {
+        if (mountedCameraMovementRttSubjectRef.current === mounted) {
+          mountedCameraMovementRttSubjectRef.current = null;
+        }
         unmountCameraMovementRttSubject(mounted);
         const latestInfo =
           useAppStore.getState().groundGlassRttRuntimeInfo;
@@ -535,9 +543,29 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     };
   }, [
     cameraMovementRenderModel,
-    configuredTargetRegion,
     sceneId,
   ]);
+
+  // Target teaching steps are presentation-only. Keep the mounted subject and
+  // all owned GPU resources stable while mutating its existing materials.
+  useEffect(() => {
+    if (sceneId !== "understanding-camera-movements") return;
+    const mounted = mountedCameraMovementRttSubjectRef.current;
+    if (!mounted) return;
+    updateCameraMovementRttSubjectTarget(
+      mounted,
+      cameraMovementRenderModel,
+      configuredTargetRegion,
+    );
+    const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    if (currentInfo?.latticeSubjectGeneration !== mounted.runtimeInfo.generation) {
+      return;
+    }
+    useAppStore.getState().setGroundGlassRttRuntimeInfo({
+      ...currentInfo,
+      latticeTargetRegion: configuredTargetRegion,
+    });
+  }, [cameraMovementRenderModel, configuredTargetRegion, sceneId]);
 
   // Logical size, quality, DPR, and zoom affect only internal RTT resolution.
   // Keep the scene subject, camera, materials, post-processing scenes, and

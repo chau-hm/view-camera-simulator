@@ -70,13 +70,14 @@ describe("Store-enforced cameraControlPolicy", () => {
       expect(s.selectedMovement).toBe("frontRiseMm");
     });
 
-    it("defaults target region to middle and preserves it through movement reset", () => {
+    it("defaults target region to middle and public Reset Movements restores it", () => {
       const store = useAppStore.getState();
       expect(store.scene.targetRegion).toBe("middle");
       useAppStore.setState((state) => ({ scene: { ...state.scene, targetRegion: "upper" } }));
       store.setSelectedMovement("rearRiseMm");
       store.resetMovements();
-      expect(useAppStore.getState().scene.targetRegion).toBe("upper");
+      // Public route Reset Movements applies complete Neutral (middle target).
+      expect(useAppStore.getState().scene.targetRegion).toBe("middle");
     });
 
     it("restores default target region and focal preset on restart and route changes", () => {

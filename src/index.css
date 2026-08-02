@@ -792,6 +792,19 @@ button {
 .control-help { color: var(--text-muted); font-size: 12px; }
 .control-stack { display: grid; gap: 8px; }
 .choice-list { display: grid; gap: 6px; }
+.teaching-controls { border: 0; padding: 0; margin: 0 0 10px; min-width: 0; }
+.teaching-controls legend { padding: 0; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em; }
+.teaching-controls__intro { margin: 0 0 10px; font-size: 13px; color: var(--text-muted); }
+.teaching-controls__group { margin-bottom: 8px; }
+.teaching-controls__heading { margin: 8px 0 4px; font-size: 12px; font-weight: 600; color: var(--text); }
+.teaching-controls__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.teaching-controls__choice { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; min-height: 36px; padding: 6px 8px; border: 1px solid var(--border-soft); border-radius: 8px; cursor: pointer; }
+.teaching-controls__choice:has(input:checked) { border-color: var(--primary); background: rgba(79,70,229,0.06); }
+.teaching-controls__choice:has(input:focus-visible) { outline: 2px solid var(--primary); outline-offset: 1px; }
+.teaching-controls__choice input { flex: 0 0 auto; margin-top: 2px; }
+.teaching-controls__explanation { margin-top: 4px; font-size: 13px; line-height: 1.4; color: var(--text); }
+.teaching-controls__explanation p { margin: 0; }
+@media (max-width: 720px) { .teaching-controls__grid { grid-template-columns: 1fr; } }
 .choice-label { display: inline-flex; align-items: center; gap: var(--sim-control-gap); font-size: 14px; min-height: 24px; }
 .range-slider { width: 100%; accent-color: var(--primary); }
 

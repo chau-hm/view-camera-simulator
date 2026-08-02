@@ -15,6 +15,7 @@ import { AppBrand } from "./AppBrand";
 import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
+import { CameraMovementTeachingControls } from "../controls/CameraMovementTeachingControls";
 import { MovementControls } from "../controls/MovementControls";
 import { MovementSelector } from "../controls/MovementSelector";
 import { SingleMovementControl } from "../controls/SingleMovementControl";
@@ -30,6 +31,11 @@ import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPa
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
+import {
+  formatCameraMovementPublicReadout,
+  matchCameraMovementTeachingCase,
+  type CameraMovementPublicCaseId,
+} from "../../scenes/cameraMovementPublicTeaching";
 
 type SimulatorWorkspaceProps = {
   mode: SimulatorMode;
@@ -54,6 +60,9 @@ export const SimulatorWorkspace = ({
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const clearCameraMovementCalibrationSession = useAppStore(
     (state) => state.clearCameraMovementCalibrationSession,
+  );
+  const clearSimulatorRouteInitialization = useAppStore(
+    (state) => state.clearSimulatorRouteInitialization,
   );
   const camera = useAppStore((state) => state.camera);
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
@@ -105,8 +114,18 @@ export const SimulatorWorkspace = ({
   useEffect(
     () => () => {
       if (calibrationEnabled) clearCameraMovementCalibrationSession();
+      // Restore Neutral on leave-and-return for the public teaching route only.
+      // Other free scenes intentionally preserve their in-memory state on
+      // leave-and-return, so the route-init guard is cleared solely here.
+      if (
+        sceneId === "understanding-camera-movements" &&
+        mode === "free" &&
+        !calibrationEnabled
+      ) {
+        clearSimulatorRouteInitialization();
+      }
     },
-    [calibrationEnabled, clearCameraMovementCalibrationSession],
+    [calibrationEnabled, clearCameraMovementCalibrationSession, clearSimulatorRouteInitialization, mode, sceneId],
   );
 
   const closeGeometryPanel = useCallback((restoreFocus = true) => {
@@ -212,6 +231,30 @@ export const SimulatorWorkspace = ({
     camera,
     effectiveCameraMovementCalibration,
   );
+  const activeTeachingCaseId = useMemo<CameraMovementPublicCaseId | null>(() => {
+    if (
+      camera.activeSceneId !== "understanding-camera-movements" ||
+      calibrationSession.active
+    ) {
+      return null;
+    }
+    return matchCameraMovementTeachingCase({
+      anchor: camera.viewpointAnchor,
+      targetRegion,
+      camera,
+    });
+  }, [
+    camera,
+    calibrationSession.active,
+    targetRegion,
+  ]);
+  const teachingReadout = useMemo(
+    () =>
+      activeTeachingCaseId
+        ? formatCameraMovementPublicReadout(activeTeachingCaseId)
+        : null,
+    [activeTeachingCaseId],
+  );
   const cameraMovementCalibrationDiagnostics = useMemo(() => {
     if (
       !calibrationEnabled ||
@@ -252,6 +295,10 @@ export const SimulatorWorkspace = ({
   const apertureLocked = controlPolicy.aperture === "fixed";
   const infinityResetHidden = controlPolicy.infinityReset === false;
   const [rawRttDebug, setRawRttDebug] = useState(false);
+  const showPublicTeachingControls =
+    sceneId === "understanding-camera-movements" &&
+    mode === "free" &&
+    !calibrationEnabled;
 
   // enabled controls currently depend only on mode, task metadata, and active scene.
   // Avoid depending on the entire camera object because movement/focus changes should not recompute this set.
@@ -424,6 +471,7 @@ export const SimulatorWorkspace = ({
                   case "frontSwingDeg": return camera.frontSwingDeg;
                 }
               })() } : null}
+              teachingReadout={teachingReadout}
             />
 
             <FocusTargetsReadout
@@ -472,7 +520,11 @@ export const SimulatorWorkspace = ({
             </div>
 
             <div style={{ marginTop: 8 }}>
-              {(safeScene.movementCapabilities && selectedMovement) ? (
+              {showPublicTeachingControls ? (
+                <div className="sim-section">
+                  <CameraMovementTeachingControls />
+                </div>
+              ) : (safeScene.movementCapabilities && selectedMovement) ? (
                 <>
                   <div className="sim-section">
                     <MovementSelector
@@ -551,7 +603,7 @@ export const SimulatorWorkspace = ({
             </button>
           </div>
 
-          <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} riseMm={camera.frontRiseMm} />
+          <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} riseMm={camera.frontRiseMm} movementSummary={teachingReadout ? `${teachingReadout.label}${teachingReadout.value ? ` · ${teachingReadout.value}` : ""}` : null} />
         </div>
       )}
 

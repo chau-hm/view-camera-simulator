@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { isGroundGlassRttScene, RTT_SCENES } from "../../render/groundGlassRttScenes";
 import {
   createRegisteredRttSubject,
@@ -22,6 +22,12 @@ import {
   createCameraMovementsGroup,
   disposeCameraMovementsGroup,
 } from "../../render/CameraMovementsSubjectFactory";
+import {
+  mountCameraMovementRttSubject,
+  unmountCameraMovementRttSubject,
+  updateCameraMovementRttSubjectTarget,
+} from "../../render/cameraMovementRttSubjectLifecycle";
+import { CAMERA_MOVEMENT_BASELINE_RENDER_MODEL } from "../../render/cameraMovementLatticeRenderModel";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 
@@ -223,6 +229,76 @@ describe("Camera Movements RTT focal uniforms", () => {
       resolveGroundGlassImageDistanceMm(pitched),
       4,
     );
+  });
+
+  it("keeps one RTT subject generation and owned resources across target teaching transitions", () => {
+    const scene = new THREE.Scene();
+    const mounted = mountCameraMovementRttSubject(
+      scene,
+      CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+      "middle",
+    );
+    const group = mounted.group;
+    const generation = mounted.runtimeInfo.generation;
+    const resourceKey = group.userData.resourceKey;
+    const geometryId = group.userData.canonicalGeometryId;
+    const geometryKey = group.userData.canonicalGeometryKey;
+    const presentationKey = group.userData.presentationKey;
+    const geometries = new Set<THREE.BufferGeometry>();
+    const materials = new Set<THREE.Material>();
+    group.traverse((object) => {
+      const candidate = object as THREE.Mesh;
+      if (candidate.geometry) geometries.add(candidate.geometry);
+      const objectMaterials = Array.isArray(candidate.material)
+        ? candidate.material
+        : candidate.material
+          ? [candidate.material]
+          : [];
+      objectMaterials.forEach((material) => materials.add(material));
+    });
+    const geometryDisposals = [...geometries].map((geometry) =>
+      vi.spyOn(geometry, "dispose"),
+    );
+    const materialDisposals = [...materials].map((material) =>
+      vi.spyOn(material, "dispose"),
+    );
+
+    ( ["upper", "lower", "middle"] as const).forEach((targetRegion) => {
+      updateCameraMovementRttSubjectTarget(
+        mounted,
+        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+        targetRegion,
+      );
+      expect(group.userData.targetRegion).toBe(targetRegion);
+      expect(group.userData.rttMountGeneration).toBe(generation);
+      expect(group.userData.canonicalGeometryId).toBe(geometryId);
+      expect(group.userData.canonicalGeometryKey).toBe(geometryKey);
+      expect(group.userData.presentationKey).toBe(presentationKey);
+      expect(group.userData.resourceKey).toBe(resourceKey);
+      expect(group.userData.canonicalEdgeCount).toBe(
+        CAMERA_MOVEMENT_LATTICE.edges.length,
+      );
+      const selectedBatch = group.children.find(
+        (child) => child.userData.edgeTargetRegion === targetRegion,
+      ) as THREE.LineSegments & { material: THREE.Material & { color?: THREE.Color } };
+      expect(selectedBatch).toBeDefined();
+      expect(selectedBatch.userData.selectedTarget).toBe(true);
+      expect(selectedBatch.material.color?.getHexString()).toBe(
+        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation[
+          targetRegion === "upper"
+            ? "upperRegionColour"
+            : targetRegion === "lower"
+              ? "lowerRegionColour"
+              : "middleRegionColour"
+        ].slice(1),
+      );
+      geometryDisposals.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+      materialDisposals.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+    });
+
+    unmountCameraMovementRttSubject(mounted);
+    geometryDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+    materialDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
   });
 });
 

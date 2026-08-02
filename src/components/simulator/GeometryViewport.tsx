@@ -23,12 +23,14 @@ type GeometryViewportProps = {
   scene: SceneDefinition;
   riseMm?: number;
   showHeader?: boolean;
+  /** Public teaching movement summary for the active case. */
+  movementSummary?: string | null;
 };
 
 const SVG_WIDTH = 460;
 const SVG_HEIGHT = 280;
 
-export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, showHeader }: GeometryViewportProps) => {
+export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, showHeader, movementSummary }: GeometryViewportProps) => {
   const setGeometryView = useAppStore((state) => state.setGeometryView);
   const diagramRef = useRef<HTMLDivElement | null>(null);
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
@@ -231,7 +233,9 @@ const cameraProjection = constructionWindow
             ? "Side view"
             : effectiveGeometryView === "top"
               ? "Top view"
-              : "Perpendicular Scheimpflug section"} | Rise: {(riseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
+              : "Perpendicular Scheimpflug section"}{movementSummary
+            ? ` | ${movementSummary}`
+            : ` | Rise: ${(riseMm ?? 0).toFixed(1)} mm | ${UI_COPY.simulator.tiltLabel}: ${opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | ${UI_COPY.simulator.swingLabel}: ${opticsState.diagnostics.swingAngleDeg.toFixed(1)}°`}
       </p>
 
       <div ref={diagramRef} className="geometry-diagram-container" style={{ flex: 1, minHeight: 0 }}>
