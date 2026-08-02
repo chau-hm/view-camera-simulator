@@ -1,7 +1,7 @@
 name = "vcs_ui_tasks"
 description = "Implements bounded React UI, responsive layout, accessibility, controls, routes, catalog, state, and guided-task changes."
 model = "gpt-5.6-luna"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Canvas", "Relay", "Mosaic"]
 
