@@ -1,6 +1,6 @@
 name = "vcs_pr_reviewer"
 description = "Independent merge-gate reviewer for View Camera Simulator pull requests, focused on correctness, lifecycle, task integrity, accessibility, and test validity."
-model = "gpt-5.6-sol"
+model = "gpt-5.6-luna"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 nickname_candidates = ["Atlas", "Auditor", "Gatekeeper"]

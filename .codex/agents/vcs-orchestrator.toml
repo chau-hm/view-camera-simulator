@@ -1,6 +1,6 @@
 name = "vcs_orchestrator"
 description = "Coordinates multi-domain View Camera Simulator work, creates bounded work packets, assigns project agents, and controls integration and merge gates."
-model = "gpt-5.6-sol"
+model = "gpt-5.6-luna"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 nickname_candidates = ["Conductor", "Navigator", "Planner"]
