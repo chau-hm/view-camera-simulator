@@ -62,9 +62,110 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   useAppStore.getState().setGroundGlassRttRuntimeInfo(null);
+  useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-original", null);
+  useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-current", null);
 });
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
+  it("owns independent Original and Current RTT channels through resize and teardown", () => {
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+    });
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...understandingCameraMovementsScene.cameraPreset,
+      activeSceneId: understandingCameraMovementsScene.id,
+    };
+    const optics = deriveOpticsState(camera, understandingCameraMovementsScene);
+    const createSubject = vi.mocked(createRegisteredRttSubject);
+    createSubject.mockClear();
+    const view = render(
+      React.createElement(
+        React.Fragment,
+        null,
+        React.createElement(GroundGlassRTT, {
+          opticsState: optics,
+          focalLengthMm: camera.focalLengthMm,
+          sceneId: understandingCameraMovementsScene.id,
+          widthPx: 500,
+          heightPx: 400,
+          renderQuality: "standard",
+          channel: "camera-movement-original",
+          targetRegion: "middle",
+        }),
+        React.createElement(GroundGlassRTT, {
+          opticsState: optics,
+          focalLengthMm: camera.focalLengthMm,
+          sceneId: understandingCameraMovementsScene.id,
+          widthPx: 500,
+          heightPx: 400,
+          renderQuality: "standard",
+          channel: "camera-movement-current",
+          targetRegion: "middle",
+        }),
+      ),
+    );
+
+    expect(createSubject).toHaveBeenCalledTimes(2);
+    const originalInfo = useAppStore.getState().groundGlassRttRuntimeInfoByChannel?.["camera-movement-original"];
+    const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfoByChannel?.["camera-movement-current"];
+    expect(originalInfo?.channel).toBe("camera-movement-original");
+    expect(currentInfo?.channel).toBe("camera-movement-current");
+    expect(originalInfo?.resourceGeneration).toBeGreaterThan(0);
+    expect(currentInfo?.resourceGeneration).toBeGreaterThan(0);
+    expect(createSubject.mock.results[0]?.value).not.toBe(createSubject.mock.results[1]?.value);
+    const ownedGeometrySpies = createSubject.mock.results.map((result) => {
+      const group = result.value as THREE.Group;
+      const geometry = (group.children[0] as THREE.Mesh).geometry;
+      return vi.spyOn(geometry, "dispose");
+    });
+    expect(view.container.querySelectorAll('[data-rtt-resource-channel="camera-movement-original"]').length).toBe(1);
+    expect(view.container.querySelectorAll('[data-rtt-resource-channel="camera-movement-current"]').length).toBe(1);
+
+    view.rerender(
+      React.createElement(
+        React.Fragment,
+        null,
+        React.createElement(GroundGlassRTT, {
+          opticsState: optics,
+          focalLengthMm: camera.focalLengthMm,
+          sceneId: understandingCameraMovementsScene.id,
+          widthPx: 750,
+          heightPx: 600,
+          renderQuality: "standard",
+          channel: "camera-movement-original",
+          targetRegion: "middle",
+        }),
+        React.createElement(GroundGlassRTT, {
+          opticsState: optics,
+          focalLengthMm: camera.focalLengthMm,
+          sceneId: understandingCameraMovementsScene.id,
+          widthPx: 750,
+          heightPx: 600,
+          renderQuality: "standard",
+          channel: "camera-movement-current",
+          targetRegion: "middle",
+        }),
+      ),
+    );
+
+    expect(useAppStore.getState().groundGlassRttRuntimeInfoByChannel?.["camera-movement-original"]?.resourceGeneration).toBe(
+      originalInfo?.resourceGeneration,
+    );
+    expect(useAppStore.getState().groundGlassRttRuntimeInfoByChannel?.["camera-movement-current"]?.resourceGeneration).toBe(
+      currentInfo?.resourceGeneration,
+    );
+    expect(useAppStore.getState().groundGlassRttRuntimeInfoByChannel?.["camera-movement-original"]?.internalWidthPx).toBeGreaterThan(
+      originalInfo?.internalWidthPx ?? 0,
+    );
+    ownedGeometrySpies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+    view.unmount();
+    ownedGeometrySpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+    expect(useAppStore.getState().groundGlassRttRuntimeInfoByChannel?.["camera-movement-original"]).toBeNull();
+    expect(useAppStore.getState().groundGlassRttRuntimeInfoByChannel?.["camera-movement-current"]).toBeNull();
+  });
+
   it("keeps the owned lattice and RTT generation stable across canonical optics changes", () => {
     useAppStore.getState().initializeSimulatorRoute({
       mode: "free",

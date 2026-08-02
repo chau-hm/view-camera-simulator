@@ -2,6 +2,7 @@ import type { DerivedOpticsState } from "../types/optics";
 import { GroundGlassRTT } from "./GroundGlassRTT";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { useAppStore } from "../state/appStore";
+import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
 
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
@@ -21,6 +22,8 @@ export type GroundGlassRenderSurfaceProps = {
   heightPx: number;
   renderQuality: import("../types/ui").RenderQualityProfile;
   zoomEnabled?: boolean;
+  channel?: GroundGlassRttChannel;
+  targetRegion?: import("../scenes/cameraMovementSceneCalibration").CameraMovementTargetRegion;
 };
 
 export const GroundGlassRenderSurface = ({
@@ -41,12 +44,19 @@ export const GroundGlassRenderSurface = ({
   heightPx,
   renderQuality,
   zoomEnabled,
+  channel = "default",
+  targetRegion,
 }: GroundGlassRenderSurfaceProps) => {
-  const rttRuntimeInfo = useAppStore((state) => state.groundGlassRttRuntimeInfo);
+  const rttRuntimeInfo = useAppStore((state) =>
+    channel === "default"
+      ? state.groundGlassRttRuntimeInfo
+      : state.groundGlassRttRuntimeInfoByChannel?.[channel] ?? null,
+  );
   if (isGroundGlassRttScene(sceneId)) {
     return (
       <div
         data-testid="ground-glass-rtt"
+        data-rtt-channel={channel}
         data-rtt-scene-id={sceneId}
         data-rtt-camera-ok={rttRuntimeInfo?.cameraConfigurationOk === undefined ? undefined : String(rttRuntimeInfo.cameraConfigurationOk)}
         data-rtt-depth-available={rttRuntimeInfo?.depthTextureAvailable === undefined ? undefined : String(rttRuntimeInfo.depthTextureAvailable)}
@@ -62,7 +72,11 @@ export const GroundGlassRenderSurface = ({
         data-rtt-focal-length-mm={rttRuntimeInfo?.focalLengthMm}
         data-rtt-lattice-edge-count={rttRuntimeInfo?.latticeEdgeCount}
         data-rtt-lattice-geometry-id={rttRuntimeInfo?.latticeGeometryId}
+        data-rtt-lattice-geometry-key={rttRuntimeInfo?.latticeGeometryKey}
+        data-rtt-lattice-presentation-key={rttRuntimeInfo?.latticePresentationKey}
+        data-rtt-lattice-resource-key={rttRuntimeInfo?.latticeResourceKey}
         data-rtt-lattice-target-region={rttRuntimeInfo?.latticeTargetRegion}
+        data-rtt-lattice-subject-generation={rttRuntimeInfo?.latticeSubjectGeneration}
         data-rtt-camera-position={rttRuntimeInfo?.cameraPositionWorld?.join(",")}
         data-rtt-camera-up={rttRuntimeInfo?.cameraUpWorld?.join(",")}
         data-rtt-camera-forward={rttRuntimeInfo?.cameraForwardWorld?.join(",")}
@@ -103,6 +117,8 @@ export const GroundGlassRenderSurface = ({
           focusAssistEnabled={focusAssistEnabled}
           renderQuality={renderQuality}
           zoomEnabled={zoomEnabled}
+          channel={channel}
+          targetRegion={targetRegion}
         />
       </div>
     );

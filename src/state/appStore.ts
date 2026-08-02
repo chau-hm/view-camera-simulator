@@ -234,7 +234,10 @@ const isInfinityResetDisallowed = (sceneId: string): boolean => {
   return scene?.cameraControlPolicy?.infinityReset === false;
 };
 
-import type { GroundGlassRttRuntimeInfo } from "../render/groundGlassRttDimensions";
+import type {
+  GroundGlassRttChannel,
+  GroundGlassRttRuntimeInfo,
+} from "../render/groundGlassRttDimensions";
 import type { InteractiveLatticeRuntimeInfo } from "../render/cameraMovementLatticeRuntime";
 
 export type AppStore = {
@@ -248,11 +251,18 @@ export type AppStore = {
   lastInitializedRouteKey?: string | null;
   /** Optional runtime diagnostics for RTT scenes. */
   groundGlassRttRuntimeInfo?: GroundGlassRttRuntimeInfo | null;
+  groundGlassRttRuntimeInfoByChannel?: Partial<
+    Record<GroundGlassRttChannel, GroundGlassRttRuntimeInfo | null>
+  >;
   /** Actual mounted interactive lattice diagnostics; null when not mounted. */
   interactiveLatticeRuntimeInfo?: InteractiveLatticeRuntimeInfo | null;
   cameraMovementCalibrationSession: CameraMovementCalibrationSession;
 
   setGroundGlassRttRuntimeInfo: (info: GroundGlassRttRuntimeInfo | null) => void;
+  setGroundGlassRttRuntimeInfoForChannel: (
+    channel: GroundGlassRttChannel,
+    info: GroundGlassRttRuntimeInfo | null,
+  ) => void;
   setInteractiveLatticeRuntimeInfo: (info: InteractiveLatticeRuntimeInfo | null) => void;
   setCurrentTaskEvaluation: (evaluation: TaskEvaluation | null) => void;
   setMode: (mode: SimulatorMode) => void;
@@ -338,11 +348,19 @@ export const useAppStore = create<AppStore>((set) => ({
   selectedMovement: null,
   lastInitializedRouteKey: null,
   groundGlassRttRuntimeInfo: null,
+  groundGlassRttRuntimeInfoByChannel: {},
   interactiveLatticeRuntimeInfo: null,
   cameraMovementCalibrationSession: createCalibrationSession(),
 
   setGroundGlassRttRuntimeInfo: (info) =>
     set(() => ({ groundGlassRttRuntimeInfo: info })),
+  setGroundGlassRttRuntimeInfoForChannel: (channel, info) =>
+    set((state) => ({
+      groundGlassRttRuntimeInfoByChannel: {
+        ...state.groundGlassRttRuntimeInfoByChannel,
+        [channel]: info,
+      },
+    })),
   setInteractiveLatticeRuntimeInfo: (info) =>
     set(() => ({ interactiveLatticeRuntimeInfo: info })),
 

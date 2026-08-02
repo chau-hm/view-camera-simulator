@@ -62,27 +62,41 @@ const expectFiniteVectorAttribute = async (
   return components;
 };
 
+const rttForChannel = (
+  page: Page,
+  channel: "default" | "camera-movement-original" | "camera-movement-current",
+) => page.locator(`[data-testid="ground-glass-rtt"][data-rtt-channel="${channel}"]`);
+
+const publicCurrentRtt = (page: Page) =>
+  rttForChannel(page, "camera-movement-current");
+
+const publicComparisonRtts = (page: Page) =>
+  page.locator(
+    '[data-testid="ground-glass-rtt"][data-rtt-channel="camera-movement-original"], ' +
+      '[data-testid="ground-glass-rtt"][data-rtt-channel="camera-movement-current"]',
+  );
+
 test("camera movements scene loads and renders valid Ground Glass content", async ({ page }) => {
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   await expect(page.locator('[data-testid="scene-canvas"]')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('[data-optical-geometry-visible="true"]')).toBeVisible({ timeout: 5000 });
 
-  const rtt = page.locator('[data-testid="ground-glass-rtt"]');
-  await expect(rtt).toHaveCount(1);
-  await expect(rtt).toBeVisible({ timeout: 15000 });
-
-  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
-  await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 5000 });
-  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15000 });
-  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
-
-  const rawNonBg = Number(await rtt.getAttribute("data-rtt-raw-non-background"));
-  const finalNonBg = Number(await rtt.getAttribute("data-rtt-final-non-background"));
-  expect(Number.isFinite(rawNonBg) && rawNonBg > 0).toBe(true);
-  expect(Number.isFinite(finalNonBg) && finalNonBg > 0).toBe(true);
-
-  const sanityError = await rtt.getAttribute("data-rtt-sanity-error");
-  expect(sanityError === null || sanityError === "" || sanityError === "null").toBe(true);
+  const rtts = publicComparisonRtts(page);
+  await expect(rtts).toHaveCount(2);
+  for (const channel of ["camera-movement-original", "camera-movement-current"] as const) {
+    const rtt = rttForChannel(page, channel);
+    await expect(rtt).toBeVisible({ timeout: 15000 });
+    await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
+    await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 5000 });
+    await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15000 });
+    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
+    const rawNonBg = Number(await rtt.getAttribute("data-rtt-raw-non-background"));
+    const finalNonBg = Number(await rtt.getAttribute("data-rtt-final-non-background"));
+    expect(Number.isFinite(rawNonBg) && rawNonBg > 0).toBe(true);
+    expect(Number.isFinite(finalNonBg) && finalNonBg > 0).toBe(true);
+    const sanityError = await rtt.getAttribute("data-rtt-sanity-error");
+    expect(sanityError === null || sanityError === "" || sanityError === "null").toBe(true);
+  }
 
   await expect(page.getByRole("radio", { name: "Neutral" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "A — Front tilt" })).toBeVisible();
@@ -101,7 +115,7 @@ test("camera movements scene loads and renders valid Ground Glass content", asyn
 test("all four movements change Ground Glass without breaking", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
-  const rtt = page.locator('[data-testid="ground-glass-rtt"]');
+  const rtt = publicCurrentRtt(page);
   await expect(rtt).toBeVisible({ timeout: 15000 });
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
 
@@ -134,7 +148,7 @@ test("all four movements change Ground Glass without breaking", async ({ page })
 test("Reset Movements restores zero state and keeps Ground Glass valid", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
-  const rtt = page.locator('[data-testid="ground-glass-rtt"]');
+  const rtt = publicCurrentRtt(page);
   await expect(rtt).toBeVisible({ timeout: 15000 });
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
 
@@ -178,7 +192,7 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
 
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   const scene = page.locator('[data-testid="scene-canvas"]');
-  const rtt = page.locator('[data-testid="ground-glass-rtt"]');
+  const rtt = publicCurrentRtt(page);
   const sceneCanvas = scene.locator("canvas");
   await expect(sceneCanvas).toHaveCount(1);
   await expect(scene).toHaveAttribute("data-mounted-lattice", "true", { timeout: 15_000 });
@@ -313,7 +327,9 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
     .click();
   await enableRttDiagnosticsWithoutNavigation(page);
   const returnedScene = page.locator('[data-testid="scene-canvas"]');
-  const returnedRtt = page.locator('[data-testid="ground-glass-rtt"]');
+  const returnedRtt = publicCurrentRtt(page);
+  const returnedComparisonRtts = publicComparisonRtts(page);
+  await expect(returnedComparisonRtts).toHaveCount(2, { timeout: 15_000 });
   await expect(returnedScene).toHaveAttribute("data-lattice-edge-count", "224", { timeout: 15_000 });
   await expect(returnedScene).toHaveAttribute("data-mounted-lattice", "true", { timeout: 15_000 });
   await expect(returnedScene).toHaveAttribute("data-mounted-lattice-edge-count", "224");
@@ -347,6 +363,18 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   await expect(returnedRtt).toHaveAttribute("data-rtt-lattice-target-region", "middle");
   await expect(returnedRtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15_000 });
   await expect(returnedRtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 15_000 });
+  await expect(
+    rttForChannel(page, "camera-movement-original"),
+  ).toHaveAttribute("data-rtt-lattice-geometry-id", returnedGeometryId!);
+  await expect(
+    rttForChannel(page, "camera-movement-original"),
+  ).toHaveAttribute("data-rtt-lattice-edge-count", "224");
+  await expect(
+    rttForChannel(page, "camera-movement-original"),
+  ).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15_000 });
+  await expect(
+    rttForChannel(page, "camera-movement-original"),
+  ).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 15_000 });
   await disableOpticalGeometry(page, returnedScene);
   const returnVisual = await readSceneCanvasVisualSample(returnedScene.locator("canvas"));
   expect(returnVisual.supported).toBe(true);

@@ -19,13 +19,23 @@ const expectSharedLattice = async (
   expectContentDiagnostics = true,
 ) => {
   const scene = page.locator('[data-testid="scene-canvas"]');
-  const rtt = page.locator('[data-testid="ground-glass-rtt"]');
+  const calibrationRoute = new URL(page.url()).searchParams.has("cameraCalibration");
+  const rtt = !calibrationRoute
+    ? page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="camera-movement-current"]')
+    : page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
   await expect(scene).toHaveAttribute("data-mounted-lattice", "true", { timeout: 15_000 });
   await expect(scene).toHaveAttribute("data-mounted-lattice-edge-count", expectedEdgeCount);
   const geometryId = await scene.getAttribute("data-mounted-lattice-geometry-id");
   expect(geometryId).toBeTruthy();
   await expect(rtt).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
   await expect(rtt).toHaveAttribute("data-rtt-lattice-edge-count", expectedEdgeCount);
+  if (!calibrationRoute) {
+    const original = page.locator(
+      '[data-testid="ground-glass-rtt"][data-rtt-channel="camera-movement-original"]',
+    );
+    await expect(original).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
+    await expect(original).toHaveAttribute("data-rtt-lattice-edge-count", expectedEdgeCount);
+  }
   if (expectContentDiagnostics) {
     await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15_000 });
     await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 15_000 });
