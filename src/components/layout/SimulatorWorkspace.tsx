@@ -334,6 +334,7 @@ export const SimulatorWorkspace = ({
 
   // RTT runtime info
   const rttRuntimeInfo = useAppStore((s) => s.groundGlassRttRuntimeInfo);
+  const rttRuntimeInfoByChannel = useAppStore((s) => s.groundGlassRttRuntimeInfoByChannel);
 
   const tableTiltFocusMetric =
     safeScene.id === "table-tilt" && mode === "free" ? "point" : "patch";
@@ -525,6 +526,8 @@ export const SimulatorWorkspace = ({
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
               rttRuntimeInfo={rttRuntimeInfo}
+              rttRuntimeInfoByChannel={rttRuntimeInfoByChannel}
+              comparison={groundGlassComparison}
             />
             </div>
           </>}

@@ -22,6 +22,7 @@ import { understandingCameraMovementsScene } from "../../scenes/definitions/unde
 import geometry from "../../scenes/shelfSwingGeometry";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import type { GroundGlassRttRuntimeInfo } from "../../render/groundGlassRttDimensions";
 
 const fiberTestState = vi.hoisted(() => ({
   gl: {
@@ -67,6 +68,40 @@ afterEach(() => {
 });
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
+  it("ignores stale owner cleanup for default, Original, and Current channels", () => {
+    const runtimeInfo = (resourceGeneration: number) =>
+      ({ resourceGeneration } as GroundGlassRttRuntimeInfo);
+
+    useAppStore.getState().setGroundGlassRttRuntimeInfo(runtimeInfo(1), "default-old");
+    useAppStore.getState().setGroundGlassRttRuntimeInfo(runtimeInfo(2), "default-new");
+    useAppStore.getState().setGroundGlassRttRuntimeInfo(null, "default-old");
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(2);
+    useAppStore.getState().setGroundGlassRttRuntimeInfo(null, "default-new");
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo).toBeNull();
+
+    for (const channel of [
+      "camera-movement-original",
+      "camera-movement-current",
+    ] as const) {
+      useAppStore
+        .getState()
+        .setGroundGlassRttRuntimeInfoForChannel(channel, runtimeInfo(3), `${channel}-old`);
+      useAppStore
+        .getState()
+        .setGroundGlassRttRuntimeInfoForChannel(channel, runtimeInfo(4), `${channel}-new`);
+      useAppStore
+        .getState()
+        .setGroundGlassRttRuntimeInfoForChannel(channel, null, `${channel}-old`);
+      expect(
+        useAppStore.getState().groundGlassRttRuntimeInfoByChannel?.[channel]?.resourceGeneration,
+      ).toBe(4);
+      useAppStore
+        .getState()
+        .setGroundGlassRttRuntimeInfoForChannel(channel, null, `${channel}-new`);
+      expect(useAppStore.getState().groundGlassRttRuntimeInfoByChannel?.[channel]).toBeNull();
+    }
+  });
+
   it("owns independent Original and Current RTT channels through resize and teardown", () => {
     useAppStore.getState().initializeSimulatorRoute({
       mode: "free",
@@ -112,6 +147,9 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfoByChannel?.["camera-movement-current"];
     expect(originalInfo?.channel).toBe("camera-movement-original");
     expect(currentInfo?.channel).toBe("camera-movement-current");
+    expect(originalInfo?.ownerId).toMatch(/^ground-glass-rtt-owner-/);
+    expect(currentInfo?.ownerId).toMatch(/^ground-glass-rtt-owner-/);
+    expect(originalInfo?.ownerId).not.toBe(currentInfo?.ownerId);
     expect(originalInfo?.resourceGeneration).toBeGreaterThan(0);
     expect(currentInfo?.resourceGeneration).toBeGreaterThan(0);
     expect(createSubject.mock.results[0]?.value).not.toBe(createSubject.mock.results[1]?.value);

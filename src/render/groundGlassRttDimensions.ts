@@ -19,6 +19,8 @@ export type GroundGlassRttDimensions = {
 };
 
 export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
+  /** Mounted renderer that currently owns this diagnostics record. */
+  ownerId?: string;
   channel?: GroundGlassRttChannel;
   profile: RenderQualityProfile;
 

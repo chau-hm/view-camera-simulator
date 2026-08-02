@@ -69,6 +69,7 @@ export const GroundGlassRenderSurface = ({
         data-rtt-raw-non-background={rttRuntimeInfo?.rawNonBackgroundPixelCount}
         data-rtt-final-non-background={rttRuntimeInfo?.finalNonBackgroundPixelCount}
         data-rtt-resource-generation={rttRuntimeInfo?.resourceGeneration}
+        data-rtt-owner-id={rttRuntimeInfo?.ownerId}
         data-rtt-focal-length-mm={rttRuntimeInfo?.focalLengthMm}
         data-rtt-lattice-edge-count={rttRuntimeInfo?.latticeEdgeCount}
         data-rtt-lattice-geometry-id={rttRuntimeInfo?.latticeGeometryId}

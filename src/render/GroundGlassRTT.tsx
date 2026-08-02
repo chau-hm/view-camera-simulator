@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef } from "react";
+import React, { useEffect, useId, useLayoutEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CAMERA_CONSTANTS } from "../utils/constants";
@@ -76,6 +76,10 @@ const tupleMatches = (
   Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
 function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, channel = "default", targetRegion: explicitTargetRegion, }: GroundGlassRTTProps) {
+  // React gives each mounted renderer a stable identity without a module-level
+  // mutable registry. It survives ordinary prop changes and is replaced only
+  // when this OffscreenRenderer instance is actually remounted.
+  const runtimeOwnerId = `ground-glass-rtt-owner-${useId()}`;
   // single-frame flag to avoid repeating uniform-preparation warnings every frame
   const reportedUniformPreparationErrorRef = React.useRef<string | null>(null);
   const reportedCameraConfigurationErrorRef = React.useRef<string | null>(null);
@@ -133,14 +137,20 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   }, [channel]);
   const setRuntimeInfo = React.useCallback(
     (info: import("./groundGlassRttDimensions").GroundGlassRttRuntimeInfo | null) => {
-      const enriched = info ? { ...info, channel } : null;
+      const enriched = info
+        ? { ...info, channel, ownerId: runtimeOwnerId }
+        : null;
       if (channel === "default") {
-        useAppStore.getState().setGroundGlassRttRuntimeInfo(enriched);
+        useAppStore.getState().setGroundGlassRttRuntimeInfo(enriched, runtimeOwnerId);
       } else {
-        useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel(channel, enriched);
+        useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel(
+          channel,
+          enriched,
+          runtimeOwnerId,
+        );
       }
     },
-    [channel],
+    [channel, runtimeOwnerId],
   );
 
   // clear RTT runtime diagnostics when this renderer unmounts or is recreated

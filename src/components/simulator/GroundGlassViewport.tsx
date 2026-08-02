@@ -73,6 +73,10 @@ export const GroundGlassViewport = ({
   const [currentZoomEnabled, setCurrentZoomEnabled] = useState(false);
   const originalHeadingId = useId();
   const currentHeadingId = useId();
+  const originalDescriptionId = useId();
+  const currentDescriptionId = useId();
+  const comparisonHeadingId = useId();
+  const comparisonDescriptionId = useId();
   const expandTriggerRef = useRef<HTMLButtonElement | null>(null);
   const restoreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const previouslyExpandedRef = useRef(expanded);
@@ -85,20 +89,22 @@ export const GroundGlassViewport = ({
       label,
       headingId,
       layer,
+      descriptionId,
       layerZoomEnabled,
       onLayerZoomChange,
       resetSuffix,
     }: {
       label: "Original" | "Current";
       headingId: string;
+      descriptionId: string;
       layer: CameraMovementGroundGlassComparison["original"];
       layerZoomEnabled: boolean;
       onLayerZoomChange: (nextZoomed: boolean) => void;
       resetSuffix: string;
     }) => (
-      <section className="groundglass-comparison__panel" aria-labelledby={headingId}>
+      <section className="groundglass-comparison__panel" aria-labelledby={headingId} aria-describedby={descriptionId}>
         <h3 id={headingId} className="groundglass-comparison__title">{label}</h3>
-        <p className="groundglass-comparison__label">
+        <p id={descriptionId} className="groundglass-comparison__label">
           {label === "Original" ? comparisonLabels?.original : comparisonLabels?.current}
         </p>
         <GroundGlassRenderer
@@ -197,9 +203,14 @@ export const GroundGlassViewport = ({
       </div>
 
       {comparison ? (
-        <p className="groundglass-comparison__intro">
-          Compare the neutral camera with the selected movement.
-        </p>
+        <>
+          <h3 id={comparisonHeadingId} className="groundglass-comparison__heading">
+            Original and Current Ground Glass comparison
+          </h3>
+          <p id={comparisonDescriptionId} className="groundglass-comparison__intro">
+            Compare the neutral camera with the selected movement.
+          </p>
+        </>
       ) : null}
 
       <div
@@ -207,10 +218,17 @@ export const GroundGlassViewport = ({
         aria-label="GroundGlassViewport"
       >
         {comparison ? (
-          <div className="groundglass-comparison" aria-label="Original and Current Ground Glass comparison">
+          <section
+            className="groundglass-comparison"
+            role="region"
+            aria-label="Original and Current Ground Glass comparison"
+            aria-labelledby={comparisonHeadingId}
+            aria-describedby={comparisonDescriptionId}
+          >
             {renderLayer({
               label: "Original",
               headingId: originalHeadingId,
+              descriptionId: originalDescriptionId,
               layer: comparison.original,
               layerZoomEnabled: originalZoomEnabled,
               onLayerZoomChange: setOriginalZoomEnabled,
@@ -219,12 +237,13 @@ export const GroundGlassViewport = ({
             {renderLayer({
               label: "Current",
               headingId: currentHeadingId,
+              descriptionId: currentDescriptionId,
               layer: comparison.current,
               layerZoomEnabled: currentZoomEnabled,
               onLayerZoomChange: setCurrentZoomEnabled,
               resetSuffix: "current",
             })}
-          </div>
+          </section>
         ) : (
           <div className={`groundglass-renderer-host${expanded ? " groundglass-renderer-host--expanded" : ""}`}>
             {/* Expanded presentation intentionally keeps the existing logical RTT size; container-aware RTT sizing is a renderer-focused follow-up. */}
