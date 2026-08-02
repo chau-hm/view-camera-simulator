@@ -347,7 +347,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     );
   });
 
-  it("replaces and disposes the owned RTT lattice when target region changes", () => {
+  it("updates the owned RTT lattice target in place without reallocating it", () => {
     useAppStore.getState().initializeSimulatorRoute({
       mode: "free",
       sceneId: understandingCameraMovementsScene.id,
@@ -372,40 +372,40 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const firstSubjectGeneration =
       useAppStore.getState().groundGlassRttRuntimeInfo?.latticeSubjectGeneration;
     const firstGroup = createSubject.mock.results[0]?.value as THREE.Group;
+    const firstResourceKey = firstGroup.userData.resourceKey;
     const firstGeometry = (firstGroup.children[0] as THREE.Mesh).geometry;
     const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
 
-    act(() =>
-      useAppStore.setState((state) => ({
-        scene: { ...state.scene, targetRegion: "middle" },
-      })),
-    );
+    (["middle", "lower", "middle"] as const).forEach((targetRegion) => {
+      act(() =>
+        useAppStore.setState((state) => ({
+          scene: { ...state.scene, targetRegion },
+        })),
+      );
 
-    expect(createSubject).toHaveBeenCalledTimes(2);
-    expect(createSubject).toHaveBeenLastCalledWith(
-      understandingCameraMovementsScene.id,
-      expect.objectContaining({ targetRegion: "middle" }),
-    );
-    expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
-    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
-      firstGeneration,
-    );
-    expect(
-      useAppStore.getState().groundGlassRttRuntimeInfo
-        ?.latticeSubjectGeneration,
-    ).toBeGreaterThan(
-      firstSubjectGeneration ?? 0,
-    );
-    expect(
-      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeEdgeCount,
-    ).toBe(firstGroup.userData.canonicalEdgeCount);
-    expect(
-      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeGeometryId,
-    ).toBe(firstGroup.userData.canonicalGeometryId);
-    expect(
-      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeTargetRegion,
-    ).toBe("middle");
+      expect(createSubject).toHaveBeenCalledTimes(1);
+      expect(disposeFirstGeometry).not.toHaveBeenCalled();
+      expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
+        firstGeneration,
+      );
+      expect(useAppStore.getState().groundGlassRttRuntimeInfo?.latticeSubjectGeneration).toBe(
+        firstSubjectGeneration,
+      );
+      expect(useAppStore.getState().groundGlassRttRuntimeInfo?.latticeResourceKey).toBe(
+        firstResourceKey,
+      );
+      expect(
+        useAppStore.getState().groundGlassRttRuntimeInfo?.latticeEdgeCount,
+      ).toBe(firstGroup.userData.canonicalEdgeCount);
+      expect(
+        useAppStore.getState().groundGlassRttRuntimeInfo?.latticeGeometryId,
+      ).toBe(firstGroup.userData.canonicalGeometryId);
+      expect(
+        useAppStore.getState().groundGlassRttRuntimeInfo?.latticeTargetRegion,
+      ).toBe(targetRegion);
+    });
     view.unmount();
+    expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
   });
 
   it("replaces presentation resources without reallocating the RTT graph", () => {

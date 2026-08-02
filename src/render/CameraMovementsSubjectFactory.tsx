@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
@@ -25,17 +25,8 @@ import {
 } from "./cameraMovementLatticeRuntime";
 import { toWorld } from "./rttUtils";
 
-type LatticeStyleBatch = {
-  role: CanonicalCameraMovementLattice["edges"][number]["role"];
-  colour: string;
-  opacity: number;
-  weight: number;
-  edgeIds: string[];
-  positions: number[];
-};
-
 const edgeWeightForRole = (
-  role: LatticeStyleBatch["role"],
+  role: CanonicalCameraMovementLattice["edges"][number]["role"],
   presentation: CameraMovementPresentationCalibration,
 ): number => {
   if (role === "outer-vertical") return presentation.outerVerticalWeight;
@@ -52,43 +43,32 @@ const colourForRegion = (
   return presentation.middleRegionColour;
 };
 
-/**
- * Deterministic compact identity for the exact canonical millimetre geometry
- * consumed by both the interactive R3F subject and Ground Glass RTT.
- */
-export const CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID =
-  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.geometryId;
+type LatticeStyleBatch = {
+  role: CanonicalCameraMovementLattice["edges"][number]["role"];
+  targetRegion: CanonicalCameraMovementLattice["edges"][number]["targetRegion"];
+  edgeIds: string[];
+  positions: number[];
+};
 
 const createStyleBatches = (
   lattice: CanonicalCameraMovementLattice,
-  presentation: CameraMovementPresentationCalibration,
-  targetRegion: CameraMovementTargetRegion,
 ): LatticeStyleBatch[] => {
   const batches = new Map<string, LatticeStyleBatch>();
-
   lattice.edges.forEach((edge) => {
-    const selected = edge.targetRegion === targetRegion;
-    const colour = selected
-      ? colourForRegion(targetRegion, presentation)
-      : presentation.inactiveColour;
-    const opacity =
-      edge.role === "internal" ? presentation.internalEdgeOpacity : 1;
-    const weight = edgeWeightForRole(edge.role, presentation);
-    const key = `${edge.role}:${colour}:${opacity}:${weight}`;
+    const key = `${edge.role}:${edge.targetRegion}`;
     let batch = batches.get(key);
     if (!batch) {
       batch = {
         role: edge.role,
-        colour,
-        opacity,
-        weight,
+        targetRegion: edge.targetRegion,
         edgeIds: [],
         positions: [],
       };
       batches.set(key, batch);
     }
-    batch.edgeIds.push(edge.id);
-    batch.positions.push(
+    const resolvedBatch = batch;
+    resolvedBatch.edgeIds.push(edge.id);
+    resolvedBatch.positions.push(
       toWorld(edge.startWorld.x),
       toWorld(edge.startWorld.y),
       toWorld(edge.startWorld.z),
@@ -97,8 +77,53 @@ const createStyleBatches = (
       toWorld(edge.endWorld.z),
     );
   });
-
   return [...batches.values()];
+};
+
+/**
+ * Deterministic compact identity for the exact canonical millimetre geometry
+ * consumed by both the interactive R3F subject and Ground Glass RTT.
+ */
+export const CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID =
+  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.geometryId;
+
+/** Apply target highlighting without replacing the canonical lattice objects. */
+export const applyCameraMovementsGroupStyle = (
+  group: THREE.Group,
+  presentation: CameraMovementPresentationCalibration,
+  targetRegion: CameraMovementTargetRegion,
+): void => {
+  group.userData.targetRegion = targetRegion;
+  group.traverse((object) => {
+    const edgeRole = object.userData.edgeRole;
+    const edgeTargetRegion = object.userData.edgeTargetRegion;
+    if (
+      (edgeRole !== "internal" &&
+        edgeRole !== "outer-horizontal" &&
+        edgeRole !== "outer-vertical") ||
+      (edgeTargetRegion !== "upper" &&
+        edgeTargetRegion !== "middle" &&
+        edgeTargetRegion !== "lower" &&
+        edgeTargetRegion !== "neutral")
+    ) return;
+    const selected = edgeTargetRegion === targetRegion;
+    const opacity = edgeRole === "internal" ? presentation.internalEdgeOpacity : 1;
+    const material = object as THREE.LineSegments & { material?: THREE.Material };
+    const lineMaterial = material.material as
+      | (THREE.Material & { color?: THREE.Color; linewidth?: number; opacity?: number; transparent?: boolean })
+      | undefined;
+    if (!lineMaterial) return;
+    lineMaterial.color?.set(
+      selected ? colourForRegion(targetRegion, presentation) : presentation.inactiveColour,
+    );
+    if (typeof lineMaterial.linewidth === "number") {
+      lineMaterial.linewidth = edgeWeightForRole(edgeRole, presentation);
+    }
+    if (typeof lineMaterial.opacity === "number") lineMaterial.opacity = opacity;
+    if (typeof lineMaterial.transparent === "boolean") lineMaterial.transparent = opacity < 1;
+    object.userData.lineOpacity = opacity;
+    object.userData.selectedTarget = selected;
+  });
 };
 
 export type CameraMovementsGroupOptions = Readonly<{
@@ -168,33 +193,39 @@ export function createCameraMovementsGroup(
   group.userData.canonicalGeometryId = geometryId;
   group.userData.canonicalGeometryKey = geometryKey;
   group.userData.presentationKey = presentationKey;
-  group.userData.resourceKey =
-    `${geometryKey}|${presentationKey}|target:${targetRegion}`;
+  group.userData.resourceKey = `${geometryKey}|${presentationKey}`;
   group.userData.canonicalEdgeCount = lattice.edges.length;
   group.userData.canonicalEdgeIds = lattice.edges.map(({ id }) => id);
   group.userData.canonicalUnits = lattice.units;
   group.userData.canonicalBounds = lattice.bounds;
 
-  createStyleBatches(lattice, presentation, targetRegion).forEach((batch) => {
+  createStyleBatches(lattice).forEach((batch) => {
+    const selected = batch.targetRegion === targetRegion;
+    const opacity = batch.role === "internal" ? presentation.internalEdgeOpacity : 1;
+    const weight = edgeWeightForRole(batch.role, presentation);
     const lineGeometry = new LineSegmentsGeometry();
     lineGeometry.setPositions(batch.positions);
     lineGeometry.computeBoundingBox();
     lineGeometry.computeBoundingSphere();
 
     const lineMaterial = new LineMaterial({
-      color: batch.colour,
-      linewidth: batch.weight,
-      opacity: batch.opacity,
-      transparent: batch.opacity < 1,
+      color: selected
+        ? colourForRegion(targetRegion, presentation)
+        : presentation.inactiveColour,
+      linewidth: weight,
+      opacity,
+      transparent: opacity < 1,
       depthTest: true,
       depthWrite: true,
     });
     const segments = new LineSegments2(lineGeometry, lineMaterial);
-    segments.name = `camera-movements-lattice-${batch.role}`;
+    segments.name = `camera-movements-lattice-${batch.role}-${batch.targetRegion}`;
     segments.userData.edgeRole = batch.role;
+    segments.userData.edgeTargetRegion = batch.targetRegion;
     segments.userData.canonicalEdgeIds = batch.edgeIds;
-    segments.userData.lineWeight = batch.weight;
-    segments.userData.lineOpacity = batch.opacity;
+    segments.userData.lineWeight = weight;
+    segments.userData.lineOpacity = opacity;
+    segments.userData.selectedTarget = selected;
     segments.computeLineDistances();
     group.add(segments);
   });
@@ -260,6 +291,20 @@ export const publishAttachedInteractiveLatticeRuntime = (
   return runtimeInfo;
 };
 
+/** Publish a target-only presentation update without changing mount identity. */
+export const updateAttachedInteractiveLatticeRuntime = (
+  group: THREE.Group,
+  targetRegion: CameraMovementTargetRegion,
+): InteractiveLatticeRuntimeInfo | null => {
+  group.userData.targetRegion = targetRegion;
+  const current = useAppStore.getState().interactiveLatticeRuntimeInfo;
+  const generation = group.userData.interactiveMountGeneration;
+  if (!current || current.generation !== generation) return null;
+  const runtimeInfo = readInteractiveLatticeRuntimeInfo(group);
+  useAppStore.getState().setInteractiveLatticeRuntimeInfo(runtimeInfo);
+  return runtimeInfo;
+};
+
 export const clearInteractiveLatticeRuntime = (
   runtimeInfo: InteractiveLatticeRuntimeInfo | null,
 ): void => {
@@ -274,6 +319,8 @@ export const clearInteractiveLatticeRuntime = (
 export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
   onGroupChange,
 }) => {
+  const onGroupChangeRef = useRef(onGroupChange);
+  onGroupChangeRef.current = onGroupChange;
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
   const effectiveCalibration = useAppStore(
     selectEffectiveCameraMovementCalibration,
@@ -287,22 +334,30 @@ export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
       createCameraMovementsGroup(
         cameraMovementsGroupOptionsFromRenderModel(
           renderModel,
-          targetRegion,
         ),
       ),
-    [renderModel, targetRegion],
+    [renderModel],
   );
+
+  useEffect(() => {
+    applyCameraMovementsGroupStyle(
+      group,
+      renderModel.presentation,
+      targetRegion,
+    );
+    updateAttachedInteractiveLatticeRuntime(group, targetRegion);
+  }, [group, renderModel, targetRegion]);
 
   useEffect(() => {
     const runtimeInfo =
       publishAttachedInteractiveLatticeRuntime(group, r3fScene);
-    onGroupChange?.(group);
+    onGroupChangeRef.current?.(group);
     return () => {
       disposeCameraMovementsGroup(group);
       clearInteractiveLatticeRuntime(runtimeInfo);
-      onGroupChange?.(null);
+      onGroupChangeRef.current?.(null);
     };
-  }, [group, onGroupChange, r3fScene]);
+  }, [group, r3fScene]);
 
   return <primitive object={group} dispose={null} />;
 };

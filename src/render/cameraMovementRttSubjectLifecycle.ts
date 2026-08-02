@@ -9,6 +9,7 @@ import {
   publishAttachedRttLatticeRuntime,
   type RttLatticeRuntimeInfo,
 } from "./cameraMovementLatticeRuntime";
+import { applyCameraMovementsGroupStyle } from "./CameraMovementsSubjectFactory";
 
 const CAMERA_MOVEMENT_SCENE_ID = "understanding-camera-movements";
 
@@ -50,4 +51,17 @@ export const unmountCameraMovementRttSubject = (
 ): void => {
   mounted.scene.remove(mounted.group);
   disposeRegisteredRttSubject(CAMERA_MOVEMENT_SCENE_ID, mounted.group);
+};
+
+/** Update only target presentation on the mounted subject. */
+export const updateCameraMovementRttSubjectTarget = (
+  mounted: MountedCameraMovementRttSubject,
+  renderModel: CameraMovementLatticeRenderModel,
+  targetRegion: CameraMovementTargetRegion,
+): void => {
+  applyCameraMovementsGroupStyle(
+    mounted.group,
+    renderModel.presentation,
+    targetRegion,
+  );
 };

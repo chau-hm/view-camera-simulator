@@ -110,11 +110,13 @@ export const CameraMovementTeachingControls = () => {
 
   return (
     <section aria-label={UI_COPY.controls.teachingCaseGroupLabel}>
+      <h3 className="sim-section-label">{UI_COPY.controls.teachingTitle}</h3>
       <p className="teaching-controls__intro">{UI_COPY.controls.teachingIntro}</p>
       <fieldset
         className="teaching-controls"
         role="radiogroup"
         aria-labelledby={groupId}
+        aria-describedby={explanationId}
       >
         <legend id={groupId}>{UI_COPY.controls.teachingCaseGroupLabel}</legend>
         {TEACHING_GROUPS.map((group) => (

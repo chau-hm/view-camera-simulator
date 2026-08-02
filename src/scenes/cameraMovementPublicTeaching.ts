@@ -81,8 +81,14 @@ export const matchCameraMovementTeachingCase = (input: {
     | "rearTiltDeg"
     | "frontSwingDeg"
     | "cameraBodyPitchDeg"
+    | "focusMode"
   >;
 }): CameraMovementPublicCaseId | null => {
+  // Public teaching cases are finite-focus instructional states. Keep legacy
+  // fixtures that omit focusMode compatible, but never classify an explicit
+  // infinity state as a case.
+  if (input.camera.focusMode === "infinity") return null;
+
   const order = [
     "neutral",
     "A-front-tilt",

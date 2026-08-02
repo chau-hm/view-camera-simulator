@@ -8,6 +8,9 @@ import {
   CAMERA_MOVEMENT_CASE_MATCH_TOLERANCE,
 } from "../../scenes/cameraMovementPublicTeaching";
 import { CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS } from "../../scenes/cameraMovementTeachingCases";
+import { CAMERA_MOVEMENT_CALIBRATION_BASELINE } from "../../scenes/cameraMovementEffectiveCalibration";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import type { CameraState } from "../../types/camera";
 
 const tilt = CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.tiltDeg;
@@ -55,6 +58,16 @@ describe("camera movement public teaching matcher", () => {
     // stale rear tilt after selecting A must not match
     expect(matchCameraMovementTeachingCase({ anchor: "mid", targetRegion: "middle", camera: { ...neutralCamera(), frontTiltDeg: tilt, rearTiltDeg: 2 } })).toBeNull();
     expect(matchCameraMovementTeachingCase({ anchor: "high", targetRegion: "upper", camera: { ...neutralCamera(), cameraBodyPitchDeg: pitch, frontRiseMm: 5 } })).toBeNull();
+  });
+
+  it("returns null for an explicit infinity-focus state", () => {
+    expect(
+      matchCameraMovementTeachingCase({
+        anchor: "mid",
+        targetRegion: "middle",
+        camera: { ...neutralCamera(), focusMode: "infinity" },
+      }),
+    ).toBeNull();
   });
 
   it("uses a tight documented tolerance that absorbs fp noise but not user drift", () => {
@@ -134,6 +147,28 @@ describe("camera movement public readout formatting", () => {
 });
 
 describe("camera movement public teaching store action", () => {
+  it("enters finite focus after Architecture Rise was set to infinity", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise" });
+    store.setInfinityFocus();
+    expect(useAppStore.getState().camera.focusMode).toBe("infinity");
+
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "understanding-camera-movements",
+    });
+    const state = useAppStore.getState();
+    const calibratedFocus =
+      CAMERA_MOVEMENT_CALIBRATION_BASELINE.optics.provisionalFocusDistanceMm;
+    expect(state.camera.focusMode).toBe("finite");
+    expect(state.camera.focusDistanceMm).toBe(calibratedFocus);
+    expect(state.camera.lastFiniteFocusDepthMm).toBe(calibratedFocus);
+    expect(
+      deriveOpticsState(state.camera, understandingCameraMovementsScene).diagnostics
+        .fallbackApplied,
+    ).toBe(false);
+  });
+
   it("neutral is selected on public route entry", () => {
     const store = useAppStore.getState();
     store.initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements" });
@@ -156,22 +191,75 @@ describe("camera movement public teaching store action", () => {
       expect(state.camera.frontTiltDeg).toBe(CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[id].camera.frontTiltDeg);
       expect(state.camera.rearTiltDeg).toBe(CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[id].camera.rearTiltDeg);
       expect(state.camera.cameraBodyPitchDeg).toBe(CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[id].camera.cameraBodyPitchDeg);
+      expect(state.camera.focusMode).toBe("finite");
+      expect(state.camera.lastFiniteFocusDepthMm).toBe(state.camera.focusDistanceMm);
       expect(state.camera.viewpointAnchor).toBe(CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[id].anchor);
       expect(state.scene.targetRegion).toBe(CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[id].targetRegion);
       expect(matchCameraMovementTeachingCase({ anchor: state.camera.viewpointAnchor, targetRegion: state.scene.targetRegion, camera: state.camera })).toBe(id);
     }
   });
 
+  it.each([
+    "A-front-tilt",
+    "B-rear-tilt",
+    "C3-high-viewpoint",
+    "D1-front-fall",
+    "D3-low-viewpoint",
+  ] as const)("keeps %s finite without changing focal/focus values", (id) => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements" });
+    const before = useAppStore.getState().camera;
+    // Model an explicit infinity state while retaining the finite calibrated
+    // distance that the camera stores for restoration.
+    useAppStore.setState((state) => ({
+      camera: { ...state.camera, focusMode: "infinity" },
+    }));
+
+    useAppStore.getState().applyCameraMovementTeachingCase(id);
+    const after = useAppStore.getState().camera;
+    expect(after.focusMode).toBe("finite");
+    expect(after.focalLengthMm).toBe(before.focalLengthMm);
+    expect(after.focusDistanceMm).toBe(before.focusDistanceMm);
+    expect(after.lastFiniteFocusDepthMm).toBe(before.focusDistanceMm);
+  });
+
   it("is a no-op on other scenes and when calibration is active", () => {
     const store = useAppStore.getState();
     store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise" });
+    store.setInfinityFocus();
+    const architectureInfinity = useAppStore.getState().camera;
     useAppStore.getState().applyCameraMovementTeachingCase("C3-high-viewpoint");
     expect(useAppStore.getState().camera.viewpointAnchor).toBe("mid");
+    expect(useAppStore.getState().camera.focusMode).toBe(architectureInfinity.focusMode);
 
     useAppStore.getState().initializeSimulatorRoute({ mode: "free", sceneId: "understanding-camera-movements", calibrationEnabled: true });
+    const calibrationBefore = useAppStore.getState();
     useAppStore.getState().applyCameraMovementTeachingCase("C3-high-viewpoint");
     expect(useAppStore.getState().camera.viewpointAnchor).toBe("mid");
     expect(useAppStore.getState().cameraMovementCalibrationSession.active).toBe(true);
+    expect(useAppStore.getState().camera.focalLengthMm).toBe(calibrationBefore.camera.focalLengthMm);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(calibrationBefore.camera.focusDistanceMm);
+  });
+
+  it("uses active workbench focus calibration when the calibration route initializes", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "understanding-camera-movements",
+      calibrationEnabled: true,
+    });
+    expect(store.updateCameraMovementCalibration({ optics: { provisionalFocusDistanceMm: 2400 } })).toBe(true);
+    store.clearSimulatorRouteInitialization();
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "understanding-camera-movements",
+      calibrationEnabled: true,
+    });
+    const state = useAppStore.getState();
+    expect(state.camera.focusMode).toBe("finite");
+    expect(state.camera.focusDistanceMm).toBe(2400);
+    expect(state.camera.lastFiniteFocusDepthMm).toBe(2400);
+    expect(state.cameraMovementCalibrationSession.effectiveCalibration.optics.provisionalFocusDistanceMm).toBe(2400);
   });
 
   it("applies one completed case transition atomically (no intermediate mixed states)", () => {

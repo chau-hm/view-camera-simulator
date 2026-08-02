@@ -30,6 +30,7 @@ describe("CameraMovementTeachingControls", () => {
   it("shows the introductory copy and group headings", () => {
     onPublicRoute();
     render(<CameraMovementTeachingControls />);
+    expect(screen.getByRole("heading", { name: "Movement examples", level: 3 })).toBeVisible();
     expect(screen.getByText(/Start from Neutral, then compare one camera movement at a time/)).toBeInTheDocument();
     expect(screen.getByText("Reference")).toBeInTheDocument();
     expect(screen.getByText("Tilt")).toBeInTheDocument();
@@ -75,6 +76,17 @@ describe("CameraMovementTeachingControls", () => {
     const neutral = screen.getByRole("radio", { name: "Neutral" });
     expect(neutral).toHaveAttribute("type", "radio");
     expect(neutral).toBeChecked();
+  });
+
+  it("describes the radio group with its visible live explanation", () => {
+    onPublicRoute();
+    render(<CameraMovementTeachingControls />);
+    const group = screen.getByRole("radiogroup", { name: "Camera movement teaching cases" });
+    const explanationId = group.getAttribute("aria-describedby");
+
+    expect(explanationId).toBeTruthy();
+    expect(explanationId).toBe(screen.getByRole("status").id);
+    expect(document.getElementById(explanationId ?? "")).toBeVisible();
   });
 
   it("supports keyboard operation through native radio semantics", () => {

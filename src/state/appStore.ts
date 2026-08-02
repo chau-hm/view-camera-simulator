@@ -84,6 +84,31 @@ const resolveCameraBodyReset = (sceneId: string): Pick<CameraState, "cameraBodyP
 
 const isCameraMovementsScene = (sceneId: string) => sceneId === "understanding-camera-movements";
 
+const isCameraMovementCalibrationRoute = (
+  mode: CameraState["mode"],
+  sceneId: string,
+  calibrationEnabled: boolean,
+): boolean =>
+  mode === "free" &&
+  sceneId === "understanding-camera-movements" &&
+  calibrationEnabled;
+
+/**
+ * Resolve the immutable optical calibration used while a route is being
+ * initialized. Public teaching uses the production baseline; an active
+ * calibration workbench keeps its accepted effective calibration instead of
+ * falling back to the scene preset.
+ */
+const resolveCameraMovementRouteCalibration = (
+  state: Pick<AppStore, "camera" | "cameraMovementCalibrationSession">,
+  calibrationRoute: boolean,
+) =>
+  calibrationRoute &&
+  state.camera.activeSceneId === "understanding-camera-movements" &&
+  state.cameraMovementCalibrationSession.active
+    ? state.cameraMovementCalibrationSession.effectiveCalibration
+    : CAMERA_MOVEMENT_CALIBRATION_BASELINE;
+
 const resolveRigPlacement = (
   sceneId: string,
   anchor: CameraRigViewpointAnchor = "mid",
@@ -472,10 +497,19 @@ export const useAppStore = create<AppStore>((set) => ({
       if (state.cameraMovementCalibrationSession.active) return {};
       if (!(caseId in CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES)) return {};
       const patch = buildCameraMovementTeachingCasePatch(caseId);
+      const finiteFocusMetadata = Number.isFinite(state.camera.focusDistanceMm)
+        ? { focusMode: "finite" as const, lastFiniteFocusDepthMm: state.camera.focusDistanceMm }
+        : Number.isFinite(state.camera.lastFiniteFocusDepthMm)
+          ? {
+              focusMode: "finite" as const,
+              lastFiniteFocusDepthMm: state.camera.lastFiniteFocusDepthMm,
+            }
+          : { focusMode: "finite" as const };
       return {
         camera: {
           ...state.camera,
           ...patch.camera,
+          ...finiteFocusMetadata,
           cameraRigPlacement: resolveRigPlacement(
             state.camera.activeSceneId,
             patch.camera.viewpointAnchor,
@@ -591,6 +625,17 @@ export const useAppStore = create<AppStore>((set) => ({
         };
       }
 
+      const calibrationRoute = isCameraMovementCalibrationRoute(
+        mode,
+        sceneId,
+        calibrationEnabled,
+      );
+      const routeCalibration = resolveCameraMovementRouteCalibration(
+        state,
+        calibrationRoute,
+      );
+      const cameraMovementRoute = isCameraMovementsScene(sceneId);
+
       let nextCamera: CameraState = { ...state.camera };
       const routeTask = taskId ? getTaskById(taskId) : undefined;
 
@@ -630,14 +675,47 @@ export const useAppStore = create<AppStore>((set) => ({
         }
       }
 
+      // Understanding Camera Movements is a finite-focus teaching route. Its
+      // focus values come from the canonical production calibration, or from
+      // the accepted workbench calibration when entering that route. This is
+      // deliberately scoped to this scene so other scenes retain their own
+      // infinity/finite focus policy.
+      if (cameraMovementRoute) {
+        nextCamera = {
+          ...nextCamera,
+          focalLengthMm: routeCalibration.optics.provisionalFocalLengthMm,
+          focusDistanceMm: routeCalibration.optics.provisionalFocusDistanceMm,
+          focusMode: "finite",
+          lastFiniteFocusDepthMm:
+            routeCalibration.optics.provisionalFocusDistanceMm,
+        };
+      }
+
       nextCamera = {
         ...nextCamera,
         viewpointAnchor: "mid",
-        cameraRigPlacement: resolveRigPlacement(sceneId, "mid"),
+        cameraRigPlacement: resolveRigPlacement(
+          sceneId,
+          "mid",
+          routeCalibration,
+        ),
         cameraBodyPitchDeg: 0,
       };
 
       const defaultMovement = resolveDefaultMovement(sceneId);
+
+      const nextCalibrationSession = calibrationRoute
+        ? state.cameraMovementCalibrationSession.active &&
+          state.camera.activeSceneId === sceneId
+          ? state.cameraMovementCalibrationSession
+          : createCalibrationSession(
+              true,
+              state.cameraMovementCalibrationSession.draftResetGeneration + 1,
+            )
+        : createCalibrationSession(
+            false,
+            state.cameraMovementCalibrationSession.draftResetGeneration + 1,
+          );
 
       const nextUi = {
         ...state.ui,
@@ -659,10 +737,7 @@ export const useAppStore = create<AppStore>((set) => ({
         ui: nextUi,
         selectedMovement: defaultMovement,
         lastInitializedRouteKey: routeKey,
-        cameraMovementCalibrationSession: createCalibrationSession(
-          mode === "free" && sceneId === "understanding-camera-movements" && calibrationEnabled,
-          state.cameraMovementCalibrationSession.draftResetGeneration + 1,
-        ),
+        cameraMovementCalibrationSession: nextCalibrationSession,
       };
     }),
 

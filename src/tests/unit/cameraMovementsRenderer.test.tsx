@@ -7,8 +7,17 @@ import {
   clearInteractiveLatticeRuntime,
   createCameraMovementsGroup,
   disposeCameraMovementsGroup,
+  applyCameraMovementsGroupStyle,
   publishAttachedInteractiveLatticeRuntime,
+  updateAttachedInteractiveLatticeRuntime,
 } from "../../render/CameraMovementsSubjectFactory";
+import {
+  mountCameraMovementRttSubject,
+  unmountCameraMovementRttSubject,
+  updateCameraMovementRttSubjectTarget,
+} from "../../render/cameraMovementRttSubjectLifecycle";
+import { CAMERA_MOVEMENT_BASELINE_RENDER_MODEL } from "../../render/cameraMovementLatticeRenderModel";
+import { CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES } from "../../scenes/cameraMovementPublicTeaching";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
@@ -62,6 +71,14 @@ describe("Camera Movements subject factory", () => {
       targetRegion: "upper",
       generation: unattached.userData.interactiveMountGeneration,
     });
+
+    const firstGeneration = first!.generation;
+    const firstResourceKey = first!.resourceKey;
+    const updated = updateAttachedInteractiveLatticeRuntime(unattached, "lower");
+    expect(updated?.targetRegion).toBe("lower");
+    expect(updated?.generation).toBe(firstGeneration);
+    expect(updated?.resourceKey).toBe(firstResourceKey);
+    expect(unattached.userData.resourceKey).toBe(firstResourceKey);
 
     scene.remove(unattached);
     clearInteractiveLatticeRuntime(first);
@@ -213,7 +230,7 @@ describe("Camera Movements subject factory", () => {
     disposeCameraMovementsGroup(replacement);
   });
 
-  it("replaces and disposes component-owned groups for a target-region change", () => {
+  it("updates target presentation in place without replacing owned resources", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
     useAppStore.getState().initializeSimulatorRoute({
       mode: "free",
@@ -242,6 +259,7 @@ describe("Camera Movements subject factory", () => {
     assertCanonicalGroup(first, "upper");
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     const firstGeometry = (first.children[0] as THREE.Mesh).geometry;
+    const firstMaterial = (first.children[0] as THREE.Mesh).material;
     const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
 
     act(() =>
@@ -250,14 +268,14 @@ describe("Camera Movements subject factory", () => {
       })),
     );
 
-    const second = mountedGroups[1];
-    expect(second).not.toBe(first);
-    expect(first.userData.resourcesDisposed).toBe(true);
-    expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
+    const second = mountedGroups[0];
+    expect(second).toBe(first);
+    expect(first.userData.resourcesDisposed).not.toBe(true);
+    expect(disposeFirstGeometry).not.toHaveBeenCalled();
+    expect((first.children[0] as THREE.Mesh).geometry).toBe(firstGeometry);
+    expect((first.children[0] as THREE.Mesh).material).toBe(firstMaterial);
     assertCanonicalGroup(second, "middle");
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
-    const secondGeometry = (second.children[0] as THREE.Mesh).geometry;
-    const disposeSecondGeometry = vi.spyOn(secondGeometry!, "dispose");
 
     act(() =>
       useAppStore.setState((state) => ({
@@ -265,18 +283,16 @@ describe("Camera Movements subject factory", () => {
       })),
     );
 
-    const third = mountedGroups[2];
-    expect(third).not.toBe(second);
-    expect(second.userData.resourcesDisposed).toBe(true);
-    expect(disposeSecondGeometry).toHaveBeenCalledTimes(1);
+    const third = mountedGroups[0];
+    expect(third).toBe(second);
+    expect(second.userData.resourcesDisposed).not.toBe(true);
+    expect(disposeFirstGeometry).not.toHaveBeenCalled();
     assertCanonicalGroup(third, "lower");
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
 
-    const thirdGeometry = (third.children[0] as THREE.Mesh).geometry;
-    const disposeThirdGeometry = vi.spyOn(thirdGeometry!, "dispose");
     view.unmount();
     expect(third.userData.resourcesDisposed).toBe(true);
-    expect(disposeThirdGeometry).toHaveBeenCalledTimes(1);
+    expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     expect(consoleError).toHaveBeenCalledTimes(1);
     expect(String(consoleError.mock.calls[0]?.[0])).toContain(
@@ -284,6 +300,104 @@ describe("Camera Movements subject factory", () => {
     );
     expect(consoleError.mock.calls[0]?.[1]).toBe("primitive");
     consoleError.mockRestore();
+  });
+
+  it("keeps both subjects stable across the complete public teaching transition sequence", () => {
+    useAppStore.getState().setInteractiveLatticeRuntimeInfo(null);
+    const scene = new THREE.Scene();
+    const interactive = createCameraMovementsGroup("middle");
+    scene.add(interactive);
+    const initialInteractive = publishAttachedInteractiveLatticeRuntime(
+      interactive,
+      scene,
+    );
+    expect(initialInteractive).not.toBeNull();
+
+    const rtt = mountCameraMovementRttSubject(
+      scene,
+      CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+      "middle",
+    );
+    const initialGeometryId = interactive.userData.canonicalGeometryId;
+    const initialEdgeCount = interactive.userData.canonicalEdgeCount;
+    const initialResourceKey = interactive.userData.resourceKey;
+    const initialInteractiveGeneration = initialInteractive!.generation;
+    const initialRttGeneration = rtt.runtimeInfo.generation;
+    const geometries = new Set<THREE.BufferGeometry>();
+    const materials = new Set<THREE.Material>();
+    for (const group of [interactive, rtt.group]) {
+      group.traverse((object) => {
+        const candidate = object as THREE.Mesh;
+        if (candidate.geometry) geometries.add(candidate.geometry);
+        const objectMaterials = Array.isArray(candidate.material)
+          ? candidate.material
+          : candidate.material
+            ? [candidate.material]
+            : [];
+        objectMaterials.forEach((material) => materials.add(material));
+      });
+    }
+    const geometryDisposals = [...geometries].map((geometry) =>
+      vi.spyOn(geometry, "dispose"),
+    );
+    const materialDisposals = [...materials].map((material) =>
+      vi.spyOn(material, "dispose"),
+    );
+    const sequence = [
+      "neutral",
+      "A-front-tilt",
+      "B-rear-tilt",
+      "C1-front-rise",
+      "C2-rear-rise",
+      "C3-high-viewpoint",
+      "D1-front-fall",
+      "D2-rear-fall",
+      "D3-low-viewpoint",
+      "neutral",
+    ] as const;
+
+    for (const caseId of sequence) {
+      const targetRegion = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[caseId].targetRegion;
+      applyCameraMovementsGroupStyle(
+        interactive,
+        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation,
+        targetRegion,
+      );
+      updateAttachedInteractiveLatticeRuntime(interactive, targetRegion);
+      updateCameraMovementRttSubjectTarget(
+        rtt,
+        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+        targetRegion,
+      );
+
+      const interactiveRuntime = useAppStore.getState().interactiveLatticeRuntimeInfo;
+      expect(interactive.userData.canonicalGeometryId, caseId).toBe(initialGeometryId);
+      expect(rtt.group.userData.canonicalGeometryId, caseId).toBe(initialGeometryId);
+      expect(interactive.userData.canonicalEdgeCount, caseId).toBe(initialEdgeCount);
+      expect(rtt.group.userData.canonicalEdgeCount, caseId).toBe(initialEdgeCount);
+      expect(interactive.userData.resourceKey, caseId).toBe(initialResourceKey);
+      expect(rtt.group.userData.resourceKey, caseId).toBe(initialResourceKey);
+      expect(interactive.userData.targetRegion, caseId).toBe(targetRegion);
+      expect(rtt.group.userData.targetRegion, caseId).toBe(targetRegion);
+      expect(interactiveRuntime?.targetRegion, caseId).toBe(targetRegion);
+      expect(interactiveRuntime?.generation, caseId).toBe(initialInteractiveGeneration);
+      expect(rtt.runtimeInfo.generation, caseId).toBe(initialRttGeneration);
+      expect(
+        interactive.getObjectByName(`camera-movements-lattice-outer-vertical-${targetRegion}`)
+          ?.userData.selectedTarget,
+        caseId,
+      ).toBe(true);
+      geometryDisposals.forEach((spy) => expect(spy, caseId).not.toHaveBeenCalled());
+      materialDisposals.forEach((spy) => expect(spy, caseId).not.toHaveBeenCalled());
+    }
+
+    unmountCameraMovementRttSubject(rtt);
+    scene.remove(interactive);
+    clearInteractiveLatticeRuntime(initialInteractive);
+    disposeCameraMovementsGroup(interactive);
+    geometryDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+    materialDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
   });
 
   it("replaces mounted resources on presentation and geometry calibration keys", () => {
