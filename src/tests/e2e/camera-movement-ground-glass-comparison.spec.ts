@@ -61,6 +61,42 @@ test("public camera-movement Ground Glass compares neutral and current through s
   await expect(original).toHaveAttribute("data-rtt-lattice-target-region", "middle");
   await expect(current).toHaveAttribute("data-rtt-lattice-target-region", "middle");
 
+  // The shared lattice/resource assertions above do not prove that the two RTT
+  // cameras are driven by different physical states.  Capture the neutral
+  // poses and require Original to remain neutral while representative movement
+  // cases change Current.  Rear tilt, rise, and viewpoint placement are used
+  // because each changes the rendered camera extrinsics in the canonical model.
+  const poseAttributes = ["data-rtt-camera-position", "data-rtt-camera-up", "data-rtt-camera-forward"] as const;
+  const neutralOriginalPose = Object.fromEntries(
+    await Promise.all(poseAttributes.map(async (attribute) => [attribute, await original.getAttribute(attribute)] as const)),
+  );
+  const neutralCurrentPose = Object.fromEntries(
+    await Promise.all(poseAttributes.map(async (attribute) => [attribute, await current.getAttribute(attribute)] as const)),
+  );
+  for (const attribute of poseAttributes) {
+    expect(neutralOriginalPose[attribute]).toBeTruthy();
+    expect(neutralCurrentPose[attribute]).toBeTruthy();
+    expect(neutralOriginalPose[attribute]).toBe(neutralCurrentPose[attribute]);
+  }
+
+  const assertOriginalNeutralAndCurrentChanged = async (label: string) => {
+    await page.getByRole("radio", { name: label }).click();
+    await expect(page.getByRole("radio", { name: label })).toBeChecked();
+    for (const attribute of poseAttributes) {
+      await expect(original).toHaveAttribute(attribute, neutralOriginalPose[attribute]!);
+    }
+    await expect
+      .poll(async () => {
+        const values = await Promise.all(poseAttributes.map((attribute) => current.getAttribute(attribute)));
+        return values.some((value, index) => value !== neutralCurrentPose[poseAttributes[index]]);
+      })
+      .toBe(true);
+  };
+
+  await assertOriginalNeutralAndCurrentChanged("B — Rear tilt");
+  await assertOriginalNeutralAndCurrentChanged("C1 — Front rise");
+  await assertOriginalNeutralAndCurrentChanged("C3 — Higher viewpoint");
+
   for (const label of [
     "A — Front tilt",
     "B — Rear tilt",
