@@ -74,7 +74,7 @@ describe("Understanding Camera Movements static observer framing", () => {
   const FOV_DEG = 45;
   const ASPECT = 1024 / 768;
 
-  /** Canonical body-pitch for each teaching anchor (0 neutral, +6 high, -6 low). */
+  /** Canonical body-pitch for each teaching anchor (0 neutral, +34 high, -34 low). */
   const bodyPitchForAnchor: Record<"mid" | "high" | "low", number> = {
     mid: 0,
     high: CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.bodyPitchDeg,

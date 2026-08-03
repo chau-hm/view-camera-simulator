@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { distance } from "../../core/math/vec";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   resolveCameraMovementGroundGlassComparison,
@@ -10,6 +11,7 @@ import {
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { resolveCameraRigViewpointAnchor } from "../../scenes/cameraRigViewpointGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import { CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS } from "../../scenes/cameraMovementTeachingCases";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const cameraForRoute = (overrides: Partial<typeof DEFAULT_CAMERA_STATE> = {}) => ({
@@ -58,7 +60,10 @@ describe("camera-movement Ground Glass comparison resolver", () => {
       const camera = {
         ...cameraForRoute({
         viewpointAnchor: anchor,
-        cameraBodyPitchDeg: anchor === "high" ? 6 : -6,
+        cameraBodyPitchDeg:
+          anchor === "high"
+            ? CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.bodyPitchDeg
+            : -CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.bodyPitchDeg,
         }),
       };
       const result = resolveCameraMovementGroundGlassComparison({
@@ -74,6 +79,18 @@ describe("camera-movement Ground Glass comparison resolver", () => {
       expect(result.original.camera.viewpointAnchor).toBe("mid");
       expect(result.current.camera.viewpointAnchor).toBe(anchor);
       expect(result.original.calibrationKey).toBe(result.current.calibrationKey);
+      expect(
+        distance(
+          result.original.opticsState.cameraRigPlacement.rigOriginWorld,
+          CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.arcCenterWorld,
+        ),
+      ).toBeCloseTo(2000, 12);
+      expect(
+        distance(
+          result.current.opticsState.cameraRigPlacement.rigOriginWorld,
+          CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.arcCenterWorld,
+        ),
+      ).toBeCloseTo(1520, 12);
     },
   );
 

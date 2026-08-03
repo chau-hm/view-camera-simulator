@@ -196,6 +196,12 @@ const snapshotSections = (calibration: CameraMovementSceneCalibration) => ({
     arcCenterWorld: cloneVec3(calibration.cameraRig.arcCenterWorld),
     midRigOriginWorld: cloneVec3(calibration.cameraRig.midRigOriginWorld),
     arcRadiusMm: calibration.cameraRig.arcRadiusMm,
+    ...(calibration.cameraRig.highLowArcRadiusMm === undefined
+      ? {}
+      : { highLowArcRadiusMm: calibration.cameraRig.highLowArcRadiusMm }),
+    ...(calibration.cameraRig.lowArcRadiusMm === undefined
+      ? {}
+      : { lowArcRadiusMm: calibration.cameraRig.lowArcRadiusMm }),
     highArcAngleDeg: calibration.cameraRig.highArcAngleDeg,
     lowArcAngleDeg: calibration.cameraRig.lowArcAngleDeg,
     provisionalBasePitchDeg: calibration.cameraRig.provisionalBasePitchDeg,
@@ -223,8 +229,10 @@ const snapshotSections = (calibration: CameraMovementSceneCalibration) => ({
 /**
  * Resolve workbench overrides without mutating the baseline.
  *
- * Target levels, rig centre/radius, and symmetric arc angles are canonical
- * derivatives rather than independent editable values.
+ * Target levels, rig centre/mid-radius, and symmetric arc angles are canonical
+ * derivatives rather than independent editable values. When the subject or
+ * mid-rig origin changes, the optional high/low and low-only radii keep their
+ * baseline proportions so the teaching viewpoints preserve their calibration.
  */
 export const resolveEffectiveCameraMovementCalibration = (
   baseline: CameraMovementSceneCalibration,
@@ -245,6 +253,16 @@ export const resolveEffectiveCameraMovementCalibration = (
   );
   const arcAngleDeg = rig.arcAngleDeg ?? baseline.cameraRig.highArcAngleDeg;
   const arcRadiusMm = distance(subjectOriginWorld, midRigOriginWorld);
+  const highLowArcRadiusMm =
+    baseline.cameraRig.highLowArcRadiusMm === undefined
+      ? undefined
+      : baseline.cameraRig.highLowArcRadiusMm *
+        (arcRadiusMm / baseline.cameraRig.arcRadiusMm);
+  const lowArcRadiusMm =
+    baseline.cameraRig.lowArcRadiusMm === undefined
+      ? undefined
+      : baseline.cameraRig.lowArcRadiusMm *
+        (arcRadiusMm / baseline.cameraRig.arcRadiusMm);
 
   const resolved: CameraMovementSceneCalibration = {
     calibrationStatus: baseline.calibrationStatus,
@@ -275,6 +293,8 @@ export const resolveEffectiveCameraMovementCalibration = (
       arcCenterWorld: subjectOriginWorld,
       midRigOriginWorld,
       arcRadiusMm,
+      ...(highLowArcRadiusMm === undefined ? {} : { highLowArcRadiusMm }),
+      ...(lowArcRadiusMm === undefined ? {} : { lowArcRadiusMm }),
       highArcAngleDeg: arcAngleDeg,
       lowArcAngleDeg: -arcAngleDeg,
       provisionalBasePitchDeg:
@@ -379,6 +399,32 @@ export const validateEffectiveCameraMovementCalibration = (
         "subject.cubeSizeMm",
         "not-positive",
         "cubeSizeMm must be from 50 to 1000 mm",
+      ),
+    );
+  }
+  if (
+    cameraRig.highLowArcRadiusMm !== undefined &&
+    (!Number.isFinite(cameraRig.highLowArcRadiusMm) || cameraRig.highLowArcRadiusMm <= 0)
+  ) {
+    errors.push(
+      error(
+        "rig",
+        "cameraRig.highLowArcRadiusMm",
+        "invalid-rig-radius",
+        "high/low rig radius must be finite and greater than zero",
+      ),
+    );
+  }
+  if (
+    cameraRig.lowArcRadiusMm !== undefined &&
+    (!Number.isFinite(cameraRig.lowArcRadiusMm) || cameraRig.lowArcRadiusMm <= 0)
+  ) {
+    errors.push(
+      error(
+        "rig",
+        "cameraRig.lowArcRadiusMm",
+        "invalid-rig-radius",
+        "low rig radius must be finite and greater than zero",
       ),
     );
   }

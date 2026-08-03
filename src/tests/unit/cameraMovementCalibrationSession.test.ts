@@ -40,8 +40,10 @@ describe("camera movement calibration session", () => {
       provisionalFocusDistanceMm: 2000,
     });
     expect(initial.cameraMovementCalibrationSession.effectiveCalibration.cameraRig).toMatchObject({
-      highArcAngleDeg: 20,
-      lowArcAngleDeg: -20,
+      highArcAngleDeg: 35,
+      lowArcAngleDeg: -35,
+      highLowArcRadiusMm: 1520,
+      lowArcRadiusMm: 1520,
       provisionalBasePitchDeg: 0,
     });
 

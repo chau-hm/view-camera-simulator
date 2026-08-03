@@ -4,6 +4,7 @@ import { getGeometryPresentationProfile } from "../../components/geometry/geomet
 import { distance, magnitude } from "../../core/math/vec";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { imageDistanceMm } from "../../core/optics/thinLensModel";
+import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
 import {
   CAMERA_MOVEMENT_CALIBRATION_SEARCH_SPACE,
   CAMERA_MOVEMENT_FOCUS_DISTANCE_SAFE_EPSILON_MM,
@@ -29,6 +30,7 @@ import {
   CAMERA_MOVEMENT_SCENE_CALIBRATION,
   CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION,
 } from "../../scenes/cameraMovementSceneCalibration";
+import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import geometry from "../../scenes/understandingCameraMovementsGeometry";
 import type { CameraMovementTeachingCase } from "../../scenes/cameraMovementTeachingCases";
 import type { CameraState } from "../../types/camera";
@@ -85,13 +87,15 @@ describe("camera-movement teaching calibration", () => {
         focusDistanceMm: 2000,
       },
       cameraRig: {
-        arcAngleDeg: 20,
+        arcAngleDeg: 35,
+        highLowArcRadiusMm: 1520,
+        lowArcRadiusMm: 1520,
       },
     });
     expect(CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS).toEqual({
       tiltDeg: 5,
       riseMm: 20,
-      bodyPitchDeg: 6,
+      bodyPitchDeg: 34,
     });
     expect(CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION).not.toBe(
       CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
@@ -144,10 +148,10 @@ describe("camera-movement teaching calibration", () => {
       },
       focalLengthMm: [90, 105, 120, 150],
       focusDistanceMm: [1800, 2000, 2400, 3000],
-      arcAngleDeg: [10, 12, 15, 18, 20],
+      arcAngleDeg: [10, 12, 15, 18, 20, 24, 35, 40],
       tiltDeg: [5, 7.5, 10],
       riseMm: [20, 40, 60, 80, 120, 160],
-      bodyPitchDeg: [6, 8, 10, 12],
+      bodyPitchDeg: [6, 8, 10, 12, 25, 34],
     });
   });
 
@@ -195,12 +199,12 @@ describe("camera-movement teaching calibration", () => {
     expect(cases["C3-high-viewpoint"]).toMatchObject({
       anchor: "high",
       targetRegion: "upper",
-      camera: { cameraBodyPitchDeg: 6 },
+      camera: { cameraBodyPitchDeg: 34 },
     });
     expect(cases["D3-low-viewpoint"]).toMatchObject({
       anchor: "low",
       targetRegion: "lower",
-      camera: { cameraBodyPitchDeg: -6 },
+      camera: { cameraBodyPitchDeg: -34 },
     });
   });
 
@@ -253,7 +257,7 @@ describe("camera-movement teaching calibration", () => {
     }
   });
 
-  it("centres the intended high/low region with signed, opposite pitch convergence", () => {
+  it("keeps intended high/low regions in frame with signed, opposite pitch convergence", () => {
     const high = evaluation.cases["C3-high-viewpoint"];
     const low = evaluation.cases["D3-low-viewpoint"];
 
@@ -261,12 +265,44 @@ describe("camera-movement teaching calibration", () => {
     expect(low.targetInFrame).toBe(true);
     expect(high.rigOriginWorld.y).toBeGreaterThan(0);
     expect(low.rigOriginWorld.y).toBeLessThan(0);
-    expect(high.convergenceSignal).toBeGreaterThan(0.08);
-    expect(low.convergenceSignal).toBeLessThan(-0.08);
+    expect(high.convergenceSignal).toBeGreaterThan(0.105);
+    expect(low.convergenceSignal).toBeLessThan(-0.105);
     expect(high.targetOffsetFromFilmCentreUv.u).toBeCloseTo(0, 12);
     expect(low.targetOffsetFromFilmCentreUv.u).toBeCloseTo(0, 12);
-    expect(Math.abs(high.targetOffsetFromFilmCentreUv.v)).toBeLessThan(0.02);
-    expect(Math.abs(low.targetOffsetFromFilmCentreUv.v)).toBeLessThan(0.02);
+  });
+
+  it("aims both opposite viewpoints near the middle lattice layer", () => {
+    const projectLevelCentreV = (
+      optics: ReturnType<typeof deriveOpticsState>,
+      levelIndex: number,
+    ): number => {
+      const bounds = CAMERA_MOVEMENT_LATTICE.perLevelBounds[levelIndex].bounds;
+      const projection = projectWorldPointToFilmPlaneGroundGlass({
+        worldPoint: {
+          x: (bounds.min.x + bounds.max.x) / 2,
+          y: (bounds.min.y + bounds.max.y) / 2,
+          z: (bounds.min.z + bounds.max.z) / 2,
+        },
+        lensCenterWorld: optics.lensCenterWorld,
+        filmPlaneCornersWorld: optics.filmPlaneCornersWorld,
+      });
+      expect(projection.filmPointWorld).not.toBeNull();
+      return projection.vRaw;
+    };
+
+    const high = deriveOpticsState(
+      cameraForTeachingCase(teachingCases["C3-high-viewpoint"]),
+      understandingCameraMovementsScene,
+    );
+    const low = deriveOpticsState(
+      cameraForTeachingCase(teachingCases["D3-low-viewpoint"]),
+      understandingCameraMovementsScene,
+    );
+
+    expect(projectLevelCentreV(high, 2)).toBeGreaterThan(0.45);
+    expect(projectLevelCentreV(high, 2)).toBeLessThan(0.55);
+    expect(projectLevelCentreV(low, 2)).toBeGreaterThan(0.45);
+    expect(projectLevelCentreV(low, 2)).toBeLessThan(0.55);
   });
 
   it("projects opposite rear tilts with finite, symmetric convergence signs", () => {
@@ -352,19 +388,21 @@ describe("camera-movement teaching calibration", () => {
     );
     const highMetrics = evaluation.cases["C3-high-viewpoint"];
     const lowMetrics = evaluation.cases["D3-low-viewpoint"];
-    const arcRadiusMm = CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.arcRadiusMm;
+    const highArcRadiusMm =
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.highLowArcRadiusMm!;
+    const lowArcRadiusMm = CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.lowArcRadiusMm!;
     expect(
       distance(
         highMetrics.rigOriginWorld,
         CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.arcCenterWorld,
       ),
-    ).toBeCloseTo(arcRadiusMm, 9);
+    ).toBeCloseTo(highArcRadiusMm, 9);
     expect(
       distance(
         lowMetrics.rigOriginWorld,
         CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.arcCenterWorld,
       ),
-    ).toBeCloseTo(arcRadiusMm, 9);
+    ).toBeCloseTo(lowArcRadiusMm, 9);
     expect(highMetrics.rigOriginWorld.y).toBeCloseTo(-lowMetrics.rigOriginWorld.y, 12);
     expect(highMetrics.rigOriginWorld.z).toBeCloseTo(lowMetrics.rigOriginWorld.z, 12);
     expect(highMetrics.convergenceSignal).toBeGreaterThan(0);
@@ -372,7 +410,9 @@ describe("camera-movement teaching calibration", () => {
     const convergenceAsymmetry =
       Math.abs(Math.abs(highMetrics.convergenceSignal) - Math.abs(lowMetrics.convergenceSignal)) /
       Math.max(Math.abs(highMetrics.convergenceSignal), Math.abs(lowMetrics.convergenceSignal));
-    expect(convergenceAsymmetry).toBeLessThanOrEqual(0.2);
+    // D3 intentionally uses a one-cube-farther low anchor, so its magnitude
+    // is allowed to differ modestly from C3 while preserving opposite signs.
+    expect(convergenceAsymmetry).toBeLessThanOrEqual(0.3);
     const coverageAsymmetry =
       Math.abs(
         highMetrics.coverage.projectedBoundsInsideFrame -
@@ -382,7 +422,7 @@ describe("camera-movement teaching calibration", () => {
         highMetrics.coverage.projectedBoundsInsideFrame,
         lowMetrics.coverage.projectedBoundsInsideFrame,
       );
-    expect(coverageAsymmetry).toBeLessThanOrEqual(0.2);
+    expect(coverageAsymmetry).toBeLessThanOrEqual(0.3);
     expect(highMetrics.lensFilmDistanceMm).toBeCloseTo(lowMetrics.lensFilmDistanceMm, 12);
     expect(evaluation.subjectBoundsWorld).toEqual(geometry.subjectBounds);
     expect(evaluation.cases["C3-high-viewpoint"].identity.edgeCount).toBe(

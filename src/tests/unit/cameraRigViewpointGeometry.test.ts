@@ -18,8 +18,10 @@ describe("camera rig YZ-arc viewpoint anchors", () => {
       arcCenterWorld: { x: 0, y: 0, z: 2000 },
       midRigOriginWorld: { x: 0, y: 0, z: 0 },
       arcRadiusMm: 2000,
-      highArcAngleDeg: 20,
-      lowArcAngleDeg: -20,
+      highLowArcRadiusMm: 1520,
+      lowArcRadiusMm: 1520,
+      highArcAngleDeg: 35,
+      lowArcAngleDeg: -35,
       provisionalBasePitchDeg: 0,
       defaultAnchor: "mid",
       anchorMetadata: {
@@ -46,12 +48,12 @@ describe("camera rig YZ-arc viewpoint anchors", () => {
     expect(mid.radiusMm).toBe(2000);
   });
 
-  it("places high and low symmetrically on the same 2000 mm YZ circle", () => {
+  it("places high and low symmetrically at 1520 mm on the calibrated YZ arc", () => {
     const { mid, high, low } = resolveCameraRigViewpointAnchors(calibration);
     const centre = calibration.arcCenterWorld;
 
-    expect(high.arcAngleDeg).toBe(20);
-    expect(low.arcAngleDeg).toBe(-20);
+    expect(high.arcAngleDeg).toBe(35);
+    expect(low.arcAngleDeg).toBe(-35);
     expect(high.metadata.identity).toBe("high");
     expect(low.metadata.identity).toBe("low");
     expect(high.rigOriginWorld.x).toBe(mid.rigOriginWorld.x);
@@ -60,8 +62,8 @@ describe("camera rig YZ-arc viewpoint anchors", () => {
     expect(low.rigOriginWorld.y).toBeLessThan(mid.rigOriginWorld.y);
     expect(high.rigOriginWorld.y).toBeCloseTo(-low.rigOriginWorld.y, 12);
     expect(high.rigOriginWorld.z).toBeCloseTo(low.rigOriginWorld.z, 12);
-    expect(distance(high.rigOriginWorld, centre)).toBeCloseTo(2000, 12);
-    expect(distance(low.rigOriginWorld, centre)).toBeCloseTo(2000, 12);
+    expect(distance(high.rigOriginWorld, centre)).toBeCloseTo(1520, 12);
+    expect(distance(low.rigOriginWorld, centre)).toBeCloseTo(1520, 12);
   });
 
   it.each(["mid", "high", "low"] as const)(
@@ -108,6 +110,14 @@ describe("camera rig YZ-arc viewpoint anchors", () => {
     [
       "radius mismatch",
       { ...calibration, arcRadiusMm: calibration.arcRadiusMm + 1 },
+    ],
+    [
+      "zero high/low radius",
+      { ...calibration, highLowArcRadiusMm: 0 },
+    ],
+    [
+      "zero low radius",
+      { ...calibration, lowArcRadiusMm: 0 },
     ],
     [
       "coincident centre and midpoint",

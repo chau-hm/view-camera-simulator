@@ -42,7 +42,7 @@ export type CameraMovementTeachingCalibrationCandidate = Readonly<{
 export const CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS = Object.freeze({
   tiltDeg: 5,
   riseMm: 20,
-  bodyPitchDeg: 6,
+  bodyPitchDeg: 34,
 });
 
 const selectedPhysical = CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION;
@@ -50,9 +50,10 @@ const selectedPhysical = CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION;
 /**
  * Lightweight runtime contract for the selected teaching cases.
  *
- * It derives physical values from the one raw selection. The rig arc radius is
- * not stored on the candidate; it is always derived from the subject distance
- * and the fixed mid-anchor lens datum through the canonical rig contract.
+ * It derives physical values from the one raw selection. The candidate does
+ * not store a rig radius; the effective calibration derives the mid-anchor
+ * radius and carries the selected high-viewpoint radius plus the D3 low-only
+ * distance override.
  */
 export const CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION = Object.freeze({
   subject: Object.freeze({

@@ -21,8 +21,8 @@ export const understandingCameraMovementsScene: SceneDefinition = {
   },
   cameraPlacement: {
     /** Pulled-back three-quarter view containing the lattice and the full neutral/high/low rig arc */
-    position: { x: 2300, y: 600, z: -600 },
-    target: { x: 0, y: 0, z: 1100 },
+    position: { x: 2430, y: 640, z: -680 },
+    target: { x: 0, y: 0, z: 800 },
   },
   bounds: {
     min: geometry.subjectBounds.min,

@@ -5,8 +5,11 @@ Status: provisional instructional calibration, not a claim of metrological camer
 Evaluation base: `8451e379bf8e20a5511ce5caa120882b87d28eb2`.
 The starting scaffold used the same 3 × 3 × 5 lattice with 260 mm cubes,
 0 mm gaps, 2,000 mm subject/focus distance, a 105 mm lens, and `±15°`
-viewpoint anchors. This packet changes only the evidenced focal length and arc
-to 90 mm and `±20°`; the subject dimensions and focus distance remain intact.
+viewpoint anchors. The selected physical calibration uses a 90 mm lens,
+`±35°` high/low arc, and a 1,520 mm C3/D3 viewpoint radius; the C3/D3
+teaching calibration uses `±34°` body pitch. Neutral and all mid-anchor cases
+retain the 2,000 mm mid-anchor radius.
+The subject dimensions and focus distance remain intact.
 
 ## Canonical contract
 
@@ -21,8 +24,9 @@ to 90 mm and `±20°`; the subject dimensions and focus distance remain intact.
 - Positive body pitch rotates the rigid camera about the fixed tripod/rail
   pivot so rig-local +Z moves toward rig-local -Y. Local standard movements
   happen first, body pitch second, and outer rig placement last.
-- The viewpoint arc lies in world YZ, is centred on the lattice centre, and has
-  radius equal to the mid lens-datum-to-subject-centre distance.
+- The viewpoint arc lies in world YZ and is centred on the lattice centre. Its
+  mid-anchor radius equals the mid lens-datum-to-subject-centre distance; C3
+  use the explicit 1,520 mm viewpoint radius.
 - Ground Glass UV is raw and unclamped: origin top-left, +U right, +V down.
 
 The evaluator calls the existing effective-calibration resolver, lattice
@@ -31,14 +35,16 @@ diagnostics. It contains no independent plane or projection calculation.
 
 The immutable `CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION` object is the
 only selected-value source for subject geometry and distance, focal length and
-focus distance, and rig arc angle. Production scene calibration and the
-selected teaching candidate both derive from it through one canonical rig
+focus distance, and the rig viewpoint values. Production scene calibration and
+the selected teaching candidate both derive from it through one canonical rig
 relationship: the subject centre is the arc centre, the mid-anchor lens datum
-is the fixed `(0, 0, 0)` origin, and `arcRadiusMm` is always derived as the
-distance between those two points. No candidate stores an independent radius,
-so a centre, origin, and radius can never contradict. The shared
+is the fixed `(0, 0, 0)` origin, and `arcRadiusMm` is derived as the distance
+between those two points. The C3/D3 viewpoint radius is an explicit
+teaching-anchor calibration; it does not affect Neutral or any mid-anchor case.
+The shared
 `isCanonicalCameraRigGeometry` / `resolveCameraRigArcRadiusMm` contract is used
-by the production builder and the calibration evaluator alike. The
+for the mid-anchor geometry by the production builder and the calibration
+evaluator alike. The
 lightweight teaching-case module contains only case identities and movement
 states, while the candidate search, optics derivation, and projection metrics
 remain in the development evaluator.
@@ -52,8 +58,8 @@ movements.
 | --- | --- |
 | Physical subject | 3 × 3 × 5; 260 mm cubes; 0 mm gaps; centre `(0, 0, 2000)` |
 | Physical optics | 90 mm focal length; 2,000 mm finite-focus distance |
-| Physical rig | 2,000 mm radius; high/low arc `+20°/-20°`; base pitch `0°` |
-| Internal teaching movements | tilt `5°`; rise/fall `±20 mm`; body pitch `±6°` |
+| Physical rig | 2,000 mm mid radius; 1,520 mm C3/D3 viewpoint radius; high/low arc `+35°/-35°`; base pitch `0°` |
+| Internal teaching movements | tilt `5°`; rise/fall `±20 mm`; body pitch `±34°` |
 
 The physical values are exact candidate inputs. Raw projection, plane-normal,
 coverage, convergence, distance, identity, and fallback evidence remains in
@@ -65,7 +71,7 @@ values.
 Each factor group was varied alone before combining a shortlist. Subject
 checks used cube sizes 200/260/320 mm, gaps 0/50/100 mm, and distances
 1,800/2,000/2,400/3,000 mm. Optics used 90/105/120/150 mm; rig arc used
-10/12/15/18/20°; tilt used 5/7.5/10°; body pitch used 6/8/10/12°.
+10/12/15/18/20/24/35/40°; tilt used 5/7.5/10°; body pitch used 6/8/10/12/25/34°.
 
 The initial 80/120/160 mm rise set was rejected: even 80 mm moved every
 selected rise/fall target outside the 4 × 5 frame. A bounded visibility
@@ -79,8 +85,8 @@ follow-up tested 20/40/60 mm on the selected physical geometry:
 
 Twenty millimetres is the smallest candidate with a clear, signed response,
 in-frame selected targets, and meaningful lattice overlap. Its rise/fall-only
-minimum overlap is 0.88937; the lower 0.77328 global minimum belongs to the C3
-high-viewpoint case.
+minimum overlap is 0.88937; the lower 0.76021 global minimum belongs to the C3
+high-viewpoint case after the follow-up distance-and-aim calibration.
 
 The final physical shortlist was:
 
@@ -108,25 +114,29 @@ lens-to-target distance.
 | B-rear-tilt | mid / middle | rear tilt +5° | (0.50000, 0.50000) | yes | all / 1.00000 | +0.06823 |
 | C1-front-rise | mid / middle | front rise +20 mm | (0.50000, 0.29387) | yes | partial / 0.88937 | 0 |
 | C2-rear-rise | mid / middle | rear rise +20 mm | (0.50000, 0.69685) | yes | partial / 0.90476 | 0 |
-| C3-high-viewpoint | high / upper | body pitch +6° | (0.50000, 0.51865) | yes | partial / 0.77328 | +0.08435 |
+| C3-high-viewpoint | high / upper | body pitch +34° | (0.50000, 0.82926) | yes | all / 1.00000 | +0.48414 |
 | D1-front-fall | mid / middle | front rise -20 mm | (0.50000, 0.70613) | yes | partial / 0.88937 | 0 |
 | D2-rear-fall | mid / middle | rear rise -20 mm | (0.50000, 0.30315) | yes | partial / 0.90476 | 0 |
-| D3-low-viewpoint | low / lower | body pitch -6° | (0.50000, 0.48105) | yes | partial / 0.78178 | -0.08338 |
+| D3-low-viewpoint | low / lower | body pitch -34° | (0.50000, 0.17435) | yes | all / 1.00000 | -0.45372 |
 
 A-front-tilt changes the lens normal by exactly 5° while leaving the film
 normal unchanged. B-rear-tilt changes the film normal by exactly 5° while
 leaving the lens normal unchanged. Their centred target does not fabricate a
 composition shift; their instructional difference comes from the canonical
 planes and B's perspective convergence. Rise/fall pairs have equal-and-opposite
-signed target movement. High/low cases use symmetric anchors and body pitch,
-with opposite convergence.
+signed target movement. High/low cases use calibrated anchors and opposite
+body pitch, with opposite convergence.
 
 The canonical `-5°` rear-tilt probe is also finite, projectable, non-fallback,
 and not fully off-frame. It produces convergence `-0.06823`, equal in magnitude
 and opposite in sign to B's `+0.06823`; neutral remains inside the `1e-6`
-parallel epsilon. C3/D3 convergence differs in magnitude by about 1.2%, their
-projected frame coverage differs by about 1.1%, and their lens-film distance is
-invariant.
+parallel epsilon. With the paired 1,520 mm anchors, C3/D3 convergence remains
+opposite in sign and close in magnitude; both projected lattice bounds are
+fully in frame and their lens-film distance remains invariant.
+
+At the selected `±34°` body pitch, both opposite optical axes project near the
+centre of level 2 (the third layer), shifting C3 down one layer and D3 up one
+layer from the preceding calibration.
 
 ## Bounded composed-scene inspection
 
@@ -142,10 +152,10 @@ harness and captures were not committed.
 | B | Rear-plane change and bottom convergence are visible; target remains centred and the complete lattice remains framed. |
 | C1 | Positive front rise shifts the selected target upward; the target remains readable with 88.94% lattice overlap. |
 | C2 | Positive rear rise produces the opposite Ground Glass shift; the target remains readable with 90.48% overlap. |
-| C3 | Upper target remains readable in raw/final Ground Glass with expected outer crop and bottom convergence; the pulled-back default 3D keeps the elevated rig and lattice readable. |
+| C3 | Upper target remains readable in raw/final Ground Glass with full lattice coverage and convergence comparable to D3; the widened default 3D view keeps the elevated rig and lattice readable. |
 | D1 | Front fall mirrors C1; the selected target remains readable with 88.94% overlap. |
 | D2 | Rear fall mirrors C2; the selected target remains readable with 90.48% overlap. |
-| D3 | Lower target remains readable with expected outer crop and top convergence; the pulled-back default 3D keeps the lowered rig and lattice readable. |
+| D3 | Lower target remains readable in raw/final Ground Glass with stronger top convergence; the farther low anchor keeps the lowered rig and lattice readable in the widened default 3D view. |
 
 Every raw and final RTT was contentful; its camera, uniforms, and depth state
 were finite; color, depth, and final targets agreed at 528 × 422; and no page,
@@ -154,17 +164,19 @@ Three.js, WebGL, or GPU errors were observed.
 Static observer framing is derived from canonical transformed camera-body
 bounds. The framing tests pass the rig-local body AABB (front standard, rear
 standard, rail, bellows, and tripod pivot) through the shared
-`transformRigLocalPointToWorld` helper for the neutral, C3 (+6° body pitch),
-and D3 (−6° body pitch) rigs, then require every transformed bounds corner to
+`transformRigLocalPointToWorld` helper for the neutral, C3 (+34° body pitch),
+and D3 (−34° body pitch) rigs, then require every transformed bounds corner to
 lie inside the actual 45° observer frustum at 1024 × 768. The default 3D scene
-view pulls back to `(2300, 600, -600)` targeting `(0, 0, 1100)` so the complete
+view pulls back to `(2430, 640, -680)` targeting `(0, 0, 800)` so the complete
 lattice and the full neutral, high, and low rigs are all in frame with margin;
 the fixed Camera inspection view stays at `(2200, 1100, -2300)` targeting
 `(0, 0, 100)` so the full rig arc spans the inspection volume at every anchor.
 The previous `visibleFraction >= 0.5` acceptance and hand-written unrotated
 rig-body bounds were removed: a high/low rig that is only half visible now
 fails the framing test. Reset View restores the selected scene and inspection
-presets. No calibration or teaching movement value was changed to achieve this.
+presets. The observer preset is widened only to accommodate the closer,
+steeper C3/D3 teaching rigs; neutral and all mid-anchor cases retain their
+existing physical calibration.
 The 2D header still reports front rise only, so C2/D2 read `Rise: 0.0 mm` even
 though their rear-rise ray geometry is correct.
 

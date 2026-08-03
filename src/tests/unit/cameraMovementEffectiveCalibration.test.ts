@@ -48,6 +48,14 @@ describe("effective camera-movement calibration", () => {
     });
     expect(effective.cameraRig.arcCenterWorld).toBe(effective.subject.originWorld);
     expect(effective.cameraRig.arcRadiusMm).toBeCloseTo(Math.hypot(0, 50, 2850), 12);
+    expect(effective.cameraRig.highLowArcRadiusMm).toBeCloseTo(
+      1520 * (Math.hypot(0, 50, 2850) / 2000),
+      12,
+    );
+    expect(effective.cameraRig.lowArcRadiusMm).toBeCloseTo(
+      1520 * (Math.hypot(0, 50, 2850) / 2000),
+      12,
+    );
     expect(effective.cameraRig.highArcAngleDeg).toBe(22.5);
     expect(effective.cameraRig.lowArcAngleDeg).toBe(-22.5);
     expect(validateEffectiveCameraMovementCalibration(effective)).toEqual({

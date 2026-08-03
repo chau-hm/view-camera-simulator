@@ -48,10 +48,10 @@ export const CAMERA_MOVEMENT_CALIBRATION_SEARCH_SPACE = Object.freeze({
   }),
   focalLengthMm: Object.freeze([90, 105, 120, 150] as const),
   focusDistanceMm: Object.freeze([1800, 2000, 2400, 3000] as const),
-  arcAngleDeg: Object.freeze([10, 12, 15, 18, 20] as const),
+  arcAngleDeg: Object.freeze([10, 12, 15, 18, 20, 24, 35, 40] as const),
   tiltDeg: Object.freeze([5, 7.5, 10] as const),
   riseMm: Object.freeze([20, 40, 60, 80, 120, 160] as const),
-  bodyPitchDeg: Object.freeze([6, 8, 10, 12] as const),
+  bodyPitchDeg: Object.freeze([6, 8, 10, 12, 25, 34] as const),
 });
 
 /** Minimum finite-focus separation used before evaluating the thin-lens denominator. */

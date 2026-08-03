@@ -70,19 +70,23 @@ export type CameraMovementSelectedPhysicalCalibration = Readonly<{
     focusDistanceMm: number;
   }>;
   cameraRig: Readonly<{
-    /** Positive half-angle of the YZ viewpoint arc; radius is derived. */
+    /** Positive half-angle of the YZ viewpoint arc; low is its exact negative. */
     arcAngleDeg: number;
+    /** Closer shared radius for the high teaching viewpoint. */
+    highLowArcRadiusMm: number;
+    /** D3-only radius for the lower teaching viewpoint. */
+    lowArcRadiusMm: number;
   }>;
 }>;
 
 /**
  * Raw physical selection produced by the bounded calibration exercise.
  *
- * Subject placement and optical focus are stored independently. The rig arc
- * radius is not an independent field: it is always derived as the distance
- * between the subject centre (arc centre) and the mid-anchor lens datum.
- * Teaching movements and public-control rounding do not belong to this
- * contract.
+ * Subject placement and optical focus are stored independently. The mid-rig
+ * arc radius is always derived as the distance between the subject centre
+ * (arc centre) and the mid-anchor lens datum. The selected high/low teaching
+ * radius is a separate symmetric viewpoint calibration so C3/D3 can move
+ * closer without changing Neutral or the mid-anchor cases.
  */
 export const CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION = Object.freeze({
   subject: Object.freeze({
@@ -99,7 +103,9 @@ export const CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION = Object.freeze({
     focusDistanceMm: 2000,
   }),
   cameraRig: Object.freeze({
-    arcAngleDeg: 20,
+    arcAngleDeg: 35,
+    highLowArcRadiusMm: 1520,
+    lowArcRadiusMm: 1520,
   }),
 }) satisfies CameraMovementSelectedPhysicalCalibration;
 
@@ -151,6 +157,8 @@ export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration =
     arcCenterWorld: cameraMovementLatticeOriginWorld,
     midRigOriginWorld: cameraMovementMidRigOriginWorld,
     arcRadiusMm: cameraMovementArcRadiusMm,
+    highLowArcRadiusMm: selectedPhysical.cameraRig.highLowArcRadiusMm,
+    lowArcRadiusMm: selectedPhysical.cameraRig.lowArcRadiusMm,
     highArcAngleDeg: selectedPhysical.cameraRig.arcAngleDeg,
     lowArcAngleDeg: -selectedPhysical.cameraRig.arcAngleDeg,
     provisionalBasePitchDeg: 0,

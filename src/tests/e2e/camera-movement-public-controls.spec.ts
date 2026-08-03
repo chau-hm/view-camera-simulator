@@ -67,7 +67,7 @@ test("public camera movement controls on the normal route", async ({ page }) => 
   await expect(page.getByRole("radio", { name: "C3 — Higher viewpoint" })).toBeChecked();
   await expect(scene).toHaveAttribute("data-camera-rig-anchor", "high");
   await expect(scene).toHaveAttribute("data-lattice-target-region", "upper");
-  await expect(scene).toHaveAttribute("data-camera-body-pitch-deg", "6.000000");
+  await expect(scene).toHaveAttribute("data-camera-body-pitch-deg", "34.000000");
   await expectGroundGlassValid(page);
 
   // 5. Switch to Camera inspection and confirm the camera stays visible.
@@ -81,7 +81,7 @@ test("public camera movement controls on the normal route", async ({ page }) => 
   await expect(page.getByRole("radio", { name: "D3 — Lower viewpoint" })).toBeChecked();
   await expect(scene).toHaveAttribute("data-camera-rig-anchor", "low");
   await expect(scene).toHaveAttribute("data-lattice-target-region", "lower");
-  await expect(scene).toHaveAttribute("data-camera-body-pitch-deg", "-6.000000");
+  await expect(scene).toHaveAttribute("data-camera-body-pitch-deg", "-34.000000");
   await expectGroundGlassValid(page);
 
   // 7. Select D1 and confirm negative fall applied.
