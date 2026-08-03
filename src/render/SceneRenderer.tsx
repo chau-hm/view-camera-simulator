@@ -28,6 +28,7 @@ import {
 } from "./sceneSubjectRegistry";
 import {
   createCameraInspectionView,
+  resolveCameraInspectionFocusTargetWorld,
   translateObserverViewToTarget,
   type ObserverViewState,
   type SceneViewFocus,
@@ -979,9 +980,22 @@ export const SceneRenderer = ({
     () => ({ position: observerCameraPosition, target: observerCameraTarget }),
     [observerCameraPosition, observerCameraTarget],
   );
+  const cameraInspectionTarget = useMemo(
+    () =>
+      scene.id === "understanding-camera-movements"
+        ? resolveCameraInspectionFocusTargetWorld(opticsState.cameraRigTransform)
+        : undefined,
+    [opticsState.cameraRigTransform, scene.id],
+  );
   const cameraObserverView = useMemo(
-    () => createCameraInspectionView(scene, sceneObserverView, activeFocalLengthMm),
-    [activeFocalLengthMm, scene, sceneObserverView],
+    () =>
+      createCameraInspectionView(
+        scene,
+        sceneObserverView,
+        activeFocalLengthMm,
+        cameraInspectionTarget,
+      ),
+    [activeFocalLengthMm, cameraInspectionTarget, scene, sceneObserverView],
   );
   const [observerViewState, setObserverViewState] = useState<ObserverViewState>(sceneObserverView);
   const activeAssets = useMemo(

@@ -1,4 +1,6 @@
 import type { SceneDefinition } from "../types/scene";
+import { transformRigLocalPointToWorld } from "../core/optics/applyCameraBodyPitch";
+import type { CameraRigTransform } from "../types/optics";
 
 export type SceneViewFocus = "scene" | "camera";
 
@@ -22,6 +24,21 @@ const normalize = (
 };
 
 const toWorld = (mm: number) => mm * WORLD_SCALE;
+
+/**
+ * Resolve the inspection pivot from the same canonical rig transform used by
+ * the rendered camera assembly. The body-pitch pivot is stable within the
+ * complete camera body and moves with both the viewpoint anchor and pitch.
+ */
+export const resolveCameraInspectionFocusTargetWorld = (
+  rigTransform: CameraRigTransform,
+): [number, number, number] => {
+  const pivotWorld = transformRigLocalPointToWorld(
+    rigTransform.bodyPitchPivotRigLocal,
+    rigTransform,
+  );
+  return [toWorld(pivotWorld.x), toWorld(pivotWorld.y), toWorld(pivotWorld.z)];
+};
 
 const resolveInspectionTarget = (
   scene: Pick<SceneDefinition, "id" | "cameraInspectionPlacement">,
@@ -94,10 +111,14 @@ export const createCameraInspectionView = (
   scene: Pick<SceneDefinition, "id" | "cameraInspectionPlacement">,
   sceneView: ObserverViewState,
   focalLengthMm: number,
+  targetOverride?: [number, number, number],
 ): ObserverViewState => {
   const target = resolveInspectionTarget(scene, focalLengthMm);
   const position = resolveInspectionPosition(scene, sceneView, target);
-  return { target, position };
+  const baseView = { target, position };
+  return targetOverride
+    ? translateObserverViewToTarget(baseView, targetOverride)
+    : baseView;
 };
 
 export const createObserverViewPresets = (

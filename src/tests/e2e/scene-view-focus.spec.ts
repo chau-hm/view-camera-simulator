@@ -32,6 +32,31 @@ const readStableViewState = async (sceneCanvas: Locator): Promise<ViewState> => 
 const viewDistance = (state: ViewState) =>
   Math.hypot(...state.position.map((coordinate, index) => coordinate - state.target[index]));
 
+const expectCameraFocusTarget = async (sceneCanvas: Locator): Promise<ViewState> => {
+  const view = await readStableViewState(sceneCanvas);
+  const pivotMm = parseVector(await sceneCanvas.getAttribute("data-camera-body-pivot-world"));
+  pivotMm.forEach((value, index) => {
+    expect(view.target[index], `camera focus target component ${index}`).toBeCloseTo(value * 0.001, 5);
+  });
+  return view;
+};
+
+const expectTranslatedByTargetDelta = (before: ViewState, after: ViewState) => {
+  for (let index = 0; index < 3; index += 1) {
+    const targetDelta = after.target[index] - before.target[index];
+    const positionDelta = after.position[index] - before.position[index];
+    expect(positionDelta, `observer translation component ${index}`).toBeCloseTo(targetDelta, 5);
+  }
+};
+
+const expectSameObserverOffset = (reference: ViewState, actual: ViewState) => {
+  for (let index = 0; index < 3; index += 1) {
+    const referenceOffset = reference.position[index] - reference.target[index];
+    const actualOffset = actual.position[index] - actual.target[index];
+    expect(actualOffset, `observer offset component ${index}`).toBeCloseTo(referenceOffset, 5);
+  }
+};
+
 const orbitScene = async (page: Page, sceneCanvas: Locator) => {
   const canvas = sceneCanvas.locator("canvas");
   const bounds = await canvas.boundingBox();
@@ -138,6 +163,89 @@ test("View Focus preserves independent Scene and Camera views and resets the act
 
   expect(pageErrors).toEqual([]);
   expect(consoleProblems).toEqual([]);
+});
+
+test("Understanding Camera Movements Camera focus follows the current rig through C3 and D3", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/understanding-camera-movements");
+
+  const sceneCanvas = page.getByTestId("scene-canvas");
+  await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
+  await expect(sceneCanvas).toHaveAttribute("data-mounted-lattice", "true", { timeout: 15_000 });
+  const geometryId = await sceneCanvas.getAttribute("data-mounted-lattice-geometry-id");
+  const generation = await sceneCanvas.getAttribute("data-mounted-lattice-generation");
+  expect(geometryId).toBeTruthy();
+  expect(generation).toBeTruthy();
+
+  const cameraButton = page.getByRole("button", { name: "Camera", exact: true });
+  const sceneButton = page.getByRole("button", { name: "Scene", exact: true });
+  await cameraButton.click();
+  await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");
+
+  const neutralView = await expectCameraFocusTarget(sceneCanvas);
+  const inspectionDistance = viewDistance(neutralView);
+
+  await page.getByRole("radio", { name: "C3 — Higher viewpoint" }).click();
+  await expect(page.getByRole("radio", { name: "C3 — Higher viewpoint" })).toBeChecked();
+  await expect(sceneCanvas).toHaveAttribute("data-camera-rig-anchor", "high");
+  const c3View = await expectCameraFocusTarget(sceneCanvas);
+  expect(c3View.target).not.toEqual(neutralView.target);
+  expectTranslatedByTargetDelta(neutralView, c3View);
+  expectSameObserverOffset(neutralView, c3View);
+  expect(viewDistance(c3View)).toBeCloseTo(inspectionDistance, 5);
+
+  await page.getByRole("radio", { name: "D3 — Lower viewpoint" }).click();
+  await expect(page.getByRole("radio", { name: "D3 — Lower viewpoint" })).toBeChecked();
+  await expect(sceneCanvas).toHaveAttribute("data-camera-rig-anchor", "low");
+  const d3View = await expectCameraFocusTarget(sceneCanvas);
+  expect(d3View.target).not.toEqual(c3View.target);
+  expect(d3View.target).not.toEqual(neutralView.target);
+  expectTranslatedByTargetDelta(c3View, d3View);
+  expectSameObserverOffset(neutralView, d3View);
+  expect(viewDistance(d3View)).toBeCloseTo(inspectionDistance, 5);
+
+  await page.getByRole("button", { name: "Reset 3D view" }).click();
+  const d3ResetView = await expectCameraFocusTarget(sceneCanvas);
+  expect(viewDistance(d3ResetView)).toBeCloseTo(inspectionDistance, 5);
+
+  await page.getByRole("radio", { name: "C3 — Higher viewpoint" }).click();
+  await page.getByRole("button", { name: "Reset 3D view" }).click();
+  const c3ResetView = await expectCameraFocusTarget(sceneCanvas);
+  expect(viewDistance(c3ResetView)).toBeCloseTo(inspectionDistance, 5);
+
+  await orbitScene(page, sceneCanvas);
+  await expect.poll(async () => (await readViewState(sceneCanvas)).position).not.toEqual(
+    c3ResetView.position,
+  );
+  const c3OrbitedView = await expectCameraFocusTarget(sceneCanvas);
+  expect(c3OrbitedView.target).toEqual(c3ResetView.target);
+  const orbitedInspectionDistance = viewDistance(c3OrbitedView);
+
+  await page.getByRole("radio", { name: "D3 — Lower viewpoint" }).click();
+  const d3AfterOrbitView = await expectCameraFocusTarget(sceneCanvas);
+  expectTranslatedByTargetDelta(c3OrbitedView, d3AfterOrbitView);
+  expectSameObserverOffset(c3OrbitedView, d3AfterOrbitView);
+  expect(viewDistance(d3AfterOrbitView)).toBeCloseTo(orbitedInspectionDistance, 5);
+
+  await page.getByRole("radio", { name: "Neutral" }).click();
+  await page.getByRole("button", { name: "Reset 3D view" }).click();
+  const neutralResetView = await expectCameraFocusTarget(sceneCanvas);
+  expect(neutralResetView.target).toEqual(neutralView.target);
+  expect(viewDistance(neutralResetView)).toBeCloseTo(inspectionDistance, 5);
+
+  await sceneButton.click();
+  await expect(sceneCanvas).toHaveAttribute("data-view-focus", "scene");
+  const sceneView = await readStableViewState(sceneCanvas);
+  await page.getByRole("radio", { name: "C3 — Higher viewpoint" }).click();
+  const c3SceneView = await readStableViewState(sceneCanvas);
+  expect(c3SceneView.target).toEqual(sceneView.target);
+  await page.getByRole("radio", { name: "D3 — Lower viewpoint" }).click();
+  const d3SceneView = await readStableViewState(sceneCanvas);
+  expect(d3SceneView.target).toEqual(sceneView.target);
+
+  await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
+  await expect(sceneCanvas).toHaveAttribute("data-mounted-lattice-geometry-id", geometryId!);
+  await expect(sceneCanvas).toHaveAttribute("data-mounted-lattice-generation", generation!);
 });
 
 test("guided task restart restores task Optical Geometry preset", async ({ page }) => {
