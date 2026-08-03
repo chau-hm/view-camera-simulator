@@ -18,6 +18,19 @@ export const CAMERA_MOVEMENT_TEACHING_CASE_IDS = [
 
 export type CameraMovementTeachingCaseId = (typeof CAMERA_MOVEMENT_TEACHING_CASE_IDS)[number];
 
+/** Canonical lattice highlight region for each public teaching case. */
+export const CAMERA_MOVEMENT_TEACHING_PRESENTATION_REGIONS = Object.freeze({
+  neutral: "middle",
+  "A-front-tilt": "middle",
+  "B-rear-tilt": "middle",
+  "C1-front-rise": "upper",
+  "C2-rear-rise": "upper",
+  "C3-high-viewpoint": "middle",
+  "D1-front-fall": "lower",
+  "D2-rear-fall": "lower",
+  "D3-low-viewpoint": "middle",
+} as const satisfies Readonly<Record<CameraMovementTeachingCaseId, CameraMovementTargetRegion>>);
+
 export const CAMERA_MOVEMENT_OPPOSITE_REAR_TILT_PROBE_ID = "B-opposite-rear-tilt-probe" as const;
 
 export type CameraMovementTeachingCalibrationCandidate = Readonly<{
@@ -83,7 +96,10 @@ export type CameraMovementTeachingMovements = Readonly<{
 export type CameraMovementTeachingCase = Readonly<{
   id: CameraMovementTeachingCaseId;
   anchor: CameraRigViewpointAnchor;
+  /** Canonical target used by teaching evaluation and public-case matching. */
   targetRegion: CameraMovementTargetRegion;
+  /** Presentation-only lattice highlight; does not change the target geometry. */
+  presentationTargetRegion: CameraMovementTargetRegion;
   camera: CameraMovementTeachingMovements;
 }>;
 
@@ -109,6 +125,7 @@ const teachingCase = (
     id,
     anchor,
     targetRegion,
+    presentationTargetRegion: CAMERA_MOVEMENT_TEACHING_PRESENTATION_REGIONS[id],
     camera: freezeCamera(camera),
   });
 

@@ -10,6 +10,11 @@ import type {
   CameraMovementPresentationCalibration,
   CameraMovementTargetRegion,
 } from "../scenes/cameraMovementSceneCalibration";
+import {
+  CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES,
+  matchCameraMovementTeachingCase,
+} from "../scenes/cameraMovementPublicTeaching";
+import type { CameraState } from "../types/camera";
 import { useAppStore } from "../state/appStore";
 import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
 import type { SceneDefinition } from "../types/scene";
@@ -41,6 +46,24 @@ const colourForRegion = (
   if (region === "upper") return presentation.upperRegionColour;
   if (region === "lower") return presentation.lowerRegionColour;
   return presentation.middleRegionColour;
+};
+
+const resolveTeachingPresentationTargetRegion = (
+  camera: CameraState,
+  targetRegion: CameraMovementTargetRegion,
+  calibrationActive: boolean,
+): CameraMovementTargetRegion => {
+  if (calibrationActive || camera.activeSceneId !== "understanding-camera-movements") {
+    return targetRegion;
+  }
+  const caseId = matchCameraMovementTeachingCase({
+    anchor: camera.viewpointAnchor,
+    targetRegion,
+    camera,
+  });
+  return caseId
+    ? CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[caseId].presentationTargetRegion
+    : targetRegion;
 };
 
 type LatticeStyleBatch = {
@@ -321,7 +344,16 @@ export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
 }) => {
   const onGroupChangeRef = useRef(onGroupChange);
   onGroupChangeRef.current = onGroupChange;
+  const camera = useAppStore((state) => state.camera);
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
+  const calibrationActive = useAppStore(
+    (state) => state.cameraMovementCalibrationSession.active,
+  );
+  const presentationTargetRegion = resolveTeachingPresentationTargetRegion(
+    camera,
+    targetRegion,
+    calibrationActive,
+  );
   const effectiveCalibration = useAppStore(
     selectEffectiveCameraMovementCalibration,
   );
@@ -343,10 +375,10 @@ export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
     applyCameraMovementsGroupStyle(
       group,
       renderModel.presentation,
-      targetRegion,
+      presentationTargetRegion,
     );
-    updateAttachedInteractiveLatticeRuntime(group, targetRegion);
-  }, [group, renderModel, targetRegion]);
+    updateAttachedInteractiveLatticeRuntime(group, presentationTargetRegion);
+  }, [group, renderModel, presentationTargetRegion]);
 
   useEffect(() => {
     const runtimeInfo =

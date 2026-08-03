@@ -206,6 +206,24 @@ describe("camera-movement teaching calibration", () => {
       targetRegion: "lower",
       camera: { cameraBodyPitchDeg: -34 },
     });
+    expect(
+      Object.fromEntries(
+        CAMERA_MOVEMENT_TEACHING_CASE_IDS.map((id) => [
+          id,
+          cases[id].presentationTargetRegion,
+        ]),
+      ),
+    ).toEqual({
+      neutral: "middle",
+      "A-front-tilt": "middle",
+      "B-rear-tilt": "middle",
+      "C1-front-rise": "upper",
+      "C2-rear-rise": "upper",
+      "C3-high-viewpoint": "middle",
+      "D1-front-fall": "lower",
+      "D2-rear-fall": "lower",
+      "D3-low-viewpoint": "middle",
+    });
   });
 
   it("returns only finite measured numbers with explicit identity and fallback evidence", () => {

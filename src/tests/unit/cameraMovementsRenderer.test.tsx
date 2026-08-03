@@ -357,7 +357,7 @@ describe("Camera Movements subject factory", () => {
     ] as const;
 
     for (const caseId of sequence) {
-      const targetRegion = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[caseId].targetRegion;
+      const targetRegion = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[caseId].presentationTargetRegion;
       applyCameraMovementsGroupStyle(
         interactive,
         CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation,
@@ -380,6 +380,20 @@ describe("Camera Movements subject factory", () => {
       expect(interactive.userData.targetRegion, caseId).toBe(targetRegion);
       expect(rtt.group.userData.targetRegion, caseId).toBe(targetRegion);
       expect(interactiveRuntime?.targetRegion, caseId).toBe(targetRegion);
+      const selectedVertical = interactive.getObjectByName(
+        `camera-movements-lattice-outer-vertical-${targetRegion}`,
+      );
+      const selectedColour = (
+        selectedVertical as
+          | { material?: THREE.Material & { color?: THREE.Color } }
+          | undefined
+      )?.material?.color?.getHexString();
+      const expectedColour = {
+        upper: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.upperRegionColour,
+        middle: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.middleRegionColour,
+        lower: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.lowerRegionColour,
+      }[targetRegion].slice(1).toLowerCase();
+      expect(selectedColour, caseId).toBe(expectedColour);
       expect(interactiveRuntime?.generation, caseId).toBe(initialInteractiveGeneration);
       expect(rtt.runtimeInfo.generation, caseId).toBe(initialRttGeneration);
       expect(

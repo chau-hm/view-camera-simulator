@@ -12,6 +12,7 @@ import { understandingCameraMovementsScene } from "../../scenes/definitions/unde
 import { resolveCameraRigViewpointAnchor } from "../../scenes/cameraRigViewpointGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS } from "../../scenes/cameraMovementTeachingCases";
+import { CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES } from "../../scenes/cameraMovementPublicTeaching";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const cameraForRoute = (overrides: Partial<typeof DEFAULT_CAMERA_STATE> = {}) => ({
@@ -91,6 +92,36 @@ describe("camera-movement Ground Glass comparison resolver", () => {
           CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.arcCenterWorld,
         ),
       ).toBeCloseTo(1520, 12);
+    },
+  );
+
+  it.each([
+    ["neutral", "middle"],
+    ["A-front-tilt", "middle"],
+    ["B-rear-tilt", "middle"],
+    ["C1-front-rise", "upper"],
+    ["C2-rear-rise", "upper"],
+    ["C3-high-viewpoint", "middle"],
+    ["D1-front-fall", "lower"],
+    ["D2-rear-fall", "lower"],
+    ["D3-low-viewpoint", "middle"],
+  ] as const)(
+    "shares the canonical %s presentation region across Original and Current",
+    (caseId, presentationRegion) => {
+      const teachingCase = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[caseId];
+      const result = resolveCameraMovementGroundGlassComparison({
+        camera: cameraForRoute({
+          ...teachingCase.camera,
+          viewpointAnchor: teachingCase.anchor,
+        }),
+        targetRegion: teachingCase.targetRegion,
+      });
+
+      expect(result.activeTeachingCaseId).toBe(caseId);
+      expect(result.targetRegion).toBe(teachingCase.targetRegion);
+      expect(result.presentationTargetRegion).toBe(presentationRegion);
+      expect(result.original.presentationTargetRegion).toBe(presentationRegion);
+      expect(result.current.presentationTargetRegion).toBe(presentationRegion);
     },
   );
 

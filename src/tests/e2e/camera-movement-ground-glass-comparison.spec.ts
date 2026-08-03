@@ -44,6 +44,7 @@ test("public camera-movement Ground Glass compares neutral and current through s
   await assertComparisonContentful(page);
   const original = paneRtt(page, "camera-movement-original");
   const current = paneRtt(page, "camera-movement-current");
+  const scene = page.locator('[data-testid="scene-canvas"]');
   const geometryId = await original.getAttribute("data-rtt-lattice-geometry-id");
   const originalGeneration = await original.getAttribute("data-rtt-resource-generation");
   const originalSubjectGeneration = await original.getAttribute("data-rtt-lattice-subject-generation");
@@ -110,7 +111,12 @@ test("public camera-movement Ground Glass compares neutral and current through s
   ]) {
     await page.getByRole("radio", { name: label }).click();
     await expect(page.getByRole("radio", { name: label })).toBeChecked();
-    const expectedRegion = label.includes("C3") ? "upper" : label.includes("D3") ? "lower" : "middle";
+    const expectedRegion = label.includes("C1") || label.includes("C2")
+      ? "upper"
+      : label.includes("D1") || label.includes("D2")
+        ? "lower"
+        : "middle";
+    await expect(scene).toHaveAttribute("data-mounted-lattice-target-region", expectedRegion);
     await expect(original).toHaveAttribute("data-rtt-lattice-target-region", expectedRegion);
     await expect(current).toHaveAttribute("data-rtt-lattice-target-region", expectedRegion);
     await expect(original).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
