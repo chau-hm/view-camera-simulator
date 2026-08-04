@@ -48,6 +48,10 @@ import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 import { createGroundGlassRenderSanityStateKey } from "./groundGlassRenderSanityKey";
 import { resizeGroundGlassRttResources } from "./groundGlassRttResources";
 import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
+import {
+  resolveCameraMovementLessonPresentationTargetRegion,
+} from "../scenes/cameraMovementLessonState";
+import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementSceneCalibration";
 
 export type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
@@ -65,8 +69,8 @@ export type GroundGlassRTTProps = {
   zoomEnabled?: boolean;
   /** Independent RTT resource/diagnostic channel for comparison panes. */
   channel?: GroundGlassRttChannel;
-  /** Explicit target label for comparison panes; defaults to the app store. */
-  targetRegion?: import("../scenes/cameraMovementSceneCalibration").CameraMovementTargetRegion;
+  /** Explicit visual lattice presentation for comparison panes. */
+  presentationRegion?: CameraMovementPresentationRegion;
 };
 
 const tupleMatches = (
@@ -75,7 +79,7 @@ const tupleMatches = (
 ): boolean =>
   Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
-function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, channel = "default", targetRegion: explicitTargetRegion, }: GroundGlassRTTProps) {
+function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, channel = "default", presentationRegion: explicitPresentationRegion, }: GroundGlassRTTProps) {
   // React gives each mounted renderer a stable identity without a module-level
   // mutable registry. It survives ordinary prop changes and is replaced only
   // when this OffscreenRenderer instance is actually remounted.
@@ -87,12 +91,22 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   const renderTarget = useRef<THREE.WebGLRenderTarget | null>(null);
   const offscreenScene = useRef<THREE.Scene | null>(null);
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
+  const presentationRegionRef = useRef<CameraMovementPresentationRegion>("middle");
 
   const { gl } = useThree();
-  const configuredTargetRegion = useAppStore((state) =>
-    explicitTargetRegion === undefined ? state.scene.targetRegion : undefined,
+  const configuredPresentationRegion = useAppStore((state) =>
+    explicitPresentationRegion === undefined
+      ? state.camera.cameraMovementLessonState &&
+        state.camera.activeSceneId === "understanding-camera-movements"
+        ? resolveCameraMovementLessonPresentationTargetRegion(
+            state.camera.cameraMovementLessonState,
+          )
+        : state.scene.targetRegion
+      : undefined,
   );
-  const targetRegion = explicitTargetRegion ?? configuredTargetRegion ?? "middle";
+  const presentationRegion =
+    explicitPresentationRegion ?? configuredPresentationRegion ?? "middle";
+  presentationRegionRef.current = presentationRegion;
   const effectiveCameraMovementCalibration = useAppStore(
     selectEffectiveCameraMovementCalibration,
   );
@@ -495,7 +509,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     const registration = getSceneSubjectRegistration(sceneId);
     const subjectOptions = {
-      targetRegion: undefined,
+      presentationRegion: undefined,
       cameraMovementRenderModel:
         sceneId === "understanding-camera-movements"
           ? cameraMovementRenderModel
@@ -526,7 +540,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       const mounted = mountCameraMovementRttSubject(
         scene,
         cameraMovementRenderModel,
-        cameraMovementRenderModel.presentation.defaultTargetRegion,
+        presentationRegionRef.current,
       );
       mountedCameraMovementRttSubjectRef.current = mounted;
       const runtimeInfo = mounted.runtimeInfo;
@@ -539,7 +553,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           latticeGeometryKey: runtimeInfo.geometryKey,
           latticePresentationKey: runtimeInfo.presentationKey,
           latticeResourceKey: runtimeInfo.resourceKey,
-          latticeTargetRegion: runtimeInfo.targetRegion,
+          latticePresentationRegion: runtimeInfo.presentationRegion,
           latticeSubjectGeneration: runtimeInfo.generation,
         });
       }
@@ -560,7 +574,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
             latticeGeometryKey: undefined,
             latticePresentationKey: undefined,
             latticeResourceKey: undefined,
-            latticeTargetRegion: undefined,
+            latticePresentationRegion: undefined,
             latticeSubjectGeneration: undefined,
           });
         }
@@ -590,7 +604,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     updateCameraMovementRttSubjectTarget(
       mounted,
       cameraMovementRenderModel,
-      targetRegion,
+      presentationRegion,
     );
     const currentInfo = readRuntimeInfo();
     if (currentInfo?.latticeSubjectGeneration !== mounted.runtimeInfo.generation) {
@@ -598,9 +612,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     }
     setRuntimeInfo({
       ...currentInfo,
-      latticeTargetRegion: targetRegion,
+      latticePresentationRegion: presentationRegion,
     });
-  }, [cameraMovementRenderModel, readRuntimeInfo, sceneId, setRuntimeInfo, targetRegion]);
+  }, [cameraMovementRenderModel, presentationRegion, readRuntimeInfo, sceneId, setRuntimeInfo]);
 
   // Logical size, quality, DPR, and zoom affect only internal RTT resolution.
   // Keep the scene subject, camera, materials, post-processing scenes, and
@@ -1057,7 +1071,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled, channel = "default", targetRegion }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled, channel = "default", presentationRegion }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
@@ -1065,7 +1079,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
   return (
     <div data-rtt-resource-channel={channel} style={{ width: "100%", height: "100%" }}>
       <Canvas dpr={qualitySettings.dpr} style={{ width: "100%", height: "100%" }} gl={GROUND_GLASS_GL_OPTIONS} orthographic={false}>
-        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} targetRegion={targetRegion} />
+        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} presentationRegion={presentationRegion} />
       </Canvas>
     </div>
   );

@@ -31,6 +31,8 @@ export type ArcAnchorCameraRigPlacement = Readonly<{
   basePitchDeg: number;
   arcAngleDeg: number;
   radiusMm: number;
+  /** Optional continuous lesson parameter; omitted for discrete endpoints. */
+  viewpointT?: number;
 }>;
 
 export type CameraRigPlacement =

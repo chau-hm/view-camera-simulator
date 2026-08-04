@@ -44,6 +44,7 @@ test("public camera-movement Ground Glass compares neutral and current through s
   await assertComparisonContentful(page);
   const original = paneRtt(page, "camera-movement-original");
   const current = paneRtt(page, "camera-movement-current");
+  const scene = page.locator('[data-testid="scene-canvas"]');
   const geometryId = await original.getAttribute("data-rtt-lattice-geometry-id");
   const originalGeneration = await original.getAttribute("data-rtt-resource-generation");
   const originalSubjectGeneration = await original.getAttribute("data-rtt-lattice-subject-generation");
@@ -58,8 +59,8 @@ test("public camera-movement Ground Glass compares neutral and current through s
   await expect(current).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
   await expect(original).toHaveAttribute("data-rtt-lattice-edge-count", "224");
   await expect(current).toHaveAttribute("data-rtt-lattice-edge-count", "224");
-  await expect(original).toHaveAttribute("data-rtt-lattice-target-region", "middle");
-  await expect(current).toHaveAttribute("data-rtt-lattice-target-region", "middle");
+  await expect(original).toHaveAttribute("data-rtt-lattice-presentation-region", "whole");
+  await expect(current).toHaveAttribute("data-rtt-lattice-presentation-region", "whole");
 
   // The shared lattice/resource assertions above do not prove that the two RTT
   // cameras are driven by different physical states.  Capture the neutral
@@ -110,9 +111,16 @@ test("public camera-movement Ground Glass compares neutral and current through s
   ]) {
     await page.getByRole("radio", { name: label }).click();
     await expect(page.getByRole("radio", { name: label })).toBeChecked();
-    const expectedRegion = label.includes("C3") ? "upper" : label.includes("D3") ? "lower" : "middle";
-    await expect(original).toHaveAttribute("data-rtt-lattice-target-region", expectedRegion);
-    await expect(current).toHaveAttribute("data-rtt-lattice-target-region", expectedRegion);
+    const expectedRegion = label.includes("C1") || label.includes("C2")
+      ? "upper"
+      : label.includes("D1") || label.includes("D2")
+        ? "lower"
+        : label === "A — Front tilt" || label === "B — Rear tilt"
+          ? "middle"
+          : "whole";
+    await expect(scene).toHaveAttribute("data-mounted-lattice-presentation-region", expectedRegion);
+    await expect(original).toHaveAttribute("data-rtt-lattice-presentation-region", expectedRegion);
+    await expect(current).toHaveAttribute("data-rtt-lattice-presentation-region", expectedRegion);
     await expect(original).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
     await expect(current).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
     await expect(original).toHaveAttribute("data-rtt-lattice-subject-generation", originalSubjectGeneration!);

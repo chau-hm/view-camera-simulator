@@ -11,11 +11,14 @@ import {
   type CameraMovementTeachingCalibrationCandidate,
 } from "./cameraMovementTeachingCases";
 import {
+  CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES,
   matchCameraMovementTeachingCase,
   type CameraMovementPublicCaseId,
 } from "./cameraMovementPublicTeaching";
+import { resolveCameraMovementLessonPresentationTargetRegion } from "./cameraMovementLessonState";
 import {
   DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
+  type CameraMovementPresentationRegion,
   type CameraMovementSceneCalibration,
   type CameraMovementTargetRegion,
 } from "./cameraMovementSceneCalibration";
@@ -27,10 +30,10 @@ import { isApertureValue } from "../utils/constants";
 /**
  * The two renderable sides of a Ground Glass comparison.
  *
- * Both sides carry the same target-region label. The Original side is a
- * neutral, canonical camera; the Current side is the caller's live camera.
- * Keeping the label on each layer prevents a renderer from accidentally
- * selecting C3/D3's region only for one of the two images.
+ * Both sides carry the same target and presentation-region labels. The
+ * Original side is a neutral, canonical camera; the Current side is the
+ * caller's live camera. Keeping both labels on each layer prevents a
+ * renderer from selecting a teaching highlight for only one image.
  */
 export type CameraMovementGroundGlassComparisonLayer = Readonly<{
   camera: Readonly<CameraState>;
@@ -38,6 +41,7 @@ export type CameraMovementGroundGlassComparisonLayer = Readonly<{
   /** Alias useful to consumers that call the derived result simply `optics`. */
   optics: Readonly<DerivedOpticsState>;
   targetRegion: CameraMovementTargetRegion;
+  presentationTargetRegion: CameraMovementPresentationRegion;
   calibrationKey: string;
 }>;
 
@@ -62,6 +66,7 @@ export type CameraMovementGroundGlassComparison = Readonly<{
   sceneId: typeof understandingCameraMovementsScene.id;
   targetRegion: CameraMovementTargetRegion;
   comparisonTargetRegion: CameraMovementTargetRegion;
+  presentationTargetRegion: CameraMovementPresentationRegion;
   activeTeachingCaseId: CameraMovementPublicCaseId | null;
   /** Deliberately duplicated labels make the shared-region invariant inspectable. */
   originalTargetRegion: CameraMovementTargetRegion;
@@ -224,6 +229,7 @@ export const resolveCameraMovementGroundGlassComparison = (
     aperture: sharedPhysical.aperture,
     focusMode: "finite",
     lastFiniteFocusDepthMm: sharedPhysical.focusDistanceMm,
+    cameraMovementLessonState: neutralTeachingCase.lessonState,
     activeSceneId: understandingCameraMovementsScene.id,
     viewpointAnchor: neutralTeachingCase.anchor,
     cameraRigPlacement: resolveCameraRigViewpointAnchor(
@@ -248,6 +254,20 @@ export const resolveCameraMovementGroundGlassComparison = (
   const frozenOriginalCamera = cloneAndFreeze(originalCamera);
   const frozenCurrentOptics = cloneAndFreeze(currentOptics);
   const frozenOriginalOptics = cloneAndFreeze(originalOptics);
+  const activeTeachingCaseId = matchCameraMovementTeachingCase({
+    anchor: currentCamera.viewpointAnchor,
+    targetRegion,
+    camera: currentCamera,
+  });
+  const presentationTargetRegion =
+    currentCamera.cameraMovementLessonState
+      ? resolveCameraMovementLessonPresentationTargetRegion(
+          currentCamera.cameraMovementLessonState,
+        )
+      : activeTeachingCaseId
+        ? CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[activeTeachingCaseId]
+            .presentationTargetRegion
+        : targetRegion;
   const calibrationIdentity = {
     effectiveKey: calibration.effectiveKey,
     subjectGeometryKey: calibration.subjectGeometryKey,
@@ -259,6 +279,7 @@ export const resolveCameraMovementGroundGlassComparison = (
     opticsState: frozenCurrentOptics,
     optics: frozenCurrentOptics,
     targetRegion,
+    presentationTargetRegion,
     calibrationKey: calibration.effectiveKey,
   } as const;
   const originalLayer = {
@@ -266,19 +287,15 @@ export const resolveCameraMovementGroundGlassComparison = (
     opticsState: frozenOriginalOptics,
     optics: frozenOriginalOptics,
     targetRegion,
+    presentationTargetRegion,
     calibrationKey: calibration.effectiveKey,
   } as const;
-
-  const activeTeachingCaseId = matchCameraMovementTeachingCase({
-    anchor: currentCamera.viewpointAnchor,
-    targetRegion,
-    camera: currentCamera,
-  });
 
   return cloneAndFreeze({
     sceneId: understandingCameraMovementsScene.id,
     targetRegion,
     comparisonTargetRegion: targetRegion,
+    presentationTargetRegion,
     activeTeachingCaseId,
     originalTargetRegion: targetRegion,
     currentTargetRegion: targetRegion,

@@ -23,7 +23,7 @@ export type GroundGlassRenderSurfaceProps = {
   renderQuality: import("../types/ui").RenderQualityProfile;
   zoomEnabled?: boolean;
   channel?: GroundGlassRttChannel;
-  targetRegion?: import("../scenes/cameraMovementSceneCalibration").CameraMovementTargetRegion;
+  presentationRegion?: import("../scenes/cameraMovementSceneCalibration").CameraMovementPresentationRegion;
 };
 
 export const GroundGlassRenderSurface = ({
@@ -45,7 +45,7 @@ export const GroundGlassRenderSurface = ({
   renderQuality,
   zoomEnabled,
   channel = "default",
-  targetRegion,
+  presentationRegion,
 }: GroundGlassRenderSurfaceProps) => {
   const rttRuntimeInfo = useAppStore((state) =>
     channel === "default"
@@ -76,7 +76,7 @@ export const GroundGlassRenderSurface = ({
         data-rtt-lattice-geometry-key={rttRuntimeInfo?.latticeGeometryKey}
         data-rtt-lattice-presentation-key={rttRuntimeInfo?.latticePresentationKey}
         data-rtt-lattice-resource-key={rttRuntimeInfo?.latticeResourceKey}
-        data-rtt-lattice-target-region={rttRuntimeInfo?.latticeTargetRegion}
+        data-rtt-lattice-presentation-region={rttRuntimeInfo?.latticePresentationRegion}
         data-rtt-lattice-subject-generation={rttRuntimeInfo?.latticeSubjectGeneration}
         data-rtt-camera-position={rttRuntimeInfo?.cameraPositionWorld?.join(",")}
         data-rtt-camera-up={rttRuntimeInfo?.cameraUpWorld?.join(",")}
@@ -119,7 +119,7 @@ export const GroundGlassRenderSurface = ({
           renderQuality={renderQuality}
           zoomEnabled={zoomEnabled}
           channel={channel}
-          targetRegion={targetRegion}
+          presentationRegion={presentationRegion}
         />
       </div>
     );

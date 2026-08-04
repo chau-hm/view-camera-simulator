@@ -64,6 +64,24 @@ describe("effective camera-movement calibration", () => {
     });
   });
 
+  it("preserves independently calibrated Low and High angles when no workbench angle override is used", () => {
+    const asymmetricBaseline = {
+      ...baseline,
+      cameraRig: {
+        ...baseline.cameraRig,
+        lowArcAngleDeg: -31,
+      },
+    };
+    const effective = resolveEffectiveCameraMovementCalibration(asymmetricBaseline);
+
+    expect(effective.cameraRig.highArcAngleDeg).toBe(35);
+    expect(effective.cameraRig.lowArcAngleDeg).toBe(-31);
+    expect(validateEffectiveCameraMovementCalibration(effective)).toEqual({
+      valid: true,
+      errors: [],
+    });
+  });
+
   it("publishes deterministic scoped keys with changes isolated to owning scopes", () => {
     const first = resolveEffectiveCameraMovementCalibration(baseline);
     const same = resolveEffectiveCameraMovementCalibration(

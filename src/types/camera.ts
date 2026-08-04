@@ -2,6 +2,22 @@ import type { CameraRigPlacement, CameraRigViewpointAnchor, Vec3 } from "./optic
 
 export type SimulatorMode = "guided" | "free";
 
+export type MovementStudy = "viewpoint" | "tilt" | "vertical-framing";
+
+export type ActiveStandard = "front" | "rear";
+
+/** Continuous canonical lesson state for Understanding Camera Movements. */
+export type CameraMovementLessonState = Readonly<{
+  study: MovementStudy;
+  /** -1 lower viewpoint, 0 neutral, +1 higher viewpoint. */
+  viewpointT: number;
+  activeStandard: ActiveStandard;
+  /** Signed front/rear tilt value in degrees. */
+  tiltDeg: number;
+  /** -1 lower framing, 0 middle, +1 upper framing. */
+  framingT: number;
+}>;
+
 export type ApertureValue = 5.6 | 11 | 22 | 32;
 
 export type GeometryView = "side" | "top" | "scheimpflug";
@@ -23,6 +39,8 @@ export type CameraState = {
   viewpointAnchor: CameraRigViewpointAnchor;
   /** Canonical resolved physical viewpoint placement consumed by optics adapters. */
   cameraRigPlacement: CameraRigPlacement;
+  /** Scene-specific continuous lesson source for public camera-movement adapters. */
+  cameraMovementLessonState?: CameraMovementLessonState;
   activeSceneId: string;
   activeTaskId: string | null;
   mode: SimulatorMode;

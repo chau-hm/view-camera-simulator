@@ -50,16 +50,16 @@ describe("RTT scene registration", () => {
     expect(reg?.createRttGroup).toBeDefined();
   });
 
-  it.each(["upper", "middle", "lower"] as const)(
-    "3D and RTT resolve the identical canonical lattice for the %s target region",
-    (targetRegion) => {
+  it.each(["whole", "upper", "middle", "lower"] as const)(
+    "3D and RTT resolve the identical canonical lattice for the %s presentation region",
+    (presentationRegion) => {
       const rttGroup = createRegisteredRttSubject(
         "understanding-camera-movements",
-        { targetRegion },
+        { presentationRegion },
       );
-      const interactiveGroup = createCameraMovementsGroup(targetRegion);
+      const interactiveGroup = createCameraMovementsGroup(presentationRegion);
       try {
-        expect(rttGroup?.userData.targetRegion).toBe(targetRegion);
+        expect(rttGroup?.userData.presentationRegion).toBe(presentationRegion);
         expect(rttGroup?.userData.canonicalGeometryId).toBe(
           CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
         );
@@ -263,13 +263,13 @@ describe("Camera Movements RTT focal uniforms", () => {
       vi.spyOn(material, "dispose"),
     );
 
-    ( ["upper", "lower", "middle"] as const).forEach((targetRegion) => {
+    (["whole", "upper", "lower", "middle"] as const).forEach((presentationRegion) => {
       updateCameraMovementRttSubjectTarget(
         mounted,
         CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
-        targetRegion,
+        presentationRegion,
       );
-      expect(group.userData.targetRegion).toBe(targetRegion);
+      expect(group.userData.presentationRegion).toBe(presentationRegion);
       expect(group.userData.rttMountGeneration).toBe(generation);
       expect(group.userData.canonicalGeometryId).toBe(geometryId);
       expect(group.userData.canonicalGeometryKey).toBe(geometryKey);
@@ -278,20 +278,35 @@ describe("Camera Movements RTT focal uniforms", () => {
       expect(group.userData.canonicalEdgeCount).toBe(
         CAMERA_MOVEMENT_LATTICE.edges.length,
       );
-      const selectedBatch = group.children.find(
-        (child) => child.userData.edgeTargetRegion === targetRegion,
-      ) as THREE.LineSegments & { material: THREE.Material & { color?: THREE.Color } };
-      expect(selectedBatch).toBeDefined();
-      expect(selectedBatch.userData.selectedTarget).toBe(true);
-      expect(selectedBatch.material.color?.getHexString()).toBe(
-        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation[
-          targetRegion === "upper"
-            ? "upperRegionColour"
-            : targetRegion === "lower"
-              ? "lowerRegionColour"
-              : "middleRegionColour"
-        ].slice(1),
-      );
+      const selectedBatches = group.children.filter(
+        (child) => child.userData.selectedTarget === true,
+      ) as Array<THREE.LineSegments & { material: THREE.Material & { color?: THREE.Color } }>;
+      if (presentationRegion === "whole") {
+        expect(selectedBatches).toHaveLength(0);
+        group.children
+          .filter((child) => child.userData.edgeRole)
+          .forEach((child) => {
+          const line = child as THREE.LineSegments & { material: THREE.Material & { color?: THREE.Color } };
+          expect(line.material.color?.getHexString()).toBe(
+            CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.inactiveColour.slice(1),
+          );
+          });
+      } else {
+        const selectedBatch = group.children.find(
+          (child) => child.userData.edgeTargetRegion === presentationRegion,
+        ) as THREE.LineSegments & { material: THREE.Material & { color?: THREE.Color } };
+        expect(selectedBatch).toBeDefined();
+        expect(selectedBatch.userData.selectedTarget).toBe(true);
+        expect(selectedBatch.material.color?.getHexString()).toBe(
+          CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation[
+            presentationRegion === "upper"
+              ? "upperRegionColour"
+              : presentationRegion === "lower"
+                ? "lowerRegionColour"
+                : "middleRegionColour"
+          ].slice(1),
+        );
+      }
       geometryDisposals.forEach((spy) => expect(spy).not.toHaveBeenCalled());
       materialDisposals.forEach((spy) => expect(spy).not.toHaveBeenCalled());
     });

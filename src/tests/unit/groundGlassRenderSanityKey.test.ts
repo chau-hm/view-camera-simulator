@@ -8,7 +8,25 @@ import geometry from "../../scenes/understandingCameraMovementsGeometry";
 
 function buildOptics(overrides: Partial<ReturnType<typeof useAppStore.getState>['camera']> = {}): DerivedOpticsState {
   const base = useAppStore.getState().camera;
-  return deriveOpticsState({ ...base, ...overrides }, understandingCameraMovementsScene);
+  const legacyMovementKeys = [
+    "frontRiseMm",
+    "frontTiltDeg",
+    "frontSwingDeg",
+    "rearRiseMm",
+    "rearTiltDeg",
+    "cameraBodyPitchDeg",
+    "viewpointAnchor",
+    "cameraRigPlacement",
+  ] as const;
+  const overridesLegacyMovement = legacyMovementKeys.some((key) => key in overrides);
+  return deriveOpticsState(
+    {
+      ...base,
+      ...overrides,
+      ...(overridesLegacyMovement ? { cameraMovementLessonState: undefined } : {}),
+    },
+    understandingCameraMovementsScene,
+  );
 }
 
 function makeKey(optics: DerivedOpticsState, overrides: Partial<Parameters<typeof createGroundGlassRenderSanityStateKey>[0]> = {}) {
@@ -76,6 +94,7 @@ describe("groundGlassRenderSanityKey", () => {
       ...camera,
       viewpointAnchor: "high" as const,
       cameraRigPlacement: geometry.cameraRig.viewpointAnchors.high,
+      cameraMovementLessonState: undefined,
     };
     const midpoint = deriveOpticsState(
       camera,

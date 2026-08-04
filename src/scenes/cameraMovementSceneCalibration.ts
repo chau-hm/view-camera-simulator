@@ -6,8 +6,17 @@ import {
 } from "./cameraRigViewpointGeometry";
 
 export type CameraMovementTargetRegion = "upper" | "middle" | "lower";
+/** Visual lattice styling only; never use this for physical targeting. */
+export type CameraMovementPresentationRegion = CameraMovementTargetRegion | "whole";
 export type CameraMovementLatticeRegion = CameraMovementTargetRegion | "neutral";
 export const DEFAULT_CAMERA_MOVEMENT_TARGET_REGION: CameraMovementTargetRegion = "middle";
+
+/** Existing instructional endpoint magnitudes, kept in scene calibration. */
+export const CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS = Object.freeze({
+  tiltDeg: 5,
+  riseMm: 20,
+  bodyPitchDeg: 34,
+});
 
 export type CameraMovementSubjectCalibration = Readonly<{
   columns: number;
@@ -161,6 +170,8 @@ export const CAMERA_MOVEMENT_SCENE_CALIBRATION: CameraMovementSceneCalibration =
     lowArcRadiusMm: selectedPhysical.cameraRig.lowArcRadiusMm,
     highArcAngleDeg: selectedPhysical.cameraRig.arcAngleDeg,
     lowArcAngleDeg: -selectedPhysical.cameraRig.arcAngleDeg,
+    highBodyPitchDeg: CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.bodyPitchDeg,
+    lowBodyPitchDeg: -CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.bodyPitchDeg,
     provisionalBasePitchDeg: 0,
     defaultAnchor: "mid",
     anchorMetadata: {

@@ -63,7 +63,7 @@ describe("channel-aware Optical Debug", () => {
       latticeGeometryId: "lattice-original",
       latticeGeometryKey: "geometry-original",
       latticeResourceKey: "resource-original",
-      latticeTargetRegion: "upper",
+      latticePresentationRegion: "upper",
       cameraPositionWorld: [0, 0, 1],
       cameraUpWorld: [0, 1, 0],
       cameraForwardWorld: [0, 0, 1],
@@ -76,7 +76,7 @@ describe("channel-aware Optical Debug", () => {
       latticeGeometryId: "lattice-current",
       latticeGeometryKey: "geometry-current",
       latticeResourceKey: "resource-current",
-      latticeTargetRegion: "lower",
+      latticePresentationRegion: "lower",
       cameraPositionWorld: [4, 5, 6],
       cameraUpWorld: [0, 0, 1],
       cameraForwardWorld: [1, 0, 0],
@@ -108,8 +108,8 @@ describe("channel-aware Optical Debug", () => {
     expect(layers[1]).toHaveTextContent("current-owner");
     expect(layers[1]).toHaveTextContent("lattice-current");
     expect(layers[1]).toHaveTextContent("4.000, 5.000, 6.000");
-    expect(layers[0]).toHaveTextContent("Target region: upper");
-    expect(layers[1]).toHaveTextContent("Target region: lower");
+    expect(layers[0]).toHaveTextContent("Lattice presentation: upper");
+    expect(layers[1]).toHaveTextContent("Lattice presentation: lower");
 
     view.rerender(
       <OpticalDebugPanel

@@ -53,6 +53,116 @@ describe("camera movement public teaching matcher", () => {
     expect(matchCameraMovementTeachingCase({ anchor: "low", targetRegion: "lower", camera: { ...neutralCamera(), cameraBodyPitchDeg: -pitch } })).toBe("D3-low-viewpoint");
   });
 
+  it("matches viewpoint cases with either retained active standard", () => {
+    for (const id of ["neutral", "C3-high-viewpoint", "D3-low-viewpoint"] as const) {
+      const teachingCase = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[id];
+      expect(
+        matchCameraMovementTeachingCase({
+          anchor: teachingCase.anchor,
+          targetRegion: teachingCase.targetRegion,
+          camera: {
+            ...neutralCamera(),
+            cameraMovementLessonState: {
+              ...teachingCase.lessonState,
+              activeStandard: "rear",
+            },
+          },
+        }),
+      ).toBe(id);
+    }
+  });
+
+  it("keeps tilt and vertical-framing standards semantically distinct", () => {
+    const frontTilt = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES["A-front-tilt"];
+    const rearTilt = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES["B-rear-tilt"];
+    expect(
+      matchCameraMovementTeachingCase({
+        anchor: frontTilt.anchor,
+        targetRegion: frontTilt.targetRegion,
+        camera: {
+          ...neutralCamera(),
+          cameraMovementLessonState: frontTilt.lessonState,
+        },
+      }),
+    ).toBe("A-front-tilt");
+    expect(
+      matchCameraMovementTeachingCase({
+        anchor: rearTilt.anchor,
+        targetRegion: rearTilt.targetRegion,
+        camera: {
+          ...neutralCamera(),
+          cameraMovementLessonState: rearTilt.lessonState,
+        },
+      }),
+    ).toBe("B-rear-tilt");
+
+    const frontRise = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES["C1-front-rise"];
+    const rearRise = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES["C2-rear-rise"];
+    expect(
+      matchCameraMovementTeachingCase({
+        anchor: frontRise.anchor,
+        targetRegion: frontRise.targetRegion,
+        camera: {
+          ...neutralCamera(),
+          cameraMovementLessonState: frontRise.lessonState,
+        },
+      }),
+    ).toBe("C1-front-rise");
+    expect(
+      matchCameraMovementTeachingCase({
+        anchor: rearRise.anchor,
+        targetRegion: rearRise.targetRegion,
+        camera: {
+          ...neutralCamera(),
+          cameraMovementLessonState: rearRise.lessonState,
+        },
+      }),
+    ).toBe("C2-rear-rise");
+  });
+
+  it("does not match a continuous non-endpoint viewpoint as a legacy case", () => {
+    expect(
+      matchCameraMovementTeachingCase({
+        anchor: "mid",
+        targetRegion: "middle",
+        camera: {
+          ...neutralCamera(),
+          cameraMovementLessonState: {
+            study: "viewpoint",
+            viewpointT: 0.5,
+            activeStandard: "rear",
+            tiltDeg: 0,
+            framingT: 0,
+          },
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("does not let a stale physical anchor or target masquerade as a canonical case", () => {
+    const c3 = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES["C3-high-viewpoint"];
+    expect(
+      matchCameraMovementTeachingCase({
+        anchor: "mid",
+        targetRegion: c3.targetRegion,
+        camera: {
+          ...neutralCamera(),
+          cameraMovementLessonState: c3.lessonState,
+        },
+      }),
+    ).toBeNull();
+    expect(
+      matchCameraMovementTeachingCase({
+        anchor: c3.anchor,
+        targetRegion: "middle",
+        camera: {
+          ...neutralCamera(),
+          cameraMovementLessonState: c3.lessonState,
+        },
+      }),
+    ).toBeNull();
+  });
+
   it("returns null for custom states and stale movement residue", () => {
     expect(matchCameraMovementTeachingCase({ anchor: "mid", targetRegion: "middle", camera: { ...neutralCamera(), frontTiltDeg: 3.3 } })).toBeNull();
     // stale rear tilt after selecting A must not match
