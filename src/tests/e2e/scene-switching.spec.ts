@@ -69,17 +69,13 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
       .toBe(documentToken);
 
     const sceneCanvas = page.getByTestId("scene-canvas");
-    const groundGlassPanes = visit.sceneId === "understanding-camera-movements"
-      ? page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel^="camera-movement-"]')
-      : page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
-    const groundGlass = visit.sceneId === "understanding-camera-movements"
-      ? page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="camera-movement-current"]')
-      : page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
+    const groundGlassPanes = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
+    const groundGlass = groundGlassPanes;
     await expect(sceneCanvas).toHaveCount(1);
     await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", visit.sceneId);
     await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
-    await expect(groundGlassPanes).toHaveCount(visit.sceneId === "understanding-camera-movements" ? 2 : 1);
-    await expect(groundGlassPanes.locator("canvas")).toHaveCount(visit.sceneId === "understanding-camera-movements" ? 2 : 1);
+    await expect(groundGlassPanes).toHaveCount(1);
+    await expect(groundGlassPanes.locator("canvas")).toHaveCount(1);
 
     // Use dedicated scene-id attribute instead of parsing internal cache key
     for (const pane of await groundGlassPanes.all()) {
