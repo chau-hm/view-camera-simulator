@@ -139,6 +139,30 @@ describe("camera movement public teaching matcher", () => {
     ).toBeNull();
   });
 
+  it("does not let a stale physical anchor or target masquerade as a canonical case", () => {
+    const c3 = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES["C3-high-viewpoint"];
+    expect(
+      matchCameraMovementTeachingCase({
+        anchor: "mid",
+        targetRegion: c3.targetRegion,
+        camera: {
+          ...neutralCamera(),
+          cameraMovementLessonState: c3.lessonState,
+        },
+      }),
+    ).toBeNull();
+    expect(
+      matchCameraMovementTeachingCase({
+        anchor: c3.anchor,
+        targetRegion: "middle",
+        camera: {
+          ...neutralCamera(),
+          cameraMovementLessonState: c3.lessonState,
+        },
+      }),
+    ).toBeNull();
+  });
+
   it("returns null for custom states and stale movement residue", () => {
     expect(matchCameraMovementTeachingCase({ anchor: "mid", targetRegion: "middle", camera: { ...neutralCamera(), frontTiltDeg: 3.3 } })).toBeNull();
     // stale rear tilt after selecting A must not match

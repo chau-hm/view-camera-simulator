@@ -107,10 +107,13 @@ export const matchCameraMovementTeachingCase = (input: {
 
   if (input.camera.cameraMovementLessonState) {
     for (const id of CAMERA_MOVEMENT_TEACHING_CASE_ORDER) {
+      const teachingCase = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[id];
       if (
+        teachingCase.anchor === input.anchor &&
+        teachingCase.targetRegion === input.targetRegion &&
         cameraMovementLessonStatesEqual(
           input.camera.cameraMovementLessonState,
-          CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[id].lessonState,
+          teachingCase.lessonState,
         )
       ) {
         return id;

@@ -333,6 +333,24 @@ describe("Camera Movements subject factory", () => {
     const materialDisposals = [...materials].map((material) =>
       vi.spyOn(material, "dispose"),
     );
+    const edgeStyleSnapshots = interactive.children
+      .filter((child) => child.userData.edgeRole)
+      .map((child) => {
+        const material = (
+          child as unknown as {
+            material: THREE.Material & { linewidth?: number };
+          }
+        ).material;
+        return {
+          child,
+          material,
+          lineWeight: child.userData.lineWeight,
+          lineOpacity: child.userData.lineOpacity,
+          materialOpacity: material.opacity,
+          materialTransparent: material.transparent,
+          linewidth: material.linewidth,
+        };
+      });
     const sequence = [
       "neutral",
       "A-front-tilt",
@@ -370,6 +388,19 @@ describe("Camera Movements subject factory", () => {
       expect(interactive.userData.presentationRegion, caseId).toBe(presentationRegion);
       expect(rtt.group.userData.presentationRegion, caseId).toBe(presentationRegion);
       expect(interactiveRuntime?.presentationRegion, caseId).toBe(presentationRegion);
+      edgeStyleSnapshots.forEach((snapshot) => {
+        const material = (
+          snapshot.child as unknown as {
+            material: THREE.Material & { linewidth?: number };
+          }
+        ).material;
+        expect(snapshot.child.userData.lineWeight, caseId).toBe(snapshot.lineWeight);
+        expect(snapshot.child.userData.lineOpacity, caseId).toBe(snapshot.lineOpacity);
+        expect(material, caseId).toBe(snapshot.material);
+        expect(material.opacity, caseId).toBe(snapshot.materialOpacity);
+        expect(material.transparent, caseId).toBe(snapshot.materialTransparent);
+        expect(material.linewidth, caseId).toBe(snapshot.linewidth);
+      });
       if (presentationRegion === "whole") {
         const edgeGroups = interactive.children.filter(
           (child) => child.userData.edgeRole,
