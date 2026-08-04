@@ -1,8 +1,15 @@
 import type { CameraRigViewpointAnchor } from "../types/optics";
+import type { CameraMovementLessonState } from "../types/camera";
 import {
   CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION,
   type CameraMovementTargetRegion,
 } from "./cameraMovementSceneCalibration";
+import {
+  CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
+  normalizeCameraMovementLessonState,
+} from "./cameraMovementLessonState";
+
+export { CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS } from "./cameraMovementLessonState";
 
 export const CAMERA_MOVEMENT_TEACHING_CASE_IDS = [
   "neutral",
@@ -51,13 +58,6 @@ export type CameraMovementTeachingCalibrationCandidate = Readonly<{
   bodyPitchDeg: number;
 }>;
 
-/** Internal teaching movements selected after the physical scene evaluation. */
-export const CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS = Object.freeze({
-  tiltDeg: 5,
-  riseMm: 20,
-  bodyPitchDeg: 34,
-});
-
 const selectedPhysical = CAMERA_MOVEMENT_SELECTED_PHYSICAL_CALIBRATION;
 
 /**
@@ -95,6 +95,8 @@ export type CameraMovementTeachingMovements = Readonly<{
 
 export type CameraMovementTeachingCase = Readonly<{
   id: CameraMovementTeachingCaseId;
+  /** Canonical continuous lesson state represented by this compatibility case. */
+  lessonState: CameraMovementLessonState;
   anchor: CameraRigViewpointAnchor;
   /** Canonical target used by teaching evaluation and public-case matching. */
   targetRegion: CameraMovementTargetRegion;
@@ -115,14 +117,79 @@ const CASE_ID_SET: ReadonlySet<string> = new Set(CAMERA_MOVEMENT_TEACHING_CASE_I
 const freezeCamera = (camera: CameraMovementTeachingMovements): CameraMovementTeachingMovements =>
   Object.freeze({ ...camera });
 
+/** Compatibility adapter; the teaching-case ID is never the physical source of truth. */
+export const legacyCaseToLessonState = (
+  id: CameraMovementTeachingCaseId,
+  candidate: CameraMovementTeachingCalibrationCandidate,
+): CameraMovementLessonState => {
+  switch (id) {
+    case "A-front-tilt":
+      return normalizeCameraMovementLessonState({
+        study: "tilt",
+        activeStandard: "front",
+        tiltDeg: candidate.tiltDeg,
+      });
+    case "B-rear-tilt":
+      return normalizeCameraMovementLessonState({
+        study: "tilt",
+        activeStandard: "rear",
+        tiltDeg: candidate.tiltDeg,
+      });
+    case "C1-front-rise":
+      return normalizeCameraMovementLessonState({
+        study: "vertical-framing",
+        activeStandard: "front",
+        framingT: 1,
+      });
+    case "C2-rear-rise":
+      return normalizeCameraMovementLessonState({
+        study: "vertical-framing",
+        activeStandard: "rear",
+        framingT: 1,
+      });
+    case "C3-high-viewpoint":
+      return normalizeCameraMovementLessonState({
+        study: "viewpoint",
+        activeStandard: "front",
+        viewpointT: 1,
+      });
+    case "D1-front-fall":
+      return normalizeCameraMovementLessonState({
+        study: "vertical-framing",
+        activeStandard: "front",
+        framingT: -1,
+      });
+    case "D2-rear-fall":
+      return normalizeCameraMovementLessonState({
+        study: "vertical-framing",
+        activeStandard: "rear",
+        framingT: -1,
+      });
+    case "D3-low-viewpoint":
+      return normalizeCameraMovementLessonState({
+        study: "viewpoint",
+        activeStandard: "front",
+        viewpointT: -1,
+      });
+    case "neutral":
+      return normalizeCameraMovementLessonState({
+        study: "viewpoint",
+        activeStandard: "front",
+        viewpointT: 0,
+      });
+  }
+};
+
 const teachingCase = (
   id: CameraMovementTeachingCaseId,
+  lessonState: CameraMovementLessonState,
   anchor: CameraRigViewpointAnchor,
   targetRegion: CameraMovementTargetRegion,
   camera: CameraMovementTeachingMovements,
 ): CameraMovementTeachingCase =>
   Object.freeze({
     id,
+    lessonState,
     anchor,
     targetRegion,
     presentationTargetRegion: CAMERA_MOVEMENT_TEACHING_PRESENTATION_REGIONS[id],
@@ -143,36 +210,36 @@ export const createCameraMovementTeachingCases = (
 ): Readonly<Record<CameraMovementTeachingCaseId, CameraMovementTeachingCase>> => {
   const neutral = neutralMovements();
   const cases: Record<CameraMovementTeachingCaseId, CameraMovementTeachingCase> = {
-    neutral: teachingCase("neutral", "mid", "middle", neutral),
-    "A-front-tilt": teachingCase("A-front-tilt", "mid", "middle", {
+    neutral: teachingCase("neutral", legacyCaseToLessonState("neutral", candidate), "mid", "middle", neutral),
+    "A-front-tilt": teachingCase("A-front-tilt", legacyCaseToLessonState("A-front-tilt", candidate), "mid", "middle", {
       ...neutral,
       frontTiltDeg: candidate.tiltDeg,
     }),
-    "B-rear-tilt": teachingCase("B-rear-tilt", "mid", "middle", {
+    "B-rear-tilt": teachingCase("B-rear-tilt", legacyCaseToLessonState("B-rear-tilt", candidate), "mid", "middle", {
       ...neutral,
       rearTiltDeg: candidate.tiltDeg,
     }),
-    "C1-front-rise": teachingCase("C1-front-rise", "mid", "middle", {
+    "C1-front-rise": teachingCase("C1-front-rise", legacyCaseToLessonState("C1-front-rise", candidate), "mid", "middle", {
       ...neutral,
       frontRiseMm: candidate.riseMm,
     }),
-    "C2-rear-rise": teachingCase("C2-rear-rise", "mid", "middle", {
+    "C2-rear-rise": teachingCase("C2-rear-rise", legacyCaseToLessonState("C2-rear-rise", candidate), "mid", "middle", {
       ...neutral,
       rearRiseMm: candidate.riseMm,
     }),
-    "C3-high-viewpoint": teachingCase("C3-high-viewpoint", "high", "upper", {
+    "C3-high-viewpoint": teachingCase("C3-high-viewpoint", legacyCaseToLessonState("C3-high-viewpoint", candidate), "high", "upper", {
       ...neutral,
       cameraBodyPitchDeg: candidate.bodyPitchDeg,
     }),
-    "D1-front-fall": teachingCase("D1-front-fall", "mid", "middle", {
+    "D1-front-fall": teachingCase("D1-front-fall", legacyCaseToLessonState("D1-front-fall", candidate), "mid", "middle", {
       ...neutral,
       frontRiseMm: -candidate.riseMm,
     }),
-    "D2-rear-fall": teachingCase("D2-rear-fall", "mid", "middle", {
+    "D2-rear-fall": teachingCase("D2-rear-fall", legacyCaseToLessonState("D2-rear-fall", candidate), "mid", "middle", {
       ...neutral,
       rearRiseMm: -candidate.riseMm,
     }),
-    "D3-low-viewpoint": teachingCase("D3-low-viewpoint", "low", "lower", {
+    "D3-low-viewpoint": teachingCase("D3-low-viewpoint", legacyCaseToLessonState("D3-low-viewpoint", candidate), "low", "lower", {
       ...neutral,
       cameraBodyPitchDeg: -candidate.bodyPitchDeg,
     }),

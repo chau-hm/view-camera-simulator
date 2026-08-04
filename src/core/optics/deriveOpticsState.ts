@@ -41,8 +41,10 @@ import {
 } from "../../scenes/cameraMovementSceneCalibration";
 import {
   isCanonicalCameraRigViewpointPlacement,
+  resolveCameraRigViewpointPlacementAtT,
   resolveCameraRigViewpointAnchor,
 } from "../../scenes/cameraRigViewpointGeometry";
+import { resolveCameraMovementLessonState } from "../../scenes/cameraMovementLessonState";
 
 const neutralCameraRigTransform = (): CameraRigTransform => ({
   rigOriginWorld: vec(0, 0, 0),
@@ -60,6 +62,14 @@ const resolveCameraRigPlacement = (
     return DEFAULT_CAMERA_RIG_PLACEMENT;
   }
   const calibration = cameraMovementCalibration.cameraRig;
+  if (
+    scene.id === "understanding-camera-movements" &&
+    cameraState.cameraMovementLessonState
+  ) {
+    const lessonState = cameraState.cameraMovementLessonState;
+    const viewpointT = lessonState.study === "viewpoint" ? lessonState.viewpointT : 0;
+    return resolveCameraRigViewpointPlacementAtT(calibration, viewpointT);
+  }
   return isCanonicalCameraRigViewpointPlacement(
     cameraState.cameraRigPlacement,
     calibration,
@@ -75,6 +85,8 @@ const hasCanonicalCameraRigPlacement = (
   cameraMovementCalibration: CameraMovementSceneCalibration,
 ): boolean =>
   !scene.cameraBodyPitchCapability?.enabled ||
+  (scene.id === "understanding-camera-movements" &&
+    Boolean(cameraState.cameraMovementLessonState)) ||
   isCanonicalCameraRigViewpointPlacement(
     cameraState.cameraRigPlacement,
     cameraMovementCalibration.cameraRig,
@@ -107,6 +119,36 @@ const resolveCameraRigTransform = (
         : presetPivot && isFiniteVec3(presetPivot)
           ? presetPivot
           : vec(0, 0, 0),
+  };
+};
+
+/** Materialize the canonical continuous lesson state for legacy optics inputs. */
+const resolveCanonicalCameraState = (
+  cameraState: CameraState,
+  scene: SceneDefinition,
+  cameraMovementCalibration: CameraMovementSceneCalibration,
+): CameraState => {
+  if (
+    scene.id !== "understanding-camera-movements" ||
+    !cameraState.cameraMovementLessonState
+  ) {
+    return cameraState;
+  }
+  const derived = resolveCameraMovementLessonState(
+    cameraState.cameraMovementLessonState,
+    cameraMovementCalibration.cameraRig,
+  );
+  return {
+    ...cameraState,
+    cameraMovementLessonState: derived.lessonState,
+    frontRiseMm: derived.frontRiseMm,
+    frontTiltDeg: derived.frontTiltDeg,
+    frontSwingDeg: derived.frontSwingDeg,
+    rearRiseMm: derived.rearRiseMm,
+    rearTiltDeg: derived.rearTiltDeg,
+    cameraBodyPitchDeg: derived.cameraBodyPitchDeg,
+    viewpointAnchor: derived.viewpointAnchor,
+    cameraRigPlacement: derived.cameraRigPlacement,
   };
 };
 
@@ -291,11 +333,16 @@ const baseFallbackState = (
 };
 
 export const deriveOpticsState = (
-  cameraState: CameraState,
+  inputCameraState: CameraState,
   scene: SceneDefinition,
   cameraMovementCalibration: CameraMovementSceneCalibration =
     CAMERA_MOVEMENT_SCENE_CALIBRATION,
 ): DerivedOpticsState => {
+  const cameraState = resolveCanonicalCameraState(
+    inputCameraState,
+    scene,
+    cameraMovementCalibration,
+  );
   // Special handling for Infinity focus mode: branch early and produce a stable state
   if (cameraState.focusMode === "infinity") {
     if (!Number.isFinite(cameraState.focalLengthMm) || cameraState.focalLengthMm <= 0) {

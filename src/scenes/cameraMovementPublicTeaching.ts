@@ -1,6 +1,9 @@
-import type { CameraState } from "../types/camera";
+import type { CameraMovementLessonState, CameraState } from "../types/camera";
 import type { CameraRigViewpointAnchor } from "../types/optics";
 import { formatDegrees, formatMillimeter } from "../utils/formatters";
+import {
+  cameraMovementLessonStatesEqual,
+} from "./cameraMovementLessonState";
 import {
   CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION,
   createCameraMovementTeachingCases,
@@ -32,6 +35,18 @@ export type CameraMovementPublicCaseId = CameraMovementTeachingCaseId;
  * user-entered drift, so manual/calibration states resolve to "custom".
  */
 export const CAMERA_MOVEMENT_CASE_MATCH_TOLERANCE = 1e-6;
+
+const CAMERA_MOVEMENT_TEACHING_CASE_ORDER = [
+  "neutral",
+  "A-front-tilt",
+  "B-rear-tilt",
+  "C1-front-rise",
+  "C2-rear-rise",
+  "C3-high-viewpoint",
+  "D1-front-fall",
+  "D2-rear-fall",
+  "D3-low-viewpoint",
+] as const satisfies ReadonlyArray<CameraMovementPublicCaseId>;
 
 const approxEqual = (a: number, b: number): boolean =>
   Number.isFinite(a) &&
@@ -82,6 +97,7 @@ export const matchCameraMovementTeachingCase = (input: {
     | "frontSwingDeg"
     | "cameraBodyPitchDeg"
     | "focusMode"
+    | "cameraMovementLessonState"
   >;
 }): CameraMovementPublicCaseId | null => {
   // Public teaching cases are finite-focus instructional states. Keep legacy
@@ -89,18 +105,21 @@ export const matchCameraMovementTeachingCase = (input: {
   // infinity state as a case.
   if (input.camera.focusMode === "infinity") return null;
 
-  const order = [
-    "neutral",
-    "A-front-tilt",
-    "B-rear-tilt",
-    "C1-front-rise",
-    "C2-rear-rise",
-    "C3-high-viewpoint",
-    "D1-front-fall",
-    "D2-rear-fall",
-    "D3-low-viewpoint",
-  ] as const;
-  for (const id of order) {
+  if (input.camera.cameraMovementLessonState) {
+    for (const id of CAMERA_MOVEMENT_TEACHING_CASE_ORDER) {
+      if (
+        cameraMovementLessonStatesEqual(
+          input.camera.cameraMovementLessonState,
+          CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[id].lessonState,
+        )
+      ) {
+        return id;
+      }
+    }
+    return null;
+  }
+
+  for (const id of CAMERA_MOVEMENT_TEACHING_CASE_ORDER) {
     const teachingCase = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[id];
     if (
       teachingCase.anchor === input.anchor &&
@@ -133,6 +152,7 @@ export const buildCameraMovementTeachingCasePatch = (
     | "cameraBodyPitchDeg"
     | "viewpointAnchor"
   >;
+  lessonState: CameraMovementLessonState;
   targetRegion: CameraMovementTargetRegion;
 } => {
   const teachingCase = getCameraMovementTeachingCase(
@@ -140,6 +160,7 @@ export const buildCameraMovementTeachingCasePatch = (
     caseId,
   );
   return {
+    lessonState: teachingCase.lessonState,
     camera: {
       frontRiseMm: teachingCase.camera.frontRiseMm,
       rearRiseMm: teachingCase.camera.rearRiseMm,

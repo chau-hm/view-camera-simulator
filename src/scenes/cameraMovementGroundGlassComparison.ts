@@ -15,6 +15,7 @@ import {
   matchCameraMovementTeachingCase,
   type CameraMovementPublicCaseId,
 } from "./cameraMovementPublicTeaching";
+import { resolveCameraMovementLessonPresentationTargetRegion } from "./cameraMovementLessonState";
 import {
   DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
   type CameraMovementSceneCalibration,
@@ -227,6 +228,7 @@ export const resolveCameraMovementGroundGlassComparison = (
     aperture: sharedPhysical.aperture,
     focusMode: "finite",
     lastFiniteFocusDepthMm: sharedPhysical.focusDistanceMm,
+    cameraMovementLessonState: neutralTeachingCase.lessonState,
     activeSceneId: understandingCameraMovementsScene.id,
     viewpointAnchor: neutralTeachingCase.anchor,
     cameraRigPlacement: resolveCameraRigViewpointAnchor(
@@ -256,9 +258,13 @@ export const resolveCameraMovementGroundGlassComparison = (
     targetRegion,
     camera: currentCamera,
   });
-  const presentationTargetRegion = activeTeachingCaseId
-    ? CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[activeTeachingCaseId].presentationTargetRegion
-    : targetRegion;
+  const presentationTargetRegion =
+    resolveCameraMovementLessonPresentationTargetRegion(
+      currentCamera.cameraMovementLessonState,
+    ) ??
+    (activeTeachingCaseId
+      ? CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[activeTeachingCaseId].presentationTargetRegion
+      : targetRegion);
   const calibrationIdentity = {
     effectiveKey: calibration.effectiveKey,
     subjectGeometryKey: calibration.subjectGeometryKey,

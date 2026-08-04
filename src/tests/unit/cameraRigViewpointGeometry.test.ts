@@ -129,7 +129,6 @@ describe("camera rig YZ-arc viewpoint anchors", () => {
     ],
     ["zero high angle", { ...calibration, highArcAngleDeg: 0 }],
     ["positive low angle", { ...calibration, lowArcAngleDeg: 15 }],
-    ["asymmetric angles", { ...calibration, lowArcAngleDeg: -14 }],
     [
       "non-finite base pitch",
       { ...calibration, provisionalBasePitchDeg: Number.POSITIVE_INFINITY },
@@ -165,5 +164,22 @@ describe("camera rig YZ-arc viewpoint anchors", () => {
         "middle" as Parameters<typeof resolveCameraRigViewpointAnchor>[1],
       ),
     ).toThrow(/Unknown camera rig viewpoint anchor/);
+  });
+
+  it("accepts independently calibrated Low and High endpoint geometry", () => {
+    const asymmetric = {
+      ...calibration,
+      highArcAngleDeg: 35,
+      lowArcAngleDeg: -27,
+      highBodyPitchDeg: 36,
+      lowBodyPitchDeg: -29,
+    };
+    const high = resolveCameraRigViewpointAnchor(asymmetric, "high");
+    const low = resolveCameraRigViewpointAnchor(asymmetric, "low");
+
+    expect(high.arcAngleDeg).toBe(35);
+    expect(low.arcAngleDeg).toBe(-27);
+    expect(asymmetric.highBodyPitchDeg).toBe(36);
+    expect(asymmetric.lowBodyPitchDeg).toBe(-29);
   });
 });

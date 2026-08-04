@@ -5,6 +5,7 @@ import { getSceneById, getSceneFocusDistanceRange } from "../scenes/definitions"
 import type {
   ApertureValue,
   CameraState,
+  CameraMovementLessonState,
   GeometryView,
   SimulatorMode,
 } from "../types/camera";
@@ -45,6 +46,10 @@ import {
   CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES,
   type CameraMovementPublicCaseId,
 } from "../scenes/cameraMovementPublicTeaching";
+import {
+  DEFAULT_CAMERA_MOVEMENT_LESSON_STATE,
+  resolveCameraMovementLessonState,
+} from "../scenes/cameraMovementLessonState";
 
 const defaultControlState = {
   focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
@@ -119,6 +124,33 @@ const resolveRigPlacement = (
   return { ...resolved, rigOriginWorld: { ...resolved.rigOriginWorld } };
 };
 
+/** Project continuous lesson state into the legacy camera fields consumed by all renderers. */
+const resolveCameraMovementLessonCamera = (
+  camera: CameraState,
+  lessonState: CameraMovementLessonState,
+  calibration: CameraMovementSceneCalibration = CAMERA_MOVEMENT_SCENE_CALIBRATION,
+): CameraState => {
+  const derived = resolveCameraMovementLessonState(
+    lessonState,
+    calibration.cameraRig,
+  );
+  return {
+    ...camera,
+    cameraMovementLessonState: derived.lessonState,
+    frontRiseMm: derived.frontRiseMm,
+    frontTiltDeg: derived.frontTiltDeg,
+    frontSwingDeg: derived.frontSwingDeg,
+    rearRiseMm: derived.rearRiseMm,
+    rearTiltDeg: derived.rearTiltDeg,
+    cameraBodyPitchDeg: derived.cameraBodyPitchDeg,
+    viewpointAnchor: derived.viewpointAnchor,
+    cameraRigPlacement: {
+      ...derived.cameraRigPlacement,
+      rigOriginWorld: { ...derived.cameraRigPlacement.rigOriginWorld },
+    },
+  };
+};
+
 const mergeCalibrationOverrides = (
   current: CameraMovementCalibrationOverrides,
   patch: CameraMovementCalibrationOverrides,
@@ -137,6 +169,7 @@ const zeroStandardMovements = (camera: CameraState): CameraState => ({
   rearRiseMm: 0,
   rearTiltDeg: 0,
   cameraBodyPitchDeg: 0,
+  cameraMovementLessonState: undefined,
 });
 
 /** Whether the scene enforces at-most-one active movement. */
@@ -276,6 +309,8 @@ export type AppStore = {
   setMode: (mode: SimulatorMode) => void;
   setActiveScene: (sceneId: string) => void;
   setActiveTask: (taskId: string | null) => void;
+  /** Set the canonical continuous lesson state for Understanding Camera Movements. */
+  setCameraMovementLessonState: (lessonState: CameraMovementLessonState) => void;
   setCameraBodyPitchDeg: (value: number) => void;
   setCameraMovementViewpointAnchor: (anchor: CameraRigViewpointAnchor) => void;
   initializeSimulatorRoute: (init: {
@@ -549,7 +584,10 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) =>
       state.camera.activeSceneId === "understanding-camera-movements" &&
       (region === "upper" || region === "middle" || region === "lower")
-        ? { scene: { ...state.scene, targetRegion: region } }
+        ? {
+            camera: { ...state.camera, cameraMovementLessonState: undefined },
+            scene: { ...state.scene, targetRegion: region },
+          }
         : {},
     ),
 
@@ -559,6 +597,10 @@ export const useAppStore = create<AppStore>((set) => ({
       if (state.cameraMovementCalibrationSession.active) return {};
       if (!(caseId in CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES)) return {};
       const patch = buildCameraMovementTeachingCasePatch(caseId);
+      const lessonCamera = resolveCameraMovementLessonCamera(
+        state.camera,
+        patch.lessonState,
+      );
       const finiteFocusMetadata = Number.isFinite(state.camera.focusDistanceMm)
         ? { focusMode: "finite" as const, lastFiniteFocusDepthMm: state.camera.focusDistanceMm }
         : Number.isFinite(state.camera.lastFiniteFocusDepthMm)
@@ -569,13 +611,8 @@ export const useAppStore = create<AppStore>((set) => ({
           : { focusMode: "finite" as const };
       return {
         camera: {
-          ...state.camera,
-          ...patch.camera,
+          ...lessonCamera,
           ...finiteFocusMetadata,
-          cameraRigPlacement: resolveRigPlacement(
-            state.camera.activeSceneId,
-            patch.camera.viewpointAnchor,
-          ),
         },
         scene: { ...state.scene, targetRegion: patch.targetRegion },
       };
@@ -604,6 +641,11 @@ export const useAppStore = create<AppStore>((set) => ({
           ...resolveCameraBodyReset(sceneId),
           viewpointAnchor: "mid",
           cameraRigPlacement: resolveRigPlacement(sceneId),
+          cameraMovementLessonState:
+            isCameraMovementsScene(sceneId) &&
+            !state.cameraMovementCalibrationSession.active
+              ? DEFAULT_CAMERA_MOVEMENT_LESSON_STATE
+              : undefined,
           activeSceneId: sceneId,
           focalLengthMm:
             scene?.cameraPreset.focalLengthMm ??
@@ -636,6 +678,28 @@ export const useAppStore = create<AppStore>((set) => ({
       },
     })),
 
+  setCameraMovementLessonState: (lessonState) =>
+    set((state) => {
+      if (
+        !isCameraMovementsScene(state.camera.activeSceneId) ||
+        state.cameraMovementCalibrationSession.active
+      ) {
+        return {};
+      }
+      const camera = resolveCameraMovementLessonCamera(
+        state.camera,
+        lessonState,
+      );
+      const derived = resolveCameraMovementLessonState(
+        camera.cameraMovementLessonState ?? DEFAULT_CAMERA_MOVEMENT_LESSON_STATE,
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig,
+      );
+      return {
+        camera,
+        scene: { ...state.scene, targetRegion: derived.targetRegion },
+      };
+    }),
+
   setCameraBodyPitchDeg: (value) =>
     set((state) => {
       const bounds = CAMERA_MOVEMENT_WORKBENCH_BOUNDS.movements.cameraBodyPitchDeg;
@@ -649,6 +713,7 @@ export const useAppStore = create<AppStore>((set) => ({
         camera: {
           ...state.camera,
           cameraBodyPitchDeg: value,
+          cameraMovementLessonState: undefined,
         },
       };
     }),
@@ -670,6 +735,7 @@ export const useAppStore = create<AppStore>((set) => ({
             anchor,
             calibration,
           ),
+          cameraMovementLessonState: undefined,
         },
         selectedMovement: resolveDefaultMovement(state.camera.activeSceneId),
       };
@@ -762,7 +828,16 @@ export const useAppStore = create<AppStore>((set) => ({
           routeCalibration,
         ),
         cameraBodyPitchDeg: 0,
+        cameraMovementLessonState: undefined,
       };
+
+      if (cameraMovementRoute && !calibrationRoute) {
+        nextCamera = resolveCameraMovementLessonCamera(
+          nextCamera,
+          DEFAULT_CAMERA_MOVEMENT_LESSON_STATE,
+          routeCalibration,
+        );
+      }
 
       const defaultMovement = resolveDefaultMovement(sceneId);
 
@@ -812,6 +887,7 @@ export const useAppStore = create<AppStore>((set) => ({
         frontSwingDeg: 0,
         rearRiseMm: 0,
         rearTiltDeg: 0,
+        cameraMovementLessonState: undefined,
       },
       selectedMovement: movement,
     })),
@@ -824,6 +900,7 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: enforceSingleMovement(
         {
           ...state.camera,
+          cameraMovementLessonState: undefined,
           frontRiseMm: clamp(
             value,
             CAMERA_CONSTANTS.riseMinMm,
@@ -847,6 +924,7 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: enforceSingleMovement(
         {
           ...state.camera,
+          cameraMovementLessonState: undefined,
           frontTiltDeg: clamp(
             value,
             CAMERA_CONSTANTS.tiltMinDeg,
@@ -870,6 +948,7 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: enforceSingleMovement(
         {
           ...state.camera,
+          cameraMovementLessonState: undefined,
           frontSwingDeg: clamp(
             value,
             CAMERA_CONSTANTS.swingMinDeg,
@@ -893,6 +972,7 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: enforceSingleMovement(
         {
           ...state.camera,
+          cameraMovementLessonState: undefined,
           rearRiseMm: clamp(
             value,
             CAMERA_CONSTANTS.riseMinMm,
@@ -916,6 +996,7 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: enforceSingleMovement(
         {
           ...state.camera,
+          cameraMovementLessonState: undefined,
           rearTiltDeg: clamp(
             value,
             CAMERA_CONSTANTS.tiltMinDeg,
@@ -965,6 +1046,7 @@ export const useAppStore = create<AppStore>((set) => ({
           frontSwingDeg: 0,
           rearRiseMm: 0,
           rearTiltDeg: 0,
+          cameraMovementLessonState: undefined,
         },
         selectedMovement: defaultMovement,
       };
@@ -1047,21 +1129,12 @@ export const useAppStore = create<AppStore>((set) => ({
       // anchor or rig placement.
       if (publicTeachingActive) {
         const neutral = buildCameraMovementTeachingCasePatch("neutral");
+        const neutralCamera = resolveCameraMovementLessonCamera(
+          state.camera,
+          neutral.lessonState,
+        );
         return {
-          camera: {
-            ...state.camera,
-            frontRiseMm: neutral.camera.frontRiseMm,
-            rearRiseMm: neutral.camera.rearRiseMm,
-            frontTiltDeg: neutral.camera.frontTiltDeg,
-            rearTiltDeg: neutral.camera.rearTiltDeg,
-            frontSwingDeg: neutral.camera.frontSwingDeg,
-            cameraBodyPitchDeg: neutral.camera.cameraBodyPitchDeg,
-            viewpointAnchor: neutral.camera.viewpointAnchor,
-            cameraRigPlacement: resolveRigPlacement(
-              sceneId,
-              neutral.camera.viewpointAnchor,
-            ),
-          },
+          camera: neutralCamera,
           scene: { ...state.scene, targetRegion: neutral.targetRegion },
           task: { ...state.task, currentTaskEvaluation: null },
           selectedMovement: defaultMovement,
@@ -1093,6 +1166,7 @@ export const useAppStore = create<AppStore>((set) => ({
           aperture: (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
           cameraBodyPitchDeg: 0,
           cameraRigPlacement: state.camera.cameraRigPlacement,
+          cameraMovementLessonState: undefined,
         },
         task: { ...state.task, currentTaskEvaluation: null },
         selectedMovement: defaultMovement,
@@ -1166,6 +1240,10 @@ export const useAppStore = create<AppStore>((set) => ({
           focusDistanceMm: preserveCalibration
             ? activeCalibration.optics.provisionalFocusDistanceMm
             : focusDistanceMm,
+          cameraMovementLessonState:
+            isCameraMovementsScene(nextSceneId) && !preserveCalibration
+              ? DEFAULT_CAMERA_MOVEMENT_LESSON_STATE
+              : undefined,
         },
         scene: {
           activeSceneId: nextSceneId,

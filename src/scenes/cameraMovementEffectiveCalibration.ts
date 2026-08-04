@@ -204,6 +204,12 @@ const snapshotSections = (calibration: CameraMovementSceneCalibration) => ({
       : { lowArcRadiusMm: calibration.cameraRig.lowArcRadiusMm }),
     highArcAngleDeg: calibration.cameraRig.highArcAngleDeg,
     lowArcAngleDeg: calibration.cameraRig.lowArcAngleDeg,
+    ...(calibration.cameraRig.highBodyPitchDeg === undefined
+      ? {}
+      : { highBodyPitchDeg: calibration.cameraRig.highBodyPitchDeg }),
+    ...(calibration.cameraRig.lowBodyPitchDeg === undefined
+      ? {}
+      : { lowBodyPitchDeg: calibration.cameraRig.lowBodyPitchDeg }),
     provisionalBasePitchDeg: calibration.cameraRig.provisionalBasePitchDeg,
     defaultAnchor: calibration.cameraRig.defaultAnchor,
     anchorMetadata: {
@@ -229,8 +235,10 @@ const snapshotSections = (calibration: CameraMovementSceneCalibration) => ({
 /**
  * Resolve workbench overrides without mutating the baseline.
  *
- * Target levels, rig centre/mid-radius, and symmetric arc angles are canonical
- * derivatives rather than independent editable values. When the subject or
+ * Target levels, rig centre/mid-radius, and workbench arc-angle edits are
+ * canonical derivatives rather than independent editable values. The
+ * continuous resolver still supports independently calibrated Low and High
+ * endpoints. When the subject or
  * mid-rig origin changes, the optional high/low and low-only radii keep their
  * baseline proportions so the teaching viewpoints preserve their calibration.
  */
@@ -251,7 +259,11 @@ export const resolveEffectiveCameraMovementCalibration = (
   const midRigOriginWorld = cloneVec3(
     rig.midRigOriginWorld ?? baseline.cameraRig.midRigOriginWorld,
   );
-  const arcAngleDeg = rig.arcAngleDeg ?? baseline.cameraRig.highArcAngleDeg;
+  const highArcAngleDeg = rig.arcAngleDeg ?? baseline.cameraRig.highArcAngleDeg;
+  const lowArcAngleDeg =
+    rig.arcAngleDeg === undefined
+      ? baseline.cameraRig.lowArcAngleDeg
+      : -rig.arcAngleDeg;
   const arcRadiusMm = distance(subjectOriginWorld, midRigOriginWorld);
   const highLowArcRadiusMm =
     baseline.cameraRig.highLowArcRadiusMm === undefined
@@ -295,8 +307,14 @@ export const resolveEffectiveCameraMovementCalibration = (
       arcRadiusMm,
       ...(highLowArcRadiusMm === undefined ? {} : { highLowArcRadiusMm }),
       ...(lowArcRadiusMm === undefined ? {} : { lowArcRadiusMm }),
-      highArcAngleDeg: arcAngleDeg,
-      lowArcAngleDeg: -arcAngleDeg,
+      highArcAngleDeg,
+      lowArcAngleDeg,
+      ...(baseline.cameraRig.highBodyPitchDeg === undefined
+        ? {}
+        : { highBodyPitchDeg: baseline.cameraRig.highBodyPitchDeg }),
+      ...(baseline.cameraRig.lowBodyPitchDeg === undefined
+        ? {}
+        : { lowBodyPitchDeg: baseline.cameraRig.lowBodyPitchDeg }),
       provisionalBasePitchDeg:
         rig.provisionalBasePitchDeg ?? baseline.cameraRig.provisionalBasePitchDeg,
       defaultAnchor: rig.defaultAnchor ?? baseline.cameraRig.defaultAnchor,
@@ -624,15 +642,20 @@ export const validateEffectiveCameraMovementCalibration = (
       ),
     );
   }
-  if (cameraRig.highArcAngleDeg !== -cameraRig.lowArcAngleDeg) {
-    errors.push(
-      error(
-        "rig",
-        "cameraRig.arcAngles",
-        "asymmetric-rig-angle",
-        "high and low rig angles must be exact opposites",
-      ),
-    );
+  for (const [field, value] of [
+    ["highBodyPitchDeg", cameraRig.highBodyPitchDeg],
+    ["lowBodyPitchDeg", cameraRig.lowBodyPitchDeg],
+  ] as const) {
+    if (value !== undefined && !Number.isFinite(value)) {
+      errors.push(
+        error(
+          "rig",
+          `cameraRig.${field}`,
+          "not-finite",
+          `${field} must be finite when provided`,
+        ),
+      );
+    }
   }
   if (
     !Number.isFinite(cameraRig.provisionalBasePitchDeg) ||

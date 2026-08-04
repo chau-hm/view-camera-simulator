@@ -236,9 +236,7 @@ describe("Camera Movements subject factory", () => {
       mode: "free",
       sceneId: understandingCameraMovementsScene.id,
     });
-    useAppStore.setState((state) => ({
-      scene: { ...state.scene, targetRegion: "upper" },
-    }));
+    useAppStore.getState().setCameraMovementTargetRegion("upper");
     fiberTestState.scene = new THREE.Scene();
     const mountedGroups: THREE.Group[] = [];
     const onGroupChange = vi.fn((group: THREE.Group | null) => {
@@ -262,11 +260,7 @@ describe("Camera Movements subject factory", () => {
     const firstMaterial = (first.children[0] as THREE.Mesh).material;
     const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
 
-    act(() =>
-      useAppStore.setState((state) => ({
-        scene: { ...state.scene, targetRegion: "middle" },
-      })),
-    );
+    act(() => useAppStore.getState().setCameraMovementTargetRegion("middle"));
 
     const second = mountedGroups[0];
     expect(second).toBe(first);

@@ -14,6 +14,7 @@ import {
   CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES,
   matchCameraMovementTeachingCase,
 } from "../scenes/cameraMovementPublicTeaching";
+import { resolveCameraMovementLessonPresentationTargetRegion } from "../scenes/cameraMovementLessonState";
 import type { CameraState } from "../types/camera";
 import { useAppStore } from "../state/appStore";
 import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
@@ -56,6 +57,11 @@ const resolveTeachingPresentationTargetRegion = (
   if (calibrationActive || camera.activeSceneId !== "understanding-camera-movements") {
     return targetRegion;
   }
+  const lessonPresentationRegion =
+    resolveCameraMovementLessonPresentationTargetRegion(
+      camera.cameraMovementLessonState,
+    );
+  if (lessonPresentationRegion) return lessonPresentationRegion;
   const caseId = matchCameraMovementTeachingCase({
     anchor: camera.viewpointAnchor,
     targetRegion,
