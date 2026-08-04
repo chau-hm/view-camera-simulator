@@ -15,6 +15,7 @@ import { resolveCameraMovementGroundGlassComparison } from "../../scenes/cameraM
 import {
   CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
   DEFAULT_CAMERA_MOVEMENT_LESSON_STATE,
+  cameraMovementLessonStatesEqual,
   normalizeCameraMovementLessonState,
   resolveCameraMovementLessonPresentationTargetRegion,
   resolveCameraMovementLessonState,
@@ -323,17 +324,28 @@ describe("continuous camera-movement lesson state", () => {
     expect(rear.rearTiltDeg).toBe(CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.tiltDeg);
   });
 
-  it("keeps viewpoint cases unhighlighted while framing cases select a region", () => {
+  it("presents the complete lattice for every viewpoint position", () => {
+    for (const viewpointT of [-1, 0, 1]) {
+      expect(
+        resolveCameraMovementLessonPresentationTargetRegion({
+          study: "viewpoint",
+          viewpointT,
+          activeStandard: "front",
+          tiltDeg: 0,
+          framingT: 0,
+        }),
+      ).toBe("whole");
+    }
     expect(
       resolveCameraMovementLessonPresentationTargetRegion(
         CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES["C3-high-viewpoint"].lessonState,
       ),
-    ).toBe("middle");
+    ).toBe("whole");
     expect(
       resolveCameraMovementLessonPresentationTargetRegion(
         CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES["D3-low-viewpoint"].lessonState,
       ),
-    ).toBe("middle");
+    ).toBe("whole");
     expect(
       resolveCameraMovementLessonPresentationTargetRegion(
         CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES["C1-front-rise"].lessonState,
@@ -344,6 +356,81 @@ describe("continuous camera-movement lesson state", () => {
         CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES["D2-rear-fall"].lessonState,
       ),
     ).toBe("lower");
+  });
+
+  it("compares lesson states by the dimensions that are meaningful for each study", () => {
+    expect(
+      cameraMovementLessonStatesEqual(
+        {
+          study: "viewpoint",
+          viewpointT: 1,
+          activeStandard: "front",
+          tiltDeg: 0,
+          framingT: 0,
+        },
+        {
+          study: "viewpoint",
+          viewpointT: 1,
+          activeStandard: "rear",
+          tiltDeg: 9,
+          framingT: -1,
+        },
+      ),
+    ).toBe(true);
+    expect(
+      cameraMovementLessonStatesEqual(
+        {
+          study: "viewpoint",
+          viewpointT: 1,
+          activeStandard: "front",
+          tiltDeg: 0,
+          framingT: 0,
+        },
+        {
+          study: "viewpoint",
+          viewpointT: -1,
+          activeStandard: "rear",
+          tiltDeg: 0,
+          framingT: 0,
+        },
+      ),
+    ).toBe(false);
+    expect(
+      cameraMovementLessonStatesEqual(
+        {
+          study: "tilt",
+          viewpointT: 0,
+          activeStandard: "front",
+          tiltDeg: 5,
+          framingT: 0,
+        },
+        {
+          study: "tilt",
+          viewpointT: 1,
+          activeStandard: "rear",
+          tiltDeg: 5,
+          framingT: -1,
+        },
+      ),
+    ).toBe(false);
+    expect(
+      cameraMovementLessonStatesEqual(
+        {
+          study: "vertical-framing",
+          viewpointT: 0,
+          activeStandard: "front",
+          tiltDeg: 0,
+          framingT: 1,
+        },
+        {
+          study: "vertical-framing",
+          viewpointT: -1,
+          activeStandard: "rear",
+          tiltDeg: 8,
+          framingT: 1,
+        },
+      ),
+    ).toBe(false);
   });
 
   it("projects public compatibility cases into canonical store state", () => {
@@ -419,9 +506,9 @@ describe("continuous camera-movement lesson state", () => {
       currentTargetRegion: state.scene.targetRegion,
     });
     expect(comparison.activeTeachingCaseId).toBe("C3-high-viewpoint");
-    expect(comparison.presentationTargetRegion).toBe("middle");
-    expect(comparison.original.presentationTargetRegion).toBe("middle");
-    expect(comparison.current.presentationTargetRegion).toBe("middle");
+    expect(comparison.presentationTargetRegion).toBe("whole");
+    expect(comparison.original.presentationTargetRegion).toBe("whole");
+    expect(comparison.current.presentationTargetRegion).toBe("whole");
 
     useAppStore.getState().applyCameraMovementTeachingCase("C1-front-rise");
     state = useAppStore.getState();

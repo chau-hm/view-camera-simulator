@@ -18,6 +18,7 @@ import {
 import { resolveCameraMovementLessonPresentationTargetRegion } from "./cameraMovementLessonState";
 import {
   DEFAULT_CAMERA_MOVEMENT_TARGET_REGION,
+  type CameraMovementPresentationRegion,
   type CameraMovementSceneCalibration,
   type CameraMovementTargetRegion,
 } from "./cameraMovementSceneCalibration";
@@ -40,7 +41,7 @@ export type CameraMovementGroundGlassComparisonLayer = Readonly<{
   /** Alias useful to consumers that call the derived result simply `optics`. */
   optics: Readonly<DerivedOpticsState>;
   targetRegion: CameraMovementTargetRegion;
-  presentationTargetRegion: CameraMovementTargetRegion;
+  presentationTargetRegion: CameraMovementPresentationRegion;
   calibrationKey: string;
 }>;
 
@@ -65,7 +66,7 @@ export type CameraMovementGroundGlassComparison = Readonly<{
   sceneId: typeof understandingCameraMovementsScene.id;
   targetRegion: CameraMovementTargetRegion;
   comparisonTargetRegion: CameraMovementTargetRegion;
-  presentationTargetRegion: CameraMovementTargetRegion;
+  presentationTargetRegion: CameraMovementPresentationRegion;
   activeTeachingCaseId: CameraMovementPublicCaseId | null;
   /** Deliberately duplicated labels make the shared-region invariant inspectable. */
   originalTargetRegion: CameraMovementTargetRegion;
@@ -259,12 +260,14 @@ export const resolveCameraMovementGroundGlassComparison = (
     camera: currentCamera,
   });
   const presentationTargetRegion =
-    resolveCameraMovementLessonPresentationTargetRegion(
-      currentCamera.cameraMovementLessonState,
-    ) ??
-    (activeTeachingCaseId
-      ? CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[activeTeachingCaseId].presentationTargetRegion
-      : targetRegion);
+    currentCamera.cameraMovementLessonState
+      ? resolveCameraMovementLessonPresentationTargetRegion(
+          currentCamera.cameraMovementLessonState,
+        )
+      : activeTeachingCaseId
+        ? CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[activeTeachingCaseId]
+            .presentationTargetRegion
+        : targetRegion;
   const calibrationIdentity = {
     effectiveKey: calibration.effectiveKey,
     subjectGeometryKey: calibration.subjectGeometryKey,

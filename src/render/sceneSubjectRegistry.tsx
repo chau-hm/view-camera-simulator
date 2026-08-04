@@ -38,7 +38,7 @@ import {
 import { toWorld } from "./rttUtils";
 import {
   CAMERA_MOVEMENT_SCENE_CALIBRATION,
-  type CameraMovementTargetRegion,
+  type CameraMovementPresentationRegion,
 } from "../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
 
@@ -74,7 +74,7 @@ export type SceneSubjectRegistration = {
 };
 
 export type SceneSubjectRttOptions = {
-  targetRegion?: CameraMovementTargetRegion;
+  presentationRegion?: CameraMovementPresentationRegion;
   cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
 };
 
@@ -130,7 +130,7 @@ export const sceneSubjectRegistry = {
       return createCameraMovementsGroup(
         cameraMovementsGroupOptionsFromRenderModel(
           model,
-          options?.targetRegion,
+          options?.presentationRegion,
         ),
       );
     },

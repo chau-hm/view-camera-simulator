@@ -15,6 +15,7 @@ import {
 } from "./cameraRigViewpointGeometry";
 import {
   CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
+  type CameraMovementPresentationRegion,
   type CameraMovementTargetRegion,
 } from "./cameraMovementSceneCalibration";
 
@@ -77,13 +78,23 @@ export const cameraMovementLessonStatesEqual = (
 ): boolean => {
   const a = normalizeCameraMovementLessonState(first);
   const b = normalizeCameraMovementLessonState(second);
-  return (
-    a.study === b.study &&
-    a.viewpointT === b.viewpointT &&
-    a.activeStandard === b.activeStandard &&
-    a.tiltDeg === b.tiltDeg &&
-    a.framingT === b.framingT
-  );
+  if (a.study !== b.study) return false;
+  switch (a.study) {
+    case "viewpoint":
+      // The selected standard is retained as a future-control preference, but
+      // has no physical or semantic meaning while the whole camera moves.
+      return a.viewpointT === b.viewpointT;
+    case "tilt":
+      return (
+        a.activeStandard === b.activeStandard &&
+        a.tiltDeg === b.tiltDeg
+      );
+    case "vertical-framing":
+      return (
+        a.activeStandard === b.activeStandard &&
+        a.framingT === b.framingT
+      );
+  }
 };
 
 /**
@@ -108,7 +119,7 @@ export type CameraMovementLessonDerivedState = Readonly<{
   rearRiseMm: number;
   rearTiltDeg: number;
   targetRegion: CameraMovementTargetRegion;
-  presentationTargetRegion: CameraMovementTargetRegion;
+  presentationTargetRegion: CameraMovementPresentationRegion;
 }>;
 
 const targetRegionForSignedT = (value: number): CameraMovementTargetRegion =>
@@ -144,7 +155,9 @@ export const resolveCameraMovementLessonState = (
   const presentationTargetRegion =
     normalized.study === "vertical-framing"
       ? targetRegionForSignedT(framingT)
-      : "middle";
+      : normalized.study === "viewpoint"
+        ? "whole"
+        : "middle";
   const highBodyPitchDeg =
     cameraRig.highBodyPitchDeg ?? teachingMovements.bodyPitchDeg;
   const lowBodyPitchDeg =
@@ -176,11 +189,12 @@ export const resolveCameraMovementLessonState = (
 };
 
 export const resolveCameraMovementLessonPresentationTargetRegion = (
-  lessonState?: CameraMovementLessonState | null,
-): CameraMovementTargetRegion | null => {
-  if (!lessonState) return null;
+  lessonState: CameraMovementLessonState,
+): CameraMovementPresentationRegion => {
   const normalized = normalizeCameraMovementLessonState(lessonState);
   return normalized.study === "vertical-framing"
     ? targetRegionForSignedT(normalized.framingT)
-    : "middle";
+    : normalized.study === "viewpoint"
+      ? "whole"
+      : "middle";
 };

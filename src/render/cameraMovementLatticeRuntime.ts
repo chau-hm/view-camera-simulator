@@ -1,5 +1,5 @@
 import type * as THREE from "three";
-import type { CameraMovementTargetRegion } from "../scenes/cameraMovementSceneCalibration";
+import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementSceneCalibration";
 
 export type InteractiveLatticeRuntimeInfo = Readonly<{
   mounted: true;
@@ -8,7 +8,7 @@ export type InteractiveLatticeRuntimeInfo = Readonly<{
   presentationKey: string;
   resourceKey: string;
   edgeCount: number;
-  targetRegion: CameraMovementTargetRegion;
+  presentationRegion: CameraMovementPresentationRegion;
   generation: number;
 }>;
 
@@ -25,8 +25,10 @@ export const nextRttLatticeGeneration = (): number => {
   return rttLatticeGeneration;
 };
 
-const isTargetRegion = (value: unknown): value is CameraMovementTargetRegion =>
-  value === "upper" || value === "middle" || value === "lower";
+const isPresentationRegion = (
+  value: unknown,
+): value is CameraMovementPresentationRegion =>
+  value === "whole" || value === "upper" || value === "middle" || value === "lower";
 
 /**
  * Read diagnostics from the actual mounted group. Missing or malformed
@@ -40,7 +42,7 @@ export const readInteractiveLatticeRuntimeInfo = (
   const presentationKey = group.userData.presentationKey;
   const resourceKey = group.userData.resourceKey;
   const edgeCount = group.userData.canonicalEdgeCount;
-  const targetRegion = group.userData.targetRegion;
+  const presentationRegion = group.userData.presentationRegion;
   const generation = group.userData.interactiveMountGeneration;
 
   if (
@@ -54,7 +56,7 @@ export const readInteractiveLatticeRuntimeInfo = (
     resourceKey.length === 0 ||
     !Number.isInteger(edgeCount) ||
     edgeCount <= 0 ||
-    !isTargetRegion(targetRegion) ||
+    !isPresentationRegion(presentationRegion) ||
     !Number.isInteger(generation) ||
     generation <= 0
   ) {
@@ -68,7 +70,7 @@ export const readInteractiveLatticeRuntimeInfo = (
     presentationKey,
     resourceKey,
     edgeCount,
-    targetRegion,
+    presentationRegion,
     generation,
   };
 };
@@ -80,7 +82,7 @@ export type RttLatticeRuntimeInfo = Readonly<{
   presentationKey: string;
   resourceKey: string;
   edgeCount: number;
-  targetRegion: CameraMovementTargetRegion;
+  presentationRegion: CameraMovementPresentationRegion;
   generation: number;
 }>;
 
@@ -99,7 +101,7 @@ export const publishAttachedRttLatticeRuntime = (
   const presentationKey = group.userData.presentationKey;
   const resourceKey = group.userData.resourceKey;
   const edgeCount = group.userData.canonicalEdgeCount;
-  const targetRegion = group.userData.targetRegion;
+  const presentationRegion = group.userData.presentationRegion;
   const generation = group.userData.rttMountGeneration;
   if (
     typeof geometryId !== "string" ||
@@ -112,7 +114,7 @@ export const publishAttachedRttLatticeRuntime = (
     resourceKey.length === 0 ||
     !Number.isInteger(edgeCount) ||
     edgeCount <= 0 ||
-    !isTargetRegion(targetRegion) ||
+    !isPresentationRegion(presentationRegion) ||
     !Number.isInteger(generation) ||
     generation <= 0
   ) {
@@ -125,7 +127,7 @@ export const publishAttachedRttLatticeRuntime = (
     presentationKey,
     resourceKey,
     edgeCount,
-    targetRegion,
+    presentationRegion,
     generation,
   };
 };

@@ -6,6 +6,8 @@ import {
 } from "./cameraRigViewpointGeometry";
 
 export type CameraMovementTargetRegion = "upper" | "middle" | "lower";
+/** Visual lattice styling only; never use this for physical targeting. */
+export type CameraMovementPresentationRegion = CameraMovementTargetRegion | "whole";
 export type CameraMovementLatticeRegion = CameraMovementTargetRegion | "neutral";
 export const DEFAULT_CAMERA_MOVEMENT_TARGET_REGION: CameraMovementTargetRegion = "middle";
 

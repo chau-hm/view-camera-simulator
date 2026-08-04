@@ -108,7 +108,7 @@ test("session calibration separates geometry, optics, rig, reset, and SPA lifecy
   const reset = await expectSharedLattice(page, "224");
   await expect(reset.scene).toHaveAttribute("data-camera-rig-anchor", "mid");
   await expect(reset.scene).toHaveAttribute("data-camera-body-pitch-deg", "0.000000");
-  await expect(reset.scene).toHaveAttribute("data-mounted-lattice-target-region", "middle");
+  await expect(reset.scene).toHaveAttribute("data-mounted-lattice-presentation-region", "middle");
   await expect(reset.rtt).toHaveAttribute("data-rtt-focal-length-mm", "90");
   await expect(workbench.getByLabel("Focus distance (mm)")).toHaveValue("2000");
 

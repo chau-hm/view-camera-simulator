@@ -141,7 +141,7 @@ describe("dynamic camera-movement lattice render model", () => {
     const rtt = createRegisteredRttSubject(
       "understanding-camera-movements",
       {
-        targetRegion: "upper",
+        presentationRegion: "upper",
         cameraMovementRenderModel: model,
       },
     )!;
@@ -181,7 +181,7 @@ describe("dynamic camera-movement lattice render model", () => {
       const rtt = createRegisteredRttSubject(
         "understanding-camera-movements",
         {
-          targetRegion: teachingCase.presentationTargetRegion,
+          presentationRegion: teachingCase.presentationTargetRegion,
           cameraMovementRenderModel: model,
         },
       )!;
@@ -201,7 +201,7 @@ describe("dynamic camera-movement lattice render model", () => {
         expect(rtt.userData.canonicalEdgeIds, caseId).toEqual(
           interactive.userData.canonicalEdgeIds,
         );
-        expect(rtt.userData.targetRegion, caseId).toBe(
+        expect(rtt.userData.presentationRegion, caseId).toBe(
           teachingCase.presentationTargetRegion,
         );
       } finally {

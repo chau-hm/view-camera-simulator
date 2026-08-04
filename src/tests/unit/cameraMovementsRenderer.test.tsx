@@ -68,14 +68,14 @@ describe("Camera Movements subject factory", () => {
       presentationKey: unattached.userData.presentationKey,
       resourceKey: unattached.userData.resourceKey,
       edgeCount: unattached.userData.canonicalEdgeCount,
-      targetRegion: "upper",
+      presentationRegion: "upper",
       generation: unattached.userData.interactiveMountGeneration,
     });
 
     const firstGeneration = first!.generation;
     const firstResourceKey = first!.resourceKey;
     const updated = updateAttachedInteractiveLatticeRuntime(unattached, "lower");
-    expect(updated?.targetRegion).toBe("lower");
+    expect(updated?.presentationRegion).toBe("lower");
     expect(updated?.generation).toBe(firstGeneration);
     expect(updated?.resourceKey).toBe(firstResourceKey);
     expect(unattached.userData.resourceKey).toBe(firstResourceKey);
@@ -91,7 +91,7 @@ describe("Camera Movements subject factory", () => {
       replacement,
       scene,
     );
-    expect(second?.targetRegion).toBe("middle");
+    expect(second?.presentationRegion).toBe("middle");
     expect(second?.generation).toBeGreaterThan(first!.generation);
     scene.remove(replacement);
     clearInteractiveLatticeRuntime(second);
@@ -107,15 +107,15 @@ describe("Camera Movements subject factory", () => {
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
   });
 
-  it.each(["upper", "middle", "lower"] as const)(
-    "renders every canonical edge exactly once for the %s target region",
-    (targetRegion) => {
-      const group = createCameraMovementsGroup(targetRegion);
+  it.each(["whole", "upper", "middle", "lower"] as const)(
+    "renders every canonical edge exactly once for the %s presentation region",
+    (presentationRegion) => {
+      const group = createCameraMovementsGroup(presentationRegion);
       try {
         const renderedEdgeIds = group.children.flatMap(
           (child) => child.userData.canonicalEdgeIds as string[],
         );
-        expect(group.userData.targetRegion).toBe(targetRegion);
+        expect(group.userData.presentationRegion).toBe(presentationRegion);
         expect(group.userData.canonicalGeometryId).toBe(
           CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
         );
@@ -222,7 +222,7 @@ describe("Camera Movements subject factory", () => {
     expect(first.userData.resourcesDisposed).toBe(true);
     expect(replacement).not.toBe(first);
     expect(replacement.parent).toBe(scene);
-    expect(replacement.userData.targetRegion).toBe("middle");
+    expect(replacement.userData.presentationRegion).toBe("middle");
     expect(replacement.userData.canonicalEdgeIds).toEqual(
       first.userData.canonicalEdgeIds,
     );
@@ -236,7 +236,7 @@ describe("Camera Movements subject factory", () => {
       mode: "free",
       sceneId: understandingCameraMovementsScene.id,
     });
-    useAppStore.getState().setCameraMovementTargetRegion("upper");
+    useAppStore.getState().applyCameraMovementTeachingCase("C1-front-rise");
     fiberTestState.scene = new THREE.Scene();
     const mountedGroups: THREE.Group[] = [];
     const onGroupChange = vi.fn((group: THREE.Group | null) => {
@@ -246,9 +246,9 @@ describe("Camera Movements subject factory", () => {
 
     const assertCanonicalGroup = (
       group: THREE.Group,
-      targetRegion: "upper" | "middle" | "lower",
+      presentationRegion: "whole" | "upper" | "middle" | "lower",
     ) => {
-      expect(group.userData.targetRegion).toBe(targetRegion);
+      expect(group.userData.presentationRegion).toBe(presentationRegion);
       expect(group.userData.canonicalEdgeIds).toEqual(
         CAMERA_MOVEMENT_LATTICE.edges.map(({ id }) => id),
       );
@@ -260,7 +260,7 @@ describe("Camera Movements subject factory", () => {
     const firstMaterial = (first.children[0] as THREE.Mesh).material;
     const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
 
-    act(() => useAppStore.getState().setCameraMovementTargetRegion("middle"));
+    act(() => useAppStore.getState().applyCameraMovementTeachingCase("neutral"));
 
     const second = mountedGroups[0];
     expect(second).toBe(first);
@@ -268,14 +268,10 @@ describe("Camera Movements subject factory", () => {
     expect(disposeFirstGeometry).not.toHaveBeenCalled();
     expect((first.children[0] as THREE.Mesh).geometry).toBe(firstGeometry);
     expect((first.children[0] as THREE.Mesh).material).toBe(firstMaterial);
-    assertCanonicalGroup(second, "middle");
+    assertCanonicalGroup(second, "whole");
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
 
-    act(() =>
-      useAppStore.setState((state) => ({
-        scene: { ...state.scene, targetRegion: "lower" },
-      })),
-    );
+    act(() => useAppStore.getState().applyCameraMovementTeachingCase("D1-front-fall"));
 
     const third = mountedGroups[0];
     expect(third).toBe(second);
@@ -351,17 +347,17 @@ describe("Camera Movements subject factory", () => {
     ] as const;
 
     for (const caseId of sequence) {
-      const targetRegion = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[caseId].presentationTargetRegion;
+      const presentationRegion = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[caseId].presentationTargetRegion;
       applyCameraMovementsGroupStyle(
         interactive,
         CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation,
-        targetRegion,
+        presentationRegion,
       );
-      updateAttachedInteractiveLatticeRuntime(interactive, targetRegion);
+      updateAttachedInteractiveLatticeRuntime(interactive, presentationRegion);
       updateCameraMovementRttSubjectTarget(
         rtt,
         CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
-        targetRegion,
+        presentationRegion,
       );
 
       const interactiveRuntime = useAppStore.getState().interactiveLatticeRuntimeInfo;
@@ -371,30 +367,46 @@ describe("Camera Movements subject factory", () => {
       expect(rtt.group.userData.canonicalEdgeCount, caseId).toBe(initialEdgeCount);
       expect(interactive.userData.resourceKey, caseId).toBe(initialResourceKey);
       expect(rtt.group.userData.resourceKey, caseId).toBe(initialResourceKey);
-      expect(interactive.userData.targetRegion, caseId).toBe(targetRegion);
-      expect(rtt.group.userData.targetRegion, caseId).toBe(targetRegion);
-      expect(interactiveRuntime?.targetRegion, caseId).toBe(targetRegion);
-      const selectedVertical = interactive.getObjectByName(
-        `camera-movements-lattice-outer-vertical-${targetRegion}`,
-      );
-      const selectedColour = (
-        selectedVertical as
-          | { material?: THREE.Material & { color?: THREE.Color } }
-          | undefined
-      )?.material?.color?.getHexString();
-      const expectedColour = {
-        upper: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.upperRegionColour,
-        middle: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.middleRegionColour,
-        lower: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.lowerRegionColour,
-      }[targetRegion].slice(1).toLowerCase();
-      expect(selectedColour, caseId).toBe(expectedColour);
+      expect(interactive.userData.presentationRegion, caseId).toBe(presentationRegion);
+      expect(rtt.group.userData.presentationRegion, caseId).toBe(presentationRegion);
+      expect(interactiveRuntime?.presentationRegion, caseId).toBe(presentationRegion);
+      if (presentationRegion === "whole") {
+        const edgeGroups = interactive.children.filter(
+          (child) => child.userData.edgeRole,
+        );
+        edgeGroups.forEach((child) => {
+          const line = child as THREE.LineSegments & {
+            material: THREE.Material & { color?: THREE.Color };
+          };
+          expect(line.userData.selectedTarget, caseId).toBe(false);
+          expect(line.material.color?.getHexString(), caseId).toBe(
+            CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.inactiveColour.slice(1).toLowerCase(),
+          );
+        });
+      } else {
+        const selectedVertical = interactive.getObjectByName(
+          `camera-movements-lattice-outer-vertical-${presentationRegion}`,
+        );
+        const selectedColour = (
+          selectedVertical as
+            | { material?: THREE.Material & { color?: THREE.Color } }
+            | undefined
+        )?.material?.color?.getHexString();
+        const expectedColour = {
+          upper: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.upperRegionColour,
+          middle: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.middleRegionColour,
+          lower: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.lowerRegionColour,
+        }[presentationRegion].slice(1).toLowerCase();
+        expect(selectedColour, caseId).toBe(expectedColour);
+        expect(
+          interactive.getObjectByName(
+            `camera-movements-lattice-outer-vertical-${presentationRegion}`,
+          )?.userData.selectedTarget,
+          caseId,
+        ).toBe(true);
+      }
       expect(interactiveRuntime?.generation, caseId).toBe(initialInteractiveGeneration);
       expect(rtt.runtimeInfo.generation, caseId).toBe(initialRttGeneration);
-      expect(
-        interactive.getObjectByName(`camera-movements-lattice-outer-vertical-${targetRegion}`)
-          ?.userData.selectedTarget,
-        caseId,
-      ).toBe(true);
       geometryDisposals.forEach((spy) => expect(spy, caseId).not.toHaveBeenCalled());
       materialDisposals.forEach((spy) => expect(spy, caseId).not.toHaveBeenCalled());
     }

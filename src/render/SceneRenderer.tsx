@@ -1105,9 +1105,9 @@ export const SceneRenderer = ({
           ? interactiveLatticeRuntimeInfo?.edgeCount
           : undefined
       }
-      data-mounted-lattice-target-region={
+      data-mounted-lattice-presentation-region={
         scene.id === "understanding-camera-movements"
-          ? interactiveLatticeRuntimeInfo?.targetRegion
+          ? interactiveLatticeRuntimeInfo?.presentationRegion
           : undefined
       }
       data-mounted-lattice-generation={

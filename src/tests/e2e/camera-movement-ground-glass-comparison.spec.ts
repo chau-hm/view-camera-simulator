@@ -59,8 +59,8 @@ test("public camera-movement Ground Glass compares neutral and current through s
   await expect(current).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
   await expect(original).toHaveAttribute("data-rtt-lattice-edge-count", "224");
   await expect(current).toHaveAttribute("data-rtt-lattice-edge-count", "224");
-  await expect(original).toHaveAttribute("data-rtt-lattice-target-region", "middle");
-  await expect(current).toHaveAttribute("data-rtt-lattice-target-region", "middle");
+  await expect(original).toHaveAttribute("data-rtt-lattice-presentation-region", "whole");
+  await expect(current).toHaveAttribute("data-rtt-lattice-presentation-region", "whole");
 
   // The shared lattice/resource assertions above do not prove that the two RTT
   // cameras are driven by different physical states.  Capture the neutral
@@ -115,10 +115,12 @@ test("public camera-movement Ground Glass compares neutral and current through s
       ? "upper"
       : label.includes("D1") || label.includes("D2")
         ? "lower"
-        : "middle";
-    await expect(scene).toHaveAttribute("data-mounted-lattice-target-region", expectedRegion);
-    await expect(original).toHaveAttribute("data-rtt-lattice-target-region", expectedRegion);
-    await expect(current).toHaveAttribute("data-rtt-lattice-target-region", expectedRegion);
+        : label === "A — Front tilt" || label === "B — Rear tilt"
+          ? "middle"
+          : "whole";
+    await expect(scene).toHaveAttribute("data-mounted-lattice-presentation-region", expectedRegion);
+    await expect(original).toHaveAttribute("data-rtt-lattice-presentation-region", expectedRegion);
+    await expect(current).toHaveAttribute("data-rtt-lattice-presentation-region", expectedRegion);
     await expect(original).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
     await expect(current).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
     await expect(original).toHaveAttribute("data-rtt-lattice-subject-generation", originalSubjectGeneration!);

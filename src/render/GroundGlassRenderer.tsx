@@ -19,7 +19,7 @@ import { getRenderQualitySettings } from "./renderQuality";
 import { formatGroundGlassFocusLabel } from "./groundGlassFocusLabel";
 import { getSceneById } from "../scenes/definitions";
 import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
-import type { CameraMovementTargetRegion } from "../scenes/cameraMovementSceneCalibration";
+import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementSceneCalibration";
 
 type GroundGlassRendererProps = {
   opticsState: DerivedOpticsState;
@@ -46,7 +46,7 @@ type GroundGlassRendererProps = {
   /** Explicit focal length input for comparison panes; defaults to the store camera. */
   focalLengthMm?: number;
   channel?: GroundGlassRttChannel;
-  targetRegion?: CameraMovementTargetRegion;
+  presentationRegion?: CameraMovementPresentationRegion;
   accessibleLabel?: string;
   stageLabel?: string;
   lastFiniteFocusDepthMm?: number;
@@ -78,7 +78,7 @@ export const GroundGlassRenderer = ({
   cameraState,
   focalLengthMm: explicitFocalLengthMm,
   channel = "default",
-  targetRegion,
+  presentationRegion,
   accessibleLabel,
   stageLabel,
   lastFiniteFocusDepthMm: explicitLastFiniteFocusDepthMm,
@@ -238,7 +238,7 @@ export const GroundGlassRenderer = ({
           renderQuality={renderQuality}
           zoomEnabled={zoomEnabled}
           channel={channel}
-          targetRegion={targetRegion}
+          presentationRegion={presentationRegion}
         />
 
         {!isRttSceneFinal && (

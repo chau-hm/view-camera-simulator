@@ -175,7 +175,7 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
           <div><strong>Lattice subject generation:</strong> {rttRuntimeInfo?.latticeSubjectGeneration ?? "—"}</div>
           <div><strong>Lattice geometry:</strong> {rttRuntimeInfo?.latticeGeometryId ?? "—"} / {rttRuntimeInfo?.latticeGeometryKey ?? "—"}</div>
           <div><strong>Lattice resource key:</strong> {rttRuntimeInfo?.latticeResourceKey ?? "—"}</div>
-          <div><strong>Target region:</strong> {rttRuntimeInfo?.latticeTargetRegion ?? "—"}</div>
+          <div><strong>Lattice presentation:</strong> {rttRuntimeInfo?.latticePresentationRegion ?? "—"}</div>
           <div><strong>Camera configured:</strong> {rttRuntimeInfo?.cameraConfigurationOk === undefined ? "—" : rttRuntimeInfo.cameraConfigurationOk ? "Yes" : "No"}</div>
           <div><strong>Camera position:</strong> {rttRuntimeInfo?.cameraPositionWorld?.map((value) => value.toFixed(3)).join(", ") ?? "—"}</div>
           <div><strong>Camera up:</strong> {rttRuntimeInfo?.cameraUpWorld?.map((value) => value.toFixed(3)).join(", ") ?? "—"}</div>

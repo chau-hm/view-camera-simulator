@@ -82,7 +82,7 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   latticeGeometryKey?: string;
   latticePresentationKey?: string;
   latticeResourceKey?: string;
-  latticeTargetRegion?: string;
+  latticePresentationRegion?: string;
   latticeSubjectGeneration?: number;
 
   resourceGeneration: number; // increments when RTT resources are recreated

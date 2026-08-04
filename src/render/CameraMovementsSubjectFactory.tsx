@@ -8,6 +8,7 @@ import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry.js
 import type { CanonicalCameraMovementLattice } from "../scenes/cameraMovementLatticeGeometry";
 import type {
   CameraMovementPresentationCalibration,
+  CameraMovementPresentationRegion,
   CameraMovementTargetRegion,
 } from "../scenes/cameraMovementSceneCalibration";
 import {
@@ -41,9 +42,10 @@ const edgeWeightForRole = (
 };
 
 const colourForRegion = (
-  region: CameraMovementTargetRegion,
+  region: CameraMovementPresentationRegion,
   presentation: CameraMovementPresentationCalibration,
 ): string => {
+  if (region === "whole") return presentation.inactiveColour;
   if (region === "upper") return presentation.upperRegionColour;
   if (region === "lower") return presentation.lowerRegionColour;
   return presentation.middleRegionColour;
@@ -53,15 +55,17 @@ const resolveTeachingPresentationTargetRegion = (
   camera: CameraState,
   targetRegion: CameraMovementTargetRegion,
   calibrationActive: boolean,
-): CameraMovementTargetRegion => {
+): CameraMovementPresentationRegion => {
   if (calibrationActive || camera.activeSceneId !== "understanding-camera-movements") {
     return targetRegion;
   }
   const lessonPresentationRegion =
-    resolveCameraMovementLessonPresentationTargetRegion(
-      camera.cameraMovementLessonState,
-    );
-  if (lessonPresentationRegion) return lessonPresentationRegion;
+    camera.cameraMovementLessonState
+      ? resolveCameraMovementLessonPresentationTargetRegion(
+          camera.cameraMovementLessonState,
+        )
+      : undefined;
+  if (lessonPresentationRegion !== undefined) return lessonPresentationRegion;
   const caseId = matchCameraMovementTeachingCase({
     anchor: camera.viewpointAnchor,
     targetRegion,
@@ -120,9 +124,9 @@ export const CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID =
 export const applyCameraMovementsGroupStyle = (
   group: THREE.Group,
   presentation: CameraMovementPresentationCalibration,
-  targetRegion: CameraMovementTargetRegion,
+  presentationRegion: CameraMovementPresentationRegion,
 ): void => {
-  group.userData.targetRegion = targetRegion;
+  group.userData.presentationRegion = presentationRegion;
   group.traverse((object) => {
     const edgeRole = object.userData.edgeRole;
     const edgeTargetRegion = object.userData.edgeTargetRegion;
@@ -135,7 +139,8 @@ export const applyCameraMovementsGroupStyle = (
         edgeTargetRegion !== "lower" &&
         edgeTargetRegion !== "neutral")
     ) return;
-    const selected = edgeTargetRegion === targetRegion;
+    const selected =
+      presentationRegion !== "whole" && edgeTargetRegion === presentationRegion;
     const opacity = edgeRole === "internal" ? presentation.internalEdgeOpacity : 1;
     const material = object as THREE.LineSegments & { material?: THREE.Material };
     const lineMaterial = material.material as
@@ -143,7 +148,9 @@ export const applyCameraMovementsGroupStyle = (
       | undefined;
     if (!lineMaterial) return;
     lineMaterial.color?.set(
-      selected ? colourForRegion(targetRegion, presentation) : presentation.inactiveColour,
+      selected
+        ? colourForRegion(presentationRegion, presentation)
+        : presentation.inactiveColour,
     );
     if (typeof lineMaterial.linewidth === "number") {
       lineMaterial.linewidth = edgeWeightForRole(edgeRole, presentation);
@@ -162,12 +169,12 @@ export type CameraMovementsGroupOptions = Readonly<{
   presentationKey: string;
   geometryId: string;
   grid: CameraMovementLatticeRenderModel["grid"];
-  targetRegion?: CameraMovementTargetRegion;
+  presentationRegion?: CameraMovementPresentationRegion;
 }>;
 
 export const cameraMovementsGroupOptionsFromRenderModel = (
   model: CameraMovementLatticeRenderModel,
-  targetRegion?: CameraMovementTargetRegion,
+  presentationRegion?: CameraMovementPresentationRegion,
 ): CameraMovementsGroupOptions => ({
   lattice: model.lattice,
   presentation: model.presentation,
@@ -175,24 +182,24 @@ export const cameraMovementsGroupOptionsFromRenderModel = (
   presentationKey: model.presentationKey,
   geometryId: model.geometryId,
   grid: model.grid,
-  targetRegion,
+  presentationRegion,
 });
 
 const resolveGroupOptions = (
-  optionsOrTarget?: CameraMovementsGroupOptions | CameraMovementTargetRegion,
+  optionsOrPresentation?: CameraMovementsGroupOptions | CameraMovementPresentationRegion,
 ): Required<CameraMovementsGroupOptions> => {
   const baseline = CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
   const options =
-    typeof optionsOrTarget === "object"
-      ? optionsOrTarget
+    typeof optionsOrPresentation === "object"
+      ? optionsOrPresentation
       : cameraMovementsGroupOptionsFromRenderModel(
           baseline,
-          optionsOrTarget,
+          optionsOrPresentation,
         );
   return {
     ...options,
-    targetRegion:
-      options.targetRegion ?? options.presentation.defaultTargetRegion,
+    presentationRegion:
+      options.presentationRegion ?? options.presentation.defaultTargetRegion,
   };
 };
 
@@ -204,7 +211,7 @@ const resolveGroupOptions = (
  * in exactly one style batch; no renderer reconstructs cells or cube faces.
  */
 export function createCameraMovementsGroup(
-  optionsOrTarget?: CameraMovementsGroupOptions | CameraMovementTargetRegion,
+  optionsOrPresentation?: CameraMovementsGroupOptions | CameraMovementPresentationRegion,
 ): THREE.Group {
   const {
     lattice,
@@ -213,12 +220,12 @@ export function createCameraMovementsGroup(
     presentationKey,
     geometryId,
     grid,
-    targetRegion,
-  } = resolveGroupOptions(optionsOrTarget);
+    presentationRegion,
+  } = resolveGroupOptions(optionsOrPresentation);
   const group = new THREE.Group();
   group.name = "camera-movements-lattice-subject";
   group.userData.resourceOwnership = "owned";
-  group.userData.targetRegion = targetRegion;
+  group.userData.presentationRegion = presentationRegion;
   group.userData.canonicalGeometryId = geometryId;
   group.userData.canonicalGeometryKey = geometryKey;
   group.userData.presentationKey = presentationKey;
@@ -229,7 +236,8 @@ export function createCameraMovementsGroup(
   group.userData.canonicalBounds = lattice.bounds;
 
   createStyleBatches(lattice).forEach((batch) => {
-    const selected = batch.targetRegion === targetRegion;
+    const selected =
+      presentationRegion !== "whole" && batch.targetRegion === presentationRegion;
     const opacity = batch.role === "internal" ? presentation.internalEdgeOpacity : 1;
     const weight = edgeWeightForRole(batch.role, presentation);
     const lineGeometry = new LineSegmentsGeometry();
@@ -239,7 +247,7 @@ export function createCameraMovementsGroup(
 
     const lineMaterial = new LineMaterial({
       color: selected
-        ? colourForRegion(targetRegion, presentation)
+        ? colourForRegion(presentationRegion, presentation)
         : presentation.inactiveColour,
       linewidth: weight,
       opacity,
@@ -323,9 +331,9 @@ export const publishAttachedInteractiveLatticeRuntime = (
 /** Publish a target-only presentation update without changing mount identity. */
 export const updateAttachedInteractiveLatticeRuntime = (
   group: THREE.Group,
-  targetRegion: CameraMovementTargetRegion,
+  presentationRegion: CameraMovementPresentationRegion,
 ): InteractiveLatticeRuntimeInfo | null => {
-  group.userData.targetRegion = targetRegion;
+  group.userData.presentationRegion = presentationRegion;
   const current = useAppStore.getState().interactiveLatticeRuntimeInfo;
   const generation = group.userData.interactiveMountGeneration;
   if (!current || current.generation !== generation) return null;

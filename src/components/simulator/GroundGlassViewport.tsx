@@ -128,7 +128,7 @@ export const GroundGlassViewport = ({
           interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}:${resetSuffix}`}
           cameraState={layer.camera}
           channel={label === "Original" ? "camera-movement-original" : "camera-movement-current"}
-          targetRegion={layer.presentationTargetRegion}
+          presentationRegion={layer.presentationTargetRegion}
           accessibleLabel={`${label} Ground Glass`}
           stageLabel={`${label} Ground Glass`}
           lastFiniteFocusDepthMm={layer.camera.lastFiniteFocusDepthMm}

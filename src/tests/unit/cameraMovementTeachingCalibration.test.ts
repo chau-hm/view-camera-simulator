@@ -214,15 +214,15 @@ describe("camera-movement teaching calibration", () => {
         ]),
       ),
     ).toEqual({
-      neutral: "middle",
+      neutral: "whole",
       "A-front-tilt": "middle",
       "B-rear-tilt": "middle",
       "C1-front-rise": "upper",
       "C2-rear-rise": "upper",
-      "C3-high-viewpoint": "middle",
+      "C3-high-viewpoint": "whole",
       "D1-front-fall": "lower",
       "D2-rear-fall": "lower",
-      "D3-low-viewpoint": "middle",
+      "D3-low-viewpoint": "whole",
     });
   });
 

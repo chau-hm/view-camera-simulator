@@ -127,7 +127,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
           heightPx: 400,
           renderQuality: "standard",
           channel: "camera-movement-original",
-          targetRegion: "middle",
+          presentationRegion: "middle",
         }),
         React.createElement(GroundGlassRTT, {
           opticsState: optics,
@@ -137,7 +137,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
           heightPx: 400,
           renderQuality: "standard",
           channel: "camera-movement-current",
-          targetRegion: "middle",
+          presentationRegion: "middle",
         }),
       ),
     );
@@ -173,7 +173,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
           heightPx: 600,
           renderQuality: "standard",
           channel: "camera-movement-original",
-          targetRegion: "middle",
+          presentationRegion: "middle",
         }),
         React.createElement(GroundGlassRTT, {
           opticsState: optics,
@@ -183,7 +183,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
           heightPx: 600,
           renderQuality: "standard",
           channel: "camera-movement-current",
-          targetRegion: "middle",
+          presentationRegion: "middle",
         }),
       ),
     );
@@ -491,9 +491,6 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       mode: "free",
       sceneId: understandingCameraMovementsScene.id,
     });
-    useAppStore.setState((state) => ({
-      scene: { ...state.scene, targetRegion: "upper" },
-    }));
     const camera = useAppStore.getState().camera;
     const createSubject = vi.mocked(createRegisteredRttSubject);
     createSubject.mockClear();
@@ -515,12 +512,61 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const firstGeometry = (firstGroup.children[0] as THREE.Mesh).geometry;
     const disposeFirstGeometry = vi.spyOn(firstGeometry!, "dispose");
 
-    (["middle", "lower", "middle"] as const).forEach((targetRegion) => {
-      act(() =>
-        useAppStore.setState((state) => ({
-          scene: { ...state.scene, targetRegion },
-        })),
-      );
+    const presentationTransitions = [
+      {
+        presentationRegion: "whole",
+        lessonState: {
+          study: "viewpoint",
+          viewpointT: 0,
+          activeStandard: "front",
+          tiltDeg: 0,
+          framingT: 0,
+        },
+      },
+      {
+        presentationRegion: "upper",
+        lessonState: {
+          study: "vertical-framing",
+          viewpointT: 0,
+          activeStandard: "front",
+          tiltDeg: 0,
+          framingT: 1,
+        },
+      },
+      {
+        presentationRegion: "whole",
+        lessonState: {
+          study: "viewpoint",
+          viewpointT: 0,
+          activeStandard: "rear",
+          tiltDeg: 0,
+          framingT: 0,
+        },
+      },
+      {
+        presentationRegion: "lower",
+        lessonState: {
+          study: "vertical-framing",
+          viewpointT: 0,
+          activeStandard: "rear",
+          tiltDeg: 0,
+          framingT: -1,
+        },
+      },
+      {
+        presentationRegion: "whole",
+        lessonState: {
+          study: "viewpoint",
+          viewpointT: 0,
+          activeStandard: "front",
+          tiltDeg: 0,
+          framingT: 0,
+        },
+      },
+    ] as const;
+
+    presentationTransitions.forEach(({ presentationRegion, lessonState }) => {
+      act(() => useAppStore.getState().setCameraMovementLessonState(lessonState));
 
       expect(createSubject).toHaveBeenCalledTimes(1);
       expect(disposeFirstGeometry).not.toHaveBeenCalled();
@@ -540,8 +586,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
         useAppStore.getState().groundGlassRttRuntimeInfo?.latticeGeometryId,
       ).toBe(firstGroup.userData.canonicalGeometryId);
       expect(
-        useAppStore.getState().groundGlassRttRuntimeInfo?.latticeTargetRegion,
-      ).toBe(targetRegion);
+        useAppStore.getState().groundGlassRttRuntimeInfo?.latticePresentationRegion,
+      ).toBe(presentationRegion);
     });
     view.unmount();
     expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);

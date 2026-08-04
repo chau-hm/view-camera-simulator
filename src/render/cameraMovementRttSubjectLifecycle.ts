@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { CameraMovementTargetRegion } from "../scenes/cameraMovementSceneCalibration";
+import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementSceneCalibration";
 import {
   createRegisteredRttSubject,
   disposeRegisteredRttSubject,
@@ -26,10 +26,10 @@ export type MountedCameraMovementRttSubject = Readonly<{
 export const mountCameraMovementRttSubject = (
   scene: THREE.Scene,
   renderModel: CameraMovementLatticeRenderModel,
-  targetRegion: CameraMovementTargetRegion,
+  presentationRegion: CameraMovementPresentationRegion,
 ): MountedCameraMovementRttSubject => {
   const group = createRegisteredRttSubject(CAMERA_MOVEMENT_SCENE_ID, {
-    targetRegion,
+    presentationRegion,
     cameraMovementRenderModel: renderModel,
   });
   if (!group) {
@@ -57,11 +57,11 @@ export const unmountCameraMovementRttSubject = (
 export const updateCameraMovementRttSubjectTarget = (
   mounted: MountedCameraMovementRttSubject,
   renderModel: CameraMovementLatticeRenderModel,
-  targetRegion: CameraMovementTargetRegion,
+  presentationRegion: CameraMovementPresentationRegion,
 ): void => {
   applyCameraMovementsGroupStyle(
     mounted.group,
     renderModel.presentation,
-    targetRegion,
+    presentationRegion,
   );
 };
