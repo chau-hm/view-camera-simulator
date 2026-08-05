@@ -44,7 +44,13 @@ afterEach(() => {
 describe("public camera movement controls in the workspace", () => {
   it("renders one live Current Ground Glass and no comparison panes on the public route", () => {
     render(publicWorkspace());
-    expect(screen.getByRole("radio", { name: "A — Front tilt" })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Viewpoint" })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Tilt" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Front standard" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Rear standard" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "C1 — Front rise" })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "A — Front tilt" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "C3 — Higher viewpoint" })).not.toBeInTheDocument();
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     expect(screen.getByTestId("ground-glass-rtt")).toHaveAttribute("data-rtt-channel", "default");
     expect(screen.queryByRole("region", { name: "Original and Current Ground Glass comparison" })).not.toBeInTheDocument();
@@ -135,14 +141,18 @@ describe("public camera movement controls in the workspace", () => {
     render(publicWorkspace());
     const rtt = screen.getByTestId("ground-glass-rtt");
 
-    fireEvent.click(screen.getByRole("radio", { name: "A — Front tilt" }));
+    fireEvent.change(screen.getByRole("slider", { name: "Viewpoint" }), {
+      target: { value: "0.75" },
+    });
     expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
     expect(screen.getByTestId("ground-glass-rtt")).toHaveAttribute("data-rtt-channel", "default");
 
     fireEvent.click(screen.getByRole("button", { name: "Zoom in Ground Glass preview view" }));
 
     expect(screen.getByRole("button", { name: "Reset Ground Glass preview view" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: "C3 — Higher viewpoint" }));
+    fireEvent.change(screen.getByRole("slider", { name: "Tilt" }), {
+      target: { value: "3.2" },
+    });
     expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
     expect(screen.getByRole("button", { name: "Reset Ground Glass preview view" })).toBeInTheDocument();
   });
@@ -179,24 +189,25 @@ describe("public camera movement controls in the workspace", () => {
     expect(screen.getAllByRole("button", { name: "Zoom in Ground Glass preview view" })).toHaveLength(1);
   });
 
-  it("keeps Neutral selected after rerender and applies a case", async () => {
+  it("keeps the continuous Viewpoint state after rerender", () => {
     const view = render(publicWorkspace());
-    const neutral = screen.getByRole("radio", { name: "Neutral" });
-    expect(neutral).toBeChecked();
+    const viewpoint = screen.getByRole("slider", { name: "Viewpoint" });
+    expect(viewpoint).toHaveValue("0");
 
-    fireEvent.click(screen.getByRole("radio", { name: "C3 — Higher viewpoint" }));
+    fireEvent.change(viewpoint, { target: { value: "1" } });
     const state = useAppStore.getState();
     expect(state.camera.viewpointAnchor).toBe("high");
     expect(state.scene.targetRegion).toBe("upper");
     expect(matchCameraMovementTeachingCase({ anchor: state.camera.viewpointAnchor, targetRegion: state.scene.targetRegion, camera: state.camera })).toBe("C3-high-viewpoint");
 
     view.rerender(publicWorkspace());
-    expect(screen.getByRole("radio", { name: "C3 — Higher viewpoint" })).toBeChecked();
+    expect(screen.getByRole("slider", { name: "Viewpoint" })).toHaveValue("1");
+    expect(screen.getByRole("status")).toHaveTextContent("Higher viewpoint");
   });
 
   it("Reset Movements restores complete Neutral without a stale anchor", () => {
     render(publicWorkspace());
-    fireEvent.click(screen.getByRole("radio", { name: "C3 — Higher viewpoint" }));
+    fireEvent.change(screen.getByRole("slider", { name: "Viewpoint" }), { target: { value: "1" } });
     expect(useAppStore.getState().camera.viewpointAnchor).toBe("high");
 
     fireEvent.click(screen.getByRole("button", { name: /Reset movements/i }));
@@ -204,11 +215,13 @@ describe("public camera movement controls in the workspace", () => {
     expect(state.camera.viewpointAnchor).toBe("mid");
     expect(state.scene.targetRegion).toBe("middle");
     expect(matchCameraMovementTeachingCase({ anchor: state.camera.viewpointAnchor, targetRegion: state.scene.targetRegion, camera: state.camera })).toBe("neutral");
+    expect(screen.getByRole("slider", { name: "Viewpoint" })).toHaveValue("0");
+    expect(screen.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
   });
 
   it("route exit and re-entry restore Neutral", () => {
     render(publicWorkspace());
-    fireEvent.click(screen.getByRole("radio", { name: "C3 — Higher viewpoint" }));
+    fireEvent.change(screen.getByRole("slider", { name: "Viewpoint" }), { target: { value: "1" } });
     expect(useAppStore.getState().camera.viewpointAnchor).toBe("high");
 
     // Leave the scene (unmount) then return with a fresh mount.
@@ -217,7 +230,8 @@ describe("public camera movement controls in the workspace", () => {
     const state = useAppStore.getState();
     expect(state.camera.viewpointAnchor).toBe("mid");
     expect(state.scene.targetRegion).toBe("middle");
-    expect(screen.getByRole("radio", { name: "Neutral" })).toBeChecked();
+    expect(screen.getByRole("slider", { name: "Viewpoint" })).toHaveValue("0");
+    expect(screen.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
   });
 
   it("calibration route does not apply Neutral after workbench edits", () => {

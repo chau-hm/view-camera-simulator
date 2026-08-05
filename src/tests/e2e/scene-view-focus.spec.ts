@@ -179,14 +179,15 @@ test("Understanding Camera Movements Camera focus follows the current rig throug
 
   const cameraButton = page.getByRole("button", { name: "Camera", exact: true });
   const sceneButton = page.getByRole("button", { name: "Scene", exact: true });
+  const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
   await cameraButton.click();
   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");
 
   const neutralView = await expectCameraFocusTarget(sceneCanvas);
   const inspectionDistance = viewDistance(neutralView);
 
-  await page.getByRole("radio", { name: "C3 — Higher viewpoint" }).click();
-  await expect(page.getByRole("radio", { name: "C3 — Higher viewpoint" })).toBeChecked();
+  await viewpoint.fill("1");
+  await expect(viewpoint).toHaveValue("1");
   await expect(sceneCanvas).toHaveAttribute("data-camera-rig-anchor", "high");
   const c3View = await expectCameraFocusTarget(sceneCanvas);
   expect(c3View.target).not.toEqual(neutralView.target);
@@ -194,8 +195,8 @@ test("Understanding Camera Movements Camera focus follows the current rig throug
   expectSameObserverOffset(neutralView, c3View);
   expect(viewDistance(c3View)).toBeCloseTo(inspectionDistance, 5);
 
-  await page.getByRole("radio", { name: "D3 — Lower viewpoint" }).click();
-  await expect(page.getByRole("radio", { name: "D3 — Lower viewpoint" })).toBeChecked();
+  await viewpoint.fill("-1");
+  await expect(viewpoint).toHaveValue("-1");
   await expect(sceneCanvas).toHaveAttribute("data-camera-rig-anchor", "low");
   const d3View = await expectCameraFocusTarget(sceneCanvas);
   expect(d3View.target).not.toEqual(c3View.target);
@@ -208,7 +209,7 @@ test("Understanding Camera Movements Camera focus follows the current rig throug
   const d3ResetView = await expectCameraFocusTarget(sceneCanvas);
   expect(viewDistance(d3ResetView)).toBeCloseTo(inspectionDistance, 5);
 
-  await page.getByRole("radio", { name: "C3 — Higher viewpoint" }).click();
+  await viewpoint.fill("1");
   await page.getByRole("button", { name: "Reset 3D view" }).click();
   const c3ResetView = await expectCameraFocusTarget(sceneCanvas);
   expect(viewDistance(c3ResetView)).toBeCloseTo(inspectionDistance, 5);
@@ -221,13 +222,14 @@ test("Understanding Camera Movements Camera focus follows the current rig throug
   expect(c3OrbitedView.target).toEqual(c3ResetView.target);
   const orbitedInspectionDistance = viewDistance(c3OrbitedView);
 
-  await page.getByRole("radio", { name: "D3 — Lower viewpoint" }).click();
+  await viewpoint.fill("-1");
   const d3AfterOrbitView = await expectCameraFocusTarget(sceneCanvas);
   expectTranslatedByTargetDelta(c3OrbitedView, d3AfterOrbitView);
   expectSameObserverOffset(c3OrbitedView, d3AfterOrbitView);
   expect(viewDistance(d3AfterOrbitView)).toBeCloseTo(orbitedInspectionDistance, 5);
 
-  await page.getByRole("radio", { name: "Neutral" }).click();
+  await viewpoint.fill("0");
+  await expect(viewpoint).toHaveValue("0");
   await page.getByRole("button", { name: "Reset 3D view" }).click();
   const neutralResetView = await expectCameraFocusTarget(sceneCanvas);
   expect(neutralResetView.target).toEqual(neutralView.target);
@@ -236,10 +238,10 @@ test("Understanding Camera Movements Camera focus follows the current rig throug
   await sceneButton.click();
   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "scene");
   const sceneView = await readStableViewState(sceneCanvas);
-  await page.getByRole("radio", { name: "C3 — Higher viewpoint" }).click();
+  await viewpoint.fill("1");
   const c3SceneView = await readStableViewState(sceneCanvas);
   expect(c3SceneView.target).toEqual(sceneView.target);
-  await page.getByRole("radio", { name: "D3 — Lower viewpoint" }).click();
+  await viewpoint.fill("-1");
   const d3SceneView = await readStableViewState(sceneCanvas);
   expect(d3SceneView.target).toEqual(sceneView.target);
 

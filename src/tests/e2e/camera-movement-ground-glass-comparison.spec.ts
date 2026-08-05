@@ -63,9 +63,8 @@ test("public camera-movement Ground Glass renders one live Current view through 
     expect(neutralPose[attribute]).toBeTruthy();
   }
 
-  const assertCurrentChanged = async (label: string) => {
-    await page.getByRole("radio", { name: label }).click();
-    await expect(page.getByRole("radio", { name: label })).toBeChecked();
+  const assertCurrentChanged = async (change: () => Promise<void>) => {
+    await change();
     await expect
       .poll(async () => {
         const values = await Promise.all(poseAttributes.map((attribute) => current.getAttribute(attribute)));
@@ -74,30 +73,29 @@ test("public camera-movement Ground Glass renders one live Current view through 
       .toBe(true);
   };
 
-  await assertCurrentChanged("B — Rear tilt");
-  await assertCurrentChanged("C1 — Front rise");
-  await assertCurrentChanged("C3 — Higher viewpoint");
+  const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
+  const tilt = page.getByRole("slider", { name: "Tilt" });
+  await tilt.fill("3.2");
+  await expect(tilt).toHaveValue("3.2");
+  await page.getByRole("radio", { name: "Rear standard" }).click();
+  await expect(page.getByRole("radio", { name: "Rear standard" })).toBeChecked();
+  await assertCurrentChanged(async () => page.getByRole("radio", { name: "C1 — Front rise" }).click());
+  await assertCurrentChanged(async () => viewpoint.fill("1"));
 
-  for (const label of [
-    "A — Front tilt",
-    "B — Rear tilt",
-    "C1 — Front rise",
-    "C2 — Rear rise",
-    "C3 — Higher viewpoint",
-    "D1 — Front fall",
-    "D2 — Rear fall",
-    "D3 — Lower viewpoint",
-    "Neutral",
-  ]) {
-    await page.getByRole("radio", { name: label }).click();
-    await expect(page.getByRole("radio", { name: label })).toBeChecked();
-    const expectedRegion = label.includes("C1") || label.includes("C2")
-      ? "upper"
-      : label.includes("D1") || label.includes("D2")
-        ? "lower"
-        : label === "A — Front tilt" || label === "B — Rear tilt"
-          ? "middle"
-          : "whole";
+  const presentationCases: Array<{ change: () => Promise<void>; expectedRegion: string }> = [
+    { change: async () => tilt.fill("-2.4"), expectedRegion: "middle" },
+    { change: async () => page.getByRole("radio", { name: "Front standard" }).click(), expectedRegion: "middle" },
+    { change: async () => page.getByRole("radio", { name: "C1 — Front rise" }).click(), expectedRegion: "upper" },
+    { change: async () => page.getByRole("radio", { name: "C2 — Rear rise" }).click(), expectedRegion: "upper" },
+    { change: async () => page.getByRole("radio", { name: "D1 — Front fall" }).click(), expectedRegion: "lower" },
+    { change: async () => page.getByRole("radio", { name: "D2 — Rear fall" }).click(), expectedRegion: "lower" },
+    { change: async () => viewpoint.fill("1"), expectedRegion: "whole" },
+    { change: async () => viewpoint.fill("-1"), expectedRegion: "whole" },
+    { change: async () => viewpoint.fill("0"), expectedRegion: "whole" },
+  ];
+
+  for (const { change, expectedRegion } of presentationCases) {
+    await change();
     await expect(scene).toHaveAttribute("data-mounted-lattice-presentation-region", expectedRegion);
     await expect(current).toHaveAttribute("data-rtt-lattice-presentation-region", expectedRegion);
     await expect(current).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
