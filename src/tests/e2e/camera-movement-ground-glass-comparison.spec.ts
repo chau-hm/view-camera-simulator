@@ -52,35 +52,58 @@ test("public camera-movement Ground Glass renders one live Current view through 
   await expect(scene).toHaveAttribute("data-mounted-lattice-presentation-region", "whole");
   await expect(current).toHaveAttribute("data-rtt-lattice-presentation-region", "whole");
 
-  // The default RTT camera is the live canonical camera. Representative cases
-  // must change its extrinsics while the subject and owned RTT resources stay
-  // mounted and stable.
-  const poseAttributes = ["data-rtt-camera-position", "data-rtt-camera-up", "data-rtt-camera-forward"] as const;
-  const neutralPose = Object.fromEntries(
-    await Promise.all(poseAttributes.map(async (attribute) => [attribute, await current.getAttribute(attribute)] as const)),
-  );
-  for (const attribute of poseAttributes) {
-    expect(neutralPose[attribute]).toBeTruthy();
-  }
+  const neutralSanityState = await current.getAttribute("data-rtt-sanity-state");
+  expect(neutralSanityState).toBeTruthy();
 
-  const assertCurrentChanged = async (change: () => Promise<void>) => {
-    await change();
+  const assertStableRendererIdentities = async () => {
+    await expect(current).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
+    await expect(current).toHaveAttribute("data-rtt-lattice-subject-generation", subjectGeneration!);
+    await expect(current).toHaveAttribute("data-rtt-resource-generation", resourceGeneration!);
+    await expect(current).toHaveAttribute("data-rtt-lattice-resource-key", resourceKey!);
+  };
+
+  const waitForSanityStateChange = async (previousState: string) => {
     await expect
-      .poll(async () => {
-        const values = await Promise.all(poseAttributes.map((attribute) => current.getAttribute(attribute)));
-        return values.some((value, index) => value !== neutralPose[poseAttributes[index]]);
-      })
-      .toBe(true);
+      .poll(async () => current.getAttribute("data-rtt-sanity-state"))
+      .not.toBe(previousState);
+    const nextState = await current.getAttribute("data-rtt-sanity-state");
+    expect(nextState).toBeTruthy();
+    return nextState!;
+  };
+
+  const assertPresentation = async (expectedRegion: string) => {
+    await expect(scene).toHaveAttribute("data-mounted-lattice-presentation-region", expectedRegion);
+    await expect(current).toHaveAttribute("data-rtt-lattice-presentation-region", expectedRegion);
+    await assertStableRendererIdentities();
+    await assertCurrentContentful(page);
   };
 
   const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
   const tilt = page.getByRole("slider", { name: "Tilt" });
+  const movementStatus = page.locator(".camera-movement-controls__status");
   await tilt.fill("3.2");
   await expect(tilt).toHaveValue("3.2");
+  await expect(page.getByRole("radio", { name: "Front standard" })).toBeChecked();
+  await expect(movementStatus).toContainText("Front tilt · +3.2°");
+  let previousSanityState = await waitForSanityStateChange(neutralSanityState!);
+  await assertPresentation("middle");
+
   await page.getByRole("radio", { name: "Rear standard" }).click();
   await expect(page.getByRole("radio", { name: "Rear standard" })).toBeChecked();
-  await assertCurrentChanged(async () => page.getByRole("radio", { name: "C1 — Front rise" }).click());
-  await assertCurrentChanged(async () => viewpoint.fill("1"));
+  await expect(tilt).toHaveValue("3.2");
+  await expect(movementStatus).toContainText("Rear tilt · +3.2°");
+  previousSanityState = await waitForSanityStateChange(previousSanityState);
+  await assertPresentation("middle");
+
+  await page.getByRole("radio", { name: "C1 — Front rise" }).click();
+  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toBeChecked();
+  previousSanityState = await waitForSanityStateChange(previousSanityState);
+  await assertPresentation("upper");
+
+  await viewpoint.fill("1");
+  await expect(viewpoint).toHaveValue("1");
+  await waitForSanityStateChange(previousSanityState);
+  await assertPresentation("whole");
 
   const presentationCases: Array<{ change: () => Promise<void>; expectedRegion: string }> = [
     { change: async () => tilt.fill("-2.4"), expectedRegion: "middle" },
@@ -96,13 +119,7 @@ test("public camera-movement Ground Glass renders one live Current view through 
 
   for (const { change, expectedRegion } of presentationCases) {
     await change();
-    await expect(scene).toHaveAttribute("data-mounted-lattice-presentation-region", expectedRegion);
-    await expect(current).toHaveAttribute("data-rtt-lattice-presentation-region", expectedRegion);
-    await expect(current).toHaveAttribute("data-rtt-lattice-geometry-id", geometryId!);
-    await expect(current).toHaveAttribute("data-rtt-lattice-subject-generation", subjectGeneration!);
-    await expect(current).toHaveAttribute("data-rtt-resource-generation", resourceGeneration!);
-    await expect(current).toHaveAttribute("data-rtt-lattice-resource-key", resourceKey!);
-    await assertCurrentContentful(page);
+    await assertPresentation(expectedRegion);
   }
 
   const rttHandle = await current.elementHandle();

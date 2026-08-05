@@ -122,9 +122,9 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   await expect.poll(async () => viewDistance(await readViewState(sceneCanvas))).toBeCloseTo(0.72, 4);
 
   const beforeRise = await readStableViewState(sceneCanvas);
-  const beforeRiseGeometry = await page.getByTestId("scene-front-y-mm").textContent();
+  const beforeRiseGeometry = await page.getByTestId("optical-debug-front-y-mm").textContent();
   await page.getByLabel("Rise").press("ArrowRight");
-  await expect(page.getByTestId("scene-front-y-mm")).not.toHaveText(beforeRiseGeometry ?? "");
+  await expect(page.getByTestId("optical-debug-front-y-mm")).not.toHaveText(beforeRiseGeometry ?? "");
   await expect.poll(async () => (await readViewState(sceneCanvas)).target).toEqual(beforeRise.target);
 
   for (const movementControl of ["Focus distance", "Tilt", "Swing"]) {
@@ -165,7 +165,7 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   expect(consoleProblems).toEqual([]);
 });
 
-test("Understanding Camera Movements Camera focus follows the current rig through C3 and D3", async ({ page }) => {
+test("Understanding Camera Movements Camera focus follows continuous viewpoint changes", async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto("/simulator/free/understanding-camera-movements");
 
@@ -185,15 +185,52 @@ test("Understanding Camera Movements Camera focus follows the current rig throug
 
   const neutralView = await expectCameraFocusTarget(sceneCanvas);
   const inspectionDistance = viewDistance(neutralView);
+  const currentRtt = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
+  await expect(currentRtt).toHaveCount(1);
+  const rttHandle = await currentRtt.elementHandle();
+  const rttResourceGeneration = await currentRtt.getAttribute("data-rtt-resource-generation");
+  const rttSubjectGeneration = await currentRtt.getAttribute("data-rtt-lattice-subject-generation");
+  const rttGeometryId = await currentRtt.getAttribute("data-rtt-lattice-geometry-id");
+  if (!rttHandle || !rttResourceGeneration || !rttSubjectGeneration || !rttGeometryId) {
+    throw new Error("Current Ground Glass identities unavailable");
+  }
+
+  const expectRendererIdentitiesStable = async () => {
+    await expect(sceneCanvas).toHaveAttribute("data-mounted-lattice-geometry-id", geometryId!);
+    await expect(sceneCanvas).toHaveAttribute("data-mounted-lattice-generation", generation!);
+    await expect(currentRtt).toHaveCount(1);
+    await expect(currentRtt).toHaveAttribute("data-rtt-resource-generation", rttResourceGeneration);
+    await expect(currentRtt).toHaveAttribute("data-rtt-lattice-subject-generation", rttSubjectGeneration);
+    await expect(currentRtt).toHaveAttribute("data-rtt-lattice-geometry-id", rttGeometryId);
+    expect(
+      await page.evaluate(
+        (node) => node === document.querySelector('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]'),
+        rttHandle,
+      ),
+    ).toBe(true);
+  };
+
+  await viewpoint.fill("0.5");
+  await expect(viewpoint).toHaveValue("0.5");
+  const intermediateView = await expectCameraFocusTarget(sceneCanvas);
+  expect(intermediateView.target).not.toEqual(neutralView.target);
+  expectTranslatedByTargetDelta(neutralView, intermediateView);
+  expectSameObserverOffset(neutralView, intermediateView);
+  expect(viewDistance(intermediateView)).toBeCloseTo(inspectionDistance, 5);
+  await expectRendererIdentitiesStable();
 
   await viewpoint.fill("1");
   await expect(viewpoint).toHaveValue("1");
   await expect(sceneCanvas).toHaveAttribute("data-camera-rig-anchor", "high");
   const c3View = await expectCameraFocusTarget(sceneCanvas);
   expect(c3View.target).not.toEqual(neutralView.target);
+  expect(c3View.target).not.toEqual(intermediateView.target);
+  expect(intermediateView.target).not.toEqual(c3View.target);
   expectTranslatedByTargetDelta(neutralView, c3View);
-  expectSameObserverOffset(neutralView, c3View);
+  expectTranslatedByTargetDelta(intermediateView, c3View);
+  expectSameObserverOffset(intermediateView, c3View);
   expect(viewDistance(c3View)).toBeCloseTo(inspectionDistance, 5);
+  await expectRendererIdentitiesStable();
 
   await viewpoint.fill("-1");
   await expect(viewpoint).toHaveValue("-1");

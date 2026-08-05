@@ -1022,9 +1022,6 @@ button {
   z-index: 10;
 }
 
-.scene-status-row { display: flex; gap: var(--sim-control-group-gap); align-items: center; justify-content: space-between; }
-.scene-status-row p { margin: 0; font-size: 12px; color: var(--text-muted); }
-
 .geometry-viewport { container-type: inline-size; }
 .geometry-construction-split {
   display: grid;

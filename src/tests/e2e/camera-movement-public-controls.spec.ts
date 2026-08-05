@@ -136,6 +136,36 @@ test("public camera movement controls on the normal route", async ({ page }) => 
   expect(unexpectedGraphicsMessages).toEqual([]);
 });
 
+test("3D Scene layout stays stable while the Viewpoint slider changes", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1680, height: 900 });
+  await page.goto("/simulator/free/understanding-camera-movements");
+
+  const viewportHost = page.locator(".scene-viewport-host");
+  await expect(viewportHost).toBeVisible({ timeout: 15_000 });
+  const initialBounds = await viewportHost.boundingBox();
+  if (!initialBounds) throw new Error("3D Scene viewport bounds unavailable");
+  const scenePanel = page.locator(".scene-panel");
+
+  const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
+  for (const value of ["0", "-0.12", "-1", "0.5", "1"]) {
+    await viewpoint.fill(value);
+    await expect(viewpoint).toHaveValue(value);
+    await expect
+      .poll(async () => {
+        const bounds = await viewportHost.boundingBox();
+        return Boolean(
+          bounds &&
+            Math.abs(bounds.y - initialBounds.y) <= 1 &&
+            Math.abs(bounds.height - initialBounds.height) <= 1,
+        );
+      })
+      .toBe(true);
+    await expect(scenePanel).not.toContainText("Front standard Y:");
+    await expect(scenePanel).not.toContainText("Loaded assets:");
+  }
+});
+
 test("calibration route preserves workbench and hides public controls", async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto("/simulator/free/understanding-camera-movements?cameraCalibration=1&rttDiagnostics=1");

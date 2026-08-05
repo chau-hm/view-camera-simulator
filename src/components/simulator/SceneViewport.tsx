@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import { SceneOverlayControls } from "./SceneOverlayControls";
-import { getLazySceneAssets, getPreloadSceneAssets, getRequiredSceneAssets } from "../../scenes/definitions";
 import { isWebGLAvailable } from "../../utils/webgl";
 import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
@@ -67,9 +66,6 @@ export const SceneViewport = ({
   const previouslyExpandedRef = useRef(expanded);
   const viewFocus = viewFocusState.sceneId === scene.id ? viewFocusState.focus : "scene";
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
-  const requiredAssets = useMemo(() => getRequiredSceneAssets(scene.id), [scene.id]);
-  const lazyAssets = useMemo(() => getLazySceneAssets(scene.id), [scene.id]);
-  const preloadAssets = useMemo(() => getPreloadSceneAssets(scene.id), [scene.id]);
   const scheimpflugConstruction = useMemo(
     () =>
       deriveScheimpflugConstruction({
@@ -114,7 +110,6 @@ export const SceneViewport = ({
     return (
       <section>
         <h2>{UI_COPY.simulator.sceneTitle}</h2>
-        <p data-testid="scene-front-y-mm">Front standard Y: {opticsState.lensCenterWorld.y.toFixed(1)} mm</p>
         <p>{UI_COPY.simulator.webglUnavailable}</p>
       </section>
     );
@@ -141,11 +136,6 @@ export const SceneViewport = ({
   return (
     <section className={`scene-panel${expanded ? " simulator-viewport-panel--expanded scene-panel--expanded" : ""}`}>
       {showHeader !== false && <h2>{UI_COPY.simulator.sceneTitle}</h2>}
-
-      <div className="scene-status-row">
-        <p data-testid="scene-front-y-mm">Front standard Y: {opticsState.lensCenterWorld.y.toFixed(1)} mm</p>
-        <p className="scene-assets">Loaded assets: {requiredAssets.length} required, {lazyAssets.length} lazy for current scene, {preloadAssets.length} preload for next scene.</p>
-      </div>
 
       <div className="scene-panel__controls">
         {/* Toolbar: left actions and right quality control */}
