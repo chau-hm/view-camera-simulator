@@ -2,8 +2,15 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
+import { GroundGlassViewport } from "../../components/simulator/GroundGlassViewport";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { resolveCameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import { resolveCameraRigViewpointAnchor } from "../../scenes/cameraRigViewpointGeometry";
+import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { useAppStore } from "../../state/appStore";
 import { matchCameraMovementTeachingCase } from "../../scenes/cameraMovementPublicTeaching";
+import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const publicWorkspace = () => (
   <MemoryRouter>
@@ -46,6 +53,82 @@ describe("public camera movement controls in the workspace", () => {
     expect(screen.getAllByRole("button", { name: "Zoom in Ground Glass preview view" })).toHaveLength(1);
     expect(screen.queryByRole("radiogroup", { name: "Camera movement calibration workbench" })).not.toBeInTheDocument();
     expect(screen.queryByText("Camera Movement Calibration")).not.toBeInTheDocument();
+  });
+
+  it("renders the retained Original/Current comparison composition with independent RTT channels and zoom", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...understandingCameraMovementsScene.cameraPreset,
+      activeSceneId: understandingCameraMovementsScene.id,
+      activeTaskId: null,
+      mode: "free" as const,
+      cameraRigPlacement: resolveCameraRigViewpointAnchor(
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig,
+        "mid",
+      ),
+    };
+    const opticsState = deriveOpticsState(camera, understandingCameraMovementsScene);
+    const comparison = resolveCameraMovementGroundGlassComparison({
+      camera,
+      opticsState,
+    });
+
+    render(
+      <GroundGlassViewport
+        opticsState={opticsState}
+        orientationAssistEnabled
+        focusAssistEnabled={camera.focusAssistEnabled}
+        gridEnabled={camera.gridEnabled}
+        canToggleFocusAssist
+        canToggleGrid
+        riseMm={camera.frontRiseMm}
+        tiltDeg={camera.frontTiltDeg}
+        swingDeg={camera.frontSwingDeg}
+        focusDistanceMm={camera.focusDistanceMm}
+        aperture={camera.aperture}
+        renderQuality="standard"
+        sceneId={understandingCameraMovementsScene.id}
+        expanded={false}
+        restoreFocusOnCollapse
+        onRequestExpand={() => undefined}
+        onRequestRestore={() => undefined}
+        comparison={comparison}
+        comparisonLabels={{
+          original: "Neutral · No camera movements",
+          current: "A · Front tilt",
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Original and Current Ground Glass comparison" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: "Original", level: 3 })).toHaveLength(1);
+    expect(screen.getAllByRole("heading", { name: "Current", level: 3 })).toHaveLength(1);
+
+    const rttHosts = document.querySelectorAll('[data-testid="ground-glass-rtt"]');
+    expect(rttHosts).toHaveLength(2);
+    expect(document.querySelectorAll('[data-rtt-channel="camera-movement-original"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-rtt-channel="camera-movement-current"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-rtt-channel="default"]')).toHaveLength(0);
+
+    expect(
+      screen.getByRole("button", { name: "Zoom in Original Ground Glass view" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Zoom in Current Ground Glass view" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Zoom in Original Ground Glass view" }));
+    expect(
+      screen.getByRole("button", { name: "Reset Original Ground Glass view" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Zoom in Current Ground Glass view" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Reset Current Ground Glass view" }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the single Current Ground Glass renderer and its zoom state through case changes", () => {
