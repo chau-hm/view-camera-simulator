@@ -122,9 +122,9 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   await expect.poll(async () => viewDistance(await readViewState(sceneCanvas))).toBeCloseTo(0.72, 4);
 
   const beforeRise = await readStableViewState(sceneCanvas);
-  const beforeRiseGeometry = await page.getByTestId("scene-front-y-mm").textContent();
+  const beforeRiseGeometry = await page.getByTestId("optical-debug-front-y-mm").textContent();
   await page.getByLabel("Rise").press("ArrowRight");
-  await expect(page.getByTestId("scene-front-y-mm")).not.toHaveText(beforeRiseGeometry ?? "");
+  await expect(page.getByTestId("optical-debug-front-y-mm")).not.toHaveText(beforeRiseGeometry ?? "");
   await expect.poll(async () => (await readViewState(sceneCanvas)).target).toEqual(beforeRise.target);
 
   for (const movementControl of ["Focus distance", "Tilt", "Swing"]) {
@@ -165,7 +165,7 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   expect(consoleProblems).toEqual([]);
 });
 
-test("Understanding Camera Movements Camera focus follows the current rig through C3 and D3", async ({ page }) => {
+test("Understanding Camera Movements Camera focus follows continuous viewpoint changes", async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto("/simulator/free/understanding-camera-movements");
 
@@ -179,23 +179,61 @@ test("Understanding Camera Movements Camera focus follows the current rig throug
 
   const cameraButton = page.getByRole("button", { name: "Camera", exact: true });
   const sceneButton = page.getByRole("button", { name: "Scene", exact: true });
+  const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
   await cameraButton.click();
   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");
 
   const neutralView = await expectCameraFocusTarget(sceneCanvas);
   const inspectionDistance = viewDistance(neutralView);
+  const currentRtt = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
+  await expect(currentRtt).toHaveCount(1);
+  const rttHandle = await currentRtt.elementHandle();
+  const rttResourceGeneration = await currentRtt.getAttribute("data-rtt-resource-generation");
+  const rttSubjectGeneration = await currentRtt.getAttribute("data-rtt-lattice-subject-generation");
+  const rttGeometryId = await currentRtt.getAttribute("data-rtt-lattice-geometry-id");
+  if (!rttHandle || !rttResourceGeneration || !rttSubjectGeneration || !rttGeometryId) {
+    throw new Error("Current Ground Glass identities unavailable");
+  }
 
-  await page.getByRole("radio", { name: "C3 — Higher viewpoint" }).click();
-  await expect(page.getByRole("radio", { name: "C3 — Higher viewpoint" })).toBeChecked();
+  const expectRendererIdentitiesStable = async () => {
+    await expect(sceneCanvas).toHaveAttribute("data-mounted-lattice-geometry-id", geometryId!);
+    await expect(sceneCanvas).toHaveAttribute("data-mounted-lattice-generation", generation!);
+    await expect(currentRtt).toHaveCount(1);
+    await expect(currentRtt).toHaveAttribute("data-rtt-resource-generation", rttResourceGeneration);
+    await expect(currentRtt).toHaveAttribute("data-rtt-lattice-subject-generation", rttSubjectGeneration);
+    await expect(currentRtt).toHaveAttribute("data-rtt-lattice-geometry-id", rttGeometryId);
+    expect(
+      await page.evaluate(
+        (node) => node === document.querySelector('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]'),
+        rttHandle,
+      ),
+    ).toBe(true);
+  };
+
+  await viewpoint.fill("0.5");
+  await expect(viewpoint).toHaveValue("0.5");
+  const intermediateView = await expectCameraFocusTarget(sceneCanvas);
+  expect(intermediateView.target).not.toEqual(neutralView.target);
+  expectTranslatedByTargetDelta(neutralView, intermediateView);
+  expectSameObserverOffset(neutralView, intermediateView);
+  expect(viewDistance(intermediateView)).toBeCloseTo(inspectionDistance, 5);
+  await expectRendererIdentitiesStable();
+
+  await viewpoint.fill("1");
+  await expect(viewpoint).toHaveValue("1");
   await expect(sceneCanvas).toHaveAttribute("data-camera-rig-anchor", "high");
   const c3View = await expectCameraFocusTarget(sceneCanvas);
   expect(c3View.target).not.toEqual(neutralView.target);
+  expect(c3View.target).not.toEqual(intermediateView.target);
+  expect(intermediateView.target).not.toEqual(c3View.target);
   expectTranslatedByTargetDelta(neutralView, c3View);
-  expectSameObserverOffset(neutralView, c3View);
+  expectTranslatedByTargetDelta(intermediateView, c3View);
+  expectSameObserverOffset(intermediateView, c3View);
   expect(viewDistance(c3View)).toBeCloseTo(inspectionDistance, 5);
+  await expectRendererIdentitiesStable();
 
-  await page.getByRole("radio", { name: "D3 — Lower viewpoint" }).click();
-  await expect(page.getByRole("radio", { name: "D3 — Lower viewpoint" })).toBeChecked();
+  await viewpoint.fill("-1");
+  await expect(viewpoint).toHaveValue("-1");
   await expect(sceneCanvas).toHaveAttribute("data-camera-rig-anchor", "low");
   const d3View = await expectCameraFocusTarget(sceneCanvas);
   expect(d3View.target).not.toEqual(c3View.target);
@@ -208,7 +246,7 @@ test("Understanding Camera Movements Camera focus follows the current rig throug
   const d3ResetView = await expectCameraFocusTarget(sceneCanvas);
   expect(viewDistance(d3ResetView)).toBeCloseTo(inspectionDistance, 5);
 
-  await page.getByRole("radio", { name: "C3 — Higher viewpoint" }).click();
+  await viewpoint.fill("1");
   await page.getByRole("button", { name: "Reset 3D view" }).click();
   const c3ResetView = await expectCameraFocusTarget(sceneCanvas);
   expect(viewDistance(c3ResetView)).toBeCloseTo(inspectionDistance, 5);
@@ -221,13 +259,14 @@ test("Understanding Camera Movements Camera focus follows the current rig throug
   expect(c3OrbitedView.target).toEqual(c3ResetView.target);
   const orbitedInspectionDistance = viewDistance(c3OrbitedView);
 
-  await page.getByRole("radio", { name: "D3 — Lower viewpoint" }).click();
+  await viewpoint.fill("-1");
   const d3AfterOrbitView = await expectCameraFocusTarget(sceneCanvas);
   expectTranslatedByTargetDelta(c3OrbitedView, d3AfterOrbitView);
   expectSameObserverOffset(c3OrbitedView, d3AfterOrbitView);
   expect(viewDistance(d3AfterOrbitView)).toBeCloseTo(orbitedInspectionDistance, 5);
 
-  await page.getByRole("radio", { name: "Neutral" }).click();
+  await viewpoint.fill("0");
+  await expect(viewpoint).toHaveValue("0");
   await page.getByRole("button", { name: "Reset 3D view" }).click();
   const neutralResetView = await expectCameraFocusTarget(sceneCanvas);
   expect(neutralResetView.target).toEqual(neutralView.target);
@@ -236,10 +275,10 @@ test("Understanding Camera Movements Camera focus follows the current rig throug
   await sceneButton.click();
   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "scene");
   const sceneView = await readStableViewState(sceneCanvas);
-  await page.getByRole("radio", { name: "C3 — Higher viewpoint" }).click();
+  await viewpoint.fill("1");
   const c3SceneView = await readStableViewState(sceneCanvas);
   expect(c3SceneView.target).toEqual(sceneView.target);
-  await page.getByRole("radio", { name: "D3 — Lower viewpoint" }).click();
+  await viewpoint.fill("-1");
   const d3SceneView = await readStableViewState(sceneCanvas);
   expect(d3SceneView.target).toEqual(sceneView.target);
 

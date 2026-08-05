@@ -848,6 +848,19 @@ button {
 .teaching-controls__choice input { flex: 0 0 auto; margin-top: 2px; }
 .teaching-controls__explanation { margin-top: 4px; font-size: 13px; line-height: 1.4; color: var(--text); }
 .teaching-controls__explanation p { margin: 0; }
+.camera-movement-controls { display: grid; gap: 12px; }
+.camera-movement-controls__intro { margin: 0; font-size: 13px; color: var(--text-muted); }
+.camera-movement-controls__section { display: grid; gap: 7px; min-width: 0; }
+.camera-movement-controls__heading { margin: 0; font-size: 13px; font-weight: 650; color: var(--text); }
+.camera-movement-controls__copy { margin: 0; font-size: 12px; line-height: 1.4; color: var(--text-muted); }
+.camera-movement-controls__slider { min-width: 0; }
+.camera-movement-controls__range-labels { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-muted); }
+.camera-movement-controls__range-labels span:nth-child(2) { color: var(--text); font-weight: 600; }
+.camera-movement-controls__standard { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.camera-movement-controls__standard legend { width: 100%; padding: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.camera-movement-controls__status { min-height: 20px; font-size: 13px; font-weight: 600; color: var(--text); }
+.camera-movement-controls__compatibility { padding-top: 4px; border-top: 1px solid var(--border-soft); }
+.camera-movement-controls__compatibility-copy { margin: -4px 0 0; font-size: 12px; line-height: 1.4; color: var(--text-muted); }
 @media (max-width: 720px) { .teaching-controls__grid { grid-template-columns: 1fr; } }
 .choice-label { display: inline-flex; align-items: center; gap: var(--sim-control-gap); font-size: 14px; min-height: 24px; }
 .range-slider { width: 100%; accent-color: var(--primary); }
@@ -1008,9 +1021,6 @@ button {
   top: var(--sim-panel-section-gap);
   z-index: 10;
 }
-
-.scene-status-row { display: flex; gap: var(--sim-control-group-gap); align-items: center; justify-content: space-between; }
-.scene-status-row p { margin: 0; font-size: 12px; color: var(--text-muted); }
 
 .geometry-viewport { container-type: inline-size; }
 .geometry-construction-split {

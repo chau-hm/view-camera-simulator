@@ -90,51 +90,51 @@ test("camera movements scene loads and renders valid Ground Glass content", asyn
   const sanityError = await rtt.getAttribute("data-rtt-sanity-error");
   expect(sanityError === null || sanityError === "" || sanityError === "null").toBe(true);
 
-  await expect(page.getByRole("radio", { name: "Neutral" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "A — Front tilt" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "B — Rear tilt" })).toBeVisible();
+  await expect(page.getByRole("slider", { name: "Viewpoint" })).toBeVisible();
+  await expect(page.getByRole("slider", { name: "Tilt" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Front standard" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Rear standard" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "C2 — Rear rise" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "C3 — Higher viewpoint" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "D1 — Front fall" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "D2 — Rear fall" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "D3 — Lower viewpoint" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Neutral" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "A — Front tilt" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "C3 — Higher viewpoint" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "D3 — Lower viewpoint" })).toHaveCount(0);
 
   await expect(page.getByRole("button", { name: "Reset Movements" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Restart Task" })).toHaveCount(0);
 });
 
-test("all four movements change Ground Glass without breaking", async ({ page }) => {
+test("continuous viewpoint and tilt plus framing adapters change Ground Glass without breaking", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   const rtt = publicCurrentRtt(page);
   await expect(rtt).toBeVisible({ timeout: 15000 });
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
 
-  const cases: Array<{ label: string }> = [
-    { label: "A — Front tilt" },
-    { label: "B — Rear tilt" },
-    { label: "C1 — Front rise" },
-    { label: "C2 — Rear rise" },
-    { label: "C3 — Higher viewpoint" },
-    { label: "D1 — Front fall" },
-    { label: "D2 — Rear fall" },
-    { label: "D3 — Lower viewpoint" },
-  ];
+  const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
+  const tilt = page.getByRole("slider", { name: "Tilt" });
+  await tilt.fill("3.2");
+  await expect(tilt).toHaveValue("3.2");
+  await page.getByRole("radio", { name: "Rear standard" }).click();
+  await expect(page.getByRole("radio", { name: "Rear standard" })).toBeChecked();
+  await expect(tilt).toHaveValue("3.2");
+  await viewpoint.fill("0.5");
+  await expect(viewpoint).toHaveValue("0.5");
+  await viewpoint.fill("1");
+  await expect(viewpoint).toHaveValue("1");
+  await page.getByRole("radio", { name: "C1 — Front rise" }).click();
+  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toBeChecked();
+  await page.getByRole("radio", { name: "D2 — Rear fall" }).click();
+  await expect(page.getByRole("radio", { name: "D2 — Rear fall" })).toBeChecked();
 
-  for (const { label } of cases) {
-    const radio = page.getByRole("radio", { name: label });
-    await radio.click();
-    await expect(radio).toBeChecked();
-
-    // RTT stays valid after the case transition. Movement-only changes do not
-    // guarantee a distinct sanity hash (e.g. A vs B), so wait for RTT validity
-    // rather than a sanity-state change.
-    await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5000 });
-    await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 5000 });
-    await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10000 });
-    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
-  }
+  // RTT stays valid after each continuous or compatibility transition.
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5000 });
+  await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 5000 });
+  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10000 });
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
 });
 
 test("Reset Movements restores zero state and keeps Ground Glass valid", async ({ page }) => {
@@ -144,17 +144,18 @@ test("Reset Movements restores zero state and keeps Ground Glass valid", async (
   await expect(rtt).toBeVisible({ timeout: 15000 });
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
 
-  // Select and change A — Front tilt
-  await page.getByRole("radio", { name: "A — Front tilt" }).click();
-  await expect(page.getByRole("radio", { name: "A — Front tilt" })).toBeChecked();
+  // Select a non-neutral continuous state.
+  await page.getByRole("slider", { name: "Viewpoint" }).fill("-0.6");
+  await expect(page.getByRole("slider", { name: "Viewpoint" })).toHaveValue("-0.6");
 
   const prevState = await rtt.getAttribute("data-rtt-sanity-state");
 
   // Reset Movements restores complete Neutral
   await page.getByRole("button", { name: "Reset Movements" }).click();
 
-  // Neutral should be selected again
-  await expect(page.getByRole("radio", { name: "Neutral" })).toBeChecked();
+  // Neutral Viewpoint should be selected again.
+  await expect(page.getByRole("slider", { name: "Viewpoint" })).toHaveValue("0");
+  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
 
   // Wait for a new RTT frame after reset
   await expect.poll(async () => {
@@ -254,7 +255,7 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
     initialGeometryId!,
   );
   await page.getByRole("button", { name: "Reset Movements" }).click();
-  await expect(page.getByRole("radio", { name: "Neutral" })).toBeChecked();
+  await expect(page.getByRole("slider", { name: "Viewpoint" })).toHaveValue("0");
   await expect(rtt).toHaveAttribute(
     "data-rtt-camera-position",
     initialRttCameraPosition!,

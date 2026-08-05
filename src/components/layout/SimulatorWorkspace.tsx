@@ -32,6 +32,7 @@ import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMove
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
 import {
+  formatCameraMovementLessonReadout,
   formatCameraMovementPublicReadout,
   matchCameraMovementTeachingCase,
   type CameraMovementPublicCaseId,
@@ -250,10 +251,15 @@ export const SimulatorWorkspace = ({
   ]);
   const teachingReadout = useMemo(
     () =>
-      activeTeachingCaseId
-        ? formatCameraMovementPublicReadout(activeTeachingCaseId)
-        : null,
-    [activeTeachingCaseId],
+      camera.cameraMovementLessonState
+        ? formatCameraMovementLessonReadout(
+            camera.cameraMovementLessonState,
+            activeTeachingCaseId,
+          )
+        : activeTeachingCaseId
+          ? formatCameraMovementPublicReadout(activeTeachingCaseId)
+          : null,
+    [activeTeachingCaseId, camera.cameraMovementLessonState],
   );
   const cameraMovementCalibrationDiagnostics = useMemo(() => {
     if (

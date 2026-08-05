@@ -3,6 +3,7 @@ import { useAppStore } from "../../state/appStore";
 import {
   CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES,
   buildCameraMovementTeachingCasePatch,
+  formatCameraMovementLessonReadout,
   formatCameraMovementPublicReadout,
   matchCameraMovementTeachingCase,
   CAMERA_MOVEMENT_CASE_MATCH_TOLERANCE,
@@ -253,6 +254,69 @@ describe("camera movement public readout formatting", () => {
     expect(c2.label).not.toContain("Front rise");
     const d2 = formatCameraMovementPublicReadout("D2-rear-fall");
     expect(d2.label).not.toContain("Front rise");
+  });
+
+  it("formats continuous Viewpoint states without legacy case codes", () => {
+    expect(
+      formatCameraMovementLessonReadout({
+        study: "viewpoint",
+        viewpointT: -0.37,
+        activeStandard: "rear",
+        tiltDeg: 0,
+        framingT: 0,
+      }),
+    ).toEqual({
+      caseId: null,
+      title: "Viewpoint",
+      label: "Lower viewpoint",
+      value: "37% toward lower viewpoint",
+    });
+    expect(
+      formatCameraMovementLessonReadout({
+        study: "viewpoint",
+        viewpointT: 1,
+        activeStandard: "front",
+        tiltDeg: 0,
+        framingT: 0,
+      }),
+    ).toEqual({
+      caseId: null,
+      title: "Viewpoint",
+      label: "Higher viewpoint",
+      value: "",
+    });
+  });
+
+  it("formats signed continuous Tilt states for the active standard", () => {
+    expect(
+      formatCameraMovementLessonReadout({
+        study: "tilt",
+        viewpointT: 0,
+        activeStandard: "rear",
+        tiltDeg: -3.2,
+        framingT: 0,
+      }),
+    ).toEqual({
+      caseId: null,
+      title: "Tilt",
+      label: "Rear tilt",
+      value: "-3.2°",
+    });
+  });
+
+  it("keeps legacy labels only for the temporary vertical-framing adapter", () => {
+    expect(
+      formatCameraMovementLessonReadout(
+        {
+          study: "vertical-framing",
+          viewpointT: 0,
+          activeStandard: "front",
+          tiltDeg: 0,
+          framingT: 1,
+        },
+        "C1-front-rise",
+      ).label,
+    ).toContain("C1 · Front rise");
   });
 });
 

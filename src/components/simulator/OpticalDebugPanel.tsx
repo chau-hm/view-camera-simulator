@@ -14,6 +14,11 @@ import type {
 } from "../../render/groundGlassRttDimensions";
 import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugConstruction";
 import type { CameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
+import {
+  getLazySceneAssets,
+  getPreloadSceneAssets,
+  getRequiredSceneAssets,
+} from "../../scenes/definitions";
 
 type OpticalDebugLayer = {
   label: "Original" | "Current";
@@ -120,6 +125,7 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
           <div><strong>Aperture:</strong> f/{aperture}</div>
           <div><strong>Focus distance:</strong> {typeof focusDistanceMm === "number" ? `${focusDistanceMm.toFixed(1)} mm` : "—"}</div>
           <div><strong>Lens center:</strong> {lens.x.toFixed(1)}, {lens.y.toFixed(1)}, {lens.z.toFixed(1)} mm</div>
+          <div data-testid="optical-debug-front-y-mm"><strong>Front standard Y:</strong> {lens.y.toFixed(1)} mm</div>
           <div><strong>Film center:</strong> {film.x.toFixed(1)}, {film.y.toFixed(1)}, {film.z.toFixed(1)} mm</div>
           <div><strong>Film normal:</strong> {filmNormal.x.toFixed(3)}, {filmNormal.y.toFixed(3)}, {filmNormal.z.toFixed(3)}</div>
           <div><strong>Optical axis:</strong> {axis.x.toFixed(3)}, {axis.y.toFixed(3)}, {axis.z.toFixed(3)}</div>
@@ -282,6 +288,14 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({
         },
       ]
     : null;
+  const sceneAssetCounts = React.useMemo(
+    () => ({
+      required: getRequiredSceneAssets(sceneId).length,
+      lazy: getLazySceneAssets(sceneId).length,
+      preload: getPreloadSceneAssets(sceneId).length,
+    }),
+    [sceneId],
+  );
 
   return (
     <div className="simulator-info-card simulator-info-card--debug optical-debug">
@@ -294,6 +308,15 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({
         </summary>
 
         <div className="optical-debug__content">
+          <details className="optical-debug__group" data-testid="optical-debug-scene-assets">
+            <summary>Scene assets</summary>
+            <div className="optical-debug__group-content">
+              <div><strong>Required:</strong> {sceneAssetCounts.required}</div>
+              <div><strong>Lazy for current scene:</strong> {sceneAssetCounts.lazy}</div>
+              <div><strong>Preload for next scene:</strong> {sceneAssetCounts.preload}</div>
+            </div>
+          </details>
+
           {comparisonLayers ? (
             <div className="optical-debug__comparison" aria-label="Original and Current optical diagnostics">
               {comparisonLayers.map((layer) => {

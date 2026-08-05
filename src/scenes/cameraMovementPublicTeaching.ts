@@ -3,6 +3,7 @@ import type { CameraRigViewpointAnchor } from "../types/optics";
 import { formatDegrees, formatMillimeter } from "../utils/formatters";
 import {
   cameraMovementLessonStatesEqual,
+  normalizeCameraMovementLessonState,
 } from "./cameraMovementLessonState";
 import {
   CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION,
@@ -179,7 +180,7 @@ export const buildCameraMovementTeachingCasePatch = (
 
 /** Public readout for the active movement, derived from the matched case. */
 export type CameraMovementPublicReadout = {
-  caseId: CameraMovementPublicCaseId;
+  caseId: CameraMovementPublicCaseId | null;
   title: string;
   label: string;
   value: string;
@@ -250,4 +251,63 @@ export const formatCameraMovementPublicReadout = (
   }
 
   return { caseId, title, label, value: "" };
+};
+
+const formatSignedTilt = (tiltDeg: number): string =>
+  tiltDeg === 0
+    ? formatDegrees(0)
+    : tiltDeg < 0
+    ? `-${formatDegrees(Math.abs(tiltDeg))}`
+    : `+${formatDegrees(tiltDeg)}`;
+
+/**
+ * Format the active continuous lesson state for public readouts. Legacy case
+ * codes remain available only for the temporary vertical-framing adapter;
+ * Viewpoint and Tilt are described by their semantic continuous controls.
+ */
+export const formatCameraMovementLessonReadout = (
+  lessonState: CameraMovementLessonState,
+  verticalFramingCaseId: CameraMovementPublicCaseId | null = null,
+): CameraMovementPublicReadout => {
+  const normalized = normalizeCameraMovementLessonState(lessonState);
+
+  switch (normalized.study) {
+    case "viewpoint": {
+      if (normalized.viewpointT === 0) {
+        return {
+          caseId: null,
+          title: "Viewpoint",
+          label: "Neutral viewpoint",
+          value: "",
+        };
+      }
+      const direction = normalized.viewpointT < 0 ? "lower" : "higher";
+      const percent = Math.round(Math.abs(normalized.viewpointT) * 100);
+      return {
+        caseId: null,
+        title: "Viewpoint",
+        label: `${direction[0].toUpperCase()}${direction.slice(1)} viewpoint`,
+        value: percent === 100 ? "" : `${percent}% toward ${direction} viewpoint`,
+      };
+    }
+    case "tilt": {
+      const standard = normalized.activeStandard === "front" ? "Front" : "Rear";
+      return {
+        caseId: null,
+        title: "Tilt",
+        label: `${standard} tilt`,
+        value: formatSignedTilt(normalized.tiltDeg),
+      };
+    }
+    case "vertical-framing":
+      if (verticalFramingCaseId) {
+        return formatCameraMovementPublicReadout(verticalFramingCaseId);
+      }
+      return {
+        caseId: null,
+        title: "Vertical framing",
+        label: "Vertical framing",
+        value: normalized.framingT > 0 ? "Upper" : normalized.framingT < 0 ? "Lower" : "Middle",
+      };
+  }
 };
