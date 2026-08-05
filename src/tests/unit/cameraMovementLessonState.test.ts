@@ -82,19 +82,37 @@ describe("continuous camera-movement lesson state", () => {
   it("normalizes the continuous ranges and clears inactive study dimensions", () => {
     expect(
       normalizeCameraMovementLessonState({
-        study: "tilt",
-        viewpointT: 3,
-        activeStandard: "rear",
-        tiltDeg: 999,
-        framingT: -3,
+      study: "tilt",
+      viewpointT: 3,
+      activeStandard: "rear",
+      tiltDeg: 999,
+      framingT: -3,
       }),
     ).toEqual({
       study: "tilt",
       viewpointT: 0,
       activeStandard: "rear",
-      tiltDeg: 10,
+      tiltDeg: CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.tiltDeg,
       framingT: 0,
     });
+  });
+
+  it("clamps Tilt to the calibrated public teaching magnitude", () => {
+    const limit = CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.tiltDeg;
+    expect(
+      normalizeCameraMovementLessonState({
+        study: "tilt",
+        activeStandard: "front",
+        tiltDeg: limit + 1,
+      }).tiltDeg,
+    ).toBe(limit);
+    expect(
+      normalizeCameraMovementLessonState({
+        study: "tilt",
+        activeStandard: "rear",
+        tiltDeg: -limit - 1,
+      }).tiltDeg,
+    ).toBe(-limit);
   });
 
   it("maps the legacy teaching cases through the continuous contract", () => {
@@ -268,7 +286,7 @@ describe("continuous camera-movement lesson state", () => {
       ],
       [
         { study: "tilt", viewpointT: 0.5, activeStandard: "front", tiltDeg: 6, framingT: 0.5 },
-        { viewpointT: 0, cameraBodyPitchDeg: 0, frontTiltDeg: 6, rearTiltDeg: 0, frontRiseMm: 0, rearRiseMm: 0 },
+        { viewpointT: 0, cameraBodyPitchDeg: 0, frontTiltDeg: CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.tiltDeg, rearTiltDeg: 0, frontRiseMm: 0, rearRiseMm: 0 },
       ],
       [
         { study: "tilt", viewpointT: -0.5, activeStandard: "rear", tiltDeg: -4, framingT: -0.5 },

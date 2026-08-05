@@ -1,5 +1,4 @@
 import { clamp } from "../core/math/clamps";
-import { CAMERA_CONSTANTS } from "../utils/constants";
 import type {
   ActiveStandard,
   CameraMovementLessonState,
@@ -38,6 +37,8 @@ const isActiveStandard = (value: unknown): value is ActiveStandard =>
 const finiteOr = (value: unknown, fallback: number): number =>
   typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
+const LESSON_TILT_LIMIT_DEG = Math.abs(CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.tiltDeg);
+
 /**
  * Normalize the lesson state at the canonical state boundary. Inactive study
  * dimensions are zeroed here so stale values cannot leak into physical views.
@@ -58,8 +59,8 @@ export const normalizeCameraMovementLessonState = (
   );
   const tiltDeg = clamp(
     finiteOr(input?.tiltDeg, 0),
-    CAMERA_CONSTANTS.tiltMinDeg,
-    CAMERA_CONSTANTS.tiltMaxDeg,
+    -LESSON_TILT_LIMIT_DEG,
+    LESSON_TILT_LIMIT_DEG,
   );
   const framingT = clamp(finiteOr(input?.framingT, 0), -1, 1);
 
