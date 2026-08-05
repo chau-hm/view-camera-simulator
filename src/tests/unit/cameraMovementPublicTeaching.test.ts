@@ -304,7 +304,7 @@ describe("camera movement public readout formatting", () => {
     });
   });
 
-  it("keeps legacy labels only for the temporary vertical-framing adapter", () => {
+  it("formats vertical framing with the active standard and resolved physical millimetres", () => {
     expect(
       formatCameraMovementLessonReadout(
         {
@@ -314,9 +314,38 @@ describe("camera movement public readout formatting", () => {
           tiltDeg: 0,
           framingT: 1,
         },
-        "C1-front-rise",
+        { frontRiseMm: 20, rearRiseMm: 0 },
+      ),
+    ).toEqual({
+      caseId: null,
+      title: "Vertical framing",
+      label: "Front standard",
+      value: "Upper framing · +20.0 mm",
+    });
+    expect(
+      formatCameraMovementLessonReadout(
+        {
+          study: "vertical-framing",
+          viewpointT: 0,
+          activeStandard: "rear",
+          tiltDeg: 0,
+          framingT: -0.35,
+        },
+        { frontRiseMm: 0, rearRiseMm: -7 },
       ).label,
-    ).toContain("C1 · Front rise");
+    ).toBe("Rear standard");
+    expect(
+      formatCameraMovementLessonReadout(
+        {
+          study: "vertical-framing",
+          viewpointT: 0,
+          activeStandard: "rear",
+          tiltDeg: 0,
+          framingT: -0.35,
+        },
+        { frontRiseMm: 0, rearRiseMm: -7 },
+      ).value,
+    ).toBe("Lower framing · -7.0 mm");
   });
 });
 

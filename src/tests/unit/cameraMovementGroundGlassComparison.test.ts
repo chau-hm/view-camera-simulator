@@ -125,6 +125,43 @@ describe("camera-movement Ground Glass comparison resolver", () => {
     },
   );
 
+  it("propagates continuous study presentation without changing physical targets", () => {
+    const viewpoint = resolveCameraMovementGroundGlassComparison({
+      camera: cameraForRoute({
+        cameraMovementLessonState: {
+          study: "viewpoint",
+          viewpointT: 0.5,
+          activeStandard: "rear",
+          tiltDeg: 0,
+          framingT: 0,
+        },
+      }),
+      targetRegion: "middle",
+    });
+    expect(viewpoint.presentationTargetRegion).toBe("whole");
+    expect(viewpoint.original.presentationTargetRegion).toBe("whole");
+    expect(viewpoint.current.presentationTargetRegion).toBe("whole");
+    expect(viewpoint.targetRegion).toBe("middle");
+
+    const vertical = resolveCameraMovementGroundGlassComparison({
+      camera: cameraForRoute({
+        frontRiseMm: 10,
+        cameraMovementLessonState: {
+          study: "vertical-framing",
+          viewpointT: 0,
+          activeStandard: "front",
+          tiltDeg: 0,
+          framingT: 0.5,
+        },
+      }),
+      targetRegion: "middle",
+    });
+    expect(vertical.presentationTargetRegion).toBe("upper");
+    expect(vertical.original.presentationTargetRegion).toBe("upper");
+    expect(vertical.current.presentationTargetRegion).toBe("upper");
+    expect(vertical.targetRegion).toBe("middle");
+  });
+
   it("keeps effective calibration identity and physical values shared after an override", () => {
     const calibration = resolveEffectiveCameraMovementCalibration(
       CAMERA_MOVEMENT_CALIBRATION_BASELINE,

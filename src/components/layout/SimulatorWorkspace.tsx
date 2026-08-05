@@ -254,12 +254,20 @@ export const SimulatorWorkspace = ({
       camera.cameraMovementLessonState
         ? formatCameraMovementLessonReadout(
             camera.cameraMovementLessonState,
-            activeTeachingCaseId,
+            {
+              frontRiseMm: camera.frontRiseMm,
+              rearRiseMm: camera.rearRiseMm,
+            },
           )
         : activeTeachingCaseId
           ? formatCameraMovementPublicReadout(activeTeachingCaseId)
           : null,
-    [activeTeachingCaseId, camera.cameraMovementLessonState],
+    [
+      activeTeachingCaseId,
+      camera.cameraMovementLessonState,
+      camera.frontRiseMm,
+      camera.rearRiseMm,
+    ],
   );
   const cameraMovementCalibrationDiagnostics = useMemo(() => {
     if (

@@ -180,6 +180,8 @@ test("Understanding Camera Movements Camera focus follows continuous viewpoint c
   const cameraButton = page.getByRole("button", { name: "Camera", exact: true });
   const sceneButton = page.getByRole("button", { name: "Scene", exact: true });
   const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
+  const framing = page.getByRole("slider", { name: "Vertical framing" });
+  const framingStandards = page.getByRole("group", { name: "Vertical framing standard" });
   await cameraButton.click();
   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");
 
@@ -209,6 +211,25 @@ test("Understanding Camera Movements Camera focus follows continuous viewpoint c
       ),
     ).toBe(true);
   };
+
+  // Standard vertical framing changes the image movement while the complete
+  // camera remains at the neutral inspection pivot.
+  await framing.fill("0.5");
+  await expect(framing).toHaveValue("0.5");
+  const frontFramingView = await expectCameraFocusTarget(sceneCanvas);
+  expect(frontFramingView.target).toEqual(neutralView.target);
+  expectTranslatedByTargetDelta(neutralView, frontFramingView);
+  expectSameObserverOffset(neutralView, frontFramingView);
+  expect(viewDistance(frontFramingView)).toBeCloseTo(inspectionDistance, 5);
+  await expectRendererIdentitiesStable();
+
+  await framingStandards.getByRole("radio", { name: "Rear standard" }).click();
+  const rearFramingView = await expectCameraFocusTarget(sceneCanvas);
+  expect(rearFramingView.target).toEqual(neutralView.target);
+  expectTranslatedByTargetDelta(frontFramingView, rearFramingView);
+  expectSameObserverOffset(frontFramingView, rearFramingView);
+  expect(viewDistance(rearFramingView)).toBeCloseTo(inspectionDistance, 5);
+  await expectRendererIdentitiesStable();
 
   await viewpoint.fill("0.5");
   await expect(viewpoint).toHaveValue("0.5");

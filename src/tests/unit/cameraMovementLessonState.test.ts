@@ -6,6 +6,7 @@ import { useAppStore } from "../../state/appStore";
 import type { CameraMovementLessonState } from "../../types/camera";
 import type { CameraRigPlacement } from "../../types/optics";
 import {
+  CAMERA_MOVEMENT_VERTICAL_FRAMING_ENDPOINTS,
   CAMERA_MOVEMENT_SCENE_CALIBRATION,
 } from "../../scenes/cameraMovementSceneCalibration";
 import {
@@ -340,6 +341,72 @@ describe("continuous camera-movement lesson state", () => {
     expect(front.rearRiseMm).toBe(0);
     expect(rear.frontTiltDeg).toBe(0);
     expect(rear.rearTiltDeg).toBe(CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.tiltDeg);
+  });
+
+  it("interpolates each standard's independently calibrated framing endpoints", () => {
+    const endpoints = {
+      front: { lowerMm: -12, upperMm: 24 },
+      rear: { lowerMm: -18, upperMm: 30 },
+    } as const;
+    const frontUpper = resolveCameraMovementLessonState(
+      {
+        study: "vertical-framing",
+        viewpointT: 0,
+        activeStandard: "front",
+        tiltDeg: 0,
+        framingT: 0.5,
+      },
+      calibration,
+      CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
+      endpoints,
+    );
+    const frontLower = resolveCameraMovementLessonState(
+      {
+        study: "vertical-framing",
+        viewpointT: 0,
+        activeStandard: "front",
+        tiltDeg: 0,
+        framingT: -0.5,
+      },
+      calibration,
+      CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
+      endpoints,
+    );
+    const rearUpper = resolveCameraMovementLessonState(
+      {
+        study: "vertical-framing",
+        viewpointT: 0,
+        activeStandard: "rear",
+        tiltDeg: 0,
+        framingT: 0.5,
+      },
+      calibration,
+      CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
+      endpoints,
+    );
+    const rearLower = resolveCameraMovementLessonState(
+      {
+        study: "vertical-framing",
+        viewpointT: 0,
+        activeStandard: "rear",
+        tiltDeg: 0,
+        framingT: -0.5,
+      },
+      calibration,
+      CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
+      endpoints,
+    );
+
+    expect(frontUpper.frontRiseMm).toBe(12);
+    expect(frontLower.frontRiseMm).toBe(-6);
+    expect(rearUpper.rearRiseMm).toBe(15);
+    expect(rearLower.rearRiseMm).toBe(-9);
+    expect(frontUpper.rearRiseMm).toBe(0);
+    expect(rearUpper.frontRiseMm).toBe(0);
+    expect(CAMERA_MOVEMENT_VERTICAL_FRAMING_ENDPOINTS.front).toEqual({
+      lowerMm: -CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.riseMm,
+      upperMm: CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.riseMm,
+    });
   });
 
   it("presents the complete lattice for every viewpoint position", () => {

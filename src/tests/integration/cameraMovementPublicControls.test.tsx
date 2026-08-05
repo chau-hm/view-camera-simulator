@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
@@ -44,11 +44,22 @@ afterEach(() => {
 describe("public camera movement controls in the workspace", () => {
   it("renders one live Current Ground Glass and no comparison panes on the public route", () => {
     render(publicWorkspace());
-    expect(screen.getByRole("slider", { name: "Viewpoint" })).toBeInTheDocument();
-    expect(screen.getByRole("slider", { name: "Tilt" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Front standard" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Rear standard" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "C1 — Front rise" })).toBeInTheDocument();
+    const movementControls = screen.getByRole("region", { name: "Camera Movement" });
+    expect(within(movementControls).getByRole("slider", { name: "Viewpoint" })).toBeInTheDocument();
+    expect(within(movementControls).getByRole("slider", { name: "Tilt" })).toBeInTheDocument();
+    expect(within(movementControls).getByRole("slider", { name: "Vertical framing" })).toBeInTheDocument();
+    expect(within(movementControls).getAllByRole("slider")).toHaveLength(3);
+    expect(
+      within(screen.getByRole("group", { name: "Tilt standard" })).getByRole("radio", {
+        name: "Front standard",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("group", { name: "Vertical framing standard" })).getByRole("radio", {
+        name: "Rear standard",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "C1 — Front rise" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "A — Front tilt" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "C3 — Higher viewpoint" })).not.toBeInTheDocument();
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
@@ -155,6 +166,19 @@ describe("public camera movement controls in the workspace", () => {
     });
     expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
     expect(screen.getByRole("button", { name: "Reset Ground Glass preview view" })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("slider", { name: "Vertical framing" }), {
+      target: { value: "0.5" },
+    });
+    expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
+    expect(screen.getByRole("status")).toHaveTextContent("Upper framing");
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Vertical framing standard" })).getByRole("radio", {
+        name: "Rear standard",
+      }),
+    );
+    expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
+    expect(screen.getByRole("status")).toHaveTextContent("Rear standard · Upper framing");
   });
 
   it("exposes the live default RTT channel in optical diagnostics", () => {

@@ -80,38 +80,45 @@ test("public camera-movement Ground Glass renders one live Current view through 
 
   const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
   const tilt = page.getByRole("slider", { name: "Tilt" });
+  const framing = page.getByRole("slider", { name: "Vertical framing" });
+  const tiltStandards = page.getByRole("group", { name: "Tilt standard" });
+  const framingStandards = page.getByRole("group", { name: "Vertical framing standard" });
   const movementStatus = page.locator(".camera-movement-controls__status");
   await tilt.fill("3.2");
   await expect(tilt).toHaveValue("3.2");
-  await expect(page.getByRole("radio", { name: "Front standard" })).toBeChecked();
+  await expect(tiltStandards.getByRole("radio", { name: "Front standard" })).toBeChecked();
   await expect(movementStatus).toContainText("Front tilt · +3.2°");
   let previousSanityState = await waitForSanityStateChange(neutralSanityState!);
   await assertPresentation("middle");
 
-  await page.getByRole("radio", { name: "Rear standard" }).click();
-  await expect(page.getByRole("radio", { name: "Rear standard" })).toBeChecked();
+  await tiltStandards.getByRole("radio", { name: "Rear standard" }).click();
+  await expect(tiltStandards.getByRole("radio", { name: "Rear standard" })).toBeChecked();
   await expect(tilt).toHaveValue("3.2");
   await expect(movementStatus).toContainText("Rear tilt · +3.2°");
   previousSanityState = await waitForSanityStateChange(previousSanityState);
   await assertPresentation("middle");
 
-  await page.getByRole("radio", { name: "C1 — Front rise" }).click();
-  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toBeChecked();
+  // Transfer the preserved framing value to the Front standard and apply the
+  // C1-compatible upper endpoint through the continuous control.
+  await framingStandards.getByRole("radio", { name: "Front standard" }).click();
+  await framing.fill("1");
+  await expect(framing).toHaveValue("1");
   previousSanityState = await waitForSanityStateChange(previousSanityState);
   await assertPresentation("upper");
 
   await viewpoint.fill("1");
   await expect(viewpoint).toHaveValue("1");
-  await waitForSanityStateChange(previousSanityState);
+  previousSanityState = await waitForSanityStateChange(previousSanityState);
   await assertPresentation("whole");
 
   const presentationCases: Array<{ change: () => Promise<void>; expectedRegion: string }> = [
     { change: async () => tilt.fill("-2.4"), expectedRegion: "middle" },
-    { change: async () => page.getByRole("radio", { name: "Front standard" }).click(), expectedRegion: "middle" },
-    { change: async () => page.getByRole("radio", { name: "C1 — Front rise" }).click(), expectedRegion: "upper" },
-    { change: async () => page.getByRole("radio", { name: "C2 — Rear rise" }).click(), expectedRegion: "upper" },
-    { change: async () => page.getByRole("radio", { name: "D1 — Front fall" }).click(), expectedRegion: "lower" },
-    { change: async () => page.getByRole("radio", { name: "D2 — Rear fall" }).click(), expectedRegion: "lower" },
+    { change: async () => tiltStandards.getByRole("radio", { name: "Rear standard" }).click(), expectedRegion: "middle" },
+    { change: async () => framingStandards.getByRole("radio", { name: "Front standard" }).click(), expectedRegion: "middle" },
+    { change: async () => framing.fill("1"), expectedRegion: "upper" },
+    { change: async () => framingStandards.getByRole("radio", { name: "Rear standard" }).click(), expectedRegion: "upper" },
+    { change: async () => framing.fill("-1"), expectedRegion: "lower" },
+    { change: async () => framingStandards.getByRole("radio", { name: "Front standard" }).click(), expectedRegion: "lower" },
     { change: async () => viewpoint.fill("1"), expectedRegion: "whole" },
     { change: async () => viewpoint.fill("-1"), expectedRegion: "whole" },
     { change: async () => viewpoint.fill("0"), expectedRegion: "whole" },
@@ -119,6 +126,7 @@ test("public camera-movement Ground Glass renders one live Current view through 
 
   for (const { change, expectedRegion } of presentationCases) {
     await change();
+    previousSanityState = await waitForSanityStateChange(previousSanityState);
     await assertPresentation(expectedRegion);
   }
 

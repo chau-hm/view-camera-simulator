@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { CameraMovementTeachingControls } from "../../components/controls/CameraMovementTeachingControls";
 import {
@@ -19,7 +19,7 @@ const onPublicRoute = () => {
 };
 
 describe("CameraMovementTeachingControls", () => {
-  it("renders semantic Viewpoint and Tilt controls with temporary framing adapters", () => {
+  it("renders the three continuous semantic movement studies", () => {
     onPublicRoute();
     render(<CameraMovementTeachingControls />);
 
@@ -33,8 +33,17 @@ describe("CameraMovementTeachingControls", () => {
     expect(screen.getByRole("slider", { name: "Tilt" })).toHaveAttribute("min", "-5");
     expect(screen.getByRole("slider", { name: "Tilt" })).toHaveAttribute("max", "5");
     expect(screen.getByRole("slider", { name: "Tilt" })).toHaveAttribute("step", "0.1");
-    expect(screen.getByRole("radio", { name: "Front standard" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "Rear standard" })).not.toBeChecked();
+    expect(screen.getByRole("slider", { name: "Vertical framing" })).toHaveAttribute("min", "-1");
+    expect(screen.getByRole("slider", { name: "Vertical framing" })).toHaveAttribute("max", "1");
+    expect(screen.getByRole("slider", { name: "Vertical framing" })).toHaveAttribute("step", "0.01");
+    expect(screen.getAllByRole("slider")).toHaveLength(3);
+
+    const tiltStandards = within(screen.getByRole("group", { name: "Tilt standard" }));
+    expect(tiltStandards.getByRole("radio", { name: "Front standard" })).toBeChecked();
+    expect(tiltStandards.getByRole("radio", { name: "Rear standard" })).not.toBeChecked();
+    const framingStandards = within(screen.getByRole("group", { name: "Vertical framing standard" }));
+    expect(framingStandards.getByRole("radio", { name: "Front standard" })).toBeChecked();
+    expect(framingStandards.getByRole("radio", { name: "Rear standard" })).not.toBeChecked();
 
     for (const label of [
       "C1 — Front rise",
@@ -42,7 +51,7 @@ describe("CameraMovementTeachingControls", () => {
       "D1 — Front fall",
       "D2 — Rear fall",
     ]) {
-      expect(screen.getByRole("radio", { name: label })).toBeInTheDocument();
+      expect(screen.queryByRole("radio", { name: label })).not.toBeInTheDocument();
     }
     for (const label of [
       "Neutral",
@@ -61,10 +70,13 @@ describe("CameraMovementTeachingControls", () => {
 
     const viewpoint = screen.getByRole("slider", { name: "Viewpoint" });
     const tilt = screen.getByRole("slider", { name: "Tilt" });
+    const framing = screen.getByRole("slider", { name: "Vertical framing" });
     expect(viewpoint).toHaveValue("0");
     expect(viewpoint).toHaveAttribute("aria-valuetext", "Neutral viewpoint");
     expect(tilt).toHaveValue("0");
     expect(tilt).toHaveAttribute("aria-valuetext", "Front standard, zero tilt");
+    expect(framing).toHaveValue("0");
+    expect(framing).toHaveAttribute("aria-valuetext", "Front standard, middle framing");
     expect(screen.getByRole("status")).toHaveTextContent("Neutral viewpoint");
   });
 
@@ -142,7 +154,11 @@ describe("CameraMovementTeachingControls", () => {
     expect(resolveCameraMovementLessonPresentationTargetRegion(state.camera.cameraMovementLessonState!)).toBe("middle");
     expect(screen.getByRole("status")).toHaveTextContent("Front tilt · +5.0°");
 
-    fireEvent.click(screen.getByRole("radio", { name: "Rear standard" }));
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Tilt standard" })).getByRole("radio", {
+        name: "Rear standard",
+      }),
+    );
     state = useAppStore.getState();
     expect(state.camera.cameraMovementLessonState).toMatchObject({
       study: "tilt",
@@ -160,7 +176,11 @@ describe("CameraMovementTeachingControls", () => {
   it("keeps negative Tilt signed and does not mix in viewpoint or framing", () => {
     onPublicRoute();
     render(<CameraMovementTeachingControls />);
-    fireEvent.click(screen.getByRole("radio", { name: "Rear standard" }));
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Tilt standard" })).getByRole("radio", {
+        name: "Rear standard",
+      }),
+    );
     fireEvent.change(screen.getByRole("slider", { name: "Tilt" }), {
       target: { value: "-3.2" },
     });
@@ -187,10 +207,12 @@ describe("CameraMovementTeachingControls", () => {
   it("activates Tilt from Vertical Framing and clears rise/fall", () => {
     onPublicRoute();
     render(<CameraMovementTeachingControls />);
-    fireEvent.click(screen.getByRole("radio", { name: "C1 — Front rise" }));
+    fireEvent.change(screen.getByRole("slider", { name: "Vertical framing" }), {
+      target: { value: "0.5" },
+    });
     expect(useAppStore.getState().camera.cameraMovementLessonState).toMatchObject({
       study: "vertical-framing",
-      framingT: 1,
+      framingT: 0.5,
     });
 
     fireEvent.change(screen.getByRole("slider", { name: "Tilt" }), {
@@ -207,6 +229,68 @@ describe("CameraMovementTeachingControls", () => {
     expect(state.camera.rearRiseMm).toBe(0);
     expect(state.camera.frontTiltDeg).toBe(-3);
     expect(state.camera.viewpointAnchor).toBe("mid");
+  });
+
+  it("resolves continuous Front vertical framing into physical rise and semantic readout", () => {
+    onPublicRoute();
+    render(<CameraMovementTeachingControls />);
+
+    fireEvent.change(screen.getByRole("slider", { name: "Vertical framing" }), {
+      target: { value: "0.5" },
+    });
+    let state = useAppStore.getState();
+    expect(state.camera.cameraMovementLessonState).toMatchObject({
+      study: "vertical-framing",
+      activeStandard: "front",
+      framingT: 0.5,
+    });
+    expect(state.camera.frontRiseMm).toBe(10);
+    expect(state.camera.rearRiseMm).toBe(0);
+    expect(screen.getByRole("slider", { name: "Vertical framing" })).toHaveAttribute(
+      "aria-valuetext",
+      "Front standard, 50% toward upper framing",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Front standard · Upper framing · +10.0 mm",
+    );
+
+    fireEvent.change(screen.getByRole("slider", { name: "Vertical framing" }), {
+      target: { value: "-0.25" },
+    });
+    state = useAppStore.getState();
+    expect(state.camera.frontRiseMm).toBe(-5);
+    expect(state.scene.targetRegion).toBe("middle");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Front standard · Lower framing · -5.0 mm",
+    );
+  });
+
+  it("preserves vertical framing while transferring it to the selected Rear standard", () => {
+    onPublicRoute();
+    render(<CameraMovementTeachingControls />);
+    const framingStandards = within(
+      screen.getByRole("group", { name: "Vertical framing standard" }),
+    );
+
+    fireEvent.change(screen.getByRole("slider", { name: "Vertical framing" }), {
+      target: { value: "0.35" },
+    });
+    fireEvent.click(framingStandards.getByRole("radio", { name: "Rear standard" }));
+
+    const state = useAppStore.getState();
+    expect(state.camera.cameraMovementLessonState).toMatchObject({
+      study: "vertical-framing",
+      activeStandard: "rear",
+      framingT: 0.35,
+      viewpointT: 0,
+      tiltDeg: 0,
+    });
+    expect(state.camera.frontRiseMm).toBe(0);
+    expect(state.camera.rearRiseMm).toBe(7);
+    expect(screen.getByRole("slider", { name: "Vertical framing" })).toHaveValue("0.35");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Rear standard · Upper framing · +7.0 mm",
+    );
   });
 
   it("resets continuous studies to the canonical neutral state", () => {

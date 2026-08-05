@@ -92,12 +92,15 @@ test("camera movements scene loads and renders valid Ground Glass content", asyn
 
   await expect(page.getByRole("slider", { name: "Viewpoint" })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Tilt" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "Front standard" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "Rear standard" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "C2 — Rear rise" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "D1 — Front fall" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "D2 — Rear fall" })).toBeVisible();
+  await expect(page.getByRole("slider", { name: "Vertical framing" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Tilt standard" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Vertical framing standard" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Tilt standard" }).getByRole("radio", { name: "Front standard" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Vertical framing standard" }).getByRole("radio", { name: "Rear standard" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "C2 — Rear rise" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "D1 — Front fall" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "D2 — Rear fall" })).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "Neutral" })).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "A — Front tilt" })).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "C3 — Higher viewpoint" })).toHaveCount(0);
@@ -107,7 +110,7 @@ test("camera movements scene loads and renders valid Ground Glass content", asyn
   await expect(page.getByRole("button", { name: "Restart Task" })).toHaveCount(0);
 });
 
-test("continuous viewpoint and tilt plus framing adapters change Ground Glass without breaking", async ({ page }) => {
+test("continuous viewpoint, tilt, and vertical framing change Ground Glass without breaking", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   const rtt = publicCurrentRtt(page);
@@ -116,19 +119,24 @@ test("continuous viewpoint and tilt plus framing adapters change Ground Glass wi
 
   const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
   const tilt = page.getByRole("slider", { name: "Tilt" });
+  const framing = page.getByRole("slider", { name: "Vertical framing" });
+  const tiltStandards = page.getByRole("group", { name: "Tilt standard" });
+  const framingStandards = page.getByRole("group", { name: "Vertical framing standard" });
   await tilt.fill("3.2");
   await expect(tilt).toHaveValue("3.2");
-  await page.getByRole("radio", { name: "Rear standard" }).click();
-  await expect(page.getByRole("radio", { name: "Rear standard" })).toBeChecked();
+  await tiltStandards.getByRole("radio", { name: "Rear standard" }).click();
+  await expect(tiltStandards.getByRole("radio", { name: "Rear standard" })).toBeChecked();
   await expect(tilt).toHaveValue("3.2");
   await viewpoint.fill("0.5");
   await expect(viewpoint).toHaveValue("0.5");
   await viewpoint.fill("1");
   await expect(viewpoint).toHaveValue("1");
-  await page.getByRole("radio", { name: "C1 — Front rise" }).click();
-  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toBeChecked();
-  await page.getByRole("radio", { name: "D2 — Rear fall" }).click();
-  await expect(page.getByRole("radio", { name: "D2 — Rear fall" })).toBeChecked();
+  await framingStandards.getByRole("radio", { name: "Front standard" }).click();
+  await framing.fill("1");
+  await expect(framing).toHaveValue("1");
+  await framingStandards.getByRole("radio", { name: "Rear standard" }).click();
+  await framing.fill("-1");
+  await expect(framing).toHaveValue("-1");
 
   // RTT stays valid after each continuous or compatibility transition.
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 5000 });
@@ -237,8 +245,8 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   expect(initialRttGeneration).toBeTruthy();
   expect(initialRttCameraPosition).toBeTruthy();
 
-  await page.getByRole("radio", { name: "C1 — Front rise" }).click();
-  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toBeChecked();
+  await page.getByRole("slider", { name: "Vertical framing" }).fill("1");
+  await expect(page.getByRole("slider", { name: "Vertical framing" })).toHaveValue("1");
   await expect
     .poll(() => rtt.getAttribute("data-rtt-camera-position"))
     .not.toBe(initialRttCameraPosition);
