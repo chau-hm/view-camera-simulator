@@ -36,7 +36,6 @@ import {
   matchCameraMovementTeachingCase,
   type CameraMovementPublicCaseId,
 } from "../../scenes/cameraMovementPublicTeaching";
-import { resolveCameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
 
 type SimulatorWorkspaceProps = {
   mode: SimulatorMode;
@@ -300,18 +299,6 @@ export const SimulatorWorkspace = ({
     sceneId === "understanding-camera-movements" &&
     mode === "free" &&
     !calibrationEnabled;
-  const groundGlassComparison = useMemo(
-    () =>
-      showPublicTeachingControls
-        ? resolveCameraMovementGroundGlassComparison({
-            camera,
-            opticsState,
-            currentTargetRegion: targetRegion,
-            effectiveCalibration: effectiveCameraMovementCalibration,
-          })
-        : null,
-    [camera, effectiveCameraMovementCalibration, opticsState, showPublicTeachingControls, targetRegion],
-  );
 
   // enabled controls currently depend only on mode, task metadata, and active scene.
   // Avoid depending on the entire camera object because movement/focus changes should not recompute this set.
@@ -334,7 +321,6 @@ export const SimulatorWorkspace = ({
 
   // RTT runtime info
   const rttRuntimeInfo = useAppStore((s) => s.groundGlassRttRuntimeInfo);
-  const rttRuntimeInfoByChannel = useAppStore((s) => s.groundGlassRttRuntimeInfoByChannel);
 
   const tableTiltFocusMetric =
     safeScene.id === "table-tilt" && mode === "free" ? "point" : "patch";
@@ -462,13 +448,6 @@ export const SimulatorWorkspace = ({
                 restoreFocusOnCollapse={restoreViewportFocus}
                 onRequestExpand={() => requestViewportExpansion("groundGlass")}
                 onRequestRestore={requestViewportRestore}
-                comparison={groundGlassComparison}
-                comparisonLabels={{
-                  original: "Neutral · No camera movements",
-                  current: groundGlassComparison?.activeTeachingCaseId
-                    ? formatCameraMovementPublicReadout(groundGlassComparison.activeTeachingCaseId).label
-                    : teachingReadout?.label ?? "Custom movement state",
-                }}
               />
             </div>}
           </div>
@@ -526,8 +505,6 @@ export const SimulatorWorkspace = ({
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
               rttRuntimeInfo={rttRuntimeInfo}
-              rttRuntimeInfoByChannel={rttRuntimeInfoByChannel}
-              comparison={groundGlassComparison}
             />
             </div>
           </>}

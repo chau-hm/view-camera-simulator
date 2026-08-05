@@ -68,35 +68,27 @@ const rttForChannel = (
 ) => page.locator(`[data-testid="ground-glass-rtt"][data-rtt-channel="${channel}"]`);
 
 const publicCurrentRtt = (page: Page) =>
-  rttForChannel(page, "camera-movement-current");
-
-const publicComparisonRtts = (page: Page) =>
-  page.locator(
-    '[data-testid="ground-glass-rtt"][data-rtt-channel="camera-movement-original"], ' +
-      '[data-testid="ground-glass-rtt"][data-rtt-channel="camera-movement-current"]',
-  );
+  rttForChannel(page, "default");
 
 test("camera movements scene loads and renders valid Ground Glass content", async ({ page }) => {
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   await expect(page.locator('[data-testid="scene-canvas"]')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('[data-optical-geometry-visible="true"]')).toBeVisible({ timeout: 5000 });
 
-  const rtts = publicComparisonRtts(page);
-  await expect(rtts).toHaveCount(2);
-  for (const channel of ["camera-movement-original", "camera-movement-current"] as const) {
-    const rtt = rttForChannel(page, channel);
-    await expect(rtt).toBeVisible({ timeout: 15000 });
-    await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
-    await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 5000 });
-    await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15000 });
-    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
-    const rawNonBg = Number(await rtt.getAttribute("data-rtt-raw-non-background"));
-    const finalNonBg = Number(await rtt.getAttribute("data-rtt-final-non-background"));
-    expect(Number.isFinite(rawNonBg) && rawNonBg > 0).toBe(true);
-    expect(Number.isFinite(finalNonBg) && finalNonBg > 0).toBe(true);
-    const sanityError = await rtt.getAttribute("data-rtt-sanity-error");
-    expect(sanityError === null || sanityError === "" || sanityError === "null").toBe(true);
-  }
+  const rtt = publicCurrentRtt(page);
+  await expect(rtt).toHaveCount(1);
+  await expect(page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel^="camera-movement-"]')).toHaveCount(0);
+  await expect(rtt).toBeVisible({ timeout: 15000 });
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
+  await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 5000 });
+  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15000 });
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
+  const rawNonBg = Number(await rtt.getAttribute("data-rtt-raw-non-background"));
+  const finalNonBg = Number(await rtt.getAttribute("data-rtt-final-non-background"));
+  expect(Number.isFinite(rawNonBg) && rawNonBg > 0).toBe(true);
+  expect(Number.isFinite(finalNonBg) && finalNonBg > 0).toBe(true);
+  const sanityError = await rtt.getAttribute("data-rtt-sanity-error");
+  expect(sanityError === null || sanityError === "" || sanityError === "null").toBe(true);
 
   await expect(page.getByRole("radio", { name: "Neutral" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "A — Front tilt" })).toBeVisible();
@@ -328,8 +320,8 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   await enableRttDiagnosticsWithoutNavigation(page);
   const returnedScene = page.locator('[data-testid="scene-canvas"]');
   const returnedRtt = publicCurrentRtt(page);
-  const returnedComparisonRtts = publicComparisonRtts(page);
-  await expect(returnedComparisonRtts).toHaveCount(2, { timeout: 15_000 });
+  await expect(returnedRtt).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel^="camera-movement-"]')).toHaveCount(0);
   await expect(returnedScene).toHaveAttribute("data-lattice-edge-count", "224", { timeout: 15_000 });
   await expect(returnedScene).toHaveAttribute("data-mounted-lattice", "true", { timeout: 15_000 });
   await expect(returnedScene).toHaveAttribute("data-mounted-lattice-edge-count", "224");
@@ -363,18 +355,6 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   await expect(returnedRtt).toHaveAttribute("data-rtt-lattice-presentation-region", "whole");
   await expect(returnedRtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15_000 });
   await expect(returnedRtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 15_000 });
-  await expect(
-    rttForChannel(page, "camera-movement-original"),
-  ).toHaveAttribute("data-rtt-lattice-geometry-id", returnedGeometryId!);
-  await expect(
-    rttForChannel(page, "camera-movement-original"),
-  ).toHaveAttribute("data-rtt-lattice-edge-count", "224");
-  await expect(
-    rttForChannel(page, "camera-movement-original"),
-  ).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 15_000 });
-  await expect(
-    rttForChannel(page, "camera-movement-original"),
-  ).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 15_000 });
   await disableOpticalGeometry(page, returnedScene);
   const returnVisual = await readSceneCanvasVisualSample(returnedScene.locator("canvas"));
   expect(returnVisual.supported).toBe(true);

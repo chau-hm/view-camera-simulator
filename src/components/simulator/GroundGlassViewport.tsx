@@ -71,6 +71,8 @@ export const GroundGlassViewport = ({
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [originalZoomEnabled, setOriginalZoomEnabled] = useState(false);
   const [currentZoomEnabled, setCurrentZoomEnabled] = useState(false);
+  const singleViewAccessibleLabel =
+    sceneId === "understanding-camera-movements" ? "Ground Glass preview" : undefined;
   const originalHeadingId = useId();
   const currentHeadingId = useId();
   const originalDescriptionId = useId();
@@ -265,6 +267,8 @@ export const GroundGlassViewport = ({
               zoomEnabled={zoomEnabled}
               onZoomChange={handleZoomChange}
               interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}`}
+              accessibleLabel={singleViewAccessibleLabel}
+              stageLabel={singleViewAccessibleLabel}
             />
           </div>
         )}
