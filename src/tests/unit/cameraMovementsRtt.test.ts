@@ -262,6 +262,12 @@ describe("Camera Movements RTT focal uniforms", () => {
     const materialDisposals = [...materials].map((material) =>
       vi.spyOn(material, "dispose"),
     );
+    const expectedColourByTargetRegion = {
+      upper: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.upperRegionColour,
+      middle: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.middleRegionColour,
+      lower: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.lowerRegionColour,
+      neutral: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.inactiveColour,
+    } as const;
 
     (["whole", "upper", "lower", "middle"] as const).forEach((presentationRegion) => {
       updateCameraMovementRttSubjectTarget(
@@ -278,35 +284,20 @@ describe("Camera Movements RTT focal uniforms", () => {
       expect(group.userData.canonicalEdgeCount).toBe(
         CAMERA_MOVEMENT_LATTICE.edges.length,
       );
-      const selectedBatches = group.children.filter(
-        (child) => child.userData.selectedTarget === true,
-      ) as Array<THREE.LineSegments & { material: THREE.Material & { color?: THREE.Color } }>;
-      if (presentationRegion === "whole") {
-        expect(selectedBatches).toHaveLength(0);
-        group.children
-          .filter((child) => child.userData.edgeRole)
-          .forEach((child) => {
-          const line = child as THREE.LineSegments & { material: THREE.Material & { color?: THREE.Color } };
+      group.children
+        .filter((child) => child.userData.edgeRole)
+        .forEach((child) => {
+          const line = child as THREE.LineSegments & {
+            material: THREE.Material & { color?: THREE.Color };
+          };
+          const targetRegion = child.userData.edgeTargetRegion as keyof typeof expectedColourByTargetRegion;
           expect(line.material.color?.getHexString()).toBe(
-            CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.inactiveColour.slice(1),
+            expectedColourByTargetRegion[targetRegion].slice(1),
           );
-          });
-      } else {
-        const selectedBatch = group.children.find(
-          (child) => child.userData.edgeTargetRegion === presentationRegion,
-        ) as THREE.LineSegments & { material: THREE.Material & { color?: THREE.Color } };
-        expect(selectedBatch).toBeDefined();
-        expect(selectedBatch.userData.selectedTarget).toBe(true);
-        expect(selectedBatch.material.color?.getHexString()).toBe(
-          CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation[
-            presentationRegion === "upper"
-              ? "upperRegionColour"
-              : presentationRegion === "lower"
-                ? "lowerRegionColour"
-                : "middleRegionColour"
-          ].slice(1),
-        );
-      }
+          expect(line.userData.selectedTarget).toBe(
+            presentationRegion !== "whole" && targetRegion === presentationRegion,
+          );
+        });
       geometryDisposals.forEach((spy) => expect(spy).not.toHaveBeenCalled());
       materialDisposals.forEach((spy) => expect(spy).not.toHaveBeenCalled());
     });

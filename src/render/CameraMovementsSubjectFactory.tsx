@@ -7,6 +7,7 @@ import { LineSegments2 } from "three/addons/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry.js";
 import type { CanonicalCameraMovementLattice } from "../scenes/cameraMovementLatticeGeometry";
 import type {
+  CameraMovementLatticeRegion,
   CameraMovementPresentationCalibration,
   CameraMovementPresentationRegion,
   CameraMovementTargetRegion,
@@ -41,14 +42,20 @@ const edgeWeightForRole = (
   return presentation.internalEdgeWeight;
 };
 
-const colourForRegion = (
-  region: CameraMovementPresentationRegion,
+const colourForLatticeRegion = (
+  region: CameraMovementLatticeRegion,
   presentation: CameraMovementPresentationCalibration,
 ): string => {
-  if (region === "whole") return presentation.inactiveColour;
-  if (region === "upper") return presentation.upperRegionColour;
-  if (region === "lower") return presentation.lowerRegionColour;
-  return presentation.middleRegionColour;
+  switch (region) {
+    case "upper":
+      return presentation.upperRegionColour;
+    case "middle":
+      return presentation.middleRegionColour;
+    case "lower":
+      return presentation.lowerRegionColour;
+    case "neutral":
+      return presentation.inactiveColour;
+  }
 };
 
 const resolveTeachingPresentationTargetRegion = (
@@ -147,11 +154,7 @@ export const applyCameraMovementsGroupStyle = (
       | (THREE.Material & { color?: THREE.Color; linewidth?: number; opacity?: number; transparent?: boolean })
       | undefined;
     if (!lineMaterial) return;
-    lineMaterial.color?.set(
-      selected
-        ? colourForRegion(presentationRegion, presentation)
-        : presentation.inactiveColour,
-    );
+    lineMaterial.color?.set(colourForLatticeRegion(edgeTargetRegion, presentation));
     if (typeof lineMaterial.linewidth === "number") {
       lineMaterial.linewidth = edgeWeightForRole(edgeRole, presentation);
     }
@@ -246,9 +249,7 @@ export function createCameraMovementsGroup(
     lineGeometry.computeBoundingSphere();
 
     const lineMaterial = new LineMaterial({
-      color: selected
-        ? colourForRegion(presentationRegion, presentation)
-        : presentation.inactiveColour,
+      color: colourForLatticeRegion(batch.targetRegion, presentation),
       linewidth: weight,
       opacity,
       transparent: opacity < 1,
