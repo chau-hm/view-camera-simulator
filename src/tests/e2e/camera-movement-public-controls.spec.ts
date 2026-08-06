@@ -41,11 +41,16 @@ test("public camera movement controls on the normal route", async ({ page }) => 
   // 1. Viewpoint starts at neutral and no workbench is visible.
   const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
   const tilt = page.getByRole("slider", { name: "Tilt" });
+  const framing = page.getByRole("slider", { name: "Vertical framing" });
+  const tiltStandards = page.getByRole("group", { name: "Tilt standard" });
+  const framingStandards = page.getByRole("group", { name: "Vertical framing standard" });
   await expect(viewpoint).toHaveValue("0");
   await expect(tilt).toHaveValue("0");
-  await expect(page.getByRole("radio", { name: "Front standard" })).toBeChecked();
+  await expect(framing).toHaveValue("0");
+  await expect(tiltStandards.getByRole("radio", { name: "Front standard" })).toBeChecked();
   await expect(page.getByRole("radio", { name: "A — Front tilt" })).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "C3 — Higher viewpoint" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toHaveCount(0);
   await expect(page.getByText("Camera Movement Calibration")).toHaveCount(0);
   await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
   await expect(scene).toHaveAttribute("data-lattice-target-region", "middle");
@@ -57,8 +62,8 @@ test("public camera movement controls on the normal route", async ({ page }) => 
   await expectGroundGlassValid(page);
 
   // 3. Switch the active standard while preserving the signed tilt value.
-  await page.getByRole("radio", { name: "Rear standard" }).click();
-  await expect(page.getByRole("radio", { name: "Rear standard" })).toBeChecked();
+  await tiltStandards.getByRole("radio", { name: "Rear standard" }).click();
+  await expect(tiltStandards.getByRole("radio", { name: "Rear standard" })).toBeChecked();
   await expect(tilt).toHaveValue("3.2");
   await expectGroundGlassValid(page);
 
@@ -84,22 +89,25 @@ test("public camera movement controls on the normal route", async ({ page }) => 
   await expect(scene).toHaveAttribute("data-camera-body-pitch-deg", "-34.000000");
   await expectGroundGlassValid(page);
 
-  // 7. Select D1 and confirm negative fall applied.
-  await page.getByRole("radio", { name: "D1 — Front fall" }).click();
-  await expect(page.getByRole("radio", { name: "D1 — Front fall" })).toBeChecked();
+  // 7. Select the continuous lower framing endpoint and confirm negative fall.
+  await framingStandards.getByRole("radio", { name: "Front standard" }).click();
+  await framing.fill("-1");
+  await expect(framing).toHaveValue("-1");
   await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
+  await expect(page.locator(".camera-movement-controls__status")).toContainText("Lower framing");
   await expectGroundGlassValid(page);
 
   // 8. Reset Movements returns to the neutral Viewpoint state.
   await page.getByRole("button", { name: "Reset Movements" }).click();
   await expect(viewpoint).toHaveValue("0");
   await expect(tilt).toHaveValue("0");
+  await expect(framing).toHaveValue("0");
   await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
   await expect(scene).toHaveAttribute("data-lattice-target-region", "middle");
 
   // 9. Orbit/zoom then Reset View restores the observer preset and preserves the case.
-  await page.getByRole("radio", { name: "C1 — Front rise" }).click();
-  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toBeChecked();
+  await framing.fill("1");
+  await expect(framing).toHaveValue("1");
   const sceneCanvas = scene.locator("canvas");
   const bounds = await sceneCanvas.boundingBox();
   if (bounds) {
@@ -111,7 +119,7 @@ test("public camera movement controls on the normal route", async ({ page }) => 
     await page.mouse.up();
   }
   await page.getByRole("button", { name: "Reset 3D view" }).click();
-  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toBeChecked();
+  await expect(framing).toHaveValue("1");
   await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
   await expectGroundGlassValid(page);
 
@@ -136,7 +144,7 @@ test("public camera movement controls on the normal route", async ({ page }) => 
   expect(unexpectedGraphicsMessages).toEqual([]);
 });
 
-test("3D Scene layout stays stable while the Viewpoint slider changes", async ({ page }) => {
+test("3D Scene layout stays stable across continuous movement sliders", async ({ page }) => {
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 1680, height: 900 });
   await page.goto("/simulator/free/understanding-camera-movements");
@@ -148,9 +156,21 @@ test("3D Scene layout stays stable while the Viewpoint slider changes", async ({
   const scenePanel = page.locator(".scene-panel");
 
   const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
-  for (const value of ["0", "-0.12", "-1", "0.5", "1"]) {
-    await viewpoint.fill(value);
-    await expect(viewpoint).toHaveValue(value);
+  const framing = page.getByRole("slider", { name: "Vertical framing" });
+  for (const [slider, value] of [
+    [viewpoint, "0"],
+    [viewpoint, "-0.12"],
+    [viewpoint, "-1"],
+    [viewpoint, "0.5"],
+    [viewpoint, "1"],
+    [framing, "0"],
+    [framing, "-0.12"],
+    [framing, "-1"],
+    [framing, "0.5"],
+    [framing, "1"],
+  ] as const) {
+    await slider.fill(value);
+    await expect(slider).toHaveValue(value);
     await expect
       .poll(async () => {
         const bounds = await viewportHost.boundingBox();
@@ -191,6 +211,7 @@ test("teaching controls stay usable and non-overflowing at 1024px and narrow wid
     await expect(aside).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole("slider", { name: "Viewpoint" })).toBeVisible();
     await expect(page.getByRole("slider", { name: "Tilt" })).toBeVisible();
+    await expect(page.getByRole("slider", { name: "Vertical framing" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Original", exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Current", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Zoom in Ground Glass preview view", exact: true })).toHaveCount(1);
@@ -209,15 +230,15 @@ test("teaching controls stay usable and non-overflowing at 1024px and narrow wid
 
     await expect(page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]')).toHaveCount(1);
 
-    // The temporary vertical framing adapters remain reachable; viewpoint and
-    // tilt are continuous sliders rather than nine public case radios.
+    // All three public studies are continuous; legacy case radios remain
+    // internal compatibility adapters only.
     for (const label of [
       "C1 — Front rise",
       "C2 — Rear rise",
       "D1 — Front fall",
       "D2 — Rear fall",
     ]) {
-      await expect(page.getByRole("radio", { name: label })).toBeAttached();
+      await expect(page.getByRole("radio", { name: label })).toHaveCount(0);
     }
     await expect(page.getByRole("radio", { name: "Neutral" })).toHaveCount(0);
     await expect(page.getByRole("radio", { name: "A — Front tilt" })).toHaveCount(0);

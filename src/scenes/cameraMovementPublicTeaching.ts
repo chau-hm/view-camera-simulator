@@ -4,6 +4,7 @@ import { formatDegrees, formatMillimeter } from "../utils/formatters";
 import {
   cameraMovementLessonStatesEqual,
   normalizeCameraMovementLessonState,
+  resolveCameraMovementLessonState,
 } from "./cameraMovementLessonState";
 import {
   CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION,
@@ -12,6 +13,7 @@ import {
   type CameraMovementTeachingCaseId,
 } from "./cameraMovementTeachingCases";
 import type { CameraMovementTargetRegion } from "./cameraMovementSceneCalibration";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "./cameraMovementSceneCalibration";
 
 /**
  * Public teaching-case contract for Understanding Camera Movements.
@@ -260,14 +262,26 @@ const formatSignedTilt = (tiltDeg: number): string =>
     ? `-${formatDegrees(Math.abs(tiltDeg))}`
     : `+${formatDegrees(tiltDeg)}`;
 
+const formatSignedMillimeter = (value: number): string =>
+  value === 0
+    ? formatMillimeter(0)
+    : value < 0
+      ? `-${formatMillimeter(Math.abs(value))}`
+      : `+${formatMillimeter(value)}`;
+
+export type CameraMovementLessonPhysicalMovement = Pick<
+  CameraState,
+  "frontRiseMm" | "rearRiseMm"
+>;
+
 /**
- * Format the active continuous lesson state for public readouts. Legacy case
- * codes remain available only for the temporary vertical-framing adapter;
- * Viewpoint and Tilt are described by their semantic continuous controls.
+ * Format the active continuous lesson state for public readouts. The optional
+ * physical movement is the already-resolved camera state used by the public
+ * workspace; the canonical resolver is the fallback for pure callers/tests.
  */
 export const formatCameraMovementLessonReadout = (
   lessonState: CameraMovementLessonState,
-  verticalFramingCaseId: CameraMovementPublicCaseId | null = null,
+  physicalMovement?: CameraMovementLessonPhysicalMovement,
 ): CameraMovementPublicReadout => {
   const normalized = normalizeCameraMovementLessonState(lessonState);
 
@@ -299,15 +313,30 @@ export const formatCameraMovementLessonReadout = (
         value: formatSignedTilt(normalized.tiltDeg),
       };
     }
-    case "vertical-framing":
-      if (verticalFramingCaseId) {
-        return formatCameraMovementPublicReadout(verticalFramingCaseId);
-      }
+    case "vertical-framing": {
+      const standard = normalized.activeStandard === "front" ? "Front" : "Rear";
+      const framingPosition =
+        normalized.framingT > 0
+          ? "Upper"
+          : normalized.framingT < 0
+            ? "Lower"
+            : "Middle";
+      const resolvedMovement =
+        physicalMovement ??
+        resolveCameraMovementLessonState(
+          normalized,
+          CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig,
+        );
+      const movementMm =
+        normalized.activeStandard === "front"
+          ? resolvedMovement.frontRiseMm
+          : resolvedMovement.rearRiseMm;
       return {
         caseId: null,
         title: "Vertical framing",
-        label: "Vertical framing",
-        value: normalized.framingT > 0 ? "Upper" : normalized.framingT < 0 ? "Lower" : "Middle",
+        label: `${standard} standard`,
+        value: `${framingPosition} framing · ${formatSignedMillimeter(movementMm)}`,
       };
+    }
   }
 };

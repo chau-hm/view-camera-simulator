@@ -18,6 +18,42 @@ export const CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS = Object.freeze({
   bodyPitchDeg: 34,
 });
 
+/**
+ * Signed vertical-framing endpoints for each standard. These remain separate
+ * from the legacy candidate's scalar rise value so the continuous resolver
+ * can preserve independently calibrated front/rear upper and lower endpoints.
+ */
+export type CameraMovementVerticalFramingEndpoints = Readonly<{
+  front: Readonly<{
+    lowerMm: number;
+    upperMm: number;
+  }>;
+  rear: Readonly<{
+    lowerMm: number;
+    upperMm: number;
+  }>;
+}>;
+
+export const createCameraMovementVerticalFramingEndpoints = (
+  riseMm: number,
+): CameraMovementVerticalFramingEndpoints => {
+  const magnitudeMm = Math.abs(riseMm);
+  const endpoint = Object.freeze({
+    lowerMm: -magnitudeMm,
+    upperMm: magnitudeMm,
+  });
+  return Object.freeze({
+    front: endpoint,
+    rear: endpoint,
+  });
+};
+
+/** The committed four endpoints are symmetric at the current calibration. */
+export const CAMERA_MOVEMENT_VERTICAL_FRAMING_ENDPOINTS =
+  createCameraMovementVerticalFramingEndpoints(
+    CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.riseMm,
+  );
+
 export type CameraMovementSubjectCalibration = Readonly<{
   columns: number;
   rows: number;

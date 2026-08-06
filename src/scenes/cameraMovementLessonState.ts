@@ -13,9 +13,12 @@ import {
   type CameraRigViewpointArcCalibration,
 } from "./cameraRigViewpointGeometry";
 import {
+  CAMERA_MOVEMENT_VERTICAL_FRAMING_ENDPOINTS,
+  createCameraMovementVerticalFramingEndpoints,
   CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
   type CameraMovementPresentationRegion,
   type CameraMovementTargetRegion,
+  type CameraMovementVerticalFramingEndpoints,
 } from "./cameraMovementSceneCalibration";
 
 export { CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS } from "./cameraMovementSceneCalibration";
@@ -126,18 +129,29 @@ export type CameraMovementLessonDerivedState = Readonly<{
 const targetRegionForSignedT = (value: number): CameraMovementTargetRegion =>
   value > 0 ? "upper" : value < 0 ? "lower" : "middle";
 
+const resolveVerticalFramingMillimetres = (
+  framingT: number,
+  activeStandard: ActiveStandard,
+  endpoints: CameraMovementVerticalFramingEndpoints,
+): number => {
+  const endpoint = endpoints[activeStandard];
+  if (framingT >= 0) return framingT * endpoint.upperMm;
+  return -framingT * endpoint.lowerMm;
+};
+
 /**
  * Derive all legacy camera fields required by optics/render consumers from the
  * continuous lesson state. Viewpoint interpolation is piecewise Low -> Mid
  * and Mid -> High, using each endpoint's own calibration; Low and High are
- * never assumed to be symmetrical. Public study controls are deferred to
- * PRs 3E-B, 3E-C, and 3E-D.
+ * never assumed to be symmetrical. Vertical framing similarly interpolates
+ * between the selected standard's signed lower and upper endpoints.
  */
 export const resolveCameraMovementLessonState = (
   lessonState: CameraMovementLessonState,
   cameraRig: CameraRigViewpointArcCalibration,
   teachingMovements: typeof CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS =
     CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
+  verticalFramingEndpoints?: CameraMovementVerticalFramingEndpoints,
 ): CameraMovementLessonDerivedState => {
   const normalized = normalizeCameraMovementLessonState(lessonState);
   const viewpointT = normalized.study === "viewpoint" ? normalized.viewpointT : 0;
@@ -148,7 +162,16 @@ export const resolveCameraMovementLessonState = (
     viewpointT,
   );
   const viewpointAnchor = cameraRigPlacement.anchor;
-  const riseMm = framingT * teachingMovements.riseMm;
+  const resolvedVerticalFramingEndpoints =
+    verticalFramingEndpoints ??
+    (teachingMovements === CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS
+      ? CAMERA_MOVEMENT_VERTICAL_FRAMING_ENDPOINTS
+      : createCameraMovementVerticalFramingEndpoints(teachingMovements.riseMm));
+  const riseMm = resolveVerticalFramingMillimetres(
+    framingT,
+    normalized.activeStandard,
+    resolvedVerticalFramingEndpoints,
+  );
   const targetRegion =
     normalized.study === "viewpoint"
       ? targetRegionForSignedT(viewpointT)

@@ -3,8 +3,7 @@ import { useAppStore } from "../../state/appStore";
 import { UI_COPY } from "../../ui/copy";
 import {
   formatCameraMovementLessonReadout,
-  matchCameraMovementTeachingCase,
-  type CameraMovementPublicCaseId,
+  type CameraMovementLessonPhysicalMovement,
 } from "../../scenes/cameraMovementPublicTeaching";
 import {
   CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS,
@@ -17,33 +16,9 @@ const VIEWPOINT_MIN = -1;
 const VIEWPOINT_MAX = 1;
 const VIEWPOINT_STEP = 0.01;
 const TILT_LIMIT_DEG = CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS.tiltDeg;
-
-const VERTICAL_FRAMING_CASES = [
-  {
-    id: "C1-front-rise",
-    label: UI_COPY.controls.teachingC1Name,
-    copy: UI_COPY.controls.teachingC1Copy,
-  },
-  {
-    id: "C2-rear-rise",
-    label: UI_COPY.controls.teachingC2Name,
-    copy: UI_COPY.controls.teachingC2Copy,
-  },
-  {
-    id: "D1-front-fall",
-    label: UI_COPY.controls.teachingD1Name,
-    copy: UI_COPY.controls.teachingD1Copy,
-  },
-  {
-    id: "D2-rear-fall",
-    label: UI_COPY.controls.teachingD2Name,
-    copy: UI_COPY.controls.teachingD2Copy,
-  },
-] as const satisfies ReadonlyArray<{
-  id: Extract<CameraMovementPublicCaseId, "C1-front-rise" | "C2-rear-rise" | "D1-front-fall" | "D2-rear-fall">;
-  label: string;
-  copy: string;
-}>;
+const FRAMING_MIN = -1;
+const FRAMING_MAX = 1;
+const FRAMING_STEP = 0.01;
 
 const viewpointValueText = (viewpointT: number): string => {
   if (viewpointT === 0) return "Neutral viewpoint";
@@ -61,6 +36,19 @@ const tiltValueText = (activeStandard: ActiveStandard, tiltDeg: number): string 
   return `${standard} standard, ${direction} ${Math.abs(tiltDeg).toFixed(1)} degrees`;
 };
 
+const verticalFramingValueText = (
+  activeStandard: ActiveStandard,
+  framingT: number,
+): string => {
+  const standard = activeStandard === "front" ? "Front" : "Rear";
+  if (framingT === 0) return `${standard} standard, middle framing`;
+  const direction = framingT < 0 ? "lower" : "upper";
+  const percent = Math.round(Math.abs(framingT) * 100);
+  return percent === 100
+    ? `${standard} standard, ${direction} framing`
+    : `${standard} standard, ${percent}% toward ${direction} framing`;
+};
+
 const signedTiltText = (tiltDeg: number): string =>
   tiltDeg === 0 ? "0.0°" : tiltDeg < 0 ? `-${Math.abs(tiltDeg).toFixed(1)}°` : `+${tiltDeg.toFixed(1)}°`;
 
@@ -69,21 +57,16 @@ export const CameraMovementTeachingControls = () => {
   const viewpointHelpId = useId();
   const tiltSliderId = useId();
   const tiltHelpId = useId();
+  const framingSliderId = useId();
+  const framingHelpId = useId();
   const statusId = useId();
 
   const lessonState = useAppStore(
     (state) => state.camera.cameraMovementLessonState ?? DEFAULT_CAMERA_MOVEMENT_LESSON_STATE,
   );
   const setLessonState = useAppStore((state) => state.setCameraMovementLessonState);
-  const applyTeachingCase = useAppStore((state) => state.applyCameraMovementTeachingCase);
-  const activeCaseId = useAppStore((state) => {
-    if (state.camera.activeSceneId !== "understanding-camera-movements") return null;
-    return matchCameraMovementTeachingCase({
-      anchor: state.camera.viewpointAnchor,
-      targetRegion: state.scene.targetRegion,
-      camera: state.camera,
-    });
-  });
+  const frontRiseMm = useAppStore((state) => state.camera.frontRiseMm);
+  const rearRiseMm = useAppStore((state) => state.camera.rearRiseMm);
 
   const handleViewpointChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -100,7 +83,7 @@ export const CameraMovementTeachingControls = () => {
     [lessonState.activeStandard, setLessonState],
   );
 
-  const handleStandardChange = useCallback(
+  const handleTiltStandardChange = useCallback(
     (activeStandard: ActiveStandard) => {
       setLessonState({
         study: "tilt",
@@ -128,7 +111,39 @@ export const CameraMovementTeachingControls = () => {
     [lessonState.activeStandard, setLessonState],
   );
 
-  const currentReadout = formatCameraMovementLessonReadout(lessonState, activeCaseId);
+  const handleVerticalFramingStandardChange = useCallback(
+    (activeStandard: ActiveStandard) => {
+      setLessonState({
+        study: "vertical-framing",
+        viewpointT: 0,
+        activeStandard,
+        tiltDeg: 0,
+        framingT: lessonState.study === "vertical-framing" ? lessonState.framingT : 0,
+      });
+    },
+    [lessonState.framingT, lessonState.study, setLessonState],
+  );
+
+  const handleVerticalFramingChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const framingT = Number(event.currentTarget.value);
+      if (!Number.isFinite(framingT)) return;
+      setLessonState({
+        study: "vertical-framing",
+        viewpointT: 0,
+        activeStandard: lessonState.activeStandard,
+        tiltDeg: 0,
+        framingT,
+      });
+    },
+    [lessonState.activeStandard, setLessonState],
+  );
+
+  const physicalMovement: CameraMovementLessonPhysicalMovement = {
+    frontRiseMm,
+    rearRiseMm,
+  };
+  const currentReadout = formatCameraMovementLessonReadout(lessonState, physicalMovement);
 
   return (
     <section aria-label={UI_COPY.controls.cameraMovementTitle} className="camera-movement-controls">
@@ -182,7 +197,7 @@ export const CameraMovementTeachingControls = () => {
               name="camera-movement-tilt-standard"
               value="front"
               checked={lessonState.activeStandard === "front"}
-              onChange={() => handleStandardChange("front")}
+              onChange={() => handleTiltStandardChange("front")}
             />
             <span>{UI_COPY.controls.tiltFrontStandard}</span>
           </label>
@@ -193,7 +208,7 @@ export const CameraMovementTeachingControls = () => {
               name="camera-movement-tilt-standard"
               value="rear"
               checked={lessonState.activeStandard === "rear"}
-              onChange={() => handleStandardChange("rear")}
+              onChange={() => handleTiltStandardChange("rear")}
             />
             <span>{UI_COPY.controls.tiltRearStandard}</span>
           </label>
@@ -222,39 +237,69 @@ export const CameraMovementTeachingControls = () => {
         </div>
       </section>
 
-      <section className="camera-movement-controls__section camera-movement-controls__compatibility" aria-labelledby={`${statusId}-vertical-heading`}>
-        <h4 id={`${statusId}-vertical-heading`} className="camera-movement-controls__heading">
+      <section className="camera-movement-controls__section" aria-labelledby={`${framingSliderId}-heading`}>
+        <h4 id={`${framingSliderId}-heading`} className="camera-movement-controls__heading">
           {UI_COPY.controls.verticalFramingTitle}
         </h4>
-        <p className="camera-movement-controls__copy">{UI_COPY.controls.verticalFramingCopy}</p>
-        <fieldset className="teaching-controls" role="radiogroup" aria-label={UI_COPY.controls.verticalFramingGroupLabel}>
-          <legend>{UI_COPY.controls.verticalFramingGroupLabel}</legend>
-          <div className="teaching-controls__grid">
-            {VERTICAL_FRAMING_CASES.map((option) => (
-              <label key={option.id} className="teaching-controls__choice">
-                <input
-                  type="radio"
-                  name="camera-movement-vertical-framing"
-                  value={option.id}
-                  checked={activeCaseId === option.id}
-                  onChange={() => applyTeachingCase(option.id)}
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </div>
+        <p id={framingHelpId} className="camera-movement-controls__copy">
+          {UI_COPY.controls.verticalFramingCopy}
+        </p>
+        <fieldset
+          className="camera-movement-controls__standard"
+          aria-label={UI_COPY.controls.verticalFramingGroupLabel}
+        >
+          <legend>Standard</legend>
+          <label className="choice-label">
+            <input
+              className="form-radio"
+              type="radio"
+              name="camera-movement-vertical-framing-standard"
+              value="front"
+              checked={lessonState.activeStandard === "front"}
+              onChange={() => handleVerticalFramingStandardChange("front")}
+            />
+            <span>{UI_COPY.controls.tiltFrontStandard}</span>
+          </label>
+          <label className="choice-label">
+            <input
+              className="form-radio"
+              type="radio"
+              name="camera-movement-vertical-framing-standard"
+              value="rear"
+              checked={lessonState.activeStandard === "rear"}
+              onChange={() => handleVerticalFramingStandardChange("rear")}
+            />
+            <span>{UI_COPY.controls.tiltRearStandard}</span>
+          </label>
         </fieldset>
+        <label className="control-label" htmlFor={framingSliderId}>
+          <span>Vertical framing</span>
+          <span>{verticalFramingValueText(lessonState.activeStandard, lessonState.framingT)}</span>
+        </label>
+        <input
+          id={framingSliderId}
+          className="range-slider camera-movement-controls__slider"
+          type="range"
+          min={FRAMING_MIN}
+          max={FRAMING_MAX}
+          step={FRAMING_STEP}
+          value={lessonState.framingT}
+          aria-label="Vertical framing"
+          aria-valuetext={verticalFramingValueText(lessonState.activeStandard, lessonState.framingT)}
+          aria-describedby={framingHelpId}
+          onChange={handleVerticalFramingChange}
+        />
+        <div className="camera-movement-controls__range-labels" role="group" aria-label="Vertical framing positions">
+          <span>{UI_COPY.controls.verticalFramingLower}</span>
+          <span>{UI_COPY.controls.verticalFramingMiddle}</span>
+          <span>{UI_COPY.controls.verticalFramingUpper}</span>
+        </div>
       </section>
 
       <div id={statusId} className="camera-movement-controls__status" role="status" aria-live="polite" aria-atomic="true">
         {currentReadout.label}{currentReadout.value ? ` · ${currentReadout.value}` : ""}
       </div>
 
-      {activeCaseId && lessonState.study === "vertical-framing" ? (
-        <p className="camera-movement-controls__compatibility-copy">
-          {VERTICAL_FRAMING_CASES.find((option) => option.id === activeCaseId)?.copy}
-        </p>
-      ) : null}
     </section>
   );
 };
