@@ -133,9 +133,19 @@ describe("Camera Movements subject factory", () => {
     },
   );
 
-  it("uses calibrated role weights, internal opacity, and selected-region colour", () => {
+  it("uses calibrated role weights, internal opacity, and fixed bright layer colours", () => {
     const group = createCameraMovementsGroup("middle");
     try {
+      expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.lowerRegionColour).toBe("#22d3ee");
+      expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.middleRegionColour).toBe("#d4b000");
+      expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.upperRegionColour).toBe("#4ade80");
+      expect(
+        new Set([
+          CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.lowerRegionColour,
+          CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.middleRegionColour,
+          CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.upperRegionColour,
+        ]).size,
+      ).toBe(3);
       const roleWeights = new Map<string, Set<number>>();
       group.children.forEach((child) => {
         const role = child.userData.edgeRole as string;
@@ -351,6 +361,12 @@ describe("Camera Movements subject factory", () => {
           linewidth: material.linewidth,
         };
       });
+    const expectedColourByTargetRegion = {
+      upper: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.upperRegionColour,
+      middle: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.middleRegionColour,
+      lower: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.lowerRegionColour,
+      neutral: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.inactiveColour,
+    } as const;
     const sequence = [
       "neutral",
       "A-front-tilt",
@@ -401,41 +417,20 @@ describe("Camera Movements subject factory", () => {
         expect(material.transparent, caseId).toBe(snapshot.materialTransparent);
         expect(material.linewidth, caseId).toBe(snapshot.linewidth);
       });
-      if (presentationRegion === "whole") {
-        const edgeGroups = interactive.children.filter(
-          (child) => child.userData.edgeRole,
-        );
-        edgeGroups.forEach((child) => {
+      interactive.children
+        .filter((child) => child.userData.edgeRole)
+        .forEach((child) => {
           const line = child as THREE.LineSegments & {
             material: THREE.Material & { color?: THREE.Color };
           };
-          expect(line.userData.selectedTarget, caseId).toBe(false);
+          const targetRegion = child.userData.edgeTargetRegion as keyof typeof expectedColourByTargetRegion;
           expect(line.material.color?.getHexString(), caseId).toBe(
-            CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.inactiveColour.slice(1).toLowerCase(),
+            expectedColourByTargetRegion[targetRegion].slice(1).toLowerCase(),
+          );
+          expect(line.userData.selectedTarget, caseId).toBe(
+            presentationRegion !== "whole" && targetRegion === presentationRegion,
           );
         });
-      } else {
-        const selectedVertical = interactive.getObjectByName(
-          `camera-movements-lattice-outer-vertical-${presentationRegion}`,
-        );
-        const selectedColour = (
-          selectedVertical as
-            | { material?: THREE.Material & { color?: THREE.Color } }
-            | undefined
-        )?.material?.color?.getHexString();
-        const expectedColour = {
-          upper: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.upperRegionColour,
-          middle: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.middleRegionColour,
-          lower: CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.lowerRegionColour,
-        }[presentationRegion].slice(1).toLowerCase();
-        expect(selectedColour, caseId).toBe(expectedColour);
-        expect(
-          interactive.getObjectByName(
-            `camera-movements-lattice-outer-vertical-${presentationRegion}`,
-          )?.userData.selectedTarget,
-          caseId,
-        ).toBe(true);
-      }
       expect(interactiveRuntime?.generation, caseId).toBe(initialInteractiveGeneration);
       expect(rtt.runtimeInfo.generation, caseId).toBe(initialRttGeneration);
       geometryDisposals.forEach((spy) => expect(spy, caseId).not.toHaveBeenCalled());
