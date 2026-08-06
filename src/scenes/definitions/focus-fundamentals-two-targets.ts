@@ -5,7 +5,7 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
   id: "focus-fundamentals-two-targets",
   name: "Focus Fundamentals — Two Targets",
   description:
-    "Isolated scene to validate thin-lens focusing, ground-glass projection, and DOF before any front-standard movements are enabled.",
+    "Compare front- and rear-standard focusing and observe how moving the lens affects composition.",
   assets: [],
   cameraPreset: {
     focusDistanceMm: 2000,
@@ -27,4 +27,10 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
   },
   focusTargets: focusTargetsDefs,
   compositionTargets: [],
+  focusStandardCapability: {
+    enabled: true,
+    defaultStandard: "front",
+    referenceFocusDepthMm: 2000,
+    minimumFocusDepthMm: 600,
+  },
 };

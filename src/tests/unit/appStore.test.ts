@@ -5,6 +5,7 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { resolveInitialOpticalGeometryVisibility } from "../../state/sceneViewDefaults";
 import { getTaskById } from "../../core/tasks/taskRegistry";
+import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 
 describe("app store STA-001", () => {
   afterEach(() => {
@@ -220,5 +221,58 @@ describe("app store STA-001", () => {
     // architecture preset focusDistanceMm must equal scene-specified preset (non-default)
     expect(camera.focusDistanceMm).not.toBe(2000);
     expect(camera.activeSceneId).toBe("architecture-rise");
+  });
+
+  it("selects focus standard without changing finite or infinity focus state", () => {
+    const { initializeSimulatorRoute, setFocusDistance, setFocusStandard, setInfinityFocus } =
+      useAppStore.getState();
+
+    initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
+    setFocusDistance(3000);
+    setFocusStandard("rear");
+    expect(useAppStore.getState().camera).toMatchObject({
+      focusStandard: "rear",
+      focusDistanceMm: 3000,
+      focusMode: "finite",
+      lastFiniteFocusDepthMm: 3000,
+    });
+
+    setInfinityFocus();
+    setFocusStandard("front");
+    expect(useAppStore.getState().camera).toMatchObject({
+      focusStandard: "front",
+      focusMode: "infinity",
+      lastFiniteFocusDepthMm: 3000,
+    });
+  });
+
+  it("resets Focus Fundamentals standard and finite focus to its declared baseline", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
+    store.setFocusStandard("rear");
+    store.setFocusDistance(4000);
+    store.setInfinityFocus();
+    store.resetMovements();
+    expect(useAppStore.getState().camera).toMatchObject({
+      focusStandard: "front",
+      focusDistanceMm: 2000,
+      focusMode: "finite",
+      lastFiniteFocusDepthMm: 2000,
+    });
+  });
+
+  it("keeps the selectable-focus route inside the physical focus range", () => {
+    expect(getSceneFocusDistanceRange(focusFundamentalsTwoTargets.id)).toEqual({
+      min: 600,
+      max: 12000,
+    });
+  });
+
+  it("does not change focus standard on scenes without selectable-focus capability", () => {
+    const store = useAppStore.getState();
+    store.setActiveScene("architecture-rise");
+    const before = useAppStore.getState().camera;
+    store.setFocusStandard("rear");
+    expect(useAppStore.getState().camera).toEqual(before);
   });
 });

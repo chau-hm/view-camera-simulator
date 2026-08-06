@@ -1,6 +1,10 @@
 import { deriveOpticsState } from "../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../scenes/definitions/architecture-rise";
 import { getSceneById, getSceneFocusDistanceRange } from "../scenes/definitions";
+import {
+  getFocusStandardDefault,
+  supportsFocusStandard,
+} from "./appStore";
 import type { AppStore } from "./appStore";
 import type { CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
@@ -27,6 +31,8 @@ export const selectFocusControlState = (state: AppStore) => ({
   focusMode: state.camera.focusMode,
   lastFiniteFocusDepthMm: state.camera.lastFiniteFocusDepthMm,
   activeSceneId: state.camera.activeSceneId,
+  focusStandard: state.camera.focusStandard ?? getFocusStandardDefault(state.camera.activeSceneId),
+  supportsFocusStandard: supportsFocusStandard(state.camera.activeSceneId),
 });
 
 export const selectApertureControlState = (state: AppStore) => ({
@@ -86,6 +92,7 @@ const buildDerivedCameraKey = (
     camera.focalLengthMm,
     camera.aperture,
     camera.focusDistanceMm,
+    camera.focusStandard,
     camera.focusMode ?? "finite",
     camera.lastFiniteFocusDepthMm ?? "",
     camera.frontRiseMm,

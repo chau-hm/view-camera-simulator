@@ -6,6 +6,9 @@ export type MovementStudy = "viewpoint" | "tilt" | "vertical-framing";
 
 export type ActiveStandard = "front" | "rear";
 
+/** Focus-standard selection for scenes that support selectable focusing geometry. */
+export type FocusStandard = "front" | "rear";
+
 /** Continuous canonical lesson state for Understanding Camera Movements. */
 export type CameraMovementLessonState = Readonly<{
   study: MovementStudy;
@@ -26,6 +29,7 @@ export type CameraState = {
   focalLengthMm: number;
   aperture: ApertureValue;
   focusDistanceMm: number;
+  focusStandard: FocusStandard;
   frontRiseMm: number;
   frontTiltDeg: number;
   frontSwingDeg: number;

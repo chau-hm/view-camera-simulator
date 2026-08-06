@@ -166,6 +166,14 @@ export type DerivedOpticsState = {
     fallbackReason?: string | null;
     errorMessage?: string;
     isInfinityFocus?: boolean;
+    /** Resolved focus-standard geometry diagnostics for selectable-focus scenes. */
+    focusStandard?: "front" | "rear";
+    /** Requested focus standard before any safe geometry fallback. */
+    requestedFocusStandard?: "front" | "rear";
+    /** Actual lens-to-focus-plane distance passed to DOF for finite focus. */
+    focusObjectDistanceMm?: number | null;
+    /** Actual lens-to-film image distance used by the focus resolver. */
+    imageDistanceMm?: number | null;
   };
 };
 

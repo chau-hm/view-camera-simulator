@@ -8,8 +8,12 @@ import type {
   CameraMovementLessonState,
   GeometryView,
   SimulatorMode,
+  FocusStandard,
 } from "../types/camera";
-import type { CameraMovementField } from "../types/scene";
+import type {
+  CameraMovementField,
+  SceneFocusStandardCapability,
+} from "../types/scene";
 import type { TaskEvaluation } from "../types/task";
 import {
   CAMERA_CONSTANTS,
@@ -50,6 +54,24 @@ import {
   DEFAULT_CAMERA_MOVEMENT_LESSON_STATE,
   resolveCameraMovementLessonState,
 } from "../scenes/cameraMovementLessonState";
+
+const getFocusStandardCapability = (
+  sceneId: string,
+): SceneFocusStandardCapability | undefined =>
+  getSceneById(sceneId)?.focusStandardCapability;
+
+export const supportsFocusStandard = (sceneId: string): boolean => {
+  const capability = getFocusStandardCapability(sceneId);
+  return Boolean(capability?.enabled);
+};
+
+export const getFocusStandardDefault = (sceneId: string): FocusStandard => {
+  const capability = getFocusStandardCapability(sceneId);
+  return capability?.defaultStandard ?? "front";
+};
+
+const isFocusFundamentalsScene = (sceneId: string): boolean =>
+  sceneId === "focus-fundamentals-two-targets" && supportsFocusStandard(sceneId);
 
 const defaultControlState = {
   focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
@@ -330,6 +352,7 @@ export type AppStore = {
   setRearTilt: (value: number) => void;
 
   setFocusDistance: (value: number) => void;
+  setFocusStandard: (focusStandard: FocusStandard) => void;
   setInfinityFocus: () => void;
   setAperture: (value: ApertureValue) => void;
   setGeometryView: (value: GeometryView) => void;
@@ -654,6 +677,9 @@ export const useAppStore = create<AppStore>((set) => ({
             sceneId,
             state.camera.focusDistanceMm,
           ),
+          ...(supportsFocusStandard(sceneId)
+            ? { focusStandard: getFocusStandardDefault(sceneId) }
+            : {}),
         },
         scene: {
           activeSceneId: sceneId,
@@ -816,6 +842,16 @@ export const useAppStore = create<AppStore>((set) => ({
           focusMode: "finite",
           lastFiniteFocusDepthMm:
             routeCalibration.optics.provisionalFocusDistanceMm,
+        };
+      }
+
+      if (isFocusFundamentalsScene(sceneId)) {
+        nextCamera = {
+          ...nextCamera,
+          focusStandard: getFocusStandardDefault(sceneId),
+          focusDistanceMm: 2000,
+          focusMode: "finite",
+          lastFiniteFocusDepthMm: 2000,
         };
       }
 
@@ -1029,6 +1065,22 @@ export const useAppStore = create<AppStore>((set) => ({
       };
     }),
 
+  setFocusStandard: (focusStandard) =>
+    set((state) => {
+      if (
+        (focusStandard !== "front" && focusStandard !== "rear") ||
+        !supportsFocusStandard(state.camera.activeSceneId)
+      ) {
+        return {};
+      }
+      return {
+        camera: {
+          ...state.camera,
+          focusStandard,
+        },
+      };
+    }),
+
   setInfinityFocus: () =>
     set((state) => {
       if (isInfinityResetDisallowed(state.camera.activeSceneId)) return {};
@@ -1140,6 +1192,7 @@ export const useAppStore = create<AppStore>((set) => ({
           selectedMovement: defaultMovement,
         };
       }
+      const focusFundamentalsReset = isFocusFundamentalsScene(sceneId);
       // For all other scenes (and the calibration route), use the scene preset
       // or global default state.
       const resetValues = Object.keys(scenePreset).length > 0
@@ -1167,6 +1220,14 @@ export const useAppStore = create<AppStore>((set) => ({
           cameraBodyPitchDeg: 0,
           cameraRigPlacement: state.camera.cameraRigPlacement,
           cameraMovementLessonState: undefined,
+          ...(focusFundamentalsReset
+            ? {
+                focusStandard: getFocusStandardDefault(sceneId),
+                focusDistanceMm: 2000,
+                focusMode: "finite" as const,
+                lastFiniteFocusDepthMm: 2000,
+              }
+            : {}),
         },
         task: { ...state.task, currentTaskEvaluation: null },
         selectedMovement: defaultMovement,
@@ -1208,6 +1269,7 @@ export const useAppStore = create<AppStore>((set) => ({
         resolveInitialOpticalGeometryVisibility(activeTask);
 
       const defaultMovement = resolveDefaultMovement(nextSceneId);
+      const focusFundamentalsRestart = isFocusFundamentalsScene(nextSceneId);
       const preserveCalibration =
         state.cameraMovementCalibrationSession.active &&
         isCameraMovementsScene(nextSceneId) &&
@@ -1240,6 +1302,14 @@ export const useAppStore = create<AppStore>((set) => ({
           focusDistanceMm: preserveCalibration
             ? activeCalibration.optics.provisionalFocusDistanceMm
             : focusDistanceMm,
+          ...(focusFundamentalsRestart
+            ? {
+                focusStandard: getFocusStandardDefault(nextSceneId),
+                focusDistanceMm: 2000,
+                focusMode: "finite" as const,
+                lastFiniteFocusDepthMm: 2000,
+              }
+            : {}),
           cameraMovementLessonState:
             isCameraMovementsScene(nextSceneId) && !preserveCalibration
               ? DEFAULT_CAMERA_MOVEMENT_LESSON_STATE

@@ -14,7 +14,11 @@ import type { SceneDefinition } from "../../types/scene";
 import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
-import { solveLensExtensionForRearDatumFocusDepth, imageDistanceMm } from "./thinLensModel";
+import { imageDistanceMm } from "./thinLensModel";
+import {
+  resolveFocusFundamentalsFocusing,
+  type FocusFundamentalsFocusingResult,
+} from "./focusFundamentalsFocusing";
 import {
   CAMERA_CONSTANTS,
   DEFAULT_CAMERA_RIG_PLACEMENT,
@@ -327,7 +331,11 @@ const baseFallbackState = (
       focusPlaneModel: lensFilmRel.isParallel ? "parallel" : "scheimpflug",
       groundGlassDofModel: "parallel-thin-lens",
       fallbackApplied: true,
+      fallbackReason: errorMessage,
       errorMessage,
+      focusStandard:
+        scene.id === "focus-fundamentals-two-targets" ? "front" : cameraState.focusStandard,
+      requestedFocusStandard: cameraState.focusStandard,
     },
   };
 };
@@ -382,13 +390,36 @@ export const deriveOpticsState = (
       );
     }
     const f = cameraState.focalLengthMm;
-    const lensCenterLocal = vec(0, cameraState.frontRiseMm, f);
+    const focusFundamentalsFocusing =
+      scene.id === "focus-fundamentals-two-targets"
+        ? resolveFocusFundamentalsFocusing({
+            standard:
+              scene.focusStandardCapability?.enabled && cameraState.focusStandard === "rear"
+                ? "rear"
+                : "front",
+            focusMode: "infinity",
+            focusDepthMm: cameraState.focusDistanceMm,
+            focalLengthMm: f,
+            referenceFocusDepthMm:
+              scene.focusStandardCapability?.referenceFocusDepthMm ??
+              CAMERA_CONSTANTS.defaultFocusDistanceMm,
+          })
+        : null;
+    const lensCenterLocal = vec(
+      0,
+      cameraState.frontRiseMm,
+      focusFundamentalsFocusing?.lensZMm ?? f,
+    );
     const lensNormalLocal = calculateLensNormal(
       cameraState.frontTiltDeg,
       cameraState.frontSwingDeg,
     );
     const lensPlaneLocal = planeFromPointNormal(lensCenterLocal, lensNormalLocal);
-    const baselineFilmCenter = vec(0, 0, 0);
+    const baselineFilmCenter = vec(
+      0,
+      0,
+      focusFundamentalsFocusing?.filmZMm ?? 0,
+    );
     const { frame: rearStandardFrameLocal, corners: filmPlaneCornersLocal } =
       calculateRearStandardFrame(
         baselineFilmCenter,
@@ -489,9 +520,14 @@ export const deriveOpticsState = (
         swingAngleDeg: cameraState.frontSwingDeg,
         focusPlaneModel: infinityLensFilmRel.isParallel ? "parallel" : "scheimpflug",
         groundGlassDofModel: "parallel-thin-lens",
-        fallbackApplied: false,
-        errorMessage: "Infinity focus",
+        fallbackApplied: focusFundamentalsFocusing?.fallbackApplied ?? false,
+        fallbackReason: focusFundamentalsFocusing?.fallbackReason ?? null,
+        errorMessage: focusFundamentalsFocusing?.fallbackReason ?? "Infinity focus",
         isInfinityFocus: true,
+        focusStandard: focusFundamentalsFocusing?.standard ?? cameraState.focusStandard,
+        requestedFocusStandard: cameraState.focusStandard,
+        focusObjectDistanceMm: focusFundamentalsFocusing?.objectDistanceUMm ?? null,
+        imageDistanceMm: focusFundamentalsFocusing?.imageDistanceVMm ?? f,
       },
     };
   }
@@ -558,29 +594,42 @@ export const deriveOpticsState = (
     filmCenterLocal = vec(0, 0, -v);
   }
 
-  // Prepare to store solved extension for Focus Fundamentals so we don't call solver twice
-  let solvedLensExtensionV: number | null = null;
-  let solvedObjectDistanceU: number | null = null;
+  // Prepare to store the canonical Focus Fundamentals lens/film/U/v solution so
+  // every downstream geometry consumer uses exactly one resolved construction.
+  let focusFundamentalsFocusing: FocusFundamentalsFocusingResult | null = null;
+  let focusFundamentalsFocusDepthMm: number | null = null;
 
   // For the Focus Fundamentals scene (front-standard focusing):
   // - rear datum / film datum remain at z = 0
   // - lens (front standard) moves to +imageDistanceMm from the rear datum
   // All values remain in mm until conversion at render boundary.
   if (scene.id === "focus-fundamentals-two-targets") {
-    // Interpret cameraState.focusDistanceMm as S: focus plane depth from rear datum
-    const S = cameraState.focusDistanceMm;
-    const f = cameraState.focalLengthMm;
-    // solve lens extension v and lens-to-subject distance U
-    const { v, U } = solveLensExtensionForRearDatumFocusDepth(S, f);
-    solvedLensExtensionV = v;
-    solvedObjectDistanceU = U;
+    focusFundamentalsFocusing = resolveFocusFundamentalsFocusing({
+      standard:
+        scene.focusStandardCapability?.enabled && cameraState.focusStandard === "rear"
+          ? "rear"
+          : "front",
+      focusMode: "finite",
+      focusDepthMm: cameraState.focusDistanceMm,
+      focalLengthMm: cameraState.focalLengthMm,
+      referenceFocusDepthMm:
+        scene.focusStandardCapability?.referenceFocusDepthMm ??
+        CAMERA_CONSTANTS.defaultFocusDistanceMm,
+    });
+    if (focusFundamentalsFocusing.fallbackApplied) {
+      return baseFallbackState(
+        cameraState,
+        scene,
+        focusFundamentalsFocusing.fallbackReason ??
+          "Invalid Focus Fundamentals focus geometry",
+        cameraMovementCalibration,
+      );
+    }
+    focusFundamentalsFocusDepthMm = focusFundamentalsFocusing.focusDepthMm;
+    filmCenterLocal = vec(0, 0, focusFundamentalsFocusing.filmZMm);
 
-    // keep film datum at rear datum (z = 0)
-    filmCenterLocal = vec(0, 0, 0);
-
-    // Move lens center to +v from the rear datum (front standard moves)
-    // For this strict baseline, ignore any lateral/front rise: lens x/y are zero
-    lensCenterLocal = vec(0, 0, solvedLensExtensionV);
+    // Focus Fundamentals deliberately keeps both standards on the optical axis.
+    lensCenterLocal = vec(0, 0, focusFundamentalsFocusing.lensZMm);
     // recompute lensPlane with updated lens center
     lensPlaneLocal = planeFromPointNormal(lensCenterLocal, lensNormalLocal);
 
@@ -632,7 +681,11 @@ export const deriveOpticsState = (
   let focusPointWorld = calculateFocusPoint(cameraState, opticalAxis);
   // For Focus Fundamentals scene, cameraState.focusDistanceMm represents S (focus plane depth from rear datum)
   if (scene.id === "focus-fundamentals-two-targets") {
-    focusPointWorld = vec(0, 0, cameraState.focusDistanceMm);
+    focusPointWorld = vec(
+      0,
+      0,
+      focusFundamentalsFocusDepthMm ?? cameraState.focusDistanceMm,
+    );
   }
 
   // Derive lens/film relationship from actual geometry.
@@ -654,10 +707,9 @@ export const deriveOpticsState = (
   let depthOfFieldFarPlane;
   let dofResultGlobal: ReturnType<typeof calculateDepthOfField> | null = null;
   if (scene.id === "focus-fundamentals-two-targets") {
-    const S = cameraState.focusDistanceMm;
     const f = cameraState.focalLengthMm;
-    // use previously solved U (should be available)
-    const U = solvedObjectDistanceU ?? solveLensExtensionForRearDatumFocusDepth(S, f).U;
+    // Use the actual lens-to-subject U from the canonical front/rear solution.
+    const U = focusFundamentalsFocusing?.objectDistanceUMm ?? f * 2;
     dofResultGlobal = calculateDepthOfField({
       focalLengthMm: f,
       apertureFNumber: cameraState.aperture,
@@ -764,9 +816,16 @@ export const deriveOpticsState = (
       nearU: dofResultGlobal?.nearU ?? null,
       farU: dofResultGlobal?.farU ?? null,
       farIsInfinite: dofResultGlobal?.farIsInfinite ?? false,
-      fallbackApplied: dofResultGlobal?.fallbackApplied ?? false,
-      fallbackReason: dofResultGlobal?.fallbackReason ?? null,
+      fallbackApplied:
+        focusFundamentalsFocusing?.fallbackApplied ||
+        dofResultGlobal?.fallbackApplied === true,
+      fallbackReason:
+        focusFundamentalsFocusing?.fallbackReason ?? dofResultGlobal?.fallbackReason ?? null,
       isInfinityFocus: false,
+      focusStandard: focusFundamentalsFocusing?.standard ?? cameraState.focusStandard,
+      requestedFocusStandard: cameraState.focusStandard,
+      focusObjectDistanceMm: focusFundamentalsFocusing?.objectDistanceUMm ?? null,
+      imageDistanceMm: focusFundamentalsFocusing?.imageDistanceVMm ?? null,
     },
   };
 };

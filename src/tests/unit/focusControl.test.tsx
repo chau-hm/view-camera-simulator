@@ -123,4 +123,22 @@ describe("FocusControl presets for Focus Fundamentals", () => {
       before + CAMERA_CONTROL_STEPS.focusDistanceMm,
     );
   });
+
+  it("renders accessible focus-standard radios and updates concise mode copy", () => {
+    render(<FocusControl focusEnabled={true} lockReason="" />);
+
+    expect(screen.getByText("Focus with")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Front standard" })).toBeChecked();
+    const rear = screen.getByRole("radio", { name: "Rear standard" });
+    fireEvent.click(rear);
+    expect(rear).toBeChecked();
+    expect(screen.getByText("Moving the rear standard changes focus while keeping the lens position and composition stable.")).toBeInTheDocument();
+  });
+
+  it("does not render focus-standard radios for an unrelated scene", () => {
+    useAppStore.getState().setActiveScene("architecture-rise");
+    render(<FocusControl focusEnabled={true} lockReason="" />);
+    expect(screen.queryByText("Focus with")).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "Front standard" })).not.toBeInTheDocument();
+  });
 });
