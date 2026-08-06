@@ -44,6 +44,12 @@ describe("CameraMovementTeachingControls", () => {
     const framingStandards = within(screen.getByRole("group", { name: "Vertical framing standard" }));
     expect(framingStandards.getByRole("radio", { name: "Front standard" })).toBeChecked();
     expect(framingStandards.getByRole("radio", { name: "Rear standard" })).not.toBeChecked();
+    const framingPositions = within(screen.getByRole("group", { name: "Vertical framing positions" }));
+    expect(framingPositions.getByText("Lower", { exact: true })).toBeInTheDocument();
+    expect(framingPositions.getByText("Middle", { exact: true })).toBeInTheDocument();
+    expect(framingPositions.getByText("Upper", { exact: true })).toBeInTheDocument();
+    expect(framingPositions.queryByText("Neutral", { exact: true })).not.toBeInTheDocument();
+    expect(framingPositions.queryByText("Higher", { exact: true })).not.toBeInTheDocument();
 
     for (const label of [
       "C1 — Front rise",

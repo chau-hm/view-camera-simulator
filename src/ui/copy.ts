@@ -42,6 +42,9 @@ export const UI_COPY = {
     verticalFramingTitle: "Vertical Framing",
     verticalFramingCopy: "Move the front or rear standard vertically to frame a lower or higher part of the subject.",
     verticalFramingGroupLabel: "Vertical framing standard",
+    verticalFramingLower: "Lower",
+    verticalFramingMiddle: "Middle",
+    verticalFramingUpper: "Upper",
   },
   simulator: {
     taskTitle: "Task",

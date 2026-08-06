@@ -273,7 +273,7 @@ export const CameraMovementTeachingControls = () => {
           </label>
         </fieldset>
         <label className="control-label" htmlFor={framingSliderId}>
-          <span>Framing</span>
+          <span>Vertical framing</span>
           <span>{verticalFramingValueText(lessonState.activeStandard, lessonState.framingT)}</span>
         </label>
         <input
@@ -290,9 +290,9 @@ export const CameraMovementTeachingControls = () => {
           onChange={handleVerticalFramingChange}
         />
         <div className="camera-movement-controls__range-labels" role="group" aria-label="Vertical framing positions">
-          <span>{UI_COPY.controls.viewpointLower}</span>
-          <span>{UI_COPY.controls.viewpointNeutral}</span>
-          <span>{UI_COPY.controls.viewpointHigher}</span>
+          <span>{UI_COPY.controls.verticalFramingLower}</span>
+          <span>{UI_COPY.controls.verticalFramingMiddle}</span>
+          <span>{UI_COPY.controls.verticalFramingUpper}</span>
         </div>
       </section>
 
