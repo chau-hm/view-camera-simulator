@@ -133,9 +133,19 @@ describe("Camera Movements subject factory", () => {
     },
   );
 
-  it("uses calibrated role weights, internal opacity, and selected-region colour", () => {
+  it("uses calibrated role weights, internal opacity, and fixed bright layer colours", () => {
     const group = createCameraMovementsGroup("middle");
     try {
+      expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.lowerRegionColour).toBe("#22d3ee");
+      expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.middleRegionColour).toBe("#d4b000");
+      expect(CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.upperRegionColour).toBe("#4ade80");
+      expect(
+        new Set([
+          CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.lowerRegionColour,
+          CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.middleRegionColour,
+          CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.upperRegionColour,
+        ]).size,
+      ).toBe(3);
       const roleWeights = new Map<string, Set<number>>();
       group.children.forEach((child) => {
         const role = child.userData.edgeRole as string;
