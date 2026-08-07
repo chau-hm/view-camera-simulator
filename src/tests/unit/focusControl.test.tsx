@@ -135,7 +135,9 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     const rear = screen.getByRole("radio", { name: "Rear standard" });
     fireEvent.click(rear);
     expect(rear).toBeChecked();
-    expect(screen.getByText("Moving the rear standard changes focus while keeping the lens position stable.")).toBeInTheDocument();
+    expect(screen.getByText("Rear focusing moves the film while the lens/viewpoint stays fixed.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Front standard" }));
+    expect(screen.getByText("Front focusing moves the lens/viewpoint. The film stays fixed.")).toBeInTheDocument();
   });
 
   it("does not render focus-standard radios for an unrelated scene", () => {

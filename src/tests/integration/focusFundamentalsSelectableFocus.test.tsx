@@ -45,6 +45,9 @@ describe("Focus Fundamentals selectable focus integration", () => {
 
     expect(front).toBeChecked();
     expect(rear).not.toBeChecked();
+    expect(screen.getByText("Focus method")).toBeInTheDocument();
+    expect(screen.getByText("Front standard", { selector: ".current-settings-row" })).toBeInTheDocument();
+    expect(screen.getByText("Movement · Lens moves · Film fixed")).toBeInTheDocument();
     expect(slider).toHaveAttribute("min", "1500");
     expect(slider).toHaveAttribute("max", "2500");
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-selected", "front");
@@ -62,6 +65,8 @@ describe("Focus Fundamentals selectable focus integration", () => {
     fireEvent.click(rear);
     await waitFor(() => expect(useAppStore.getState().camera.focusStandard).toBe("rear"));
     expect(rear).toBeChecked();
+    expect(screen.getByText("Rear standard", { selector: ".current-settings-row" })).toBeInTheDocument();
+    expect(screen.getByText("Movement · Film moves · Lens/viewpoint fixed")).toBeInTheDocument();
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-selected", "rear");
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-resolved", "rear");
     expect(readZ(sceneCanvas, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 10);
