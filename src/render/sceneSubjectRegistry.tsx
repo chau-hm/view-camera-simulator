@@ -41,6 +41,7 @@ import {
   type CameraMovementPresentationRegion,
 } from "../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
+import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTargets";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -177,6 +178,11 @@ export const sceneSubjectRegistry = {
   "focus-fundamentals-two-targets": {
     SceneSubject: FocusFundamentalsSubject,
     createRttGroup: createFocusFundamentalsGroup,
+    rttLighting: {
+      targetMm: focusFundamentalsObjectCenterMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },
+      fillOffsetWorld: { x: 2, y: 1.5, z: -2.5 },
+    },
   },
   "architecture-rise": {
     SceneSubject: ArchitectureRiseRegisteredSubject,

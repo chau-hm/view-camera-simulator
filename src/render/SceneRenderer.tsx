@@ -1154,6 +1154,12 @@ export const SceneRenderer = ({
       data-camera-film-center-world={serializeFiniteRenderVector(
         opticsState.filmCenterWorld,
       )}
+      data-focus-standard-selected={
+        opticsState.diagnostics.requestedFocusStandard ?? opticsState.diagnostics.focusStandard
+      }
+      data-focus-standard-resolved={opticsState.diagnostics.focusStandard}
+      data-optics-fallback-applied={String(opticsState.diagnostics.fallbackApplied)}
+      data-optics-fallback-reason={opticsState.diagnostics.fallbackReason ?? undefined}
       data-view-focus={viewFocus}
       data-orbit-target={observerViewState.target.map((value) => value.toFixed(6)).join(",")}
       data-observer-camera-position={observerViewState.position.map((value) => value.toFixed(6)).join(",")}

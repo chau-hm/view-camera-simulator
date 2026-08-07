@@ -1,5 +1,5 @@
 import type { Bounds3, Vec3 } from "./optics";
-import type { CameraState } from "./camera";
+import type { CameraState, FocusStandard } from "./camera";
 
 export type FocusTarget = {
   id: string;
@@ -57,6 +57,15 @@ export type SceneCameraBodyPitchCapability = {
   enabled: true;
 };
 
+export type SceneFocusStandardCapability = {
+  enabled: true;
+  defaultStandard: FocusStandard;
+  /** Rear-datum focus depth used to calibrate the rear-standard lens position. */
+  referenceFocusDepthMm: number;
+  /** Smallest public focus depth that keeps both supported standards physical. */
+  minimumFocusDepthMm?: number;
+};
+
 export type SceneDefinition = {
   id: string;
   name: string;
@@ -79,6 +88,8 @@ export type SceneDefinition = {
   compositionTargets: CompositionTarget[];
   /** Optional physical film-placement strategy. The legacy Z=-f baseline applies when absent. */
   finiteFocusStrategy?: SceneFiniteFocusStrategy;
+  /** Optional capability for selectable front/rear finite-focus geometry. */
+  focusStandardCapability?: SceneFocusStandardCapability;
   /** Enables the canonical rigid body-pitch transform for this scene. */
   cameraBodyPitchCapability?: SceneCameraBodyPitchCapability;
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */

@@ -38,6 +38,7 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
   focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
   aperture: 11,
   focusDistanceMm: CAMERA_CONSTANTS.defaultFocusDistanceMm,
+  focusStandard: "front",
   frontRiseMm: 0,
   frontTiltDeg: 0,
   frontSwingDeg: 0,

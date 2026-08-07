@@ -69,7 +69,11 @@ export const getSceneFocusDistanceRange = (sceneId: string): FocusDistanceRangeM
     return DEFAULT_FOCUS_DISTANCE_RANGE_MM;
   }
 
-  const min = Math.max(DEFAULT_FOCUS_DISTANCE_RANGE_MM.min, scene.bounds.min.z);
+  const min = Math.max(
+    DEFAULT_FOCUS_DISTANCE_RANGE_MM.min,
+    scene.bounds.min.z,
+    scene.focusStandardCapability?.minimumFocusDepthMm ?? DEFAULT_FOCUS_DISTANCE_RANGE_MM.min,
+  );
   const max = Math.max(min, scene.bounds.max.z);
   return { min, max };
 };
