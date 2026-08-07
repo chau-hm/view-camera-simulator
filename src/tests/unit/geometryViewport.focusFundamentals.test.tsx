@@ -150,6 +150,45 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     expect(txt2).toMatch(/∞/);
   });
 
+  it("shows canonical current/reference lens and film positions without an Original/Current legend", () => {
+    const scene = focusFundamentalsTwoTargets;
+    const optics = deriveOpticsState(
+      { ...DEFAULT_CAMERA_STATE, focusDistanceMm: 1720 },
+      scene,
+    );
+    const { container } = render(
+      <GeometryViewport
+        opticsState={optics}
+        geometryView="side"
+        scene={scene}
+        riseMm={0}
+      />,
+    );
+    const svg = container.querySelector('[data-testid="geometry-svg-side"]');
+    expect(svg?.querySelector('[data-testid="focus-fundamentals-position-cues"]')).toBeTruthy();
+    for (const state of ["current", "reference"]) {
+      for (const standard of ["lens", "film"]) {
+        expect(
+          svg?.querySelector(`[data-testid="focus-${state}-${standard}-position"]`),
+        ).toBeTruthy();
+      }
+    }
+    expect(svg?.textContent).toContain("Lens · current");
+    expect(svg?.textContent).toContain("Lens · reference");
+    expect(svg?.textContent).not.toContain("Original");
+    expect(svg?.textContent).not.toContain("Ground Glass");
+
+    const currentLens = svg?.querySelector(
+      '[data-testid="focus-current-lens-position"] line',
+    );
+    const referenceLens = svg?.querySelector(
+      '[data-testid="focus-reference-lens-position"] line',
+    );
+    expect(currentLens).toBeTruthy();
+    expect(referenceLens).toBeTruthy();
+    expect(currentLens?.getAttribute("x1")).not.toBe(referenceLens?.getAttribute("x1"));
+  });
+
   it("F: Raw RTT isolation — GroundGlassRenderer uses RTT and not legacy overlay for Focus Fundamentals", () => {
     const scene = focusFundamentalsTwoTargets;
     const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);

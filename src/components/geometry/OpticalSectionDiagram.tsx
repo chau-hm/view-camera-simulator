@@ -62,6 +62,69 @@ type ConstructionLayerLayerProps = {
   layerOpticsState?: DerivedOpticsState;
 };
 
+const FocusFundamentalsPositionCues = ({
+  currentProjection,
+  referenceProjection,
+  geometryView,
+  svgWidth,
+}: {
+  currentProjection: OpticalSectionData;
+  referenceProjection: OpticalSectionData;
+  geometryView: GeometryView;
+  svgWidth: number;
+}) => {
+  if (geometryView !== "side") return null;
+
+  const currentSegments = currentProjection.views[geometryView].physicalPlaneSegments;
+  const referenceSegments = referenceProjection.views[geometryView].physicalPlaneSegments;
+  const positions = (["film", "lens"] as const).flatMap((standard) => {
+    const current = currentSegments.find((segment) => segment.id === `physical-${standard}`);
+    const reference = referenceSegments.find((segment) => segment.id === `physical-${standard}`);
+    if (!current || !reference) return [];
+    return [
+      { standard, state: "reference" as const, segment: reference },
+      { standard, state: "current" as const, segment: current },
+    ];
+  });
+
+  return (
+    <g data-testid="focus-fundamentals-position-cues">
+      {positions.map(({ standard, state, segment }) => {
+        const x = (segment.p1.x + segment.p2.x) / 2;
+        const y = Math.min(segment.p1.y, segment.p2.y);
+        const isReference = state === "reference";
+        return (
+          <g
+            key={`${standard}-${state}`}
+            data-testid={`focus-${state}-${standard}-position`}
+          >
+            <line
+              x1={segment.p1.x}
+              y1={segment.p1.y}
+              x2={segment.p2.x}
+              y2={segment.p2.y}
+              stroke={segment.color}
+              strokeWidth={isReference ? 3 : 4}
+              strokeDasharray={isReference ? "5 4" : undefined}
+              opacity={isReference ? 0.38 : 1}
+              strokeLinecap="round"
+            />
+            <text
+              x={Math.min(svgWidth - 8, x + 8)}
+              y={Math.max(14, y - (isReference ? 8 : 22))}
+              fontSize={10}
+              fill={segment.color}
+              opacity={isReference ? 0.72 : 1}
+            >
+              {standard === "lens" ? "Lens" : "Film"} · {state}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+};
+
 const ConstructionLayer = ({
   projection: baseProjection,
   
@@ -483,8 +546,9 @@ export const OpticalSectionDiagram = ({
   displayMode = "full",
 }: Props) => {
   const showCurrentLayer = true; // Always render the current layer
+  const isFocusFundamentals = scene.id === "focus-fundamentals-two-targets";
   const hasOriginal =
-    Boolean(referenceProjection) && displayMode === "full";
+    Boolean(referenceProjection) && displayMode === "full" && !isFocusFundamentals;
 
   const currentStyle: ConstructionLayerStyle = {
     opacity: 1,
@@ -515,6 +579,14 @@ export const OpticalSectionDiagram = ({
         background: "#f8fafc",
       }}
     >
+      {isFocusFundamentals && referenceProjection ? (
+        <FocusFundamentalsPositionCues
+          currentProjection={projection}
+          referenceProjection={referenceProjection}
+          geometryView={geometryView}
+          svgWidth={svgWidth}
+        />
+      ) : null}
       {/* Original reference layer (rendered first, underneath) */}
       {hasOriginal && referenceProjection && (
         <ConstructionLayer
