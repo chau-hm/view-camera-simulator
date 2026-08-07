@@ -11,8 +11,11 @@ const parseVector = (value: string | null): number[] => {
   return vector;
 };
 
+const readVector = async (locator: Locator, attribute: string) =>
+  parseVector(await locator.getAttribute(attribute));
+
 const readZ = async (locator: Locator, attribute: string) =>
-  parseVector(await locator.getAttribute(attribute))[2];
+  (await readVector(locator, attribute))[2];
 
 const expectContentfulRtt = async (rtt: Locator) => {
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 120_000 });
@@ -30,122 +33,181 @@ const expectStableRttIdentity = async (
   page: Page,
   rtt: Locator,
   rttHandle: ElementHandle<SVGElement | HTMLElement>,
-  canvasHandle: ElementHandle<SVGElement | HTMLElement>,
-  sceneHandle: ElementHandle<SVGElement | HTMLElement>,
+  rttCanvasHandle: ElementHandle<SVGElement | HTMLElement>,
+  sceneCanvasHandle: ElementHandle<SVGElement | HTMLElement>,
   ownerId: string,
   resourceGeneration: string,
 ) => {
-  await expect.poll(() => page.evaluate((node) => node.isConnected && document.querySelector('[data-testid="ground-glass-rtt"]') === node, rttHandle)).toBe(true);
-  await expect.poll(() => page.evaluate((node) => node.isConnected && document.querySelector('[data-testid="ground-glass-rtt"] canvas') === node, canvasHandle)).toBe(true);
-  await expect.poll(() => page.evaluate((node) => node.isConnected && document.querySelector('[data-testid="scene-canvas"]') === node, sceneHandle)).toBe(true);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (node) => node.isConnected && document.querySelector('[data-testid="ground-glass-rtt"]') === node,
+        rttHandle,
+      ),
+    )
+    .toBe(true);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (node) => node.isConnected && document.querySelector('[data-testid="ground-glass-rtt"] canvas') === node,
+        rttCanvasHandle,
+      ),
+    )
+    .toBe(true);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (node) => node.isConnected && document.querySelector('[data-testid="scene-canvas"] canvas') === node,
+        sceneCanvasHandle,
+      ),
+    )
+    .toBe(true);
   await expect(rtt).toHaveAttribute("data-rtt-owner-id", ownerId);
   await expect(rtt).toHaveAttribute("data-rtt-resource-generation", resourceGeneration);
 };
 
-test("Focus Fundamentals switches standards and focus modes without replacing RTT resources", async ({ page }) => {
+const expectRttCameraAtLens = async (scene: Locator, rtt: Locator) => {
+  await expect
+    .poll(async () => {
+      const lens = await readVector(scene, "data-camera-lens-center-world");
+      const camera = await readVector(rtt, "data-rtt-camera-position");
+      return Math.hypot(
+        camera[0] - lens[0] * 0.001,
+        camera[1] - lens[1] * 0.001,
+        camera[2] - lens[2] * 0.001,
+      );
+    })
+    .toBeLessThan(1e-5);
+};
+
+test("Focus Fundamentals proves front/rear viewpoint behavior without replacing RTT resources", async ({ page }) => {
   test.setTimeout(240_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
-    if ((message.type() === "error" || message.type() === "warning") && !isAllowedEnvironmentConsoleMessage(message.text())) {
+    if (
+      (message.type() === "error" || message.type() === "warning") &&
+      !isAllowedEnvironmentConsoleMessage(message.text())
+    ) {
       consoleProblems.push(message.text());
     }
   });
 
   await page.goto("/simulator/free/focus-fundamentals-two-targets?rttDiagnostics=1");
   const scene = page.getByTestId("scene-canvas");
+  const sceneCanvas = scene.locator("canvas").first();
   const rtt = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
-  const canvas = rtt.locator("canvas");
-  const sceneHandle = await scene.elementHandle();
+  const rttCanvas = rtt.locator("canvas");
+  const sceneCanvasHandle = await sceneCanvas.elementHandle();
   const slider = page.getByLabel("Focus distance");
   const front = page.getByRole("radio", { name: "Front standard" });
   const rear = page.getByRole("radio", { name: "Rear standard" });
-  const nearSharpness = page.getByRole("progressbar", { name: "focus-near-board sharpness" });
-  const farSharpness = page.getByRole("progressbar", { name: "focus-far-board sharpness" });
+  const nearSharpness = page.getByRole("progressbar", { name: "focus-near-detail sharpness" });
+  const farSharpness = page.getByRole("progressbar", { name: "focus-far-detail sharpness" });
 
   await expect(scene).toHaveAttribute("data-scene-subject-id", "focus-fundamentals-two-targets");
   await expect(page.getByRole("group", { name: "Focus standard" })).toBeVisible();
   await expect(front).toBeChecked();
   await expect(slider).toHaveValue("2000");
+  await expect(slider).toHaveAttribute("min", "1500");
+  await expect(slider).toHaveAttribute("max", "2500");
   await expectContentfulRtt(rtt);
 
   const rttHandle = await rtt.elementHandle();
-  const canvasHandle = await canvas.elementHandle();
-  if (!rttHandle || !canvasHandle || !sceneHandle) throw new Error("Focus Fundamentals render resources were not mounted");
+  const rttCanvasHandle = await rttCanvas.elementHandle();
+  if (!rttHandle || !rttCanvasHandle || !sceneCanvasHandle) {
+    throw new Error("Focus Fundamentals render resources were not mounted");
+  }
   const ownerId = await rtt.getAttribute("data-rtt-owner-id");
   const resourceGeneration = await rtt.getAttribute("data-rtt-resource-generation");
   if (!ownerId || !resourceGeneration) throw new Error("Ground Glass RTT diagnostics were incomplete");
+
   const referenceLensZ = await readZ(scene, "data-camera-lens-center-world");
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(0, 8);
   expect(await scene.getAttribute("data-focus-standard-selected")).toBe("front");
   expect(await scene.getAttribute("data-focus-standard-resolved")).toBe("front");
+  await expectRttCameraAtLens(scene, rtt);
   const initialSanityState = await rtt.getAttribute("data-rtt-sanity-state");
   expect(initialSanityState).toBeTruthy();
 
-  await page.getByRole("button", { name: "Focus Near Board" }).click();
-  await expect(slider).toHaveValue("1000");
+  await page.getByRole("button", { name: "Focus Near Detail" }).click();
+  await expect(slider).toHaveValue("1720");
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(0, 8);
-  expect(await readZ(scene, "data-camera-lens-center-world")).not.toBeCloseTo(referenceLensZ, 8);
-  await expect.poll(async () => Number(await nearSharpness.getAttribute("aria-valuenow")) - Number(await farSharpness.getAttribute("aria-valuenow"))).toBeGreaterThan(0);
+  const frontNearLensZ = await readZ(scene, "data-camera-lens-center-world");
+  expect(frontNearLensZ).not.toBeCloseTo(referenceLensZ, 8);
+  await expectRttCameraAtLens(scene, rtt);
+  const frontNearRttPosition = await readVector(rtt, "data-rtt-camera-position");
+  await expect
+    .poll(async () => Number(await nearSharpness.getAttribute("aria-valuenow")) - Number(await farSharpness.getAttribute("aria-valuenow")))
+    .toBeGreaterThan(0);
   await expect.poll(() => rtt.getAttribute("data-rtt-sanity-state"), { timeout: 120_000 }).not.toBe(initialSanityState);
   await expectContentfulRtt(rtt);
-  await expectStableRttIdentity(page, rtt, rttHandle, canvasHandle, sceneHandle, ownerId, resourceGeneration);
+  await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
-  await page.getByRole("button", { name: "Focus Far Board" }).click();
-  await expect(slider).toHaveValue("3000");
+  await page.getByRole("button", { name: "Focus Far Detail" }).click();
+  await expect(slider).toHaveValue("2180");
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(0, 8);
-  await expect.poll(async () => Number(await farSharpness.getAttribute("aria-valuenow")) - Number(await nearSharpness.getAttribute("aria-valuenow"))).toBeGreaterThan(0);
+  const frontFarLensZ = await readZ(scene, "data-camera-lens-center-world");
+  expect(frontFarLensZ).not.toBeCloseTo(frontNearLensZ, 8);
+  await expectRttCameraAtLens(scene, rtt);
+  expect(await readZ(rtt, "data-rtt-camera-position")).not.toBeCloseTo(frontNearRttPosition[2], 6);
+  await expect
+    .poll(async () => Number(await farSharpness.getAttribute("aria-valuenow")) - Number(await nearSharpness.getAttribute("aria-valuenow")))
+    .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
-  await expectStableRttIdentity(page, rtt, rttHandle, canvasHandle, sceneHandle, ownerId, resourceGeneration);
+  await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await rear.click();
   await expect(rear).toBeChecked();
-  await expect(slider).toHaveValue("3000");
+  await expect(slider).toHaveValue("2180");
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "rear");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "rear");
   expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 8);
   const rearFarFilmZ = await readZ(scene, "data-camera-film-center-world");
   expect(rearFarFilmZ).not.toBeCloseTo(0, 8);
+  await expectRttCameraAtLens(scene, rtt);
+  const rearFarRttPosition = await readVector(rtt, "data-rtt-camera-position");
   await expectContentfulRtt(rtt);
-  await expectStableRttIdentity(page, rtt, rttHandle, canvasHandle, sceneHandle, ownerId, resourceGeneration);
+  await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
-  await page.getByRole("button", { name: "Focus Near Board" }).click();
-  await expect(slider).toHaveValue("1000");
+  await page.getByRole("button", { name: "Focus Near Detail" }).click();
+  await expect(slider).toHaveValue("1720");
   expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 8);
   const rearNearFilmZ = await readZ(scene, "data-camera-film-center-world");
   expect(rearNearFilmZ).not.toBeCloseTo(rearFarFilmZ, 8);
-  await expect.poll(async () => Number(await nearSharpness.getAttribute("aria-valuenow")) - Number(await farSharpness.getAttribute("aria-valuenow"))).toBeGreaterThan(0);
+  await expectRttCameraAtLens(scene, rtt);
+  const rearNearRttPosition = await readVector(rtt, "data-rtt-camera-position");
+  expect(Math.hypot(...rearNearRttPosition.map((value, index) => value - rearFarRttPosition[index]))).toBeLessThan(1e-7);
+  await expect
+    .poll(async () => Number(await nearSharpness.getAttribute("aria-valuenow")) - Number(await farSharpness.getAttribute("aria-valuenow")))
+    .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
-  await expectStableRttIdentity(page, rtt, rttHandle, canvasHandle, sceneHandle, ownerId, resourceGeneration);
+  await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
-  await page.getByRole("button", { name: "Focus Far Board" }).click();
-  await expect(slider).toHaveValue("3000");
+  await page.getByRole("button", { name: "Focus Far Detail" }).click();
+  await expect(slider).toHaveValue("2180");
   expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 8);
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(rearFarFilmZ, 8);
-  await expect.poll(async () => Number(await farSharpness.getAttribute("aria-valuenow")) - Number(await nearSharpness.getAttribute("aria-valuenow"))).toBeGreaterThan(0);
+  await expectRttCameraAtLens(scene, rtt);
+  await expect
+    .poll(async () => Number(await farSharpness.getAttribute("aria-valuenow")) - Number(await nearSharpness.getAttribute("aria-valuenow")))
+    .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
-  await expectStableRttIdentity(page, rtt, rttHandle, canvasHandle, sceneHandle, ownerId, resourceGeneration);
+  await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await front.click();
   await expect(front).toBeChecked();
-  await expect(scene).toHaveAttribute("data-focus-standard-selected", "front");
-  await expect(scene).toHaveAttribute("data-focus-standard-resolved", "front");
-
   await page.getByRole("button", { name: "Infinity Reset" }).click();
   await expect(page.getByText("Focus: ∞")).toBeVisible();
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "front");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "front");
-  const infinityLensZ = await readZ(scene, "data-camera-lens-center-world");
   const focalLengthMm = Number(await rtt.getAttribute("data-rtt-focal-length-mm"));
-  expect(Number.isFinite(focalLengthMm)).toBe(true);
-  expect(infinityLensZ).toBeCloseTo(focalLengthMm, 8);
-  expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(
-    0,
-    8,
-  );
+  expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(focalLengthMm, 8);
+  expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(0, 8);
+  await expectRttCameraAtLens(scene, rtt);
   await expectContentfulRtt(rtt);
-  await expectStableRttIdentity(page, rtt, rttHandle, canvasHandle, sceneHandle, ownerId, resourceGeneration);
+  await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await rear.click();
   await expect(rear).toBeChecked();
@@ -154,11 +216,12 @@ test("Focus Fundamentals switches standards and focus modes without replacing RT
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "rear");
   expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 8);
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(referenceLensZ - focalLengthMm, 8);
+  await expectRttCameraAtLens(scene, rtt);
   await expectContentfulRtt(rtt);
-  await expectStableRttIdentity(page, rtt, rttHandle, canvasHandle, sceneHandle, ownerId, resourceGeneration);
+  await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
-  await page.getByRole("button", { name: "Focus Far Board" }).click();
-  await expect(slider).toHaveValue("3000");
+  await page.getByRole("button", { name: "Focus Far Detail" }).click();
+  await expect(slider).toHaveValue("2180");
   await expect(page.getByText("Focus: ∞")).toHaveCount(0);
   await expect(rear).toBeChecked();
   await expect(page.getByTestId("scene-canvas")).toHaveAttribute("data-optics-fallback-applied", "false");
@@ -169,14 +232,15 @@ test("Focus Fundamentals switches standards and focus modes without replacing RT
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "front");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "front");
   await expect(scene).toHaveAttribute("data-optics-fallback-applied", "false");
+  await expectRttCameraAtLens(scene, rtt);
   await expectContentfulRtt(rtt);
-  await expectStableRttIdentity(page, rtt, rttHandle, canvasHandle, sceneHandle, ownerId, resourceGeneration);
+  await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `React/Three.js/WebGL warnings: ${consoleProblems.join("\n")}`).toEqual([]);
 });
 
-test("Focus Fundamentals controls remain usable at a 1024px viewport", async ({ page }) => {
+test("Focus Fundamentals controls remain usable at responsive viewports", async ({ page }) => {
   for (const viewport of [
     { width: 1024, height: 768 },
     { width: 390, height: 844 },
@@ -193,8 +257,8 @@ test("Focus Fundamentals controls remain usable at a 1024px viewport", async ({ 
     await expect(page.getByRole("radio", { name: "Front standard" })).toBeVisible();
     await expect(page.getByRole("radio", { name: "Rear standard" })).toBeVisible();
     await expect(page.getByLabel("Focus distance")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Focus Near Board" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Focus Far Board" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Focus Near Detail" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Focus Far Detail" })).toBeVisible();
     await expect(page.getByTestId("ground-glass-rtt")).toHaveCount(1);
 
     const bounds = await group.boundingBox();

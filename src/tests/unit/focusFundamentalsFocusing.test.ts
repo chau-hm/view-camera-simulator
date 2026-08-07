@@ -32,6 +32,8 @@ const expectFiniteGeometry = (optics: ReturnType<typeof deriveOpticsState>) => {
 describe("Focus Fundamentals selectable focus standard geometry", () => {
   const f = CAMERA_CONSTANTS.focalLengthMm;
   const reference = focusFundamentalsTwoTargets.focusStandardCapability?.referenceFocusDepthMm ?? 2000;
+  const nearDepth = focusFundamentalsTwoTargets.focusTargets[0].focusReferenceDepthFromRearDatumMm!;
+  const farDepth = focusFundamentalsTwoTargets.focusTargets[1].focusReferenceDepthFromRearDatumMm!;
 
   it("makes front and rear geometry identical at the reference depth", () => {
     const front = deriveOpticsState(cameraFor({ focusDistanceMm: reference, focusStandard: "front" }), focusFundamentalsTwoTargets);
@@ -46,7 +48,7 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
     expect(rear.diagnostics.fallbackApplied).toBe(false);
   });
 
-  it.each([1000, 3000])("resolves rear finite focus at S=%i with actual U", (S) => {
+  it.each([nearDepth, farDepth])("resolves rear finite focus at S=%i with actual U", (S) => {
     const front = deriveOpticsState(cameraFor({ focusDistanceMm: S, focusStandard: "front" }), focusFundamentalsTwoTargets);
     const rear = deriveOpticsState(cameraFor({ focusDistanceMm: S, focusStandard: "rear" }), focusFundamentalsTwoTargets);
     const referenceSolution = solveLensExtensionForRearDatumFocusDepth(reference, f);
@@ -69,29 +71,29 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
 
   it("keeps the front film datum fixed while moving the lens across Near and Far", () => {
     const near = deriveOpticsState(
-      cameraFor({ focusDistanceMm: 1000, focusStandard: "front" }),
+      cameraFor({ focusDistanceMm: nearDepth, focusStandard: "front" }),
       focusFundamentalsTwoTargets,
     );
     const far = deriveOpticsState(
-      cameraFor({ focusDistanceMm: 3000, focusStandard: "front" }),
+      cameraFor({ focusDistanceMm: farDepth, focusStandard: "front" }),
       focusFundamentalsTwoTargets,
     );
 
     expect(near.filmCenterWorld.z).toBe(0);
     expect(far.filmCenterWorld.z).toBe(0);
     expect(near.lensCenterWorld.z).not.toBeCloseTo(far.lensCenterWorld.z, 12);
-    expect(near.focusPointWorld.z).toBe(1000);
-    expect(far.focusPointWorld.z).toBe(3000);
+    expect(near.focusPointWorld.z).toBe(nearDepth);
+    expect(far.focusPointWorld.z).toBe(farDepth);
     expectFiniteGeometry(near);
     expectFiniteGeometry(far);
   });
 
   it("invalidates the derived-optics selector when the focus standard changes", () => {
     const front = selectDerivedOpticsState(
-      cameraFor({ focusDistanceMm: 1000, focusStandard: "front" }),
+      cameraFor({ focusDistanceMm: nearDepth, focusStandard: "front" }),
     );
     const rear = selectDerivedOpticsState(
-      cameraFor({ focusDistanceMm: 1000, focusStandard: "rear" }),
+      cameraFor({ focusDistanceMm: nearDepth, focusStandard: "rear" }),
     );
 
     expect(rear).not.toBe(front);

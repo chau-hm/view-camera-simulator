@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 import { useAppStore } from "../../state/appStore";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import { focusFundamentalsReferenceFocusDepthMm } from "../../scenes/focusFundamentalsTargets";
 
 const renderRoute = (sceneId: string) =>
   render(
@@ -44,8 +45,8 @@ describe("Focus Fundamentals selectable focus integration", () => {
 
     expect(front).toBeChecked();
     expect(rear).not.toBeChecked();
-    expect(slider).toHaveAttribute("min", "600");
-    expect(slider).toHaveAttribute("max", "12000");
+    expect(slider).toHaveAttribute("min", "1500");
+    expect(slider).toHaveAttribute("max", "2500");
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-selected", "front");
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-resolved", "front");
     expect(sceneCanvas).toHaveAttribute("data-optics-fallback-applied", "false");
@@ -53,8 +54,8 @@ describe("Focus Fundamentals selectable focus integration", () => {
     const referenceLensZ = readZ(sceneCanvas, "data-camera-lens-center-world");
     expect(readZ(sceneCanvas, "data-camera-film-center-world")).toBeCloseTo(0, 10);
 
-    fireEvent.change(slider, { target: { value: "3000" } });
-    await waitFor(() => expect(useAppStore.getState().camera.focusDistanceMm).toBe(3000));
+    fireEvent.change(slider, { target: { value: "2180" } });
+    await waitFor(() => expect(useAppStore.getState().camera.focusDistanceMm).toBe(2180));
     expect(readZ(sceneCanvas, "data-camera-film-center-world")).toBeCloseTo(0, 10);
     expect(readZ(sceneCanvas, "data-camera-lens-center-world")).not.toBeCloseTo(referenceLensZ, 10);
 
@@ -85,7 +86,7 @@ describe("Focus Fundamentals selectable focus integration", () => {
     await waitFor(() =>
       expect(useAppStore.getState().camera).toMatchObject({
         focusStandard: "front",
-        focusDistanceMm: 2000,
+        focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
         focusMode: "finite",
       }),
     );

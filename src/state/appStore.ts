@@ -70,9 +70,6 @@ export const getFocusStandardDefault = (sceneId: string): FocusStandard => {
   return capability?.defaultStandard ?? "front";
 };
 
-const isFocusFundamentalsScene = (sceneId: string): boolean =>
-  sceneId === "focus-fundamentals-two-targets" && supportsFocusStandard(sceneId);
-
 const defaultControlState = {
   focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
   frontRiseMm: DEFAULT_CAMERA_STATE.frontRiseMm,
@@ -87,6 +84,23 @@ const defaultControlState = {
 const clampFocusDistanceForScene = (sceneId: string, value: number) => {
   const range = getSceneFocusDistanceRange(sceneId);
   return clamp(value, range.min, range.max);
+};
+
+/** Resolve the declared finite-focus baseline for a selectable-focus scene. */
+const resolveSceneFocusDefaults = (
+  sceneId: string,
+): Pick<CameraState, "focusStandard" | "focusDistanceMm" | "focusMode" | "lastFiniteFocusDepthMm"> => {
+  const scene = getSceneById(sceneId);
+  const focusDistanceMm = clampFocusDistanceForScene(
+    sceneId,
+    scene?.cameraPreset.focusDistanceMm ?? defaultControlState.focusDistanceMm,
+  );
+  return {
+    focusStandard: getFocusStandardDefault(sceneId),
+    focusDistanceMm,
+    focusMode: "finite",
+    lastFiniteFocusDepthMm: focusDistanceMm,
+  };
 };
 
 /** Resolve the default movement for a scene, if any. */
@@ -845,13 +859,10 @@ export const useAppStore = create<AppStore>((set) => ({
         };
       }
 
-      if (isFocusFundamentalsScene(sceneId)) {
+      if (supportsFocusStandard(sceneId)) {
         nextCamera = {
           ...nextCamera,
-          focusStandard: getFocusStandardDefault(sceneId),
-          focusDistanceMm: 2000,
-          focusMode: "finite",
-          lastFiniteFocusDepthMm: 2000,
+          ...resolveSceneFocusDefaults(sceneId),
         };
       }
 
@@ -1192,7 +1203,7 @@ export const useAppStore = create<AppStore>((set) => ({
           selectedMovement: defaultMovement,
         };
       }
-      const focusFundamentalsReset = isFocusFundamentalsScene(sceneId);
+      const selectableFocusReset = supportsFocusStandard(sceneId);
       // For all other scenes (and the calibration route), use the scene preset
       // or global default state.
       const resetValues = Object.keys(scenePreset).length > 0
@@ -1220,14 +1231,7 @@ export const useAppStore = create<AppStore>((set) => ({
           cameraBodyPitchDeg: 0,
           cameraRigPlacement: state.camera.cameraRigPlacement,
           cameraMovementLessonState: undefined,
-          ...(focusFundamentalsReset
-            ? {
-                focusStandard: getFocusStandardDefault(sceneId),
-                focusDistanceMm: 2000,
-                focusMode: "finite" as const,
-                lastFiniteFocusDepthMm: 2000,
-              }
-            : {}),
+          ...(selectableFocusReset ? resolveSceneFocusDefaults(sceneId) : {}),
         },
         task: { ...state.task, currentTaskEvaluation: null },
         selectedMovement: defaultMovement,
@@ -1269,7 +1273,7 @@ export const useAppStore = create<AppStore>((set) => ({
         resolveInitialOpticalGeometryVisibility(activeTask);
 
       const defaultMovement = resolveDefaultMovement(nextSceneId);
-      const focusFundamentalsRestart = isFocusFundamentalsScene(nextSceneId);
+      const selectableFocusRestart = supportsFocusStandard(nextSceneId);
       const preserveCalibration =
         state.cameraMovementCalibrationSession.active &&
         isCameraMovementsScene(nextSceneId) &&
@@ -1302,14 +1306,7 @@ export const useAppStore = create<AppStore>((set) => ({
           focusDistanceMm: preserveCalibration
             ? activeCalibration.optics.provisionalFocusDistanceMm
             : focusDistanceMm,
-          ...(focusFundamentalsRestart
-            ? {
-                focusStandard: getFocusStandardDefault(nextSceneId),
-                focusDistanceMm: 2000,
-                focusMode: "finite" as const,
-                lastFiniteFocusDepthMm: 2000,
-              }
-            : {}),
+          ...(selectableFocusRestart ? resolveSceneFocusDefaults(nextSceneId) : {}),
           cameraMovementLessonState:
             isCameraMovementsScene(nextSceneId) && !preserveCalibration
               ? DEFAULT_CAMERA_MOVEMENT_LESSON_STATE

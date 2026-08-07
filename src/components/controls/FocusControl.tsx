@@ -52,8 +52,8 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
           </label>
           <small className="control-help">
             {focusControl.focusStandard === "rear"
-              ? "Moving the rear standard changes focus while keeping the lens position and composition stable."
-              : "Moving the front standard changes focus and composition."}
+              ? "Moving the rear standard changes focus while keeping the lens position stable."
+              : "Moving the front standard changes focus and moves the lens."}
           </small>
         </fieldset>
       )}

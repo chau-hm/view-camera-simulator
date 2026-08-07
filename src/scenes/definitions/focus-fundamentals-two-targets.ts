@@ -1,36 +1,39 @@
 import type { SceneDefinition } from "../../types/scene";
-import { focusTargetsDefs } from "../focusFundamentalsTargets";
+import {
+  focusFundamentalsObjectCenterMm,
+  focusFundamentalsReferenceFocusDepthMm,
+  focusFundamentalsSceneBoundsMm,
+  focusTargetsDefs,
+} from "../focusFundamentalsTargets";
 
 export const focusFundamentalsTwoTargets: SceneDefinition = {
   id: "focus-fundamentals-two-targets",
   name: "Focus Fundamentals — Two Targets",
   description:
-    "Compare front- and rear-standard focusing and observe how moving the lens affects composition.",
+    "Focus two depths on the same object and compare front- and rear-standard focusing.",
   assets: [],
   cameraPreset: {
-    focusDistanceMm: 2000,
-   aperture: 11,
-   frontRiseMm: 0,
-   frontTiltDeg: 0,
-   frontSwingDeg: 0,
+    focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
+    aperture: 11,
+    frontRiseMm: 0,
+    frontTiltDeg: 0,
+    frontSwingDeg: 0,
     rearRiseMm: 0,
     rearTiltDeg: 0,
- },
+  },
   cameraPlacement: {
-    // observer camera placed behind the lens looking forward along +Z
-    position: { x: 0, y: 0, z: -800 },
-    target: { x: 0, y: 0, z: 2000 },
+    // observer camera is offset to keep the block's front and right detail
+    // readable alongside the physical camera standards.
+    position: { x: 350, y: 180, z: -800 },
+    target: focusFundamentalsObjectCenterMm,
   },
-  bounds: {
-    min: { x: -2000, y: -1000, z: 200 },
-    max: { x: 2000, y: 2000, z: 12000 },
-  },
+  bounds: focusFundamentalsSceneBoundsMm,
   focusTargets: focusTargetsDefs,
   compositionTargets: [],
   focusStandardCapability: {
     enabled: true,
     defaultStandard: "front",
-    referenceFocusDepthMm: 2000,
-    minimumFocusDepthMm: 600,
+    referenceFocusDepthMm: focusFundamentalsReferenceFocusDepthMm,
+    minimumFocusDepthMm: focusFundamentalsSceneBoundsMm.min.z,
   },
 };

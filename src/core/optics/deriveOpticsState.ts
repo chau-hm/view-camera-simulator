@@ -599,9 +599,8 @@ export const deriveOpticsState = (
   let focusFundamentalsFocusing: FocusFundamentalsFocusingResult | null = null;
   let focusFundamentalsFocusDepthMm: number | null = null;
 
-  // For the Focus Fundamentals scene (front-standard focusing):
-  // - rear datum / film datum remain at z = 0
-  // - lens (front standard) moves to +imageDistanceMm from the rear datum
+  // For the Focus Fundamentals scene, the canonical front/rear resolver owns
+  // lens and film placement in the rear-datum coordinate system.
   // All values remain in mm until conversion at render boundary.
   if (scene.id === "focus-fundamentals-two-targets") {
     focusFundamentalsFocusing = resolveFocusFundamentalsFocusing({
@@ -679,7 +678,8 @@ export const deriveOpticsState = (
 
   // Determine focus point / plane
   let focusPointWorld = calculateFocusPoint(cameraState, opticalAxis);
-  // For Focus Fundamentals scene, cameraState.focusDistanceMm represents S (focus plane depth from rear datum)
+  // For Focus Fundamentals, focusDistanceMm represents S (focus-plane depth
+  // from the rear datum), independent of which standard is selected.
   if (scene.id === "focus-fundamentals-two-targets") {
     focusPointWorld = vec(
       0,
