@@ -6,6 +6,7 @@ import {
 } from "../../scenes/focusFundamentalsPresentation";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { resolveFocusStandardVisualState } from "../../render/focusStandardPresentation";
 
 const opticsFor = (
   focusStandard: "front" | "rear",
@@ -115,5 +116,21 @@ describe("Focus Fundamentals presentation cues", () => {
         150,
       )!.lensCenterWorld.z,
     );
+  });
+
+  it("uses the active accent only on the selected focusing standard", () => {
+    const front = resolveFocusStandardVisualState("front", "front");
+    const rear = resolveFocusStandardVisualState("rear", "front");
+    expect(front.active).toBe(true);
+    expect(front.bodyColor).toBe("#2563eb");
+    expect(rear.active).toBe(false);
+    expect(rear.bodyColor).toBe("#4b5563");
+
+    const rearActive = resolveFocusStandardVisualState("rear", "rear");
+    const frontInactive = resolveFocusStandardVisualState("front", "rear");
+    expect(rearActive.active).toBe(true);
+    expect(rearActive.bodyColor).toBe("#2563eb");
+    expect(frontInactive.active).toBe(false);
+    expect(frontInactive.bodyColor).toBe("#6b7280");
   });
 });

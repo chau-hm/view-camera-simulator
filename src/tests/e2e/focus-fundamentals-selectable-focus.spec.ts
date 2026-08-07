@@ -112,7 +112,23 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(slider).toHaveValue("2000");
   await expect(slider).toHaveAttribute("min", "1500");
   await expect(slider).toHaveAttribute("max", "2500");
+  await expect(page.getByText("Focus method")).toBeVisible();
+  await expect(page.getByText("Movement · Lens moves · Film fixed")).toBeVisible();
+  await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "front");
+  await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "false");
+  expect(Number(await scene.getAttribute("data-focus-teaching-displacement-mm"))).toBeLessThan(1e-6);
   await expectContentfulRtt(rtt);
+
+  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  const geometrySvg = page.getByTestId("geometry-svg-side");
+  await expect(geometrySvg).toBeVisible();
+  await expect(geometrySvg.locator('[data-testid="focus-fundamentals-position-cues"]')).toBeVisible();
+  await expect(geometrySvg.locator('[data-testid="focus-current-lens-position"]')).toBeVisible();
+  await expect(geometrySvg.locator('[data-testid="focus-reference-lens-position"]')).toBeVisible();
+  await expect(geometrySvg).toContainText("Lens · current");
+  await expect(geometrySvg).toContainText("Lens · reference");
+  await expect(geometrySvg).not.toContainText("Original");
+  await page.getByRole("button", { name: "Close 2D Geometry" }).click();
 
   const rttHandle = await rtt.elementHandle();
   const rttCanvasHandle = await rttCanvas.elementHandle();
@@ -136,6 +152,10 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(0, 8);
   const frontNearLensZ = await readZ(scene, "data-camera-lens-center-world");
   expect(frontNearLensZ).not.toBeCloseTo(referenceLensZ, 8);
+  await expect(page.getByText("Movement · Lens moves · Film fixed")).toBeVisible();
+  await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "front");
+  await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "true");
+  expect(Number(await scene.getAttribute("data-focus-teaching-displacement-mm"))).toBeGreaterThan(0.5);
   await expectRttCameraAtLens(scene, rtt);
   const frontNearRttPosition = await readVector(rtt, "data-rtt-camera-position");
   await expect
@@ -150,6 +170,8 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(0, 8);
   const frontFarLensZ = await readZ(scene, "data-camera-lens-center-world");
   expect(frontFarLensZ).not.toBeCloseTo(frontNearLensZ, 8);
+  await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "front");
+  await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "true");
   await expectRttCameraAtLens(scene, rtt);
   expect(await readZ(rtt, "data-rtt-camera-position")).not.toBeCloseTo(frontNearRttPosition[2], 6);
   await expect
@@ -163,6 +185,9 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(slider).toHaveValue("2180");
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "rear");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "rear");
+  await expect(page.getByText("Movement · Film moves · Lens/viewpoint fixed")).toBeVisible();
+  await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "rear");
+  await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "true");
   expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 8);
   const rearFarFilmZ = await readZ(scene, "data-camera-film-center-world");
   expect(rearFarFilmZ).not.toBeCloseTo(0, 8);
@@ -176,6 +201,8 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 8);
   const rearNearFilmZ = await readZ(scene, "data-camera-film-center-world");
   expect(rearNearFilmZ).not.toBeCloseTo(rearFarFilmZ, 8);
+  await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "rear");
+  await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "true");
   await expectRttCameraAtLens(scene, rtt);
   const rearNearRttPosition = await readVector(rtt, "data-rtt-camera-position");
   expect(Math.hypot(...rearNearRttPosition.map((value, index) => value - rearFarRttPosition[index]))).toBeLessThan(1e-7);
@@ -202,6 +229,8 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(page.getByText("Focus: ∞")).toBeVisible();
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "front");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "front");
+  await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "front");
+  await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "true");
   const focalLengthMm = Number(await rtt.getAttribute("data-rtt-focal-length-mm"));
   expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(focalLengthMm, 8);
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(0, 8);
@@ -214,6 +243,8 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(page.getByText("Focus: ∞")).toBeVisible();
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "rear");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "rear");
+  await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "rear");
+  await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "true");
   expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 8);
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(referenceLensZ - focalLengthMm, 8);
   await expectRttCameraAtLens(scene, rtt);
@@ -231,6 +262,9 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(front).toBeChecked();
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "front");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "front");
+  await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "front");
+  await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "false");
+  expect(Number(await scene.getAttribute("data-focus-teaching-displacement-mm"))).toBeLessThan(1e-6);
   await expect(scene).toHaveAttribute("data-optics-fallback-applied", "false");
   await expectRttCameraAtLens(scene, rtt);
   await expectContentfulRtt(rtt);

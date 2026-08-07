@@ -41,6 +41,7 @@ import {
   type CameraMovementLatticeRenderModel,
 } from "./cameraMovementLatticeRenderModel";
 import { FocusFundamentalsTeachingCues } from "./FocusFundamentalsTeachingCues";
+import { resolveFocusStandardVisualState } from "./focusStandardPresentation";
 import {
   deriveFocusFundamentalsReferenceOptics,
   resolveFocusFundamentalsActiveStandard,
@@ -256,13 +257,14 @@ const RearStandard = ({
   opticsState?: DerivedOpticsState;
   active?: boolean;
 }) => {
+  const visual = resolveFocusStandardVisualState("rear", active ? "rear" : null);
   // Fallback only when no valid opticsState exists
   if (!opticsState) {
     return (
       <>
         <mesh position={[0, 0, toWorld(-CAMERA_CONSTANTS.focalLengthMm)]}>
           <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
-          <meshStandardMaterial color={active ? "#2563eb" : "#4b5563"} />
+          <meshStandardMaterial color={visual.bodyColor} />
         </mesh>
       </>
     );
@@ -276,9 +278,9 @@ const RearStandard = ({
       <mesh>
         <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
         <meshStandardMaterial
-          color={active ? "#2563eb" : "#4b5563"}
-          emissive={active ? "#0e7490" : "#000000"}
-          emissiveIntensity={active ? 0.18 : 0}
+          color={visual.bodyColor}
+          emissive={visual.emissiveColor}
+          emissiveIntensity={visual.emissiveIntensity}
         />
       </mesh>
     </group>
@@ -292,6 +294,7 @@ const FrontStandard = ({
   opticsState: DerivedOpticsState;
   active?: boolean;
 }) => {
+  const visual = resolveFocusStandardVisualState("front", active ? "front" : null);
   const transform = resolveFrontStandardRenderTransform(
     opticsState.lensCenterWorld,
     opticsState.lensNormalWorld,
@@ -302,18 +305,18 @@ const FrontStandard = ({
       <mesh>
         <boxGeometry args={[toWorld(CAMERA_CONSTANTS.frontStandardWidthMm), toWorld(CAMERA_CONSTANTS.frontStandardHeightMm), toWorld(12)]} />
         <meshStandardMaterial
-          color={active ? "#2563eb" : "#6b7280"}
-          emissive={active ? "#0e7490" : "#000000"}
-          emissiveIntensity={active ? 0.18 : 0}
+          color={visual.bodyColor}
+          emissive={visual.emissiveColor}
+          emissiveIntensity={visual.emissiveIntensity}
         />
       </mesh>
       <mesh position={[0, 0, toWorld(8)]}>
         <boxGeometry args={[toWorld(100), toWorld(100), toWorld(8)]} />
-        <meshStandardMaterial color={active ? "#60a5fa" : "#9ca3af"} />
+        <meshStandardMaterial color={visual.detailColor} />
       </mesh>
       <mesh position={[0, 0, toWorld(16)]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[toWorld(18), toWorld(18), toWorld(18), 24]} />
-        <meshStandardMaterial color={active ? "#0f172a" : "#1f2937"} />
+        <meshStandardMaterial color={visual.lensColor} />
       </mesh>
     </group>
   );
