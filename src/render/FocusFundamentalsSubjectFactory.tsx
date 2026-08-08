@@ -12,6 +12,16 @@ import {
   getFocusFundamentalsDetailMarkerLocalPosition,
   getFocusFundamentalsDetailMarkerRotationY,
 } from "../scenes/focusFundamentalsTargets";
+import {
+  focusFundamentalsParallaxBracketBarWidthMm,
+  focusFundamentalsParallaxBracketGapMm,
+  focusFundamentalsParallaxBracketHeightMm,
+  focusFundamentalsParallaxFeatureDepthMm,
+  focusFundamentalsParallaxFeatures,
+  focusFundamentalsParallaxPointerHeightMm,
+  focusFundamentalsParallaxPointerWidthMm,
+  focusFundamentalsParallaxSupportWidthMm,
+} from "../scenes/focusFundamentalsParallax";
 
 const FLOOR_COLOR = new THREE.Color("#9aa6b5");
 const OBJECT_COLOR = new THREE.Color("#64748b");
@@ -27,8 +37,17 @@ type FrameGeometrySet = {
   connector: THREE.BoxGeometry;
 };
 
+type ParallaxGeometrySet = {
+  bracketVertical: THREE.BoxGeometry;
+  bracketHorizontal: THREE.BoxGeometry;
+  pointer: THREE.BoxGeometry;
+};
+
 let frameGeometries: FrameGeometrySet | null = null;
+let parallaxGeometries: ParallaxGeometrySet | null = null;
 let objectMaterial: THREE.MeshStandardMaterial | null = null;
+let parallaxBracketMaterial: THREE.MeshBasicMaterial | null = null;
+let parallaxPointerMaterial: THREE.MeshBasicMaterial | null = null;
 let markerGeometry: THREE.BoxGeometry | null = null;
 let markerTextures: [THREE.DataTexture, THREE.DataTexture] | null = null;
 let markerMaterials: [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial] | null = null;
@@ -104,6 +123,40 @@ function ensureSharedResources() {
       color: OBJECT_COLOR,
       roughness: 0.78,
       metalness: 0.02,
+    });
+  }
+  if (!parallaxGeometries) {
+    const totalBracketWidthMm =
+      focusFundamentalsParallaxBracketGapMm +
+      focusFundamentalsParallaxBracketBarWidthMm * 2;
+    parallaxGeometries = {
+      bracketVertical: new THREE.BoxGeometry(
+        toWorld(focusFundamentalsParallaxBracketBarWidthMm),
+        toWorld(focusFundamentalsParallaxBracketHeightMm),
+        toWorld(focusFundamentalsParallaxFeatureDepthMm),
+      ),
+      bracketHorizontal: new THREE.BoxGeometry(
+        toWorld(totalBracketWidthMm),
+        toWorld(focusFundamentalsParallaxBracketBarWidthMm),
+        toWorld(focusFundamentalsParallaxFeatureDepthMm),
+      ),
+      pointer: new THREE.BoxGeometry(
+        toWorld(focusFundamentalsParallaxPointerWidthMm),
+        toWorld(focusFundamentalsParallaxPointerHeightMm),
+        toWorld(focusFundamentalsParallaxFeatureDepthMm),
+      ),
+    };
+  }
+  if (!parallaxBracketMaterial) {
+    parallaxBracketMaterial = new THREE.MeshBasicMaterial({
+      color: "#f8fafc",
+      side: THREE.DoubleSide,
+    });
+  }
+  if (!parallaxPointerMaterial) {
+    parallaxPointerMaterial = new THREE.MeshBasicMaterial({
+      color: "#ef4444",
+      side: THREE.DoubleSide,
     });
   }
   if (!markerGeometry) {
@@ -231,6 +284,7 @@ const addDepthConnector = (
   name: string,
   startMm: { x: number; y: number; z: number },
   endMm: { x: number; y: number; z: number },
+  widthMm: number = focusFundamentalsFrameGeometry.memberWidthMm,
 ) => {
   const start = new THREE.Vector3(
     toWorld(startMm.x),
@@ -251,11 +305,89 @@ const addDepthConnector = (
     direction.clone().normalize(),
   );
   connector.scale.set(
-    toWorld(focusFundamentalsFrameGeometry.memberWidthMm),
-    toWorld(focusFundamentalsFrameGeometry.memberWidthMm),
+    toWorld(widthMm),
+    toWorld(widthMm),
     direction.length(),
   );
   connectorGroup.add(connector);
+};
+
+const addParallaxAlignmentFeature = (
+  featureGroup: THREE.Group,
+  feature: (typeof focusFundamentalsParallaxFeatures)[number],
+) => {
+  featureGroup.position.set(
+    toWorld(feature.localPositionMm.x),
+    toWorld(feature.localPositionMm.y),
+    toWorld(feature.localPositionMm.z),
+  );
+  // The parent subject is yawed for depth readability. Counter-rotate this
+  // small sight assembly so its bracket/pointer remains legible to the camera.
+  featureGroup.rotation.y = -focusFundamentalsObjectRotationYRad;
+  featureGroup.userData = {
+    parallaxFeatureId: feature.id,
+    parallaxFeatureDepthMm: feature.depthMm,
+    parallaxFeatureWorldMm: feature.referenceWorldPositionMm,
+  };
+
+  if (feature.id === "near-alignment-gate") {
+    const halfGap = focusFundamentalsParallaxBracketGapMm / 2;
+    const halfBar = focusFundamentalsParallaxBracketBarWidthMm / 2;
+    const verticalOffset = halfGap + halfBar;
+    const verticalY = 0;
+    const topY = focusFundamentalsParallaxBracketHeightMm / 2 - halfBar;
+    const left = new THREE.Mesh(
+      parallaxGeometries!.bracketVertical,
+      parallaxBracketMaterial!,
+    );
+    left.name = "focus-fundamentals-near-alignment-gate-left";
+    left.position.set(toWorld(-verticalOffset), toWorld(verticalY), 0);
+    const right = new THREE.Mesh(
+      parallaxGeometries!.bracketVertical,
+      parallaxBracketMaterial!,
+    );
+    right.name = "focus-fundamentals-near-alignment-gate-right";
+    right.position.set(toWorld(verticalOffset), toWorld(verticalY), 0);
+    const top = new THREE.Mesh(
+      parallaxGeometries!.bracketHorizontal,
+      parallaxBracketMaterial!,
+    );
+    top.name = "focus-fundamentals-near-alignment-gate-top";
+    top.position.set(0, toWorld(topY), 0);
+    featureGroup.add(left, right, top);
+    return;
+  }
+
+  const pointer = new THREE.Mesh(
+    parallaxGeometries!.pointer,
+    parallaxPointerMaterial!,
+  );
+  pointer.name = "focus-fundamentals-far-alignment-pointer";
+  pointer.position.set(0, 0, 0);
+  featureGroup.add(pointer);
+};
+
+const addParallaxAlignmentFeatures = (objectGroup: THREE.Group) => {
+  const supports = new THREE.Group();
+  supports.name = "focus-fundamentals-parallax-supports";
+  const features = new THREE.Group();
+  features.name = "focus-fundamentals-parallax-features";
+
+  for (const feature of focusFundamentalsParallaxFeatures) {
+    addDepthConnector(
+      supports,
+      `focus-fundamentals-${feature.id}-support`,
+      feature.supportAnchorLocalPositionMm,
+      feature.localPositionMm,
+      focusFundamentalsParallaxSupportWidthMm,
+    );
+    const featureGroup = new THREE.Group();
+    featureGroup.name = `focus-fundamentals-${feature.id}`;
+    addParallaxAlignmentFeature(featureGroup, feature);
+    features.add(featureGroup);
+  }
+
+  objectGroup.add(supports, features);
 };
 
 const addDepthConnectors = (connectorGroup: THREE.Group) => {
@@ -334,6 +466,7 @@ export function createFocusFundamentalsGroup(): THREE.Group {
   focusFundamentalsFocusDetails.forEach((detail, index) =>
     addFocusDetailMarker(objectGroup, detail, index),
   );
+  addParallaxAlignmentFeatures(objectGroup);
   group.add(objectGroup);
 
   const floor = new THREE.Mesh(floorGeometry!, floorMaterial!);

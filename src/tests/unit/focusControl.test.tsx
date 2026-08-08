@@ -141,6 +141,7 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     fireEvent.click(rear);
     expect(rear).toBeChecked();
     expect(screen.getByText("Rear focusing moves the film while the lens/viewpoint stays fixed.")).toBeInTheDocument();
+    expect(screen.getByText("Watch the near sight and far pointer: Front focus changes their alignment; Rear focus keeps them aligned.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "Front standard" }));
     expect(screen.getByText("Front focusing moves the lens/viewpoint. The film stays fixed.")).toBeInTheDocument();
   });
