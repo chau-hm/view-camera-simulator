@@ -352,7 +352,11 @@ describe("optical section projection", () => {
   it("keeps Architecture Rise and Focus Fundamentals DOF regions valid", () => {
     for (const scene of [architectureRiseScene, focusFundamentalsTwoTargets]) {
       const optics = deriveOpticsState(
-        { ...DEFAULT_CAMERA_STATE, activeSceneId: scene.id },
+        {
+          ...DEFAULT_CAMERA_STATE,
+          ...(scene.id === focusFundamentalsTwoTargets.id ? scene.cameraPreset : {}),
+          activeSceneId: scene.id,
+        },
         scene,
       );
       assertValidDofPolygon(optics, scene, "side");

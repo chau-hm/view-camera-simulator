@@ -5,6 +5,11 @@ import {
   resolveFocusFundamentalsTeachingCue,
 } from "../../scenes/focusFundamentalsPresentation";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import {
+  focusFundamentalsFocalLengthMm,
+  focusFundamentalsNearFocusDepthMm,
+  focusFundamentalsReferenceFocusDepthMm,
+} from "../../scenes/focusFundamentalsTargets";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { resolveFocusStandardVisualState } from "../../render/focusStandardPresentation";
 
@@ -12,11 +17,12 @@ const opticsFor = (
   focusStandard: "front" | "rear",
   focusDistanceMm: number,
   focusMode: "finite" | "infinity" = "finite",
-  focalLengthMm = DEFAULT_CAMERA_STATE.focalLengthMm,
+  focalLengthMm = focusFundamentalsFocalLengthMm,
 ) =>
   deriveOpticsState(
     {
       ...DEFAULT_CAMERA_STATE,
+      ...focusFundamentalsTwoTargets.cameraPreset,
       activeSceneId: focusFundamentalsTwoTargets.id,
       focusStandard,
       focusDistanceMm,
@@ -33,7 +39,7 @@ describe("Focus Fundamentals presentation cues", () => {
   ] as const)(
     "uses the canonical %s movable standard position for signed movement",
     (focusStandard, positionField) => {
-      const current = opticsFor(focusStandard, 1720);
+      const current = opticsFor(focusStandard, focusFundamentalsNearFocusDepthMm);
       const reference = deriveFocusFundamentalsReferenceOptics(
         current,
         focusFundamentalsTwoTargets,
@@ -63,7 +69,7 @@ describe("Focus Fundamentals presentation cues", () => {
   );
 
   it("collapses the movement cue at the canonical finite reference depth", () => {
-    const current = opticsFor("rear", 2000);
+    const current = opticsFor("rear", focusFundamentalsReferenceFocusDepthMm);
     const reference = deriveFocusFundamentalsReferenceOptics(
       current,
       focusFundamentalsTwoTargets,
@@ -76,7 +82,7 @@ describe("Focus Fundamentals presentation cues", () => {
   });
 
   it("compares infinity against the finite canonical reference state", () => {
-    const current = opticsFor("rear", 2000, "infinity");
+    const current = opticsFor("rear", focusFundamentalsReferenceFocusDepthMm, "infinity");
     const reference = deriveFocusFundamentalsReferenceOptics(
       current,
       focusFundamentalsTwoTargets,
@@ -90,19 +96,24 @@ describe("Focus Fundamentals presentation cues", () => {
   });
 
   it("uses the current canonical focal length for the finite reference derivation", () => {
-    const current = opticsFor("front", 1720, "finite", 180);
+    const current = opticsFor(
+      "front",
+      focusFundamentalsNearFocusDepthMm,
+      "finite",
+      210,
+    );
     const reference = deriveFocusFundamentalsReferenceOptics(
       current,
       focusFundamentalsTwoTargets,
-      180,
+      210,
     );
     const expectedReference = deriveOpticsState(
       {
         ...DEFAULT_CAMERA_STATE,
         activeSceneId: focusFundamentalsTwoTargets.id,
         focusStandard: "front",
-        focusDistanceMm: 2000,
-        focalLengthMm: 180,
+        focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
+        focalLengthMm: 210,
       },
       focusFundamentalsTwoTargets,
     );
@@ -113,7 +124,7 @@ describe("Focus Fundamentals presentation cues", () => {
       deriveFocusFundamentalsReferenceOptics(
         current,
         focusFundamentalsTwoTargets,
-        150,
+        focusFundamentalsFocalLengthMm,
       )!.lensCenterWorld.z,
     );
   });

@@ -5,7 +5,11 @@ import { useAppStore } from "../../state/appStore";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { cocDiameterMm } from "../../core/optics/thinLensModel";
-import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS } from "../../utils/constants";
+import { CAMERA_CONTROL_STEPS } from "../../utils/constants";
+import {
+  focusFundamentalsFocalLengthMm,
+  focusFundamentalsReferenceFocusDepthMm,
+} from "../../scenes/focusFundamentalsTargets";
 import { subtract, dot } from "../../core/math/vec";
 
 const nearFocusDepthMm = focusFundamentalsTwoTargets.focusTargets[0].focusReferenceDepthFromRearDatumMm!;
@@ -42,7 +46,7 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     const near = focusFundamentalsTwoTargets.focusTargets[0];
     const U = dot(subtract(near.worldPosition, optics.lensCenterWorld), optics.opticalAxis.direction);
     const imgDist = Math.abs(optics.filmPlane.point.z - optics.lensCenterWorld.z);
-    const coc = cocDiameterMm(CAMERA_CONSTANTS.focalLengthMm, camera.aperture as number, imgDist, U);
+    const coc = cocDiameterMm(focusFundamentalsFocalLengthMm, camera.aperture as number, imgDist, U);
     expect(Math.abs(coc)).toBeLessThan(0.05);
   });
 
@@ -63,7 +67,7 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     const far = focusFundamentalsTwoTargets.focusTargets[1];
     const U = dot(subtract(far.worldPosition, optics.lensCenterWorld), optics.opticalAxis.direction);
     const imgDist = Math.abs(optics.filmPlane.point.z - optics.lensCenterWorld.z);
-    const coc = cocDiameterMm(CAMERA_CONSTANTS.focalLengthMm, camera.aperture as number, imgDist, U);
+    const coc = cocDiameterMm(focusFundamentalsFocalLengthMm, camera.aperture as number, imgDist, U);
     expect(Math.abs(coc)).toBeLessThan(0.05);
   });
 
@@ -115,6 +119,7 @@ describe("FocusControl presets for Focus Fundamentals", () => {
   });
 
   it("uses the shared focus step for range and keyboard movement", () => {
+    useAppStore.getState().setFocusDistance(focusFundamentalsReferenceFocusDepthMm);
     render(<FocusControl focusEnabled={true} lockReason="" />);
     const slider = screen.getByLabelText("Focus distance");
     const before = useAppStore.getState().camera.focusDistanceMm;

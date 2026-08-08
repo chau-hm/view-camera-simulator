@@ -3,6 +3,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import { GeometryViewport } from "../../components/simulator/GeometryViewport";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import {
+  focusFundamentalsFarFocusDepthMm,
+  focusFundamentalsNearFocusDepthMm,
+  focusFundamentalsReferenceFocusDepthMm,
+} from "../../scenes/focusFundamentalsTargets";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 
@@ -11,25 +16,24 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     cleanup();
   });
 
-  it("A: Stable board positions when changing focus (side view)", () => {
+  it("A: Stable detail positions when changing focus (side view)", () => {
     const scene = focusFundamentalsTwoTargets;
-    const state1000 = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, focusDistanceMm: 1000 }, scene);
-    const { container, rerender } = render(<GeometryViewport opticsState={state1000} geometryView="side" scene={scene} riseMm={0} />);
+    const stateNear = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset, focusDistanceMm: focusFundamentalsNearFocusDepthMm }, scene);
+    const { container, rerender } = render(<GeometryViewport opticsState={stateNear} geometryView="side" scene={scene} riseMm={0} />);
     const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svg).toBeTruthy();
 
-    // find board glyph rects (side view uses 12x16 rectangles for boards)
+    // Focus Fundamentals renders canonical detail glyphs in the side view.
     const rects = Array.from(svg!.querySelectorAll('rect')).filter((r) => r.getAttribute('width') === '12' && r.getAttribute('height') === '16' && r.getAttribute('fill') === '#0f766e');
     expect(rects.length).toBeGreaterThanOrEqual(2);
     const centres1 = rects.map((r) => ({ cx: parseFloat(r.getAttribute('x') || '0') + 6 }));
 
-    // rerender at focus 3000
-    const state3000 = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, focusDistanceMm: 3000 }, scene);
-    rerender(<GeometryViewport opticsState={state3000} geometryView="side" scene={scene} riseMm={0} />);
+    const stateFar = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset, focusDistanceMm: focusFundamentalsFarFocusDepthMm }, scene);
+    rerender(<GeometryViewport opticsState={stateFar} geometryView="side" scene={scene} riseMm={0} />);
     const rects2 = Array.from(svg!.querySelectorAll('rect')).filter((r) => r.getAttribute('width') === '12' && r.getAttribute('height') === '16' && r.getAttribute('fill') === '#0f766e');
     const centres2 = rects2.map((r) => ({ cx: parseFloat(r.getAttribute('x') || '0') + 6 }));
 
-    // compare X positions for each board (order preserved)
+    // Compare X positions for each canonical detail (order preserved).
     expect(centres1.length).toBe(centres2.length);
     for (let i = 0; i < centres1.length; i++) {
       expect(Math.abs(centres1[i].cx - centres2[i].cx)).toBeLessThan(0.5);
@@ -38,7 +42,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
 
   it("B/D: Plane and projected camera orientation stay vertical in zero-movement Side and Top", () => {
     const scene = focusFundamentalsTwoTargets;
-    const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
+    const optics = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset }, scene);
 
     // side view
     const { container: c1 } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} riseMm={0} />);
@@ -93,7 +97,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
 
   it("C: FOV rays intersect visible plane segments", () => {
     const scene = focusFundamentalsTwoTargets;
-    const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
+    const optics = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset }, scene);
     const { container } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} riseMm={0} />);
     const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svg).toBeTruthy();
@@ -121,7 +125,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
 
   it("E: Depth strip shows expected chips and DiagramLegend is not present; Infinity mode shows ∞", () => {
     const scene = focusFundamentalsTwoTargets;
-    const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
+    const optics = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset }, scene);
     const { container, rerender } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} riseMm={0} />);
 
     // depth strip exists and has aria-label
@@ -153,7 +157,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
   it("shows canonical current/reference lens and film positions without an Original/Current legend", () => {
     const scene = focusFundamentalsTwoTargets;
     const optics = deriveOpticsState(
-      { ...DEFAULT_CAMERA_STATE, focusDistanceMm: 1720 },
+      { ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset, focusDistanceMm: focusFundamentalsNearFocusDepthMm },
       scene,
     );
     const { container } = render(
@@ -191,7 +195,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
 
   it("F: Raw RTT isolation — GroundGlassRenderer uses RTT and not legacy overlay for Focus Fundamentals", () => {
     const scene = focusFundamentalsTwoTargets;
-    const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
+    const optics = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset }, scene);
     const { container } = render(
       <GroundGlassRenderer
         opticsState={optics}
@@ -201,7 +205,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
         riseMm={0}
         tiltDeg={0}
         swingDeg={0}
-        focusDistanceMm={2000}
+        focusDistanceMm={focusFundamentalsReferenceFocusDepthMm}
         aperture={11}
         renderQuality="low"
         sceneId={scene.id}

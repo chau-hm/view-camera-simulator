@@ -4,7 +4,11 @@ import {
   focusFundamentalsObjectBoundsMm,
   focusFundamentalsObjectDimensionsMm,
   focusFundamentalsObjectRotationYDeg,
+  focusFundamentalsFocalLengthMm,
+  focusFundamentalsNearFocusDepthMm,
+  focusFundamentalsFarFocusDepthMm,
   focusFundamentalsReferenceFocusDepthMm,
+  focusFundamentalsFocusDepthRangeMm,
   focusFundamentalsSceneBoundsMm,
   focusFundamentalsFrameGeometry,
   focusFundamentalsMarkerOffsetMm,
@@ -29,9 +33,12 @@ describe("Focus Fundamentals canonical subject geometry", () => {
     expect(focusFundamentalsReferenceFocusDepthMm).toBeLessThan(far.focusDepthMm);
 
     const focusDepthSpanMm = far.focusDepthMm - near.focusDepthMm;
-    expect(focusDepthSpanMm).toBe(460);
+    expect(near.focusDepthMm).toBe(focusFundamentalsNearFocusDepthMm);
+    expect(far.focusDepthMm).toBe(focusFundamentalsFarFocusDepthMm);
+    expect(focusDepthSpanMm).toBe(300);
     expect(focusDepthSpanMm).toBeLessThan(2000);
 
+    expect(focusFundamentalsFocalLengthMm).toBe(180);
     expect(focusFundamentalsObjectRotationYDeg).toBeGreaterThan(25);
     expect(focusFundamentalsObjectDimensionsMm.width).toBeLessThan(520);
     expect(focusFundamentalsObjectDimensionsMm.height).toBeLessThan(380);
@@ -90,5 +97,7 @@ describe("Focus Fundamentals canonical subject geometry", () => {
     expect(focusFundamentalsSceneBoundsMm.max.z).toBeGreaterThan(
       focusFundamentalsObjectBoundsMm.max.z,
     );
+    expect(focusFundamentalsSceneBoundsMm.min.z).toBe(focusFundamentalsFocusDepthRangeMm.min);
+    expect(focusFundamentalsSceneBoundsMm.max.z).toBe(focusFundamentalsFocusDepthRangeMm.max);
   });
 });

@@ -6,7 +6,11 @@ import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { resolveInitialOpticalGeometryVisibility } from "../../state/sceneViewDefaults";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
-import { focusFundamentalsReferenceFocusDepthMm } from "../../scenes/focusFundamentalsTargets";
+import {
+  focusFundamentalsFarFocusDepthMm,
+  focusFundamentalsFocusDepthRangeMm,
+  focusFundamentalsReferenceFocusDepthMm,
+} from "../../scenes/focusFundamentalsTargets";
 
 describe("app store STA-001", () => {
   afterEach(() => {
@@ -229,13 +233,13 @@ describe("app store STA-001", () => {
       useAppStore.getState();
 
     initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
-    setFocusDistance(2180);
+    setFocusDistance(focusFundamentalsFarFocusDepthMm);
     setFocusStandard("rear");
     expect(useAppStore.getState().camera).toMatchObject({
       focusStandard: "rear",
-      focusDistanceMm: 2180,
+      focusDistanceMm: focusFundamentalsFarFocusDepthMm,
       focusMode: "finite",
-      lastFiniteFocusDepthMm: 2180,
+      lastFiniteFocusDepthMm: focusFundamentalsFarFocusDepthMm,
     });
 
     setInfinityFocus();
@@ -243,7 +247,7 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera).toMatchObject({
       focusStandard: "front",
       focusMode: "infinity",
-      lastFiniteFocusDepthMm: 2180,
+      lastFiniteFocusDepthMm: focusFundamentalsFarFocusDepthMm,
     });
   });
 
@@ -264,8 +268,8 @@ describe("app store STA-001", () => {
 
   it("keeps the selectable-focus route inside the physical focus range", () => {
     expect(getSceneFocusDistanceRange(focusFundamentalsTwoTargets.id)).toEqual({
-      min: 1500,
-      max: 2500,
+      min: focusFundamentalsFocusDepthRangeMm.min,
+      max: focusFundamentalsFocusDepthRangeMm.max,
     });
   });
 

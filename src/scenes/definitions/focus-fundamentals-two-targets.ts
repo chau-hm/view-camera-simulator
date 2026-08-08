@@ -1,6 +1,7 @@
 import type { SceneDefinition } from "../../types/scene";
 import {
   focusFundamentalsObjectCenterMm,
+  focusFundamentalsFocalLengthMm,
   focusFundamentalsReferenceFocusDepthMm,
   focusFundamentalsSceneBoundsMm,
   focusTargetsDefs,
@@ -13,6 +14,7 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
     "Focus two depths on the same object and compare front- and rear-standard focusing.",
   assets: [],
   cameraPreset: {
+    focalLengthMm: focusFundamentalsFocalLengthMm,
     focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
     aperture: 11,
     frontRiseMm: 0,
