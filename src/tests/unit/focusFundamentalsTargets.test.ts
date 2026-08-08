@@ -3,8 +3,12 @@ import {
   focusFundamentalsFocusDetails,
   focusFundamentalsObjectBoundsMm,
   focusFundamentalsObjectDimensionsMm,
+  focusFundamentalsObjectRotationYDeg,
   focusFundamentalsReferenceFocusDepthMm,
   focusFundamentalsSceneBoundsMm,
+  focusFundamentalsFrameGeometry,
+  focusFundamentalsMarkerOffsetMm,
+  getFocusFundamentalsDetailMarkerLocalPosition,
   focusTargetsDefs,
 } from "../../scenes/focusFundamentalsTargets";
 
@@ -16,7 +20,7 @@ describe("Focus Fundamentals canonical subject geometry", () => {
 
     expect(focusTargetsDefs).toHaveLength(2);
     expect(near.surface).toBe("front");
-    expect(far.surface).toBe("right");
+    expect(far.surface).toBe("back");
     expect(nearTarget.worldPosition).toEqual(near.worldPositionMm);
     expect(farTarget.worldPosition).toEqual(far.worldPositionMm);
     expect(near.worldPositionMm.z).toBe(near.focusDepthMm);
@@ -28,7 +32,29 @@ describe("Focus Fundamentals canonical subject geometry", () => {
     expect(focusDepthSpanMm).toBe(460);
     expect(focusDepthSpanMm).toBeLessThan(2000);
 
+    expect(focusFundamentalsObjectRotationYDeg).toBeGreaterThan(25);
+    expect(focusFundamentalsObjectDimensionsMm.width).toBeLessThan(520);
+    expect(focusFundamentalsObjectDimensionsMm.height).toBeLessThan(380);
+    expect(focusFundamentalsObjectDimensionsMm.depth).toBeLessThan(560);
+    expect(focusFundamentalsFrameGeometry.back.widthMm).toBeLessThan(
+      focusFundamentalsFrameGeometry.front.widthMm,
+    );
+    expect(focusFundamentalsFrameGeometry.back.heightMm).toBeLessThan(
+      focusFundamentalsFrameGeometry.front.heightMm,
+    );
+
     for (const detail of focusFundamentalsFocusDetails) {
+      const expectedSurfaceZ =
+        detail.surface === "front"
+          ? focusFundamentalsFrameGeometry.front.centerZMm -
+            focusFundamentalsFrameGeometry.depthMm / 2
+          : focusFundamentalsFrameGeometry.back.centerZMm -
+            focusFundamentalsFrameGeometry.depthMm / 2;
+      expect(detail.localPositionMm.z).toBeCloseTo(expectedSurfaceZ, 12);
+      expect(getFocusFundamentalsDetailMarkerLocalPosition(detail).z).toBeCloseTo(
+        expectedSurfaceZ - focusFundamentalsMarkerOffsetMm,
+        12,
+      );
       expect(detail.worldPositionMm.x).toBeGreaterThanOrEqual(
         focusFundamentalsObjectBoundsMm.min.x,
       );

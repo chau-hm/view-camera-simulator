@@ -5,9 +5,9 @@ import { toWorld } from "./rttUtils";
 import {
   focusFundamentalsFloorYmm,
   focusFundamentalsFocusDetails,
+  focusFundamentalsFrameGeometry,
   focusFundamentalsMarkerSizeMm,
   focusFundamentalsObjectCenterMm,
-  focusFundamentalsObjectDimensionsMm,
   focusFundamentalsObjectRotationYRad,
   getFocusFundamentalsDetailMarkerLocalPosition,
   getFocusFundamentalsDetailMarkerRotationY,
@@ -19,7 +19,15 @@ const MARKER_COLORS = ["#ef4444", "#f59e0b"] as const;
 const FLOOR_WIDTH_MM = 5000;
 const FLOOR_DEPTH_MM = 5000;
 
-let objectGeometry: THREE.BoxGeometry | null = null;
+type FrameGeometrySet = {
+  frontVertical: THREE.BoxGeometry;
+  frontHorizontal: THREE.BoxGeometry;
+  backVertical: THREE.BoxGeometry;
+  backHorizontal: THREE.BoxGeometry;
+  connector: THREE.BoxGeometry;
+};
+
+let frameGeometries: FrameGeometrySet | null = null;
 let objectMaterial: THREE.MeshStandardMaterial | null = null;
 let markerGeometry: THREE.BoxGeometry | null = null;
 let markerTextures: [THREE.DataTexture, THREE.DataTexture] | null = null;
@@ -64,12 +72,32 @@ const makeFocusDetailTexture = (accent: string): THREE.DataTexture => {
 };
 
 function ensureSharedResources() {
-  if (!objectGeometry) {
-    objectGeometry = new THREE.BoxGeometry(
-      toWorld(focusFundamentalsObjectDimensionsMm.width),
-      toWorld(focusFundamentalsObjectDimensionsMm.height),
-      toWorld(focusFundamentalsObjectDimensionsMm.depth),
-    );
+  if (!frameGeometries) {
+    const { front, back, depthMm, memberWidthMm } = focusFundamentalsFrameGeometry;
+    frameGeometries = {
+      frontVertical: new THREE.BoxGeometry(
+        toWorld(memberWidthMm),
+        toWorld(front.heightMm),
+        toWorld(depthMm),
+      ),
+      frontHorizontal: new THREE.BoxGeometry(
+        toWorld(front.widthMm - memberWidthMm * 2),
+        toWorld(memberWidthMm),
+        toWorld(depthMm),
+      ),
+      backVertical: new THREE.BoxGeometry(
+        toWorld(memberWidthMm),
+        toWorld(back.heightMm),
+        toWorld(depthMm),
+      ),
+      backHorizontal: new THREE.BoxGeometry(
+        toWorld(back.widthMm - memberWidthMm * 2),
+        toWorld(memberWidthMm),
+        toWorld(depthMm),
+      ),
+      // A unit cube is scaled to each connector's physical local length.
+      connector: new THREE.BoxGeometry(1, 1, 1),
+    };
   }
   if (!objectMaterial) {
     objectMaterial = new THREE.MeshStandardMaterial({
@@ -137,6 +165,132 @@ function addFocusDetailMarker(
   objectGroup.add(marker);
 }
 
+type FrameDefinition = {
+  widthMm: number;
+  heightMm: number;
+  centerZMm: number;
+};
+
+const addFrameBar = (
+  frameGroup: THREE.Group,
+  geometry: THREE.BoxGeometry,
+  name: string,
+  positionMm: { x: number; y: number; z: number },
+) => {
+  const bar = new THREE.Mesh(geometry, objectMaterial!);
+  bar.name = name;
+  bar.position.set(
+    toWorld(positionMm.x),
+    toWorld(positionMm.y),
+    toWorld(positionMm.z),
+  );
+  frameGroup.add(bar);
+};
+
+const addFrame = (
+  frameGroup: THREE.Group,
+  frameName: "front" | "back",
+  frame: FrameDefinition,
+  verticalGeometry: THREE.BoxGeometry,
+  horizontalGeometry: THREE.BoxGeometry,
+) => {
+  const halfMember = focusFundamentalsFrameGeometry.memberWidthMm / 2;
+  const halfWidth = frame.widthMm / 2;
+  const halfHeight = frame.heightMm / 2;
+  const x = halfWidth - halfMember;
+  const y = halfHeight - halfMember;
+
+  addFrameBar(
+    frameGroup,
+    verticalGeometry,
+    `focus-fundamentals-${frameName}-frame-left`,
+    { x: -x, y: 0, z: frame.centerZMm },
+  );
+  addFrameBar(
+    frameGroup,
+    verticalGeometry,
+    `focus-fundamentals-${frameName}-frame-right`,
+    { x, y: 0, z: frame.centerZMm },
+  );
+  addFrameBar(
+    frameGroup,
+    horizontalGeometry,
+    `focus-fundamentals-${frameName}-frame-top`,
+    { x: 0, y, z: frame.centerZMm },
+  );
+  addFrameBar(
+    frameGroup,
+    horizontalGeometry,
+    `focus-fundamentals-${frameName}-frame-bottom`,
+    { x: 0, y: -y, z: frame.centerZMm },
+  );
+};
+
+const addDepthConnector = (
+  connectorGroup: THREE.Group,
+  name: string,
+  startMm: { x: number; y: number; z: number },
+  endMm: { x: number; y: number; z: number },
+) => {
+  const start = new THREE.Vector3(
+    toWorld(startMm.x),
+    toWorld(startMm.y),
+    toWorld(startMm.z),
+  );
+  const end = new THREE.Vector3(
+    toWorld(endMm.x),
+    toWorld(endMm.y),
+    toWorld(endMm.z),
+  );
+  const direction = end.clone().sub(start);
+  const connector = new THREE.Mesh(frameGeometries!.connector, objectMaterial!);
+  connector.name = name;
+  connector.position.copy(start).add(end).multiplyScalar(0.5);
+  connector.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 0, 1),
+    direction.clone().normalize(),
+  );
+  connector.scale.set(
+    toWorld(focusFundamentalsFrameGeometry.memberWidthMm),
+    toWorld(focusFundamentalsFrameGeometry.memberWidthMm),
+    direction.length(),
+  );
+  connectorGroup.add(connector);
+};
+
+const addDepthConnectors = (connectorGroup: THREE.Group) => {
+  const { front, back, depthMm, memberWidthMm } = focusFundamentalsFrameGeometry;
+  const halfFrontWidth = front.widthMm / 2 - memberWidthMm / 2;
+  const halfFrontHeight = front.heightMm / 2 - memberWidthMm / 2;
+  const halfBackWidth = back.widthMm / 2 - memberWidthMm / 2;
+  const halfBackHeight = back.heightMm / 2 - memberWidthMm / 2;
+  const frontBackSurfaceZ = front.centerZMm + depthMm / 2;
+  const backFrontSurfaceZ = back.centerZMm - depthMm / 2;
+
+  for (const [index, sign] of [
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ].entries()) {
+    const [xSign, ySign] = sign;
+    addDepthConnector(
+      connectorGroup,
+      `focus-fundamentals-depth-rail-${index + 1}`,
+      {
+        x: xSign * halfFrontWidth,
+        y: ySign * halfFrontHeight,
+        z: frontBackSurfaceZ,
+      },
+      {
+        x: xSign * halfBackWidth,
+        y: ySign * halfBackHeight,
+        z: backFrontSurfaceZ,
+      },
+    );
+  }
+};
+
 export function createFocusFundamentalsGroup(): THREE.Group {
   ensureSharedResources();
 
@@ -152,8 +306,30 @@ export function createFocusFundamentalsGroup(): THREE.Group {
   );
   objectGroup.rotation.y = focusFundamentalsObjectRotationYRad;
 
-  const body = new THREE.Mesh(objectGeometry!, objectMaterial!);
+  const body = new THREE.Group();
   body.name = "focus-fundamentals-object-body";
+  const frontFrame = new THREE.Group();
+  frontFrame.name = "focus-fundamentals-front-frame";
+  addFrame(
+    frontFrame,
+    "front",
+    focusFundamentalsFrameGeometry.front,
+    frameGeometries!.frontVertical,
+    frameGeometries!.frontHorizontal,
+  );
+  const backFrame = new THREE.Group();
+  backFrame.name = "focus-fundamentals-back-frame";
+  addFrame(
+    backFrame,
+    "back",
+    focusFundamentalsFrameGeometry.back,
+    frameGeometries!.backVertical,
+    frameGeometries!.backHorizontal,
+  );
+  const depthConnectors = new THREE.Group();
+  depthConnectors.name = "focus-fundamentals-depth-connectors";
+  addDepthConnectors(depthConnectors);
+  body.add(frontFrame, backFrame, depthConnectors);
   objectGroup.add(body);
   focusFundamentalsFocusDetails.forEach((detail, index) =>
     addFocusDetailMarker(objectGroup, detail, index),

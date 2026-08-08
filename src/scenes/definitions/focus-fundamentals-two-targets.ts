@@ -22,8 +22,8 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
     rearTiltDeg: 0,
   },
   cameraPlacement: {
-    // observer camera is offset to keep the block's front and right detail
-    // readable alongside the physical camera standards.
+    // observer camera is offset to keep the open subject's front and back
+    // structure readable alongside the physical camera standards.
     position: { x: 350, y: 180, z: -800 },
     target: focusFundamentalsObjectCenterMm,
   },
