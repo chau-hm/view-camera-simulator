@@ -23,6 +23,7 @@ import {
   focusFundamentalsParallaxPointerOuterDepthMm,
   focusFundamentalsParallaxPointerOuterFrontOffsetMm,
   focusFundamentalsParallaxPointerOuterHeightMm,
+  focusFundamentalsParallaxPointerOuterLeftExtensionMm,
   focusFundamentalsParallaxPointerOuterWidthMm,
   focusFundamentalsParallaxPointerHeightMm,
   focusFundamentalsParallaxSupportWidthMm,
@@ -45,6 +46,7 @@ type FrameGeometrySet = {
 type ParallaxGeometrySet = {
   bracketVertical: THREE.BoxGeometry;
   bracketHorizontal: THREE.BoxGeometry;
+  pointerOuterLeftVertical: THREE.BoxGeometry;
   pointerOuterVertical: THREE.BoxGeometry;
   pointerOuterHorizontal: THREE.BoxGeometry;
   pointer: THREE.BoxGeometry;
@@ -149,6 +151,14 @@ function ensureSharedResources() {
         toWorld(totalBracketWidthMm),
         toWorld(focusFundamentalsParallaxBracketBarWidthMm),
         toWorld(gateShape.depthMm),
+      ),
+      pointerOuterLeftVertical: new THREE.BoxGeometry(
+        toWorld(
+          focusFundamentalsParallaxPointerOuterBorderWidthMm +
+            focusFundamentalsParallaxPointerOuterLeftExtensionMm,
+        ),
+        toWorld(focusFundamentalsParallaxPointerOuterHeightMm),
+        toWorld(focusFundamentalsParallaxPointerOuterDepthMm),
       ),
       pointerOuterVertical: new THREE.BoxGeometry(
         toWorld(focusFundamentalsParallaxPointerOuterBorderWidthMm),
@@ -392,9 +402,16 @@ const addParallaxAlignmentFeature = (
     return;
   }
 
-  const pointerOuterVerticalOffset =
+  const pointerOuterRightVerticalOffset =
     focusFundamentalsParallaxPointerOuterWidthMm / 2 -
     focusFundamentalsParallaxPointerOuterBorderWidthMm / 2;
+  const pointerOuterLeftWidthMm =
+    focusFundamentalsParallaxPointerOuterBorderWidthMm +
+    focusFundamentalsParallaxPointerOuterLeftExtensionMm;
+  const pointerOuterLeftVerticalOffset =
+    -focusFundamentalsParallaxPointerOuterWidthMm / 2 -
+    focusFundamentalsParallaxPointerOuterLeftExtensionMm +
+    pointerOuterLeftWidthMm / 2;
   const pointerOuterHorizontalOffset =
     focusFundamentalsParallaxPointerOuterHeightMm / 2 -
     (focusFundamentalsParallaxPointerOuterHeightMm - focusFundamentalsParallaxPointerHeightMm) /
@@ -402,12 +419,12 @@ const addParallaxAlignmentFeature = (
   const pointerOuterParts = [
     {
       name: "focus-fundamentals-far-alignment-pointer-outer-left",
-      position: { x: -pointerOuterVerticalOffset, y: 0 },
-      geometry: parallaxGeometries!.pointerOuterVertical,
+      position: { x: pointerOuterLeftVerticalOffset, y: 0 },
+      geometry: parallaxGeometries!.pointerOuterLeftVertical,
     },
     {
       name: "focus-fundamentals-far-alignment-pointer-outer-right",
-      position: { x: pointerOuterVerticalOffset, y: 0 },
+      position: { x: pointerOuterRightVerticalOffset, y: 0 },
       geometry: parallaxGeometries!.pointerOuterVertical,
     },
     {

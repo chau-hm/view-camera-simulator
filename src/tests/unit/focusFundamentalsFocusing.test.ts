@@ -57,7 +57,8 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
 
   it.each([nearDepth, farDepth])("resolves rear finite focus at S=%i with actual U", (S) => {
     const front = deriveOpticsState(cameraFor({ focusDistanceMm: S, focusStandard: "front" }), focusFundamentalsTwoTargets);
-    const rear = deriveOpticsState(cameraFor({ focusDistanceMm: S, focusStandard: "rear" }), focusFundamentalsTwoTargets);
+    const rearCamera = cameraFor({ focusDistanceMm: S, focusStandard: "rear" });
+    const rear = deriveOpticsState(rearCamera, focusFundamentalsTwoTargets);
     const referenceSolution = solveLensExtensionForRearDatumFocusDepth(reference, f);
     const U = S - referenceSolution.v;
     const v = imageDistanceMm(f, U);
@@ -71,7 +72,7 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
     expect(rear.diagnostics.imageDistanceMm).toBeCloseTo(v, 12);
     expect(rear.diagnostics.nearU).not.toBeNull();
 
-    const H = (f * f) / (11 * 0.1) + f;
+    const H = (f * f) / (rearCamera.aperture * 0.1) + f;
     expect(rear.diagnostics.nearU).toBeCloseTo((H * U) / (H + (U - f)), 10);
     expectFiniteGeometry(rear);
   });
