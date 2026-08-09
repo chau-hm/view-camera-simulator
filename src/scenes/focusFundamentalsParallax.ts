@@ -1,7 +1,7 @@
 import type { CameraState } from "../types/camera";
 import type { Bounds3, DerivedOpticsState, Vec3 } from "../types/optics";
 import { deriveOpticsState } from "../core/optics/deriveOpticsState";
-import { add, cross, distance, magnitude, normalize, scale, subtract } from "../core/math/vec";
+import { add, cross, distance, magnitude, normalize, rotateAroundY, scale, subtract } from "../core/math/vec";
 import { DEFAULT_CAMERA_STATE } from "../utils/constants";
 import { deriveFocusFundamentalsReferenceOptics } from "./focusFundamentalsPresentation";
 import { focusFundamentalsTwoTargets } from "./definitions/focus-fundamentals-two-targets";
@@ -11,6 +11,7 @@ import {
   focusFundamentalsObjectCenterMm,
   focusFundamentalsObjectBoundsMm,
   focusFundamentalsObjectRotationYDeg,
+  focusFundamentalsObjectRotationYRad,
   focusFundamentalsReferenceFocusDepthMm,
   transformFocusFundamentalsLocalPointToWorld,
 } from "./focusFundamentalsTargets";
@@ -34,8 +35,36 @@ export const focusFundamentalsParallaxBracketGapMm = 12;
 export const focusFundamentalsParallaxBracketBarWidthMm = 10;
 export const focusFundamentalsParallaxFeatureDepthMm = 8;
 export const focusFundamentalsParallaxPointerHeightMm = 52;
-export const focusFundamentalsParallaxPointerWidthMm = 8;
+export const focusFundamentalsParallaxPointerWidthMm = 16;
 export const focusFundamentalsParallaxSupportWidthMm = 8;
+export const focusFundamentalsParallaxPointerColor = "#22d3ee";
+
+/**
+ * The feature groups cancel the parent object's yaw so their sight surfaces
+ * remain camera-facing. Keep this transform explicit so projected edge points
+ * use the same orientation as the rendered meshes.
+ */
+export const focusFundamentalsParallaxFeatureRotationYDeg =
+  -focusFundamentalsObjectRotationYDeg;
+export const focusFundamentalsParallaxFeatureRotationYRad =
+  -focusFundamentalsObjectRotationYRad;
+
+export const focusFundamentalsParallaxFeatureShapes = {
+  "near-alignment-gate": {
+    leftEdgeXMm: -focusFundamentalsParallaxBracketGapMm / 2,
+    rightEdgeXMm: focusFundamentalsParallaxBracketGapMm / 2,
+    heightMm: focusFundamentalsParallaxBracketHeightMm,
+    depthMm: focusFundamentalsParallaxFeatureDepthMm,
+    barWidthMm: focusFundamentalsParallaxBracketBarWidthMm,
+  },
+  "far-alignment-pointer": {
+    leftEdgeXMm: -focusFundamentalsParallaxPointerWidthMm / 2,
+    rightEdgeXMm: focusFundamentalsParallaxPointerWidthMm / 2,
+    heightMm: focusFundamentalsParallaxPointerHeightMm,
+    depthMm: focusFundamentalsParallaxFeatureDepthMm,
+    barWidthMm: 0,
+  },
+} as const;
 
 export type FocusFundamentalsParallaxFeature = {
   id: "near-alignment-gate" | "far-alignment-pointer";
@@ -46,6 +75,8 @@ export type FocusFundamentalsParallaxFeature = {
   supportAnchorWorldPositionMm: Vec3;
   supportAnchorLocalPositionMm: Vec3;
 };
+
+export type FocusFundamentalsParallaxFeatureEdge = "left" | "right";
 
 export type FocusFundamentalsParallaxReferenceGeometry = {
   opticsState: DerivedOpticsState;
@@ -191,6 +222,30 @@ export const focusFundamentalsParallaxFeatures =
   focusFundamentalsParallaxReferenceGeometry.features;
 export const focusFundamentalsParallaxReferenceLensCenterWorldMm =
   focusFundamentalsParallaxReferenceGeometry.lensCenterWorldMm;
+
+/**
+ * Return a rendered feature edge in world millimetres. The offset is placed
+ * on the depth-centre line of the actual BoxGeometry (the lateral edge spans
+ * the full feature depth) and transformed through the same counter-rotated
+ * feature group used by R3F and RTT.
+ */
+export const getFocusFundamentalsParallaxFeatureEdgeWorldPosition = (
+  feature: FocusFundamentalsParallaxFeature,
+  edge: FocusFundamentalsParallaxFeatureEdge,
+): Vec3 => {
+  const shape = focusFundamentalsParallaxFeatureShapes[feature.id];
+  const featureOffset = rotateAroundY(
+    {
+      x: edge === "left" ? shape.leftEdgeXMm : shape.rightEdgeXMm,
+      y: 0,
+      z: 0,
+    },
+    focusFundamentalsParallaxFeatureRotationYDeg,
+  );
+  return transformFocusFundamentalsLocalPointToWorld(
+    add(feature.localPositionMm, featureOffset),
+  );
+};
 
 const connectedSubjectBoundsPoints = [
   focusFundamentalsObjectBoundsMm.min,

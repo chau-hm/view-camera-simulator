@@ -9,7 +9,10 @@ import {
   focusFundamentalsObjectRotationYRad,
   getFocusFundamentalsDetailMarkerLocalPosition,
 } from "../../scenes/focusFundamentalsTargets";
-import { focusFundamentalsParallaxFeatures } from "../../scenes/focusFundamentalsParallax";
+import {
+  focusFundamentalsParallaxFeatures,
+  focusFundamentalsParallaxPointerColor,
+} from "../../scenes/focusFundamentalsParallax";
 import { toWorld } from "../../render/rttUtils";
 
 describe("Focus Fundamentals shared subject factory", () => {
@@ -48,8 +51,8 @@ describe("Focus Fundamentals shared subject factory", () => {
     const secondNearMarker = secondGroup.getObjectByName("focus-near-detail-marker") as THREE.Mesh;
     const firstGate = group.getObjectByName("focus-fundamentals-near-alignment-gate-left") as THREE.Mesh;
     const secondGate = secondGroup.getObjectByName("focus-fundamentals-near-alignment-gate-left") as THREE.Mesh;
-    const firstPointer = group.getObjectByName("focus-fundamentals-far-alignment-pointer") as THREE.Mesh;
-    const secondPointer = secondGroup.getObjectByName("focus-fundamentals-far-alignment-pointer") as THREE.Mesh;
+    const firstPointer = group.getObjectByName("focus-fundamentals-far-alignment-pointer-mesh") as THREE.Mesh;
+    const secondPointer = secondGroup.getObjectByName("focus-fundamentals-far-alignment-pointer-mesh") as THREE.Mesh;
     expect(firstFrameBar.geometry).toBe(secondFrameBar.geometry);
     expect(firstFrameBar.material).toBe(secondFrameBar.material);
     expect(firstNearMarker.geometry).toBe(secondNearMarker.geometry);
@@ -58,6 +61,9 @@ describe("Focus Fundamentals shared subject factory", () => {
     expect(firstGate.material).toBe(secondGate.material);
     expect(firstPointer.geometry).toBe(secondPointer.geometry);
     expect(firstPointer.material).toBe(secondPointer.material);
+    expect((firstPointer.material as THREE.MeshBasicMaterial).color.getHexString()).toBe(
+      focusFundamentalsParallaxPointerColor.slice(1),
+    );
 
     for (const detail of focusFundamentalsFocusDetails) {
       const marker = group.getObjectByName(`${detail.id}-marker`);

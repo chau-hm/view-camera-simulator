@@ -18,7 +18,10 @@ import {
   focusFundamentalsSceneBoundsMm,
 } from "../../scenes/focusFundamentalsTargets";
 import {
+  focusFundamentalsMaximumRearParallaxClearanceAsymmetryMm,
+  focusFundamentalsMinimumFrontParallaxClearanceAsymmetryMm,
   focusFundamentalsMinimumFrontParallaxAlignmentSeparationMm,
+  focusFundamentalsMinimumParallaxEdgeClearanceMm,
   projectFocusFundamentalsParallaxMetric,
 } from "../../render/focusFundamentalsParallaxMetric";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -122,5 +125,78 @@ describe("Focus Fundamentals physical parallax alignment geometry", () => {
     expect(frontNear.signedSeparationMm * frontFar.signedSeparationMm).toBeLessThan(0);
     expect(frontNear.separationMm).toBeGreaterThan(rearNear.separationMm + 0.05);
     expect(frontFar.separationMm).toBeGreaterThan(rearFar.separationMm + 0.05);
+  });
+
+  it("keeps Rear edge clearance symmetric while Front edge clearance changes sides", () => {
+    const states = {
+      reference: opticsFor(focusFundamentalsReferenceFocusDepthMm, "front"),
+      frontNear: opticsFor(focusFundamentalsNearFocusDepthMm, "front"),
+      frontFar: opticsFor(focusFundamentalsFarFocusDepthMm, "front"),
+      rearNear: opticsFor(focusFundamentalsNearFocusDepthMm, "rear"),
+      rearFar: opticsFor(focusFundamentalsFarFocusDepthMm, "rear"),
+    } as const;
+    const metrics = Object.fromEntries(
+      Object.entries(states).map(([name, optics]) => [
+        name,
+        projectFocusFundamentalsParallaxMetric(optics),
+      ]),
+    ) as Record<keyof typeof states, NonNullable<ReturnType<typeof projectFocusFundamentalsParallaxMetric>>>;
+
+    for (const name of Object.keys(metrics) as Array<keyof typeof metrics>) {
+      expect(metrics[name]).not.toBeNull();
+      expect(metrics[name].allPointsVisible).toBe(true);
+      expect(metrics[name].gateInnerWidthMm).toBeGreaterThan(0);
+      expect(metrics[name].pointerWidthMm).toBeGreaterThan(0);
+    }
+
+    expect(metrics.reference.leftClearanceMm).toBeGreaterThan(
+      focusFundamentalsMinimumParallaxEdgeClearanceMm,
+    );
+    expect(metrics.reference.rightClearanceMm).toBeGreaterThan(
+      focusFundamentalsMinimumParallaxEdgeClearanceMm,
+    );
+    expect(Math.abs(metrics.reference.clearanceAsymmetryMm)).toBeLessThan(
+      focusFundamentalsMaximumRearParallaxClearanceAsymmetryMm,
+    );
+
+    for (const name of ["rearNear", "rearFar"] as const) {
+      expect(metrics[name].leftClearanceMm).toBeGreaterThan(
+        focusFundamentalsMinimumParallaxEdgeClearanceMm,
+      );
+      expect(metrics[name].rightClearanceMm).toBeGreaterThan(
+        focusFundamentalsMinimumParallaxEdgeClearanceMm,
+      );
+      expect(Math.abs(metrics[name].clearanceAsymmetryMm)).toBeLessThan(
+        focusFundamentalsMaximumRearParallaxClearanceAsymmetryMm,
+      );
+      expect(metrics[name].separationMm).toBeLessThan(1e-10);
+    }
+
+    expect(metrics.frontNear.leftClearanceMm).toBeGreaterThan(
+      focusFundamentalsMinimumParallaxEdgeClearanceMm,
+    );
+    expect(metrics.frontNear.rightClearanceMm).toBeGreaterThan(
+      focusFundamentalsMinimumParallaxEdgeClearanceMm,
+    );
+    expect(metrics.frontFar.leftClearanceMm).toBeGreaterThan(
+      focusFundamentalsMinimumParallaxEdgeClearanceMm,
+    );
+    expect(metrics.frontFar.rightClearanceMm).toBeGreaterThan(
+      focusFundamentalsMinimumParallaxEdgeClearanceMm,
+    );
+    expect(metrics.frontNear.clearanceAsymmetryMm).toBeLessThan(
+      -focusFundamentalsMinimumFrontParallaxClearanceAsymmetryMm,
+    );
+    expect(metrics.frontFar.clearanceAsymmetryMm).toBeGreaterThan(
+      focusFundamentalsMinimumFrontParallaxClearanceAsymmetryMm,
+    );
+    expect(Math.abs(metrics.frontNear.clearanceAsymmetryMm)).toBeGreaterThan(
+      Math.abs(metrics.rearNear.clearanceAsymmetryMm) +
+        focusFundamentalsMinimumFrontParallaxClearanceAsymmetryMm,
+    );
+    expect(Math.abs(metrics.frontFar.clearanceAsymmetryMm)).toBeGreaterThan(
+      Math.abs(metrics.rearFar.clearanceAsymmetryMm) +
+        focusFundamentalsMinimumFrontParallaxClearanceAsymmetryMm,
+    );
   });
 });

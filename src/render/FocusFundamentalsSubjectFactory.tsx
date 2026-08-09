@@ -14,12 +14,10 @@ import {
 } from "../scenes/focusFundamentalsTargets";
 import {
   focusFundamentalsParallaxBracketBarWidthMm,
-  focusFundamentalsParallaxBracketGapMm,
-  focusFundamentalsParallaxBracketHeightMm,
-  focusFundamentalsParallaxFeatureDepthMm,
+  focusFundamentalsParallaxFeatureShapes,
+  focusFundamentalsParallaxFeatureRotationYRad,
   focusFundamentalsParallaxFeatures,
-  focusFundamentalsParallaxPointerHeightMm,
-  focusFundamentalsParallaxPointerWidthMm,
+  focusFundamentalsParallaxPointerColor,
   focusFundamentalsParallaxSupportWidthMm,
 } from "../scenes/focusFundamentalsParallax";
 
@@ -126,24 +124,26 @@ function ensureSharedResources() {
     });
   }
   if (!parallaxGeometries) {
+    const gateShape = focusFundamentalsParallaxFeatureShapes["near-alignment-gate"];
+    const pointerShape = focusFundamentalsParallaxFeatureShapes["far-alignment-pointer"];
     const totalBracketWidthMm =
-      focusFundamentalsParallaxBracketGapMm +
+      gateShape.rightEdgeXMm - gateShape.leftEdgeXMm +
       focusFundamentalsParallaxBracketBarWidthMm * 2;
     parallaxGeometries = {
       bracketVertical: new THREE.BoxGeometry(
         toWorld(focusFundamentalsParallaxBracketBarWidthMm),
-        toWorld(focusFundamentalsParallaxBracketHeightMm),
-        toWorld(focusFundamentalsParallaxFeatureDepthMm),
+        toWorld(gateShape.heightMm),
+        toWorld(gateShape.depthMm),
       ),
       bracketHorizontal: new THREE.BoxGeometry(
         toWorld(totalBracketWidthMm),
         toWorld(focusFundamentalsParallaxBracketBarWidthMm),
-        toWorld(focusFundamentalsParallaxFeatureDepthMm),
+        toWorld(gateShape.depthMm),
       ),
       pointer: new THREE.BoxGeometry(
-        toWorld(focusFundamentalsParallaxPointerWidthMm),
-        toWorld(focusFundamentalsParallaxPointerHeightMm),
-        toWorld(focusFundamentalsParallaxFeatureDepthMm),
+        toWorld(pointerShape.rightEdgeXMm - pointerShape.leftEdgeXMm),
+        toWorld(pointerShape.heightMm),
+        toWorld(pointerShape.depthMm),
       ),
     };
   }
@@ -155,7 +155,7 @@ function ensureSharedResources() {
   }
   if (!parallaxPointerMaterial) {
     parallaxPointerMaterial = new THREE.MeshBasicMaterial({
-      color: "#ef4444",
+      color: focusFundamentalsParallaxPointerColor,
       side: THREE.DoubleSide,
     });
   }
@@ -323,7 +323,7 @@ const addParallaxAlignmentFeature = (
   );
   // The parent subject is yawed for depth readability. Counter-rotate this
   // small sight assembly so its bracket/pointer remains legible to the camera.
-  featureGroup.rotation.y = -focusFundamentalsObjectRotationYRad;
+  featureGroup.rotation.y = focusFundamentalsParallaxFeatureRotationYRad;
   featureGroup.userData = {
     parallaxFeatureId: feature.id,
     parallaxFeatureDepthMm: feature.depthMm,
@@ -331,11 +331,12 @@ const addParallaxAlignmentFeature = (
   };
 
   if (feature.id === "near-alignment-gate") {
-    const halfGap = focusFundamentalsParallaxBracketGapMm / 2;
+    const gateShape = focusFundamentalsParallaxFeatureShapes[feature.id];
+    const halfGap = (gateShape.rightEdgeXMm - gateShape.leftEdgeXMm) / 2;
     const halfBar = focusFundamentalsParallaxBracketBarWidthMm / 2;
     const verticalOffset = halfGap + halfBar;
     const verticalY = 0;
-    const topY = focusFundamentalsParallaxBracketHeightMm / 2 - halfBar;
+    const topY = gateShape.heightMm / 2 - halfBar;
     const left = new THREE.Mesh(
       parallaxGeometries!.bracketVertical,
       parallaxBracketMaterial!,
@@ -362,7 +363,7 @@ const addParallaxAlignmentFeature = (
     parallaxGeometries!.pointer,
     parallaxPointerMaterial!,
   );
-  pointer.name = "focus-fundamentals-far-alignment-pointer";
+  pointer.name = "focus-fundamentals-far-alignment-pointer-mesh";
   pointer.position.set(0, 0, 0);
   featureGroup.add(pointer);
 };
