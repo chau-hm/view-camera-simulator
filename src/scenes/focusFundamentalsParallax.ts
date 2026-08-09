@@ -38,6 +38,16 @@ export const focusFundamentalsParallaxPointerHeightMm = 52;
 export const focusFundamentalsParallaxPointerWidthMm = 16;
 export const focusFundamentalsParallaxSupportWidthMm = 8;
 export const focusFundamentalsParallaxPointerColor = "#22d3ee";
+/** A thin red sleeve makes the existing cyan pointer easier to track. */
+export const focusFundamentalsParallaxPointerOuterWidthMm =
+  focusFundamentalsParallaxPointerWidthMm + 2;
+export const focusFundamentalsParallaxPointerOuterHeightMm =
+  focusFundamentalsParallaxPointerHeightMm + 6;
+export const focusFundamentalsParallaxPointerOuterDepthMm = 2;
+export const focusFundamentalsParallaxPointerOuterBorderWidthMm = 2;
+export const focusFundamentalsParallaxPointerOuterFrontOffsetMm =
+  -(focusFundamentalsParallaxFeatureDepthMm - focusFundamentalsParallaxPointerOuterDepthMm) / 2 - 0.1;
+export const focusFundamentalsParallaxPointerOuterColor = "#ef4444";
 
 /**
  * The feature groups cancel the parent object's yaw so their sight surfaces
