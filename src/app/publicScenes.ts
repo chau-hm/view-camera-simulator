@@ -35,8 +35,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
     id: "focus-fundamentals-two-targets",
     description:
-      "Compare two targets at different distances. Adjust focus and aperture to see how the plane of focus and depth of field change.",
-    topics: ["Focus", "Aperture", "Depth of field"],
+      "Compare Front and Rear focusing on two depths of one object with a fixed f/32 aperture.",
+    topics: ["Focus", "Front / Rear standards", "Parallax alignment"],
     availability: "available",
     availableModes: ["free"],
     thumbnailAsset: "assets/two-targets-illustration.png",
