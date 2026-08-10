@@ -32,11 +32,11 @@ export function getFreePracticeGuidance(sceneId: string | undefined): FreePracti
       ],
     },
     "focus-fundamentals-two-targets": {
-      objective: "Explore Front and Rear focusing across two depths on the same object at fixed f/32.",
+      objective: "Explore how focus distance and aperture affect two details on the same object.",
       bullets: [
         "Move focus between the near and far detail.",
-        "Watch the white frame (near gate) and far pointer.",
-        "Compare Front focus, which changes their alignment, with Rear focus, which keeps them aligned.",
+        "Change Aperture to compare depth of field.",
+        "Use Focus Assist to compare target sharpness.",
       ],
     },
     "table-tilt": {
@@ -59,7 +59,7 @@ export function getFreePracticeFeedback(sceneId: string | undefined): { observat
   const generic = { observation: UI_COPY.simulator.changesReflected || 'Changes are reflected immediately in the 3D Scene, Ground Glass, Current Settings, and Focus Targets.' };
   const map: Record<string, { observation: string }> = {
     "architecture-rise": { observation: 'Watch the top of the building as Rise changes. The framing should move upward while the vertical edges remain parallel.' },
-    "focus-fundamentals-two-targets": { observation: 'Watch the white frame and far pointer as Front and Rear focus change their alignment.' },
+    "focus-fundamentals-two-targets": { observation: 'Watch the two detail sharpness bars as Focus distance and Aperture change.' },
     "table-tilt": {
       observation:
         "Without tilt, focus can move from near to far, but only one depth region is sharp at a time. Front tilt rotates the plane of sharp focus so the three tabletop focus cards can become sharp together. Compare the plane in 3D, the depth-of-field bounds, real blur on Ground Glass, and the Focus Targets readout: Free Mode reports centre-point focus while the guided task requires full patch coverage.",

@@ -45,8 +45,6 @@ export const focusFundamentalsParallaxPointerOuterHeightMm =
   focusFundamentalsParallaxPointerHeightMm + 6;
 export const focusFundamentalsParallaxPointerOuterDepthMm = 2;
 export const focusFundamentalsParallaxPointerOuterBorderWidthMm = 2;
-/** Extra red exposure on the left side keeps the physical sleeve easy to track. */
-export const focusFundamentalsParallaxPointerOuterLeftExtensionMm = 3;
 export const focusFundamentalsParallaxPointerOuterFrontOffsetMm =
   -(focusFundamentalsParallaxFeatureDepthMm - focusFundamentalsParallaxPointerOuterDepthMm) / 2 - 0.1;
 export const focusFundamentalsParallaxPointerOuterColor = "#ef4444";

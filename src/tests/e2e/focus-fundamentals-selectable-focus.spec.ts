@@ -108,7 +108,6 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   const rttCanvas = rtt.locator("canvas");
   const sceneCanvasHandle = await sceneCanvas.elementHandle();
   const slider = page.getByLabel("Focus distance");
-  const aperture = page.getByRole("combobox", { name: "Aperture" });
   const front = page.getByRole("radio", { name: "Front standard" });
   const rear = page.getByRole("radio", { name: "Rear standard" });
   const nearSharpness = page.getByRole("progressbar", { name: "focus-near-detail sharpness" });
@@ -117,9 +116,6 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(scene).toHaveAttribute("data-scene-subject-id", "focus-fundamentals-two-targets");
   await expect(page.getByRole("group", { name: "Focus standard" })).toBeVisible();
   await expect(front).toBeChecked();
-  await expect(aperture).toHaveValue("32");
-  await expect(aperture).toBeDisabled();
-  await expect(page.getByText("Aperture is fixed for this lesson")).toBeVisible();
   await expect(slider).toHaveValue(String(focusFundamentalsReferenceFocusDepthMm));
   await expect(slider).toHaveAttribute("min", String(focusFundamentalsFocusDepthRangeMm.min));
   await expect(slider).toHaveAttribute("max", String(focusFundamentalsFocusDepthRangeMm.max));
@@ -128,7 +124,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "front");
   await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "false");
   expect(Number(await scene.getAttribute("data-focus-teaching-displacement-mm"))).toBeLessThan(1e-6);
-  await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", String(focusFundamentalsFocalLengthMm));
+  expect(Number(await rtt.getAttribute("data-rtt-focal-length-mm"))).toBe(focusFundamentalsFocalLengthMm);
   await expectContentfulRtt(rtt);
 
   await page.getByRole("button", { name: "Open 2D Geometry" }).click();

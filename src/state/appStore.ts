@@ -297,17 +297,6 @@ const isApertureLocked = (sceneId: string): boolean => {
   return scene?.cameraControlPolicy?.aperture === "fixed";
 };
 
-/** Resolve a locked scene's aperture from its canonical camera preset. */
-const resolveSceneAperture = (
-  sceneId: string,
-  fallback: ApertureValue,
-): ApertureValue => {
-  const scene = getSceneById(sceneId);
-  return scene?.cameraControlPolicy?.aperture === "fixed"
-    ? scene.cameraPreset.aperture
-    : fallback;
-};
-
 /** Check if infinity reset is disallowed by the active scene. */
 const isInfinityResetDisallowed = (sceneId: string): boolean => {
   const scene = getSceneById(sceneId);
@@ -698,7 +687,6 @@ export const useAppStore = create<AppStore>((set) => ({
           focalLengthMm:
             scene?.cameraPreset.focalLengthMm ??
             DEFAULT_CAMERA_STATE.focalLengthMm,
-          aperture: resolveSceneAperture(sceneId, state.camera.aperture),
           focusDistanceMm: clampFocusDistanceForScene(
             sceneId,
             state.camera.focusDistanceMm,
@@ -877,11 +865,6 @@ export const useAppStore = create<AppStore>((set) => ({
           ...resolveSceneFocusDefaults(sceneId),
         };
       }
-
-      nextCamera = {
-        ...nextCamera,
-        aperture: resolveSceneAperture(sceneId, nextCamera.aperture),
-      };
 
       nextCamera = {
         ...nextCamera,
@@ -1137,7 +1120,7 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: {
         ...state.camera,
         aperture: isApertureLocked(state.camera.activeSceneId)
-          ? resolveSceneAperture(state.camera.activeSceneId, state.camera.aperture)
+          ? state.camera.aperture
           : isApertureValue(value) ? value : state.camera.aperture,
       },
     })),
@@ -1244,10 +1227,7 @@ export const useAppStore = create<AppStore>((set) => ({
           focalLengthMm: preserveCalibrationOptics
             ? state.camera.focalLengthMm
             : resetValues.focalLengthMm ?? state.camera.focalLengthMm,
-          aperture: resolveSceneAperture(
-            sceneId,
-            (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
-          ),
+          aperture: (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
           cameraBodyPitchDeg: 0,
           cameraRigPlacement: state.camera.cameraRigPlacement,
           cameraMovementLessonState: undefined,
@@ -1309,10 +1289,6 @@ export const useAppStore = create<AppStore>((set) => ({
           mode: nextMode,
           ...resolveCameraBodyReset(nextSceneId),
           ...nextControlState,
-          aperture: resolveSceneAperture(
-            nextSceneId,
-            (nextControlState as Partial<CameraState>).aperture ?? state.camera.aperture,
-          ),
           viewpointAnchor: "mid",
           cameraRigPlacement: resolveRigPlacement(
             nextSceneId,

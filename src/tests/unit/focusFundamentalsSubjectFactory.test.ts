@@ -11,8 +11,6 @@ import {
 } from "../../scenes/focusFundamentalsTargets";
 import {
   focusFundamentalsParallaxFeatures,
-  focusFundamentalsParallaxPointerOuterBorderWidthMm,
-  focusFundamentalsParallaxPointerOuterLeftExtensionMm,
   focusFundamentalsParallaxPointerColor,
   focusFundamentalsParallaxPointerOuterColor,
 } from "../../scenes/focusFundamentalsParallax";
@@ -58,7 +56,6 @@ describe("Focus Fundamentals shared subject factory", () => {
     const secondPointer = secondGroup.getObjectByName("focus-fundamentals-far-alignment-pointer-mesh") as THREE.Mesh;
     const firstPointerOuter = group.getObjectByName("focus-fundamentals-far-alignment-pointer-outer-left") as THREE.Mesh;
     const secondPointerOuter = secondGroup.getObjectByName("focus-fundamentals-far-alignment-pointer-outer-left") as THREE.Mesh;
-    const firstPointerOuterRight = group.getObjectByName("focus-fundamentals-far-alignment-pointer-outer-right") as THREE.Mesh;
     expect(firstFrameBar.geometry).toBe(secondFrameBar.geometry);
     expect(firstFrameBar.material).toBe(secondFrameBar.material);
     expect(firstNearMarker.geometry).toBe(secondNearMarker.geometry);
@@ -74,17 +71,6 @@ describe("Focus Fundamentals shared subject factory", () => {
     );
     expect((firstPointerOuter.material as THREE.MeshBasicMaterial).color.getHexString()).toBe(
       focusFundamentalsParallaxPointerOuterColor.slice(1),
-    );
-    expect((firstPointerOuter.geometry as THREE.BoxGeometry).parameters.width).toBeCloseTo(
-      toWorld(
-        focusFundamentalsParallaxPointerOuterBorderWidthMm +
-          focusFundamentalsParallaxPointerOuterLeftExtensionMm,
-      ),
-      12,
-    );
-    expect((firstPointerOuterRight.geometry as THREE.BoxGeometry).parameters.width).toBeCloseTo(
-      toWorld(focusFundamentalsParallaxPointerOuterBorderWidthMm),
-      12,
     );
 
     for (const detail of focusFundamentalsFocusDetails) {
