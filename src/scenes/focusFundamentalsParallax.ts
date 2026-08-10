@@ -45,9 +45,40 @@ export const focusFundamentalsParallaxPointerOuterHeightMm =
   focusFundamentalsParallaxPointerHeightMm + 6;
 export const focusFundamentalsParallaxPointerOuterDepthMm = 2;
 export const focusFundamentalsParallaxPointerOuterBorderWidthMm = 2;
+/** Extra red exposure on the left side keeps the physical sleeve easy to track. */
+export const focusFundamentalsParallaxPointerOuterLeftExtensionMm = 3;
 export const focusFundamentalsParallaxPointerOuterFrontOffsetMm =
   -(focusFundamentalsParallaxFeatureDepthMm - focusFundamentalsParallaxPointerOuterDepthMm) / 2 - 0.1;
 export const focusFundamentalsParallaxPointerOuterColor = "#ef4444";
+
+/** Canonical local dimensions and centers for the rendered red sleeve parts. */
+export const focusFundamentalsParallaxPointerOuterLeftWidthMm =
+  focusFundamentalsParallaxPointerOuterBorderWidthMm +
+  focusFundamentalsParallaxPointerOuterLeftExtensionMm;
+export const focusFundamentalsParallaxPointerOuterRightWidthMm =
+  focusFundamentalsParallaxPointerOuterBorderWidthMm;
+export const focusFundamentalsParallaxPointerOuterHorizontalWidthMm =
+  focusFundamentalsParallaxPointerOuterWidthMm -
+  focusFundamentalsParallaxPointerOuterBorderWidthMm * 2;
+export const focusFundamentalsParallaxPointerOuterHorizontalHeightMm =
+  (focusFundamentalsParallaxPointerOuterHeightMm -
+    focusFundamentalsParallaxPointerHeightMm) /
+  2;
+export const focusFundamentalsParallaxPointerOuterLeftCenterXMm =
+  -focusFundamentalsParallaxPointerOuterWidthMm / 2 -
+  focusFundamentalsParallaxPointerOuterLeftExtensionMm +
+  focusFundamentalsParallaxPointerOuterLeftWidthMm / 2;
+export const focusFundamentalsParallaxPointerOuterRightCenterXMm =
+  focusFundamentalsParallaxPointerOuterWidthMm / 2 -
+  focusFundamentalsParallaxPointerOuterRightWidthMm / 2;
+export const focusFundamentalsParallaxPointerOuterHorizontalCenterYMm =
+  focusFundamentalsParallaxPointerOuterHeightMm / 2 -
+  focusFundamentalsParallaxPointerOuterHorizontalHeightMm / 2;
+export const focusFundamentalsParallaxPointerOuterLeftEdgeXMm =
+  -focusFundamentalsParallaxPointerOuterWidthMm / 2 -
+  focusFundamentalsParallaxPointerOuterLeftExtensionMm;
+export const focusFundamentalsParallaxPointerOuterRightEdgeXMm =
+  focusFundamentalsParallaxPointerOuterWidthMm / 2;
 
 /**
  * The feature groups cancel the parent object's yaw so their sight surfaces
@@ -87,6 +118,11 @@ export type FocusFundamentalsParallaxFeature = {
 };
 
 export type FocusFundamentalsParallaxFeatureEdge = "left" | "right";
+export type FocusFundamentalsParallaxPointerAssemblyEdge =
+  | "cyan-left"
+  | "cyan-right"
+  | "red-left-outer"
+  | "red-right-outer";
 
 export type FocusFundamentalsParallaxReferenceGeometry = {
   opticsState: DerivedOpticsState;
@@ -254,6 +290,38 @@ export const getFocusFundamentalsParallaxFeatureEdgeWorldPosition = (
   );
   return transformFocusFundamentalsLocalPointToWorld(
     add(feature.localPositionMm, featureOffset),
+  );
+};
+
+/**
+ * Return the lateral edge of the actual far-pointer assembly. Cyan edges use
+ * the pointer's depth centre, while red edges use the sleeve's physical
+ * depth-centre offset; both are transformed through the rendered feature
+ * group rather than reconstructed from a projected silhouette.
+ */
+export const getFocusFundamentalsParallaxPointerAssemblyEdgeWorldPosition = (
+  feature: FocusFundamentalsParallaxFeature,
+  edge: FocusFundamentalsParallaxPointerAssemblyEdge,
+): Vec3 => {
+  if (feature.id !== "far-alignment-pointer") {
+    throw new Error("Pointer assembly geometry requires the far alignment pointer");
+  }
+  const x =
+    edge === "cyan-left"
+      ? focusFundamentalsParallaxFeatureShapes[feature.id].leftEdgeXMm
+      : edge === "cyan-right"
+        ? focusFundamentalsParallaxFeatureShapes[feature.id].rightEdgeXMm
+        : edge === "red-left-outer"
+          ? focusFundamentalsParallaxPointerOuterLeftEdgeXMm
+          : focusFundamentalsParallaxPointerOuterRightEdgeXMm;
+  const z = edge.startsWith("red")
+    ? focusFundamentalsParallaxPointerOuterFrontOffsetMm
+    : 0;
+  return transformFocusFundamentalsLocalPointToWorld(
+    add(
+      feature.localPositionMm,
+      rotateAroundY({ x, y: 0, z }, focusFundamentalsParallaxFeatureRotationYDeg),
+    ),
   );
 };
 

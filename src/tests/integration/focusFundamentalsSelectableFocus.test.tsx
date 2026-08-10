@@ -45,8 +45,14 @@ describe("Focus Fundamentals selectable focus integration", () => {
     const front = screen.getByRole("radio", { name: "Front standard" });
     const rear = screen.getByRole("radio", { name: "Rear standard" });
     const slider = screen.getByLabelText("Focus distance");
+    const aperture = screen.getByRole("combobox", { name: "Aperture" });
     const sceneCanvas = screen.getByTestId("scene-canvas");
 
+    await waitFor(() => expect(aperture).toHaveValue("32"));
+    expect(aperture).toBeDisabled();
+    expect(screen.getByText("Aperture is fixed for this lesson")).toBeInTheDocument();
+    fireEvent.change(aperture, { target: { value: "11" } });
+    expect(useAppStore.getState().camera.aperture).toBe(32);
     expect(front).toBeChecked();
     expect(rear).not.toBeChecked();
     expect(screen.getByText("Focus method")).toBeInTheDocument();
@@ -97,6 +103,7 @@ describe("Focus Fundamentals selectable focus integration", () => {
         focusStandard: "front",
         focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
         focusMode: "finite",
+        aperture: 32,
       }),
     );
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-selected", "front");

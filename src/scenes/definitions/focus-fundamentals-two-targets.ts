@@ -16,7 +16,7 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
   cameraPreset: {
     focalLengthMm: focusFundamentalsFocalLengthMm,
     focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
-    aperture: 11,
+    aperture: 32,
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
@@ -37,5 +37,8 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
     defaultStandard: "front",
     referenceFocusDepthMm: focusFundamentalsReferenceFocusDepthMm,
     minimumFocusDepthMm: focusFundamentalsSceneBoundsMm.min.z,
+  },
+  cameraControlPolicy: {
+    aperture: "fixed",
   },
 };
