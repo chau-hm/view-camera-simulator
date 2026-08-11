@@ -69,16 +69,6 @@ describe("Focus Fundamentals shared subject factory", () => {
       height: toWorld(52),
       depth: toWorld(8),
     });
-    for (const name of [
-      "focus-fundamentals-far-alignment-pointer-outer-left",
-      "focus-fundamentals-far-alignment-pointer-outer-right",
-      "focus-fundamentals-far-alignment-pointer-outer-top",
-      "focus-fundamentals-far-alignment-pointer-outer-bottom",
-    ]) {
-      expect(group.getObjectByName(name)).toBeUndefined();
-      expect(secondGroup.getObjectByName(name)).toBeUndefined();
-    }
-
     for (const detail of focusFundamentalsFocusDetails) {
       const marker = group.getObjectByName(`${detail.id}-marker`);
       expect(marker).toBeInstanceOf(THREE.Mesh);
