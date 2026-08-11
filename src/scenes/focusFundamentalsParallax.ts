@@ -38,25 +38,47 @@ export const focusFundamentalsParallaxPointerHeightMm = 52;
 export const focusFundamentalsParallaxPointerWidthMm = 16;
 export const focusFundamentalsParallaxSupportWidthMm = 8;
 export const focusFundamentalsParallaxPointerColor = "#22d3ee";
-/** Presentation-only red accents adjacent to the cyan pointer. */
-export const focusFundamentalsParallaxPointerAccentColor = "#ef4444";
-export const focusFundamentalsParallaxPointerAccentPlaneOffsetMm = 0;
-export const focusFundamentalsParallaxPointerAccentDepthMm =
-  focusFundamentalsParallaxFeatureDepthMm;
-export const focusFundamentalsParallaxPointerAccentHeightMm =
-  focusFundamentalsParallaxPointerHeightMm;
-export const focusFundamentalsParallaxPointerAccentLeftWidthMm = 4;
-export const focusFundamentalsParallaxPointerAccentRightWidthMm = 2;
-export const focusFundamentalsParallaxPointerAccentLeftCenterXMm =
-  -focusFundamentalsParallaxPointerWidthMm / 2 -
-  focusFundamentalsParallaxPointerAccentLeftWidthMm / 2;
-export const focusFundamentalsParallaxPointerAccentRightCenterXMm =
-  focusFundamentalsParallaxPointerWidthMm / 2 +
-  focusFundamentalsParallaxPointerAccentRightWidthMm / 2;
-export const focusFundamentalsParallaxPointerAccentLeftOuterEdgeXMm =
-  -focusFundamentalsParallaxPointerWidthMm / 2 - focusFundamentalsParallaxPointerAccentLeftWidthMm;
-export const focusFundamentalsParallaxPointerAccentRightOuterEdgeXMm =
-  focusFundamentalsParallaxPointerWidthMm / 2 + focusFundamentalsParallaxPointerAccentRightWidthMm;
+/** A thin red sleeve makes the existing cyan pointer easier to track. */
+export const focusFundamentalsParallaxPointerOuterWidthMm =
+  focusFundamentalsParallaxPointerWidthMm + 2;
+export const focusFundamentalsParallaxPointerOuterHeightMm =
+  focusFundamentalsParallaxPointerHeightMm + 6;
+export const focusFundamentalsParallaxPointerOuterDepthMm = 2;
+export const focusFundamentalsParallaxPointerOuterBorderWidthMm = 2;
+/** Extra red exposure on the left side keeps the physical sleeve easy to track. */
+export const focusFundamentalsParallaxPointerOuterLeftExtensionMm = 3;
+export const focusFundamentalsParallaxPointerOuterFrontOffsetMm =
+  -(focusFundamentalsParallaxFeatureDepthMm - focusFundamentalsParallaxPointerOuterDepthMm) / 2 - 0.1;
+export const focusFundamentalsParallaxPointerOuterColor = "#ef4444";
+
+/** Canonical local dimensions and centers for the rendered red sleeve parts. */
+export const focusFundamentalsParallaxPointerOuterLeftWidthMm =
+  focusFundamentalsParallaxPointerOuterBorderWidthMm +
+  focusFundamentalsParallaxPointerOuterLeftExtensionMm;
+export const focusFundamentalsParallaxPointerOuterRightWidthMm =
+  focusFundamentalsParallaxPointerOuterBorderWidthMm;
+export const focusFundamentalsParallaxPointerOuterHorizontalWidthMm =
+  focusFundamentalsParallaxPointerOuterWidthMm -
+  focusFundamentalsParallaxPointerOuterBorderWidthMm * 2;
+export const focusFundamentalsParallaxPointerOuterHorizontalHeightMm =
+  (focusFundamentalsParallaxPointerOuterHeightMm -
+    focusFundamentalsParallaxPointerHeightMm) /
+  2;
+export const focusFundamentalsParallaxPointerOuterLeftCenterXMm =
+  -focusFundamentalsParallaxPointerOuterWidthMm / 2 -
+  focusFundamentalsParallaxPointerOuterLeftExtensionMm +
+  focusFundamentalsParallaxPointerOuterLeftWidthMm / 2;
+export const focusFundamentalsParallaxPointerOuterRightCenterXMm =
+  focusFundamentalsParallaxPointerOuterWidthMm / 2 -
+  focusFundamentalsParallaxPointerOuterRightWidthMm / 2;
+export const focusFundamentalsParallaxPointerOuterHorizontalCenterYMm =
+  focusFundamentalsParallaxPointerOuterHeightMm / 2 -
+  focusFundamentalsParallaxPointerOuterHorizontalHeightMm / 2;
+export const focusFundamentalsParallaxPointerOuterLeftEdgeXMm =
+  -focusFundamentalsParallaxPointerOuterWidthMm / 2 -
+  focusFundamentalsParallaxPointerOuterLeftExtensionMm;
+export const focusFundamentalsParallaxPointerOuterRightEdgeXMm =
+  focusFundamentalsParallaxPointerOuterWidthMm / 2;
 
 /**
  * The feature groups cancel the parent object's yaw so their sight surfaces
@@ -99,8 +121,8 @@ export type FocusFundamentalsParallaxFeatureEdge = "left" | "right";
 export type FocusFundamentalsParallaxPointerAssemblyEdge =
   | "cyan-left"
   | "cyan-right"
-  | "red-left-edge"
-  | "red-right-edge";
+  | "red-left-outer"
+  | "red-right-outer";
 
 export type FocusFundamentalsParallaxReferenceGeometry = {
   opticsState: DerivedOpticsState;
@@ -272,10 +294,10 @@ export const getFocusFundamentalsParallaxFeatureEdgeWorldPosition = (
 };
 
 /**
- * Return the lateral edge of the actual coplanar far-pointer assembly. Cyan
- * and red edges use the same feature-plane depth centre and are transformed
- * through the rendered feature group rather than reconstructed from a
- * projected silhouette.
+ * Return the lateral edge of the actual far-pointer assembly. Cyan edges use
+ * the pointer's depth centre, while red edges use the sleeve's physical
+ * depth-centre offset; both are transformed through the rendered feature
+ * group rather than reconstructed from a projected silhouette.
  */
 export const getFocusFundamentalsParallaxPointerAssemblyEdgeWorldPosition = (
   feature: FocusFundamentalsParallaxFeature,
@@ -289,10 +311,12 @@ export const getFocusFundamentalsParallaxPointerAssemblyEdgeWorldPosition = (
       ? focusFundamentalsParallaxFeatureShapes[feature.id].leftEdgeXMm
       : edge === "cyan-right"
         ? focusFundamentalsParallaxFeatureShapes[feature.id].rightEdgeXMm
-        : edge === "red-left-edge"
-          ? focusFundamentalsParallaxPointerAccentLeftOuterEdgeXMm
-          : focusFundamentalsParallaxPointerAccentRightOuterEdgeXMm;
-  const z = focusFundamentalsParallaxPointerAccentPlaneOffsetMm;
+        : edge === "red-left-outer"
+          ? focusFundamentalsParallaxPointerOuterLeftEdgeXMm
+          : focusFundamentalsParallaxPointerOuterRightEdgeXMm;
+  const z = edge.startsWith("red")
+    ? focusFundamentalsParallaxPointerOuterFrontOffsetMm
+    : 0;
   return transformFocusFundamentalsLocalPointToWorld(
     add(
       feature.localPositionMm,

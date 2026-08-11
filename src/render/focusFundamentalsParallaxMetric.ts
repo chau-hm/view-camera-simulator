@@ -3,7 +3,6 @@ import { dot, distance, normalize, subtract } from "../core/math/vec";
 import {
   getFocusFundamentalsParallaxFeatureEdgeWorldPosition,
   getFocusFundamentalsParallaxPointerAssemblyEdgeWorldPosition,
-  focusFundamentalsParallaxPointerAccentPlaneOffsetMm,
   focusFundamentalsParallaxFeatures,
   focusFundamentalsParallaxReferenceGeometry,
 } from "../scenes/focusFundamentalsParallax";
@@ -27,14 +26,12 @@ export type FocusFundamentalsParallaxMetric = {
 export type FocusFundamentalsParallaxPointerAssemblyMetric = {
   cyanLeftFilmPointWorld: Vec3;
   cyanRightFilmPointWorld: Vec3;
-  redAccentLeftOuterFilmPointWorld: Vec3;
-  redAccentRightOuterFilmPointWorld: Vec3;
+  redLeftOuterFilmPointWorld: Vec3;
+  redRightOuterFilmPointWorld: Vec3;
   cyanPointerWidthMm: number;
-  redAccentWidthMm: number;
-  redAccentLeftOffsetFromCyanCenterMm: number;
-  redAccentRightOffsetFromCyanCenterMm: number;
-  cyanPointerPlaneZMm: number;
-  redAccentPlaneZMm: number;
+  redSleeveWidthMm: number;
+  redSleeveLeftOffsetFromCyanCenterMm: number;
+  redSleeveRightOffsetFromCyanCenterMm: number;
 };
 
 /** Conservative floor below the observed front-state physical separation. */
@@ -87,16 +84,16 @@ export const projectFocusFundamentalsParallaxMetric = (
       "cyan-right",
     ),
   );
-  const redAccentLeftProjection = project(
+  const redSleeveLeftProjection = project(
     getFocusFundamentalsParallaxPointerAssemblyEdgeWorldPosition(
       farFeature,
-      "red-left-edge",
+      "red-left-outer",
     ),
   );
-  const redAccentRightProjection = project(
+  const redSleeveRightProjection = project(
     getFocusFundamentalsParallaxPointerAssemblyEdgeWorldPosition(
       farFeature,
-      "red-right-edge",
+      "red-right-outer",
     ),
   );
   const projections = [
@@ -108,8 +105,8 @@ export const projectFocusFundamentalsParallaxMetric = (
     farPointerRightProjection,
     cyanPointerLeftProjection,
     cyanPointerRightProjection,
-    redAccentLeftProjection,
-    redAccentRightProjection,
+    redSleeveLeftProjection,
+    redSleeveRightProjection,
   ];
   if (projections.some(({ filmPointWorld }) => !filmPointWorld)) return null;
   if (
@@ -121,8 +118,8 @@ export const projectFocusFundamentalsParallaxMetric = (
     !farPointerRightProjection.filmPointWorld ||
     !cyanPointerLeftProjection.filmPointWorld ||
     !cyanPointerRightProjection.filmPointWorld ||
-    !redAccentLeftProjection.filmPointWorld ||
-    !redAccentRightProjection.filmPointWorld
+    !redSleeveLeftProjection.filmPointWorld ||
+    !redSleeveRightProjection.filmPointWorld
   ) {
     return null;
   }
@@ -167,8 +164,8 @@ export const projectFocusFundamentalsParallaxMetric = (
   const cyanPointerCenterAxis = orientedAxisValue(farProjection.filmPointWorld);
   const cyanPointerLeftAxis = orientedAxisValue(cyanPointerLeftProjection.filmPointWorld);
   const cyanPointerRightAxis = orientedAxisValue(cyanPointerRightProjection.filmPointWorld);
-  const redAccentLeftAxis = orientedAxisValue(redAccentLeftProjection.filmPointWorld);
-  const redAccentRightAxis = orientedAxisValue(redAccentRightProjection.filmPointWorld);
+  const redSleeveLeftAxis = orientedAxisValue(redSleeveLeftProjection.filmPointWorld);
+  const redSleeveRightAxis = orientedAxisValue(redSleeveRightProjection.filmPointWorld);
 
   return {
     nearFilmPointWorld: nearProjection.filmPointWorld,
@@ -186,14 +183,12 @@ export const projectFocusFundamentalsParallaxMetric = (
     pointerAssembly: {
       cyanLeftFilmPointWorld: cyanPointerLeftProjection.filmPointWorld,
       cyanRightFilmPointWorld: cyanPointerRightProjection.filmPointWorld,
-      redAccentLeftOuterFilmPointWorld: redAccentLeftProjection.filmPointWorld,
-      redAccentRightOuterFilmPointWorld: redAccentRightProjection.filmPointWorld,
+      redLeftOuterFilmPointWorld: redSleeveLeftProjection.filmPointWorld,
+      redRightOuterFilmPointWorld: redSleeveRightProjection.filmPointWorld,
       cyanPointerWidthMm: cyanPointerRightAxis - cyanPointerLeftAxis,
-      redAccentWidthMm: redAccentRightAxis - redAccentLeftAxis,
-      redAccentLeftOffsetFromCyanCenterMm: redAccentLeftAxis - cyanPointerCenterAxis,
-      redAccentRightOffsetFromCyanCenterMm: redAccentRightAxis - cyanPointerCenterAxis,
-      cyanPointerPlaneZMm: 0,
-      redAccentPlaneZMm: focusFundamentalsParallaxPointerAccentPlaneOffsetMm,
+      redSleeveWidthMm: redSleeveRightAxis - redSleeveLeftAxis,
+      redSleeveLeftOffsetFromCyanCenterMm: redSleeveLeftAxis - cyanPointerCenterAxis,
+      redSleeveRightOffsetFromCyanCenterMm: redSleeveRightAxis - cyanPointerCenterAxis,
     },
     allPointsVisible: projections.every(({ visible }) => visible),
   };
