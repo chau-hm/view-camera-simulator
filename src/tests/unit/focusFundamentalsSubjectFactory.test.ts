@@ -10,6 +10,14 @@ import {
   getFocusFundamentalsDetailMarkerLocalPosition,
 } from "../../scenes/focusFundamentalsTargets";
 import {
+  focusFundamentalsParallaxPointerAccentColor,
+  focusFundamentalsParallaxPointerAccentDepthMm,
+  focusFundamentalsParallaxPointerAccentHeightMm,
+  focusFundamentalsParallaxPointerAccentLeftCenterXMm,
+  focusFundamentalsParallaxPointerAccentLeftWidthMm,
+  focusFundamentalsParallaxPointerAccentPlaneOffsetMm,
+  focusFundamentalsParallaxPointerAccentRightCenterXMm,
+  focusFundamentalsParallaxPointerAccentRightWidthMm,
   focusFundamentalsParallaxFeatures,
   focusFundamentalsParallaxPointerColor,
 } from "../../scenes/focusFundamentalsParallax";
@@ -53,6 +61,18 @@ describe("Focus Fundamentals shared subject factory", () => {
     const secondGate = secondGroup.getObjectByName("focus-fundamentals-near-alignment-gate-left") as THREE.Mesh;
     const firstPointer = group.getObjectByName("focus-fundamentals-far-alignment-pointer-mesh") as THREE.Mesh;
     const secondPointer = secondGroup.getObjectByName("focus-fundamentals-far-alignment-pointer-mesh") as THREE.Mesh;
+    const firstAccentLeft = group.getObjectByName(
+      "focus-fundamentals-far-alignment-pointer-accent-left",
+    ) as THREE.Mesh;
+    const secondAccentLeft = secondGroup.getObjectByName(
+      "focus-fundamentals-far-alignment-pointer-accent-left",
+    ) as THREE.Mesh;
+    const firstAccentRight = group.getObjectByName(
+      "focus-fundamentals-far-alignment-pointer-accent-right",
+    ) as THREE.Mesh;
+    const secondAccentRight = secondGroup.getObjectByName(
+      "focus-fundamentals-far-alignment-pointer-accent-right",
+    ) as THREE.Mesh;
     expect(firstFrameBar.geometry).toBe(secondFrameBar.geometry);
     expect(firstFrameBar.material).toBe(secondFrameBar.material);
     expect(firstNearMarker.geometry).toBe(secondNearMarker.geometry);
@@ -61,6 +81,10 @@ describe("Focus Fundamentals shared subject factory", () => {
     expect(firstGate.material).toBe(secondGate.material);
     expect(firstPointer.geometry).toBe(secondPointer.geometry);
     expect(firstPointer.material).toBe(secondPointer.material);
+    expect(firstAccentLeft.geometry).toBe(secondAccentLeft.geometry);
+    expect(firstAccentLeft.material).toBe(secondAccentLeft.material);
+    expect(firstAccentRight.geometry).toBe(secondAccentRight.geometry);
+    expect(firstAccentRight.material).toBe(secondAccentRight.material);
     expect((firstPointer.material as THREE.MeshBasicMaterial).color.getHexString()).toBe(
       focusFundamentalsParallaxPointerColor.slice(1),
     );
@@ -69,6 +93,56 @@ describe("Focus Fundamentals shared subject factory", () => {
       height: toWorld(52),
       depth: toWorld(8),
     });
+    expect((firstAccentLeft.material as THREE.MeshBasicMaterial).color.getHexString()).toBe(
+      focusFundamentalsParallaxPointerAccentColor.slice(1),
+    );
+    expect((firstAccentLeft.geometry as THREE.BoxGeometry).parameters).toMatchObject({
+      width: toWorld(focusFundamentalsParallaxPointerAccentLeftWidthMm),
+      height: toWorld(focusFundamentalsParallaxPointerAccentHeightMm),
+      depth: toWorld(focusFundamentalsParallaxPointerAccentDepthMm),
+    });
+    expect((firstAccentRight.geometry as THREE.BoxGeometry).parameters).toMatchObject({
+      width: toWorld(focusFundamentalsParallaxPointerAccentRightWidthMm),
+      height: toWorld(focusFundamentalsParallaxPointerAccentHeightMm),
+      depth: toWorld(focusFundamentalsParallaxPointerAccentDepthMm),
+    });
+    expect(firstAccentLeft.position.x).toBeCloseTo(
+      toWorld(focusFundamentalsParallaxPointerAccentLeftCenterXMm),
+      12,
+    );
+    expect(firstAccentRight.position.x).toBeCloseTo(
+      toWorld(focusFundamentalsParallaxPointerAccentRightCenterXMm),
+      12,
+    );
+    expect(firstAccentLeft.position.z).toBeCloseTo(
+      toWorld(focusFundamentalsParallaxPointerAccentPlaneOffsetMm),
+      12,
+    );
+    expect(firstAccentRight.position.z).toBeCloseTo(
+      toWorld(focusFundamentalsParallaxPointerAccentPlaneOffsetMm),
+      12,
+    );
+    expect(firstAccentLeft.position.z).toBeCloseTo(firstPointer.position.z, 12);
+    expect(firstAccentRight.position.z).toBeCloseTo(firstPointer.position.z, 12);
+    expect(focusFundamentalsParallaxPointerAccentLeftWidthMm).toBeGreaterThan(
+      focusFundamentalsParallaxPointerAccentRightWidthMm,
+    );
+    expect(
+      firstAccentLeft.position.x +
+        (firstAccentLeft.geometry as THREE.BoxGeometry).parameters.width / 2,
+    ).toBeCloseTo(
+      firstPointer.position.x - (firstPointer.geometry as THREE.BoxGeometry).parameters.width / 2,
+      12,
+    );
+    expect(
+      firstAccentRight.position.x -
+        (firstAccentRight.geometry as THREE.BoxGeometry).parameters.width / 2,
+    ).toBeCloseTo(
+      firstPointer.position.x + (firstPointer.geometry as THREE.BoxGeometry).parameters.width / 2,
+      12,
+    );
+    expect(firstAccentLeft.position.x - secondAccentLeft.position.x).toBeCloseTo(0, 12);
+    expect(firstAccentRight.position.x - secondAccentRight.position.x).toBeCloseTo(0, 12);
     for (const name of [
       "focus-fundamentals-far-alignment-pointer-outer-left",
       "focus-fundamentals-far-alignment-pointer-outer-right",

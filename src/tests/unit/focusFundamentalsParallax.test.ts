@@ -200,7 +200,7 @@ describe("Focus Fundamentals physical parallax alignment geometry", () => {
     );
   });
 
-  it("projects the cyan pointer and red sleeve separately without using the sleeve as the alignment centre", () => {
+  it("projects the coplanar red accents separately without using them as the alignment centre", () => {
     const states = {
       frontNear: opticsFor(focusFundamentalsNearFocusDepthMm, "front"),
       frontFar: opticsFor(focusFundamentalsFarFocusDepthMm, "front"),
@@ -216,48 +216,52 @@ describe("Focus Fundamentals physical parallax alignment geometry", () => {
 
     for (const metric of Object.values(metrics)) {
       expect(metric.pointerAssembly.cyanPointerWidthMm).toBeCloseTo(metric.pointerWidthMm, 12);
-      expect(metric.pointerAssembly.redSleeveWidthMm).toBeGreaterThan(
+      expect(metric.pointerAssembly.redAccentWidthMm).toBeGreaterThan(
         metric.pointerAssembly.cyanPointerWidthMm,
       );
-      expect(metric.pointerAssembly.redSleeveLeftOffsetFromCyanCenterMm).toBeLessThan(0);
-      expect(metric.pointerAssembly.redSleeveRightOffsetFromCyanCenterMm).toBeGreaterThan(0);
+      expect(metric.pointerAssembly.redAccentLeftOffsetFromCyanCenterMm).toBeLessThan(0);
+      expect(metric.pointerAssembly.redAccentRightOffsetFromCyanCenterMm).toBeGreaterThan(0);
+      expect(metric.pointerAssembly.redAccentPlaneZMm).toBeCloseTo(
+        metric.pointerAssembly.cyanPointerPlaneZMm,
+        12,
+      );
     }
 
     for (const name of ["rearNear", "rearFar"] as const) {
       expect(metrics[name].separationMm).toBeLessThan(1e-10);
       expect(
-        metrics[name].pointerAssembly.redSleeveLeftOffsetFromCyanCenterMm /
+        metrics[name].pointerAssembly.redAccentLeftOffsetFromCyanCenterMm /
           metrics[name].pointerAssembly.cyanPointerWidthMm,
       ).toBeCloseTo(
-        metrics.rearNear.pointerAssembly.redSleeveLeftOffsetFromCyanCenterMm /
+        metrics.rearNear.pointerAssembly.redAccentLeftOffsetFromCyanCenterMm /
           metrics.rearNear.pointerAssembly.cyanPointerWidthMm,
         10,
       );
       expect(
-        metrics[name].pointerAssembly.redSleeveRightOffsetFromCyanCenterMm /
+        metrics[name].pointerAssembly.redAccentRightOffsetFromCyanCenterMm /
           metrics[name].pointerAssembly.cyanPointerWidthMm,
       ).toBeCloseTo(
-        metrics.rearNear.pointerAssembly.redSleeveRightOffsetFromCyanCenterMm /
+        metrics.rearNear.pointerAssembly.redAccentRightOffsetFromCyanCenterMm /
           metrics.rearNear.pointerAssembly.cyanPointerWidthMm,
         10,
       );
     }
 
     const referenceLeftOffsetRatio =
-      metrics.rearNear.pointerAssembly.redSleeveLeftOffsetFromCyanCenterMm /
+      metrics.rearNear.pointerAssembly.redAccentLeftOffsetFromCyanCenterMm /
       metrics.rearNear.pointerAssembly.cyanPointerWidthMm;
     const referenceRightOffsetRatio =
-      metrics.rearNear.pointerAssembly.redSleeveRightOffsetFromCyanCenterMm /
+      metrics.rearNear.pointerAssembly.redAccentRightOffsetFromCyanCenterMm /
       metrics.rearNear.pointerAssembly.cyanPointerWidthMm;
     // Perspective projection changes the apparent scale slightly with focus;
     // the factory-level test above protects the exact local rigid transform.
     for (const metric of Object.values(metrics)) {
       expect(
-        metric.pointerAssembly.redSleeveLeftOffsetFromCyanCenterMm /
+        metric.pointerAssembly.redAccentLeftOffsetFromCyanCenterMm /
           metric.pointerAssembly.cyanPointerWidthMm,
       ).toBeCloseTo(referenceLeftOffsetRatio, 3);
       expect(
-        metric.pointerAssembly.redSleeveRightOffsetFromCyanCenterMm /
+        metric.pointerAssembly.redAccentRightOffsetFromCyanCenterMm /
           metric.pointerAssembly.cyanPointerWidthMm,
       ).toBeCloseTo(referenceRightOffsetRatio, 3);
     }
