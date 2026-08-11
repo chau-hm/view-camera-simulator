@@ -18,7 +18,7 @@ export const focusFundamentalsFloorYmm = -150;
 export const focusFundamentalsBackdropRearMarginMm = 400;
 export const focusFundamentalsBackdropHorizontalMarginMm = 500;
 export const focusFundamentalsBackdropVerticalMarginMm = 500;
-export const focusFundamentalsBackdropColor = "#334155";
+export const focusFundamentalsBackdropColor = "#0108bb";
 
 export const focusFundamentalsObjectDimensionsMm = {
   width: 240,
@@ -50,25 +50,19 @@ export const focusFundamentalsFrameGeometry = {
   front: {
     widthMm: focusFundamentalsObjectDimensionsMm.width,
     heightMm: focusFundamentalsObjectDimensionsMm.height,
-    centerZMm:
-      -focusFundamentalsObjectDimensionsMm.depth / 2 +
-      focusFundamentalsFrameDepthMm / 2,
+    centerZMm: -focusFundamentalsObjectDimensionsMm.depth / 2 + focusFundamentalsFrameDepthMm / 2,
   },
   back: {
     widthMm: focusFundamentalsBackFrameDimensionsMm.width,
     heightMm: focusFundamentalsBackFrameDimensionsMm.height,
-    centerZMm:
-      focusFundamentalsObjectDimensionsMm.depth / 2 -
-      focusFundamentalsFrameDepthMm / 2,
+    centerZMm: focusFundamentalsObjectDimensionsMm.depth / 2 - focusFundamentalsFrameDepthMm / 2,
   },
 } as const;
 
 const frontFrameSurfaceZMm =
-  focusFundamentalsFrameGeometry.front.centerZMm -
-  focusFundamentalsFrameGeometry.depthMm / 2;
+  focusFundamentalsFrameGeometry.front.centerZMm - focusFundamentalsFrameGeometry.depthMm / 2;
 const backFrameFrontSurfaceZMm =
-  focusFundamentalsFrameGeometry.back.centerZMm -
-  focusFundamentalsFrameGeometry.depthMm / 2;
+  focusFundamentalsFrameGeometry.back.centerZMm - focusFundamentalsFrameGeometry.depthMm / 2;
 
 export const focusFundamentalsMarkerSizeMm = {
   width: 48,
@@ -94,9 +88,7 @@ const halfObjectHeightMm = focusFundamentalsObjectDimensionsMm.height / 2;
 const halfObjectDepthMm = focusFundamentalsObjectDimensionsMm.depth / 2;
 
 /** Transform a point in the subject's local millimetre coordinates to world mm. */
-export const transformFocusFundamentalsLocalPointToWorld = (
-  localPositionMm: Vec3,
-): Vec3 => ({
+export const transformFocusFundamentalsLocalPointToWorld = (localPositionMm: Vec3): Vec3 => ({
   x:
     focusFundamentalsObjectCenterMm.x +
     cosRotationY * localPositionMm.x +
@@ -108,14 +100,8 @@ export const transformFocusFundamentalsLocalPointToWorld = (
     cosRotationY * localPositionMm.z,
 });
 
-const localXForFocusDepth = (
-  focusDepthMm: number,
-  localZMm: number,
-): number =>
-  (focusFundamentalsObjectCenterMm.z +
-    cosRotationY * localZMm -
-    focusDepthMm) /
-  sinRotationY;
+const localXForFocusDepth = (focusDepthMm: number, localZMm: number): number =>
+  (focusFundamentalsObjectCenterMm.z + cosRotationY * localZMm - focusDepthMm) / sinRotationY;
 
 const focusDetailSpecs = [
   {
@@ -146,9 +132,7 @@ export const focusFundamentalsFocusDetails: readonly FocusFundamentalsFocusDetai
   focusDetailSpecs.map((detail) => ({
     ...detail,
     localPositionMm: { ...detail.localPositionMm },
-    worldPositionMm: transformFocusFundamentalsLocalPointToWorld(
-      detail.localPositionMm,
-    ),
+    worldPositionMm: transformFocusFundamentalsLocalPointToWorld(detail.localPositionMm),
   }));
 
 export type FocusFundamentalsFrameReferencePoints = {
@@ -221,9 +205,7 @@ const objectCornersLocalMm: Vec3[] = [
   { x: halfObjectWidthMm, y: halfObjectHeightMm, z: halfObjectDepthMm },
 ];
 
-const objectCornerWorldMm = objectCornersLocalMm.map(
-  transformFocusFundamentalsLocalPointToWorld,
-);
+const objectCornerWorldMm = objectCornersLocalMm.map(transformFocusFundamentalsLocalPointToWorld);
 
 export const focusFundamentalsObjectBoundsMm: Bounds3 = {
   min: {
