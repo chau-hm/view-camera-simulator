@@ -14,6 +14,12 @@ export const focusFundamentalsFarFocusDepthMm = 1350;
 export const focusFundamentalsFocusDepthPaddingMm = 100;
 export const focusFundamentalsFloorYmm = -150;
 
+/** Presentation-only backdrop margins; the wall is not part of optical geometry. */
+export const focusFundamentalsBackdropRearMarginMm = 400;
+export const focusFundamentalsBackdropHorizontalMarginMm = 500;
+export const focusFundamentalsBackdropVerticalMarginMm = 500;
+export const focusFundamentalsBackdropColor = "#334155";
+
 export const focusFundamentalsObjectDimensionsMm = {
   width: 240,
   height: 200,
