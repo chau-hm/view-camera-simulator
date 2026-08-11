@@ -3,35 +3,74 @@ import type { Bounds3, Vec3 } from "../types/optics";
 /**
  * Canonical subject geometry for Focus Fundamentals.
  *
- * The scene is one rigid block.  The two focus targets are surface details on
- * that block; all render paths and focus controls derive from this module.
+ * The scene is one rigid connected open-frame subject. The two focus targets
+ * are details on its front and back structure; all render paths and focus
+ * controls derive from this module.
  */
-export const focusFundamentalsReferenceFocusDepthMm = 2000;
+export const focusFundamentalsFocalLengthMm = 180;
+export const focusFundamentalsReferenceFocusDepthMm = 1200;
+export const focusFundamentalsNearFocusDepthMm = 1050;
+export const focusFundamentalsFarFocusDepthMm = 1350;
+export const focusFundamentalsFocusDepthPaddingMm = 100;
 export const focusFundamentalsFloorYmm = -150;
+
+export const focusFundamentalsObjectDimensionsMm = {
+  width: 240,
+  height: 200,
+  depth: 440,
+} as const;
 
 export const focusFundamentalsObjectCenterMm: Readonly<Vec3> = {
   x: 0,
-  y: focusFundamentalsFloorYmm + 190,
+  y: focusFundamentalsFloorYmm + focusFundamentalsObjectDimensionsMm.height / 2,
   z: focusFundamentalsReferenceFocusDepthMm,
 };
 
-export const focusFundamentalsObjectDimensionsMm = {
-  width: 520,
-  height: 380,
-  depth: 560,
-} as const;
-
-export const focusFundamentalsObjectRotationYDeg = 18;
+export const focusFundamentalsObjectRotationYDeg = 38;
 export const focusFundamentalsObjectRotationYRad =
   (focusFundamentalsObjectRotationYDeg * Math.PI) / 180;
 
+export const focusFundamentalsFrameMemberWidthMm = 36;
+export const focusFundamentalsFrameDepthMm = 36;
+export const focusFundamentalsBackFrameDimensionsMm = {
+  width: 220,
+  height: 160,
+} as const;
+
+/** Canonical connected front/back frame structure for both subject render paths. */
+export const focusFundamentalsFrameGeometry = {
+  memberWidthMm: focusFundamentalsFrameMemberWidthMm,
+  depthMm: focusFundamentalsFrameDepthMm,
+  front: {
+    widthMm: focusFundamentalsObjectDimensionsMm.width,
+    heightMm: focusFundamentalsObjectDimensionsMm.height,
+    centerZMm:
+      -focusFundamentalsObjectDimensionsMm.depth / 2 +
+      focusFundamentalsFrameDepthMm / 2,
+  },
+  back: {
+    widthMm: focusFundamentalsBackFrameDimensionsMm.width,
+    heightMm: focusFundamentalsBackFrameDimensionsMm.height,
+    centerZMm:
+      focusFundamentalsObjectDimensionsMm.depth / 2 -
+      focusFundamentalsFrameDepthMm / 2,
+  },
+} as const;
+
+const frontFrameSurfaceZMm =
+  focusFundamentalsFrameGeometry.front.centerZMm -
+  focusFundamentalsFrameGeometry.depthMm / 2;
+const backFrameFrontSurfaceZMm =
+  focusFundamentalsFrameGeometry.back.centerZMm -
+  focusFundamentalsFrameGeometry.depthMm / 2;
+
 export const focusFundamentalsMarkerSizeMm = {
-  width: 100,
-  height: 100,
+  width: 48,
+  height: 48,
 } as const;
 export const focusFundamentalsMarkerOffsetMm = 2;
 
-type FocusDetailSurface = "front" | "right";
+type FocusDetailSurface = "front" | "back";
 
 export type FocusFundamentalsFocusDetail = {
   id: string;
@@ -48,7 +87,7 @@ const halfObjectWidthMm = focusFundamentalsObjectDimensionsMm.width / 2;
 const halfObjectHeightMm = focusFundamentalsObjectDimensionsMm.height / 2;
 const halfObjectDepthMm = focusFundamentalsObjectDimensionsMm.depth / 2;
 
-/** Transform a point in the block's local millimetre coordinates to world mm. */
+/** Transform a point in the subject's local millimetre coordinates to world mm. */
 export const transformFocusFundamentalsLocalPointToWorld = (
   localPositionMm: Vec3,
 ): Vec3 => ({
@@ -63,39 +102,36 @@ export const transformFocusFundamentalsLocalPointToWorld = (
     cosRotationY * localPositionMm.z,
 });
 
-const localXForFrontDepth = (focusDepthMm: number): number =>
-  (focusFundamentalsObjectCenterMm.z -
-    cosRotationY * halfObjectDepthMm -
+const localXForFocusDepth = (
+  focusDepthMm: number,
+  localZMm: number,
+): number =>
+  (focusFundamentalsObjectCenterMm.z +
+    cosRotationY * localZMm -
     focusDepthMm) /
   sinRotationY;
-
-const localZForRightDepth = (focusDepthMm: number): number =>
-  (focusDepthMm -
-    focusFundamentalsObjectCenterMm.z +
-    sinRotationY * halfObjectWidthMm) /
-  cosRotationY;
 
 const focusDetailSpecs = [
   {
     id: "focus-near-detail",
     label: "Focus Near Detail",
     surface: "front" as const,
-    focusDepthMm: 1720,
+    focusDepthMm: focusFundamentalsNearFocusDepthMm,
     localPositionMm: {
-      x: localXForFrontDepth(1720),
-      y: 50,
-      z: -halfObjectDepthMm,
+      x: localXForFocusDepth(focusFundamentalsNearFocusDepthMm, frontFrameSurfaceZMm),
+      y: 30,
+      z: frontFrameSurfaceZMm,
     },
   },
   {
     id: "focus-far-detail",
     label: "Focus Far Detail",
-    surface: "right" as const,
-    focusDepthMm: 2180,
+    surface: "back" as const,
+    focusDepthMm: focusFundamentalsFarFocusDepthMm,
     localPositionMm: {
-      x: halfObjectWidthMm,
-      y: 50,
-      z: localZForRightDepth(2180),
+      x: localXForFocusDepth(focusFundamentalsFarFocusDepthMm, backFrameFrontSurfaceZMm),
+      y: 0,
+      z: backFrameFrontSurfaceZMm,
     },
   },
 ] as const;
@@ -109,22 +145,64 @@ export const focusFundamentalsFocusDetails: readonly FocusFundamentalsFocusDetai
     ),
   }));
 
+export type FocusFundamentalsFrameReferencePoints = {
+  topLeft: Vec3;
+  topRight: Vec3;
+  bottomLeft: Vec3;
+  bottomRight: Vec3;
+};
+
+const makeFrameReferencePoints = (
+  widthMm: number,
+  heightMm: number,
+  surfaceZMm: number,
+): FocusFundamentalsFrameReferencePoints => ({
+  topLeft: transformFocusFundamentalsLocalPointToWorld({
+    x: -widthMm / 2,
+    y: heightMm / 2,
+    z: surfaceZMm,
+  }),
+  topRight: transformFocusFundamentalsLocalPointToWorld({
+    x: widthMm / 2,
+    y: heightMm / 2,
+    z: surfaceZMm,
+  }),
+  bottomLeft: transformFocusFundamentalsLocalPointToWorld({
+    x: -widthMm / 2,
+    y: -heightMm / 2,
+    z: surfaceZMm,
+  }),
+  bottomRight: transformFocusFundamentalsLocalPointToWorld({
+    x: widthMm / 2,
+    y: -heightMm / 2,
+    z: surfaceZMm,
+  }),
+});
+
+/** Corresponding front/back frame corners used by the scale-independent projection metric. */
+export const focusFundamentalsPerspectiveReferencePoints = {
+  front: makeFrameReferencePoints(
+    focusFundamentalsFrameGeometry.front.widthMm,
+    focusFundamentalsFrameGeometry.front.heightMm,
+    frontFrameSurfaceZMm,
+  ),
+  back: makeFrameReferencePoints(
+    focusFundamentalsFrameGeometry.back.widthMm,
+    focusFundamentalsFrameGeometry.back.heightMm,
+    backFrameFrontSurfaceZMm,
+  ),
+} as const;
+
 export const getFocusFundamentalsDetailMarkerLocalPosition = (
   detail: FocusFundamentalsFocusDetail,
-): Vec3 =>
-  detail.surface === "front"
-    ? {
-        ...detail.localPositionMm,
-        z: detail.localPositionMm.z - focusFundamentalsMarkerOffsetMm,
-      }
-    : {
-        ...detail.localPositionMm,
-        x: detail.localPositionMm.x + focusFundamentalsMarkerOffsetMm,
-      };
+): Vec3 => ({
+  ...detail.localPositionMm,
+  z: detail.localPositionMm.z - focusFundamentalsMarkerOffsetMm,
+});
 
 export const getFocusFundamentalsDetailMarkerRotationY = (
   detail: FocusFundamentalsFocusDetail,
-): number => (detail.surface === "front" ? Math.PI : Math.PI / 2);
+): number => (detail.surface === "front" || detail.surface === "back" ? Math.PI : 0);
 
 const objectCornersLocalMm: Vec3[] = [
   { x: -halfObjectWidthMm, y: -halfObjectHeightMm, z: -halfObjectDepthMm },
@@ -154,10 +232,23 @@ export const focusFundamentalsObjectBoundsMm: Bounds3 = {
   },
 };
 
-/** Camera/clip bounds include a modest teaching margin around the block. */
+export const focusFundamentalsFocusDepthRangeMm = {
+  min: focusFundamentalsNearFocusDepthMm - focusFundamentalsFocusDepthPaddingMm,
+  max: focusFundamentalsFarFocusDepthMm + focusFundamentalsFocusDepthPaddingMm,
+} as const;
+
+/** Camera/clip bounds include a modest margin around the connected open-frame subject. */
 export const focusFundamentalsSceneBoundsMm: Bounds3 = {
-  min: { x: -500, y: -200, z: 1500 },
-  max: { x: 500, y: 300, z: 2500 },
+  min: {
+    x: focusFundamentalsObjectBoundsMm.min.x - 130,
+    y: Math.min(focusFundamentalsFloorYmm, focusFundamentalsObjectBoundsMm.min.y) - 50,
+    z: focusFundamentalsFocusDepthRangeMm.min,
+  },
+  max: {
+    x: focusFundamentalsObjectBoundsMm.max.x + 130,
+    y: focusFundamentalsObjectBoundsMm.max.y + 100,
+    z: focusFundamentalsFocusDepthRangeMm.max,
+  },
 };
 
 // IDs are intentionally descriptive now; the previous compatibility IDs were

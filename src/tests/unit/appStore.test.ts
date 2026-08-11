@@ -6,7 +6,11 @@ import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { resolveInitialOpticalGeometryVisibility } from "../../state/sceneViewDefaults";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
-import { focusFundamentalsReferenceFocusDepthMm } from "../../scenes/focusFundamentalsTargets";
+import {
+  focusFundamentalsFarFocusDepthMm,
+  focusFundamentalsFocusDepthRangeMm,
+  focusFundamentalsReferenceFocusDepthMm,
+} from "../../scenes/focusFundamentalsTargets";
 
 describe("app store STA-001", () => {
   afterEach(() => {
@@ -229,13 +233,13 @@ describe("app store STA-001", () => {
       useAppStore.getState();
 
     initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
-    setFocusDistance(2180);
+    setFocusDistance(focusFundamentalsFarFocusDepthMm);
     setFocusStandard("rear");
     expect(useAppStore.getState().camera).toMatchObject({
       focusStandard: "rear",
-      focusDistanceMm: 2180,
+      focusDistanceMm: focusFundamentalsFarFocusDepthMm,
       focusMode: "finite",
-      lastFiniteFocusDepthMm: 2180,
+      lastFiniteFocusDepthMm: focusFundamentalsFarFocusDepthMm,
     });
 
     setInfinityFocus();
@@ -243,7 +247,7 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera).toMatchObject({
       focusStandard: "front",
       focusMode: "infinity",
-      lastFiniteFocusDepthMm: 2180,
+      lastFiniteFocusDepthMm: focusFundamentalsFarFocusDepthMm,
     });
   });
 
@@ -259,13 +263,41 @@ describe("app store STA-001", () => {
       focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
       focusMode: "finite",
       lastFiniteFocusDepthMm: focusFundamentalsReferenceFocusDepthMm,
+      aperture: 32,
     });
+  });
+
+  it("restores Focus Fundamentals f/32 across scene entry, mode changes, and reset actions", () => {
+    const store = useAppStore.getState();
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    expect(useAppStore.getState().camera.aperture).toBe(11);
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
+    expect(useAppStore.getState().camera.aperture).toBe(32);
+
+    store.setAperture(11);
+    store.setMode("guided");
+    expect(useAppStore.getState().camera.aperture).toBe(32);
+
+    store.setActiveScene("architecture-rise");
+    store.setAperture(11);
+    store.setActiveScene(focusFundamentalsTwoTargets.id);
+    expect(useAppStore.getState().camera.aperture).toBe(32);
+
+    store.setAperture(11);
+    store.resetMovements();
+    expect(useAppStore.getState().camera.aperture).toBe(32);
+
+    store.setAperture(11);
+    store.restartTask();
+    expect(useAppStore.getState().camera.aperture).toBe(32);
   });
 
   it("keeps the selectable-focus route inside the physical focus range", () => {
     expect(getSceneFocusDistanceRange(focusFundamentalsTwoTargets.id)).toEqual({
-      min: 1500,
-      max: 2500,
+      min: focusFundamentalsFocusDepthRangeMm.min,
+      max: focusFundamentalsFocusDepthRangeMm.max,
     });
   });
 

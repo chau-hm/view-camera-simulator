@@ -486,6 +486,7 @@ export const SimulatorWorkspace = ({
                 }
               })() } : null}
               teachingReadout={teachingReadout}
+              focusStandard={camera.activeSceneId === "focus-fundamentals-two-targets" ? camera.focusStandard : undefined}
             />
 
             <FocusTargetsReadout

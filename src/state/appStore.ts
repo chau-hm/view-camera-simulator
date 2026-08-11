@@ -297,6 +297,17 @@ const isApertureLocked = (sceneId: string): boolean => {
   return scene?.cameraControlPolicy?.aperture === "fixed";
 };
 
+/** Resolve a locked scene's aperture from its canonical camera preset. */
+const resolveSceneAperture = (
+  sceneId: string,
+  fallback: ApertureValue,
+): ApertureValue => {
+  const scene = getSceneById(sceneId);
+  return scene?.cameraControlPolicy?.aperture === "fixed"
+    ? scene.cameraPreset.aperture
+    : fallback;
+};
+
 /** Check if infinity reset is disallowed by the active scene. */
 const isInfinityResetDisallowed = (sceneId: string): boolean => {
   const scene = getSceneById(sceneId);
@@ -665,7 +676,11 @@ export const useAppStore = create<AppStore>((set) => ({
 
   setMode: (mode) =>
     set((state) => ({
-      camera: { ...state.camera, mode },
+      camera: {
+        ...state.camera,
+        mode,
+        aperture: resolveSceneAperture(state.camera.activeSceneId, state.camera.aperture),
+      },
       ui: { ...state.ui, mode },
     })),
 
@@ -687,6 +702,7 @@ export const useAppStore = create<AppStore>((set) => ({
           focalLengthMm:
             scene?.cameraPreset.focalLengthMm ??
             DEFAULT_CAMERA_STATE.focalLengthMm,
+          aperture: resolveSceneAperture(sceneId, state.camera.aperture),
           focusDistanceMm: clampFocusDistanceForScene(
             sceneId,
             state.camera.focusDistanceMm,
@@ -787,6 +803,10 @@ export const useAppStore = create<AppStore>((set) => ({
       const routeKey = `${mode}:${sceneId}:${taskId ?? ""}:${calibrationEnabled ? "calibration" : ""}`;
       if (state.lastInitializedRouteKey === routeKey) {
         return {
+          camera: {
+            ...state.camera,
+            aperture: resolveSceneAperture(sceneId, state.camera.aperture),
+          },
           scene: { ...state.scene, activeSceneId: sceneId },
           task: { ...state.task, activeTaskId: taskId ?? null },
           ui: { ...state.ui, mode },
@@ -865,6 +885,11 @@ export const useAppStore = create<AppStore>((set) => ({
           ...resolveSceneFocusDefaults(sceneId),
         };
       }
+
+      nextCamera = {
+        ...nextCamera,
+        aperture: resolveSceneAperture(sceneId, nextCamera.aperture),
+      };
 
       nextCamera = {
         ...nextCamera,
@@ -1120,7 +1145,7 @@ export const useAppStore = create<AppStore>((set) => ({
       camera: {
         ...state.camera,
         aperture: isApertureLocked(state.camera.activeSceneId)
-          ? state.camera.aperture
+          ? resolveSceneAperture(state.camera.activeSceneId, state.camera.aperture)
           : isApertureValue(value) ? value : state.camera.aperture,
       },
     })),
@@ -1227,7 +1252,10 @@ export const useAppStore = create<AppStore>((set) => ({
           focalLengthMm: preserveCalibrationOptics
             ? state.camera.focalLengthMm
             : resetValues.focalLengthMm ?? state.camera.focalLengthMm,
-          aperture: (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
+          aperture: resolveSceneAperture(
+            sceneId,
+            (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
+          ),
           cameraBodyPitchDeg: 0,
           cameraRigPlacement: state.camera.cameraRigPlacement,
           cameraMovementLessonState: undefined,
@@ -1306,6 +1334,10 @@ export const useAppStore = create<AppStore>((set) => ({
           focusDistanceMm: preserveCalibration
             ? activeCalibration.optics.provisionalFocusDistanceMm
             : focusDistanceMm,
+          aperture: resolveSceneAperture(
+            nextSceneId,
+            (nextControlState as Partial<CameraState>).aperture ?? state.camera.aperture,
+          ),
           ...(selectableFocusRestart ? resolveSceneFocusDefaults(nextSceneId) : {}),
           cameraMovementLessonState:
             isCameraMovementsScene(nextSceneId) && !preserveCalibration

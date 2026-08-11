@@ -25,10 +25,10 @@ export type GeometryPresentationProfile = {
 export function getGeometryPresentationProfile(
   scene: SceneDefinition,
 ): GeometryPresentationProfile {
-  // Focus Fundamentals gets a fixed teaching window
+  // Focus Fundamentals keeps its compact teaching window tied to canonical scene bounds.
   if (scene.id === "focus-fundamentals-two-targets") {
     return {
-      depthWindow: { mode: "fixed", minMm: -250, maxMm: 4000 },
+      depthWindow: { mode: "scene-bounds", marginMm: 300 },
       annotationMode: "minimal",
       diagramPaddingPx: 24,
       showDepthStrip: true,

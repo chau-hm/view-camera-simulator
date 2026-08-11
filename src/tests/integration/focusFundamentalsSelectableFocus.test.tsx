@@ -4,7 +4,11 @@ import { MemoryRouter } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 import { useAppStore } from "../../state/appStore";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
-import { focusFundamentalsReferenceFocusDepthMm } from "../../scenes/focusFundamentalsTargets";
+import {
+  focusFundamentalsFarFocusDepthMm,
+  focusFundamentalsFocusDepthRangeMm,
+  focusFundamentalsReferenceFocusDepthMm,
+} from "../../scenes/focusFundamentalsTargets";
 
 const renderRoute = (sceneId: string) =>
   render(
@@ -41,12 +45,21 @@ describe("Focus Fundamentals selectable focus integration", () => {
     const front = screen.getByRole("radio", { name: "Front standard" });
     const rear = screen.getByRole("radio", { name: "Rear standard" });
     const slider = screen.getByLabelText("Focus distance");
+    const aperture = screen.getByRole("combobox", { name: "Aperture" });
     const sceneCanvas = screen.getByTestId("scene-canvas");
 
+    await waitFor(() => expect(aperture).toHaveValue("32"));
+    expect(aperture).toBeDisabled();
+    expect(screen.getByText("Aperture is fixed for this lesson")).toBeInTheDocument();
+    fireEvent.change(aperture, { target: { value: "11" } });
+    expect(useAppStore.getState().camera.aperture).toBe(32);
     expect(front).toBeChecked();
     expect(rear).not.toBeChecked();
-    expect(slider).toHaveAttribute("min", "1500");
-    expect(slider).toHaveAttribute("max", "2500");
+    expect(screen.getByText("Focus method")).toBeInTheDocument();
+    expect(screen.getByText("Front standard", { selector: ".current-settings-row" })).toBeInTheDocument();
+    expect(screen.getByText("Movement · Lens moves · Film fixed")).toBeInTheDocument();
+    expect(slider).toHaveAttribute("min", String(focusFundamentalsFocusDepthRangeMm.min));
+    expect(slider).toHaveAttribute("max", String(focusFundamentalsFocusDepthRangeMm.max));
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-selected", "front");
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-resolved", "front");
     expect(sceneCanvas).toHaveAttribute("data-optics-fallback-applied", "false");
@@ -54,14 +67,16 @@ describe("Focus Fundamentals selectable focus integration", () => {
     const referenceLensZ = readZ(sceneCanvas, "data-camera-lens-center-world");
     expect(readZ(sceneCanvas, "data-camera-film-center-world")).toBeCloseTo(0, 10);
 
-    fireEvent.change(slider, { target: { value: "2180" } });
-    await waitFor(() => expect(useAppStore.getState().camera.focusDistanceMm).toBe(2180));
+    fireEvent.change(slider, { target: { value: String(focusFundamentalsFarFocusDepthMm) } });
+    await waitFor(() => expect(useAppStore.getState().camera.focusDistanceMm).toBe(focusFundamentalsFarFocusDepthMm));
     expect(readZ(sceneCanvas, "data-camera-film-center-world")).toBeCloseTo(0, 10);
     expect(readZ(sceneCanvas, "data-camera-lens-center-world")).not.toBeCloseTo(referenceLensZ, 10);
 
     fireEvent.click(rear);
     await waitFor(() => expect(useAppStore.getState().camera.focusStandard).toBe("rear"));
     expect(rear).toBeChecked();
+    expect(screen.getByText("Rear standard", { selector: ".current-settings-row" })).toBeInTheDocument();
+    expect(screen.getByText("Movement · Film moves · Lens/viewpoint fixed")).toBeInTheDocument();
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-selected", "rear");
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-resolved", "rear");
     expect(readZ(sceneCanvas, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 10);
@@ -88,6 +103,7 @@ describe("Focus Fundamentals selectable focus integration", () => {
         focusStandard: "front",
         focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
         focusMode: "finite",
+        aperture: 32,
       }),
     );
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-selected", "front");

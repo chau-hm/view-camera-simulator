@@ -10,6 +10,7 @@ import {
   sceneRegistry,
 } from "../../scenes/definitions";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
@@ -38,6 +39,11 @@ describe("scene definitions", () => {
   it("defines near/mid/far table focus targets", () => {
     const focusTargetIds = tableTiltScene.focusTargets.map((target) => target.id);
     expect(focusTargetIds).toEqual(["near-cup", "mid-notebook", "far-book"]);
+  });
+
+  it("locks Focus Fundamentals to its fixed f/32 teaching aperture", () => {
+    expect(focusFundamentalsTwoTargets.cameraPreset.aperture).toBe(32);
+    expect(focusFundamentalsTwoTargets.cameraControlPolicy?.aperture).toBe("fixed");
   });
 
   it("defines near/mid/far shelf focus targets", () => {

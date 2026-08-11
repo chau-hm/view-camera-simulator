@@ -1,6 +1,7 @@
 import type { SceneDefinition } from "../../types/scene";
 import {
   focusFundamentalsObjectCenterMm,
+  focusFundamentalsFocalLengthMm,
   focusFundamentalsReferenceFocusDepthMm,
   focusFundamentalsSceneBoundsMm,
   focusTargetsDefs,
@@ -13,8 +14,9 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
     "Focus two depths on the same object and compare front- and rear-standard focusing.",
   assets: [],
   cameraPreset: {
+    focalLengthMm: focusFundamentalsFocalLengthMm,
     focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
-    aperture: 11,
+    aperture: 32,
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
@@ -22,8 +24,8 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
     rearTiltDeg: 0,
   },
   cameraPlacement: {
-    // observer camera is offset to keep the block's front and right detail
-    // readable alongside the physical camera standards.
+    // observer camera is offset to keep the open subject's front and back
+    // structure readable alongside the physical camera standards.
     position: { x: 350, y: 180, z: -800 },
     target: focusFundamentalsObjectCenterMm,
   },
@@ -35,5 +37,8 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
     defaultStandard: "front",
     referenceFocusDepthMm: focusFundamentalsReferenceFocusDepthMm,
     minimumFocusDepthMm: focusFundamentalsSceneBoundsMm.min.z,
+  },
+  cameraControlPolicy: {
+    aperture: "fixed",
   },
 };

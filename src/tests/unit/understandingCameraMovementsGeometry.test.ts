@@ -6,6 +6,7 @@ import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeome
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import { focusFundamentalsFocalLengthMm } from "../../scenes/focusFundamentalsTargets";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
@@ -212,7 +213,9 @@ describe("Understanding Camera Movements focal calibration", () => {
     expect(architectureRiseScene.cameraPreset.focalLengthMm).toBeUndefined();
     expect(tableTiltScene.cameraPreset.focalLengthMm).toBeUndefined();
     expect(shelfSwingScene.cameraPreset.focalLengthMm).toBeUndefined();
-    expect(focusFundamentalsTwoTargets.cameraPreset.focalLengthMm).toBeUndefined();
+    expect(focusFundamentalsTwoTargets.cameraPreset.focalLengthMm).toBe(
+      focusFundamentalsFocalLengthMm,
+    );
     expect(DEFAULT_CAMERA_STATE.focalLengthMm).toBe(CAMERA_CONSTANTS.focalLengthMm);
     expect(CAMERA_CONSTANTS.focalLengthMm).toBe(150);
   });

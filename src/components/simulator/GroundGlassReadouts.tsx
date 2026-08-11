@@ -2,6 +2,7 @@ import { UI_COPY } from "../../ui/copy";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import type { RenderQualityProfile } from "../../types/ui";
 import type { CameraMovementField } from "../../types/scene";
+import type { FocusStandard } from "../../types/camera";
 import type { CameraMovementPublicReadout } from "../../scenes/cameraMovementPublicTeaching";
 
 type ActiveMovementInfo = {
@@ -21,6 +22,8 @@ type GroundGlassReadoutsProps = {
   activeMovement?: ActiveMovementInfo | null;
   /** Optional public teaching readout for Understanding Camera Movements. */
   teachingReadout?: CameraMovementPublicReadout | null;
+  /** Focus-standard teaching readout, used only by Focus Fundamentals. */
+  focusStandard?: FocusStandard;
   rttRuntimeInfo?: import("../../render/groundGlassRttDimensions").GroundGlassRttRuntimeInfo | null;
 };
 
@@ -46,6 +49,7 @@ export const CurrentSettingsReadout = ({
   renderQuality,
   activeMovement,
   teachingReadout,
+  focusStandard,
 }: GroundGlassReadoutsProps) => {
   return (
     <div aria-label="CurrentSettingsReadout" className="simulator-info-card simulator-info-card--settings">
@@ -88,6 +92,21 @@ export const CurrentSettingsReadout = ({
           </dd>
         </div>
       </dl>
+      {focusStandard && (
+        <dl className="current-settings-groups">
+          <div className="current-settings-group">
+            <dt>Focus method</dt>
+            <dd>
+              <div className="current-settings-row">
+                {focusStandard === "front" ? "Front standard" : "Rear standard"}
+              </div>
+              <div className="current-settings-row">
+                Movement · {focusStandard === "front" ? "Lens moves · Film fixed" : "Film moves · Lens/viewpoint fixed"}
+              </div>
+            </dd>
+          </div>
+        </dl>
+      )}
     </div>
   );
 };
@@ -147,6 +166,7 @@ export const GroundGlassReadouts = ({
   renderQuality,
   focusTargets,
   activeMovement,
+  focusStandard,
 }: GroundGlassReadoutsProps) => {
   return (
     <div aria-label="GroundGlassReadouts" style={{ display: 'grid', gap: '0.5rem' }}>
@@ -158,6 +178,7 @@ export const GroundGlassReadouts = ({
         aperture={aperture}
         renderQuality={renderQuality}
         activeMovement={activeMovement}
+        focusStandard={focusStandard}
       />
       <FocusTargetsReadout focusTargets={focusTargets} />
     </div>

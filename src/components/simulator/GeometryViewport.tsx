@@ -16,6 +16,7 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { supportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
 import { useAppStore } from "../../state/appStore";
+import { deriveFocusFundamentalsReferenceOptics } from "../../scenes/focusFundamentalsPresentation";
 
 type GeometryViewportProps = {
   opticsState: DerivedOpticsState;
@@ -32,6 +33,7 @@ const SVG_HEIGHT = 280;
 
 export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, showHeader, movementSummary }: GeometryViewportProps) => {
   const setGeometryView = useAppStore((state) => state.setGeometryView);
+  const focalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const diagramRef = useRef<HTMLDivElement | null>(null);
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
   const [fitMode, setFitMode] = useState<"scene" | "construction">("scene");
@@ -109,18 +111,27 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
 
   // Original (zero-movement) optics and projection for camera-movement comparison scenes
   const originalRef = useMemo<{ optics: DerivedOpticsState; projection: typeof sceneProjection } | null>(() => {
-    if (!scene.movementCapabilities) return null;
-    const originalCamera = {
-      ...DEFAULT_CAMERA_STATE,
-      ...scene.cameraPreset,
-      frontRiseMm: 0,
-      frontTiltDeg: 0,
-      frontSwingDeg: 0,
-      rearRiseMm: 0,
-      rearTiltDeg: 0,
-      activeSceneId: scene.id,
-    };
-    const originalOptics = deriveOpticsState(originalCamera, scene);
+    let originalOptics: DerivedOpticsState | null = null;
+    if (scene.movementCapabilities) {
+      const originalCamera = {
+        ...DEFAULT_CAMERA_STATE,
+        ...scene.cameraPreset,
+        frontRiseMm: 0,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
+        rearRiseMm: 0,
+        rearTiltDeg: 0,
+        activeSceneId: scene.id,
+      };
+      originalOptics = deriveOpticsState(originalCamera, scene);
+    } else if (scene.id === "focus-fundamentals-two-targets") {
+      originalOptics = deriveFocusFundamentalsReferenceOptics(
+        opticsState,
+        scene,
+        focalLengthMm,
+      );
+    }
+    if (!originalOptics) return null;
     const originalProjection = computeOpticalSectionData({
       opticsState: originalOptics,
       scene,
@@ -131,7 +142,7 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
       paddingPx: profile.diagramPaddingPx,
     });
     return { optics: originalOptics, projection: originalProjection };
-  }, [scene, svgSize.width, svgSize.height, sceneDepthWindow, profile.lateralWindow, profile.diagramPaddingPx]);
+  }, [focalLengthMm, opticsState, scene, svgSize.width, svgSize.height, sceneDepthWindow, profile.lateralWindow, profile.diagramPaddingPx]);
 
 const cameraProjection = constructionWindow
     ? computeOpticalSectionData({

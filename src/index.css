@@ -834,6 +834,9 @@ button {
 
 .control-label { display: grid; gap: 6px; font-size: 14px; color: var(--text); }
 .control-help { color: var(--text-muted); font-size: 12px; }
+fieldset[aria-label="Focus standard"] > .control-help { display: block; margin-top: 4px; line-height: 1.35; }
+fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
+.focus-parallax-help { display: grid; gap: 4px; margin-top: 4px; line-height: 1.35; }
 .control-stack { display: grid; gap: 8px; }
 .choice-list { display: grid; gap: 6px; }
 .camera-movement-controls { display: grid; gap: 12px; }

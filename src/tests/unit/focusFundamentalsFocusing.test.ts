@@ -6,12 +6,19 @@ import {
 } from "../../core/optics/thinLensModel";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import {
+  focusFundamentalsFocalLengthMm,
+  focusFundamentalsFarFocusDepthMm,
+  focusFundamentalsNearFocusDepthMm,
+  focusFundamentalsReferenceFocusDepthMm,
+} from "../../scenes/focusFundamentalsTargets";
 import type { CameraState } from "../../types/camera";
-import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { selectDerivedOpticsState } from "../../state/selectors";
 
 const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
+  ...focusFundamentalsTwoTargets.cameraPreset,
   activeSceneId: focusFundamentalsTwoTargets.id,
   ...overrides,
 });
@@ -30,10 +37,10 @@ const expectFiniteGeometry = (optics: ReturnType<typeof deriveOpticsState>) => {
 };
 
 describe("Focus Fundamentals selectable focus standard geometry", () => {
-  const f = CAMERA_CONSTANTS.focalLengthMm;
-  const reference = focusFundamentalsTwoTargets.focusStandardCapability?.referenceFocusDepthMm ?? 2000;
-  const nearDepth = focusFundamentalsTwoTargets.focusTargets[0].focusReferenceDepthFromRearDatumMm!;
-  const farDepth = focusFundamentalsTwoTargets.focusTargets[1].focusReferenceDepthFromRearDatumMm!;
+  const f = focusFundamentalsFocalLengthMm;
+  const reference = focusFundamentalsReferenceFocusDepthMm;
+  const nearDepth = focusFundamentalsNearFocusDepthMm;
+  const farDepth = focusFundamentalsFarFocusDepthMm;
 
   it("makes front and rear geometry identical at the reference depth", () => {
     const front = deriveOpticsState(cameraFor({ focusDistanceMm: reference, focusStandard: "front" }), focusFundamentalsTwoTargets);
@@ -50,7 +57,8 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
 
   it.each([nearDepth, farDepth])("resolves rear finite focus at S=%i with actual U", (S) => {
     const front = deriveOpticsState(cameraFor({ focusDistanceMm: S, focusStandard: "front" }), focusFundamentalsTwoTargets);
-    const rear = deriveOpticsState(cameraFor({ focusDistanceMm: S, focusStandard: "rear" }), focusFundamentalsTwoTargets);
+    const rearCamera = cameraFor({ focusDistanceMm: S, focusStandard: "rear" });
+    const rear = deriveOpticsState(rearCamera, focusFundamentalsTwoTargets);
     const referenceSolution = solveLensExtensionForRearDatumFocusDepth(reference, f);
     const U = S - referenceSolution.v;
     const v = imageDistanceMm(f, U);
@@ -64,7 +72,7 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
     expect(rear.diagnostics.imageDistanceMm).toBeCloseTo(v, 12);
     expect(rear.diagnostics.nearU).not.toBeNull();
 
-    const H = (f * f) / (11 * 0.1) + f;
+    const H = (f * f) / (rearCamera.aperture * 0.1) + f;
     expect(rear.diagnostics.nearU).toBeCloseTo((H * U) / (H + (U - f)), 10);
     expectFiniteGeometry(rear);
   });
@@ -82,6 +90,11 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
     expect(near.filmCenterWorld.z).toBe(0);
     expect(far.filmCenterWorld.z).toBe(0);
     expect(near.lensCenterWorld.z).not.toBeCloseTo(far.lensCenterWorld.z, 12);
+    const frontLensTravelMm = Math.abs(near.lensCenterWorld.z - far.lensCenterWorld.z);
+    // The selected scene calibration is intentionally well above the previous
+    // roughly 4 mm Near/Far travel while remaining physically modest.
+    expect(frontLensTravelMm).toBeGreaterThan(12);
+    expect(frontLensTravelMm / reference).toBeGreaterThan(0.01);
     expect(near.focusPointWorld.z).toBe(nearDepth);
     expect(far.focusPointWorld.z).toBe(farDepth);
     expectFiniteGeometry(near);

@@ -52,9 +52,15 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
           </label>
           <small className="control-help">
             {focusControl.focusStandard === "rear"
-              ? "Moving the rear standard changes focus while keeping the lens position stable."
-              : "Moving the front standard changes focus and moves the lens."}
+              ? "Rear focusing moves the film while the lens/viewpoint stays fixed."
+              : "Front focusing moves the lens/viewpoint. The film stays fixed."}
           </small>
+          {focusControl.activeSceneId === "focus-fundamentals-two-targets" && (
+            <small className="control-help focus-parallax-help">
+              <span>Watch the white frame (near gate) and far pointer.</span>
+              <span>Front focus changes their alignment; Rear focus keeps them aligned.</span>
+            </small>
+          )}
         </fieldset>
       )}
       <label className="control-label">
