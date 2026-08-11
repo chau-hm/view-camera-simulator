@@ -18,17 +18,6 @@ import {
   focusFundamentalsParallaxFeatureRotationYRad,
   focusFundamentalsParallaxFeatures,
   focusFundamentalsParallaxPointerColor,
-  focusFundamentalsParallaxPointerOuterColor,
-  focusFundamentalsParallaxPointerOuterDepthMm,
-  focusFundamentalsParallaxPointerOuterFrontOffsetMm,
-  focusFundamentalsParallaxPointerOuterHeightMm,
-  focusFundamentalsParallaxPointerOuterHorizontalHeightMm,
-  focusFundamentalsParallaxPointerOuterHorizontalWidthMm,
-  focusFundamentalsParallaxPointerOuterLeftCenterXMm,
-  focusFundamentalsParallaxPointerOuterLeftWidthMm,
-  focusFundamentalsParallaxPointerOuterRightCenterXMm,
-  focusFundamentalsParallaxPointerOuterRightWidthMm,
-  focusFundamentalsParallaxPointerOuterHorizontalCenterYMm,
   focusFundamentalsParallaxSupportWidthMm,
 } from "../scenes/focusFundamentalsParallax";
 
@@ -49,9 +38,6 @@ type FrameGeometrySet = {
 type ParallaxGeometrySet = {
   bracketVertical: THREE.BoxGeometry;
   bracketHorizontal: THREE.BoxGeometry;
-  pointerOuterLeftVertical: THREE.BoxGeometry;
-  pointerOuterVertical: THREE.BoxGeometry;
-  pointerOuterHorizontal: THREE.BoxGeometry;
   pointer: THREE.BoxGeometry;
 };
 
@@ -59,7 +45,6 @@ let frameGeometries: FrameGeometrySet | null = null;
 let parallaxGeometries: ParallaxGeometrySet | null = null;
 let objectMaterial: THREE.MeshStandardMaterial | null = null;
 let parallaxBracketMaterial: THREE.MeshBasicMaterial | null = null;
-let parallaxPointerOuterMaterial: THREE.MeshBasicMaterial | null = null;
 let parallaxPointerMaterial: THREE.MeshBasicMaterial | null = null;
 let markerGeometry: THREE.BoxGeometry | null = null;
 let markerTextures: [THREE.DataTexture, THREE.DataTexture] | null = null;
@@ -155,21 +140,6 @@ function ensureSharedResources() {
         toWorld(focusFundamentalsParallaxBracketBarWidthMm),
         toWorld(gateShape.depthMm),
       ),
-      pointerOuterLeftVertical: new THREE.BoxGeometry(
-        toWorld(focusFundamentalsParallaxPointerOuterLeftWidthMm),
-        toWorld(focusFundamentalsParallaxPointerOuterHeightMm),
-        toWorld(focusFundamentalsParallaxPointerOuterDepthMm),
-      ),
-      pointerOuterVertical: new THREE.BoxGeometry(
-        toWorld(focusFundamentalsParallaxPointerOuterRightWidthMm),
-        toWorld(focusFundamentalsParallaxPointerOuterHeightMm),
-        toWorld(focusFundamentalsParallaxPointerOuterDepthMm),
-      ),
-      pointerOuterHorizontal: new THREE.BoxGeometry(
-        toWorld(focusFundamentalsParallaxPointerOuterHorizontalWidthMm),
-        toWorld(focusFundamentalsParallaxPointerOuterHorizontalHeightMm),
-        toWorld(focusFundamentalsParallaxPointerOuterDepthMm),
-      ),
       pointer: new THREE.BoxGeometry(
         toWorld(pointerShape.rightEdgeXMm - pointerShape.leftEdgeXMm),
         toWorld(pointerShape.heightMm),
@@ -180,12 +150,6 @@ function ensureSharedResources() {
   if (!parallaxBracketMaterial) {
     parallaxBracketMaterial = new THREE.MeshBasicMaterial({
       color: "#f8fafc",
-      side: THREE.DoubleSide,
-    });
-  }
-  if (!parallaxPointerOuterMaterial) {
-    parallaxPointerOuterMaterial = new THREE.MeshBasicMaterial({
-      color: focusFundamentalsParallaxPointerOuterColor,
       side: THREE.DoubleSide,
     });
   }
@@ -393,39 +357,6 @@ const addParallaxAlignmentFeature = (
     top.position.set(0, toWorld(topY), 0);
     featureGroup.add(left, right, top);
     return;
-  }
-
-  const pointerOuterParts = [
-    {
-      name: "focus-fundamentals-far-alignment-pointer-outer-left",
-      position: { x: focusFundamentalsParallaxPointerOuterLeftCenterXMm, y: 0 },
-      geometry: parallaxGeometries!.pointerOuterLeftVertical,
-    },
-    {
-      name: "focus-fundamentals-far-alignment-pointer-outer-right",
-      position: { x: focusFundamentalsParallaxPointerOuterRightCenterXMm, y: 0 },
-      geometry: parallaxGeometries!.pointerOuterVertical,
-    },
-    {
-      name: "focus-fundamentals-far-alignment-pointer-outer-top",
-      position: { x: 0, y: focusFundamentalsParallaxPointerOuterHorizontalCenterYMm },
-      geometry: parallaxGeometries!.pointerOuterHorizontal,
-    },
-    {
-      name: "focus-fundamentals-far-alignment-pointer-outer-bottom",
-      position: { x: 0, y: -focusFundamentalsParallaxPointerOuterHorizontalCenterYMm },
-      geometry: parallaxGeometries!.pointerOuterHorizontal,
-    },
-  ];
-  for (const part of pointerOuterParts) {
-    const pointerOuter = new THREE.Mesh(part.geometry, parallaxPointerOuterMaterial!);
-    pointerOuter.name = part.name;
-    pointerOuter.position.set(
-      toWorld(part.position.x),
-      toWorld(part.position.y),
-      toWorld(focusFundamentalsParallaxPointerOuterFrontOffsetMm),
-    );
-    featureGroup.add(pointerOuter);
   }
 
   const pointer = new THREE.Mesh(

@@ -11,13 +11,7 @@ import {
 } from "../../scenes/focusFundamentalsTargets";
 import {
   focusFundamentalsParallaxFeatures,
-  focusFundamentalsParallaxPointerOuterFrontOffsetMm,
-  focusFundamentalsParallaxPointerOuterLeftCenterXMm,
-  focusFundamentalsParallaxPointerOuterBorderWidthMm,
-  focusFundamentalsParallaxPointerOuterLeftExtensionMm,
   focusFundamentalsParallaxPointerColor,
-  focusFundamentalsParallaxPointerOuterColor,
-  focusFundamentalsParallaxPointerOuterRightCenterXMm,
 } from "../../scenes/focusFundamentalsParallax";
 import { toWorld } from "../../render/rttUtils";
 
@@ -59,10 +53,6 @@ describe("Focus Fundamentals shared subject factory", () => {
     const secondGate = secondGroup.getObjectByName("focus-fundamentals-near-alignment-gate-left") as THREE.Mesh;
     const firstPointer = group.getObjectByName("focus-fundamentals-far-alignment-pointer-mesh") as THREE.Mesh;
     const secondPointer = secondGroup.getObjectByName("focus-fundamentals-far-alignment-pointer-mesh") as THREE.Mesh;
-    const firstPointerOuter = group.getObjectByName("focus-fundamentals-far-alignment-pointer-outer-left") as THREE.Mesh;
-    const secondPointerOuter = secondGroup.getObjectByName("focus-fundamentals-far-alignment-pointer-outer-left") as THREE.Mesh;
-    const firstPointerOuterRight = group.getObjectByName("focus-fundamentals-far-alignment-pointer-outer-right") as THREE.Mesh;
-    const secondPointerOuterRight = secondGroup.getObjectByName("focus-fundamentals-far-alignment-pointer-outer-right") as THREE.Mesh;
     expect(firstFrameBar.geometry).toBe(secondFrameBar.geometry);
     expect(firstFrameBar.material).toBe(secondFrameBar.material);
     expect(firstNearMarker.geometry).toBe(secondNearMarker.geometry);
@@ -71,40 +61,23 @@ describe("Focus Fundamentals shared subject factory", () => {
     expect(firstGate.material).toBe(secondGate.material);
     expect(firstPointer.geometry).toBe(secondPointer.geometry);
     expect(firstPointer.material).toBe(secondPointer.material);
-    expect(firstPointerOuter.geometry).toBe(secondPointerOuter.geometry);
-    expect(firstPointerOuter.material).toBe(secondPointerOuter.material);
     expect((firstPointer.material as THREE.MeshBasicMaterial).color.getHexString()).toBe(
       focusFundamentalsParallaxPointerColor.slice(1),
     );
-    expect((firstPointerOuter.material as THREE.MeshBasicMaterial).color.getHexString()).toBe(
-      focusFundamentalsParallaxPointerOuterColor.slice(1),
-    );
-    expect((firstPointerOuter.geometry as THREE.BoxGeometry).parameters.width).toBeCloseTo(
-      toWorld(
-        focusFundamentalsParallaxPointerOuterBorderWidthMm +
-          focusFundamentalsParallaxPointerOuterLeftExtensionMm,
-      ),
-      12,
-    );
-    expect((firstPointerOuterRight.geometry as THREE.BoxGeometry).parameters.width).toBeCloseTo(
-      toWorld(focusFundamentalsParallaxPointerOuterBorderWidthMm),
-      12,
-    );
-    expect(firstPointerOuter.position.x).toBeCloseTo(
-      toWorld(focusFundamentalsParallaxPointerOuterLeftCenterXMm),
-      12,
-    );
-    expect(firstPointerOuterRight.position.x).toBeCloseTo(
-      toWorld(focusFundamentalsParallaxPointerOuterRightCenterXMm),
-      12,
-    );
-    expect(firstPointerOuter.position.z).toBeCloseTo(
-      toWorld(focusFundamentalsParallaxPointerOuterFrontOffsetMm),
-      12,
-    );
-    expect(firstPointerOuter.position.x - secondPointerOuter.position.x).toBeCloseTo(0, 12);
-    expect(firstPointerOuterRight.position.x - secondPointerOuterRight.position.x).toBeCloseTo(0, 12);
-    expect(focusFundamentalsParallaxPointerOuterLeftExtensionMm).toBe(3);
+    expect((firstPointer.geometry as THREE.BoxGeometry).parameters).toMatchObject({
+      width: toWorld(16),
+      height: toWorld(52),
+      depth: toWorld(8),
+    });
+    for (const name of [
+      "focus-fundamentals-far-alignment-pointer-outer-left",
+      "focus-fundamentals-far-alignment-pointer-outer-right",
+      "focus-fundamentals-far-alignment-pointer-outer-top",
+      "focus-fundamentals-far-alignment-pointer-outer-bottom",
+    ]) {
+      expect(group.getObjectByName(name)).toBeUndefined();
+      expect(secondGroup.getObjectByName(name)).toBeUndefined();
+    }
 
     for (const detail of focusFundamentalsFocusDetails) {
       const marker = group.getObjectByName(`${detail.id}-marker`);
