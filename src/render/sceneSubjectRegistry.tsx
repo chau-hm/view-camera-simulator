@@ -26,7 +26,7 @@ import {
 } from "./ShelfSwingSubjectFactory";
 import {
   MirrorShiftSubject,
-  createMirrorShiftGroup,
+  createMirrorShiftRttGroup,
   disposeMirrorShiftGroup,
 } from "./MirrorShiftSubjectFactory";
 import {
@@ -221,7 +221,7 @@ export const sceneSubjectRegistry = {
   },
   "mirror-shift": {
     SceneSubject: MirrorShiftSubject,
-    createRttGroup: createMirrorShiftGroup,
+    createRttGroup: createMirrorShiftRttGroup,
     disposeRttGroup: disposeMirrorShiftGroup,
     rttLighting: {
       targetMm: mirrorShiftGeometry.mirror.center,

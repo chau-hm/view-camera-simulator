@@ -10,6 +10,8 @@ import {
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import {
   createMirrorShiftGroup,
+  createMirrorShiftRttGroup,
+  createMirrorShiftViewportGroup,
   disposeMirrorShiftGroup,
 } from "../../render/MirrorShiftSubjectFactory";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
@@ -104,8 +106,51 @@ describe("Mirror Shift planar reflection geometry", () => {
         toWorldMm(mirrorShiftGeometry.camera.reflectedAnchors.frontStandardCenter.z),
         10,
       );
+
+      const realDetail = group.getObjectByName("mirror-shift-real-tall-marker-detail-1")!;
+      const reflectedDetail = group.getObjectByName(
+        "mirror-shift-reflected-tall-marker-detail-1",
+      )!;
+      const realDetailWorld = new THREE.Vector3();
+      const reflectedDetailWorld = new THREE.Vector3();
+      realDetail.getWorldPosition(realDetailWorld);
+      reflectedDetail.getWorldPosition(reflectedDetailWorld);
+      const realDetailMm = {
+        x: realDetailWorld.x / 0.001,
+        y: realDetailWorld.y / 0.001,
+        z: realDetailWorld.z / 0.001,
+      };
+      const expectedReflectedDetail = reflectPointAcrossMirrorPlane(realDetailMm);
+
+      expect(reflectedDetailWorld.x).toBeCloseTo(toWorldMm(expectedReflectedDetail.x), 10);
+      expect(reflectedDetailWorld.y).toBeCloseTo(toWorldMm(expectedReflectedDetail.y), 10);
+      expect(reflectedDetailWorld.z).toBeCloseTo(toWorldMm(expectedReflectedDetail.z), 10);
+      expect(
+        Math.abs(realDetailMm.z - mirrorShiftMirrorPlane.point.z),
+      ).toBeCloseTo(
+        Math.abs(expectedReflectedDetail.z - mirrorShiftMirrorPlane.point.z),
+        10,
+      );
     } finally {
       disposeMirrorShiftGroup(group);
+    }
+  });
+
+  it("keeps virtual reflection geometry in RTT while keeping the viewport physical-only", () => {
+    const viewportGroup = createMirrorShiftViewportGroup();
+    const rttGroup = createMirrorShiftRttGroup();
+    try {
+      expect(viewportGroup.getObjectByName("mirror-shift-mirror-surface")).toBeInstanceOf(THREE.Mesh);
+      expect(viewportGroup.getObjectByName("mirror-shift-real-tall-marker")).toBeInstanceOf(THREE.Mesh);
+      expect(viewportGroup.getObjectByName("mirror-shift-reflected-props")).toBeUndefined();
+      expect(viewportGroup.getObjectByName("mirror-shift-camera-reflection")).toBeUndefined();
+
+      expect(rttGroup.getObjectByName("mirror-shift-reflected-props")).toBeInstanceOf(THREE.Group);
+      expect(rttGroup.getObjectByName("mirror-shift-reflected-tall-marker")).toBeInstanceOf(THREE.Mesh);
+      expect(rttGroup.getObjectByName("mirror-shift-camera-reflection")).toBeInstanceOf(THREE.Group);
+    } finally {
+      disposeMirrorShiftGroup(viewportGroup);
+      disposeMirrorShiftGroup(rttGroup);
     }
   });
 

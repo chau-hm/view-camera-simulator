@@ -1,7 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import { mirrorShiftGeometry, type MirrorShiftProp } from "../scenes/mirrorShiftGeometry";
+import {
+  mirrorShiftGeometry,
+  reflectPointAcrossMirrorPlane,
+  type MirrorShiftProp,
+} from "../scenes/mirrorShiftGeometry";
 import { toWorld } from "./rttUtils";
 
 const material = (color: string, options: THREE.MeshStandardMaterialParameters = {}) =>
@@ -223,6 +227,7 @@ const addProp = (
   parent: THREE.Object3D,
   prop: MirrorShiftProp,
   namePrefix: "real" | "reflected",
+  sourceProp: MirrorShiftProp = prop,
 ): void => {
   const propMaterial = material(prop.color, { roughness: namePrefix === "reflected" ? 0.62 : 0.78 });
   const name = `mirror-shift-${namePrefix}-${prop.id}`;
@@ -235,12 +240,21 @@ const addProp = (
   const detailMaterial = material(namePrefix === "reflected" ? "#dbeafe" : "#eff6ff", {
     roughness: 0.6,
   });
-  const detailDepth = prop.dimensions.z / 2 + 4;
+  const detailDepth = sourceProp.dimensions.z / 2 + 4;
   for (const [index, offsetY] of [-320, 40].entries()) {
+    const realDetailPosition = {
+      x: sourceProp.position.x,
+      y: sourceProp.position.y + offsetY,
+      z: sourceProp.position.z - detailDepth,
+    };
+    const detailPosition =
+      namePrefix === "reflected"
+        ? reflectPointAcrossMirrorPlane(realDetailPosition)
+        : realDetailPosition;
     addBox(
       parent,
       `${name}-detail-${index + 1}`,
-      { x: prop.position.x, y: prop.position.y + offsetY, z: prop.position.z - detailDepth },
+      detailPosition,
       { x: prop.dimensions.x * 0.7, y: 42, z: 12 },
       detailMaterial,
     );
@@ -350,8 +364,14 @@ const addCameraReflection = (root: THREE.Group): void => {
   root.add(cameraGroup);
 };
 
-/** Build the static mirror scene shared by the 3D viewport and Ground Glass RTT. */
-export const createMirrorShiftGroup = (): THREE.Group => {
+export type MirrorShiftGroupOptions = {
+  includeVirtualReflection?: boolean;
+};
+
+/** Build the static mirror scene for either the viewport or Ground Glass RTT. */
+export const createMirrorShiftGroup = ({
+  includeVirtualReflection = true,
+}: MirrorShiftGroupOptions = {}): THREE.Group => {
   const root = new THREE.Group();
   root.name = "mirror-shift-subject";
 
@@ -363,15 +383,30 @@ export const createMirrorShiftGroup = (): THREE.Group => {
   mirrorShiftGeometry.props.forEach((prop) => addProp(realGroup, prop, "real"));
   root.add(realGroup);
 
-  const reflectedGroup = new THREE.Group();
-  reflectedGroup.name = "mirror-shift-reflected-props";
-  reflectedGroup.userData = { representation: "planar-mirror-reflection" };
-  mirrorShiftGeometry.reflectedProps.forEach((prop) => addProp(reflectedGroup, prop, "reflected"));
-  addCameraReflection(reflectedGroup);
-  root.add(reflectedGroup);
+  if (includeVirtualReflection) {
+    const reflectedGroup = new THREE.Group();
+    reflectedGroup.name = "mirror-shift-reflected-props";
+    reflectedGroup.userData = { representation: "planar-mirror-reflection" };
+    mirrorShiftGeometry.props.forEach((sourceProp, index) =>
+      addProp(
+        reflectedGroup,
+        mirrorShiftGeometry.reflectedProps[index],
+        "reflected",
+        sourceProp,
+      ),
+    );
+    addCameraReflection(reflectedGroup);
+    root.add(reflectedGroup);
+  }
 
   return root;
 };
+
+export const createMirrorShiftViewportGroup = (): THREE.Group =>
+  createMirrorShiftGroup({ includeVirtualReflection: false });
+
+export const createMirrorShiftRttGroup = (): THREE.Group =>
+  createMirrorShiftGroup({ includeVirtualReflection: true });
 
 export const disposeMirrorShiftGroup = (group: THREE.Group): void => {
   const geometries = new Set<THREE.BufferGeometry>();
@@ -386,9 +421,9 @@ export const disposeMirrorShiftGroup = (group: THREE.Group): void => {
   materials.forEach((meshMaterial) => meshMaterial.dispose());
 };
 
-/** React Three Fiber boundary backed by the same static group used by RTT. */
+/** React Three Fiber boundary for the physical viewport representation. */
 export const MirrorShiftSubject: React.FC = () => {
-  const group = useMemo(() => createMirrorShiftGroup(), []);
+  const group = useMemo(() => createMirrorShiftViewportGroup(), []);
 
   useEffect(
     () => () => {
