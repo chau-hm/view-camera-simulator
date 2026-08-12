@@ -8,6 +8,7 @@ export const publicSceneIds = [
   "architecture-rise",
   "table-tilt",
   "shelf-swing",
+  "mirror-shift",
 ] as const;
 export type PublicSceneId = (typeof publicSceneIds)[number];
 export type SceneAvailability = "available" | "in-development";
@@ -70,6 +71,15 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/shelf-swing.png",
     guidedTaskId: "swing-01",
+  },
+  {
+    id: "mirror-shift",
+    description:
+      "Inspect a static planar mirror scene and compare its reflected props and view-camera proxy on the Ground Glass.",
+    topics: ["Mirror", "Reflected viewpoint", "Ground Glass"],
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/mirror-shift.svg",
   },
 ];
 

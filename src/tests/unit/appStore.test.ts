@@ -267,6 +267,41 @@ describe("app store STA-001", () => {
     });
   });
 
+  it("keeps Mirror Shift movement, focus, and aperture controls fixed", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+    store.setRise(24);
+    store.setTilt(4);
+    store.setSwing(-3);
+    store.setRearRise(18);
+    store.setRearTilt(-2);
+    store.setFocusDistance(2500);
+    store.setAperture(5.6);
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      activeSceneId: "mirror-shift",
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      rearRiseMm: 0,
+      rearTiltDeg: 0,
+      focusDistanceMm: 6000,
+      aperture: 32,
+    });
+    expect(useAppStore.getState().selectedMovement).toBeNull();
+
+    store.resetMovements();
+    expect(useAppStore.getState().camera).toMatchObject({
+      focusDistanceMm: 6000,
+      aperture: 32,
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      rearRiseMm: 0,
+      rearTiltDeg: 0,
+    });
+  });
+
   it("restores Focus Fundamentals f/32 across scene entry, mode changes, and reset actions", () => {
     const store = useAppStore.getState();
 

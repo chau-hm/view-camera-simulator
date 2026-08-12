@@ -8,6 +8,7 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { DEFAULT_CAMERA_STATE, CAMERA_CONSTANTS } from "../../utils/constants";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 
@@ -196,6 +197,37 @@ describe("GroundGlassRenderer", () => {
     shelfSwingScene.focusTargets.forEach((target) => {
       expect(screen.queryByTestId(`ground-glass-target-${target.id}`)).not.toBeInTheDocument();
     });
+  });
+
+  it("routes Mirror Shift through the normal RTT surface without legacy DOM artifacts", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...mirrorShiftScene.cameraPreset,
+      activeSceneId: mirrorShiftScene.id,
+      activeTaskId: null,
+      mode: "free" as const,
+    };
+    const opticsState = deriveOpticsState(camera, mirrorShiftScene);
+    render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        focusAssistEnabled={false}
+        gridEnabled={false}
+        riseMm={0}
+        tiltDeg={0}
+        swingDeg={0}
+        focusDistanceMm={camera.focusDistanceMm}
+        aperture={camera.aperture}
+        renderQuality="standard"
+        previewMode="raw"
+        sceneId={mirrorShiftScene.id}
+      />,
+    );
+
+    expect(isGroundGlassRttScene(mirrorShiftScene.id)).toBe(true);
+    expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
+    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
   });
 
   it("uses matching point and patch defocus metrics in Table Tilt labels", () => {

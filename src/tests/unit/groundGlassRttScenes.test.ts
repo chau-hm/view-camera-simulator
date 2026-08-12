@@ -6,11 +6,23 @@ import {
 } from "../../render/groundGlassRttScenes";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import geometry from "../../scenes/shelfSwingGeometry";
+import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 
 describe("Ground Glass RTT scene registration", () => {
   it("includes Shelf Swing in the centralized RTT scene set", () => {
     expect(RTT_SCENES).toContain("shelf-swing");
     expect(isGroundGlassRttScene("shelf-swing")).toBe(true);
+  });
+
+  it("includes Mirror Shift in the centralized RTT scene set", () => {
+    expect(RTT_SCENES).toContain("mirror-shift");
+    expect(isGroundGlassRttScene("mirror-shift")).toBe(true);
+    const clip = getGroundGlassClipRangeWorld(
+      mirrorShiftScene,
+      { x: 0, y: 0, z: 0 },
+      { x: 0, y: 0, z: 1 },
+    );
+    expect(clip.far).toBeGreaterThan(9);
   });
 
   it("derives enough far clipping range for the back station and samples", () => {

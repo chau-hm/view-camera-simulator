@@ -102,6 +102,7 @@ export type SceneDefinition = {
 
 /** Per-scene control policy for locking controls in instructional scenes. */
 export type CameraControlPolicy = {
+  movement?: "fixed";
   focusDistance?: "fixed";
   aperture?: "fixed";
   infinityReset?: false;

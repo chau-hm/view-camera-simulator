@@ -25,6 +25,11 @@ import {
   disposeShelfSwingGroup,
 } from "./ShelfSwingSubjectFactory";
 import {
+  MirrorShiftSubject,
+  createMirrorShiftGroup,
+  disposeMirrorShiftGroup,
+} from "./MirrorShiftSubjectFactory";
+import {
   CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   CameraMovementsSubject,
   cameraMovementsGroupOptionsFromRenderModel,
@@ -42,6 +47,7 @@ import {
 } from "../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
 import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTargets";
+import { mirrorShiftGeometry } from "../scenes/mirrorShiftGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -209,6 +215,16 @@ export const sceneSubjectRegistry = {
     disposeRttGroup: disposeShelfSwingGroup,
     rttLighting: {
       targetMm: shelfSwingLightingTargetMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
+    },
+  },
+  "mirror-shift": {
+    SceneSubject: MirrorShiftSubject,
+    createRttGroup: createMirrorShiftGroup,
+    disposeRttGroup: disposeMirrorShiftGroup,
+    rttLighting: {
+      targetMm: mirrorShiftGeometry.mirror.center,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
