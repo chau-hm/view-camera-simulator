@@ -15,29 +15,77 @@ Current product scope:
 
 Do not add accounts, persistence, multiplayer, photorealistic rendering, unsupported movements, or unrelated product features unless the task explicitly requires them.
 
+## Execution scope: smallest safe harness first
+
+Always use the smallest execution path that can safely prove the requested change.
+
+Do not invoke a project-local specialist merely because a changed file falls inside that specialist's nominal ownership area. Use a specialist only when the task depends on that domain's reasoning, invariants, or shared contracts.
+
+Start as a **micro edit** when all of the following are true:
+
+- the requested behaviour is explicit;
+- the root cause is known or locally obvious;
+- the work affects one concern;
+- the change is normally limited to one to three files;
+- no shared architecture or abstraction changes;
+- no optics derivation, sign convention, or canonical-state contract changes;
+- no RTT, GPU ownership, renderer-lifecycle, or projection contract changes;
+- no public route/task schema or cross-component behavioural contract changes.
+
+For a micro edit:
+
+- inspect only the directly relevant files and nearby tests;
+- make the minimum necessary change;
+- run the nearest relevant test or static check;
+- run `git diff --check` and inspect `git status --short`;
+- do not invoke `$vcs-orchestrate-pr`;
+- do not require a separate `$vcs-verify-pr` pass unless the user explicitly requests review or the change is being evaluated at a merge gate;
+- do not proactively refactor, generalize, add diagnostics, or strengthen unrelated tests.
+
+Escalate only when concrete evidence shows that the local change crosses an existing domain contract, has an uncertain root cause, or cannot be safely proven with local evidence.
+
 ## Project-local skills
 
-Use only the skill relevant to the current task. Do not load all skills by default.
+Load only the skill relevant to the current task.
 
-- `$vcs-orchestrate-pr` — decompose multi-domain work, assign bounded work packets, and control integration.
-- `$vcs-optics-geometry` — analyze or change optical calculations, canonical scene geometry, calibration, or 2D/3D geometric consistency.
-- `$vcs-threejs-rtt` — analyze or change Three.js, React Three Fiber, Ground Glass RTT, shaders, scene subjects, WebGL diagnostics, or resource disposal.
-- `$vcs-ui-tasks` — change React UI, responsive layout, accessibility, controls, state, public scene metadata, routes, tasks, or feedback.
-- `$vcs-verify-pr` — independently review a branch or PR, validate tests and CI evidence, and issue a merge verdict.
+- `$vcs-orchestrate-pr` — coordinate multi-domain, ambiguous, or high-risk work.
+- `$vcs-optics-geometry` — optical calculations, canonical scene geometry, calibration, Scheimpflug geometry, or movement-sign reasoning.
+- `$vcs-threejs-rtt` — Three.js/R3F, Ground Glass RTT, shaders, renderer diagnostics, WebGL resources, or lifecycle.
+- `$vcs-ui-tasks` — React UI, responsive layout, accessibility, controls, state, routes, catalog, or guided tasks.
+- `$vcs-verify-pr` — independent merge-gate review and evidence validation.
 
-For small, single-concern fixes, use one implementation skill and then `$vcs-verify-pr`.
-For multi-domain or high-risk changes, start with `$vcs-orchestrate-pr`.
+Typical routing:
 
-If a project-local skill is not visible in the Codex skill picker, read its `.agents/skills/<skill-name>/SKILL.md` file directly and follow the same instructions.
+```text
+Micro edit
+local inspection → minimal edit → nearest focused validation
+
+Focused fix
+one relevant implementation skill → focused validation
+
+Standard PR
+$vcs-orchestrate-pr → bounded implementation packets → integration
+
+High-risk / merge-critical
+$vcs-orchestrate-pr → specialists as required → integration → $vcs-verify-pr
+```
+
+If a project-local skill is not visible in the Codex skill picker, read its `.agents/skills/<skill-name>/SKILL.md` file directly.
 
 ## Before changing code
 
-- Read this file, `README.md`, `package.json`, the lockfile, and only the feature documents relevant to the task.
-- Inspect the current branch, base branch, working tree, and focused diff before editing.
-- Search for existing helpers, constants, registries, tests, and established patterns before adding new abstractions.
-- Keep changes limited to the explicit work packet or user request.
-- Preserve existing public APIs and user-visible behavior unless the task requires a change.
-- Do not silently broaden a bug fix into a refactor.
+Scale discovery to the task.
+
+For micro edits, inspect only the current branch/worktree state, the exact target, nearby dependencies, and the nearest relevant tests.
+
+For broader work, additionally inspect the base branch, focused diff, relevant architecture, package scripts, and feature documents.
+
+Always:
+
+- search for existing helpers, constants, registries, tests, and established patterns before adding new abstractions;
+- preserve existing public APIs and user-visible behaviour unless the task requires a change;
+- keep changes limited to the explicit request or work packet;
+- do not silently broaden a bug fix into a refactor.
 
 ## Simulation rules
 
@@ -52,12 +100,12 @@ If a project-local skill is not visible in the Codex skill picker, read its `.ag
 
 ## Rendering rules
 
-- Keep scene subject registration and lifecycle ownership explicit.
+- Keep scene-subject registration and lifecycle ownership explicit.
 - Dispose only resources owned by the component or registered scene subject.
-- Do not use full page reloads to prove SPA lifecycle or resource cleanup.
-- Do not hide renderer defects with decorative legacy DOM fallbacks.
+- Do not use full-page reloads to prove SPA lifecycle or resource cleanup.
+- Do not hide renderer defects with decorative DOM fallbacks.
 - Keep WebGL-independent tests separate from WebGL-dependent tests.
-- Any test that claims resource cleanup must observe client-side navigation and meaningful lifecycle evidence.
+- Tests claiming resource cleanup must use client-side navigation and meaningful lifecycle evidence.
 
 ## UI and task rules
 
@@ -71,16 +119,34 @@ If a project-local skill is not visible in the Codex skill picker, read its `.ag
 
 ## Validation policy
 
-Run the smallest relevant checks first:
+Validation depth follows execution risk.
 
-1. focused unit tests
-2. focused integration tests
-3. one relevant E2E spec
-4. affected-scene regressions
-5. full unit/integration suite
-6. full E2E only at the integration or merge gate
+### Micro edit
 
-Required repository checks before declaring a change complete:
+Use the nearest evidence that directly proves the requested change.
+
+Typical checks:
+
+```bash
+# nearest focused test or relevant static check
+git diff --check
+git status --short
+```
+
+Do not run the full repository suite merely because a file was edited.
+
+### Focused fix
+
+Run:
+
+1. focused unit/integration tests;
+2. relevant typecheck, lint, CSS, or build check when the changed surface can affect it;
+3. `git diff --check`;
+4. `git status --short`.
+
+### Standard PR integration
+
+Run affected suites first, then the repository integration checks:
 
 ```bash
 npm test
@@ -92,13 +158,39 @@ git diff --check
 git status --short
 ```
 
-Run `npm run ci:local:e2e` only when required by the work packet, renderer-wide risk, or merge gate. Report checks that could not be run and why.
+### High-risk or merge gate
 
-## Token and handoff policy
+Run the standard integration checks plus the relevant E2E coverage.
 
-- Pass subagents only the current objective, relevant files, known evidence, constraints, and acceptance criteria.
-- Do not paste project history, complete PR prompts, or full diffs into every handoff.
-- Keep work packets bounded by file ownership and one concern.
-- Keep ordinary handoffs under 500 words; optics or renderer handoffs under 1,000 words.
-- Reference commit SHAs, paths, test names, and raw logs instead of retelling the investigation.
-- An implementation agent must not issue the final merge verdict for its own work.
+Run `npm run ci:local:e2e` when:
+
+- the work packet explicitly requires it;
+- renderer-wide risk exists;
+- scene lifecycle or WebGL resource ownership changed;
+- a public workflow needs E2E proof;
+- the branch is at the merge gate.
+
+Report checks not run and why.
+
+## Test-integrity rules
+
+A passing test is evidence only when it could detect the original defect.
+
+Do not:
+
+- use a full reload to prove SPA cleanup;
+- inject unreachable control values to prove user completion;
+- use prop-mirroring attributes to prove internal lifecycle state;
+- rely on screenshot byte size as the only rendering proof;
+- broadly suppress unknown WebGL warnings;
+- lower a task threshold instead of fixing optics or public-control reachability.
+
+## Handoff and review
+
+For work that uses subagents, pass only the current objective, relevant files, evidence, constraints, acceptance criteria, and validation needs.
+
+Keep handoffs compact and reference paths, tests, logs, and commit SHAs instead of pasting full diffs or project history.
+
+Independent review is a **merge-gate mechanism**, not a mandatory step after every local edit.
+
+An implementation agent must not be the sole final reviewer when a merge verdict is required.
