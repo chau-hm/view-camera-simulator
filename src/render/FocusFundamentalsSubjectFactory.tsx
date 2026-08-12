@@ -1,157 +1,533 @@
 /* eslint-disable react-refresh/only-export-components */
 import * as THREE from "three";
-import React from "react";
+import React, { useMemo } from "react";
 import { toWorld } from "./rttUtils";
-import { nearBoardCenterMm, farBoardCenterMm, boardWidthMm, boardHeightMm, floorYmm } from "../scenes/focusFundamentalsTargets";
+import {
+  focusFundamentalsBackdropColor,
+  focusFundamentalsBackdropHorizontalMarginMm,
+  focusFundamentalsBackdropRearMarginMm,
+  focusFundamentalsBackdropVerticalMarginMm,
+  focusFundamentalsFloorYmm,
+  focusFundamentalsFocusDetails,
+  focusFundamentalsFrameGeometry,
+  focusFundamentalsMarkerSizeMm,
+  focusFundamentalsObjectCenterMm,
+  focusFundamentalsObjectRotationYRad,
+  getFocusFundamentalsDetailMarkerLocalPosition,
+  getFocusFundamentalsDetailMarkerRotationY,
+} from "../scenes/focusFundamentalsTargets";
+import {
+  focusFundamentalsParallaxBracketBarWidthMm,
+  focusFundamentalsConnectedSubjectBoundsMm,
+  focusFundamentalsParallaxFeatureShapes,
+  focusFundamentalsParallaxFeatureRotationYRad,
+  focusFundamentalsParallaxFeatures,
+  focusFundamentalsParallaxPointerColor,
+  focusFundamentalsParallaxSupportWidthMm,
+} from "../scenes/focusFundamentalsParallax";
 
-// Shared colors
 const FLOOR_COLOR = new THREE.Color("#9aa6b5");
+const OBJECT_COLOR = new THREE.Color("#64748b");
+const MARKER_COLORS = ["#ef4444", "#f59e0b"] as const;
+const FLOOR_WIDTH_MM = 5000;
+const FLOOR_DEPTH_MM = 5000;
 
-// Shared sizes in mm
-const BOARD_W = boardWidthMm;
-const BOARD_H = boardHeightMm;
-const BOARD_THICK = 10;
+type FrameGeometrySet = {
+  frontVertical: THREE.BoxGeometry;
+  frontHorizontal: THREE.BoxGeometry;
+  backVertical: THREE.BoxGeometry;
+  backHorizontal: THREE.BoxGeometry;
+  connector: THREE.BoxGeometry;
+};
 
-// Positions in mm (as specified)
-const NEAR_CENTER = nearBoardCenterMm;
-const FAR_CENTER = farBoardCenterMm;
-const FLOOR_Y = floorYmm;
+type ParallaxGeometrySet = {
+  bracketVertical: THREE.BoxGeometry;
+  bracketHorizontal: THREE.BoxGeometry;
+  pointer: THREE.BoxGeometry;
+};
 
-let nearCanvasTexture: THREE.Texture | null = null;
-let farCanvasTexture: THREE.Texture | null = null;
-let nearMaterial: THREE.MeshBasicMaterial | null = null;
-let farMaterial: THREE.MeshBasicMaterial | null = null;
-let boardGeometry: THREE.BoxGeometry | null = null;
+let frameGeometries: FrameGeometrySet | null = null;
+let parallaxGeometries: ParallaxGeometrySet | null = null;
+let objectMaterial: THREE.MeshStandardMaterial | null = null;
+let parallaxBracketMaterial: THREE.MeshBasicMaterial | null = null;
+let parallaxPointerMaterial: THREE.MeshBasicMaterial | null = null;
+let markerGeometry: THREE.BoxGeometry | null = null;
+let markerTextures: [THREE.DataTexture, THREE.DataTexture] | null = null;
+let markerMaterials: [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial] | null = null;
 let floorGeometry: THREE.PlaneGeometry | null = null;
 let floorMaterial: THREE.MeshStandardMaterial | null = null;
+let backdropGeometry: THREE.PlaneGeometry | null = null;
+let backdropMaterial: THREE.MeshBasicMaterial | null = null;
 
-function makeCheckerTexture(markerColor = "#ef4444", addLowerMarker = false): THREE.Texture {
-  const w = 512;
-  const h = 768;
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d")!;
-  // background
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, w, h);
+const makeFocusDetailTexture = (accent: string): THREE.DataTexture => {
+  const width = 64;
+  const height = 64;
+  const data = new Uint8Array(width * height * 4);
+  const accentHex = accent.replace("#", "");
+  const accentRgb = [
+    Number.parseInt(accentHex.slice(0, 2), 16),
+    Number.parseInt(accentHex.slice(2, 4), 16),
+    Number.parseInt(accentHex.slice(4, 6), 16),
+  ];
 
-  // checkerboard
-  const cols = 6;
-  const rows = 9;
-  const cellW = Math.floor(w / cols);
-  const cellH = Math.floor(h / rows);
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      if ((r + c) % 2 === 0) {
-        ctx.fillStyle = "#111111";
-        ctx.fillRect(c * cellW, r * cellH, cellW, cellH);
-      }
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      const checker = (Math.floor(x / 8) + Math.floor(y / 8)) % 2 === 0;
+      const crosshair = Math.abs(x - width / 2) <= 1 || Math.abs(y - height / 2) <= 1;
+      const accentBar = x < 5 && y < 22;
+      const color = accentBar
+        ? accentRgb
+        : crosshair
+          ? [255, 255, 255]
+          : checker
+            ? [18, 24, 38]
+            : [244, 247, 250];
+      data[index] = color[0];
+      data[index + 1] = color[1];
+      data[index + 2] = color[2];
+      data[index + 3] = 255;
     }
   }
 
-  // L marker top-left (colored)
-  ctx.fillStyle = markerColor; // marker
-  const markerW = Math.floor(cellW * 1.5);
-  const markerH = Math.floor(cellH * 1.5);
-  ctx.fillRect(4, 4, markerW, Math.floor(markerH / 4));
-  ctx.fillRect(4, 4, Math.floor(markerW / 4), markerH);
-
-  if (addLowerMarker) {
-    // add a lower-left vertical marker to help orientation; ensure visible size ~15mm equivalent
-    // canvas height corresponds to BOARD_H mm; choose markerMm = 15
-    const markerMm = 15;
-    const markerPixelH = Math.max(4, Math.floor((markerMm / BOARD_H) * h));
-    const x = 6;
-    const y = h - 6 - markerPixelH;
-    ctx.fillStyle = "#ffdd00"; // saturated yellow
-    ctx.fillRect(x, y, Math.floor(markerPixelH * 0.6), markerPixelH);
-  }
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  return tex;
-}
+  const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
+  texture.needsUpdate = true;
+  return texture;
+};
 
 function ensureSharedResources() {
-  if (!boardGeometry) boardGeometry = new THREE.BoxGeometry(toWorld(BOARD_W), toWorld(BOARD_H), toWorld(BOARD_THICK));
-  if (!nearCanvasTexture) nearCanvasTexture = makeCheckerTexture("#ef4444", false);
-  if (!farCanvasTexture) farCanvasTexture = makeCheckerTexture("#ef4444", true);
-  if (!nearMaterial) nearMaterial = new THREE.MeshBasicMaterial({ map: nearCanvasTexture, side: THREE.DoubleSide });
-  if (!farMaterial) farMaterial = new THREE.MeshBasicMaterial({ map: farCanvasTexture, side: THREE.DoubleSide });
-  if (!floorGeometry) floorGeometry = new THREE.PlaneGeometry(toWorld(5000), toWorld(7000));
-  if (!floorMaterial) floorMaterial = new THREE.MeshStandardMaterial({ color: FLOOR_COLOR, roughness: 0.9, metalness: 0 });
+  if (!frameGeometries) {
+    const { front, back, depthMm, memberWidthMm } = focusFundamentalsFrameGeometry;
+    frameGeometries = {
+      frontVertical: new THREE.BoxGeometry(
+        toWorld(memberWidthMm),
+        toWorld(front.heightMm),
+        toWorld(depthMm),
+      ),
+      frontHorizontal: new THREE.BoxGeometry(
+        toWorld(front.widthMm - memberWidthMm * 2),
+        toWorld(memberWidthMm),
+        toWorld(depthMm),
+      ),
+      backVertical: new THREE.BoxGeometry(
+        toWorld(memberWidthMm),
+        toWorld(back.heightMm),
+        toWorld(depthMm),
+      ),
+      backHorizontal: new THREE.BoxGeometry(
+        toWorld(back.widthMm - memberWidthMm * 2),
+        toWorld(memberWidthMm),
+        toWorld(depthMm),
+      ),
+      // A unit cube is scaled to each connector's physical local length.
+      connector: new THREE.BoxGeometry(1, 1, 1),
+    };
+  }
+  if (!objectMaterial) {
+    objectMaterial = new THREE.MeshStandardMaterial({
+      color: OBJECT_COLOR,
+      roughness: 0.78,
+      metalness: 0.02,
+    });
+  }
+  if (!parallaxGeometries) {
+    const gateShape = focusFundamentalsParallaxFeatureShapes["near-alignment-gate"];
+    const pointerShape = focusFundamentalsParallaxFeatureShapes["far-alignment-pointer"];
+    const totalBracketWidthMm =
+      gateShape.rightEdgeXMm - gateShape.leftEdgeXMm +
+      focusFundamentalsParallaxBracketBarWidthMm * 2;
+    parallaxGeometries = {
+      bracketVertical: new THREE.BoxGeometry(
+        toWorld(focusFundamentalsParallaxBracketBarWidthMm),
+        toWorld(gateShape.heightMm),
+        toWorld(gateShape.depthMm),
+      ),
+      bracketHorizontal: new THREE.BoxGeometry(
+        toWorld(totalBracketWidthMm),
+        toWorld(focusFundamentalsParallaxBracketBarWidthMm),
+        toWorld(gateShape.depthMm),
+      ),
+      pointer: new THREE.BoxGeometry(
+        toWorld(pointerShape.rightEdgeXMm - pointerShape.leftEdgeXMm),
+        toWorld(pointerShape.heightMm),
+        toWorld(pointerShape.depthMm),
+      ),
+    };
+  }
+  if (!parallaxBracketMaterial) {
+    parallaxBracketMaterial = new THREE.MeshBasicMaterial({
+      color: "#f8fafc",
+      side: THREE.DoubleSide,
+    });
+  }
+  if (!parallaxPointerMaterial) {
+    parallaxPointerMaterial = new THREE.MeshBasicMaterial({
+      color: focusFundamentalsParallaxPointerColor,
+      side: THREE.DoubleSide,
+    });
+  }
+  if (!markerGeometry) {
+    markerGeometry = new THREE.BoxGeometry(
+      toWorld(focusFundamentalsMarkerSizeMm.width),
+      toWorld(focusFundamentalsMarkerSizeMm.height),
+      toWorld(4),
+    );
+  }
+  if (!markerTextures) {
+    markerTextures = [
+      makeFocusDetailTexture(MARKER_COLORS[0]),
+      makeFocusDetailTexture(MARKER_COLORS[1]),
+    ];
+  }
+  if (!markerMaterials) {
+    markerMaterials = markerTextures.map(
+      (texture) =>
+        new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+        }),
+    ) as [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial];
+  }
+  if (!floorGeometry) {
+    floorGeometry = new THREE.PlaneGeometry(
+      toWorld(FLOOR_WIDTH_MM),
+      toWorld(FLOOR_DEPTH_MM),
+    );
+  }
+  if (!floorMaterial) {
+    floorMaterial = new THREE.MeshStandardMaterial({
+      color: FLOOR_COLOR,
+      roughness: 0.9,
+      metalness: 0,
+    });
+  }
+  if (!backdropGeometry) {
+    const subjectWidthMm =
+      focusFundamentalsConnectedSubjectBoundsMm.max.x -
+      focusFundamentalsConnectedSubjectBoundsMm.min.x;
+    const subjectHeightMm =
+      focusFundamentalsConnectedSubjectBoundsMm.max.y -
+      focusFundamentalsConnectedSubjectBoundsMm.min.y;
+    backdropGeometry = new THREE.PlaneGeometry(
+      toWorld(subjectWidthMm + focusFundamentalsBackdropHorizontalMarginMm * 2),
+      toWorld(subjectHeightMm + focusFundamentalsBackdropVerticalMarginMm * 2),
+    );
+  }
+  if (!backdropMaterial) {
+    backdropMaterial = new THREE.MeshBasicMaterial({
+      color: focusFundamentalsBackdropColor,
+      side: THREE.DoubleSide,
+    });
+  }
 }
+
+function addFocusDetailMarker(
+  objectGroup: THREE.Group,
+  detail: (typeof focusFundamentalsFocusDetails)[number],
+  index: number,
+) {
+  const marker = new THREE.Mesh(markerGeometry!, markerMaterials![index]);
+  marker.name = `${detail.id}-marker`;
+  const markerPosition = getFocusFundamentalsDetailMarkerLocalPosition(detail);
+  marker.position.set(
+    toWorld(markerPosition.x),
+    toWorld(markerPosition.y),
+    toWorld(markerPosition.z),
+  );
+  marker.rotation.y = getFocusFundamentalsDetailMarkerRotationY(detail);
+  marker.userData = {
+    focusTargetId: detail.id,
+    focusDetailWorldMm: detail.worldPositionMm,
+    surface: detail.surface,
+  };
+  objectGroup.add(marker);
+}
+
+type FrameDefinition = {
+  widthMm: number;
+  heightMm: number;
+  centerZMm: number;
+};
+
+const addFrameBar = (
+  frameGroup: THREE.Group,
+  geometry: THREE.BoxGeometry,
+  name: string,
+  positionMm: { x: number; y: number; z: number },
+) => {
+  const bar = new THREE.Mesh(geometry, objectMaterial!);
+  bar.name = name;
+  bar.position.set(
+    toWorld(positionMm.x),
+    toWorld(positionMm.y),
+    toWorld(positionMm.z),
+  );
+  frameGroup.add(bar);
+};
+
+const addFrame = (
+  frameGroup: THREE.Group,
+  frameName: "front" | "back",
+  frame: FrameDefinition,
+  verticalGeometry: THREE.BoxGeometry,
+  horizontalGeometry: THREE.BoxGeometry,
+) => {
+  const halfMember = focusFundamentalsFrameGeometry.memberWidthMm / 2;
+  const halfWidth = frame.widthMm / 2;
+  const halfHeight = frame.heightMm / 2;
+  const x = halfWidth - halfMember;
+  const y = halfHeight - halfMember;
+
+  addFrameBar(
+    frameGroup,
+    verticalGeometry,
+    `focus-fundamentals-${frameName}-frame-left`,
+    { x: -x, y: 0, z: frame.centerZMm },
+  );
+  addFrameBar(
+    frameGroup,
+    verticalGeometry,
+    `focus-fundamentals-${frameName}-frame-right`,
+    { x, y: 0, z: frame.centerZMm },
+  );
+  addFrameBar(
+    frameGroup,
+    horizontalGeometry,
+    `focus-fundamentals-${frameName}-frame-top`,
+    { x: 0, y, z: frame.centerZMm },
+  );
+  addFrameBar(
+    frameGroup,
+    horizontalGeometry,
+    `focus-fundamentals-${frameName}-frame-bottom`,
+    { x: 0, y: -y, z: frame.centerZMm },
+  );
+};
+
+const addDepthConnector = (
+  connectorGroup: THREE.Group,
+  name: string,
+  startMm: { x: number; y: number; z: number },
+  endMm: { x: number; y: number; z: number },
+  widthMm: number = focusFundamentalsFrameGeometry.memberWidthMm,
+) => {
+  const start = new THREE.Vector3(
+    toWorld(startMm.x),
+    toWorld(startMm.y),
+    toWorld(startMm.z),
+  );
+  const end = new THREE.Vector3(
+    toWorld(endMm.x),
+    toWorld(endMm.y),
+    toWorld(endMm.z),
+  );
+  const direction = end.clone().sub(start);
+  const connector = new THREE.Mesh(frameGeometries!.connector, objectMaterial!);
+  connector.name = name;
+  connector.position.copy(start).add(end).multiplyScalar(0.5);
+  connector.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 0, 1),
+    direction.clone().normalize(),
+  );
+  connector.scale.set(
+    toWorld(widthMm),
+    toWorld(widthMm),
+    direction.length(),
+  );
+  connectorGroup.add(connector);
+};
+
+const addParallaxAlignmentFeature = (
+  featureGroup: THREE.Group,
+  feature: (typeof focusFundamentalsParallaxFeatures)[number],
+) => {
+  featureGroup.position.set(
+    toWorld(feature.localPositionMm.x),
+    toWorld(feature.localPositionMm.y),
+    toWorld(feature.localPositionMm.z),
+  );
+  // The parent subject is yawed for depth readability. Counter-rotate this
+  // small sight assembly so its bracket/pointer remains legible to the camera.
+  featureGroup.rotation.y = focusFundamentalsParallaxFeatureRotationYRad;
+  featureGroup.userData = {
+    parallaxFeatureId: feature.id,
+    parallaxFeatureDepthMm: feature.depthMm,
+    parallaxFeatureWorldMm: feature.referenceWorldPositionMm,
+  };
+
+  if (feature.id === "near-alignment-gate") {
+    const gateShape = focusFundamentalsParallaxFeatureShapes[feature.id];
+    const halfGap = (gateShape.rightEdgeXMm - gateShape.leftEdgeXMm) / 2;
+    const halfBar = focusFundamentalsParallaxBracketBarWidthMm / 2;
+    const verticalOffset = halfGap + halfBar;
+    const verticalY = 0;
+    const topY = gateShape.heightMm / 2 - halfBar;
+    const left = new THREE.Mesh(
+      parallaxGeometries!.bracketVertical,
+      parallaxBracketMaterial!,
+    );
+    left.name = "focus-fundamentals-near-alignment-gate-left";
+    left.position.set(toWorld(-verticalOffset), toWorld(verticalY), 0);
+    const right = new THREE.Mesh(
+      parallaxGeometries!.bracketVertical,
+      parallaxBracketMaterial!,
+    );
+    right.name = "focus-fundamentals-near-alignment-gate-right";
+    right.position.set(toWorld(verticalOffset), toWorld(verticalY), 0);
+    const top = new THREE.Mesh(
+      parallaxGeometries!.bracketHorizontal,
+      parallaxBracketMaterial!,
+    );
+    top.name = "focus-fundamentals-near-alignment-gate-top";
+    top.position.set(0, toWorld(topY), 0);
+    featureGroup.add(left, right, top);
+    return;
+  }
+
+  const pointer = new THREE.Mesh(
+    parallaxGeometries!.pointer,
+    parallaxPointerMaterial!,
+  );
+  pointer.name = "focus-fundamentals-far-alignment-pointer-mesh";
+  pointer.position.set(0, 0, 0);
+  featureGroup.add(pointer);
+};
+
+const addParallaxAlignmentFeatures = (objectGroup: THREE.Group) => {
+  const supports = new THREE.Group();
+  supports.name = "focus-fundamentals-parallax-supports";
+  const features = new THREE.Group();
+  features.name = "focus-fundamentals-parallax-features";
+
+  for (const feature of focusFundamentalsParallaxFeatures) {
+    addDepthConnector(
+      supports,
+      `focus-fundamentals-${feature.id}-support`,
+      feature.supportAnchorLocalPositionMm,
+      feature.localPositionMm,
+      focusFundamentalsParallaxSupportWidthMm,
+    );
+    const featureGroup = new THREE.Group();
+    featureGroup.name = `focus-fundamentals-${feature.id}`;
+    addParallaxAlignmentFeature(featureGroup, feature);
+    features.add(featureGroup);
+  }
+
+  objectGroup.add(supports, features);
+};
+
+const addDepthConnectors = (connectorGroup: THREE.Group) => {
+  const { front, back, depthMm, memberWidthMm } = focusFundamentalsFrameGeometry;
+  const halfFrontWidth = front.widthMm / 2 - memberWidthMm / 2;
+  const halfFrontHeight = front.heightMm / 2 - memberWidthMm / 2;
+  const halfBackWidth = back.widthMm / 2 - memberWidthMm / 2;
+  const halfBackHeight = back.heightMm / 2 - memberWidthMm / 2;
+  const frontBackSurfaceZ = front.centerZMm + depthMm / 2;
+  const backFrontSurfaceZ = back.centerZMm - depthMm / 2;
+
+  for (const [index, sign] of [
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ].entries()) {
+    const [xSign, ySign] = sign;
+    addDepthConnector(
+      connectorGroup,
+      `focus-fundamentals-depth-rail-${index + 1}`,
+      {
+        x: xSign * halfFrontWidth,
+        y: ySign * halfFrontHeight,
+        z: frontBackSurfaceZ,
+      },
+      {
+        x: xSign * halfBackWidth,
+        y: ySign * halfBackHeight,
+        z: backFrontSurfaceZ,
+      },
+    );
+  }
+};
 
 export function createFocusFundamentalsGroup(): THREE.Group {
   ensureSharedResources();
+
   const group = new THREE.Group();
+  group.name = "focus-fundamentals-subject";
 
-  // Near board
-  const near = new THREE.Mesh(boardGeometry!, nearMaterial!);
-  near.position.set(toWorld(NEAR_CENTER.x), toWorld(NEAR_CENTER.y), toWorld(NEAR_CENTER.z));
-  // face camera toward -Z: rotate so plane normal points -Z; default plane faces +Z so rotate 180 on Y
-  near.rotation.y = Math.PI; // ensure facing -Z
-  group.add(near);
+  const objectGroup = new THREE.Group();
+  objectGroup.name = "focus-fundamentals-object";
+  objectGroup.position.set(
+    toWorld(focusFundamentalsObjectCenterMm.x),
+    toWorld(focusFundamentalsObjectCenterMm.y),
+    toWorld(focusFundamentalsObjectCenterMm.z),
+  );
+  objectGroup.rotation.y = focusFundamentalsObjectRotationYRad;
 
-  // Far board
-  const far = new THREE.Mesh(boardGeometry!, farMaterial!);
-  far.position.set(toWorld(FAR_CENTER.x), toWorld(FAR_CENTER.y), toWorld(FAR_CENTER.z));
-  far.rotation.y = Math.PI;
-  // Pedestal sized to touch floor and board bottom exactly
-  const boardBottomY = FAR_CENTER.y - BOARD_H / 2;
-  const pedestalHeightMm = boardBottomY - FLOOR_Y; // positive
-  const pedestalCenterY = FLOOR_Y + pedestalHeightMm / 2;
-  const pedestal = new THREE.Mesh(new THREE.BoxGeometry(toWorld(40), toWorld(pedestalHeightMm), toWorld(40)), new THREE.MeshStandardMaterial({ color: "#111827" }));
-  pedestal.position.set(toWorld(FAR_CENTER.x), toWorld(pedestalCenterY), toWorld(FAR_CENTER.z));
-  group.add(pedestal);
-  group.add(far);
+  const body = new THREE.Group();
+  body.name = "focus-fundamentals-object-body";
+  const frontFrame = new THREE.Group();
+  frontFrame.name = "focus-fundamentals-front-frame";
+  addFrame(
+    frontFrame,
+    "front",
+    focusFundamentalsFrameGeometry.front,
+    frameGeometries!.frontVertical,
+    frameGeometries!.frontHorizontal,
+  );
+  const backFrame = new THREE.Group();
+  backFrame.name = "focus-fundamentals-back-frame";
+  addFrame(
+    backFrame,
+    "back",
+    focusFundamentalsFrameGeometry.back,
+    frameGeometries!.backVertical,
+    frameGeometries!.backHorizontal,
+  );
+  const depthConnectors = new THREE.Group();
+  depthConnectors.name = "focus-fundamentals-depth-connectors";
+  addDepthConnectors(depthConnectors);
+  body.add(frontFrame, backFrame, depthConnectors);
+  objectGroup.add(body);
+  focusFundamentalsFocusDetails.forEach((detail, index) =>
+    addFocusDetailMarker(objectGroup, detail, index),
+  );
+  addParallaxAlignmentFeatures(objectGroup);
 
-  // Floor
+  const backdrop = new THREE.Mesh(backdropGeometry!, backdropMaterial!);
+  backdrop.name = "focus-fundamentals-backdrop";
+  backdrop.position.set(
+    toWorld(
+      (focusFundamentalsConnectedSubjectBoundsMm.min.x +
+        focusFundamentalsConnectedSubjectBoundsMm.max.x) /
+        2,
+    ),
+    toWorld(
+      (focusFundamentalsConnectedSubjectBoundsMm.min.y +
+        focusFundamentalsConnectedSubjectBoundsMm.max.y) /
+        2,
+    ),
+    toWorld(
+      focusFundamentalsConnectedSubjectBoundsMm.max.z +
+        focusFundamentalsBackdropRearMarginMm,
+    ),
+  );
+  group.add(backdrop, objectGroup);
+
   const floor = new THREE.Mesh(floorGeometry!, floorMaterial!);
+  floor.name = "focus-fundamentals-floor";
   floor.rotation.x = -Math.PI / 2;
-  floor.position.y = toWorld(FLOOR_Y);
+  floor.position.y = toWorld(focusFundamentalsFloorYmm);
   group.add(floor);
 
   return group;
 }
 
-// React component that reuses the same shared resources and renders via JSX for SceneRenderer
+/**
+ * The interactive R3F scene mounts the same factory output as RTT.  Shared
+ * resources are module-owned, so disable R3F auto-disposal for this primitive.
+ */
 export const FocusFundamentalsSubject: React.FC = () => {
-  ensureSharedResources();
-  return (
-    <group>
-      {/* Near board */}
-          <mesh position={[toWorld(NEAR_CENTER.x), toWorld(NEAR_CENTER.y), toWorld(NEAR_CENTER.z)]} rotation={[0, Math.PI, 0]}>
-        <boxGeometry args={[toWorld(BOARD_W), toWorld(BOARD_H), toWorld(BOARD_THICK)]} />
-        <meshBasicMaterial attach="material" map={nearCanvasTexture ?? makeCheckerTexture()} side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* Far board and pedestal */}
-      <mesh position={[toWorld(FAR_CENTER.x), toWorld(FAR_CENTER.y), toWorld(FAR_CENTER.z)]} rotation={[0, Math.PI, 0]}>
-        <boxGeometry args={[toWorld(BOARD_W), toWorld(BOARD_H), toWorld(BOARD_THICK)]} />
-        <meshBasicMaterial attach="material" map={farCanvasTexture ?? makeCheckerTexture(undefined, true)} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Pedestal computed to touch floor and board bottom */}
-      {(() => {
-        const boardBottomY = FAR_CENTER.y - BOARD_H / 2;
-        const pedestalHeightMm = boardBottomY - FLOOR_Y;
-        const pedestalCenterY = FLOOR_Y + pedestalHeightMm / 2;
-        return (
-          <mesh position={[toWorld(FAR_CENTER.x), toWorld(pedestalCenterY), toWorld(FAR_CENTER.z)]}>
-            <boxGeometry args={[toWorld(40), toWorld(pedestalHeightMm), toWorld(40)]} />
-            <meshStandardMaterial attach="material" color="#111827" />
-          </mesh>
-        );
-      })()}
-
-      {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toWorld(FLOOR_Y), 0]}>
-        <planeGeometry args={[toWorld(5000), toWorld(7000)]} />
-        <meshStandardMaterial color={FLOOR_COLOR} roughness={0.9} metalness={0} />
-      </mesh>
-    </group>
-  );
+  const group = useMemo(() => createFocusFundamentalsGroup(), []);
+  return <primitive object={group} dispose={null} />;
 };

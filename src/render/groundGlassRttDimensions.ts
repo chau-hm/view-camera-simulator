@@ -2,6 +2,11 @@ import { getRenderQualitySettings } from "./renderQuality";
 import type { RenderQualityProfile } from "../types/ui";
 import { GROUND_GLASS_ZOOM_SCALE } from "./groundGlassStageTransform";
 
+export type GroundGlassRttChannel =
+  | "default"
+  | "camera-movement-original"
+  | "camera-movement-current";
+
 export type GroundGlassRttDimensions = {
   logicalWidthPx: number;
   logicalHeightPx: number;
@@ -14,6 +19,9 @@ export type GroundGlassRttDimensions = {
 };
 
 export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
+  /** Mounted renderer that currently owns this diagnostics record. */
+  ownerId?: string;
+  channel?: GroundGlassRttChannel;
   profile: RenderQualityProfile;
 
   configuredCanvasDpr: number; // the DPR configured by the selected quality profile
@@ -50,6 +58,10 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   cameraConfigurationOk?: boolean;
   cameraConfigurationError?: string | null;
   projectionDeterminant?: number | null;
+  /** Extrinsics read from the configured Three.js camera, in render-world units. */
+  cameraPositionWorld?: [number, number, number];
+  cameraUpWorld?: [number, number, number];
+  cameraForwardWorld?: [number, number, number];
   depthTextureAvailable?: boolean;
   dofMode?: "parallel-thin-lens" | "derived-planes";
   uniformsFinite?: boolean;
@@ -63,6 +75,15 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   renderSanitySampleCount?: number;
   renderSanityStateKey?: string;
   renderSanityError?: string | null;
+  /** Values actually consumed by the current owned RTT subject/shader graph. */
+  focalLengthMm?: number;
+  latticeEdgeCount?: number;
+  latticeGeometryId?: string;
+  latticeGeometryKey?: string;
+  latticePresentationKey?: string;
+  latticeResourceKey?: string;
+  latticePresentationRegion?: string;
+  latticeSubjectGeneration?: number;
 
   resourceGeneration: number; // increments when RTT resources are recreated
 };

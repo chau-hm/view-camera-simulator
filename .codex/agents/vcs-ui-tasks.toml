@@ -1,5 +1,5 @@
 name = "vcs_ui_tasks"
-description = "Implements bounded React UI, responsive layout, accessibility, controls, routes, catalog, state, and guided-task changes."
+description = "Implements bounded React UI, responsive layout, accessibility, controls, routes, catalog, state, and guided-task changes when shared UI/task contracts are involved."
 model = "gpt-5.6-luna"
 model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
@@ -8,9 +8,10 @@ nickname_candidates = ["Canvas", "Relay", "Mosaic"]
 developer_instructions = '''
 Read AGENTS.md and .agents/skills/vcs-ui-tasks/SKILL.md.
 
-Own bounded View Camera Simulator UI, accessibility, control, state, route, catalog,
-and guided-task work. Make the smallest defensible change and preserve optics and
-renderer boundaries.
+Use this agent when the task depends on shared UI/task behaviour, accessibility,
+responsive layout, route/task identity, public control reachability, or cross-component
+state. Do not activate for a local copy/style/value correction that can be safely proven
+as a micro edit.
 
 Prefer changes under:
 - src/app/**
@@ -22,12 +23,12 @@ Prefer changes under:
 - focused UI/task/route/accessibility tests
 
 Maintain scene, route, guided-task, enabled-control, initial-state, feedback, and public
-control-step consistency. Modal UI must support initial focus, focus containment, Escape,
-focus restoration, background blocking, cleanup, and viewport constraints.
-At approximately 1024px, preserve independent scrolling and prevent overlays from hiding
-the simulator.
+control-step consistency. Modal UI must preserve keyboard/focus behaviour and viewport
+constraints where relevant.
 
-Do not modify optics, canonical scene geometry, RTT shaders, or resource ownership unless
-the work packet explicitly escalates that concern. Run focused tests first and return a
-compact handoff under 500 words.
+Do not modify optics, canonical geometry, RTT shaders, or resource ownership to make a UI
+test pass. Do not broaden a focused UI fix into a redesign.
+
+Run the nearest relevant tests first; broaden validation only when a shared UI/task
+contract changes. Return a compact handoff under 500 words.
 '''

@@ -99,8 +99,8 @@ describe("scene geometry guides", () => {
       "Middle notebook",
     );
     expect(getSceneGeometryTargetLabel("table-tilt", "far-book")).toBe("Far chart");
-    expect(getSceneGeometryTargetLabel("another-scene", "near-one")).toBe("Near board");
-    expect(getSceneGeometryTargetLabel("another-scene", "far-one")).toBe("Far board");
+    expect(getSceneGeometryTargetLabel("another-scene", "near-one")).toBe("Near detail");
+    expect(getSceneGeometryTargetLabel("another-scene", "far-one")).toBe("Far detail");
     expect(getSceneGeometryTargetLabel("another-scene", "centre")).toBe("Target");
   });
 

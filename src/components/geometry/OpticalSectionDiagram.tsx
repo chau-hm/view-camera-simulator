@@ -26,6 +26,10 @@ type Props = {
   svgWidth: number;
   svgHeight: number;
   displayMode?: "full" | "camera-construction" | "subject-field";
+  /** Optional zero-movement reference projection for comparison scenes. */
+  referenceProjection?: OpticalSectionData | null;
+  /** Optional zero-movement reference optics state (must match referenceProjection). */
+  referenceOpticsState?: DerivedOpticsState | null;
 };
 
 const planeTeachingLabel = (segment: PlaneSegment): string | null => {
@@ -35,8 +39,504 @@ const planeTeachingLabel = (segment: PlaneSegment): string | null => {
   return null;
 };
 
+type ConstructionLayerStyle = {
+  opacity: number;
+  strokeDasharray: string | undefined;
+  strokeWidthMultiplier: number;
+  testId: string;
+};
+
+type ConstructionLayerLayerProps = {
+  projection: OpticalSectionData;
+  geometryView: GeometryView;
+  profile: GeometryPresentationProfile;
+  scene: SceneDefinition;
+  opticsState: DerivedOpticsState;
+  svgWidth: number;
+  svgHeight: number;
+  displayMode?: string;
+  style: ConstructionLayerStyle;
+  /** Override which projection data to use (default to projection) */
+  layerProjection?: OpticalSectionData;
+  /** Override which opticsState to use. */
+  layerOpticsState?: DerivedOpticsState;
+};
+
+const FocusFundamentalsPositionCues = ({
+  currentProjection,
+  referenceProjection,
+  geometryView,
+  svgWidth,
+}: {
+  currentProjection: OpticalSectionData;
+  referenceProjection: OpticalSectionData;
+  geometryView: GeometryView;
+  svgWidth: number;
+}) => {
+  if (geometryView !== "side") return null;
+
+  const currentSegments = currentProjection.views[geometryView].physicalPlaneSegments;
+  const referenceSegments = referenceProjection.views[geometryView].physicalPlaneSegments;
+  const positions = (["film", "lens"] as const).flatMap((standard) => {
+    const current = currentSegments.find((segment) => segment.id === `physical-${standard}`);
+    const reference = referenceSegments.find((segment) => segment.id === `physical-${standard}`);
+    if (!current || !reference) return [];
+    return [
+      { standard, state: "reference" as const, segment: reference },
+      { standard, state: "current" as const, segment: current },
+    ];
+  });
+
+  return (
+    <g data-testid="focus-fundamentals-position-cues">
+      {positions.map(({ standard, state, segment }) => {
+        const x = (segment.p1.x + segment.p2.x) / 2;
+        const y = Math.min(segment.p1.y, segment.p2.y);
+        const isReference = state === "reference";
+        return (
+          <g
+            key={`${standard}-${state}`}
+            data-testid={`focus-${state}-${standard}-position`}
+          >
+            <line
+              x1={segment.p1.x}
+              y1={segment.p1.y}
+              x2={segment.p2.x}
+              y2={segment.p2.y}
+              stroke={segment.color}
+              strokeWidth={isReference ? 3 : 4}
+              strokeDasharray={isReference ? "5 4" : undefined}
+              opacity={isReference ? 0.38 : 1}
+              strokeLinecap="round"
+            />
+            <text
+              x={Math.min(svgWidth - 8, x + 8)}
+              y={Math.max(14, y - (isReference ? 8 : 22))}
+              fontSize={10}
+              fill={segment.color}
+              opacity={isReference ? 0.72 : 1}
+            >
+              {standard === "lens" ? "Lens" : "Film"} · {state}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+};
+
+const ConstructionLayer = ({
+  projection: baseProjection,
+  
+  geometryView,
+  profile,
+  scene,
+  opticsState,
+  svgWidth,
+  svgHeight,
+  displayMode = "full",
+  style,
+  layerProjection,
+  layerOpticsState,
+}: ConstructionLayerLayerProps) => {
+  const projection = layerProjection ?? baseProjection;
+  const effectiveOpticsState = layerOpticsState ?? opticsState;
+  const view = projection.views[geometryView];
+  const segments = view.planeSegments;
+  const showDepthPlaneGeometry =
+    profile.depthPlaneGeometryViews?.includes(geometryView) ?? true;
+  const visibleSegments = segments.filter((segment) => {
+    const isDepthPlane = ["focus", "nearDof", "farDof"].includes(segment.id);
+    if (isDepthPlane && !showDepthPlaneGeometry) return false;
+    return displayMode !== "subject-field" || isDepthPlane;
+  });
+  const showCameraConstruction = displayMode !== "subject-field";
+  const showSubjectTargets =
+    displayMode === "subject-field" || geometryView !== "scheimpflug";
+  const { isInfinity } = projection;
+  const safeMargin = 10;
+  const filmCenter = view.projectWorldPoint(effectiveOpticsState.filmCenterWorld);
+  const lensCenter = view.projectWorldPoint(effectiveOpticsState.lensCenterWorld);
+  const subjectGuides =
+    displayMode === "camera-construction"
+      ? []
+      : getSceneGeometryGuides(scene.id).filter(
+          (guide) => guide.view === geometryView,
+        );
+
+  const { opacity, strokeDasharray, strokeWidthMultiplier, testId } = style;
+
+  return (
+    <g data-testid={testId} opacity={opacity}>
+      {showCameraConstruction
+        ? view.fovSegments.map((segment, index) => (
+            <line
+              key={`fov-${index}`}
+              x1={segment.p1.x}
+              y1={segment.p1.y}
+              x2={segment.p2.x}
+              y2={segment.p2.y}
+              stroke="#f59e0b"
+              strokeWidth={1}
+              opacity={0.85}
+            />
+          ))
+        : null}
+
+      {view.opticalAxisSegment
+        ? (() => {
+            const { p1, p2 } = view.opticalAxisSegment;
+            const labelX =
+              p1.x +
+              (p2.x - p1.x) *
+                (scene.id === "table-tilt" ? 0.12 : 0.03);
+            const labelY =
+              p1.y +
+              (p2.y - p1.y) *
+                (scene.id === "table-tilt" ? 0.12 : 0.03) -
+              8;
+            return (
+              <g>
+                <line
+                  data-testid="optical-axis-line"
+                  x1={p1.x}
+                  y1={p1.y}
+                  x2={p2.x}
+                  y2={p2.y}
+                  stroke="#f59e0b"
+                  strokeWidth={1.2}
+                  strokeDasharray="6 4"
+                  opacity={0.95}
+                />
+                {profile.showOpticalAxisLabel ? (
+                  <text
+                    x={labelX}
+                    y={labelY}
+                    fontSize={11}
+                    fill="#b45309"
+                  >
+                    Optical axis
+                  </text>
+                ) : null}
+              </g>
+            );
+          })()
+        : null}
+
+      {subjectGuides.map((guide) => {
+        const start = view.projectWorldPoint(guide.startWorld);
+        const end = view.projectWorldPoint(guide.endWorld);
+        const labelPlacement = getGeometryGuideLabelPlacement({
+          start,
+          end,
+          positionT: guide.labelPositionT,
+          offsetPx: guide.labelOffsetPx,
+          anchor: guide.labelAnchor,
+          text: guide.label,
+          svgWidth,
+          svgHeight,
+          safeMargin,
+        });
+        return (
+          <g
+            key={guide.id}
+            data-testid={guide.testId}
+            data-geometry-guide-id={guide.id}
+          >
+            <line
+              x1={start.x}
+              y1={start.y}
+              x2={end.x}
+              y2={end.y}
+              stroke={guide.color}
+              strokeWidth={3}
+            />
+            <text
+              data-testid={`${guide.testId}-label`}
+              data-guide-label-position-t={labelPlacement.positionT}
+              x={labelPlacement.x}
+              y={labelPlacement.y}
+              fontSize={12}
+              fontWeight={600}
+              fill={guide.color}
+              textAnchor={labelPlacement.anchor}
+            >
+              {guide.label}
+            </text>
+          </g>
+        );
+      })}
+
+      {showDepthPlaneGeometry &&
+      !isInfinity &&
+      effectiveOpticsState.depthOfFieldNearPlane &&
+      effectiveOpticsState.depthOfFieldFarPlane
+        ? (() => {
+            const near = segments.find(
+              (segment) => segment.id === "nearDof",
+            );
+            const far = segments.find(
+              (segment) => segment.id === "farDof",
+            );
+            if (!near || !far) return null;
+            const points = buildDofPolygonPoints(near, far)
+              .map((point) => `${point.x},${point.y}`)
+              .join(" ");
+            return (
+              <polygon
+                data-testid="dof-region"
+                points={points}
+                fill="#8b5cf6"
+                opacity={profile.dofFillOpacity}
+                stroke="#8b5cf6"
+              />
+            );
+          })()
+        : null}
+
+      {visibleSegments.map((segment) => {
+        const extensionTestId =
+          geometryView === "scheimpflug" && segment.id === "film"
+            ? "scheimpflug-film-extension"
+            : geometryView === "scheimpflug" && segment.id === "lens"
+              ? "scheimpflug-lens-extension"
+              : undefined;
+        return (
+          <g key={segment.id} data-testid={extensionTestId}>
+            <line
+              x1={segment.p1.x}
+              y1={segment.p1.y}
+              x2={segment.p2.x}
+              y2={segment.p2.y}
+              stroke={segment.color}
+              strokeWidth={
+                (geometryView === "scheimpflug" &&
+                ["film", "lens", "focus"].includes(segment.id)
+                  ? 2.5
+                  : 2) * strokeWidthMultiplier
+              }
+              strokeDasharray={
+                strokeDasharray ??
+                (geometryView === "scheimpflug" &&
+                ["film", "lens", "focus"].includes(segment.id)
+                  ? "7 5"
+                  : segment.id === "focus"
+                    ? "6 4"
+                    : undefined)
+              }
+              aria-label={`${segment.id} plane`}
+              data-testid={
+                segment.id === "film"
+                  ? "plane-line-film"
+                  : segment.id === "lens"
+                    ? "plane-line-lens"
+                    : segment.id === "focus"
+                      ? "plane-line-focus"
+                      : undefined
+              }
+            />
+          </g>
+        );
+      })}
+
+      {showCameraConstruction ? (
+        <ProjectedCameraConstruction
+          physicalPlaneSegments={view.physicalPlaneSegments}
+          filmCenter={filmCenter}
+          lensCenter={lensCenter}
+          displayMode={
+            geometryView === "scheimpflug" ? "construction" : "compact"
+          }
+        />
+      ) : null}
+
+      {geometryView === "scheimpflug" && showCameraConstruction
+        ? visibleSegments.map((segment) => {
+            const label = planeTeachingLabel(segment);
+            if (!label) return null;
+            const right =
+              segment.p1.x >= segment.p2.x ? segment.p1 : segment.p2;
+            const labelY =
+              segment.id === "focus"
+                ? Math.min(svgHeight - safeMargin, right.y + 18)
+                : Math.max(safeMargin + 10, right.y - 8);
+            return (
+              <text
+                key={`${segment.id}-teaching-label`}
+                x={Math.min(svgWidth - safeMargin, right.x - 5)}
+                y={labelY}
+                fontSize={11}
+                fontWeight={600}
+                fill={segment.color}
+                textAnchor="end"
+              >
+                {label}
+              </text>
+            );
+          })
+        : null}
+
+      {scene.id === "table-tilt" && geometryView === "side"
+        ? (() => {
+            const focus = segments.find(
+              (segment) => segment.id === "focus",
+            );
+            if (!focus) return null;
+            const left =
+              focus.p1.x < focus.p2.x ? focus.p1 : focus.p2;
+            const maxX = Math.max(focus.p1.x, focus.p2.x);
+            return (
+              <text
+                x={left.x + Math.min(120, (maxX - left.x) * 0.15)}
+                y={left.y - 10}
+                fontSize={12}
+                fontWeight={600}
+                fill="#15803d"
+              >
+                Focus plane
+              </text>
+            );
+          })()
+        : null}
+
+      {showSubjectTargets
+        ? scene.focusTargets.map((target) => {
+            const position = view.projectWorldPoint(
+              target.worldPosition,
+            );
+            const labelText = getSceneGeometryTargetLabel(
+              scene.id,
+              target.id,
+            );
+            const placement = getLocalTargetLabelPlacement({
+              targetX: position.x,
+              targetY: position.y,
+              text: labelText,
+              svgWidth,
+              svgHeight,
+              safeMargin,
+            });
+            if (geometryView === "side") {
+              return (
+                <g
+                  key={target.id}
+                  data-testid={`geometry-target-${target.id}`}
+                >
+                  <rect
+                    x={position.x - 6}
+                    y={position.y - 20}
+                    width={12}
+                    height={16}
+                    fill="#0f766e"
+                  />
+                  <rect
+                    x={position.x - 2}
+                    y={position.y - 4}
+                    width={4}
+                    height={8}
+                    fill="#6b7280"
+                  />
+                  {profile.targetLabelMode === "short-local" ? (
+                    <text
+                      x={placement.x}
+                      y={placement.y}
+                      fontSize={12}
+                      fill="#064e3b"
+                      textAnchor={placement.anchor}
+                    >
+                      {labelText}
+                    </text>
+                  ) : null}
+                </g>
+              );
+            }
+            return (
+              <g
+                key={target.id}
+                data-testid={`geometry-target-${target.id}`}
+              >
+                <rect
+                  x={position.x - 3}
+                  y={position.y - 9}
+                  width={6}
+                  height={18}
+                  fill="#0f766e"
+                />
+                <line
+                  x1={position.x}
+                  y1={position.y + 9}
+                  x2={position.x}
+                  y2={position.y + 13}
+                  stroke="#0b5e54"
+                  strokeWidth={1}
+                />
+                {profile.targetLabelMode === "short-local" ? (
+                  <text
+                    x={placement.x}
+                    y={placement.y}
+                    fontSize={12}
+                    fill="#064e3b"
+                    textAnchor={placement.anchor}
+                  >
+                    {labelText}
+                  </text>
+                ) : null}
+              </g>
+            );
+          })
+        : null}
+
+      {!isInfinity && effectiveOpticsState.focusPlane
+        ? (() => {
+            const point = view.projectWorldPoint(
+              effectiveOpticsState.focusPlane.point,
+            );
+            return (
+              <circle
+                data-testid="focus-marker"
+                cx={point.x}
+                cy={point.y}
+                r={4}
+                fill="#dc2626"
+              />
+            );
+          })()
+        : null}
+
+      {profile.showScheimpflugIntersection &&
+      geometryView === "scheimpflug" &&
+      view.scheimpflugIntersection
+        ? (() => {
+            const point = view.scheimpflugIntersection!;
+            return (
+              <g data-testid="scheimpflug-intersection">
+                <circle
+                  cx={point.x}
+                  cy={point.y}
+                  r={5}
+                  fill="#7c3aed"
+                />
+                <text
+                  x={point.x + 9}
+                  y={point.y - 9}
+                  fontSize={11}
+                  fontWeight={600}
+                  fill="#6d28d9"
+                >
+                  Scheimpflug intersection
+                </text>
+              </g>
+            );
+          })()
+        : null}
+    </g>
+  );
+};
+
 export const OpticalSectionDiagram = ({
   projection,
+  referenceProjection,
+  referenceOpticsState,
   geometryView,
   profile,
   scene,
@@ -45,24 +545,24 @@ export const OpticalSectionDiagram = ({
   svgHeight,
   displayMode = "full",
 }: Props) => {
-  const view = projection.views[geometryView];
-  const segments = view.planeSegments;
-  const showDepthPlaneGeometry = profile.depthPlaneGeometryViews?.includes(geometryView) ?? true;
-  const visibleSegments = segments.filter((segment) => {
-    const isDepthPlane = ["focus", "nearDof", "farDof"].includes(segment.id);
-    if (isDepthPlane && !showDepthPlaneGeometry) return false;
-    return displayMode !== "subject-field" || isDepthPlane;
-  });
-  const showCameraConstruction = displayMode !== "subject-field";
-  const showSubjectTargets = displayMode === "subject-field" || geometryView !== "scheimpflug";
-  const { isInfinity } = projection;
-  const safeMargin = 10;
-  const filmCenter = view.projectWorldPoint(opticsState.filmCenterWorld);
-  const lensCenter = view.projectWorldPoint(opticsState.lensCenterWorld);
-  const subjectGuides =
-    displayMode === "camera-construction"
-      ? []
-      : getSceneGeometryGuides(scene.id).filter((guide) => guide.view === geometryView);
+  const showCurrentLayer = true; // Always render the current layer
+  const isFocusFundamentals = scene.id === "focus-fundamentals-two-targets";
+  const hasOriginal =
+    Boolean(referenceProjection) && displayMode === "full" && !isFocusFundamentals;
+
+  const currentStyle: ConstructionLayerStyle = {
+    opacity: 1,
+    strokeDasharray: undefined,
+    strokeWidthMultiplier: 1,
+    testId: "geometry-construction-current",
+  };
+
+  const originalStyle: ConstructionLayerStyle = {
+    opacity: 0.45,
+    strokeDasharray: "6 4",
+    strokeWidthMultiplier: 0.8,
+    testId: "geometry-construction-original",
+  };
 
   return (
     <svg
@@ -79,278 +579,88 @@ export const OpticalSectionDiagram = ({
         background: "#f8fafc",
       }}
     >
-      <g>
-        {showCameraConstruction ? view.fovSegments.map((segment, index) => (
+      {isFocusFundamentals && referenceProjection ? (
+        <FocusFundamentalsPositionCues
+          currentProjection={projection}
+          referenceProjection={referenceProjection}
+          geometryView={geometryView}
+          svgWidth={svgWidth}
+        />
+      ) : null}
+      {/* Original reference layer (rendered first, underneath) */}
+      {hasOriginal && referenceProjection && (
+        <ConstructionLayer
+          projection={projection}
+          geometryView={geometryView}
+          profile={profile}
+          scene={scene}
+          opticsState={opticsState}
+          svgWidth={svgWidth}
+          svgHeight={svgHeight}
+          displayMode={undefined}
+          style={originalStyle}
+          layerProjection={referenceProjection}
+          layerOpticsState={referenceOpticsState ?? undefined}
+        />
+      )}
+
+      {/* Current layer (rendered second, on top) */}
+      {showCurrentLayer && (
+        <ConstructionLayer
+          projection={projection}
+          geometryView={geometryView}
+          profile={profile}
+          scene={scene}
+          opticsState={opticsState}
+          svgWidth={svgWidth}
+          svgHeight={svgHeight}
+          displayMode={displayMode}
+          style={currentStyle}
+        />
+      )}
+
+      {/* Original / Current legend — only when reference exists and not in construction mode */}
+      {hasOriginal && (
+        <g transform="translate(10, 10)">
+          <rect
+            x="0"
+            y="0"
+            width="150"
+            height="36"
+            rx="4"
+            fill="rgba(255,255,255,0.85)"
+          />
           <line
-            key={`fov-${index}`}
-            x1={segment.p1.x}
-            y1={segment.p1.y}
-            x2={segment.p2.x}
-            y2={segment.p2.y}
-            stroke="#f59e0b"
-            strokeWidth={1}
-            opacity={0.85}
+            x1="12"
+            y1="12"
+            x2="36"
+            y2="12"
+            stroke="#374151"
+            strokeWidth={2}
           />
-        )) : null}
-
-        {view.opticalAxisSegment ? (() => {
-          const { p1, p2 } = view.opticalAxisSegment;
-          const labelX = p1.x + (p2.x - p1.x) * (scene.id === "table-tilt" ? 0.12 : 0.03);
-          const labelY = p1.y + (p2.y - p1.y) * (scene.id === "table-tilt" ? 0.12 : 0.03) - 8;
-          return (
-            <g>
-              <line
-                data-testid="optical-axis-line"
-                x1={p1.x}
-                y1={p1.y}
-                x2={p2.x}
-                y2={p2.y}
-                stroke="#f59e0b"
-                strokeWidth={1.2}
-                strokeDasharray="6 4"
-                opacity={0.95}
-              />
-              {profile.showOpticalAxisLabel ? (
-                <text x={labelX} y={labelY} fontSize={11} fill="#b45309">
-                  Optical axis
-                </text>
-              ) : null}
-            </g>
-          );
-        })() : null}
-
-        {subjectGuides.map((guide) => {
-          const start = view.projectWorldPoint(guide.startWorld);
-          const end = view.projectWorldPoint(guide.endWorld);
-          const labelPlacement = getGeometryGuideLabelPlacement({
-            start,
-            end,
-            positionT: guide.labelPositionT,
-            offsetPx: guide.labelOffsetPx,
-            anchor: guide.labelAnchor,
-            text: guide.label,
-            svgWidth,
-            svgHeight,
-            safeMargin,
-          });
-          return (
-            <g key={guide.id} data-testid={guide.testId} data-geometry-guide-id={guide.id}>
-              <line
-                x1={start.x}
-                y1={start.y}
-                x2={end.x}
-                y2={end.y}
-                stroke={guide.color}
-                strokeWidth={3}
-              />
-              <text
-                data-testid={`${guide.testId}-label`}
-                data-guide-label-position-t={labelPlacement.positionT}
-                x={labelPlacement.x}
-                y={labelPlacement.y}
-                fontSize={12}
-                fontWeight={600}
-                fill={guide.color}
-                textAnchor={labelPlacement.anchor}
-              >
-                {guide.label}
-              </text>
-            </g>
-          );
-        })}
-
-        {showDepthPlaneGeometry &&
-        !isInfinity &&
-        opticsState.depthOfFieldNearPlane &&
-        opticsState.depthOfFieldFarPlane
-          ? (() => {
-              const near = segments.find((segment) => segment.id === "nearDof");
-              const far = segments.find((segment) => segment.id === "farDof");
-              if (!near || !far) return null;
-              const points = buildDofPolygonPoints(near, far)
-                .map((point) => `${point.x},${point.y}`)
-                .join(" ");
-              return (
-                <polygon
-                  data-testid="dof-region"
-                  points={points}
-                  fill="#8b5cf6"
-                  opacity={profile.dofFillOpacity}
-                  stroke="#8b5cf6"
-                />
-              );
-            })()
-          : null}
-
-        {visibleSegments.map((segment) => {
-          const extensionTestId =
-            geometryView === "scheimpflug" && segment.id === "film"
-              ? "scheimpflug-film-extension"
-              : geometryView === "scheimpflug" && segment.id === "lens"
-                ? "scheimpflug-lens-extension"
-                : undefined;
-          return (
-            <g key={segment.id} data-testid={extensionTestId}>
-              <line
-                x1={segment.p1.x}
-                y1={segment.p1.y}
-                x2={segment.p2.x}
-                y2={segment.p2.y}
-                stroke={segment.color}
-                strokeWidth={geometryView === "scheimpflug" && ["film", "lens", "focus"].includes(segment.id) ? 2.5 : 2}
-                strokeDasharray={
-                  geometryView === "scheimpflug" && ["film", "lens", "focus"].includes(segment.id)
-                    ? "7 5"
-                    : segment.id === "focus"
-                      ? "6 4"
-                      : undefined
-                }
-                aria-label={`${segment.id} plane`}
-                data-testid={
-                  segment.id === "film"
-                    ? "plane-line-film"
-                    : segment.id === "lens"
-                      ? "plane-line-lens"
-                      : segment.id === "focus"
-                        ? "plane-line-focus"
-                        : undefined
-                }
-              />
-            </g>
-          );
-        })}
-
-        {showCameraConstruction ? (
-          <ProjectedCameraConstruction
-            physicalPlaneSegments={view.physicalPlaneSegments}
-            filmCenter={filmCenter}
-            lensCenter={lensCenter}
-            displayMode={geometryView === "scheimpflug" ? "construction" : "compact"}
+          <text
+            x="44"
+            y="16"
+            fontSize="11"
+            fill="#1e293b"
+            fontWeight="500"
+          >
+            Current
+          </text>
+          <line
+            x1="12"
+            y1="28"
+            x2="36"
+            y2="28"
+            stroke="#94a3b8"
+            strokeWidth={1.5}
+            strokeDasharray="6 4"
           />
-        ) : null}
-
-        {geometryView === "scheimpflug" && showCameraConstruction
-          ? visibleSegments.map((segment) => {
-              const label = planeTeachingLabel(segment);
-              if (!label) return null;
-              const right = segment.p1.x >= segment.p2.x ? segment.p1 : segment.p2;
-              const labelY =
-                segment.id === "focus"
-                  ? Math.min(svgHeight - safeMargin, right.y + 18)
-                  : Math.max(safeMargin + 10, right.y - 8);
-              return (
-                <text
-                  key={`${segment.id}-teaching-label`}
-                  x={Math.min(svgWidth - safeMargin, right.x - 5)}
-                  y={labelY}
-                  fontSize={11}
-                  fontWeight={600}
-                  fill={segment.color}
-                  textAnchor="end"
-                >
-                  {label}
-                </text>
-              );
-            })
-          : null}
-
-        {scene.id === "table-tilt" && geometryView === "side"
-          ? (() => {
-              const focus = segments.find((segment) => segment.id === "focus");
-              if (!focus) return null;
-              const left = focus.p1.x < focus.p2.x ? focus.p1 : focus.p2;
-              const maxX = Math.max(focus.p1.x, focus.p2.x);
-              return (
-                <text
-                  x={left.x + Math.min(120, (maxX - left.x) * 0.15)}
-                  y={left.y - 10}
-                  fontSize={12}
-                  fontWeight={600}
-                  fill="#15803d"
-                >
-                  Focus plane
-                </text>
-              );
-            })()
-          : null}
-
-        {showSubjectTargets ? scene.focusTargets.map((target) => {
-          const position = view.projectWorldPoint(target.worldPosition);
-          const labelText = getSceneGeometryTargetLabel(scene.id, target.id);
-          const placement = getLocalTargetLabelPlacement({
-            targetX: position.x,
-            targetY: position.y,
-            text: labelText,
-            svgWidth,
-            svgHeight,
-            safeMargin,
-          });
-          if (geometryView === "side") {
-            return (
-              <g key={target.id} data-testid={`geometry-target-${target.id}`}>
-                <rect x={position.x - 6} y={position.y - 20} width={12} height={16} fill="#0f766e" />
-                <rect x={position.x - 2} y={position.y - 4} width={4} height={8} fill="#6b7280" />
-                {profile.targetLabelMode === "short-local" ? (
-                  <text
-                    x={placement.x}
-                    y={placement.y}
-                    fontSize={12}
-                    fill="#064e3b"
-                    textAnchor={placement.anchor}
-                  >
-                    {labelText}
-                  </text>
-                ) : null}
-              </g>
-            );
-          }
-          return (
-            <g key={target.id} data-testid={`geometry-target-${target.id}`}>
-              <rect x={position.x - 3} y={position.y - 9} width={6} height={18} fill="#0f766e" />
-              <line
-                x1={position.x}
-                y1={position.y + 9}
-                x2={position.x}
-                y2={position.y + 13}
-                stroke="#0b5e54"
-                strokeWidth={1}
-              />
-              {profile.targetLabelMode === "short-local" ? (
-                <text
-                  x={placement.x}
-                  y={placement.y}
-                  fontSize={12}
-                  fill="#064e3b"
-                  textAnchor={placement.anchor}
-                >
-                  {labelText}
-                </text>
-              ) : null}
-            </g>
-          );
-        }) : null}
-
-        {!isInfinity && opticsState.focusPlane ? (() => {
-          const point = view.projectWorldPoint(opticsState.focusPlane.point);
-          return <circle cx={point.x} cy={point.y} r={4} fill="#dc2626" />;
-        })() : null}
-
-        {profile.showScheimpflugIntersection &&
-        geometryView === "scheimpflug" &&
-        view.scheimpflugIntersection
-          ? (() => {
-              const point = view.scheimpflugIntersection!;
-              return (
-                <g data-testid="scheimpflug-intersection">
-                  <circle cx={point.x} cy={point.y} r={5} fill="#7c3aed" />
-                  <text x={point.x + 9} y={point.y - 9} fontSize={11} fontWeight={600} fill="#6d28d9">
-                    Scheimpflug intersection
-                  </text>
-                </g>
-              );
-            })()
-          : null}
-      </g>
+          <text x="44" y="32" fontSize="11" fill="#64748b">
+            Original
+          </text>
+        </g>
+      )}
     </svg>
   );
 };

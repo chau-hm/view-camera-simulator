@@ -1,0 +1,364 @@
+import {
+  distance,
+  isFiniteVec3,
+  rotatePointAroundX,
+  subtract,
+} from "../core/math/vec";
+import type {
+  ArcAnchorCameraRigPlacement,
+  CameraRigPlacement,
+  CameraRigViewpointAnchor,
+  CameraRigViewpointAnchorMetadata,
+  CameraRigViewpointArcPlane,
+  Vec3,
+} from "../types/optics";
+
+export type {
+  CameraRigViewpointAnchor,
+  CameraRigViewpointAnchorMetadata,
+  CameraRigViewpointArcPlane,
+  CameraRigViewpointRelativeHeight,
+} from "../types/optics";
+
+export type CameraRigViewpointArcCalibration = Readonly<{
+  /** Arc is constrained to the world YZ plane; X remains unchanged. */
+  arcPlane: CameraRigViewpointArcPlane;
+  /** Centre of the viewpoint arc in canonical scene millimetres. */
+  arcCenterWorld: Readonly<Vec3>;
+  /** Zero-movement lens datum for the mid anchor. */
+  midRigOriginWorld: Readonly<Vec3>;
+  /** Explicit raw physical radius of the provisional arc. */
+  arcRadiusMm: number;
+  /** Optional closer radius shared by the high and low anchors. */
+  highLowArcRadiusMm?: number;
+  /** Optional low-only radius used by the D3 lower-viewpoint teaching case. */
+  lowArcRadiusMm?: number;
+  /** Positive right-handed +X arc angle for the elevated anchor. */
+  highArcAngleDeg: number;
+  /** Negative right-handed +X arc angle for the lowered anchor. */
+  lowArcAngleDeg: number;
+  /** Optional independently calibrated body pitch at the higher endpoint. */
+  highBodyPitchDeg?: number;
+  /** Optional independently calibrated body pitch at the lower endpoint. */
+  lowBodyPitchDeg?: number;
+  /** Provisional outer rig pitch, independent from anchor position. */
+  provisionalBasePitchDeg: number;
+  defaultAnchor: CameraRigViewpointAnchor;
+  anchorMetadata: Readonly<
+    Record<CameraRigViewpointAnchor, CameraRigViewpointAnchorMetadata>
+  >;
+}>;
+
+/** Scene-level name for a canonical resolved arc-anchor placement. */
+export type ResolvedCameraRigViewpointAnchor = ArcAnchorCameraRigPlacement;
+
+/**
+ * Canonical mid-anchor lens datum for the camera-movement rig.
+ *
+ * The mid (zero-movement) lens centre is the world origin, and the arc centre
+ * is the subject centre. The mid-anchor radius is derived through this shared
+ * contract. A calibration may additionally provide one symmetric closer
+ * radius for the high/low teaching anchors.
+ */
+export const CANONICAL_MID_RIG_ORIGIN_WORLD: Readonly<Vec3> = Object.freeze({
+  x: 0,
+  y: 0,
+  z: 0,
+});
+
+/** Resolve the canonical arc radius from the arc centre and mid-anchor origin. */
+export const resolveCameraRigArcRadiusMm = (
+  arcCenterWorld: Readonly<Vec3>,
+  midRigOriginWorld: Readonly<Vec3>,
+): number => distance(arcCenterWorld, midRigOriginWorld);
+
+/** True when the three rig values agree with the single canonical relationship. */
+export const isCanonicalCameraRigGeometry = (
+  arcCenterWorld: Readonly<Vec3>,
+  midRigOriginWorld: Readonly<Vec3>,
+  arcRadiusMm: number,
+): boolean => {
+  if (!isFiniteVec3(arcCenterWorld) || !isFiniteVec3(midRigOriginWorld)) {
+    return false;
+  }
+  if (arcCenterWorld.x !== midRigOriginWorld.x) {
+    return false;
+  }
+  const measuredRadiusMm = distance(arcCenterWorld, midRigOriginWorld);
+  if (!Number.isFinite(measuredRadiusMm) || measuredRadiusMm <= 0) {
+    return false;
+  }
+  if (!Number.isFinite(arcRadiusMm) || arcRadiusMm <= 0) {
+    return false;
+  }
+  return approximatelyEqual(arcRadiusMm, measuredRadiusMm);
+};
+
+const approximatelyEqual = (a: number, b: number): boolean => {
+  const scale = Math.max(1, Math.abs(a), Math.abs(b));
+  return Math.abs(a - b) <= Number.EPSILON * scale * 8;
+};
+
+const placementNumberApproximatelyEqual = (a: number, b: number): boolean => {
+  const scale = Math.max(1, Math.abs(a), Math.abs(b));
+  return Number.isFinite(a) && Math.abs(a - b) <= 1e-9 * scale;
+};
+
+const placementVectorApproximatelyEqual = (
+  a: Readonly<Vec3>,
+  b: Readonly<Vec3>,
+): boolean =>
+  placementNumberApproximatelyEqual(a.x, b.x) &&
+  placementNumberApproximatelyEqual(a.y, b.y) &&
+  placementNumberApproximatelyEqual(a.z, b.z);
+
+const assertValidCalibration = (calibration: CameraRigViewpointArcCalibration): void => {
+  if (calibration.arcPlane !== "yz") {
+    throw new Error("Camera rig viewpoint arc plane must be yz");
+  }
+  if (!isFiniteVec3(calibration.arcCenterWorld) || !isFiniteVec3(calibration.midRigOriginWorld)) {
+    throw new Error("Camera rig viewpoint arc requires finite centre and mid-origin coordinates");
+  }
+  if (calibration.arcCenterWorld.x !== calibration.midRigOriginWorld.x) {
+    throw new Error("Camera rig viewpoint arc centre and mid origin must share X");
+  }
+  if (!Number.isFinite(calibration.arcRadiusMm) || calibration.arcRadiusMm <= 0) {
+    throw new Error("Camera rig viewpoint arc radius must be finite and greater than zero");
+  }
+  const measuredRadiusMm = resolveCameraRigArcRadiusMm(
+    calibration.arcCenterWorld,
+    calibration.midRigOriginWorld,
+  );
+  if (!Number.isFinite(measuredRadiusMm) || measuredRadiusMm <= 0) {
+    throw new Error("Camera rig viewpoint centre and mid origin must define a non-zero radius");
+  }
+  if (!approximatelyEqual(calibration.arcRadiusMm, measuredRadiusMm)) {
+    throw new Error("Configured camera rig arc radius must match centre-to-mid distance");
+  }
+  if (
+    calibration.highLowArcRadiusMm !== undefined &&
+    (!Number.isFinite(calibration.highLowArcRadiusMm) || calibration.highLowArcRadiusMm <= 0)
+  ) {
+    throw new Error("Camera rig high/low arc radius must be finite and greater than zero");
+  }
+  if (
+    calibration.lowArcRadiusMm !== undefined &&
+    (!Number.isFinite(calibration.lowArcRadiusMm) || calibration.lowArcRadiusMm <= 0)
+  ) {
+    throw new Error("Camera rig low arc radius must be finite and greater than zero");
+  }
+  if (
+    !Number.isFinite(calibration.highArcAngleDeg) ||
+    calibration.highArcAngleDeg <= 0 ||
+    calibration.highArcAngleDeg >= 180
+  ) {
+    throw new Error("Camera rig high arc angle must be finite, positive, and below 180 degrees");
+  }
+  if (
+    !Number.isFinite(calibration.lowArcAngleDeg) ||
+    calibration.lowArcAngleDeg >= 0 ||
+    calibration.lowArcAngleDeg <= -180
+  ) {
+    throw new Error("Camera rig low arc angle must be finite, negative, and above -180 degrees");
+  }
+  if (!Number.isFinite(calibration.provisionalBasePitchDeg)) {
+    throw new Error("Camera rig provisional base pitch must be finite");
+  }
+  for (const [label, value] of [
+    ["high", calibration.highBodyPitchDeg],
+    ["low", calibration.lowBodyPitchDeg],
+  ] as const) {
+    if (value !== undefined && !Number.isFinite(value)) {
+      throw new Error(`Camera rig ${label} body pitch must be finite`);
+    }
+  }
+
+  const expectedMetadata = {
+    mid: { identity: "mid", relativeHeight: "at-mid" },
+    high: { identity: "high", relativeHeight: "above-mid" },
+    low: { identity: "low", relativeHeight: "below-mid" },
+  } as const satisfies Readonly<
+    Record<CameraRigViewpointAnchor, CameraRigViewpointAnchorMetadata>
+  >;
+  for (const anchor of ["mid", "high", "low"] as const) {
+    const metadata = calibration.anchorMetadata?.[anchor];
+    if (
+      metadata?.identity !== expectedMetadata[anchor].identity ||
+      metadata.relativeHeight !== expectedMetadata[anchor].relativeHeight
+    ) {
+      throw new Error(`Camera rig ${anchor} anchor metadata is invalid`);
+    }
+  }
+  if (
+    !["mid", "high", "low"].includes(calibration.defaultAnchor) ||
+    calibration.anchorMetadata[calibration.defaultAnchor]?.identity !==
+      calibration.defaultAnchor
+  ) {
+    throw new Error("Camera rig default anchor metadata is invalid");
+  }
+};
+
+const angleForAnchor = (
+  calibration: CameraRigViewpointArcCalibration,
+  anchor: CameraRigViewpointAnchor,
+): number => {
+  switch (anchor) {
+    case "mid":
+      return 0;
+    case "high":
+      return calibration.highArcAngleDeg;
+    case "low":
+      return calibration.lowArcAngleDeg;
+    default:
+      throw new Error(`Unknown camera rig viewpoint anchor: ${String(anchor)}`);
+  }
+};
+
+const radiusForAnchor = (
+  calibration: CameraRigViewpointArcCalibration,
+  anchor: CameraRigViewpointAnchor,
+): number =>
+  anchor === "mid"
+    ? calibration.arcRadiusMm
+    : anchor === "low"
+      ? calibration.lowArcRadiusMm ??
+        calibration.highLowArcRadiusMm ??
+        calibration.arcRadiusMm
+      : calibration.highLowArcRadiusMm ?? calibration.arcRadiusMm;
+
+const resolveArcPlacement = (
+  calibration: CameraRigViewpointArcCalibration,
+  arcAngleDeg: number,
+  radiusMm: number,
+  anchor: CameraRigViewpointAnchor,
+  viewpointT?: number,
+): ResolvedCameraRigViewpointAnchor => {
+  const midpointDirection = subtract(
+    calibration.midRigOriginWorld,
+    calibration.arcCenterWorld,
+  );
+  const anchorRadiusScale = radiusMm / calibration.arcRadiusMm;
+  const anchorBasePoint = {
+    x: calibration.arcCenterWorld.x + midpointDirection.x * anchorRadiusScale,
+    y: calibration.arcCenterWorld.y + midpointDirection.y * anchorRadiusScale,
+    z: calibration.arcCenterWorld.z + midpointDirection.z * anchorRadiusScale,
+  };
+  const rigOriginWorld =
+    arcAngleDeg === 0
+      ? anchorBasePoint
+      : rotatePointAroundX(anchorBasePoint, calibration.arcCenterWorld, arcAngleDeg);
+
+  return {
+    kind: "arc-anchor",
+    anchor,
+    metadata: calibration.anchorMetadata[anchor],
+    arcPlane: calibration.arcPlane,
+    arcCenterWorld: { ...calibration.arcCenterWorld },
+    rigOriginWorld,
+    basePitchDeg: calibration.provisionalBasePitchDeg,
+    arcAngleDeg,
+    radiusMm,
+    ...(viewpointT === undefined ? {} : { viewpointT }),
+  };
+};
+
+/**
+ * Resolve one camera-rig lens-datum anchor on a pure world YZ arc.
+ *
+ * Positive arc rotation is the high viewpoint because the calibrated
+ * centre-to-mid vector points along -Z and right-handed +X sends -Z toward +Y.
+ */
+export const resolveCameraRigViewpointAnchor = (
+  calibration: CameraRigViewpointArcCalibration,
+  anchor: CameraRigViewpointAnchor,
+): ResolvedCameraRigViewpointAnchor => {
+  assertValidCalibration(calibration);
+  const arcAngleDeg = angleForAnchor(calibration, anchor);
+  const radiusMm = radiusForAnchor(calibration, anchor);
+  if (anchor === "mid") {
+    return {
+      ...resolveArcPlacement(calibration, arcAngleDeg, radiusMm, anchor),
+      rigOriginWorld: { ...calibration.midRigOriginWorld },
+    };
+  }
+  return resolveArcPlacement(calibration, arcAngleDeg, radiusMm, anchor);
+};
+
+/** Resolve a continuous lesson viewpoint on the calibrated mid↔high/low arcs. */
+export const resolveCameraRigViewpointPlacementAtT = (
+  calibration: CameraRigViewpointArcCalibration,
+  viewpointT: number,
+): ResolvedCameraRigViewpointAnchor => {
+  assertValidCalibration(calibration);
+  const t = Math.min(1, Math.max(-1, Number.isFinite(viewpointT) ? viewpointT : 0));
+  if (t === 0) return resolveCameraRigViewpointAnchor(calibration, "mid");
+  if (t === 1) return resolveCameraRigViewpointAnchor(calibration, "high");
+  if (t === -1) return resolveCameraRigViewpointAnchor(calibration, "low");
+
+  const anchor: CameraRigViewpointAnchor = t > 0 ? "high" : "low";
+  const progress = Math.abs(t);
+  const endpoint = resolveCameraRigViewpointAnchor(calibration, anchor);
+  return resolveArcPlacement(
+    calibration,
+    endpoint.arcAngleDeg * progress,
+    calibration.arcRadiusMm + (endpoint.radiusMm - calibration.arcRadiusMm) * progress,
+    anchor,
+    t,
+  );
+};
+
+/**
+ * Validate compatibility state against a freshly resolved canonical anchor.
+ *
+ * The stored numeric placement is never authoritative: callers should consume
+ * the newly resolved placement after this comparison succeeds.
+ */
+export const isCanonicalCameraRigViewpointPlacement = (
+  placement: CameraRigPlacement,
+  calibration: CameraRigViewpointArcCalibration,
+  anchor: CameraRigViewpointAnchor,
+): placement is ArcAnchorCameraRigPlacement => {
+  let expected: ResolvedCameraRigViewpointAnchor;
+  try {
+    expected = resolveCameraRigViewpointAnchor(calibration, anchor);
+  } catch {
+    return false;
+  }
+
+  try {
+    return (
+      placement.kind === "arc-anchor" &&
+      placement.anchor === expected.anchor &&
+      placement.metadata.identity === expected.metadata.identity &&
+      placement.metadata.relativeHeight === expected.metadata.relativeHeight &&
+      placement.arcPlane === expected.arcPlane &&
+      placementVectorApproximatelyEqual(
+        placement.arcCenterWorld,
+        expected.arcCenterWorld,
+      ) &&
+      placementVectorApproximatelyEqual(
+        placement.rigOriginWorld,
+        expected.rigOriginWorld,
+      ) &&
+      placementNumberApproximatelyEqual(placement.radiusMm, expected.radiusMm) &&
+      placementNumberApproximatelyEqual(
+        placement.arcAngleDeg,
+        expected.arcAngleDeg,
+      ) &&
+      placementNumberApproximatelyEqual(
+        placement.basePitchDeg,
+        expected.basePitchDeg,
+      )
+    );
+  } catch {
+    return false;
+  }
+};
+
+export const resolveCameraRigViewpointAnchors = (
+  calibration: CameraRigViewpointArcCalibration,
+): Readonly<Record<CameraRigViewpointAnchor, ResolvedCameraRigViewpointAnchor>> => ({
+  mid: resolveCameraRigViewpointAnchor(calibration, "mid"),
+  high: resolveCameraRigViewpointAnchor(calibration, "high"),
+  low: resolveCameraRigViewpointAnchor(calibration, "low"),
+});

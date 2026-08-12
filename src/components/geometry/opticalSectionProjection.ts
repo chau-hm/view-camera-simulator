@@ -5,6 +5,8 @@ import {
   deriveScheimpflugConstruction,
   type ScheimpflugConstruction,
 } from "../../core/optics/scheimpflugConstruction";
+import { transformRigLocalPointToWorld } from "../../core/optics/applyCameraBodyPitch";
+import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 
 export type ScreenPoint = { x: number; y: number };
@@ -36,6 +38,11 @@ export type OpticalSectionViewData = {
   projectWorldPoint: (point: Vec3) => ScreenPoint;
 };
 
+export type CameraBodyRailWorldEndpoints = {
+  rear: Vec3;
+  front: Vec3;
+};
+
 export type OpticalSectionData = {
   sectionOrigin: Vec3;
   sectionDepthDir: Vec3;
@@ -58,6 +65,28 @@ type SectionWindow = {
   maxDepth: number;
   minLateral: number;
   maxLateral: number;
+};
+
+/**
+ * Resolve the capable scene's fixed rail from the same canonical body
+ * transform consumed by the 3D hierarchy.
+ */
+export const resolveCameraBodyRailWorldEndpoints = (
+  opticsState: DerivedOpticsState,
+  scene: SceneDefinition,
+): CameraBodyRailWorldEndpoints | null => {
+  if (!scene.cameraBodyPitchCapability?.enabled) return null;
+  const rail = cameraMovementsGeometry.cameraBody.rail;
+  return {
+    rear: transformRigLocalPointToWorld(
+      rail.rearEndpointRigLocal,
+      opticsState.cameraRigTransform,
+    ),
+    front: transformRigLocalPointToWorld(
+      rail.frontEndpointRigLocal,
+      opticsState.cameraRigTransform,
+    ),
+  };
 };
 
 // Pure geometry helpers (no React and no scene-specific coordinate shortcuts).
@@ -330,25 +359,26 @@ export function computeOpticalSectionData({
   const diagramMinDepthMm = depthWindow.minMm;
   const diagramMaxDepthMm = depthWindow.maxMm;
   const sectionOrigin = opticsState.filmCenterWorld;
-  const sectionDepthDir = vecNorm(opticsState.filmNormalWorld);
+  const sectionDepthDir = { x: 0, y: 0, z: 1 };
   const construction = deriveScheimpflugConstruction({
     filmPlane: opticsState.filmPlane,
     lensPlane: opticsState.lensPlane,
     focusPlane: opticsState.focusPlane,
   });
   const constructionBasis = createConstructionBasis(opticsState, construction);
+  const cameraBodyRailWorld = resolveCameraBodyRailWorldEndpoints(opticsState, scene);
   const baseSections: Array<Omit<OpticalSection, "lateralMinMm" | "lateralMaxMm">> = [
     {
       id: "side",
       origin: sectionOrigin,
-      depthAxis: sectionDepthDir,
+      depthAxis: { x: 0, y: 0, z: 1 },
       lateralAxis: { x: 0, y: 1, z: 0 },
       normal: { x: 1, y: 0, z: 0 },
     },
     {
       id: "top",
       origin: sectionOrigin,
-      depthAxis: sectionDepthDir,
+      depthAxis: { x: 0, y: 0, z: 1 },
       lateralAxis: { x: 1, y: 0, z: 0 },
       normal: { x: 0, y: 1, z: 0 },
     },
@@ -364,6 +394,8 @@ export function computeOpticalSectionData({
     opticsState.filmCenterWorld,
     opticsState.lensCenterWorld,
     opticsState.focusPlane?.point,
+    cameraBodyRailWorld?.rear,
+    cameraBodyRailWorld?.front,
   ].filter((point): point is Vec3 => Boolean(point));
   const sections = baseSections.map((section): OpticalSection => {
     const configured = lateralWindow?.[section.id];
@@ -387,7 +419,6 @@ export function computeOpticalSectionData({
     };
   });
 
-  const filmCorners = Object.values(opticsState.filmPlaneCornersWorld);
   const planeDefinitions: Array<{ id: string; plane: Plane | null | undefined; color: string }> = [
     { id: "film", plane: opticsState.filmPlane, color: "#0284c7" },
     { id: "lens", plane: opticsState.lensPlane, color: "#475569" },
@@ -462,14 +493,29 @@ export function computeOpticalSectionData({
         ? { p1: mapToScreen(clippedAxis[0]), p2: mapToScreen(clippedAxis[1]) }
         : null;
 
-      const filmHalfSpan = Math.max(
-        ...filmCorners.map((point) =>
-          Math.abs(vecDot(vecSub(point, opticsState.filmCenterWorld), section.lateralAxis)),
-        ),
-      );
-      const filmSectionEndpoints = [-filmHalfSpan, filmHalfSpan].map((offset) =>
-        vecAdd(opticsState.filmCenterWorld, vecScale(section.lateralAxis, offset)),
-      );
+      const rearFrame = opticsState.rearStandardFrame;
+      const filmHeightMm = CAMERA_CONSTANTS.filmHeightMm;
+      const filmWidthMm = CAMERA_CONSTANTS.filmWidthMm;
+      const isSideView = section.id === "side";
+      const isTopView = section.id === "top";
+      let filmSectionEndpoints: Vec3[];
+      if (isSideView || isTopView) {
+        const filmLateralAxis = isSideView ? rearFrame.upWorld : rearFrame.rightWorld;
+        const filmHalfLengthMm = (isSideView ? filmHeightMm : filmWidthMm) / 2;
+        filmSectionEndpoints = [-filmHalfLengthMm, filmHalfLengthMm].map((offset) =>
+          vecAdd(opticsState.filmCenterWorld, vecScale(filmLateralAxis, offset)),
+        );
+      } else {
+        // Scheimpflug view: use the section lateral axis for the physical segment
+        const filmHalfSpan = Math.max(
+          ...Object.values(opticsState.filmPlaneCornersWorld).map((point) =>
+            Math.abs(vecDot(vecSub(point, opticsState.filmCenterWorld), section.lateralAxis)),
+          ),
+        );
+        filmSectionEndpoints = [-filmHalfSpan, filmHalfSpan].map((offset) =>
+          vecAdd(opticsState.filmCenterWorld, vecScale(section.lateralAxis, offset)),
+        );
+      }
       const lensTrace = planeTraceDirection(opticsState.lensPlane);
       const lensTraceLength = Math.hypot(lensTrace.depth, lensTrace.lateral) || 1;
       const lensPhysicalHalfLengthMm = CAMERA_CONSTANTS.frontStandardWidthMm / 2;
@@ -500,6 +546,16 @@ export function computeOpticalSectionData({
               (lensTrace.lateral / lensTraceLength) * lensPhysicalHalfLengthMm,
           }),
         },
+        ...(cameraBodyRailWorld
+          ? [
+              {
+                id: "camera-body-rail",
+                color: "#334155",
+                p1: mapToScreen(projectPointIntoSection(cameraBodyRailWorld.rear, section)),
+                p2: mapToScreen(projectPointIntoSection(cameraBodyRailWorld.front, section)),
+              },
+            ]
+          : []),
       ];
       const fovSegments = filmSectionEndpoints.flatMap((filmPoint) => {
         const directionWorld = vecNorm(vecSub(opticsState.lensCenterWorld, filmPoint));

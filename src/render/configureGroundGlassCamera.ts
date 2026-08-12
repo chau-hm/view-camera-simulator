@@ -2,6 +2,12 @@ import * as THREE from "three";
 import { WORLD_SCALE } from "./rttUtils";
 import type { DerivedOpticsState } from "../types/optics";
 
+export type GroundGlassCameraPose = {
+  positionWorld: [number, number, number];
+  upWorld: [number, number, number];
+  forwardWorld: [number, number, number];
+};
+
 export type GroundGlassCameraConfigResult =
   | {
       ok: true;
@@ -12,11 +18,24 @@ export type GroundGlassCameraConfigResult =
       near: number;
       far: number;
       determinant: number;
+      pose: GroundGlassCameraPose;
     }
   | {
       ok: false;
       reason: string;
     };
+
+export function readGroundGlassCameraPose(
+  camera: THREE.Camera,
+): GroundGlassCameraPose {
+  const forward = camera.getWorldDirection(new THREE.Vector3()).normalize();
+  const up = camera.up.clone().normalize();
+  return {
+    positionWorld: camera.position.toArray() as [number, number, number],
+    upWorld: up.toArray() as [number, number, number],
+    forwardWorld: forward.toArray() as [number, number, number],
+  };
+}
 
 /**
  * Configure a Three.js camera to use an off-axis projection matching the optics state.
@@ -133,5 +152,15 @@ export function configureGroundGlassCamera(
     return { ok: false, reason: "projection matrix determinant invalid" };
   }
 
-  return { ok: true, left, right, top, bottom, near, far, determinant: det };
+  return {
+    ok: true,
+    left,
+    right,
+    top,
+    bottom,
+    near,
+    far,
+    determinant: det,
+    pose: readGroundGlassCameraPose(camera),
+  };
 }

@@ -1,4 +1,13 @@
 import type { ApertureValue, CameraState } from "../types/camera";
+import type { CameraRigPlacement, Vec3 } from "../types/optics";
+
+/** Neutral body-pitch pivot used by scenes without the camera-body-pitch capability. */
+export const DEFAULT_CAMERA_BODY_PIVOT_WORLD: Vec3 = { x: 0, y: 0, z: 0 };
+export const DEFAULT_CAMERA_RIG_PLACEMENT: CameraRigPlacement = {
+  kind: "identity",
+  rigOriginWorld: { x: 0, y: 0, z: 0 },
+  basePitchDeg: 0,
+};
 
 export const CAMERA_CONSTANTS = {
   filmWidthMm: 127,
@@ -14,6 +23,7 @@ export const CAMERA_CONSTANTS = {
   swingMaxDeg: 10,
   apertureOptions: [5.6, 11, 22, 32] as const,
   tiltParallelThresholdDeg: 0.1,
+  tableTiltParallelThresholdDeg: 1e-6,
   defaultFocusDistanceMm: 2000,
 } as const;
 
@@ -28,9 +38,16 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
   focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
   aperture: 11,
   focusDistanceMm: CAMERA_CONSTANTS.defaultFocusDistanceMm,
+  focusStandard: "front",
   frontRiseMm: 0,
   frontTiltDeg: 0,
   frontSwingDeg: 0,
+  rearRiseMm: 0,
+  rearTiltDeg: 0,
+  cameraBodyPitchDeg: 0,
+  cameraBodyPivotWorld: DEFAULT_CAMERA_BODY_PIVOT_WORLD,
+  viewpointAnchor: "mid",
+  cameraRigPlacement: DEFAULT_CAMERA_RIG_PLACEMENT,
   activeSceneId: "architecture-rise",
   activeTaskId: "rise-01",
   mode: "guided",

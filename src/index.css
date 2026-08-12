@@ -108,6 +108,18 @@ button {
   box-shadow: var(--shadow-card);
 }
 
+.camera-calibration-workbench { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); font-size: 12px; }
+.camera-calibration-workbench__header { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.camera-calibration-workbench h4 { margin: 0; font-size: 14px; }
+.camera-calibration-workbench p { margin: 4px 0 8px; color: var(--text-muted); }
+.camera-calibration-workbench fieldset { margin: 10px 0 0; padding: 8px; border: 1px solid var(--border-soft); border-radius: 8px; min-width: 0; }
+.camera-calibration-workbench legend { padding: 0 4px; font-weight: 600; }
+.camera-calibration-workbench__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.camera-calibration-workbench__field { display: grid; gap: 3px; color: var(--text-muted); }
+.camera-calibration-workbench__field input, .camera-calibration-workbench__field select { width: 100%; min-height: 28px; padding: 3px 5px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); }
+.camera-calibration-workbench__status { overflow-wrap: anywhere; }
+@media (max-width: 1024px) { .camera-calibration-workbench__grid { grid-template-columns: 1fr; } }
+
 .simulator-header {
   height: 72px;
   background: var(--surface);
@@ -310,6 +322,9 @@ button {
 .optical-debug__group summary { cursor: pointer; font-weight:600; }
 .optical-debug__group-content { padding: 6px 0 0 6px; font-size: 13px; line-height:1.3; }
 .optical-debug-reference-list details { margin-bottom: 8px; }
+.optical-debug__layer { margin-bottom: 12px; }
+.optical-debug__layer h3 { margin: 0; font-size: 13px; color: var(--text-muted); }
+.optical-debug__layer > p { margin: 4px 0 8px; font-size: 12px; color: var(--text-muted); }
 
 
 /* Ground glass compact control bar (updated to row-based layout) */
@@ -371,6 +386,43 @@ button {
   max-width: 100%;
   max-height: 100%;
 }
+.groundglass-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sim-control-group-gap);
+  width: 100%;
+  min-width: 0;
+}
+.groundglass-comparison__intro {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.groundglass-comparison__heading {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--text-muted);
+}
+.groundglass-comparison__panel {
+  display: grid;
+  gap: var(--sim-control-gap);
+  align-content: start;
+  min-width: 0;
+}
+.groundglass-comparison__label {
+  min-height: 2.4em;
+  margin: -4px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+.groundglass-comparison__title {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--text-muted);
+}
 .groundglass-view-control { max-width: 104px; }
 .groundglass-focus-label {
   max-width: calc(100% - 128px);
@@ -399,6 +451,10 @@ button {
 
 @media (max-width: 700px) {
   .groundglass-control-groups { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 1024px) {
+  .groundglass-comparison { grid-template-columns: 1fr; }
 }
 
 .simulator-task-feedback-grid {
@@ -778,8 +834,22 @@ button {
 
 .control-label { display: grid; gap: 6px; font-size: 14px; color: var(--text); }
 .control-help { color: var(--text-muted); font-size: 12px; }
+fieldset[aria-label="Focus standard"] > .control-help { display: block; margin-top: 4px; line-height: 1.35; }
+fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
+.focus-parallax-help { display: grid; gap: 4px; margin-top: 4px; line-height: 1.35; }
 .control-stack { display: grid; gap: 8px; }
 .choice-list { display: grid; gap: 6px; }
+.camera-movement-controls { display: grid; gap: 12px; }
+.camera-movement-controls__intro { margin: 0; font-size: 13px; color: var(--text-muted); }
+.camera-movement-controls__section { display: grid; gap: 7px; min-width: 0; }
+.camera-movement-controls__heading { margin: 0; font-size: 13px; font-weight: 650; color: var(--text); }
+.camera-movement-controls__copy { margin: 0; font-size: 12px; line-height: 1.4; color: var(--text-muted); }
+.camera-movement-controls__slider { min-width: 0; }
+.camera-movement-controls__range-labels { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-muted); }
+.camera-movement-controls__range-labels span:nth-child(2) { color: var(--text); font-weight: 600; }
+.camera-movement-controls__standard { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.camera-movement-controls__standard legend { width: 100%; padding: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.camera-movement-controls__status { min-height: 20px; font-size: 13px; font-weight: 600; color: var(--text); }
 .choice-label { display: inline-flex; align-items: center; gap: var(--sim-control-gap); font-size: 14px; min-height: 24px; }
 .range-slider { width: 100%; accent-color: var(--primary); }
 
@@ -939,9 +1009,6 @@ button {
   top: var(--sim-panel-section-gap);
   z-index: 10;
 }
-
-.scene-status-row { display: flex; gap: var(--sim-control-group-gap); align-items: center; justify-content: space-between; }
-.scene-status-row p { margin: 0; font-size: 12px; color: var(--text-muted); }
 
 .geometry-viewport { container-type: inline-size; }
 .geometry-construction-split {

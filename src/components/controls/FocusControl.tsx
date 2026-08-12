@@ -16,12 +16,53 @@ type FocusControlProps = {
 export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: FocusControlProps) => {
   const focusControl = useAppStore(useShallow(selectFocusControlState));
   const setFocusDistance = useAppStore((state) => state.setFocusDistance);
+  const setFocusStandard = useAppStore((state) => state.setFocusStandard);
 
   const formatLastFiniteFocus = (value: number | null | undefined) => (typeof value === 'number' && Number.isFinite(value) ? formatMillimeter(value) : '—');
 
   return (
     <section aria-label={UI_COPY.controls.focusTitle}>
       {showTitle && <h3>{UI_COPY.controls.focusTitle}</h3>}
+      {focusControl.supportsFocusStandard && (
+        <fieldset aria-label="Focus standard">
+          <legend>Focus with</legend>
+          <label className="choice-label">
+            <input
+              className="form-radio"
+              type="radio"
+              name="focus-standard"
+              value="front"
+              checked={focusControl.focusStandard === "front"}
+              disabled={!focusEnabled}
+              onChange={() => setFocusStandard("front")}
+            />
+            Front standard
+          </label>
+          <label className="choice-label">
+            <input
+              className="form-radio"
+              type="radio"
+              name="focus-standard"
+              value="rear"
+              checked={focusControl.focusStandard === "rear"}
+              disabled={!focusEnabled}
+              onChange={() => setFocusStandard("rear")}
+            />
+            Rear standard
+          </label>
+          <small className="control-help">
+            {focusControl.focusStandard === "rear"
+              ? "Rear focusing moves the film while the lens/viewpoint stays fixed."
+              : "Front focusing moves the lens/viewpoint. The film stays fixed."}
+          </small>
+          {focusControl.activeSceneId === "focus-fundamentals-two-targets" && (
+            <small className="control-help focus-parallax-help">
+              <span>Watch the white frame (near gate) and far pointer.</span>
+              <span>Front focus changes their alignment; Rear focus keeps them aligned.</span>
+            </small>
+          )}
+        </fieldset>
+      )}
       <label className="control-label">
         {focusControl.focusMode === "infinity" ? (
           <>

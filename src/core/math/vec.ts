@@ -57,6 +57,10 @@ export const rotateAroundX = (value: Vec3, angleDeg: number): Vec3 => {
   return vec(value.x, value.y * cos - value.z * sin, value.y * sin + value.z * cos);
 };
 
+/** Rotate a point rigidly around an explicit world-space +X pivot. */
+export const rotatePointAroundX = (point: Vec3, pivotWorld: Vec3, angleDeg: number): Vec3 =>
+  add(pivotWorld, rotateAroundX(subtract(point, pivotWorld), angleDeg));
+
 export const rotateAroundY = (value: Vec3, angleDeg: number): Vec3 => {
   const angleRad = (angleDeg * Math.PI) / 180;
   const cos = Math.cos(angleRad);

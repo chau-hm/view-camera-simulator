@@ -1,7 +1,14 @@
 import { UI_COPY } from "../../ui/copy";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import type { RenderQualityProfile } from "../../types/ui";
-// focus display mapping is handled by createFocusAssistPass; keep helper available for lower-level tests
+import type { CameraMovementField } from "../../types/scene";
+import type { FocusStandard } from "../../types/camera";
+import type { CameraMovementPublicReadout } from "../../scenes/cameraMovementPublicTeaching";
+
+type ActiveMovementInfo = {
+  field: CameraMovementField;
+  value: number;
+};
 
 type GroundGlassReadoutsProps = {
   riseMm: number;
@@ -11,8 +18,26 @@ type GroundGlassReadoutsProps = {
   aperture: number | string;
   renderQuality: RenderQualityProfile;
   focusTargets?: { id: string; sharpnessPercent: number }[];
-  // new: RTT runtime info for RTT-capable scenes
+  /** Optional active movement info for single-movement scenes. */
+  activeMovement?: ActiveMovementInfo | null;
+  /** Optional public teaching readout for Understanding Camera Movements. */
+  teachingReadout?: CameraMovementPublicReadout | null;
+  /** Focus-standard teaching readout, used only by Focus Fundamentals. */
+  focusStandard?: FocusStandard;
   rttRuntimeInfo?: import("../../render/groundGlassRttDimensions").GroundGlassRttRuntimeInfo | null;
+};
+
+const MOVEMENT_LABELS: Record<CameraMovementField, string> = {
+  frontRiseMm: "Front Rise",
+  rearRiseMm: "Rear Rise",
+  frontTiltDeg: "Front Tilt",
+  rearTiltDeg: "Rear Tilt",
+  frontSwingDeg: "Front Swing",
+};
+
+const formatMovementValue = (field: CameraMovementField, value: number): string => {
+  if (field === "frontRiseMm" || field === "rearRiseMm") return formatMillimeter(value);
+  return formatDegrees(value);
 };
 
 export const CurrentSettingsReadout = ({
@@ -22,6 +47,9 @@ export const CurrentSettingsReadout = ({
   focusDistanceMm,
   aperture,
   renderQuality,
+  activeMovement,
+  teachingReadout,
+  focusStandard,
 }: GroundGlassReadoutsProps) => {
   return (
     <div aria-label="CurrentSettingsReadout" className="simulator-info-card simulator-info-card--settings">
@@ -30,9 +58,22 @@ export const CurrentSettingsReadout = ({
         <div className="current-settings-group">
           <dt>Movement</dt>
           <dd>
-            <div className="current-settings-row">Rise {formatMillimeter(riseMm)}</div>
-            <div className="current-settings-row">Tilt {formatDegrees(tiltDeg)}</div>
-            <div className="current-settings-row">Swing {formatDegrees(swingDeg)}</div>
+            {teachingReadout ? (
+              <div className="current-settings-row">
+                {teachingReadout.label}
+                {teachingReadout.value ? ` · ${teachingReadout.value}` : ""}
+              </div>
+            ) : activeMovement ? (
+              <div className="current-settings-row">
+                {MOVEMENT_LABELS[activeMovement.field]}: {formatMovementValue(activeMovement.field, activeMovement.value)}
+              </div>
+            ) : (
+              <>
+                <div className="current-settings-row">Rise {formatMillimeter(riseMm)}</div>
+                <div className="current-settings-row">Tilt {formatDegrees(tiltDeg)}</div>
+                <div className="current-settings-row">Swing {formatDegrees(swingDeg)}</div>
+              </>
+            )}
           </dd>
         </div>
 
@@ -51,9 +92,25 @@ export const CurrentSettingsReadout = ({
           </dd>
         </div>
       </dl>
+      {focusStandard && (
+        <dl className="current-settings-groups">
+          <div className="current-settings-group">
+            <dt>Focus method</dt>
+            <dd>
+              <div className="current-settings-row">
+                {focusStandard === "front" ? "Front standard" : "Rear standard"}
+              </div>
+              <div className="current-settings-row">
+                Movement · {focusStandard === "front" ? "Lens moves · Film fixed" : "Film moves · Lens/viewpoint fixed"}
+              </div>
+            </dd>
+          </div>
+        </dl>
+      )}
     </div>
   );
 };
+
 export const FocusTargetsReadout = ({
   focusTargets,
   metricLabel = "Focus",
@@ -69,7 +126,6 @@ export const FocusTargetsReadout = ({
       <div className="focus-target-list">
         {focusTargets && focusTargets.length > 0 ? (
           focusTargets.map((target) => {
-            // use the already-computed percentage and status from the focus assist pass
             const display = Math.max(0, Math.min(100, Math.round(target.sharpnessPercent ?? 0)));
             const statusText = target.status === 'sharp' ? 'Sharp' : target.status === 'acceptable' ? 'Acceptable' : 'Soft';
             const cls = `focus-target-row ${target.status === 'sharp' ? 'focus-target-row--sharp' : target.status === 'acceptable' ? 'focus-target-row--acceptable' : 'focus-target-row--soft'}`;
@@ -79,11 +135,9 @@ export const FocusTargetsReadout = ({
                   <span className="focus-target-row__name" title={target.id}>{formatTargetId(target.id)}</span>
                   <span className="focus-target-row__value">{display}%</span>
                 </div>
-
                 <div className="focus-target-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={display} aria-label={`${target.id} sharpness`}>
                   <div className="focus-target-progress__fill" style={{ width: `${display}%` }} />
                 </div>
-
                 <div className="focus-target-row__meta">
                   {metricLabel} · {statusText}
                   {target.id === closestTargetId ? " · Closest point" : ""}
@@ -100,7 +154,6 @@ export const FocusTargetsReadout = ({
 };
 
 function formatTargetId(id: string) {
-  // simple presentation cleanup: replace dashes with spaces and capitalize
   return id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
@@ -112,6 +165,8 @@ export const GroundGlassReadouts = ({
   aperture,
   renderQuality,
   focusTargets,
+  activeMovement,
+  focusStandard,
 }: GroundGlassReadoutsProps) => {
   return (
     <div aria-label="GroundGlassReadouts" style={{ display: 'grid', gap: '0.5rem' }}>
@@ -122,8 +177,9 @@ export const GroundGlassReadouts = ({
         focusDistanceMm={focusDistanceMm}
         aperture={aperture}
         renderQuality={renderQuality}
+        activeMovement={activeMovement}
+        focusStandard={focusStandard}
       />
-
       <FocusTargetsReadout focusTargets={focusTargets} />
     </div>
   );

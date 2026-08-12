@@ -29,6 +29,31 @@ export type GroundGlassDofUniformState = {
   displayBlurScale: number;
 };
 
+export function applyGroundGlassDofUniformState(
+  material: THREE.ShaderMaterial,
+  state: GroundGlassDofUniformState,
+): void {
+  material.uniforms.dofMode.value = state.mode;
+  material.uniforms.lensCenterWorld.value.set(...state.lensCenterWorld);
+  material.uniforms.focusPlanePoint.value.set(...state.focusPlanePoint);
+  material.uniforms.focusPlaneNormal.value.set(...state.focusPlaneNormal);
+  if (state.nearPlanePoint) material.uniforms.nearPlanePoint.value.set(...state.nearPlanePoint);
+  if (state.nearPlaneNormal) material.uniforms.nearPlaneNormal.value.set(...state.nearPlaneNormal);
+  if (state.farPlanePoint) material.uniforms.farPlanePoint.value.set(...state.farPlanePoint);
+  if (state.farPlaneNormal) material.uniforms.farPlaneNormal.value.set(...state.farPlaneNormal);
+  material.uniforms.hasFiniteFar.value = state.hasFiniteFarPlane ? 1 : 0;
+  material.uniforms.inverseProjectionMatrix.value.fromArray(state.inverseProjectionMatrix);
+  material.uniforms.cameraMatrixWorld.value.fromArray(state.cameraMatrixWorld);
+  material.uniforms.maximumBlurRadiusPx.value = state.maximumBlurRadiusPx;
+  material.uniforms.displayBlurScale.value = state.displayBlurScale;
+  material.uniforms.focalLengthMm.value = state.focalLengthMm;
+  material.uniforms.filmWidthMm.value = state.filmWidthMm;
+  material.uniforms.fNumber.value = state.fNumber;
+  material.uniforms.imageDistanceMm.value = state.imageDistanceMm;
+  material.uniforms.renderWidth.value = state.renderWidth;
+  material.uniforms.renderHeight.value = state.renderHeight;
+}
+
 export function createGroundGlassDofUniformState(
   opticsState: DerivedOpticsState,
   camera: THREE.PerspectiveCamera,

@@ -2,9 +2,11 @@ import type { DerivedOpticsState } from "../types/optics";
 import { GroundGlassRTT } from "./GroundGlassRTT";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { useAppStore } from "../state/appStore";
+import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
 
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
+  focalLengthMm: number;
   sceneId?: string;
   apertureNumber: number;
   previewMode: "raw" | "upright";
@@ -20,10 +22,13 @@ export type GroundGlassRenderSurfaceProps = {
   heightPx: number;
   renderQuality: import("../types/ui").RenderQualityProfile;
   zoomEnabled?: boolean;
+  channel?: GroundGlassRttChannel;
+  presentationRegion?: import("../scenes/cameraMovementSceneCalibration").CameraMovementPresentationRegion;
 };
 
 export const GroundGlassRenderSurface = ({
   opticsState,
+  focalLengthMm,
   sceneId,
   apertureNumber,
   previewMode,
@@ -39,12 +44,20 @@ export const GroundGlassRenderSurface = ({
   heightPx,
   renderQuality,
   zoomEnabled,
+  channel = "default",
+  presentationRegion,
 }: GroundGlassRenderSurfaceProps) => {
-  const rttRuntimeInfo = useAppStore((state) => state.groundGlassRttRuntimeInfo);
+  const rttRuntimeInfo = useAppStore((state) =>
+    channel === "default"
+      ? state.groundGlassRttRuntimeInfo
+      : state.groundGlassRttRuntimeInfoByChannel?.[channel] ?? null,
+  );
   if (isGroundGlassRttScene(sceneId)) {
     return (
       <div
         data-testid="ground-glass-rtt"
+        data-rtt-channel={channel}
+        data-rtt-scene-id={sceneId}
         data-rtt-camera-ok={rttRuntimeInfo?.cameraConfigurationOk === undefined ? undefined : String(rttRuntimeInfo.cameraConfigurationOk)}
         data-rtt-depth-available={rttRuntimeInfo?.depthTextureAvailable === undefined ? undefined : String(rttRuntimeInfo.depthTextureAvailable)}
         data-rtt-uniforms-finite={rttRuntimeInfo?.uniformsFinite === undefined ? undefined : String(rttRuntimeInfo.uniformsFinite)}
@@ -56,6 +69,18 @@ export const GroundGlassRenderSurface = ({
         data-rtt-raw-non-background={rttRuntimeInfo?.rawNonBackgroundPixelCount}
         data-rtt-final-non-background={rttRuntimeInfo?.finalNonBackgroundPixelCount}
         data-rtt-resource-generation={rttRuntimeInfo?.resourceGeneration}
+        data-rtt-owner-id={rttRuntimeInfo?.ownerId}
+        data-rtt-focal-length-mm={rttRuntimeInfo?.focalLengthMm}
+        data-rtt-lattice-edge-count={rttRuntimeInfo?.latticeEdgeCount}
+        data-rtt-lattice-geometry-id={rttRuntimeInfo?.latticeGeometryId}
+        data-rtt-lattice-geometry-key={rttRuntimeInfo?.latticeGeometryKey}
+        data-rtt-lattice-presentation-key={rttRuntimeInfo?.latticePresentationKey}
+        data-rtt-lattice-resource-key={rttRuntimeInfo?.latticeResourceKey}
+        data-rtt-lattice-presentation-region={rttRuntimeInfo?.latticePresentationRegion}
+        data-rtt-lattice-subject-generation={rttRuntimeInfo?.latticeSubjectGeneration}
+        data-rtt-camera-position={rttRuntimeInfo?.cameraPositionWorld?.join(",")}
+        data-rtt-camera-up={rttRuntimeInfo?.cameraUpWorld?.join(",")}
+        data-rtt-camera-forward={rttRuntimeInfo?.cameraForwardWorld?.join(",")}
         data-rtt-logical-width={rttRuntimeInfo?.logicalWidthPx}
         data-rtt-logical-height={rttRuntimeInfo?.logicalHeightPx}
         data-rtt-internal-width={rttRuntimeInfo?.internalWidthPx}
@@ -81,6 +106,7 @@ export const GroundGlassRenderSurface = ({
       >
         <GroundGlassRTT
           opticsState={opticsState}
+          focalLengthMm={focalLengthMm}
           sceneId={sceneId}
           widthPx={widthPx}
           heightPx={heightPx}
@@ -92,6 +118,8 @@ export const GroundGlassRenderSurface = ({
           focusAssistEnabled={focusAssistEnabled}
           renderQuality={renderQuality}
           zoomEnabled={zoomEnabled}
+          channel={channel}
+          presentationRegion={presentationRegion}
         />
       </div>
     );

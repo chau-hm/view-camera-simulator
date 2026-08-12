@@ -2,12 +2,24 @@ import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   createObserverViewPresets,
+  createCameraInspectionView,
+  resolveCameraInspectionFocusTargetWorld,
   resolveStableCameraInspectionTarget,
   translateObserverViewToTarget,
   type ObserverViewState,
 } from "../../render/sceneViewFraming";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import {
+  CAMERA_MOVEMENT_SCENE_CALIBRATION,
+} from "../../scenes/cameraMovementSceneCalibration";
+import {
+  CAMERA_BODY_PIVOT_RIG_LOCAL,
+  CAMERA_RIG_VIEWPOINT_ANCHORS,
+} from "../../scenes/understandingCameraMovementsGeometry";
+import { transformRigLocalPointToWorld } from "../../core/optics/applyCameraBodyPitch";
 import type { CameraState } from "../../types/camera";
+import type { CameraRigTransform } from "../../types/optics";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const sceneView: ObserverViewState = {
@@ -25,6 +37,72 @@ const cameraState = (overrides: Partial<CameraState> = {}): CameraState => ({
 });
 
 describe("3D observer view framing", () => {
+  const cameraRigTransformFor = (
+    anchor: "mid" | "high" | "low",
+  ): CameraRigTransform => {
+    const placement = CAMERA_RIG_VIEWPOINT_ANCHORS[anchor];
+    return {
+      rigOriginWorld: placement.rigOriginWorld,
+      basePitchDeg: placement.basePitchDeg,
+      bodyPitchDeg: anchor === "high" ? 34 : anchor === "low" ? -34 : 0,
+      bodyPitchPivotRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
+    };
+  };
+
+  it.each(["mid", "high", "low"] as const)(
+    "resolves the %s camera inspection target from the canonical rig transform",
+    (anchor) => {
+      const transform = cameraRigTransformFor(anchor);
+      const expectedPivot = transformRigLocalPointToWorld(
+        transform.bodyPitchPivotRigLocal,
+        transform,
+      );
+      const actualTarget = resolveCameraInspectionFocusTargetWorld(transform);
+
+      expect(actualTarget[0]).toBeCloseTo(expectedPivot.x * 0.001, 10);
+      expect(actualTarget[1]).toBeCloseTo(expectedPivot.y * 0.001, 10);
+      expect(actualTarget[2]).toBeCloseTo(expectedPivot.z * 0.001, 10);
+    },
+  );
+
+  it("keeps camera inspection framing distance and offset when targeting a moved rig", () => {
+    const baseView = createCameraInspectionView(
+      understandingCameraMovementsScene,
+      {
+        position: [2.43, 0.64, -0.68],
+        target: [0, 0, 0.8],
+      },
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
+    );
+    const highTarget = resolveCameraInspectionFocusTargetWorld(
+      cameraRigTransformFor("high"),
+    );
+    const inspectionView = createCameraInspectionView(
+      understandingCameraMovementsScene,
+      {
+        position: [2.43, 0.64, -0.68],
+        target: [0, 0, 0.8],
+      },
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
+      highTarget,
+    );
+    const baseOffset = baseView.position.map(
+      (value, index) => value - baseView.target[index],
+    );
+    const inspectionOffset = inspectionView.position.map(
+      (value, index) => value - inspectionView.target[index],
+    );
+
+    expect(inspectionView.target).toEqual(highTarget);
+    inspectionOffset.forEach((value, index) => {
+      expect(value).toBeCloseTo(baseOffset[index], 10);
+    });
+    expect(Math.hypot(...inspectionOffset)).toBeCloseTo(
+      Math.hypot(...baseOffset),
+      10,
+    );
+  });
+
   it("preserves the canonical scene view and frames the camera around its stable body anchor", () => {
     const expectedCenter = resolveStableCameraInspectionTarget(
       architectureRiseScene.id,

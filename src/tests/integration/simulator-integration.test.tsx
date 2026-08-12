@@ -54,10 +54,10 @@ describe("phase 12 integration", () => {
     expect(useAppStore.getState().camera.frontSwingDeg).toBeCloseTo(2.7, 8);
   });
 
-  it("TST-INT-004 rise sync updates 3D front Y readout", () => {
+  it("TST-INT-004 rise sync updates Optical Debug front Y", () => {
     renderWorkspace("guided", "architecture-rise", "rise-01");
     fireEvent.change(screen.getByLabelText("Rise"), { target: { value: "20" } });
-    expect(screen.getByTestId("scene-front-y-mm")).toHaveTextContent("20.0 mm");
+    expect(screen.getByTestId("optical-debug-front-y-mm")).toHaveTextContent("20.0 mm");
   });
 
   it("TST-INT-005 tilt sync updates side diagram focus line", () => {

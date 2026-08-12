@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DiagramLegend } from "../geometry/DiagramPrimitives";
 import {
   computeOpticalSectionData,
@@ -12,8 +12,11 @@ import type { GeometryView } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
 import { UI_COPY } from "../../ui/copy";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { supportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
 import { useAppStore } from "../../state/appStore";
+import { deriveFocusFundamentalsReferenceOptics } from "../../scenes/focusFundamentalsPresentation";
 
 type GeometryViewportProps = {
   opticsState: DerivedOpticsState;
@@ -21,13 +24,16 @@ type GeometryViewportProps = {
   scene: SceneDefinition;
   riseMm?: number;
   showHeader?: boolean;
+  /** Public teaching movement summary for the active case. */
+  movementSummary?: string | null;
 };
 
 const SVG_WIDTH = 460;
 const SVG_HEIGHT = 280;
 
-export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, showHeader }: GeometryViewportProps) => {
+export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, showHeader, movementSummary }: GeometryViewportProps) => {
   const setGeometryView = useAppStore((state) => state.setGeometryView);
+  const focalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const diagramRef = useRef<HTMLDivElement | null>(null);
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
   const [fitMode, setFitMode] = useState<"scene" | "construction">("scene");
@@ -80,13 +86,15 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
     if (geometryView !== "scheimpflug") setFitMode("scene");
   }, [constructionWindow, fitMode, geometryView, setGeometryView, subjectGeometryView]);
 
-  const sceneDepthWindow =
-    profile.depthWindow.mode === "fixed"
-      ? { minMm: profile.depthWindow.minMm, maxMm: profile.depthWindow.maxMm }
-      : {
-          minMm: Math.min(-250, scene.bounds.min.z - profile.depthWindow.marginMm),
-          maxMm: scene.bounds.max.z + profile.depthWindow.marginMm,
-        };
+  const sceneDepthWindow = useMemo<{ minMm: number; maxMm: number }>(() => {
+    if (profile.depthWindow.mode === "fixed") {
+      return { minMm: profile.depthWindow.minMm, maxMm: profile.depthWindow.maxMm };
+    }
+    return {
+      minMm: Math.min(-250, scene.bounds.min.z - profile.depthWindow.marginMm),
+      maxMm: scene.bounds.max.z + profile.depthWindow.marginMm,
+    };
+  }, [profile.depthWindow, scene.bounds]);
 
   const sceneProjection = computeOpticalSectionData({
     opticsState,
@@ -100,7 +108,43 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
 
   const splitSvgWidth = Math.max(280, Math.floor((svgSize.width - 72) / 2));
   const splitSvgHeight = Math.max(190, Math.min(250, svgSize.height));
-  const cameraProjection = constructionWindow
+
+  // Original (zero-movement) optics and projection for camera-movement comparison scenes
+  const originalRef = useMemo<{ optics: DerivedOpticsState; projection: typeof sceneProjection } | null>(() => {
+    let originalOptics: DerivedOpticsState | null = null;
+    if (scene.movementCapabilities) {
+      const originalCamera = {
+        ...DEFAULT_CAMERA_STATE,
+        ...scene.cameraPreset,
+        frontRiseMm: 0,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
+        rearRiseMm: 0,
+        rearTiltDeg: 0,
+        activeSceneId: scene.id,
+      };
+      originalOptics = deriveOpticsState(originalCamera, scene);
+    } else if (scene.id === "focus-fundamentals-two-targets") {
+      originalOptics = deriveFocusFundamentalsReferenceOptics(
+        opticsState,
+        scene,
+        focalLengthMm,
+      );
+    }
+    if (!originalOptics) return null;
+    const originalProjection = computeOpticalSectionData({
+      opticsState: originalOptics,
+      scene,
+      svgWidth: svgSize.width,
+      svgHeight: svgSize.height,
+      depthWindow: sceneDepthWindow,
+      lateralWindow: profile.lateralWindow,
+      paddingPx: profile.diagramPaddingPx,
+    });
+    return { optics: originalOptics, projection: originalProjection };
+  }, [focalLengthMm, opticsState, scene, svgSize.width, svgSize.height, sceneDepthWindow, profile.lateralWindow, profile.diagramPaddingPx]);
+
+const cameraProjection = constructionWindow
     ? computeOpticalSectionData({
         opticsState,
         scene,
@@ -200,7 +244,9 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
             ? "Side view"
             : effectiveGeometryView === "top"
               ? "Top view"
-              : "Perpendicular Scheimpflug section"} | Rise: {(riseMm ?? 0).toFixed(1)} mm | {UI_COPY.simulator.tiltLabel}: {opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | {UI_COPY.simulator.swingLabel}: {opticsState.diagnostics.swingAngleDeg.toFixed(1)}°
+              : "Perpendicular Scheimpflug section"}{movementSummary
+            ? ` | ${movementSummary}`
+            : ` | Rise: ${(riseMm ?? 0).toFixed(1)} mm | ${UI_COPY.simulator.tiltLabel}: ${opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | ${UI_COPY.simulator.swingLabel}: ${opticsState.diagnostics.swingAngleDeg.toFixed(1)}°`}
       </p>
 
       <div ref={diagramRef} className="geometry-diagram-container" style={{ flex: 1, minHeight: 0 }}>
@@ -247,6 +293,8 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
             opticsState={opticsState}
             svgWidth={svgSize.width}
             svgHeight={svgSize.height}
+            referenceProjection={originalRef?.projection ?? null}
+              referenceOpticsState={originalRef?.optics ?? null}
           />
         )}
       </div>

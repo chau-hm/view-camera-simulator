@@ -1,95 +1,138 @@
 ---
 name: vcs-orchestrate-pr
-description: Plan and coordinate multi-file or multi-domain work in the View Camera Simulator repository. Use for new scene rebuilds, cross-cutting refactors, PR planning, large fixes, work that spans optics, Three.js/RTT, UI/tasks, or test infrastructure, and requests to split a long prompt across Codex agents or models.
+description: Coordinate multi-domain or high-risk View Camera Simulator work, decompose it into bounded packets, and control integration without over-orchestrating local fixes.
 ---
 
-# Orchestrate View Camera Simulator PRs
+# VCS Orchestrate PR
 
-Act as the project coordinator. Decompose and integrate; do not become the default implementation owner.
+## Purpose
 
-## Start with bounded discovery
+Coordinate work only when orchestration adds real decision, ownership, or integration value.
 
-Inspect:
+This skill is an escalation tool, not the default entry point.
 
-```bash
-git status --short
-git branch --show-current
-git log -5 --oneline
-git diff --stat <base>...HEAD
+## First decision: should this task be orchestrated?
+
+Before decomposing anything, check whether the task qualifies as a micro edit or focused fix under `AGENTS.md`.
+
+Do **not** orchestrate when:
+
+- the requested behaviour is explicit;
+- the root cause is known or locally obvious;
+- one concern can be fixed and proven locally;
+- no shared domain contract changes;
+- no multi-agent coordination is required.
+
+If the task can be completed safely as a micro edit, recommend or return the lighter path instead of creating work packets.
+
+Do not create artificial packets merely to use the harness.
+
+## Use this skill when
+
+- multiple domains must change together;
+- ownership is ambiguous after focused inspection;
+- integration order matters;
+- parallel work needs non-overlapping file ownership;
+- optics/geometry, renderer, UI/task, and test contracts must be reconciled;
+- a high-risk PR needs explicit merge gates.
+
+## Discovery
+
+Inspect only what is needed to classify and bound the work:
+
+- current branch and intended base;
+- working-tree status;
+- focused diff or failing surface;
+- relevant architecture and tests;
+- current PR review/CI evidence when applicable.
+
+Do not read the entire repository by default.
+
+## Routing rule
+
+A file path does not automatically imply a specialist.
+
+Invoke a specialist only if the task depends on that specialist's reasoning or invariants.
+
+Examples:
+
+- local copy change in a renderer component → no renderer specialist;
+- changing render-target ownership → `$vcs-threejs-rtt`;
+- established camera constant adjustment → local/focused path;
+- deriving a camera solution from physical geometry → `$vcs-optics-geometry`.
+
+## Work packets
+
+Create two to four packets only when decomposition is useful.
+
+Each packet must include:
+
+```text
+WORK PACKET
+
+ID:
+Objective:
+Owner skill:
+Branch and base:
+Known evidence:
+Allowed files or ownership:
+Do not modify:
+Required behaviour:
+Required validation:
+Dependencies:
+Output:
 ```
 
-Read `AGENTS.md`, the task request, and only the most relevant source and test files.
+Rules:
 
-Do not read every project document before classifying the task.
+- one concern per packet;
+- explicit, non-overlapping ownership where possible;
+- no complete project history;
+- no full diffs;
+- no speculative extra work;
+- more than four packets usually means the PR should be split.
 
-## Classify complexity
+## Parallel work
 
-Read `references/routing-matrix.md`.
+Parallelize only when:
 
-Choose one mode:
+- file ownership does not overlap;
+- dependencies are resolved;
+- shared contracts are already established;
+- integration order is explicit.
 
-- **Small fix** — one concern, usually one implementation skill plus verification.
-- **Standard PR** — two related concerns, one or two implementation skills plus verification.
-- **High-risk simulation PR** — optics, projection, RTT, shaders, or resource lifecycle; require domain analysis and independent verification.
+Do not parallelize optics and renderer implementation while their shared coordinate/state contract is still unresolved.
 
-## Produce work packets
+## Integration
 
-Use `references/work-packet-template.md`.
+After implementation:
 
-Each packet must define:
+- review compact handoffs;
+- reconcile shared assumptions;
+- inspect final focused diff;
+- run validation appropriate to the task level;
+- use `$vcs-verify-pr` only when a merge verdict or explicit independent review is needed.
 
-- one objective
-- one owner skill
-- allowed files or ownership boundary
-- forbidden scope
-- known evidence
-- acceptance criteria
-- focused validation
-- dependencies on other packets
+Do not automatically invoke a reviewer merely because implementation completed.
 
-Prefer two to four packets. More than four usually indicates the PR should be split.
+## Stop condition
 
-Parallelize only packets with non-overlapping files and no unresolved design dependency.
+Do not broaden the task beyond the requested behaviour.
 
-## Model routing
+If a local implementation proves sufficient:
 
-Recommend, but do not pretend to enforce, the model choice:
+- stop;
+- do not refactor unrelated modules;
+- do not add general infrastructure;
+- do not create extra packets to consume available agents.
 
-- strongest reasoning model: orchestration, optics, renderer architecture, final review
-- balanced coding model: UI, tasks, state, focused tests
-- lightweight model: search, inventories, documentation, mechanical test updates
-
-Escalate to a stronger model when a task involves ambiguous geometry, hidden lifecycle state, conflicting evidence, or a failed implementation attempt.
-
-## Integration gates
-
-Before implementation:
-
-- resolve sign conventions and canonical ownership
-- identify shared files
-- prevent two agents from editing the same file concurrently
-- identify which tests prove the behavior rather than merely exercise it
-
-Before full CI:
-
-- require compact handoffs from every packet
-- inspect `git diff --check`
-- run focused tests
-- resolve overlaps and stale assumptions
-
-Before merge:
-
-- invoke `$vcs-verify-pr`
-- require a merge verdict independent from implementation agents
-
-## Output contract
+## Output
 
 Return:
 
-1. complexity mode
-2. shared baseline
-3. work packets
-4. dependency order
-5. model recommendation per packet
-6. integration sequence
-7. merge gates
+- task level;
+- why orchestration is or is not necessary;
+- packet list when used;
+- dependencies/integration order;
+- required validation;
+- known risks.

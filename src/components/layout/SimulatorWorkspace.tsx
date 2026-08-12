@@ -4,7 +4,10 @@ import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { useAppStore } from "../../state/appStore";
-import { selectDerivedOpticsState } from "../../state/selectors";
+import {
+  selectDerivedOpticsState,
+  selectEffectiveCameraMovementCalibration,
+} from "../../state/selectors";
 import type { SimulatorMode } from "../../types/camera";
 import type { RenderQualityProfile } from "../../types/ui";
 import { UI_COPY } from "../../ui/copy";
@@ -12,7 +15,10 @@ import { AppBrand } from "./AppBrand";
 import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
+import { CameraMovementTeachingControls } from "../controls/CameraMovementTeachingControls";
 import { MovementControls } from "../controls/MovementControls";
+import { MovementSelector } from "../controls/MovementSelector";
+import { SingleMovementControl } from "../controls/SingleMovementControl";
 import { ResetControls } from "../controls/ResetControls";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
@@ -22,11 +28,21 @@ import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
 import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
+import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
+import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
+import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
+import {
+  formatCameraMovementLessonReadout,
+  formatCameraMovementPublicReadout,
+  matchCameraMovementTeachingCase,
+  type CameraMovementPublicCaseId,
+} from "../../scenes/cameraMovementPublicTeaching";
 
 type SimulatorWorkspaceProps = {
   mode: SimulatorMode;
   sceneId: string;
   taskId: string | null;
+  calibrationEnabled?: boolean;
   simulateAssetFailure: boolean;
 };
 
@@ -36,13 +52,31 @@ export const SimulatorWorkspace = ({
   mode,
   sceneId,
   taskId,
+  calibrationEnabled = false,
   simulateAssetFailure,
 }: SimulatorWorkspaceProps) => {
   const setMode = useAppStore((state) => state.setMode);
   const setActiveScene = useAppStore((state) => state.setActiveScene);
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
+  const clearCameraMovementCalibrationSession = useAppStore(
+    (state) => state.clearCameraMovementCalibrationSession,
+  );
+  const clearSimulatorRouteInitialization = useAppStore(
+    (state) => state.clearSimulatorRouteInitialization,
+  );
   const camera = useAppStore((state) => state.camera);
+  const targetRegion = useAppStore((state) => state.scene.targetRegion);
+  const calibrationSession = useAppStore(
+    (state) => state.cameraMovementCalibrationSession,
+  );
+  const effectiveCameraMovementCalibration = useAppStore(
+    selectEffectiveCameraMovementCalibration,
+  );
+  const selectedMovement = useAppStore((state) => state.selectedMovement);
+  const overlayMenuResetGeneration = useAppStore(
+    (state) => state.ui.overlayMenuResetGeneration,
+  );
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
   const [expandedViewport, setExpandedViewport] = useState<ExpandedViewport>(null);
   const [restoreViewportFocus, setRestoreViewportFocus] = useState(true);
@@ -66,7 +100,7 @@ export const SimulatorWorkspace = ({
     const initRoute = (modeParam: SimulatorMode, sceneParam: string, taskParam: string | null | undefined) => {
       const initializeSimulatorRoute = useAppStore.getState().initializeSimulatorRoute;
       if (initializeSimulatorRoute) {
-        initializeSimulatorRoute({ mode: modeParam, sceneId: sceneParam, taskId: taskParam ?? null });
+        initializeSimulatorRoute({ mode: modeParam, sceneId: sceneParam, taskId: taskParam ?? null, calibrationEnabled });
       } else {
         // fall back to individual setters if the initialize action isn't available
         setMode(modeParam);
@@ -76,7 +110,24 @@ export const SimulatorWorkspace = ({
     };
 
     initRoute(mode, sceneId, taskId);
-  }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId]);
+  }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId, calibrationEnabled]);
+
+  useEffect(
+    () => () => {
+      if (calibrationEnabled) clearCameraMovementCalibrationSession();
+      // Restore Neutral on leave-and-return for the public teaching route only.
+      // Other free scenes intentionally preserve their in-memory state on
+      // leave-and-return, so the route-init guard is cleared solely here.
+      if (
+        sceneId === "understanding-camera-movements" &&
+        mode === "free" &&
+        !calibrationEnabled
+      ) {
+        clearSimulatorRouteInitialization();
+      }
+    },
+    [calibrationEnabled, clearCameraMovementCalibrationSession, clearSimulatorRouteInitialization, mode, sceneId],
+  );
 
   const closeGeometryPanel = useCallback((restoreFocus = true) => {
     setShowGeometryPanel(false);
@@ -177,9 +228,91 @@ export const SimulatorWorkspace = ({
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
 
-  const opticsState = selectDerivedOpticsState(camera);
+  const opticsState = selectDerivedOpticsState(
+    camera,
+    effectiveCameraMovementCalibration,
+  );
+  const activeTeachingCaseId = useMemo<CameraMovementPublicCaseId | null>(() => {
+    if (
+      camera.activeSceneId !== "understanding-camera-movements" ||
+      calibrationSession.active
+    ) {
+      return null;
+    }
+    return matchCameraMovementTeachingCase({
+      anchor: camera.viewpointAnchor,
+      targetRegion,
+      camera,
+    });
+  }, [
+    camera,
+    calibrationSession.active,
+    targetRegion,
+  ]);
+  const teachingReadout = useMemo(
+    () =>
+      camera.cameraMovementLessonState
+        ? formatCameraMovementLessonReadout(
+            camera.cameraMovementLessonState,
+            {
+              frontRiseMm: camera.frontRiseMm,
+              rearRiseMm: camera.rearRiseMm,
+            },
+          )
+        : activeTeachingCaseId
+          ? formatCameraMovementPublicReadout(activeTeachingCaseId)
+          : null,
+    [
+      activeTeachingCaseId,
+      camera.cameraMovementLessonState,
+      camera.frontRiseMm,
+      camera.rearRiseMm,
+    ],
+  );
+  const cameraMovementCalibrationDiagnostics = useMemo(() => {
+    if (
+      !calibrationEnabled ||
+      mode !== "free" ||
+      sceneId !== "understanding-camera-movements"
+    ) {
+      return undefined;
+    }
+    const renderModel = resolveCameraMovementLatticeRenderModel(
+      effectiveCameraMovementCalibration,
+    );
+    return calculateCameraMovementProjectionDiagnostics({
+      effectiveCalibration: effectiveCameraMovementCalibration,
+      lattice: renderModel.lattice,
+      calibrationIdentity: {
+        sessionActive: calibrationSession.active,
+        revision: calibrationSession.revision,
+        geometryId: renderModel.geometryId,
+      },
+      currentAnchor: camera.viewpointAnchor,
+      targetRegion,
+      opticsState,
+    });
+  }, [
+    calibrationEnabled,
+    calibrationSession.active,
+    calibrationSession.revision,
+    camera.viewpointAnchor,
+    effectiveCameraMovementCalibration,
+    mode,
+    opticsState,
+    sceneId,
+    targetRegion,
+  ]);
   const lockReason = UI_COPY.controls.guidedControlLockedReason;
+  const controlPolicy = safeScene.cameraControlPolicy ?? {};
+  const focusLocked = controlPolicy.focusDistance === "fixed";
+  const apertureLocked = controlPolicy.aperture === "fixed";
+  const infinityResetHidden = controlPolicy.infinityReset === false;
   const [rawRttDebug, setRawRttDebug] = useState(false);
+  const showPublicTeachingControls =
+    sceneId === "understanding-camera-movements" &&
+    mode === "free" &&
+    !calibrationEnabled;
 
   // enabled controls currently depend only on mode, task metadata, and active scene.
   // Avoid depending on the entire camera object because movement/focus changes should not recompute this set.
@@ -268,6 +401,7 @@ export const SimulatorWorkspace = ({
               </div>
 
               <SceneViewport
+                overlayMenuResetGeneration={overlayMenuResetGeneration}
                 scene={safeScene}
                 opticsState={opticsState}
                 renderQuality={renderQuality}
@@ -342,6 +476,17 @@ export const SimulatorWorkspace = ({
               focusDistanceMm={camera.focusDistanceMm}
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
+              activeMovement={selectedMovement ? { field: selectedMovement, value: (() => {
+                switch (selectedMovement) {
+                  case "frontRiseMm": return camera.frontRiseMm;
+                  case "rearRiseMm": return camera.rearRiseMm;
+                  case "frontTiltDeg": return camera.frontTiltDeg;
+                  case "rearTiltDeg": return camera.rearTiltDeg;
+                  case "frontSwingDeg": return camera.frontSwingDeg;
+                }
+              })() } : null}
+              teachingReadout={teachingReadout}
+              focusStandard={camera.activeSceneId === "focus-fundamentals-two-targets" ? camera.focusStandard : undefined}
             />
 
             <FocusTargetsReadout
@@ -386,23 +531,41 @@ export const SimulatorWorkspace = ({
           <section aria-label="Camera Controls">
             <div className="aside-header">
               <h3 style={{ margin: 0 }}>Camera Controls</h3>
-              <button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>Infinity Reset</button>
+              {!infinityResetHidden && (<button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>Infinity Reset</button>)}
             </div>
 
             <div style={{ marginTop: 8 }}>
-              <div className="sim-section">
-                <div className="sim-section-label">Movement</div>
-                <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
-              </div>
+              {showPublicTeachingControls ? (
+                <div className="sim-section">
+                  <CameraMovementTeachingControls />
+                </div>
+              ) : (safeScene.movementCapabilities && selectedMovement) ? (
+                <>
+                  <div className="sim-section">
+                    <MovementSelector
+                      available={safeScene.movementCapabilities.available}
+                      selected={selectedMovement}
+                    />
+                  </div>
+                  <div className="sim-section">
+                    <SingleMovementControl movement={selectedMovement} />
+                  </div>
+                </>
+              ) : (
+                <div className="sim-section">
+                  <div className="sim-section-label">Movement</div>
+                  <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
+                </div>
+              )}
 
               <div className="sim-section">
                 <div className="sim-section-label">Focus</div>
-                <FocusControl focusEnabled={enabledControls.has("focusDistance")} lockReason={lockReason} showTitle={false} />
+                <FocusControl focusEnabled={enabledControls.has("focusDistance") && !focusLocked} lockReason={focusLocked ? "Focus is fixed for this lesson" : lockReason} showTitle={false} />
               </div>
 
               <div className="sim-section">
                 <div className="sim-section-label">Aperture</div>
-                <ApertureControl apertureEnabled={enabledControls.has("aperture")} lockReason={lockReason} showTitle={false} />
+                <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? "Aperture is fixed for this lesson" : lockReason} showTitle={false} />
               </div>
 
               <div className="sim-section reset" style={{ paddingBottom: 0 }}>
@@ -423,6 +586,7 @@ export const SimulatorWorkspace = ({
               {rawRttDebug ? (
                 <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)', marginTop: 6 }}>Depth-of-field and focus blur are disabled in Raw RTT mode.</div>
               ) : null}
+              {calibrationEnabled && mode === "free" && sceneId === "understanding-camera-movements" ? <CameraMovementCalibrationWorkbench diagnostics={cameraMovementCalibrationDiagnostics} /> : null}
             </div>
           </section>
         </aside>
@@ -454,7 +618,7 @@ export const SimulatorWorkspace = ({
             </button>
           </div>
 
-          <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} riseMm={camera.frontRiseMm} />
+          <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} riseMm={camera.frontRiseMm} movementSummary={teachingReadout ? `${teachingReadout.label}${teachingReadout.value ? ` · ${teachingReadout.value}` : ""}` : null} />
         </div>
       )}
 

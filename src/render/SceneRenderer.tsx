@@ -6,10 +6,11 @@ import type { RefObject } from "react";
 import { Camera, DoubleSide, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { OrbitControls as OrbitControlsController } from "three-stdlib";
+import type { CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
-import { CAMERA_CONSTANTS } from "../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../utils/constants";
 import { UI_COPY } from "../ui/copy";
 import { getRenderQualitySettings } from "./renderQuality";
 import { getVisibleSceneLegendKeys } from "./sceneLegendHelpers";
@@ -19,15 +20,33 @@ import {
   type ScenePlaneOverlayGeometry,
 } from "./scenePlaneOverlayGeometry";
 import { createScheimpflugConstructionGeometry } from "./scheimpflugConstructionGeometry";
-import { quaternionForPlaneNormal } from "./planeOrientation";
-import { getRegisteredSceneSubject } from "./sceneSubjectRegistry";
+import { quaternionForPlaneNormal, resolveFrontStandardRenderTransform, resolveRearStandardRenderTransform } from "./planeOrientation";
+import { deriveOpticsState } from "../core/optics/deriveOpticsState";
+import {
+  getRegisteredSceneSubject,
+  getSceneSubjectRegistration,
+} from "./sceneSubjectRegistry";
 import {
   createCameraInspectionView,
-  resolveStableCameraInspectionTarget,
+  resolveCameraInspectionFocusTargetWorld,
   translateObserverViewToTarget,
   type ObserverViewState,
   type SceneViewFocus,
 } from "./sceneViewFraming";
+import { useAppStore } from "../state/appStore";
+import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
+import { CameraBodyAssembly } from "./CameraBodyAssembly";
+import {
+  resolveCameraMovementLatticeRenderModel,
+  type CameraMovementLatticeRenderModel,
+} from "./cameraMovementLatticeRenderModel";
+import { FocusFundamentalsTeachingCues } from "./FocusFundamentalsTeachingCues";
+import { resolveFocusStandardVisualState } from "./focusStandardPresentation";
+import {
+  deriveFocusFundamentalsReferenceOptics,
+  resolveFocusFundamentalsActiveStandard,
+  resolveFocusFundamentalsTeachingCue,
+} from "../scenes/focusFundamentalsPresentation";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -47,7 +66,32 @@ type SceneRendererProps = {
   containerStyle?: React.CSSProperties;
 };
 
+export const shouldRenderReferenceCamera = (
+  scene: SceneDefinition,
+  cameraMovementRenderModel?: CameraMovementLatticeRenderModel,
+): boolean =>
+  Boolean(scene.movementCapabilities) &&
+  (
+    getSceneSubjectRegistration(scene.id)?.resolveShowReferenceCamera?.({
+      cameraMovementRenderModel,
+    }) ??
+    getSceneSubjectRegistration(scene.id)?.showReferenceCamera ??
+    true
+  );
+
 const WORLD_SCALE = 0.001;
+
+export const serializeFiniteRenderVector = (
+  value: { x: number; y: number; z: number },
+): string | undefined => {
+  const components = [value.x, value.y, value.z];
+  return components.every(Number.isFinite)
+    ? components.map((component) => component.toFixed(6)).join(",")
+    : undefined;
+};
+
+const serializeFiniteRenderNumber = (value: number): string | undefined =>
+  Number.isFinite(value) ? value.toFixed(6) : undefined;
 
 type OrbitControlsProps = {
   enablePan?: boolean;
@@ -206,59 +250,73 @@ export const OCCLUDED_PLANE_MATERIAL_SETTINGS = {
   polygonOffsetUnits: -1,
 } as const;
 
-const RearStandard = ({ opticsState, isFocusFundamentals }: { opticsState?: DerivedOpticsState; isFocusFundamentals?: boolean }) => {
-  // For Focus Fundamentals keep the original datum (film at z=0)
-  if (isFocusFundamentals || !opticsState) {
-    const rearZ = isFocusFundamentals ? 0 : -CAMERA_CONSTANTS.focalLengthMm;
+const RearStandard = ({
+  opticsState,
+  active = false,
+}: {
+  opticsState?: DerivedOpticsState;
+  active?: boolean;
+}) => {
+  const visual = resolveFocusStandardVisualState("rear", active ? "rear" : null);
+  // Fallback only when no valid opticsState exists
+  if (!opticsState) {
     return (
       <>
-        <mesh position={[0, 0, toWorld(rearZ)]}>
+        <mesh position={[0, 0, toWorld(-CAMERA_CONSTANTS.focalLengthMm)]}>
           <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
-          <meshStandardMaterial color="#4b5563" />
+          <meshStandardMaterial color={visual.bodyColor} />
         </mesh>
       </>
     );
   }
 
-  // For architecture and other scene-aware optics, position the rear standard at the film center
-  const filmPos = vecToWorld(opticsState.filmCenterWorld);
-  const filmNormal = opticsState.filmNormalWorld ?? { x: 0, y: 0, z: 1 };
-
+  // Use the canonical frame transform so that the orientation
+  // preserves right/up/normal axes without reconstruction from normal alone.
+  const renderTransform = resolveRearStandardRenderTransform(opticsState.rearStandardFrame);
   return (
-    <group position={filmPos} ref={(g) => {
-      if (!g) return;
-      // orient so the group's +Z axis aligns with the film normal
-      g.lookAt(filmPos[0] + filmNormal.x, filmPos[1] + filmNormal.y, filmPos[2] + filmNormal.z);
-    }}>
+    <group position={renderTransform.position} quaternion={renderTransform.quaternion}>
       <mesh>
         <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
-        <meshStandardMaterial color="#4b5563" />
+        <meshStandardMaterial
+          color={visual.bodyColor}
+          emissive={visual.emissiveColor}
+          emissiveIntensity={visual.emissiveIntensity}
+        />
       </mesh>
     </group>
   );
 };
 
-const FrontStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
-  const frontPosition = vecToWorld(opticsState.lensCenterWorld);
-  const frontRotation: [number, number, number] = [
-    (opticsState.diagnostics.tiltAngleDeg * Math.PI) / 180,
-    (opticsState.diagnostics.swingAngleDeg * Math.PI) / 180,
-    0,
-  ];
+const FrontStandard = ({
+  opticsState,
+  active = false,
+}: {
+  opticsState: DerivedOpticsState;
+  active?: boolean;
+}) => {
+  const visual = resolveFocusStandardVisualState("front", active ? "front" : null);
+  const transform = resolveFrontStandardRenderTransform(
+    opticsState.lensCenterWorld,
+    opticsState.lensNormalWorld,
+  );
 
   return (
-    <group position={frontPosition} rotation={frontRotation}>
+    <group position={transform.position} quaternion={transform.quaternion}>
       <mesh>
         <boxGeometry args={[toWorld(CAMERA_CONSTANTS.frontStandardWidthMm), toWorld(CAMERA_CONSTANTS.frontStandardHeightMm), toWorld(12)]} />
-        <meshStandardMaterial color="#6b7280" />
+        <meshStandardMaterial
+          color={visual.bodyColor}
+          emissive={visual.emissiveColor}
+          emissiveIntensity={visual.emissiveIntensity}
+        />
       </mesh>
       <mesh position={[0, 0, toWorld(8)]}>
         <boxGeometry args={[toWorld(100), toWorld(100), toWorld(8)]} />
-        <meshStandardMaterial color="#9ca3af" />
+        <meshStandardMaterial color={visual.detailColor} />
       </mesh>
       <mesh position={[0, 0, toWorld(16)]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[toWorld(18), toWorld(18), toWorld(18), 24]} />
-        <meshStandardMaterial color="#1f2937" />
+        <meshStandardMaterial color={visual.lensColor} />
       </mesh>
     </group>
   );
@@ -714,20 +772,36 @@ const OpticalGeometryOverlays = ({
 
 const SceneContent = ({
   scene,
+  cameraMovementRenderModel,
   opticsState,
   showFocusPlaneOverlay,
   showDofOverlay,
   showOpticalGeometry,
   showScheimpflugConstruction,
+  focusFocalLengthMm,
 }: {
   scene: SceneDefinition;
+  cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
   opticsState: DerivedOpticsState;
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
   showOpticalGeometry: boolean;
   showScheimpflugConstruction: boolean;
+  focusFocalLengthMm: number;
 }) => {
-  const RegisteredSubject = getRegisteredSceneSubject(scene.id);
+  const registration = getSceneSubjectRegistration(scene.id);
+  const RegisteredSubject = registration?.SceneSubject;
+  const isFocusFundamentals = scene.id === "focus-fundamentals-two-targets";
+  const focusFundamentalsReferenceOptics = isFocusFundamentals
+    ? deriveFocusFundamentalsReferenceOptics(opticsState, scene, focusFocalLengthMm)
+    : null;
+  const activeFocusStandard = isFocusFundamentals
+    ? resolveFocusFundamentalsActiveStandard(opticsState)
+    : null;
+  const referenceCameraVisible = shouldRenderReferenceCamera(
+    scene,
+    cameraMovementRenderModel,
+  );
 
   return (
     <>
@@ -736,9 +810,30 @@ const SceneContent = ({
     <directionalLight position={[2, 4, 2]} intensity={0.7} />
     <hemisphereLight args={["#ffffff", "#d1d5db", 0.45]} />
     <SceneAssets assets={scene.assets} />
-    <RearStandard opticsState={opticsState} isFocusFundamentals={scene.id === "focus-fundamentals-two-targets"} />
-    <FrontStandard opticsState={opticsState} />
-    {scene.id !== "focus-fundamentals-two-targets" && <Bellows opticsState={opticsState} />}
+    {scene.cameraBodyPitchCapability?.enabled ? (
+      <CameraBodyAssembly
+        opticsState={opticsState}
+        showBellows={scene.id !== "focus-fundamentals-two-targets"}
+      />
+    ) : (
+      <>
+        <RearStandard
+          opticsState={opticsState}
+          active={activeFocusStandard === "rear"}
+        />
+        <FrontStandard
+          opticsState={opticsState}
+          active={activeFocusStandard === "front"}
+        />
+        {scene.id !== "focus-fundamentals-two-targets" && <Bellows opticsState={opticsState} />}
+      </>
+    )}
+    {focusFundamentalsReferenceOptics ? (
+      <FocusFundamentalsTeachingCues
+        opticsState={opticsState}
+        referenceOpticsState={focusFundamentalsReferenceOptics}
+      />
+    ) : null}
     <OpticalGeometryOverlays
       scene={scene}
       opticsState={opticsState}
@@ -757,7 +852,129 @@ const SceneContent = ({
         </mesh>
       ))
     )}
+    {referenceCameraVisible ? <OriginalGhostCamera scene={scene} /> : null}
     </>
+  );
+};
+
+const OriginalGhostCamera = ({
+  scene,
+}: {
+  scene: SceneDefinition;
+}) => {
+  const hasCapabilities = Boolean(scene.movementCapabilities);
+
+  // Always derive original (zero-movement) optics from the scene preset
+  const originalOptics = useMemo(() => {
+    if (!hasCapabilities) return null;
+    const cameraState: CameraState = {
+      ...DEFAULT_CAMERA_STATE,
+      ...scene.cameraPreset,
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      rearRiseMm: 0,
+      rearTiltDeg: 0,
+      cameraBodyPitchDeg: 0,
+      activeSceneId: scene.id,
+    };
+    return deriveOpticsState(cameraState, scene);
+  }, [hasCapabilities, scene]);
+
+  if (!hasCapabilities || !originalOptics) return null;
+
+  if (scene.cameraBodyPitchCapability?.enabled) {
+    return (
+      <group name="original-ghost-camera">
+        <CameraBodyAssembly
+          opticsState={originalOptics}
+          ghost
+          showBellows={scene.id !== "focus-fundamentals-two-targets"}
+        />
+      </group>
+    );
+  }
+
+  return (
+    <group name="original-ghost-camera">
+      <GhostRearStandard opticsState={originalOptics} />
+      <GhostFrontStandard opticsState={originalOptics} />
+      {scene.id !== "focus-fundamentals-two-targets" && (
+        <GhostBellows opticsState={originalOptics} />
+      )}
+    </group>
+  );
+};
+
+const GhostRearStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
+  const renderTransform = resolveRearStandardRenderTransform(opticsState.rearStandardFrame);
+  return (
+    <group position={renderTransform.position} quaternion={renderTransform.quaternion}>
+      <mesh renderOrder={10}>
+        <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
+        <meshStandardMaterial
+          color="#94a3b8"
+          transparent
+          opacity={0.35}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  );
+};
+
+const GhostFrontStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
+  const transform = resolveFrontStandardRenderTransform(
+    opticsState.lensCenterWorld,
+    opticsState.lensNormalWorld,
+  );
+  return (
+    <group position={transform.position} quaternion={transform.quaternion} renderOrder={10}>
+      <mesh>
+        <boxGeometry args={[toWorld(CAMERA_CONSTANTS.frontStandardWidthMm), toWorld(CAMERA_CONSTANTS.frontStandardHeightMm), toWorld(12)]} />
+        <meshStandardMaterial color="#94a3b8" transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0, toWorld(8)]}>
+        <boxGeometry args={[toWorld(100), toWorld(100), toWorld(8)]} />
+        <meshStandardMaterial color="#cbd5e1" transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0, toWorld(16)]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[toWorld(18), toWorld(18), toWorld(18), 24]} />
+        <meshStandardMaterial color="#6b7280" transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+};
+
+const GhostBellows = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
+  const film = vecToWorld(opticsState.filmCenterWorld);
+  const lens = vecToWorld(opticsState.lensCenterWorld);
+
+  return (
+    <group name="original-ghost-bellows">
+      <mesh
+        position={[
+          (film[0] + lens[0]) / 2,
+          (film[1] + lens[1]) / 2,
+          (film[2] + lens[2]) / 2,
+        ]}
+        renderOrder={10}
+      >
+        <boxGeometry
+          args={[
+            toWorld(CAMERA_CONSTANTS.frontStandardWidthMm) * 0.85,
+            toWorld(CAMERA_CONSTANTS.frontStandardHeightMm) * 0.85,
+            Math.hypot(lens[0] - film[0], lens[1] - film[1], lens[2] - film[2]),
+          ]}
+        />
+        <meshStandardMaterial
+          color="#94a3b8"
+          transparent
+          opacity={0.2}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
   );
 };
 
@@ -777,9 +994,30 @@ export const SceneRenderer = ({
   onAssetError,
   containerStyle,
 }: SceneRendererProps) => {
+  const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
+  const configuredTargetRegion = useAppStore((state) => state.scene.targetRegion);
+  const effectiveCameraMovementCalibration = useAppStore(
+    selectEffectiveCameraMovementCalibration,
+  );
+  const interactiveLatticeRuntimeInfo = useAppStore(
+    (state) => state.interactiveLatticeRuntimeInfo,
+  );
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
+  const cameraMovementRenderModel = resolveCameraMovementLatticeRenderModel(
+    effectiveCameraMovementCalibration,
+  );
+  const renderScene = useMemo(
+    () =>
+      scene.id === "understanding-camera-movements"
+        ? {
+            ...scene,
+            bounds: cameraMovementRenderModel.subjectBounds,
+          }
+        : scene,
+    [cameraMovementRenderModel, scene],
+  );
   const observerCameraPosition = useMemo(
     () => vecToWorld(scene.cameraPlacement.position),
     [scene.cameraPlacement.position],
@@ -793,12 +1031,21 @@ export const SceneRenderer = ({
     [observerCameraPosition, observerCameraTarget],
   );
   const cameraInspectionTarget = useMemo(
-    () => resolveStableCameraInspectionTarget(scene.id, CAMERA_CONSTANTS.focalLengthMm),
-    [scene.id],
+    () =>
+      scene.id === "understanding-camera-movements"
+        ? resolveCameraInspectionFocusTargetWorld(opticsState.cameraRigTransform)
+        : undefined,
+    [opticsState.cameraRigTransform, scene.id],
   );
   const cameraObserverView = useMemo(
-    () => createCameraInspectionView(sceneObserverView, cameraInspectionTarget),
-    [cameraInspectionTarget, sceneObserverView],
+    () =>
+      createCameraInspectionView(
+        scene,
+        sceneObserverView,
+        activeFocalLengthMm,
+        cameraInspectionTarget,
+      ),
+    [activeFocalLengthMm, cameraInspectionTarget, scene, sceneObserverView],
   );
   const [observerViewState, setObserverViewState] = useState<ObserverViewState>(sceneObserverView);
   const activeAssets = useMemo(
@@ -846,7 +1093,7 @@ export const SceneRenderer = ({
     isInfinityFocus: Boolean(opticsState.diagnostics.isInfinityFocus),
     hasFiniteFarPlane: Boolean(opticsState.depthOfFieldFarPlane),
   });
-  const overlayBounds = getScenePlaneOverlayBounds(scene);
+  const overlayBounds = getScenePlaneOverlayBounds(renderScene);
   const focusOverlayVertexCount = opticsState.focusPlane
     ? createScenePlaneOverlayGeometry(opticsState.focusPlane, overlayBounds, { extendToPlanePoint: scene.id !== "table-tilt" })?.verticesMm.length ?? 0
     : 0;
@@ -857,14 +1104,74 @@ export const SceneRenderer = ({
     ? createScenePlaneOverlayGeometry(opticsState.depthOfFieldFarPlane, overlayBounds, { extendToPlanePoint: scene.id !== "table-tilt" })?.verticesMm.length ?? 0
     : 0;
   const scheimpflugConstructionGeometry = showScheimpflugConstruction
-    ? createScheimpflugConstructionGeometry(opticsState, scene)
+    ? createScheimpflugConstructionGeometry(opticsState, renderScene)
     : null;
+  const subjectRegistration = getSceneSubjectRegistration(scene.id);
+  const focusFundamentalsReferenceOptics = scene.id === "focus-fundamentals-two-targets"
+    ? deriveFocusFundamentalsReferenceOptics(opticsState, scene, activeFocalLengthMm)
+    : null;
+  const focusFundamentalsTeachingCue = focusFundamentalsReferenceOptics
+    ? resolveFocusFundamentalsTeachingCue(opticsState, focusFundamentalsReferenceOptics)
+    : null;
+  const referenceCameraVisible = shouldRenderReferenceCamera(
+    renderScene,
+    cameraMovementRenderModel,
+  );
 
   return (
     <div
       ref={containerRef}
       data-testid="scene-canvas"
       data-scene-subject-id={getRegisteredSceneSubject(scene.id) ? scene.id : "fallback"}
+      data-lattice-edge-count={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.edgeCount
+          : subjectRegistration?.canonicalLattice?.edgeCount
+      }
+      data-lattice-target-region={
+        subjectRegistration?.canonicalLattice ? configuredTargetRegion : undefined
+      }
+      data-mounted-lattice={
+        scene.id === "understanding-camera-movements"
+          ? String(interactiveLatticeRuntimeInfo?.mounted === true)
+          : undefined
+      }
+      data-mounted-lattice-geometry-id={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.geometryId
+          : undefined
+      }
+      data-mounted-lattice-geometry-key={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.geometryKey
+          : undefined
+      }
+      data-mounted-lattice-presentation-key={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.presentationKey
+          : undefined
+      }
+      data-mounted-lattice-resource-key={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.resourceKey
+          : undefined
+      }
+      data-mounted-lattice-edge-count={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.edgeCount
+          : undefined
+      }
+      data-mounted-lattice-presentation-region={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.presentationRegion
+          : undefined
+      }
+      data-mounted-lattice-generation={
+        scene.id === "understanding-camera-movements"
+          ? interactiveLatticeRuntimeInfo?.generation
+          : undefined
+      }
+      data-reference-camera-visible={String(referenceCameraVisible)}
       data-focus-overlay-vertices={focusOverlayVertexCount}
       data-near-dof-overlay-vertices={nearDofOverlayVertexCount}
       data-far-dof-overlay-vertices={farDofOverlayVertexCount}
@@ -879,6 +1186,62 @@ export const SceneRenderer = ({
       data-scheimpflug-focus-vertices={scheimpflugConstructionGeometry?.focusPlane.verticesMm.length ?? 0}
       data-scheimpflug-line-points={scheimpflugConstructionGeometry ? 2 : 0}
       data-lens-plane-normal={`${opticsState.lensPlane.normal.x.toFixed(6)},${opticsState.lensPlane.normal.y.toFixed(6)},${opticsState.lensPlane.normal.z.toFixed(6)}`}
+      data-camera-rig-origin={serializeFiniteRenderVector(
+        opticsState.cameraRigTransform.rigOriginWorld,
+      )}
+      data-camera-rig-placement-kind={opticsState.cameraRigPlacement.kind}
+      data-camera-rig-anchor={
+        opticsState.cameraRigPlacement.kind === "arc-anchor"
+          ? opticsState.cameraRigPlacement.anchor
+          : undefined
+      }
+      data-camera-rig-base-pitch-deg={serializeFiniteRenderNumber(
+        opticsState.cameraRigTransform.basePitchDeg,
+      )}
+      data-camera-body-pitch-deg={serializeFiniteRenderNumber(
+        opticsState.cameraRigTransform.bodyPitchDeg,
+      )}
+      data-camera-body-pivot-world={serializeFiniteRenderVector(
+        opticsState.cameraBodyPivotWorld,
+      )}
+      data-camera-lens-center-world={serializeFiniteRenderVector(
+        opticsState.lensCenterWorld,
+      )}
+      data-camera-film-center-world={serializeFiniteRenderVector(
+        opticsState.filmCenterWorld,
+      )}
+      data-focus-standard-selected={
+        opticsState.diagnostics.requestedFocusStandard ?? opticsState.diagnostics.focusStandard
+      }
+      data-focus-standard-resolved={opticsState.diagnostics.focusStandard}
+      data-focus-teaching-active-standard={focusFundamentalsTeachingCue?.activeStandard}
+      data-focus-teaching-current-position={
+        focusFundamentalsTeachingCue
+          ? serializeFiniteRenderVector(focusFundamentalsTeachingCue.currentPosition)
+          : undefined
+      }
+      data-focus-teaching-reference-position={
+        focusFundamentalsTeachingCue
+          ? serializeFiniteRenderVector(focusFundamentalsTeachingCue.referencePosition)
+          : undefined
+      }
+      data-focus-teaching-signed-movement-mm={
+        focusFundamentalsTeachingCue
+          ? serializeFiniteRenderNumber(focusFundamentalsTeachingCue.signedMovementMm)
+          : undefined
+      }
+      data-focus-teaching-displacement-mm={
+        focusFundamentalsTeachingCue
+          ? serializeFiniteRenderNumber(focusFundamentalsTeachingCue.distanceMm)
+          : undefined
+      }
+      data-focus-teaching-movement-visible={
+        focusFundamentalsTeachingCue
+          ? String(focusFundamentalsTeachingCue.distanceMm > 0.5)
+          : undefined
+      }
+      data-optics-fallback-applied={String(opticsState.diagnostics.fallbackApplied)}
+      data-optics-fallback-reason={opticsState.diagnostics.fallbackReason ?? undefined}
       data-view-focus={viewFocus}
       data-orbit-target={observerViewState.target.map((value) => value.toFixed(6)).join(",")}
       data-observer-camera-position={observerViewState.position.map((value) => value.toFixed(6)).join(",")}
@@ -894,12 +1257,14 @@ export const SceneRenderer = ({
         {/**/}
         <LegendUpdater containerRef={containerRef} opticsState={opticsState} setLegendPositions={setLegendPositions} visibleKeys={visibleLegendKeys} showLegends={showLegends} />
         <SceneContent
-          scene={{ ...scene, assets: activeAssets }}
+          scene={{ ...renderScene, assets: activeAssets }}
+          cameraMovementRenderModel={cameraMovementRenderModel}
           opticsState={opticsState}
           showFocusPlaneOverlay={showFocusPlaneOverlay}
           showDofOverlay={showDofOverlay}
           showOpticalGeometry={Boolean(showOpticalGeometry)}
           showScheimpflugConstruction={Boolean(showScheimpflugConstruction)}
+          focusFocalLengthMm={activeFocalLengthMm}
         />
         <OrbitControls
           ref={controlsRef}

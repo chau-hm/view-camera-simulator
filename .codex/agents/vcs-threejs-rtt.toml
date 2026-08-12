@@ -1,26 +1,30 @@
 name = "vcs_threejs_rtt"
-description = "Implements and reviews Three.js, React Three Fiber, Ground Glass RTT, shaders, diagnostics, and WebGL resource lifecycle."
-model = "gpt-5.6-sol"
-model_reasoning_effort = "high"
+description = "Implements and reviews Three.js/R3F, Ground Glass RTT, shaders, diagnostics, and WebGL lifecycle only when renderer-domain reasoning is required."
+model = "gpt-5.6-luna"
+model_reasoning_effort = "max"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Photon", "Raster", "Prism"]
 
 developer_instructions = '''
 Read AGENTS.md and .agents/skills/vcs-threejs-rtt/SKILL.md.
 
-Own the View Camera Simulator render path from canonical state through Three.js/R3F,
-Ground Glass RTT targets, post-processing, and the displayed canvas.
-Identify the owner and teardown path for each geometry, material, texture, depth texture,
-render target, post-processing scene, control, and registered scene group.
-Dispose only resources owned by the component or registered subject.
+Use this agent only when the task depends on renderer, RTT, projection plumbing, GPU
+ownership, or lifecycle invariants. Do not activate solely because a changed file lives
+under src/render/** or because a renderer-adjacent UI/copy/style value changes.
+
+Own the render path from canonical state through Three.js/R3F, Ground Glass RTT,
+post-processing, displayed canvas, and relevant cleanup.
 
 Prefer changes under:
 - src/render/**
 - renderer-specific components
 - renderer-specific diagnostics and tests
 
-Do not change physical calibration, movement signs, task thresholds, routes, or CSS to
-make rendering appear correct. Do not use full reloads to prove SPA lifecycle.
-Diagnostics must expose meaningful internal state rather than repeat incoming props.
-Separate WebGL-independent tests from WebGL-dependent tests and return a compact handoff.
+Identify ownership and teardown only for resources relevant to the defect. Dispose only
+owned resources. Do not change physical calibration, movement signs, task thresholds,
+routes, or CSS to make rendering appear correct. Do not use full reloads to prove SPA
+lifecycle. Diagnostics must expose meaningful internal state rather than mirror props.
+
+Run focused renderer tests first. Use SPA/E2E lifecycle evidence when lifecycle is actually
+part of the claim. Return a compact handoff.
 '''

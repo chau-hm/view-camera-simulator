@@ -20,10 +20,10 @@ describe("scenes page", () => {
     ).toBeInTheDocument();
     const openButtons = await screen.findAllByText(/Open Scene/);
     expect(openButtons.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/Compare two targets at different distances/)).toBeInTheDocument();
+    expect(screen.getByText(/Compare Front and Rear focusing on two depths/)).toBeInTheDocument();
     expect(screen.getByText("Focus")).toBeInTheDocument();
-    expect(screen.getByText("Aperture")).toBeInTheDocument();
-    expect(screen.getByText("Depth of field")).toBeInTheDocument();
+    expect(screen.getByText("Front / Rear standards")).toBeInTheDocument();
+    expect(screen.getByText("Parallax alignment")).toBeInTheDocument();
     const focusHeading = await screen.findByRole("heading", {
       name: "Focus Fundamentals — Two Targets",
       level: 2,
@@ -88,6 +88,7 @@ describe("scenes page", () => {
     );
 
     expect(publicSceneIds).toEqual([
+      "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
       "table-tilt",
@@ -101,6 +102,7 @@ describe("scenes page", () => {
     expect(
       screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
     ).toEqual([
+      "Understanding Camera Movements",
       "Focus Fundamentals — Two Targets",
       "Architecture Rise",
       "Table Tilt",

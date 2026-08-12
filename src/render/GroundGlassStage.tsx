@@ -59,6 +59,9 @@ type GroundGlassStageProps = {
   onViewportSizeChange?: (size: { width: number; height: number }) => void;
   /** Changes when navigation or preview state must discard the current interaction. */
   interactionResetKey?: string;
+  /** Distinguishes comparison panes while preserving the default label. */
+  accessibleLabel?: string;
+  stageLabel?: string;
 };
 
 export const GroundGlassStage = ({
@@ -68,7 +71,10 @@ export const GroundGlassStage = ({
   onZoomChange,
   onViewportSizeChange,
   interactionResetKey,
+  accessibleLabel,
+  stageLabel,
 }: GroundGlassStageProps) => {
+  const resolvedStageLabel = stageLabel ?? accessibleLabel ?? "Ground Glass";
   // Pan is normalized to the current viewport, so resize only needs to update
   // the viewport bounds; denormalization always produces a newly clamped value.
   const [normalizedPan, setNormalizedPan] = useState<PanOffset>(ZERO_PAN);
@@ -309,7 +315,7 @@ export const GroundGlassStage = ({
         data-dragging={isDragging ? "true" : "false"}
         data-pointer-active={dragRef.current.pointerId === null ? "false" : "true"}
         data-pointer-captured={dragRef.current.captured ? "true" : "false"}
-        aria-label={zoomEnabled ? "Zoom out Ground Glass" : "Zoom in Ground Glass"}
+        aria-label={zoomEnabled ? `Zoom out ${resolvedStageLabel}` : `Zoom in ${resolvedStageLabel}`}
         onKeyDown={handleKeyDown}
         style={{
           position: "relative",
@@ -347,7 +353,7 @@ export const GroundGlassStage = ({
       <button
         type="button"
         className="btn btn--compact btn--secondary groundglass-view-control"
-        aria-label={zoomEnabled ? "Reset Ground Glass view" : "Zoom in Ground Glass view"}
+        aria-label={zoomEnabled ? `Reset ${resolvedStageLabel} view` : `Zoom in ${resolvedStageLabel} view`}
         onClick={zoomEnabled ? resetGroundGlassInteraction : () => requestZoomIn()}
         style={{
           position: "absolute",

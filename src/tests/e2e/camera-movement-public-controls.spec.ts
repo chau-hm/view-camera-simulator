@@ -1,0 +1,248 @@
+import { test, expect, type Page } from "@playwright/test";
+
+const disableOpticalGeometry = async (page: Page) => {
+  const scene = page.locator('[data-testid="scene-canvas"]');
+  if ((await scene.getAttribute("data-optical-geometry-visible")) !== "true") return;
+  const trigger = page.getByRole("button", { name: "View overlays" });
+  if (await trigger.isVisible()) await trigger.click();
+  await page.getByRole("button", { name: "Hide Optical geometry" }).click();
+  await expect(scene).toHaveAttribute("data-optical-geometry-visible", "false");
+};
+
+const expectGroundGlassValid = async (page: Page) => {
+  const rtt = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
+  await expect(rtt).toHaveCount(1);
+  await expect(page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel^="camera-movement-"]')).toHaveCount(0);
+  await expect(rtt).toBeVisible({ timeout: 15000 });
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 10000 });
+  await expect(rtt).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 5000 });
+  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 10000 });
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 5000 });
+};
+
+test("public camera movement controls on the normal route", async ({ page }) => {
+  test.setTimeout(150_000);
+  const pageErrors: string[] = [];
+  const unexpectedGraphicsMessages: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    const text = message.text();
+    if (!(message.type() === "warning" || message.type() === "error") || !/(WebGL|THREE|GPU)/i.test(text)) return;
+    if (/GPU stall due to ReadPixels/i.test(text)) return;
+    unexpectedGraphicsMessages.push(`${message.type()}: ${text}`);
+  });
+
+  await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
+  const scene = page.locator('[data-testid="scene-canvas"]');
+  await expect(scene).toHaveAttribute("data-mounted-lattice", "true", { timeout: 15000 });
+  await disableOpticalGeometry(page);
+  await expectGroundGlassValid(page);
+
+  // 1. Viewpoint starts at neutral and no workbench is visible.
+  const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
+  const tilt = page.getByRole("slider", { name: "Tilt" });
+  const framing = page.getByRole("slider", { name: "Vertical framing" });
+  const tiltStandards = page.getByRole("group", { name: "Tilt standard" });
+  const framingStandards = page.getByRole("group", { name: "Vertical framing standard" });
+  await expect(viewpoint).toHaveValue("0");
+  await expect(tilt).toHaveValue("0");
+  await expect(framing).toHaveValue("0");
+  await expect(tiltStandards.getByRole("radio", { name: "Front standard" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "A — Front tilt" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "C3 — Higher viewpoint" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "C1 — Front rise" })).toHaveCount(0);
+  await expect(page.getByText("Camera Movement Calibration")).toHaveCount(0);
+  await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
+  await expect(scene).toHaveAttribute("data-lattice-target-region", "middle");
+
+  // 2. Select a continuous Front tilt; the rig remains at Mid.
+  await tilt.fill("3.2");
+  await expect(tilt).toHaveValue("3.2");
+  await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
+  await expectGroundGlassValid(page);
+
+  // 3. Switch the active standard while preserving the signed tilt value.
+  await tiltStandards.getByRole("radio", { name: "Rear standard" }).click();
+  await expect(tiltStandards.getByRole("radio", { name: "Rear standard" })).toBeChecked();
+  await expect(tilt).toHaveValue("3.2");
+  await expectGroundGlassValid(page);
+
+  // 4. Move to the higher viewpoint endpoint: upper target, positive body pitch.
+  await viewpoint.fill("1");
+  await expect(viewpoint).toHaveValue("1");
+  await expect(scene).toHaveAttribute("data-camera-rig-anchor", "high");
+  await expect(scene).toHaveAttribute("data-lattice-target-region", "upper");
+  await expect(scene).toHaveAttribute("data-camera-body-pitch-deg", "34.000000");
+  await expectGroundGlassValid(page);
+
+  // 5. Switch to Camera inspection and confirm the camera stays visible.
+  await page.getByRole("button", { name: "Camera", exact: true }).click();
+  await expect(scene).toHaveAttribute("data-view-focus", "camera", { timeout: 5000 });
+  await expectGroundGlassValid(page);
+  await page.getByRole("button", { name: "Scene", exact: true }).click();
+
+  // 6. Move to the lower viewpoint endpoint: lower target, negative body pitch.
+  await viewpoint.fill("-1");
+  await expect(viewpoint).toHaveValue("-1");
+  await expect(scene).toHaveAttribute("data-camera-rig-anchor", "low");
+  await expect(scene).toHaveAttribute("data-lattice-target-region", "lower");
+  await expect(scene).toHaveAttribute("data-camera-body-pitch-deg", "-34.000000");
+  await expectGroundGlassValid(page);
+
+  // 7. Select the continuous lower framing endpoint and confirm negative fall.
+  await framingStandards.getByRole("radio", { name: "Front standard" }).click();
+  await framing.fill("-1");
+  await expect(framing).toHaveValue("-1");
+  await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
+  await expect(page.locator(".camera-movement-controls__status")).toContainText("Lower framing");
+  await expectGroundGlassValid(page);
+
+  // 8. Reset Movements returns to the neutral Viewpoint state.
+  await page.getByRole("button", { name: "Reset Movements" }).click();
+  await expect(viewpoint).toHaveValue("0");
+  await expect(tilt).toHaveValue("0");
+  await expect(framing).toHaveValue("0");
+  await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
+  await expect(scene).toHaveAttribute("data-lattice-target-region", "middle");
+
+  // 9. Orbit/zoom then Reset View restores the observer preset and preserves the case.
+  await framing.fill("1");
+  await expect(framing).toHaveValue("1");
+  const sceneCanvas = scene.locator("canvas");
+  const bounds = await sceneCanvas.boundingBox();
+  if (bounds) {
+    const x = bounds.x + bounds.width * 0.58;
+    const y = bounds.y + bounds.height * 0.52;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 72, y - 36, { steps: 6 });
+    await page.mouse.up();
+  }
+  await page.getByRole("button", { name: "Reset 3D view" }).click();
+  await expect(framing).toHaveValue("1");
+  await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
+  await expectGroundGlassValid(page);
+
+  // 10. Navigate away and return; neutral Viewpoint is restored.
+  await page.getByRole("link", { name: "All Scenes" }).click();
+  await page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Understanding Camera Movements" }) })
+    .getByRole("link", { name: "Open Scene" })
+    .click();
+  await page.evaluate(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("rttDiagnostics", "1");
+    window.history.replaceState(window.history.state, "", url);
+  });
+  await expect(page.getByRole("slider", { name: "Viewpoint" })).toHaveValue("0", { timeout: 15000 });
+  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
+  await expect(scene).toHaveAttribute("data-camera-rig-anchor", "mid");
+  await expectGroundGlassValid(page);
+
+  expect(pageErrors).toEqual([]);
+  expect(unexpectedGraphicsMessages).toEqual([]);
+});
+
+test("3D Scene layout stays stable across continuous movement sliders", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1680, height: 900 });
+  await page.goto("/simulator/free/understanding-camera-movements");
+
+  const viewportHost = page.locator(".scene-viewport-host");
+  await expect(viewportHost).toBeVisible({ timeout: 15_000 });
+  const initialBounds = await viewportHost.boundingBox();
+  if (!initialBounds) throw new Error("3D Scene viewport bounds unavailable");
+  const scenePanel = page.locator(".scene-panel");
+
+  const viewpoint = page.getByRole("slider", { name: "Viewpoint" });
+  const framing = page.getByRole("slider", { name: "Vertical framing" });
+  for (const [slider, value] of [
+    [viewpoint, "0"],
+    [viewpoint, "-0.12"],
+    [viewpoint, "-1"],
+    [viewpoint, "0.5"],
+    [viewpoint, "1"],
+    [framing, "0"],
+    [framing, "-0.12"],
+    [framing, "-1"],
+    [framing, "0.5"],
+    [framing, "1"],
+  ] as const) {
+    await slider.fill(value);
+    await expect(slider).toHaveValue(value);
+    await expect
+      .poll(async () => {
+        const bounds = await viewportHost.boundingBox();
+        return Boolean(
+          bounds &&
+            Math.abs(bounds.y - initialBounds.y) <= 1 &&
+            Math.abs(bounds.height - initialBounds.height) <= 1,
+        );
+      })
+      .toBe(true);
+    await expect(scenePanel).not.toContainText("Front standard Y:");
+    await expect(scenePanel).not.toContainText("Loaded assets:");
+  }
+});
+
+test("calibration route preserves workbench and hides public controls", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/understanding-camera-movements?cameraCalibration=1&rttDiagnostics=1");
+  await expect(page.getByText("Camera Movement Calibration")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole("radio", { name: "A — Front tilt" })).toHaveCount(0);
+
+  // Make one valid calibration edit (change focal length from 90 to 120.5)
+  const focalLength = page.getByLabel("Focal length (mm)");
+  await focalLength.fill("120.5");
+  await focalLength.press("Enter");
+  await expect(page.getByLabel("Focal length (mm)")).toHaveValue("120.5");
+
+  // Public teaching controls remain absent after a workbench edit.
+  await expect(page.getByRole("radio", { name: "A — Front tilt" })).toHaveCount(0);
+});
+
+test("teaching controls stay usable and non-overflowing at 1024px and narrow widths", async ({ page }) => {
+  test.setTimeout(90_000);
+  for (const viewport of [{ width: 1024, height: 768 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/simulator/free/understanding-camera-movements");
+    const aside = page.locator(".simulator-aside");
+    await expect(aside).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("slider", { name: "Viewpoint" })).toBeVisible();
+    await expect(page.getByRole("slider", { name: "Tilt" })).toBeVisible();
+    await expect(page.getByRole("slider", { name: "Vertical framing" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Original", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Current", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Zoom in Ground Glass preview view", exact: true })).toHaveCount(1);
+    await expect(page.locator(".groundglass-comparison")).toHaveCount(0);
+
+    const overflow = await page.evaluate(() => {
+      const aside = document.querySelector<HTMLElement>(".simulator-aside");
+      const body = document.body;
+      return {
+        asideOverflow: aside ? aside.scrollWidth - aside.clientWidth : 0,
+        bodyOverflow: body ? body.scrollWidth - body.clientWidth : 0,
+      };
+    });
+    expect(overflow.asideOverflow).toBeLessThanOrEqual(2);
+    expect(overflow.bodyOverflow).toBeLessThanOrEqual(2);
+
+    await expect(page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]')).toHaveCount(1);
+
+    // All three public studies are continuous; legacy case radios remain
+    // internal compatibility adapters only.
+    for (const label of [
+      "C1 — Front rise",
+      "C2 — Rear rise",
+      "D1 — Front fall",
+      "D2 — Rear fall",
+    ]) {
+      await expect(page.getByRole("radio", { name: label })).toHaveCount(0);
+    }
+    await expect(page.getByRole("radio", { name: "Neutral" })).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: "A — Front tilt" })).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: "C3 — Higher viewpoint" })).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: "D3 — Lower viewpoint" })).toHaveCount(0);
+  }
+});

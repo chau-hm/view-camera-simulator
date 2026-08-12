@@ -62,6 +62,10 @@ const targetLabels: Readonly<Record<string, SceneGeometryTargetLabelMap>> = {
     "shelf-middle": "Middle chart",
     "shelf-back": "Back chart",
   },
+  "focus-fundamentals-two-targets": {
+    "focus-near-detail": "Near detail",
+    "focus-far-detail": "Far detail",
+  },
 };
 
 export const getSceneGeometryGuides = (sceneId: string): readonly SceneGeometryGuide[] =>
@@ -69,4 +73,4 @@ export const getSceneGeometryGuides = (sceneId: string): readonly SceneGeometryG
 
 export const getSceneGeometryTargetLabel = (sceneId: string, targetId: string): string =>
   targetLabels[sceneId]?.[targetId] ??
-  (/near/i.test(targetId) ? "Near board" : /far/i.test(targetId) ? "Far board" : "Target");
+  (/near/i.test(targetId) ? "Near detail" : /far/i.test(targetId) ? "Far detail" : "Target");

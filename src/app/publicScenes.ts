@@ -3,6 +3,7 @@ import type { SimulatorMode } from "../types/camera";
 import { getSceneById } from "../scenes/definitions";
 
 export const publicSceneIds = [
+  "understanding-camera-movements",
   "focus-fundamentals-two-targets",
   "architecture-rise",
   "table-tilt",
@@ -23,10 +24,19 @@ export type PublicSceneEntry = {
 
 export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
+    id: "understanding-camera-movements",
+    description:
+      "Observe front and rear camera movements and how each movement changes the camera geometry and image.",
+    topics: ["Camera movements", "Front standard", "Rear standard", "Comparative geometry"],
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/understanding-camera-movements.png",
+  },
+  {
     id: "focus-fundamentals-two-targets",
     description:
-      "Compare two targets at different distances. Adjust focus and aperture to see how the plane of focus and depth of field change.",
-    topics: ["Focus", "Aperture", "Depth of field"],
+      "Compare Front and Rear focusing on two depths of one object with a fixed f/32 aperture.",
+    topics: ["Focus", "Front / Rear standards", "Parallax alignment"],
     availability: "available",
     availableModes: ["free"],
     thumbnailAsset: "assets/two-targets-illustration.png",

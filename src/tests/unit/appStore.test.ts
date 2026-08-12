@@ -5,6 +5,12 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { resolveInitialOpticalGeometryVisibility } from "../../state/sceneViewDefaults";
 import { getTaskById } from "../../core/tasks/taskRegistry";
+import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import {
+  focusFundamentalsFarFocusDepthMm,
+  focusFundamentalsFocusDepthRangeMm,
+  focusFundamentalsReferenceFocusDepthMm,
+} from "../../scenes/focusFundamentalsTargets";
 
 describe("app store STA-001", () => {
   afterEach(() => {
@@ -220,5 +226,86 @@ describe("app store STA-001", () => {
     // architecture preset focusDistanceMm must equal scene-specified preset (non-default)
     expect(camera.focusDistanceMm).not.toBe(2000);
     expect(camera.activeSceneId).toBe("architecture-rise");
+  });
+
+  it("selects focus standard without changing finite or infinity focus state", () => {
+    const { initializeSimulatorRoute, setFocusDistance, setFocusStandard, setInfinityFocus } =
+      useAppStore.getState();
+
+    initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
+    setFocusDistance(focusFundamentalsFarFocusDepthMm);
+    setFocusStandard("rear");
+    expect(useAppStore.getState().camera).toMatchObject({
+      focusStandard: "rear",
+      focusDistanceMm: focusFundamentalsFarFocusDepthMm,
+      focusMode: "finite",
+      lastFiniteFocusDepthMm: focusFundamentalsFarFocusDepthMm,
+    });
+
+    setInfinityFocus();
+    setFocusStandard("front");
+    expect(useAppStore.getState().camera).toMatchObject({
+      focusStandard: "front",
+      focusMode: "infinity",
+      lastFiniteFocusDepthMm: focusFundamentalsFarFocusDepthMm,
+    });
+  });
+
+  it("resets Focus Fundamentals standard and finite focus to its declared baseline", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
+    store.setFocusStandard("rear");
+    store.setFocusDistance(4000);
+    store.setInfinityFocus();
+    store.resetMovements();
+    expect(useAppStore.getState().camera).toMatchObject({
+      focusStandard: "front",
+      focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
+      focusMode: "finite",
+      lastFiniteFocusDepthMm: focusFundamentalsReferenceFocusDepthMm,
+      aperture: 32,
+    });
+  });
+
+  it("restores Focus Fundamentals f/32 across scene entry, mode changes, and reset actions", () => {
+    const store = useAppStore.getState();
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    expect(useAppStore.getState().camera.aperture).toBe(11);
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
+    expect(useAppStore.getState().camera.aperture).toBe(32);
+
+    store.setAperture(11);
+    store.setMode("guided");
+    expect(useAppStore.getState().camera.aperture).toBe(32);
+
+    store.setActiveScene("architecture-rise");
+    store.setAperture(11);
+    store.setActiveScene(focusFundamentalsTwoTargets.id);
+    expect(useAppStore.getState().camera.aperture).toBe(32);
+
+    store.setAperture(11);
+    store.resetMovements();
+    expect(useAppStore.getState().camera.aperture).toBe(32);
+
+    store.setAperture(11);
+    store.restartTask();
+    expect(useAppStore.getState().camera.aperture).toBe(32);
+  });
+
+  it("keeps the selectable-focus route inside the physical focus range", () => {
+    expect(getSceneFocusDistanceRange(focusFundamentalsTwoTargets.id)).toEqual({
+      min: focusFundamentalsFocusDepthRangeMm.min,
+      max: focusFundamentalsFocusDepthRangeMm.max,
+    });
+  });
+
+  it("does not change focus standard on scenes without selectable-focus capability", () => {
+    const store = useAppStore.getState();
+    store.setActiveScene("architecture-rise");
+    const before = useAppStore.getState().camera;
+    store.setFocusStandard("rear");
+    expect(useAppStore.getState().camera).toEqual(before);
   });
 });

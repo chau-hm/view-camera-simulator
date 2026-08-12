@@ -4,6 +4,41 @@ export type Vec3 = {
   z: number;
 };
 
+export type CameraRigViewpointAnchor = "mid" | "high" | "low";
+export type CameraRigViewpointArcPlane = "yz";
+export type CameraRigViewpointRelativeHeight = "at-mid" | "above-mid" | "below-mid";
+
+export type CameraRigViewpointAnchorMetadata = Readonly<{
+  identity: CameraRigViewpointAnchor;
+  relativeHeight: CameraRigViewpointRelativeHeight;
+}>;
+
+/** Identity placement used by scenes without a calibrated viewpoint arc. */
+export type IdentityCameraRigPlacement = Readonly<{
+  kind: "identity";
+  rigOriginWorld: Vec3;
+  basePitchDeg: 0;
+}>;
+
+/** Resolved calibrated arc anchor. Body pitch and its pivot remain separate. */
+export type ArcAnchorCameraRigPlacement = Readonly<{
+  kind: "arc-anchor";
+  anchor: CameraRigViewpointAnchor;
+  metadata: CameraRigViewpointAnchorMetadata;
+  arcPlane: CameraRigViewpointArcPlane;
+  arcCenterWorld: Vec3;
+  rigOriginWorld: Vec3;
+  basePitchDeg: number;
+  arcAngleDeg: number;
+  radiusMm: number;
+  /** Optional continuous lesson parameter; omitted for discrete endpoints. */
+  viewpointT?: number;
+}>;
+
+export type CameraRigPlacement =
+  | IdentityCameraRigPlacement
+  | ArcAnchorCameraRigPlacement;
+
 export type Ray = {
   origin: Vec3;
   direction: Vec3;
@@ -74,7 +109,23 @@ export type OffAxisProjectionInput = {
   filmCornersWorld: FilmPlaneCorners;
 };
 
+export type LensFilmRelationship = {
+  isParallel: boolean;
+  commonLine: Line3 | null;
+};
 export type DerivedOpticsState = {
+  /** Validated resolved outer placement consumed by every downstream view. */
+  cameraRigPlacement: CameraRigPlacement;
+  /** Canonical local-body-pitch then outer-rig placement transform. */
+  cameraRigTransform: CameraRigTransform;
+  /**
+   * @deprecated Compatibility adapter for renderer/state consumers that only
+   * understand the original zero-origin, zero-base-pitch body transform.
+   */
+  cameraBodyTransform: CameraBodyTransform;
+  cameraBodyLocalGeometry: CameraBodyLocalGeometry;
+  /** Body-pitch pivot resolved into world coordinates. */
+  cameraBodyPivotWorld: Vec3;
   lensCenterWorld: Vec3;
   lensNormalWorld: Vec3;
   lensPlane: Plane;
@@ -82,6 +133,7 @@ export type DerivedOpticsState = {
   filmNormalWorld: Vec3;
   filmPlane: Plane;
   filmPlaneCornersWorld: FilmPlaneCorners;
+  rearStandardFrame: StandardFrame;
   opticalAxis: Ray;
   /** Legacy compatibility name: this is the film/lens Scheimpflug common line, not the Hinge Rule line. */
   lensFilmHingeLine: Line3 | null;
@@ -114,5 +166,65 @@ export type DerivedOpticsState = {
     fallbackReason?: string | null;
     errorMessage?: string;
     isInfinityFocus?: boolean;
+    /** Resolved focus-standard geometry diagnostics for selectable-focus scenes. */
+    focusStandard?: "front" | "rear";
+    /** Requested focus standard before any safe geometry fallback. */
+    requestedFocusStandard?: "front" | "rear";
+    /** Actual lens-to-focus-plane distance passed to DOF for finite focus. */
+    focusObjectDistanceMm?: number | null;
+    /** Actual lens-to-film image distance used by the focus resolver. */
+    imageDistanceMm?: number | null;
   };
+};
+
+export type StandardFrame = {
+  centerWorld: Vec3;
+  rightWorld: Vec3;
+  upWorld: Vec3;
+  normalWorld: Vec3;
+  plane: Plane;
+};
+
+export type CameraBodyTransform = {
+  /** Legacy rig-local +X pitch. Positive sends rig-local +Z toward rig-local -Y. */
+  pitchDeg: number;
+  /**
+   * @deprecated Despite the legacy name, this value is the rig-local pivot.
+   * Use CameraRigTransform.bodyPitchPivotRigLocal in canonical calculations.
+   */
+  pivotWorld: Vec3;
+};
+
+/**
+ * Canonical camera-rig composition.
+ *
+ * Local standard geometry is first pitched around bodyPitchPivotRigLocal.
+ * The complete result is then rotated by basePitchDeg around the rig-local
+ * origin and translated so that the zero-movement lens datum lands at
+ * rigOriginWorld.
+ */
+export type CameraRigTransform = {
+  /** World position of the zero-movement rig-local lens datum, in millimetres. */
+  rigOriginWorld: Vec3;
+  /** Outer rig rotation about rig-local +X, in degrees. */
+  basePitchDeg: number;
+  /** Body rotation about rig-local +X. Positive sends local +Z toward local -Y. */
+  bodyPitchDeg: number;
+  /** Fixed tripod/rail pivot expressed in rig-local millimetres. */
+  bodyPitchPivotRigLocal: Vec3;
+};
+
+/**
+ * Standard geometry after local rise/tilt/swing, before the rigid body pitch.
+ * These values are expressed in rig-local millimetres.
+ */
+export type CameraBodyLocalGeometry = {
+  lensCenterLocal: Vec3;
+  lensNormalLocal: Vec3;
+  lensPlaneLocal: Plane;
+  filmCenterLocal: Vec3;
+  filmNormalLocal: Vec3;
+  filmPlaneLocal: Plane;
+  filmPlaneCornersLocal: FilmPlaneCorners;
+  rearStandardFrameLocal: StandardFrame;
 };

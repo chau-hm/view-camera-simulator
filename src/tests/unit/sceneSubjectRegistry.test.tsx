@@ -12,6 +12,9 @@ import {
 } from "../../render/sceneSubjectRegistry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import geometry from "../../scenes/shelfSwingGeometry";
+import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/CameraMovementsSubjectFactory";
 
 afterEach(cleanup);
 
@@ -33,6 +36,7 @@ const collectDisposableSpies = (group: THREE.Group) => {
 describe("scene subject registry", () => {
   it("registers every canonical rendered scene and rejects unknown IDs", () => {
     expect(Object.keys(sceneSubjectRegistry)).toEqual([
+      "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
       "table-tilt",
@@ -58,6 +62,20 @@ describe("scene subject registry", () => {
       expect(group?.getObjectByName(subject.focusChart.semanticName)).toBeInstanceOf(THREE.Group);
     });
     disposeRegisteredRttSubject("shelf-swing", group!);
+  });
+
+  it("registers canonical lattice identity and calibration-driven ghost policy", () => {
+    const registration = getSceneSubjectRegistration(
+      "understanding-camera-movements",
+    );
+    expect(registration?.canonicalLattice).toEqual({
+      geometryId: CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
+      edgeCount: CAMERA_MOVEMENT_LATTICE.edges.length,
+    });
+    expect(registration?.showReferenceCamera).toBe(
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.showReferenceCamera,
+    );
+    expect(registration?.showReferenceCamera).toBe(false);
   });
 
   it.each(["shelf-swing", "table-tilt"])(

@@ -1,0 +1,166 @@
+import * as THREE from "three";
+import { describe, expect, it } from "vitest";
+import {
+  createFocusFundamentalsGroup,
+} from "../../render/FocusFundamentalsSubjectFactory";
+import {
+  focusFundamentalsBackdropColor,
+  focusFundamentalsBackdropHorizontalMarginMm,
+  focusFundamentalsBackdropRearMarginMm,
+  focusFundamentalsBackdropVerticalMarginMm,
+  focusFundamentalsFocusDetails,
+  focusFundamentalsObjectCenterMm,
+  focusFundamentalsObjectRotationYRad,
+  getFocusFundamentalsDetailMarkerLocalPosition,
+} from "../../scenes/focusFundamentalsTargets";
+import {
+  focusFundamentalsConnectedSubjectBoundsMm,
+  focusFundamentalsParallaxFeatures,
+  focusFundamentalsParallaxPointerColor,
+} from "../../scenes/focusFundamentalsParallax";
+import { toWorld } from "../../render/rttUtils";
+
+describe("Focus Fundamentals shared subject factory", () => {
+  it("creates one canonical object with both focus details and a floor", () => {
+    const group = createFocusFundamentalsGroup();
+    const secondGroup = createFocusFundamentalsGroup();
+    group.updateMatrixWorld(true);
+    secondGroup.updateMatrixWorld(true);
+
+    expect(group.name).toBe("focus-fundamentals-subject");
+    expect(group.children).toHaveLength(3);
+    expect(group.getObjectByName("focus-fundamentals-floor")).toBeInstanceOf(THREE.Mesh);
+
+    const backdropMeshes: THREE.Mesh[] = [];
+    group.traverse((child) => {
+      if (child.name === "focus-fundamentals-backdrop" && child instanceof THREE.Mesh) {
+        backdropMeshes.push(child);
+      }
+    });
+    expect(backdropMeshes).toHaveLength(1);
+    const backdrop = backdropMeshes[0];
+    expect(backdrop.geometry).toBeInstanceOf(THREE.PlaneGeometry);
+    expect(backdrop.position.x).toBeCloseTo(
+      toWorld(
+        (focusFundamentalsConnectedSubjectBoundsMm.min.x +
+          focusFundamentalsConnectedSubjectBoundsMm.max.x) /
+          2,
+      ),
+      12,
+    );
+    expect(backdrop.position.y).toBeCloseTo(
+      toWorld(
+        (focusFundamentalsConnectedSubjectBoundsMm.min.y +
+          focusFundamentalsConnectedSubjectBoundsMm.max.y) /
+          2,
+      ),
+      12,
+    );
+    expect(backdrop.position.z).toBeCloseTo(
+      toWorld(
+        focusFundamentalsConnectedSubjectBoundsMm.max.z +
+          focusFundamentalsBackdropRearMarginMm,
+      ),
+      12,
+    );
+    expect(backdrop.position.z).toBeGreaterThan(
+      toWorld(focusFundamentalsConnectedSubjectBoundsMm.max.z),
+    );
+    const backdropParameters = (backdrop.geometry as THREE.PlaneGeometry).parameters;
+    const connectedSubjectWidthMm =
+      focusFundamentalsConnectedSubjectBoundsMm.max.x -
+      focusFundamentalsConnectedSubjectBoundsMm.min.x;
+    const connectedSubjectHeightMm =
+      focusFundamentalsConnectedSubjectBoundsMm.max.y -
+      focusFundamentalsConnectedSubjectBoundsMm.min.y;
+    expect(backdropParameters.width).toBeCloseTo(
+      toWorld(connectedSubjectWidthMm + focusFundamentalsBackdropHorizontalMarginMm * 2),
+      12,
+    );
+    expect(backdropParameters.height).toBeCloseTo(
+      toWorld(connectedSubjectHeightMm + focusFundamentalsBackdropVerticalMarginMm * 2),
+      12,
+    );
+    expect(backdropParameters.width).toBeGreaterThan(toWorld(connectedSubjectWidthMm));
+    expect(backdropParameters.height).toBeGreaterThan(toWorld(connectedSubjectHeightMm));
+    const backdropMaterial = backdrop.material as THREE.MeshBasicMaterial;
+    expect(backdropMaterial).toBeInstanceOf(THREE.MeshBasicMaterial);
+    expect(backdropMaterial.color.getHexString()).toBe(focusFundamentalsBackdropColor.slice(1));
+    expect(backdropMaterial.side).toBe(THREE.DoubleSide);
+    expect(backdropMaterial.transparent).toBe(false);
+    expect(backdropMaterial.depthTest).toBe(true);
+    expect(backdropMaterial.depthWrite).toBe(true);
+    expect(backdropMaterial.map).toBeNull();
+    expect(backdropMaterial.polygonOffset).toBe(false);
+    expect(backdrop.renderOrder).toBe(0);
+
+    const object = group.getObjectByName("focus-fundamentals-object");
+    expect(object).toBeInstanceOf(THREE.Group);
+    expect(object?.position.z).toBeCloseTo(toWorld(focusFundamentalsObjectCenterMm.z), 12);
+    expect(object?.rotation.y).toBeCloseTo(focusFundamentalsObjectRotationYRad, 12);
+
+    const body = group.getObjectByName("focus-fundamentals-object-body");
+    expect(body).toBeInstanceOf(THREE.Group);
+    expect(group.getObjectByName("focus-fundamentals-front-frame")).toBeInstanceOf(THREE.Group);
+    expect(group.getObjectByName("focus-fundamentals-back-frame")).toBeInstanceOf(THREE.Group);
+    expect(group.getObjectByName("focus-fundamentals-depth-connectors")).toBeInstanceOf(THREE.Group);
+    expect(group.getObjectByName("focus-fundamentals-parallax-supports")).toBeInstanceOf(THREE.Group);
+    expect(group.getObjectByName("focus-fundamentals-parallax-features")).toBeInstanceOf(THREE.Group);
+    expect(object?.children.filter((child) => child.name.endsWith("-marker"))).toHaveLength(2);
+
+    for (const feature of focusFundamentalsParallaxFeatures) {
+      expect(group.getObjectByName(`focus-fundamentals-${feature.id}`)).toBeInstanceOf(THREE.Group);
+      expect(group.getObjectByName(`focus-fundamentals-${feature.id}-support`)).toBeInstanceOf(THREE.Mesh);
+    }
+
+    const firstFrameBar = group.getObjectByName("focus-fundamentals-front-frame-left") as THREE.Mesh;
+    const secondFrameBar = secondGroup.getObjectByName("focus-fundamentals-front-frame-left") as THREE.Mesh;
+    const firstNearMarker = group.getObjectByName("focus-near-detail-marker") as THREE.Mesh;
+    const secondNearMarker = secondGroup.getObjectByName("focus-near-detail-marker") as THREE.Mesh;
+    const firstGate = group.getObjectByName("focus-fundamentals-near-alignment-gate-left") as THREE.Mesh;
+    const secondGate = secondGroup.getObjectByName("focus-fundamentals-near-alignment-gate-left") as THREE.Mesh;
+    const firstGateTop = group.getObjectByName("focus-fundamentals-near-alignment-gate-top") as THREE.Mesh;
+    const firstPointer = group.getObjectByName("focus-fundamentals-far-alignment-pointer-mesh") as THREE.Mesh;
+    const secondPointer = secondGroup.getObjectByName("focus-fundamentals-far-alignment-pointer-mesh") as THREE.Mesh;
+    const secondBackdrop = secondGroup.getObjectByName("focus-fundamentals-backdrop") as THREE.Mesh;
+    expect(firstFrameBar.geometry).toBe(secondFrameBar.geometry);
+    expect(firstFrameBar.material).toBe(secondFrameBar.material);
+    expect(firstNearMarker.geometry).toBe(secondNearMarker.geometry);
+    expect(firstNearMarker.material).toBe(secondNearMarker.material);
+    expect(firstGate.geometry).toBe(secondGate.geometry);
+    expect(firstGate.material).toBe(secondGate.material);
+    expect(firstGate.geometry).toMatchObject({
+      parameters: { width: toWorld(10), height: toWorld(64), depth: toWorld(8) },
+    });
+    expect(firstGateTop.geometry).toMatchObject({
+      parameters: { width: toWorld(32), height: toWorld(10), depth: toWorld(8) },
+    });
+    expect((firstGate.material as THREE.MeshBasicMaterial).color.getHexString()).toBe("f8fafc");
+    expect(firstPointer.geometry).toBe(secondPointer.geometry);
+    expect(firstPointer.material).toBe(secondPointer.material);
+    expect(backdrop.geometry).toBe(secondBackdrop.geometry);
+    expect(backdrop.material).toBe(secondBackdrop.material);
+    expect((firstPointer.material as THREE.MeshBasicMaterial).color.getHexString()).toBe(
+      focusFundamentalsParallaxPointerColor.slice(1),
+    );
+    expect((firstPointer.geometry as THREE.BoxGeometry).parameters).toMatchObject({
+      width: toWorld(16),
+      height: toWorld(52),
+      depth: toWorld(8),
+    });
+    for (const detail of focusFundamentalsFocusDetails) {
+      const marker = group.getObjectByName(`${detail.id}-marker`);
+      expect(marker).toBeInstanceOf(THREE.Mesh);
+      expect(marker?.userData).toMatchObject({
+        focusTargetId: detail.id,
+        focusDetailWorldMm: detail.worldPositionMm,
+        surface: detail.surface,
+      });
+
+      const local = getFocusFundamentalsDetailMarkerLocalPosition(detail);
+      expect(marker?.position.x).toBeCloseTo(toWorld(local.x), 12);
+      expect(marker?.position.y).toBeCloseTo(toWorld(local.y), 12);
+      expect(marker?.position.z).toBeCloseTo(toWorld(local.z), 12);
+    }
+  });
+});

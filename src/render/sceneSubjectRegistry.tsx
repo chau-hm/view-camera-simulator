@@ -24,7 +24,24 @@ import {
   createShelfSwingGroup,
   disposeShelfSwingGroup,
 } from "./ShelfSwingSubjectFactory";
+import {
+  CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
+  CameraMovementsSubject,
+  cameraMovementsGroupOptionsFromRenderModel,
+  createCameraMovementsGroup,
+  disposeCameraMovementsGroup,
+} from "./CameraMovementsSubjectFactory";
+import {
+  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+  type CameraMovementLatticeRenderModel,
+} from "./cameraMovementLatticeRenderModel";
 import { toWorld } from "./rttUtils";
+import {
+  CAMERA_MOVEMENT_SCENE_CALIBRATION,
+  type CameraMovementPresentationRegion,
+} from "../scenes/cameraMovementSceneCalibration";
+import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
+import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTargets";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -38,9 +55,28 @@ export type SceneSubjectRttLighting = {
 
 export type SceneSubjectRegistration = {
   SceneSubject: ComponentType<RegisteredSceneSubjectProps>;
-  createRttGroup: () => THREE.Group;
+  createRttGroup: (options?: SceneSubjectRttOptions) => THREE.Group;
   disposeRttGroup?: (group: THREE.Group) => void;
   rttLighting?: SceneSubjectRttLighting;
+  resolveRttLighting?: (options?: SceneSubjectRttOptions) => SceneSubjectRttLighting;
+  showReferenceCamera?: boolean;
+  resolveShowReferenceCamera?: (options?: SceneSubjectRttOptions) => boolean;
+  canonicalLattice?: {
+    geometryId: string;
+    edgeCount: number;
+  };
+  resolveCanonicalLattice?: (options?: SceneSubjectRttOptions) => {
+    geometryId: string;
+    geometryKey: string;
+    presentationKey: string;
+    edgeCount: number;
+    bounds: CameraMovementLatticeRenderModel["subjectBounds"];
+  };
+};
+
+export type SceneSubjectRttOptions = {
+  presentationRegion?: CameraMovementPresentationRegion;
+  cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
 };
 
 export const ArchitectureRiseRegisteredSubject = ({
@@ -77,14 +113,76 @@ const tableTiltLightingTargetMm = {
   z: tableTiltGeometry.tabletop.center.z,
 } as const;
 
+const cameraMovementsLightingTargetMm = {
+  ...CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.lightingTargetMm,
+} as const;
+
 const shelfSwingLightingTargetMm = {
   ...shelfSwingGeometry.middleSubject.focusDetailProbeWorld,
 };
 
 export const sceneSubjectRegistry = {
+  "understanding-camera-movements": {
+    SceneSubject: CameraMovementsSubject,
+    createRttGroup: (options) => {
+      const model =
+        options?.cameraMovementRenderModel ??
+        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
+      return createCameraMovementsGroup(
+        cameraMovementsGroupOptionsFromRenderModel(
+          model,
+          options?.presentationRegion,
+        ),
+      );
+    },
+    disposeRttGroup: disposeCameraMovementsGroup,
+    showReferenceCamera:
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.showReferenceCamera,
+    resolveShowReferenceCamera: (options) =>
+      (
+        options?.cameraMovementRenderModel ??
+        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL
+      ).showReferenceCamera,
+    canonicalLattice: {
+      geometryId: CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
+      edgeCount: CAMERA_MOVEMENT_LATTICE.edges.length,
+    },
+    resolveCanonicalLattice: (options) => {
+      const model =
+        options?.cameraMovementRenderModel ??
+        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
+      return {
+        geometryId: model.geometryId,
+        geometryKey: model.geometryKey,
+        presentationKey: model.presentationKey,
+        edgeCount: model.lattice.edges.length,
+        bounds: model.subjectBounds,
+      };
+    },
+    rttLighting: {
+      targetMm: cameraMovementsLightingTargetMm,
+      keyOffsetWorld: { x: -2, y: 2.5, z: -2 },
+      fillOffsetWorld: { x: 1.5, y: 1, z: -2.5 },
+    },
+    resolveRttLighting: (options) => ({
+      targetMm: {
+        ...(
+          options?.cameraMovementRenderModel ??
+          CAMERA_MOVEMENT_BASELINE_RENDER_MODEL
+        ).lightingTargetMm,
+      },
+      keyOffsetWorld: { x: -2, y: 2.5, z: -2 },
+      fillOffsetWorld: { x: 1.5, y: 1, z: -2.5 },
+    }),
+  },
   "focus-fundamentals-two-targets": {
     SceneSubject: FocusFundamentalsSubject,
     createRttGroup: createFocusFundamentalsGroup,
+    rttLighting: {
+      targetMm: focusFundamentalsObjectCenterMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },
+      fillOffsetWorld: { x: 2, y: 1.5, z: -2.5 },
+    },
   },
   "architecture-rise": {
     SceneSubject: ArchitectureRiseRegisteredSubject,
@@ -125,8 +223,11 @@ export const getSceneSubjectRegistration = (
 export const getRegisteredSceneSubject = (sceneId: string) =>
   getSceneSubjectRegistration(sceneId)?.SceneSubject;
 
-export const createRegisteredRttSubject = (sceneId: string): THREE.Group | null =>
-  getSceneSubjectRegistration(sceneId)?.createRttGroup() ?? null;
+export const createRegisteredRttSubject = (
+  sceneId: string,
+  options?: SceneSubjectRttOptions,
+): THREE.Group | null =>
+  getSceneSubjectRegistration(sceneId)?.createRttGroup(options) ?? null;
 
 export const disposeRegisteredRttSubject = (
   sceneId: string,

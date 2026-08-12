@@ -1,108 +1,119 @@
 ---
 name: vcs-threejs-rtt
-description: Analyze, implement, or review Three.js, React Three Fiber, and Ground Glass render-to-texture behavior in View Camera Simulator. Use for RTT cameras, render targets, shader uniforms, DOF post-processing, WebGL fallback, scene subject registration, lighting, clipping, zoom quality, blank or stale canvases, duplicate renderers, resource ownership, disposal, and SPA renderer lifecycle.
+description: Analyze or change View Camera Simulator Three.js/R3F rendering, Ground Glass RTT, shaders, diagnostics, projection plumbing, and WebGL resource lifecycle.
 ---
 
-# View Camera Three.js and RTT
+# VCS Three.js RTT
 
-Own renderer behavior and GPU resource lifecycle. Do not change physical calibration merely to improve the picture.
+## Activation rule
 
-## Identify the render path
+Use this skill only when the task depends on renderer/WebGL reasoning or lifecycle invariants.
 
-Trace:
+Do **not** activate it solely because:
 
-```text
-canonical camera state
-→ derived optics
-→ scene subject registry
-→ Three.js / R3F scene
-→ Ground Glass RTT camera
-→ color and depth targets
-→ DOF passes
-→ displayed canvas
-```
+- the edited file lives under `src/render/**`;
+- a renderer-adjacent button, label, CSS rule, or local presentation value changes;
+- a known local conditional can be fixed without changing render ownership or projection contracts.
 
-Determine whether the defect is:
+## Use this skill when
 
-- incorrect optics input
-- camera configuration
-- scene subject or lighting
-- render-target lifecycle
-- shader uniform or post-processing
-- clipping or DPR
-- DOM staging, zoom, or orientation
-- stale state during SPA navigation
+- Ground Glass is blank, stale, duplicated, too dark, or inconsistent;
+- RTT camera/clipping/render-target dimensions change;
+- shaders or post-processing change;
+- scene-subject registration changes;
+- GPU resource ownership/disposal is involved;
+- SPA scene switching must prove resource replacement or cleanup;
+- renderer diagnostics must expose meaningful internal state;
+- projection plumbing between canonical state and displayed canvas changes.
 
-Read `references/renderer-checklist.md`.
+## Primary ownership
 
-## Resource ownership
-
-For every allocated resource, identify the owner and teardown:
-
-- geometries
-- materials
-- textures
-- depth textures
-- render targets
-- post-processing scenes
-- controls
-- registered scene groups
-
-Dispose only owned resources. Do not generically dispose shared Architecture or Focus resources.
-
-## Diagnostics
-
-Prefer narrow, truthful diagnostics:
-
-- active scene subject identity
-- RTT resource generation
-- finite uniform state
-- content sanity
-- target dimensions
-- camera validity
-- disposal or replacement counters when lifecycle is under test
-
-Do not add diagnostics that always mirror props and therefore cannot detect stale internal resources.
-
-## Testing rules
-
-Separate:
-
-- WebGL-independent component and routing tests
-- WebGL-dependent RTT and lifecycle tests
-
-A lifecycle test must:
-
-- perform client-side navigation
-- avoid full page reload between transitions
-- observe meaningful subject or resource replacement
-- detect stale scene objects or duplicate canvases
-- capture page errors and relevant Three.js/WebGL warnings
-
-Do not use screenshot byte size as the only proof of correctness.
-
-## Scope boundary
-
-Prefer changes in:
+Prefer:
 
 ```text
 src/render/**
 renderer-specific components
+renderer-specific diagnostics
 renderer-specific tests
 ```
 
-Escalate optical ambiguity to `$vcs-optics-geometry`.
-Escalate layout, accessibility, task, or routing work to `$vcs-ui-tasks`.
+Ownership is a boundary, not an activation trigger.
 
-## Output contract
+## Trace the render path
 
-Report:
+When the problem is genuinely renderer-related, follow:
 
-- root render path
-- resource owner and lifecycle
-- defect classification
-- diagnostics added or reused
-- WebGL-independent evidence
-- WebGL-dependent evidence
-- disposal and SPA navigation result
-- remaining optics or UI dependency
+```text
+canonical state
+→ scene subject / camera
+→ RTT target
+→ shader or post-process
+→ displayed canvas
+→ cleanup / replacement
+```
+
+Identify the owner and teardown path for resources relevant to the defect, including as applicable:
+
+- geometries;
+- materials;
+- textures;
+- depth textures;
+- render targets;
+- post-processing scenes;
+- controls;
+- registered scene groups.
+
+Dispose only resources owned by the component or registered subject.
+
+## Required principles
+
+- Renderer visualizes canonical physical state; it must not reinterpret movement signs.
+- Visual clipping or display caps must not mutate physical geometry.
+- Diagnostics must expose meaningful internal state, not merely mirror incoming props.
+- Separate WebGL-independent from WebGL-dependent tests.
+- Use true client-side navigation when claiming SPA lifecycle behaviour.
+- Prefer semantic evidence over screenshot size or incidental rendering output.
+
+## Must not
+
+- change physical calibration to make an image look better;
+- change task thresholds to hide a rendering defect;
+- add decorative DOM fallbacks that conceal renderer failure;
+- use full page reloads to prove cleanup;
+- broadly suppress unknown WebGL warnings;
+- refactor unrelated renderer infrastructure during a focused fix.
+
+## Validation
+
+For a focused known renderer defect:
+
+- run the nearest renderer/unit/integration test;
+- prove the original failure observable;
+- inspect relevant lifecycle diagnostics if needed.
+
+For lifecycle or resource-ownership changes:
+
+- use SPA navigation;
+- verify meaningful replacement/disposal evidence;
+- run relevant E2E and integration checks.
+
+Run full E2E only when the work reaches the appropriate integration/merge gate or when the public workflow is the only valid proof.
+
+## Escalation
+
+Escalate to `$vcs-optics-geometry` if the renderer receives inconsistent or physically invalid canonical state.
+
+Escalate to `$vcs-ui-tasks` if the defect is actually a public-control/state/route issue.
+
+## Output
+
+Return:
+
+- root cause;
+- render-path segment affected;
+- ownership/disposal decision when relevant;
+- files changed;
+- tests and runtime evidence;
+- tests not run;
+- remaining risks;
+- commit SHA when applicable.
