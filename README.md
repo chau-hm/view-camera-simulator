@@ -119,7 +119,12 @@ npm run dev
 This repository includes `.github/workflows/pages.yml`:
 
 * CI on pull requests and pushes to all branches (`lint`, `typecheck`, `test`)
-* CD on pushes to the repository default branch (build + deploy to GitHub Pages)
+* CD only on pushes to `production` (build + deploy to GitHub Pages)
+
+`main` is the development branch. At a release milestone, merge `main` into
+`production`; the resulting `production` push runs CI and deploys that exact commit.
+CI runs on other branches use per-ref concurrency, so they cannot cancel an active
+`production` deployment.
 
 Deployment uses the repository name as the Vite base path and publishes `dist/` to Pages.
 For SPA deep-link fallback on GitHub Pages, the workflow also copies `dist/index.html` to `dist/404.html`.
