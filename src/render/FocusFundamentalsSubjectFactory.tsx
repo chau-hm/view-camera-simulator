@@ -3,6 +3,10 @@ import * as THREE from "three";
 import React, { useMemo } from "react";
 import { toWorld } from "./rttUtils";
 import {
+  focusFundamentalsBackdropColor,
+  focusFundamentalsBackdropHorizontalMarginMm,
+  focusFundamentalsBackdropRearMarginMm,
+  focusFundamentalsBackdropVerticalMarginMm,
   focusFundamentalsFloorYmm,
   focusFundamentalsFocusDetails,
   focusFundamentalsFrameGeometry,
@@ -14,6 +18,7 @@ import {
 } from "../scenes/focusFundamentalsTargets";
 import {
   focusFundamentalsParallaxBracketBarWidthMm,
+  focusFundamentalsConnectedSubjectBoundsMm,
   focusFundamentalsParallaxFeatureShapes,
   focusFundamentalsParallaxFeatureRotationYRad,
   focusFundamentalsParallaxFeatures,
@@ -51,6 +56,8 @@ let markerTextures: [THREE.DataTexture, THREE.DataTexture] | null = null;
 let markerMaterials: [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial] | null = null;
 let floorGeometry: THREE.PlaneGeometry | null = null;
 let floorMaterial: THREE.MeshStandardMaterial | null = null;
+let backdropGeometry: THREE.PlaneGeometry | null = null;
+let backdropMaterial: THREE.MeshBasicMaterial | null = null;
 
 const makeFocusDetailTexture = (accent: string): THREE.DataTexture => {
   const width = 64;
@@ -192,6 +199,24 @@ function ensureSharedResources() {
       color: FLOOR_COLOR,
       roughness: 0.9,
       metalness: 0,
+    });
+  }
+  if (!backdropGeometry) {
+    const subjectWidthMm =
+      focusFundamentalsConnectedSubjectBoundsMm.max.x -
+      focusFundamentalsConnectedSubjectBoundsMm.min.x;
+    const subjectHeightMm =
+      focusFundamentalsConnectedSubjectBoundsMm.max.y -
+      focusFundamentalsConnectedSubjectBoundsMm.min.y;
+    backdropGeometry = new THREE.PlaneGeometry(
+      toWorld(subjectWidthMm + focusFundamentalsBackdropHorizontalMarginMm * 2),
+      toWorld(subjectHeightMm + focusFundamentalsBackdropVerticalMarginMm * 2),
+    );
+  }
+  if (!backdropMaterial) {
+    backdropMaterial = new THREE.MeshBasicMaterial({
+      color: focusFundamentalsBackdropColor,
+      side: THREE.DoubleSide,
     });
   }
 }
@@ -468,7 +493,26 @@ export function createFocusFundamentalsGroup(): THREE.Group {
     addFocusDetailMarker(objectGroup, detail, index),
   );
   addParallaxAlignmentFeatures(objectGroup);
-  group.add(objectGroup);
+
+  const backdrop = new THREE.Mesh(backdropGeometry!, backdropMaterial!);
+  backdrop.name = "focus-fundamentals-backdrop";
+  backdrop.position.set(
+    toWorld(
+      (focusFundamentalsConnectedSubjectBoundsMm.min.x +
+        focusFundamentalsConnectedSubjectBoundsMm.max.x) /
+        2,
+    ),
+    toWorld(
+      (focusFundamentalsConnectedSubjectBoundsMm.min.y +
+        focusFundamentalsConnectedSubjectBoundsMm.max.y) /
+        2,
+    ),
+    toWorld(
+      focusFundamentalsConnectedSubjectBoundsMm.max.z +
+        focusFundamentalsBackdropRearMarginMm,
+    ),
+  );
+  group.add(backdrop, objectGroup);
 
   const floor = new THREE.Mesh(floorGeometry!, floorMaterial!);
   floor.name = "focus-fundamentals-floor";
