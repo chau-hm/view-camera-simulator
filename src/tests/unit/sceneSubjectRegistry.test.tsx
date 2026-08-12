@@ -41,6 +41,7 @@ describe("scene subject registry", () => {
       "architecture-rise",
       "table-tilt",
       "shelf-swing",
+      "mirror-shift",
     ]);
     Object.keys(sceneSubjectRegistry).forEach((sceneId) => {
       expect(getSceneSubjectRegistration(sceneId)).toBeDefined();
@@ -62,6 +63,18 @@ describe("scene subject registry", () => {
       expect(group?.getObjectByName(subject.focusChart.semanticName)).toBeInstanceOf(THREE.Group);
     });
     disposeRegisteredRttSubject("shelf-swing", group!);
+  });
+
+  it("resolves Mirror Shift to the shared static reflection subject and RTT factory", () => {
+    const registration = getSceneSubjectRegistration("mirror-shift");
+    expect(registration).toBeDefined();
+    expect(getRegisteredSceneSubject("mirror-shift")).toBe(registration?.SceneSubject);
+
+    const group = createRegisteredRttSubject("mirror-shift");
+    expect(group?.name).toBe("mirror-shift-subject");
+    expect(group?.getObjectByName("mirror-shift-mirror-surface")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.getObjectByName("mirror-shift-camera-reflection")).toBeInstanceOf(THREE.Group);
+    disposeRegisteredRttSubject("mirror-shift", group!);
   });
 
   it("registers canonical lattice identity and calibration-driven ghost policy", () => {

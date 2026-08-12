@@ -42,6 +42,7 @@ describe("simulator route availability", () => {
     ["/simulator/free/focus-fundamentals-two-targets", "free:focus-fundamentals-two-targets:none"],
     ["/simulator/free/architecture-rise", "free:architecture-rise:none"],
     ["/simulator/free/shelf-swing", "free:shelf-swing:none"],
+    ["/simulator/free/mirror-shift", "free:mirror-shift:none"],
     ["/simulator/guided/architecture-rise/rise-01", "guided:architecture-rise:rise-01"],
     ["/simulator/guided/shelf-swing/swing-01", "guided:shelf-swing:swing-01"],
     ["/simulator/free/table-tilt", "free:table-tilt:none"],

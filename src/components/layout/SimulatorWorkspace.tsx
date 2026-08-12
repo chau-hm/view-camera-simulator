@@ -305,6 +305,7 @@ export const SimulatorWorkspace = ({
   ]);
   const lockReason = UI_COPY.controls.guidedControlLockedReason;
   const controlPolicy = safeScene.cameraControlPolicy ?? {};
+  const movementLocked = controlPolicy.movement === "fixed";
   const focusLocked = controlPolicy.focusDistance === "fixed";
   const apertureLocked = controlPolicy.aperture === "fixed";
   const infinityResetHidden = controlPolicy.infinityReset === false;
@@ -535,7 +536,7 @@ export const SimulatorWorkspace = ({
             </div>
 
             <div style={{ marginTop: 8 }}>
-              {showPublicTeachingControls ? (
+              {!movementLocked ? (showPublicTeachingControls ? (
                 <div className="sim-section">
                   <CameraMovementTeachingControls />
                 </div>
@@ -556,7 +557,7 @@ export const SimulatorWorkspace = ({
                   <div className="sim-section-label">Movement</div>
                   <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
                 </div>
-              )}
+              )) : null}
 
               <div className="sim-section">
                 <div className="sim-section-label">Focus</div>
@@ -568,10 +569,12 @@ export const SimulatorWorkspace = ({
                 <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? "Aperture is fixed for this lesson" : lockReason} showTitle={false} />
               </div>
 
-              <div className="sim-section reset" style={{ paddingBottom: 0 }}>
-                <div className="sim-section-label">Reset</div>
-                <ResetControls showTitle={false} />
-              </div>
+              {(!movementLocked || task !== null) && (
+                <div className="sim-section reset" style={{ paddingBottom: 0 }}>
+                  <div className="sim-section-label">Reset</div>
+                  <ResetControls showTitle={false} showMovementReset={!movementLocked} />
+                </div>
+              )}
             </div>
 
           </section>

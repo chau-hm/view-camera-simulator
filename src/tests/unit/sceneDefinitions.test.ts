@@ -13,6 +13,7 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -23,7 +24,9 @@ describe("scene definitions", () => {
       expect.arrayContaining(["architecture-rise", "table-tilt", "shelf-swing"]),
     );
     expect(sceneRegistry["table-tilt"]).toBe(tableTiltScene);
+    expect(sceneRegistry["mirror-shift"]).toBe(mirrorShiftScene);
     expect(sceneOrder).toContain("table-tilt");
+    expect(sceneOrder).toContain("mirror-shift");
     expect(getAllScenes().length).toBeGreaterThanOrEqual(3);
   });
 
@@ -44,6 +47,18 @@ describe("scene definitions", () => {
   it("locks Focus Fundamentals to its fixed f/32 teaching aperture", () => {
     expect(focusFundamentalsTwoTargets.cameraPreset.aperture).toBe(32);
     expect(focusFundamentalsTwoTargets.cameraControlPolicy?.aperture).toBe("fixed");
+  });
+
+  it("keeps Mirror Shift in a fixed neutral camera state", () => {
+    expect(mirrorShiftScene.name).toBe("Mirror Shift");
+    expect(mirrorShiftScene.cameraControlPolicy).toEqual({
+      movement: "fixed",
+      focusDistance: "fixed",
+      aperture: "fixed",
+      infinityReset: false,
+    });
+    expect(mirrorShiftScene.focusTargets).toHaveLength(0);
+    expect(mirrorShiftScene.compositionTargets).toHaveLength(0);
   });
 
   it("defines near/mid/far shelf focus targets", () => {
