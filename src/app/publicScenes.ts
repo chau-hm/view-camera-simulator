@@ -78,8 +78,9 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       "Inspect a static planar mirror scene and compare its reflected props and view-camera proxy on the Ground Glass.",
     topics: ["Mirror", "Reflected viewpoint", "Ground Glass"],
     availability: "available",
-    availableModes: ["free"],
+    availableModes: ["free", "guided"],
     thumbnailAsset: "assets/mirror-shift.svg",
+    guidedTaskId: "mirror-shift-01",
   },
 ];
 

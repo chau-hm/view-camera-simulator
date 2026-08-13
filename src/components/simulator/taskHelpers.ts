@@ -11,6 +11,8 @@ export function formatControlLabel(controlId: string): string {
     focusAssist: "Focus Assist",
     grid: "Grid",
     geometryView: "2D Geometry",
+    cameraPosition: "Camera Position",
+    frontShift: "Front Shift",
   };
   return map[controlId] ?? controlId;
 }
@@ -94,7 +96,18 @@ export function getPrimaryFailedCriterion(
   return failed ?? null;
 }
 
-export function formatFinalCameraState(finalState?: { frontRiseMm?: number; frontTiltDeg?: number; frontSwingDeg?: number; focusDistanceMm?: number; aperture?: number } | null): string {
+export function formatFinalCameraState(finalState?: {
+  frontRiseMm?: number;
+  frontTiltDeg?: number;
+  frontSwingDeg?: number;
+  focusDistanceMm?: number;
+  aperture?: number;
+  frontShiftMm?: number;
+  mirrorShiftLessonState?: { rigLateralMm?: number };
+} | null): string {
   if (!finalState) return "";
-  return `Rise ${finalState.frontRiseMm ?? 0} mm · Tilt ${finalState.frontTiltDeg ?? 0}° · Swing ${finalState.frontSwingDeg ?? 0}° · Focus ${finalState.focusDistanceMm ?? 0} mm · Aperture f/${finalState.aperture ?? 11}`;
+  const mirrorShiftSummary = finalState.mirrorShiftLessonState || finalState.frontShiftMm !== undefined
+    ? ` · Camera Position ${finalState.mirrorShiftLessonState?.rigLateralMm ?? 0} mm · Front Shift ${finalState.frontShiftMm ?? 0} mm`
+    : "";
+  return `Rise ${finalState.frontRiseMm ?? 0} mm · Tilt ${finalState.frontTiltDeg ?? 0}° · Swing ${finalState.frontSwingDeg ?? 0}° · Focus ${finalState.focusDistanceMm ?? 0} mm · Aperture f/${finalState.aperture ?? 11}${mirrorShiftSummary}`;
 }

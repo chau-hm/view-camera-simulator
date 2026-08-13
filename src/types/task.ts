@@ -4,18 +4,19 @@ import type { SceneDefinition } from "./scene";
 
 export type TaskInitialCameraState = Pick<
   CameraState,
- | "frontRiseMm"
- | "frontTiltDeg"
- | "frontSwingDeg"
+  | "frontRiseMm"
+  | "frontTiltDeg"
+  | "frontSwingDeg"
   | "rearRiseMm"
   | "rearTiltDeg"
- | "focusDistanceMm"
+  | "focusDistanceMm"
   | "aperture"
   | "geometryView"
   | "groundGlassAssistEnabled"
   | "focusAssistEnabled"
   | "gridEnabled"
->;
+> &
+  Partial<Pick<CameraState, "frontShiftMm" | "mirrorShiftLessonState">>;
 
 export type TaskDefinition = {
   id: string;
@@ -24,7 +25,16 @@ export type TaskDefinition = {
   /** Optional presentation-only objective/summary for UI cards */
   objective?: string;
   mode: "guided" | "free";
-  enabledControls: Array<"rise" | "tilt" | "swing" | "focusDistance" | "aperture" | "geometryView">;
+  enabledControls: Array<
+    | "rise"
+    | "tilt"
+    | "swing"
+    | "focusDistance"
+    | "aperture"
+    | "geometryView"
+    | "cameraPosition"
+    | "frontShift"
+  >;
   constraints: {
     movement?: "rise-only" | "tilt-only" | "swing-only";
     notes: string[];
@@ -32,6 +42,7 @@ export type TaskDefinition = {
   criteria: TaskSuccessCriterion[];
   feedbackRules: {
     passPrimary: string;
+    passSecondary?: string;
     defaultFailPrimary: string;
     failPrimaryByCriterionId: Record<string, string>;
     failSecondaryByCriterionId: Record<string, string>;
@@ -85,12 +96,36 @@ export type CompositionVisibleCriterion = {
   minimumCoverage: number;
 };
 
+export type MirrorReflectionClearCriterion = {
+  id: string;
+  label: string;
+  type: "mirror-reflection-clear";
+  minimumClearanceMm: number;
+};
+
+export type MirrorFramingRestoredCriterion = {
+  id: string;
+  label: string;
+  type: "mirror-framing-restored";
+  maximumCenterErrorNormalized: number;
+};
+
+export type MirrorViewpointRetainedCriterion = {
+  id: string;
+  label: string;
+  type: "mirror-viewpoint-retained";
+  minimumParallaxDeltaNormalized: number;
+};
+
 export type TaskSuccessCriterion =
   | FocusTargetsSharpCriterion
   | MovementUsedCriterion
   | MovementRangeCriterion
   | AllowedApertureCriterion
-  | CompositionVisibleCriterion;
+  | CompositionVisibleCriterion
+  | MirrorReflectionClearCriterion
+  | MirrorFramingRestoredCriterion
+  | MirrorViewpointRetainedCriterion;
 
 export type TaskCriteriaEvaluation = {
   criterionId: string;
@@ -107,7 +142,11 @@ export type TaskEvaluation = {
   criteria: TaskCriteriaEvaluation[];
   primaryFeedback: string;
   secondaryFeedback: string[];
-  finalCameraState?: Pick<CameraState, "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "focusDistanceMm" | "aperture">;
+  finalCameraState?: Pick<
+    CameraState,
+    "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "focusDistanceMm" | "aperture"
+  > &
+    Partial<Pick<CameraState, "frontShiftMm" | "mirrorShiftLessonState">>;
 };
 
 export type TaskEvaluationContext = {

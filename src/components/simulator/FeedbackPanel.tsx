@@ -60,6 +60,16 @@ export const FeedbackPanel = ({ mode, sceneId, evaluation, showTitle = true }: F
 
         <h3 style={{ marginTop: 8 }}>{primaryText}</h3>
 
+        {evaluation && evaluation.secondaryFeedback.length > 0 ? (
+          <div aria-label={UI_COPY.simulator.secondaryFeedbackLabel} style={{ marginTop: 8 }}>
+            {evaluation.secondaryFeedback.map((feedback) => (
+              <p key={feedback} style={{ margin: "4px 0", color: "var(--text-muted)" }}>
+                {feedback}
+              </p>
+            ))}
+          </div>
+        ) : null}
+
         <div style={{ marginTop: 8 }}>
           <div><strong>{UI_COPY.simulator.nextAdjustmentLabel}</strong></div>
           <div style={{ marginTop: 6, fontWeight: 600 }}>{primaryFailed ? primaryFailed.message : UI_COPY.simulator.noAdjustmentNeeded}</div>

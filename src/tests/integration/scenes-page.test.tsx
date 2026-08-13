@@ -122,8 +122,15 @@ describe("scenes page", () => {
       "free",
       "guided",
     ]);
-    expect(getPublicSceneEntryById("mirror-shift")?.availableModes).toEqual(["free"]);
-    expect(getPublicSceneEntryById("mirror-shift")?.guidedTaskId).toBeUndefined();
+    const mirrorHeading = await screen.findByRole("heading", { name: "Mirror Shift", level: 2 });
+    const mirrorCard = mirrorHeading.closest("article");
+    expect(mirrorCard).not.toBeNull();
+    expect(within(mirrorCard!).getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/mirror-shift/mirror-shift-01",
+    );
+    expect(getPublicSceneEntryById("mirror-shift")?.availableModes).toEqual(["free", "guided"]);
+    expect(getPublicSceneEntryById("mirror-shift")?.guidedTaskId).toBe("mirror-shift-01");
     expect(getPublicScenes().map((scene) => scene.id)).toContain("mirror-shift");
     expect(getPublicSceneEntryById("unknown-scene")).toBeUndefined();
     expect(

@@ -387,6 +387,85 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera.frontShiftMm).toBe(0);
   });
 
+  it("initializes and restarts the guided Mirror Shift task at calibrated Neutral", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({
+      mode: "guided",
+      sceneId: "mirror-shift",
+      taskId: "mirror-shift-01",
+    });
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      mode: "guided",
+      activeTaskId: "mirror-shift-01",
+      frontShiftMm: 0,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+      geometryView: "top",
+    });
+
+    store.setMirrorShiftRigLateralMm(2000);
+    store.setFrontShiftMm(-55);
+    store.setCurrentTaskEvaluation({
+      taskId: "mirror-shift-01",
+      status: "passed",
+      score: 100,
+      criteria: [],
+      primaryFeedback: "done",
+      secondaryFeedback: [],
+    });
+    store.restartTask();
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      mode: "guided",
+      activeTaskId: "mirror-shift-01",
+      frontShiftMm: 0,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+      geometryView: "top",
+    });
+    expect(useAppStore.getState().task.currentTaskEvaluation).toBeNull();
+  });
+
+  it("keeps guided evaluation and movement state isolated from Mirror Shift Free Mode", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+    store.setMirrorShiftRigLateralMm(1800);
+    store.setFrontShiftMm(-50);
+
+    store.initializeSimulatorRoute({
+      mode: "guided",
+      sceneId: "mirror-shift",
+      taskId: "mirror-shift-01",
+    });
+    expect(useAppStore.getState().camera).toMatchObject({
+      mode: "guided",
+      frontShiftMm: 0,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+    });
+
+    store.setMirrorShiftRigLateralMm(2000);
+    store.setFrontShiftMm(-55);
+    store.setCurrentTaskEvaluation({
+      taskId: "mirror-shift-01",
+      status: "passed",
+      score: 100,
+      criteria: [],
+      primaryFeedback: "done",
+      secondaryFeedback: [],
+    });
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      mode: "free",
+      activeTaskId: null,
+      frontShiftMm: 0,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+    });
+    expect(useAppStore.getState().task).toMatchObject({
+      activeTaskId: null,
+      currentTaskEvaluation: null,
+    });
+  });
+
   it("preserves the stored geometry view when entering and leaving Mirror Shift", () => {
     const store = useAppStore.getState();
     store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
