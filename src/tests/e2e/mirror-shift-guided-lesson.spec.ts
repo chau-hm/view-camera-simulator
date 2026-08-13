@@ -43,6 +43,7 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
   await page.getByRole("button", { name: "Open 2D Geometry" }).click();
   const geometry = page.getByTestId("mirror-shift-teaching-svg");
   await expect(geometry).toBeVisible();
+  await expect(page.locator("section[data-geometry-fit]")).toHaveAttribute("data-geometry-view", "top");
   await expect(geometry).toHaveAttribute("data-current-film-x-mm", "2000");
   await expect(geometry).toHaveAttribute("data-current-lens-x-mm", "1945");
   await page.getByRole("button", { name: "Close 2D Geometry" }).click();

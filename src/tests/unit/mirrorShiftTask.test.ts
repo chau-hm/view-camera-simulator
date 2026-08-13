@@ -52,8 +52,8 @@ describe("Mirror Shift guided task", () => {
       mirrorShiftLessonState: {
         rigLateralMm: resolveMirrorShiftTeachingState("neutral").rigLateralMm,
       },
-      geometryView: "top",
     });
+    expect(task?.initialCameraState).not.toHaveProperty("geometryView");
     expect(task?.criteria).toEqual([
       expect.objectContaining({
         type: "mirror-reflection-clear",

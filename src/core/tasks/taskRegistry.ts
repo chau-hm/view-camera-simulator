@@ -377,7 +377,6 @@ const mirrorShiftTask: TaskDefinition = {
     rearTiltDeg: 0,
     focusDistanceMm: mirrorShiftScene.cameraPreset.focusDistanceMm,
     aperture: mirrorShiftScene.cameraPreset.aperture,
-    geometryView: "top",
     groundGlassAssistEnabled: false,
     focusAssistEnabled: false,
     gridEnabled: true,

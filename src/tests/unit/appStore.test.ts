@@ -389,6 +389,9 @@ describe("app store STA-001", () => {
 
   it("initializes and restarts the guided Mirror Shift task at calibrated Neutral", () => {
     const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    store.setGeometryView("side");
+
     store.initializeSimulatorRoute({
       mode: "guided",
       sceneId: "mirror-shift",
@@ -400,8 +403,9 @@ describe("app store STA-001", () => {
       activeTaskId: "mirror-shift-01",
       frontShiftMm: 0,
       mirrorShiftLessonState: { rigLateralMm: 0 },
-      geometryView: "top",
     });
+    expect(useAppStore.getState().camera.geometryView).toBe("side");
+    expect(useAppStore.getState().ui.geometryView).toBe("side");
 
     store.setMirrorShiftRigLateralMm(2000);
     store.setFrontShiftMm(-55);
@@ -420,8 +424,9 @@ describe("app store STA-001", () => {
       activeTaskId: "mirror-shift-01",
       frontShiftMm: 0,
       mirrorShiftLessonState: { rigLateralMm: 0 },
-      geometryView: "top",
     });
+    expect(useAppStore.getState().camera.geometryView).toBe("side");
+    expect(useAppStore.getState().ui.geometryView).toBe("side");
     expect(useAppStore.getState().task.currentTaskEvaluation).toBeNull();
   });
 

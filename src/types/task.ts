@@ -11,12 +11,16 @@ export type TaskInitialCameraState = Pick<
   | "rearTiltDeg"
   | "focusDistanceMm"
   | "aperture"
-  | "geometryView"
   | "groundGlassAssistEnabled"
   | "focusAssistEnabled"
   | "gridEnabled"
 > &
-  Partial<Pick<CameraState, "frontShiftMm" | "mirrorShiftLessonState">>;
+  Partial<
+    Pick<
+      CameraState,
+      "geometryView" | "frontShiftMm" | "mirrorShiftLessonState"
+    >
+  >;
 
 export type TaskDefinition = {
   id: string;
