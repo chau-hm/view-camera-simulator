@@ -883,6 +883,8 @@ export const useAppStore = create<AppStore>((set) => ({
         return {
           camera: {
             ...state.camera,
+            mode,
+            activeTaskId: taskId ?? null,
             aperture: resolveSceneAperture(sceneId, state.camera.aperture),
           },
           scene: { ...state.scene, activeSceneId: sceneId },
@@ -904,6 +906,17 @@ export const useAppStore = create<AppStore>((set) => ({
 
       let nextCamera: CameraState = { ...state.camera };
       const routeTask = taskId ? getTaskById(taskId) : undefined;
+      const routeMirrorShiftLessonState =
+        sceneId === "mirror-shift"
+          ? routeTask?.initialCameraState?.mirrorShiftLessonState ??
+            DEFAULT_MIRROR_SHIFT_LESSON_STATE
+          : undefined;
+      const routeFrontShiftMm =
+        getSceneById(sceneId)?.cameraFrontShiftCapability?.enabled
+          ? routeTask?.initialCameraState?.frontShiftMm ??
+            getSceneById(sceneId)?.cameraPreset.frontShiftMm ??
+            0
+          : 0;
 
       try {
         const scene = getSceneById(sceneId);
@@ -971,21 +984,19 @@ export const useAppStore = create<AppStore>((set) => ({
 
       nextCamera = {
         ...nextCamera,
-        frontShiftMm: getSceneById(sceneId)?.cameraFrontShiftCapability?.enabled
-          ? getSceneById(sceneId)?.cameraPreset.frontShiftMm ?? 0
-          : 0,
+        mode,
+        activeTaskId: taskId ?? null,
+        frontShiftMm: routeFrontShiftMm,
         viewpointAnchor: "mid",
-        cameraRigPlacement: resolveRigPlacement(
-          sceneId,
-          "mid",
-          routeCalibration,
-        ),
+        cameraRigPlacement:
+          sceneId === "mirror-shift"
+            ? resolveMirrorShiftRigPlacement(
+                routeMirrorShiftLessonState?.rigLateralMm ?? 0,
+              )
+            : resolveRigPlacement(sceneId, "mid", routeCalibration),
         cameraBodyPitchDeg: 0,
         cameraMovementLessonState: undefined,
-        mirrorShiftLessonState:
-          sceneId === "mirror-shift"
-            ? DEFAULT_MIRROR_SHIFT_LESSON_STATE
-            : undefined,
+        mirrorShiftLessonState: routeMirrorShiftLessonState,
       };
 
       if (cameraMovementRoute && !calibrationRoute) {
@@ -1415,6 +1426,11 @@ export const useAppStore = create<AppStore>((set) => ({
         state.camera.gridEnabled;
       const nextShowOpticalGeometry =
         resolveInitialOpticalGeometryVisibility(activeTask);
+      const nextMirrorShiftLessonState =
+        nextSceneId === "mirror-shift"
+          ? (nextControlState as Partial<CameraState>).mirrorShiftLessonState ??
+            DEFAULT_MIRROR_SHIFT_LESSON_STATE
+          : undefined;
 
       const defaultMovement = resolveDefaultMovement(nextSceneId);
       const selectableFocusRestart = supportsFocusStandard(nextSceneId);
@@ -1434,11 +1450,12 @@ export const useAppStore = create<AppStore>((set) => ({
           ...resolveCameraBodyReset(nextSceneId),
           ...nextControlState,
           viewpointAnchor: "mid",
-          cameraRigPlacement: resolveRigPlacement(
-            nextSceneId,
-            "mid",
-            activeCalibration,
-          ),
+          cameraRigPlacement:
+            nextSceneId === "mirror-shift"
+              ? resolveMirrorShiftRigPlacement(
+                  nextMirrorShiftLessonState?.rigLateralMm ?? 0,
+                )
+              : resolveRigPlacement(nextSceneId, "mid", activeCalibration),
           geometryView: nextGeometryView,
           groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
           focusAssistEnabled: nextFocusAssistEnabled,
@@ -1465,9 +1482,7 @@ export const useAppStore = create<AppStore>((set) => ({
               ? DEFAULT_CAMERA_MOVEMENT_LESSON_STATE
               : undefined,
           mirrorShiftLessonState:
-            nextSceneId === "mirror-shift"
-              ? DEFAULT_MIRROR_SHIFT_LESSON_STATE
-              : undefined,
+            nextMirrorShiftLessonState,
         },
         scene: {
           activeSceneId: nextSceneId,
