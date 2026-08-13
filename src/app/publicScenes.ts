@@ -79,7 +79,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     topics: ["Mirror", "Reflected viewpoint", "Ground Glass"],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/mirror-shift.svg",
+    thumbnailAsset: "assets/mirror-shift.png",
     guidedTaskId: "mirror-shift-01",
   },
 ];
