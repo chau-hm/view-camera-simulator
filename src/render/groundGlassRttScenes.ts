@@ -8,6 +8,7 @@ export const RTT_SCENES = [
   "table-tilt",
   "shelf-swing",
   "understanding-camera-movements",
+  "mirror-shift",
 ] as const;
 export type RttSceneId = (typeof RTT_SCENES)[number];
 

@@ -1,4 +1,5 @@
 import type { SceneDefinition } from "../types/scene";
+import type { Vec3 } from "../types/optics";
 import { transformRigLocalPointToWorld } from "../core/optics/applyCameraBodyPitch";
 import type { CameraRigTransform } from "../types/optics";
 
@@ -168,3 +169,17 @@ export const translateObserverViewToTarget = (
     ],
   };
 };
+
+/**
+ * Translate a calibrated camera-inspection view by the canonical rigid-rig
+ * origin while preserving its observer-to-target orbit offset.
+ */
+export const translateObserverViewByRigOrigin = (
+  view: ObserverViewState,
+  rigOriginWorld: Vec3,
+): ObserverViewState =>
+  translateObserverViewToTarget(view, [
+    view.target[0] + toWorld(rigOriginWorld.x),
+    view.target[1] + toWorld(rigOriginWorld.y),
+    view.target[2] + toWorld(rigOriginWorld.z),
+  ]);

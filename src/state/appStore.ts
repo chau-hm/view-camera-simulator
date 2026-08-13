@@ -54,6 +54,12 @@ import {
   DEFAULT_CAMERA_MOVEMENT_LESSON_STATE,
   resolveCameraMovementLessonState,
 } from "../scenes/cameraMovementLessonState";
+import {
+  clampMirrorShiftFrontShiftMm,
+  clampMirrorShiftRigLateralMm,
+  DEFAULT_MIRROR_SHIFT_LESSON_STATE,
+  resolveMirrorShiftRigPlacement,
+} from "../scenes/mirrorShiftLessonState";
 
 const getFocusStandardCapability = (
   sceneId: string,
@@ -73,6 +79,7 @@ export const getFocusStandardDefault = (sceneId: string): FocusStandard => {
 const defaultControlState = {
   focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
   frontRiseMm: DEFAULT_CAMERA_STATE.frontRiseMm,
+  frontShiftMm: DEFAULT_CAMERA_STATE.frontShiftMm,
   frontTiltDeg: DEFAULT_CAMERA_STATE.frontTiltDeg,
   frontSwingDeg: DEFAULT_CAMERA_STATE.frontSwingDeg,
   rearRiseMm: DEFAULT_CAMERA_STATE.rearRiseMm,
@@ -155,6 +162,9 @@ const resolveRigPlacement = (
   anchor: CameraRigViewpointAnchor = "mid",
   calibration: CameraMovementSceneCalibration = CAMERA_MOVEMENT_SCENE_CALIBRATION,
 ): CameraState["cameraRigPlacement"] => {
+  if (sceneId === "mirror-shift") {
+    return resolveMirrorShiftRigPlacement(0);
+  }
   if (!isCameraMovementsScene(sceneId)) return { ...DEFAULT_CAMERA_RIG_PLACEMENT };
   const resolved = resolveCameraRigViewpointAnchor(calibration.cameraRig, anchor);
   return { ...resolved, rigOriginWorld: { ...resolved.rigOriginWorld } };
@@ -172,6 +182,7 @@ const resolveCameraMovementLessonCamera = (
   );
   return {
     ...camera,
+    frontShiftMm: 0,
     cameraMovementLessonState: derived.lessonState,
     frontRiseMm: derived.frontRiseMm,
     frontTiltDeg: derived.frontTiltDeg,
@@ -236,11 +247,17 @@ const resolveScenePresetReset = (
   sceneId: string,
 ): Partial<CameraState> => {
   const scene = getSceneById(sceneId);
-  if (!scene?.movementCapabilities) return {};
+  if (
+    !scene?.movementCapabilities &&
+    scene?.cameraControlPolicy?.movement !== "fixed"
+  ) {
+    return {};
+  }
   const preset = scene.cameraPreset;
   return {
     ...(preset.focalLengthMm === undefined ? {} : { focalLengthMm: preset.focalLengthMm }),
     frontRiseMm: preset.frontRiseMm,
+    frontShiftMm: preset.frontShiftMm ?? 0,
     frontTiltDeg: preset.frontTiltDeg,
     frontSwingDeg: preset.frontSwingDeg,
     rearRiseMm: preset.rearRiseMm,
@@ -289,6 +306,12 @@ export type CameraMovementCalibrationSession = Readonly<{
 const isFocusDistanceLocked = (sceneId: string): boolean => {
   const scene = getSceneById(sceneId);
   return scene?.cameraControlPolicy?.focusDistance === "fixed";
+};
+
+/** Check if standard movement controls are locked by the active scene. */
+const isMovementLocked = (sceneId: string): boolean => {
+  const scene = getSceneById(sceneId);
+  return scene?.cameraControlPolicy?.movement === "fixed";
 };
 
 /** Check if aperture is locked by the active scene's cameraControlPolicy. */
@@ -358,6 +381,8 @@ export type AppStore = {
   setActiveTask: (taskId: string | null) => void;
   /** Set the canonical continuous lesson state for Understanding Camera Movements. */
   setCameraMovementLessonState: (lessonState: CameraMovementLessonState) => void;
+  setMirrorShiftRigLateralMm: (value: number) => void;
+  setFrontShiftMm: (value: number) => void;
   setCameraBodyPitchDeg: (value: number) => void;
   setCameraMovementViewpointAnchor: (anchor: CameraRigViewpointAnchor) => void;
   initializeSimulatorRoute: (init: {
@@ -599,6 +624,7 @@ export const useAppStore = create<AppStore>((set) => ({
         frontSwingDeg: 0,
         rearRiseMm: 0,
         rearTiltDeg: 0,
+        frontShiftMm: 0,
         cameraBodyPitchDeg: 0,
         viewpointAnchor: "mid",
         cameraRigPlacement: resolveRigPlacement(
@@ -691,14 +717,31 @@ export const useAppStore = create<AppStore>((set) => ({
         camera: {
           ...state.camera,
           ...resolveCameraBodyReset(sceneId),
+          frontShiftMm: scene?.cameraFrontShiftCapability?.enabled
+            ? scene.cameraPreset.frontShiftMm ?? 0
+            : 0,
           viewpointAnchor: "mid",
           cameraRigPlacement: resolveRigPlacement(sceneId),
+          mirrorShiftLessonState:
+            sceneId === "mirror-shift"
+              ? DEFAULT_MIRROR_SHIFT_LESSON_STATE
+              : undefined,
           cameraMovementLessonState:
             isCameraMovementsScene(sceneId) &&
             !state.cameraMovementCalibrationSession.active
               ? DEFAULT_CAMERA_MOVEMENT_LESSON_STATE
               : undefined,
           activeSceneId: sceneId,
+          ...(scene?.cameraControlPolicy?.movement === "fixed"
+            ? {
+                frontRiseMm: 0,
+                frontTiltDeg: 0,
+                frontSwingDeg: 0,
+                rearRiseMm: 0,
+                rearTiltDeg: 0,
+                cameraMovementLessonState: undefined,
+              }
+            : {}),
           focalLengthMm:
             scene?.cameraPreset.focalLengthMm ??
             DEFAULT_CAMERA_STATE.focalLengthMm,
@@ -756,6 +799,41 @@ export const useAppStore = create<AppStore>((set) => ({
       };
     }),
 
+  setMirrorShiftRigLateralMm: (value) =>
+    set((state) => {
+      if (
+        state.camera.activeSceneId !== "mirror-shift" ||
+        !Number.isFinite(value)
+      ) {
+        return {};
+      }
+      const rigLateralMm = clampMirrorShiftRigLateralMm(value);
+      return {
+        camera: {
+          ...state.camera,
+          mirrorShiftLessonState: { rigLateralMm },
+          cameraRigPlacement: resolveMirrorShiftRigPlacement(rigLateralMm),
+        },
+      };
+    }),
+
+  setFrontShiftMm: (value) =>
+    set((state) => {
+      const scene = getSceneById(state.camera.activeSceneId);
+      if (
+        !scene?.cameraFrontShiftCapability?.enabled ||
+        !Number.isFinite(value)
+      ) {
+        return {};
+      }
+      return {
+        camera: {
+          ...state.camera,
+          frontShiftMm: clampMirrorShiftFrontShiftMm(value),
+        },
+      };
+    }),
+
   setCameraBodyPitchDeg: (value) =>
     set((state) => {
       const bounds = CAMERA_MOVEMENT_WORKBENCH_BOUNDS.movements.cameraBodyPitchDeg;
@@ -805,6 +883,8 @@ export const useAppStore = create<AppStore>((set) => ({
         return {
           camera: {
             ...state.camera,
+            mode,
+            activeTaskId: taskId ?? null,
             aperture: resolveSceneAperture(sceneId, state.camera.aperture),
           },
           scene: { ...state.scene, activeSceneId: sceneId },
@@ -826,6 +906,17 @@ export const useAppStore = create<AppStore>((set) => ({
 
       let nextCamera: CameraState = { ...state.camera };
       const routeTask = taskId ? getTaskById(taskId) : undefined;
+      const routeMirrorShiftLessonState =
+        sceneId === "mirror-shift"
+          ? routeTask?.initialCameraState?.mirrorShiftLessonState ??
+            DEFAULT_MIRROR_SHIFT_LESSON_STATE
+          : undefined;
+      const routeFrontShiftMm =
+        getSceneById(sceneId)?.cameraFrontShiftCapability?.enabled
+          ? routeTask?.initialCameraState?.frontShiftMm ??
+            getSceneById(sceneId)?.cameraPreset.frontShiftMm ??
+            0
+          : 0;
 
       try {
         const scene = getSceneById(sceneId);
@@ -893,14 +984,19 @@ export const useAppStore = create<AppStore>((set) => ({
 
       nextCamera = {
         ...nextCamera,
+        mode,
+        activeTaskId: taskId ?? null,
+        frontShiftMm: routeFrontShiftMm,
         viewpointAnchor: "mid",
-        cameraRigPlacement: resolveRigPlacement(
-          sceneId,
-          "mid",
-          routeCalibration,
-        ),
+        cameraRigPlacement:
+          sceneId === "mirror-shift"
+            ? resolveMirrorShiftRigPlacement(
+                routeMirrorShiftLessonState?.rigLateralMm ?? 0,
+              )
+            : resolveRigPlacement(sceneId, "mid", routeCalibration),
         cameraBodyPitchDeg: 0,
         cameraMovementLessonState: undefined,
+        mirrorShiftLessonState: routeMirrorShiftLessonState,
       };
 
       if (cameraMovementRoute && !calibrationRoute) {
@@ -951,138 +1047,162 @@ export const useAppStore = create<AppStore>((set) => ({
     }),
 
   setSelectedMovement: (movement) =>
-    set((state) => ({
-      camera: {
-        ...state.camera,
-        frontRiseMm: 0,
-        frontTiltDeg: 0,
-        frontSwingDeg: 0,
-        rearRiseMm: 0,
-        rearTiltDeg: 0,
-        cameraMovementLessonState: undefined,
-      },
-      selectedMovement: movement,
-    })),
+    set((state) =>
+      isMovementLocked(state.camera.activeSceneId)
+        ? {}
+        : {
+            camera: {
+              ...state.camera,
+              frontRiseMm: 0,
+              frontTiltDeg: 0,
+              frontSwingDeg: 0,
+              rearRiseMm: 0,
+              rearTiltDeg: 0,
+              cameraMovementLessonState: undefined,
+            },
+            selectedMovement: movement,
+          },
+    ),
 
   setRise: (value) =>
-    set((state) => ({
-      ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+    set((state) =>
+      isMovementLocked(state.camera.activeSceneId)
         ? {}
         : {
-      camera: enforceSingleMovement(
-        {
-          ...state.camera,
-          cameraMovementLessonState: undefined,
-          frontRiseMm: clamp(
-            value,
-            CAMERA_CONSTANTS.riseMinMm,
-            CAMERA_CONSTANTS.riseMaxMm,
-          ),
-        },
-        state.camera.activeSceneId,
-        "frontRiseMm",
-      ),
-      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
-        ? "frontRiseMm"
-        : state.selectedMovement,
-        }),
-    })),
+            ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+              ? {}
+              : {
+                  camera: enforceSingleMovement(
+                    {
+                      ...state.camera,
+                      cameraMovementLessonState: undefined,
+                      frontRiseMm: clamp(
+                        value,
+                        CAMERA_CONSTANTS.riseMinMm,
+                        CAMERA_CONSTANTS.riseMaxMm,
+                      ),
+                    },
+                    state.camera.activeSceneId,
+                    "frontRiseMm",
+                  ),
+                  selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+                    ? "frontRiseMm"
+                    : state.selectedMovement,
+                }),
+          },
+    ),
 
   setTilt: (value) =>
-    set((state) => ({
-      ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+    set((state) =>
+      isMovementLocked(state.camera.activeSceneId)
         ? {}
         : {
-      camera: enforceSingleMovement(
-        {
-          ...state.camera,
-          cameraMovementLessonState: undefined,
-          frontTiltDeg: clamp(
-            value,
-            CAMERA_CONSTANTS.tiltMinDeg,
-            CAMERA_CONSTANTS.tiltMaxDeg,
-          ),
-        },
-        state.camera.activeSceneId,
-        "frontTiltDeg",
-      ),
-      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
-        ? "frontTiltDeg"
-        : state.selectedMovement,
-        }),
-    })),
+            ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+              ? {}
+              : {
+                  camera: enforceSingleMovement(
+                    {
+                      ...state.camera,
+                      cameraMovementLessonState: undefined,
+                      frontTiltDeg: clamp(
+                        value,
+                        CAMERA_CONSTANTS.tiltMinDeg,
+                        CAMERA_CONSTANTS.tiltMaxDeg,
+                      ),
+                    },
+                    state.camera.activeSceneId,
+                    "frontTiltDeg",
+                  ),
+                  selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+                    ? "frontTiltDeg"
+                    : state.selectedMovement,
+                }),
+          },
+    ),
 
   setSwing: (value) =>
-    set((state) => ({
-      ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+    set((state) =>
+      isMovementLocked(state.camera.activeSceneId)
         ? {}
         : {
-      camera: enforceSingleMovement(
-        {
-          ...state.camera,
-          cameraMovementLessonState: undefined,
-          frontSwingDeg: clamp(
-            value,
-            CAMERA_CONSTANTS.swingMinDeg,
-            CAMERA_CONSTANTS.swingMaxDeg,
-          ),
-        },
-        state.camera.activeSceneId,
-        "frontSwingDeg",
-      ),
-      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
-        ? "frontSwingDeg"
-        : state.selectedMovement,
-        }),
-    })),
+            ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+              ? {}
+              : {
+                  camera: enforceSingleMovement(
+                    {
+                      ...state.camera,
+                      cameraMovementLessonState: undefined,
+                      frontSwingDeg: clamp(
+                        value,
+                        CAMERA_CONSTANTS.swingMinDeg,
+                        CAMERA_CONSTANTS.swingMaxDeg,
+                      ),
+                    },
+                    state.camera.activeSceneId,
+                    "frontSwingDeg",
+                  ),
+                  selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+                    ? "frontSwingDeg"
+                    : state.selectedMovement,
+                }),
+          },
+    ),
 
   setRearRise: (value) =>
-    set((state) => ({
-      ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+    set((state) =>
+      isMovementLocked(state.camera.activeSceneId)
         ? {}
         : {
-      camera: enforceSingleMovement(
-        {
-          ...state.camera,
-          cameraMovementLessonState: undefined,
-          rearRiseMm: clamp(
-            value,
-            CAMERA_CONSTANTS.riseMinMm,
-            CAMERA_CONSTANTS.riseMaxMm,
-          ),
-        },
-        state.camera.activeSceneId,
-        "rearRiseMm",
-      ),
-      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
-        ? "rearRiseMm"
-        : state.selectedMovement,
-        }),
-    })),
+            ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+              ? {}
+              : {
+                  camera: enforceSingleMovement(
+                    {
+                      ...state.camera,
+                      cameraMovementLessonState: undefined,
+                      rearRiseMm: clamp(
+                        value,
+                        CAMERA_CONSTANTS.riseMinMm,
+                        CAMERA_CONSTANTS.riseMaxMm,
+                      ),
+                    },
+                    state.camera.activeSceneId,
+                    "rearRiseMm",
+                  ),
+                  selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+                    ? "rearRiseMm"
+                    : state.selectedMovement,
+                }),
+          },
+    ),
 
   setRearTilt: (value) =>
-    set((state) => ({
-      ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+    set((state) =>
+      isMovementLocked(state.camera.activeSceneId)
         ? {}
         : {
-      camera: enforceSingleMovement(
-        {
-          ...state.camera,
-          cameraMovementLessonState: undefined,
-          rearTiltDeg: clamp(
-            value,
-            CAMERA_CONSTANTS.tiltMinDeg,
-            CAMERA_CONSTANTS.tiltMaxDeg,
-          ),
-        },
-        state.camera.activeSceneId,
-        "rearTiltDeg",
-      ),
-      selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
-        ? "rearTiltDeg"
-        : state.selectedMovement,
-        }),
-    })),
+            ...(state.camera.viewpointAnchor !== "mid" && isCameraMovementsScene(state.camera.activeSceneId)
+              ? {}
+              : {
+                  camera: enforceSingleMovement(
+                    {
+                      ...state.camera,
+                      cameraMovementLessonState: undefined,
+                      rearTiltDeg: clamp(
+                        value,
+                        CAMERA_CONSTANTS.tiltMinDeg,
+                        CAMERA_CONSTANTS.tiltMaxDeg,
+                      ),
+                    },
+                    state.camera.activeSceneId,
+                    "rearTiltDeg",
+                  ),
+                  selectedMovement: isSingleMovementScene(state.camera.activeSceneId)
+                    ? "rearTiltDeg"
+                    : state.selectedMovement,
+                }),
+          },
+    ),
 
   setFocusDistance: (value) =>
     set((state) => {
@@ -1257,8 +1377,15 @@ export const useAppStore = create<AppStore>((set) => ({
             (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
           ),
           cameraBodyPitchDeg: 0,
-          cameraRigPlacement: state.camera.cameraRigPlacement,
+          cameraRigPlacement:
+            sceneId === "mirror-shift"
+              ? resolveMirrorShiftRigPlacement(0)
+              : state.camera.cameraRigPlacement,
           cameraMovementLessonState: undefined,
+          mirrorShiftLessonState:
+            sceneId === "mirror-shift"
+              ? DEFAULT_MIRROR_SHIFT_LESSON_STATE
+              : undefined,
           ...(selectableFocusReset ? resolveSceneFocusDefaults(sceneId) : {}),
         },
         task: { ...state.task, currentTaskEvaluation: null },
@@ -1299,6 +1426,11 @@ export const useAppStore = create<AppStore>((set) => ({
         state.camera.gridEnabled;
       const nextShowOpticalGeometry =
         resolveInitialOpticalGeometryVisibility(activeTask);
+      const nextMirrorShiftLessonState =
+        nextSceneId === "mirror-shift"
+          ? (nextControlState as Partial<CameraState>).mirrorShiftLessonState ??
+            DEFAULT_MIRROR_SHIFT_LESSON_STATE
+          : undefined;
 
       const defaultMovement = resolveDefaultMovement(nextSceneId);
       const selectableFocusRestart = supportsFocusStandard(nextSceneId);
@@ -1318,11 +1450,12 @@ export const useAppStore = create<AppStore>((set) => ({
           ...resolveCameraBodyReset(nextSceneId),
           ...nextControlState,
           viewpointAnchor: "mid",
-          cameraRigPlacement: resolveRigPlacement(
-            nextSceneId,
-            "mid",
-            activeCalibration,
-          ),
+          cameraRigPlacement:
+            nextSceneId === "mirror-shift"
+              ? resolveMirrorShiftRigPlacement(
+                  nextMirrorShiftLessonState?.rigLateralMm ?? 0,
+                )
+              : resolveRigPlacement(nextSceneId, "mid", activeCalibration),
           geometryView: nextGeometryView,
           groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
           focusAssistEnabled: nextFocusAssistEnabled,
@@ -1338,11 +1471,18 @@ export const useAppStore = create<AppStore>((set) => ({
             nextSceneId,
             (nextControlState as Partial<CameraState>).aperture ?? state.camera.aperture,
           ),
+          frontShiftMm: getSceneById(nextSceneId)?.cameraFrontShiftCapability?.enabled
+            ? (nextControlState as Partial<CameraState>).frontShiftMm ??
+              getSceneById(nextSceneId)?.cameraPreset.frontShiftMm ??
+              0
+            : 0,
           ...(selectableFocusRestart ? resolveSceneFocusDefaults(nextSceneId) : {}),
           cameraMovementLessonState:
             isCameraMovementsScene(nextSceneId) && !preserveCalibration
               ? DEFAULT_CAMERA_MOVEMENT_LESSON_STATE
               : undefined,
+          mirrorShiftLessonState:
+            nextMirrorShiftLessonState,
         },
         scene: {
           activeSceneId: nextSceneId,

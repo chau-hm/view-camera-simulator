@@ -21,7 +21,9 @@ export const feedbackEngine = (
   if (evaluation.status === "passed") {
     return {
       primaryFeedback: task.feedbackRules.passPrimary,
-      secondaryFeedback: [],
+      secondaryFeedback: task.feedbackRules.passSecondary
+        ? [task.feedbackRules.passSecondary]
+        : [],
     };
   }
 

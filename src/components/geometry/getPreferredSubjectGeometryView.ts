@@ -7,6 +7,7 @@ const SCENE_DEFAULT_SUBJECT_VIEW: Readonly<Record<string, SubjectGeometryView>> 
   "shelf-swing": "top",
   "architecture-rise": "side",
   "focus-fundamentals-two-targets": "side",
+  "mirror-shift": "top",
 };
 
 export function getPreferredSubjectGeometryView({

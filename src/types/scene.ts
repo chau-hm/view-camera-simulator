@@ -57,6 +57,17 @@ export type SceneCameraBodyPitchCapability = {
   enabled: true;
 };
 
+export type SceneCameraRigTranslationCapability = {
+  enabled: true;
+  axis: "x";
+  state: "mirrorShiftLessonState";
+};
+
+export type SceneCameraFrontShiftCapability = {
+  enabled: true;
+  axis: "x";
+};
+
 export type SceneFocusStandardCapability = {
   enabled: true;
   defaultStandard: FocusStandard;
@@ -81,7 +92,7 @@ export type SceneDefinition = {
     | "rearRiseMm"
     | "rearTiltDeg"
   > &
-    Partial<Pick<CameraState, "focalLengthMm" | "cameraBodyPitchDeg" | "cameraBodyPivotWorld">>;
+    Partial<Pick<CameraState, "focalLengthMm" | "frontShiftMm" | "cameraBodyPitchDeg" | "cameraBodyPivotWorld">>;
   cameraPlacement: CameraPlacement;
   bounds: Bounds3;
   focusTargets: FocusTarget[];
@@ -92,6 +103,10 @@ export type SceneDefinition = {
   focusStandardCapability?: SceneFocusStandardCapability;
   /** Enables the canonical rigid body-pitch transform for this scene. */
   cameraBodyPitchCapability?: SceneCameraBodyPitchCapability;
+  /** Enables a scene-specific rigid lateral translation of the complete camera rig. */
+  cameraRigTranslationCapability?: SceneCameraRigTranslationCapability;
+  /** Enables a scene-specific horizontal translation of the front standard. */
+  cameraFrontShiftCapability?: SceneCameraFrontShiftCapability;
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
   movementCapabilities?: SceneMovementCapabilities;
   /** Optional camera-inspection observer framing. When absent, the default fallback applies. */
@@ -102,6 +117,7 @@ export type SceneDefinition = {
 
 /** Per-scene control policy for locking controls in instructional scenes. */
 export type CameraControlPolicy = {
+  movement?: "fixed";
   focusDistance?: "fixed";
   aperture?: "fixed";
   infinityReset?: false;

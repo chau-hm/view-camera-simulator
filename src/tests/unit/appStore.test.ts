@@ -267,6 +267,230 @@ describe("app store STA-001", () => {
     });
   });
 
+  it("keeps Mirror Shift movement, focus, and aperture controls fixed", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+    store.setRise(24);
+    store.setTilt(4);
+    store.setSwing(-3);
+    store.setRearRise(18);
+    store.setRearTilt(-2);
+    store.setFocusDistance(2500);
+    store.setAperture(5.6);
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      activeSceneId: "mirror-shift",
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      rearRiseMm: 0,
+      rearTiltDeg: 0,
+      focusDistanceMm: 6000,
+      aperture: 32,
+    });
+    expect(useAppStore.getState().selectedMovement).toBeNull();
+
+    store.resetMovements();
+    expect(useAppStore.getState().camera).toMatchObject({
+      focusDistanceMm: 6000,
+      aperture: 32,
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      rearRiseMm: 0,
+      rearTiltDeg: 0,
+    });
+  });
+
+  it("keeps Mirror Shift lateral position canonical, resettable, and isolated across scenes", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+
+    expect(useAppStore.getState().camera.mirrorShiftLessonState).toEqual({
+      rigLateralMm: 0,
+    });
+    store.setMirrorShiftRigLateralMm(1800);
+    expect(useAppStore.getState().camera).toMatchObject({
+      mirrorShiftLessonState: { rigLateralMm: 1800 },
+      cameraRigPlacement: {
+        kind: "identity",
+        rigOriginWorld: { x: 1800, y: 0, z: 0 },
+      },
+    });
+
+    store.setRise(20);
+    store.setTilt(4);
+    store.setSwing(-3);
+    store.setRearRise(18);
+    store.setRearTilt(-2);
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      rearRiseMm: 0,
+      rearTiltDeg: 0,
+    });
+
+    store.resetMovements();
+    expect(useAppStore.getState().camera.mirrorShiftLessonState).toEqual({
+      rigLateralMm: 0,
+    });
+    expect(useAppStore.getState().camera.cameraRigPlacement.rigOriginWorld).toEqual({
+      x: 0,
+      y: 0,
+      z: 0,
+    });
+
+    store.setMirrorShiftRigLateralMm(-1800);
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    expect(useAppStore.getState().camera.mirrorShiftLessonState).toBeUndefined();
+    store.setMirrorShiftRigLateralMm(1800);
+    expect(useAppStore.getState().camera.mirrorShiftLessonState).toBeUndefined();
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+    expect(useAppStore.getState().camera.mirrorShiftLessonState).toEqual({
+      rigLateralMm: 0,
+    });
+  });
+
+  it("keeps front shift canonical, bounded, resettable, and isolated across scenes", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(0);
+    store.setFrontShiftMm(40);
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(40);
+    store.setFrontShiftMm(100);
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(60);
+    store.setFrontShiftMm(Number.NaN);
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(60);
+
+    store.setMirrorShiftRigLateralMm(1800);
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontShiftMm: 60,
+      mirrorShiftLessonState: { rigLateralMm: 1800 },
+    });
+
+    store.resetMovements();
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontShiftMm: 0,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+    });
+
+    store.setFrontShiftMm(-50);
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(0);
+    store.setFrontShiftMm(50);
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(0);
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(0);
+  });
+
+  it("initializes and restarts the guided Mirror Shift task at calibrated Neutral", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    store.setGeometryView("side");
+
+    store.initializeSimulatorRoute({
+      mode: "guided",
+      sceneId: "mirror-shift",
+      taskId: "mirror-shift-01",
+    });
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      mode: "guided",
+      activeTaskId: "mirror-shift-01",
+      frontShiftMm: 0,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+    });
+    expect(useAppStore.getState().camera.geometryView).toBe("side");
+    expect(useAppStore.getState().ui.geometryView).toBe("side");
+
+    store.setMirrorShiftRigLateralMm(2000);
+    store.setFrontShiftMm(-55);
+    store.setCurrentTaskEvaluation({
+      taskId: "mirror-shift-01",
+      status: "passed",
+      score: 100,
+      criteria: [],
+      primaryFeedback: "done",
+      secondaryFeedback: [],
+    });
+    store.restartTask();
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      mode: "guided",
+      activeTaskId: "mirror-shift-01",
+      frontShiftMm: 0,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+    });
+    expect(useAppStore.getState().camera.geometryView).toBe("side");
+    expect(useAppStore.getState().ui.geometryView).toBe("side");
+    expect(useAppStore.getState().task.currentTaskEvaluation).toBeNull();
+  });
+
+  it("keeps guided evaluation and movement state isolated from Mirror Shift Free Mode", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+    store.setMirrorShiftRigLateralMm(1800);
+    store.setFrontShiftMm(-50);
+
+    store.initializeSimulatorRoute({
+      mode: "guided",
+      sceneId: "mirror-shift",
+      taskId: "mirror-shift-01",
+    });
+    expect(useAppStore.getState().camera).toMatchObject({
+      mode: "guided",
+      frontShiftMm: 0,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+    });
+
+    store.setMirrorShiftRigLateralMm(2000);
+    store.setFrontShiftMm(-55);
+    store.setCurrentTaskEvaluation({
+      taskId: "mirror-shift-01",
+      status: "passed",
+      score: 100,
+      criteria: [],
+      primaryFeedback: "done",
+      secondaryFeedback: [],
+    });
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      mode: "free",
+      activeTaskId: null,
+      frontShiftMm: 0,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+    });
+    expect(useAppStore.getState().task).toMatchObject({
+      activeTaskId: null,
+      currentTaskEvaluation: null,
+    });
+  });
+
+  it("preserves the stored geometry view when entering and leaving Mirror Shift", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    store.setGeometryView("side");
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+    expect(useAppStore.getState().camera.geometryView).toBe("side");
+    expect(useAppStore.getState().ui.geometryView).toBe("side");
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    expect(useAppStore.getState().camera.geometryView).toBe("side");
+    expect(useAppStore.getState().ui.geometryView).toBe("side");
+
+    store.setGeometryView("top");
+    store.setActiveScene("mirror-shift");
+    expect(useAppStore.getState().camera.geometryView).toBe("top");
+    store.setActiveScene("architecture-rise");
+    expect(useAppStore.getState().camera.geometryView).toBe("top");
+  });
+
   it("restores Focus Fundamentals f/32 across scene entry, mode changes, and reset actions", () => {
     const store = useAppStore.getState();
 

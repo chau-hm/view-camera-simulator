@@ -13,6 +13,7 @@ import {
   disposeRegisteredRttSubject,
   getSceneSubjectRegistration,
 } from "./sceneSubjectRegistry";
+import { updateMirrorShiftCameraReflection } from "./MirrorShiftSubjectFactory";
 import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
 import { resolveCameraMovementLatticeRenderModel } from "./cameraMovementLatticeRenderModel";
 import {
@@ -140,6 +141,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   } | null>(null);
   const mountedCameraMovementRttSubjectRef =
     useRef<MountedCameraMovementRttSubject | null>(null);
+  const mirrorShiftRttSubjectRef = useRef<THREE.Group | null>(null);
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality, zoomEnabled });
   sizeInputsRef.current = { widthPx, heightPx, renderQuality, zoomEnabled };
 
@@ -583,8 +585,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     const subjectGroup = createRegisteredRttSubject(sceneId, subjectOptions);
     if (!subjectGroup) return;
+    if (sceneId === "mirror-shift") {
+      mirrorShiftRttSubjectRef.current = subjectGroup;
+    }
     scene.add(subjectGroup);
     return () => {
+      if (mirrorShiftRttSubjectRef.current === subjectGroup) {
+        mirrorShiftRttSubjectRef.current = null;
+      }
       scene.remove(subjectGroup);
       disposeRegisteredRttSubject(sceneId, subjectGroup);
     };
@@ -593,6 +601,25 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     sceneId,
     readRuntimeInfo,
     setRuntimeInfo,
+  ]);
+
+  const mirrorShiftRigOrigin = opticsState.cameraRigTransform.rigOriginWorld;
+  const mirrorShiftFrontShiftMm = opticsState.cameraBodyLocalGeometry.lensCenterLocal.x;
+  useEffect(() => {
+    if (sceneId !== "mirror-shift") return;
+    const subjectGroup = mirrorShiftRttSubjectRef.current;
+    if (!subjectGroup) return;
+    updateMirrorShiftCameraReflection(subjectGroup, {
+      x: mirrorShiftRigOrigin.x,
+      y: mirrorShiftRigOrigin.y,
+      z: mirrorShiftRigOrigin.z,
+    }, mirrorShiftFrontShiftMm);
+  }, [
+    mirrorShiftFrontShiftMm,
+    mirrorShiftRigOrigin.x,
+    mirrorShiftRigOrigin.y,
+    mirrorShiftRigOrigin.z,
+    sceneId,
   ]);
 
   // Target teaching steps are presentation-only. Keep the mounted subject and
@@ -1078,7 +1105,13 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
 
   return (
     <div data-rtt-resource-channel={channel} style={{ width: "100%", height: "100%" }}>
-      <Canvas dpr={qualitySettings.dpr} style={{ width: "100%", height: "100%" }} gl={GROUND_GLASS_GL_OPTIONS} orthographic={false}>
+      <Canvas
+        dpr={qualitySettings.dpr}
+        resize={{ offsetSize: true }}
+        style={{ width: "100%", height: "100%" }}
+        gl={GROUND_GLASS_GL_OPTIONS}
+        orthographic={false}
+      >
         <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} presentationRegion={presentationRegion} />
       </Canvas>
     </div>

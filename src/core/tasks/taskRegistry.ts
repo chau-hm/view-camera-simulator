@@ -2,6 +2,11 @@ import type { TaskDefinition } from "../../types/task";
 import architectureGeometry from "../../scenes/architectureRiseGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
+import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
+import {
+  MIRROR_SHIFT_SCENE_CALIBRATION,
+  resolveMirrorShiftTeachingState,
+} from "../../scenes/mirrorShiftCalibration";
 
 const riseTask: TaskDefinition = {
   id: "rise-01",
@@ -301,10 +306,95 @@ const swingTask: TaskDefinition = {
   },
 };
 
+const mirrorShiftTask: TaskDefinition = {
+  id: "mirror-shift-01",
+  sceneId: mirrorShiftScene.id,
+  title: "Hide the camera with shift",
+  objective:
+    "Move the camera sideways to remove its reflection, then use opposite Front Shift to restore the mirror framing.",
+  mode: "guided",
+  enabledControls: ["cameraPosition", "frontShift", "geometryView"],
+  constraints: {
+    notes: [
+      "Move the whole camera sideways until its reflection is completely outside the mirror.",
+      "Keep the camera where it is. Shift the front standard in the opposite direction to restore the mirror framing.",
+      "Keep the film plane parallel to the mirror; do not move the camera back after the reflection is clear.",
+    ],
+  },
+  criteria: [
+    {
+      id: "mirror-reflection-clear",
+      label: "Camera reflection is clear of the mirror",
+      type: "mirror-reflection-clear",
+      minimumClearanceMm:
+        MIRROR_SHIFT_SCENE_CALIBRATION.tolerances.cameraReflectionClearanceMm,
+    },
+    {
+      id: "mirror-framing-restored",
+      label: "Mirror framing is restored near Neutral",
+      type: "mirror-framing-restored",
+      maximumCenterErrorNormalized:
+        MIRROR_SHIFT_SCENE_CALIBRATION.tolerances.mirrorFramingRestoredNormalized,
+    },
+    {
+      id: "mirror-viewpoint-retained",
+      label: "Reflected props retain a changed viewpoint",
+      type: "mirror-viewpoint-retained",
+      minimumParallaxDeltaNormalized:
+        MIRROR_SHIFT_SCENE_CALIBRATION.tolerances.minimumPropParallaxDeltaNormalized,
+    },
+  ],
+  feedbackRules: {
+    passPrimary:
+      "Success. The mirror framing is restored, but the camera remains outside the reflection.",
+    passSecondary:
+      "The reflected props still differ from Neutral because the viewpoint changed. Front Shift restored composition without returning the camera to its original position.",
+    defaultFailPrimary:
+      "Move the whole camera sideways until its reflection is completely outside the mirror.",
+    failPrimaryByCriterionId: {
+      "mirror-reflection-clear":
+        "Move the whole camera sideways until its reflection is completely outside the mirror.",
+      "mirror-framing-restored":
+        "Good — the camera is out of the reflection. Keep the camera in place and shift the front standard in the opposite direction to restore the mirror framing.",
+      "mirror-viewpoint-retained":
+        "The framing is close, but the viewpoint has not changed enough.",
+    },
+    failSecondaryByCriterionId: {
+      "mirror-reflection-clear":
+        "Do not use Front Shift yet to hide the camera. Moving the whole camera changes the viewpoint.",
+      "mirror-framing-restored":
+        "Watch the Ground Glass. Front Shift changes framing without moving the film plane back to the original viewpoint.",
+      "mirror-viewpoint-retained":
+        "Move the whole camera farther sideways, then compensate again with Front Shift. Compare the two reflected props as a parallax cue.",
+    },
+  },
+  initialCameraState: {
+    ...mirrorShiftScene.cameraPreset,
+    frontRiseMm: 0,
+    frontTiltDeg: 0,
+    frontSwingDeg: 0,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    focusDistanceMm: mirrorShiftScene.cameraPreset.focusDistanceMm,
+    aperture: mirrorShiftScene.cameraPreset.aperture,
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+    frontShiftMm: resolveMirrorShiftTeachingState("neutral").frontShiftMm,
+    mirrorShiftLessonState: {
+      rigLateralMm: resolveMirrorShiftTeachingState("neutral").rigLateralMm,
+    },
+  },
+  initialViewState: {
+    showOpticalGeometry: true,
+  },
+};
+
 export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
   "tilt-01": tiltTask,
   "swing-01": swingTask,
+  "mirror-shift-01": mirrorShiftTask,
 };
 
 export const getTaskById = (taskId: string): TaskDefinition | undefined => taskRegistry[taskId];

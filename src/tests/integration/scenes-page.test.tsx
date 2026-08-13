@@ -93,6 +93,7 @@ describe("scenes page", () => {
       "architecture-rise",
       "table-tilt",
       "shelf-swing",
+      "mirror-shift",
     ]);
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual(publicSceneIds);
     expect(getPublicSceneEntryById("focus-fundamentals-two-targets")?.availableModes).toEqual([
@@ -107,6 +108,7 @@ describe("scenes page", () => {
       "Architecture Rise",
       "Table Tilt",
       "Shelf Swing",
+      "Mirror Shift",
     ]);
     expect(getPublicScenes().map((scene) => scene.id)).toContain("shelf-swing");
     expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("available");
@@ -120,6 +122,16 @@ describe("scenes page", () => {
       "free",
       "guided",
     ]);
+    const mirrorHeading = await screen.findByRole("heading", { name: "Mirror Shift", level: 2 });
+    const mirrorCard = mirrorHeading.closest("article");
+    expect(mirrorCard).not.toBeNull();
+    expect(within(mirrorCard!).getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/mirror-shift/mirror-shift-01",
+    );
+    expect(getPublicSceneEntryById("mirror-shift")?.availableModes).toEqual(["free", "guided"]);
+    expect(getPublicSceneEntryById("mirror-shift")?.guidedTaskId).toBe("mirror-shift-01");
+    expect(getPublicScenes().map((scene) => scene.id)).toContain("mirror-shift");
     expect(getPublicSceneEntryById("unknown-scene")).toBeUndefined();
     expect(
       screen.queryByText("The guided Shelf Swing lesson is still being prepared."),
