@@ -139,12 +139,12 @@ const updateCameraReflectionProxy = (
 
   if (frontStandard) setObjectPositionMm(frontStandard, anchors.frontStandardCenter);
   if (rearStandard) setObjectPositionMm(rearStandard, anchors.rearStandardCenter);
-  if (bellows) {
-    setObjectPositionMm(bellows, {
-      x: (anchors.frontStandardCenter.x + anchors.rearStandardCenter.x) / 2,
-      y: (anchors.frontStandardCenter.y + anchors.rearStandardCenter.y) / 2,
-      z: (anchors.frontStandardCenter.z + anchors.rearStandardCenter.z) / 2,
-    });
+  if (bellows instanceof THREE.Mesh) {
+    updateBeamTransform(
+      bellows,
+      anchors.frontStandardCenter,
+      anchors.rearStandardCenter,
+    );
   }
   if (lens) {
     setObjectPositionMm(lens, {
@@ -388,7 +388,7 @@ const addCameraReflection = (
     y: (anchors.frontStandardCenter.y + anchors.rearStandardCenter.y) / 2,
     z: (anchors.frontStandardCenter.z + anchors.rearStandardCenter.z) / 2,
   };
-  addBox(
+  const bellows = addBox(
     cameraGroup,
     "mirror-shift-camera-reflection-bellows",
     bellowsMidpoint,
@@ -398,6 +398,9 @@ const addCameraReflection = (
       z: Math.abs(anchors.rearStandardCenter.z - anchors.frontStandardCenter.z),
     },
     bellowsMaterial,
+  );
+  bellows.userData.baseLengthWorld = toWorld(
+    Math.abs(anchors.rearStandardCenter.z - anchors.frontStandardCenter.z),
   );
 
   const lens = new THREE.Mesh(
@@ -493,12 +496,19 @@ export const createMirrorShiftRttGroup = (): THREE.Group =>
 export const updateMirrorShiftCameraReflection = (
   subjectGroup: THREE.Group,
   rigOriginWorld: Vec3,
+  frontShiftMm = 0,
 ): boolean => {
   const cameraGroup = subjectGroup.getObjectByName("mirror-shift-camera-reflection");
   if (!(cameraGroup instanceof THREE.Group)) return false;
-  const anchors = resolveMirrorShiftCameraAnchors(rigOriginWorld).reflected;
+  const anchors = resolveMirrorShiftCameraAnchors(
+    rigOriginWorld,
+    frontShiftMm,
+  ).reflected;
   updateCameraReflectionProxy(cameraGroup, anchors);
   cameraGroup.userData.reflectedRigOriginWorld = { ...rigOriginWorld };
+  cameraGroup.userData.reflectedFrontShiftMm = Number.isFinite(frontShiftMm)
+    ? frontShiftMm
+    : 0;
   return true;
 };
 

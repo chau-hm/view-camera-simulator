@@ -55,6 +55,7 @@ import {
   resolveCameraMovementLessonState,
 } from "../scenes/cameraMovementLessonState";
 import {
+  clampMirrorShiftFrontShiftMm,
   clampMirrorShiftRigLateralMm,
   DEFAULT_MIRROR_SHIFT_LESSON_STATE,
   resolveMirrorShiftRigPlacement,
@@ -78,6 +79,7 @@ export const getFocusStandardDefault = (sceneId: string): FocusStandard => {
 const defaultControlState = {
   focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
   frontRiseMm: DEFAULT_CAMERA_STATE.frontRiseMm,
+  frontShiftMm: DEFAULT_CAMERA_STATE.frontShiftMm,
   frontTiltDeg: DEFAULT_CAMERA_STATE.frontTiltDeg,
   frontSwingDeg: DEFAULT_CAMERA_STATE.frontSwingDeg,
   rearRiseMm: DEFAULT_CAMERA_STATE.rearRiseMm,
@@ -180,6 +182,7 @@ const resolveCameraMovementLessonCamera = (
   );
   return {
     ...camera,
+    frontShiftMm: 0,
     cameraMovementLessonState: derived.lessonState,
     frontRiseMm: derived.frontRiseMm,
     frontTiltDeg: derived.frontTiltDeg,
@@ -254,6 +257,7 @@ const resolveScenePresetReset = (
   return {
     ...(preset.focalLengthMm === undefined ? {} : { focalLengthMm: preset.focalLengthMm }),
     frontRiseMm: preset.frontRiseMm,
+    frontShiftMm: preset.frontShiftMm ?? 0,
     frontTiltDeg: preset.frontTiltDeg,
     frontSwingDeg: preset.frontSwingDeg,
     rearRiseMm: preset.rearRiseMm,
@@ -378,6 +382,7 @@ export type AppStore = {
   /** Set the canonical continuous lesson state for Understanding Camera Movements. */
   setCameraMovementLessonState: (lessonState: CameraMovementLessonState) => void;
   setMirrorShiftRigLateralMm: (value: number) => void;
+  setFrontShiftMm: (value: number) => void;
   setCameraBodyPitchDeg: (value: number) => void;
   setCameraMovementViewpointAnchor: (anchor: CameraRigViewpointAnchor) => void;
   initializeSimulatorRoute: (init: {
@@ -619,6 +624,7 @@ export const useAppStore = create<AppStore>((set) => ({
         frontSwingDeg: 0,
         rearRiseMm: 0,
         rearTiltDeg: 0,
+        frontShiftMm: 0,
         cameraBodyPitchDeg: 0,
         viewpointAnchor: "mid",
         cameraRigPlacement: resolveRigPlacement(
@@ -711,6 +717,9 @@ export const useAppStore = create<AppStore>((set) => ({
         camera: {
           ...state.camera,
           ...resolveCameraBodyReset(sceneId),
+          frontShiftMm: scene?.cameraFrontShiftCapability?.enabled
+            ? scene.cameraPreset.frontShiftMm ?? 0
+            : 0,
           viewpointAnchor: "mid",
           cameraRigPlacement: resolveRigPlacement(sceneId),
           mirrorShiftLessonState:
@@ -804,6 +813,23 @@ export const useAppStore = create<AppStore>((set) => ({
           ...state.camera,
           mirrorShiftLessonState: { rigLateralMm },
           cameraRigPlacement: resolveMirrorShiftRigPlacement(rigLateralMm),
+        },
+      };
+    }),
+
+  setFrontShiftMm: (value) =>
+    set((state) => {
+      const scene = getSceneById(state.camera.activeSceneId);
+      if (
+        !scene?.cameraFrontShiftCapability?.enabled ||
+        !Number.isFinite(value)
+      ) {
+        return {};
+      }
+      return {
+        camera: {
+          ...state.camera,
+          frontShiftMm: clampMirrorShiftFrontShiftMm(value),
         },
       };
     }),
@@ -945,6 +971,9 @@ export const useAppStore = create<AppStore>((set) => ({
 
       nextCamera = {
         ...nextCamera,
+        frontShiftMm: getSceneById(sceneId)?.cameraFrontShiftCapability?.enabled
+          ? getSceneById(sceneId)?.cameraPreset.frontShiftMm ?? 0
+          : 0,
         viewpointAnchor: "mid",
         cameraRigPlacement: resolveRigPlacement(
           sceneId,
@@ -1425,6 +1454,11 @@ export const useAppStore = create<AppStore>((set) => ({
             nextSceneId,
             (nextControlState as Partial<CameraState>).aperture ?? state.camera.aperture,
           ),
+          frontShiftMm: getSceneById(nextSceneId)?.cameraFrontShiftCapability?.enabled
+            ? (nextControlState as Partial<CameraState>).frontShiftMm ??
+              getSceneById(nextSceneId)?.cameraPreset.frontShiftMm ??
+              0
+            : 0,
           ...(selectableFocusRestart ? resolveSceneFocusDefaults(nextSceneId) : {}),
           cameraMovementLessonState:
             isCameraMovementsScene(nextSceneId) && !preserveCalibration

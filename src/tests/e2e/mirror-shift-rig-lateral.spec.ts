@@ -57,8 +57,10 @@ test("Mirror Shift moves the canonical rig while keeping its RTT mounted", async
   const scene = page.locator('[data-testid="scene-canvas"]');
   const rtt = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
   const position = page.getByRole("slider", { name: "Camera Position" });
+  const frontShift = page.getByRole("slider", { name: "Front Shift" });
 
   await expect(position).toHaveValue("0");
+  await expect(frontShift).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveCount(0);
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveCount(0);
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveCount(0);
@@ -89,8 +91,24 @@ test("Mirror Shift moves the canonical rig while keeping its RTT mounted", async
   await expect.poll(() => page.evaluate((node) => node?.isConnected, sceneElement)).toBe(true);
   await expect.poll(() => page.evaluate((node) => node?.isConnected, rttElement)).toBe(true);
 
+  await frontShift.fill("-50");
+  await expect(frontShift).toHaveValue("-50");
+  await expect(scene).toHaveAttribute(
+    "data-camera-rig-origin",
+    "1800.000000,0.000000,0.000000",
+  );
+  await expect(scene).toHaveAttribute("data-camera-lens-center-world", "1750.000000,0.000000,0.000000");
+  const movedFilmCenterAfterShift = await scene.getAttribute("data-camera-film-center-world");
+  expect(movedFilmCenterAfterShift?.split(",")[0]).toBe("1800.000000");
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 30_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 30_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-resource-generation", resourceGeneration!);
+  await expect.poll(() => page.evaluate((node) => node?.isConnected, sceneElement)).toBe(true);
+  await expect.poll(() => page.evaluate((node) => node?.isConnected, rttElement)).toBe(true);
+
   await page.getByRole("button", { name: "Reset movements" }).click();
   await expect(position).toHaveValue("0");
+  await expect(frontShift).toHaveValue("0");
   await expect(scene).toHaveAttribute(
     "data-camera-rig-origin",
     "0.000000,0.000000,0.000000",

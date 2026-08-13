@@ -353,6 +353,40 @@ describe("app store STA-001", () => {
     });
   });
 
+  it("keeps front shift canonical, bounded, resettable, and isolated across scenes", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(0);
+    store.setFrontShiftMm(40);
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(40);
+    store.setFrontShiftMm(100);
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(60);
+    store.setFrontShiftMm(Number.NaN);
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(60);
+
+    store.setMirrorShiftRigLateralMm(1800);
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontShiftMm: 60,
+      mirrorShiftLessonState: { rigLateralMm: 1800 },
+    });
+
+    store.resetMovements();
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontShiftMm: 0,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+    });
+
+    store.setFrontShiftMm(-50);
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(0);
+    store.setFrontShiftMm(50);
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(0);
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(0);
+  });
+
   it("restores Focus Fundamentals f/32 across scene entry, mode changes, and reset actions", () => {
     const store = useAppStore.getState();
 
