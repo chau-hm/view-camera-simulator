@@ -57,6 +57,12 @@ export type SceneCameraBodyPitchCapability = {
   enabled: true;
 };
 
+export type SceneCameraRigTranslationCapability = {
+  enabled: true;
+  axis: "x";
+  state: "mirrorShiftLessonState";
+};
+
 export type SceneFocusStandardCapability = {
   enabled: true;
   defaultStandard: FocusStandard;
@@ -92,6 +98,8 @@ export type SceneDefinition = {
   focusStandardCapability?: SceneFocusStandardCapability;
   /** Enables the canonical rigid body-pitch transform for this scene. */
   cameraBodyPitchCapability?: SceneCameraBodyPitchCapability;
+  /** Enables a scene-specific rigid lateral translation of the complete camera rig. */
+  cameraRigTranslationCapability?: SceneCameraRigTranslationCapability;
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
   movementCapabilities?: SceneMovementCapabilities;
   /** Optional camera-inspection observer framing. When absent, the default fallback applies. */

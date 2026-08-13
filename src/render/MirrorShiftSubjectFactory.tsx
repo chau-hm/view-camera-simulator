@@ -4,8 +4,10 @@ import * as THREE from "three";
 import {
   mirrorShiftGeometry,
   reflectPointAcrossMirrorPlane,
+  resolveMirrorShiftCameraAnchors,
   type MirrorShiftProp,
 } from "../scenes/mirrorShiftGeometry";
+import type { Vec3 } from "../types/optics";
 import { toWorld } from "./rttUtils";
 
 const material = (color: string, options: THREE.MeshStandardMaterialParameters = {}) =>
@@ -76,6 +78,7 @@ const addBeam = (
     meshMaterial,
   );
   mesh.name = name;
+  mesh.userData.baseLengthWorld = length;
   mesh.position.copy(startWorld).add(endWorld).multiplyScalar(0.5);
   mesh.quaternion.setFromUnitVectors(
     new THREE.Vector3(0, 0, 1),
@@ -83,6 +86,80 @@ const addBeam = (
   );
   parent.add(mesh);
   return mesh;
+};
+
+const setObjectPositionMm = (object: THREE.Object3D, position: Vec3): void => {
+  object.position.set(toWorld(position.x), toWorld(position.y), toWorld(position.z));
+};
+
+const updateBeamTransform = (
+  mesh: THREE.Mesh,
+  start: Vec3,
+  end: Vec3,
+): void => {
+  const startWorld = new THREE.Vector3(toWorld(start.x), toWorld(start.y), toWorld(start.z));
+  const endWorld = new THREE.Vector3(toWorld(end.x), toWorld(end.y), toWorld(end.z));
+  const direction = endWorld.clone().sub(startWorld);
+  const length = direction.length();
+  if (length <= 1e-9) return;
+  const baseLength =
+    typeof mesh.userData.baseLengthWorld === "number"
+      ? mesh.userData.baseLengthWorld
+      : length;
+  mesh.position.copy(startWorld).add(endWorld).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 0, 1),
+    direction.normalize(),
+  );
+  mesh.scale.set(1, 1, baseLength > 1e-9 ? length / baseLength : 1);
+};
+
+const updateCameraReflectionProxy = (
+  cameraGroup: THREE.Group,
+  anchors: ReturnType<typeof resolveMirrorShiftCameraAnchors>["reflected"],
+): void => {
+  const { camera } = mirrorShiftGeometry;
+  const frontStandard = cameraGroup.getObjectByName(
+    "mirror-shift-camera-reflection-front-standard",
+  );
+  const rearStandard = cameraGroup.getObjectByName(
+    "mirror-shift-camera-reflection-rear-standard",
+  );
+  const bellows = cameraGroup.getObjectByName("mirror-shift-camera-reflection-bellows");
+  const lens = cameraGroup.getObjectByName("mirror-shift-camera-reflection-lens");
+  const tripodHead = cameraGroup.getObjectByName(
+    "mirror-shift-camera-reflection-tripod-head",
+  );
+  const leftLeg = cameraGroup.getObjectByName(
+    "mirror-shift-camera-reflection-left-leg",
+  );
+  const rightLeg = cameraGroup.getObjectByName(
+    "mirror-shift-camera-reflection-right-leg",
+  );
+
+  if (frontStandard) setObjectPositionMm(frontStandard, anchors.frontStandardCenter);
+  if (rearStandard) setObjectPositionMm(rearStandard, anchors.rearStandardCenter);
+  if (bellows) {
+    setObjectPositionMm(bellows, {
+      x: (anchors.frontStandardCenter.x + anchors.rearStandardCenter.x) / 2,
+      y: (anchors.frontStandardCenter.y + anchors.rearStandardCenter.y) / 2,
+      z: (anchors.frontStandardCenter.z + anchors.rearStandardCenter.z) / 2,
+    });
+  }
+  if (lens) {
+    setObjectPositionMm(lens, {
+      x: anchors.frontStandardCenter.x,
+      y: anchors.frontStandardCenter.y,
+      z: anchors.frontStandardCenter.z - camera.lens.depthMm / 2 - 10,
+    });
+  }
+  if (tripodHead) setObjectPositionMm(tripodHead, anchors.tripodHead);
+  if (leftLeg instanceof THREE.Mesh) {
+    updateBeamTransform(leftLeg, anchors.tripodHead, anchors.leftTripodFoot);
+  }
+  if (rightLeg instanceof THREE.Mesh) {
+    updateBeamTransform(rightLeg, anchors.tripodHead, anchors.rightTripodFoot);
+  }
 };
 
 const addWallAndFloor = (root: THREE.Group): void => {
@@ -261,9 +338,12 @@ const addProp = (
   }
 };
 
-const addCameraReflection = (root: THREE.Group): void => {
+const addCameraReflection = (
+  root: THREE.Group,
+  anchors: ReturnType<typeof resolveMirrorShiftCameraAnchors>["reflected"] =
+    mirrorShiftGeometry.camera.reflectedAnchors,
+): void => {
   const { camera } = mirrorShiftGeometry;
-  const anchors = camera.reflectedAnchors;
   const cameraGroup = new THREE.Group();
   cameraGroup.name = "mirror-shift-camera-reflection";
   cameraGroup.userData = { reflectionOf: "neutral-view-camera" };
@@ -361,6 +441,7 @@ const addCameraReflection = (root: THREE.Group): void => {
     camera.tripod.legWidthMm,
     tripodMaterial,
   );
+  updateCameraReflectionProxy(cameraGroup, anchors);
   root.add(cameraGroup);
 };
 
@@ -407,6 +488,19 @@ export const createMirrorShiftViewportGroup = (): THREE.Group =>
 
 export const createMirrorShiftRttGroup = (): THREE.Group =>
   createMirrorShiftGroup({ includeVirtualReflection: true });
+
+/** Mutate only the reflected camera proxy; static reflection geometry stays mounted. */
+export const updateMirrorShiftCameraReflection = (
+  subjectGroup: THREE.Group,
+  rigOriginWorld: Vec3,
+): boolean => {
+  const cameraGroup = subjectGroup.getObjectByName("mirror-shift-camera-reflection");
+  if (!(cameraGroup instanceof THREE.Group)) return false;
+  const anchors = resolveMirrorShiftCameraAnchors(rigOriginWorld).reflected;
+  updateCameraReflectionProxy(cameraGroup, anchors);
+  cameraGroup.userData.reflectedRigOriginWorld = { ...rigOriginWorld };
+  return true;
+};
 
 export const disposeMirrorShiftGroup = (group: THREE.Group): void => {
   const geometries = new Set<THREE.BufferGeometry>();

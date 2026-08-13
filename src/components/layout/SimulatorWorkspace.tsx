@@ -20,6 +20,7 @@ import { MovementControls } from "../controls/MovementControls";
 import { MovementSelector } from "../controls/MovementSelector";
 import { SingleMovementControl } from "../controls/SingleMovementControl";
 import { ResetControls } from "../controls/ResetControls";
+import { MirrorShiftCameraPositionControl } from "../controls/MirrorShiftCameraPositionControl";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
@@ -536,6 +537,12 @@ export const SimulatorWorkspace = ({
             </div>
 
             <div style={{ marginTop: 8 }}>
+              {safeScene.cameraRigTranslationCapability?.enabled ? (
+                <div className="sim-section">
+                  <MirrorShiftCameraPositionControl />
+                </div>
+              ) : null}
+
               {!movementLocked ? (showPublicTeachingControls ? (
                 <div className="sim-section">
                   <CameraMovementTeachingControls />
@@ -569,10 +576,13 @@ export const SimulatorWorkspace = ({
                 <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? "Aperture is fixed for this lesson" : lockReason} showTitle={false} />
               </div>
 
-              {(!movementLocked || task !== null) && (
+              {(!movementLocked || task !== null || safeScene.cameraRigTranslationCapability?.enabled) && (
                 <div className="sim-section reset" style={{ paddingBottom: 0 }}>
                   <div className="sim-section-label">Reset</div>
-                  <ResetControls showTitle={false} showMovementReset={!movementLocked} />
+                  <ResetControls
+                    showTitle={false}
+                    showMovementReset={!movementLocked || safeScene.cameraRigTranslationCapability?.enabled === true}
+                  />
                 </div>
               )}
             </div>

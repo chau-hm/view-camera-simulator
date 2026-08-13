@@ -49,6 +49,7 @@ import {
   resolveCameraRigViewpointAnchor,
 } from "../../scenes/cameraRigViewpointGeometry";
 import { resolveCameraMovementLessonState } from "../../scenes/cameraMovementLessonState";
+import { resolveMirrorShiftRigPlacement } from "../../scenes/mirrorShiftLessonState";
 
 const neutralCameraRigTransform = (): CameraRigTransform => ({
   rigOriginWorld: vec(0, 0, 0),
@@ -62,6 +63,12 @@ const resolveCameraRigPlacement = (
   scene: SceneDefinition,
   cameraMovementCalibration: CameraMovementSceneCalibration,
 ): CameraRigPlacement => {
+  if (scene.cameraRigTranslationCapability?.enabled) {
+    const rigLateralMm = cameraState.mirrorShiftLessonState?.rigLateralMm ?? 0;
+    return resolveMirrorShiftRigPlacement(
+      Number.isFinite(rigLateralMm) ? rigLateralMm : 0,
+    );
+  }
   if (!scene.cameraBodyPitchCapability?.enabled) {
     return DEFAULT_CAMERA_RIG_PLACEMENT;
   }
@@ -87,22 +94,52 @@ const hasCanonicalCameraRigPlacement = (
   cameraState: CameraState,
   scene: SceneDefinition,
   cameraMovementCalibration: CameraMovementSceneCalibration,
-): boolean =>
-  !scene.cameraBodyPitchCapability?.enabled ||
-  (scene.id === "understanding-camera-movements" &&
-    Boolean(cameraState.cameraMovementLessonState)) ||
-  isCanonicalCameraRigViewpointPlacement(
-    cameraState.cameraRigPlacement,
-    cameraMovementCalibration.cameraRig,
-    cameraState.viewpointAnchor,
+): boolean => {
+  if (scene.cameraRigTranslationCapability?.enabled) {
+    return Number.isFinite(
+      cameraState.mirrorShiftLessonState?.rigLateralMm ?? 0,
+    );
+  }
+  if (!scene.cameraBodyPitchCapability?.enabled) return true;
+  return (
+    (scene.id === "understanding-camera-movements" &&
+      Boolean(cameraState.cameraMovementLessonState)) ||
+    isCanonicalCameraRigViewpointPlacement(
+      cameraState.cameraRigPlacement,
+      cameraMovementCalibration.cameraRig,
+      cameraState.viewpointAnchor,
+    )
   );
+};
+
+const hasFiniteCameraRigInput = (
+  cameraState: CameraState,
+  scene: SceneDefinition,
+  cameraMovementCalibration: CameraMovementSceneCalibration,
+): boolean => {
+  if (
+    scene.cameraRigTranslationCapability?.enabled &&
+    !Number.isFinite(cameraState.mirrorShiftLessonState?.rigLateralMm ?? 0)
+  ) {
+    return false;
+  }
+  if (!scene.cameraBodyPitchCapability?.enabled) return true;
+  return (
+    hasCanonicalCameraRigPlacement(cameraState, scene, cameraMovementCalibration) &&
+    Number.isFinite(cameraState.cameraBodyPitchDeg) &&
+    Boolean(cameraState.cameraBodyPivotWorld) &&
+    isFiniteVec3(cameraState.cameraBodyPivotWorld)
+  );
+};
 
 const resolveCameraRigTransform = (
   cameraState: CameraState,
   scene: SceneDefinition,
   placement: CameraRigPlacement,
 ): CameraRigTransform => {
-  if (!scene.cameraBodyPitchCapability?.enabled) {
+  const bodyPitchEnabled = scene.cameraBodyPitchCapability?.enabled === true;
+  const translationEnabled = scene.cameraRigTranslationCapability?.enabled === true;
+  if (!bodyPitchEnabled && !translationEnabled) {
     return neutralCameraRigTransform();
   }
   const presetPitch = scene.cameraPreset.cameraBodyPitchDeg;
@@ -110,17 +147,17 @@ const resolveCameraRigTransform = (
   return {
     rigOriginWorld: placement.rigOriginWorld,
     basePitchDeg: placement.basePitchDeg,
-    bodyPitchDeg: Number.isFinite(cameraState.cameraBodyPitchDeg)
+    bodyPitchDeg: bodyPitchEnabled && Number.isFinite(cameraState.cameraBodyPitchDeg)
       ? cameraState.cameraBodyPitchDeg
-      : Number.isFinite(presetPitch)
+      : bodyPitchEnabled && Number.isFinite(presetPitch)
         ? (presetPitch as number)
         : 0,
     // cameraBodyPivotWorld is a legacy state boundary. Its calibrated value
     // has always been rig-local because the pre-3C-B rig origin was zero.
-    bodyPitchPivotRigLocal:
+    bodyPitchPivotRigLocal: bodyPitchEnabled &&
       cameraState.cameraBodyPivotWorld && isFiniteVec3(cameraState.cameraBodyPivotWorld)
         ? cameraState.cameraBodyPivotWorld
-        : presetPivot && isFiniteVec3(presetPivot)
+        : bodyPitchEnabled && presetPivot && isFiniteVec3(presetPivot)
           ? presetPivot
           : vec(0, 0, 0),
   };
@@ -201,13 +238,7 @@ const isFiniteCameraInput = (
     cameraState.rearTiltDeg,
   ].every((value) => Number.isFinite(value));
   if (!standardInputsFinite) return false;
-  if (!scene.cameraBodyPitchCapability?.enabled) return true;
-  return (
-    hasCanonicalCameraRigPlacement(cameraState, scene, cameraMovementCalibration) &&
-    Number.isFinite(cameraState.cameraBodyPitchDeg) &&
-    Boolean(cameraState.cameraBodyPivotWorld) &&
-    isFiniteVec3(cameraState.cameraBodyPivotWorld)
-  );
+  return hasFiniteCameraRigInput(cameraState, scene, cameraMovementCalibration);
 };
 
 const baseFallbackState = (
@@ -276,9 +307,11 @@ const baseFallbackState = (
   const lensFilmRel = deriveLensFilmRelationship(lensPlane, filmPlane, scene.id === "table-tilt");
 
   const opticalAxis = createOpticalAxis(lensCenterWorld, lensNormalWorld);
-  const focusPointWorld = scene.cameraBodyPitchCapability?.enabled
-    ? add(lensCenterWorld, scale(opticalAxis.direction, safeFocusDistance))
-    : vec(0, 0, safeFocusDistance);
+  const focusPointWorld =
+    scene.cameraBodyPitchCapability?.enabled ||
+    scene.cameraRigTranslationCapability?.enabled
+      ? add(lensCenterWorld, scale(opticalAxis.direction, safeFocusDistance))
+      : vec(0, 0, safeFocusDistance);
   const { focusPlane } = calculateFocusPlaneWithFallback(
     focusPointWorld,
     filmPlane,
@@ -369,15 +402,7 @@ export const deriveOpticsState = (
       Number.isFinite(cameraState.frontSwingDeg) &&
       Number.isFinite(cameraState.rearRiseMm) &&
       Number.isFinite(cameraState.rearTiltDeg) &&
-      (!scene.cameraBodyPitchCapability?.enabled ||
-        (hasCanonicalCameraRigPlacement(
-          cameraState,
-          scene,
-          cameraMovementCalibration,
-        ) &&
-          Number.isFinite(cameraState.cameraBodyPitchDeg) &&
-          Boolean(cameraState.cameraBodyPivotWorld) &&
-          isFiniteVec3(cameraState.cameraBodyPivotWorld))) &&
+      hasFiniteCameraRigInput(cameraState, scene, cameraMovementCalibration) &&
       CAMERA_CONSTANTS.apertureOptions.includes(
         cameraState.aperture as (typeof CAMERA_CONSTANTS.apertureOptions)[number],
       );

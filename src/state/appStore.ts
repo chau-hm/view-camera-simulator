@@ -54,6 +54,11 @@ import {
   DEFAULT_CAMERA_MOVEMENT_LESSON_STATE,
   resolveCameraMovementLessonState,
 } from "../scenes/cameraMovementLessonState";
+import {
+  clampMirrorShiftRigLateralMm,
+  DEFAULT_MIRROR_SHIFT_LESSON_STATE,
+  resolveMirrorShiftRigPlacement,
+} from "../scenes/mirrorShiftLessonState";
 
 const getFocusStandardCapability = (
   sceneId: string,
@@ -155,6 +160,9 @@ const resolveRigPlacement = (
   anchor: CameraRigViewpointAnchor = "mid",
   calibration: CameraMovementSceneCalibration = CAMERA_MOVEMENT_SCENE_CALIBRATION,
 ): CameraState["cameraRigPlacement"] => {
+  if (sceneId === "mirror-shift") {
+    return resolveMirrorShiftRigPlacement(0);
+  }
   if (!isCameraMovementsScene(sceneId)) return { ...DEFAULT_CAMERA_RIG_PLACEMENT };
   const resolved = resolveCameraRigViewpointAnchor(calibration.cameraRig, anchor);
   return { ...resolved, rigOriginWorld: { ...resolved.rigOriginWorld } };
@@ -369,6 +377,7 @@ export type AppStore = {
   setActiveTask: (taskId: string | null) => void;
   /** Set the canonical continuous lesson state for Understanding Camera Movements. */
   setCameraMovementLessonState: (lessonState: CameraMovementLessonState) => void;
+  setMirrorShiftRigLateralMm: (value: number) => void;
   setCameraBodyPitchDeg: (value: number) => void;
   setCameraMovementViewpointAnchor: (anchor: CameraRigViewpointAnchor) => void;
   initializeSimulatorRoute: (init: {
@@ -704,6 +713,10 @@ export const useAppStore = create<AppStore>((set) => ({
           ...resolveCameraBodyReset(sceneId),
           viewpointAnchor: "mid",
           cameraRigPlacement: resolveRigPlacement(sceneId),
+          mirrorShiftLessonState:
+            sceneId === "mirror-shift"
+              ? DEFAULT_MIRROR_SHIFT_LESSON_STATE
+              : undefined,
           cameraMovementLessonState:
             isCameraMovementsScene(sceneId) &&
             !state.cameraMovementCalibrationSession.active
@@ -774,6 +787,24 @@ export const useAppStore = create<AppStore>((set) => ({
       return {
         camera,
         scene: { ...state.scene, targetRegion: derived.targetRegion },
+      };
+    }),
+
+  setMirrorShiftRigLateralMm: (value) =>
+    set((state) => {
+      if (
+        state.camera.activeSceneId !== "mirror-shift" ||
+        !Number.isFinite(value)
+      ) {
+        return {};
+      }
+      const rigLateralMm = clampMirrorShiftRigLateralMm(value);
+      return {
+        camera: {
+          ...state.camera,
+          mirrorShiftLessonState: { rigLateralMm },
+          cameraRigPlacement: resolveMirrorShiftRigPlacement(rigLateralMm),
+        },
       };
     }),
 
@@ -922,6 +953,10 @@ export const useAppStore = create<AppStore>((set) => ({
         ),
         cameraBodyPitchDeg: 0,
         cameraMovementLessonState: undefined,
+        mirrorShiftLessonState:
+          sceneId === "mirror-shift"
+            ? DEFAULT_MIRROR_SHIFT_LESSON_STATE
+            : undefined,
       };
 
       if (cameraMovementRoute && !calibrationRoute) {
@@ -1302,8 +1337,15 @@ export const useAppStore = create<AppStore>((set) => ({
             (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
           ),
           cameraBodyPitchDeg: 0,
-          cameraRigPlacement: state.camera.cameraRigPlacement,
+          cameraRigPlacement:
+            sceneId === "mirror-shift"
+              ? resolveMirrorShiftRigPlacement(0)
+              : state.camera.cameraRigPlacement,
           cameraMovementLessonState: undefined,
+          mirrorShiftLessonState:
+            sceneId === "mirror-shift"
+              ? DEFAULT_MIRROR_SHIFT_LESSON_STATE
+              : undefined,
           ...(selectableFocusReset ? resolveSceneFocusDefaults(sceneId) : {}),
         },
         task: { ...state.task, currentTaskEvaluation: null },
@@ -1387,6 +1429,10 @@ export const useAppStore = create<AppStore>((set) => ({
           cameraMovementLessonState:
             isCameraMovementsScene(nextSceneId) && !preserveCalibration
               ? DEFAULT_CAMERA_MOVEMENT_LESSON_STATE
+              : undefined,
+          mirrorShiftLessonState:
+            nextSceneId === "mirror-shift"
+              ? DEFAULT_MIRROR_SHIFT_LESSON_STATE
               : undefined,
         },
         scene: {
