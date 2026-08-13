@@ -309,6 +309,7 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera.mirrorShiftLessonState).toEqual({
       rigLateralMm: 0,
     });
+    expect(useAppStore.getState().camera.geometryView).toBe("top");
     store.setMirrorShiftRigLateralMm(1800);
     expect(useAppStore.getState().camera).toMatchObject({
       mirrorShiftLessonState: { rigLateralMm: 1800 },
