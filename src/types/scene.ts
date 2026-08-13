@@ -63,6 +63,11 @@ export type SceneCameraRigTranslationCapability = {
   state: "mirrorShiftLessonState";
 };
 
+export type SceneCameraFrontShiftCapability = {
+  enabled: true;
+  axis: "x";
+};
+
 export type SceneFocusStandardCapability = {
   enabled: true;
   defaultStandard: FocusStandard;
@@ -87,7 +92,7 @@ export type SceneDefinition = {
     | "rearRiseMm"
     | "rearTiltDeg"
   > &
-    Partial<Pick<CameraState, "focalLengthMm" | "cameraBodyPitchDeg" | "cameraBodyPivotWorld">>;
+    Partial<Pick<CameraState, "focalLengthMm" | "frontShiftMm" | "cameraBodyPitchDeg" | "cameraBodyPivotWorld">>;
   cameraPlacement: CameraPlacement;
   bounds: Bounds3;
   focusTargets: FocusTarget[];
@@ -100,6 +105,8 @@ export type SceneDefinition = {
   cameraBodyPitchCapability?: SceneCameraBodyPitchCapability;
   /** Enables a scene-specific rigid lateral translation of the complete camera rig. */
   cameraRigTranslationCapability?: SceneCameraRigTranslationCapability;
+  /** Enables a scene-specific horizontal translation of the front standard. */
+  cameraFrontShiftCapability?: SceneCameraFrontShiftCapability;
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
   movementCapabilities?: SceneMovementCapabilities;
   /** Optional camera-inspection observer framing. When absent, the default fallback applies. */

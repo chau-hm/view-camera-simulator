@@ -18,8 +18,16 @@ export const createFilmPlane = (
 
 export const calculateBaseLensCenter = (): Vec3 => vec(0, 0, 0);
 
-export const calculateLensCenter = (baseLensCenter: Vec3, riseMm: number): Vec3 =>
-  vec(baseLensCenter.x, baseLensCenter.y + riseMm, baseLensCenter.z);
+export const calculateLensCenter = (
+  baseLensCenter: Vec3,
+  riseMm: number,
+  shiftMm = 0,
+): Vec3 =>
+  vec(
+    baseLensCenter.x + (Number.isFinite(shiftMm) ? shiftMm : 0),
+    baseLensCenter.y + riseMm,
+    baseLensCenter.z,
+  );
 
 export const calculateTiltRotation = (tiltDeg: number): Vec3 =>
   rotateAroundX(vec(0, 0, 1), tiltDeg);
@@ -83,7 +91,11 @@ export const calculateLensPlane = (
   cameraState: CameraState,
 ): { lensCenterWorld: Vec3; lensNormalWorld: Vec3; lensPlane: Plane } => {
   const baseLensCenter = calculateBaseLensCenter();
-  const lensCenterWorld = calculateLensCenter(baseLensCenter, cameraState.frontRiseMm);
+  const lensCenterWorld = calculateLensCenter(
+    baseLensCenter,
+    cameraState.frontRiseMm,
+    cameraState.frontShiftMm,
+  );
   const lensNormalWorld = calculateLensNormal(cameraState.frontTiltDeg, cameraState.frontSwingDeg);
   return {
     lensCenterWorld,

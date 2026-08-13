@@ -96,6 +96,7 @@ const buildDerivedCameraKey = (
     camera.focusMode ?? "finite",
     camera.lastFiniteFocusDepthMm ?? "",
     camera.frontRiseMm,
+    camera.frontShiftMm,
     camera.frontTiltDeg,
     camera.frontSwingDeg,
     camera.rearRiseMm,

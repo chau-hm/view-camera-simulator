@@ -604,6 +604,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   ]);
 
   const mirrorShiftRigOrigin = opticsState.cameraRigTransform.rigOriginWorld;
+  const mirrorShiftFrontShiftMm = opticsState.cameraBodyLocalGeometry.lensCenterLocal.x;
   useEffect(() => {
     if (sceneId !== "mirror-shift") return;
     const subjectGroup = mirrorShiftRttSubjectRef.current;
@@ -612,8 +613,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       x: mirrorShiftRigOrigin.x,
       y: mirrorShiftRigOrigin.y,
       z: mirrorShiftRigOrigin.z,
-    });
+    }, mirrorShiftFrontShiftMm);
   }, [
+    mirrorShiftFrontShiftMm,
     mirrorShiftRigOrigin.x,
     mirrorShiftRigOrigin.y,
     mirrorShiftRigOrigin.z,

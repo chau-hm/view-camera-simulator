@@ -12,6 +12,7 @@ export const mirrorShiftScene: SceneDefinition = {
     focusDistanceMm: 6000,
     aperture: 32,
     frontRiseMm: 0,
+    frontShiftMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,
     rearRiseMm: 0,
@@ -38,5 +39,9 @@ export const mirrorShiftScene: SceneDefinition = {
     enabled: true,
     axis: "x",
     state: "mirrorShiftLessonState",
+  },
+  cameraFrontShiftCapability: {
+    enabled: true,
+    axis: "x",
   },
 };
