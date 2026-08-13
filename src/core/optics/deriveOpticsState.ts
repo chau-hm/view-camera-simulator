@@ -232,6 +232,7 @@ const isFiniteCameraInput = (
     cameraState.focalLengthMm,
     cameraState.focusDistanceMm,
     cameraState.frontRiseMm,
+    cameraState.frontShiftMm ?? 0,
     cameraState.frontTiltDeg,
     cameraState.frontSwingDeg,
     cameraState.rearRiseMm,
@@ -257,13 +258,14 @@ const baseFallbackState = (
       ? cameraState.focusDistanceMm
       : CAMERA_CONSTANTS.defaultFocusDistanceMm;
   const safeFrontRise = Number.isFinite(cameraState.frontRiseMm) ? cameraState.frontRiseMm : 0;
+  const safeFrontShift = Number.isFinite(cameraState.frontShiftMm) ? cameraState.frontShiftMm : 0;
   const safeFrontTilt = Number.isFinite(cameraState.frontTiltDeg) ? cameraState.frontTiltDeg : 0;
   const safeFrontSwing = Number.isFinite(cameraState.frontSwingDeg) ? cameraState.frontSwingDeg : 0;
   const safeRearRise = Number.isFinite(cameraState.rearRiseMm) ? cameraState.rearRiseMm : 0;
   const safeRearTilt = Number.isFinite(cameraState.rearTiltDeg) ? cameraState.rearTiltDeg : 0;
 
   // Use canonical helpers for lens and film geometry
-  const lensCenterLocal = vec(0, safeFrontRise, 0);
+  const lensCenterLocal = vec(safeFrontShift, safeFrontRise, 0);
   const lensNormalLocal = calculateLensNormal(safeFrontTilt, safeFrontSwing);
   const lensPlaneLocal = planeFromPointNormal(lensCenterLocal, lensNormalLocal);
   const { filmCenterWorld: baselineFilmCenter } = calculateFiniteFocusFilmPlane({
@@ -398,6 +400,7 @@ export const deriveOpticsState = (
     // passed to solvers, or returned through diagnostics consumed by renderers.
     const infinityInputsValid =
       Number.isFinite(cameraState.frontRiseMm) &&
+      Number.isFinite(cameraState.frontShiftMm ?? 0) &&
       Number.isFinite(cameraState.frontTiltDeg) &&
       Number.isFinite(cameraState.frontSwingDeg) &&
       Number.isFinite(cameraState.rearRiseMm) &&
@@ -431,7 +434,7 @@ export const deriveOpticsState = (
           })
         : null;
     const lensCenterLocal = vec(
-      0,
+      Number.isFinite(cameraState.frontShiftMm) ? cameraState.frontShiftMm : 0,
       cameraState.frontRiseMm,
       focusFundamentalsFocusing?.lensZMm ?? f,
     );
@@ -653,7 +656,11 @@ export const deriveOpticsState = (
     filmCenterLocal = vec(0, 0, focusFundamentalsFocusing.filmZMm);
 
     // Focus Fundamentals deliberately keeps both standards on the optical axis.
-    lensCenterLocal = vec(0, 0, focusFundamentalsFocusing.lensZMm);
+    lensCenterLocal = vec(
+      Number.isFinite(cameraState.frontShiftMm) ? cameraState.frontShiftMm : 0,
+      0,
+      focusFundamentalsFocusing.lensZMm,
+    );
     // recompute lensPlane with updated lens center
     lensPlaneLocal = planeFromPointNormal(lensCenterLocal, lensNormalLocal);
 

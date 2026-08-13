@@ -40,6 +40,7 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
   focusDistanceMm: CAMERA_CONSTANTS.defaultFocusDistanceMm,
   focusStandard: "front",
   frontRiseMm: 0,
+  frontShiftMm: 0,
   frontTiltDeg: 0,
   frontSwingDeg: 0,
   rearRiseMm: 0,

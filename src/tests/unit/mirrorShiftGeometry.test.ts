@@ -106,6 +106,92 @@ describe("Mirror Shift planar reflection geometry", () => {
     expect(moved.cameraBodyLocalGeometry).toEqual(neutral.cameraBodyLocalGeometry);
   });
 
+  it("moves only the rig-local lens/front standard for canonical front shift", () => {
+    const neutralCamera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...mirrorShiftScene.cameraPreset,
+      activeSceneId: mirrorShiftScene.id,
+      activeTaskId: null,
+      mode: "free" as const,
+      mirrorShiftLessonState: { rigLateralMm: 0 },
+      frontShiftMm: 0,
+    };
+    const shiftedCamera = { ...neutralCamera, frontShiftMm: 40 };
+    const neutral = deriveOpticsState(neutralCamera, mirrorShiftScene);
+    const shifted = deriveOpticsState(shiftedCamera, mirrorShiftScene);
+
+    expect(
+      shifted.cameraBodyLocalGeometry.lensCenterLocal.x -
+        neutral.cameraBodyLocalGeometry.lensCenterLocal.x,
+    ).toBeCloseTo(40, 10);
+    expect(shifted.lensCenterWorld.x - neutral.lensCenterWorld.x).toBeCloseTo(40, 10);
+    expect(shifted.lensPlane.point.x - neutral.lensPlane.point.x).toBeCloseTo(40, 10);
+    expect(shifted.lensNormalWorld).toEqual(neutral.lensNormalWorld);
+    expect(shifted.cameraRigTransform).toEqual(neutral.cameraRigTransform);
+    expect(shifted.cameraRigPlacement).toEqual(neutral.cameraRigPlacement);
+    expect(shifted.filmCenterWorld).toEqual(neutral.filmCenterWorld);
+    expect(shifted.filmNormalWorld).toEqual(neutral.filmNormalWorld);
+    expect(shifted.filmPlane).toEqual(neutral.filmPlane);
+    expect(shifted.filmPlaneCornersWorld).toEqual(neutral.filmPlaneCornersWorld);
+    expect(shifted.rearStandardFrame).toEqual(neutral.rearStandardFrame);
+  });
+
+  it("keeps whole-rig translation and front shift independent", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...mirrorShiftScene.cameraPreset,
+      activeSceneId: mirrorShiftScene.id,
+      activeTaskId: null,
+      mode: "free" as const,
+      mirrorShiftLessonState: { rigLateralMm: 1800 },
+      frontShiftMm: -50,
+    };
+    const optics = deriveOpticsState(camera, mirrorShiftScene);
+
+    expect(optics.cameraRigTransform.rigOriginWorld).toEqual({
+      x: 1800,
+      y: 0,
+      z: 0,
+    });
+    expect(optics.cameraBodyLocalGeometry.lensCenterLocal.x).toBeCloseTo(-50, 10);
+    expect(optics.lensCenterWorld.x).toBeCloseTo(1750, 10);
+    expect(optics.filmCenterWorld.x).toBeCloseTo(1800, 10);
+    expect(optics.rearStandardFrame.centerWorld.x).toBeCloseTo(1800, 10);
+  });
+
+  it("moves the moved-rig mirror projection toward centre with opposite front shift", () => {
+    const baseCamera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...mirrorShiftScene.cameraPreset,
+      activeSceneId: mirrorShiftScene.id,
+      activeTaskId: null,
+      mode: "free" as const,
+      mirrorShiftLessonState: { rigLateralMm: 1800 },
+    };
+    const moved = deriveOpticsState(
+      { ...baseCamera, frontShiftMm: 0 },
+      mirrorShiftScene,
+    );
+    const compensated = deriveOpticsState(
+      { ...baseCamera, frontShiftMm: -50 },
+      mirrorShiftScene,
+    );
+    const projectMirrorCentre = (optics: ReturnType<typeof deriveOpticsState>) =>
+      projectWorldPointToFilmPlaneGroundGlass({
+        worldPoint: mirrorShiftGeometry.mirror.center,
+        lensCenterWorld: optics.lensCenterWorld,
+        filmPlaneCornersWorld: optics.filmPlaneCornersWorld,
+      });
+
+    const movedProjection = projectMirrorCentre(moved);
+    const compensatedProjection = projectMirrorCentre(compensated);
+    expect(movedProjection.visible).toBe(true);
+    expect(compensatedProjection.visible).toBe(true);
+    expect(Math.abs(compensatedProjection.uRaw - 0.5)).toBeLessThan(
+      Math.abs(movedProjection.uRaw - 0.5),
+    );
+  });
+
   it("mounts reflected props and a camera proxy at the mirrored neutral positions", () => {
     const group = createMirrorShiftGroup();
     try {
@@ -193,9 +279,20 @@ describe("Mirror Shift planar reflection geometry", () => {
         x: 1800,
         y: 0,
         z: 0,
-      });
+      }, -50);
 
-      expect(updateMirrorShiftCameraReflection(group, { x: 1800, y: 0, z: 0 })).toBe(true);
+      const lens = group.getObjectByName(
+        "mirror-shift-camera-reflection-lens",
+      )!;
+      const bellows = group.getObjectByName(
+        "mirror-shift-camera-reflection-bellows",
+      )!;
+      const cameraGroupGeometry = (frontStandard as THREE.Mesh).geometry;
+      const lensGeometry = (lens as THREE.Mesh).geometry;
+
+      expect(
+        updateMirrorShiftCameraReflection(group, { x: 1800, y: 0, z: 0 }, -50),
+      ).toBe(true);
       group.updateMatrixWorld(true);
 
       const frontWorld = new THREE.Vector3();
@@ -219,16 +316,35 @@ describe("Mirror Shift planar reflection geometry", () => {
         toWorldMm(translatedAnchors.reflected.rearStandardCenter.z),
         10,
       );
+      const lensWorld = new THREE.Vector3();
+      lens.getWorldPosition(lensWorld);
+      expect(lensWorld.x).toBeCloseTo(
+        toWorldMm(translatedAnchors.reflected.frontStandardCenter.x),
+        10,
+      );
+      const bellowsWorld = new THREE.Vector3();
+      bellows.getWorldPosition(bellowsWorld);
+      expect(bellowsWorld.x).toBeCloseTo(
+        toWorldMm(
+          (translatedAnchors.reflected.frontStandardCenter.x +
+            translatedAnchors.reflected.rearStandardCenter.x) /
+            2,
+        ),
+        10,
+      );
       expect(cameraGroup).toBe(group.getObjectByName("mirror-shift-camera-reflection"));
       expect(reflectedProps).toBe(group.getObjectByName("mirror-shift-reflected-props"));
       expect(staticProp.geometry).toBe(staticGeometry);
       expect(staticProp.material).toBe(staticMaterial);
+      expect((frontStandard as THREE.Mesh).geometry).toBe(cameraGroupGeometry);
+      expect((lens as THREE.Mesh).geometry).toBe(lensGeometry);
       expect(staticProp.position).toEqual(staticPropPosition);
       expect(cameraGroup.userData.reflectedRigOriginWorld).toEqual({
         x: 1800,
         y: 0,
         z: 0,
       });
+      expect(cameraGroup.userData.reflectedFrontShiftMm).toBe(-50);
     } finally {
       disposeMirrorShiftGroup(group);
     }
@@ -283,6 +399,28 @@ describe("Mirror Shift planar reflection geometry", () => {
       disposeMirrorShiftGroup(viewportGroup);
       disposeMirrorShiftGroup(rttGroup);
     }
+  });
+
+  it("derives combined rig and front-shift camera reflections from real anchors", () => {
+    const anchors = resolveMirrorShiftCameraAnchors(
+      { x: 1800, y: 0, z: 0 },
+      -50,
+    );
+
+    for (const key of [
+      "frontStandardCenter",
+      "rearStandardCenter",
+      "tripodHead",
+      "leftTripodFoot",
+      "rightTripodFoot",
+    ] as const) {
+      expect(anchors.reflected[key]).toEqual(
+        reflectPointAcrossMirrorPlane(anchors.real[key]),
+      );
+    }
+    expect(anchors.real.frontStandardCenter.x).toBe(1750);
+    expect(anchors.real.rearStandardCenter.x).toBe(1800);
+    expect(anchors.real.tripodHead.x).toBe(1800);
   });
 
   it("disposes each owned geometry and material once", () => {

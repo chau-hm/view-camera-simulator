@@ -36,6 +36,8 @@ export type CameraState = {
   focusDistanceMm: number;
   focusStandard: FocusStandard;
   frontRiseMm: number;
+  /** Physical horizontal translation of the front standard in rig-local X. */
+  frontShiftMm: number;
   frontTiltDeg: number;
   frontSwingDeg: number;
   rearRiseMm: number;

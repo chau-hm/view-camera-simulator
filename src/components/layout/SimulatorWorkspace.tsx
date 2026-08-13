@@ -21,6 +21,7 @@ import { MovementSelector } from "../controls/MovementSelector";
 import { SingleMovementControl } from "../controls/SingleMovementControl";
 import { ResetControls } from "../controls/ResetControls";
 import { MirrorShiftCameraPositionControl } from "../controls/MirrorShiftCameraPositionControl";
+import { MirrorShiftFrontShiftControl } from "../controls/MirrorShiftFrontShiftControl";
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
@@ -540,6 +541,12 @@ export const SimulatorWorkspace = ({
               {safeScene.cameraRigTranslationCapability?.enabled ? (
                 <div className="sim-section">
                   <MirrorShiftCameraPositionControl />
+                </div>
+              ) : null}
+
+              {safeScene.cameraFrontShiftCapability?.enabled ? (
+                <div className="sim-section">
+                  <MirrorShiftFrontShiftControl />
                 </div>
               ) : null}
 

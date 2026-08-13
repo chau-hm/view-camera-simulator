@@ -83,14 +83,16 @@ const translateAnchor = (anchor: Vec3, translation: Vec3): Vec3 => ({
 /** Translate the neutral camera anchors, then derive their virtual counterparts from the mirror plane. */
 export const resolveMirrorShiftCameraAnchors = (
   rigTranslation: Vec3 = { x: 0, y: 0, z: 0 },
+  frontShiftMm = 0,
 ): {
   real: MirrorShiftCameraAnchorSet;
   reflected: MirrorShiftCameraAnchorSet;
 } => {
+  const safeFrontShiftMm = Number.isFinite(frontShiftMm) ? frontShiftMm : 0;
   const real: MirrorShiftCameraAnchorSet = {
     frontStandardCenter: translateAnchor(
       neutralCameraAnchors.frontStandardCenter,
-      rigTranslation,
+      { ...rigTranslation, x: rigTranslation.x + safeFrontShiftMm },
     ),
     rearStandardCenter: translateAnchor(
       neutralCameraAnchors.rearStandardCenter,
