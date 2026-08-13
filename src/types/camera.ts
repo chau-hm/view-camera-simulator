@@ -21,6 +21,11 @@ export type CameraMovementLessonState = Readonly<{
   framingT: number;
 }>;
 
+/** Continuous canonical lesson state for the Mirror Shift rig-position control. */
+export type MirrorShiftLessonState = Readonly<{
+  rigLateralMm: number;
+}>;
+
 export type ApertureValue = 5.6 | 11 | 22 | 32;
 
 export type GeometryView = "side" | "top" | "scheimpflug";
@@ -45,6 +50,8 @@ export type CameraState = {
   cameraRigPlacement: CameraRigPlacement;
   /** Scene-specific continuous lesson source for public camera-movement adapters. */
   cameraMovementLessonState?: CameraMovementLessonState;
+  /** Scene-specific continuous lesson source for Mirror Shift rig translation. */
+  mirrorShiftLessonState?: MirrorShiftLessonState;
   activeSceneId: string;
   activeTaskId: string | null;
   mode: SimulatorMode;

@@ -58,21 +58,68 @@ const floorY = -1200;
 const wallWidthMm = 5800;
 const wallTopY = 1800;
 
-const neutralCameraAnchors = {
+export type MirrorShiftCameraAnchorSet = {
+  frontStandardCenter: Vec3;
+  rearStandardCenter: Vec3;
+  tripodHead: Vec3;
+  leftTripodFoot: Vec3;
+  rightTripodFoot: Vec3;
+};
+
+const neutralCameraAnchors: MirrorShiftCameraAnchorSet = {
   frontStandardCenter: { x: 0, y: 0, z: 0 },
   rearStandardCenter: { x: 0, y: 0, z: -160 },
   tripodHead: { x: 0, y: -180, z: -80 },
   leftTripodFoot: { x: -260, y: -1040, z: -20 },
   rightTripodFoot: { x: 260, y: -1040, z: -20 },
-} as const;
+};
 
-const reflectedCameraAnchors = {
-  frontStandardCenter: reflectPointAcrossMirrorPlane(neutralCameraAnchors.frontStandardCenter),
-  rearStandardCenter: reflectPointAcrossMirrorPlane(neutralCameraAnchors.rearStandardCenter),
-  tripodHead: reflectPointAcrossMirrorPlane(neutralCameraAnchors.tripodHead),
-  leftTripodFoot: reflectPointAcrossMirrorPlane(neutralCameraAnchors.leftTripodFoot),
-  rightTripodFoot: reflectPointAcrossMirrorPlane(neutralCameraAnchors.rightTripodFoot),
-} as const;
+const translateAnchor = (anchor: Vec3, translation: Vec3): Vec3 => ({
+  x: anchor.x + translation.x,
+  y: anchor.y + translation.y,
+  z: anchor.z + translation.z,
+});
+
+/** Translate the neutral camera anchors, then derive their virtual counterparts from the mirror plane. */
+export const resolveMirrorShiftCameraAnchors = (
+  rigTranslation: Vec3 = { x: 0, y: 0, z: 0 },
+): {
+  real: MirrorShiftCameraAnchorSet;
+  reflected: MirrorShiftCameraAnchorSet;
+} => {
+  const real: MirrorShiftCameraAnchorSet = {
+    frontStandardCenter: translateAnchor(
+      neutralCameraAnchors.frontStandardCenter,
+      rigTranslation,
+    ),
+    rearStandardCenter: translateAnchor(
+      neutralCameraAnchors.rearStandardCenter,
+      rigTranslation,
+    ),
+    tripodHead: translateAnchor(neutralCameraAnchors.tripodHead, rigTranslation),
+    leftTripodFoot: translateAnchor(
+      neutralCameraAnchors.leftTripodFoot,
+      rigTranslation,
+    ),
+    rightTripodFoot: translateAnchor(
+      neutralCameraAnchors.rightTripodFoot,
+      rigTranslation,
+    ),
+  };
+
+  return {
+    real,
+    reflected: {
+      frontStandardCenter: reflectPointAcrossMirrorPlane(real.frontStandardCenter),
+      rearStandardCenter: reflectPointAcrossMirrorPlane(real.rearStandardCenter),
+      tripodHead: reflectPointAcrossMirrorPlane(real.tripodHead),
+      leftTripodFoot: reflectPointAcrossMirrorPlane(real.leftTripodFoot),
+      rightTripodFoot: reflectPointAcrossMirrorPlane(real.rightTripodFoot),
+    },
+  };
+};
+
+const reflectedCameraAnchors = resolveMirrorShiftCameraAnchors().reflected;
 
 const props: readonly MirrorShiftProp[] = [
   {

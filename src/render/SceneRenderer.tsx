@@ -29,6 +29,7 @@ import {
 import {
   createCameraInspectionView,
   resolveCameraInspectionFocusTargetWorld,
+  translateObserverViewByRigOrigin,
   translateObserverViewToTarget,
   type ObserverViewState,
   type SceneViewFocus,
@@ -1038,14 +1039,27 @@ export const SceneRenderer = ({
     [opticsState.cameraRigTransform, scene.id],
   );
   const cameraObserverView = useMemo(
-    () =>
-      createCameraInspectionView(
+    () => {
+      const inspectionView = createCameraInspectionView(
         scene,
         sceneObserverView,
         activeFocalLengthMm,
         cameraInspectionTarget,
-      ),
-    [activeFocalLengthMm, cameraInspectionTarget, scene, sceneObserverView],
+      );
+      return scene.id === "mirror-shift"
+        ? translateObserverViewByRigOrigin(
+            inspectionView,
+            opticsState.cameraRigTransform.rigOriginWorld,
+          )
+        : inspectionView;
+    },
+    [
+      activeFocalLengthMm,
+      cameraInspectionTarget,
+      opticsState.cameraRigTransform,
+      scene,
+      sceneObserverView,
+    ],
   );
   const [observerViewState, setObserverViewState] = useState<ObserverViewState>(sceneObserverView);
   const activeAssets = useMemo(

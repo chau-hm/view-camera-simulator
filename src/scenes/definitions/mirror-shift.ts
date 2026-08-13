@@ -34,4 +34,9 @@ export const mirrorShiftScene: SceneDefinition = {
     aperture: "fixed",
     infinityReset: false,
   },
+  cameraRigTranslationCapability: {
+    enabled: true,
+    axis: "x",
+    state: "mirrorShiftLessonState",
+  },
 };

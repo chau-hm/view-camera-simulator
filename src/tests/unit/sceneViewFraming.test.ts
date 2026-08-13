@@ -5,10 +5,12 @@ import {
   createCameraInspectionView,
   resolveCameraInspectionFocusTargetWorld,
   resolveStableCameraInspectionTarget,
+  translateObserverViewByRigOrigin,
   translateObserverViewToTarget,
   type ObserverViewState,
 } from "../../render/sceneViewFraming";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import {
   CAMERA_MOVEMENT_SCENE_CALIBRATION,
@@ -143,5 +145,33 @@ describe("3D observer view framing", () => {
 
     expect(translated.target).toEqual([0, 0.02, -0.09]);
     expect(translated.position).toEqual([0.4, 0.32, -0.61]);
+  });
+
+  it("translates the calibrated Mirror Shift camera inspection view with the rig", () => {
+    const neutralView = createCameraInspectionView(
+      mirrorShiftScene,
+      sceneView,
+      mirrorShiftScene.cameraPreset.focalLengthMm ?? CAMERA_CONSTANTS.focalLengthMm,
+    );
+    const movedView = translateObserverViewByRigOrigin(neutralView, {
+      x: 1800,
+      y: 0,
+      z: 0,
+    });
+
+    expect(neutralView.target[0]).toBeCloseTo(0, 10);
+    expect(movedView.target[0]).toBeCloseTo(1.8, 10);
+    expect(movedView.position[0]).toBeCloseTo(neutralView.position[0] + 1.8, 10);
+    expect(movedView.target[1]).toBeCloseTo(neutralView.target[1], 10);
+    expect(movedView.target[2]).toBeCloseTo(neutralView.target[2], 10);
+    expect(movedView.position[1]).toBeCloseTo(neutralView.position[1], 10);
+    expect(movedView.position[2]).toBeCloseTo(neutralView.position[2], 10);
+
+    for (let index = 0; index < 3; index += 1) {
+      expect(movedView.position[index] - movedView.target[index]).toBeCloseTo(
+        neutralView.position[index] - neutralView.target[index],
+        10,
+      );
+    }
   });
 });

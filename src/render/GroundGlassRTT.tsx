@@ -13,6 +13,7 @@ import {
   disposeRegisteredRttSubject,
   getSceneSubjectRegistration,
 } from "./sceneSubjectRegistry";
+import { updateMirrorShiftCameraReflection } from "./MirrorShiftSubjectFactory";
 import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
 import { resolveCameraMovementLatticeRenderModel } from "./cameraMovementLatticeRenderModel";
 import {
@@ -140,6 +141,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   } | null>(null);
   const mountedCameraMovementRttSubjectRef =
     useRef<MountedCameraMovementRttSubject | null>(null);
+  const mirrorShiftRttSubjectRef = useRef<THREE.Group | null>(null);
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality, zoomEnabled });
   sizeInputsRef.current = { widthPx, heightPx, renderQuality, zoomEnabled };
 
@@ -583,8 +585,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     const subjectGroup = createRegisteredRttSubject(sceneId, subjectOptions);
     if (!subjectGroup) return;
+    if (sceneId === "mirror-shift") {
+      mirrorShiftRttSubjectRef.current = subjectGroup;
+    }
     scene.add(subjectGroup);
     return () => {
+      if (mirrorShiftRttSubjectRef.current === subjectGroup) {
+        mirrorShiftRttSubjectRef.current = null;
+      }
       scene.remove(subjectGroup);
       disposeRegisteredRttSubject(sceneId, subjectGroup);
     };
@@ -593,6 +601,23 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     sceneId,
     readRuntimeInfo,
     setRuntimeInfo,
+  ]);
+
+  const mirrorShiftRigOrigin = opticsState.cameraRigTransform.rigOriginWorld;
+  useEffect(() => {
+    if (sceneId !== "mirror-shift") return;
+    const subjectGroup = mirrorShiftRttSubjectRef.current;
+    if (!subjectGroup) return;
+    updateMirrorShiftCameraReflection(subjectGroup, {
+      x: mirrorShiftRigOrigin.x,
+      y: mirrorShiftRigOrigin.y,
+      z: mirrorShiftRigOrigin.z,
+    });
+  }, [
+    mirrorShiftRigOrigin.x,
+    mirrorShiftRigOrigin.y,
+    mirrorShiftRigOrigin.z,
+    sceneId,
   ]);
 
   // Target teaching steps are presentation-only. Keep the mounted subject and
