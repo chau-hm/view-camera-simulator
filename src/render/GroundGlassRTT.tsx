@@ -1103,7 +1103,13 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
 
   return (
     <div data-rtt-resource-channel={channel} style={{ width: "100%", height: "100%" }}>
-      <Canvas dpr={qualitySettings.dpr} style={{ width: "100%", height: "100%" }} gl={GROUND_GLASS_GL_OPTIONS} orthographic={false}>
+      <Canvas
+        dpr={qualitySettings.dpr}
+        resize={{ offsetSize: true }}
+        style={{ width: "100%", height: "100%" }}
+        gl={GROUND_GLASS_GL_OPTIONS}
+        orthographic={false}
+      >
         <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} presentationRegion={presentationRegion} />
       </Canvas>
     </div>
