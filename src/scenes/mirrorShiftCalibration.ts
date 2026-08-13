@@ -1,4 +1,16 @@
-import type { DerivedOpticsState, Vec3 } from "../types/optics";
+import type { DerivedOpticsState, Plane, Vec3 } from "../types/optics";
+import { planeFromPointNormal } from "../core/math/plane";
+import { intersectRayPlane } from "../core/math/ray";
+import {
+  add,
+  cross,
+  dot,
+  isFiniteVec3,
+  magnitude,
+  normalize,
+  scale,
+  subtract,
+} from "../core/math/vec";
 import {
   mirrorShiftGeometry,
   resolveMirrorShiftCameraAnchors,
@@ -42,7 +54,8 @@ export const MIRROR_SHIFT_SCENE_CALIBRATION = {
   tolerances: {
     mirrorFramingRestoredNormalized: 0.02,
     minimumMovedMirrorDisplacementNormalized: 0.25,
-    cameraReflectionClearanceMm: 80,
+    // Corrected mirror-plane projection leaves state C 34 mm beyond this gate.
+    cameraReflectionClearanceMm: 180,
     minimumPropParallaxDeltaNormalized: 0.02,
     mirrorRectangularityResidual: 1e-8,
   },
@@ -62,6 +75,9 @@ export type MirrorShiftMirrorCornerName =
 export type MirrorShiftTeachingProjection = GroundGlassFilmPlaneProjectionResult;
 
 export type MirrorShiftCameraReflectionMetrics = Readonly<{
+  /** True only when every representative proxy point projected successfully. */
+  valid: boolean;
+  /** Footprint projected onto the mirror plane from the current lens viewpoint. */
   boundsMm: Readonly<{
     minX: number;
     maxX: number;
@@ -128,16 +144,154 @@ const project = (
 const extendBounds = (
   bounds: { minX: number; maxX: number; minY: number; maxY: number },
   point: Vec3,
+): void => {
+  bounds.minX = Math.min(bounds.minX, point.x);
+  bounds.maxX = Math.max(bounds.maxX, point.x);
+  bounds.minY = Math.min(bounds.minY, point.y);
+  bounds.maxY = Math.max(bounds.maxY, point.y);
+};
+
+const boxCorners = (center: Vec3, halfSize: Vec3): Vec3[] => {
+  const corners: Vec3[] = [];
+  for (const x of [-1, 1]) {
+    for (const y of [-1, 1]) {
+      for (const z of [-1, 1]) {
+        corners.push({
+          x: center.x + x * halfSize.x,
+          y: center.y + y * halfSize.y,
+          z: center.z + z * halfSize.z,
+        });
+      }
+    }
+  }
+  return corners;
+};
+
+const beamCorners = (
+  start: Vec3,
+  end: Vec3,
   halfWidthMm: number,
   halfHeightMm: number,
-): void => {
-  bounds.minX = Math.min(bounds.minX, point.x - halfWidthMm);
-  bounds.maxX = Math.max(bounds.maxX, point.x + halfWidthMm);
-  bounds.minY = Math.min(bounds.minY, point.y - halfHeightMm);
-  bounds.maxY = Math.max(bounds.maxY, point.y + halfHeightMm);
+): Vec3[] => {
+  const direction = subtract(end, start);
+  const length = magnitude(direction);
+  if (!Number.isFinite(length) || length <= 1e-9) return [];
+
+  const axis = scale(direction, 1 / length);
+  const reference = Math.abs(axis.y) < 0.9
+    ? { x: 0, y: 1, z: 0 }
+    : { x: 1, y: 0, z: 0 };
+  const widthAxis = normalize(cross(reference, axis));
+  const heightAxis = normalize(cross(axis, widthAxis));
+  const corners: Vec3[] = [];
+  for (const endpoint of [start, end]) {
+    for (const widthSign of [-1, 1]) {
+      for (const heightSign of [-1, 1]) {
+        corners.push(
+          add(
+            add(endpoint, scale(widthAxis, widthSign * halfWidthMm)),
+            scale(heightAxis, heightSign * halfHeightMm),
+          ),
+        );
+      }
+    }
+  }
+  return corners;
+};
+
+const mirrorPlaneAsOpticsPlane = (plane: { point: Vec3; normal: Vec3 }): Plane =>
+  planeFromPointNormal(plane.point, plane.normal);
+
+/**
+ * Project a virtual reflected point back to the physical mirror plane from
+ * the current lens viewpoint. The result is on the mirror plane, rather than
+ * at the virtual point's world-space X/Y coordinates.
+ */
+export const projectVirtualPointToMirrorPlane = ({
+  viewpoint,
+  virtualPoint,
+  mirrorPlane = mirrorShiftGeometry.mirror.plane,
+}: {
+  viewpoint: Vec3;
+  virtualPoint: Vec3;
+  mirrorPlane?: { point: Vec3; normal: Vec3 };
+}): Vec3 | null => {
+  if (!isFiniteVec3(viewpoint) || !isFiniteVec3(virtualPoint)) return null;
+  if (
+    !isFiniteVec3(mirrorPlane.point) ||
+    !isFiniteVec3(mirrorPlane.normal) ||
+    magnitude(mirrorPlane.normal) <= 1e-9
+  ) {
+    return null;
+  }
+  const direction = subtract(virtualPoint, viewpoint);
+  const directionLength = magnitude(direction);
+  if (!Number.isFinite(directionLength) || directionLength <= 1e-9) return null;
+
+  const hit = intersectRayPlane(
+    {
+      origin: viewpoint,
+      direction: normalize(direction),
+    },
+    mirrorPlaneAsOpticsPlane(mirrorPlane),
+  );
+  if (!hit || !isFiniteVec3(hit.point)) return null;
+
+  const alongRay = dot(subtract(hit.point, viewpoint), direction) /
+    (directionLength * directionLength);
+  if (!Number.isFinite(alongRay) || alongRay < -1e-9 || alongRay > 1 + 1e-9) {
+    return null;
+  }
+  return hit.point;
+};
+
+const resolveCameraProxyRepresentativePoints = (
+  anchors: MirrorShiftCameraAnchorSet,
+): Vec3[] => {
+  const { camera } = mirrorShiftGeometry;
+  return [
+    ...boxCorners(anchors.frontStandardCenter, {
+      x: camera.frontStandard.widthMm / 2,
+      y: camera.frontStandard.heightMm / 2,
+      z: camera.frontStandard.depthMm / 2,
+    }),
+    ...boxCorners(anchors.rearStandardCenter, {
+      x: camera.rearStandard.widthMm / 2,
+      y: camera.rearStandard.heightMm / 2,
+      z: camera.rearStandard.depthMm / 2,
+    }),
+    ...boxCorners(anchors.tripodHead, { x: 55, y: 35, z: 50 }),
+    ...boxCorners(
+      {
+        x: anchors.frontStandardCenter.x,
+        y: anchors.frontStandardCenter.y,
+        z: anchors.frontStandardCenter.z - camera.lens.depthMm / 2 - 10,
+      },
+      { x: camera.lens.radiusMm, y: camera.lens.radiusMm, z: camera.lens.depthMm / 2 },
+    ),
+    ...beamCorners(
+      anchors.frontStandardCenter,
+      anchors.rearStandardCenter,
+      camera.bellows.widthMm / 2,
+      camera.bellows.heightMm / 2,
+    ),
+    ...beamCorners(
+      anchors.tripodHead,
+      anchors.leftTripodFoot,
+      camera.tripod.legWidthMm / 2,
+      camera.tripod.legWidthMm / 2,
+    ),
+    ...beamCorners(
+      anchors.tripodHead,
+      anchors.rightTripodFoot,
+      camera.tripod.legWidthMm / 2,
+      camera.tripod.legWidthMm / 2,
+    ),
+  ];
 };
 
 const resolveCameraReflectionBounds = (
+  viewpoint: Vec3,
   anchors: MirrorShiftCameraAnchorSet,
 ): MirrorShiftCameraReflectionMetrics => {
   const bounds = {
@@ -146,33 +300,28 @@ const resolveCameraReflectionBounds = (
     minY: Number.POSITIVE_INFINITY,
     maxY: Number.NEGATIVE_INFINITY,
   };
-  const { camera } = mirrorShiftGeometry;
+  const projectedPoints = resolveCameraProxyRepresentativePoints(anchors)
+    .map((virtualPoint) =>
+      projectVirtualPointToMirrorPlane({ viewpoint, virtualPoint }),
+    );
 
-  extendBounds(
-    bounds,
-    anchors.frontStandardCenter,
-    camera.frontStandard.widthMm / 2,
-    camera.frontStandard.heightMm / 2,
-  );
-  extendBounds(
-    bounds,
-    anchors.rearStandardCenter,
-    camera.rearStandard.widthMm / 2,
-    camera.rearStandard.heightMm / 2,
-  );
-  extendBounds(bounds, anchors.tripodHead, 110 / 2, 70 / 2);
-  extendBounds(
-    bounds,
-    anchors.leftTripodFoot,
-    camera.tripod.legWidthMm / 2,
-    camera.tripod.legWidthMm / 2,
-  );
-  extendBounds(
-    bounds,
-    anchors.rightTripodFoot,
-    camera.tripod.legWidthMm / 2,
-    camera.tripod.legWidthMm / 2,
-  );
+  if (projectedPoints.some((point) => point === null)) {
+    return {
+      valid: false,
+      boundsMm: {
+        minX: Number.NaN,
+        maxX: Number.NaN,
+        minY: Number.NaN,
+        maxY: Number.NaN,
+      },
+      intersectsMirrorAperture: false,
+      clearanceMm: Number.NaN,
+    };
+  }
+
+  projectedPoints.forEach((point) => {
+    if (point) extendBounds(bounds, point);
+  });
 
   const aperture = mirrorShiftGeometry.mirror.innerBounds;
   const xClearance =
@@ -189,9 +338,10 @@ const resolveCameraReflectionBounds = (
         : 0;
 
   return {
+    valid: true,
     boundsMm: bounds,
     intersectsMirrorAperture: xClearance === 0 && yClearance === 0,
-    clearanceMm: Math.max(xClearance, yClearance),
+    clearanceMm: Math.hypot(xClearance, yClearance),
   };
 };
 
@@ -265,7 +415,7 @@ export const measureMirrorShiftTeachingState = (
   return {
     mirrorCenter: project(opticsState, mirrorShiftGeometry.mirror.center),
     mirrorCorners: projectedCorners,
-    cameraReflection: resolveCameraReflectionBounds(reflected),
+    cameraReflection: resolveCameraReflectionBounds(opticsState.lensCenterWorld, reflected),
     reflectedPropProjections,
     reflectedPropSeparationNormalized:
       reflectedPropProjections["tall-marker"].uRaw -

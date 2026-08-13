@@ -720,7 +720,6 @@ export const useAppStore = create<AppStore>((set) => ({
           frontShiftMm: scene?.cameraFrontShiftCapability?.enabled
             ? scene.cameraPreset.frontShiftMm ?? 0
             : 0,
-          geometryView: sceneId === "mirror-shift" ? "top" : state.camera.geometryView,
           viewpointAnchor: "mid",
           cameraRigPlacement: resolveRigPlacement(sceneId),
           mirrorShiftLessonState:
@@ -885,7 +884,6 @@ export const useAppStore = create<AppStore>((set) => ({
           camera: {
             ...state.camera,
             aperture: resolveSceneAperture(sceneId, state.camera.aperture),
-            geometryView: sceneId === "mirror-shift" ? "top" : state.camera.geometryView,
           },
           scene: { ...state.scene, activeSceneId: sceneId },
           task: { ...state.task, activeTaskId: taskId ?? null },
@@ -917,7 +915,6 @@ export const useAppStore = create<AppStore>((set) => ({
             focalLengthMm:
               preset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm,
             ...preset,
-            geometryView: sceneId === "mirror-shift" ? "top" : nextCamera.geometryView,
             activeSceneId: sceneId,
           };
         } else {
@@ -1405,10 +1402,8 @@ export const useAppStore = create<AppStore>((set) => ({
         presetFocusDistanceMm,
       );
       const nextGeometryView =
-        nextSceneId === "mirror-shift"
-          ? "top"
-          : activeTask?.initialCameraState?.geometryView ??
-            state.camera.geometryView;
+        activeTask?.initialCameraState?.geometryView ??
+        state.camera.geometryView;
       const nextGroundGlassAssistEnabled =
         activeTask?.initialCameraState?.groundGlassAssistEnabled ??
         state.camera.groundGlassAssistEnabled;

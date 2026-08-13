@@ -4,6 +4,7 @@ import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import {
   MIRROR_SHIFT_SCENE_CALIBRATION,
   measureMirrorShiftTeachingState,
+  projectVirtualPointToMirrorPlane,
   resolveMirrorShiftTeachingState,
 } from "../../scenes/mirrorShiftCalibration";
 import { resolveMirrorShiftTeachingDiagramModel } from "../../scenes/mirrorShiftTeachingGeometry";
@@ -30,6 +31,18 @@ const calibrationOptics = (name: "neutral" | "camera-moved" | "framing-restored"
 };
 
 describe("Mirror Shift teaching calibration", () => {
+  it("projects a virtual camera point onto the mirror plane from the current viewpoint", () => {
+    const viewpoint = { x: 1000, y: 200, z: 0 };
+    const virtualPoint = { x: 2000, y: 600, z: 8400 };
+    const projected = projectVirtualPointToMirrorPlane({ viewpoint, virtualPoint });
+
+    expect(projected).not.toBeNull();
+    expect(projected?.x).toBeCloseTo(1500, 10);
+    expect(projected?.y).toBeCloseTo(400, 10);
+    expect(projected?.z).toBeCloseTo(4200, 10);
+    expect(projected?.x).not.toBeCloseTo(virtualPoint.x, 10);
+  });
+
   it("defines A/B/C with a shared moved rig and distinct front shift", () => {
     const neutral = resolveMirrorShiftTeachingState("neutral");
     const moved = resolveMirrorShiftTeachingState("camera-moved");
@@ -61,11 +74,18 @@ describe("Mirror Shift teaching calibration", () => {
     expect(neutralMetrics.cameraReflection.intersectsMirrorAperture).toBe(true);
     expect(movedMetrics.cameraReflection.intersectsMirrorAperture).toBe(false);
     expect(restoredMetrics.cameraReflection.intersectsMirrorAperture).toBe(false);
+    expect(neutralMetrics.cameraReflection.valid).toBe(true);
+    expect(movedMetrics.cameraReflection.valid).toBe(true);
+    expect(restoredMetrics.cameraReflection.valid).toBe(true);
     expect(movedMetrics.cameraReflection.clearanceMm).toBeGreaterThanOrEqual(
       tolerances.cameraReflectionClearanceMm,
     );
     expect(restoredMetrics.cameraReflection.clearanceMm).toBeGreaterThanOrEqual(
       tolerances.cameraReflectionClearanceMm,
+    );
+    expect(movedMetrics.cameraReflection.boundsMm.minX).not.toBeCloseTo(
+      restoredMetrics.cameraReflection.boundsMm.minX,
+      10,
     );
 
     expect(Math.abs(restoredMetrics.reflectedPropSeparationNormalized - neutralMetrics.reflectedPropSeparationNormalized)).toBeGreaterThanOrEqual(
