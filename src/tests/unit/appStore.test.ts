@@ -387,6 +387,26 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera.frontShiftMm).toBe(0);
   });
 
+  it("preserves the stored geometry view when entering and leaving Mirror Shift", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    store.setGeometryView("side");
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+    expect(useAppStore.getState().camera.geometryView).toBe("side");
+    expect(useAppStore.getState().ui.geometryView).toBe("side");
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    expect(useAppStore.getState().camera.geometryView).toBe("side");
+    expect(useAppStore.getState().ui.geometryView).toBe("side");
+
+    store.setGeometryView("top");
+    store.setActiveScene("mirror-shift");
+    expect(useAppStore.getState().camera.geometryView).toBe("top");
+    store.setActiveScene("architecture-rise");
+    expect(useAppStore.getState().camera.geometryView).toBe("top");
+  });
+
   it("restores Focus Fundamentals f/32 across scene entry, mode changes, and reset actions", () => {
     const store = useAppStore.getState();
 

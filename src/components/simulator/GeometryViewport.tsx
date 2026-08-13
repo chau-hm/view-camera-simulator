@@ -8,6 +8,7 @@ import { getGeometryPresentationProfile } from "../geometry/geometryPresentation
 import { getPreferredSubjectGeometryView } from "../geometry/getPreferredSubjectGeometryView";
 import { OpticalDepthStrip } from "../geometry/OpticalDepthStrip";
 import OpticalSectionDiagram from "../geometry/OpticalSectionDiagram";
+import { MirrorShiftTeachingDiagram } from "../geometry/MirrorShiftTeachingDiagram";
 import type { GeometryView } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
@@ -38,13 +39,18 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
   const [fitMode, setFitMode] = useState<"scene" | "construction">("scene");
   const supportsConstruction = supportsScheimpflugConstruction(scene.id);
+  const isMirrorShiftTeaching = scene.id === "mirror-shift";
   const subjectGeometryView = getPreferredSubjectGeometryView({
     sceneId: scene.id,
     tiltDeg: opticsState.diagnostics.tiltAngleDeg,
     swingDeg: opticsState.diagnostics.swingAngleDeg,
   });
   const effectiveGeometryView =
-    !supportsConstruction && geometryView === "scheimpflug" ? subjectGeometryView : geometryView;
+    isMirrorShiftTeaching
+      ? "top"
+      : !supportsConstruction && geometryView === "scheimpflug"
+        ? subjectGeometryView
+        : geometryView;
 
   useEffect(() => {
     if (!supportsConstruction) {
@@ -144,6 +150,27 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
     return { optics: originalOptics, projection: originalProjection };
   }, [focalLengthMm, opticsState, scene, svgSize.width, svgSize.height, sceneDepthWindow, profile.lateralWindow, profile.diagramPaddingPx]);
 
+  const mirrorShiftNeutralOptics = useMemo<DerivedOpticsState | null>(() => {
+    if (!isMirrorShiftTeaching) return null;
+    return deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...scene.cameraPreset,
+        activeSceneId: scene.id,
+        activeTaskId: null,
+        mode: "free",
+        frontRiseMm: 0,
+        frontShiftMm: 0,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
+        rearRiseMm: 0,
+        rearTiltDeg: 0,
+        mirrorShiftLessonState: { rigLateralMm: 0 },
+      },
+      scene,
+    );
+  }, [isMirrorShiftTeaching, scene]);
+
 const cameraProjection = constructionWindow
     ? computeOpticalSectionData({
         opticsState,
@@ -191,10 +218,12 @@ const cameraProjection = constructionWindow
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <h2 style={{ margin: 0 }}>{UI_COPY.simulator.geometryTitle}</h2>
           <div role="group" aria-label="Geometry view" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => {
-              setFitMode("scene");
-              setGeometryView("side");
-            }}>Side</button>
+            {!isMirrorShiftTeaching ? (
+              <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => {
+                setFitMode("scene");
+                setGeometryView("side");
+              }}>Side</button>
+            ) : null}
             <button className={effectiveGeometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "top"} onClick={() => {
               setFitMode("scene");
               setGeometryView("top");
@@ -250,7 +279,12 @@ const cameraProjection = constructionWindow
       </p>
 
       <div ref={diagramRef} className="geometry-diagram-container" style={{ flex: 1, minHeight: 0 }}>
-        {constructionLayoutActive && cameraProjection ? (
+        {isMirrorShiftTeaching && mirrorShiftNeutralOptics ? (
+          <MirrorShiftTeachingDiagram
+            neutralOptics={mirrorShiftNeutralOptics}
+            currentOptics={opticsState}
+          />
+        ) : constructionLayoutActive && cameraProjection ? (
           <div className="geometry-construction-split" data-testid="geometry-construction-split">
             <section className="geometry-construction-region" data-testid="camera-construction-region">
               <h3>Camera-side Scheimpflug construction — enlarged</h3>

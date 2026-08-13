@@ -31,6 +31,7 @@ describe("getPreferredSubjectGeometryView", () => {
   it.each([
     ["architecture-rise", "side"],
     ["focus-fundamentals-two-targets", "side"],
+    ["mirror-shift", "top"],
     ["unknown-scene", "side"],
   ] as const)("uses the expected zero-movement default for %s", (sceneId, expected) => {
     expect(preferredView(sceneId, 0, 0)).toBe(expected);
