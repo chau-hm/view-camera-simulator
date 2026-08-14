@@ -35,8 +35,9 @@ rendering.
   translated titles, descriptions, and topics for all six scenes at the
   Scenes-page presentation boundary.
 - Kept `src/ui/copy.ts` and simulator teaching/task/readout/feedback/help copy
-  unchanged. AppBrand remains stable brand/accessibility copy so direct
-  simulator renders without a provider do not expose translation keys.
+  unchanged. AppBrand is presentation-neutral with the existing English label
+  as its default; SiteHeader supplies the localized public-shell label while
+  direct simulator renders remain unchanged.
 - Added `docs/I18N.md` documenting the locale, key, resource, and domain-state
   contract.
 
@@ -47,8 +48,8 @@ rendering.
 - `src/i18n/**`
 - `src/main.tsx`, `src/app/providers.tsx`, `src/app/pages.tsx`,
   `src/app/publicScenes.ts`
-- `src/components/layout/LanguageSelector.tsx`, `SiteHeader.tsx`,
-  `SiteFooter.tsx`
+- `src/components/layout/LanguageSelector.tsx`, `AppBrand.tsx`,
+  `SiteHeader.tsx`, `SiteFooter.tsx`
 - `src/components/marketing/DesktopExperienceNotice.tsx`,
   `FocusCtaPanel.tsx`, `SceneCard.tsx`
 - `src/styles/site-marketing.css`
@@ -70,8 +71,9 @@ files outside the bundled message modules were added.
 - `npm run check:css`: passed.
 - `npm run build`: passed.
 - `git diff --check`: passed.
-- Pre-status-commit `git status --short`: clean after the substantive commit;
-  the only subsequent worktree change is this handoff update.
+- Focused review-fix tests: passed; 3 files, 5 tests.
+- Pre-handoff `git status --short`: clean after the review-fix commit; the only
+  subsequent worktree change is this handoff update.
 
 ## Not run
 
@@ -130,11 +132,17 @@ files outside the bundled message modules were added.
 
 ## Since previous review
 
-Not applicable.
+- Addressed finding 1: `AppBrand` now accepts an optional `homeLabel` with the
+  existing English accessible-name default, and `SiteHeader` passes
+  `t("common.brand.homeLabel")`; simulator consumers remain unchanged.
+- Addressed finding 2: polished only the zh-HK Focus CTA body and the
+  Understanding Camera Movements description for natural wording while
+  preserving the existing instructional semantics.
 
 ## Commit
 
 Substantive implementation: `4afa44e4f4206edc348b18f33cf6678647fbf551`
+Review-fix implementation: `33ff60f3e050fb8c473e8acd36d9b2e6f8710e13`
 
-Final bookkeeping: the status-only commit that adds this file; intentionally
-not self-referenced to avoid recursive commits.
+Final bookkeeping: the status-only commit that records this handoff update;
+intentionally not self-referenced to avoid recursive commits.
