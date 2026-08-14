@@ -27,8 +27,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
     id: "understanding-camera-movements",
     description:
-      "Observe front and rear camera movements and how each movement changes the camera geometry and image.",
-    topics: ["Camera movements", "Front standard", "Rear standard", "Comparative geometry"],
+      "Compare whole-camera viewpoint changes with Front and Rear standard movements, and observe how each affects framing, perspective geometry and the Ground Glass image.",
+    topics: ["Viewpoint", "Framing", "Front / Rear standards", "Perspective control"],
     availability: "available",
     availableModes: ["free"],
     thumbnailAsset: "assets/understanding-camera-movements.png",
@@ -36,8 +36,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
     id: "focus-fundamentals-two-targets",
     description:
-      "Compare Front and Rear focusing on two depths of one object with a fixed f/32 aperture.",
-    topics: ["Focus", "Front / Rear standards", "Parallax alignment"],
+      "Compare Front and Rear focusing across two depths of one object at fixed f/32, and observe how image alignment changes on the Ground Glass.",
+    topics: ["Front / Rear focusing", "Image alignment", "Fixed f/32"],
     availability: "available",
     availableModes: ["free"],
     thumbnailAsset: "assets/two-targets-illustration.png",
@@ -45,8 +45,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
     id: "architecture-rise",
     description:
-      "Use front rise to include the top of a building while keeping the camera level and vertical lines parallel.",
-    topics: ["Rise", "Architecture", "Perspective control"],
+      "Keep the camera level and use Front Rise to include more of the building while preserving the scene's intended parallel verticals.",
+    topics: ["Front Rise", "Framing", "Perspective control"],
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/architecture-rise.png",
@@ -55,8 +55,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
     id: "table-tilt",
     description:
-      "Use front tilt to align the plane of sharp focus with three coplanar focus cards above the tabletop.",
-    topics: ["Tilt", "Plane of focus", "Scheimpflug principle"],
+      "Use Front Tilt to rotate the plane of sharp focus until it aligns with three coplanar focus cards above the tabletop.",
+    topics: ["Front Tilt", "Plane of sharp focus", "Scheimpflug principle"],
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/table-tilt.png",
@@ -65,8 +65,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
     id: "shelf-swing",
     description:
-      "Use front swing to rotate the plane of sharp focus through three subjects arranged diagonally from front-left to back-right.",
-    topics: ["Swing", "Plane of focus", "Scheimpflug principle"],
+      "Use Front Swing to rotate the plane of sharp focus through subjects arranged diagonally in depth.",
+    topics: ["Front Swing", "Plane of sharp focus", "Scheimpflug principle"],
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/shelf-swing.png",
@@ -75,8 +75,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
     id: "mirror-shift",
     description:
-      "Inspect a static planar mirror scene and compare its reflected props and view-camera proxy on the Ground Glass.",
-    topics: ["Mirror", "Reflected viewpoint", "Ground Glass"],
+      "Move the whole camera sideways to clear its reflection, then use opposite Front Shift to restore the mirror framing while keeping the changed viewpoint.",
+    topics: ["Viewpoint", "Framing", "Front Shift", "Parallax"],
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/mirror-shift.png",

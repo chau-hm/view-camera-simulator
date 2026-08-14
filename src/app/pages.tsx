@@ -24,8 +24,8 @@ export const HomePage = () => (
         <div className="eyebrow">Interactive View Camera Learning</div>
         <h1>See how a view camera changes the image before the shutter is pressed.</h1>
         <p>
-          Move the camera, adjust focus and aperture, and compare the 3D scene with the image formed on the
-          ground glass.
+          Move the whole camera or its Front and Rear standards, then compare how viewpoint, framing, perspective
+          and focus change on the Ground Glass.
         </p>
         <div className="hero__actions">
           <Link className="btn btn--primary" to="/scenes">
@@ -43,12 +43,12 @@ export const HomePage = () => (
 
     <section id="why" className="landing-info-section" aria-label="Why use a view camera">
       <div className="landing-info-list">
-        <InfoCard icon={<span className="material-symbols-outlined">architecture</span>} title={"Why use a view camera when Photoshop can correct perspective?"}>
-          Photoshop can reshape an image after it has been captured, but it cannot replace every decision made at the camera. A view camera lets the photographer keep vertical lines straight, place the plane of focus and compose the final geometry before exposure—often with less cropping and fewer compromises.
+        <InfoCard icon={<span className="material-symbols-outlined">architecture</span>} title={"What can a view camera control before exposure?"}>
+          A view camera separates decisions that are often bundled together: where the camera observes from, how the subject is framed, how the image geometry is controlled, and where the plane of sharp focus lies. These relationships can be shaped at the camera before exposure rather than treated only as corrections afterwards.
         </InfoCard>
 
-        <InfoCard icon={<span className="material-symbols-outlined">open_with</span>} title={"When is the camera simpler than post-processing?"}>
-          For architecture, interiors, still life and product photography, a carefully applied rise, tilt or swing can solve perspective and focus in one exposure. The alternative may require perspective correction, heavy cropping, focus stacking and repeated retouching.
+        <InfoCard icon={<span className="material-symbols-outlined">open_with</span>} title={"Why do camera movements matter?"}>
+          Rise and shift can change framing without moving the viewpoint. Tilt and swing can rotate the plane of sharp focus. Moving the whole camera changes viewpoint, perspective relationships and parallax. The useful question is which physical relationship you want to change.
         </InfoCard>
 
         <InfoCard icon={<span className="material-symbols-outlined">person</span>} title={"Why do artists still use view cameras?"}>
@@ -66,7 +66,7 @@ export const ScenesPage = () => {
 
   return (
     <AppShell title="Scenes" useSiteShell>
-      <p>Choose a scene to explore how focus, perspective and camera movements affect the image on the ground glass.</p>
+      <p>Choose a scene to compare viewpoint, framing, perspective geometry and plane-of-sharp-focus control on the Ground Glass.</p>
 
       <DesktopExperienceNotice />
 
