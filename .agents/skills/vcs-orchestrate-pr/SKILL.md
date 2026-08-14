@@ -111,6 +111,8 @@ After implementation:
 - reconcile shared assumptions;
 - inspect final focused diff;
 - run validation appropriate to the task level;
+- for Standard or High-risk integrated work, ensure `.agents/status/CURRENT.md` is current before the final implementation handoff; update it at the integration boundary, not for every internal packet;
+- for review-fix rounds, include a compact `Since previous review` mapping of material findings to resulting changes and note material areas intentionally unchanged when useful;
 - use `$vcs-verify-pr` only when a merge verdict or explicit independent review is needed.
 
 Do not automatically invoke a reviewer merely because implementation completed.
