@@ -2,82 +2,92 @@
 
 ## Work
 
-PR / work identifier: PR 6A — Canonical Learning Model
-Branch: `docs/canonical-learning-model`
-Base: `origin/main` @ `e554623dc6e465952f962a705c97d860303b362f`
+PR / work identifier: PR 5G — Safe Feature-Branch Publishing
+Branch: `chore/safe-feature-branch-publishing`
+Base: `origin/main` @ `5f3a6447843cc1325119c939718670a7ae71f3c0`
 Head convention: record the substantive implementation commit here; a final
 status-only bookkeeping commit is intentionally not self-referenced.
 
 ## Objective
 
-Establish the canonical current pedagogical/content model for the simulator
-without changing application behaviour or learner-facing UI.
+Strengthen the repository harness so PR-oriented feature branches are created,
+published, and handed to PR creation with explicit and verified refs rather
+than inherited upstream or push.default behaviour.
 
 ## Implemented
 
-- Added `docs/LEARNING_MODEL.md` as the current source of truth for viewpoint,
-  framing, perspective geometry, standard movement, focus-plane concepts, and
-  the six current public lessons.
-- Defined canonical English terminology, cross-scene teaching principles, and
-  the `en` / `zh-HK` localization contract without implementing i18n.
-- Marked the five original MVP planning documents as historical while
-  preserving their bodies.
+- Added a no-track PR branch creation contract using origin/main as the base.
+- Added fail-closed validation for the current branch, intended PR head/base,
+  origin, protected destinations, and diagnostic upstream/config state.
+- Established explicit HEAD:refs/heads/<same-feature-branch> publication.
+- Added remote feature-head and remote-main before/after postconditions before
+  PR creation, including non-destructive handling of existing remote branches.
+- Kept the guard at the integrated orchestration boundary; local non-published
+  work and Micro edits remain lightweight.
 
 ## Changed surface
 
-- `docs/LEARNING_MODEL.md`
-- `docs/PRD.md`
-- `docs/SDD.md`
-- `docs/Spec.md`
-- `docs/TASK_INVENTORY.md`
-- `docs/ATOMIC_TASK_INVENTORY.md`
+- `AGENTS.md`
+- `docs/AI_AGENT_WORKFLOW.md`
+- `.agents/skills/vcs-orchestrate-pr/SKILL.md`
 - `.agents/status/CURRENT.md`
+
+`vcs-verify-pr`, custom Codex/TOML instructions, simulator/runtime code,
+package files, CI, and global Git configuration were intentionally unchanged.
 
 ## Validation
 
-- `git diff --check`: passed for the substantive documentation diff.
-- Required-heading, terminology, locale, and placeholder searches: passed.
-- Historical-document diff inspection: passed; each file has only a top banner
-  addition and no body deletions or rewrites.
-- Runtime/package/CI surface inspection: passed; no application or dependency
-  files changed.
+- `git status --short`: passed; no output before this correction (worktree clean).
+- `git diff --check`: passed for the substantive policy diff.
+- Final scope inspection: passed; only the three policy owners changed before
+  this handoff update.
+- Current branch creation: passed; the requested branch has no upstream before
+  first publication.
+- Policy search: passed for no-track creation, explicit refspec, branch/base
+  validation, remote-main before/after checks, PR gating, and no-force rules.
+- Non-destructive reasoning pass: scenarios A–H covered safe branch creation,
+  inherited origin/main upstream, main/master rejection, fast-forward update,
+  divergence, missing/mismatched feature refs, and unexpected main movement.
 
 ## Not run
 
 - Application tests, typecheck, lint, CSS check, build, and E2E: not run; this
-  PR changes documentation and handoff state only.
-- Markdown-specific validator: not run; no repository command for one exists.
+  PR changes repository harness documentation only.
+- Destructive remote tests: not run; the guard is validated by policy review
+  and the actual non-destructive PR 5G publication postconditions.
 
-## Decisions
+## Publishing-safety decisions
 
-- The six public lessons are described by pedagogical role, not as a new
-  mandatory runtime curriculum order.
-- README alignment, learner-facing copy, calibration, optics, and i18n remain
-  deferred to later PRs.
-- `LEARNING_MODEL.md` documents conceptual truth while code/tests and
-  scene-specific calibration documents retain technical authority.
-- Historical MVP claims remain intact after the compact status banners.
+- PR publication never relies on upstream, push.default, remote.pushDefault,
+  or a bare git push.
+- A normal push may update an existing same-named remote feature branch only
+  when it is accepted as a fast-forward; divergence fails closed.
+- Remote main is observed before and after publication. Unexpected movement
+  stops PR creation without reset, revert, or force-push repair.
+- PR 6A history remains untouched and is treated only as failure evidence.
+- PR creation receives explicit head/base refs only after remote verification.
 
 ## Remaining risks / known gaps
 
-- Existing README and UI copy still contain historical or pre-localization
-  wording; aligning them is intentionally deferred.
-- No automated documentation consistency or glossary check exists.
-- Later copy/localization work must preserve the viewpoint, framing, and focus
-  plane distinctions established here.
+- The contract is instruction-based; no repository-local publishing helper or
+  automated static check enforces it independently.
+- GitHub authentication or a concurrent remote update can still block PR
+  creation; the workflow must report the state rather than repair it.
+- Independent merge-gate review remains required when the PR reaches that
+  boundary.
 
 ## Reviewer focus
 
-1. Verify that `LEARNING_MODEL.md` matches current implemented teaching
-   behaviour rather than old MVP intent.
-2. Verify that Viewpoint, Framing, Perspective, and Plane of Sharp Focus are
-   clearly separated.
-3. Verify that Mirror Shift and Focus Fundamentals are represented accurately.
-4. Verify that historical planning documents were preserved rather than
-   rewritten.
-5. Verify that localization readiness is defined without prematurely
-   implementing i18n.
-6. Verify that the PR stayed documentation-only.
+1. Verify implicit upstream and push.default behaviour cannot determine the PR
+   publish destination.
+2. Verify the canonical command publishes HEAD to the same-named remote
+   feature branch.
+3. Verify remote feature state is checked before PR creation.
+4. Verify remote main is protected by before/after verification rather than
+   automatic repair.
+5. Verify no force-push or direct-to-main fallback exists.
+6. Verify Micro edits and non-published local work remain lightweight.
+7. Verify PR 6A history was left untouched.
 
 ## Since previous review
 
@@ -85,7 +95,7 @@ Not applicable.
 
 ## Commit
 
-Substantive implementation: `7c627bb592e3996c64d6e801b1cab03ff6ef48bb`
+Substantive implementation: `a164068a1110b85ff91a9b308d7f0374b331a871`
 
 Final bookkeeping: the status-only commit that adds this file; intentionally
 not self-referenced to avoid recursive commits.

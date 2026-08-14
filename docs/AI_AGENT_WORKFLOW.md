@@ -469,6 +469,51 @@ If final bookkeeping changes the branch HEAD after the substantive implementatio
 
 ---
 
+### 9.2 Safe PR branch publication
+
+PR publication is an orchestration-boundary operation, not a default step for
+local work:
+
+    local implementation
+        ↓
+    pre-push branch/ref validation
+        ↓
+    explicit feature-branch push
+        ↓
+    remote feature ref + remote-main verification
+        ↓
+    PR creation with explicit head/base
+        ↓
+    independent review when merge-gate appropriate
+
+Create PR-oriented branches from the fetched base with no upstream:
+
+    git fetch origin
+    git switch --no-track -c <feature-branch> origin/main
+
+An upstream pointing at origin/main, push.default, remote.pushDefault, and
+branch-specific remote/merge settings are diagnostic context only. They must
+never choose the PR destination. Before pushing, validate that the current
+branch is the intended non-main PR head and that origin and the base branch
+are explicit.
+
+Record the remote main SHA before publication, then use the canonical explicit
+refspec:
+
+    main_before="$(git ls-remote --exit-code origin refs/heads/main | awk 'NR == 1 { print $1 }')"
+    git push -u origin "HEAD:refs/heads/<current-feature-branch>"
+
+Afterward, require the remote feature ref to exist and equal local HEAD, and
+require a second read of refs/heads/main to equal main_before. Only then may
+PR creation use explicit head and base values. A missing/mismatched feature ref
+or unexpected main movement is a fail-closed stop: report the before/after
+state, do not create the PR, and do not reset or force-push anything.
+
+Existing remote feature branches may be updated only by a normal
+non-destructive fast-forward. Divergence stops publication. Never use a bare
+git push, a direct-to-main refspec, --force, or --force-with-lease for PR
+publication. See the full repository contract in AGENTS.md.
+
 ## 10. Validation strategy
 
 Validation must be proportional to the claimed behaviour and risk.
