@@ -1,10 +1,14 @@
+import { useTranslation } from "react-i18next";
+
 export const SiteFooter = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="site-footer" role="contentinfo">
       <div className="site-footer__inner">
         <div>
           <strong>View Camera Simulator</strong>
-          <div className="site-footer__desc">A simple interactive trainer for view camera focus, perspective and movements.</div>
+          <div className="site-footer__desc">{t("common.footer.description")}</div>
         </div>
 
         <div>

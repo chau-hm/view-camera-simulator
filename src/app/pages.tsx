@@ -1,5 +1,7 @@
 import { lazy, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
+import "../i18n";
 import { AppShell } from "../components/layout/AppShell";
 import { getTaskById } from "../core/tasks/taskRegistry";
 import { getSceneById } from "../scenes/definitions";
@@ -17,70 +19,82 @@ const SimulatorWorkspace = lazy(() =>
   import("../components/layout/SimulatorWorkspace").then((module) => ({ default: module.SimulatorWorkspace })),
 );
 
-export const HomePage = () => (
-  <AppShell title="">
-    <section className="hero">
-      <div className="hero__content">
-        <div className="eyebrow">Interactive View Camera Learning</div>
-        <h1>See how a view camera changes the image before the shutter is pressed.</h1>
-        <p>
-          Move the whole camera or its Front and Rear standards, then compare how viewpoint, framing, perspective
-          and focus change on the Ground Glass.
-        </p>
-        <div className="hero__actions">
-          <Link className="btn btn--primary" to="/scenes">
-            Explore the Simulator
-          </Link>
-          <a className="btn" href="#why">Learn Why</a>
+export const HomePage = () => {
+  const { t } = useTranslation();
+
+  return (
+    <AppShell title="">
+      <section className="hero">
+        <div className="hero__content">
+          <div className="eyebrow">{t("home.hero.eyebrow")}</div>
+          <h1>{t("home.hero.title")}</h1>
+          <p>{t("home.hero.description")}</p>
+          <div className="hero__actions">
+            <Link className="btn btn--primary" to="/scenes">
+              {t("home.hero.exploreSimulator")}
+            </Link>
+            <a className="btn" href="#why">
+              {t("home.hero.learnWhy")}
+            </a>
+          </div>
         </div>
 
-      </div>
+        <ViewCameraHeroIllustration />
+      </section>
 
-      <ViewCameraHeroIllustration />
-    </section>
+      <DesktopExperienceNotice />
 
-    <DesktopExperienceNotice />
+      <section id="why" className="landing-info-section" aria-label={t("home.why.ariaLabel")}>
+        <div className="landing-info-list">
+          <InfoCard
+            icon={<span className="material-symbols-outlined">architecture</span>}
+            title={t("home.info.control.title")}
+          >
+            {t("home.info.control.body")}
+          </InfoCard>
 
-    <section id="why" className="landing-info-section" aria-label="Why use a view camera">
-      <div className="landing-info-list">
-        <InfoCard icon={<span className="material-symbols-outlined">architecture</span>} title={"What can a view camera control before exposure?"}>
-          A view camera separates decisions that are often bundled together: where the camera observes from, how the subject is framed, how the image geometry is controlled, and where the plane of sharp focus lies. These relationships can be shaped at the camera before exposure rather than treated only as corrections afterwards.
-        </InfoCard>
+          <InfoCard
+            icon={<span className="material-symbols-outlined">open_with</span>}
+            title={t("home.info.movements.title")}
+          >
+            {t("home.info.movements.body")}
+          </InfoCard>
 
-        <InfoCard icon={<span className="material-symbols-outlined">open_with</span>} title={"Why do camera movements matter?"}>
-          Rise and shift can change framing without moving the viewpoint. Tilt and swing can rotate the plane of sharp focus. Moving the whole camera changes viewpoint, perspective relationships and parallax. The useful question is which physical relationship you want to change.
-        </InfoCard>
+          <InfoCard
+            icon={<span className="material-symbols-outlined">person</span>}
+            title={t("home.info.artists.title")}
+          >
+            {t("home.info.artists.body")}
+          </InfoCard>
+        </div>
+      </section>
 
-        <InfoCard icon={<span className="material-symbols-outlined">person</span>} title={"Why do artists still use view cameras?"}>
-          A view camera slows the process down. The upside-down image on the ground glass encourages careful looking, and every movement becomes a deliberate choice. Artists use it not only for image quality, but because the method changes how a photograph is seen and made.
-        </InfoCard>
-      </div>
-    </section>
-
-    <FocusCtaPanel />
-  </AppShell>
-);
+      <FocusCtaPanel />
+    </AppShell>
+  );
+};
 
 export const ScenesPage = () => {
+  const { t } = useTranslation();
   const entries = getPublicSceneEntries();
 
   return (
-    <AppShell title="Scenes" useSiteShell>
-      <p>Choose a scene to compare viewpoint, framing, perspective geometry and plane-of-sharp-focus control on the Ground Glass.</p>
+    <AppShell title={t("scenes.page.title")} useSiteShell>
+      <p>{t("scenes.page.intro")}</p>
 
       <DesktopExperienceNotice />
 
       <div className="scenes-grid">
         {entries.length === 0 ? (
-          <div className="content-note">No scenes available.</div>
+          <div className="content-note">{t("scenes.page.noScenesAvailable")}</div>
         ) : (
           entries.map(({ scene, meta }) => (
             <SceneCard
               key={scene.id}
               sceneId={scene.id}
-              title={scene.name}
-              description={meta.description}
-              topics={meta.topics}
+              title={t(meta.titleKey)}
+              description={t(meta.descriptionKey)}
+              topics={meta.topicKeys.map((topicKey) => t(topicKey))}
               availability={meta.availability}
               thumbnailAsset={meta.thumbnailAsset}
               guidedTaskId={meta.guidedTaskId}

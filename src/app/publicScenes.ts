@@ -1,6 +1,12 @@
 import type { SceneDefinition } from "../types/scene";
 import type { SimulatorMode } from "../types/camera";
 import { getSceneById } from "../scenes/definitions";
+import {
+  publicSceneMessageKeys,
+  type PublicSceneDescriptionKey,
+  type PublicSceneTitleKey,
+  type PublicSceneTopicKey,
+} from "../i18n/messageKeys";
 
 export const publicSceneIds = [
   "understanding-camera-movements",
@@ -15,8 +21,9 @@ export type SceneAvailability = "available" | "in-development";
 
 export type PublicSceneEntry = {
   id: PublicSceneId;
-  description: string;
-  topics: readonly string[];
+  titleKey: PublicSceneTitleKey;
+  descriptionKey: PublicSceneDescriptionKey;
+  topicKeys: readonly PublicSceneTopicKey[];
   availability: SceneAvailability;
   availableModes: readonly SimulatorMode[];
   thumbnailAsset: string;
@@ -26,27 +33,40 @@ export type PublicSceneEntry = {
 export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
     id: "understanding-camera-movements",
-    description:
-      "Compare whole-camera viewpoint changes with Front and Rear standard movements, and observe how each affects framing, perspective geometry and the Ground Glass image.",
-    topics: ["Viewpoint", "Framing", "Front / Rear standards", "Perspective control"],
+    titleKey: publicSceneMessageKeys.understanding.title,
+    descriptionKey: publicSceneMessageKeys.understanding.description,
+    topicKeys: [
+      publicSceneMessageKeys.understanding.topics.viewpoint,
+      publicSceneMessageKeys.understanding.topics.framing,
+      publicSceneMessageKeys.understanding.topics.frontRearStandards,
+      publicSceneMessageKeys.understanding.topics.perspectiveControl,
+    ],
     availability: "available",
     availableModes: ["free"],
     thumbnailAsset: "assets/understanding-camera-movements.png",
   },
   {
     id: "focus-fundamentals-two-targets",
-    description:
-      "Compare Front and Rear focusing across two depths of one object at fixed f/32, and observe how image alignment changes on the Ground Glass.",
-    topics: ["Front / Rear focusing", "Image alignment", "Fixed f/32"],
+    titleKey: publicSceneMessageKeys.focusFundamentals.title,
+    descriptionKey: publicSceneMessageKeys.focusFundamentals.description,
+    topicKeys: [
+      publicSceneMessageKeys.focusFundamentals.topics.frontRearFocusing,
+      publicSceneMessageKeys.focusFundamentals.topics.imageAlignment,
+      publicSceneMessageKeys.focusFundamentals.topics.fixedAperture,
+    ],
     availability: "available",
     availableModes: ["free"],
     thumbnailAsset: "assets/two-targets-illustration.png",
   },
   {
     id: "architecture-rise",
-    description:
-      "Keep the camera level and use Front Rise to include more of the building while preserving the scene's intended parallel verticals.",
-    topics: ["Front Rise", "Framing", "Perspective control"],
+    titleKey: publicSceneMessageKeys.architectureRise.title,
+    descriptionKey: publicSceneMessageKeys.architectureRise.description,
+    topicKeys: [
+      publicSceneMessageKeys.architectureRise.topics.frontRise,
+      publicSceneMessageKeys.architectureRise.topics.framing,
+      publicSceneMessageKeys.architectureRise.topics.perspectiveControl,
+    ],
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/architecture-rise.png",
@@ -54,9 +74,13 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "table-tilt",
-    description:
-      "Use Front Tilt to rotate the plane of sharp focus until it aligns with three coplanar focus cards above the tabletop.",
-    topics: ["Front Tilt", "Plane of sharp focus", "Scheimpflug principle"],
+    titleKey: publicSceneMessageKeys.tableTilt.title,
+    descriptionKey: publicSceneMessageKeys.tableTilt.description,
+    topicKeys: [
+      publicSceneMessageKeys.tableTilt.topics.frontTilt,
+      publicSceneMessageKeys.tableTilt.topics.planeOfSharpFocus,
+      publicSceneMessageKeys.tableTilt.topics.scheimpflugPrinciple,
+    ],
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/table-tilt.png",
@@ -64,9 +88,13 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "shelf-swing",
-    description:
-      "Use Front Swing to rotate the plane of sharp focus through subjects arranged diagonally in depth.",
-    topics: ["Front Swing", "Plane of sharp focus", "Scheimpflug principle"],
+    titleKey: publicSceneMessageKeys.shelfSwing.title,
+    descriptionKey: publicSceneMessageKeys.shelfSwing.description,
+    topicKeys: [
+      publicSceneMessageKeys.shelfSwing.topics.frontSwing,
+      publicSceneMessageKeys.shelfSwing.topics.planeOfSharpFocus,
+      publicSceneMessageKeys.shelfSwing.topics.scheimpflugPrinciple,
+    ],
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/shelf-swing.png",
@@ -74,9 +102,14 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "mirror-shift",
-    description:
-      "Move the whole camera sideways to clear its reflection, then use opposite Front Shift to restore the mirror framing while keeping the changed viewpoint.",
-    topics: ["Viewpoint", "Framing", "Front Shift", "Parallax"],
+    titleKey: publicSceneMessageKeys.mirrorShift.title,
+    descriptionKey: publicSceneMessageKeys.mirrorShift.description,
+    topicKeys: [
+      publicSceneMessageKeys.mirrorShift.topics.viewpoint,
+      publicSceneMessageKeys.mirrorShift.topics.framing,
+      publicSceneMessageKeys.mirrorShift.topics.frontShift,
+      publicSceneMessageKeys.mirrorShift.topics.parallax,
+    ],
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/mirror-shift.png",
