@@ -28,8 +28,8 @@ describe("home page", () => {
     expect(openFocus).toBeInTheDocument();
     expect(openFocus.closest('a')).toHaveAttribute('href', '/simulator/free/focus-fundamentals-two-targets');
 
-    // landing should have Understand focus first as an h2 in the CTA panel
-    expect(await screen.findByRole('heading', { name: 'Understand focus first', level: 2 })).toBeInTheDocument();
+    // landing should have the Front-versus-Rear focusing lesson as an h2 in the CTA panel
+    expect(await screen.findByRole('heading', { name: 'Compare Front and Rear focusing', level: 2 })).toBeInTheDocument();
 
     // hero illustration wrapper present (decorative, aria-hidden)
     const heroWrap = document.querySelector('.hero__illustration');
@@ -52,8 +52,8 @@ describe("home page", () => {
 
     // info cards: headings should be h2 and present exactly once each
     const cardHeadings = [
-      'Why use a view camera when Photoshop can correct perspective?',
-      'When is the camera simpler than post-processing?',
+      'What can a view camera control before exposure?',
+      'Why do camera movements matter?',
       'Why do artists still use view cameras?'
     ];
 
@@ -68,8 +68,8 @@ describe("home page", () => {
     expect(screen.queryByText('Why artists still use it')).toBeNull();
 
     // verify full paragraphs are present
-    expect(screen.getByText(/Photoshop can reshape an image after it has been captured, but it cannot replace every decision made at the camera\./)).toBeTruthy();
-    expect(screen.getByText(/For architecture, interiors, still life and product photography, a carefully applied rise, tilt or swing can solve perspective and focus in one exposure\./)).toBeTruthy();
+    expect(screen.getByText(/A view camera separates decisions that are often bundled together: where the camera observes from, how the subject is framed, how the image geometry is controlled, and where the plane of sharp focus lies\./)).toBeTruthy();
+    expect(screen.getByText(/Rise and shift can change framing without moving the viewpoint\. Tilt and swing can rotate the plane of sharp focus\./)).toBeTruthy();
     expect(screen.getByText(/A view camera slows the process down. The upside-down image on the ground glass encourages careful looking, and every movement becomes a deliberate choice\./)).toBeTruthy();
   });
 });

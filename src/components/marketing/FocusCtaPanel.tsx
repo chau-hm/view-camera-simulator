@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 export const FocusCtaPanel = () => (
   <section className="focus-cta" aria-labelledby="focus-cta-heading">
     <div className="focus-cta__content">
-      <div className="eyebrow">Start with focus</div>
-      <h2 id="focus-cta-heading">Understand focus first</h2>
+      <div className="eyebrow">Focus Fundamentals</div>
+      <h2 id="focus-cta-heading">Compare Front and Rear focusing</h2>
       <p>
-        Use two targets at different distances to see how focus distance and aperture affect the ground-glass image.
+        Focus the same two depths by moving the Front or Rear standard, then watch how their alignment changes on the Ground Glass. Aperture stays fixed at f/32 so the comparison isolates the focusing method.
       </p>
       <div className="focus-cta__actions">
         <Link className="btn btn--primary" to="/simulator/free/focus-fundamentals-two-targets">

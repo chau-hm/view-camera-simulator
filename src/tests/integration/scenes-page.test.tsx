@@ -20,10 +20,10 @@ describe("scenes page", () => {
     ).toBeInTheDocument();
     const openButtons = await screen.findAllByText(/Open Scene/);
     expect(openButtons.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/Compare Front and Rear focusing on two depths/)).toBeInTheDocument();
-    expect(screen.getByText("Focus")).toBeInTheDocument();
-    expect(screen.getByText("Front / Rear standards")).toBeInTheDocument();
-    expect(screen.getByText("Parallax alignment")).toBeInTheDocument();
+    expect(screen.getByText(/Compare Front and Rear focusing across two depths of one object at fixed f\/32/)).toBeInTheDocument();
+    expect(screen.getByText("Front / Rear focusing")).toBeInTheDocument();
+    expect(screen.getByText("Image alignment")).toBeInTheDocument();
+    expect(screen.getByText("Fixed f/32")).toBeInTheDocument();
     const focusHeading = await screen.findByRole("heading", {
       name: "Focus Fundamentals — Two Targets",
       level: 2,
@@ -33,13 +33,15 @@ describe("scenes page", () => {
     expect(within(focusCard!).queryByRole("link", { name: "Start Guided Task" })).not.toBeInTheDocument();
 
     // Architecture Rise card should be present with its description and topics
-    expect(
-      await screen.findByRole("heading", { name: "Architecture Rise", level: 2 }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Use front rise to include the top of a building/)).toBeInTheDocument();
-    expect(screen.getByText("Rise")).toBeInTheDocument();
-    expect(screen.getByText("Architecture")).toBeInTheDocument();
-    expect(screen.getByText("Perspective control")).toBeInTheDocument();
+    const architectureHeading = await screen.findByRole("heading", { name: "Architecture Rise", level: 2 });
+    expect(architectureHeading).toBeInTheDocument();
+    const architectureCard = architectureHeading.closest("article");
+    expect(architectureCard).not.toBeNull();
+    const scopedArchitectureCard = within(architectureCard!);
+    expect(scopedArchitectureCard.getByText(/Keep the camera level and use Front Rise to include more of the building/)).toBeInTheDocument();
+    expect(scopedArchitectureCard.getByText("Front Rise")).toBeInTheDocument();
+    expect(scopedArchitectureCard.getByText("Framing")).toBeInTheDocument();
+    expect(scopedArchitectureCard.getByText("Perspective control")).toBeInTheDocument();
 
     // Table Tilt follows Architecture Rise and uses the standard enabled SceneCard link.
     const tableHeading = await screen.findByRole("heading", { name: "Table Tilt", level: 2 });
@@ -48,11 +50,11 @@ describe("scenes page", () => {
     const scopedTableCard = within(tableCard!);
     expect(
       scopedTableCard.getByText(
-        "Use front tilt to align the plane of sharp focus with three coplanar focus cards above the tabletop.",
+        "Use Front Tilt to rotate the plane of sharp focus until it aligns with three coplanar focus cards above the tabletop.",
       ),
     ).toBeInTheDocument();
-    expect(scopedTableCard.getByText("Tilt")).toBeInTheDocument();
-    expect(scopedTableCard.getByText("Plane of focus")).toBeInTheDocument();
+    expect(scopedTableCard.getByText("Front Tilt")).toBeInTheDocument();
+    expect(scopedTableCard.getByText("Plane of sharp focus")).toBeInTheDocument();
     expect(scopedTableCard.getByText("Scheimpflug principle")).toBeInTheDocument();
     expect(tableCard!.querySelector("img")).toHaveAttribute("src", "/assets/table-tilt.png");
     expect(scopedTableCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
@@ -70,11 +72,11 @@ describe("scenes page", () => {
     const scopedShelfCard = within(shelfCard!);
     expect(
       scopedShelfCard.getByText(
-        "Use front swing to rotate the plane of sharp focus through three subjects arranged diagonally from front-left to back-right.",
+        "Use Front Swing to rotate the plane of sharp focus through subjects arranged diagonally in depth.",
       ),
     ).toBeInTheDocument();
-    expect(scopedShelfCard.getByText("Swing")).toBeInTheDocument();
-    expect(scopedShelfCard.getByText("Plane of focus")).toBeInTheDocument();
+    expect(scopedShelfCard.getByText("Front Swing")).toBeInTheDocument();
+    expect(scopedShelfCard.getByText("Plane of sharp focus")).toBeInTheDocument();
     expect(scopedShelfCard.getByText("Scheimpflug principle")).toBeInTheDocument();
     expect(shelfCard!.querySelector("img")).toHaveAttribute("src", "/assets/shelf-swing.png");
     expect(scopedShelfCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
