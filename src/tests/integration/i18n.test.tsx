@@ -22,6 +22,7 @@ describe("internationalization foundation", () => {
 
     expect(document.documentElement.lang).toBe("en");
     expect(screen.getByRole("combobox", { name: "Language" })).toHaveValue("en");
+    expect(screen.getByRole("link", { name: "View Camera Simulator home" })).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         name: "See how a view camera changes the image before the shutter is pressed.",
@@ -42,6 +43,7 @@ describe("internationalization foundation", () => {
       expect(screen.getByRole("heading", { name: "在按下快門前，了解大型相機如何改變影像。" })).toBeInTheDocument();
     });
     expect(screen.getByRole("link", { name: "場景" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View Camera Simulator 主頁" })).toBeInTheDocument();
     expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-HK");
     expect(router.state.location.pathname).toBe("/");
 

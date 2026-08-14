@@ -10,7 +10,7 @@ export const scenesMessages = {
   understanding: {
     title: "了解大型相機移動",
     description:
-      "比較整部相機改變視點與前組、後組移動，並觀察各自如何影響構圖、透視幾何及對焦屏影像。",
+      "比較整部相機移動造成的視點改變，與前組、後組移動的效果，並觀察它們如何影響構圖、透視幾何及對焦屏影像。",
     topics: {
       viewpoint: "視點",
       framing: "構圖",

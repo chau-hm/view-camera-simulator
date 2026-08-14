@@ -9,7 +9,7 @@ export const SiteHeader = () => {
   return (
     <header className="site-header" role="banner">
       <div className="site-header__inner">
-        <AppBrand />
+        <AppBrand homeLabel={t("common.brand.homeLabel")} />
 
         <nav className="site-nav" aria-label={t("common.nav.primaryNavigation")}>
           <NavLink to="/" className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")} end>
