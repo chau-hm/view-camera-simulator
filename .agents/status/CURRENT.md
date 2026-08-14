@@ -2,92 +2,94 @@
 
 ## Work
 
-PR / work identifier: PR 5G — Safe Feature-Branch Publishing
-Branch: `chore/safe-feature-branch-publishing`
-Base: `origin/main` @ `5f3a6447843cc1325119c939718670a7ae71f3c0`
+PR / work identifier: PR 6B — Landing Page + Scene Catalog Alignment
+Branch: `content/landing-scene-catalog-alignment`
+Base: `origin/main` @ `dffdd92c00107d87785cf86f9c96753145c7d51b`
 Head convention: record the substantive implementation commit here; a final
 status-only bookkeeping commit is intentionally not self-referenced.
 
 ## Objective
 
-Strengthen the repository harness so PR-oriented feature branches are created,
-published, and handed to PR creation with explicit and verified refs rather
-than inherited upstream or push.default behaviour.
+Align the public landing-page narrative, Focus CTA, Scenes introduction, and
+six public scene catalog entries with `docs/LEARNING_MODEL.md` without
+changing simulator behavior, task logic, routes, curriculum order, or i18n.
 
 ## Implemented
 
-- Added a no-track PR branch creation contract using origin/main as the base.
-- Added fail-closed validation for the current branch, intended PR head/base,
-  origin, protected destinations, and diagnostic upstream/config state.
-- Established explicit HEAD:refs/heads/<same-feature-branch> publication.
-- Added remote feature-head and remote-main before/after postconditions before
-  PR creation, including non-destructive handling of existing remote branches.
-- Kept the guard at the integrated orchestration boundary; local non-published
-  work and Micro edits remain lightweight.
+- Reframed the hero and first two information cards around viewpoint, framing,
+  perspective relationships, and plane-of-sharp-focus control.
+- Updated the Focus CTA to teach Front versus Rear focusing with two depths at
+  fixed f/32 on the Ground Glass.
+- Updated all six catalog descriptions and topics, including whole-camera
+  viewpoint versus standard movement, Front Rise framing, Front Tilt/Swing
+  plane-of-sharp-focus control, and Mirror Shift viewpoint-versus-framing.
+- Updated only the home-page and scenes-page assertions invalidated by the
+  intentional copy changes.
 
 ## Changed surface
 
-- `AGENTS.md`
-- `docs/AI_AGENT_WORKFLOW.md`
-- `.agents/skills/vcs-orchestrate-pr/SKILL.md`
+- `src/app/pages.tsx`
+- `src/app/publicScenes.ts`
+- `src/components/marketing/FocusCtaPanel.tsx`
+- `src/tests/integration/home-page.test.tsx`
+- `src/tests/integration/scenes-page.test.tsx`
 - `.agents/status/CURRENT.md`
 
-`vcs-verify-pr`, custom Codex/TOML instructions, simulator/runtime code,
-package files, CI, and global Git configuration were intentionally unchanged.
+Scene IDs, public order, availability, modes, guided-task IDs, thumbnails,
+routes, task definitions, calibration, optics, rendering, CSS, packages, and
+i18n infrastructure were intentionally unchanged.
 
 ## Validation
 
-- `git status --short`: passed; no output before this correction (worktree clean).
-- `git diff --check`: passed for the substantive policy diff.
-- Final scope inspection: passed; only the three policy owners changed before
-  this handoff update.
-- Current branch creation: passed; the requested branch has no upstream before
-  first publication.
-- Policy search: passed for no-track creation, explicit refspec, branch/base
-  validation, remote-main before/after checks, PR gating, and no-force rules.
-- Non-destructive reasoning pass: scenarios A–H covered safe branch creation,
-  inherited origin/main upstream, main/master rejection, fast-forward update,
-  divergence, missing/mismatched feature refs, and unexpected main movement.
+- Focused home/scenes integration tests: passed; 2 files, 2 tests.
+- `npm test`: passed; 107 files, 1,026 tests.
+- `npm run typecheck`: passed.
+- `npm run lint`: passed with zero warnings.
+- `git diff --check`: passed.
+- Pre-commit `git status --short`: reported only the five intended PR6B
+  source/test files. The worktree was clean after the substantive commit
+  before this handoff update.
+- Final post-handoff `git status --short` will be verified separately after
+  the status-only commit.
 
 ## Not run
 
-- Application tests, typecheck, lint, CSS check, build, and E2E: not run; this
-  PR changes repository harness documentation only.
-- Destructive remote tests: not run; the guard is validated by policy review
-  and the actual non-destructive PR 5G publication postconditions.
+- `npm run check:css`: not run; no CSS files changed.
+- `npm run build`: not run; this is a copy-only change with no import or
+  application-architecture changes.
+- E2E: not run; existing behavior, routes, layout, and scene state were not
+  changed, and the focused integration coverage passed.
 
-## Publishing-safety decisions
+## Key content decisions
 
-- PR publication never relies on upstream, push.default, remote.pushDefault,
-  or a bare git push.
-- A normal push may update an existing same-named remote feature branch only
-  when it is accepted as a fast-forward; divergence fails closed.
-- Remote main is observed before and after publication. Unexpected movement
-  stops PR creation without reset, revert, or force-push repair.
-- PR 6A history remains untouched and is treated only as failure evidence.
-- PR creation receives explicit head/base refs only after remote verification.
+- English public copy now uses the canonical distinctions between viewpoint,
+  framing, perspective geometry/control, Front/Rear standards, and plane of
+  sharp focus.
+- Focus Fundamentals explicitly isolates Front/Rear focusing at fixed f/32;
+  it is not presented as an aperture-choice lesson.
+- Mirror Shift is presented as whole-camera lateral viewpoint change followed
+  by opposite Front Shift to restore framing, while retaining the changed
+  viewpoint and parallax relationships.
+- The existing artistic/process card was preserved.
+- No i18n scaffolding, translation keys, locale files, or translated copy was
+  introduced.
 
 ## Remaining risks / known gaps
 
-- The contract is instruction-based; no repository-local publishing helper or
-  automated static check enforces it independently.
-- GitHub authentication or a concurrent remote update can still block PR
-  creation; the workflow must report the state rather than repair it.
-- Independent merge-gate review remains required when the PR reaches that
-  boundary.
+- Later content PRs still need to align task/free-practice guidance, feedback,
+  controls, help/readouts, and broader README orientation where required.
+- Curriculum ordering and homepage CTA sequencing remain deferred by scope.
+- Multilingual infrastructure and `en` / `zh-HK` content remain deferred to
+  the localization work.
 
 ## Reviewer focus
 
-1. Verify implicit upstream and push.default behaviour cannot determine the PR
-   publish destination.
-2. Verify the canonical command publishes HEAD to the same-named remote
-   feature branch.
-3. Verify remote feature state is checked before PR creation.
-4. Verify remote main is protected by before/after verification rather than
-   automatic repair.
-5. Verify no force-push or direct-to-main fallback exists.
-6. Verify Micro edits and non-published local work remain lightweight.
-7. Verify PR 6A history was left untouched.
+1. Verify public copy matches `docs/LEARNING_MODEL.md`.
+2. Verify the Focus CTA no longer misrepresents fixed f/32.
+3. Verify Mirror Shift communicates Viewpoint versus Framing.
+4. Verify Front/Rear terminology is used consistently.
+5. Verify public scene identity, order, routes, and behavior did not change.
+6. Verify no i18n implementation or unrelated copy cleanup entered the PR.
 
 ## Since previous review
 
@@ -95,7 +97,7 @@ Not applicable.
 
 ## Commit
 
-Substantive implementation: `a164068a1110b85ff91a9b308d7f0374b331a871`
+Substantive implementation: `103a7734ee01d1dbd806142659532c8afbaaadbe`
 
 Final bookkeeping: the status-only commit that adds this file; intentionally
 not self-referenced to avoid recursive commits.
