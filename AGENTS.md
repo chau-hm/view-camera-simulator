@@ -191,6 +191,12 @@ For work that uses subagents, pass only the current objective, relevant files, e
 
 Keep handoffs compact and reference paths, tests, logs, and commit SHAs instead of pasting full diffs or project history.
 
+For Standard PR and High-risk PR work, and for review-fix rounds that address previously reported findings, update `.agents/status/CURRENT.md` before the final implementation handoff. Overwrite stale work-specific content rather than appending history or creating one file per PR. The file should remain compact and reviewer-oriented.
+
+For a Focused fix, updating `.agents/status/CURRENT.md` is optional when it would materially help a later reviewer. Micro edits do not require it and must remain able to use the lightweight flow above.
+
+`.agents/status/CURRENT.md` is durable reviewer navigation and a record of implementation-agent claims about objective, scope, decisions, validation, and known gaps. It is not authoritative product documentation, independent verification evidence, a replacement for the actual branch/diff/tests or PR metadata, or a historical changelog. If it conflicts with the branch or diff, the branch and diff win and the discrepancy should be reported.
+
 Independent review is a **merge-gate mechanism**, not a mandatory step after every local edit.
 
 An implementation agent must not be the sole final reviewer when a merge verdict is required.
