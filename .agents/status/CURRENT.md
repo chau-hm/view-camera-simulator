@@ -28,6 +28,7 @@ Add a compact, durable reviewer handoff to the project harness without changing 
 ## Validation
 
 - `git diff --check`: passed for the policy implementation diff.
+- `git status --short`: passed; no output before this correction (worktree clean).
 - Policy search and final-diff inspection: passed.
 
 ## Not run
