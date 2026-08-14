@@ -1,6 +1,9 @@
+import { useTranslation } from "react-i18next";
 import type { TaskEvaluation, TaskDefinition } from "../../types/task";
 import { UI_COPY } from "../../ui/copy";
-import { getFeedbackStatus, getPassedCriteriaCount, getPrimaryFailedCriterion, formatFinalCameraState, getFreePracticeFeedback } from './taskHelpers';
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
+import { getFeedbackStatus, getPassedCriteriaCount, getPrimaryFailedCriterion, formatFinalCameraState, getFreePracticeFeedbackKey } from './taskHelpers';
 
 type FeedbackPanelProps = {
   mode: string;
@@ -11,22 +14,26 @@ type FeedbackPanelProps = {
 };
 
 export const FeedbackPanel = ({ mode, sceneId, evaluation, showTitle = true }: FeedbackPanelProps) => {
+  const { t } = useTranslation();
   const status = getFeedbackStatus(mode, evaluation);
   const { passed, total } = getPassedCriteriaCount(evaluation);
   const primaryFailed = getPrimaryFailedCriterion(evaluation);
 
   if (!evaluation && mode !== 'guided') {
     // Free mode neutral observation: use scene-specific observation and a single live badge
-    const freeObs = getFreePracticeFeedback(sceneId);
+    const freeObs = getFreePracticeFeedbackKey(sceneId);
+    const genericObservationKey = simulatorMessageKeys.freePractice.generic.observation;
     return (
-      <section aria-label={UI_COPY.simulator.feedbackTitle} className="feedback-panel feedback-panel--idle">
-        {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
+      <section aria-label={t(simulatorMessageKeys.feedback.title)} className="feedback-panel feedback-panel--idle">
+        {showTitle ? <h2>{t(simulatorMessageKeys.feedback.title)}</h2> : null}
         <div className="feedback-summary">
           <div className="feedback-summary__header">
-            <span className="feedback-status">{UI_COPY.simulator.liveObservation}</span>
+            <span className="feedback-status">{t(simulatorMessageKeys.feedback.liveObservation)}</span>
           </div>
-          <p style={{ marginTop: 8 }}>{UI_COPY.simulator.changesReflected}</p>
-          <p style={{ marginTop: 6, color: 'var(--text-muted)' }}>{freeObs.observation}</p>
+          <p style={{ marginTop: 8 }}>{t(genericObservationKey)}</p>
+          {freeObs.observationKey !== genericObservationKey ? (
+            <p style={{ marginTop: 6, color: 'var(--text-muted)' }}>{t(freeObs.observationKey)}</p>
+          ) : null}
         </div>
       </section>
     );
@@ -34,8 +41,8 @@ export const FeedbackPanel = ({ mode, sceneId, evaluation, showTitle = true }: F
 
   if (!evaluation && mode === 'guided') {
     return (
-      <section aria-label={UI_COPY.simulator.feedbackTitle} className="feedback-panel feedback-panel--idle">
-        {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
+      <section aria-label={t(simulatorMessageKeys.feedback.title)} className="feedback-panel feedback-panel--idle">
+        {showTitle ? <h2>{t(simulatorMessageKeys.feedback.title)}</h2> : null}
         <div>
           <div className="feedback-status">{UI_COPY.simulator.notStarted}</div>
           <p style={{ marginTop: 8 }}>{UI_COPY.simulator.freePracticeIntro}</p>
@@ -49,8 +56,8 @@ export const FeedbackPanel = ({ mode, sceneId, evaluation, showTitle = true }: F
   const primaryText = evaluation?.primaryFeedback ?? '';
 
   return (
-    <section aria-label={UI_COPY.simulator.feedbackTitle} className={`feedback-panel ${evaluation && evaluation.status === 'passed' ? 'feedback-panel--complete' : 'feedback-panel--progress'}`}>
-      {showTitle ? <h2>{UI_COPY.simulator.feedbackTitle}</h2> : null}
+    <section aria-label={t(simulatorMessageKeys.feedback.title)} className={`feedback-panel ${evaluation && evaluation.status === 'passed' ? 'feedback-panel--complete' : 'feedback-panel--progress'}`}>
+      {showTitle ? <h2>{t(simulatorMessageKeys.feedback.title)}</h2> : null}
 
       <div className="feedback-summary">
         <div className="feedback-summary__header">

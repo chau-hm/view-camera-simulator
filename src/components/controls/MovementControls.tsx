@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { selectMovementControlState } from "../../state/selectors";
 import { UI_COPY } from "../../ui/copy";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS } from "../../utils/constants";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import { useAppStore } from "../../state/appStore";
@@ -16,6 +19,7 @@ type MovementControlsProps = {
 };
 
 export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockReason, showTitle = true }: MovementControlsProps) => {
+  const { t } = useTranslation();
   const movement = useAppStore(useShallow(selectMovementControlState));
   const setRise = useAppStore((state) => state.setRise);
   const setTilt = useAppStore((state) => state.setTilt);
@@ -48,8 +52,8 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
   return (
     <section aria-label={UI_COPY.controls.movementTitle}>
       {showTitle && <h3>{UI_COPY.controls.movementTitle}</h3>}
-      <button ref={helpButtonRef} type="button" onClick={() => setHelpOpen(true)} aria-label={UI_COPY.controls.helpButton} className="btn btn--compact btn--secondary">
-        {UI_COPY.controls.helpButton}
+      <button ref={helpButtonRef} type="button" onClick={() => setHelpOpen(true)} aria-label={t(simulatorMessageKeys.movementHelp.button)} className="btn btn--compact btn--secondary">
+        {t(simulatorMessageKeys.movementHelp.button)}
       </button>
       {helpOpen && (
         <div
@@ -57,12 +61,12 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
           aria-modal="true"
           aria-labelledby="movement-help-title"
         >
-          <h4 id="movement-help-title" style={{ marginTop: 0 }}>{UI_COPY.controls.helpTitle}</h4>
-          <p>{UI_COPY.controls.helpRise}</p>
-          <p>{UI_COPY.controls.helpTilt}</p>
-          <p>{UI_COPY.controls.helpSwing}</p>
+          <h4 id="movement-help-title" style={{ marginTop: 0 }}>{t(simulatorMessageKeys.movementHelp.title)}</h4>
+          <p>{t(simulatorMessageKeys.movementHelp.rise)}</p>
+          <p>{t(simulatorMessageKeys.movementHelp.tilt)}</p>
+          <p>{t(simulatorMessageKeys.movementHelp.swing)}</p>
           <button ref={closeButtonRef} type="button" onClick={closeHelp} className="btn btn--compact btn--secondary">
-            {UI_COPY.controls.closeHelpButton}
+            {t(simulatorMessageKeys.movementHelp.close)}
           </button>
         </div>
       )}

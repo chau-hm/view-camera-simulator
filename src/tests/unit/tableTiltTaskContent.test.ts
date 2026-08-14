@@ -1,29 +1,26 @@
 import { describe, expect, it } from "vitest";
 import {
-  getFreePracticeFeedback,
-  getFreePracticeGuidance,
+  getFreePracticeFeedbackKey,
+  getFreePracticeGuidanceKeys,
 } from "../../components/simulator/taskHelpers";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 
 describe("Table Tilt lesson content", () => {
   it("provides scene-specific free-practice guidance", () => {
-    const guidance = getFreePracticeGuidance("table-tilt");
-    expect(guidance.objective).toContain("three coplanar focus cards");
-    expect(guidance.bullets).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining("middle notebook"),
-        expect.stringContaining("positive front tilt"),
-        expect.stringContaining("f/11 and f/22"),
-      ]),
-    );
+    const guidance = getFreePracticeGuidanceKeys("table-tilt");
+    expect(guidance.objectiveKey).toBe("simulator.freePractice.tableTilt.objective");
+    expect(guidance.bulletKeys).toEqual([
+      "simulator.freePractice.tableTilt.bullets.focus",
+      "simulator.freePractice.tableTilt.bullets.tilt",
+      "simulator.freePractice.tableTilt.bullets.patches",
+      "simulator.freePractice.tableTilt.bullets.aperture",
+    ]);
   });
 
-  it("explains the shared 3D, DOF, Ground Glass, and target readouts", () => {
-    const feedback = getFreePracticeFeedback("table-tilt").observation;
-    expect(feedback).toContain("3D");
-    expect(feedback).toContain("depth-of-field");
-    expect(feedback).toContain("Ground Glass");
-    expect(feedback).toContain("Focus Targets");
+  it("returns a scene-specific observation key", () => {
+    expect(getFreePracticeFeedbackKey("table-tilt").observationKey).toBe(
+      "simulator.freePractice.tableTilt.observation",
+    );
   });
 
   it("describes the recalibrated guided solution without obsolete thresholds", () => {
