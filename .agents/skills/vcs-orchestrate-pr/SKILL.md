@@ -115,6 +115,26 @@ After implementation:
 - for review-fix rounds, include a compact `Since previous review` mapping of material findings to resulting changes and note material areas intentionally unchanged when useful;
 - use `$vcs-verify-pr` only when a merge verdict or explicit independent review is needed.
 
+### PR publication boundary
+
+If the integrated work is being published as a PR, the orchestration boundary
+must apply the repository publishing contract before any PR-creation call:
+
+- validate the current non-main feature branch and intended PR head/base;
+- resolve origin and the destination ref explicitly, independent of upstream
+  and push.default;
+- record remote refs/heads/main before publication;
+- publish with HEAD:refs/heads/<same-feature-branch>, never a bare push or a
+  direct-to-main refspec;
+- verify the remote feature ref equals local HEAD and remote main is unchanged
+  before PR creation;
+- stop on missing/mismatched refs, concurrent main movement, or a divergent
+  remote feature branch; never force-push or automatically repair it.
+
+Subagents do not publish branches independently. Keep this guard at the
+integrated publication boundary and retain lightweight local work for tasks
+that are not being published as PR branches.
+
 Do not automatically invoke a reviewer merely because implementation completed.
 
 ## Stop condition
