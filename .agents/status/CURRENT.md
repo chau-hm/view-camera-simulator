@@ -37,6 +37,7 @@ package files, CI, and global Git configuration were intentionally unchanged.
 
 ## Validation
 
+- `git status --short`: passed; no output before this correction (worktree clean).
 - `git diff --check`: passed for the substantive policy diff.
 - Final scope inspection: passed; only the three policy owners changed before
   this handoff update.
