@@ -40,6 +40,14 @@ describe("Free Practice teaching copy", () => {
     expect(
       screen.getByText(/Whole-camera Viewpoint movement changes perspective relationships and parallax/),
     ).toBeInTheDocument();
+
+    cleanup();
+    render(<FeedbackPanel mode="free" sceneId="table-tilt" task={null} evaluation={null} />);
+    const tableTiltObservation = screen.getByText(/Front Tilt rotates the plane of sharp focus/);
+    expect(tableTiltObservation).toHaveTextContent(/plane of sharp focus/);
+    expect(tableTiltObservation).toHaveTextContent(/Ground Glass/);
+    expect(tableTiltObservation).toHaveTextContent(/depth-of-field/);
+    expect(tableTiltObservation).toHaveTextContent(/Focus Targets/);
   });
 
   it("renders representative zh-HK scene-specific guidance and observations", async () => {

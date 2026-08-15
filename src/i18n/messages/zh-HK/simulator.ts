@@ -20,7 +20,7 @@ export const simulatorMessages = {
   },
   freePractice: {
     generic: {
-      objective: "探索場景，不設計分任務。",
+      objective: "自由探索場景，不設評分任務。",
       observation: "變更會即時反映在 3D 場景、對焦屏及相關讀數上。",
     },
     understanding: {
