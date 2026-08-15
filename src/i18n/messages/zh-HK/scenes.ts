@@ -60,7 +60,7 @@ export const scenesMessages = {
   mirrorShift: {
     title: "鏡面構圖與視點",
     description:
-      "理解前組橫移如何恢復構圖，而已改變的視點與視差仍然保留。",
+      "理解前組橫移如何恢復構圖，而不會恢復原本的視點與視差。",
     topics: {
       viewpoint: "視點",
       framing: "構圖",

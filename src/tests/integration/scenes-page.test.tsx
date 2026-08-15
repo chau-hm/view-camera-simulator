@@ -142,7 +142,11 @@ describe("scenes page", () => {
     const mirrorHeading = await screen.findByRole("heading", { name: "Mirror Shift", level: 2 });
     const mirrorCard = mirrorHeading.closest("article");
     expect(mirrorCard).not.toBeNull();
-    expect(within(mirrorCard!).getByText(/Understand how framing can be restored with Front Shift/)).toBeInTheDocument();
+    expect(
+      within(mirrorCard!).getByText(
+        "Understand how Front Shift can restore framing without restoring the original viewpoint or parallax.",
+      ),
+    ).toBeInTheDocument();
     expect(within(mirrorCard!).getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
       "href",
       "/simulator/guided/mirror-shift/mirror-shift-01",
@@ -181,7 +185,11 @@ describe("scenes page", () => {
     };
 
     expect(cardFor("認識大片幅相機移軸").getByText(/理解整部相機移動與前、後組移軸/)).toBeInTheDocument();
-    expect(cardFor("鏡面構圖與視點").getByText(/理解前組橫移如何恢復構圖/)).toBeInTheDocument();
+    expect(
+      cardFor("鏡面構圖與視點").getByText(
+        "理解前組橫移如何恢復構圖，而不會恢復原本的視點與視差。",
+      ),
+    ).toBeInTheDocument();
     expect(cardFor("桌面焦平面與傾斜").getByText(/理解前組傾斜如何改變清晰焦平面/)).toBeInTheDocument();
     expect(cardFor("斜向焦平面與擺動").getByText(/理解前組擺動如何改變清晰焦平面/)).toBeInTheDocument();
   });

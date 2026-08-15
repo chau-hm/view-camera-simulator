@@ -59,7 +59,7 @@ export const scenesMessages = {
   mirrorShift: {
     title: "Mirror Shift",
     description:
-      "Understand how framing can be restored with Front Shift while viewpoint and parallax remain changed.",
+      "Understand how Front Shift can restore framing without restoring the original viewpoint or parallax.",
     topics: {
       viewpoint: "Viewpoint",
       framing: "Framing",

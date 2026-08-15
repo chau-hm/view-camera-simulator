@@ -45,6 +45,12 @@ describe("internationalization foundation", () => {
     expect(screen.getByRole("link", { name: "場景" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View Camera Simulator 主頁" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "為甚麼相機移軸重要？", level: 2 })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "移動整部相機，或調整前組及後組，然後在對焦屏上比較視點、構圖、透視及對焦如何改變。",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/前、後組移軸/)).not.toBeInTheDocument();
     expect(screen.getByText(/移動整部相機會改變視點/)).toBeInTheDocument();
     expect(document.body.textContent).not.toContain("大型相機");
     expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-HK");
@@ -79,7 +85,7 @@ describe("internationalization foundation", () => {
     expect(mirrorCard).not.toBeNull();
     expect(
       within(mirrorCard!).getByText(
-        "理解前組橫移如何恢復構圖，而已改變的視點與視差仍然保留。",
+        "理解前組橫移如何恢復構圖，而不會恢復原本的視點與視差。",
       ),
     ).toBeInTheDocument();
     expect(within(mirrorCard!).getByText("視點")).toBeInTheDocument();
