@@ -104,13 +104,13 @@ describe("app store STA-001", () => {
       criteria: [
         {
           criterionId: "focus-main",
-          label: "Primary focus target is sharp",
+          label: { key: "tasks.common.genericCriterion" },
           passed: false,
           score: 0.4,
-          message: "Primary focus target is soft",
+          message: { key: "tasks.results.focusTargetsSharp.fail" },
         },
       ],
-      primaryFeedback: "Adjust movement",
+      primaryFeedback: { key: "tasks.common.genericFailPrimary" },
       secondaryFeedback: [],
     });
 
@@ -414,7 +414,7 @@ describe("app store STA-001", () => {
       status: "passed",
       score: 100,
       criteria: [],
-      primaryFeedback: "done",
+      primaryFeedback: { key: "tasks.common.genericPassPrimary" },
       secondaryFeedback: [],
     });
     store.restartTask();
@@ -454,7 +454,7 @@ describe("app store STA-001", () => {
       status: "passed",
       score: 100,
       criteria: [],
-      primaryFeedback: "done",
+      primaryFeedback: { key: "tasks.common.genericPassPrimary" },
       secondaryFeedback: [],
     });
     store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });

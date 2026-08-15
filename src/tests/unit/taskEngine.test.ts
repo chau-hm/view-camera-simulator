@@ -15,30 +15,25 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 const buildCustomTask = (): TaskDefinition => ({
   id: "custom-task",
   sceneId: tableTiltScene.id,
-  title: "Custom evaluator task",
   mode: "guided",
   enabledControls: ["tilt", "focusDistance", "aperture", "geometryView"],
   constraints: {
     movement: "tilt-only",
-    notes: ["Custom criteria for unit test"],
   },
   criteria: [
     {
       id: "c-aperture",
-      label: "Allowed aperture",
       type: "allowed-aperture",
       allowedApertures: [11, 22],
     },
     {
       id: "c-tilt-used",
-      label: "Tilt used",
       type: "movement-used",
       movement: "tilt",
       minimumAbs: 1.5,
     },
     {
       id: "c-tilt-range",
-      label: "Tilt range",
       type: "movement-range",
       movement: "tilt",
       min: 1.5,
@@ -46,28 +41,11 @@ const buildCustomTask = (): TaskDefinition => ({
     },
     {
       id: "c-focus",
-      label: "Near target sharp",
       type: "focus-targets-sharp",
       targetIds: ["near-cup"],
       minimumSharpness: 0,
     },
   ],
-  feedbackRules: {
-    passPrimary: "Pass",
-    defaultFailPrimary: "Default fail",
-    failPrimaryByCriterionId: {
-      "c-aperture": "Aperture fail",
-      "c-tilt-used": "Tilt used fail",
-      "c-tilt-range": "Tilt range fail",
-      "c-focus": "Focus fail",
-    },
-    failSecondaryByCriterionId: {
-      "c-aperture": "Aperture hint",
-      "c-tilt-used": "Tilt used hint",
-      "c-tilt-range": "Tilt range hint",
-      "c-focus": "Focus hint",
-    },
-  },
 });
 
 describe("task engine", () => {
@@ -151,7 +129,6 @@ describe("task engine", () => {
       criteria: [
         {
           id: "signed-swing",
-          label: "Signed swing range",
           type: "movement-range",
           movement: "swing",
           min: -4.2,
@@ -159,12 +136,6 @@ describe("task engine", () => {
           valueMode: "signed",
         },
       ],
-      feedbackRules: {
-        passPrimary: "Pass",
-        defaultFailPrimary: "Fail",
-        failPrimaryByCriterionId: { "signed-swing": "Signed range fail" },
-        failSecondaryByCriterionId: { "signed-swing": "Signed range hint" },
-      },
     };
     const camera = {
       ...DEFAULT_CAMERA_STATE,
@@ -187,19 +158,12 @@ describe("task engine", () => {
         criteria: [
           {
             id: "absolute-swing",
-            label: "Absolute swing range",
             type: "movement-range",
             movement: "swing",
             min: 1.5,
             max: 8,
           },
         ],
-        feedbackRules: {
-          passPrimary: "Pass",
-          defaultFailPrimary: "Fail",
-          failPrimaryByCriterionId: { "absolute-swing": "Absolute range fail" },
-          failSecondaryByCriterionId: { "absolute-swing": "Absolute range hint" },
-        },
       };
       const camera = {
         ...DEFAULT_CAMERA_STATE,
@@ -223,8 +187,10 @@ describe("task engine", () => {
     };
     const optics = deriveOpticsState(camera, tableTiltScene);
     const evaluation = evaluateTask(task, tableTiltScene, camera, optics);
-    expect(evaluation.primaryFeedback).toBe("Aperture fail");
-    expect(evaluation.secondaryFeedback).toEqual(["Aperture hint"]);
+    expect(evaluation.primaryFeedback.key).toBe("tasks.results.allowedAperture.fail");
+    expect(evaluation.secondaryFeedback).toEqual([
+      { key: "tasks.common.genericSecondary" },
+    ]);
   });
 
   it("enforces tilt task f/32 restriction", () => {
@@ -262,7 +228,6 @@ describe("task engine", () => {
       criteria: [
         {
           id: "c-composition",
-          label: "Composition visible",
           type: "composition-visible",
           targetId: "tiny-target",
           minimumCoverage: 0.5,

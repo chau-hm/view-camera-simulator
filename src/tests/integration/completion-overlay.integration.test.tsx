@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
+import { guidedTaskMessageKeys } from "../../i18n/guidedTaskMessageKeys";
 
 vi.mock("../../core/tasks/evaluateTask", async () => {
   const actual = await vi.importActual<typeof import("../../core/tasks/evaluateTask")>("../../core/tasks/evaluateTask");
@@ -11,15 +12,15 @@ vi.mock("../../core/tasks/evaluateTask", async () => {
       taskId: "rise-01",
       status: "passed" as const,
       score: 1,
-      primaryFeedback: "Great work.",
+      primaryFeedback: { key: guidedTaskMessageKeys.common.genericPassPrimary },
       secondaryFeedback: [],
       criteria: [
         {
           criterionId: "mock",
-          label: "Mock criterion",
+          label: { key: guidedTaskMessageKeys.common.genericCriterion },
           passed: true,
           score: 1,
-          message: "Met",
+          message: { key: guidedTaskMessageKeys.common.genericPassPrimary },
         },
       ],
       finalCameraState: {

@@ -87,7 +87,7 @@ test("Table Tilt card exposes free and guided navigation", async ({ page }) => {
 
   await card.getByRole("link", { name: "Start Guided Task" }).click();
   await expect(page).toHaveURL(/\/simulator\/guided\/table-tilt\/tilt-01$/);
-  await expect(page.getByText("Align the tabletop focus cards with tilt")).toBeVisible();
+  await expect(page.getByText("Align the tabletop plane of sharp focus")).toBeVisible();
 });
 
 test("Table Tilt Ground Glass uses one RTT surface and no legacy artifacts", async ({ page }) => {
@@ -112,7 +112,7 @@ test("Table Tilt zero-tilt point focus moves from near to middle to far", async 
   await setRangeDirect(page, "Tilt", 0);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
   await expect(page.getByRole("heading", { name: /Focus targets · Point focus/i })).toBeVisible();
-  await expect(page.getByText(/Without tilt, focus can move from near to far/)).toBeVisible();
+  await expect(page.getByText(/At 0° Front Tilt, move Focus from the near card/)).toBeVisible();
 
   const focusCases = [
     { focus: 3150, expected: "near-cup" },
@@ -245,7 +245,7 @@ test("Table Tilt calibrated controls complete the guided task", async ({ page })
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
 
   await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await expect(page.getByText(/Positive front tilt made the plane of sharp focus parallel/)).toBeVisible();
+  await expect(page.getByText(/Positive Front Tilt aligned the plane of sharp focus/)).toBeVisible();
 
   const sceneCanvas = page.getByTestId("scene-canvas");
   for (const attribute of [
