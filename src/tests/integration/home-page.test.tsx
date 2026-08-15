@@ -23,14 +23,6 @@ describe("home page", () => {
     // Learn Why should link to #why anchor
     expect(learnWhy.closest('a')).toHaveAttribute('href', '#why');
 
-    // Focus CTA button present and links to simulator route
-    const openFocus = await screen.findByText("Open Focus Fundamentals");
-    expect(openFocus).toBeInTheDocument();
-    expect(openFocus.closest('a')).toHaveAttribute('href', '/simulator/free/focus-fundamentals-two-targets');
-
-    // landing should have the Front-versus-Rear focusing lesson as an h2 in the CTA panel
-    expect(await screen.findByRole('heading', { name: 'Compare Front and Rear focusing', level: 2 })).toBeInTheDocument();
-
     // hero illustration wrapper present (decorative, aria-hidden)
     const heroWrap = document.querySelector('.hero__illustration');
     expect(heroWrap).toBeTruthy();

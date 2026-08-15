@@ -30,11 +30,4 @@ export const homeMessages = {
         "大片幅相機令拍攝過程慢下來。對焦屏上的倒置影像鼓勵細心觀察，而每一項移軸都成為有意識的選擇。藝術家使用它不只是為了影像質素，也因為這種方法改變了觀看及創作相片的方式。",
     },
   },
-  focusCta: {
-    eyebrow: "對焦基礎",
-    title: "比較前組及後組對焦",
-    body:
-      "透過移動前組或後組，分別對同一物件的兩個深度對焦，然後觀察它們在對焦屏上的對齊如何改變。光圈固定為 f/32，讓比較集中於對焦方式。",
-    action: "開啟對焦基礎",
-  },
 } satisfies MessageShape<typeof englishHomeMessages>;
