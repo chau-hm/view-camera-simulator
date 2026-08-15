@@ -1,5 +1,9 @@
 import { UI_COPY } from "../../ui/copy";
 import type { TaskEvaluation, TaskCriteriaEvaluation } from "../../types/task";
+import {
+  simulatorMessageKeys,
+  type FreePracticeMessageKey,
+} from "../../i18n/simulatorMessageKeys";
 
 export function formatControlLabel(controlId: string): string {
   const map: Record<string, string> = {
@@ -17,58 +21,106 @@ export function formatControlLabel(controlId: string): string {
   return map[controlId] ?? controlId;
 }
 
-export type FreePracticeGuidance = {
-  objective: string;
-  bullets: string[];
+export type FreePracticeGuidanceKeys = {
+  objectiveKey: FreePracticeMessageKey;
+  bulletKeys: readonly FreePracticeMessageKey[];
 };
 
-export function getFreePracticeGuidance(sceneId: string | undefined): FreePracticeGuidance {
-  const genericObjective = UI_COPY.simulator.freePracticeIntro || "Explore the scene without a scored task.";
-  const defaults: Record<string, FreePracticeGuidance> = {
-    "architecture-rise": {
-      objective: "Explore how front rise changes the framing while the camera remains level.",
-      bullets: [
-        "Increase Rise to include more of the building.",
-        "Keep Tilt and Swing at 0° to preserve parallel vertical lines.",
-        "Adjust Focus and Aperture to compare sharpness and depth of field.",
-      ],
-    },
-    "focus-fundamentals-two-targets": {
-      objective: "Explore Front and Rear focusing across two depths on the same object at fixed f/32.",
-      bullets: [
-        "Move focus between the near and far detail.",
-        "Watch the white frame (near gate) and far pointer.",
-        "Compare Front focus, which changes their alignment, with Rear focus, which keeps them aligned.",
-      ],
-    },
-    "table-tilt": {
-      objective:
-        "Use front tilt and focus to align the three coplanar focus cards above the tabletop.",
-      bullets: [
-        "At 0° tilt, move focus from the near card through the middle notebook to the far chart.",
-        "Apply positive front tilt and watch the focus plane rotate parallel to the tabletop through the focus-card surfaces.",
-        "Refine focus until all three patches—not only their centre points—are covered.",
-        "Compare f/11 and f/22, but do not rely on f/32 to solve the exercise.",
-      ],
-    },
-  };
+export type FreePracticeFeedbackKey = {
+  observationKey: FreePracticeMessageKey;
+};
 
-  if (sceneId && defaults[sceneId]) return defaults[sceneId];
-  return { objective: genericObjective, bullets: [] };
+const genericGuidance: FreePracticeGuidanceKeys = {
+  objectiveKey: simulatorMessageKeys.freePractice.generic.objective,
+  bulletKeys: [],
+};
+
+const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
+  "understanding-camera-movements": {
+    objectiveKey: simulatorMessageKeys.freePractice.understanding.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.understanding.bullets.viewpoint,
+      simulatorMessageKeys.freePractice.understanding.bullets.tilt,
+      simulatorMessageKeys.freePractice.understanding.bullets.verticalFraming,
+      simulatorMessageKeys.freePractice.understanding.bullets.compare,
+    ],
+  },
+  "focus-fundamentals-two-targets": {
+    objectiveKey: simulatorMessageKeys.freePractice.focusFundamentals.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.focusFundamentals.bullets.focusDistance,
+      simulatorMessageKeys.freePractice.focusFundamentals.bullets.readouts,
+      simulatorMessageKeys.freePractice.focusFundamentals.bullets.compare,
+    ],
+  },
+  "architecture-rise": {
+    objectiveKey: simulatorMessageKeys.freePractice.architectureRise.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.architectureRise.bullets.rise,
+      simulatorMessageKeys.freePractice.architectureRise.bullets.level,
+      simulatorMessageKeys.freePractice.architectureRise.bullets.focus,
+    ],
+  },
+  "table-tilt": {
+    objectiveKey: simulatorMessageKeys.freePractice.tableTilt.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.tableTilt.bullets.focus,
+      simulatorMessageKeys.freePractice.tableTilt.bullets.tilt,
+      simulatorMessageKeys.freePractice.tableTilt.bullets.patches,
+      simulatorMessageKeys.freePractice.tableTilt.bullets.aperture,
+    ],
+  },
+  "shelf-swing": {
+    objectiveKey: simulatorMessageKeys.freePractice.shelfSwing.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.shelfSwing.bullets.start,
+      simulatorMessageKeys.freePractice.shelfSwing.bullets.geometry,
+      simulatorMessageKeys.freePractice.shelfSwing.bullets.refine,
+      simulatorMessageKeys.freePractice.shelfSwing.bullets.compare,
+    ],
+  },
+  "mirror-shift": {
+    objectiveKey: simulatorMessageKeys.freePractice.mirrorShift.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.mirrorShift.bullets.position,
+      simulatorMessageKeys.freePractice.mirrorShift.bullets.viewpoint,
+      simulatorMessageKeys.freePractice.mirrorShift.bullets.framing,
+      simulatorMessageKeys.freePractice.mirrorShift.bullets.parallax,
+    ],
+  },
+};
+
+export function getFreePracticeGuidanceKeys(sceneId: string | undefined): FreePracticeGuidanceKeys {
+  return (sceneId && guidanceByScene[sceneId]) || genericGuidance;
 }
 
-export function getFreePracticeFeedback(sceneId: string | undefined): { observation: string } {
-  const generic = { observation: UI_COPY.simulator.changesReflected || 'Changes are reflected immediately in the 3D Scene, Ground Glass, Current Settings, and Focus Targets.' };
-  const map: Record<string, { observation: string }> = {
-    "architecture-rise": { observation: 'Watch the top of the building as Rise changes. The framing should move upward while the vertical edges remain parallel.' },
-    "focus-fundamentals-two-targets": { observation: 'Watch the white frame and far pointer as Front and Rear focus change their alignment.' },
-    "table-tilt": {
-      observation:
-        "Without tilt, focus can move from near to far, but only one depth region is sharp at a time. Front tilt rotates the plane of sharp focus so the three tabletop focus cards can become sharp together. Compare the plane in 3D, the depth-of-field bounds, real blur on Ground Glass, and the Focus Targets readout: Free Mode reports centre-point focus while the guided task requires full patch coverage.",
-    },
-  };
+const genericFeedback: FreePracticeFeedbackKey = {
+  observationKey: simulatorMessageKeys.freePractice.generic.observation,
+};
 
-  return (sceneId && map[sceneId]) ? map[sceneId] : generic;
+const feedbackByScene: Record<string, FreePracticeFeedbackKey> = {
+  "understanding-camera-movements": {
+    observationKey: simulatorMessageKeys.freePractice.understanding.observation,
+  },
+  "focus-fundamentals-two-targets": {
+    observationKey: simulatorMessageKeys.freePractice.focusFundamentals.observation,
+  },
+  "architecture-rise": {
+    observationKey: simulatorMessageKeys.freePractice.architectureRise.observation,
+  },
+  "table-tilt": {
+    observationKey: simulatorMessageKeys.freePractice.tableTilt.observation,
+  },
+  "shelf-swing": {
+    observationKey: simulatorMessageKeys.freePractice.shelfSwing.observation,
+  },
+  "mirror-shift": {
+    observationKey: simulatorMessageKeys.freePractice.mirrorShift.observation,
+  },
+};
+
+export function getFreePracticeFeedbackKey(sceneId: string | undefined): FreePracticeFeedbackKey {
+  return (sceneId && feedbackByScene[sceneId]) || genericFeedback;
 }
 
 export function getFeedbackStatus(mode: string, evaluation: TaskEvaluation | null): string {

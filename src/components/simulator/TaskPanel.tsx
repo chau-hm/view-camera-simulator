@@ -1,6 +1,9 @@
+import { useTranslation } from "react-i18next";
 import type { TaskDefinition } from "../../types/task";
 import { UI_COPY } from "../../ui/copy";
-import { formatControlLabel, getFreePracticeGuidance } from './taskHelpers';
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
+import { formatControlLabel, getFreePracticeGuidanceKeys } from './taskHelpers';
 
 type TaskPanelProps = {
   task: TaskDefinition | null;
@@ -9,25 +12,26 @@ type TaskPanelProps = {
 };
 
 export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) => {
-  const freeGuidance = getFreePracticeGuidance(sceneId);
+  const { t } = useTranslation();
+  const freeGuidance = getFreePracticeGuidanceKeys(sceneId);
 
   if (!task) {
     // Free mode guidance (content-only; outer card shell and heading provided by Workspace)
     return (
-      <section aria-label={UI_COPY.simulator.taskTitle} className="task-panel task-panel--free">
-        {showTitle ? <h2>{UI_COPY.simulator.taskTitle}</h2> : null}
+      <section aria-label={t(simulatorMessageKeys.task.title)} className="task-panel task-panel--free">
+        {showTitle ? <h2>{t(simulatorMessageKeys.task.title)}</h2> : null}
         <div className="task-summary">
           <div className="task-summary__header">
-            <span className="task-status task-status--free">{UI_COPY.simulator.freePractice}</span>
+            <span className="task-status task-status--free">{t(simulatorMessageKeys.task.freePractice)}</span>
           </div>
 
           {/* single objective paragraph (scene-specific) */}
-          <p className="task-summary__objective">{freeGuidance.objective}</p>
+          <p className="task-summary__objective">{t(freeGuidance.objectiveKey)}</p>
 
-          {freeGuidance.bullets.length > 0 && (
+          {freeGuidance.bulletKeys.length > 0 && (
             <ul className="task-summary__guidance">
-              {freeGuidance.bullets.map((b) => (
-                <li key={b}>{b}</li>
+              {freeGuidance.bulletKeys.map((bulletKey) => (
+                <li key={bulletKey}>{t(bulletKey)}</li>
               ))}
             </ul>
           )}
@@ -41,8 +45,8 @@ export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) =
   const remainingNotes = task.constraints.notes && task.constraints.notes.length > 1 ? task.constraints.notes.slice(1) : [];
 
   return (
-    <section aria-label={UI_COPY.simulator.taskTitle} className="task-panel task-panel--guided">
-      {showTitle ? <h2>{UI_COPY.simulator.taskTitle}</h2> : null}
+    <section aria-label={t(simulatorMessageKeys.task.title)} className="task-panel task-panel--guided">
+      {showTitle ? <h2>{t(simulatorMessageKeys.task.title)}</h2> : null}
       <div className="task-summary">
         <div className="task-summary__header">
           <span className="task-status task-status--progress">Guided task</span>
