@@ -54,6 +54,8 @@ or deployment workflow files changed.
 
 - Focused header/i18n/catalog/Free Practice integration tests: passed; 4
   files, 11 tests.
+- PR #57 review-fix focused i18n and Scenes integration tests: passed; 2
+  files, 5 tests.
 - Full `npm test`: passed; 115 test files, 1,073 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
@@ -123,11 +125,20 @@ post-merge release gate.
 
 ## Since previous review
 
-Not applicable
+- Corrected the zh-HK Home hero so generic Front/Rear standard adjustment
+  uses `調整前組及後組`, not `前、後組移軸`; clarified in `docs/I18N.md` that
+  `相機移軸` is not a catch-all and that focusing remains
+  `前組／後組對焦`.
+- Reworded the English and zh-HK Mirror Shift catalog descriptions so they
+  state that Front Shift restores framing without restoring the original
+  viewpoint or parallax; updated the directly affected integration
+  assertions.
 
 ## Commit
 
 Substantive implementation: `d7d3b13e0605f2625fbc97f2a55e43397250ce5f`
+
+Substantive review fix: `58d7b348c5c5d8da130af11e63389d86b5ba0c5c`
 
 Final bookkeeping: the status-only commit that records this handoff is
 intentionally not self-referenced to avoid recursive commits.
