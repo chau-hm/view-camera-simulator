@@ -56,7 +56,8 @@ or Free Practice source changes were made.
 - Focused task/evaluator and presentation tests: passed; 6 files, 63 tests.
 - Guided localization/completion/no-evaluation integration tests: passed;
   10 tests.
-- `npm test`: passed; 113 test files, 1,060 tests.
+- Review-fix focused tests: passed; 4 files, 50 tests.
+- Latest `npm test`: passed; 113 test files, 1,061 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
