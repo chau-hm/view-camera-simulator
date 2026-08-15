@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { getGuidedTaskCopy } from "../../core/tasks/guidedTaskCopyKeys";
+import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import {
   getFreePracticeFeedbackKey,
   getFreePracticeGuidanceKeys,
@@ -25,18 +27,22 @@ describe("Table Tilt lesson content", () => {
 
   it("describes the recalibrated guided solution without obsolete thresholds", () => {
     const task = getTaskById("tilt-01")!;
-    const allCopy = [
-      ...task.constraints.notes,
-      task.feedbackRules.passPrimary,
-      task.feedbackRules.defaultFailPrimary,
-      ...Object.values(task.feedbackRules.failPrimaryByCriterionId),
-      ...Object.values(task.feedbackRules.failSecondaryByCriterionId),
-    ].join(" ");
-    expect(allCopy).toContain("positive front tilt");
-    expect(task.title).toBe("Align the tabletop focus cards with tilt");
-    expect(allCopy).toContain("parallel to the tabletop");
-    expect(allCopy).toContain("all three focus cards");
-    expect(allCopy).toContain("9°");
-    expect(allCopy).not.toContain("1.5° to 8°");
+    const copy = getGuidedTaskCopy(task);
+    expect(copy.title.key).toBe("tasks.tableTilt.title");
+    expect(copy.objective.key).toBe("tasks.tableTilt.objective");
+    expect(copy.notes).toEqual([
+      { key: "tasks.tableTilt.notes.focusAndTilt" },
+      { key: "tasks.tableTilt.notes.constraints" },
+    ]);
+    expect(copy.criteria["tilt-movement-range"]?.values).toEqual({
+      min: tableTiltGeometry.tableTiltCalibration.allowedTiltMinDeg,
+      max: tableTiltGeometry.tableTiltCalibration.allowedTiltMaxDeg,
+    });
+    expect(copy.feedback.primary["tilt-movement-range"]?.values).toEqual({
+      tiltDeg: tableTiltGeometry.tableTiltCalibration.frontTiltDeg,
+    });
+    expect(copy.feedback.primary["tilt-movement-range"]?.key).toBe(
+      "tasks.tableTilt.feedback.primary.movementRange",
+    );
   });
 });

@@ -2,6 +2,7 @@ import type { CameraState } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
 import type { TaskDefinition, TaskEvaluation } from "../../types/task";
+import { getGuidedTaskCopy, type GuidedTaskMessageRef } from "./guidedTaskCopyKeys";
 
 type FeedbackContext = {
   camera: CameraState;
@@ -15,24 +16,25 @@ export const feedbackEngine = (
   task: TaskDefinition,
   evaluation: TaskEvaluation,
   _context: FeedbackContext,
-): { primaryFeedback: string; secondaryFeedback: string[] } => {
+): { primaryFeedback: GuidedTaskMessageRef; secondaryFeedback: GuidedTaskMessageRef[] } => {
   void _context;
+  const copy = getGuidedTaskCopy(task);
 
   if (evaluation.status === "passed") {
     return {
-      primaryFeedback: task.feedbackRules.passPrimary,
-      secondaryFeedback: task.feedbackRules.passSecondary
-        ? [task.feedbackRules.passSecondary]
+      primaryFeedback: copy.feedback.passPrimary,
+      secondaryFeedback: copy.feedback.passSecondary
+        ? [copy.feedback.passSecondary]
         : [],
     };
   }
 
   const firstFailedCriterion = evaluation.criteria.find((criterion) => !criterion.passed);
   const primaryFeedback =
-    (firstFailedCriterion && task.feedbackRules.failPrimaryByCriterionId[firstFailedCriterion.criterionId]) ||
-    task.feedbackRules.defaultFailPrimary;
+    (firstFailedCriterion && copy.feedback.primary[firstFailedCriterion.criterionId]) ||
+    copy.feedback.defaultFailPrimary;
   const secondaryHint = firstFailedCriterion
-    ? task.feedbackRules.failSecondaryByCriterionId[firstFailedCriterion.criterionId]
+    ? copy.feedback.secondary[firstFailedCriterion.criterionId]
     : undefined;
 
   return {

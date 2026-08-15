@@ -1,25 +1,12 @@
-import { UI_COPY } from "../../ui/copy";
 import type { TaskEvaluation, TaskCriteriaEvaluation } from "../../types/task";
 import {
   simulatorMessageKeys,
   type FreePracticeMessageKey,
 } from "../../i18n/simulatorMessageKeys";
-
-export function formatControlLabel(controlId: string): string {
-  const map: Record<string, string> = {
-    focusDistance: "Focus",
-    aperture: "Aperture",
-    rise: "Rise",
-    tilt: "Tilt",
-    swing: "Swing",
-    focusAssist: "Focus Assist",
-    grid: "Grid",
-    geometryView: "2D Geometry",
-    cameraPosition: "Camera Position",
-    frontShift: "Front Shift",
-  };
-  return map[controlId] ?? controlId;
-}
+import {
+  guidedTaskMessageKeys,
+  type GuidedTaskMessageKey,
+} from "../../i18n/guidedTaskMessageKeys";
 
 export type FreePracticeGuidanceKeys = {
   objectiveKey: FreePracticeMessageKey;
@@ -123,11 +110,11 @@ export function getFreePracticeFeedbackKey(sceneId: string | undefined): FreePra
   return (sceneId && feedbackByScene[sceneId]) || genericFeedback;
 }
 
-export function getFeedbackStatus(mode: string, evaluation: TaskEvaluation | null): string {
-  if (mode !== "guided") return UI_COPY.simulator.noScoredTask || "No scored task";
-  if (!evaluation) return UI_COPY.simulator.notStarted || "Not started";
-  if (evaluation.status === "passed") return UI_COPY.simulator.completed || "Completed";
-  return UI_COPY.simulator.inProgress || "In progress";
+export function getFeedbackStatus(mode: string, evaluation: TaskEvaluation | null): GuidedTaskMessageKey {
+  if (mode !== "guided") return guidedTaskMessageKeys.common.notStarted;
+  if (!evaluation) return guidedTaskMessageKeys.common.notStarted;
+  if (evaluation.status === "passed") return guidedTaskMessageKeys.common.completed;
+  return guidedTaskMessageKeys.common.inProgress;
 }
 
 export function getPassedCriteriaCount(evaluation: TaskEvaluation | null): {
@@ -148,6 +135,11 @@ export function getPrimaryFailedCriterion(
   return failed ?? null;
 }
 
+export type FinalCameraStateLine = {
+  labelKey: GuidedTaskMessageKey;
+  value: string;
+};
+
 export function formatFinalCameraState(finalState?: {
   frontRiseMm?: number;
   frontTiltDeg?: number;
@@ -156,10 +148,23 @@ export function formatFinalCameraState(finalState?: {
   aperture?: number;
   frontShiftMm?: number;
   mirrorShiftLessonState?: { rigLateralMm?: number };
-} | null): string {
-  if (!finalState) return "";
-  const mirrorShiftSummary = finalState.mirrorShiftLessonState || finalState.frontShiftMm !== undefined
-    ? ` · Camera Position ${finalState.mirrorShiftLessonState?.rigLateralMm ?? 0} mm · Front Shift ${finalState.frontShiftMm ?? 0} mm`
-    : "";
-  return `Rise ${finalState.frontRiseMm ?? 0} mm · Tilt ${finalState.frontTiltDeg ?? 0}° · Swing ${finalState.frontSwingDeg ?? 0}° · Focus ${finalState.focusDistanceMm ?? 0} mm · Aperture f/${finalState.aperture ?? 11}${mirrorShiftSummary}`;
+} | null): FinalCameraStateLine[] {
+  if (!finalState) return [];
+  const lines: FinalCameraStateLine[] = [
+    { labelKey: guidedTaskMessageKeys.controls.rise, value: `${finalState.frontRiseMm ?? 0} mm` },
+    { labelKey: guidedTaskMessageKeys.controls.tilt, value: `${finalState.frontTiltDeg ?? 0}°` },
+    { labelKey: guidedTaskMessageKeys.controls.swing, value: `${finalState.frontSwingDeg ?? 0}°` },
+    { labelKey: guidedTaskMessageKeys.controls.focusDistance, value: `${finalState.focusDistanceMm ?? 0} mm` },
+    { labelKey: guidedTaskMessageKeys.controls.aperture, value: `f/${finalState.aperture ?? 11}` },
+  ];
+  if (finalState.mirrorShiftLessonState || finalState.frontShiftMm !== undefined) {
+    lines.push(
+      {
+        labelKey: guidedTaskMessageKeys.controls.cameraPosition,
+        value: `${finalState.mirrorShiftLessonState?.rigLateralMm ?? 0} mm`,
+      },
+      { labelKey: guidedTaskMessageKeys.controls.frontShift, value: `${finalState.frontShiftMm ?? 0} mm` },
+    );
+  }
+  return lines;
 }
