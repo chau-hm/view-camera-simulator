@@ -116,11 +116,18 @@ changes were made.
 
 ## Since previous review
 
-Not applicable
+- Addressed finding 1: changed only the zh-HK generic Free Practice
+  objective to `自由探索場景，不設評分任務。`; English and all other
+  zh-HK teaching messages remain unchanged.
+- Addressed finding 2: extended the Free Practice integration test to render
+  the English Table Tilt observation and assert the learner-visible concepts
+  `plane of sharp focus`, `Ground Glass`, `depth-of-field`, and `Focus
+  Targets`. The pure helper/key test remains prose-free.
 
 ## Commit
 
 Substantive implementation: `6b00f268075d3ab63bd65c23b4aa96d8e11f8278`
+Review-fix implementation: `61c53c68eb3fe72213433fc8fa356802b65369f7`
 
 Final bookkeeping: the status-only commit that records this handoff update;
 intentionally not self-referenced to avoid recursive commits.
