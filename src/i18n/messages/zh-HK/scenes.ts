@@ -8,9 +8,9 @@ export const scenesMessages = {
     noScenesAvailable: "暫時沒有可用場景。",
   },
   understanding: {
-    title: "了解大型相機移動",
+    title: "認識大片幅相機移軸",
     description:
-      "比較整部相機移動造成的視點改變，與前組、後組移動的效果，並觀察它們如何影響構圖、透視幾何及對焦屏影像。",
+      "理解整部相機移動與前、後組移軸，如何分別影響視點、構圖、透視幾何與對焦屏影像。",
     topics: {
       viewpoint: "視點",
       framing: "構圖",
@@ -19,9 +19,9 @@ export const scenesMessages = {
     },
   },
   focusFundamentals: {
-    title: "對焦基礎 — 兩個目標",
+    title: "前後組對焦比較",
     description:
-      "在同一物件的兩個深度上比較前組及後組對焦（固定 f/32），並觀察影像在對焦屏上的對齊如何改變。",
+      "理解前組與後組對焦，在同一物件不同深度之間對焦時所產生的差異。",
     topics: {
       frontRearFocusing: "前組／後組對焦",
       imageAlignment: "影像對齊",
@@ -29,9 +29,9 @@ export const scenesMessages = {
     },
   },
   architectureRise: {
-    title: "建築上移",
+    title: "建築構圖與上移",
     description:
-      "保持相機水平，使用前組上移把建築物較高的部分納入畫面，同時保持場景預期的垂直線平行。",
+      "理解前組上移如何改變構圖，同時讓水平相機保持垂直線平行。",
     topics: {
       frontRise: "前組上移",
       framing: "構圖",
@@ -39,9 +39,9 @@ export const scenesMessages = {
     },
   },
   tableTilt: {
-    title: "桌面傾斜",
+    title: "桌面焦平面與傾斜",
     description:
-      "使用前組傾斜旋轉清晰焦平面，直到它與桌面上方三張共面的對焦卡對齊。",
+      "理解前組傾斜如何改變清晰焦平面在景物深度中的方向。",
     topics: {
       frontTilt: "前組傾斜",
       planeOfSharpFocus: "清晰焦平面",
@@ -49,8 +49,8 @@ export const scenesMessages = {
     },
   },
   shelfSwing: {
-    title: "書架擺動",
-    description: "使用前組擺動，讓清晰焦平面穿過沿深度斜向排列的主體。",
+    title: "斜向焦平面與擺動",
+    description: "理解前組擺動如何改變清晰焦平面，使其配合沿深度斜向排列的主體。",
     topics: {
       frontSwing: "前組擺動",
       planeOfSharpFocus: "清晰焦平面",
@@ -58,9 +58,9 @@ export const scenesMessages = {
     },
   },
   mirrorShift: {
-    title: "鏡面橫移",
+    title: "鏡面構圖與視點",
     description:
-      "將整部相機向側面移動以避開相機倒影，然後使用相反方向的前組橫移恢復鏡面構圖，同時保留已改變的視點。",
+      "理解前組橫移如何恢復構圖，而已改變的視點與視差仍然保留。",
     topics: {
       viewpoint: "視點",
       framing: "構圖",

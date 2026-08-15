@@ -1,5 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import {
   getPublicSceneEntryById,
@@ -8,6 +8,16 @@ import {
   publicSceneIds,
 } from "../../app/publicScenes";
 import { routes } from "../../app/router";
+import { i18n } from "../../i18n";
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(async () => {
+  cleanup();
+  await i18n.changeLanguage("en");
+});
 
 describe("scenes page", () => {
   it("shows the enabled public scene cards in catalog order", async () => {
@@ -20,7 +30,7 @@ describe("scenes page", () => {
     ).toBeInTheDocument();
     const openButtons = await screen.findAllByText(/Open Scene/);
     expect(openButtons.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/Compare Front and Rear focusing across two depths of one object at fixed f\/32/)).toBeInTheDocument();
+    expect(screen.getByText(/Understand how Front and Rear focusing differ/)).toBeInTheDocument();
     expect(screen.getByText("Front / Rear focusing")).toBeInTheDocument();
     expect(screen.getByText("Image alignment")).toBeInTheDocument();
     expect(screen.getByText("Fixed f/32")).toBeInTheDocument();
@@ -32,13 +42,18 @@ describe("scenes page", () => {
     expect(focusCard).not.toBeNull();
     expect(within(focusCard!).queryByRole("link", { name: "Start Guided Task" })).not.toBeInTheDocument();
 
+    const understandingHeading = await screen.findByRole("heading", { name: "Understanding Camera Movements", level: 2 });
+    const understandingCard = understandingHeading.closest("article");
+    expect(understandingCard).not.toBeNull();
+    expect(within(understandingCard!).getByText(/Understand how whole-camera movement and Front\/Rear standard movements affect viewpoint/)).toBeInTheDocument();
+
     // Architecture Rise card should be present with its description and topics
     const architectureHeading = await screen.findByRole("heading", { name: "Architecture Rise", level: 2 });
     expect(architectureHeading).toBeInTheDocument();
     const architectureCard = architectureHeading.closest("article");
     expect(architectureCard).not.toBeNull();
     const scopedArchitectureCard = within(architectureCard!);
-    expect(scopedArchitectureCard.getByText(/Keep the camera level and use Front Rise to include more of the building/)).toBeInTheDocument();
+    expect(scopedArchitectureCard.getByText(/Understand how Front Rise changes framing/)).toBeInTheDocument();
     expect(scopedArchitectureCard.getByText("Front Rise")).toBeInTheDocument();
     expect(scopedArchitectureCard.getByText("Framing")).toBeInTheDocument();
     expect(scopedArchitectureCard.getByText("Perspective control")).toBeInTheDocument();
@@ -50,7 +65,7 @@ describe("scenes page", () => {
     const scopedTableCard = within(tableCard!);
     expect(
       scopedTableCard.getByText(
-        "Use Front Tilt to rotate the plane of sharp focus until it aligns with three coplanar focus cards above the tabletop.",
+        "Understand how Front Tilt changes the plane of sharp focus across subject depth.",
       ),
     ).toBeInTheDocument();
     expect(scopedTableCard.getByText("Front Tilt")).toBeInTheDocument();
@@ -72,7 +87,7 @@ describe("scenes page", () => {
     const scopedShelfCard = within(shelfCard!);
     expect(
       scopedShelfCard.getByText(
-        "Use Front Swing to rotate the plane of sharp focus through subjects arranged diagonally in depth.",
+        "Understand how Front Swing changes the plane of sharp focus across subjects arranged diagonally in depth.",
       ),
     ).toBeInTheDocument();
     expect(scopedShelfCard.getByText("Front Swing")).toBeInTheDocument();
@@ -127,6 +142,7 @@ describe("scenes page", () => {
     const mirrorHeading = await screen.findByRole("heading", { name: "Mirror Shift", level: 2 });
     const mirrorCard = mirrorHeading.closest("article");
     expect(mirrorCard).not.toBeNull();
+    expect(within(mirrorCard!).getByText(/Understand how framing can be restored with Front Shift/)).toBeInTheDocument();
     expect(within(mirrorCard!).getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
       "href",
       "/simulator/guided/mirror-shift/mirror-shift-01",
@@ -138,5 +154,35 @@ describe("scenes page", () => {
     expect(
       screen.queryByText("The guided Shelf Swing lesson is still being prepared."),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders canonical zh-HK titles and learning-purpose descriptions", async () => {
+    await i18n.changeLanguage("zh-HK");
+    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
+    render(<RouterProvider router={memoryRouter} />);
+
+    expect(screen.getByRole("combobox", { name: "語言" })).toHaveValue("zh-HK");
+    expect(
+      (await screen.findAllByRole("heading", { level: 2 })).map((heading) => heading.textContent),
+    ).toEqual([
+      "認識大片幅相機移軸",
+      "前後組對焦比較",
+      "建築構圖與上移",
+      "桌面焦平面與傾斜",
+      "斜向焦平面與擺動",
+      "鏡面構圖與視點",
+    ]);
+
+    const cardFor = (title: string) => {
+      const heading = screen.getByRole("heading", { name: title, level: 2 });
+      const card = heading.closest("article");
+      expect(card).not.toBeNull();
+      return within(card!);
+    };
+
+    expect(cardFor("認識大片幅相機移軸").getByText(/理解整部相機移動與前、後組移軸/)).toBeInTheDocument();
+    expect(cardFor("鏡面構圖與視點").getByText(/理解前組橫移如何恢復構圖/)).toBeInTheDocument();
+    expect(cardFor("桌面焦平面與傾斜").getByText(/理解前組傾斜如何改變清晰焦平面/)).toBeInTheDocument();
+    expect(cardFor("斜向焦平面與擺動").getByText(/理解前組擺動如何改變清晰焦平面/)).toBeInTheDocument();
   });
 });

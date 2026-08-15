@@ -10,7 +10,7 @@ export const readoutsMessages = {
     ariaLabel: "目前設定",
   },
   groups: {
-    movement: "移動",
+    movement: "相機移軸",
     movementRelationship: "移動關係",
     exposureFocus: "曝光與對焦",
     focusMethod: "對焦方式",
