@@ -16,7 +16,7 @@ export const commonMessages = {
     homeLabel: "View Camera Simulator 主頁",
   },
   footer: {
-    description: "一個簡單的互動式大型相機對焦、透視及移動訓練工具。",
+    description: "一個簡單的互動式大片幅相機對焦、透視及相機移軸訓練工具。",
   },
   site: {
     desktopExperienceTitle: "建議使用桌面瀏覽器",

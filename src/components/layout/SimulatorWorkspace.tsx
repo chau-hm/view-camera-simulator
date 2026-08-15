@@ -12,6 +12,7 @@ import type { SimulatorMode } from "../../types/camera";
 import type { RenderQualityProfile } from "../../types/ui";
 import { UI_COPY } from "../../ui/copy";
 import { AppBrand } from "./AppBrand";
+import { LanguageSelector } from "./LanguageSelector";
 import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
@@ -394,6 +395,7 @@ export const SimulatorWorkspace = ({
 
         <div className="sim-header-actions">
           <Link className="btn btn--ghost" to="/scenes">All Scenes</Link>
+          <LanguageSelector />
         </div>
       </header>
 

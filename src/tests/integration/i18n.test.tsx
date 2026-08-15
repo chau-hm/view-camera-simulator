@@ -40,10 +40,19 @@ describe("internationalization foundation", () => {
 
     await waitFor(() => {
       expect(document.documentElement.lang).toBe("zh-HK");
-      expect(screen.getByRole("heading", { name: "在按下快門前，了解大型相機如何改變影像。" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "在按下快門前，了解大片幅相機如何改變影像。" })).toBeInTheDocument();
     });
     expect(screen.getByRole("link", { name: "場景" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View Camera Simulator 主頁" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "為甚麼相機移軸重要？", level: 2 })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "移動整部相機，或調整前組及後組，然後在對焦屏上比較視點、構圖、透視及對焦如何改變。",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/前、後組移軸/)).not.toBeInTheDocument();
+    expect(screen.getByText(/移動整部相機會改變視點/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain("大型相機");
     expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-HK");
     expect(router.state.location.pathname).toBe("/");
 
@@ -71,12 +80,12 @@ describe("internationalization foundation", () => {
       expect(screen.getByRole("combobox", { name: "語言" })).toHaveValue("zh-HK");
     });
 
-    const mirrorHeading = screen.getByRole("heading", { name: "鏡面橫移", level: 2 });
+    const mirrorHeading = screen.getByRole("heading", { name: "鏡面構圖與視點", level: 2 });
     const mirrorCard = mirrorHeading.closest("article");
     expect(mirrorCard).not.toBeNull();
     expect(
       within(mirrorCard!).getByText(
-        "將整部相機向側面移動以避開相機倒影，然後使用相反方向的前組橫移恢復鏡面構圖，同時保留已改變的視點。",
+        "理解前組橫移如何恢復構圖，而不會恢復原本的視點與視差。",
       ),
     ).toBeInTheDocument();
     expect(within(mirrorCard!).getByText("視點")).toBeInTheDocument();
@@ -86,5 +95,6 @@ describe("internationalization foundation", () => {
       "href",
       "/simulator/free/mirror-shift",
     );
+    expect(screen.getByRole("combobox", { name: "語言" })).toHaveValue("zh-HK");
   });
 });

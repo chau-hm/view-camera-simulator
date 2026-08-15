@@ -8,7 +8,7 @@ export const scenesMessages = {
   understanding: {
     title: "Understanding Camera Movements",
     description:
-      "Compare whole-camera viewpoint changes with Front and Rear standard movements, and observe how each affects framing, perspective geometry and the Ground Glass image.",
+      "Understand how whole-camera movement and Front/Rear standard movements affect viewpoint, framing, perspective geometry and the Ground Glass image.",
     topics: {
       viewpoint: "Viewpoint",
       framing: "Framing",
@@ -19,7 +19,7 @@ export const scenesMessages = {
   focusFundamentals: {
     title: "Focus Fundamentals — Two Targets",
     description:
-      "Compare Front and Rear focusing across two depths of one object at fixed f/32, and observe how image alignment changes on the Ground Glass.",
+      "Understand how Front and Rear focusing differ when focusing across two depths of the same object.",
     topics: {
       frontRearFocusing: "Front / Rear focusing",
       imageAlignment: "Image alignment",
@@ -29,7 +29,7 @@ export const scenesMessages = {
   architectureRise: {
     title: "Architecture Rise",
     description:
-      "Keep the camera level and use Front Rise to include more of the building while preserving the scene's intended parallel verticals.",
+      "Understand how Front Rise changes framing while a level camera keeps verticals parallel.",
     topics: {
       frontRise: "Front Rise",
       framing: "Framing",
@@ -39,7 +39,7 @@ export const scenesMessages = {
   tableTilt: {
     title: "Table Tilt",
     description:
-      "Use Front Tilt to rotate the plane of sharp focus until it aligns with three coplanar focus cards above the tabletop.",
+      "Understand how Front Tilt changes the plane of sharp focus across subject depth.",
     topics: {
       frontTilt: "Front Tilt",
       planeOfSharpFocus: "Plane of sharp focus",
@@ -49,7 +49,7 @@ export const scenesMessages = {
   shelfSwing: {
     title: "Shelf Swing",
     description:
-      "Use Front Swing to rotate the plane of sharp focus through subjects arranged diagonally in depth.",
+      "Understand how Front Swing changes the plane of sharp focus across subjects arranged diagonally in depth.",
     topics: {
       frontSwing: "Front Swing",
       planeOfSharpFocus: "Plane of sharp focus",
@@ -59,7 +59,7 @@ export const scenesMessages = {
   mirrorShift: {
     title: "Mirror Shift",
     description:
-      "Move the whole camera sideways to clear its reflection, then use opposite Front Shift to restore the mirror framing while keeping the changed viewpoint.",
+      "Understand how Front Shift can restore framing without restoring the original viewpoint or parallax.",
     topics: {
       viewpoint: "Viewpoint",
       framing: "Framing",

@@ -55,7 +55,7 @@ describe("Free Practice teaching copy", () => {
 
     render(<TaskPanel task={null} sceneId="understanding-camera-movements" />);
     await waitFor(() => {
-      expect(screen.getByText(/視點移動與前組、後組移動/)).toBeInTheDocument();
+      expect(screen.getByText(/整部相機移動造成的視點改變與前組、後組移軸/)).toBeInTheDocument();
     });
     expect(screen.getByText(/前組傾斜與後組傾斜/)).toBeInTheDocument();
 
@@ -101,7 +101,7 @@ describe("Movement Help", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "說明" }));
 
-    expect(screen.getByRole("heading", { name: "移動說明" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "相機移軸說明" })).toBeInTheDocument();
     expect(screen.getByText(/前組上移/)).toBeInTheDocument();
     expect(screen.getByText(/前組傾斜/)).toBeInTheDocument();
     expect(screen.getByText(/前組擺動/)).toBeInTheDocument();

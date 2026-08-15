@@ -2,135 +2,143 @@
 
 ## Work
 
-PR / work identifier: PR 6F — Scene-aware Learner Readouts
-Branch: `feature/scene-aware-learner-readouts`
-Base: `origin/main` @ `440ca708f08f1bfb8c0e5b03defe393e792b6c06`
+PR / work identifier: PR 6G — Localization UX + Terminology & Scene Copy Polish
+Branch: `content/localization-ux-polish`
+Base: `origin/main` @ `8f9e7e9390f84e1aca0317b7576efe117a80d180`
 Head convention: record the substantive implementation commit here; the
 final status-only bookkeeping commit is intentionally not self-referenced.
 
 ## Objective
 
-Make the learner readouts above Task/Feedback scene-aware and localizable in
-`en` and `zh-HK`, while preserving simulator state, task behavior, controls,
-routes, optics, calibration, and rendering.
+Make the bilingual learner experience consistent with the canonical learning
+model by exposing locale switching in the simulator header, correcting
+zh-HK camera terminology, and aligning the six public scene titles and
+learning-purpose descriptions without changing simulator behavior.
 
 ## Implemented
 
-- Added a presentation-only resolver for the six public scenes plus a safe
-  standard fallback for unknown scenes.
-- Understanding Camera Movements now shows the movement/teaching relationship,
-  preserves the continuous teaching readout, hides Focus Targets, and omits
-  generic Exposure & focus content.
-- Focus Fundamentals now shows Focus method plus Exposure & focus, including
-  Front/Rear relationships and the fixed f/32 value.
-- Architecture Rise, Table Tilt, and Shelf Swing show their relevant Front
-  movement with Focus and Aperture alongside Focus Targets.
-- Mirror Shift now shows Camera Position from the existing rig-lateral state
-  and Front Shift, with a single-card Viewpoint & framing readout and no empty
-  Focus Targets card.
-- Added typed learner-readout message catalogs and semantic keys for English
-  and Hong Kong Traditional Chinese, including localized statuses, metrics,
-  progress labels, and accessible names. Target IDs remain stable state data.
-- Added the smallest single-column grid modifier when a second readout card is
-  intentionally absent, and documented the presentation-only i18n boundary.
+- Reused the existing `LanguageSelector` in the full-bleed simulator header;
+  shared site pages continue to use `SiteHeader`.
+- Added a small narrow-width header wrap adjustment without redesigning the
+  simulator layout or changing independent scrolling behavior.
+- Updated zh-HK explanatory uses of large format/view camera to
+  `大片幅相機`.
+- Established and applied the distinction between technical standard
+  movements (`相機移軸`) and physical whole-camera movement
+  (`整部相機移動` / `移動整部相機`). Individual named movements remain
+  `前組上移`, `前組傾斜`, `前組擺動`, and `前組橫移`.
+- Replaced the six zh-HK public scene titles with the canonical learner-facing
+  titles and rewrote all six English and zh-HK catalog descriptions as concise
+  learning-purpose statements.
+- Updated only directly affected Free Practice, i18n, scene-catalog, and
+  simulator-header assertions.
 
 ## Changed surface
 
-- `src/components/simulator/learnerReadoutPolicy.ts`
-- `src/components/simulator/GroundGlassReadouts.tsx`
 - `src/components/layout/SimulatorWorkspace.tsx`
-- `src/i18n/readoutMessageKeys.ts`
-- `src/i18n/messages/en/readouts.ts`
-- `src/i18n/messages/zh-HK/readouts.ts`
-- `src/i18n/messages/en/index.ts`, `src/i18n/messages/zh-HK/index.ts`
 - `src/index.css`
+- `src/i18n/messages/en/scenes.ts`
+- `src/i18n/messages/zh-HK/common.ts`
+- `src/i18n/messages/zh-HK/home.ts`
+- `src/i18n/messages/zh-HK/readouts.ts`
+- `src/i18n/messages/zh-HK/scenes.ts`
+- `src/i18n/messages/zh-HK/simulator.ts`
 - `docs/I18N.md`
-- Directly affected workspace/readout policy integration and unit tests
+- Directly affected integration tests under `src/tests/integration/`
 
-No task panel, feedback panel, evaluator, task registry, task copy, scene
-metadata, route, camera store, control, optics, calibration, renderer, RTT,
-package, dependency, or CI files changed.
+No scene IDs, public catalog order, route IDs, guided task IDs, task or
+evaluator logic, optics, calibration, renderer, RTT, package, dependency,
+or deployment workflow files changed.
 
 ## Validation
 
-- Focused policy/readout tests: passed; 2 files, 9 tests.
-- Existing affected workspace/focus/i18n integration tests: passed; 3 files,
-  19 tests.
-- Latest `npm test`: passed; 115 test files, 1,070 tests.
+- Focused header/i18n/catalog/Free Practice integration tests: passed; 4
+  files, 11 tests.
+- PR #57 review-fix focused i18n and Scenes integration tests: passed; 2
+  files, 5 tests.
+- Full `npm test`: passed; 115 test files, 1,073 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
 - `npm run build`: passed.
 - `git diff --check`: passed.
-- `git status --short`: no output after the substantive commit and before this
-  handoff update; the final status-only commit is expected to restore the same
-  clean state.
+- Final `git status --short` will be verified after the handoff commit and
+  after feature-branch publication.
 
 ## Validation not run
 
-- E2E was not run; the affected readout behavior has focused integration
-  coverage, and no renderer, optics, scene lifecycle, or public control
-  behavior changed.
-- Full `npm run ci:local:e2e` was not run for the same proportional-validation
-  reason.
+- Browser E2E was not run: no targeted language-selector browser spec exists;
+  the nearest focused React integration coverage exercises the simulator
+  header through accessible controls, locale switching, route preservation,
+  document language, persisted locale, and camera-state preservation. No
+  renderer, optics, lifecycle, or public-control behavior changed.
+- Production release validation and publication were not run. PR 6G must be
+  reviewed and merged to `main` before the separately authorized release
+  phase begins.
 
 ## Important decisions
 
-- Readout policy is derived from stable scene IDs and actual focus-target
-  presence at the presentation boundary; it is not stored in Zustand or added
-  to `SceneDefinition`.
-- Focus Targets render only when policy allows them and the resolved target
-  array is non-empty. Understanding Camera Movements and Mirror Shift therefore
-  have no empty-card or “No focus targets” state.
-- English remains canonical; `zh-HK` preserves the same semantic message
-  shape. Locale changes affect presentation only, not camera or optics state.
-- The public movement readout localizes the existing teaching relationship and
-  strips legacy A/B/C/D calibration labels from that learner-facing surface.
-- Render quality, diagnostics, controls, task/free-practice copy, and other
-  simulator strings remain deferred to their own content work.
+- The simulator header reuses `LanguageSelector`; no second locale store,
+  route prefix, reload, or locale architecture was added.
+- Locale switching remains presentation-only. Focused integration coverage
+  verifies the route, scene, viewpoint lesson state, target region, document
+  language, and persisted locale behavior.
+- `docs/I18N.md` now records `大片幅相機`, `相機移軸`, and the separate
+  whole-camera movement terms, and documents selector availability in both
+  headers.
+- Scene identity, ordering, routes, task identity, evaluator facts, and
+  learner-readout behavior remain stable.
 
 ## Remaining risks / known gaps
 
-- Remaining simulator controls, diagnostics, and unrelated simulator copy are
-  still outside this localized readout surface.
-- The new `zh-HK` readout terminology has automated coverage but still merits
-  separate native-language editorial review.
-- Target IDs remain formatted stable identifiers rather than translated
-  domain state; later content work may provide localized display names if the
-  product adds that semantic layer.
+- Some remaining simulator shell/control and diagnostic strings are outside
+  this bounded localization sweep and remain deferred.
+- zh-HK wording has semantic integration coverage but still merits native
+  language editorial review.
+- Production remains unreleased until the reviewed PR 6G snapshot is merged
+  to `main` and the dedicated release procedure is followed.
 
 ## Reviewer focus
 
-1. Verify each public scene receives the intended Current Settings variant and
-   Focus Targets visibility policy.
-2. Verify Viewpoint, Framing, Front/Rear movement, focus method, and fixed f/32
-   relationships are clearly separated in the learner readouts.
-3. Verify Mirror Shift uses the existing rig-lateral and Front Shift state and
-   remains a Viewpoint-versus-Framing readout.
-4. Verify English and `zh-HK` message shapes, accessible names, statuses, and
-   metrics are localized without putting translated strings in state.
-5. Verify the one-card layout does not create an empty second column and that
-   Task/Feedback and Optical Debug layout behavior remains unchanged.
-6. Verify no task/evaluator/control/route/scene-state/optics/calibration/
-   renderer/runtime or i18n-architecture changes entered the PR.
+1. Verify the selector is available in Home, Scenes, Free Practice, and
+   Guided Task through the shared site/simulator headers, with Result and Not
+   Found retaining shared site-shell access.
+2. Verify `大片幅相機`, `相機移軸`, and `整部相機移動` are used naturally and
+   whole-camera movement is not conflated with standard movement.
+3. Verify the six zh-HK titles and the English/zh-HK catalog descriptions
+   explain learning purpose rather than operating instructions.
+4. Verify simulator locale switching does not reset route, scene, camera
+   state, current task, or learner readout facts.
+5. Verify scene IDs/order, routes, guided task IDs, and available modes are
+   unchanged.
+6. Verify no task/evaluator/optics/calibration/rendering/deployment or broad
+   simulator localization changes entered the PR.
+7. Verify no production release is attempted before PR 6G is reviewed and
+   merged to `main`.
+
+## Production release authorization
+
+The user authorized release of PR 6G after the reviewed PR has successfully
+merged to `main`. This feature phase does not publish or merge to
+`production`; the release branch and production PR are deferred until the
+post-merge release gate.
 
 ## Since previous review
 
-- Fixed the Understanding Camera Movements Vertical Framing localization
-  bug: the presentation parser compared `Upper`/`Lower` even though the
-  canonical readout value includes `Upper framing`/`Lower framing`.
-- The bounded fix now maps `Upper framing`, `Middle framing`, and
-  `Lower framing` explicitly to `upperFraming`, `middleFraming`, and
-  `lowerFraming`, preserving Front/Rear labels and physical movement values.
-- Added integration coverage for Front/Rear × Upper/Lower, including
-  `+20.0 mm`/`-20.0 mm` learner-visible values and representative zh-HK
-  assertions proving Upper/Lower do not collapse to Middle.
+- Corrected the zh-HK Home hero so generic Front/Rear standard adjustment
+  uses `調整前組及後組`, not `前、後組移軸`; clarified in `docs/I18N.md` that
+  `相機移軸` is not a catch-all and that focusing remains
+  `前組／後組對焦`.
+- Reworded the English and zh-HK Mirror Shift catalog descriptions so they
+  state that Front Shift restores framing without restoring the original
+  viewpoint or parallax; updated the directly affected integration
+  assertions.
 
 ## Commit
 
-Substantive implementation: `f9cc819948c903e45b6dd428130190faddc02148`
+Substantive implementation: `d7d3b13e0605f2625fbc97f2a55e43397250ce5f`
 
-Review-fix implementation: `23224b6b7f89bc39163e86087f5fff14896d03f7`
+Substantive review fix: `58d7b348c5c5d8da130af11e63389d86b5ba0c5c`
 
 Final bookkeeping: the status-only commit that records this handoff is
 intentionally not self-referenced to avoid recursive commits.
