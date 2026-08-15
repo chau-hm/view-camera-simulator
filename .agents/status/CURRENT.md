@@ -116,11 +116,21 @@ package, dependency, or CI files changed.
 
 ## Since previous review
 
-Not applicable
+- Fixed the Understanding Camera Movements Vertical Framing localization
+  bug: the presentation parser compared `Upper`/`Lower` even though the
+  canonical readout value includes `Upper framing`/`Lower framing`.
+- The bounded fix now maps `Upper framing`, `Middle framing`, and
+  `Lower framing` explicitly to `upperFraming`, `middleFraming`, and
+  `lowerFraming`, preserving Front/Rear labels and physical movement values.
+- Added integration coverage for Front/Rear × Upper/Lower, including
+  `+20.0 mm`/`-20.0 mm` learner-visible values and representative zh-HK
+  assertions proving Upper/Lower do not collapse to Middle.
 
 ## Commit
 
 Substantive implementation: `f9cc819948c903e45b6dd428130190faddc02148`
+
+Review-fix implementation: `23224b6b7f89bc39163e86087f5fff14896d03f7`
 
 Final bookkeeping: the status-only commit that records this handoff is
 intentionally not self-referenced to avoid recursive commits.
