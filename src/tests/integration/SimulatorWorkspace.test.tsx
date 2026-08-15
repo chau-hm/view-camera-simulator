@@ -191,8 +191,8 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
     expect(screen.getByTestId("scene-canvas")).toBe(originalSceneRenderer);
     expect(screen.queryByLabelText("GroundGlassColumn")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("CurrentSettingsReadout")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("FocusTargetsReadout")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("focus-targets-readout")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Task")).not.toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -210,7 +210,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(normalHost).not.toHaveClass("scene-viewport-host--expanded");
     expect(screen.getByTestId("scene-canvas")).toBe(originalSceneRenderer);
     expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
-    expect(screen.getByLabelText("CurrentSettingsReadout")).toBeInTheDocument();
+    expect(screen.getByTestId("current-settings-readout")).toBeInTheDocument();
   });
 
   it("removes every expanded sizing class after repeated restore cycles", async () => {
@@ -295,8 +295,8 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getByTestId("ground-glass-rtt")).toBe(originalGroundGlassRenderer);
     expect(screen.getByLabelText("Upright Assist")).toBeChecked();
     expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toHaveAttribute("data-zoomed", "true");
-    expect(screen.queryByLabelText("CurrentSettingsReadout")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("FocusTargetsReadout")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("focus-targets-readout")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Task")).not.toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -322,7 +322,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
     expect(screen.getByTestId("ground-glass-rtt")).toBe(originalGroundGlassRenderer);
     expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
-    expect(screen.getByLabelText("CurrentSettingsReadout")).toBeInTheDocument();
+    expect(screen.getByTestId("current-settings-readout")).toBeInTheDocument();
     expect(screen.getByLabelText("Upright Assist")).toBeChecked();
     expect(screen.getByRole("button", { name: "Zoom in Ground Glass" })).toHaveAttribute("data-zoomed", "false");
   });
