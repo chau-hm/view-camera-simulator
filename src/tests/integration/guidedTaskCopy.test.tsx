@@ -127,15 +127,17 @@ describe("Guided Task presentation", () => {
     expect(document.body).toHaveTextContent(/whole-camera viewpoint/);
 
     cleanup();
-    renderGuidedTask("tilt-01");
+    renderGuidedTask("tilt-01", "tilt-movement-range");
     expect(document.body).toHaveTextContent(/Front Tilt/);
     expect(document.body).toHaveTextContent(/plane of sharp focus/);
+    expect(document.body).toHaveTextContent(/green plane of sharp focus/);
     expect(document.body).toHaveTextContent(/f\/11 or f\/22/);
 
     cleanup();
-    renderGuidedTask("swing-01", "swing-allowed-aperture");
+    renderGuidedTask("swing-01", "swing-movement-range");
     expect(document.body).toHaveTextContent(/negative Front Swing/);
     expect(document.body).toHaveTextContent(/plane of sharp focus/);
+    expect(document.body).toHaveTextContent(/green plane of sharp focus/);
     expect(document.body).toHaveTextContent(/Top view/);
 
     cleanup();
@@ -160,12 +162,12 @@ describe("Guided Task presentation", () => {
     expect(document.body).toHaveTextContent(/允許的控制項目/);
 
     cleanup();
-    renderGuidedTask("tilt-01");
+    renderGuidedTask("tilt-01", "tilt-movement-range");
     expect(document.body).toHaveTextContent(/前組傾斜/);
     expect(document.body).toHaveTextContent(/清晰焦平面/);
 
     cleanup();
-    renderGuidedTask("swing-01", "swing-allowed-aperture");
+    renderGuidedTask("swing-01", "swing-movement-range");
     expect(document.body).toHaveTextContent(/前組擺動/);
     expect(document.body).toHaveTextContent(/清晰焦平面/);
     expect(document.body).toHaveTextContent(/俯視幾何圖/);
@@ -223,6 +225,24 @@ describe("Guided Task presentation", () => {
       expect(document.body).toHaveTextContent(/相機位置/);
       expect(document.body).toHaveTextContent(/前組橫移/);
     });
+  });
+
+  it("describes zh-HK composition results as visible coverage", async () => {
+    const task = getGuidedTask("rise-01");
+    changeLocale("zh-HK");
+    render(
+      <FeedbackPanel
+        mode="guided"
+        sceneId={task.sceneId}
+        task={task}
+        evaluation={makePassedEvaluation(task)}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(document.body).toHaveTextContent(/構圖目標的可見範圍已足夠/);
+    });
+    expect(document.body).not.toHaveTextContent(/構圖目標已足夠清晰可見/);
   });
 
   it("uses Guided-specific waiting copy when no evaluation exists", async () => {

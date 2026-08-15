@@ -74,7 +74,7 @@ export const tasksMessages = {
       fail: "光圈設定不適用於此任務",
     },
     compositionVisible: {
-      pass: "構圖目標已足夠清晰可見",
+      pass: "構圖目標的可見範圍已足夠",
       fail: "構圖目標的可見範圍不足",
     },
     mirrorReflectionClear: {
