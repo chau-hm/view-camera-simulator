@@ -2,133 +2,125 @@
 
 ## Work
 
-PR / work identifier: PR 6E — Guided Task Copy Alignment
-Branch: `content/guided-task-copy`
-Base: `origin/main` @ `6fe59a64d0923f6171a922121d537924a835e885`
-Head convention: record the substantive implementation commit here; a final
-status-only bookkeeping commit is intentionally not self-referenced.
+PR / work identifier: PR 6F — Scene-aware Learner Readouts
+Branch: `feature/scene-aware-learner-readouts`
+Base: `origin/main` @ `440ca708f08f1bfb8c0e5b03defe393e792b6c06`
+Head convention: record the substantive implementation commit here; the
+final status-only bookkeeping commit is intentionally not self-referenced.
 
 ## Objective
 
-Localize the four existing Guided Tasks in `en` and `zh-HK` while keeping task
-mechanics, evaluator facts, routes, scene state, readouts, optics, calibration,
-rendering, and Free Practice behavior unchanged.
+Make the learner readouts above Task/Feedback scene-aware and localizable in
+`en` and `zh-HK`, while preserving simulator state, task behavior, controls,
+routes, optics, calibration, and rendering.
 
 ## Implemented
 
-- Added typed Guided Task message catalogs for `en` and `zh-HK`, with English
-  defining the shared resource shape and stable semantic message keys.
-- Added locale-neutral serializable message references with interpolation
-  values, and mapped `rise-01`, `tilt-01`, `swing-01`, and
-  `mirror-shift-01` by stable task/criterion IDs.
-- Removed learner-facing Guided Task prose from `taskRegistry`; mechanics,
-  thresholds, criteria, enabled controls, initial state, and ordering remain
-  authoritative there.
-- Refactored evaluation and feedback selection to return message references;
-  `TaskPanel` and `FeedbackPanel` translate at render time. Existing
-  evaluations therefore re-render in a new locale without reevaluation.
-- Localized Guided structural labels, control chips, criterion labels/results,
-  status/progress, no-evaluation copy, secondary hints, and completion-summary
-  labels. Calibrated values remain data-driven through interpolation.
-- Preserved Free Practice, simulator readouts/diagnostics, routes, scene/task
-  identity, evaluator mechanics, and the existing simulator language-selector
-  boundary. Updated only directly affected Guided E2E assertions.
-- Updated `docs/I18N.md` with the Guided presentation/evaluator boundary.
+- Added a presentation-only resolver for the six public scenes plus a safe
+  standard fallback for unknown scenes.
+- Understanding Camera Movements now shows the movement/teaching relationship,
+  preserves the continuous teaching readout, hides Focus Targets, and omits
+  generic Exposure & focus content.
+- Focus Fundamentals now shows Focus method plus Exposure & focus, including
+  Front/Rear relationships and the fixed f/32 value.
+- Architecture Rise, Table Tilt, and Shelf Swing show their relevant Front
+  movement with Focus and Aperture alongside Focus Targets.
+- Mirror Shift now shows Camera Position from the existing rig-lateral state
+  and Front Shift, with a single-card Viewpoint & framing readout and no empty
+  Focus Targets card.
+- Added typed learner-readout message catalogs and semantic keys for English
+  and Hong Kong Traditional Chinese, including localized statuses, metrics,
+  progress labels, and accessible names. Target IDs remain stable state data.
+- Added the smallest single-column grid modifier when a second readout card is
+  intentionally absent, and documented the presentation-only i18n boundary.
 
 ## Changed surface
 
-- `src/types/task.ts`
-- `src/core/tasks/taskRegistry.ts`, `evaluateTask.ts`, `feedbackEngine.ts`,
-  `guidedTaskCopyKeys.ts`
-- `src/components/simulator/TaskPanel.tsx`, `FeedbackPanel.tsx`,
-  `taskHelpers.ts`
-- `src/i18n/guidedTaskMessageKeys.ts` and typed `en`/`zh-HK` task catalogs
+- `src/components/simulator/learnerReadoutPolicy.ts`
+- `src/components/simulator/GroundGlassReadouts.tsx`
+- `src/components/layout/SimulatorWorkspace.tsx`
+- `src/i18n/readoutMessageKeys.ts`
+- `src/i18n/messages/en/readouts.ts`
+- `src/i18n/messages/zh-HK/readouts.ts`
+- `src/i18n/messages/en/index.ts`, `src/i18n/messages/zh-HK/index.ts`
+- `src/index.css`
 - `docs/I18N.md`
-- Directly affected unit, integration, and Guided E2E assertions, including
-  `src/tests/integration/guidedTaskCopy.test.tsx`
+- Directly affected workspace/readout policy integration and unit tests
 
-No package, dependency, CI, CSS, route, scene metadata, task criteria,
-evaluator calculation, camera-state, optics, calibration, renderer, readout,
-or Free Practice source changes were made.
+No task panel, feedback panel, evaluator, task registry, task copy, scene
+metadata, route, camera store, control, optics, calibration, renderer, RTT,
+package, dependency, or CI files changed.
 
 ## Validation
 
-- Focused task/evaluator and presentation tests: passed; 6 files, 63 tests.
-- Guided localization/completion/no-evaluation integration tests: passed;
-  10 tests.
-- Review-fix focused tests: passed; 4 files, 50 tests.
-- Latest `npm test`: passed; 113 test files, 1,061 tests.
+- Focused policy/readout tests: passed; 2 files, 9 tests.
+- Existing affected workspace/focus/i18n integration tests: passed; 3 files,
+  19 tests.
+- Latest `npm test`: passed; 115 test files, 1,070 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
 - `npm run build`: passed.
-- Targeted Guided E2E (`mirror-shift-guided-lesson.spec.ts`,
-  `shelf-swing.spec.ts`, `table-tilt.spec.ts`): passed; 27 tests.
 - `git diff --check`: passed.
-- `git status --short`: clean after the substantive commit, before this
-  handoff update.
+- `git status --short`: no output after the substantive commit and before this
+  handoff update; the final status-only commit is expected to restore the same
+  clean state.
 
 ## Validation not run
 
-- Full `npm run ci:local:e2e` was not run; the three affected Guided E2E specs
-  provide proportional browser coverage and no renderer/optics behavior
-  changed.
+- E2E was not run; the affected readout behavior has focused integration
+  coverage, and no renderer, optics, scene lifecycle, or public control
+  behavior changed.
+- Full `npm run ci:local:e2e` was not run for the same proportional-validation
+  reason.
 
 ## Important decisions
 
-- English is canonical; `zh-HK` satisfies the same typed task-message shape
-  and uses the established terms 前組/後組, 視點, 構圖, 清晰焦平面, 底片平面,
-  對焦屏, and 視差.
-- Task and evaluator layers contain stable message references and numeric
-  interpolation data only. They do not call i18next, read the active locale,
-  or store translated output.
-- Front Rise, Front Tilt, Front Swing, and Mirror Shift copy now preserves the
-  current learning model: framing versus viewpoint, plane of sharp focus,
-  Top-view relationships, and whole-camera movement versus Front Shift.
-- No Guided Tasks were added to Understanding Camera Movements or Focus
-  Fundamentals; no curriculum, readout, or simulator language-selector work
-  was pulled forward.
+- Readout policy is derived from stable scene IDs and actual focus-target
+  presence at the presentation boundary; it is not stored in Zustand or added
+  to `SceneDefinition`.
+- Focus Targets render only when policy allows them and the resolved target
+  array is non-empty. Understanding Camera Movements and Mirror Shift therefore
+  have no empty-card or “No focus targets” state.
+- English remains canonical; `zh-HK` preserves the same semantic message
+  shape. Locale changes affect presentation only, not camera or optics state.
+- The public movement readout localizes the existing teaching relationship and
+  strips legacy A/B/C/D calibration labels from that learner-facing surface.
+- Render quality, diagnostics, controls, task/free-practice copy, and other
+  simulator strings remain deferred to their own content work.
 
 ## Remaining risks / known gaps
 
-- Remaining simulator controls, Current Settings/Focus Targets readouts,
-  diagnostics, and other non-Guided simulator copy remain on their existing
-  architecture for later content PRs.
-- The new zh-HK Guided copy has automated terminology coverage but still needs
+- Remaining simulator controls, diagnostics, and unrelated simulator copy are
+  still outside this localized readout surface.
+- The new `zh-HK` readout terminology has automated coverage but still merits
   separate native-language editorial review.
-- Full CI-local E2E remains deferred; no domain behavior was changed.
+- Target IDs remain formatted stable identifiers rather than translated
+  domain state; later content work may provide localized display names if the
+  product adds that semantic layer.
 
 ## Reviewer focus
 
-1. Verify all four existing Guided Tasks have complete, semantically aligned
-   `en` and `zh-HK` title, objective, notes, criteria, feedback, and control
-   copy.
-2. Verify task/evaluation core stays locale-neutral and an existing evaluation
-   re-renders after locale change without reevaluation.
-3. Verify Front Rise/framing, Front Tilt and Front Swing/plane of sharp focus,
-   and Mirror Shift/Viewpoint-versus-Framing semantics are accurate.
-4. Verify calibrated interpolation values come from existing criteria/calibration
-   data and are not duplicated per locale.
-5. Verify Guided structural labels, no-evaluation state, criterion results,
-   progress, and completion summary are localized at presentation time.
-6. Verify task/criterion IDs, thresholds, ordering, evaluator facts, final
-   state, routes, scene state, and Free Practice behavior are unchanged.
-7. Verify no i18n architecture expansion, simulator-copy migration, CSS,
-   package, CI, optics, calibration, or renderer work entered the PR.
+1. Verify each public scene receives the intended Current Settings variant and
+   Focus Targets visibility policy.
+2. Verify Viewpoint, Framing, Front/Rear movement, focus method, and fixed f/32
+   relationships are clearly separated in the learner readouts.
+3. Verify Mirror Shift uses the existing rig-lateral and Front Shift state and
+   remains a Viewpoint-versus-Framing readout.
+4. Verify English and `zh-HK` message shapes, accessible names, statuses, and
+   metrics are localized without putting translated strings in state.
+5. Verify the one-card layout does not create an empty second column and that
+   Task/Feedback and Optical Debug layout behavior remains unchanged.
+6. Verify no task/evaluator/control/route/scene-state/optics/calibration/
+   renderer/runtime or i18n-architecture changes entered the PR.
 
 ## Since previous review
 
-- Addressed finding 1: normalized the remaining English Table Tilt and Shelf
-  Swing secondary-feedback references from `focus plane`/`green focus plane`
-  to the canonical `plane of sharp focus`/`green plane of sharp focus`.
-- Addressed finding 2: changed the zh-HK composition-visibility pass message
-  to `構圖目標的可見範圍已足夠`, preserving the existing visibility-coverage
-  fail meaning.
+Not applicable
 
 ## Commit
 
-Substantive implementation: `e4986f1b5bc326921161415435f17eea31f77a46`
-Review-fix implementation: `f5f7b59bc1be34fab315a87249ee18e5ed6d90e5`
+Substantive implementation: `f9cc819948c903e45b6dd428130190faddc02148`
 
-Final bookkeeping: the status-only commit that records this handoff update;
+Final bookkeeping: the status-only commit that records this handoff is
 intentionally not self-referenced to avoid recursive commits.
