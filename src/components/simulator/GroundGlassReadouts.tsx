@@ -147,9 +147,11 @@ export const CurrentSettingsReadout = ({
           ? readoutMessageKeys.teaching.frontVerticalFraming
           : readoutMessageKeys.teaching.rearVerticalFraming;
         const [position, movement] = readout.value.split(" · ");
-        const positionKey = position === "Upper"
+        const positionKey = position === "Upper framing"
           ? readoutMessageKeys.teaching.upperFraming
-          : position === "Lower"
+          : position === "Middle framing"
+            ? readoutMessageKeys.teaching.middleFraming
+            : position === "Lower framing"
             ? readoutMessageKeys.teaching.lowerFraming
             : readoutMessageKeys.teaching.middleFraming;
         return `${t(standardKey)} · ${t(positionKey)}${movement ? ` · ${movement}` : ""}`;

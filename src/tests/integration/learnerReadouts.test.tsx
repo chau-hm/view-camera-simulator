@@ -49,6 +49,49 @@ describe("scene-aware learner readouts", () => {
     expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("中立視點");
   });
 
+  it("localizes Understanding Camera Movements vertical framing for both standards and directions", async () => {
+    renderWorkspace("understanding-camera-movements");
+
+    await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("understanding-camera-movements"));
+    const current = screen.getByTestId("current-settings-readout");
+    const framingSlider = screen.getByRole("slider", { name: "Vertical framing" });
+    const standardGroup = screen.getByRole("group", { name: "Vertical framing standard" });
+
+    const setEnglishFraming = async (
+      standard: "Front" | "Rear",
+      value: "1" | "-1",
+      framing: "Upper framing" | "Lower framing",
+      movement: "+20.0 mm" | "-20.0 mm",
+    ) => {
+      fireEvent.click(within(standardGroup).getByRole("radio", { name: `${standard} standard` }));
+      fireEvent.change(framingSlider, { target: { value } });
+
+      await waitFor(() => {
+        expect(current).toHaveTextContent(
+          `${standard} Vertical Framing · ${framing} · ${movement}`,
+        );
+      });
+    };
+
+    await setEnglishFraming("Front", "1", "Upper framing", "+20.0 mm");
+    await setEnglishFraming("Front", "-1", "Lower framing", "-20.0 mm");
+    await setEnglishFraming("Rear", "1", "Upper framing", "+20.0 mm");
+    await setEnglishFraming("Rear", "-1", "Lower framing", "-20.0 mm");
+
+    await i18n.changeLanguage("zh-HK");
+    fireEvent.change(framingSlider, { target: { value: "1" } });
+    await waitFor(() => {
+      expect(current).toHaveTextContent("後組垂直構圖 · 上方構圖 · +20.0 mm");
+      expect(current).not.toHaveTextContent("中間構圖");
+    });
+
+    fireEvent.change(framingSlider, { target: { value: "-1" } });
+    await waitFor(() => {
+      expect(current).toHaveTextContent("後組垂直構圖 · 下方構圖 · -20.0 mm");
+      expect(current).not.toHaveTextContent("中間構圖");
+    });
+  });
+
   it("shows Mirror Shift viewpoint and framing values without a focus card", async () => {
     renderWorkspace("mirror-shift");
 
