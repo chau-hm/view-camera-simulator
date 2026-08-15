@@ -67,12 +67,12 @@ The public catalog currently presents these scenes in this order:
 
 | Scene | Learning purpose | Available mode(s) |
 | --- | --- | --- |
-| **Understanding Camera Movements** | Compare whole-camera viewpoint changes with Front and Rear standard movements and observe their effects on framing, perspective geometry, and the Ground Glass image. | Free Practice |
-| **Focus Fundamentals — Two Targets** | Compare Front and Rear focusing across two depths of the same object. | Free Practice |
-| **Architecture Rise** | Use Front Rise to change framing while a level camera keeps the scene's verticals parallel. | Free Practice + Guided Task (`rise-01`) |
-| **Table Tilt** | Use Front Tilt to change the plane of sharp focus across subject depth. | Free Practice + Guided Task (`tilt-01`) |
-| **Shelf Swing** | Use Front Swing to change the plane of sharp focus across subjects arranged diagonally in depth. | Free Practice + Guided Task (`swing-01`) |
-| **Mirror Shift** | Use Front Shift to restore framing without restoring the original viewpoint or parallax. | Free Practice + Guided Task (`mirror-shift-01`) |
+| **Understanding Camera Movements** | Understand how whole-camera movement and Front/Rear standard movements affect viewpoint, framing, perspective geometry and the Ground Glass image. | Free Practice |
+| **Focus Fundamentals — Two Targets** | Understand how Front and Rear focusing differ when focusing across two depths of the same object. | Free Practice |
+| **Architecture Rise** | Understand how Front Rise changes framing while a level camera keeps verticals parallel. | Free Practice + Guided Task (`rise-01`) |
+| **Table Tilt** | Understand how Front Tilt changes the plane of sharp focus across subject depth. | Free Practice + Guided Task (`tilt-01`) |
+| **Shelf Swing** | Understand how Front Swing changes the plane of sharp focus across subjects arranged diagonally in depth. | Free Practice + Guided Task (`swing-01`) |
+| **Mirror Shift** | Understand how Front Shift can restore framing without restoring the original viewpoint or parallax. | Free Practice + Guided Task (`mirror-shift-01`) |
 
 ## Current scope
 
