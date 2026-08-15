@@ -5,8 +5,7 @@ test.describe('Marketing responsive', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
 
-    // Home: warning absent, CTA visible
-    await expect(page.locator('role=link[name="Open Focus Fundamentals"]')).toBeVisible();
+    // Home: warning absent
     await expect(page.locator('role=note')).toHaveCount(0);
 
     // Scenes
@@ -20,26 +19,11 @@ test.describe('Marketing responsive', () => {
     expect(openSceneCount).toBeGreaterThan(0);
   });
 
-  test('Narrow Home (390x844) shows warning and retains CTA without overflow', async ({ page }) => {
+  test('Narrow Home (390x844) shows warning without overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
 
     await expect(page.locator('role=note')).toBeVisible();
-    await expect(page.locator('role=link[name="Open Focus Fundamentals"]')).toBeVisible();
-
-    // ensure CTA button bounding box width > 0 and fits within viewport
-    const cta = await page.locator('role=link[name="Open Focus Fundamentals"]').first();
-    const box = await cta.boundingBox();
-    expect(box && box.width).toBeGreaterThan(0);
-    expect(box).not.toBeNull();
-    // allow 1px rounding tolerance
-    expect(box!.x + box!.width).toBeLessThanOrEqual(391);
-
-    // Ensure the Focus CTA panel itself fits within the viewport
-    const focusCta = page.locator('.focus-cta');
-    const focusCtaBox = await focusCta.boundingBox();
-    expect(focusCtaBox).not.toBeNull();
-    expect(focusCtaBox!.x + focusCtaBox!.width).toBeLessThanOrEqual(391);
 
     // Ensure the desktop experience notice stays within the viewport
     const notice = page.locator('.desktop-experience-notice');

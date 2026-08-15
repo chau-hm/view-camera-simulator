@@ -27,11 +27,4 @@ export const homeMessages = {
         "A view camera slows the process down. The upside-down image on the ground glass encourages careful looking, and every movement becomes a deliberate choice. Artists use it not only for image quality, but because the method changes how a photograph is seen and made.",
     },
   },
-  focusCta: {
-    eyebrow: "Focus Fundamentals",
-    title: "Compare Front and Rear focusing",
-    body:
-      "Focus the same two depths by moving the Front or Rear standard, then watch how their alignment changes on the Ground Glass. Aperture stays fixed at f/32 so the comparison isolates the focusing method.",
-    action: "Open Focus Fundamentals",
-  },
 } as const;

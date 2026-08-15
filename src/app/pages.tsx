@@ -11,7 +11,6 @@ import type { SimulatorMode } from "../types/camera";
 
 import { ViewCameraHeroIllustration } from "../components/marketing/ViewCameraHeroIllustration";
 import { InfoCard } from "../components/marketing/InfoCard";
-import { FocusCtaPanel } from "../components/marketing/FocusCtaPanel";
 import { SceneCard } from "../components/marketing/SceneCard";
 import { DesktopExperienceNotice } from "../components/marketing/DesktopExperienceNotice";
 
@@ -69,7 +68,6 @@ export const HomePage = () => {
         </div>
       </section>
 
-      <FocusCtaPanel />
     </AppShell>
   );
 };

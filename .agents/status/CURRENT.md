@@ -2,143 +2,73 @@
 
 ## Work
 
-PR / work identifier: PR 6G — Localization UX + Terminology & Scene Copy Polish
-Branch: `content/localization-ux-polish`
-Base: `origin/main` @ `8f9e7e9390f84e1aca0317b7576efe117a80d180`
+PR / work identifier: Micro fix — Remove redundant Focus Fundamentals landing CTA
+Branch: `fix/remove-focus-cta`
+Base: `origin/main` @ `678f919c87a8f5ccf9aeed63eca38d3a3313c9e8`
 Head convention: record the substantive implementation commit here; the
 final status-only bookkeeping commit is intentionally not self-referenced.
 
 ## Objective
 
-Make the bilingual learner experience consistent with the canonical learning
-model by exposing locale switching in the simulator header, correcting
-zh-HK camera terminology, and aligning the six public scene titles and
-learning-purpose descriptions without changing simulator behavior.
+Remove the redundant Focus Fundamentals CTA from the landing page while
+leaving the public Scenes catalog and the simulator lesson unchanged.
 
 ## Implemented
 
-- Reused the existing `LanguageSelector` in the full-bleed simulator header;
-  shared site pages continue to use `SiteHeader`.
-- Added a small narrow-width header wrap adjustment without redesigning the
-  simulator layout or changing independent scrolling behavior.
-- Updated zh-HK explanatory uses of large format/view camera to
-  `大片幅相機`.
-- Established and applied the distinction between technical standard
-  movements (`相機移軸`) and physical whole-camera movement
-  (`整部相機移動` / `移動整部相機`). Individual named movements remain
-  `前組上移`, `前組傾斜`, `前組擺動`, and `前組橫移`.
-- Replaced the six zh-HK public scene titles with the canonical learner-facing
-  titles and rewrote all six English and zh-HK catalog descriptions as concise
-  learning-purpose statements.
-- Updated only directly affected Free Practice, i18n, scene-catalog, and
-  simulator-header assertions.
+- Removed the `FocusCtaPanel` render and import from `HomePage`.
+- Deleted the unused `FocusCtaPanel` component.
+- Removed its typed English and zh-HK home message entries.
+- Removed only Focus CTA-specific CSS and direct landing-page assertions.
+- Updated the responsive marketing assertions that targeted the deleted CTA
+  surface.
 
 ## Changed surface
 
-- `src/components/layout/SimulatorWorkspace.tsx`
-- `src/index.css`
-- `src/i18n/messages/en/scenes.ts`
-- `src/i18n/messages/zh-HK/common.ts`
+- `src/app/pages.tsx`
+- `src/components/marketing/FocusCtaPanel.tsx` (deleted)
+- `src/i18n/messages/en/home.ts`
 - `src/i18n/messages/zh-HK/home.ts`
-- `src/i18n/messages/zh-HK/readouts.ts`
-- `src/i18n/messages/zh-HK/scenes.ts`
-- `src/i18n/messages/zh-HK/simulator.ts`
-- `docs/I18N.md`
-- Directly affected integration tests under `src/tests/integration/`
+- `src/styles/site-marketing.css`
+- `src/tests/integration/home-page.test.tsx`
+- `src/tests/integration/marketing-warning.test.tsx`
+- `src/tests/e2e/marketing-responsive.spec.ts`
 
-No scene IDs, public catalog order, route IDs, guided task IDs, task or
-evaluator logic, optics, calibration, renderer, RTT, package, dependency,
-or deployment workflow files changed.
+No scene catalog, route, Focus Fundamentals scene, simulator teaching copy,
+task, evaluator, optics, rendering, state, documentation, or dependency files
+changed.
 
 ## Validation
 
-- Focused header/i18n/catalog/Free Practice integration tests: passed; 4
-  files, 11 tests.
-- PR #57 review-fix focused i18n and Scenes integration tests: passed; 2
-  files, 5 tests.
-- Full `npm test`: passed; 115 test files, 1,073 tests.
+- Focused landing integration tests: passed; 2 files, 3 tests.
 - `npm run typecheck`: passed.
-- `npm run lint`: passed with zero warnings.
+- `npm run lint`: passed.
 - `npm run check:css`: passed.
-- `npm run build`: passed.
 - `git diff --check`: passed.
-- Final `git status --short` will be verified after the handoff commit and
-  after feature-branch publication.
+- Final worktree status will be verified after the handoff commit and feature
+  publication.
 
-## Validation not run
+## Validation intentionally not run
 
-- Browser E2E was not run: no targeted language-selector browser spec exists;
-  the nearest focused React integration coverage exercises the simulator
-  header through accessible controls, locale switching, route preservation,
-  document language, persisted locale, and camera-state preservation. No
-  renderer, optics, lifecycle, or public-control behavior changed.
-- Production release validation and publication were not run. PR 6G must be
-  reviewed and merged to `main` before the separately authorized release
-  phase begins.
-
-## Important decisions
-
-- The simulator header reuses `LanguageSelector`; no second locale store,
-  route prefix, reload, or locale architecture was added.
-- Locale switching remains presentation-only. Focused integration coverage
-  verifies the route, scene, viewpoint lesson state, target region, document
-  language, and persisted locale behavior.
-- `docs/I18N.md` now records `大片幅相機`, `相機移軸`, and the separate
-  whole-camera movement terms, and documents selector availability in both
-  headers.
-- Scene identity, ordering, routes, task identity, evaluator facts, and
-  learner-readout behavior remain stable.
-
-## Remaining risks / known gaps
-
-- Some remaining simulator shell/control and diagnostic strings are outside
-  this bounded localization sweep and remain deferred.
-- zh-HK wording has semantic integration coverage but still merits native
-  language editorial review.
-- Production remains unreleased until the reviewed PR 6G snapshot is merged
-  to `main` and the dedicated release procedure is followed.
+- Full `npm test` was not run because this is a bounded Micro fix and the
+  directly affected landing tests passed.
+- Renderer/browser E2E was not run, as explicitly excluded for this change.
 
 ## Reviewer focus
 
-1. Verify the selector is available in Home, Scenes, Free Practice, and
-   Guided Task through the shared site/simulator headers, with Result and Not
-   Found retaining shared site-shell access.
-2. Verify `大片幅相機`, `相機移軸`, and `整部相機移動` are used naturally and
-   whole-camera movement is not conflated with standard movement.
-3. Verify the six zh-HK titles and the English/zh-HK catalog descriptions
-   explain learning purpose rather than operating instructions.
-4. Verify simulator locale switching does not reset route, scene, camera
-   state, current task, or learner readout facts.
-5. Verify scene IDs/order, routes, guided task IDs, and available modes are
-   unchanged.
-6. Verify no task/evaluator/optics/calibration/rendering/deployment or broad
-   simulator localization changes entered the PR.
-7. Verify no production release is attempted before PR 6G is reviewed and
-   merged to `main`.
-
-## Production release authorization
-
-The user authorized release of PR 6G after the reviewed PR has successfully
-merged to `main`. This feature phase does not publish or merge to
-`production`; the release branch and production PR are deferred until the
-post-merge release gate.
+1. Verify the landing page no longer renders the redundant Focus CTA.
+2. Verify both locale message shapes remain valid after removing `home.focusCta`.
+3. Verify CTA-only CSS and direct assertions were removed without changing
+   shared landing styles or the Scenes catalog.
+4. Verify no Focus Fundamentals simulator, route, task, or teaching behavior
+   changed.
 
 ## Since previous review
 
-- Corrected the zh-HK Home hero so generic Front/Rear standard adjustment
-  uses `調整前組及後組`, not `前、後組移軸`; clarified in `docs/I18N.md` that
-  `相機移軸` is not a catch-all and that focusing remains
-  `前組／後組對焦`.
-- Reworded the English and zh-HK Mirror Shift catalog descriptions so they
-  state that Front Shift restores framing without restoring the original
-  viewpoint or parallax; updated the directly affected integration
-  assertions.
+Not applicable
 
 ## Commit
 
-Substantive implementation: `d7d3b13e0605f2625fbc97f2a55e43397250ce5f`
-
-Substantive review fix: `58d7b348c5c5d8da130af11e63389d86b5ba0c5c`
+Substantive implementation: `19a8865610e42290de696da5e86da0cfefc46fc5`
 
 Final bookkeeping: the status-only commit that records this handoff is
 intentionally not self-referenced to avoid recursive commits.
