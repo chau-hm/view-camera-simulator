@@ -117,11 +117,17 @@ or Free Practice source changes were made.
 
 ## Since previous review
 
-Since previous review: Not applicable
+- Addressed finding 1: normalized the remaining English Table Tilt and Shelf
+  Swing secondary-feedback references from `focus plane`/`green focus plane`
+  to the canonical `plane of sharp focus`/`green plane of sharp focus`.
+- Addressed finding 2: changed the zh-HK composition-visibility pass message
+  to `構圖目標的可見範圍已足夠`, preserving the existing visibility-coverage
+  fail meaning.
 
 ## Commit
 
 Substantive implementation: `e4986f1b5bc326921161415435f17eea31f77a46`
+Review-fix implementation: `f5f7b59bc1be34fab315a87249ee18e5ed6d90e5`
 
 Final bookkeeping: the status-only commit that records this handoff update;
 intentionally not self-referenced to avoid recursive commits.
