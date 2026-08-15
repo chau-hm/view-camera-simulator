@@ -110,11 +110,16 @@ deployment workflow, or historical-document body changed.
 
 ## Since previous review
 
-Not applicable
+- README review finding: the six Teaching scenes descriptions had drifted
+  back toward operational “Use Front ...” wording. Replaced all six with the
+  current learner-purpose descriptions from the public catalog contract while
+  preserving the existing mode and Guided Task ID column.
 
 ## Commit
 
 Substantive implementation: `498d511d9fd8d1bbdc9e8b06f5abcda1b4da1166`
+
+Substantive review fix: `699c3f337bb2f667355e0248cd46c199d2020db9`
 
 Final bookkeeping: the status-only commit that records this handoff is
 intentionally not self-referenced to avoid recursive commits.
