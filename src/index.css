@@ -122,6 +122,7 @@ button {
 
 .simulator-header {
   height: 72px;
+  min-width: 0;
   background: var(--surface);
   border-bottom: 1px solid rgba(15,23,42,0.06);
   padding: 0 24px;
@@ -248,6 +249,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .simulator-card-title {
@@ -263,6 +265,10 @@ button {
  grid-template-columns: repeat(2, minmax(0, 1fr));
  gap: 16px;
  align-items: start;
+}
+
+.simulator-primary-info-grid--single {
+ grid-template-columns: minmax(0, 1fr);
 }
 
 /* task + feedback grid: two equal columns */
@@ -797,8 +803,11 @@ button {
 
 @media (max-width: 480px) {
   .simulator-header {
+    height: auto;
+    min-height: 72px;
     padding-inline: 12px;
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   .simulator-header .app-brand__link {

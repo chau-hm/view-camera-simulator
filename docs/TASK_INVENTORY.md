@@ -1,5 +1,12 @@
 # View Camera Movement Simulator — Task Inventory
 
+> Historical MVP v0.1 document.
+>
+> This document records the original implementation baseline and is no longer
+> the authoritative description of current simulator capabilities or teaching
+> scope. See `LEARNING_MODEL.md` for the current pedagogical model and
+> `README.md` for current project orientation.
+
 **版本**：MVP v0.1
 **估算單位**：S / M / L
 **優先級**：P0 = MVP 必須；P1 = MVP 完成前建議；P2 = MVP 後

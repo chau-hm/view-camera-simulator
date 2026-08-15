@@ -1,6 +1,16 @@
 import type { CameraState } from "./camera";
 import type { ApertureValue } from "./camera";
 import type { SceneDefinition } from "./scene";
+import type { GuidedTaskMessageKey } from "../i18n/guidedTaskMessageKeys";
+
+export type MessageValues = Record<string, string | number>;
+
+export type MessageRef<Key extends string = string> = {
+  key: Key;
+  values?: MessageValues;
+};
+
+export type GuidedTaskMessageRef = MessageRef<GuidedTaskMessageKey>;
 
 export type TaskInitialCameraState = Pick<
   CameraState,
@@ -25,9 +35,6 @@ export type TaskInitialCameraState = Pick<
 export type TaskDefinition = {
   id: string;
   sceneId: string;
-  title: string;
-  /** Optional presentation-only objective/summary for UI cards */
-  objective?: string;
   mode: "guided" | "free";
   enabledControls: Array<
     | "rise"
@@ -41,16 +48,8 @@ export type TaskDefinition = {
   >;
   constraints: {
     movement?: "rise-only" | "tilt-only" | "swing-only";
-    notes: string[];
   };
   criteria: TaskSuccessCriterion[];
-  feedbackRules: {
-    passPrimary: string;
-    passSecondary?: string;
-    defaultFailPrimary: string;
-    failPrimaryByCriterionId: Record<string, string>;
-    failSecondaryByCriterionId: Record<string, string>;
-  };
   initialCameraState?: TaskInitialCameraState;
   initialViewState?: {
     showOpticalGeometry?: boolean;
@@ -61,7 +60,6 @@ export type MovementAxis = "rise" | "tilt" | "swing";
 
 export type FocusTargetsSharpCriterion = {
   id: string;
-  label: string;
   type: "focus-targets-sharp";
   targetIds: string[];
   minimumSharpness: number;
@@ -69,7 +67,6 @@ export type FocusTargetsSharpCriterion = {
 
 export type MovementUsedCriterion = {
   id: string;
-  label: string;
   type: "movement-used";
   movement: MovementAxis;
   minimumAbs: number;
@@ -77,7 +74,6 @@ export type MovementUsedCriterion = {
 
 export type MovementRangeCriterion = {
   id: string;
-  label: string;
   type: "movement-range";
   movement: MovementAxis;
   min: number;
@@ -87,14 +83,12 @@ export type MovementRangeCriterion = {
 
 export type AllowedApertureCriterion = {
   id: string;
-  label: string;
   type: "allowed-aperture";
   allowedApertures: ApertureValue[];
 };
 
 export type CompositionVisibleCriterion = {
   id: string;
-  label: string;
   type: "composition-visible";
   targetId: string;
   minimumCoverage: number;
@@ -102,21 +96,18 @@ export type CompositionVisibleCriterion = {
 
 export type MirrorReflectionClearCriterion = {
   id: string;
-  label: string;
   type: "mirror-reflection-clear";
   minimumClearanceMm: number;
 };
 
 export type MirrorFramingRestoredCriterion = {
   id: string;
-  label: string;
   type: "mirror-framing-restored";
   maximumCenterErrorNormalized: number;
 };
 
 export type MirrorViewpointRetainedCriterion = {
   id: string;
-  label: string;
   type: "mirror-viewpoint-retained";
   minimumParallaxDeltaNormalized: number;
 };
@@ -133,10 +124,10 @@ export type TaskSuccessCriterion =
 
 export type TaskCriteriaEvaluation = {
   criterionId: string;
-  label: string;
+  label: GuidedTaskMessageRef;
   passed: boolean;
   score: number;
-  message: string;
+  message: GuidedTaskMessageRef;
 };
 
 export type TaskEvaluation = {
@@ -144,8 +135,8 @@ export type TaskEvaluation = {
   status: "passed" | "failed";
   score: number;
   criteria: TaskCriteriaEvaluation[];
-  primaryFeedback: string;
-  secondaryFeedback: string[];
+  primaryFeedback: GuidedTaskMessageRef;
+  secondaryFeedback: GuidedTaskMessageRef[];
   finalCameraState?: Pick<
     CameraState,
     "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "focusDistanceMm" | "aperture"

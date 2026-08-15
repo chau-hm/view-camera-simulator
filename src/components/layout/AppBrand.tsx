@@ -3,11 +3,12 @@ import { publicAssetUrl } from "../../utils/publicAssetUrl";
 
 type AppBrandProps = {
   className?: string;
+  homeLabel?: string;
 };
 
-export const AppBrand = ({ className = "" }: AppBrandProps) => (
+export const AppBrand = ({ className = "", homeLabel = "View Camera Simulator home" }: AppBrandProps) => (
   <div className={`app-brand ${className}`.trim()}>
-    <Link to="/" className="app-brand__link" aria-label="View Camera Simulator home">
+    <Link to="/" className="app-brand__link" aria-label={homeLabel}>
       <img
         className="app-brand__icon"
         src={publicAssetUrl("assets/view-camera-app-icon-32.png")}

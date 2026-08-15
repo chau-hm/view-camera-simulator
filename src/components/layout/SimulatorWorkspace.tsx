@@ -12,6 +12,7 @@ import type { SimulatorMode } from "../../types/camera";
 import type { RenderQualityProfile } from "../../types/ui";
 import { UI_COPY } from "../../ui/copy";
 import { AppBrand } from "./AppBrand";
+import { LanguageSelector } from "./LanguageSelector";
 import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
@@ -25,7 +26,12 @@ import { MirrorShiftFrontShiftControl } from "../controls/MirrorShiftFrontShiftC
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
-import { CurrentSettingsReadout, FocusTargetsReadout } from "../simulator/GroundGlassReadouts";
+import {
+  CurrentSettingsReadout,
+  FocusTargetsReadout,
+  type FocusTargetMetric,
+} from "../simulator/GroundGlassReadouts";
+import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
@@ -350,6 +356,12 @@ export const SimulatorWorkspace = ({
       }).targets,
     [camera.focusAssistEnabled, opticsState.focusTargets, tableTiltFocusMetric],
   );
+  const learnerReadoutPolicy = useMemo(
+    () => resolveLearnerReadoutPolicy(safeScene.id, { hasFocusTargets: focusAssistTargets.length > 0 }),
+    [focusAssistTargets.length, safeScene.id],
+  );
+  const focusTargetMetric: FocusTargetMetric =
+    tableTiltFocusMetric === "point" ? "point" : safeScene.id === "table-tilt" ? "patch" : "focus";
   const closestPointTargetId = useMemo(() => {
     if (safeScene.id !== "table-tilt" || mode !== "free") return undefined;
     return opticsState.focusTargets.reduce<string | undefined>((closestId, target) => {
@@ -383,6 +395,7 @@ export const SimulatorWorkspace = ({
 
         <div className="sim-header-actions">
           <Link className="btn btn--ghost" to="/scenes">All Scenes</Link>
+          <LanguageSelector />
         </div>
       </header>
 
@@ -470,8 +483,8 @@ export const SimulatorWorkspace = ({
           </div>
 
           {!viewportExpanded && <>
-            {/* Row 1: Current Settings | Focus Targets */}
-            <div className="simulator-primary-info-grid">
+            {/* Row 1: scene-aware learner readouts */}
+            <div className={`simulator-primary-info-grid${learnerReadoutPolicy.showFocusTargets && focusAssistTargets.length > 0 ? "" : " simulator-primary-info-grid--single"}`}>
             <CurrentSettingsReadout
               riseMm={camera.frontRiseMm}
               tiltDeg={camera.frontTiltDeg}
@@ -490,13 +503,18 @@ export const SimulatorWorkspace = ({
               })() } : null}
               teachingReadout={teachingReadout}
               focusStandard={camera.activeSceneId === "focus-fundamentals-two-targets" ? camera.focusStandard : undefined}
+              settingsVariant={learnerReadoutPolicy.settingsVariant}
+              cameraPositionMm={camera.mirrorShiftLessonState?.rigLateralMm}
+              frontShiftMm={camera.frontShiftMm}
             />
 
-            <FocusTargetsReadout
-              focusTargets={focusAssistTargets}
-              metricLabel={tableTiltFocusMetric === "point" ? "Point focus" : safeScene.id === "table-tilt" ? "Patch coverage" : "Focus"}
-              closestTargetId={closestPointTargetId}
-            />
+            {learnerReadoutPolicy.showFocusTargets && focusAssistTargets.length > 0 ? (
+              <FocusTargetsReadout
+                focusTargets={focusAssistTargets}
+                metric={focusTargetMetric}
+                closestTargetId={closestPointTargetId}
+              />
+            ) : null}
             </div>
 
             {/* Row 2: Task | Feedback (each wrapped in a card shell provided by Workspace) */}

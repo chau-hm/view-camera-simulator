@@ -1,6 +1,13 @@
-import type { TaskDefinition } from "../../types/task";
-import { UI_COPY } from "../../ui/copy";
-import { formatControlLabel, getFreePracticeGuidance } from './taskHelpers';
+import { useTranslation } from "react-i18next";
+import type { GuidedTaskMessageRef, TaskDefinition } from "../../types/task";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
+import { guidedTaskMessageKeys } from "../../i18n/guidedTaskMessageKeys";
+import { getFreePracticeGuidanceKeys } from "./taskHelpers";
+import {
+  getGuidedControlMessageKey,
+  getGuidedTaskCopy,
+} from "../../core/tasks/guidedTaskCopyKeys";
 
 type TaskPanelProps = {
   task: TaskDefinition | null;
@@ -9,25 +16,28 @@ type TaskPanelProps = {
 };
 
 export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) => {
-  const freeGuidance = getFreePracticeGuidance(sceneId);
+  const { t } = useTranslation();
+  const translateMessage = (message: GuidedTaskMessageRef): string =>
+    String(message.values ? t(message.key, message.values as never) : t(message.key));
+  const freeGuidance = getFreePracticeGuidanceKeys(sceneId);
 
   if (!task) {
     // Free mode guidance (content-only; outer card shell and heading provided by Workspace)
     return (
-      <section aria-label={UI_COPY.simulator.taskTitle} className="task-panel task-panel--free">
-        {showTitle ? <h2>{UI_COPY.simulator.taskTitle}</h2> : null}
+      <section aria-label={t(simulatorMessageKeys.task.title)} className="task-panel task-panel--free">
+        {showTitle ? <h2>{t(simulatorMessageKeys.task.title)}</h2> : null}
         <div className="task-summary">
           <div className="task-summary__header">
-            <span className="task-status task-status--free">{UI_COPY.simulator.freePractice}</span>
+            <span className="task-status task-status--free">{t(simulatorMessageKeys.task.freePractice)}</span>
           </div>
 
           {/* single objective paragraph (scene-specific) */}
-          <p className="task-summary__objective">{freeGuidance.objective}</p>
+          <p className="task-summary__objective">{t(freeGuidance.objectiveKey)}</p>
 
-          {freeGuidance.bullets.length > 0 && (
+          {freeGuidance.bulletKeys.length > 0 && (
             <ul className="task-summary__guidance">
-              {freeGuidance.bullets.map((b) => (
-                <li key={b}>{b}</li>
+              {freeGuidance.bulletKeys.map((bulletKey) => (
+                <li key={bulletKey}>{t(bulletKey)}</li>
               ))}
             </ul>
           )}
@@ -37,38 +47,40 @@ export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) =
   }
 
   // Guided task summary
-  const objectiveNote = task.constraints.notes && task.constraints.notes.length > 0 ? task.constraints.notes[0] : '';
-  const remainingNotes = task.constraints.notes && task.constraints.notes.length > 1 ? task.constraints.notes.slice(1) : [];
+  const guidedCopy = getGuidedTaskCopy(task);
 
   return (
-    <section aria-label={UI_COPY.simulator.taskTitle} className="task-panel task-panel--guided">
-      {showTitle ? <h2>{UI_COPY.simulator.taskTitle}</h2> : null}
+    <section aria-label={t(simulatorMessageKeys.task.title)} className="task-panel task-panel--guided">
+      {showTitle ? <h2>{t(simulatorMessageKeys.task.title)}</h2> : null}
       <div className="task-summary">
         <div className="task-summary__header">
-          <span className="task-status task-status--progress">Guided task</span>
+          <span className="task-status task-status--progress">{t(guidedTaskMessageKeys.common.guidedTask)}</span>
         </div>
-        <h3 className="task-summary__title">{task.title}</h3>
-        {/* objective may be an optional presentation field on some task definitions */}
-        <p className="task-summary__objective">{task.objective ?? objectiveNote}</p>
+        <h3 className="task-summary__title">{translateMessage(guidedCopy.title)}</h3>
+        <p className="task-summary__objective">{translateMessage(guidedCopy.objective)}</p>
 
         <div className="task-summary__controls">
-          <strong>{UI_COPY.simulator.allowedControlsLabel}:</strong>{' '}
+          <strong>{t(guidedTaskMessageKeys.common.allowedControls)}:</strong>{" "}
           {task.enabledControls.map((c) => (
-            <span key={c} className="chip" style={{ marginLeft: 8 }}>{formatControlLabel(c)}</span>
+            <span key={c} className="chip" style={{ marginLeft: 8 }}>
+              {t(getGuidedControlMessageKey(c))}
+            </span>
           ))}
         </div>
 
         <details>
-          <summary>{UI_COPY.simulator.viewRequirementsLabel}</summary>
+          <summary>{t(guidedTaskMessageKeys.common.viewRequirements)}</summary>
           <div className="task-requirements" style={{ marginTop: 8 }}>
-            {remainingNotes.length > 0 ? (
+            {guidedCopy.notes.length > 0 ? (
               <ul className="task-requirements__list">
-                {remainingNotes.map((note) => (
-                  <li key={note}>{note}</li>
+                {guidedCopy.notes.map((note) => (
+                  <li key={note.key}>{translateMessage(note)}</li>
                 ))}
               </ul>
             ) : (
-              <div className="task-requirements__empty">{UI_COPY.simulator.noAdjustmentNeeded}</div>
+              <div className="task-requirements__empty">
+                {t(guidedTaskMessageKeys.common.noAdjustmentNeeded)}
+              </div>
             )}
           </div>
         </details>

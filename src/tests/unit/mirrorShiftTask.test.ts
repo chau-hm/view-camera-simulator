@@ -77,22 +77,22 @@ describe("Mirror Shift guided task", () => {
     const result = evaluate("neutral");
     expect(result.status).toBe("failed");
     expect(result.criteria.map((criterion) => criterion.passed)).toEqual([false, true, false]);
-    expect(result.primaryFeedback).toContain("whole camera sideways");
+    expect(result.primaryFeedback.key).toBe("tasks.mirrorShift.feedback.primary.reflectionClear");
   });
 
   it("passes reflection clearance at Camera Moved and advances to Front Shift", () => {
     const result = evaluate("camera-moved");
     expect(result.status).toBe("failed");
     expect(result.criteria.map((criterion) => criterion.passed)).toEqual([true, false, true]);
-    expect(result.primaryFeedback).toContain("front standard");
+    expect(result.primaryFeedback.key).toBe("tasks.mirrorShift.feedback.primary.framingRestored");
   });
 
   it("passes the calibrated Framing Restored outcome with the viewpoint retained", () => {
     const result = evaluate("framing-restored");
     expect(result.status).toBe("passed");
     expect(result.criteria.every((criterion) => criterion.passed)).toBe(true);
-    expect(result.primaryFeedback).toContain("framing is restored");
-    expect(result.secondaryFeedback.join(" ")).toContain("viewpoint changed");
+    expect(result.primaryFeedback.key).toBe("tasks.mirrorShift.feedback.passPrimary");
+    expect(result.secondaryFeedback[0]?.key).toBe("tasks.mirrorShift.feedback.passSecondary");
   });
 
   it("accepts a nearby outcome that satisfies the measured contracts", () => {

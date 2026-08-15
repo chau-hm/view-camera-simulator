@@ -172,6 +172,99 @@ Run `npm run ci:local:e2e` when:
 
 Report checks not run and why.
 
+## PR branch publishing safety
+
+This contract applies when work is being published as a PR branch. It does
+not add remote-publishing ceremony to non-published local work or Micro edits.
+
+### Create a PR branch without inheriting the base upstream
+
+Start from the fetched base and create the PR-oriented branch with no
+upstream:
+
+    git fetch origin
+    git switch --no-track -c <feature-branch> origin/main
+
+The invariant before first publication is:
+
+    local feature branch
+    no upstream pointing to origin/main
+
+Do not use a branch-creation form that may configure the feature branch to
+track origin/main. An existing upstream is diagnostic context only, never the
+PR publication destination. Inspect it when present with:
+
+    git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'
+
+If that reports origin/main, warn and continue only with the explicit
+feature-branch refspec below. Do not publish through the upstream.
+
+### Resolve and validate the publication destination
+
+Before any PR-branch push, resolve the current local branch, intended remote,
+intended PR head, and intended base explicitly. Fail closed unless all of the
+following are true:
+
+- current branch is non-empty;
+- current branch exactly matches the intended PR head branch;
+- current branch is not main or master;
+- origin exists and resolves to a remote URL;
+- the destination is refs/heads/<current-feature-branch>;
+- the destination is not refs/heads/main, refs/heads/master, or another
+  explicitly protected/base branch;
+- the intended PR head and base are different refs.
+
+The branch, remote, destination, push.default, remote.pushDefault, and
+branch-specific remote/merge values must not be inferred from one another.
+The following values may be inspected for diagnostics, but must not determine
+the PR destination:
+
+    git config --get push.default
+    git config --get remote.pushDefault
+    git config --get branch.<branch>.remote
+    git config --get branch.<branch>.merge
+
+Do not modify global or system Git configuration to solve a publication
+failure. Repository policy must remain safe under unusual local settings.
+
+### Publish with an explicit feature-branch refspec
+
+Record remote evidence before the push:
+
+    local_head="$(git rev-parse --verify HEAD)"
+    main_before="$(git ls-remote --exit-code origin refs/heads/main | awk 'NR == 1 { print $1 }')"
+
+Require both values to be non-empty, then publish only with the validated
+same-named feature branch:
+
+    git push -u origin "HEAD:refs/heads/<current-feature-branch>"
+
+For initial PR publication, never rely on a bare git push, push.default,
+remote.pushDefault, or an inherited upstream. Never use a refspec ending in
+refs/heads/main and never use --force or --force-with-lease. A normal explicit
+push may update an existing feature branch only when the remote accepts it as
+a non-destructive fast-forward. If it would require history rewriting, stop.
+
+### Verify the remote before creating the PR
+
+After the push, independently read the remote refs again. Before invoking
+gh pr create or an equivalent PR mechanism, require:
+
+    remote_feature_head="$(git ls-remote --exit-code origin "refs/heads/<current-feature-branch>" | awk 'NR == 1 { print $1 }')"
+    main_after="$(git ls-remote --exit-code origin refs/heads/main | awk 'NR == 1 { print $1 }')"
+
+- remote_feature_head exists and equals local_head;
+- main_after exists and equals main_before;
+- the explicit PR head is the validated feature branch;
+- the explicit PR base is the expected base branch;
+- feature and base refs are not the same.
+
+Only after those postconditions pass may PR creation be attempted, using
+explicit head and base values. If the feature ref is missing or differs from
+local HEAD, stop. If remote main changed, report the before/after SHAs, stop,
+and do not reset, revert, force-push, or otherwise overwrite concurrent remote
+work. Do not fall back to publishing the implementation to main.
+
 ## Test-integrity rules
 
 A passing test is evidence only when it could detect the original defect.
@@ -190,6 +283,12 @@ Do not:
 For work that uses subagents, pass only the current objective, relevant files, evidence, constraints, acceptance criteria, and validation needs.
 
 Keep handoffs compact and reference paths, tests, logs, and commit SHAs instead of pasting full diffs or project history.
+
+For Standard PR and High-risk PR work, and for review-fix rounds that address previously reported findings, update `.agents/status/CURRENT.md` before the final implementation handoff. Overwrite stale work-specific content rather than appending history or creating one file per PR. The file should remain compact and reviewer-oriented.
+
+For a Focused fix, updating `.agents/status/CURRENT.md` is optional when it would materially help a later reviewer. Micro edits do not require it and must remain able to use the lightweight flow above.
+
+`.agents/status/CURRENT.md` is durable reviewer navigation and a record of implementation-agent claims about objective, scope, decisions, validation, and known gaps. It is not authoritative product documentation, independent verification evidence, a replacement for the actual branch/diff/tests or PR metadata, or a historical changelog. If it conflicts with the branch or diff, the branch and diff win and the discrepancy should be reported.
 
 Independent review is a **merge-gate mechanism**, not a mandatory step after every local edit.
 
