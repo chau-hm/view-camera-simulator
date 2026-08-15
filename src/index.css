@@ -265,6 +265,10 @@ button {
  align-items: start;
 }
 
+.simulator-primary-info-grid--single {
+ grid-template-columns: minmax(0, 1fr);
+}
+
 /* task + feedback grid: two equal columns */
 .simulator-task-feedback-grid {
  grid-column: 1 / -1;
