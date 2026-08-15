@@ -2,132 +2,126 @@
 
 ## Work
 
-PR / work identifier: PR 6D — Free Practice + General Teaching Copy Alignment
-Branch: `content/free-practice-teaching-copy`
-Base: `origin/main` @ `9b4cf4e6df96bdd53797a72bd26fcecbc5edd37e`
+PR / work identifier: PR 6E — Guided Task Copy Alignment
+Branch: `content/guided-task-copy`
+Base: `origin/main` @ `6fe59a64d0923f6171a922121d537924a835e885`
 Head convention: record the substantive implementation commit here; a final
 status-only bookkeeping commit is intentionally not self-referenced.
 
 ## Objective
 
-Localize the current simulator Free Practice and Movement Help teaching copy
-through the PR 6C i18n foundation, while preserving simulator behavior,
-guided-task architecture, evaluator state, readouts, routes, scene identity,
-optics, calibration, and rendering.
+Localize the four existing Guided Tasks in `en` and `zh-HK` while keeping task
+mechanics, evaluator facts, routes, scene state, readouts, optics, calibration,
+rendering, and Free Practice behavior unchanged.
 
 ## Implemented
 
-- Added typed `simulator` message catalogs for `en` and `zh-HK`, with one
-  shared semantic key tree and English-defined resource shape.
-- Refactored Free Practice guidance and live observations into pure semantic
-  key lookups. All six public scenes have scene-specific objective, bullet,
-  and observation coverage; unknown scenes use a neutral generic fallback.
-- Translated Free Practice and FeedbackPanel content at the presentation
-  boundary. Guided Task teaching, evaluator feedback, readouts, and the
-  Guided no-evaluation copy remain on their existing architecture.
-- Localized Movement Help for Front Rise, Front Tilt, and Front Swing using
-  canonical Front-standard, lens-plane, plane-of-sharp-focus, and Ground
-  Glass terminology without X/Y-axis jargon.
-- Removed only the migrated simulator `UI_COPY` entries that became unused;
-  left the remaining copy surface unchanged.
-- Updated `docs/I18N.md` to record simulator teaching-copy coverage and the
-  presentation-only translation boundary.
+- Added typed Guided Task message catalogs for `en` and `zh-HK`, with English
+  defining the shared resource shape and stable semantic message keys.
+- Added locale-neutral serializable message references with interpolation
+  values, and mapped `rise-01`, `tilt-01`, `swing-01`, and
+  `mirror-shift-01` by stable task/criterion IDs.
+- Removed learner-facing Guided Task prose from `taskRegistry`; mechanics,
+  thresholds, criteria, enabled controls, initial state, and ordering remain
+  authoritative there.
+- Refactored evaluation and feedback selection to return message references;
+  `TaskPanel` and `FeedbackPanel` translate at render time. Existing
+  evaluations therefore re-render in a new locale without reevaluation.
+- Localized Guided structural labels, control chips, criterion labels/results,
+  status/progress, no-evaluation copy, secondary hints, and completion-summary
+  labels. Calibrated values remain data-driven through interpolation.
+- Preserved Free Practice, simulator readouts/diagnostics, routes, scene/task
+  identity, evaluator mechanics, and the existing simulator language-selector
+  boundary. Updated only directly affected Guided E2E assertions.
+- Updated `docs/I18N.md` with the Guided presentation/evaluator boundary.
 
 ## Changed surface
 
-- `docs/I18N.md`
-- `src/components/controls/MovementControls.tsx`
-- `src/components/simulator/FeedbackPanel.tsx`, `TaskPanel.tsx`,
+- `src/types/task.ts`
+- `src/core/tasks/taskRegistry.ts`, `evaluateTask.ts`, `feedbackEngine.ts`,
+  `guidedTaskCopyKeys.ts`
+- `src/components/simulator/TaskPanel.tsx`, `FeedbackPanel.tsx`,
   `taskHelpers.ts`
-- `src/i18n/messages/en/index.ts`, `messages/en/simulator.ts`,
-  `messages/zh-HK/index.ts`, `messages/zh-HK/simulator.ts`,
-  `src/i18n/simulatorMessageKeys.ts`
-- `src/tests/integration/freePracticeCopy.test.tsx`,
-  `src/tests/unit/freePracticeKeys.test.ts`,
-  `src/tests/unit/tableTiltTaskContent.test.ts`
-- `src/ui/copy.ts`
-- `.agents/status/CURRENT.md`
+- `src/i18n/guidedTaskMessageKeys.ts` and typed `en`/`zh-HK` task catalogs
+- `docs/I18N.md`
+- Directly affected unit, integration, and Guided E2E assertions, including
+  `src/tests/integration/guidedTaskCopy.test.tsx`
 
-No package, dependency, CI, route, scene metadata, task definition,
-evaluator, camera-state, readout, optics, calibration, renderer, or CSS
-changes were made.
+No package, dependency, CI, CSS, route, scene metadata, task criteria,
+evaluator calculation, camera-state, optics, calibration, renderer, readout,
+or Free Practice source changes were made.
 
 ## Validation
 
-- Focused tests: passed; 3 files, 14 tests.
-- `npm test`: passed; 112 test files, 1,051 tests.
+- Focused task/evaluator and presentation tests: passed; 6 files, 63 tests.
+- Guided localization/completion/no-evaluation integration tests: passed;
+  10 tests.
+- `npm test`: passed; 113 test files, 1,060 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
 - `npm run build`: passed.
+- Targeted Guided E2E (`mirror-shift-guided-lesson.spec.ts`,
+  `shelf-swing.spec.ts`, `table-tilt.spec.ts`): passed; 27 tests.
 - `git diff --check`: passed.
-- `git status --short`: clean before this handoff update (no output).
+- `git status --short`: clean after the substantive commit, before this
+  handoff update.
 
-## Not run
+## Validation not run
 
-- E2E: not run; this PR changes bundled simulator presentation copy and
-  i18n-boundary wiring only, with focused UI/integration coverage and no
-  route, scene-state, rendering, or WebGL behavior change.
+- Full `npm run ci:local:e2e` was not run; the three affected Guided E2E specs
+  provide proportional browser coverage and no renderer/optics behavior
+  changed.
 
-## Key decisions
+## Important decisions
 
-- English is the canonical simulator resource shape; `zh-HK` satisfies the
-  same typed key contract and uses the learning-model terms 視點, 構圖,
-  透視幾何, 前組/後組, 鏡頭平面, 底片平面, 清晰焦平面, 對焦屏, and 視差.
-- Domain helpers return semantic message keys only. React presentation
-  boundaries perform translation, so translated strings never drive scene
-  state, task identity, or evaluator behavior.
-- Free Practice copy covers Understanding Camera Movements, Focus
-  Fundamentals, Architecture Rise, Table Tilt, Shelf Swing, and Mirror
-  Shift. Focus remains fixed at f/32; Mirror Shift explicitly separates
-  whole-camera Viewpoint movement from Front Shift framing restoration.
-- Guided-task copy and the broader simulator `UI_COPY` surface are deferred
-  to PR 6E/6F as requested. No simulator language selector was added.
+- English is canonical; `zh-HK` satisfies the same typed task-message shape
+  and uses the established terms 前組/後組, 視點, 構圖, 清晰焦平面, 底片平面,
+  對焦屏, and 視差.
+- Task and evaluator layers contain stable message references and numeric
+  interpolation data only. They do not call i18next, read the active locale,
+  or store translated output.
+- Front Rise, Front Tilt, Front Swing, and Mirror Shift copy now preserves the
+  current learning model: framing versus viewpoint, plane of sharp focus,
+  Top-view relationships, and whole-camera movement versus Front Shift.
+- No Guided Tasks were added to Understanding Camera Movements or Focus
+  Fundamentals; no curriculum, readout, or simulator language-selector work
+  was pulled forward.
 
 ## Remaining risks / known gaps
 
-- Guided Task teaching/evaluator feedback, readouts, diagnostics, and other
-  simulator copy remain English and are intentionally deferred.
-- The new `zh-HK` simulator wording has representative automated coverage
-  but no separate native-language editorial review.
-- E2E/browser validation and any future simulator locale selector remain
-  deferred; no route or persistence behavior was changed here.
+- Remaining simulator controls, Current Settings/Focus Targets readouts,
+  diagnostics, and other non-Guided simulator copy remain on their existing
+  architecture for later content PRs.
+- The new zh-HK Guided copy has automated terminology coverage but still needs
+  separate native-language editorial review.
+- Full CI-local E2E remains deferred; no domain behavior was changed.
 
 ## Reviewer focus
 
-1. Verify the simulator message catalogs share a complete typed key shape and
-   the English fallback remains intact.
-2. Verify all six public scenes have correct Free Practice objective, bullet,
-   live-observation, and unknown-scene fallback coverage.
-3. Verify Viewpoint, Framing, Front/Rear standards, lens-plane/film-plane,
-   plane-of-sharp-focus, Ground Glass, and fixed-f/32 semantics in both
-   locales.
-4. Verify Movement Help describes Front Rise/Tilt/Swing accurately without
-   introducing X/Y-axis jargon.
-5. Verify translation happens only at presentation boundaries and does not
-   change scene state, task identity, evaluator criteria, readouts, routes,
-   optics, calibration, or rendering.
-6. Verify Guided Task teaching and evaluator/readout architecture remains
-   unchanged and `src/ui/copy.ts` was not broadly migrated.
-7. Verify no i18n dependency, locale-selector, route, CSS, or unrelated copy
-   cleanup entered the PR.
-8. Verify the change remains bounded to the requested Free Practice/general
-   teaching-copy alignment.
+1. Verify all four existing Guided Tasks have complete, semantically aligned
+   `en` and `zh-HK` title, objective, notes, criteria, feedback, and control
+   copy.
+2. Verify task/evaluation core stays locale-neutral and an existing evaluation
+   re-renders after locale change without reevaluation.
+3. Verify Front Rise/framing, Front Tilt and Front Swing/plane of sharp focus,
+   and Mirror Shift/Viewpoint-versus-Framing semantics are accurate.
+4. Verify calibrated interpolation values come from existing criteria/calibration
+   data and are not duplicated per locale.
+5. Verify Guided structural labels, no-evaluation state, criterion results,
+   progress, and completion summary are localized at presentation time.
+6. Verify task/criterion IDs, thresholds, ordering, evaluator facts, final
+   state, routes, scene state, and Free Practice behavior are unchanged.
+7. Verify no i18n architecture expansion, simulator-copy migration, CSS,
+   package, CI, optics, calibration, or renderer work entered the PR.
 
 ## Since previous review
 
-- Addressed finding 1: changed only the zh-HK generic Free Practice
-  objective to `自由探索場景，不設評分任務。`; English and all other
-  zh-HK teaching messages remain unchanged.
-- Addressed finding 2: extended the Free Practice integration test to render
-  the English Table Tilt observation and assert the learner-visible concepts
-  `plane of sharp focus`, `Ground Glass`, `depth-of-field`, and `Focus
-  Targets`. The pure helper/key test remains prose-free.
+Since previous review: Not applicable
 
 ## Commit
 
-Substantive implementation: `6b00f268075d3ab63bd65c23b4aa96d8e11f8278`
-Review-fix implementation: `61c53c68eb3fe72213433fc8fa356802b65369f7`
+Substantive implementation: `e4986f1b5bc326921161415435f17eea31f77a46`
 
 Final bookkeeping: the status-only commit that records this handoff update;
 intentionally not self-referenced to avoid recursive commits.
