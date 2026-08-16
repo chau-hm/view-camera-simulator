@@ -14,6 +14,17 @@ the verticals remain vertical, the building top is cropped, and near/middle/far
 façade samples are not uniformly sharp. No Rise/Swing lesson or evaluator is
 included.
 
+## Since previous review
+
+- Recalibrated the subject depth so a 20 mm Front Rise, reachable on the
+  existing 1 mm / 0–40 mm public control, fits the roof and base corners.
+- Moved Oblique Architecture to the final public scene position and updated
+  scene-order/preload assertions.
+- Replaced the temporary development title, description, and topics with
+  final-facing compound-movement copy in English and zh-HK.
+- Replaced the temporary SVG card art with the supplied approved
+  `public/assets/oblique-architecture.png` ImageGen asset.
+
 ## Implemented
 
 - Added canonical millimetre geometry for a rectilinear teaching building with
@@ -23,8 +34,8 @@ included.
   Glass RTT, including named near/middle/far focus probes and unique-resource
   disposal.
 - Added a fixed scene definition: zero rise/tilt/swing, finite focus at the
-  middle façade sample, level rear standard, stable observer placement, and no
-  user movement/focus/aperture/reset controls.
+  middle façade sample, level rear standard, stable observer placement, no
+  movement/reset controls, and locked focus/aperture controls.
 - Registered the scene in the definitions, public catalog, free route
   validation, RTT scene set, scene geometry view, top-view façade guide,
   English/zh-HK copy, and free-practice observation copy. No guided task ID is
@@ -37,16 +48,20 @@ included.
 
 ## Root design and calibration decisions
 
-- Building ground is at `y = -1200 mm`; the mass spans `z = 5600..12800 mm`
+- Building ground is at `y = -1200 mm`; the mass spans `z = 9600..16800 mm`
   with the target façade on `x = 900 mm`, making the side-oblique viewpoint
-  legible without decorative geometry.
-- Camera placement is `(-6200, 3200, -5200) mm` looking toward
-  `(1800, 1000, 9000) mm`; rear movements remain zero so the canonical film
+  legible without changing the building's physical proportions. The ground
+  spans `z = 8200..19000 mm`.
+- Camera placement is `(-6200, 3200, -1200) mm` looking toward
+  `(1800, 1000, 13000) mm`; rear movements remain zero so the canonical film
   frame stays level.
-- Focus is `9200 mm`, the middle of the target façade. Canonical focus targets
+- Focus is `13200 mm`, the middle of the target façade. Canonical focus targets
   are near/middle/far side windows; the Ground Glass display uses the existing
   physical CoC path with a bounded `48 px` blur radius and `3.6` display scale
   so the derived sharpness falloff remains legible at RTT resolution.
+- The calibrated future Rise value is `20 mm`; full roof and base corner
+  projections are inside the usable frame at that value, while the neutral
+  roof remains cropped.
 - The scene uses the generic rear-standard thin-lens finite-focus strategy;
   no new optics or sign convention was introduced.
 
@@ -64,7 +79,7 @@ included.
 - Public catalog, route/geometry wiring, thumbnail, and copy:
   `src/app/publicScenes.ts`, `src/components/geometry/*`,
   `src/components/simulator/taskHelpers.ts`, `src/i18n/*`,
-  `public/assets/oblique-architecture.svg`
+  `public/assets/oblique-architecture.png`
 - Tests:
   `src/tests/unit/obliqueArchitectureScene.test.ts`,
   `src/tests/e2e/oblique-architecture.spec.ts`, and the related scene,
@@ -72,7 +87,8 @@ included.
 
 ## Validation
 
-- `npm test`: passed — 116 files, 1,087 tests.
+- Focused review-fix tests: passed — 6 files, 66 tests.
+- `npm test`: passed — 116 files, 1,088 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
@@ -93,5 +109,5 @@ included.
 
 ## Commit
 
-Substantive implementation: `b76eda1` (`feat(scene): add oblique architecture static problem`).
-Final status-only bookkeeping commit: intentionally not self-referenced.
+Substantive review-fix implementation: `0f35f12`.
+Final status-only bookkeeping commit: pending; intentionally not self-referenced.
