@@ -76,8 +76,8 @@ export const tasksMessages = {
       fail: "Composition target visibility is too low",
     },
     cameraLevel: {
-      pass: "Camera and rear standard remain level",
-      fail: "Camera level or rear-standard neutrality changed",
+      pass: "Camera and film plane remain level",
+      fail: "Camera or film-plane orientation is no longer level",
     },
     mirrorReflectionClear: {
       pass: "Camera reflection is outside the mirror aperture",

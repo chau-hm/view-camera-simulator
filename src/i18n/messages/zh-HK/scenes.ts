@@ -41,7 +41,7 @@ export const scenesMessages = {
   obliqueArchitecture: {
     title: "斜向建築攝影",
     description:
-      "使用前組上移在斜角拍攝建築物時保持垂直線平行；延伸立面的清晰度問題留待日後課程。",
+      "結合前組上移與前組擺動，在斜角拍攝建築物時保持垂直線平行，並讓延伸的立面由近至遠保持清晰。",
     topics: {
       frontRise: "前組上移",
       frontSwing: "前組擺動",

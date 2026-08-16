@@ -4,8 +4,11 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
+import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import geometry, { reachableFrontRiseMm } from "../../scenes/obliqueArchitectureGeometry";
 import type { CameraState } from "../../types/camera";
+import type { SceneDefinition } from "../../types/scene";
+import type { TaskDefinition } from "../../types/task";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const task = getTaskById("oblique-rise-01");
@@ -18,6 +21,21 @@ const cameraAtRise = (frontRiseMm: number): CameraState => ({
   mode: "guided",
   frontRiseMm,
 });
+
+const cameraLevelRegressionTaskFor = (scene: SceneDefinition): TaskDefinition => ({
+  id: `camera-level-regression-${scene.id}`,
+  sceneId: scene.id,
+  mode: "guided",
+  enabledControls: [],
+  constraints: {},
+  criteria: [{ id: "camera-level-regression", type: "camera-level" }],
+});
+
+const cameraLevelPassed = (scene: SceneDefinition, camera: CameraState): boolean => {
+  const optics = deriveOpticsState(camera, scene);
+  const evaluation = evaluateTask(cameraLevelRegressionTaskFor(scene), scene, camera, optics);
+  return evaluation.criteria[0]?.passed ?? false;
+};
 
 const evaluateAtRise = (frontRiseMm: number) => {
   if (!task) {
@@ -71,19 +89,28 @@ describe("Oblique Architecture Rise composition task", () => {
     expect(nearby.evaluation.status).toBe("passed");
   });
 
-  it("does not pass when a non-level movement is introduced", () => {
-    if (!task) {
-      throw new Error("oblique-rise-01 is not registered");
-    }
-    const camera = { ...cameraAtRise(reachableFrontRiseMm), frontTiltDeg: 0.1 };
-    const optics = deriveOpticsState(camera, obliqueArchitectureScene);
-    const evaluation = evaluateTask(task, obliqueArchitectureScene, camera, optics);
+  it("uses rear-standard orientation, so front movements and rear translation remain level", () => {
+    const validCamera = cameraAtRise(reachableFrontRiseMm);
 
-    expect(evaluation.status).toBe("failed");
-    expect(
-      evaluation.criteria.find((criterion) => criterion.criterionId === "oblique-rise-camera-level")
-        ?.passed,
-    ).toBe(false);
+    expect(cameraLevelPassed(obliqueArchitectureScene, { ...validCamera, frontSwingDeg: 4 })).toBe(true);
+    expect(cameraLevelPassed(obliqueArchitectureScene, { ...validCamera, frontTiltDeg: 4 })).toBe(true);
+    expect(cameraLevelPassed(obliqueArchitectureScene, { ...validCamera, rearRiseMm: 40 })).toBe(true);
+  });
+
+  it("fails when rear tilt or supported whole-camera pitch changes the derived level frame", () => {
+    const validCamera = cameraAtRise(reachableFrontRiseMm);
+
+    expect(cameraLevelPassed(obliqueArchitectureScene, { ...validCamera, rearTiltDeg: 4 })).toBe(false);
+
+    const pitchedCamera: CameraState = {
+      ...DEFAULT_CAMERA_STATE,
+      ...understandingCameraMovementsScene.cameraPreset,
+      activeSceneId: understandingCameraMovementsScene.id,
+      activeTaskId: null,
+      mode: "guided",
+      cameraBodyPitchDeg: 4,
+    };
+    expect(cameraLevelPassed(understandingCameraMovementsScene, pitchedCamera)).toBe(false);
   });
 
   it("keeps the oblique façade focus problem after Rise solves framing", () => {

@@ -70,6 +70,9 @@ describe("scene definitions", () => {
   });
 
   it("defines the Oblique Architecture Rise slice with a single movement capability", () => {
+    expect(obliqueArchitectureScene.description).toBe(
+      "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
+    );
     expect(obliqueArchitectureScene.cameraPreset.focusDistanceMm).toBe(
       obliqueArchitectureGeometry.canonicalFocusDistanceMm,
     );

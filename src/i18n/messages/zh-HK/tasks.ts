@@ -78,8 +78,8 @@ export const tasksMessages = {
       fail: "構圖目標的可見範圍不足",
     },
     cameraLevel: {
-      pass: "相機及後組保持水平",
-      fail: "相機水平或後組中立狀態已改變",
+      pass: "相機及底片平面保持水平",
+      fail: "相機或底片平面方向不再水平",
     },
     mirrorReflectionClear: {
       pass: "相機倒影已離開鏡面範圍",

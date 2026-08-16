@@ -1,6 +1,7 @@
 import { feedbackEngine } from "./feedbackEngine";
 import { getCriterionResultMessageRef, getGuidedTaskCopy } from "./guidedTaskCopyKeys";
 import { evaluateFocusTargets } from "./evaluateFocusTargets";
+import { isStandardFrameLevel } from "../optics/calculateRearStandardFrame";
 import {
   calculateCompositionCoverage,
   calculateCompositionCoverageByTarget,
@@ -196,16 +197,7 @@ export const evaluateTask = (
         };
       }
       case "camera-level": {
-        const neutralValues = [
-          camera.frontTiltDeg,
-          camera.frontSwingDeg,
-          camera.rearRiseMm,
-          camera.rearTiltDeg,
-          camera.cameraBodyPitchDeg,
-        ];
-        const passed = neutralValues.every(
-          (value) => Number.isFinite(value) && Math.abs(value) <= 1e-9,
-        );
+        const passed = isStandardFrameLevel(opticsState.rearStandardFrame);
         return {
           criterionId: criterion.id,
           label: guidedCopy.criteria[criterion.id],

@@ -5,7 +5,7 @@ export const obliqueArchitectureScene: SceneDefinition = {
   id: "oblique-architecture",
   name: "Oblique Architecture",
   description:
-    "Use Front Rise to frame an oblique building while keeping verticals parallel; the receding façade’s sharpness remains a later problem.",
+    "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
   assets: [
     {
       id: "oblique-architecture-ground",

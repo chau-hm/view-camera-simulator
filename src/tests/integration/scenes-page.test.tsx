@@ -68,7 +68,7 @@ describe("scenes page", () => {
     const scopedObliqueCard = within(obliqueCard!);
     expect(
       scopedObliqueCard.getByText(
-        "Use Front Rise to frame an oblique building while keeping verticals parallel; the receding façade’s sharpness remains a later problem.",
+        "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
       ),
     ).toBeInTheDocument();
     expect(scopedObliqueCard.getByText("Front Rise")).toBeInTheDocument();
@@ -227,7 +227,7 @@ describe("scenes page", () => {
     expect(cardFor("斜向焦平面與擺動").getByText(/理解前組擺動如何改變清晰焦平面/)).toBeInTheDocument();
     expect(
       cardFor("斜向建築攝影").getByText(
-        "使用前組上移在斜角拍攝建築物時保持垂直線平行；延伸立面的清晰度問題留待日後課程。",
+        "結合前組上移與前組擺動，在斜角拍攝建築物時保持垂直線平行，並讓延伸的立面由近至遠保持清晰。",
       ),
     ).toBeInTheDocument();
   });
