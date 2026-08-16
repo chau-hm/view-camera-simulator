@@ -74,6 +74,10 @@ export const guidedTaskMessageKeys = {
       pass: "tasks.results.compositionVisible.pass",
       fail: "tasks.results.compositionVisible.fail",
     },
+    cameraLevel: {
+      pass: "tasks.results.cameraLevel.pass",
+      fail: "tasks.results.cameraLevel.fail",
+    },
     mirrorReflectionClear: {
       pass: "tasks.results.mirrorReflectionClear.pass",
       fail: "tasks.results.mirrorReflectionClear.fail",
@@ -114,6 +118,37 @@ export const guidedTaskMessageKeys = {
         buildingMainVisible: "tasks.rise.feedback.secondary.buildingMainVisible",
         movementUsed: "tasks.rise.feedback.secondary.movementUsed",
         movementRange: "tasks.rise.feedback.secondary.movementRange",
+      },
+    },
+  },
+  obliqueRise: {
+    title: "tasks.obliqueRise.title",
+    objective: "tasks.obliqueRise.objective",
+    notes: {
+      useRise: "tasks.obliqueRise.notes.useRise",
+      keepBase: "tasks.obliqueRise.notes.keepBase",
+      depth: "tasks.obliqueRise.notes.depth",
+    },
+    criteria: {
+      buildingTopVisible: "tasks.obliqueRise.criteria.buildingTopVisible",
+      buildingBaseVisible: "tasks.obliqueRise.criteria.buildingBaseVisible",
+      cameraLevel: "tasks.obliqueRise.criteria.cameraLevel",
+      movementUsed: "tasks.obliqueRise.criteria.movementUsed",
+    },
+    feedback: {
+      passPrimary: "tasks.obliqueRise.feedback.passPrimary",
+      defaultFailPrimary: "tasks.obliqueRise.feedback.defaultFailPrimary",
+      primary: {
+        buildingTopVisible: "tasks.obliqueRise.feedback.primary.buildingTopVisible",
+        buildingBaseVisible: "tasks.obliqueRise.feedback.primary.buildingBaseVisible",
+        cameraLevel: "tasks.obliqueRise.feedback.primary.cameraLevel",
+        movementUsed: "tasks.obliqueRise.feedback.primary.movementUsed",
+      },
+      secondary: {
+        buildingTopVisible: "tasks.obliqueRise.feedback.secondary.buildingTopVisible",
+        buildingBaseVisible: "tasks.obliqueRise.feedback.secondary.buildingBaseVisible",
+        cameraLevel: "tasks.obliqueRise.feedback.secondary.cameraLevel",
+        movementUsed: "tasks.obliqueRise.feedback.secondary.movementUsed",
       },
     },
   },

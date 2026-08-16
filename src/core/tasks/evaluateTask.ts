@@ -1,8 +1,11 @@
 import { feedbackEngine } from "./feedbackEngine";
 import { getCriterionResultMessageRef, getGuidedTaskCopy } from "./guidedTaskCopyKeys";
-import { evaluateCompositionTargets } from "./evaluateCompositionTargets";
 import { evaluateFocusTargets } from "./evaluateFocusTargets";
-import { calculateCompositionCoverage, calculateCompositionCoverageByTarget } from "../optics/calculateCompositionCoverage";
+import {
+  calculateCompositionCoverage,
+  calculateCompositionCoverageByTarget,
+  calculateProjectedCompositionCoverageByTarget,
+} from "../optics/calculateCompositionCoverage";
 import { deriveOpticsState } from "../optics/deriveOpticsState";
 import {
   measureMirrorShiftTeachingState,
@@ -98,6 +101,10 @@ export const evaluateTask = (
 ): TaskEvaluation => {
   const guidedCopy = getGuidedTaskCopy(task);
   const compositionCoverageByTarget = calculateCompositionCoverageByTarget(scene, opticsState);
+  const projectedCompositionCoverageByTarget = calculateProjectedCompositionCoverageByTarget(
+    scene,
+    opticsState,
+  );
   const compositionCoverage = calculateCompositionCoverage(scene, opticsState);
   const mirrorShiftMeasurements = hasMirrorShiftCriteria(task)
     ? resolveMirrorShiftMeasurements(camera, scene, opticsState)
@@ -175,17 +182,35 @@ export const evaluateTask = (
         };
       }
       case "composition-visible": {
-        const score = compositionCoverageByTarget[criterion.targetId] ?? 0;
-        const passed = evaluateCompositionTargets(
-          compositionCoverageByTarget,
-          criterion.targetId,
-          criterion.minimumCoverage,
-        );
+        const score =
+          criterion.coverageMode === "projected-corners"
+            ? projectedCompositionCoverageByTarget[criterion.targetId] ?? 0
+            : compositionCoverageByTarget[criterion.targetId] ?? 0;
+        const passed = score >= criterion.minimumCoverage;
         return {
           criterionId: criterion.id,
           label: guidedCopy.criteria[criterion.id],
           passed,
           score,
+          message: getCriterionResultMessageRef(criterion, passed),
+        };
+      }
+      case "camera-level": {
+        const neutralValues = [
+          camera.frontTiltDeg,
+          camera.frontSwingDeg,
+          camera.rearRiseMm,
+          camera.rearTiltDeg,
+          camera.cameraBodyPitchDeg,
+        ];
+        const passed = neutralValues.every(
+          (value) => Number.isFinite(value) && Math.abs(value) <= 1e-9,
+        );
+        return {
+          criterionId: criterion.id,
+          label: guidedCopy.criteria[criterion.id],
+          passed,
+          score: passed ? 1 : 0,
           message: getCriterionResultMessageRef(criterion, passed),
         };
       }

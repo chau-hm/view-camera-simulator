@@ -67,14 +67,14 @@ export const simulatorMessages = {
     },
     obliqueArchitecture: {
       objective:
-        "Observe the stable before-state for an oblique architectural view. No movement is required in this scene.",
+        "Use Front Rise to frame an oblique architectural view while keeping the camera level; the façade sharpness problem remains for a later lesson.",
       bullets: {
         level: "The level camera keeps the building verticals parallel on the Ground Glass.",
-        framing: "Notice that the near building top is cropped because the frame has no Rise.",
-        depth: "Compare the near, middle, and far windows along the receding façade; they do not share one sharpness level.",
+        framing: "Increase Front Rise to include the building top while keeping the base inside the frame.",
+        depth: "Compare the near, middle, and far windows along the receding façade; they still do not share one sharpness level.",
       },
       observation:
-        "The static scene separates two problems: level framing preserves verticals, while the oblique façade still spans depth and does not stay uniformly sharp.",
+        "Front Rise changes framing while the level camera preserves verticals. The oblique façade still spans depth and does not stay uniformly sharp.",
     },
     tableTilt: {
       objective:

@@ -46,6 +46,22 @@ describe("public scene catalog integrity", () => {
     ).toBe(false);
   });
 
+  it("publishes Oblique Architecture as the final free and guided scene", () => {
+    const entry = publicSceneCatalog.at(-1)!;
+    expect(entry?.id).toBe("oblique-architecture");
+    expect(entry?.availableModes).toEqual(["free", "guided"]);
+    expect(entry?.guidedTaskId).toBe("oblique-rise-01");
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: "oblique-architecture",
+        taskId: "oblique-rise-01",
+        publicEntry: entry,
+        task: getTaskById("oblique-rise-01"),
+      }),
+    ).toBe(true);
+  });
+
   it("rejects a missing scene definition", () => {
     expect(validate(publicSceneCatalog, () => undefined).errors).toContain(
       "shelf-swing: scene definition is missing",

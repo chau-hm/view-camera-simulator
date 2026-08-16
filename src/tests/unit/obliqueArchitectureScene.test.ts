@@ -46,11 +46,15 @@ const projectRegion = (riseMm: number, y: number) => {
   };
 };
 
-describe("Oblique Architecture — Static Problem", () => {
-  it("declares a fixed, level before-state with a receding façade", () => {
+describe("Oblique Architecture — Rise composition slice", () => {
+  it("declares a level before-state with Front Rise as the only movement", () => {
     expect(obliqueArchitectureScene.name).toBe("Oblique Architecture");
+    expect(obliqueArchitectureScene.movementCapabilities).toEqual({
+      available: ["frontRiseMm"],
+      selectionMode: "single",
+      defaultMovement: "frontRiseMm",
+    });
     expect(obliqueArchitectureScene.cameraControlPolicy).toEqual({
-      movement: "fixed",
       focusDistance: "fixed",
       aperture: "fixed",
       infinityReset: false,

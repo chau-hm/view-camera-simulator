@@ -77,6 +77,10 @@ export const tasksMessages = {
       pass: "構圖目標的可見範圍已足夠",
       fail: "構圖目標的可見範圍不足",
     },
+    cameraLevel: {
+      pass: "相機及後組保持水平",
+      fail: "相機水平或後組中立狀態已改變",
+    },
     mirrorReflectionClear: {
       pass: "相機倒影已離開鏡面範圍",
       fail: "相機倒影仍然透過鏡面可見",
@@ -117,6 +121,37 @@ export const tasksMessages = {
         buildingMainVisible: "使用前組上移重新構圖，讓建築物主體保持在中央，同時保留頂部。",
         movementUsed: "先從約 15 mm 開始，再逐步微調前組上移。",
         movementRange: "不要用前組傾斜解決問題；使用前組上移控制構圖。",
+      },
+    },
+  },
+  obliqueRise: {
+    title: "為建築物構圖",
+    objective: "使用前組上移把整座建築物納入畫面，同時保持相機水平及垂直線平行。",
+    notes: {
+      useRise: "保持前組傾斜及前組擺動為 0°，然後增加前組上移，讓屋頂進入畫面。",
+      keepBase: "把指定的建築物頂部納入畫面，同時保留較低的建築物底部。",
+      depth: "此課程只處理構圖；延伸立面仍會有不均勻的清晰度。",
+    },
+    criteria: {
+      buildingTopVisible: "指定的建築物頂部範圍可見",
+      buildingBaseVisible: "指定的建築物底部範圍仍然可見",
+      cameraLevel: "相機及後組保持水平",
+      movementUsed: "已使用前組上移",
+    },
+    feedback: {
+      passPrimary: "前組上移恢復了建築物構圖，同時保持相機水平。",
+      defaultFailPrimary: "使用前組上移納入屋頂，同時保持底部及垂直線穩定。",
+      primary: {
+        buildingTopVisible: "指定的屋頂範圍仍被裁切，請增加前組上移。",
+        buildingBaseVisible: "調整前組上移時，請保留畫面內較低的建築物底部。",
+        cameraLevel: "保持相機及後組水平；不要加入傾斜、擺動或後組移軸。",
+        movementUsed: "增加前組上移，開始解決構圖問題。",
+      },
+      secondary: {
+        buildingTopVisible: "觀察對焦屏頂部邊緣，直到指定的屋頂角落都在畫面內。",
+        buildingBaseVisible: "把屋頂納入畫面時，留意對焦屏底部邊緣。",
+        cameraLevel: "前組上移改變構圖，不會令相機俯仰或使垂直線收斂。",
+        movementUsed: "使用前組上移完成此構圖任務；不會指定必須使用的數值。",
       },
     },
   },

@@ -126,8 +126,9 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       publicSceneMessageKeys.obliqueArchitecture.topics.compoundMovements,
     ],
     availability: "available",
-    availableModes: ["free"],
+    availableModes: ["free", "guided"],
     thumbnailAsset: "assets/oblique-architecture.png",
+    guidedTaskId: "oblique-rise-01",
   },
 ];
 

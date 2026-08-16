@@ -39,7 +39,7 @@ export const scenesMessages = {
   obliqueArchitecture: {
     title: "Oblique Architecture",
     description:
-      "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
+      "Use Front Rise to frame an oblique building while keeping verticals parallel; the receding façade’s sharpness remains a later problem.",
     topics: {
       frontRise: "Front Rise",
       frontSwing: "Front Swing",

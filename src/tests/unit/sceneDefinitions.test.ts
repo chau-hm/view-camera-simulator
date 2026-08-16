@@ -69,21 +69,26 @@ describe("scene definitions", () => {
     expect(mirrorShiftScene.compositionTargets).toHaveLength(0);
   });
 
-  it("defines the Oblique Architecture static problem without a guided task", () => {
+  it("defines the Oblique Architecture Rise slice with a single movement capability", () => {
     expect(obliqueArchitectureScene.cameraPreset.focusDistanceMm).toBe(
       obliqueArchitectureGeometry.canonicalFocusDistanceMm,
     );
     expect(obliqueArchitectureScene.cameraControlPolicy).toEqual({
-      movement: "fixed",
       focusDistance: "fixed",
       aperture: "fixed",
       infinityReset: false,
+    });
+    expect(obliqueArchitectureScene.movementCapabilities).toEqual({
+      available: ["frontRiseMm"],
+      selectionMode: "single",
+      defaultMovement: "frontRiseMm",
     });
     expect(obliqueArchitectureScene.focusTargets).toEqual(
       obliqueArchitectureGeometry.focusTargets,
     );
     expect(obliqueArchitectureScene.compositionTargets.map((target) => target.id)).toEqual([
       "building-top",
+      "building-base",
       "target-facade",
     ]);
     expect(sceneOrder).toContain("oblique-architecture");

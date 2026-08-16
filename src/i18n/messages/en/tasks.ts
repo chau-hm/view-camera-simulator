@@ -75,6 +75,10 @@ export const tasksMessages = {
       pass: "Composition target is visible enough",
       fail: "Composition target visibility is too low",
     },
+    cameraLevel: {
+      pass: "Camera and rear standard remain level",
+      fail: "Camera level or rear-standard neutrality changed",
+    },
     mirrorReflectionClear: {
       pass: "Camera reflection is outside the mirror aperture",
       fail: "Camera reflection is still visible through the mirror",
@@ -119,6 +123,38 @@ export const tasksMessages = {
           "Reframe with Front Rise so the building body stays centered while retaining the top.",
         movementUsed: "Start from about 15 mm and fine-tune Front Rise upward.",
         movementRange: "Avoid solving this with Front Tilt; use Front Rise for the framing.",
+      },
+    },
+  },
+  obliqueRise: {
+    title: "Frame the Building",
+    objective:
+      "Use Front Rise to include the full building while keeping the camera level and the verticals parallel.",
+    notes: {
+      useRise: "Keep Front Tilt and Front Swing at 0°, then increase Front Rise to bring the roof into the frame.",
+      keepBase: "Include the required building top while keeping the lower building base inside the frame.",
+      depth: "This lesson solves framing only; the receding façade will still have uneven sharpness.",
+    },
+    criteria: {
+      buildingTopVisible: "Required building-top region is visible",
+      buildingBaseVisible: "Required building-base region remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      movementUsed: "Front Rise is used",
+    },
+    feedback: {
+      passPrimary: "Front Rise restored the building framing while the camera stayed level.",
+      defaultFailPrimary: "Use Front Rise to include the roof while keeping the base and verticals stable.",
+      primary: {
+        buildingTopVisible: "The required roof region is still cropped. Increase Front Rise.",
+        buildingBaseVisible: "Keep the lower building base inside the frame while adjusting Front Rise.",
+        cameraLevel: "Keep the camera and rear standard level; do not introduce tilt, swing, or rear movement.",
+        movementUsed: "Increase Front Rise to begin solving the framing problem.",
+      },
+      secondary: {
+        buildingTopVisible: "Watch the Ground Glass top edge until the required roof corners are inside.",
+        buildingBaseVisible: "Check the lower Ground Glass edge as you bring the roof into view.",
+        cameraLevel: "Front Rise changes framing without pitching the camera or converging the verticals.",
+        movementUsed: "Use the Front Rise control for this composition task; the exact value is not prescribed.",
       },
     },
   },

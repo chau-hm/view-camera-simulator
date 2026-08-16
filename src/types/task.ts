@@ -92,6 +92,14 @@ export type CompositionVisibleCriterion = {
   type: "composition-visible";
   targetId: string;
   minimumCoverage: number;
+  /** Use projected target corners when a target spans meaningful depth. */
+  coverageMode?: "frame-area" | "projected-corners";
+};
+
+/** Requires the camera and rear standard to remain in the neutral level state. */
+export type CameraLevelCriterion = {
+  id: string;
+  type: "camera-level";
 };
 
 export type MirrorReflectionClearCriterion = {
@@ -118,6 +126,7 @@ export type TaskSuccessCriterion =
   | MovementRangeCriterion
   | AllowedApertureCriterion
   | CompositionVisibleCriterion
+  | CameraLevelCriterion
   | MirrorReflectionClearCriterion
   | MirrorFramingRestoredCriterion
   | MirrorViewpointRetainedCriterion;
