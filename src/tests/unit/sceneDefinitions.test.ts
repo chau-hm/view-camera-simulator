@@ -141,7 +141,10 @@ describe("scene definitions", () => {
 
     expect(required.length).toBeGreaterThan(0);
     expect(lazy.length).toBeGreaterThan(0);
-    expect(nextSceneId).toBe("oblique-architecture");
+    expect(nextSceneId).toBe("table-tilt");
     expect(preload.length).toBeGreaterThan(0);
+    expect(sceneOrder.at(-1)).toBe("oblique-architecture");
+    expect(getNextSceneId("mirror-shift")).toBe("oblique-architecture");
+    expect(getNextSceneId("oblique-architecture")).toBeNull();
   });
 });

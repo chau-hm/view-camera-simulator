@@ -12,18 +12,18 @@ export type ObliqueArchitectureGroundGeometry = {
 
 export const ground: ObliqueArchitectureGroundGeometry = {
   y: -1200,
-  nearZ: 4200,
-  farZ: 15000,
+  nearZ: 8200,
+  farZ: 19000,
   width: 11000,
   centerX: 2800,
-  centerZ: (4200 + 15000) / 2,
+  centerZ: (8200 + 19000) / 2,
 };
 
 export const building = {
   width: 2400,
   height: 5000,
-  nearZ: 5600,
-  farZ: 12800,
+  nearZ: 9600,
+  farZ: 16800,
   leftX: 900,
   rightX: 3300,
   windowRows: 4,
@@ -75,6 +75,11 @@ export const facade = {
 
 export const focusTargetRow = 1;
 export const canonicalFocusDistanceMm = sideWindowColumnCenters[3] ?? buildingCenter.z;
+
+// Derived from the full roof/base corner projection after the subject is
+// placed at its calibrated depth. This is an evidence value for PR 6B, not a
+// movement preset or a bypass around the public control step.
+export const reachableFrontRiseMm = 20;
 
 export const focusTargetIds = [
   "facade-near",
@@ -161,6 +166,7 @@ export default {
   facade,
   focusTargetRow,
   canonicalFocusDistanceMm,
+  reachableFrontRiseMm,
   focusTargets,
   compositionTargets,
   sceneBounds,

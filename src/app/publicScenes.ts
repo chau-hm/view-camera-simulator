@@ -12,10 +12,10 @@ export const publicSceneIds = [
   "understanding-camera-movements",
   "focus-fundamentals-two-targets",
   "architecture-rise",
-  "oblique-architecture",
   "table-tilt",
   "shelf-swing",
   "mirror-shift",
+  "oblique-architecture",
 ] as const;
 export type PublicSceneId = (typeof publicSceneIds)[number];
 export type SceneAvailability = "available" | "in-development";
@@ -74,19 +74,6 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     guidedTaskId: "rise-01",
   },
   {
-    id: "oblique-architecture",
-    titleKey: publicSceneMessageKeys.obliqueArchitecture.title,
-    descriptionKey: publicSceneMessageKeys.obliqueArchitecture.description,
-    topicKeys: [
-      publicSceneMessageKeys.obliqueArchitecture.topics.levelCamera,
-      publicSceneMessageKeys.obliqueArchitecture.topics.croppedFraming,
-      publicSceneMessageKeys.obliqueArchitecture.topics.facadeDepth,
-    ],
-    availability: "available",
-    availableModes: ["free"],
-    thumbnailAsset: "assets/oblique-architecture.svg",
-  },
-  {
     id: "table-tilt",
     titleKey: publicSceneMessageKeys.tableTilt.title,
     descriptionKey: publicSceneMessageKeys.tableTilt.description,
@@ -128,6 +115,19 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/mirror-shift.png",
     guidedTaskId: "mirror-shift-01",
+  },
+  {
+    id: "oblique-architecture",
+    titleKey: publicSceneMessageKeys.obliqueArchitecture.title,
+    descriptionKey: publicSceneMessageKeys.obliqueArchitecture.description,
+    topicKeys: [
+      publicSceneMessageKeys.obliqueArchitecture.topics.frontRise,
+      publicSceneMessageKeys.obliqueArchitecture.topics.frontSwing,
+      publicSceneMessageKeys.obliqueArchitecture.topics.compoundMovements,
+    ],
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/oblique-architecture.png",
   },
 ];
 

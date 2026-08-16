@@ -39,13 +39,13 @@ export const scenesMessages = {
     },
   },
   obliqueArchitecture: {
-    title: "斜向建築 — 靜態問題",
+    title: "斜向建築攝影",
     description:
-      "觀察保持水平、從斜角觀看的相機：建築頂部被裁切，而沿深度延伸的立面不會由近至遠都同樣清晰。",
+      "結合前組上移與前組擺動，在斜角拍攝建築物時保持垂直線平行，並讓延伸的立面由近至遠保持清晰。",
     topics: {
-      levelCamera: "水平相機",
-      croppedFraming: "裁切構圖",
-      facadeDepth: "立面深度",
+      frontRise: "前組上移",
+      frontSwing: "前組擺動",
+      compoundMovements: "複合運動",
     },
   },
   tableTilt: {

@@ -37,13 +37,13 @@ export const scenesMessages = {
     },
   },
   obliqueArchitecture: {
-    title: "Oblique Architecture — Static Problem",
+    title: "Oblique Architecture",
     description:
-      "Observe a level camera facing a receding building corner: the top is cropped and the façade does not stay equally sharp from near to far.",
+      "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
     topics: {
-      levelCamera: "Level camera",
-      croppedFraming: "Cropped framing",
-      facadeDepth: "Façade depth",
+      frontRise: "Front Rise",
+      frontSwing: "Front Swing",
+      compoundMovements: "Compound movements",
     },
   },
   tableTilt: {

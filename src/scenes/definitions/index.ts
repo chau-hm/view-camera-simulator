@@ -10,21 +10,21 @@ import { obliqueArchitectureScene } from "./oblique-architecture";
 export const sceneRegistry: Record<string, SceneDefinition> = {
   [understandingCameraMovementsScene.id]: understandingCameraMovementsScene,
   [architectureRiseScene.id]: architectureRiseScene,
-  [obliqueArchitectureScene.id]: obliqueArchitectureScene,
   [tableTiltScene.id]: tableTiltScene,
   [shelfSwingScene.id]: shelfSwingScene,
   [focusFundamentalsTwoTargets.id]: focusFundamentalsTwoTargets,
   [mirrorShiftScene.id]: mirrorShiftScene,
+  [obliqueArchitectureScene.id]: obliqueArchitectureScene,
 };
 
 export const sceneOrder = [
   understandingCameraMovementsScene.id,
   architectureRiseScene.id,
-  obliqueArchitectureScene.id,
   tableTiltScene.id,
   shelfSwingScene.id,
   focusFundamentalsTwoTargets.id,
   mirrorShiftScene.id,
+  obliqueArchitectureScene.id,
 ] as const;
 
 export const getSceneById = (sceneId: string): SceneDefinition | undefined =>

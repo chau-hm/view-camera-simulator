@@ -58,23 +58,25 @@ describe("scenes page", () => {
     expect(scopedArchitectureCard.getByText("Framing")).toBeInTheDocument();
     expect(scopedArchitectureCard.getByText("Perspective control")).toBeInTheDocument();
 
-    // Oblique Architecture is a free-only static scene with no guided task.
+    // Oblique Architecture is the final free-only scene with no guided task.
     const obliqueHeading = await screen.findByRole("heading", {
-      name: "Oblique Architecture — Static Problem",
+      name: "Oblique Architecture",
       level: 2,
     });
     const obliqueCard = obliqueHeading.closest("article");
     expect(obliqueCard).not.toBeNull();
     const scopedObliqueCard = within(obliqueCard!);
     expect(
-      scopedObliqueCard.getByText(/Observe a level camera facing a receding building corner/),
+      scopedObliqueCard.getByText(
+        "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
+      ),
     ).toBeInTheDocument();
-    expect(scopedObliqueCard.getByText("Level camera")).toBeInTheDocument();
-    expect(scopedObliqueCard.getByText("Cropped framing")).toBeInTheDocument();
-    expect(scopedObliqueCard.getByText("Façade depth")).toBeInTheDocument();
+    expect(scopedObliqueCard.getByText("Front Rise")).toBeInTheDocument();
+    expect(scopedObliqueCard.getByText("Front Swing")).toBeInTheDocument();
+    expect(scopedObliqueCard.getByText("Compound movements")).toBeInTheDocument();
     expect(obliqueCard!.querySelector("img")).toHaveAttribute(
       "src",
-      "/assets/oblique-architecture.svg",
+      "/assets/oblique-architecture.png",
     );
     expect(scopedObliqueCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
@@ -82,7 +84,7 @@ describe("scenes page", () => {
     );
     expect(scopedObliqueCard.queryByRole("link", { name: "Start Guided Task" })).not.toBeInTheDocument();
 
-    // Table Tilt follows Oblique Architecture and uses the standard enabled SceneCard link.
+    // Table Tilt remains in the existing lesson order and uses the standard enabled SceneCard link.
     const tableHeading = await screen.findByRole("heading", { name: "Table Tilt", level: 2 });
     const tableCard = tableHeading.closest("article");
     expect(tableCard).not.toBeNull();
@@ -132,11 +134,12 @@ describe("scenes page", () => {
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
-      "oblique-architecture",
       "table-tilt",
       "shelf-swing",
       "mirror-shift",
+      "oblique-architecture",
     ]);
+    expect(publicSceneIds.at(-1)).toBe("oblique-architecture");
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual(publicSceneIds);
     expect(getPublicSceneEntryById("focus-fundamentals-two-targets")?.availableModes).toEqual([
       "free",
@@ -148,10 +151,10 @@ describe("scenes page", () => {
       "Understanding Camera Movements",
       "Focus Fundamentals — Two Targets",
       "Architecture Rise",
-      "Oblique Architecture — Static Problem",
       "Table Tilt",
       "Shelf Swing",
       "Mirror Shift",
+      "Oblique Architecture",
     ]);
     expect(getPublicScenes().map((scene) => scene.id)).toContain("shelf-swing");
     expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("available");
@@ -198,10 +201,10 @@ describe("scenes page", () => {
       "認識大片幅相機移軸",
       "前後組對焦比較",
       "建築構圖與上移",
-      "斜向建築 — 靜態問題",
       "桌面焦平面與傾斜",
       "斜向焦平面與擺動",
       "鏡面構圖與視點",
+      "斜向建築攝影",
     ]);
 
     const cardFor = (title: string) => {
@@ -219,6 +222,10 @@ describe("scenes page", () => {
     ).toBeInTheDocument();
     expect(cardFor("桌面焦平面與傾斜").getByText(/理解前組傾斜如何改變清晰焦平面/)).toBeInTheDocument();
     expect(cardFor("斜向焦平面與擺動").getByText(/理解前組擺動如何改變清晰焦平面/)).toBeInTheDocument();
-    expect(cardFor("斜向建築 — 靜態問題").getByText(/觀察保持水平、從斜角觀看的相機/)).toBeInTheDocument();
+    expect(
+      cardFor("斜向建築攝影").getByText(
+        "結合前組上移與前組擺動，在斜角拍攝建築物時保持垂直線平行，並讓延伸的立面由近至遠保持清晰。",
+      ),
+    ).toBeInTheDocument();
   });
 });

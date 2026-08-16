@@ -3,8 +3,12 @@ import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlas
 import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
-import geometry from "../../scenes/obliqueArchitectureGeometry";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import geometry, { reachableFrontRiseMm } from "../../scenes/obliqueArchitectureGeometry";
+import {
+  CAMERA_CONSTANTS,
+  CAMERA_CONTROL_STEPS,
+  DEFAULT_CAMERA_STATE,
+} from "../../utils/constants";
 
 const sceneCamera = {
   ...DEFAULT_CAMERA_STATE,
@@ -14,8 +18,37 @@ const sceneCamera = {
   mode: "free" as const,
 };
 
+const projectRegion = (riseMm: number, y: number) => {
+  const optics = deriveOpticsState(
+    { ...sceneCamera, frontRiseMm: riseMm },
+    obliqueArchitectureScene,
+  );
+  const project = (worldPoint: { x: number; y: number; z: number }) =>
+    projectWorldPointToFilmPlaneGroundGlass({
+      worldPoint,
+      lensCenterWorld: optics.lensCenterWorld,
+      filmPlaneCornersWorld: optics.filmPlaneCornersWorld,
+    });
+  const corners = [geometry.building.leftX, geometry.building.rightX].flatMap((x) =>
+    [geometry.building.nearZ, geometry.building.farZ].map((z) =>
+      project({ x, y, z }),
+    ),
+  );
+
+  return {
+    optics,
+    corners,
+    minU: Math.min(...corners.map((corner) => corner.uRaw)),
+    maxU: Math.max(...corners.map((corner) => corner.uRaw)),
+    minV: Math.min(...corners.map((corner) => corner.vRaw)),
+    maxV: Math.max(...corners.map((corner) => corner.vRaw)),
+    allVisible: corners.every((corner) => corner.visible),
+  };
+};
+
 describe("Oblique Architecture — Static Problem", () => {
   it("declares a fixed, level before-state with a receding façade", () => {
+    expect(obliqueArchitectureScene.name).toBe("Oblique Architecture");
     expect(obliqueArchitectureScene.cameraControlPolicy).toEqual({
       movement: "fixed",
       focusDistance: "fixed",
@@ -78,6 +111,34 @@ describe("Oblique Architecture — Static Problem", () => {
     expect(top.visible).toBe(false);
     expect(bottom.uRaw).toBeCloseTo(top.uRaw, 8);
     expect(farVerticalBottom.uRaw).not.toBeCloseTo(bottom.uRaw, 2);
+  });
+
+  it("keeps the roof cropped at neutral and reachable through the public Rise step", () => {
+    const neutralRoof = projectRegion(0, geometry.buildingTopY);
+    const neutralBase = projectRegion(0, geometry.ground.y);
+    const risenRoof = projectRegion(reachableFrontRiseMm, geometry.buildingTopY);
+    const risenBase = projectRegion(reachableFrontRiseMm, geometry.ground.y);
+
+    expect(neutralRoof.optics.diagnostics.fallbackApplied).toBe(false);
+    expect(neutralRoof.allVisible).toBe(false);
+    expect(neutralRoof.corners.some((corner) => corner.visible)).toBe(true);
+    expect(neutralRoof.maxV).toBeGreaterThan(1);
+    expect(neutralBase.allVisible).toBe(true);
+
+    expect(reachableFrontRiseMm).toBeGreaterThan(0);
+    expect(reachableFrontRiseMm).toBeLessThanOrEqual(CAMERA_CONSTANTS.riseMaxMm);
+    expect(reachableFrontRiseMm % CAMERA_CONTROL_STEPS.riseMm).toBe(0);
+    expect(risenRoof.allVisible).toBe(true);
+    expect(risenRoof.minU).toBeGreaterThan(0);
+    expect(risenRoof.maxU).toBeLessThan(1);
+    expect(risenRoof.maxV).toBeLessThan(1);
+    expect(risenBase.allVisible).toBe(true);
+    expect(risenBase.minU).toBeGreaterThan(0);
+    expect(risenBase.maxU).toBeLessThan(1);
+    expect(risenBase.minV).toBeGreaterThan(0);
+    expect(risenRoof.optics.rearStandardFrame).toEqual(
+      neutralRoof.optics.rearStandardFrame,
+    );
   });
 
   it("keeps the near and far façade samples from being uniformly sharp", () => {

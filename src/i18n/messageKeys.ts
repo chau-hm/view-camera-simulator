@@ -31,9 +31,9 @@ export const publicSceneMessageKeys = {
     title: "scenes.obliqueArchitecture.title",
     description: "scenes.obliqueArchitecture.description",
     topics: {
-      levelCamera: "scenes.obliqueArchitecture.topics.levelCamera",
-      croppedFraming: "scenes.obliqueArchitecture.topics.croppedFraming",
-      facadeDepth: "scenes.obliqueArchitecture.topics.facadeDepth",
+      frontRise: "scenes.obliqueArchitecture.topics.frontRise",
+      frontSwing: "scenes.obliqueArchitecture.topics.frontSwing",
+      compoundMovements: "scenes.obliqueArchitecture.topics.compoundMovements",
     },
   },
   tableTilt: {

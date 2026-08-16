@@ -3,8 +3,9 @@ import geometry from "../obliqueArchitectureGeometry";
 
 export const obliqueArchitectureScene: SceneDefinition = {
   id: "oblique-architecture",
-  name: "Oblique Architecture — Static Problem",
-  description: "See the architectural framing and depth-of-focus problem before any movement is applied.",
+  name: "Oblique Architecture",
+  description:
+    "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
   assets: [
     {
       id: "oblique-architecture-ground",
@@ -36,8 +37,8 @@ export const obliqueArchitectureScene: SceneDefinition = {
     focusDistanceReference: "lens-to-focus-plane",
   },
   cameraPlacement: {
-    position: { x: -6200, y: 3200, z: -5200 },
-    target: { x: 1800, y: 1000, z: 9000 },
+    position: { x: -6200, y: 3200, z: -1200 },
+    target: { x: 1800, y: 1000, z: 13000 },
   },
   bounds: geometry.sceneBounds,
   focusTargets: geometry.focusTargets,
