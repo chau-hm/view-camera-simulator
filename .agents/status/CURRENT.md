@@ -2,73 +2,96 @@
 
 ## Work
 
-PR / work identifier: Micro fix — Remove redundant Focus Fundamentals landing CTA
-Branch: `fix/remove-focus-cta`
-Base: `origin/main` @ `678f919c87a8f5ccf9aeed63eca38d3a3313c9e8`
-Head convention: record the substantive implementation commit here; the
-final status-only bookkeeping commit is intentionally not self-referenced.
+PR / work identifier: PR 6A — Oblique Architecture — Static Problem
+Branch: `feature/oblique-architecture-scene`
+Base: `origin/main` @ `389c27f`
 
 ## Objective
 
-Remove the redundant Focus Fundamentals CTA from the landing page while
-leaving the public Scenes catalog and the simulator lesson unchanged.
+Add the first public, free-only Oblique Architecture learning scene as a stable
+before-state. It presents a level camera facing a receding building corner so
+the verticals remain vertical, the building top is cropped, and near/middle/far
+façade samples are not uniformly sharp. No Rise/Swing lesson or evaluator is
+included.
 
 ## Implemented
 
-- Removed the `FocusCtaPanel` render and import from `HomePage`.
-- Deleted the unused `FocusCtaPanel` component.
-- Removed its typed English and zh-HK home message entries.
-- Removed only Focus CTA-specific CSS and direct landing-page assertions.
-- Updated the responsive marketing assertions that targeted the deleted CTA
-  surface.
+- Added canonical millimetre geometry for a rectilinear teaching building with
+  a visible corner, four repeated window rows, front windows, and a seven-stop
+  target façade extending in depth.
+- Added a shared Three.js subject factory for the interactive scene and Ground
+  Glass RTT, including named near/middle/far focus probes and unique-resource
+  disposal.
+- Added a fixed scene definition: zero rise/tilt/swing, finite focus at the
+  middle façade sample, level rear standard, stable observer placement, and no
+  user movement/focus/aperture/reset controls.
+- Registered the scene in the definitions, public catalog, free route
+  validation, RTT scene set, scene geometry view, top-view façade guide,
+  English/zh-HK copy, and free-practice observation copy. No guided task ID is
+  published.
+- Added scene-specific Ground Glass display calibration while preserving the
+  canonical physical CoC/optics state.
+- Added unit/integration coverage for projection/framing/sharpness, subject
+  identity/disposal, catalog/route consistency, localization, and RTT
+  registration, plus a focused Chromium runtime check.
+
+## Root design and calibration decisions
+
+- Building ground is at `y = -1200 mm`; the mass spans `z = 5600..12800 mm`
+  with the target façade on `x = 900 mm`, making the side-oblique viewpoint
+  legible without decorative geometry.
+- Camera placement is `(-6200, 3200, -5200) mm` looking toward
+  `(1800, 1000, 9000) mm`; rear movements remain zero so the canonical film
+  frame stays level.
+- Focus is `9200 mm`, the middle of the target façade. Canonical focus targets
+  are near/middle/far side windows; the Ground Glass display uses the existing
+  physical CoC path with a bounded `48 px` blur radius and `3.6` display scale
+  so the derived sharpness falloff remains legible at RTT resolution.
+- The scene uses the generic rear-standard thin-lens finite-focus strategy;
+  no new optics or sign convention was introduced.
 
 ## Changed surface
 
-- `src/app/pages.tsx`
-- `src/components/marketing/FocusCtaPanel.tsx` (deleted)
-- `src/i18n/messages/en/home.ts`
-- `src/i18n/messages/zh-HK/home.ts`
-- `src/styles/site-marketing.css`
-- `src/tests/integration/home-page.test.tsx`
-- `src/tests/integration/marketing-warning.test.tsx`
-- `src/tests/e2e/marketing-responsive.spec.ts`
-
-No scene catalog, route, Focus Fundamentals scene, simulator teaching copy,
-task, evaluator, optics, rendering, state, documentation, or dependency files
-changed.
+- Scene definition and canonical geometry:
+  `src/scenes/definitions/oblique-architecture.ts`,
+  `src/scenes/obliqueArchitectureGeometry.ts`,
+  `src/scenes/definitions/index.ts`
+- Shared 3D/RTT subject and registry:
+  `src/render/ObliqueArchitectureSubjectFactory.tsx`,
+  `src/render/sceneSubjectRegistry.tsx`,
+  `src/render/groundGlassRttScenes.ts`,
+  `src/render/groundGlassVisualSettings.ts`
+- Public catalog, route/geometry wiring, thumbnail, and copy:
+  `src/app/publicScenes.ts`, `src/components/geometry/*`,
+  `src/components/simulator/taskHelpers.ts`, `src/i18n/*`,
+  `public/assets/oblique-architecture.svg`
+- Tests:
+  `src/tests/unit/obliqueArchitectureScene.test.ts`,
+  `src/tests/e2e/oblique-architecture.spec.ts`, and the related scene,
+  registry, route, catalog, i18n, and RTT tests.
 
 ## Validation
 
-- Focused landing integration tests: passed; 2 files, 3 tests.
+- `npm test`: passed — 116 files, 1,087 tests.
 - `npm run typecheck`: passed.
-- `npm run lint`: passed.
+- `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
+- `npm run build`: passed.
+- Focused Chromium E2E: passed — shared 3D/RTT subject, finite RTT
+  diagnostics, contentful Ground Glass, near/middle/far sharpness falloff,
+  and no Rise/Swing/reset controls.
 - `git diff --check`: passed.
-- Final worktree status will be verified after the handoff commit and feature
-  publication.
 
-## Validation intentionally not run
+## Known gaps / PR 6B follow-up
 
-- Full `npm test` was not run because this is a bounded Micro fix and the
-  directly affected landing tests passed.
-- Renderer/browser E2E was not run, as explicitly excluded for this change.
-
-## Reviewer focus
-
-1. Verify the landing page no longer renders the redundant Focus CTA.
-2. Verify both locale message shapes remain valid after removing `home.focusCta`.
-3. Verify CTA-only CSS and direct assertions were removed without changing
-   shared landing styles or the Scenes catalog.
-4. Verify no Focus Fundamentals simulator, route, task, or teaching behavior
-   changed.
-
-## Since previous review
-
-Not applicable
+- Rise remains intentionally unavailable; PR 6B should introduce the Rise
+  control and its guided framing lesson from this fixed before-state.
+- Swing/focus-plane teaching, compound evaluation, and final guided
+  integration remain out of scope for PR 6A.
+- Full `npm run ci:local:e2e` was not run; the new RTT-backed public workflow
+  has focused Chromium coverage and the full unit/integration suite is green.
 
 ## Commit
 
-Substantive implementation: `19a8865610e42290de696da5e86da0cfefc46fc5`
-
-Final bookkeeping: the status-only commit that records this handoff is
-intentionally not self-referenced to avoid recursive commits.
+Substantive implementation: pending local commit.
+Final status-only bookkeeping commit: intentionally not self-referenced.

@@ -65,6 +65,17 @@ export const simulatorMessages = {
       observation:
         "Watch the top of the building as Front Rise changes. Framing moves while the whole-camera viewpoint stays fixed and the intended verticals remain parallel.",
     },
+    obliqueArchitecture: {
+      objective:
+        "Observe the stable before-state for an oblique architectural view. No movement is required in this scene.",
+      bullets: {
+        level: "The level camera keeps the building verticals parallel on the Ground Glass.",
+        framing: "Notice that the near building top is cropped because the frame has no Rise.",
+        depth: "Compare the near, middle, and far windows along the receding façade; they do not share one sharpness level.",
+      },
+      observation:
+        "The static scene separates two problems: level framing preserves verticals, while the oblique façade still spans depth and does not stay uniformly sharp.",
+    },
     tableTilt: {
       objective:
         "Use Front Tilt and Focus to align the plane of sharp focus with the three coplanar focus cards above the tabletop.",

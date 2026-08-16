@@ -38,6 +38,16 @@ export const scenesMessages = {
       perspectiveControl: "透視控制",
     },
   },
+  obliqueArchitecture: {
+    title: "斜向建築 — 靜態問題",
+    description:
+      "觀察保持水平、從斜角觀看的相機：建築頂部被裁切，而沿深度延伸的立面不會由近至遠都同樣清晰。",
+    topics: {
+      levelCamera: "水平相機",
+      croppedFraming: "裁切構圖",
+      facadeDepth: "立面深度",
+    },
+  },
   tableTilt: {
     title: "桌面焦平面與傾斜",
     description:

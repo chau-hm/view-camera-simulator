@@ -43,7 +43,7 @@ const validate = ({
   });
 
 describe("isValidSimulatorRoute", () => {
-  it.each(["shelf-swing", "table-tilt"])("accepts free mode without a task for %s", (sceneId) => {
+  it.each(["shelf-swing", "table-tilt", "oblique-architecture"])("accepts free mode without a task for %s", (sceneId) => {
     expect(validate({ mode: "free", sceneId })).toBe(true);
   });
 

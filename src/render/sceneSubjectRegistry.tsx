@@ -11,6 +11,11 @@ import {
   createArchitectureRiseGroup,
 } from "./ArchitectureRiseSubjectFactory";
 import {
+  ObliqueArchitectureSubject,
+  createObliqueArchitectureGroup,
+  disposeObliqueArchitectureGroup,
+} from "./ObliqueArchitectureSubjectFactory";
+import {
   FocusFundamentalsSubject,
   createFocusFundamentalsGroup,
 } from "./FocusFundamentalsSubjectFactory";
@@ -48,6 +53,7 @@ import {
 import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
 import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTargets";
 import { mirrorShiftGeometry } from "../scenes/mirrorShiftGeometry";
+import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -107,6 +113,10 @@ export const ArchitectureRiseRegisteredSubject = ({
   </>
 );
 
+export const ObliqueArchitectureRegisteredSubject = () => (
+  <ObliqueArchitectureSubject />
+);
+
 const architectureLightingTargetMm = {
   x: architectureRiseGeometry.building.center.x,
   y: architectureRiseGeometry.building.center.y,
@@ -126,6 +136,11 @@ const cameraMovementsLightingTargetMm = {
 const shelfSwingLightingTargetMm = {
   ...shelfSwingGeometry.middleSubject.focusDetailProbeWorld,
 };
+
+const obliqueArchitectureLightingTargetMm = {
+  ...(obliqueArchitectureGeometry.focusTargets[1]?.worldPosition ??
+    obliqueArchitectureGeometry.focusTargets[0].worldPosition),
+} as const;
 
 export const sceneSubjectRegistry = {
   "understanding-camera-movements": {
@@ -197,6 +212,16 @@ export const sceneSubjectRegistry = {
       targetMm: architectureLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },
       fillOffsetWorld: { x: 2, y: 1.5, z: -3 },
+    },
+  },
+  "oblique-architecture": {
+    SceneSubject: ObliqueArchitectureRegisteredSubject,
+    createRttGroup: createObliqueArchitectureGroup,
+    disposeRttGroup: disposeObliqueArchitectureGroup,
+    rttLighting: {
+      targetMm: obliqueArchitectureLightingTargetMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },
   "table-tilt": {

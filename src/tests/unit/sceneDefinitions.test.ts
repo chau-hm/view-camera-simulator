@@ -14,17 +14,25 @@ import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fund
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
+import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
+import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("scene definitions", () => {
   it("registers the core scenes", () => {
     // allow additional debug scenes to be registered in tests/environments
     expect(Object.keys(sceneRegistry)).toEqual(
-      expect.arrayContaining(["architecture-rise", "table-tilt", "shelf-swing"]),
+      expect.arrayContaining([
+        "architecture-rise",
+        "oblique-architecture",
+        "table-tilt",
+        "shelf-swing",
+      ]),
     );
     expect(sceneRegistry["table-tilt"]).toBe(tableTiltScene);
     expect(sceneRegistry["mirror-shift"]).toBe(mirrorShiftScene);
+    expect(sceneRegistry["oblique-architecture"]).toBe(obliqueArchitectureScene);
     expect(sceneOrder).toContain("table-tilt");
     expect(sceneOrder).toContain("mirror-shift");
     expect(getAllScenes().length).toBeGreaterThanOrEqual(3);
@@ -59,6 +67,26 @@ describe("scene definitions", () => {
     });
     expect(mirrorShiftScene.focusTargets).toHaveLength(0);
     expect(mirrorShiftScene.compositionTargets).toHaveLength(0);
+  });
+
+  it("defines the Oblique Architecture static problem without a guided task", () => {
+    expect(obliqueArchitectureScene.cameraPreset.focusDistanceMm).toBe(
+      obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+    );
+    expect(obliqueArchitectureScene.cameraControlPolicy).toEqual({
+      movement: "fixed",
+      focusDistance: "fixed",
+      aperture: "fixed",
+      infinityReset: false,
+    });
+    expect(obliqueArchitectureScene.focusTargets).toEqual(
+      obliqueArchitectureGeometry.focusTargets,
+    );
+    expect(obliqueArchitectureScene.compositionTargets.map((target) => target.id)).toEqual([
+      "building-top",
+      "target-facade",
+    ]);
+    expect(sceneOrder).toContain("oblique-architecture");
   });
 
   it("defines near/mid/far shelf focus targets", () => {
@@ -113,7 +141,7 @@ describe("scene definitions", () => {
 
     expect(required.length).toBeGreaterThan(0);
     expect(lazy.length).toBeGreaterThan(0);
-    expect(nextSceneId).toBe("table-tilt");
+    expect(nextSceneId).toBe("oblique-architecture");
     expect(preload.length).toBeGreaterThan(0);
   });
 });

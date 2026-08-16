@@ -31,6 +31,13 @@ const SCENE_DOF_VISUAL_SETTINGS: Readonly<
     // plane. RTT should display those already-derived planes even at 0° swing.
     planeMode: "derived-planes",
   },
+  "oblique-architecture": {
+    // The physical CoC remains canonical; this display calibration makes the
+    // near-to-far façade falloff legible at Ground Glass resolution.
+    maximumBlurRadiusPx: 48,
+    displayBlurScale: 3.6,
+    planeMode: "automatic",
+  },
 };
 
 export const getGroundGlassDofVisualSettings = (

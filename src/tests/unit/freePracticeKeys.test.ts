@@ -9,6 +9,7 @@ const publicSceneIds = [
   "understanding-camera-movements",
   "focus-fundamentals-two-targets",
   "architecture-rise",
+  "oblique-architecture",
   "table-tilt",
   "shelf-swing",
   "mirror-shift",

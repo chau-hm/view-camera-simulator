@@ -58,7 +58,31 @@ describe("scenes page", () => {
     expect(scopedArchitectureCard.getByText("Framing")).toBeInTheDocument();
     expect(scopedArchitectureCard.getByText("Perspective control")).toBeInTheDocument();
 
-    // Table Tilt follows Architecture Rise and uses the standard enabled SceneCard link.
+    // Oblique Architecture is a free-only static scene with no guided task.
+    const obliqueHeading = await screen.findByRole("heading", {
+      name: "Oblique Architecture — Static Problem",
+      level: 2,
+    });
+    const obliqueCard = obliqueHeading.closest("article");
+    expect(obliqueCard).not.toBeNull();
+    const scopedObliqueCard = within(obliqueCard!);
+    expect(
+      scopedObliqueCard.getByText(/Observe a level camera facing a receding building corner/),
+    ).toBeInTheDocument();
+    expect(scopedObliqueCard.getByText("Level camera")).toBeInTheDocument();
+    expect(scopedObliqueCard.getByText("Cropped framing")).toBeInTheDocument();
+    expect(scopedObliqueCard.getByText("Façade depth")).toBeInTheDocument();
+    expect(obliqueCard!.querySelector("img")).toHaveAttribute(
+      "src",
+      "/assets/oblique-architecture.svg",
+    );
+    expect(scopedObliqueCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
+      "href",
+      "/simulator/free/oblique-architecture",
+    );
+    expect(scopedObliqueCard.queryByRole("link", { name: "Start Guided Task" })).not.toBeInTheDocument();
+
+    // Table Tilt follows Oblique Architecture and uses the standard enabled SceneCard link.
     const tableHeading = await screen.findByRole("heading", { name: "Table Tilt", level: 2 });
     const tableCard = tableHeading.closest("article");
     expect(tableCard).not.toBeNull();
@@ -108,6 +132,7 @@ describe("scenes page", () => {
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
+      "oblique-architecture",
       "table-tilt",
       "shelf-swing",
       "mirror-shift",
@@ -123,6 +148,7 @@ describe("scenes page", () => {
       "Understanding Camera Movements",
       "Focus Fundamentals — Two Targets",
       "Architecture Rise",
+      "Oblique Architecture — Static Problem",
       "Table Tilt",
       "Shelf Swing",
       "Mirror Shift",
@@ -172,6 +198,7 @@ describe("scenes page", () => {
       "認識大片幅相機移軸",
       "前後組對焦比較",
       "建築構圖與上移",
+      "斜向建築 — 靜態問題",
       "桌面焦平面與傾斜",
       "斜向焦平面與擺動",
       "鏡面構圖與視點",
@@ -192,5 +219,6 @@ describe("scenes page", () => {
     ).toBeInTheDocument();
     expect(cardFor("桌面焦平面與傾斜").getByText(/理解前組傾斜如何改變清晰焦平面/)).toBeInTheDocument();
     expect(cardFor("斜向焦平面與擺動").getByText(/理解前組擺動如何改變清晰焦平面/)).toBeInTheDocument();
+    expect(cardFor("斜向建築 — 靜態問題").getByText(/觀察保持水平、從斜角觀看的相機/)).toBeInTheDocument();
   });
 });

@@ -48,6 +48,15 @@ export const simulatorMessageKeys = {
       },
       observation: "simulator.freePractice.architectureRise.observation",
     },
+    obliqueArchitecture: {
+      objective: "simulator.freePractice.obliqueArchitecture.objective",
+      bullets: {
+        level: "simulator.freePractice.obliqueArchitecture.bullets.level",
+        framing: "simulator.freePractice.obliqueArchitecture.bullets.framing",
+        depth: "simulator.freePractice.obliqueArchitecture.bullets.depth",
+      },
+      observation: "simulator.freePractice.obliqueArchitecture.observation",
+    },
     tableTilt: {
       objective: "simulator.freePractice.tableTilt.objective",
       bullets: {

@@ -48,6 +48,14 @@ const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
       simulatorMessageKeys.freePractice.architectureRise.bullets.focus,
     ],
   },
+  "oblique-architecture": {
+    objectiveKey: simulatorMessageKeys.freePractice.obliqueArchitecture.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.obliqueArchitecture.bullets.level,
+      simulatorMessageKeys.freePractice.obliqueArchitecture.bullets.framing,
+      simulatorMessageKeys.freePractice.obliqueArchitecture.bullets.depth,
+    ],
+  },
   "table-tilt": {
     objectiveKey: simulatorMessageKeys.freePractice.tableTilt.objective,
     bulletKeys: [
@@ -94,6 +102,9 @@ const feedbackByScene: Record<string, FreePracticeFeedbackKey> = {
   },
   "architecture-rise": {
     observationKey: simulatorMessageKeys.freePractice.architectureRise.observation,
+  },
+  "oblique-architecture": {
+    observationKey: simulatorMessageKeys.freePractice.obliqueArchitecture.observation,
   },
   "table-tilt": {
     observationKey: simulatorMessageKeys.freePractice.tableTilt.observation,

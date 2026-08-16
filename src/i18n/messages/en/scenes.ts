@@ -36,6 +36,16 @@ export const scenesMessages = {
       perspectiveControl: "Perspective control",
     },
   },
+  obliqueArchitecture: {
+    title: "Oblique Architecture — Static Problem",
+    description:
+      "Observe a level camera facing a receding building corner: the top is cropped and the façade does not stay equally sharp from near to far.",
+    topics: {
+      levelCamera: "Level camera",
+      croppedFraming: "Cropped framing",
+      facadeDepth: "Façade depth",
+    },
+  },
   tableTilt: {
     title: "Table Tilt",
     description:
