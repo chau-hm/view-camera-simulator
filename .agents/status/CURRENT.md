@@ -67,11 +67,22 @@ The regression coverage proves:
 - Added guided English/zh-HK task copy, catalog routing, reset/restart coverage,
   and current-head Chromium coverage for Rise-only controls and RTT response.
 
+## Since previous review
+
+- Corrected `camera-level` evaluation to use the derived rear-standard/film-plane
+  orientation rather than unrelated front-standard movements.
+- Added regression coverage proving Front Swing does not invalidate camera level
+  while Rear Tilt does; horizontal yaw remains level as well.
+- Restored the final-facing Oblique Architecture scene/catalog description in
+  English and zh-HK.
+- Preserved the Rise-only PR 6B guided-task copy and behavior.
+- Revalidated the current branch HEAD.
+
 ## Validation
 
-- Focused Oblique Architecture, scene/catalog/route, task-engine, and guided
-  copy checks: passed.
-- `npm test`: passed — 117 test files, 1,095 tests.
+- Focused Oblique Architecture, rear-standard, scene/catalog/route, task-engine,
+  and guided-copy checks: passed — 7 files, 99 tests.
+- `npm test`: passed — 117 test files, 1,097 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
@@ -94,5 +105,6 @@ The regression coverage proves:
 ## Commit references
 
 - Substantive implementation commit: `e484602` (`feat(scene): add Oblique Architecture Rise composition lesson`).
+- Review-fix substantive commit: `99ddcd3` (`fix(scene): correct Oblique Architecture level criterion and catalog copy`).
 - Final status update commit is bookkeeping-only and intentionally not
   self-referenced.
