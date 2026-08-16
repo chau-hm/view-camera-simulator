@@ -8,7 +8,6 @@ export const homeMessages = {
     description:
       "移動整部相機，或調整前組及後組，然後在對焦屏上比較視點、構圖、透視及對焦如何改變。",
     exploreSimulator: "探索模擬器",
-    learnWhy: "了解原因",
   },
   why: {
     ariaLabel: "為甚麼使用大片幅相機",

@@ -32,9 +32,6 @@ export const HomePage = () => {
             <Link className="btn btn--primary" to="/scenes">
               {t("home.hero.exploreSimulator")}
             </Link>
-            <a className="btn" href="#why">
-              {t("home.hero.learnWhy")}
-            </a>
           </div>
         </div>
 
