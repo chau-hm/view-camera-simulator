@@ -93,5 +93,5 @@ included.
 
 ## Commit
 
-Substantive implementation: pending local commit.
+Substantive implementation: `b76eda1` (`feat(scene): add oblique architecture static problem`).
 Final status-only bookkeeping commit: intentionally not self-referenced.
