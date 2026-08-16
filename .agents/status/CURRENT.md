@@ -4,110 +4,90 @@
 
 PR / work identifier: PR 6A — Oblique Architecture — Static Problem
 Branch: `feature/oblique-architecture-scene`
-Base: `origin/main` @ `389c27f`
+Base: `main` (`origin/main` @ `389c27f`)
 
 ## Objective
 
-Add the first public, free-only Oblique Architecture learning scene as a stable
-before-state. It presents a level camera facing a receding building corner so
-the verticals remain vertical, the building top is cropped, and near/middle/far
-façade samples are not uniformly sharp. No Rise/Swing lesson or evaluator is
-included.
+Provide the stable, free-only before-state for the Oblique Architecture
+learning scene: a level camera keeps the building verticals parallel, neutral
+framing crops the roof, and the oblique target façade is not uniformly sharp
+from near to far. Rise/Swing solving and guided evaluation remain out of scope.
 
 ## Since previous review
 
-- Recalibrated the subject depth so a 20 mm Front Rise, reachable on the
-  existing 1 mm / 0–40 mm public control, fits the roof and base corners.
-- Moved Oblique Architecture to the final public scene position and updated
-  scene-order/preload assertions.
-- Replaced the temporary development title, description, and topics with
-  final-facing compound-movement copy in English and zh-HK.
-- Replaced the temporary SVG card art with the supplied approved
-  `public/assets/oblique-architecture.png` ImageGen asset.
+- Recalibrated the subject depth so the framing problem is solvable through the existing public Front Rise range.
+- Added a publicly reachable 20 mm / 1 mm-step Rise solution regression test.
+- Moved Oblique Architecture to the final public scene position.
+- Replaced temporary static-problem catalog copy with final-facing compound-movement copy.
+- Replaced the temporary SVG thumbnail with the approved PNG asset.
+- Revalidated the latest branch HEAD.
 
-## Implemented
+## Current geometry and calibration
 
-- Added canonical millimetre geometry for a rectilinear teaching building with
-  a visible corner, four repeated window rows, front windows, and a seven-stop
-  target façade extending in depth.
-- Added a shared Three.js subject factory for the interactive scene and Ground
-  Glass RTT, including named near/middle/far focus probes and unique-resource
-  disposal.
-- Added a fixed scene definition: zero rise/tilt/swing, finite focus at the
-  middle façade sample, level rear standard, stable observer placement, no
-  movement/reset controls, and locked focus/aperture controls.
-- Registered the scene in the definitions, public catalog, free route
-  validation, RTT scene set, scene geometry view, top-view façade guide,
-  English/zh-HK copy, and free-practice observation copy. No guided task ID is
-  published.
-- Added scene-specific Ground Glass display calibration while preserving the
-  canonical physical CoC/optics state.
-- Added unit/integration coverage for projection/framing/sharpness, subject
-  identity/disposal, catalog/route consistency, localization, and RTT
-  registration, plus a focused Chromium runtime check.
+- Building depth: `z = 9600..16800 mm`
+- Ground: `z = 8200..19000 mm`
+- Camera placement:
+  - position = `(-6200, 3200, -1200) mm`
+  - target = `(1800, 1000, 13000) mm`
+- Rear standard remains level and unchanged in the initial state; initial Rise,
+  Tilt, and Swing are zero.
+- Canonical focus: `13200 mm`, derived from the middle target-façade sample in
+  the current implementation.
+- Reachable Front Rise: `20 mm`
+- Public Rise range: `0..40 mm`
+- Public Rise step: `1 mm`
 
-## Root design and calibration decisions
+The regression test proves:
 
-- Building ground is at `y = -1200 mm`; the mass spans `z = 9600..16800 mm`
-  with the target façade on `x = 900 mm`, making the side-oblique viewpoint
-  legible without changing the building's physical proportions. The ground
-  spans `z = 8200..19000 mm`.
-- Camera placement is `(-6200, 3200, -1200) mm` looking toward
-  `(1800, 1000, 13000) mm`; rear movements remain zero so the canonical film
-  frame stays level.
-- Focus is `13200 mm`, the middle of the target façade. Canonical focus targets
-  are near/middle/far side windows; the Ground Glass display uses the existing
-  physical CoC path with a bounded `48 px` blur radius and `3.6` display scale
-  so the derived sharpness falloff remains legible at RTT resolution.
-- The calibrated future Rise value is `20 mm`; full roof and base corner
-  projections are inside the usable frame at that value, while the neutral
-  roof remains cropped.
-- The scene uses the generic rear-standard thin-lens finite-focus strategy;
-  no new optics or sign convention was introduced.
+- `0 mm Rise` → roof remains cropped.
+- `20 mm Rise` → required roof corners fit, required base corners remain visible,
+  and the rear standard remains unchanged.
 
-## Changed surface
+## Public catalog state
 
-- Scene definition and canonical geometry:
-  `src/scenes/definitions/oblique-architecture.ts`,
-  `src/scenes/obliqueArchitectureGeometry.ts`,
-  `src/scenes/definitions/index.ts`
-- Shared 3D/RTT subject and registry:
-  `src/render/ObliqueArchitectureSubjectFactory.tsx`,
-  `src/render/sceneSubjectRegistry.tsx`,
-  `src/render/groundGlassRttScenes.ts`,
-  `src/render/groundGlassVisualSettings.ts`
-- Public catalog, route/geometry wiring, thumbnail, and copy:
-  `src/app/publicScenes.ts`, `src/components/geometry/*`,
-  `src/components/simulator/taskHelpers.ts`, `src/i18n/*`,
-  `public/assets/oblique-architecture.png`
-- Tests:
-  `src/tests/unit/obliqueArchitectureScene.test.ts`,
-  `src/tests/e2e/oblique-architecture.spec.ts`, and the related scene,
-  registry, route, catalog, i18n, and RTT tests.
+- Public title: `Oblique Architecture`
+- zh-HK title: `斜向建築攝影`
+- Public scene ordering: Oblique Architecture is the final public scene.
+- Thumbnail: `public/assets/oblique-architecture.png`
+- Availability is free-only with no guided task ID; Rise/Swing solving controls
+  and movement reset remain unavailable in PR 6A.
+
+## Implemented surfaces
+
+- Canonical building, ground, camera placement, focus targets, and composition
+  bounds in `src/scenes/obliqueArchitectureGeometry.ts` and the scene definition.
+- One registered Three.js subject shared by the 3D scene and Ground Glass RTT,
+  including near/middle/far focus probes and owned-resource disposal.
+- Public catalog, scene ordering, free route validation, RTT registration,
+  scene geometry/top-view support, English/zh-HK copy, and the approved PNG.
+- Focused unit/integration coverage plus Chromium coverage for the shared
+  subject, RTT diagnostics/content, sharpness falloff, and unavailable controls.
 
 ## Validation
 
-- Focused review-fix tests: passed — 6 files, 66 tests.
+- Focused Oblique Architecture and related scene/catalog/route tests: passed —
+  6 files, 66 tests.
 - `npm test`: passed — 116 files, 1,088 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
 - `npm run build`: passed.
-- Focused Chromium E2E: passed — shared 3D/RTT subject, finite RTT
-  diagnostics, contentful Ground Glass, near/middle/far sharpness falloff,
-  and no Rise/Swing/reset controls.
+- Focused Chromium E2E: passed — scene mount, shared 3D/RTT subject, optics
+  fallback false, contentful Ground Glass, non-uniform near/middle/far
+  sharpness, and unavailable Rise/Swing/reset controls.
 - `git diff --check`: passed.
 
 ## Known gaps / PR 6B follow-up
 
-- Rise remains intentionally unavailable; PR 6B should introduce the Rise
-  control and its guided framing lesson from this fixed before-state.
-- Swing/focus-plane teaching, compound evaluation, and final guided
-  integration remain out of scope for PR 6A.
-- Full `npm run ci:local:e2e` was not run; the new RTT-backed public workflow
-  has focused Chromium coverage and the full unit/integration suite is green.
+- PR 6B should introduce the public Rise control and guided framing lesson
+  using the reachable 20 mm calibration evidence.
+- Swing/focus-plane teaching, compound evaluation, and final guided integration
+  remain out of scope for PR 6A.
+- Full `npm run ci:local:e2e` was not run; focused Chromium coverage was used
+  for this scene and the full unit/integration suite is green.
 
-## Commit
+## Commit references
 
-Substantive review-fix implementation: `0f35f12`.
-Final status-only bookkeeping commit: pending; intentionally not self-referenced.
+- Substantive implementation/review-fix commit: `0f35f12`.
+- Final status update commit: pending; bookkeeping only and intentionally not
+  self-referenced.
