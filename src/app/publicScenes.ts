@@ -15,6 +15,7 @@ export const publicSceneIds = [
   "table-tilt",
   "shelf-swing",
   "mirror-shift",
+  "oblique-architecture",
 ] as const;
 export type PublicSceneId = (typeof publicSceneIds)[number];
 export type SceneAvailability = "available" | "in-development";
@@ -114,6 +115,19 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/mirror-shift.png",
     guidedTaskId: "mirror-shift-01",
+  },
+  {
+    id: "oblique-architecture",
+    titleKey: publicSceneMessageKeys.obliqueArchitecture.title,
+    descriptionKey: publicSceneMessageKeys.obliqueArchitecture.description,
+    topicKeys: [
+      publicSceneMessageKeys.obliqueArchitecture.topics.frontRise,
+      publicSceneMessageKeys.obliqueArchitecture.topics.frontSwing,
+      publicSceneMessageKeys.obliqueArchitecture.topics.compoundMovements,
+    ],
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/oblique-architecture.png",
   },
 ];
 

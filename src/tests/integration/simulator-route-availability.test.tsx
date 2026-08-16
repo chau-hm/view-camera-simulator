@@ -41,6 +41,7 @@ describe("simulator route availability", () => {
   it.each([
     ["/simulator/free/focus-fundamentals-two-targets", "free:focus-fundamentals-two-targets:none"],
     ["/simulator/free/architecture-rise", "free:architecture-rise:none"],
+    ["/simulator/free/oblique-architecture", "free:oblique-architecture:none"],
     ["/simulator/free/shelf-swing", "free:shelf-swing:none"],
     ["/simulator/free/mirror-shift", "free:mirror-shift:none"],
     ["/simulator/guided/architecture-rise/rise-01", "guided:architecture-rise:rise-01"],
@@ -75,6 +76,8 @@ describe("simulator route availability", () => {
     "/simulator/free/table-tilt/tilt-01",
     "/simulator/guided/focus-fundamentals-two-targets",
     "/simulator/guided/focus-fundamentals-two-targets/rise-01",
+    "/simulator/guided/oblique-architecture",
+    "/simulator/guided/oblique-architecture/rise-01",
   ])("redirects invalid simulator route %s to Scenes", async (route) => {
     renderRoute(route);
 

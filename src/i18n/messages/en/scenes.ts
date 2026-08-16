@@ -36,6 +36,16 @@ export const scenesMessages = {
       perspectiveControl: "Perspective control",
     },
   },
+  obliqueArchitecture: {
+    title: "Oblique Architecture",
+    description:
+      "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
+    topics: {
+      frontRise: "Front Rise",
+      frontSwing: "Front Swing",
+      compoundMovements: "Compound movements",
+    },
+  },
   tableTilt: {
     title: "Table Tilt",
     description:

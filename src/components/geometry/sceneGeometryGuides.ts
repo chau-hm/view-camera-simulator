@@ -1,6 +1,7 @@
 import type { Vec3 } from "../../types/optics";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
+import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 
 export type SceneGeometryGuide = {
   id: string;
@@ -46,6 +47,20 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
       testId: "shelf-swing-subject-trace",
       labelPositionT: 0.72,
       labelOffsetPx: { x: 0, y: -20 },
+      labelAnchor: "middle",
+    },
+  ],
+  "oblique-architecture": [
+    {
+      id: "oblique-architecture-target-facade",
+      label: "Target façade depth",
+      view: "top",
+      startWorld: obliqueArchitectureGeometry.focusTargets[0].worldPosition,
+      endWorld: obliqueArchitectureGeometry.focusTargets[2].worldPosition,
+      color: "#115e59",
+      testId: "oblique-architecture-target-facade",
+      labelPositionT: 0.52,
+      labelOffsetPx: { x: 0, y: -18 },
       labelAnchor: "middle",
     },
   ],

@@ -25,6 +25,11 @@ describe("Ground Glass RTT scene registration", () => {
     expect(clip.far).toBeGreaterThan(9);
   });
 
+  it("includes Oblique Architecture in the centralized RTT scene set", () => {
+    expect(RTT_SCENES).toContain("oblique-architecture");
+    expect(isGroundGlassRttScene("oblique-architecture")).toBe(true);
+  });
+
   it("derives enough far clipping range for the back station and samples", () => {
     const lensCenter = { x: 0, y: 0, z: 0 };
     const clip = getGroundGlassClipRangeWorld(shelfSwingScene, lensCenter);

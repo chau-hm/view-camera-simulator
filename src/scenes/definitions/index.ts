@@ -5,6 +5,7 @@ import { tableTiltScene } from "./table-tilt";
 import { focusFundamentalsTwoTargets } from "./focus-fundamentals-two-targets";
 import { understandingCameraMovementsScene } from "./understanding-camera-movements";
 import { mirrorShiftScene } from "./mirror-shift";
+import { obliqueArchitectureScene } from "./oblique-architecture";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
   [understandingCameraMovementsScene.id]: understandingCameraMovementsScene,
@@ -13,6 +14,7 @@ export const sceneRegistry: Record<string, SceneDefinition> = {
   [shelfSwingScene.id]: shelfSwingScene,
   [focusFundamentalsTwoTargets.id]: focusFundamentalsTwoTargets,
   [mirrorShiftScene.id]: mirrorShiftScene,
+  [obliqueArchitectureScene.id]: obliqueArchitectureScene,
 };
 
 export const sceneOrder = [
@@ -22,6 +24,7 @@ export const sceneOrder = [
   shelfSwingScene.id,
   focusFundamentalsTwoTargets.id,
   mirrorShiftScene.id,
+  obliqueArchitectureScene.id,
 ] as const;
 
 export const getSceneById = (sceneId: string): SceneDefinition | undefined =>

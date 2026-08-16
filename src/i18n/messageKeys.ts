@@ -27,6 +27,15 @@ export const publicSceneMessageKeys = {
       perspectiveControl: "scenes.architectureRise.topics.perspectiveControl",
     },
   },
+  obliqueArchitecture: {
+    title: "scenes.obliqueArchitecture.title",
+    description: "scenes.obliqueArchitecture.description",
+    topics: {
+      frontRise: "scenes.obliqueArchitecture.topics.frontRise",
+      frontSwing: "scenes.obliqueArchitecture.topics.frontSwing",
+      compoundMovements: "scenes.obliqueArchitecture.topics.compoundMovements",
+    },
+  },
   tableTilt: {
     title: "scenes.tableTilt.title",
     description: "scenes.tableTilt.description",
@@ -66,6 +75,7 @@ export type PublicSceneTopicKey =
   | TopicValues<typeof publicSceneMessageKeys.understanding>
   | TopicValues<typeof publicSceneMessageKeys.focusFundamentals>
   | TopicValues<typeof publicSceneMessageKeys.architectureRise>
+  | TopicValues<typeof publicSceneMessageKeys.obliqueArchitecture>
   | TopicValues<typeof publicSceneMessageKeys.tableTilt>
   | TopicValues<typeof publicSceneMessageKeys.shelfSwing>
   | TopicValues<typeof publicSceneMessageKeys.mirrorShift>;
