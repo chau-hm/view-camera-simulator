@@ -5,7 +5,6 @@ export const homeMessages = {
     description:
       "Move the whole camera or its Front and Rear standards, then compare how viewpoint, framing, perspective and focus change on the Ground Glass.",
     exploreSimulator: "Explore the Simulator",
-    learnWhy: "Learn Why",
   },
   why: {
     ariaLabel: "Why use a view camera",

@@ -18,11 +18,6 @@ describe("home page", () => {
     expect(explore).toBeInTheDocument();
     expect(explore.closest('a')).toHaveAttribute('href', '/scenes');
 
-    const learnWhy = await screen.findByText("Learn Why");
-    expect(learnWhy).toBeInTheDocument();
-    // Learn Why should link to #why anchor
-    expect(learnWhy.closest('a')).toHaveAttribute('href', '#why');
-
     // hero illustration wrapper present (decorative, aria-hidden)
     const heroWrap = document.querySelector('.hero__illustration');
     expect(heroWrap).toBeTruthy();
