@@ -58,7 +58,7 @@ describe("scenes page", () => {
     expect(scopedArchitectureCard.getByText("Framing")).toBeInTheDocument();
     expect(scopedArchitectureCard.getByText("Perspective control")).toBeInTheDocument();
 
-    // Oblique Architecture remains the final public scene and now exposes the Rise task.
+    // Oblique Architecture remains the final public scene and now exposes the Swing + Focus task.
     const obliqueHeading = await screen.findByRole("heading", {
       name: "Oblique Architecture",
       level: 2,
@@ -84,7 +84,7 @@ describe("scenes page", () => {
     );
     expect(scopedObliqueCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
       "href",
-      "/simulator/guided/oblique-architecture/oblique-rise-01",
+      "/simulator/guided/oblique-architecture/oblique-swing-focus-01",
     );
 
     // Table Tilt remains in the existing lesson order and uses the standard enabled SceneCard link.

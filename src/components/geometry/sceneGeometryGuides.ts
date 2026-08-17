@@ -81,6 +81,11 @@ const targetLabels: Readonly<Record<string, SceneGeometryTargetLabelMap>> = {
     "focus-near-detail": "Near detail",
     "focus-far-detail": "Far detail",
   },
+  "oblique-architecture": {
+    "facade-near": "Near façade",
+    "facade-middle": "Middle façade",
+    "facade-far": "Far façade",
+  },
 };
 
 export const getSceneGeometryGuides = (sceneId: string): readonly SceneGeometryGuide[] =>

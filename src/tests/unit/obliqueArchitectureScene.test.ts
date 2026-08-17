@@ -46,19 +46,21 @@ const projectRegion = (riseMm: number, y: number) => {
   };
 };
 
-describe("Oblique Architecture — Rise composition slice", () => {
-  it("declares a level before-state with Front Rise as the only movement", () => {
+describe("Oblique Architecture scene", () => {
+  it("declares a level scene with Rise and Swing available for the compound slices", () => {
     expect(obliqueArchitectureScene.name).toBe("Oblique Architecture");
     expect(obliqueArchitectureScene.movementCapabilities).toEqual({
-      available: ["frontRiseMm"],
-      selectionMode: "single",
+      available: ["frontRiseMm", "frontSwingDeg"],
+      selectionMode: "multiple",
       defaultMovement: "frontRiseMm",
     });
     expect(obliqueArchitectureScene.cameraControlPolicy).toEqual({
-      focusDistance: "fixed",
       aperture: "fixed",
       infinityReset: false,
     });
+    expect(obliqueArchitectureScene.focusDistanceRangeMm).toEqual(
+      geometry.focusDistanceRangeMm,
+    );
     expect(obliqueArchitectureScene.cameraPreset).toMatchObject({
       frontRiseMm: 0,
       frontTiltDeg: 0,

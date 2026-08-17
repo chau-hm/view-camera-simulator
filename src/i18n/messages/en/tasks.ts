@@ -158,6 +158,45 @@ export const tasksMessages = {
       },
     },
   },
+  obliqueSwingFocus: {
+    title: "Align the Façade Focus",
+    objective:
+      "Use Front Swing and Focus to keep the receding façade sharp from near to far while preserving the architectural framing.",
+    notes: {
+      composition: "The building is already framed with Front Rise; keep that composition intact.",
+      swing: "Use Front Swing to rotate the plane of sharp focus toward the receding façade.",
+      focus: "Refine Focus so the plane passes through the near, middle, and far façade regions.",
+      level: "Keep the rear standard level so the building verticals remain parallel.",
+    },
+    criteria: {
+      buildingTopVisible: "Required building-top region remains visible",
+      buildingBaseVisible: "Required building-base region remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      nearSharp: "Near façade region is sharp",
+      middleSharp: "Middle façade region is sharp",
+      farSharp: "Far façade region is sharp",
+    },
+    feedback: {
+      passPrimary: "Front Swing and Focus aligned the façade while the level rear standard preserved the framing.",
+      defaultFailPrimary: "Keep the solved Rise framing, then use Front Swing and Focus until the façade is sharp from near to far.",
+      primary: {
+        buildingTopVisible: "Keep the required roof region inside the frame; do not change the solved Rise composition.",
+        buildingBaseVisible: "Keep the lower building base inside the frame while refining the focus plane.",
+        cameraLevel: "Keep the rear standard level; Front Swing should rotate the lens/focus plane, not the film plane.",
+        nearSharp: "The near façade remains soft. Adjust Front Swing and refine Focus so the focus plane reaches the near region.",
+        middleSharp: "The middle façade is not sharp enough. Refine Focus around the middle region before fine-tuning Swing.",
+        farSharp: "The far façade remains soft. Continue refining Front Swing and Focus across the receding depth.",
+      },
+      secondary: {
+        buildingTopVisible: "Use the Ground Glass top edge as a framing guardrail while working on focus.",
+        buildingBaseVisible: "Swing and Focus should preserve the Rise composition; watch the lower Ground Glass edge.",
+        cameraLevel: "A non-zero Front Swing changes lens-plane orientation without pitching the camera or rear standard.",
+        nearSharp: "Check the near window target and its surrounding sharpness patch in the readout.",
+        middleSharp: "Use the middle window as the initial focus reference, then compare all three depths.",
+        farSharp: "Use the Top geometry view to see whether the focus plane reaches the far façade target.",
+      },
+    },
+  },
   tableTilt: {
     title: "Align the tabletop plane of sharp focus",
     objective:

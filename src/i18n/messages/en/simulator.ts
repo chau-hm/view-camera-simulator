@@ -67,14 +67,14 @@ export const simulatorMessages = {
     },
     obliqueArchitecture: {
       objective:
-        "Use Front Rise to frame an oblique architectural view while keeping the camera level; the façade sharpness problem remains for a later lesson.",
+        "Explore Front Rise, Front Swing, and Focus while keeping the rear standard level in an oblique architectural view.",
       bullets: {
         level: "The level camera keeps the building verticals parallel on the Ground Glass.",
         framing: "Increase Front Rise to include the building top while keeping the base inside the frame.",
-        depth: "Compare the near, middle, and far windows along the receding façade; they still do not share one sharpness level.",
+        depth: "Use Front Swing and Focus to align the plane of sharp focus across the near, middle, and far windows.",
       },
       observation:
-        "Front Rise changes framing while the level camera preserves verticals. The oblique façade still spans depth and does not stay uniformly sharp.",
+        "Front Rise changes framing and Front Swing rotates the lens/focus plane. Compare the Ground Glass and Top geometry while the rear standard preserves parallel verticals.",
     },
     tableTilt: {
       objective:

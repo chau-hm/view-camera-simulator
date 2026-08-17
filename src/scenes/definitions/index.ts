@@ -1,4 +1,7 @@
-import type { SceneDefinition } from "../../types/scene";
+import type {
+  SceneDefinition,
+  SceneFocusDistanceRangeMm,
+} from "../../types/scene";
 import { architectureRiseScene } from "./architecture-rise";
 import { shelfSwingScene } from "./shelf-swing";
 import { tableTiltScene } from "./table-tilt";
@@ -59,10 +62,16 @@ export const getPreloadSceneAssets = (sceneId: string) => {
   return getRequiredSceneAssets(nextSceneId);
 };
 
-export type FocusDistanceRangeMm = {
-  min: number;
-  max: number;
-};
+export type FocusDistanceRangeMm = SceneFocusDistanceRangeMm;
+
+const isValidExplicitFocusDistanceRange = (
+  range: FocusDistanceRangeMm | undefined,
+): range is FocusDistanceRangeMm =>
+  range !== undefined &&
+  Number.isFinite(range.min) &&
+  Number.isFinite(range.max) &&
+  range.min > 0 &&
+  range.max >= range.min;
 
 const DEFAULT_FOCUS_DISTANCE_RANGE_MM: FocusDistanceRangeMm = {
   min: 100,
@@ -73,6 +82,13 @@ export const getSceneFocusDistanceRange = (sceneId: string): FocusDistanceRangeM
   const scene = getSceneById(sceneId);
   if (!scene) {
     return DEFAULT_FOCUS_DISTANCE_RANGE_MM;
+  }
+
+  if (isValidExplicitFocusDistanceRange(scene.focusDistanceRangeMm)) {
+    return {
+      min: scene.focusDistanceRangeMm.min,
+      max: scene.focusDistanceRangeMm.max,
+    };
   }
 
   const min = Math.max(

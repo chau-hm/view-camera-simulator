@@ -57,9 +57,11 @@ describe("Oblique Architecture Rise composition task", () => {
     expect(task?.sceneId).toBe(obliqueArchitectureScene.id);
     expect(task?.enabledControls).toEqual(["rise", "geometryView"]);
     expect(task?.constraints).toEqual({ movement: "rise-only" });
-    expect(obliqueArchitectureScene.movementCapabilities?.available).toEqual(["frontRiseMm"]);
+    expect(obliqueArchitectureScene.movementCapabilities?.available).toEqual([
+      "frontRiseMm",
+      "frontSwingDeg",
+    ]);
     expect(obliqueArchitectureScene.cameraControlPolicy).toEqual({
-      focusDistance: "fixed",
       aperture: "fixed",
       infinityReset: false,
     });

@@ -113,7 +113,9 @@ const resolveSceneFocusDefaults = (
 /** Resolve the default movement for a scene, if any. */
 const resolveDefaultMovement = (sceneId: string): CameraMovementField | null => {
   const scene = getSceneById(sceneId);
-  return scene?.movementCapabilities?.defaultMovement ?? null;
+  return scene?.movementCapabilities?.selectionMode === "single"
+    ? scene.movementCapabilities.defaultMovement
+    : null;
 };
 
 const resolveCameraBodyReset = (sceneId: string): Pick<CameraState, "cameraBodyPitchDeg" | "cameraBodyPivotWorld"> => {
