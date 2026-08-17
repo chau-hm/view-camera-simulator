@@ -112,21 +112,27 @@ appropriate Free Practice or guided initial state.
   `oblique-swing-focus-01` with observable façade sharpness criteria.
 - Added canonical top-view façade target labels and preserved the shared
   3D/RTT subject, projection, level-camera semantics, and PR 6B Rise task.
+- Fixed Current Settings for multi-movement scenes so Oblique Architecture
+  exposes actual Rise + Swing values instead of a stale single selected
+  movement.
+- Preserved the existing selected-movement presentation for single-movement
+  scenes.
+- Added focused regression coverage for the multi-movement Swing readout.
 - Revalidated the current branch HEAD.
 
 ## Validation
 
-- Focused Oblique Architecture/task/catalog/route/geometry checks: passed —
-  9 files, 74 tests.
-- `npm test`: passed — 118 test files, 1,106 tests.
+- Focused readout, Oblique Architecture/task/catalog/route checks: passed —
+  4 files, 40 tests.
+- `npm test`: passed — 118 test files, 1,107 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
 - `npm run build`: passed.
 - Focused Chromium Oblique Architecture E2E: passed — 3 tests covering Free
-  Practice, `oblique-rise-01`, and `oblique-swing-focus-01`, including RTT
-  content, optics fallback false, control restrictions, completion, and
-  restart semantics.
+  Practice Rise + Swing readouts, `oblique-rise-01`, and
+  `oblique-swing-focus-01` Swing readout visibility, RTT content, optics
+  fallback false, control restrictions, completion, and restart semantics.
 - `git diff --check`: passed.
 - Full `npm run ci:local:e2e`: not run; focused Chromium coverage directly
   exercises the changed public scene workflows.
@@ -138,6 +144,7 @@ compound free-practice/outcome exercise. PR 6C is not the final compound task.
 
 ## Commit references
 
-- Substantive implementation commit: `5cdedae` (`feat(scene): add Oblique Architecture Swing and façade focus lesson`).
+- PR 6C implementation commit: `5cdedae` (`feat(scene): add Oblique Architecture Swing and façade focus lesson`).
+- Review-fix implementation commit: `a9bfe22` (`fix(ui): show multi-movement camera state in Current Settings`).
 - Final status update commit will be bookkeeping-only and intentionally not
   self-referenced.
