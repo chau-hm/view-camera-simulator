@@ -1,6 +1,10 @@
 // Canonical geometry for the Oblique Architecture — Static Problem scene.
 // All subject, focus, framing, and top-view guide values are expressed in mm.
 
+import { calibrateShelfSwing, type ShelfSwingVec3 } from "./shelfSwingGeometry";
+import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS } from "../utils/constants";
+import { roundToStep } from "../utils/roundToStep";
+
 export type ObliqueArchitectureGroundGeometry = {
   y: number;
   nearZ: number;
@@ -80,6 +84,7 @@ export const canonicalFocusDistanceMm = sideWindowColumnCenters[3] ?? buildingCe
 // placed at its calibrated depth. This is an evidence value for PR 6B, not a
 // movement preset or a bypass around the public control step.
 export const reachableFrontRiseMm = 20;
+export const facadeSharpnessMinimum = 0.8;
 
 export const focusTargetIds = [
   "facade-near",
@@ -167,6 +172,47 @@ export const sceneBounds = {
   },
 };
 
+// This is calibration evidence for the later Swing + Focus slice. The shared
+// three-probe solver derives the continuous plane intersection; the public
+// range leaves a depth-derived margin around that solution rather than using
+// the subject's world-Z bounds as a finite-focus lower limit.
+export const swingFocusCalibration = calibrateShelfSwing({
+  focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
+  focusProbes: focusTargets.map((target) => target.worldPosition) as [
+    ShelfSwingVec3,
+    ShelfSwingVec3,
+    ShelfSwingVec3,
+  ],
+});
+
+const focusCalibrationMarginMm = Math.max(
+  CAMERA_CONTROL_STEPS.focusDistanceMm * 50,
+  roundToStep(
+    (facade.farZ - facade.nearZ) * 0.1,
+    CAMERA_CONTROL_STEPS.focusDistanceMm,
+  ),
+);
+
+export const focusDistanceRangeMm = {
+  min: roundToStep(
+    Math.max(
+      CAMERA_CONTROL_STEPS.focusDistanceMm,
+      swingFocusCalibration.focusDistanceMm - focusCalibrationMarginMm,
+    ),
+    CAMERA_CONTROL_STEPS.focusDistanceMm,
+  ),
+  max: roundToStep(sceneBounds.max.z, CAMERA_CONTROL_STEPS.focusDistanceMm),
+} as const;
+
+export const reachableFrontSwingDeg = roundToStep(
+  swingFocusCalibration.frontSwingDeg,
+  CAMERA_CONTROL_STEPS.swingDeg,
+);
+export const reachableFacadeFocusDistanceMm = roundToStep(
+  swingFocusCalibration.focusDistanceMm,
+  CAMERA_CONTROL_STEPS.focusDistanceMm,
+);
+
 export default {
   ground,
   building,
@@ -179,7 +225,12 @@ export default {
   focusTargetRow,
   canonicalFocusDistanceMm,
   reachableFrontRiseMm,
+  facadeSharpnessMinimum,
   focusTargets,
+  swingFocusCalibration,
+  focusDistanceRangeMm,
+  reachableFrontSwingDeg,
+  reachableFacadeFocusDistanceMm,
   compositionTargets,
   sceneBounds,
 };

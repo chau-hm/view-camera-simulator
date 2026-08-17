@@ -36,6 +36,7 @@ export const obliqueArchitectureScene: SceneDefinition = {
     lensDatum: "baseline-origin",
     focusDistanceReference: "lens-to-focus-plane",
   },
+  focusDistanceRangeMm: geometry.focusDistanceRangeMm,
   cameraPlacement: {
     position: { x: -6200, y: 3200, z: -1200 },
     target: { x: 1800, y: 1000, z: 13000 },
@@ -59,15 +60,14 @@ export const obliqueArchitectureScene: SceneDefinition = {
       worldBounds: geometry.compositionTargets.targetFacade,
     },
   ],
-  // PR 6B exposes only Front Rise. Focus, aperture, and infinity reset remain
-  // fixed until the later compound-movement slices.
+  // PR 6C exposes Front Rise and Front Swing together in Free Practice. The
+  // guided Swing + Focus task narrows the public controls through task metadata.
   movementCapabilities: {
-    available: ["frontRiseMm"],
-    selectionMode: "single",
+    available: ["frontRiseMm", "frontSwingDeg"],
+    selectionMode: "multiple",
     defaultMovement: "frontRiseMm",
   },
   cameraControlPolicy: {
-    focusDistance: "fixed",
     aperture: "fixed",
     infinityReset: false,
   },

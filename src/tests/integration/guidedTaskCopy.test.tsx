@@ -12,7 +12,7 @@ import { LOCALE_STORAGE_KEY } from "../../i18n/localePreference";
 import { guidedTaskMessageKeys } from "../../i18n/guidedTaskMessageKeys";
 import type { TaskDefinition, TaskEvaluation } from "../../types/task";
 
-const guidedTaskIds = ["rise-01", "oblique-rise-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
+const guidedTaskIds = ["rise-01", "oblique-rise-01", "oblique-swing-focus-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
 
 const resetLocale = async () => {
   cleanup();
@@ -134,6 +134,13 @@ describe("Guided Task presentation", () => {
     expect(document.body).not.toHaveTextContent(/20 mm/);
 
     cleanup();
+    renderGuidedTask("oblique-swing-focus-01", "oblique-swing-focus-near-sharp");
+    expect(document.body).toHaveTextContent(/Align the Façade Focus/);
+    expect(document.body).toHaveTextContent(/Front Swing and Focus/);
+    expect(document.body).toHaveTextContent(/near, middle, and far/);
+    expect(document.body).not.toHaveTextContent(/9\.7°|5260 mm/);
+
+    cleanup();
     renderGuidedTask("tilt-01", "tilt-movement-range");
     expect(document.body).toHaveTextContent(/Front Tilt/);
     expect(document.body).toHaveTextContent(/plane of sharp focus/);
@@ -173,6 +180,12 @@ describe("Guided Task presentation", () => {
     expect(document.body).toHaveTextContent(/為建築物構圖/);
     expect(document.body).toHaveTextContent(/整座建築物/);
     expect(document.body).toHaveTextContent(/延伸立面/);
+
+    cleanup();
+    renderGuidedTask("oblique-swing-focus-01", "oblique-swing-focus-near-sharp");
+    expect(document.body).toHaveTextContent(/對齊立面清晰焦平面/);
+    expect(document.body).toHaveTextContent(/前組擺動及對焦/);
+    expect(document.body).toHaveTextContent(/近處、中間及遠處/);
 
     cleanup();
     renderGuidedTask("tilt-01", "tilt-movement-range");

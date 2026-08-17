@@ -29,6 +29,8 @@ export type PublicSceneEntry = {
   availableModes: readonly SimulatorMode[];
   thumbnailAsset: string;
   guidedTaskId?: string;
+  /** Additional direct guided routes for scenes that grow across learning slices. */
+  guidedTaskIds?: readonly string[];
 };
 
 export const publicSceneCatalog: readonly PublicSceneEntry[] = [
@@ -128,7 +130,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/oblique-architecture.png",
-    guidedTaskId: "oblique-rise-01",
+    guidedTaskId: "oblique-swing-focus-01",
+    guidedTaskIds: ["oblique-rise-01", "oblique-swing-focus-01"],
   },
 ];
 

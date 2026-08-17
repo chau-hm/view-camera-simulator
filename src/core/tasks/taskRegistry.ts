@@ -109,6 +109,65 @@ const obliqueRiseTask: TaskDefinition = {
   },
 };
 
+const obliqueSwingFocusTask: TaskDefinition = {
+  id: "oblique-swing-focus-01",
+  sceneId: obliqueArchitectureScene.id,
+  mode: "guided",
+  enabledControls: ["swing", "focusDistance", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "oblique-swing-focus-building-top-visible",
+      type: "composition-visible",
+      targetId: "building-top",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "oblique-swing-focus-building-base-visible",
+      type: "composition-visible",
+      targetId: "building-base",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "oblique-swing-focus-camera-level",
+      type: "camera-level",
+    },
+    {
+      id: "oblique-swing-focus-near-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["facade-near"],
+      minimumSharpness: obliqueArchitectureGeometry.facadeSharpnessMinimum,
+    },
+    {
+      id: "oblique-swing-focus-middle-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["facade-middle"],
+      minimumSharpness: obliqueArchitectureGeometry.facadeSharpnessMinimum,
+    },
+    {
+      id: "oblique-swing-focus-far-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["facade-far"],
+      minimumSharpness: obliqueArchitectureGeometry.facadeSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    frontRiseMm: obliqueArchitectureGeometry.reachableFrontRiseMm,
+    frontTiltDeg: 0,
+    frontSwingDeg: 0,
+    focusDistanceMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    aperture: obliqueArchitectureScene.cameraPreset.aperture,
+    geometryView: "top",
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+  },
+};
+
 const tiltTask: TaskDefinition = {
   id: "tilt-01",
   sceneId: "table-tilt",
@@ -300,6 +359,7 @@ const mirrorShiftTask: TaskDefinition = {
 export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
   "oblique-rise-01": obliqueRiseTask,
+  "oblique-swing-focus-01": obliqueSwingFocusTask,
   "tilt-01": tiltTask,
   "swing-01": swingTask,
   "mirror-shift-01": mirrorShiftTask,

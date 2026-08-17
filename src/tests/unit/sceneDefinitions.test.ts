@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   getAllScenes,
+  getSceneFocusDistanceRange,
   getLazySceneAssets,
   getNextSceneId,
   getPreloadSceneAssets,
@@ -69,21 +70,26 @@ describe("scene definitions", () => {
     expect(mirrorShiftScene.compositionTargets).toHaveLength(0);
   });
 
-  it("defines the Oblique Architecture Rise slice with a single movement capability", () => {
+  it("defines the Oblique Architecture scene with the shared Rise/Swing capability", () => {
     expect(obliqueArchitectureScene.description).toBe(
       "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
     );
     expect(obliqueArchitectureScene.cameraPreset.focusDistanceMm).toBe(
       obliqueArchitectureGeometry.canonicalFocusDistanceMm,
     );
+    expect(obliqueArchitectureScene.focusDistanceRangeMm).toEqual(
+      obliqueArchitectureGeometry.focusDistanceRangeMm,
+    );
+    expect(getSceneFocusDistanceRange(obliqueArchitectureScene.id)).toEqual(
+      obliqueArchitectureGeometry.focusDistanceRangeMm,
+    );
     expect(obliqueArchitectureScene.cameraControlPolicy).toEqual({
-      focusDistance: "fixed",
       aperture: "fixed",
       infinityReset: false,
     });
     expect(obliqueArchitectureScene.movementCapabilities).toEqual({
-      available: ["frontRiseMm"],
-      selectionMode: "single",
+      available: ["frontRiseMm", "frontSwingDeg"],
+      selectionMode: "multiple",
       defaultMovement: "frontRiseMm",
     });
     expect(obliqueArchitectureScene.focusTargets).toEqual(
@@ -95,6 +101,13 @@ describe("scene definitions", () => {
       "target-facade",
     ]);
     expect(sceneOrder).toContain("oblique-architecture");
+  });
+
+  it("preserves legacy focus-range derivation for scenes without an explicit range", () => {
+    expect(getSceneFocusDistanceRange(tableTiltScene.id)).toEqual({
+      min: Math.max(100, tableTiltScene.bounds.min.z),
+      max: Math.max(tableTiltScene.bounds.min.z, tableTiltScene.bounds.max.z),
+    });
   });
 
   it("defines near/mid/far shelf focus targets", () => {

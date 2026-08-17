@@ -328,14 +328,29 @@ export const SimulatorWorkspace = ({
   const enabledControls = useMemo(() => {
     const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
     if (focusFundamentals) {
-    return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
+      return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
     }
 
     if (mode === "free" || !task) {
-    return new Set(["rise", "tilt", "swing", "focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
+      const controls = new Set(["geometryView", "focusAssist", "grid"]);
+      const availableMovements = safeScene.movementCapabilities?.available;
+      if (!availableMovements) {
+        controls.add("rise");
+        controls.add("tilt");
+        controls.add("swing");
+      } else {
+        availableMovements.forEach((movement) => {
+          if (movement === "frontRiseMm") controls.add("rise");
+          if (movement === "frontTiltDeg") controls.add("tilt");
+          if (movement === "frontSwingDeg") controls.add("swing");
+        });
+      }
+      if (!focusLocked) controls.add("focusDistance");
+      if (!apertureLocked) controls.add("aperture");
+      return controls;
     }
     return new Set([...task.enabledControls]);
-  }, [mode, task, camera.activeSceneId]);
+  }, [apertureLocked, camera.activeSceneId, focusLocked, mode, safeScene, task]);
 
   const evaluation = useMemo(() => (task ? evaluateTask(task, safeScene, camera, opticsState) : null), [camera, opticsState, safeScene, task]);
   useEffect(() => {
@@ -572,7 +587,7 @@ export const SimulatorWorkspace = ({
                 <div className="sim-section">
                   <CameraMovementTeachingControls />
                 </div>
-              ) : (safeScene.movementCapabilities && selectedMovement) ? (
+              ) : (safeScene.movementCapabilities?.selectionMode === "single" && selectedMovement) ? (
                 <>
                   <div className="sim-section">
                     <MovementSelector

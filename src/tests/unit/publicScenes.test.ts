@@ -50,7 +50,8 @@ describe("public scene catalog integrity", () => {
     const entry = publicSceneCatalog.at(-1)!;
     expect(entry?.id).toBe("oblique-architecture");
     expect(entry?.availableModes).toEqual(["free", "guided"]);
-    expect(entry?.guidedTaskId).toBe("oblique-rise-01");
+    expect(entry?.guidedTaskId).toBe("oblique-swing-focus-01");
+    expect(entry?.guidedTaskIds).toEqual(["oblique-rise-01", "oblique-swing-focus-01"]);
     expect(
       isValidSimulatorRoute({
         mode: "guided",
@@ -58,6 +59,15 @@ describe("public scene catalog integrity", () => {
         taskId: "oblique-rise-01",
         publicEntry: entry,
         task: getTaskById("oblique-rise-01"),
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: "oblique-architecture",
+        taskId: "oblique-swing-focus-01",
+        publicEntry: entry,
+        task: getTaskById("oblique-swing-focus-01"),
       }),
     ).toBe(true);
   });
