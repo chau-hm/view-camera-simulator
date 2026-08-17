@@ -128,6 +128,18 @@ export const compositionTargets = {
       z: building.farZ + 100,
     },
   },
+  buildingBase: {
+    min: {
+      x: building.leftX - 100,
+      y: ground.y,
+      z: building.nearZ - 100,
+    },
+    max: {
+      x: building.rightX + 100,
+      y: ground.y + 900,
+      z: building.farZ + 100,
+    },
+  },
   targetFacade: {
     min: {
       x: building.leftX - 100,

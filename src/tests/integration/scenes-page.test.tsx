@@ -58,7 +58,7 @@ describe("scenes page", () => {
     expect(scopedArchitectureCard.getByText("Framing")).toBeInTheDocument();
     expect(scopedArchitectureCard.getByText("Perspective control")).toBeInTheDocument();
 
-    // Oblique Architecture is the final free-only scene with no guided task.
+    // Oblique Architecture remains the final public scene and now exposes the Rise task.
     const obliqueHeading = await screen.findByRole("heading", {
       name: "Oblique Architecture",
       level: 2,
@@ -82,7 +82,10 @@ describe("scenes page", () => {
       "href",
       "/simulator/free/oblique-architecture",
     );
-    expect(scopedObliqueCard.queryByRole("link", { name: "Start Guided Task" })).not.toBeInTheDocument();
+    expect(scopedObliqueCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/oblique-architecture/oblique-rise-01",
+    );
 
     // Table Tilt remains in the existing lesson order and uses the standard enabled SceneCard link.
     const tableHeading = await screen.findByRole("heading", { name: "Table Tilt", level: 2 });

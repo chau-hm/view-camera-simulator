@@ -3,6 +3,8 @@ import architectureGeometry from "../../scenes/architectureRiseGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
+import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
+import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import {
   MIRROR_SHIFT_SCENE_CALIBRATION,
   resolveMirrorShiftTeachingState,
@@ -52,6 +54,55 @@ const riseTask: TaskDefinition = {
     rearTiltDeg: 0,
    aperture: 11,
    geometryView: "side",
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+  },
+};
+
+const obliqueRiseTask: TaskDefinition = {
+  id: "oblique-rise-01",
+  sceneId: obliqueArchitectureScene.id,
+  mode: "guided",
+  enabledControls: ["rise", "geometryView"],
+  constraints: {
+    movement: "rise-only",
+  },
+  criteria: [
+    {
+      id: "oblique-rise-building-top-visible",
+      type: "composition-visible",
+      targetId: "building-top",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "oblique-rise-building-base-visible",
+      type: "composition-visible",
+      targetId: "building-base",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "oblique-rise-camera-level",
+      type: "camera-level",
+    },
+    {
+      id: "oblique-rise-movement-used",
+      type: "movement-used",
+      movement: "rise",
+      minimumAbs: 1,
+    },
+  ],
+  initialCameraState: {
+    frontRiseMm: 0,
+    frontTiltDeg: 0,
+    frontSwingDeg: 0,
+    focusDistanceMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    aperture: obliqueArchitectureScene.cameraPreset.aperture,
+    geometryView: "side",
     groundGlassAssistEnabled: false,
     focusAssistEnabled: false,
     gridEnabled: true,
@@ -248,6 +299,7 @@ const mirrorShiftTask: TaskDefinition = {
 
 export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
+  "oblique-rise-01": obliqueRiseTask,
   "tilt-01": tiltTask,
   "swing-01": swingTask,
   "mirror-shift-01": mirrorShiftTask,

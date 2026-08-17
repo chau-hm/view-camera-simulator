@@ -65,6 +65,33 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
       },
     },
   },
+  "oblique-rise-01": {
+    title: k.obliqueRise.title,
+    objective: k.obliqueRise.objective,
+    notes: [k.obliqueRise.notes.useRise, k.obliqueRise.notes.keepBase, k.obliqueRise.notes.depth],
+    criteria: {
+      "oblique-rise-building-top-visible": k.obliqueRise.criteria.buildingTopVisible,
+      "oblique-rise-building-base-visible": k.obliqueRise.criteria.buildingBaseVisible,
+      "oblique-rise-camera-level": k.obliqueRise.criteria.cameraLevel,
+      "oblique-rise-movement-used": k.obliqueRise.criteria.movementUsed,
+    },
+    feedback: {
+      passPrimary: k.obliqueRise.feedback.passPrimary,
+      defaultFailPrimary: k.obliqueRise.feedback.defaultFailPrimary,
+      primary: {
+        "oblique-rise-building-top-visible": k.obliqueRise.feedback.primary.buildingTopVisible,
+        "oblique-rise-building-base-visible": k.obliqueRise.feedback.primary.buildingBaseVisible,
+        "oblique-rise-camera-level": k.obliqueRise.feedback.primary.cameraLevel,
+        "oblique-rise-movement-used": k.obliqueRise.feedback.primary.movementUsed,
+      },
+      secondary: {
+        "oblique-rise-building-top-visible": k.obliqueRise.feedback.secondary.buildingTopVisible,
+        "oblique-rise-building-base-visible": k.obliqueRise.feedback.secondary.buildingBaseVisible,
+        "oblique-rise-camera-level": k.obliqueRise.feedback.secondary.cameraLevel,
+        "oblique-rise-movement-used": k.obliqueRise.feedback.secondary.movementUsed,
+      },
+    },
+  },
   "tilt-01": {
     title: k.tableTilt.title,
     objective: k.tableTilt.objective,
@@ -269,6 +296,8 @@ export const getCriterionResultMessageRef = (
       return ref(k.results.allowedAperture[variant]);
     case "composition-visible":
       return ref(k.results.compositionVisible[variant]);
+    case "camera-level":
+      return ref(k.results.cameraLevel[variant]);
     case "mirror-reflection-clear":
       return ref(k.results.mirrorReflectionClear[variant]);
     case "mirror-framing-restored":

@@ -1,24 +1,10 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
-test("Oblique Architecture mounts the level static problem through the shared RTT subject", async ({ page }) => {
-  test.setTimeout(120_000);
-  const pageErrors: string[] = [];
-  const consoleProblems: string[] = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
-  page.on("console", (message) => {
-    if (
-      (message.type() === "error" || message.type() === "warning") &&
-      !isAllowedEnvironmentConsoleMessage(message.text())
-    ) {
-      consoleProblems.push(message.text());
-    }
-  });
-
-  await page.goto("/simulator/free/oblique-architecture?rttDiagnostics=1");
-  await expect(page).toHaveURL(/\/simulator\/free\/oblique-architecture\?rttDiagnostics=1$/);
+const assertSharedObliqueRendering = async (page: Page) => {
   await expect(page.getByRole("heading", { name: "3D Scene" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Ground Glass" })).toBeVisible();
 
@@ -39,28 +25,101 @@ test("Oblique Architecture mounts the level static problem through the shared RT
   expect(Number(await rtt.getAttribute("data-rtt-final-non-background"))).toBeGreaterThan(0);
   await expect(rtt.locator("canvas")).toBeVisible();
 
-  const nearSharpness = page.getByRole("progressbar", { name: "facade-near sharpness" });
-  const middleSharpness = page.getByRole("progressbar", { name: "facade-middle sharpness" });
-  const farSharpness = page.getByRole("progressbar", { name: "facade-far sharpness" });
-  await expect(nearSharpness).toHaveCount(1);
-  await expect(middleSharpness).toHaveCount(1);
-  await expect(farSharpness).toHaveCount(1);
-  expect(Number(await nearSharpness.getAttribute("aria-valuenow"))).toBeLessThan(
-    Number(await middleSharpness.getAttribute("aria-valuenow")),
+  const sharpness = await Promise.all(
+    ["facade-near", "facade-middle", "facade-far"].map(async (id) =>
+      Number(await page.getByRole("progressbar", { name: `${id} sharpness` }).getAttribute("aria-valuenow")),
+    ),
   );
-  expect(Number(await farSharpness.getAttribute("aria-valuenow"))).toBeLessThan(
-    Number(await middleSharpness.getAttribute("aria-valuenow")),
-  );
+  expect(sharpness[1]).toBeGreaterThan(sharpness[0]);
+  expect(sharpness[1]).toBeGreaterThan(sharpness[2]);
 
-  // The static slice exposes observation-only controls: no movement or reset
-  // control is offered, while focus and aperture stay visibly locked.
+  return { rtt, sceneCanvas };
+};
+
+const assertRiseOnlyControls = async (page: Page) => {
   const cameraControls = page.getByRole("region", { name: "Camera Controls" });
-  await expect(cameraControls.getByRole("slider", { name: "Rise" })).toHaveCount(0);
-  await expect(cameraControls.getByRole("slider", { name: "Swing" })).toHaveCount(0);
-  await expect(cameraControls.getByRole("button", { name: /Reset Movements/ })).toHaveCount(0);
+  const rise = cameraControls.getByRole("slider", { name: "Front Rise" });
+  await expect(rise).toBeVisible();
+  await expect(rise).toBeEnabled();
+  await expect(cameraControls.getByRole("radio", { name: "Front Rise" })).toBeChecked();
+  await expect(cameraControls.getByRole("slider", { name: "Front Swing" })).toHaveCount(0);
+  await expect(cameraControls.getByRole("slider", { name: "Front Tilt" })).toHaveCount(0);
+  await expect(cameraControls.getByRole("radio", { name: "Front Swing" })).toHaveCount(0);
+  await expect(cameraControls.getByRole("radio", { name: "Front Tilt" })).toHaveCount(0);
+  await expect(page.getByLabel("Focus distance")).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  return rise;
+};
+
+test("Oblique Architecture free practice keeps the shared level subject and exposes Front Rise only", async ({ page }) => {
+  test.setTimeout(120_000);
+  const pageErrors: string[] = [];
+  const consoleProblems: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (
+      (message.type() === "error" || message.type() === "warning") &&
+      !isAllowedEnvironmentConsoleMessage(message.text())
+    ) {
+      consoleProblems.push(message.text());
+    }
+  });
+
+  await page.goto("/simulator/free/oblique-architecture?rttDiagnostics=1");
+  await expect(page).toHaveURL(/\/simulator\/free\/oblique-architecture\?rttDiagnostics=1$/);
+  const { rtt } = await assertSharedObliqueRendering(page);
+  const rise = await assertRiseOnlyControls(page);
+  await expect(rise).toHaveValue("0");
   await expect(page.getByText("Focus is fixed for this lesson", { exact: true })).toBeVisible();
   await expect(page.getByText("Aperture is fixed for this lesson", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reset movements" })).toBeVisible();
+
+  const neutralSanityState = await rtt.getAttribute("data-rtt-sanity-state");
+  await setStepRangeInput(page, "Front Rise", 20);
+  await expect(rise).toHaveValue("20");
+  await expect.poll(async () => rtt.getAttribute("data-rtt-sanity-state")).not.toBe(neutralSanityState);
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+
+  await page.getByRole("button", { name: "Reset movements" }).click();
+  await expect(rise).toHaveValue("0");
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
+});
+
+test("Oblique Architecture guided Rise task solves observable framing and restarts to neutral", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/simulator/guided/oblique-architecture/oblique-rise-01?rttDiagnostics=1");
+  await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-rise-01\?rttDiagnostics=1$/);
+  await expect(page.getByText("Frame the Building", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(
+      "Use Front Rise to include the full building while keeping the camera level and the verticals parallel.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+
+  const { rtt } = await assertSharedObliqueRendering(page);
+  const rise = await assertRiseOnlyControls(page);
+  await expect(rise).toHaveValue("0");
+  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expect(page.getByRole("button", { name: "Restart task" })).toBeVisible();
+
+  const neutralSanityState = await rtt.getAttribute("data-rtt-sanity-state");
+  await setStepRangeInput(page, "Front Rise", 20);
+  await expect(rise).toHaveValue("20");
+  await expect.poll(async () => rtt.getAttribute("data-rtt-sanity-state")).not.toBe(neutralSanityState);
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "Task requirements completed" })).toHaveAttribute(
+    "aria-valuenow",
+    "4",
+  );
+
+  await page.getByRole("button", { name: "Restart task" }).click();
+  await expect(rise).toHaveValue("0");
+  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expect(page.getByRole("button", { name: "Restart task" })).toBeVisible();
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 });

@@ -49,15 +49,24 @@ export const obliqueArchitectureScene: SceneDefinition = {
       worldBounds: geometry.compositionTargets.buildingTop,
     },
     {
+      id: "building-base",
+      label: "Building base",
+      worldBounds: geometry.compositionTargets.buildingBase,
+    },
+    {
       id: "target-facade",
       label: "Target façade",
       worldBounds: geometry.compositionTargets.targetFacade,
     },
   ],
-  // PR 6A is a stable before-state. Later slices will deliberately relax this
-  // policy when Rise, Swing, and the compound task become public.
+  // PR 6B exposes only Front Rise. Focus, aperture, and infinity reset remain
+  // fixed until the later compound-movement slices.
+  movementCapabilities: {
+    available: ["frontRiseMm"],
+    selectionMode: "single",
+    defaultMovement: "frontRiseMm",
+  },
   cameraControlPolicy: {
-    movement: "fixed",
     focusDistance: "fixed",
     aperture: "fixed",
     infinityReset: false,
