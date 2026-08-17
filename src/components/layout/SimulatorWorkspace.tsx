@@ -235,6 +235,10 @@ export const SimulatorWorkspace = ({
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
+  const activeSingleMovement =
+    safeScene.movementCapabilities?.selectionMode === "single"
+      ? selectedMovement
+      : null;
 
   const opticsState = selectDerivedOpticsState(
     camera,
@@ -507,8 +511,8 @@ export const SimulatorWorkspace = ({
               focusDistanceMm={camera.focusDistanceMm}
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
-              activeMovement={selectedMovement ? { field: selectedMovement, value: (() => {
-                switch (selectedMovement) {
+              activeMovement={activeSingleMovement ? { field: activeSingleMovement, value: (() => {
+                switch (activeSingleMovement) {
                   case "frontRiseMm": return camera.frontRiseMm;
                   case "rearRiseMm": return camera.rearRiseMm;
                   case "frontTiltDeg": return camera.frontTiltDeg;

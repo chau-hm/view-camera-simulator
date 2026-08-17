@@ -86,6 +86,12 @@ test("Oblique Architecture free practice exposes Rise, Swing, and Focus", async 
   await expect(page.getByText("Aperture is fixed for this lesson", { exact: true })).toBeVisible();
   await expect(swing).toHaveValue("0");
 
+  const currentSettings = page.getByTestId("current-settings-readout");
+  await setStepRangeInput(page, "Rise", 20);
+  await setStepRangeInput(page, "Swing", 5);
+  await expect(currentSettings).toContainText("Front Rise: 20.0 mm");
+  await expect(currentSettings).toContainText("Front Swing: 5.0°");
+
   const focusBefore = await focus.inputValue();
 
   const neutralSanityState = await rtt.getAttribute("data-rtt-sanity-state");
@@ -180,6 +186,9 @@ test("Oblique Architecture guided Swing + Focus task starts from solved Rise and
     "aria-valuenow",
     "6",
   );
+  const currentSettings = page.getByTestId("current-settings-readout");
+  await expect(currentSettings).toContainText("Front Rise: 20.0 mm");
+  await expect(currentSettings).toContainText("Front Swing: 9.7°");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
   await page.getByRole("button", { name: "Restart task" }).click();
