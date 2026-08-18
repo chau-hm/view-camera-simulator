@@ -2,109 +2,95 @@
 
 ## Work
 
-PR / work identifier: PR 6D — Oblique Architecture — Compound Practice
-Branch: `feature/oblique-architecture-compound-practice`
-Base: `main` (`origin/main` @ `6e92677` when this branch was created)
+PR 6E — Oblique Architecture Guided Lesson + Final Integration
+
+Branch: `feature/oblique-architecture-guided-integration`
+Base: `main` (`origin/main` @ `fb2c33a`)
+Substantive implementation commit: `e2c94ee`
 
 ## Objective
 
-Add the complete Oblique Architecture outcome challenge from the neutral
-camera state. The learner uses Front Rise for composition, then Front Swing
-and Focus for the receding façade, while the rear standard remains level.
-Final guided progression remains deferred to PR 6E.
+Integrate the completed Oblique Architecture slices into one opt-in guided
+sequence without changing the optics, calibration, task evaluator, or
+renderer architecture.
 
-## Preserved PR 6C foundation
+## Guided Lesson sequence
 
-- Explicit Oblique Architecture Focus range: `4540..19020 mm`
-- Public Focus step: `10 mm`
-- Public Swing range/step: `-10..10°` / `0.1°`
-- Public Rise range/step: `0..40 mm` / `1 mm`
-- Fixed Aperture: `f/5.6`
-- Façade sharpness threshold: `0.8` for near/middle/far targets
-- Existing verification state: Rise `20 mm`, Swing `9.7°`, Focus `5260 mm`
+The public Oblique Architecture card now offers `Guided Lesson`, which enters:
 
-No optics model, scene geometry, calibration, threshold, focus-range, or
-renderer changes were required for PR 6D.
+1. Observe — `/simulator/free/oblique-architecture?lesson=1`
+2. Compose — `oblique-rise-01`
+3. Align Focus — `oblique-swing-focus-01`
+4. Final Challenge — `oblique-compound-01`
 
-## Compound task
+The three graded task references continue to come from the existing ordered
+`guidedTaskIds` list. The lightweight `guidedLesson` metadata only declares
+the lesson identity, Observe intro, and aligned stage labels.
 
-- Task ID: `oblique-compound-01` — **Complete the Photograph**
-- Primary public guided CTA: `oblique-compound-01`
-- Initial state: Rise `0 mm`, Swing `0°`, Focus `13200 mm`, Front Tilt `0°`,
-  rear movements `0`, fixed Aperture `f/5.6`, Top geometry view.
-- Enabled controls: Rise, Swing, Focus, and Geometry View.
-- Fixed/unavailable: Front Tilt, rear movements, Aperture, whole-camera pitch,
-  and Infinity Reset.
-- Observable criteria: projected building-top corners visible, projected
-  building-base corners visible, derived rear-standard/film-plane level, and
-  near/middle/far façade targets each at least `0.8` sharpness.
-- Success does not require exact movement or Focus values.
+Ordinary `/simulator/free/oblique-architecture` remains independent and
+unscored. All three direct guided task routes remain valid without the lesson
+query marker.
 
-## Compound regression evidence
+## Stage behavior
 
-- Neutral (`0 / 0 / 13200`): roof fails, base and camera-level pass, façade is
-  not uniformly sharp, overall task fails.
-- Rise-only (`20 / 0 / 13200`): framing passes but façade sharpness is
-  incomplete, overall task fails.
-- Swing + Focus without Rise (`0 / 9.7 / 5260`): façade sharpness passes but
-  roof composition fails, overall task fails.
-- Rise + Swing with canonical Focus (`20 / 9.7 / 13200`): composition may
-  pass but focus remains incomplete, overall task fails.
-- Full public verification (`20 / 9.7 / 5260`): all six observable criteria
-  pass.
-- Nearby public state (`20 / 9.6 / 5260`): also passes, protecting against
-  exact-answer scoring.
-- Current Settings exposes Front Rise, Front Swing, and Focus simultaneously
-  at the solved state; Restart returns the complete neutral initial state.
+- Observe uses the canonical neutral scene state: Rise `0 mm`, Swing `0°`,
+  Focus `13200 mm`, level rear standard, fixed `f/5.6` aperture. It shows the
+  cropped roof / uneven façade-sharpness explanation and has an always-enabled
+  Continue link.
+- Compose reuses `oblique-rise-01`, starts neutral, and enables Continue only
+  when the existing task evaluation passes.
+- Align Focus reuses `oblique-swing-focus-01`, starts at solved Rise `20 mm`,
+  Swing `0°`, Focus `13200 mm`, and is gated by its existing evaluation.
+- Final Challenge reuses `oblique-compound-01`, resets to Rise `0 mm`,
+  Swing `0°`, Focus `13200 mm`, and is gated by the compound evaluation.
 
-## Previous guided tasks preserved
+Previous navigation uses normal route initialization, so each task restores
+its own deliberate initial state. Completion shows the final outcome copy,
+`Lesson complete`, and `Back to Scenes`. There is no automatic navigation or
+persistent progress tracking.
 
-- `oblique-rise-01`: starts neutral and teaches Rise-only framing.
-- `oblique-swing-focus-01`: starts at solved Rise and teaches Swing + Focus.
-- `oblique-compound-01`: starts fully neutral and requires both composition
-  and façade sharpness.
-- All three routes remain directly routable; Oblique Architecture remains the
-  final public scene with the approved title, description, topics, and PNG
-  thumbnail.
+Entering the lesson Observe route is a scoped fresh route initialization;
+regression coverage proves stale Oblique Free Practice Rise/Swing/Focus values
+are cleared only for that lesson entry.
 
-## Since previous review
+## Preserved foundation
 
-- Added `oblique-compound-01` with neutral initialization and outcome-based
-  projected-corner, camera-level, and near/middle/far sharpness criteria.
-- Promoted the compound task to the primary Oblique Architecture guided CTA
-  while retaining both earlier guided routes.
-- Added English and zh-HK compound-task guidance and criterion-specific
-  feedback without exposing calibration answers.
-- Added partial-solution unit coverage, route/catalog/copy coverage, and the
-  focused neutral-to-solved Chromium workflow.
-- Revalidated the current branch HEAD.
+- Current Settings continues to show simultaneous Front Rise, Front Swing, and
+  Focus in the multi-movement Oblique scene.
+- Existing PR 6B–6D task criteria, initial states, reset semantics, direct
+  routes, public copy, scene ordering, thumbnail, RTT subject registration,
+  optics fallback behavior, and calibration remain unchanged.
+- PR 6E adds no new optical model, calibration, focus threshold, or graded
+  photographic outcome.
 
 ## Validation
 
-- Focused compound task/catalog/route/copy/scenes-page checks: passed — 5
-  files, 47 tests.
-- `npm test`: passed — 119 test files, 1,113 tests.
+- Focused lesson/catalog/route/store/UI tests: passed — 5 files, 61 tests.
+- `npm test`: passed — 121 test files, 1,123 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
 - `npm run build`: passed.
-- Focused Chromium Oblique Architecture E2E: passed — 4 tests covering Free
-  Practice, `oblique-rise-01`, `oblique-swing-focus-01`, and
-  `oblique-compound-01`, including RTT diagnostics, optics fallback false,
-  partial states, simultaneous readouts, completion, and Restart.
+- Focused Chromium Oblique Architecture E2E: passed — 5 tests covering
+  ordinary Free Practice, all three direct guided task workflows, and the
+  complete Observe → Compose → Align Focus → Final Challenge journey.
 - `git diff --check`: passed.
-- Full `npm run ci:local:e2e`: not run; focused Chromium coverage directly
-  exercises all changed Oblique Architecture public guided workflows.
+- Working tree was clean before the final status update.
+
+## Checks not run
+
+- Full `npm run ci:local:e2e` was not run. The focused Chromium suite covers the
+  changed lesson entry/progression and all existing Oblique workflows; no
+  renderer, scene lifecycle, or cross-scene control architecture changed.
 
 ## PR 6E handoff
 
-PR 6E will add the final guided learning sequence / integration across
-Observe → Compose → Align Focus → Final Challenge. It must reuse the completed
-PR 6B–6D task and optics infrastructure rather than introducing another
-optical model.
+This is the final planned Oblique Architecture integration slice. No PR 6F or
+post-6E feature work is started.
 
 ## Commit references
 
-- PR 6D substantive implementation: `21c8929` (`feat(scene): add Oblique Architecture compound practice challenge`).
-- Final status update commit will be bookkeeping-only and intentionally not
-  self-referenced.
+- Substantive implementation: `e2c94ee` (`feat(scene): integrate Oblique
+  Architecture guided lesson`).
+- The final status update commit is bookkeeping-only and intentionally does
+  not self-reference its own SHA.
