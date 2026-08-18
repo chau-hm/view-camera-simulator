@@ -4,10 +4,11 @@
 
 PR 6E — Oblique Architecture Guided Lesson + Final Integration
 
-Branch: `feature/oblique-architecture-guided-integration`
-Base: `main` (`origin/main` @ `fb2c33a`)
+Branch: `fix/oblique-architecture-aperture-tuning`
+Base: `main` (`origin/main` @ `b6ef012`)
 PR 6E implementation commit: `e2c94ee`
 Review-fix implementation commit: `79e4ef5`
+Aperture tuning implementation commit: `ba3afbf`
 
 ## Objective
 
@@ -35,7 +36,7 @@ query marker.
 ## Stage behavior
 
 - Observe uses the canonical neutral scene state: Rise `0 mm`, Swing `0°`,
-  Focus `13200 mm`, level rear standard, fixed `f/5.6` aperture. It shows the
+  Focus `13200 mm`, level rear standard, fixed `f/11` aperture. It shows the
   cropped roof / uneven façade-sharpness explanation and has an always-enabled
   Continue link.
 - Compose reuses `oblique-rise-01`, starts neutral, and enables Continue only
@@ -78,6 +79,21 @@ are cleared only for that lesson entry.
 - PR 6E adds no new optical model, calibration, focus threshold, or graded
   photographic outcome.
 
+## Aperture tuning follow-up
+
+- The fixed `f/5.6` opening made too much of the building appear oddly blurred.
+- Chose Option A: keep aperture fixed and tune Oblique Architecture to `f/11`
+  across Observe, Compose, Align Focus, and Final Challenge. No Final Challenge
+  aperture control fallback was added.
+- At `f/11`, neutral and Rise-only retain an incomplete façade sharpness result;
+  Swing + Focus without Rise still fails composition; the existing public
+  `20 mm / 9.7° / 5260 mm` compound verification state still passes.
+- Geometry, focus range, movement ranges, task thresholds, routing, and lesson
+  structure remain unchanged.
+- Current follow-up validation: focused Oblique unit tests `19/19`, full
+  `npm test` `121 files / 1,125 tests`, typecheck, lint, CSS check, build, and
+  focused Chromium `5/5` all passed.
+
 ## Validation
 
 - Focused lesson/catalog/route/store/UI tests: passed — 5 files, 63 tests.
@@ -95,9 +111,15 @@ are cleared only for that lesson entry.
 - `git diff --check`: passed.
 - Working tree is clean after the final status bookkeeping update.
 
-## Checks not run
+## Checks not run (PR 6E)
 
 - None.
+
+## Follow-up checks not run
+
+- Full `npm run ci:local:e2e` was not run for the two-file fixed-aperture
+  tuning; the focused Chromium suite plus the full unit/integration suite were
+  sufficient for this non-shared-behavior change.
 
 ## PR 6E handoff
 
@@ -110,5 +132,7 @@ post-6E feature work is started.
   Architecture guided lesson`).
 - Review-fix implementation: `79e4ef5` (`fix(scene): stabilize Oblique
   Architecture lesson entry state`).
+- Aperture tuning implementation: `ba3afbf` (`fix(scene): tune Oblique
+  Architecture aperture behavior`).
 - The final status update commit is bookkeeping-only and intentionally does
   not self-reference its own SHA.
