@@ -2,149 +2,109 @@
 
 ## Work
 
-PR / work identifier: PR 6C — Oblique Architecture — Swing + Façade Focus
-Branch: `feature/oblique-architecture-swing-focus`
-Base: `main` (`origin/main` @ `9d7fc46` when this branch was created)
+PR / work identifier: PR 6D — Oblique Architecture — Compound Practice
+Branch: `feature/oblique-architecture-compound-practice`
+Base: `main` (`origin/main` @ `6e92677` when this branch was created)
 
 ## Objective
 
-Add the second Oblique Architecture teaching slice: Free Practice exposes
-Front Rise, Front Swing, and Focus, while a guided task starts from the
-existing solved Rise composition and teaches alignment of the façade focus
-plane. The final neutral-state compound exercise remains deferred to PR 6D.
+Add the complete Oblique Architecture outcome challenge from the neutral
+camera state. The learner uses Front Rise for composition, then Front Swing
+and Focus for the receding façade, while the rear standard remains level.
+Final guided progression remains deferred to PR 6E.
 
-## Focus-range prerequisite
+## Preserved PR 6C foundation
 
-The previous public Focus minimum (approximately `8200..19000 mm`) came from
-the subject world-Z lower bound. That is not a universal lower bound when the
-finite-focus reference is `lens-to-focus-plane`: Front Swing can rotate the
-focus plane so its optical-axis intersection is closer than the nearest
-subject world-Z.
-
-The scene contract now supports an explicit, validated
-`SceneFocusDistanceRangeMm` override. Oblique Architecture derives its range
-from the shared three-probe Swing calibration plus a depth-based practical
-margin, independent of `focusStandardCapability`:
-
-- Public Focus range: `4540..19020 mm`
+- Explicit Oblique Architecture Focus range: `4540..19020 mm`
 - Public Focus step: `10 mm`
-- Validation: finite values, `min > 0`, and `max >= min`; malformed explicit
-  ranges fall back to the existing legacy derivation.
-- Scenes without the override preserve the legacy range behavior.
+- Public Swing range/step: `-10..10°` / `0.1°`
+- Public Rise range/step: `0..40 mm` / `1 mm`
+- Fixed Aperture: `f/5.6`
+- Façade sharpness threshold: `0.8` for near/middle/far targets
+- Existing verification state: Rise `20 mm`, Swing `9.7°`, Focus `5260 mm`
 
-## Current geometry and calibration
+No optics model, scene geometry, calibration, threshold, focus-range, or
+renderer changes were required for PR 6D.
 
-- Building depth: `z = 9600..16800 mm`
-- Ground: `z = 8200..19000 mm`
-- Camera placement:
-  - position = `(-6200, 3200, -1200) mm`
-  - target = `(1800, 1000, 13000) mm`
-- Canonical middle-façade Focus: `13200 mm`
-- Reachable calibrated Front Rise: `20 mm`
-- Public Front Rise range/step: `0..40 mm` / `1 mm`
-- Public Front Swing range/step: `-10..10°` / `0.1°`
-- Fixed Oblique Architecture Aperture: `f/5.6`
-- Façade sharpness threshold: `0.8` per near/middle/far target.
+## Compound task
 
-The continuous shared calibration is approximately `9.6518°` Swing and
-`5260.625 mm` Focus. The rounded public verification state is `9.7°` /
-`5260 mm`; it is reachable and passes the observable criteria.
+- Task ID: `oblique-compound-01` — **Complete the Photograph**
+- Primary public guided CTA: `oblique-compound-01`
+- Initial state: Rise `0 mm`, Swing `0°`, Focus `13200 mm`, Front Tilt `0°`,
+  rear movements `0`, fixed Aperture `f/5.6`, Top geometry view.
+- Enabled controls: Rise, Swing, Focus, and Geometry View.
+- Fixed/unavailable: Front Tilt, rear movements, Aperture, whole-camera pitch,
+  and Infinity Reset.
+- Observable criteria: projected building-top corners visible, projected
+  building-base corners visible, derived rear-standard/film-plane level, and
+  near/middle/far façade targets each at least `0.8` sharpness.
+- Success does not require exact movement or Focus values.
 
-## Exhaustive public-grid calibration
+## Compound regression evidence
 
-The gate searched Rise `20 mm`, Swing `-10..10°` in `0.1°` steps, and Focus
-`4540..19020 mm` in `10 mm` steps: `291,249` public states. Required framing,
-rear-standard level, and all three façade sharpness thresholds produced `620`
-passing states.
+- Neutral (`0 / 0 / 13200`): roof fails, base and camera-level pass, façade is
+  not uniformly sharp, overall task fails.
+- Rise-only (`20 / 0 / 13200`): framing passes but façade sharpness is
+  incomplete, overall task fails.
+- Swing + Focus without Rise (`0 / 9.7 / 5260`): façade sharpness passes but
+  roof composition fails, overall task fails.
+- Rise + Swing with canonical Focus (`20 / 9.7 / 13200`): composition may
+  pass but focus remains incomplete, overall task fails.
+- Full public verification (`20 / 9.7 / 5260`): all six observable criteria
+  pass.
+- Nearby public state (`20 / 9.6 / 5260`): also passes, protecting against
+  exact-answer scoring.
+- Current Settings exposes Front Rise, Front Swing, and Focus simultaneously
+  at the solved state; Restart returns the complete neutral initial state.
 
-- Best passing public-grid state: Swing `9.9°`, Focus `5140 mm`.
-- Sharpness at that state: near `0.99904`, middle `0.99810`, far `0.99712`;
-  worst `0.99712`.
-- Nearby passing evidence includes `9.6° / 5260 mm`, `9.8° / 5140 mm`,
-  `9.9° / 5130 mm`, and `10.0° / 5150 mm`.
-- Boundary risk: no fail-closed boundary condition; passing states exist on
-  both sides of the rounded `9.7° / 5260 mm` verification state and are not
-  dependent on changing the global Swing range or sharpness threshold.
+## Previous guided tasks preserved
 
-## Free Practice
-
-- Public controls: Front Rise, Front Swing, Focus, Geometry View, and the
-  existing movement reset behavior.
-- Front Tilt, Rear Rise, Rear Tilt, and Aperture remain unavailable/fixed.
-- Neutral initialization remains Rise `0 mm`, Swing `0°`, and canonical Focus
-  `13200 mm`; Free Practice is not scored.
-
-## Guided task
-
-- Primary task/CTA: `oblique-swing-focus-01` — **Align the Façade Focus**.
-- Existing `oblique-rise-01` remains registered and directly routable.
-- Initial state: Rise `20 mm`, Swing `0°`, Focus `13200 mm`, fixed Aperture
-  `f/5.6`; Rise is supplied as solved composition and is not learner-adjustable.
-- Guided controls: Front Swing, Focus, and Geometry View.
-- Observable criteria: projected building-top corners visible, projected base
-  corners visible, derived rear-standard/film-plane level, and near/middle/far
-  façade targets each at least `0.8` sharpness.
-
-Evidence covers the initial solved-Rise state as incomplete, Focus-only and
-Swing-only searches at the established public grid as insufficient to solve
-all façade depths, a valid non-zero Swing preserving `camera-level`, and a
-nearby public-step solution that also passes. Reset/Restart returns the
-appropriate Free Practice or guided initial state.
-
-## Public catalog state
-
-- Public title: `Oblique Architecture`
-- zh-HK title: `斜向建築攝影`
-- Public scene ordering: Oblique Architecture is the final public scene.
-- Thumbnail: `public/assets/oblique-architecture.png`
-- Primary guided task: `oblique-swing-focus-01`; `oblique-rise-01` remains a
-  valid direct guided route.
-- Stable catalog description remains the final-facing Rise + Swing compound
-  wording in English and zh-HK.
+- `oblique-rise-01`: starts neutral and teaches Rise-only framing.
+- `oblique-swing-focus-01`: starts at solved Rise and teaches Swing + Focus.
+- `oblique-compound-01`: starts fully neutral and requires both composition
+  and façade sharpness.
+- All three routes remain directly routable; Oblique Architecture remains the
+  final public scene with the approved title, description, topics, and PNG
+  thumbnail.
 
 ## Since previous review
 
-- Added an explicit per-scene Focus-distance range contract and preserved the
-  legacy derivation for scenes without it.
-- Recalibrated the public Focus domain using the shared canonical optics
-  calibration and verified a robust reachable Swing + Focus region.
-- Added the PR 6C Free Practice controls and the solved-Rise guided task
-  `oblique-swing-focus-01` with observable façade sharpness criteria.
-- Added canonical top-view façade target labels and preserved the shared
-  3D/RTT subject, projection, level-camera semantics, and PR 6B Rise task.
-- Fixed Current Settings for multi-movement scenes so Oblique Architecture
-  exposes actual Rise + Swing values instead of a stale single selected
-  movement.
-- Preserved the existing selected-movement presentation for single-movement
-  scenes.
-- Added focused regression coverage for the multi-movement Swing readout.
+- Added `oblique-compound-01` with neutral initialization and outcome-based
+  projected-corner, camera-level, and near/middle/far sharpness criteria.
+- Promoted the compound task to the primary Oblique Architecture guided CTA
+  while retaining both earlier guided routes.
+- Added English and zh-HK compound-task guidance and criterion-specific
+  feedback without exposing calibration answers.
+- Added partial-solution unit coverage, route/catalog/copy coverage, and the
+  focused neutral-to-solved Chromium workflow.
 - Revalidated the current branch HEAD.
 
 ## Validation
 
-- Focused readout, Oblique Architecture/task/catalog/route checks: passed —
-  4 files, 40 tests.
-- `npm test`: passed — 118 test files, 1,107 tests.
+- Focused compound task/catalog/route/copy/scenes-page checks: passed — 5
+  files, 47 tests.
+- `npm test`: passed — 119 test files, 1,113 tests.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed with zero warnings.
 - `npm run check:css`: passed.
 - `npm run build`: passed.
-- Focused Chromium Oblique Architecture E2E: passed — 3 tests covering Free
-  Practice Rise + Swing readouts, `oblique-rise-01`, and
-  `oblique-swing-focus-01` Swing readout visibility, RTT content, optics
-  fallback false, control restrictions, completion, and restart semantics.
+- Focused Chromium Oblique Architecture E2E: passed — 4 tests covering Free
+  Practice, `oblique-rise-01`, `oblique-swing-focus-01`, and
+  `oblique-compound-01`, including RTT diagnostics, optics fallback false,
+  partial states, simultaneous readouts, completion, and Restart.
 - `git diff --check`: passed.
 - Full `npm run ci:local:e2e`: not run; focused Chromium coverage directly
-  exercises the changed public scene workflows.
+  exercises all changed Oblique Architecture public guided workflows.
 
-## PR 6D handoff
+## PR 6E handoff
 
-PR 6D will combine Rise + Swing + Focus from the fully neutral state into one
-compound free-practice/outcome exercise. PR 6C is not the final compound task.
+PR 6E will add the final guided learning sequence / integration across
+Observe → Compose → Align Focus → Final Challenge. It must reuse the completed
+PR 6B–6D task and optics infrastructure rather than introducing another
+optical model.
 
 ## Commit references
 
-- PR 6C implementation commit: `5cdedae` (`feat(scene): add Oblique Architecture Swing and façade focus lesson`).
-- Review-fix implementation commit: `a9bfe22` (`fix(ui): show multi-movement camera state in Current Settings`).
+- PR 6D substantive implementation: `21c8929` (`feat(scene): add Oblique Architecture compound practice challenge`).
 - Final status update commit will be bookkeeping-only and intentionally not
   self-referenced.
