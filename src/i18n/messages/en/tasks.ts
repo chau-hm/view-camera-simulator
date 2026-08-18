@@ -197,6 +197,48 @@ export const tasksMessages = {
       },
     },
   },
+  obliqueCompound: {
+    title: "Complete the Photograph",
+    objective:
+      "Use Front Rise, Front Swing, and Focus to frame the building, keep its verticals parallel, and make the receding façade sharp from near to far.",
+    notes: {
+      composition: "Start by solving the composition with Front Rise.",
+      swing: "Then use Front Swing to rotate the plane of sharp focus toward the receding façade.",
+      focus: "Refine Focus until the near, middle, and far façade regions are all sharp.",
+      level: "Keep the rear standard level throughout.",
+    },
+    criteria: {
+      buildingTopVisible: "Required building-top region is visible",
+      buildingBaseVisible: "Required building-base region is visible",
+      cameraLevel: "Camera and rear standard remain level",
+      nearSharp: "Near façade region is sharp",
+      middleSharp: "Middle façade region is sharp",
+      farSharp: "Far façade region is sharp",
+    },
+    feedback: {
+      passPrimary:
+        "The building is framed, its verticals remain parallel, and the receding façade is sharp from near to far.",
+      defaultFailPrimary:
+        "Use Front Rise to frame the building, then Front Swing and Focus to make the receding façade sharp.",
+      primary: {
+        buildingTopVisible: "Use Front Rise to bring the required roof region into the Ground Glass.",
+        buildingBaseVisible: "Keep the lower building inside the frame while adjusting Front Rise.",
+        cameraLevel: "Keep the rear standard level so the architectural verticals remain parallel.",
+        nearSharp:
+          "The near façade remains soft. Use Front Swing to align the focus plane with the receding façade, then refine Focus.",
+        middleSharp: "The middle façade is not sharp enough. Refine Focus around the middle region.",
+        farSharp: "The far façade remains soft. Continue refining Front Swing and Focus across the receding depth.",
+      },
+      secondary: {
+        buildingTopVisible: "Watch the Ground Glass top edge until the required roof corners are inside.",
+        buildingBaseVisible: "Check the lower Ground Glass edge as you bring the roof into view.",
+        cameraLevel: "Front Rise and Front Swing should leave the rear standard level; do not pitch the camera.",
+        nearSharp: "Compare the near façade target with the middle and far targets in the sharpness readout.",
+        middleSharp: "Use the middle façade as your initial Focus reference before comparing all three depths.",
+        farSharp: "Use the Top geometry view to see whether the plane of sharp focus reaches the far façade target.",
+      },
+    },
+  },
   tableTilt: {
     title: "Align the tabletop plane of sharp focus",
     objective:

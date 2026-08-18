@@ -168,6 +168,65 @@ const obliqueSwingFocusTask: TaskDefinition = {
   },
 };
 
+const obliqueCompoundTask: TaskDefinition = {
+  id: "oblique-compound-01",
+  sceneId: obliqueArchitectureScene.id,
+  mode: "guided",
+  enabledControls: ["rise", "swing", "focusDistance", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "oblique-compound-building-top-visible",
+      type: "composition-visible",
+      targetId: "building-top",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "oblique-compound-building-base-visible",
+      type: "composition-visible",
+      targetId: "building-base",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "oblique-compound-camera-level",
+      type: "camera-level",
+    },
+    {
+      id: "oblique-compound-near-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["facade-near"],
+      minimumSharpness: obliqueArchitectureGeometry.facadeSharpnessMinimum,
+    },
+    {
+      id: "oblique-compound-middle-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["facade-middle"],
+      minimumSharpness: obliqueArchitectureGeometry.facadeSharpnessMinimum,
+    },
+    {
+      id: "oblique-compound-far-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["facade-far"],
+      minimumSharpness: obliqueArchitectureGeometry.facadeSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    frontRiseMm: 0,
+    frontTiltDeg: 0,
+    frontSwingDeg: 0,
+    focusDistanceMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    aperture: obliqueArchitectureScene.cameraPreset.aperture,
+    geometryView: "top",
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+  },
+};
+
 const tiltTask: TaskDefinition = {
   id: "tilt-01",
   sceneId: "table-tilt",
@@ -360,6 +419,7 @@ export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
   "oblique-rise-01": obliqueRiseTask,
   "oblique-swing-focus-01": obliqueSwingFocusTask,
+  "oblique-compound-01": obliqueCompoundTask,
   "tilt-01": tiltTask,
   "swing-01": swingTask,
   "mirror-shift-01": mirrorShiftTask,
