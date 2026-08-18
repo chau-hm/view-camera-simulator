@@ -60,6 +60,7 @@ describe("isValidSimulatorRoute", () => {
     ["shelf-swing", "swing-01"],
     ["oblique-architecture", "oblique-rise-01"],
     ["oblique-architecture", "oblique-swing-focus-01"],
+    ["oblique-architecture", "oblique-compound-01"],
   ])("accepts the configured guided task for %s", (sceneId, taskId) => {
     expect(validate({ mode: "guided", sceneId, taskId })).toBe(true);
   });

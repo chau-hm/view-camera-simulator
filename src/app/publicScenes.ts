@@ -130,8 +130,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/oblique-architecture.png",
-    guidedTaskId: "oblique-swing-focus-01",
-    guidedTaskIds: ["oblique-rise-01", "oblique-swing-focus-01"],
+    guidedTaskId: "oblique-compound-01",
+    guidedTaskIds: ["oblique-rise-01", "oblique-swing-focus-01", "oblique-compound-01"],
   },
 ];
 

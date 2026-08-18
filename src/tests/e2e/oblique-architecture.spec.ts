@@ -6,7 +6,7 @@ const isAllowedEnvironmentConsoleMessage = (message: string) =>
 
 const assertSharedObliqueRendering = async (page: Page) => {
   await expect(page.getByRole("heading", { name: "3D Scene" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Ground Glass" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ground Glass", exact: true })).toBeVisible();
 
   const sceneCanvas = page.getByTestId("scene-canvas");
   await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "oblique-architecture");
@@ -193,6 +193,68 @@ test("Oblique Architecture guided Swing + Focus task starts from solved Rise and
 
   await page.getByRole("button", { name: "Restart task" }).click();
   await expect(rise).toHaveValue("20");
+  await expect(swing).toHaveValue("0");
+  await expect(focus).toHaveValue("13200");
+  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+});
+
+test("Oblique Architecture compound task solves Rise, Swing, and Focus from neutral", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/simulator/guided/oblique-architecture/oblique-compound-01?rttDiagnostics=1");
+  await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-compound-01\?rttDiagnostics=1$/);
+  await expect(page.getByText("Complete the Photograph", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(
+      "Use Front Rise, Front Swing, and Focus to frame the building, keep its verticals parallel, and make the receding façade sharp from near to far.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+
+  const { rtt } = await assertSharedObliqueRendering(page);
+  const cameraControls = page.getByRole("region", { name: "Camera Controls" });
+  const rise = cameraControls.getByRole("slider", { name: "Rise" });
+  const swing = cameraControls.getByRole("slider", { name: "Swing" });
+  const tilt = cameraControls.getByRole("slider", { name: "Tilt" });
+  const focus = page.getByLabel("Focus distance");
+
+  await expect(rise).toHaveValue("0");
+  await expect(rise).toBeEnabled();
+  await expect(swing).toHaveValue("0");
+  await expect(swing).toBeEnabled();
+  await expect(tilt).toBeDisabled();
+  await expect(focus).toHaveValue("13200");
+  await expect(focus).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Open 2D Geometry" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+
+  const neutralSanityState = await rtt.getAttribute("data-rtt-sanity-state");
+  await setStepRangeInput(page, "Rise", 20);
+  await expect(rise).toHaveValue("20");
+  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+
+  await setStepRangeInput(page, "Swing", 9.7);
+  await expect(swing).toHaveValue("9.7");
+  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+
+  await setStepRangeInput(page, "Focus distance", 5260);
+  await expect(focus).toHaveValue("5260");
+  await expect.poll(async () => rtt.getAttribute("data-rtt-sanity-state")).not.toBe(neutralSanityState);
+  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "Task requirements completed" })).toHaveAttribute(
+    "aria-valuenow",
+    "6",
+  );
+
+  const currentSettings = page.getByTestId("current-settings-readout");
+  await expect(currentSettings).toContainText("Front Rise: 20.0 mm");
+  await expect(currentSettings).toContainText("Front Swing: 9.7°");
+  await expect(currentSettings).toContainText("Focus: 5260.0 mm");
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+
+  await page.getByRole("button", { name: "Restart task" }).click();
+  await expect(rise).toHaveValue("0");
   await expect(swing).toHaveValue("0");
   await expect(focus).toHaveValue("13200");
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
