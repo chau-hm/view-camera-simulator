@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { getGuidedLessonContext } from "../../app/guidedLesson";
+import { getPublicSceneEntryById } from "../../app/publicScenes";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
@@ -35,6 +37,7 @@ import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
+import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
 import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
@@ -50,6 +53,7 @@ type SimulatorWorkspaceProps = {
   mode: SimulatorMode;
   sceneId: string;
   taskId: string | null;
+  guidedLessonEnabled?: boolean;
   calibrationEnabled?: boolean;
   simulateAssetFailure: boolean;
 };
@@ -60,6 +64,7 @@ export const SimulatorWorkspace = ({
   mode,
   sceneId,
   taskId,
+  guidedLessonEnabled = false,
   calibrationEnabled = false,
   simulateAssetFailure,
 }: SimulatorWorkspaceProps) => {
@@ -108,7 +113,13 @@ export const SimulatorWorkspace = ({
     const initRoute = (modeParam: SimulatorMode, sceneParam: string, taskParam: string | null | undefined) => {
       const initializeSimulatorRoute = useAppStore.getState().initializeSimulatorRoute;
       if (initializeSimulatorRoute) {
-        initializeSimulatorRoute({ mode: modeParam, sceneId: sceneParam, taskId: taskParam ?? null, calibrationEnabled });
+        initializeSimulatorRoute({
+          mode: modeParam,
+          sceneId: sceneParam,
+          taskId: taskParam ?? null,
+          calibrationEnabled,
+          lessonEntry: guidedLessonEnabled,
+        });
       } else {
         // fall back to individual setters if the initialize action isn't available
         setMode(modeParam);
@@ -118,23 +129,40 @@ export const SimulatorWorkspace = ({
     };
 
     initRoute(mode, sceneId, taskId);
-  }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId, calibrationEnabled]);
+  }, [
+    calibrationEnabled,
+    guidedLessonEnabled,
+    mode,
+    sceneId,
+    setActiveScene,
+    setActiveTask,
+    setMode,
+    taskId,
+  ]);
 
   useEffect(
     () => () => {
       if (calibrationEnabled) clearCameraMovementCalibrationSession();
-      // Restore Neutral on leave-and-return for the public teaching route only.
-      // Other free scenes intentionally preserve their in-memory state on
-      // leave-and-return, so the route-init guard is cleared solely here.
+      // Restore Neutral on leave-and-return for the public teaching routes
+      // that require a fresh entry. Other free scenes intentionally preserve
+      // their in-memory state on leave-and-return.
       if (
-        sceneId === "understanding-camera-movements" &&
-        mode === "free" &&
-        !calibrationEnabled
+        guidedLessonEnabled ||
+        (sceneId === "understanding-camera-movements" &&
+          mode === "free" &&
+          !calibrationEnabled)
       ) {
         clearSimulatorRouteInitialization();
       }
     },
-    [calibrationEnabled, clearCameraMovementCalibrationSession, clearSimulatorRouteInitialization, mode, sceneId],
+    [
+      calibrationEnabled,
+      clearCameraMovementCalibrationSession,
+      clearSimulatorRouteInitialization,
+      guidedLessonEnabled,
+      mode,
+      sceneId,
+    ],
   );
 
   const closeGeometryPanel = useCallback((restoreFocus = true) => {
@@ -195,7 +223,7 @@ export const SimulatorWorkspace = ({
   useEffect(() => {
     setShowGeometryPanel(false);
     setGeometryDialogStyle(undefined);
-  }, [mode, sceneId, taskId]);
+  }, [guidedLessonEnabled, mode, sceneId, taskId]);
 
   useEffect(() => {
     setRestoreViewportFocus(false);
@@ -207,7 +235,7 @@ export const SimulatorWorkspace = ({
       activeElement.blur();
     }
     setExpandedViewport(null);
-  }, [mode, sceneId, taskId]);
+  }, [guidedLessonEnabled, mode, sceneId, taskId]);
 
   const requestViewportExpansion = useCallback((viewport: Exclude<ExpandedViewport, null>) => {
     setRestoreViewportFocus(true);
@@ -235,6 +263,20 @@ export const SimulatorWorkspace = ({
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
+  const publicSceneEntry = getPublicSceneEntryById(sceneId);
+  const guidedLessonContext = useMemo(
+    () =>
+      guidedLessonEnabled && publicSceneEntry
+        ? getGuidedLessonContext({
+            entry: publicSceneEntry,
+            mode,
+            sceneId,
+            taskId,
+            search: "?lesson=1",
+          })
+        : null,
+    [guidedLessonEnabled, mode, publicSceneEntry, sceneId, taskId],
+  );
   const activeSingleMovement =
     safeScene.movementCapabilities?.selectionMode === "single"
       ? selectedMovement
@@ -540,7 +582,12 @@ export const SimulatorWorkspace = ({
             <div className="simulator-task-feedback-grid">
             <div className="simulator-info-card simulator-info-card--task">
               <h4>Task</h4>
-              <TaskPanel task={task} sceneId={safeScene.id} showTitle={false} />
+              {guidedLessonContext ? (
+                <GuidedLessonProgress context={guidedLessonContext} evaluation={evaluation} />
+              ) : null}
+              {guidedLessonContext?.stage === "observe" ? null : (
+                <TaskPanel task={task} sceneId={safeScene.id} showTitle={false} />
+              )}
             </div>
             <div className="simulator-info-card simulator-info-card--feedback">
               <h4>Feedback</h4>

@@ -5,6 +5,7 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { resolveInitialOpticalGeometryVisibility } from "../../state/sceneViewDefaults";
 import { getTaskById } from "../../core/tasks/taskRegistry";
+import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import {
   focusFundamentalsFarFocusDepthMm,
@@ -226,6 +227,72 @@ describe("app store STA-001", () => {
     // architecture preset focusDistanceMm must equal scene-specified preset (non-default)
     expect(camera.focusDistanceMm).not.toBe(2000);
     expect(camera.activeSceneId).toBe("architecture-rise");
+  });
+
+  it("restores finite focus when lesson Observe follows another scene's Infinity Reset", () => {
+    const store = useAppStore.getState();
+
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "architecture-rise",
+      taskId: null,
+    });
+    store.setInfinityFocus();
+    expect(useAppStore.getState().camera.focusMode).toBe("infinity");
+
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "oblique-architecture",
+      taskId: null,
+      lessonEntry: true,
+    });
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 0,
+      frontSwingDeg: 0,
+      frontTiltDeg: 0,
+      rearRiseMm: 0,
+      rearTiltDeg: 0,
+      focusMode: "finite",
+      focusDistanceMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+      lastFiniteFocusDepthMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+      activeTaskId: null,
+    });
+  });
+
+  it("freshly reinitializes lesson Observe after leaving while preserving same-route changes", () => {
+    const store = useAppStore.getState();
+    const lessonObserveRoute = {
+      mode: "free" as const,
+      sceneId: "oblique-architecture",
+      taskId: null,
+      lessonEntry: true,
+    };
+
+    store.initializeSimulatorRoute(lessonObserveRoute);
+    store.setRise(20);
+    store.setSwing(5);
+    store.setFocusDistance(5260);
+
+    store.initializeSimulatorRoute(lessonObserveRoute);
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 20,
+      frontSwingDeg: 5,
+      focusDistanceMm: 5260,
+    });
+
+    // This is the cleanup performed when the Guided Lesson workspace is left.
+    store.clearSimulatorRouteInitialization();
+    store.initializeSimulatorRoute(lessonObserveRoute);
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 0,
+      frontSwingDeg: 0,
+      focusMode: "finite",
+      focusDistanceMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+      lastFiniteFocusDepthMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+      activeTaskId: null,
+    });
   });
 
   it("selects focus standard without changing finite or infinity focus state", () => {
