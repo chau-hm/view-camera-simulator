@@ -513,7 +513,7 @@ button {
 .guided-lesson-progress__stages li { display: grid; gap: 4px; justify-items: center; min-width: 0; color: var(--text-muted); font-size: 12px; text-align: center; }
 .guided-lesson-progress__stages li[aria-current="step"] { color: var(--text); font-weight: 700; }
 .guided-lesson-progress__stage-index { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,0.08); font-weight: 700; }
-.guided-lesson-progress__stages li[data-stage-status="complete"] .guided-lesson-progress__stage-index { background: rgba(22,163,74,0.16); color: #166534; }
+.guided-lesson-progress__stages li[data-stage-status="previous"] { color: var(--text-muted); opacity: 0.8; }
 .guided-lesson-progress__stages li[aria-current="step"] .guided-lesson-progress__stage-index { background: var(--primary); color: white; }
 .guided-lesson-progress__observe { border-left: 4px solid var(--primary); padding-left: 10px; }
 .guided-lesson-progress__observe h3 { margin: 0; font-size: 17px; }

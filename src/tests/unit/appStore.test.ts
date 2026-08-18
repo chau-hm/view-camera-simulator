@@ -229,17 +229,16 @@ describe("app store STA-001", () => {
     expect(camera.activeSceneId).toBe("architecture-rise");
   });
 
-  it("treats Oblique Architecture lesson Observe entry as a fresh neutral route", () => {
+  it("restores finite focus when lesson Observe follows another scene's Infinity Reset", () => {
     const store = useAppStore.getState();
 
     store.initializeSimulatorRoute({
       mode: "free",
-      sceneId: "oblique-architecture",
+      sceneId: "architecture-rise",
       taskId: null,
     });
-    store.setRise(20);
-    store.setSwing(5);
-    store.setFocusDistance(5260);
+    store.setInfinityFocus();
+    expect(useAppStore.getState().camera.focusMode).toBe("infinity");
 
     store.initializeSimulatorRoute({
       mode: "free",
@@ -251,7 +250,47 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera).toMatchObject({
       frontRiseMm: 0,
       frontSwingDeg: 0,
+      frontTiltDeg: 0,
+      rearRiseMm: 0,
+      rearTiltDeg: 0,
+      focusMode: "finite",
       focusDistanceMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+      lastFiniteFocusDepthMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+      activeTaskId: null,
+    });
+  });
+
+  it("freshly reinitializes lesson Observe after leaving while preserving same-route changes", () => {
+    const store = useAppStore.getState();
+    const lessonObserveRoute = {
+      mode: "free" as const,
+      sceneId: "oblique-architecture",
+      taskId: null,
+      lessonEntry: true,
+    };
+
+    store.initializeSimulatorRoute(lessonObserveRoute);
+    store.setRise(20);
+    store.setSwing(5);
+    store.setFocusDistance(5260);
+
+    store.initializeSimulatorRoute(lessonObserveRoute);
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 20,
+      frontSwingDeg: 5,
+      focusDistanceMm: 5260,
+    });
+
+    // This is the cleanup performed when the Guided Lesson workspace is left.
+    store.clearSimulatorRouteInitialization();
+    store.initializeSimulatorRoute(lessonObserveRoute);
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 0,
+      frontSwingDeg: 0,
+      focusMode: "finite",
+      focusDistanceMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+      lastFiniteFocusDepthMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
       activeTaskId: null,
     });
   });

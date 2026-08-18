@@ -78,6 +78,29 @@ describe("GuidedLessonProgress", () => {
       "href",
       "/simulator/guided/oblique-architecture/oblique-swing-focus-01?lesson=1",
     );
+
+    const stages = screen.getAllByRole("listitem");
+    expect(stages[0]).toHaveAttribute("data-stage-status", "previous");
+    expect(stages[0]).not.toHaveAttribute("data-stage-status", "complete");
+  });
+
+  it("uses neutral previous status for deep-linked later stages without progress history", () => {
+    const context = contextFor("guided", "oblique-compound-01");
+    render(
+      <MemoryRouter>
+        <GuidedLessonProgress context={context} evaluation={null} />
+      </MemoryRouter>,
+    );
+
+    const stages = screen.getAllByRole("listitem");
+    expect(stages.map((stage) => stage.getAttribute("data-stage-status"))).toEqual([
+      "previous",
+      "previous",
+      "previous",
+      "current",
+    ]);
+    expect(stages.slice(0, 3).every((stage) => !stage.className.includes("complete"))).toBe(true);
+    expect(screen.queryByText("Lesson complete")).not.toBeInTheDocument();
   });
 
   it("shows completion and a Scenes exit on the final stage", () => {
@@ -94,5 +117,11 @@ describe("GuidedLessonProgress", () => {
       "/scenes",
     );
     expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Final Challenge");
+    expect(screen.getAllByRole("listitem").map((stage) => stage.getAttribute("data-stage-status"))).toEqual([
+      "previous",
+      "previous",
+      "previous",
+      "current",
+    ]);
   });
 });

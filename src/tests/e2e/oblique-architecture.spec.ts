@@ -281,6 +281,23 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
   await expect(page.locator('[aria-current="step"]')).toHaveText(/Observe/);
+
+  // Leaving the lesson and starting it again must create a fresh neutral
+  // Observe entry instead of reusing the prior route-initialization key.
+  await setStepRangeInput(page, "Rise", 20);
+  await setStepRangeInput(page, "Swing", 5);
+  await setStepRangeInput(page, "Focus distance", 5260);
+  await page.getByRole("link", { name: "All Scenes" }).click();
+  await expect(page).toHaveURL(/\/scenes$/);
+  const reentryCard = page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Oblique Architecture" }) });
+  await reentryCard.getByRole("link", { name: "Guided Lesson" }).click();
+  await expect(page).toHaveURL(/\/simulator\/free\/oblique-architecture\?lesson=1$/);
+  await expect(page.locator('[aria-current="step"]')).toHaveText(/Observe/);
+  await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
+  await expect(page.getByLabel("Focus distance")).toHaveValue("13200");
   await page.getByRole("link", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-rise-01\?lesson=1$/);

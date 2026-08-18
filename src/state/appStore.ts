@@ -60,6 +60,7 @@ import {
   DEFAULT_MIRROR_SHIFT_LESSON_STATE,
   resolveMirrorShiftRigPlacement,
 } from "../scenes/mirrorShiftLessonState";
+import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
 
 const getFocusStandardCapability = (
   sceneId: string,
@@ -142,6 +143,17 @@ const isCameraMovementCalibrationRoute = (
   mode === "free" &&
   sceneId === "understanding-camera-movements" &&
   calibrationEnabled;
+
+const isObliqueArchitectureLessonObserveRoute = (
+  mode: CameraState["mode"],
+  sceneId: string,
+  taskId: string | null | undefined,
+  lessonEntry: boolean,
+): boolean =>
+  lessonEntry &&
+  mode === "free" &&
+  sceneId === "oblique-architecture" &&
+  taskId == null;
 
 /**
  * Resolve the immutable optical calibration used while a route is being
@@ -990,6 +1002,32 @@ export const useAppStore = create<AppStore>((set) => ({
         ...nextCamera,
         aperture: resolveSceneAperture(sceneId, nextCamera.aperture),
       };
+
+      // Guided Lesson Observe is the explicit neutral entry point for the
+      // Oblique Architecture lesson. Restore finite focus metadata as well as
+      // the numeric baseline so a prior scene's Infinity Reset cannot leak
+      // into this lesson's canonical finite-focus state.
+      if (
+        isObliqueArchitectureLessonObserveRoute(
+          mode,
+          sceneId,
+          taskId,
+          lessonEntry,
+        )
+      ) {
+        nextCamera = {
+          ...nextCamera,
+          frontRiseMm: 0,
+          frontTiltDeg: 0,
+          frontSwingDeg: 0,
+          rearRiseMm: 0,
+          rearTiltDeg: 0,
+          focusMode: "finite",
+          focusDistanceMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+          lastFiniteFocusDepthMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+          activeTaskId: null,
+        };
+      }
 
       nextCamera = {
         ...nextCamera,

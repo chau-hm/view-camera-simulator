@@ -56,7 +56,7 @@ export const GuidedLessonProgress = ({
             aria-current={index === context.stageIndex ? "step" : undefined}
             data-stage-status={
               index < context.stageIndex
-                ? "complete"
+                ? "previous"
                 : index === context.stageIndex
                   ? "current"
                   : "upcoming"
