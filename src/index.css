@@ -505,6 +505,29 @@ button {
 .task-status--progress { background: rgba(250,204,21,0.08); color: #92400e; }
 .chip { background: rgba(0,0,0,0.04); padding: 4px 8px; border-radius: 999px; font-size: 13px; }
 
+/* Query-scoped Oblique Architecture lesson navigation */
+.guided-lesson-progress { display: grid; gap: 12px; padding: 6px; }
+.guided-lesson-progress__header { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.guided-lesson-progress__header > span { color: var(--text-muted); font-size: 13px; }
+.guided-lesson-progress__stages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 0; padding: 0; }
+.guided-lesson-progress__stages li { display: grid; gap: 4px; justify-items: center; min-width: 0; color: var(--text-muted); font-size: 12px; text-align: center; }
+.guided-lesson-progress__stages li[aria-current="step"] { color: var(--text); font-weight: 700; }
+.guided-lesson-progress__stage-index { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,0.08); font-weight: 700; }
+.guided-lesson-progress__stages li[data-stage-status="complete"] .guided-lesson-progress__stage-index { background: rgba(22,163,74,0.16); color: #166534; }
+.guided-lesson-progress__stages li[aria-current="step"] .guided-lesson-progress__stage-index { background: var(--primary); color: white; }
+.guided-lesson-progress__observe { border-left: 4px solid var(--primary); padding-left: 10px; }
+.guided-lesson-progress__observe h3 { margin: 0; font-size: 17px; }
+.guided-lesson-progress__observe p { margin: 6px 0 0; }
+.guided-lesson-progress__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.guided-lesson-progress__completion { color: var(--text-muted); font-size: 13px; }
+.guided-lesson-progress__completion--complete { color: #166534; font-weight: 700; }
+.guided-lesson-progress__completion-body { margin: 0; color: var(--text-muted); }
+
+@media (max-width: 520px) {
+ .guided-lesson-progress__stages { gap: 2px; }
+ .guided-lesson-progress__stages li { font-size: 11px; }
+}
+
 /* task requirements smaller helper classes */
 .task-requirements { margin-top: 8px; }
 .task-requirements__list { margin: 0; padding-left: 16px; }

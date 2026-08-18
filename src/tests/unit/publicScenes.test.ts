@@ -56,6 +56,11 @@ describe("public scene catalog integrity", () => {
       "oblique-swing-focus-01",
       "oblique-compound-01",
     ]);
+    expect(entry?.guidedLesson).toEqual({
+      id: "oblique-architecture",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "align-focus", "final-challenge"],
+    });
     expect(
       isValidSimulatorRoute({
         mode: "guided",
@@ -111,6 +116,51 @@ describe("public scene catalog integrity", () => {
     );
     expect(validate(unexpectedTaskId).errors).toContain(
       "shelf-swing: guidedTaskId requires guided mode",
+    );
+  });
+
+  it("requires lesson metadata to have guided support and ordered tasks", () => {
+    const lessonWithoutGuidedMode = [
+      {
+        ...shelfEntry,
+        availableModes: ["free"] as const,
+        guidedLesson: {
+          id: "shelf-lesson",
+          includeObserveStage: true,
+          taskStageIds: ["compose"] as const,
+        },
+      },
+    ];
+    const lessonWithoutTasks = [
+      {
+        ...shelfEntry,
+        guidedTaskIds: undefined,
+        guidedLesson: {
+          id: "shelf-lesson",
+          includeObserveStage: true,
+          taskStageIds: ["compose"] as const,
+        },
+      },
+    ];
+    const lessonWithMismatchedStages = [
+      {
+        ...shelfEntry,
+        guidedLesson: {
+          id: "shelf-lesson",
+          includeObserveStage: true,
+          taskStageIds: ["compose", "align-focus"] as const,
+        },
+      },
+    ];
+
+    expect(validate(lessonWithoutGuidedMode).errors).toContain(
+      "shelf-swing: guidedLesson requires guided mode",
+    );
+    expect(validate(lessonWithoutTasks).errors).toContain(
+      "shelf-swing: guidedLesson requires ordered guidedTaskIds",
+    );
+    expect(validate(lessonWithMismatchedStages).errors).toContain(
+      "shelf-swing: guidedLesson stage count must match guidedTaskIds",
     );
   });
 

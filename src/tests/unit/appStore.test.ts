@@ -5,6 +5,7 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { resolveInitialOpticalGeometryVisibility } from "../../state/sceneViewDefaults";
 import { getTaskById } from "../../core/tasks/taskRegistry";
+import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import {
   focusFundamentalsFarFocusDepthMm,
@@ -226,6 +227,33 @@ describe("app store STA-001", () => {
     // architecture preset focusDistanceMm must equal scene-specified preset (non-default)
     expect(camera.focusDistanceMm).not.toBe(2000);
     expect(camera.activeSceneId).toBe("architecture-rise");
+  });
+
+  it("treats Oblique Architecture lesson Observe entry as a fresh neutral route", () => {
+    const store = useAppStore.getState();
+
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "oblique-architecture",
+      taskId: null,
+    });
+    store.setRise(20);
+    store.setSwing(5);
+    store.setFocusDistance(5260);
+
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "oblique-architecture",
+      taskId: null,
+      lessonEntry: true,
+    });
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 0,
+      frontSwingDeg: 0,
+      focusDistanceMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+      activeTaskId: null,
+    });
   });
 
   it("selects focus standard without changing finite or infinity focus state", () => {

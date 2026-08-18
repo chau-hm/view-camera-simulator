@@ -82,6 +82,7 @@ test("Oblique Architecture free practice exposes Rise, Swing, and Focus", async 
   await expect(page).toHaveURL(/\/simulator\/free\/oblique-architecture\?rttDiagnostics=1$/);
   await assertSharedObliqueRendering(page);
   const { rise, swing, focus, rtt } = await assertFreeControls(page);
+  await expect(page.getByRole("region", { name: "Guided lesson progress" })).not.toBeVisible();
   await expect(rise).toHaveValue("0");
   await expect(page.getByText("Aperture is fixed for this lesson", { exact: true })).toBeVisible();
   await expect(swing).toHaveValue("0");
@@ -259,4 +260,56 @@ test("Oblique Architecture compound task solves Rise, Swing, and Focus from neut
   await expect(focus).toHaveValue("13200");
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+});
+
+test("Oblique Architecture guided lesson progresses through the four stages", async ({ page }) => {
+  test.setTimeout(180_000);
+
+  await page.goto("/scenes");
+  const obliqueCard = page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Oblique Architecture" }) });
+  await expect(obliqueCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
+    "href",
+    "/simulator/free/oblique-architecture?lesson=1",
+  );
+  await obliqueCard.getByRole("link", { name: "Guided Lesson" }).click();
+  await expect(page).toHaveURL(/\/simulator\/free\/oblique-architecture\?lesson=1$/);
+  await expect(page.getByRole("region", { name: "Guided lesson progress" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Observe the Problem" })).toBeVisible();
+  await expect(page.getByLabel("Focus distance")).toHaveValue("13200");
+  await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
+  await expect(page.locator('[aria-current="step"]')).toHaveText(/Observe/);
+  await page.getByRole("link", { name: "Continue" }).click();
+
+  await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-rise-01\?lesson=1$/);
+  await expect(page.locator('[aria-current="step"]')).toHaveText(/Compose/);
+  await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
+  await setStepRangeInput(page, "Rise", 20);
+  await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
+  await page.getByRole("link", { name: "Continue" }).click();
+
+  await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-swing-focus-01\?lesson=1$/);
+  await expect(page.locator('[aria-current="step"]')).toHaveText(/Align Focus/);
+  await expect(page.getByLabel("Focus distance")).toHaveValue("13200");
+  await setStepRangeInput(page, "Swing", 9.7);
+  await setStepRangeInput(page, "Focus distance", 5260);
+  await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
+  await page.getByRole("link", { name: "Continue" }).click();
+
+  await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-compound-01\?lesson=1$/);
+  await expect(page.locator('[aria-current="step"]')).toHaveText(/Final Challenge/);
+  await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
+  await expect(page.getByLabel("Focus distance")).toHaveValue("13200");
+  await setStepRangeInput(page, "Rise", 20);
+  await setStepRangeInput(page, "Swing", 9.7);
+  await setStepRangeInput(page, "Focus distance", 5260);
+  await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("current-settings-readout")).toContainText("Front Rise: 20.0 mm");
+  await expect(page.getByTestId("current-settings-readout")).toContainText("Front Swing: 9.7°");
+  await expect(page.getByTestId("current-settings-readout")).toContainText("Focus: 5260.0 mm");
+  await page.getByRole("link", { name: "Back to Scenes" }).click();
+  await expect(page).toHaveURL(/\/scenes$/);
 });

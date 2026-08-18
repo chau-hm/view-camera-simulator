@@ -392,6 +392,7 @@ export type AppStore = {
     sceneId: string;
     taskId?: string | null;
     calibrationEnabled?: boolean;
+    lessonEntry?: boolean;
   }) => void;
 
   /** Set the currently active movement for single-active scenes. Zeros all four supported movements first. */
@@ -879,8 +880,14 @@ export const useAppStore = create<AppStore>((set) => ({
 
   initializeSimulatorRoute: (init) =>
     set((state) => {
-      const { mode, sceneId, taskId, calibrationEnabled = false } = init;
-      const routeKey = `${mode}:${sceneId}:${taskId ?? ""}:${calibrationEnabled ? "calibration" : ""}`;
+      const {
+        mode,
+        sceneId,
+        taskId,
+        calibrationEnabled = false,
+        lessonEntry = false,
+      } = init;
+      const routeKey = `${mode}:${sceneId}:${taskId ?? ""}:${calibrationEnabled ? "calibration" : ""}:${lessonEntry ? "lesson" : ""}`;
       if (state.lastInitializedRouteKey === routeKey) {
         return {
           camera: {

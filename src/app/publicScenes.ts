@@ -20,6 +20,18 @@ export const publicSceneIds = [
 export type PublicSceneId = (typeof publicSceneIds)[number];
 export type SceneAvailability = "available" | "in-development";
 
+export type PublicGuidedLessonTaskStageId =
+  | "compose"
+  | "align-focus"
+  | "final-challenge";
+
+export type PublicGuidedLessonConfig = {
+  id: string;
+  includeObserveStage: boolean;
+  /** Stage labels aligned with the existing ordered guidedTaskIds list. */
+  taskStageIds: readonly PublicGuidedLessonTaskStageId[];
+};
+
 export type PublicSceneEntry = {
   id: PublicSceneId;
   titleKey: PublicSceneTitleKey;
@@ -31,6 +43,8 @@ export type PublicSceneEntry = {
   guidedTaskId?: string;
   /** Additional direct guided routes for scenes that grow across learning slices. */
   guidedTaskIds?: readonly string[];
+  /** Optional lightweight lesson integration metadata for the public scene. */
+  guidedLesson?: PublicGuidedLessonConfig;
 };
 
 export const publicSceneCatalog: readonly PublicSceneEntry[] = [
@@ -132,6 +146,11 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     thumbnailAsset: "assets/oblique-architecture.png",
     guidedTaskId: "oblique-compound-01",
     guidedTaskIds: ["oblique-rise-01", "oblique-swing-focus-01", "oblique-compound-01"],
+    guidedLesson: {
+      id: "oblique-architecture",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "align-focus", "final-challenge"],
+    },
   },
 ];
 

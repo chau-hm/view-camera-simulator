@@ -38,9 +38,26 @@ export const validatePublicSceneCatalog = ({
     if (!supportsGuided && (entry.guidedTaskId || entry.guidedTaskIds?.length)) {
       errors.push(`${entry.id}: guidedTaskId requires guided mode`);
     }
+    if (entry.guidedLesson) {
+      if (!supportsGuided) {
+        errors.push(`${entry.id}: guidedLesson requires guided mode`);
+      }
+      if (!entry.guidedLesson.id.trim()) {
+        errors.push(`${entry.id}: guidedLesson requires a lesson id`);
+      }
+      if (!entry.guidedTaskIds?.length) {
+        errors.push(`${entry.id}: guidedLesson requires ordered guidedTaskIds`);
+      }
+    }
 
     const guidedTaskIds = entry.guidedTaskIds ??
       (entry.guidedTaskId ? [entry.guidedTaskId] : []);
+    if (
+      entry.guidedLesson &&
+      entry.guidedLesson.taskStageIds.length !== guidedTaskIds.length
+    ) {
+      errors.push(`${entry.id}: guidedLesson stage count must match guidedTaskIds`);
+    }
     if (
       entry.guidedTaskIds &&
       entry.guidedTaskId &&

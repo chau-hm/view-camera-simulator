@@ -82,9 +82,9 @@ describe("scenes page", () => {
       "href",
       "/simulator/free/oblique-architecture",
     );
-    expect(scopedObliqueCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
+    expect(scopedObliqueCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
       "href",
-      "/simulator/guided/oblique-architecture/oblique-compound-01",
+      "/simulator/free/oblique-architecture?lesson=1",
     );
 
     // Table Tilt remains in the existing lesson order and uses the standard enabled SceneCard link.
@@ -230,5 +230,9 @@ describe("scenes page", () => {
         "結合前組上移與前組擺動，在斜角拍攝建築物時保持垂直線平行，並讓延伸的立面由近至遠保持清晰。",
       ),
     ).toBeInTheDocument();
+    expect(cardFor("斜向建築攝影").getByRole("link", { name: "引導課程" })).toHaveAttribute(
+      "href",
+      "/simulator/free/oblique-architecture?lesson=1",
+    );
   });
 });

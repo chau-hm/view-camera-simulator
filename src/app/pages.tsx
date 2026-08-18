@@ -93,6 +93,7 @@ export const ScenesPage = () => {
               availability={meta.availability}
               thumbnailAsset={meta.thumbnailAsset}
               guidedTaskId={meta.guidedTaskId}
+              guidedLesson={Boolean(meta.guidedLesson)}
             />
           ))
         )}
@@ -140,6 +141,7 @@ export const SimulatorRoutePage = () => {
           mode={parsedMode}
           sceneId={resolvedSceneId}
           taskId={taskId ?? null}
+          guidedLessonEnabled={searchParams.get("lesson") === "1" && Boolean(publicEntry.guidedLesson)}
           calibrationEnabled={parsedMode === "free" && resolvedSceneId === "understanding-camera-movements" && searchParams.get("cameraCalibration") === "1"}
           simulateAssetFailure={searchParams.get("assetError") === "1"}
         />
