@@ -24,7 +24,9 @@ export const obliqueArchitectureScene: SceneDefinition = {
   ],
   cameraPreset: {
     focusDistanceMm: geometry.canonicalFocusDistanceMm,
-    aperture: 5.6,
+    // A moderate fixed opening keeps the building legible while preserving
+    // the distinct receding-façade focus problem for Swing + Focus.
+    aperture: 11,
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,

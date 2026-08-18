@@ -169,6 +169,6 @@ describe("Oblique Architecture scene", () => {
     expect(settings.planeMode).toBe("automatic");
     expect(settings.maximumBlurRadiusPx).toBe(48);
     expect(settings.displayBlurScale).toBeGreaterThan(1);
-    expect(obliqueArchitectureScene.cameraPreset.aperture).toBe(5.6);
+    expect(obliqueArchitectureScene.cameraPreset.aperture).toBe(11);
   });
 });
