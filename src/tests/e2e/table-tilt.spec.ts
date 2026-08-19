@@ -5,6 +5,7 @@ import {
   readStageTransform,
 } from "./helpers/groundGlass";
 import { setRangeDirect } from "./helpers/rangeInput";
+import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const tableTiltCard = (page: import("@playwright/test").Page) =>
   page
@@ -461,7 +462,7 @@ test("2D Geometry keeps projected camera orientation and fit/view state coherent
   await expect(sideSvg.getByTestId("generic-camera-glyphs")).toHaveCount(0);
   const zeroTiltLens = await readProjectedLine(sideSvg.getByTestId("physical-lens-segment"));
 
-  await setRangeDirect(page, "Tilt", 7);
+  await setStepRangeInput(page, "Tilt", 7);
   await expect.poll(async () => {
     const tiltedLens = await readProjectedLine(sideSvg.getByTestId("physical-lens-segment"));
     return Math.abs(projectedSlope(tiltedLens) - projectedSlope(zeroTiltLens));
