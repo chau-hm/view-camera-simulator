@@ -148,7 +148,7 @@ test("Shelf Swing free and guided workflows stay accessible without console erro
   await overlayTrigger.click();
   const focusPlaneToggle = page.getByRole("button", { name: /focus plane/i }).first();
   await expect(focusPlaneToggle).toHaveAttribute("aria-pressed", /true|false/);
-  await expect(page.getByRole("button", { name: "Open 2D Geometry" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Expand 2D Geometry" })).toBeVisible();
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
@@ -299,7 +299,7 @@ test("Shelf Swing geometry limits projected depth planes to the movement-relevan
   await setStepRangeInput(page, "Swing", -3.8);
   await setStepRangeInput(page, "Focus distance", 3410);
 
-  const trigger = page.getByRole("button", { name: "Open 2D Geometry" });
+  const trigger = page.getByRole("button", { name: "Expand 2D Geometry" });
   await trigger.click();
   await page.getByRole("button", { name: "Side", exact: true }).click();
   const side = page.getByTestId("geometry-svg-side");
@@ -333,7 +333,7 @@ test("Shelf Swing geometry limits projected depth planes to the movement-relevan
     await expect(locator).toBeVisible();
   }
 
-  await page.getByRole("button", { name: "Close 2D Geometry" }).click();
+  await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
   await expect(page.locator("section.geometry-viewport")).toHaveCount(0);
   await expect(trigger).toBeFocused();
 });
@@ -356,7 +356,7 @@ test("Shelf Swing solved geometry and RTT remain coherent at the public solution
     await expect.poll(async () => Number(await sceneCanvas.getAttribute(attribute))).toBeGreaterThanOrEqual(4);
   }
 
-  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   const calibratedTop = page.getByTestId("geometry-svg-top");
   await expectGuideLabelClearOfMiddleTarget(calibratedTop);
   const subjectLine = calibratedTop.getByTestId("shelf-swing-subject-trace").locator("line");
@@ -422,14 +422,14 @@ test("Shelf Swing expanded Geometry keeps controls interactive and restores the 
     );
     await overlayTrigger.click();
 
-    const trigger = page.getByRole("button", { name: "Open 2D Geometry" });
+    const trigger = page.getByRole("button", { name: "Expand 2D Geometry" });
     await trigger.click();
     const geometry = page.locator("section.geometry-viewport");
     await expect(geometry).toBeVisible();
     await expect(page.getByRole("dialog", { name: "2D Geometry" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "3D Scene" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Ground Glass" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Close 2D Geometry" })).toBeFocused();
+    await expect(page.getByRole("button", { name: "Restore 2D Geometry" })).toBeFocused();
     await expect(page.getByRole("button", { name: "Fit Scene" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Fit Construction" })).toBeVisible();
     const geometryLayout = await page.evaluate(() => {
@@ -465,7 +465,7 @@ test("Shelf Swing expanded Geometry keeps controls interactive and restores the 
     await expect(page.getByRole("region", { name: "Camera Controls" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
-    await page.getByRole("button", { name: "Close 2D Geometry" }).click();
+    await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
     await expect(geometry).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "3D Scene" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Ground Glass" })).toBeVisible();

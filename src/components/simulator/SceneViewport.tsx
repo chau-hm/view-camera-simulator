@@ -188,9 +188,14 @@ export const SceneViewport = ({
                 ref={geometryTriggerRef}
                 type="button"
                 onClick={(event) => onToggleGeometryPanel(event.currentTarget)}
-                className="btn btn--secondary"
+                aria-label={t(simulatorMessageKeys.viewport.expandGeometry)}
+                title={t(simulatorMessageKeys.viewport.expandGeometry)}
+                data-viewport-expanded="false"
+                className="btn btn--icon btn--viewport-action scene-toolbar__geometry-action"
               >
-                {t(simulatorMessageKeys.viewport.openGeometry)}
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  open_in_new
+                </span>
               </button>
             )}
           </div>

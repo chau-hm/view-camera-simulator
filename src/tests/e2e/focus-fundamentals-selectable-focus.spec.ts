@@ -134,7 +134,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", String(focusFundamentalsFocalLengthMm));
   await expectContentfulRtt(rtt);
 
-  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   const geometrySvg = page.getByTestId("geometry-svg-side");
   await expect(geometrySvg).toBeVisible();
   await expect(geometrySvg.locator('[data-testid="focus-fundamentals-position-cues"]')).toBeVisible();
@@ -143,7 +143,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(geometrySvg).toContainText("Lens · current");
   await expect(geometrySvg).toContainText("Lens · reference");
   await expect(geometrySvg).not.toContainText("Original");
-  await page.getByRole("button", { name: "Close 2D Geometry" }).click();
+  await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
 
   const rttHandle = await rtt.elementHandle();
   const rttCanvasHandle = await rttCanvas.elementHandle();

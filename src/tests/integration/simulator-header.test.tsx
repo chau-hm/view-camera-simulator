@@ -152,7 +152,7 @@ describe("simulator header", () => {
 
     expect(screen.getByRole("slider", { name: "Camera Position" })).toBeInTheDocument();
     expect(screen.getByRole("slider", { name: "Front Shift" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Open 2D Geometry" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
     expect(screen.getByRole("img", { name: "Mirror Shift top-view teaching geometry" })).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {

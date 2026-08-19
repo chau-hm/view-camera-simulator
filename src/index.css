@@ -79,6 +79,7 @@ button {
 
 /* Main owns vertical scrolling and contains viewport grid + info grid */
 .simulator-main {
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -141,6 +142,7 @@ button {
 
 .simulator-viewport-grid--expanded {
   height: 100%;
+  width: 100%;
   min-height: 0;
   grid-template-columns: minmax(0, 1fr);
 }
@@ -1004,7 +1006,56 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   z-index: 10;
 }
 
-.geometry-viewport { container-type: inline-size; }
+.geometry-viewport {
+  position: relative;
+  container-type: inline-size;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.geometry-viewport__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.geometry-viewport__header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.geometry-viewport__view-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.geometry-viewport__framing-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.geometry-viewport__restore-action,
+.scene-toolbar__geometry-action {
+  position: static;
+  flex: 0 0 auto;
+  z-index: auto;
+}
+.geometry-diagram-container {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
 .mirror-shift-teaching-diagram {
   display: flex;
   flex-direction: column;
@@ -1050,6 +1101,7 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
+  min-width: 0;
 }
 .geometry-construction-region {
   min-width: 0;
@@ -1075,6 +1127,13 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 .geometry-construction-continuation span:last-child { font-size: 20px; line-height: 1; }
 
 @container (max-width: 760px) {
+  .geometry-viewport__header {
+    align-items: flex-start;
+  }
+  .geometry-viewport__header-actions {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
   .geometry-construction-split { grid-template-columns: minmax(0, 1fr); }
   .geometry-construction-continuation {
     grid-auto-flow: column;

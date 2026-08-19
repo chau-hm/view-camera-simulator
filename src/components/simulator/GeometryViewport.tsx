@@ -249,10 +249,10 @@ const cameraProjection = constructionWindow
       style={{ display: "flex", flexDirection: "column", height: "100%" }}
     >
       {showHeader !== false ? (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <div className="geometry-viewport__header">
           <h2 style={{ margin: 0 }}>{t(simulatorMessageKeys.viewport.geometryTitle)}</h2>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div role="group" aria-label={t(simulatorMessageKeys.geometry.viewLabel)} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div className="geometry-viewport__header-actions">
+            <div className="geometry-viewport__view-controls" role="group" aria-label={t(simulatorMessageKeys.geometry.viewLabel)}>
               {!isMirrorShiftTeaching ? (
                 <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => {
                   setFitMode("scene");
@@ -273,20 +273,23 @@ const cameraProjection = constructionWindow
             {onRequestRestore ? (
               <button
                 ref={restoreTriggerRef}
-                className="btn btn--compact btn--secondary"
+                className="btn btn--icon btn--viewport-action geometry-viewport__restore-action"
                 type="button"
                 onClick={onRequestRestore}
-                aria-label={t(simulatorMessageKeys.viewport.closeGeometry)}
-                data-viewport-expanded={expanded ? "true" : "false"}
+                aria-label={t(simulatorMessageKeys.viewport.restoreGeometry)}
+                title={t(simulatorMessageKeys.viewport.restoreGeometry)}
+                data-viewport-expanded="true"
               >
-                {t(simulatorMessageKeys.viewport.closeGeometry)}
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  close_fullscreen
+                </span>
               </button>
             ) : null}
           </div>
         </div>
       ) : null}
 
-      <div role="group" aria-label={t(simulatorMessageKeys.geometry.framingLabel)} style={{ display: "flex", gap: 8, marginTop: 6 }}>
+      <div className="geometry-viewport__framing-controls" role="group" aria-label={t(simulatorMessageKeys.geometry.framingLabel)}>
         <button
           type="button"
           className={effectiveFitMode === "scene" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
