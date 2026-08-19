@@ -226,7 +226,7 @@ test("Oblique Architecture compound task solves Rise, Swing, and Focus from neut
   await expect(tilt).toBeDisabled();
   await expect(focus).toHaveValue("13200");
   await expect(focus).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Open 2D Geometry" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Expand 2D Geometry" })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
 
