@@ -334,7 +334,7 @@ test("Shelf Swing geometry limits projected depth planes to the movement-relevan
   }
 
   await page.getByRole("button", { name: "Close 2D Geometry" }).click();
-  await expect(page.getByRole("dialog", { name: "2D Geometry" })).toHaveCount(0);
+  await expect(page.locator("section.geometry-viewport")).toHaveCount(0);
   await expect(trigger).toBeFocused();
 });
 
@@ -389,7 +389,7 @@ test("Shelf Swing solved geometry and RTT remain coherent at the public solution
   await expect(page.getByTestId("geometry-svg-top")).toBeVisible();
 });
 
-test("Shelf Swing geometry dialog stays keyboard-accessible and bounded at 1024px", async ({ page }) => {
+test("Shelf Swing expanded Geometry keeps controls interactive and restores the normal layout", async ({ page }) => {
   test.setTimeout(120_000);
   for (const height of [768, 900]) {
     await page.setViewportSize({ width: 1024, height });
@@ -424,36 +424,56 @@ test("Shelf Swing geometry dialog stays keyboard-accessible and bounded at 1024p
 
     const trigger = page.getByRole("button", { name: "Open 2D Geometry" });
     await trigger.click();
-    const dialog = page.getByRole("dialog", { name: "2D Geometry" });
-    await expect(dialog).toHaveAttribute("aria-modal", "true");
+    const geometry = page.locator("section.geometry-viewport");
+    await expect(geometry).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "2D Geometry" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "3D Scene" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Ground Glass" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Close 2D Geometry" })).toBeFocused();
     await expect(page.getByRole("button", { name: "Fit Scene" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Fit Construction" })).toBeVisible();
-    const bounds = await dialog.boundingBox();
-    if (!bounds) throw new Error("2D Geometry dialog bounds were unavailable");
-    expect(bounds.x).toBeGreaterThanOrEqual(0);
-    expect(bounds.y).toBeGreaterThanOrEqual(0);
-    expect(bounds.x + bounds.width).toBeLessThanOrEqual(1024);
-    expect(bounds.y + bounds.height).toBeLessThanOrEqual(height);
-    const beforeResize = { ...bounds };
-    await page.mouse.move(bounds.x + bounds.width - 3, bounds.y + bounds.height - 3);
-    await page.mouse.down();
-    await page.mouse.move(bounds.x + bounds.width + 90, bounds.y + bounds.height + 70, { steps: 5 });
-    await page.mouse.up();
-    const resized = await dialog.boundingBox();
-    if (!resized) throw new Error("Resized dialog bounds were unavailable");
-    expect(resized.width).toBeGreaterThan(beforeResize.width + 20);
-    expect(resized.height).toBeGreaterThan(beforeResize.height + 20);
-    expect(Math.abs(resized.x - beforeResize.x)).toBeLessThanOrEqual(2);
-    expect(Math.abs(resized.y - beforeResize.y)).toBeLessThanOrEqual(2);
-    expect(resized.x).toBeGreaterThanOrEqual(16);
-    expect(resized.y).toBeGreaterThanOrEqual(16);
-    expect(resized.x + resized.width).toBeLessThanOrEqual(1024 - 16);
-    expect(resized.y + resized.height).toBeLessThanOrEqual(height - 16);
+    const geometryLayout = await page.evaluate(() => {
+      const main = document.querySelector<HTMLElement>(".simulator-main");
+      const aside = document.querySelector<HTMLElement>(".simulator-aside");
+      const card = document.querySelector<HTMLElement>(".simulator-card--expanded");
+      const diagram = document.querySelector<HTMLElement>(".geometry-diagram-container");
+      if (!main || !aside || !card || !diagram) throw new Error("Expanded Geometry layout is incomplete");
+      const mainRect = main.getBoundingClientRect();
+      const asideRect = aside.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      const diagramRect = diagram.getBoundingClientRect();
+      return {
+        main: { left: mainRect.left, right: mainRect.right, overflowY: getComputedStyle(main).overflowY },
+        aside: { left: asideRect.left, overflowY: getComputedStyle(aside).overflowY },
+        card: { left: cardRect.left, right: cardRect.right, height: cardRect.height },
+        diagram: { width: diagramRect.width, height: diagramRect.height },
+      };
+    });
+    expect(geometryLayout.card.left).toBeGreaterThanOrEqual(geometryLayout.main.left - 1);
+    expect(geometryLayout.card.right).toBeLessThanOrEqual(geometryLayout.main.right + 1);
+    expect(geometryLayout.card.right).toBeLessThan(geometryLayout.aside.left);
+    expect(geometryLayout.card.height).toBeGreaterThan(0);
+    expect(geometryLayout.diagram.width).toBeGreaterThan(0);
+    expect(geometryLayout.diagram.height).toBeGreaterThan(0);
+    expect(geometryLayout.main.overflowY).toBe("hidden");
+    expect(geometryLayout.aside.overflowY).toBe("auto");
+    const swing = page.getByLabel("Swing");
+    await swing.focus();
+    const beforeSwing = await swing.inputValue();
+    await swing.press("ArrowRight");
+    await expect(swing).not.toHaveValue(beforeSwing);
+    await expect(page.getByRole("region", { name: "Camera Controls" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
+    await page.getByRole("button", { name: "Close 2D Geometry" }).click();
+    await expect(geometry).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "3D Scene" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ground Glass" })).toBeVisible();
+    await expect(trigger).toBeFocused();
+
+    await trigger.click();
     await page.keyboard.press("Escape");
-    await expect(dialog).toHaveCount(0);
+    await expect(geometry).toHaveCount(0);
     await expect(trigger).toBeFocused();
   }
 });

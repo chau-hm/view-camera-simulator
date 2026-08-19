@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type Ref, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import { SceneOverlayControls } from "./SceneOverlayControls";
@@ -25,6 +25,7 @@ type SceneViewportProps = {
   onRequestExpand: () => void;
   onRequestRestore: () => void;
   onToggleGeometryPanel?: (trigger: HTMLButtonElement) => void;
+  geometryTriggerRef?: Ref<HTMLButtonElement>;
   showHeader?: boolean;
   overlayMenuResetGeneration: number;
 };
@@ -47,6 +48,7 @@ export const SceneViewport = ({
   onRequestExpand,
   onRequestRestore,
   onToggleGeometryPanel,
+  geometryTriggerRef,
   showHeader,
   overlayMenuResetGeneration,
 }: SceneViewportProps) => {
@@ -183,6 +185,7 @@ export const SceneViewport = ({
             </fieldset>
             {onToggleGeometryPanel && (
               <button
+                ref={geometryTriggerRef}
                 type="button"
                 onClick={(event) => onToggleGeometryPanel(event.currentTarget)}
                 className="btn btn--secondary"
