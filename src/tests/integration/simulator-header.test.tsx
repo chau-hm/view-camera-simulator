@@ -115,6 +115,7 @@ describe("simulator header", () => {
     expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Focus assist" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "View overlays" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Expand 2D Geometry" })).toHaveTextContent("2D Geometry");
 
     fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
       target: { value: "zh-HK" },
@@ -128,6 +129,7 @@ describe("simulator header", () => {
       expect(screen.getByRole("button", { name: "展開 3D 場景" })).toBeInTheDocument();
       expect(screen.getByRole("checkbox", { name: "對焦輔助" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "檢視疊加層" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "展開 2D 幾何圖" })).toHaveTextContent("2D 幾何圖");
     });
 
     expect(screen.queryByRole("slider", { name: "Viewpoint" })).not.toBeInTheDocument();

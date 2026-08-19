@@ -19,6 +19,8 @@ type SceneViewportProps = {
   opticsState: DerivedOpticsState;
   renderQuality: RenderQualityProfile;
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
+  requestedScheimpflugConstruction: boolean;
+  onToggleScheimpflugConstruction: () => void;
   simulateAssetFailure: boolean;
   expanded: boolean;
   restoreFocusOnCollapse: boolean;
@@ -42,6 +44,8 @@ export const SceneViewport = ({
   opticsState,
   renderQuality,
   setRenderQuality,
+  requestedScheimpflugConstruction,
+  onToggleScheimpflugConstruction,
   simulateAssetFailure,
   expanded,
   restoreFocusOnCollapse,
@@ -60,7 +64,6 @@ export const SceneViewport = ({
   const [showLegends, setShowLegends] = useState(false);
   const showOpticalGeometry = useAppStore((state) => state.ui.showOpticalGeometry);
   const setShowOpticalGeometry = useAppStore((state) => state.setShowOpticalGeometry);
-  const [requestedScheimpflugConstruction, setRequestedScheimpflugConstruction] = useState(false);
   const [viewResetNonce, setViewResetNonce] = useState(0);
   const [viewFocusState, setViewFocusState] = useState<{
     sceneId: string;
@@ -101,12 +104,6 @@ export const SceneViewport = ({
         return scheimpflugConstruction.unavailableReason;
     }
   })();
-
-  useEffect(() => {
-    if (!supportsScheimpflugConstruction) {
-      setRequestedScheimpflugConstruction(false);
-    }
-  }, [supportsScheimpflugConstruction]);
 
   useEffect(() => {
     setViewFocusState({ sceneId: scene.id, focus: "scene" });
@@ -191,8 +188,9 @@ export const SceneViewport = ({
                 aria-label={t(simulatorMessageKeys.viewport.expandGeometry)}
                 title={t(simulatorMessageKeys.viewport.expandGeometry)}
                 data-viewport-expanded="false"
-                className="btn btn--icon btn--viewport-action scene-toolbar__geometry-action"
+                className="btn btn--secondary scene-toolbar__geometry-action"
               >
+                <span>{t(simulatorMessageKeys.viewport.geometryTitle)}</span>
                 <span className="material-symbols-outlined" aria-hidden="true">
                   open_in_new
                 </span>
@@ -243,7 +241,7 @@ export const SceneViewport = ({
               onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
               onToggleLegends={() => setShowLegends((s) => !s)}
               onToggleOpticalGeometry={() => setShowOpticalGeometry(!showOpticalGeometry)}
-              onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setRequestedScheimpflugConstruction((state) => !state) : undefined}
+              onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? onToggleScheimpflugConstruction : undefined}
             />
           </div>
 
