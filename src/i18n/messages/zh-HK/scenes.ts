@@ -38,6 +38,16 @@ export const scenesMessages = {
       perspectiveControl: "透視控制",
     },
   },
+  obliqueArchitecture: {
+    title: "斜向建築攝影",
+    description:
+      "結合前組上移與前組擺動，在斜角拍攝建築物時保持垂直線平行，並讓延伸的立面由近至遠保持清晰。",
+    topics: {
+      frontRise: "前組上移",
+      frontSwing: "前組擺動",
+      compoundMovements: "複合運動",
+    },
+  },
   tableTilt: {
     title: "桌面焦平面與傾斜",
     description:

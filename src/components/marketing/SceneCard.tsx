@@ -11,6 +11,7 @@ type SceneCardProps = {
   availability: SceneAvailability;
   thumbnailAsset: string;
   guidedTaskId?: string;
+  guidedLesson?: boolean;
 };
 
 export const SceneCard = ({
@@ -21,6 +22,7 @@ export const SceneCard = ({
   availability,
   thumbnailAsset,
   guidedTaskId,
+  guidedLesson = false,
 }: SceneCardProps) => {
   const { t } = useTranslation();
 
@@ -57,9 +59,13 @@ export const SceneCard = ({
               {guidedTaskId ? (
                 <Link
                   className="btn btn--secondary"
-                  to={`/simulator/guided/${sceneId}/${guidedTaskId}`}
+                  to={
+                    guidedLesson
+                      ? `/simulator/free/${sceneId}?lesson=1`
+                      : `/simulator/guided/${sceneId}/${guidedTaskId}`
+                  }
                 >
-                  {t("common.sceneCard.startGuidedTask")}
+                  {t(guidedLesson ? "common.sceneCard.guidedLesson" : "common.sceneCard.startGuidedTask")}
                 </Link>
               ) : null}
             </>

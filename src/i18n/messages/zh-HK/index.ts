@@ -4,6 +4,7 @@ import { readoutsMessages } from "./readouts";
 import { scenesMessages } from "./scenes";
 import { simulatorMessages } from "./simulator";
 import { tasksMessages } from "./tasks";
+import { guidedLessonMessages } from "./guidedLesson";
 
 export const zhHkMessages = {
   common: commonMessages,
@@ -12,4 +13,5 @@ export const zhHkMessages = {
   scenes: scenesMessages,
   simulator: simulatorMessages,
   tasks: tasksMessages,
+  guidedLesson: guidedLessonMessages,
 } as const;

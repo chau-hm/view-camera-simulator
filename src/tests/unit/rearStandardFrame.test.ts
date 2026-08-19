@@ -1,13 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { calculateLensNormal } from "../../core/optics/calculateLensPlane";
-import { calculateRearStandardFrame, validateFilmCorners } from "../../core/optics/calculateRearStandardFrame";
+import {
+  calculateRearStandardFrame,
+  isStandardFrameLevel,
+  validateFilmCorners,
+} from "../../core/optics/calculateRearStandardFrame";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
-import { vec } from "../../core/math/vec";
+import { rotateAroundY, vec } from "../../core/math/vec";
 import type { ApertureValue, CameraState } from "../../types/camera";
 
 
@@ -168,6 +172,22 @@ describe("Case 3: rear tilt only", () => {
     // Matrix finite and changes from baseline
     expect(tilted.offAxisProjectionMatrix.every(Number.isFinite)).toBe(true);
     expect(tilted.offAxisProjectionMatrix).not.toEqual(base.offAxisProjectionMatrix);
+  });
+});
+
+describe("rear-standard level orientation", () => {
+  it("allows horizontal yaw but rejects a tilted frame", () => {
+    const baseline = calculateRearStandardFrame(vec(0, 0, -150), 0, 0).frame;
+    const yawed = {
+      ...baseline,
+      rightWorld: rotateAroundY(baseline.rightWorld, 30),
+      normalWorld: rotateAroundY(baseline.normalWorld, 30),
+    };
+
+    expect(isStandardFrameLevel(yawed)).toBe(true);
+    expect(
+      isStandardFrameLevel(calculateRearStandardFrame(vec(0, 0, -150), 0, 10).frame),
+    ).toBe(false);
   });
 });
 

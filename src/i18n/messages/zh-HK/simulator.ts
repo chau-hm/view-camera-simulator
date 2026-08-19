@@ -55,6 +55,15 @@ export const simulatorMessages = {
       },
       observation: "觀察前組上移時建築物上方如何進入畫面。構圖改變，但整部相機的視點保持不變，預期的垂直線仍然平行。",
     },
+    obliqueArchitecture: {
+      objective: "在斜角建築場景中探索前組上移、前組擺動及對焦，同時保持後組水平。",
+      bullets: {
+        level: "水平相機令建築物垂直線在對焦屏上保持平行。",
+        framing: "增加前組上移，把建築物頂部納入畫面，同時保留底部。",
+        depth: "使用前組擺動及對焦，讓清晰焦平面對齊近、中、遠窗戶。",
+      },
+      observation: "前組上移改變構圖，前組擺動旋轉鏡頭／清晰焦平面。比較對焦屏及 Top 幾何圖，同時由後組保持垂直線平行。",
+    },
     tableTilt: {
       objective: "使用前組傾斜及對焦，讓清晰焦平面與桌面上方三張共面的對焦卡對齊。",
       bullets: {

@@ -15,9 +15,22 @@ export const publicSceneIds = [
   "table-tilt",
   "shelf-swing",
   "mirror-shift",
+  "oblique-architecture",
 ] as const;
 export type PublicSceneId = (typeof publicSceneIds)[number];
 export type SceneAvailability = "available" | "in-development";
+
+export type PublicGuidedLessonTaskStageId =
+  | "compose"
+  | "align-focus"
+  | "final-challenge";
+
+export type PublicGuidedLessonConfig = {
+  id: string;
+  includeObserveStage: boolean;
+  /** Stage labels aligned with the existing ordered guidedTaskIds list. */
+  taskStageIds: readonly PublicGuidedLessonTaskStageId[];
+};
 
 export type PublicSceneEntry = {
   id: PublicSceneId;
@@ -28,6 +41,10 @@ export type PublicSceneEntry = {
   availableModes: readonly SimulatorMode[];
   thumbnailAsset: string;
   guidedTaskId?: string;
+  /** Additional direct guided routes for scenes that grow across learning slices. */
+  guidedTaskIds?: readonly string[];
+  /** Optional lightweight lesson integration metadata for the public scene. */
+  guidedLesson?: PublicGuidedLessonConfig;
 };
 
 export const publicSceneCatalog: readonly PublicSceneEntry[] = [
@@ -114,6 +131,26 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/mirror-shift.png",
     guidedTaskId: "mirror-shift-01",
+  },
+  {
+    id: "oblique-architecture",
+    titleKey: publicSceneMessageKeys.obliqueArchitecture.title,
+    descriptionKey: publicSceneMessageKeys.obliqueArchitecture.description,
+    topicKeys: [
+      publicSceneMessageKeys.obliqueArchitecture.topics.frontRise,
+      publicSceneMessageKeys.obliqueArchitecture.topics.frontSwing,
+      publicSceneMessageKeys.obliqueArchitecture.topics.compoundMovements,
+    ],
+    availability: "available",
+    availableModes: ["free", "guided"],
+    thumbnailAsset: "assets/oblique-architecture.png",
+    guidedTaskId: "oblique-compound-01",
+    guidedTaskIds: ["oblique-rise-01", "oblique-swing-focus-01", "oblique-compound-01"],
+    guidedLesson: {
+      id: "oblique-architecture",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "align-focus", "final-challenge"],
+    },
   },
 ];
 

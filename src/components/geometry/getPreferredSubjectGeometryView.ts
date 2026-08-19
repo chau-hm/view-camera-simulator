@@ -6,6 +6,7 @@ const SCENE_DEFAULT_SUBJECT_VIEW: Readonly<Record<string, SubjectGeometryView>> 
   "table-tilt": "side",
   "shelf-swing": "top",
   "architecture-rise": "side",
+  "oblique-architecture": "top",
   "focus-fundamentals-two-targets": "side",
   "mirror-shift": "top",
 };

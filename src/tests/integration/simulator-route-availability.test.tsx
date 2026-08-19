@@ -8,15 +8,17 @@ vi.mock("../../components/layout/SimulatorWorkspace", () => ({
     mode,
     sceneId,
     taskId,
+    guidedLessonEnabled,
     calibrationEnabled,
   }: {
     mode: string;
     sceneId: string;
     taskId: string | null;
+    guidedLessonEnabled?: boolean;
     calibrationEnabled?: boolean;
   }) => (
     <div data-testid="simulator-workspace">
-      {mode}:{sceneId}:{taskId ?? "none"}:calibration={String(Boolean(calibrationEnabled))}
+      {mode}:{sceneId}:{taskId ?? "none"}:lesson={String(Boolean(guidedLessonEnabled))}:calibration={String(Boolean(calibrationEnabled))}
     </div>
   ),
 }));
@@ -39,19 +41,28 @@ const renderRoute = (initialEntry: string) =>
 
 describe("simulator route availability", () => {
   it.each([
-    ["/simulator/free/focus-fundamentals-two-targets", "free:focus-fundamentals-two-targets:none"],
-    ["/simulator/free/architecture-rise", "free:architecture-rise:none"],
-    ["/simulator/free/shelf-swing", "free:shelf-swing:none"],
-    ["/simulator/free/mirror-shift", "free:mirror-shift:none"],
-    ["/simulator/guided/architecture-rise/rise-01", "guided:architecture-rise:rise-01"],
-    ["/simulator/guided/shelf-swing/swing-01", "guided:shelf-swing:swing-01"],
-    ["/simulator/free/table-tilt", "free:table-tilt:none"],
-    ["/simulator/guided/table-tilt/tilt-01", "guided:table-tilt:tilt-01"],
+    ["/simulator/free/focus-fundamentals-two-targets", "free:focus-fundamentals-two-targets:none:lesson=false"],
+    ["/simulator/free/architecture-rise", "free:architecture-rise:none:lesson=false"],
+    ["/simulator/free/oblique-architecture", "free:oblique-architecture:none:lesson=false"],
+    ["/simulator/free/shelf-swing", "free:shelf-swing:none:lesson=false"],
+    ["/simulator/free/mirror-shift", "free:mirror-shift:none:lesson=false"],
+    ["/simulator/guided/architecture-rise/rise-01", "guided:architecture-rise:rise-01:lesson=false"],
+    ["/simulator/guided/shelf-swing/swing-01", "guided:shelf-swing:swing-01:lesson=false"],
+    ["/simulator/free/table-tilt", "free:table-tilt:none:lesson=false"],
+    ["/simulator/guided/table-tilt/tilt-01", "guided:table-tilt:tilt-01:lesson=false"],
   ])("keeps available simulator route %s open", async (route, expectedWorkspace) => {
     renderRoute(route);
 
     expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(expectedWorkspace);
     expect(screen.getByTestId("route-location")).toHaveTextContent(route);
+  });
+
+  it("marks only the Oblique Architecture lesson query for lesson UI", async () => {
+    renderRoute("/simulator/free/oblique-architecture?lesson=1");
+
+    expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(
+      "free:oblique-architecture:none:lesson=true",
+    );
   });
 
   it.each([
@@ -75,6 +86,8 @@ describe("simulator route availability", () => {
     "/simulator/free/table-tilt/tilt-01",
     "/simulator/guided/focus-fundamentals-two-targets",
     "/simulator/guided/focus-fundamentals-two-targets/rise-01",
+    "/simulator/guided/oblique-architecture",
+    "/simulator/guided/oblique-architecture/rise-01",
   ])("redirects invalid simulator route %s to Scenes", async (route) => {
     renderRoute(route);
 

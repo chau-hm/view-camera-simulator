@@ -65,6 +65,17 @@ export const simulatorMessages = {
       observation:
         "Watch the top of the building as Front Rise changes. Framing moves while the whole-camera viewpoint stays fixed and the intended verticals remain parallel.",
     },
+    obliqueArchitecture: {
+      objective:
+        "Explore Front Rise, Front Swing, and Focus while keeping the rear standard level in an oblique architectural view.",
+      bullets: {
+        level: "The level camera keeps the building verticals parallel on the Ground Glass.",
+        framing: "Increase Front Rise to include the building top while keeping the base inside the frame.",
+        depth: "Use Front Swing and Focus to align the plane of sharp focus across the near, middle, and far windows.",
+      },
+      observation:
+        "Front Rise changes framing and Front Swing rotates the lens/focus plane. Compare the Ground Glass and Top geometry while the rear standard preserves parallel verticals.",
+    },
     tableTilt: {
       objective:
         "Use Front Tilt and Focus to align the plane of sharp focus with the three coplanar focus cards above the tabletop.",

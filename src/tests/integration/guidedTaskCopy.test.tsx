@@ -12,7 +12,7 @@ import { LOCALE_STORAGE_KEY } from "../../i18n/localePreference";
 import { guidedTaskMessageKeys } from "../../i18n/guidedTaskMessageKeys";
 import type { TaskDefinition, TaskEvaluation } from "../../types/task";
 
-const guidedTaskIds = ["rise-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
+const guidedTaskIds = ["rise-01", "oblique-rise-01", "oblique-swing-focus-01", "oblique-compound-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
 
 const resetLocale = async () => {
   cleanup();
@@ -120,11 +120,32 @@ describe("Guided Task message contract", () => {
 });
 
 describe("Guided Task presentation", () => {
-  it("renders representative English teaching relationships for all four tasks", () => {
+  it("renders representative English teaching relationships for all guided tasks", () => {
     renderGuidedTask("rise-01");
     expect(document.body).toHaveTextContent(/Front Rise/);
     expect(document.body).toHaveTextContent(/camera level/);
     expect(document.body).toHaveTextContent(/whole-camera viewpoint/);
+
+    cleanup();
+    renderGuidedTask("oblique-rise-01", "oblique-rise-building-top-visible");
+    expect(document.body).toHaveTextContent(/Frame the Building/);
+    expect(document.body).toHaveTextContent(/full building/);
+    expect(document.body).toHaveTextContent(/receding façade/);
+    expect(document.body).not.toHaveTextContent(/20 mm/);
+
+    cleanup();
+    renderGuidedTask("oblique-swing-focus-01", "oblique-swing-focus-near-sharp");
+    expect(document.body).toHaveTextContent(/Align the Façade Focus/);
+    expect(document.body).toHaveTextContent(/Front Swing and Focus/);
+    expect(document.body).toHaveTextContent(/near, middle, and far/);
+    expect(document.body).not.toHaveTextContent(/9\.7°|5260 mm/);
+
+    cleanup();
+    renderGuidedTask("oblique-compound-01", "oblique-compound-near-sharp");
+    expect(document.body).toHaveTextContent(/Complete the Photograph/);
+    expect(document.body).toHaveTextContent(/Front Rise, Front Swing, and Focus/);
+    expect(document.body).toHaveTextContent(/near, middle, and far/);
+    expect(document.body).not.toHaveTextContent(/20 mm|9\.7°|5260 mm/);
 
     cleanup();
     renderGuidedTask("tilt-01", "tilt-movement-range");
@@ -160,6 +181,24 @@ describe("Guided Task presentation", () => {
     expect(document.body).toHaveTextContent(/視點/);
     expect(document.body).toHaveTextContent(/引導任務/);
     expect(document.body).toHaveTextContent(/允許的控制項目/);
+
+    cleanup();
+    renderGuidedTask("oblique-rise-01", "oblique-rise-building-top-visible");
+    expect(document.body).toHaveTextContent(/為建築物構圖/);
+    expect(document.body).toHaveTextContent(/整座建築物/);
+    expect(document.body).toHaveTextContent(/延伸立面/);
+
+    cleanup();
+    renderGuidedTask("oblique-swing-focus-01", "oblique-swing-focus-near-sharp");
+    expect(document.body).toHaveTextContent(/對齊立面清晰焦平面/);
+    expect(document.body).toHaveTextContent(/前組擺動及對焦/);
+    expect(document.body).toHaveTextContent(/近處、中間及遠處/);
+
+    cleanup();
+    renderGuidedTask("oblique-compound-01", "oblique-compound-near-sharp");
+    expect(document.body).toHaveTextContent(/完成這張相片/);
+    expect(document.body).toHaveTextContent(/前組上移、前組擺動及對焦/);
+    expect(document.body).toHaveTextContent(/近處、中間及遠處/);
 
     cleanup();
     renderGuidedTask("tilt-01", "tilt-movement-range");

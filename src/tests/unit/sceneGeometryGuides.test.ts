@@ -12,7 +12,9 @@ import {
 } from "../../components/geometry/opticalSectionProjection";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
+import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const createProjection = (frontSwingDeg: number, focusDistanceMm: number) => {
@@ -102,6 +104,22 @@ describe("scene geometry guides", () => {
     expect(getSceneGeometryTargetLabel("another-scene", "near-one")).toBe("Near detail");
     expect(getSceneGeometryTargetLabel("another-scene", "far-one")).toBe("Far detail");
     expect(getSceneGeometryTargetLabel("another-scene", "centre")).toBe("Target");
+    expect(getSceneGeometryTargetLabel("oblique-architecture", "facade-near")).toBe("Near façade");
+    expect(getSceneGeometryTargetLabel("oblique-architecture", "facade-middle")).toBe("Middle façade");
+    expect(getSceneGeometryTargetLabel("oblique-architecture", "facade-far")).toBe("Far façade");
+  });
+
+  it("registers the canonical Oblique Architecture façade depth guide", () => {
+    const guides = getSceneGeometryGuides(obliqueArchitectureScene.id);
+    expect(guides).toHaveLength(1);
+    expect(guides[0]).toMatchObject({
+      id: "oblique-architecture-target-facade",
+      label: "Target façade depth",
+      view: "top",
+      testId: "oblique-architecture-target-facade",
+    });
+    expect(guides[0].startWorld).toEqual(obliqueArchitectureGeometry.focusTargets[0].worldPosition);
+    expect(guides[0].endWorld).toEqual(obliqueArchitectureGeometry.focusTargets[2].worldPosition);
   });
 
   it("selects a dedicated Top-view-compatible Shelf Swing presentation profile", () => {

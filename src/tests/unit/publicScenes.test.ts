@@ -46,6 +46,50 @@ describe("public scene catalog integrity", () => {
     ).toBe(false);
   });
 
+  it("publishes Oblique Architecture as the final free and guided scene", () => {
+    const entry = publicSceneCatalog.at(-1)!;
+    expect(entry?.id).toBe("oblique-architecture");
+    expect(entry?.availableModes).toEqual(["free", "guided"]);
+    expect(entry?.guidedTaskId).toBe("oblique-compound-01");
+    expect(entry?.guidedTaskIds).toEqual([
+      "oblique-rise-01",
+      "oblique-swing-focus-01",
+      "oblique-compound-01",
+    ]);
+    expect(entry?.guidedLesson).toEqual({
+      id: "oblique-architecture",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "align-focus", "final-challenge"],
+    });
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: "oblique-architecture",
+        taskId: "oblique-rise-01",
+        publicEntry: entry,
+        task: getTaskById("oblique-rise-01"),
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: "oblique-architecture",
+        taskId: "oblique-compound-01",
+        publicEntry: entry,
+        task: getTaskById("oblique-compound-01"),
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: "oblique-architecture",
+        taskId: "oblique-swing-focus-01",
+        publicEntry: entry,
+        task: getTaskById("oblique-swing-focus-01"),
+      }),
+    ).toBe(true);
+  });
+
   it("rejects a missing scene definition", () => {
     expect(validate(publicSceneCatalog, () => undefined).errors).toContain(
       "shelf-swing: scene definition is missing",
@@ -72,6 +116,51 @@ describe("public scene catalog integrity", () => {
     );
     expect(validate(unexpectedTaskId).errors).toContain(
       "shelf-swing: guidedTaskId requires guided mode",
+    );
+  });
+
+  it("requires lesson metadata to have guided support and ordered tasks", () => {
+    const lessonWithoutGuidedMode = [
+      {
+        ...shelfEntry,
+        availableModes: ["free"] as const,
+        guidedLesson: {
+          id: "shelf-lesson",
+          includeObserveStage: true,
+          taskStageIds: ["compose"] as const,
+        },
+      },
+    ];
+    const lessonWithoutTasks = [
+      {
+        ...shelfEntry,
+        guidedTaskIds: undefined,
+        guidedLesson: {
+          id: "shelf-lesson",
+          includeObserveStage: true,
+          taskStageIds: ["compose"] as const,
+        },
+      },
+    ];
+    const lessonWithMismatchedStages = [
+      {
+        ...shelfEntry,
+        guidedLesson: {
+          id: "shelf-lesson",
+          includeObserveStage: true,
+          taskStageIds: ["compose", "align-focus"] as const,
+        },
+      },
+    ];
+
+    expect(validate(lessonWithoutGuidedMode).errors).toContain(
+      "shelf-swing: guidedLesson requires guided mode",
+    );
+    expect(validate(lessonWithoutTasks).errors).toContain(
+      "shelf-swing: guidedLesson requires ordered guidedTaskIds",
+    );
+    expect(validate(lessonWithMismatchedStages).errors).toContain(
+      "shelf-swing: guidedLesson stage count must match guidedTaskIds",
     );
   });
 

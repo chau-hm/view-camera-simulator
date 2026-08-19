@@ -58,7 +58,36 @@ describe("scenes page", () => {
     expect(scopedArchitectureCard.getByText("Framing")).toBeInTheDocument();
     expect(scopedArchitectureCard.getByText("Perspective control")).toBeInTheDocument();
 
-    // Table Tilt follows Architecture Rise and uses the standard enabled SceneCard link.
+    // Oblique Architecture remains the final public scene and now exposes the compound task.
+    const obliqueHeading = await screen.findByRole("heading", {
+      name: "Oblique Architecture",
+      level: 2,
+    });
+    const obliqueCard = obliqueHeading.closest("article");
+    expect(obliqueCard).not.toBeNull();
+    const scopedObliqueCard = within(obliqueCard!);
+    expect(
+      scopedObliqueCard.getByText(
+        "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
+      ),
+    ).toBeInTheDocument();
+    expect(scopedObliqueCard.getByText("Front Rise")).toBeInTheDocument();
+    expect(scopedObliqueCard.getByText("Front Swing")).toBeInTheDocument();
+    expect(scopedObliqueCard.getByText("Compound movements")).toBeInTheDocument();
+    expect(obliqueCard!.querySelector("img")).toHaveAttribute(
+      "src",
+      "/assets/oblique-architecture.png",
+    );
+    expect(scopedObliqueCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
+      "href",
+      "/simulator/free/oblique-architecture",
+    );
+    expect(scopedObliqueCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
+      "href",
+      "/simulator/free/oblique-architecture?lesson=1",
+    );
+
+    // Table Tilt remains in the existing lesson order and uses the standard enabled SceneCard link.
     const tableHeading = await screen.findByRole("heading", { name: "Table Tilt", level: 2 });
     const tableCard = tableHeading.closest("article");
     expect(tableCard).not.toBeNull();
@@ -111,7 +140,9 @@ describe("scenes page", () => {
       "table-tilt",
       "shelf-swing",
       "mirror-shift",
+      "oblique-architecture",
     ]);
+    expect(publicSceneIds.at(-1)).toBe("oblique-architecture");
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual(publicSceneIds);
     expect(getPublicSceneEntryById("focus-fundamentals-two-targets")?.availableModes).toEqual([
       "free",
@@ -126,6 +157,7 @@ describe("scenes page", () => {
       "Table Tilt",
       "Shelf Swing",
       "Mirror Shift",
+      "Oblique Architecture",
     ]);
     expect(getPublicScenes().map((scene) => scene.id)).toContain("shelf-swing");
     expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("available");
@@ -175,6 +207,7 @@ describe("scenes page", () => {
       "桌面焦平面與傾斜",
       "斜向焦平面與擺動",
       "鏡面構圖與視點",
+      "斜向建築攝影",
     ]);
 
     const cardFor = (title: string) => {
@@ -192,5 +225,14 @@ describe("scenes page", () => {
     ).toBeInTheDocument();
     expect(cardFor("桌面焦平面與傾斜").getByText(/理解前組傾斜如何改變清晰焦平面/)).toBeInTheDocument();
     expect(cardFor("斜向焦平面與擺動").getByText(/理解前組擺動如何改變清晰焦平面/)).toBeInTheDocument();
+    expect(
+      cardFor("斜向建築攝影").getByText(
+        "結合前組上移與前組擺動，在斜角拍攝建築物時保持垂直線平行，並讓延伸的立面由近至遠保持清晰。",
+      ),
+    ).toBeInTheDocument();
+    expect(cardFor("斜向建築攝影").getByRole("link", { name: "引導課程" })).toHaveAttribute(
+      "href",
+      "/simulator/free/oblique-architecture?lesson=1",
+    );
   });
 });

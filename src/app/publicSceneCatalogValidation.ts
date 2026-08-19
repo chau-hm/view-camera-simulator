@@ -35,34 +35,61 @@ export const validatePublicSceneCatalog = ({
     if (supportsGuided && !entry.guidedTaskId) {
       errors.push(`${entry.id}: guided mode requires guidedTaskId`);
     }
-    if (!supportsGuided && entry.guidedTaskId) {
+    if (!supportsGuided && (entry.guidedTaskId || entry.guidedTaskIds?.length)) {
       errors.push(`${entry.id}: guidedTaskId requires guided mode`);
     }
-
-    if (!entry.guidedTaskId) return;
-
-    const previousOwner = guidedTaskOwners.get(entry.guidedTaskId);
-    if (previousOwner) {
-      errors.push(
-        `${entry.id}: guided task ${entry.guidedTaskId} is already assigned to ${previousOwner}`,
-      );
-    } else {
-      guidedTaskOwners.set(entry.guidedTaskId, entry.id);
+    if (entry.guidedLesson) {
+      if (!supportsGuided) {
+        errors.push(`${entry.id}: guidedLesson requires guided mode`);
+      }
+      if (!entry.guidedLesson.id.trim()) {
+        errors.push(`${entry.id}: guidedLesson requires a lesson id`);
+      }
+      if (!entry.guidedTaskIds?.length) {
+        errors.push(`${entry.id}: guidedLesson requires ordered guidedTaskIds`);
+      }
     }
 
-    const task = resolveTask(entry.guidedTaskId);
-    if (!task) {
-      errors.push(`${entry.id}: guided task ${entry.guidedTaskId} is missing`);
-      return;
+    const guidedTaskIds = entry.guidedTaskIds ??
+      (entry.guidedTaskId ? [entry.guidedTaskId] : []);
+    if (
+      entry.guidedLesson &&
+      entry.guidedLesson.taskStageIds.length !== guidedTaskIds.length
+    ) {
+      errors.push(`${entry.id}: guidedLesson stage count must match guidedTaskIds`);
     }
-    if (task.mode !== "guided") {
-      errors.push(`${entry.id}: task ${entry.guidedTaskId} must use guided mode`);
+    if (
+      entry.guidedTaskIds &&
+      entry.guidedTaskId &&
+      !entry.guidedTaskIds.includes(entry.guidedTaskId)
+    ) {
+      errors.push(`${entry.id}: primary guidedTaskId must be included in guidedTaskIds`);
     }
-    if (task.sceneId !== entry.id) {
-      errors.push(
-        `${entry.id}: task ${entry.guidedTaskId} belongs to scene ${task.sceneId}`,
-      );
-    }
+
+    guidedTaskIds.forEach((guidedTaskId) => {
+      const previousOwner = guidedTaskOwners.get(guidedTaskId);
+      if (previousOwner) {
+        errors.push(
+          `${entry.id}: guided task ${guidedTaskId} is already assigned to ${previousOwner}`,
+        );
+      } else {
+        guidedTaskOwners.set(guidedTaskId, entry.id);
+      }
+
+      const task = resolveTask(guidedTaskId);
+      if (!task) {
+        errors.push(`${entry.id}: guided task ${guidedTaskId} is missing`);
+        return;
+      }
+      if (task.mode !== "guided") {
+        errors.push(`${entry.id}: task ${guidedTaskId} must use guided mode`);
+      }
+      if (task.sceneId !== entry.id) {
+        errors.push(
+          `${entry.id}: task ${guidedTaskId} belongs to scene ${task.sceneId}`,
+        );
+      }
+    });
   });
 
   return { valid: errors.length === 0, errors };

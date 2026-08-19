@@ -75,6 +75,10 @@ export const tasksMessages = {
       pass: "Composition target is visible enough",
       fail: "Composition target visibility is too low",
     },
+    cameraLevel: {
+      pass: "Camera and film plane remain level",
+      fail: "Camera or film-plane orientation is no longer level",
+    },
     mirrorReflectionClear: {
       pass: "Camera reflection is outside the mirror aperture",
       fail: "Camera reflection is still visible through the mirror",
@@ -119,6 +123,119 @@ export const tasksMessages = {
           "Reframe with Front Rise so the building body stays centered while retaining the top.",
         movementUsed: "Start from about 15 mm and fine-tune Front Rise upward.",
         movementRange: "Avoid solving this with Front Tilt; use Front Rise for the framing.",
+      },
+    },
+  },
+  obliqueRise: {
+    title: "Frame the Building",
+    objective:
+      "Use Front Rise to include the full building while keeping the camera level and the verticals parallel.",
+    notes: {
+      useRise: "Keep Front Tilt and Front Swing at 0°, then increase Front Rise to bring the roof into the frame.",
+      keepBase: "Include the required building top while keeping the lower building base inside the frame.",
+      depth: "This lesson solves framing only; the receding façade will still have uneven sharpness.",
+    },
+    criteria: {
+      buildingTopVisible: "Required building-top region is visible",
+      buildingBaseVisible: "Required building-base region remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      movementUsed: "Front Rise is used",
+    },
+    feedback: {
+      passPrimary: "Front Rise restored the building framing while the camera stayed level.",
+      defaultFailPrimary: "Use Front Rise to include the roof while keeping the base and verticals stable.",
+      primary: {
+        buildingTopVisible: "The required roof region is still cropped. Increase Front Rise.",
+        buildingBaseVisible: "Keep the lower building base inside the frame while adjusting Front Rise.",
+        cameraLevel: "Keep the camera and rear standard level; do not introduce tilt, swing, or rear movement.",
+        movementUsed: "Increase Front Rise to begin solving the framing problem.",
+      },
+      secondary: {
+        buildingTopVisible: "Watch the Ground Glass top edge until the required roof corners are inside.",
+        buildingBaseVisible: "Check the lower Ground Glass edge as you bring the roof into view.",
+        cameraLevel: "Front Rise changes framing without pitching the camera or converging the verticals.",
+        movementUsed: "Use the Front Rise control for this composition task; the exact value is not prescribed.",
+      },
+    },
+  },
+  obliqueSwingFocus: {
+    title: "Align the Façade Focus",
+    objective:
+      "Use Front Swing and Focus to keep the receding façade sharp from near to far while preserving the architectural framing.",
+    notes: {
+      composition: "The building is already framed with Front Rise; keep that composition intact.",
+      swing: "Use Front Swing to rotate the plane of sharp focus toward the receding façade.",
+      focus: "Refine Focus so the plane passes through the near, middle, and far façade regions.",
+      level: "Keep the rear standard level so the building verticals remain parallel.",
+    },
+    criteria: {
+      buildingTopVisible: "Required building-top region remains visible",
+      buildingBaseVisible: "Required building-base region remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      nearSharp: "Near façade region is sharp",
+      middleSharp: "Middle façade region is sharp",
+      farSharp: "Far façade region is sharp",
+    },
+    feedback: {
+      passPrimary: "Front Swing and Focus aligned the façade while the level rear standard preserved the framing.",
+      defaultFailPrimary: "Keep the solved Rise framing, then use Front Swing and Focus until the façade is sharp from near to far.",
+      primary: {
+        buildingTopVisible: "Keep the required roof region inside the frame; do not change the solved Rise composition.",
+        buildingBaseVisible: "Keep the lower building base inside the frame while refining the focus plane.",
+        cameraLevel: "Keep the rear standard level; Front Swing should rotate the lens/focus plane, not the film plane.",
+        nearSharp: "The near façade remains soft. Adjust Front Swing and refine Focus so the focus plane reaches the near region.",
+        middleSharp: "The middle façade is not sharp enough. Refine Focus around the middle region before fine-tuning Swing.",
+        farSharp: "The far façade remains soft. Continue refining Front Swing and Focus across the receding depth.",
+      },
+      secondary: {
+        buildingTopVisible: "Use the Ground Glass top edge as a framing guardrail while working on focus.",
+        buildingBaseVisible: "Swing and Focus should preserve the Rise composition; watch the lower Ground Glass edge.",
+        cameraLevel: "A non-zero Front Swing changes lens-plane orientation without pitching the camera or rear standard.",
+        nearSharp: "Check the near window target and its surrounding sharpness patch in the readout.",
+        middleSharp: "Use the middle window as the initial focus reference, then compare all three depths.",
+        farSharp: "Use the Top geometry view to see whether the focus plane reaches the far façade target.",
+      },
+    },
+  },
+  obliqueCompound: {
+    title: "Complete the Photograph",
+    objective:
+      "Use Front Rise, Front Swing, and Focus to frame the building, keep its verticals parallel, and make the receding façade sharp from near to far.",
+    notes: {
+      composition: "Start by solving the composition with Front Rise.",
+      swing: "Then use Front Swing to rotate the plane of sharp focus toward the receding façade.",
+      focus: "Refine Focus until the near, middle, and far façade regions are all sharp.",
+      level: "Keep the rear standard level throughout.",
+    },
+    criteria: {
+      buildingTopVisible: "Required building-top region is visible",
+      buildingBaseVisible: "Required building-base region is visible",
+      cameraLevel: "Camera and rear standard remain level",
+      nearSharp: "Near façade region is sharp",
+      middleSharp: "Middle façade region is sharp",
+      farSharp: "Far façade region is sharp",
+    },
+    feedback: {
+      passPrimary:
+        "The building is framed, its verticals remain parallel, and the receding façade is sharp from near to far.",
+      defaultFailPrimary:
+        "Use Front Rise to frame the building, then Front Swing and Focus to make the receding façade sharp.",
+      primary: {
+        buildingTopVisible: "Use Front Rise to bring the required roof region into the Ground Glass.",
+        buildingBaseVisible: "Keep the lower building inside the frame while adjusting Front Rise.",
+        cameraLevel: "Keep the rear standard level so the architectural verticals remain parallel.",
+        nearSharp:
+          "The near façade remains soft. Use Front Swing to align the focus plane with the receding façade, then refine Focus.",
+        middleSharp: "The middle façade is not sharp enough. Refine Focus around the middle region.",
+        farSharp: "The far façade remains soft. Continue refining Front Swing and Focus across the receding depth.",
+      },
+      secondary: {
+        buildingTopVisible: "Watch the Ground Glass top edge until the required roof corners are inside.",
+        buildingBaseVisible: "Check the lower Ground Glass edge as you bring the roof into view.",
+        cameraLevel: "Front Rise and Front Swing should leave the rear standard level; do not pitch the camera.",
+        nearSharp: "Compare the near façade target with the middle and far targets in the sharpness readout.",
+        middleSharp: "Use the middle façade as your initial Focus reference before comparing all three depths.",
+        farSharp: "Use the Top geometry view to see whether the plane of sharp focus reaches the far façade target.",
       },
     },
   },

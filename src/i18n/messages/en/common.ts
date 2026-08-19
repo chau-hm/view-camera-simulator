@@ -25,6 +25,7 @@ export const commonMessages = {
   sceneCard: {
     openScene: "Open Scene",
     startGuidedTask: "Start Guided Task",
+    guidedLesson: "Guided Lesson",
     inDevelopment: "In development",
   },
 } as const;

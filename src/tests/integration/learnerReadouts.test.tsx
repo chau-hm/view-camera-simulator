@@ -159,6 +159,26 @@ describe("scene-aware learner readouts", () => {
     expect(screen.getByTestId("focus-targets-readout")).toBeInTheDocument();
   });
 
+  it("keeps single-movement scenes collapsed to their selected movement", async () => {
+    render(
+      <MemoryRouter>
+        <SimulatorWorkspace
+          mode="free"
+          sceneId="understanding-camera-movements"
+          taskId={null}
+          calibrationEnabled
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("understanding-camera-movements"));
+    const current = screen.getByTestId("current-settings-readout");
+    expect(current).toHaveTextContent("Front Rise: 0.0 mm");
+    expect(current).not.toHaveTextContent("Front Tilt: 0.0°");
+    expect(current).not.toHaveTextContent("Front Swing: 0.0°");
+  });
+
   it("preserves the Table Tilt patch-coverage metric in the guided readout", async () => {
     renderWorkspace("table-tilt", "guided", "tilt-01");
 

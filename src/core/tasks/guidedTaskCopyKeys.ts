@@ -65,6 +65,109 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
       },
     },
   },
+  "oblique-rise-01": {
+    title: k.obliqueRise.title,
+    objective: k.obliqueRise.objective,
+    notes: [k.obliqueRise.notes.useRise, k.obliqueRise.notes.keepBase, k.obliqueRise.notes.depth],
+    criteria: {
+      "oblique-rise-building-top-visible": k.obliqueRise.criteria.buildingTopVisible,
+      "oblique-rise-building-base-visible": k.obliqueRise.criteria.buildingBaseVisible,
+      "oblique-rise-camera-level": k.obliqueRise.criteria.cameraLevel,
+      "oblique-rise-movement-used": k.obliqueRise.criteria.movementUsed,
+    },
+    feedback: {
+      passPrimary: k.obliqueRise.feedback.passPrimary,
+      defaultFailPrimary: k.obliqueRise.feedback.defaultFailPrimary,
+      primary: {
+        "oblique-rise-building-top-visible": k.obliqueRise.feedback.primary.buildingTopVisible,
+        "oblique-rise-building-base-visible": k.obliqueRise.feedback.primary.buildingBaseVisible,
+        "oblique-rise-camera-level": k.obliqueRise.feedback.primary.cameraLevel,
+        "oblique-rise-movement-used": k.obliqueRise.feedback.primary.movementUsed,
+      },
+      secondary: {
+        "oblique-rise-building-top-visible": k.obliqueRise.feedback.secondary.buildingTopVisible,
+        "oblique-rise-building-base-visible": k.obliqueRise.feedback.secondary.buildingBaseVisible,
+        "oblique-rise-camera-level": k.obliqueRise.feedback.secondary.cameraLevel,
+        "oblique-rise-movement-used": k.obliqueRise.feedback.secondary.movementUsed,
+      },
+    },
+  },
+  "oblique-swing-focus-01": {
+    title: k.obliqueSwingFocus.title,
+    objective: k.obliqueSwingFocus.objective,
+    notes: [
+      k.obliqueSwingFocus.notes.composition,
+      k.obliqueSwingFocus.notes.swing,
+      k.obliqueSwingFocus.notes.focus,
+      k.obliqueSwingFocus.notes.level,
+    ],
+    criteria: {
+      "oblique-swing-focus-building-top-visible": k.obliqueSwingFocus.criteria.buildingTopVisible,
+      "oblique-swing-focus-building-base-visible": k.obliqueSwingFocus.criteria.buildingBaseVisible,
+      "oblique-swing-focus-camera-level": k.obliqueSwingFocus.criteria.cameraLevel,
+      "oblique-swing-focus-near-sharp": k.obliqueSwingFocus.criteria.nearSharp,
+      "oblique-swing-focus-middle-sharp": k.obliqueSwingFocus.criteria.middleSharp,
+      "oblique-swing-focus-far-sharp": k.obliqueSwingFocus.criteria.farSharp,
+    },
+    feedback: {
+      passPrimary: k.obliqueSwingFocus.feedback.passPrimary,
+      defaultFailPrimary: k.obliqueSwingFocus.feedback.defaultFailPrimary,
+      primary: {
+        "oblique-swing-focus-building-top-visible": k.obliqueSwingFocus.feedback.primary.buildingTopVisible,
+        "oblique-swing-focus-building-base-visible": k.obliqueSwingFocus.feedback.primary.buildingBaseVisible,
+        "oblique-swing-focus-camera-level": k.obliqueSwingFocus.feedback.primary.cameraLevel,
+        "oblique-swing-focus-near-sharp": k.obliqueSwingFocus.feedback.primary.nearSharp,
+        "oblique-swing-focus-middle-sharp": k.obliqueSwingFocus.feedback.primary.middleSharp,
+        "oblique-swing-focus-far-sharp": k.obliqueSwingFocus.feedback.primary.farSharp,
+      },
+      secondary: {
+        "oblique-swing-focus-building-top-visible": k.obliqueSwingFocus.feedback.secondary.buildingTopVisible,
+        "oblique-swing-focus-building-base-visible": k.obliqueSwingFocus.feedback.secondary.buildingBaseVisible,
+        "oblique-swing-focus-camera-level": k.obliqueSwingFocus.feedback.secondary.cameraLevel,
+        "oblique-swing-focus-near-sharp": k.obliqueSwingFocus.feedback.secondary.nearSharp,
+        "oblique-swing-focus-middle-sharp": k.obliqueSwingFocus.feedback.secondary.middleSharp,
+        "oblique-swing-focus-far-sharp": k.obliqueSwingFocus.feedback.secondary.farSharp,
+      },
+    },
+  },
+  "oblique-compound-01": {
+    title: k.obliqueCompound.title,
+    objective: k.obliqueCompound.objective,
+    notes: [
+      k.obliqueCompound.notes.composition,
+      k.obliqueCompound.notes.swing,
+      k.obliqueCompound.notes.focus,
+      k.obliqueCompound.notes.level,
+    ],
+    criteria: {
+      "oblique-compound-building-top-visible": k.obliqueCompound.criteria.buildingTopVisible,
+      "oblique-compound-building-base-visible": k.obliqueCompound.criteria.buildingBaseVisible,
+      "oblique-compound-camera-level": k.obliqueCompound.criteria.cameraLevel,
+      "oblique-compound-near-sharp": k.obliqueCompound.criteria.nearSharp,
+      "oblique-compound-middle-sharp": k.obliqueCompound.criteria.middleSharp,
+      "oblique-compound-far-sharp": k.obliqueCompound.criteria.farSharp,
+    },
+    feedback: {
+      passPrimary: k.obliqueCompound.feedback.passPrimary,
+      defaultFailPrimary: k.obliqueCompound.feedback.defaultFailPrimary,
+      primary: {
+        "oblique-compound-building-top-visible": k.obliqueCompound.feedback.primary.buildingTopVisible,
+        "oblique-compound-building-base-visible": k.obliqueCompound.feedback.primary.buildingBaseVisible,
+        "oblique-compound-camera-level": k.obliqueCompound.feedback.primary.cameraLevel,
+        "oblique-compound-near-sharp": k.obliqueCompound.feedback.primary.nearSharp,
+        "oblique-compound-middle-sharp": k.obliqueCompound.feedback.primary.middleSharp,
+        "oblique-compound-far-sharp": k.obliqueCompound.feedback.primary.farSharp,
+      },
+      secondary: {
+        "oblique-compound-building-top-visible": k.obliqueCompound.feedback.secondary.buildingTopVisible,
+        "oblique-compound-building-base-visible": k.obliqueCompound.feedback.secondary.buildingBaseVisible,
+        "oblique-compound-camera-level": k.obliqueCompound.feedback.secondary.cameraLevel,
+        "oblique-compound-near-sharp": k.obliqueCompound.feedback.secondary.nearSharp,
+        "oblique-compound-middle-sharp": k.obliqueCompound.feedback.secondary.middleSharp,
+        "oblique-compound-far-sharp": k.obliqueCompound.feedback.secondary.farSharp,
+      },
+    },
+  },
   "tilt-01": {
     title: k.tableTilt.title,
     objective: k.tableTilt.objective,
@@ -269,6 +372,8 @@ export const getCriterionResultMessageRef = (
       return ref(k.results.allowedAperture[variant]);
     case "composition-visible":
       return ref(k.results.compositionVisible[variant]);
+    case "camera-level":
+      return ref(k.results.cameraLevel[variant]);
     case "mirror-reflection-clear":
       return ref(k.results.mirrorReflectionClear[variant]);
     case "mirror-framing-restored":

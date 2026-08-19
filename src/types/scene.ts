@@ -38,7 +38,7 @@ export type SceneMovementCapabilities = {
   /** Movement field names available for this scene. */
   available: readonly CameraMovementField[];
   /** How many movements may be active simultaneously. */
-  selectionMode: "single";
+  selectionMode: "single" | "multiple";
   /** Default selected movement on scene entry. */
   defaultMovement: CameraMovementField;
 };
@@ -77,6 +77,11 @@ export type SceneFocusStandardCapability = {
   minimumFocusDepthMm?: number;
 };
 
+export type SceneFocusDistanceRangeMm = {
+  min: number;
+  max: number;
+};
+
 export type SceneDefinition = {
   id: string;
   name: string;
@@ -101,6 +106,8 @@ export type SceneDefinition = {
   finiteFocusStrategy?: SceneFiniteFocusStrategy;
   /** Optional capability for selectable front/rear finite-focus geometry. */
   focusStandardCapability?: SceneFocusStandardCapability;
+  /** Optional explicit public focus-distance domain for finite-focus scenes. */
+  focusDistanceRangeMm?: SceneFocusDistanceRangeMm;
   /** Enables the canonical rigid body-pitch transform for this scene. */
   cameraBodyPitchCapability?: SceneCameraBodyPitchCapability;
   /** Enables a scene-specific rigid lateral translation of the complete camera rig. */
