@@ -39,6 +39,7 @@ describe("scene subject registry", () => {
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
+      "oblique-architecture",
       "table-tilt",
       "shelf-swing",
       "mirror-shift",
@@ -77,6 +78,22 @@ describe("scene subject registry", () => {
     disposeRegisteredRttSubject("mirror-shift", group!);
   });
 
+  it("resolves Oblique Architecture to one shared static subject for 3D and RTT", () => {
+    const registration = getSceneSubjectRegistration("oblique-architecture");
+    expect(registration).toBeDefined();
+    const group = createRegisteredRttSubject("oblique-architecture");
+    expect(group?.name).toBe("oblique-architecture-subject");
+    expect(group?.getObjectByName("oblique-architecture-building")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.getObjectByName("oblique-architecture-corner")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.getObjectByName("oblique-architecture-target-facade")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.getObjectByName("oblique-architecture-side-window-2-1")).toBeInstanceOf(THREE.Group);
+    expect(group?.getObjectByName("oblique-architecture-side-window-2-7")).toBeInstanceOf(THREE.Group);
+    expect(group?.getObjectByName("oblique-architecture-focus-facade-middle")).toBeInstanceOf(THREE.Object3D);
+    const spies = collectDisposableSpies(group!);
+    disposeRegisteredRttSubject("oblique-architecture", group!);
+    spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+  });
+
   it("registers canonical lattice identity and calibration-driven ghost policy", () => {
     const registration = getSceneSubjectRegistration(
       "understanding-camera-movements",
@@ -91,7 +108,7 @@ describe("scene subject registry", () => {
     expect(registration?.showReferenceCamera).toBe(false);
   });
 
-  it.each(["shelf-swing", "table-tilt"])(
+  it.each(["shelf-swing", "table-tilt", "oblique-architecture"])(
     "uses the explicit unique-resource disposer for %s",
     (sceneId) => {
       const group = createRegisteredRttSubject(sceneId)!;

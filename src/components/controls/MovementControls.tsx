@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { selectMovementControlState } from "../../state/selectors";
-import { UI_COPY } from "../../ui/copy";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS } from "../../utils/constants";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import { useAppStore } from "../../state/appStore";
@@ -16,6 +18,7 @@ type MovementControlsProps = {
 };
 
 export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockReason, showTitle = true }: MovementControlsProps) => {
+  const { t } = useTranslation();
   const movement = useAppStore(useShallow(selectMovementControlState));
   const setRise = useAppStore((state) => state.setRise);
   const setTilt = useAppStore((state) => state.setTilt);
@@ -46,10 +49,10 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
   }, [helpOpen, closeHelp]);
 
   return (
-    <section aria-label={UI_COPY.controls.movementTitle}>
-      {showTitle && <h3>{UI_COPY.controls.movementTitle}</h3>}
-      <button ref={helpButtonRef} type="button" onClick={() => setHelpOpen(true)} aria-label={UI_COPY.controls.helpButton} className="btn btn--compact btn--secondary">
-        {UI_COPY.controls.helpButton}
+    <section aria-label={t(simulatorMessageKeys.controls.movementTitle)}>
+      {showTitle && <h3>{t(simulatorMessageKeys.controls.movementTitle)}</h3>}
+      <button ref={helpButtonRef} type="button" onClick={() => setHelpOpen(true)} aria-label={t(simulatorMessageKeys.movementHelp.button)} className="btn btn--compact btn--secondary">
+        {t(simulatorMessageKeys.movementHelp.button)}
       </button>
       {helpOpen && (
         <div
@@ -57,21 +60,21 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
           aria-modal="true"
           aria-labelledby="movement-help-title"
         >
-          <h4 id="movement-help-title" style={{ marginTop: 0 }}>{UI_COPY.controls.helpTitle}</h4>
-          <p>{UI_COPY.controls.helpRise}</p>
-          <p>{UI_COPY.controls.helpTilt}</p>
-          <p>{UI_COPY.controls.helpSwing}</p>
+          <h4 id="movement-help-title" style={{ marginTop: 0 }}>{t(simulatorMessageKeys.movementHelp.title)}</h4>
+          <p>{t(simulatorMessageKeys.movementHelp.rise)}</p>
+          <p>{t(simulatorMessageKeys.movementHelp.tilt)}</p>
+          <p>{t(simulatorMessageKeys.movementHelp.swing)}</p>
           <button ref={closeButtonRef} type="button" onClick={closeHelp} className="btn btn--compact btn--secondary">
-            {UI_COPY.controls.closeHelpButton}
+            {t(simulatorMessageKeys.movementHelp.close)}
           </button>
         </div>
       )}
 
       <div className="control-stack">
         <label className="control-label">
-          <span>{UI_COPY.controls.riseLabel} ({formatMillimeter(movement.frontRiseMm)})</span>
+          <span>{t(simulatorMessageKeys.controls.riseLabel)} ({formatMillimeter(movement.frontRiseMm)})</span>
           <input
-            aria-label={UI_COPY.controls.riseLabel}
+            aria-label={t(simulatorMessageKeys.controls.riseLabel)}
             type="range"
             min={CAMERA_CONSTANTS.riseMinMm}
             max={CAMERA_CONSTANTS.riseMaxMm}
@@ -94,9 +97,9 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
         </label>
 
         <label className="control-label">
-          <span>{UI_COPY.controls.tiltLabel} ({formatDegrees(movement.frontTiltDeg)})</span>
+          <span>{t(simulatorMessageKeys.controls.tiltLabel)} ({formatDegrees(movement.frontTiltDeg)})</span>
           <input
-            aria-label={UI_COPY.controls.tiltLabel}
+            aria-label={t(simulatorMessageKeys.controls.tiltLabel)}
             type="range"
             min={CAMERA_CONSTANTS.tiltMinDeg}
             max={CAMERA_CONSTANTS.tiltMaxDeg}
@@ -119,9 +122,9 @@ export const MovementControls = ({ riseEnabled, tiltEnabled, swingEnabled, lockR
         </label>
 
         <label className="control-label">
-          <span>{UI_COPY.controls.swingLabel} ({formatDegrees(movement.frontSwingDeg)})</span>
+          <span>{t(simulatorMessageKeys.controls.swingLabel)} ({formatDegrees(movement.frontSwingDeg)})</span>
           <input
-            aria-label={UI_COPY.controls.swingLabel}
+            aria-label={t(simulatorMessageKeys.controls.swingLabel)}
             type="range"
             min={CAMERA_CONSTANTS.swingMinDeg}
             max={CAMERA_CONSTANTS.swingMaxDeg}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { DiagramLegend } from "../geometry/DiagramPrimitives";
 import {
   computeOpticalSectionData,
@@ -12,7 +13,9 @@ import { MirrorShiftTeachingDiagram } from "../geometry/MirrorShiftTeachingDiagr
 import type { GeometryView } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
-import { UI_COPY } from "../../ui/copy";
+import "../../i18n";
+import { readoutMessageKeys } from "../../i18n/readoutMessageKeys";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { supportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
@@ -33,6 +36,7 @@ const SVG_WIDTH = 460;
 const SVG_HEIGHT = 280;
 
 export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, showHeader, movementSummary }: GeometryViewportProps) => {
+  const { t } = useTranslation();
   const setGeometryView = useAppStore((state) => state.setGeometryView);
   const focalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const diagramRef = useRef<HTMLDivElement | null>(null);
@@ -202,6 +206,17 @@ const cameraProjection = constructionWindow
     Boolean(constructionWindow);
   const effectiveFitMode = constructionLayoutActive ? "construction" : "scene";
   const { sectionOrigin, sectionDepthDir, isInfinity } = sceneProjection;
+  const localizedMovementSummary = movementSummary
+    ?.replace("Front tilt", t(readoutMessageKeys.teaching.frontTilt))
+    .replace("Rear tilt", t(readoutMessageKeys.teaching.rearTilt))
+    .replace("Front rise", t(readoutMessageKeys.teaching.frontRise))
+    .replace("Rear rise", t(readoutMessageKeys.teaching.rearRise))
+    .replace("Front fall", t(readoutMessageKeys.teaching.frontFall))
+    .replace("Rear fall", t(readoutMessageKeys.teaching.rearFall))
+    .replace("Higher viewpoint", t(readoutMessageKeys.teaching.higherViewpoint))
+    .replace("Lower viewpoint", t(readoutMessageKeys.teaching.lowerViewpoint))
+    .replace("Neutral viewpoint", t(readoutMessageKeys.teaching.neutralViewpoint))
+    .replace("Body pitch", t(readoutMessageKeys.teaching.bodyPitch));
 
   return (
     <section
@@ -216,29 +231,29 @@ const cameraProjection = constructionWindow
     >
       {showHeader !== false ? (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <h2 style={{ margin: 0 }}>{UI_COPY.simulator.geometryTitle}</h2>
-          <div role="group" aria-label="Geometry view" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <h2 style={{ margin: 0 }}>{t(simulatorMessageKeys.viewport.geometryTitle)}</h2>
+          <div role="group" aria-label={t(simulatorMessageKeys.geometry.viewLabel)} style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {!isMirrorShiftTeaching ? (
               <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => {
                 setFitMode("scene");
                 setGeometryView("side");
-              }}>Side</button>
+              }}>{t(simulatorMessageKeys.geometry.side)}</button>
             ) : null}
             <button className={effectiveGeometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "top"} onClick={() => {
               setFitMode("scene");
               setGeometryView("top");
-            }}>Top</button>
+            }}>{t(simulatorMessageKeys.geometry.top)}</button>
             {supportsConstruction ? (
               <button className={effectiveGeometryView === "scheimpflug" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "scheimpflug"} onClick={() => {
                 setFitMode("scene");
                 setGeometryView("scheimpflug");
-              }}>Scheimpflug Section</button>
+              }}>{t(simulatorMessageKeys.geometry.scheimpflugSection)}</button>
             ) : null}
           </div>
         </div>
       ) : null}
 
-      <div role="group" aria-label="Geometry framing" style={{ display: "flex", gap: 8, marginTop: 6 }}>
+      <div role="group" aria-label={t(simulatorMessageKeys.geometry.framingLabel)} style={{ display: "flex", gap: 8, marginTop: 6 }}>
         <button
           type="button"
           className={effectiveFitMode === "scene" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
@@ -248,7 +263,7 @@ const cameraProjection = constructionWindow
             setGeometryView(subjectGeometryView);
           }}
         >
-          Fit Scene
+          {t(simulatorMessageKeys.geometry.fitScene)}
         </button>
         {supportsConstruction ? (
           <button
@@ -261,21 +276,21 @@ const cameraProjection = constructionWindow
               setGeometryView("scheimpflug");
             }}
           >
-            Fit Construction
+            {t(simulatorMessageKeys.geometry.fitConstruction)}
           </button>
         ) : null}
       </div>
 
       <p style={{ marginTop: 6, marginBottom: 8 }}>
         {constructionLayoutActive
-          ? "Scheimpflug construction and subject relationship"
+          ? t(simulatorMessageKeys.geometry.constructionAndSubjectRelationship)
           : effectiveGeometryView === "side"
-            ? "Side view"
+            ? t(simulatorMessageKeys.geometry.sideView)
             : effectiveGeometryView === "top"
-              ? "Top view"
-              : "Perpendicular Scheimpflug section"}{movementSummary
-            ? ` | ${movementSummary}`
-            : ` | Rise: ${(riseMm ?? 0).toFixed(1)} mm | ${UI_COPY.simulator.tiltLabel}: ${opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | ${UI_COPY.simulator.swingLabel}: ${opticsState.diagnostics.swingAngleDeg.toFixed(1)}°`}
+              ? t(simulatorMessageKeys.geometry.topView)
+              : t(simulatorMessageKeys.geometry.perpendicularScheimpflugSection)}{localizedMovementSummary
+            ? ` | ${localizedMovementSummary}`
+            : ` | ${t(simulatorMessageKeys.controls.riseLabel)}: ${(riseMm ?? 0).toFixed(1)} mm | ${t(simulatorMessageKeys.controls.tiltLabel)}: ${opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | ${t(simulatorMessageKeys.controls.swingLabel)}: ${opticsState.diagnostics.swingAngleDeg.toFixed(1)}°`}
       </p>
 
       <div ref={diagramRef} className="geometry-diagram-container" style={{ flex: 1, minHeight: 0 }}>
@@ -287,7 +302,7 @@ const cameraProjection = constructionWindow
         ) : constructionLayoutActive && cameraProjection ? (
           <div className="geometry-construction-split" data-testid="geometry-construction-split">
             <section className="geometry-construction-region" data-testid="camera-construction-region">
-              <h3>Camera-side Scheimpflug construction — enlarged</h3>
+              <h3>{t(simulatorMessageKeys.geometry.cameraConstructionHeading)}</h3>
               <OpticalSectionDiagram
                 projection={cameraProjection}
                 geometryView="scheimpflug"
@@ -299,13 +314,13 @@ const cameraProjection = constructionWindow
                 displayMode="camera-construction"
               />
             </section>
-            <div className="geometry-construction-continuation" aria-label="Continues to subject field">
+            <div className="geometry-construction-continuation" aria-label={t(simulatorMessageKeys.geometry.continuesToSubjectField)}>
               <span aria-hidden="true">⋯</span>
-              <span>continues to subject field</span>
+              <span>{t(simulatorMessageKeys.geometry.continuesToSubjectField)}</span>
               <span aria-hidden="true">››</span>
             </div>
             <section className="geometry-construction-region" data-testid="subject-field-region">
-              <h3>Subject field</h3>
+              <h3>{t(simulatorMessageKeys.geometry.subjectField)}</h3>
               <OpticalSectionDiagram
                 projection={subjectProjection}
                 geometryView={subjectGeometryView}
@@ -339,16 +354,16 @@ const cameraProjection = constructionWindow
 
       {profile.showDepthStrip ? (
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 12, color: "rgba(15,23,42,0.7)" }}>Amber lines: optical axis and FOV boundary rays.</div>
+          <div style={{ fontSize: 12, color: "rgba(15,23,42,0.7)" }}>{t(simulatorMessageKeys.geometry.opticalAxisAndFov)}</div>
           {constructionLayoutActive ? (
             <div style={{ fontSize: 12, color: "rgba(15,23,42,0.7)" }}>
-              Each labelled region uses its own linear scale. The enlarged camera construction continues to the true-distance subject field.
+              {t(simulatorMessageKeys.geometry.constructionScaleNote)}
             </div>
           ) : effectiveGeometryView === "scheimpflug" ? (
             <div style={{ fontSize: 12, color: "rgba(15,23,42,0.7)" }}>
               {opticsState.lensFilmHingeLine
-                ? "Film, lens and focus planes meet along one line. This section views that line end-on."
-                : "At zero tilt and swing the film and lens planes are parallel. Apply a movement to reveal their common Scheimpflug line and perpendicular section."}
+                ? t(simulatorMessageKeys.geometry.scheimpflugValidNote)
+                : t(simulatorMessageKeys.geometry.scheimpflugZeroNote)}
             </div>
           ) : null}
         </div>

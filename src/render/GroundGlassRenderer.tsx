@@ -49,6 +49,10 @@ type GroundGlassRendererProps = {
   presentationRegion?: CameraMovementPresentationRegion;
   accessibleLabel?: string;
   stageLabel?: string;
+  zoomInLabel?: string;
+  zoomOutLabel?: string;
+  resetViewLabel?: string;
+  resetActionLabel?: string;
   lastFiniteFocusDepthMm?: number;
 };
 
@@ -81,6 +85,10 @@ export const GroundGlassRenderer = ({
   presentationRegion,
   accessibleLabel,
   stageLabel,
+  zoomInLabel,
+  zoomOutLabel,
+  resetViewLabel,
+  resetActionLabel,
   lastFiniteFocusDepthMm: explicitLastFiniteFocusDepthMm,
 }: GroundGlassRendererProps) => {
   const storeFocalLengthMm = useAppStore((state) =>
@@ -293,6 +301,10 @@ export const GroundGlassRenderer = ({
         interactionResetKey={interactionResetKey}
         accessibleLabel={accessibleLabel}
         stageLabel={stageLabel}
+        zoomInLabel={zoomInLabel}
+        zoomOutLabel={zoomOutLabel}
+        resetViewLabel={resetViewLabel}
+        resetActionLabel={resetActionLabel}
         imageLayer={transformedImageLayer}
         fixedOverlayLayer={fixedOverlayLayer}
       />

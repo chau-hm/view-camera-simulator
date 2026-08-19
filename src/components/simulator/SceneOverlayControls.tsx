@@ -1,5 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { UI_COPY } from "../../ui/copy";
+import { useTranslation } from "react-i18next";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import {
   getSceneOverlayPresentation,
   type SceneOverlayPresentation,
@@ -28,21 +30,27 @@ type OverlayChoiceProps = {
   disabled?: boolean;
 };
 
-const OverlayChoice = ({ active, label, onToggle, disabled }: OverlayChoiceProps) => (
-  <button
-    type="button"
-    className="scene-overlay-controls__button btn btn--compact"
-    aria-label={`${active ? "Hide" : "Show"} ${label}`}
-    aria-pressed={active}
-    disabled={disabled}
-    onClick={onToggle}
-  >
-    <span aria-hidden="true" className="scene-overlay-controls__check">
-      {active ? "✓" : ""}
-    </span>
-    <span>{label}</span>
-  </button>
-);
+const OverlayChoice = ({ active, label, onToggle, disabled }: OverlayChoiceProps) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      className="scene-overlay-controls__button btn btn--compact"
+      aria-label={t(simulatorMessageKeys.viewport.overlayAction, {
+        action: t(active ? simulatorMessageKeys.viewport.hide : simulatorMessageKeys.viewport.show),
+        label,
+      })}
+      aria-pressed={active}
+      disabled={disabled}
+      onClick={onToggle}
+    >
+      <span aria-hidden="true" className="scene-overlay-controls__check">
+        {active ? "✓" : ""}
+      </span>
+      <span>{label}</span>
+    </button>
+  );
+};
 
 const OverlayChoices = ({
   labelledBy,
@@ -52,29 +60,27 @@ const OverlayChoices = ({
   labelledBy?: string;
   presentation: SceneOverlayPresentation;
 }) => {
-  const rawFocusBase = UI_COPY.simulator.focusPlaneOverlayLabel.replace(/^Show\s+/i, "");
-  const focusBase = `${rawFocusBase.charAt(0).toUpperCase()}${rawFocusBase.slice(1)}`;
-  const dofBase = UI_COPY.simulator.dofOverlayLabel.replace(/^Show\s+/i, "");
+  const { t } = useTranslation();
   return (
     <div
       className={`scene-overlay-controls scene-overlay-controls--${presentation}`}
       role={presentation === "inline" ? "toolbar" : "group"}
-      aria-label={labelledBy ? undefined : "3D overlays"}
+      aria-label={labelledBy ? undefined : t(simulatorMessageKeys.viewport.overlaysGroup)}
       aria-labelledby={labelledBy}
       data-testid={`scene-overlay-${presentation}`}
     >
-      <OverlayChoice active={props.showFocusPlane} label={focusBase} onToggle={props.onToggleFocusPlane} />
-      <OverlayChoice active={props.showDofRegion} label={dofBase} onToggle={props.onToggleDofRegion} />
-      <OverlayChoice active={props.showLegends} label="Legends" onToggle={props.onToggleLegends} />
+      <OverlayChoice active={props.showFocusPlane} label={t(simulatorMessageKeys.viewport.focusPlaneOverlay)} onToggle={props.onToggleFocusPlane} />
+      <OverlayChoice active={props.showDofRegion} label={t(simulatorMessageKeys.viewport.dofOverlay)} onToggle={props.onToggleDofRegion} />
+      <OverlayChoice active={props.showLegends} label={t(simulatorMessageKeys.viewport.legendsOverlay)} onToggle={props.onToggleLegends} />
       <OverlayChoice
         active={props.showOpticalGeometry}
-        label="Optical geometry"
+        label={t(simulatorMessageKeys.viewport.opticalGeometryOverlay)}
         onToggle={props.onToggleOpticalGeometry}
       />
       {props.onToggleScheimpflugConstruction ? (
         <OverlayChoice
           active={Boolean(props.showScheimpflugConstruction)}
-          label="Scheimpflug construction"
+          label={t(simulatorMessageKeys.viewport.scheimpflugConstructionOverlay)}
           disabled={
             props.scheimpflugConstructionAvailable === false &&
             !props.showScheimpflugConstruction
@@ -87,6 +93,7 @@ const OverlayChoices = ({
 };
 
 export const SceneOverlayControls = (props: SceneOverlayControlsProps) => {
+  const { t } = useTranslation();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [presentation, setPresentation] = useState<SceneOverlayPresentation>("collapsed");
@@ -160,7 +167,7 @@ export const SceneOverlayControls = (props: SceneOverlayControlsProps) => {
             onClick={() => setMenuOpen((open) => !open)}
           >
             <span className="material-symbols-outlined" aria-hidden="true">layers</span>
-            <span>View overlays</span>
+            <span>{t(simulatorMessageKeys.viewport.viewOverlays)}</span>
             <span aria-hidden="true">{menuOpen ? "▴" : "▾"}</span>
           </button>
           {menuOpen ? (

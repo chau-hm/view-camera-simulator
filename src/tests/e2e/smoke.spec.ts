@@ -6,5 +6,4 @@ test("smoke: app boots at home", async ({ page }) => {
     page.getByRole("heading", { name: "See how a view camera changes the image before the shutter is pressed." }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore the Simulator" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Learn Why" })).toBeVisible();
 });

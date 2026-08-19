@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import type { DerivedOpticsState } from "../../types/optics";
 import { resolveMirrorShiftTeachingDiagramModel } from "../../scenes/mirrorShiftTeachingGeometry";
 
@@ -111,6 +114,7 @@ const CameraStateLayer = ({
   label: string;
   testId: string;
 }) => {
+  const { t } = useTranslation();
   const film = line(state.filmPlane.start, state.filmPlane.end, bounds);
   const lens = line(state.lensPlane.start, state.lensPlane.end, bounds);
   const labelX = dashed ? film.p1.x - 4 : film.p1.x + 4;
@@ -119,13 +123,14 @@ const CameraStateLayer = ({
     <g data-testid={testId} opacity={dashed ? 0.42 : 1}>
       <line x1={film.p1.x} y1={film.p1.y} x2={film.p2.x} y2={film.p2.y} stroke={color} strokeWidth={dashed ? 2 : 3} strokeDasharray={dashed ? "7 5" : undefined} />
       <line x1={lens.p1.x} y1={lens.p1.y} x2={lens.p2.x} y2={lens.p2.y} stroke={color} strokeWidth={dashed ? 2 : 3} strokeDasharray={dashed ? "7 5" : undefined} />
-      <text x={labelX} y={film.p1.y - 8} fontSize={11} fill={color} textAnchor={labelAnchor}>{label} film</text>
-      <text x={labelX} y={lens.p1.y + 16} fontSize={11} fill={color} textAnchor={labelAnchor}>{label} lens</text>
+      <text x={labelX} y={film.p1.y - 8} fontSize={11} fill={color} textAnchor={labelAnchor}>{t(simulatorMessageKeys.controls.stateFilm, { state: label })}</text>
+      <text x={labelX} y={lens.p1.y + 16} fontSize={11} fill={color} textAnchor={labelAnchor}>{t(simulatorMessageKeys.controls.stateLens, { state: label })}</text>
     </g>
   );
 };
 
 export const MirrorShiftTeachingDiagram = ({ neutralOptics, currentOptics }: Props) => {
+  const { t } = useTranslation();
   const model = resolveMirrorShiftTeachingDiagramModel({ neutralOptics, currentOptics });
   const bounds = { min: { x: model.bounds.min.x, z: model.bounds.min.z }, max: { x: model.bounds.max.x, z: model.bounds.max.z } };
   const mirror = line(model.mirrorPlane.start, model.mirrorPlane.end, bounds);
@@ -139,7 +144,7 @@ export const MirrorShiftTeachingDiagram = ({ neutralOptics, currentOptics }: Pro
         viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
         width="100%"
         role="img"
-        aria-label="Mirror Shift top-view teaching geometry"
+        aria-label={t(simulatorMessageKeys.controls.mirrorShiftTopViewAria)}
         data-rig-lateral-mm={model.rigLateralMm}
         data-front-shift-mm={model.frontShiftMm}
         data-current-film-x-mm={model.current.filmCenter.x}
@@ -153,32 +158,32 @@ export const MirrorShiftTeachingDiagram = ({ neutralOptics, currentOptics }: Pro
         </defs>
         <rect x="0" y="0" width={VIEW_WIDTH} height={VIEW_HEIGHT} fill="#f8fafc" />
         <line data-testid="mirror-shift-mirror-plane" x1={mirror.p1.x} y1={mirror.p1.y} x2={mirror.p2.x} y2={mirror.p2.y} stroke="#0f172a" strokeWidth={5} />
-        <text x={mirror.p1.x + 6} y={mirror.p1.y - 10} fill="#0f172a" fontSize={12}>Mirror aperture</text>
+        <text x={mirror.p1.x + 6} y={mirror.p1.y - 10} fill="#0f172a" fontSize={12}>{t(simulatorMessageKeys.controls.mirrorAperture)}</text>
 
-        <CameraStateLayer state={model.neutral} bounds={bounds} color="#64748b" dashed label="Neutral" testId="mirror-shift-neutral-camera" />
-        <CameraStateLayer state={model.current} bounds={bounds} color="#2563eb" label="Current" testId="mirror-shift-current-camera" />
+        <CameraStateLayer state={model.neutral} bounds={bounds} color="#64748b" dashed label={t(simulatorMessageKeys.controls.viewpointNeutral)} testId="mirror-shift-neutral-camera" />
+        <CameraStateLayer state={model.current} bounds={bounds} color="#2563eb" label={t(simulatorMessageKeys.controls.current)} testId="mirror-shift-current-camera" />
 
         {model.rigShiftCue ? (
-          <Arrow start={model.rigShiftCue.start} end={model.rigShiftCue.end} bounds={bounds} color="#64748b" label="Camera Position" testId="mirror-shift-rig-shift-cue" />
+          <Arrow start={model.rigShiftCue.start} end={model.rigShiftCue.end} bounds={bounds} color="#64748b" label={t(simulatorMessageKeys.controls.cameraPosition)} testId="mirror-shift-rig-shift-cue" />
         ) : null}
         {model.frontShiftCue ? (
-          <Arrow start={model.frontShiftCue.start} end={model.frontShiftCue.end} bounds={bounds} color="#2563eb" label="Front Shift" testId="mirror-shift-front-shift-cue" />
+          <Arrow start={model.frontShiftCue.start} end={model.frontShiftCue.end} bounds={bounds} color="#2563eb" label={t(simulatorMessageKeys.controls.frontShift)} testId="mirror-shift-front-shift-cue" />
         ) : null}
 
         <Arrow start={neutralRay.mirrorPoint} end={neutralRay.lensPoint} bounds={bounds} color="#94a3b8" dashed testId="mirror-shift-neutral-chief-ray" />
-        <Arrow start={currentRay.mirrorPoint} end={currentRay.lensPoint} bounds={bounds} color="#d97706" label="Mirror-centre chief ray" testId="mirror-shift-current-chief-ray" />
+        <Arrow start={currentRay.mirrorPoint} end={currentRay.lensPoint} bounds={bounds} color="#d97706" label={t(simulatorMessageKeys.controls.mirrorCentreChiefRay)} testId="mirror-shift-current-chief-ray" />
         {currentRay.filmPoint ? (
           <Arrow start={currentRay.lensPoint} end={currentRay.filmPoint} bounds={bounds} color="#d97706" testId="mirror-shift-current-chief-ray-film" />
         ) : null}
         {neutralRay.filmPoint ? (
           <Arrow start={neutralRay.lensPoint} end={neutralRay.filmPoint} bounds={bounds} color="#94a3b8" dashed testId="mirror-shift-neutral-chief-ray-film" />
         ) : null}
-        <text x={PADDING} y={VIEW_HEIGHT - 10} fontSize={11} fill="#475569">Top view · X lateral · Z optical depth</text>
+        <text x={PADDING} y={VIEW_HEIGHT - 10} fontSize={11} fill="#475569">{t(simulatorMessageKeys.controls.topViewAxes)}</text>
       </svg>
       <div className="mirror-shift-teaching-diagram__legend" aria-hidden="true">
-        <span><i className="mirror-shift-teaching-diagram__swatch mirror-shift-teaching-diagram__swatch--neutral" /> Neutral reference</span>
-        <span><i className="mirror-shift-teaching-diagram__swatch mirror-shift-teaching-diagram__swatch--current" /> Current camera</span>
-        <span><i className="mirror-shift-teaching-diagram__swatch mirror-shift-teaching-diagram__swatch--ray" /> Mirror-centre chief ray</span>
+        <span><i className="mirror-shift-teaching-diagram__swatch mirror-shift-teaching-diagram__swatch--neutral" /> {t(simulatorMessageKeys.controls.neutralReference)}</span>
+        <span><i className="mirror-shift-teaching-diagram__swatch mirror-shift-teaching-diagram__swatch--current" /> {t(simulatorMessageKeys.controls.currentCamera)}</span>
+        <span><i className="mirror-shift-teaching-diagram__swatch mirror-shift-teaching-diagram__swatch--ray" /> {t(simulatorMessageKeys.controls.mirrorCentreChiefRay)}</span>
       </div>
     </div>
   );

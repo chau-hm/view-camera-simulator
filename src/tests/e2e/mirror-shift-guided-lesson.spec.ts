@@ -9,10 +9,10 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
   const rtt = page.getByTestId("ground-glass-rtt").first();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/mirror-shift\/mirror-shift-01/);
-  await expect(page.getByText("Hide the camera with shift")).toBeVisible();
+  await expect(page.getByText("Restore mirror framing after changing viewpoint")).toBeVisible();
   await expect(
     page.getByText(
-      "Move the camera sideways to remove its reflection, then use opposite Front Shift to restore the mirror framing.",
+      "Move the whole camera sideways to clear its reflection, then use opposite Front Shift to restore the mirror framing while keeping the changed viewpoint.",
     ),
   ).toBeVisible();
   await expect(position).toHaveValue("0");
@@ -22,14 +22,22 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveCount(0);
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
-  await expect(page.getByText("Move the whole camera sideways until its reflection is completely outside the mirror.")).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Move the whole camera sideways until its reflection is completely outside the mirror.",
+    }),
+  ).toBeVisible();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   const resourceGeneration = await rtt.getAttribute("data-rtt-resource-generation");
   expect(resourceGeneration).toBeTruthy();
 
   await position.fill("2000");
   await expect(position).toHaveValue("2000");
-  await expect(page.getByText("Keep the camera in place and shift the front standard in the opposite direction to restore the mirror framing.")).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Good—the camera is out of the reflection. Keep it in place and apply opposite Front Shift to restore the mirror framing.",
+    }),
+  ).toBeVisible();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   await expect(rtt).toHaveAttribute("data-rtt-resource-generation", resourceGeneration!);
 
@@ -52,7 +60,11 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
   await expect(position).toHaveValue("0");
   await expect(frontShift).toHaveValue("0");
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
-  await expect(page.getByText("Move the whole camera sideways until its reflection is completely outside the mirror.")).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Move the whole camera sideways until its reflection is completely outside the mirror.",
+    }),
+  ).toBeVisible();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   await expect(rtt).toHaveAttribute("data-rtt-resource-generation", resourceGeneration!);
 });

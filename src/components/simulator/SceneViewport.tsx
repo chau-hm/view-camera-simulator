@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import { SceneOverlayControls } from "./SceneOverlayControls";
 import { isWebGLAvailable } from "../../utils/webgl";
@@ -6,7 +7,8 @@ import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { RenderQualityProfile } from "../../types/ui";
-import { UI_COPY } from "../../ui/copy";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugConstruction";
 import { supportsScheimpflugConstruction as sceneSupportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
 import type { SceneViewFocus } from "../../render/sceneViewFraming";
@@ -48,6 +50,7 @@ export const SceneViewport = ({
   showHeader,
   overlayMenuResetGeneration,
 }: SceneViewportProps) => {
+  const { t } = useTranslation();
   const [attempt, setAttempt] = useState(0);
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
   const [showFocusPlaneOverlay, setShowFocusPlaneOverlay] = useState(true);
@@ -80,6 +83,22 @@ export const SceneViewport = ({
     supportsScheimpflugConstruction &&
     requestedScheimpflugConstruction &&
     scheimpflugConstruction.isValid;
+  const constructionUnavailableReason = (() => {
+    switch (scheimpflugConstruction.unavailableReason) {
+      case "Film and lens planes are parallel.":
+        return t(simulatorMessageKeys.viewport.scheimpflugReasonParallel);
+      case "A finite plane of sharp focus is unavailable.":
+        return t(simulatorMessageKeys.viewport.scheimpflugReasonNoFocus);
+      case "The plane intersection produced non-finite geometry.":
+        return t(simulatorMessageKeys.viewport.scheimpflugReasonNonFiniteIntersection);
+      case "The construction residuals are non-finite.":
+        return t(simulatorMessageKeys.viewport.scheimpflugReasonNonFiniteResidual);
+      case "The focus plane does not contain the film/lens intersection line.":
+        return t(simulatorMessageKeys.viewport.scheimpflugReasonInvalidFocusPlane);
+      default:
+        return scheimpflugConstruction.unavailableReason;
+    }
+  })();
 
   useEffect(() => {
     if (!supportsScheimpflugConstruction) {
@@ -109,8 +128,8 @@ export const SceneViewport = ({
   if (!webglAvailable) {
     return (
       <section>
-        <h2>{UI_COPY.simulator.sceneTitle}</h2>
-        <p>{UI_COPY.simulator.webglUnavailable}</p>
+        <h2>{t(simulatorMessageKeys.viewport.sceneTitle)}</h2>
+        <p>{t(simulatorMessageKeys.viewport.webglUnavailable)}</p>
       </section>
     );
   }
@@ -118,7 +137,7 @@ export const SceneViewport = ({
   if (assetError) {
     return (
       <section>
-        <h2>{UI_COPY.simulator.sceneTitle}</h2>
+        <h2>{t(simulatorMessageKeys.viewport.sceneTitle)}</h2>
         <p>{assetError.message}</p>
         <button
           type="button"
@@ -127,7 +146,7 @@ export const SceneViewport = ({
             setAttempt((value) => value + 1);
           }}
         >
-          {UI_COPY.simulator.retryLoadScene}
+          {t(simulatorMessageKeys.viewport.retryLoadScene)}
         </button>
       </section>
     );
@@ -135,17 +154,17 @@ export const SceneViewport = ({
 
   return (
     <section className={`scene-panel${expanded ? " simulator-viewport-panel--expanded scene-panel--expanded" : ""}`}>
-      {showHeader !== false && <h2>{UI_COPY.simulator.sceneTitle}</h2>}
+      {showHeader !== false && <h2>{t(simulatorMessageKeys.viewport.sceneTitle)}</h2>}
 
       <div className="scene-panel__controls">
         {/* Toolbar: left actions and right quality control */}
         <div className="scene-toolbar">
           <div className="scene-toolbar__actions">
             <button type="button" className="btn" onClick={() => setViewResetNonce((value) => value + 1)}>
-              {UI_COPY.simulator.sceneViewReset}
+              {t(simulatorMessageKeys.viewport.sceneViewReset)}
             </button>
-            <fieldset className="scene-view-focus" aria-label={UI_COPY.simulator.sceneViewFocusLabel}>
-              <legend>{UI_COPY.simulator.sceneViewFocusLabel}</legend>
+            <fieldset className="scene-view-focus" aria-label={t(simulatorMessageKeys.viewport.sceneViewFocusLabel)}>
+              <legend>{t(simulatorMessageKeys.viewport.sceneViewFocusLabel)}</legend>
               <div className="scene-view-focus__options">
                 {(["scene", "camera"] as const).map((focus) => (
                   <button
@@ -156,8 +175,8 @@ export const SceneViewport = ({
                     onClick={() => setViewFocusState({ sceneId: scene.id, focus })}
                   >
                     {focus === "scene"
-                      ? UI_COPY.simulator.sceneViewFocusScene
-                      : UI_COPY.simulator.sceneViewFocusCamera}
+                      ? t(simulatorMessageKeys.viewport.sceneViewFocusScene)
+                      : t(simulatorMessageKeys.viewport.sceneViewFocusCamera)}
                   </button>
                 ))}
               </div>
@@ -168,17 +187,17 @@ export const SceneViewport = ({
                 onClick={(event) => onToggleGeometryPanel(event.currentTarget)}
                 className="btn btn--secondary"
               >
-                Open 2D Geometry
+                {t(simulatorMessageKeys.viewport.openGeometry)}
               </button>
             )}
           </div>
 
           <label className="scene-toolbar__quality">
-            <span>{UI_COPY.simulator.renderQualityLabel}</span>
+            <span>{t(simulatorMessageKeys.viewport.renderQualityLabel)}</span>
             <select className="form-select" value={renderQuality} onChange={(event) => setRenderQuality(parseRenderQuality(event.target.value))}>
-              <option value="high">{UI_COPY.simulator.renderQualityHigh}</option>
-              <option value="standard">{UI_COPY.simulator.renderQualityStandard}</option>
-              <option value="low">{UI_COPY.simulator.renderQualityLow}</option>
+              <option value="high">{t(simulatorMessageKeys.viewport.renderQualityHigh)}</option>
+              <option value="standard">{t(simulatorMessageKeys.viewport.renderQualityStandard)}</option>
+              <option value="low">{t(simulatorMessageKeys.viewport.renderQualityLow)}</option>
             </select>
           </label>
         </div>
@@ -198,7 +217,7 @@ export const SceneViewport = ({
             viewResetNonce={viewResetNonce}
             viewFocus={viewFocus}
             simulateAssetFailure={simulateAssetFailure}
-            onAssetError={(message) => setAssetError({ title: UI_COPY.simulator.sceneLoadFailed, message })}
+            onAssetError={(message) => setAssetError({ title: t(simulatorMessageKeys.viewport.sceneLoadFailed), message })}
             containerStyle={{ width: "100%", height: "100%", border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
           />
 
@@ -223,8 +242,9 @@ export const SceneViewport = ({
           <button
             ref={expanded ? restoreTriggerRef : expandTriggerRef}
             type="button"
-            aria-label={expanded ? "Restore 3D Scene" : "Expand 3D Scene"}
-            title={expanded ? "Restore 3D Scene" : "Expand 3D Scene"}
+            aria-label={expanded ? t(simulatorMessageKeys.viewport.restoreScene) : t(simulatorMessageKeys.viewport.expandScene)}
+            title={expanded ? t(simulatorMessageKeys.viewport.restoreScene) : t(simulatorMessageKeys.viewport.expandScene)}
+            data-viewport-expanded={expanded ? "true" : "false"}
             className="btn btn--icon btn--viewport-action"
             onClick={expanded ? onRequestRestore : onRequestExpand}
           >
@@ -237,8 +257,8 @@ export const SceneViewport = ({
         {supportsScheimpflugConstruction && requestedScheimpflugConstruction ? (
           <p className="scene-construction-note" data-testid="scheimpflug-construction-note">
             {scheimpflugConstruction.isValid
-              ? "Film (blue), lens (slate), and sharp-focus (green) planes contain the violet Scheimpflug line. Open the Scheimpflug Section to view that line end-on."
-              : scheimpflugConstruction.unavailableReason}
+              ? t(simulatorMessageKeys.viewport.scheimpflugConstructionNote)
+              : constructionUnavailableReason}
           </p>
         ) : null}
       </div>

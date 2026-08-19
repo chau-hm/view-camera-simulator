@@ -1,6 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
+import "../i18n";
+import { simulatorMessageKeys } from "../i18n/simulatorMessageKeys";
 import {
   calculateGroundGlassAnchoredPan,
   denormalizeGroundGlassPan,
@@ -62,6 +65,10 @@ type GroundGlassStageProps = {
   /** Distinguishes comparison panes while preserving the default label. */
   accessibleLabel?: string;
   stageLabel?: string;
+  zoomInLabel?: string;
+  zoomOutLabel?: string;
+  resetViewLabel?: string;
+  resetActionLabel?: string;
 };
 
 export const GroundGlassStage = ({
@@ -73,8 +80,17 @@ export const GroundGlassStage = ({
   interactionResetKey,
   accessibleLabel,
   stageLabel,
+  zoomInLabel,
+  zoomOutLabel,
+  resetViewLabel,
+  resetActionLabel,
 }: GroundGlassStageProps) => {
-  const resolvedStageLabel = stageLabel ?? accessibleLabel ?? "Ground Glass";
+  const { t } = useTranslation();
+  const resolvedStageLabel = stageLabel ?? accessibleLabel ?? t(simulatorMessageKeys.viewport.groundGlassTitle);
+  const resolvedZoomInLabel = zoomInLabel ?? t(simulatorMessageKeys.viewport.zoomIn);
+  const resolvedZoomOutLabel = zoomOutLabel ?? t(simulatorMessageKeys.viewport.zoomOut);
+  const resolvedResetViewLabel = resetViewLabel ?? t(simulatorMessageKeys.viewport.resetView);
+  const resolvedResetActionLabel = resetActionLabel ?? t(simulatorMessageKeys.viewport.resetAction);
   // Pan is normalized to the current viewport, so resize only needs to update
   // the viewport bounds; denormalization always produces a newly clamped value.
   const [normalizedPan, setNormalizedPan] = useState<PanOffset>(ZERO_PAN);
@@ -315,7 +331,7 @@ export const GroundGlassStage = ({
         data-dragging={isDragging ? "true" : "false"}
         data-pointer-active={dragRef.current.pointerId === null ? "false" : "true"}
         data-pointer-captured={dragRef.current.captured ? "true" : "false"}
-        aria-label={zoomEnabled ? `Zoom out ${resolvedStageLabel}` : `Zoom in ${resolvedStageLabel}`}
+        aria-label={`${zoomEnabled ? resolvedZoomOutLabel : resolvedZoomInLabel} ${resolvedStageLabel}`}
         onKeyDown={handleKeyDown}
         style={{
           position: "relative",
@@ -353,7 +369,7 @@ export const GroundGlassStage = ({
       <button
         type="button"
         className="btn btn--compact btn--secondary groundglass-view-control"
-        aria-label={zoomEnabled ? `Reset ${resolvedStageLabel} view` : `Zoom in ${resolvedStageLabel} view`}
+        aria-label={zoomEnabled ? `${resolvedResetActionLabel} ${resolvedStageLabel} view` : `${resolvedZoomInLabel} ${resolvedStageLabel} view`}
         onClick={zoomEnabled ? resetGroundGlassInteraction : () => requestZoomIn()}
         style={{
           position: "absolute",
@@ -363,7 +379,7 @@ export const GroundGlassStage = ({
           boxShadow: "0 1px 4px rgba(15, 23, 42, 0.25)",
         }}
       >
-        {zoomEnabled ? "Reset view" : "Zoom in"}
+        {zoomEnabled ? resolvedResetViewLabel : resolvedZoomInLabel}
       </button>
     </div>
   );

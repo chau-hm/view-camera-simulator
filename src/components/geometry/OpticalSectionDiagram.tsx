@@ -1,3 +1,7 @@
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import "../../i18n";
+import { simulatorMessageKeys, type SimulatorMessageKey } from "../../i18n/simulatorMessageKeys";
 import type { GeometryView } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
@@ -14,7 +18,6 @@ import {
 import { ProjectedCameraConstruction } from "./ProjectedCameraConstruction";
 import {
   getSceneGeometryGuides,
-  getSceneGeometryTargetLabel,
 } from "./sceneGeometryGuides";
 
 type Props = {
@@ -32,11 +35,59 @@ type Props = {
   referenceOpticsState?: DerivedOpticsState | null;
 };
 
-const planeTeachingLabel = (segment: PlaneSegment): string | null => {
-  if (segment.id === "film") return "Film plane (extended)";
-  if (segment.id === "lens") return "Lens plane (extended)";
-  if (segment.id === "focus") return "Plane of sharp focus (extended)";
+const translateMessage = (t: TFunction, key: SimulatorMessageKey): string => String(t(key));
+
+const planeTeachingLabel = (segment: PlaneSegment, t: TFunction): string | null => {
+  if (segment.id === "film") return translateMessage(t, simulatorMessageKeys.geometry.filmPlaneExtended);
+  if (segment.id === "lens") return translateMessage(t, simulatorMessageKeys.geometry.lensPlaneExtended);
+  if (segment.id === "focus") return translateMessage(t, simulatorMessageKeys.geometry.sharpFocusPlaneExtended);
   return null;
+};
+
+const sceneGeometryGuideMessageKey = (sceneId: string, guideId: string): SimulatorMessageKey | null => {
+  switch (`${sceneId}:${guideId}`) {
+    case "table-tilt:table-tilt-tabletop":
+      return simulatorMessageKeys.geometry.tabletopGuide;
+    case "shelf-swing:shelf-swing-subject-trace":
+      return simulatorMessageKeys.geometry.diagonalSubjectPlaneGuide;
+    case "oblique-architecture:oblique-architecture-target-facade":
+      return simulatorMessageKeys.geometry.targetFacadeDepthGuide;
+    default:
+      return null;
+  }
+};
+
+const sceneGeometryTargetMessageKey = (sceneId: string, targetId: string): SimulatorMessageKey => {
+  switch (`${sceneId}:${targetId}`) {
+    case "table-tilt:near-cup":
+      return simulatorMessageKeys.geometry.nearCardTarget;
+    case "table-tilt:mid-notebook":
+      return simulatorMessageKeys.geometry.middleNotebookTarget;
+    case "table-tilt:far-book":
+      return simulatorMessageKeys.geometry.farChartTarget;
+    case "shelf-swing:shelf-front":
+      return simulatorMessageKeys.geometry.frontChartTarget;
+    case "shelf-swing:shelf-middle":
+      return simulatorMessageKeys.geometry.middleChartTarget;
+    case "shelf-swing:shelf-back":
+      return simulatorMessageKeys.geometry.backChartTarget;
+    case "focus-fundamentals-two-targets:focus-near-detail":
+      return simulatorMessageKeys.geometry.nearDetailTarget;
+    case "focus-fundamentals-two-targets:focus-far-detail":
+      return simulatorMessageKeys.geometry.farDetailTarget;
+    case "oblique-architecture:facade-near":
+      return simulatorMessageKeys.geometry.nearFacadeTarget;
+    case "oblique-architecture:facade-middle":
+      return simulatorMessageKeys.geometry.middleFacadeTarget;
+    case "oblique-architecture:facade-far":
+      return simulatorMessageKeys.geometry.farFacadeTarget;
+    default:
+      return /near/i.test(targetId)
+        ? simulatorMessageKeys.geometry.nearDetailTarget
+        : /far/i.test(targetId)
+          ? simulatorMessageKeys.geometry.farDetailTarget
+          : simulatorMessageKeys.geometry.targetFallback;
+  }
 };
 
 type ConstructionLayerStyle = {
@@ -73,6 +124,7 @@ const FocusFundamentalsPositionCues = ({
   geometryView: GeometryView;
   svgWidth: number;
 }) => {
+  const { t } = useTranslation();
   if (geometryView !== "side") return null;
 
   const currentSegments = currentProjection.views[geometryView].physicalPlaneSegments;
@@ -116,7 +168,11 @@ const FocusFundamentalsPositionCues = ({
               fill={segment.color}
               opacity={isReference ? 0.72 : 1}
             >
-              {standard === "lens" ? "Lens" : "Film"} · {state}
+              {t(standard === "lens" ? simulatorMessageKeys.geometry.lens : simulatorMessageKeys.geometry.film)} · {t(
+                state === "reference"
+                  ? simulatorMessageKeys.geometry.referenceState
+                  : simulatorMessageKeys.geometry.currentState,
+              )}
             </text>
           </g>
         );
@@ -139,6 +195,7 @@ const ConstructionLayer = ({
   layerProjection,
   layerOpticsState,
 }: ConstructionLayerLayerProps) => {
+  const { t } = useTranslation();
   const projection = layerProjection ?? baseProjection;
   const effectiveOpticsState = layerOpticsState ?? opticsState;
   const view = projection.views[geometryView];
@@ -215,7 +272,7 @@ const ConstructionLayer = ({
                     fontSize={11}
                     fill="#b45309"
                   >
-                    Optical axis
+                    {t(simulatorMessageKeys.geometry.opticalAxisLabel)}
                   </text>
                 ) : null}
               </g>
@@ -226,13 +283,15 @@ const ConstructionLayer = ({
       {subjectGuides.map((guide) => {
         const start = view.projectWorldPoint(guide.startWorld);
         const end = view.projectWorldPoint(guide.endWorld);
+        const guideMessageKey = sceneGeometryGuideMessageKey(scene.id, guide.id);
+        const guideLabel = guideMessageKey ? translateMessage(t, guideMessageKey) : guide.label;
         const labelPlacement = getGeometryGuideLabelPlacement({
           start,
           end,
           positionT: guide.labelPositionT,
           offsetPx: guide.labelOffsetPx,
           anchor: guide.labelAnchor,
-          text: guide.label,
+          text: guideLabel,
           svgWidth,
           svgHeight,
           safeMargin,
@@ -261,7 +320,7 @@ const ConstructionLayer = ({
               fill={guide.color}
               textAnchor={labelPlacement.anchor}
             >
-              {guide.label}
+              {guideLabel}
             </text>
           </g>
         );
@@ -324,7 +383,17 @@ const ConstructionLayer = ({
                     ? "6 4"
                     : undefined)
               }
-              aria-label={`${segment.id} plane`}
+              aria-label={t(
+                segment.id === "film"
+                  ? simulatorMessageKeys.geometry.filmPlaneAria
+                  : segment.id === "lens"
+                    ? simulatorMessageKeys.geometry.lensPlaneAria
+                    : segment.id === "focus"
+                      ? simulatorMessageKeys.geometry.focusPlaneAria
+                      : segment.id === "nearDof"
+                        ? simulatorMessageKeys.geometry.nearDofPlaneAria
+                        : simulatorMessageKeys.geometry.farDofPlaneAria,
+              )}
               data-testid={
                 segment.id === "film"
                   ? "plane-line-film"
@@ -352,7 +421,7 @@ const ConstructionLayer = ({
 
       {geometryView === "scheimpflug" && showCameraConstruction
         ? visibleSegments.map((segment) => {
-            const label = planeTeachingLabel(segment);
+            const label = planeTeachingLabel(segment, t);
             if (!label) return null;
             const right =
               segment.p1.x >= segment.p2.x ? segment.p1 : segment.p2;
@@ -393,7 +462,7 @@ const ConstructionLayer = ({
                 fontWeight={600}
                 fill="#15803d"
               >
-                Focus plane
+                {t(simulatorMessageKeys.geometry.focusPlaneLabel)}
               </text>
             );
           })()
@@ -404,10 +473,7 @@ const ConstructionLayer = ({
             const position = view.projectWorldPoint(
               target.worldPosition,
             );
-            const labelText = getSceneGeometryTargetLabel(
-              scene.id,
-              target.id,
-            );
+            const labelText = translateMessage(t, sceneGeometryTargetMessageKey(scene.id, target.id));
             const placement = getLocalTargetLabelPlacement({
               targetX: position.x,
               targetY: position.y,
@@ -523,7 +589,7 @@ const ConstructionLayer = ({
                   fontWeight={600}
                   fill="#6d28d9"
                 >
-                  Scheimpflug intersection
+                  {t(simulatorMessageKeys.geometry.scheimpflugIntersection)}
                 </text>
               </g>
             );

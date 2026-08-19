@@ -106,15 +106,15 @@ test("Shelf Swing card exposes free and guided modes", async ({ page }) => {
 test("Shelf Swing routes reject mismatched and free-mode task IDs", async ({ page }) => {
   await page.goto("/simulator/guided/shelf-swing/tilt-01");
   await expect(page).toHaveURL(/\/scenes$/);
-  await expect(page.getByText("Align the tabletop focus cards with tilt")).toHaveCount(0);
+  await expect(page.getByText("Align the tabletop plane of sharp focus")).toHaveCount(0);
 
   await page.goto("/simulator/free/shelf-swing/swing-01");
   await expect(page).toHaveURL(/\/scenes$/);
-  await expect(page.getByText("Align the diagonal focus plane with swing")).toHaveCount(0);
+  await expect(page.getByText("Align the diagonal plane of sharp focus")).toHaveCount(0);
 
   await page.goto("/simulator/guided/shelf-swing/swing-01");
   await expect(page).toHaveURL(/\/simulator\/guided\/shelf-swing\/swing-01$/);
-  await expect(page.getByText("Align the diagonal focus plane with swing")).toBeVisible();
+  await expect(page.getByText("Align the diagonal plane of sharp focus")).toBeVisible();
 });
 
 test("Shelf Swing free and guided workflows stay accessible without console errors", async ({ page }) => {
@@ -252,10 +252,10 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
   await shelfCard(page).getByRole("link", { name: "Start Guided Task" }).click();
   await expect(page).toHaveURL(/\/simulator\/guided\/shelf-swing\/swing-01$/);
   await expect(
-    page.getByText("Align the diagonal focus plane with swing"),
+    page.getByText("Align the diagonal plane of sharp focus"),
   ).toBeVisible();
   await expect(
-    page.getByText(/Use negative front swing and focus to align the plane of sharp focus/),
+    page.getByText(/Use negative Front Swing and Focus to align the plane of sharp focus/),
   ).toBeVisible();
   await page.getByLabel("Render quality").selectOption("low");
 
@@ -274,14 +274,14 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
   await setStepRangeInput(page, "Swing", 3.8);
   await setStepRangeInput(page, "Focus distance", 3410);
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
-  await expect(page.getByText(/Use negative front swing near -3\.8°/)).toBeVisible();
+  await expect(page.getByText(/Use negative Front Swing near -3\.8°/)).toBeVisible();
 
   await setStepRangeInput(page, "Swing", -3.8);
   await expect
     .poll(async () => Object.values(await readSharpness(page)).every((score) => score >= 80))
     .toBe(true);
   await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await expect(page.getByText(/Negative front swing rotated the plane of sharp focus/)).toBeVisible();
+  await expect(page.getByText(/Negative Front Swing rotated the plane of sharp focus/)).toBeVisible();
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
   await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");

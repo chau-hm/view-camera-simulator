@@ -11,7 +11,7 @@ export const setStepRangeInput = async (
   target: number,
   maximumKeypresses = 1_000,
 ): Promise<void> => {
-  const slider = page.getByLabel(label);
+  const slider = page.getByRole("slider", { name: label });
   const [minimumText, maximumText, stepText, currentText] = await Promise.all([
     slider.getAttribute("min"),
     slider.getAttribute("max"),

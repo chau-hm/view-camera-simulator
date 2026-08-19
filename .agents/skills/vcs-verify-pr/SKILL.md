@@ -49,6 +49,17 @@ Inspect:
 
 Do not re-read unrelated project history.
 
+### Durable handoff orientation
+
+When `.agents/status/CURRENT.md` exists and is relevant to the branch under review:
+
+1. read it early for orientation;
+2. use it to identify the objective, expected scope, changed surfaces, claimed validation, known gaps, reviewer-focus areas, and any `Since previous review` delta;
+3. independently inspect the actual PR/branch diff and merge-critical evidence against those claims;
+4. detect and report stale or contradictory handoff data rather than silently trusting it.
+
+`CURRENT.md` is a navigation aid and implementation claim, not review evidence. Its presence does not require a full repository scan; use it to make focused review discovery more efficient.
+
 ## Review priorities
 
 1. optical and canonical-geometry correctness when changed;

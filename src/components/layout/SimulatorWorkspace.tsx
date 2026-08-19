@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useTranslation } from "react-i18next";
+import { getGuidedLessonContext } from "../../app/guidedLesson";
+import { getPublicSceneEntryById } from "../../app/publicScenes";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
@@ -10,8 +13,10 @@ import {
 } from "../../state/selectors";
 import type { SimulatorMode } from "../../types/camera";
 import type { RenderQualityProfile } from "../../types/ui";
-import { UI_COPY } from "../../ui/copy";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { AppBrand } from "./AppBrand";
+import { LanguageSelector } from "./LanguageSelector";
 import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
@@ -25,10 +30,16 @@ import { MirrorShiftFrontShiftControl } from "../controls/MirrorShiftFrontShiftC
 import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
-import { CurrentSettingsReadout, FocusTargetsReadout } from "../simulator/GroundGlassReadouts";
+import {
+  CurrentSettingsReadout,
+  FocusTargetsReadout,
+  type FocusTargetMetric,
+} from "../simulator/GroundGlassReadouts";
+import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
+import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
 import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
@@ -44,6 +55,7 @@ type SimulatorWorkspaceProps = {
   mode: SimulatorMode;
   sceneId: string;
   taskId: string | null;
+  guidedLessonEnabled?: boolean;
   calibrationEnabled?: boolean;
   simulateAssetFailure: boolean;
 };
@@ -54,9 +66,11 @@ export const SimulatorWorkspace = ({
   mode,
   sceneId,
   taskId,
+  guidedLessonEnabled = false,
   calibrationEnabled = false,
   simulateAssetFailure,
 }: SimulatorWorkspaceProps) => {
+  const { t } = useTranslation();
   const setMode = useAppStore((state) => state.setMode);
   const setActiveScene = useAppStore((state) => state.setActiveScene);
   const setActiveTask = useAppStore((state) => state.setActiveTask);
@@ -102,7 +116,13 @@ export const SimulatorWorkspace = ({
     const initRoute = (modeParam: SimulatorMode, sceneParam: string, taskParam: string | null | undefined) => {
       const initializeSimulatorRoute = useAppStore.getState().initializeSimulatorRoute;
       if (initializeSimulatorRoute) {
-        initializeSimulatorRoute({ mode: modeParam, sceneId: sceneParam, taskId: taskParam ?? null, calibrationEnabled });
+        initializeSimulatorRoute({
+          mode: modeParam,
+          sceneId: sceneParam,
+          taskId: taskParam ?? null,
+          calibrationEnabled,
+          lessonEntry: guidedLessonEnabled,
+        });
       } else {
         // fall back to individual setters if the initialize action isn't available
         setMode(modeParam);
@@ -112,23 +132,40 @@ export const SimulatorWorkspace = ({
     };
 
     initRoute(mode, sceneId, taskId);
-  }, [mode, sceneId, setActiveScene, setActiveTask, setMode, taskId, calibrationEnabled]);
+  }, [
+    calibrationEnabled,
+    guidedLessonEnabled,
+    mode,
+    sceneId,
+    setActiveScene,
+    setActiveTask,
+    setMode,
+    taskId,
+  ]);
 
   useEffect(
     () => () => {
       if (calibrationEnabled) clearCameraMovementCalibrationSession();
-      // Restore Neutral on leave-and-return for the public teaching route only.
-      // Other free scenes intentionally preserve their in-memory state on
-      // leave-and-return, so the route-init guard is cleared solely here.
+      // Restore Neutral on leave-and-return for the public teaching routes
+      // that require a fresh entry. Other free scenes intentionally preserve
+      // their in-memory state on leave-and-return.
       if (
-        sceneId === "understanding-camera-movements" &&
-        mode === "free" &&
-        !calibrationEnabled
+        guidedLessonEnabled ||
+        (sceneId === "understanding-camera-movements" &&
+          mode === "free" &&
+          !calibrationEnabled)
       ) {
         clearSimulatorRouteInitialization();
       }
     },
-    [calibrationEnabled, clearCameraMovementCalibrationSession, clearSimulatorRouteInitialization, mode, sceneId],
+    [
+      calibrationEnabled,
+      clearCameraMovementCalibrationSession,
+      clearSimulatorRouteInitialization,
+      guidedLessonEnabled,
+      mode,
+      sceneId,
+    ],
   );
 
   const closeGeometryPanel = useCallback((restoreFocus = true) => {
@@ -189,19 +226,19 @@ export const SimulatorWorkspace = ({
   useEffect(() => {
     setShowGeometryPanel(false);
     setGeometryDialogStyle(undefined);
-  }, [mode, sceneId, taskId]);
+  }, [guidedLessonEnabled, mode, sceneId, taskId]);
 
   useEffect(() => {
     setRestoreViewportFocus(false);
     const activeElement = document.activeElement;
     if (
       activeElement instanceof HTMLElement &&
-      activeElement.matches('.btn--viewport-action[aria-label^="Restore "]')
+      activeElement.matches('.btn--viewport-action[data-viewport-expanded="true"]')
     ) {
       activeElement.blur();
     }
     setExpandedViewport(null);
-  }, [mode, sceneId, taskId]);
+  }, [guidedLessonEnabled, mode, sceneId, taskId]);
 
   const requestViewportExpansion = useCallback((viewport: Exclude<ExpandedViewport, null>) => {
     setRestoreViewportFocus(true);
@@ -229,6 +266,24 @@ export const SimulatorWorkspace = ({
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
+  const publicSceneEntry = getPublicSceneEntryById(sceneId);
+  const guidedLessonContext = useMemo(
+    () =>
+      guidedLessonEnabled && publicSceneEntry
+        ? getGuidedLessonContext({
+            entry: publicSceneEntry,
+            mode,
+            sceneId,
+            taskId,
+            search: "?lesson=1",
+          })
+        : null,
+    [guidedLessonEnabled, mode, publicSceneEntry, sceneId, taskId],
+  );
+  const activeSingleMovement =
+    safeScene.movementCapabilities?.selectionMode === "single"
+      ? selectedMovement
+      : null;
 
   const opticsState = selectDerivedOpticsState(
     camera,
@@ -305,7 +360,7 @@ export const SimulatorWorkspace = ({
     sceneId,
     targetRegion,
   ]);
-  const lockReason = UI_COPY.controls.guidedControlLockedReason;
+  const lockReason = t(simulatorMessageKeys.controls.guidedControlLockedReason);
   const controlPolicy = safeScene.cameraControlPolicy ?? {};
   const movementLocked = controlPolicy.movement === "fixed";
   const focusLocked = controlPolicy.focusDistance === "fixed";
@@ -322,14 +377,29 @@ export const SimulatorWorkspace = ({
   const enabledControls = useMemo(() => {
     const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
     if (focusFundamentals) {
-    return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
+      return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
     }
 
     if (mode === "free" || !task) {
-    return new Set(["rise", "tilt", "swing", "focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
+      const controls = new Set(["geometryView", "focusAssist", "grid"]);
+      const availableMovements = safeScene.movementCapabilities?.available;
+      if (!availableMovements) {
+        controls.add("rise");
+        controls.add("tilt");
+        controls.add("swing");
+      } else {
+        availableMovements.forEach((movement) => {
+          if (movement === "frontRiseMm") controls.add("rise");
+          if (movement === "frontTiltDeg") controls.add("tilt");
+          if (movement === "frontSwingDeg") controls.add("swing");
+        });
+      }
+      if (!focusLocked) controls.add("focusDistance");
+      if (!apertureLocked) controls.add("aperture");
+      return controls;
     }
     return new Set([...task.enabledControls]);
-  }, [mode, task, camera.activeSceneId]);
+  }, [apertureLocked, camera.activeSceneId, focusLocked, mode, safeScene, task]);
 
   const evaluation = useMemo(() => (task ? evaluateTask(task, safeScene, camera, opticsState) : null), [camera, opticsState, safeScene, task]);
   useEffect(() => {
@@ -350,6 +420,12 @@ export const SimulatorWorkspace = ({
       }).targets,
     [camera.focusAssistEnabled, opticsState.focusTargets, tableTiltFocusMetric],
   );
+  const learnerReadoutPolicy = useMemo(
+    () => resolveLearnerReadoutPolicy(safeScene.id, { hasFocusTargets: focusAssistTargets.length > 0 }),
+    [focusAssistTargets.length, safeScene.id],
+  );
+  const focusTargetMetric: FocusTargetMetric =
+    tableTiltFocusMetric === "point" ? "point" : safeScene.id === "table-tilt" ? "patch" : "focus";
   const closestPointTargetId = useMemo(() => {
     if (safeScene.id !== "table-tilt" || mode !== "free") return undefined;
     return opticsState.focusTargets.reduce<string | undefined>((closestId, target) => {
@@ -370,7 +446,7 @@ export const SimulatorWorkspace = ({
   if (!scene) {
     return (
       <p>
-        {UI_COPY.simulator.unknownScenePrefix}: {sceneId}
+        {t(simulatorMessageKeys.viewport.unknownScenePrefix)}: {sceneId}
       </p>
     );
   }
@@ -382,16 +458,17 @@ export const SimulatorWorkspace = ({
         <AppBrand />
 
         <div className="sim-header-actions">
-          <Link className="btn btn--ghost" to="/scenes">All Scenes</Link>
+          <Link className="btn btn--ghost" to="/scenes">{t(simulatorMessageKeys.viewport.allScenes)}</Link>
+          <LanguageSelector />
         </div>
       </header>
 
       {/* Body: main (scrollable) + aside (scrollable) */}
-      <div role="region" aria-label="Simulator body" className={`simulator-body${showGeometryPanel ? " simulator-body--modal-open" : ""}`}>
+      <div role="region" aria-label={t(simulatorMessageKeys.viewport.bodyLabel)} className={`simulator-body${showGeometryPanel ? " simulator-body--modal-open" : ""}`}>
         {/* Main area: single scroll container for 3D Scene + Ground Glass */}
         <main className={`simulator-main${viewportExpanded ? " simulator-main--viewport-expanded" : ""}`}>
           {!viewportExpanded && opticsState.diagnostics.fallbackApplied && (
-            <p role="alert">{UI_COPY.simulator.opticsFallbackPrefix}: {opticsState.diagnostics.errorMessage}</p>
+            <p role="alert">{t(simulatorMessageKeys.viewport.opticsFallbackPrefix)}: {opticsState.diagnostics.errorMessage}</p>
           )}
 
           <div className={`simulator-viewport-grid${viewportExpanded ? " simulator-viewport-grid--expanded" : ""}`}>
@@ -400,7 +477,7 @@ export const SimulatorWorkspace = ({
                 <div className="panel-icon" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
                 </div>
-                <h2 className="simulator-card-title">3D Scene</h2>
+                <h2 className="simulator-card-title">{t(simulatorMessageKeys.viewport.sceneTitle)}</h2>
               </div>
 
               <SceneViewport
@@ -434,12 +511,12 @@ export const SimulatorWorkspace = ({
               />
             </div>}
 
-            {!sceneExpanded && <div className={`simulator-card${groundGlassExpanded ? " simulator-card--expanded" : ""}`} aria-label="GroundGlassColumn">
+            {!sceneExpanded && <div className={`simulator-card${groundGlassExpanded ? " simulator-card--expanded" : ""}`} aria-label={t(simulatorMessageKeys.viewport.groundGlassColumnLabel)}>
               <div className="simulator-card-header">
                 <div className="panel-icon panel-icon--muted" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
                 </div>
-                <h2 className="simulator-card-title">Ground Glass</h2>
+                <h2 className="simulator-card-title">{t(simulatorMessageKeys.viewport.groundGlassTitle)}</h2>
               </div>
 
               <GroundGlassViewport
@@ -470,8 +547,8 @@ export const SimulatorWorkspace = ({
           </div>
 
           {!viewportExpanded && <>
-            {/* Row 1: Current Settings | Focus Targets */}
-            <div className="simulator-primary-info-grid">
+            {/* Row 1: scene-aware learner readouts */}
+            <div className={`simulator-primary-info-grid${learnerReadoutPolicy.showFocusTargets && focusAssistTargets.length > 0 ? "" : " simulator-primary-info-grid--single"}`}>
             <CurrentSettingsReadout
               riseMm={camera.frontRiseMm}
               tiltDeg={camera.frontTiltDeg}
@@ -479,8 +556,8 @@ export const SimulatorWorkspace = ({
               focusDistanceMm={camera.focusDistanceMm}
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
-              activeMovement={selectedMovement ? { field: selectedMovement, value: (() => {
-                switch (selectedMovement) {
+              activeMovement={activeSingleMovement ? { field: activeSingleMovement, value: (() => {
+                switch (activeSingleMovement) {
                   case "frontRiseMm": return camera.frontRiseMm;
                   case "rearRiseMm": return camera.rearRiseMm;
                   case "frontTiltDeg": return camera.frontTiltDeg;
@@ -490,23 +567,33 @@ export const SimulatorWorkspace = ({
               })() } : null}
               teachingReadout={teachingReadout}
               focusStandard={camera.activeSceneId === "focus-fundamentals-two-targets" ? camera.focusStandard : undefined}
+              settingsVariant={learnerReadoutPolicy.settingsVariant}
+              cameraPositionMm={camera.mirrorShiftLessonState?.rigLateralMm}
+              frontShiftMm={camera.frontShiftMm}
             />
 
-            <FocusTargetsReadout
-              focusTargets={focusAssistTargets}
-              metricLabel={tableTiltFocusMetric === "point" ? "Point focus" : safeScene.id === "table-tilt" ? "Patch coverage" : "Focus"}
-              closestTargetId={closestPointTargetId}
-            />
+            {learnerReadoutPolicy.showFocusTargets && focusAssistTargets.length > 0 ? (
+              <FocusTargetsReadout
+                focusTargets={focusAssistTargets}
+                metric={focusTargetMetric}
+                closestTargetId={closestPointTargetId}
+              />
+            ) : null}
             </div>
 
             {/* Row 2: Task | Feedback (each wrapped in a card shell provided by Workspace) */}
             <div className="simulator-task-feedback-grid">
             <div className="simulator-info-card simulator-info-card--task">
-              <h4>Task</h4>
-              <TaskPanel task={task} sceneId={safeScene.id} showTitle={false} />
+              <h4>{t(simulatorMessageKeys.task.title)}</h4>
+              {guidedLessonContext ? (
+                <GuidedLessonProgress context={guidedLessonContext} evaluation={evaluation} />
+              ) : null}
+              {guidedLessonContext?.stage === "observe" ? null : (
+                <TaskPanel task={task} sceneId={safeScene.id} showTitle={false} />
+              )}
             </div>
             <div className="simulator-info-card simulator-info-card--feedback">
-              <h4>Feedback</h4>
+              <h4>{t(simulatorMessageKeys.feedback.title)}</h4>
               <FeedbackPanel mode={mode} sceneId={safeScene.id} task={task} evaluation={evaluation} showTitle={false} />
             </div>
             </div>
@@ -531,10 +618,10 @@ export const SimulatorWorkspace = ({
 
         {/* Right aside: independent scroll */}
         <aside className="simulator-aside">
-          <section aria-label="Camera Controls">
+          <section aria-label={t(simulatorMessageKeys.controls.cameraControls)}>
             <div className="aside-header">
-              <h3 style={{ margin: 0 }}>Camera Controls</h3>
-              {!infinityResetHidden && (<button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>Infinity Reset</button>)}
+              <h3 style={{ margin: 0 }}>{t(simulatorMessageKeys.controls.cameraControls)}</h3>
+              {!infinityResetHidden && (<button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>{t(simulatorMessageKeys.controls.infinityReset)}</button>)}
             </div>
 
             <div style={{ marginTop: 8 }}>
@@ -554,7 +641,7 @@ export const SimulatorWorkspace = ({
                 <div className="sim-section">
                   <CameraMovementTeachingControls />
                 </div>
-              ) : (safeScene.movementCapabilities && selectedMovement) ? (
+              ) : (safeScene.movementCapabilities?.selectionMode === "single" && selectedMovement) ? (
                 <>
                   <div className="sim-section">
                     <MovementSelector
@@ -568,24 +655,24 @@ export const SimulatorWorkspace = ({
                 </>
               ) : (
                 <div className="sim-section">
-                  <div className="sim-section-label">Movement</div>
+                  <div className="sim-section-label">{t(simulatorMessageKeys.controls.movementTitle)}</div>
                   <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
                 </div>
               )) : null}
 
               <div className="sim-section">
-                <div className="sim-section-label">Focus</div>
-                <FocusControl focusEnabled={enabledControls.has("focusDistance") && !focusLocked} lockReason={focusLocked ? "Focus is fixed for this lesson" : lockReason} showTitle={false} />
+                <div className="sim-section-label">{t(simulatorMessageKeys.controls.focusTitle)}</div>
+                <FocusControl focusEnabled={enabledControls.has("focusDistance") && !focusLocked} lockReason={focusLocked ? t(simulatorMessageKeys.controls.focusFixedReason) : lockReason} showTitle={false} />
               </div>
 
               <div className="sim-section">
-                <div className="sim-section-label">Aperture</div>
-                <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? "Aperture is fixed for this lesson" : lockReason} showTitle={false} />
+                <div className="sim-section-label">{t(simulatorMessageKeys.controls.apertureTitle)}</div>
+                <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? t(simulatorMessageKeys.controls.apertureFixedReason) : lockReason} showTitle={false} />
               </div>
 
               {(!movementLocked || task !== null || safeScene.cameraRigTranslationCapability?.enabled) && (
                 <div className="sim-section reset" style={{ paddingBottom: 0 }}>
-                  <div className="sim-section-label">Reset</div>
+                  <div className="sim-section-label">{t(simulatorMessageKeys.controls.resetTitle)}</div>
                   <ResetControls
                     showTitle={false}
                     showMovementReset={!movementLocked || safeScene.cameraRigTranslationCapability?.enabled === true}
@@ -626,15 +713,15 @@ export const SimulatorWorkspace = ({
           tabIndex={-1}
         >
           <div className="geometry-dialog__header">
-            <strong id="geometry-dialog-title">2D Geometry</strong>
+            <strong id="geometry-dialog-title">{t(simulatorMessageKeys.viewport.geometryTitle)}</strong>
             <button
               ref={geometryCloseRef}
               className="btn btn--compact"
               type="button"
               onClick={() => closeGeometryPanel()}
-              aria-label="Close 2D Geometry"
+              aria-label={t(simulatorMessageKeys.viewport.closeGeometry)}
             >
-              Close
+              {t(simulatorMessageKeys.viewport.closeGeometry)}
             </button>
           </div>
 

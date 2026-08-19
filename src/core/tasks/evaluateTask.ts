@@ -1,7 +1,12 @@
 import { feedbackEngine } from "./feedbackEngine";
-import { evaluateCompositionTargets } from "./evaluateCompositionTargets";
+import { getCriterionResultMessageRef, getGuidedTaskCopy } from "./guidedTaskCopyKeys";
 import { evaluateFocusTargets } from "./evaluateFocusTargets";
-import { calculateCompositionCoverage, calculateCompositionCoverageByTarget } from "../optics/calculateCompositionCoverage";
+import { isStandardFrameLevel } from "../optics/calculateRearStandardFrame";
+import {
+  calculateCompositionCoverage,
+  calculateCompositionCoverageByTarget,
+  calculateProjectedCompositionCoverageByTarget,
+} from "../optics/calculateCompositionCoverage";
 import { deriveOpticsState } from "../optics/deriveOpticsState";
 import {
   measureMirrorShiftTeachingState,
@@ -95,7 +100,12 @@ export const evaluateTask = (
   camera: CameraState,
   opticsState: DerivedOpticsState,
 ): TaskEvaluation => {
+  const guidedCopy = getGuidedTaskCopy(task);
   const compositionCoverageByTarget = calculateCompositionCoverageByTarget(scene, opticsState);
+  const projectedCompositionCoverageByTarget = calculateProjectedCompositionCoverageByTarget(
+    scene,
+    opticsState,
+  );
   const compositionCoverage = calculateCompositionCoverage(scene, opticsState);
   const mirrorShiftMeasurements = hasMirrorShiftCriteria(task)
     ? resolveMirrorShiftMeasurements(camera, scene, opticsState)
@@ -116,10 +126,10 @@ export const evaluateTask = (
         const score = targetScores.length === 0 ? 0 : Math.min(...targetScores);
         return {
           criterionId: criterion.id,
-          label: criterion.label,
+          label: guidedCopy.criteria[criterion.id],
           passed,
           score,
-          message: passed ? "Focus targets are sharp enough" : "Some focus targets are too soft",
+          message: getCriterionResultMessageRef(criterion, passed),
         };
       }
       case "movement-used": {
@@ -127,12 +137,10 @@ export const evaluateTask = (
         const passed = value >= criterion.minimumAbs;
         return {
           criterionId: criterion.id,
-          label: criterion.label,
+          label: guidedCopy.criteria[criterion.id],
           passed,
           score: Math.min(1, value / Math.max(criterion.minimumAbs, 1e-9)),
-          message: passed
-            ? `${criterion.movement} movement used`
-            : `${criterion.movement} movement not used enough`,
+          message: getCriterionResultMessageRef(criterion, passed),
         };
       }
       case "movement-range": {
@@ -158,37 +166,44 @@ export const evaluateTask = (
                 : criterion.max / value;
         return {
           criterionId: criterion.id,
-          label: criterion.label,
+          label: guidedCopy.criteria[criterion.id],
           passed,
           score: Math.max(0, Math.min(1, inRangeScore)),
-          message: passed
-            ? `${criterion.movement} is within allowed range`
-            : `${criterion.movement} is outside allowed range`,
+          message: getCriterionResultMessageRef(criterion, passed),
         };
       }
       case "allowed-aperture": {
         const passed = criterion.allowedApertures.includes(camera.aperture);
         return {
           criterionId: criterion.id,
-          label: criterion.label,
+          label: guidedCopy.criteria[criterion.id],
           passed,
           score: passed ? 1 : 0,
-          message: passed ? "Aperture is allowed" : "Aperture is not allowed for this task",
+          message: getCriterionResultMessageRef(criterion, passed),
         };
       }
       case "composition-visible": {
-        const score = compositionCoverageByTarget[criterion.targetId] ?? 0;
-        const passed = evaluateCompositionTargets(
-          compositionCoverageByTarget,
-          criterion.targetId,
-          criterion.minimumCoverage,
-        );
+        const score =
+          criterion.coverageMode === "projected-corners"
+            ? projectedCompositionCoverageByTarget[criterion.targetId] ?? 0
+            : compositionCoverageByTarget[criterion.targetId] ?? 0;
+        const passed = score >= criterion.minimumCoverage;
         return {
           criterionId: criterion.id,
-          label: criterion.label,
+          label: guidedCopy.criteria[criterion.id],
           passed,
           score,
-          message: passed ? "Composition target is visible enough" : "Composition target visibility is too low",
+          message: getCriterionResultMessageRef(criterion, passed),
+        };
+      }
+      case "camera-level": {
+        const passed = isStandardFrameLevel(opticsState.rearStandardFrame);
+        return {
+          criterionId: criterion.id,
+          label: guidedCopy.criteria[criterion.id],
+          passed,
+          score: passed ? 1 : 0,
+          message: getCriterionResultMessageRef(criterion, passed),
         };
       }
       case "mirror-reflection-clear": {
@@ -201,14 +216,12 @@ export const evaluateTask = (
         );
         return {
           criterionId: criterion.id,
-          label: criterion.label,
+          label: guidedCopy.criteria[criterion.id],
           passed,
           score: reflection?.valid
             ? boundedRatio(reflection.clearanceMm, criterion.minimumClearanceMm)
             : 0,
-          message: passed
-            ? "Camera reflection is outside the mirror aperture"
-            : "Camera reflection is still visible through the mirror",
+          message: getCriterionResultMessageRef(criterion, passed),
         };
       }
       case "mirror-framing-restored": {
@@ -223,7 +236,7 @@ export const evaluateTask = (
           centerError <= criterion.maximumCenterErrorNormalized;
         return {
           criterionId: criterion.id,
-          label: criterion.label,
+          label: guidedCopy.criteria[criterion.id],
           passed,
           score: finite(centerError)
             ? Math.max(
@@ -231,9 +244,7 @@ export const evaluateTask = (
                 1 - boundedRatio(centerError, criterion.maximumCenterErrorNormalized),
               )
             : 0,
-          message: passed
-            ? "Mirror framing is close to Neutral"
-            : "Mirror framing is still displaced from Neutral",
+          message: getCriterionResultMessageRef(criterion, passed),
         };
       }
       case "mirror-viewpoint-retained": {
@@ -250,12 +261,10 @@ export const evaluateTask = (
           parallaxDelta >= criterion.minimumParallaxDeltaNormalized;
         return {
           criterionId: criterion.id,
-          label: criterion.label,
+          label: guidedCopy.criteria[criterion.id],
           passed,
           score: boundedRatio(parallaxDelta, criterion.minimumParallaxDeltaNormalized),
-          message: passed
-            ? "Reflected props show a changed viewpoint"
-            : "Reflected-prop parallax is not yet large enough",
+          message: getCriterionResultMessageRef(criterion, passed),
         };
       }
     }
@@ -272,7 +281,7 @@ export const evaluateTask = (
     status,
     score,
     criteria,
-    primaryFeedback: "",
+    primaryFeedback: guidedCopy.feedback.defaultFailPrimary,
     secondaryFeedback: [],
     finalCameraState: {
       frontRiseMm: camera.frontRiseMm,

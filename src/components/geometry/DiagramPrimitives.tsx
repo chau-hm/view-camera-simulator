@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import type { GeometryView } from "../../types/camera";
 import type { Bounds3, Plane, Vec3 } from "../../types/optics";
 import { planeLineWorldEndpoints, worldToDiagramPoint } from "./diagramHelpers";
@@ -100,43 +103,46 @@ type DiagramLegendProps = {
   hasTargets?: boolean;
 };
 
-export const DiagramLegend = ({ isInfinity = false, hasNearDof = false, hasFarDof = false, hasTargets = false }: DiagramLegendProps) => (
-  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 12 }}>
+export const DiagramLegend = ({ isInfinity = false, hasNearDof = false, hasFarDof = false, hasTargets = false }: DiagramLegendProps) => {
+  const { t } = useTranslation();
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 12 }}>
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
       <span style={{ width: 12, height: 12, background: "#0284c7", display: "inline-block", borderRadius: 2 }} />
-      <span>Film datum</span>
+      <span>{t(simulatorMessageKeys.geometry.filmDatum)}</span>
     </div>
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
       <span style={{ width: 12, height: 12, background: "#475569", display: "inline-block", borderRadius: 2 }} />
-      <span>Lens plane</span>
+      <span>{t(simulatorMessageKeys.geometry.lensPlane)}</span>
     </div>
     {!isInfinity && (
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <span style={{ width: 12, height: 12, background: "#16a34a", display: "inline-block", borderRadius: 2 }} />
-        <span>Focus plane</span>
+        <span>{t(simulatorMessageKeys.geometry.focusPlane)}</span>
       </div>
     )}
     {hasNearDof && (
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <span style={{ width: 12, height: 12, background: "#0284c7", display: "inline-block", borderRadius: 2 }} />
-        <span>DOF limit</span>
+        <span>{t(simulatorMessageKeys.geometry.dofLimit)}</span>
       </div>
     )}
     {hasFarDof && !isInfinity && (
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <span style={{ width: 12, height: 12, background: "#8b5cf6", display: "inline-block", borderRadius: 2 }} />
-        <span>Far DOF</span>
+        <span>{t(simulatorMessageKeys.geometry.farDof)}</span>
       </div>
     )}
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
       <span style={{ width: 12, height: 12, background: "#f59e0b", display: "inline-block", borderRadius: 2 }} />
-      <span>Optical axis</span>
+      <span>{t(simulatorMessageKeys.geometry.opticalAxis)}</span>
     </div>
     {hasTargets && (
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <span style={{ width: 12, height: 12, background: "#0f766e", display: "inline-block", borderRadius: 2 }} />
-        <span>Focus targets</span>
+        <span>{t(simulatorMessageKeys.geometry.focusTargets)}</span>
       </div>
     )}
-  </div>
-);
+    </div>
+  );
+};
