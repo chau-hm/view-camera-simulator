@@ -100,4 +100,73 @@ describe("simulator header", () => {
       route: screen.getByTestId("route-location").textContent,
     }).toEqual(beforeLocale);
   });
+
+  it("updates public control and viewport labels, including accessible names, without reload", async () => {
+    render(
+      <MemoryRouter initialEntries={["/simulator/free/understanding-camera-movements"]}>
+        <SimulatorWorkspace mode="free" sceneId="understanding-camera-movements" taskId={null} simulateAssetFailure={false} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("slider", { name: "Viewpoint" })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Focus distance" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "3D Scene" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset 3D view" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Focus assist" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View overlays" })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
+      target: { value: "zh-HK" },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("slider", { name: "視點" })).toBeInTheDocument();
+      expect(screen.getByRole("slider", { name: "對焦距離" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "3D 場景" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "重設 3D 視圖" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "展開 3D 場景" })).toBeInTheDocument();
+      expect(screen.getByRole("checkbox", { name: "對焦輔助" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "檢視疊加層" })).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("slider", { name: "Viewpoint" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Expand 3D Scene" })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "語言" }), {
+      target: { value: "en" },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("slider", { name: "Viewpoint" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toBeInTheDocument();
+    });
+  });
+
+  it("localizes scene-specific Mirror Shift controls and teaching geometry", async () => {
+    render(
+      <MemoryRouter initialEntries={["/simulator/free/mirror-shift"]}>
+        <SimulatorWorkspace mode="free" sceneId="mirror-shift" taskId={null} simulateAssetFailure={false} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("slider", { name: "Camera Position" })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Front Shift" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open 2D Geometry" }));
+    expect(screen.getByRole("img", { name: "Mirror Shift top-view teaching geometry" })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
+      target: { value: "zh-HK" },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("slider", { name: "相機位置" })).toBeInTheDocument();
+      expect(screen.getByRole("slider", { name: "前組橫移" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "反射鏡橫移頂部檢視教學幾何圖" })).toBeInTheDocument();
+      expect(screen.getByText("反射鏡光圈")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("slider", { name: "Camera Position" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("slider", { name: "Front Shift" })).not.toBeInTheDocument();
+  });
 });

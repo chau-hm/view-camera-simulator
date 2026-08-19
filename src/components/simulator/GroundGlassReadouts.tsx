@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import { readoutMessageKeys, type ReadoutMessageKey } from "../../i18n/readoutMessageKeys";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import type { RenderQualityProfile } from "../../types/ui";
 import type { CameraMovementField } from "../../types/scene";
@@ -79,6 +80,18 @@ const focusTargetStatusKey = (status: string | undefined): ReadoutMessageKey => 
     default:
       return readoutMessageKeys.focusTargets.soft;
   }
+};
+
+const focusTargetLabelKey = (id: string) => {
+  if (id === "focus-near-detail") return simulatorMessageKeys.controls.focusNearDetailButton;
+  if (id === "focus-far-detail") return simulatorMessageKeys.controls.focusFarDetailButton;
+  return null;
+};
+
+const focusTargetAriaKey = (id: string) => {
+  if (id === "focus-near-detail") return simulatorMessageKeys.controls.focusNearDetailAria;
+  if (id === "focus-far-detail") return simulatorMessageKeys.controls.focusFarDetailAria;
+  return null;
 };
 
 export const CurrentSettingsReadout = ({
@@ -284,11 +297,15 @@ export const FocusTargetsReadout = ({
         {focusTargets.map((target) => {
           const display = Math.max(0, Math.min(100, Math.round(target.sharpnessPercent ?? 0)));
           const statusKey = focusTargetStatusKey(target.status);
+          const targetLabelKey = focusTargetLabelKey(target.id);
+          const targetAriaKey = focusTargetAriaKey(target.id);
+          const targetLabel = targetLabelKey ? t(targetLabelKey) : formatTargetId(target.id);
+          const targetAriaLabel = targetAriaKey ? t(targetAriaKey) : target.id;
           const cls = `focus-target-row ${target.status === "sharp" ? "focus-target-row--sharp" : target.status === "acceptable" ? "focus-target-row--acceptable" : "focus-target-row--soft"}`;
           return (
             <div key={target.id} className={cls}>
               <div className="focus-target-row__header">
-                <span className="focus-target-row__name" title={target.id}>{formatTargetId(target.id)}</span>
+                <span className="focus-target-row__name" title={targetLabel}>{targetLabel}</span>
                 <span className="focus-target-row__value">{display}%</span>
               </div>
               <div
@@ -297,7 +314,7 @@ export const FocusTargetsReadout = ({
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={display}
-                aria-label={t(readoutMessageKeys.focusTargets.sharpnessAria, { target: target.id })}
+                aria-label={t(readoutMessageKeys.focusTargets.sharpnessAria, { target: targetAriaLabel })}
               >
                 <div className="focus-target-progress__fill" style={{ width: `${display}%` }} />
               </div>

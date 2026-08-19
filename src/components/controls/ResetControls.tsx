@@ -1,5 +1,7 @@
+import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../state/appStore";
-import { UI_COPY } from "../../ui/copy";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 
 export const ResetControls = ({
   showTitle = true,
@@ -8,6 +10,7 @@ export const ResetControls = ({
   showTitle?: boolean;
   showMovementReset?: boolean;
 }) => {
+  const { t } = useTranslation();
   const resetMovements = useAppStore((state) => state.resetMovements);
   const restartTask = useAppStore((state) => state.restartTask);
   const activeTaskId = useAppStore((state) => state.task.activeTaskId);
@@ -15,17 +18,17 @@ export const ResetControls = ({
   const hasTask = activeTaskId !== null && mode === "guided";
 
   return (
-    <section aria-label={UI_COPY.controls.resetTitle}>
-      {showTitle && <h3>{UI_COPY.controls.resetTitle}</h3>}
+    <section aria-label={t(simulatorMessageKeys.controls.resetTitle)}>
+      {showTitle && <h3>{t(simulatorMessageKeys.controls.resetTitle)}</h3>}
       <div className="control-row">
         {showMovementReset && (
-          <button type="button" onClick={resetMovements} aria-label={UI_COPY.controls.resetMovementsButton} className="btn btn--danger">
-            {UI_COPY.controls.resetMovementsButton}
+          <button type="button" onClick={resetMovements} aria-label={t(simulatorMessageKeys.controls.resetMovementsButton)} className="btn btn--danger">
+            {t(simulatorMessageKeys.controls.resetMovementsButton)}
           </button>
         )}
         {hasTask && (
-          <button type="button" onClick={restartTask} aria-label={UI_COPY.controls.restartTaskButton} className="btn btn--secondary">
-            {UI_COPY.controls.restartTaskButton}
+          <button type="button" onClick={restartTask} aria-label={t(simulatorMessageKeys.controls.restartTaskButton)} className="btn btn--secondary">
+            {t(simulatorMessageKeys.controls.restartTaskButton)}
           </button>
         )}
       </div>

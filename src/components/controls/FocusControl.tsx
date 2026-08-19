@@ -1,7 +1,9 @@
 import { useShallow } from "zustand/react/shallow";
+import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../state/appStore";
 import { selectFocusControlState } from "../../state/selectors";
-import { UI_COPY } from "../../ui/copy";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { focusTargetsDefs } from "../../scenes/focusFundamentalsTargets";
 import { formatMillimeter } from "../../utils/formatters";
 import { handleRangeInputKeyboard } from "../../utils/rangeInputKeyboard";
@@ -14,6 +16,7 @@ type FocusControlProps = {
 };
 
 export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: FocusControlProps) => {
+  const { t } = useTranslation();
   const focusControl = useAppStore(useShallow(selectFocusControlState));
   const setFocusDistance = useAppStore((state) => state.setFocusDistance);
   const setFocusStandard = useAppStore((state) => state.setFocusStandard);
@@ -21,11 +24,11 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
   const formatLastFiniteFocus = (value: number | null | undefined) => (typeof value === 'number' && Number.isFinite(value) ? formatMillimeter(value) : '—');
 
   return (
-    <section aria-label={UI_COPY.controls.focusTitle}>
-      {showTitle && <h3>{UI_COPY.controls.focusTitle}</h3>}
+    <section aria-label={t(simulatorMessageKeys.controls.focusTitle)}>
+      {showTitle && <h3>{t(simulatorMessageKeys.controls.focusTitle)}</h3>}
       {focusControl.supportsFocusStandard && (
-        <fieldset aria-label="Focus standard">
-          <legend>Focus with</legend>
+        <fieldset aria-label={t(simulatorMessageKeys.controls.focusStandardGroupLabel)}>
+          <legend>{t(simulatorMessageKeys.controls.focusWithLegend)}</legend>
           <label className="choice-label">
             <input
               className="form-radio"
@@ -36,7 +39,7 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
               disabled={!focusEnabled}
               onChange={() => setFocusStandard("front")}
             />
-            Front standard
+            {t(simulatorMessageKeys.controls.frontStandard)}
           </label>
           <label className="choice-label">
             <input
@@ -48,17 +51,17 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
               disabled={!focusEnabled}
               onChange={() => setFocusStandard("rear")}
             />
-            Rear standard
+            {t(simulatorMessageKeys.controls.rearStandard)}
           </label>
           <small className="control-help">
             {focusControl.focusStandard === "rear"
-              ? "Rear focusing moves the film while the lens/viewpoint stays fixed."
-              : "Front focusing moves the lens/viewpoint. The film stays fixed."}
+              ? t(simulatorMessageKeys.controls.rearFocusHelp)
+              : t(simulatorMessageKeys.controls.frontFocusHelp)}
           </small>
           {focusControl.activeSceneId === "focus-fundamentals-two-targets" && (
             <small className="control-help focus-parallax-help">
-              <span>Watch the white frame (near gate) and far pointer.</span>
-              <span>Front focus changes their alignment; Rear focus keeps them aligned.</span>
+              <span>{t(simulatorMessageKeys.controls.focusTargetObservationNear)}</span>
+              <span>{t(simulatorMessageKeys.controls.focusTargetObservationAlignment)}</span>
             </small>
           )}
         </fieldset>
@@ -66,14 +69,18 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
       <label className="control-label">
         {focusControl.focusMode === "infinity" ? (
           <>
-            <div>Focus: ∞</div>
-            <div>Last finite focus: {formatLastFiniteFocus(focusControl.lastFiniteFocusDepthMm)}</div>
+            <div>{t(simulatorMessageKeys.controls.focusInfinityLabel)}</div>
+            <div>
+              {t(simulatorMessageKeys.controls.lastFiniteFocusLabel, {
+                distance: formatLastFiniteFocus(focusControl.lastFiniteFocusDepthMm),
+              })}
+            </div>
           </>
         ) : (
-          <>{UI_COPY.controls.focusDistanceLabel} ({formatMillimeter(focusControl.focusDistanceMm)})</>
+          <>{t(simulatorMessageKeys.controls.focusDistanceLabel)} ({formatMillimeter(focusControl.focusDistanceMm)})</>
         )}
         <input
-          aria-label={UI_COPY.controls.focusDistanceLabel}
+          aria-label={t(simulatorMessageKeys.controls.focusDistanceLabel)}
           type="range"
           min={focusControl.focusDistanceMinMm}
           max={focusControl.focusDistanceMaxMm}
@@ -93,24 +100,28 @@ export const FocusControl = ({ focusEnabled, lockReason, showTitle = true }: Foc
           onChange={(event) => setFocusDistance(Number(event.target.value))}
         />
         {focusControl.focusMode === "infinity" ? (
-          <small className="control-help">Last finite focus — drag to exit ∞</small>
+          <small className="control-help">{t(simulatorMessageKeys.controls.lastFiniteFocusHelp)}</small>
         ) : (
           !focusEnabled && <small className="control-help">{lockReason}</small>
         )}
         {focusControl.activeSceneId === "focus-fundamentals-two-targets" && (
           <div className="control-row" style={{ marginTop: 8 }}>
-            {focusTargetsDefs.map((t) => (
+            {focusTargetsDefs.map((target) => (
               <button
-                key={t.id}
+                key={target.id}
                 type="button"
                 className="btn btn--secondary btn--compact"
                 onClick={() => {
-                  if (typeof t.focusReferenceDepthFromRearDatumMm === "number") {
-                    setFocusDistance(t.focusReferenceDepthFromRearDatumMm);
+                  if (typeof target.focusReferenceDepthFromRearDatumMm === "number") {
+                    setFocusDistance(target.focusReferenceDepthFromRearDatumMm);
                   }
                 }}
               >
-                {t.label}
+                {t(
+                  target.id === "focus-near-detail"
+                    ? simulatorMessageKeys.controls.focusNearDetailButton
+                    : simulatorMessageKeys.controls.focusFarDetailButton,
+                )}
               </button>
             ))}
           </div>

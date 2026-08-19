@@ -1,7 +1,10 @@
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "../../state/appStore";
 import type { CameraMovementField } from "../../types/scene";
+import "../../i18n";
+import { readoutMessageKeys, type ReadoutMessageKey } from "../../i18n/readoutMessageKeys";
 
 import {
   CAMERA_CONSTANTS,
@@ -14,17 +17,18 @@ type SingleMovementControlProps = {
   movement: CameraMovementField;
 };
 
-const MOVEMENT_LABELS: Record<CameraMovementField, string> = {
-  frontRiseMm: "Front Rise",
-  rearRiseMm: "Rear Rise",
-  frontTiltDeg: "Front Tilt",
-  rearTiltDeg: "Rear Tilt",
-  frontSwingDeg: "Front Swing",
+const MOVEMENT_LABEL_KEYS: Record<CameraMovementField, ReadoutMessageKey> = {
+  frontRiseMm: readoutMessageKeys.controls.frontRise,
+  rearRiseMm: readoutMessageKeys.controls.rearRise,
+  frontTiltDeg: readoutMessageKeys.controls.frontTilt,
+  rearTiltDeg: readoutMessageKeys.controls.rearTilt,
+  frontSwingDeg: readoutMessageKeys.controls.frontSwing,
 };
 
 export const SingleMovementControl = ({
   movement,
 }: SingleMovementControlProps) => {
+  const { t } = useTranslation();
   const value = useAppStore(
     useShallow((state) => {
       switch (movement) {
@@ -47,7 +51,7 @@ export const SingleMovementControl = ({
   const setFrontTilt = useAppStore((s) => s.setTilt);
   const setRearTilt = useAppStore((s) => s.setRearTilt);
 
-  const label = MOVEMENT_LABELS[movement] ?? movement;
+  const label = t(MOVEMENT_LABEL_KEYS[movement]);
 
   const isRise = movement === "frontRiseMm" || movement === "rearRiseMm";
 
