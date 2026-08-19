@@ -43,6 +43,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
 
     expect(trigger).toHaveAttribute("title", "Expand 2D Geometry");
     expect(trigger).toHaveAttribute("data-viewport-expanded", "false");
+    expect(trigger).toHaveTextContent("2D Geometry");
     expect(trigger.querySelector(".material-symbols-outlined")).toHaveTextContent("open_in_new");
 
     fireEvent.click(trigger);
@@ -127,6 +128,38 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
     expect(screen.getByTestId("geometry-svg-top")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Fit Construction" })).toBeDisabled();
+  });
+
+  it("preserves the requested Scheimpflug construction across Geometry replacement", async () => {
+    render(workspaceRoute("free", "table-tilt", null));
+    fireEvent.change(screen.getByLabelText("Tilt"), { target: { value: "4" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "View overlays" }));
+    const showConstruction = screen.getByRole("button", { name: "Show Scheimpflug construction" });
+    expect(showConstruction).toBeEnabled();
+    fireEvent.click(showConstruction);
+    expect(screen.getByRole("button", { name: "Hide Scheimpflug construction" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Restore 2D Geometry" })).toHaveFocus());
+    fireEvent.click(screen.getByRole("button", { name: "Restore 2D Geometry" }));
+
+    await waitFor(() => expect(screen.getByTestId("scheimpflug-construction-note")).toBeVisible());
+    fireEvent.click(screen.getByRole("button", { name: "View overlays" }));
+    expect(screen.getByRole("button", { name: "Hide Scheimpflug construction" })).toBeInTheDocument();
+  });
+
+  it("clears the requested Scheimpflug construction when the scene identity changes", async () => {
+    const view = render(workspaceRoute("free", "table-tilt", null));
+    fireEvent.change(screen.getByLabelText("Tilt"), { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("button", { name: "View overlays" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show Scheimpflug construction" }));
+    expect(screen.getByRole("button", { name: "Hide Scheimpflug construction" })).toBeInTheDocument();
+
+    view.rerender(workspaceRoute("free", "architecture-rise", null));
+    await screen.findByRole("button", { name: "Expand 2D Geometry" });
+    expect(screen.queryByRole("button", { name: /Scheimpflug construction/ })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("scheimpflug-construction-note")).not.toBeInTheDocument();
   });
 
   it("defaults View Focus to Scene and restores Optical Geometry on Restart", () => {

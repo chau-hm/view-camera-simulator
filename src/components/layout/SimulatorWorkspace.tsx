@@ -94,6 +94,7 @@ export const SimulatorWorkspace = ({
     (state) => state.ui.overlayMenuResetGeneration,
   );
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
+  const [requestedScheimpflugConstruction, setRequestedScheimpflugConstruction] = useState(false);
   const [expandedViewport, setExpandedViewport] = useState<ExpandedViewport>(null);
   const [restoreViewportFocus, setRestoreViewportFocus] = useState(true);
   const geometryTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -176,6 +177,7 @@ export const SimulatorWorkspace = ({
       activeElement.blur();
     }
     setExpandedViewport(null);
+    setRequestedScheimpflugConstruction(false);
   }, [guidedLessonEnabled, mode, sceneId, taskId]);
 
   const requestViewportExpansion = useCallback((viewport: Exclude<ExpandedViewport, null>) => {
@@ -435,6 +437,8 @@ export const SimulatorWorkspace = ({
                 opticsState={opticsState}
                 renderQuality={renderQuality}
                 setRenderQuality={setRenderQuality}
+                requestedScheimpflugConstruction={requestedScheimpflugConstruction}
+                onToggleScheimpflugConstruction={() => setRequestedScheimpflugConstruction((state) => !state)}
                 simulateAssetFailure={simulateAssetFailure}
                 expanded={sceneExpanded}
                 restoreFocusOnCollapse={restoreViewportFocus}

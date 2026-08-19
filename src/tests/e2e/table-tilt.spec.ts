@@ -320,6 +320,33 @@ test("Table Tilt calibrated side geometry keeps the table, targets, focus, and D
   expect(labelsOverlap).toBe(false);
 });
 
+test("Table Tilt preserves the requested Scheimpflug construction after Geometry restore", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto("/simulator/free/table-tilt");
+  await setStepRangeInput(page, "Tilt", 4);
+
+  const sceneCanvas = page.getByTestId("scene-canvas");
+  const overlayTrigger = page.getByRole("button", { name: "View overlays" });
+  await overlayTrigger.click();
+  const showConstruction = page.getByRole("button", { name: "Show Scheimpflug construction" });
+  await expect(showConstruction).toBeEnabled();
+  await showConstruction.click();
+  await expect(sceneCanvas).toHaveAttribute("data-scheimpflug-construction", "true");
+  await expect(page.getByTestId("scheimpflug-construction-note")).toBeVisible();
+
+  const geometryTrigger = page.getByRole("button", { name: "Expand 2D Geometry" });
+  await geometryTrigger.click();
+  await expect(page.getByRole("button", { name: "Restore 2D Geometry" })).toBeFocused();
+  await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
+  await expect(geometryTrigger).toBeFocused();
+
+  await expect(sceneCanvas).toHaveAttribute("data-scheimpflug-construction", "true");
+  await expect(page.getByTestId("scheimpflug-construction-note")).toBeVisible();
+  await overlayTrigger.click();
+  await expect(page.getByRole("button", { name: "Hide Scheimpflug construction" })).toBeVisible();
+});
+
 test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", async ({ page }) => {
   test.setTimeout(60_000);
   await page.setViewportSize({ width: 1024, height: 900 });
