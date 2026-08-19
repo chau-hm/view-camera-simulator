@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { UI_COPY } from "../ui/copy";
+import { useTranslation } from "react-i18next";
+import "../i18n";
+import { simulatorMessageKeys } from "../i18n/simulatorMessageKeys";
 import { formatMillimeter } from "../utils/formatters";
 
 export type GroundGlassOverlaysProps = {
@@ -75,6 +77,8 @@ export const GroundGlassFixedOverlays = ({
   focusDistanceLabel: string;
   focusAssistVisible: boolean;
 }): ReactNode | null => {
+  const { t } = useTranslation();
+
   return (
     <>
       <div
@@ -89,7 +93,7 @@ export const GroundGlassFixedOverlays = ({
           color: "#e2e8f0",
         }}
       >
-        {UI_COPY.render.groundGlassPreview}
+        {t(simulatorMessageKeys.focusOverlay.preview)}
       </div>
 
       <div
@@ -108,9 +112,11 @@ export const GroundGlassFixedOverlays = ({
       >
         {isInfinityFocus ? (
           <div>
-            <div>∞ focus</div>
+            <div>{t(simulatorMessageKeys.focusOverlay.infinity)}</div>
             {lastFiniteFocusDepthMm && (
-              <div style={{ fontSize: 10, color: "#94a3b8" }}>Last finite focus: {formatMillimeter(lastFiniteFocusDepthMm)}</div>
+              <div style={{ fontSize: 10, color: "#94a3b8" }}>
+                {t(simulatorMessageKeys.focusOverlay.lastFinite, { distance: formatMillimeter(lastFiniteFocusDepthMm) })}
+              </div>
             )}
           </div>
         ) : (
@@ -131,7 +137,7 @@ export const GroundGlassFixedOverlays = ({
             padding: "2px 6px",
           }}
         >
-          {UI_COPY.render.focusAssistBadge}
+          {t(simulatorMessageKeys.focusOverlay.focusAssist)}
         </span>
       )}
     </>

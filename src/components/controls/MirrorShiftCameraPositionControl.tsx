@@ -1,4 +1,7 @@
+import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../state/appStore";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import {
   MIRROR_SHIFT_RIG_LATERAL_RANGE_MM,
 } from "../../scenes/mirrorShiftLessonState";
@@ -6,6 +9,7 @@ import { formatMillimeter } from "../../utils/formatters";
 import { handleRangeInputKeyboard } from "../../utils/rangeInputKeyboard";
 
 export const MirrorShiftCameraPositionControl = () => {
+  const { t } = useTranslation();
   const value = useAppStore(
     (state) => state.camera.mirrorShiftLessonState?.rigLateralMm ?? 0,
   );
@@ -15,12 +19,12 @@ export const MirrorShiftCameraPositionControl = () => {
   const range = MIRROR_SHIFT_RIG_LATERAL_RANGE_MM;
 
   return (
-    <section aria-label="Camera Position">
-      <div className="sim-section-label">Camera Position</div>
+    <section aria-label={t(simulatorMessageKeys.controls.cameraPosition)}>
+      <div className="sim-section-label">{t(simulatorMessageKeys.controls.cameraPosition)}</div>
       <label className="control-label">
         <span>{formatMillimeter(value)}</span>
         <input
-          aria-label="Camera Position"
+          aria-label={t(simulatorMessageKeys.controls.cameraPosition)}
           type="range"
           min={range.min}
           max={range.max}
@@ -42,10 +46,10 @@ export const MirrorShiftCameraPositionControl = () => {
       <div
         className="camera-movement-controls__range-labels"
         role="group"
-        aria-label="Camera Position direction"
+        aria-label={t(simulatorMessageKeys.controls.cameraPositionDirection)}
       >
-        <span>Left</span>
-        <span>Right</span>
+        <span>{t(simulatorMessageKeys.controls.left)}</span>
+        <span>{t(simulatorMessageKeys.controls.right)}</span>
       </div>
     </section>
   );

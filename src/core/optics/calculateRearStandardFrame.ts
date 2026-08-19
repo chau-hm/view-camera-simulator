@@ -1,7 +1,53 @@
 import type { FilmPlaneCorners, Plane, StandardFrame, Vec3 } from "../../types/optics";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { planeFromPointNormal } from "../math/plane";
-import { add, dot, rotateAroundX, safeNormalize, scale, subtract, vec } from "../math/vec";
+import {
+  DEFAULT_EPSILON,
+  add,
+  dot,
+  isFiniteVec3,
+  magnitude,
+  rotateAroundX,
+  safeNormalize,
+  scale,
+  subtract,
+  vec,
+} from "../math/vec";
+
+const WORLD_UP = vec(0, 1, 0);
+const STANDARD_LEVEL_TOLERANCE = 1e-8;
+
+const normalizeOrNull = (value: Vec3): Vec3 | null => {
+  if (!isFiniteVec3(value)) return null;
+  const length = magnitude(value);
+  if (!Number.isFinite(length) || length <= DEFAULT_EPSILON) return null;
+  return scale(value, 1 / length);
+};
+
+/**
+ * Check the physical level orientation of a standard frame.
+ *
+ * The frame may yaw around world up: level is defined by its up axis staying
+ * vertical and its right/normal axes staying horizontal, not by one fixed
+ * world compass heading.
+ */
+export const isStandardFrameLevel = (
+  frame: StandardFrame,
+  tolerance = STANDARD_LEVEL_TOLERANCE,
+): boolean => {
+  const up = normalizeOrNull(frame.upWorld);
+  const right = normalizeOrNull(frame.rightWorld);
+  const normal = normalizeOrNull(frame.normalWorld);
+  if (!up || !right || !normal || !Number.isFinite(tolerance) || tolerance < 0) {
+    return false;
+  }
+
+  return (
+    dot(up, WORLD_UP) >= 1 - tolerance &&
+    Math.abs(dot(right, WORLD_UP)) <= tolerance &&
+    Math.abs(dot(normal, WORLD_UP)) <= tolerance
+  );
+};
 
 /**
  * Construct the canonical rear-standard frame and oriented film corners

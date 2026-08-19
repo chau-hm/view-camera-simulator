@@ -1,6 +1,7 @@
 import type { Vec3 } from "../../types/optics";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
+import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 
 export type SceneGeometryGuide = {
   id: string;
@@ -49,6 +50,20 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
       labelAnchor: "middle",
     },
   ],
+  "oblique-architecture": [
+    {
+      id: "oblique-architecture-target-facade",
+      label: "Target façade depth",
+      view: "top",
+      startWorld: obliqueArchitectureGeometry.focusTargets[0].worldPosition,
+      endWorld: obliqueArchitectureGeometry.focusTargets[2].worldPosition,
+      color: "#115e59",
+      testId: "oblique-architecture-target-facade",
+      labelPositionT: 0.52,
+      labelOffsetPx: { x: 0, y: -18 },
+      labelAnchor: "middle",
+    },
+  ],
 };
 
 const targetLabels: Readonly<Record<string, SceneGeometryTargetLabelMap>> = {
@@ -65,6 +80,11 @@ const targetLabels: Readonly<Record<string, SceneGeometryTargetLabelMap>> = {
   "focus-fundamentals-two-targets": {
     "focus-near-detail": "Near detail",
     "focus-far-detail": "Far detail",
+  },
+  "oblique-architecture": {
+    "facade-near": "Near façade",
+    "facade-middle": "Middle façade",
+    "facade-far": "Far façade",
   },
 };
 

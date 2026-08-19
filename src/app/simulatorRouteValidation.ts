@@ -25,11 +25,14 @@ export const isValidSimulatorRoute = ({
     return taskId === undefined;
   }
 
+  const guidedTaskIds = publicEntry.guidedTaskIds ??
+    (publicEntry.guidedTaskId ? [publicEntry.guidedTaskId] : []);
+
   return (
     taskId !== undefined &&
     task !== undefined &&
     task.mode === "guided" &&
     task.sceneId === sceneId &&
-    publicEntry.guidedTaskId === taskId
+    guidedTaskIds.includes(taskId)
   );
 };

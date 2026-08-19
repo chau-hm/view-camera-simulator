@@ -43,7 +43,7 @@ const validate = ({
   });
 
 describe("isValidSimulatorRoute", () => {
-  it.each(["shelf-swing", "table-tilt"])("accepts free mode without a task for %s", (sceneId) => {
+  it.each(["shelf-swing", "table-tilt", "oblique-architecture"])("accepts free mode without a task for %s", (sceneId) => {
     expect(validate({ mode: "free", sceneId })).toBe(true);
   });
 
@@ -58,6 +58,9 @@ describe("isValidSimulatorRoute", () => {
     ["architecture-rise", "rise-01"],
     ["table-tilt", "tilt-01"],
     ["shelf-swing", "swing-01"],
+    ["oblique-architecture", "oblique-rise-01"],
+    ["oblique-architecture", "oblique-swing-focus-01"],
+    ["oblique-architecture", "oblique-compound-01"],
   ])("accepts the configured guided task for %s", (sceneId, taskId) => {
     expect(validate({ mode: "guided", sceneId, taskId })).toBe(true);
   });

@@ -1,5 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { add, scale } from "../core/math/vec";
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
@@ -11,7 +13,8 @@ import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../utils/constants";
-import { UI_COPY } from "../ui/copy";
+import "../i18n";
+import { simulatorMessageKeys } from "../i18n/simulatorMessageKeys";
 import { getRenderQualitySettings } from "./renderQuality";
 import { getVisibleSceneLegendKeys } from "./sceneLegendHelpers";
 import {
@@ -402,7 +405,7 @@ const OpticalAxisOverlay = ({ opticsState }: { opticsState: DerivedOpticsState }
 };
 
 // Helper to render legend text and swatch for a given key
-const renderLegendText = (key: string) => {
+const renderLegendText = (key: string, t: TFunction) => {
   const swatch = (color: string) => (
     <span style={{ display: "inline-block", width: 10, height: 10, background: color, marginRight: 6, verticalAlign: "middle", borderRadius: 2 }} />
   );
@@ -411,49 +414,49 @@ const renderLegendText = (key: string) => {
       return (
         <>
           {swatch("#38bdf8")}
-          <span>Film plane (blue)</span>
+          <span>{t(simulatorMessageKeys.sceneLegend.filmPlane)}</span>
         </>
       );
     case "lens":
       return (
         <>
           {swatch("#1f2937")}
-          <span>Lens plane (slate)</span>
+          <span>{t(simulatorMessageKeys.sceneLegend.lensPlane)}</span>
         </>
       );
     case "focus":
       return (
         <>
           {swatch("#16a34a")}
-          <span>Focus plane (green)</span>
+          <span>{t(simulatorMessageKeys.sceneLegend.focusPlane)}</span>
         </>
       );
     case "nearDof":
       return (
         <>
           {swatch("#0284c7")}
-          <span>DOF limit (blue)</span>
+          <span>{t(simulatorMessageKeys.sceneLegend.dofLimit)}</span>
         </>
       );
     case "farDof":
       return (
         <>
           {swatch("#a78bfa")}
-          <span>Far DOF (violet)</span>
+          <span>{t(simulatorMessageKeys.sceneLegend.farDof)}</span>
         </>
       );
     case "fov":
       return (
         <>
           {swatch("#f59e0b")}
-          <span>FOV rays (amber)</span>
+          <span>{t(simulatorMessageKeys.sceneLegend.fovRays)}</span>
         </>
       );
     case "axis":
       return (
         <>
           {swatch("#06b6d4")}
-          <span>Optical axis</span>
+          <span>{t(simulatorMessageKeys.sceneLegend.opticalAxis)}</span>
         </>
       );
     default:
@@ -995,6 +998,7 @@ export const SceneRenderer = ({
   onAssetError,
   containerStyle,
 }: SceneRendererProps) => {
+  const { t } = useTranslation();
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const configuredTargetRegion = useAppStore((state) => state.scene.targetRegion);
   const effectiveCameraMovementCalibration = useAppStore(
@@ -1078,9 +1082,9 @@ export const SceneRenderer = ({
 
   useEffect(() => {
     if (simulateAssetFailure && attempt === 0) {
-      onAssetError(`${UI_COPY.render.sceneAssetLoadFailedPrefix} ${scene.id}.`);
+      onAssetError(`${t(simulatorMessageKeys.viewport.sceneAssetLoadFailedPrefix)} ${scene.id}.`);
     }
-  }, [attempt, onAssetError, scene.id, simulateAssetFailure]);
+  }, [attempt, onAssetError, scene.id, simulateAssetFailure, t]);
 
   const defaultContainerStyle: React.CSSProperties = { height: 320, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" };
 
@@ -1318,7 +1322,7 @@ export const SceneRenderer = ({
               textOverflow: "ellipsis",
             }}
           >
-            {renderLegendText(key)}
+            {renderLegendText(key, t)}
           </div>
         ) : null,
       )}

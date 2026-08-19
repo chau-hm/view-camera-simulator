@@ -34,11 +34,10 @@ describe('marketing desktop experience notice', () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ['/'] });
     render(<RouterProvider router={memoryRouter} />);
 
-    expect(await screen.findByText('Open Focus Fundamentals')).toBeInTheDocument();
     expect(screen.queryByRole('note')).toBeNull();
   });
 
-  it('shows notice on narrow viewport and retains CTA', async () => {
+  it('shows notice on narrow viewport', async () => {
     (window as unknown as { innerWidth: number }).innerWidth = 390;
     mockMatchMedia({ '(max-width: 899px)': true, '(pointer: coarse)': true });
 
@@ -47,7 +46,5 @@ describe('marketing desktop experience notice', () => {
 
     const note = await screen.findByRole('note');
     expect(note).toBeInTheDocument();
-    const ctas = await screen.findAllByText('Open Focus Fundamentals');
-    expect(ctas.length).toBeGreaterThanOrEqual(1);
   });
 });

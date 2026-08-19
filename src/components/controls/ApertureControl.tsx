@@ -1,7 +1,9 @@
 import { useShallow } from "zustand/react/shallow";
+import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../state/appStore";
 import { selectApertureControlState } from "../../state/selectors";
-import { UI_COPY } from "../../ui/copy";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { CAMERA_CONSTANTS, isApertureValue } from "../../utils/constants";
 
 type ApertureControlProps = {
@@ -11,14 +13,15 @@ type ApertureControlProps = {
 };
 
 export const ApertureControl = ({ apertureEnabled, lockReason, showTitle = true }: ApertureControlProps) => {
+  const { t } = useTranslation();
   const { aperture } = useAppStore(useShallow(selectApertureControlState));
   const setAperture = useAppStore((state) => state.setAperture);
 
   return (
-    <section aria-label={UI_COPY.controls.apertureTitle}>
-      {showTitle && <h3>{UI_COPY.controls.apertureTitle}</h3>}
+    <section aria-label={t(simulatorMessageKeys.controls.apertureTitle)}>
+      {showTitle && <h3>{t(simulatorMessageKeys.controls.apertureTitle)}</h3>}
       <select
-        aria-label={UI_COPY.controls.apertureTitle}
+        aria-label={t(simulatorMessageKeys.controls.apertureTitle)}
         value={aperture}
         disabled={!apertureEnabled}
         className="form-select"

@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import type { PlaneSegment, ScreenPoint } from "./opticalSectionProjection";
 
 type ProjectedCameraConstructionProps = {
@@ -21,6 +24,7 @@ export const ProjectedCameraConstruction = ({
   lensCenter,
   displayMode = "compact",
 }: ProjectedCameraConstructionProps) => {
+  const { t } = useTranslation();
   const filmSegment = segmentFor(physicalPlaneSegments, "physical-film");
   const lensSegment = segmentFor(physicalPlaneSegments, "physical-lens");
   const cameraBodyRailSegment = physicalPlaneSegments.find(
@@ -46,7 +50,7 @@ export const ProjectedCameraConstruction = ({
           stroke={cameraBodyRailSegment.color}
           strokeWidth={displayMode === "construction" ? 5 : 4}
           strokeLinecap="round"
-          aria-label="Camera body rail"
+          aria-label={t(simulatorMessageKeys.geometry.cameraBodyRail)}
         />
       ) : null}
       <line
@@ -58,7 +62,7 @@ export const ProjectedCameraConstruction = ({
         stroke="#94a3b8"
         strokeWidth={2}
         strokeDasharray="4 3"
-        aria-label="Simplified bellows connector"
+        aria-label={t(simulatorMessageKeys.geometry.bellowsConnector)}
       />
       {[filmSegment, lensSegment].map((segment) => (
         <line

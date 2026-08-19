@@ -6,6 +6,7 @@ import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
+import { i18n } from "../../i18n";
 import { selectDerivedOpticsState } from "../../state/selectors";
 import { useAppStore } from "../../state/appStore";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
@@ -151,7 +152,12 @@ describe("phase 12 integration", () => {
     const evaluation = evaluateTask(task, scene, camera, optics);
     expect(screen.getByText(new RegExp(`Score: ${evaluation.score}`))).toBeInTheDocument();
     for (const criterion of evaluation.criteria) {
-      expect(screen.getByText(new RegExp(criterion.label))).toBeInTheDocument();
+      const label = String(
+        criterion.label.values
+          ? i18n.t(criterion.label.key, criterion.label.values as never)
+          : i18n.t(criterion.label.key),
+      );
+      expect(screen.getByText(label)).toBeInTheDocument();
     }
   });
 
@@ -212,7 +218,7 @@ describe("phase 12 integration", () => {
 
   it("keeps Shelf Swing task identity intact across guided and free routes", async () => {
     renderWorkspaceRoute("/simulator/guided/shelf-swing/swing-01");
-    expect(await screen.findByText("Align the diagonal focus plane with swing")).toBeInTheDocument();
+    expect(await screen.findByText("Align the diagonal plane of sharp focus")).toBeInTheDocument();
     expect(useAppStore.getState().camera.activeSceneId).toBe("shelf-swing");
     expect(useAppStore.getState().camera.activeTaskId).toBe("swing-01");
 
@@ -221,7 +227,7 @@ describe("phase 12 integration", () => {
     useAppStore.getState().setActiveTask(null);
     renderWorkspaceRoute("/simulator/guided/shelf-swing/tilt-01");
     expect(await screen.findByText("Scenes route")).toBeInTheDocument();
-    expect(screen.queryByText("Align the tabletop focus cards with tilt")).not.toBeInTheDocument();
+    expect(screen.queryByText("Align the tabletop plane of sharp focus")).not.toBeInTheDocument();
     expect(useAppStore.getState().task.activeTaskId).toBeNull();
 
     cleanup();
@@ -229,7 +235,7 @@ describe("phase 12 integration", () => {
     useAppStore.getState().setActiveTask(null);
     renderWorkspaceRoute("/simulator/free/shelf-swing");
     expect(await screen.findByRole("heading", { name: "3D Scene", level: 2 })).toBeInTheDocument();
-    expect(screen.queryByText("Align the diagonal focus plane with swing")).not.toBeInTheDocument();
+    expect(screen.queryByText("Align the diagonal plane of sharp focus")).not.toBeInTheDocument();
     expect(useAppStore.getState().camera.activeSceneId).toBe("shelf-swing");
     expect(useAppStore.getState().task.activeTaskId).toBeNull();
   });

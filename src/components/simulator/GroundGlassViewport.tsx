@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { ViewOptions } from "../controls/ViewOptions";
-import { UI_COPY } from "../../ui/copy";
+import "../../i18n";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { useAppStore } from "../../state/appStore";
 import type { ApertureValue } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
@@ -63,6 +65,7 @@ export const GroundGlassViewport = ({
   comparison,
   comparisonLabels,
 }: GroundGlassViewportProps) => {
+  const { t } = useTranslation();
   // Preview mode control local to the Ground Glass panel. Default to camera state
   const groundGlassAssistEnabled = useAppStore((s) => s.camera.groundGlassAssistEnabled);
   const setGroundGlassAssistEnabled = useAppStore((s) => s.setGroundGlassAssistEnabled);
@@ -72,7 +75,15 @@ export const GroundGlassViewport = ({
   const [originalZoomEnabled, setOriginalZoomEnabled] = useState(false);
   const [currentZoomEnabled, setCurrentZoomEnabled] = useState(false);
   const singleViewAccessibleLabel =
-    sceneId === "understanding-camera-movements" ? "Ground Glass preview" : undefined;
+    sceneId === "understanding-camera-movements"
+      ? t(simulatorMessageKeys.viewport.previewLabel)
+      : t(simulatorMessageKeys.viewport.groundGlassTitle);
+  const zoomInLabel = t(simulatorMessageKeys.viewport.zoomIn);
+  const zoomOutLabel = t(simulatorMessageKeys.viewport.zoomOut);
+  const resetViewLabel = t(simulatorMessageKeys.viewport.resetView);
+  const resetActionLabel = t(simulatorMessageKeys.viewport.resetAction);
+  const originalStageLabel = t(simulatorMessageKeys.viewport.originalGroundGlass);
+  const currentStageLabel = t(simulatorMessageKeys.viewport.currentGroundGlass);
   const originalHeadingId = useId();
   const currentHeadingId = useId();
   const originalDescriptionId = useId();
@@ -105,11 +116,15 @@ export const GroundGlassViewport = ({
       resetSuffix: string;
     }) => (
       <section className="groundglass-comparison__panel" aria-labelledby={headingId} aria-describedby={descriptionId}>
-        <h3 id={headingId} className="groundglass-comparison__title">{label}</h3>
+        <h3 id={headingId} className="groundglass-comparison__title">
+          {label === "Original"
+            ? t(simulatorMessageKeys.viewport.originalLabel)
+            : t(simulatorMessageKeys.viewport.currentLabel)}
+        </h3>
         <p id={descriptionId} className="groundglass-comparison__label">
           {label === "Original" ? comparisonLabels?.original : comparisonLabels?.current}
         </p>
-        <GroundGlassRenderer
+          <GroundGlassRenderer
           opticsState={layer.opticsState}
           assistEnabled={layer.opticsState.groundGlassProjection.assistModeEnabled}
           focusAssistEnabled={focusAssistEnabled}
@@ -131,13 +146,17 @@ export const GroundGlassViewport = ({
           cameraState={layer.camera}
           channel={label === "Original" ? "camera-movement-original" : "camera-movement-current"}
           presentationRegion={layer.presentationTargetRegion}
-          accessibleLabel={`${label} Ground Glass`}
-          stageLabel={`${label} Ground Glass`}
+          accessibleLabel={label === "Original" ? originalStageLabel : currentStageLabel}
+          stageLabel={label === "Original" ? originalStageLabel : currentStageLabel}
+          zoomInLabel={zoomInLabel}
+          zoomOutLabel={zoomOutLabel}
+          resetViewLabel={resetViewLabel}
+          resetActionLabel={resetActionLabel}
           lastFiniteFocusDepthMm={layer.camera.lastFiniteFocusDepthMm}
         />
       </section>
     ),
-    [comparisonLabels, focusAssistEnabled, focusMetric, gridEnabled, interactionResetKey, previewMode, rawRttDebug, renderQuality, sceneId],
+    [comparisonLabels, currentStageLabel, focusAssistEnabled, focusMetric, gridEnabled, interactionResetKey, originalStageLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, sceneId, t, zoomInLabel, zoomOutLabel],
   );
 
   useEffect(() => {
@@ -157,12 +176,12 @@ export const GroundGlassViewport = ({
 
   return (
     <section className={`groundglass-panel${expanded ? " simulator-viewport-panel--expanded groundglass-panel--expanded" : ""}`}>
-      {showHeader !== false && <h2 className="simulator-card-title">{UI_COPY.simulator.groundGlassTitle}</h2>}
+      {showHeader !== false && <h2 className="simulator-card-title">{t(simulatorMessageKeys.viewport.groundGlassTitle)}</h2>}
 
       <div className="groundglass-controls">
         <div className="groundglass-control-groups">
           <fieldset className="groundglass-control-group">
-            <legend className="control-group-title">Preview</legend>
+            <legend className="control-group-title">{t(simulatorMessageKeys.viewport.preview)}</legend>
             <div className="groundglass-control-group__options">
               <div className="choice-list choice-list--stacked">
                 <label className="choice-label">
@@ -173,7 +192,7 @@ export const GroundGlassViewport = ({
                     checked={previewMode === "raw"}
                     onChange={() => { setPreviewMode("raw"); setGroundGlassAssistEnabled(false); }}
                   />
-                  <span>Raw Ground Glass</span>
+                  <span>{t(simulatorMessageKeys.viewport.rawGroundGlass)}</span>
                 </label>
 
                 <label className="choice-label">
@@ -184,14 +203,14 @@ export const GroundGlassViewport = ({
                     checked={previewMode === "upright"}
                     onChange={() => { setPreviewMode("upright"); setGroundGlassAssistEnabled(true); }}
                   />
-                  <span>Upright Assist</span>
+                  <span>{t(simulatorMessageKeys.viewport.uprightAssist)}</span>
                 </label>
               </div>
             </div>
           </fieldset>
 
           <fieldset className="groundglass-control-group">
-            <legend className="control-group-title">View Options</legend>
+            <legend className="control-group-title">{t(simulatorMessageKeys.viewport.viewOptions)}</legend>
             <div className="groundglass-control-group__options">
               <ViewOptions
                 canToggleFocusAssist={canToggleFocusAssist ?? true}
@@ -207,23 +226,23 @@ export const GroundGlassViewport = ({
       {comparison ? (
         <>
           <h3 id={comparisonHeadingId} className="groundglass-comparison__heading">
-            Original and Current Ground Glass comparison
+            {t(simulatorMessageKeys.viewport.comparisonHeading)}
           </h3>
           <p id={comparisonDescriptionId} className="groundglass-comparison__intro">
-            Compare the neutral camera with the selected movement.
+            {t(simulatorMessageKeys.viewport.comparisonDescription)}
           </p>
         </>
       ) : null}
 
       <div
         className={`groundglass-viewport-frame${expanded ? " groundglass-viewport-frame--expanded" : ""}`}
-        aria-label="GroundGlassViewport"
+        aria-label={t(simulatorMessageKeys.viewport.groundGlassViewportLabel)}
       >
         {comparison ? (
           <section
             className="groundglass-comparison"
             role="region"
-            aria-label="Original and Current Ground Glass comparison"
+            aria-label={t(simulatorMessageKeys.viewport.comparisonRegion)}
             aria-labelledby={comparisonHeadingId}
             aria-describedby={comparisonDescriptionId}
           >
@@ -269,6 +288,10 @@ export const GroundGlassViewport = ({
               interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}`}
               accessibleLabel={singleViewAccessibleLabel}
               stageLabel={singleViewAccessibleLabel}
+              zoomInLabel={zoomInLabel}
+              zoomOutLabel={zoomOutLabel}
+              resetViewLabel={resetViewLabel}
+              resetActionLabel={resetActionLabel}
             />
           </div>
         )}
@@ -276,8 +299,9 @@ export const GroundGlassViewport = ({
         <button
           ref={expanded ? restoreTriggerRef : expandTriggerRef}
           type="button"
-          aria-label={expanded ? "Restore Ground Glass" : "Expand Ground Glass"}
-          title={expanded ? "Restore Ground Glass" : "Expand Ground Glass"}
+          aria-label={expanded ? t(simulatorMessageKeys.viewport.restoreGroundGlass) : t(simulatorMessageKeys.viewport.expandGroundGlass)}
+          title={expanded ? t(simulatorMessageKeys.viewport.restoreGroundGlass) : t(simulatorMessageKeys.viewport.expandGroundGlass)}
+          data-viewport-expanded={expanded ? "true" : "false"}
           className="btn btn--icon btn--viewport-action"
           onClick={expanded ? onRequestRestore : onRequestExpand}
         >

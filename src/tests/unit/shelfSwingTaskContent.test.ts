@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getGuidedTaskCopy } from "../../core/tasks/guidedTaskCopyKeys";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
@@ -41,8 +42,9 @@ describe("Shelf Swing guided task", () => {
   it("defines the calibrated signed lesson without obsolete criteria", () => {
     expect(task.sceneId).toBe("shelf-swing");
     expect(task.mode).toBe("guided");
-    expect(task.title).toBe("Align the diagonal focus plane with swing");
-    expect(task.objective).toContain("negative front swing");
+    const copy = getGuidedTaskCopy(task);
+    expect(copy.title.key).toBe("tasks.shelfSwing.title");
+    expect(copy.objective.key).toBe("tasks.shelfSwing.objective");
     expect(task.enabledControls).toEqual([
       "swing",
       "focusDistance",
@@ -77,7 +79,7 @@ describe("Shelf Swing guided task", () => {
       min: calibration.allowedSwingMinDeg,
       max: calibration.allowedSwingMaxDeg,
     });
-    expect(range?.label).toBe("Swing remains within -4.2° to -3.4°");
+    expect(copy.criteria["swing-movement-range"]?.values).toEqual({ min: -4.2, max: -3.4 });
     expect(task.criteria.some((criterion) => criterion.id === "swing-movement-used")).toBe(false);
     expect(
       task.criteria
@@ -85,8 +87,8 @@ describe("Shelf Swing guided task", () => {
         .flatMap((criterion) => criterion.targetIds),
     ).toEqual(["shelf-front", "shelf-middle", "shelf-back"]);
     task.criteria.forEach((criterion) => {
-      expect(task.feedbackRules.failPrimaryByCriterionId[criterion.id]).toBeTruthy();
-      expect(task.feedbackRules.failSecondaryByCriterionId[criterion.id]).toBeTruthy();
+      expect(copy.feedback.primary[criterion.id]).toBeTruthy();
+      expect(copy.feedback.secondary[criterion.id]).toBeTruthy();
     });
   });
 
@@ -131,7 +133,7 @@ describe("Shelf Swing guided task", () => {
     expect(result.status).toBe("passed");
     expect(result.score).toBe(100);
     expect(result.criteria.every((criterion) => criterion.passed)).toBe(true);
-    expect(result.primaryFeedback).toContain("Negative front swing");
+    expect(result.primaryFeedback.key).toBe("tasks.shelfSwing.feedback.passPrimary");
   });
 
   it("keeps the raw physical solution separate from the public control solution", () => {
@@ -204,7 +206,9 @@ describe("Shelf Swing guided task", () => {
         (criterion) => criterion.criterionId === "swing-movement-range",
       )?.passed,
     ).toBe(false);
-    expect(opposite.result.primaryFeedback).toContain("negative front swing");
+    expect(opposite.result.primaryFeedback.key).toBe(
+      "tasks.shelfSwing.feedback.primary.movementRange",
+    );
     const endSharpness = (state: typeof canonical.optics) =>
       Math.min(
         state.focusTargets.find((target) => target.id === "shelf-front")?.sharpness ?? 0,

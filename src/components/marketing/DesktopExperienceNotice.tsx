@@ -1,24 +1,25 @@
 import React from "react";
-import { UI_COPY } from "../../ui/copy";
+import { useTranslation } from "react-i18next";
 import { useSimulatorSuitability } from "../../hooks/useSimulatorSuitability";
 
 export const DesktopExperienceNotice: React.FC = () => {
+  const { t } = useTranslation();
   const { shouldWarn, isNarrowViewport, viewportWidth } = useSimulatorSuitability();
 
   if (!shouldWarn) return null;
 
   return (
-    <aside className="desktop-experience-notice" role="note" aria-label="Desktop browser recommendation">
+    <aside className="desktop-experience-notice" role="note" aria-label={t("common.site.desktopExperienceTitle")}>
       <span className="desktop-experience-notice__icon material-symbols-outlined" aria-hidden="true">
         desktop_windows
       </span>
 
       <div className="desktop-experience-notice__content">
-        <div className="desktop-experience-notice__title">{UI_COPY.simulator.desktopExperienceTitle}</div>
+        <div className="desktop-experience-notice__title">{t("common.site.desktopExperienceTitle")}</div>
         <p className="desktop-experience-notice__text">
-          {UI_COPY.simulator.desktopExperienceBody}
+          {t("common.site.desktopExperienceBody")}
           {isNarrowViewport && viewportWidth !== null ? (
-            <><br />{UI_COPY.simulator.desktopExperienceNarrowline}</>
+            <><br />{t("common.site.desktopExperienceNarrowLine")}</>
           ) : null}
         </p>
       </div>

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   getAllScenes,
+  getSceneFocusDistanceRange,
   getLazySceneAssets,
   getNextSceneId,
   getPreloadSceneAssets,
@@ -14,17 +15,25 @@ import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fund
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
+import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
+import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("scene definitions", () => {
   it("registers the core scenes", () => {
     // allow additional debug scenes to be registered in tests/environments
     expect(Object.keys(sceneRegistry)).toEqual(
-      expect.arrayContaining(["architecture-rise", "table-tilt", "shelf-swing"]),
+      expect.arrayContaining([
+        "architecture-rise",
+        "oblique-architecture",
+        "table-tilt",
+        "shelf-swing",
+      ]),
     );
     expect(sceneRegistry["table-tilt"]).toBe(tableTiltScene);
     expect(sceneRegistry["mirror-shift"]).toBe(mirrorShiftScene);
+    expect(sceneRegistry["oblique-architecture"]).toBe(obliqueArchitectureScene);
     expect(sceneOrder).toContain("table-tilt");
     expect(sceneOrder).toContain("mirror-shift");
     expect(getAllScenes().length).toBeGreaterThanOrEqual(3);
@@ -59,6 +68,46 @@ describe("scene definitions", () => {
     });
     expect(mirrorShiftScene.focusTargets).toHaveLength(0);
     expect(mirrorShiftScene.compositionTargets).toHaveLength(0);
+  });
+
+  it("defines the Oblique Architecture scene with the shared Rise/Swing capability", () => {
+    expect(obliqueArchitectureScene.description).toBe(
+      "Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp.",
+    );
+    expect(obliqueArchitectureScene.cameraPreset.focusDistanceMm).toBe(
+      obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+    );
+    expect(obliqueArchitectureScene.focusDistanceRangeMm).toEqual(
+      obliqueArchitectureGeometry.focusDistanceRangeMm,
+    );
+    expect(getSceneFocusDistanceRange(obliqueArchitectureScene.id)).toEqual(
+      obliqueArchitectureGeometry.focusDistanceRangeMm,
+    );
+    expect(obliqueArchitectureScene.cameraControlPolicy).toEqual({
+      aperture: "fixed",
+      infinityReset: false,
+    });
+    expect(obliqueArchitectureScene.movementCapabilities).toEqual({
+      available: ["frontRiseMm", "frontSwingDeg"],
+      selectionMode: "multiple",
+      defaultMovement: "frontRiseMm",
+    });
+    expect(obliqueArchitectureScene.focusTargets).toEqual(
+      obliqueArchitectureGeometry.focusTargets,
+    );
+    expect(obliqueArchitectureScene.compositionTargets.map((target) => target.id)).toEqual([
+      "building-top",
+      "building-base",
+      "target-facade",
+    ]);
+    expect(sceneOrder).toContain("oblique-architecture");
+  });
+
+  it("preserves legacy focus-range derivation for scenes without an explicit range", () => {
+    expect(getSceneFocusDistanceRange(tableTiltScene.id)).toEqual({
+      min: Math.max(100, tableTiltScene.bounds.min.z),
+      max: Math.max(tableTiltScene.bounds.min.z, tableTiltScene.bounds.max.z),
+    });
   });
 
   it("defines near/mid/far shelf focus targets", () => {
@@ -115,5 +164,8 @@ describe("scene definitions", () => {
     expect(lazy.length).toBeGreaterThan(0);
     expect(nextSceneId).toBe("table-tilt");
     expect(preload.length).toBeGreaterThan(0);
+    expect(sceneOrder.at(-1)).toBe("oblique-architecture");
+    expect(getNextSceneId("mirror-shift")).toBe("oblique-architecture");
+    expect(getNextSceneId("oblique-architecture")).toBeNull();
   });
 });
