@@ -63,8 +63,8 @@ describe("phase 12 integration", () => {
 
   it("TST-INT-005 tilt sync updates side diagram focus line", () => {
     renderWorkspace("guided", "table-tilt", "tilt-01");
-    // open the floating 2D Geometry panel to expose the geometry SVG
-    fireEvent.click(screen.getByText(/Open 2D Geometry/i));
+    // expand the 2D Geometry viewport to expose the geometry SVG
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
     const focusLine = screen.getByTestId("plane-line-focus");
     const before = [focusLine.getAttribute("x1"), focusLine.getAttribute("y1"), focusLine.getAttribute("x2"), focusLine.getAttribute("y2")].join("|");
     fireEvent.change(screen.getByLabelText("Tilt"), { target: { value: "4" } });
@@ -75,8 +75,8 @@ describe("phase 12 integration", () => {
 
   it("TST-INT-006 swing sync updates top diagram focus line", () => {
     renderWorkspace("guided", "shelf-swing", "swing-01");
-    // open the floating 2D Geometry panel to expose the geometry SVG
-    fireEvent.click(screen.getByText(/Open 2D Geometry/i));
+    // expand the 2D Geometry viewport to expose the geometry SVG
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
     const focusLine = screen.getByTestId("plane-line-focus");
     const before = [focusLine.getAttribute("x1"), focusLine.getAttribute("y1"), focusLine.getAttribute("x2"), focusLine.getAttribute("y2")].join("|");
     fireEvent.change(screen.getByLabelText("Swing"), { target: { value: "5" } });

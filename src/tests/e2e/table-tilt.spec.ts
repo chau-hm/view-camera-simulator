@@ -5,6 +5,7 @@ import {
   readStageTransform,
 } from "./helpers/groundGlass";
 import { setRangeDirect } from "./helpers/rangeInput";
+import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const tableTiltCard = (page: import("@playwright/test").Page) =>
   page
@@ -280,7 +281,7 @@ test("Table Tilt calibrated side geometry keeps the table, targets, focus, and D
   await setRangeDirect(page, "Tilt", 9);
   await setRangeDirect(page, "Focus distance", 6054);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
-  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
 
   const svg = page.getByTestId("geometry-svg-side");
   const svgBox = await svg.boundingBox();
@@ -319,6 +320,33 @@ test("Table Tilt calibrated side geometry keeps the table, targets, focus, and D
   expect(labelsOverlap).toBe(false);
 });
 
+test("Table Tilt preserves the requested Scheimpflug construction after Geometry restore", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto("/simulator/free/table-tilt");
+  await setStepRangeInput(page, "Tilt", 4);
+
+  const sceneCanvas = page.getByTestId("scene-canvas");
+  const overlayTrigger = page.getByRole("button", { name: "View overlays" });
+  await overlayTrigger.click();
+  const showConstruction = page.getByRole("button", { name: "Show Scheimpflug construction" });
+  await expect(showConstruction).toBeEnabled();
+  await showConstruction.click();
+  await expect(sceneCanvas).toHaveAttribute("data-scheimpflug-construction", "true");
+  await expect(page.getByTestId("scheimpflug-construction-note")).toBeVisible();
+
+  const geometryTrigger = page.getByRole("button", { name: "Expand 2D Geometry" });
+  await geometryTrigger.click();
+  await expect(page.getByRole("button", { name: "Restore 2D Geometry" })).toBeFocused();
+  await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
+  await expect(geometryTrigger).toBeFocused();
+
+  await expect(sceneCanvas).toHaveAttribute("data-scheimpflug-construction", "true");
+  await expect(page.getByTestId("scheimpflug-construction-note")).toBeVisible();
+  await overlayTrigger.click();
+  await expect(page.getByRole("button", { name: "Hide Scheimpflug construction" })).toBeVisible();
+});
+
 test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", async ({ page }) => {
   test.setTimeout(60_000);
   await page.setViewportSize({ width: 1024, height: 900 });
@@ -355,7 +383,7 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
     "violet Scheimpflug line",
   );
 
-  const geometryTrigger = page.getByRole("button", { name: "Open 2D Geometry" });
+  const geometryTrigger = page.getByRole("button", { name: "Expand 2D Geometry" });
   await geometryTrigger.click();
   await page.getByRole("button", { name: "Scheimpflug Section", exact: true }).click();
   const section = page.getByTestId("geometry-svg-scheimpflug");
@@ -419,7 +447,7 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   await expect(section.getByTestId("scheimpflug-intersection")).toBeVisible();
   await page.getByRole("button", { name: "Fit Scene" }).click();
   await expect(geometryPanel).toHaveAttribute("data-geometry-fit", "scene");
-  await page.getByRole("button", { name: "Close 2D Geometry" }).click();
+  await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
   await expect(geometryTrigger).toBeFocused();
 
   // Returning to parallel standards makes the requested construction invalid,
@@ -441,12 +469,92 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   expect(overflow).toBeLessThanOrEqual(2);
 });
 
+test("Expanded Geometry reflows Scheimpflug construction while controls stay usable", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/simulator/free/table-tilt");
+  await setStepRangeInput(page, "Tilt", 9);
+
+  const geometryTrigger = page.getByRole("button", { name: "Expand 2D Geometry" });
+  await geometryTrigger.click();
+  await page.getByRole("button", { name: "Fit Construction" }).click();
+
+  const geometryPanel = page.locator("section[data-geometry-fit]");
+  const cameraRegion = page.getByTestId("camera-construction-region");
+  const subjectRegion = page.getByTestId("subject-field-region");
+  await expect(cameraRegion).toBeVisible();
+  await expect(subjectRegion).toBeVisible();
+  const readLayout = () => page.evaluate(() => {
+    const getRect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      const rect = element.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height };
+    };
+    const geometry = getRect("section[data-geometry-fit]");
+    const diagram = getRect(".geometry-diagram-container");
+    const camera = getRect('[data-testid="camera-construction-region"]');
+    const subject = getRect('[data-testid="subject-field-region"]');
+    const main = getRect(".simulator-main");
+    const aside = getRect(".simulator-aside");
+    return {
+      geometry,
+      diagram,
+      camera,
+      subject,
+      main,
+      aside,
+      horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  const expectLayoutUsable = async () => {
+    const layout = await readLayout();
+    expect(layout.geometry.width).toBeGreaterThan(0);
+    expect(layout.geometry.height).toBeGreaterThan(0);
+    expect(layout.diagram.width).toBeGreaterThan(0);
+    expect(layout.diagram.height).toBeGreaterThan(0);
+    expect(layout.geometry.left).toBeGreaterThanOrEqual(layout.main.left - 1);
+    expect(layout.geometry.right).toBeLessThanOrEqual(layout.main.right + 1);
+    expect(layout.geometry.right).toBeLessThan(layout.aside.left);
+    for (const region of [layout.camera, layout.subject]) {
+      expect(region.width).toBeGreaterThan(0);
+      expect(region.height).toBeGreaterThan(0);
+      expect(region.left).toBeGreaterThanOrEqual(layout.geometry.left - 1);
+      expect(region.right).toBeLessThanOrEqual(layout.geometry.right + 1);
+    }
+    const regionsOverlap = !(
+      layout.camera.right <= layout.subject.left + 1 ||
+      layout.subject.right <= layout.camera.left + 1 ||
+      layout.camera.bottom <= layout.subject.top + 1 ||
+      layout.subject.bottom <= layout.camera.top + 1
+    );
+    expect(regionsOverlap).toBe(false);
+    expect(layout.horizontalOverflow).toBeLessThanOrEqual(2);
+  };
+
+  await expect(geometryPanel).toHaveAttribute("data-construction-layout", "split");
+  await expectLayoutUsable();
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(geometryPanel).toBeVisible();
+  await expectLayoutUsable();
+  await expect(page.getByRole("button", { name: "Restore 2D Geometry" })).toBeVisible();
+
+  const tilt = page.getByLabel("Tilt");
+  await expect(tilt).toBeEnabled();
+  const beforeTilt = await tilt.inputValue();
+  await tilt.press("ArrowLeft");
+  await expect(tilt).not.toHaveValue(beforeTilt);
+  await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
+  await expect(geometryTrigger).toBeFocused();
+});
+
 test("2D Geometry keeps projected camera orientation and fit/view state coherent", async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto("/simulator/free/table-tilt");
   await setRangeDirect(page, "Tilt", 0);
   await setRangeDirect(page, "Swing", 0);
-  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
 
   const geometryPanel = page.locator('section[data-geometry-fit]');
   const sideButton = page.getByRole("button", { name: "Side", exact: true });
@@ -461,7 +569,7 @@ test("2D Geometry keeps projected camera orientation and fit/view state coherent
   await expect(sideSvg.getByTestId("generic-camera-glyphs")).toHaveCount(0);
   const zeroTiltLens = await readProjectedLine(sideSvg.getByTestId("physical-lens-segment"));
 
-  await setRangeDirect(page, "Tilt", 7);
+  await setStepRangeInput(page, "Tilt", 7);
   await expect.poll(async () => {
     const tiltedLens = await readProjectedLine(sideSvg.getByTestId("physical-lens-segment"));
     return Math.abs(projectedSlope(tiltedLens) - projectedSlope(zeroTiltLens));
@@ -822,7 +930,7 @@ test("Ground Glass zoom state resets across free/guided and scene navigation", a
   await expect(page.getByRole("button", { name: "Hide Legends" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Scheimpflug construction/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   await expect(page.getByRole("button", { name: "Scheimpflug Section" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Fit Construction" })).toHaveCount(0);
   await page.goto("/simulator/free/focus-fundamentals-two-targets");
@@ -843,7 +951,7 @@ test("Ground Glass zoom state resets across free/guided and scene navigation", a
   await expect(page.getByRole("button", { name: "Hide Optical geometry" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Scheimpflug construction/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Open 2D Geometry" }).click();
+  await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   await expect(page.getByRole("button", { name: "Scheimpflug Section" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Fit Construction" })).toHaveCount(0);
 });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type Ref, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import { SceneOverlayControls } from "./SceneOverlayControls";
@@ -19,12 +19,15 @@ type SceneViewportProps = {
   opticsState: DerivedOpticsState;
   renderQuality: RenderQualityProfile;
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
+  requestedScheimpflugConstruction: boolean;
+  onToggleScheimpflugConstruction: () => void;
   simulateAssetFailure: boolean;
   expanded: boolean;
   restoreFocusOnCollapse: boolean;
   onRequestExpand: () => void;
   onRequestRestore: () => void;
   onToggleGeometryPanel?: (trigger: HTMLButtonElement) => void;
+  geometryTriggerRef?: Ref<HTMLButtonElement>;
   showHeader?: boolean;
   overlayMenuResetGeneration: number;
 };
@@ -41,12 +44,15 @@ export const SceneViewport = ({
   opticsState,
   renderQuality,
   setRenderQuality,
+  requestedScheimpflugConstruction,
+  onToggleScheimpflugConstruction,
   simulateAssetFailure,
   expanded,
   restoreFocusOnCollapse,
   onRequestExpand,
   onRequestRestore,
   onToggleGeometryPanel,
+  geometryTriggerRef,
   showHeader,
   overlayMenuResetGeneration,
 }: SceneViewportProps) => {
@@ -58,7 +64,6 @@ export const SceneViewport = ({
   const [showLegends, setShowLegends] = useState(false);
   const showOpticalGeometry = useAppStore((state) => state.ui.showOpticalGeometry);
   const setShowOpticalGeometry = useAppStore((state) => state.setShowOpticalGeometry);
-  const [requestedScheimpflugConstruction, setRequestedScheimpflugConstruction] = useState(false);
   const [viewResetNonce, setViewResetNonce] = useState(0);
   const [viewFocusState, setViewFocusState] = useState<{
     sceneId: string;
@@ -99,12 +104,6 @@ export const SceneViewport = ({
         return scheimpflugConstruction.unavailableReason;
     }
   })();
-
-  useEffect(() => {
-    if (!supportsScheimpflugConstruction) {
-      setRequestedScheimpflugConstruction(false);
-    }
-  }, [supportsScheimpflugConstruction]);
 
   useEffect(() => {
     setViewFocusState({ sceneId: scene.id, focus: "scene" });
@@ -183,11 +182,18 @@ export const SceneViewport = ({
             </fieldset>
             {onToggleGeometryPanel && (
               <button
+                ref={geometryTriggerRef}
                 type="button"
                 onClick={(event) => onToggleGeometryPanel(event.currentTarget)}
-                className="btn btn--secondary"
+                aria-label={t(simulatorMessageKeys.viewport.expandGeometry)}
+                title={t(simulatorMessageKeys.viewport.expandGeometry)}
+                data-viewport-expanded="false"
+                className="btn btn--secondary scene-toolbar__geometry-action"
               >
-                {t(simulatorMessageKeys.viewport.openGeometry)}
+                <span>{t(simulatorMessageKeys.viewport.geometryTitle)}</span>
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  open_in_new
+                </span>
               </button>
             )}
           </div>
@@ -235,7 +241,7 @@ export const SceneViewport = ({
               onToggleDofRegion={() => setShowDofOverlay((s) => !s)}
               onToggleLegends={() => setShowLegends((s) => !s)}
               onToggleOpticalGeometry={() => setShowOpticalGeometry(!showOpticalGeometry)}
-              onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? () => setRequestedScheimpflugConstruction((state) => !state) : undefined}
+              onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? onToggleScheimpflugConstruction : undefined}
             />
           </div>
 

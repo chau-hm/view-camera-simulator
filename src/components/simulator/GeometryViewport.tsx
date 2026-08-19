@@ -28,6 +28,8 @@ type GeometryViewportProps = {
   scene: SceneDefinition;
   riseMm?: number;
   showHeader?: boolean;
+  expanded?: boolean;
+  onRequestRestore?: () => void;
   /** Public teaching movement summary for the active case. */
   movementSummary?: string | null;
 };
@@ -35,11 +37,21 @@ type GeometryViewportProps = {
 const SVG_WIDTH = 460;
 const SVG_HEIGHT = 280;
 
-export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, showHeader, movementSummary }: GeometryViewportProps) => {
+export const GeometryViewport = ({
+  opticsState,
+  geometryView,
+  scene,
+  riseMm,
+  showHeader,
+  expanded = false,
+  onRequestRestore,
+  movementSummary,
+}: GeometryViewportProps) => {
   const { t } = useTranslation();
   const setGeometryView = useAppStore((state) => state.setGeometryView);
   const focalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const diagramRef = useRef<HTMLDivElement | null>(null);
+  const restoreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
   const [fitMode, setFitMode] = useState<"scene" | "construction">("scene");
   const supportsConstruction = supportsScheimpflugConstruction(scene.id);
@@ -82,6 +94,13 @@ export const GeometryViewport = ({ opticsState, geometryView, scene, riseMm, sho
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
   }, [scene.id]);
+
+  useEffect(() => {
+    if (!expanded) return;
+
+    const frame = window.requestAnimationFrame(() => restoreTriggerRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [expanded]);
 
   const profile = getGeometryPresentationProfile(scene);
   const constructionWindow = getScheimpflugConstructionWindow(opticsState);
@@ -220,7 +239,7 @@ const cameraProjection = constructionWindow
 
   return (
     <section
-      className="geometry-viewport"
+      className={`geometry-viewport${expanded ? " geometry-viewport--expanded" : ""}`}
       data-geometry-fit={effectiveFitMode}
       data-geometry-view={effectiveGeometryView}
       data-construction-valid={constructionWindow ? "true" : "false"}
@@ -230,30 +249,47 @@ const cameraProjection = constructionWindow
       style={{ display: "flex", flexDirection: "column", height: "100%" }}
     >
       {showHeader !== false ? (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <div className="geometry-viewport__header">
           <h2 style={{ margin: 0 }}>{t(simulatorMessageKeys.viewport.geometryTitle)}</h2>
-          <div role="group" aria-label={t(simulatorMessageKeys.geometry.viewLabel)} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {!isMirrorShiftTeaching ? (
-              <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => {
+          <div className="geometry-viewport__header-actions">
+            <div className="geometry-viewport__view-controls" role="group" aria-label={t(simulatorMessageKeys.geometry.viewLabel)}>
+              {!isMirrorShiftTeaching ? (
+                <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => {
+                  setFitMode("scene");
+                  setGeometryView("side");
+                }}>{t(simulatorMessageKeys.geometry.side)}</button>
+              ) : null}
+              <button className={effectiveGeometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "top"} onClick={() => {
                 setFitMode("scene");
-                setGeometryView("side");
-              }}>{t(simulatorMessageKeys.geometry.side)}</button>
-            ) : null}
-            <button className={effectiveGeometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "top"} onClick={() => {
-              setFitMode("scene");
-              setGeometryView("top");
-            }}>{t(simulatorMessageKeys.geometry.top)}</button>
-            {supportsConstruction ? (
-              <button className={effectiveGeometryView === "scheimpflug" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "scheimpflug"} onClick={() => {
-                setFitMode("scene");
-                setGeometryView("scheimpflug");
-              }}>{t(simulatorMessageKeys.geometry.scheimpflugSection)}</button>
+                setGeometryView("top");
+              }}>{t(simulatorMessageKeys.geometry.top)}</button>
+              {supportsConstruction ? (
+                <button className={effectiveGeometryView === "scheimpflug" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "scheimpflug"} onClick={() => {
+                  setFitMode("scene");
+                  setGeometryView("scheimpflug");
+                }}>{t(simulatorMessageKeys.geometry.scheimpflugSection)}</button>
+              ) : null}
+            </div>
+            {onRequestRestore ? (
+              <button
+                ref={restoreTriggerRef}
+                className="btn btn--icon btn--viewport-action geometry-viewport__restore-action"
+                type="button"
+                onClick={onRequestRestore}
+                aria-label={t(simulatorMessageKeys.viewport.restoreGeometry)}
+                title={t(simulatorMessageKeys.viewport.restoreGeometry)}
+                data-viewport-expanded="true"
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  close_fullscreen
+                </span>
+              </button>
             ) : null}
           </div>
         </div>
       ) : null}
 
-      <div role="group" aria-label={t(simulatorMessageKeys.geometry.framingLabel)} style={{ display: "flex", gap: 8, marginTop: 6 }}>
+      <div className="geometry-viewport__framing-controls" role="group" aria-label={t(simulatorMessageKeys.geometry.framingLabel)}>
         <button
           type="button"
           className={effectiveFitMode === "scene" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}

@@ -30,82 +30,136 @@ const workspaceRoute = (
   </MemoryRouter>
 );
 
-describe("SimulatorWorkspace geometry dialog accessibility", () => {
+describe("SimulatorWorkspace expanded Geometry accessibility", () => {
   afterEach(() => {
     cleanup();
     useAppStore.getState().resetCamera();
     useAppStore.getState().setActiveTask(null);
   });
 
-  it("focuses Close, closes with Escape, and restores focus to its trigger", async () => {
+  it("focuses Restore, restores with Escape, and returns focus to its trigger", async () => {
     render(workspace());
-    const trigger = screen.getByRole("button", { name: "Open 2D Geometry" });
+    const trigger = screen.getByRole("button", { name: "Expand 2D Geometry" });
+
+    expect(trigger).toHaveAttribute("title", "Expand 2D Geometry");
+    expect(trigger).toHaveAttribute("data-viewport-expanded", "false");
+    expect(trigger).toHaveTextContent("2D Geometry");
+    expect(trigger.querySelector(".material-symbols-outlined")).toHaveTextContent("open_in_new");
 
     fireEvent.click(trigger);
 
-    const dialog = screen.getByRole("dialog", { name: "2D Geometry" });
-    expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(screen.getByRole("button", { name: "Close 2D Geometry" })).toHaveFocus();
+    expect(screen.queryByRole("dialog", { name: "2D Geometry" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "2D Geometry" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "3D Scene" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Ground Glass" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Camera Controls" })).toBeInTheDocument();
+    const restore = screen.getByRole("button", { name: "Restore 2D Geometry" });
+    expect(restore).toHaveAttribute("title", "Restore 2D Geometry");
+    expect(restore).toHaveAttribute("data-viewport-expanded", "true");
+    expect(restore.querySelector(".material-symbols-outlined")).toHaveTextContent("close_fullscreen");
+    await waitFor(() => expect(restore).toHaveFocus());
 
     fireEvent.keyDown(document, { key: "Escape" });
 
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "2D Geometry" })).not.toBeInTheDocument());
-    await waitFor(() => expect(trigger).toHaveFocus());
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "2D Geometry" })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand 2D Geometry" })).toHaveFocus());
   });
 
-  it("wraps keyboard focus and blocks focus behind the modal", async () => {
+  it("allows focus and camera control interaction while Geometry is expanded", async () => {
     render(workspace());
-    const trigger = screen.getByRole("button", { name: "Open 2D Geometry" });
-    fireEvent.click(trigger);
-    const close = screen.getByRole("button", { name: "Close 2D Geometry" });
-    const fitScene = screen.getByRole("button", { name: "Fit Scene" });
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
+    const swing = screen.getByLabelText("Swing");
     const backgroundLink = screen.getByRole("link", { name: "All Scenes" });
 
-    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
-    expect(fitScene).toHaveFocus();
-    fireEvent.keyDown(document, { key: "Tab" });
-    expect(close).toHaveFocus();
-
     backgroundLink.focus();
-    expect(close).toHaveFocus();
+    expect(backgroundLink).toHaveFocus();
+    swing.focus();
+    expect(swing).toHaveFocus();
+    expect(swing).toBeEnabled();
+    fireEvent.change(swing, { target: { value: "2" } });
+    expect(useAppStore.getState().camera.frontSwingDeg).toBe(2);
   });
 
-  it("restores focus after Close and closes safely on route changes", async () => {
+  it("restores focus after Restore and closes safely on route changes", async () => {
     const { rerender } = render(workspace());
-    const trigger = screen.getByRole("button", { name: "Open 2D Geometry" });
+    const trigger = screen.getByRole("button", { name: "Expand 2D Geometry" });
     fireEvent.click(trigger);
-    fireEvent.click(screen.getByRole("button", { name: "Close 2D Geometry" }));
-    await waitFor(() => expect(trigger).toHaveFocus());
+    fireEvent.click(screen.getByRole("button", { name: "Restore 2D Geometry" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand 2D Geometry" })).toHaveFocus());
 
     fireEvent.click(trigger);
     rerender(workspace("table-tilt"));
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "2D Geometry" })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "2D Geometry" })).not.toBeInTheDocument());
     expect(document.activeElement).not.toBe(trigger);
   });
 
-  it("closes the dialog when the routed scene changes", async () => {
-    const { rerender } = render(workspace());
-    fireEvent.click(screen.getByRole("button", { name: "Open 2D Geometry" }));
-    expect(screen.getByRole("dialog", { name: "2D Geometry" })).toBeInTheDocument();
+  it("cancels Geometry expansion when scene, mode, or task route identity changes", async () => {
+    const view = render(workspaceRoute("guided", "shelf-swing", "swing-01"));
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
+    expect(screen.getByRole("heading", { name: "2D Geometry" })).toBeInTheDocument();
 
-    rerender(workspace("table-tilt"));
-
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "2D Geometry" })).not.toBeInTheDocument());
+    view.rerender(workspaceRoute("guided", "table-tilt", "tilt-01"));
+    await screen.findByRole("button", { name: "Expand 2D Geometry" });
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "2D Geometry" })).not.toBeInTheDocument());
     expect(screen.queryByTestId("geometry-svg-top")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
+    view.rerender(workspaceRoute("free", "table-tilt", null));
+    await screen.findByRole("button", { name: "Expand 2D Geometry" });
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "2D Geometry" })).not.toBeInTheDocument());
+    expect(screen.queryByTestId("geometry-svg-top")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
+    view.rerender(workspaceRoute("guided", "table-tilt", "tilt-01"));
+    await screen.findByRole("button", { name: "Expand 2D Geometry" });
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "2D Geometry" })).not.toBeInTheDocument());
   });
 
-  it("keeps an open dialog safe and restores Top view when the Shelf task restarts", () => {
+  it("restores Top view after the Shelf task restarts", async () => {
     render(workspace());
-    fireEvent.click(screen.getByRole("button", { name: "Open 2D Geometry" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
     fireEvent.click(screen.getByRole("button", { name: "Side" }));
-    expect(screen.getByRole("dialog", { name: "2D Geometry" })).toBeInTheDocument();
     expect(screen.getByTestId("geometry-svg-side")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Restore 2D Geometry" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Expand 2D Geometry" })).toHaveFocus());
 
     fireEvent.click(screen.getByRole("button", { name: "Restart task" }));
 
-    expect(screen.getByRole("dialog", { name: "2D Geometry" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
     expect(screen.getByTestId("geometry-svg-top")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Fit Construction" })).toBeDisabled();
+  });
+
+  it("preserves the requested Scheimpflug construction across Geometry replacement", async () => {
+    render(workspaceRoute("free", "table-tilt", null));
+    fireEvent.change(screen.getByLabelText("Tilt"), { target: { value: "4" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "View overlays" }));
+    const showConstruction = screen.getByRole("button", { name: "Show Scheimpflug construction" });
+    expect(showConstruction).toBeEnabled();
+    fireEvent.click(showConstruction);
+    expect(screen.getByRole("button", { name: "Hide Scheimpflug construction" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Restore 2D Geometry" })).toHaveFocus());
+    fireEvent.click(screen.getByRole("button", { name: "Restore 2D Geometry" }));
+
+    await waitFor(() => expect(screen.getByTestId("scheimpflug-construction-note")).toBeVisible());
+    fireEvent.click(screen.getByRole("button", { name: "View overlays" }));
+    expect(screen.getByRole("button", { name: "Hide Scheimpflug construction" })).toBeInTheDocument();
+  });
+
+  it("clears the requested Scheimpflug construction when the scene identity changes", async () => {
+    const view = render(workspaceRoute("free", "table-tilt", null));
+    fireEvent.change(screen.getByLabelText("Tilt"), { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("button", { name: "View overlays" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show Scheimpflug construction" }));
+    expect(screen.getByRole("button", { name: "Hide Scheimpflug construction" })).toBeInTheDocument();
+
+    view.rerender(workspaceRoute("free", "architecture-rise", null));
+    await screen.findByRole("button", { name: "Expand 2D Geometry" });
+    expect(screen.queryByRole("button", { name: /Scheimpflug construction/ })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("scheimpflug-construction-note")).not.toBeInTheDocument();
   });
 
   it("defaults View Focus to Scene and restores Optical Geometry on Restart", () => {

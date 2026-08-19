@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getGuidedLessonContext } from "../../app/guidedLesson";
 import { getPublicSceneEntryById } from "../../app/publicScenes";
@@ -60,7 +60,7 @@ type SimulatorWorkspaceProps = {
   simulateAssetFailure: boolean;
 };
 
-export type ExpandedViewport = "scene" | "groundGlass" | null;
+export type ExpandedViewport = "scene" | "groundGlass" | "geometry" | null;
 
 export const SimulatorWorkspace = ({
   mode,
@@ -94,12 +94,11 @@ export const SimulatorWorkspace = ({
     (state) => state.ui.overlayMenuResetGeneration,
   );
   const [renderQuality, setRenderQuality] = useState<RenderQualityProfile>("high");
+  const [requestedScheimpflugConstruction, setRequestedScheimpflugConstruction] = useState(false);
   const [expandedViewport, setExpandedViewport] = useState<ExpandedViewport>(null);
   const [restoreViewportFocus, setRestoreViewportFocus] = useState(true);
-  const [showGeometryPanel, setShowGeometryPanel] = useState(false);
-  const [geometryDialogStyle, setGeometryDialogStyle] = useState<CSSProperties | undefined>();
   const geometryTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const geometryCloseRef = useRef<HTMLButtonElement | null>(null);
+  const previousExpandedViewportRef = useRef<ExpandedViewport>(null);
   // All registered scenes still available through engine registry
   // const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
@@ -168,66 +167,6 @@ export const SimulatorWorkspace = ({
     ],
   );
 
-  const closeGeometryPanel = useCallback((restoreFocus = true) => {
-    setShowGeometryPanel(false);
-    setGeometryDialogStyle(undefined);
-    if (restoreFocus) {
-      window.requestAnimationFrame(() => geometryTriggerRef.current?.focus());
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!showGeometryPanel) return;
-
-    geometryCloseRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeGeometryPanel();
-        return;
-      }
-      if (event.key === "Tab") {
-        const dialog = document.querySelector<HTMLElement>(".geometry-dialog");
-        if (!dialog) return;
-        const focusable = Array.from(
-          dialog.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
-        ).filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true");
-        if (focusable.length === 0) {
-          event.preventDefault();
-          dialog.focus();
-          return;
-        }
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    const handleFocusIn = (event: FocusEvent) => {
-      const dialog = document.querySelector<HTMLElement>(".geometry-dialog");
-      if (dialog && event.target instanceof Node && !dialog.contains(event.target)) {
-        event.preventDefault();
-        geometryCloseRef.current?.focus();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("focusin", handleFocusIn);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("focusin", handleFocusIn);
-    };
-  }, [closeGeometryPanel, showGeometryPanel]);
-
-  useEffect(() => {
-    setShowGeometryPanel(false);
-    setGeometryDialogStyle(undefined);
-  }, [guidedLessonEnabled, mode, sceneId, taskId]);
-
   useEffect(() => {
     setRestoreViewportFocus(false);
     const activeElement = document.activeElement;
@@ -238,6 +177,7 @@ export const SimulatorWorkspace = ({
       activeElement.blur();
     }
     setExpandedViewport(null);
+    setRequestedScheimpflugConstruction(false);
   }, [guidedLessonEnabled, mode, sceneId, taskId]);
 
   const requestViewportExpansion = useCallback((viewport: Exclude<ExpandedViewport, null>) => {
@@ -251,18 +191,28 @@ export const SimulatorWorkspace = ({
   }, []);
 
   useEffect(() => {
-    if (expandedViewport === null || showGeometryPanel) return;
+    const previousExpandedViewport = previousExpandedViewportRef.current;
+    previousExpandedViewportRef.current = expandedViewport;
+
+    if (expandedViewport !== null) return;
+    if (previousExpandedViewport !== "geometry" || !restoreViewportFocus) return;
+
+    const frame = window.requestAnimationFrame(() => geometryTriggerRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [expandedViewport, restoreViewportFocus]);
+
+  useEffect(() => {
+    if (expandedViewport === null) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !event.defaultPrevented) {
         event.preventDefault();
-        setRestoreViewportFocus(true);
-        setExpandedViewport(null);
+        requestViewportRestore();
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [expandedViewport, showGeometryPanel]);
+  }, [expandedViewport, requestViewportRestore]);
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
@@ -441,6 +391,7 @@ export const SimulatorWorkspace = ({
   const setInfinityFocus = useAppStore((state) => state.setInfinityFocus);
   const sceneExpanded = expandedViewport === "scene";
   const groundGlassExpanded = expandedViewport === "groundGlass";
+  const geometryExpanded = expandedViewport === "geometry";
   const viewportExpanded = expandedViewport !== null;
 
   if (!scene) {
@@ -464,15 +415,15 @@ export const SimulatorWorkspace = ({
       </header>
 
       {/* Body: main (scrollable) + aside (scrollable) */}
-      <div role="region" aria-label={t(simulatorMessageKeys.viewport.bodyLabel)} className={`simulator-body${showGeometryPanel ? " simulator-body--modal-open" : ""}`}>
-        {/* Main area: single scroll container for 3D Scene + Ground Glass */}
+      <div role="region" aria-label={t(simulatorMessageKeys.viewport.bodyLabel)} className="simulator-body">
+        {/* Main area: single scroll container for the active viewport(s) */}
         <main className={`simulator-main${viewportExpanded ? " simulator-main--viewport-expanded" : ""}`}>
           {!viewportExpanded && opticsState.diagnostics.fallbackApplied && (
             <p role="alert">{t(simulatorMessageKeys.viewport.opticsFallbackPrefix)}: {opticsState.diagnostics.errorMessage}</p>
           )}
 
           <div className={`simulator-viewport-grid${viewportExpanded ? " simulator-viewport-grid--expanded" : ""}`}>
-            {!groundGlassExpanded && <div className={`simulator-card${sceneExpanded ? " simulator-card--expanded" : ""}`}>
+            {(!viewportExpanded || sceneExpanded) && <div className={`simulator-card${sceneExpanded ? " simulator-card--expanded" : ""}`}>
               <div className="simulator-card-header">
                 <div className="panel-icon" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
@@ -486,32 +437,23 @@ export const SimulatorWorkspace = ({
                 opticsState={opticsState}
                 renderQuality={renderQuality}
                 setRenderQuality={setRenderQuality}
+                requestedScheimpflugConstruction={requestedScheimpflugConstruction}
+                onToggleScheimpflugConstruction={() => setRequestedScheimpflugConstruction((state) => !state)}
                 simulateAssetFailure={simulateAssetFailure}
                 expanded={sceneExpanded}
                 restoreFocusOnCollapse={restoreViewportFocus}
                 onRequestExpand={() => requestViewportExpansion("scene")}
                 onRequestRestore={requestViewportRestore}
+                geometryTriggerRef={geometryTriggerRef}
                 onToggleGeometryPanel={(trigger) => {
                   geometryTriggerRef.current = trigger;
-                  const viewportWidth = typeof window === "undefined" ? 1024 : window.innerWidth;
-                  const viewportHeight = typeof window === "undefined" ? 768 : window.innerHeight;
-                  const width = Math.max(Math.min(viewportWidth * 0.7, viewportWidth - 32), Math.min(420, viewportWidth - 32));
-                  const height = Math.max(Math.min(viewportHeight * 0.7, viewportHeight - 32), Math.min(320, viewportHeight - 32));
-                  setGeometryDialogStyle({
-                    left: `${Math.max(16, (viewportWidth - width) / 2)}px`,
-                    top: `${Math.max(16, (viewportHeight - height) / 2)}px`,
-                    width: `${width}px`,
-                    height: `${height}px`,
-                    maxWidth: `${Math.max(0, viewportWidth - Math.max(16, (viewportWidth - width) / 2) - 16)}px`,
-                    maxHeight: `${Math.max(0, viewportHeight - Math.max(16, (viewportHeight - height) / 2) - 16)}px`,
-                  });
-                  setShowGeometryPanel(true);
+                  requestViewportExpansion("geometry");
                 }}
                 showHeader={false}
               />
             </div>}
 
-            {!sceneExpanded && <div className={`simulator-card${groundGlassExpanded ? " simulator-card--expanded" : ""}`} aria-label={t(simulatorMessageKeys.viewport.groundGlassColumnLabel)}>
+            {(!viewportExpanded || groundGlassExpanded) && <div className={`simulator-card${groundGlassExpanded ? " simulator-card--expanded" : ""}`} aria-label={t(simulatorMessageKeys.viewport.groundGlassColumnLabel)}>
               <div className="simulator-card-header">
                 <div className="panel-icon panel-icon--muted" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
@@ -544,6 +486,20 @@ export const SimulatorWorkspace = ({
                 onRequestRestore={requestViewportRestore}
               />
             </div>}
+
+            {geometryExpanded && (
+              <div className="simulator-card simulator-card--expanded">
+                <GeometryViewport
+                  opticsState={opticsState}
+                  geometryView={camera.geometryView}
+                  scene={scene}
+                  riseMm={camera.frontRiseMm}
+                  movementSummary={teachingReadout ? `${teachingReadout.label}${teachingReadout.value ? ` · ${teachingReadout.value}` : ""}` : null}
+                  expanded={geometryExpanded}
+                  onRequestRestore={requestViewportRestore}
+                />
+              </div>
+            )}
           </div>
 
           {!viewportExpanded && <>
@@ -698,36 +654,6 @@ export const SimulatorWorkspace = ({
           </section>
         </aside>
       </div>
-
-      {/* Floating 2D Geometry panel (fixed) */}
-      {showGeometryPanel && (
-        <div className="geometry-dialog__backdrop" aria-hidden="true" />
-      )}
-      {showGeometryPanel && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="geometry-dialog-title"
-          className="geometry-dialog"
-          style={geometryDialogStyle}
-          tabIndex={-1}
-        >
-          <div className="geometry-dialog__header">
-            <strong id="geometry-dialog-title">{t(simulatorMessageKeys.viewport.geometryTitle)}</strong>
-            <button
-              ref={geometryCloseRef}
-              className="btn btn--compact"
-              type="button"
-              onClick={() => closeGeometryPanel()}
-              aria-label={t(simulatorMessageKeys.viewport.closeGeometry)}
-            >
-              {t(simulatorMessageKeys.viewport.closeGeometry)}
-            </button>
-          </div>
-
-          <GeometryViewport opticsState={opticsState} geometryView={camera.geometryView} scene={scene} riseMm={camera.frontRiseMm} movementSummary={teachingReadout ? `${teachingReadout.label}${teachingReadout.value ? ` · ${teachingReadout.value}` : ""}` : null} />
-        </div>
-      )}
 
     </div>
   );
