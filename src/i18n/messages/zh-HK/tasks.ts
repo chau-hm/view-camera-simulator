@@ -155,6 +155,37 @@ export const tasksMessages = {
       },
     },
   },
+  architectureForegroundRise: {
+    title: "為建築物取景",
+    objective: "使用前組上移把需要的屋頂部分納入畫面，同時保留建築物基座並保持相機水平。",
+    notes: {
+      useRise: "從中立狀態增加前組上移，把需要的屋頂部分帶入畫面。",
+      keepBase: "向上重新取景時，保持建築物基座在畫面內。",
+      foreground: "這項任務只處理構圖；近處前景仍會比建築物柔和，留待之後的課程處理。",
+    },
+    criteria: {
+      buildingTopVisible: "需要的屋頂部分可見",
+      buildingBaseVisible: "建築物基座仍然可見",
+      cameraLevel: "相機及後組保持水平",
+      movementUsed: "已使用前組上移",
+    },
+    feedback: {
+      passPrimary: "前組上移修正了構圖，同時相機保持水平。前景清晰度問題會留待之後處理。",
+      defaultFailPrimary: "使用前組上移納入屋頂，同時保持基座及垂直線穩定。",
+      primary: {
+        buildingTopVisible: "需要的屋頂部分仍被裁切，請增加前組上移。",
+        buildingBaseVisible: "調整前組上移時，保持建築物基座在畫面內。",
+        cameraLevel: "保持相機及後組水平；不要加入傾斜、擺動或後組移軸。",
+        movementUsed: "增加前組上移，開始處理構圖問題。",
+      },
+      secondary: {
+        buildingTopVisible: "留意對焦屏上方邊緣，直到需要的屋頂部分進入畫面。",
+        buildingBaseVisible: "把屋頂帶入畫面時，檢查對焦屏下方邊緣。",
+        cameraLevel: "前組上移會改變取景，不會改變透視或令垂直線收斂。",
+        movementUsed: "使用前組上移處理構圖，不需要記住特定數值。",
+      },
+    },
+  },
   obliqueSwingFocus: {
     title: "對齊立面清晰焦平面",
     objective: "使用前組擺動及對焦，讓延伸立面由近至遠保持清晰，同時保留建築構圖。",

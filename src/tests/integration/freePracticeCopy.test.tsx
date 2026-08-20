@@ -36,6 +36,12 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText(/opposite Front Shift/)).toBeInTheDocument();
 
     cleanup();
+    render(<TaskPanel task={null} sceneId="architecture-foreground" />);
+    expect(screen.getByText(/Use Front Rise to correct the neutral framing problem/)).toBeInTheDocument();
+    expect(screen.getByText(/Increase Front Rise to include the roof/)).toBeInTheDocument();
+    expect(screen.getByText(/near foreground remains softer than the building/)).toBeInTheDocument();
+
+    cleanup();
     render(<FeedbackPanel mode="free" sceneId="understanding-camera-movements" task={null} evaluation={null} />);
     expect(
       screen.getByText(/Whole-camera Viewpoint movement changes perspective relationships and parallax/),
@@ -69,6 +75,12 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText(/視點與構圖/)).toBeInTheDocument();
     expect(screen.getByText(/向相反方向使用前組橫移/)).toBeInTheDocument();
     expect(screen.getByText(/視差/)).toBeInTheDocument();
+
+    cleanup();
+    render(<TaskPanel task={null} sceneId="architecture-foreground" />);
+    expect(screen.getByText(/使用前組上移修正中立狀態的構圖問題/)).toBeInTheDocument();
+    expect(screen.getByText(/增加前組上移，把屋頂納入畫面/)).toBeInTheDocument();
+    expect(screen.getByText(/近處前景仍然比建築物柔和/)).toBeInTheDocument();
   });
 });
 

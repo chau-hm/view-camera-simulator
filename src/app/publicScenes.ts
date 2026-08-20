@@ -100,8 +100,9 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       publicSceneMessageKeys.architectureForeground.topics.sharpness,
     ],
     availability: "available",
-    availableModes: ["free"],
-    thumbnailAsset: "assets/architecture-rise.png",
+    availableModes: ["free", "guided"],
+    thumbnailAsset: "assets/architecture-foreground.png",
+    guidedTaskId: "architecture-foreground-rise-01",
   },
   {
     id: "table-tilt",

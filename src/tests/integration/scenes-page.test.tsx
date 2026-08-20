@@ -73,11 +73,18 @@ describe("scenes page", () => {
     expect(scopedArchitectureForegroundCard.getByText("Level framing")).toBeInTheDocument();
     expect(scopedArchitectureForegroundCard.getByText("Foreground depth")).toBeInTheDocument();
     expect(scopedArchitectureForegroundCard.getByText("Sharpness across depth")).toBeInTheDocument();
+    expect(architectureForegroundCard!.querySelector("img")).toHaveAttribute(
+      "src",
+      "/assets/architecture-foreground.png",
+    );
     expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
       "/simulator/free/architecture-foreground",
     );
-    expect(scopedArchitectureForegroundCard.queryByRole("link", { name: "Start Guided Task" })).not.toBeInTheDocument();
+    expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/architecture-foreground/architecture-foreground-rise-01",
+    );
 
     // Oblique Architecture remains the final public scene and now exposes the compound task.
     const obliqueHeading = await screen.findByRole("heading", {

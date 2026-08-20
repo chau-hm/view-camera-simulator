@@ -48,6 +48,10 @@ describe("simulator route availability", () => {
     ["/simulator/free/shelf-swing", "free:shelf-swing:none:lesson=false"],
     ["/simulator/free/mirror-shift", "free:mirror-shift:none:lesson=false"],
     ["/simulator/guided/architecture-rise/rise-01", "guided:architecture-rise:rise-01:lesson=false"],
+    [
+      "/simulator/guided/architecture-foreground/architecture-foreground-rise-01",
+      "guided:architecture-foreground:architecture-foreground-rise-01:lesson=false",
+    ],
     ["/simulator/guided/shelf-swing/swing-01", "guided:shelf-swing:swing-01:lesson=false"],
     ["/simulator/free/table-tilt", "free:table-tilt:none:lesson=false"],
     ["/simulator/guided/table-tilt/tilt-01", "guided:table-tilt:tilt-01:lesson=false"],
@@ -90,7 +94,7 @@ describe("simulator route availability", () => {
     "/simulator/guided/oblique-architecture",
     "/simulator/guided/oblique-architecture/rise-01",
     "/simulator/guided/architecture-foreground",
-    "/simulator/guided/architecture-foreground/architecture-foreground-rise-01",
+    "/simulator/guided/architecture-foreground/architecture-foreground-tilt-focus-01",
   ])("redirects invalid simulator route %s to Scenes", async (route) => {
     renderRoute(route);
 

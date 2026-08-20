@@ -304,14 +304,14 @@ export const simulatorMessages = {
     },
     architectureForeground: {
       objective:
-        "Observe the neutral photographic problem: the level camera keeps the building verticals parallel, the roof is cropped, and the near foreground is softer than the building.",
+        "Use Front Rise to correct the neutral framing problem while observing that foreground softness remains.",
       bullets: {
-        framing: "Notice that the building base remains in frame while the required roof region is cropped.",
-        level: "The camera is level, so the building verticals remain parallel rather than converging.",
-        depth: "Compare the regular paving seams in the near foreground with the sharper building façade farther away.",
+        framing: "At neutral, notice that the roof is cropped while the building base remains in frame.",
+        rise: "Increase Front Rise to include the roof while keeping the camera level and the verticals parallel.",
+        depth: "After the roof enters the frame, compare the regular paving seams; the near foreground remains softer than the building.",
       },
       observation:
-        "The building remains usable and reasonably sharp while the close foreground is softer. The framing problem and the depth-of-field problem are present together in this neutral state.",
+        "Front Rise corrects the building framing without changing perspective or the parallel verticals. The near foreground remains softer, so composition and sharpness are still separate problems.",
     },
     obliqueArchitecture: {
       objective:
