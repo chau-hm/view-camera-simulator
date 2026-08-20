@@ -12,6 +12,7 @@ export const publicSceneIds = [
   "understanding-camera-movements",
   "focus-fundamentals-two-targets",
   "architecture-rise",
+  "architecture-foreground",
   "table-tilt",
   "shelf-swing",
   "mirror-shift",
@@ -88,6 +89,19 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/architecture-rise.png",
     guidedTaskId: "rise-01",
+  },
+  {
+    id: "architecture-foreground",
+    titleKey: publicSceneMessageKeys.architectureForeground.title,
+    descriptionKey: publicSceneMessageKeys.architectureForeground.description,
+    topicKeys: [
+      publicSceneMessageKeys.architectureForeground.topics.levelFraming,
+      publicSceneMessageKeys.architectureForeground.topics.foregroundDepth,
+      publicSceneMessageKeys.architectureForeground.topics.sharpness,
+    ],
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/architecture-rise.png",
   },
   {
     id: "table-tilt",

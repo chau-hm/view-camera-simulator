@@ -210,6 +210,8 @@ export const simulatorMessages = {
     tabletopGuide: "Tabletop",
     diagonalSubjectPlaneGuide: "Diagonal subject plane",
     targetFacadeDepthGuide: "Target façade depth",
+    architectureForegroundGroundGuide: "Foreground ground",
+    architectureForegroundBuildingGuide: "Building profile",
     nearCardTarget: "Near card",
     middleNotebookTarget: "Middle notebook",
     farChartTarget: "Far chart",
@@ -222,6 +224,10 @@ export const simulatorMessages = {
     nearFacadeTarget: "Near façade",
     middleFacadeTarget: "Middle façade",
     farFacadeTarget: "Far façade",
+    architectureForegroundNearTarget: "Near foreground",
+    architectureForegroundMiddleTarget: "Middle foreground",
+    architectureForegroundBuildingBaseTarget: "Building base",
+    architectureForegroundBuildingMiddleTarget: "Building middle",
   },
   sceneLegend: {
     filmPlane: "Film plane (blue)",
@@ -295,6 +301,17 @@ export const simulatorMessages = {
       },
       observation:
         "Watch the top of the building as Front Rise changes. Framing moves while the whole-camera viewpoint stays fixed and the intended verticals remain parallel.",
+    },
+    architectureForeground: {
+      objective:
+        "Observe the neutral photographic problem: the level camera keeps the building verticals parallel, the roof is cropped, and the near foreground is softer than the building.",
+      bullets: {
+        framing: "Notice that the building base remains in frame while the required roof region is cropped.",
+        level: "The camera is level, so the building verticals remain parallel rather than converging.",
+        depth: "Compare the regular paving seams in the near foreground with the sharper building façade farther away.",
+      },
+      observation:
+        "The building remains usable and reasonably sharp while the close foreground is softer. The framing problem and the depth-of-field problem are present together in this neutral state.",
     },
     obliqueArchitecture: {
       objective:

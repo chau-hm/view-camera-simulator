@@ -39,6 +39,7 @@ describe("scene subject registry", () => {
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
+      "architecture-foreground",
       "oblique-architecture",
       "table-tilt",
       "shelf-swing",

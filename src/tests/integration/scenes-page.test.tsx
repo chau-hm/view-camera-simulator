@@ -58,6 +58,27 @@ describe("scenes page", () => {
     expect(scopedArchitectureCard.getByText("Framing")).toBeInTheDocument();
     expect(scopedArchitectureCard.getByText("Perspective control")).toBeInTheDocument();
 
+    const architectureForegroundHeading = await screen.findByRole("heading", {
+      name: "Architecture + Foreground",
+      level: 2,
+    });
+    const architectureForegroundCard = architectureForegroundHeading.closest("article");
+    expect(architectureForegroundCard).not.toBeNull();
+    const scopedArchitectureForegroundCard = within(architectureForegroundCard!);
+    expect(
+      scopedArchitectureForegroundCard.getByText(
+        "Frame a level architectural subject while observing how foreground depth creates a second focusing problem.",
+      ),
+    ).toBeInTheDocument();
+    expect(scopedArchitectureForegroundCard.getByText("Level framing")).toBeInTheDocument();
+    expect(scopedArchitectureForegroundCard.getByText("Foreground depth")).toBeInTheDocument();
+    expect(scopedArchitectureForegroundCard.getByText("Sharpness across depth")).toBeInTheDocument();
+    expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
+      "href",
+      "/simulator/free/architecture-foreground",
+    );
+    expect(scopedArchitectureForegroundCard.queryByRole("link", { name: "Start Guided Task" })).not.toBeInTheDocument();
+
     // Oblique Architecture remains the final public scene and now exposes the compound task.
     const obliqueHeading = await screen.findByRole("heading", {
       name: "Oblique Architecture",
@@ -137,6 +158,7 @@ describe("scenes page", () => {
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
+      "architecture-foreground",
       "table-tilt",
       "shelf-swing",
       "mirror-shift",
@@ -154,6 +176,7 @@ describe("scenes page", () => {
       "Understanding Camera Movements",
       "Focus Fundamentals — Two Targets",
       "Architecture Rise",
+      "Architecture + Foreground",
       "Table Tilt",
       "Shelf Swing",
       "Mirror Shift",
@@ -204,6 +227,7 @@ describe("scenes page", () => {
       "認識大片幅相機移軸",
       "前後組對焦比較",
       "建築構圖與上移",
+      "建築物與前景",
       "桌面焦平面與傾斜",
       "斜向焦平面與擺動",
       "鏡面構圖與視點",
