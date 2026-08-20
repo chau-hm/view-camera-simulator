@@ -6,7 +6,7 @@ const completedHeading = (page: Page) => page.getByRole("heading", { name: "Task
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
-test("Architecture + Foreground Free Practice exposes Rise as the composition control", async ({ page }) => {
+test("Architecture + Foreground Free Practice exposes cumulative Rise, Tilt, and Focus controls", async ({ page }) => {
   test.setTimeout(120_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
@@ -28,9 +28,9 @@ test("Architecture + Foreground Free Practice exposes Rise as the composition co
   const rise = cameraControls.getByRole("slider", { name: "Rise" });
   await expect(rise).toBeEnabled();
   await expect(rise).toHaveValue("0");
-  await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toHaveCount(0);
-  await expect(cameraControls.getByRole("slider", { name: "Swing" })).toHaveCount(0);
-  await expect(page.getByLabel("Focus distance")).toBeDisabled();
+  await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toBeEnabled();
+  await expect(cameraControls.getByRole("slider", { name: "Swing" })).toBeDisabled();
+  await expect(page.getByLabel("Focus distance")).toBeEnabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
 
   const rtt = page.getByTestId("ground-glass-rtt");
@@ -76,8 +76,8 @@ test("Architecture + Foreground Rise guided task is observable, reachable, and r
   const rise = cameraControls.getByRole("slider", { name: "Rise" });
   await expect(rise).toBeEnabled();
   await expect(rise).toHaveValue("0");
-  await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toHaveCount(0);
-  await expect(cameraControls.getByRole("slider", { name: "Swing" })).toHaveCount(0);
+  await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toBeDisabled();
+  await expect(cameraControls.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
 

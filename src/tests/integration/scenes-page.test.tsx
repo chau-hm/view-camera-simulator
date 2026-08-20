@@ -1,6 +1,13 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { RouterProvider, createMemoryRouter } from "react-router-dom";
+import {
+  MemoryRouter,
+  Route,
+  RouterProvider,
+  Routes,
+  createMemoryRouter,
+  useLocation,
+} from "react-router-dom";
 import {
   getPublicSceneEntryById,
   getPublicScenes,
@@ -8,6 +15,7 @@ import {
   publicSceneIds,
 } from "../../app/publicScenes";
 import { routes } from "../../app/router";
+import { ScenesPage } from "../../app/pages";
 import { i18n } from "../../i18n";
 
 beforeEach(async () => {
@@ -83,7 +91,7 @@ describe("scenes page", () => {
     );
     expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
       "href",
-      "/simulator/guided/architecture-foreground/architecture-foreground-rise-01",
+      "/simulator/guided/architecture-foreground/architecture-foreground-tilt-focus-01",
     );
 
     // Oblique Architecture remains the final public scene and now exposes the compound task.
@@ -264,6 +272,29 @@ describe("scenes page", () => {
     expect(cardFor("斜向建築攝影").getByRole("link", { name: "引導課程" })).toHaveAttribute(
       "href",
       "/simulator/free/oblique-architecture?lesson=1",
+    );
+  });
+
+  it("navigates from the Architecture + Foreground card into Free Practice", async () => {
+    const LocationProbe = () => <div data-testid="navigation-location">{useLocation().pathname}</div>;
+    render(
+      <MemoryRouter initialEntries={["/scenes"]}>
+        <Routes>
+          <Route path="/scenes" element={<ScenesPage />} />
+          <Route path="/simulator/free/:sceneId" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const heading = await screen.findByRole("heading", { name: "Architecture + Foreground", level: 2 });
+    const card = heading.closest("article");
+    expect(card).not.toBeNull();
+    fireEvent.click(within(card!).getByRole("link", { name: "Open Scene" }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("navigation-location")).toHaveTextContent(
+        "/simulator/free/architecture-foreground",
+      ),
     );
   });
 });

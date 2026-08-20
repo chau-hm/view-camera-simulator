@@ -143,6 +143,19 @@ export const evaluateTask = (
           message: getCriterionResultMessageRef(criterion, passed),
         };
       }
+      case "focus-used": {
+        const initialFocusDistanceMm =
+          task.initialCameraState?.focusDistanceMm ?? scene.cameraPreset.focusDistanceMm;
+        const value = Math.abs(camera.focusDistanceMm - initialFocusDistanceMm);
+        const passed = value >= criterion.minimumAbsMm;
+        return {
+          criterionId: criterion.id,
+          label: guidedCopy.criteria[criterion.id],
+          passed,
+          score: Math.min(1, value / Math.max(criterion.minimumAbsMm, 1e-9)),
+          message: getCriterionResultMessageRef(criterion, passed),
+        };
+      }
       case "movement-range": {
         const rawValue = movementValue(camera, criterion.movement);
         const value = criterion.valueMode === "signed" ? rawValue : Math.abs(rawValue);

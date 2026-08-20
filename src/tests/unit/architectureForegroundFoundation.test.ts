@@ -34,13 +34,12 @@ describe("Architecture + Foreground foundation", () => {
       aperture: 11,
     });
     expect(architectureForegroundScene.cameraControlPolicy).toEqual({
-      focusDistance: "fixed",
       aperture: "fixed",
       infinityReset: false,
     });
     expect(architectureForegroundScene.movementCapabilities).toEqual({
-      available: ["frontRiseMm"],
-      selectionMode: "single",
+      available: ["frontRiseMm", "frontTiltDeg"],
+      selectionMode: "multiple",
       defaultMovement: "frontRiseMm",
     });
     expect(architectureForegroundScene.compositionTargets.map((target) => target.id)).toEqual([

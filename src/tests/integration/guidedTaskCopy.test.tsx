@@ -12,7 +12,7 @@ import { LOCALE_STORAGE_KEY } from "../../i18n/localePreference";
 import { guidedTaskMessageKeys } from "../../i18n/guidedTaskMessageKeys";
 import type { TaskDefinition, TaskEvaluation } from "../../types/task";
 
-const guidedTaskIds = ["rise-01", "oblique-rise-01", "architecture-foreground-rise-01", "oblique-swing-focus-01", "oblique-compound-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
+const guidedTaskIds = ["rise-01", "oblique-rise-01", "architecture-foreground-rise-01", "architecture-foreground-tilt-focus-01", "oblique-swing-focus-01", "oblique-compound-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
 
 const resetLocale = async () => {
   cleanup();
@@ -132,6 +132,13 @@ describe("Guided Task presentation", () => {
     expect(document.body).toHaveTextContent(/required roof region/);
     expect(document.body).toHaveTextContent(/foreground remains softer/);
     expect(document.body).not.toHaveTextContent(/20 mm/);
+
+    cleanup();
+    renderGuidedTask("architecture-foreground-tilt-focus-01", "architecture-foreground-tilt-focus-near-sharp");
+    expect(document.body).toHaveTextContent(/Align the Focus Plane/);
+    expect(document.body).toHaveTextContent(/Front Tilt and Focus/);
+    expect(document.body).toHaveTextContent(/depth-of-field/);
+    expect(document.body).not.toHaveTextContent(/2°|6830 mm/);
 
     cleanup();
     renderGuidedTask("oblique-rise-01", "oblique-rise-building-top-visible");

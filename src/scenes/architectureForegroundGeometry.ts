@@ -190,10 +190,25 @@ export const cameraCalibration = {
   startingAperture: 11,
   futureRiseMm: 20,
   futureTiltProbeDeg: 5,
+  rawTiltFocusSolutionDeg: 2,
+  rawTiltFocusFocusDistanceMm: 6830,
+  tiltFocusRangeDeg: { min: 1.7, max: 2.6 },
+  tiltFocusSharpnessMinimum: 0.7,
+  tiltFocusMinimumFocusAdjustmentMm: 100,
 } as const;
 
 export const canonicalFocusDistanceMm = roundToStep(
   cameraCalibration.rawFocusDistanceMm,
+  CAMERA_CONTROL_STEPS.focusDistanceMm,
+);
+
+export const canonicalTiltFocusTiltDeg = roundToStep(
+  cameraCalibration.rawTiltFocusSolutionDeg,
+  CAMERA_CONTROL_STEPS.tiltDeg,
+);
+
+export const canonicalTiltFocusFocusDistanceMm = roundToStep(
+  cameraCalibration.rawTiltFocusFocusDistanceMm,
   CAMERA_CONTROL_STEPS.focusDistanceMm,
 );
 
@@ -242,6 +257,13 @@ export const neutralCalibration = {
   publicFocusDistanceMm: canonicalFocusDistanceMm,
   futureRiseMm: cameraCalibration.futureRiseMm,
   futureTiltProbeDeg: cameraCalibration.futureTiltProbeDeg,
+  rawTiltFocusSolutionDeg: cameraCalibration.rawTiltFocusSolutionDeg,
+  publicTiltFocusSolutionDeg: canonicalTiltFocusTiltDeg,
+  rawTiltFocusFocusDistanceMm: cameraCalibration.rawTiltFocusFocusDistanceMm,
+  publicTiltFocusFocusDistanceMm: canonicalTiltFocusFocusDistanceMm,
+  tiltFocusRangeDeg: cameraCalibration.tiltFocusRangeDeg,
+  tiltFocusSharpnessMinimum: cameraCalibration.tiltFocusSharpnessMinimum,
+  tiltFocusMinimumFocusAdjustmentMm: cameraCalibration.tiltFocusMinimumFocusAdjustmentMm,
   aperture: cameraCalibration.startingAperture,
 } as const;
 

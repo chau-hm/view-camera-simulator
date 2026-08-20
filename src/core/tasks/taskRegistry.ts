@@ -160,6 +160,79 @@ const architectureForegroundRiseTask: TaskDefinition = {
   },
 };
 
+const architectureForegroundTiltFocusTask: TaskDefinition = {
+  id: "architecture-foreground-tilt-focus-01",
+  sceneId: architectureForegroundScene.id,
+  mode: "guided",
+  enabledControls: ["tilt", "focusDistance", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "architecture-foreground-tilt-focus-building-top-visible",
+      type: "composition-visible",
+      targetId: "building-top",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-tilt-focus-building-base-visible",
+      type: "composition-visible",
+      targetId: "building-base",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-tilt-focus-camera-level",
+      type: "camera-level",
+    },
+    {
+      id: "architecture-foreground-tilt-focus-tilt-used",
+      type: "movement-used",
+      movement: "tilt",
+      minimumAbs: 0.1,
+    },
+    {
+      id: "architecture-foreground-tilt-focus-tilt-range",
+      type: "movement-range",
+      movement: "tilt",
+      min: architectureForegroundGeometry.neutralCalibration.tiltFocusRangeDeg.min,
+      max: architectureForegroundGeometry.neutralCalibration.tiltFocusRangeDeg.max,
+      valueMode: "signed",
+    },
+    {
+      id: "architecture-foreground-tilt-focus-focus-used",
+      type: "focus-used",
+      minimumAbsMm:
+        architectureForegroundGeometry.neutralCalibration.tiltFocusMinimumFocusAdjustmentMm,
+    },
+    {
+      id: "architecture-foreground-tilt-focus-near-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["foreground-near"],
+      minimumSharpness: architectureForegroundGeometry.neutralCalibration.tiltFocusSharpnessMinimum,
+    },
+    {
+      id: "architecture-foreground-tilt-focus-building-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["building-middle"],
+      minimumSharpness: architectureForegroundGeometry.neutralCalibration.tiltFocusSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    frontRiseMm: architectureForegroundGeometry.neutralCalibration.futureRiseMm,
+    frontTiltDeg: 0,
+    frontSwingDeg: 0,
+    focusDistanceMm: architectureForegroundGeometry.canonicalFocusDistanceMm,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    aperture: architectureForegroundScene.cameraPreset.aperture,
+    geometryView: "side",
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+  },
+};
+
 const obliqueSwingFocusTask: TaskDefinition = {
   id: "oblique-swing-focus-01",
   sceneId: obliqueArchitectureScene.id,
@@ -470,6 +543,7 @@ export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
   "oblique-rise-01": obliqueRiseTask,
   "architecture-foreground-rise-01": architectureForegroundRiseTask,
+  "architecture-foreground-tilt-focus-01": architectureForegroundTiltFocusTask,
   "oblique-swing-focus-01": obliqueSwingFocusTask,
   "oblique-compound-01": obliqueCompoundTask,
   "tilt-01": tiltTask,
