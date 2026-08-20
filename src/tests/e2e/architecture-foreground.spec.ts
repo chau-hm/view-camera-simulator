@@ -21,7 +21,7 @@ test("Architecture + Foreground exposes the neutral photographic problem in Free
   await expect(page).toHaveURL(/\/simulator\/free\/architecture-foreground\?rttDiagnostics=1$/);
   await expect(
     page.getByText(
-      "Observe the neutral photographic problem: the level camera keeps the building verticals parallel, the roof is cropped, and the near foreground is softer than the building.",
+      "Use Front Rise to correct the neutral framing problem while observing that foreground softness remains.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -60,7 +60,8 @@ test("Architecture + Foreground exposes the neutral photographic problem in Free
   expect(sharpness[3]).toBeGreaterThanOrEqual(80);
 
   const cameraControls = page.getByRole("region", { name: "Camera Controls" });
-  await expect(cameraControls.getByRole("slider", { name: "Rise" })).toHaveCount(0);
+  await expect(cameraControls.getByRole("slider", { name: "Rise" })).toBeEnabled();
+  await expect(cameraControls.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toHaveCount(0);
   await expect(cameraControls.getByRole("slider", { name: "Swing" })).toHaveCount(0);
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
@@ -69,8 +70,8 @@ test("Architecture + Foreground exposes the neutral photographic problem in Free
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   await expect(page.locator("section[data-geometry-fit]")).toHaveAttribute("data-geometry-view", "side");
   await expect(page.getByTestId("geometry-svg-side")).toBeVisible();
-  await expect(page.getByTestId("architecture-foreground-ground-guide")).toBeVisible();
-  await expect(page.getByTestId("architecture-foreground-building-guide")).toBeVisible();
+  await expect(page.getByTestId("architecture-foreground-ground-guide").first()).toBeVisible();
+  await expect(page.getByTestId("architecture-foreground-building-guide").first()).toBeVisible();
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);

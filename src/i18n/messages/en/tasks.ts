@@ -158,6 +158,42 @@ export const tasksMessages = {
       },
     },
   },
+  architectureForegroundRise: {
+    title: "Frame the Building",
+    objective:
+      "Use Front Rise to include the required roof region while keeping the building base in frame and the camera level.",
+    notes: {
+      useRise: "Increase Front Rise from the neutral state to bring the required roof region into frame.",
+      keepBase: "Keep the building base inside the frame while you reframe upward.",
+      foreground:
+        "This task solves composition only; the near foreground remains softer than the building for a later lesson.",
+    },
+    criteria: {
+      buildingTopVisible: "Required roof region is visible",
+      buildingBaseVisible: "Building base remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      movementUsed: "Front Rise is used",
+    },
+    feedback: {
+      passPrimary:
+        "Front Rise corrected the composition while the camera stayed level. The foreground sharpness problem remains for a later lesson.",
+      defaultFailPrimary:
+        "Use Front Rise to include the roof while keeping the base and verticals stable.",
+      primary: {
+        buildingTopVisible: "The required roof region is still cropped. Increase Front Rise.",
+        buildingBaseVisible: "Keep the building base inside the frame while adjusting Front Rise.",
+        cameraLevel:
+          "Keep the camera and rear standard level; do not introduce tilt, swing, or rear movement.",
+        movementUsed: "Increase Front Rise to begin solving the composition problem.",
+      },
+      secondary: {
+        buildingTopVisible: "Watch the Ground Glass top edge until the required roof region is inside.",
+        buildingBaseVisible: "Check the lower Ground Glass edge as you bring the roof into view.",
+        cameraLevel: "Front Rise changes framing without changing perspective or converging the verticals.",
+        movementUsed: "Use Front Rise as the composition control; no exact slider value is required.",
+      },
+    },
+  },
   obliqueSwingFocus: {
     title: "Align the Façade Focus",
     objective:

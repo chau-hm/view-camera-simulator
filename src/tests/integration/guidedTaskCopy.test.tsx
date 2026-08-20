@@ -12,7 +12,7 @@ import { LOCALE_STORAGE_KEY } from "../../i18n/localePreference";
 import { guidedTaskMessageKeys } from "../../i18n/guidedTaskMessageKeys";
 import type { TaskDefinition, TaskEvaluation } from "../../types/task";
 
-const guidedTaskIds = ["rise-01", "oblique-rise-01", "oblique-swing-focus-01", "oblique-compound-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
+const guidedTaskIds = ["rise-01", "oblique-rise-01", "architecture-foreground-rise-01", "oblique-swing-focus-01", "oblique-compound-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
 
 const resetLocale = async () => {
   cleanup();
@@ -127,6 +127,13 @@ describe("Guided Task presentation", () => {
     expect(document.body).toHaveTextContent(/whole-camera viewpoint/);
 
     cleanup();
+    renderGuidedTask("architecture-foreground-rise-01", "architecture-foreground-rise-building-top-visible");
+    expect(document.body).toHaveTextContent(/Frame the Building/);
+    expect(document.body).toHaveTextContent(/required roof region/);
+    expect(document.body).toHaveTextContent(/foreground remains softer/);
+    expect(document.body).not.toHaveTextContent(/20 mm/);
+
+    cleanup();
     renderGuidedTask("oblique-rise-01", "oblique-rise-building-top-visible");
     expect(document.body).toHaveTextContent(/Frame the Building/);
     expect(document.body).toHaveTextContent(/full building/);
@@ -181,6 +188,12 @@ describe("Guided Task presentation", () => {
     expect(document.body).toHaveTextContent(/視點/);
     expect(document.body).toHaveTextContent(/引導任務/);
     expect(document.body).toHaveTextContent(/允許的控制項目/);
+
+    cleanup();
+    renderGuidedTask("architecture-foreground-rise-01", "architecture-foreground-rise-building-top-visible");
+    expect(document.body).toHaveTextContent(/為建築物取景/);
+    expect(document.body).toHaveTextContent(/需要的屋頂部分/);
+    expect(document.body).toHaveTextContent(/前景仍會比建築物柔和/);
 
     cleanup();
     renderGuidedTask("oblique-rise-01", "oblique-rise-building-top-visible");

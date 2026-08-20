@@ -52,7 +52,7 @@ const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
     objectiveKey: simulatorMessageKeys.freePractice.architectureForeground.objective,
     bulletKeys: [
       simulatorMessageKeys.freePractice.architectureForeground.bullets.framing,
-      simulatorMessageKeys.freePractice.architectureForeground.bullets.level,
+      simulatorMessageKeys.freePractice.architectureForeground.bullets.rise,
       simulatorMessageKeys.freePractice.architectureForeground.bullets.depth,
     ],
   },

@@ -92,6 +92,47 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
       },
     },
   },
+  "architecture-foreground-rise-01": {
+    title: k.architectureForegroundRise.title,
+    objective: k.architectureForegroundRise.objective,
+    notes: [
+      k.architectureForegroundRise.notes.useRise,
+      k.architectureForegroundRise.notes.keepBase,
+      k.architectureForegroundRise.notes.foreground,
+    ],
+    criteria: {
+      "architecture-foreground-rise-building-top-visible":
+        k.architectureForegroundRise.criteria.buildingTopVisible,
+      "architecture-foreground-rise-building-base-visible":
+        k.architectureForegroundRise.criteria.buildingBaseVisible,
+      "architecture-foreground-rise-camera-level": k.architectureForegroundRise.criteria.cameraLevel,
+      "architecture-foreground-rise-movement-used": k.architectureForegroundRise.criteria.movementUsed,
+    },
+    feedback: {
+      passPrimary: k.architectureForegroundRise.feedback.passPrimary,
+      defaultFailPrimary: k.architectureForegroundRise.feedback.defaultFailPrimary,
+      primary: {
+        "architecture-foreground-rise-building-top-visible":
+          k.architectureForegroundRise.feedback.primary.buildingTopVisible,
+        "architecture-foreground-rise-building-base-visible":
+          k.architectureForegroundRise.feedback.primary.buildingBaseVisible,
+        "architecture-foreground-rise-camera-level":
+          k.architectureForegroundRise.feedback.primary.cameraLevel,
+        "architecture-foreground-rise-movement-used":
+          k.architectureForegroundRise.feedback.primary.movementUsed,
+      },
+      secondary: {
+        "architecture-foreground-rise-building-top-visible":
+          k.architectureForegroundRise.feedback.secondary.buildingTopVisible,
+        "architecture-foreground-rise-building-base-visible":
+          k.architectureForegroundRise.feedback.secondary.buildingBaseVisible,
+        "architecture-foreground-rise-camera-level":
+          k.architectureForegroundRise.feedback.secondary.cameraLevel,
+        "architecture-foreground-rise-movement-used":
+          k.architectureForegroundRise.feedback.secondary.movementUsed,
+      },
+    },
+  },
   "oblique-swing-focus-01": {
     title: k.obliqueSwingFocus.title,
     objective: k.obliqueSwingFocus.objective,

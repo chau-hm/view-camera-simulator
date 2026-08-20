@@ -152,6 +152,37 @@ export const guidedTaskMessageKeys = {
       },
     },
   },
+  architectureForegroundRise: {
+    title: "tasks.architectureForegroundRise.title",
+    objective: "tasks.architectureForegroundRise.objective",
+    notes: {
+      useRise: "tasks.architectureForegroundRise.notes.useRise",
+      keepBase: "tasks.architectureForegroundRise.notes.keepBase",
+      foreground: "tasks.architectureForegroundRise.notes.foreground",
+    },
+    criteria: {
+      buildingTopVisible: "tasks.architectureForegroundRise.criteria.buildingTopVisible",
+      buildingBaseVisible: "tasks.architectureForegroundRise.criteria.buildingBaseVisible",
+      cameraLevel: "tasks.architectureForegroundRise.criteria.cameraLevel",
+      movementUsed: "tasks.architectureForegroundRise.criteria.movementUsed",
+    },
+    feedback: {
+      passPrimary: "tasks.architectureForegroundRise.feedback.passPrimary",
+      defaultFailPrimary: "tasks.architectureForegroundRise.feedback.defaultFailPrimary",
+      primary: {
+        buildingTopVisible: "tasks.architectureForegroundRise.feedback.primary.buildingTopVisible",
+        buildingBaseVisible: "tasks.architectureForegroundRise.feedback.primary.buildingBaseVisible",
+        cameraLevel: "tasks.architectureForegroundRise.feedback.primary.cameraLevel",
+        movementUsed: "tasks.architectureForegroundRise.feedback.primary.movementUsed",
+      },
+      secondary: {
+        buildingTopVisible: "tasks.architectureForegroundRise.feedback.secondary.buildingTopVisible",
+        buildingBaseVisible: "tasks.architectureForegroundRise.feedback.secondary.buildingBaseVisible",
+        cameraLevel: "tasks.architectureForegroundRise.feedback.secondary.cameraLevel",
+        movementUsed: "tasks.architectureForegroundRise.feedback.secondary.movementUsed",
+      },
+    },
+  },
   obliqueSwingFocus: {
     title: "tasks.obliqueSwingFocus.title",
     objective: "tasks.obliqueSwingFocus.objective",

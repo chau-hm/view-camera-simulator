@@ -61,8 +61,12 @@ export const architectureForegroundScene: SceneDefinition = {
     },
   ],
   focusDistanceRangeMm: geometry.focusDistanceRangeMm,
+  movementCapabilities: {
+    available: ["frontRiseMm"],
+    selectionMode: "single",
+    defaultMovement: "frontRiseMm",
+  },
   cameraControlPolicy: {
-    movement: "fixed",
     focusDistance: "fixed",
     aperture: "fixed",
     infinityReset: false,

@@ -1,7 +1,9 @@
 import type { TaskDefinition } from "../../types/task";
 import architectureGeometry from "../../scenes/architectureRiseGeometry";
+import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
+import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
@@ -102,6 +104,55 @@ const obliqueRiseTask: TaskDefinition = {
     rearRiseMm: 0,
     rearTiltDeg: 0,
     aperture: obliqueArchitectureScene.cameraPreset.aperture,
+    geometryView: "side",
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+  },
+};
+
+const architectureForegroundRiseTask: TaskDefinition = {
+  id: "architecture-foreground-rise-01",
+  sceneId: architectureForegroundScene.id,
+  mode: "guided",
+  enabledControls: ["rise", "geometryView"],
+  constraints: {
+    movement: "rise-only",
+  },
+  criteria: [
+    {
+      id: "architecture-foreground-rise-building-top-visible",
+      type: "composition-visible",
+      targetId: "building-top",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-rise-building-base-visible",
+      type: "composition-visible",
+      targetId: "building-base",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-rise-camera-level",
+      type: "camera-level",
+    },
+    {
+      id: "architecture-foreground-rise-movement-used",
+      type: "movement-used",
+      movement: "rise",
+      minimumAbs: 1,
+    },
+  ],
+  initialCameraState: {
+    frontRiseMm: 0,
+    frontTiltDeg: 0,
+    frontSwingDeg: 0,
+    focusDistanceMm: architectureForegroundGeometry.canonicalFocusDistanceMm,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    aperture: architectureForegroundScene.cameraPreset.aperture,
     geometryView: "side",
     groundGlassAssistEnabled: false,
     focusAssistEnabled: false,
@@ -418,6 +469,7 @@ const mirrorShiftTask: TaskDefinition = {
 export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
   "oblique-rise-01": obliqueRiseTask,
+  "architecture-foreground-rise-01": architectureForegroundRiseTask,
   "oblique-swing-focus-01": obliqueSwingFocusTask,
   "oblique-compound-01": obliqueCompoundTask,
   "tilt-01": tiltTask,
