@@ -46,6 +46,32 @@ describe("public scene catalog integrity", () => {
     ).toBe(false);
   });
 
+  it("publishes Architecture + Foreground as a free-only neutral foundation", () => {
+    const entry = publicSceneCatalog.find(
+      (candidate) => candidate.id === "architecture-foreground",
+    )!;
+    expect(entry.availability).toBe("available");
+    expect(entry.availableModes).toEqual(["free"]);
+    expect(entry.guidedTaskId).toBeUndefined();
+    expect(entry.guidedTaskIds).toBeUndefined();
+    expect(entry.guidedLesson).toBeUndefined();
+    expect(
+      isValidSimulatorRoute({
+        mode: "free",
+        sceneId: entry.id,
+        publicEntry: entry,
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: "architecture-foreground-rise-01",
+        publicEntry: entry,
+      }),
+    ).toBe(false);
+  });
+
   it("publishes Oblique Architecture as the final free and guided scene", () => {
     const entry = publicSceneCatalog.at(-1)!;
     expect(entry?.id).toBe("oblique-architecture");

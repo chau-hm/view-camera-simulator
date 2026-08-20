@@ -213,6 +213,8 @@ export const simulatorMessages = {
     tabletopGuide: "桌面",
     diagonalSubjectPlaneGuide: "對角主體平面",
     targetFacadeDepthGuide: "主體立面深度",
+    architectureForegroundGroundGuide: "近景地面",
+    architectureForegroundBuildingGuide: "建築物側面輪廓",
     nearCardTarget: "近處卡片",
     middleNotebookTarget: "中間筆記本",
     farChartTarget: "遠處圖表",
@@ -225,6 +227,10 @@ export const simulatorMessages = {
     nearFacadeTarget: "近處立面",
     middleFacadeTarget: "中間立面",
     farFacadeTarget: "遠處立面",
+    architectureForegroundNearTarget: "近處前景",
+    architectureForegroundMiddleTarget: "中間前景",
+    architectureForegroundBuildingBaseTarget: "建築物基座",
+    architectureForegroundBuildingMiddleTarget: "建築物中段",
   },
   sceneLegend: {
     filmPlane: "底片平面（藍色）",
@@ -285,6 +291,17 @@ export const simulatorMessages = {
         focus: "調整對焦及光圈，比較清晰度及景深。",
       },
       observation: "觀察前組上移時建築物上方如何進入畫面。構圖改變，但整部相機的視點保持不變，預期的垂直線仍然平行。",
+    },
+    architectureForeground: {
+      objective:
+        "觀察中立攝影問題：水平相機令建築物垂直線保持平行、屋頂被裁切，而近處前景比建築物柔和。",
+      bullets: {
+        framing: "留意建築物基座仍在畫面內，但需要的屋頂部分被裁切。",
+        level: "相機保持水平，因此建築物垂直線保持平行，不會互相收斂。",
+        depth: "比較近處規律的鋪地接縫與較遠且較清晰的建築物立面。",
+      },
+      observation:
+        "建築物保持可用及大致清晰，而近處前景較柔和。這個中立狀態同時呈現構圖問題及景深問題。",
     },
     obliqueArchitecture: {
       objective: "在斜角建築場景中探索前組上移、前組擺動及對焦，同時保持後組水平。",

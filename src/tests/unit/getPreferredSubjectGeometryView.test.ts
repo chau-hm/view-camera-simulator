@@ -30,6 +30,7 @@ describe("getPreferredSubjectGeometryView", () => {
 
   it.each([
     ["architecture-rise", "side"],
+    ["architecture-foreground", "side"],
     ["oblique-architecture", "top"],
     ["focus-fundamentals-two-targets", "side"],
     ["mirror-shift", "top"],

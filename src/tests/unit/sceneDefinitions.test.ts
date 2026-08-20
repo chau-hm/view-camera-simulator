@@ -162,7 +162,7 @@ describe("scene definitions", () => {
 
     expect(required.length).toBeGreaterThan(0);
     expect(lazy.length).toBeGreaterThan(0);
-    expect(nextSceneId).toBe("table-tilt");
+    expect(nextSceneId).toBe("architecture-foreground");
     expect(preload.length).toBeGreaterThan(0);
     expect(sceneOrder.at(-1)).toBe("oblique-architecture");
     expect(getNextSceneId("mirror-shift")).toBe("oblique-architecture");

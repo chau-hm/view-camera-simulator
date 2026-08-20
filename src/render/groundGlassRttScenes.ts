@@ -5,6 +5,7 @@ import { calculateImageDistanceAlongOpticalAxisMm } from "../core/optics/calcula
 export const RTT_SCENES = [
   "focus-fundamentals-two-targets",
   "architecture-rise",
+  "architecture-foreground",
   "oblique-architecture",
   "table-tilt",
   "shelf-swing",

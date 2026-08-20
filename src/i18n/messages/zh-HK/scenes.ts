@@ -38,6 +38,16 @@ export const scenesMessages = {
       perspectiveControl: "透視控制",
     },
   },
+  architectureForeground: {
+    title: "建築物與前景",
+    description:
+      "在保持建築物垂直線平行的水平相機下取景，同時觀察前景深度帶來的第二個對焦問題。",
+    topics: {
+      levelFraming: "水平取景",
+      foregroundDepth: "前景深度",
+      sharpness: "不同深度的清晰度",
+    },
+  },
   obliqueArchitecture: {
     title: "斜向建築攝影",
     description:

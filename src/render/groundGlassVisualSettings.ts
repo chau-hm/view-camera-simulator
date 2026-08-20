@@ -38,6 +38,13 @@ const SCENE_DOF_VISUAL_SETTINGS: Readonly<
     displayBlurScale: 3.6,
     planeMode: "automatic",
   },
+  "architecture-foreground": {
+    // Keep the physical CoC from the shared optics model while making the
+    // close paving seams legible at the Ground Glass display resolution.
+    maximumBlurRadiusPx: 48,
+    displayBlurScale: 3.4,
+    planeMode: "automatic",
+  },
 };
 
 export const getGroundGlassDofVisualSettings = (

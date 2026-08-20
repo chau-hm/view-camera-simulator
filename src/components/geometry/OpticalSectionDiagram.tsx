@@ -52,6 +52,10 @@ const sceneGeometryGuideMessageKey = (sceneId: string, guideId: string): Simulat
       return simulatorMessageKeys.geometry.diagonalSubjectPlaneGuide;
     case "oblique-architecture:oblique-architecture-target-facade":
       return simulatorMessageKeys.geometry.targetFacadeDepthGuide;
+    case "architecture-foreground:architecture-foreground-ground":
+      return simulatorMessageKeys.geometry.architectureForegroundGroundGuide;
+    case "architecture-foreground:architecture-foreground-building-profile":
+      return simulatorMessageKeys.geometry.architectureForegroundBuildingGuide;
     default:
       return null;
   }
@@ -81,6 +85,14 @@ const sceneGeometryTargetMessageKey = (sceneId: string, targetId: string): Simul
       return simulatorMessageKeys.geometry.middleFacadeTarget;
     case "oblique-architecture:facade-far":
       return simulatorMessageKeys.geometry.farFacadeTarget;
+    case "architecture-foreground:foreground-near":
+      return simulatorMessageKeys.geometry.architectureForegroundNearTarget;
+    case "architecture-foreground:foreground-middle":
+      return simulatorMessageKeys.geometry.architectureForegroundMiddleTarget;
+    case "architecture-foreground:building-base":
+      return simulatorMessageKeys.geometry.architectureForegroundBuildingBaseTarget;
+    case "architecture-foreground:building-middle":
+      return simulatorMessageKeys.geometry.architectureForegroundBuildingMiddleTarget;
     default:
       return /near/i.test(targetId)
         ? simulatorMessageKeys.geometry.nearDetailTarget

@@ -2,6 +2,7 @@ import type { Vec3 } from "../../types/optics";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
+import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
 
 export type SceneGeometryGuide = {
   id: string;
@@ -64,6 +65,40 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
       labelAnchor: "middle",
     },
   ],
+  "architecture-foreground": [
+    {
+      id: "architecture-foreground-ground",
+      label: "Foreground ground",
+      view: "side",
+      startWorld: {
+        x: 0,
+        y: architectureForegroundGeometry.ground.y,
+        z: architectureForegroundGeometry.ground.nearZ,
+      },
+      endWorld: {
+        x: 0,
+        y: architectureForegroundGeometry.ground.y,
+        z: architectureForegroundGeometry.facade.frontFacadeZ,
+      },
+      color: "#a16207",
+      testId: "architecture-foreground-ground-guide",
+      labelPositionT: 0.5,
+      labelOffsetPx: { x: 0, y: 18 },
+      labelAnchor: "middle",
+    },
+    {
+      id: "architecture-foreground-building-profile",
+      label: "Building profile",
+      view: "side",
+      startWorld: architectureForegroundGeometry.buildingVerticalEdges[0].bottom,
+      endWorld: architectureForegroundGeometry.buildingVerticalEdges[0].top,
+      color: "#115e59",
+      testId: "architecture-foreground-building-guide",
+      labelPositionT: 0.52,
+      labelOffsetPx: { x: 10, y: 0 },
+      labelAnchor: "start",
+    },
+  ],
 };
 
 const targetLabels: Readonly<Record<string, SceneGeometryTargetLabelMap>> = {
@@ -85,6 +120,12 @@ const targetLabels: Readonly<Record<string, SceneGeometryTargetLabelMap>> = {
     "facade-near": "Near façade",
     "facade-middle": "Middle façade",
     "facade-far": "Far façade",
+  },
+  "architecture-foreground": {
+    "foreground-near": "Near foreground",
+    "foreground-middle": "Middle foreground",
+    "building-base": "Building base",
+    "building-middle": "Building middle",
   },
 };
 
