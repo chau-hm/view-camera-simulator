@@ -1,68 +1,65 @@
 # Current Work Handoff
 
-## PR 7A — Architecture + Foreground: Scene Foundation + Neutral Photographic Problem
+## PR 7B — Architecture + Foreground: Front Rise Composition Slice
 
-- Branch: `feature/architecture-foreground-foundation`
-- Base: `origin/main` @ `f8faecaf642981c227ad3cfb7de4ea7f6234efb1`
-- Substantive implementation HEAD: `c844fcd`
-- Objective: add a public Free Practice foundation scene that shows a level,
-  front-on building with a cropped roof and a visibly softer near foreground,
-  without exposing solving controls or guided tasks.
+- Branch: `feature/architecture-foreground-rise`
+- Base: `origin/main` @ `c1fa5f941d7c45f3a39a11de439d776b81d42906`
+- Substantive implementation HEAD: `94a7952`.
+- Objective: make Front Rise the only public solving movement for the
+  Architecture + Foreground composition problem and add the direct guided task
+  `architecture-foreground-rise-01`.
 
 ## Implemented surfaces
 
-- Canonical geometry: `src/scenes/architectureForegroundGeometry.ts` and the
-  scene definition with reusable composition/focus targets and finite bounds.
-- Native subject/RTT: `ArchitectureForegroundSubjectFactory`, scene-subject
-  registry entry, centralized RTT registration, and calibrated display blur
-  settings using the shared physical optics state.
-- Teaching geometry: side-view ground/building guides, target labels, and
-  Geometry View integration.
-- Public integration: scene registry/order, Free-only catalog entry, English
-  and zh-HK copy, and scene-specific Free Practice observation guidance.
-- Tests: canonical optics/subject/RTT contracts, catalog/route contracts,
-  copy/view contracts, and focused Chromium E2E.
+- Scene policy: `architecture-foreground` now exposes only `frontRiseMm` in
+  Free Practice and keeps focus, aperture, and all other movements fixed.
+- Task/evaluator: roof and base projected-corner coverage, level camera/rear
+  standard, and nonzero Rise; no exact slider value or focus criterion.
+- Public integration: `availableModes: ["free", "guided"]`, direct
+  `guidedTaskId`, route/catalog validation, English and zh-HK task/free-practice
+  copy, and Rise-only task controls.
+- Asset: generated raster scene-card thumbnail at
+  `public/assets/architecture-foreground.png`.
+- Tests: canonical Rise calibration, catalog/routes/copy, existing neutral
+  foundation regression, and focused Chromium Free Practice/guided workflows.
 
-## Neutral calibration
+## Rise calibration and teaching distinction
 
-- Lens: 150 mm; raw building-middle focus distance 9,488 mm; public rounded
-  focus value 9,490 mm; starting aperture f/11.
-- Ground: y = -1,400 mm, z = 700–12,500 mm; building front façade z = 9,500
-  mm, width 4,200 mm, main height 4,500 mm, roof top y = 3,550 mm.
-- Camera and standards: level body/optical axis; Front Rise/Tilt/Swing and
-  Rear Rise/Tilt are all 0 at neutral.
-- Neutral evidence: roof-top region is cropped, parapet/base remains framed,
-  vertical edges project with constant horizontal coordinates, building
-  middle sharpness is at least 0.8, and near foreground sharpness is below
-  0.5 and below the building.
-- Future viability probes: +20 mm rise recovers the roof, +5° tilt changes
-  the focus plane, focus range is 3,500–12,500 mm, and f/22 is available to
-  later aperture calibration. These values are not public controls in PR 7A.
+- Neutral: `Front Rise = 0 mm`; projected roof coverage is below the 0.95
+  requirement while the base remains visible; camera/rear standard stay level.
+- Canonical solved reference: `+20 mm` (PR7A future-rise probe).
+- Nearby accepted public steps: `+10, +11, +20, and +25 mm` pass the same
+  observable roof/base criteria; `+1 mm` leaves the roof cropped and `+30 mm`
+  loses the base.
+- Solved Rise state preserves parallel architectural verticals and the
+  building/near-foreground sharpness difference; foreground sharpness remains
+  intentionally unresolved for later slices.
 
 ## Validation
 
-- `npm test` (bundled Node): PASS — 122 files / 1,140 tests.
+- `npm test -- --run`: PASS — 123 files / 1,148 tests.
 - `npm run typecheck`: PASS.
 - `npm run lint`: PASS.
 - `npm run check:css`: PASS.
 - `npm run build`: PASS.
-- Focused Chromium E2E: PASS — Architecture + Foreground neutral workflow.
-- `git diff --check`: PASS before commit.
+- Focused Chromium E2E: PASS — 3 tests covering neutral Free Practice, Rise
+  interaction/RTT, and guided completion/restart.
+- `git diff --check`: PASS.
 
-## Deliberate exclusions
+## Checks not run / deliberate exclusions
 
-- No Front Rise, Front Tilt, Front Swing, rear movement, focus, or aperture
-  solving controls are enabled.
-- No guided task IDs, guided lesson stages/copy, evaluator, or extension of
-  `PublicGuidedLessonTaskStageId` (PRs 7B–7F).
-- No global optics formulas, movement signs, RTT architecture/lifecycle,
-  persistence, new movement types, or existing-scene behavior changes.
+- Full `npm run ci:local:e2e` was not run: no renderer-wide lifecycle, RTT
+  architecture, or GPU-resource ownership changes were introduced, and focused
+  Chromium proof passed.
+- PRs 7C–7F remain deferred: Front Tilt + Focus, Aperture/DOF, compound
+  challenge, guided lesson/stage integration, future task IDs, and any
+  `PublicGuidedLessonTaskStageId` extension.
 
-## Checks not run / known risks
+## Reviewer focus / known risks
 
-- Full `npm run ci:local:e2e` was not run: no renderer-wide lifecycle or GPU
-  ownership changes were introduced, and the focused Chromium proof passed.
-- Reviewer focus: subjective Ground Glass legibility of the patterned paving,
-  the intentionally partial roof crop, and future 7B–7D calibration range.
-  The catalog currently reuses the existing Architecture Rise thumbnail as the
-  established foundation asset.
+- Confirm the projected-corner thresholds remain legible as the canonical
+  framing contract and that the base-loss guard at excessive Rise is desirable.
+- Confirm the generated thumbnail matches the existing card style and that the
+  foreground pattern remains visually distinguishable in Ground Glass.
+- No global optics formulas, movement signs, shared RTT architecture, or
+  existing-scene behavior were changed.
