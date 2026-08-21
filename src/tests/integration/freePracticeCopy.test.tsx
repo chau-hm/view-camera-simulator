@@ -37,9 +37,11 @@ describe("Free Practice teaching copy", () => {
 
     cleanup();
     render(<TaskPanel task={null} sceneId="architecture-foreground" />);
-    expect(screen.getByText(/Use Front Rise to correct the neutral framing problem/)).toBeInTheDocument();
+    expect(screen.getByText(/Explore the cumulative Architecture \+ Foreground problem/)).toBeInTheDocument();
     expect(screen.getByText(/Increase Front Rise to include the roof/)).toBeInTheDocument();
-    expect(screen.getByText(/near foreground remains softer than the building/)).toBeInTheDocument();
+    expect(screen.getByText(/Use Front Tilt to rotate the plane of sharp focus/)).toBeInTheDocument();
+    expect(screen.getByText(/Adjust Focus to place that plane/)).toBeInTheDocument();
+    expect(screen.getByText(/Aperture is fixed in this slice/)).toBeInTheDocument();
 
     cleanup();
     render(<FeedbackPanel mode="free" sceneId="understanding-camera-movements" task={null} evaluation={null} />);
@@ -78,9 +80,11 @@ describe("Free Practice teaching copy", () => {
 
     cleanup();
     render(<TaskPanel task={null} sceneId="architecture-foreground" />);
-    expect(screen.getByText(/使用前組上移修正中立狀態的構圖問題/)).toBeInTheDocument();
+    expect(screen.getByText(/探索「建築物及前景」的累積問題/)).toBeInTheDocument();
     expect(screen.getByText(/增加前組上移，把屋頂納入畫面/)).toBeInTheDocument();
-    expect(screen.getByText(/近處前景仍然比建築物柔和/)).toBeInTheDocument();
+    expect(screen.getByText(/使用前組傾斜，讓清晰焦平面/)).toBeInTheDocument();
+    expect(screen.getByText(/調整對焦，將焦平面放置/)).toBeInTheDocument();
+    expect(screen.getByText(/此切片固定光圈/)).toBeInTheDocument();
   });
 });
 

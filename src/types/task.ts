@@ -72,6 +72,12 @@ export type MovementUsedCriterion = {
   minimumAbs: number;
 };
 
+export type FocusUsedCriterion = {
+  id: string;
+  type: "focus-used";
+  minimumAbsMm: number;
+};
+
 export type MovementRangeCriterion = {
   id: string;
   type: "movement-range";
@@ -123,6 +129,7 @@ export type MirrorViewpointRetainedCriterion = {
 export type TaskSuccessCriterion =
   | FocusTargetsSharpCriterion
   | MovementUsedCriterion
+  | FocusUsedCriterion
   | MovementRangeCriterion
   | AllowedApertureCriterion
   | CompositionVisibleCriterion

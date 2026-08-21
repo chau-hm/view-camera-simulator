@@ -289,7 +289,9 @@ export const simulatorMessageKeys = {
       bullets: {
         framing: "simulator.freePractice.architectureForeground.bullets.framing",
         rise: "simulator.freePractice.architectureForeground.bullets.rise",
-        depth: "simulator.freePractice.architectureForeground.bullets.depth",
+        tilt: "simulator.freePractice.architectureForeground.bullets.tilt",
+        focus: "simulator.freePractice.architectureForeground.bullets.focus",
+        aperture: "simulator.freePractice.architectureForeground.bullets.aperture",
       },
       observation: "simulator.freePractice.architectureForeground.observation",
     },

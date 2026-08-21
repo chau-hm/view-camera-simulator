@@ -46,14 +46,17 @@ describe("public scene catalog integrity", () => {
     ).toBe(false);
   });
 
-  it("publishes Architecture + Foreground with its direct Rise guided task", () => {
+  it("publishes Architecture + Foreground with both direct guided tasks", () => {
     const entry = publicSceneCatalog.find(
       (candidate) => candidate.id === "architecture-foreground",
     )!;
     expect(entry.availability).toBe("available");
     expect(entry.availableModes).toEqual(["free", "guided"]);
-    expect(entry.guidedTaskId).toBe("architecture-foreground-rise-01");
-    expect(entry.guidedTaskIds).toBeUndefined();
+    expect(entry.guidedTaskId).toBe("architecture-foreground-tilt-focus-01");
+    expect(entry.guidedTaskIds).toEqual([
+      "architecture-foreground-rise-01",
+      "architecture-foreground-tilt-focus-01",
+    ]);
     expect(entry.guidedLesson).toBeUndefined();
     expect(entry.thumbnailAsset).toBe("assets/architecture-foreground.png");
     expect(
@@ -79,6 +82,15 @@ describe("public scene catalog integrity", () => {
         taskId: "architecture-foreground-tilt-focus-01",
         publicEntry: entry,
         task: getTaskById("architecture-foreground-tilt-focus-01"),
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: "architecture-foreground-dof-01",
+        publicEntry: entry,
+        task: getTaskById("architecture-foreground-dof-01"),
       }),
     ).toBe(false);
   });

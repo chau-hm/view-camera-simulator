@@ -39,18 +39,17 @@ const criterionPassed = (evaluation: ReturnType<typeof evaluateTask>, criterionI
   evaluation.criteria.find((criterion) => criterion.criterionId === criterionId)?.passed;
 
 describe("Architecture + Foreground Rise composition task", () => {
-  it("registers Front Rise as the only public solving movement", () => {
+  it("keeps the Rise task isolated while the scene exposes cumulative capabilities", () => {
     expect(task).toBeDefined();
     expect(task?.sceneId).toBe(architectureForegroundScene.id);
     expect(task?.enabledControls).toEqual(["rise", "geometryView"]);
     expect(task?.constraints).toEqual({ movement: "rise-only" });
     expect(architectureForegroundScene.movementCapabilities).toEqual({
-      available: ["frontRiseMm"],
-      selectionMode: "single",
+      available: ["frontRiseMm", "frontTiltDeg"],
+      selectionMode: "multiple",
       defaultMovement: "frontRiseMm",
     });
     expect(architectureForegroundScene.cameraControlPolicy).toEqual({
-      focusDistance: "fixed",
       aperture: "fixed",
       infinityReset: false,
     });

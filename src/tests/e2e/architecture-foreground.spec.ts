@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
-test("Architecture + Foreground exposes the neutral photographic problem in Free Practice", async ({ page }) => {
+test("Architecture + Foreground exposes the cumulative photographic problem in Free Practice", async ({ page }) => {
   test.setTimeout(120_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
@@ -21,7 +21,7 @@ test("Architecture + Foreground exposes the neutral photographic problem in Free
   await expect(page).toHaveURL(/\/simulator\/free\/architecture-foreground\?rttDiagnostics=1$/);
   await expect(
     page.getByText(
-      "Use Front Rise to correct the neutral framing problem while observing that foreground softness remains.",
+      "Explore the cumulative Architecture + Foreground problem: correct the framing with Front Rise, then compare focus-plane alignment across depth.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -62,9 +62,9 @@ test("Architecture + Foreground exposes the neutral photographic problem in Free
   const cameraControls = page.getByRole("region", { name: "Camera Controls" });
   await expect(cameraControls.getByRole("slider", { name: "Rise" })).toBeEnabled();
   await expect(cameraControls.getByRole("slider", { name: "Rise" })).toHaveValue("0");
-  await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toHaveCount(0);
-  await expect(cameraControls.getByRole("slider", { name: "Swing" })).toHaveCount(0);
-  await expect(page.getByLabel("Focus distance")).toBeDisabled();
+  await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toBeEnabled();
+  await expect(cameraControls.getByRole("slider", { name: "Swing" })).toBeDisabled();
+  await expect(page.getByLabel("Focus distance")).toBeEnabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
 
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();

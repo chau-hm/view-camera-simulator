@@ -133,6 +133,74 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
       },
     },
   },
+  "architecture-foreground-tilt-focus-01": {
+    title: k.architectureForegroundTiltFocus.title,
+    objective: k.architectureForegroundTiltFocus.objective,
+    notes: [
+      k.architectureForegroundTiltFocus.notes.composition,
+      k.architectureForegroundTiltFocus.notes.tilt,
+      k.architectureForegroundTiltFocus.notes.focus,
+      k.architectureForegroundTiltFocus.notes.depthOfField,
+    ],
+    criteria: {
+      "architecture-foreground-tilt-focus-building-top-visible":
+        k.architectureForegroundTiltFocus.criteria.buildingTopVisible,
+      "architecture-foreground-tilt-focus-building-base-visible":
+        k.architectureForegroundTiltFocus.criteria.buildingBaseVisible,
+      "architecture-foreground-tilt-focus-camera-level":
+        k.architectureForegroundTiltFocus.criteria.cameraLevel,
+      "architecture-foreground-tilt-focus-tilt-used":
+        k.architectureForegroundTiltFocus.criteria.tiltUsed,
+      "architecture-foreground-tilt-focus-tilt-range":
+        k.architectureForegroundTiltFocus.criteria.tiltRange,
+      "architecture-foreground-tilt-focus-focus-used":
+        k.architectureForegroundTiltFocus.criteria.focusUsed,
+      "architecture-foreground-tilt-focus-near-sharp":
+        k.architectureForegroundTiltFocus.criteria.nearSharp,
+      "architecture-foreground-tilt-focus-building-sharp":
+        k.architectureForegroundTiltFocus.criteria.buildingSharp,
+    },
+    feedback: {
+      passPrimary: k.architectureForegroundTiltFocus.feedback.passPrimary,
+      defaultFailPrimary: k.architectureForegroundTiltFocus.feedback.defaultFailPrimary,
+      primary: {
+        "architecture-foreground-tilt-focus-building-top-visible":
+          k.architectureForegroundTiltFocus.feedback.primary.buildingTopVisible,
+        "architecture-foreground-tilt-focus-building-base-visible":
+          k.architectureForegroundTiltFocus.feedback.primary.buildingBaseVisible,
+        "architecture-foreground-tilt-focus-camera-level":
+          k.architectureForegroundTiltFocus.feedback.primary.cameraLevel,
+        "architecture-foreground-tilt-focus-tilt-used":
+          k.architectureForegroundTiltFocus.feedback.primary.tiltUsed,
+        "architecture-foreground-tilt-focus-tilt-range":
+          k.architectureForegroundTiltFocus.feedback.primary.tiltRange,
+        "architecture-foreground-tilt-focus-focus-used":
+          k.architectureForegroundTiltFocus.feedback.primary.focusUsed,
+        "architecture-foreground-tilt-focus-near-sharp":
+          k.architectureForegroundTiltFocus.feedback.primary.nearSharp,
+        "architecture-foreground-tilt-focus-building-sharp":
+          k.architectureForegroundTiltFocus.feedback.primary.buildingSharp,
+      },
+      secondary: {
+        "architecture-foreground-tilt-focus-building-top-visible":
+          k.architectureForegroundTiltFocus.feedback.secondary.buildingTopVisible,
+        "architecture-foreground-tilt-focus-building-base-visible":
+          k.architectureForegroundTiltFocus.feedback.secondary.buildingBaseVisible,
+        "architecture-foreground-tilt-focus-camera-level":
+          k.architectureForegroundTiltFocus.feedback.secondary.cameraLevel,
+        "architecture-foreground-tilt-focus-tilt-used":
+          k.architectureForegroundTiltFocus.feedback.secondary.tiltUsed,
+        "architecture-foreground-tilt-focus-tilt-range":
+          k.architectureForegroundTiltFocus.feedback.secondary.tiltRange,
+        "architecture-foreground-tilt-focus-focus-used":
+          k.architectureForegroundTiltFocus.feedback.secondary.focusUsed,
+        "architecture-foreground-tilt-focus-near-sharp":
+          k.architectureForegroundTiltFocus.feedback.secondary.nearSharp,
+        "architecture-foreground-tilt-focus-building-sharp":
+          k.architectureForegroundTiltFocus.feedback.secondary.buildingSharp,
+      },
+    },
+  },
   "oblique-swing-focus-01": {
     title: k.obliqueSwingFocus.title,
     objective: k.obliqueSwingFocus.objective,
@@ -407,6 +475,8 @@ export const getCriterionResultMessageRef = (
       return ref(k.results.focusTargetsSharp[variant]);
     case "movement-used":
       return ref(k.results.movementUsed[criterion.movement][variant]);
+    case "focus-used":
+      return ref(k.results.focusUsed[variant]);
     case "movement-range":
       return ref(k.results.movementRange[criterion.movement][variant]);
     case "allowed-aperture":

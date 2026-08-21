@@ -53,7 +53,9 @@ const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
     bulletKeys: [
       simulatorMessageKeys.freePractice.architectureForeground.bullets.framing,
       simulatorMessageKeys.freePractice.architectureForeground.bullets.rise,
-      simulatorMessageKeys.freePractice.architectureForeground.bullets.depth,
+      simulatorMessageKeys.freePractice.architectureForeground.bullets.tilt,
+      simulatorMessageKeys.freePractice.architectureForeground.bullets.focus,
+      simulatorMessageKeys.freePractice.architectureForeground.bullets.aperture,
     ],
   },
   "oblique-architecture": {
