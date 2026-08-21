@@ -115,13 +115,21 @@ export function createGroundGlassDofUniformState(
     ["near", nearPlane],
     ["far", farPlane],
   ] as const) {
-    if (plane && (!finiteVec(plane.point) || !finiteVec(plane.normal))) {
+    if (
+      plane &&
+      (!finiteVec(plane.point) ||
+        !finiteVec(plane.normal) ||
+        !Number.isFinite(plane.distance))
+    ) {
       throw new Error(`${name} DOF plane contains non-finite values`);
     }
   }
 
   const boundaryCoCDiameterPx = (circleOfConfusionMm * width) / filmWidthMm;
   const boundaryBlurRadiusPx = boundaryCoCDiameterPx / 2;
+  if (!Number.isFinite(boundaryCoCDiameterPx) || !Number.isFinite(boundaryBlurRadiusPx)) {
+    throw new Error("Ground Glass boundary blur calibration is non-finite");
+  }
 
   // compute image distance along optical axis using shared helper
   const imageDistanceComputed = calculateImageDistanceAlongOpticalAxisMm({
@@ -131,7 +139,11 @@ export function createGroundGlassDofUniformState(
   });
 
   // If the image distance cannot be computed, treat this as a preparation error.
-  if (imageDistanceComputed === null) {
+  if (
+    imageDistanceComputed === null ||
+    !Number.isFinite(imageDistanceComputed) ||
+    imageDistanceComputed <= 0
+  ) {
     throw new Error("Unable to calculate image distance along the optical axis");
   }
 
