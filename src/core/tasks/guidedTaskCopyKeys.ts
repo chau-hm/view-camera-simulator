@@ -246,6 +246,50 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
       },
     },
   },
+  "architecture-foreground-compound-01": {
+    title: k.architectureForegroundCompound.title,
+    objective: k.architectureForegroundCompound.objective,
+    notes: [
+      k.architectureForegroundCompound.notes.composition,
+      k.architectureForegroundCompound.notes.tilt,
+      k.architectureForegroundCompound.notes.focus,
+      k.architectureForegroundCompound.notes.aperture,
+    ],
+    criteria: {
+      "architecture-foreground-compound-building-top-visible":
+        k.architectureForegroundCompound.criteria.buildingTopVisible,
+      "architecture-foreground-compound-building-base-visible":
+        k.architectureForegroundCompound.criteria.buildingBaseVisible,
+      "architecture-foreground-compound-camera-level":
+        k.architectureForegroundCompound.criteria.cameraLevel,
+      "architecture-foreground-compound-focus-targets":
+        k.architectureForegroundCompound.criteria.focusTargets,
+    },
+    feedback: {
+      passPrimary: k.architectureForegroundCompound.feedback.passPrimary,
+      defaultFailPrimary: k.architectureForegroundCompound.feedback.defaultFailPrimary,
+      primary: {
+        "architecture-foreground-compound-building-top-visible":
+          k.architectureForegroundCompound.feedback.primary.buildingTopVisible,
+        "architecture-foreground-compound-building-base-visible":
+          k.architectureForegroundCompound.feedback.primary.buildingBaseVisible,
+        "architecture-foreground-compound-camera-level":
+          k.architectureForegroundCompound.feedback.primary.cameraLevel,
+        "architecture-foreground-compound-focus-targets":
+          k.architectureForegroundCompound.feedback.primary.focusTargets,
+      },
+      secondary: {
+        "architecture-foreground-compound-building-top-visible":
+          k.architectureForegroundCompound.feedback.secondary.buildingTopVisible,
+        "architecture-foreground-compound-building-base-visible":
+          k.architectureForegroundCompound.feedback.secondary.buildingBaseVisible,
+        "architecture-foreground-compound-camera-level":
+          k.architectureForegroundCompound.feedback.secondary.cameraLevel,
+        "architecture-foreground-compound-focus-targets":
+          k.architectureForegroundCompound.feedback.secondary.focusTargets,
+      },
+    },
+  },
   "oblique-swing-focus-01": {
     title: k.obliqueSwingFocus.title,
     objective: k.obliqueSwingFocus.objective,

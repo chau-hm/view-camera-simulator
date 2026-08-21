@@ -6,7 +6,7 @@ const completedHeading = (page: Page) => page.getByRole("heading", { name: "Task
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
-test("Architecture + Foreground Free Practice exposes cumulative Rise, Tilt, and Focus controls", async ({ page }) => {
+test("Architecture + Foreground Free Practice exposes cumulative Rise, Tilt, Focus, and Aperture controls", async ({ page }) => {
   test.setTimeout(120_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
@@ -31,7 +31,7 @@ test("Architecture + Foreground Free Practice exposes cumulative Rise, Tilt, and
   await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toBeEnabled();
   await expect(cameraControls.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeEnabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
 
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");

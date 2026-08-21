@@ -21,7 +21,7 @@ test("Architecture + Foreground exposes the cumulative photographic problem in F
   await expect(page).toHaveURL(/\/simulator\/free\/architecture-foreground\?rttDiagnostics=1$/);
   await expect(
     page.getByText(
-      "Explore the cumulative Architecture + Foreground problem: correct the framing with Front Rise, then compare focus-plane alignment across depth.",
+      "Explore the cumulative Architecture + Foreground problem: use Rise for framing, Tilt and Focus for focus-plane alignment, and Aperture for usable depth across the full photograph.",
       { exact: true },
     ),
   ).toBeVisible();

@@ -284,6 +284,41 @@ export const tasksMessages = {
       },
     },
   },
+  architectureForegroundCompound: {
+    title: "Complete the Photograph",
+    objective:
+      "Correct the framing, align and place the focus plane, then use Aperture to produce an acceptably sharp architectural photograph from foreground to building while preserving parallel verticals.",
+    notes: {
+      composition: "Start from the neutral frame. Use Front Rise to bring the roof in without tilting the camera or rear standard.",
+      tilt: "Use Front Tilt to orient the focus plane toward the foreground-to-building depth.",
+      focus: "Use Focus to place that plane through useful foreground and architectural targets.",
+      aperture: "Use Aperture to extend usable sharpness around the aligned plane; solve the whole result rather than one slider value.",
+    },
+    criteria: {
+      buildingTopVisible: "Required roof region is visible",
+      buildingBaseVisible: "Building base remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      focusTargets: "Foreground-to-building depth is acceptably sharp",
+    },
+    feedback: {
+      passPrimary:
+        "You completed the photograph: Rise corrected framing, Tilt and Focus aligned the focus plane, and Aperture extended usable depth while the rear standard stayed level.",
+      defaultFailPrimary:
+        "Solve the photograph as a whole: keep the camera level, include the roof and base, align focus through the subject depth, and extend usable sharpness.",
+      primary: {
+        buildingTopVisible: "Keep the required roof region inside the frame without pitching the camera or rear standard.",
+        buildingBaseVisible: "Reduce excessive Rise so the building base remains inside the frame.",
+        cameraLevel: "Keep the camera and rear standard level so the architectural verticals remain parallel.",
+        focusTargets: "The focus plane or usable depth does not yet cover the foreground and building. Align Tilt and Focus before extending DOF with Aperture.",
+      },
+      secondary: {
+        buildingTopVisible: "Use the Ground Glass top edge as a composition guardrail while solving the other photographic properties.",
+        buildingBaseVisible: "Rise changes framing only; watch the lower Ground Glass edge as you include the roof.",
+        cameraLevel: "Rise, Tilt, Focus, and Aperture can be combined while the level rear standard preserves parallel verticals.",
+        focusTargets: "Compare the regular paving seams with the building base and middle targets; Aperture cannot hide a fundamentally misplaced focus plane.",
+      },
+    },
+  },
   obliqueSwingFocus: {
     title: "Align the Façade Focus",
     objective:
