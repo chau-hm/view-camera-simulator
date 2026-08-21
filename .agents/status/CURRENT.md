@@ -4,8 +4,7 @@
 
 - Branch: `feature/architecture-foreground-tilt-focus`
 - Base: `origin/main` @ `cc20652ecc20de0215bb5b62a7d8a503911e4587`
-- Substantive HEAD: PR7C implementation work is complete in the current
-  worktree; final commit SHA is recorded in the handoff/PR report.
+- Substantive implementation HEAD: `6b31073`.
 - Objective: preserve PR7B’s solved Rise composition and teach Front Tilt plus
   Focus as a second, observable focus-plane problem.
 
