@@ -4,7 +4,7 @@
 
 - Branch: `feature/architecture-foreground-depth-of-field`
 - Base: `origin/main` @ `d995f36` (PR 7C baseline).
-- Substantive implementation HEAD: pending PR 7D implementation commit.
+- Substantive implementation HEAD: `11a5c47`.
 - Objective: start from the solved Rise + Tilt + Focus state and teach
   Aperture as the remaining usable-depth control.
 
