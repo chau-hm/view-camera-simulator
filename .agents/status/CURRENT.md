@@ -8,7 +8,7 @@
 - Branch: `fix/ground-glass-dof-stability`.
 - Base: `origin/main` @ `7272cce` (`Architecture + Foreground` PR 7E
   baseline).
-- Substantive HEAD: `87b17eb`.
+- Substantive HEAD: `0b33239`.
 
 ## Reproduction and root cause
 
