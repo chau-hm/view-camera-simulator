@@ -24,6 +24,7 @@ export type SceneAvailability = "available" | "in-development";
 export type PublicGuidedLessonTaskStageId =
   | "compose"
   | "align-focus"
+  | "depth-of-field"
   | "final-challenge";
 
 export type PublicGuidedLessonConfig = {
@@ -172,6 +173,11 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       "architecture-foreground-dof-01",
       "architecture-foreground-compound-01",
     ],
+    guidedLesson: {
+      id: "architecture-foreground",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "align-focus", "depth-of-field", "final-challenge"],
+    },
   },
 ];
 

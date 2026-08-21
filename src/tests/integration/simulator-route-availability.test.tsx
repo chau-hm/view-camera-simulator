@@ -25,7 +25,10 @@ vi.mock("../../components/layout/SimulatorWorkspace", () => ({
 
 afterEach(cleanup);
 
-const LocationProbe = () => <div data-testid="route-location">{useLocation().pathname}</div>;
+const LocationProbe = () => {
+  const location = useLocation();
+  return <div data-testid="route-location">{location.pathname}{location.search}</div>;
+};
 
 const renderRoute = (initialEntry: string) =>
   render(
@@ -64,6 +67,22 @@ describe("simulator route availability", () => {
       "/simulator/guided/architecture-foreground/architecture-foreground-compound-01",
       "guided:architecture-foreground:architecture-foreground-compound-01:lesson=false",
     ],
+    [
+      "/simulator/guided/architecture-foreground/architecture-foreground-rise-01?lesson=1",
+      "guided:architecture-foreground:architecture-foreground-rise-01:lesson=true",
+    ],
+    [
+      "/simulator/guided/architecture-foreground/architecture-foreground-tilt-focus-01?lesson=1",
+      "guided:architecture-foreground:architecture-foreground-tilt-focus-01:lesson=true",
+    ],
+    [
+      "/simulator/guided/architecture-foreground/architecture-foreground-dof-01?lesson=1",
+      "guided:architecture-foreground:architecture-foreground-dof-01:lesson=true",
+    ],
+    [
+      "/simulator/guided/architecture-foreground/architecture-foreground-compound-01?lesson=1",
+      "guided:architecture-foreground:architecture-foreground-compound-01:lesson=true",
+    ],
     ["/simulator/guided/shelf-swing/swing-01", "guided:shelf-swing:swing-01:lesson=false"],
     ["/simulator/free/table-tilt", "free:table-tilt:none:lesson=false"],
     ["/simulator/guided/table-tilt/tilt-01", "guided:table-tilt:tilt-01:lesson=false"],
@@ -74,12 +93,14 @@ describe("simulator route availability", () => {
     expect(screen.getByTestId("route-location")).toHaveTextContent(route);
   });
 
-  it("marks only the Oblique Architecture lesson query for lesson UI", async () => {
-    renderRoute("/simulator/free/oblique-architecture?lesson=1");
+  it.each([
+    ["/simulator/free/oblique-architecture?lesson=1", "free:oblique-architecture:none:lesson=true"],
+    ["/simulator/free/architecture-foreground?lesson=1", "free:architecture-foreground:none:lesson=true"],
+    ["/simulator/free/table-tilt?lesson=1", "free:table-tilt:none:lesson=false"],
+  ])("only enables lesson UI for configured lessons: %s", async (route, expectedWorkspace) => {
+    renderRoute(route);
 
-    expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(
-      "free:oblique-architecture:none:lesson=true",
-    );
+    expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(expectedWorkspace);
   });
 
   it.each([
@@ -106,6 +127,7 @@ describe("simulator route availability", () => {
     "/simulator/guided/oblique-architecture",
     "/simulator/guided/oblique-architecture/rise-01",
     "/simulator/guided/architecture-foreground",
+    "/simulator/guided/architecture-foreground/architecture-foreground-not-a-task?lesson=1",
   ])("redirects invalid simulator route %s to Scenes", async (route) => {
     renderRoute(route);
 

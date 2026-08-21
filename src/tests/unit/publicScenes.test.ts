@@ -60,7 +60,11 @@ describe("public scene catalog integrity", () => {
       "architecture-foreground-dof-01",
       "architecture-foreground-compound-01",
     ]);
-    expect(entry.guidedLesson).toBeUndefined();
+    expect(entry.guidedLesson).toEqual({
+      id: "architecture-foreground",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "align-focus", "depth-of-field", "final-challenge"],
+    });
     expect(entry.thumbnailAsset).toBe("assets/architecture-foreground.png");
     expect(
       isValidSimulatorRoute({

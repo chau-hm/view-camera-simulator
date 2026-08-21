@@ -89,9 +89,9 @@ describe("scenes page", () => {
       "href",
       "/simulator/free/architecture-foreground",
     );
-    expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
+    expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
       "href",
-      "/simulator/guided/architecture-foreground/architecture-foreground-compound-01",
+      "/simulator/free/architecture-foreground?lesson=1",
     );
 
     // Oblique Architecture remains directly available immediately before the final scene.
@@ -296,6 +296,32 @@ describe("scenes page", () => {
     await waitFor(() =>
       expect(screen.getByTestId("navigation-location")).toHaveTextContent(
         "/simulator/free/architecture-foreground",
+      ),
+    );
+  });
+
+  it("navigates from the Architecture + Foreground card into its Guided Lesson", async () => {
+    const LocationProbe = () => {
+      const location = useLocation();
+      return <div data-testid="navigation-location">{location.pathname}{location.search}</div>;
+    };
+    render(
+      <MemoryRouter initialEntries={["/scenes"]}>
+        <Routes>
+          <Route path="/scenes" element={<ScenesPage />} />
+          <Route path="/simulator/free/:sceneId" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const heading = await screen.findByRole("heading", { name: "Architecture + Foreground", level: 2 });
+    const card = heading.closest("article");
+    expect(card).not.toBeNull();
+    fireEvent.click(within(card!).getByRole("link", { name: "Guided Lesson" }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("navigation-location")).toHaveTextContent(
+        "/simulator/free/architecture-foreground?lesson=1",
       ),
     );
   });
