@@ -310,10 +310,10 @@ export const simulatorMessages = {
         rise: "Increase Front Rise to include the roof while keeping the camera level and the verticals parallel.",
         tilt: "Use Front Tilt to rotate the plane of sharp focus toward the foreground-to-building depth.",
         focus: "Adjust Focus to place that plane through the near foreground and the useful building reference.",
-        aperture: "Aperture is fixed in this slice, so some finite depth-of-field limitation remains visible.",
+        aperture: "Stop down Aperture to expand usable depth around the already-aligned focus plane.",
       },
       observation:
-        "Front Rise corrects framing without changing perspective or the parallel verticals. Front Tilt changes focus-plane orientation and Focus places it; the near foreground still starts soft, and finite depth of field remains a separate problem.",
+        "Front Rise corrects framing without changing perspective or the parallel verticals. Front Tilt changes focus-plane orientation and Focus places it; Aperture then expands usable depth around that plane while the remaining depth of field stays finite.",
     },
     obliqueArchitecture: {
       objective:

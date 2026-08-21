@@ -201,6 +201,51 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
       },
     },
   },
+  "architecture-foreground-dof-01": {
+    title: k.architectureForegroundDof.title,
+    objective: k.architectureForegroundDof.objective,
+    notes: [
+      k.architectureForegroundDof.notes.composition,
+      k.architectureForegroundDof.notes.focusPlane,
+      k.architectureForegroundDof.notes.aperture,
+      k.architectureForegroundDof.notes.depthOfField,
+    ],
+    criteria: {
+      "architecture-foreground-dof-building-top-visible":
+        k.architectureForegroundDof.criteria.buildingTopVisible,
+      "architecture-foreground-dof-building-base-visible":
+        k.architectureForegroundDof.criteria.buildingBaseVisible,
+      "architecture-foreground-dof-camera-level": k.architectureForegroundDof.criteria.cameraLevel,
+      "architecture-foreground-dof-aperture": k.architectureForegroundDof.criteria.aperture,
+      "architecture-foreground-dof-focus-targets": k.architectureForegroundDof.criteria.focusTargets,
+    },
+    feedback: {
+      passPrimary: k.architectureForegroundDof.feedback.passPrimary,
+      defaultFailPrimary: k.architectureForegroundDof.feedback.defaultFailPrimary,
+      primary: {
+        "architecture-foreground-dof-building-top-visible":
+          k.architectureForegroundDof.feedback.primary.buildingTopVisible,
+        "architecture-foreground-dof-building-base-visible":
+          k.architectureForegroundDof.feedback.primary.buildingBaseVisible,
+        "architecture-foreground-dof-camera-level":
+          k.architectureForegroundDof.feedback.primary.cameraLevel,
+        "architecture-foreground-dof-aperture": k.architectureForegroundDof.feedback.primary.aperture,
+        "architecture-foreground-dof-focus-targets":
+          k.architectureForegroundDof.feedback.primary.focusTargets,
+      },
+      secondary: {
+        "architecture-foreground-dof-building-top-visible":
+          k.architectureForegroundDof.feedback.secondary.buildingTopVisible,
+        "architecture-foreground-dof-building-base-visible":
+          k.architectureForegroundDof.feedback.secondary.buildingBaseVisible,
+        "architecture-foreground-dof-camera-level":
+          k.architectureForegroundDof.feedback.secondary.cameraLevel,
+        "architecture-foreground-dof-aperture": k.architectureForegroundDof.feedback.secondary.aperture,
+        "architecture-foreground-dof-focus-targets":
+          k.architectureForegroundDof.feedback.secondary.focusTargets,
+      },
+    },
+  },
   "oblique-swing-focus-01": {
     title: k.obliqueSwingFocus.title,
     objective: k.obliqueSwingFocus.objective,

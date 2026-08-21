@@ -195,6 +195,8 @@ export const cameraCalibration = {
   tiltFocusRangeDeg: { min: 1.7, max: 2.6 },
   tiltFocusSharpnessMinimum: 0.7,
   tiltFocusMinimumFocusAdjustmentMm: 100,
+  dofSharpnessMinimum: 0.6,
+  dofPassingApertures: [22, 32] as const,
 } as const;
 
 export const canonicalFocusDistanceMm = roundToStep(
@@ -264,6 +266,8 @@ export const neutralCalibration = {
   tiltFocusRangeDeg: cameraCalibration.tiltFocusRangeDeg,
   tiltFocusSharpnessMinimum: cameraCalibration.tiltFocusSharpnessMinimum,
   tiltFocusMinimumFocusAdjustmentMm: cameraCalibration.tiltFocusMinimumFocusAdjustmentMm,
+  dofSharpnessMinimum: cameraCalibration.dofSharpnessMinimum,
+  dofPassingApertures: cameraCalibration.dofPassingApertures,
   aperture: cameraCalibration.startingAperture,
 } as const;
 

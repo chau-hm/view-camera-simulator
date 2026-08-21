@@ -246,6 +246,44 @@ export const tasksMessages = {
       },
     },
   },
+  architectureForegroundDof: {
+    title: "Extend the Depth of Field",
+    objective:
+      "Stop down the Aperture until the foreground and building are acceptably sharp while keeping the existing composition and focus-plane alignment.",
+    notes: {
+      composition: "Front Rise has already corrected the framing; keep the roof and building base inside the frame.",
+      focusPlane: "Front Tilt and Focus are already correct. Aperture does not move the focus plane.",
+      aperture: "Use Aperture to stop down from f/11. A smaller aperture increases usable depth around the aligned focus plane.",
+      depthOfField: "Stop down only as much as needed to cover the remaining subject depth; depth of field remains finite.",
+    },
+    criteria: {
+      buildingTopVisible: "Required roof region remains visible",
+      buildingBaseVisible: "Building base remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      aperture: "Aperture is stopped down for this task",
+      focusTargets: "Foreground and architectural depth targets are acceptably sharp",
+    },
+    feedback: {
+      passPrimary:
+        "The focus plane was already aligned; stopping down has now expanded usable depth around it. Composition, perspective, Tilt, and Focus remain unchanged.",
+      defaultFailPrimary:
+        "Keep the solved composition and focus-plane alignment, then stop down Aperture until the foreground and building depth targets are acceptably sharp.",
+      primary: {
+        buildingTopVisible: "Keep the required roof region inside the frame; Aperture should not change the solved composition.",
+        buildingBaseVisible: "Keep the building base inside the frame while extending depth of field.",
+        cameraLevel: "Keep the camera and rear standard level; Aperture does not require a perspective change.",
+        aperture: "Stop down from f/11 with the Aperture control. Do not reopen the aperture after the depth targets improve.",
+        focusTargets: "The focus plane is aligned, but some foreground or architectural depth remains soft. Stop down Aperture further.",
+      },
+      secondary: {
+        buildingTopVisible: "Use the Ground Glass edges as framing guardrails; Rise is already solved for this task.",
+        buildingBaseVisible: "Aperture changes usable sharpness, not framing. Leave the solved base position intact.",
+        cameraLevel: "Aperture broadens depth around the focus plane without pitching the camera or changing vertical convergence.",
+        aperture: "Use the next smaller supported aperture rather than changing Tilt or Focus.",
+        focusTargets: "Compare the regular paving seams with the building base and middle targets as depth of field expands.",
+      },
+    },
+  },
   obliqueSwingFocus: {
     title: "Align the Façade Focus",
     objective:

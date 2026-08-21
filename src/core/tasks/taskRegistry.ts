@@ -233,6 +233,64 @@ const architectureForegroundTiltFocusTask: TaskDefinition = {
   },
 };
 
+const architectureForegroundDofTask: TaskDefinition = {
+  id: "architecture-foreground-dof-01",
+  sceneId: architectureForegroundScene.id,
+  mode: "guided",
+  enabledControls: ["aperture", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "architecture-foreground-dof-building-top-visible",
+      type: "composition-visible",
+      targetId: "building-top",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-dof-building-base-visible",
+      type: "composition-visible",
+      targetId: "building-base",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-dof-camera-level",
+      type: "camera-level",
+    },
+    {
+      id: "architecture-foreground-dof-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [...architectureForegroundGeometry.neutralCalibration.dofPassingApertures],
+    },
+    {
+      id: "architecture-foreground-dof-focus-targets",
+      type: "focus-targets-sharp",
+      targetIds: [
+        "foreground-near",
+        "foreground-middle",
+        "building-base",
+        "building-middle",
+      ],
+      minimumSharpness: architectureForegroundGeometry.neutralCalibration.dofSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    frontRiseMm: architectureForegroundGeometry.neutralCalibration.futureRiseMm,
+    frontTiltDeg: architectureForegroundGeometry.neutralCalibration.publicTiltFocusSolutionDeg,
+    frontSwingDeg: 0,
+    focusDistanceMm:
+      architectureForegroundGeometry.neutralCalibration.publicTiltFocusFocusDistanceMm,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    aperture: architectureForegroundScene.cameraPreset.aperture,
+    geometryView: "side",
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+  },
+};
+
 const obliqueSwingFocusTask: TaskDefinition = {
   id: "oblique-swing-focus-01",
   sceneId: obliqueArchitectureScene.id,
@@ -544,6 +602,7 @@ export const taskRegistry: Record<string, TaskDefinition> = {
   "oblique-rise-01": obliqueRiseTask,
   "architecture-foreground-rise-01": architectureForegroundRiseTask,
   "architecture-foreground-tilt-focus-01": architectureForegroundTiltFocusTask,
+  "architecture-foreground-dof-01": architectureForegroundDofTask,
   "oblique-swing-focus-01": obliqueSwingFocusTask,
   "oblique-compound-01": obliqueCompoundTask,
   "tilt-01": tiltTask,

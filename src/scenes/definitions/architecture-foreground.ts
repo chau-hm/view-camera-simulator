@@ -67,7 +67,6 @@ export const architectureForegroundScene: SceneDefinition = {
     defaultMovement: "frontRiseMm",
   },
   cameraControlPolicy: {
-    aperture: "fixed",
     infinityReset: false,
   },
 };

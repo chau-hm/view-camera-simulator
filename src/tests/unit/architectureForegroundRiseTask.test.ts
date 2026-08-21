@@ -50,7 +50,6 @@ describe("Architecture + Foreground Rise composition task", () => {
       defaultMovement: "frontRiseMm",
     });
     expect(architectureForegroundScene.cameraControlPolicy).toEqual({
-      aperture: "fixed",
       infinityReset: false,
     });
   });

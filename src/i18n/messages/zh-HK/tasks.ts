@@ -234,6 +234,41 @@ export const tasksMessages = {
       },
     },
   },
+  architectureForegroundDof: {
+    title: "延伸景深",
+    objective: "在保留現有構圖及清晰焦平面對齊的情況下收細光圈，直到前景及建築物達到可接受的清晰度。",
+    notes: {
+      composition: "前組上移已修正構圖；保留屋頂及建築物基座在畫面內。",
+      focusPlane: "前組傾斜及對焦已經正確。光圈不會移動清晰焦平面。",
+      aperture: "使用光圈由 f/11 開始收細。較細光圈會增加已對齊焦平面周圍的實用景深。",
+      depthOfField: "只需收細至足以覆蓋剩餘主體深度；景深仍然有限。",
+    },
+    criteria: {
+      buildingTopVisible: "需要的屋頂部分仍然可見",
+      buildingBaseVisible: "建築物基座仍然可見",
+      cameraLevel: "相機及後組保持水平",
+      aperture: "光圈已為此任務收細",
+      focusTargets: "前景及建築物深度目標達到可接受的清晰度",
+    },
+    feedback: {
+      passPrimary: "清晰焦平面原本已經對齊；收細光圈現在擴大了周圍的實用景深。構圖、透視、傾斜及對焦均保持不變。",
+      defaultFailPrimary: "保持已完成的構圖及清晰焦平面對齊，再收細光圈，直到前景及建築物深度目標達到可接受的清晰度。",
+      primary: {
+        buildingTopVisible: "保留需要的屋頂部分在畫面內；光圈不應改變已完成的構圖。",
+        buildingBaseVisible: "延伸景深時，保持建築物基座在畫面內。",
+        cameraLevel: "保持相機及後組水平；光圈不需要改變透視關係。",
+        aperture: "使用光圈控制由 f/11 開始收細。不要在深度目標改善後重新放大光圈。",
+        focusTargets: "焦平面已經對齊，但部分前景或建築物深度仍然柔和。再收細光圈。",
+      },
+      secondary: {
+        buildingTopVisible: "使用對焦屏邊緣作為構圖護欄；此任務的上移已經完成。",
+        buildingBaseVisible: "光圈會改變實用清晰度而不是構圖；保留已完成的基座位置。",
+        cameraLevel: "光圈會擴大焦平面周圍的深度，不會令相機俯仰或改變垂直線收斂。",
+        aperture: "使用下一個較細的支援光圈，不要改變傾斜或對焦。",
+        focusTargets: "比較規律的鋪地接縫、建築物基座及中段目標，觀察景深如何擴大。",
+      },
+    },
+  },
   obliqueSwingFocus: {
     title: "對齊立面清晰焦平面",
     objective: "使用前組擺動及對焦，讓延伸立面由近至遠保持清晰，同時保留建築構圖。",

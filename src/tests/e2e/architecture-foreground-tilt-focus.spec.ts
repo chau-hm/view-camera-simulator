@@ -19,7 +19,7 @@ test("Architecture + Foreground is discoverable from the Scenes page", async ({ 
   );
   await expect(card.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
     "href",
-    "/simulator/guided/architecture-foreground/architecture-foreground-tilt-focus-01",
+    "/simulator/guided/architecture-foreground/architecture-foreground-dof-01",
   );
 
   await card.getByRole("link", { name: "Open Scene" }).click();
@@ -30,7 +30,7 @@ test("Architecture + Foreground is discoverable from the Scenes page", async ({ 
   );
 });
 
-test("Architecture + Foreground Free Practice exposes Rise, Tilt, and Focus without Aperture", async ({ page }) => {
+test("Architecture + Foreground Free Practice exposes Rise, Tilt, Focus, and Aperture", async ({ page }) => {
   test.setTimeout(120_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
@@ -54,7 +54,7 @@ test("Architecture + Foreground Free Practice exposes Rise, Tilt, and Focus with
   await expect(tilt).toBeEnabled();
   await expect(controls.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(focus).toBeEnabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
 
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");

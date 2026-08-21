@@ -91,7 +91,7 @@ describe("scenes page", () => {
     );
     expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
       "href",
-      "/simulator/guided/architecture-foreground/architecture-foreground-tilt-focus-01",
+      "/simulator/guided/architecture-foreground/architecture-foreground-dof-01",
     );
 
     // Oblique Architecture remains the final public scene and now exposes the compound task.
