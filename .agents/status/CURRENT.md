@@ -1,86 +1,98 @@
 # Current Work Handoff
 
-## PR 7E — Architecture + Foreground: Compound Movement Challenge
+## Ground Glass DOF stability fix
 
-- Branch: `feature/architecture-foreground-compound`
-- Base: `origin/main` @ `b735850` (completed PR 7D baseline).
-- Substantive implementation HEAD: `1f03940`.
-- Objective: add one outcome-based compound guided task that starts at the
-  neutral Architecture + Foreground problem and requires composition, focus
-  plane alignment, and usable depth of field together.
+- Objective: stabilize the shared Ground Glass DOF post-process for valid
+  finite camera states without changing projection, scene calibration, or Raw
+  RTT behavior.
+- Branch: `fix/ground-glass-dof-stability`.
+- Base: `origin/main` @ `7272cce` (`Architecture + Foreground` PR 7E
+  baseline).
+- Substantive HEAD: `87b17eb`.
 
-## Implemented surfaces
+## Reproduction and root cause
 
-- Guided task: registered `architecture-foreground-compound-01` with Rise,
-  Tilt, Focus, Aperture, and Geometry View enabled. Swing and rear movements
-  remain unavailable; no guided stage or lesson integration was added.
-- Evaluator: reuses the canonical projected roof/base targets, level-camera
-  criterion, and the PR 7D illustrative `0.6` sharpness threshold across
-  foreground-near, foreground-middle, building-base, and building-middle.
-  It does not require one exact four-value solution.
-- Public integration: Architecture + Foreground now has four direct guided
-  tasks in pedagogical order, with the compound task as the primary Guided CTA.
-  The card is last in the public catalog after Oblique Architecture and still
-  uses `public/assets/architecture-foreground.png`.
-- Copy/tests: English and zh-HK compound task copy, cumulative Free Practice
-  guidance, route/catalog/Scenes-page ordering assertions, compound evaluator
-  probes, and focused Chromium coverage were added. A stale Rise-era E2E
-  capability assertion was updated to reflect the cumulative Aperture control
-  already provided by PR 7D.
-- Shared scene/optics/RTT code was not changed; the existing canonical subject
-  and renderer remain the source of truth.
+- Reproduction: Architecture + Foreground, Rise `20 mm`, Tilt `6.6°`, Swing
+  `0°`, Focus `7750 mm`, Aperture `f/11`.
+- Raw RTT was contentful and visually correct; the processed path was
+  contentful but showed a corrupted horizontal smear/band. `Building Middle`
+  reported `NaN%`.
+- First invalid value: the building-middle ray’s signed focus-plane
+  intersection was `-22791.2048 mm`. The forward-only ray/plane helper
+  correctly returned `null`; the CPU wedge then emitted `normalizedDefocus =
+  NaN`, which propagated through `calculateSharpness` to the diagnostic.
+- The shader independently substituted target distance for the missing focus
+  intersection. That produced a reversed focus/near interval and an
+  epsilon-sized denominator, sending excessive blur toward the configured
+  maximum. Raw RTT bypassed this downstream path, proving the base projection
+  was unaffected.
 
-## Compound calibration and evidence
+## Implementation
 
-- Guided initial state: Front Rise `0 mm`, Front Tilt `0°`, Focus `9490 mm`,
-  Aperture `f/11`; composition and focus-target criteria fail as expected.
-- Canonical reference outcome: Rise `+20 mm`, Tilt `+2.0°`, Focus `6830 mm`,
-  Aperture `f/22`; all roof/base and four focus-target criteria pass while the
-  rear standard remains level.
-- Nearby passing outcomes: `(Rise 20, Tilt 1.8°, Focus 6750 mm, f/22)` and
-  `(Rise 25, Tilt 2.2°, Focus 6930 mm, f/22)` also pass. The evaluator is not
-  exact-value-only.
-- Negative probes: neutral, Rise-only, Rise + Tilt, and Rise + Tilt + Focus at
-  f/11 fail; excessive Rise loses the building base; f/32 with Tilt reset to
-  `0°` or Focus reset to `9490 mm` fails the sharpness criterion; a rear tilt
-  fails the level-camera criterion.
-- Manual Ground Glass checkpoints: neutral shows the cropped composition and
-  soft foreground; Rise/Tilt/Focus at f/11 shows the corrected framing and
-  focus plane with residual DOF limitation; f/22 completes the photograph
-  without changing perspective. RTT remained contentful at every checkpoint.
+- `src/core/optics/dofWedge.ts`: added an explicit finite fail-closed wedge
+  contract. Missing focus, degenerate/reversed finite intervals, invalid
+  distances, and non-finite results return boundary defocus `1` with
+  `insideDepthOfField: false`; positive-infinite far remains the supported
+  open-ended representation. An unreachable per-ray far boundary is treated
+  as open-ended rather than inventing a reversed finite interval.
+- `src/render/groundGlassDofShaders.ts`: mirrored forward-intersection,
+  finite-value, interval-order, world-position, CoC, and blur-radius checks in
+  GLSL. Removed the unsafe target-distance focus fallback; invalid wedge
+  samples use a finite boundary blur. Parallel-path depth/CoC checks are also
+  fail-closed.
+- `src/core/optics/dofBlurModel.ts` and `src/render/groundGlassBlur.ts`:
+  bounded finite conversion and defensive zero-blur handling at the blur
+  boundary; invalid normalized defocus no longer maps to maximum blur.
+- `src/render/createGroundGlassDofUniformState.ts`: validates plane distances,
+  image distance, and boundary blur calibration before shader state is built.
+- Added unit regression coverage in
+  `src/tests/unit/groundGlassDofStability.test.ts` and shader-source assertions
+  in `src/tests/unit/groundGlassShaders.test.ts`.
+- Added focused Chromium coverage in
+  `src/tests/e2e/ground-glass-dof-stability.spec.ts` for the exact state,
+  Raw RTT toggles, transition history, finite diagnostics, and bounded RTT
+  sanity output.
+
+## Evidence
+
+- Exact CPU state and a `6.0–7.0°` / `7500–7900 mm` neighborhood now keep all
+  focus-target scores, normalized defocus values, and applicable boundaries
+  finite. The exact building-middle wedge resolves to the finite boundary
+  fallback instead of NaN.
+- Focused unit regressions: PASS — 4 files / 39 tests, including Architecture
+  + Foreground DOF, Table Tilt, and Shelf Swing.
+- Focused Chromium DOF regression: PASS — 2 tests, including repeated
+  processed/raw transitions. Exact-state focus diagnostics remain finite and
+  RTT sanity remains contentful with finite variance.
+- Cross-scene focused Chromium checks: PASS — Oblique Architecture free RTT,
+  Shelf Swing calibrated DOF, and Table Tilt raw/final RTT diagnostics (3/3).
+- Manual screenshots: the exact processed reproduction no longer has the
+  baseline horizontal smear/banding; Raw RTT remains crisp. PR 7C f/11 and PR
+  7D f/22 remain contentful and show the expected finite-DOF progression.
 
 ## Validation
 
-- `npm test -- --run`: PASS — 126 files / 1,175 tests.
+- `npm test -- --run`: PASS — 127 files / 1,182 tests.
 - `npm run typecheck`: PASS.
 - `npm run lint`: PASS.
 - `npm run check:css`: PASS.
 - `npm run build`: PASS.
-- Focused unit/integration suites: PASS — 10 files / 97 tests, including all
-  prior Architecture + Foreground task regressions, catalog/order, routes,
-  Scenes page, and localized copy.
-- Focused Chromium E2E: PASS — 9 serial tests covering Scenes-page discovery
-  and ordering, Free Practice, Rise, Tilt + Focus, DOF, and compound task
-  completion/restart. A prior parallel run had one transient Scenes navigation
-  failure; the isolated test and the serial matrix both passed.
-- `git diff --check`: PASS.
+- `git diff --check`: PASS before status update.
+- `npm run ci:local:e2e`: ATTEMPTED but stopped at the existing Focus
+  Fundamentals selectable-focus spec: its first test saw missing
+  `data-rtt-owner-id` / `data-rtt-resource-generation` after contentful RTT
+  checks; its second test passed. A fresh-server rerun reproduced the same
+  diagnostic race. The Architecture + Foreground tests completed before that
+  stop, and the three representative cross-scene checks above passed
+  independently.
 
-## Checks not run / deliberate exclusions
+## Scope and reviewer focus
 
-- Full `npm run ci:local:e2e` was not run: no renderer lifecycle, shared RTT
-  architecture, GPU ownership, or broad route/lifecycle changes were made;
-  focused Chromium coverage passed.
-- PR 7F remains deliberately deferred: guided lesson/stage integration,
-  `guidedLesson`, and any `PublicGuidedLessonTaskStageId` extension.
-
-## Reviewer focus / known risks
-
-- Confirm the four-target `0.6` illustrative threshold and nearby solution
-  envelope remain legible in the current Ground Glass presentation.
-- Confirm the compound task remains solvable through ordinary public slider
-  steps without implying an exact Rise/Tilt/Focus/Aperture recipe.
-- Confirm the final public ordering and newest-task Scenes-page Guided CTA
-  match the project convention; all four direct Architecture + Foreground
-  guided routes are valid and future lesson integration remains absent.
-- No global optics formulas, movement signs, shared RTT architecture,
-  renderer lifecycle, thumbnail asset, or unrelated scene behavior changed.
+- No scene-specific branching, projection changes, movement-sign changes,
+  renderer lifecycle changes, UI redesign, or Raw RTT default change.
+- No global optics formula or existing scene calibration was changed.
+- PR 7A–7E guided behavior remains unchanged; this is only a shared numerical
+  stability correction. PR 7F is unrelated and remains outside scope.
+- Review the CPU/GLSL parity for unresolved wedge samples, the decision to
+  treat an unreachable far boundary as open-ended per ray, and the remaining
+  Focus Fundamentals owner/generation diagnostic race in full E2E.

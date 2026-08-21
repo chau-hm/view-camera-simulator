@@ -165,6 +165,14 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
       filmWidthMm,
       renderWidthPx,
     );
+    if (!Number.isFinite(cocDiameterPx) || cocDiameterPx < 0) {
+      return createUnresolvedGroundGlassBlurSample(
+        worldPoint,
+        objectDistanceAlongAxisMm,
+        targetRayDistanceMm,
+        "Non-finite display CoC in wedge path",
+      );
+    }
     const blurRadiusPx = dofBlurModel.calculateDofBlurRadiusPx({
       normalizedDefocus,
       circleOfConfusionMm,
@@ -173,6 +181,18 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
       maximumBlurRadiusPx,
       displayBlurScale,
     });
+    if (
+      !Number.isFinite(blurRadiusPx) ||
+      blurRadiusPx < 0 ||
+      blurRadiusPx > maximumBlurRadiusPx
+    ) {
+      return createUnresolvedGroundGlassBlurSample(
+        worldPoint,
+        objectDistanceAlongAxisMm,
+        targetRayDistanceMm,
+        "Invalid display blur radius in wedge path",
+      );
+    }
 
     // region classification based on wedge samples
     const region: GroundGlassDofRegion = (() => {
