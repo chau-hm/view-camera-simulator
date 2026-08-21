@@ -4,8 +4,7 @@
 
 - Branch: `feature/architecture-foreground-compound`
 - Base: `origin/main` @ `b735850` (completed PR 7D baseline).
-- Substantive implementation HEAD: pending commit; working tree is based on
-  `b735850`.
+- Substantive implementation HEAD: `1f03940`.
 - Objective: add one outcome-based compound guided task that starts at the
   neutral Architecture + Foreground problem and requires composition, focus
   plane alignment, and usable depth of field together.
