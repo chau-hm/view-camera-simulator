@@ -304,7 +304,7 @@ export const simulatorMessages = {
     },
     architectureForeground: {
       objective:
-        "Explore the cumulative Architecture + Foreground problem: correct the framing with Front Rise, then compare focus-plane alignment across depth.",
+        "Explore the cumulative Architecture + Foreground problem: use Rise for framing, Tilt and Focus for focus-plane alignment, and Aperture for usable depth across the full photograph.",
       bullets: {
         framing: "At neutral, notice that the roof is cropped while the building base remains in frame.",
         rise: "Increase Front Rise to include the roof while keeping the camera level and the verticals parallel.",

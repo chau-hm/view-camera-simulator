@@ -91,10 +91,10 @@ describe("scenes page", () => {
     );
     expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
       "href",
-      "/simulator/guided/architecture-foreground/architecture-foreground-dof-01",
+      "/simulator/guided/architecture-foreground/architecture-foreground-compound-01",
     );
 
-    // Oblique Architecture remains the final public scene and now exposes the compound task.
+    // Oblique Architecture remains directly available immediately before the final scene.
     const obliqueHeading = await screen.findByRole("heading", {
       name: "Oblique Architecture",
       level: 2,
@@ -173,14 +173,16 @@ describe("scenes page", () => {
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
-      "architecture-foreground",
       "table-tilt",
       "shelf-swing",
       "mirror-shift",
       "oblique-architecture",
+      "architecture-foreground",
     ]);
-    expect(publicSceneIds.at(-1)).toBe("oblique-architecture");
+    expect(publicSceneIds.at(-1)).toBe("architecture-foreground");
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual(publicSceneIds);
+    const visibleCards = screen.getAllByRole("article");
+    expect(within(visibleCards.at(-1)!).getByRole("heading", { name: "Architecture + Foreground", level: 2 })).toBeInTheDocument();
     expect(getPublicSceneEntryById("focus-fundamentals-two-targets")?.availableModes).toEqual([
       "free",
     ]);
@@ -191,11 +193,11 @@ describe("scenes page", () => {
       "Understanding Camera Movements",
       "Focus Fundamentals — Two Targets",
       "Architecture Rise",
-      "Architecture + Foreground",
       "Table Tilt",
       "Shelf Swing",
       "Mirror Shift",
       "Oblique Architecture",
+      "Architecture + Foreground",
     ]);
     expect(getPublicScenes().map((scene) => scene.id)).toContain("shelf-swing");
     expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("available");
@@ -242,11 +244,11 @@ describe("scenes page", () => {
       "認識大片幅相機移軸",
       "前後組對焦比較",
       "建築構圖與上移",
-      "建築物與前景",
       "桌面焦平面與傾斜",
       "斜向焦平面與擺動",
       "鏡面構圖與視點",
       "斜向建築攝影",
+      "建築物與前景",
     ]);
 
     const cardFor = (title: string) => {

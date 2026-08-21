@@ -266,6 +266,38 @@ export const guidedTaskMessageKeys = {
       },
     },
   },
+  architectureForegroundCompound: {
+    title: "tasks.architectureForegroundCompound.title",
+    objective: "tasks.architectureForegroundCompound.objective",
+    notes: {
+      composition: "tasks.architectureForegroundCompound.notes.composition",
+      tilt: "tasks.architectureForegroundCompound.notes.tilt",
+      focus: "tasks.architectureForegroundCompound.notes.focus",
+      aperture: "tasks.architectureForegroundCompound.notes.aperture",
+    },
+    criteria: {
+      buildingTopVisible: "tasks.architectureForegroundCompound.criteria.buildingTopVisible",
+      buildingBaseVisible: "tasks.architectureForegroundCompound.criteria.buildingBaseVisible",
+      cameraLevel: "tasks.architectureForegroundCompound.criteria.cameraLevel",
+      focusTargets: "tasks.architectureForegroundCompound.criteria.focusTargets",
+    },
+    feedback: {
+      passPrimary: "tasks.architectureForegroundCompound.feedback.passPrimary",
+      defaultFailPrimary: "tasks.architectureForegroundCompound.feedback.defaultFailPrimary",
+      primary: {
+        buildingTopVisible: "tasks.architectureForegroundCompound.feedback.primary.buildingTopVisible",
+        buildingBaseVisible: "tasks.architectureForegroundCompound.feedback.primary.buildingBaseVisible",
+        cameraLevel: "tasks.architectureForegroundCompound.feedback.primary.cameraLevel",
+        focusTargets: "tasks.architectureForegroundCompound.feedback.primary.focusTargets",
+      },
+      secondary: {
+        buildingTopVisible: "tasks.architectureForegroundCompound.feedback.secondary.buildingTopVisible",
+        buildingBaseVisible: "tasks.architectureForegroundCompound.feedback.secondary.buildingBaseVisible",
+        cameraLevel: "tasks.architectureForegroundCompound.feedback.secondary.cameraLevel",
+        focusTargets: "tasks.architectureForegroundCompound.feedback.secondary.focusTargets",
+      },
+    },
+  },
   obliqueSwingFocus: {
     title: "tasks.obliqueSwingFocus.title",
     objective: "tasks.obliqueSwingFocus.objective",

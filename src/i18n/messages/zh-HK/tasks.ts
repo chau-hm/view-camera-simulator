@@ -269,6 +269,38 @@ export const tasksMessages = {
       },
     },
   },
+  architectureForegroundCompound: {
+    title: "完成這張相片",
+    objective: "修正構圖、對齊及放置清晰焦平面，再使用光圈讓前景至建築物達到可接受的清晰度，同時保持垂直線平行。",
+    notes: {
+      composition: "從中立構圖開始。使用前組上移帶入屋頂，不要令相機或後組傾斜。",
+      tilt: "使用前組傾斜，讓焦平面轉向前景至建築物的深度方向。",
+      focus: "使用對焦，把焦平面放置在有用的前景及建築物目標上。",
+      aperture: "使用光圈擴大已對齊焦平面周圍的實用清晰度；解決整個結果，而不是追逐單一控制數值。",
+    },
+    criteria: {
+      buildingTopVisible: "需要的屋頂部分可見",
+      buildingBaseVisible: "建築物基座仍然可見",
+      cameraLevel: "相機及後組保持水平",
+      focusTargets: "前景至建築物的深度達到可接受的清晰度",
+    },
+    feedback: {
+      passPrimary: "你已完成這張相片：前組上移修正構圖，傾斜及對焦對齊清晰焦平面，光圈擴大實用景深，同時後組保持水平。",
+      defaultFailPrimary: "整體解決這張相片：保持相機水平、納入屋頂及基座、讓焦平面對齊主體深度，再擴大實用清晰度。",
+      primary: {
+        buildingTopVisible: "保持需要的屋頂部分在畫面內，不要令相機或後組俯仰。",
+        buildingBaseVisible: "減少過多的前組上移，讓建築物基座仍在畫面內。",
+        cameraLevel: "保持相機及後組水平，讓建築物垂直線維持平行。",
+        focusTargets: "焦平面或實用景深尚未覆蓋前景及建築物。先用傾斜及對焦對齊，再用光圈擴大景深。",
+      },
+      secondary: {
+        buildingTopVisible: "使用對焦屏上方邊緣作為構圖護欄，同時處理其他攝影問題。",
+        buildingBaseVisible: "前組上移只改變構圖；把屋頂納入畫面時留意對焦屏下方邊緣。",
+        cameraLevel: "可以結合前組上移、傾斜、對焦及光圈，同時由水平後組保持垂直線平行。",
+        focusTargets: "比較規律的鋪地接縫、建築物基座及中段目標；光圈不能掩蓋根本上錯誤的焦平面位置。",
+      },
+    },
+  },
   obliqueSwingFocus: {
     title: "對齊立面清晰焦平面",
     objective: "使用前組擺動及對焦，讓延伸立面由近至遠保持清晰，同時保留建築構圖。",
