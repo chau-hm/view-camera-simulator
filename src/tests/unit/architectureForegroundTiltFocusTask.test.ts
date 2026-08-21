@@ -62,7 +62,6 @@ describe("Architecture + Foreground Tilt + Focus task", () => {
       defaultMovement: "frontRiseMm",
     });
     expect(architectureForegroundScene.cameraControlPolicy).toEqual({
-      aperture: "fixed",
       infinityReset: false,
     });
   });

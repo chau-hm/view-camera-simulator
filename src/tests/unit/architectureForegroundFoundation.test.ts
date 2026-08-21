@@ -34,7 +34,6 @@ describe("Architecture + Foreground foundation", () => {
       aperture: 11,
     });
     expect(architectureForegroundScene.cameraControlPolicy).toEqual({
-      aperture: "fixed",
       infinityReset: false,
     });
     expect(architectureForegroundScene.movementCapabilities).toEqual({

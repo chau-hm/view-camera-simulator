@@ -41,7 +41,7 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText(/Increase Front Rise to include the roof/)).toBeInTheDocument();
     expect(screen.getByText(/Use Front Tilt to rotate the plane of sharp focus/)).toBeInTheDocument();
     expect(screen.getByText(/Adjust Focus to place that plane/)).toBeInTheDocument();
-    expect(screen.getByText(/Aperture is fixed in this slice/)).toBeInTheDocument();
+    expect(screen.getByText(/Stop down Aperture to expand usable depth/)).toBeInTheDocument();
 
     cleanup();
     render(<FeedbackPanel mode="free" sceneId="understanding-camera-movements" task={null} evaluation={null} />);
@@ -84,7 +84,7 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText(/增加前組上移，把屋頂納入畫面/)).toBeInTheDocument();
     expect(screen.getByText(/使用前組傾斜，讓清晰焦平面/)).toBeInTheDocument();
     expect(screen.getByText(/調整對焦，將焦平面放置/)).toBeInTheDocument();
-    expect(screen.getByText(/此切片固定光圈/)).toBeInTheDocument();
+    expect(screen.getByText(/收細光圈，擴大已對齊清晰焦平面周圍的實用景深/)).toBeInTheDocument();
   });
 });
 

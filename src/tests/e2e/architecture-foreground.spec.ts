@@ -65,7 +65,7 @@ test("Architecture + Foreground exposes the cumulative photographic problem in F
   await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toBeEnabled();
   await expect(cameraControls.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeEnabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
 
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   await expect(page.locator("section[data-geometry-fit]")).toHaveAttribute("data-geometry-view", "side");

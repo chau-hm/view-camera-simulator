@@ -231,6 +231,41 @@ export const guidedTaskMessageKeys = {
       },
     },
   },
+  architectureForegroundDof: {
+    title: "tasks.architectureForegroundDof.title",
+    objective: "tasks.architectureForegroundDof.objective",
+    notes: {
+      composition: "tasks.architectureForegroundDof.notes.composition",
+      focusPlane: "tasks.architectureForegroundDof.notes.focusPlane",
+      aperture: "tasks.architectureForegroundDof.notes.aperture",
+      depthOfField: "tasks.architectureForegroundDof.notes.depthOfField",
+    },
+    criteria: {
+      buildingTopVisible: "tasks.architectureForegroundDof.criteria.buildingTopVisible",
+      buildingBaseVisible: "tasks.architectureForegroundDof.criteria.buildingBaseVisible",
+      cameraLevel: "tasks.architectureForegroundDof.criteria.cameraLevel",
+      aperture: "tasks.architectureForegroundDof.criteria.aperture",
+      focusTargets: "tasks.architectureForegroundDof.criteria.focusTargets",
+    },
+    feedback: {
+      passPrimary: "tasks.architectureForegroundDof.feedback.passPrimary",
+      defaultFailPrimary: "tasks.architectureForegroundDof.feedback.defaultFailPrimary",
+      primary: {
+        buildingTopVisible: "tasks.architectureForegroundDof.feedback.primary.buildingTopVisible",
+        buildingBaseVisible: "tasks.architectureForegroundDof.feedback.primary.buildingBaseVisible",
+        cameraLevel: "tasks.architectureForegroundDof.feedback.primary.cameraLevel",
+        aperture: "tasks.architectureForegroundDof.feedback.primary.aperture",
+        focusTargets: "tasks.architectureForegroundDof.feedback.primary.focusTargets",
+      },
+      secondary: {
+        buildingTopVisible: "tasks.architectureForegroundDof.feedback.secondary.buildingTopVisible",
+        buildingBaseVisible: "tasks.architectureForegroundDof.feedback.secondary.buildingBaseVisible",
+        cameraLevel: "tasks.architectureForegroundDof.feedback.secondary.cameraLevel",
+        aperture: "tasks.architectureForegroundDof.feedback.secondary.aperture",
+        focusTargets: "tasks.architectureForegroundDof.feedback.secondary.focusTargets",
+      },
+    },
+  },
   obliqueSwingFocus: {
     title: "tasks.obliqueSwingFocus.title",
     objective: "tasks.obliqueSwingFocus.objective",

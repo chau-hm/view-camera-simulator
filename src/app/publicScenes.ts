@@ -102,10 +102,11 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/architecture-foreground.png",
-    guidedTaskId: "architecture-foreground-tilt-focus-01",
+    guidedTaskId: "architecture-foreground-dof-01",
     guidedTaskIds: [
       "architecture-foreground-rise-01",
       "architecture-foreground-tilt-focus-01",
+      "architecture-foreground-dof-01",
     ],
   },
   {
