@@ -89,6 +89,65 @@ export const decodeGroundGlassSignedCoC = (
   );
 };
 
+export const GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD = Math.PI;
+
+/** Quantizes a non-negative normalized footprint channel to the RGBA8 grid. */
+export const quantizeGroundGlassFootprintByte = (encoded: number): number => {
+  if (!Number.isFinite(encoded)) return 0;
+  return Math.min(255, Math.max(0, Math.round(Math.min(1, Math.max(0, encoded)) * 255)));
+};
+
+/**
+ * Encodes a local ellipse radius. Half-float stores physical millimetres;
+ * byte fallback stores a normalized value against the configured physical
+ * radius range. The decoded value is always non-negative.
+ */
+export const encodeGroundGlassFootprintRadiusMm = (
+  radiusMm: number,
+  storageFormat: GroundGlassCocStorageFormat,
+  maximumRadiusMm: number,
+): number => {
+  if (!Number.isFinite(radiusMm) || radiusMm <= 0) return 0;
+  if (storageFormat === "half-float-mm") return radiusMm;
+  if (!Number.isFinite(maximumRadiusMm) || maximumRadiusMm <= 0) return 0;
+  return Math.min(1, radiusMm / maximumRadiusMm);
+};
+
+export const decodeGroundGlassFootprintRadiusMm = (
+  storedRadius: number,
+  storageFormat: GroundGlassCocStorageFormat,
+  maximumRadiusMm: number,
+): number => {
+  if (!Number.isFinite(storedRadius)) return 0;
+  if (storageFormat === "half-float-mm") return Math.max(0, storedRadius);
+  if (!Number.isFinite(maximumRadiusMm) || maximumRadiusMm <= 0) return 0;
+  return (quantizeGroundGlassFootprintByte(storedRadius) / 255) * maximumRadiusMm;
+};
+
+/**
+ * Ellipse orientation is a line direction, so it is periodic over pi rather
+ * than 2*pi. It is normalized for both storage modes; zero footprint makes
+ * the angle immaterial but still deterministic.
+ */
+export const encodeGroundGlassFootprintOrientation = (orientationRad: number): number => {
+  if (!Number.isFinite(orientationRad)) return 0;
+  const wrapped = ((orientationRad % GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD) +
+    GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD) %
+    GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD;
+  return wrapped / GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD;
+};
+
+export const decodeGroundGlassFootprintOrientation = (
+  storedOrientation: number,
+  storageFormat: GroundGlassCocStorageFormat,
+): number => {
+  if (!Number.isFinite(storedOrientation)) return 0;
+  const normalized = storageFormat === "encoded-byte"
+    ? quantizeGroundGlassFootprintByte(storedOrientation) / 255
+    : Math.min(1, Math.max(0, storedOrientation));
+  return normalized * GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD;
+};
+
 type GroundGlassCocRenderer = Pick<
   THREE.WebGLRenderer,
   "getContext" | "getRenderTarget" | "setRenderTarget"

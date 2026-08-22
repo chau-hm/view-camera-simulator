@@ -6,13 +6,16 @@ const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
  * proposal cannot become an opaque layer by itself.
  */
 export const nearCoverageProposalCompensation = (
-  sampleRadiusPx: number,
+  sampleMajorRadiusPx: number,
+  sampleMinorRadiusPx: number,
   searchRadiusPx: number,
   sampleCount: number,
 ): number => {
   if (
-    !Number.isFinite(sampleRadiusPx) ||
-    sampleRadiusPx <= 0 ||
+    !Number.isFinite(sampleMajorRadiusPx) ||
+    sampleMajorRadiusPx <= 0 ||
+    !Number.isFinite(sampleMinorRadiusPx) ||
+    sampleMinorRadiusPx <= 0 ||
     !Number.isFinite(searchRadiusPx) ||
     searchRadiusPx <= 0 ||
     !Number.isFinite(sampleCount) ||
@@ -21,7 +24,10 @@ export const nearCoverageProposalCompensation = (
     return 0;
   }
 
-  const footprintAreaRatio = clamp01((sampleRadiusPx / searchRadiusPx) ** 2);
+  const footprintAreaRatio = clamp01(
+    (sampleMajorRadiusPx * sampleMinorRadiusPx) /
+      (searchRadiusPx * searchRadiusPx),
+  );
   const minimumResolvableAreaRatio = 1 / sampleCount;
   return Math.min(
     sampleCount,
