@@ -4,7 +4,10 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
-import { GroundGlassRTT } from "../../render/GroundGlassRTT";
+import {
+  GroundGlassRTT,
+} from "../../render/GroundGlassRTT";
+import { synchronizeGroundGlassDofClipRange } from "../../render/createGroundGlassDofUniformState";
 import {
   createGroundGlassCamera,
   createGroundGlassDepthTarget,
@@ -68,6 +71,32 @@ afterEach(() => {
 });
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
+  it("synchronizes the active clip range into both CoC and aperture gather materials", () => {
+    const cocMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        near: { value: 0.01 },
+        far: { value: 12.0 },
+      },
+    });
+    const gatherMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        near: { value: 0.01 },
+        far: { value: 12.0 },
+      },
+    });
+
+    synchronizeGroundGlassDofClipRange([cocMaterial, gatherMaterial], 0.25, 37.5);
+
+    expect(cocMaterial.uniforms.near.value).toBe(0.25);
+    expect(cocMaterial.uniforms.far.value).toBe(37.5);
+    expect(gatherMaterial.uniforms.near.value).toBe(0.25);
+    expect(gatherMaterial.uniforms.far.value).toBe(37.5);
+    expect(gatherMaterial.uniforms.far.value).not.toBe(12.0);
+
+    cocMaterial.dispose();
+    gatherMaterial.dispose();
+  });
+
   it("ignores stale owner cleanup for default, Original, and Current channels", () => {
     const runtimeInfo = (resourceGeneration: number) =>
       ({ resourceGeneration } as GroundGlassRttRuntimeInfo);

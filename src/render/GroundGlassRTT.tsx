@@ -29,6 +29,7 @@ import {
 import {
   applyGroundGlassDofUniformState,
   createGroundGlassDofUniformState,
+  synchronizeGroundGlassDofClipRange,
 } from "./createGroundGlassDofUniformState";
 import {
   groundGlassApertureGatherFragmentShader,
@@ -964,10 +965,15 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
       const cocMesh = postSceneCoc.children[0] as THREE.Mesh;
       const cocMaterial = cocMesh.material as THREE.ShaderMaterial;
+      const gatherMesh = postSceneGather.children[0] as THREE.Mesh;
+      const gatherMaterial = gatherMesh.material as THREE.ShaderMaterial;
+      synchronizeGroundGlassDofClipRange(
+        [cocMaterial, gatherMaterial],
+        cam.near,
+        cam.far,
+      );
       cocMaterial.uniforms.tDepth.value = depthTex;
       cocMaterial.uniforms.useRaw.value = 0.0;
-      cocMaterial.uniforms.near.value = cam.near;
-      cocMaterial.uniforms.far.value = cam.far;
       cocMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       cocMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
 
@@ -1010,8 +1016,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       gl.clear(true, true, true);
       gl.render(postSceneCoc, orthoCam);
 
-      const gatherMesh = postSceneGather.children[0] as THREE.Mesh;
-      const gatherMaterial = gatherMesh.material as THREE.ShaderMaterial;
       gatherMaterial.uniforms.tColor.value = (renderTarget.current as THREE.WebGLRenderTarget).texture;
       gatherMaterial.uniforms.tDepth.value = depthTex;
       gatherMaterial.uniforms.tCoC.value = cocRT.texture;

@@ -29,6 +29,18 @@ export type GroundGlassDofUniformState = {
   displayBlurScale: number;
 };
 
+/** Keep depth linearization on every DOF stage aligned with the live RTT camera. */
+export const synchronizeGroundGlassDofClipRange = (
+  materials: readonly THREE.ShaderMaterial[],
+  nearWorld: number,
+  farWorld: number,
+): void => {
+  materials.forEach((material) => {
+    material.uniforms.near.value = nearWorld;
+    material.uniforms.far.value = farWorld;
+  });
+};
+
 export function applyGroundGlassDofUniformState(
   material: THREE.ShaderMaterial,
   state: GroundGlassDofUniformState,
