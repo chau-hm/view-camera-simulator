@@ -4,6 +4,7 @@ import {
   focusPlaneWidthMm,
   projectPointToGroundGlass,
   cocDiameterMm,
+  computePhysicalCoCDiameterMm,
   verticalFovDegreesFromImageDistance,
 } from "../../core/optics/thinLensModel";
 
@@ -67,6 +68,161 @@ describe("thinLensModel", () => {
     const image = imageDistanceMm(focalLengthMm, focusD);
     const cocNear = cocDiameterMm(focalLengthMm, apertureFNumber, image, 1200);
     expect(cocNear).toBeGreaterThan(0);
+  });
+
+  describe("neutral physical CoC kernel", () => {
+    it("matches an independent thin-lens reference fixture in millimetres", () => {
+      const input = {
+        focalLengthMm: 150,
+        apertureFNumber: 8,
+        objectDistanceMm: 1200,
+        filmDistanceMm: 200,
+      };
+
+      // 1/150 = 1/1200 + 1/V, so V = 1200/7 mm.
+      const expectedImageDistanceMm = 1200 / 7;
+      const expectedApertureDiameterMm = 150 / 8;
+      const expectedCoCDiameterMm =
+        expectedApertureDiameterMm * Math.abs(1 - 200 / expectedImageDistanceMm);
+
+      expect(expectedImageDistanceMm).toBeCloseTo(171.42857142857142, 12);
+      expect(expectedCoCDiameterMm).toBeCloseTo(3.125, 12);
+      expect(computePhysicalCoCDiameterMm(input)).toBeCloseTo(
+        expectedCoCDiameterMm,
+        12,
+      );
+    });
+
+    it("is zero when the film distance equals the ideal image distance", () => {
+      const focusedInput = {
+        focalLengthMm: 150,
+        apertureFNumber: 8,
+        objectDistanceMm: 900,
+        filmDistanceMm: 180,
+      };
+
+      expect(computePhysicalCoCDiameterMm(focusedInput)).toBeCloseTo(0, 12);
+    });
+
+    it("is positive for object points nearer than and farther than the focused point", () => {
+      const baseInput = {
+        focalLengthMm: 150,
+        apertureFNumber: 8,
+        filmDistanceMm: 180,
+      };
+
+      const nearerObjectCoC = computePhysicalCoCDiameterMm({
+        ...baseInput,
+        objectDistanceMm: 600,
+      });
+      const fartherObjectCoC = computePhysicalCoCDiameterMm({
+        ...baseInput,
+        objectDistanceMm: 1200,
+      });
+
+      expect(nearerObjectCoC).toBeGreaterThan(0);
+      expect(fartherObjectCoC).toBeGreaterThan(0);
+    });
+
+    it("gets larger as the f-number gets smaller for fixed defocus", () => {
+      const input = {
+        focalLengthMm: 150,
+        objectDistanceMm: 1200,
+        filmDistanceMm: 200,
+      };
+
+      const f8CoC = computePhysicalCoCDiameterMm({ ...input, apertureFNumber: 8 });
+      const f22CoC = computePhysicalCoCDiameterMm({ ...input, apertureFNumber: 22 });
+
+      expect(f8CoC).toBeGreaterThan(f22CoC);
+    });
+
+    it("keeps a focused point at zero CoC for every valid aperture", () => {
+      const input = {
+        focalLengthMm: 150,
+        objectDistanceMm: 900,
+        filmDistanceMm: 180,
+      };
+
+      expect(
+        computePhysicalCoCDiameterMm({ ...input, apertureFNumber: 4 }),
+      ).toBeCloseTo(0, 12);
+      expect(
+        computePhysicalCoCDiameterMm({ ...input, apertureFNumber: 64 }),
+      ).toBeCloseTo(0, 12);
+    });
+
+    it("agrees with the retained positional cocDiameterMm reference API", () => {
+      const input = {
+        focalLengthMm: 150,
+        apertureFNumber: 8,
+        objectDistanceMm: 1200,
+        filmDistanceMm: 200,
+      };
+
+      expect(cocDiameterMm(
+        input.focalLengthMm,
+        input.apertureFNumber,
+        input.filmDistanceMm,
+        input.objectDistanceMm,
+      )).toBeCloseTo(computePhysicalCoCDiameterMm(input), 12);
+    });
+
+    it("handles infinity focus and the U = f optical limit without zeroing the aperture", () => {
+      const infinityObjectCoC = computePhysicalCoCDiameterMm({
+        focalLengthMm: 150,
+        apertureFNumber: 8,
+        objectDistanceMm: Number.POSITIVE_INFINITY,
+        filmDistanceMm: 200,
+      });
+      const focalObjectCoC = computePhysicalCoCDiameterMm({
+        focalLengthMm: 150,
+        apertureFNumber: 8,
+        objectDistanceMm: 150,
+        filmDistanceMm: 200,
+      });
+
+      expect(infinityObjectCoC).toBeCloseTo(6.25, 12);
+      expect(imageDistanceMm(150, 150)).toBe(Number.POSITIVE_INFINITY);
+      expect(focalObjectCoC).toBeCloseTo(150 / 8, 12);
+    });
+
+    it("keeps the virtual-image side of the focal boundary deterministic", () => {
+      const coc = computePhysicalCoCDiameterMm({
+        focalLengthMm: 150,
+        apertureFNumber: 8,
+        objectDistanceMm: 100,
+        filmDistanceMm: 200,
+      });
+
+      // V = 150*100/(100-150) = -300 mm; CoC = (150/8)|1 - 200/-300|.
+      expect(coc).toBeCloseTo(31.25, 12);
+    });
+
+    it.each([
+      { name: "zero focal length", focalLengthMm: 0 },
+      { name: "negative focal length", focalLengthMm: -150 },
+      { name: "non-finite focal length", focalLengthMm: Number.NaN },
+      { name: "zero f-number", apertureFNumber: 0 },
+      { name: "negative f-number", apertureFNumber: -8 },
+      { name: "non-finite f-number", apertureFNumber: Number.POSITIVE_INFINITY },
+      { name: "zero object distance", objectDistanceMm: 0 },
+      { name: "negative object distance", objectDistanceMm: -100 },
+      { name: "non-finite object distance", objectDistanceMm: Number.NaN },
+      { name: "negative infinite object distance", objectDistanceMm: Number.NEGATIVE_INFINITY },
+      { name: "zero film distance", filmDistanceMm: 0 },
+      { name: "non-finite film distance", filmDistanceMm: Number.POSITIVE_INFINITY },
+    ])("returns NaN for $name", (invalidInput) => {
+      const result = computePhysicalCoCDiameterMm({
+        focalLengthMm: 150,
+        apertureFNumber: 8,
+        objectDistanceMm: 1200,
+        filmDistanceMm: 200,
+        ...invalidInput,
+      });
+
+      expect(Number.isNaN(result)).toBe(true);
+    });
   });
 
   it("computes vertical FOV degrees from image distance", () => {
