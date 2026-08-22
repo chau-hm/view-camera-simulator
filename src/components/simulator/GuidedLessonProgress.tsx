@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { GuidedLessonContext, GuidedLessonStageId } from "../../app/guidedLesson";
 import {
+  getGuidedLessonCopyKeys,
   guidedLessonMessageKeys,
   type GuidedLessonMessageKey,
 } from "../../i18n/guidedLessonMessageKeys";
@@ -20,6 +21,8 @@ const stageMessageKey = (stage: GuidedLessonStageId): GuidedLessonMessageKey => 
       return guidedLessonMessageKeys.stages.compose;
     case "align-focus":
       return guidedLessonMessageKeys.stages.alignFocus;
+    case "depth-of-field":
+      return guidedLessonMessageKeys.stages.depthOfField;
     case "final-challenge":
       return guidedLessonMessageKeys.stages.finalChallenge;
   }
@@ -30,6 +33,7 @@ export const GuidedLessonProgress = ({
   evaluation,
 }: GuidedLessonProgressProps) => {
   const { t } = useTranslation();
+  const copyKeys = getGuidedLessonCopyKeys(context.lessonId);
   const isObserve = context.stage === "observe";
   const isComplete = evaluation?.status === "passed";
   const canContinue = isObserve || isComplete;
@@ -42,7 +46,7 @@ export const GuidedLessonProgress = ({
       data-guided-lesson-stage={context.stage}
     >
       <div className="guided-lesson-progress__header">
-        <strong>{t(guidedLessonMessageKeys.common.lessonName)}</strong>
+        <strong>{t(copyKeys.lessonName)}</strong>
         <span>{t(guidedLessonMessageKeys.common.stepOf, {
           current: context.stageIndex + 1,
           total: context.stages.length,
@@ -70,14 +74,14 @@ export const GuidedLessonProgress = ({
 
       {isObserve ? (
         <div className="guided-lesson-progress__observe">
-          <h3>{t(guidedLessonMessageKeys.observe.title)}</h3>
-          <p>{t(guidedLessonMessageKeys.observe.body)}</p>
+          <h3>{t(copyKeys.observeTitle)}</h3>
+          <p>{t(copyKeys.observeBody)}</p>
         </div>
       ) : null}
 
       {!isObserve && context.nextHref === null && isComplete ? (
         <p className="guided-lesson-progress__completion-body">
-          {t(guidedLessonMessageKeys.common.completionBody)}
+          {t(copyKeys.completionBody)}
         </p>
       ) : null}
 

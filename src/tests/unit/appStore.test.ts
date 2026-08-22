@@ -3,6 +3,7 @@ import { useAppStore } from "../../state/appStore";
 import { getSceneFocusDistanceRange } from "../../scenes/definitions";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
+import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
 import { resolveInitialOpticalGeometryVisibility } from "../../state/sceneViewDefaults";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
@@ -291,6 +292,40 @@ describe("app store STA-001", () => {
       focusMode: "finite",
       focusDistanceMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
       lastFiniteFocusDepthMm: obliqueArchitectureGeometry.canonicalFocusDistanceMm,
+      activeTaskId: null,
+    });
+  });
+
+  it("re-enters Architecture + Foreground lesson Observe from a neutral finite-focus state", () => {
+    const store = useAppStore.getState();
+
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "architecture-foreground",
+      taskId: null,
+    });
+    store.setRise(20);
+    store.setTilt(2);
+    store.setFocusDistance(6830);
+    store.setAperture(22);
+
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "architecture-foreground",
+      taskId: null,
+      lessonEntry: true,
+    });
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      rearRiseMm: 0,
+      rearTiltDeg: 0,
+      focusMode: "finite",
+      focusDistanceMm: architectureForegroundGeometry.canonicalFocusDistanceMm,
+      lastFiniteFocusDepthMm: architectureForegroundGeometry.canonicalFocusDistanceMm,
+      aperture: 11,
       activeTaskId: null,
     });
   });

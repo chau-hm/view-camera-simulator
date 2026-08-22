@@ -17,9 +17,9 @@ test("Architecture + Foreground is discoverable from the Scenes page", async ({ 
     "href",
     "/simulator/free/architecture-foreground",
   );
-  await expect(card.getByRole("link", { name: "Start Guided Task" })).toHaveAttribute(
+  await expect(card.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
     "href",
-    "/simulator/guided/architecture-foreground/architecture-foreground-compound-01",
+    "/simulator/free/architecture-foreground?lesson=1",
   );
 
   const sceneHeadings = await page.getByRole("heading", { level: 2 }).allTextContents();
