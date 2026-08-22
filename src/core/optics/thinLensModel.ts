@@ -116,6 +116,32 @@ export const computePhysicalCoCDiameterMm = ({
   return Number.isFinite(diameterMm) && diameterMm >= 0 ? diameterMm : NaN;
 };
 
+/**
+ * Computes signed physical CoC diameter using the same neutral thin-lens
+ * magnitude as computePhysicalCoCDiameterMm.
+ *
+ * The sign is relative to the actual film plane: negative means the ideal
+ * image plane lies behind the film (foreground/near-side defocus), positive
+ * means it lies in front of the film (background/far-side defocus), and zero
+ * means the point is focused. Units remain millimetres and the value is a
+ * signed diameter, not a radius. Invalid inputs return NaN.
+ */
+export const computeSignedPhysicalCoCDiameterMm = (
+  input: PhysicalCoCDiameterInput,
+): number => {
+  const magnitudeMm = computePhysicalCoCDiameterMm(input);
+  if (Number.isNaN(magnitudeMm)) return NaN;
+  if (magnitudeMm === 0) return 0;
+
+  const idealImageDistanceMm = input.objectDistanceMm === Number.POSITIVE_INFINITY
+    ? input.focalLengthMm
+    : imageDistanceMm(input.focalLengthMm, input.objectDistanceMm);
+  if (idealImageDistanceMm === Number.POSITIVE_INFINITY) return -magnitudeMm;
+  if (!Number.isFinite(idealImageDistanceMm)) return NaN;
+
+  return idealImageDistanceMm > input.filmDistanceMm ? -magnitudeMm : magnitudeMm;
+};
+
 export const cocDiameterMm = (
   focalLengthMm: number,
   apertureFNumber: number,

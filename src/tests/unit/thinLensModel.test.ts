@@ -5,6 +5,7 @@ import {
   projectPointToGroundGlass,
   cocDiameterMm,
   computePhysicalCoCDiameterMm,
+  computeSignedPhysicalCoCDiameterMm,
   verticalFovDegreesFromImageDistance,
 } from "../../core/optics/thinLensModel";
 
@@ -122,6 +123,54 @@ describe("thinLensModel", () => {
 
       expect(nearerObjectCoC).toBeGreaterThan(0);
       expect(fartherObjectCoC).toBeGreaterThan(0);
+    });
+
+    it("uses negative near-side and positive far-side signed CoC with unchanged magnitude", () => {
+      const baseInput = {
+        focalLengthMm: 150,
+        apertureFNumber: 8,
+        filmDistanceMm: 180,
+      };
+      const nearInput = { ...baseInput, objectDistanceMm: 600 };
+      const farInput = { ...baseInput, objectDistanceMm: 1200 };
+
+      expect(computeSignedPhysicalCoCDiameterMm(nearInput)).toBeLessThan(0);
+      expect(computeSignedPhysicalCoCDiameterMm(farInput)).toBeGreaterThan(0);
+      expect(Math.abs(computeSignedPhysicalCoCDiameterMm(nearInput))).toBeCloseTo(
+        computePhysicalCoCDiameterMm(nearInput),
+        12,
+      );
+      expect(Math.abs(computeSignedPhysicalCoCDiameterMm(farInput))).toBeCloseTo(
+        computePhysicalCoCDiameterMm(farInput),
+        12,
+      );
+    });
+
+    it("keeps focus, infinity, and the focal-boundary sign deterministic", () => {
+      expect(
+        computeSignedPhysicalCoCDiameterMm({
+          focalLengthMm: 150,
+          apertureFNumber: 8,
+          objectDistanceMm: 900,
+          filmDistanceMm: 180,
+        }),
+      ).toBeCloseTo(0, 12);
+      expect(
+        computeSignedPhysicalCoCDiameterMm({
+          focalLengthMm: 150,
+          apertureFNumber: 8,
+          objectDistanceMm: Number.POSITIVE_INFINITY,
+          filmDistanceMm: 200,
+        }),
+      ).toBeCloseTo(6.25, 12);
+      expect(
+        computeSignedPhysicalCoCDiameterMm({
+          focalLengthMm: 150,
+          apertureFNumber: 8,
+          objectDistanceMm: 150,
+          filmDistanceMm: 200,
+        }),
+      ).toBeCloseTo(-18.75, 12);
     });
 
     it("gets larger as the f-number gets smaller for fixed defocus", () => {

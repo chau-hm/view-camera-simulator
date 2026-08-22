@@ -4,6 +4,7 @@ export type SizeDependentRttResources = {
   renderTarget: THREE.WebGLRenderTarget;
   cocTarget: THREE.WebGLRenderTarget;
   gatherTarget: THREE.WebGLRenderTarget;
+  nearGatherTarget: THREE.WebGLRenderTarget;
   finalTarget: THREE.WebGLRenderTarget;
   cocMaterial: THREE.ShaderMaterial;
   gatherMaterial: THREE.ShaderMaterial;
@@ -66,6 +67,7 @@ export const resizeGroundGlassRttResources = (
 
   changed = resizeTargetIfNeeded(resources.cocTarget, widthPx, heightPx) || changed;
   changed = resizeTargetIfNeeded(resources.gatherTarget, gatherWidthPx, gatherHeightPx) || changed;
+  changed = resizeTargetIfNeeded(resources.nearGatherTarget, gatherWidthPx, gatherHeightPx) || changed;
   changed = resizeTargetIfNeeded(resources.finalTarget, widthPx, heightPx) || changed;
   changed = updateUniformPair(resources.cocMaterial, widthPx, heightPx) || changed;
   changed = updateUniformPair(resources.gatherMaterial, widthPx, heightPx) || changed;
