@@ -14,12 +14,17 @@
   in front of the film / background-side defocus. Magnitude remains the PR 8A
   physical CoC diameter in millimetres.
 - The full-resolution CoC buffer carries signed millimetres on the half-float
-  path and a reversible `[-maxCoC,+maxCoC]` normalized byte encoding on the
-  capability fallback path.
+  path and an explicit neutral-safe RGBA8 byte code on the capability fallback
+  path: code 128 is zero, 0..127 are negative, and 129..255 are positive.
+- The CoC target uses nearest filtering in both storage modes because signed
+  CoC classifies a visible surface and must not interpolate opposing sides.
 - Ground Glass renders separate far/background and near/foreground gathers to
   the same quality-scaled dimensions. Far gathering rejects foreground
   occluders; near gathering uses each foreground sample's own CoC footprint and
-  composites its coverage over the far result.
+  composites its coverage over the far result. Near coverage compensates the
+  uniform maximum-disk proposal density and uses a bounded union estimator.
+- Invalid derived-plane wedge states now return neutral/unresolved signed CoC
+  rather than fabricating a positive far-side classification.
 - Raw debug remains a true full-resolution scene-color bypass. Normal frames
   still use one scene color/depth render followed by CoC, two screen-space
   gathers, and a full-resolution composite.
@@ -28,21 +33,22 @@
 
 ## Tests and validation
 
-- Focused optics/storage/shader/resource/RTT tests: PASS — 6 files / 76 tests.
-- Full unit/integration suite: PASS — 128 files / 1,237 tests.
+- Focused optics/storage/coverage/shader/resource/RTT tests: PASS — 7 files / 78 tests.
+- Full unit/integration suite: PASS — 129 files / 1,239 tests.
 - Typecheck, lint, CSS structure check, and production build: PASS.
-- Bounded Chromium Ground Glass DOF stability spec: PASS — 2/2 tests.
+- Bounded Chromium Ground Glass and Architecture + Foreground specs: PASS — 3/3 tests.
 - `npm run ci:local:e2e` passed CSS, lint, typecheck, unit/integration, build,
   and the preceding browser files, then stopped at the known baseline failure
   in `focus-fundamentals-selectable-focus.spec.ts` test 1: RTT
   `ownerId/resourceGeneration` diagnostics were incomplete. Its test 2 passed;
-  the focused Ground Glass DOF spec independently passed 2/2.
+  the focused PR 8C Ground Glass specs independently passed 3/3.
 
 ## Scope
 
 - No Gaussian fallback, adaptive sampling, alternate aperture shapes, hidden
   background reconstruction, multi-render aperture sampling, task semantics,
   UI controls, or PR 8D work was added.
-- Review focus: signed CoC side consistency, byte/half-float storage decoding,
-  asymmetric visibility ordering, near-layer footprint coverage, full-resolution
-  raw bypass, and target resize/disposal lifecycle.
+- Review focus: signed CoC side consistency, neutral-safe byte quantization,
+  nearest side-preserving CoC sampling, asymmetric visibility ordering,
+  near-layer footprint coverage, full-resolution raw bypass, and target
+  resize/disposal lifecycle.

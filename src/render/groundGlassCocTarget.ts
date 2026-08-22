@@ -7,20 +7,73 @@ export type GroundGlassCocTarget = {
   storageFormat: GroundGlassCocStorageFormat;
 };
 
+export const GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE = 128;
+const GROUND_GLASS_SIGNED_COC_MAX_BYTE = 255;
+
+const clampByte = (value: number): number =>
+  Math.min(GROUND_GLASS_SIGNED_COC_MAX_BYTE, Math.max(0, Math.round(value)));
+
+/** Quantizes a normalized byte-target write using the actual RGBA8 code grid. */
+export const quantizeGroundGlassSignedCoCByte = (encoded: number): number => {
+  if (!Number.isFinite(encoded)) return GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE;
+  return clampByte(Math.min(1, Math.max(0, encoded)) * GROUND_GLASS_SIGNED_COC_MAX_BYTE);
+};
+
+/**
+ * Encodes signed CoC as an explicit RGBA8 code. Code 128 is neutral; codes
+ * 0..127 are negative and codes 129..255 are positive. The two sides use
+ * their available code counts independently so zero survives quantization.
+ */
+export const encodeGroundGlassSignedCoCByte = (
+  signedCocMm: number,
+  maximumCoCMm: number,
+): number => {
+  if (!Number.isFinite(signedCocMm) || !Number.isFinite(maximumCoCMm) || maximumCoCMm <= 0) {
+    return GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE;
+  }
+  const normalized = Math.min(1, Math.max(-1, signedCocMm / maximumCoCMm));
+  if (normalized < 0) {
+    return clampByte(GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE + normalized * 128);
+  }
+  return clampByte(GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE + normalized * 127);
+};
+
+export const decodeGroundGlassSignedCoCByte = (
+  byteCode: number,
+  maximumCoCMm: number,
+): number => {
+  if (!Number.isFinite(byteCode) || !Number.isFinite(maximumCoCMm) || maximumCoCMm <= 0) {
+    return 0;
+  }
+  const code = clampByte(byteCode);
+  if (code < GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE) {
+    return ((code - GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE) / 128) * maximumCoCMm;
+  }
+  if (code > GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE) {
+    return ((code - GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE) / 127) * maximumCoCMm;
+  }
+  return 0;
+};
+
 /**
  * CPU reference for the signed CoC storage contract used by the GLSL stages.
- * Half-float targets store signed millimetres directly. Byte targets map the
- * configured signed range [-maxMm, +maxMm] to [0, 1], with focus at 0.5.
+ * Half-float targets store signed millimetres directly. Byte targets use the
+ * explicit neutral-safe integer code contract above and return its normalized
+ * code-grid value for the RGBA8 render target.
  */
 export const encodeGroundGlassSignedCoC = (
   signedCocMm: number,
   storageFormat: GroundGlassCocStorageFormat,
   maximumCoCMm: number,
 ): number => {
-  if (!Number.isFinite(signedCocMm)) return storageFormat === "encoded-byte" ? 0.5 : 0;
+  if (!Number.isFinite(signedCocMm)) {
+    return storageFormat === "encoded-byte"
+      ? GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE / GROUND_GLASS_SIGNED_COC_MAX_BYTE
+      : 0;
+  }
   if (storageFormat === "half-float-mm") return signedCocMm;
-  if (!Number.isFinite(maximumCoCMm) || maximumCoCMm <= 0) return 0.5;
-  return Math.min(1, Math.max(0, signedCocMm / (2 * maximumCoCMm) + 0.5));
+  return encodeGroundGlassSignedCoCByte(signedCocMm, maximumCoCMm) /
+    GROUND_GLASS_SIGNED_COC_MAX_BYTE;
 };
 
 export const decodeGroundGlassSignedCoC = (
@@ -30,9 +83,10 @@ export const decodeGroundGlassSignedCoC = (
 ): number => {
   if (!Number.isFinite(storedCoc)) return 0;
   if (storageFormat === "half-float-mm") return storedCoc;
-  if (!Number.isFinite(maximumCoCMm) || maximumCoCMm <= 0) return 0;
-  const normalized = Math.min(1, Math.max(0, storedCoc));
-  return (normalized * 2 - 1) * maximumCoCMm;
+  return decodeGroundGlassSignedCoCByte(
+    quantizeGroundGlassSignedCoCByte(storedCoc),
+    maximumCoCMm,
+  );
 };
 
 type GroundGlassCocRenderer = Pick<
@@ -66,8 +120,10 @@ export const isGroundGlassColorRenderTargetRenderable = (
 
 /**
  * Creates a full-resolution CoC target with an explicit storage fallback.
- * The encoded-byte mode stores normalized signed CoC in the red channel;
- * shader uniforms carry the physical millimetre range needed to decode it.
+ * The encoded-byte mode stores the explicit neutral-safe normalized signed CoC
+ * code in the red channel; shader uniforms carry the physical millimetre range
+ * needed to decode it. Signed CoC is surface classification data, so neither
+ * storage representation may interpolate between opposing signs.
  */
 export const createGroundGlassCocTarget = (
   renderer: GroundGlassCocRenderer,
@@ -76,8 +132,8 @@ export const createGroundGlassCocTarget = (
 ): GroundGlassCocTarget => {
   const targetOptions = {
     format: THREE.RGBAFormat,
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
     depthBuffer: false,
     stencilBuffer: false,
   } as const;

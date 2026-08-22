@@ -81,6 +81,8 @@ void main(){
   const float goldenAngle = 2.39996323;
   vec3 accum = vec3(0.0);
   float total = 0.0;
+  float coverageMass = 0.0;
+  bool centerForeground = false;
 
   float centerWeight = nearLayer
     ? calculateNearSampleWeight(centerDepth, centerDepth, centerSignedCocMm, centerSignedCocMm)
@@ -88,6 +90,7 @@ void main(){
   if(centerWeight > 1e-6){
     accum += sharpColor.rgb * centerWeight;
     total += centerWeight;
+    if(nearLayer) centerForeground = true;
   }
 
   // Uniform-disk samples form a neutral circular aperture. The compile-time
@@ -117,6 +120,24 @@ void main(){
     if(!(weight > 1e-6)) continue;
     accum += texture2D(tColor, sampleUv).rgb * weight;
     total += weight;
+    if(nearLayer){
+      // Samples are proposed over the maximum search disk, so coverage is
+      // compensated by each foreground footprint's area ratio. The
+      // sample-count-derived floor/cap limits sparse-proposal noise without a
+      // visual fudge multiplier.
+      float footprintAreaRatio = clamp(
+        (sampleRadiusPx / max(gatherRadiusPx, 1e-6)) *
+        (sampleRadiusPx / max(gatherRadiusPx, 1e-6)),
+        0.0,
+        1.0
+      );
+      float minimumResolvableAreaRatio = 1.0 / activeSamples;
+      float proposalCompensation = min(
+        activeSamples,
+        1.0 / max(footprintAreaRatio, minimumResolvableAreaRatio)
+      );
+      coverageMass += weight * proposalCompensation;
+    }
   }
 
   if(!(total > 1e-6)){
@@ -124,7 +145,9 @@ void main(){
     return;
   }
   float coverage = nearLayer
-    ? clamp(total / (activeSamples + 1.0), 0.0, 1.0)
+    ? (centerForeground
+      ? 1.0
+      : clamp(1.0 - exp(-coverageMass / activeSamples), 0.0, 1.0))
     : 1.0;
   gl_FragColor = vec4(accum / total, nearLayer ? coverage : sharpColor.a);
 }

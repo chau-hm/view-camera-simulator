@@ -102,9 +102,10 @@ float calculatePhysicalCoCDiameterMmFromDepth(float depth){
   return abs(calculateSignedPhysicalCoCDiameterMmFromDepth(depth));
 }
 
+// A malformed or unreachable wedge has no trustworthy near/far side. Return
+// neutral rather than fabricating a positive far-side classification.
 float safeUnresolvedWedgeCoCDiameterMm(){
-  if(!isFiniteFloat(circleOfConfusionMm) || circleOfConfusionMm < 0.0) return 0.0;
-  return circleOfConfusionMm;
+  return 0.0;
 }
 
 float calculateSignedWedgeCoCDiameterMmFromWorldPosition(vec3 worldPos){
@@ -161,21 +162,29 @@ float calculateCoCDiameterMmAtFragment(vec2 uv, float depth){
 }
 
 // The physical CoC is normally stored directly as signed millimetres in the
-// half-float target. The byte fallback maps [-maxMm, +maxMm] to [0, 1], with
-// focus at 0.5. Encoding is deliberately after the optical calculation so
-// storage capability cannot change the CoC semantics.
+// half-float target. The byte fallback uses an explicit RGBA8 code contract:
+// code 128 is neutral, codes 0..127 are negative, and codes 129..255 are
+// positive. Encoding is deliberately after the optical calculation so storage
+// capability cannot change the CoC semantics.
 float encodeSignedPhysicalCoCDiameterMm(float signedCocMm){
-  if(!isFiniteFloat(signedCocMm)) return cocStorageEncoded < 0.5 ? 0.0 : 0.5;
+  if(!isFiniteFloat(signedCocMm)) return cocStorageEncoded < 0.5 ? 0.0 : 128.0 / 255.0;
   if(cocStorageEncoded < 0.5) return signedCocMm;
-  if(!isFiniteFloat(cocStorageMaxMm) || cocStorageMaxMm <= 0.0) return 0.5;
-  return clamp(signedCocMm / (2.0 * cocStorageMaxMm) + 0.5, 0.0, 1.0);
+  if(!isFiniteFloat(cocStorageMaxMm) || cocStorageMaxMm <= 0.0) return 128.0 / 255.0;
+  float normalized = clamp(signedCocMm / cocStorageMaxMm, -1.0, 1.0);
+  float byteCode = normalized < 0.0
+    ? floor(128.0 + normalized * 128.0 + 0.5)
+    : floor(128.0 + normalized * 127.0 + 0.5);
+  return clamp(byteCode, 0.0, 255.0) / 255.0;
 }
 
 float decodeStoredSignedCoCDiameterMm(float storedCoc){
   if(!isFiniteFloat(storedCoc)) return 0.0;
   if(cocStorageEncoded < 0.5) return storedCoc;
   if(!isFiniteFloat(cocStorageMaxMm) || cocStorageMaxMm <= 0.0) return 0.0;
-  return (clamp(storedCoc, 0.0, 1.0) * 2.0 - 1.0) * cocStorageMaxMm;
+  float byteCode = floor(clamp(storedCoc, 0.0, 1.0) * 255.0 + 0.5);
+  if(byteCode < 128.0) return ((byteCode - 128.0) / 128.0) * cocStorageMaxMm;
+  if(byteCode > 128.0) return ((byteCode - 128.0) / 127.0) * cocStorageMaxMm;
+  return 0.0;
 }
 
 // Convert physical CoC diameter to a gather radius in source-texture pixels.

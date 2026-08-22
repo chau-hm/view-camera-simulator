@@ -78,6 +78,9 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassSharedGlsl).toContain("cocDiameterMmToGatherRadiusPx");
     expect(groundGlassSharedGlsl).toContain("encodeSignedPhysicalCoCDiameterMm");
     expect(groundGlassSharedGlsl).toContain("decodeStoredSignedCoCDiameterMm");
+    expect(groundGlassSharedGlsl).toContain("128.0 / 255.0");
+    expect(groundGlassSharedGlsl).toContain("byteCode < 128.0");
+    expect(groundGlassSharedGlsl).toContain("byteCode > 128.0");
     expect(groundGlassSharedGlsl).toContain("calculateFarSampleWeight");
     expect(groundGlassSharedGlsl).toContain("calculateNearSampleWeight");
     expect(groundGlassSharedGlsl).not.toContain(
@@ -116,6 +119,11 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassApertureGatherFragmentShader).toContain("calculateFarSampleWeight");
     expect(groundGlassApertureGatherFragmentShader).toContain("calculateNearSampleWeight");
     expect(groundGlassApertureGatherFragmentShader).toContain("sampleRadiusPx");
+    expect(groundGlassApertureGatherFragmentShader).toContain("coverageMass");
+    expect(groundGlassApertureGatherFragmentShader).toContain("proposalCompensation");
+    expect(groundGlassApertureGatherFragmentShader).toContain(
+      "exp(-coverageMass / activeSamples)",
+    );
     expect(groundGlassApertureGatherFragmentShader).toContain("coverage");
     expect(groundGlassApertureGatherFragmentShader).toContain("texture2D(tColor, uv)");
     expect(groundGlassApertureGatherFragmentShader).not.toContain("sigma");
@@ -126,11 +134,16 @@ describe("GroundGlass DOF shader source", () => {
   test("near/far visibility policy keeps occlusion asymmetric", () => {
     const farPolicy = extractFunctionBody(groundGlassSharedGlsl, "calculateFarSampleWeight");
     const nearPolicy = extractFunctionBody(groundGlassSharedGlsl, "calculateNearSampleWeight");
+    const unresolvedPolicy = extractFunctionBody(
+      groundGlassSharedGlsl,
+      "safeUnresolvedWedgeCoCDiameterMm",
+    );
 
     expect(farPolicy).toContain("sampleSignedCocMm < -0.00001");
     expect(farPolicy).toContain("sampleUmm < centerUmm - toleranceMm");
     expect(nearPolicy).toContain("sampleSignedCocMm >= -0.00001");
     expect(nearPolicy).toContain("sampleUmm > centerUmm + toleranceMm");
+    expect(unresolvedPolicy).toContain("return 0.0");
     expect(groundGlassApertureGatherFragmentShader).toContain(
       "smoothstep(sampleRadiusPx, sampleRadiusPx + 1.0, sampleDistancePx)",
     );
