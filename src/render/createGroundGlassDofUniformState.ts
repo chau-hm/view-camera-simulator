@@ -29,6 +29,18 @@ export type GroundGlassDofUniformState = {
   displayBlurScale: number;
 };
 
+/** Keep depth linearization on every DOF stage aligned with the live RTT camera. */
+export const synchronizeGroundGlassDofClipRange = (
+  materials: readonly THREE.ShaderMaterial[],
+  nearWorld: number,
+  farWorld: number,
+): void => {
+  materials.forEach((material) => {
+    material.uniforms.near.value = nearWorld;
+    material.uniforms.far.value = farWorld;
+  });
+};
+
 export function applyGroundGlassDofUniformState(
   material: THREE.ShaderMaterial,
   state: GroundGlassDofUniformState,
@@ -44,14 +56,24 @@ export function applyGroundGlassDofUniformState(
   material.uniforms.hasFiniteFar.value = state.hasFiniteFarPlane ? 1 : 0;
   material.uniforms.inverseProjectionMatrix.value.fromArray(state.inverseProjectionMatrix);
   material.uniforms.cameraMatrixWorld.value.fromArray(state.cameraMatrixWorld);
-  material.uniforms.maximumBlurRadiusPx.value = state.maximumBlurRadiusPx;
-  material.uniforms.displayBlurScale.value = state.displayBlurScale;
-  material.uniforms.focalLengthMm.value = state.focalLengthMm;
-  material.uniforms.filmWidthMm.value = state.filmWidthMm;
-  material.uniforms.fNumber.value = state.fNumber;
-  material.uniforms.imageDistanceMm.value = state.imageDistanceMm;
-  material.uniforms.renderWidth.value = state.renderWidth;
-  material.uniforms.renderHeight.value = state.renderHeight;
+  // CoC and gather materials share this state, but only the gather material
+  // owns the quality cap. Keep the application helper compatible with both
+  // stages so optics preparation remains a single source of truth.
+  if (material.uniforms.maximumBlurRadiusPx) {
+    material.uniforms.maximumBlurRadiusPx.value = state.maximumBlurRadiusPx;
+  }
+  if (material.uniforms.maximumCoCRadiusPx) {
+    material.uniforms.maximumCoCRadiusPx.value = state.maximumBlurRadiusPx;
+  }
+  if (material.uniforms.displayBlurScale) {
+    material.uniforms.displayBlurScale.value = state.displayBlurScale;
+  }
+  if (material.uniforms.focalLengthMm) material.uniforms.focalLengthMm.value = state.focalLengthMm;
+  if (material.uniforms.filmWidthMm) material.uniforms.filmWidthMm.value = state.filmWidthMm;
+  if (material.uniforms.fNumber) material.uniforms.fNumber.value = state.fNumber;
+  if (material.uniforms.imageDistanceMm) material.uniforms.imageDistanceMm.value = state.imageDistanceMm;
+  if (material.uniforms.renderWidth) material.uniforms.renderWidth.value = state.renderWidth;
+  if (material.uniforms.renderHeight) material.uniforms.renderHeight.value = state.renderHeight;
 }
 
 export function createGroundGlassDofUniformState(

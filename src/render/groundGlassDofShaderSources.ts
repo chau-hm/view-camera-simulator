@@ -1,127 +1,128 @@
 import { groundGlassSharedGlsl, groundGlassUniformDecls } from "./groundGlassDofShaders";
 
-export const groundGlassVertexShader = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position,1.0); }`;
-
-const sharedIntro = `${groundGlassUniformDecls} ${groundGlassSharedGlsl}`;
-
-// constants: zero blur threshold and fixed sample layout
-const zeroBlurThreshold = 0.125;
-const maximumHalfSamples = 7; // symmetric taps -7..+7 => 15 taps
-
-export const groundGlassHorizontalFragmentShader = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; ${sharedIntro}
-
+export const groundGlassVertexShader = `
+varying vec2 vUv;
 void main(){
-  vec2 uv = vUv;
-  if(useRaw > 0.5){ gl_FragColor = texture2D(tColor, uv); return; }
-  float centerDepth = texture2D(tDepth, uv).x;
-  float radius = 0.0;
-  if (dofMode < 0.5) {
-    radius = calculateParallelBlurRadiusPxFromDepth(centerDepth);
-  } else {
-    vec3 worldPos = reconstructWorldPosition(uv, centerDepth, inverseProjectionMatrix, cameraMatrixWorld);
-    radius = calculateWedgeBlurRadiusPxFromWorldPosition(worldPos);
-  }
-
-  if (!(radius > ${zeroBlurThreshold})){
-    gl_FragColor = texture2D(tColor, uv);
-    return;
-  }
-
-  // continuous Gaussian family with fixed sample layout
-  float sigma = max(0.35, radius * 0.6);
-  float centerUmm = abs(viewZFromDepth(centerDepth, near, far)) * 1000.0;
-  vec3 accum = vec3(0.0);
-  float total = 0.0;
-
-  for(int i = -${maximumHalfSamples}; i <= ${maximumHalfSamples}; ++i){
-    float idx = float(i);
-    float normalizedOffset = idx / float(${maximumHalfSamples});
-    float offsetPx = normalizedOffset * radius;
-    vec2 off = vec2(offsetPx / renderWidth, 0.0);
-    float sampleDepth = texture2D(tDepth, uv + off).x;
-    float depthWeight = calculateDepthSampleWeight(centerDepth, sampleDepth);
-
-    // compat weight (soft) based on sample blur radius if wedge-mode
-    float radiusCompatibility = 1.0;
-    if(dofMode >= 0.5){
-      vec3 worldSample = reconstructWorldPosition(uv + off, sampleDepth, inverseProjectionMatrix, cameraMatrixWorld);
-      float sampleRadius = calculateWedgeBlurRadiusPxFromWorldPosition(worldSample);
-      float radiusDelta = abs(sampleRadius - radius);
-      float radiusTolerance = max(1.0, radius * 0.25);
-      radiusCompatibility = 1.0 - smoothstep(radiusTolerance * 0.5, radiusTolerance, radiusDelta);
-    }
-
-    float offset2 = offsetPx * offsetPx;
-    float s2 = sigma * sigma;
-    float g = exp(-0.5 * offset2 / s2);
-    float w = g * depthWeight * radiusCompatibility;
-    if(!(w > 1e-6)) continue;
-    vec3 c = texture2D(tColor, uv + off).rgb;
-    accum += c * w;
-    total += w;
-  }
-
-  if(!(total > 1e-6)){ gl_FragColor = texture2D(tColor, uv); return; }
-  gl_FragColor = vec4(accum / total, 1.0);
+  vUv = uv;
+  gl_Position = vec4(position, 1.0);
 }
 `;
 
-export const groundGlassVerticalFragmentShader = `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform sampler2D tDepth; ${sharedIntro} uniform vec2 ringCenter; uniform float ringRadiusPx; uniform vec3 ringColor; uniform float ringOpacity; uniform float showRing; uniform float displayUpright;
+const sharedIntro = `${groundGlassUniformDecls} ${groundGlassSharedGlsl}`;
+const zeroCoCThresholdPx = 0.125;
+const maximumApertureSamples = 64;
+
+/** Full-resolution physical CoC intermediate. The red channel stores either
+ * millimetres or the explicit normalized byte-fallback representation. */
+export const groundGlassPhysicalCocFragmentShader = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D tDepth;
+${sharedIntro}
 
 void main(){
-  vec2 screenUv = vUv;
-  vec2 sampleUv = (displayUpright > 0.5) ? vec2(1.0 - screenUv.x, 1.0 - screenUv.y) : screenUv;
-  if(useRaw > 0.5){ vec3 colorRaw = texture2D(tColor, sampleUv).rgb; vec3 color = colorRaw; if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); } gl_FragColor = vec4(color,1.0); return; }
-  float centerDepth = texture2D(tDepth, sampleUv).x;
-  float radius = 0.0;
-  if (dofMode < 0.5) {
-    radius = calculateParallelBlurRadiusPxFromDepth(centerDepth);
-  } else {
-    vec3 worldPos = reconstructWorldPosition(sampleUv, centerDepth, inverseProjectionMatrix, cameraMatrixWorld);
-    radius = calculateWedgeBlurRadiusPxFromWorldPosition(worldPos);
-  }
+  float depth = texture2D(tDepth, vUv).x;
+  float cocMm = calculateCoCDiameterMmAtFragment(vUv, depth);
+  if(!isFiniteFloat(cocMm) || cocMm < 0.0) cocMm = 0.0;
+  gl_FragColor = vec4(encodePhysicalCoCDiameterMm(cocMm), 0.0, 0.0, 1.0);
+}
+`;
 
-  if (!(radius > ${zeroBlurThreshold})){
-    vec3 color = texture2D(tColor, sampleUv).rgb;
-    if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
-    gl_FragColor = vec4(color,1.0);
+/**
+ * Neutral circular aperture gather. CoC is generated independently at full
+ * resolution; this pass may render to a scaled target for quality tiers.
+ */
+export const groundGlassApertureGatherFragmentShader = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D tColor;
+uniform sampler2D tDepth;
+uniform sampler2D tCoC;
+${sharedIntro}
+
+void main(){
+  vec2 uv = vUv;
+  vec4 sharpColor = texture2D(tColor, uv);
+  if(useRaw > 0.5){
+    gl_FragColor = sharpColor;
     return;
   }
 
-  float sigma = max(0.35, radius * 0.6);
+  float centerDepth = texture2D(tDepth, uv).x;
+  float storedCoc = texture2D(tCoC, uv).r;
+  float cocMm = decodeStoredCoCDiameterMm(storedCoc);
+  float radiusPx = cocDiameterMmToGatherRadiusPx(cocMm);
+
+  // Preserve the sharp path without paying for aperture samples.
+  if(!(radiusPx > ${zeroCoCThresholdPx.toString()})){
+    gl_FragColor = sharpColor;
+    return;
+  }
+
+  float activeSamples = clamp(floor(sampleCount + 0.5), 1.0, float(${maximumApertureSamples}));
+  const float goldenAngle = 2.39996323;
   vec3 accum = vec3(0.0);
   float total = 0.0;
 
-  for(int i = -${maximumHalfSamples}; i <= ${maximumHalfSamples}; ++i){
-    float idx = float(i);
-    float normalizedOffset = idx / float(${maximumHalfSamples});
-    float offsetPx = normalizedOffset * radius;
-    vec2 off = vec2(0.0, offsetPx / renderHeight);
-    float sampleDepth = texture2D(tDepth, sampleUv + off).x;
+  // Uniform-disk samples form a neutral circular aperture. The compile-time
+  // ceiling keeps the shader portable while sampleCount remains runtime data.
+  for(int i = 0; i < ${maximumApertureSamples}; ++i){
+    if(float(i) >= activeSamples) break;
+    float sampleIndex = float(i);
+    float radial = sqrt((sampleIndex + 0.5) / activeSamples);
+    float angle = (sampleIndex + 0.5) * goldenAngle;
+    vec2 diskOffset = radial * vec2(cos(angle), sin(angle));
+    vec2 offsetUv = diskOffset * radiusPx / vec2(renderWidth, renderHeight);
+    vec2 sampleUv = clamp(uv + offsetUv, vec2(0.0), vec2(1.0));
+    float sampleDepth = texture2D(tDepth, sampleUv).x;
     float depthWeight = calculateDepthSampleWeight(centerDepth, sampleDepth);
-
-    float radiusCompatibility = 1.0;
-    if(dofMode >= 0.5){
-      vec3 worldSample = reconstructWorldPosition(sampleUv + off, sampleDepth, inverseProjectionMatrix, cameraMatrixWorld);
-      float sampleRadius = calculateWedgeBlurRadiusPxFromWorldPosition(worldSample);
-      float radiusDelta = abs(sampleRadius - radius);
-      float radiusTolerance = max(1.0, radius * 0.25);
-      radiusCompatibility = 1.0 - smoothstep(radiusTolerance * 0.5, radiusTolerance, radiusDelta);
-    }
-
-    float offset2 = offsetPx * offsetPx;
-    float s2 = sigma * sigma;
-    float g = exp(-0.5 * offset2 / s2);
-    float w = g * depthWeight * radiusCompatibility;
-    if(!(w > 1e-6)) continue;
-    vec3 c = texture2D(tColor, sampleUv + off).rgb;
-    accum += c * w;
-    total += w;
+    if(!(depthWeight > 1e-6)) continue;
+    accum += texture2D(tColor, sampleUv).rgb * depthWeight;
+    total += depthWeight;
   }
 
-  vec3 color = texture2D(tColor, sampleUv).rgb;
-  if(total > 1e-6){ color = accum / total; }
-  if(showRing > 0.5){ vec2 ringCenterScreen = (displayUpright > 0.5) ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y) : ringCenter; vec2 px = screenUv * vec2(renderWidth, renderHeight); vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight); float d = distance(px, centerPx); float r = ringRadiusPx; float ring = smoothstep(r - 1.5, r - 0.5, d) - smoothstep(r + 0.5, r + 1.5, d); color = mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0)); }
-  gl_FragColor = vec4(color,1.0);
+  if(!(total > 1e-6)){
+    gl_FragColor = sharpColor;
+    return;
+  }
+  gl_FragColor = vec4(accum / total, sharpColor.a);
+}
+`;
+
+/** Final full-resolution display composite, including existing orientation and ring policy. */
+export const groundGlassCompositeFragmentShader = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D tGather;
+uniform vec2 ringCenter;
+uniform float ringRadiusPx;
+uniform vec3 ringColor;
+uniform float ringOpacity;
+uniform float showRing;
+uniform float displayUpright;
+uniform float renderWidth;
+uniform float renderHeight;
+
+vec3 applyFocusRing(vec3 color, vec2 screenUv){
+  if(showRing <= 0.5) return color;
+  vec2 ringCenterScreen = (displayUpright > 0.5)
+    ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y)
+    : ringCenter;
+  vec2 px = screenUv * vec2(renderWidth, renderHeight);
+  vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight);
+  float distancePx = distance(px, centerPx);
+  float ring = smoothstep(ringRadiusPx - 1.5, ringRadiusPx - 0.5, distancePx) -
+    smoothstep(ringRadiusPx + 0.5, ringRadiusPx + 1.5, distancePx);
+  return mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0));
+}
+
+void main(){
+  vec2 screenUv = vUv;
+  vec2 sampleUv = (displayUpright > 0.5)
+    ? vec2(1.0 - screenUv.x, 1.0 - screenUv.y)
+    : screenUv;
+  vec4 gathered = texture2D(tGather, sampleUv);
+  gathered.rgb = applyFocusRing(gathered.rgb, screenUv);
+  gl_FragColor = gathered;
 }
 `;

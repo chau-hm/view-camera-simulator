@@ -55,17 +55,86 @@ export const projectPointToGroundGlass = (
   return { xFilm, yFilm };
 };
 
+export type PhysicalCoCDiameterInput = {
+  focalLengthMm: number;
+  apertureFNumber: number;
+  objectDistanceMm: number;
+  filmDistanceMm: number;
+};
+
+/**
+ * Computes the physical circle-of-confusion diameter on a parallel film
+ * plane for an ideal thin lens. All distances and the returned diameter are
+ * in millimetres; the result is a diameter, not a radius.
+ *
+ * The object distance is measured from the lens centre on the object side
+ * and the film distance from the lens centre on the image side. The ideal
+ * image distance V follows 1/f = 1/U + 1/V. Positive U values below f are
+ * retained as the thin-lens virtual-image case. At U = f, V is infinite and
+ * the limiting CoC is the physical aperture diameter. A positive infinite U
+ * is the infinity-focus limit, V = f.
+ *
+ * Invalid or non-physical numeric inputs return NaN rather than a display
+ * fallback or a fabricated physical value.
+ */
+export const computePhysicalCoCDiameterMm = ({
+  focalLengthMm,
+  apertureFNumber,
+  objectDistanceMm,
+  filmDistanceMm,
+}: PhysicalCoCDiameterInput): number => {
+  const objectDistanceIsInfinity = objectDistanceMm === Number.POSITIVE_INFINITY;
+  const hasValidObjectDistance =
+    objectDistanceIsInfinity ||
+    (Number.isFinite(objectDistanceMm) && objectDistanceMm > 0);
+
+  if (
+    !Number.isFinite(focalLengthMm) ||
+    focalLengthMm <= 0 ||
+    !Number.isFinite(apertureFNumber) ||
+    apertureFNumber <= 0 ||
+    !Number.isFinite(filmDistanceMm) ||
+    filmDistanceMm <= 0 ||
+    !hasValidObjectDistance
+  ) {
+    return NaN;
+  }
+
+  const apertureDiameterMm = focalLengthMm / apertureFNumber;
+  if (!Number.isFinite(apertureDiameterMm) || apertureDiameterMm <= 0) return NaN;
+
+  // imageDistanceMm intentionally preserves Infinity at U = f. For CoC,
+  // F / Infinity is zero, so the physical limiting diameter is the aperture.
+  const idealImageDistanceMm = objectDistanceIsInfinity
+    ? focalLengthMm
+    : imageDistanceMm(focalLengthMm, objectDistanceMm);
+  if (idealImageDistanceMm === Number.POSITIVE_INFINITY) return apertureDiameterMm;
+  if (!Number.isFinite(idealImageDistanceMm) || idealImageDistanceMm === 0) return NaN;
+
+  const diameterMm =
+    apertureDiameterMm * Math.abs(1 - filmDistanceMm / idealImageDistanceMm);
+  return Number.isFinite(diameterMm) && diameterMm >= 0 ? diameterMm : NaN;
+};
+
 export const cocDiameterMm = (
   focalLengthMm: number,
   apertureFNumber: number,
-  imageDistanceMmVal: number,
+  filmDistanceMm: number,
   objectDistanceMm: number,
 ): number => {
-  // vObject = f * U / (U - f)
-  if (objectDistanceMm === focalLengthMm) return Infinity;
-  const vObject = (focalLengthMm * objectDistanceMm) / (objectDistanceMm - focalLengthMm);
-  const apertureDiameterMm = focalLengthMm / apertureFNumber;
-  return apertureDiameterMm * Math.abs(1 - imageDistanceMmVal / vObject);
+  // Preserve the historical infinity sentinel for existing positional
+  // callers. The explicit physical kernel uses the finite aperture limit at
+  // U = f, but legacy consumers use Infinity to represent this boundary.
+  if (objectDistanceMm === focalLengthMm) return Number.POSITIVE_INFINITY;
+
+  // The physical implementation owns the normal-domain equation so the two
+  // APIs cannot drift numerically.
+  return computePhysicalCoCDiameterMm({
+    focalLengthMm,
+    apertureFNumber,
+    objectDistanceMm,
+    filmDistanceMm,
+  });
 };
 
 export const verticalFovDegreesFromImageDistance = (
