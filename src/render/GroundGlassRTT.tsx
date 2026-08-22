@@ -139,6 +139,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     cocRT: THREE.WebGLRenderTarget;
     cocStorageFormat: GroundGlassCocStorageFormat;
     gatherRT: THREE.WebGLRenderTarget;
+    nearGatherRT: THREE.WebGLRenderTarget;
     finalRT: THREE.WebGLRenderTarget;
     rawDiagnosticRT: THREE.WebGLRenderTarget;
     finalDiagnosticRT: THREE.WebGLRenderTarget;
@@ -271,7 +272,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     
 
     // Create the explicit physical DOF pipeline:
-    // scene color/depth -> full-resolution CoC -> aperture gather -> composite.
+    // scene color/depth -> full-resolution signed CoC -> near/far gathers -> composite.
     const postSceneCoc = new THREE.Scene();
     const postSceneGather = new THREE.Scene();
     const postSceneComposite = new THREE.Scene();
@@ -300,6 +301,17 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       },
     );
     gatherRT.depthBuffer = false;
+    const nearGatherRT = new THREE.WebGLRenderTarget(
+      Math.max(1, Math.floor(dimsRef.current.internalWidthPx * initialQualitySettings.gatherScale)),
+      Math.max(1, Math.floor(dimsRef.current.internalHeightPx * initialQualitySettings.gatherScale)),
+      {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        depthBuffer: false,
+        stencilBuffer: false,
+      },
+    );
+    nearGatherRT.depthBuffer = false;
     const finalRT = new THREE.WebGLRenderTarget(
       dimsRef.current.internalWidthPx,
       dimsRef.current.internalHeightPx,
@@ -392,6 +404,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         sampleCount: { value: initialQualitySettings.sampleCount },
         cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
         cocStorageMaxMm: { value: initialCocStorageMaxMm },
+        gatherLayer: { value: 0.0 },
       },
     });
 
@@ -400,6 +413,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       fragmentShader: groundGlassCompositeFragmentShader,
       uniforms: {
         tGather: { value: gatherRT.texture },
+        tNearGather: { value: nearGatherRT.texture },
+        useNearGather: { value: 1.0 },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
         ringCenter: { value: new THREE.Vector2(-1, -1) },
@@ -436,6 +451,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       cocRT,
       cocStorageFormat: cocStorage.storageFormat,
       gatherRT,
+      nearGatherRT,
       finalRT,
       rawDiagnosticRT,
       finalDiagnosticRT,
@@ -459,6 +475,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         const cocH = cocRT.height;
         const gatherW = gatherRT.width;
         const gatherH = gatherRT.height;
+        const nearGatherW = nearGatherRT.width;
+        const nearGatherH = nearGatherRT.height;
 
         setRuntimeInfo({
           profile: resolvedProfile,
@@ -482,7 +500,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           depthTargetHeightPx: actualDepthH,
           blurTargetWidthPx: gatherW,
           blurTargetHeightPx: gatherH,
-          dofTechnique: "physical-coc-aperture-gather",
+          dofTechnique: "physical-coc-near-far-gather",
           gatherScale: initialQualitySettings.gatherScale,
           sampleCount: initialQualitySettings.sampleCount,
           maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
@@ -492,6 +510,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           cocTargetHeightPx: cocH,
           gatherTargetWidthPx: gatherW,
           gatherTargetHeightPx: gatherH,
+          farGatherTargetWidthPx: gatherW,
+          farGatherTargetHeightPx: gatherH,
+          nearGatherTargetWidthPx: nearGatherW,
+          nearGatherTargetHeightPx: nearGatherH,
           finalTargetWidthPx: finalRT.width,
           finalTargetHeightPx: finalRT.height,
           horizontalShaderRenderWidthPx: cocMaterial.uniforms.renderWidth.value as number,
@@ -529,6 +551,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         // dispose physical CoC and aperture-gather targets
         try { cocRT.dispose(); } catch (err) { void err; }
         try { gatherRT.dispose(); } catch (err) { void err; }
+        try { nearGatherRT.dispose(); } catch (err) { void err; }
         try { finalRT.dispose(); } catch (err) { void err; }
         try { rawDiagnosticRT.dispose(); } catch (err) { void err; }
         try { finalDiagnosticRT.dispose(); } catch (err) { void err; }
@@ -769,6 +792,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         renderTarget: rt,
         cocTarget: post.cocRT,
         gatherTarget: post.gatherRT,
+        nearGatherTarget: post.nearGatherRT,
         finalTarget: post.finalRT,
         cocMaterial,
         gatherMaterial,
@@ -808,7 +832,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       depthTargetHeightPx: depthImage?.height ?? rt.height,
       blurTargetWidthPx: post.gatherRT.width,
       blurTargetHeightPx: post.gatherRT.height,
-      dofTechnique: "physical-coc-aperture-gather",
+      dofTechnique: "physical-coc-near-far-gather",
       gatherScale: qualitySettings.gatherScale,
       sampleCount: qualitySettings.sampleCount,
       maximumCoCRadiusPx: Math.min(
@@ -821,6 +845,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       cocTargetHeightPx: post.cocRT.height,
       gatherTargetWidthPx: post.gatherRT.width,
       gatherTargetHeightPx: post.gatherRT.height,
+      farGatherTargetWidthPx: post.gatherRT.width,
+      farGatherTargetHeightPx: post.gatherRT.height,
+      nearGatherTargetWidthPx: post.nearGatherRT.width,
+      nearGatherTargetHeightPx: post.nearGatherRT.height,
       finalTargetWidthPx: post.finalRT.width,
       finalTargetHeightPx: post.finalRT.height,
       horizontalShaderRenderWidthPx: cocMaterial.uniforms.renderWidth.value as number,
@@ -959,7 +987,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     gl.clear(true, true, true);
     gl.render(offscreenScene.current, cam);
 
-    // 2) Physical CoC, neutral aperture gather, then full-resolution composite.
+    // 2) Full-resolution signed CoC, near/far aperture gathers, then composite.
     const post = postResourcesRef.current;
     if (post) {
       const {
@@ -969,6 +997,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         orthoCam,
         cocRT,
         gatherRT,
+        nearGatherRT,
         finalRT,
         rawDiagnosticRT,
         finalDiagnosticRT,
@@ -1073,6 +1102,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         gl.setRenderTarget(gatherRT);
         gl.setClearColor(SKY_COLOR.getHex(), 1);
         gl.clear(true, true, true);
+        gatherMaterial.uniforms.gatherLayer.value = 0.0;
+        gl.render(postSceneGather, orthoCam);
+
+        gl.setRenderTarget(nearGatherRT);
+        gl.setClearColor(SKY_COLOR.getHex(), 0);
+        gl.clear(true, true, true);
+        gatherMaterial.uniforms.gatherLayer.value = 1.0;
         gl.render(postSceneGather, orthoCam);
       }
 
@@ -1081,6 +1117,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       compositeMaterial.uniforms.tGather.value = rawDebug
         ? (renderTarget.current as THREE.WebGLRenderTarget).texture
         : gatherRT.texture;
+      compositeMaterial.uniforms.tNearGather.value = nearGatherRT.texture;
+      compositeMaterial.uniforms.useNearGather.value = rawDebug ? 0.0 : 1.0;
       compositeMaterial.uniforms.displayUpright.value = previewMode === "raw" ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;

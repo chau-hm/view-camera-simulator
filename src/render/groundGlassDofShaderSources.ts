@@ -12,8 +12,9 @@ const sharedIntro = `${groundGlassUniformDecls} ${groundGlassSharedGlsl}`;
 const zeroCoCThresholdPx = 0.125;
 const maximumApertureSamples = 64;
 
-/** Full-resolution physical CoC intermediate. The red channel stores either
- * millimetres or the explicit normalized byte-fallback representation. */
+/** Full-resolution signed physical CoC intermediate. The red channel stores
+ * signed millimetres or the explicit normalized byte-fallback representation.
+ * Negative is foreground/near-side; positive is background/far-side. */
 export const groundGlassPhysicalCocFragmentShader = `
 precision highp float;
 varying vec2 vUv;
@@ -22,15 +23,17 @@ ${sharedIntro}
 
 void main(){
   float depth = texture2D(tDepth, vUv).x;
-  float cocMm = calculateCoCDiameterMmAtFragment(vUv, depth);
-  if(!isFiniteFloat(cocMm) || cocMm < 0.0) cocMm = 0.0;
-  gl_FragColor = vec4(encodePhysicalCoCDiameterMm(cocMm), 0.0, 0.0, 1.0);
+  float signedCocMm = calculateSignedCoCDiameterMmAtFragment(vUv, depth);
+  if(!isFiniteFloat(signedCocMm)) signedCocMm = 0.0;
+  gl_FragColor = vec4(encodeSignedPhysicalCoCDiameterMm(signedCocMm), 0.0, 0.0, 1.0);
 }
 `;
 
 /**
  * Neutral circular aperture gather. CoC is generated independently at full
  * resolution; this pass may render to a scaled target for quality tiers.
+ * This is intentionally a single-view color/depth approximation: a background
+ * surface fully hidden by a foreground surface cannot be reconstructed here.
  */
 export const groundGlassApertureGatherFragmentShader = `
 precision highp float;
@@ -50,12 +53,27 @@ void main(){
 
   float centerDepth = texture2D(tDepth, uv).x;
   float storedCoc = texture2D(tCoC, uv).r;
-  float cocMm = decodeStoredCoCDiameterMm(storedCoc);
-  float radiusPx = cocDiameterMmToGatherRadiusPx(cocMm);
+  float centerSignedCocMm = decodeStoredSignedCoCDiameterMm(storedCoc);
+  float centerRadiusPx = cocDiameterMmToGatherRadiusPx(centerSignedCocMm);
+  bool nearLayer = gatherLayer > 0.5;
 
-  // Preserve the sharp path without paying for aperture samples.
-  if(!(radiusPx > ${zeroCoCThresholdPx.toString()})){
+  // A near center surface is already represented by the near layer. Do not
+  // let a far gather pull background through its opaque silhouette.
+  if(!nearLayer && centerSignedCocMm < -0.00001){
     gl_FragColor = sharpColor;
+    return;
+  }
+
+  // Far gathering is center-oriented. Near gathering deliberately searches
+  // the configured maximum footprint so a defocused foreground sample can
+  // scatter beyond its geometric center pixel.
+  float gatherRadiusPx = nearLayer ? maximumCoCRadiusPx : centerRadiusPx;
+  if(!nearLayer && !(centerRadiusPx > ${zeroCoCThresholdPx.toString()})){
+    gl_FragColor = sharpColor;
+    return;
+  }
+  if(!(gatherRadiusPx > ${zeroCoCThresholdPx.toString()})){
+    gl_FragColor = nearLayer ? vec4(0.0) : sharpColor;
     return;
   }
 
@@ -63,6 +81,14 @@ void main(){
   const float goldenAngle = 2.39996323;
   vec3 accum = vec3(0.0);
   float total = 0.0;
+
+  float centerWeight = nearLayer
+    ? calculateNearSampleWeight(centerDepth, centerDepth, centerSignedCocMm, centerSignedCocMm)
+    : calculateFarSampleWeight(centerDepth, centerDepth, centerSignedCocMm);
+  if(centerWeight > 1e-6){
+    accum += sharpColor.rgb * centerWeight;
+    total += centerWeight;
+  }
 
   // Uniform-disk samples form a neutral circular aperture. The compile-time
   // ceiling keeps the shader portable while sampleCount remains runtime data.
@@ -72,20 +98,35 @@ void main(){
     float radial = sqrt((sampleIndex + 0.5) / activeSamples);
     float angle = (sampleIndex + 0.5) * goldenAngle;
     vec2 diskOffset = radial * vec2(cos(angle), sin(angle));
-    vec2 offsetUv = diskOffset * radiusPx / vec2(renderWidth, renderHeight);
+    vec2 offsetUv = diskOffset * gatherRadiusPx / vec2(renderWidth, renderHeight);
     vec2 sampleUv = clamp(uv + offsetUv, vec2(0.0), vec2(1.0));
     float sampleDepth = texture2D(tDepth, sampleUv).x;
-    float depthWeight = calculateDepthSampleWeight(centerDepth, sampleDepth);
-    if(!(depthWeight > 1e-6)) continue;
-    accum += texture2D(tColor, sampleUv).rgb * depthWeight;
-    total += depthWeight;
+    float sampleSignedCocMm = decodeStoredSignedCoCDiameterMm(texture2D(tCoC, sampleUv).r);
+    float sampleRadiusPx = cocDiameterMmToGatherRadiusPx(sampleSignedCocMm);
+    float depthWeight = nearLayer
+      ? calculateNearSampleWeight(centerDepth, sampleDepth, centerSignedCocMm, sampleSignedCocMm)
+      : calculateFarSampleWeight(centerDepth, sampleDepth, sampleSignedCocMm);
+    float footprintWeight = 1.0;
+    if(nearLayer){
+      float sampleDistancePx = length(diskOffset) * gatherRadiusPx;
+      footprintWeight = sampleRadiusPx > ${zeroCoCThresholdPx.toString()}
+        ? 1.0 - smoothstep(sampleRadiusPx, sampleRadiusPx + 1.0, sampleDistancePx)
+        : 0.0;
+    }
+    float weight = depthWeight * footprintWeight;
+    if(!(weight > 1e-6)) continue;
+    accum += texture2D(tColor, sampleUv).rgb * weight;
+    total += weight;
   }
 
   if(!(total > 1e-6)){
-    gl_FragColor = sharpColor;
+    gl_FragColor = nearLayer ? vec4(0.0) : sharpColor;
     return;
   }
-  gl_FragColor = vec4(accum / total, sharpColor.a);
+  float coverage = nearLayer
+    ? clamp(total / (activeSamples + 1.0), 0.0, 1.0)
+    : 1.0;
+  gl_FragColor = vec4(accum / total, nearLayer ? coverage : sharpColor.a);
 }
 `;
 
@@ -94,6 +135,8 @@ export const groundGlassCompositeFragmentShader = `
 precision highp float;
 varying vec2 vUv;
 uniform sampler2D tGather;
+uniform sampler2D tNearGather;
+uniform float useNearGather;
 uniform vec2 ringCenter;
 uniform float ringRadiusPx;
 uniform vec3 ringColor;
@@ -122,6 +165,10 @@ void main(){
     ? vec2(1.0 - screenUv.x, 1.0 - screenUv.y)
     : screenUv;
   vec4 gathered = texture2D(tGather, sampleUv);
+  if(useNearGather > 0.5){
+    vec4 nearLayer = texture2D(tNearGather, sampleUv);
+    gathered.rgb = mix(gathered.rgb, nearLayer.rgb, clamp(nearLayer.a, 0.0, 1.0));
+  }
   gathered.rgb = applyFocusRing(gathered.rgb, screenUv);
   gl_FragColor = gathered;
 }

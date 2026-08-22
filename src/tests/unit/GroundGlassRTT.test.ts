@@ -163,6 +163,18 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(gatherMaterial?.uniforms.near.value).toBe(cocMaterial?.uniforms.near.value);
     expect(gatherMaterial?.uniforms.far.value).toBe(cocMaterial?.uniforms.far.value);
     expect(cocMaterial?.uniforms.far.value).not.toBe(12.0);
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.nearGatherTargetWidthPx).toBe(
+      useAppStore.getState().groundGlassRttRuntimeInfo?.gatherTargetWidthPx,
+    );
+    expect(
+      fiberTestState.renderedScenes.filter((scene) =>
+        scene instanceof THREE.Scene &&
+        scene.children.some((child) =>
+          (child as THREE.Mesh).material instanceof THREE.ShaderMaterial &&
+          ((child as THREE.Mesh).material as THREE.ShaderMaterial).fragmentShader.includes("goldenAngle"),
+        ),
+      ),
+    ).toHaveLength(2);
 
     view.unmount();
   });
@@ -519,9 +531,9 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(zoomedInfo?.blurTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
     expect(zoomedInfo?.cocTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
     expect(zoomedInfo?.gatherTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
-    expect(zoomedInfo?.dofTechnique).toBe("physical-coc-aperture-gather");
+    expect(zoomedInfo?.dofTechnique).toBe("physical-coc-near-far-gather");
     expect(zoomedInfo?.sampleCount).toBe(32);
-    expect(setSize).toHaveBeenCalledTimes(4);
+    expect(setSize).toHaveBeenCalledTimes(5);
     expect(runtimeUpdates).not.toContain(null);
 
     runtimeUpdates.length = 0;
@@ -532,7 +544,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(resetInfo?.resourceGeneration).toBe(initialInfo?.resourceGeneration);
     expect(resetInfo?.internalWidthPx).toBe(initialInfo?.internalWidthPx);
-    expect(setSize).toHaveBeenCalledTimes(4);
+    expect(setSize).toHaveBeenCalledTimes(5);
     expect(runtimeUpdates).not.toContain(null);
 
     unsubscribe();
@@ -576,8 +588,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(resizedInfo?.verticalShaderRenderWidthPx).toBe(resizedInfo?.internalWidthPx);
     expect(resizedInfo?.cocTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
     expect(resizedInfo?.gatherTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
-    expect(resizedInfo?.dofTechnique).toBe("physical-coc-aperture-gather");
-    expect(setSize).toHaveBeenCalledTimes(4);
+    expect(resizedInfo?.dofTechnique).toBe("physical-coc-near-far-gather");
+    expect(setSize).toHaveBeenCalledTimes(5);
 
     setSize.mockClear();
     view.rerender(
@@ -592,7 +604,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
       initialGeneration,
     );
-    expect(setSize).toHaveBeenCalledTimes(4);
+    expect(setSize).toHaveBeenCalledTimes(5);
   });
 
   it("creates a fresh subject and resource generation when the RTT scene changes", () => {

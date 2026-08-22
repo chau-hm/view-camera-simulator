@@ -7,6 +7,34 @@ export type GroundGlassCocTarget = {
   storageFormat: GroundGlassCocStorageFormat;
 };
 
+/**
+ * CPU reference for the signed CoC storage contract used by the GLSL stages.
+ * Half-float targets store signed millimetres directly. Byte targets map the
+ * configured signed range [-maxMm, +maxMm] to [0, 1], with focus at 0.5.
+ */
+export const encodeGroundGlassSignedCoC = (
+  signedCocMm: number,
+  storageFormat: GroundGlassCocStorageFormat,
+  maximumCoCMm: number,
+): number => {
+  if (!Number.isFinite(signedCocMm)) return storageFormat === "encoded-byte" ? 0.5 : 0;
+  if (storageFormat === "half-float-mm") return signedCocMm;
+  if (!Number.isFinite(maximumCoCMm) || maximumCoCMm <= 0) return 0.5;
+  return Math.min(1, Math.max(0, signedCocMm / (2 * maximumCoCMm) + 0.5));
+};
+
+export const decodeGroundGlassSignedCoC = (
+  storedCoc: number,
+  storageFormat: GroundGlassCocStorageFormat,
+  maximumCoCMm: number,
+): number => {
+  if (!Number.isFinite(storedCoc)) return 0;
+  if (storageFormat === "half-float-mm") return storedCoc;
+  if (!Number.isFinite(maximumCoCMm) || maximumCoCMm <= 0) return 0;
+  const normalized = Math.min(1, Math.max(0, storedCoc));
+  return (normalized * 2 - 1) * maximumCoCMm;
+};
+
 type GroundGlassCocRenderer = Pick<
   THREE.WebGLRenderer,
   "getContext" | "getRenderTarget" | "setRenderTarget"
@@ -38,8 +66,8 @@ export const isGroundGlassColorRenderTargetRenderable = (
 
 /**
  * Creates a full-resolution CoC target with an explicit storage fallback.
- * The encoded-byte mode stores normalized CoC in the red channel; shader
- * uniforms carry the physical millimetre range needed to decode it.
+ * The encoded-byte mode stores normalized signed CoC in the red channel;
+ * shader uniforms carry the physical millimetre range needed to decode it.
  */
 export const createGroundGlassCocTarget = (
   renderer: GroundGlassCocRenderer,
