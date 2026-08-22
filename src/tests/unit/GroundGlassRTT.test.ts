@@ -374,7 +374,11 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(zoomedInfo?.colorTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
     expect(zoomedInfo?.depthTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
     expect(zoomedInfo?.blurTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
-    expect(setSize).toHaveBeenCalledTimes(3);
+    expect(zoomedInfo?.cocTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
+    expect(zoomedInfo?.gatherTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
+    expect(zoomedInfo?.dofTechnique).toBe("physical-coc-aperture-gather");
+    expect(zoomedInfo?.sampleCount).toBe(32);
+    expect(setSize).toHaveBeenCalledTimes(4);
     expect(runtimeUpdates).not.toContain(null);
 
     runtimeUpdates.length = 0;
@@ -385,7 +389,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(resetInfo?.resourceGeneration).toBe(initialInfo?.resourceGeneration);
     expect(resetInfo?.internalWidthPx).toBe(initialInfo?.internalWidthPx);
-    expect(setSize).toHaveBeenCalledTimes(3);
+    expect(setSize).toHaveBeenCalledTimes(4);
     expect(runtimeUpdates).not.toContain(null);
 
     unsubscribe();
@@ -427,7 +431,10 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(resizedInfo?.finalTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
     expect(resizedInfo?.horizontalShaderRenderWidthPx).toBe(resizedInfo?.internalWidthPx);
     expect(resizedInfo?.verticalShaderRenderWidthPx).toBe(resizedInfo?.internalWidthPx);
-    expect(setSize).toHaveBeenCalledTimes(3);
+    expect(resizedInfo?.cocTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
+    expect(resizedInfo?.gatherTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
+    expect(resizedInfo?.dofTechnique).toBe("physical-coc-aperture-gather");
+    expect(setSize).toHaveBeenCalledTimes(4);
 
     setSize.mockClear();
     view.rerender(
@@ -442,7 +449,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
       initialGeneration,
     );
-    expect(setSize).toHaveBeenCalledTimes(3);
+    expect(setSize).toHaveBeenCalledTimes(4);
   });
 
   it("creates a fresh subject and resource generation when the RTT scene changes", () => {

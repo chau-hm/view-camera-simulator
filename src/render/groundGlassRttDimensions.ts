@@ -42,8 +42,19 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   depthTargetWidthPx: number;
   depthTargetHeightPx: number;
 
+  /** Effective aperture-gather target dimensions; CoC is full resolution. */
   blurTargetWidthPx: number;
   blurTargetHeightPx: number;
+
+  dofTechnique?: "physical-coc-aperture-gather";
+  gatherScale?: number;
+  sampleCount?: number;
+  maximumCoCRadiusPx?: number;
+  cocAvailable?: boolean;
+  cocTargetWidthPx?: number;
+  cocTargetHeightPx?: number;
+  gatherTargetWidthPx?: number;
+  gatherTargetHeightPx?: number;
 
   finalTargetWidthPx: number;
   finalTargetHeightPx: number;

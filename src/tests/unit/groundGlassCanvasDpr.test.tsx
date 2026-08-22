@@ -10,5 +10,10 @@ describe("GroundGlass render quality settings", () => {
     expect(low.dpr).toBe(1);
     expect(standard.dpr).toBe(1.5);
     expect(high.dpr).toBe(2);
+    expect(standard.gatherScale).toBe(1);
+    expect(standard.sampleCount).toBe(32);
+    expect(standard.maximumCoCRadiusPx).toBeGreaterThan(0);
+    expect(low.gatherScale).toBeLessThan(standard.gatherScale);
+    expect(low.sampleCount).toBeLessThan(standard.sampleCount);
   });
 });

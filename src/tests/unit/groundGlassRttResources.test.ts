@@ -15,61 +15,73 @@ afterEach(() => {
 });
 
 describe("resizeGroundGlassRttResources", () => {
-  it("synchronizes color, depth, blur, final, and both shader dimension pairs", () => {
+  it("keeps CoC full resolution while scaling the aperture gather target", () => {
     const renderTarget = new THREE.WebGLRenderTarget(100, 80);
     renderTarget.depthTexture = new THREE.DepthTexture(100, 80);
-    const tempTarget = new THREE.WebGLRenderTarget(100, 80);
+    const cocTarget = new THREE.WebGLRenderTarget(100, 80);
+    const gatherTarget = new THREE.WebGLRenderTarget(100, 80);
     const finalTarget = new THREE.WebGLRenderTarget(100, 80);
-    const horizontalMaterial = createMaterial(100, 80);
-    const verticalMaterial = createMaterial(100, 80);
-    const targets = [renderTarget, tempTarget, finalTarget];
+    const cocMaterial = createMaterial(100, 80);
+    const gatherMaterial = createMaterial(100, 80);
+    const compositeMaterial = createMaterial(100, 80);
+    const targets = [renderTarget, cocTarget, gatherTarget, finalTarget];
     const setSizeSpies = targets.map((target) => vi.spyOn(target, "setSize"));
 
     const changed = resizeGroundGlassRttResources(
-      { renderTarget, tempTarget, finalTarget, horizontalMaterial, verticalMaterial },
+      { renderTarget, cocTarget, gatherTarget, finalTarget, cocMaterial, gatherMaterial, compositeMaterial },
       640,
       512,
+      0.5,
     );
 
     expect(changed).toBe(true);
-    targets.forEach((target) => {
-      expect(target.width).toBe(640);
-      expect(target.height).toBe(512);
-    });
+    expect(renderTarget.width).toBe(640);
+    expect(renderTarget.height).toBe(512);
+    expect(cocTarget.width).toBe(640);
+    expect(cocTarget.height).toBe(512);
+    expect(gatherTarget.width).toBe(320);
+    expect(gatherTarget.height).toBe(256);
+    expect(finalTarget.width).toBe(640);
+    expect(finalTarget.height).toBe(512);
     expect(renderTarget.depthTexture.image.width).toBe(640);
     expect(renderTarget.depthTexture.image.height).toBe(512);
-    expect(horizontalMaterial.uniforms.renderWidth.value).toBe(640);
-    expect(horizontalMaterial.uniforms.renderHeight.value).toBe(512);
-    expect(verticalMaterial.uniforms.renderWidth.value).toBe(640);
-    expect(verticalMaterial.uniforms.renderHeight.value).toBe(512);
+    for (const material of [cocMaterial, gatherMaterial, compositeMaterial]) {
+      expect(material.uniforms.renderWidth.value).toBe(640);
+      expect(material.uniforms.renderHeight.value).toBe(512);
+    }
     setSizeSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
 
     targets.forEach((target) => target.dispose());
-    horizontalMaterial.dispose();
-    verticalMaterial.dispose();
+    cocMaterial.dispose();
+    gatherMaterial.dispose();
+    compositeMaterial.dispose();
   });
 
   it("does not perform redundant target resizes for an unchanged desired size", () => {
     const renderTarget = new THREE.WebGLRenderTarget(640, 512);
     renderTarget.depthTexture = new THREE.DepthTexture(640, 512);
-    const tempTarget = new THREE.WebGLRenderTarget(640, 512);
+    const cocTarget = new THREE.WebGLRenderTarget(640, 512);
+    const gatherTarget = new THREE.WebGLRenderTarget(320, 256);
     const finalTarget = new THREE.WebGLRenderTarget(640, 512);
-    const horizontalMaterial = createMaterial(640, 512);
-    const verticalMaterial = createMaterial(640, 512);
-    const targets = [renderTarget, tempTarget, finalTarget];
+    const cocMaterial = createMaterial(640, 512);
+    const gatherMaterial = createMaterial(640, 512);
+    const compositeMaterial = createMaterial(640, 512);
+    const targets = [renderTarget, cocTarget, gatherTarget, finalTarget];
     const setSizeSpies = targets.map((target) => vi.spyOn(target, "setSize"));
 
     const changed = resizeGroundGlassRttResources(
-      { renderTarget, tempTarget, finalTarget, horizontalMaterial, verticalMaterial },
+      { renderTarget, cocTarget, gatherTarget, finalTarget, cocMaterial, gatherMaterial, compositeMaterial },
       640,
       512,
+      0.5,
     );
 
     expect(changed).toBe(false);
     setSizeSpies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
 
     targets.forEach((target) => target.dispose());
-    horizontalMaterial.dispose();
-    verticalMaterial.dispose();
+    cocMaterial.dispose();
+    gatherMaterial.dispose();
+    compositeMaterial.dispose();
   });
 });
