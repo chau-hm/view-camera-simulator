@@ -1,7 +1,9 @@
 import type { TaskDefinition } from "../../types/task";
 import architectureGeometry from "../../scenes/architectureRiseGeometry";
+import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
+import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
@@ -102,6 +104,238 @@ const obliqueRiseTask: TaskDefinition = {
     rearRiseMm: 0,
     rearTiltDeg: 0,
     aperture: obliqueArchitectureScene.cameraPreset.aperture,
+    geometryView: "side",
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+  },
+};
+
+const architectureForegroundRiseTask: TaskDefinition = {
+  id: "architecture-foreground-rise-01",
+  sceneId: architectureForegroundScene.id,
+  mode: "guided",
+  enabledControls: ["rise", "geometryView"],
+  constraints: {
+    movement: "rise-only",
+  },
+  criteria: [
+    {
+      id: "architecture-foreground-rise-building-top-visible",
+      type: "composition-visible",
+      targetId: "building-top",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-rise-building-base-visible",
+      type: "composition-visible",
+      targetId: "building-base",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-rise-camera-level",
+      type: "camera-level",
+    },
+    {
+      id: "architecture-foreground-rise-movement-used",
+      type: "movement-used",
+      movement: "rise",
+      minimumAbs: 1,
+    },
+  ],
+  initialCameraState: {
+    frontRiseMm: 0,
+    frontTiltDeg: 0,
+    frontSwingDeg: 0,
+    focusDistanceMm: architectureForegroundGeometry.canonicalFocusDistanceMm,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    aperture: architectureForegroundScene.cameraPreset.aperture,
+    geometryView: "side",
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+  },
+};
+
+const architectureForegroundTiltFocusTask: TaskDefinition = {
+  id: "architecture-foreground-tilt-focus-01",
+  sceneId: architectureForegroundScene.id,
+  mode: "guided",
+  enabledControls: ["tilt", "focusDistance", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "architecture-foreground-tilt-focus-building-top-visible",
+      type: "composition-visible",
+      targetId: "building-top",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-tilt-focus-building-base-visible",
+      type: "composition-visible",
+      targetId: "building-base",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-tilt-focus-camera-level",
+      type: "camera-level",
+    },
+    {
+      id: "architecture-foreground-tilt-focus-tilt-used",
+      type: "movement-used",
+      movement: "tilt",
+      minimumAbs: 0.1,
+    },
+    {
+      id: "architecture-foreground-tilt-focus-tilt-range",
+      type: "movement-range",
+      movement: "tilt",
+      min: architectureForegroundGeometry.neutralCalibration.tiltFocusRangeDeg.min,
+      max: architectureForegroundGeometry.neutralCalibration.tiltFocusRangeDeg.max,
+      valueMode: "signed",
+    },
+    {
+      id: "architecture-foreground-tilt-focus-focus-used",
+      type: "focus-used",
+      minimumAbsMm:
+        architectureForegroundGeometry.neutralCalibration.tiltFocusMinimumFocusAdjustmentMm,
+    },
+    {
+      id: "architecture-foreground-tilt-focus-near-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["foreground-near"],
+      minimumSharpness: architectureForegroundGeometry.neutralCalibration.tiltFocusSharpnessMinimum,
+    },
+    {
+      id: "architecture-foreground-tilt-focus-building-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["building-middle"],
+      minimumSharpness: architectureForegroundGeometry.neutralCalibration.tiltFocusSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    frontRiseMm: architectureForegroundGeometry.neutralCalibration.futureRiseMm,
+    frontTiltDeg: 0,
+    frontSwingDeg: 0,
+    focusDistanceMm: architectureForegroundGeometry.canonicalFocusDistanceMm,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    aperture: architectureForegroundScene.cameraPreset.aperture,
+    geometryView: "side",
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+  },
+};
+
+const architectureForegroundDofTask: TaskDefinition = {
+  id: "architecture-foreground-dof-01",
+  sceneId: architectureForegroundScene.id,
+  mode: "guided",
+  enabledControls: ["aperture", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "architecture-foreground-dof-building-top-visible",
+      type: "composition-visible",
+      targetId: "building-top",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-dof-building-base-visible",
+      type: "composition-visible",
+      targetId: "building-base",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-dof-camera-level",
+      type: "camera-level",
+    },
+    {
+      id: "architecture-foreground-dof-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [...architectureForegroundGeometry.neutralCalibration.dofPassingApertures],
+    },
+    {
+      id: "architecture-foreground-dof-focus-targets",
+      type: "focus-targets-sharp",
+      targetIds: [
+        "foreground-near",
+        "foreground-middle",
+        "building-base",
+        "building-middle",
+      ],
+      minimumSharpness: architectureForegroundGeometry.neutralCalibration.dofSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    frontRiseMm: architectureForegroundGeometry.neutralCalibration.futureRiseMm,
+    frontTiltDeg: architectureForegroundGeometry.neutralCalibration.publicTiltFocusSolutionDeg,
+    frontSwingDeg: 0,
+    focusDistanceMm:
+      architectureForegroundGeometry.neutralCalibration.publicTiltFocusFocusDistanceMm,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    aperture: architectureForegroundScene.cameraPreset.aperture,
+    geometryView: "side",
+    groundGlassAssistEnabled: false,
+    focusAssistEnabled: false,
+    gridEnabled: true,
+  },
+};
+
+const architectureForegroundCompoundTask: TaskDefinition = {
+  id: "architecture-foreground-compound-01",
+  sceneId: architectureForegroundScene.id,
+  mode: "guided",
+  enabledControls: ["rise", "tilt", "focusDistance", "aperture", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "architecture-foreground-compound-building-top-visible",
+      type: "composition-visible",
+      targetId: "building-top",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-compound-building-base-visible",
+      type: "composition-visible",
+      targetId: "building-base",
+      minimumCoverage: 0.95,
+      coverageMode: "projected-corners",
+    },
+    {
+      id: "architecture-foreground-compound-camera-level",
+      type: "camera-level",
+    },
+    {
+      id: "architecture-foreground-compound-focus-targets",
+      type: "focus-targets-sharp",
+      targetIds: [
+        "foreground-near",
+        "foreground-middle",
+        "building-base",
+        "building-middle",
+      ],
+      minimumSharpness: architectureForegroundGeometry.neutralCalibration.dofSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    frontRiseMm: 0,
+    frontTiltDeg: 0,
+    frontSwingDeg: 0,
+    focusDistanceMm: architectureForegroundGeometry.canonicalFocusDistanceMm,
+    rearRiseMm: 0,
+    rearTiltDeg: 0,
+    aperture: architectureForegroundScene.cameraPreset.aperture,
     geometryView: "side",
     groundGlassAssistEnabled: false,
     focusAssistEnabled: false,
@@ -418,6 +652,10 @@ const mirrorShiftTask: TaskDefinition = {
 export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
   "oblique-rise-01": obliqueRiseTask,
+  "architecture-foreground-rise-01": architectureForegroundRiseTask,
+  "architecture-foreground-tilt-focus-01": architectureForegroundTiltFocusTask,
+  "architecture-foreground-dof-01": architectureForegroundDofTask,
+  "architecture-foreground-compound-01": architectureForegroundCompoundTask,
   "oblique-swing-focus-01": obliqueSwingFocusTask,
   "oblique-compound-01": obliqueCompoundTask,
   "tilt-01": tiltTask,

@@ -3,6 +3,14 @@ import { intersectRayPlane } from "../math/ray";
 
 const EPS = 1e-6;
 
+/**
+ * Safe fail-closed value for a ray that cannot be resolved against the
+ * derived focus wedge. One is the CoC boundary: it is finite and bounded,
+ * and it reports the sample as outside the useful depth-of-field interval
+ * without inventing a larger-than-physical blur value.
+ */
+export const SAFE_UNRESOLVED_NORMALIZED_DEFOCUS = 1;
+
 export type DofWedgeSample = {
   targetDistanceMm: number;
   nearDistanceMm: number | null;
@@ -18,6 +26,13 @@ export type DofWedgeSampleInput = {
   nearPlane: Plane | null;
   focusPlane: Plane | null;
   farPlane: Plane | null;
+};
+
+export type DofWedgeBoundaryOptions = {
+  /** True when a plane was supplied and its forward intersection is required. */
+  nearBoundaryPresent?: boolean;
+  /** True when a finite far plane was supplied and its forward intersection is required. */
+  farBoundaryPresent?: boolean;
 };
 
 // Sample a ray against focus/near/far planes. Supports finite and infinite far plane.
@@ -39,6 +54,13 @@ export function sampleDofWedge(input: DofWedgeSampleInput): DofWedgeSample {
     nearDistance,
     focusDistance,
     farDistance,
+    {
+      nearBoundaryPresent: nearPlane !== null,
+      // A far plane that has no forward intersection is an open-ended ray
+      // interval, not a reversed finite boundary. This preserves the
+      // finite/infinite far contract on a per-ray basis.
+      farBoundaryPresent: farDistance !== null,
+    },
   );
 
   return {
@@ -56,17 +78,54 @@ export function calculateDofWedgeDefocus(
   nearDistance: number | null,
   focusDistance: number | null,
   farDistance: number | null,
+  options: DofWedgeBoundaryOptions = {},
 ): { insideDepthOfField: boolean; normalizedDefocus: number } {
-  // If focusDistance is missing, cannot compute; return a safe non-finite result
-  if (focusDistance === null) {
-    return { insideDepthOfField: false, normalizedDefocus: Number.NaN };
+  const unresolved = {
+    insideDepthOfField: false,
+    normalizedDefocus: SAFE_UNRESOLVED_NORMALIZED_DEFOCUS,
+  };
+  const nearBoundaryPresent = options.nearBoundaryPresent ?? nearDistance !== null;
+  // Positive infinity is the explicit open-ended-far representation used by
+  // the optical model. Only finite far distances participate in ordering.
+  const farBoundaryPresent =
+    options.farBoundaryPresent ?? (farDistance !== null && Number.isFinite(farDistance));
+
+  // A missing forward intersection is an unresolved ray, not an infinite
+  // defocus value. In particular, using a target distance as a replacement
+  // for a missing focus intersection can reverse the interval and create a
+  // near-zero denominator (the source of the excessive-blur regression).
+  if (
+    !Number.isFinite(targetDistance) ||
+    targetDistance <= 0 ||
+    focusDistance === null ||
+    !Number.isFinite(focusDistance) ||
+    focusDistance <= 0 ||
+    (nearBoundaryPresent && (nearDistance === null || !Number.isFinite(nearDistance))) ||
+    (farDistance !== null &&
+      farDistance !== Number.POSITIVE_INFINITY &&
+      !Number.isFinite(farDistance)) ||
+    (farBoundaryPresent && (farDistance === null || !Number.isFinite(farDistance)))
+  ) {
+    return unresolved;
   }
 
   // Normalize inputs
   const n = nearDistance ?? (focusDistance - EPS);
-  const hasFiniteFar = farDistance !== null && Number.isFinite(farDistance);
+  const hasFiniteFar = farBoundaryPresent && farDistance !== null && Number.isFinite(farDistance);
   const f = hasFiniteFar ? (farDistance as number) : null;
   const t = targetDistance;
+
+  // The wedge is only meaningful when its boundaries are ordered along the
+  // forward ray. Do not replace a reversed/degenerate interval with a tiny
+  // epsilon denominator; return the finite boundary fallback instead.
+  if (
+    !Number.isFinite(n) ||
+    n <= 0 ||
+    focusDistance - n <= EPS ||
+    (hasFiniteFar && (!(f as number > 0) || (f as number) - focusDistance <= EPS))
+  ) {
+    return unresolved;
+  }
 
   // Use explicit interval ordering to avoid comparisons with Infinity
   // 1) before near
@@ -106,8 +165,11 @@ export function calculateDofWedgeDefocus(
     inside = false;
   }
 
-  // Ensure numeric safety
-  if (!Number.isFinite(normalizedDefocus) || Number.isNaN(normalizedDefocus)) normalizedDefocus = Number.POSITIVE_INFINITY;
+  // Ensure numeric safety. A finite boundary fallback keeps all downstream
+  // diagnostics and blur calculations defined when a valid camera state
+  // produces a ray that does not meet one of the derived planes in front of
+  // the lens.
+  if (!Number.isFinite(normalizedDefocus) || normalizedDefocus < 0) return unresolved;
 
   return { insideDepthOfField: Boolean(inside), normalizedDefocus };
 }

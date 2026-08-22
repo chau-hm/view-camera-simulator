@@ -36,6 +36,16 @@ export const scenesMessages = {
       perspectiveControl: "Perspective control",
     },
   },
+  architectureForeground: {
+    title: "Architecture + Foreground",
+    description:
+      "Frame a level architectural subject while observing how foreground depth creates a second focusing problem.",
+    topics: {
+      levelFraming: "Level framing",
+      foregroundDepth: "Foreground depth",
+      sharpness: "Sharpness across depth",
+    },
+  },
   obliqueArchitecture: {
     title: "Oblique Architecture",
     description:

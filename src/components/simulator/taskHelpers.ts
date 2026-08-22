@@ -48,6 +48,16 @@ const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
       simulatorMessageKeys.freePractice.architectureRise.bullets.focus,
     ],
   },
+  "architecture-foreground": {
+    objectiveKey: simulatorMessageKeys.freePractice.architectureForeground.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.architectureForeground.bullets.framing,
+      simulatorMessageKeys.freePractice.architectureForeground.bullets.rise,
+      simulatorMessageKeys.freePractice.architectureForeground.bullets.tilt,
+      simulatorMessageKeys.freePractice.architectureForeground.bullets.focus,
+      simulatorMessageKeys.freePractice.architectureForeground.bullets.aperture,
+    ],
+  },
   "oblique-architecture": {
     objectiveKey: simulatorMessageKeys.freePractice.obliqueArchitecture.objective,
     bulletKeys: [
@@ -102,6 +112,9 @@ const feedbackByScene: Record<string, FreePracticeFeedbackKey> = {
   },
   "architecture-rise": {
     observationKey: simulatorMessageKeys.freePractice.architectureRise.observation,
+  },
+  "architecture-foreground": {
+    observationKey: simulatorMessageKeys.freePractice.architectureForeground.observation,
   },
   "oblique-architecture": {
     observationKey: simulatorMessageKeys.freePractice.obliqueArchitecture.observation,

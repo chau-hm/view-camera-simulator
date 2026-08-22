@@ -209,6 +209,8 @@ export const simulatorMessageKeys = {
     tabletopGuide: "simulator.geometry.tabletopGuide",
     diagonalSubjectPlaneGuide: "simulator.geometry.diagonalSubjectPlaneGuide",
     targetFacadeDepthGuide: "simulator.geometry.targetFacadeDepthGuide",
+    architectureForegroundGroundGuide: "simulator.geometry.architectureForegroundGroundGuide",
+    architectureForegroundBuildingGuide: "simulator.geometry.architectureForegroundBuildingGuide",
     nearCardTarget: "simulator.geometry.nearCardTarget",
     middleNotebookTarget: "simulator.geometry.middleNotebookTarget",
     farChartTarget: "simulator.geometry.farChartTarget",
@@ -221,6 +223,10 @@ export const simulatorMessageKeys = {
     nearFacadeTarget: "simulator.geometry.nearFacadeTarget",
     middleFacadeTarget: "simulator.geometry.middleFacadeTarget",
     farFacadeTarget: "simulator.geometry.farFacadeTarget",
+    architectureForegroundNearTarget: "simulator.geometry.architectureForegroundNearTarget",
+    architectureForegroundMiddleTarget: "simulator.geometry.architectureForegroundMiddleTarget",
+    architectureForegroundBuildingBaseTarget: "simulator.geometry.architectureForegroundBuildingBaseTarget",
+    architectureForegroundBuildingMiddleTarget: "simulator.geometry.architectureForegroundBuildingMiddleTarget",
   },
   sceneLegend: {
     filmPlane: "simulator.sceneLegend.filmPlane",
@@ -277,6 +283,17 @@ export const simulatorMessageKeys = {
         focus: "simulator.freePractice.architectureRise.bullets.focus",
       },
       observation: "simulator.freePractice.architectureRise.observation",
+    },
+    architectureForeground: {
+      objective: "simulator.freePractice.architectureForeground.objective",
+      bullets: {
+        framing: "simulator.freePractice.architectureForeground.bullets.framing",
+        rise: "simulator.freePractice.architectureForeground.bullets.rise",
+        tilt: "simulator.freePractice.architectureForeground.bullets.tilt",
+        focus: "simulator.freePractice.architectureForeground.bullets.focus",
+        aperture: "simulator.freePractice.architectureForeground.bullets.aperture",
+      },
+      observation: "simulator.freePractice.architectureForeground.observation",
     },
     obliqueArchitecture: {
       objective: "simulator.freePractice.obliqueArchitecture.objective",

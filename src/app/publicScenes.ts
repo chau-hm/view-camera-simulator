@@ -16,6 +16,7 @@ export const publicSceneIds = [
   "shelf-swing",
   "mirror-shift",
   "oblique-architecture",
+  "architecture-foreground",
 ] as const;
 export type PublicSceneId = (typeof publicSceneIds)[number];
 export type SceneAvailability = "available" | "in-development";
@@ -23,6 +24,7 @@ export type SceneAvailability = "available" | "in-development";
 export type PublicGuidedLessonTaskStageId =
   | "compose"
   | "align-focus"
+  | "depth-of-field"
   | "final-challenge";
 
 export type PublicGuidedLessonConfig = {
@@ -150,6 +152,31 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       id: "oblique-architecture",
       includeObserveStage: true,
       taskStageIds: ["compose", "align-focus", "final-challenge"],
+    },
+  },
+  {
+    id: "architecture-foreground",
+    titleKey: publicSceneMessageKeys.architectureForeground.title,
+    descriptionKey: publicSceneMessageKeys.architectureForeground.description,
+    topicKeys: [
+      publicSceneMessageKeys.architectureForeground.topics.levelFraming,
+      publicSceneMessageKeys.architectureForeground.topics.foregroundDepth,
+      publicSceneMessageKeys.architectureForeground.topics.sharpness,
+    ],
+    availability: "available",
+    availableModes: ["free", "guided"],
+    thumbnailAsset: "assets/architecture-foreground.png",
+    guidedTaskId: "architecture-foreground-compound-01",
+    guidedTaskIds: [
+      "architecture-foreground-rise-01",
+      "architecture-foreground-tilt-focus-01",
+      "architecture-foreground-dof-01",
+      "architecture-foreground-compound-01",
+    ],
+    guidedLesson: {
+      id: "architecture-foreground",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "align-focus", "depth-of-field", "final-challenge"],
     },
   },
 ];

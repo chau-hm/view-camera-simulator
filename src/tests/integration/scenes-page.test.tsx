@@ -1,6 +1,13 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { RouterProvider, createMemoryRouter } from "react-router-dom";
+import {
+  MemoryRouter,
+  Route,
+  RouterProvider,
+  Routes,
+  createMemoryRouter,
+  useLocation,
+} from "react-router-dom";
 import {
   getPublicSceneEntryById,
   getPublicScenes,
@@ -8,6 +15,7 @@ import {
   publicSceneIds,
 } from "../../app/publicScenes";
 import { routes } from "../../app/router";
+import { ScenesPage } from "../../app/pages";
 import { i18n } from "../../i18n";
 
 beforeEach(async () => {
@@ -58,7 +66,35 @@ describe("scenes page", () => {
     expect(scopedArchitectureCard.getByText("Framing")).toBeInTheDocument();
     expect(scopedArchitectureCard.getByText("Perspective control")).toBeInTheDocument();
 
-    // Oblique Architecture remains the final public scene and now exposes the compound task.
+    const architectureForegroundHeading = await screen.findByRole("heading", {
+      name: "Architecture + Foreground",
+      level: 2,
+    });
+    const architectureForegroundCard = architectureForegroundHeading.closest("article");
+    expect(architectureForegroundCard).not.toBeNull();
+    const scopedArchitectureForegroundCard = within(architectureForegroundCard!);
+    expect(
+      scopedArchitectureForegroundCard.getByText(
+        "Frame a level architectural subject while observing how foreground depth creates a second focusing problem.",
+      ),
+    ).toBeInTheDocument();
+    expect(scopedArchitectureForegroundCard.getByText("Level framing")).toBeInTheDocument();
+    expect(scopedArchitectureForegroundCard.getByText("Foreground depth")).toBeInTheDocument();
+    expect(scopedArchitectureForegroundCard.getByText("Sharpness across depth")).toBeInTheDocument();
+    expect(architectureForegroundCard!.querySelector("img")).toHaveAttribute(
+      "src",
+      "/assets/architecture-foreground.png",
+    );
+    expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
+      "href",
+      "/simulator/free/architecture-foreground",
+    );
+    expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
+      "href",
+      "/simulator/free/architecture-foreground?lesson=1",
+    );
+
+    // Oblique Architecture remains directly available immediately before the final scene.
     const obliqueHeading = await screen.findByRole("heading", {
       name: "Oblique Architecture",
       level: 2,
@@ -141,9 +177,12 @@ describe("scenes page", () => {
       "shelf-swing",
       "mirror-shift",
       "oblique-architecture",
+      "architecture-foreground",
     ]);
-    expect(publicSceneIds.at(-1)).toBe("oblique-architecture");
+    expect(publicSceneIds.at(-1)).toBe("architecture-foreground");
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual(publicSceneIds);
+    const visibleCards = screen.getAllByRole("article");
+    expect(within(visibleCards.at(-1)!).getByRole("heading", { name: "Architecture + Foreground", level: 2 })).toBeInTheDocument();
     expect(getPublicSceneEntryById("focus-fundamentals-two-targets")?.availableModes).toEqual([
       "free",
     ]);
@@ -158,6 +197,7 @@ describe("scenes page", () => {
       "Shelf Swing",
       "Mirror Shift",
       "Oblique Architecture",
+      "Architecture + Foreground",
     ]);
     expect(getPublicScenes().map((scene) => scene.id)).toContain("shelf-swing");
     expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("available");
@@ -208,6 +248,7 @@ describe("scenes page", () => {
       "斜向焦平面與擺動",
       "鏡面構圖與視點",
       "斜向建築攝影",
+      "建築物與前景",
     ]);
 
     const cardFor = (title: string) => {
@@ -233,6 +274,55 @@ describe("scenes page", () => {
     expect(cardFor("斜向建築攝影").getByRole("link", { name: "引導課程" })).toHaveAttribute(
       "href",
       "/simulator/free/oblique-architecture?lesson=1",
+    );
+  });
+
+  it("navigates from the Architecture + Foreground card into Free Practice", async () => {
+    const LocationProbe = () => <div data-testid="navigation-location">{useLocation().pathname}</div>;
+    render(
+      <MemoryRouter initialEntries={["/scenes"]}>
+        <Routes>
+          <Route path="/scenes" element={<ScenesPage />} />
+          <Route path="/simulator/free/:sceneId" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const heading = await screen.findByRole("heading", { name: "Architecture + Foreground", level: 2 });
+    const card = heading.closest("article");
+    expect(card).not.toBeNull();
+    fireEvent.click(within(card!).getByRole("link", { name: "Open Scene" }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("navigation-location")).toHaveTextContent(
+        "/simulator/free/architecture-foreground",
+      ),
+    );
+  });
+
+  it("navigates from the Architecture + Foreground card into its Guided Lesson", async () => {
+    const LocationProbe = () => {
+      const location = useLocation();
+      return <div data-testid="navigation-location">{location.pathname}{location.search}</div>;
+    };
+    render(
+      <MemoryRouter initialEntries={["/scenes"]}>
+        <Routes>
+          <Route path="/scenes" element={<ScenesPage />} />
+          <Route path="/simulator/free/:sceneId" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const heading = await screen.findByRole("heading", { name: "Architecture + Foreground", level: 2 });
+    const card = heading.closest("article");
+    expect(card).not.toBeNull();
+    fireEvent.click(within(card!).getByRole("link", { name: "Guided Lesson" }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("navigation-location")).toHaveTextContent(
+        "/simulator/free/architecture-foreground?lesson=1",
+      ),
     );
   });
 });

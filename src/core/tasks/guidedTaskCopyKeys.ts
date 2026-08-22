@@ -92,6 +92,204 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
       },
     },
   },
+  "architecture-foreground-rise-01": {
+    title: k.architectureForegroundRise.title,
+    objective: k.architectureForegroundRise.objective,
+    notes: [
+      k.architectureForegroundRise.notes.useRise,
+      k.architectureForegroundRise.notes.keepBase,
+      k.architectureForegroundRise.notes.foreground,
+    ],
+    criteria: {
+      "architecture-foreground-rise-building-top-visible":
+        k.architectureForegroundRise.criteria.buildingTopVisible,
+      "architecture-foreground-rise-building-base-visible":
+        k.architectureForegroundRise.criteria.buildingBaseVisible,
+      "architecture-foreground-rise-camera-level": k.architectureForegroundRise.criteria.cameraLevel,
+      "architecture-foreground-rise-movement-used": k.architectureForegroundRise.criteria.movementUsed,
+    },
+    feedback: {
+      passPrimary: k.architectureForegroundRise.feedback.passPrimary,
+      defaultFailPrimary: k.architectureForegroundRise.feedback.defaultFailPrimary,
+      primary: {
+        "architecture-foreground-rise-building-top-visible":
+          k.architectureForegroundRise.feedback.primary.buildingTopVisible,
+        "architecture-foreground-rise-building-base-visible":
+          k.architectureForegroundRise.feedback.primary.buildingBaseVisible,
+        "architecture-foreground-rise-camera-level":
+          k.architectureForegroundRise.feedback.primary.cameraLevel,
+        "architecture-foreground-rise-movement-used":
+          k.architectureForegroundRise.feedback.primary.movementUsed,
+      },
+      secondary: {
+        "architecture-foreground-rise-building-top-visible":
+          k.architectureForegroundRise.feedback.secondary.buildingTopVisible,
+        "architecture-foreground-rise-building-base-visible":
+          k.architectureForegroundRise.feedback.secondary.buildingBaseVisible,
+        "architecture-foreground-rise-camera-level":
+          k.architectureForegroundRise.feedback.secondary.cameraLevel,
+        "architecture-foreground-rise-movement-used":
+          k.architectureForegroundRise.feedback.secondary.movementUsed,
+      },
+    },
+  },
+  "architecture-foreground-tilt-focus-01": {
+    title: k.architectureForegroundTiltFocus.title,
+    objective: k.architectureForegroundTiltFocus.objective,
+    notes: [
+      k.architectureForegroundTiltFocus.notes.composition,
+      k.architectureForegroundTiltFocus.notes.tilt,
+      k.architectureForegroundTiltFocus.notes.focus,
+      k.architectureForegroundTiltFocus.notes.depthOfField,
+    ],
+    criteria: {
+      "architecture-foreground-tilt-focus-building-top-visible":
+        k.architectureForegroundTiltFocus.criteria.buildingTopVisible,
+      "architecture-foreground-tilt-focus-building-base-visible":
+        k.architectureForegroundTiltFocus.criteria.buildingBaseVisible,
+      "architecture-foreground-tilt-focus-camera-level":
+        k.architectureForegroundTiltFocus.criteria.cameraLevel,
+      "architecture-foreground-tilt-focus-tilt-used":
+        k.architectureForegroundTiltFocus.criteria.tiltUsed,
+      "architecture-foreground-tilt-focus-tilt-range":
+        k.architectureForegroundTiltFocus.criteria.tiltRange,
+      "architecture-foreground-tilt-focus-focus-used":
+        k.architectureForegroundTiltFocus.criteria.focusUsed,
+      "architecture-foreground-tilt-focus-near-sharp":
+        k.architectureForegroundTiltFocus.criteria.nearSharp,
+      "architecture-foreground-tilt-focus-building-sharp":
+        k.architectureForegroundTiltFocus.criteria.buildingSharp,
+    },
+    feedback: {
+      passPrimary: k.architectureForegroundTiltFocus.feedback.passPrimary,
+      defaultFailPrimary: k.architectureForegroundTiltFocus.feedback.defaultFailPrimary,
+      primary: {
+        "architecture-foreground-tilt-focus-building-top-visible":
+          k.architectureForegroundTiltFocus.feedback.primary.buildingTopVisible,
+        "architecture-foreground-tilt-focus-building-base-visible":
+          k.architectureForegroundTiltFocus.feedback.primary.buildingBaseVisible,
+        "architecture-foreground-tilt-focus-camera-level":
+          k.architectureForegroundTiltFocus.feedback.primary.cameraLevel,
+        "architecture-foreground-tilt-focus-tilt-used":
+          k.architectureForegroundTiltFocus.feedback.primary.tiltUsed,
+        "architecture-foreground-tilt-focus-tilt-range":
+          k.architectureForegroundTiltFocus.feedback.primary.tiltRange,
+        "architecture-foreground-tilt-focus-focus-used":
+          k.architectureForegroundTiltFocus.feedback.primary.focusUsed,
+        "architecture-foreground-tilt-focus-near-sharp":
+          k.architectureForegroundTiltFocus.feedback.primary.nearSharp,
+        "architecture-foreground-tilt-focus-building-sharp":
+          k.architectureForegroundTiltFocus.feedback.primary.buildingSharp,
+      },
+      secondary: {
+        "architecture-foreground-tilt-focus-building-top-visible":
+          k.architectureForegroundTiltFocus.feedback.secondary.buildingTopVisible,
+        "architecture-foreground-tilt-focus-building-base-visible":
+          k.architectureForegroundTiltFocus.feedback.secondary.buildingBaseVisible,
+        "architecture-foreground-tilt-focus-camera-level":
+          k.architectureForegroundTiltFocus.feedback.secondary.cameraLevel,
+        "architecture-foreground-tilt-focus-tilt-used":
+          k.architectureForegroundTiltFocus.feedback.secondary.tiltUsed,
+        "architecture-foreground-tilt-focus-tilt-range":
+          k.architectureForegroundTiltFocus.feedback.secondary.tiltRange,
+        "architecture-foreground-tilt-focus-focus-used":
+          k.architectureForegroundTiltFocus.feedback.secondary.focusUsed,
+        "architecture-foreground-tilt-focus-near-sharp":
+          k.architectureForegroundTiltFocus.feedback.secondary.nearSharp,
+        "architecture-foreground-tilt-focus-building-sharp":
+          k.architectureForegroundTiltFocus.feedback.secondary.buildingSharp,
+      },
+    },
+  },
+  "architecture-foreground-dof-01": {
+    title: k.architectureForegroundDof.title,
+    objective: k.architectureForegroundDof.objective,
+    notes: [
+      k.architectureForegroundDof.notes.composition,
+      k.architectureForegroundDof.notes.focusPlane,
+      k.architectureForegroundDof.notes.aperture,
+      k.architectureForegroundDof.notes.depthOfField,
+    ],
+    criteria: {
+      "architecture-foreground-dof-building-top-visible":
+        k.architectureForegroundDof.criteria.buildingTopVisible,
+      "architecture-foreground-dof-building-base-visible":
+        k.architectureForegroundDof.criteria.buildingBaseVisible,
+      "architecture-foreground-dof-camera-level": k.architectureForegroundDof.criteria.cameraLevel,
+      "architecture-foreground-dof-aperture": k.architectureForegroundDof.criteria.aperture,
+      "architecture-foreground-dof-focus-targets": k.architectureForegroundDof.criteria.focusTargets,
+    },
+    feedback: {
+      passPrimary: k.architectureForegroundDof.feedback.passPrimary,
+      defaultFailPrimary: k.architectureForegroundDof.feedback.defaultFailPrimary,
+      primary: {
+        "architecture-foreground-dof-building-top-visible":
+          k.architectureForegroundDof.feedback.primary.buildingTopVisible,
+        "architecture-foreground-dof-building-base-visible":
+          k.architectureForegroundDof.feedback.primary.buildingBaseVisible,
+        "architecture-foreground-dof-camera-level":
+          k.architectureForegroundDof.feedback.primary.cameraLevel,
+        "architecture-foreground-dof-aperture": k.architectureForegroundDof.feedback.primary.aperture,
+        "architecture-foreground-dof-focus-targets":
+          k.architectureForegroundDof.feedback.primary.focusTargets,
+      },
+      secondary: {
+        "architecture-foreground-dof-building-top-visible":
+          k.architectureForegroundDof.feedback.secondary.buildingTopVisible,
+        "architecture-foreground-dof-building-base-visible":
+          k.architectureForegroundDof.feedback.secondary.buildingBaseVisible,
+        "architecture-foreground-dof-camera-level":
+          k.architectureForegroundDof.feedback.secondary.cameraLevel,
+        "architecture-foreground-dof-aperture": k.architectureForegroundDof.feedback.secondary.aperture,
+        "architecture-foreground-dof-focus-targets":
+          k.architectureForegroundDof.feedback.secondary.focusTargets,
+      },
+    },
+  },
+  "architecture-foreground-compound-01": {
+    title: k.architectureForegroundCompound.title,
+    objective: k.architectureForegroundCompound.objective,
+    notes: [
+      k.architectureForegroundCompound.notes.composition,
+      k.architectureForegroundCompound.notes.tilt,
+      k.architectureForegroundCompound.notes.focus,
+      k.architectureForegroundCompound.notes.aperture,
+    ],
+    criteria: {
+      "architecture-foreground-compound-building-top-visible":
+        k.architectureForegroundCompound.criteria.buildingTopVisible,
+      "architecture-foreground-compound-building-base-visible":
+        k.architectureForegroundCompound.criteria.buildingBaseVisible,
+      "architecture-foreground-compound-camera-level":
+        k.architectureForegroundCompound.criteria.cameraLevel,
+      "architecture-foreground-compound-focus-targets":
+        k.architectureForegroundCompound.criteria.focusTargets,
+    },
+    feedback: {
+      passPrimary: k.architectureForegroundCompound.feedback.passPrimary,
+      defaultFailPrimary: k.architectureForegroundCompound.feedback.defaultFailPrimary,
+      primary: {
+        "architecture-foreground-compound-building-top-visible":
+          k.architectureForegroundCompound.feedback.primary.buildingTopVisible,
+        "architecture-foreground-compound-building-base-visible":
+          k.architectureForegroundCompound.feedback.primary.buildingBaseVisible,
+        "architecture-foreground-compound-camera-level":
+          k.architectureForegroundCompound.feedback.primary.cameraLevel,
+        "architecture-foreground-compound-focus-targets":
+          k.architectureForegroundCompound.feedback.primary.focusTargets,
+      },
+      secondary: {
+        "architecture-foreground-compound-building-top-visible":
+          k.architectureForegroundCompound.feedback.secondary.buildingTopVisible,
+        "architecture-foreground-compound-building-base-visible":
+          k.architectureForegroundCompound.feedback.secondary.buildingBaseVisible,
+        "architecture-foreground-compound-camera-level":
+          k.architectureForegroundCompound.feedback.secondary.cameraLevel,
+        "architecture-foreground-compound-focus-targets":
+          k.architectureForegroundCompound.feedback.secondary.focusTargets,
+      },
+    },
+  },
   "oblique-swing-focus-01": {
     title: k.obliqueSwingFocus.title,
     objective: k.obliqueSwingFocus.objective,
@@ -366,6 +564,8 @@ export const getCriterionResultMessageRef = (
       return ref(k.results.focusTargetsSharp[variant]);
     case "movement-used":
       return ref(k.results.movementUsed[criterion.movement][variant]);
+    case "focus-used":
+      return ref(k.results.focusUsed[variant]);
     case "movement-range":
       return ref(k.results.movementRange[criterion.movement][variant]);
     case "allowed-aperture":

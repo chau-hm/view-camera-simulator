@@ -54,6 +54,12 @@ import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry
 import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTargets";
 import { mirrorShiftGeometry } from "../scenes/mirrorShiftGeometry";
 import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
+import architectureForegroundGeometry from "../scenes/architectureForegroundGeometry";
+import {
+  ArchitectureForegroundSubject,
+  createArchitectureForegroundGroup,
+  disposeArchitectureForegroundGroup,
+} from "./ArchitectureForegroundSubjectFactory";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -117,6 +123,28 @@ export const ObliqueArchitectureRegisteredSubject = () => (
   <ObliqueArchitectureSubject />
 );
 
+export const ArchitectureForegroundRegisteredSubject = ({
+  scene,
+}: RegisteredSceneSubjectProps) => (
+  <>
+    <ArchitectureForegroundSubject />
+    {scene.focusTargets.map((target) => (
+      <mesh
+        key={target.id}
+        name={`architecture-foreground-focus-target-${target.id}`}
+        position={[
+          toWorld(target.worldPosition.x),
+          toWorld(target.worldPosition.y),
+          toWorld(target.worldPosition.z),
+        ]}
+      >
+        <sphereGeometry args={[toWorld(42), 12, 12]} />
+        <meshStandardMaterial color="#ef4444" />
+      </mesh>
+    ))}
+  </>
+);
+
 const architectureLightingTargetMm = {
   x: architectureRiseGeometry.building.center.x,
   y: architectureRiseGeometry.building.center.y,
@@ -140,6 +168,12 @@ const shelfSwingLightingTargetMm = {
 const obliqueArchitectureLightingTargetMm = {
   ...(obliqueArchitectureGeometry.focusTargets[1]?.worldPosition ??
     obliqueArchitectureGeometry.focusTargets[0].worldPosition),
+} as const;
+
+const architectureForegroundLightingTargetMm = {
+  x: architectureForegroundGeometry.building.center.x,
+  y: architectureForegroundGeometry.building.center.y,
+  z: architectureForegroundGeometry.facade.frontFacadeZ,
 } as const;
 
 export const sceneSubjectRegistry = {
@@ -212,6 +246,16 @@ export const sceneSubjectRegistry = {
       targetMm: architectureLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },
       fillOffsetWorld: { x: 2, y: 1.5, z: -3 },
+    },
+  },
+  "architecture-foreground": {
+    SceneSubject: ArchitectureForegroundRegisteredSubject,
+    createRttGroup: createArchitectureForegroundGroup,
+    disposeRttGroup: disposeArchitectureForegroundGroup,
+    rttLighting: {
+      targetMm: architectureForegroundLightingTargetMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },
   "oblique-architecture": {

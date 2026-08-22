@@ -53,6 +53,10 @@ export const tasksMessages = {
         fail: "Front Swing movement not used enough",
       },
     },
+    focusUsed: {
+      pass: "Focus has been adjusted",
+      fail: "Focus has not been adjusted enough",
+    },
     movementRange: {
       rise: {
         pass: "Front Rise is within the allowed range",
@@ -155,6 +159,163 @@ export const tasksMessages = {
         buildingBaseVisible: "Check the lower Ground Glass edge as you bring the roof into view.",
         cameraLevel: "Front Rise changes framing without pitching the camera or converging the verticals.",
         movementUsed: "Use the Front Rise control for this composition task; the exact value is not prescribed.",
+      },
+    },
+  },
+  architectureForegroundRise: {
+    title: "Frame the Building",
+    objective:
+      "Use Front Rise to include the required roof region while keeping the building base in frame and the camera level.",
+    notes: {
+      useRise: "Increase Front Rise from the neutral state to bring the required roof region into frame.",
+      keepBase: "Keep the building base inside the frame while you reframe upward.",
+      foreground:
+        "This task solves composition only; the near foreground remains softer than the building for a later lesson.",
+    },
+    criteria: {
+      buildingTopVisible: "Required roof region is visible",
+      buildingBaseVisible: "Building base remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      movementUsed: "Front Rise is used",
+    },
+    feedback: {
+      passPrimary:
+        "Front Rise corrected the composition while the camera stayed level. The foreground sharpness problem remains for a later lesson.",
+      defaultFailPrimary:
+        "Use Front Rise to include the roof while keeping the base and verticals stable.",
+      primary: {
+        buildingTopVisible: "The required roof region is still cropped. Increase Front Rise.",
+        buildingBaseVisible: "Keep the building base inside the frame while adjusting Front Rise.",
+        cameraLevel:
+          "Keep the camera and rear standard level; do not introduce tilt, swing, or rear movement.",
+        movementUsed: "Increase Front Rise to begin solving the composition problem.",
+      },
+      secondary: {
+        buildingTopVisible: "Watch the Ground Glass top edge until the required roof region is inside.",
+        buildingBaseVisible: "Check the lower Ground Glass edge as you bring the roof into view.",
+        cameraLevel: "Front Rise changes framing without changing perspective or converging the verticals.",
+        movementUsed: "Use Front Rise as the composition control; no exact slider value is required.",
+      },
+    },
+  },
+  architectureForegroundTiltFocus: {
+    title: "Align the Focus Plane",
+    objective:
+      "Use Front Tilt and Focus to make the near foreground and the building usefully sharp while preserving the corrected architectural framing.",
+    notes: {
+      composition: "The building is already framed with Front Rise; keep that composition intact.",
+      tilt: "Use Front Tilt to rotate the plane of sharp focus toward the foreground-to-building depth.",
+      focus: "Adjust Focus to place that plane through the near foreground and the useful building reference.",
+      depthOfField:
+        "This task aligns the focus plane only. Aperture remains fixed, so some depth-of-field limitation remains for a later lesson.",
+    },
+    criteria: {
+      buildingTopVisible: "Required roof region remains visible",
+      buildingBaseVisible: "Building base remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      tiltUsed: "Front Tilt is used",
+      tiltRange: "Front Tilt is within the useful range",
+      focusUsed: "Focus is adjusted",
+      nearSharp: "Near foreground is usefully sharp",
+      buildingSharp: "Useful building reference is usefully sharp",
+    },
+    feedback: {
+      passPrimary:
+        "Front Tilt and Focus aligned the focus plane through the foreground and building while the composition stayed correct. Aperture will address the remaining depth-of-field limitation later.",
+      defaultFailPrimary:
+        "Keep the solved Rise framing, then use Front Tilt and Focus together to align the focus plane through the foreground and building.",
+      primary: {
+        buildingTopVisible: "Keep the required roof region inside the frame; do not change the solved Rise composition.",
+        buildingBaseVisible: "Keep the building base inside the frame while refining the focus plane.",
+        cameraLevel: "Keep the camera and rear standard level; Tilt should change the focus plane, not the film plane.",
+        tiltUsed: "Apply a useful positive Front Tilt so the focus plane can reach the foreground depth.",
+        tiltRange: "Refine Front Tilt within the useful positive range rather than using an excessive angle.",
+        focusUsed: "Adjust Focus after applying Tilt so the focus plane is placed through the subject depth.",
+        nearSharp: "The near foreground remains soft. Use positive Front Tilt and refine Focus until the paving target is sharp.",
+        buildingSharp: "The building reference is not sharp enough. Refine Focus while keeping the useful Front Tilt range.",
+      },
+      secondary: {
+        buildingTopVisible: "Use the Ground Glass top edge as a framing guardrail while working on focus.",
+        buildingBaseVisible: "Tilt and Focus should preserve the solved Rise composition; watch the lower Ground Glass edge.",
+        cameraLevel: "Front Tilt rotates the lens and focus plane without pitching the camera or rear standard, so verticals stay parallel.",
+        tiltUsed: "A non-zero Front Tilt is needed; Focus alone cannot rotate the plane of sharp focus.",
+        tiltRange: "The useful solution is modest and positive; do not chase sharpness with an extreme Tilt angle.",
+        focusUsed: "Tilt changes plane orientation; Focus then places that plane through the foreground-to-building depth.",
+        nearSharp: "Compare the regular near paving seams and the Near foreground target rather than judging only the building.",
+        buildingSharp: "Use the building-middle reference as the architectural focus target, then compare the remaining finite DOF.",
+      },
+    },
+  },
+  architectureForegroundDof: {
+    title: "Extend the Depth of Field",
+    objective:
+      "Stop down the Aperture until the foreground and building are acceptably sharp while keeping the existing composition and focus-plane alignment.",
+    notes: {
+      composition: "Front Rise has already corrected the framing; keep the roof and building base inside the frame.",
+      focusPlane: "Front Tilt and Focus are already correct. Aperture does not move the focus plane.",
+      aperture: "Use Aperture to stop down from f/11. A smaller aperture increases usable depth around the aligned focus plane.",
+      depthOfField: "Stop down only as much as needed to cover the remaining subject depth; depth of field remains finite.",
+    },
+    criteria: {
+      buildingTopVisible: "Required roof region remains visible",
+      buildingBaseVisible: "Building base remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      aperture: "Aperture is stopped down for this task",
+      focusTargets: "Foreground and architectural depth targets are acceptably sharp",
+    },
+    feedback: {
+      passPrimary:
+        "The focus plane was already aligned; stopping down has now expanded usable depth around it. Composition, perspective, Tilt, and Focus remain unchanged.",
+      defaultFailPrimary:
+        "Keep the solved composition and focus-plane alignment, then stop down Aperture until the foreground and building depth targets are acceptably sharp.",
+      primary: {
+        buildingTopVisible: "Keep the required roof region inside the frame; Aperture should not change the solved composition.",
+        buildingBaseVisible: "Keep the building base inside the frame while extending depth of field.",
+        cameraLevel: "Keep the camera and rear standard level; Aperture does not require a perspective change.",
+        aperture: "Stop down from f/11 with the Aperture control. Do not reopen the aperture after the depth targets improve.",
+        focusTargets: "The focus plane is aligned, but some foreground or architectural depth remains soft. Stop down Aperture further.",
+      },
+      secondary: {
+        buildingTopVisible: "Use the Ground Glass edges as framing guardrails; Rise is already solved for this task.",
+        buildingBaseVisible: "Aperture changes usable sharpness, not framing. Leave the solved base position intact.",
+        cameraLevel: "Aperture broadens depth around the focus plane without pitching the camera or changing vertical convergence.",
+        aperture: "Use the next smaller supported aperture rather than changing Tilt or Focus.",
+        focusTargets: "Compare the regular paving seams with the building base and middle targets as depth of field expands.",
+      },
+    },
+  },
+  architectureForegroundCompound: {
+    title: "Complete the Photograph",
+    objective:
+      "Correct the framing, align and place the focus plane, then use Aperture to produce an acceptably sharp architectural photograph from foreground to building while preserving parallel verticals.",
+    notes: {
+      composition: "Start from the neutral frame. Use Front Rise to bring the roof in without tilting the camera or rear standard.",
+      tilt: "Use Front Tilt to orient the focus plane toward the foreground-to-building depth.",
+      focus: "Use Focus to place that plane through useful foreground and architectural targets.",
+      aperture: "Use Aperture to extend usable sharpness around the aligned plane; solve the whole result rather than one slider value.",
+    },
+    criteria: {
+      buildingTopVisible: "Required roof region is visible",
+      buildingBaseVisible: "Building base remains visible",
+      cameraLevel: "Camera and rear standard remain level",
+      focusTargets: "Foreground-to-building depth is acceptably sharp",
+    },
+    feedback: {
+      passPrimary:
+        "You completed the photograph: Rise corrected framing, Tilt and Focus aligned the focus plane, and Aperture extended usable depth while the rear standard stayed level.",
+      defaultFailPrimary:
+        "Solve the photograph as a whole: keep the camera level, include the roof and base, align focus through the subject depth, and extend usable sharpness.",
+      primary: {
+        buildingTopVisible: "Keep the required roof region inside the frame without pitching the camera or rear standard.",
+        buildingBaseVisible: "Reduce excessive Rise so the building base remains inside the frame.",
+        cameraLevel: "Keep the camera and rear standard level so the architectural verticals remain parallel.",
+        focusTargets: "The focus plane or usable depth does not yet cover the foreground and building. Align Tilt and Focus before extending DOF with Aperture.",
+      },
+      secondary: {
+        buildingTopVisible: "Use the Ground Glass top edge as a composition guardrail while solving the other photographic properties.",
+        buildingBaseVisible: "Rise changes framing only; watch the lower Ground Glass edge as you include the roof.",
+        cameraLevel: "Rise, Tilt, Focus, and Aperture can be combined while the level rear standard preserves parallel verticals.",
+        focusTargets: "Compare the regular paving seams with the building base and middle targets; Aperture cannot hide a fundamentally misplaced focus plane.",
       },
     },
   },

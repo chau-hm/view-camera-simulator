@@ -47,6 +47,11 @@ describe("GroundGlass DOF shader source", () => {
   test("shared GLSL helpers contain wedge blur mapping helper", () => {
     expect(groundGlassSharedGlsl).toContain("calculateWedgeBlurRadiusPxFromWorldPosition");
     expect(groundGlassSharedGlsl).toContain("calculateNormalizedWedgeDefocus");
+    expect(groundGlassSharedGlsl).toContain("safeUnresolvedWedgeBlurRadiusPx");
+    expect(groundGlassSharedGlsl).toContain("tFocus <= 0.0");
+    expect(groundGlassSharedGlsl).not.toContain(
+      "float focusDist = tFocus > 0.0 ? tFocus : targetDist",
+    );
   });
 
   test("runtime shader sources are present and contain main", () => {

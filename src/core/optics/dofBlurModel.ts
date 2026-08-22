@@ -15,7 +15,8 @@ export function calculateBoundaryCoCDiameterPx(
   if (!Number.isFinite(circleOfConfusionMm) || circleOfConfusionMm <= 0) return 0;
   if (!Number.isFinite(filmWidthMm) || filmWidthMm <= 0) return 0;
   if (!Number.isFinite(renderWidthPx) || renderWidthPx <= 0) return 0;
-  return (circleOfConfusionMm * renderWidthPx) / filmWidthMm;
+  const diameterPx = (circleOfConfusionMm * renderWidthPx) / filmWidthMm;
+  return Number.isFinite(diameterPx) && diameterPx >= 0 ? diameterPx : 0;
 }
 
 export function calculateBoundaryBlurRadiusPx(
@@ -43,8 +44,18 @@ export function calculateDofBlurRadiusPx(input: DofBlurInput): number {
     renderWidthPx,
   );
 
-  if (!Number.isFinite(normalizedDefocus) || Number.isNaN(normalizedDefocus))
-    return maximumBlurRadiusPx;
+  // An unresolved sample must fail closed. Returning the maximum radius here
+  // turns an upstream invalid wedge into a full-frame-looking blur and makes
+  // numerical defects much harder to diagnose.
+  if (
+    !Number.isFinite(normalizedDefocus) ||
+    !Number.isFinite(maximumBlurRadiusPx) ||
+    maximumBlurRadiusPx < 0 ||
+    !Number.isFinite(displayBlurScale) ||
+    displayBlurScale <= 0
+  ) {
+    return 0;
+  }
   if (normalizedDefocus <= 0) return 0;
 
   const radius = normalizedDefocus * boundaryRadiusPx * displayBlurScale;

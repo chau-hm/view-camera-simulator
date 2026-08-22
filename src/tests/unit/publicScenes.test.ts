@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   publicSceneCatalog,
+  publicSceneIds,
   type PublicSceneEntry,
 } from "../../app/publicScenes";
 import { validatePublicSceneCatalog } from "../../app/publicSceneCatalogValidation";
@@ -46,9 +47,72 @@ describe("public scene catalog integrity", () => {
     ).toBe(false);
   });
 
-  it("publishes Oblique Architecture as the final free and guided scene", () => {
-    const entry = publicSceneCatalog.at(-1)!;
-    expect(entry?.id).toBe("oblique-architecture");
+  it("publishes Architecture + Foreground with its direct guided tasks", () => {
+    const entry = publicSceneCatalog.find(
+      (candidate) => candidate.id === "architecture-foreground",
+    )!;
+    expect(entry.availability).toBe("available");
+    expect(entry.availableModes).toEqual(["free", "guided"]);
+    expect(entry.guidedTaskId).toBe("architecture-foreground-compound-01");
+    expect(entry.guidedTaskIds).toEqual([
+      "architecture-foreground-rise-01",
+      "architecture-foreground-tilt-focus-01",
+      "architecture-foreground-dof-01",
+      "architecture-foreground-compound-01",
+    ]);
+    expect(entry.guidedLesson).toEqual({
+      id: "architecture-foreground",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "align-focus", "depth-of-field", "final-challenge"],
+    });
+    expect(entry.thumbnailAsset).toBe("assets/architecture-foreground.png");
+    expect(
+      isValidSimulatorRoute({
+        mode: "free",
+        sceneId: entry.id,
+        publicEntry: entry,
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: "architecture-foreground-rise-01",
+        publicEntry: entry,
+        task: getTaskById("architecture-foreground-rise-01"),
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: "architecture-foreground-tilt-focus-01",
+        publicEntry: entry,
+        task: getTaskById("architecture-foreground-tilt-focus-01"),
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: "architecture-foreground-dof-01",
+        publicEntry: entry,
+        task: getTaskById("architecture-foreground-dof-01"),
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: "architecture-foreground-compound-01",
+        publicEntry: entry,
+        task: getTaskById("architecture-foreground-compound-01"),
+      }),
+    ).toBe(true);
+  });
+
+  it("publishes Oblique Architecture as an independent free and guided scene", () => {
+    const entry = publicSceneCatalog.find((candidate) => candidate.id === "oblique-architecture")!;
     expect(entry?.availableModes).toEqual(["free", "guided"]);
     expect(entry?.guidedTaskId).toBe("oblique-compound-01");
     expect(entry?.guidedTaskIds).toEqual([
@@ -88,6 +152,14 @@ describe("public scene catalog integrity", () => {
         task: getTaskById("oblique-swing-focus-01"),
       }),
     ).toBe(true);
+  });
+
+  it("places Architecture + Foreground last in the canonical public order", () => {
+    expect(publicSceneCatalog.at(-1)?.id).toBe("architecture-foreground");
+    expect(publicSceneIds.at(-1)).toBe("architecture-foreground");
+    expect(new Set(publicSceneCatalog.map((entry) => entry.id)).size).toBe(publicSceneCatalog.length);
+    expect(new Set(publicSceneIds).size).toBe(publicSceneIds.length);
+    expect(publicSceneCatalog.map((entry) => entry.id)).toEqual([...publicSceneIds]);
   });
 
   it("rejects a missing scene definition", () => {

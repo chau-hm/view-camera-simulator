@@ -213,6 +213,8 @@ export const simulatorMessages = {
     tabletopGuide: "桌面",
     diagonalSubjectPlaneGuide: "對角主體平面",
     targetFacadeDepthGuide: "主體立面深度",
+    architectureForegroundGroundGuide: "近景地面",
+    architectureForegroundBuildingGuide: "建築物側面輪廓",
     nearCardTarget: "近處卡片",
     middleNotebookTarget: "中間筆記本",
     farChartTarget: "遠處圖表",
@@ -225,6 +227,10 @@ export const simulatorMessages = {
     nearFacadeTarget: "近處立面",
     middleFacadeTarget: "中間立面",
     farFacadeTarget: "遠處立面",
+    architectureForegroundNearTarget: "近處前景",
+    architectureForegroundMiddleTarget: "中間前景",
+    architectureForegroundBuildingBaseTarget: "建築物基座",
+    architectureForegroundBuildingMiddleTarget: "建築物中段",
   },
   sceneLegend: {
     filmPlane: "底片平面（藍色）",
@@ -285,6 +291,19 @@ export const simulatorMessages = {
         focus: "調整對焦及光圈，比較清晰度及景深。",
       },
       observation: "觀察前組上移時建築物上方如何進入畫面。構圖改變，但整部相機的視點保持不變，預期的垂直線仍然平行。",
+    },
+    architectureForeground: {
+      objective:
+        "探索「建築物及前景」的累積問題：使用前組上移修正構圖、用傾斜及對焦對齊焦平面，再用光圈處理整張相片的實用景深。",
+      bullets: {
+        framing: "在中立狀態留意屋頂被裁切，而建築物基座仍在畫面內。",
+        rise: "增加前組上移，把屋頂納入畫面，同時保持相機水平及垂直線平行。",
+        tilt: "使用前組傾斜，讓清晰焦平面向前景至建築物的深度方向旋轉。",
+        focus: "調整對焦，將焦平面放置在近處前景及有用的建築物參考位置上。",
+        aperture: "收細光圈，擴大已對齊清晰焦平面周圍的實用景深。",
+      },
+      observation:
+        "前組上移會在不改變透視及垂直線平行關係的情況下修正構圖。前組傾斜會改變焦平面方向，而對焦會放置焦平面；光圈再擴大焦平面周圍的實用景深，但景深仍然有限。",
     },
     obliqueArchitecture: {
       objective: "在斜角建築場景中探索前組上移、前組擺動及對焦，同時保持後組水平。",

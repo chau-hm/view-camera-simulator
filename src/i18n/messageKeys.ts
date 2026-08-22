@@ -27,6 +27,15 @@ export const publicSceneMessageKeys = {
       perspectiveControl: "scenes.architectureRise.topics.perspectiveControl",
     },
   },
+  architectureForeground: {
+    title: "scenes.architectureForeground.title",
+    description: "scenes.architectureForeground.description",
+    topics: {
+      levelFraming: "scenes.architectureForeground.topics.levelFraming",
+      foregroundDepth: "scenes.architectureForeground.topics.foregroundDepth",
+      sharpness: "scenes.architectureForeground.topics.sharpness",
+    },
+  },
   obliqueArchitecture: {
     title: "scenes.obliqueArchitecture.title",
     description: "scenes.obliqueArchitecture.description",
@@ -75,6 +84,7 @@ export type PublicSceneTopicKey =
   | TopicValues<typeof publicSceneMessageKeys.understanding>
   | TopicValues<typeof publicSceneMessageKeys.focusFundamentals>
   | TopicValues<typeof publicSceneMessageKeys.architectureRise>
+  | TopicValues<typeof publicSceneMessageKeys.architectureForeground>
   | TopicValues<typeof publicSceneMessageKeys.obliqueArchitecture>
   | TopicValues<typeof publicSceneMessageKeys.tableTilt>
   | TopicValues<typeof publicSceneMessageKeys.shelfSwing>
