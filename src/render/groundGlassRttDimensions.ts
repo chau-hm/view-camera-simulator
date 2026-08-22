@@ -1,6 +1,7 @@
 import { getRenderQualitySettings } from "./renderQuality";
 import type { RenderQualityProfile } from "../types/ui";
 import { GROUND_GLASS_ZOOM_SCALE } from "./groundGlassStageTransform";
+import type { GroundGlassCocStorageFormat } from "./groundGlassCocTarget";
 
 export type GroundGlassRttChannel =
   | "default"
@@ -50,6 +51,7 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   gatherScale?: number;
   sampleCount?: number;
   maximumCoCRadiusPx?: number;
+  cocStorageFormat?: GroundGlassCocStorageFormat;
   cocAvailable?: boolean;
   cocTargetWidthPx?: number;
   cocTargetHeightPx?: number;

@@ -54,6 +54,11 @@ import { analyzeGroundGlassRenderSanity } from "./groundGlassRenderSanity";
 import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 import { createGroundGlassRenderSanityStateKey } from "./groundGlassRenderSanityKey";
 import { resizeGroundGlassRttResources } from "./groundGlassRttResources";
+import {
+  createGroundGlassCocTarget,
+  resolveGroundGlassCocStorageMaxMm,
+  type GroundGlassCocStorageFormat,
+} from "./groundGlassCocTarget";
 import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
 import {
   resolveCameraMovementLessonPresentationTargetRegion,
@@ -132,6 +137,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     postSceneComposite: THREE.Scene;
     orthoCam: THREE.OrthographicCamera;
     cocRT: THREE.WebGLRenderTarget;
+    cocStorageFormat: GroundGlassCocStorageFormat;
     gatherRT: THREE.WebGLRenderTarget;
     finalRT: THREE.WebGLRenderTarget;
     rawDiagnosticRT: THREE.WebGLRenderTarget;
@@ -270,18 +276,19 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     const postSceneGather = new THREE.Scene();
     const postSceneComposite = new THREE.Scene();
     const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const cocRT = new THREE.WebGLRenderTarget(
+    const cocStorage = createGroundGlassCocTarget(
+      gl as unknown as WebGLRenderer,
       dimsRef.current.internalWidthPx,
       dimsRef.current.internalHeightPx,
-      {
-        type: THREE.HalfFloatType,
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        depthBuffer: false,
-        stencilBuffer: false,
-      },
     );
+    const cocRT = cocStorage.target;
     cocRT.depthBuffer = false;
+    const initialCocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
+      maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      renderWidthPx: dimsRef.current.internalWidthPx,
+      displayBlurScale,
+    });
     const gatherRT = new THREE.WebGLRenderTarget(
       Math.max(1, Math.floor(dimsRef.current.internalWidthPx * initialQualitySettings.gatherScale)),
       Math.max(1, Math.floor(dimsRef.current.internalHeightPx * initialQualitySettings.gatherScale)),
@@ -341,6 +348,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
         displayBlurScale: { value: displayBlurScale },
         sampleCount: { value: initialQualitySettings.sampleCount },
+        cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
+        cocStorageMaxMm: { value: initialCocStorageMaxMm },
       },
     });
 
@@ -381,6 +390,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
         displayBlurScale: { value: displayBlurScale },
         sampleCount: { value: initialQualitySettings.sampleCount },
+        cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
+        cocStorageMaxMm: { value: initialCocStorageMaxMm },
       },
     });
 
@@ -423,6 +434,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       postSceneComposite,
       orthoCam,
       cocRT,
+      cocStorageFormat: cocStorage.storageFormat,
       gatherRT,
       finalRT,
       rawDiagnosticRT,
@@ -474,6 +486,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           gatherScale: initialQualitySettings.gatherScale,
           sampleCount: initialQualitySettings.sampleCount,
           maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
+          cocStorageFormat: cocStorage.storageFormat,
           cocAvailable: true,
           cocTargetWidthPx: cocW,
           cocTargetHeightPx: cocH,
@@ -738,6 +751,18 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     const qualitySettings = getRenderQualitySettings(
       renderQuality || "standard",
     );
+    const resizedMaximumCoCRadiusPx = Math.min(
+      maximumBlurRadiusPx,
+      qualitySettings.maximumCoCRadiusPx,
+    );
+    const cocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
+      maximumCoCRadiusPx: resizedMaximumCoCRadiusPx,
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      renderWidthPx: dims.internalWidthPx,
+      displayBlurScale,
+    });
+    cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
+    gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
 
     resizeGroundGlassRttResources(
       {
@@ -790,6 +815,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         maximumBlurRadiusPx,
         qualitySettings.maximumCoCRadiusPx,
       ),
+      cocStorageFormat: post.cocStorageFormat,
       cocAvailable: true,
       cocTargetWidthPx: post.cocRT.width,
       cocTargetHeightPx: post.cocRT.height,
@@ -803,7 +829,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       verticalShaderRenderHeightPx: gatherMaterial.uniforms.renderHeight.value as number,
       resourceGeneration: resourceGenerationRef.current,
     });
-  }, [gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
+  }, [displayBlurScale, gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
 
   useFrame(() => {
     if (!renderTarget.current || !offscreenScene.current) return;
@@ -962,6 +988,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         maximumBlurRadiusPx,
         currentQualitySettings.maximumCoCRadiusPx,
       );
+      const cocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
+        maximumCoCRadiusPx: currentMaximumCoCRadiusPx,
+        filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+        renderWidthPx: dimsRef.current.internalWidthPx,
+        displayBlurScale,
+      });
 
       const cocMesh = postSceneCoc.children[0] as THREE.Mesh;
       const cocMaterial = cocMesh.material as THREE.ShaderMaterial;
@@ -976,6 +1008,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       cocMaterial.uniforms.useRaw.value = 0.0;
       cocMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       cocMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
+      cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
+      gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
 
       // Prepare typed optical state once and apply it to both CoC and gather.
       let uniformPreparationError: string | null = null;
@@ -1011,36 +1045,42 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         }
       }
 
-      gl.setRenderTarget(cocRT);
-      gl.setClearColor(SKY_COLOR.getHex(), 1);
-      gl.clear(true, true, true);
-      gl.render(postSceneCoc, orthoCam);
+      // Raw debug is a true bypass: the full-resolution scene color remains
+      // the source of truth and never passes through the scaled gather target.
+      if (!rawDebug) {
+        gl.setRenderTarget(cocRT);
+        gl.setClearColor(SKY_COLOR.getHex(), 1);
+        gl.clear(true, true, true);
+        gl.render(postSceneCoc, orthoCam);
 
-      gatherMaterial.uniforms.tColor.value = (renderTarget.current as THREE.WebGLRenderTarget).texture;
-      gatherMaterial.uniforms.tDepth.value = depthTex;
-      gatherMaterial.uniforms.tCoC.value = cocRT.texture;
-      gatherMaterial.uniforms.useRaw.value = rawDebug ? 1.0 : 0.0;
-      gatherMaterial.uniforms.sampleCount.value = currentQualitySettings.sampleCount;
-      gatherMaterial.uniforms.maximumCoCRadiusPx.value = currentMaximumCoCRadiusPx;
-      gatherMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
-      gatherMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
-      if (preparedDofState) {
-        applyGroundGlassDofUniformState(gatherMaterial, preparedDofState);
-      } else {
-        if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
-          console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
-          reportedUniformPreparationErrorRef.current = uniformPreparationError ?? "unknown";
+        gatherMaterial.uniforms.tColor.value = (renderTarget.current as THREE.WebGLRenderTarget).texture;
+        gatherMaterial.uniforms.tDepth.value = depthTex;
+        gatherMaterial.uniforms.tCoC.value = cocRT.texture;
+        gatherMaterial.uniforms.useRaw.value = 0.0;
+        gatherMaterial.uniforms.sampleCount.value = currentQualitySettings.sampleCount;
+        gatherMaterial.uniforms.maximumCoCRadiusPx.value = currentMaximumCoCRadiusPx;
+        gatherMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
+        gatherMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
+        if (preparedDofState) {
+          applyGroundGlassDofUniformState(gatherMaterial, preparedDofState);
+        } else {
+          if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
+            console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
+            reportedUniformPreparationErrorRef.current = uniformPreparationError ?? "unknown";
+          }
         }
-      }
 
-      gl.setRenderTarget(gatherRT);
-      gl.setClearColor(SKY_COLOR.getHex(), 1);
-      gl.clear(true, true, true);
-      gl.render(postSceneGather, orthoCam);
+        gl.setRenderTarget(gatherRT);
+        gl.setClearColor(SKY_COLOR.getHex(), 1);
+        gl.clear(true, true, true);
+        gl.render(postSceneGather, orthoCam);
+      }
 
       const compositeMesh = postSceneComposite.children[0] as THREE.Mesh;
       const compositeMaterial = compositeMesh.material as THREE.ShaderMaterial;
-      compositeMaterial.uniforms.tGather.value = gatherRT.texture;
+      compositeMaterial.uniforms.tGather.value = rawDebug
+        ? (renderTarget.current as THREE.WebGLRenderTarget).texture
+        : gatherRT.texture;
       compositeMaterial.uniforms.displayUpright.value = previewMode === "raw" ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;

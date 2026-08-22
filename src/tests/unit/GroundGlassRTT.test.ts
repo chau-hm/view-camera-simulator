@@ -20,6 +20,7 @@ import {
 } from "../../render/sceneSubjectRegistry";
 import { useAppStore } from "../../state/appStore";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import geometry from "../../scenes/shelfSwingGeometry";
@@ -28,8 +29,25 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { GroundGlassRttRuntimeInfo } from "../../render/groundGlassRttDimensions";
 
 const fiberTestState = vi.hoisted(() => ({
+  frameCallback: null as (() => void) | null,
+  renderedScenes: [] as unknown[],
+  currentTarget: null as unknown,
   gl: {
     getPixelRatio: () => 1,
+    getRenderTarget: () => fiberTestState.currentTarget,
+    setRenderTarget: (target: unknown) => {
+      fiberTestState.currentTarget = target;
+    },
+    getContext: () => ({
+      FRAMEBUFFER: 0x8d40,
+      FRAMEBUFFER_COMPLETE: 0x8cd5,
+      checkFramebufferStatus: () => 0x8cd5,
+    }),
+    setClearColor: () => undefined,
+    clear: () => undefined,
+    render: (scene: unknown) => {
+      fiberTestState.renderedScenes.push(scene);
+    },
     domElement: {
       width: 500,
       height: 400,
@@ -40,7 +58,9 @@ const fiberTestState = vi.hoisted(() => ({
 
 vi.mock("@react-three/fiber", () => ({
   Canvas: (props: { children?: unknown }) => props.children,
-  useFrame: () => undefined,
+  useFrame: (callback: () => void) => {
+    fiberTestState.frameCallback = callback;
+  },
   useThree: () => ({ gl: fiberTestState.gl }),
 }));
 
@@ -65,10 +85,23 @@ vi.mock("../../render/sceneSubjectRegistry", async (importOriginal) => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  fiberTestState.frameCallback = null;
+  fiberTestState.renderedScenes.length = 0;
+  fiberTestState.currentTarget = null;
   useAppStore.getState().setGroundGlassRttRuntimeInfo(null);
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-original", null);
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-current", null);
 });
+
+function renderedShaderMaterials() {
+  return fiberTestState.renderedScenes.flatMap((scene) => {
+    if (!(scene instanceof THREE.Scene)) return [];
+    return scene.children.flatMap((child) => {
+      const material = (child as THREE.Mesh).material;
+      return material instanceof THREE.ShaderMaterial ? [material] : [];
+    });
+  });
+}
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
   it("synchronizes the active clip range into both CoC and aperture gather materials", () => {
@@ -95,6 +128,87 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
 
     cocMaterial.dispose();
     gatherMaterial.dispose();
+  });
+
+  it("synchronizes the live camera clip range through the active frame path", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const view = render(
+      React.createElement(GroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        sceneId: architectureForegroundScene.id,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        previewMode: "upright",
+      }),
+    );
+
+    expect(fiberTestState.frameCallback).not.toBeNull();
+    act(() => fiberTestState.frameCallback?.());
+
+    const materials = renderedShaderMaterials();
+    const cocMaterial = materials.find((material) =>
+      material.fragmentShader.includes("calculateCoCDiameterMmAtFragment"),
+    );
+    const gatherMaterial = materials.find((material) =>
+      material.fragmentShader.includes("goldenAngle"),
+    );
+    expect(cocMaterial).toBeDefined();
+    expect(gatherMaterial).toBeDefined();
+    expect(gatherMaterial?.uniforms.near.value).toBe(cocMaterial?.uniforms.near.value);
+    expect(gatherMaterial?.uniforms.far.value).toBe(cocMaterial?.uniforms.far.value);
+    expect(cocMaterial?.uniforms.far.value).not.toBe(12.0);
+
+    view.unmount();
+  });
+
+  it("routes raw debug directly from the full-resolution scene color target", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    render(
+      React.createElement(GroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        sceneId: architectureForegroundScene.id,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "low",
+        previewMode: "raw",
+        rawDebug: true,
+        focusAssistEnabled: true,
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const compositeMaterial = renderedShaderMaterials().find((material) =>
+      material.fragmentShader.includes("uniform sampler2D tGather"),
+    );
+    const runtimeInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const sourceTexture = compositeMaterial?.uniforms.tGather.value as THREE.Texture;
+    const sourceWidth = (sourceTexture.image as { width: number }).width;
+    expect(sourceWidth).toBe(runtimeInfo?.colorTargetWidthPx);
+    expect(sourceWidth).not.toBe(runtimeInfo?.gatherTargetWidthPx);
+    expect(compositeMaterial?.uniforms.displayUpright.value).toBe(1.0);
+    expect(compositeMaterial?.uniforms.showRing.value).toBe(0.0);
+    expect(
+      renderedShaderMaterials().some((material) =>
+        material.fragmentShader.includes("calculateCoCDiameterMmAtFragment"),
+      ),
+    ).toBe(false);
+    expect(
+      renderedShaderMaterials().some((material) =>
+        material.fragmentShader.includes("goldenAngle"),
+      ),
+    ).toBe(false);
   });
 
   it("ignores stale owner cleanup for default, Original, and Current channels", () => {

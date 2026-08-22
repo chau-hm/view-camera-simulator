@@ -39,6 +39,8 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassUniformDecls).toContain("maximumCoCRadiusPx");
     expect(groundGlassUniformDecls).toContain("sampleCount");
     expect(groundGlassUniformDecls).toContain("filmWidthMm");
+    expect(groundGlassUniformDecls).toContain("cocStorageEncoded");
+    expect(groundGlassUniformDecls).toContain("cocStorageMaxMm");
   });
 
   test("shared GLSL helpers do not contain GLSL Infinity hacks or old formula", () => {
@@ -54,6 +56,8 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassSharedGlsl).toContain("safeUnresolvedWedgeCoCDiameterMm");
     expect(groundGlassSharedGlsl).toContain("tFocus <= 0.0");
     expect(groundGlassSharedGlsl).toContain("cocDiameterMmToGatherRadiusPx");
+    expect(groundGlassSharedGlsl).toContain("encodePhysicalCoCDiameterMm");
+    expect(groundGlassSharedGlsl).toContain("decodeStoredCoCDiameterMm");
     expect(groundGlassSharedGlsl).not.toContain(
       "float focusDist = tFocus > 0.0 ? tFocus : targetDist",
     );
@@ -74,7 +78,7 @@ describe("GroundGlass DOF shader source", () => {
   test("CoC stage writes a physical millimetre signal", () => {
     expect(groundGlassPhysicalCocFragmentShader).toContain("calculateCoCDiameterMmAtFragment");
     expect(groundGlassPhysicalCocFragmentShader).toContain("float cocMm");
-    expect(groundGlassPhysicalCocFragmentShader).toContain("gl_FragColor = vec4(cocMm");
+    expect(groundGlassPhysicalCocFragmentShader).toContain("encodePhysicalCoCDiameterMm(cocMm)");
     expect(countDeclarationOccurrences(extractMainBody(groundGlassPhysicalCocFragmentShader), "depth")).toBe(1);
   });
 
@@ -83,6 +87,7 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassApertureGatherFragmentShader).toContain("goldenAngle");
     expect(groundGlassApertureGatherFragmentShader).toContain("sampleCount");
     expect(groundGlassApertureGatherFragmentShader).toContain("cocDiameterMmToGatherRadiusPx");
+    expect(groundGlassApertureGatherFragmentShader).toContain("decodeStoredCoCDiameterMm");
     expect(groundGlassApertureGatherFragmentShader).toContain("texture2D(tColor, uv)");
     expect(groundGlassApertureGatherFragmentShader).not.toContain("sigma");
     expect(groundGlassApertureGatherFragmentShader).not.toContain("exp(-0.5");

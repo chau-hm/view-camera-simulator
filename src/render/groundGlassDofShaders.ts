@@ -145,6 +145,25 @@ float calculateCoCDiameterMmAtFragment(vec2 uv, float depth){
   return calculateWedgeCoCDiameterMmFromWorldPosition(worldPos);
 }
 
+// The physical CoC is normally stored directly as millimetres in the
+// half-float target. The byte fallback stores a normalized value whose range
+// is chosen by the CPU from the configured maximum gather radius. Encoding is
+// deliberately after the optical calculation so storage capability cannot
+// change the CoC semantics.
+float encodePhysicalCoCDiameterMm(float cocMm){
+  if(!isFiniteFloat(cocMm) || cocMm < 0.0) return 0.0;
+  if(cocStorageEncoded < 0.5) return cocMm;
+  if(!isFiniteFloat(cocStorageMaxMm) || cocStorageMaxMm <= 0.0) return 0.0;
+  return clamp(cocMm / cocStorageMaxMm, 0.0, 1.0);
+}
+
+float decodeStoredCoCDiameterMm(float storedCoc){
+  if(!isFiniteFloat(storedCoc) || storedCoc < 0.0) return 0.0;
+  if(cocStorageEncoded < 0.5) return storedCoc;
+  if(!isFiniteFloat(cocStorageMaxMm) || cocStorageMaxMm <= 0.0) return 0.0;
+  return storedCoc * cocStorageMaxMm;
+}
+
 // Convert physical CoC diameter to a gather radius in source-texture pixels.
 // The cap is a quality/display bound, applied only after the physical result
 // has been computed; it is not part of the optical kernel.
@@ -203,4 +222,6 @@ uniform float maximumCoCRadiusPx;
 uniform float circleOfConfusionMm;
 uniform float filmWidthMm;
 uniform float sampleCount;
+uniform float cocStorageEncoded;
+uniform float cocStorageMaxMm;
 `;

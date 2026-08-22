@@ -12,7 +12,8 @@ const sharedIntro = `${groundGlassUniformDecls} ${groundGlassSharedGlsl}`;
 const zeroCoCThresholdPx = 0.125;
 const maximumApertureSamples = 64;
 
-/** Full-resolution physical CoC intermediate. The red channel stores mm. */
+/** Full-resolution physical CoC intermediate. The red channel stores either
+ * millimetres or the explicit normalized byte-fallback representation. */
 export const groundGlassPhysicalCocFragmentShader = `
 precision highp float;
 varying vec2 vUv;
@@ -23,7 +24,7 @@ void main(){
   float depth = texture2D(tDepth, vUv).x;
   float cocMm = calculateCoCDiameterMmAtFragment(vUv, depth);
   if(!isFiniteFloat(cocMm) || cocMm < 0.0) cocMm = 0.0;
-  gl_FragColor = vec4(cocMm, 0.0, 0.0, 1.0);
+  gl_FragColor = vec4(encodePhysicalCoCDiameterMm(cocMm), 0.0, 0.0, 1.0);
 }
 `;
 
@@ -48,7 +49,8 @@ void main(){
   }
 
   float centerDepth = texture2D(tDepth, uv).x;
-  float cocMm = texture2D(tCoC, uv).r;
+  float storedCoc = texture2D(tCoC, uv).r;
+  float cocMm = decodeStoredCoCDiameterMm(storedCoc);
   float radiusPx = cocDiameterMmToGatherRadiusPx(cocMm);
 
   // Preserve the sharp path without paying for aperture samples.
