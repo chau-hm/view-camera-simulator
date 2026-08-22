@@ -122,9 +122,13 @@ export const cocDiameterMm = (
   filmDistanceMm: number,
   objectDistanceMm: number,
 ): number => {
-  // Compatibility wrapper for existing positional callers. The physical
-  // implementation lives in computePhysicalCoCDiameterMm so the two APIs
-  // cannot drift numerically.
+  // Preserve the historical infinity sentinel for existing positional
+  // callers. The explicit physical kernel uses the finite aperture limit at
+  // U = f, but legacy consumers use Infinity to represent this boundary.
+  if (objectDistanceMm === focalLengthMm) return Number.POSITIVE_INFINITY;
+
+  // The physical implementation owns the normal-domain equation so the two
+  // APIs cannot drift numerically.
   return computePhysicalCoCDiameterMm({
     focalLengthMm,
     apertureFNumber,

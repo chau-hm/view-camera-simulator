@@ -152,7 +152,7 @@ describe("thinLensModel", () => {
       ).toBeCloseTo(0, 12);
     });
 
-    it("agrees with the retained positional cocDiameterMm reference API", () => {
+    it("agrees with the retained positional cocDiameterMm API on the normal finite domain", () => {
       const input = {
         focalLengthMm: 150,
         apertureFNumber: 8,
@@ -166,6 +166,25 @@ describe("thinLensModel", () => {
         input.filmDistanceMm,
         input.objectDistanceMm,
       )).toBeCloseTo(computePhysicalCoCDiameterMm(input), 12);
+    });
+
+    it("preserves the legacy Infinity sentinel at U = f", () => {
+      const input = {
+        focalLengthMm: 150,
+        apertureFNumber: 8,
+        objectDistanceMm: 150,
+        filmDistanceMm: 200,
+      };
+
+      expect(computePhysicalCoCDiameterMm(input)).toBeCloseTo(18.75, 12);
+      expect(
+        cocDiameterMm(
+          input.focalLengthMm,
+          input.apertureFNumber,
+          input.filmDistanceMm,
+          input.objectDistanceMm,
+        ),
+      ).toBe(Number.POSITIVE_INFINITY);
     });
 
     it("handles infinity focus and the U = f optical limit without zeroing the aperture", () => {
