@@ -136,9 +136,10 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       ...architectureForegroundScene.cameraPreset,
       activeSceneId: architectureForegroundScene.id,
     };
+    const optics = deriveOpticsState(camera, architectureForegroundScene);
     const view = render(
       React.createElement(GroundGlassRTT, {
-        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        opticsState: optics,
         focalLengthMm: camera.focalLengthMm,
         sceneId: architectureForegroundScene.id,
         widthPx: 500,
@@ -163,6 +164,14 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(gatherMaterial?.uniforms.near.value).toBe(cocMaterial?.uniforms.near.value);
     expect(gatherMaterial?.uniforms.far.value).toBe(cocMaterial?.uniforms.far.value);
     expect(cocMaterial?.uniforms.far.value).not.toBe(12.0);
+    expect(cocMaterial?.uniforms.filmPlanePoint.value.x).toBeCloseTo(
+      optics.filmPlane.point.x * 0.001,
+      6,
+    );
+    expect(gatherMaterial?.uniforms.filmPlaneNormal.value.length()).toBeCloseTo(1, 6);
+    expect(gatherMaterial?.uniforms.filmPlaneBasisX.value.length()).toBeCloseTo(1, 6);
+    expect(gatherMaterial?.uniforms.filmPlaneBasisY.value.length()).toBeCloseTo(1, 6);
+    expect(gatherMaterial?.uniforms.footprintStorageMaxMm.value).toBeGreaterThan(0);
     expect(useAppStore.getState().groundGlassRttRuntimeInfo?.nearGatherTargetWidthPx).toBe(
       useAppStore.getState().groundGlassRttRuntimeInfo?.gatherTargetWidthPx,
     );
@@ -531,7 +540,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(zoomedInfo?.blurTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
     expect(zoomedInfo?.cocTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
     expect(zoomedInfo?.gatherTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
-    expect(zoomedInfo?.dofTechnique).toBe("physical-coc-near-far-gather");
+    expect(zoomedInfo?.dofTechnique).toBe("physical-coc-near-far-oriented-gather");
     expect(zoomedInfo?.sampleCount).toBe(32);
     expect(setSize).toHaveBeenCalledTimes(5);
     expect(runtimeUpdates).not.toContain(null);
@@ -588,7 +597,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(resizedInfo?.verticalShaderRenderWidthPx).toBe(resizedInfo?.internalWidthPx);
     expect(resizedInfo?.cocTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
     expect(resizedInfo?.gatherTargetWidthPx).toBe(resizedInfo?.internalWidthPx);
-    expect(resizedInfo?.dofTechnique).toBe("physical-coc-near-far-gather");
+    expect(resizedInfo?.dofTechnique).toBe("physical-coc-near-far-oriented-gather");
     expect(setSize).toHaveBeenCalledTimes(5);
 
     setSize.mockClear();

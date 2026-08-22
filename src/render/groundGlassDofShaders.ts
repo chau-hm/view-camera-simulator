@@ -34,9 +34,156 @@ float intersectRayPlaneDist(vec3 ro, vec3 rd, vec3 planePoint, vec3 planeNormal)
   return distance;
 }
 
-// Normalized defocus using the derived finite-depth wedge intervals. The
-// scalar is converted to the calibrated physical CoC diameter below; later
-// oriented-plane work can replace this helper without changing the gather.
+struct GroundGlassPhysicalBlurFootprint {
+  float valid;
+  float signedCocMm;
+  float majorRadiusMm;
+  float minorRadiusMm;
+  float orientationRad;
+};
+
+GroundGlassPhysicalBlurFootprint neutralPhysicalBlurFootprint(){
+  GroundGlassPhysicalBlurFootprint result;
+  result.valid = 0.0;
+  result.signedCocMm = 0.0;
+  result.majorRadiusMm = 0.0;
+  result.minorRadiusMm = 0.0;
+  result.orientationRad = 0.0;
+  return result;
+}
+
+float wrapFootprintOrientationRad(float angle){
+  const float footprintPi = 3.14159265359;
+  float wrapped = mod(angle, footprintPi);
+  return wrapped < 0.0 ? wrapped + footprintPi : wrapped;
+}
+
+GroundGlassPhysicalBlurFootprint calculatePhysicalBlurFootprintFromWorldPosition(vec3 worldPos){
+  GroundGlassPhysicalBlurFootprint result = neutralPhysicalBlurFootprint();
+  if(!isFiniteVec3(worldPos) ||
+     !isFiniteVec3(lensCenterWorld) ||
+     !isFiniteVec3(lensPlaneNormal) ||
+     !isFiniteVec3(lensPlaneBasisX) ||
+     !isFiniteVec3(lensPlaneBasisY) ||
+     !isFiniteVec3(filmPlanePoint) ||
+     !isFiniteVec3(filmPlaneNormal) ||
+     !isFiniteVec3(filmPlaneBasisX) ||
+     !isFiniteVec3(filmPlaneBasisY) ||
+     !isFiniteFloat(focalLengthMm) || focalLengthMm <= 0.0 ||
+     !isFiniteFloat(fNumber) || fNumber <= 0.0) return result;
+
+  vec3 toObject = worldPos - lensCenterWorld;
+  float objectDistanceMm = dot(toObject, lensPlaneNormal) * 1000.0;
+  if(!isFiniteFloat(objectDistanceMm) || objectDistanceMm <= 1e-4) return result;
+
+  float focalLengthWorld = focalLengthMm * 0.001;
+  float objectDistanceWorld = objectDistanceMm * 0.001;
+  float apertureRadiusWorld = focalLengthWorld / (2.0 * fNumber);
+  if(!isFiniteFloat(apertureRadiusWorld) || apertureRadiusWorld <= 0.0) return result;
+
+  vec3 lateralObjectOffset = toObject - lensPlaneNormal * objectDistanceWorld;
+  bool imagePointIsFinite = abs(objectDistanceMm - focalLengthMm) > 0.0001;
+  float idealImageDistanceMm = 0.0;
+  vec3 imagePoint = vec3(0.0);
+  vec3 imageDirection = vec3(0.0);
+  float signedSide = -1.0;
+
+  if(imagePointIsFinite){
+    float denominator = objectDistanceMm - focalLengthMm;
+    if(!isFiniteFloat(denominator) || abs(denominator) <= 1e-4) return result;
+    idealImageDistanceMm = (focalLengthMm * objectDistanceMm) / denominator;
+    if(!isFiniteFloat(idealImageDistanceMm) || abs(idealImageDistanceMm) <= 1e-6) return result;
+    float idealImageDistanceWorld = idealImageDistanceMm * 0.001;
+    imagePoint = lensCenterWorld -
+      lensPlaneNormal * idealImageDistanceWorld -
+      lateralObjectOffset * (idealImageDistanceWorld / objectDistanceWorld);
+    imageDirection = idealImageDistanceMm < 0.0
+      ? lensCenterWorld - imagePoint
+      : imagePoint - lensCenterWorld;
+    float imagePlaneDeltaMm = dot(imagePoint - filmPlanePoint, filmPlaneNormal) * 1000.0;
+    if(!isFiniteFloat(imagePlaneDeltaMm)) return result;
+    if(abs(imagePlaneDeltaMm) > 0.0001) signedSide = imagePlaneDeltaMm < 0.0 ? -1.0 : 1.0;
+    else signedSide = 0.0;
+  } else {
+    // At U = f the ideal image is at infinity and the post-lens rays are
+    // parallel. The finite film projection still has a deterministic limit.
+    imageDirection = normalize(
+      -lensPlaneNormal - lateralObjectOffset / objectDistanceWorld
+    );
+    if(!isFiniteVec3(imageDirection) || length(imageDirection) <= 1e-6) return result;
+    signedSide = -1.0;
+  }
+  if(!isFiniteVec3(imageDirection) || length(imageDirection) <= 1e-6) return result;
+
+  float centerDistance = intersectRayPlaneDist(
+    lensCenterWorld,
+    imageDirection,
+    filmPlanePoint,
+    filmPlaneNormal
+  );
+  if(centerDistance <= 0.0) return result;
+  // This is the closed-form first derivative of the symmetric +/- aperture
+  // edge construction at the aperture centre. It is the same local affine
+  // map, but avoids four redundant ray/plane intersections per full-res
+  // fragment while preserving the CPU reference contract.
+  vec3 filmDelta = filmPlanePoint - lensCenterWorld;
+  vec3 apertureX = lensPlaneBasisX * apertureRadiusWorld;
+  vec3 apertureY = lensPlaneBasisY * apertureRadiusWorld;
+  vec3 mappedX = vec3(0.0);
+  vec3 mappedY = vec3(0.0);
+  if(imagePointIsFinite){
+    vec3 imageVector = imagePoint - lensCenterWorld;
+    float denominator = dot(imageVector, filmPlaneNormal);
+    if(!isFiniteFloat(denominator) || abs(denominator) <= 1e-6) return result;
+    float rayParameter = dot(filmDelta, filmPlaneNormal) / denominator;
+    if(!isFiniteFloat(rayParameter)) return result;
+    mappedX = (
+      apertureX - imageVector * dot(apertureX, filmPlaneNormal) / denominator
+    ) * (1.0 - rayParameter);
+    mappedY = (
+      apertureY - imageVector * dot(apertureY, filmPlaneNormal) / denominator
+    ) * (1.0 - rayParameter);
+  } else {
+    float denominator = dot(imageDirection, filmPlaneNormal);
+    if(!isFiniteFloat(denominator) || abs(denominator) <= 1e-6) return result;
+    mappedX = apertureX - imageDirection * dot(apertureX, filmPlaneNormal) / denominator;
+    mappedY = apertureY - imageDirection * dot(apertureY, filmPlaneNormal) / denominator;
+  }
+  if(!isFiniteVec3(mappedX) || !isFiniteVec3(mappedY)) return result;
+
+  float matrix00 = dot(mappedX, filmPlaneBasisX) * 1000.0;
+  float matrix10 = dot(mappedX, filmPlaneBasisY) * 1000.0;
+  float matrix01 = dot(mappedY, filmPlaneBasisX) * 1000.0;
+  float matrix11 = dot(mappedY, filmPlaneBasisY) * 1000.0;
+  float covariance00 = matrix00 * matrix00 + matrix01 * matrix01;
+  float covariance01 = matrix00 * matrix10 + matrix01 * matrix11;
+  float covariance11 = matrix10 * matrix10 + matrix11 * matrix11;
+  float traceHalf = (covariance00 + covariance11) * 0.5;
+  float discriminant = length(vec2((covariance00 - covariance11) * 0.5, covariance01));
+  float majorRadiusMm = sqrt(max(0.0, traceHalf + discriminant));
+  float minorRadiusMm = sqrt(max(0.0, traceHalf - discriminant));
+  if(!isFiniteFloat(majorRadiusMm) || !isFiniteFloat(minorRadiusMm)) return result;
+
+  float orientationRad = 0.0;
+  if(majorRadiusMm - minorRadiusMm > 1e-6){
+    orientationRad = wrapFootprintOrientationRad(
+      0.5 * atan(2.0 * covariance01, covariance00 - covariance11)
+    );
+  }
+  float signedCocMm = signedSide * 2.0 * sqrt(max(0.0, majorRadiusMm * minorRadiusMm));
+  if(!isFiniteFloat(signedCocMm)) return result;
+
+  result.valid = 1.0;
+  result.signedCocMm = signedCocMm;
+  result.majorRadiusMm = majorRadiusMm;
+  result.minorRadiusMm = minorRadiusMm;
+  result.orientationRad = orientationRad;
+  return result;
+}
+
+// Legacy wedge scalar helpers remain available for diagnostics and teaching
+// geometry. The rendered CoC/footprint field below is sourced from the
+// canonical lens/film aperture projection instead.
 float calculateNormalizedWedgeDefocus(float targetDist, float nearDist, float focusDist, float farDist, float hasFiniteFar){
   if(!isFiniteFloat(targetDist) || targetDist <= 0.0 ||
      !isFiniteFloat(nearDist) || nearDist <= 0.0 ||
@@ -152,9 +299,13 @@ float calculateWedgeCoCDiameterMmFromWorldPosition(vec3 worldPos){
 }
 
 float calculateSignedCoCDiameterMmAtFragment(vec2 uv, float depth){
-  if(dofMode < 0.5) return calculateSignedPhysicalCoCDiameterMmFromDepth(depth);
   vec3 worldPos = reconstructWorldPosition(uv, depth, inverseProjectionMatrix, cameraMatrixWorld);
-  return calculateSignedWedgeCoCDiameterMmFromWorldPosition(worldPos);
+  GroundGlassPhysicalBlurFootprint footprint =
+    calculatePhysicalBlurFootprintFromWorldPosition(worldPos);
+  if(footprint.valid > 0.5) return footprint.signedCocMm;
+  // Geometry is canonical input to this path. If it is unresolved, remain
+  // neutral rather than fabricating a side from a scalar wedge fallback.
+  return 0.0;
 }
 
 float calculateCoCDiameterMmAtFragment(vec2 uv, float depth){
@@ -185,6 +336,93 @@ float decodeStoredSignedCoCDiameterMm(float storedCoc){
   if(byteCode < 128.0) return ((byteCode - 128.0) / 128.0) * cocStorageMaxMm;
   if(byteCode > 128.0) return ((byteCode - 128.0) / 127.0) * cocStorageMaxMm;
   return 0.0;
+}
+
+float encodeGroundGlassFootprintRadiusMm(float radiusMm){
+  if(!isFiniteFloat(radiusMm) || radiusMm <= 0.0) return 0.0;
+  if(cocStorageEncoded < 0.5) return radiusMm;
+  if(!isFiniteFloat(footprintStorageMaxMm) || footprintStorageMaxMm <= 0.0) return 0.0;
+  return clamp(radiusMm / footprintStorageMaxMm, 0.0, 1.0);
+}
+
+float decodeStoredGroundGlassFootprintRadiusMm(float storedRadius){
+  if(!isFiniteFloat(storedRadius)) return 0.0;
+  if(cocStorageEncoded < 0.5) return max(0.0, storedRadius);
+  if(!isFiniteFloat(footprintStorageMaxMm) || footprintStorageMaxMm <= 0.0) return 0.0;
+  return clamp(storedRadius, 0.0, 1.0) * footprintStorageMaxMm;
+}
+
+float encodeGroundGlassFootprintOrientation(float orientationRad){
+  if(!isFiniteFloat(orientationRad)) return 0.0;
+  return wrapFootprintOrientationRad(orientationRad) / 3.14159265359;
+}
+
+float decodeStoredGroundGlassFootprintOrientation(float storedOrientation){
+  if(!isFiniteFloat(storedOrientation)) return 0.0;
+  return clamp(storedOrientation, 0.0, 1.0) * 3.14159265359;
+}
+
+vec2 footprintMajorAxisPx(float majorRadiusMm, float orientationRad){
+  if(!isFiniteFloat(majorRadiusMm) || majorRadiusMm <= 0.0 ||
+     !isFiniteFloat(renderWidth) || renderWidth <= 0.0 ||
+     !isFiniteFloat(renderHeight) || renderHeight <= 0.0 ||
+     !isFiniteFloat(filmWidthMm) || filmWidthMm <= 0.0 ||
+     !isFiniteFloat(filmHeightMm) || filmHeightMm <= 0.0 ||
+     !isFiniteFloat(displayBlurScale) || displayBlurScale <= 0.0) return vec2(0.0);
+  float angle = decodeStoredGroundGlassFootprintOrientation(orientationRad);
+  return vec2(
+    cos(angle) * majorRadiusMm * renderWidth / filmWidthMm,
+    sin(angle) * majorRadiusMm * renderHeight / filmHeightMm
+  ) * displayBlurScale;
+}
+
+vec2 footprintMinorAxisPx(float minorRadiusMm, float orientationRad){
+  if(!isFiniteFloat(minorRadiusMm) || minorRadiusMm <= 0.0 ||
+     !isFiniteFloat(renderWidth) || renderWidth <= 0.0 ||
+     !isFiniteFloat(renderHeight) || renderHeight <= 0.0 ||
+     !isFiniteFloat(filmWidthMm) || filmWidthMm <= 0.0 ||
+     !isFiniteFloat(filmHeightMm) || filmHeightMm <= 0.0 ||
+     !isFiniteFloat(displayBlurScale) || displayBlurScale <= 0.0) return vec2(0.0);
+  float angle = decodeStoredGroundGlassFootprintOrientation(orientationRad);
+  return vec2(
+    -sin(angle) * minorRadiusMm * renderWidth / filmWidthMm,
+    cos(angle) * minorRadiusMm * renderHeight / filmHeightMm
+  ) * displayBlurScale;
+}
+
+float footprintClampScale(vec2 majorAxisPx, vec2 minorAxisPx){
+  float extentPx = max(length(majorAxisPx), length(minorAxisPx));
+  if(!isFiniteFloat(extentPx) || extentPx <= 0.0 ||
+     !isFiniteFloat(maximumCoCRadiusPx) || maximumCoCRadiusPx < 0.0) return 0.0;
+  return min(1.0, maximumCoCRadiusPx / extentPx);
+}
+
+vec2 orientedFootprintOffsetPx(
+  vec2 diskOffset,
+  vec2 majorAxisPx,
+  vec2 minorAxisPx,
+  float clampScale
+){
+  return (majorAxisPx * diskOffset.x + minorAxisPx * diskOffset.y) * clampScale;
+}
+
+float ellipseFootprintWeight(
+  vec2 offsetPx,
+  vec2 majorAxisPx,
+  vec2 minorAxisPx,
+  float clampScale
+){
+  vec2 major = majorAxisPx * clampScale;
+  vec2 minor = minorAxisPx * clampScale;
+  float determinant = major.x * minor.y - major.y * minor.x;
+  if(!isFiniteFloat(determinant) || abs(determinant) <= 1e-6) return 0.0;
+  vec2 local = vec2(
+    (offsetPx.x * minor.y - offsetPx.y * minor.x) / determinant,
+    (-offsetPx.x * major.y + offsetPx.y * major.x) / determinant
+  );
+  float distanceInEllipse = length(local);
+  float edgeWidth = 1.0 / max(1.0, max(length(major), length(minor)));
+  return 1.0 - smoothstep(1.0, 1.0 + edgeWidth, distanceInEllipse);
 }
 
 // Convert physical CoC diameter to a gather radius in source-texture pixels.
@@ -268,6 +506,13 @@ uniform float far;
 uniform float useRaw;
 uniform float dofMode;
 uniform vec3 lensCenterWorld;
+uniform vec3 lensPlaneNormal;
+uniform vec3 lensPlaneBasisX;
+uniform vec3 lensPlaneBasisY;
+uniform vec3 filmPlanePoint;
+uniform vec3 filmPlaneNormal;
+uniform vec3 filmPlaneBasisX;
+uniform vec3 filmPlaneBasisY;
 uniform vec3 focusPlanePoint;
 uniform vec3 focusPlaneNormal;
 uniform vec3 nearPlanePoint;
@@ -281,8 +526,10 @@ uniform float displayBlurScale;
 uniform float maximumCoCRadiusPx;
 uniform float circleOfConfusionMm;
 uniform float filmWidthMm;
+uniform float filmHeightMm;
 uniform float sampleCount;
 uniform float cocStorageEncoded;
 uniform float cocStorageMaxMm;
+uniform float footprintStorageMaxMm;
 uniform float gatherLayer;
 `;

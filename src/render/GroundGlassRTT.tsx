@@ -290,6 +290,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       renderWidthPx: dimsRef.current.internalWidthPx,
       displayBlurScale,
     });
+    const initialFootprintStorageMaxMm = Math.max(1e-6, initialCocStorageMaxMm * 0.5);
     const gatherRT = new THREE.WebGLRenderTarget(
       Math.max(1, Math.floor(dimsRef.current.internalWidthPx * initialQualitySettings.gatherScale)),
       Math.max(1, Math.floor(dimsRef.current.internalHeightPx * initialQualitySettings.gatherScale)),
@@ -346,6 +347,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         useRaw: { value: 0.0 },
         dofMode: { value: 0.0 },
         lensCenterWorld: { value: new THREE.Vector3() },
+        lensPlaneNormal: { value: new THREE.Vector3(0, 0, 1) },
+        lensPlaneBasisX: { value: new THREE.Vector3(1, 0, 0) },
+        lensPlaneBasisY: { value: new THREE.Vector3(0, 1, 0) },
+        filmPlanePoint: { value: new THREE.Vector3(0, 0, -0.15) },
+        filmPlaneNormal: { value: new THREE.Vector3(0, 0, 1) },
+        filmPlaneBasisX: { value: new THREE.Vector3(1, 0, 0) },
+        filmPlaneBasisY: { value: new THREE.Vector3(0, 1, 0) },
         focusPlanePoint: { value: new THREE.Vector3() },
         focusPlaneNormal: { value: new THREE.Vector3() },
         nearPlanePoint: { value: new THREE.Vector3() },
@@ -358,10 +366,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
         circleOfConfusionMm: { value: 0.1 },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
+        filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
         displayBlurScale: { value: displayBlurScale },
         sampleCount: { value: initialQualitySettings.sampleCount },
         cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
         cocStorageMaxMm: { value: initialCocStorageMaxMm },
+        footprintStorageMaxMm: { value: initialFootprintStorageMaxMm },
       },
     });
 
@@ -388,6 +398,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         displayUpright: { value: 0.0 },
         dofMode: { value: 0.0 },
         lensCenterWorld: { value: new THREE.Vector3() },
+        lensPlaneNormal: { value: new THREE.Vector3(0, 0, 1) },
+        lensPlaneBasisX: { value: new THREE.Vector3(1, 0, 0) },
+        lensPlaneBasisY: { value: new THREE.Vector3(0, 1, 0) },
+        filmPlanePoint: { value: new THREE.Vector3(0, 0, -0.15) },
+        filmPlaneNormal: { value: new THREE.Vector3(0, 0, 1) },
+        filmPlaneBasisX: { value: new THREE.Vector3(1, 0, 0) },
+        filmPlaneBasisY: { value: new THREE.Vector3(0, 1, 0) },
         focusPlanePoint: { value: new THREE.Vector3() },
         focusPlaneNormal: { value: new THREE.Vector3() },
         nearPlanePoint: { value: new THREE.Vector3() },
@@ -400,10 +417,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
         circleOfConfusionMm: { value: 0.1 },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
+        filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
         displayBlurScale: { value: displayBlurScale },
         sampleCount: { value: initialQualitySettings.sampleCount },
         cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
         cocStorageMaxMm: { value: initialCocStorageMaxMm },
+        footprintStorageMaxMm: { value: initialFootprintStorageMaxMm },
         gatherLayer: { value: 0.0 },
       },
     });
@@ -500,7 +519,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           depthTargetHeightPx: actualDepthH,
           blurTargetWidthPx: gatherW,
           blurTargetHeightPx: gatherH,
-          dofTechnique: "physical-coc-near-far-gather",
+          dofTechnique: "physical-coc-near-far-oriented-gather",
+          footprintRepresentation: "local-affine-ellipse",
           gatherScale: initialQualitySettings.gatherScale,
           sampleCount: initialQualitySettings.sampleCount,
           maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
@@ -786,6 +806,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     });
     cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
     gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
+    cocMaterial.uniforms.footprintStorageMaxMm.value = Math.max(1e-6, cocStorageMaxMm * 0.5);
+    gatherMaterial.uniforms.footprintStorageMaxMm.value = Math.max(1e-6, cocStorageMaxMm * 0.5);
 
     resizeGroundGlassRttResources(
       {
@@ -832,7 +854,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       depthTargetHeightPx: depthImage?.height ?? rt.height,
       blurTargetWidthPx: post.gatherRT.width,
       blurTargetHeightPx: post.gatherRT.height,
-      dofTechnique: "physical-coc-near-far-gather",
+      dofTechnique: "physical-coc-near-far-oriented-gather",
+      footprintRepresentation: "local-affine-ellipse",
       gatherScale: qualitySettings.gatherScale,
       sampleCount: qualitySettings.sampleCount,
       maximumCoCRadiusPx: Math.min(
@@ -1023,6 +1046,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         renderWidthPx: dimsRef.current.internalWidthPx,
         displayBlurScale,
       });
+      const footprintStorageMaxMm = Math.max(1e-6, cocStorageMaxMm * 0.5);
 
       const cocMesh = postSceneCoc.children[0] as THREE.Mesh;
       const cocMaterial = cocMesh.material as THREE.ShaderMaterial;
@@ -1038,7 +1062,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       cocMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       cocMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
       cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
+      cocMaterial.uniforms.footprintStorageMaxMm.value = footprintStorageMaxMm;
       gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
+      gatherMaterial.uniforms.footprintStorageMaxMm.value = footprintStorageMaxMm;
 
       // Prepare typed optical state once and apply it to both CoC and gather.
       let uniformPreparationError: string | null = null;
