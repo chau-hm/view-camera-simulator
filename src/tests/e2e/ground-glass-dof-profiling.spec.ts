@@ -7,6 +7,45 @@ const profiledScenes = [
   "architecture-foreground",
 ] as const;
 
+type ProfileTiming = { count: number } | null;
+type ProfileSnapshot = {
+  profilingBackend: "gpu-query" | "cpu-fallback";
+  rawDebug: boolean;
+  groundGlassGpu: ProfileTiming;
+  physicalDofGpu: ProfileTiming;
+  groundGlassCpuSubmit: ProfileTiming;
+  physicalDofCpuSubmit: ProfileTiming;
+};
+
+const readProfileSnapshot = async (
+  page: import("@playwright/test").Page,
+): Promise<ProfileSnapshot> => {
+  const text = await page.getByTestId("ground-glass-profiling-snapshot").textContent();
+  expect(text).not.toBeNull();
+  const snapshot = JSON.parse(text ?? "null") as ProfileSnapshot | null;
+  expect(snapshot).not.toBeNull();
+  return snapshot as ProfileSnapshot;
+};
+
+const expectBackendTimingSamples = (
+  snapshot: ProfileSnapshot,
+  rawDebug: boolean,
+) => {
+  const groundGlass = snapshot.profilingBackend === "gpu-query"
+    ? snapshot.groundGlassGpu
+    : snapshot.groundGlassCpuSubmit;
+  const physicalDof = snapshot.profilingBackend === "gpu-query"
+    ? snapshot.physicalDofGpu
+    : snapshot.physicalDofCpuSubmit;
+
+  expect(groundGlass?.count).toBeGreaterThan(0);
+  if (rawDebug) {
+    expect(physicalDof).toBeNull();
+  } else {
+    expect(physicalDof?.count).toBeGreaterThan(0);
+  }
+};
+
 const expectPopulatedProfile = async (
   page: import("@playwright/test").Page,
   sceneId: string,
@@ -38,6 +77,9 @@ const expectPopulatedProfile = async (
   expect(frameCount).toBeGreaterThan(0);
   expect(groundGlassCount).toBeGreaterThan(0);
   expect(physicalDofCount).toBeGreaterThan(0);
+  const snapshot = await readProfileSnapshot(page);
+  expect(snapshot.rawDebug).toBe(false);
+  expectBackendTimingSamples(snapshot, false);
   await expect(page.getByTestId("ground-glass-profiling-snapshot")).not.toContainText(/NaN|Infinity/);
 };
 
@@ -67,6 +109,13 @@ test("profiling preserves Raw RTT bypass and can be disabled", async ({ page }) 
     timeout: 120_000,
   });
 
+  await expect(page.getByTestId("ground-glass-profiling-snapshot")).toContainText(
+    '"rawDebug": true',
+    { timeout: 120_000 },
+  );
+  const rawSnapshot = await readProfileSnapshot(page);
+  expectBackendTimingSamples(rawSnapshot, true);
+
   await rawToggle.uncheck();
   await expect(rtt).toHaveAttribute("data-rtt-profiling-raw-debug", "false", {
     timeout: 120_000,
@@ -74,6 +123,12 @@ test("profiling preserves Raw RTT bypass and can be disabled", async ({ page }) 
   await expect(rtt).toHaveAttribute("data-rtt-profiling-physical-dof-count", /[1-9]\d*/, {
     timeout: 120_000,
   });
+  await expect(page.getByTestId("ground-glass-profiling-snapshot")).toContainText(
+    '"rawDebug": false',
+    { timeout: 120_000 },
+  );
+  const processedSnapshot = await readProfileSnapshot(page);
+  expectBackendTimingSamples(processedSnapshot, false);
 
   await page.goto("/simulator/free/architecture-foreground?rttDiagnostics=1");
   await expect(rtt).toHaveAttribute("data-rtt-profiling-enabled", "false");

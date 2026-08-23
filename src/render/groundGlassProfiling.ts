@@ -166,7 +166,8 @@ export type GroundGlassGpuTimerContext = {
   readonly createQuery?: () => unknown | null;
   readonly beginQuery?: (target: number, query: unknown) => void;
   readonly endQuery?: (target: number) => void;
-  readonly getQuery?: (query: unknown, parameter: number) => unknown;
+  /** WebGL2 query-object result access; getQuery is not a result API. */
+  readonly getQueryParameter?: (query: unknown, parameter: number) => unknown;
   readonly getParameter?: (parameter: number) => unknown;
   readonly deleteQuery?: (query: unknown) => void;
 };
@@ -265,11 +266,13 @@ export class GroundGlassGpuTimer {
   }
 
   public poll(): GroundGlassGpuTiming[] {
-    if (this.disposed || !this.context.getQuery) return [];
+    const getQueryParameter = this.context.getQueryParameter;
+    const getParameter = this.context.getParameter;
+    if (this.disposed || !getQueryParameter || !getParameter) return [];
 
     let disjoint = false;
     try {
-      disjoint = Boolean(this.context.getParameter?.(this.extension.GPU_DISJOINT_EXT));
+      disjoint = Boolean(getParameter(this.extension.GPU_DISJOINT_EXT));
     } catch {
       disjoint = true;
     }
@@ -288,7 +291,7 @@ export class GroundGlassGpuTimer {
       let available = false;
       try {
         available = Boolean(
-          this.context.getQuery?.(slot.query, this.context.QUERY_RESULT_AVAILABLE),
+          getQueryParameter(slot.query, this.context.QUERY_RESULT_AVAILABLE),
         );
       } catch {
         slot.active = null;
@@ -298,7 +301,7 @@ export class GroundGlassGpuTimer {
 
       let nanoseconds: number;
       try {
-        nanoseconds = Number(this.context.getQuery?.(slot.query, this.context.QUERY_RESULT));
+        nanoseconds = Number(getQueryParameter(slot.query, this.context.QUERY_RESULT));
       } catch {
         slot.active = null;
         return;
@@ -342,7 +345,9 @@ export const createGroundGlassGpuTimer = (
       typeof context.createQuery !== "function" ||
       typeof context.beginQuery !== "function" ||
       typeof context.endQuery !== "function" ||
-      typeof context.getQuery !== "function") return null;
+      typeof context.getQueryParameter !== "function" ||
+      typeof context.getParameter !== "function" ||
+      typeof context.deleteQuery !== "function") return null;
 
   let extension: GroundGlassTimerExtension | null = null;
   try {

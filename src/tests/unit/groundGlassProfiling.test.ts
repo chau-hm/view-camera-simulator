@@ -70,7 +70,7 @@ const makeFakeGpuContext = () => {
     endQuery: vi.fn(() => {
       activeQuery = null;
     }),
-    getQuery: vi.fn((_query: unknown, parameter: number) => {
+    getQueryParameter: vi.fn((_query: unknown, parameter: number) => {
       if (parameter === context.QUERY_RESULT_AVAILABLE) return context.available;
       if (parameter === context.QUERY_RESULT) return context.resultNanoseconds;
       return 0;
@@ -139,6 +139,14 @@ describe("Ground Glass profiling capability and timer lifecycle", () => {
     expect(context.createQuery).not.toHaveBeenCalled();
   });
 
+  it("returns no GPU timer when WebGL2 query-result retrieval is unavailable", () => {
+    const context = makeFakeGpuContext().context;
+    (context as { getQueryParameter?: unknown }).getQueryParameter = undefined;
+
+    expect(createGroundGlassGpuTimer({ getContext: () => context })).toBeNull();
+    expect(context.createQuery).not.toHaveBeenCalled();
+  });
+
   it("reads completed timer results asynchronously and discards disjoint results", () => {
     const fake = makeFakeGpuContext();
     const timer = createGroundGlassGpuTimer({ getContext: () => fake.context });
@@ -156,9 +164,19 @@ describe("Ground Glass profiling capability and timer lifecycle", () => {
     expect(timer!.poll()).toEqual([
       { frameId: 1, pass: "sceneRender", durationMs: 2 },
     ]);
+    expect(fake.context.getQueryParameter).toHaveBeenCalledWith(
+      expect.anything(),
+      fake.context.QUERY_RESULT_AVAILABLE,
+    );
+    expect(fake.context.getQueryParameter).toHaveBeenCalledWith(
+      expect.anything(),
+      fake.context.QUERY_RESULT,
+    );
     expect(timer!.pendingCount).toBe(0);
 
     const disjointToken = timer!.begin(2, "composite");
+    expect(disjointToken).not.toBeNull();
+    expect(fake.context.createdQueries).toHaveLength(1);
     timer!.end(disjointToken);
     fake.context.disjoint = true;
     expect(timer!.poll()).toEqual([]);
@@ -167,6 +185,20 @@ describe("Ground Glass profiling capability and timer lifecycle", () => {
     timer!.dispose();
     expect(fake.context.deletedQueries).toHaveLength(1);
     expect(timer!.begin(3, "sceneRender")).toBeNull();
+  });
+
+  it("resets pending queries without publishing stale results", () => {
+    const fake = makeFakeGpuContext();
+    const timer = createGroundGlassGpuTimer({ getContext: () => fake.context });
+    const token = timer!.begin(1, "sceneRender");
+    timer!.end(token);
+
+    timer!.reset();
+    fake.context.available = true;
+
+    expect(timer!.poll()).toEqual([]);
+    expect(timer!.poolSize).toBe(0);
+    expect(fake.context.deletedQueries).toHaveLength(1);
   });
 
   it("skips a pass when the bounded query pool is full", () => {

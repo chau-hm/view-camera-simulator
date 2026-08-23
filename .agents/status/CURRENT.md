@@ -24,11 +24,18 @@
 ## Manual benchmark protocol
 
 For each scene/profile: reset or reload the scene, enable `?dofProfiling=1`,
-allow warm-up, wait for at least 60 completed `frame.count` samples, capture
-the JSON snapshot from the Ground Glass profiling debug group, avoid camera
-interaction during sampling, and record whether the display appears capped by
-vsync. Compare frame timing separately from Ground Glass GPU/CPU-submit timing;
-do not infer uncapped FPS or application FPS from Ground Glass GPU time.
+allow warm-up, and capture the JSON snapshot from the Ground Glass profiling
+debug group only after the timing channel for the selected backend has a full
+window. For processed Ground Glass, wait until both
+`groundGlassGpu.count` and `physicalDofGpu.count` reach 60 when
+`profilingBackend` is `gpu-query`; when it is `cpu-fallback`, wait until both
+`groundGlassCpuSubmit.count` and `physicalDofCpuSubmit.count` reach 60. Keep
+`frame.count` as the separate browser-frame timing / approximate-FPS window.
+For Raw RTT, physical-DOF timing must remain null; wait only for the selected
+Ground Glass GPU or CPU-submit count to reach 60. Avoid camera interaction
+during sampling and record whether the display appears capped by vsync.
+Compare frame timing separately from Ground Glass GPU/CPU-submit timing; do not
+infer uncapped FPS or application FPS from Ground Glass GPU time.
 
 Suggested matrix:
 
