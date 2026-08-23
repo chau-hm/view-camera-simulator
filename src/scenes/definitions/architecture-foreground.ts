@@ -43,6 +43,11 @@ export const architectureForegroundScene: SceneDefinition = {
   cameraInspectionPlacement: geometry.inspectionCamera,
   bounds: geometry.sceneBounds,
   focusTargets: geometry.focusTargets,
+  finiteFocusStrategy: {
+    kind: "rear-standard-thin-lens",
+    lensDatum: "baseline-origin",
+    focusDistanceReference: "lens-to-focus-plane",
+  },
   compositionTargets: [
     {
       id: "building-top",
