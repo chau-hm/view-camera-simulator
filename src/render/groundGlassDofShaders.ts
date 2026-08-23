@@ -345,11 +345,52 @@ float encodeGroundGlassFootprintRadiusMm(float radiusMm){
   return clamp(radiusMm / footprintStorageMaxMm, 0.0, 1.0);
 }
 
+float quantizeGroundGlassFootprintChannel(float encodedRadius){
+  if(!isFiniteFloat(encodedRadius)) return 0.0;
+  return floor(clamp(encodedRadius, 0.0, 1.0) * 255.0 + 0.5) / 255.0;
+}
+
+float footprintStorageScaleForAxes(float majorRadiusMm, float minorRadiusMm){
+  if(!isFiniteFloat(majorRadiusMm) || majorRadiusMm < 0.0 ||
+     !isFiniteFloat(minorRadiusMm) || minorRadiusMm < 0.0 ||
+     minorRadiusMm > majorRadiusMm) return 0.0;
+  if(cocStorageEncoded < 0.5) return 1.0;
+  if(!isFiniteFloat(footprintStorageMaxMm) || footprintStorageMaxMm <= 0.0) return 0.0;
+  float largestRadiusMm = max(majorRadiusMm, minorRadiusMm);
+  if(largestRadiusMm <= footprintStorageMaxMm) return 1.0;
+  return footprintStorageMaxMm / largestRadiusMm;
+}
+
+vec2 encodeGroundGlassFootprintAxesMm(float majorRadiusMm, float minorRadiusMm){
+  float storageScale = footprintStorageScaleForAxes(majorRadiusMm, minorRadiusMm);
+  if(storageScale <= 0.0) return vec2(0.0);
+  vec2 encodedAxes = vec2(
+    encodeGroundGlassFootprintRadiusMm(majorRadiusMm * storageScale),
+    encodeGroundGlassFootprintRadiusMm(minorRadiusMm * storageScale)
+  );
+  // Explicitly model the RGBA8 code grid. The actual texture write performs
+  // the same conversion, and this keeps the CPU/GPU storage contracts aligned.
+  return cocStorageEncoded < 0.5
+    ? encodedAxes
+    : vec2(
+        quantizeGroundGlassFootprintChannel(encodedAxes.x),
+        quantizeGroundGlassFootprintChannel(encodedAxes.y)
+      );
+}
+
 float decodeStoredGroundGlassFootprintRadiusMm(float storedRadius){
   if(!isFiniteFloat(storedRadius)) return 0.0;
   if(cocStorageEncoded < 0.5) return max(0.0, storedRadius);
   if(!isFiniteFloat(footprintStorageMaxMm) || footprintStorageMaxMm <= 0.0) return 0.0;
-  return clamp(storedRadius, 0.0, 1.0) * footprintStorageMaxMm;
+  float byteCode = floor(clamp(storedRadius, 0.0, 1.0) * 255.0 + 0.5);
+  return (byteCode / 255.0) * footprintStorageMaxMm;
+}
+
+vec2 decodeStoredGroundGlassFootprintAxesMm(vec2 storedAxes){
+  return vec2(
+    decodeStoredGroundGlassFootprintRadiusMm(storedAxes.x),
+    decodeStoredGroundGlassFootprintRadiusMm(storedAxes.y)
+  );
 }
 
 float encodeGroundGlassFootprintOrientation(float orientationRad){
@@ -370,9 +411,12 @@ vec2 footprintMajorAxisPx(float majorRadiusMm, float orientationRad){
      !isFiniteFloat(filmHeightMm) || filmHeightMm <= 0.0 ||
      !isFiniteFloat(displayBlurScale) || displayBlurScale <= 0.0) return vec2(0.0);
   float angle = decodeStoredGroundGlassFootprintOrientation(orientationRad);
+  // Physical film +Y points toward the top edge, while raw RTT V increases
+  // toward the bottom edge. Apply that reflection here, before any preview
+  // orientation policy is applied by the final composite.
   return vec2(
     cos(angle) * majorRadiusMm * renderWidth / filmWidthMm,
-    sin(angle) * majorRadiusMm * renderHeight / filmHeightMm
+    -sin(angle) * majorRadiusMm * renderHeight / filmHeightMm
   ) * displayBlurScale;
 }
 
@@ -386,7 +430,7 @@ vec2 footprintMinorAxisPx(float minorRadiusMm, float orientationRad){
   float angle = decodeStoredGroundGlassFootprintOrientation(orientationRad);
   return vec2(
     -sin(angle) * minorRadiusMm * renderWidth / filmWidthMm,
-    cos(angle) * minorRadiusMm * renderHeight / filmHeightMm
+    -cos(angle) * minorRadiusMm * renderHeight / filmHeightMm
   ) * displayBlurScale;
 }
 

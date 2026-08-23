@@ -124,6 +124,102 @@ export const decodeGroundGlassFootprintRadiusMm = (
   return (quantizeGroundGlassFootprintByte(storedRadius) / 255) * maximumRadiusMm;
 };
 
+export type GroundGlassFootprintAxesMm = {
+  majorRadiusMm: number;
+  minorRadiusMm: number;
+};
+
+export type GroundGlassEncodedFootprintAxes = {
+  encodedMajorRadius: number;
+  encodedMinorRadius: number;
+  /** Uniform representational scale applied before byte encoding. */
+  storageScale: number;
+};
+
+const sanitizeGroundGlassFootprintAxes = (
+  axes: GroundGlassFootprintAxesMm,
+): GroundGlassFootprintAxesMm => {
+  const majorRadiusMm = Number.isFinite(axes.majorRadiusMm) && axes.majorRadiusMm > 0
+    ? axes.majorRadiusMm
+    : 0;
+  const minorRadiusMm = Number.isFinite(axes.minorRadiusMm) && axes.minorRadiusMm > 0
+    ? axes.minorRadiusMm
+    : 0;
+
+  // The footprint contract names the singular values in descending order.
+  // Invalid ordering is fail-closed rather than silently rotating the stored
+  // orientation to match a swapped pair.
+  if (minorRadiusMm > majorRadiusMm) return { majorRadiusMm: 0, minorRadiusMm: 0 };
+  return { majorRadiusMm, minorRadiusMm };
+};
+
+/**
+ * Encodes the two ellipse radii as one storage pair.
+ *
+ * Half-float targets retain physical millimetres. Byte targets first apply
+ * one uniform scale when either axis exceeds the representable range, then
+ * quantize both normalized channels on the actual RGBA8 code grid. Scaling
+ * the pair together preserves anisotropy before display-space clamping.
+ */
+export const encodeGroundGlassFootprintAxesMm = (input: {
+  majorRadiusMm: number;
+  minorRadiusMm: number;
+  storageFormat: GroundGlassCocStorageFormat;
+  maximumRadiusMm: number;
+}): GroundGlassEncodedFootprintAxes => {
+  const axes = sanitizeGroundGlassFootprintAxes(input);
+  if (input.storageFormat === "half-float-mm") {
+    return {
+      encodedMajorRadius: axes.majorRadiusMm,
+      encodedMinorRadius: axes.minorRadiusMm,
+      storageScale: 1,
+    };
+  }
+
+  if (!Number.isFinite(input.maximumRadiusMm) || input.maximumRadiusMm <= 0) {
+    return { encodedMajorRadius: 0, encodedMinorRadius: 0, storageScale: 0 };
+  }
+
+  const largestRadiusMm = Math.max(axes.majorRadiusMm, axes.minorRadiusMm);
+  const storageScale = largestRadiusMm > input.maximumRadiusMm
+    ? input.maximumRadiusMm / largestRadiusMm
+    : 1;
+  const scaledMajorRadiusMm = axes.majorRadiusMm * storageScale;
+  const scaledMinorRadiusMm = axes.minorRadiusMm * storageScale;
+  const quantizedNormalizedRadius = (radiusMm: number): number =>
+    quantizeGroundGlassFootprintByte(
+      encodeGroundGlassFootprintRadiusMm(radiusMm, "encoded-byte", input.maximumRadiusMm),
+    ) / GROUND_GLASS_SIGNED_COC_MAX_BYTE;
+
+  return {
+    encodedMajorRadius: quantizedNormalizedRadius(scaledMajorRadiusMm),
+    encodedMinorRadius: quantizedNormalizedRadius(scaledMinorRadiusMm),
+    storageScale,
+  };
+};
+
+/** Decodes the pair-level footprint storage contract used by the gather. */
+export const decodeGroundGlassFootprintAxesMm = (input: {
+  encodedMajorRadius: number;
+  encodedMinorRadius: number;
+  storageFormat: GroundGlassCocStorageFormat;
+  maximumRadiusMm: number;
+}): GroundGlassFootprintAxesMm => {
+  const axes = sanitizeGroundGlassFootprintAxes({
+    majorRadiusMm: decodeGroundGlassFootprintRadiusMm(
+      input.encodedMajorRadius,
+      input.storageFormat,
+      input.maximumRadiusMm,
+    ),
+    minorRadiusMm: decodeGroundGlassFootprintRadiusMm(
+      input.encodedMinorRadius,
+      input.storageFormat,
+      input.maximumRadiusMm,
+    ),
+  });
+  return axes;
+};
+
 /**
  * Ellipse orientation is a line direction, so it is periodic over pi rather
  * than 2*pi. It is normalized for both storage modes; zero footprint makes

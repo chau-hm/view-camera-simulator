@@ -31,10 +31,14 @@ void main(){
     gl_FragColor = vec4(encodeSignedPhysicalCoCDiameterMm(0.0), 0.0, 0.0, 0.0);
     return;
   }
+  vec2 encodedFootprintAxes = encodeGroundGlassFootprintAxesMm(
+    footprint.majorRadiusMm,
+    footprint.minorRadiusMm
+  );
   gl_FragColor = vec4(
     encodeSignedPhysicalCoCDiameterMm(footprint.signedCocMm),
-    encodeGroundGlassFootprintRadiusMm(footprint.majorRadiusMm),
-    encodeGroundGlassFootprintRadiusMm(footprint.minorRadiusMm),
+    encodedFootprintAxes.x,
+    encodedFootprintAxes.y,
     encodeGroundGlassFootprintOrientation(footprint.orientationRad)
   );
 }
@@ -66,8 +70,9 @@ void main(){
   float centerDepth = texture2D(tDepth, uv).x;
   vec4 centerFootprint = texture2D(tCoC, uv);
   float centerSignedCocMm = decodeStoredSignedCoCDiameterMm(centerFootprint.r);
-  float centerMajorRadiusMm = decodeStoredGroundGlassFootprintRadiusMm(centerFootprint.g);
-  float centerMinorRadiusMm = decodeStoredGroundGlassFootprintRadiusMm(centerFootprint.b);
+  vec2 centerFootprintAxesMm = decodeStoredGroundGlassFootprintAxesMm(centerFootprint.gb);
+  float centerMajorRadiusMm = centerFootprintAxesMm.x;
+  float centerMinorRadiusMm = centerFootprintAxesMm.y;
   float centerOrientation = centerFootprint.a;
   vec2 centerMajorAxisPx = footprintMajorAxisPx(centerMajorRadiusMm, centerOrientation);
   vec2 centerMinorAxisPx = footprintMinorAxisPx(centerMinorRadiusMm, centerOrientation);
@@ -152,8 +157,9 @@ void main(){
     vec2 sampleMinorAxisPx = vec2(0.0);
     float sampleClampScale = 0.0;
     if(nearLayer){
-      float sampleMajorRadiusMm = decodeStoredGroundGlassFootprintRadiusMm(sampleFootprint.g);
-      float sampleMinorRadiusMm = decodeStoredGroundGlassFootprintRadiusMm(sampleFootprint.b);
+      vec2 sampleFootprintAxesMm = decodeStoredGroundGlassFootprintAxesMm(sampleFootprint.gb);
+      float sampleMajorRadiusMm = sampleFootprintAxesMm.x;
+      float sampleMinorRadiusMm = sampleFootprintAxesMm.y;
       float sampleOrientation = sampleFootprint.a;
       sampleMajorAxisPx = footprintMajorAxisPx(sampleMajorRadiusMm, sampleOrientation);
       sampleMinorAxisPx = footprintMinorAxisPx(sampleMinorRadiusMm, sampleOrientation);

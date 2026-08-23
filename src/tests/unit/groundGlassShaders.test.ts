@@ -92,7 +92,16 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassSharedGlsl).toContain("footprintMajorAxisPx");
     expect(groundGlassSharedGlsl).toContain("ellipseFootprintWeight");
     expect(groundGlassSharedGlsl).toContain("encodeGroundGlassFootprintRadiusMm");
+    expect(groundGlassSharedGlsl).toContain("encodeGroundGlassFootprintAxesMm");
+    expect(groundGlassSharedGlsl).toContain("footprintStorageScaleForAxes");
+    expect(groundGlassSharedGlsl).toContain("decodeStoredGroundGlassFootprintAxesMm");
     expect(groundGlassSharedGlsl).toContain("decodeStoredGroundGlassFootprintOrientation");
+    expect(groundGlassSharedGlsl).toContain(
+      "-sin(angle) * majorRadiusMm * renderHeight / filmHeightMm",
+    );
+    expect(groundGlassSharedGlsl).toContain(
+      "-cos(angle) * minorRadiusMm * renderHeight / filmHeightMm",
+    );
     expect(groundGlassSharedGlsl).not.toContain(
       "float focusDist = tFocus > 0.0 ? tFocus : targetDist",
     );
@@ -116,6 +125,7 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassPhysicalCocFragmentShader).toContain("footprint.orientationRad");
     expect(groundGlassPhysicalCocFragmentShader).toContain("calculateSignedCoCDiameterMmAtFragment");
     expect(groundGlassPhysicalCocFragmentShader).toContain("footprint.signedCocMm");
+    expect(groundGlassPhysicalCocFragmentShader).toContain("encodeGroundGlassFootprintAxesMm");
     expect(groundGlassPhysicalCocFragmentShader).toContain(
       "encodeSignedPhysicalCoCDiameterMm(footprint.signedCocMm)",
     );
@@ -133,6 +143,9 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassApertureGatherFragmentShader).toContain("calculateNearSampleWeight");
     expect(groundGlassApertureGatherFragmentShader).toContain("sampleMajorRadiusMm");
     expect(groundGlassApertureGatherFragmentShader).toContain("sampleMinorRadiusMm");
+    expect(groundGlassApertureGatherFragmentShader).toContain(
+      "decodeStoredGroundGlassFootprintAxesMm",
+    );
     expect(groundGlassApertureGatherFragmentShader).toContain("orientedFootprintOffsetPx");
     expect(groundGlassApertureGatherFragmentShader).toContain("footprintAreaPx");
     expect(groundGlassApertureGatherFragmentShader).toContain("ellipseFootprintWeight");
