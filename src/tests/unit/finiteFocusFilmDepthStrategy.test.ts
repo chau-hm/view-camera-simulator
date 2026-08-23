@@ -103,7 +103,7 @@ describe("finite-focus film-depth strategy", () => {
       "rear-standard-z",
     );
     expect(architectureForegroundScene.finiteFocusStrategy?.filmDepthReference).toBe(
-      "rear-standard-z",
+      "optical-axis-conjugate",
     );
   });
 });

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { distance } from "../../core/math/vec";
+import { distance, dot, subtract } from "../../core/math/vec";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   computePhysicalBlurFootprint,
@@ -11,22 +11,31 @@ import { configureGroundGlassCamera } from "../../render/configureGroundGlassCam
 import { createGroundGlassDofUniformState } from "../../render/createGroundGlassDofUniformState";
 import { getGroundGlassClipRangeWorld } from "../../render/groundGlassRttScenes";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
+import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
 import type { CameraState } from "../../types/camera";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
-const focusCamera = (focusDistanceMm: number): CameraState => ({
+const focusCamera = (
+  focusDistanceMm: number,
+  frontTiltDeg = 0,
+  aperture: CameraState["aperture"] = 5.6,
+  frontRiseMm = 0,
+): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
   ...architectureForegroundScene.cameraPreset,
   activeSceneId: architectureForegroundScene.id,
   activeTaskId: null,
   mode: "free",
   focusDistanceMm,
-  aperture: 5.6,
+  frontRiseMm,
+  frontTiltDeg,
+  aperture,
 });
 
 const footprintAt = (
   optics: ReturnType<typeof deriveOpticsState>,
   objectPoint: { x: number; y: number; z: number },
+  apertureFNumber = 5.6,
 ) => {
   const lensBasis = deriveOrthonormalPlaneBasis(
     optics.lensPlane.normal,
@@ -50,17 +59,51 @@ const footprintAt = (
     filmPlaneBasisX: filmBasis.x,
     filmPlaneBasisY: filmBasis.y,
     focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
-    apertureFNumber: 5.6,
+    apertureFNumber,
   });
 };
 
+const representativeTargetIds = ["foreground-near", "building-middle"] as const;
+
+const physicalMetricAt = (optics: ReturnType<typeof deriveOpticsState>) => {
+  const footprints = representativeTargetIds.flatMap((id) => {
+    const target = architectureForegroundScene.focusTargets.find((candidate) => candidate.id === id);
+    if (!target) throw new Error(`Missing Architecture + Foreground target ${id}`);
+    return (target.sampleWorldPositions ?? [target.worldPosition]).map((point) =>
+      footprintAt(optics, point, 11),
+    );
+  });
+  return {
+    maxAbsSignedCoC: Math.max(...footprints.map((footprint) => Math.abs(footprint.signedCoCDiameterMm))),
+    maxMajorRadius: Math.max(...footprints.map((footprint) => footprint.majorRadiusMm)),
+    maxMinorRadius: Math.max(...footprints.map((footprint) => footprint.minorRadiusMm)),
+    maxBlurDiameterMm: Math.max(
+      ...footprints.flatMap((footprint) => [
+        Math.abs(footprint.signedCoCDiameterMm),
+        2 * footprint.majorRadiusMm,
+        2 * footprint.minorRadiusMm,
+      ]),
+    ),
+  };
+};
+
+const rayPlaneDistance = (
+  rayOrigin: { x: number; y: number; z: number },
+  rayDirection: { x: number; y: number; z: number },
+  plane: { point: { x: number; y: number; z: number }; normal: { x: number; y: number; z: number } },
+) => {
+  const denominator = dot(rayDirection, plane.normal);
+  const parameter = dot(subtract(plane.point, rayOrigin), plane.normal) / denominator;
+  return Math.abs(parameter);
+};
+
 describe("Architecture + Foreground focus-to-film propagation", () => {
-  it("moves the rear-standard film plane with focus and changes physical footprints", () => {
+  it("moves the finite-focus film plane with focus and changes physical footprints", () => {
     expect(architectureForegroundScene.finiteFocusStrategy).toEqual({
       kind: "rear-standard-thin-lens",
       lensDatum: "baseline-origin",
       focusDistanceReference: "lens-to-focus-plane",
-      filmDepthReference: "rear-standard-z",
+      filmDepthReference: "optical-axis-conjugate",
     });
     const focusNear = deriveOpticsState(focusCamera(3920), architectureForegroundScene);
     const focusFar = deriveOpticsState(focusCamera(9450), architectureForegroundScene);
@@ -147,5 +190,47 @@ describe("Architecture + Foreground focus-to-film propagation", () => {
         ...state.filmPlaneBasisY,
       ].every(Number.isFinite),
     )).toBe(true);
+  });
+
+  it("keeps the canonical Tilt + Focus state physically conjugate", () => {
+    const tiltDeg = architectureForegroundGeometry.neutralCalibration.publicTiltFocusSolutionDeg;
+    const focusDistanceMm = architectureForegroundGeometry.neutralCalibration.publicTiltFocusFocusDistanceMm;
+    const riseMm = architectureForegroundGeometry.neutralCalibration.futureRiseMm;
+    const canonical = deriveOpticsState(
+      focusCamera(focusDistanceMm, tiltDeg, 11, riseMm),
+      architectureForegroundScene,
+    );
+    const focusOnly = deriveOpticsState(
+      focusCamera(focusDistanceMm, 0, 11, riseMm),
+      architectureForegroundScene,
+    );
+    const tiltOnly = deriveOpticsState(
+      focusCamera(
+        architectureForegroundGeometry.canonicalFocusDistanceMm,
+        tiltDeg,
+        11,
+        riseMm,
+      ),
+      architectureForegroundScene,
+    );
+    const expectedImageDistance = imageDistanceMm(
+      CAMERA_CONSTANTS.focalLengthMm,
+      focusDistanceMm,
+    );
+    const conjugateDistance = rayPlaneDistance(
+      canonical.lensCenterWorld,
+      canonical.opticalAxis.direction,
+      canonical.filmPlane,
+    );
+    const canonicalMetric = physicalMetricAt(canonical);
+    const focusOnlyMetric = physicalMetricAt(focusOnly);
+    const tiltOnlyMetric = physicalMetricAt(tiltOnly);
+
+    expect(conjugateDistance).toBeCloseTo(expectedImageDistance, 10);
+    expect(canonicalMetric.maxBlurDiameterMm).toBeLessThan(focusOnlyMetric.maxBlurDiameterMm * 0.25);
+    expect(canonicalMetric.maxBlurDiameterMm).toBeLessThan(tiltOnlyMetric.maxBlurDiameterMm * 0.25);
+    expect(canonicalMetric.maxAbsSignedCoC).toBeGreaterThan(0);
+    expect(canonicalMetric.maxMajorRadius).toBeGreaterThan(0);
+    expect(canonicalMetric.maxMinorRadius).toBeGreaterThan(0);
   });
 });

@@ -47,9 +47,10 @@ export const architectureForegroundScene: SceneDefinition = {
     kind: "rear-standard-thin-lens",
     lensDatum: "baseline-origin",
     focusDistanceReference: "lens-to-focus-plane",
-    // This scene compares neutral foreground depth; front tilt does not
-    // silently introduce rear-standard axial translation.
-    filmDepthReference: "rear-standard-z",
+    // This guided Tilt + Focus lesson measures focus distance along the
+    // current tilted optical axis, so the rear film depth remains conjugate
+    // to that axis rather than retaining a fixed rear-standard Z datum.
+    filmDepthReference: "optical-axis-conjugate",
   },
   compositionTargets: [
     {

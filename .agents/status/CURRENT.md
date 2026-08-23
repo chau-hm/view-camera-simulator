@@ -12,23 +12,29 @@
 - `rear-standard-z` is the default and preserves `film Z = -v`.
 - `optical-axis-conjugate` explicitly selects `film Z = -v * lensNormal.z`;
   `imageDistanceMm` remains the physical thin-lens conjugate `v` in both modes.
-- Shelf Swing, Table Tilt, and Oblique Architecture use
+- Shelf Swing, Table Tilt, Oblique Architecture, and Architecture + Foreground use
   `optical-axis-conjugate` because their calibrated Scheimpflug focus solution
   refocuses a fixed rear film plane against the swung/tilted optical axis.
-- Understanding Camera Movements and Architecture + Foreground use
-  `rear-standard-z` so isolated front movements do not hide a rear-standard
-  axial translation. Architecture + Foreground remains numerically equivalent
-  at its neutral focus state.
+- Understanding Camera Movements uses `rear-standard-z` so isolated front
+  movements do not hide a rear-standard axial translation.
+- Architecture + Foreground's guided Tilt + Focus lesson measures focus along
+  the current tilted optical axis, so its resolved rear film depth must remain
+  optically conjugate. At neutral tilt it remains numerically equivalent to
+  `rear-standard-z`.
 
 ## Validation status
 
-- Focused strategy/scene/renderer unit suites pass: 18 files, 181 tests.
-- Full unit/integration suite passes: 136 files, 1287 tests; typecheck, lint,
+- Focused strategy/scene/renderer unit suites pass, including the Architecture
+  + Foreground non-zero Tilt + Focus physical footprint and optical-axis
+  conjugacy regression (16 files, 167 tests).
+- Full unit/integration suite passes: 136 files, 1288 tests; typecheck, lint,
   CSS check, build, and diff check pass.
-- Chromium passes Shelf Swing (2), Table Tilt (4), Oblique Architecture (3),
-  and Architecture + Foreground (2). Understanding Camera Movements passes
-  its neutral/tilt/reset tests (3); its existing SPA legacy diagnostic test
-  still fails because Architecture Rise omits `data-rtt-focal-length-mm`.
+- Serial Chromium validation passes all six Architecture + Foreground cases and
+  seven preserved-scene smoke cases (Shelf Swing, Table Tilt, Oblique
+  Architecture, and Understanding Camera Movements). A broader 47-test matrix
+  was resource-contended under parallel WebGL workers; its deterministic
+  legacy failure remains the Architecture Rise omission of
+  `data-rtt-focal-length-mm` in the Understanding SPA test.
 - `npm run ci:local:e2e` reaches the known unrelated Focus Fundamentals
   owner/resource-generation diagnostic failure in
   `focus-fundamentals-selectable-focus.spec.ts:155`; affected PR tests pass
