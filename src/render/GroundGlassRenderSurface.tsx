@@ -102,6 +102,13 @@ export const GroundGlassRenderSurface = ({
         data-rtt-was-clamped={rttRuntimeInfo?.wasClamped === undefined ? undefined : String(rttRuntimeInfo.wasClamped)}
         data-rtt-sanity-state={rttRuntimeInfo?.renderSanityStateKey}
         data-rtt-sanity-error={rttRuntimeInfo?.renderSanityError ?? undefined}
+        data-rtt-profiling-enabled={rttRuntimeInfo?.profilingEnabled === undefined ? undefined : String(rttRuntimeInfo.profilingEnabled)}
+        data-rtt-profiling-backend={rttRuntimeInfo?.profilingBackend}
+        data-rtt-profiling-raw-debug={rttRuntimeInfo?.profilingSnapshot?.rawDebug === undefined ? undefined : String(rttRuntimeInfo.profilingSnapshot.rawDebug)}
+        data-rtt-profiling-frame-count={rttRuntimeInfo?.profilingSnapshot?.frame.count}
+        data-rtt-profiling-approx-fps={rttRuntimeInfo?.profilingSnapshot?.approxFps}
+        data-rtt-profiling-ground-glass-count={rttRuntimeInfo?.profilingSnapshot?.groundGlassGpu?.count ?? rttRuntimeInfo?.profilingSnapshot?.groundGlassCpuSubmit?.count}
+        data-rtt-profiling-physical-dof-count={rttRuntimeInfo?.profilingSnapshot?.physicalDofGpu?.count ?? rttRuntimeInfo?.profilingSnapshot?.physicalDofCpuSubmit?.count}
         style={{ position: "absolute", inset: 0 }}
       >
         <GroundGlassRTT

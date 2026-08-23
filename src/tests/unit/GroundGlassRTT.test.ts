@@ -29,7 +29,7 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { GroundGlassRttRuntimeInfo } from "../../render/groundGlassRttDimensions";
 
 const fiberTestState = vi.hoisted(() => ({
-  frameCallback: null as (() => void) | null,
+  frameCallback: null as ((state?: unknown, delta?: number) => void) | null,
   renderedScenes: [] as unknown[],
   currentTarget: null as unknown,
   gl: {
@@ -58,7 +58,7 @@ const fiberTestState = vi.hoisted(() => ({
 
 vi.mock("@react-three/fiber", () => ({
   Canvas: (props: { children?: unknown }) => props.children,
-  useFrame: (callback: () => void) => {
+  useFrame: (callback: (state?: unknown, delta?: number) => void) => {
     fiberTestState.frameCallback = callback;
   },
   useThree: () => ({ gl: fiberTestState.gl }),
@@ -83,6 +83,7 @@ vi.mock("../../render/sceneSubjectRegistry", async (importOriginal) => {
 });
 
 afterEach(() => {
+  window.history.replaceState({}, "", "/");
   cleanup();
   vi.restoreAllMocks();
   fiberTestState.frameCallback = null;
@@ -184,6 +185,81 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
         ),
       ),
     ).toHaveLength(2);
+
+    view.unmount();
+  });
+
+  it("publishes timings for the active processed Ground Glass passes", () => {
+    window.history.replaceState({}, "", "/?dofProfiling=1");
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const view = render(
+      React.createElement(GroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        sceneId: architectureForegroundScene.id,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        previewMode: "upright",
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+
+    const snapshot = useAppStore.getState().groundGlassRttRuntimeInfo?.profilingSnapshot;
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.profilingEnabled).toBe(true);
+    expect(snapshot?.profilingBackend).toBe("cpu-fallback");
+    expect(snapshot?.timingUnit).toBe("cpu-submit-ms");
+    expect(snapshot?.frame.count).toBe(1);
+    expect(snapshot?.groundGlassCpuSubmit?.count).toBe(1);
+    expect(snapshot?.physicalDofCpuSubmit?.count).toBe(1);
+    expect(snapshot?.passes.sceneRenderMs?.count).toBe(1);
+    expect(snapshot?.passes.cocFootprintMs?.count).toBe(1);
+    expect(snapshot?.passes.farGatherMs?.count).toBe(1);
+    expect(snapshot?.passes.nearGatherMs?.count).toBe(1);
+    expect(snapshot?.passes.compositeMs?.count).toBe(1);
+    expect(snapshot?.gatherResolution).toEqual([
+      useAppStore.getState().groundGlassRttRuntimeInfo?.gatherTargetWidthPx,
+      useAppStore.getState().groundGlassRttRuntimeInfo?.gatherTargetHeightPx,
+    ]);
+
+    view.unmount();
+  });
+
+  it("does not profile skipped CoC and gather passes in Raw RTT mode", () => {
+    window.history.replaceState({}, "", "/?dofProfiling=1");
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const view = render(
+      React.createElement(GroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        sceneId: architectureForegroundScene.id,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "low",
+        previewMode: "raw",
+        rawDebug: true,
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+
+    const snapshot = useAppStore.getState().groundGlassRttRuntimeInfo?.profilingSnapshot;
+    expect(snapshot?.rawDebug).toBe(true);
+    expect(snapshot?.passes.sceneRenderMs?.count).toBe(1);
+    expect(snapshot?.passes.compositeMs?.count).toBe(1);
+    expect(snapshot?.passes.cocFootprintMs).toBeNull();
+    expect(snapshot?.passes.farGatherMs).toBeNull();
+    expect(snapshot?.passes.nearGatherMs).toBeNull();
+    expect(snapshot?.physicalDofCpuSubmit).toBeNull();
 
     view.unmount();
   });
