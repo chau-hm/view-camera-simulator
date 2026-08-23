@@ -272,6 +272,7 @@ const baseFallbackState = (
     focalLengthMm: safeFocalLength,
     focusDistanceMm: safeFocusDistance,
     strategy: scene.finiteFocusStrategy,
+    lensNormalLocal,
   });
   const { frame: rearStandardFrameLocal, corners: filmPlaneCornersLocal } =
     calculateRearStandardFrame(baselineFilmCenter, safeRearRise, safeRearTilt);
@@ -602,6 +603,7 @@ export const deriveOpticsState = (
     focalLengthMm: cameraState.focalLengthMm,
     focusDistanceMm: cameraState.focusDistanceMm,
     strategy: scene.finiteFocusStrategy,
+    lensNormalLocal,
   });
   if (baselineFilm.fallbackApplied && scene.finiteFocusStrategy) {
     return baseFallbackState(

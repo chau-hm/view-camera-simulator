@@ -79,7 +79,7 @@ describe("Shelf Swing guided task", () => {
       min: calibration.allowedSwingMinDeg,
       max: calibration.allowedSwingMaxDeg,
     });
-    expect(copy.criteria["swing-movement-range"]?.values).toEqual({ min: -4.2, max: -3.4 });
+    expect(copy.criteria["swing-movement-range"]?.values).toEqual({ min: -4.4, max: -3.6 });
     expect(task.criteria.some((criterion) => criterion.id === "swing-movement-used")).toBe(false);
     expect(
       task.criteria
@@ -95,8 +95,8 @@ describe("Shelf Swing guided task", () => {
   it.each([
     [-4.2, true],
     [-3.8, true],
-    [-3.4, true],
-    [-4.3, false],
+    [-3.4, false],
+    [-4.3, true],
     [-3.3, false],
     [3.8, false],
     [0, false],
@@ -137,11 +137,11 @@ describe("Shelf Swing guided task", () => {
   });
 
   it("keeps the raw physical solution separate from the public control solution", () => {
-    expect(calibration.frontSwingDeg).toBeCloseTo(-3.802040434, 8);
-    expect(calibration.focusDistanceMm).toBeCloseTo(3411.619, 3);
+    expect(calibration.frontSwingDeg).toBeCloseTo(-3.961086726, 8);
+    expect(calibration.focusDistanceMm).toBeCloseTo(3397.409, 3);
     expect(calibration.controlSolution).toEqual({
-      frontSwingDeg: -3.8,
-      focusDistanceMm: 3410,
+      frontSwingDeg: -4,
+      focusDistanceMm: 3400,
       aperture: 11,
     });
     expect(

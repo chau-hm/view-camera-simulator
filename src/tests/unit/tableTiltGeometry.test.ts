@@ -62,9 +62,8 @@ describe("canonical Table Tilt geometry", () => {
   it("derives the tabletop height from the calibrated lens hinge geometry", () => {
     const calibration = geometry.tableTiltCalibration;
     const tiltRadians = (calibration.frontTiltDeg * Math.PI) / 180;
-    const expectedProbePlaneY = -calibration.focalLengthMm / Math.tan(tiltRadians);
-    const expectedFocusDistance =
-      (calibration.focalLengthMm * Math.cos(tiltRadians)) / Math.sin(tiltRadians) ** 2;
+    const expectedProbePlaneY = -calibration.focalLengthMm / Math.sin(tiltRadians);
+    const expectedFocusDistance = calibration.focalLengthMm / Math.sin(tiltRadians) ** 2;
 
     expect(calibration.focusPlaneY).toBeCloseTo(expectedProbePlaneY, 8);
     expect(calibration.focusDistanceMm).toBeCloseTo(expectedFocusDistance, 8);

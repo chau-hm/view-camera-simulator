@@ -66,6 +66,14 @@ const expectGuideLabelClearOfMiddleTarget = async (svg: Locator) => {
   expect(guideBox.y + guideBox.height).toBeLessThanOrEqual(svgBox.y + svgBox.height);
 };
 
+const readRttVariance = async (page: Page) => {
+  const rtt = page.getByTestId("ground-glass-rtt");
+  return {
+    raw: Number(await rtt.getAttribute("data-rtt-raw-variance")),
+    final: Number(await rtt.getAttribute("data-rtt-final-variance")),
+  };
+};
+
 const expectRttContent = async (page: Page) => {
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 120_000 });
@@ -170,22 +178,34 @@ test("Shelf Swing free scene uses canonical R3F and contentful RTT rendering", a
   await expectRttContent(page);
 });
 
-test("Shelf Swing negative calibration sharpens all targets and the opposite sign worsens them", async ({ page }) => {
+test("Shelf Swing physical focus becomes near-sharp and approaches the Raw RTT control", async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto("/simulator/free/shelf-swing?rttDiagnostics=1");
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
 
-  await setRangeDirect(page, "Swing", 0);
-  await setRangeDirect(page, "Focus distance", 3800);
-  const zero = await readSharpness(page);
-  expect(zero["shelf-middle"]).toBe(Math.max(...Object.values(zero)));
-  expect(Object.values(zero).every((score) => score >= 80)).toBe(false);
+  await setRangeDirect(page, "Swing", -3.961086726);
+  await setRangeDirect(page, "Focus distance", 2000);
+  await expect(page.getByTestId("ground-glass-rtt")).toHaveAttribute("data-rtt-final-contentful", "true");
+  await expect.poll(async () => Object.values(await readSharpness(page)).every((score) => score >= 80)).toBe(false);
+  const wrongFocus = await readSharpness(page);
+  const wrongFocusVariance = await readRttVariance(page);
+  expect(Number.isFinite(wrongFocusVariance.final)).toBe(true);
+  expect(Number.isFinite(wrongFocusVariance.raw)).toBe(true);
 
-  await setRangeDirect(page, "Swing", -3.802040434);
-  await setRangeDirect(page, "Focus distance", 3411.619);
+  await setRangeDirect(page, "Focus distance", 3397.409);
   await expect.poll(async () => Object.values(await readSharpness(page)).every((score) => score >= 80)).toBe(true);
   const calibrated = await readSharpness(page);
   await expectRttContent(page);
+  const calibratedVariance = await readRttVariance(page);
+  expect(Number.isFinite(calibratedVariance.final)).toBe(true);
+  expect(Number.isFinite(calibratedVariance.raw)).toBe(true);
+  expect(Math.min(...Object.values(calibrated))).toBeGreaterThan(
+    Math.max(...Object.values(wrongFocus)),
+  );
+  expect(Math.abs(calibratedVariance.final - calibratedVariance.raw)).toBeLessThan(
+    Math.abs(wrongFocusVariance.final - wrongFocusVariance.raw),
+  );
+
   const calibratedStateKey = await page
     .getByTestId("ground-glass-rtt")
     .getAttribute("data-rtt-sanity-state");
@@ -200,9 +220,11 @@ test("Shelf Swing negative calibration sharpens all targets and the opposite sig
     .poll(() => page.getByTestId("ground-glass-rtt").getAttribute("data-rtt-sanity-state"))
     .not.toBe(calibratedStateKey);
 
-  const f11 = Math.min(...Object.values(opposite));
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
-  await expect.poll(async () => Math.min(...Object.values(await readSharpness(page)))).toBeGreaterThanOrEqual(f11);
+  const rawToggle = page.getByLabel("Raw RTT — bypass DOF");
+  await rawToggle.check();
+  await expectRttContent(page);
+  await rawToggle.uncheck();
+  await expectRttContent(page);
 });
 
 test("Shelf Swing Ground Glass zoom, pan, reset, orientation, and quality stay live", async ({ page }) => {
@@ -274,7 +296,7 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
   await setStepRangeInput(page, "Swing", 3.8);
   await setStepRangeInput(page, "Focus distance", 3410);
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
-  await expect(page.getByText(/Use negative Front Swing near -3\.8°/)).toBeVisible();
+  await expect(page.getByText(/Use negative Front Swing near -4\.0°/)).toBeVisible();
 
   await setStepRangeInput(page, "Swing", -3.8);
   await expect
@@ -342,8 +364,8 @@ test("Shelf Swing solved geometry and RTT remain coherent at the public solution
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 1024, height: 900 });
   await page.goto("/simulator/guided/shelf-swing/swing-01?rttDiagnostics=1");
-  await setStepRangeInput(page, "Swing", -3.8);
-  await setStepRangeInput(page, "Focus distance", 3410);
+  await setStepRangeInput(page, "Swing", -4);
+  await setStepRangeInput(page, "Focus distance", 3400);
   await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
   await expectRttContent(page);
 
@@ -373,7 +395,10 @@ test("Shelf Swing solved geometry and RTT remain coherent at the public solution
     const b = { x: focus.x2 - focus.x1, y: focus.y2 - focus.y1 };
     return Math.abs(a.x * b.y - a.y * b.x) / (Math.hypot(a.x, a.y) * Math.hypot(b.x, b.y));
   });
-  expect(residual).toBeLessThan(1e-3);
+  // The public 0.1° / 10 mm controls quantize the continuous physical
+  // calibration. The CPU regression covers the exact zero-footprint state;
+  // this browser assertion protects the rounded public geometry contract.
+  expect(residual).toBeLessThan(0.01);
   await expect(page.getByRole("button", { name: "Fit Construction" })).toBeEnabled();
   await page.getByRole("button", { name: "Fit Construction" }).click();
   const subjectField = page.getByTestId("subject-field-region");

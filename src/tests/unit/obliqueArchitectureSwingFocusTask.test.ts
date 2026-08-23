@@ -67,9 +67,8 @@ describe("Oblique Architecture Swing + façade focus task", () => {
       reachableFrontSwingDeg - CAMERA_CONTROL_STEPS.swingDeg,
       reachableFacadeFocusDistanceMm,
     );
-
-    expect(reachableFrontSwingDeg).toBe(9.7);
-    expect(reachableFacadeFocusDistanceMm).toBe(5260);
+    expect(reachableFrontSwingDeg).toBe(9.8);
+    expect(reachableFacadeFocusDistanceMm).toBe(5190);
     expect(solved.evaluation.status).toBe("passed");
     expect(solved.evaluation.criteria.every((criterion) => criterion.passed)).toBe(true);
     expect(nearby.evaluation.status).toBe("passed");

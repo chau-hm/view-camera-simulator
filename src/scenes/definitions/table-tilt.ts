@@ -37,6 +37,11 @@ export const tableTiltScene: SceneDefinition = {
     rearRiseMm: 0,
     rearTiltDeg: 0,
  },
+  finiteFocusStrategy: {
+    kind: "rear-standard-thin-lens",
+    lensDatum: "baseline-origin",
+    focusDistanceReference: "lens-to-focus-plane",
+  },
   cameraPlacement: {
     position: geometry.observerCamera.position,
     target: geometry.observerCamera.target,

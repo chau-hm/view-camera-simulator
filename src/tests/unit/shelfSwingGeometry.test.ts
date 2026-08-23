@@ -176,17 +176,17 @@ describe("canonical Shelf Swing geometry", () => {
     expect(Math.abs(calibration.frontSwingDeg)).toBeLessThanOrEqual(5);
     expect(calibration.focusDistanceMm).toBeGreaterThanOrEqual(3000);
     expect(calibration.focusDistanceMm).toBeLessThanOrEqual(3500);
-    expect(calibration.frontSwingDeg).toBeCloseTo(-3.802040434, 9);
-    expect(calibration.focusDistanceMm).toBeCloseTo(3411.62, 1);
+    expect(calibration.frontSwingDeg).toBeCloseTo(-3.961086726, 9);
+    expect(calibration.focusDistanceMm).toBeCloseTo(3397.409, 3);
     expect(calibration.swingControlStepDeg).toBe(0.1);
     expect(calibration.allowedSwingMinDeg).toBeLessThan(calibration.allowedSwingMaxDeg);
-    expect(calibration.allowedSwingMinDeg).toBe(-4.2);
-    expect(calibration.allowedSwingMaxDeg).toBe(-3.4);
+    expect(calibration.allowedSwingMinDeg).toBe(-4.4);
+    expect(calibration.allowedSwingMaxDeg).toBe(-3.6);
   });
 
   it("places the hinge on the film plane and the top-view subject trace", () => {
     const { hingeLine, subjectPlane } = geometry.calibrationSolution;
-    expect(hingeLine.point.z).toBe(-geometry.shelfSwingCalibration.focalLengthMm);
+    expect(hingeLine.point.z).toBeCloseTo(-geometry.calibrationSolution.filmDistanceMm, 10);
     expect(hingeLine.direction).toEqual({ x: 0, y: 1, z: 0 });
     expect(
       hingeLine.point.x -
