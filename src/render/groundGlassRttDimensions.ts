@@ -2,6 +2,10 @@ import { getRenderQualitySettings } from "./renderQuality";
 import type { RenderQualityProfile } from "../types/ui";
 import { GROUND_GLASS_ZOOM_SCALE } from "./groundGlassStageTransform";
 import type { GroundGlassCocStorageFormat } from "./groundGlassCocTarget";
+import type {
+  GroundGlassProfilingBackend,
+  GroundGlassProfilingSnapshot,
+} from "./groundGlassProfiling";
 
 export type GroundGlassRttChannel =
   | "default"
@@ -96,6 +100,9 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   renderSanitySampleCount?: number;
   renderSanityStateKey?: string;
   renderSanityError?: string | null;
+  profilingEnabled?: boolean;
+  profilingBackend?: GroundGlassProfilingBackend;
+  profilingSnapshot?: GroundGlassProfilingSnapshot;
   /** Values actually consumed by the current owned RTT subject/shader graph. */
   focalLengthMm?: number;
   latticeEdgeCount?: number;

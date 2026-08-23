@@ -199,6 +199,24 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
         </div>
       </details>
 
+      {rttRuntimeInfo?.profilingEnabled ? (
+        <details className="optical-debug__group" data-testid="ground-glass-profiling">
+          <summary>Ground Glass DOF profiling</summary>
+          <div className="optical-debug__group-content">
+            <div><strong>Backend:</strong> {rttRuntimeInfo.profilingBackend ?? "—"}</div>
+            <div><strong>Timing unit:</strong> {rttRuntimeInfo.profilingSnapshot?.timingUnit ?? "—"}</div>
+            <div><strong>Completed frames:</strong> {rttRuntimeInfo.profilingSnapshot?.frame.count ?? 0}</div>
+            <div><strong>Approx. FPS:</strong> {rttRuntimeInfo.profilingSnapshot?.approxFps?.toFixed(1) ?? "—"} (frame timing, display-capped if applicable)</div>
+            <pre
+              data-testid="ground-glass-profiling-snapshot"
+              style={{ maxHeight: "16rem", overflow: "auto", whiteSpace: "pre-wrap" }}
+            >
+              {JSON.stringify(rttRuntimeInfo.profilingSnapshot ?? null, null, 2)}
+            </pre>
+          </div>
+        </details>
+      ) : null}
+
       {refDiagnostics ? (
         <details className="optical-debug__group">
           <summary>Reference object diagnostics</summary>

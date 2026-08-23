@@ -1,48 +1,56 @@
-# PR 8D — Arbitrary-plane physical blur footprint
+# PR 8E — Ground Glass Physical DOF profiling
 
-- Branch: `feature/arbitrary-plane-blur-footprint`.
-- Base: `origin/main` at `2b2795c`, containing merged PR #84 / PR 8C.
-- Objective: extend the full-resolution signed CoC stage with a local-affine
-  oriented ellipse derived from canonical lens/film geometry, then use that
-  field in the existing far/near aperture gathers.
+- Branch: `perf/ground-glass-dof-profiling`.
+- Base: `origin/main` at `ef91bd8`, containing merged PR #85 / PR 8D.
+- Objective: measure the existing Ground Glass physical-DOF pipeline without
+  changing optical calculations, gather quality, or rendered output.
 
-## Implementation decisions
+## Instrumentation contract
 
-- `computePhysicalBlurFootprint` is a pure millimetre-based CPU reference. It
-  derives the ideal thin-lens image point, intersects the centre ray with the
-  actual film plane, and uses the closed-form first derivative of the
-  symmetric +/- aperture-edge projection for the local affine map. Singular
-  values are the ellipse semi-axes; the sign remains negative near / positive
-  far. The derivative is algebraically the first-order form of the required
-  symmetric edge construction and avoids four redundant full-resolution GPU
-  intersections.
-- Canonical `DerivedOpticsState` lens/film planes and rear-standard frame are
-  converted to typed renderer uniforms. The CoC RGBA field stores signed CoC,
-  major radius, minor radius, and orientation modulo pi. Half-float stores
-  physical radii; the existing neutral-safe RGBA8 path stores bounded,
-  quantized normalized channels.
-- Far gathering transforms the circular proposal disk by the centre ellipse.
-  Near gathering keeps its conservative search disk, checks each sampled
-  foreground object's own ellipse, and compensates coverage using ellipse area.
-  Existing near-over-far visibility ordering and the one-scene-render
-  architecture remain unchanged.
-- Invalid geometry writes a neutral unresolved field. Raw RTT still bypasses
-  CoC/gather and uses the full-resolution scene color target.
+- Profiling is developer opt-in with `?dofProfiling=1` (the alias
+  `?groundGlassProfiling=1` is also accepted).
+- The active RTT frame scopes the real scene, CoC/footprint, far gather, near
+  gather, and composite render calls. Raw RTT scopes only scene and composite;
+  CoC/far/near are not executed or reported.
+- `EXT_disjoint_timer_query_webgl2` is used asynchronously when available. A
+  bounded 24-query pool is reused; pending/disjoint results are discarded and
+  all query objects are disposed with the RTT resources. Unsupported contexts
+  use explicitly labeled CPU submission timing.
+- A bounded 60-sample window publishes latest, mean, p50, and p95 statistics.
+  Snapshots include the measured resolution, gather settings, storage format,
+  technique, preview/raw state, timing backend, and pass data in the existing
+  runtime/debug diagnostics.
 
-## Validation
+## Manual benchmark protocol
 
-- Focused optics, footprint storage, coverage, shader, CoC target, RTT
-  lifecycle, resize, and scene-optics tests pass.
-- Typecheck, lint, CSS structure check, build, and `git diff --check` pass.
-- The focused Architecture + Foreground Chromium Raw RTT toggle and transition
-  regressions pass after the shader's local-affine derivative optimization.
-  Table Tilt RTT diagnostics and Shelf Swing contentful RTT checks also pass.
-- `npm run ci:local:e2e` stops at the repository baseline
-  `focus-fundamentals-selectable-focus.spec.ts` test 1 because
-  `ownerId/resourceGeneration` diagnostics are incomplete; its test 2 passes.
+For each scene/profile: reset or reload the scene, enable `?dofProfiling=1`,
+allow warm-up, and capture the JSON snapshot from the Ground Glass profiling
+debug group only after the timing channel for the selected backend has a full
+window. For processed Ground Glass, wait until both
+`groundGlassGpu.count` and `physicalDofGpu.count` reach 60 when
+`profilingBackend` is `gpu-query`; when it is `cpu-fallback`, wait until both
+`groundGlassCpuSubmit.count` and `physicalDofCpuSubmit.count` reach 60. Keep
+`frame.count` as the separate browser-frame timing / approximate-FPS window.
+For Raw RTT, physical-DOF timing must remain null; wait only for the selected
+Ground Glass GPU or CPU-submit count to reach 60. Avoid camera interaction
+during sampling and record whether the display appears capped by vsync.
+Compare frame timing separately from Ground Glass GPU/CPU-submit timing; do not
+infer uncapped FPS or application FPS from Ground Glass GPU time.
 
-## Known limitation
+Suggested matrix:
 
-The implementation is a local affine ellipse approximation of the projective
-aperture projection. It remains a single-view color/depth renderer and cannot
-reconstruct background surfaces fully hidden behind foreground geometry.
+- Architecture + Foreground — High, Standard, Low
+- Table Tilt — High, Standard, Low
+- Shelf Swing — High, Standard, Low
+- Raw RTT reference — High
+
+Run the same procedure later on the Mac mini M4 Pro and iPad mini 7. This PR
+has no performance target and introduces no automatic quality changes.
+
+## Known limitations
+
+- CPU fallback measures browser-side submission duration, not GPU execution.
+- Browser frame time includes React, the main viewport, UI, and compositor
+  work; it is not a Ground Glass-only FPS measurement.
+- GPU timing is asynchronous, so the first snapshots may be sparse until
+  timer results become available. No telemetry leaves the browser.

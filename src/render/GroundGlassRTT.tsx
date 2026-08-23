@@ -59,6 +59,12 @@ import {
   resolveGroundGlassCocStorageMaxMm,
   type GroundGlassCocStorageFormat,
 } from "./groundGlassCocTarget";
+import {
+  GroundGlassProfiler,
+  isGroundGlassProfilingEnabled,
+  type GroundGlassProfilingConfiguration,
+  type GroundGlassProfilingPass,
+} from "./groundGlassProfiling";
 import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
 import {
   resolveCameraMovementLessonPresentationTargetRegion,
@@ -126,6 +132,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     effectiveCameraMovementCalibration,
   );
   const { maximumBlurRadiusPx, displayBlurScale } = getGroundGlassDofVisualSettings(sceneId);
+  const profilingEnabled = isGroundGlassProfilingEnabled();
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
   const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1, zoomEnabled }));
@@ -147,6 +154,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     copyMaterial: THREE.ShaderMaterial;
   };
   const postResourcesRef = React.useRef<PostResources | null>(null);
+  const groundGlassProfilerRef = React.useRef<GroundGlassProfiler | null>(null);
   const fallbackDepthRef = React.useRef<THREE.DataTexture | null>(null);
   const resourceGenerationRef = React.useRef<number>(0);
   const lightingRigRef = React.useRef<{
@@ -479,6 +487,22 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     };
     postResourcesRef.current = postResources;
 
+    const profiler = new GroundGlassProfiler(
+      profilingEnabled,
+      gl,
+      (snapshot) => {
+        const currentInfo = readRuntimeInfo();
+        if (!currentInfo) return;
+        setRuntimeInfo({
+          ...currentInfo,
+          profilingEnabled: true,
+          profilingBackend: snapshot.profilingBackend,
+          profilingSnapshot: snapshot,
+        });
+      },
+    );
+    groundGlassProfilerRef.current = profiler;
+
     // After resources are created, update runtime info with actual resource sizes
     try {
       if (setRuntimeInfo) {
@@ -544,6 +568,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
             (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture,
           ),
           resourceGeneration: resourceGenerationRef.current,
+          profilingEnabled,
+          profilingBackend: profiler.backend,
         });
       }
     } catch (err) { void err; }
@@ -565,6 +591,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     return () => {
       try {
+        profiler.dispose();
+        if (groundGlassProfilerRef.current === profiler) {
+          groundGlassProfilerRef.current = null;
+        }
         // dispose main color target
         try { rt.dispose(); } catch (err) { void err; }
         if (renderTarget.current === rt) renderTarget.current = null;
@@ -622,6 +652,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     displayBlurScale,
     gl,
     maximumBlurRadiusPx,
+    profilingEnabled,
+    readRuntimeInfo,
     sceneId,
     setRuntimeInfo,
   ]);
@@ -825,6 +857,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       qualitySettings.gatherScale,
     );
     dimsRef.current = dims;
+    groundGlassProfilerRef.current?.resetSession();
 
     // Preserve content and sanity diagnostics until the next frame publishes a
     // sample for the resized targets. A normal view zoom/reset is not teardown.
@@ -879,10 +912,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       verticalShaderRenderWidthPx: gatherMaterial.uniforms.renderWidth.value as number,
       verticalShaderRenderHeightPx: gatherMaterial.uniforms.renderHeight.value as number,
       resourceGeneration: resourceGenerationRef.current,
+      profilingSnapshot: undefined,
     });
   }, [displayBlurScale, gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
 
-  useFrame(() => {
+  useFrame((_state, frameDelta) => {
     if (!renderTarget.current || !offscreenScene.current) return;
     const imgDist = resolveGroundGlassImageDistanceMm(opticsState);
     const cam = groundGlassCamera.current;
@@ -1003,15 +1037,78 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       });
     } catch (err) { void err; }
 
+    const post = postResourcesRef.current;
+    const currentQualitySettings = getRenderQualitySettings(
+      sizeInputsRef.current.renderQuality || "standard",
+    );
+    const currentMaximumCoCRadiusPx = Math.min(
+      maximumBlurRadiusPx,
+      currentQualitySettings.maximumCoCRadiusPx,
+    );
+    const profiler = groundGlassProfilerRef.current;
+    const profilingActive = profiler !== null && profiler.backend !== "disabled";
+    if (profilingActive) {
+      const profilingConfiguration: GroundGlassProfilingConfiguration = {
+        sceneId: sceneId ?? null,
+        renderQuality: sizeInputsRef.current.renderQuality || "standard",
+        internalResolution: [
+          dimsRef.current.internalWidthPx,
+          dimsRef.current.internalHeightPx,
+        ],
+        gatherResolution: [
+          post?.gatherRT.width ?? Math.max(
+            1,
+            Math.floor(dimsRef.current.internalWidthPx * currentQualitySettings.gatherScale),
+          ),
+          post?.gatherRT.height ?? Math.max(
+            1,
+            Math.floor(dimsRef.current.internalHeightPx * currentQualitySettings.gatherScale),
+          ),
+        ],
+        gatherScale: currentQualitySettings.gatherScale,
+        sampleCount: currentQualitySettings.sampleCount,
+        maximumCoCRadiusPx: currentMaximumCoCRadiusPx,
+        cocStorageFormat: post?.cocStorageFormat ?? null,
+        footprintRepresentation: "local-affine-ellipse",
+        dofTechnique: "physical-coc-near-far-oriented-gather",
+        previewMode: previewMode === "raw" ? "raw" : "upright",
+        rawDebug: Boolean(rawDebug),
+        devicePixelRatio:
+          typeof gl.getPixelRatio === "function"
+            ? gl.getPixelRatio()
+            : typeof window !== "undefined"
+              ? window.devicePixelRatio
+              : 1,
+        zoomEnabled: Boolean(zoomEnabled),
+      };
+      profiler.beginFrame(
+        profilingConfiguration,
+        Number.isFinite(frameDelta) ? (frameDelta as number) * 1000 : undefined,
+      );
+    }
+    const measurePass = profilingActive
+      ? (pass: GroundGlassProfilingPass, renderPass: () => void): void => {
+          const scope = profiler.beginPass(pass);
+          try {
+            renderPass();
+          } finally {
+            scope.end();
+          }
+        }
+      : (_pass: GroundGlassProfilingPass, renderPass: () => void): void => {
+          renderPass();
+        };
+
     // 1) render scene to color+depth renderTarget
     const prev = gl.getRenderTarget();
-    gl.setRenderTarget(renderTarget.current);
-    gl.setClearColor(SKY_COLOR.getHex(), 1);
-    gl.clear(true, true, true);
-    gl.render(offscreenScene.current, cam);
+    measurePass("sceneRender", () => {
+      gl.setRenderTarget(renderTarget.current);
+      gl.setClearColor(SKY_COLOR.getHex(), 1);
+      gl.clear(true, true, true);
+      gl.render(offscreenScene.current!, cam);
+    });
 
     // 2) Full-resolution signed CoC, near/far aperture gathers, then composite.
-    const post = postResourcesRef.current;
     if (post) {
       const {
         postSceneCoc,
@@ -1033,13 +1130,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       // path active with the explicit far-depth texture instead of silently
       // changing the user's preview to Raw RTT.
       const isFallbackDepth = depthTex === fallbackDepthRef.current;
-      const currentQualitySettings = getRenderQualitySettings(
-        sizeInputsRef.current.renderQuality || "standard",
-      );
-      const currentMaximumCoCRadiusPx = Math.min(
-        maximumBlurRadiusPx,
-        currentQualitySettings.maximumCoCRadiusPx,
-      );
       const cocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
         maximumCoCRadiusPx: currentMaximumCoCRadiusPx,
         filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
@@ -1103,10 +1193,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       // Raw debug is a true bypass: the full-resolution scene color remains
       // the source of truth and never passes through the scaled gather target.
       if (!rawDebug) {
-        gl.setRenderTarget(cocRT);
-        gl.setClearColor(SKY_COLOR.getHex(), 1);
-        gl.clear(true, true, true);
-        gl.render(postSceneCoc, orthoCam);
+        measurePass("cocFootprint", () => {
+          gl.setRenderTarget(cocRT);
+          gl.setClearColor(SKY_COLOR.getHex(), 1);
+          gl.clear(true, true, true);
+          gl.render(postSceneCoc, orthoCam);
+        });
 
         gatherMaterial.uniforms.tColor.value = (renderTarget.current as THREE.WebGLRenderTarget).texture;
         gatherMaterial.uniforms.tDepth.value = depthTex;
@@ -1125,17 +1217,21 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           }
         }
 
-        gl.setRenderTarget(gatherRT);
-        gl.setClearColor(SKY_COLOR.getHex(), 1);
-        gl.clear(true, true, true);
-        gatherMaterial.uniforms.gatherLayer.value = 0.0;
-        gl.render(postSceneGather, orthoCam);
+        measurePass("farGather", () => {
+          gl.setRenderTarget(gatherRT);
+          gl.setClearColor(SKY_COLOR.getHex(), 1);
+          gl.clear(true, true, true);
+          gatherMaterial.uniforms.gatherLayer.value = 0.0;
+          gl.render(postSceneGather, orthoCam);
+        });
 
-        gl.setRenderTarget(nearGatherRT);
-        gl.setClearColor(SKY_COLOR.getHex(), 0);
-        gl.clear(true, true, true);
-        gatherMaterial.uniforms.gatherLayer.value = 1.0;
-        gl.render(postSceneGather, orthoCam);
+        measurePass("nearGather", () => {
+          gl.setRenderTarget(nearGatherRT);
+          gl.setClearColor(SKY_COLOR.getHex(), 0);
+          gl.clear(true, true, true);
+          gatherMaterial.uniforms.gatherLayer.value = 1.0;
+          gl.render(postSceneGather, orthoCam);
+        });
       }
 
       const compositeMesh = postSceneComposite.children[0] as THREE.Mesh;
@@ -1172,10 +1268,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       // Keep the final DOF result in an owned target. Besides enabling a
       // deterministic render sanity readback, this prevents a transient empty
       // default framebuffer from becoming the Ground Glass source of truth.
-      gl.setRenderTarget(finalRT);
-      gl.setClearColor(SKY_COLOR.getHex(), 1);
-      gl.clear(true, true, true);
-      gl.render(postSceneComposite, orthoCam);
+      measurePass("composite", () => {
+        gl.setRenderTarget(finalRT);
+        gl.setClearColor(SKY_COLOR.getHex(), 1);
+        gl.clear(true, true, true);
+        gl.render(postSceneComposite, orthoCam);
+      });
 
       const sanityStateKey = createGroundGlassRenderSanityStateKey({
         resourceGeneration: resourceGenerationRef.current,
@@ -1269,6 +1367,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       gl.setRenderTarget(null);
     }
 
+    if (profilingActive) profiler.endFrame();
     gl.setRenderTarget(prev);
   }, 1);
 
