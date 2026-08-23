@@ -56,8 +56,12 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassUniformDecls).toContain("maximumCoCRadiusPx");
     expect(groundGlassUniformDecls).toContain("sampleCount");
     expect(groundGlassUniformDecls).toContain("filmWidthMm");
+    expect(groundGlassUniformDecls).toContain("filmHeightMm");
     expect(groundGlassUniformDecls).toContain("cocStorageEncoded");
     expect(groundGlassUniformDecls).toContain("cocStorageMaxMm");
+    expect(groundGlassUniformDecls).toContain("lensPlaneBasisX");
+    expect(groundGlassUniformDecls).toContain("filmPlaneBasisY");
+    expect(groundGlassUniformDecls).toContain("footprintStorageMaxMm");
   });
 
   test("shared GLSL helpers do not contain GLSL Infinity hacks or old formula", () => {
@@ -83,6 +87,21 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassSharedGlsl).toContain("byteCode > 128.0");
     expect(groundGlassSharedGlsl).toContain("calculateFarSampleWeight");
     expect(groundGlassSharedGlsl).toContain("calculateNearSampleWeight");
+    expect(groundGlassSharedGlsl).toContain("calculatePhysicalBlurFootprintFromWorldPosition");
+    expect(groundGlassSharedGlsl).toContain("GroundGlassPhysicalBlurFootprint");
+    expect(groundGlassSharedGlsl).toContain("footprintMajorAxisPx");
+    expect(groundGlassSharedGlsl).toContain("ellipseFootprintWeight");
+    expect(groundGlassSharedGlsl).toContain("encodeGroundGlassFootprintRadiusMm");
+    expect(groundGlassSharedGlsl).toContain("encodeGroundGlassFootprintAxesMm");
+    expect(groundGlassSharedGlsl).toContain("footprintStorageScaleForAxes");
+    expect(groundGlassSharedGlsl).toContain("decodeStoredGroundGlassFootprintAxesMm");
+    expect(groundGlassSharedGlsl).toContain("decodeStoredGroundGlassFootprintOrientation");
+    expect(groundGlassSharedGlsl).toContain(
+      "-sin(angle) * majorRadiusMm * renderHeight / filmHeightMm",
+    );
+    expect(groundGlassSharedGlsl).toContain(
+      "-cos(angle) * minorRadiusMm * renderHeight / filmHeightMm",
+    );
     expect(groundGlassSharedGlsl).not.toContain(
       "float focusDist = tFocus > 0.0 ? tFocus : targetDist",
     );
@@ -101,15 +120,19 @@ describe("GroundGlass DOF shader source", () => {
   });
 
   test("CoC stage writes a physical millimetre signal", () => {
+    expect(groundGlassPhysicalCocFragmentShader).toContain("footprint.majorRadiusMm");
+    expect(groundGlassPhysicalCocFragmentShader).toContain("footprint.minorRadiusMm");
+    expect(groundGlassPhysicalCocFragmentShader).toContain("footprint.orientationRad");
     expect(groundGlassPhysicalCocFragmentShader).toContain("calculateSignedCoCDiameterMmAtFragment");
-    expect(groundGlassPhysicalCocFragmentShader).toContain("float signedCocMm");
+    expect(groundGlassPhysicalCocFragmentShader).toContain("footprint.signedCocMm");
+    expect(groundGlassPhysicalCocFragmentShader).toContain("encodeGroundGlassFootprintAxesMm");
     expect(groundGlassPhysicalCocFragmentShader).toContain(
-      "encodeSignedPhysicalCoCDiameterMm(signedCocMm)",
+      "encodeSignedPhysicalCoCDiameterMm(footprint.signedCocMm)",
     );
     expect(countDeclarationOccurrences(extractMainBody(groundGlassPhysicalCocFragmentShader), "depth")).toBe(1);
   });
 
-  test("aperture stage uses a configurable circular gather with a sharp early-out", () => {
+  test("aperture stage uses an oriented footprint gather with a sharp early-out", () => {
     expect(groundGlassApertureGatherFragmentShader).toContain("uniform sampler2D tCoC");
     expect(groundGlassApertureGatherFragmentShader).toContain("goldenAngle");
     expect(groundGlassApertureGatherFragmentShader).toContain("sampleCount");
@@ -118,7 +141,14 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassApertureGatherFragmentShader).toContain("gatherLayer");
     expect(groundGlassApertureGatherFragmentShader).toContain("calculateFarSampleWeight");
     expect(groundGlassApertureGatherFragmentShader).toContain("calculateNearSampleWeight");
-    expect(groundGlassApertureGatherFragmentShader).toContain("sampleRadiusPx");
+    expect(groundGlassApertureGatherFragmentShader).toContain("sampleMajorRadiusMm");
+    expect(groundGlassApertureGatherFragmentShader).toContain("sampleMinorRadiusMm");
+    expect(groundGlassApertureGatherFragmentShader).toContain(
+      "decodeStoredGroundGlassFootprintAxesMm",
+    );
+    expect(groundGlassApertureGatherFragmentShader).toContain("orientedFootprintOffsetPx");
+    expect(groundGlassApertureGatherFragmentShader).toContain("footprintAreaPx");
+    expect(groundGlassApertureGatherFragmentShader).toContain("ellipseFootprintWeight");
     expect(groundGlassApertureGatherFragmentShader).toContain("coverageMass");
     expect(groundGlassApertureGatherFragmentShader).toContain("proposalCompensation");
     expect(groundGlassApertureGatherFragmentShader).toContain(
@@ -144,9 +174,7 @@ describe("GroundGlass DOF shader source", () => {
     expect(nearPolicy).toContain("sampleSignedCocMm >= -0.00001");
     expect(nearPolicy).toContain("sampleUmm > centerUmm + toleranceMm");
     expect(unresolvedPolicy).toContain("return 0.0");
-    expect(groundGlassApertureGatherFragmentShader).toContain(
-      "smoothstep(sampleRadiusPx, sampleRadiusPx + 1.0, sampleDistancePx)",
-    );
+    expect(groundGlassApertureGatherFragmentShader).toContain("ellipseFootprintWeight(");
     expect(groundGlassCompositeFragmentShader).toContain(
       "mix(gathered.rgb, nearLayer.rgb, clamp(nearLayer.a, 0.0, 1.0))",
     );

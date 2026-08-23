@@ -12,9 +12,10 @@ const sharedIntro = `${groundGlassUniformDecls} ${groundGlassSharedGlsl}`;
 const zeroCoCThresholdPx = 0.125;
 const maximumApertureSamples = 64;
 
-/** Full-resolution signed physical CoC intermediate. The red channel stores
- * signed millimetres or the explicit normalized byte-fallback representation.
- * Negative is foreground/near-side; positive is background/far-side. */
+/** Full-resolution signed physical CoC + local affine footprint intermediate.
+ * R stores signed CoC; G/B store major/minor semi-axes; A stores orientation
+ * modulo pi. Half-float uses physical mm for R/G/B, while byte fallback uses
+ * the explicit normalized storage contract. */
 export const groundGlassPhysicalCocFragmentShader = `
 precision highp float;
 varying vec2 vUv;
@@ -23,17 +24,32 @@ ${sharedIntro}
 
 void main(){
   float depth = texture2D(tDepth, vUv).x;
-  float signedCocMm = calculateSignedCoCDiameterMmAtFragment(vUv, depth);
-  if(!isFiniteFloat(signedCocMm)) signedCocMm = 0.0;
-  gl_FragColor = vec4(encodeSignedPhysicalCoCDiameterMm(signedCocMm), 0.0, 0.0, 1.0);
+  vec3 worldPos = reconstructWorldPosition(vUv, depth, inverseProjectionMatrix, cameraMatrixWorld);
+  GroundGlassPhysicalBlurFootprint footprint =
+    calculatePhysicalBlurFootprintFromWorldPosition(worldPos);
+  if(footprint.valid < 0.5){
+    gl_FragColor = vec4(encodeSignedPhysicalCoCDiameterMm(0.0), 0.0, 0.0, 0.0);
+    return;
+  }
+  vec2 encodedFootprintAxes = encodeGroundGlassFootprintAxesMm(
+    footprint.majorRadiusMm,
+    footprint.minorRadiusMm
+  );
+  gl_FragColor = vec4(
+    encodeSignedPhysicalCoCDiameterMm(footprint.signedCocMm),
+    encodedFootprintAxes.x,
+    encodedFootprintAxes.y,
+    encodeGroundGlassFootprintOrientation(footprint.orientationRad)
+  );
 }
 `;
 
 /**
- * Neutral circular aperture gather. CoC is generated independently at full
- * resolution; this pass may render to a scaled target for quality tiers.
- * This is intentionally a single-view color/depth approximation: a background
- * surface fully hidden by a foreground surface cannot be reconstructed here.
+ * Local-affine oriented aperture gather. CoC and footprint data are generated
+ * independently at full resolution; this pass may render to a scaled target
+ * for quality tiers. This is intentionally a single-view color/depth
+ * approximation: a background surface fully hidden by a foreground surface
+ * cannot be reconstructed here.
  */
 export const groundGlassApertureGatherFragmentShader = `
 precision highp float;
@@ -52,9 +68,26 @@ void main(){
   }
 
   float centerDepth = texture2D(tDepth, uv).x;
-  float storedCoc = texture2D(tCoC, uv).r;
-  float centerSignedCocMm = decodeStoredSignedCoCDiameterMm(storedCoc);
-  float centerRadiusPx = cocDiameterMmToGatherRadiusPx(centerSignedCocMm);
+  vec4 centerFootprint = texture2D(tCoC, uv);
+  float centerSignedCocMm = decodeStoredSignedCoCDiameterMm(centerFootprint.r);
+  vec2 centerFootprintAxesMm = decodeStoredGroundGlassFootprintAxesMm(centerFootprint.gb);
+  float centerMajorRadiusMm = centerFootprintAxesMm.x;
+  float centerMinorRadiusMm = centerFootprintAxesMm.y;
+  float centerOrientation = centerFootprint.a;
+  vec2 centerMajorAxisPx = footprintMajorAxisPx(centerMajorRadiusMm, centerOrientation);
+  vec2 centerMinorAxisPx = footprintMinorAxisPx(centerMinorRadiusMm, centerOrientation);
+  float centerClampScale = footprintClampScale(centerMajorAxisPx, centerMinorAxisPx);
+  float centerExtentPx = max(length(centerMajorAxisPx), length(centerMinorAxisPx)) * centerClampScale;
+  float centerScalarRadiusPx = cocDiameterMmToGatherRadiusPx(centerSignedCocMm);
+  if(centerExtentPx <= 0.125 && centerScalarRadiusPx > 0.125){
+    // A tiny byte-quantized ellipse can retain signed CoC classification but
+    // lose its axis channels. Keep a conservative circular fallback only for
+    // that storage edge case; valid physical ellipses use their own axes.
+    centerMajorAxisPx = vec2(centerScalarRadiusPx, 0.0);
+    centerMinorAxisPx = vec2(0.0, centerScalarRadiusPx);
+    centerClampScale = 1.0;
+    centerExtentPx = centerScalarRadiusPx;
+  }
   bool nearLayer = gatherLayer > 0.5;
 
   // A near center surface is already represented by the near layer. Do not
@@ -64,11 +97,12 @@ void main(){
     return;
   }
 
-  // Far gathering is center-oriented. Near gathering deliberately searches
-  // the configured maximum footprint so a defocused foreground sample can
-  // scatter beyond its geometric center pixel.
-  float gatherRadiusPx = nearLayer ? maximumCoCRadiusPx : centerRadiusPx;
-  if(!nearLayer && !(centerRadiusPx > ${zeroCoCThresholdPx.toString()})){
+  // Far gathering follows the center surface's local ellipse. Near gathering
+  // deliberately searches a conservative disk so a foreground sample can
+  // scatter beyond its geometric center pixel; membership is then tested
+  // against that sampled foreground object's own ellipse.
+  float gatherRadiusPx = nearLayer ? maximumCoCRadiusPx : centerExtentPx;
+  if(!nearLayer && !(centerExtentPx > ${zeroCoCThresholdPx.toString()})){
     gl_FragColor = sharpColor;
     return;
   }
@@ -93,28 +127,49 @@ void main(){
     if(nearLayer) centerForeground = true;
   }
 
-  // Uniform-disk samples form a neutral circular aperture. The compile-time
-  // ceiling keeps the shader portable while sampleCount remains runtime data.
-  for(int i = 0; i < ${maximumApertureSamples}; ++i){
+  // Uniform-disk samples are proposal points. Far samples are transformed by
+  // the center ellipse; near samples retain the circular proposal disk and
+  // apply each sampled foreground ellipse as a visibility footprint.
+  for(int i = 0; i < 64; ++i){
     if(float(i) >= activeSamples) break;
     float sampleIndex = float(i);
     float radial = sqrt((sampleIndex + 0.5) / activeSamples);
     float angle = (sampleIndex + 0.5) * goldenAngle;
     vec2 diskOffset = radial * vec2(cos(angle), sin(angle));
-    vec2 offsetUv = diskOffset * gatherRadiusPx / vec2(renderWidth, renderHeight);
+    vec2 offsetPx = nearLayer
+      ? diskOffset * gatherRadiusPx
+      : orientedFootprintOffsetPx(
+          diskOffset,
+          centerMajorAxisPx,
+          centerMinorAxisPx,
+          centerClampScale
+        );
+    vec2 offsetUv = offsetPx / vec2(renderWidth, renderHeight);
     vec2 sampleUv = clamp(uv + offsetUv, vec2(0.0), vec2(1.0));
     float sampleDepth = texture2D(tDepth, sampleUv).x;
-    float sampleSignedCocMm = decodeStoredSignedCoCDiameterMm(texture2D(tCoC, sampleUv).r);
-    float sampleRadiusPx = cocDiameterMmToGatherRadiusPx(sampleSignedCocMm);
+    vec4 sampleFootprint = texture2D(tCoC, sampleUv);
+    float sampleSignedCocMm = decodeStoredSignedCoCDiameterMm(sampleFootprint.r);
     float depthWeight = nearLayer
       ? calculateNearSampleWeight(centerDepth, sampleDepth, centerSignedCocMm, sampleSignedCocMm)
       : calculateFarSampleWeight(centerDepth, sampleDepth, sampleSignedCocMm);
     float footprintWeight = 1.0;
+    vec2 sampleMajorAxisPx = vec2(0.0);
+    vec2 sampleMinorAxisPx = vec2(0.0);
+    float sampleClampScale = 0.0;
     if(nearLayer){
-      float sampleDistancePx = length(diskOffset) * gatherRadiusPx;
-      footprintWeight = sampleRadiusPx > ${zeroCoCThresholdPx.toString()}
-        ? 1.0 - smoothstep(sampleRadiusPx, sampleRadiusPx + 1.0, sampleDistancePx)
-        : 0.0;
+      vec2 sampleFootprintAxesMm = decodeStoredGroundGlassFootprintAxesMm(sampleFootprint.gb);
+      float sampleMajorRadiusMm = sampleFootprintAxesMm.x;
+      float sampleMinorRadiusMm = sampleFootprintAxesMm.y;
+      float sampleOrientation = sampleFootprint.a;
+      sampleMajorAxisPx = footprintMajorAxisPx(sampleMajorRadiusMm, sampleOrientation);
+      sampleMinorAxisPx = footprintMinorAxisPx(sampleMinorRadiusMm, sampleOrientation);
+      sampleClampScale = footprintClampScale(sampleMajorAxisPx, sampleMinorAxisPx);
+      footprintWeight = ellipseFootprintWeight(
+        offsetPx,
+        sampleMajorAxisPx,
+        sampleMinorAxisPx,
+        sampleClampScale
+      );
     }
     float weight = depthWeight * footprintWeight;
     if(!(weight > 1e-6)) continue;
@@ -122,12 +177,17 @@ void main(){
     total += weight;
     if(nearLayer){
       // Samples are proposed over the maximum search disk, so coverage is
-      // compensated by each foreground footprint's area ratio. The
+      // compensated by each foreground ellipse's area ratio. The
       // sample-count-derived floor/cap limits sparse-proposal noise without a
       // visual fudge multiplier.
+      vec2 acceptedMajorAxisPx = sampleMajorAxisPx * sampleClampScale;
+      vec2 acceptedMinorAxisPx = sampleMinorAxisPx * sampleClampScale;
+      float footprintAreaPx = abs(
+        acceptedMajorAxisPx.x * acceptedMinorAxisPx.y -
+        acceptedMajorAxisPx.y * acceptedMinorAxisPx.x
+      );
       float footprintAreaRatio = clamp(
-        (sampleRadiusPx / max(gatherRadiusPx, 1e-6)) *
-        (sampleRadiusPx / max(gatherRadiusPx, 1e-6)),
+        footprintAreaPx / max(gatherRadiusPx * gatherRadiusPx, 1e-6),
         0.0,
         1.0
       );

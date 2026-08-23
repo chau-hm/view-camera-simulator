@@ -1,54 +1,48 @@
-# Current Work Handoff
+# PR 8D — Arbitrary-plane physical blur footprint
 
-## PR 8C — Depth-aware physical DOF occlusion
+- Branch: `feature/arbitrary-plane-blur-footprint`.
+- Base: `origin/main` at `2b2795c`, containing merged PR #84 / PR 8C.
+- Objective: extend the full-resolution signed CoC stage with a local-affine
+  oriented ellipse derived from canonical lens/film geometry, then use that
+  field in the existing far/near aperture gathers.
 
-- Objective: extend the merged PR 8B pipeline with signed/sided physical CoC,
-  asymmetric near/far aperture gathers, and near-over-far visibility policy.
-- Branch: `feature/physical-dof-occlusion`.
-- Base: merged PR 8B in `origin/main` at branch creation (`745c105`).
+## Implementation decisions
 
-## Implementation
+- `computePhysicalBlurFootprint` is a pure millimetre-based CPU reference. It
+  derives the ideal thin-lens image point, intersects the centre ray with the
+  actual film plane, and uses the closed-form first derivative of the
+  symmetric +/- aperture-edge projection for the local affine map. Singular
+  values are the ellipse semi-axes; the sign remains negative near / positive
+  far. The derivative is algebraically the first-order form of the required
+  symmetric edge construction and avoids four redundant full-resolution GPU
+  intersections.
+- Canonical `DerivedOpticsState` lens/film planes and rear-standard frame are
+  converted to typed renderer uniforms. The CoC RGBA field stores signed CoC,
+  major radius, minor radius, and orientation modulo pi. Half-float stores
+  physical radii; the existing neutral-safe RGBA8 path stores bounded,
+  quantized normalized channels.
+- Far gathering transforms the circular proposal disk by the centre ellipse.
+  Near gathering keeps its conservative search disk, checks each sampled
+  foreground object's own ellipse, and compensates coverage using ellipse area.
+  Existing near-over-far visibility ordering and the one-scene-render
+  architecture remain unchanged.
+- Invalid geometry writes a neutral unresolved field. Raw RTT still bypasses
+  CoC/gather and uses the full-resolution scene color target.
 
-- Neutral thin-lens CoC now has an explicit signed API. Negative means the ideal
-  image plane is behind the film / foreground-side defocus; positive means it is
-  in front of the film / background-side defocus. Magnitude remains the PR 8A
-  physical CoC diameter in millimetres.
-- The full-resolution CoC buffer carries signed millimetres on the half-float
-  path and an explicit neutral-safe RGBA8 byte code on the capability fallback
-  path: code 128 is zero, 0..127 are negative, and 129..255 are positive.
-- The CoC target uses nearest filtering in both storage modes because signed
-  CoC classifies a visible surface and must not interpolate opposing sides.
-- Ground Glass renders separate far/background and near/foreground gathers to
-  the same quality-scaled dimensions. Far gathering rejects foreground
-  occluders; near gathering uses each foreground sample's own CoC footprint and
-  composites its coverage over the far result. Near coverage compensates the
-  uniform maximum-disk proposal density and uses a bounded union estimator.
-- Invalid derived-plane wedge states now return neutral/unresolved signed CoC
-  rather than fabricating a positive far-side classification.
-- Raw debug remains a true full-resolution scene-color bypass. Normal frames
-  still use one scene color/depth render followed by CoC, two screen-space
-  gathers, and a full-resolution composite.
-- The single-view limitation is intentional: fully hidden background color
-  cannot be reconstructed from one color/depth view.
+## Validation
 
-## Tests and validation
+- Focused optics, footprint storage, coverage, shader, CoC target, RTT
+  lifecycle, resize, and scene-optics tests pass.
+- Typecheck, lint, CSS structure check, build, and `git diff --check` pass.
+- The focused Architecture + Foreground Chromium Raw RTT toggle and transition
+  regressions pass after the shader's local-affine derivative optimization.
+  Table Tilt RTT diagnostics and Shelf Swing contentful RTT checks also pass.
+- `npm run ci:local:e2e` stops at the repository baseline
+  `focus-fundamentals-selectable-focus.spec.ts` test 1 because
+  `ownerId/resourceGeneration` diagnostics are incomplete; its test 2 passes.
 
-- Focused optics/storage/coverage/shader/resource/RTT tests: PASS — 7 files / 78 tests.
-- Full unit/integration suite: PASS — 129 files / 1,239 tests.
-- Typecheck, lint, CSS structure check, and production build: PASS.
-- Bounded Chromium Ground Glass and Architecture + Foreground specs: PASS — 3/3 tests.
-- `npm run ci:local:e2e` passed CSS, lint, typecheck, unit/integration, build,
-  and the preceding browser files, then stopped at the known baseline failure
-  in `focus-fundamentals-selectable-focus.spec.ts` test 1: RTT
-  `ownerId/resourceGeneration` diagnostics were incomplete. Its test 2 passed;
-  the focused PR 8C Ground Glass specs independently passed 3/3.
+## Known limitation
 
-## Scope
-
-- No Gaussian fallback, adaptive sampling, alternate aperture shapes, hidden
-  background reconstruction, multi-render aperture sampling, task semantics,
-  UI controls, or PR 8D work was added.
-- Review focus: signed CoC side consistency, neutral-safe byte quantization,
-  nearest side-preserving CoC sampling, asymmetric visibility ordering,
-  near-layer footprint coverage, full-resolution raw bypass, and target
-  resize/disposal lifecycle.
+The implementation is a local affine ellipse approximation of the projective
+aperture projection. It remains a single-view color/depth renderer and cannot
+reconstruct background surfaces fully hidden behind foreground geometry.

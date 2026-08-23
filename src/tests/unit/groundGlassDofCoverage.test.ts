@@ -9,9 +9,10 @@ describe("Ground Glass near-layer coverage estimator", () => {
   const searchRadiusPx = 60;
 
   const coverageForUniformFootprint = (sampleRadiusPx: number) => {
-    const areaRatio = (sampleRadiusPx / searchRadiusPx) ** 2;
+    const areaRatio = (sampleRadiusPx * sampleRadiusPx) / (searchRadiusPx * searchRadiusPx);
     const expectedAcceptedWeight = sampleCount * areaRatio;
     const compensation = nearCoverageProposalCompensation(
+      sampleRadiusPx,
       sampleRadiusPx,
       searchRadiusPx,
       sampleCount,
@@ -32,7 +33,7 @@ describe("Ground Glass near-layer coverage estimator", () => {
   });
 
   it("uses a sample-count-derived cap so one sparse proposal is not opaque", () => {
-    const compensation = nearCoverageProposalCompensation(1, searchRadiusPx, sampleCount);
+    const compensation = nearCoverageProposalCompensation(1, 1, searchRadiusPx, sampleCount);
     const oneProposalCoverage = estimateNearLayerCoverage({
       coverageMass: compensation,
       sampleCount,
@@ -44,7 +45,7 @@ describe("Ground Glass near-layer coverage estimator", () => {
   });
 
   it("fails closed for negligible footprints and keeps center foreground opaque", () => {
-    expect(nearCoverageProposalCompensation(0, searchRadiusPx, sampleCount)).toBe(0);
+    expect(nearCoverageProposalCompensation(0, 1, searchRadiusPx, sampleCount)).toBe(0);
     expect(
       estimateNearLayerCoverage({ coverageMass: 0, sampleCount }),
     ).toBe(0);
@@ -61,7 +62,14 @@ describe("Ground Glass near-layer coverage estimator", () => {
       estimateNearLayerCoverage({ coverageMass: Number.MAX_VALUE, sampleCount }),
     ).toBeLessThanOrEqual(1);
     expect(
-      nearCoverageProposalCompensation(10, searchRadiusPx, sampleCount),
+      nearCoverageProposalCompensation(10, 5, searchRadiusPx, sampleCount),
     ).toBeLessThanOrEqual(sampleCount);
+  });
+
+  it("accounts for the ellipse area rather than only its major radius", () => {
+    const wide = nearCoverageProposalCompensation(20, 20, searchRadiusPx, sampleCount);
+    const narrow = nearCoverageProposalCompensation(20, 5, searchRadiusPx, sampleCount);
+
+    expect(narrow).toBeGreaterThan(wide);
   });
 });

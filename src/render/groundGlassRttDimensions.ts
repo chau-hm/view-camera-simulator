@@ -47,7 +47,11 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   blurTargetWidthPx: number;
   blurTargetHeightPx: number;
 
-  dofTechnique?: "physical-coc-aperture-gather" | "physical-coc-near-far-gather";
+  dofTechnique?:
+    | "physical-coc-aperture-gather"
+    | "physical-coc-near-far-gather"
+    | "physical-coc-near-far-oriented-gather";
+  footprintRepresentation?: "local-affine-ellipse";
   gatherScale?: number;
   sampleCount?: number;
   maximumCoCRadiusPx?: number;

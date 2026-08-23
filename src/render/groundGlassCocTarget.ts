@@ -89,6 +89,161 @@ export const decodeGroundGlassSignedCoC = (
   );
 };
 
+export const GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD = Math.PI;
+
+/** Quantizes a non-negative normalized footprint channel to the RGBA8 grid. */
+export const quantizeGroundGlassFootprintByte = (encoded: number): number => {
+  if (!Number.isFinite(encoded)) return 0;
+  return Math.min(255, Math.max(0, Math.round(Math.min(1, Math.max(0, encoded)) * 255)));
+};
+
+/**
+ * Encodes a local ellipse radius. Half-float stores physical millimetres;
+ * byte fallback stores a normalized value against the configured physical
+ * radius range. The decoded value is always non-negative.
+ */
+export const encodeGroundGlassFootprintRadiusMm = (
+  radiusMm: number,
+  storageFormat: GroundGlassCocStorageFormat,
+  maximumRadiusMm: number,
+): number => {
+  if (!Number.isFinite(radiusMm) || radiusMm <= 0) return 0;
+  if (storageFormat === "half-float-mm") return radiusMm;
+  if (!Number.isFinite(maximumRadiusMm) || maximumRadiusMm <= 0) return 0;
+  return Math.min(1, radiusMm / maximumRadiusMm);
+};
+
+export const decodeGroundGlassFootprintRadiusMm = (
+  storedRadius: number,
+  storageFormat: GroundGlassCocStorageFormat,
+  maximumRadiusMm: number,
+): number => {
+  if (!Number.isFinite(storedRadius)) return 0;
+  if (storageFormat === "half-float-mm") return Math.max(0, storedRadius);
+  if (!Number.isFinite(maximumRadiusMm) || maximumRadiusMm <= 0) return 0;
+  return (quantizeGroundGlassFootprintByte(storedRadius) / 255) * maximumRadiusMm;
+};
+
+export type GroundGlassFootprintAxesMm = {
+  majorRadiusMm: number;
+  minorRadiusMm: number;
+};
+
+export type GroundGlassEncodedFootprintAxes = {
+  encodedMajorRadius: number;
+  encodedMinorRadius: number;
+  /** Uniform representational scale applied before byte encoding. */
+  storageScale: number;
+};
+
+const sanitizeGroundGlassFootprintAxes = (
+  axes: GroundGlassFootprintAxesMm,
+): GroundGlassFootprintAxesMm => {
+  const majorRadiusMm = Number.isFinite(axes.majorRadiusMm) && axes.majorRadiusMm > 0
+    ? axes.majorRadiusMm
+    : 0;
+  const minorRadiusMm = Number.isFinite(axes.minorRadiusMm) && axes.minorRadiusMm > 0
+    ? axes.minorRadiusMm
+    : 0;
+
+  // The footprint contract names the singular values in descending order.
+  // Invalid ordering is fail-closed rather than silently rotating the stored
+  // orientation to match a swapped pair.
+  if (minorRadiusMm > majorRadiusMm) return { majorRadiusMm: 0, minorRadiusMm: 0 };
+  return { majorRadiusMm, minorRadiusMm };
+};
+
+/**
+ * Encodes the two ellipse radii as one storage pair.
+ *
+ * Half-float targets retain physical millimetres. Byte targets first apply
+ * one uniform scale when either axis exceeds the representable range, then
+ * quantize both normalized channels on the actual RGBA8 code grid. Scaling
+ * the pair together preserves anisotropy before display-space clamping.
+ */
+export const encodeGroundGlassFootprintAxesMm = (input: {
+  majorRadiusMm: number;
+  minorRadiusMm: number;
+  storageFormat: GroundGlassCocStorageFormat;
+  maximumRadiusMm: number;
+}): GroundGlassEncodedFootprintAxes => {
+  const axes = sanitizeGroundGlassFootprintAxes(input);
+  if (input.storageFormat === "half-float-mm") {
+    return {
+      encodedMajorRadius: axes.majorRadiusMm,
+      encodedMinorRadius: axes.minorRadiusMm,
+      storageScale: 1,
+    };
+  }
+
+  if (!Number.isFinite(input.maximumRadiusMm) || input.maximumRadiusMm <= 0) {
+    return { encodedMajorRadius: 0, encodedMinorRadius: 0, storageScale: 0 };
+  }
+
+  const largestRadiusMm = Math.max(axes.majorRadiusMm, axes.minorRadiusMm);
+  const storageScale = largestRadiusMm > input.maximumRadiusMm
+    ? input.maximumRadiusMm / largestRadiusMm
+    : 1;
+  const scaledMajorRadiusMm = axes.majorRadiusMm * storageScale;
+  const scaledMinorRadiusMm = axes.minorRadiusMm * storageScale;
+  const quantizedNormalizedRadius = (radiusMm: number): number =>
+    quantizeGroundGlassFootprintByte(
+      encodeGroundGlassFootprintRadiusMm(radiusMm, "encoded-byte", input.maximumRadiusMm),
+    ) / GROUND_GLASS_SIGNED_COC_MAX_BYTE;
+
+  return {
+    encodedMajorRadius: quantizedNormalizedRadius(scaledMajorRadiusMm),
+    encodedMinorRadius: quantizedNormalizedRadius(scaledMinorRadiusMm),
+    storageScale,
+  };
+};
+
+/** Decodes the pair-level footprint storage contract used by the gather. */
+export const decodeGroundGlassFootprintAxesMm = (input: {
+  encodedMajorRadius: number;
+  encodedMinorRadius: number;
+  storageFormat: GroundGlassCocStorageFormat;
+  maximumRadiusMm: number;
+}): GroundGlassFootprintAxesMm => {
+  const axes = sanitizeGroundGlassFootprintAxes({
+    majorRadiusMm: decodeGroundGlassFootprintRadiusMm(
+      input.encodedMajorRadius,
+      input.storageFormat,
+      input.maximumRadiusMm,
+    ),
+    minorRadiusMm: decodeGroundGlassFootprintRadiusMm(
+      input.encodedMinorRadius,
+      input.storageFormat,
+      input.maximumRadiusMm,
+    ),
+  });
+  return axes;
+};
+
+/**
+ * Ellipse orientation is a line direction, so it is periodic over pi rather
+ * than 2*pi. It is normalized for both storage modes; zero footprint makes
+ * the angle immaterial but still deterministic.
+ */
+export const encodeGroundGlassFootprintOrientation = (orientationRad: number): number => {
+  if (!Number.isFinite(orientationRad)) return 0;
+  const wrapped = ((orientationRad % GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD) +
+    GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD) %
+    GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD;
+  return wrapped / GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD;
+};
+
+export const decodeGroundGlassFootprintOrientation = (
+  storedOrientation: number,
+  storageFormat: GroundGlassCocStorageFormat,
+): number => {
+  if (!Number.isFinite(storedOrientation)) return 0;
+  const normalized = storageFormat === "encoded-byte"
+    ? quantizeGroundGlassFootprintByte(storedOrientation) / 255
+    : Math.min(1, Math.max(0, storedOrientation));
+  return normalized * GROUND_GLASS_FOOTPRINT_ORIENTATION_PERIOD_RAD;
+};
+
 type GroundGlassCocRenderer = Pick<
   THREE.WebGLRenderer,
   "getContext" | "getRenderTarget" | "setRenderTarget"
