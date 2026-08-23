@@ -47,6 +47,9 @@ export const architectureForegroundScene: SceneDefinition = {
     kind: "rear-standard-thin-lens",
     lensDatum: "baseline-origin",
     focusDistanceReference: "lens-to-focus-plane",
+    // This scene compares neutral foreground depth; front tilt does not
+    // silently introduce rear-standard axial translation.
+    filmDepthReference: "rear-standard-z",
   },
   compositionTargets: [
     {

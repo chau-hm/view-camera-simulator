@@ -51,6 +51,12 @@ export type SceneFiniteFocusStrategy = {
   kind: "rear-standard-thin-lens";
   lensDatum: "baseline-origin";
   focusDistanceReference: "lens-to-focus-plane";
+  /**
+   * Chooses how the finite-focus rear film depth is interpreted when the
+   * front lens is tilted or swung. Omitted values preserve the historical
+   * rear-standard Z datum.
+   */
+  filmDepthReference?: "rear-standard-z" | "optical-axis-conjugate";
 };
 
 export type SceneCameraBodyPitchCapability = {

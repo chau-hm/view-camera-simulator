@@ -16,8 +16,9 @@ export type FiniteFocusFilmPlaneResult = ReturnType<typeof createFilmPlane> & {
  *
  * The default preserves the historical focal-length baseline. A
  * rear-standard thin-lens scene keeps its lens at the baseline origin and
- * places the film at the on-axis image point's world-Z depth, where
- * v = fU / (U - f). For a swung/tilted lens this is Z = -v * normal.z.
+ * places the film at Z = -v, where v = fU / (U - f). Scenes that explicitly
+ * select optical-axis-conjugate may instead place the fixed rear film at the
+ * on-axis image point's Z depth, Z = -v * normal.z.
  */
 export const calculateFiniteFocusFilmPlane = ({
   focalLengthMm,
@@ -43,8 +44,10 @@ export const calculateFiniteFocusFilmPlane = ({
       : focalLengthMm;
   const isValid = Number.isFinite(rawImageDistanceMm) && rawImageDistanceMm > 0;
   const resolvedImageDistanceMm = isValid ? rawImageDistanceMm : focalLengthMm;
+  const filmDepthReference = strategy?.filmDepthReference ?? "rear-standard-z";
   const projectedImageDepthMm =
     strategy?.kind === "rear-standard-thin-lens" &&
+    filmDepthReference === "optical-axis-conjugate" &&
     lensNormalLocal &&
     Number.isFinite(lensNormalLocal.z) &&
     lensNormalLocal.z > 0

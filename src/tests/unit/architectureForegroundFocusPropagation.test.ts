@@ -60,6 +60,7 @@ describe("Architecture + Foreground focus-to-film propagation", () => {
       kind: "rear-standard-thin-lens",
       lensDatum: "baseline-origin",
       focusDistanceReference: "lens-to-focus-plane",
+      filmDepthReference: "rear-standard-z",
     });
     const focusNear = deriveOpticsState(focusCamera(3920), architectureForegroundScene);
     const focusFar = deriveOpticsState(focusCamera(9450), architectureForegroundScene);

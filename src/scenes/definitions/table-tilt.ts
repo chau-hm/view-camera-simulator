@@ -41,6 +41,7 @@ export const tableTiltScene: SceneDefinition = {
     kind: "rear-standard-thin-lens",
     lensDatum: "baseline-origin",
     focusDistanceReference: "lens-to-focus-plane",
+    filmDepthReference: "optical-axis-conjugate",
   },
   cameraPlacement: {
     position: geometry.observerCamera.position,

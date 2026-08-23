@@ -34,6 +34,8 @@ export const understandingCameraMovementsScene: SceneDefinition = {
     kind: "rear-standard-thin-lens",
     lensDatum: "baseline-origin",
     focusDistanceReference: "lens-to-focus-plane",
+    // This isolated-movement lesson keeps the rear-standard Z datum fixed.
+    filmDepthReference: "rear-standard-z",
   },
   cameraBodyPitchCapability: {
     enabled: true,
