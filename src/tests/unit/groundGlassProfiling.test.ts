@@ -30,6 +30,13 @@ const makeConfiguration = (
 });
 
 type FakeGpuContext = GroundGlassGpuTimerContext & {
+  getExtension: ReturnType<typeof vi.fn>;
+  createQuery: ReturnType<typeof vi.fn>;
+  beginQuery: ReturnType<typeof vi.fn>;
+  endQuery: ReturnType<typeof vi.fn>;
+  getQueryParameter: ReturnType<typeof vi.fn>;
+  getParameter: ReturnType<typeof vi.fn>;
+  deleteQuery: ReturnType<typeof vi.fn>;
   available: boolean;
   disjoint: boolean;
   resultNanoseconds: number;
@@ -215,9 +222,181 @@ describe("Ground Glass profiling capability and timer lifecycle", () => {
     expect(fake.context.createdQueries).toHaveLength(1);
     timer!.dispose();
   });
+
+  it("reports logical capacity without allocating query objects", () => {
+    const fake = makeFakeGpuContext();
+    const timer = createGroundGlassGpuTimer({ getContext: () => fake.context }, 5)!;
+
+    expect(timer.availableSlots).toBe(5);
+    expect(timer.canReserve(5)).toBe(true);
+    expect(timer.canReserve(6)).toBe(false);
+    expect(timer.canReserve(0)).toBe(false);
+    expect(timer.canReserve(-1)).toBe(false);
+    expect(timer.canReserve(Number.NaN)).toBe(false);
+    expect(fake.context.createdQueries).toHaveLength(0);
+
+    const first = timer.begin(1, "sceneRender");
+    timer.end(first);
+    const second = timer.begin(1, "composite");
+    timer.end(second);
+
+    expect(timer.pendingCount).toBe(2);
+    expect(timer.availableSlots).toBe(3);
+    expect(timer.canReserve(3)).toBe(true);
+    expect(timer.canReserve(4)).toBe(false);
+    expect(fake.context.createdQueries).toHaveLength(2);
+
+    fake.context.available = true;
+    expect(timer.poll()).toHaveLength(2);
+    expect(timer.availableSlots).toBe(5);
+    timer.dispose();
+  });
 });
 
 describe("Ground Glass profiling pass contract", () => {
+  const processedPasses: readonly GroundGlassProfilingPass[] = [
+    "sceneRender",
+    "cocFootprint",
+    "farGather",
+    "nearGather",
+    "composite",
+  ];
+
+  it("admits a processed frame atomically before issuing GPU queries", () => {
+    const fake = makeFakeGpuContext();
+    const profiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => fake.context },
+      undefined,
+      0,
+      5,
+    );
+    const configuration = makeConfiguration();
+
+    // Leave one completed-but-unavailable query pending so only four slots
+    // remain for the next processed frame.
+    profiler.beginFrame(configuration, 16);
+    profiler.beginPass("sceneRender").end();
+    profiler.endFrame();
+    const beginCallsBeforeRejectedFrame = fake.context.beginQuery.mock.calls.length;
+    const createCallsBeforeRejectedFrame = fake.context.createQuery.mock.calls.length;
+
+    profiler.beginFrame(configuration, 16);
+    processedPasses.forEach((pass) => profiler.beginPass(pass).end());
+    profiler.endFrame();
+
+    expect(fake.context.beginQuery).toHaveBeenCalledTimes(beginCallsBeforeRejectedFrame);
+    expect(fake.context.createQuery).toHaveBeenCalledTimes(createCallsBeforeRejectedFrame);
+    expect(profiler.snapshot().frame.count).toBe(2);
+    expect(profiler.snapshot().groundGlassGpu?.count).toBe(0);
+    expect(profiler.snapshot().physicalDofGpu?.count).toBe(0);
+    processedPasses.forEach((pass) => {
+      const key = `${pass}Ms` as const;
+      expect(profiler.snapshot().passes[key]?.count).toBe(0);
+    });
+    profiler.dispose();
+  });
+
+  it("admits a processed frame when exactly five slots are available", () => {
+    const fake = makeFakeGpuContext();
+    const profiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => fake.context },
+      undefined,
+      0,
+      5,
+    );
+
+    profiler.beginFrame(makeConfiguration(), 16);
+    processedPasses.forEach((pass) => profiler.beginPass(pass).end());
+    profiler.endFrame();
+
+    expect(fake.context.beginQuery).toHaveBeenCalledTimes(5);
+    expect(fake.context.createQuery).toHaveBeenCalledTimes(5);
+    profiler.dispose();
+  });
+
+  it("uses only two slots for Raw RTT and rejects before a partial allocation", () => {
+    const admittedFake = makeFakeGpuContext();
+    const admittedProfiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => admittedFake.context },
+      undefined,
+      0,
+      2,
+    );
+    const rawConfiguration = makeConfiguration(true);
+
+    admittedProfiler.beginFrame(rawConfiguration, 16);
+    admittedProfiler.beginPass("sceneRender").end();
+    admittedProfiler.beginPass("composite").end();
+    admittedProfiler.endFrame();
+    expect(admittedFake.context.beginQuery).toHaveBeenCalledTimes(2);
+    expect(admittedProfiler.snapshot().passes.cocFootprintMs).toBeNull();
+    expect(admittedProfiler.snapshot().passes.farGatherMs).toBeNull();
+    expect(admittedProfiler.snapshot().passes.nearGatherMs).toBeNull();
+    expect(admittedProfiler.snapshot().physicalDofGpu).toBeNull();
+    admittedProfiler.dispose();
+
+    const rejectedFake = makeFakeGpuContext();
+    const rejectedProfiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => rejectedFake.context },
+      undefined,
+      0,
+      2,
+    );
+    rejectedProfiler.beginFrame(rawConfiguration, 16);
+    rejectedProfiler.beginPass("sceneRender").end();
+    rejectedProfiler.endFrame();
+    const beginCallsBeforeRejectedFrame = rejectedFake.context.beginQuery.mock.calls.length;
+
+    rejectedProfiler.beginFrame(rawConfiguration, 16);
+    rejectedProfiler.beginPass("sceneRender").end();
+    rejectedProfiler.beginPass("composite").end();
+    rejectedProfiler.beginPass("cocFootprint").end();
+    rejectedProfiler.endFrame();
+
+    expect(rejectedFake.context.beginQuery).toHaveBeenCalledTimes(beginCallsBeforeRejectedFrame);
+    expect(rejectedFake.context.createQuery).toHaveBeenCalledTimes(1);
+    expect(rejectedProfiler.snapshot().frame.count).toBe(2);
+    expect(rejectedProfiler.snapshot().physicalDofGpu).toBeNull();
+    rejectedProfiler.dispose();
+  });
+
+  it("resumes GPU profiling after pending queries complete", () => {
+    const fake = makeFakeGpuContext();
+    const profiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => fake.context },
+      undefined,
+      0,
+      5,
+    );
+    const configuration = makeConfiguration();
+
+    profiler.beginFrame(configuration, 16);
+    profiler.beginPass("sceneRender").end();
+    profiler.endFrame();
+    const beginCallsAfterFirstFrame = fake.context.beginQuery.mock.calls.length;
+
+    // Capacity is still four, so this whole frame is skipped.
+    profiler.beginFrame(configuration, 16);
+    processedPasses.forEach((pass) => profiler.beginPass(pass).end());
+    profiler.endFrame();
+    expect(fake.context.beginQuery).toHaveBeenCalledTimes(beginCallsAfterFirstFrame);
+
+    fake.context.available = true;
+    profiler.beginFrame(configuration, 16);
+    processedPasses.forEach((pass) => profiler.beginPass(pass).end());
+    profiler.endFrame();
+
+    expect(fake.context.beginQuery).toHaveBeenCalledTimes(beginCallsAfterFirstFrame + 5);
+    expect(fake.context.createQuery).toHaveBeenCalledTimes(5);
+    expect(profiler.snapshot().frame.count).toBe(3);
+    profiler.dispose();
+  });
+
   it("uses labeled CPU submission scopes when GPU queries are unavailable", () => {
     const snapshots: ReturnType<GroundGlassProfiler["snapshot"]>[] = [];
     const profiler = new GroundGlassProfiler(

@@ -228,6 +228,15 @@ export class GroundGlassGpuTimer {
     return this.slots.filter((slot) => slot.active !== null).length;
   }
 
+  public get availableSlots(): number {
+    return Math.max(0, this.maxQueries - this.pendingCount);
+  }
+
+  /** Checks logical pool capacity without allocating or reserving a query. */
+  public canReserve(count: number): boolean {
+    return Number.isInteger(count) && count > 0 && count <= this.availableSlots;
+  }
+
   public begin(frameId: number, pass: GroundGlassProfilingPass): GroundGlassGpuTimerToken | null {
     if (this.disposed ||
         !this.context.createQuery ||
@@ -368,6 +377,7 @@ type FrameRecord = {
   rawDebug: boolean;
   expected: readonly GroundGlassProfilingPass[];
   timings: Partial<Record<GroundGlassProfilingPass, number>>;
+  measurementAccepted: boolean;
   valid: boolean;
   finished: boolean;
 };
@@ -415,6 +425,7 @@ export class GroundGlassProfiler {
     renderer: GroundGlassGpuTimerRenderer,
     onSnapshot?: (snapshot: GroundGlassProfilingSnapshot) => void,
     publishIntervalMs = GROUND_GLASS_PROFILING_PUBLISH_INTERVAL_MS,
+    maxGpuQueries = GROUND_GLASS_PROFILING_QUERY_POOL_SIZE,
   ) {
     this.enabled = enabled;
     this.onSnapshot = onSnapshot;
@@ -424,7 +435,7 @@ export class GroundGlassProfiler {
       this.gpuTimer = null;
       return;
     }
-    this.gpuTimer = createGroundGlassGpuTimer(renderer);
+    this.gpuTimer = createGroundGlassGpuTimer(renderer, maxGpuQueries);
     this.backend = this.gpuTimer ? "gpu-query" : "cpu-fallback";
   }
 
@@ -461,11 +472,14 @@ export class GroundGlassProfiler {
     const expected = configuration.rawDebug
       ? (["sceneRender", "composite"] as const)
       : PASS_NAMES;
+    const measurementAccepted = this.backend !== "gpu-query" ||
+      (this.gpuTimer?.canReserve(expected.length) ?? false);
     this.currentFrame = {
       id: ++this.frameId,
       rawDebug: configuration.rawDebug,
       expected,
       timings: {},
+      measurementAccepted,
       valid: this.backend !== "unavailable",
       finished: false,
     };
@@ -473,7 +487,8 @@ export class GroundGlassProfiler {
 
   public beginPass(pass: GroundGlassProfilingPass): GroundGlassPassScope {
     const frame = this.currentFrame;
-    if (!this.enabled || !frame || !frame.expected.includes(pass) || !frame.valid) {
+    if (!this.enabled || !frame || !frame.expected.includes(pass) ||
+        !frame.measurementAccepted || !frame.valid) {
       return NOOP_SCOPE;
     }
 
@@ -510,7 +525,7 @@ export class GroundGlassProfiler {
     if (!frame) return;
     frame.finished = true;
     this.currentFrame = null;
-    if (!frame.valid || this.backend === "unavailable") {
+    if (!frame.measurementAccepted || !frame.valid || this.backend === "unavailable") {
       this.pendingFrames.delete(frame.id);
     } else {
       this.pendingFrames.set(frame.id, frame);
