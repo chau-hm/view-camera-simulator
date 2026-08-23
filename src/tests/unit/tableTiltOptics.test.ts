@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { planeFromPointNormal, intersectPlanes } from "../../core/math/plane";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { calculateDepthOfField } from "../../core/optics/calculateDepthOfField";
+import { imageDistanceMm } from "../../core/optics/thinLensModel";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
@@ -441,7 +442,10 @@ describe("Table Tilt optics calibration", () => {
       expect(uniforms.mode).toBe(1);
       expect(uniforms.imageDistanceMm).toBeGreaterThan(0);
       if (frontTiltDeg === 0) {
-        expect(uniforms.imageDistanceMm).toBeCloseTo(CAMERA_CONSTANTS.focalLengthMm, 8);
+        expect(uniforms.imageDistanceMm).toBeCloseTo(
+          imageDistanceMm(CAMERA_CONSTANTS.focalLengthMm, geometry.canonicalFocusDistanceMm),
+          8,
+        );
       }
       expect(
         [

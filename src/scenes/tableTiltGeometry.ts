@@ -74,18 +74,19 @@ const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 /**
  * Calibration is derived from the actual 150 mm lens/film geometry.
  *
- * With front tilt θ, the lens/film hinge is y = -f·cot(θ). A focus point on
- * that same height produces a horizontal Scheimpflug focus plane. Its distance
- * along the tilted optical axis is f·cos(θ)/sin²(θ). The tabletop is placed one
- * canonical probe height below that plane so the visible detail probes—not the
- * hidden subject footprints—sit on the known-correct plane.
+ * With front tilt θ and a rear-standard finite-focus film plane, the horizontal
+ * object plane conjugate to the film has y = -f/sin(θ). Its optical-axis focus
+ * distance is f/sin²(θ), while the corresponding film Z depth is v*cos(θ).
+ * The tabletop is placed one canonical probe height below that plane so the
+ * visible detail probes—not the hidden subject footprints—sit on the physical
+ * focus plane consumed by Ground Glass.
  */
 const calibrationTiltDeg = 9;
 const calibrationTiltRad = degreesToRadians(calibrationTiltDeg);
 const focusProbeHeightAboveTabletopMm = 180 * 0.52;
-const calibratedFocusPlaneY = -150 / Math.tan(calibrationTiltRad);
+const calibratedFocusPlaneY = -150 / Math.sin(calibrationTiltRad);
 const calibratedFocusDistanceMm =
-  (150 * Math.cos(calibrationTiltRad)) / Math.sin(calibrationTiltRad) ** 2;
+  150 / Math.sin(calibrationTiltRad) ** 2;
 const tabletopTopSurfaceY = calibratedFocusPlaneY - focusProbeHeightAboveTabletopMm;
 const focusProbeSurfaceGapMm = 1;
 const detailPanelThicknessMm = 4;

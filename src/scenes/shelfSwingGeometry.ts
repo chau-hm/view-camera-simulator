@@ -13,6 +13,7 @@ import {
 } from "../core/math/vec";
 import { CAMERA_CONTROL_STEPS } from "../utils/constants";
 import { roundToStep } from "../utils/roundToStep";
+import { imageDistanceMm } from "../core/optics/thinLensModel";
 
 export type ShelfSwingVec3 = {
   x: number;
@@ -102,6 +103,7 @@ export type ShelfSwingCalibrationResult = {
   };
   opticalAxisIntersection: ShelfSwingVec3;
   focusDistanceMm: number;
+  filmDistanceMm: number;
   collinearityErrorMm: number;
 };
 
@@ -117,10 +119,10 @@ const requireFinitePoint = (point: ShelfSwingVec3, label: string): void => {
 /**
  * Derive the signed front-swing solution from three probes on one vertical plane.
  *
- * The film plane is z = -f and the existing rotateAroundY convention gives the
- * swung lens normal (sin(theta), 0, cos(theta)). The lens/film hinge therefore
- * satisfies f*cot(theta) = hingeX. The focus distance is then the positive ray
- * parameter where that swung optical axis intersects the canonical subject plane.
+ * The rear-standard finite-focus contract places the film at the Z coordinate
+ * of the on-axis ideal image point, F = v*cos(theta). Solving the hinge
+ * condition against that conjugate film plane keeps the calibrated subject
+ * plane and the physical aperture projection on the same focus plane.
  */
 export function calibrateShelfSwing({
   focalLengthMm,
@@ -171,12 +173,15 @@ export function calibrateShelfSwing({
 
   const xPerZ = trace.x / trace.z;
   const xInterceptMm = front.x - xPerZ * front.z;
-  const hingeX = xInterceptMm - xPerZ * focalLengthMm;
-  if (!Number.isFinite(hingeX) || Math.abs(hingeX) <= collinearityEpsilonMm) {
-    throw new Error("Shelf Swing calibration produced an invalid lens/film hinge position");
+  if (Math.abs(xInterceptMm) <= focalLengthMm + collinearityEpsilonMm) {
+    throw new Error("Shelf Swing calibration has no finite rear-standard swing solution");
   }
 
-  const frontSwingRad = Math.atan(focalLengthMm / hingeX);
+  const swingTangent =
+    Math.sign(xInterceptMm) *
+    focalLengthMm /
+      Math.sqrt(Math.max(0, xInterceptMm * xInterceptMm - focalLengthMm * focalLengthMm));
+  const frontSwingRad = Math.atan(swingTangent);
   const frontSwingDeg = radiansToDegrees(frontSwingRad);
   if (!Number.isFinite(frontSwingDeg) || Math.abs(frontSwingDeg) <= 1e-9) {
     throw new Error("Shelf Swing calibration produced an invalid zero swing solution");
@@ -202,6 +207,18 @@ export function calibrateShelfSwing({
   if (!isFiniteVec3(opticalAxisIntersection)) {
     throw new Error("Shelf Swing calibration produced a non-finite optical-axis intersection");
   }
+  const idealImageDistanceMm = imageDistanceMm(focalLengthMm, focusDistanceMm);
+  const filmDistanceMm = idealImageDistanceMm * opticalAxisDirection.z;
+  const hingeX = filmDistanceMm / Math.tan(frontSwingRad);
+  if (
+    !Number.isFinite(idealImageDistanceMm) ||
+    !Number.isFinite(filmDistanceMm) ||
+    filmDistanceMm <= 0 ||
+    !Number.isFinite(hingeX) ||
+    Math.abs(hingeX) <= collinearityEpsilonMm
+  ) {
+    throw new Error("Shelf Swing calibration produced an invalid lens/film hinge position");
+  }
 
   return {
     subjectPlane: {
@@ -211,7 +228,7 @@ export function calibrateShelfSwing({
       topViewTrace: { xPerZ, xInterceptMm },
     },
     hingeLine: {
-      point: { x: hingeX, y: 0, z: -focalLengthMm },
+      point: { x: hingeX, y: 0, z: -filmDistanceMm },
       direction: { x: 0, y: 1, z: 0 },
     },
     frontSwingDeg,
@@ -221,6 +238,7 @@ export function calibrateShelfSwing({
     },
     opticalAxisIntersection,
     focusDistanceMm,
+    filmDistanceMm,
     collinearityErrorMm,
   };
 }
