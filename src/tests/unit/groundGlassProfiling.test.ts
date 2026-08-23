@@ -145,6 +145,10 @@ describe("Ground Glass profiling capability and timer lifecycle", () => {
 
     expect(createGroundGlassGpuTimer({ getContext: () => context })).toBeNull();
     expect(context.createQuery).not.toHaveBeenCalled();
+
+    const profiler = new GroundGlassProfiler(true, { getContext: () => context });
+    expect(profiler.backend).toBe("cpu-fallback");
+    profiler.dispose();
   });
 
   it("reads completed timer results asynchronously and discards disjoint results", () => {
