@@ -1,56 +1,48 @@
-# PR 8E — Ground Glass Physical DOF profiling
+# Focused fix — Ground Glass focus-to-film-plane propagation
 
-- Branch: `perf/ground-glass-dof-profiling`.
-- Base: `origin/main` at `ef91bd8`, containing merged PR #85 / PR 8D.
-- Objective: measure the existing Ground Glass physical-DOF pipeline without
-  changing optical calculations, gather quality, or rendered output.
+- Branch: `fix/ground-glass-focus-film-plane-propagation`.
+- Base: `origin/main` at `e7faa124` (merged PR #86 / PR 8E; PR 8D is also in
+  main).
+- Objective: make the Architecture + Foreground focus control update the
+  canonical physical film plane consumed by Ground Glass CoC/footprint
+  uniforms, without changing renderer algorithms or global optics defaults.
 
-## Instrumentation contract
+## Root cause and decision
 
-- Profiling is developer opt-in with `?dofProfiling=1` (the alias
-  `?groundGlassProfiling=1` is also accepted).
-- The active RTT frame scopes the real scene, CoC/footprint, far gather, near
-  gather, and composite render calls. Raw RTT scopes only scene and composite;
-  CoC/far/near are not executed or reported.
-- `EXT_disjoint_timer_query_webgl2` is used asynchronously when available. A
-  bounded 24-query pool is reused; pending/disjoint results are discarded and
-  all query objects are disposed with the RTT resources. Unsupported contexts
-  use explicitly labeled CPU submission timing.
-- A bounded 60-sample window publishes latest, mean, p50, and p95 statistics.
-  Snapshots include the measured resolution, gather settings, storage format,
-  technique, preview/raw state, timing backend, and pass data in the existing
-  runtime/debug diagnostics.
+- `calculateFiniteFocusFilmPlane` already supports the declarative
+  `rear-standard-thin-lens` strategy, but Architecture + Foreground did not
+  declare it. Its focus-adjustable path therefore kept the legacy `-f`
+  film-plane datum for every finite focus value.
+- Architecture + Foreground now declares the existing rear-standard strategy:
+  `lensDatum: baseline-origin`, `focusDistanceReference: lens-to-focus-plane`.
+- Focus Fundamentals remains owned by its selectable front/rear resolver;
+  Architecture Rise keeps its explicit rear-standard special case; Table Tilt
+  and Shelf Swing retain derived-plane focus semantics; Oblique Architecture
+  and the fixed Understanding Camera Movements scene retain their existing
+  declarations/contracts; Mirror Shift remains fixed.
 
-## Manual benchmark protocol
+## Validation evidence
 
-For each scene/profile: reset or reload the scene, enable `?dofProfiling=1`,
-allow warm-up, and capture the JSON snapshot from the Ground Glass profiling
-debug group only after the timing channel for the selected backend has a full
-window. For processed Ground Glass, wait until both
-`groundGlassGpu.count` and `physicalDofGpu.count` reach 60 when
-`profilingBackend` is `gpu-query`; when it is `cpu-fallback`, wait until both
-`groundGlassCpuSubmit.count` and `physicalDofCpuSubmit.count` reach 60. Keep
-`frame.count` as the separate browser-frame timing / approximate-FPS window.
-For Raw RTT, physical-DOF timing must remain null; wait only for the selected
-Ground Glass GPU or CPU-submit count to reach 60. Avoid camera interaction
-during sampling and record whether the display appears capped by vsync.
-Compare frame timing separately from Ground Glass GPU/CPU-submit timing; do not
-infer uncapped FPS or application FPS from Ground Glass GPU time.
+- Focused unit coverage compares 3920 mm and 9450 mm focus, canonical
+  thin-lens image distance, unchanged lens/rig placement, physical signed CoC
+  and ellipse footprints at façade/foreground samples, and Ground Glass
+  uniform film-plane propagation.
+- Focused Chromium coverage checks processed RTT output changes after focus,
+  film-center movement with a stable lens center, finite diagnostics, and Raw
+  RTT contentfulness through a processed/raw transition.
+- Full unit/integration validation passed (134 files / 1278 tests), along with
+  typecheck, lint, CSS check, and build. Serial Architecture + Foreground,
+  Ground Glass stability, Table Tilt, Shelf Swing, and Oblique smoke checks
+  passed. The CI-local E2E workflow stopped at the existing Focus Fundamentals
+  diagnostic baseline (`focus-fundamentals-selectable-focus.spec.ts:155`,
+  missing owner/resource-generation diagnostics); the affected optics and
+  integration code was not changed here.
+- No renderer shader, blur-quality, display scaling, or UI control
+  implementation was changed.
 
-Suggested matrix:
+## Known limitation
 
-- Architecture + Foreground — High, Standard, Low
-- Table Tilt — High, Standard, Low
-- Shelf Swing — High, Standard, Low
-- Raw RTT reference — High
-
-Run the same procedure later on the Mac mini M4 Pro and iPad mini 7. This PR
-has no performance target and introduces no automatic quality changes.
-
-## Known limitations
-
-- CPU fallback measures browser-side submission duration, not GPU execution.
-- Browser frame time includes React, the main viewport, UI, and compositor
-  work; it is not a Ground Glass-only FPS measurement.
-- GPU timing is asynchronous, so the first snapshots may be sparse until
-  timer results become available. No telemetry leaves the browser.
+This is a scene-contract correction. The existing local-affine physical CoC,
+oriented footprint, near/far gather, and profiling implementations remain
+unchanged; later work may extend focus propagation to any newly introduced
+scene only when its canonical focusing semantics are explicitly classified.
