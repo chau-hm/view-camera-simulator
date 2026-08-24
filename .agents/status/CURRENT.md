@@ -1,43 +1,49 @@
-# Focused fix — Scope finite-focus film-depth semantics
+# Focused fix — Ground Glass GPU profiler runtime completion
 
-- Branch: `fix/ground-glass-focus-film-plane-propagation`.
-- Base: `origin/main` at `6dd36e5b2b60b36990afc70c3b463faba2a7de6b`.
-- Transplanted predecessor: `0dc3f53` (`fix(optics): align swing focus
-  diagnostics with physical DOF`).
-- Scope: make projected optical-axis film-depth behavior explicit per scene
-  while restoring historical isolated-movement semantics.
+- Branch: `fix/ground-glass-gpu-profiler-runtime`.
+- Base: `origin/main` at `67ee0e38d6283a11708d2d0e3b8194cd43ed5b9e`.
+- Scope: make the existing opt-in GPU timer-query path operational and
+  observable without changing Ground Glass rendering or quality settings.
 
-## Contract
+## Root cause
 
-- `rear-standard-z` is the default and preserves `film Z = -v`.
-- `optical-axis-conjugate` explicitly selects `film Z = -v * lensNormal.z`;
-  `imageDistanceMm` remains the physical thin-lens conjugate `v` in both modes.
-- Shelf Swing, Table Tilt, Oblique Architecture, and Architecture + Foreground use
-  `optical-axis-conjugate` because their calibrated Scheimpflug focus solution
-  refocuses a fixed rear film plane against the swung/tilted optical axis.
-- Understanding Camera Movements uses `rear-standard-z` so isolated front
-  movements do not hide a rear-standard axial translation.
-- Architecture + Foreground's guided Tilt + Focus lesson measures focus along
-  the current tilted optical axis, so its resolved rear film depth must remain
-  optically conjugate. At neutral tilt it remains numerically equivalent to
-  `rear-standard-z`.
+`GroundGlassGpuTimer.poll()` copied native WebGL `getParameter` and
+`getQueryParameter` methods into local variables before calling them. Native
+WebGL methods require their context receiver, so the real Ground Glass context
+failed at the first asynchronous poll. The old fake context accepted the
+unbound calls and masked the integration defect. Queries were begun/ended but
+no results reached frame aggregation.
+
+## Fix and diagnostics
+
+- Polls invoke the WebGL methods through the owning context, preserving `this`.
+- GPU query state is reported separately from backend capability: detected,
+  active, stalled, disjoint, or error.
+- Bounded counters expose frame admission, query begin/end/poll/completion,
+  unavailable/disjoint/error, pending-frame, ownership, and session-reset
+  state in the profiling snapshot.
+- The debug panel labels browser-frame samples separately from completed GPU
+  frames. Raw RTT continues to profile only scene render and composite.
+- GPU timing remains asynchronous and uses no `gl.finish`, `readPixels`, or
+  automatic CPU fallback when the GPU backend is available.
 
 ## Validation status
 
-- Focused strategy/scene/renderer unit suites pass, including the Architecture
-  + Foreground non-zero Tilt + Focus physical footprint and optical-axis
-  conjugacy regression (16 files, 167 tests).
-- Full unit/integration suite passes: 136 files, 1288 tests; typecheck, lint,
+- Focused profiler and Ground Glass RTT unit suites pass, including receiver-
+  bound WebGL fakes, delayed multi-pass ownership, reset/disjoint/failure,
+  atomic admission, Raw RTT, and CPU fallback coverage.
+- Focused profiling Chromium suite passes in the default CPU-fallback runner.
+- Edge on this Mac with a Metal-backed timer-query context reaches 60 samples
+  for all five processed passes, Ground Glass, and physical DOF; diagnostics
+  report active state, no disjoint/error, and zero ownership drops. Raw High
+  reports scene/composite only and `physicalDofGpu: null`.
+- Full unit/integration tests pass: 136 files, 1,292 tests; typecheck, lint,
   CSS check, build, and diff check pass.
-- Serial Chromium validation passes all six Architecture + Foreground cases and
-  seven preserved-scene smoke cases (Shelf Swing, Table Tilt, Oblique
-  Architecture, and Understanding Camera Movements). A broader 47-test matrix
-  was resource-contended under parallel WebGL workers; its deterministic
-  legacy failure remains the Architecture Rise omission of
-  `data-rtt-focal-length-mm` in the Understanding SPA test.
-- `npm run ci:local:e2e` reaches the known unrelated Focus Fundamentals
-  owner/resource-generation diagnostic failure in
-  `focus-fundamentals-selectable-focus.spec.ts:155`; affected PR tests pass
-  independently.
-- No renderer, physical CoC, blur calibration, task scoring, or PR 8F scene
-  detail changes are in scope.
+- Independent affected Chromium matrix passes all 37 profiling/stability,
+  Shelf Swing, Table Tilt, and Oblique Architecture cases.
+- `npm run ci:local:e2e` reaches the known unrelated baseline failure at
+  `focus-fundamentals-selectable-focus.spec.ts:155` (“Ground Glass RTT
+  diagnostics were incomplete”); the remaining test in that file passes.
+
+No optical equations, DOF shaders, gather settings, scene geometry, task
+thresholds, or PR 8F work are in scope.

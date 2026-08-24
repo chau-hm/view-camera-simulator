@@ -214,6 +214,9 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(useAppStore.getState().groundGlassRttRuntimeInfo?.profilingEnabled).toBe(true);
     expect(snapshot?.profilingBackend).toBe("cpu-fallback");
     expect(snapshot?.timingUnit).toBe("cpu-submit-ms");
+    expect(snapshot?.profilingDiagnostics.gpuQueryState).toBe("unavailable");
+    expect(snapshot?.profilingDiagnostics.framesAttempted).toBe(1);
+    expect(snapshot?.profilingDiagnostics.framesAccepted).toBe(1);
     expect(snapshot?.frame.count).toBe(1);
     expect(snapshot?.groundGlassCpuSubmit?.count).toBe(1);
     expect(snapshot?.physicalDofCpuSubmit?.count).toBe(1);
@@ -260,6 +263,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(snapshot?.passes.farGatherMs).toBeNull();
     expect(snapshot?.passes.nearGatherMs).toBeNull();
     expect(snapshot?.physicalDofCpuSubmit).toBeNull();
+    expect(snapshot?.profilingDiagnostics.framesAttempted).toBe(1);
+    expect(snapshot?.profilingDiagnostics.framesAccepted).toBe(1);
 
     view.unmount();
   });

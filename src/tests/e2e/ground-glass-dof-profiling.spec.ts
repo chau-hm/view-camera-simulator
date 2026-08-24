@@ -15,6 +15,15 @@ type ProfileSnapshot = {
   physicalDofGpu: ProfileTiming;
   groundGlassCpuSubmit: ProfileTiming;
   physicalDofCpuSubmit: ProfileTiming;
+  profilingDiagnostics: {
+    gpuQueryState: string;
+    framesCompletedGpu: number;
+    lastGpuQueryError: string | null;
+  };
+  passes: Record<
+    "sceneRenderMs" | "cocFootprintMs" | "farGatherMs" | "nearGatherMs" | "compositeMs",
+    ProfileTiming
+  >;
 };
 
 const readProfileSnapshot = async (
@@ -43,6 +52,36 @@ const expectBackendTimingSamples = (
     expect(physicalDof).toBeNull();
   } else {
     expect(physicalDof?.count).toBeGreaterThan(0);
+  }
+
+  if (snapshot.profilingBackend === "gpu-query") {
+    // A detected GPU backend with no completed samples is only acceptable when
+    // the snapshot explicitly says that the query path is stalled/disjoint or
+    // failed. A healthy GPU backend must prove its own timing channel.
+    if ((groundGlass?.count ?? 0) === 0) {
+      expect(["stalled", "disjoint", "error"]).toContain(
+        snapshot.profilingDiagnostics.gpuQueryState,
+      );
+      expect(
+        snapshot.profilingDiagnostics.lastGpuQueryError ??
+          snapshot.profilingDiagnostics.gpuQueryState,
+      ).toBeTruthy();
+      return;
+    }
+    expect(snapshot.profilingDiagnostics.gpuQueryState).toBe("active");
+    expect(snapshot.profilingDiagnostics.framesCompletedGpu).toBeGreaterThan(0);
+  }
+
+  const expectedPasses = rawDebug
+    ? ["sceneRenderMs", "compositeMs"] as const
+    : ["sceneRenderMs", "cocFootprintMs", "farGatherMs", "nearGatherMs", "compositeMs"] as const;
+  expectedPasses.forEach((pass) => {
+    expect(snapshot.passes[pass]?.count).toBeGreaterThan(0);
+  });
+  if (rawDebug) {
+    expect(snapshot.passes.cocFootprintMs).toBeNull();
+    expect(snapshot.passes.farGatherMs).toBeNull();
+    expect(snapshot.passes.nearGatherMs).toBeNull();
   }
 };
 

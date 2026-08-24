@@ -77,14 +77,16 @@ const makeFakeGpuContext = () => {
     endQuery: vi.fn(() => {
       activeQuery = null;
     }),
-    getQueryParameter: vi.fn((_query: unknown, parameter: number) => {
+    getQueryParameter: vi.fn(function (this: FakeGpuContext, _query: unknown, parameter: number) {
+      if (this !== context) throw new TypeError("Illegal invocation");
       if (parameter === context.QUERY_RESULT_AVAILABLE) return context.available;
       if (parameter === context.QUERY_RESULT) return context.resultNanoseconds;
       return 0;
     }),
-    getParameter: vi.fn((parameter: number) =>
-      parameter === extension.GPU_DISJOINT_EXT ? context.disjoint : false,
-    ),
+    getParameter: vi.fn(function (this: FakeGpuContext, parameter: number) {
+      if (this !== context) throw new TypeError("Illegal invocation");
+      return parameter === extension.GPU_DISJOINT_EXT ? context.disjoint : false;
+    }),
     deleteQuery: vi.fn((query: unknown) => {
       context.deletedQueries.push(query);
     }),
@@ -183,6 +185,7 @@ describe("Ground Glass profiling capability and timer lifecycle", () => {
       expect.anything(),
       fake.context.QUERY_RESULT,
     );
+    expect(fake.context.getParameter).toHaveBeenCalledWith(fake.extension.GPU_DISJOINT_EXT);
     expect(timer!.pendingCount).toBe(0);
 
     const disjointToken = timer!.begin(2, "composite");
@@ -192,6 +195,8 @@ describe("Ground Glass profiling capability and timer lifecycle", () => {
     fake.context.disjoint = true;
     expect(timer!.poll()).toEqual([]);
     expect(timer!.pendingCount).toBe(0);
+    expect(timer!.getDiagnostics().disjointEvents).toBe(1);
+    expect(timer!.getDiagnostics().queriesDiscardedDisjoint).toBe(1);
 
     timer!.dispose();
     expect(fake.context.deletedQueries).toHaveLength(1);
@@ -313,6 +318,122 @@ describe("Ground Glass profiling pass contract", () => {
 
     expect(fake.context.beginQuery).toHaveBeenCalledTimes(5);
     expect(fake.context.createQuery).toHaveBeenCalledTimes(5);
+    profiler.dispose();
+  });
+
+  it("retains delayed multi-pass results until the owning frame completes", () => {
+    const fake = makeFakeGpuContext();
+    const profiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => fake.context },
+      undefined,
+      0,
+      10,
+    );
+    const configuration = makeConfiguration();
+
+    const issueProcessedFrame = () => {
+      profiler.beginFrame(configuration, 16);
+      processedPasses.forEach((pass) => profiler.beginPass(pass).end());
+      profiler.endFrame();
+    };
+
+    // Two frames can remain in flight while the GPU reports both results
+    // unavailable. The next frame polls them before allocating new queries.
+    issueProcessedFrame();
+    issueProcessedFrame();
+    expect(profiler.snapshot().groundGlassGpu?.count).toBe(0);
+    expect(profiler.snapshot().profilingDiagnostics.pendingQueries).toBe(10);
+
+    fake.context.available = true;
+    profiler.beginFrame(configuration, 16);
+    const snapshot = profiler.snapshot();
+    expect(snapshot.groundGlassGpu?.count).toBe(2);
+    expect(snapshot.physicalDofGpu?.count).toBe(2);
+    processedPasses.forEach((pass) => {
+      const key = `${pass}Ms` as const;
+      expect(snapshot.passes[key]?.count).toBe(2);
+    });
+    expect(snapshot.profilingDiagnostics.framesCompletedGpu).toBe(2);
+    expect(snapshot.profilingDiagnostics.queriesDroppedOwnership).toBe(0);
+    expect(snapshot.profilingDiagnostics.pendingQueries).toBe(0);
+    profiler.endFrame();
+    profiler.dispose();
+  });
+
+  it("keeps unavailable results pending across polls and then recovers", () => {
+    const fake = makeFakeGpuContext();
+    const profiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => fake.context },
+      undefined,
+      0,
+      5,
+    );
+    const configuration = makeConfiguration();
+
+    profiler.beginFrame(configuration, 16);
+    processedPasses.forEach((pass) => profiler.beginPass(pass).end());
+    profiler.endFrame();
+
+    fake.context.available = false;
+    profiler.beginFrame(configuration, 16);
+    expect(profiler.snapshot().profilingDiagnostics.queriesUnavailable).toBe(5);
+    expect(profiler.snapshot().profilingDiagnostics.gpuQueryState).toBe("stalled");
+    profiler.endFrame();
+
+    fake.context.available = true;
+    profiler.beginFrame(configuration, 16);
+    expect(profiler.snapshot().groundGlassGpu?.count).toBe(1);
+    expect(profiler.snapshot().physicalDofGpu?.count).toBe(1);
+    profiler.endFrame();
+    profiler.dispose();
+  });
+
+  it("discards stale frame ownership on an explicit session reset", () => {
+    const fake = makeFakeGpuContext();
+    const profiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => fake.context },
+      undefined,
+      0,
+      5,
+    );
+    const configuration = makeConfiguration();
+
+    profiler.beginFrame(configuration, 16);
+    processedPasses.forEach((pass) => profiler.beginPass(pass).end());
+    profiler.endFrame();
+    profiler.resetSession("test-config-change");
+    fake.context.available = true;
+    profiler.beginFrame(configuration, 16);
+    expect(profiler.snapshot().groundGlassGpu?.count).toBe(0);
+    expect(profiler.snapshot().profilingDiagnostics.sessionResets).toBe(2);
+    expect(profiler.snapshot().profilingDiagnostics.lastResetReason).toBe("test-config-change");
+    profiler.endFrame();
+    profiler.dispose();
+  });
+
+  it("surfaces a begin-query failure instead of presenting a valid frame", () => {
+    const fake = makeFakeGpuContext();
+    fake.context.beginQuery.mockImplementationOnce(() => {
+      throw new Error("begin failed");
+    });
+    const profiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => fake.context },
+      undefined,
+      0,
+      5,
+    );
+
+    profiler.beginFrame(makeConfiguration(), 16);
+    profiler.beginPass("sceneRender").end();
+    profiler.endFrame();
+    const diagnostics = profiler.snapshot().profilingDiagnostics;
+    expect(diagnostics.framesInvalidated).toBe(1);
+    expect(diagnostics.queriesBeginFailed).toBe(1);
+    expect(diagnostics.lastGpuQueryError).toBe("begin-query-failed");
     profiler.dispose();
   });
 

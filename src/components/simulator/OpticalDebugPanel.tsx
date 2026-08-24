@@ -205,7 +205,14 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
           <div className="optical-debug__group-content">
             <div><strong>Backend:</strong> {rttRuntimeInfo.profilingBackend ?? "—"}</div>
             <div><strong>Timing unit:</strong> {rttRuntimeInfo.profilingSnapshot?.timingUnit ?? "—"}</div>
-            <div><strong>Completed frames:</strong> {rttRuntimeInfo.profilingSnapshot?.frame.count ?? 0}</div>
+            <div><strong>GPU query state:</strong> {rttRuntimeInfo.profilingSnapshot?.profilingDiagnostics.gpuQueryState ?? "—"}</div>
+            <div><strong>Frame timing samples:</strong> {rttRuntimeInfo.profilingSnapshot?.frame.count ?? 0}</div>
+            <div><strong>Completed GPU frames:</strong> {rttRuntimeInfo.profilingSnapshot?.profilingDiagnostics.framesCompletedGpu ?? 0}</div>
+            <div><strong>GPU queries:</strong> {rttRuntimeInfo.profilingSnapshot ? `${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.queriesCompleted} completed · ${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.pendingQueries} pending / ${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.queryPoolSize} slots` : "—"}</div>
+            <div><strong>GPU frame admission:</strong> {rttRuntimeInfo.profilingSnapshot ? `${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.framesAccepted} accepted · ${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.framesRejectedCapacity} capacity-skipped` : "—"}</div>
+            {rttRuntimeInfo.profilingSnapshot?.profilingDiagnostics.lastGpuQueryError ? (
+              <div><strong>GPU query error:</strong> {rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.lastGpuQueryError}</div>
+            ) : null}
             <div><strong>Approx. FPS:</strong> {rttRuntimeInfo.profilingSnapshot?.approxFps?.toFixed(1) ?? "—"} (frame timing, display-capped if applicable)</div>
             <pre
               data-testid="ground-glass-profiling-snapshot"

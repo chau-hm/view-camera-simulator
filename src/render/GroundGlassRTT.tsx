@@ -857,7 +857,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       qualitySettings.gatherScale,
     );
     dimsRef.current = dims;
-    groundGlassProfilerRef.current?.resetSession();
+    groundGlassProfilerRef.current?.resetSession("resource-resize");
 
     // Preserve content and sanity diagnostics until the next frame publishes a
     // sample for the resized targets. A normal view zoom/reset is not teardown.

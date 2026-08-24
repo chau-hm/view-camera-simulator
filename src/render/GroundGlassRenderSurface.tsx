@@ -109,6 +109,11 @@ export const GroundGlassRenderSurface = ({
         data-rtt-profiling-approx-fps={rttRuntimeInfo?.profilingSnapshot?.approxFps}
         data-rtt-profiling-ground-glass-count={rttRuntimeInfo?.profilingSnapshot?.groundGlassGpu?.count ?? rttRuntimeInfo?.profilingSnapshot?.groundGlassCpuSubmit?.count}
         data-rtt-profiling-physical-dof-count={rttRuntimeInfo?.profilingSnapshot?.physicalDofGpu?.count ?? rttRuntimeInfo?.profilingSnapshot?.physicalDofCpuSubmit?.count}
+        data-rtt-profiling-gpu-state={rttRuntimeInfo?.profilingSnapshot?.profilingDiagnostics.gpuQueryState}
+        data-rtt-profiling-gpu-frames-completed={rttRuntimeInfo?.profilingSnapshot?.profilingDiagnostics.framesCompletedGpu}
+        data-rtt-profiling-gpu-queries-completed={rttRuntimeInfo?.profilingSnapshot?.profilingDiagnostics.queriesCompleted}
+        data-rtt-profiling-gpu-pending-queries={rttRuntimeInfo?.profilingSnapshot?.profilingDiagnostics.pendingQueries}
+        data-rtt-profiling-gpu-last-error={rttRuntimeInfo?.profilingSnapshot?.profilingDiagnostics.lastGpuQueryError ?? undefined}
         style={{ position: "absolute", inset: 0 }}
       >
         <GroundGlassRTT

@@ -16,6 +16,14 @@ export type GroundGlassProfilingTimingUnit =
   | "cpu-submit-ms"
   | "none";
 
+export type GroundGlassGpuQueryState =
+  | "unavailable"
+  | "detected"
+  | "active"
+  | "stalled"
+  | "disjoint"
+  | "error";
+
 export type GroundGlassProfilingPass =
   | "sceneRender"
   | "cocFootprint"
@@ -29,6 +37,33 @@ export type GroundGlassProfilingTimingStats = {
   p50Ms: number | null;
   p95Ms: number | null;
   count: number;
+};
+
+export type GroundGlassProfilingDiagnostics = {
+  gpuQueryState: GroundGlassGpuQueryState;
+  framesAttempted: number;
+  framesAccepted: number;
+  framesRejectedCapacity: number;
+  framesInvalidated: number;
+  framesCompletedGpu: number;
+  queriesBegun: number;
+  queriesBeginFailed: number;
+  queriesEnded: number;
+  queriesEndFailed: number;
+  queriesPolled: number;
+  queriesCompleted: number;
+  queriesUnavailable: number;
+  disjointEvents: number;
+  queriesDiscardedDisjoint: number;
+  queriesDroppedOwnership: number;
+  pendingQueries: number;
+  queryPoolSize: number;
+  availableQuerySlots: number;
+  pendingFrames: number;
+  sessionResets: number;
+  lastResetReason: string | null;
+  lastRejectedReason: string | null;
+  lastGpuQueryError: string | null;
 };
 
 export type GroundGlassProfilingConfiguration = {
@@ -58,6 +93,7 @@ export type GroundGlassProfilingSnapshot = GroundGlassProfilingConfiguration & {
   physicalDofGpu: GroundGlassProfilingTimingStats | null;
   groundGlassCpuSubmit: GroundGlassProfilingTimingStats | null;
   physicalDofCpuSubmit: GroundGlassProfilingTimingStats | null;
+  profilingDiagnostics: GroundGlassProfilingDiagnostics;
   passes: {
     sceneRenderMs: GroundGlassProfilingTimingStats | null;
     cocFootprintMs: GroundGlassProfilingTimingStats | null;
@@ -196,6 +232,23 @@ export type GroundGlassGpuTimerToken = {
   ended: boolean;
 };
 
+export type GroundGlassGpuTimerDiagnostics = {
+  gpuQueryState: Exclude<GroundGlassGpuQueryState, "unavailable">;
+  queriesBegun: number;
+  queriesBeginFailed: number;
+  queriesEnded: number;
+  queriesEndFailed: number;
+  queriesPolled: number;
+  queriesCompleted: number;
+  queriesUnavailable: number;
+  disjointEvents: number;
+  queriesDiscardedDisjoint: number;
+  pendingQueries: number;
+  queryPoolSize: number;
+  availableQuerySlots: number;
+  lastGpuQueryError: string | null;
+};
+
 /**
  * Non-blocking EXT_disjoint_timer_query_webgl2 adapter.
  *
@@ -209,6 +262,17 @@ export class GroundGlassGpuTimer {
   private readonly context: GroundGlassGpuTimerContext;
   private readonly extension: GroundGlassTimerExtension;
   private readonly maxQueries: number;
+  private gpuQueryState: Exclude<GroundGlassGpuQueryState, "unavailable"> = "detected";
+  private queriesBegun = 0;
+  private queriesBeginFailed = 0;
+  private queriesEnded = 0;
+  private queriesEndFailed = 0;
+  private queriesPolled = 0;
+  private queriesCompleted = 0;
+  private queriesUnavailable = 0;
+  private disjointEvents = 0;
+  private queriesDiscardedDisjoint = 0;
+  private lastGpuQueryError: string | null = null;
 
   public constructor(
     context: GroundGlassGpuTimerContext,
@@ -241,13 +305,30 @@ export class GroundGlassGpuTimer {
     if (this.disposed ||
         !this.context.createQuery ||
         !this.context.beginQuery ||
-        !this.context.endQuery) return null;
+        !this.context.endQuery) {
+      this.queriesBeginFailed += 1;
+      this.setError("query-api-unavailable");
+      return null;
+    }
 
     let slot = this.slots.find((candidate) => candidate.active === null);
     if (!slot) {
-      if (this.slots.length >= this.maxQueries) return null;
-      const query = this.context.createQuery();
-      if (query === null || query === undefined) return null;
+      if (this.slots.length >= this.maxQueries) {
+        this.queriesBeginFailed += 1;
+        this.setError("query-pool-exhausted");
+        return null;
+      }
+      let query: unknown | null;
+      try {
+        query = this.context.createQuery();
+      } catch {
+        query = null;
+      }
+      if (query === null || query === undefined) {
+        this.queriesBeginFailed += 1;
+        this.setError("create-query-failed");
+        return null;
+      }
       slot = { query, active: null };
       this.slots.push(slot);
     }
@@ -255,11 +336,16 @@ export class GroundGlassGpuTimer {
     try {
       this.context.beginQuery(this.extension.TIME_ELAPSED_EXT, slot.query);
       slot.active = { frameId, pass, ended: false };
-      return { slot, ended: false };
     } catch {
       slot.active = null;
+      this.queriesBeginFailed += 1;
+      this.setError("begin-query-failed");
       return null;
     }
+    this.queriesBegun += 1;
+    this.gpuQueryState = "active";
+    this.lastGpuQueryError = null;
+    return { slot, ended: false };
   }
 
   public end(token: GroundGlassGpuTimerToken | null): void {
@@ -269,59 +355,113 @@ export class GroundGlassGpuTimer {
     token.slot.active.ended = true;
     try {
       this.context.endQuery(this.extension.TIME_ELAPSED_EXT);
+      this.queriesEnded += 1;
     } catch {
       token.slot.active = null;
+      this.queriesEndFailed += 1;
+      this.setError("end-query-failed");
     }
   }
 
   public poll(): GroundGlassGpuTiming[] {
-    const getQueryParameter = this.context.getQueryParameter;
-    const getParameter = this.context.getParameter;
-    if (this.disposed || !getQueryParameter || !getParameter) return [];
+    if (this.disposed || !this.context.getQueryParameter || !this.context.getParameter) {
+      this.setError("query-api-unavailable");
+      return [];
+    }
 
     let disjoint = false;
     try {
-      disjoint = Boolean(getParameter(this.extension.GPU_DISJOINT_EXT));
+      // Keep the native WebGL context receiver. WebGL methods are not
+      // transferable callbacks; invoking a destructured getParameter throws
+      // Illegal invocation in real browsers even though test doubles often do
+      // not require a receiver.
+      disjoint = Boolean(
+        this.context.getParameter!(this.extension.GPU_DISJOINT_EXT),
+      );
     } catch {
-      disjoint = true;
+      this.setError("get-parameter-failed");
+      // The disjoint flag itself could not be read. Fail closed and release
+      // the outstanding slots, but do not mislabel an API failure as a GPU
+      // disjoint event.
+      this.slots.forEach((slot) => { slot.active = null; });
+      return [];
     }
     if (disjoint) {
       // The GPU clock was invalidated. Discard every pending result rather
       // than publishing a measurement from an unknown time base.
+      this.disjointEvents += 1;
+      this.queriesDiscardedDisjoint += this.pendingCount;
       this.slots.forEach((slot) => { slot.active = null; });
+      this.gpuQueryState = "disjoint";
       return [];
     }
 
     const completed: GroundGlassGpuTiming[] = [];
+    let pendingPolled = 0;
     this.slots.forEach((slot) => {
       const active = slot.active;
       if (!active || !active.ended) return;
+      this.queriesPolled += 1;
+      pendingPolled += 1;
 
       let available = false;
       try {
         available = Boolean(
-          getQueryParameter(slot.query, this.context.QUERY_RESULT_AVAILABLE),
+          this.context.getQueryParameter!(slot.query, this.context.QUERY_RESULT_AVAILABLE),
         );
       } catch {
-        slot.active = null;
+        this.slots.forEach((candidate) => { candidate.active = null; });
+        this.setError("get-query-parameter-failed");
         return;
       }
-      if (!available) return;
+      if (!available) {
+        this.queriesUnavailable += 1;
+        return;
+      }
 
       let nanoseconds: number;
       try {
-        nanoseconds = Number(getQueryParameter(slot.query, this.context.QUERY_RESULT));
+        nanoseconds = Number(
+          this.context.getQueryParameter!(slot.query, this.context.QUERY_RESULT),
+        );
       } catch {
-        slot.active = null;
+        this.slots.forEach((candidate) => { candidate.active = null; });
+        this.setError("get-query-result-failed");
         return;
       }
       slot.active = null;
       const durationMs = nanoseconds / 1e6;
       if (Number.isFinite(durationMs) && durationMs >= 0) {
         completed.push({ frameId: active.frameId, pass: active.pass, durationMs });
+        this.queriesCompleted += 1;
       }
     });
+    if (completed.length > 0) {
+      this.gpuQueryState = "active";
+      this.lastGpuQueryError = null;
+    } else if (pendingPolled > 0 && this.pendingCount > 0) {
+      this.gpuQueryState = "stalled";
+    }
     return completed;
+  }
+
+  public getDiagnostics(): GroundGlassGpuTimerDiagnostics {
+    return {
+      gpuQueryState: this.gpuQueryState,
+      queriesBegun: this.queriesBegun,
+      queriesBeginFailed: this.queriesBeginFailed,
+      queriesEnded: this.queriesEnded,
+      queriesEndFailed: this.queriesEndFailed,
+      queriesPolled: this.queriesPolled,
+      queriesCompleted: this.queriesCompleted,
+      queriesUnavailable: this.queriesUnavailable,
+      disjointEvents: this.disjointEvents,
+      queriesDiscardedDisjoint: this.queriesDiscardedDisjoint,
+      pendingQueries: this.pendingCount,
+      queryPoolSize: this.maxQueries,
+      availableQuerySlots: this.availableSlots,
+      lastGpuQueryError: this.lastGpuQueryError,
+    };
   }
 
   /** Discards pending results without waiting for GPU completion. */
@@ -330,12 +470,19 @@ export class GroundGlassGpuTimer {
       try { this.context.deleteQuery?.(slot.query); } catch { /* best effort */ }
     });
     this.slots.length = 0;
+    this.gpuQueryState = "detected";
+    this.lastGpuQueryError = null;
   }
 
   public dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
     this.reset();
+  }
+
+  private setError(reason: string): void {
+    this.gpuQueryState = "error";
+    this.lastGpuQueryError = reason;
   }
 }
 
@@ -380,6 +527,7 @@ type FrameRecord = {
   measurementAccepted: boolean;
   valid: boolean;
   finished: boolean;
+  completed: boolean;
 };
 
 type GroundGlassPassScope = { end: () => void };
@@ -414,6 +562,16 @@ export class GroundGlassProfiler {
   private lastConfig: GroundGlassProfilingConfiguration | null = null;
   private lastPublishedAt = Number.NEGATIVE_INFINITY;
   private lastSnapshot: GroundGlassProfilingSnapshot | null = null;
+  private framesAttempted = 0;
+  private framesAccepted = 0;
+  private framesRejectedCapacity = 0;
+  private framesInvalidated = 0;
+  private framesCompletedGpu = 0;
+  private queriesDroppedOwnership = 0;
+  private sessionResets = 0;
+  private lastResetReason: string | null = null;
+  private lastRejectedReason: string | null = null;
+  private readonly discardedFrameIds = new Set<number>();
   private readonly enabled: boolean;
   private readonly onSnapshot?: (snapshot: GroundGlassProfilingSnapshot) => void;
   private readonly publishIntervalMs: number;
@@ -444,6 +602,7 @@ export class GroundGlassProfiler {
     frameTimeMs?: number,
   ): void {
     if (!this.enabled) return;
+    this.framesAttempted += 1;
     this.pollGpuResults();
 
     const key = JSON.stringify([
@@ -460,7 +619,7 @@ export class GroundGlassProfiler {
       configuration.zoomEnabled,
     ]);
     if (this.measurementKey !== key) {
-      this.resetSession();
+      this.resetSession("measurement-key-change");
       this.measurementKey = key;
     }
 
@@ -474,6 +633,13 @@ export class GroundGlassProfiler {
       : PASS_NAMES;
     const measurementAccepted = this.backend !== "gpu-query" ||
       (this.gpuTimer?.canReserve(expected.length) ?? false);
+    if (measurementAccepted) {
+      this.framesAccepted += 1;
+      this.lastRejectedReason = null;
+    } else {
+      this.framesRejectedCapacity += 1;
+      this.lastRejectedReason = `query-capacity:${expected.length}`;
+    }
     this.currentFrame = {
       id: ++this.frameId,
       rawDebug: configuration.rawDebug,
@@ -482,6 +648,7 @@ export class GroundGlassProfiler {
       measurementAccepted,
       valid: this.backend !== "unavailable",
       finished: false,
+      completed: false,
     };
   }
 
@@ -495,7 +662,7 @@ export class GroundGlassProfiler {
     if (this.backend === "gpu-query") {
       const token = this.gpuTimer?.begin(frame.id, pass) ?? null;
       if (!token) {
-        frame.valid = false;
+        this.invalidateFrame(frame, "begin-query-failed");
         return NOOP_SCOPE;
       }
       let ended = false;
@@ -526,6 +693,13 @@ export class GroundGlassProfiler {
     frame.finished = true;
     this.currentFrame = null;
     if (!frame.measurementAccepted || !frame.valid || this.backend === "unavailable") {
+      if (!frame.valid) {
+        if (this.discardedFrameIds.size >= GROUND_GLASS_PROFILING_QUERY_POOL_SIZE * 2) {
+          const oldest = this.discardedFrameIds.values().next().value;
+          if (oldest !== undefined) this.discardedFrameIds.delete(oldest);
+        }
+        this.discardedFrameIds.add(frame.id);
+      }
       this.pendingFrames.delete(frame.id);
     } else {
       this.pendingFrames.set(frame.id, frame);
@@ -537,16 +711,37 @@ export class GroundGlassProfiler {
 
   public pollGpuResults(): void {
     if (this.backend !== "gpu-query") return;
-    this.gpuTimer?.poll().forEach((timing) => {
+    const timer = this.gpuTimer;
+    if (!timer) return;
+    const before = timer.getDiagnostics();
+    const timings = timer.poll();
+    const after = timer.getDiagnostics();
+    const queryFailure = after.gpuQueryState === "error" &&
+      (before.gpuQueryState !== "error" || before.lastGpuQueryError !== after.lastGpuQueryError);
+    const disjoint = after.disjointEvents > before.disjointEvents;
+    if (queryFailure || disjoint) {
+      this.invalidatePendingGpuFrames(
+        queryFailure
+          ? `gpu-query:${after.lastGpuQueryError ?? "error"}`
+          : "gpu-disjoint",
+      );
+    }
+    timings.forEach((timing) => {
       this.recordTiming(timing.frameId, timing.pass, timing.durationMs);
     });
   }
 
   /** Reset windows and discard pending GPU results after a resource/config change. */
-  public resetSession(): void {
+  public resetSession(reason = "explicit-reset"): void {
+    if (this.pendingFrames.size > 0 || this.currentFrame) {
+      this.framesInvalidated += this.pendingFrames.size + (this.currentFrame ? 1 : 0);
+    }
+    this.sessionResets += 1;
+    this.lastResetReason = reason;
     this.gpuTimer?.reset();
     this.pendingFrames.clear();
     this.currentFrame = null;
+    this.discardedFrameIds.clear();
     this.frameWindow.clear();
     this.groundGlassWindow.clear();
     this.physicalDofWindow.clear();
@@ -578,6 +773,7 @@ export class GroundGlassProfiler {
     const gpuStats = this.backend === "gpu-query";
     const cpuStats = this.backend === "cpu-fallback";
     const frameStats = this.frameWindow.snapshot();
+    const timerDiagnostics = this.gpuTimer?.getDiagnostics();
     return {
       ...config,
       internalResolution: [...config.internalResolution] as [number, number],
@@ -593,6 +789,32 @@ export class GroundGlassProfiler {
       physicalDofGpu: gpuStats && !rawDebug ? this.physicalDofWindow.snapshot() : null,
       groundGlassCpuSubmit: cpuStats ? this.groundGlassWindow.snapshot() : null,
       physicalDofCpuSubmit: cpuStats && !rawDebug ? this.physicalDofWindow.snapshot() : null,
+      profilingDiagnostics: {
+        gpuQueryState: timerDiagnostics?.gpuQueryState ?? "unavailable",
+        framesAttempted: this.framesAttempted,
+        framesAccepted: this.framesAccepted,
+        framesRejectedCapacity: this.framesRejectedCapacity,
+        framesInvalidated: this.framesInvalidated,
+        framesCompletedGpu: this.framesCompletedGpu,
+        queriesBegun: timerDiagnostics?.queriesBegun ?? 0,
+        queriesBeginFailed: timerDiagnostics?.queriesBeginFailed ?? 0,
+        queriesEnded: timerDiagnostics?.queriesEnded ?? 0,
+        queriesEndFailed: timerDiagnostics?.queriesEndFailed ?? 0,
+        queriesPolled: timerDiagnostics?.queriesPolled ?? 0,
+        queriesCompleted: timerDiagnostics?.queriesCompleted ?? 0,
+        queriesUnavailable: timerDiagnostics?.queriesUnavailable ?? 0,
+        disjointEvents: timerDiagnostics?.disjointEvents ?? 0,
+        queriesDiscardedDisjoint: timerDiagnostics?.queriesDiscardedDisjoint ?? 0,
+        queriesDroppedOwnership: this.queriesDroppedOwnership,
+        pendingQueries: timerDiagnostics?.pendingQueries ?? 0,
+        queryPoolSize: timerDiagnostics?.queryPoolSize ?? 0,
+        availableQuerySlots: timerDiagnostics?.availableQuerySlots ?? 0,
+        pendingFrames: this.pendingFrames.size,
+        sessionResets: this.sessionResets,
+        lastResetReason: this.lastResetReason,
+        lastRejectedReason: this.lastRejectedReason,
+        lastGpuQueryError: timerDiagnostics?.lastGpuQueryError ?? null,
+      },
       passes: {
         sceneRenderMs: passStats("sceneRender"),
         cocFootprintMs: passStats("cocFootprint"),
@@ -620,7 +842,11 @@ export class GroundGlassProfiler {
     const frame = this.currentFrame?.id === frameId
       ? this.currentFrame
       : this.pendingFrames.get(frameId);
-    if (!frame || !frame.valid || !Number.isFinite(durationMs) || durationMs < 0) return;
+    if (!frame) {
+      if (!this.discardedFrameIds.has(frameId)) this.queriesDroppedOwnership += 1;
+      return;
+    }
+    if (!frame.valid || !Number.isFinite(durationMs) || durationMs < 0) return;
     frame.timings[pass] = durationMs;
     if (frame.finished) this.tryCompleteFrame(frame);
   }
@@ -643,6 +869,10 @@ export class GroundGlassProfiler {
         timings.cocFootprint + timings.farGather + timings.nearGather + timings.composite,
       );
     }
+    if (this.backend === "gpu-query" && !frame.completed) {
+      this.framesCompletedGpu += 1;
+      frame.completed = true;
+    }
     this.pendingFrames.delete(frame.id);
   }
 
@@ -651,7 +881,29 @@ export class GroundGlassProfiler {
       const oldest = this.pendingFrames.keys().next().value;
       if (oldest === undefined) break;
       this.pendingFrames.delete(oldest);
+      this.framesInvalidated += 1;
     }
+  }
+
+  private invalidateFrame(frame: FrameRecord, reason: string): void {
+    if (!frame.valid) return;
+    frame.valid = false;
+    this.framesInvalidated += 1;
+    this.lastRejectedReason = reason;
+  }
+
+  private invalidatePendingGpuFrames(reason: string): void {
+    for (const frame of this.pendingFrames.values()) {
+      frame.valid = false;
+      this.framesInvalidated += 1;
+      if (this.discardedFrameIds.size >= GROUND_GLASS_PROFILING_QUERY_POOL_SIZE * 2) {
+        const oldest = this.discardedFrameIds.values().next().value;
+        if (oldest !== undefined) this.discardedFrameIds.delete(oldest);
+      }
+      this.discardedFrameIds.add(frame.id);
+    }
+    this.pendingFrames.clear();
+    this.lastRejectedReason = reason;
   }
 
   private maybePublish(): void {
