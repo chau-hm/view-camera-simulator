@@ -34,7 +34,6 @@ export type GroundGlassDofUniformState = {
   boundaryBlurRadiusPx: number;
   filmWidthMm: number;
   filmHeightMm: number;
-  displayBlurScale: number;
 };
 
 /** Keep depth linearization on every DOF stage aligned with the live RTT camera. */
@@ -80,9 +79,6 @@ export function applyGroundGlassDofUniformState(
   if (material.uniforms.maximumCoCRadiusPx) {
     material.uniforms.maximumCoCRadiusPx.value = state.maximumBlurRadiusPx;
   }
-  if (material.uniforms.displayBlurScale) {
-    material.uniforms.displayBlurScale.value = state.displayBlurScale;
-  }
   if (material.uniforms.focalLengthMm) material.uniforms.focalLengthMm.value = state.focalLengthMm;
   if (material.uniforms.filmWidthMm) material.uniforms.filmWidthMm.value = state.filmWidthMm;
   if (material.uniforms.filmHeightMm) material.uniforms.filmHeightMm.value = state.filmHeightMm;
@@ -103,7 +99,6 @@ export function createGroundGlassDofUniformState(
   width: number,
   height: number,
   maximumBlurRadiusPx: number,
-  displayBlurScale = 1,
 ): GroundGlassDofUniformState {
   const groundGlassDofModel =
     opticsState.diagnostics.groundGlassDofModel ??
@@ -123,10 +118,6 @@ export function createGroundGlassDofUniformState(
   if (!Number.isFinite(maximumBlurRadiusPx) || maximumBlurRadiusPx < 0) {
     throw new Error("Invalid maximumBlurRadiusPx");
   }
-  if (!Number.isFinite(displayBlurScale) || displayBlurScale <= 0) {
-    throw new Error("Invalid displayBlurScale");
-  }
-
   const lens = opticsState.lensCenterWorld;
   const lensBasis = deriveOrthonormalPlaneBasis(
     opticsState.lensPlane.normal,
@@ -228,6 +219,5 @@ export function createGroundGlassDofUniformState(
     boundaryBlurRadiusPx,
     filmWidthMm,
     filmHeightMm,
-    displayBlurScale,
   };
 }

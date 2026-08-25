@@ -65,7 +65,6 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   filmWidthMm: number;
   renderWidthPx: number;
   maximumBlurRadiusPx: number;
-  displayBlurScale: number;
 }): GroundGlassWorldBlurSample {
   const {
     worldPoint,
@@ -76,7 +75,6 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
     filmWidthMm,
     renderWidthPx,
     maximumBlurRadiusPx,
-    displayBlurScale,
   } = input;
 
   const lensCenter = opticsState.lensCenterWorld;
@@ -120,10 +118,6 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   if (!Number.isFinite(maximumBlurRadiusPx) || maximumBlurRadiusPx < 0) {
     return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid maximumBlurRadiusPx");
   }
-  if (!Number.isFinite(displayBlurScale) || displayBlurScale <= 0) {
-    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid displayBlurScale");
-  }
-
   if (model === "scheimpflug-wedge") {
     // form ray and sample wedge
     const ray = {
@@ -179,7 +173,6 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
       filmWidthMm,
       renderWidthPx,
       maximumBlurRadiusPx,
-      displayBlurScale,
     });
     if (
       !Number.isFinite(blurRadiusPx) ||
@@ -253,7 +246,7 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
 
   // convert to pixels and radius
   const circleOfConfusionDiameterPx = (cocDiameterMmFinal * renderWidthPx) / filmWidthMm;
-  const blurRadiusPxRaw = circleOfConfusionDiameterPx * 0.5 * displayBlurScale;
+  const blurRadiusPxRaw = circleOfConfusionDiameterPx * 0.5;
   const blurRadiusPxClamped = Math.min(maximumBlurRadiusPx, Math.max(0, blurRadiusPxRaw));
 
   // Prepare ray and intersect with DOF planes for diagnostics

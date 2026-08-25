@@ -72,9 +72,8 @@ describe("Ground Glass CoC target capability policy", () => {
         maximumCoCRadiusPx: 48,
         filmWidthMm: 180,
         renderWidthPx: 1200,
-        displayBlurScale: 2,
       }),
-    ).toBeCloseTo(7.2, 10);
+    ).toBeCloseTo(14.4, 10);
   });
 
   it("preserves an exact neutral byte code through normalized RGBA8 quantization", () => {

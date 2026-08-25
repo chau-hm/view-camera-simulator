@@ -408,8 +408,7 @@ vec2 footprintMajorAxisPx(float majorRadiusMm, float orientationRad){
      !isFiniteFloat(renderWidth) || renderWidth <= 0.0 ||
      !isFiniteFloat(renderHeight) || renderHeight <= 0.0 ||
      !isFiniteFloat(filmWidthMm) || filmWidthMm <= 0.0 ||
-     !isFiniteFloat(filmHeightMm) || filmHeightMm <= 0.0 ||
-     !isFiniteFloat(displayBlurScale) || displayBlurScale <= 0.0) return vec2(0.0);
+     !isFiniteFloat(filmHeightMm) || filmHeightMm <= 0.0) return vec2(0.0);
   float angle = decodeStoredGroundGlassFootprintOrientation(orientationRad);
   // Physical film +Y points toward the top edge, while raw RTT V increases
   // toward the bottom edge. Apply that reflection here, before any preview
@@ -417,7 +416,7 @@ vec2 footprintMajorAxisPx(float majorRadiusMm, float orientationRad){
   return vec2(
     cos(angle) * majorRadiusMm * renderWidth / filmWidthMm,
     -sin(angle) * majorRadiusMm * renderHeight / filmHeightMm
-  ) * displayBlurScale;
+  );
 }
 
 vec2 footprintMinorAxisPx(float minorRadiusMm, float orientationRad){
@@ -425,13 +424,12 @@ vec2 footprintMinorAxisPx(float minorRadiusMm, float orientationRad){
      !isFiniteFloat(renderWidth) || renderWidth <= 0.0 ||
      !isFiniteFloat(renderHeight) || renderHeight <= 0.0 ||
      !isFiniteFloat(filmWidthMm) || filmWidthMm <= 0.0 ||
-     !isFiniteFloat(filmHeightMm) || filmHeightMm <= 0.0 ||
-     !isFiniteFloat(displayBlurScale) || displayBlurScale <= 0.0) return vec2(0.0);
+     !isFiniteFloat(filmHeightMm) || filmHeightMm <= 0.0) return vec2(0.0);
   float angle = decodeStoredGroundGlassFootprintOrientation(orientationRad);
   return vec2(
     -sin(angle) * minorRadiusMm * renderWidth / filmWidthMm,
     -cos(angle) * minorRadiusMm * renderHeight / filmHeightMm
-  ) * displayBlurScale;
+  );
 }
 
 float footprintClampScale(vec2 majorAxisPx, vec2 minorAxisPx){
@@ -477,10 +475,9 @@ float cocDiameterMmToGatherRadiusPx(float cocDiameterMm){
   if(!isFiniteFloat(cocDiameterMm) ||
      !isFiniteFloat(renderWidth) || renderWidth <= 0.0 ||
      !isFiniteFloat(filmWidthMm) || filmWidthMm <= 0.0 ||
-     !isFiniteFloat(displayBlurScale) || displayBlurScale <= 0.0 ||
      !isFiniteFloat(maximumCoCRadiusPx) || maximumCoCRadiusPx < 0.0) return 0.0;
 
-  float diameterPx = cocDiameterMm * renderWidth / filmWidthMm * displayBlurScale;
+  float diameterPx = cocDiameterMm * renderWidth / filmWidthMm;
   if(!isFiniteFloat(diameterPx)) return 0.0;
   float radiusPx = diameterPx * 0.5;
   if(!isFiniteFloat(radiusPx)) return 0.0;
@@ -566,7 +563,6 @@ uniform vec3 farPlaneNormal;
 uniform float hasFiniteFar;
 uniform mat4 inverseProjectionMatrix;
 uniform mat4 cameraMatrixWorld;
-uniform float displayBlurScale;
 uniform float maximumCoCRadiusPx;
 uniform float circleOfConfusionMm;
 uniform float filmWidthMm;

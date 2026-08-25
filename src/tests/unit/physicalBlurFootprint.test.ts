@@ -193,6 +193,17 @@ describe("physical arbitrary-plane blur footprint", () => {
     expect(f8.minorRadiusMm / f16.minorRadiusMm).toBeCloseTo(2, 8);
   });
 
+  it("keeps the physical aperture response monotonic across common settings", () => {
+    const f56 = createFixture(parallelFilm(160), objectPoint, 5.6);
+    const f11 = createFixture(parallelFilm(160), objectPoint, 11);
+    const f22 = createFixture(parallelFilm(160), objectPoint, 22);
+
+    expect(f56.majorRadiusMm).toBeGreaterThan(f11.majorRadiusMm);
+    expect(f11.majorRadiusMm).toBeGreaterThan(f22.majorRadiusMm);
+    expect(f56.minorRadiusMm).toBeGreaterThan(f11.minorRadiusMm);
+    expect(f11.minorRadiusMm).toBeGreaterThan(f22.minorRadiusMm);
+  });
+
   it("fails closed for unresolved geometry without non-finite output", () => {
     const footprint = computePhysicalBlurFootprint({
       objectPoint,

@@ -329,18 +329,15 @@ export const resolveGroundGlassCocStorageMaxMm = (input: {
   maximumCoCRadiusPx: number;
   filmWidthMm: number;
   renderWidthPx: number;
-  displayBlurScale: number;
 }): number => {
-  const { maximumCoCRadiusPx, filmWidthMm, renderWidthPx, displayBlurScale } = input;
+  const { maximumCoCRadiusPx, filmWidthMm, renderWidthPx } = input;
   if (
     !Number.isFinite(maximumCoCRadiusPx) ||
     maximumCoCRadiusPx < 0 ||
     !Number.isFinite(filmWidthMm) ||
     filmWidthMm <= 0 ||
     !Number.isFinite(renderWidthPx) ||
-    renderWidthPx <= 0 ||
-    !Number.isFinite(displayBlurScale) ||
-    displayBlurScale <= 0
+    renderWidthPx <= 0
   ) {
     return 1;
   }
@@ -348,6 +345,6 @@ export const resolveGroundGlassCocStorageMaxMm = (input: {
   return Math.max(
     1e-6,
     (maximumCoCRadiusPx * 2 * filmWidthMm) /
-      (renderWidthPx * displayBlurScale),
+      renderWidthPx,
   );
 };

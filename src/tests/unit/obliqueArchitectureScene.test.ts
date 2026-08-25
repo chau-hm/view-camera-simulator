@@ -163,12 +163,12 @@ describe("Oblique Architecture scene", () => {
     expect(optics.focusTargets.some((target) => target.status !== "sharp")).toBe(true);
   });
 
-  it("uses the canonical physical defocus with a restrained Ground Glass display calibration", () => {
+  it("uses the canonical physical defocus with an independent pixel cap", () => {
     const settings = getGroundGlassDofVisualSettings(obliqueArchitectureScene.id);
 
     expect(settings.planeMode).toBe("automatic");
     expect(settings.maximumBlurRadiusPx).toBe(48);
-    expect(settings.displayBlurScale).toBeGreaterThan(1);
+    expect("displayBlurScale" in settings).toBe(false);
     expect(obliqueArchitectureScene.cameraPreset.aperture).toBe(11);
   });
 });

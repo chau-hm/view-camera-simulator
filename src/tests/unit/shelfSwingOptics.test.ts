@@ -140,7 +140,6 @@ describe("Shelf Swing optics calibration", () => {
       500,
       400,
       visual.maximumBlurRadiusPx,
-      visual.displayBlurScale,
     );
     expect(uniforms.mode).toBe(1);
     expect(
@@ -155,7 +154,7 @@ describe("Shelf Swing optics calibration", () => {
     ).toBe(true);
   });
 
-  it("uses display-only DOF scaling while preserving physical target evaluation", () => {
+  it("uses physical DOF scaling while preserving physical target evaluation", () => {
     const camera = cameraFor({
       frontSwingDeg: 0,
       focusDistanceMm: geometry.middleSubject.focusDetailProbeWorld.z,
@@ -165,9 +164,9 @@ describe("Shelf Swing optics calibration", () => {
     const visual = getGroundGlassDofVisualSettings(shelfSwingScene.id);
     expect(visual).toEqual({
       maximumBlurRadiusPx: 42,
-      displayBlurScale: 3.2,
       planeMode: "derived-planes",
     });
+    expect("displayBlurScale" in visual).toBe(false);
     const displayOptics = resolveGroundGlassDisplayOpticsState(shelfSwingScene.id, optics);
 
     const displayed = geometry.subjects.map((subject) =>
@@ -180,11 +179,10 @@ describe("Shelf Swing optics calibration", () => {
         filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
         renderWidthPx: 1000,
         maximumBlurRadiusPx: visual.maximumBlurRadiusPx,
-        displayBlurScale: visual.displayBlurScale,
       }),
     );
     expect(displayed[1].blurRadiusPx).toBeLessThan(0.01);
-    expect(Math.max(displayed[0].blurRadiusPx, displayed[2].blurRadiusPx)).toBeGreaterThan(1);
+    expect(Math.max(displayed[0].blurRadiusPx, displayed[2].blurRadiusPx)).toBeGreaterThan(0.5);
   });
 
   it("projects every chart centre consistently in raw and upright modes", () => {

@@ -131,7 +131,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   const cameraMovementRenderModel = resolveCameraMovementLatticeRenderModel(
     effectiveCameraMovementCalibration,
   );
-  const { maximumBlurRadiusPx, displayBlurScale } = getGroundGlassDofVisualSettings(sceneId);
+  const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(sceneId);
   const profilingEnabled = isGroundGlassProfilingEnabled();
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
@@ -296,7 +296,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       renderWidthPx: dimsRef.current.internalWidthPx,
-      displayBlurScale,
     });
     const initialFootprintStorageMaxMm = Math.max(1e-6, initialCocStorageMaxMm * 0.5);
     const gatherRT = new THREE.WebGLRenderTarget(
@@ -375,7 +374,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         circleOfConfusionMm: { value: 0.1 },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
         filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
-        displayBlurScale: { value: displayBlurScale },
         sampleCount: { value: initialQualitySettings.sampleCount },
         cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
         cocStorageMaxMm: { value: initialCocStorageMaxMm },
@@ -426,7 +424,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         circleOfConfusionMm: { value: 0.1 },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
         filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
-        displayBlurScale: { value: displayBlurScale },
         sampleCount: { value: initialQualitySettings.sampleCount },
         cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
         cocStorageMaxMm: { value: initialCocStorageMaxMm },
@@ -649,7 +646,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       }
     };
   }, [
-    displayBlurScale,
     gl,
     maximumBlurRadiusPx,
     profilingEnabled,
@@ -834,7 +830,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       maximumCoCRadiusPx: resizedMaximumCoCRadiusPx,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       renderWidthPx: dims.internalWidthPx,
-      displayBlurScale,
     });
     cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
     gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
@@ -914,7 +909,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       resourceGeneration: resourceGenerationRef.current,
       profilingSnapshot: undefined,
     });
-  }, [displayBlurScale, gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
+  }, [gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
 
   useFrame((_state, frameDelta) => {
     if (!renderTarget.current || !offscreenScene.current) return;
@@ -1134,7 +1129,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         maximumCoCRadiusPx: currentMaximumCoCRadiusPx,
         filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
         renderWidthPx: dimsRef.current.internalWidthPx,
-        displayBlurScale,
       });
       const footprintStorageMaxMm = Math.max(1e-6, cocStorageMaxMm * 0.5);
 
@@ -1172,7 +1166,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           dimsRef.current.internalWidthPx,
           dimsRef.current.internalHeightPx,
           currentMaximumCoCRadiusPx,
-          displayBlurScale,
         );
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);
