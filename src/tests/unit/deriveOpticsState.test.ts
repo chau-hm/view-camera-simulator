@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { imageDistanceMm } from "../../core/optics/thinLensModel";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { SceneDefinition } from "../../types/scene";
@@ -221,5 +222,36 @@ describe("deriveOpticsState", () => {
     );
     expect(result.diagnostics.fallbackApplied).toBe(true);
     expect(result.diagnostics.errorMessage).toBe("Invalid focus distance");
+  });
+
+  it("keeps Architecture Rise finite focus on the positive real-image branch", () => {
+    const expectedDistances = [220, 180, 160].map((focusDistanceMm) => ({
+      focusDistanceMm,
+      imageDistanceMm: imageDistanceMm(
+        DEFAULT_CAMERA_STATE.focalLengthMm,
+        focusDistanceMm,
+      ),
+    }));
+
+    for (const { focusDistanceMm, imageDistanceMm } of expectedDistances) {
+      const result = deriveOpticsState(
+        { ...DEFAULT_CAMERA_STATE, focusDistanceMm },
+        architectureRiseScene,
+      );
+
+      expect(result.diagnostics.fallbackApplied).toBe(false);
+      expect(result.filmCenterWorld.z).toBeCloseTo(-imageDistanceMm, 10);
+      expect(Math.abs(result.filmCenterWorld.z)).not.toBe(150);
+    }
+  });
+
+  it("marks a direct Architecture Rise U <= f request invalid instead of treating it as infinity focus", () => {
+    const result = deriveOpticsState(
+      { ...DEFAULT_CAMERA_STATE, focusDistanceMm: 100 },
+      architectureRiseScene,
+    );
+
+    expect(result.diagnostics.fallbackApplied).toBe(true);
+    expect(result.diagnostics.errorMessage).toBe("Invalid finite-focus image distance");
   });
 });

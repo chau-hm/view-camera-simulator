@@ -38,6 +38,14 @@ export const architectureRiseScene: SceneDefinition = {
     rearRiseMm: 0,
     rearTiltDeg: 0,
  },
+  finiteFocusStrategy: {
+    kind: "rear-standard-thin-lens",
+    lensDatum: "baseline-origin",
+    focusDistanceReference: "lens-to-focus-plane",
+    // Rise uses the historical rear-standard Z datum while focus distance is
+    // still the lens-to-subject distance used by the thin-lens model.
+    filmDepthReference: "rear-standard-z",
+  },
   cameraPlacement: {
     // Observer camera is intentionally separate from the physical camera datum.
     // This three-quarter view keeps the full camera, ground, and building visible.

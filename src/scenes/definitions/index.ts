@@ -2,6 +2,8 @@ import type {
   SceneDefinition,
   SceneFocusDistanceRangeMm,
 } from "../../types/scene";
+import { minimumRealImageFiniteFocusDistanceMm } from "../../core/optics/finiteFocusDomain";
+import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { architectureRiseScene } from "./architecture-rise";
 import { shelfSwingScene } from "./shelf-swing";
 import { tableTiltScene } from "./table-tilt";
@@ -81,16 +83,27 @@ const DEFAULT_FOCUS_DISTANCE_RANGE_MM: FocusDistanceRangeMm = {
   max: 12000,
 };
 
-export const getSceneFocusDistanceRange = (sceneId: string): FocusDistanceRangeMm => {
+export const getSceneFocusDistanceRange = (
+  sceneId: string,
+  focalLengthMm: number = CAMERA_CONSTANTS.focalLengthMm,
+): FocusDistanceRangeMm => {
   const scene = getSceneById(sceneId);
   if (!scene) {
     return DEFAULT_FOCUS_DISTANCE_RANGE_MM;
   }
 
+  const usesRealImageFocusDistance =
+    scene.finiteFocusStrategy?.kind === "rear-standard-thin-lens" &&
+    scene.finiteFocusStrategy.focusDistanceReference === "lens-to-focus-plane";
+  const realImageMinimum = usesRealImageFocusDistance
+    ? minimumRealImageFiniteFocusDistanceMm(focalLengthMm)
+    : null;
+
   if (isValidExplicitFocusDistanceRange(scene.focusDistanceRangeMm)) {
+    const min = Math.max(scene.focusDistanceRangeMm.min, realImageMinimum ?? -Infinity);
     return {
-      min: scene.focusDistanceRangeMm.min,
-      max: scene.focusDistanceRangeMm.max,
+      min,
+      max: Math.max(scene.focusDistanceRangeMm.max, min),
     };
   }
 
@@ -98,6 +111,7 @@ export const getSceneFocusDistanceRange = (sceneId: string): FocusDistanceRangeM
     DEFAULT_FOCUS_DISTANCE_RANGE_MM.min,
     scene.bounds.min.z,
     scene.focusStandardCapability?.minimumFocusDepthMm ?? DEFAULT_FOCUS_DISTANCE_RANGE_MM.min,
+    realImageMinimum ?? -Infinity,
   );
   const max = Math.max(min, scene.bounds.max.z);
   return { min, max };
