@@ -25,6 +25,26 @@ export type ShelfSwingSubjectRole = "front" | "middle" | "back";
 export type ShelfSwingFocusSampleId = "centre" | "top" | "bottom" | "left" | "right";
 export type ShelfSwingChartPattern = "vertical-stripes" | "checker" | "horizontal-lines";
 
+export type ShelfSwingComparisonMotifRow = {
+  id: "coarse" | "medium" | "fine";
+  yOffset: number;
+  count: number;
+  barWidth: number;
+  gap: number;
+  barHeight: number;
+};
+
+export type ShelfSwingComparisonMotif = {
+  /** Position relative to the focus-chart group, not the station root. */
+  chartLocalCenter: ShelfSwingVec3;
+  width: number;
+  height: number;
+  backingDepth: number;
+  barDepth: number;
+  surfaceGap: number;
+  rows: readonly ShelfSwingComparisonMotifRow[];
+};
+
 export type ShelfSwingFocusSample = {
   id: ShelfSwingFocusSampleId;
   localPosition: ShelfSwingVec3;
@@ -58,6 +78,7 @@ export type ShelfSwingSubjectDefinition = {
     height: number;
     columns: number;
     rows: number;
+    comparisonMotif: ShelfSwingComparisonMotif;
   };
   displayObjects: ShelfSwingDisplayObject[];
   dimensions: {
@@ -265,6 +286,22 @@ export const detailGeometry = {
     sampleOffsetX: 147,
     sampleOffsetY: 105,
   },
+  comparisonMotif: {
+    // The chart group is already translated to station-local y=560 mm. Keep
+    // the motif inside that chart by expressing its intended station-local
+    // y=460 mm position as chart-local y=-100 mm.
+    chartLocalCenter: { x: 0, y: -100, z: 0 },
+    width: 240,
+    height: 72,
+    backingDepth: 2,
+    barDepth: 2,
+    surfaceGap: 1,
+    rows: [
+      { id: "coarse", yOffset: -20, count: 4, barWidth: 18, gap: 18, barHeight: 10 },
+      { id: "medium", yOffset: 0, count: 6, barWidth: 9, gap: 9, barHeight: 10 },
+      { id: "fine", yOffset: 20, count: 10, barWidth: 4, gap: 4, barHeight: 10 },
+    ],
+  },
 } as const;
 
 export const opticalAxisHeightAboveFloorMm = detailGeometry.chart.centerY;
@@ -394,6 +431,7 @@ export const subjects: ShelfSwingSubjectDefinition[] = subjectInputs.map((input)
     height: detailGeometry.chart.height,
     columns: detailGeometry.chart.columns,
     rows: detailGeometry.chart.rows,
+    comparisonMotif: detailGeometry.comparisonMotif,
   };
   const focusSampleInputs = [
     { id: "centre", x: 0, y: 0 },

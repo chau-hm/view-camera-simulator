@@ -185,6 +185,13 @@ export const detailGeometry = {
       bandThickness: notebookLineThicknessMm,
       bandGap: notebookLineGapMm,
       supportWidth: 8,
+      fineBands: {
+        count: 9,
+        widthRatio: 0.72,
+        thickness: 1.5,
+        surfaceGap: 1,
+        depthRatio: 0.55,
+      },
     },
   },
   notebook: {
@@ -207,6 +214,14 @@ export const detailGeometry = {
       lineThickness: notebookLineThicknessMm,
       lineGap: notebookLineGapMm,
       supportWidth: 8,
+      fineLines: {
+        width: 108,
+        centerX: 44,
+        count: 9,
+        thickness: 1.5,
+        surfaceGap: 1,
+        depth: 2,
+      },
     },
     binding: {
       width: 18,
@@ -236,6 +251,16 @@ export const detailGeometry = {
       cellThickness: bookCellThicknessMm,
       cellGap: bookCellGapMm,
       supportWidth: 8,
+      fineGrid: {
+        width: 96,
+        depth: 48,
+        centerX: 36,
+        centerZ: 8,
+        columns: 6,
+        rows: 4,
+        cellThickness: 1.5,
+        cellGap: 1.5,
+      },
     },
   },
 } as const;

@@ -174,6 +174,102 @@ export const facadeDetailSmallGapMm = 2; // small gap to avoid z-fighting
 export const mullionWidthMm = 40;
 export const horizontalStripeHeightMm = 12;
 
+// A compact façade window detail adds a second, finer spatial frequency without
+// turning the building into a resolution chart. Its world-space definition is
+// consumed by both the R3F and imperative RTT subject paths.
+export const facadeFineDetail = {
+  center: { x: 820, y: 2200 },
+  width: 360,
+  height: 420,
+  panelDepth: 14,
+  frameThickness: 18,
+  frameDepth: 18,
+  frameColumns: 4,
+  frameRows: 4,
+  fineLineCount: 6,
+  fineLineHeight: 5,
+  fineLineWidth: 300,
+  fineLineRegionHeight: 150,
+  fineLineDepth: 10,
+  surfaceGap: 2,
+} as const;
+
+export type ArchitectureFacadeFineDetailPiece = {
+  id: string;
+  role: "panel" | "frame" | "fine";
+  x: number;
+  y: number;
+  z: number;
+  width: number;
+  height: number;
+  depth: number;
+};
+
+export function getArchitectureFacadeFineDetailPieces(): ArchitectureFacadeFineDetailPiece[] {
+  const detail = facadeFineDetail;
+  const panelZ = facade.frontFacadeZ - detail.panelDepth / 2 - detail.surfaceGap;
+  const frameZ = panelZ - detail.panelDepth / 2 - detail.surfaceGap - detail.frameDepth / 2;
+  const fineZ = panelZ - detail.panelDepth / 2 - detail.surfaceGap - detail.fineLineDepth / 2;
+  const frameWidth = detail.width - detail.frameThickness;
+  const frameHeight = detail.height - detail.frameThickness;
+  const pieces: ArchitectureFacadeFineDetailPiece[] = [
+    {
+      id: "architecture-rise-facade-fine-detail-panel",
+      role: "panel",
+      x: detail.center.x,
+      y: detail.center.y,
+      z: panelZ,
+      width: detail.width,
+      height: detail.height,
+      depth: detail.panelDepth,
+    },
+  ];
+
+  for (let index = 0; index < detail.frameColumns; index += 1) {
+    pieces.push({
+      id: `architecture-rise-facade-fine-detail-frame-v-${index + 1}`,
+      role: "frame",
+      x: detail.center.x - frameWidth / 2 + (index * frameWidth) / (detail.frameColumns - 1),
+      y: detail.center.y,
+      z: frameZ,
+      width: detail.frameThickness,
+      height: detail.height,
+      depth: detail.frameDepth,
+    });
+  }
+
+  for (let index = 0; index < detail.frameRows; index += 1) {
+    pieces.push({
+      id: `architecture-rise-facade-fine-detail-frame-h-${index + 1}`,
+      role: "frame",
+      x: detail.center.x,
+      y: detail.center.y - frameHeight / 2 + (index * frameHeight) / (detail.frameRows - 1),
+      z: frameZ,
+      width: detail.width,
+      height: detail.frameThickness,
+      depth: detail.frameDepth,
+    });
+  }
+
+  for (let index = 0; index < detail.fineLineCount; index += 1) {
+    pieces.push({
+      id: `architecture-rise-facade-fine-detail-line-${index + 1}`,
+      role: "fine",
+      x: detail.center.x,
+      y:
+        detail.center.y +
+        detail.fineLineRegionHeight / 2 -
+        ((index + 1) * detail.fineLineRegionHeight) / (detail.fineLineCount + 1),
+      z: fineZ,
+      width: detail.fineLineWidth,
+      height: detail.fineLineHeight,
+      depth: detail.fineLineDepth,
+    });
+  }
+
+  return pieces;
+}
+
 // Focus chart canonical size and grid
 export const focusChartSizeMm = 750; // ~700-800mm
 export const focusChartCells = 8; // 6 or 8 recommended
@@ -317,6 +413,8 @@ export default {
   facadeDetailSmallGapMm,
   mullionWidthMm,
   horizontalStripeHeightMm,
+  facadeFineDetail,
+  getArchitectureFacadeFineDetailPieces,
   focusChartSizeMm,
   focusChartCells,
   // helper exports for consumers that import the default geometry object

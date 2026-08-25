@@ -11,6 +11,10 @@ let floorPlaneGeom: THREE.PlaneGeometry | null = null;
 let buildingMaterial: THREE.MeshStandardMaterial | null = null;
 let mullionMaterial: THREE.MeshStandardMaterial | null = null;
 let groundMaterial: THREE.MeshStandardMaterial | null = null;
+let facadeFineDetailGeom: THREE.BoxGeometry | null = null;
+let facadeFinePanelMaterial: THREE.MeshBasicMaterial | null = null;
+let facadeFineFrameMaterial: THREE.MeshBasicMaterial | null = null;
+let facadeFineLineMaterial: THREE.MeshBasicMaterial | null = null;
 
 function ensureResources() {
   if (!buildingGeom) buildingGeom = new THREE.BoxGeometry(toWorld(geometry.building.width), toWorld(geometry.building.height), toWorld(geometry.building.depth));
@@ -19,7 +23,30 @@ function ensureResources() {
   if (!buildingMaterial) buildingMaterial = new THREE.MeshStandardMaterial({ color: "#94a3b8", roughness: 0.9, metalness: 0.05 });
   if (!mullionMaterial) mullionMaterial = new THREE.MeshStandardMaterial({ color: "#334155", roughness: 0.92, metalness: 0 });
   if (!groundMaterial) groundMaterial = new THREE.MeshStandardMaterial({ color: "#e6eef7", roughness: 1, metalness: 0 });
+  if (!facadeFineDetailGeom) facadeFineDetailGeom = new THREE.BoxGeometry(1, 1, 1);
+  if (!facadeFinePanelMaterial) facadeFinePanelMaterial = new THREE.MeshBasicMaterial({ color: "#294354" });
+  if (!facadeFineFrameMaterial) facadeFineFrameMaterial = new THREE.MeshBasicMaterial({ color: "#dbeafe" });
+  if (!facadeFineLineMaterial) facadeFineLineMaterial = new THREE.MeshBasicMaterial({ color: "#f8fafc" });
 }
+
+const addFacadeFineDetail = (parent: THREE.Group): void => {
+  const detailGroup = new THREE.Group();
+  detailGroup.name = "architecture-rise-facade-fine-detail";
+  geometry.getArchitectureFacadeFineDetailPieces().forEach((piece) => {
+    const material =
+      piece.role === "panel"
+        ? facadeFinePanelMaterial!
+        : piece.role === "frame"
+          ? facadeFineFrameMaterial!
+          : facadeFineLineMaterial!;
+    const mesh = new THREE.Mesh(facadeFineDetailGeom!, material);
+    mesh.name = piece.id;
+    mesh.scale.set(toWorld(piece.width), toWorld(piece.height), toWorld(piece.depth));
+    mesh.position.set(toWorld(piece.x), toWorld(piece.y), toWorld(piece.z));
+    detailGroup.add(mesh);
+  });
+  parent.add(detailGroup);
+};
 
 export function createArchitectureRiseGroup(): THREE.Group {
   ensureResources();
@@ -96,6 +123,8 @@ export function createArchitectureRiseGroup(): THREE.Group {
   });
 
   g.add(focusGroup);
+
+  addFacadeFineDetail(g);
 
   // small reference objects (plinths) around the building to aid depth reading
   if (Array.isArray(referenceObjects) && referenceObjects.length > 0) {
@@ -229,6 +258,21 @@ export const ArchitectureRiseSubject: React.FC = () => {
           });
           return elems;
         })()}
+      </group>
+
+      <group name="architecture-rise-facade-fine-detail">
+        {geometry.getArchitectureFacadeFineDetailPieces().map((piece) => (
+          <mesh
+            key={piece.id}
+            name={piece.id}
+            position={[toW(piece.x), toW(piece.y), toW(piece.z)]}
+          >
+            <boxGeometry args={[toW(piece.width), toW(piece.height), toW(piece.depth)]} />
+            <meshBasicMaterial
+              color={piece.role === "panel" ? "#294354" : piece.role === "frame" ? "#dbeafe" : "#f8fafc"}
+            />
+          </mesh>
+        ))}
       </group>
 
       {/* reference objects (plinths) */}
