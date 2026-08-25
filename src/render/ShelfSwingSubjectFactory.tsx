@@ -64,6 +64,60 @@ const addChartTiles = (chartGroup: THREE.Group, subject: ShelfSwingSubjectDefini
   }
 };
 
+const addComparisonMotif = (
+  chartGroup: THREE.Group,
+  subject: ShelfSwingSubjectDefinition,
+): void => {
+  const motif = subject.focusChart.comparisonMotif;
+  const motifGroup = new THREE.Group();
+  motifGroup.name = `${subject.focusChart.semanticName}-comparison-motif`;
+  motifGroup.position.set(
+    toWorld(motif.centerLocal.x),
+    toWorld(motif.centerLocal.y),
+    toWorld(motif.centerLocal.z),
+  );
+  motifGroup.userData = {
+    focusTargetId: subject.id,
+    comparisonMotif: {
+      widthMm: motif.width,
+      heightMm: motif.height,
+      rows: motif.rows,
+    },
+  };
+
+  const backing = new THREE.Mesh(
+    new THREE.BoxGeometry(toWorld(motif.width), toWorld(motif.height), toWorld(motif.backingDepth)),
+    basicMaterial(subject.materialHints.secondary),
+  );
+  backing.name = `${motifGroup.name}-backing`;
+  backing.position.z = toWorld(motif.surfaceGap + motif.backingDepth / 2);
+  motifGroup.add(backing);
+
+  const barMaterial = basicMaterial(subject.materialHints.detail);
+  motif.rows.forEach((row) => {
+    const totalWidth = row.count * row.barWidth + (row.count - 1) * row.gap;
+    for (let index = 0; index < row.count; index += 1) {
+      const bar = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          toWorld(row.barWidth),
+          toWorld(row.barHeight),
+          toWorld(motif.barDepth),
+        ),
+        barMaterial,
+      );
+      bar.name = `${motifGroup.name}-${row.id}-${index + 1}`;
+      bar.position.set(
+        toWorld(-totalWidth / 2 + row.barWidth / 2 + index * (row.barWidth + row.gap)),
+        toWorld(row.yOffset),
+        toWorld(motif.surfaceGap + motif.backingDepth + motif.barDepth / 2),
+      );
+      motifGroup.add(bar);
+    }
+  });
+
+  chartGroup.add(motifGroup);
+};
+
 const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
   const station = new THREE.Group();
   station.name = subject.semanticName;
@@ -172,6 +226,7 @@ const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
     focusChartSurfaceWorldMm: { ...subject.focusDetailProbeWorld },
   };
   addChartTiles(chartGroup, subject);
+  addComparisonMotif(chartGroup, subject);
   station.add(chartGroup);
 
   const focusProbe = new THREE.Object3D();

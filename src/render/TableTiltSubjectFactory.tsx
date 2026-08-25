@@ -122,6 +122,26 @@ const addCup = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
     );
     parent.add(band);
   }
+
+  const fineBands = card.fineBands;
+  const fineBandDepth = card.depth / fineBands.count;
+  for (let index = 0; index < fineBands.count; index += 1) {
+    const band = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toWorld(card.width * fineBands.widthRatio),
+        toWorld(fineBands.thickness),
+        toWorld(fineBandDepth * fineBands.depthRatio),
+      ),
+      basicMaterial(index % 2 === 0 ? "#f8fafc" : subject.materialHints.detail),
+    );
+    band.name = `${subject.semanticName}-focus-card-fine-band-${index + 1}`;
+    band.position.set(
+      0,
+      toWorld(card.centerHeight + card.thickness / 2 + fineBands.surfaceGap + fineBands.thickness / 2),
+      toWorld(-card.depth / 2 + fineBandDepth / 2 + index * fineBandDepth),
+    );
+    parent.add(band);
+  }
 };
 
 const addNotebook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
@@ -197,6 +217,26 @@ const addNotebook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) =
         -panel.depth / 2 +
           ((index + 1) * panel.depth) / (panel.lineCount + 1),
       ),
+    );
+    parent.add(line);
+  }
+
+  const fineLines = panel.fineLines;
+  const fineLineMaterial = basicMaterial("#b45309");
+  for (let index = 0; index < fineLines.count; index += 1) {
+    const line = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toWorld(fineLines.width),
+        toWorld(fineLines.thickness),
+        toWorld(fineLines.depth),
+      ),
+      fineLineMaterial,
+    );
+    line.name = `${subject.semanticName}-fine-line-${index + 1}`;
+    line.position.set(
+      toWorld(fineLines.centerX),
+      toWorld(panel.centerHeight + panel.thickness / 2 + fineLines.surfaceGap + fineLines.thickness / 2),
+      toWorld(-panel.depth / 2 + ((index + 1) * panel.depth) / (fineLines.count + 1)),
     );
     parent.add(line);
   }
@@ -294,6 +334,29 @@ const addBook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
         toWorld(-chartWidth / 2 + cellWidth / 2 + column * cellWidth),
         toWorld(chart.centerHeight + chart.thickness / 2 + chart.cellGap + chart.cellThickness / 2),
         toWorld(-chartDepth / 2 + cellDepth / 2 + row * cellDepth),
+      );
+      parent.add(cell);
+    }
+  }
+
+  const fineGrid = chart.fineGrid;
+  const fineCellWidth = fineGrid.width / fineGrid.columns;
+  const fineCellDepth = fineGrid.depth / fineGrid.rows;
+  for (let column = 0; column < fineGrid.columns; column += 1) {
+    for (let row = 0; row < fineGrid.rows; row += 1) {
+      const cell = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          toWorld(fineCellWidth - fineGrid.cellGap),
+          toWorld(fineGrid.cellThickness),
+          toWorld(fineCellDepth - fineGrid.cellGap),
+        ),
+        basicMaterial((column + row) % 2 === 0 ? subject.materialHints.detail : "#f8fafc"),
+      );
+      cell.name = `${subject.semanticName}-fine-grid-${column + 1}-${row + 1}`;
+      cell.position.set(
+        toWorld(fineGrid.centerX - fineGrid.width / 2 + fineCellWidth / 2 + column * fineCellWidth),
+        toWorld(chart.centerHeight + chart.thickness / 2 + fineGrid.cellGap + fineGrid.cellThickness / 2),
+        toWorld(fineGrid.centerZ - fineGrid.depth / 2 + fineCellDepth / 2 + row * fineCellDepth),
       );
       parent.add(cell);
     }
