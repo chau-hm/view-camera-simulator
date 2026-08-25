@@ -11,7 +11,7 @@ import geometry from "../../scenes/shelfSwingGeometry";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("Ground Glass visual settings", () => {
-  it("calibrates Shelf Swing display blur without changing the source optics state", () => {
+  it("keeps Shelf Swing plane presentation separate from physical blur scale", () => {
     const optics = deriveOpticsState(
       {
         ...DEFAULT_CAMERA_STATE,
@@ -26,7 +26,6 @@ describe("Ground Glass visual settings", () => {
 
     expect(getGroundGlassDofVisualSettings(shelfSwingScene.id)).toEqual({
       maximumBlurRadiusPx: 42,
-      displayBlurScale: 3.2,
       planeMode: "derived-planes",
     });
     expect(optics.diagnostics.groundGlassDofModel).toBe("parallel-thin-lens");
@@ -34,6 +33,19 @@ describe("Ground Glass visual settings", () => {
     expect(display.focusPlane).toBe(optics.focusPlane);
     expect(display.depthOfFieldNearPlane).toBe(optics.depthOfFieldNearPlane);
     expect(display.depthOfFieldFarPlane).toBe(optics.depthOfFieldFarPlane);
+  });
+
+  it("does not expose scene-specific physical blur amplification", () => {
+    for (const sceneId of [
+      "architecture-rise",
+      "table-tilt",
+      "shelf-swing",
+      "oblique-architecture",
+      "architecture-foreground",
+    ]) {
+      const settings = getGroundGlassDofVisualSettings(sceneId);
+      expect("displayBlurScale" in settings).toBe(false);
+    }
   });
 
   it("leaves unrelated scene optics untouched", () => {
@@ -72,7 +84,6 @@ describe("Ground Glass visual settings", () => {
       500,
       400,
       42,
-      3.2,
     );
     expect(uniforms.mode).toBe(0);
     expect(uniforms.imageDistanceMm).toBeGreaterThan(0);

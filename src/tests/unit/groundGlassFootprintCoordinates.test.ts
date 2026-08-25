@@ -8,7 +8,6 @@ const baseInput = {
   renderHeightPx: 800,
   filmWidthMm: 100,
   filmHeightMm: 80,
-  displayBlurScale: 1,
 };
 
 describe("physical film footprint to raw RTT coordinates", () => {
@@ -50,11 +49,36 @@ describe("physical film footprint to raw RTT coordinates", () => {
     const axes = groundGlassFootprintAxesToRttPixels({
       ...baseInput,
       orientationRad: Math.PI / 4,
-      displayBlurScale: 2,
     });
 
     expect(axes.majorAxisPx[1]).toBeLessThan(0);
     expect(axes.minorAxisPx[1]).toBeLessThan(0);
     expect(Math.abs(axes.majorAxisPx[0])).toBeCloseTo(Math.abs(axes.majorAxisPx[1]), 12);
+  });
+
+  it("maps millimetres directly to pixels and scales only with render resolution", () => {
+    const oneMmAtBase = groundGlassFootprintAxesToRttPixels({
+      ...baseInput,
+      majorRadiusMm: 1,
+      minorRadiusMm: 1,
+      orientationRad: 0,
+    });
+    const oneMmAtDoubleResolution = groundGlassFootprintAxesToRttPixels({
+      ...baseInput,
+      majorRadiusMm: 1,
+      minorRadiusMm: 1,
+      renderWidthPx: 2000,
+      renderHeightPx: 1600,
+      orientationRad: 0,
+    });
+
+    expect(oneMmAtBase.majorAxisPx[0]).toBeCloseTo(10, 12);
+    expect(oneMmAtBase.majorAxisPx[1]).toBeCloseTo(0, 12);
+    expect(oneMmAtBase.minorAxisPx[0]).toBeCloseTo(0, 12);
+    expect(oneMmAtBase.minorAxisPx[1]).toBeCloseTo(-10, 12);
+    expect(oneMmAtDoubleResolution.majorAxisPx[0]).toBeCloseTo(20, 12);
+    expect(oneMmAtDoubleResolution.majorAxisPx[1]).toBeCloseTo(0, 12);
+    expect(oneMmAtDoubleResolution.minorAxisPx[0]).toBeCloseTo(0, 12);
+    expect(oneMmAtDoubleResolution.minorAxisPx[1]).toBeCloseTo(-20, 12);
   });
 });

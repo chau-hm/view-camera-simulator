@@ -52,7 +52,7 @@ function extractFunctionBody(source: string, name: string) {
 
 describe("GroundGlass DOF shader source", () => {
   test("shared uniform decls include required uniforms", () => {
-    expect(groundGlassUniformDecls).toContain("displayBlurScale");
+    expect(groundGlassUniformDecls).not.toContain("displayBlurScale");
     expect(groundGlassUniformDecls).toContain("maximumCoCRadiusPx");
     expect(groundGlassUniformDecls).toContain("sampleCount");
     expect(groundGlassUniformDecls).toContain("filmWidthMm");
@@ -105,6 +105,7 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassSharedGlsl).not.toContain(
       "float focusDist = tFocus > 0.0 ? tFocus : targetDist",
     );
+    expect(groundGlassSharedGlsl).not.toContain("displayBlurScale");
   });
 
   test("runtime shader sources are present and contain main", () => {

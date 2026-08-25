@@ -1,32 +1,33 @@
-# PR 8G — finite-focus real-image domain guard
+# PR 8H — physical Ground Glass blur scale
 
-- Branch: `fix/finite-focus-real-image-domain`.
-- Base: `origin/main` at `8dd58dbfa714de4b1af52662036dd9b96a5f4080`.
-- Scope: prevent real-image finite-focus controls from entering `U <= f`.
+- Branch: `feature/physical-ground-glass-blur-scale`.
+- Base: `origin/main` at `fd019512db7a5013f92c6c09976f76f4865cceac`.
+- Scope: remove scene-specific physical blur amplification while preserving
+  the existing pixel-radius cap and Shelf Swing `planeMode`.
 
 ## Contract
 
-- `minimumRealImageFiniteFocusDistanceMm()` returns the next configured focus
-  control step strictly above the current focal length.
-- Scene ranges, the Focus control selector, and `setFocusDistance()` share the
-  same effective lower bound for `rear-standard-thin-lens` scenes whose focus
-  distance is measured lens-to-focus-plane.
-- Architecture Rise now declares its historical rear-standard-Z finite-focus
-  strategy; the derive-time scene special case was removed.
-- Direct invalid Architecture Rise `U <= f` input remains fail-closed through
-  `Invalid finite-focus image distance` diagnostics. No virtual-image model or
-  infinity reinterpretation was added.
-- Focus Fundamentals and its separate front/rear focus contract remain outside
-  this guard.
+- The active RTT path keeps physical CoC and footprint radii in millimetres
+  until film-mm to render-pixel conversion.
+- `displayBlurScale` is no longer part of Ground Glass visual settings,
+  uniforms, storage-range resolution, CPU Ground Glass diagnostics, or GLSL.
+- `maximumBlurRadiusPx` remains a strict post-conversion cap.
+- Half-float and RGBA8 footprint storage retain physical millimetre semantics;
+  the existing pairwise byte scaling and neutral signed-CoC mapping are
+  unchanged.
+- Shelf Swing `planeMode: "derived-planes"` is preserved.
 
 ## Validation
 
-- Focused real-image domain, scene-range, store, selector, and optics tests pass.
-- Full unit/integration suite: 139 files, 1,311 tests passed.
-- Typecheck, lint, CSS check, build, and diff check pass.
-- Table Tilt Chromium suite: 18 passed. Architecture Rise guided checks: 2
-  passed. The full local E2E workflow stopped at the known Focus Fundamentals
-  baseline diagnostic failure (`focus-fundamentals-selectable-focus.spec.ts:155`,
-  incomplete RTT owner/resource diagnostics); its second test passed.
-- No DOF, shader, calibration, scene-detail, profiler, or PR 8F changes are
-  included.
+- Focused physical-scale, footprint-coordinate, CoC-storage, shader, visual
+  settings, stability, Table Tilt, Shelf Swing, Oblique Architecture, and
+  physical-footprint tests pass.
+- Full unit/integration suite: 140 files, 1,319 tests passed. Typecheck, lint,
+  CSS check, build, and diff check pass.
+- Bounded Chromium checks passed for Architecture Rise, Table Tilt, Shelf
+  Swing, Architecture + Foreground, and Oblique Architecture. The full local
+  E2E workflow stopped at the known Focus Fundamentals baseline diagnostic
+  failure (`focus-fundamentals-selectable-focus.spec.ts:155`, incomplete RTT
+  owner/resource diagnostics); its responsive companion test passed.
+- No optics equations, scene geometry, task scoring, quality profiles,
+  profiler, or PR 8F detail files are changed.
