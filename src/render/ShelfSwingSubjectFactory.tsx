@@ -72,9 +72,9 @@ const addComparisonMotif = (
   const motifGroup = new THREE.Group();
   motifGroup.name = `${subject.focusChart.semanticName}-comparison-motif`;
   motifGroup.position.set(
-    toWorld(motif.centerLocal.x),
-    toWorld(motif.centerLocal.y),
-    toWorld(motif.centerLocal.z),
+    toWorld(motif.chartLocalCenter.x),
+    toWorld(motif.chartLocalCenter.y),
+    toWorld(motif.chartLocalCenter.z),
   );
   motifGroup.userData = {
     focusTargetId: subject.id,

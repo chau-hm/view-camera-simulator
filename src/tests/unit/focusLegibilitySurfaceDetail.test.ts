@@ -9,6 +9,7 @@ import {
   createTableTiltGroup,
   disposeTableTiltGroup,
 } from "../../render/TableTiltSubjectFactory";
+import { WORLD_SCALE } from "../../render/rttUtils";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import architectureRiseGeometry from "../../scenes/architectureRiseGeometry";
@@ -117,6 +118,36 @@ describe("focus-legibility surface detail", () => {
         architectureRiseGeometry.getArchitectureFacadeFineDetailPieces().length,
       );
 
+      const nearCupAnchor = tableGroup.getObjectByName("table-tilt-near-cup-anchor");
+      const nearCupOrientation = tableGroup.getObjectByName("table-tilt-near-cup-orientation");
+      const focusCard = tableGroup.getObjectByName("table-tilt-near-cup-focus-card-surface");
+      expect(nearCupAnchor).toBeInstanceOf(THREE.Group);
+      expect(nearCupOrientation).toBeInstanceOf(THREE.Group);
+      expect(focusCard).toBeInstanceOf(THREE.Mesh);
+      const cardMesh = focusCard as THREE.Mesh;
+      const cardDepthMm = (cardMesh.geometry as THREE.BoxGeometry).parameters.depth / WORLD_SCALE;
+      const cardCenterZMm = cardMesh.position.z / WORLD_SCALE;
+      const cardMinZMm = cardCenterZMm - cardDepthMm / 2;
+      const cardMaxZMm = cardCenterZMm + cardDepthMm / 2;
+      for (
+        let index = 1;
+        index <= tableTiltGeometry.detailGeometry.cup.focusCard.fineBands.count;
+        index += 1
+      ) {
+        const fineBand = tableGroup.getObjectByName(
+          `table-tilt-near-cup-focus-card-fine-band-${index}`,
+        );
+        expect(fineBand).toBeInstanceOf(THREE.Mesh);
+        expect(fineBand?.parent).toBe(nearCupOrientation);
+        expect(nearCupOrientation?.parent).toBe(nearCupAnchor);
+        const fineBandMesh = fineBand as THREE.Mesh;
+        const fineBandDepthMm =
+          (fineBandMesh.geometry as THREE.BoxGeometry).parameters.depth / WORLD_SCALE;
+        const fineBandCenterZMm = fineBandMesh.position.z / WORLD_SCALE;
+        expect(fineBandCenterZMm - fineBandDepthMm / 2).toBeGreaterThanOrEqual(cardMinZMm);
+        expect(fineBandCenterZMm + fineBandDepthMm / 2).toBeLessThanOrEqual(cardMaxZMm);
+      }
+
       shelfSwingGeometry.subjects.forEach((subject) => {
         const motif = shelfGroup.getObjectByName(
           `${subject.focusChart.semanticName}-comparison-motif`,
@@ -126,6 +157,36 @@ describe("focus-legibility surface detail", () => {
           motif?.children.filter((child) => child instanceof THREE.Mesh),
         ).toHaveLength(
           1 + subject.focusChart.comparisonMotif.rows.reduce((sum, row) => sum + row.count, 0),
+        );
+        const chartGroup = shelfGroup.getObjectByName(subject.focusChart.semanticName);
+        const station = shelfGroup.getObjectByName(subject.semanticName);
+        expect(chartGroup).toBeInstanceOf(THREE.Group);
+        expect(station).toBeInstanceOf(THREE.Group);
+        shelfGroup.updateMatrixWorld(true);
+        const motifCenterWorld = (motif as THREE.Group).getWorldPosition(new THREE.Vector3());
+        const motifCenterChartLocalWorld = (chartGroup as THREE.Group).worldToLocal(
+          motifCenterWorld.clone(),
+        );
+        const motifCenterChartLocal = {
+          x: motifCenterChartLocalWorld.x / WORLD_SCALE,
+          y: motifCenterChartLocalWorld.y / WORLD_SCALE,
+        };
+        const chartLocalCenter = subject.focusChart.comparisonMotif.chartLocalCenter;
+        const chartHalfHeight = subject.focusChart.height / 2;
+        expect(motifCenterChartLocal.x).toBeCloseTo(chartLocalCenter.x, 8);
+        expect(motifCenterChartLocal.y).toBeCloseTo(chartLocalCenter.y, 8);
+        expect(
+          motifCenterChartLocal.y - subject.focusChart.comparisonMotif.height / 2,
+        ).toBeGreaterThanOrEqual(-chartHalfHeight);
+        expect(
+          motifCenterChartLocal.y + subject.focusChart.comparisonMotif.height / 2,
+        ).toBeLessThanOrEqual(chartHalfHeight);
+        const motifCenterStationLocalWorld = (station as THREE.Group).worldToLocal(
+          motifCenterWorld.clone(),
+        );
+        expect(motifCenterStationLocalWorld.y / WORLD_SCALE).toBeCloseTo(
+          subject.focusChart.centerLocal.y + chartLocalCenter.y,
+          8,
         );
       });
 

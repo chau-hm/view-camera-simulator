@@ -35,7 +35,8 @@ export type ShelfSwingComparisonMotifRow = {
 };
 
 export type ShelfSwingComparisonMotif = {
-  centerLocal: ShelfSwingVec3;
+  /** Position relative to the focus-chart group, not the station root. */
+  chartLocalCenter: ShelfSwingVec3;
   width: number;
   height: number;
   backingDepth: number;
@@ -286,7 +287,10 @@ export const detailGeometry = {
     sampleOffsetY: 105,
   },
   comparisonMotif: {
-    centerLocal: { x: 0, y: 460, z: 0 },
+    // The chart group is already translated to station-local y=560 mm. Keep
+    // the motif inside that chart by expressing its intended station-local
+    // y=460 mm position as chart-local y=-100 mm.
+    chartLocalCenter: { x: 0, y: -100, z: 0 },
     width: 240,
     height: 72,
     backingDepth: 2,

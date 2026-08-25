@@ -138,7 +138,7 @@ const addCup = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
     band.position.set(
       0,
       toWorld(card.centerHeight + card.thickness / 2 + fineBands.surfaceGap + fineBands.thickness / 2),
-      toWorld(-card.depth / 2 + fineBandDepth / 2 + index * fineBandDepth),
+      toWorld(card.centerZ - card.depth / 2 + fineBandDepth / 2 + index * fineBandDepth),
     );
     parent.add(band);
   }
