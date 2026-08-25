@@ -21,8 +21,9 @@
 
 - Focused physical-scale, footprint-coordinate, CoC-storage, shader, visual
   settings, stability, Table Tilt, Shelf Swing, Oblique Architecture, and
-  physical-footprint tests pass.
-- Full unit/integration suite: 140 files, 1,319 tests passed. Typecheck, lint,
+  physical-footprint tests pass, including aperture monotonicity and strict
+  pixel-cap coverage.
+- Full unit/integration suite: 140 files, 1,321 tests passed. Typecheck, lint,
   CSS check, build, and diff check pass.
 - Bounded Chromium checks passed for Architecture Rise, Table Tilt, Shelf
   Swing, Architecture + Foreground, and Oblique Architecture. The full local
