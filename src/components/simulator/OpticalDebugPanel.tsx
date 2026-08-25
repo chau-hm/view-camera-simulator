@@ -77,6 +77,8 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
   renderQuality,
   rttRuntimeInfo,
 }) => {
+  const [copyStatus, setCopyStatus] = React.useState<"idle" | "copied" | "failed">("idle");
+  const copyStatusTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const lens = opticsState.lensCenterWorld;
   const film = opticsState.filmPlane.point;
   const filmNormal = opticsState.filmPlane.normal;
@@ -93,6 +95,34 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
 
   const internalWidth = rttRuntimeInfo?.internalWidthPx ?? 1024;
   const logicalWidth = rttRuntimeInfo?.logicalWidthPx ?? 800;
+
+  React.useEffect(() => () => {
+    if (copyStatusTimeoutRef.current !== null) clearTimeout(copyStatusTimeoutRef.current);
+  }, []);
+
+  const showCopyStatus = (status: "copied" | "failed") => {
+    setCopyStatus(status);
+    if (copyStatusTimeoutRef.current !== null) clearTimeout(copyStatusTimeoutRef.current);
+    copyStatusTimeoutRef.current = setTimeout(() => {
+      copyStatusTimeoutRef.current = null;
+      setCopyStatus("idle");
+    }, 1800);
+  };
+
+  const copyProfilingSnapshot = async () => {
+    const snapshot = rttRuntimeInfo?.profilingSnapshot;
+    if (!snapshot) return;
+    const serializedSnapshot = JSON.stringify(snapshot, null, 2);
+    try {
+      if (typeof navigator === "undefined" || typeof navigator.clipboard?.writeText !== "function") {
+        throw new Error("Clipboard API unavailable");
+      }
+      await navigator.clipboard.writeText(serializedSnapshot);
+      showCopyStatus("copied");
+    } catch {
+      showCopyStatus("failed");
+    }
+  };
 
   const refDiagnostics = React.useMemo(() => {
     if (sceneId !== "architecture-rise") return null;
@@ -214,6 +244,15 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
               <div><strong>GPU query error:</strong> {rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.lastGpuQueryError}</div>
             ) : null}
             <div><strong>Approx. FPS:</strong> {rttRuntimeInfo.profilingSnapshot?.approxFps?.toFixed(1) ?? "—"} (frame timing, display-capped if applicable)</div>
+            <button
+              type="button"
+              className="btn btn--compact"
+              data-testid="ground-glass-profiling-copy"
+              disabled={!rttRuntimeInfo.profilingSnapshot}
+              onClick={() => { void copyProfilingSnapshot(); }}
+            >
+              {copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Copy failed" : "Copy snapshot"}
+            </button>
             <pre
               data-testid="ground-glass-profiling-snapshot"
               style={{ maxHeight: "16rem", overflow: "auto", whiteSpace: "pre-wrap" }}
