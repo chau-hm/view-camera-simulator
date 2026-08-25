@@ -4,6 +4,7 @@ import {
   encodeGroundGlassFootprintAxesMm,
   resolveGroundGlassCocStorageMaxMm,
 } from "../../render/groundGlassCocTarget";
+import { calculateDofBlurRadiusPx } from "../../core/optics/dofBlurModel";
 import { groundGlassFootprintAxesToRttPixels } from "../../render/groundGlassFootprintCoordinates";
 import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
 
@@ -85,6 +86,26 @@ describe("physical Ground Glass blur scale", () => {
       filmWidthMm: 127,
       renderWidthPx: 1270,
     })).toBeCloseTo(8.4, 12);
+  });
+
+  it("applies maximumBlurRadiusPx only as a post-conversion cap", () => {
+    const physicalRadiusPx = calculateDofBlurRadiusPx({
+      normalizedDefocus: 1,
+      circleOfConfusionMm: 0.1,
+      filmWidthMm: 127,
+      renderWidthPx: 1270,
+      maximumBlurRadiusPx: 100,
+    });
+    const cappedRadiusPx = calculateDofBlurRadiusPx({
+      normalizedDefocus: 4,
+      circleOfConfusionMm: 0.1,
+      filmWidthMm: 127,
+      renderWidthPx: 1270,
+      maximumBlurRadiusPx: 1.25,
+    });
+
+    expect(physicalRadiusPx).toBeCloseTo(0.5, 12);
+    expect(cappedRadiusPx).toBe(1.25);
   });
 
   it("keeps half-float and byte storage in physical radius semantics", () => {
