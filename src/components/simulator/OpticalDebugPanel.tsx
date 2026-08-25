@@ -207,7 +207,7 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
             <div><strong>Timing unit:</strong> {rttRuntimeInfo.profilingSnapshot?.timingUnit ?? "—"}</div>
             <div><strong>GPU query state:</strong> {rttRuntimeInfo.profilingSnapshot?.profilingDiagnostics.gpuQueryState ?? "—"}</div>
             <div><strong>Frame timing samples:</strong> {rttRuntimeInfo.profilingSnapshot?.frame.count ?? 0}</div>
-            <div><strong>Completed GPU frames:</strong> {rttRuntimeInfo.profilingSnapshot?.profilingDiagnostics.framesCompletedGpu ?? 0}</div>
+            <div><strong>Cumulative GPU frames:</strong> {rttRuntimeInfo.profilingSnapshot?.profilingDiagnostics.framesCompletedGpu ?? 0}</div>
             <div><strong>GPU queries:</strong> {rttRuntimeInfo.profilingSnapshot ? `${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.queriesCompleted} completed · ${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.pendingQueries} pending / ${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.queryPoolSize} slots` : "—"}</div>
             <div><strong>GPU frame admission:</strong> {rttRuntimeInfo.profilingSnapshot ? `${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.framesAccepted} accepted · ${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.framesRejectedCapacity} capacity-skipped` : "—"}</div>
             {rttRuntimeInfo.profilingSnapshot?.profilingDiagnostics.lastGpuQueryError ? (

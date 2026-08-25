@@ -218,6 +218,19 @@ export type GroundGlassGpuTiming = {
   durationMs: number;
 };
 
+export type GroundGlassGpuTimerFailure = {
+  reason: string;
+  frameId: number;
+  pass: GroundGlassProfilingPass;
+};
+
+export type GroundGlassGpuPollResult = {
+  timings: GroundGlassGpuTiming[];
+  failure: string | null;
+  disjoint: boolean;
+  discardedFrameIds: number[];
+};
+
 type QuerySlot = {
   query: unknown;
   active: {
@@ -343,16 +356,20 @@ export class GroundGlassGpuTimer {
       return null;
     }
     this.queriesBegun += 1;
-    this.gpuQueryState = "active";
-    this.lastGpuQueryError = null;
+    // A successful begin can start recovery, but it must not erase an
+    // unconsumed failure from an earlier end/poll operation. A later healthy
+    // poll clears the error after the profiler has had a chance to invalidate
+    // the affected frame.
+    if (this.lastGpuQueryError === null) this.gpuQueryState = "active";
     return { slot, ended: false };
   }
 
-  public end(token: GroundGlassGpuTimerToken | null): void {
-    if (!token || token.ended || this.disposed || !this.context.endQuery) return;
+  public end(token: GroundGlassGpuTimerToken | null): GroundGlassGpuTimerFailure | null {
+    if (!token || token.ended || this.disposed || !this.context.endQuery) return null;
     token.ended = true;
-    if (!token.slot.active) return;
-    token.slot.active.ended = true;
+    const active = token.slot.active;
+    if (!active) return null;
+    active.ended = true;
     try {
       this.context.endQuery(this.extension.TIME_ELAPSED_EXT);
       this.queriesEnded += 1;
@@ -360,13 +377,48 @@ export class GroundGlassGpuTimer {
       token.slot.active = null;
       this.queriesEndFailed += 1;
       this.setError("end-query-failed");
+      return {
+        reason: "end-query-failed",
+        frameId: active.frameId,
+        pass: active.pass,
+      };
     }
+    return null;
   }
 
+  /**
+   * Compatibility wrapper for callers that only need completed timings.
+   * GroundGlassProfiler uses pollWithEvents() so transient failures cannot be
+   * hidden by a later successful result in the same poll.
+   */
   public poll(): GroundGlassGpuTiming[] {
+    return this.pollWithEvents().timings;
+  }
+
+  public pollWithEvents(): GroundGlassGpuPollResult {
+    const result: GroundGlassGpuPollResult = {
+      timings: [],
+      failure: null,
+      disjoint: false,
+      discardedFrameIds: [],
+    };
+    const discardedFrameIds = new Set<number>();
+    const discardActiveQueries = (): void => {
+      this.slots.forEach((slot) => {
+        if (slot.active) discardedFrameIds.add(slot.active.frameId);
+        slot.active = null;
+      });
+      result.discardedFrameIds = [...discardedFrameIds];
+    };
+    const fail = (reason: string): void => {
+      result.failure = reason;
+      discardActiveQueries();
+      this.setError(reason);
+    };
+
     if (this.disposed || !this.context.getQueryParameter || !this.context.getParameter) {
-      this.setError("query-api-unavailable");
-      return [];
+      fail("query-api-unavailable");
+      return result;
     }
 
     let disjoint = false;
@@ -379,28 +431,28 @@ export class GroundGlassGpuTimer {
         this.context.getParameter!(this.extension.GPU_DISJOINT_EXT),
       );
     } catch {
-      this.setError("get-parameter-failed");
       // The disjoint flag itself could not be read. Fail closed and release
       // the outstanding slots, but do not mislabel an API failure as a GPU
       // disjoint event.
-      this.slots.forEach((slot) => { slot.active = null; });
-      return [];
+      fail("get-parameter-failed");
+      return result;
     }
     if (disjoint) {
       // The GPU clock was invalidated. Discard every pending result rather
       // than publishing a measurement from an unknown time base.
       this.disjointEvents += 1;
       this.queriesDiscardedDisjoint += this.pendingCount;
-      this.slots.forEach((slot) => { slot.active = null; });
+      discardActiveQueries();
       this.gpuQueryState = "disjoint";
-      return [];
+      result.disjoint = true;
+      return result;
     }
 
     const completed: GroundGlassGpuTiming[] = [];
     let pendingPolled = 0;
-    this.slots.forEach((slot) => {
+    for (const slot of this.slots) {
       const active = slot.active;
-      if (!active || !active.ended) return;
+      if (!active || !active.ended) continue;
       this.queriesPolled += 1;
       pendingPolled += 1;
 
@@ -410,13 +462,12 @@ export class GroundGlassGpuTimer {
           this.context.getQueryParameter!(slot.query, this.context.QUERY_RESULT_AVAILABLE),
         );
       } catch {
-        this.slots.forEach((candidate) => { candidate.active = null; });
-        this.setError("get-query-parameter-failed");
-        return;
+        fail("get-query-parameter-failed");
+        break;
       }
       if (!available) {
         this.queriesUnavailable += 1;
-        return;
+        continue;
       }
 
       let nanoseconds: number;
@@ -425,9 +476,8 @@ export class GroundGlassGpuTimer {
           this.context.getQueryParameter!(slot.query, this.context.QUERY_RESULT),
         );
       } catch {
-        this.slots.forEach((candidate) => { candidate.active = null; });
-        this.setError("get-query-result-failed");
-        return;
+        fail("get-query-result-failed");
+        break;
       }
       slot.active = null;
       const durationMs = nanoseconds / 1e6;
@@ -435,14 +485,20 @@ export class GroundGlassGpuTimer {
         completed.push({ frameId: active.frameId, pass: active.pass, durationMs });
         this.queriesCompleted += 1;
       }
-    });
-    if (completed.length > 0) {
+    }
+    result.timings = completed;
+    result.discardedFrameIds = [...discardedFrameIds];
+    if (result.failure !== null) {
+      // Failure dominates partial success. Do not let completed timings from
+      // earlier slots make this poll look healthy.
+      this.gpuQueryState = "error";
+    } else if (completed.length > 0) {
       this.gpuQueryState = "active";
       this.lastGpuQueryError = null;
     } else if (pendingPolled > 0 && this.pendingCount > 0) {
-      this.gpuQueryState = "stalled";
+      if (this.lastGpuQueryError === null) this.gpuQueryState = "stalled";
     }
-    return completed;
+    return result;
   }
 
   public getDiagnostics(): GroundGlassGpuTimerDiagnostics {
@@ -635,7 +691,6 @@ export class GroundGlassProfiler {
       (this.gpuTimer?.canReserve(expected.length) ?? false);
     if (measurementAccepted) {
       this.framesAccepted += 1;
-      this.lastRejectedReason = null;
     } else {
       this.framesRejectedCapacity += 1;
       this.lastRejectedReason = `query-capacity:${expected.length}`;
@@ -670,7 +725,8 @@ export class GroundGlassProfiler {
         end: () => {
           if (ended) return;
           ended = true;
-          this.gpuTimer?.end(token);
+          const failure = this.gpuTimer?.end(token) ?? null;
+          if (failure) this.invalidateFrame(frame, failure.reason);
         },
       };
     }
@@ -713,20 +769,22 @@ export class GroundGlassProfiler {
     if (this.backend !== "gpu-query") return;
     const timer = this.gpuTimer;
     if (!timer) return;
-    const before = timer.getDiagnostics();
-    const timings = timer.poll();
-    const after = timer.getDiagnostics();
-    const queryFailure = after.gpuQueryState === "error" &&
-      (before.gpuQueryState !== "error" || before.lastGpuQueryError !== after.lastGpuQueryError);
-    const disjoint = after.disjointEvents > before.disjointEvents;
-    if (queryFailure || disjoint) {
-      this.invalidatePendingGpuFrames(
-        queryFailure
-          ? `gpu-query:${after.lastGpuQueryError ?? "error"}`
-          : "gpu-disjoint",
-      );
+    const result = timer.pollWithEvents();
+    if (result.disjoint) {
+      this.invalidatePendingGpuFrames("gpu-disjoint");
+    } else if (result.failure) {
+      const reason = `gpu-query:${result.failure}`;
+      if (result.discardedFrameIds.length > 0) {
+        this.invalidateGpuFrames(result.discardedFrameIds, reason);
+      } else {
+        this.invalidatePendingGpuFrames(reason);
+      }
+    } else if (result.discardedFrameIds.length > 0) {
+      // Defensive handling for a timer implementation that discards query
+      // ownership without classifying it as a disjoint or API failure.
+      this.invalidateGpuFrames(result.discardedFrameIds, "gpu-query:discarded");
     }
-    timings.forEach((timing) => {
+    result.timings.forEach((timing) => {
       this.recordTiming(timing.frameId, timing.pass, timing.durationMs);
     });
   }
@@ -892,15 +950,32 @@ export class GroundGlassProfiler {
     this.lastRejectedReason = reason;
   }
 
+  private rememberDiscardedFrame(frameId: number): void {
+    if (this.discardedFrameIds.size >= GROUND_GLASS_PROFILING_QUERY_POOL_SIZE * 2) {
+      const oldest = this.discardedFrameIds.values().next().value;
+      if (oldest !== undefined) this.discardedFrameIds.delete(oldest);
+    }
+    this.discardedFrameIds.add(frameId);
+  }
+
+  private invalidateGpuFrames(frameIds: readonly number[], reason: string): void {
+    for (const frameId of frameIds) {
+      const frame = this.currentFrame?.id === frameId
+        ? this.currentFrame
+        : this.pendingFrames.get(frameId);
+      if (frame) {
+        this.invalidateFrame(frame, reason);
+        if (this.pendingFrames.get(frameId) === frame) this.pendingFrames.delete(frameId);
+      }
+      this.rememberDiscardedFrame(frameId);
+    }
+    this.lastRejectedReason = reason;
+  }
+
   private invalidatePendingGpuFrames(reason: string): void {
     for (const frame of this.pendingFrames.values()) {
-      frame.valid = false;
-      this.framesInvalidated += 1;
-      if (this.discardedFrameIds.size >= GROUND_GLASS_PROFILING_QUERY_POOL_SIZE * 2) {
-        const oldest = this.discardedFrameIds.values().next().value;
-        if (oldest !== undefined) this.discardedFrameIds.delete(oldest);
-      }
-      this.discardedFrameIds.add(frame.id);
+      this.invalidateFrame(frame, reason);
+      this.rememberDiscardedFrame(frame.id);
     }
     this.pendingFrames.clear();
     this.lastRejectedReason = reason;
