@@ -154,4 +154,11 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     expect(screen.queryByText("Focus with")).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "Front standard" })).not.toBeInTheDocument();
   });
+
+  it("exposes the real-image minimum for a 150 mm Architecture Rise lens", () => {
+    useAppStore.getState().setActiveScene("architecture-rise");
+    render(<FocusControl focusEnabled={true} lockReason="" />);
+
+    expect(screen.getByLabelText("Focus distance")).toHaveAttribute("min", "160");
+  });
 });

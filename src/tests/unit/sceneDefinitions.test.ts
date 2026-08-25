@@ -48,6 +48,16 @@ describe("scene definitions", () => {
     expect(architectureRiseScene.cameraPreset.frontRiseMm).toBe(0);
   });
 
+  it("keeps real-image finite-focus ranges strictly beyond the current focal length", () => {
+    expect(architectureRiseScene.finiteFocusStrategy?.focusDistanceReference).toBe(
+      "lens-to-focus-plane",
+    );
+    expect(getSceneFocusDistanceRange(architectureRiseScene.id, 150).min).toBe(160);
+    expect(getSceneFocusDistanceRange(tableTiltScene.id, 150).min).toBe(160);
+    expect(getSceneFocusDistanceRange(architectureRiseScene.id, 150).min).toBeGreaterThan(150);
+    expect(getSceneFocusDistanceRange(tableTiltScene.id, 150).min).toBeGreaterThan(150);
+  });
+
   it("defines near/mid/far table focus targets", () => {
     const focusTargetIds = tableTiltScene.focusTargets.map((target) => target.id);
     expect(focusTargetIds).toEqual(["near-cup", "mid-notebook", "far-book"]);
@@ -103,9 +113,18 @@ describe("scene definitions", () => {
     expect(sceneOrder).toContain("oblique-architecture");
   });
 
-  it("preserves legacy focus-range derivation for scenes without an explicit range", () => {
+  it("preserves larger explicit focus ranges above the physical floor", () => {
+    expect(getSceneFocusDistanceRange("architecture-foreground", 150).min).toBe(
+      3500,
+    );
+    expect(getSceneFocusDistanceRange(obliqueArchitectureScene.id, 150)).toEqual(
+      obliqueArchitectureGeometry.focusDistanceRangeMm,
+    );
+  });
+
+  it("derives the table range from scene bounds while applying the real-image floor", () => {
     expect(getSceneFocusDistanceRange(tableTiltScene.id)).toEqual({
-      min: Math.max(100, tableTiltScene.bounds.min.z),
+      min: Math.max(160, tableTiltScene.bounds.min.z),
       max: Math.max(tableTiltScene.bounds.min.z, tableTiltScene.bounds.max.z),
     });
   });

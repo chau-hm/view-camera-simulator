@@ -26,8 +26,14 @@ export const selectMovementControlState = (state: AppStore) => ({
 
 export const selectFocusControlState = (state: AppStore) => ({
   focusDistanceMm: state.camera.focusDistanceMm,
-  focusDistanceMinMm: getSceneFocusDistanceRange(state.camera.activeSceneId).min,
-  focusDistanceMaxMm: getSceneFocusDistanceRange(state.camera.activeSceneId).max,
+  focusDistanceMinMm: getSceneFocusDistanceRange(
+    state.camera.activeSceneId,
+    state.camera.focalLengthMm,
+  ).min,
+  focusDistanceMaxMm: getSceneFocusDistanceRange(
+    state.camera.activeSceneId,
+    state.camera.focalLengthMm,
+  ).max,
   focusMode: state.camera.focusMode,
   lastFiniteFocusDepthMm: state.camera.lastFiniteFocusDepthMm,
   activeSceneId: state.camera.activeSceneId,

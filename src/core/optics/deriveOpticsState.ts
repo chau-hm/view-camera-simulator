@@ -14,7 +14,6 @@ import type { SceneDefinition } from "../../types/scene";
 import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
-import { imageDistanceMm } from "./thinLensModel";
 import {
   resolveFocusFundamentalsFocusing,
   type FocusFundamentalsFocusingResult,
@@ -614,15 +613,6 @@ export const deriveOpticsState = (
     );
   }
   let { filmCenterWorld: filmCenterLocal } = baselineFilm;
-
-  // For Architecture Rise use rear-standard focusing: interpret focusDistanceMm as lens-to-subject distance U
-  // and place film at image distance v from the lens (filmCenterWorld.z = -v)
-  if (scene.id === "architecture-rise") {
-    const U = cameraState.focusDistanceMm; // lens-to-subject distance in mm (object side)
-    const f = cameraState.focalLengthMm;
-    const v = Number.isFinite(U) && U > f ? imageDistanceMm(f, U) : cameraState.focalLengthMm;
-    filmCenterLocal = vec(0, 0, -v);
-  }
 
   // Prepare to store the canonical Focus Fundamentals lens/film/U/v solution so
   // every downstream geometry consumer uses exactly one resolved construction.
