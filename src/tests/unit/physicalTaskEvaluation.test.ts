@@ -99,7 +99,7 @@ const canonicalTaskStates: Array<{
       frontTiltDeg: architectureForegroundGeometry.neutralCalibration.publicTiltFocusSolutionDeg,
       focusDistanceMm:
         architectureForegroundGeometry.neutralCalibration.publicTiltFocusFocusDistanceMm,
-      aperture: 22,
+      aperture: 32,
     },
   },
   {
@@ -110,7 +110,7 @@ const canonicalTaskStates: Array<{
       frontTiltDeg: architectureForegroundGeometry.neutralCalibration.publicTiltFocusSolutionDeg,
       focusDistanceMm:
         architectureForegroundGeometry.neutralCalibration.publicTiltFocusFocusDistanceMm,
-      aperture: 22,
+      aperture: 32,
     },
   },
   {
@@ -170,13 +170,13 @@ describe("physical guided-task focus evaluation", () => {
         taskId: "architecture-foreground-dof-01",
         criterionId: "architecture-foreground-dof-focus-targets",
         targetIds: ["foreground-near", "foreground-middle", "building-base", "building-middle"],
-        minimumSharpness: 0.4,
+        minimumSharpness: 0.5,
       },
       {
         taskId: "architecture-foreground-compound-01",
         criterionId: "architecture-foreground-compound-focus-targets",
         targetIds: ["foreground-near", "foreground-middle", "building-base", "building-middle"],
-        minimumSharpness: 0.4,
+        minimumSharpness: 0.5,
       },
       {
         taskId: "oblique-swing-focus-01",
@@ -340,6 +340,31 @@ describe("physical guided-task focus evaluation", () => {
         expect(resolvePhysicalTaskPatchSharpness(target)).not.toBeNull();
       });
     });
+  });
+
+  it("keeps the Architecture + Foreground passing states out of Soft presentation", () => {
+    for (const taskId of ["architecture-foreground-dof-01", "architecture-foreground-compound-01"]) {
+      const task = taskRegistry[taskId];
+      const camera = cameraFor(architectureForegroundScene, {
+        activeTaskId: taskId,
+        frontRiseMm: architectureForegroundGeometry.neutralCalibration.futureRiseMm,
+        frontTiltDeg: architectureForegroundGeometry.neutralCalibration.publicTiltFocusSolutionDeg,
+        focusDistanceMm:
+          architectureForegroundGeometry.neutralCalibration.publicTiltFocusFocusDistanceMm,
+        aperture: 32,
+      });
+      const optics = deriveOpticsState(camera, architectureForegroundScene);
+
+      expect(evaluateTask(task, architectureForegroundScene, camera, optics).status).toBe("passed");
+      task.criteria
+        .filter((criterion) => criterion.type === "focus-targets-sharp")
+        .flatMap((criterion) => criterion.targetIds)
+        .forEach((targetId) => {
+          const target = optics.focusTargets.find((entry) => entry.id === targetId);
+          expect(target?.physicalPatchStatus, `${taskId}:${targetId}`).not.toBe("soft");
+          expect(target?.physicalPatchSharpness, `${taskId}:${targetId}`).toBeGreaterThanOrEqual(0.5);
+        });
+    }
   });
 
   it("keeps meaningful wrong-focus and incomplete-movement controls from passing", () => {

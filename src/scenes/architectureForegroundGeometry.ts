@@ -195,11 +195,12 @@ export const cameraCalibration = {
   tiltFocusRangeDeg: { min: 1.7, max: 2.6 },
   tiltFocusSharpnessMinimum: 0.7,
   tiltFocusMinimumFocusAdjustmentMm: 100,
-  // Physical patch sharpness at the public f/22 solution is approximately
-  // 0.424 at its worst target. Keep a small margin for the rounded public
-  // tilt/focus steps while remaining stricter than the 0.1 mm CoC boundary.
-  dofSharpnessMinimum: 0.4,
-  dofPassingApertures: [22, 32] as const,
+  // The learner-facing Acceptable status begins at 0.5. The public f/22
+  // solution is Soft at its worst target (approximately 0.424), while f/32
+  // is Acceptable (approximately 0.604), so only f/32 is a truthful passing
+  // aperture for the whole-target DOF lesson.
+  dofSharpnessMinimum: 0.5,
+  dofPassingApertures: [32] as const,
 } as const;
 
 export const canonicalFocusDistanceMm = roundToStep(
