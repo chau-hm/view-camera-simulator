@@ -243,11 +243,17 @@ describe("GroundGlassRenderer", () => {
         index === 0
           ? {
               ...target,
-              pointSharpness: 1,
-              pointNormalizedDefocus: 0,
-              patchSharpness: 0,
-              patchNormalizedDefocus: 2,
-              normalizedDefocus: 2,
+              pointSharpness: 0.1,
+              pointNormalizedDefocus: 4,
+              patchSharpness: 0.9,
+              patchNormalizedDefocus: 0.1,
+              normalizedDefocus: 0.1,
+              physicalPointSharpness: 1,
+              physicalPointStatus: "sharp" as const,
+              pointEquivalentCoCDiameterMm: 0,
+              physicalPatchSharpness: 0,
+              physicalPatchStatus: "soft" as const,
+              patchEquivalentCoCDiameterMm: 0.2,
             }
           : target,
       ),

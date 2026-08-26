@@ -36,6 +36,8 @@ const numericFocusFields = [
   "sharpness",
   "pointSharpness",
   "patchSharpness",
+  "physicalPointSharpness",
+  "physicalPatchSharpness",
   "pointNormalizedDefocus",
   "patchNormalizedDefocus",
   "normalizedDefocus",

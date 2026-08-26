@@ -40,7 +40,10 @@ import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
 import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
-import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
+import {
+  createFocusAssistPass,
+  resolveFocusTargetPresentationMetric,
+} from "../../render/postprocessing/FocusAssistPass";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
@@ -381,8 +384,8 @@ export const SimulatorWorkspace = ({
     return opticsState.focusTargets.reduce<string | undefined>((closestId, target) => {
       if (!closestId) return target.id;
       const closest = opticsState.focusTargets.find((candidate) => candidate.id === closestId);
-      return (target.pointSharpness ?? target.sharpness) >
-        (closest?.pointSharpness ?? closest?.sharpness ?? -1)
+      return resolveFocusTargetPresentationMetric(target, "point").sharpness >
+        (closest ? resolveFocusTargetPresentationMetric(closest, "point").sharpness : -1)
         ? target.id
         : closestId;
     }, undefined);

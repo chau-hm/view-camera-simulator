@@ -1,12 +1,65 @@
 import type { FocusTargetSharpness } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
 import { pointToPlaneDistance } from "../math/plane";
-import type { Plane } from "../../types/optics";
+import type { Plane, Vec3 } from "../../types/optics";
 import { clamp } from "../math/clamps";
 
-import type { Ray, Vec3 } from "../../types/optics";
+import { computePhysicalBlurFootprint } from "./computePhysicalBlurFootprint";
+import {
+  calculatePhysicalSharpnessFromEquivalentCoCDiameterMm,
+  focusTargetStatusForSharpness,
+} from "./physicalSharpness";
+import type { Ray } from "../../types/optics";
 import { safeNormalize, subtract, dot } from "../math/vec";
 import { sampleDofWedge } from "./dofWedge";
+
+export type PhysicalFocusGeometry = {
+  lensCenterWorld: Vec3;
+  lensPlaneNormal: Vec3;
+  lensPlaneBasisX: Vec3;
+  lensPlaneBasisY: Vec3;
+  filmPlane: Plane;
+  filmPlaneBasisX: Vec3;
+  filmPlaneBasisY: Vec3;
+  focalLengthMm: number;
+  apertureFNumber: number;
+};
+
+type PhysicalSampleEvaluation = {
+  equivalentCoCDiameterMm: number | null;
+  sharpness: number;
+  status: FocusTargetSharpness["status"];
+};
+
+const evaluatePhysicalPosition = (
+  worldPosition: Vec3,
+  geometry: PhysicalFocusGeometry,
+): PhysicalSampleEvaluation => {
+  const footprint = computePhysicalBlurFootprint({
+    objectPoint: worldPosition,
+    lensCenter: geometry.lensCenterWorld,
+    lensPlaneNormal: geometry.lensPlaneNormal,
+    lensPlaneBasisX: geometry.lensPlaneBasisX,
+    lensPlaneBasisY: geometry.lensPlaneBasisY,
+    filmPlane: geometry.filmPlane,
+    filmPlaneBasisX: geometry.filmPlaneBasisX,
+    filmPlaneBasisY: geometry.filmPlaneBasisY,
+    focalLengthMm: geometry.focalLengthMm,
+    apertureFNumber: geometry.apertureFNumber,
+  });
+  const equivalentCoCDiameterMm = footprint.valid
+    ? Math.abs(footprint.signedCoCDiameterMm)
+    : null;
+  const sharpness = calculatePhysicalSharpnessFromEquivalentCoCDiameterMm(
+    equivalentCoCDiameterMm,
+  );
+  return {
+    equivalentCoCDiameterMm,
+    sharpness,
+    status: focusTargetStatusForSharpness(sharpness),
+  };
+};
+
 export const calculateSharpness = (
   scene: SceneDefinition,
   focusPlane: Plane | null,
@@ -14,10 +67,8 @@ export const calculateSharpness = (
   lensCenterWorld: Vec3,
   nearPlane: Plane | null,
   farPlane: Plane | null,
+  physicalGeometry?: PhysicalFocusGeometry,
 ): FocusTargetSharpness[] => {
-  const statusFor = (sharpness: number): FocusTargetSharpness["status"] =>
-    sharpness >= 0.8 ? "sharp" : sharpness >= 0.5 ? "acceptable" : "soft";
-
   return scene.focusTargets.map((target) => {
     const positions = target.sampleWorldPositions?.length
       ? target.sampleWorldPositions
@@ -54,6 +105,23 @@ export const calculateSharpness = (
     const pointSharpness = point.sharpness;
     const patchSharpness = worst.sharpness;
 
+    const physicalSamples = physicalGeometry
+      ? positions.map((position) => evaluatePhysicalPosition(position, physicalGeometry))
+      : [];
+    const physicalWorst = physicalSamples.length > 0
+      ? physicalSamples.reduce((currentWorst, candidate) =>
+          currentWorst.equivalentCoCDiameterMm === null
+            ? currentWorst
+            : candidate.equivalentCoCDiameterMm === null ||
+                candidate.equivalentCoCDiameterMm > currentWorst.equivalentCoCDiameterMm
+              ? candidate
+              : currentWorst,
+        )
+      : undefined;
+    const physicalPoint = physicalGeometry
+      ? evaluatePhysicalPosition(target.worldPosition, physicalGeometry)
+      : undefined;
+
     return {
       id: target.id,
       distanceToFocusPlaneMm: focusPlane
@@ -62,11 +130,21 @@ export const calculateSharpness = (
       // Preserve the established task/evaluator contract: `sharpness` remains
       // conservative whole-patch coverage when a target has multiple samples.
       sharpness: patchSharpness,
-      status: statusFor(patchSharpness),
+      status: focusTargetStatusForSharpness(patchSharpness),
       pointSharpness,
-      pointStatus: statusFor(pointSharpness),
+      pointStatus: focusTargetStatusForSharpness(pointSharpness),
       patchSharpness,
-      patchStatus: statusFor(patchSharpness),
+      patchStatus: focusTargetStatusForSharpness(patchSharpness),
+      ...(physicalPoint && physicalWorst
+        ? {
+            physicalPointSharpness: physicalPoint.sharpness,
+            physicalPointStatus: physicalPoint.status,
+            physicalPatchSharpness: physicalWorst.sharpness,
+            physicalPatchStatus: physicalWorst.status,
+            pointEquivalentCoCDiameterMm: physicalPoint.equivalentCoCDiameterMm,
+            patchEquivalentCoCDiameterMm: physicalWorst.equivalentCoCDiameterMm,
+          }
+        : {}),
       pointNormalizedDefocus: point.wedge.normalizedDefocus,
       patchNormalizedDefocus: worst.wedge.normalizedDefocus,
       insideDepthOfField: evaluatedSamples.every((sample) => sample.wedge.insideDepthOfField),
