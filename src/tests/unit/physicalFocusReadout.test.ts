@@ -7,7 +7,10 @@ import {
 } from "../../core/optics/physicalSharpness";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { evaluateFocusTargets } from "../../core/tasks/evaluateFocusTargets";
-import { createFocusAssistPass, resolveFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
+import {
+  createFocusAssistPass,
+  resolvePhysicalFocusTargetPresentationMetric,
+} from "../../render/postprocessing/FocusAssistPass";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
@@ -224,10 +227,10 @@ describe("physical focus readout", () => {
       sharpnessPercent: 35,
       status: "soft",
     });
-    expect(resolveFocusTargetPresentationMetric(target, "patch").sharpness).toBe(0.35);
+    expect(resolvePhysicalFocusTargetPresentationMetric(target, "patch").sharpness).toBe(0.35);
   });
 
-  it("keeps legacy-only fixtures compatible", () => {
+  it("fails closed for legacy-only presentation fixtures", () => {
     const target: FocusTargetSharpness = {
       id: "legacy-only",
       distanceToFocusPlaneMm: 0,
@@ -237,8 +240,13 @@ describe("physical focus readout", () => {
       patchStatus: "sharp",
     };
     expect(createFocusAssistPass({ enabled: true, targets: [target] }).targets[0]).toMatchObject({
-      sharpnessPercent: 90,
-      status: "sharp",
+      sharpnessPercent: 0,
+      status: "soft",
+    });
+    expect(resolvePhysicalFocusTargetPresentationMetric(target)).toEqual({
+      sharpness: 0,
+      status: "soft",
+      equivalentCoCDiameterMm: null,
     });
   });
 

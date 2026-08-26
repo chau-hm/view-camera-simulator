@@ -286,7 +286,7 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
                     <div>Focus ray: {d.sample.focusRayDistanceMm !== null ? `${fmt(d.sample.focusRayDistanceMm, 1)} mm` : "—"}</div>
                     <div>Far ray: {d.sample.farRayDistanceMm !== null ? `${fmt(d.sample.farRayDistanceMm, 1)} mm` : d.sample.depthOfFieldModel === "parallel" ? "—" : "∞"}</div>
                     <div>Inside DOF: {insideDofText}</div>
-                    <div>Normalized defocus: {fmtNormalized(d.sample.normalizedDefocus)}</div>
+                    <div>{d.sample.depthOfFieldModel === "scheimpflug-wedge" ? "Wedge normalized defocus" : "Physical CoC / acceptable CoC"}: {fmtNormalized(d.sample.normalizedDefocus)}</div>
                     <div>CoC: {d.sample.circleOfConfusionDiameterMm ? d.sample.circleOfConfusionDiameterMm.toFixed(4) : "—"} mm ({d.sample.circleOfConfusionDiameterPx ? d.sample.circleOfConfusionDiameterPx.toFixed(3) : "—"} px)</div>
                     <div>Blur radius: {d.sample.blurRadiusPx ? d.sample.blurRadiusPx.toFixed(3) : "—"} internal px, {d.logicalBlurRadiusPx ? d.logicalBlurRadiusPx.toFixed(3) : "—"} display px</div>
                     {d.sample.diagnosticReason ? <div style={{ color: "#b91c1c" }}>Reason: {d.sample.diagnosticReason}</div> : null}

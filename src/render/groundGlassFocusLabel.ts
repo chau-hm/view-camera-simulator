@@ -1,3 +1,4 @@
+import type { FocusTargetPresentationMetric } from "./postprocessing/FocusAssistPass";
 import { formatMillimeter } from "../utils/formatters";
 
 export type GroundGlassFocusLabelInput = {
@@ -5,11 +6,8 @@ export type GroundGlassFocusLabelInput = {
   isInfinityFocus: boolean;
   focusDistanceMm: number;
   lastFiniteFocusDepthMm?: number | null;
-  primaryTarget?: {
-    sharpness?: number; // 0..1
-    normalizedDefocus?: number; // -inf..inf
-    distanceToFocusPlaneMm?: number;
-  } | null;
+  /** Strict physical film-space metric selected by the presentation boundary. */
+  primaryTarget?: FocusTargetPresentationMetric | null;
   legacyDistanceToFocusPlaneMm?: number;
 };
 
@@ -42,11 +40,10 @@ export function formatGroundGlassFocusLabel(input: GroundGlassFocusLabelInput): 
 
   const base = Number.isFinite(focusDistanceMm) ? `${formatMillimeter(focusDistanceMm)} focus` : "—";
 
-  if (primaryTarget && typeof primaryTarget.sharpness === "number") {
-    const sharpPct = Math.round((primaryTarget.sharpness ?? 0) * 100);
-    if (typeof primaryTarget.normalizedDefocus === "number") {
-      const nd = primaryTarget.normalizedDefocus;
-      return `${base} / defocus ${nd.toFixed(2)} (${sharpPct}%)`;
+  if (primaryTarget) {
+    const sharpPct = Math.round(primaryTarget.sharpness * 100);
+    if (primaryTarget.equivalentCoCDiameterMm !== null) {
+      return `${base} / CoC ${primaryTarget.equivalentCoCDiameterMm.toFixed(3)} mm (${sharpPct}%)`;
     }
     return `${base} / target ${sharpPct}%`;
   }

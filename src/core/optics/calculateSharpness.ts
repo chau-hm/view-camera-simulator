@@ -73,6 +73,8 @@ export const calculateSharpness = (
     const positions = target.sampleWorldPositions?.length
       ? target.sampleWorldPositions
       : [target.worldPosition];
+    // Keep the wedge sample for geometric/diagnostic compatibility. The
+    // physical evaluation below is the only source for learner presentation.
     const evaluatePosition = (worldPosition: Vec3) => {
       const direction = safeNormalize(subtract(worldPosition, lensCenterWorld), {
         x: 0,

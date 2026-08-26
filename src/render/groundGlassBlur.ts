@@ -24,7 +24,11 @@ export type GroundGlassWorldBlurSample = {
 
   region: GroundGlassDofRegion;
   insideDepthOfField: boolean;
-  // normalizedDefocus may be null when unresolved
+  /**
+   * Path-specific diagnostic: wedge-normalized defocus for derived-plane
+   * samples, or physical CoC divided by the acceptable CoC for the parallel
+   * path. This is not the learner/task FocusTargetSharpness metric.
+   */
   normalizedDefocus: number | null;
 
   circleOfConfusionDiameterMm: number;
