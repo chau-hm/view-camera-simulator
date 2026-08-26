@@ -5,8 +5,13 @@
 - Scope: make physical film-space point/patch focus metrics the strict source
   for learner presentation and guided-task behavior, while retaining wedge
   geometry where it still has a real diagnostic/legacy owner.
-- No physical optics, Ground Glass renderer, shader, calibration, task
-  threshold, scene, quality, or performance behavior is changed.
+- No physical optics equations, physical CoC calculation, oriented blur
+  footprint, DOF rendering/shader behavior, gather/composite behavior,
+  calibration, task thresholds, scene geometry, quality settings, or
+  performance behavior changed.
+- Learner-facing Ground Glass focus presentation intentionally changed:
+  physical point/patch metrics are now strict, and RTT focus labels report
+  equivalent physical CoC instead of legacy normalized defocus.
 
 ## Consumer matrix
 
@@ -19,7 +24,7 @@
 | `OpticalDebugPanel` | `GroundGlassWorldBlurSample` path-specific value | physical CoC path value | developer diagnostics, explicitly labelled |
 | `dofWedge.ts` / `dofBlurModel.ts` | normalized wedge geometry/display input | no | retained geometric/legacy helper path |
 | `groundGlassBlur.ts` | derived-plane wedge path | parallel physical CoC path | retained active legacy/non-RTT helper; behavior unchanged and type documented |
-| `groundGlassDofShaders.ts` | legacy wedge helper branch | physical RTT branch | renderer implementation; unchanged |
+| `groundGlassDofShaders.ts` | legacy wedge helper branch | physical RTT branch | physical renderer/shader behavior; unchanged |
 | `focusTargetDisplay.ts` | legacy target sharpness/defocus | no | dead production helper; removed with obsolete tests |
 
 ## Boundary decisions

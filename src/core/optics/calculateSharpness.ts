@@ -129,8 +129,8 @@ export const calculateSharpness = (
       distanceToFocusPlaneMm: focusPlane
         ? Math.max(...positions.map((position) => pointToPlaneDistance(position, focusPlane)))
         : 0,
-      // Preserve the established task/evaluator contract: `sharpness` remains
-      // conservative whole-patch coverage when a target has multiple samples.
+      // Preserve the legacy conservative whole-patch wedge field for
+      // diagnostic/compatibility consumers.
       sharpness: patchSharpness,
       status: focusTargetStatusForSharpness(patchSharpness),
       pointSharpness,
