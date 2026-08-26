@@ -13,6 +13,7 @@ import type {
   GroundGlassRttRuntimeInfo,
 } from "../../render/groundGlassRttDimensions";
 import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugConstruction";
+import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
 import type { CameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
 import {
   getLazySceneAssets,
@@ -133,7 +134,7 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
         opticsState,
         focalLengthMm,
         aperture,
-        circleOfConfusionMm: 0.1,
+        circleOfConfusionMm: ACCEPTABLE_COC_DIAMETER_MM,
         filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
         renderWidthPx: internalWidth,
         maximumBlurRadiusPx: 60,

@@ -2,6 +2,7 @@ import React, { useEffect, useId, useLayoutEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CAMERA_CONSTANTS } from "../utils/constants";
+import { ACCEPTABLE_COC_DIAMETER_MM } from "../core/optics/physicalSharpness";
 
 const SKY_COLOR = new THREE.Color("#dfe5ec");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
@@ -371,7 +372,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
-        circleOfConfusionMm: { value: 0.1 },
+        circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
         filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
         sampleCount: { value: initialQualitySettings.sampleCount },
@@ -421,7 +422,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
-        circleOfConfusionMm: { value: 0.1 },
+        circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
         filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
         sampleCount: { value: initialQualitySettings.sampleCount },
@@ -1161,7 +1162,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           focalLengthMm,
           CAMERA_CONSTANTS.filmWidthMm,
           CAMERA_CONSTANTS.filmHeightMm,
-          0.1, // circleOfConfusionMm (must match core optics)
+          ACCEPTABLE_COC_DIAMETER_MM,
           aperture,
           dimsRef.current.internalWidthPx,
           dimsRef.current.internalHeightPx,

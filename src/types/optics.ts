@@ -55,6 +55,8 @@ export type Line3 = {
   direction: Vec3;
 };
 
+export type FocusTargetStatus = "sharp" | "acceptable" | "soft";
+
 export type Transform = {
   translation: Vec3;
   rotationDeg: Vec3;
@@ -71,13 +73,23 @@ export type FocusTargetSharpness = {
   // legacy field kept for compatibility; may be undefined for wedge model
   acceptableRangeMm?: number | undefined;
   sharpness: number;
-  status: "sharp" | "acceptable" | "soft";
+  status: FocusTargetStatus;
   /** Centre-sample focus used for point-focusing feedback in Free Mode. */
   pointSharpness?: number;
-  pointStatus?: "sharp" | "acceptable" | "soft";
+  pointStatus?: FocusTargetStatus;
   /** Conservative worst-sample score used for whole-patch task coverage. */
   patchSharpness?: number;
-  patchStatus?: "sharp" | "acceptable" | "soft";
+  patchStatus?: FocusTargetStatus;
+  /** Physical film-space presentation metric paired with the point sample. */
+  physicalPointSharpness?: number;
+  physicalPointStatus?: FocusTargetStatus;
+  /** Physical film-space presentation metric using the worst patch sample. */
+  physicalPatchSharpness?: number;
+  physicalPatchStatus?: FocusTargetStatus;
+  /** Absolute equivalent CoC diameter used by the physical point metric. */
+  pointEquivalentCoCDiameterMm?: number | null;
+  /** Absolute equivalent CoC diameter used by the physical patch metric. */
+  patchEquivalentCoCDiameterMm?: number | null;
   /** Centre-sample defocus paired with pointSharpness. */
   pointNormalizedDefocus?: number;
   /** Worst-sample defocus paired with patchSharpness. */

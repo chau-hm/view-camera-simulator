@@ -35,6 +35,7 @@ import {
 } from "./calculateOffAxisProjection";
 import { calculateRearStandardFrame } from "./calculateRearStandardFrame";
 import { calculateSharpness } from "./calculateSharpness";
+import { ACCEPTABLE_COC_DIAMETER_MM } from "./physicalSharpness";
 import { isFiniteVec3, vec, subtract, dot, add, scale } from "../math/vec";
 import { calculateFiniteFocusFilmPlane } from "./calculateFiniteFocusFilmPlane";
 import { applyCameraRigTransform } from "./applyCameraBodyPitch";
@@ -493,7 +494,7 @@ export const deriveOpticsState = (
     const dofResult = calculateDepthOfField({
       focalLengthMm: f,
       apertureFNumber: cameraState.aperture,
-      circleOfConfusionMm: 0.1,
+      circleOfConfusionMm: ACCEPTABLE_COC_DIAMETER_MM,
       lensCenterWorld,
       opticalAxis,
       focusObjectDistanceMm: 1e9,
@@ -737,7 +738,7 @@ export const deriveOpticsState = (
     dofResultGlobal = calculateDepthOfField({
       focalLengthMm: f,
       apertureFNumber: cameraState.aperture,
-      circleOfConfusionMm: 0.1,
+      circleOfConfusionMm: ACCEPTABLE_COC_DIAMETER_MM,
       lensCenterWorld: lensCenterWorld,
       opticalAxis,
       focusObjectDistanceMm: U,
@@ -755,7 +756,7 @@ export const deriveOpticsState = (
     dofResultGlobal = calculateDepthOfField({
       focalLengthMm: cameraState.focalLengthMm,
       apertureFNumber: cameraState.aperture,
-      circleOfConfusionMm: 0.1,
+      circleOfConfusionMm: ACCEPTABLE_COC_DIAMETER_MM,
       lensCenterWorld,
       opticalAxis,
       focusObjectDistanceMm: U,
@@ -774,7 +775,7 @@ export const deriveOpticsState = (
     dofResultGlobal = calculateDepthOfField({
       focalLengthMm: cameraState.focalLengthMm,
       apertureFNumber: cameraState.aperture,
-      circleOfConfusionMm: 0.1,
+      circleOfConfusionMm: ACCEPTABLE_COC_DIAMETER_MM,
       lensCenterWorld,
       opticalAxis,
       focusObjectDistanceMm: U,
@@ -823,6 +824,17 @@ export const deriveOpticsState = (
       lensCenterWorld,
       depthOfFieldNearPlane ?? null,
       depthOfFieldFarPlane ?? null,
+      {
+        lensCenterWorld,
+        lensPlaneNormal: lensPlane.normal,
+        lensPlaneBasisX: rearFrame.rightWorld,
+        lensPlaneBasisY: rearFrame.upWorld,
+        filmPlane,
+        filmPlaneBasisX: rearFrame.rightWorld,
+        filmPlaneBasisY: rearFrame.upWorld,
+        focalLengthMm: cameraState.focalLengthMm,
+        apertureFNumber: cameraState.aperture,
+      },
     ),
     diagnostics: {
       isParallelLensFilm,

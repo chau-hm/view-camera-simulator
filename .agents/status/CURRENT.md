@@ -1,34 +1,35 @@
-# PR 8H — physical Ground Glass blur scale
+# PR 8I — physical focus readout alignment
 
-- Branch: `feature/physical-ground-glass-blur-scale`.
-- Base: `origin/main` at `fd019512db7a5013f92c6c09976f76f4865cceac`.
-- Scope: remove scene-specific physical blur amplification while preserving
-  the existing pixel-radius cap and Shelf Swing `planeMode`.
+- Branch: `feature/physical-focus-readout-alignment`.
+- Base: `origin/main` at `eec7df2c824b761977903a3478af42db0e6bec9a`.
+- Scope: add physical film-space focus presentation metrics while preserving
+  the legacy task/evaluator sharpness contract.
 
 ## Contract
 
-- The active RTT path keeps physical CoC and footprint radii in millimetres
-  until film-mm to render-pixel conversion.
-- `displayBlurScale` is no longer part of Ground Glass visual settings,
-  uniforms, storage-range resolution, CPU Ground Glass diagnostics, or GLSL.
-- `maximumBlurRadiusPx` remains a strict post-conversion cap.
-- Half-float and RGBA8 footprint storage retain physical millimetre semantics;
-  the existing pairwise byte scaling and neutral signed-CoC mapping are
-  unchanged.
-- Shelf Swing `planeMode: "derived-planes"` is preserved.
+- `computePhysicalBlurFootprint()` is the CPU reference for physical point and
+  worst-sample patch metrics.
+- Physical presentation sharpness is
+  `clamp(1 - abs(signedCoCDiameterMm) / 0.1mm, 0, 1)`; invalid footprints fail
+  closed to `0` / `soft`.
+- Focus Assist, Ground Glass focus labels, and Table Tilt's closest-target
+  presentation prefer the physical metrics, with a legacy-only fixture
+  fallback.
+- `target.sharpness` and `evaluateFocusTargets()` remain unchanged for task
+  compatibility; no thresholds, calibration, quality, shader, or scene
+  geometry changes were made.
+- Point presentation uses the target point; patch presentation uses the worst
+  physical sample. Raw RTT remains independent of diagnostics.
 
 ## Validation
 
-- Focused physical-scale, footprint-coordinate, CoC-storage, shader, visual
-  settings, stability, Table Tilt, Shelf Swing, Oblique Architecture, and
-  physical-footprint tests pass, including aperture monotonicity and strict
-  pixel-cap coverage.
-- Full unit/integration suite: 140 files, 1,321 tests passed. Typecheck, lint,
-  CSS check, build, and diff check pass.
-- Bounded Chromium checks passed for Architecture Rise, Table Tilt, Shelf
-  Swing, Architecture + Foreground, and Oblique Architecture. The full local
-  E2E workflow stopped at the known Focus Fundamentals baseline diagnostic
-  failure (`focus-fundamentals-selectable-focus.spec.ts:155`, incomplete RTT
-  owner/resource diagnostics); its responsive companion test passed.
-- No optics equations, scene geometry, task scoring, quality profiles,
-  profiler, or PR 8F detail files are changed.
+- Focused physical readout, renderer, Ground Glass stability/pipeline, and
+  scene optics tests pass. Full unit/integration suite: 141 files, 1,332 tests
+  passed.
+- Typecheck, lint, CSS check, and build pass.
+- Bounded Chromium checks passed for Architecture + Foreground, Table Tilt,
+  Shelf Swing, Oblique Architecture, and Architecture Rise.
+- `npm run ci:local:e2e` stopped at the known unrelated Focus Fundamentals RTT
+  diagnostic baseline (`focus-fundamentals-selectable-focus.spec.ts:155`,
+  missing owner/resource-generation attributes); its responsive companion
+  passed. No affected physical-readout test failed.
