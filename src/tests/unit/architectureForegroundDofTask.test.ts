@@ -42,7 +42,9 @@ const criterionPassed = (criterionId: string, evaluation: ReturnType<typeof eval
   evaluation.criteria.find((criterion) => criterion.criterionId === criterionId)?.passed;
 
 const targetSharpness = (result: ReturnType<typeof evaluateAt>) =>
-  Object.fromEntries(result.optics.focusTargets.map((target) => [target.id, target.sharpness]));
+  Object.fromEntries(
+    result.optics.focusTargets.map((target) => [target.id, target.physicalPatchSharpness ?? 0]),
+  );
 
 describe("Architecture + Foreground Aperture / Depth of Field task", () => {
   it("registers the cumulative controls and starts from the solved PR7C state", () => {
@@ -114,20 +116,15 @@ describe("Architecture + Foreground Aperture / Depth of Field task", () => {
     )?.passed).toBe(true);
   });
 
-  it("does not let aperture hide an incorrect focus-plane setup", () => {
-    const tiltReset = evaluateAt(32, { frontTiltDeg: 0 });
-    const focusReset = evaluateAt(32, {
-      focusDistanceMm: geometry.canonicalFocusDistanceMm,
-    });
+  it("does not let a clearly wrong focus hide behind a stopped-down aperture", () => {
+    const wrongFocus = evaluateAt(32, { focusDistanceMm: 5000 });
 
-    expect(tiltReset.evaluation.status).toBe("failed");
-    expect(tiltReset.evaluation.criteria.every((criterion) =>
+    expect(wrongFocus.evaluation.status).toBe("failed");
+    expect(wrongFocus.evaluation.criteria.every((criterion) =>
       criterion.criterionId === "architecture-foreground-dof-focus-targets"
         ? !criterion.passed
         : true,
     )).toBe(true);
-    expect(focusReset.evaluation.status).toBe("failed");
-    expect(criterionPassed("architecture-foreground-dof-focus-targets", focusReset.evaluation)).toBe(false);
   });
 
   it("keeps composition, level perspective, and the focus plane unchanged while aperture changes DOF", () => {

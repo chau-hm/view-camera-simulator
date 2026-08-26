@@ -242,16 +242,39 @@ describe("physical focus readout", () => {
     });
   });
 
-  it("leaves task evaluation on the legacy sharpness field", () => {
-    const target: FocusTargetSharpness = {
-      id: "task-compatible",
+  it("uses physical patch sharpness instead of contradictory legacy task values", () => {
+    const legacyPassingPhysicalFailing: FocusTargetSharpness = {
+      id: "physical-task-metric",
       distanceToFocusPlaneMm: 999,
       sharpness: 0.9,
       status: "sharp",
       physicalPatchSharpness: 0.2,
       physicalPatchStatus: "soft",
+      patchEquivalentCoCDiameterMm: 0.08,
     };
-    expect(evaluateFocusTargets([target], [target.id], 0.8)).toBe(true);
+    const legacyFailingPhysicalPassing: FocusTargetSharpness = {
+      ...legacyPassingPhysicalFailing,
+      sharpness: 0.2,
+      status: "soft",
+      physicalPatchSharpness: 0.9,
+      physicalPatchStatus: "sharp",
+      patchEquivalentCoCDiameterMm: 0.01,
+    };
+
+    expect(
+      evaluateFocusTargets(
+        [legacyPassingPhysicalFailing],
+        [legacyPassingPhysicalFailing.id],
+        0.8,
+      ),
+    ).toBe(false);
+    expect(
+      evaluateFocusTargets(
+        [legacyFailingPhysicalPassing],
+        [legacyFailingPhysicalPassing.id],
+        0.8,
+      ),
+    ).toBe(true);
   });
 
   it("populates physical metrics for Focus Fundamentals without changing its controls", () => {

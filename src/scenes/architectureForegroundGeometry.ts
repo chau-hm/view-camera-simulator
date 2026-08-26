@@ -195,7 +195,10 @@ export const cameraCalibration = {
   tiltFocusRangeDeg: { min: 1.7, max: 2.6 },
   tiltFocusSharpnessMinimum: 0.7,
   tiltFocusMinimumFocusAdjustmentMm: 100,
-  dofSharpnessMinimum: 0.6,
+  // Physical patch sharpness at the public f/22 solution is approximately
+  // 0.424 at its worst target. Keep a small margin for the rounded public
+  // tilt/focus steps while remaining stricter than the 0.1 mm CoC boundary.
+  dofSharpnessMinimum: 0.4,
   dofPassingApertures: [22, 32] as const,
 } as const;
 

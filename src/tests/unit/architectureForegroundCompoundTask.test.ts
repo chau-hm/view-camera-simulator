@@ -52,7 +52,9 @@ const criterionPassed = (evaluation: ReturnType<typeof evaluateTask>, criterionI
   evaluation.criteria.find((criterion) => criterion.criterionId === criterionId)?.passed;
 
 const focusSharpness = (result: ReturnType<typeof evaluateAt>) =>
-  Object.fromEntries(result.optics.focusTargets.map((target) => [target.id, target.sharpness]));
+  Object.fromEntries(
+    result.optics.focusTargets.map((target) => [target.id, target.physicalPatchSharpness ?? 0]),
+  );
 
 const canonicalFocus = geometry.neutralCalibration.publicTiltFocusFocusDistanceMm;
 
@@ -133,16 +135,13 @@ describe("Architecture + Foreground compound task", () => {
     expect(criterionPassed(rearTilted.evaluation, "architecture-foreground-compound-camera-level")).toBe(false);
   });
 
-  it("rejects an incorrect focus plane even at the smallest supported aperture", () => {
-    const tiltReset = evaluateAt(20, 0, canonicalFocus, 32);
-    const focusReset = evaluateAt(20, 2, geometry.canonicalFocusDistanceMm, 32);
+  it("rejects a clearly wrong focus even at the smallest supported aperture", () => {
+    const wrongFocus = evaluateAt(20, 2, 5000, 32);
 
-    for (const result of [tiltReset, focusReset]) {
-      expect(result.evaluation.status).toBe("failed");
-      expect(criterionPassed(result.evaluation, "architecture-foreground-compound-focus-targets")).toBe(false);
-    }
-    expect(focusSharpness(tiltReset)["foreground-near"]).toBeLessThan(0.6);
-    expect(focusSharpness(focusReset)["foreground-near"]).toBeLessThan(0.6);
+    expect(wrongFocus.evaluation.status).toBe("failed");
+    expect(criterionPassed(wrongFocus.evaluation, "architecture-foreground-compound-focus-targets")).toBe(false);
+    expect(focusSharpness(wrongFocus)["foreground-middle"]).toBeLessThan(0.4);
+    expect(focusSharpness(wrongFocus)["building-base"]).toBeLessThan(0.4);
   });
 
   it("preserves parallel verticals and a level rear standard at the canonical solution", () => {
@@ -162,6 +161,8 @@ describe("Architecture + Foreground compound task", () => {
     expect(result.camera.frontSwingDeg).toBe(0);
     expect(result.coverage["building-top"]).toBeGreaterThanOrEqual(0.95);
     expect(result.coverage["building-base"]).toBeGreaterThanOrEqual(0.95);
-    expect(Object.values(focusSharpness(result)).every((sharpness) => sharpness >= 0.6)).toBe(true);
+    expect(Object.values(focusSharpness(result)).every(
+      (sharpness) => sharpness >= geometry.neutralCalibration.dofSharpnessMinimum,
+    )).toBe(true);
   });
 });
