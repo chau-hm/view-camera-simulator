@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const completedHeading = (page: Page) => page.getByRole("heading", { name: "Task completed" });
@@ -89,7 +90,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await assertFiniteGroundGlass(page);
   await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
   await setStepRangeInput(page, "Tilt", 2);
-  await setStepRangeInput(page, "Focus distance", 6830);
+  await setRangeDirect(page, "Focus distance", 6830);
   await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
   await page.getByRole("link", { name: "Continue" }).click();
 
@@ -110,12 +111,12 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("9490");
   await setStepRangeInput(page, "Tilt", 2);
-  await setStepRangeInput(page, "Focus distance", 6830);
+  await setRangeDirect(page, "Focus distance", 6830);
   await page.getByRole("link", { name: "Continue" }).click();
   await expectLessonStage(page, "Step 4 of 5", "Depth of Field");
 
   await assertFiniteGroundGlass(page);
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
+  await page.getByRole("combobox", { name: "Aperture" }).selectOption("32");
   await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
   await page.getByRole("link", { name: "Continue" }).click();
 
@@ -142,8 +143,8 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
 
   await setStepRangeInput(page, "Rise", 20);
   await setStepRangeInput(page, "Tilt", 2);
-  await setStepRangeInput(page, "Focus distance", 6830);
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
+  await setRangeDirect(page, "Focus distance", 6830);
+  await page.getByRole("combobox", { name: "Aperture" }).selectOption("32");
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(/You corrected the framing with Rise/)).toBeVisible();
   await expect(page.getByRole("link", { name: "Back to Scenes" })).toBeVisible();
@@ -159,7 +160,7 @@ test("Architecture + Foreground lesson entry resets after Free Practice and dire
   await page.goto("/simulator/free/architecture-foreground");
   await setStepRangeInput(page, "Rise", 20);
   await setStepRangeInput(page, "Tilt", 2);
-  await setStepRangeInput(page, "Focus distance", 6830);
+  await setRangeDirect(page, "Focus distance", 6830);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
   await page.getByRole("link", { name: "All Scenes" }).click();
   await expect(page).toHaveURL(/\/scenes$/);
@@ -179,6 +180,6 @@ test("Architecture + Foreground lesson entry resets after Free Practice and dire
   await expect(page.getByRole("heading", { name: "Extend the Depth of Field" })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Rise" })).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
+  await page.getByRole("combobox", { name: "Aperture" }).selectOption("32");
   await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
 });

@@ -74,8 +74,15 @@ test("Architecture + Foreground DOF task starts solved through PR7C and complete
   await expect(rtt).toHaveAttribute("data-rtt-dof-mode", "derived-planes");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
+  // f/22 improves the physical patch score but leaves building-base Soft, so
+  // the learner must continue to the first fully Acceptable/Sharp aperture.
   await aperture.selectOption("22");
   await expect(aperture).toHaveValue("22");
+  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+
+  await aperture.selectOption("32");
+  await expect(aperture).toHaveValue("32");
   await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible({ timeout: 20_000 });
   await expect(
     page.getByText(/focus plane was already aligned; stopping down has now expanded usable depth/i),

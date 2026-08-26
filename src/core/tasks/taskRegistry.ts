@@ -317,6 +317,26 @@ const architectureForegroundCompoundTask: TaskDefinition = {
       type: "camera-level",
     },
     {
+      id: "architecture-foreground-compound-tilt-used",
+      type: "movement-used",
+      movement: "tilt",
+      minimumAbs: 0.1,
+    },
+    {
+      id: "architecture-foreground-compound-tilt-range",
+      type: "movement-range",
+      movement: "tilt",
+      min: architectureForegroundGeometry.neutralCalibration.tiltFocusRangeDeg.min,
+      max: architectureForegroundGeometry.neutralCalibration.tiltFocusRangeDeg.max,
+      valueMode: "signed",
+    },
+    {
+      id: "architecture-foreground-compound-focus-used",
+      type: "focus-used",
+      minimumAbsMm:
+        architectureForegroundGeometry.neutralCalibration.tiltFocusMinimumFocusAdjustmentMm,
+    },
+    {
       id: "architecture-foreground-compound-focus-targets",
       type: "focus-targets-sharp",
       targetIds: [
