@@ -2,18 +2,21 @@ import { render } from "@testing-library/react";
 import { PerspectiveCamera, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   applyObserverCameraReset,
   SceneAssetMesh,
   serializeFiniteRenderVector,
   shouldRenderReferenceCamera,
 } from "../../render/SceneRenderer";
+import { resolveSceneViewportFraming } from "../../render/sceneViewFraming";
 import { createShelfSwingGroup, disposeShelfSwingGroup } from "../../render/ShelfSwingSubjectFactory";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import geometry from "../../scenes/shelfSwingGeometry";
 import { toWorld } from "../../render/rttUtils";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("SceneRenderer Shelf Swing integration", () => {
   it("serializes only finite resolved renderer vectors", () => {
@@ -84,6 +87,21 @@ describe("SceneRenderer Shelf Swing integration", () => {
 
   it("Reset View restores the understanding-camera-movements scene and inspection presets", () => {
     const scene = understandingCameraMovementsScene;
+    const optics = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...scene.cameraPreset,
+        activeSceneId: scene.id,
+      },
+      scene,
+    );
+    const observerViews = resolveSceneViewportFraming({
+      scene,
+      focalLengthMm:
+        scene.cameraPreset.focalLengthMm ??
+        CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
+      cameraRigTransform: optics.cameraRigTransform,
+    });
     const resetScene = () => {
       const camera = new PerspectiveCamera();
       const target = new Vector3();
@@ -91,16 +109,7 @@ describe("SceneRenderer Shelf Swing integration", () => {
         target,
         update: () => undefined,
       } as unknown as OrbitControlsImpl;
-      const positionWorld = [
-        toWorld(scene.cameraPlacement.position.x),
-        toWorld(scene.cameraPlacement.position.y),
-        toWorld(scene.cameraPlacement.position.z),
-      ] as [number, number, number];
-      const targetWorld = [
-        toWorld(scene.cameraPlacement.target.x),
-        toWorld(scene.cameraPlacement.target.y),
-        toWorld(scene.cameraPlacement.target.z),
-      ] as [number, number, number];
+      const { position: positionWorld, target: targetWorld } = observerViews.scene;
       applyObserverCameraReset(camera, controls, positionWorld, targetWorld);
       return { position: camera.position.toArray(), target: target.toArray() };
     };
@@ -112,43 +121,17 @@ describe("SceneRenderer Shelf Swing integration", () => {
         target,
         update: () => undefined,
       } as unknown as OrbitControlsImpl;
-      const inspection = scene.cameraInspectionPlacement!;
-      const positionWorld = [
-        toWorld(inspection.position.x),
-        toWorld(inspection.position.y),
-        toWorld(inspection.position.z),
-      ] as [number, number, number];
-      const targetWorld = [
-        toWorld(inspection.target.x),
-        toWorld(inspection.target.y),
-        toWorld(inspection.target.z),
-      ] as [number, number, number];
+      const { position: positionWorld, target: targetWorld } = observerViews.camera;
       applyObserverCameraReset(camera, controls, positionWorld, targetWorld);
       return { position: camera.position.toArray(), target: target.toArray() };
     };
 
     const sceneReset = resetScene();
-    expect(sceneReset.position).toEqual([
-      toWorld(scene.cameraPlacement.position.x),
-      toWorld(scene.cameraPlacement.position.y),
-      toWorld(scene.cameraPlacement.position.z),
-    ]);
-    expect(sceneReset.target).toEqual([
-      toWorld(scene.cameraPlacement.target.x),
-      toWorld(scene.cameraPlacement.target.y),
-      toWorld(scene.cameraPlacement.target.z),
-    ]);
+    expect(sceneReset.position).toEqual(observerViews.scene.position);
+    expect(sceneReset.target).toEqual(observerViews.scene.target);
 
     const inspectionReset = resetInspection();
-    expect(inspectionReset.position).toEqual([
-      toWorld(scene.cameraInspectionPlacement!.position.x),
-      toWorld(scene.cameraInspectionPlacement!.position.y),
-      toWorld(scene.cameraInspectionPlacement!.position.z),
-    ]);
-    expect(inspectionReset.target).toEqual([
-      toWorld(scene.cameraInspectionPlacement!.target.x),
-      toWorld(scene.cameraInspectionPlacement!.target.y),
-      toWorld(scene.cameraInspectionPlacement!.target.z),
-    ]);
+    expect(inspectionReset.position).toEqual(observerViews.camera.position);
+    expect(inspectionReset.target).toEqual(observerViews.camera.target);
   });
 });

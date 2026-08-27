@@ -30,11 +30,9 @@ import {
   getSceneSubjectRegistration,
 } from "./sceneSubjectRegistry";
 import {
-  createCameraInspectionView,
-  resolveCameraInspectionFocusTargetWorld,
-  translateObserverViewByRigOrigin,
   translateObserverViewToTarget,
   type ObserverViewState,
+  type SceneViewportFraming,
   type SceneViewFocus,
 } from "./sceneViewFraming";
 import { useAppStore } from "../state/appStore";
@@ -64,6 +62,7 @@ type SceneRendererProps = {
   renderQuality: RenderQualityProfile;
   viewResetNonce: number;
   viewFocus: SceneViewFocus;
+  observerViews: SceneViewportFraming;
   simulateAssetFailure: boolean;
   onAssetError: (message: string) => void;
   // optional container style allows embedding the renderer in different sized containers
@@ -994,6 +993,7 @@ export const SceneRenderer = ({
   renderQuality,
   viewResetNonce,
   viewFocus,
+  observerViews,
   simulateAssetFailure,
   onAssetError,
   containerStyle,
@@ -1023,49 +1023,10 @@ export const SceneRenderer = ({
         : scene,
     [cameraMovementRenderModel, scene],
   );
-  const observerCameraPosition = useMemo(
-    () => vecToWorld(scene.cameraPlacement.position),
-    [scene.cameraPlacement.position],
+  const observerCameraPosition = observerViews[viewFocus].position;
+  const [observerViewState, setObserverViewState] = useState<ObserverViewState>(
+    () => observerViews[viewFocus],
   );
-  const observerCameraTarget = useMemo(
-    () => vecToWorld(scene.cameraPlacement.target),
-    [scene.cameraPlacement.target],
-  );
-  const sceneObserverView = useMemo<ObserverViewState>(
-    () => ({ position: observerCameraPosition, target: observerCameraTarget }),
-    [observerCameraPosition, observerCameraTarget],
-  );
-  const cameraInspectionTarget = useMemo(
-    () =>
-      scene.id === "understanding-camera-movements"
-        ? resolveCameraInspectionFocusTargetWorld(opticsState.cameraRigTransform)
-        : undefined,
-    [opticsState.cameraRigTransform, scene.id],
-  );
-  const cameraObserverView = useMemo(
-    () => {
-      const inspectionView = createCameraInspectionView(
-        scene,
-        sceneObserverView,
-        activeFocalLengthMm,
-        cameraInspectionTarget,
-      );
-      return scene.id === "mirror-shift"
-        ? translateObserverViewByRigOrigin(
-            inspectionView,
-            opticsState.cameraRigTransform.rigOriginWorld,
-          )
-        : inspectionView;
-    },
-    [
-      activeFocalLengthMm,
-      cameraInspectionTarget,
-      opticsState.cameraRigTransform,
-      scene,
-      sceneObserverView,
-    ],
-  );
-  const [observerViewState, setObserverViewState] = useState<ObserverViewState>(sceneObserverView);
   const activeAssets = useMemo(
     () =>
       scene.assets.filter((asset) =>
@@ -1291,8 +1252,8 @@ export const SceneRenderer = ({
           enableRotate
           sceneId={scene.id}
           viewFocus={viewFocus}
-          sceneView={sceneObserverView}
-          cameraView={cameraObserverView}
+          sceneView={observerViews.scene}
+          cameraView={observerViews.camera}
           viewResetNonce={viewResetNonce}
           onViewStateChange={setObserverViewState}
         />

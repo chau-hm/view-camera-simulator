@@ -1,75 +1,37 @@
-# PR 8K — physical focus metric boundary consolidation
+# PR #98 — Scene viewport framing review-fix
 
-- Branch: `refactor/physical-focus-metric-boundary`.
-- Base: `origin/main` at `5909b8c187f0c44bab2d078b59dfa1e0de169392` (PR 8J merged).
-- Scope: make physical film-space point/patch focus metrics the strict source
-  for learner presentation and guided-task behavior, while retaining wedge
-  geometry where it still has a real diagnostic/legacy owner.
-- No physical optics equations, physical CoC calculation, oriented blur
-  footprint, DOF rendering/shader behavior, gather/composite behavior,
-  calibration, task thresholds, scene geometry, quality settings, or
-  performance behavior changed.
-- Learner-facing Ground Glass focus presentation intentionally changed:
-  physical point/patch metrics are now strict, and RTT focus labels report
-  equivalent physical CoC instead of legacy normalized defocus.
+- Work identifier: `refactor/self-contained-scene-viewport` / PR #98 review-fix round.
+- Branch: `refactor/self-contained-scene-viewport`.
+- Base: `origin/main` at `37415e7032cb7f0861037a09adc581aa6df9ff1c`.
+- Substantive HEAD: `ddf95a8b63983b69884b2aa4d3633a8d9b9ab9fa`.
+- Objective: complete the reusable Scene/Camera viewport framing contract without broadening PR #98.
 
-## Consumer matrix
+## Framing contract decision
 
-| Consumer | Legacy wedge | Physical metric | Final role |
-| --- | --- | --- | --- |
-| `evaluateFocusTargets()` / `evaluateTask()` | no | `physicalPatchSharpness` + physical CoC | guided-task pass/fail and score; strict fail-closed |
-| `FocusAssistPass` / `GroundGlassReadouts` | no | point or patch physical field | learner presentation; strict fail-closed |
-| `GroundGlassRenderer` / `groundGlassFocusLabel` | no | selected physical field + equivalent CoC | Ground Glass learner label; no model mixing |
-| `calculateSharpness()` | writes legacy wedge diagnostics | writes physical point/patch metrics | canonical derived target producer; both models retained with separate owners |
-| `OpticalDebugPanel` | `GroundGlassWorldBlurSample` path-specific value | physical CoC path value | developer diagnostics, explicitly labelled |
-| `dofWedge.ts` / `dofBlurModel.ts` | normalized wedge geometry/display input | no | retained geometric/legacy helper path |
-| `groundGlassBlur.ts` | derived-plane wedge path | parallel physical CoC path | retained active legacy/non-RTT helper; behavior unchanged and type documented |
-| `groundGlassDofShaders.ts` | legacy wedge helper branch | physical RTT branch | physical renderer/shader behavior; unchanged |
-| `focusTargetDisplay.ts` | legacy target sharpness/defocus | no | dead production helper; removed with obsolete tests |
+- Mirror Shift and Architecture + Foreground use the shared generic physical body anchor and reusable `0.72` world-unit inspection distance; stale absolute observer calibrations were removed.
+- Focus Fundamentals declares the semantic `front` stable inspection anchor; `resolveStableCameraInspectionTarget()` no longer selects by public scene ID.
+- Canonical rig scenes and SceneRenderer/SceneViewport boundaries remain unchanged from PR #98.
 
-## Boundary decisions
+## Changed surfaces
 
-- Normal production presentation uses `resolvePhysicalFocusTargetPresentationMetric()`;
-  missing, non-finite, out-of-range, or missing-CoC physical data becomes
-  `0 / soft` and never falls back to wedge scores. The old resolver name remains
-  only as a strict, deprecated alias for internal compatibility.
-- Point presentation uses `physicalPointSharpness` and its point equivalent
-  CoC; patch presentation uses `physicalPatchSharpness` and its patch CoC.
-- Production `focus-targets-sharp` evaluation remains physical-patch-only and
-  fail-closed. Legacy `sharpness` remains available for diagnostics and
-  historical fixtures, but is not read by learner/task production paths.
-- The Ground Glass learner label reports physical equivalent CoC and its paired
-  physical percentage. Wedge normalized defocus is not used as a fallback.
-- `sampleDofWedge()` remains the owner of near/focus/far geometric interval
-  diagnostics, and the legacy `groundGlassBlur`/shader wedge paths are not
-  replaced in this boundary pass.
-
-## Legacy consumer inventory
-
-Remaining production writes/reads are intentional:
-
-- `target.sharpness`, `pointSharpness`, and `patchSharpness` are written by
-  `calculateSharpness()` for legacy wedge diagnostics/compatibility. There are
-  no production learner/task reads.
-- `normalizedDefocus` remains in `dofWedge`, `dofBlurModel`, the derived-plane
-  `groundGlassBlur` path, the legacy shader helper, and developer diagnostics.
-  It is not used for normal learner target presentation or guided-task success.
-- `sampleDofWedge()` and `calculateDofWedgeDefocus()` remain active for wedge
-  geometry and legacy helper behavior.
-- `calculateFocusTargetDisplaySharpness()` had no production import and was
-  removed rather than retaining a misleading legacy fallback.
+- Framing/schema: `src/render/sceneViewFraming.ts`, `src/types/scene.ts`.
+- Scene migration: Mirror Shift, Architecture + Foreground, Focus Fundamentals.
+- Regression evidence: framing unit tests and Scene View Focus/Mirror Shift browser tests.
 
 ## Validation
 
-- Focused boundary/readout/task tests: pass (4 files, 40 tests), including
-  strict physical presentation, physical task agreement, physical CoC label
-  output, and contradictory legacy fixtures.
-- Full `npm test`: pass (141 files, 1,338 tests). Typecheck, lint, CSS check,
-  build, and `git diff --check`: pass.
-- Bounded serial Chromium scene checks: 36 pass; the unchanged known
-  Focus Fundamentals RTT diagnostics baseline fails at
-  `focus-fundamentals-selectable-focus.spec.ts:155` because owner/resource
-  diagnostics are absent; its responsive companion passes.
-- `npm run ci:local:e2e`: all pre-E2E checks and affected Architecture +
-  Foreground E2E pass, then stops at the same known Focus Fundamentals baseline
-  failure. No new focus/readout/task/renderer failure was observed.
+- Pass: focused framing unit tests — 18 tests.
+- Pass: focused browser regressions — `scene-view-focus.spec.ts` 5/5 and `mirror-shift-rig-lateral.spec.ts` 2/2.
+- Pass: `npm test` — 141 files / 1,348 tests.
+- Pass: `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`, `git diff --check`.
+- Incomplete: `npm run ci:local:e2e` passed its pre-E2E gates and earlier suites, then stopped at `focus-fundamentals-selectable-focus.spec.ts` test 1 with `Ground Glass RTT diagnostics were incomplete` while `ownerId`/`resourceGeneration` were unavailable; the same existing diagnostic failure reproduced in isolation. No RTT code was changed.
+
+## Tests not run / remaining risks
+
+- E2E files after the merge-gate stop were not run.
+- Remote Actions remains subject to the existing `npm ci` resolution failure for `eslint-plugin-react-hooks@^6.8.0`; dependency management is outside this fix.
+
+## Reviewer focus
+
+- Verify the generic anchor-side configuration preserves Focus Fundamentals’ positive-side target and that ordinary scenes derive the `0.72` observer distance.
+- Verify no framing semantics or named-scene selection moved back into SceneRenderer, and that the existing RTT diagnostic failure is unrelated.

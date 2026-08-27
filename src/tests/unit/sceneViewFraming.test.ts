@@ -4,12 +4,15 @@ import {
   createObserverViewPresets,
   createCameraInspectionView,
   resolveCameraInspectionFocusTargetWorld,
+  resolveSceneViewportFraming,
   resolveStableCameraInspectionTarget,
   translateObserverViewByRigOrigin,
   translateObserverViewToTarget,
   type ObserverViewState,
 } from "../../render/sceneViewFraming";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
+import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import {
@@ -28,6 +31,13 @@ const sceneView: ObserverViewState = {
   position: [6.5, 3, -6.5],
   target: [0, 0.9, 5.6],
 };
+
+const viewDistance = (view: ObserverViewState) =>
+  Math.hypot(
+    view.position[0] - view.target[0],
+    view.position[1] - view.target[1],
+    view.position[2] - view.target[2],
+  );
 
 const cameraState = (overrides: Partial<CameraState> = {}): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
@@ -74,20 +84,12 @@ describe("3D observer view framing", () => {
         position: [2.43, 0.64, -0.68],
         target: [0, 0, 0.8],
       },
-      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
+      resolveCameraInspectionFocusTargetWorld(cameraRigTransformFor("mid")),
     );
     const highTarget = resolveCameraInspectionFocusTargetWorld(
       cameraRigTransformFor("high"),
     );
-    const inspectionView = createCameraInspectionView(
-      understandingCameraMovementsScene,
-      {
-        position: [2.43, 0.64, -0.68],
-        target: [0, 0, 0.8],
-      },
-      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
-      highTarget,
-    );
+    const inspectionView = translateObserverViewToTarget(baseView, highTarget);
     const baseOffset = baseView.position.map(
       (value, index) => value - baseView.target[index],
     );
@@ -107,7 +109,7 @@ describe("3D observer view framing", () => {
 
   it("preserves the canonical scene view and frames the camera around its stable body anchor", () => {
     const expectedCenter = resolveStableCameraInspectionTarget(
-      architectureRiseScene.id,
+      architectureRiseScene.cameraInspectionAnchorSide,
       CAMERA_CONSTANTS.focalLengthMm,
     );
     const presets = createObserverViewPresets(sceneView, expectedCenter);
@@ -115,11 +117,69 @@ describe("3D observer view framing", () => {
     expect(presets.scene).toBe(sceneView);
     expect(presets.camera.target).toEqual(expectedCenter);
     expect(expectedCenter).toEqual([0, 0, -0.075]);
-    expect(Math.hypot(
-      presets.camera.position[0] - expectedCenter[0],
-      presets.camera.position[1] - expectedCenter[1],
-      presets.camera.position[2] - expectedCenter[2],
-    )).toBeCloseTo(0.72, 8);
+    expect(viewDistance(presets.camera)).toBeCloseTo(0.72, 8);
+  });
+
+  it.each([
+    {
+      label: "Architecture Rise",
+      scene: architectureRiseScene,
+      expectedTarget: [0, 0, -0.075],
+    },
+    {
+      label: "Architecture + Foreground",
+      scene: architectureForegroundScene,
+      expectedTarget: [0, 0, -0.075],
+    },
+    {
+      label: "Mirror Shift",
+      scene: mirrorShiftScene,
+      expectedTarget: [0, 0, -0.06],
+    },
+  ])(
+    "$label uses the shared generic camera inspection distance",
+    ({ scene, expectedTarget }) => {
+      const focalLengthMm =
+        scene.cameraPreset.focalLengthMm ?? CAMERA_CONSTANTS.focalLengthMm;
+      const optics = deriveOpticsState(
+        {
+          ...cameraState(),
+          ...scene.cameraPreset,
+          activeSceneId: scene.id,
+        },
+        scene,
+      );
+      const framing = resolveSceneViewportFraming({
+        scene,
+        focalLengthMm,
+        cameraRigTransform: optics.cameraRigTransform,
+      });
+
+      expect(framing.camera.target).toEqual(expectedTarget);
+      expect(viewDistance(framing.camera)).toBeCloseTo(0.72, 8);
+    },
+  );
+
+  it("uses Focus Fundamentals' explicit front-side stable inspection anchor", () => {
+    const focalLengthMm =
+      focusFundamentalsTwoTargets.cameraPreset.focalLengthMm ??
+      CAMERA_CONSTANTS.focalLengthMm;
+    const optics = deriveOpticsState(
+      {
+        ...cameraState(),
+        ...focusFundamentalsTwoTargets.cameraPreset,
+        activeSceneId: focusFundamentalsTwoTargets.id,
+      },
+      focusFundamentalsTwoTargets,
+    );
+    const framing = resolveSceneViewportFraming({
+      scene: focusFundamentalsTwoTargets,
+      focalLengthMm,
+      cameraRigTransform: optics.cameraRigTransform,
+    });
+
+    expect(framing.camera.target).toEqual([0, 0, focalLengthMm * 0.0005]);
+    expect(viewDistance(framing.camera)).toBeCloseTo(0.72, 8);
   });
 
   it("keeps the inspection anchor stable when front geometry and focus change", () => {
@@ -127,7 +187,7 @@ describe("3D observer view framing", () => {
     const risenOptics = deriveOpticsState(cameraState({ frontRiseMm: 40 }), architectureRiseScene);
     const focusedOptics = deriveOpticsState(cameraState({ focusDistanceMm: 5000 }), architectureRiseScene);
     const stableTarget = resolveStableCameraInspectionTarget(
-      architectureRiseScene.id,
+      architectureRiseScene.cameraInspectionAnchorSide,
       CAMERA_CONSTANTS.focalLengthMm,
     );
 
@@ -151,7 +211,10 @@ describe("3D observer view framing", () => {
     const neutralView = createCameraInspectionView(
       mirrorShiftScene,
       sceneView,
-      mirrorShiftScene.cameraPreset.focalLengthMm ?? CAMERA_CONSTANTS.focalLengthMm,
+      resolveStableCameraInspectionTarget(
+        mirrorShiftScene.cameraInspectionAnchorSide,
+        mirrorShiftScene.cameraPreset.focalLengthMm ?? CAMERA_CONSTANTS.focalLengthMm,
+      ),
     );
     const movedView = translateObserverViewByRigOrigin(neutralView, {
       x: 1800,
@@ -170,6 +233,105 @@ describe("3D observer view framing", () => {
     for (let index = 0; index < 3; index += 1) {
       expect(movedView.position[index] - movedView.target[index]).toBeCloseTo(
         neutralView.position[index] - neutralView.target[index],
+        10,
+      );
+    }
+  });
+
+  it("resolves Scene and Camera focus through one shared public-scene contract", () => {
+    const optics = deriveOpticsState(cameraState(), architectureRiseScene);
+    const framing = resolveSceneViewportFraming({
+      scene: architectureRiseScene,
+      focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
+      cameraRigTransform: optics.cameraRigTransform,
+    });
+
+    expect(framing.scene.target).toEqual([
+      architectureRiseScene.cameraPlacement.target.x * 0.001,
+      architectureRiseScene.cameraPlacement.target.y * 0.001,
+      architectureRiseScene.cameraPlacement.target.z * 0.001,
+    ]);
+    expect(framing.camera.target).toEqual(
+      resolveStableCameraInspectionTarget(
+        architectureRiseScene.cameraInspectionAnchorSide,
+        CAMERA_CONSTANTS.focalLengthMm,
+      ),
+    );
+  });
+
+  it("does not use Architecture + Foreground's subject composition target for Camera focus", () => {
+    const optics = deriveOpticsState(
+      {
+        ...cameraState(),
+        ...architectureForegroundScene.cameraPreset,
+        activeSceneId: architectureForegroundScene.id,
+      },
+      architectureForegroundScene,
+    );
+    const framing = resolveSceneViewportFraming({
+      scene: architectureForegroundScene,
+      focalLengthMm: architectureForegroundScene.cameraPreset.focalLengthMm ?? CAMERA_CONSTANTS.focalLengthMm,
+      cameraRigTransform: optics.cameraRigTransform,
+    });
+
+    expect(framing.scene.target).toEqual([
+      architectureForegroundScene.cameraPlacement.target.x * 0.001,
+      architectureForegroundScene.cameraPlacement.target.y * 0.001,
+      architectureForegroundScene.cameraPlacement.target.z * 0.001,
+    ]);
+    expect(framing.camera.target).toEqual(
+      resolveStableCameraInspectionTarget(
+        architectureForegroundScene.cameraInspectionAnchorSide,
+        architectureForegroundScene.cameraPreset.focalLengthMm ?? CAMERA_CONSTANTS.focalLengthMm,
+      ),
+    );
+    expect(framing.camera.target[2]).not.toBeCloseTo(6.5, 5);
+  });
+
+  it.each(["mid", "high", "low"] as const)(
+    "uses the canonical physical camera pivot for the %s camera-movements rig",
+    (anchor) => {
+      const framing = resolveSceneViewportFraming({
+        scene: understandingCameraMovementsScene,
+        focalLengthMm: CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
+        cameraRigTransform: cameraRigTransformFor(anchor),
+      });
+
+      expect(framing.camera.target).toEqual(
+        resolveCameraInspectionFocusTargetWorld(cameraRigTransformFor(anchor)),
+      );
+    },
+  );
+
+  it("moves Mirror Shift's physical camera anchor with the rig while preserving its orbit offset", () => {
+    const neutralTransform: CameraRigTransform = {
+      rigOriginWorld: { x: 0, y: 0, z: 0 },
+      basePitchDeg: 0,
+      bodyPitchDeg: 0,
+      bodyPitchPivotRigLocal: { x: 0, y: 0, z: 0 },
+    };
+    const movedTransform: CameraRigTransform = {
+      ...neutralTransform,
+      rigOriginWorld: { x: 1800, y: 0, z: 0 },
+    };
+    const neutral = resolveSceneViewportFraming({
+      scene: mirrorShiftScene,
+      focalLengthMm: mirrorShiftScene.cameraPreset.focalLengthMm ?? CAMERA_CONSTANTS.focalLengthMm,
+      cameraRigTransform: neutralTransform,
+    }).camera;
+    const moved = resolveSceneViewportFraming({
+      scene: mirrorShiftScene,
+      focalLengthMm: mirrorShiftScene.cameraPreset.focalLengthMm ?? CAMERA_CONSTANTS.focalLengthMm,
+      cameraRigTransform: movedTransform,
+    }).camera;
+
+    expect(moved.target[0] - neutral.target[0]).toBeCloseTo(1.8, 10);
+    expect(moved.position[0] - neutral.position[0]).toBeCloseTo(1.8, 10);
+    expect(moved.target.slice(1)).toEqual(neutral.target.slice(1));
+    expect(moved.position.slice(1)).toEqual(neutral.position.slice(1));
+    for (let index = 0; index < 3; index += 1) {
+      expect(moved.position[index] - moved.target[index]).toBeCloseTo(
+        neutral.position[index] - neutral.target[index],
         10,
       );
     }

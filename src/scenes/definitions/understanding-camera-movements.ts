@@ -53,6 +53,5 @@ export const understandingCameraMovementsScene: SceneDefinition = {
   cameraInspectionPlacement: {
     /** Pulled-back three-quarter angle spanning the full rig arc so the camera stays centred and non-clipped at high/low */
     position: { x: 2200, y: 1100, z: -2300 },
-    target: { x: 0, y: 0, z: 100 },
   },
 };

@@ -40,7 +40,6 @@ export const architectureForegroundScene: SceneDefinition = {
     rearTiltDeg: 0,
   },
   cameraPlacement: geometry.observerCamera,
-  cameraInspectionPlacement: geometry.inspectionCamera,
   bounds: geometry.sceneBounds,
   focusTargets: geometry.focusTargets,
   finiteFocusStrategy: {
