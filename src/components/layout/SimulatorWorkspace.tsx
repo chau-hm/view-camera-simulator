@@ -42,7 +42,7 @@ import { TaskPanel } from "../simulator/TaskPanel";
 import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
 import {
   createFocusAssistPass,
-  resolveFocusTargetPresentationMetric,
+  resolvePhysicalFocusTargetPresentationMetric,
 } from "../../render/postprocessing/FocusAssistPass";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
@@ -384,8 +384,8 @@ export const SimulatorWorkspace = ({
     return opticsState.focusTargets.reduce<string | undefined>((closestId, target) => {
       if (!closestId) return target.id;
       const closest = opticsState.focusTargets.find((candidate) => candidate.id === closestId);
-      return resolveFocusTargetPresentationMetric(target, "point").sharpness >
-        (closest ? resolveFocusTargetPresentationMetric(closest, "point").sharpness : -1)
+      return resolvePhysicalFocusTargetPresentationMetric(target, "point").sharpness >
+        (closest ? resolvePhysicalFocusTargetPresentationMetric(closest, "point").sharpness : -1)
         ? target.id
         : closestId;
     }, undefined);

@@ -230,7 +230,7 @@ describe("GroundGlassRenderer", () => {
     expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
   });
 
-  it("uses matching point and patch defocus metrics in Table Tilt labels", () => {
+  it("uses matching physical point and patch metrics in Table Tilt labels", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
       ...tableTiltScene.cameraPreset,
@@ -273,9 +273,9 @@ describe("GroundGlassRenderer", () => {
       sceneId: tableTiltScene.id,
     };
     const view = render(<GroundGlassRenderer {...props} focusMetric="point" />);
-    expect(screen.getByText(/defocus 0\.00 \(100%\)/)).toBeInTheDocument();
+    expect(screen.getByText(/CoC 0\.000 mm \(100%\)/)).toBeInTheDocument();
     view.rerender(<GroundGlassRenderer {...props} focusMetric="patch" />);
-    expect(screen.getByText(/defocus 2\.00 \(0%\)/)).toBeInTheDocument();
+    expect(screen.getByText(/CoC 0\.200 mm \(0%\)/)).toBeInTheDocument();
   });
 
   // Regression tests for thin-lens projection and DOM placeholder removal

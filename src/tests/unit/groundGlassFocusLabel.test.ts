@@ -3,9 +3,19 @@ import { formatGroundGlassFocusLabel } from "../../render/groundGlassFocusLabel"
 
 describe("formatGroundGlassFocusLabel", () => {
   it("shows focus and sharpness for RTT target", () => {
-    const s = formatGroundGlassFocusLabel({ isRttScene: true, isInfinityFocus: false, focusDistanceMm: 8890, primaryTarget: { sharpness: 0.997, normalizedDefocus: 0.01 } });
+    const s = formatGroundGlassFocusLabel({
+      isRttScene: true,
+      isInfinityFocus: false,
+      focusDistanceMm: 8890,
+      primaryTarget: {
+        sharpness: 0.997,
+        status: "sharp",
+        equivalentCoCDiameterMm: 0.001,
+      },
+    });
     expect(s).toContain('8890');
-    expect(s).toMatch(/target|defocus/);
+    expect(s).toContain('CoC');
+    expect(s).not.toContain('defocus');
   });
 
   it("shows infinity for RTT infinite focus", () => {

@@ -13,9 +13,8 @@ export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
 import {
   createFocusAssistPass,
-  resolveFocusTargetPresentationMetric,
+  resolvePhysicalFocusTargetPresentationMetric,
 } from "./postprocessing/FocusAssistPass";
-import { ACCEPTABLE_COC_DIAMETER_MM } from "../core/optics/physicalSharpness";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
@@ -183,7 +182,7 @@ export const GroundGlassRenderer = ({
   const lastFiniteFocusDepthMm = explicitLastFiniteFocusDepthMm ?? storeLastFiniteFocusDepthMm;
   const primaryTarget = opticsState.focusTargets && opticsState.focusTargets.length > 0 ? opticsState.focusTargets[0] : null;
   const primaryPresentationMetric = primaryTarget
-    ? resolveFocusTargetPresentationMetric(primaryTarget, focusMetric)
+    ? resolvePhysicalFocusTargetPresentationMetric(primaryTarget, focusMetric)
     : null;
 
   const focusDistanceLabel = formatGroundGlassFocusLabel({
@@ -191,21 +190,7 @@ export const GroundGlassRenderer = ({
     isInfinityFocus,
     focusDistanceMm: resolvedFocusDistanceMm,
     lastFiniteFocusDepthMm,
-    primaryTarget: primaryTarget
-      ? {
-          sharpness: primaryPresentationMetric?.sharpness,
-          normalizedDefocus:
-            primaryPresentationMetric?.equivalentCoCDiameterMm !== undefined &&
-            primaryPresentationMetric.equivalentCoCDiameterMm !== null
-              ? primaryPresentationMetric.equivalentCoCDiameterMm / ACCEPTABLE_COC_DIAMETER_MM
-              : primaryPresentationMetric?.equivalentCoCDiameterMm === null
-                ? undefined
-                : focusMetric === "point"
-                  ? (primaryTarget.pointNormalizedDefocus ?? primaryTarget.normalizedDefocus)
-                  : (primaryTarget.patchNormalizedDefocus ?? primaryTarget.normalizedDefocus),
-          distanceToFocusPlaneMm: primaryTarget.distanceToFocusPlaneMm,
-        }
-      : null,
+    primaryTarget: primaryPresentationMetric,
     legacyDistanceToFocusPlaneMm: dofSample.distanceToFocusPlaneMm,
   });
 

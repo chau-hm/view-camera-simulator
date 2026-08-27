@@ -1,4 +1,5 @@
 import type { FocusTargetSharpness, FocusTargetStatus } from "../../types/optics";
+import { focusTargetStatusForSharpness } from "../../core/optics/physicalSharpness";
 
 export type FocusAssistMetric = "point" | "patch";
 
@@ -11,7 +12,7 @@ export type FocusAssistPassConfig = {
 export type FocusTargetPresentationMetric = {
   sharpness: number;
   status: FocusTargetStatus;
-  equivalentCoCDiameterMm?: number | null;
+  equivalentCoCDiameterMm: number | null;
 };
 
 export type FocusAssistDisplayTarget = {
@@ -32,11 +33,32 @@ const statusPatternMap: Record<FocusTargetSharpness["status"], FocusAssistDispla
   soft: "cross",
 };
 
+const unresolvedPhysicalPresentationMetric = (): FocusTargetPresentationMetric => ({
+  sharpness: 0,
+  status: "soft",
+  equivalentCoCDiameterMm: null,
+});
+
+const isValidPhysicalPresentationMetric = (
+  sharpness: unknown,
+  equivalentCoCDiameterMm: unknown,
+): sharpness is number =>
+  typeof sharpness === "number" &&
+  Number.isFinite(sharpness) &&
+  sharpness >= 0 &&
+  sharpness <= 1 &&
+  typeof equivalentCoCDiameterMm === "number" &&
+  Number.isFinite(equivalentCoCDiameterMm) &&
+  equivalentCoCDiameterMm >= 0;
+
 /**
- * Resolve the learner-facing metric while keeping old task/fixture objects
- * compatible. Normal derived optics always provide the physical fields.
+ * Resolve the strict learner-facing physical metric.
+ *
+ * Normal derived optics always provide both the bounded physical score and its
+ * equivalent film-space CoC. Missing or invalid physical data fails closed;
+ * legacy wedge scores are intentionally not a presentation fallback.
  */
-export const resolveFocusTargetPresentationMetric = (
+export const resolvePhysicalFocusTargetPresentationMetric = (
   target: FocusTargetSharpness,
   metric: FocusAssistMetric = "patch",
 ): FocusTargetPresentationMetric => {
@@ -44,30 +66,30 @@ export const resolveFocusTargetPresentationMetric = (
   const physicalSharpness = usePoint
     ? target.physicalPointSharpness
     : target.physicalPatchSharpness;
-  if (typeof physicalSharpness === "number" && Number.isFinite(physicalSharpness)) {
-    return {
-      sharpness: physicalSharpness,
-      status: usePoint
-        ? target.physicalPointStatus ?? target.status
-        : target.physicalPatchStatus ?? target.status,
-      equivalentCoCDiameterMm: usePoint
-        ? target.pointEquivalentCoCDiameterMm
-        : target.patchEquivalentCoCDiameterMm,
-    };
+  const equivalentCoCDiameterMm = usePoint
+    ? target.pointEquivalentCoCDiameterMm
+    : target.patchEquivalentCoCDiameterMm;
+  if (!isValidPhysicalPresentationMetric(physicalSharpness, equivalentCoCDiameterMm)) {
+    return unresolvedPhysicalPresentationMetric();
   }
-
   return {
-    sharpness: usePoint
-      ? (target.pointSharpness ?? target.sharpness)
-      : (target.patchSharpness ?? target.sharpness),
-    status: usePoint ? (target.pointStatus ?? target.status) : (target.patchStatus ?? target.status),
+    sharpness: physicalSharpness,
+    status: focusTargetStatusForSharpness(physicalSharpness),
+    equivalentCoCDiameterMm: equivalentCoCDiameterMm as number,
   };
 };
+
+/**
+ * @deprecated Use the explicitly named physical resolver. This compatibility
+ * alias is strict as well and never falls back to legacy wedge fields.
+ */
+export const resolveFocusTargetPresentationMetric =
+  resolvePhysicalFocusTargetPresentationMetric;
 
 export const createFocusAssistPass = (config: FocusAssistPassConfig): FocusAssistPassResult => ({
   enabled: config.enabled,
   targets: config.targets.map((target) => {
-    const metric = resolveFocusTargetPresentationMetric(target, config.metric);
+    const metric = resolvePhysicalFocusTargetPresentationMetric(target, config.metric);
     return {
       id: target.id,
       status: metric.status,

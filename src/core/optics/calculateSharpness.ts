@@ -73,6 +73,8 @@ export const calculateSharpness = (
     const positions = target.sampleWorldPositions?.length
       ? target.sampleWorldPositions
       : [target.worldPosition];
+    // Keep the wedge sample for geometric/diagnostic compatibility. The
+    // physical evaluation below is the only source for learner presentation.
     const evaluatePosition = (worldPosition: Vec3) => {
       const direction = safeNormalize(subtract(worldPosition, lensCenterWorld), {
         x: 0,
@@ -127,8 +129,8 @@ export const calculateSharpness = (
       distanceToFocusPlaneMm: focusPlane
         ? Math.max(...positions.map((position) => pointToPlaneDistance(position, focusPlane)))
         : 0,
-      // Preserve the established task/evaluator contract: `sharpness` remains
-      // conservative whole-patch coverage when a target has multiple samples.
+      // Preserve the legacy conservative whole-patch wedge field for
+      // diagnostic/compatibility consumers.
       sharpness: patchSharpness,
       status: focusTargetStatusForSharpness(patchSharpness),
       pointSharpness,

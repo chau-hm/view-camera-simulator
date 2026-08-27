@@ -1,3 +1,4 @@
+/** Legacy/wedge display blur input; physical RTT uses millimetre footprints. */
 export type DofBlurInput = {
   normalizedDefocus: number;
   circleOfConfusionMm: number;

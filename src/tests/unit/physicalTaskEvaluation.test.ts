@@ -6,7 +6,7 @@ import {
 } from "../../core/tasks/evaluateFocusTargets";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { taskRegistry } from "../../core/tasks/taskRegistry";
-import { resolveFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
+import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
@@ -300,7 +300,7 @@ describe("physical guided-task focus evaluation", () => {
     });
     const optics = deriveOpticsState(camera, shelfSwingScene);
     optics.focusTargets.forEach((target) => {
-      expect(resolveFocusTargetPresentationMetric(target, "patch").sharpness).toBe(
+      expect(resolvePhysicalFocusTargetPresentationMetric(target, "patch").sharpness).toBe(
         resolvePhysicalTaskPatchSharpness(target),
       );
     });
