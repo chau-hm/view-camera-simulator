@@ -101,7 +101,6 @@ describe("Camera Movements RTT focal uniforms", () => {
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumBlurRadiusPx: { value: 0 },
-        displayBlurScale: { value: 0 },
         focalLengthMm: { value: 0 },
         filmWidthMm: { value: 0 },
         fNumber: { value: 0 },

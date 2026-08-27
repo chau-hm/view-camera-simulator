@@ -89,8 +89,12 @@ const defaultControlState = {
   aperture: DEFAULT_CAMERA_STATE.aperture,
 };
 
-const clampFocusDistanceForScene = (sceneId: string, value: number) => {
-  const range = getSceneFocusDistanceRange(sceneId);
+const clampFocusDistanceForScene = (
+  sceneId: string,
+  value: number,
+  focalLengthMm: number = defaultControlState.focalLengthMm,
+) => {
+  const range = getSceneFocusDistanceRange(sceneId, focalLengthMm);
   return clamp(value, range.min, range.max);
 };
 
@@ -99,9 +103,11 @@ const resolveSceneFocusDefaults = (
   sceneId: string,
 ): Pick<CameraState, "focusStandard" | "focusDistanceMm" | "focusMode" | "lastFiniteFocusDepthMm"> => {
   const scene = getSceneById(sceneId);
+  const focalLengthMm = scene?.cameraPreset.focalLengthMm ?? defaultControlState.focalLengthMm;
   const focusDistanceMm = clampFocusDistanceForScene(
     sceneId,
     scene?.cameraPreset.focusDistanceMm ?? defaultControlState.focusDistanceMm,
+    focalLengthMm,
   );
   return {
     focusStandard: getFocusStandardDefault(sceneId),
@@ -158,9 +164,12 @@ const isGuidedLessonObserveRoute = (
 const resolveGuidedLessonObserveFocus = (
   sceneId: string,
 ): Pick<CameraState, "focusMode" | "focusDistanceMm" | "lastFiniteFocusDepthMm"> => {
+  const scene = getSceneById(sceneId);
+  const focalLengthMm = scene?.cameraPreset.focalLengthMm ?? defaultControlState.focalLengthMm;
   const focusDistanceMm = clampFocusDistanceForScene(
     sceneId,
-    getSceneById(sceneId)?.cameraPreset.focusDistanceMm ?? defaultControlState.focusDistanceMm,
+    scene?.cameraPreset.focusDistanceMm ?? defaultControlState.focusDistanceMm,
+    focalLengthMm,
   );
   return {
     focusMode: "finite",
@@ -742,6 +751,8 @@ export const useAppStore = create<AppStore>((set) => ({
   setActiveScene: (sceneId) =>
     set((state) => {
       const scene = getSceneById(sceneId);
+      const focalLengthMm =
+        scene?.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm;
       return {
         camera: {
           ...state.camera,
@@ -772,12 +783,12 @@ export const useAppStore = create<AppStore>((set) => ({
               }
             : {}),
           focalLengthMm:
-            scene?.cameraPreset.focalLengthMm ??
-            DEFAULT_CAMERA_STATE.focalLengthMm,
+            focalLengthMm,
           aperture: resolveSceneAperture(sceneId, state.camera.aperture),
           focusDistanceMm: clampFocusDistanceForScene(
             sceneId,
             state.camera.focusDistanceMm,
+            focalLengthMm,
           ),
           ...(supportsFocusStandard(sceneId)
             ? { focusStandard: getFocusStandardDefault(sceneId) }
@@ -1065,6 +1076,21 @@ export const useAppStore = create<AppStore>((set) => ({
         );
       }
 
+      if (!cameraMovementRoute && Number.isFinite(nextCamera.focusDistanceMm)) {
+        const focusDistanceMm = clampFocusDistanceForScene(
+          sceneId,
+          nextCamera.focusDistanceMm,
+          nextCamera.focalLengthMm,
+        );
+        nextCamera = {
+          ...nextCamera,
+          focusDistanceMm,
+          ...(nextCamera.focusMode === "finite"
+            ? { lastFiniteFocusDepthMm: focusDistanceMm }
+            : {}),
+        };
+      }
+
       const defaultMovement = resolveDefaultMovement(sceneId);
 
       const nextCalibrationSession = calibrationRoute
@@ -1265,15 +1291,20 @@ export const useAppStore = create<AppStore>((set) => ({
   setFocusDistance: (value) =>
     set((state) => {
       if (isFocusDistanceLocked(state.camera.activeSceneId)) return {};
+      const resolvedFocusDistanceMm = Number.isFinite(value)
+        ? clampFocusDistanceForScene(
+            state.camera.activeSceneId,
+            value,
+            state.camera.focalLengthMm,
+          )
+        : value;
       return {
         camera: {
           ...state.camera,
-          focusDistanceMm: Number.isFinite(value)
-            ? clampFocusDistanceForScene(state.camera.activeSceneId, value)
-            : value,
+          focusDistanceMm: resolvedFocusDistanceMm,
           focusMode: Number.isFinite(value) ? "finite" : state.camera.focusMode,
           lastFiniteFocusDepthMm: Number.isFinite(value)
-            ? clampFocusDistanceForScene(state.camera.activeSceneId, value)
+            ? resolvedFocusDistanceMm
             : state.camera.lastFiniteFocusDepthMm,
         },
       };
@@ -1415,6 +1446,9 @@ export const useAppStore = create<AppStore>((set) => ({
       const preserveCalibrationOptics =
         state.cameraMovementCalibrationSession.active &&
         isCameraMovementsScene(sceneId);
+      const focalLengthMm = preserveCalibrationOptics
+        ? state.camera.focalLengthMm
+        : resetValues.focalLengthMm ?? state.camera.focalLengthMm;
       return {
         camera: {
           ...state.camera,
@@ -1426,10 +1460,9 @@ export const useAppStore = create<AppStore>((set) => ({
               ? state.camera.focusDistanceMm
               : resetValues.focusDistanceMm ??
                   defaultControlState.focusDistanceMm,
+            focalLengthMm,
           ),
-          focalLengthMm: preserveCalibrationOptics
-            ? state.camera.focalLengthMm
-            : resetValues.focalLengthMm ?? state.camera.focalLengthMm,
+          focalLengthMm,
           aperture: resolveSceneAperture(
             sceneId,
             (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
@@ -1464,11 +1497,23 @@ export const useAppStore = create<AppStore>((set) => ({
           ?? (Object.keys(resolveScenePresetReset(nextSceneId)).length > 0
             ? resolveScenePresetReset(nextSceneId)
             : defaultControlState);
+      const preserveCalibration =
+        state.cameraMovementCalibrationSession.active &&
+        isCameraMovementsScene(nextSceneId) &&
+        nextMode === "free";
+      const activeCalibration = preserveCalibration
+        ? state.cameraMovementCalibrationSession.effectiveCalibration
+        : CAMERA_MOVEMENT_SCENE_CALIBRATION;
+      const nextFocalLengthMm = preserveCalibration
+        ? activeCalibration.optics.provisionalFocalLengthMm
+        : (nextControlState as Partial<CameraState>).focalLengthMm ??
+          state.camera.focalLengthMm;
       const presetFocusDistanceMm = (nextControlState as Partial<Record<string, number>>).focusDistanceMm
         ?? defaultControlState.focusDistanceMm;
       const focusDistanceMm = clampFocusDistanceForScene(
         nextSceneId,
         presetFocusDistanceMm,
+        nextFocalLengthMm,
       );
       const nextGeometryView =
         activeTask?.initialCameraState?.geometryView ??
@@ -1492,13 +1537,6 @@ export const useAppStore = create<AppStore>((set) => ({
 
       const defaultMovement = resolveDefaultMovement(nextSceneId);
       const selectableFocusRestart = supportsFocusStandard(nextSceneId);
-      const preserveCalibration =
-        state.cameraMovementCalibrationSession.active &&
-        isCameraMovementsScene(nextSceneId) &&
-        nextMode === "free";
-      const activeCalibration = preserveCalibration
-        ? state.cameraMovementCalibrationSession.effectiveCalibration
-        : CAMERA_MOVEMENT_SCENE_CALIBRATION;
 
       return {
         camera: {
@@ -1518,10 +1556,7 @@ export const useAppStore = create<AppStore>((set) => ({
           groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
           focusAssistEnabled: nextFocusAssistEnabled,
           gridEnabled: nextGridEnabled,
-          focalLengthMm: preserveCalibration
-            ? activeCalibration.optics.provisionalFocalLengthMm
-            : (nextControlState as Partial<CameraState>).focalLengthMm ??
-              state.camera.focalLengthMm,
+          focalLengthMm: nextFocalLengthMm,
           focusDistanceMm: preserveCalibration
             ? activeCalibration.optics.provisionalFocusDistanceMm
             : focusDistanceMm,

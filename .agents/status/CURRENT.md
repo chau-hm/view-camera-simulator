@@ -1,79 +1,75 @@
-# Current Work Handoff
+# PR 8K — physical focus metric boundary consolidation
 
-## PR 7F — Architecture + Foreground Guided Lesson
+- Branch: `refactor/physical-focus-metric-boundary`.
+- Base: `origin/main` at `5909b8c187f0c44bab2d078b59dfa1e0de169392` (PR 8J merged).
+- Scope: make physical film-space point/patch focus metrics the strict source
+  for learner presentation and guided-task behavior, while retaining wedge
+  geometry where it still has a real diagnostic/legacy owner.
+- No physical optics equations, physical CoC calculation, oriented blur
+  footprint, DOF rendering/shader behavior, gather/composite behavior,
+  calibration, task thresholds, scene geometry, quality settings, or
+  performance behavior changed.
+- Learner-facing Ground Glass focus presentation intentionally changed:
+  physical point/patch metrics are now strict, and RTT focus labels report
+  equivalent physical CoC instead of legacy normalized defocus.
 
-- Objective: integrate the four existing Architecture + Foreground guided tasks
-  into one public five-stage lesson without changing task calibration,
-  evaluators, optics, or rendering.
-- Branch: `feature/architecture-foreground-guided-lesson`.
-- Base: `origin/main` @ `3a754d3` (`fix(ground-glass): stabilize DOF post-processing`).
-- Substantive HEAD: `3377fef` (`feat(scene): add Architecture + Foreground guided lesson`).
+## Consumer matrix
 
-## Lesson contract
+| Consumer | Legacy wedge | Physical metric | Final role |
+| --- | --- | --- | --- |
+| `evaluateFocusTargets()` / `evaluateTask()` | no | `physicalPatchSharpness` + physical CoC | guided-task pass/fail and score; strict fail-closed |
+| `FocusAssistPass` / `GroundGlassReadouts` | no | point or patch physical field | learner presentation; strict fail-closed |
+| `GroundGlassRenderer` / `groundGlassFocusLabel` | no | selected physical field + equivalent CoC | Ground Glass learner label; no model mixing |
+| `calculateSharpness()` | writes legacy wedge diagnostics | writes physical point/patch metrics | canonical derived target producer; both models retained with separate owners |
+| `OpticalDebugPanel` | `GroundGlassWorldBlurSample` path-specific value | physical CoC path value | developer diagnostics, explicitly labelled |
+| `dofWedge.ts` / `dofBlurModel.ts` | normalized wedge geometry/display input | no | retained geometric/legacy helper path |
+| `groundGlassBlur.ts` | derived-plane wedge path | parallel physical CoC path | retained active legacy/non-RTT helper; behavior unchanged and type documented |
+| `groundGlassDofShaders.ts` | legacy wedge helper branch | physical RTT branch | physical renderer/shader behavior; unchanged |
+| `focusTargetDisplay.ts` | legacy target sharpness/defocus | no | dead production helper; removed with obsolete tests |
 
-- Public scene `architecture-foreground` remains available in Free and Guided
-  modes, remains the final catalog/Scenes-page card, and retains
-  `assets/architecture-foreground.png`.
-- `guidedLesson`: id `architecture-foreground`, `includeObserveStage: true`.
-- Ordered task stages: `compose`, `align-focus`, `depth-of-field`,
-  `final-challenge`.
-- Resolved lesson: Observe → Compose → Align Focus → Depth of Field → Final
-  Challenge.
-- Task mapping remains index-aligned and unchanged:
-  `architecture-foreground-rise-01`,
-  `architecture-foreground-tilt-focus-01`,
-  `architecture-foreground-dof-01`,
-  `architecture-foreground-compound-01`.
-- Scenes CTA uses the shared `/simulator/free/architecture-foreground?lesson=1`
-  behavior. Direct guided task URLs remain standalone without `lesson=1`.
+## Boundary decisions
 
-## Implementation
+- Normal production presentation uses `resolvePhysicalFocusTargetPresentationMetric()`;
+  missing, non-finite, out-of-range, or missing-CoC physical data becomes
+  `0 / soft` and never falls back to wedge scores. The old resolver name remains
+  only as a strict, deprecated alias for internal compatibility.
+- Point presentation uses `physicalPointSharpness` and its point equivalent
+  CoC; patch presentation uses `physicalPatchSharpness` and its patch CoC.
+- Production `focus-targets-sharp` evaluation remains physical-patch-only and
+  fail-closed. Legacy `sharpness` remains available for diagnostics and
+  historical fixtures, but is not read by learner/task production paths.
+- The Ground Glass learner label reports physical equivalent CoC and its paired
+  physical percentage. Wedge normalized defocus is not used as a fallback.
+- `sampleDofWedge()` remains the owner of near/focus/far geometric interval
+  diagnostics, and the legacy `groundGlassBlur`/shader wedge paths are not
+  replaced in this boundary pass.
 
-- Added the shared `depth-of-field` stage ID and English/zh-HK stage labels.
-- Added data-driven, lesson-aware copy for Architecture + Foreground and
-  preserved Oblique Architecture’s existing lesson name, Observe copy, and
-  completion copy.
-- Generalized lesson Observe initialization to any valid public scene with
-  `guidedLesson`; Architecture + Foreground re-entry resets to Rise/Tilt/Swing
-  zero, finite canonical focus `9490 mm`, f/11, and no task.
-- Reused existing route generation, Continue/Previous gating, restart behavior,
-  task evaluators, and Scenes-card CTA. No optics/task calibration or RTT code
-  changed.
+## Legacy consumer inventory
+
+Remaining production writes/reads are intentional:
+
+- `target.sharpness`, `pointSharpness`, and `patchSharpness` are written by
+  `calculateSharpness()` for legacy wedge diagnostics/compatibility. There are
+  no production learner/task reads.
+- `normalizedDefocus` remains in `dofWedge`, `dofBlurModel`, the derived-plane
+  `groundGlassBlur` path, the legacy shader helper, and developer diagnostics.
+  It is not used for normal learner target presentation or guided-task success.
+- `sampleDofWedge()` and `calculateDofWedgeDefocus()` remain active for wedge
+  geometry and legacy helper behavior.
+- `calculateFocusTargetDisplaySharpness()` had no production import and was
+  removed rather than retaining a misleading legacy fallback.
 
 ## Validation
 
-- Focused unit/integration: PASS — 96 tests covering stage construction,
-  hrefs, metadata, copy, catalog/routes, progress gating, and neutral state.
-- Full unit/integration: PASS — 127 files / 1,198 tests.
-- Typecheck, lint, CSS structure check, build, and `git diff --check`: PASS.
-- Architecture + Foreground serial Chromium lesson suite: PASS — complete
-  five-stage journey, Previous navigation, Final Challenge reset/completion,
-  neutral re-entry, standalone DOF route, canvas/RTT presence, and finite
-  diagnostics with no NaN/Infinity text.
-- Existing Architecture + Foreground Scenes-page CTA regression: PASS.
-- Oblique lesson copy/framework unit compatibility: PASS.
-
-## Full E2E status
-
-- `npm run ci:local:e2e` ran all prerequisite checks and all Architecture +
-  Foreground PR 7F specs passed. It stopped at the unrelated
-  Focus Fundamentals selectable-focus test because RTT owner/resource-generation
-  diagnostics were absent after contentful RTT checks; its responsive companion
-  passed. Isolated rerun reproduced the same failure.
-- The existing Oblique full-lesson browser test also timed out in its pre-task
-  re-entry setup while moving Focus from `6100` to `5260 mm`; the same class of
-  slider timeout was observed on the baseline work previously. No Oblique task,
-  optics, or renderer code changed here.
-
-## Scope and reviewer focus
-
-- Deliberately excluded new tasks, lesson persistence, stage jumping, UI
-  redesign, optics recalibration, evaluator changes, renderer/DOF changes, and
-  PR 7E task behavior changes.
-- Review scene-aware copy-key mapping, valid-lesson gating in route
-  initialization, exact five-stage href construction, index alignment between
-  `guidedTaskIds` and `taskStageIds`, and preservation of direct standalone
-  task routes.
-- Remaining risks are the pre-existing Focus Fundamentals RTT diagnostic race
-  and Oblique focus-slider E2E timeout noted above; neither is in the PR 7F
-  changed surface.
+- Focused boundary/readout/task tests: pass (4 files, 40 tests), including
+  strict physical presentation, physical task agreement, physical CoC label
+  output, and contradictory legacy fixtures.
+- Full `npm test`: pass (141 files, 1,338 tests). Typecheck, lint, CSS check,
+  build, and `git diff --check`: pass.
+- Bounded serial Chromium scene checks: 36 pass; the unchanged known
+  Focus Fundamentals RTT diagnostics baseline fails at
+  `focus-fundamentals-selectable-focus.spec.ts:155` because owner/resource
+  diagnostics are absent; its responsive companion passes.
+- `npm run ci:local:e2e`: all pre-E2E checks and affected Architecture +
+  Foreground E2E pass, then stops at the same known Focus Fundamentals baseline
+  failure. No new focus/readout/task/renderer failure was observed.

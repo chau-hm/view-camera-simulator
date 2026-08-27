@@ -1,6 +1,9 @@
 import { feedbackEngine } from "./feedbackEngine";
 import { getCriterionResultMessageRef, getGuidedTaskCopy } from "./guidedTaskCopyKeys";
-import { evaluateFocusTargets } from "./evaluateFocusTargets";
+import {
+  evaluateFocusTargets,
+  resolvePhysicalTaskPatchSharpness,
+} from "./evaluateFocusTargets";
 import { isStandardFrameLevel } from "../optics/calculateRearStandardFrame";
 import {
   calculateCompositionCoverage,
@@ -121,7 +124,7 @@ export const evaluateTask = (
         );
         const targetScores = criterion.targetIds.map((targetId) => {
           const target = opticsState.focusTargets.find((entry) => entry.id === targetId);
-          return target?.sharpness ?? 0;
+          return resolvePhysicalTaskPatchSharpness(target) ?? 0;
         });
         const score = targetScores.length === 0 ? 0 : Math.min(...targetScores);
         return {

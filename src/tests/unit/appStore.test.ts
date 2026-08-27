@@ -162,6 +162,28 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera.focusDistanceMm).toBe(tableTiltRange.max);
   });
 
+  it("enforces the real-image floor for Architecture Rise and Table Tilt", () => {
+    const { setActiveScene, setFocusDistance } = useAppStore.getState();
+
+    setActiveScene("architecture-rise");
+    setFocusDistance(100);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(160);
+    expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(160);
+
+    setFocusDistance(150);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(160);
+    expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(160);
+
+    setFocusDistance(160);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(160);
+    expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(160);
+
+    setActiveScene("table-tilt");
+    setFocusDistance(100);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(160);
+    expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(160);
+  });
+
   it("re-clamps focus when active scene changes", () => {
     const { setActiveScene, setFocusDistance } = useAppStore.getState();
     const architectureRange = getSceneFocusDistanceRange("architecture-rise");

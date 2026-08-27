@@ -1,10 +1,10 @@
+/** Legacy/wedge display blur input; physical RTT uses millimetre footprints. */
 export type DofBlurInput = {
   normalizedDefocus: number;
   circleOfConfusionMm: number;
   filmWidthMm: number;
   renderWidthPx: number;
   maximumBlurRadiusPx: number;
-  displayBlurScale?: number;
 };
 
 export function calculateBoundaryCoCDiameterPx(
@@ -35,7 +35,6 @@ export function calculateDofBlurRadiusPx(input: DofBlurInput): number {
     filmWidthMm,
     renderWidthPx,
     maximumBlurRadiusPx,
-    displayBlurScale = 1,
   } = input;
 
   const boundaryRadiusPx = calculateBoundaryBlurRadiusPx(
@@ -50,15 +49,13 @@ export function calculateDofBlurRadiusPx(input: DofBlurInput): number {
   if (
     !Number.isFinite(normalizedDefocus) ||
     !Number.isFinite(maximumBlurRadiusPx) ||
-    maximumBlurRadiusPx < 0 ||
-    !Number.isFinite(displayBlurScale) ||
-    displayBlurScale <= 0
+    maximumBlurRadiusPx < 0
   ) {
     return 0;
   }
   if (normalizedDefocus <= 0) return 0;
 
-  const radius = normalizedDefocus * boundaryRadiusPx * displayBlurScale;
+  const radius = normalizedDefocus * boundaryRadiusPx;
   if (!Number.isFinite(radius) || Number.isNaN(radius)) return 0;
   return Math.min(maximumBlurRadiusPx, Math.max(0, radius));
 }

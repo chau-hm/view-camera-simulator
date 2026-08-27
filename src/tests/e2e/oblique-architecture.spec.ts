@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
@@ -179,8 +180,8 @@ test("Oblique Architecture guided Swing + Focus task starts from solved Rise and
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
 
   const neutralSanityState = await rtt.getAttribute("data-rtt-sanity-state");
-  await setStepRangeInput(page, "Swing", 9.7);
-  await setStepRangeInput(page, "Focus distance", 5260);
+  await setStepRangeInput(page, "Swing", 9.8);
+  await setRangeDirect(page, "Focus distance", 5190);
   await expect.poll(async () => rtt.getAttribute("data-rtt-sanity-state")).not.toBe(neutralSanityState);
   await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "Task requirements completed" })).toHaveAttribute(
@@ -189,7 +190,7 @@ test("Oblique Architecture guided Swing + Focus task starts from solved Rise and
   );
   const currentSettings = page.getByTestId("current-settings-readout");
   await expect(currentSettings).toContainText("Front Rise: 20.0 mm");
-  await expect(currentSettings).toContainText("Front Swing: 9.7°");
+  await expect(currentSettings).toContainText("Front Swing: 9.8°");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
   await page.getByRole("button", { name: "Restart task" }).click();
@@ -235,12 +236,12 @@ test("Oblique Architecture compound task solves Rise, Swing, and Focus from neut
   await expect(rise).toHaveValue("20");
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
 
-  await setStepRangeInput(page, "Swing", 9.7);
-  await expect(swing).toHaveValue("9.7");
+  await setStepRangeInput(page, "Swing", 9.8);
+  await expect(swing).toHaveValue("9.8");
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
 
-  await setStepRangeInput(page, "Focus distance", 5260);
-  await expect(focus).toHaveValue("5260");
+  await setRangeDirect(page, "Focus distance", 5190);
+  await expect(focus).toHaveValue("5190");
   await expect.poll(async () => rtt.getAttribute("data-rtt-sanity-state")).not.toBe(neutralSanityState);
   await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "Task requirements completed" })).toHaveAttribute(
@@ -250,8 +251,8 @@ test("Oblique Architecture compound task solves Rise, Swing, and Focus from neut
 
   const currentSettings = page.getByTestId("current-settings-readout");
   await expect(currentSettings).toContainText("Front Rise: 20.0 mm");
-  await expect(currentSettings).toContainText("Front Swing: 9.7°");
-  await expect(currentSettings).toContainText("Focus: 5260.0 mm");
+  await expect(currentSettings).toContainText("Front Swing: 9.8°");
+  await expect(currentSettings).toContainText("Focus: 5190.0 mm");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
   await page.getByRole("button", { name: "Restart task" }).click();
@@ -286,7 +287,7 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   // Observe entry instead of reusing the prior route-initialization key.
   await setStepRangeInput(page, "Rise", 20);
   await setStepRangeInput(page, "Swing", 5);
-  await setStepRangeInput(page, "Focus distance", 5260);
+  await setRangeDirect(page, "Focus distance", 5190);
   await page.getByRole("link", { name: "All Scenes" }).click();
   await expect(page).toHaveURL(/\/scenes$/);
   const reentryCard = page
@@ -310,8 +311,8 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-swing-focus-01\?lesson=1$/);
   await expect(page.locator('[aria-current="step"]')).toHaveText(/Align Focus/);
   await expect(page.getByLabel("Focus distance")).toHaveValue("13200");
-  await setStepRangeInput(page, "Swing", 9.7);
-  await setStepRangeInput(page, "Focus distance", 5260);
+  await setStepRangeInput(page, "Swing", 9.8);
+  await setRangeDirect(page, "Focus distance", 5190);
   await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
   await page.getByRole("link", { name: "Continue" }).click();
 
@@ -321,12 +322,12 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("13200");
   await setStepRangeInput(page, "Rise", 20);
-  await setStepRangeInput(page, "Swing", 9.7);
-  await setStepRangeInput(page, "Focus distance", 5260);
+  await setStepRangeInput(page, "Swing", 9.8);
+  await setRangeDirect(page, "Focus distance", 5190);
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible();
   await expect(page.getByTestId("current-settings-readout")).toContainText("Front Rise: 20.0 mm");
-  await expect(page.getByTestId("current-settings-readout")).toContainText("Front Swing: 9.7°");
-  await expect(page.getByTestId("current-settings-readout")).toContainText("Focus: 5260.0 mm");
+  await expect(page.getByTestId("current-settings-readout")).toContainText("Front Swing: 9.8°");
+  await expect(page.getByTestId("current-settings-readout")).toContainText("Focus: 5190.0 mm");
   await page.getByRole("link", { name: "Back to Scenes" }).click();
   await expect(page).toHaveURL(/\/scenes$/);
 });

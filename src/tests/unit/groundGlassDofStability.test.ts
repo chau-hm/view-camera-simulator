@@ -36,6 +36,8 @@ const numericFocusFields = [
   "sharpness",
   "pointSharpness",
   "patchSharpness",
+  "physicalPointSharpness",
+  "physicalPatchSharpness",
   "pointNormalizedDefocus",
   "patchNormalizedDefocus",
   "normalizedDefocus",
@@ -139,7 +141,6 @@ describe("Ground Glass DOF numerical stability", () => {
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       renderWidthPx: 1000,
       maximumBlurRadiusPx: visual.maximumBlurRadiusPx,
-      displayBlurScale: visual.displayBlurScale,
     });
 
     expect(sample.depthOfFieldModel).toBe("scheimpflug-wedge");
@@ -157,7 +158,6 @@ describe("Ground Glass DOF numerical stability", () => {
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       renderWidthPx: 1000,
       maximumBlurRadiusPx: 48,
-      displayBlurScale: 3.4,
     };
     expect(calculateDofBlurRadiusPx({ ...common, normalizedDefocus: Number.NaN })).toBe(0);
     expect(calculateDofBlurRadiusPx({ ...common, normalizedDefocus: Number.POSITIVE_INFINITY })).toBe(0);
@@ -184,7 +184,6 @@ describe("Ground Glass DOF numerical stability", () => {
       500,
       400,
       visual.maximumBlurRadiusPx,
-      visual.displayBlurScale,
     );
     const values = [
       ...uniforms.lensCenterWorld,
@@ -207,7 +206,6 @@ describe("Ground Glass DOF numerical stability", () => {
       uniforms.boundaryBlurRadiusPx,
       uniforms.filmWidthMm,
       uniforms.filmHeightMm,
-      uniforms.displayBlurScale,
     ];
     expect(values.every(Number.isFinite)).toBe(true);
     expect(uniforms.boundaryBlurRadiusPx).toBeLessThanOrEqual(uniforms.maximumBlurRadiusPx);

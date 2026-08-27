@@ -2,13 +2,11 @@ import type { DerivedOpticsState } from "../types/optics";
 
 export type GroundGlassDofVisualSettings = {
   maximumBlurRadiusPx: number;
-  displayBlurScale: number;
   planeMode: "automatic" | "derived-planes";
 };
 
 const DEFAULT_DOF_VISUAL_SETTINGS: GroundGlassDofVisualSettings = {
   maximumBlurRadiusPx: 60,
-  displayBlurScale: 1,
   planeMode: "automatic",
 };
 
@@ -16,33 +14,21 @@ const SCENE_DOF_VISUAL_SETTINGS: Readonly<
   Record<string, GroundGlassDofVisualSettings>
 > = {
   "table-tilt": {
-    // The physical CoC still comes from the shared optics state. This display
-    // calibration makes its small pixel footprint legible on Table Tilt detail.
     maximumBlurRadiusPx: 42,
-    displayBlurScale: 3.2,
     planeMode: "automatic",
   },
   "shelf-swing": {
-    // Keep physical focus and target scoring unchanged while making the
-    // front-to-back chart defocus legible at Ground Glass display resolution.
     maximumBlurRadiusPx: 42,
-    displayBlurScale: 3.2,
     // Shelf Swing focus distance is expressed by the canonical scene focus
     // plane. RTT should display those already-derived planes even at 0° swing.
     planeMode: "derived-planes",
   },
   "oblique-architecture": {
-    // The physical CoC remains canonical; this display calibration makes the
-    // near-to-far façade falloff legible at Ground Glass resolution.
     maximumBlurRadiusPx: 48,
-    displayBlurScale: 3.6,
     planeMode: "automatic",
   },
   "architecture-foreground": {
-    // Keep the physical CoC from the shared optics model while making the
-    // close paving seams legible at the Ground Glass display resolution.
     maximumBlurRadiusPx: 48,
-    displayBlurScale: 3.4,
     planeMode: "automatic",
   },
 };

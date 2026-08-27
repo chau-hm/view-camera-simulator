@@ -55,12 +55,30 @@ describe("task engine", () => {
     expect(getTaskById("swing-01")?.id).toBe("swing-01");
   });
 
-  it("checks specified focus targets against sharpness threshold", () => {
+  it("checks specified focus targets against physical patch sharpness", () => {
     expect(
       evaluateFocusTargets(
         [
-          { id: "a", distanceToFocusPlaneMm: 0, acceptableRangeMm: 10, sharpness: 0.9, status: "sharp" },
-          { id: "b", distanceToFocusPlaneMm: 1, acceptableRangeMm: 10, sharpness: 0.7, status: "acceptable" },
+          {
+            id: "a",
+            distanceToFocusPlaneMm: 0,
+            acceptableRangeMm: 10,
+            sharpness: 0.9,
+            status: "sharp",
+            physicalPatchSharpness: 0.9,
+            physicalPatchStatus: "sharp",
+            patchEquivalentCoCDiameterMm: 0.01,
+          },
+          {
+            id: "b",
+            distanceToFocusPlaneMm: 1,
+            acceptableRangeMm: 10,
+            sharpness: 0.7,
+            status: "acceptable",
+            physicalPatchSharpness: 0.7,
+            physicalPatchStatus: "acceptable",
+            patchEquivalentCoCDiameterMm: 0.03,
+          },
         ],
         ["a"],
         0.8,
@@ -69,8 +87,26 @@ describe("task engine", () => {
     expect(
       evaluateFocusTargets(
         [
-          { id: "a", distanceToFocusPlaneMm: 0, acceptableRangeMm: 10, sharpness: 0.9, status: "sharp" },
-          { id: "b", distanceToFocusPlaneMm: 1, acceptableRangeMm: 10, sharpness: 0.7, status: "acceptable" },
+          {
+            id: "a",
+            distanceToFocusPlaneMm: 0,
+            acceptableRangeMm: 10,
+            sharpness: 0.9,
+            status: "sharp",
+            physicalPatchSharpness: 0.9,
+            physicalPatchStatus: "sharp",
+            patchEquivalentCoCDiameterMm: 0.01,
+          },
+          {
+            id: "b",
+            distanceToFocusPlaneMm: 1,
+            acceptableRangeMm: 10,
+            sharpness: 0.7,
+            status: "acceptable",
+            physicalPatchSharpness: 0.7,
+            physicalPatchStatus: "acceptable",
+            patchEquivalentCoCDiameterMm: 0.03,
+          },
         ],
         ["a", "b"],
         0.8,

@@ -37,6 +37,7 @@ export const obliqueArchitectureScene: SceneDefinition = {
     kind: "rear-standard-thin-lens",
     lensDatum: "baseline-origin",
     focusDistanceReference: "lens-to-focus-plane",
+    filmDepthReference: "optical-axis-conjugate",
   },
   focusDistanceRangeMm: geometry.focusDistanceRangeMm,
   cameraPlacement: {

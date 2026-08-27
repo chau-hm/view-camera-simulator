@@ -52,7 +52,9 @@ const criterionPassed = (evaluation: ReturnType<typeof evaluateTask>, criterionI
   evaluation.criteria.find((criterion) => criterion.criterionId === criterionId)?.passed;
 
 const focusSharpness = (result: ReturnType<typeof evaluateAt>) =>
-  Object.fromEntries(result.optics.focusTargets.map((target) => [target.id, target.sharpness]));
+  Object.fromEntries(
+    result.optics.focusTargets.map((target) => [target.id, target.physicalPatchSharpness ?? 0]),
+  );
 
 const canonicalFocus = geometry.neutralCalibration.publicTiltFocusFocusDistanceMm;
 
@@ -68,6 +70,15 @@ describe("Architecture + Foreground compound task", () => {
       "geometryView",
     ]);
     expect(task?.constraints).toEqual({});
+    expect(task?.criteria.map((criterion) => criterion.id)).toEqual([
+      "architecture-foreground-compound-building-top-visible",
+      "architecture-foreground-compound-building-base-visible",
+      "architecture-foreground-compound-camera-level",
+      "architecture-foreground-compound-tilt-used",
+      "architecture-foreground-compound-tilt-range",
+      "architecture-foreground-compound-focus-used",
+      "architecture-foreground-compound-focus-targets",
+    ]);
     expect(task?.initialCameraState).toMatchObject({
       frontRiseMm: 0,
       frontTiltDeg: 0,
@@ -105,9 +116,9 @@ describe("Architecture + Foreground compound task", () => {
 
   it("passes the canonical and nearby outcome-based solutions", () => {
     const candidates = [
-      evaluateAt(20, 2, canonicalFocus, 22),
-      evaluateAt(20, 1.8, 6750, 22),
-      evaluateAt(25, 2.2, 6930, 22),
+      evaluateAt(20, 2, canonicalFocus, 32),
+      evaluateAt(20, 1.8, 6750, 32),
+      evaluateAt(25, 2.2, 6930, 32),
     ];
 
     for (const result of candidates) {
@@ -116,11 +127,37 @@ describe("Architecture + Foreground compound task", () => {
       expect(result.coverage["building-top"]).toBeGreaterThanOrEqual(0.95);
       expect(result.coverage["building-base"]).toBeGreaterThanOrEqual(0.95);
       expect(Math.abs(result.optics.diagnostics.tiltAngleDeg)).toBeGreaterThan(0);
+      expect(result.optics.focusTargets.every((target) => target.physicalPatchStatus !== "soft")).toBe(true);
     }
   });
 
+  it("requires the intended Tilt operation even when the physical focus outcome is acceptable", () => {
+    const reproducedBypass = evaluateAt(20, 0, 6200, 22);
+    const noTilt = evaluateAt(20, 0, 6200, 32);
+
+    expect(reproducedBypass.evaluation.status).toBe("failed");
+    expect(criterionPassed(reproducedBypass.evaluation, "architecture-foreground-compound-tilt-used")).toBe(false);
+    expect(criterionPassed(reproducedBypass.evaluation, "architecture-foreground-compound-tilt-range")).toBe(false);
+    expect(criterionPassed(reproducedBypass.evaluation, "architecture-foreground-compound-focus-used")).toBe(true);
+    expect(noTilt.evaluation.status).toBe("failed");
+    expect(criterionPassed(noTilt.evaluation, "architecture-foreground-compound-tilt-used")).toBe(false);
+    expect(criterionPassed(noTilt.evaluation, "architecture-foreground-compound-tilt-range")).toBe(false);
+    expect(criterionPassed(noTilt.evaluation, "architecture-foreground-compound-focus-used")).toBe(true);
+    expect(criterionPassed(noTilt.evaluation, "architecture-foreground-compound-focus-targets")).toBe(true);
+  });
+
+  it("requires meaningful Focus adjustment after Tilt", () => {
+    const noFocus = evaluateAt(20, 2, geometry.canonicalFocusDistanceMm, 32);
+
+    expect(noFocus.evaluation.status).toBe("failed");
+    expect(criterionPassed(noFocus.evaluation, "architecture-foreground-compound-tilt-used")).toBe(true);
+    expect(criterionPassed(noFocus.evaluation, "architecture-foreground-compound-tilt-range")).toBe(true);
+    expect(criterionPassed(noFocus.evaluation, "architecture-foreground-compound-focus-used")).toBe(false);
+    expect(criterionPassed(noFocus.evaluation, "architecture-foreground-compound-focus-targets")).toBe(true);
+  });
+
   it("rejects excessive Rise and non-level rear-standard state", () => {
-    const excessiveRise = evaluateAt(40, 2, canonicalFocus, 22);
+    const excessiveRise = evaluateAt(40, 2, canonicalFocus, 32);
     expect(excessiveRise.coverage["building-top"]).toBeGreaterThanOrEqual(0.95);
     expect(excessiveRise.coverage["building-base"]).toBeLessThan(0.95);
     expect(excessiveRise.evaluation.status).toBe("failed");
@@ -128,25 +165,22 @@ describe("Architecture + Foreground compound task", () => {
       criterionPassed(excessiveRise.evaluation, "architecture-foreground-compound-building-base-visible"),
     ).toBe(false);
 
-    const rearTilted = evaluateAt(20, 2, canonicalFocus, 22, { rearTiltDeg: 1 });
+    const rearTilted = evaluateAt(20, 2, canonicalFocus, 32, { rearTiltDeg: 1 });
     expect(rearTilted.evaluation.status).toBe("failed");
     expect(criterionPassed(rearTilted.evaluation, "architecture-foreground-compound-camera-level")).toBe(false);
   });
 
-  it("rejects an incorrect focus plane even at the smallest supported aperture", () => {
-    const tiltReset = evaluateAt(20, 0, canonicalFocus, 32);
-    const focusReset = evaluateAt(20, 2, geometry.canonicalFocusDistanceMm, 32);
+  it("rejects a clearly wrong focus even at the smallest supported aperture", () => {
+    const wrongFocus = evaluateAt(20, 2, 5000, 32);
 
-    for (const result of [tiltReset, focusReset]) {
-      expect(result.evaluation.status).toBe("failed");
-      expect(criterionPassed(result.evaluation, "architecture-foreground-compound-focus-targets")).toBe(false);
-    }
-    expect(focusSharpness(tiltReset)["foreground-near"]).toBeLessThan(0.6);
-    expect(focusSharpness(focusReset)["foreground-near"]).toBeLessThan(0.6);
+    expect(wrongFocus.evaluation.status).toBe("failed");
+    expect(criterionPassed(wrongFocus.evaluation, "architecture-foreground-compound-focus-targets")).toBe(false);
+    expect(focusSharpness(wrongFocus)["foreground-middle"]).toBeLessThan(0.5);
+    expect(focusSharpness(wrongFocus)["building-base"]).toBeLessThan(0.5);
   });
 
   it("preserves parallel verticals and a level rear standard at the canonical solution", () => {
-    const result = evaluateAt(20, 2, canonicalFocus, 22);
+    const result = evaluateAt(20, 2, canonicalFocus, 32);
     const project = (worldPoint: (typeof geometry.buildingVerticalEdges)[number]["bottom"]) =>
       projectWorldPointToFilmPlaneGroundGlass({
         worldPoint,
@@ -162,6 +196,9 @@ describe("Architecture + Foreground compound task", () => {
     expect(result.camera.frontSwingDeg).toBe(0);
     expect(result.coverage["building-top"]).toBeGreaterThanOrEqual(0.95);
     expect(result.coverage["building-base"]).toBeGreaterThanOrEqual(0.95);
-    expect(Object.values(focusSharpness(result)).every((sharpness) => sharpness >= 0.6)).toBe(true);
+    expect(Object.values(focusSharpness(result)).every(
+      (sharpness) => sharpness >= 0.5,
+    )).toBe(true);
+    expect(result.optics.focusTargets.every((target) => target.physicalPatchStatus !== "soft")).toBe(true);
   });
 });

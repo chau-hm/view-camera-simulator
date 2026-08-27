@@ -11,7 +11,10 @@ import type { ApertureValue, CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
-import { createFocusAssistPass } from "./postprocessing/FocusAssistPass";
+import {
+  createFocusAssistPass,
+  resolvePhysicalFocusTargetPresentationMetric,
+} from "./postprocessing/FocusAssistPass";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
@@ -178,25 +181,16 @@ export const GroundGlassRenderer = ({
   );
   const lastFiniteFocusDepthMm = explicitLastFiniteFocusDepthMm ?? storeLastFiniteFocusDepthMm;
   const primaryTarget = opticsState.focusTargets && opticsState.focusTargets.length > 0 ? opticsState.focusTargets[0] : null;
+  const primaryPresentationMetric = primaryTarget
+    ? resolvePhysicalFocusTargetPresentationMetric(primaryTarget, focusMetric)
+    : null;
 
   const focusDistanceLabel = formatGroundGlassFocusLabel({
     isRttScene: isRttSceneFinal,
     isInfinityFocus,
     focusDistanceMm: resolvedFocusDistanceMm,
     lastFiniteFocusDepthMm,
-    primaryTarget: primaryTarget
-      ? {
-          sharpness:
-            focusMetric === "point"
-              ? (primaryTarget.pointSharpness ?? primaryTarget.sharpness)
-              : (primaryTarget.patchSharpness ?? primaryTarget.sharpness),
-          normalizedDefocus:
-            focusMetric === "point"
-              ? (primaryTarget.pointNormalizedDefocus ?? primaryTarget.normalizedDefocus)
-              : (primaryTarget.patchNormalizedDefocus ?? primaryTarget.normalizedDefocus),
-          distanceToFocusPlaneMm: primaryTarget.distanceToFocusPlaneMm,
-        }
-      : null,
+    primaryTarget: primaryPresentationMetric,
     legacyDistanceToFocusPlaneMm: dofSample.distanceToFocusPlaneMm,
   });
 

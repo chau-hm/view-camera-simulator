@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { planeFromPointNormal, intersectPlanes } from "../../core/math/plane";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { calculateDepthOfField } from "../../core/optics/calculateDepthOfField";
+import { imageDistanceMm } from "../../core/optics/thinLensModel";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
@@ -168,7 +169,7 @@ describe("Table Tilt optics calibration", () => {
     expect(passingSubjectsAtZeroTilt.length).toBeLessThan(geometry.subjects.length);
   });
 
-  it("amplifies real zero-tilt detail defocus without changing the physical optics", () => {
+  it("uses physical zero-tilt detail defocus without scene amplification", () => {
     const camera = cameraFor({ frontTiltDeg: 0, aperture: 11 });
     const optics = deriveOpticsState(camera, tableTiltScene);
     const visual = getGroundGlassDofVisualSettings(tableTiltScene.id);
@@ -182,30 +183,16 @@ describe("Table Tilt optics calibration", () => {
         filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
         renderWidthPx: 1000,
         maximumBlurRadiusPx: visual.maximumBlurRadiusPx,
-        displayBlurScale: visual.displayBlurScale,
       }),
     );
     const [near, middle, far] = samples;
-    const physicalScaleSamples = geometry.subjects.map((subject) =>
-      sampleGroundGlassBlurAtWorldPoint({
-        worldPoint: subject.focusDetailProbeWorld,
-        opticsState: optics,
-        focalLengthMm: CAMERA_CONSTANTS.focalLengthMm,
-        aperture: camera.aperture,
-        circleOfConfusionMm: 0.1,
-        filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
-        renderWidthPx: 1000,
-        maximumBlurRadiusPx: visual.maximumBlurRadiusPx,
-        displayBlurScale: 1,
-      }),
-    );
 
-    expect(visual.displayBlurScale).toBeGreaterThan(1);
-    [near, middle, far].forEach((sample, index) => {
-      expect(sample.normalizedDefocus).toBe(physicalScaleSamples[index].normalizedDefocus);
-      expect(sample.blurRadiusPx).toBeGreaterThanOrEqual(physicalScaleSamples[index].blurRadiusPx);
+    expect("displayBlurScale" in visual).toBe(false);
+    [near, middle, far].forEach((sample) => {
+      expect(Number.isFinite(sample.blurRadiusPx)).toBe(true);
+      expect(sample.blurRadiusPx).toBeLessThanOrEqual(visual.maximumBlurRadiusPx);
     });
-    expect(Math.max(near.blurRadiusPx, far.blurRadiusPx)).toBeGreaterThan(1);
+    expect(Math.max(near.blurRadiusPx, far.blurRadiusPx)).toBeGreaterThan(0);
   });
 
   it("brackets the focus plane at every probe and widens the wedge at f/32", () => {
@@ -345,7 +332,6 @@ describe("Table Tilt optics calibration", () => {
           filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
           renderWidthPx: 1000,
           maximumBlurRadiusPx: visual.maximumBlurRadiusPx,
-          displayBlurScale: visual.displayBlurScale,
         }),
       );
       expect(blurSamples[focusedIndex].blurRadiusPx).toBeLessThan(0.01);
@@ -441,7 +427,10 @@ describe("Table Tilt optics calibration", () => {
       expect(uniforms.mode).toBe(1);
       expect(uniforms.imageDistanceMm).toBeGreaterThan(0);
       if (frontTiltDeg === 0) {
-        expect(uniforms.imageDistanceMm).toBeCloseTo(CAMERA_CONSTANTS.focalLengthMm, 8);
+        expect(uniforms.imageDistanceMm).toBeCloseTo(
+          imageDistanceMm(CAMERA_CONSTANTS.focalLengthMm, geometry.canonicalFocusDistanceMm),
+          8,
+        );
       }
       expect(
         [

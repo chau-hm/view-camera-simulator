@@ -242,7 +242,7 @@ test("Table Tilt calibrated controls complete the guided task", async ({ page })
   await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
 
   await setRangeDirect(page, "Tilt", 9);
-  await setRangeDirect(page, "Focus distance", 6054);
+  await setRangeDirect(page, "Focus distance", 6130);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
 
   await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
@@ -279,7 +279,7 @@ test("Table Tilt calibrated side geometry keeps the table, targets, focus, and D
   test.setTimeout(60_000);
   await page.goto("/simulator/free/table-tilt");
   await setRangeDirect(page, "Tilt", 9);
-  await setRangeDirect(page, "Focus distance", 6054);
+  await setRangeDirect(page, "Focus distance", 6130);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
 
@@ -359,7 +359,7 @@ test("Table Tilt exposes the 3D and perpendicular Scheimpflug construction", asy
   await expect(page.getByRole("button", { name: "Show Scheimpflug construction" })).toBeDisabled();
   await expect(sceneCanvas).toHaveAttribute("data-focus-overlay-visible", "true");
   await setRangeDirect(page, "Tilt", 9);
-  await setRangeDirect(page, "Focus distance", 6054);
+  await setRangeDirect(page, "Focus distance", 6130);
   await expect.poll(() => sceneCanvas.getAttribute("data-lens-plane-normal")).not.toBe(zeroTiltNormal);
 
   await expect(page.getByRole("button", { name: "Show Scheimpflug construction" })).toBeEnabled();

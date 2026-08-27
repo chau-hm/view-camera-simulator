@@ -2,6 +2,7 @@ import React, { useEffect, useId, useLayoutEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CAMERA_CONSTANTS } from "../utils/constants";
+import { ACCEPTABLE_COC_DIAMETER_MM } from "../core/optics/physicalSharpness";
 
 const SKY_COLOR = new THREE.Color("#dfe5ec");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
@@ -29,8 +30,14 @@ import {
 import {
   applyGroundGlassDofUniformState,
   createGroundGlassDofUniformState,
+  synchronizeGroundGlassDofClipRange,
 } from "./createGroundGlassDofUniformState";
-import { groundGlassVertexShader, groundGlassHorizontalFragmentShader, groundGlassVerticalFragmentShader } from "./groundGlassDofShaderSources";
+import {
+  groundGlassApertureGatherFragmentShader,
+  groundGlassCompositeFragmentShader,
+  groundGlassPhysicalCocFragmentShader,
+  groundGlassVertexShader,
+} from "./groundGlassDofShaderSources";
 import type { DerivedOpticsState } from "../types/optics";
 import type { ApertureValue } from "../types/camera";
 import { useAppStore } from "../state/appStore";
@@ -48,6 +55,17 @@ import { analyzeGroundGlassRenderSanity } from "./groundGlassRenderSanity";
 import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 import { createGroundGlassRenderSanityStateKey } from "./groundGlassRenderSanityKey";
 import { resizeGroundGlassRttResources } from "./groundGlassRttResources";
+import {
+  createGroundGlassCocTarget,
+  resolveGroundGlassCocStorageMaxMm,
+  type GroundGlassCocStorageFormat,
+} from "./groundGlassCocTarget";
+import {
+  GroundGlassProfiler,
+  isGroundGlassProfilingEnabled,
+  type GroundGlassProfilingConfiguration,
+  type GroundGlassProfilingPass,
+} from "./groundGlassProfiling";
 import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
 import {
   resolveCameraMovementLessonPresentationTargetRegion,
@@ -114,17 +132,22 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   const cameraMovementRenderModel = resolveCameraMovementLatticeRenderModel(
     effectiveCameraMovementCalibration,
   );
-  const { maximumBlurRadiusPx, displayBlurScale } = getGroundGlassDofVisualSettings(sceneId);
+  const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(sceneId);
+  const profilingEnabled = isGroundGlassProfilingEnabled();
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
   const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1, zoomEnabled }));
 
   // refs for instance-owned resources (avoid storing on function object)
   type PostResources = {
-    postSceneH: THREE.Scene;
-    postSceneV: THREE.Scene;
+    postSceneCoc: THREE.Scene;
+    postSceneGather: THREE.Scene;
+    postSceneComposite: THREE.Scene;
     orthoCam: THREE.OrthographicCamera;
-    tempRT: THREE.WebGLRenderTarget;
+    cocRT: THREE.WebGLRenderTarget;
+    cocStorageFormat: GroundGlassCocStorageFormat;
+    gatherRT: THREE.WebGLRenderTarget;
+    nearGatherRT: THREE.WebGLRenderTarget;
     finalRT: THREE.WebGLRenderTarget;
     rawDiagnosticRT: THREE.WebGLRenderTarget;
     finalDiagnosticRT: THREE.WebGLRenderTarget;
@@ -132,6 +155,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     copyMaterial: THREE.ShaderMaterial;
   };
   const postResourcesRef = React.useRef<PostResources | null>(null);
+  const groundGlassProfilerRef = React.useRef<GroundGlassProfiler | null>(null);
   const fallbackDepthRef = React.useRef<THREE.DataTexture | null>(null);
   const resourceGenerationRef = React.useRef<number>(0);
   const lightingRigRef = React.useRef<{
@@ -182,6 +206,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
   useEffect(() => {
     const sizeInputs = sizeInputsRef.current;
+    const initialQualitySettings = getRenderQualitySettings(
+      sizeInputs.renderQuality || "standard",
+    );
+    const initialMaximumCoCRadiusPx = Math.min(
+      maximumBlurRadiusPx,
+      initialQualitySettings.maximumCoCRadiusPx,
+    );
     // resolve desired internal RTT dimensions from quality profile, DPR and zoom state
     const rendererPixelRatio = (gl && typeof gl.getPixelRatio === 'function') ? gl.getPixelRatio() : (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
 
@@ -249,13 +280,51 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     // scene.add(...) will be done after subject group setup where appropriate.
     
 
-    // create postprocessing scenes and resources for separable DOF
-    const postSceneH = new THREE.Scene();
-    const postSceneV = new THREE.Scene();
+    // Create the explicit physical DOF pipeline:
+    // scene color/depth -> full-resolution signed CoC -> near/far gathers -> composite.
+    const postSceneCoc = new THREE.Scene();
+    const postSceneGather = new THREE.Scene();
+    const postSceneComposite = new THREE.Scene();
     const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const tempRT = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
-    tempRT.depthBuffer = false;
-    const finalRT = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
+    const cocStorage = createGroundGlassCocTarget(
+      gl as unknown as WebGLRenderer,
+      dimsRef.current.internalWidthPx,
+      dimsRef.current.internalHeightPx,
+    );
+    const cocRT = cocStorage.target;
+    cocRT.depthBuffer = false;
+    const initialCocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
+      maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      renderWidthPx: dimsRef.current.internalWidthPx,
+    });
+    const initialFootprintStorageMaxMm = Math.max(1e-6, initialCocStorageMaxMm * 0.5);
+    const gatherRT = new THREE.WebGLRenderTarget(
+      Math.max(1, Math.floor(dimsRef.current.internalWidthPx * initialQualitySettings.gatherScale)),
+      Math.max(1, Math.floor(dimsRef.current.internalHeightPx * initialQualitySettings.gatherScale)),
+      {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        depthBuffer: false,
+        stencilBuffer: false,
+      },
+    );
+    gatherRT.depthBuffer = false;
+    const nearGatherRT = new THREE.WebGLRenderTarget(
+      Math.max(1, Math.floor(dimsRef.current.internalWidthPx * initialQualitySettings.gatherScale)),
+      Math.max(1, Math.floor(dimsRef.current.internalHeightPx * initialQualitySettings.gatherScale)),
+      {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        depthBuffer: false,
+        stencilBuffer: false,
+      },
+    );
+    nearGatherRT.depthBuffer = false;
+    const finalRT = new THREE.WebGLRenderTarget(
+      dimsRef.current.internalWidthPx,
+      dimsRef.current.internalHeightPx,
+    );
     finalRT.depthBuffer = false;
     const rawDiagnosticRT = new THREE.WebGLRenderTarget(32, 32);
     rawDiagnosticRT.depthBuffer = false;
@@ -271,21 +340,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     const vertexShader = groundGlassVertexShader;
 
-    // Horizontal/Vertical fragment shaders are imported from groundGlassDofShaderSources
-    const fragH = groundGlassHorizontalFragmentShader;
-
-    // Vertical pass shader: uses the imported vertical fragment shader
-    const fragV = groundGlassVerticalFragmentShader;
-
-    // NOTE: fragH and fragV now import shared GLSL helpers and uniform decls from groundGlassDofShaders.
-
-
-
-    const matH = new THREE.ShaderMaterial({
+    const cocMaterial = new THREE.ShaderMaterial({
       vertexShader,
-      fragmentShader: fragH,
+      fragmentShader: groundGlassPhysicalCocFragmentShader,
       uniforms: {
-        tColor: { value: null },
         tDepth: { value: null },
         near: { value: 0.01 },
         far: { value: 12.0 },
@@ -297,6 +355,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         useRaw: { value: 0.0 },
         dofMode: { value: 0.0 },
         lensCenterWorld: { value: new THREE.Vector3() },
+        lensPlaneNormal: { value: new THREE.Vector3(0, 0, 1) },
+        lensPlaneBasisX: { value: new THREE.Vector3(1, 0, 0) },
+        lensPlaneBasisY: { value: new THREE.Vector3(0, 1, 0) },
+        filmPlanePoint: { value: new THREE.Vector3(0, 0, -0.15) },
+        filmPlaneNormal: { value: new THREE.Vector3(0, 0, 1) },
+        filmPlaneBasisX: { value: new THREE.Vector3(1, 0, 0) },
+        filmPlaneBasisY: { value: new THREE.Vector3(0, 1, 0) },
         focusPlanePoint: { value: new THREE.Vector3() },
         focusPlaneNormal: { value: new THREE.Vector3() },
         nearPlanePoint: { value: new THREE.Vector3() },
@@ -306,19 +371,24 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         hasFiniteFar: { value: 0.0 },
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
-        maximumBlurRadiusPx: { value: maximumBlurRadiusPx },
-        circleOfConfusionMm: { value: 0.1 },
+        maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
+        circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
-        displayBlurScale: { value: displayBlurScale },
+        filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
+        sampleCount: { value: initialQualitySettings.sampleCount },
+        cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
+        cocStorageMaxMm: { value: initialCocStorageMaxMm },
+        footprintStorageMaxMm: { value: initialFootprintStorageMaxMm },
       },
     });
 
-    const matV = new THREE.ShaderMaterial({
+    const gatherMaterial = new THREE.ShaderMaterial({
       vertexShader,
-      fragmentShader: fragV,
+      fragmentShader: groundGlassApertureGatherFragmentShader,
       uniforms: {
         tColor: { value: null },
         tDepth: { value: null },
+        tCoC: { value: cocRT.texture },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
         focalLengthMm: { value: 1.0 },
@@ -335,6 +405,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         displayUpright: { value: 0.0 },
         dofMode: { value: 0.0 },
         lensCenterWorld: { value: new THREE.Vector3() },
+        lensPlaneNormal: { value: new THREE.Vector3(0, 0, 1) },
+        lensPlaneBasisX: { value: new THREE.Vector3(1, 0, 0) },
+        lensPlaneBasisY: { value: new THREE.Vector3(0, 1, 0) },
+        filmPlanePoint: { value: new THREE.Vector3(0, 0, -0.15) },
+        filmPlaneNormal: { value: new THREE.Vector3(0, 0, 1) },
+        filmPlaneBasisX: { value: new THREE.Vector3(1, 0, 0) },
+        filmPlaneBasisY: { value: new THREE.Vector3(0, 1, 0) },
         focusPlanePoint: { value: new THREE.Vector3() },
         focusPlaneNormal: { value: new THREE.Vector3() },
         nearPlanePoint: { value: new THREE.Vector3() },
@@ -344,15 +421,39 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         hasFiniteFar: { value: 0.0 },
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
-        maximumBlurRadiusPx: { value: maximumBlurRadiusPx },
-        circleOfConfusionMm: { value: 0.1 },
+        maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
+        circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
-        displayBlurScale: { value: displayBlurScale },
+        filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
+        sampleCount: { value: initialQualitySettings.sampleCount },
+        cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
+        cocStorageMaxMm: { value: initialCocStorageMaxMm },
+        footprintStorageMaxMm: { value: initialFootprintStorageMaxMm },
+        gatherLayer: { value: 0.0 },
       },
     });
 
-    const quadH = new THREE.Mesh(quadGeo, matH);
-    const quadV = new THREE.Mesh(quadGeo, matV);
+    const compositeMaterial = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader: groundGlassCompositeFragmentShader,
+      uniforms: {
+        tGather: { value: gatherRT.texture },
+        tNearGather: { value: nearGatherRT.texture },
+        useNearGather: { value: 1.0 },
+        renderWidth: { value: dimsRef.current.internalWidthPx },
+        renderHeight: { value: dimsRef.current.internalHeightPx },
+        ringCenter: { value: new THREE.Vector2(-1, -1) },
+        ringRadiusPx: { value: 0.0 },
+        ringColor: { value: new THREE.Vector3(59 / 255, 130 / 255, 246 / 255) },
+        ringOpacity: { value: 0.8 },
+        showRing: { value: 0.0 },
+        displayUpright: { value: 0.0 },
+      },
+    });
+
+    const cocQuad = new THREE.Mesh(quadGeo, cocMaterial);
+    const gatherQuad = new THREE.Mesh(quadGeo, gatherMaterial);
+    const compositeQuad = new THREE.Mesh(quadGeo, compositeMaterial);
     const copyMaterial = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader: `precision highp float; varying vec2 vUv; uniform sampler2D tColor; void main(){ gl_FragColor = texture2D(tColor, vUv); }`,
@@ -361,16 +462,21 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       depthWrite: false,
     });
     const displayQuad = new THREE.Mesh(quadGeo, copyMaterial);
-    postSceneH.add(quadH);
-    postSceneV.add(quadV);
+    postSceneCoc.add(cocQuad);
+    postSceneGather.add(gatherQuad);
+    postSceneComposite.add(compositeQuad);
     displayScene.add(displayQuad);
 
     // store post resources (per-instance ref)
     const postResources: PostResources = {
-      postSceneH,
-      postSceneV,
+      postSceneCoc,
+      postSceneGather,
+      postSceneComposite,
       orthoCam,
-      tempRT,
+      cocRT,
+      cocStorageFormat: cocStorage.storageFormat,
+      gatherRT,
+      nearGatherRT,
       finalRT,
       rawDiagnosticRT,
       finalDiagnosticRT,
@@ -378,6 +484,22 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       copyMaterial,
     };
     postResourcesRef.current = postResources;
+
+    const profiler = new GroundGlassProfiler(
+      profilingEnabled,
+      gl,
+      (snapshot) => {
+        const currentInfo = readRuntimeInfo();
+        if (!currentInfo) return;
+        setRuntimeInfo({
+          ...currentInfo,
+          profilingEnabled: true,
+          profilingBackend: snapshot.profilingBackend,
+          profilingSnapshot: snapshot,
+        });
+      },
+    );
+    groundGlassProfilerRef.current = profiler;
 
     // After resources are created, update runtime info with actual resource sizes
     try {
@@ -390,8 +512,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         const actualColorH = (renderTarget.current as THREE.WebGLRenderTarget).height;
         const actualDepthW = (renderTarget.current as unknown as { depthTexture?: { image?: { width?: number; height?: number } } }).depthTexture?.image?.width ?? actualColorW;
         const actualDepthH = (renderTarget.current as unknown as { depthTexture?: { image?: { width?: number; height?: number } } }).depthTexture?.image?.height ?? actualColorH;
-        const tempW = tempRT.width;
-        const tempH = tempRT.height;
+        const cocW = cocRT.width;
+        const cocH = cocRT.height;
+        const gatherW = gatherRT.width;
+        const gatherH = gatherRT.height;
+        const nearGatherW = nearGatherRT.width;
+        const nearGatherH = nearGatherRT.height;
 
         setRuntimeInfo({
           profile: resolvedProfile,
@@ -413,18 +539,35 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           colorTargetHeightPx: actualColorH,
           depthTargetWidthPx: actualDepthW,
           depthTargetHeightPx: actualDepthH,
-          blurTargetWidthPx: tempW,
-          blurTargetHeightPx: tempH,
+          blurTargetWidthPx: gatherW,
+          blurTargetHeightPx: gatherH,
+          dofTechnique: "physical-coc-near-far-oriented-gather",
+          footprintRepresentation: "local-affine-ellipse",
+          gatherScale: initialQualitySettings.gatherScale,
+          sampleCount: initialQualitySettings.sampleCount,
+          maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
+          cocStorageFormat: cocStorage.storageFormat,
+          cocAvailable: true,
+          cocTargetWidthPx: cocW,
+          cocTargetHeightPx: cocH,
+          gatherTargetWidthPx: gatherW,
+          gatherTargetHeightPx: gatherH,
+          farGatherTargetWidthPx: gatherW,
+          farGatherTargetHeightPx: gatherH,
+          nearGatherTargetWidthPx: nearGatherW,
+          nearGatherTargetHeightPx: nearGatherH,
           finalTargetWidthPx: finalRT.width,
           finalTargetHeightPx: finalRT.height,
-          horizontalShaderRenderWidthPx: matH.uniforms.renderWidth.value as number,
-          horizontalShaderRenderHeightPx: matH.uniforms.renderHeight.value as number,
-          verticalShaderRenderWidthPx: matV.uniforms.renderWidth.value as number,
-          verticalShaderRenderHeightPx: matV.uniforms.renderHeight.value as number,
+          horizontalShaderRenderWidthPx: cocMaterial.uniforms.renderWidth.value as number,
+          horizontalShaderRenderHeightPx: cocMaterial.uniforms.renderHeight.value as number,
+          verticalShaderRenderWidthPx: gatherMaterial.uniforms.renderWidth.value as number,
+          verticalShaderRenderHeightPx: gatherMaterial.uniforms.renderHeight.value as number,
           depthTextureAvailable: Boolean(
             (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture,
           ),
           resourceGeneration: resourceGenerationRef.current,
+          profilingEnabled,
+          profilingBackend: profiler.backend,
         });
       }
     } catch (err) { void err; }
@@ -446,11 +589,17 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     return () => {
       try {
+        profiler.dispose();
+        if (groundGlassProfilerRef.current === profiler) {
+          groundGlassProfilerRef.current = null;
+        }
         // dispose main color target
         try { rt.dispose(); } catch (err) { void err; }
         if (renderTarget.current === rt) renderTarget.current = null;
-        // dispose temporary blur target
-        try { tempRT.dispose(); } catch (err) { void err; }
+        // dispose physical CoC and aperture-gather targets
+        try { cocRT.dispose(); } catch (err) { void err; }
+        try { gatherRT.dispose(); } catch (err) { void err; }
+        try { nearGatherRT.dispose(); } catch (err) { void err; }
         try { finalRT.dispose(); } catch (err) { void err; }
         try { rawDiagnosticRT.dispose(); } catch (err) { void err; }
         try { finalDiagnosticRT.dispose(); } catch (err) { void err; }
@@ -466,7 +615,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
             // dispose quad materials and geometry
             const geometries = new Set<THREE.BufferGeometry>();
             const materials = new Set<THREE.Material>();
-            [post.postSceneH, post.postSceneV, post.displayScene].forEach((s) => {
+            [post.postSceneCoc, post.postSceneGather, post.postSceneComposite, post.displayScene].forEach((s) => {
               s.children.forEach((c) => {
                 const m = c as THREE.Mesh;
                 if (m.material) materials.add(m.material as THREE.Material);
@@ -475,10 +624,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
             });
             materials.forEach((material) => material.dispose());
             geometries.forEach((geometryResource) => geometryResource.dispose());
-            // dispose tempRT already done above
             // remove scenes
-            post.postSceneH.clear();
-            post.postSceneV.clear();
+            post.postSceneCoc.clear();
+            post.postSceneGather.clear();
+            post.postSceneComposite.clear();
             post.displayScene.clear();
           } catch (err) { void err; }
           postResourcesRef.current = null;
@@ -498,9 +647,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       }
     };
   }, [
-    displayBlurScale,
     gl,
     maximumBlurRadiusPx,
+    profilingEnabled,
+    readRuntimeInfo,
     sceneId,
     setRuntimeInfo,
   ]);
@@ -664,23 +814,46 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       devicePixelRatio: rendererPixelRatio,
       zoomEnabled,
     });
-    const horizontalMaterial = (post.postSceneH.children[0] as THREE.Mesh)
+    const cocMaterial = (post.postSceneCoc.children[0] as THREE.Mesh)
       .material as THREE.ShaderMaterial;
-    const verticalMaterial = (post.postSceneV.children[0] as THREE.Mesh)
+    const gatherMaterial = (post.postSceneGather.children[0] as THREE.Mesh)
       .material as THREE.ShaderMaterial;
+    const compositeMaterial = (post.postSceneComposite.children[0] as THREE.Mesh)
+      .material as THREE.ShaderMaterial;
+    const qualitySettings = getRenderQualitySettings(
+      renderQuality || "standard",
+    );
+    const resizedMaximumCoCRadiusPx = Math.min(
+      maximumBlurRadiusPx,
+      qualitySettings.maximumCoCRadiusPx,
+    );
+    const cocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
+      maximumCoCRadiusPx: resizedMaximumCoCRadiusPx,
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      renderWidthPx: dims.internalWidthPx,
+    });
+    cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
+    gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
+    cocMaterial.uniforms.footprintStorageMaxMm.value = Math.max(1e-6, cocStorageMaxMm * 0.5);
+    gatherMaterial.uniforms.footprintStorageMaxMm.value = Math.max(1e-6, cocStorageMaxMm * 0.5);
 
     resizeGroundGlassRttResources(
       {
         renderTarget: rt,
-        tempTarget: post.tempRT,
+        cocTarget: post.cocRT,
+        gatherTarget: post.gatherRT,
+        nearGatherTarget: post.nearGatherRT,
         finalTarget: post.finalRT,
-        horizontalMaterial,
-        verticalMaterial,
+        cocMaterial,
+        gatherMaterial,
+        compositeMaterial,
       },
       dims.internalWidthPx,
       dims.internalHeightPx,
+      qualitySettings.gatherScale,
     );
     dimsRef.current = dims;
+    groundGlassProfilerRef.current?.resetSession("resource-resize");
 
     // Preserve content and sanity diagnostics until the next frame publishes a
     // sample for the resized targets. A normal view zoom/reset is not teardown.
@@ -708,19 +881,38 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       colorTargetHeightPx: rt.height,
       depthTargetWidthPx: depthImage?.width ?? rt.width,
       depthTargetHeightPx: depthImage?.height ?? rt.height,
-      blurTargetWidthPx: post.tempRT.width,
-      blurTargetHeightPx: post.tempRT.height,
+      blurTargetWidthPx: post.gatherRT.width,
+      blurTargetHeightPx: post.gatherRT.height,
+      dofTechnique: "physical-coc-near-far-oriented-gather",
+      footprintRepresentation: "local-affine-ellipse",
+      gatherScale: qualitySettings.gatherScale,
+      sampleCount: qualitySettings.sampleCount,
+      maximumCoCRadiusPx: Math.min(
+        maximumBlurRadiusPx,
+        qualitySettings.maximumCoCRadiusPx,
+      ),
+      cocStorageFormat: post.cocStorageFormat,
+      cocAvailable: true,
+      cocTargetWidthPx: post.cocRT.width,
+      cocTargetHeightPx: post.cocRT.height,
+      gatherTargetWidthPx: post.gatherRT.width,
+      gatherTargetHeightPx: post.gatherRT.height,
+      farGatherTargetWidthPx: post.gatherRT.width,
+      farGatherTargetHeightPx: post.gatherRT.height,
+      nearGatherTargetWidthPx: post.nearGatherRT.width,
+      nearGatherTargetHeightPx: post.nearGatherRT.height,
       finalTargetWidthPx: post.finalRT.width,
       finalTargetHeightPx: post.finalRT.height,
-      horizontalShaderRenderWidthPx: horizontalMaterial.uniforms.renderWidth.value as number,
-      horizontalShaderRenderHeightPx: horizontalMaterial.uniforms.renderHeight.value as number,
-      verticalShaderRenderWidthPx: verticalMaterial.uniforms.renderWidth.value as number,
-      verticalShaderRenderHeightPx: verticalMaterial.uniforms.renderHeight.value as number,
+      horizontalShaderRenderWidthPx: cocMaterial.uniforms.renderWidth.value as number,
+      horizontalShaderRenderHeightPx: cocMaterial.uniforms.renderHeight.value as number,
+      verticalShaderRenderWidthPx: gatherMaterial.uniforms.renderWidth.value as number,
+      verticalShaderRenderHeightPx: gatherMaterial.uniforms.renderHeight.value as number,
       resourceGeneration: resourceGenerationRef.current,
+      profilingSnapshot: undefined,
     });
-  }, [gl, heightPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
+  }, [gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
 
-  useFrame(() => {
+  useFrame((_state, frameDelta) => {
     if (!renderTarget.current || !offscreenScene.current) return;
     const imgDist = resolveGroundGlassImageDistanceMm(opticsState);
     const cam = groundGlassCamera.current;
@@ -841,52 +1033,125 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       });
     } catch (err) { void err; }
 
+    const post = postResourcesRef.current;
+    const currentQualitySettings = getRenderQualitySettings(
+      sizeInputsRef.current.renderQuality || "standard",
+    );
+    const currentMaximumCoCRadiusPx = Math.min(
+      maximumBlurRadiusPx,
+      currentQualitySettings.maximumCoCRadiusPx,
+    );
+    const profiler = groundGlassProfilerRef.current;
+    const profilingActive = profiler !== null && profiler.backend !== "disabled";
+    if (profilingActive) {
+      const profilingConfiguration: GroundGlassProfilingConfiguration = {
+        sceneId: sceneId ?? null,
+        renderQuality: sizeInputsRef.current.renderQuality || "standard",
+        internalResolution: [
+          dimsRef.current.internalWidthPx,
+          dimsRef.current.internalHeightPx,
+        ],
+        gatherResolution: [
+          post?.gatherRT.width ?? Math.max(
+            1,
+            Math.floor(dimsRef.current.internalWidthPx * currentQualitySettings.gatherScale),
+          ),
+          post?.gatherRT.height ?? Math.max(
+            1,
+            Math.floor(dimsRef.current.internalHeightPx * currentQualitySettings.gatherScale),
+          ),
+        ],
+        gatherScale: currentQualitySettings.gatherScale,
+        sampleCount: currentQualitySettings.sampleCount,
+        maximumCoCRadiusPx: currentMaximumCoCRadiusPx,
+        cocStorageFormat: post?.cocStorageFormat ?? null,
+        footprintRepresentation: "local-affine-ellipse",
+        dofTechnique: "physical-coc-near-far-oriented-gather",
+        previewMode: previewMode === "raw" ? "raw" : "upright",
+        rawDebug: Boolean(rawDebug),
+        devicePixelRatio:
+          typeof gl.getPixelRatio === "function"
+            ? gl.getPixelRatio()
+            : typeof window !== "undefined"
+              ? window.devicePixelRatio
+              : 1,
+        zoomEnabled: Boolean(zoomEnabled),
+      };
+      profiler.beginFrame(
+        profilingConfiguration,
+        Number.isFinite(frameDelta) ? (frameDelta as number) * 1000 : undefined,
+      );
+    }
+    const measurePass = profilingActive
+      ? (pass: GroundGlassProfilingPass, renderPass: () => void): void => {
+          const scope = profiler.beginPass(pass);
+          try {
+            renderPass();
+          } finally {
+            scope.end();
+          }
+        }
+      : (_pass: GroundGlassProfilingPass, renderPass: () => void): void => {
+          renderPass();
+        };
+
     // 1) render scene to color+depth renderTarget
     const prev = gl.getRenderTarget();
-    gl.setRenderTarget(renderTarget.current);
-    gl.setClearColor(SKY_COLOR.getHex(), 1);
-    gl.clear(true, true, true);
-    gl.render(offscreenScene.current, cam);
+    measurePass("sceneRender", () => {
+      gl.setRenderTarget(renderTarget.current);
+      gl.setClearColor(SKY_COLOR.getHex(), 1);
+      gl.clear(true, true, true);
+      gl.render(offscreenScene.current!, cam);
+    });
 
-    // 2) horizontal separable pass -> tempRT
-    const post = postResourcesRef.current;
+    // 2) Full-resolution signed CoC, near/far aperture gathers, then composite.
     if (post) {
       const {
-        postSceneH,
-        postSceneV,
+        postSceneCoc,
+        postSceneGather,
+        postSceneComposite,
         orthoCam,
-        tempRT,
+        cocRT,
+        gatherRT,
+        nearGatherRT,
         finalRT,
         rawDiagnosticRT,
         finalDiagnosticRT,
         displayScene,
         copyMaterial,
       } = post;
-      // update H uniforms
-      const meshH = postSceneH.children[0] as THREE.Mesh;
-      const matH = meshH.material as THREE.ShaderMaterial;
-      matH.uniforms.tColor.value = (renderTarget.current as THREE.WebGLRenderTarget).texture;
       // prefer the renderTarget.depthTexture when available, otherwise use a 1.0 depth fallback
       const depthTex = (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture ?? fallbackDepthRef.current ?? null;
-      matH.uniforms.tDepth.value = depthTex;
-      // ensure imageDistance uniform is never zero; use small positive fallback if necessary
-      matH.uniforms.imageDistanceMm.value = Math.max(1e-6, imgDist);
-      matH.uniforms.focalLengthMm.value = focalLengthMm;
-      matH.uniforms.fNumber.value = aperture;
-      matH.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
-      matH.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
-      matH.uniforms.near.value = cam.near;
-      matH.uniforms.far.value = cam.far;
-      // displayUpright is applied only in the final vertical pass (matV) so DOF and horizontal pass are identical for both preview modes
-      // matH remains orientation-agnostic to ensure identical processing for raw/upright
-      // matH.uniforms.displayUpright.value = previewMode === "upright" ? 1.0 : 0.0;
       // A missing depth texture is surfaced through diagnostics. Keep the DOF
       // path active with the explicit far-depth texture instead of silently
       // changing the user's preview to Raw RTT.
       const isFallbackDepth = depthTex === fallbackDepthRef.current;
-      matH.uniforms.useRaw.value = rawDebug ? 1.0 : 0.0;
+      const cocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
+        maximumCoCRadiusPx: currentMaximumCoCRadiusPx,
+        filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+        renderWidthPx: dimsRef.current.internalWidthPx,
+      });
+      const footprintStorageMaxMm = Math.max(1e-6, cocStorageMaxMm * 0.5);
 
-      // prepare typed DOF uniform state and populate shader uniforms (single state applied to both passes)
+      const cocMesh = postSceneCoc.children[0] as THREE.Mesh;
+      const cocMaterial = cocMesh.material as THREE.ShaderMaterial;
+      const gatherMesh = postSceneGather.children[0] as THREE.Mesh;
+      const gatherMaterial = gatherMesh.material as THREE.ShaderMaterial;
+      synchronizeGroundGlassDofClipRange(
+        [cocMaterial, gatherMaterial],
+        cam.near,
+        cam.far,
+      );
+      cocMaterial.uniforms.tDepth.value = depthTex;
+      cocMaterial.uniforms.useRaw.value = 0.0;
+      cocMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
+      cocMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
+      cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
+      cocMaterial.uniforms.footprintStorageMaxMm.value = footprintStorageMaxMm;
+      gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
+      gatherMaterial.uniforms.footprintStorageMaxMm.value = footprintStorageMaxMm;
+
+      // Prepare typed optical state once and apply it to both CoC and gather.
       let uniformPreparationError: string | null = null;
       let preparedDofState: ReturnType<typeof createGroundGlassDofUniformState> | null = null;
       try {
@@ -897,19 +1162,18 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
           focalLengthMm,
           CAMERA_CONSTANTS.filmWidthMm,
           CAMERA_CONSTANTS.filmHeightMm,
-          0.1, // circleOfConfusionMm (must match core optics)
+          ACCEPTABLE_COC_DIAMETER_MM,
           aperture,
           dimsRef.current.internalWidthPx,
           dimsRef.current.internalHeightPx,
-          matH.uniforms.maximumBlurRadiusPx.value as number,
-          displayBlurScale,
+          currentMaximumCoCRadiusPx,
         );
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);
       }
 
       if (preparedDofState) {
-        applyGroundGlassDofUniformState(matH, preparedDofState);
+        applyGroundGlassDofUniformState(cocMaterial, preparedDofState);
         reportedUniformPreparationErrorRef.current = null;
       } else {
         // Keep the last valid shader state. Do not conceal configuration errors
@@ -920,56 +1184,61 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         }
       }
 
-      gl.setRenderTarget(tempRT);
-      gl.setClearColor(SKY_COLOR.getHex(), 1);
-      gl.clear(true, true, true);
-      gl.render(postSceneH, orthoCam);
+      // Raw debug is a true bypass: the full-resolution scene color remains
+      // the source of truth and never passes through the scaled gather target.
+      if (!rawDebug) {
+        measurePass("cocFootprint", () => {
+          gl.setRenderTarget(cocRT);
+          gl.setClearColor(SKY_COLOR.getHex(), 1);
+          gl.clear(true, true, true);
+          gl.render(postSceneCoc, orthoCam);
+        });
 
-      // 3) vertical pass -> screen
-      const meshV = postSceneV.children[0] as THREE.Mesh;
-      const matV = meshV.material as THREE.ShaderMaterial;
-      matV.uniforms.tColor.value = (tempRT as THREE.WebGLRenderTarget).texture;
-      matV.uniforms.tDepth.value = depthTex;
-      matV.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
-      matV.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
-      // ensure imageDistance uniform is never zero; use small positive fallback if necessary
-      matV.uniforms.imageDistanceMm.value = Math.max(1e-6, imgDist);
-      matV.uniforms.focalLengthMm.value = focalLengthMm;
-      matV.uniforms.fNumber.value = aperture;
-      matV.uniforms.near.value = cam.near;
-      matV.uniforms.far.value = cam.far;
-      // Only the explicit developer toggle bypasses DOF.
-      matV.uniforms.useRaw.value = rawDebug ? 1.0 : 0.0;
-      // apply previously prepared DOF uniform state to vertical pass
-      if (preparedDofState) {
-        applyGroundGlassDofUniformState(matV, preparedDofState);
-        const horizontalFocalLengthMm = matH.uniforms.focalLengthMm.value as number;
-        const verticalFocalLengthMm = matV.uniforms.focalLengthMm.value as number;
-        if (
-          horizontalFocalLengthMm === verticalFocalLengthMm &&
-          Number.isFinite(horizontalFocalLengthMm)
-        ) {
-          const currentInfo = readRuntimeInfo();
-          if (currentInfo && currentInfo.focalLengthMm !== horizontalFocalLengthMm) {
-            setRuntimeInfo({
-              ...currentInfo,
-              focalLengthMm: horizontalFocalLengthMm,
-            });
+        gatherMaterial.uniforms.tColor.value = (renderTarget.current as THREE.WebGLRenderTarget).texture;
+        gatherMaterial.uniforms.tDepth.value = depthTex;
+        gatherMaterial.uniforms.tCoC.value = cocRT.texture;
+        gatherMaterial.uniforms.useRaw.value = 0.0;
+        gatherMaterial.uniforms.sampleCount.value = currentQualitySettings.sampleCount;
+        gatherMaterial.uniforms.maximumCoCRadiusPx.value = currentMaximumCoCRadiusPx;
+        gatherMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
+        gatherMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
+        if (preparedDofState) {
+          applyGroundGlassDofUniformState(gatherMaterial, preparedDofState);
+        } else {
+          if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
+            console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
+            reportedUniformPreparationErrorRef.current = uniformPreparationError ?? "unknown";
           }
         }
-      } else {
-        if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
-          console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
-          reportedUniformPreparationErrorRef.current = uniformPreparationError ?? "unknown";
-        }
+
+        measurePass("farGather", () => {
+          gl.setRenderTarget(gatherRT);
+          gl.setClearColor(SKY_COLOR.getHex(), 1);
+          gl.clear(true, true, true);
+          gatherMaterial.uniforms.gatherLayer.value = 0.0;
+          gl.render(postSceneGather, orthoCam);
+        });
+
+        measurePass("nearGather", () => {
+          gl.setRenderTarget(nearGatherRT);
+          gl.setClearColor(SKY_COLOR.getHex(), 0);
+          gl.clear(true, true, true);
+          gatherMaterial.uniforms.gatherLayer.value = 1.0;
+          gl.render(postSceneGather, orthoCam);
+        });
       }
 
-      // For Architecture we still allow final display inversion to be applied (displayUpright)
-      // apply final display orientation only here (final blit)
-      // map previewMode to display orientation: raw = physical inversion, upright = no inversion
-      matV.uniforms.displayUpright.value = previewMode === "raw" ? 1.0 : 0.0;
-      // hide focus ring in raw debug mode
-      if (rawDebug) matV.uniforms.showRing.value = 0.0;
+      const compositeMesh = postSceneComposite.children[0] as THREE.Mesh;
+      const compositeMaterial = compositeMesh.material as THREE.ShaderMaterial;
+      compositeMaterial.uniforms.tGather.value = rawDebug
+        ? (renderTarget.current as THREE.WebGLRenderTarget).texture
+        : gatherRT.texture;
+      compositeMaterial.uniforms.tNearGather.value = nearGatherRT.texture;
+      compositeMaterial.uniforms.useNearGather.value = rawDebug ? 0.0 : 1.0;
+      compositeMaterial.uniforms.displayUpright.value = previewMode === "raw" ? 1.0 : 0.0;
+      compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
+      compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
+      compositeMaterial.uniforms.showRing.value = 0.0;
 
       // compute focus ring projection using the shared projection helper
       const sceneDefForProjection = sceneId ? getSceneById(sceneId) : undefined;
@@ -984,21 +1253,21 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       const shouldShow = Boolean(focusAssistEnabled) && !rawDebug && Boolean(primaryProjectedTarget?.visible);
       if (shouldShow && primaryProjectedTarget) {
         // pass raw uRaw/vRaw to shader; shader applies display orientation when sampling
-        matV.uniforms.ringCenter.value.set(primaryProjectedTarget.rawUv.u, primaryProjectedTarget.rawUv.v);
-        matV.uniforms.ringRadiusPx.value = focusRingRadiusPx ?? 68;
-        matV.uniforms.ringOpacity.value = focusRingOpacity ?? 0.8;
-        matV.uniforms.showRing.value = 1.0;
-      } else {
-        matV.uniforms.showRing.value = 0.0;
+        compositeMaterial.uniforms.ringCenter.value.set(primaryProjectedTarget.rawUv.u, primaryProjectedTarget.rawUv.v);
+        compositeMaterial.uniforms.ringRadiusPx.value = focusRingRadiusPx ?? 68;
+        compositeMaterial.uniforms.ringOpacity.value = focusRingOpacity ?? 0.8;
+        compositeMaterial.uniforms.showRing.value = 1.0;
       }
 
       // Keep the final DOF result in an owned target. Besides enabling a
       // deterministic render sanity readback, this prevents a transient empty
       // default framebuffer from becoming the Ground Glass source of truth.
-      gl.setRenderTarget(finalRT);
-      gl.setClearColor(SKY_COLOR.getHex(), 1);
-      gl.clear(true, true, true);
-      gl.render(postSceneV, orthoCam);
+      measurePass("composite", () => {
+        gl.setRenderTarget(finalRT);
+        gl.setClearColor(SKY_COLOR.getHex(), 1);
+        gl.clear(true, true, true);
+        gl.render(postSceneComposite, orthoCam);
+      });
 
       const sanityStateKey = createGroundGlassRenderSanityStateKey({
         resourceGeneration: resourceGenerationRef.current,
@@ -1092,6 +1361,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       gl.setRenderTarget(null);
     }
 
+    if (profilingActive) profiler.endFrame();
     gl.setRenderTarget(prev);
   }, 1);
 

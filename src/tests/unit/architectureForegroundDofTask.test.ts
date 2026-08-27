@@ -42,7 +42,9 @@ const criterionPassed = (criterionId: string, evaluation: ReturnType<typeof eval
   evaluation.criteria.find((criterion) => criterion.criterionId === criterionId)?.passed;
 
 const targetSharpness = (result: ReturnType<typeof evaluateAt>) =>
-  Object.fromEntries(result.optics.focusTargets.map((target) => [target.id, target.sharpness]));
+  Object.fromEntries(
+    result.optics.focusTargets.map((target) => [target.id, target.physicalPatchSharpness ?? 0]),
+  );
 
 describe("Architecture + Foreground Aperture / Depth of Field task", () => {
   it("registers the cumulative controls and starts from the solved PR7C state", () => {
@@ -88,7 +90,7 @@ describe("Architecture + Foreground Aperture / Depth of Field task", () => {
     );
   });
 
-  it.each([22, 32] as const)("passes at the calibrated stopped-down aperture f/%s", (aperture) => {
+  it.each([32] as const)("passes at the calibrated stopped-down aperture f/%s", (aperture) => {
     const result = evaluateAt(aperture);
     expect(result.evaluation.status).toBe("passed");
     expect(result.evaluation.criteria.every((criterion) => criterion.passed)).toBe(true);
@@ -106,28 +108,29 @@ describe("Architecture + Foreground Aperture / Depth of Field task", () => {
 
     expect(minimumScore(stoppedDown)).toBeGreaterThan(minimumScore(start));
     expect(minimumScore(smallest)).toBeGreaterThan(minimumScore(stoppedDown));
+    expect(stoppedDown.evaluation.status).toBe("failed");
+    expect(criterionPassed("architecture-foreground-dof-focus-targets", stoppedDown.evaluation)).toBe(false);
     expect(stoppedDown.evaluation.criteria.find(
       (criterion) => criterion.criterionId === "architecture-foreground-dof-aperture",
-    )?.passed).toBe(true);
+    )?.passed).toBe(false);
+    expect(Object.values(targetSharpness(stoppedDown)).some((sharpness) => sharpness < 0.5)).toBe(true);
+    expect(stoppedDown.optics.focusTargets.some((target) => target.physicalPatchStatus === "soft")).toBe(true);
+    expect(Object.values(targetSharpness(smallest)).every((sharpness) => sharpness >= 0.5)).toBe(true);
+    expect(smallest.optics.focusTargets.every((target) => target.physicalPatchStatus !== "soft")).toBe(true);
     expect(smallest.evaluation.criteria.find(
       (criterion) => criterion.criterionId === "architecture-foreground-dof-aperture",
     )?.passed).toBe(true);
   });
 
-  it("does not let aperture hide an incorrect focus-plane setup", () => {
-    const tiltReset = evaluateAt(32, { frontTiltDeg: 0 });
-    const focusReset = evaluateAt(32, {
-      focusDistanceMm: geometry.canonicalFocusDistanceMm,
-    });
+  it("does not let a clearly wrong focus hide behind a stopped-down aperture", () => {
+    const wrongFocus = evaluateAt(32, { focusDistanceMm: 5000 });
 
-    expect(tiltReset.evaluation.status).toBe("failed");
-    expect(tiltReset.evaluation.criteria.every((criterion) =>
+    expect(wrongFocus.evaluation.status).toBe("failed");
+    expect(wrongFocus.evaluation.criteria.every((criterion) =>
       criterion.criterionId === "architecture-foreground-dof-focus-targets"
         ? !criterion.passed
         : true,
     )).toBe(true);
-    expect(focusReset.evaluation.status).toBe("failed");
-    expect(criterionPassed("architecture-foreground-dof-focus-targets", focusReset.evaluation)).toBe(false);
   });
 
   it("keeps composition, level perspective, and the focus plane unchanged while aperture changes DOF", () => {

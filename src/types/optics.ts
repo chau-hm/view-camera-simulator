@@ -55,6 +55,8 @@ export type Line3 = {
   direction: Vec3;
 };
 
+export type FocusTargetStatus = "sharp" | "acceptable" | "soft";
+
 export type Transform = {
   translation: Vec3;
   rotationDeg: Vec3;
@@ -68,19 +70,31 @@ export type Bounds3 = {
 export type FocusTargetSharpness = {
   id: string;
   distanceToFocusPlaneMm: number;
-  // legacy field kept for compatibility; may be undefined for wedge model
+  /** Legacy compatibility field; not used by physical learner/task paths. */
   acceptableRangeMm?: number | undefined;
+  /** Legacy DOF-wedge conservative patch score; not a physical learner/task metric. */
   sharpness: number;
-  status: "sharp" | "acceptable" | "soft";
-  /** Centre-sample focus used for point-focusing feedback in Free Mode. */
+  /** Status paired with the legacy wedge `sharpness` field. */
+  status: FocusTargetStatus;
+  /** Legacy DOF-wedge centre-sample score; not a physical learner/task metric. */
   pointSharpness?: number;
-  pointStatus?: "sharp" | "acceptable" | "soft";
-  /** Conservative worst-sample score used for whole-patch task coverage. */
+  pointStatus?: FocusTargetStatus;
+  /** Legacy DOF-wedge worst-sample score; not a physical learner/task metric. */
   patchSharpness?: number;
-  patchStatus?: "sharp" | "acceptable" | "soft";
-  /** Centre-sample defocus paired with pointSharpness. */
+  patchStatus?: FocusTargetStatus;
+  /** Physical film-space presentation metric paired with the point sample; strict presentation requires it. */
+  physicalPointSharpness?: number;
+  physicalPointStatus?: FocusTargetStatus;
+  /** Physical film-space presentation metric using the worst patch sample; strict task/presentation requires it. */
+  physicalPatchSharpness?: number;
+  physicalPatchStatus?: FocusTargetStatus;
+  /** Absolute equivalent CoC diameter used by the physical point metric. */
+  pointEquivalentCoCDiameterMm?: number | null;
+  /** Absolute equivalent CoC diameter used by the physical patch metric. */
+  patchEquivalentCoCDiameterMm?: number | null;
+  /** Legacy wedge defocus paired with pointSharpness. */
   pointNormalizedDefocus?: number;
-  /** Worst-sample defocus paired with patchSharpness. */
+  /** Legacy wedge defocus paired with patchSharpness. */
   patchNormalizedDefocus?: number;
   // extended diagnostics
   insideDepthOfField?: boolean;
@@ -88,6 +102,7 @@ export type FocusTargetSharpness = {
   nearBoundaryDistanceMm?: number | null;
   focusBoundaryDistanceMm?: number | null;
   farBoundaryDistanceMm?: number | null;
+  /** Legacy worst-sample wedge normalized defocus diagnostic. */
   normalizedDefocus?: number;
 };
 

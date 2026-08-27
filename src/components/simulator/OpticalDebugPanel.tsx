@@ -13,6 +13,7 @@ import type {
   GroundGlassRttRuntimeInfo,
 } from "../../render/groundGlassRttDimensions";
 import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugConstruction";
+import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
 import type { CameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
 import {
   getLazySceneAssets,
@@ -77,6 +78,8 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
   renderQuality,
   rttRuntimeInfo,
 }) => {
+  const [copyStatus, setCopyStatus] = React.useState<"idle" | "copied" | "failed">("idle");
+  const copyStatusTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const lens = opticsState.lensCenterWorld;
   const film = opticsState.filmPlane.point;
   const filmNormal = opticsState.filmPlane.normal;
@@ -94,6 +97,34 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
   const internalWidth = rttRuntimeInfo?.internalWidthPx ?? 1024;
   const logicalWidth = rttRuntimeInfo?.logicalWidthPx ?? 800;
 
+  React.useEffect(() => () => {
+    if (copyStatusTimeoutRef.current !== null) clearTimeout(copyStatusTimeoutRef.current);
+  }, []);
+
+  const showCopyStatus = (status: "copied" | "failed") => {
+    setCopyStatus(status);
+    if (copyStatusTimeoutRef.current !== null) clearTimeout(copyStatusTimeoutRef.current);
+    copyStatusTimeoutRef.current = setTimeout(() => {
+      copyStatusTimeoutRef.current = null;
+      setCopyStatus("idle");
+    }, 1800);
+  };
+
+  const copyProfilingSnapshot = async () => {
+    const snapshot = rttRuntimeInfo?.profilingSnapshot;
+    if (!snapshot) return;
+    const serializedSnapshot = JSON.stringify(snapshot, null, 2);
+    try {
+      if (typeof navigator === "undefined" || typeof navigator.clipboard?.writeText !== "function") {
+        throw new Error("Clipboard API unavailable");
+      }
+      await navigator.clipboard.writeText(serializedSnapshot);
+      showCopyStatus("copied");
+    } catch {
+      showCopyStatus("failed");
+    }
+  };
+
   const refDiagnostics = React.useMemo(() => {
     if (sceneId !== "architecture-rise") return null;
     return referenceObjects.map((obj: ReferenceObjectDef) => {
@@ -103,11 +134,10 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
         opticsState,
         focalLengthMm,
         aperture,
-        circleOfConfusionMm: 0.1,
+        circleOfConfusionMm: ACCEPTABLE_COC_DIAMETER_MM,
         filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
         renderWidthPx: internalWidth,
         maximumBlurRadiusPx: 60,
-        displayBlurScale: 1,
       });
       const logicalBlurRadiusPx = sample.blurRadiusPx * (logicalWidth / Math.max(1, internalWidth));
       return { id: obj.id, role: obj.role, probe, sample, logicalBlurRadiusPx };
@@ -199,6 +229,40 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
         </div>
       </details>
 
+      {rttRuntimeInfo?.profilingEnabled ? (
+        <details className="optical-debug__group" data-testid="ground-glass-profiling">
+          <summary>Ground Glass DOF profiling</summary>
+          <div className="optical-debug__group-content">
+            <div><strong>Backend:</strong> {rttRuntimeInfo.profilingBackend ?? "—"}</div>
+            <div><strong>Timing unit:</strong> {rttRuntimeInfo.profilingSnapshot?.timingUnit ?? "—"}</div>
+            <div><strong>GPU query state:</strong> {rttRuntimeInfo.profilingSnapshot?.profilingDiagnostics.gpuQueryState ?? "—"}</div>
+            <div><strong>Frame timing samples:</strong> {rttRuntimeInfo.profilingSnapshot?.frame.count ?? 0}</div>
+            <div><strong>Cumulative GPU frames:</strong> {rttRuntimeInfo.profilingSnapshot?.profilingDiagnostics.framesCompletedGpu ?? 0}</div>
+            <div><strong>GPU queries:</strong> {rttRuntimeInfo.profilingSnapshot ? `${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.queriesCompleted} completed · ${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.pendingQueries} pending / ${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.queryPoolSize} slots` : "—"}</div>
+            <div><strong>GPU frame admission:</strong> {rttRuntimeInfo.profilingSnapshot ? `${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.framesAccepted} accepted · ${rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.framesRejectedCapacity} capacity-skipped` : "—"}</div>
+            {rttRuntimeInfo.profilingSnapshot?.profilingDiagnostics.lastGpuQueryError ? (
+              <div><strong>GPU query error:</strong> {rttRuntimeInfo.profilingSnapshot.profilingDiagnostics.lastGpuQueryError}</div>
+            ) : null}
+            <div><strong>Approx. FPS:</strong> {rttRuntimeInfo.profilingSnapshot?.approxFps?.toFixed(1) ?? "—"} (frame timing, display-capped if applicable)</div>
+            <button
+              type="button"
+              className="btn btn--compact"
+              data-testid="ground-glass-profiling-copy"
+              disabled={!rttRuntimeInfo.profilingSnapshot}
+              onClick={() => { void copyProfilingSnapshot(); }}
+            >
+              {copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Copy failed" : "Copy snapshot"}
+            </button>
+            <pre
+              data-testid="ground-glass-profiling-snapshot"
+              style={{ maxHeight: "16rem", overflow: "auto", whiteSpace: "pre-wrap" }}
+            >
+              {JSON.stringify(rttRuntimeInfo.profilingSnapshot ?? null, null, 2)}
+            </pre>
+          </div>
+        </details>
+      ) : null}
+
       {refDiagnostics ? (
         <details className="optical-debug__group">
           <summary>Reference object diagnostics</summary>
@@ -222,7 +286,7 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
                     <div>Focus ray: {d.sample.focusRayDistanceMm !== null ? `${fmt(d.sample.focusRayDistanceMm, 1)} mm` : "—"}</div>
                     <div>Far ray: {d.sample.farRayDistanceMm !== null ? `${fmt(d.sample.farRayDistanceMm, 1)} mm` : d.sample.depthOfFieldModel === "parallel" ? "—" : "∞"}</div>
                     <div>Inside DOF: {insideDofText}</div>
-                    <div>Normalized defocus: {fmtNormalized(d.sample.normalizedDefocus)}</div>
+                    <div>{d.sample.depthOfFieldModel === "scheimpflug-wedge" ? "Wedge normalized defocus" : "Physical CoC / acceptable CoC"}: {fmtNormalized(d.sample.normalizedDefocus)}</div>
                     <div>CoC: {d.sample.circleOfConfusionDiameterMm ? d.sample.circleOfConfusionDiameterMm.toFixed(4) : "—"} mm ({d.sample.circleOfConfusionDiameterPx ? d.sample.circleOfConfusionDiameterPx.toFixed(3) : "—"} px)</div>
                     <div>Blur radius: {d.sample.blurRadiusPx ? d.sample.blurRadiusPx.toFixed(3) : "—"} internal px, {d.logicalBlurRadiusPx ? d.logicalBlurRadiusPx.toFixed(3) : "—"} display px</div>
                     {d.sample.diagnosticReason ? <div style={{ color: "#b91c1c" }}>Reason: {d.sample.diagnosticReason}</div> : null}

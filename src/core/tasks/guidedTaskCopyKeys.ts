@@ -262,6 +262,12 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
         k.architectureForegroundCompound.criteria.buildingBaseVisible,
       "architecture-foreground-compound-camera-level":
         k.architectureForegroundCompound.criteria.cameraLevel,
+      "architecture-foreground-compound-tilt-used":
+        k.architectureForegroundTiltFocus.criteria.tiltUsed,
+      "architecture-foreground-compound-tilt-range":
+        k.architectureForegroundTiltFocus.criteria.tiltRange,
+      "architecture-foreground-compound-focus-used":
+        k.architectureForegroundTiltFocus.criteria.focusUsed,
       "architecture-foreground-compound-focus-targets":
         k.architectureForegroundCompound.criteria.focusTargets,
     },
@@ -275,6 +281,12 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
           k.architectureForegroundCompound.feedback.primary.buildingBaseVisible,
         "architecture-foreground-compound-camera-level":
           k.architectureForegroundCompound.feedback.primary.cameraLevel,
+        "architecture-foreground-compound-tilt-used":
+          k.architectureForegroundTiltFocus.feedback.primary.tiltUsed,
+        "architecture-foreground-compound-tilt-range":
+          k.architectureForegroundTiltFocus.feedback.primary.tiltRange,
+        "architecture-foreground-compound-focus-used":
+          k.architectureForegroundTiltFocus.feedback.primary.focusUsed,
         "architecture-foreground-compound-focus-targets":
           k.architectureForegroundCompound.feedback.primary.focusTargets,
       },
@@ -285,6 +297,12 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
           k.architectureForegroundCompound.feedback.secondary.buildingBaseVisible,
         "architecture-foreground-compound-camera-level":
           k.architectureForegroundCompound.feedback.secondary.cameraLevel,
+        "architecture-foreground-compound-tilt-used":
+          k.architectureForegroundTiltFocus.feedback.secondary.tiltUsed,
+        "architecture-foreground-compound-tilt-range":
+          k.architectureForegroundTiltFocus.feedback.secondary.tiltRange,
+        "architecture-foreground-compound-focus-used":
+          k.architectureForegroundTiltFocus.feedback.secondary.focusUsed,
         "architecture-foreground-compound-focus-targets":
           k.architectureForegroundCompound.feedback.secondary.focusTargets,
       },

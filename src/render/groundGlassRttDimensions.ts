@@ -1,6 +1,11 @@
 import { getRenderQualitySettings } from "./renderQuality";
 import type { RenderQualityProfile } from "../types/ui";
 import { GROUND_GLASS_ZOOM_SCALE } from "./groundGlassStageTransform";
+import type { GroundGlassCocStorageFormat } from "./groundGlassCocTarget";
+import type {
+  GroundGlassProfilingBackend,
+  GroundGlassProfilingSnapshot,
+} from "./groundGlassProfiling";
 
 export type GroundGlassRttChannel =
   | "default"
@@ -42,8 +47,28 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   depthTargetWidthPx: number;
   depthTargetHeightPx: number;
 
+  /** Effective aperture-gather target dimensions; CoC is full resolution. */
   blurTargetWidthPx: number;
   blurTargetHeightPx: number;
+
+  dofTechnique?:
+    | "physical-coc-aperture-gather"
+    | "physical-coc-near-far-gather"
+    | "physical-coc-near-far-oriented-gather";
+  footprintRepresentation?: "local-affine-ellipse";
+  gatherScale?: number;
+  sampleCount?: number;
+  maximumCoCRadiusPx?: number;
+  cocStorageFormat?: GroundGlassCocStorageFormat;
+  cocAvailable?: boolean;
+  cocTargetWidthPx?: number;
+  cocTargetHeightPx?: number;
+  gatherTargetWidthPx?: number;
+  gatherTargetHeightPx?: number;
+  nearGatherTargetWidthPx?: number;
+  nearGatherTargetHeightPx?: number;
+  farGatherTargetWidthPx?: number;
+  farGatherTargetHeightPx?: number;
 
   finalTargetWidthPx: number;
   finalTargetHeightPx: number;
@@ -75,6 +100,9 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   renderSanitySampleCount?: number;
   renderSanityStateKey?: string;
   renderSanityError?: string | null;
+  profilingEnabled?: boolean;
+  profilingBackend?: GroundGlassProfilingBackend;
+  profilingSnapshot?: GroundGlassProfilingSnapshot;
   /** Values actually consumed by the current owned RTT subject/shader graph. */
   focalLengthMm?: number;
   latticeEdgeCount?: number;
