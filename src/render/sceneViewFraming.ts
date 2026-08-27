@@ -1,4 +1,7 @@
-import type { SceneDefinition } from "../types/scene";
+import type {
+  CameraInspectionAnchorSide,
+  SceneDefinition,
+} from "../types/scene";
 import type { Vec3 } from "../types/optics";
 import { transformRigLocalPointToWorld } from "../core/optics/applyCameraBodyPitch";
 import type { CameraRigTransform } from "../types/optics";
@@ -19,8 +22,8 @@ export type SceneViewportFraming = {
 
 type SceneViewportFramingScene = Pick<
   SceneDefinition,
-  | "id"
   | "cameraPlacement"
+  | "cameraInspectionAnchorSide"
   | "cameraInspectionPlacement"
   | "cameraBodyPitchCapability"
   | "cameraRigTranslationCapability"
@@ -69,11 +72,11 @@ export const resolveCameraInspectionFocusTargetWorld = (
 
 /** Resolve the stable body anchor used by scenes without a canonical rig transform. */
 export const resolveStableCameraInspectionTarget = (
-  sceneId: string,
+  cameraInspectionAnchorSide: CameraInspectionAnchorSide | undefined,
   focalLengthMm: number,
 ): [number, number, number] => {
   const nominalBodyCenterZMm =
-    sceneId === "focus-fundamentals-two-targets"
+    cameraInspectionAnchorSide === "front"
       ? focalLengthMm / 2
       : -focalLengthMm / 2;
 
@@ -136,7 +139,10 @@ export const resolveSceneViewportFraming = ({
   const usesCanonicalPhysicalPivot = scene.cameraBodyPitchCapability?.enabled === true;
   const cameraTarget = usesCanonicalPhysicalPivot
     ? resolveCameraInspectionFocusTargetWorld(cameraRigTransform)
-    : resolveStableCameraInspectionTarget(scene.id, focalLengthMm);
+    : resolveStableCameraInspectionTarget(
+        scene.cameraInspectionAnchorSide,
+        focalLengthMm,
+      );
   const calibratedCameraTarget = usesCanonicalPhysicalPivot
     ? resolveCameraInspectionFocusTargetWorld({
         ...cameraRigTransform,

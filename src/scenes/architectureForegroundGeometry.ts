@@ -5,7 +5,7 @@
 import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS } from "../utils/constants";
 import { roundToStep } from "../utils/roundToStep";
 import type { Bounds3, Vec3 } from "../types/optics";
-import type { CameraInspectionPlacement, CameraPlacement, FocusTarget } from "../types/scene";
+import type { CameraPlacement, FocusTarget } from "../types/scene";
 
 export type ArchitectureForegroundGroundGeometry = {
   y: number;
@@ -241,10 +241,6 @@ export const observerCamera: CameraPlacement = {
   target: { x: 0, y: 250, z: 6900 },
 };
 
-export const inspectionCamera: CameraInspectionPlacement = {
-  position: { x: 3000, y: 1900, z: -3600 },
-};
-
 /**
  * Values used by later movement slices. They are kept separate from the
  * rounded public-control values so calibration evidence remains physical.
@@ -301,7 +297,6 @@ export default {
   focusDistanceRangeMm,
   sceneBounds,
   observerCamera,
-  inspectionCamera,
   neutralCalibration,
   buildingVerticalEdges,
   filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,

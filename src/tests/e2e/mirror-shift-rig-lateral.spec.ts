@@ -29,6 +29,9 @@ const readStableViewState = async (scene: Locator): Promise<ViewState> => {
   return readViewState(scene);
 };
 
+const viewDistance = (view: ViewState) =>
+  Math.hypot(...view.position.map((coordinate, index) => coordinate - view.target[index]));
+
 const expectSameObserverOffset = (reference: ViewState, actual: ViewState) => {
   for (let index = 0; index < 3; index += 1) {
     expect(actual.position[index] - actual.target[index]).toBeCloseTo(
@@ -131,6 +134,7 @@ test("Mirror Shift Camera focus follows the rig while Scene focus stays fixed", 
   // Mirror Shift uses the shared stable body-midpoint anchor at -60 mm for
   // its 120 mm camera, rather than the former subject-space target.
   expect(neutralCameraPreset.target).toEqual([0, 0, -0.06]);
+  expect(viewDistance(neutralCameraPreset)).toBeCloseTo(0.72, 4);
   await orbitScene(page, scene);
   await expect.poll(async () => (await readViewState(scene)).position).not.toEqual(
     neutralCameraPreset.position,
@@ -152,6 +156,7 @@ test("Mirror Shift Camera focus follows the rig while Scene focus stays fixed", 
     expect(movedCameraView.position[index] - neutralCameraView.position[index]).toBeCloseTo(0, 5);
   }
   expectSameObserverOffset(neutralCameraView, movedCameraView);
+  expect(viewDistance(movedCameraView)).toBeCloseTo(viewDistance(neutralCameraView), 5);
 
   await sceneButton.click();
   await expect(scene).toHaveAttribute("data-view-focus", "scene");

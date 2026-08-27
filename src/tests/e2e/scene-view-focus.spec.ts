@@ -324,6 +324,7 @@ test("Architecture + Foreground Camera focus uses the physical camera anchor", a
   // stable physical body-midpoint anchor is -75 mm on the optical axis.
   expect(sceneView.target).toEqual([0, 0.25, 6.9]);
   expect(cameraView.target).toEqual([0, 0, -0.075]);
+  expect(viewDistance(cameraView)).toBeCloseTo(0.72, 4);
   expect(cameraView.target).not.toEqual(sceneView.target);
   expect(cameraView.target[2]).not.toBeCloseTo(6.5, 5);
 });
