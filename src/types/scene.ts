@@ -31,6 +31,11 @@ export type CameraPlacement = {
   target: Vec3;
 };
 
+/** Calibrated observer placement for Camera focus; its orbit target is resolved by viewport framing. */
+export type CameraInspectionPlacement = {
+  position: Vec3;
+};
+
 export type CameraMovementField =
   "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "rearRiseMm" | "rearTiltDeg";
 
@@ -122,8 +127,8 @@ export type SceneDefinition = {
   cameraFrontShiftCapability?: SceneCameraFrontShiftCapability;
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
   movementCapabilities?: SceneMovementCapabilities;
-  /** Optional camera-inspection observer framing. When absent, the default fallback applies. */
-  cameraInspectionPlacement?: CameraPlacement;
+  /** Optional camera-inspection observer position. The physical orbit target is resolved by viewport framing. */
+  cameraInspectionPlacement?: CameraInspectionPlacement;
   /** Optional per-scene control policy. When absent, all controls are available. */
   cameraControlPolicy?: CameraControlPolicy;
 };

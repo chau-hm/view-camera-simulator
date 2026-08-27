@@ -128,6 +128,9 @@ test("Mirror Shift Camera focus follows the rig while Scene focus stays fixed", 
   await cameraButton.click();
   await expect(scene).toHaveAttribute("data-view-focus", "camera");
   const neutralCameraPreset = await readStableViewState(scene);
+  // Mirror Shift uses the shared stable body-midpoint anchor at -60 mm for
+  // its 120 mm camera, rather than the former subject-space target.
+  expect(neutralCameraPreset.target).toEqual([0, 0, -0.06]);
   await orbitScene(page, scene);
   await expect.poll(async () => (await readViewState(scene)).position).not.toEqual(
     neutralCameraPreset.position,

@@ -308,6 +308,26 @@ test("Understanding Camera Movements Camera focus follows continuous viewpoint c
   await expect(sceneCanvas).toHaveAttribute("data-mounted-lattice-generation", generation!);
 });
 
+test("Architecture + Foreground Camera focus uses the physical camera anchor", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto("/simulator/free/architecture-foreground");
+
+  const sceneCanvas = page.getByTestId("scene-canvas");
+  await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
+  const sceneView = await readStableViewState(sceneCanvas);
+
+  await page.getByRole("button", { name: "Camera", exact: true }).click();
+  await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");
+  const cameraView = await readStableViewState(sceneCanvas);
+
+  // Architecture + Foreground has a 150 mm focal length, so the shared
+  // stable physical body-midpoint anchor is -75 mm on the optical axis.
+  expect(sceneView.target).toEqual([0, 0.25, 6.9]);
+  expect(cameraView.target).toEqual([0, 0, -0.075]);
+  expect(cameraView.target).not.toEqual(sceneView.target);
+  expect(cameraView.target[2]).not.toBeCloseTo(6.5, 5);
+});
+
 test("guided task restart restores task Optical Geometry preset", async ({ page }) => {
   test.setTimeout(30_000);
 
