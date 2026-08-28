@@ -11,10 +11,16 @@ import type { RenderQualityProfile } from "../../types/ui";
 import type { CameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
 import type { CameraMovementPresentationRegion } from "../../scenes/cameraMovementSceneCalibration";
 import type { EffectiveCameraMovementCalibration } from "../../scenes/cameraMovementEffectiveCalibration";
+import type {
+  GroundGlassRttRuntimeInfoByChannel,
+  GroundGlassRttRuntimeInfoChangeHandler,
+} from "../../render/groundGlassRttDimensions";
 
 type GroundGlassViewportProps = {
   opticsState: DerivedOpticsState;
-  scene?: SceneDefinition;
+  scene: SceneDefinition;
+  runtimeInfoByChannel: GroundGlassRttRuntimeInfoByChannel;
+  onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler;
   groundGlassAssistEnabled: boolean;
   onGroundGlassAssistEnabledChange: (enabled: boolean) => void;
   // current state (from camera)
@@ -29,8 +35,7 @@ type GroundGlassViewportProps = {
   focusDistanceMm: number;
   aperture: ApertureValue;
   renderQuality: RenderQualityProfile;
-  sceneId: string;
-  focalLengthMm?: number;
+  focalLengthMm: number;
   lastFiniteFocusDepthMm?: number;
   effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
   presentationRegion?: CameraMovementPresentationRegion;
@@ -62,8 +67,9 @@ export const GroundGlassViewport = ({
   focusDistanceMm,
   aperture,
   renderQuality,
-  sceneId,
   focalLengthMm,
+  runtimeInfoByChannel,
+  onRuntimeInfoChange,
   lastFiniteFocusDepthMm,
   effectiveCameraMovementCalibration,
   presentationRegion,
@@ -80,6 +86,7 @@ export const GroundGlassViewport = ({
   comparisonLabels,
 }: GroundGlassViewportProps) => {
   const { t } = useTranslation();
+  const sceneId = scene.id;
   // Preview mode control local to the Ground Glass panel. Default to camera state
   const [previewMode, setPreviewMode] = useState<"raw" | "upright">(groundGlassAssistEnabled ? "upright" : "raw");
 
@@ -150,7 +157,6 @@ export const GroundGlassViewport = ({
           focalLengthMm={layer.camera.focalLengthMm}
           effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
           renderQuality={renderQuality}
-          sceneId={sceneId}
           previewMode={previewMode}
           rawDebug={rawRttDebug}
           focusMetric={focusMetric}
@@ -160,6 +166,8 @@ export const GroundGlassViewport = ({
           cameraState={layer.camera}
           channel={label === "Original" ? "camera-movement-original" : "camera-movement-current"}
           presentationRegion={layer.presentationTargetRegion}
+          runtimeInfo={runtimeInfoByChannel[label === "Original" ? "camera-movement-original" : "camera-movement-current"]}
+          onRuntimeInfoChange={onRuntimeInfoChange}
           accessibleLabel={label === "Original" ? originalStageLabel : currentStageLabel}
           stageLabel={label === "Original" ? originalStageLabel : currentStageLabel}
           zoomInLabel={zoomInLabel}
@@ -170,7 +178,7 @@ export const GroundGlassViewport = ({
         />
       </section>
     ),
-    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusAssistEnabled, focusMetric, gridEnabled, interactionResetKey, originalStageLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, scene, sceneId, t, zoomInLabel, zoomOutLabel],
+    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusAssistEnabled, focusMetric, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t, zoomInLabel, zoomOutLabel],
   );
 
   useEffect(() => {
@@ -297,7 +305,8 @@ export const GroundGlassViewport = ({
               lastFiniteFocusDepthMm={lastFiniteFocusDepthMm}
               effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
               renderQuality={renderQuality}
-              sceneId={sceneId}
+              runtimeInfo={runtimeInfoByChannel.default}
+              onRuntimeInfoChange={onRuntimeInfoChange}
               previewMode={previewMode}
               rawDebug={rawRttDebug}
               focusMetric={focusMetric}

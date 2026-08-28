@@ -1,8 +1,6 @@
-import { useCallback } from "react";
 import type { DerivedOpticsState } from "../types/optics";
 import { GroundGlassRTT } from "./GroundGlassRTT";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
-import { useAppStore } from "../state/appStore";
 import type { SceneDefinition } from "../types/scene";
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
 import type {
@@ -14,8 +12,7 @@ import type {
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
   focalLengthMm: number;
-  sceneId?: string;
-  scene?: SceneDefinition;
+  scene: SceneDefinition;
   apertureNumber: number;
   previewMode: "raw" | "upright";
   rawDebug?: boolean;
@@ -40,7 +37,6 @@ export type GroundGlassRenderSurfaceProps = {
 export const GroundGlassRenderSurface = ({
   opticsState,
   focalLengthMm,
-  sceneId,
   scene,
   apertureNumber,
   previewMode,
@@ -62,38 +58,15 @@ export const GroundGlassRenderSurface = ({
   runtimeInfo: explicitRuntimeInfo,
   onRuntimeInfoChange: explicitRuntimeInfoChange,
 }: GroundGlassRenderSurfaceProps) => {
-  // Keep the application-store bridge at this adapter boundary. The reusable
-  // RTT component below only publishes through its explicit callback.
-  const connectedRuntimeInfo = useAppStore((state) =>
-    channel === "default"
-      ? state.groundGlassRttRuntimeInfo
-      : state.groundGlassRttRuntimeInfoByChannel?.[channel] ?? null,
-  );
-  const setGroundGlassRttRuntimeInfo = useAppStore(
-    (state) => state.setGroundGlassRttRuntimeInfo,
-  );
-  const setGroundGlassRttRuntimeInfoForChannel = useAppStore(
-    (state) => state.setGroundGlassRttRuntimeInfoForChannel,
-  );
-  const connectedRuntimeInfoChange = useCallback<GroundGlassRttRuntimeInfoChangeHandler>(
-    (runtimeChannel, info, ownerId) => {
-      if (runtimeChannel === "default") {
-        setGroundGlassRttRuntimeInfo(info, ownerId);
-      } else {
-        setGroundGlassRttRuntimeInfoForChannel(runtimeChannel, info, ownerId);
-      }
-    },
-    [setGroundGlassRttRuntimeInfo, setGroundGlassRttRuntimeInfoForChannel],
-  );
-  const rttRuntimeInfo = explicitRuntimeInfo ?? connectedRuntimeInfo;
-  const runtimeInfoChange = explicitRuntimeInfoChange ?? connectedRuntimeInfoChange;
-  const resolvedSceneId = scene?.id ?? sceneId;
-  if (isGroundGlassRttScene(resolvedSceneId)) {
+  const rttRuntimeInfo = explicitRuntimeInfo;
+  const runtimeInfoChange = explicitRuntimeInfoChange;
+  const sceneId = scene.id;
+  if (isGroundGlassRttScene(sceneId)) {
     return (
       <div
         data-testid="ground-glass-rtt"
         data-rtt-channel={channel}
-        data-rtt-scene-id={resolvedSceneId}
+        data-rtt-scene-id={sceneId}
         data-rtt-camera-ok={rttRuntimeInfo?.cameraConfigurationOk === undefined ? undefined : String(rttRuntimeInfo.cameraConfigurationOk)}
         data-rtt-depth-available={rttRuntimeInfo?.depthTextureAvailable === undefined ? undefined : String(rttRuntimeInfo.depthTextureAvailable)}
         data-rtt-uniforms-finite={rttRuntimeInfo?.uniformsFinite === undefined ? undefined : String(rttRuntimeInfo.uniformsFinite)}
@@ -155,7 +128,6 @@ export const GroundGlassRenderSurface = ({
         <GroundGlassRTT
           opticsState={opticsState}
           focalLengthMm={focalLengthMm}
-          sceneId={resolvedSceneId}
           scene={scene}
           widthPx={widthPx}
           heightPx={heightPx}

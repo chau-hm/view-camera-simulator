@@ -122,6 +122,11 @@ export type GroundGlassRttRuntimeInfoChangeHandler = (
   ownerId: string,
 ) => void;
 
+export type GroundGlassRttRuntimeInfoByChannel = Record<
+  GroundGlassRttChannel,
+  GroundGlassRttRuntimeInfo | null
+>;
+
 const MAX_INTERNAL_WIDTH = 1600;
 const MAX_INTERNAL_HEIGHT = 1280;
 
