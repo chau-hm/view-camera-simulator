@@ -7,7 +7,7 @@ import { formatMillimeter } from "../utils/formatters";
 export type GroundGlassOverlaysProps = {
   gridEnabled: boolean;
   rawDebug?: boolean;
-  isFocusFundamentals: boolean;
+  showDecorativeVignette: boolean;
   blurOpacity: number;
   isInfinityFocus: boolean;
   lastFiniteFocusDepthMm?: number;
@@ -15,7 +15,7 @@ export type GroundGlassOverlaysProps = {
   focusAssistVisible: boolean;
 };
 
-export const GroundGlassTransformedOverlays = ({ gridEnabled, rawDebug, isFocusFundamentals, blurOpacity }: { gridEnabled: boolean; rawDebug?: boolean; isFocusFundamentals: boolean; blurOpacity: number }): ReactNode | null => {
+export const GroundGlassTransformedOverlays = ({ gridEnabled, rawDebug, showDecorativeVignette, blurOpacity }: { gridEnabled: boolean; rawDebug?: boolean; showDecorativeVignette: boolean; blurOpacity: number }): ReactNode | null => {
   return (
     <>
       {!rawDebug && (
@@ -53,7 +53,7 @@ export const GroundGlassTransformedOverlays = ({ gridEnabled, rawDebug, isFocusF
         />
       )}
 
-      {!(isFocusFundamentals || rawDebug) && (
+      {showDecorativeVignette && !rawDebug && (
         <div
           style={{
             position: "absolute",
