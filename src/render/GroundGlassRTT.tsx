@@ -9,21 +9,15 @@ const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
 import { vecToWorld } from "./rttUtils";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import {
-  createRegisteredRttSubject,
-  disposeRegisteredRttSubject,
-  getSceneSubjectRegistration,
-} from "./sceneSubjectRegistry";
-import { updateMirrorShiftCameraReflection } from "./MirrorShiftSubjectFactory";
-import {
   CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
   resolveCameraMovementLatticeRenderModel,
 } from "./cameraMovementLatticeRenderModel";
 import {
-  mountCameraMovementRttSubject,
-  unmountCameraMovementRttSubject,
-  updateCameraMovementRttSubjectTarget,
-  type MountedCameraMovementRttSubject,
-} from "./cameraMovementRttSubjectLifecycle";
+  getGroundGlassSceneProfile,
+  type GroundGlassSceneProfileContext,
+  type GroundGlassSceneProfileUpdateContext,
+  type MountedGroundGlassSceneSubject,
+} from "./groundGlassSceneProfiles";
 import {
   configureGroundGlassCamera,
   readGroundGlassCameraPose,
@@ -130,6 +124,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     ? resolveCameraMovementLatticeRenderModel(effectiveCameraMovementCalibration)
     : CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
   const resolvedSceneId = sceneDefinition.id;
+  const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
   const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
   const profilingEnabled = isGroundGlassProfilingEnabled();
 
@@ -163,9 +158,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     fillLight: THREE.DirectionalLight;
     target: THREE.Object3D;
   } | null>(null);
-  const mountedCameraMovementRttSubjectRef =
-    useRef<MountedCameraMovementRttSubject | null>(null);
-  const mirrorShiftRttSubjectRef = useRef<THREE.Group | null>(null);
+  const mountedSceneSubjectRef = useRef<MountedGroundGlassSceneSubject | null>(null);
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality, zoomEnabled });
   sizeInputsRef.current = { widthPx, heightPx, renderQuality, zoomEnabled };
 
@@ -645,19 +638,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
   useEffect(() => {
     const scene = offscreenScene.current;
-    if (!resolvedSceneId || !scene) return;
+    if (!scene) return;
 
-    const registration = getSceneSubjectRegistration(resolvedSceneId);
-    const subjectOptions = {
-      presentationRegion: undefined,
-      cameraMovementRenderModel:
-        resolvedSceneId === "understanding-camera-movements"
-          ? cameraMovementRenderModel
-          : undefined,
+    const profileContext: GroundGlassSceneProfileContext = {
+      scene: sceneDefinition,
+      cameraMovementRenderModel,
+      presentationRegion: presentationRegionRef.current,
     };
-    const lighting =
-      registration?.resolveRttLighting?.(subjectOptions) ??
-      registration?.rttLighting;
+    const lighting = sceneProfile.resolveRttLighting(profileContext);
     const lightingRig = lightingRigRef.current;
     if (lighting && lightingRig) {
       const lightingTarget = new THREE.Vector3(
@@ -676,110 +664,88 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       );
     }
 
-    if (resolvedSceneId === "understanding-camera-movements") {
-      const mounted = mountCameraMovementRttSubject(
-        scene,
-        cameraMovementRenderModel,
-        presentationRegionRef.current,
-      );
-      mountedCameraMovementRttSubjectRef.current = mounted;
-      const runtimeInfo = mounted.runtimeInfo;
-      const currentInfo = readRuntimeInfo();
-      if (currentInfo) {
+    const mounted = sceneProfile.mountSubject(scene, profileContext);
+    if (!mounted) return;
+    mountedSceneSubjectRef.current = mounted;
+
+    const runtimeInfo = mounted.runtimeInfo;
+    const currentInfo = readRuntimeInfo();
+    if (runtimeInfo && currentInfo) {
+      setRuntimeInfo({
+        ...currentInfo,
+        latticeEdgeCount: runtimeInfo.edgeCount,
+        latticeGeometryId: runtimeInfo.geometryId,
+        latticeGeometryKey: runtimeInfo.geometryKey,
+        latticePresentationKey: runtimeInfo.presentationKey,
+        latticeResourceKey: runtimeInfo.resourceKey,
+        latticePresentationRegion: runtimeInfo.presentationRegion,
+        latticeSubjectGeneration: runtimeInfo.generation,
+      });
+    }
+
+    return () => {
+      if (mountedSceneSubjectRef.current === mounted) {
+        mountedSceneSubjectRef.current = null;
+      }
+      mounted.dispose();
+      const latestInfo = readRuntimeInfo();
+      if (
+        runtimeInfo &&
+        latestInfo?.latticeSubjectGeneration === runtimeInfo.generation
+      ) {
         setRuntimeInfo({
-          ...currentInfo,
-          latticeEdgeCount: runtimeInfo.edgeCount,
-          latticeGeometryId: runtimeInfo.geometryId,
-          latticeGeometryKey: runtimeInfo.geometryKey,
-          latticePresentationKey: runtimeInfo.presentationKey,
-          latticeResourceKey: runtimeInfo.resourceKey,
-          latticePresentationRegion: runtimeInfo.presentationRegion,
-          latticeSubjectGeneration: runtimeInfo.generation,
+          ...latestInfo,
+          latticeEdgeCount: undefined,
+          latticeGeometryId: undefined,
+          latticeGeometryKey: undefined,
+          latticePresentationKey: undefined,
+          latticeResourceKey: undefined,
+          latticePresentationRegion: undefined,
+          latticeSubjectGeneration: undefined,
         });
       }
-
-      return () => {
-        if (mountedCameraMovementRttSubjectRef.current === mounted) {
-          mountedCameraMovementRttSubjectRef.current = null;
-        }
-        unmountCameraMovementRttSubject(mounted);
-        const latestInfo = readRuntimeInfo();
-        if (
-          latestInfo?.latticeSubjectGeneration === runtimeInfo.generation
-        ) {
-          setRuntimeInfo({
-            ...latestInfo,
-            latticeEdgeCount: undefined,
-            latticeGeometryId: undefined,
-            latticeGeometryKey: undefined,
-            latticePresentationKey: undefined,
-            latticeResourceKey: undefined,
-            latticePresentationRegion: undefined,
-            latticeSubjectGeneration: undefined,
-          });
-        }
-      };
-    }
-
-    const subjectGroup = createRegisteredRttSubject(resolvedSceneId, subjectOptions);
-    if (!subjectGroup) return;
-    if (resolvedSceneId === "mirror-shift") {
-      mirrorShiftRttSubjectRef.current = subjectGroup;
-    }
-    scene.add(subjectGroup);
-    return () => {
-      if (mirrorShiftRttSubjectRef.current === subjectGroup) {
-        mirrorShiftRttSubjectRef.current = null;
-      }
-      scene.remove(subjectGroup);
-      disposeRegisteredRttSubject(resolvedSceneId, subjectGroup);
     };
   }, [
     cameraMovementRenderModel,
-    resolvedSceneId,
+    sceneDefinition,
+    sceneProfile,
     readRuntimeInfo,
     setRuntimeInfo,
   ]);
 
-  const mirrorShiftRigOrigin = opticsState.cameraRigTransform.rigOriginWorld;
-  const mirrorShiftFrontShiftMm = opticsState.cameraBodyLocalGeometry.lensCenterLocal.x;
+  // Scene profiles own any scene-specific mutation of their mounted subject.
   useEffect(() => {
-    if (resolvedSceneId !== "mirror-shift") return;
-    const subjectGroup = mirrorShiftRttSubjectRef.current;
-    if (!subjectGroup) return;
-    updateMirrorShiftCameraReflection(subjectGroup, {
-      x: mirrorShiftRigOrigin.x,
-      y: mirrorShiftRigOrigin.y,
-      z: mirrorShiftRigOrigin.z,
-    }, mirrorShiftFrontShiftMm);
-  }, [
-    mirrorShiftFrontShiftMm,
-    mirrorShiftRigOrigin.x,
-    mirrorShiftRigOrigin.y,
-    mirrorShiftRigOrigin.z,
-    resolvedSceneId,
-  ]);
-
-  // Target teaching steps are presentation-only. Keep the mounted subject and
-  // all owned GPU resources stable while mutating its existing materials.
-  useEffect(() => {
-    if (resolvedSceneId !== "understanding-camera-movements") return;
-    const mounted = mountedCameraMovementRttSubjectRef.current;
+    const mounted = mountedSceneSubjectRef.current;
     if (!mounted) return;
-    updateCameraMovementRttSubjectTarget(
-      mounted,
+
+    const profileUpdateContext: GroundGlassSceneProfileUpdateContext = {
+      scene: sceneDefinition,
       cameraMovementRenderModel,
       presentationRegion,
-    );
+      opticsState,
+    };
+    mounted.update?.(profileUpdateContext);
+
+    const runtimeInfo = mounted.runtimeInfo;
     const currentInfo = readRuntimeInfo();
-    if (currentInfo?.latticeSubjectGeneration !== mounted.runtimeInfo.generation) {
+    if (
+      !runtimeInfo ||
+      currentInfo?.latticeSubjectGeneration !== runtimeInfo.generation
+    ) {
       return;
     }
     setRuntimeInfo({
       ...currentInfo,
       latticePresentationRegion: presentationRegion,
     });
-  }, [cameraMovementRenderModel, presentationRegion, readRuntimeInfo, resolvedSceneId, setRuntimeInfo]);
+  }, [
+    cameraMovementRenderModel,
+    opticsState,
+    presentationRegion,
+    readRuntimeInfo,
+    sceneDefinition,
+    setRuntimeInfo,
+  ]);
 
   // Logical size, quality, DPR, and zoom affect only internal RTT resolution.
   // Keep the scene subject, camera, materials, post-processing scenes, and
@@ -908,14 +874,16 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
     // Configure once with a conservative preliminary range so the actual
     // Three.js camera forward vector can drive the final pitch-safe range.
-    const registeredSceneDef = sceneDefinition;
+    const profileContext: GroundGlassSceneProfileContext = {
+      scene: sceneDefinition,
+      cameraMovementRenderModel,
+      presentationRegion,
+    };
+    const effectiveBounds = sceneProfile.resolveRenderBounds(profileContext);
     const sceneDef =
-      registeredSceneDef?.id === "understanding-camera-movements"
-        ? {
-            ...registeredSceneDef,
-            bounds: cameraMovementRenderModel.subjectBounds,
-          }
-        : registeredSceneDef;
+      effectiveBounds === sceneDefinition.bounds
+        ? sceneDefinition
+        : { ...sceneDefinition, bounds: effectiveBounds };
     const preliminaryClipRange = getGroundGlassClipRangeWorld(
       sceneDef,
       opticsState.lensCenterWorld,
