@@ -1,6 +1,6 @@
 # Ground Glass scene profiles — Standard PR
 
-- Work identifier: `refactor/ground-glass-scene-profiles` / new Ground Glass scene-profile PR.
+- Work identifier: PR #100 review/implementation, `refactor/ground-glass-scene-profiles`.
 - Branch/base: `refactor/ground-glass-scene-profiles` from `origin/main` at `b0698432bad1c096b32e2ac083e8ecb209dd990a` (PR #99).
 - Substantive HEAD: `d86eb10` (`refactor(render): centralize Ground Glass scene profiles`).
 - Objective: keep GroundGlassRTT generic by resolving scene subject lifecycle, dynamic updates, and effective bounds through a small profile layer.
@@ -19,7 +19,7 @@
 - Typecheck, lint, CSS structure check, build, and `git diff --check`: pass.
 - Focused E2E: 14/15 pass. The only failure is the existing `understanding-camera-movements.spec.ts:182` SPA-route diagnostic assertion at line 308, missing `data-rtt-focal-length-mm="150"` after the route transition.
 - `npm run ci:local:e2e`: CSS, lint, typecheck, all unit/integration, build, and preceding E2E suites passed; stopped at unrelated `mirror-shift-teaching-geometry.spec.ts:32` after 30s waiting for the RTT element on the Geometry-only path.
-- Remote Actions: no run created for this branch yet; repository context records the known hosted npm-install failure resolving `eslint-plugin-react-hooks@^6.8.0`; no dependency or workflow changes made.
+- Remote Actions: PR #100 `ci` run `33194385685` failed during `npm ci` with `No matching version found for eslint-plugin-react-hooks@^6.8.0`; a second `ci` run is pending and deploy is skipped. No dependency or workflow changes made.
 
 ## Reviewer focus
 
