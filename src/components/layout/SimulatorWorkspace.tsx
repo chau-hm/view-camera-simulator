@@ -46,6 +46,11 @@ import {
 } from "../../render/postprocessing/FocusAssistPass";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
+import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
+import type {
+  GroundGlassRttRuntimeInfoByChannel,
+  GroundGlassRttRuntimeInfoChangeHandler,
+} from "../../render/groundGlassRttDimensions";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
 import {
   formatCameraMovementLessonReadout,
@@ -78,6 +83,9 @@ export const SimulatorWorkspace = ({
   const setActiveScene = useAppStore((state) => state.setActiveScene);
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
+  const setGroundGlassAssistEnabled = useAppStore(
+    (state) => state.setGroundGlassAssistEnabled,
+  );
   const clearCameraMovementCalibrationSession = useAppStore(
     (state) => state.clearCameraMovementCalibrationSession,
   );
@@ -219,6 +227,10 @@ export const SimulatorWorkspace = ({
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
+  const presentationRegion =
+    safeScene.id === "understanding-camera-movements" && camera.cameraMovementLessonState
+      ? resolveCameraMovementLessonPresentationTargetRegion(camera.cameraMovementLessonState)
+      : targetRegion;
   const publicSceneEntry = getPublicSceneEntryById(sceneId);
   const guidedLessonContext = useMemo(
     () =>
@@ -361,6 +373,36 @@ export const SimulatorWorkspace = ({
 
   // RTT runtime info
   const rttRuntimeInfo = useAppStore((s) => s.groundGlassRttRuntimeInfo);
+  const originalRttRuntimeInfo = useAppStore(
+    (s) => s.groundGlassRttRuntimeInfoByChannel?.["camera-movement-original"] ?? null,
+  );
+  const currentRttRuntimeInfo = useAppStore(
+    (s) => s.groundGlassRttRuntimeInfoByChannel?.["camera-movement-current"] ?? null,
+  );
+  const setGroundGlassRttRuntimeInfo = useAppStore(
+    (state) => state.setGroundGlassRttRuntimeInfo,
+  );
+  const setGroundGlassRttRuntimeInfoForChannel = useAppStore(
+    (state) => state.setGroundGlassRttRuntimeInfoForChannel,
+  );
+  const groundGlassRuntimeInfoByChannel = useMemo<GroundGlassRttRuntimeInfoByChannel>(
+    () => ({
+      default: rttRuntimeInfo ?? null,
+      "camera-movement-original": originalRttRuntimeInfo,
+      "camera-movement-current": currentRttRuntimeInfo,
+    }),
+    [currentRttRuntimeInfo, originalRttRuntimeInfo, rttRuntimeInfo],
+  );
+  const onGroundGlassRuntimeInfoChange = useCallback<GroundGlassRttRuntimeInfoChangeHandler>(
+    (channel, info, ownerId) => {
+      if (channel === "default") {
+        setGroundGlassRttRuntimeInfo(info, ownerId);
+      } else {
+        setGroundGlassRttRuntimeInfoForChannel(channel, info, ownerId);
+      }
+    },
+    [setGroundGlassRttRuntimeInfo, setGroundGlassRttRuntimeInfoForChannel],
+  );
 
   const tableTiltFocusMetric =
     safeScene.id === "table-tilt" && mode === "free" ? "point" : "patch";
@@ -466,7 +508,11 @@ export const SimulatorWorkspace = ({
 
               <GroundGlassViewport
                 opticsState={opticsState}
-                orientationAssistEnabled={mode === "free"}
+                scene={safeScene}
+                runtimeInfoByChannel={groundGlassRuntimeInfoByChannel}
+                onRuntimeInfoChange={onGroundGlassRuntimeInfoChange}
+                groundGlassAssistEnabled={camera.groundGlassAssistEnabled}
+                onGroundGlassAssistEnabledChange={setGroundGlassAssistEnabled}
                 focusAssistEnabled={camera.focusAssistEnabled}
                 gridEnabled={camera.gridEnabled}
                 canToggleFocusAssist={enabledControls.has("focusAssist")}
@@ -477,7 +523,10 @@ export const SimulatorWorkspace = ({
                 focusDistanceMm={camera.focusDistanceMm}
                 aperture={camera.aperture}
                 renderQuality={renderQuality}
-                sceneId={camera.activeSceneId}
+                focalLengthMm={camera.focalLengthMm}
+                lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
+                effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+                presentationRegion={presentationRegion}
                 lockReason={lockReason}
                 rawRttDebug={rawRttDebug}
                 focusMetric={tableTiltFocusMetric}

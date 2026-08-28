@@ -1,37 +1,25 @@
-# PR #98 — Scene viewport framing review-fix
+# PR #99 review-fix — explicit Ground Glass rendering boundary
 
-- Work identifier: `refactor/self-contained-scene-viewport` / PR #98 review-fix round.
-- Branch: `refactor/self-contained-scene-viewport`.
-- Base: `origin/main` at `37415e7032cb7f0861037a09adc581aa6df9ff1c`.
-- Substantive HEAD: `ddf95a8b63983b69884b2aa4d3633a8d9b9ab9fa`.
-- Objective: complete the reusable Scene/Camera viewport framing contract without broadening PR #98.
+- Work identifier: PR #99 review-fix, `refactor/self-contained-ground-glass-viewport`.
+- Branch/base: `refactor/self-contained-ground-glass-viewport` from `origin/main` at `ea574cc97d002c0b5cc1057ca339bf99a5a746be`.
+- Substantive HEAD: `a953a52` (`fix(render): complete Ground Glass explicit boundary`).
+- Findings fixed: `SceneDefinition` and `focalLengthMm` are required at the reusable viewport/renderer/RTT boundary; stale scene-ID/implicit focal inputs are removed.
 
-## Framing contract decision
+## Boundary
 
-- Mirror Shift and Architecture + Foreground use the shared generic physical body anchor and reusable `0.72` world-unit inspection distance; stale absolute observer calibrations were removed.
-- Focus Fundamentals declares the semantic `front` stable inspection anchor; `resolveStableCameraInspectionTarget()` no longer selects by public scene ID.
-- Canonical rig scenes and SceneRenderer/SceneViewport boundaries remain unchanged from PR #98.
+- `SimulatorWorkspace` is the only connected Ground Glass adapter: it maps default/Original/Current runtime diagnostics and preserves owner-aware store actions.
+- `GroundGlassViewport`, `GroundGlassRenderer`, `GroundGlassRenderSurface`, and `GroundGlassRTT` consume explicit scene, physical focal length, presentation/calibration, runtime-info, and callback inputs; no direct Zustand imports remain in the pure stack.
+- Explicit `runtimeInfo={null}` remains null. RTT publication continues as `(channel, info, ownerId)` with per-channel stale-owner protection.
 
-## Changed surfaces
+## Evidence
 
-- Framing/schema: `src/render/sceneViewFraming.ts`, `src/types/scene.ts`.
-- Scene migration: Mirror Shift, Architecture + Foreground, Focus Fundamentals.
-- Regression evidence: framing unit tests and Scene View Focus/Mirror Shift browser tests.
-
-## Validation
-
-- Pass: focused framing unit tests — 18 tests.
-- Pass: focused browser regressions — `scene-view-focus.spec.ts` 5/5 and `mirror-shift-rig-lateral.spec.ts` 2/2.
-- Pass: `npm test` — 141 files / 1,348 tests.
-- Pass: `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`, `git diff --check`.
-- Incomplete: `npm run ci:local:e2e` passed its pre-E2E gates and earlier suites, then stopped at `focus-fundamentals-selectable-focus.spec.ts` test 1 with `Ground Glass RTT diagnostics were incomplete` while `ownerId`/`resourceGeneration` were unavailable; the same existing diagnostic failure reproduced in isolation. No RTT code was changed.
-
-## Tests not run / remaining risks
-
-- E2E files after the merge-gate stop were not run.
-- Remote Actions remains subject to the existing `npm ci` resolution failure for `eslint-plugin-react-hooks@^6.8.0`; dependency management is outside this fix.
+- Pure RTT lifecycle tests now inject callback collectors; only dedicated adapter tests mount the small connected diagnostics wrapper. Comparison channels remain independent.
+- Focused unit/integration: pass, 4 files / 56 tests. Full unit/integration: pass, 141 files / 1,351 tests. Typecheck, lint, CSS check, build, and `git diff --check`: pass.
+- Focused browser suites: Ground Glass comparison 2/2, Focus Fundamentals 2/2, Ground Glass interaction 3/3, DOF stability/profiling 4/4, Mirror Shift lateral 2/2, Scene View Focus 5/5: pass. Understanding Camera Movements: 3/4; unchanged SPA-route diagnostic assertion misses `data-rtt-focal-length-mm` after the route drops `rttDiagnostics=1`.
+- `npm run ci:local:e2e`: standard gates and preceding suites passed; stopped at unrelated `mirror-shift-teaching-geometry.spec.ts:32` after 30s waiting for `getByTestId("ground-glass-rtt")` while Geometry-only expansion intentionally unmounts the viewport.
+- Remote Actions: known PR install failure resolving `eslint-plugin-react-hooks@^6.8.0`; no dependency/CI changes made.
 
 ## Reviewer focus
 
-- Verify the generic anchor-side configuration preserves Focus Fundamentals’ positive-side target and that ordinary scenes derive the `0.72` observer distance.
-- Verify no framing semantics or named-scene selection moved back into SceneRenderer, and that the existing RTT diagnostic failure is unrelated.
+- Verify the Workspace diagnostics adapter is the sole Zustand bridge, required SceneDefinition/focal-length props are propagated through comparison and default paths, explicit null is preserved, and RTT resource-generation/owner cleanup remains instance-owned.
+- Confirm no shader, optics, projection, CoC, scene geometry, or GPU ownership changes; remaining validation risk is the pre-existing unrelated E2E failure described above.

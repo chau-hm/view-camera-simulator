@@ -208,7 +208,8 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
         focusDistanceMm={focusFundamentalsReferenceFocusDepthMm}
         aperture={11}
         renderQuality="low"
-        sceneId={scene.id}
+        scene={scene}
+        focalLengthMm={150}
         previewMode="raw"
       />,
     );

@@ -106,7 +106,6 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   const sceneCanvas = scene.locator("canvas").first();
   const rtt = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
   const rttCanvas = rtt.locator("canvas");
-  const sceneCanvasHandle = await sceneCanvas.elementHandle();
   const slider = page.getByLabel("Focus distance");
   const aperture = page.getByRole("combobox", { name: "Aperture" });
   const front = page.getByRole("radio", { name: "Front standard" });
@@ -147,9 +146,14 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
 
   const rttHandle = await rtt.elementHandle();
   const rttCanvasHandle = await rttCanvas.elementHandle();
+  const sceneCanvasHandle = await sceneCanvas.elementHandle();
   if (!rttHandle || !rttCanvasHandle || !sceneCanvasHandle) {
     throw new Error("Focus Fundamentals render resources were not mounted");
   }
+  // The RTT now reports diagnostics through the connected adapter callback;
+  // wait for the remounted owner to publish its initial resource record.
+  await expect(rtt).toHaveAttribute("data-rtt-owner-id", /^ground-glass-rtt-owner-/, { timeout: 120_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-resource-generation", /^\d+$/, { timeout: 120_000 });
   const ownerId = await rtt.getAttribute("data-rtt-owner-id");
   const resourceGeneration = await rtt.getAttribute("data-rtt-resource-generation");
   if (!ownerId || !resourceGeneration) throw new Error("Ground Glass RTT diagnostics were incomplete");
