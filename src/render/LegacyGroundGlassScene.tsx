@@ -1,7 +1,6 @@
 import type { ProjectedGroundGlassTarget } from "./groundGlassTargetProjection";
 
 export type LegacyGroundGlassSceneProps = {
-  sceneId?: string;
   sceneHasFocusTargets: boolean;
   projectedTargets: ProjectedGroundGlassTarget[];
   blurRadiusPx: number;
@@ -15,7 +14,6 @@ export type LegacyGroundGlassSceneProps = {
 };
 
 export const LegacyGroundGlassScene = ({
-  sceneId,
   sceneHasFocusTargets,
   projectedTargets,
   blurRadiusPx,
@@ -27,8 +25,6 @@ export const LegacyGroundGlassScene = ({
   tiltDeg,
   swingDeg,
 }: LegacyGroundGlassSceneProps) => {
-  if (sceneId === "table-tilt") return null;
-
   return (
     <div
       data-testid="ground-glass-scene"
@@ -53,22 +49,20 @@ export const LegacyGroundGlassScene = ({
                 position: "absolute",
                 left: `${pt.leftPercent}%`,
                 top: `${pt.topPercent}%`,
-                width: sceneId === "architecture-rise" ? "18%" : "10%",
-                height: sceneId === "architecture-rise" ? "48%" : "14%",
-                marginLeft: sceneId === "architecture-rise" ? "-9%" : "-5%",
-                marginTop: sceneId === "architecture-rise" ? "-24%" : "-7%",
-                borderRadius: sceneId === "architecture-rise" ? 10 : 4,
+                width: "10%",
+                height: "14%",
+                marginLeft: "-5%",
+                marginTop: "-7%",
+                borderRadius: 4,
                 background:
-                  sceneId === "architecture-rise"
-                    ? "linear-gradient(180deg, rgba(148,163,184,0.95), rgba(71,85,105,0.92) 30%, rgba(15,23,42,0.9))"
-                    : "rgba(255,255,255,0.9)",
+                  "rgba(255,255,255,0.9)",
                 boxShadow: pt.blurStrengthAtTarget < 0.35 ? "0 0 18px rgba(255,255,255,0.28)" : "0 4px 8px rgba(0,0,0,0.45)",
                 opacity: 1 - Math.max(0, Math.min(1, pt.blurStrengthAtTarget)) * 0.7,
               }}
             />
           ))}
         </>
-      ) : !sceneId || sceneId === "architecture-rise" ? (
+      ) : (
         <>
           <div
             style={{
@@ -108,7 +102,7 @@ export const LegacyGroundGlassScene = ({
             }}
           />
         </>
-      ) : null}
+      )}
     </div>
   );
 };
