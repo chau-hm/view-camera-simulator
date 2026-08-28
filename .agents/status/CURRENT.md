@@ -18,7 +18,7 @@
 - Replaced StoreBacked unit harnesses with explicit controlled parents; Workspace integration verifies public view selection updates application state.
 - Focused unit/integration: 5 files, 64 passed. Full unit/integration: 143 files, 1,362 passed. Typecheck, lint, CSS check, build, and diff check passed.
 - Focused browser batch: 36 passed / 8 failed; failures were existing WebGL/diagnostic/layout-stability cases. `npm run ci:local:e2e` passed all standard checks and stopped at `mirror-shift-teaching-geometry.spec.ts:3`, waiting for `data-rtt-final-contentful="true"` at line 32; the spec's second test passed.
-- Remote Actions: PR #103 is open. Run `33206467895` failed before tests during `npm ci` with `No matching version found for eslint-plugin-react-hooks@^6.8.0`; deploy was skipped. Run `33206506901` was queued at last check. No dependency or workflow changes were made.
+- Remote Actions: PR #103 is open. Runs `33206467895`, `33206506901`, `33206580330`, and `33206583191` all failed before tests during `npm ci` with `No matching version found for eslint-plugin-react-hooks@^6.8.0`; deploy jobs were skipped. No dependency or workflow changes were made.
 
 ## Reviewer focus
 
