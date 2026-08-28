@@ -19,12 +19,13 @@ import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { supportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
-import { useAppStore } from "../../state/appStore";
 import { deriveFocusFundamentalsReferenceOptics } from "../../scenes/focusFundamentalsPresentation";
 
 type GeometryViewportProps = {
   opticsState: DerivedOpticsState;
   geometryView: GeometryView;
+  onGeometryViewChange: (view: GeometryView) => void;
+  focalLengthMm: number;
   scene: SceneDefinition;
   riseMm?: number;
   showHeader?: boolean;
@@ -40,6 +41,8 @@ const SVG_HEIGHT = 280;
 export const GeometryViewport = ({
   opticsState,
   geometryView,
+  onGeometryViewChange,
+  focalLengthMm,
   scene,
   riseMm,
   showHeader,
@@ -48,8 +51,6 @@ export const GeometryViewport = ({
   movementSummary,
 }: GeometryViewportProps) => {
   const { t } = useTranslation();
-  const setGeometryView = useAppStore((state) => state.setGeometryView);
-  const focalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const diagramRef = useRef<HTMLDivElement | null>(null);
   const restoreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
@@ -70,10 +71,10 @@ export const GeometryViewport = ({
 
   useEffect(() => {
     if (!supportsConstruction) {
-      if (geometryView === "scheimpflug") setGeometryView(subjectGeometryView);
+      if (geometryView === "scheimpflug") onGeometryViewChange(subjectGeometryView);
       if (fitMode === "construction") setFitMode("scene");
     }
-  }, [fitMode, geometryView, setGeometryView, subjectGeometryView, supportsConstruction]);
+  }, [fitMode, geometryView, onGeometryViewChange, subjectGeometryView, supportsConstruction]);
 
   useEffect(() => {
     const element = diagramRef.current;
@@ -109,11 +110,11 @@ export const GeometryViewport = ({
     if (fitMode !== "construction") return;
     if (!constructionWindow) {
       setFitMode("scene");
-      if (geometryView === "scheimpflug") setGeometryView(subjectGeometryView);
+      if (geometryView === "scheimpflug") onGeometryViewChange(subjectGeometryView);
       return;
     }
     if (geometryView !== "scheimpflug") setFitMode("scene");
-  }, [constructionWindow, fitMode, geometryView, setGeometryView, subjectGeometryView]);
+  }, [constructionWindow, fitMode, geometryView, onGeometryViewChange, subjectGeometryView]);
 
   const sceneDepthWindow = useMemo<{ minMm: number; maxMm: number }>(() => {
     if (profile.depthWindow.mode === "fixed") {
@@ -256,17 +257,17 @@ const cameraProjection = constructionWindow
               {!isMirrorShiftTeaching ? (
                 <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => {
                   setFitMode("scene");
-                  setGeometryView("side");
+                  onGeometryViewChange("side");
                 }}>{t(simulatorMessageKeys.geometry.side)}</button>
               ) : null}
               <button className={effectiveGeometryView === "top" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "top"} onClick={() => {
                 setFitMode("scene");
-                setGeometryView("top");
+                onGeometryViewChange("top");
               }}>{t(simulatorMessageKeys.geometry.top)}</button>
               {supportsConstruction ? (
                 <button className={effectiveGeometryView === "scheimpflug" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "scheimpflug"} onClick={() => {
                   setFitMode("scene");
-                  setGeometryView("scheimpflug");
+                  onGeometryViewChange("scheimpflug");
                 }}>{t(simulatorMessageKeys.geometry.scheimpflugSection)}</button>
               ) : null}
             </div>
@@ -296,7 +297,7 @@ const cameraProjection = constructionWindow
           aria-pressed={effectiveFitMode === "scene"}
           onClick={() => {
             setFitMode("scene");
-            setGeometryView(subjectGeometryView);
+            onGeometryViewChange(subjectGeometryView);
           }}
         >
           {t(simulatorMessageKeys.geometry.fitScene)}
@@ -309,7 +310,7 @@ const cameraProjection = constructionWindow
             disabled={!constructionWindow}
             onClick={() => {
               setFitMode("construction");
-              setGeometryView("scheimpflug");
+              onGeometryViewChange("scheimpflug");
             }}
           >
             {t(simulatorMessageKeys.geometry.fitConstruction)}

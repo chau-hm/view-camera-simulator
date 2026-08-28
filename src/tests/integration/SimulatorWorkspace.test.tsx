@@ -80,6 +80,18 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(useAppStore.getState().camera.frontSwingDeg).toBe(2);
   });
 
+  it("passes the application geometry view through the explicit viewport boundary", async () => {
+    render(workspaceRoute("free", "table-tilt", null));
+    useAppStore.getState().setGeometryView("top");
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
+    expect(await screen.findByTestId("geometry-svg-top")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Side" }));
+    await waitFor(() => expect(useAppStore.getState().camera.geometryView).toBe("side"));
+    expect(screen.getByTestId("geometry-svg-side")).toBeInTheDocument();
+  });
+
   it("restores focus after Restore and closes safely on route changes", async () => {
     const { rerender } = render(workspace());
     const trigger = screen.getByRole("button", { name: "Expand 2D Geometry" });
