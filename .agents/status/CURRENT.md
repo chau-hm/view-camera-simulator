@@ -1,25 +1,28 @@
-# PR #99 review-fix — explicit Ground Glass rendering boundary
+# Ground Glass scene profiles — Standard PR
 
-- Work identifier: PR #99 review-fix, `refactor/self-contained-ground-glass-viewport`.
-- Branch/base: `refactor/self-contained-ground-glass-viewport` from `origin/main` at `ea574cc97d002c0b5cc1057ca339bf99a5a746be`.
-- Substantive HEAD: `a953a52` (`fix(render): complete Ground Glass explicit boundary`).
-- Findings fixed: `SceneDefinition` and `focalLengthMm` are required at the reusable viewport/renderer/RTT boundary; stale scene-ID/implicit focal inputs are removed.
+- Work identifier: `refactor/ground-glass-scene-profiles` / new Ground Glass scene-profile PR.
+- Branch/base: `refactor/ground-glass-scene-profiles` from `origin/main` at `b0698432bad1c096b32e2ac083e8ecb209dd990a` (PR #99).
+- Substantive HEAD: `d86eb10` (`refactor(render): centralize Ground Glass scene profiles`).
+- Objective: keep GroundGlassRTT generic by resolving scene subject lifecycle, dynamic updates, and effective bounds through a small profile layer.
 
-## Boundary
+## Profile boundary
 
-- `SimulatorWorkspace` is the only connected Ground Glass adapter: it maps default/Original/Current runtime diagnostics and preserves owner-aware store actions.
-- `GroundGlassViewport`, `GroundGlassRenderer`, `GroundGlassRenderSurface`, and `GroundGlassRTT` consume explicit scene, physical focal length, presentation/calibration, runtime-info, and callback inputs; no direct Zustand imports remain in the pure stack.
-- Explicit `runtimeInfo={null}` remains null. RTT publication continues as `(channel, info, ownerId)` with per-channel stale-owner protection.
+- `groundGlassSceneProfiles.ts` composes `sceneSubjectRegistry`, the Camera Movement RTT lifecycle helper, and the Mirror Shift reflection updater; it has no Zustand access.
+- Ordinary scenes use the registered subject factory/disposer and `SceneDefinition.bounds`.
+- Understanding Camera Movements owns specialized mount/presentation updates, runtime lattice metadata, and `cameraMovementRenderModel.subjectBounds` through its profile.
+- Mirror Shift owns in-place reflected-camera proxy updates through its profile. `GroundGlassRTT` now has one generic mounted-subject handle and no covered public scene-ID lifecycle/bounds branches.
 
 ## Evidence
 
-- Pure RTT lifecycle tests now inject callback collectors; only dedicated adapter tests mount the small connected diagnostics wrapper. Comparison channels remain independent.
-- Focused unit/integration: pass, 4 files / 56 tests. Full unit/integration: pass, 141 files / 1,351 tests. Typecheck, lint, CSS check, build, and `git diff --check`: pass.
-- Focused browser suites: Ground Glass comparison 2/2, Focus Fundamentals 2/2, Ground Glass interaction 3/3, DOF stability/profiling 4/4, Mirror Shift lateral 2/2, Scene View Focus 5/5: pass. Understanding Camera Movements: 3/4; unchanged SPA-route diagnostic assertion misses `data-rtt-focal-length-mm` after the route drops `rttDiagnostics=1`.
-- `npm run ci:local:e2e`: standard gates and preceding suites passed; stopped at unrelated `mirror-shift-teaching-geometry.spec.ts:32` after 30s waiting for `getByTestId("ground-glass-rtt")` while Geometry-only expansion intentionally unmounts the viewport.
-- Remote Actions: known PR install failure resolving `eslint-plugin-react-hooks@^6.8.0`; no dependency/CI changes made.
+- Changed files: `src/render/GroundGlassRTT.tsx`, `src/render/groundGlassSceneProfiles.ts`, `src/tests/unit/groundGlassSceneProfiles.test.ts`.
+- Focused unit/lifecycle: pass, 7 files / 93 tests. Full unit/integration: pass, 142 files / 1,354 tests.
+- Typecheck, lint, CSS structure check, build, and `git diff --check`: pass.
+- Focused E2E: 14/15 pass. The only failure is the existing `understanding-camera-movements.spec.ts:182` SPA-route diagnostic assertion at line 308, missing `data-rtt-focal-length-mm="150"` after the route transition.
+- `npm run ci:local:e2e`: CSS, lint, typecheck, all unit/integration, build, and preceding E2E suites passed; stopped at unrelated `mirror-shift-teaching-geometry.spec.ts:32` after 30s waiting for the RTT element on the Geometry-only path.
+- Remote Actions: no run created for this branch yet; repository context records the known hosted npm-install failure resolving `eslint-plugin-react-hooks@^6.8.0`; no dependency or workflow changes made.
 
 ## Reviewer focus
 
-- Verify the Workspace diagnostics adapter is the sole Zustand bridge, required SceneDefinition/focal-length props are propagated through comparison and default paths, explicit null is preserved, and RTT resource-generation/owner cleanup remains instance-owned.
-- Confirm no shader, optics, projection, CoC, scene geometry, or GPU ownership changes; remaining validation risk is the pre-existing unrelated E2E failure described above.
+- Confirm generic RTT orchestration delegates mount, update, disposal, lighting, and bounds to the profile while GPU/post-processing resources remain RTT-owned.
+- Verify Camera Movement presentation updates and Mirror Shift lateral/front-shift updates preserve subject identity and runtime/resource-generation behavior.
+- Confirm no shader, optics, projection, CoC, scene geometry, or Zustand boundary changes; remaining risks are the two unrelated/pre-existing E2E diagnostics above.
