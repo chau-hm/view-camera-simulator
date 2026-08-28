@@ -2,6 +2,7 @@ export const commonMessages = {
   nav: {
     home: "Home",
     scenes: "Scenes",
+    faq: "FAQ",
     primaryNavigation: "Primary navigation",
   },
   language: {

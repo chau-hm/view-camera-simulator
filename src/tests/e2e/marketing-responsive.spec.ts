@@ -40,6 +40,18 @@ test.describe('Marketing responsive', () => {
     expect(overflowWidth).toBeLessThanOrEqual(2);
   });
 
+  test('Narrow FAQ (390x844) does not overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/faq');
+
+    await expect(page.getByRole('heading', { name: 'Frequently Asked Questions', level: 1 })).toBeVisible();
+    const overflowWidth = await page.evaluate(() => {
+      const root = document.documentElement;
+      return root.scrollWidth - root.clientWidth;
+    });
+    expect(overflowWidth).toBeLessThanOrEqual(2);
+  });
+
   test('Narrow Scenes (390x844) shows warning and scene cards without overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/scenes');

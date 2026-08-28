@@ -5,6 +5,7 @@ export const commonMessages = {
   nav: {
     home: "主頁",
     scenes: "場景",
+    faq: "FAQ",
     primaryNavigation: "主要導覽",
   },
   language: {

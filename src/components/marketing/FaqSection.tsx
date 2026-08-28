@@ -7,9 +7,9 @@ type FaqItemProps = {
 };
 
 const FaqItem = ({ question, children }: FaqItemProps) => (
-  <details className="landing-faq-item">
+  <details className="faq-item">
     <summary>{question}</summary>
-    <div className="landing-faq-item__answer">{children}</div>
+    <div className="faq-item__answer">{children}</div>
   </details>
 );
 
@@ -19,14 +19,12 @@ export const FaqSection = () => {
   return (
     <section
       id="faq"
-      className="landing-faq-section"
-      aria-labelledby="landing-faq-heading"
-      data-testid="landing-faq"
+      className="faq-section"
+      aria-label={t("home.faq.title")}
+      data-testid="faq-section"
     >
-      <div className="landing-faq-section__inner">
-        <h2 id="landing-faq-heading">{t("home.faq.title")}</h2>
-
-        <div className="landing-faq-list">
+      <div className="faq-section__inner">
+        <div className="faq-list">
           <FaqItem question={t("home.faq.items.audience.question")}>
             <p>{t("home.faq.items.audience.intro")}</p>
             <ul>

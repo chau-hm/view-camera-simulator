@@ -15,10 +15,15 @@ test("home can navigate to Scenes page", async ({ page }) => {
   await expect(architectureCard.getByRole("link", { name: "Open Scene" })).toBeVisible();
 });
 
-test("home FAQ disclosures are keyboard accessible", async ({ page }) => {
+test("FAQ disclosures are keyboard accessible from the public page", async ({ page }) => {
   await page.goto("/");
 
-  const faq = page.getByTestId("landing-faq");
+  const faqNav = page.getByRole("link", { name: "FAQ", exact: true });
+  await expect(faqNav).toHaveAttribute("href", "/faq");
+  await faqNav.click();
+  await expect(page).toHaveURL(/\/faq$/);
+
+  const faq = page.getByTestId("faq-section");
   const summaries = faq.locator("summary");
   const questions = [
     "Who is View Camera Simulator for?",
@@ -30,7 +35,7 @@ test("home FAQ disclosures are keyboard accessible", async ({ page }) => {
     "Is it a replacement for learning with a real view camera?",
   ];
 
-  await expect(faq.getByRole("heading", { name: "Frequently Asked Questions", level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Frequently Asked Questions", level: 1 })).toBeVisible();
   await expect(summaries).toHaveCount(7);
   for (const [index, question] of questions.entries()) {
     await expect(summaries.nth(index)).toHaveText(question);

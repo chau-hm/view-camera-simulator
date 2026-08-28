@@ -1,9 +1,7 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { routes } from "../../app/router";
-
-afterEach(cleanup);
 
 describe("home page", () => {
   it("renders hero heading and CTAs", async () => {
@@ -60,41 +58,7 @@ describe("home page", () => {
     expect(screen.getByText(/A view camera separates decisions that are often bundled together: where the camera observes from, how the subject is framed, how the image geometry is controlled, and where the plane of sharp focus lies\./)).toBeTruthy();
     expect(screen.getByText(/Rise and shift can change framing without moving the viewpoint\. Tilt and swing can rotate the plane of sharp focus\./)).toBeTruthy();
     expect(screen.getByText(/A view camera slows the process down. The upside-down image on the ground glass encourages careful looking, and every movement becomes a deliberate choice\./)).toBeTruthy();
-  });
-
-  it("renders the seven FAQ disclosures in the supplied order", async () => {
-    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/"] });
-    render(<RouterProvider router={memoryRouter} />);
-
-    expect(screen.getByRole("heading", { name: "Frequently Asked Questions", level: 2 })).toBeInTheDocument();
-
-    const faq = screen.getByTestId("landing-faq");
-    const details = Array.from(faq.querySelectorAll("details"));
-    const summaries = Array.from(faq.querySelectorAll("summary"));
-    const questions = [
-      "Who is View Camera Simulator for?",
-      "Do I need to own a large-format camera?",
-      "What can I learn with View Camera Simulator?",
-      "Is the simulator based on a specific type of view camera, camera, or lens?",
-      "Will every movement shown be available on my camera?",
-      "How realistic is the simulator?",
-      "Is it a replacement for learning with a real view camera?",
-    ];
-
-    expect(details).toHaveLength(7);
-    expect(summaries.map((summary) => summary.textContent)).toEqual(questions);
-    expect(details.every((detail) => !detail.open)).toBe(true);
-
-    const firstSummary = summaries[0];
-    const firstDetails = details[0];
-    firstSummary.focus();
-    expect(document.activeElement).toBe(firstSummary);
-    fireEvent.click(firstSummary);
-    expect(firstDetails.open).toBe(true);
-    fireEvent.click(firstSummary);
-    expect(firstDetails.open).toBe(false);
-
-    expect(screen.getByText(/View Camera Simulator is for anyone who wants to understand camera movements and photographic geometry more clearly\./)).toBeInTheDocument();
-    expect(screen.getByText(/The simulator allows you to explore camera geometry and movement concepts separately from these practical considerations\./)).toBeInTheDocument();
+    expect(screen.queryByTestId("faq-section")).not.toBeInTheDocument();
+    expect(screen.queryByText("Who is View Camera Simulator for?")).not.toBeInTheDocument();
   });
 });

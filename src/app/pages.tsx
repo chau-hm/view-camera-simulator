@@ -66,6 +66,15 @@ export const HomePage = () => {
         </div>
       </section>
 
+    </AppShell>
+  );
+};
+
+export const FaqPage = () => {
+  const { t } = useTranslation();
+
+  return (
+    <AppShell title={t("home.faq.title")} useSiteShell>
       <FaqSection />
     </AppShell>
   );
