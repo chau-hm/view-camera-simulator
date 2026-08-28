@@ -29,4 +29,6 @@ export const homeMessages = {
         "大片幅相機令拍攝過程慢下來。對焦屏上的倒置影像鼓勵細心觀察，而每一項移軸都成為有意識的選擇。藝術家使用它不只是為了影像質素，也因為這種方法改變了觀看及創作相片的方式。",
     },
   },
+  // FAQ translations are not available yet; keep the supplied English source copy via the locale boundary.
+  faq: englishHomeMessages.faq,
 } satisfies MessageShape<typeof englishHomeMessages>;

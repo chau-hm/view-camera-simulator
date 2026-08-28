@@ -200,6 +200,96 @@
   line-height: 1.7;
 }
 
+/* Landing FAQ */
+.landing-faq-section {
+  padding: 56px 0 72px;
+  scroll-margin-top: 96px;
+}
+
+.landing-faq-section__inner {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.landing-faq-section h2 {
+  margin: 0 0 22px;
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.landing-faq-list {
+  display: grid;
+  gap: 12px;
+}
+
+.landing-faq-item {
+  min-width: 0;
+  overflow: hidden;
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius-md);
+  box-shadow: 0 8px 24px rgba(30, 41, 59, 0.045);
+}
+
+.landing-faq-item summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px 24px;
+  color: var(--site-text);
+  font-weight: 700;
+  line-height: 1.45;
+  cursor: pointer;
+  list-style: none;
+}
+
+.landing-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.landing-faq-item summary::after {
+  flex: 0 0 auto;
+  color: var(--site-accent);
+  content: "+";
+  font-size: 1.35rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.landing-faq-item[open] summary::after {
+  content: "−";
+}
+
+.landing-faq-item summary:focus-visible {
+  outline: 3px solid rgba(91, 78, 232, 0.3);
+  outline-offset: -3px;
+}
+
+.landing-faq-item__answer {
+  min-width: 0;
+  padding: 0 24px 22px;
+  border-top: 1px solid var(--site-border);
+  color: var(--site-text-muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.landing-faq-item__answer p {
+  margin: 18px 0 0;
+}
+
+.landing-faq-item__answer ul {
+  margin: 16px 0 0;
+  padding-left: 1.35rem;
+}
+
+.landing-faq-item__answer li + li {
+  margin-top: 6px;
+}
+
 /* Desktop experience notice */
 .desktop-experience-notice {
   margin: 18px 0;
@@ -404,4 +494,7 @@
   .site-footer__inner { flex-direction: column; align-items:flex-start; padding: 0 16px; }
   .hero { padding: 40px 0; }
   .marketing-container { padding: 16px; }
+  .landing-faq-section { padding: 40px 0 52px; }
+  .landing-faq-item summary { padding: 16px; }
+  .landing-faq-item__answer { padding: 0 16px 18px; }
 }
