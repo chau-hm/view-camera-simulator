@@ -22,6 +22,7 @@ test("FAQ disclosures are keyboard accessible from the public page", async ({ pa
   await expect(faqNav).toHaveAttribute("href", "/faq");
   await faqNav.click();
   await expect(page).toHaveURL(/\/faq$/);
+  await expect(faqNav).toHaveClass(/site-nav__link--active/);
 
   const faq = page.getByTestId("faq-section");
   const summaries = faq.locator("summary");
@@ -38,7 +39,7 @@ test("FAQ disclosures are keyboard accessible from the public page", async ({ pa
   await expect(page.getByRole("heading", { name: "Frequently Asked Questions", level: 1 })).toBeVisible();
   await expect(summaries).toHaveCount(7);
   for (const [index, question] of questions.entries()) {
-    await expect(summaries.nth(index)).toHaveText(question);
+    await expect(summaries.nth(index).locator(".faq-item__question-text")).toHaveText(question);
   }
 
   const firstSummary = summaries.first();

@@ -201,8 +201,53 @@
 }
 
 /* FAQ */
+.faq-page-header {
+  max-width: 920px;
+  margin: 32px auto 0;
+}
+
+.faq-page-header__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 7px 11px;
+  border: 1px solid rgba(91, 78, 232, 0.16);
+  border-radius: 999px;
+  background: var(--site-accent-soft);
+  color: var(--site-accent-hover);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.faq-page-header__eyebrow .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.faq-page-header h1 {
+  max-width: 780px;
+  margin: 20px 0 12px;
+  color: var(--site-text);
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.faq-page-header p {
+  max-width: 640px;
+  margin: 0;
+  color: var(--site-text-muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
 .faq-section {
-  padding: 56px 0 72px;
+  padding: 36px 0 72px;
   scroll-margin-top: 96px;
 }
 
@@ -213,7 +258,7 @@
 
 .faq-list {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .faq-item {
@@ -221,17 +266,24 @@
   overflow: hidden;
   background: var(--site-surface);
   border: 1px solid var(--site-border);
+  border-left: 3px solid transparent;
   border-radius: var(--site-radius-md);
   box-shadow: 0 8px 24px rgba(30, 41, 59, 0.045);
 }
 
+.faq-item[open] {
+  border-left-color: var(--site-accent);
+  background: var(--site-surface-soft);
+  box-shadow: 0 10px 28px rgba(30, 41, 59, 0.07);
+}
+
 .faq-item summary {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 18px;
   min-width: 0;
-  padding: 20px 24px;
+  padding: 20px 22px;
   color: var(--site-text);
   font-weight: 700;
   line-height: 1.45;
@@ -243,16 +295,64 @@
   display: none;
 }
 
-.faq-item summary::after {
-  flex: 0 0 auto;
+.faq-item__question {
+  display: grid;
+  grid-template-columns: 24px 32px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.faq-item__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  min-height: 24px;
   color: var(--site-accent);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.faq-item__number {
+  color: var(--site-text-muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.faq-item__question-text {
+  min-width: 0;
+}
+
+.faq-item__indicator {
+  display: inline-grid;
+  flex: 0 0 auto;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--site-border);
+  border-radius: 999px;
+  background: var(--site-surface-soft);
+  color: var(--site-accent);
+}
+
+.faq-item__indicator::before {
   content: "+";
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 500;
   line-height: 1;
 }
 
-.faq-item[open] summary::after {
+.faq-item[open] .faq-item__indicator {
+  border-color: var(--site-accent);
+  background: var(--site-accent);
+  color: #fff;
+}
+
+.faq-item[open] .faq-item__indicator::before {
   content: "−";
 }
 
@@ -263,7 +363,9 @@
 
 .faq-item__answer {
   min-width: 0;
-  padding: 0 24px 22px;
+  max-width: 720px;
+  margin: 0 24px 0 78px;
+  padding: 18px 0 24px;
   border-top: 1px solid var(--site-border);
   color: var(--site-text-muted);
   line-height: 1.7;
@@ -271,12 +373,20 @@
 }
 
 .faq-item__answer p {
-  margin: 18px 0 0;
+  margin: 0;
+}
+
+.faq-item__answer p + p {
+  margin-top: 16px;
 }
 
 .faq-item__answer ul {
-  margin: 16px 0 0;
+  margin: 12px 0 0;
   padding-left: 1.35rem;
+}
+
+.faq-item__answer ul + p {
+  margin-top: 16px;
 }
 
 .faq-item__answer li + li {
@@ -487,7 +597,18 @@
   .site-footer__inner { flex-direction: column; align-items:flex-start; padding: 0 16px; }
   .hero { padding: 40px 0; }
   .marketing-container { padding: 16px; }
-  .faq-section { padding: 40px 0 52px; }
+  .faq-page-header { margin-top: 20px; }
+  .faq-page-header h1 {
+    margin-top: 18px;
+    font-size: clamp(2.15rem, 11vw, 3rem);
+  }
+  .faq-page-header p { font-size: 1rem; }
+  .faq-section { padding: 28px 0 52px; }
   .faq-item summary { padding: 16px; }
-  .faq-item__answer { padding: 0 16px 18px; }
+  .faq-item__question {
+    grid-template-columns: 22px 28px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .faq-item__indicator { width: 34px; height: 34px; }
+  .faq-item__answer { margin-left: 58px; margin-right: 16px; padding-bottom: 18px; }
 }

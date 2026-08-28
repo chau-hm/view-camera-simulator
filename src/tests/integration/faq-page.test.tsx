@@ -16,6 +16,8 @@ describe("FAQ page", () => {
     });
     expect(heading).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { name: "Frequently Asked Questions" })).toHaveLength(1);
+    expect(screen.getByText("VIEW CAMERA SIMULATOR")).toBeInTheDocument();
+    expect(screen.getByText("Answers to common questions about View Camera Simulator.")).toBeInTheDocument();
 
     const faq = screen.getByTestId("faq-section");
     const details = Array.from(faq.querySelectorAll("details"));
@@ -31,7 +33,19 @@ describe("FAQ page", () => {
     ];
 
     expect(details).toHaveLength(7);
-    expect(summaries.map((summary) => summary.textContent)).toEqual(questions);
+    expect(
+      summaries.map((summary) => summary.querySelector(".faq-item__question-text")?.textContent),
+    ).toEqual(questions);
+    expect(Array.from(faq.querySelectorAll(".faq-item__number")).map((number) => number.textContent?.trim())).toEqual([
+      "1.",
+      "2.",
+      "3.",
+      "4.",
+      "5.",
+      "6.",
+      "7.",
+    ]);
+    expect(faq.querySelectorAll(".faq-item__icon")).toHaveLength(7);
     expect(details.every((detail) => !detail.open)).toBe(true);
 
     const firstSummary = summaries[0];
