@@ -19,7 +19,7 @@
 - Typecheck, lint, CSS structure check, build, and `git diff --check`: pass.
 - Focused E2E: 28/29 pass. The only failure is the existing `understanding-camera-movements.spec.ts:308` SPA diagnostic assertion expecting `data-rtt-focal-length-mm="150"` after navigation to Architecture Rise; the RTT attribute is absent. No unrelated layout/diagnostic test was changed.
 - `npm run ci:local:e2e`: CSS, lint, typecheck, unit/integration, and build passed; E2E stopped at the known `mirror-shift-teaching-geometry.spec.ts:32` Geometry-only case because the expected RTT element was absent while waiting for `data-rtt-final-contentful="true"`.
-- Remote Actions: not run for this new branch/PR yet. The known hosted `npm ci` failure for `eslint-plugin-react-hooks@^6.8.0` remains baseline infrastructure state; no dependency or workflow changes were made.
+- Remote Actions: PR #102 runs `33200941566` and `33200981441` both failed in `npm ci` with `No matching version found for eslint-plugin-react-hooks@^6.8.0`; deploy was skipped. No dependency or workflow changes were made.
 
 ## Reviewer focus
 
