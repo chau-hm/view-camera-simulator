@@ -4,16 +4,19 @@ import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { ViewOptions } from "../controls/ViewOptions";
 import "../../i18n";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
-import { useAppStore } from "../../state/appStore";
 import type { ApertureValue } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
+import type { SceneDefinition } from "../../types/scene";
 import type { RenderQualityProfile } from "../../types/ui";
 import type { CameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
+import type { CameraMovementPresentationRegion } from "../../scenes/cameraMovementSceneCalibration";
+import type { EffectiveCameraMovementCalibration } from "../../scenes/cameraMovementEffectiveCalibration";
 
 type GroundGlassViewportProps = {
   opticsState: DerivedOpticsState;
-  // permission: whether orientation assist controls can be toggled in this mode
-  orientationAssistEnabled: boolean;
+  scene?: SceneDefinition;
+  groundGlassAssistEnabled: boolean;
+  onGroundGlassAssistEnabledChange: (enabled: boolean) => void;
   // current state (from camera)
   focusAssistEnabled: boolean;
   gridEnabled: boolean;
@@ -27,6 +30,10 @@ type GroundGlassViewportProps = {
   aperture: ApertureValue;
   renderQuality: RenderQualityProfile;
   sceneId: string;
+  focalLengthMm?: number;
+  lastFiniteFocusDepthMm?: number;
+  effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
+  presentationRegion?: CameraMovementPresentationRegion;
   lockReason?: string;
   rawRttDebug?: boolean;
   focusMetric?: "point" | "patch";
@@ -42,6 +49,9 @@ type GroundGlassViewportProps = {
 
 export const GroundGlassViewport = ({
   opticsState,
+  scene,
+  groundGlassAssistEnabled,
+  onGroundGlassAssistEnabledChange,
   focusAssistEnabled,
   gridEnabled,
   canToggleFocusAssist,
@@ -53,6 +63,10 @@ export const GroundGlassViewport = ({
   aperture,
   renderQuality,
   sceneId,
+  focalLengthMm,
+  lastFiniteFocusDepthMm,
+  effectiveCameraMovementCalibration,
+  presentationRegion,
   lockReason,
   rawRttDebug,
   focusMetric,
@@ -67,8 +81,6 @@ export const GroundGlassViewport = ({
 }: GroundGlassViewportProps) => {
   const { t } = useTranslation();
   // Preview mode control local to the Ground Glass panel. Default to camera state
-  const groundGlassAssistEnabled = useAppStore((s) => s.camera.groundGlassAssistEnabled);
-  const setGroundGlassAssistEnabled = useAppStore((s) => s.setGroundGlassAssistEnabled);
   const [previewMode, setPreviewMode] = useState<"raw" | "upright">(groundGlassAssistEnabled ? "upright" : "raw");
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
@@ -125,6 +137,7 @@ export const GroundGlassViewport = ({
           {label === "Original" ? comparisonLabels?.original : comparisonLabels?.current}
         </p>
           <GroundGlassRenderer
+          scene={scene}
           opticsState={layer.opticsState}
           assistEnabled={layer.opticsState.groundGlassProjection.assistModeEnabled}
           focusAssistEnabled={focusAssistEnabled}
@@ -135,6 +148,7 @@ export const GroundGlassViewport = ({
           focusDistanceMm={layer.camera.focusDistanceMm}
           aperture={layer.camera.aperture}
           focalLengthMm={layer.camera.focalLengthMm}
+          effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
           renderQuality={renderQuality}
           sceneId={sceneId}
           previewMode={previewMode}
@@ -156,7 +170,7 @@ export const GroundGlassViewport = ({
         />
       </section>
     ),
-    [comparisonLabels, currentStageLabel, focusAssistEnabled, focusMetric, gridEnabled, interactionResetKey, originalStageLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, sceneId, t, zoomInLabel, zoomOutLabel],
+    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusAssistEnabled, focusMetric, gridEnabled, interactionResetKey, originalStageLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, scene, sceneId, t, zoomInLabel, zoomOutLabel],
   );
 
   useEffect(() => {
@@ -190,7 +204,7 @@ export const GroundGlassViewport = ({
                     type="radio"
                     name={`gg-preview-${sceneId}`}
                     checked={previewMode === "raw"}
-                    onChange={() => { setPreviewMode("raw"); setGroundGlassAssistEnabled(false); }}
+                    onChange={() => { setPreviewMode("raw"); onGroundGlassAssistEnabledChange(false); }}
                   />
                   <span>{t(simulatorMessageKeys.viewport.rawGroundGlass)}</span>
                 </label>
@@ -201,7 +215,7 @@ export const GroundGlassViewport = ({
                     type="radio"
                     name={`gg-preview-${sceneId}`}
                     checked={previewMode === "upright"}
-                    onChange={() => { setPreviewMode("upright"); setGroundGlassAssistEnabled(true); }}
+                    onChange={() => { setPreviewMode("upright"); onGroundGlassAssistEnabledChange(true); }}
                   />
                   <span>{t(simulatorMessageKeys.viewport.uprightAssist)}</span>
                 </label>
@@ -269,6 +283,7 @@ export const GroundGlassViewport = ({
           <div className={`groundglass-renderer-host${expanded ? " groundglass-renderer-host--expanded" : ""}`}>
             {/* Expanded presentation intentionally keeps the existing logical RTT size; container-aware RTT sizing is a renderer-focused follow-up. */}
             <GroundGlassRenderer
+              scene={scene}
               opticsState={opticsState}
               assistEnabled={opticsState.groundGlassProjection.assistModeEnabled}
               focusAssistEnabled={focusAssistEnabled}
@@ -278,6 +293,9 @@ export const GroundGlassViewport = ({
               swingDeg={swingDeg}
               focusDistanceMm={focusDistanceMm}
               aperture={aperture}
+              focalLengthMm={focalLengthMm}
+              lastFiniteFocusDepthMm={lastFiniteFocusDepthMm}
+              effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
               renderQuality={renderQuality}
               sceneId={sceneId}
               previewMode={previewMode}
@@ -292,6 +310,7 @@ export const GroundGlassViewport = ({
               zoomOutLabel={zoomOutLabel}
               resetViewLabel={resetViewLabel}
               resetActionLabel={resetActionLabel}
+              presentationRegion={presentationRegion}
             />
           </div>
         )}

@@ -1,13 +1,21 @@
+import { useCallback } from "react";
 import type { DerivedOpticsState } from "../types/optics";
 import { GroundGlassRTT } from "./GroundGlassRTT";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { useAppStore } from "../state/appStore";
-import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
+import type { SceneDefinition } from "../types/scene";
+import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
+import type {
+  GroundGlassRttChannel,
+  GroundGlassRttRuntimeInfo,
+  GroundGlassRttRuntimeInfoChangeHandler,
+} from "./groundGlassRttDimensions";
 
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
   focalLengthMm: number;
   sceneId?: string;
+  scene?: SceneDefinition;
   apertureNumber: number;
   previewMode: "raw" | "upright";
   rawDebug?: boolean;
@@ -24,12 +32,16 @@ export type GroundGlassRenderSurfaceProps = {
   zoomEnabled?: boolean;
   channel?: GroundGlassRttChannel;
   presentationRegion?: import("../scenes/cameraMovementSceneCalibration").CameraMovementPresentationRegion;
+  effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
+  runtimeInfo?: GroundGlassRttRuntimeInfo | null;
+  onRuntimeInfoChange?: GroundGlassRttRuntimeInfoChangeHandler;
 };
 
 export const GroundGlassRenderSurface = ({
   opticsState,
   focalLengthMm,
   sceneId,
+  scene,
   apertureNumber,
   previewMode,
   rawDebug,
@@ -46,18 +58,42 @@ export const GroundGlassRenderSurface = ({
   zoomEnabled,
   channel = "default",
   presentationRegion,
+  effectiveCameraMovementCalibration,
+  runtimeInfo: explicitRuntimeInfo,
+  onRuntimeInfoChange: explicitRuntimeInfoChange,
 }: GroundGlassRenderSurfaceProps) => {
-  const rttRuntimeInfo = useAppStore((state) =>
+  // Keep the application-store bridge at this adapter boundary. The reusable
+  // RTT component below only publishes through its explicit callback.
+  const connectedRuntimeInfo = useAppStore((state) =>
     channel === "default"
       ? state.groundGlassRttRuntimeInfo
       : state.groundGlassRttRuntimeInfoByChannel?.[channel] ?? null,
   );
-  if (isGroundGlassRttScene(sceneId)) {
+  const setGroundGlassRttRuntimeInfo = useAppStore(
+    (state) => state.setGroundGlassRttRuntimeInfo,
+  );
+  const setGroundGlassRttRuntimeInfoForChannel = useAppStore(
+    (state) => state.setGroundGlassRttRuntimeInfoForChannel,
+  );
+  const connectedRuntimeInfoChange = useCallback<GroundGlassRttRuntimeInfoChangeHandler>(
+    (runtimeChannel, info, ownerId) => {
+      if (runtimeChannel === "default") {
+        setGroundGlassRttRuntimeInfo(info, ownerId);
+      } else {
+        setGroundGlassRttRuntimeInfoForChannel(runtimeChannel, info, ownerId);
+      }
+    },
+    [setGroundGlassRttRuntimeInfo, setGroundGlassRttRuntimeInfoForChannel],
+  );
+  const rttRuntimeInfo = explicitRuntimeInfo ?? connectedRuntimeInfo;
+  const runtimeInfoChange = explicitRuntimeInfoChange ?? connectedRuntimeInfoChange;
+  const resolvedSceneId = scene?.id ?? sceneId;
+  if (isGroundGlassRttScene(resolvedSceneId)) {
     return (
       <div
         data-testid="ground-glass-rtt"
         data-rtt-channel={channel}
-        data-rtt-scene-id={sceneId}
+        data-rtt-scene-id={resolvedSceneId}
         data-rtt-camera-ok={rttRuntimeInfo?.cameraConfigurationOk === undefined ? undefined : String(rttRuntimeInfo.cameraConfigurationOk)}
         data-rtt-depth-available={rttRuntimeInfo?.depthTextureAvailable === undefined ? undefined : String(rttRuntimeInfo.depthTextureAvailable)}
         data-rtt-uniforms-finite={rttRuntimeInfo?.uniformsFinite === undefined ? undefined : String(rttRuntimeInfo.uniformsFinite)}
@@ -119,7 +155,8 @@ export const GroundGlassRenderSurface = ({
         <GroundGlassRTT
           opticsState={opticsState}
           focalLengthMm={focalLengthMm}
-          sceneId={sceneId}
+          sceneId={resolvedSceneId}
+          scene={scene}
           widthPx={widthPx}
           heightPx={heightPx}
           aperture={apertureNumber}
@@ -132,6 +169,8 @@ export const GroundGlassRenderSurface = ({
           zoomEnabled={zoomEnabled}
           channel={channel}
           presentationRegion={presentationRegion}
+          effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+          onRuntimeInfoChange={runtimeInfoChange}
         />
       </div>
     );

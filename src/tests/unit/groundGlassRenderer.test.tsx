@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { GroundGlassRenderer, projectWorldPointToGroundGlass } from "../../render/GroundGlassRenderer";
 import { projectSceneFocusTargetsToGroundGlass, mapGroundGlassUvToDisplayUv } from "../../render/groundGlassTargetProjection";
@@ -42,10 +42,12 @@ describe("GroundGlassRenderer", () => {
 
   it("supports zoom mode (control belongs to viewport) without changing camera state", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    const onGroundGlassAssistEnabledChange = vi.fn();
     render(
       <GroundGlassViewport
         opticsState={opticsState}
-        orientationAssistEnabled={true}
+        groundGlassAssistEnabled={false}
+        onGroundGlassAssistEnabledChange={onGroundGlassAssistEnabledChange}
         focusAssistEnabled={false}
         gridEnabled={false}
         canToggleFocusAssist={true}
@@ -67,6 +69,8 @@ describe("GroundGlassRenderer", () => {
     const zoomIn = screen.getByRole("button", { name: "Zoom in Ground Glass" });
     fireEvent.click(zoomIn);
     expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Upright Assist" }));
+    expect(onGroundGlassAssistEnabledChange).toHaveBeenCalledWith(true);
   });
 
   it("updates the preview when focus and movement controls change", () => {

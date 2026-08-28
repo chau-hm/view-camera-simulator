@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import {
-  GroundGlassRTT,
+  GroundGlassRTT as UnconnectedGroundGlassRTT,
+  type GroundGlassRTTProps,
 } from "../../render/GroundGlassRTT";
 import { synchronizeGroundGlassDofClipRange } from "../../render/createGroundGlassDofUniformState";
 import {
@@ -19,6 +20,7 @@ import {
   getSceneSubjectRegistration,
 } from "../../render/sceneSubjectRegistry";
 import { useAppStore } from "../../state/appStore";
+import { selectEffectiveCameraMovementCalibration } from "../../state/selectors";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
@@ -27,6 +29,8 @@ import geometry from "../../scenes/shelfSwingGeometry";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { GroundGlassRttRuntimeInfo } from "../../render/groundGlassRttDimensions";
+import type { GroundGlassRttRuntimeInfoChangeHandler } from "../../render/groundGlassRttDimensions";
+import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
 
 const fiberTestState = vi.hoisted(() => ({
   frameCallback: null as ((state?: unknown, delta?: number) => void) | null,
@@ -93,6 +97,42 @@ afterEach(() => {
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-original", null);
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-current", null);
 });
+
+const StoreConnectedGroundGlassRTT = (props: GroundGlassRTTProps) => {
+  const effectiveCameraMovementCalibration = useAppStore(
+    selectEffectiveCameraMovementCalibration,
+  );
+  const targetRegion = useAppStore((state) => state.scene.targetRegion);
+  const lessonState = useAppStore((state) => state.camera.cameraMovementLessonState);
+  const presentationRegion =
+    props.presentationRegion ??
+    (props.sceneId === "understanding-camera-movements" && lessonState
+      ? resolveCameraMovementLessonPresentationTargetRegion(lessonState)
+      : targetRegion);
+  const onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler = (
+    channel,
+    info,
+    ownerId,
+  ) => {
+    if (channel === "default") {
+      useAppStore.getState().setGroundGlassRttRuntimeInfo(info, ownerId);
+    } else {
+      useAppStore
+        .getState()
+        .setGroundGlassRttRuntimeInfoForChannel(channel, info, ownerId);
+    }
+  };
+
+  return React.createElement(UnconnectedGroundGlassRTT, {
+    ...props,
+    effectiveCameraMovementCalibration:
+      props.effectiveCameraMovementCalibration ?? effectiveCameraMovementCalibration,
+    presentationRegion,
+    onRuntimeInfoChange: props.onRuntimeInfoChange ?? onRuntimeInfoChange,
+  });
+};
+
+const GroundGlassRTT = StoreConnectedGroundGlassRTT;
 
 function renderedShaderMaterials() {
   return fiberTestState.renderedScenes.flatMap((scene) => {
@@ -187,6 +227,47 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     ).toHaveLength(2);
 
     view.unmount();
+  });
+
+  it("publishes runtime diagnostics through the injected owner-aware callback", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const updates: Array<
+      Parameters<GroundGlassRttRuntimeInfoChangeHandler>
+    > = [];
+    const onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler = (
+      channel,
+      info,
+      ownerId,
+    ) => {
+      updates.push([channel, info, ownerId]);
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        onRuntimeInfoChange,
+      }),
+    );
+
+    const initialUpdate = updates.find(([, info]) => info !== null);
+    expect(initialUpdate?.[0]).toBe("default");
+    expect(initialUpdate?.[1]?.resourceGeneration).toBe(1);
+    expect(initialUpdate?.[1]?.ownerId).toBe(initialUpdate?.[2]);
+
+    view.unmount();
+
+    const finalUpdate = updates[updates.length - 1];
+    expect(finalUpdate?.[0]).toBe("default");
+    expect(finalUpdate?.[1]).toBeNull();
+    expect(finalUpdate?.[2]).toBe(initialUpdate?.[2]);
   });
 
   it("publishes timings for the active processed Ground Glass passes", () => {

@@ -46,6 +46,7 @@ import {
 } from "../../render/postprocessing/FocusAssistPass";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
+import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
 import {
   formatCameraMovementLessonReadout,
@@ -78,6 +79,9 @@ export const SimulatorWorkspace = ({
   const setActiveScene = useAppStore((state) => state.setActiveScene);
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
+  const setGroundGlassAssistEnabled = useAppStore(
+    (state) => state.setGroundGlassAssistEnabled,
+  );
   const clearCameraMovementCalibrationSession = useAppStore(
     (state) => state.clearCameraMovementCalibrationSession,
   );
@@ -219,6 +223,10 @@ export const SimulatorWorkspace = ({
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
+  const presentationRegion =
+    safeScene.id === "understanding-camera-movements" && camera.cameraMovementLessonState
+      ? resolveCameraMovementLessonPresentationTargetRegion(camera.cameraMovementLessonState)
+      : targetRegion;
   const publicSceneEntry = getPublicSceneEntryById(sceneId);
   const guidedLessonContext = useMemo(
     () =>
@@ -466,7 +474,9 @@ export const SimulatorWorkspace = ({
 
               <GroundGlassViewport
                 opticsState={opticsState}
-                orientationAssistEnabled={mode === "free"}
+                scene={safeScene}
+                groundGlassAssistEnabled={camera.groundGlassAssistEnabled}
+                onGroundGlassAssistEnabledChange={setGroundGlassAssistEnabled}
                 focusAssistEnabled={camera.focusAssistEnabled}
                 gridEnabled={camera.gridEnabled}
                 canToggleFocusAssist={enabledControls.has("focusAssist")}
@@ -478,6 +488,10 @@ export const SimulatorWorkspace = ({
                 aperture={camera.aperture}
                 renderQuality={renderQuality}
                 sceneId={camera.activeSceneId}
+                focalLengthMm={camera.focalLengthMm}
+                lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
+                effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+                presentationRegion={presentationRegion}
                 lockReason={lockReason}
                 rawRttDebug={rawRttDebug}
                 focusMetric={tableTiltFocusMetric}

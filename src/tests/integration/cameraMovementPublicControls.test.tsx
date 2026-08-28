@@ -93,7 +93,8 @@ describe("public camera movement controls in the workspace", () => {
     render(
       <GroundGlassViewport
         opticsState={opticsState}
-        orientationAssistEnabled
+        groundGlassAssistEnabled={camera.groundGlassAssistEnabled}
+        onGroundGlassAssistEnabledChange={() => undefined}
         focusAssistEnabled={camera.focusAssistEnabled}
         gridEnabled={camera.gridEnabled}
         canToggleFocusAssist
