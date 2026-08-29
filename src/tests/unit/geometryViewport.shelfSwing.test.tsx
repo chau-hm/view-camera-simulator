@@ -53,6 +53,7 @@ const expectGuideLabelClearOfMiddleTarget = (svg: Element): void => {
     (element) => element.textContent === "Middle chart",
   );
   expect(guideLabel).not.toBeNull();
+  expect(guideLabel?.textContent).toBe("Diagonal subject plane");
   expect(middleMarker).not.toBeNull();
   expect(middleLabel).not.toBeUndefined();
 
