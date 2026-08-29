@@ -2,6 +2,9 @@ import type { GeometryView } from "../../types/camera";
 import type { SceneDefinition } from "../../types/scene";
 
 export type GeometryPresentationProfile = {
+  defaultSubjectView: "side" | "top";
+  diagramVariant: "optical-section" | "mirror-shift-teaching";
+
   depthWindow:
     { mode: "fixed"; minMm: number; maxMm: number } | { mode: "scene-bounds"; marginMm: number };
 
@@ -22,12 +25,28 @@ export type GeometryPresentationProfile = {
   depthPlaneGeometryViews?: readonly GeometryView[];
 };
 
+const DEFAULT_GEOMETRY_PRESENTATION_PROFILE: GeometryPresentationProfile = {
+  defaultSubjectView: "side",
+  diagramVariant: "optical-section",
+  depthWindow: { mode: "scene-bounds", marginMm: 300 },
+  annotationMode: "minimal",
+  diagramPaddingPx: 24,
+  showDepthStrip: true,
+  showSwatchLegend: false,
+  targetLabelMode: "short-local",
+  showOpticalAxisLabel: true,
+  showScheimpflugIntersection: true,
+  dofFillOpacity: 0.12,
+};
+
 export function getGeometryPresentationProfile(
   scene: SceneDefinition,
 ): GeometryPresentationProfile {
   // Focus Fundamentals keeps its compact teaching window tied to canonical scene bounds.
   if (scene.id === "focus-fundamentals-two-targets") {
     return {
+      defaultSubjectView: "side",
+      diagramVariant: "optical-section",
       depthWindow: { mode: "scene-bounds", marginMm: 300 },
       annotationMode: "minimal",
       diagramPaddingPx: 24,
@@ -42,6 +61,8 @@ export function getGeometryPresentationProfile(
 
   if (scene.id === "table-tilt") {
     return {
+      defaultSubjectView: "side",
+      diagramVariant: "optical-section",
       depthWindow: { mode: "fixed", minMm: -250, maxMm: 6800 },
       lateralWindow: {
         side: { minMm: -1400, maxMm: 250 },
@@ -61,6 +82,8 @@ export function getGeometryPresentationProfile(
 
   if (scene.id === "shelf-swing") {
     return {
+      defaultSubjectView: "top",
+      diagramVariant: "optical-section",
       depthWindow: { mode: "fixed", minMm: -250, maxMm: 6100 },
       lateralWindow: {
         side: { minMm: -900, maxMm: 900 },
@@ -78,16 +101,21 @@ export function getGeometryPresentationProfile(
     };
   }
 
+  if (scene.id === "oblique-architecture") {
+    return {
+      ...DEFAULT_GEOMETRY_PRESENTATION_PROFILE,
+      defaultSubjectView: "top",
+    };
+  }
+
+  if (scene.id === "mirror-shift") {
+    return {
+      ...DEFAULT_GEOMETRY_PRESENTATION_PROFILE,
+      defaultSubjectView: "top",
+      diagramVariant: "mirror-shift-teaching",
+    };
+  }
+
   // Default: scene-bounds profile with minimal annotations
-  return {
-    depthWindow: { mode: "scene-bounds", marginMm: 300 },
-    annotationMode: "minimal",
-    diagramPaddingPx: 24,
-    showDepthStrip: true,
-    showSwatchLegend: false,
-    targetLabelMode: "short-local",
-    showOpticalAxisLabel: true,
-    showScheimpflugIntersection: true,
-    dofFillOpacity: 0.12,
-  };
+  return DEFAULT_GEOMETRY_PRESENTATION_PROFILE;
 }
