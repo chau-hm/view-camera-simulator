@@ -7,5 +7,5 @@
 - Geometry decision: rear shift translates the canonical rear frame by rig-local +X; rear swing applies the established +Y rotation convention after rear tilt. The resulting `StandardFrame` continues to drive film plane, corners, projection, 2D, 3D, and Ground Glass consumers.
 - Exposure: no current generic scene capability array includes `frontShiftMm`, `rearShiftMm`, or `rearSwingDeg`; no new lesson/task/control copy was added. Existing Mirror Shift Front Shift remains available through its scene-specific capability.
 - Intentionally unchanged: `riseMinMm = 0` and no Fall exposure; no scene-specific ranges or unrelated Ground Glass/RTT fixes.
-- Validation: pending for this review-fix round.
+- Validation: `npm run ci:local` passed after the merge (146 files / 1,416 tests, lint, typecheck, CSS check, and build). Focused review suites passed (14 files / 229 tests). Requested browser coverage passed 9/12 in the combined run; the standalone Ground Glass interaction spec passed 3/3, while the two known RTT baseline assertions reproduced independently. `git diff --check` passed before final commit.
 - Known gap for 9B: the legacy CPU Ground Glass DOF path remains axis-aligned for oriented rear planes; this PR keeps that pre-existing limitation out of scope because the active canonical RTT/frame consumers are already wired.

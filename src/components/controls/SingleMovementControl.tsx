@@ -17,6 +17,8 @@ type SingleMovementControlProps = {
   movement: CameraMovementField;
 };
 
+type MovementCategory = "rise" | "shift" | "tilt" | "swing";
+
 const MOVEMENT_LABEL_KEYS: Record<CameraMovementField, ReadoutMessageKey> = {
   frontRiseMm: readoutMessageKeys.controls.frontRise,
   frontShiftMm: readoutMessageKeys.controls.frontShift,
@@ -66,24 +68,36 @@ export const SingleMovementControl = ({
 
   const label = t(MOVEMENT_LABEL_KEYS[movement]);
 
-  const isRise = movement === "frontRiseMm" || movement === "rearRiseMm";
-  const isShift = movement === "frontShiftMm" || movement === "rearShiftMm";
+  const movementCategory: MovementCategory =
+    movement === "frontRiseMm" || movement === "rearRiseMm"
+      ? "rise"
+      : movement === "frontShiftMm" || movement === "rearShiftMm"
+        ? "shift"
+        : movement === "frontSwingDeg" || movement === "rearSwingDeg"
+          ? "swing"
+          : "tilt";
 
-  const min = isRise
+  const min = movementCategory === "rise"
     ? CAMERA_CONSTANTS.riseMinMm
-    : isShift
+    : movementCategory === "shift"
       ? CAMERA_CONSTANTS.shiftMinMm
-      : CAMERA_CONSTANTS.tiltMinDeg;
-  const max = isRise
+      : movementCategory === "swing"
+        ? CAMERA_CONSTANTS.swingMinDeg
+        : CAMERA_CONSTANTS.tiltMinDeg;
+  const max = movementCategory === "rise"
     ? CAMERA_CONSTANTS.riseMaxMm
-    : isShift
+    : movementCategory === "shift"
       ? CAMERA_CONSTANTS.shiftMaxMm
-      : CAMERA_CONSTANTS.tiltMaxDeg;
-  const step = isRise
+      : movementCategory === "swing"
+        ? CAMERA_CONSTANTS.swingMaxDeg
+        : CAMERA_CONSTANTS.tiltMaxDeg;
+  const step = movementCategory === "rise"
     ? CAMERA_CONTROL_STEPS.riseMm
-    : isShift
+    : movementCategory === "shift"
       ? CAMERA_CONTROL_STEPS.shiftMm
-      : CAMERA_CONTROL_STEPS.tiltDeg;
+      : movementCategory === "swing"
+        ? CAMERA_CONTROL_STEPS.swingDeg
+        : CAMERA_CONTROL_STEPS.tiltDeg;
 
   const setter = useCallback(
     (v: number) => {
@@ -127,7 +141,7 @@ export const SingleMovementControl = ({
     ],
   );
 
-  const displayValue = isRise || isShift
+  const displayValue = movementCategory === "rise" || movementCategory === "shift"
     ? formatMillimeter(value)
     : formatDegrees(value);
 

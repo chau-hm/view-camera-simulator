@@ -11,7 +11,13 @@ import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
-import { rotateAroundY, vec } from "../../core/math/vec";
+import {
+  dot,
+  magnitude,
+  rotateAroundX,
+  rotateAroundY,
+  vec,
+} from "../../core/math/vec";
 import type { ApertureValue, CameraState } from "../../types/camera";
 
 
@@ -255,6 +261,54 @@ describe("rear-standard swing", () => {
       CAMERA_CONSTANTS.filmWidthMm,
       CAMERA_CONSTANTS.filmHeightMm,
     )).toBeNull();
+  });
+});
+
+describe("rear-standard combined tilt and swing", () => {
+  it("applies rear tilt around X before rear swing around Y", () => {
+    const baselineCenter = vec(0, 0, -150);
+    const rearTiltDeg = 6;
+    const rearSwingDeg = 8;
+    const { frame, corners } = calculateRearStandardFrame(
+      baselineCenter,
+      0,
+      rearTiltDeg,
+      CAMERA_CONSTANTS.filmWidthMm,
+      CAMERA_CONSTANTS.filmHeightMm,
+      0,
+      rearSwingDeg,
+    );
+    const expectedRight = rotateAroundY(vec(1, 0, 0), rearSwingDeg);
+    const expectedUp = rotateAroundY(
+      rotateAroundX(vec(0, 1, 0), rearTiltDeg),
+      rearSwingDeg,
+    );
+    const expectedNormal = rotateAroundY(
+      rotateAroundX(vec(0, 0, 1), rearTiltDeg),
+      rearSwingDeg,
+    );
+
+    expect(frame.centerWorld).toEqual(baselineCenter);
+    for (const axis of ["x", "y", "z"] as const) {
+      expect(frame.rightWorld[axis]).toBeCloseTo(expectedRight[axis], 10);
+      expect(frame.upWorld[axis]).toBeCloseTo(expectedUp[axis], 10);
+      expect(frame.normalWorld[axis]).toBeCloseTo(expectedNormal[axis], 10);
+    }
+
+    expect(magnitude(frame.rightWorld)).toBeCloseTo(1, 10);
+    expect(magnitude(frame.upWorld)).toBeCloseTo(1, 10);
+    expect(magnitude(frame.normalWorld)).toBeCloseTo(1, 10);
+    expect(dot(frame.rightWorld, frame.upWorld)).toBeCloseTo(0, 10);
+    expect(dot(frame.rightWorld, frame.normalWorld)).toBeCloseTo(0, 10);
+    expect(dot(frame.upWorld, frame.normalWorld)).toBeCloseTo(0, 10);
+    expect(
+      validateFilmCorners(
+        corners,
+        frame,
+        CAMERA_CONSTANTS.filmWidthMm,
+        CAMERA_CONSTANTS.filmHeightMm,
+      ),
+    ).toBeNull();
   });
 });
 
