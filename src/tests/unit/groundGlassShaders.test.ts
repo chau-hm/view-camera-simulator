@@ -181,12 +181,13 @@ describe("GroundGlass DOF shader source", () => {
     );
   });
 
-  test("composite stage owns orientation and focus-ring display policy", () => {
+  test("composite stage owns orientation without the removed focus-assist ring", () => {
     expect(groundGlassCompositeFragmentShader).toContain("displayUpright");
-    expect(groundGlassCompositeFragmentShader).toContain("applyFocusRing");
     expect(groundGlassCompositeFragmentShader).toContain("uniform sampler2D tGather");
     expect(groundGlassCompositeFragmentShader).toContain("uniform sampler2D tNearGather");
     expect(groundGlassCompositeFragmentShader).toContain("useNearGather");
+    expect(groundGlassCompositeFragmentShader).not.toContain("applyFocusRing");
+    expect(groundGlassCompositeFragmentShader).not.toContain("showRing");
     expect(groundGlassCompositeFragmentShader).not.toContain("sigma");
   });
 });

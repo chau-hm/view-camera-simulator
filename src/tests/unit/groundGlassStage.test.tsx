@@ -155,9 +155,12 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     const view = render(<ControlledGroundGlassStage />);
     const stage = getStage(view.getByRole);
     configureStage(stage);
+    expect(stage).toHaveStyle({ cursor: "zoom-in" });
     pointerGesture(stage, { pointerId: 1, startX: 350, startY: 250 });
     expect(stage).toHaveAttribute("data-zoomed", "true");
     expect(stage).toHaveAttribute("data-scale", "1.9");
+    expect(stage).toHaveAttribute("aria-label", "Pan Ground Glass");
+    expect(stage).toHaveStyle({ cursor: "grab" });
     // A duplicate pointer-up for the completed gesture is inert.
     fireEvent.pointerUp(stage, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 350, clientY: 250 });
     expect(stage).toHaveAttribute("data-zoomed", "true");
@@ -186,12 +189,16 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(resetButton).toHaveFocus();
   });
 
-  it("treats 3-5 px mouse jitter as a zoom-out click and resets atomically", () => {
+  it("does not reset zoom or pan for a short zoomed press or below-threshold movement", () => {
     const view = render(<ControlledGroundGlassStage />);
     const stage = getStage(view.getByRole);
     configureStage(stage);
     pointerGesture(stage, { pointerId: 2, startX: 180, startY: 120 });
     expect(stage).toHaveAttribute("data-zoomed", "true");
+    const normalizedPanX = stage.getAttribute("data-normalized-pan-x");
+    const normalizedPanY = stage.getAttribute("data-normalized-pan-y");
+    const panX = stage.getAttribute("data-pan-x");
+    const panY = stage.getAttribute("data-pan-y");
 
     pointerGesture(stage, {
       pointerId: 3,
@@ -200,18 +207,15 @@ describe("GroundGlassStage explicit zoom interaction", () => {
       endX: 354,
       endY: 253,
     });
-    expect(stage).toHaveAttribute("data-zoomed", "false");
-    expect(stage).toHaveAttribute("data-pan-x", "0");
-    expect(stage).toHaveAttribute("data-pan-y", "0");
-    expect(stage).toHaveAttribute("data-normalized-pan-x", "0");
-    expect(stage).toHaveAttribute("data-normalized-pan-y", "0");
-    expect(stage).toHaveAttribute("data-scale", "1");
+    expect(stage).toHaveAttribute("data-zoomed", "true");
+    expect(stage).toHaveAttribute("data-pan-x", panX);
+    expect(stage).toHaveAttribute("data-pan-y", panY);
+    expect(stage).toHaveAttribute("data-normalized-pan-x", normalizedPanX);
+    expect(stage).toHaveAttribute("data-normalized-pan-y", normalizedPanY);
+    expect(stage).toHaveAttribute("data-scale", "1.9");
     expect(stage).toHaveAttribute("data-dragging", "false");
     expect(stage).toHaveAttribute("data-pointer-active", "false");
     expect(stage).toHaveAttribute("data-pointer-captured", "false");
-    expect(view.getByTestId("ground-glass-image-layer")).toHaveStyle({
-      transform: "translate3d(0px, 0px, 0) scale(1)",
-    });
   });
 
   it.each([
@@ -235,15 +239,50 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(Number(stage.getAttribute("data-pan-x"))).not.toBe(0);
   });
 
-  it("a drag-generated click is inert and the next independent click works immediately", () => {
+  it("uses grab and grabbing cursors for an active zoomed pan gesture", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    pointerGesture(stage, { pointerId: 15, startX: 350, startY: 250 });
+
+    fireEvent.pointerDown(stage, {
+      pointerId: 16,
+      pointerType: "mouse",
+      button: 0,
+      clientX: 350,
+      clientY: 250,
+    });
+    expect(stage).toHaveStyle({ cursor: "grab" });
+    fireEvent.pointerMove(stage, {
+      pointerId: 16,
+      pointerType: "mouse",
+      clientX: 390,
+      clientY: 275,
+    });
+    expect(stage).toHaveStyle({ cursor: "grabbing" });
+    fireEvent.pointerUp(stage, {
+      pointerId: 16,
+      pointerType: "mouse",
+      button: 0,
+      clientX: 390,
+      clientY: 275,
+    });
+    expect(stage).toHaveStyle({ cursor: "grab" });
+  });
+
+  it("a drag-generated click is inert and the next independent click preserves zoom", () => {
     const view = render(<ControlledGroundGlassStage />);
     const stage = getStage(view.getByRole);
     configureStage(stage);
     pointerGesture(stage, { pointerId: 20, startX: 350, startY: 250 });
     pointerGesture(stage, { pointerId: 21, startX: 350, startY: 250, endX: 390, endY: 275 });
     expect(stage).toHaveAttribute("data-zoomed", "true");
+    const panX = stage.getAttribute("data-pan-x");
+    const panY = stage.getAttribute("data-pan-y");
     pointerGesture(stage, { pointerId: 22, startX: 350, startY: 250, endX: 354, endY: 252 });
-    expect(stage).toHaveAttribute("data-zoomed", "false");
+    expect(stage).toHaveAttribute("data-zoomed", "true");
+    expect(stage).toHaveAttribute("data-pan-x", panX);
+    expect(stage).toHaveAttribute("data-pan-y", panY);
   });
 
   it("classifies total pointer-up displacement even when no move event was delivered", () => {
@@ -282,27 +321,36 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(stage.releasePointerCapture).toHaveBeenCalledWith(31);
   });
 
-  it.each(["pointerCancel", "lostPointerCapture"] as const)("%s resets a captured gesture", (eventName) => {
+  it.each(["pointerCancel", "lostPointerCapture"] as const)("%s cancels a captured gesture without resetting zoom or pan", (eventName) => {
     const view = render(<ControlledGroundGlassStage />);
     const stage = getStage(view.getByRole);
     configureStage(stage);
     pointerGesture(stage, { pointerId: 40, startX: 350, startY: 250 });
-    fireEvent.pointerDown(stage, { pointerId: 41, pointerType: "mouse", button: 0, clientX: 350, clientY: 250 });
-    fireEvent.pointerMove(stage, { pointerId: 41, pointerType: "mouse", clientX: 390, clientY: 270 });
-    fireEvent[eventName](stage, { pointerId: 41, pointerType: "mouse" });
-    expect(stage).toHaveAttribute("data-zoomed", "false");
+    pointerGesture(stage, { pointerId: 41, startX: 350, startY: 250, endX: 390, endY: 270 });
+    fireEvent.pointerDown(stage, { pointerId: 42, pointerType: "mouse", button: 0, clientX: 350, clientY: 250 });
+    fireEvent.pointerMove(stage, { pointerId: 42, pointerType: "mouse", clientX: 390, clientY: 270 });
+    expect(stage).toHaveAttribute("data-dragging", "true");
+    const panX = stage.getAttribute("data-pan-x");
+    const panY = stage.getAttribute("data-pan-y");
+    fireEvent[eventName](stage, { pointerId: 42, pointerType: "mouse" });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
     expect(stage).toHaveAttribute("data-pointer-active", "false");
     expect(stage).toHaveAttribute("data-dragging", "false");
-    expect(stage).toHaveAttribute("data-pan-x", "0");
+    expect(stage).toHaveAttribute("data-pan-x", panX);
+    expect(stage).toHaveAttribute("data-pan-y", panY);
+    expect(stage).toHaveStyle({ cursor: "grab" });
   });
 
-  it("Escape resets while Enter uses the same explicit centered path", () => {
+  it("Escape resets while Enter only zooms an unzoomed stage", () => {
     const view = render(<ControlledGroundGlassStage />);
     const stage = getStage(view.getByRole);
     configureStage(stage);
     fireEvent.keyDown(stage, { key: "Enter" });
     expect(stage).toHaveAttribute("data-zoomed", "true");
     expect(stage).toHaveAttribute("data-pan-x", "0");
+    expect(stage).toHaveAttribute("aria-label", "Pan Ground Glass");
+    fireEvent.keyDown(stage, { key: "Enter" });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
     fireEvent.keyDown(stage, { key: "Escape" });
     expect(stage).toHaveAttribute("data-zoomed", "false");
     expect(stage).toHaveAttribute("data-scale", "1");

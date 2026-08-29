@@ -207,8 +207,6 @@ describe("phase 12 integration", () => {
     expect(screen.getByLabelText("Swing")).toBeInTheDocument();
     expect(screen.getByLabelText("Focus distance")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeInTheDocument();
-    // Ground glass assist control removed; preview mode (Raw/Upright) is now used instead
-    expect(screen.getByLabelText("Focus assist")).toBeInTheDocument();
     expect(screen.getByLabelText("Grid")).toBeInTheDocument();
     expect(screen.getByLabelText("Rise")).toHaveAttribute("step", "1");
     expect(screen.getByLabelText("Tilt")).toHaveAttribute("step", "0.1");

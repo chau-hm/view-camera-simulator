@@ -53,7 +53,6 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
   activeTaskId: "rise-01",
   mode: "guided",
   groundGlassAssistEnabled: false,
-  focusAssistEnabled: false,
   gridEnabled: true,
   geometryView: "side",
   focusMode: "finite",

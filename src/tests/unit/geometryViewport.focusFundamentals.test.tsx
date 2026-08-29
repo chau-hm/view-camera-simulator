@@ -304,7 +304,6 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
       <GroundGlassRenderer
         opticsState={optics}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}

@@ -213,34 +213,16 @@ void main(){
 }
 `;
 
-/** Final full-resolution display composite, including existing orientation and ring policy. */
+/** Final full-resolution display composite, including existing orientation policy. */
 export const groundGlassCompositeFragmentShader = `
 precision highp float;
 varying vec2 vUv;
 uniform sampler2D tGather;
 uniform sampler2D tNearGather;
 uniform float useNearGather;
-uniform vec2 ringCenter;
-uniform float ringRadiusPx;
-uniform vec3 ringColor;
-uniform float ringOpacity;
-uniform float showRing;
 uniform float displayUpright;
 uniform float renderWidth;
 uniform float renderHeight;
-
-vec3 applyFocusRing(vec3 color, vec2 screenUv){
-  if(showRing <= 0.5) return color;
-  vec2 ringCenterScreen = (displayUpright > 0.5)
-    ? vec2(1.0 - ringCenter.x, 1.0 - ringCenter.y)
-    : ringCenter;
-  vec2 px = screenUv * vec2(renderWidth, renderHeight);
-  vec2 centerPx = ringCenterScreen * vec2(renderWidth, renderHeight);
-  float distancePx = distance(px, centerPx);
-  float ring = smoothstep(ringRadiusPx - 1.5, ringRadiusPx - 0.5, distancePx) -
-    smoothstep(ringRadiusPx + 0.5, ringRadiusPx + 1.5, distancePx);
-  return mix(color, ringColor, clamp(ring * ringOpacity, 0.0, 1.0));
-}
 
 void main(){
   vec2 screenUv = vUv;
@@ -252,7 +234,7 @@ void main(){
     vec4 nearLayer = texture2D(tNearGather, sampleUv);
     gathered.rgb = mix(gathered.rgb, nearLayer.rgb, clamp(nearLayer.a, 0.0, 1.0));
   }
-  gathered.rgb = applyFocusRing(gathered.rgb, screenUv);
+
   gl_FragColor = gathered;
 }
 `;

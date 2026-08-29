@@ -1,25 +1,30 @@
-# Expanded 3D Scene viewport fill
+# Ground Glass Focus Assist removal and stable zoomed pan
 
-- Work identifier: `fix/expanded-3d-scene-fill-viewport` / PR title `fix(ui): let expanded 3D scene fill viewport`.
-- Branch/base: `fix/expanded-3d-scene-fill-viewport` from `origin/main` `c09bc408`.
-- Substantive HEAD: `de4f71a` (`fix(ui): let expanded 3d scene fill viewport`).
-- Objective: make the expanded 3D Scene render surface use the available simulator main width and height while preserving normal, Ground Glass, Geometry, and controls layouts.
+- Work identifier: `fix/ground-glass-focus-assist-pan` / PR title `fix(ground-glass): simplify focus assist and zoom-pan interaction`.
+- Branch/base: `fix/ground-glass-focus-assist-pan` from latest `origin/main` `8ff1f974afaf70530add4ba1229a924c8afdc1ed` (PR #107 is merged).
+- Substantive HEAD: pending implementation commit.
+- Objective: remove the obsolete Ground Glass Focus Assist feature and make zoomed image interaction a non-destructive pan surface.
 
-## Root cause and fix
+## Implementation
 
-- `SimulatorWorkspace` embeds `SceneViewport` with `showHeader={false}`, leaving the scene panel with only toolbar and viewport-shell children.
-- `.scene-panel--expanded` reserved three grid rows (`auto auto 1fr`), so the shell stayed at its intrinsic/aspect-ratio height and the unused third row received the remaining space.
-- The expanded scene grid now uses `auto minmax(0, 1fr)`. The existing 100%-height host and Canvas sizing then grow with the panel and follow browser resize.
+- Removed the Focus Assist View Options control, camera/UI state, toggle/action, task defaults, enabled-control permissions, Ground Glass prop plumbing, RTT focus-ring uniforms/projection, fixed Focus Assist badge, and unused `createFocusAssistPass` presentation mapping.
+- Retained `FocusAssistPass.ts`, `FocusAssistMetric`, and `resolvePhysicalFocusTargetPresentationMetric` only because the physical metric remains the source for focus-distance and learner focus-target readouts. No obsolete Focus Assist state or display-target path remains in `src`.
+- Before: any zoomed pointer-up classified as a click activated the current zoom action and reset zoom; pointercancel/lostpointercapture used the full zoom-and-pan reset.
+- After: unzoomed click/tap zooms in at its anchor; zoomed drag pans; zoomed short clicks and below-threshold movements do nothing; pointercancel/lostpointercapture end only the drag and preserve zoom/pan. Reset View, Escape, navigation/preview reset keys, and externally disabled zoom retain explicit reset behavior.
+- Cursor and stage accessibility now use `zoom-in` / `grab` / `grabbing` and `Zoom in` / `Pan` labels; the explicit Zoom/Reset button remains keyboard accessible.
 
-## Scope and evidence
+## Files and evidence
 
-- Changed: `src/index.css` and `src/tests/e2e/scene-viewport-expansion.spec.ts`.
-- Normal mode behavior is unchanged; expanded mode fills the available height, follows window resize, and restores cleanly.
-- Focused integration: 17/17 passed. Focused expanded-scene browser test: 1/1 passed, including repeated restore and live resize.
-- Full unit/integration: 145 files / 1,392 tests passed. Typecheck, lint, CSS check, build, and `git diff --check` passed.
-- Full viewport-expansion browser file: 3/4 passed. The unrelated Ground Glass quality test consistently retains the existing RTT mismatch (`colorWidth` 172 vs `blurWidth` 86); no Ground Glass code was changed.
+- Changed UI/state/render files across `src/components`, `src/state`, `src/types`, `src/core/tasks`, `src/i18n`, `src/render`, `src/ui`, and the focused unit/integration/E2E tests. No optics, transform math, RTT dimensions, viewport sizing, comparison-state ownership, or camera-control logic was changed.
+- Normal Ground Glass behavior, Grid, raw/upright preview, focus-distance/infinity/last-finite labels, comparison panes, and expansion/restoration paths are intended to remain unchanged.
+- Focused unit/integration: 11 files / 163 tests passed; full unit/integration: 145 files / 1,393 tests passed.
+- Focused browser: `groundglass-interaction.spec.ts` 3/3 passed; Table Tilt zoom/pan and interrupted-pointer cases 2/2 passed; expansion/restoration suite 3/4 passed, with the existing RTT quality-size mismatch as the fourth result.
+- Full checks: `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`, `npm test`, and `git diff --check` passed.
+- `npm run ci:local:e2e` passed its CSS/lint/typecheck/unit/build stages and many browser suites, then stopped at the unchanged Mirror Shift geometry test because `ground-glass-rtt` did not appear within 30s. A focused rerun reproduced that baseline failure. The unrelated expansion quality baseline remains `colorWidth` 86 vs `blurWidth` 172.
+- Remote Actions: not used; publication will use explicit Git/GitHub CLI refs.
 
 ## Remaining risks and reviewer focus
 
-- Remaining risk is the pre-existing WebGL/RTT quality-test baseline noted above.
-- Verify the two-row expanded scene chain, canvas bottom alignment, browser-height resize, collapse/restore, and unchanged normal/Ground Glass/Geometry/control layout behavior.
+- Review that all Focus Assist-only control/state/RTT display paths are removed while the retained physical metric still drives focus readouts.
+- Review stale-gesture protection around synchronous `lostpointercapture` during capture release, and confirm no transform math changed.
+- Existing unrelated WebGL/RTT baselines noted above remain. Unrelated untracked `public/assets/f2f105ab-04dd-4bcc-b37c-bf90894b3e7f.png` is intentionally untouched and will not be staged.

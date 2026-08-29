@@ -46,7 +46,6 @@ test("Architecture + Foreground DOF regression stays finite across Raw RTT toggl
   });
 
   await page.goto("/simulator/free/architecture-foreground?rttDiagnostics=1");
-  await page.getByLabel("Focus assist").check();
   await setStepRangeInput(page, "Rise", 20);
   await setStepRangeInput(page, "Tilt", 6.6);
   await setRangeDirect(page, "Focus distance", 7750);
@@ -94,7 +93,6 @@ test("Architecture + Foreground DOF regression stays finite across Raw RTT toggl
 test("Architecture + Foreground DOF remains finite through a transition sequence", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/simulator/free/architecture-foreground?rttDiagnostics=1");
-  await page.getByLabel("Focus assist").check();
   const rtt = page.getByTestId("ground-glass-rtt");
   const checkpoints = [
     { tilt: 2, focus: 6830, aperture: "11" },
