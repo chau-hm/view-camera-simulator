@@ -44,7 +44,9 @@ test.describe('Marketing responsive', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/faq');
 
-    await expect(page.getByRole('heading', { name: 'Frequently Asked Questions', level: 1 })).toBeVisible();
+    await page.getByRole('combobox', { name: 'Language' }).selectOption('zh-HK');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'zh-HK');
+    await expect(page.getByRole('heading', { name: '常見問題', level: 1 })).toBeVisible();
     const overflowWidth = await page.evaluate(() => {
       const root = document.documentElement;
       return root.scrollWidth - root.clientWidth;

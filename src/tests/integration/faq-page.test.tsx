@@ -68,7 +68,7 @@ describe("FAQ page", () => {
     expect(firstDetails.open).toBe(false);
   });
 
-  it("marks the English FAQ fallback within an English language boundary", async () => {
+  it("renders the approved Traditional Chinese FAQ in the zh-HK locale", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/faq"] });
     render(<RouterProvider router={memoryRouter} />);
 
@@ -79,17 +79,28 @@ describe("FAQ page", () => {
     await waitFor(() => {
       expect(document.documentElement.lang).toBe("zh-HK");
       expect(screen.getByRole("combobox", { name: "語言" })).toHaveValue("zh-HK");
+      expect(screen.getByRole("heading", { name: "常見問題", level: 1 })).toBeInTheDocument();
     });
 
-    const heading = screen.getByRole("heading", {
-      name: "Frequently Asked Questions",
-      level: 1,
-    });
-    const languageBoundary = heading.closest("[lang=\"en\"]");
+    const faq = screen.getByTestId("faq-section");
+    const summaries = Array.from(faq.querySelectorAll("summary"));
+    const questions = [
+      "View Camera Simulator 適合哪些人使用？",
+      "我需要擁有大片幅相機嗎？",
+      "我可以透過 View Camera Simulator 學到甚麼？",
+      "模擬器是否以某一款特定的大片幅相機或鏡頭為基礎？",
+      "我的相機會提供模擬器展示的所有移軸功能嗎？",
+      "模擬器有多真實？",
+      "它可以取代使用實際大片幅相機的學習嗎？",
+    ];
 
-    expect(languageBoundary).not.toBeNull();
-    expect(languageBoundary).toContainElement(screen.getByTestId("faq-section"));
-    expect(languageBoundary).toHaveAttribute("lang", "en");
+    expect(summaries.map((summary) => summary.querySelector(".faq-item__question-text")?.textContent)).toEqual(
+      questions,
+    );
+    expect(screen.getByText("不需要。")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "常見問題" })).toHaveAttribute("href", "/faq");
+    expect(screen.getByRole("heading", { name: "常見問題", level: 1 }).closest("[lang=\"en\"]")).toBeNull();
+    expect(faq.closest("[lang=\"en\"]")).toBeNull();
     expect(document.documentElement).toHaveAttribute("lang", "zh-HK");
   });
 });

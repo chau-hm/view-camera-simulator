@@ -75,12 +75,10 @@ export const FaqPage = () => {
 
   return (
     <AppShell title="" useSiteShell>
-      <div lang="en">
-        <header className="faq-page-header">
-          <h1>{t("home.faq.title")}</h1>
-        </header>
-        <FaqSection />
-      </div>
+      <header className="faq-page-header">
+        <h1>{t("home.faq.title")}</h1>
+      </header>
+      <FaqSection />
     </AppShell>
   );
 };
