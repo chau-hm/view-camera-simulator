@@ -1,26 +1,28 @@
-# Geometry viewport state boundary — focused refactor
+# PR #101 — FAQ final correction
 
-- Work identifier: `refactor/self-contained-geometry-viewport`.
-- Branch/base: `refactor/self-contained-geometry-viewport` from latest `origin/main` at `76a98aaee297493ee0dc35bec3fcc91d06dd9299`.
-- Substantive HEAD: `741e284` (`refactor(geometry): decouple viewport state boundary`).
-- Objective: make `GeometryViewport` a reusable explicit-input boundary with `SimulatorWorkspace` as the application-state adapter.
+- Branch: `feature/landing-faq`.
+- Synchronization base: `origin/main` at `8f72c43542f2cb5bfb1f2f213a74460e1adfe376`, merged in `926a9ee`.
+- FAQ implementation commit: `8d6c950`.
+- Objective: keep `/` concise, retain the redesigned `/faq` accordion, and scope the English fallback explicitly for assistive technology.
 
-## Boundary decision
+## Current surface
 
-- Before: `GeometryViewport` read `setGeometryView` and `camera.focalLengthMm` from Zustand.
-- After: `SimulatorWorkspace` passes required `geometryView`, `onGeometryViewChange`, and `focalLengthMm` props; GeometryViewport retains only presentation-local state (`svgSize`, fit mode, refs, and ResizeObserver).
-- Geometry math, scene policy modules, visual behavior, Ground Glass, and SceneViewport are unchanged.
+- Removed the obsolete FAQ eyebrow/subtitle markup and `home.faq.eyebrow` / `home.faq.subtitle` keys.
+- Wrapped the FAQ page H1, questions, and answers in `lang="en"`; the document remains locale-controlled by the existing i18n system.
+- Kept the seven approved FAQ items, order, native disclosures, numbering, icons, open-state accent, focus styling, and responsive layout unchanged.
 
-## Changes and evidence
+## Validation
 
-- Changed files: `GeometryViewport.tsx`, `SimulatorWorkspace.tsx`, GeometryViewport unit suites, and `SimulatorWorkspace.test.tsx`.
-- GeometryViewport contains no `useAppStore` or `appStore` references.
-- Replaced StoreBacked unit harnesses with explicit controlled parents; Workspace integration verifies public view selection updates application state.
-- Focused unit/integration: 5 files, 64 passed. Full unit/integration: 143 files, 1,362 passed. Typecheck, lint, CSS check, build, and diff check passed.
-- Focused browser batch: 36 passed / 8 failed; failures were existing WebGL/diagnostic/layout-stability cases. `npm run ci:local:e2e` passed all standard checks and stopped at `mirror-shift-teaching-geometry.spec.ts:3`, waiting for `data-rtt-final-contentful="true"` at line 32; the spec's second test passed.
-- Remote Actions: PR #103 is open. Latest runs `33206724211` and `33206727471` (as well as earlier runs `33206467895`, `33206506901`, `33206580330`, and `33206583191`) failed before tests during `npm ci` with `No matching version found for eslint-plugin-react-hooks@^6.8.0`; deploy jobs were skipped. No dependency or workflow changes were made.
+- Full unit/integration: pass (144 files / 1,364 tests).
+- Focused FAQ/home/navigation/i18n integration: pass (4 files / 7 tests).
+- Typecheck, ESLint, CSS structure check, production build, and `git diff --check`: pass.
+- Focused Chromium: pass (FAQ navigation/keyboard behavior and 390px overflow; 2 tests).
+- Renderer/WebGL E2E not run; no renderer behavior changed.
 
-## Reviewer focus
+## Known gap
 
-- Verify the explicit callback/focal-length contract at the Workspace boundary and that Focus Fundamentals reference geometry uses the injected focal length.
-- Confirm no geometry formulas, scene policies, Ground Glass code, or visual behavior changed. Remaining risk is the documented WebGL timing/diagnostic baseline, especially the Geometry-only Mirror Shift RTT assertion.
+- Hosted CI remains expected to fail at `npm ci` for `eslint-plugin-react-hooks@^6.8.0`; dependency files were not changed.
+
+## Scope note
+
+- The only merge conflict was this bookkeeping file; it was first resolved to latest `origin/main`, then overwritten after implementation and validation. Incoming simulator/render changes were not manually reinterpreted or modified.
