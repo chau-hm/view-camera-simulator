@@ -1,26 +1,25 @@
-# Geometry label metadata — focused refactor
+# Expanded 3D Scene viewport fill
 
-- Work identifier: `refactor/geometry-label-metadata` / PR #106.
-- Branch/base: `refactor/geometry-label-metadata` from latest `origin/main` `8642ca1` (PR #104 is included).
-- Substantive HEAD: `ce47c3a` (`refactor(geometry): centralize label metadata`).
-- Objective: make scene Geometry metadata the single source for guide/target label semantics while `OpticalSectionDiagram` only translates and renders them.
+- Work identifier: `fix/expanded-3d-scene-fill-viewport` / PR title `fix(ui): let expanded 3D scene fill viewport`.
+- Branch/base: `fix/expanded-3d-scene-fill-viewport` from `origin/main` `c09bc408`.
+- Substantive HEAD: `de4f71a` (`fix(ui): let expanded 3d scene fill viewport`).
+- Objective: make the expanded 3D Scene render surface use the available simulator main width and height while preserving normal, Ground Glass, Geometry, and controls layouts.
 
-## Architecture decision
+## Root cause and fix
 
-- Before: guide fallback metadata and an English target registry lived in `sceneGeometryGuides.ts`, while `OpticalSectionDiagram` duplicated guide/target scene-ID routing switches.
-- After: guides carry optional `labelMessageKey`; the same metadata module owns one canonical scene/target `SimulatorMessageKey` map and resolver. The obsolete English target registry/function was removed after repository audit found no production callers.
-- `OpticalSectionDiagram` now consumes guide metadata and `getSceneGeometryTargetMessageKey`; label placement, translation keys, fallback labels, and visible text remain unchanged. `GeometryPresentationProfile`, Scheimpflug support, `GeometryViewport`, Ground Glass, and 3D code are unchanged.
+- `SimulatorWorkspace` embeds `SceneViewport` with `showHeader={false}`, leaving the scene panel with only toolbar and viewport-shell children.
+- `.scene-panel--expanded` reserved three grid rows (`auto auto 1fr`), so the shell stayed at its intrinsic/aspect-ratio height and the unused third row received the remaining space.
+- The expanded scene grid now uses `auto minmax(0, 1fr)`. The existing 100%-height host and Canvas sizing then grow with the panel and follow browser resize.
 
 ## Scope and evidence
 
-- Changed: `sceneGeometryGuides.ts`, `OpticalSectionDiagram.tsx`, and focused guide/target plus Table Tilt, Shelf Swing, Focus Fundamentals, and Architecture + Foreground viewport tests.
-- Static audit: no `sceneGeometryGuideMessageKey`, `sceneGeometryTargetMessageKey`, `getSceneGeometryTargetLabel`, or old target registry remains in `src`; guide/target routing is no longer defined in the SVG renderer.
-- Focused unit set passed: 6 files / 82 tests. Final full unit/integration suite passed: 145 files / 1,392 tests. Typecheck, lint, CSS check, build, and `git diff --check` passed.
-- Focused browser batch: 31 passed / 10 failed; failures were existing WebGL screenshot stability, RTT readiness, layout, focus restoration, or task timing paths, with no label assertion failure. `npm run ci:local:e2e` passed CSS/lint/typecheck/unit/build, then stopped at `mirror-shift-teaching-geometry.spec.ts:3` waiting 30s for `ground-glass-rtt[data-rtt-final-contentful="true"]`; its second test passed.
-- Remote Actions: PR #106 checks were in progress at handoff. The known hosted `npm ci` failure is infrastructure/dependency state; no dependency/workflow changes were made.
+- Changed: `src/index.css` and `src/tests/e2e/scene-viewport-expansion.spec.ts`.
+- Normal mode behavior is unchanged; expanded mode fills the available height, follows window resize, and restores cleanly.
+- Focused integration: 17/17 passed. Focused expanded-scene browser test: 1/1 passed, including repeated restore and live resize.
+- Full unit/integration: 145 files / 1,392 tests passed. Typecheck, lint, CSS check, build, and `git diff --check` passed.
+- Full viewport-expansion browser file: 3/4 passed. The unrelated Ground Glass quality test consistently retains the existing RTT mismatch (`colorWidth` 172 vs `blurWidth` 86); no Ground Glass code was changed.
 
-## Reviewer focus
+## Remaining risks and reviewer focus
 
-- Verify all explicit guide keys and 15 target mappings, plus near/far/generic fallback resolution, remain identical to the former renderer switches.
-- Verify representative rendered labels remain learner-facing identical and guide geometry/label placement is unchanged.
-- Remaining risk is the documented repository WebGL/RTT E2E baseline; no optical geometry, Scheimpflug, viewport, Ground Glass, or 3D behavior was intended to change.
+- Remaining risk is the pre-existing WebGL/RTT quality-test baseline noted above.
+- Verify the two-row expanded scene chain, canvas bottom alignment, browser-height resize, collapse/restore, and unchanged normal/Ground Glass/Geometry/control layout behavior.
