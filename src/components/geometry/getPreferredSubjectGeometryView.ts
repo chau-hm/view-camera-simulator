@@ -2,22 +2,12 @@ export const MOVEMENT_VIEW_EPSILON_DEG = 1e-4;
 
 export type SubjectGeometryView = "side" | "top";
 
-const SCENE_DEFAULT_SUBJECT_VIEW: Readonly<Record<string, SubjectGeometryView>> = {
-  "table-tilt": "side",
-  "shelf-swing": "top",
-  "architecture-rise": "side",
-  "architecture-foreground": "side",
-  "oblique-architecture": "top",
-  "focus-fundamentals-two-targets": "side",
-  "mirror-shift": "top",
-};
-
 export function getPreferredSubjectGeometryView({
-  sceneId,
+  defaultView,
   tiltDeg,
   swingDeg,
 }: {
-  sceneId: string;
+  defaultView: SubjectGeometryView;
   tiltDeg: number;
   swingDeg: number;
 }): SubjectGeometryView {
@@ -28,7 +18,7 @@ export function getPreferredSubjectGeometryView({
   // Treat effectively equal movements as a tie so floating-point noise cannot
   // repeatedly flip the instructional view around the crossover point.
   if (Math.abs(magnitudeDifference) <= MOVEMENT_VIEW_EPSILON_DEG) {
-    return SCENE_DEFAULT_SUBJECT_VIEW[sceneId] ?? "side";
+    return defaultView;
   }
 
   return magnitudeDifference > 0 ? "side" : "top";
