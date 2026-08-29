@@ -1,8 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import type { ReactNode } from "react";
 import { DoubleSide, Quaternion, Vector3 } from "three";
+import { imageDistanceMm } from "../core/optics/thinLensModel";
+import { transformRigLocalPointToWorld } from "../core/optics/applyCameraBodyPitch";
 import type {
   CameraBodyLocalGeometry,
+  CameraRigTransform,
   DerivedOpticsState,
   StandardFrame,
   Vec3,
@@ -37,6 +40,35 @@ export type ConceptualCameraCoordinateSpace = "world" | "rig-local";
 export type ConceptualCameraRail = {
   centerRigLocal: Vec3;
   dimensionsMm: Vec3;
+};
+
+const CONCEPTUAL_CAMERA_SUPPORT_RAIL_OVERHANG_MM = 60;
+const CONCEPTUAL_CAMERA_SUPPORT_RAIL_CLEARANCE_MM = 34;
+const conceptualSupportImageDistanceMm = imageDistanceMm(
+  CAMERA_CONSTANTS.focalLengthMm,
+  CAMERA_CONSTANTS.defaultFocusDistanceMm,
+);
+
+/**
+ * Fixed generic rig-local support datum for scenes without a calibrated rail.
+ * Standard movements never participate in this value; whole-camera transforms
+ * are applied separately when the datum is rendered in world space.
+ */
+export const CONCEPTUAL_CAMERA_SUPPORT_RAIL: ConceptualCameraRail = {
+  centerRigLocal: {
+    x: 0,
+    y: -(
+      CAMERA_CONSTANTS.frontStandardHeightMm / 2 +
+      CONCEPTUAL_CAMERA_SUPPORT_RAIL_CLEARANCE_MM
+    ),
+    z: -conceptualSupportImageDistanceMm / 2,
+  },
+  dimensionsMm: {
+    x: 36,
+    y: 24,
+    z: conceptualSupportImageDistanceMm +
+      CONCEPTUAL_CAMERA_SUPPORT_RAIL_OVERHANG_MM * 2,
+  },
 };
 
 export type ConceptualViewCameraProps = {
@@ -97,22 +129,6 @@ const AnatomyPartGroup = ({
   </group>
 );
 
-const resolveFallbackRigRail = (
-  rearCenter: Vec3,
-  frontCenter: Vec3,
-): ConceptualCameraRail => ({
-  centerRigLocal: {
-    x: 0,
-    y: -(CAMERA_CONSTANTS.frontStandardHeightMm / 2 + 34),
-    z: (rearCenter.z + frontCenter.z) / 2,
-  },
-  dimensionsMm: {
-    x: 36,
-    y: 24,
-    z: Math.abs(frontCenter.z - rearCenter.z) + 120,
-  },
-});
-
 const resolveCanonicalCameraGeometry = (
   opticsState: DerivedOpticsState,
   coordinateSpace: ConceptualCameraCoordinateSpace,
@@ -141,22 +157,48 @@ type ConceptualBeamTransform = {
   length: number;
 };
 
-/** Resolve a world-space support beam from the canonical standard centres. */
+type SupportSide = "rear" | "front";
+
+const resolveRailEndpointRigLocal = (
+  rail: ConceptualCameraRail,
+  side: SupportSide,
+): Vec3 => ({
+  ...rail.centerRigLocal,
+  z:
+    rail.centerRigLocal.z +
+    (side === "front" ? 1 : -1) * rail.dimensionsMm.z / 2,
+});
+
+const resolveSupportMountRigLocal = (
+  rail: ConceptualCameraRail,
+  side: SupportSide,
+): Vec3 => ({
+  x: rail.centerRigLocal.x,
+  y: rail.centerRigLocal.y + rail.dimensionsMm.y / 2 + 10,
+  z:
+    rail.centerRigLocal.z +
+    (side === "front" ? 1 : -1) *
+      Math.max(
+        0,
+        rail.dimensionsMm.z / 2 - CONCEPTUAL_CAMERA_SUPPORT_RAIL_OVERHANG_MM,
+      ),
+});
+
+/**
+ * Resolve a world-space support beam from a fixed rig-local support datum.
+ * Standard centres are deliberately not inputs: rise, shift, tilt, and swing
+ * are local standard movements and cannot rotate or translate this beam.
+ */
 export const resolveConceptualSupportBeam = (
-  rearCenter: Vec3,
-  frontCenter: Vec3,
+  rail: ConceptualCameraRail,
+  rigTransform: CameraRigTransform,
 ): ConceptualBeamTransform => {
-  const supportDropMm = CAMERA_CONSTANTS.frontStandardHeightMm / 2 + 34;
-  const rear = new Vector3(
-    rearCenter.x,
-    rearCenter.y - supportDropMm,
-    rearCenter.z,
-  ).multiplyScalar(WORLD_SCALE);
-  const front = new Vector3(
-    frontCenter.x,
-    frontCenter.y - supportDropMm,
-    frontCenter.z,
-  ).multiplyScalar(WORLD_SCALE);
+  const rearRigLocal = resolveRailEndpointRigLocal(rail, "rear");
+  const frontRigLocal = resolveRailEndpointRigLocal(rail, "front");
+  const rearWorldMm = transformRigLocalPointToWorld(rearRigLocal, rigTransform);
+  const frontWorldMm = transformRigLocalPointToWorld(frontRigLocal, rigTransform);
+  const rear = new Vector3(...vecToWorld(rearWorldMm));
+  const front = new Vector3(...vecToWorld(frontWorldMm));
   const direction = front.clone().sub(rear);
   const length = Math.max(direction.length(), toWorld(20));
   if (direction.lengthSq() <= 1e-12) direction.set(0, 0, 1);
@@ -515,21 +557,42 @@ const StaticBellowsAssembly = ({
 
 const CameraSupport = ({
   coordinateSpace,
-  rearCenter,
-  frontCenter,
+  rigTransform,
   ghost,
   rigRail,
 }: {
   coordinateSpace: ConceptualCameraCoordinateSpace;
-  rearCenter: Vec3;
-  frontCenter: Vec3;
+  rigTransform: CameraRigTransform;
   ghost: boolean;
   rigRail?: ConceptualCameraRail;
 }) => {
   const presentation = { ghost, renderOrder: ghost ? 10 : 0 };
+  const rail = rigRail ?? CONCEPTUAL_CAMERA_SUPPORT_RAIL;
+  const rearMountRigLocal = resolveSupportMountRigLocal(rail, "rear");
+  const frontMountRigLocal = resolveSupportMountRigLocal(rail, "front");
+
+  const mount = (
+    name: string,
+    position: [number, number, number],
+    quaternion?: Quaternion,
+  ) => (
+    <group
+      name={name}
+      position={position}
+      quaternion={quaternion}
+      renderOrder={presentation.renderOrder}
+    >
+      <mesh>
+        <boxGeometry args={[toWorld(52), toWorld(22), toWorld(38)]} />
+        <meshStandardMaterial
+          color={ghost ? "#cbd5e1" : "#475569"}
+          {...frameMaterialProps(presentation)}
+        />
+      </mesh>
+    </group>
+  );
+
   if (coordinateSpace === "rig-local") {
-    const rail = rigRail ?? resolveFallbackRigRail(rearCenter, frontCenter);
-    const mountY = rail.centerRigLocal.y + rail.dimensionsMm.y / 2 + 10;
     return (
       <AnatomyPartGroup part="camera-support" renderOrder={presentation.renderOrder}>
         <mesh
@@ -549,50 +612,20 @@ const CameraSupport = ({
             {...frameMaterialProps(presentation)}
           />
         </mesh>
-        <mesh
-          name="camera-support-front-mount"
-          position={[toWorld(frontCenter.x), toWorld(mountY), toWorld(frontCenter.z)]}
-          renderOrder={presentation.renderOrder}
-        >
-          <boxGeometry args={[toWorld(52), toWorld(22), toWorld(38)]} />
-          <meshStandardMaterial
-            color={ghost ? "#cbd5e1" : "#475569"}
-            {...frameMaterialProps(presentation)}
-          />
-        </mesh>
-        <mesh
-          name="camera-support-rear-mount"
-          position={[toWorld(rearCenter.x), toWorld(mountY), toWorld(rearCenter.z)]}
-          renderOrder={presentation.renderOrder}
-        >
-          <boxGeometry args={[toWorld(52), toWorld(22), toWorld(38)]} />
-          <meshStandardMaterial
-            color={ghost ? "#cbd5e1" : "#475569"}
-            {...frameMaterialProps(presentation)}
-          />
-        </mesh>
+        {mount("camera-support-front-mount", vecToWorld(frontMountRigLocal))}
+        {mount("camera-support-rear-mount", vecToWorld(rearMountRigLocal))}
       </AnatomyPartGroup>
     );
   }
 
-  const beam = resolveConceptualSupportBeam(rearCenter, frontCenter);
-  const railWidthMm = 36;
-  const railHeightMm = 24;
-  const mount = (name: string, center: Vec3) => (
-    <group
-      name={name}
-      position={[toWorld(center.x), toWorld(center.y - (CAMERA_CONSTANTS.frontStandardHeightMm / 2 + 34)), toWorld(center.z)]}
-      quaternion={beam.quaternion}
-      renderOrder={presentation.renderOrder}
-    >
-      <mesh>
-        <boxGeometry args={[toWorld(52), toWorld(22), toWorld(38)]} />
-        <meshStandardMaterial
-          color={ghost ? "#cbd5e1" : "#475569"}
-          {...frameMaterialProps(presentation)}
-        />
-      </mesh>
-      </group>
+  const beam = resolveConceptualSupportBeam(rail, rigTransform);
+  const rearMountWorld = transformRigLocalPointToWorld(
+    rearMountRigLocal,
+    rigTransform,
+  );
+  const frontMountWorld = transformRigLocalPointToWorld(
+    frontMountRigLocal,
+    rigTransform,
   );
 
   return (
@@ -604,15 +637,29 @@ const CameraSupport = ({
         renderOrder={presentation.renderOrder}
       >
         <mesh>
-          <boxGeometry args={[toWorld(railWidthMm), toWorld(railHeightMm), beam.length]} />
+          <boxGeometry
+            args={[
+              toWorld(rail.dimensionsMm.x),
+              toWorld(rail.dimensionsMm.y),
+              beam.length,
+            ]}
+          />
           <meshStandardMaterial
             color={ghost ? "#94a3b8" : "#334155"}
             {...frameMaterialProps(presentation)}
           />
         </mesh>
       </group>
-      {mount("camera-support-front-mount", frontCenter)}
-      {mount("camera-support-rear-mount", rearCenter)}
+      {mount(
+        "camera-support-front-mount",
+        vecToWorld(frontMountWorld),
+        beam.quaternion,
+      )}
+      {mount(
+        "camera-support-rear-mount",
+        vecToWorld(rearMountWorld),
+        beam.quaternion,
+      )}
     </AnatomyPartGroup>
   );
 };
@@ -634,8 +681,7 @@ const renderAnatomy = ({
     <>
       <CameraSupport
         coordinateSpace={coordinateSpace}
-        rearCenter={canonical.filmCenter}
-        frontCenter={canonical.lensCenter}
+        rigTransform={opticsState.cameraRigTransform}
         ghost={ghost}
         rigRail={rigRail}
       />
