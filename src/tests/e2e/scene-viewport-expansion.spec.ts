@@ -110,8 +110,17 @@ test("simulator viewports expand in main without replacing their active canvases
     return {
       main: { left: mainRect.left, right: mainRect.right, height: mainRect.height },
       aside: { left: asideRect.left, overflowY: getComputedStyle(aside).overflowY },
-      card: { left: cardRect.left, right: cardRect.right, height: cardRect.height },
-      renderer: { width: rendererRect.width, height: rendererRect.height },
+      card: {
+        left: cardRect.left,
+        right: cardRect.right,
+        height: cardRect.height,
+        bottom: cardRect.bottom,
+      },
+      renderer: {
+        width: rendererRect.width,
+        height: rendererRect.height,
+        bottom: rendererRect.bottom,
+      },
       mainOverflowY: getComputedStyle(main).overflowY,
     };
   }, activeViewportSelector);
@@ -136,6 +145,8 @@ test("simulator viewports expand in main without replacing their active canvases
       },
     };
   });
+
+  const normalLayout = await readRestoredLayout();
 
   for (let cycle = 0; cycle < 3; cycle += 1) {
     await page.getByRole("button", { name: "Expand 3D Scene" }).click();
@@ -164,8 +175,30 @@ test("simulator viewports expand in main without replacing their active canvases
     expect(expandedLayout.card.height).toBeGreaterThan(0);
     expect(expandedLayout.renderer.width).toBeGreaterThan(0);
     expect(expandedLayout.renderer.height).toBeGreaterThan(200);
+    expect(expandedLayout.renderer.height).toBeGreaterThan(normalLayout.renderer.height + 80);
+    expect(expandedLayout.card.bottom - expandedLayout.renderer.bottom).toBeLessThan(32);
     expect(expandedLayout.mainOverflowY).toBe("hidden");
     expect(expandedLayout.aside.overflowY).toBe("auto");
+
+    if (cycle === 0) {
+      await page.setViewportSize({ width: 1024, height: 900 });
+      await expect
+        .poll(async () => (await readExpandedLayout('[data-testid="scene-canvas"]')).renderer.height, {
+          timeout: 30_000,
+        })
+        .toBeGreaterThan(expandedLayout.renderer.height + 80);
+      const resizedExpandedLayout = await readExpandedLayout('[data-testid="scene-canvas"]');
+      expect(resizedExpandedLayout.card.bottom - resizedExpandedLayout.renderer.bottom).toBeLessThan(32);
+
+      await page.setViewportSize({ width: 1024, height: 768 });
+      await expect
+        .poll(async () => (await readExpandedLayout('[data-testid="scene-canvas"]')).renderer.height, {
+          timeout: 30_000,
+        })
+        .toBeGreaterThan(expandedLayout.renderer.height - 3);
+      const resetExpandedLayout = await readExpandedLayout('[data-testid="scene-canvas"]');
+      expect(resetExpandedLayout.renderer.height).toBeLessThan(expandedLayout.renderer.height + 3);
+    }
 
     await page.getByRole("button", { name: "Restore 3D Scene" }).click();
     await expect(page.getByRole("button", { name: "Expand 3D Scene" })).toBeFocused();
