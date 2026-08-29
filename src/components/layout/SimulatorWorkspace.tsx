@@ -356,6 +356,7 @@ export const SimulatorWorkspace = ({
       } else {
         availableMovements.forEach((movement) => {
           if (movement === "frontRiseMm") controls.add("rise");
+          if (movement === "frontShiftMm") controls.add("frontShift");
           if (movement === "frontTiltDeg") controls.add("tilt");
           if (movement === "frontSwingDeg") controls.add("swing");
         });
@@ -570,10 +571,13 @@ export const SimulatorWorkspace = ({
               activeMovement={activeSingleMovement ? { field: activeSingleMovement, value: (() => {
                 switch (activeSingleMovement) {
                   case "frontRiseMm": return camera.frontRiseMm;
+                  case "frontShiftMm": return camera.frontShiftMm;
                   case "rearRiseMm": return camera.rearRiseMm;
+                  case "rearShiftMm": return camera.rearShiftMm;
                   case "frontTiltDeg": return camera.frontTiltDeg;
                   case "rearTiltDeg": return camera.rearTiltDeg;
                   case "frontSwingDeg": return camera.frontSwingDeg;
+                  case "rearSwingDeg": return camera.rearSwingDeg;
                 }
               })() } : null}
               teachingReadout={teachingReadout}

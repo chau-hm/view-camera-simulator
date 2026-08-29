@@ -8,10 +8,13 @@ import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 
 const MOVEMENT_LABEL_KEYS: Record<CameraMovementField, ReadoutMessageKey> = {
   frontRiseMm: readoutMessageKeys.controls.frontRise,
+  frontShiftMm: readoutMessageKeys.controls.frontShift,
   rearRiseMm: readoutMessageKeys.controls.rearRise,
+  rearShiftMm: readoutMessageKeys.controls.rearShift,
   frontTiltDeg: readoutMessageKeys.controls.frontTilt,
   rearTiltDeg: readoutMessageKeys.controls.rearTilt,
   frontSwingDeg: readoutMessageKeys.controls.frontSwing,
+  rearSwingDeg: readoutMessageKeys.controls.rearSwing,
 };
 
 type MovementSelectorProps = {

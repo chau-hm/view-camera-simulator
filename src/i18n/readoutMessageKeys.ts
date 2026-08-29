@@ -19,10 +19,12 @@ export const readoutMessageKeys = {
     frontTilt: "readouts.controls.frontTilt",
     rearTilt: "readouts.controls.rearTilt",
     frontSwing: "readouts.controls.frontSwing",
+    rearSwing: "readouts.controls.rearSwing",
     focus: "readouts.controls.focus",
     aperture: "readouts.controls.aperture",
     cameraPosition: "readouts.controls.cameraPosition",
     frontShift: "readouts.controls.frontShift",
+    rearShift: "readouts.controls.rearShift",
   },
   focusMethod: {
     frontStandard: "readouts.focusMethod.frontStandard",

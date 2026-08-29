@@ -40,14 +40,22 @@ export type FocusTargetMetric = "point" | "patch" | "focus";
 
 const MOVEMENT_LABEL_KEYS: Record<CameraMovementField, ReadoutMessageKey> = {
   frontRiseMm: readoutMessageKeys.controls.frontRise,
+  frontShiftMm: readoutMessageKeys.controls.frontShift,
   rearRiseMm: readoutMessageKeys.controls.rearRise,
+  rearShiftMm: readoutMessageKeys.controls.rearShift,
   frontTiltDeg: readoutMessageKeys.controls.frontTilt,
   rearTiltDeg: readoutMessageKeys.controls.rearTilt,
   frontSwingDeg: readoutMessageKeys.controls.frontSwing,
+  rearSwingDeg: readoutMessageKeys.controls.rearSwing,
 };
 
 const formatMovementValue = (field: CameraMovementField, value: number): string => {
-  if (field === "frontRiseMm" || field === "rearRiseMm") return formatMillimeter(value);
+  if (
+    field === "frontRiseMm" ||
+    field === "frontShiftMm" ||
+    field === "rearRiseMm" ||
+    field === "rearShiftMm"
+  ) return formatMillimeter(value);
   return formatDegrees(value);
 };
 

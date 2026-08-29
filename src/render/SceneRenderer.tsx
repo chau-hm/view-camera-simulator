@@ -874,10 +874,13 @@ const OriginalGhostCamera = ({
       ...DEFAULT_CAMERA_STATE,
       ...scene.cameraPreset,
       frontRiseMm: 0,
+      frontShiftMm: 0,
       frontTiltDeg: 0,
       frontSwingDeg: 0,
       rearRiseMm: 0,
+      rearShiftMm: 0,
       rearTiltDeg: 0,
+      rearSwingDeg: 0,
       cameraBodyPitchDeg: 0,
       activeSceneId: scene.id,
     };

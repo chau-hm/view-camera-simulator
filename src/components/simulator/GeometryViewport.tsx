@@ -147,10 +147,13 @@ export const GeometryViewport = ({
         ...DEFAULT_CAMERA_STATE,
         ...scene.cameraPreset,
         frontRiseMm: 0,
+        frontShiftMm: 0,
         frontTiltDeg: 0,
         frontSwingDeg: 0,
         rearRiseMm: 0,
+        rearShiftMm: 0,
         rearTiltDeg: 0,
+        rearSwingDeg: 0,
         activeSceneId: scene.id,
       };
       originalOptics = deriveOpticsState(originalCamera, scene);
@@ -188,7 +191,9 @@ export const GeometryViewport = ({
         frontTiltDeg: 0,
         frontSwingDeg: 0,
         rearRiseMm: 0,
+        rearShiftMm: 0,
         rearTiltDeg: 0,
+        rearSwingDeg: 0,
         mirrorShiftLessonState: { rigLateralMm: 0 },
       },
       scene,

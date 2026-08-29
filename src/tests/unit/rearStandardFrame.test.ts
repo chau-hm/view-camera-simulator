@@ -69,6 +69,39 @@ describe("Case 1: zero rear movement preserves current optics", () => {
     expect(optics.diagnostics.fallbackApplied).toBe(false);
     expect(optics.diagnostics.focusPlaneModel).toBe("scheimpflug");
   });
+
+  it("keeps explicit zero rear shift and swing identical to the default", () => {
+    const implicit = deriveOpticsState(
+      cameraFor(architectureRiseScene),
+      architectureRiseScene,
+    );
+    const explicit = deriveOpticsState(
+      cameraFor(architectureRiseScene, { rearShiftMm: 0, rearSwingDeg: 0 }),
+      architectureRiseScene,
+    );
+
+    expect(explicit.lensCenterWorld).toEqual(implicit.lensCenterWorld);
+    expect(explicit.filmCenterWorld).toEqual(implicit.filmCenterWorld);
+    expect(explicit.rearStandardFrame).toEqual(implicit.rearStandardFrame);
+    expect(explicit.filmPlaneCornersWorld).toEqual(implicit.filmPlaneCornersWorld);
+    expect(explicit.offAxisProjectionMatrix).toEqual(implicit.offAxisProjectionMatrix);
+  });
+});
+
+describe("front-standard shift", () => {
+  it("translates the canonical front standard without moving the rear standard", () => {
+    const base = deriveOpticsState(cameraFor(architectureRiseScene), architectureRiseScene);
+    const shifted = deriveOpticsState(
+      cameraFor(architectureRiseScene, { frontShiftMm: 18 }),
+      architectureRiseScene,
+    );
+
+    expect(shifted.lensCenterWorld.x - base.lensCenterWorld.x).toBeCloseTo(18, 10);
+    expect(shifted.lensCenterWorld.y).toBeCloseTo(base.lensCenterWorld.y, 10);
+    expect(shifted.lensCenterWorld.z).toBeCloseTo(base.lensCenterWorld.z, 10);
+    expect(shifted.filmCenterWorld).toEqual(base.filmCenterWorld);
+    expect(shifted.rearStandardFrame).toEqual(base.rearStandardFrame);
+  });
 });
 
 describe("Case 2: rear rise only", () => {
@@ -123,6 +156,29 @@ describe("Case 2: rear rise only", () => {
   });
 });
 
+describe("rear-standard shift", () => {
+  it("translates the film-plane assembly laterally without moving the lens", () => {
+    const base = deriveOpticsState(cameraFor(architectureRiseScene), architectureRiseScene);
+    const shifted = deriveOpticsState(
+      cameraFor(architectureRiseScene, { rearShiftMm: 22 }),
+      architectureRiseScene,
+    );
+
+    expect(shifted.lensCenterWorld).toEqual(base.lensCenterWorld);
+    expect(shifted.filmCenterWorld.x - base.filmCenterWorld.x).toBeCloseTo(22, 10);
+    expect(shifted.filmCenterWorld.y).toBeCloseTo(base.filmCenterWorld.y, 10);
+    expect(shifted.filmCenterWorld.z).toBeCloseTo(base.filmCenterWorld.z, 10);
+    expect(shifted.filmNormalWorld).toEqual(base.filmNormalWorld);
+
+    for (const key of ["topLeft", "topRight", "bottomLeft", "bottomRight"] as const) {
+      expect(shifted.filmPlaneCornersWorld[key].x - base.filmPlaneCornersWorld[key].x).toBeCloseTo(22, 10);
+      expect(shifted.filmPlaneCornersWorld[key].y).toBeCloseTo(base.filmPlaneCornersWorld[key].y, 10);
+      expect(shifted.filmPlaneCornersWorld[key].z).toBeCloseTo(base.filmPlaneCornersWorld[key].z, 10);
+    }
+    expect(shifted.offAxisProjectionMatrix).not.toEqual(base.offAxisProjectionMatrix);
+  });
+});
+
 describe("Case 3: rear tilt only", () => {
   it("rotates film normal and up around world X without moving centre", () => {
     const base = deriveOpticsState(cameraFor(tableTiltScene), tableTiltScene);
@@ -172,6 +228,33 @@ describe("Case 3: rear tilt only", () => {
     // Matrix finite and changes from baseline
     expect(tilted.offAxisProjectionMatrix.every(Number.isFinite)).toBe(true);
     expect(tilted.offAxisProjectionMatrix).not.toEqual(base.offAxisProjectionMatrix);
+  });
+});
+
+describe("rear-standard swing", () => {
+  it("rotates the film-plane orientation around its unchanged centre", () => {
+    const base = deriveOpticsState(cameraFor(architectureRiseScene), architectureRiseScene);
+    const swung = deriveOpticsState(
+      cameraFor(architectureRiseScene, { rearSwingDeg: 8 }),
+      architectureRiseScene,
+    );
+    const radians = (8 * Math.PI) / 180;
+
+    expect(swung.lensCenterWorld).toEqual(base.lensCenterWorld);
+    expect(swung.lensNormalWorld).toEqual(base.lensNormalWorld);
+    expect(swung.filmCenterWorld).toEqual(base.filmCenterWorld);
+    expect(swung.rearStandardFrame.rightWorld.x).toBeCloseTo(Math.cos(radians), 10);
+    expect(swung.rearStandardFrame.rightWorld.z).toBeCloseTo(-Math.sin(radians), 10);
+    expect(swung.rearStandardFrame.normalWorld.x).toBeCloseTo(Math.sin(radians), 10);
+    expect(swung.rearStandardFrame.normalWorld.z).toBeCloseTo(Math.cos(radians), 10);
+    expect(swung.filmPlaneCornersWorld).not.toEqual(base.filmPlaneCornersWorld);
+    expect(swung.offAxisProjectionMatrix).not.toEqual(base.offAxisProjectionMatrix);
+    expect(validateFilmCorners(
+      swung.filmPlaneCornersWorld,
+      swung.rearStandardFrame,
+      CAMERA_CONSTANTS.filmWidthMm,
+      CAMERA_CONSTANTS.filmHeightMm,
+    )).toBeNull();
   });
 });
 
@@ -765,6 +848,38 @@ describe("calculateRearStandardFrame direct tests", () => {
     expect(frame.upWorld.y).toBeCloseTo(Math.cos((10 * Math.PI) / 180), 8);
     expect(frame.upWorld.z).toBeCloseTo(Math.sin((10 * Math.PI) / 180), 8);
     expect(frame.normalWorld.y).toBeCloseTo(-Math.sin((10 * Math.PI) / 180), 8);
+    expect(frame.normalWorld.z).toBeCloseTo(Math.cos((10 * Math.PI) / 180), 8);
+  });
+
+  it("translates the rear frame along world +X for rear shift", () => {
+    const { frame } = calculateRearStandardFrame(
+      vec(0, 0, -150),
+      20,
+      0,
+      CAMERA_CONSTANTS.filmWidthMm,
+      CAMERA_CONSTANTS.filmHeightMm,
+      15,
+      0,
+    );
+    expect(frame.centerWorld).toEqual(vec(15, 20, -150));
+    expect(frame.rightWorld).toEqual(vec(1, 0, 0));
+    expect(frame.normalWorld).toEqual(vec(0, 0, 1));
+  });
+
+  it("applies rear swing around world Y after rear tilt", () => {
+    const { frame } = calculateRearStandardFrame(
+      vec(0, 0, -150),
+      0,
+      0,
+      CAMERA_CONSTANTS.filmWidthMm,
+      CAMERA_CONSTANTS.filmHeightMm,
+      0,
+      10,
+    );
+    expect(frame.centerWorld).toEqual(vec(0, 0, -150));
+    expect(frame.rightWorld.x).toBeCloseTo(Math.cos((10 * Math.PI) / 180), 8);
+    expect(frame.rightWorld.z).toBeCloseTo(-Math.sin((10 * Math.PI) / 180), 8);
+    expect(frame.normalWorld.x).toBeCloseTo(Math.sin((10 * Math.PI) / 180), 8);
     expect(frame.normalWorld.z).toBeCloseTo(Math.cos((10 * Math.PI) / 180), 8);
   });
 });

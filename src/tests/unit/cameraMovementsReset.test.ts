@@ -24,9 +24,11 @@ describe("Reset and restart preserve scene preset overlap", () => {
 
     expect(s.camera.frontRiseMm).toBe(0);
     expect(s.camera.rearRiseMm).toBe(0);
+    expect(s.camera.rearShiftMm).toBe(0);
     expect(s.camera.frontTiltDeg).toBe(0);
     expect(s.camera.rearTiltDeg).toBe(0);
     expect(s.camera.frontSwingDeg).toBe(0);
+    expect(s.camera.rearSwingDeg).toBe(0);
     expect(s.camera.focusDistanceMm).toBe(2000);
     expect(s.camera.aperture).toBe(32);
     expect(s.camera.focusMode).toBe("finite");
@@ -52,5 +54,16 @@ describe("Reset and restart preserve scene preset overlap", () => {
     expect(s.camera.focusDistanceMm).toBe(2000);
     expect(s.camera.aperture).toBe(32);
     expect(s.selectedMovement).toBe("frontRiseMm");
+  });
+
+  it("restores canonical rear shift and swing to neutral", () => {
+    useAppStore.setState((state) => ({
+      camera: { ...state.camera, rearShiftMm: 25, rearSwingDeg: 7 },
+    }));
+
+    useAppStore.getState().resetMovements();
+    const s = useAppStore.getState();
+    expect(s.camera.rearShiftMm).toBe(0);
+    expect(s.camera.rearSwingDeg).toBe(0);
   });
 });

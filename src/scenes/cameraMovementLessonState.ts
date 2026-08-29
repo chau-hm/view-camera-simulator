@@ -118,10 +118,13 @@ export type CameraMovementLessonDerivedState = Readonly<{
   cameraRigPlacement: CameraRigPlacement;
   cameraBodyPitchDeg: number;
   frontRiseMm: number;
+  frontShiftMm: 0;
   frontTiltDeg: number;
   frontSwingDeg: 0;
   rearRiseMm: number;
+  rearShiftMm: 0;
   rearTiltDeg: number;
+  rearSwingDeg: 0;
   targetRegion: CameraMovementTargetRegion;
   presentationTargetRegion: CameraMovementPresentationRegion;
 }>;
@@ -203,10 +206,13 @@ export const resolveCameraMovementLessonState = (
     cameraRigPlacement,
     cameraBodyPitchDeg,
     frontRiseMm: normalized.activeStandard === "front" ? riseMm : 0,
+    frontShiftMm: 0,
     frontTiltDeg: normalized.activeStandard === "front" ? tiltDeg : 0,
     frontSwingDeg: 0,
     rearRiseMm: normalized.activeStandard === "rear" ? riseMm : 0,
+    rearShiftMm: 0,
     rearTiltDeg: normalized.activeStandard === "rear" ? tiltDeg : 0,
+    rearSwingDeg: 0,
     targetRegion,
     presentationTargetRegion,
   });

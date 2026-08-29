@@ -1,25 +1,8 @@
-# Expanded 3D Scene viewport fill
+# PR 9A — Complete canonical standard movement vocabulary
 
-- Work identifier: `fix/expanded-3d-scene-fill-viewport` / PR title `fix(ui): let expanded 3D scene fill viewport`.
-- Branch/base: `fix/expanded-3d-scene-fill-viewport` from `origin/main` `c09bc408`.
-- Substantive HEAD: `de4f71a` (`fix(ui): let expanded 3d scene fill viewport`).
-- Objective: make the expanded 3D Scene render surface use the available simulator main width and height while preserving normal, Ground Glass, Geometry, and controls layouts.
-
-## Root cause and fix
-
-- `SimulatorWorkspace` embeds `SceneViewport` with `showHeader={false}`, leaving the scene panel with only toolbar and viewport-shell children.
-- `.scene-panel--expanded` reserved three grid rows (`auto auto 1fr`), so the shell stayed at its intrinsic/aspect-ratio height and the unused third row received the remaining space.
-- The expanded scene grid now uses `auto minmax(0, 1fr)`. The existing 100%-height host and Canvas sizing then grow with the panel and follow browser resize.
-
-## Scope and evidence
-
-- Changed: `src/index.css` and `src/tests/e2e/scene-viewport-expansion.spec.ts`.
-- Normal mode behavior is unchanged; expanded mode fills the available height, follows window resize, and restores cleanly.
-- Focused integration: 17/17 passed. Focused expanded-scene browser test: 1/1 passed, including repeated restore and live resize.
-- Full unit/integration: 145 files / 1,392 tests passed. Typecheck, lint, CSS check, build, and `git diff --check` passed.
-- Full viewport-expansion browser file: 3/4 passed. The unrelated Ground Glass quality test consistently retains the existing RTT mismatch (`colorWidth` 172 vs `blurWidth` 86); no Ground Glass code was changed.
-
-## Remaining risks and reviewer focus
-
-- Remaining risk is the pre-existing WebGL/RTT quality-test baseline noted above.
-- Verify the two-row expanded scene chain, canvas bottom alignment, browser-height resize, collapse/restore, and unchanged normal/Ground Glass/Geometry/control layout behavior.
+- Objective: add canonical `rearShiftMm` and `rearSwingDeg`, generalize `frontShiftMm` through the movement vocabulary, and keep all current lessons visually/control-wise unchanged.
+- Scope: `CameraState` defaults/resets/selectors, scene preset contracts, generic movement maps/setters, rear standard frame/optics derivation, and focused state/geometry/control tests. Mirror Shift keeps its specialized Front Shift UI.
+- Geometry decision: rear shift translates the canonical rear frame by rig-local +X; rear swing applies the established +Y rotation convention after rear tilt. The resulting `StandardFrame` continues to drive film plane, corners, projection, 2D, 3D, and Ground Glass consumers.
+- Exposure: no current generic scene capability array includes `frontShiftMm`, `rearShiftMm`, or `rearSwingDeg`; no new lesson/task/control copy was added. Existing Mirror Shift Front Shift remains available through its scene-specific capability.
+- Validation: `npm test` — 146 files / 1,406 tests passed; `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build` passed. Focused canonical tests passed (4 files / 89 tests after the final reset/API adjustments). The full `npm run ci:local:e2e` workflow stopped at the existing Mirror Shift teaching-geometry RTT mount assertion; the failing spec was reproduced independently. Relevant camera-movement, Mirror Shift rig/guided, and Understanding Camera Movements E2E coverage passed except the existing lattice-route RTT attribute assertion.
+- Known gap for 9B: the legacy CPU Ground Glass DOF path remains axis-aligned for oriented rear planes; this PR keeps that pre-existing limitation out of scope because the active canonical RTT/frame consumers are already wired.

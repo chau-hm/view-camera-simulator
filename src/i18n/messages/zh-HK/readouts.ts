@@ -22,10 +22,12 @@ export const readoutsMessages = {
     frontTilt: "前組傾斜",
     rearTilt: "後組傾斜",
     frontSwing: "前組擺動",
+    rearSwing: "後組擺動",
     focus: "對焦",
     aperture: "光圈",
     cameraPosition: "相機位置",
     frontShift: "前組橫移",
+    rearShift: "後組橫移",
   },
   focusMethod: {
     frontStandard: "前組",

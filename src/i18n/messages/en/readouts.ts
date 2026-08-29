@@ -19,10 +19,12 @@ export const readoutsMessages = {
     frontTilt: "Front Tilt",
     rearTilt: "Rear Tilt",
     frontSwing: "Front Swing",
+    rearSwing: "Rear Swing",
     focus: "Focus",
     aperture: "Aperture",
     cameraPosition: "Camera Position",
     frontShift: "Front Shift",
+    rearShift: "Rear Shift",
   },
   focusMethod: {
     frontStandard: "Front standard",

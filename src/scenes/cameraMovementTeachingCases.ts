@@ -87,10 +87,13 @@ export const CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION = Object.freeze({
 
 export type CameraMovementTeachingMovements = Readonly<{
   frontRiseMm: number;
+  frontShiftMm: 0;
   rearRiseMm: number;
+  rearShiftMm: 0;
   frontTiltDeg: number;
   rearTiltDeg: number;
   frontSwingDeg: 0;
+  rearSwingDeg: 0;
   cameraBodyPitchDeg: number;
 }>;
 
@@ -199,10 +202,13 @@ const teachingCase = (
 
 const neutralMovements = (): CameraMovementTeachingMovements => ({
   frontRiseMm: 0,
+  frontShiftMm: 0,
   rearRiseMm: 0,
+  rearShiftMm: 0,
   frontTiltDeg: 0,
   rearTiltDeg: 0,
   frontSwingDeg: 0,
+  rearSwingDeg: 0,
   cameraBodyPitchDeg: 0,
 });
 
