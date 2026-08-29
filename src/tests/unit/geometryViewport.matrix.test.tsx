@@ -1,4 +1,5 @@
 import { render, cleanup, fireEvent, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { GeometryViewport } from "../../components/simulator/GeometryViewport";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
@@ -9,11 +10,15 @@ import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fund
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
-import { useAppStore } from "../../state/appStore";
+import type { GeometryView } from "../../types/camera";
 import type { SceneDefinition } from "../../types/scene";
 
 const SCENES = [architectureRiseScene, tableTiltScene, shelfSwingScene, focusFundamentalsTwoTargets];
 const VIEWS: Array<'side' | 'top'> = ['side', 'top'];
+const defaultGeometryViewportProps = {
+  onGeometryViewChange: () => undefined,
+  focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
+};
 
 const expectDepthPlaneGeometry = (svg: Element, visible: boolean): void => {
   for (const selector of [
@@ -27,18 +32,22 @@ const expectDepthPlaneGeometry = (svg: Element, visible: boolean): void => {
   }
 };
 
-const StoreBackedGeometryViewport = ({
+const ControlledGeometryViewport = ({
   opticsState,
   scene = tableTiltScene,
+  initialGeometryView = "side",
 }: {
   opticsState: ReturnType<typeof deriveOpticsState>;
   scene?: SceneDefinition;
+  initialGeometryView?: GeometryView;
 }) => {
-  const geometryView = useAppStore((state) => state.camera.geometryView);
+  const [geometryView, setGeometryView] = useState<GeometryView>(initialGeometryView);
   return (
     <GeometryViewport
       opticsState={opticsState}
       geometryView={geometryView}
+      onGeometryViewChange={setGeometryView}
+      focalLengthMm={scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
       scene={scene}
       riseMm={0}
     />
@@ -48,7 +57,6 @@ const StoreBackedGeometryViewport = ({
 describe('GeometryViewport matrix', () => {
   afterEach(() => {
     cleanup();
-    useAppStore.getState().setGeometryView("side");
   });
 
   for (const scene of SCENES) {
@@ -58,8 +66,8 @@ describe('GeometryViewport matrix', () => {
         it(`${scene.id} movement: tilt affects Side geometry`, () => {
           const base = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
           const tilted = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, frontTiltDeg: 5 }, scene);
-          const { container: c1 } = render(<GeometryViewport opticsState={base} geometryView={view} scene={scene} riseMm={0} />);
-          const { container: c2 } = render(<GeometryViewport opticsState={tilted} geometryView={view} scene={scene} riseMm={0} />);
+          const { container: c1 } = render(<GeometryViewport {...defaultGeometryViewportProps} opticsState={base} geometryView={view} scene={scene} riseMm={0} />);
+          const { container: c2 } = render(<GeometryViewport {...defaultGeometryViewportProps} opticsState={tilted} geometryView={view} scene={scene} riseMm={0} />);
           const l1 = c1.querySelector('line[data-testid="plane-line-focus"]');
           const l2 = c2.querySelector('line[data-testid="plane-line-focus"]');
           expect(l1).not.toBeNull();
@@ -82,8 +90,8 @@ describe('GeometryViewport matrix', () => {
         it(`${scene.id} movement: swing affects Top geometry`, () => {
           const base = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
           const swung = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, frontSwingDeg: 5 }, scene);
-          const { container: c1 } = render(<GeometryViewport opticsState={base} geometryView={view} scene={scene} riseMm={0} />);
-          const { container: c2 } = render(<GeometryViewport opticsState={swung} geometryView={view} scene={scene} riseMm={0} />);
+          const { container: c1 } = render(<GeometryViewport {...defaultGeometryViewportProps} opticsState={base} geometryView={view} scene={scene} riseMm={0} />);
+          const { container: c2 } = render(<GeometryViewport {...defaultGeometryViewportProps} opticsState={swung} geometryView={view} scene={scene} riseMm={0} />);
           const l1 = c1.querySelector('line[data-testid="plane-line-focus"]');
           const l2 = c2.querySelector('line[data-testid="plane-line-focus"]');
           expect(l1).not.toBeNull();
@@ -103,7 +111,7 @@ describe('GeometryViewport matrix', () => {
       }
       it(`${scene.id} renders (${view}) primitives, depth strip, and minimal annotations`, () => {
         const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, scene);
-        const { container } = render(<GeometryViewport opticsState={optics} geometryView={view} scene={scene} riseMm={0} />);
+        const { container } = render(<GeometryViewport {...defaultGeometryViewportProps} opticsState={optics} geometryView={view} scene={scene} riseMm={0} />);
 
         const svg = container.querySelector(`[data-testid="geometry-svg-${view}"]`) as SVGElement | null;
         expect(svg).toBeTruthy();
@@ -170,7 +178,7 @@ describe('GeometryViewport matrix', () => {
 
       it(`${scene.id} stability: target Xs stable under focus change (${view})`, () => {
         const state1 = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, focusDistanceMm: 1000 }, scene);
-        const { container, rerender } = render(<GeometryViewport opticsState={state1} geometryView={view} scene={scene} riseMm={0} />);
+        const { container, rerender } = render(<GeometryViewport {...defaultGeometryViewportProps} opticsState={state1} geometryView={view} scene={scene} riseMm={0} />);
         const svg = container.querySelector(`[data-testid="geometry-svg-${view}"]`) as SVGElement | null;
         expect(svg).toBeTruthy();
         const targetRects1 = Array.from(svg!.querySelectorAll('rect')).filter((r) => r.getAttribute('fill') === '#0f766e');
@@ -178,7 +186,7 @@ describe('GeometryViewport matrix', () => {
         const centres1 = targetRects1.map((r) => parseFloat(r.getAttribute('x') || '0'));
 
         const state2 = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, focusDistanceMm: 3000 }, scene);
-        rerender(<GeometryViewport opticsState={state2} geometryView={view} scene={scene} riseMm={0} />);
+        rerender(<GeometryViewport {...defaultGeometryViewportProps} opticsState={state2} geometryView={view} scene={scene} riseMm={0} />);
         const targetRects2 = Array.from(svg!.querySelectorAll('rect')).filter((r) => r.getAttribute('fill') === '#0f766e');
         const centres2 = targetRects2.map((r) => parseFloat(r.getAttribute('x') || '0'));
 
@@ -234,6 +242,7 @@ describe('GeometryViewport matrix', () => {
       );
       const { container } = render(
         <GeometryViewport
+          {...defaultGeometryViewportProps}
           opticsState={optics}
           geometryView={geometryView}
           scene={scene}
@@ -260,6 +269,7 @@ describe('GeometryViewport matrix', () => {
     );
     const { container } = render(
       <GeometryViewport
+        {...defaultGeometryViewportProps}
         opticsState={optics}
         geometryView="side"
         scene={tableTiltScene}
@@ -303,6 +313,7 @@ describe('GeometryViewport matrix', () => {
     );
     const { container, getByRole, getByText } = render(
       <GeometryViewport
+        {...defaultGeometryViewportProps}
         opticsState={optics}
         geometryView="scheimpflug"
         scene={tableTiltScene}
@@ -379,7 +390,6 @@ describe('GeometryViewport matrix', () => {
   });
 
   it("enforces view and fit-mode transitions while keeping scene targets visible", async () => {
-    useAppStore.getState().setGeometryView("side");
     const optics = deriveOpticsState(
       {
         ...DEFAULT_CAMERA_STATE,
@@ -388,7 +398,7 @@ describe('GeometryViewport matrix', () => {
       },
       tableTiltScene,
     );
-    const view = render(<StoreBackedGeometryViewport opticsState={optics} />);
+    const view = render(<ControlledGeometryViewport opticsState={optics} />);
     const viewport = view.container.querySelector("section[data-geometry-fit]");
     expect(viewport).not.toBeNull();
 
@@ -428,7 +438,6 @@ describe('GeometryViewport matrix', () => {
   });
 
   it("falls Table Tilt back to Side without reopening construction after movement is restored", async () => {
-    useAppStore.getState().setGeometryView("side");
     const validOptics = deriveOpticsState(
       {
         ...DEFAULT_CAMERA_STATE,
@@ -441,13 +450,13 @@ describe('GeometryViewport matrix', () => {
       { ...DEFAULT_CAMERA_STATE, ...tableTiltScene.cameraPreset, frontTiltDeg: 0, frontSwingDeg: 0 },
       tableTiltScene,
     );
-    const view = render(<StoreBackedGeometryViewport opticsState={validOptics} />);
+    const view = render(<ControlledGeometryViewport opticsState={validOptics} />);
     const viewport = view.container.querySelector("section[data-geometry-fit]");
     expect(viewport).not.toBeNull();
     fireEvent.click(view.getByRole("button", { name: "Fit Construction" }));
     expect(viewport).toHaveAttribute("data-construction-layout", "split");
 
-    view.rerender(<StoreBackedGeometryViewport opticsState={zeroMovementOptics} />);
+    view.rerender(<ControlledGeometryViewport opticsState={zeroMovementOptics} />);
     await waitFor(() => {
       expect(viewport).toHaveAttribute("data-geometry-view", "side");
       expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
@@ -458,7 +467,7 @@ describe('GeometryViewport matrix', () => {
       expect(view.container.querySelector(`[data-testid="geometry-target-${targetId}"]`)).not.toBeNull();
     }
 
-    view.rerender(<StoreBackedGeometryViewport opticsState={validOptics} />);
+    view.rerender(<ControlledGeometryViewport opticsState={validOptics} />);
     await waitFor(() => {
       expect(viewport).toHaveAttribute("data-geometry-view", "side");
       expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
@@ -467,7 +476,6 @@ describe('GeometryViewport matrix', () => {
   });
 
   it("falls Shelf Swing back to Top without reopening construction after movement is restored", async () => {
-    useAppStore.getState().setGeometryView("top");
     const validOptics = deriveOpticsState(
       { ...DEFAULT_CAMERA_STATE, ...shelfSwingScene.cameraPreset, frontSwingDeg: 7 },
       shelfSwingScene,
@@ -477,7 +485,7 @@ describe('GeometryViewport matrix', () => {
       shelfSwingScene,
     );
     const view = render(
-      <StoreBackedGeometryViewport opticsState={validOptics} scene={shelfSwingScene} />,
+      <ControlledGeometryViewport opticsState={validOptics} scene={shelfSwingScene} initialGeometryView="top" />,
     );
     const viewport = view.container.querySelector("section[data-geometry-fit]");
     expect(viewport).not.toBeNull();
@@ -488,7 +496,7 @@ describe('GeometryViewport matrix', () => {
     expect(viewport).toHaveAttribute("data-construction-layout", "split");
 
     view.rerender(
-      <StoreBackedGeometryViewport opticsState={zeroMovementOptics} scene={shelfSwingScene} />,
+      <ControlledGeometryViewport opticsState={zeroMovementOptics} scene={shelfSwingScene} />,
     );
     await waitFor(() => {
       expect(viewport).toHaveAttribute("data-geometry-view", "top");
@@ -500,7 +508,7 @@ describe('GeometryViewport matrix', () => {
     }
 
     view.rerender(
-      <StoreBackedGeometryViewport opticsState={validOptics} scene={shelfSwingScene} />,
+      <ControlledGeometryViewport opticsState={validOptics} scene={shelfSwingScene} />,
     );
     await waitFor(() => {
       expect(viewport).toHaveAttribute("data-geometry-view", "top");
@@ -523,7 +531,6 @@ describe('GeometryViewport matrix', () => {
   ] as const)(
     "selects the movement-aware Table Tilt Fit Scene view for tilt %s and swing %s",
     async (frontTiltDeg, frontSwingDeg, expectedView) => {
-      useAppStore.getState().setGeometryView("scheimpflug");
       const optics = deriveOpticsState(
         {
           ...DEFAULT_CAMERA_STATE,
@@ -533,7 +540,7 @@ describe('GeometryViewport matrix', () => {
         },
         tableTiltScene,
       );
-      const view = render(<StoreBackedGeometryViewport opticsState={optics} />);
+      const view = render(<ControlledGeometryViewport opticsState={optics} initialGeometryView="scheimpflug" />);
       const viewport = view.container.querySelector("section[data-geometry-fit]");
       expect(viewport).not.toBeNull();
 
@@ -546,7 +553,6 @@ describe('GeometryViewport matrix', () => {
   );
 
   it("does not continuously override a direct subject-view choice", async () => {
-    useAppStore.getState().setGeometryView("side");
     const baseOptics = deriveOpticsState(
       { ...DEFAULT_CAMERA_STATE, ...tableTiltScene.cameraPreset, frontTiltDeg: 7 },
       tableTiltScene,
@@ -555,13 +561,13 @@ describe('GeometryViewport matrix', () => {
       { ...DEFAULT_CAMERA_STATE, ...tableTiltScene.cameraPreset, frontTiltDeg: 0 },
       tableTiltScene,
     );
-    const view = render(<StoreBackedGeometryViewport opticsState={baseOptics} />);
+    const view = render(<ControlledGeometryViewport opticsState={baseOptics} />);
     const viewport = view.container.querySelector("section[data-geometry-fit]");
     expect(viewport).not.toBeNull();
 
     fireEvent.click(view.getByRole("button", { name: "Top" }));
     expect(viewport).toHaveAttribute("data-geometry-view", "top");
-    view.rerender(<StoreBackedGeometryViewport opticsState={changedOptics} />);
+    view.rerender(<ControlledGeometryViewport opticsState={changedOptics} />);
     await waitFor(() => {
       expect(viewport).toHaveAttribute("data-geometry-view", "top");
       expect(viewport).toHaveAttribute("data-geometry-fit", "scene");
@@ -569,13 +575,12 @@ describe('GeometryViewport matrix', () => {
   });
 
   it("returns Fit Scene to Top for a swing-dominant Shelf Swing state", async () => {
-    useAppStore.getState().setGeometryView("side");
     const optics = deriveOpticsState(
       { ...DEFAULT_CAMERA_STATE, ...shelfSwingScene.cameraPreset, frontSwingDeg: 7 },
       shelfSwingScene,
     );
     const view = render(
-      <StoreBackedGeometryViewport opticsState={optics} scene={shelfSwingScene} />,
+      <ControlledGeometryViewport opticsState={optics} scene={shelfSwingScene} />,
     );
     const viewport = view.container.querySelector("section[data-geometry-fit]");
     expect(viewport).not.toBeNull();
@@ -596,7 +601,7 @@ describe('GeometryViewport matrix', () => {
     expect(infinityState.focusPlane).toBeNull();
     expect(infinityState.depthOfFieldFarPlane).toBeNull();
 
-    const { container } = render(<GeometryViewport opticsState={infinityState} geometryView="side" scene={scene} riseMm={0} />);
+    const { container } = render(<GeometryViewport {...defaultGeometryViewportProps} opticsState={infinityState} geometryView="side" scene={scene} riseMm={0} />);
     const depthStrip = container.querySelector('[aria-label="Optical depth order"]');
     expect(depthStrip).toBeTruthy();
     const txt = depthStrip?.textContent || '';
@@ -628,6 +633,7 @@ describe('GeometryViewport matrix', () => {
     const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     const { container, queryByRole, getByText } = render(
       <GeometryViewport
+        {...defaultGeometryViewportProps}
         opticsState={optics}
         geometryView="scheimpflug"
         scene={architectureRiseScene}
@@ -647,14 +653,14 @@ describe('GeometryViewport matrix', () => {
       tableTiltScene,
     );
     const view = render(
-      <GeometryViewport opticsState={tableOptics} geometryView="scheimpflug" scene={tableTiltScene} riseMm={0} />,
+      <GeometryViewport {...defaultGeometryViewportProps} opticsState={tableOptics} geometryView="scheimpflug" scene={tableTiltScene} riseMm={0} />,
     );
     fireEvent.click(view.getByRole("button", { name: "Fit Construction" }));
     expect(view.container.querySelector('section[data-geometry-fit]')).toHaveAttribute("data-geometry-fit", "construction");
 
     const architectureOptics = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     view.rerender(
-      <GeometryViewport opticsState={architectureOptics} geometryView="scheimpflug" scene={architectureRiseScene} riseMm={0} />,
+      <GeometryViewport {...defaultGeometryViewportProps} opticsState={architectureOptics} geometryView="scheimpflug" scene={architectureRiseScene} riseMm={0} />,
     );
     expect(view.queryByRole("button", { name: "Scheimpflug Section" })).toBeNull();
     expect(view.queryByRole("button", { name: "Fit Construction" })).toBeNull();

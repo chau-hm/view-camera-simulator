@@ -7,22 +7,17 @@ import { ACCEPTABLE_COC_DIAMETER_MM } from "../core/optics/physicalSharpness";
 const SKY_COLOR = new THREE.Color("#dfe5ec");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
 import { vecToWorld } from "./rttUtils";
-import { getSceneById } from "../scenes/definitions";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import {
-  createRegisteredRttSubject,
-  disposeRegisteredRttSubject,
-  getSceneSubjectRegistration,
-} from "./sceneSubjectRegistry";
-import { updateMirrorShiftCameraReflection } from "./MirrorShiftSubjectFactory";
-import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
-import { resolveCameraMovementLatticeRenderModel } from "./cameraMovementLatticeRenderModel";
+  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+  resolveCameraMovementLatticeRenderModel,
+} from "./cameraMovementLatticeRenderModel";
 import {
-  mountCameraMovementRttSubject,
-  unmountCameraMovementRttSubject,
-  updateCameraMovementRttSubjectTarget,
-  type MountedCameraMovementRttSubject,
-} from "./cameraMovementRttSubjectLifecycle";
+  getGroundGlassSceneProfile,
+  type GroundGlassSceneProfileContext,
+  type GroundGlassSceneProfileUpdateContext,
+  type MountedGroundGlassSceneSubject,
+} from "./groundGlassSceneProfiles";
 import {
   configureGroundGlassCamera,
   readGroundGlassCameraPose,
@@ -40,7 +35,8 @@ import {
 } from "./groundGlassDofShaderSources";
 import type { DerivedOpticsState } from "../types/optics";
 import type { ApertureValue } from "../types/camera";
-import { useAppStore } from "../state/appStore";
+import type { SceneDefinition } from "../types/scene";
+import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
 import type { WebGLRenderer } from "three";
 import { getRenderQualitySettings } from "./renderQuality";
 import {
@@ -66,16 +62,18 @@ import {
   type GroundGlassProfilingConfiguration,
   type GroundGlassProfilingPass,
 } from "./groundGlassProfiling";
-import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
-import {
-  resolveCameraMovementLessonPresentationTargetRegion,
-} from "../scenes/cameraMovementLessonState";
+import type {
+  GroundGlassRttChannel,
+  GroundGlassRttRuntimeInfo,
+  GroundGlassRttRuntimeInfoChangeHandler,
+} from "./groundGlassRttDimensions";
 import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementSceneCalibration";
 
 export type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
   focalLengthMm: number;
-  sceneId?: string;
+  /** Explicit scene definition for bounds and focus-target projection. */
+  scene: SceneDefinition;
   widthPx: number;
   heightPx: number;
   aperture?: number; // f-number for DOF calculations
@@ -90,6 +88,10 @@ export type GroundGlassRTTProps = {
   channel?: GroundGlassRttChannel;
   /** Explicit visual lattice presentation for comparison panes. */
   presentationRegion?: CameraMovementPresentationRegion;
+  /** Effective calibration selected by the application boundary. */
+  effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
+  /** Application-owned diagnostics adapter. */
+  onRuntimeInfoChange?: GroundGlassRttRuntimeInfoChangeHandler;
 };
 
 const tupleMatches = (
@@ -98,7 +100,7 @@ const tupleMatches = (
 ): boolean =>
   Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
-function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, channel = "default", presentationRegion: explicitPresentationRegion, }: GroundGlassRTTProps) {
+function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, channel = "default", presentationRegion: explicitPresentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange, }: GroundGlassRTTProps) {
   // React gives each mounted renderer a stable identity without a module-level
   // mutable registry. It survives ordinary prop changes and is replaced only
   // when this OffscreenRenderer instance is actually remounted.
@@ -111,28 +113,19 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   const offscreenScene = useRef<THREE.Scene | null>(null);
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
   const presentationRegionRef = useRef<CameraMovementPresentationRegion>("middle");
+  const runtimeInfoRef = useRef<GroundGlassRttRuntimeInfo | null>(null);
+  const runtimeInfoChangeRef = useRef(onRuntimeInfoChange);
+  runtimeInfoChangeRef.current = onRuntimeInfoChange;
 
   const { gl } = useThree();
-  const configuredPresentationRegion = useAppStore((state) =>
-    explicitPresentationRegion === undefined
-      ? state.camera.cameraMovementLessonState &&
-        state.camera.activeSceneId === "understanding-camera-movements"
-        ? resolveCameraMovementLessonPresentationTargetRegion(
-            state.camera.cameraMovementLessonState,
-          )
-        : state.scene.targetRegion
-      : undefined,
-  );
-  const presentationRegion =
-    explicitPresentationRegion ?? configuredPresentationRegion ?? "middle";
+  const presentationRegion = explicitPresentationRegion ?? "middle";
   presentationRegionRef.current = presentationRegion;
-  const effectiveCameraMovementCalibration = useAppStore(
-    selectEffectiveCameraMovementCalibration,
-  );
-  const cameraMovementRenderModel = resolveCameraMovementLatticeRenderModel(
-    effectiveCameraMovementCalibration,
-  );
-  const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(sceneId);
+  const cameraMovementRenderModel = effectiveCameraMovementCalibration
+    ? resolveCameraMovementLatticeRenderModel(effectiveCameraMovementCalibration)
+    : CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
+  const resolvedSceneId = sceneDefinition.id;
+  const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
+  const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
   const profilingEnabled = isGroundGlassProfilingEnabled();
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
@@ -158,37 +151,25 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   const groundGlassProfilerRef = React.useRef<GroundGlassProfiler | null>(null);
   const fallbackDepthRef = React.useRef<THREE.DataTexture | null>(null);
   const resourceGenerationRef = React.useRef<number>(0);
+  const focalLengthMmRef = React.useRef(focalLengthMm);
+  focalLengthMmRef.current = focalLengthMm;
   const lightingRigRef = React.useRef<{
     keyLight: THREE.DirectionalLight;
     fillLight: THREE.DirectionalLight;
     target: THREE.Object3D;
   } | null>(null);
-  const mountedCameraMovementRttSubjectRef =
-    useRef<MountedCameraMovementRttSubject | null>(null);
-  const mirrorShiftRttSubjectRef = useRef<THREE.Group | null>(null);
+  const mountedSceneSubjectRef = useRef<MountedGroundGlassSceneSubject | null>(null);
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality, zoomEnabled });
   sizeInputsRef.current = { widthPx, heightPx, renderQuality, zoomEnabled };
 
-  const readRuntimeInfo = React.useCallback(() => {
-    const state = useAppStore.getState();
-    return channel === "default"
-      ? state.groundGlassRttRuntimeInfo
-      : state.groundGlassRttRuntimeInfoByChannel?.[channel] ?? null;
-  }, [channel]);
+  const readRuntimeInfo = React.useCallback(() => runtimeInfoRef.current, []);
   const setRuntimeInfo = React.useCallback(
-    (info: import("./groundGlassRttDimensions").GroundGlassRttRuntimeInfo | null) => {
+    (info: GroundGlassRttRuntimeInfo | null) => {
       const enriched = info
         ? { ...info, channel, ownerId: runtimeOwnerId }
         : null;
-      if (channel === "default") {
-        useAppStore.getState().setGroundGlassRttRuntimeInfo(enriched, runtimeOwnerId);
-      } else {
-        useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel(
-          channel,
-          enriched,
-          runtimeOwnerId,
-        );
-      }
+      runtimeInfoRef.current = enriched;
+      runtimeInfoChangeRef.current?.(channel, enriched, runtimeOwnerId);
     },
     [channel, runtimeOwnerId],
   );
@@ -348,7 +329,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         near: { value: 0.01 },
         far: { value: 12.0 },
         imageDistanceMm: { value: 100.0 },
-        focalLengthMm: { value: 1.0 },
+        focalLengthMm: { value: focalLengthMmRef.current },
         fNumber: { value: 11.0 },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
@@ -391,7 +372,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
         tCoC: { value: cocRT.texture },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
-        focalLengthMm: { value: 1.0 },
+        focalLengthMm: { value: focalLengthMmRef.current },
         fNumber: { value: 11.0 },
         imageDistanceMm: { value: 100.0 },
         near: { value: 0.01 },
@@ -651,25 +632,20 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     maximumBlurRadiusPx,
     profilingEnabled,
     readRuntimeInfo,
-    sceneId,
+    resolvedSceneId,
     setRuntimeInfo,
   ]);
 
   useEffect(() => {
     const scene = offscreenScene.current;
-    if (!sceneId || !scene) return;
+    if (!scene) return;
 
-    const registration = getSceneSubjectRegistration(sceneId);
-    const subjectOptions = {
-      presentationRegion: undefined,
-      cameraMovementRenderModel:
-        sceneId === "understanding-camera-movements"
-          ? cameraMovementRenderModel
-          : undefined,
+    const profileContext: GroundGlassSceneProfileContext = {
+      scene: sceneDefinition,
+      cameraMovementRenderModel,
+      presentationRegion: presentationRegionRef.current,
     };
-    const lighting =
-      registration?.resolveRttLighting?.(subjectOptions) ??
-      registration?.rttLighting;
+    const lighting = sceneProfile.resolveRttLighting(profileContext);
     const lightingRig = lightingRigRef.current;
     if (lighting && lightingRig) {
       const lightingTarget = new THREE.Vector3(
@@ -688,110 +664,88 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       );
     }
 
-    if (sceneId === "understanding-camera-movements") {
-      const mounted = mountCameraMovementRttSubject(
-        scene,
-        cameraMovementRenderModel,
-        presentationRegionRef.current,
-      );
-      mountedCameraMovementRttSubjectRef.current = mounted;
-      const runtimeInfo = mounted.runtimeInfo;
-      const currentInfo = readRuntimeInfo();
-      if (currentInfo) {
+    const mounted = sceneProfile.mountSubject(scene, profileContext);
+    if (!mounted) return;
+    mountedSceneSubjectRef.current = mounted;
+
+    const runtimeInfo = mounted.runtimeInfo;
+    const currentInfo = readRuntimeInfo();
+    if (runtimeInfo && currentInfo) {
+      setRuntimeInfo({
+        ...currentInfo,
+        latticeEdgeCount: runtimeInfo.edgeCount,
+        latticeGeometryId: runtimeInfo.geometryId,
+        latticeGeometryKey: runtimeInfo.geometryKey,
+        latticePresentationKey: runtimeInfo.presentationKey,
+        latticeResourceKey: runtimeInfo.resourceKey,
+        latticePresentationRegion: runtimeInfo.presentationRegion,
+        latticeSubjectGeneration: runtimeInfo.generation,
+      });
+    }
+
+    return () => {
+      if (mountedSceneSubjectRef.current === mounted) {
+        mountedSceneSubjectRef.current = null;
+      }
+      mounted.dispose();
+      const latestInfo = readRuntimeInfo();
+      if (
+        runtimeInfo &&
+        latestInfo?.latticeSubjectGeneration === runtimeInfo.generation
+      ) {
         setRuntimeInfo({
-          ...currentInfo,
-          latticeEdgeCount: runtimeInfo.edgeCount,
-          latticeGeometryId: runtimeInfo.geometryId,
-          latticeGeometryKey: runtimeInfo.geometryKey,
-          latticePresentationKey: runtimeInfo.presentationKey,
-          latticeResourceKey: runtimeInfo.resourceKey,
-          latticePresentationRegion: runtimeInfo.presentationRegion,
-          latticeSubjectGeneration: runtimeInfo.generation,
+          ...latestInfo,
+          latticeEdgeCount: undefined,
+          latticeGeometryId: undefined,
+          latticeGeometryKey: undefined,
+          latticePresentationKey: undefined,
+          latticeResourceKey: undefined,
+          latticePresentationRegion: undefined,
+          latticeSubjectGeneration: undefined,
         });
       }
-
-      return () => {
-        if (mountedCameraMovementRttSubjectRef.current === mounted) {
-          mountedCameraMovementRttSubjectRef.current = null;
-        }
-        unmountCameraMovementRttSubject(mounted);
-        const latestInfo = readRuntimeInfo();
-        if (
-          latestInfo?.latticeSubjectGeneration === runtimeInfo.generation
-        ) {
-          setRuntimeInfo({
-            ...latestInfo,
-            latticeEdgeCount: undefined,
-            latticeGeometryId: undefined,
-            latticeGeometryKey: undefined,
-            latticePresentationKey: undefined,
-            latticeResourceKey: undefined,
-            latticePresentationRegion: undefined,
-            latticeSubjectGeneration: undefined,
-          });
-        }
-      };
-    }
-
-    const subjectGroup = createRegisteredRttSubject(sceneId, subjectOptions);
-    if (!subjectGroup) return;
-    if (sceneId === "mirror-shift") {
-      mirrorShiftRttSubjectRef.current = subjectGroup;
-    }
-    scene.add(subjectGroup);
-    return () => {
-      if (mirrorShiftRttSubjectRef.current === subjectGroup) {
-        mirrorShiftRttSubjectRef.current = null;
-      }
-      scene.remove(subjectGroup);
-      disposeRegisteredRttSubject(sceneId, subjectGroup);
     };
   }, [
     cameraMovementRenderModel,
-    sceneId,
+    sceneDefinition,
+    sceneProfile,
     readRuntimeInfo,
     setRuntimeInfo,
   ]);
 
-  const mirrorShiftRigOrigin = opticsState.cameraRigTransform.rigOriginWorld;
-  const mirrorShiftFrontShiftMm = opticsState.cameraBodyLocalGeometry.lensCenterLocal.x;
+  // Scene profiles own any scene-specific mutation of their mounted subject.
   useEffect(() => {
-    if (sceneId !== "mirror-shift") return;
-    const subjectGroup = mirrorShiftRttSubjectRef.current;
-    if (!subjectGroup) return;
-    updateMirrorShiftCameraReflection(subjectGroup, {
-      x: mirrorShiftRigOrigin.x,
-      y: mirrorShiftRigOrigin.y,
-      z: mirrorShiftRigOrigin.z,
-    }, mirrorShiftFrontShiftMm);
-  }, [
-    mirrorShiftFrontShiftMm,
-    mirrorShiftRigOrigin.x,
-    mirrorShiftRigOrigin.y,
-    mirrorShiftRigOrigin.z,
-    sceneId,
-  ]);
-
-  // Target teaching steps are presentation-only. Keep the mounted subject and
-  // all owned GPU resources stable while mutating its existing materials.
-  useEffect(() => {
-    if (sceneId !== "understanding-camera-movements") return;
-    const mounted = mountedCameraMovementRttSubjectRef.current;
+    const mounted = mountedSceneSubjectRef.current;
     if (!mounted) return;
-    updateCameraMovementRttSubjectTarget(
-      mounted,
+
+    const profileUpdateContext: GroundGlassSceneProfileUpdateContext = {
+      scene: sceneDefinition,
       cameraMovementRenderModel,
       presentationRegion,
-    );
+      opticsState,
+    };
+    mounted.update?.(profileUpdateContext);
+
+    const runtimeInfo = mounted.runtimeInfo;
     const currentInfo = readRuntimeInfo();
-    if (currentInfo?.latticeSubjectGeneration !== mounted.runtimeInfo.generation) {
+    if (
+      !runtimeInfo ||
+      currentInfo?.latticeSubjectGeneration !== runtimeInfo.generation
+    ) {
       return;
     }
     setRuntimeInfo({
       ...currentInfo,
       latticePresentationRegion: presentationRegion,
     });
-  }, [cameraMovementRenderModel, presentationRegion, readRuntimeInfo, sceneId, setRuntimeInfo]);
+  }, [
+    cameraMovementRenderModel,
+    opticsState,
+    presentationRegion,
+    readRuntimeInfo,
+    sceneDefinition,
+    setRuntimeInfo,
+  ]);
 
   // Logical size, quality, DPR, and zoom affect only internal RTT resolution.
   // Keep the scene subject, camera, materials, post-processing scenes, and
@@ -920,14 +874,16 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
     // Configure once with a conservative preliminary range so the actual
     // Three.js camera forward vector can drive the final pitch-safe range.
-    const registeredSceneDef = sceneId ? getSceneById(sceneId) : undefined;
+    const profileContext: GroundGlassSceneProfileContext = {
+      scene: sceneDefinition,
+      cameraMovementRenderModel,
+      presentationRegion,
+    };
+    const effectiveBounds = sceneProfile.resolveRenderBounds(profileContext);
     const sceneDef =
-      registeredSceneDef?.id === "understanding-camera-movements"
-        ? {
-            ...registeredSceneDef,
-            bounds: cameraMovementRenderModel.subjectBounds,
-          }
-        : registeredSceneDef;
+      effectiveBounds === sceneDefinition.bounds
+        ? sceneDefinition
+        : { ...sceneDefinition, bounds: effectiveBounds };
     const preliminaryClipRange = getGroundGlassClipRangeWorld(
       sceneDef,
       opticsState.lensCenterWorld,
@@ -1045,7 +1001,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
     const profilingActive = profiler !== null && profiler.backend !== "disabled";
     if (profilingActive) {
       const profilingConfiguration: GroundGlassProfilingConfiguration = {
-        sceneId: sceneId ?? null,
+        sceneId: resolvedSceneId,
         renderQuality: sizeInputsRef.current.renderQuality || "standard",
         internalResolution: [
           dimsRef.current.internalWidthPx,
@@ -1155,7 +1111,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       let uniformPreparationError: string | null = null;
       let preparedDofState: ReturnType<typeof createGroundGlassDofUniformState> | null = null;
       try {
-        const displayOpticsState = resolveGroundGlassDisplayOpticsState(sceneId, opticsState);
+        const displayOpticsState = resolveGroundGlassDisplayOpticsState(resolvedSceneId, opticsState);
         preparedDofState = createGroundGlassDofUniformState(
           displayOpticsState,
           cam,
@@ -1241,7 +1197,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
       compositeMaterial.uniforms.showRing.value = 0.0;
 
       // compute focus ring projection using the shared projection helper
-      const sceneDefForProjection = sceneId ? getSceneById(sceneId) : undefined;
+      const sceneDefForProjection = sceneDefinition;
       const projectedTargets = projectSceneFocusTargetsToGroundGlass({
         sceneDef: sceneDefForProjection,
         opticsState,
@@ -1271,7 +1227,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
 
       const sanityStateKey = createGroundGlassRenderSanityStateKey({
         resourceGeneration: resourceGenerationRef.current,
-        sceneId,
+        sceneId: resolvedSceneId,
         previewMode,
         rawDebug: rawDebug,
         zoomEnabled: zoomEnabled,
@@ -1368,7 +1324,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, sceneId, widthPx, heigh
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, sceneId, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled, channel = "default", presentationRegion }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, scene, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled, channel = "default", presentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
@@ -1382,7 +1338,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
         gl={GROUND_GLASS_GL_OPTIONS}
         orthographic={false}
       >
-        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} sceneId={sceneId} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} presentationRegion={presentationRegion} />
+        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
       </Canvas>
     </div>
   );

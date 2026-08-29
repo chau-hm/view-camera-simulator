@@ -93,7 +93,15 @@ describe("public camera movement controls in the workspace", () => {
     render(
       <GroundGlassViewport
         opticsState={opticsState}
-        orientationAssistEnabled
+        scene={understandingCameraMovementsScene}
+        runtimeInfoByChannel={{
+          default: null,
+          "camera-movement-original": null,
+          "camera-movement-current": null,
+        }}
+        onRuntimeInfoChange={() => undefined}
+        groundGlassAssistEnabled={camera.groundGlassAssistEnabled}
+        onGroundGlassAssistEnabledChange={() => undefined}
         focusAssistEnabled={camera.focusAssistEnabled}
         gridEnabled={camera.gridEnabled}
         canToggleFocusAssist
@@ -104,7 +112,7 @@ describe("public camera movement controls in the workspace", () => {
         focusDistanceMm={camera.focusDistanceMm}
         aperture={camera.aperture}
         renderQuality="standard"
-        sceneId={understandingCameraMovementsScene.id}
+        focalLengthMm={camera.focalLengthMm}
         expanded={false}
         restoreFocusOnCollapse
         onRequestExpand={() => undefined}

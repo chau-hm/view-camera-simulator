@@ -11,6 +11,7 @@ import {
 } from "../../scenes/understandingCameraMovementsGeometry";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_PROVISIONAL_TEACHING_MOVEMENTS } from "../../scenes/cameraMovementTeachingCases";
+import { resolveSceneViewportFraming } from "../../render/sceneViewFraming";
 import type { CameraRigTransform } from "../../types/optics";
 
 describe("Understanding Camera Movements scene definition", () => {
@@ -49,7 +50,6 @@ describe("Understanding Camera Movements scene definition", () => {
     const placement = understandingCameraMovementsScene.cameraInspectionPlacement;
     expect(placement).toBeDefined();
     expect(placement?.position).toBeDefined();
-    expect(placement?.target).toBeDefined();
   });
 
   it("has a zero-movement camera preset", () => {
@@ -172,20 +172,21 @@ describe("Understanding Camera Movements static observer framing", () => {
   });
 
   it("camera inspection framing keeps the camera centred and non-clipped at high and low anchors", () => {
-    const inspection = understandingCameraMovementsScene.cameraInspectionPlacement!;
-    const positionWorld: [number, number, number] = [
-      inspection.position.x * WORLD_SCALE,
-      inspection.position.y * WORLD_SCALE,
-      inspection.position.z * WORLD_SCALE,
-    ];
-    const targetWorld: [number, number, number] = [
-      inspection.target.x * WORLD_SCALE,
-      inspection.target.y * WORLD_SCALE,
-      inspection.target.z * WORLD_SCALE,
-    ];
-    for (const bounds of rigBoundsForEachAnchor()) {
+    const rig = resolveCameraRigViewpointAnchors(CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig);
+    for (const anchor of [rig.mid, rig.high, rig.low]) {
+      const transform: CameraRigTransform = {
+        rigOriginWorld: anchor.rigOriginWorld,
+        basePitchDeg: anchor.basePitchDeg,
+        bodyPitchDeg: bodyPitchForAnchor[anchor.anchor],
+        bodyPitchPivotRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
+      };
+      const inspection = resolveSceneViewportFraming({
+        scene: understandingCameraMovementsScene,
+        focalLengthMm: CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
+        cameraRigTransform: transform,
+      }).camera;
       expect(
-        allCornersInView(bounds, positionWorld, targetWorld),
+        allCornersInView(rigBoundsForAnchor(anchor), inspection.position, inspection.target),
         "inspection framing must contain every transformed rig corner",
       ).toBe(true);
     }

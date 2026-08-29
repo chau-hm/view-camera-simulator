@@ -172,98 +172,105 @@ Run `npm run ci:local:e2e` when:
 
 Report checks not run and why.
 
-## PR branch publishing safety
+## Git publication safety
 
-This contract applies when work is being published as a PR branch. It does
-not add remote-publishing ceremony to non-published local work or Micro edits.
+Remote publication is a separate execution boundary from local implementation.
+Never infer a remote destination from the current branch, an upstream, `push.default`,
+`remote.pushDefault`, or prior shell state.
 
-### Create a PR branch without inheriting the base upstream
+### PR branch publishing
 
-Start from the fetched base and create the PR-oriented branch with no
-upstream:
+This contract applies when work is being published as a PR branch. It does not
+add remote-publishing ceremony to non-published local work or Micro edits.
 
-    git fetch origin
-    git switch --no-track -c <feature-branch> origin/main
+Create PR-oriented branches from the fetched base with no upstream:
 
-The invariant before first publication is:
+```bash
+git fetch origin
+git switch --no-track -c <feature-branch> origin/main
+```
 
-    local feature branch
-    no upstream pointing to origin/main
+Before any PR-branch push, fail closed unless the current branch is the intended
+non-main PR head, `origin` exists, and the destination is exactly
+`refs/heads/<current-feature-branch>`.
 
-Do not use a branch-creation form that may configure the feature branch to
-track origin/main. An existing upstream is diagnostic context only, never the
-PR publication destination. Inspect it when present with:
+Upstream and push configuration are diagnostic context only. They must never
+choose the publication destination:
 
-    git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'
+```bash
+git config --get push.default
+git config --get remote.pushDefault
+git config --get branch.<branch>.remote
+git config --get branch.<branch>.merge
+```
 
-If that reports origin/main, warn and continue only with the explicit
-feature-branch refspec below. Do not publish through the upstream.
+Record remote main before publication and push only with an explicit feature
+refspec:
 
-### Resolve and validate the publication destination
+```bash
+local_head="$(git rev-parse --verify HEAD)"
+main_before="$(git ls-remote --exit-code origin refs/heads/main | awk 'NR == 1 { print $1 }')"
+git push -u origin "HEAD:refs/heads/<current-feature-branch>"
+```
 
-Before any PR-branch push, resolve the current local branch, intended remote,
-intended PR head, and intended base explicitly. Fail closed unless all of the
-following are true:
+Afterward, require the remote feature ref to equal `local_head` and require a
+second read of `refs/heads/main` to equal `main_before`. Only then may PR
+creation use explicit head/base values.
 
-- current branch is non-empty;
-- current branch exactly matches the intended PR head branch;
-- current branch is not main or master;
-- origin exists and resolves to a remote URL;
-- the destination is refs/heads/<current-feature-branch>;
-- the destination is not refs/heads/main, refs/heads/master, or another
-  explicitly protected/base branch;
-- the intended PR head and base are different refs.
+Never use a bare `git push`, a direct-to-main refspec, `--force`, or
+`--force-with-lease` for PR publication. Existing remote feature branches may
+be updated only by a normal non-destructive fast-forward. Divergence or
+unexpected remote-main movement is a fail-closed stop.
 
-The branch, remote, destination, push.default, remote.pushDefault, and
-branch-specific remote/merge values must not be inferred from one another.
-The following values may be inspected for diagnostics, but must not determine
-the PR destination:
+### Production promotion
 
-    git config --get push.default
-    git config --get remote.pushDefault
-    git config --get branch.<branch>.remote
-    git config --get branch.<branch>.merge
+Production promotion is a distinct release operation. Its source of truth is
+`origin/main` and its destination is `origin/production`.
 
-Do not modify global or system Git configuration to solve a publication
-failure. Repository policy must remain safe under unusual local settings.
+Never implement a release request as "merge local main into local production"
+and never use local branch names, their upstreams, or the current checkout to
+select the source or destination.
 
-### Publish with an explicit feature-branch refspec
+When `scripts/promote-production.mjs` is present, use the canonical command:
 
-Record remote evidence before the push:
+```bash
+npm run promote:production
+```
 
-    local_head="$(git rev-parse --verify HEAD)"
-    main_before="$(git ls-remote --exit-code origin refs/heads/main | awk 'NR == 1 { print $1 }')"
+For inspection without publication:
 
-Require both values to be non-empty, then publish only with the validated
-same-named feature branch:
+```bash
+npm run promote:production -- --check
+```
 
-    git push -u origin "HEAD:refs/heads/<current-feature-branch>"
+The promotion command must:
 
-For initial PR publication, never rely on a bare git push, push.default,
-remote.pushDefault, or an inherited upstream. Never use a refspec ending in
-refs/heads/main and never use --force or --force-with-lease. A normal explicit
-push may update an existing feature branch only when the remote accepts it as
-a non-destructive fast-forward. If it would require history rewriting, stop.
+- fetch `origin` before resolving source and destination;
+- read authoritative `refs/heads/main` and `refs/heads/production` SHAs from the remote;
+- operate from those exact SHAs rather than local `main` or `production` branches;
+- use an isolated temporary worktree so the caller's current branch and working tree are not the release state;
+- create the production merge from the recorded remote-production SHA and the recorded remote-main SHA;
+- re-read both remote refs immediately before publication and abort if either changed;
+- publish only with the explicit refspec `HEAD:refs/heads/production`;
+- use a normal non-force push only;
+- verify afterward that remote production equals the promoted commit and remote main is unchanged;
+- no-op when the recorded remote main is already contained in remote production;
+- fail closed on missing refs, merge conflicts, divergence requiring history rewriting, concurrent remote movement, or post-push verification failure.
 
-### Verify the remote before creating the PR
+The invariant is:
 
-After the push, independently read the remote refs again. Before invoking
-gh pr create or an equivalent PR mechanism, require:
+```text
+origin/main       = read-only promotion source
+origin/production = only publication destination
+local main        = irrelevant
+local production  = irrelevant
+current branch    = irrelevant
+```
 
-    remote_feature_head="$(git ls-remote --exit-code origin "refs/heads/<current-feature-branch>" | awk 'NR == 1 { print $1 }')"
-    main_after="$(git ls-remote --exit-code origin refs/heads/main | awk 'NR == 1 { print $1 }')"
-
-- remote_feature_head exists and equals local_head;
-- main_after exists and equals main_before;
-- the explicit PR head is the validated feature branch;
-- the explicit PR base is the expected base branch;
-- feature and base refs are not the same.
-
-Only after those postconditions pass may PR creation be attempted, using
-explicit head and base values. If the feature ref is missing or differs from
-local HEAD, stop. If remote main changed, report the before/after SHAs, stop,
-and do not reset, revert, force-push, or otherwise overwrite concurrent remote
-work. Do not fall back to publishing the implementation to main.
+A production promotion must never move `refs/heads/main`, create or update a
+feature branch, use a bare `git push`, or use `--force` / `--force-with-lease`.
+If the canonical promotion script is unavailable or fails, report the evidence
+and stop rather than substituting an ad-hoc local-branch merge.
 
 ## Test-integrity rules
 

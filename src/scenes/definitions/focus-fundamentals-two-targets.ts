@@ -29,6 +29,7 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
     position: { x: 350, y: 180, z: -800 },
     target: focusFundamentalsObjectCenterMm,
   },
+  cameraInspectionAnchorSide: "front",
   bounds: focusFundamentalsSceneBoundsMm,
   focusTargets: focusTargetsDefs,
   compositionTargets: [],

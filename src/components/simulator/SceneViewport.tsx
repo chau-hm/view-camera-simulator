@@ -11,7 +11,10 @@ import "../../i18n";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugConstruction";
 import { supportsScheimpflugConstruction as sceneSupportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
-import type { SceneViewFocus } from "../../render/sceneViewFraming";
+import {
+  resolveSceneViewportFraming,
+  type SceneViewFocus,
+} from "../../render/sceneViewFraming";
 import { useAppStore } from "../../state/appStore";
 
 type SceneViewportProps = {
@@ -64,6 +67,7 @@ export const SceneViewport = ({
   const [showLegends, setShowLegends] = useState(false);
   const showOpticalGeometry = useAppStore((state) => state.ui.showOpticalGeometry);
   const setShowOpticalGeometry = useAppStore((state) => state.setShowOpticalGeometry);
+  const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const [viewResetNonce, setViewResetNonce] = useState(0);
   const [viewFocusState, setViewFocusState] = useState<{
     sceneId: string;
@@ -73,6 +77,15 @@ export const SceneViewport = ({
   const restoreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const previouslyExpandedRef = useRef(expanded);
   const viewFocus = viewFocusState.sceneId === scene.id ? viewFocusState.focus : "scene";
+  const observerViews = useMemo(
+    () =>
+      resolveSceneViewportFraming({
+        scene,
+        focalLengthMm: activeFocalLengthMm,
+        cameraRigTransform: opticsState.cameraRigTransform,
+      }),
+    [activeFocalLengthMm, opticsState.cameraRigTransform, scene],
+  );
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
   const scheimpflugConstruction = useMemo(
     () =>
@@ -222,6 +235,7 @@ export const SceneViewport = ({
             renderQuality={renderQuality}
             viewResetNonce={viewResetNonce}
             viewFocus={viewFocus}
+            observerViews={observerViews}
             simulateAssetFailure={simulateAssetFailure}
             onAssetError={(message) => setAssetError({ title: t(simulatorMessageKeys.viewport.sceneLoadFailed), message })}
             containerStyle={{ width: "100%", height: "100%", border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}

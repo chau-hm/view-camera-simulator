@@ -4,12 +4,13 @@ import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { routes } from "../../app/router";
 
 describe("site navigation", () => {
-  it("shows Home, Scenes and GitHub links in header", async () => {
+  it("shows Home, Scenes, FAQ and GitHub links in header", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/"] });
     render(<RouterProvider router={memoryRouter} />);
 
     expect(screen.getByText("Home")).toBeInTheDocument();
     expect(screen.getByText("Scenes")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "FAQ" })).toHaveAttribute("href", "/faq");
     const gh = screen.getAllByText("GitHub");
     expect(gh.length).toBeGreaterThanOrEqual(1);
 

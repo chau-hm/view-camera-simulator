@@ -14,6 +14,8 @@
     "check:css": "node ./scripts/check-css-structure.mjs",
     "ci:local": "node ./scripts/ci-local.mjs",
     "ci:local:e2e": "node ./scripts/ci-local.mjs --with-e2e",
+    "promote:preflight": "node ./scripts/promote-production.mjs -- --check",
+    "promote:production": "node ./scripts/promote-production.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -38,7 +40,7 @@
     "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^6.8.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.4.0",
     "jsdom": "^29.1.1",

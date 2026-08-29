@@ -514,6 +514,70 @@ non-destructive fast-forward. Divergence stops publication. Never use a bare
 git push, a direct-to-main refspec, --force, or --force-with-lease for PR
 publication. See the full repository contract in AGENTS.md.
 
+### 9.3 Safe production promotion
+
+Production promotion is a release boundary, separate from PR publication. The
+canonical data flow is:
+
+```text
+origin/main
+    │  read exact remote SHA
+    ▼
+isolated promotion worktree
+    │  merge exact recorded main SHA into exact recorded production SHA
+    ▼
+origin/production
+```
+
+Local `main`, local `production`, the caller's current branch, branch upstreams,
+`push.default`, and `remote.pushDefault` are not release sources of truth. This
+prevents a stale or mis-tracked local feature branch from being promoted or
+published to a base branch.
+
+When the repository provides `scripts/promote-production.mjs`, use:
+
+```bash
+npm run promote:production -- --check
+npm run promote:production
+```
+
+The first command is a non-publishing preflight: it fetches remote refs but does not merge or push. The second performs the promotion.
+Do not replace the canonical command with `git switch production`, `git merge
+main`, or a bare `git push`.
+
+The promotion implementation must:
+
+1. fetch `origin --prune`;
+2. record authoritative remote `main` and `production` SHAs;
+3. confirm fetched remote-tracking refs match those recorded SHAs;
+4. no-op if the recorded main SHA is already an ancestor of recorded production;
+5. create an isolated temporary worktree at the recorded production SHA;
+6. merge the exact recorded main SHA there, normally with an explicit release
+   merge commit;
+7. require both recorded SHAs to remain unchanged on the remote immediately
+   before publication;
+8. push only `HEAD:refs/heads/production` with a normal non-force push;
+9. verify remote production equals the promoted commit and remote main still
+   equals the original main SHA;
+10. clean up the temporary worktree.
+
+Fail closed on missing refs, merge conflicts, concurrent movement of either
+remote branch, non-fast-forward publication, or failed post-push verification.
+Never repair such a failure by resetting or force-pushing a remote branch.
+
+The release invariant is:
+
+```text
+origin/main must not move during promotion
+origin/production may move only to the verified promoted commit
+```
+
+A completed PR merge and a production promotion are separate actions. Do not
+automatically promote after every PR unless the user or release policy explicitly
+requests that deployment step.
+
+---
+
 ## 10. Validation strategy
 
 Validation must be proportional to the claimed behaviour and risk.

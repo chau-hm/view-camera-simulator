@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import {
-  GroundGlassRTT,
+  GroundGlassRTT as UnconnectedGroundGlassRTT,
+  type GroundGlassRTTProps,
 } from "../../render/GroundGlassRTT";
 import { synchronizeGroundGlassDofClipRange } from "../../render/createGroundGlassDofUniformState";
 import {
@@ -19,6 +20,7 @@ import {
   getSceneSubjectRegistration,
 } from "../../render/sceneSubjectRegistry";
 import { useAppStore } from "../../state/appStore";
+import { selectEffectiveCameraMovementCalibration } from "../../state/selectors";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
@@ -26,7 +28,11 @@ import { understandingCameraMovementsScene } from "../../scenes/definitions/unde
 import geometry from "../../scenes/shelfSwingGeometry";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
-import type { GroundGlassRttRuntimeInfo } from "../../render/groundGlassRttDimensions";
+import type {
+  GroundGlassRttChannel,
+  GroundGlassRttRuntimeInfo,
+  GroundGlassRttRuntimeInfoChangeHandler,
+} from "../../render/groundGlassRttDimensions";
 
 const fiberTestState = vi.hoisted(() => ({
   frameCallback: null as ((state?: unknown, delta?: number) => void) | null,
@@ -94,6 +100,41 @@ afterEach(() => {
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-current", null);
 });
 
+const ConnectedGroundGlassRTT = (props: GroundGlassRTTProps) => {
+  const onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler = (
+    channel,
+    info,
+    ownerId,
+  ) => {
+    if (channel === "default") {
+      useAppStore.getState().setGroundGlassRttRuntimeInfo(info, ownerId);
+    } else {
+      useAppStore
+        .getState()
+        .setGroundGlassRttRuntimeInfoForChannel(channel, info, ownerId);
+    }
+  };
+
+  return React.createElement(UnconnectedGroundGlassRTT, {
+    ...props,
+    onRuntimeInfoChange: props.onRuntimeInfoChange ?? onRuntimeInfoChange,
+  });
+};
+
+const createRuntimeInfoCollector = () => {
+  const updates: Array<Parameters<GroundGlassRttRuntimeInfoChangeHandler>> = [];
+  const runtimeInfoByChannel = new Map<GroundGlassRttChannel, GroundGlassRttRuntimeInfo | null>();
+  const onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler = (channel, info, ownerId) => {
+    updates.push([channel, info, ownerId]);
+    runtimeInfoByChannel.set(channel, info);
+  };
+  return {
+    onRuntimeInfoChange,
+    updates,
+    get: (channel: GroundGlassRttChannel = "default") => runtimeInfoByChannel.get(channel) ?? null,
+  };
+};
+
 function renderedShaderMaterials() {
   return fiberTestState.renderedScenes.flatMap((scene) => {
     if (!(scene instanceof THREE.Scene)) return [];
@@ -138,15 +179,17 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       activeSceneId: architectureForegroundScene.id,
     };
     const optics = deriveOpticsState(camera, architectureForegroundScene);
+    const diagnostics = createRuntimeInfoCollector();
     const view = render(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         opticsState: optics,
         focalLengthMm: camera.focalLengthMm,
-        sceneId: architectureForegroundScene.id,
+        scene: architectureForegroundScene,
         widthPx: 500,
         heightPx: 400,
         renderQuality: "standard",
         previewMode: "upright",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
 
@@ -173,8 +216,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(gatherMaterial?.uniforms.filmPlaneBasisX.value.length()).toBeCloseTo(1, 6);
     expect(gatherMaterial?.uniforms.filmPlaneBasisY.value.length()).toBeCloseTo(1, 6);
     expect(gatherMaterial?.uniforms.footprintStorageMaxMm.value).toBeGreaterThan(0);
-    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.nearGatherTargetWidthPx).toBe(
-      useAppStore.getState().groundGlassRttRuntimeInfo?.gatherTargetWidthPx,
+    expect(diagnostics.get()?.nearGatherTargetWidthPx).toBe(
+      diagnostics.get()?.gatherTargetWidthPx,
     );
     expect(
       fiberTestState.renderedScenes.filter((scene) =>
@@ -189,6 +232,47 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     view.unmount();
   });
 
+  it("publishes runtime diagnostics through the injected owner-aware callback", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const updates: Array<
+      Parameters<GroundGlassRttRuntimeInfoChangeHandler>
+    > = [];
+    const onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler = (
+      channel,
+      info,
+      ownerId,
+    ) => {
+      updates.push([channel, info, ownerId]);
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        onRuntimeInfoChange,
+      }),
+    );
+
+    const initialUpdate = updates.find(([, info]) => info !== null);
+    expect(initialUpdate?.[0]).toBe("default");
+    expect(initialUpdate?.[1]?.resourceGeneration).toBe(1);
+    expect(initialUpdate?.[1]?.ownerId).toBe(initialUpdate?.[2]);
+
+    view.unmount();
+
+    const finalUpdate = updates[updates.length - 1];
+    expect(finalUpdate?.[0]).toBe("default");
+    expect(finalUpdate?.[1]).toBeNull();
+    expect(finalUpdate?.[2]).toBe(initialUpdate?.[2]);
+  });
+
   it("publishes timings for the active processed Ground Glass passes", () => {
     window.history.replaceState({}, "", "/?dofProfiling=1");
     const camera = {
@@ -196,22 +280,25 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       ...architectureForegroundScene.cameraPreset,
       activeSceneId: architectureForegroundScene.id,
     };
+    const diagnostics = createRuntimeInfoCollector();
     const view = render(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         opticsState: deriveOpticsState(camera, architectureForegroundScene),
         focalLengthMm: camera.focalLengthMm,
-        sceneId: architectureForegroundScene.id,
+        scene: architectureForegroundScene,
         widthPx: 500,
         heightPx: 400,
         renderQuality: "standard",
         previewMode: "upright",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
 
     act(() => fiberTestState.frameCallback?.({}, 1 / 60));
 
-    const snapshot = useAppStore.getState().groundGlassRttRuntimeInfo?.profilingSnapshot;
-    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.profilingEnabled).toBe(true);
+    const runtimeInfo = diagnostics.get();
+    const snapshot = runtimeInfo?.profilingSnapshot;
+    expect(runtimeInfo?.profilingEnabled).toBe(true);
     expect(snapshot?.profilingBackend).toBe("cpu-fallback");
     expect(snapshot?.timingUnit).toBe("cpu-submit-ms");
     expect(snapshot?.profilingDiagnostics.gpuQueryState).toBe("unavailable");
@@ -226,8 +313,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(snapshot?.passes.nearGatherMs?.count).toBe(1);
     expect(snapshot?.passes.compositeMs?.count).toBe(1);
     expect(snapshot?.gatherResolution).toEqual([
-      useAppStore.getState().groundGlassRttRuntimeInfo?.gatherTargetWidthPx,
-      useAppStore.getState().groundGlassRttRuntimeInfo?.gatherTargetHeightPx,
+      runtimeInfo?.gatherTargetWidthPx,
+      runtimeInfo?.gatherTargetHeightPx,
     ]);
 
     view.unmount();
@@ -240,22 +327,24 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       ...architectureForegroundScene.cameraPreset,
       activeSceneId: architectureForegroundScene.id,
     };
+    const diagnostics = createRuntimeInfoCollector();
     const view = render(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         opticsState: deriveOpticsState(camera, architectureForegroundScene),
         focalLengthMm: camera.focalLengthMm,
-        sceneId: architectureForegroundScene.id,
+        scene: architectureForegroundScene,
         widthPx: 500,
         heightPx: 400,
         renderQuality: "low",
         previewMode: "raw",
         rawDebug: true,
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
 
     act(() => fiberTestState.frameCallback?.({}, 1 / 60));
 
-    const snapshot = useAppStore.getState().groundGlassRttRuntimeInfo?.profilingSnapshot;
+    const snapshot = diagnostics.get()?.profilingSnapshot;
     expect(snapshot?.rawDebug).toBe(true);
     expect(snapshot?.passes.sceneRenderMs?.count).toBe(1);
     expect(snapshot?.passes.compositeMs?.count).toBe(1);
@@ -275,17 +364,19 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       ...architectureForegroundScene.cameraPreset,
       activeSceneId: architectureForegroundScene.id,
     };
+    const diagnostics = createRuntimeInfoCollector();
     render(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         opticsState: deriveOpticsState(camera, architectureForegroundScene),
         focalLengthMm: camera.focalLengthMm,
-        sceneId: architectureForegroundScene.id,
+        scene: architectureForegroundScene,
         widthPx: 500,
         heightPx: 400,
         renderQuality: "low",
         previewMode: "raw",
         rawDebug: true,
         focusAssistEnabled: true,
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
 
@@ -294,7 +385,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const compositeMaterial = renderedShaderMaterials().find((material) =>
       material.fragmentShader.includes("uniform sampler2D tGather"),
     );
-    const runtimeInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const runtimeInfo = diagnostics.get();
     const sourceTexture = compositeMaterial?.uniforms.tGather.value as THREE.Texture;
     const sourceWidth = (sourceTexture.image as { width: number }).width;
     expect(sourceWidth).toBe(runtimeInfo?.colorTargetWidthPx);
@@ -347,6 +438,32 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     }
   });
 
+  it("maps default-channel diagnostics through the connected adapter", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+    };
+    const view = render(
+      React.createElement(ConnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureRiseScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureRiseScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+      }),
+    );
+
+    const runtimeInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    expect(runtimeInfo?.channel).toBe("default");
+    expect(runtimeInfo?.ownerId).toMatch(/^ground-glass-rtt-owner-/);
+
+    view.unmount();
+
+    expect(useAppStore.getState().groundGlassRttRuntimeInfo).toBeNull();
+  });
+
   it("owns independent Original and Current RTT channels through resize and teardown", () => {
     useAppStore.getState().initializeSimulatorRoute({
       mode: "free",
@@ -358,31 +475,36 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       activeSceneId: understandingCameraMovementsScene.id,
     };
     const optics = deriveOpticsState(camera, understandingCameraMovementsScene);
+    const effectiveCameraMovementCalibration = selectEffectiveCameraMovementCalibration(
+      useAppStore.getState(),
+    );
     const createSubject = vi.mocked(createRegisteredRttSubject);
     createSubject.mockClear();
     const view = render(
       React.createElement(
         React.Fragment,
         null,
-        React.createElement(GroundGlassRTT, {
+        React.createElement(ConnectedGroundGlassRTT, {
           opticsState: optics,
           focalLengthMm: camera.focalLengthMm,
-          sceneId: understandingCameraMovementsScene.id,
+          scene: understandingCameraMovementsScene,
           widthPx: 500,
           heightPx: 400,
           renderQuality: "standard",
           channel: "camera-movement-original",
           presentationRegion: "middle",
+          effectiveCameraMovementCalibration,
         }),
-        React.createElement(GroundGlassRTT, {
+        React.createElement(ConnectedGroundGlassRTT, {
           opticsState: optics,
           focalLengthMm: camera.focalLengthMm,
-          sceneId: understandingCameraMovementsScene.id,
+          scene: understandingCameraMovementsScene,
           widthPx: 500,
           heightPx: 400,
           renderQuality: "standard",
           channel: "camera-movement-current",
           presentationRegion: "middle",
+          effectiveCameraMovementCalibration,
         }),
       ),
     );
@@ -410,25 +532,27 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       React.createElement(
         React.Fragment,
         null,
-        React.createElement(GroundGlassRTT, {
+        React.createElement(ConnectedGroundGlassRTT, {
           opticsState: optics,
           focalLengthMm: camera.focalLengthMm,
-          sceneId: understandingCameraMovementsScene.id,
+          scene: understandingCameraMovementsScene,
           widthPx: 750,
           heightPx: 600,
           renderQuality: "standard",
           channel: "camera-movement-original",
           presentationRegion: "middle",
+          effectiveCameraMovementCalibration,
         }),
-        React.createElement(GroundGlassRTT, {
+        React.createElement(ConnectedGroundGlassRTT, {
           opticsState: optics,
           focalLengthMm: camera.focalLengthMm,
-          sceneId: understandingCameraMovementsScene.id,
+          scene: understandingCameraMovementsScene,
           widthPx: 750,
           heightPx: 600,
           renderQuality: "standard",
           channel: "camera-movement-current",
           presentationRegion: "middle",
+          effectiveCameraMovementCalibration,
         }),
       ),
     );
@@ -461,15 +585,21 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       activeSceneId: understandingCameraMovementsScene.id,
     };
     const createSubject = vi.mocked(createRegisteredRttSubject);
+    const diagnostics = createRuntimeInfoCollector();
     const props = {
       focalLengthMm: baseCamera.focalLengthMm,
-      sceneId: understandingCameraMovementsScene.id,
+      scene: understandingCameraMovementsScene,
       widthPx: 500,
       heightPx: 400,
       renderQuality: "standard" as const,
+      effectiveCameraMovementCalibration: selectEffectiveCameraMovementCalibration(
+        useAppStore.getState(),
+      ),
+      presentationRegion: "middle" as const,
+      onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
     };
     const view = render(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         ...props,
         opticsState: deriveOpticsState(
           baseCamera,
@@ -477,15 +607,12 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
         ),
       }),
     );
-    const initialGeneration =
-      useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration;
-    const initialGeometryId =
-      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeGeometryId;
-    const initialEdgeCount =
-      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeEdgeCount;
+    const initialGeneration = diagnostics.get()?.resourceGeneration;
+    const initialGeometryId = diagnostics.get()?.latticeGeometryId;
+    const initialEdgeCount = diagnostics.get()?.latticeEdgeCount;
 
     view.rerender(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         ...props,
         opticsState: deriveOpticsState(
           { ...baseCamera, cameraBodyPitchDeg: 8 },
@@ -501,7 +628,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       cameraRigPlacement: cameraMovementsGeometry.cameraRig.viewpointAnchors.high,
     };
     view.rerender(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         ...props,
         opticsState: deriveOpticsState(
           placedCamera,
@@ -511,15 +638,9 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     );
 
     expect(createSubject).toHaveBeenCalledTimes(1);
-    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
-      initialGeneration,
-    );
-    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.latticeGeometryId).toBe(
-      initialGeometryId,
-    );
-    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.latticeEdgeCount).toBe(
-      initialEdgeCount,
-    );
+    expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
+    expect(diagnostics.get()?.latticeGeometryId).toBe(initialGeometryId);
+    expect(diagnostics.get()?.latticeEdgeCount).toBe(initialEdgeCount);
   });
 
   it("creates the canonical charts without the generic fallback subject", () => {
@@ -589,30 +710,28 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const opticsState = deriveOpticsState(camera, architectureRiseScene);
     const createSubject = vi.mocked(createRegisteredRttSubject);
     const setSize = vi.spyOn(THREE.WebGLRenderTarget.prototype, "setSize");
-    const runtimeUpdates: Array<ReturnType<typeof useAppStore.getState>["groundGlassRttRuntimeInfo"]> = [];
-    const unsubscribe = useAppStore.subscribe((state) => {
-      runtimeUpdates.push(state.groundGlassRttRuntimeInfo);
-    });
+    const diagnostics = createRuntimeInfoCollector();
 
     const props = {
       opticsState,
       focalLengthMm: camera.focalLengthMm,
-      sceneId: architectureRiseScene.id,
+      scene: architectureRiseScene,
       widthPx: 500,
       heightPx: 400,
       renderQuality: "standard" as const,
       zoomEnabled: false,
+      onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
     };
-    const view = render(React.createElement(GroundGlassRTT, props));
-    const initialInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, props));
+    const initialInfo = diagnostics.get();
     expect(initialInfo?.resourceGeneration).toBe(1);
     expect(createSubject).toHaveBeenCalledTimes(1);
 
-    runtimeUpdates.length = 0;
+    diagnostics.updates.length = 0;
     setSize.mockClear();
-    view.rerender(React.createElement(GroundGlassRTT, { ...props, zoomEnabled: true }));
+    view.rerender(React.createElement(UnconnectedGroundGlassRTT, { ...props, zoomEnabled: true }));
 
-    const zoomedInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const zoomedInfo = diagnostics.get();
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(zoomedInfo?.resourceGeneration).toBe(initialInfo?.resourceGeneration);
     expect(zoomedInfo?.internalWidthPx).toBeGreaterThan(initialInfo?.internalWidthPx ?? 0);
@@ -624,20 +743,18 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(zoomedInfo?.dofTechnique).toBe("physical-coc-near-far-oriented-gather");
     expect(zoomedInfo?.sampleCount).toBe(32);
     expect(setSize).toHaveBeenCalledTimes(5);
-    expect(runtimeUpdates).not.toContain(null);
+    expect(diagnostics.updates.some(([, info]) => info === null)).toBe(false);
 
-    runtimeUpdates.length = 0;
+    diagnostics.updates.length = 0;
     setSize.mockClear();
-    view.rerender(React.createElement(GroundGlassRTT, props));
+    view.rerender(React.createElement(UnconnectedGroundGlassRTT, props));
 
-    const resetInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const resetInfo = diagnostics.get();
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(resetInfo?.resourceGeneration).toBe(initialInfo?.resourceGeneration);
     expect(resetInfo?.internalWidthPx).toBe(initialInfo?.internalWidthPx);
     expect(setSize).toHaveBeenCalledTimes(5);
-    expect(runtimeUpdates).not.toContain(null);
-
-    unsubscribe();
+    expect(diagnostics.updates.some(([, info]) => info === null)).toBe(false);
   });
 
   it("resizes responsive and quality-derived targets without reallocating the RTT graph", () => {
@@ -649,23 +766,25 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const opticsState = deriveOpticsState(camera, architectureRiseScene);
     const createSubject = vi.mocked(createRegisteredRttSubject);
     const setSize = vi.spyOn(THREE.WebGLRenderTarget.prototype, "setSize");
+    const diagnostics = createRuntimeInfoCollector();
     const props = {
       opticsState,
       focalLengthMm: camera.focalLengthMm,
-      sceneId: architectureRiseScene.id,
+      scene: architectureRiseScene,
       widthPx: 500,
       heightPx: 400,
       renderQuality: "standard" as const,
       zoomEnabled: false,
+      onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
     };
-    const view = render(React.createElement(GroundGlassRTT, props));
-    const initialGeneration = useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration;
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, props));
+    const initialGeneration = diagnostics.get()?.resourceGeneration;
 
     setSize.mockClear();
     view.rerender(
-      React.createElement(GroundGlassRTT, { ...props, widthPx: 750, heightPx: 600 }),
+      React.createElement(UnconnectedGroundGlassRTT, { ...props, widthPx: 750, heightPx: 600 }),
     );
-    const resizedInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const resizedInfo = diagnostics.get();
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(resizedInfo?.resourceGeneration).toBe(initialGeneration);
     expect(resizedInfo?.logicalWidthPx).toBe(750);
@@ -683,7 +802,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
 
     setSize.mockClear();
     view.rerender(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         ...props,
         widthPx: 750,
         heightPx: 600,
@@ -691,9 +810,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       }),
     );
     expect(createSubject).toHaveBeenCalledTimes(1);
-    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
-      initialGeneration,
-    );
+    expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
     expect(setSize).toHaveBeenCalledTimes(5);
   });
 
@@ -709,33 +826,34 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       activeSceneId: shelfSwingScene.id,
     };
     const createSubject = vi.mocked(createRegisteredRttSubject);
+    const diagnostics = createRuntimeInfoCollector();
     const view = render(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         opticsState: deriveOpticsState(architectureCamera, architectureRiseScene),
         focalLengthMm: architectureCamera.focalLengthMm,
-        sceneId: architectureRiseScene.id,
+        scene: architectureRiseScene,
         widthPx: 500,
         heightPx: 400,
         renderQuality: "standard",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
-    const initialGeneration = useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration;
+    const initialGeneration = diagnostics.get()?.resourceGeneration;
 
     view.rerender(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         opticsState: deriveOpticsState(shelfCamera, shelfSwingScene),
         focalLengthMm: shelfCamera.focalLengthMm,
-        sceneId: shelfSwingScene.id,
+        scene: shelfSwingScene,
         widthPx: 500,
         heightPx: 400,
         renderQuality: "standard",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
 
     expect(createSubject).toHaveBeenCalledTimes(2);
-    expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
-      (initialGeneration ?? 0) + 1,
-    );
+    expect(diagnostics.get()?.resourceGeneration).toBe((initialGeneration ?? 0) + 1);
   });
 
   it("updates the owned RTT lattice target in place without reallocating it", () => {
@@ -746,19 +864,25 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const camera = useAppStore.getState().camera;
     const createSubject = vi.mocked(createRegisteredRttSubject);
     createSubject.mockClear();
+    const diagnostics = createRuntimeInfoCollector();
+    const effectiveCameraMovementCalibration = selectEffectiveCameraMovementCalibration(
+      useAppStore.getState(),
+    );
     const view = render(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         opticsState: deriveOpticsState(camera, understandingCameraMovementsScene),
         focalLengthMm: camera.focalLengthMm,
-        sceneId: understandingCameraMovementsScene.id,
+        scene: understandingCameraMovementsScene,
         widthPx: 500,
         heightPx: 400,
         renderQuality: "standard",
+        effectiveCameraMovementCalibration,
+        presentationRegion: "middle",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
-    const firstGeneration = useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration;
-    const firstSubjectGeneration =
-      useAppStore.getState().groundGlassRttRuntimeInfo?.latticeSubjectGeneration;
+    const firstGeneration = diagnostics.get()?.resourceGeneration;
+    const firstSubjectGeneration = diagnostics.get()?.latticeSubjectGeneration;
     const firstGroup = createSubject.mock.results[0]?.value as THREE.Group;
     const firstResourceKey = firstGroup.userData.resourceKey;
     const firstGeometry = (firstGroup.children[0] as THREE.Mesh).geometry;
@@ -818,28 +942,31 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     ] as const;
 
     presentationTransitions.forEach(({ presentationRegion, lessonState }) => {
-      act(() => useAppStore.getState().setCameraMovementLessonState(lessonState));
+      act(() => {
+        useAppStore.getState().setCameraMovementLessonState(lessonState);
+        view.rerender(
+          React.createElement(UnconnectedGroundGlassRTT, {
+            opticsState: deriveOpticsState(camera, understandingCameraMovementsScene),
+            focalLengthMm: camera.focalLengthMm,
+            scene: understandingCameraMovementsScene,
+            widthPx: 500,
+            heightPx: 400,
+            renderQuality: "standard",
+            effectiveCameraMovementCalibration,
+            presentationRegion,
+            onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+          }),
+        );
+      });
 
       expect(createSubject).toHaveBeenCalledTimes(1);
       expect(disposeFirstGeometry).not.toHaveBeenCalled();
-      expect(useAppStore.getState().groundGlassRttRuntimeInfo?.resourceGeneration).toBe(
-        firstGeneration,
-      );
-      expect(useAppStore.getState().groundGlassRttRuntimeInfo?.latticeSubjectGeneration).toBe(
-        firstSubjectGeneration,
-      );
-      expect(useAppStore.getState().groundGlassRttRuntimeInfo?.latticeResourceKey).toBe(
-        firstResourceKey,
-      );
-      expect(
-        useAppStore.getState().groundGlassRttRuntimeInfo?.latticeEdgeCount,
-      ).toBe(firstGroup.userData.canonicalEdgeCount);
-      expect(
-        useAppStore.getState().groundGlassRttRuntimeInfo?.latticeGeometryId,
-      ).toBe(firstGroup.userData.canonicalGeometryId);
-      expect(
-        useAppStore.getState().groundGlassRttRuntimeInfo?.latticePresentationRegion,
-      ).toBe(presentationRegion);
+      expect(diagnostics.get()?.resourceGeneration).toBe(firstGeneration);
+      expect(diagnostics.get()?.latticeSubjectGeneration).toBe(firstSubjectGeneration);
+      expect(diagnostics.get()?.latticeResourceKey).toBe(firstResourceKey);
+      expect(diagnostics.get()?.latticeEdgeCount).toBe(firstGroup.userData.canonicalEdgeCount);
+      expect(diagnostics.get()?.latticeGeometryId).toBe(firstGroup.userData.canonicalGeometryId);
+      expect(diagnostics.get()?.latticePresentationRegion).toBe(presentationRegion);
     });
     view.unmount();
     expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
@@ -854,24 +981,31 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const camera = useAppStore.getState().camera;
     const createSubject = vi.mocked(createRegisteredRttSubject);
     createSubject.mockClear();
+    const diagnostics = createRuntimeInfoCollector();
+    const initialCalibration = selectEffectiveCameraMovementCalibration(
+      useAppStore.getState(),
+    );
     const disposeRenderTarget = vi.spyOn(
       THREE.WebGLRenderTarget.prototype,
       "dispose",
     );
     const view = render(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         opticsState: deriveOpticsState(
           camera,
           understandingCameraMovementsScene,
         ),
         focalLengthMm: camera.focalLengthMm,
-        sceneId: understandingCameraMovementsScene.id,
+        scene: understandingCameraMovementsScene,
         widthPx: 500,
         heightPx: 400,
         renderQuality: "standard",
+        effectiveCameraMovementCalibration: initialCalibration,
+        presentationRegion: "middle",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
-    const firstInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const firstInfo = diagnostics.get();
     const firstGroup = createSubject.mock.results[0]?.value as THREE.Group;
     const disposeFirstGeometry = vi.spyOn(
       (firstGroup.children[0] as THREE.Mesh).geometry,
@@ -889,8 +1023,26 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       ).toBe(true);
     });
 
-    const replacementInfo =
-      useAppStore.getState().groundGlassRttRuntimeInfo;
+    view.rerender(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(
+          useAppStore.getState().camera,
+          understandingCameraMovementsScene,
+        ),
+        focalLengthMm: useAppStore.getState().camera.focalLengthMm,
+        scene: understandingCameraMovementsScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        effectiveCameraMovementCalibration: selectEffectiveCameraMovementCalibration(
+          useAppStore.getState(),
+        ),
+        presentationRegion: "middle",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+      }),
+    );
+
+    const replacementInfo = diagnostics.get();
     expect(createSubject).toHaveBeenCalledTimes(2);
     expect(disposeFirstGeometry).toHaveBeenCalledTimes(1);
     expect(replacementInfo?.resourceGeneration).toBe(
@@ -916,6 +1068,9 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       sceneId: understandingCameraMovementsScene.id,
     });
     const cameraMovementCamera = useAppStore.getState().camera;
+    const effectiveCameraMovementCalibration = selectEffectiveCameraMovementCalibration(
+      useAppStore.getState(),
+    );
     const architectureCamera = {
       ...DEFAULT_CAMERA_STATE,
       ...architectureRiseScene.cameraPreset,
@@ -923,17 +1078,20 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     };
     const createSubject = vi.mocked(createRegisteredRttSubject);
     createSubject.mockClear();
+    const diagnostics = createRuntimeInfoCollector();
     const view = render(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         opticsState: deriveOpticsState(
           cameraMovementCamera,
           understandingCameraMovementsScene,
         ),
         focalLengthMm: cameraMovementCamera.focalLengthMm,
-        sceneId: understandingCameraMovementsScene.id,
+        scene: understandingCameraMovementsScene,
         widthPx: 500,
         heightPx: 400,
         renderQuality: "standard",
+        effectiveCameraMovementCalibration,
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
     const cameraMovementGroup =
@@ -944,20 +1102,21 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     );
 
     view.rerender(
-      React.createElement(GroundGlassRTT, {
+      React.createElement(UnconnectedGroundGlassRTT, {
         opticsState: deriveOpticsState(
           architectureCamera,
           architectureRiseScene,
         ),
         focalLengthMm: architectureCamera.focalLengthMm,
-        sceneId: architectureRiseScene.id,
+        scene: architectureRiseScene,
         widthPx: 500,
         heightPx: 400,
         renderQuality: "standard",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
 
-    const currentInfo = useAppStore.getState().groundGlassRttRuntimeInfo;
+    const currentInfo = diagnostics.get();
     expect(cameraMovementGroup.parent).toBeNull();
     expect(cameraMovementGroup.userData.resourcesDisposed).toBe(true);
     expect(disposeGeometry).toHaveBeenCalledTimes(1);
@@ -991,7 +1150,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
         focusDistanceMm: camera.focusDistanceMm,
         aperture: camera.aperture,
         renderQuality: "standard",
-        sceneId: architectureRiseScene.id,
+        scene: architectureRiseScene,
+        focalLengthMm: camera.focalLengthMm,
         previewMode: "raw",
       }),
     );
