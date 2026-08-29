@@ -116,6 +116,17 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   resourceGeneration: number; // increments when RTT resources are recreated
 };
 
+export type GroundGlassRttRuntimeInfoChangeHandler = (
+  channel: GroundGlassRttChannel,
+  info: GroundGlassRttRuntimeInfo | null,
+  ownerId: string,
+) => void;
+
+export type GroundGlassRttRuntimeInfoByChannel = Record<
+  GroundGlassRttChannel,
+  GroundGlassRttRuntimeInfo | null
+>;
+
 const MAX_INTERNAL_WIDTH = 1600;
 const MAX_INTERNAL_HEIGHT = 1280;
 

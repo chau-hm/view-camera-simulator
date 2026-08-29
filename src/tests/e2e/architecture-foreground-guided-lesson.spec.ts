@@ -11,10 +11,7 @@ const assertFiniteGroundGlass = async (page: Page) => {
   const finalContentful = await rtt.getAttribute("data-rtt-final-contentful");
   if (finalContentful !== null) expect(finalContentful).toBe("true");
 
-  const focusAssist = page.getByLabel("Focus assist");
   expect(await page.locator("body").innerText()).not.toMatch(/NaN|Infinity/);
-  if (await focusAssist.isDisabled()) return;
-  if (!(await focusAssist.isChecked())) await focusAssist.check();
   for (const targetId of ["foreground-near", "foreground-middle", "building-base", "building-middle"]) {
     const progress = page.getByRole("progressbar", { name: `${targetId} sharpness` });
     await expect(progress).toBeVisible();

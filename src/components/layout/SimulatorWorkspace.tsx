@@ -40,12 +40,14 @@ import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
 import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
-import {
-  createFocusAssistPass,
-  resolvePhysicalFocusTargetPresentationMetric,
-} from "../../render/postprocessing/FocusAssistPass";
+import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
+import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
+import type {
+  GroundGlassRttRuntimeInfoByChannel,
+  GroundGlassRttRuntimeInfoChangeHandler,
+} from "../../render/groundGlassRttDimensions";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
 import {
   formatCameraMovementLessonReadout,
@@ -78,6 +80,9 @@ export const SimulatorWorkspace = ({
   const setActiveScene = useAppStore((state) => state.setActiveScene);
   const setActiveTask = useAppStore((state) => state.setActiveTask);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
+  const setGroundGlassAssistEnabled = useAppStore(
+    (state) => state.setGroundGlassAssistEnabled,
+  );
   const clearCameraMovementCalibrationSession = useAppStore(
     (state) => state.clearCameraMovementCalibrationSession,
   );
@@ -85,6 +90,7 @@ export const SimulatorWorkspace = ({
     (state) => state.clearSimulatorRouteInitialization,
   );
   const camera = useAppStore((state) => state.camera);
+  const setGeometryView = useAppStore((state) => state.setGeometryView);
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
   const calibrationSession = useAppStore(
     (state) => state.cameraMovementCalibrationSession,
@@ -219,6 +225,10 @@ export const SimulatorWorkspace = ({
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
+  const presentationRegion =
+    safeScene.id === "understanding-camera-movements" && camera.cameraMovementLessonState
+      ? resolveCameraMovementLessonPresentationTargetRegion(camera.cameraMovementLessonState)
+      : targetRegion;
   const publicSceneEntry = getPublicSceneEntryById(sceneId);
   const guidedLessonContext = useMemo(
     () =>
@@ -330,11 +340,11 @@ export const SimulatorWorkspace = ({
   const enabledControls = useMemo(() => {
     const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
     if (focusFundamentals) {
-      return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
+      return new Set(["focusDistance", "aperture", "geometryView", "grid"]);
     }
 
     if (mode === "free" || !task) {
-      const controls = new Set(["geometryView", "focusAssist", "grid"]);
+      const controls = new Set(["geometryView", "grid"]);
       const availableMovements = safeScene.movementCapabilities?.available;
       if (!availableMovements) {
         controls.add("rise");
@@ -361,21 +371,54 @@ export const SimulatorWorkspace = ({
 
   // RTT runtime info
   const rttRuntimeInfo = useAppStore((s) => s.groundGlassRttRuntimeInfo);
+  const originalRttRuntimeInfo = useAppStore(
+    (s) => s.groundGlassRttRuntimeInfoByChannel?.["camera-movement-original"] ?? null,
+  );
+  const currentRttRuntimeInfo = useAppStore(
+    (s) => s.groundGlassRttRuntimeInfoByChannel?.["camera-movement-current"] ?? null,
+  );
+  const setGroundGlassRttRuntimeInfo = useAppStore(
+    (state) => state.setGroundGlassRttRuntimeInfo,
+  );
+  const setGroundGlassRttRuntimeInfoForChannel = useAppStore(
+    (state) => state.setGroundGlassRttRuntimeInfoForChannel,
+  );
+  const groundGlassRuntimeInfoByChannel = useMemo<GroundGlassRttRuntimeInfoByChannel>(
+    () => ({
+      default: rttRuntimeInfo ?? null,
+      "camera-movement-original": originalRttRuntimeInfo,
+      "camera-movement-current": currentRttRuntimeInfo,
+    }),
+    [currentRttRuntimeInfo, originalRttRuntimeInfo, rttRuntimeInfo],
+  );
+  const onGroundGlassRuntimeInfoChange = useCallback<GroundGlassRttRuntimeInfoChangeHandler>(
+    (channel, info, ownerId) => {
+      if (channel === "default") {
+        setGroundGlassRttRuntimeInfo(info, ownerId);
+      } else {
+        setGroundGlassRttRuntimeInfoForChannel(channel, info, ownerId);
+      }
+    },
+    [setGroundGlassRttRuntimeInfo, setGroundGlassRttRuntimeInfoForChannel],
+  );
 
   const tableTiltFocusMetric =
     safeScene.id === "table-tilt" && mode === "free" ? "point" : "patch";
-  const focusAssistTargets = useMemo(
+  const focusTargetReadouts = useMemo(
     () =>
-      createFocusAssistPass({
-        enabled: camera.focusAssistEnabled,
-        targets: opticsState.focusTargets,
-        metric: tableTiltFocusMetric,
-      }).targets,
-    [camera.focusAssistEnabled, opticsState.focusTargets, tableTiltFocusMetric],
+      opticsState.focusTargets.map((target) => {
+        const metric = resolvePhysicalFocusTargetPresentationMetric(target, tableTiltFocusMetric);
+        return {
+          id: target.id,
+          status: metric.status,
+          sharpnessPercent: Math.round(metric.sharpness * 100),
+        };
+      }),
+    [opticsState.focusTargets, tableTiltFocusMetric],
   );
   const learnerReadoutPolicy = useMemo(
-    () => resolveLearnerReadoutPolicy(safeScene.id, { hasFocusTargets: focusAssistTargets.length > 0 }),
-    [focusAssistTargets.length, safeScene.id],
+    () => resolveLearnerReadoutPolicy(safeScene.id, { hasFocusTargets: focusTargetReadouts.length > 0 }),
+    [focusTargetReadouts.length, safeScene.id],
   );
   const focusTargetMetric: FocusTargetMetric =
     tableTiltFocusMetric === "point" ? "point" : safeScene.id === "table-tilt" ? "patch" : "focus";
@@ -466,10 +509,12 @@ export const SimulatorWorkspace = ({
 
               <GroundGlassViewport
                 opticsState={opticsState}
-                orientationAssistEnabled={mode === "free"}
-                focusAssistEnabled={camera.focusAssistEnabled}
+                scene={safeScene}
+                runtimeInfoByChannel={groundGlassRuntimeInfoByChannel}
+                onRuntimeInfoChange={onGroundGlassRuntimeInfoChange}
+                groundGlassAssistEnabled={camera.groundGlassAssistEnabled}
+                onGroundGlassAssistEnabledChange={setGroundGlassAssistEnabled}
                 gridEnabled={camera.gridEnabled}
-                canToggleFocusAssist={enabledControls.has("focusAssist")}
                 canToggleGrid={enabledControls.has("grid")}
                 riseMm={camera.frontRiseMm}
                 tiltDeg={camera.frontTiltDeg}
@@ -477,7 +522,10 @@ export const SimulatorWorkspace = ({
                 focusDistanceMm={camera.focusDistanceMm}
                 aperture={camera.aperture}
                 renderQuality={renderQuality}
-                sceneId={camera.activeSceneId}
+                focalLengthMm={camera.focalLengthMm}
+                lastFiniteFocusDepthMm={camera.lastFiniteFocusDepthMm}
+                effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+                presentationRegion={presentationRegion}
                 lockReason={lockReason}
                 rawRttDebug={rawRttDebug}
                 focusMetric={tableTiltFocusMetric}
@@ -495,6 +543,8 @@ export const SimulatorWorkspace = ({
                 <GeometryViewport
                   opticsState={opticsState}
                   geometryView={camera.geometryView}
+                  onGeometryViewChange={setGeometryView}
+                  focalLengthMm={camera.focalLengthMm}
                   scene={scene}
                   riseMm={camera.frontRiseMm}
                   movementSummary={teachingReadout ? `${teachingReadout.label}${teachingReadout.value ? ` · ${teachingReadout.value}` : ""}` : null}
@@ -507,7 +557,7 @@ export const SimulatorWorkspace = ({
 
           {!viewportExpanded && <>
             {/* Row 1: scene-aware learner readouts */}
-            <div className={`simulator-primary-info-grid${learnerReadoutPolicy.showFocusTargets && focusAssistTargets.length > 0 ? "" : " simulator-primary-info-grid--single"}`}>
+            <div className={`simulator-primary-info-grid${learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? "" : " simulator-primary-info-grid--single"}`}>
             <CurrentSettingsReadout
               riseMm={camera.frontRiseMm}
               tiltDeg={camera.frontTiltDeg}
@@ -531,9 +581,9 @@ export const SimulatorWorkspace = ({
               frontShiftMm={camera.frontShiftMm}
             />
 
-            {learnerReadoutPolicy.showFocusTargets && focusAssistTargets.length > 0 ? (
+            {learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? (
               <FocusTargetsReadout
-                focusTargets={focusAssistTargets}
+                focusTargets={focusTargetReadouts}
                 metric={focusTargetMetric}
                 closestTargetId={closestPointTargetId}
               />

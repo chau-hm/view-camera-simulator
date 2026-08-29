@@ -58,5 +58,7 @@ describe("home page", () => {
     expect(screen.getByText(/A view camera separates decisions that are often bundled together: where the camera observes from, how the subject is framed, how the image geometry is controlled, and where the plane of sharp focus lies\./)).toBeTruthy();
     expect(screen.getByText(/Rise and shift can change framing without moving the viewpoint\. Tilt and swing can rotate the plane of sharp focus\./)).toBeTruthy();
     expect(screen.getByText(/A view camera slows the process down. The upside-down image on the ground glass encourages careful looking, and every movement becomes a deliberate choice\./)).toBeTruthy();
+    expect(screen.queryByTestId("faq-section")).not.toBeInTheDocument();
+    expect(screen.queryByText("Who is View Camera Simulator for?")).not.toBeInTheDocument();
   });
 });

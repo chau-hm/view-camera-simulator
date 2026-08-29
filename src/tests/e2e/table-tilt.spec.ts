@@ -100,10 +100,6 @@ test("Table Tilt Ground Glass uses one RTT surface and no legacy artifacts", asy
   await expect(viewport.getByTestId("ground-glass-focus-ring")).toHaveCount(0);
   await expect(viewport.locator('[data-testid^="ground-glass-target-"]')).toHaveCount(0);
 
-  const focusAssist = page.getByLabel("Focus Assist");
-  await expect(focusAssist).not.toBeChecked();
-  await focusAssist.check();
-  await expect(focusAssist).toBeChecked();
   await expect(viewport.getByTestId("ground-glass-focus-ring")).toHaveCount(0);
 });
 
@@ -182,7 +178,7 @@ test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource s
   await page.goto("/simulator/free/table-tilt");
   const viewport = page.getByLabel("GroundGlassViewport");
   const rtt = viewport.getByTestId("ground-glass-rtt");
-  const stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
+  const stage = viewport.locator('[data-zoomed]');
   const assertLiveCanvas = async () => {
     const canvas = rtt.locator("canvas");
     await expect(canvas).toBeVisible();
@@ -222,7 +218,8 @@ test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource s
   await page.mouse.move(box.x + box.width / 2 + 25, box.y + box.height / 2 + 15);
   await page.mouse.up();
   await assertLiveCanvas();
-  await stage.click({ position: { x: box.width / 2, y: box.height / 2 } });
+  await expect(stage).toHaveAttribute("data-zoomed", "true");
+  await viewport.getByRole("button", { name: "Reset Ground Glass view" }).click();
   await expect(stage).toHaveAttribute("data-zoomed", "false");
   await assertLiveCanvas();
 
@@ -712,7 +709,7 @@ const groundGlassLocators = (page: import("@playwright/test").Page) => {
   const viewport = page.getByLabel("GroundGlassViewport");
   return {
     viewport,
-    stage: viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ }),
+    stage: viewport.locator('[data-zoomed]'),
     transformedLayer: viewport.locator(".groundglass-stage"),
   };
 };
@@ -780,12 +777,17 @@ test("Table Tilt Ground Glass zoom, pan, jitter, and reset stay deterministic", 
     (bounds.height * (panned.scaleY - 1)) / 2 + 1,
   );
 
+  const panBeforeShortPress = await readStageTransform(transformedLayer);
   await page.mouse.move(centerX, centerY);
   await page.mouse.down();
   await page.mouse.move(centerX + 4, centerY + 3);
   await page.mouse.up();
-  await expectGroundGlassIdentity(stage, transformedLayer);
+  await expect(stage).toHaveAttribute("data-zoomed", "true");
+  const panAfterShortPress = await readStageTransform(transformedLayer);
+  expect(panAfterShortPress).toEqual(panBeforeShortPress);
 
+  await viewport.getByRole("button", { name: "Reset Ground Glass view" }).click();
+  await expectGroundGlassIdentity(stage, transformedLayer);
   await zoomGroundGlassAt(page, stage, 0.8, 0.7);
   const rezoomed = await readStageTransform(transformedLayer);
   expect(rezoomed.translateX).toBeLessThan(0);
@@ -811,7 +813,7 @@ test("Table Tilt Ground Glass recovers from interrupted pointer gestures", async
   const { stage, transformedLayer } = groundGlassLocators(page);
 
   for (const [index, terminalEvent] of ["pointercancel", "lostpointercapture"].entries()) {
-    const bounds = await zoomGroundGlassAt(page, stage);
+    const bounds = index === 0 ? await zoomGroundGlassAt(page, stage) : await readFreshElementBounds(stage);
     const start = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
     const pointerId = 91 + index;
     await stage.dispatchEvent("pointerdown", {
@@ -827,8 +829,10 @@ test("Table Tilt Ground Glass recovers from interrupted pointer gestures", async
       clientX: start.x + 30,
       clientY: start.y + 20,
     });
+    const before = await readStageTransform(transformedLayer);
     await stage.dispatchEvent(terminalEvent, { pointerId, pointerType: "mouse" });
-    await expectGroundGlassIdentity(stage, transformedLayer);
+    await expect(stage).toHaveAttribute("data-zoomed", "true");
+    expect(await readStageTransform(transformedLayer)).toEqual(before);
     await expect(stage).toHaveAttribute("data-pointer-active", "false");
     await expect(stage).toHaveAttribute("data-pointer-captured", "false");
   }
@@ -909,19 +913,19 @@ test("Ground Glass zoom state resets across free/guided and scene navigation", a
   test.setTimeout(60_000);
   await page.goto("/simulator/free/table-tilt");
   let viewport = page.getByLabel("GroundGlassViewport");
-  let stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
+  let stage = viewport.locator('[data-zoomed]');
   await stage.click({ position: { x: 90, y: 80 } });
   await expect(stage).toHaveAttribute("data-zoomed", "true");
 
   await page.goto("/simulator/guided/table-tilt/tilt-01");
   viewport = page.getByLabel("GroundGlassViewport");
-  stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
+  stage = viewport.locator('[data-zoomed]');
   await expect(stage).toHaveAttribute("data-zoomed", "false");
   await expect(stage).toHaveAttribute("data-pan-x", "0");
 
   await page.goto("/simulator/free/architecture-rise");
   viewport = page.getByLabel("GroundGlassViewport");
-  stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
+  stage = viewport.locator('[data-zoomed]');
   await expect(stage).toHaveAttribute("data-zoomed", "false");
   await expect(stage).toHaveAttribute("data-pan-y", "0");
   await expect(viewport.getByTestId("ground-glass-rtt")).toBeVisible();
@@ -936,7 +940,7 @@ test("Ground Glass zoom state resets across free/guided and scene navigation", a
   await page.goto("/simulator/free/focus-fundamentals-two-targets");
   await expect(page).toHaveURL(/\/simulator\/free\/focus-fundamentals-two-targets$/);
   viewport = page.getByLabel("GroundGlassViewport");
-  stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
+  stage = viewport.locator('[data-zoomed]');
   await expect(stage).toHaveAttribute("data-zoomed", "false");
   await expect(stage).toHaveAttribute("data-pan-x", "0");
   await expect(stage).toHaveAttribute("data-pan-y", "0");

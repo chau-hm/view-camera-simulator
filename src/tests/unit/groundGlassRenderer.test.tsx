@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { GroundGlassRenderer, projectWorldPointToGroundGlass } from "../../render/GroundGlassRenderer";
 import { projectSceneFocusTargetsToGroundGlass, mapGroundGlassUvToDisplayUv } from "../../render/groundGlassTargetProjection";
@@ -11,10 +11,13 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { DEFAULT_CAMERA_STATE, CAMERA_CONSTANTS } from "../../utils/constants";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
+import { useAppStore } from "../../state/appStore";
+import type { GroundGlassRttRuntimeInfo } from "../../render/groundGlassRttDimensions";
 
 describe("GroundGlassRenderer", () => {
   afterEach(() => {
     cleanup();
+    useAppStore.getState().setGroundGlassRttRuntimeInfo(null);
   });
 
   it("renders pipeline and settings overlays", () => {
@@ -23,7 +26,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled
         gridEnabled
         riseMm={DEFAULT_CAMERA_STATE.frontRiseMm}
         tiltDeg={DEFAULT_CAMERA_STATE.frontTiltDeg}
@@ -31,24 +33,33 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={DEFAULT_CAMERA_STATE.focusDistanceMm}
         aperture={DEFAULT_CAMERA_STATE.aperture}
         renderQuality="standard"
+        scene={architectureRiseScene}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
         previewMode="raw"
       />,
     );
 
-    // Pipeline title removed from UI; ensure assist labels remain
+    // The preview and physical focus-distance overlays remain visible.
     expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
-    expect(screen.getByText("Focus assist")).toBeInTheDocument();
+    expect(screen.getByTestId("ground-glass-focus-label")).toBeInTheDocument();
+    expect(screen.queryByText("Focus assist")).not.toBeInTheDocument();
   });
 
   it("supports zoom mode (control belongs to viewport) without changing camera state", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    const onGroundGlassAssistEnabledChange = vi.fn();
     render(
       <GroundGlassViewport
         opticsState={opticsState}
-        orientationAssistEnabled={true}
-        focusAssistEnabled={false}
+        runtimeInfoByChannel={{
+          default: null,
+          "camera-movement-original": null,
+          "camera-movement-current": null,
+        }}
+        onRuntimeInfoChange={() => undefined}
+        groundGlassAssistEnabled={false}
+        onGroundGlassAssistEnabledChange={onGroundGlassAssistEnabledChange}
         gridEnabled={false}
-        canToggleFocusAssist={true}
         canToggleGrid={true}
         riseMm={10}
         tiltDeg={2}
@@ -56,7 +67,8 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={2500}
         aperture={11}
         renderQuality="low"
-        sceneId={architectureRiseScene.id}
+        scene={architectureRiseScene}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
         expanded={false}
         restoreFocusOnCollapse={true}
         onRequestExpand={() => undefined}
@@ -66,7 +78,9 @@ describe("GroundGlassRenderer", () => {
 
     const zoomIn = screen.getByRole("button", { name: "Zoom in Ground Glass" });
     fireEvent.click(zoomIn);
-    expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset Ground Glass view" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Upright Assist" }));
+    expect(onGroundGlassAssistEnabledChange).toHaveBeenCalledWith(true);
   });
 
   it("updates the preview when focus and movement controls change", () => {
@@ -75,7 +89,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -84,7 +97,8 @@ describe("GroundGlassRenderer", () => {
         aperture={11}
         renderQuality="standard"
         previewMode="raw"
-        sceneId={architectureRiseScene.id}
+        scene={architectureRiseScene}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
       />,
     );
 
@@ -97,7 +111,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={24}
         tiltDeg={4}
@@ -106,7 +119,8 @@ describe("GroundGlassRenderer", () => {
         aperture={32}
         renderQuality="standard"
         previewMode="raw"
-        sceneId={architectureRiseScene.id}
+        scene={architectureRiseScene}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
       />,
     );
 
@@ -119,14 +133,12 @@ describe("GroundGlassRenderer", () => {
       ...DEFAULT_CAMERA_STATE,
       ...tableTiltScene.cameraPreset,
       activeSceneId: tableTiltScene.id,
-      focusAssistEnabled: false,
     };
     const opticsState = deriveOpticsState(camera, tableTiltScene);
     const { rerender } = render(
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={camera.frontRiseMm}
         tiltDeg={camera.frontTiltDeg}
@@ -135,7 +147,8 @@ describe("GroundGlassRenderer", () => {
         aperture={camera.aperture}
         renderQuality="standard"
         previewMode="raw"
-        sceneId={tableTiltScene.id}
+        scene={tableTiltScene}
+        focalLengthMm={camera.focalLengthMm}
       />,
     );
 
@@ -150,7 +163,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled
         gridEnabled={false}
         riseMm={camera.frontRiseMm}
         tiltDeg={camera.frontTiltDeg}
@@ -159,7 +171,8 @@ describe("GroundGlassRenderer", () => {
         aperture={camera.aperture}
         renderQuality="standard"
         previewMode="upright"
-        sceneId={tableTiltScene.id}
+        scene={tableTiltScene}
+        focalLengthMm={camera.focalLengthMm}
       />,
     );
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
@@ -177,7 +190,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={camera.frontRiseMm}
         tiltDeg={camera.frontTiltDeg}
@@ -186,7 +198,8 @@ describe("GroundGlassRenderer", () => {
         aperture={camera.aperture}
         renderQuality="standard"
         previewMode="raw"
-        sceneId={shelfSwingScene.id}
+        scene={shelfSwingScene}
+        focalLengthMm={camera.focalLengthMm}
       />,
     );
 
@@ -212,7 +225,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -221,13 +233,43 @@ describe("GroundGlassRenderer", () => {
         aperture={camera.aperture}
         renderQuality="standard"
         previewMode="raw"
-        sceneId={mirrorShiftScene.id}
+        scene={mirrorShiftScene}
+        focalLengthMm={camera.focalLengthMm}
       />,
     );
 
     expect(isGroundGlassRttScene(mirrorShiftScene.id)).toBe(true);
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
+  });
+
+  it("preserves an explicit null diagnostics value instead of consulting application state", () => {
+    useAppStore
+      .getState()
+      .setGroundGlassRttRuntimeInfo({ resourceGeneration: 99 } as GroundGlassRttRuntimeInfo, "store-owner");
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+
+    render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        gridEnabled={false}
+        riseMm={0}
+        tiltDeg={0}
+        swingDeg={0}
+        focusDistanceMm={DEFAULT_CAMERA_STATE.focusDistanceMm}
+        aperture={DEFAULT_CAMERA_STATE.aperture}
+        renderQuality="standard"
+        scene={architectureRiseScene}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        runtimeInfo={null}
+        previewMode="raw"
+      />,
+    );
+
+    expect(screen.getByTestId("ground-glass-rtt")).not.toHaveAttribute(
+      "data-rtt-resource-generation",
+    );
   });
 
   it("uses matching physical point and patch metrics in Table Tilt labels", () => {
@@ -261,7 +303,6 @@ describe("GroundGlassRenderer", () => {
     const props = {
       opticsState,
       assistEnabled: false,
-      focusAssistEnabled: false,
       gridEnabled: false,
       riseMm: camera.frontRiseMm,
       tiltDeg: camera.frontTiltDeg,
@@ -270,7 +311,8 @@ describe("GroundGlassRenderer", () => {
       aperture: camera.aperture,
       renderQuality: "standard" as const,
       previewMode: "raw" as const,
-      sceneId: tableTiltScene.id,
+      scene: tableTiltScene,
+      focalLengthMm: camera.focalLengthMm,
     };
     const view = render(<GroundGlassRenderer {...props} focusMetric="point" />);
     expect(screen.getByText(/CoC 0\.000 mm \(100%\)/)).toBeInTheDocument();
@@ -423,7 +465,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -432,7 +473,8 @@ describe("GroundGlassRenderer", () => {
         aperture={DEFAULT_CAMERA_STATE.aperture}
         renderQuality="standard"
         previewMode="raw"
-        sceneId={architectureRiseScene.id}
+        scene={architectureRiseScene}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
       />,
     );
 
@@ -450,7 +492,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -458,7 +499,8 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={680}
         aperture={11}
         renderQuality="standard"
-        sceneId={focusFundamentalsTwoTargets.id}
+        scene={focusFundamentalsTwoTargets}
+        focalLengthMm={cameraState.focalLengthMm}
         previewMode="raw"
       />,
     );
@@ -475,7 +517,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -484,7 +525,8 @@ describe("GroundGlassRenderer", () => {
         aperture={DEFAULT_CAMERA_STATE.aperture}
         renderQuality="standard"
         previewMode="raw"
-        sceneId={architectureRiseScene.id}
+        scene={architectureRiseScene}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
       />,
     );
 
@@ -498,11 +540,10 @@ describe("GroundGlassRenderer", () => {
   it('focus fundamentals still routes to RTT only', () => {
     const cameraState = { ...DEFAULT_CAMERA_STATE, focalLengthMm: 150, focusDistanceMm: 680 };
     const opticsState = deriveOpticsState(cameraState, focusFundamentalsTwoTargets);
-    render(
+    const { container } = render(
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -510,7 +551,8 @@ describe("GroundGlassRenderer", () => {
         focusDistanceMm={680}
         aperture={11}
         renderQuality="standard"
-        sceneId={focusFundamentalsTwoTargets.id}
+        scene={focusFundamentalsTwoTargets}
+        focalLengthMm={cameraState.focalLengthMm}
         previewMode="raw"
       />,
     );
@@ -518,5 +560,10 @@ describe("GroundGlassRenderer", () => {
     expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
+    expect(
+      Array.from(container.querySelectorAll("div")).some((element) =>
+        element.getAttribute("style")?.includes("radial-gradient"),
+      ),
+    ).toBe(false);
   });
 });

@@ -1,10 +1,15 @@
-import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GeometryViewport } from "../../components/simulator/GeometryViewport";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
+import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+
+const noopGeometryViewChange = () => undefined;
 
 describe("GeometryViewport", () => {
   afterEach(() => {
@@ -14,7 +19,14 @@ describe("GeometryViewport", () => {
   it("renders side-view svg and has expected primitives", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     const { container } = render(
-      <GeometryViewport opticsState={opticsState} geometryView="side" scene={architectureRiseScene} riseMm={0} />,
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={architectureRiseScene}
+        riseMm={0}
+      />,
     );
     const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svg).toBeTruthy();
@@ -39,6 +51,34 @@ describe("GeometryViewport", () => {
     expect(axisText).toBeTruthy();
   });
 
+  it("renders Architecture + Foreground labels from scene Geometry metadata", () => {
+    const opticsState = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...architectureForegroundScene.cameraPreset,
+        activeSceneId: architectureForegroundScene.id,
+      },
+      architectureForegroundScene,
+    );
+    const { container } = render(
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={architectureForegroundScene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={architectureForegroundScene}
+        riseMm={0}
+      />,
+    );
+    const svg = container.querySelector('[data-testid="geometry-svg-side"]');
+    expect(svg?.textContent).toContain("Foreground ground");
+    expect(svg?.textContent).toContain("Building profile");
+    expect(svg?.textContent).toContain("Near foreground");
+    expect(svg?.textContent).toContain("Middle foreground");
+    expect(svg?.textContent).toContain("Building base");
+    expect(svg?.textContent).toContain("Building middle");
+  });
+
   it("renders top-view svg and has expected primitives", () => {
     const opticsState = deriveOpticsState(
       {
@@ -48,7 +88,14 @@ describe("GeometryViewport", () => {
       architectureRiseScene,
     );
     const { container } = render(
-      <GeometryViewport opticsState={opticsState} geometryView="top" scene={architectureRiseScene} riseMm={0} />,
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="top"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={architectureRiseScene}
+        riseMm={0}
+      />,
     );
     const svg = container.querySelector('[data-testid="geometry-svg-top"]') as SVGElement | null;
     expect(svg).toBeTruthy();
@@ -81,7 +128,13 @@ describe("GeometryViewport", () => {
       mirrorShiftScene,
     );
     const { container } = render(
-      <GeometryViewport opticsState={opticsState} geometryView="side" scene={mirrorShiftScene} />,
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={mirrorShiftScene}
+      />,
     );
     const viewport = container.querySelector("section[data-geometry-fit]");
     expect(viewport).toHaveAttribute("data-geometry-view", "top");
@@ -91,5 +144,62 @@ describe("GeometryViewport", () => {
     expect(container.querySelector('[data-testid="mirror-shift-current-camera"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="mirror-shift-front-shift-cue"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="mirror-shift-current-chief-ray"]')).not.toBeNull();
+  });
+
+  it("publishes view selections through the explicit callback", () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, tableTiltScene);
+    const onGeometryViewChange = vi.fn();
+    const view = render(
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="side"
+        onGeometryViewChange={onGeometryViewChange}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={tableTiltScene}
+        riseMm={0}
+      />,
+    );
+
+    fireEvent.click(view.getByRole("button", { name: "Top" }));
+    fireEvent.click(view.getByRole("button", { name: "Side" }));
+    fireEvent.click(view.getByRole("button", { name: "Scheimpflug Section" }));
+
+    expect(onGeometryViewChange.mock.calls).toEqual([["top"], ["side"], ["scheimpflug"]]);
+  });
+
+  it("requests the preferred view when Scheimpflug is unsupported", async () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    const onGeometryViewChange = vi.fn();
+    render(
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="scheimpflug"
+        onGeometryViewChange={onGeometryViewChange}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={architectureRiseScene}
+        riseMm={0}
+      />,
+    );
+
+    await waitFor(() => expect(onGeometryViewChange).toHaveBeenCalledWith("side"));
+  });
+
+  it("uses the Oblique Architecture profile default for an unsupported Scheimpflug view", async () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, obliqueArchitectureScene);
+    const onGeometryViewChange = vi.fn();
+    const view = render(
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="scheimpflug"
+        onGeometryViewChange={onGeometryViewChange}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={obliqueArchitectureScene}
+        riseMm={0}
+      />,
+    );
+
+    const viewport = view.container.querySelector("section[data-geometry-fit]");
+    expect(viewport).toHaveAttribute("data-geometry-view", "top");
+    await waitFor(() => expect(onGeometryViewChange).toHaveBeenCalledWith("top"));
   });
 });

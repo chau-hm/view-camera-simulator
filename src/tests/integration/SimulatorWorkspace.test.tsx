@@ -80,6 +80,18 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(useAppStore.getState().camera.frontSwingDeg).toBe(2);
   });
 
+  it("passes the application geometry view through the explicit viewport boundary", async () => {
+    render(workspaceRoute("free", "table-tilt", null));
+    useAppStore.getState().setGeometryView("top");
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
+    expect(await screen.findByTestId("geometry-svg-top")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Side" }));
+    await waitFor(() => expect(useAppStore.getState().camera.geometryView).toBe("side"));
+    expect(screen.getByTestId("geometry-svg-side")).toBeInTheDocument();
+  });
+
   it("restores focus after Restore and closes safely on route changes", async () => {
     const { rerender } = render(workspace());
     const trigger = screen.getByRole("button", { name: "Expand 2D Geometry" });
@@ -337,7 +349,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     fireEvent.click(screen.getByLabelText("Upright Assist"));
     fireEvent.click(screen.getByRole("button", { name: "Zoom in Ground Glass view" }));
-    expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toHaveAttribute("data-zoomed", "true");
+    expect(screen.getByRole("region", { name: "Pan Ground Glass" })).toHaveAttribute("data-zoomed", "true");
 
     fireEvent.click(screen.getByRole("button", { name: "Expand Ground Glass" }));
 
@@ -348,7 +360,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     expect(screen.getByTestId("ground-glass-rtt")).toBe(originalGroundGlassRenderer);
     expect(screen.getByLabelText("Upright Assist")).toBeChecked();
-    expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toHaveAttribute("data-zoomed", "true");
+    expect(screen.getByRole("region", { name: "Pan Ground Glass" })).toHaveAttribute("data-zoomed", "true");
     expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
     expect(screen.queryByTestId("focus-targets-readout")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Task")).not.toBeInTheDocument();
@@ -362,7 +374,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     fireEvent.change(swing, { target: { value: "2" } });
     expect(useAppStore.getState().camera.frontSwingDeg).toBe(2);
 
-    const zoomedStage = screen.getByRole("button", { name: "Zoom out Ground Glass" });
+    const zoomedStage = screen.getByRole("region", { name: "Pan Ground Glass" });
     fireEvent.keyDown(zoomedStage, { key: "Escape" });
 
     expect(screen.getByRole("button", { name: "Restore Ground Glass" })).toBeInTheDocument();

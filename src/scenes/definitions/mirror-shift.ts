@@ -22,10 +22,6 @@ export const mirrorShiftScene: SceneDefinition = {
     position: { x: 7600, y: 4200, z: -8200 },
     target: { x: 0, y: -100, z: 3000 },
   },
-  cameraInspectionPlacement: {
-    position: { x: 3000, y: 1800, z: -3200 },
-    target: { x: 0, y: -80, z: 900 },
-  },
   bounds: mirrorShiftGeometry.sceneBounds,
   focusTargets: [],
   compositionTargets: [],

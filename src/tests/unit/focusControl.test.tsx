@@ -96,7 +96,6 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     store.setRise(12);
     store.setTilt(3);
     store.setSwing(4);
-    store.toggleFocusAssist();
     store.toggleGrid();
 
     render(<FocusControl focusEnabled={true} lockReason="" />);
@@ -104,7 +103,6 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     const riseBefore = useAppStore.getState().camera.frontRiseMm;
     const tiltBefore = useAppStore.getState().camera.frontTiltDeg;
     const swingBefore = useAppStore.getState().camera.frontSwingDeg;
-    const focusAssistBefore = useAppStore.getState().camera.focusAssistEnabled;
     const gridBefore = useAppStore.getState().camera.gridEnabled;
 
     const btn = screen.getByRole("button", { name: /Focus Far Detail/i });
@@ -114,7 +112,6 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     expect(useAppStore.getState().camera.frontRiseMm).toBe(riseBefore);
     expect(useAppStore.getState().camera.frontTiltDeg).toBe(tiltBefore);
     expect(useAppStore.getState().camera.frontSwingDeg).toBe(swingBefore);
-    expect(useAppStore.getState().camera.focusAssistEnabled).toBe(focusAssistBefore);
     expect(useAppStore.getState().camera.gridEnabled).toBe(gridBefore);
   });
 

@@ -4,21 +4,28 @@ import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { ViewOptions } from "../controls/ViewOptions";
 import "../../i18n";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
-import { useAppStore } from "../../state/appStore";
 import type { ApertureValue } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
+import type { SceneDefinition } from "../../types/scene";
 import type { RenderQualityProfile } from "../../types/ui";
 import type { CameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
+import type { CameraMovementPresentationRegion } from "../../scenes/cameraMovementSceneCalibration";
+import type { EffectiveCameraMovementCalibration } from "../../scenes/cameraMovementEffectiveCalibration";
+import type {
+  GroundGlassRttRuntimeInfoByChannel,
+  GroundGlassRttRuntimeInfoChangeHandler,
+} from "../../render/groundGlassRttDimensions";
 
 type GroundGlassViewportProps = {
   opticsState: DerivedOpticsState;
-  // permission: whether orientation assist controls can be toggled in this mode
-  orientationAssistEnabled: boolean;
+  scene: SceneDefinition;
+  runtimeInfoByChannel: GroundGlassRttRuntimeInfoByChannel;
+  onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler;
+  groundGlassAssistEnabled: boolean;
+  onGroundGlassAssistEnabledChange: (enabled: boolean) => void;
   // current state (from camera)
-  focusAssistEnabled: boolean;
   gridEnabled: boolean;
   // permissions (from enabledControls) — whether the control is allowed in current mode/task
-  canToggleFocusAssist?: boolean;
   canToggleGrid?: boolean;
   riseMm: number;
   tiltDeg: number;
@@ -26,7 +33,10 @@ type GroundGlassViewportProps = {
   focusDistanceMm: number;
   aperture: ApertureValue;
   renderQuality: RenderQualityProfile;
-  sceneId: string;
+  focalLengthMm: number;
+  lastFiniteFocusDepthMm?: number;
+  effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
+  presentationRegion?: CameraMovementPresentationRegion;
   lockReason?: string;
   rawRttDebug?: boolean;
   focusMetric?: "point" | "patch";
@@ -42,9 +52,10 @@ type GroundGlassViewportProps = {
 
 export const GroundGlassViewport = ({
   opticsState,
-  focusAssistEnabled,
+  scene,
+  groundGlassAssistEnabled,
+  onGroundGlassAssistEnabledChange,
   gridEnabled,
-  canToggleFocusAssist,
   canToggleGrid,
   riseMm,
   tiltDeg,
@@ -52,7 +63,12 @@ export const GroundGlassViewport = ({
   focusDistanceMm,
   aperture,
   renderQuality,
-  sceneId,
+  focalLengthMm,
+  runtimeInfoByChannel,
+  onRuntimeInfoChange,
+  lastFiniteFocusDepthMm,
+  effectiveCameraMovementCalibration,
+  presentationRegion,
   lockReason,
   rawRttDebug,
   focusMetric,
@@ -66,9 +82,8 @@ export const GroundGlassViewport = ({
   comparisonLabels,
 }: GroundGlassViewportProps) => {
   const { t } = useTranslation();
+  const sceneId = scene.id;
   // Preview mode control local to the Ground Glass panel. Default to camera state
-  const groundGlassAssistEnabled = useAppStore((s) => s.camera.groundGlassAssistEnabled);
-  const setGroundGlassAssistEnabled = useAppStore((s) => s.setGroundGlassAssistEnabled);
   const [previewMode, setPreviewMode] = useState<"raw" | "upright">(groundGlassAssistEnabled ? "upright" : "raw");
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
@@ -79,7 +94,7 @@ export const GroundGlassViewport = ({
       ? t(simulatorMessageKeys.viewport.previewLabel)
       : t(simulatorMessageKeys.viewport.groundGlassTitle);
   const zoomInLabel = t(simulatorMessageKeys.viewport.zoomIn);
-  const zoomOutLabel = t(simulatorMessageKeys.viewport.zoomOut);
+  const panLabel = t(simulatorMessageKeys.viewport.pan);
   const resetViewLabel = t(simulatorMessageKeys.viewport.resetView);
   const resetActionLabel = t(simulatorMessageKeys.viewport.resetAction);
   const originalStageLabel = t(simulatorMessageKeys.viewport.originalGroundGlass);
@@ -125,9 +140,9 @@ export const GroundGlassViewport = ({
           {label === "Original" ? comparisonLabels?.original : comparisonLabels?.current}
         </p>
           <GroundGlassRenderer
+          scene={scene}
           opticsState={layer.opticsState}
           assistEnabled={layer.opticsState.groundGlassProjection.assistModeEnabled}
-          focusAssistEnabled={focusAssistEnabled}
           gridEnabled={gridEnabled}
           riseMm={layer.camera.frontRiseMm}
           tiltDeg={layer.camera.frontTiltDeg}
@@ -135,8 +150,8 @@ export const GroundGlassViewport = ({
           focusDistanceMm={layer.camera.focusDistanceMm}
           aperture={layer.camera.aperture}
           focalLengthMm={layer.camera.focalLengthMm}
+          effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
           renderQuality={renderQuality}
-          sceneId={sceneId}
           previewMode={previewMode}
           rawDebug={rawRttDebug}
           focusMetric={focusMetric}
@@ -146,17 +161,19 @@ export const GroundGlassViewport = ({
           cameraState={layer.camera}
           channel={label === "Original" ? "camera-movement-original" : "camera-movement-current"}
           presentationRegion={layer.presentationTargetRegion}
+          runtimeInfo={runtimeInfoByChannel[label === "Original" ? "camera-movement-original" : "camera-movement-current"]}
+          onRuntimeInfoChange={onRuntimeInfoChange}
           accessibleLabel={label === "Original" ? originalStageLabel : currentStageLabel}
           stageLabel={label === "Original" ? originalStageLabel : currentStageLabel}
           zoomInLabel={zoomInLabel}
-          zoomOutLabel={zoomOutLabel}
+          panLabel={panLabel}
           resetViewLabel={resetViewLabel}
           resetActionLabel={resetActionLabel}
           lastFiniteFocusDepthMm={layer.camera.lastFiniteFocusDepthMm}
         />
       </section>
     ),
-    [comparisonLabels, currentStageLabel, focusAssistEnabled, focusMetric, gridEnabled, interactionResetKey, originalStageLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, sceneId, t, zoomInLabel, zoomOutLabel],
+    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusMetric, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, panLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t, zoomInLabel],
   );
 
   useEffect(() => {
@@ -190,7 +207,7 @@ export const GroundGlassViewport = ({
                     type="radio"
                     name={`gg-preview-${sceneId}`}
                     checked={previewMode === "raw"}
-                    onChange={() => { setPreviewMode("raw"); setGroundGlassAssistEnabled(false); }}
+                    onChange={() => { setPreviewMode("raw"); onGroundGlassAssistEnabledChange(false); }}
                   />
                   <span>{t(simulatorMessageKeys.viewport.rawGroundGlass)}</span>
                 </label>
@@ -201,7 +218,7 @@ export const GroundGlassViewport = ({
                     type="radio"
                     name={`gg-preview-${sceneId}`}
                     checked={previewMode === "upright"}
-                    onChange={() => { setPreviewMode("upright"); setGroundGlassAssistEnabled(true); }}
+                    onChange={() => { setPreviewMode("upright"); onGroundGlassAssistEnabledChange(true); }}
                   />
                   <span>{t(simulatorMessageKeys.viewport.uprightAssist)}</span>
                 </label>
@@ -213,7 +230,6 @@ export const GroundGlassViewport = ({
             <legend className="control-group-title">{t(simulatorMessageKeys.viewport.viewOptions)}</legend>
             <div className="groundglass-control-group__options">
               <ViewOptions
-                canToggleFocusAssist={canToggleFocusAssist ?? true}
                 canToggleGrid={canToggleGrid ?? true}
                 lockReason={lockReason ?? ""}
                 compact
@@ -269,17 +285,21 @@ export const GroundGlassViewport = ({
           <div className={`groundglass-renderer-host${expanded ? " groundglass-renderer-host--expanded" : ""}`}>
             {/* Expanded presentation intentionally keeps the existing logical RTT size; container-aware RTT sizing is a renderer-focused follow-up. */}
             <GroundGlassRenderer
+              scene={scene}
               opticsState={opticsState}
               assistEnabled={opticsState.groundGlassProjection.assistModeEnabled}
-              focusAssistEnabled={focusAssistEnabled}
               gridEnabled={gridEnabled}
               riseMm={riseMm}
               tiltDeg={tiltDeg}
               swingDeg={swingDeg}
               focusDistanceMm={focusDistanceMm}
               aperture={aperture}
+              focalLengthMm={focalLengthMm}
+              lastFiniteFocusDepthMm={lastFiniteFocusDepthMm}
+              effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
               renderQuality={renderQuality}
-              sceneId={sceneId}
+              runtimeInfo={runtimeInfoByChannel.default}
+              onRuntimeInfoChange={onRuntimeInfoChange}
               previewMode={previewMode}
               rawDebug={rawRttDebug}
               focusMetric={focusMetric}
@@ -289,9 +309,10 @@ export const GroundGlassViewport = ({
               accessibleLabel={singleViewAccessibleLabel}
               stageLabel={singleViewAccessibleLabel}
               zoomInLabel={zoomInLabel}
-              zoomOutLabel={zoomOutLabel}
+              panLabel={panLabel}
               resetViewLabel={resetViewLabel}
               resetActionLabel={resetActionLabel}
+              presentationRegion={presentationRegion}
             />
           </div>
         )}

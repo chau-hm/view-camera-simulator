@@ -43,7 +43,6 @@ describe("app store STA-001", () => {
     expect(camera.mode).toBe(ui.mode);
     expect(camera.geometryView).toBe(ui.geometryView);
     expect(camera.groundGlassAssistEnabled).toBe(ui.groundGlassAssistEnabled);
-    expect(camera.focusAssistEnabled).toBe(ui.focusAssistEnabled);
     expect(camera.gridEnabled).toBe(ui.gridEnabled);
   });
 
@@ -204,15 +203,11 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera.aperture).toBe(22);
   });
 
-  it("toggles focus and grid assists in both camera and ui state", () => {
-    const { toggleFocusAssist, toggleGrid } = useAppStore.getState();
-
-    toggleFocusAssist();
+  it("toggles grid in both camera and ui state", () => {
+    const { toggleGrid } = useAppStore.getState();
     toggleGrid();
 
     const { camera, ui } = useAppStore.getState();
-    expect(camera.focusAssistEnabled).toBe(true);
-    expect(ui.focusAssistEnabled).toBe(true);
     expect(camera.gridEnabled).toBe(false);
     expect(ui.gridEnabled).toBe(false);
   });

@@ -7,15 +7,14 @@ import { formatMillimeter } from "../utils/formatters";
 export type GroundGlassOverlaysProps = {
   gridEnabled: boolean;
   rawDebug?: boolean;
-  isFocusFundamentals: boolean;
+  showDecorativeVignette: boolean;
   blurOpacity: number;
   isInfinityFocus: boolean;
   lastFiniteFocusDepthMm?: number;
   focusDistanceLabel: string;
-  focusAssistVisible: boolean;
 };
 
-export const GroundGlassTransformedOverlays = ({ gridEnabled, rawDebug, isFocusFundamentals, blurOpacity }: { gridEnabled: boolean; rawDebug?: boolean; isFocusFundamentals: boolean; blurOpacity: number }): ReactNode | null => {
+export const GroundGlassTransformedOverlays = ({ gridEnabled, rawDebug, showDecorativeVignette, blurOpacity }: { gridEnabled: boolean; rawDebug?: boolean; showDecorativeVignette: boolean; blurOpacity: number }): ReactNode | null => {
   return (
     <>
       {!rawDebug && (
@@ -53,7 +52,7 @@ export const GroundGlassTransformedOverlays = ({ gridEnabled, rawDebug, isFocusF
         />
       )}
 
-      {!(isFocusFundamentals || rawDebug) && (
+      {showDecorativeVignette && !rawDebug && (
         <div
           style={{
             position: "absolute",
@@ -70,12 +69,10 @@ export const GroundGlassFixedOverlays = ({
   isInfinityFocus,
   lastFiniteFocusDepthMm,
   focusDistanceLabel,
-  focusAssistVisible,
 }: {
   isInfinityFocus: boolean;
   lastFiniteFocusDepthMm?: number;
   focusDistanceLabel: string;
-  focusAssistVisible: boolean;
 }): ReactNode | null => {
   const { t } = useTranslation();
 
@@ -124,22 +121,6 @@ export const GroundGlassFixedOverlays = ({
         )}
       </div>
 
-      {focusAssistVisible && (
-        <span
-          style={{
-            position: "absolute",
-            bottom: 8,
-            right: 8,
-            fontSize: 12,
-            color: "#1d4ed8",
-            background: "rgba(255,255,255,0.85)",
-            borderRadius: 4,
-            padding: "2px 6px",
-          }}
-        >
-          {t(simulatorMessageKeys.focusOverlay.focusAssist)}
-        </span>
-      )}
     </>
   );
 };

@@ -1,75 +1,39 @@
-# PR 8K — physical focus metric boundary consolidation
+# Ground Glass Focus Assist removal and stable zoomed pan
 
-- Branch: `refactor/physical-focus-metric-boundary`.
-- Base: `origin/main` at `5909b8c187f0c44bab2d078b59dfa1e0de169392` (PR 8J merged).
-- Scope: make physical film-space point/patch focus metrics the strict source
-  for learner presentation and guided-task behavior, while retaining wedge
-  geometry where it still has a real diagnostic/legacy owner.
-- No physical optics equations, physical CoC calculation, oriented blur
-  footprint, DOF rendering/shader behavior, gather/composite behavior,
-  calibration, task thresholds, scene geometry, quality settings, or
-  performance behavior changed.
-- Learner-facing Ground Glass focus presentation intentionally changed:
-  physical point/patch metrics are now strict, and RTT focus labels report
-  equivalent physical CoC instead of legacy normalized defocus.
+- Work identifier: `fix/ground-glass-focus-assist-pan` / PR title `fix(ground-glass): simplify focus assist and zoom-pan interaction`.
+- Branch/base: `fix/ground-glass-focus-assist-pan` from latest `origin/main` `8ff1f974afaf70530add4ba1229a924c8afdc1ed` (PR #107 is merged).
+- Substantive HEAD: `56b923b1a1801068d62bcfb0c3f836f9613e7474` (`fix(ground-glass): simplify focus assist and zoom-pan interaction`).
+- Objective: remove the obsolete Ground Glass Focus Assist feature and make zoomed image interaction a non-destructive pan surface.
 
-## Consumer matrix
+## Implementation
 
-| Consumer | Legacy wedge | Physical metric | Final role |
-| --- | --- | --- | --- |
-| `evaluateFocusTargets()` / `evaluateTask()` | no | `physicalPatchSharpness` + physical CoC | guided-task pass/fail and score; strict fail-closed |
-| `FocusAssistPass` / `GroundGlassReadouts` | no | point or patch physical field | learner presentation; strict fail-closed |
-| `GroundGlassRenderer` / `groundGlassFocusLabel` | no | selected physical field + equivalent CoC | Ground Glass learner label; no model mixing |
-| `calculateSharpness()` | writes legacy wedge diagnostics | writes physical point/patch metrics | canonical derived target producer; both models retained with separate owners |
-| `OpticalDebugPanel` | `GroundGlassWorldBlurSample` path-specific value | physical CoC path value | developer diagnostics, explicitly labelled |
-| `dofWedge.ts` / `dofBlurModel.ts` | normalized wedge geometry/display input | no | retained geometric/legacy helper path |
-| `groundGlassBlur.ts` | derived-plane wedge path | parallel physical CoC path | retained active legacy/non-RTT helper; behavior unchanged and type documented |
-| `groundGlassDofShaders.ts` | legacy wedge helper branch | physical RTT branch | physical renderer/shader behavior; unchanged |
-| `focusTargetDisplay.ts` | legacy target sharpness/defocus | no | dead production helper; removed with obsolete tests |
+- Removed the Focus Assist View Options control, camera/UI state, toggle/action, task defaults, enabled-control permissions, Ground Glass prop plumbing, RTT focus-ring uniforms/projection, fixed Focus Assist badge, and unused `createFocusAssistPass` presentation mapping.
+- Retained `FocusAssistPass.ts`, `FocusAssistMetric`, and `resolvePhysicalFocusTargetPresentationMetric` only because the physical metric remains the source for focus-distance and learner focus-target readouts. No obsolete Focus Assist state or display-target path remains in `src`.
+- Before: any zoomed pointer-up classified as a click activated the current zoom action and reset zoom; pointercancel/lostpointercapture used the full zoom-and-pan reset.
+- After: unzoomed click/tap zooms in at its anchor; zoomed drag pans; zoomed short clicks and below-threshold movements do nothing; pointercancel/lostpointercapture end only the drag and preserve zoom/pan. Reset View, Escape, navigation/preview reset keys, and externally disabled zoom retain explicit reset behavior.
+- Cursor and stage accessibility now use `zoom-in` / `grab` / `grabbing` and `Zoom in` / `Pan` labels; the explicit Zoom/Reset button remains keyboard accessible.
 
-## Boundary decisions
+## Files and evidence
 
-- Normal production presentation uses `resolvePhysicalFocusTargetPresentationMetric()`;
-  missing, non-finite, out-of-range, or missing-CoC physical data becomes
-  `0 / soft` and never falls back to wedge scores. The old resolver name remains
-  only as a strict, deprecated alias for internal compatibility.
-- Point presentation uses `physicalPointSharpness` and its point equivalent
-  CoC; patch presentation uses `physicalPatchSharpness` and its patch CoC.
-- Production `focus-targets-sharp` evaluation remains physical-patch-only and
-  fail-closed. Legacy `sharpness` remains available for diagnostics and
-  historical fixtures, but is not read by learner/task production paths.
-- The Ground Glass learner label reports physical equivalent CoC and its paired
-  physical percentage. Wedge normalized defocus is not used as a fallback.
-- `sampleDofWedge()` remains the owner of near/focus/far geometric interval
-  diagnostics, and the legacy `groundGlassBlur`/shader wedge paths are not
-  replaced in this boundary pass.
+- Changed UI/state/render files across `src/components`, `src/state`, `src/types`, `src/core/tasks`, `src/i18n`, `src/render`, `src/ui`, and the focused unit/integration/E2E tests. No optics, transform math, RTT dimensions, viewport sizing, comparison-state ownership, or camera-control logic was changed.
+- Normal Ground Glass behavior, Grid, raw/upright preview, focus-distance/infinity/last-finite labels, comparison panes, and expansion/restoration paths are intended to remain unchanged.
+- Focused unit/integration: 11 files / 163 tests passed; full unit/integration: 145 files / 1,393 tests passed.
+- Focused browser: `groundglass-interaction.spec.ts` 3/3 passed; Table Tilt zoom/pan and interrupted-pointer cases 2/2 passed; expansion/restoration suite 3/4 passed, with the existing RTT quality-size mismatch as the fourth result.
+- Full checks: `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`, `npm test`, and `git diff --check` passed.
+- `npm run ci:local:e2e` passed its CSS/lint/typecheck/unit/build stages and many browser suites, then stopped at the unchanged Mirror Shift geometry test because `ground-glass-rtt` did not appear within 30s. A focused rerun reproduced that baseline failure. The unrelated expansion quality baseline remains `colorWidth` 86 vs `blurWidth` 172.
+- Remote Actions: not used; feature ref was published with an explicit refspec and PR [#108](https://github.com/chau-hm/view-camera-simulator/pull/108) is open against `main` and unmerged.
 
-## Legacy consumer inventory
+## Remaining risks and reviewer focus
 
-Remaining production writes/reads are intentional:
+- Review that all Focus Assist-only control/state/RTT display paths are removed while the retained physical metric still drives focus readouts.
+- Review stale-gesture protection around synchronous `lostpointercapture` during capture release, and confirm no transform math changed.
+- Existing unrelated WebGL/RTT baselines noted above remain. Unrelated untracked `public/assets/f2f105ab-04dd-4bcc-b37c-bf90894b3e7f.png` is intentionally untouched and will not be staged.
 
-- `target.sharpness`, `pointSharpness`, and `patchSharpness` are written by
-  `calculateSharpness()` for legacy wedge diagnostics/compatibility. There are
-  no production learner/task reads.
-- `normalizedDefocus` remains in `dofWedge`, `dofBlurModel`, the derived-plane
-  `groundGlassBlur` path, the legacy shader helper, and developer diagnostics.
-  It is not used for normal learner target presentation or guided-task success.
-- `sampleDofWedge()` and `calculateDofWedgeDefocus()` remain active for wedge
-  geometry and legacy helper behavior.
-- `calculateFocusTargetDisplaySharpness()` had no production import and was
-  removed rather than retaining a misleading legacy fallback.
+## Accessibility review follow-up
 
-## Validation
-
-- Focused boundary/readout/task tests: pass (4 files, 40 tests), including
-  strict physical presentation, physical task agreement, physical CoC label
-  output, and contradictory legacy fixtures.
-- Full `npm test`: pass (141 files, 1,338 tests). Typecheck, lint, CSS check,
-  build, and `git diff --check`: pass.
-- Bounded serial Chromium scene checks: 36 pass; the unchanged known
-  Focus Fundamentals RTT diagnostics baseline fails at
-  `focus-fundamentals-selectable-focus.spec.ts:155` because owner/resource
-  diagnostics are absent; its responsive companion passes.
-- `npm run ci:local:e2e`: all pre-E2E checks and affected Architecture +
-  Foreground E2E pass, then stops at the same known Focus Fundamentals baseline
-  failure. No new focus/readout/task/renderer failure was observed.
+- Addressed the PR #108 finding that the zoomed stage exposed `role="button"` while Enter/Space performed no action.
+- Old zoomed semantic: labelled `button` (`Pan Ground Glass`) with inert activation keys.
+- New zoomed semantic: labelled, focusable `region` (`Pan Ground Glass`); unzoomed remains a keyboard-activatable `button` (`Zoom in Ground Glass`).
+- Focused coverage: GroundGlassStage keyboard/role assertions 19/19, SimulatorWorkspace and comparison integration tests 28/28, and Ground Glass browser interaction 3/3 passed.
+- Latest validation: full unit/integration, typecheck, lint, CSS check, build, and diff check passed. The previously documented RTT/Mirror Shift browser baselines remain unrelated.
+- Substantive accessibility-fix commit: `37f1c7fbc4472ac12cbacef8a54d471726681e1f` (`fix(ground-glass): align zoomed stage accessibility semantics`).

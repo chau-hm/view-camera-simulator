@@ -241,11 +241,6 @@ export const observerCamera: CameraPlacement = {
   target: { x: 0, y: 250, z: 6900 },
 };
 
-export const inspectionCamera: CameraPlacement = {
-  position: { x: 3000, y: 1900, z: -3600 },
-  target: { x: 0, y: 150, z: 6500 },
-};
-
 /**
  * Values used by later movement slices. They are kept separate from the
  * rounded public-control values so calibration evidence remains physical.
@@ -302,7 +297,6 @@ export default {
   focusDistanceRangeMm,
   sceneBounds,
   observerCamera,
-  inspectionCamera,
   neutralCalibration,
   buildingVerticalEdges,
   filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,

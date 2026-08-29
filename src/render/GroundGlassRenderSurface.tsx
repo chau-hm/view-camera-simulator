@@ -1,19 +1,21 @@
 import type { DerivedOpticsState } from "../types/optics";
 import { GroundGlassRTT } from "./GroundGlassRTT";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
-import { useAppStore } from "../state/appStore";
-import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
+import type { SceneDefinition } from "../types/scene";
+import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
+import type {
+  GroundGlassRttChannel,
+  GroundGlassRttRuntimeInfo,
+  GroundGlassRttRuntimeInfoChangeHandler,
+} from "./groundGlassRttDimensions";
 
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
   focalLengthMm: number;
-  sceneId?: string;
+  scene: SceneDefinition;
   apertureNumber: number;
   previewMode: "raw" | "upright";
   rawDebug?: boolean;
-  focusAssistEnabled: boolean;
-  focusRingSize: number;
-  focusRingOpacity: number;
   sceneShiftX: number;
   sceneShiftY: number;
   sceneRotationDeg: number;
@@ -24,18 +26,18 @@ export type GroundGlassRenderSurfaceProps = {
   zoomEnabled?: boolean;
   channel?: GroundGlassRttChannel;
   presentationRegion?: import("../scenes/cameraMovementSceneCalibration").CameraMovementPresentationRegion;
+  effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
+  runtimeInfo?: GroundGlassRttRuntimeInfo | null;
+  onRuntimeInfoChange?: GroundGlassRttRuntimeInfoChangeHandler;
 };
 
 export const GroundGlassRenderSurface = ({
   opticsState,
   focalLengthMm,
-  sceneId,
+  scene,
   apertureNumber,
   previewMode,
   rawDebug,
-  focusAssistEnabled,
-  focusRingSize,
-  focusRingOpacity,
   sceneShiftX,
   sceneShiftY,
   sceneRotationDeg,
@@ -46,12 +48,13 @@ export const GroundGlassRenderSurface = ({
   zoomEnabled,
   channel = "default",
   presentationRegion,
+  effectiveCameraMovementCalibration,
+  runtimeInfo: explicitRuntimeInfo,
+  onRuntimeInfoChange: explicitRuntimeInfoChange,
 }: GroundGlassRenderSurfaceProps) => {
-  const rttRuntimeInfo = useAppStore((state) =>
-    channel === "default"
-      ? state.groundGlassRttRuntimeInfo
-      : state.groundGlassRttRuntimeInfoByChannel?.[channel] ?? null,
-  );
+  const rttRuntimeInfo = explicitRuntimeInfo;
+  const runtimeInfoChange = explicitRuntimeInfoChange;
+  const sceneId = scene.id;
   if (isGroundGlassRttScene(sceneId)) {
     return (
       <div
@@ -119,19 +122,18 @@ export const GroundGlassRenderSurface = ({
         <GroundGlassRTT
           opticsState={opticsState}
           focalLengthMm={focalLengthMm}
-          sceneId={sceneId}
+          scene={scene}
           widthPx={widthPx}
           heightPx={heightPx}
           aperture={apertureNumber}
           previewMode={previewMode}
-          focusRingRadiusPx={focusRingSize}
-          focusRingOpacity={focusRingOpacity}
           rawDebug={rawDebug}
-          focusAssistEnabled={focusAssistEnabled}
           renderQuality={renderQuality}
           zoomEnabled={zoomEnabled}
           channel={channel}
           presentationRegion={presentationRegion}
+          effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+          onRuntimeInfoChange={runtimeInfoChange}
         />
       </div>
     );
