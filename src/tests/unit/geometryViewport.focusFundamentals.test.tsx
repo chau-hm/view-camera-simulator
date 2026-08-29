@@ -77,6 +77,8 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     );
     const svgSide = c1.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svgSide).toBeTruthy();
+    expect(svgSide?.textContent).toContain("Near detail");
+    expect(svgSide?.textContent).toContain("Far detail");
 
     // check there exists at least one vertical plane line (x1 ~ x2)
     const planeLinesAll = Array.from(svgSide!.querySelectorAll('line')) as SVGLineElement[];

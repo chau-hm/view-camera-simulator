@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { GeometryViewport } from "../../components/simulator/GeometryViewport";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -48,6 +49,34 @@ describe("GeometryViewport", () => {
     // Optical axis annotation exists in annotations layer
     const axisText = Array.from(svg!.querySelectorAll("text")).find((t) => t.textContent === "Optical axis");
     expect(axisText).toBeTruthy();
+  });
+
+  it("renders Architecture + Foreground labels from scene Geometry metadata", () => {
+    const opticsState = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...architectureForegroundScene.cameraPreset,
+        activeSceneId: architectureForegroundScene.id,
+      },
+      architectureForegroundScene,
+    );
+    const { container } = render(
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={architectureForegroundScene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={architectureForegroundScene}
+        riseMm={0}
+      />,
+    );
+    const svg = container.querySelector('[data-testid="geometry-svg-side"]');
+    expect(svg?.textContent).toContain("Foreground ground");
+    expect(svg?.textContent).toContain("Building profile");
+    expect(svg?.textContent).toContain("Near foreground");
+    expect(svg?.textContent).toContain("Middle foreground");
+    expect(svg?.textContent).toContain("Building base");
+    expect(svg?.textContent).toContain("Building middle");
   });
 
   it("renders top-view svg and has expected primitives", () => {

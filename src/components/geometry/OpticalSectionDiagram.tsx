@@ -18,6 +18,7 @@ import {
 import { ProjectedCameraConstruction } from "./ProjectedCameraConstruction";
 import {
   getSceneGeometryGuides,
+  getSceneGeometryTargetMessageKey,
 } from "./sceneGeometryGuides";
 
 type Props = {
@@ -42,64 +43,6 @@ const planeTeachingLabel = (segment: PlaneSegment, t: TFunction): string | null 
   if (segment.id === "lens") return translateMessage(t, simulatorMessageKeys.geometry.lensPlaneExtended);
   if (segment.id === "focus") return translateMessage(t, simulatorMessageKeys.geometry.sharpFocusPlaneExtended);
   return null;
-};
-
-const sceneGeometryGuideMessageKey = (sceneId: string, guideId: string): SimulatorMessageKey | null => {
-  switch (`${sceneId}:${guideId}`) {
-    case "table-tilt:table-tilt-tabletop":
-      return simulatorMessageKeys.geometry.tabletopGuide;
-    case "shelf-swing:shelf-swing-subject-trace":
-      return simulatorMessageKeys.geometry.diagonalSubjectPlaneGuide;
-    case "oblique-architecture:oblique-architecture-target-facade":
-      return simulatorMessageKeys.geometry.targetFacadeDepthGuide;
-    case "architecture-foreground:architecture-foreground-ground":
-      return simulatorMessageKeys.geometry.architectureForegroundGroundGuide;
-    case "architecture-foreground:architecture-foreground-building-profile":
-      return simulatorMessageKeys.geometry.architectureForegroundBuildingGuide;
-    default:
-      return null;
-  }
-};
-
-const sceneGeometryTargetMessageKey = (sceneId: string, targetId: string): SimulatorMessageKey => {
-  switch (`${sceneId}:${targetId}`) {
-    case "table-tilt:near-cup":
-      return simulatorMessageKeys.geometry.nearCardTarget;
-    case "table-tilt:mid-notebook":
-      return simulatorMessageKeys.geometry.middleNotebookTarget;
-    case "table-tilt:far-book":
-      return simulatorMessageKeys.geometry.farChartTarget;
-    case "shelf-swing:shelf-front":
-      return simulatorMessageKeys.geometry.frontChartTarget;
-    case "shelf-swing:shelf-middle":
-      return simulatorMessageKeys.geometry.middleChartTarget;
-    case "shelf-swing:shelf-back":
-      return simulatorMessageKeys.geometry.backChartTarget;
-    case "focus-fundamentals-two-targets:focus-near-detail":
-      return simulatorMessageKeys.geometry.nearDetailTarget;
-    case "focus-fundamentals-two-targets:focus-far-detail":
-      return simulatorMessageKeys.geometry.farDetailTarget;
-    case "oblique-architecture:facade-near":
-      return simulatorMessageKeys.geometry.nearFacadeTarget;
-    case "oblique-architecture:facade-middle":
-      return simulatorMessageKeys.geometry.middleFacadeTarget;
-    case "oblique-architecture:facade-far":
-      return simulatorMessageKeys.geometry.farFacadeTarget;
-    case "architecture-foreground:foreground-near":
-      return simulatorMessageKeys.geometry.architectureForegroundNearTarget;
-    case "architecture-foreground:foreground-middle":
-      return simulatorMessageKeys.geometry.architectureForegroundMiddleTarget;
-    case "architecture-foreground:building-base":
-      return simulatorMessageKeys.geometry.architectureForegroundBuildingBaseTarget;
-    case "architecture-foreground:building-middle":
-      return simulatorMessageKeys.geometry.architectureForegroundBuildingMiddleTarget;
-    default:
-      return /near/i.test(targetId)
-        ? simulatorMessageKeys.geometry.nearDetailTarget
-        : /far/i.test(targetId)
-          ? simulatorMessageKeys.geometry.farDetailTarget
-          : simulatorMessageKeys.geometry.targetFallback;
-  }
 };
 
 type ConstructionLayerStyle = {
@@ -295,8 +238,9 @@ const ConstructionLayer = ({
       {subjectGuides.map((guide) => {
         const start = view.projectWorldPoint(guide.startWorld);
         const end = view.projectWorldPoint(guide.endWorld);
-        const guideMessageKey = sceneGeometryGuideMessageKey(scene.id, guide.id);
-        const guideLabel = guideMessageKey ? translateMessage(t, guideMessageKey) : guide.label;
+        const guideLabel = guide.labelMessageKey
+          ? translateMessage(t, guide.labelMessageKey)
+          : guide.label;
         const labelPlacement = getGeometryGuideLabelPlacement({
           start,
           end,
@@ -485,7 +429,10 @@ const ConstructionLayer = ({
             const position = view.projectWorldPoint(
               target.worldPosition,
             );
-            const labelText = translateMessage(t, sceneGeometryTargetMessageKey(scene.id, target.id));
+            const labelText = translateMessage(
+              t,
+              getSceneGeometryTargetMessageKey(scene.id, target.id),
+            );
             const placement = getLocalTargetLabelPlacement({
               targetX: position.x,
               targetY: position.y,

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import {
   getSceneGeometryGuides,
-  getSceneGeometryTargetLabel,
+  getSceneGeometryTargetMessageKey,
 } from "../../components/geometry/sceneGeometryGuides";
 import { getGeometryPresentationProfile } from "../../components/geometry/geometryPresentationProfiles";
 import {
@@ -92,21 +93,43 @@ describe("scene geometry guides", () => {
     });
   });
 
-  it("uses explicit scene target labels while preserving generic fallbacks", () => {
-    expect(getSceneGeometryTargetLabel("shelf-swing", "shelf-front")).toBe("Front chart");
-    expect(getSceneGeometryTargetLabel("shelf-swing", "shelf-middle")).toBe("Middle chart");
-    expect(getSceneGeometryTargetLabel("shelf-swing", "shelf-back")).toBe("Back chart");
-    expect(getSceneGeometryTargetLabel("table-tilt", "near-cup")).toBe("Near card");
-    expect(getSceneGeometryTargetLabel("table-tilt", "mid-notebook")).toBe(
-      "Middle notebook",
-    );
-    expect(getSceneGeometryTargetLabel("table-tilt", "far-book")).toBe("Far chart");
-    expect(getSceneGeometryTargetLabel("another-scene", "near-one")).toBe("Near detail");
-    expect(getSceneGeometryTargetLabel("another-scene", "far-one")).toBe("Far detail");
-    expect(getSceneGeometryTargetLabel("another-scene", "centre")).toBe("Target");
-    expect(getSceneGeometryTargetLabel("oblique-architecture", "facade-near")).toBe("Near façade");
-    expect(getSceneGeometryTargetLabel("oblique-architecture", "facade-middle")).toBe("Middle façade");
-    expect(getSceneGeometryTargetLabel("oblique-architecture", "facade-far")).toBe("Far façade");
+  it.each([
+    ["table-tilt", "table-tilt-tabletop", simulatorMessageKeys.geometry.tabletopGuide],
+    ["shelf-swing", "shelf-swing-subject-trace", simulatorMessageKeys.geometry.diagonalSubjectPlaneGuide],
+    ["oblique-architecture", "oblique-architecture-target-facade", simulatorMessageKeys.geometry.targetFacadeDepthGuide],
+    ["architecture-foreground", "architecture-foreground-ground", simulatorMessageKeys.geometry.architectureForegroundGroundGuide],
+    ["architecture-foreground", "architecture-foreground-building-profile", simulatorMessageKeys.geometry.architectureForegroundBuildingGuide],
+  ] as const)("keeps the canonical message key for %s/%s", (sceneId, guideId, expectedKey) => {
+    const guide = getSceneGeometryGuides(sceneId).find(({ id }) => id === guideId);
+    expect(guide).toMatchObject({ id: guideId, labelMessageKey: expectedKey });
+  });
+
+  it.each([
+    ["table-tilt", "near-cup", simulatorMessageKeys.geometry.nearCardTarget],
+    ["table-tilt", "mid-notebook", simulatorMessageKeys.geometry.middleNotebookTarget],
+    ["table-tilt", "far-book", simulatorMessageKeys.geometry.farChartTarget],
+    ["shelf-swing", "shelf-front", simulatorMessageKeys.geometry.frontChartTarget],
+    ["shelf-swing", "shelf-middle", simulatorMessageKeys.geometry.middleChartTarget],
+    ["shelf-swing", "shelf-back", simulatorMessageKeys.geometry.backChartTarget],
+    ["focus-fundamentals-two-targets", "focus-near-detail", simulatorMessageKeys.geometry.nearDetailTarget],
+    ["focus-fundamentals-two-targets", "focus-far-detail", simulatorMessageKeys.geometry.farDetailTarget],
+    ["oblique-architecture", "facade-near", simulatorMessageKeys.geometry.nearFacadeTarget],
+    ["oblique-architecture", "facade-middle", simulatorMessageKeys.geometry.middleFacadeTarget],
+    ["oblique-architecture", "facade-far", simulatorMessageKeys.geometry.farFacadeTarget],
+    ["architecture-foreground", "foreground-near", simulatorMessageKeys.geometry.architectureForegroundNearTarget],
+    ["architecture-foreground", "foreground-middle", simulatorMessageKeys.geometry.architectureForegroundMiddleTarget],
+    ["architecture-foreground", "building-base", simulatorMessageKeys.geometry.architectureForegroundBuildingBaseTarget],
+    ["architecture-foreground", "building-middle", simulatorMessageKeys.geometry.architectureForegroundBuildingMiddleTarget],
+  ] as const)("resolves the canonical target message key for %s/%s", (sceneId, targetId, expectedKey) => {
+    expect(getSceneGeometryTargetMessageKey(sceneId, targetId)).toBe(expectedKey);
+  });
+
+  it.each([
+    ["near-one", simulatorMessageKeys.geometry.nearDetailTarget],
+    ["far-one", simulatorMessageKeys.geometry.farDetailTarget],
+    ["centre", simulatorMessageKeys.geometry.targetFallback],
+  ] as const)("resolves the %s target fallback", (targetId, expectedKey) => {
+    expect(getSceneGeometryTargetMessageKey("another-scene", targetId)).toBe(expectedKey);
   });
 
   it("registers the canonical Oblique Architecture façade depth guide", () => {
