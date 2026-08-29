@@ -232,7 +232,7 @@ test("Shelf Swing Ground Glass zoom, pan, reset, orientation, and quality stay l
   await page.goto("/simulator/free/shelf-swing?rttDiagnostics=1");
   await expectRttContent(page);
   const viewport = page.getByLabel("GroundGlassViewport");
-  const stage = viewport.getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
+  const stage = viewport.locator('[data-zoomed]');
   const layer = viewport.getByTestId("ground-glass-image-layer");
 
   await clickStageAt(page, stage, 0.25, 0.25);

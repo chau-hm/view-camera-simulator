@@ -7,40 +7,24 @@ import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 
 type ViewOptionsProps = {
   // permissions: whether the user is allowed to toggle each option in the current mode/task
-  canToggleFocusAssist: boolean;
   canToggleGrid: boolean;
   lockReason: string;
   compact?: boolean;
 };
 
 export const ViewOptions = ({
-  canToggleFocusAssist,
   canToggleGrid,
   lockReason,
   compact = false,
 }: ViewOptionsProps) => {
   const { t } = useTranslation();
   const viewOptions = useAppStore(useShallow(selectViewOptionState));
-  const toggleFocusAssist = useAppStore((state) => state.toggleFocusAssist);
   const toggleGrid = useAppStore((state) => state.toggleGrid);
 
   return (
     <section aria-label={t(simulatorMessageKeys.controls.viewOptionsTitle)} className={compact ? 'view-options view-options--compact' : 'view-options'}>
       {!compact && <h3 className="control-group-title">{t(simulatorMessageKeys.controls.viewOptionsTitle)}</h3>}
       <div className={compact ? 'choice-list choice-list--stacked' : 'choice-list'}>
-        <label className="choice-label">
-          <input
-            className="form-checkbox"
-            aria-label={t(simulatorMessageKeys.controls.focusAssistLabel)}
-            type="checkbox"
-            checked={viewOptions.focusAssistEnabled}
-            disabled={!canToggleFocusAssist}
-            onChange={() => toggleFocusAssist()}
-          />
-          <span>{t(simulatorMessageKeys.controls.focusAssistLabel)}</span>
-          {!canToggleFocusAssist && <small className="control-help">{lockReason}</small>}
-        </label>
-
         <label className="choice-label">
           <input
             className="form-checkbox"

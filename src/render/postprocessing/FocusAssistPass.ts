@@ -3,34 +3,10 @@ import { focusTargetStatusForSharpness } from "../../core/optics/physicalSharpne
 
 export type FocusAssistMetric = "point" | "patch";
 
-export type FocusAssistPassConfig = {
-  enabled: boolean;
-  targets: FocusTargetSharpness[];
-  metric?: FocusAssistMetric;
-};
-
 export type FocusTargetPresentationMetric = {
   sharpness: number;
   status: FocusTargetStatus;
   equivalentCoCDiameterMm: number | null;
-};
-
-export type FocusAssistDisplayTarget = {
-  id: string;
-  status: FocusTargetSharpness["status"];
-  pattern: "solid" | "hatch" | "cross";
-  sharpnessPercent: number;
-};
-
-export type FocusAssistPassResult = {
-  enabled: boolean;
-  targets: FocusAssistDisplayTarget[];
-};
-
-const statusPatternMap: Record<FocusTargetSharpness["status"], FocusAssistDisplayTarget["pattern"]> = {
-  sharp: "solid",
-  acceptable: "hatch",
-  soft: "cross",
 };
 
 const unresolvedPhysicalPresentationMetric = (): FocusTargetPresentationMetric => ({
@@ -85,16 +61,3 @@ export const resolvePhysicalFocusTargetPresentationMetric = (
  */
 export const resolveFocusTargetPresentationMetric =
   resolvePhysicalFocusTargetPresentationMetric;
-
-export const createFocusAssistPass = (config: FocusAssistPassConfig): FocusAssistPassResult => ({
-  enabled: config.enabled,
-  targets: config.targets.map((target) => {
-    const metric = resolvePhysicalFocusTargetPresentationMetric(target, config.metric);
-    return {
-      id: target.id,
-      status: metric.status,
-      pattern: statusPatternMap[metric.status],
-      sharpnessPercent: Math.round(metric.sharpness * 100),
-    };
-  }),
-});

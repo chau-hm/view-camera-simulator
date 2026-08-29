@@ -113,7 +113,8 @@ describe("simulator header", () => {
     expect(screen.getByRole("heading", { name: "3D Scene" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reset 3D view" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Expand 3D Scene" })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Focus assist" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Grid" })).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Focus assist" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "View overlays" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Expand 2D Geometry" })).toHaveTextContent("2D Geometry");
 
@@ -127,7 +128,8 @@ describe("simulator header", () => {
       expect(screen.getByRole("heading", { name: "3D 場景" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "重設 3D 視圖" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "展開 3D 場景" })).toBeInTheDocument();
-      expect(screen.getByRole("checkbox", { name: "對焦輔助" })).toBeInTheDocument();
+      expect(screen.getByRole("checkbox", { name: "網格" })).toBeInTheDocument();
+      expect(screen.queryByRole("checkbox", { name: "對焦輔助" })).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: "檢視疊加層" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "展開 2D 幾何圖" })).toHaveTextContent("2D 幾何圖");
     });

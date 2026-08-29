@@ -10,7 +10,6 @@ import {
   reconstructWorldPosition,
 } from "../../render/groundGlassPipeline";
 import { createDepthOfFieldPass } from "../../render/postprocessing/DepthOfFieldPass";
-import { createFocusAssistPass } from "../../render/postprocessing/FocusAssistPass";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { RenderQualityProfile } from "../../types/ui";
 
@@ -93,12 +92,8 @@ describe("ground glass pipeline", () => {
     expect(Number.isFinite(worldPosition.z)).toBe(true);
   });
 
-  it("generates focus-assist target patterns and dof pass output", () => {
+  it("generates the physical dof pass output", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
-    const assistPass = createFocusAssistPass({
-      enabled: true,
-      targets: opticsState.focusTargets,
-    });
     const dofPass = createDepthOfFieldPass(
       {
         enabled: true,
@@ -111,7 +106,6 @@ describe("ground glass pipeline", () => {
       },
       opticsState,
     );
-    expect(assistPass.targets.length).toBe(opticsState.focusTargets.length);
     expect(dofPass.blurPass.widthPx).toBe(250);
     expect(dofPass.blurPass.heightPx).toBe(200);
   });

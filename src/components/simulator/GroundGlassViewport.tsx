@@ -24,10 +24,8 @@ type GroundGlassViewportProps = {
   groundGlassAssistEnabled: boolean;
   onGroundGlassAssistEnabledChange: (enabled: boolean) => void;
   // current state (from camera)
-  focusAssistEnabled: boolean;
   gridEnabled: boolean;
   // permissions (from enabledControls) — whether the control is allowed in current mode/task
-  canToggleFocusAssist?: boolean;
   canToggleGrid?: boolean;
   riseMm: number;
   tiltDeg: number;
@@ -57,9 +55,7 @@ export const GroundGlassViewport = ({
   scene,
   groundGlassAssistEnabled,
   onGroundGlassAssistEnabledChange,
-  focusAssistEnabled,
   gridEnabled,
-  canToggleFocusAssist,
   canToggleGrid,
   riseMm,
   tiltDeg,
@@ -98,7 +94,7 @@ export const GroundGlassViewport = ({
       ? t(simulatorMessageKeys.viewport.previewLabel)
       : t(simulatorMessageKeys.viewport.groundGlassTitle);
   const zoomInLabel = t(simulatorMessageKeys.viewport.zoomIn);
-  const zoomOutLabel = t(simulatorMessageKeys.viewport.zoomOut);
+  const panLabel = t(simulatorMessageKeys.viewport.pan);
   const resetViewLabel = t(simulatorMessageKeys.viewport.resetView);
   const resetActionLabel = t(simulatorMessageKeys.viewport.resetAction);
   const originalStageLabel = t(simulatorMessageKeys.viewport.originalGroundGlass);
@@ -147,7 +143,6 @@ export const GroundGlassViewport = ({
           scene={scene}
           opticsState={layer.opticsState}
           assistEnabled={layer.opticsState.groundGlassProjection.assistModeEnabled}
-          focusAssistEnabled={focusAssistEnabled}
           gridEnabled={gridEnabled}
           riseMm={layer.camera.frontRiseMm}
           tiltDeg={layer.camera.frontTiltDeg}
@@ -171,14 +166,14 @@ export const GroundGlassViewport = ({
           accessibleLabel={label === "Original" ? originalStageLabel : currentStageLabel}
           stageLabel={label === "Original" ? originalStageLabel : currentStageLabel}
           zoomInLabel={zoomInLabel}
-          zoomOutLabel={zoomOutLabel}
+          panLabel={panLabel}
           resetViewLabel={resetViewLabel}
           resetActionLabel={resetActionLabel}
           lastFiniteFocusDepthMm={layer.camera.lastFiniteFocusDepthMm}
         />
       </section>
     ),
-    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusAssistEnabled, focusMetric, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t, zoomInLabel, zoomOutLabel],
+    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusMetric, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, panLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t, zoomInLabel],
   );
 
   useEffect(() => {
@@ -235,7 +230,6 @@ export const GroundGlassViewport = ({
             <legend className="control-group-title">{t(simulatorMessageKeys.viewport.viewOptions)}</legend>
             <div className="groundglass-control-group__options">
               <ViewOptions
-                canToggleFocusAssist={canToggleFocusAssist ?? true}
                 canToggleGrid={canToggleGrid ?? true}
                 lockReason={lockReason ?? ""}
                 compact
@@ -294,7 +288,6 @@ export const GroundGlassViewport = ({
               scene={scene}
               opticsState={opticsState}
               assistEnabled={opticsState.groundGlassProjection.assistModeEnabled}
-              focusAssistEnabled={focusAssistEnabled}
               gridEnabled={gridEnabled}
               riseMm={riseMm}
               tiltDeg={tiltDeg}
@@ -316,7 +309,7 @@ export const GroundGlassViewport = ({
               accessibleLabel={singleViewAccessibleLabel}
               stageLabel={singleViewAccessibleLabel}
               zoomInLabel={zoomInLabel}
-              zoomOutLabel={zoomOutLabel}
+              panLabel={panLabel}
               resetViewLabel={resetViewLabel}
               resetActionLabel={resetActionLabel}
               presentationRegion={presentationRegion}

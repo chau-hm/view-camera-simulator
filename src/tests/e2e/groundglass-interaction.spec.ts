@@ -23,7 +23,7 @@ test.describe('Ground Glass interaction', () => {
 
     await page.goto('/simulator/free/architecture-rise?rttDiagnostics=1');
     const viewport = page.getByLabel('GroundGlassViewport');
-    const stage = viewport.getByRole('button', { name: /^Zoom (?:in|out) Ground Glass$/ });
+    const stage = viewport.locator('[data-zoomed]');
     const rtt = viewport.getByTestId('ground-glass-rtt');
     const canvas = rtt.locator('canvas');
     const transformedLayer = viewport.locator('.groundglass-stage');
@@ -121,7 +121,7 @@ test.describe('Ground Glass interaction', () => {
     expect(rendererWarnings, `React/Three.js/WebGL warnings: ${rendererWarnings.join('\n')}`).toEqual([]);
   });
 
-  test('Architecture Rise: off-center anchor, drag pan, zoom-out centering, and immediate re-zoom', async ({ page }) => {
+  test('Architecture Rise: off-center anchor, drag pan, short-click preservation, and immediate re-zoom', async ({ page }) => {
     // allow a longer timeout for this interaction-heavy test to tolerate renderer scheduling in CI/local
     test.setTimeout(120_000);
     await page.goto('/simulator/free/architecture-rise');
@@ -129,8 +129,9 @@ test.describe('Ground Glass interaction', () => {
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
 
-    const stage = viewport.getByRole('button', { name: /^Zoom (?:in|out) Ground Glass$/ });
+    const stage = viewport.locator('[data-zoomed]');
     await expect(stage).toBeVisible();
+    await expect(stage).toHaveAttribute('role', 'button');
 
     const transformedLayer = transformedLayerFor(viewport);
 
@@ -144,7 +145,10 @@ test.describe('Ground Glass interaction', () => {
 
     // state change
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
+    await expect(stage).toHaveAttribute('aria-label', 'Pan Ground Glass');
+    await expect(stage).toHaveAttribute('role', 'region');
+    await expect(viewport.getByRole('region', { name: 'Pan Ground Glass', exact: true })).toHaveCount(1);
+    await expect(viewport.getByRole('button', { name: 'Pan Ground Glass', exact: true })).toHaveCount(0);
 
     // scale becomes ~1.9 and translates positive — poll once for all conditions
     await expect.poll(async () => {
@@ -164,9 +168,9 @@ test.describe('Ground Glass interaction', () => {
     await page.mouse.move(centerX + 60, centerY + 40, { steps: 6 });
     await page.mouse.up();
 
-    // should remain zoomed and aria label unchanged
+    // should remain zoomed and expose the pan action
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
+    await expect(stage).toHaveAttribute('aria-label', 'Pan Ground Glass');
 
     const postDrag = await readStageTransform(transformedLayer());
     await expect(postDrag.scaleX).toBeCloseTo(1.9, 1);
@@ -183,10 +187,15 @@ test.describe('Ground Glass interaction', () => {
     const isInside = await previewOverlay.evaluate((el) => Boolean((el as Element).closest('.groundglass-stage')));
     expect(isInside).toBe(false);
 
-    // click to zoom out (ordinary centered click)
+    // An ordinary click on the zoomed image is a no-op and preserves the pan.
+    const beforeShortClick = await readStageTransform(transformedLayer());
     await clickStageAt(page, stage, 0.5, 0.5);
+    await expect(stage).toHaveAttribute('data-zoomed', 'true');
+    await expect(stage).toHaveAttribute('aria-label', 'Pan Ground Glass');
+    expect(await readStageTransform(transformedLayer())).toEqual(beforeShortClick);
 
-    // confirm unzoomed state and transformed layer exists
+    // The explicit reset control is the only zoom-out affordance.
+    await viewport.getByRole('button', { name: 'Reset Ground Glass view', exact: true }).click();
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
 
     // read transform and assert identity (scale ~1, translations near zero) — poll once
@@ -200,7 +209,7 @@ test.describe('Ground Glass interaction', () => {
     await page.mouse.click(freshBox.x + freshBox.width * 0.7, freshBox.y + freshBox.height * 0.65);
 
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('aria-label', 'Zoom out Ground Glass');
+    await expect(stage).toHaveAttribute('aria-label', 'Pan Ground Glass');
 
     // scale and translate sign checks — poll once for all conditions to reduce overhead
     await expect.poll(async () => {
@@ -214,8 +223,8 @@ test.describe('Ground Glass interaction', () => {
 
     // repeated centered cycles (3x) using real Playwright clicks
     for (let i = 0; i < 3; i++) {
-      // zoom out (center)
-      await clickStageAt(page, stage, 0.5, 0.5);
+      // reset explicitly (a zoomed image click is intentionally inert)
+      await viewport.getByRole('button', { name: 'Reset Ground Glass view', exact: true }).click();
       await expect(stage).toHaveAttribute('data-zoomed', 'false');
       await expect.poll(async () => {
         const t = await readStageTransform(transformedLayer());
@@ -232,12 +241,12 @@ test.describe('Ground Glass interaction', () => {
     }
   });
 
-  test('Focus Fundamentals: three-click smoke test', async ({ page }) => {
+  test('Focus Fundamentals: image zoom and explicit reset smoke test', async ({ page }) => {
     test.setTimeout(90_000);
     await page.goto('/simulator/free/focus-fundamentals-two-targets');
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
-    const stage = viewport.getByRole('button', { name: /^Zoom (?:in|out) Ground Glass$/ });
+    const stage = viewport.locator('[data-zoomed]');
     await expect(stage).toBeVisible();
 
     const transformedLayer = transformedLayerFor(viewport);
@@ -258,17 +267,21 @@ test.describe('Ground Glass interaction', () => {
       { timeout: 15_000 },
     ).toBeCloseTo(1.9, 1);
 
-    // click 2 -> zoom out
+    // A second image click does not reset a zoomed stage.
     await stage.click({ position: { x: cx, y: cy } });
-    await expect(stage).toHaveAttribute('data-zoomed', 'false');
-    await expect(stage).toHaveAttribute('data-scale', '1');
+    await expect(stage).toHaveAttribute('data-zoomed', 'true');
+    await expect(stage).toHaveAttribute('data-scale', '1.9');
     await expect.poll(
       async () => (await readStageTransform(transformedLayer())).scaleX,
       { timeout: 15_000 },
-    ).toBeCloseTo(1, 2);
-    await expect(stage).toHaveAttribute('data-pan-x', '0');
+    ).toBeCloseTo(1.9, 1);
 
-    // click 3 -> zoom in
+    // The explicit Reset View control restores the identity transform.
+    await viewport.getByRole('button', { name: 'Reset Ground Glass view', exact: true }).click();
+    await expect(stage).toHaveAttribute('data-zoomed', 'false');
+    await expect(stage).toHaveAttribute('data-scale', '1');
+
+    // A subsequent image click can zoom in again.
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('data-scale', '1.9');

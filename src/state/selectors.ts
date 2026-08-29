@@ -48,7 +48,6 @@ export const selectApertureControlState = (state: AppStore) => ({
 export const selectViewOptionState = (state: AppStore) => ({
   geometryView: state.camera.geometryView,
   groundGlassAssistEnabled: state.camera.groundGlassAssistEnabled,
-  focusAssistEnabled: state.camera.focusAssistEnabled,
   gridEnabled: state.camera.gridEnabled,
   showOpticalGeometry: state.ui.showOpticalGeometry,
 });

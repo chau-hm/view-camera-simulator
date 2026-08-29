@@ -16,7 +16,6 @@ export const UI_COPY = {
     geometryViewTop: "Top",
     geometryViewScheimpflug: "Scheimpflug Section",
     groundGlassAssistLabel: "Ground glass assist",
-    focusAssistLabel: "Focus assist",
     gridLabel: "Grid",
     guidedControlLockedReason: "Disabled for this guided task",
     cameraMovementTitle: "Camera Movement",
@@ -52,7 +51,6 @@ export const UI_COPY = {
     swingLabel: "Swing",
     groundGlassTitle: "Ground Glass",
     groundGlassZoomIn: "Zoom in",
-    groundGlassZoomOut: "Zoom out",
     groundGlassRenderPipeline: "Ground glass pipeline",
     groundGlassCurrentSettings: "Current settings",
     groundGlassFocusTargets: "Focus targets",
@@ -104,7 +102,6 @@ export const UI_COPY = {
   },
   render: {
     groundGlassPreview: "Ground glass preview",
-    focusAssistBadge: "Focus assist",
     focusStatusSharp: "Sharp",
     focusStatusAcceptable: "Near-sharp",
     focusStatusSoft: "Blurred",

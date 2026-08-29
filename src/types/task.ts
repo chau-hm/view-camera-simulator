@@ -22,7 +22,6 @@ export type TaskInitialCameraState = Pick<
   | "focusDistanceMm"
   | "aperture"
   | "groundGlassAssistEnabled"
-  | "focusAssistEnabled"
   | "gridEnabled"
 > &
   Partial<

@@ -57,7 +57,6 @@ const riseTask: TaskDefinition = {
    aperture: 11,
    geometryView: "side",
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
   },
 };
@@ -106,7 +105,6 @@ const obliqueRiseTask: TaskDefinition = {
     aperture: obliqueArchitectureScene.cameraPreset.aperture,
     geometryView: "side",
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
   },
 };
@@ -155,7 +153,6 @@ const architectureForegroundRiseTask: TaskDefinition = {
     aperture: architectureForegroundScene.cameraPreset.aperture,
     geometryView: "side",
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
   },
 };
@@ -228,7 +225,6 @@ const architectureForegroundTiltFocusTask: TaskDefinition = {
     aperture: architectureForegroundScene.cameraPreset.aperture,
     geometryView: "side",
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
   },
 };
@@ -286,7 +282,6 @@ const architectureForegroundDofTask: TaskDefinition = {
     aperture: architectureForegroundScene.cameraPreset.aperture,
     geometryView: "side",
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
   },
 };
@@ -358,7 +353,6 @@ const architectureForegroundCompoundTask: TaskDefinition = {
     aperture: architectureForegroundScene.cameraPreset.aperture,
     geometryView: "side",
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
   },
 };
@@ -417,7 +411,6 @@ const obliqueSwingFocusTask: TaskDefinition = {
     aperture: obliqueArchitectureScene.cameraPreset.aperture,
     geometryView: "top",
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
   },
 };
@@ -476,7 +469,6 @@ const obliqueCompoundTask: TaskDefinition = {
     aperture: obliqueArchitectureScene.cameraPreset.aperture,
     geometryView: "top",
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
   },
 };
@@ -545,7 +537,6 @@ const tiltTask: TaskDefinition = {
    aperture: 11,
    geometryView: "side",
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
   },
 };
@@ -615,7 +606,6 @@ const swingTask: TaskDefinition = {
    aperture: 11,
    geometryView: "top",
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
   },
 };
@@ -657,7 +647,6 @@ const mirrorShiftTask: TaskDefinition = {
     focusDistanceMm: mirrorShiftScene.cameraPreset.focusDistanceMm,
     aperture: mirrorShiftScene.cameraPreset.aperture,
     groundGlassAssistEnabled: false,
-    focusAssistEnabled: false,
     gridEnabled: true,
     frontShiftMm: resolveMirrorShiftTeachingState("neutral").frontShiftMm,
     mirrorShiftLessonState: {
