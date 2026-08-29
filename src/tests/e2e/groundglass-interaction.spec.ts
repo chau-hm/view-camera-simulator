@@ -23,7 +23,7 @@ test.describe('Ground Glass interaction', () => {
 
     await page.goto('/simulator/free/architecture-rise?rttDiagnostics=1');
     const viewport = page.getByLabel('GroundGlassViewport');
-    const stage = viewport.getByRole('button', { name: /^(?:Zoom in|Pan) Ground Glass$/ });
+    const stage = viewport.locator('[data-zoomed]');
     const rtt = viewport.getByTestId('ground-glass-rtt');
     const canvas = rtt.locator('canvas');
     const transformedLayer = viewport.locator('.groundglass-stage');
@@ -129,8 +129,9 @@ test.describe('Ground Glass interaction', () => {
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
 
-    const stage = viewport.getByRole('button', { name: /^(?:Zoom in|Pan) Ground Glass$/ });
+    const stage = viewport.locator('[data-zoomed]');
     await expect(stage).toBeVisible();
+    await expect(stage).toHaveAttribute('role', 'button');
 
     const transformedLayer = transformedLayerFor(viewport);
 
@@ -145,6 +146,9 @@ test.describe('Ground Glass interaction', () => {
     // state change
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('aria-label', 'Pan Ground Glass');
+    await expect(stage).toHaveAttribute('role', 'region');
+    await expect(viewport.getByRole('region', { name: 'Pan Ground Glass', exact: true })).toHaveCount(1);
+    await expect(viewport.getByRole('button', { name: 'Pan Ground Glass', exact: true })).toHaveCount(0);
 
     // scale becomes ~1.9 and translates positive — poll once for all conditions
     await expect.poll(async () => {
@@ -242,7 +246,7 @@ test.describe('Ground Glass interaction', () => {
     await page.goto('/simulator/free/focus-fundamentals-two-targets');
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
-    const stage = viewport.getByRole('button', { name: /^(?:Zoom in|Pan) Ground Glass$/ });
+    const stage = viewport.locator('[data-zoomed]');
     await expect(stage).toBeVisible();
 
     const transformedLayer = transformedLayerFor(viewport);

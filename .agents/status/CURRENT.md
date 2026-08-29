@@ -28,3 +28,12 @@
 - Review that all Focus Assist-only control/state/RTT display paths are removed while the retained physical metric still drives focus readouts.
 - Review stale-gesture protection around synchronous `lostpointercapture` during capture release, and confirm no transform math changed.
 - Existing unrelated WebGL/RTT baselines noted above remain. Unrelated untracked `public/assets/f2f105ab-04dd-4bcc-b37c-bf90894b3e7f.png` is intentionally untouched and will not be staged.
+
+## Accessibility review follow-up
+
+- Addressed the PR #108 finding that the zoomed stage exposed `role="button"` while Enter/Space performed no action.
+- Old zoomed semantic: labelled `button` (`Pan Ground Glass`) with inert activation keys.
+- New zoomed semantic: labelled, focusable `region` (`Pan Ground Glass`); unzoomed remains a keyboard-activatable `button` (`Zoom in Ground Glass`).
+- Focused coverage: GroundGlassStage keyboard/role assertions 19/19, SimulatorWorkspace and comparison integration tests 28/28, and Ground Glass browser interaction 3/3 passed.
+- Latest validation: full unit/integration, typecheck, lint, CSS check, build, and diff check passed. The previously documented RTT/Mirror Shift browser baselines remain unrelated.
+- Substantive accessibility-fix commit: pending.

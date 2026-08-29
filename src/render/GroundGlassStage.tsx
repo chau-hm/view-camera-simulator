@@ -224,9 +224,10 @@ export const GroundGlassStage = ({
       return;
     }
     if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+      if (zoomEnabled) return;
       event.preventDefault();
       event.stopPropagation();
-      if (!zoomEnabled) requestZoomIn();
+      requestZoomIn();
     }
   };
 
@@ -320,7 +321,7 @@ export const GroundGlassStage = ({
     <div style={{ position: "relative" }}>
       <div
         ref={panelRef}
-        role="button"
+        role={zoomEnabled ? "region" : "button"}
         tabIndex={0}
         data-zoomed={zoomEnabled ? "true" : "false"}
         data-pan-x={effectivePan.x}

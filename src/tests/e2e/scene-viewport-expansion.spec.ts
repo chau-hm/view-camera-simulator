@@ -310,7 +310,7 @@ test("simulator viewports expand in main without replacing their active canvases
   await expect(tilt).not.toHaveValue(tiltBefore);
 
   await page.getByRole("button", { name: "Zoom in Ground Glass view" }).click();
-  const zoomedGroundGlass = page.getByRole("button", { name: "Pan Ground Glass" });
+  const zoomedGroundGlass = page.getByRole("region", { name: "Pan Ground Glass" });
   await expect(zoomedGroundGlass).toHaveAttribute("data-zoomed", "true");
   await zoomedGroundGlass.focus();
   await page.keyboard.press("Escape");
@@ -458,7 +458,7 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
   await expect.poll(async () => (await readRttSnapshot(page)).internalWidth, { timeout: 30_000 }).toBe(beforeZoom.internalWidth);
   expect((await readRttSnapshot(page)).generation).toBe(normal.generation);
-  const groundGlassStage = page.getByLabel("GroundGlassViewport").getByRole("button", { name: /^(?:Zoom in|Pan) Ground Glass$/ });
+  const groundGlassStage = page.getByLabel("GroundGlassViewport").locator('[data-zoomed]');
   await expect(groundGlassStage).toHaveAttribute("data-pan-x", "0");
   await expect(groundGlassStage).toHaveAttribute("data-pan-y", "0");
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);

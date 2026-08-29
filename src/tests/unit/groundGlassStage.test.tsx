@@ -156,10 +156,14 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     const stage = getStage(view.getByRole);
     configureStage(stage);
     expect(stage).toHaveStyle({ cursor: "zoom-in" });
+    expect(stage).toHaveAttribute("role", "button");
     pointerGesture(stage, { pointerId: 1, startX: 350, startY: 250 });
     expect(stage).toHaveAttribute("data-zoomed", "true");
     expect(stage).toHaveAttribute("data-scale", "1.9");
     expect(stage).toHaveAttribute("aria-label", "Pan Ground Glass");
+    expect(stage).toHaveAttribute("role", "region");
+    expect(view.getByRole("region", { name: "Pan Ground Glass" })).toBe(stage);
+    expect(view.queryByRole("button", { name: "Pan Ground Glass" })).not.toBeInTheDocument();
     expect(stage).toHaveStyle({ cursor: "grab" });
     // A duplicate pointer-up for the completed gesture is inert.
     fireEvent.pointerUp(stage, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 350, clientY: 250 });
@@ -341,19 +345,29 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(stage).toHaveStyle({ cursor: "grab" });
   });
 
-  it("Escape resets while Enter only zooms an unzoomed stage", () => {
+  it("keeps activation semantics stateful while Escape resets", () => {
     const view = render(<ControlledGroundGlassStage />);
     const stage = getStage(view.getByRole);
     configureStage(stage);
+    expect(stage).toHaveAttribute("role", "button");
     fireEvent.keyDown(stage, { key: "Enter" });
     expect(stage).toHaveAttribute("data-zoomed", "true");
     expect(stage).toHaveAttribute("data-pan-x", "0");
     expect(stage).toHaveAttribute("aria-label", "Pan Ground Glass");
+    expect(stage).toHaveAttribute("role", "region");
+    const panX = stage.getAttribute("data-pan-x");
+    const panY = stage.getAttribute("data-pan-y");
     fireEvent.keyDown(stage, { key: "Enter" });
+    fireEvent.keyDown(stage, { key: " " });
     expect(stage).toHaveAttribute("data-zoomed", "true");
+    expect(stage).toHaveAttribute("data-pan-x", panX);
+    expect(stage).toHaveAttribute("data-pan-y", panY);
     fireEvent.keyDown(stage, { key: "Escape" });
     expect(stage).toHaveAttribute("data-zoomed", "false");
     expect(stage).toHaveAttribute("data-scale", "1");
+    expect(stage).toHaveAttribute("role", "button");
+    fireEvent.keyDown(stage, { key: " " });
+    expect(stage).toHaveAttribute("data-zoomed", "true");
   });
 
   it("scene/route reset keys discard zoom and pan", () => {
