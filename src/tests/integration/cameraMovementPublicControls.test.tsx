@@ -102,9 +102,7 @@ describe("public camera movement controls in the workspace", () => {
         onRuntimeInfoChange={() => undefined}
         groundGlassAssistEnabled={camera.groundGlassAssistEnabled}
         onGroundGlassAssistEnabledChange={() => undefined}
-        focusAssistEnabled={camera.focusAssistEnabled}
         gridEnabled={camera.gridEnabled}
-        canToggleFocusAssist
         canToggleGrid
         riseMm={camera.frontRiseMm}
         tiltDeg={camera.frontTiltDeg}

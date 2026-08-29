@@ -40,10 +40,7 @@ import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { TaskPanel } from "../simulator/TaskPanel";
 import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
-import {
-  createFocusAssistPass,
-  resolvePhysicalFocusTargetPresentationMetric,
-} from "../../render/postprocessing/FocusAssistPass";
+import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
@@ -343,11 +340,11 @@ export const SimulatorWorkspace = ({
   const enabledControls = useMemo(() => {
     const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
     if (focusFundamentals) {
-      return new Set(["focusDistance", "aperture", "geometryView", "focusAssist", "grid"]);
+      return new Set(["focusDistance", "aperture", "geometryView", "grid"]);
     }
 
     if (mode === "free" || !task) {
-      const controls = new Set(["geometryView", "focusAssist", "grid"]);
+      const controls = new Set(["geometryView", "grid"]);
       const availableMovements = safeScene.movementCapabilities?.available;
       if (!availableMovements) {
         controls.add("rise");
@@ -408,18 +405,21 @@ export const SimulatorWorkspace = ({
 
   const tableTiltFocusMetric =
     safeScene.id === "table-tilt" && mode === "free" ? "point" : "patch";
-  const focusAssistTargets = useMemo(
+  const focusTargetReadouts = useMemo(
     () =>
-      createFocusAssistPass({
-        enabled: camera.focusAssistEnabled,
-        targets: opticsState.focusTargets,
-        metric: tableTiltFocusMetric,
-      }).targets,
-    [camera.focusAssistEnabled, opticsState.focusTargets, tableTiltFocusMetric],
+      opticsState.focusTargets.map((target) => {
+        const metric = resolvePhysicalFocusTargetPresentationMetric(target, tableTiltFocusMetric);
+        return {
+          id: target.id,
+          status: metric.status,
+          sharpnessPercent: Math.round(metric.sharpness * 100),
+        };
+      }),
+    [opticsState.focusTargets, tableTiltFocusMetric],
   );
   const learnerReadoutPolicy = useMemo(
-    () => resolveLearnerReadoutPolicy(safeScene.id, { hasFocusTargets: focusAssistTargets.length > 0 }),
-    [focusAssistTargets.length, safeScene.id],
+    () => resolveLearnerReadoutPolicy(safeScene.id, { hasFocusTargets: focusTargetReadouts.length > 0 }),
+    [focusTargetReadouts.length, safeScene.id],
   );
   const focusTargetMetric: FocusTargetMetric =
     tableTiltFocusMetric === "point" ? "point" : safeScene.id === "table-tilt" ? "patch" : "focus";
@@ -515,9 +515,7 @@ export const SimulatorWorkspace = ({
                 onRuntimeInfoChange={onGroundGlassRuntimeInfoChange}
                 groundGlassAssistEnabled={camera.groundGlassAssistEnabled}
                 onGroundGlassAssistEnabledChange={setGroundGlassAssistEnabled}
-                focusAssistEnabled={camera.focusAssistEnabled}
                 gridEnabled={camera.gridEnabled}
-                canToggleFocusAssist={enabledControls.has("focusAssist")}
                 canToggleGrid={enabledControls.has("grid")}
                 riseMm={camera.frontRiseMm}
                 tiltDeg={camera.frontTiltDeg}
@@ -560,7 +558,7 @@ export const SimulatorWorkspace = ({
 
           {!viewportExpanded && <>
             {/* Row 1: scene-aware learner readouts */}
-            <div className={`simulator-primary-info-grid${learnerReadoutPolicy.showFocusTargets && focusAssistTargets.length > 0 ? "" : " simulator-primary-info-grid--single"}`}>
+            <div className={`simulator-primary-info-grid${learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? "" : " simulator-primary-info-grid--single"}`}>
             <CurrentSettingsReadout
               riseMm={camera.frontRiseMm}
               tiltDeg={camera.frontTiltDeg}
@@ -587,9 +585,9 @@ export const SimulatorWorkspace = ({
               frontShiftMm={camera.frontShiftMm}
             />
 
-            {learnerReadoutPolicy.showFocusTargets && focusAssistTargets.length > 0 ? (
+            {learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? (
               <FocusTargetsReadout
-                focusTargets={focusAssistTargets}
+                focusTargets={focusTargetReadouts}
                 metric={focusTargetMetric}
                 closestTargetId={closestPointTargetId}
               />

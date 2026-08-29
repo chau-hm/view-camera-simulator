@@ -349,7 +349,6 @@ type UIState = {
   mode: SimulatorMode;
   geometryView: GeometryView;
   groundGlassAssistEnabled: boolean;
-  focusAssistEnabled: boolean;
   gridEnabled: boolean;
   showOpticalGeometry: boolean;
   overlayMenuResetGeneration: number;
@@ -477,7 +476,6 @@ export type AppStore = {
   setGeometryView: (value: GeometryView) => void;
   toggleGroundGlassAssist: () => void;
   setGroundGlassAssistEnabled: (enabled: boolean) => void;
-  toggleFocusAssist: () => void;
   toggleGrid: () => void;
   setShowOpticalGeometry: (enabled: boolean) => void;
   resetMovements: () => void;
@@ -525,7 +523,6 @@ export const useAppStore = create<AppStore>((set) => ({
     mode: DEFAULT_CAMERA_STATE.mode,
     geometryView: DEFAULT_CAMERA_STATE.geometryView,
     groundGlassAssistEnabled: DEFAULT_CAMERA_STATE.groundGlassAssistEnabled,
-    focusAssistEnabled: DEFAULT_CAMERA_STATE.focusAssistEnabled,
     gridEnabled: DEFAULT_CAMERA_STATE.gridEnabled,
     showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY,
     overlayMenuResetGeneration: 0,
@@ -1521,18 +1518,6 @@ export const useAppStore = create<AppStore>((set) => ({
       },
     })),
 
-  toggleFocusAssist: () =>
-    set((state) => ({
-      camera: {
-        ...state.camera,
-        focusAssistEnabled: !state.camera.focusAssistEnabled,
-      },
-      ui: {
-        ...state.ui,
-        focusAssistEnabled: !state.ui.focusAssistEnabled,
-      },
-    })),
-
   toggleGrid: () =>
     set((state) => ({
       camera: { ...state.camera, gridEnabled: !state.camera.gridEnabled },
@@ -1653,9 +1638,6 @@ export const useAppStore = create<AppStore>((set) => ({
       const nextGroundGlassAssistEnabled =
         activeTask?.initialCameraState?.groundGlassAssistEnabled ??
         state.camera.groundGlassAssistEnabled;
-      const nextFocusAssistEnabled =
-        activeTask?.initialCameraState?.focusAssistEnabled ??
-        state.camera.focusAssistEnabled;
       const nextGridEnabled =
         activeTask?.initialCameraState?.gridEnabled ??
         state.camera.gridEnabled;
@@ -1686,7 +1668,6 @@ export const useAppStore = create<AppStore>((set) => ({
               : resolveRigPlacement(nextSceneId, "mid", activeCalibration),
           geometryView: nextGeometryView,
           groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
-          focusAssistEnabled: nextFocusAssistEnabled,
           gridEnabled: nextGridEnabled,
           focalLengthMm: nextFocalLengthMm,
           focusDistanceMm: preserveCalibration
@@ -1730,7 +1711,6 @@ export const useAppStore = create<AppStore>((set) => ({
           mode: nextMode,
           geometryView: nextGeometryView,
           groundGlassAssistEnabled: nextGroundGlassAssistEnabled,
-          focusAssistEnabled: nextFocusAssistEnabled,
           gridEnabled: nextGridEnabled,
           showOpticalGeometry: nextShowOpticalGeometry,
           overlayMenuResetGeneration: state.ui.overlayMenuResetGeneration + 1,
@@ -1760,7 +1740,6 @@ export const useAppStore = create<AppStore>((set) => ({
         geometryView: DEFAULT_CAMERA_STATE.geometryView,
         groundGlassAssistEnabled:
           DEFAULT_CAMERA_STATE.groundGlassAssistEnabled,
-        focusAssistEnabled: DEFAULT_CAMERA_STATE.focusAssistEnabled,
         gridEnabled: DEFAULT_CAMERA_STATE.gridEnabled,
         showOpticalGeometry: DEFAULT_SHOW_OPTICAL_GEOMETRY,
         overlayMenuResetGeneration: 0,

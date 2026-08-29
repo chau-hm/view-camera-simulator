@@ -62,7 +62,6 @@ export type CameraState = {
   activeTaskId: string | null;
   mode: SimulatorMode;
   groundGlassAssistEnabled: boolean;
-  focusAssistEnabled: boolean;
   gridEnabled: boolean;
   geometryView: GeometryView;
   // Optional focus mode: 'finite' (default) or 'infinity'

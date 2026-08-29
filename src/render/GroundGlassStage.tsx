@@ -66,7 +66,7 @@ type GroundGlassStageProps = {
   accessibleLabel?: string;
   stageLabel?: string;
   zoomInLabel?: string;
-  zoomOutLabel?: string;
+  panLabel?: string;
   resetViewLabel?: string;
   resetActionLabel?: string;
 };
@@ -81,14 +81,14 @@ export const GroundGlassStage = ({
   accessibleLabel,
   stageLabel,
   zoomInLabel,
-  zoomOutLabel,
+  panLabel,
   resetViewLabel,
   resetActionLabel,
 }: GroundGlassStageProps) => {
   const { t } = useTranslation();
   const resolvedStageLabel = stageLabel ?? accessibleLabel ?? t(simulatorMessageKeys.viewport.groundGlassTitle);
   const resolvedZoomInLabel = zoomInLabel ?? t(simulatorMessageKeys.viewport.zoomIn);
-  const resolvedZoomOutLabel = zoomOutLabel ?? t(simulatorMessageKeys.viewport.zoomOut);
+  const resolvedPanLabel = panLabel ?? t(simulatorMessageKeys.viewport.pan);
   const resolvedResetViewLabel = resetViewLabel ?? t(simulatorMessageKeys.viewport.resetView);
   const resolvedResetActionLabel = resetActionLabel ?? t(simulatorMessageKeys.viewport.resetAction);
   // Pan is normalized to the current viewport, so resize only needs to update
@@ -164,8 +164,13 @@ export const GroundGlassStage = ({
     onZoomChange?.(false);
   }, [onZoomChange, releaseCurrentPointerCapture]);
 
-  // Navigation/preview changes reset synchronously before paint. Zoom-out does
-  // not depend on this effect; all user reset paths call the same function.
+  const cancelCurrentDrag = useCallback(() => {
+    releaseCurrentPointerCapture();
+    setIsDragging(false);
+  }, [releaseCurrentPointerCapture]);
+
+  // Navigation/preview changes reset synchronously before paint. Explicit
+  // reset paths call the same function without relying on this effect.
   useLayoutEffect(() => {
     resetGroundGlassInteraction();
   }, [interactionResetKey, resetGroundGlassInteraction]);
@@ -211,11 +216,6 @@ export const GroundGlassStage = ({
     onZoomChange?.(true);
   };
 
-  const activateCurrentZoomAction = (anchor?: { clientX: number; clientY: number }) => {
-    if (zoomEnabled) resetGroundGlassInteraction();
-    else requestZoomIn(anchor);
-  };
-
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape" && zoomEnabled) {
       event.preventDefault();
@@ -224,9 +224,10 @@ export const GroundGlassStage = ({
       return;
     }
     if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+      if (zoomEnabled) return;
       event.preventDefault();
       event.stopPropagation();
-      activateCurrentZoomAction();
+      requestZoomIn();
     }
   };
 
@@ -235,7 +236,7 @@ export const GroundGlassStage = ({
     // Physical pointer activation is handled once, on pointer-up. Retain the
     // detail=0 path for assistive-technology/synthetic keyboard activation.
     if (event.detail > 0) return;
-    activateCurrentZoomAction();
+    if (!zoomEnabled) requestZoomIn();
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -301,26 +302,26 @@ export const GroundGlassStage = ({
         getGroundGlassPointerThresholdPx(gesture.pointerType);
     releaseCurrentPointerCapture();
     setIsDragging(false);
-    if (!wasMoved) {
-      activateCurrentZoomAction({ clientX: event.clientX, clientY: event.clientY });
+    if (!wasMoved && !zoomEnabled) {
+      requestZoomIn({ clientX: event.clientX, clientY: event.clientY });
     }
   };
 
   const handlePointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
     if (dragRef.current.pointerId !== event.pointerId) return;
-    resetGroundGlassInteraction();
+    cancelCurrentDrag();
   };
 
   const handleLostPointerCapture = (event: React.PointerEvent<HTMLDivElement>) => {
     if (dragRef.current.pointerId !== event.pointerId) return;
-    resetGroundGlassInteraction();
+    cancelCurrentDrag();
   };
 
   return (
     <div style={{ position: "relative" }}>
       <div
         ref={panelRef}
-        role="button"
+        role={zoomEnabled ? "region" : "button"}
         tabIndex={0}
         data-zoomed={zoomEnabled ? "true" : "false"}
         data-pan-x={effectivePan.x}
@@ -331,7 +332,7 @@ export const GroundGlassStage = ({
         data-dragging={isDragging ? "true" : "false"}
         data-pointer-active={dragRef.current.pointerId === null ? "false" : "true"}
         data-pointer-captured={dragRef.current.captured ? "true" : "false"}
-        aria-label={`${zoomEnabled ? resolvedZoomOutLabel : resolvedZoomInLabel} ${resolvedStageLabel}`}
+        aria-label={`${zoomEnabled ? resolvedPanLabel : resolvedZoomInLabel} ${resolvedStageLabel}`}
         onKeyDown={handleKeyDown}
         style={{
           position: "relative",
@@ -340,7 +341,7 @@ export const GroundGlassStage = ({
           border: "1px solid #d1d5db",
           borderRadius: 8,
           overflow: "hidden",
-          cursor: zoomEnabled ? (isDragging ? "grabbing" : "zoom-out") : "zoom-in",
+          cursor: zoomEnabled ? (isDragging ? "grabbing" : "grab") : "zoom-in",
           outline: "none",
         }}
         onClick={handleClick}

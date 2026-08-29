@@ -7,7 +7,6 @@ import { ACCEPTABLE_COC_DIAMETER_MM } from "../core/optics/physicalSharpness";
 const SKY_COLOR = new THREE.Color("#dfe5ec");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
 import { vecToWorld } from "./rttUtils";
-import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
 import {
   CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
   resolveCameraMovementLatticeRenderModel,
@@ -34,7 +33,6 @@ import {
   groundGlassVertexShader,
 } from "./groundGlassDofShaderSources";
 import type { DerivedOpticsState } from "../types/optics";
-import type { ApertureValue } from "../types/camera";
 import type { SceneDefinition } from "../types/scene";
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
 import type { WebGLRenderer } from "three";
@@ -78,10 +76,7 @@ export type GroundGlassRTTProps = {
   heightPx: number;
   aperture?: number; // f-number for DOF calculations
   previewMode?: "raw" | "upright";
-  focusRingRadiusPx?: number;
-  focusRingOpacity?: number;
   rawDebug?: boolean;
-  focusAssistEnabled?: boolean;
   renderQuality?: import("../types/ui").RenderQualityProfile;
   zoomEnabled?: boolean;
   /** Independent RTT resource/diagnostic channel for comparison panes. */
@@ -100,7 +95,7 @@ const tupleMatches = (
 ): boolean =>
   Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
-function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', focusRingRadiusPx = 68, focusRingOpacity = 0.8, rawDebug = false, focusAssistEnabled = false, renderQuality = "standard", zoomEnabled = false, channel = "default", presentationRegion: explicitPresentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange, }: GroundGlassRTTProps) {
+function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', rawDebug = false, renderQuality = "standard", zoomEnabled = false, channel = "default", presentationRegion: explicitPresentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange, }: GroundGlassRTTProps) {
   // React gives each mounted renderer a stable identity without a module-level
   // mutable registry. It survives ordinary prop changes and is replaced only
   // when this OffscreenRenderer instance is actually remounted.
@@ -377,11 +372,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         imageDistanceMm: { value: 100.0 },
         near: { value: 0.01 },
         far: { value: 12.0 },
-        ringCenter: { value: new THREE.Vector2(-1, -1) },
-        ringRadiusPx: { value: 0.0 },
-        ringColor: { value: new THREE.Vector3(59/255,130/255,246/255) },
-        ringOpacity: { value: 0.8 },
-        showRing: { value: 0.0 },
         useRaw: { value: 0.0 },
         displayUpright: { value: 0.0 },
         dofMode: { value: 0.0 },
@@ -423,11 +413,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         useNearGather: { value: 1.0 },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
-        ringCenter: { value: new THREE.Vector2(-1, -1) },
-        ringRadiusPx: { value: 0.0 },
-        ringColor: { value: new THREE.Vector3(59 / 255, 130 / 255, 246 / 255) },
-        ringOpacity: { value: 0.8 },
-        showRing: { value: 0.0 },
         displayUpright: { value: 0.0 },
       },
     });
@@ -1194,26 +1179,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       compositeMaterial.uniforms.displayUpright.value = previewMode === "raw" ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
-      compositeMaterial.uniforms.showRing.value = 0.0;
-
-      // compute focus ring projection using the shared projection helper
-      const sceneDefForProjection = sceneDefinition;
-      const projectedTargets = projectSceneFocusTargetsToGroundGlass({
-        sceneDef: sceneDefForProjection,
-        opticsState,
-        aperture: aperture as unknown as ApertureValue,
-        previewMode,
-      });
-      const primaryProjectedTarget = projectedTargets.length > 0 ? projectedTargets[0] : null;
-
-      const shouldShow = Boolean(focusAssistEnabled) && !rawDebug && Boolean(primaryProjectedTarget?.visible);
-      if (shouldShow && primaryProjectedTarget) {
-        // pass raw uRaw/vRaw to shader; shader applies display orientation when sampling
-        compositeMaterial.uniforms.ringCenter.value.set(primaryProjectedTarget.rawUv.u, primaryProjectedTarget.rawUv.v);
-        compositeMaterial.uniforms.ringRadiusPx.value = focusRingRadiusPx ?? 68;
-        compositeMaterial.uniforms.ringOpacity.value = focusRingOpacity ?? 0.8;
-        compositeMaterial.uniforms.showRing.value = 1.0;
-      }
 
       // Keep the final DOF result in an owned target. Besides enabling a
       // deterministic render sanity readback, this prevents a transient empty
@@ -1324,7 +1289,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, scene, widthPx, heightPx, aperture, previewMode, focusRingRadiusPx, focusRingOpacity, rawDebug, focusAssistEnabled, renderQuality, zoomEnabled, channel = "default", presentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, scene, widthPx, heightPx, aperture, previewMode, rawDebug, renderQuality, zoomEnabled, channel = "default", presentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
@@ -1338,7 +1303,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
         gl={GROUND_GLASS_GL_OPTIONS}
         orthographic={false}
       >
-        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} focusRingRadiusPx={focusRingRadiusPx} focusRingOpacity={focusRingOpacity} rawDebug={rawDebug} focusAssistEnabled={focusAssistEnabled} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
+        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} rawDebug={rawDebug} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
       </Canvas>
     </div>
   );

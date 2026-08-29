@@ -26,7 +26,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled
         gridEnabled
         riseMm={DEFAULT_CAMERA_STATE.frontRiseMm}
         tiltDeg={DEFAULT_CAMERA_STATE.frontTiltDeg}
@@ -40,9 +39,10 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    // Pipeline title removed from UI; ensure assist labels remain
+    // The preview and physical focus-distance overlays remain visible.
     expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
-    expect(screen.getByText("Focus assist")).toBeInTheDocument();
+    expect(screen.getByTestId("ground-glass-focus-label")).toBeInTheDocument();
+    expect(screen.queryByText("Focus assist")).not.toBeInTheDocument();
   });
 
   it("supports zoom mode (control belongs to viewport) without changing camera state", () => {
@@ -59,9 +59,7 @@ describe("GroundGlassRenderer", () => {
         onRuntimeInfoChange={() => undefined}
         groundGlassAssistEnabled={false}
         onGroundGlassAssistEnabledChange={onGroundGlassAssistEnabledChange}
-        focusAssistEnabled={false}
         gridEnabled={false}
-        canToggleFocusAssist={true}
         canToggleGrid={true}
         riseMm={10}
         tiltDeg={2}
@@ -80,7 +78,7 @@ describe("GroundGlassRenderer", () => {
 
     const zoomIn = screen.getByRole("button", { name: "Zoom in Ground Glass" });
     fireEvent.click(zoomIn);
-    expect(screen.getByRole("button", { name: "Zoom out Ground Glass" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset Ground Glass view" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "Upright Assist" }));
     expect(onGroundGlassAssistEnabledChange).toHaveBeenCalledWith(true);
   });
@@ -91,7 +89,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -114,7 +111,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={24}
         tiltDeg={4}
@@ -137,14 +133,12 @@ describe("GroundGlassRenderer", () => {
       ...DEFAULT_CAMERA_STATE,
       ...tableTiltScene.cameraPreset,
       activeSceneId: tableTiltScene.id,
-      focusAssistEnabled: false,
     };
     const opticsState = deriveOpticsState(camera, tableTiltScene);
     const { rerender } = render(
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={camera.frontRiseMm}
         tiltDeg={camera.frontTiltDeg}
@@ -169,7 +163,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled
         gridEnabled={false}
         riseMm={camera.frontRiseMm}
         tiltDeg={camera.frontTiltDeg}
@@ -197,7 +190,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={camera.frontRiseMm}
         tiltDeg={camera.frontTiltDeg}
@@ -233,7 +225,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -262,7 +253,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -313,7 +303,6 @@ describe("GroundGlassRenderer", () => {
     const props = {
       opticsState,
       assistEnabled: false,
-      focusAssistEnabled: false,
       gridEnabled: false,
       riseMm: camera.frontRiseMm,
       tiltDeg: camera.frontTiltDeg,
@@ -476,7 +465,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -504,7 +492,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -530,7 +517,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}
@@ -558,7 +544,6 @@ describe("GroundGlassRenderer", () => {
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
-        focusAssistEnabled={false}
         gridEnabled={false}
         riseMm={0}
         tiltDeg={0}

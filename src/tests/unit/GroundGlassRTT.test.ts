@@ -375,7 +375,6 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
         renderQuality: "low",
         previewMode: "raw",
         rawDebug: true,
-        focusAssistEnabled: true,
         onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
@@ -391,7 +390,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(sourceWidth).toBe(runtimeInfo?.colorTargetWidthPx);
     expect(sourceWidth).not.toBe(runtimeInfo?.gatherTargetWidthPx);
     expect(compositeMaterial?.uniforms.displayUpright.value).toBe(1.0);
-    expect(compositeMaterial?.uniforms.showRing.value).toBe(0.0);
+    expect(compositeMaterial?.fragmentShader).not.toContain("showRing");
     expect(
       renderedShaderMaterials().some((material) =>
         material.fragmentShader.includes("calculateCoCDiameterMmAtFragment"),
@@ -1142,7 +1141,6 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       React.createElement(GroundGlassRenderer, {
         opticsState,
         assistEnabled: false,
-        focusAssistEnabled: false,
         gridEnabled: false,
         riseMm: camera.frontRiseMm,
         tiltDeg: camera.frontTiltDeg,

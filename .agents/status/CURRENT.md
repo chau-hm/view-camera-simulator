@@ -1,8 +1,11 @@
 # PR 9A — Complete canonical standard movement vocabulary
 
-- Objective: add canonical `rearShiftMm` and `rearSwingDeg`, generalize `frontShiftMm` through the movement vocabulary, and keep all current lessons visually/control-wise unchanged.
+- Objective: add canonical `rearShiftMm` and `rearSwingDeg`, generalize `frontShiftMm` through the movement vocabulary, and keep current lessons visually/control-wise unchanged.
+- Since previous review: sync with `origin/main` at `3151452c029965246c70a075c752bb21c3699204` (`fix(ground-glass): simplify focus assist and zoom-pan interaction`, PR #108); preserved its removal of obsolete Focus Assist state, controls, task plumbing, and RTT display plumbing. Retained physical focus-target metric helpers are still used for learner readouts.
+- Review fixes: `SingleMovementControl` now uses dedicated Shift and Swing min/max/step constants; focused coverage adds the combined rear tilt-then-swing basis contract for `rearTiltDeg = 6` and `rearSwingDeg = 8`.
 - Scope: `CameraState` defaults/resets/selectors, scene preset contracts, generic movement maps/setters, rear standard frame/optics derivation, and focused state/geometry/control tests. Mirror Shift keeps its specialized Front Shift UI.
 - Geometry decision: rear shift translates the canonical rear frame by rig-local +X; rear swing applies the established +Y rotation convention after rear tilt. The resulting `StandardFrame` continues to drive film plane, corners, projection, 2D, 3D, and Ground Glass consumers.
 - Exposure: no current generic scene capability array includes `frontShiftMm`, `rearShiftMm`, or `rearSwingDeg`; no new lesson/task/control copy was added. Existing Mirror Shift Front Shift remains available through its scene-specific capability.
-- Validation: `npm test` — 146 files / 1,406 tests passed; `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build` passed. Focused canonical tests passed (4 files / 89 tests after the final reset/API adjustments). The full `npm run ci:local:e2e` workflow stopped at the existing Mirror Shift teaching-geometry RTT mount assertion; the failing spec was reproduced independently. Relevant camera-movement, Mirror Shift rig/guided, and Understanding Camera Movements E2E coverage passed except the existing lattice-route RTT attribute assertion.
+- Intentionally unchanged: `riseMinMm = 0` and no Fall exposure; no scene-specific ranges or unrelated Ground Glass/RTT fixes.
+- Validation: pending for this review-fix round.
 - Known gap for 9B: the legacy CPU Ground Glass DOF path remains axis-aligned for oriented rear planes; this PR keeps that pre-existing limitation out of scope because the active canonical RTT/frame consumers are already wired.

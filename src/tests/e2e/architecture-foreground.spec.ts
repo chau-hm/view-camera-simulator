@@ -45,10 +45,6 @@ test("Architecture + Foreground exposes the cumulative photographic problem in F
   expect(Number(await rtt.getAttribute("data-rtt-final-non-background"))).toBeGreaterThan(0);
   await expect(rtt.locator("canvas")).toBeVisible();
 
-  const focusAssist = page.getByLabel("Focus assist");
-  await expect(focusAssist).toBeEnabled();
-  if (!(await focusAssist.isChecked())) await focusAssist.check();
-
   const sharpness = await Promise.all(
     ["foreground-near", "foreground-middle", "building-base", "building-middle"].map(async (id) => {
       const progress = page.getByRole("progressbar", { name: `${id} sharpness` });

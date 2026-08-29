@@ -8,7 +8,6 @@ import {
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { evaluateFocusTargets } from "../../core/tasks/evaluateFocusTargets";
 import {
-  createFocusAssistPass,
   resolvePhysicalFocusTargetPresentationMetric,
 } from "../../render/postprocessing/FocusAssistPass";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
@@ -221,13 +220,16 @@ describe("physical focus readout", () => {
       pointEquivalentCoCDiameterMm: 0.065,
       patchEquivalentCoCDiameterMm: 0.065,
     };
-    const pass = createFocusAssistPass({ enabled: true, targets: [target], metric: "patch" });
-    expect(pass.targets[0]).toMatchObject({ sharpnessPercent: 35, status: "soft" });
-    expect(createFocusAssistPass({ enabled: true, targets: [target], metric: "point" }).targets[0]).toMatchObject({
-      sharpnessPercent: 35,
+    expect(resolvePhysicalFocusTargetPresentationMetric(target, "patch")).toMatchObject({
+      sharpness: 0.35,
       status: "soft",
+      equivalentCoCDiameterMm: 0.065,
     });
-    expect(resolvePhysicalFocusTargetPresentationMetric(target, "patch").sharpness).toBe(0.35);
+    expect(resolvePhysicalFocusTargetPresentationMetric(target, "point")).toMatchObject({
+      sharpness: 0.35,
+      status: "soft",
+      equivalentCoCDiameterMm: 0.065,
+    });
   });
 
   it("fails closed for legacy-only presentation fixtures", () => {
@@ -239,10 +241,6 @@ describe("physical focus readout", () => {
       patchSharpness: 0.9,
       patchStatus: "sharp",
     };
-    expect(createFocusAssistPass({ enabled: true, targets: [target] }).targets[0]).toMatchObject({
-      sharpnessPercent: 0,
-      status: "soft",
-    });
     expect(resolvePhysicalFocusTargetPresentationMetric(target)).toEqual({
       sharpness: 0,
       status: "soft",
