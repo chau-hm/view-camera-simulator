@@ -11,10 +11,7 @@ import type { DerivedOpticsState } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
-import {
-  createFocusAssistPass,
-  resolvePhysicalFocusTargetPresentationMetric,
-} from "./postprocessing/FocusAssistPass";
+import { resolvePhysicalFocusTargetPresentationMetric } from "./postprocessing/FocusAssistPass";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
@@ -32,7 +29,6 @@ import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovemen
 export type GroundGlassRendererProps = {
   opticsState: DerivedOpticsState;
   assistEnabled: boolean;
-  focusAssistEnabled: boolean;
   gridEnabled: boolean;
   riseMm: number;
   tiltDeg: number;
@@ -62,7 +58,7 @@ export type GroundGlassRendererProps = {
   accessibleLabel?: string;
   stageLabel?: string;
   zoomInLabel?: string;
-  zoomOutLabel?: string;
+  panLabel?: string;
   resetViewLabel?: string;
   resetActionLabel?: string;
   lastFiniteFocusDepthMm?: number;
@@ -76,7 +72,6 @@ const clamp = (value: number, min: number, max: number): number => Math.min(max,
 export const GroundGlassRenderer = ({
   opticsState,
   assistEnabled,
-  focusAssistEnabled,
   gridEnabled,
   riseMm,
   tiltDeg,
@@ -101,7 +96,7 @@ export const GroundGlassRenderer = ({
   accessibleLabel,
   stageLabel,
   zoomInLabel,
-  zoomOutLabel,
+  panLabel,
   resetViewLabel,
   resetActionLabel,
   lastFiniteFocusDepthMm: explicitLastFiniteFocusDepthMm,
@@ -132,10 +127,6 @@ export const GroundGlassRenderer = ({
   }, [opticsState, renderQuality, sceneId]);
 
   const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
-  const focusAssist = useMemo(
-    () => createFocusAssistPass({ enabled: focusAssistEnabled, targets: opticsState.focusTargets, metric: focusMetric }),
-    [focusAssistEnabled, focusMetric, opticsState.focusTargets],
-  );
   const dofSample = useMemo(
     () =>
       createDepthOfFieldPass(
@@ -220,9 +211,6 @@ export const GroundGlassRenderer = ({
           apertureNumber={apertureNumber}
           previewMode={previewMode}
           rawDebug={rawDebug}
-          focusAssistEnabled={focusAssistEnabled}
-          focusRingSize={focusRingSize}
-          focusRingOpacity={focusRingOpacity}
           sceneShiftX={sceneShiftX}
           sceneShiftY={sceneShiftY}
           sceneRotationDeg={sceneRotationDeg}
@@ -264,7 +252,6 @@ export const GroundGlassRenderer = ({
         isInfinityFocus={isInfinityFocus}
         lastFiniteFocusDepthMm={lastFiniteFocusDepthMm}
         focusDistanceLabel={focusDistanceLabel}
-        focusAssistVisible={focusAssist.enabled && !rawDebug}
       />
 
       {!isRttSceneFinal && (
@@ -289,7 +276,7 @@ export const GroundGlassRenderer = ({
         accessibleLabel={accessibleLabel}
         stageLabel={stageLabel}
         zoomInLabel={zoomInLabel}
-        zoomOutLabel={zoomOutLabel}
+        panLabel={panLabel}
         resetViewLabel={resetViewLabel}
         resetActionLabel={resetActionLabel}
         imageLayer={transformedImageLayer}

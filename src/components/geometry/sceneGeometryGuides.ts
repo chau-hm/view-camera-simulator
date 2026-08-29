@@ -1,4 +1,5 @@
 import type { Vec3 } from "../../types/optics";
+import { simulatorMessageKeys, type SimulatorMessageKey } from "../../i18n/simulatorMessageKeys";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
@@ -7,6 +8,7 @@ import architectureForegroundGeometry from "../../scenes/architectureForegroundG
 export type SceneGeometryGuide = {
   id: string;
   label: string;
+  labelMessageKey?: SimulatorMessageKey;
   view: "side" | "top";
   startWorld: Vec3;
   endWorld: Vec3;
@@ -20,13 +22,12 @@ export type SceneGeometryGuide = {
   labelAnchor?: "start" | "middle" | "end";
 };
 
-export type SceneGeometryTargetLabelMap = Readonly<Record<string, string>>;
-
 const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]>> = {
   "table-tilt": [
     {
       id: "table-tilt-tabletop",
       label: "Tabletop",
+      labelMessageKey: simulatorMessageKeys.geometry.tabletopGuide,
       view: "side",
       startWorld: tableTiltGeometry.tabletopExtents.near.topSurfaceCenterWorld,
       endWorld: tableTiltGeometry.tabletopExtents.far.topSurfaceCenterWorld,
@@ -41,6 +42,7 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
     {
       id: "shelf-swing-subject-trace",
       label: "Diagonal subject plane",
+      labelMessageKey: simulatorMessageKeys.geometry.diagonalSubjectPlaneGuide,
       view: "top",
       startWorld: shelfSwingGeometry.frontSubject.focusDetailProbeWorld,
       endWorld: shelfSwingGeometry.backSubject.focusDetailProbeWorld,
@@ -55,6 +57,7 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
     {
       id: "oblique-architecture-target-facade",
       label: "Target façade depth",
+      labelMessageKey: simulatorMessageKeys.geometry.targetFacadeDepthGuide,
       view: "top",
       startWorld: obliqueArchitectureGeometry.focusTargets[0].worldPosition,
       endWorld: obliqueArchitectureGeometry.focusTargets[2].worldPosition,
@@ -69,6 +72,7 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
     {
       id: "architecture-foreground-ground",
       label: "Foreground ground",
+      labelMessageKey: simulatorMessageKeys.geometry.architectureForegroundGroundGuide,
       view: "side",
       startWorld: {
         x: 0,
@@ -89,6 +93,7 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
     {
       id: "architecture-foreground-building-profile",
       label: "Building profile",
+      labelMessageKey: simulatorMessageKeys.geometry.architectureForegroundBuildingGuide,
       view: "side",
       startWorld: architectureForegroundGeometry.buildingVerticalEdges[0].bottom,
       endWorld: architectureForegroundGeometry.buildingVerticalEdges[0].top,
@@ -101,37 +106,46 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
   ],
 };
 
-const targetLabels: Readonly<Record<string, SceneGeometryTargetLabelMap>> = {
+export type SceneGeometryTargetMessageKeyMap = Readonly<Record<string, SimulatorMessageKey>>;
+
+const targetMessageKeys: Readonly<Record<string, SceneGeometryTargetMessageKeyMap>> = {
   "table-tilt": {
-    "near-cup": "Near card",
-    "mid-notebook": "Middle notebook",
-    "far-book": "Far chart",
+    "near-cup": simulatorMessageKeys.geometry.nearCardTarget,
+    "mid-notebook": simulatorMessageKeys.geometry.middleNotebookTarget,
+    "far-book": simulatorMessageKeys.geometry.farChartTarget,
   },
   "shelf-swing": {
-    "shelf-front": "Front chart",
-    "shelf-middle": "Middle chart",
-    "shelf-back": "Back chart",
+    "shelf-front": simulatorMessageKeys.geometry.frontChartTarget,
+    "shelf-middle": simulatorMessageKeys.geometry.middleChartTarget,
+    "shelf-back": simulatorMessageKeys.geometry.backChartTarget,
   },
   "focus-fundamentals-two-targets": {
-    "focus-near-detail": "Near detail",
-    "focus-far-detail": "Far detail",
+    "focus-near-detail": simulatorMessageKeys.geometry.nearDetailTarget,
+    "focus-far-detail": simulatorMessageKeys.geometry.farDetailTarget,
   },
   "oblique-architecture": {
-    "facade-near": "Near façade",
-    "facade-middle": "Middle façade",
-    "facade-far": "Far façade",
+    "facade-near": simulatorMessageKeys.geometry.nearFacadeTarget,
+    "facade-middle": simulatorMessageKeys.geometry.middleFacadeTarget,
+    "facade-far": simulatorMessageKeys.geometry.farFacadeTarget,
   },
   "architecture-foreground": {
-    "foreground-near": "Near foreground",
-    "foreground-middle": "Middle foreground",
-    "building-base": "Building base",
-    "building-middle": "Building middle",
+    "foreground-near": simulatorMessageKeys.geometry.architectureForegroundNearTarget,
+    "foreground-middle": simulatorMessageKeys.geometry.architectureForegroundMiddleTarget,
+    "building-base": simulatorMessageKeys.geometry.architectureForegroundBuildingBaseTarget,
+    "building-middle": simulatorMessageKeys.geometry.architectureForegroundBuildingMiddleTarget,
   },
 };
 
 export const getSceneGeometryGuides = (sceneId: string): readonly SceneGeometryGuide[] =>
   sceneGeometryGuides[sceneId] ?? [];
 
-export const getSceneGeometryTargetLabel = (sceneId: string, targetId: string): string =>
-  targetLabels[sceneId]?.[targetId] ??
-  (/near/i.test(targetId) ? "Near detail" : /far/i.test(targetId) ? "Far detail" : "Target");
+export const getSceneGeometryTargetMessageKey = (
+  sceneId: string,
+  targetId: string,
+): SimulatorMessageKey =>
+  targetMessageKeys[sceneId]?.[targetId] ??
+  (/near/i.test(targetId)
+    ? simulatorMessageKeys.geometry.nearDetailTarget
+    : /far/i.test(targetId)
+      ? simulatorMessageKeys.geometry.farDetailTarget
+      : simulatorMessageKeys.geometry.targetFallback);

@@ -110,8 +110,17 @@ test("simulator viewports expand in main without replacing their active canvases
     return {
       main: { left: mainRect.left, right: mainRect.right, height: mainRect.height },
       aside: { left: asideRect.left, overflowY: getComputedStyle(aside).overflowY },
-      card: { left: cardRect.left, right: cardRect.right, height: cardRect.height },
-      renderer: { width: rendererRect.width, height: rendererRect.height },
+      card: {
+        left: cardRect.left,
+        right: cardRect.right,
+        height: cardRect.height,
+        bottom: cardRect.bottom,
+      },
+      renderer: {
+        width: rendererRect.width,
+        height: rendererRect.height,
+        bottom: rendererRect.bottom,
+      },
       mainOverflowY: getComputedStyle(main).overflowY,
     };
   }, activeViewportSelector);
@@ -136,6 +145,8 @@ test("simulator viewports expand in main without replacing their active canvases
       },
     };
   });
+
+  const normalLayout = await readRestoredLayout();
 
   for (let cycle = 0; cycle < 3; cycle += 1) {
     await page.getByRole("button", { name: "Expand 3D Scene" }).click();
@@ -164,8 +175,30 @@ test("simulator viewports expand in main without replacing their active canvases
     expect(expandedLayout.card.height).toBeGreaterThan(0);
     expect(expandedLayout.renderer.width).toBeGreaterThan(0);
     expect(expandedLayout.renderer.height).toBeGreaterThan(200);
+    expect(expandedLayout.renderer.height).toBeGreaterThan(normalLayout.renderer.height + 80);
+    expect(expandedLayout.card.bottom - expandedLayout.renderer.bottom).toBeLessThan(32);
     expect(expandedLayout.mainOverflowY).toBe("hidden");
     expect(expandedLayout.aside.overflowY).toBe("auto");
+
+    if (cycle === 0) {
+      await page.setViewportSize({ width: 1024, height: 900 });
+      await expect
+        .poll(async () => (await readExpandedLayout('[data-testid="scene-canvas"]')).renderer.height, {
+          timeout: 30_000,
+        })
+        .toBeGreaterThan(expandedLayout.renderer.height + 80);
+      const resizedExpandedLayout = await readExpandedLayout('[data-testid="scene-canvas"]');
+      expect(resizedExpandedLayout.card.bottom - resizedExpandedLayout.renderer.bottom).toBeLessThan(32);
+
+      await page.setViewportSize({ width: 1024, height: 768 });
+      await expect
+        .poll(async () => (await readExpandedLayout('[data-testid="scene-canvas"]')).renderer.height, {
+          timeout: 30_000,
+        })
+        .toBeGreaterThan(expandedLayout.renderer.height - 3);
+      const resetExpandedLayout = await readExpandedLayout('[data-testid="scene-canvas"]');
+      expect(resetExpandedLayout.renderer.height).toBeLessThan(expandedLayout.renderer.height + 3);
+    }
 
     await page.getByRole("button", { name: "Restore 3D Scene" }).click();
     await expect(page.getByRole("button", { name: "Expand 3D Scene" })).toBeFocused();
@@ -277,7 +310,7 @@ test("simulator viewports expand in main without replacing their active canvases
   await expect(tilt).not.toHaveValue(tiltBefore);
 
   await page.getByRole("button", { name: "Zoom in Ground Glass view" }).click();
-  const zoomedGroundGlass = page.getByRole("button", { name: "Zoom out Ground Glass" });
+  const zoomedGroundGlass = page.getByRole("region", { name: "Pan Ground Glass" });
   await expect(zoomedGroundGlass).toHaveAttribute("data-zoomed", "true");
   await zoomedGroundGlass.focus();
   await page.keyboard.press("Escape");
@@ -425,7 +458,7 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
   await expect.poll(async () => (await readRttSnapshot(page)).internalWidth, { timeout: 30_000 }).toBe(beforeZoom.internalWidth);
   expect((await readRttSnapshot(page)).generation).toBe(normal.generation);
-  const groundGlassStage = page.getByLabel("GroundGlassViewport").getByRole("button", { name: /^Zoom (?:in|out) Ground Glass$/ });
+  const groundGlassStage = page.getByLabel("GroundGlassViewport").locator('[data-zoomed]');
   await expect(groundGlassStage).toHaveAttribute("data-pan-x", "0");
   await expect(groundGlassStage).toHaveAttribute("data-pan-y", "0");
   expect(pageErrors, pageErrors.join("\n")).toEqual([]);

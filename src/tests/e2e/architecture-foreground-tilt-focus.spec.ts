@@ -64,7 +64,6 @@ test("Architecture + Foreground Free Practice exposes Rise, Tilt, Focus, and Ape
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
-  await page.getByLabel("Focus assist").check();
   const nearSharpness = page.getByRole("progressbar", { name: "foreground-near sharpness" });
   const buildingSharpness = page.getByRole("progressbar", { name: "building-middle sharpness" });
   await expect(nearSharpness).toBeVisible();

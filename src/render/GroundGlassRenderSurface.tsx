@@ -16,9 +16,6 @@ export type GroundGlassRenderSurfaceProps = {
   apertureNumber: number;
   previewMode: "raw" | "upright";
   rawDebug?: boolean;
-  focusAssistEnabled: boolean;
-  focusRingSize: number;
-  focusRingOpacity: number;
   sceneShiftX: number;
   sceneShiftY: number;
   sceneRotationDeg: number;
@@ -41,9 +38,6 @@ export const GroundGlassRenderSurface = ({
   apertureNumber,
   previewMode,
   rawDebug,
-  focusAssistEnabled,
-  focusRingSize,
-  focusRingOpacity,
   sceneShiftX,
   sceneShiftY,
   sceneRotationDeg,
@@ -133,10 +127,7 @@ export const GroundGlassRenderSurface = ({
           heightPx={heightPx}
           aperture={apertureNumber}
           previewMode={previewMode}
-          focusRingRadiusPx={focusRingSize}
-          focusRingOpacity={focusRingOpacity}
           rawDebug={rawDebug}
-          focusAssistEnabled={focusAssistEnabled}
           renderQuality={renderQuality}
           zoomEnabled={zoomEnabled}
           channel={channel}
