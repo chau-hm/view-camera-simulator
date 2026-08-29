@@ -181,12 +181,15 @@ const resolveCanonicalCameraState = (
   );
   return {
     ...cameraState,
+    frontShiftMm: 0,
     cameraMovementLessonState: derived.lessonState,
     frontRiseMm: derived.frontRiseMm,
     frontTiltDeg: derived.frontTiltDeg,
     frontSwingDeg: derived.frontSwingDeg,
     rearRiseMm: derived.rearRiseMm,
+    rearShiftMm: 0,
     rearTiltDeg: derived.rearTiltDeg,
+    rearSwingDeg: 0,
     cameraBodyPitchDeg: derived.cameraBodyPitchDeg,
     viewpointAnchor: derived.viewpointAnchor,
     cameraRigPlacement: derived.cameraRigPlacement,
@@ -236,7 +239,9 @@ const isFiniteCameraInput = (
     cameraState.frontTiltDeg,
     cameraState.frontSwingDeg,
     cameraState.rearRiseMm,
+    cameraState.rearShiftMm,
     cameraState.rearTiltDeg,
+    cameraState.rearSwingDeg,
   ].every((value) => Number.isFinite(value));
   if (!standardInputsFinite) return false;
   return hasFiniteCameraRigInput(cameraState, scene, cameraMovementCalibration);
@@ -262,7 +267,9 @@ const baseFallbackState = (
   const safeFrontTilt = Number.isFinite(cameraState.frontTiltDeg) ? cameraState.frontTiltDeg : 0;
   const safeFrontSwing = Number.isFinite(cameraState.frontSwingDeg) ? cameraState.frontSwingDeg : 0;
   const safeRearRise = Number.isFinite(cameraState.rearRiseMm) ? cameraState.rearRiseMm : 0;
+  const safeRearShift = Number.isFinite(cameraState.rearShiftMm) ? cameraState.rearShiftMm : 0;
   const safeRearTilt = Number.isFinite(cameraState.rearTiltDeg) ? cameraState.rearTiltDeg : 0;
+  const safeRearSwing = Number.isFinite(cameraState.rearSwingDeg) ? cameraState.rearSwingDeg : 0;
 
   // Use canonical helpers for lens and film geometry
   const lensCenterLocal = vec(safeFrontShift, safeFrontRise, 0);
@@ -275,7 +282,15 @@ const baseFallbackState = (
     lensNormalLocal,
   });
   const { frame: rearStandardFrameLocal, corners: filmPlaneCornersLocal } =
-    calculateRearStandardFrame(baselineFilmCenter, safeRearRise, safeRearTilt);
+    calculateRearStandardFrame(
+      baselineFilmCenter,
+      safeRearRise,
+      safeRearTilt,
+      CAMERA_CONSTANTS.filmWidthMm,
+      CAMERA_CONSTANTS.filmHeightMm,
+      safeRearShift,
+      safeRearSwing,
+    );
   const cameraBodyLocalGeometry = createCameraBodyLocalGeometry({
     lensCenterLocal,
     lensNormalLocal,
@@ -405,7 +420,9 @@ export const deriveOpticsState = (
       Number.isFinite(cameraState.frontTiltDeg) &&
       Number.isFinite(cameraState.frontSwingDeg) &&
       Number.isFinite(cameraState.rearRiseMm) &&
+      Number.isFinite(cameraState.rearShiftMm) &&
       Number.isFinite(cameraState.rearTiltDeg) &&
+      Number.isFinite(cameraState.rearSwingDeg) &&
       hasFiniteCameraRigInput(cameraState, scene, cameraMovementCalibration) &&
       CAMERA_CONSTANTS.apertureOptions.includes(
         cameraState.aperture as (typeof CAMERA_CONSTANTS.apertureOptions)[number],
@@ -454,6 +471,10 @@ export const deriveOpticsState = (
         baselineFilmCenter,
         cameraState.rearRiseMm,
         cameraState.rearTiltDeg,
+        CAMERA_CONSTANTS.filmWidthMm,
+        CAMERA_CONSTANTS.filmHeightMm,
+        cameraState.rearShiftMm,
+        cameraState.rearSwingDeg,
       );
     const cameraBodyLocalGeometry = createCameraBodyLocalGeometry({
       lensCenterLocal,
@@ -660,7 +681,12 @@ export const deriveOpticsState = (
     // focus plane world point is at z = S
   }
 
-  if (!Number.isFinite(cameraState.rearRiseMm) || !Number.isFinite(cameraState.rearTiltDeg)) {
+  if (
+    !Number.isFinite(cameraState.rearRiseMm) ||
+    !Number.isFinite(cameraState.rearShiftMm) ||
+    !Number.isFinite(cameraState.rearTiltDeg) ||
+    !Number.isFinite(cameraState.rearSwingDeg)
+  ) {
     return baseFallbackState(
       cameraState,
       scene,
@@ -669,7 +695,15 @@ export const deriveOpticsState = (
     );
   }
   const { frame: rearStandardFrameLocal, corners: filmPlaneCornersLocal } =
-    calculateRearStandardFrame(filmCenterLocal, cameraState.rearRiseMm, cameraState.rearTiltDeg);
+    calculateRearStandardFrame(
+      filmCenterLocal,
+      cameraState.rearRiseMm,
+      cameraState.rearTiltDeg,
+      CAMERA_CONSTANTS.filmWidthMm,
+      CAMERA_CONSTANTS.filmHeightMm,
+      cameraState.rearShiftMm,
+      cameraState.rearSwingDeg,
+    );
   const cameraBodyLocalGeometry = createCameraBodyLocalGeometry({
     lensCenterLocal,
     lensNormalLocal,

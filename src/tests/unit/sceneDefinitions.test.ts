@@ -39,6 +39,14 @@ describe("scene definitions", () => {
     expect(getAllScenes().length).toBeGreaterThanOrEqual(3);
   });
 
+  it("keeps canonical shift and rear swing dormant in current scene capabilities", () => {
+    for (const scene of getAllScenes()) {
+      expect(scene.movementCapabilities?.available ?? []).not.toContain("frontShiftMm");
+      expect(scene.movementCapabilities?.available ?? []).not.toContain("rearShiftMm");
+      expect(scene.movementCapabilities?.available ?? []).not.toContain("rearSwingDeg");
+    }
+  });
+
   it("defines architecture composition targets for top and main building", () => {
     const compositionTargetIds = architectureRiseScene.compositionTargets.map(
       (target) => target.id,

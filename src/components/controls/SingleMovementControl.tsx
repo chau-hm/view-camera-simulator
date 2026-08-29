@@ -17,12 +17,17 @@ type SingleMovementControlProps = {
   movement: CameraMovementField;
 };
 
+type MovementCategory = "rise" | "shift" | "tilt" | "swing";
+
 const MOVEMENT_LABEL_KEYS: Record<CameraMovementField, ReadoutMessageKey> = {
   frontRiseMm: readoutMessageKeys.controls.frontRise,
+  frontShiftMm: readoutMessageKeys.controls.frontShift,
   rearRiseMm: readoutMessageKeys.controls.rearRise,
+  rearShiftMm: readoutMessageKeys.controls.rearShift,
   frontTiltDeg: readoutMessageKeys.controls.frontTilt,
   rearTiltDeg: readoutMessageKeys.controls.rearTilt,
   frontSwingDeg: readoutMessageKeys.controls.frontSwing,
+  rearSwingDeg: readoutMessageKeys.controls.rearSwing,
 };
 
 export const SingleMovementControl = ({
@@ -34,32 +39,65 @@ export const SingleMovementControl = ({
       switch (movement) {
         case "frontRiseMm":
           return state.camera.frontRiseMm;
+        case "frontShiftMm":
+          return state.camera.frontShiftMm;
         case "rearRiseMm":
           return state.camera.rearRiseMm;
+        case "rearShiftMm":
+          return state.camera.rearShiftMm;
         case "frontTiltDeg":
           return state.camera.frontTiltDeg;
         case "rearTiltDeg":
           return state.camera.rearTiltDeg;
         case "frontSwingDeg":
           return state.camera.frontSwingDeg;
+        case "rearSwingDeg":
+          return state.camera.rearSwingDeg;
       }
     }),
   );
 
   const setFrontRise = useAppStore((s) => s.setRise);
+  const setFrontShift = useAppStore((s) => s.setFrontShiftMm);
   const setRearRise = useAppStore((s) => s.setRearRise);
+  const setRearShift = useAppStore((s) => s.setRearShift);
   const setFrontTilt = useAppStore((s) => s.setTilt);
   const setRearTilt = useAppStore((s) => s.setRearTilt);
+  const setFrontSwing = useAppStore((s) => s.setSwing);
+  const setRearSwing = useAppStore((s) => s.setRearSwing);
 
   const label = t(MOVEMENT_LABEL_KEYS[movement]);
 
-  const isRise = movement === "frontRiseMm" || movement === "rearRiseMm";
+  const movementCategory: MovementCategory =
+    movement === "frontRiseMm" || movement === "rearRiseMm"
+      ? "rise"
+      : movement === "frontShiftMm" || movement === "rearShiftMm"
+        ? "shift"
+        : movement === "frontSwingDeg" || movement === "rearSwingDeg"
+          ? "swing"
+          : "tilt";
 
-  const min = isRise ? CAMERA_CONSTANTS.riseMinMm : CAMERA_CONSTANTS.tiltMinDeg;
-  const max = isRise ? CAMERA_CONSTANTS.riseMaxMm : CAMERA_CONSTANTS.tiltMaxDeg;
-  const step = isRise
+  const min = movementCategory === "rise"
+    ? CAMERA_CONSTANTS.riseMinMm
+    : movementCategory === "shift"
+      ? CAMERA_CONSTANTS.shiftMinMm
+      : movementCategory === "swing"
+        ? CAMERA_CONSTANTS.swingMinDeg
+        : CAMERA_CONSTANTS.tiltMinDeg;
+  const max = movementCategory === "rise"
+    ? CAMERA_CONSTANTS.riseMaxMm
+    : movementCategory === "shift"
+      ? CAMERA_CONSTANTS.shiftMaxMm
+      : movementCategory === "swing"
+        ? CAMERA_CONSTANTS.swingMaxDeg
+        : CAMERA_CONSTANTS.tiltMaxDeg;
+  const step = movementCategory === "rise"
     ? CAMERA_CONTROL_STEPS.riseMm
-    : CAMERA_CONTROL_STEPS.tiltDeg;
+    : movementCategory === "shift"
+      ? CAMERA_CONTROL_STEPS.shiftMm
+      : movementCategory === "swing"
+        ? CAMERA_CONTROL_STEPS.swingDeg
+        : CAMERA_CONTROL_STEPS.tiltDeg;
 
   const setter = useCallback(
     (v: number) => {
@@ -67,8 +105,14 @@ export const SingleMovementControl = ({
         case "frontRiseMm":
           setFrontRise(v);
           break;
+        case "frontShiftMm":
+          setFrontShift(v);
+          break;
         case "rearRiseMm":
           setRearRise(v);
+          break;
+        case "rearShiftMm":
+          setRearShift(v);
           break;
         case "frontTiltDeg":
           setFrontTilt(v);
@@ -76,12 +120,28 @@ export const SingleMovementControl = ({
         case "rearTiltDeg":
           setRearTilt(v);
           break;
+        case "frontSwingDeg":
+          setFrontSwing(v);
+          break;
+        case "rearSwingDeg":
+          setRearSwing(v);
+          break;
       }
     },
-    [movement, setFrontRise, setRearRise, setFrontTilt, setRearTilt],
+    [
+      movement,
+      setFrontRise,
+      setFrontShift,
+      setRearRise,
+      setRearShift,
+      setFrontTilt,
+      setRearTilt,
+      setFrontSwing,
+      setRearSwing,
+    ],
   );
 
-  const displayValue = isRise
+  const displayValue = movementCategory === "rise" || movementCategory === "shift"
     ? formatMillimeter(value)
     : formatDegrees(value);
 

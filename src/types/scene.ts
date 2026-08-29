@@ -40,7 +40,14 @@ export type CameraInspectionPlacement = {
 export type CameraInspectionAnchorSide = "front" | "rear";
 
 export type CameraMovementField =
-  "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "rearRiseMm" | "rearTiltDeg";
+  | "frontRiseMm"
+  | "frontShiftMm"
+  | "frontTiltDeg"
+  | "frontSwingDeg"
+  | "rearRiseMm"
+  | "rearShiftMm"
+  | "rearTiltDeg"
+  | "rearSwingDeg";
 
 export type SceneMovementCapabilities = {
   /** Movement field names available for this scene. */
@@ -109,7 +116,9 @@ export type SceneDefinition = {
     | "frontTiltDeg"
     | "frontSwingDeg"
     | "rearRiseMm"
+    | "rearShiftMm"
     | "rearTiltDeg"
+    | "rearSwingDeg"
   > &
     Partial<Pick<CameraState, "focalLengthMm" | "frontShiftMm" | "cameraBodyPitchDeg" | "cameraBodyPivotWorld">>;
   cameraPlacement: CameraPlacement;

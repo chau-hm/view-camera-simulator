@@ -17,6 +17,8 @@ export const CAMERA_CONSTANTS = {
   focalLengthMm: 150,
   riseMinMm: 0,
   riseMaxMm: 40,
+  shiftMinMm: -60,
+  shiftMaxMm: 60,
   tiltMinDeg: -10,
   tiltMaxDeg: 10,
   swingMinDeg: -10,
@@ -29,6 +31,7 @@ export const CAMERA_CONSTANTS = {
 
 export const CAMERA_CONTROL_STEPS = {
   riseMm: 1,
+  shiftMm: 1,
   tiltDeg: 0.1,
   swingDeg: 0.1,
   focusDistanceMm: 10,
@@ -44,7 +47,9 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
   frontTiltDeg: 0,
   frontSwingDeg: 0,
   rearRiseMm: 0,
+  rearShiftMm: 0,
   rearTiltDeg: 0,
+  rearSwingDeg: 0,
   cameraBodyPitchDeg: 0,
   cameraBodyPivotWorld: DEFAULT_CAMERA_BODY_PIVOT_WORLD,
   viewpointAnchor: "mid",
@@ -62,4 +67,10 @@ export const DEFAULT_CAMERA_STATE: CameraState = {
 export const isApertureValue = (value: number): value is ApertureValue =>
   CAMERA_CONSTANTS.apertureOptions.includes(
     value as (typeof CAMERA_CONSTANTS.apertureOptions)[number],
+  );
+
+export const clampStandardShiftMm = (value: number): number =>
+  Math.min(
+    CAMERA_CONSTANTS.shiftMaxMm,
+    Math.max(CAMERA_CONSTANTS.shiftMinMm, value),
   );

@@ -65,22 +65,29 @@ const matchMovement = (
     | "rearTiltDeg"
     | "frontSwingDeg"
     | "cameraBodyPitchDeg"
-  >,
+  > &
+    Partial<Pick<CameraState, "frontShiftMm" | "rearShiftMm" | "rearSwingDeg">>,
   expected: Pick<
     CameraState,
     | "frontRiseMm"
+    | "frontShiftMm"
     | "rearRiseMm"
+    | "rearShiftMm"
     | "frontTiltDeg"
     | "rearTiltDeg"
     | "frontSwingDeg"
+    | "rearSwingDeg"
     | "cameraBodyPitchDeg"
   >,
 ): boolean =>
   approxEqual(camera.frontRiseMm, expected.frontRiseMm) &&
+  approxEqual(camera.frontShiftMm ?? 0, expected.frontShiftMm) &&
   approxEqual(camera.rearRiseMm, expected.rearRiseMm) &&
+  approxEqual(camera.rearShiftMm ?? 0, expected.rearShiftMm) &&
   approxEqual(camera.frontTiltDeg, expected.frontTiltDeg) &&
   approxEqual(camera.rearTiltDeg, expected.rearTiltDeg) &&
   approxEqual(camera.frontSwingDeg, expected.frontSwingDeg) &&
+  approxEqual(camera.rearSwingDeg ?? 0, expected.rearSwingDeg) &&
   approxEqual(camera.cameraBodyPitchDeg, expected.cameraBodyPitchDeg);
 
 /**
@@ -101,12 +108,19 @@ export const matchCameraMovementTeachingCase = (input: {
     | "cameraBodyPitchDeg"
     | "focusMode"
     | "cameraMovementLessonState"
-  >;
+  > &
+    Partial<Pick<CameraState, "frontShiftMm" | "rearShiftMm" | "rearSwingDeg">>;
 }): CameraMovementPublicCaseId | null => {
   // Public teaching cases are finite-focus instructional states. Keep legacy
   // fixtures that omit focusMode compatible, but never classify an explicit
   // infinity state as a case.
   if (input.camera.focusMode === "infinity") return null;
+
+  if (
+    !approxEqual(input.camera.frontShiftMm ?? 0, 0) ||
+    !approxEqual(input.camera.rearShiftMm ?? 0, 0) ||
+    !approxEqual(input.camera.rearSwingDeg ?? 0, 0)
+  ) return null;
 
   if (input.camera.cameraMovementLessonState) {
     for (const id of CAMERA_MOVEMENT_TEACHING_CASE_ORDER) {
@@ -151,10 +165,13 @@ export const buildCameraMovementTeachingCasePatch = (
   camera: Pick<
     CameraState,
     | "frontRiseMm"
+    | "frontShiftMm"
     | "rearRiseMm"
+    | "rearShiftMm"
     | "frontTiltDeg"
     | "rearTiltDeg"
     | "frontSwingDeg"
+    | "rearSwingDeg"
     | "cameraBodyPitchDeg"
     | "viewpointAnchor"
   >;
@@ -169,10 +186,13 @@ export const buildCameraMovementTeachingCasePatch = (
     lessonState: teachingCase.lessonState,
     camera: {
       frontRiseMm: teachingCase.camera.frontRiseMm,
+      frontShiftMm: teachingCase.camera.frontShiftMm,
       rearRiseMm: teachingCase.camera.rearRiseMm,
+      rearShiftMm: teachingCase.camera.rearShiftMm,
       frontTiltDeg: teachingCase.camera.frontTiltDeg,
       rearTiltDeg: teachingCase.camera.rearTiltDeg,
       frontSwingDeg: teachingCase.camera.frontSwingDeg,
+      rearSwingDeg: teachingCase.camera.rearSwingDeg,
       cameraBodyPitchDeg: teachingCase.camera.cameraBodyPitchDeg,
       viewpointAnchor: teachingCase.anchor,
     },
