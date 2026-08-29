@@ -28,8 +28,6 @@ export const homeMessages = {
   },
   faq: {
     title: "Frequently Asked Questions",
-    eyebrow: "VIEW CAMERA SIMULATOR",
-    subtitle: "Answers to common questions about View Camera Simulator.",
     items: {
       audience: {
         question: "Who is View Camera Simulator for?",

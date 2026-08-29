@@ -75,17 +75,12 @@ export const FaqPage = () => {
 
   return (
     <AppShell title="" useSiteShell>
-      <header className="faq-page-header">
-        <div className="faq-page-header__eyebrow">
-          <span className="material-symbols-outlined" aria-hidden="true">
-            camera
-          </span>
-          <span>{t("home.faq.eyebrow")}</span>
-        </div>
-        <h1>{t("home.faq.title")}</h1>
-        <p>{t("home.faq.subtitle")}</p>
-      </header>
-      <FaqSection />
+      <div lang="en">
+        <header className="faq-page-header">
+          <h1>{t("home.faq.title")}</h1>
+        </header>
+        <FaqSection />
+      </div>
     </AppShell>
   );
 };

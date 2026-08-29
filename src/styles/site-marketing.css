@@ -206,31 +206,9 @@
   margin: 32px auto 0;
 }
 
-.faq-page-header__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 100%;
-  padding: 7px 11px;
-  border: 1px solid rgba(91, 78, 232, 0.16);
-  border-radius: 999px;
-  background: var(--site-accent-soft);
-  color: var(--site-accent-hover);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.faq-page-header__eyebrow .material-symbols-outlined {
-  font-size: 16px;
-  line-height: 1;
-}
-
 .faq-page-header h1 {
   max-width: 780px;
-  margin: 20px 0 12px;
+  margin: 0;
   color: var(--site-text);
   font-size: clamp(2.4rem, 5vw, 4rem);
   font-weight: 800;
@@ -238,16 +216,8 @@
   line-height: 1.05;
 }
 
-.faq-page-header p {
-  max-width: 640px;
-  margin: 0;
-  color: var(--site-text-muted);
-  font-size: 1.05rem;
-  line-height: 1.7;
-}
-
 .faq-section {
-  padding: 36px 0 72px;
+  padding: 40px 0 72px;
   scroll-margin-top: 96px;
 }
 
@@ -599,10 +569,8 @@
   .marketing-container { padding: 16px; }
   .faq-page-header { margin-top: 20px; }
   .faq-page-header h1 {
-    margin-top: 18px;
     font-size: clamp(2.15rem, 11vw, 3rem);
   }
-  .faq-page-header p { font-size: 1rem; }
   .faq-section { padding: 28px 0 52px; }
   .faq-item summary { padding: 16px; }
   .faq-item__question {
