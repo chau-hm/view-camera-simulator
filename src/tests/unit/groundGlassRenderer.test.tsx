@@ -554,7 +554,7 @@ describe("GroundGlassRenderer", () => {
   it('focus fundamentals still routes to RTT only', () => {
     const cameraState = { ...DEFAULT_CAMERA_STATE, focalLengthMm: 150, focusDistanceMm: 680 };
     const opticsState = deriveOpticsState(cameraState, focusFundamentalsTwoTargets);
-    render(
+    const { container } = render(
       <GroundGlassRenderer
         opticsState={opticsState}
         assistEnabled={false}
@@ -575,5 +575,10 @@ describe("GroundGlassRenderer", () => {
     expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
+    expect(
+      Array.from(container.querySelectorAll("div")).some((element) =>
+        element.getAttribute("style")?.includes("radial-gradient"),
+      ),
+    ).toBe(false);
   });
 });

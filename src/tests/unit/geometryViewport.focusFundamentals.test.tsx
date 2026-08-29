@@ -11,6 +11,8 @@ import {
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 
+const noopGeometryViewChange = () => undefined;
+
 describe("GeometryViewport - Focus Fundamentals specific regression", () => {
   afterEach(() => {
     cleanup();
@@ -19,7 +21,16 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
   it("A: Stable detail positions when changing focus (side view)", () => {
     const scene = focusFundamentalsTwoTargets;
     const stateNear = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset, focusDistanceMm: focusFundamentalsNearFocusDepthMm }, scene);
-    const { container, rerender } = render(<GeometryViewport opticsState={stateNear} geometryView="side" scene={scene} riseMm={0} />);
+    const { container, rerender } = render(
+      <GeometryViewport
+        opticsState={stateNear}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={scene}
+        riseMm={0}
+      />,
+    );
     const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svg).toBeTruthy();
 
@@ -29,7 +40,16 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     const centres1 = rects.map((r) => ({ cx: parseFloat(r.getAttribute('x') || '0') + 6 }));
 
     const stateFar = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset, focusDistanceMm: focusFundamentalsFarFocusDepthMm }, scene);
-    rerender(<GeometryViewport opticsState={stateFar} geometryView="side" scene={scene} riseMm={0} />);
+    rerender(
+      <GeometryViewport
+        opticsState={stateFar}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={scene}
+        riseMm={0}
+      />,
+    );
     const rects2 = Array.from(svg!.querySelectorAll('rect')).filter((r) => r.getAttribute('width') === '12' && r.getAttribute('height') === '16' && r.getAttribute('fill') === '#0f766e');
     const centres2 = rects2.map((r) => ({ cx: parseFloat(r.getAttribute('x') || '0') + 6 }));
 
@@ -45,7 +65,16 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     const optics = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset }, scene);
 
     // side view
-    const { container: c1 } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} riseMm={0} />);
+    const { container: c1 } = render(
+      <GeometryViewport
+        opticsState={optics}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={scene}
+        riseMm={0}
+      />,
+    );
     const svgSide = c1.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svgSide).toBeTruthy();
 
@@ -82,7 +111,16 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     assertProjectedStandards(svgSide!);
 
     // top view
-    const { container: c2 } = render(<GeometryViewport opticsState={optics} geometryView="top" scene={scene} riseMm={0} />);
+    const { container: c2 } = render(
+      <GeometryViewport
+        opticsState={optics}
+        geometryView="top"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={scene}
+        riseMm={0}
+      />,
+    );
     const svgTop = c2.querySelector('[data-testid="geometry-svg-top"]') as SVGElement | null;
     expect(svgTop).toBeTruthy();
     assertProjectedStandards(svgTop!);
@@ -98,7 +136,16 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
   it("C: FOV rays intersect visible plane segments", () => {
     const scene = focusFundamentalsTwoTargets;
     const optics = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset }, scene);
-    const { container } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} riseMm={0} />);
+    const { container } = render(
+      <GeometryViewport
+        opticsState={optics}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={scene}
+        riseMm={0}
+      />,
+    );
     const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
     expect(svg).toBeTruthy();
 
@@ -126,7 +173,16 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
   it("E: Depth strip shows expected chips and DiagramLegend is not present; Infinity mode shows ∞", () => {
     const scene = focusFundamentalsTwoTargets;
     const optics = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset }, scene);
-    const { container, rerender } = render(<GeometryViewport opticsState={optics} geometryView="side" scene={scene} riseMm={0} />);
+    const { container, rerender } = render(
+      <GeometryViewport
+        opticsState={optics}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={scene}
+        riseMm={0}
+      />,
+    );
 
     // depth strip exists and has aria-label
     const depthStrip = container.querySelector('[aria-label="Optical depth order"]');
@@ -146,7 +202,16 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     // build a shallow copy and set diagnostics.isInfinityFocus without using `any`
     const origDiag = (optics as unknown as { diagnostics?: Record<string, unknown> }).diagnostics ?? {};
     const opticsInf = { ...(optics as unknown as Record<string, unknown>), diagnostics: { ...(origDiag as Record<string, unknown>), isInfinityFocus: true } } as unknown as typeof optics;
-    rerender(<GeometryViewport opticsState={opticsInf} geometryView="side" scene={scene} riseMm={0} />);
+    rerender(
+      <GeometryViewport
+        opticsState={opticsInf}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={scene}
+        riseMm={0}
+      />,
+    );
     const depthStrip2 = container.querySelector('[aria-label="Optical depth order"]');
     expect(depthStrip2).toBeTruthy();
     const txt2 = depthStrip2?.textContent || '';
@@ -164,6 +229,8 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
       <GeometryViewport
         opticsState={optics}
         geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
         scene={scene}
         riseMm={0}
       />,
@@ -191,6 +258,41 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     expect(currentLens).toBeTruthy();
     expect(referenceLens).toBeTruthy();
     expect(currentLens?.getAttribute("x1")).not.toBe(referenceLens?.getAttribute("x1"));
+  });
+
+  it("uses the explicit focal length for Focus Fundamentals reference geometry", () => {
+    const scene = focusFundamentalsTwoTargets;
+    const optics = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset }, scene);
+    const view = render(
+      <GeometryViewport
+        opticsState={optics}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={150}
+        scene={scene}
+        riseMm={0}
+      />,
+    );
+    const getReferenceLensX = () =>
+      view.container
+        .querySelector('[data-testid="focus-reference-lens-position"] line')
+        ?.getAttribute("x1");
+
+    const referenceLensAt150 = getReferenceLensX();
+    expect(referenceLensAt150).toBeTruthy();
+
+    view.rerender(
+      <GeometryViewport
+        opticsState={optics}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={210}
+        scene={scene}
+        riseMm={0}
+      />,
+    );
+
+    expect(getReferenceLensX()).not.toBe(referenceLensAt150);
   });
 
   it("F: Raw RTT isolation — GroundGlassRenderer uses RTT and not legacy overlay for Focus Fundamentals", () => {

@@ -1,12 +1,13 @@
 import { cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { GeometryViewport } from "../../components/simulator/GeometryViewport";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
-import { useAppStore } from "../../state/appStore";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { getApproximateSvgTextBounds } from "../../components/geometry/labelPlacement";
+import type { GeometryView } from "../../types/camera";
 
 type ApproximateBounds = ReturnType<typeof getApproximateSvgTextBounds>;
 
@@ -80,16 +81,20 @@ const createOptics = (frontSwingDeg: number, focusDistanceMm: number) =>
     shelfSwingScene,
   );
 
-const StoreBackedViewport = ({
+const ControlledViewport = ({
   opticsState,
+  initialGeometryView = "side",
 }: {
   opticsState: ReturnType<typeof deriveOpticsState>;
+  initialGeometryView?: GeometryView;
 }) => {
-  const geometryView = useAppStore((state) => state.camera.geometryView);
+  const [geometryView, setGeometryView] = useState<GeometryView>(initialGeometryView);
   return (
     <GeometryViewport
       opticsState={opticsState}
       geometryView={geometryView}
+      onGeometryViewChange={setGeometryView}
+      focalLengthMm={shelfSwingScene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
       scene={shelfSwingScene}
       riseMm={0}
     />
@@ -99,13 +104,11 @@ const StoreBackedViewport = ({
 describe("Shelf Swing geometry viewport", () => {
   afterEach(() => {
     cleanup();
-    useAppStore.getState().setGeometryView("side");
   });
 
   it("starts in Top view with the physical trace, three labelled targets, and no fake construction", () => {
-    useAppStore.getState().setGeometryView("top");
     const optics = createOptics(0, shelfSwingGeometry.middleSubject.focusDetailProbeWorld.z);
-    const view = render(<StoreBackedViewport opticsState={optics} />);
+    const view = render(<ControlledViewport opticsState={optics} initialGeometryView="top" />);
     const topSvg = view.container.querySelector('[data-testid="geometry-svg-top"]');
     expect(topSvg).not.toBeNull();
     expect(topSvg?.querySelector('[data-testid="shelf-swing-subject-trace"]')).not.toBeNull();
@@ -132,6 +135,8 @@ describe("Shelf Swing geometry viewport", () => {
       <GeometryViewport
         opticsState={optics}
         geometryView="side"
+        onGeometryViewChange={() => undefined}
+        focalLengthMm={shelfSwingScene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm}
         scene={shelfSwingScene}
         riseMm={0}
       />,
@@ -150,12 +155,11 @@ describe("Shelf Swing geometry viewport", () => {
   });
 
   it("shows the trace only in the subject field and restores Top view after construction", async () => {
-    useAppStore.getState().setGeometryView("top");
     const optics = createOptics(
       shelfSwingGeometry.shelfSwingCalibration.frontSwingDeg,
       shelfSwingGeometry.shelfSwingCalibration.focusDistanceMm,
     );
-    const view = render(<StoreBackedViewport opticsState={optics} />);
+    const view = render(<ControlledViewport opticsState={optics} initialGeometryView="top" />);
     const fitConstruction = view.getByRole("button", { name: "Fit Construction" });
     expect(fitConstruction).toBeEnabled();
     fireEvent.click(fitConstruction);

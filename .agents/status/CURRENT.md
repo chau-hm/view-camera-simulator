@@ -1,31 +1,26 @@
-# Dedicated FAQ page — final UI refinement
+# Geometry viewport state boundary — focused refactor
 
-- Work identifier: PR #101 final UI refinement.
-- Branch/base: `feature/landing-faq` from `origin/main` at `b97f024134b5b697b8773370991fef068e7a0fc8`.
-- Previous HEAD: `dc176cf4084edae3c8ee4f916a86175b39978996`.
-- Objective: keep `/` concise and present the existing seven-question FAQ as a polished, dedicated `/faq` page.
+- Work identifier: `refactor/self-contained-geometry-viewport`.
+- Branch/base: `refactor/self-contained-geometry-viewport` from latest `origin/main` at `76a98aaee297493ee0dc35bec3fcc91d06dd9299`.
+- Substantive HEAD: `741e284` (`refactor(geometry): decouple viewport state boundary`).
+- Objective: make `GeometryViewport` a reusable explicit-input boundary with `SimulatorWorkspace` as the application-state adapter.
 
-## Changed surface
+## Boundary decision
 
-- `FaqPage` uses the shared site shell with a route-local eyebrow, sole page `<h1>`, and i18n-backed subtitle.
-- `FaqSection` keeps native `<details>/<summary>` disclosures and adds decorative Material Symbols, presentation-only numbering, and an intentional open/closed indicator.
-- FAQ-only CSS adds centered page framing, readable answer width, card/open-state treatment, focus styling, and narrow-screen layout rules.
-- Existing English FAQ content and the `zh-HK` English fallback remain unchanged apart from the new page-intro strings.
+- Before: `GeometryViewport` read `setGeometryView` and `camera.focalLengthMm` from Zustand.
+- After: `SimulatorWorkspace` passes required `geometryView`, `onGeometryViewChange`, and `focalLengthMm` props; GeometryViewport retains only presentation-local state (`svgSize`, fit mode, refs, and ResizeObserver).
+- Geometry math, scene policy modules, visual behavior, Ground Glass, and SceneViewport are unchanged.
 
-## Validation
+## Changes and evidence
 
-- Focused integration: pass (`faq-page`, `home-page`, and `site-nav`; 3 tests).
-- Full unit/integration: pass (143 files / 1,355 tests).
-- Focused Chromium: pass (FAQ client-side navigation and keyboard disclosure; narrow `/faq` overflow; 2 tests).
-- Typecheck, ESLint, CSS structure check, production build, and `git diff --check`: pass.
-- Renderer/WebGL E2E was not run because this refinement changes only site UI and FAQ routing/content presentation.
-
-## Known CI issue
-
-- The pre-existing `npm ci` failure for `eslint-plugin-react-hooks@^6.8.0` remains outside scope; `package.json` and `package-lock.json` were not changed.
+- Changed files: `GeometryViewport.tsx`, `SimulatorWorkspace.tsx`, GeometryViewport unit suites, and `SimulatorWorkspace.test.tsx`.
+- GeometryViewport contains no `useAppStore` or `appStore` references.
+- Replaced StoreBacked unit harnesses with explicit controlled parents; Workspace integration verifies public view selection updates application state.
+- Focused unit/integration: 5 files, 64 passed. Full unit/integration: 143 files, 1,362 passed. Typecheck, lint, CSS check, build, and diff check passed.
+- Focused browser batch: 36 passed / 8 failed; failures were existing WebGL/diagnostic/layout-stability cases. `npm run ci:local:e2e` passed all standard checks and stopped at `mirror-shift-teaching-geometry.spec.ts:3`, waiting for `data-rtt-final-contentful="true"` at line 32; the spec's second test passed.
+- Remote Actions: PR #103 is open. Latest runs `33206724211` and `33206727471` (as well as earlier runs `33206467895`, `33206506901`, `33206580330`, and `33206583191`) failed before tests during `npm ci` with `No matching version found for eslint-plugin-react-hooks@^6.8.0`; deploy jobs were skipped. No dependency or workflow changes were made.
 
 ## Reviewer focus
 
-- Confirm `/` remains FAQ-free and `/faq` has one page `<h1>` plus all seven disclosures in the approved order.
-- Confirm question text remains separate from presentation numbering/icons and summaries remain the only interactive controls.
-- Confirm no simulator, optics, renderer, state, scene, task, dependency, or unrelated refactor files changed.
+- Verify the explicit callback/focal-length contract at the Workspace boundary and that Focus Fundamentals reference geometry uses the injected focal length.
+- Confirm no geometry formulas, scene policies, Ground Glass code, or visual behavior changed. Remaining risk is the documented WebGL timing/diagnostic baseline, especially the Geometry-only Mirror Shift RTT assertion.

@@ -1,7 +1,6 @@
 import type { ProjectedGroundGlassTarget } from "./groundGlassTargetProjection";
 
 export type GroundGlassFocusRingProps = {
-  sceneId?: string;
   primaryProjectedTarget: ProjectedGroundGlassTarget | null;
   focusRingSize: number;
   focusRingOpacity: number;
@@ -9,8 +8,7 @@ export type GroundGlassFocusRingProps = {
   tiltDeg: number;
 };
 
-export const GroundGlassFocusRing = ({ sceneId, primaryProjectedTarget, focusRingSize, focusRingOpacity, swingDeg, tiltDeg }: GroundGlassFocusRingProps) => {
-  if (sceneId === "focus-fundamentals-two-targets" || sceneId === "table-tilt") return null;
+export const GroundGlassFocusRing = ({ primaryProjectedTarget, focusRingSize, focusRingOpacity, swingDeg, tiltDeg }: GroundGlassFocusRingProps) => {
   const left = primaryProjectedTarget && primaryProjectedTarget.visible ? `${primaryProjectedTarget.leftPercent}%` : `${50 + swingDeg * 0.5}%`;
   const top = primaryProjectedTarget && primaryProjectedTarget.visible ? `${primaryProjectedTarget.topPercent}%` : `${50 - tiltDeg * 0.5}%`;
   const display = primaryProjectedTarget && primaryProjectedTarget.visible ? "block" : "none";
