@@ -4,6 +4,7 @@ import { GeometryViewport } from "../../components/simulator/GeometryViewport";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
+import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 
@@ -152,5 +153,24 @@ describe("GeometryViewport", () => {
     );
 
     await waitFor(() => expect(onGeometryViewChange).toHaveBeenCalledWith("side"));
+  });
+
+  it("uses the Oblique Architecture profile default for an unsupported Scheimpflug view", async () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, obliqueArchitectureScene);
+    const onGeometryViewChange = vi.fn();
+    const view = render(
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="scheimpflug"
+        onGeometryViewChange={onGeometryViewChange}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={obliqueArchitectureScene}
+        riseMm={0}
+      />,
+    );
+
+    const viewport = view.container.querySelector("section[data-geometry-fit]");
+    expect(viewport).toHaveAttribute("data-geometry-view", "top");
+    await waitFor(() => expect(onGeometryViewChange).toHaveBeenCalledWith("top"));
   });
 });

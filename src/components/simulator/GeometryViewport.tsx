@@ -55,15 +55,16 @@ export const GeometryViewport = ({
   const restoreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
   const [fitMode, setFitMode] = useState<"scene" | "construction">("scene");
+  const profile = getGeometryPresentationProfile(scene);
   const supportsConstruction = supportsScheimpflugConstruction(scene.id);
-  const isMirrorShiftTeaching = scene.id === "mirror-shift";
+  const usesMirrorShiftTeachingDiagram = profile.diagramVariant === "mirror-shift-teaching";
   const subjectGeometryView = getPreferredSubjectGeometryView({
-    sceneId: scene.id,
+    defaultView: profile.defaultSubjectView,
     tiltDeg: opticsState.diagnostics.tiltAngleDeg,
     swingDeg: opticsState.diagnostics.swingAngleDeg,
   });
   const effectiveGeometryView =
-    isMirrorShiftTeaching
+    usesMirrorShiftTeachingDiagram
       ? "top"
       : !supportsConstruction && geometryView === "scheimpflug"
         ? subjectGeometryView
@@ -103,7 +104,6 @@ export const GeometryViewport = ({
     return () => window.cancelAnimationFrame(frame);
   }, [expanded]);
 
-  const profile = getGeometryPresentationProfile(scene);
   const constructionWindow = getScheimpflugConstructionWindow(opticsState);
 
   useEffect(() => {
@@ -175,7 +175,7 @@ export const GeometryViewport = ({
   }, [focalLengthMm, opticsState, scene, svgSize.width, svgSize.height, sceneDepthWindow, profile.lateralWindow, profile.diagramPaddingPx]);
 
   const mirrorShiftNeutralOptics = useMemo<DerivedOpticsState | null>(() => {
-    if (!isMirrorShiftTeaching) return null;
+    if (!usesMirrorShiftTeachingDiagram) return null;
     return deriveOpticsState(
       {
         ...DEFAULT_CAMERA_STATE,
@@ -193,7 +193,7 @@ export const GeometryViewport = ({
       },
       scene,
     );
-  }, [isMirrorShiftTeaching, scene]);
+  }, [scene, usesMirrorShiftTeachingDiagram]);
 
 const cameraProjection = constructionWindow
     ? computeOpticalSectionData({
@@ -254,7 +254,7 @@ const cameraProjection = constructionWindow
           <h2 style={{ margin: 0 }}>{t(simulatorMessageKeys.viewport.geometryTitle)}</h2>
           <div className="geometry-viewport__header-actions">
             <div className="geometry-viewport__view-controls" role="group" aria-label={t(simulatorMessageKeys.geometry.viewLabel)}>
-              {!isMirrorShiftTeaching ? (
+              {!usesMirrorShiftTeachingDiagram ? (
                 <button className={effectiveGeometryView === "side" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"} aria-pressed={effectiveGeometryView === "side"} onClick={() => {
                   setFitMode("scene");
                   onGeometryViewChange("side");
@@ -331,7 +331,7 @@ const cameraProjection = constructionWindow
       </p>
 
       <div ref={diagramRef} className="geometry-diagram-container" style={{ flex: 1, minHeight: 0 }}>
-        {isMirrorShiftTeaching && mirrorShiftNeutralOptics ? (
+        {usesMirrorShiftTeachingDiagram && mirrorShiftNeutralOptics ? (
           <MirrorShiftTeachingDiagram
             neutralOptics={mirrorShiftNeutralOptics}
             currentOptics={opticsState}
