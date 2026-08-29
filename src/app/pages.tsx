@@ -13,6 +13,7 @@ import { ViewCameraHeroIllustration } from "../components/marketing/ViewCameraHe
 import { InfoCard } from "../components/marketing/InfoCard";
 import { SceneCard } from "../components/marketing/SceneCard";
 import { DesktopExperienceNotice } from "../components/marketing/DesktopExperienceNotice";
+import { FaqSection } from "../components/marketing/FaqSection";
 
 const SimulatorWorkspace = lazy(() =>
   import("../components/layout/SimulatorWorkspace").then((module) => ({ default: module.SimulatorWorkspace })),
@@ -65,6 +66,19 @@ export const HomePage = () => {
         </div>
       </section>
 
+    </AppShell>
+  );
+};
+
+export const FaqPage = () => {
+  const { t } = useTranslation();
+
+  return (
+    <AppShell title="" useSiteShell>
+      <header className="faq-page-header">
+        <h1>{t("home.faq.title")}</h1>
+      </header>
+      <FaqSection />
     </AppShell>
   );
 };

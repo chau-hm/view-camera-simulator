@@ -20,6 +20,10 @@ export const SiteHeader = () => {
             {t("common.nav.scenes")}
           </NavLink>
 
+          <NavLink to="/faq" className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")}>
+            {t("common.nav.faq")}
+          </NavLink>
+
           <a className="site-nav__link" href="https://github.com/chau-hm/view-camera-simulator" rel="noopener noreferrer" target="_blank">
             GitHub
           </a>
