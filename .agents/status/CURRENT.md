@@ -21,7 +21,7 @@
 - Focused browser: `groundglass-interaction.spec.ts` 3/3 passed; Table Tilt zoom/pan and interrupted-pointer cases 2/2 passed; expansion/restoration suite 3/4 passed, with the existing RTT quality-size mismatch as the fourth result.
 - Full checks: `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`, `npm test`, and `git diff --check` passed.
 - `npm run ci:local:e2e` passed its CSS/lint/typecheck/unit/build stages and many browser suites, then stopped at the unchanged Mirror Shift geometry test because `ground-glass-rtt` did not appear within 30s. A focused rerun reproduced that baseline failure. The unrelated expansion quality baseline remains `colorWidth` 86 vs `blurWidth` 172.
-- Remote Actions: not used; publication will use explicit Git/GitHub CLI refs.
+- Remote Actions: not used; feature ref was published with an explicit refspec and PR [#108](https://github.com/chau-hm/view-camera-simulator/pull/108) is open against `main` and unmerged.
 
 ## Remaining risks and reviewer focus
 
