@@ -36,4 +36,4 @@
 - New zoomed semantic: labelled, focusable `region` (`Pan Ground Glass`); unzoomed remains a keyboard-activatable `button` (`Zoom in Ground Glass`).
 - Focused coverage: GroundGlassStage keyboard/role assertions 19/19, SimulatorWorkspace and comparison integration tests 28/28, and Ground Glass browser interaction 3/3 passed.
 - Latest validation: full unit/integration, typecheck, lint, CSS check, build, and diff check passed. The previously documented RTT/Mirror Shift browser baselines remain unrelated.
-- Substantive accessibility-fix commit: pending.
+- Substantive accessibility-fix commit: `37f1c7fbc4472ac12cbacef8a54d471726681e1f` (`fix(ground-glass): align zoomed stage accessibility semantics`).
