@@ -2,7 +2,7 @@
 
 - Work identifier: `fix/ground-glass-focus-assist-pan` / PR title `fix(ground-glass): simplify focus assist and zoom-pan interaction`.
 - Branch/base: `fix/ground-glass-focus-assist-pan` from latest `origin/main` `8ff1f974afaf70530add4ba1229a924c8afdc1ed` (PR #107 is merged).
-- Substantive HEAD: pending implementation commit.
+- Substantive HEAD: `56b923b1a1801068d62bcfb0c3f836f9613e7474` (`fix(ground-glass): simplify focus assist and zoom-pan interaction`).
 - Objective: remove the obsolete Ground Glass Focus Assist feature and make zoomed image interaction a non-destructive pan surface.
 
 ## Implementation
