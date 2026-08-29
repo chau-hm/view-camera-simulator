@@ -1,11 +1,11 @@
-# PR 9A — Complete canonical standard movement vocabulary
+# PR 9B — Conceptual View Camera v2 static anatomy
 
-- Objective: add canonical `rearShiftMm` and `rearSwingDeg`, generalize `frontShiftMm` through the movement vocabulary, and keep current lessons visually/control-wise unchanged.
-- Since previous review: sync with the latest `origin/main` at `8944ea1c726003eafa198f7780f086c48bab89c3`, which includes PR #108's Focus Assist removal and the intervening asset cleanup; preserved the removal of obsolete Focus Assist state, controls, task plumbing, and RTT display plumbing. Retained physical focus-target metric helpers are still used for learner readouts.
-- Review fixes: `SingleMovementControl` now uses dedicated Shift and Swing min/max/step constants; focused coverage adds the combined rear tilt-then-swing basis contract for `rearTiltDeg = 6` and `rearSwingDeg = 8`.
-- Scope: `CameraState` defaults/resets/selectors, scene preset contracts, generic movement maps/setters, rear standard frame/optics derivation, and focused state/geometry/control tests. Mirror Shift keeps its specialized Front Shift UI.
-- Geometry decision: rear shift translates the canonical rear frame by rig-local +X; rear swing applies the established +Y rotation convention after rear tilt. The resulting `StandardFrame` continues to drive film plane, corners, projection, 2D, 3D, and Ground Glass consumers.
-- Exposure: no current generic scene capability array includes `frontShiftMm`, `rearShiftMm`, or `rearSwingDeg`; no new lesson/task/control copy was added. Existing Mirror Shift Front Shift remains available through its scene-specific capability.
-- Intentionally unchanged: `riseMinMm = 0` and no Fall exposure; no scene-specific ranges or unrelated Ground Glass/RTT fixes.
-- Validation: `npm run ci:local` passed after the merge (146 files / 1,416 tests, lint, typecheck, CSS check, and build). Focused review suites passed (14 files / 229 tests). Requested browser coverage passed 9/12 in the combined run; the standalone Ground Glass interaction spec passed 3/3, while the two known RTT baseline assertions reproduced independently. `git diff --check` passed before final commit.
-- Known gap for 9B: the legacy CPU Ground Glass DOF path remains axis-aligned for oriented rear planes; this PR keeps that pre-existing limitation out of scope because the active canonical RTT/frame consumers are already wired.
+- Objective: replace the primitive visible camera meshes with one reusable semantic camera model for static teaching anatomy; do not add Lesson 0 or new movement exposure.
+- Base: `origin/main` at `4c588e9fbed71d038e7af4464665bf11ab4b488b`, which includes merged PR #109.
+- Scope: shared `ConceptualViewCamera` anatomy for lens, lens board, front standard, static accordion bellows, rear standard, ground-glass back, and support; current and ghost variants use the same renderer path.
+- Transform decision: ordinary scenes consume resolved world-space `DerivedOpticsState`; the calibrated body-pitch scene retains the existing local geometry → body pitch → rig placement hierarchy through a thin `CameraBodyAssembly` adapter. No optics/model state was added.
+- Semantic IDs: stable `camera-anatomy-*` object names and `userData.anatomyPart` values cover all seven future Lesson 0 parts.
+- Bellows decision: nine procedural, tapered rectangular static folds span canonical film and lens centres. No compound/deformable bellows interpolation is implemented.
+- Compatibility: existing rail names and calibrated rail geometry remain available; Mirror Shift's specialized reflection/teaching implementation remains untouched; no public Rear Shift/Rear Swing or Lesson 0 controls were added.
+- Validation: final `npm run ci:local` passed (147 files / 1,420 tests, CSS check, lint, typecheck, and build); focused anatomy/renderer tests pass; camera inspection E2E passed 5/5. The requested Mirror Shift, Understanding Camera Movements, and Ground Glass smoke run passed 9/10, with the route-transition `data-rtt-focal-length-mm` assertion remaining a confirmed pre-existing failure on untouched `origin/main`.
+- PR 9C note: the shared anatomy boundary and canonical placement adapters are ready for deformable bellows and standard animation without another camera-geometry rewrite, subject to keeping animation state derived from canonical optics/frame data.
