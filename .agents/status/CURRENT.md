@@ -1,7 +1,7 @@
 # PR 9A — Complete canonical standard movement vocabulary
 
 - Objective: add canonical `rearShiftMm` and `rearSwingDeg`, generalize `frontShiftMm` through the movement vocabulary, and keep current lessons visually/control-wise unchanged.
-- Since previous review: sync with `origin/main` at `3151452c029965246c70a075c752bb21c3699204` (`fix(ground-glass): simplify focus assist and zoom-pan interaction`, PR #108); preserved its removal of obsolete Focus Assist state, controls, task plumbing, and RTT display plumbing. Retained physical focus-target metric helpers are still used for learner readouts.
+- Since previous review: sync with the latest `origin/main` at `8944ea1c726003eafa198f7780f086c48bab89c3`, which includes PR #108's Focus Assist removal and the intervening asset cleanup; preserved the removal of obsolete Focus Assist state, controls, task plumbing, and RTT display plumbing. Retained physical focus-target metric helpers are still used for learner readouts.
 - Review fixes: `SingleMovementControl` now uses dedicated Shift and Swing min/max/step constants; focused coverage adds the combined rear tilt-then-swing basis contract for `rearTiltDeg = 6` and `rearSwingDeg = 8`.
 - Scope: `CameraState` defaults/resets/selectors, scene preset contracts, generic movement maps/setters, rear standard frame/optics derivation, and focused state/geometry/control tests. Mirror Shift keeps its specialized Front Shift UI.
 - Geometry decision: rear shift translates the canonical rear frame by rig-local +X; rear swing applies the established +Y rotation convention after rear tilt. The resulting `StandardFrame` continues to drive film plane, corners, projection, 2D, 3D, and Ground Glass consumers.
