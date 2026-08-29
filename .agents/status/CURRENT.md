@@ -1,26 +1,27 @@
-# Geometry viewport state boundary — focused refactor
+# Geometry presentation policy — focused refactor
 
-- Work identifier: `refactor/self-contained-geometry-viewport`.
-- Branch/base: `refactor/self-contained-geometry-viewport` from latest `origin/main` at `76a98aaee297493ee0dc35bec3fcc91d06dd9299`.
-- Substantive HEAD: `741e284` (`refactor(geometry): decouple viewport state boundary`).
-- Objective: make `GeometryViewport` a reusable explicit-input boundary with `SimulatorWorkspace` as the application-state adapter.
+- Work identifier: `refactor/geometry-presentation-profile` / PR #104.
+- Branch/base: `refactor/geometry-presentation-profile` from `origin/main` `8f72c435`.
+- Substantive HEAD: `6a580bab` (`refactor(geometry): centralize presentation policy`).
+- Objective: centralize Geometry-specific default subject view and diagram-variant semantics without changing shared Scheimpflug capability or optical geometry.
 
-## Boundary decision
+## Architecture decision
 
-- Before: `GeometryViewport` read `setGeometryView` and `camera.focalLengthMm` from Zustand.
-- After: `SimulatorWorkspace` passes required `geometryView`, `onGeometryViewChange`, and `focalLengthMm` props; GeometryViewport retains only presentation-local state (`svgSize`, fit mode, refs, and ResizeObserver).
-- Geometry math, scene policy modules, visual behavior, Ground Glass, and SceneViewport are unchanged.
+- `GeometryPresentationProfile` now owns `defaultSubjectView` and `diagramVariant` alongside its existing static Geometry presentation settings.
+- `getPreferredSubjectGeometryView` is a pure movement resolver accepting only `defaultView`, tilt, and swing; its scene-ID map was removed.
+- `GeometryViewport` resolves the profile and routes Mirror Shift teaching behavior through `diagramVariant`. Focus Fundamentals reference-optics logic remains its explicit physical-special-case branch.
+- `scheimpflugSceneSupport.ts` remains the shared capability source for both viewports; `SceneViewport` is unchanged.
 
-## Changes and evidence
+## Scope and evidence
 
-- Changed files: `GeometryViewport.tsx`, `SimulatorWorkspace.tsx`, GeometryViewport unit suites, and `SimulatorWorkspace.test.tsx`.
-- GeometryViewport contains no `useAppStore` or `appStore` references.
-- Replaced StoreBacked unit harnesses with explicit controlled parents; Workspace integration verifies public view selection updates application state.
-- Focused unit/integration: 5 files, 64 passed. Full unit/integration: 143 files, 1,362 passed. Typecheck, lint, CSS check, build, and diff check passed.
-- Focused browser batch: 36 passed / 8 failed; failures were existing WebGL/diagnostic/layout-stability cases. `npm run ci:local:e2e` passed all standard checks and stopped at `mirror-shift-teaching-geometry.spec.ts:3`, waiting for `data-rtt-final-contentful="true"` at line 32; the spec's second test passed.
-- Remote Actions: PR #103 is open. Latest runs `33206724211` and `33206727471` (as well as earlier runs `33206467895`, `33206506901`, `33206580330`, and `33206583191`) failed before tests during `npm ci` with `No matching version found for eslint-plugin-react-hooks@^6.8.0`; deploy jobs were skipped. No dependency or workflow changes were made.
+- Changed: `geometryPresentationProfiles.ts`, `getPreferredSubjectGeometryView.ts`, `GeometryViewport.tsx`, and focused profile/resolver/viewport tests.
+- Static audit: no scene-ID map or `sceneId` parameter remains in the movement resolver; GeometryViewport has no Mirror Shift scene-ID presentation branch. No labels/guides, math, Ground Glass, 3D, or Scheimpflug files changed.
+- Focused Geometry unit coverage passed; final full unit/integration suite passed 144 files / 1,377 tests. Typecheck, lint, CSS check, build, and `git diff --check` passed.
+- Focused browser batch: 33 passed / 10 failed; failures were existing RTT/WebGL, resource, layout, or task-baseline paths, with no profile/resolver assertion failure. `npm run ci:local:e2e` passed CSS/lint/typecheck/unit/build, then stopped at `mirror-shift-teaching-geometry.spec.ts:3` waiting 30s for `ground-glass-rtt[data-rtt-final-contentful="true"]`; its second test passed.
+- Remote Actions: PR #104 push run `33230353071` and pull-request run `33230381351` both fail during `npm ci` with `No matching version found for eslint-plugin-react-hooks@^6.8.0`; lint/tests are skipped and deploy is skipped. No dependency/workflow changes were made.
 
 ## Reviewer focus
 
-- Verify the explicit callback/focal-length contract at the Workspace boundary and that Focus Fundamentals reference geometry uses the injected focal length.
-- Confirm no geometry formulas, scene policies, Ground Glass code, or visual behavior changed. Remaining risk is the documented WebGL timing/diagnostic baseline, especially the Geometry-only Mirror Shift RTT assertion.
+- Verify profile defaults: ordinary scenes side/optical-section, Oblique Architecture top, Shelf Swing top, and Mirror Shift top/mirror-shift-teaching.
+- Verify movement tie semantics and GeometryViewport Mirror Shift routing remain unchanged while Scheimpflug capability stays shared and separate.
+- Remaining risk is the documented repository WebGL/RTT E2E baseline; no visual or physical geometry changes are intended.
