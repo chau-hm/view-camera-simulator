@@ -93,6 +93,7 @@ export const SimulatorWorkspace = ({
     (state) => state.clearSimulatorRouteInitialization,
   );
   const camera = useAppStore((state) => state.camera);
+  const setGeometryView = useAppStore((state) => state.setGeometryView);
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
   const calibrationSession = useAppStore(
     (state) => state.cameraMovementCalibrationSession,
@@ -544,6 +545,8 @@ export const SimulatorWorkspace = ({
                 <GeometryViewport
                   opticsState={opticsState}
                   geometryView={camera.geometryView}
+                  onGeometryViewChange={setGeometryView}
+                  focalLengthMm={camera.focalLengthMm}
                   scene={scene}
                   riseMm={camera.frontRiseMm}
                   movementSummary={teachingReadout ? `${teachingReadout.label}${teachingReadout.value ? ` · ${teachingReadout.value}` : ""}` : null}
