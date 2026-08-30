@@ -1,9 +1,9 @@
-# PR 9D — Ground Glass, Film Holder + Aperture Iris
+# PR 9E — Lesson 0: Meet the View Camera
 
-- Objective: add rear-back anatomy and a visible canonical-aperture iris to the shared `ConceptualViewCamera`; no Lesson 0, new state, controls, optics, RTT, or bellows redesign.
-- Base: `origin/main` at `f173a39ff7b662e903bb4efde018a175d4f54d06`, merged PR #111.
-- Rear-back contract: `GroundGlassBack` and `FilmHolder` are mutually exclusive render variants under the existing `rear-standard-frame`; both sensitive surfaces use local `{ x: 0, y: 0, z: 0 }`, the canonical rear/film plane. Holder shell/frame geometry extends rearward.
-- Aperture contract: `resolveConceptualApertureOpening` derives a bounded visual opening from canonical focal length / f-number; `lens-aperture-iris` remains a child of the canonical front lens hierarchy.
-- Semantic reuse: existing `ground-glass-back` remains stable; `ground-glass-frame`, `ground-glass-screen`, `film-holder`, `film-holder-body`, `film-holder-film-surface`, and `lens-aperture-iris` provide stable anatomy names. Current/ghost and world/rig-local paths share the same implementation.
-- Compatibility: standards, deformable bellows, fixed support, canonical optics, and Ground Glass RTT remain unchanged; no learner-facing rear-back switch is exposed.
-- Validation: `npm run ci:local` passes (149 test files / 1,450 tests, CSS check, lint, typecheck, and build); focused anatomy/camera-body tests pass (29 tests); targeted Chromium smoke coverage passes 45/47, with only the pre-existing scene-orbit assertion and Understanding Camera Movements route-transition RTT race. Camera-focused screenshots show the rear screen/frame and hollow bellows; aperture UI changes were exercised at f/5.6 and f/32.
+- Objective: add a guided, anatomy-only Lesson 0 before movement lessons using the shared ConceptualViewCamera semantic anatomy; no movement teaching, new optics, RTT changes, or camera-model rewrite.
+- Base: `origin/main` at `2d61f6df144773b1dda82e2b3bda2fee9eac14d3`, merged PR #112 / PR 9D.
+- Lesson: public free-only scene/lesson `view-camera-anatomy`; ten deterministic steps cover complete camera, Front Standard, Lens/Lens Board, Aperture, Bellows, Rear Standard, Ground Glass, Film Holder, Camera Support, and recap.
+- Presentation contract: lesson-facing targets centrally map to existing semantic IDs; declarative normal/highlighted/dimmed presentation is scoped through `ConceptualCameraPresentation`; Film Holder and aperture values are rendering-only overrides, so canonical optics/camera state remains unchanged.
+- Inspection contract: existing SceneViewport/SceneRenderer path accepts semantic inspection targets; Lesson 0 starts in camera focus with a front three-quarter neutral pose and suppresses unrelated optical/control UI without changing shared camera/RTT behavior.
+- Isolation/reset: anatomy lesson state is local to `SimulatorWorkspace`; route initialization restores neutral finite focus; restart restores step one, Ground Glass, normal presentation, and the default view; leaving the route restores ordinary scene controls.
+- Validation: `npm run ci:local` passes (152 test files / 1,463 tests, CSS check, lint, typecheck, and build); focused Lesson 0 Playwright passes; Focus Fundamentals (2), Mirror Shift (2), Ground Glass interaction (3), and standalone camera-focus (1) browser suites pass. Understanding Camera Movements has one pre-existing legacy RTT diagnostic failure: `data-rtt-focal-length-mm="150"` remains absent after SPA return to Architecture Rise.

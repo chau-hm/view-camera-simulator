@@ -12,8 +12,10 @@ import { understandingCameraMovementsScene } from "./understanding-camera-moveme
 import { mirrorShiftScene } from "./mirror-shift";
 import { obliqueArchitectureScene } from "./oblique-architecture";
 import { architectureForegroundScene } from "./architecture-foreground";
+import { viewCameraAnatomyScene } from "./view-camera-anatomy";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
+  [viewCameraAnatomyScene.id]: viewCameraAnatomyScene,
   [understandingCameraMovementsScene.id]: understandingCameraMovementsScene,
   [architectureRiseScene.id]: architectureRiseScene,
   [architectureForegroundScene.id]: architectureForegroundScene,
@@ -25,6 +27,7 @@ export const sceneRegistry: Record<string, SceneDefinition> = {
 };
 
 export const sceneOrder = [
+  viewCameraAnatomyScene.id,
   understandingCameraMovementsScene.id,
   architectureRiseScene.id,
   architectureForegroundScene.id,

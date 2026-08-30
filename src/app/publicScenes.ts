@@ -9,6 +9,7 @@ import {
 } from "../i18n/messageKeys";
 
 export const publicSceneIds = [
+  "view-camera-anatomy",
   "understanding-camera-movements",
   "focus-fundamentals-two-targets",
   "architecture-rise",
@@ -34,6 +35,11 @@ export type PublicGuidedLessonConfig = {
   taskStageIds: readonly PublicGuidedLessonTaskStageId[];
 };
 
+export type PublicLessonConfig = {
+  kind: "anatomy";
+  id: string;
+};
+
 export type PublicSceneEntry = {
   id: PublicSceneId;
   titleKey: PublicSceneTitleKey;
@@ -47,9 +53,28 @@ export type PublicSceneEntry = {
   guidedTaskIds?: readonly string[];
   /** Optional lightweight lesson integration metadata for the public scene. */
   guidedLesson?: PublicGuidedLessonConfig;
+  /** Optional explanatory lesson rendered without task/evaluation state. */
+  lesson?: PublicLessonConfig;
 };
 
 export const publicSceneCatalog: readonly PublicSceneEntry[] = [
+  {
+    id: "view-camera-anatomy",
+    titleKey: publicSceneMessageKeys.viewCameraAnatomy.title,
+    descriptionKey: publicSceneMessageKeys.viewCameraAnatomy.description,
+    topicKeys: [
+      publicSceneMessageKeys.viewCameraAnatomy.topics.anatomy,
+      publicSceneMessageKeys.viewCameraAnatomy.topics.focusing,
+      publicSceneMessageKeys.viewCameraAnatomy.topics.filmPlane,
+    ],
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/view-camera-hero-illustration.png",
+    lesson: {
+      kind: "anatomy",
+      id: "view-camera-anatomy",
+    },
+  },
   {
     id: "understanding-camera-movements",
     titleKey: publicSceneMessageKeys.understanding.title,

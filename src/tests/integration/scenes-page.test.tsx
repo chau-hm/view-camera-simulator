@@ -38,6 +38,25 @@ describe("scenes page", () => {
     ).toBeInTheDocument();
     const openButtons = await screen.findAllByText(/Open Scene/);
     expect(openButtons.length).toBeGreaterThanOrEqual(1);
+    const anatomyHeading = await screen.findByRole("heading", {
+      name: "Lesson 0 — Meet the View Camera",
+      level: 2,
+    });
+    const anatomyCard = anatomyHeading.closest("article");
+    expect(anatomyCard).not.toBeNull();
+    const scopedAnatomyCard = within(anatomyCard!);
+    expect(
+      scopedAnatomyCard.getByText(
+        "Identify the major physical parts of a conceptual view camera before exploring its movements.",
+      ),
+    ).toBeInTheDocument();
+    expect(scopedAnatomyCard.getByText("Camera anatomy")).toBeInTheDocument();
+    expect(scopedAnatomyCard.getByText("Focusing screen")).toBeInTheDocument();
+    expect(scopedAnatomyCard.getByText("Shared image plane")).toBeInTheDocument();
+    expect(scopedAnatomyCard.getByRole("link", { name: "Start Lesson" })).toHaveAttribute(
+      "href",
+      "/simulator/free/view-camera-anatomy?lesson=1",
+    );
     expect(screen.getByText(/Understand how Front and Rear focusing differ/)).toBeInTheDocument();
     expect(screen.getByText("Front / Rear focusing")).toBeInTheDocument();
     expect(screen.getByText("Image alignment")).toBeInTheDocument();
@@ -170,6 +189,7 @@ describe("scenes page", () => {
     );
 
     expect(publicSceneIds).toEqual([
+      "view-camera-anatomy",
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
@@ -190,6 +210,7 @@ describe("scenes page", () => {
     expect(
       screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
     ).toEqual([
+      "Lesson 0 — Meet the View Camera",
       "Understanding Camera Movements",
       "Focus Fundamentals — Two Targets",
       "Architecture Rise",
@@ -241,6 +262,7 @@ describe("scenes page", () => {
     expect(
       (await screen.findAllByRole("heading", { level: 2 })).map((heading) => heading.textContent),
     ).toEqual([
+      "第 0 課 — 認識大片幅相機",
       "認識大片幅相機移軸",
       "前後組對焦比較",
       "建築構圖與上移",
@@ -258,6 +280,10 @@ describe("scenes page", () => {
       return within(card!);
     };
 
+    expect(cardFor("第 0 課 — 認識大片幅相機").getByRole("link", { name: "開始課程" })).toHaveAttribute(
+      "href",
+      "/simulator/free/view-camera-anatomy?lesson=1",
+    );
     expect(cardFor("認識大片幅相機移軸").getByText(/理解整部相機移動與前、後組移軸/)).toBeInTheDocument();
     expect(
       cardFor("鏡面構圖與視點").getByText(

@@ -1,4 +1,13 @@
 export const publicSceneMessageKeys = {
+  viewCameraAnatomy: {
+    title: "scenes.viewCameraAnatomy.title",
+    description: "scenes.viewCameraAnatomy.description",
+    topics: {
+      anatomy: "scenes.viewCameraAnatomy.topics.anatomy",
+      focusing: "scenes.viewCameraAnatomy.topics.focusing",
+      filmPlane: "scenes.viewCameraAnatomy.topics.filmPlane",
+    },
+  },
   understanding: {
     title: "scenes.understanding.title",
     description: "scenes.understanding.description",
@@ -81,6 +90,7 @@ type TopicValues<T extends { topics: Record<string, string> }> = T["topics"][key
 export type PublicSceneTitleKey = PublicSceneMessageGroup["title"];
 export type PublicSceneDescriptionKey = PublicSceneMessageGroup["description"];
 export type PublicSceneTopicKey =
+  | TopicValues<typeof publicSceneMessageKeys.viewCameraAnatomy>
   | TopicValues<typeof publicSceneMessageKeys.understanding>
   | TopicValues<typeof publicSceneMessageKeys.focusFundamentals>
   | TopicValues<typeof publicSceneMessageKeys.architectureRise>

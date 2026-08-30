@@ -5,6 +5,7 @@ import { scenesMessages } from "./scenes";
 import { simulatorMessages } from "./simulator";
 import { tasksMessages } from "./tasks";
 import { guidedLessonMessages } from "./guidedLesson";
+import { lessonZeroMessages } from "./lessonZero";
 
 export const enMessages = {
   common: commonMessages,
@@ -14,4 +15,5 @@ export const enMessages = {
   simulator: simulatorMessages,
   tasks: tasksMessages,
   guidedLesson: guidedLessonMessages,
+  lessonZero: lessonZeroMessages,
 } as const;

@@ -7,6 +7,15 @@ export const scenesMessages = {
     intro: "選擇一個場景，在對焦屏上比較視點、構圖、透視幾何及清晰焦平面控制。",
     noScenesAvailable: "暫時沒有可用場景。",
   },
+  viewCameraAnatomy: {
+    title: "第 0 課 — 認識大片幅相機",
+    description: "在探索相機移軸前，先認識概念大片幅相機的主要實體部件。",
+    topics: {
+      anatomy: "相機結構",
+      focusing: "對焦屏",
+      filmPlane: "相同影像平面",
+    },
+  },
   understanding: {
     title: "認識大片幅相機移軸",
     description:

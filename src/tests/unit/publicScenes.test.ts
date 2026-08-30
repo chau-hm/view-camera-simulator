@@ -24,6 +24,31 @@ describe("public scene catalog integrity", () => {
     expect(validate(publicSceneCatalog)).toEqual({ valid: true, errors: [] });
   });
 
+  it("publishes Lesson 0 as the first free-only anatomy lesson", () => {
+    const entry = publicSceneCatalog[0];
+    expect(entry).toMatchObject({
+      id: "view-camera-anatomy",
+      availableModes: ["free"],
+      lesson: { kind: "anatomy", id: "view-camera-anatomy" },
+    });
+    expect(publicSceneIds[0]).toBe("view-camera-anatomy");
+    expect(
+      isValidSimulatorRoute({
+        mode: "free",
+        sceneId: entry.id,
+        publicEntry: entry,
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: "not-a-task",
+        publicEntry: entry,
+      }),
+    ).toBe(false);
+  });
+
   it("publishes Focus Fundamentals as free-only without inventing a guided task", () => {
     const entry = publicSceneCatalog.find(
       (candidate) => candidate.id === "focus-fundamentals-two-targets",
