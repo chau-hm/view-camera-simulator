@@ -23,6 +23,38 @@ type GroupProps = {
   children: ReactNode;
 };
 
+type InspectableProps = {
+  name?: string;
+  children?: ReactNode;
+  [key: string]: unknown;
+};
+
+const childrenOf = (element: ReactElement<InspectableProps>): ReactNode => {
+  if (typeof element.type === "function") {
+    return (element.type as (props: InspectableProps) => ReactNode)(element.props);
+  }
+  return element.props.children;
+};
+
+const hasNamedDescendant = (node: ReactNode, expectedName: string): boolean => {
+  let found = false;
+  Children.forEach(node, (child) => {
+    if (found || typeof child !== "object" || child === null || !("props" in child)) {
+      return;
+    }
+    const element = child as ReactElement<{
+      name?: string;
+      children?: ReactNode;
+    }>;
+    if (element.props.name === expectedName) {
+      found = true;
+      return;
+    }
+    found = hasNamedDescendant(childrenOf(element), expectedName);
+  });
+  return found;
+};
+
 const cameraFor = (pitchDeg: number): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
   ...understandingCameraMovementsScene.cameraPreset,
@@ -120,14 +152,9 @@ describe("canonical camera-body render views", () => {
       const localGroup = Children.only(pitchGroup.props.children) as ReactElement<GroupProps>;
       expect(localGroup.props.name).toBe("camera-body-local-geometry");
       expect(localGroup.props.position).toEqual(transform.localOffset);
+      expect(hasNamedDescendant(localGroup.props.children, "camera-body-rail")).toBe(true);
       expect(
-        Children.toArray(localGroup.props.children).some(
-          (child) =>
-            typeof child === "object" &&
-            child !== null &&
-            "props" in child &&
-            (child.props as { name?: string }).name === "camera-body-rail",
-        ),
+        hasNamedDescendant(localGroup.props.children, "camera-anatomy-camera-support"),
       ).toBe(true);
     },
   );
@@ -146,13 +173,10 @@ describe("canonical camera-body render views", () => {
     expect(tree.props.name).toBe("original-ghost-camera-rig-placement");
     expect(pitchGroup.props.name).toBe("original-ghost-camera-body-pitch");
     expect(
-      Children.toArray(localGroup.props.children).some(
-        (child) =>
-          typeof child === "object" &&
-          child !== null &&
-          "props" in child &&
-          (child.props as { name?: string }).name === "original-ghost-camera-rail",
-      ),
+      hasNamedDescendant(localGroup.props.children, "original-ghost-camera-rail"),
+    ).toBe(true);
+    expect(
+      hasNamedDescendant(localGroup.props.children, "camera-anatomy-camera-support"),
     ).toBe(true);
   });
 
