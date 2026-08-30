@@ -54,7 +54,7 @@ describe("AnatomyLessonPanel", () => {
     const { onStepIndexChange, onReset } = renderPanel(9);
 
     expect(screen.getByText("Lesson complete")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Previous" }));
     fireEvent.click(screen.getByRole("button", { name: "Restart lesson" }));
 

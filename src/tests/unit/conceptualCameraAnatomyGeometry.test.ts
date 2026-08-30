@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   CONCEPTUAL_LENS_APERTURE_MIN_RADIUS_MM,
   CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
+  CONCEPTUAL_LENS_IRIS_BLADE_COUNT,
+  resolveConceptualApertureBlades,
   resolveConceptualApertureOpening,
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
@@ -67,5 +69,17 @@ describe("conceptual aperture opening geometry", () => {
     expect(opening.entrancePupilDiameterMm).toBe(
       CAMERA_CONSTANTS.focalLengthMm / CAMERA_CONSTANTS.apertureOptions[1],
     );
+  });
+
+  it("resolves a deterministic set of visible iris blades around the canonical opening", () => {
+    const wide = resolveConceptualApertureBlades({ aperture: 5.6 });
+    const narrow = resolveConceptualApertureBlades({ aperture: 32 });
+
+    expect(wide).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+    expect(wide).toEqual(resolveConceptualApertureBlades({ aperture: 5.6 }));
+    expect(wide[0].innerRadiusMm).toBeGreaterThan(narrow[0].innerRadiusMm);
+    expect(wide.every((blade) => blade.outerRadiusMm > blade.innerRadiusMm)).toBe(true);
+    expect(wide.every((blade) => Number.isFinite(blade.thetaStartRad))).toBe(true);
+    expect(wide.every((blade) => Number.isFinite(blade.thetaLengthRad))).toBe(true);
   });
 });

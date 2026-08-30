@@ -107,7 +107,15 @@ export const resolveConceptualFilmHolderGeometry = (): ConceptualFilmHolderGeome
 export const CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM = 22;
 export const CONCEPTUAL_LENS_APERTURE_VISUAL_SCALE = 1.5;
 export const CONCEPTUAL_LENS_APERTURE_MIN_RADIUS_MM = 1.5;
+export const CONCEPTUAL_LENS_IRIS_BLADE_COUNT = 8;
 const CONCEPTUAL_LENS_APERTURE_RIM_MM = 0.5;
+const CONCEPTUAL_LENS_IRIS_BLADE_RIM_MM = 1.5;
+const CONCEPTUAL_LENS_IRIS_BLADE_SPAN_RATIO = 0.82;
+
+type ConceptualApertureInput = {
+  aperture?: number;
+  focalLengthMm?: number;
+};
 
 export type ConceptualApertureOpening = Readonly<{
   /** Physical entrance-pupil diameter before visual scaling. */
@@ -126,10 +134,7 @@ export type ConceptualApertureOpening = Readonly<{
 export const resolveConceptualApertureOpening = ({
   aperture = CAMERA_CONSTANTS.apertureOptions[1],
   focalLengthMm = CAMERA_CONSTANTS.focalLengthMm,
-}: {
-  aperture?: number;
-  focalLengthMm?: number;
-} = {}): ConceptualApertureOpening => {
+}: ConceptualApertureInput = {}): ConceptualApertureOpening => {
   const safeAperture = Number.isFinite(aperture) && aperture > 0
     ? aperture
     : CAMERA_CONSTANTS.apertureOptions[1];
@@ -152,4 +157,39 @@ export const resolveConceptualApertureOpening = ({
     openingRadiusMm,
     outerRadiusMm,
   };
+};
+
+export type ConceptualApertureBlade = Readonly<{
+  index: number;
+  innerRadiusMm: number;
+  outerRadiusMm: number;
+  thetaStartRad: number;
+  thetaLengthRad: number;
+}>;
+
+/** Resolve the lightweight annular sectors used to make the conceptual iris readable. */
+export const resolveConceptualApertureBlades = (
+  input: ConceptualApertureInput = {},
+): readonly ConceptualApertureBlade[] => {
+  const opening = resolveConceptualApertureOpening(input);
+  const segmentAngleRad = (Math.PI * 2) / CONCEPTUAL_LENS_IRIS_BLADE_COUNT;
+  const outerRadiusMm = Math.min(
+    opening.outerRadiusMm,
+    Math.max(
+      opening.openingRadiusMm + 0.75,
+      opening.outerRadiusMm - CONCEPTUAL_LENS_IRIS_BLADE_RIM_MM,
+    ),
+  );
+  const thetaLengthRad = segmentAngleRad * CONCEPTUAL_LENS_IRIS_BLADE_SPAN_RATIO;
+
+  return Array.from(
+    { length: CONCEPTUAL_LENS_IRIS_BLADE_COUNT },
+    (_, index) => ({
+      index,
+      innerRadiusMm: opening.openingRadiusMm,
+      outerRadiusMm,
+      thetaStartRad: index * segmentAngleRad - thetaLengthRad / 2,
+      thetaLengthRad,
+    }),
+  );
 };

@@ -59,6 +59,11 @@ describe("Lesson 0 integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByRole("heading", { name: "Film Holder", level: 3 })).toBeInTheDocument();
     expect(useAppStore.getState().camera.aperture).toBe(11);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByRole("heading", { name: "Recap", level: 3 })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument();
   });
 
   it("resets the lesson and restores normal presentation on scene exit", async () => {

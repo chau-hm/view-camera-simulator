@@ -267,6 +267,34 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     expect(findNamedElement(wide, "camera-anatomy-lens")).not.toBeNull();
   });
 
+  it("keeps the front glass readable while exposing the highlighted iris blades", () => {
+    const opticsState = deriveOpticsState(cameraFor(), architectureRiseScene);
+    const tree = renderConceptualViewCamera({
+      opticsState,
+      aperture: 5.6,
+      presentation: {
+        anatomy: {
+          targets: [{ kind: "element", name: "lens-aperture-iris", parentPart: "lens" }],
+        },
+      },
+    });
+    const glass = findNamedElement(tree, "lens-front-glass");
+    const irisBlades = collectNamedElements(
+      tree,
+      (name) => name.startsWith("lens-aperture-iris-blade-"),
+    );
+    const opening = findNamedElement(tree, "lens-aperture-opening");
+
+    expect(glass).not.toBeNull();
+    expect(geometryArgs(glass!, "sphereGeometry")[0]).toBeGreaterThan(0);
+    expect(glass!.props.scale).toEqual([1, 1, 0.22]);
+    expect(glass!.props.renderOrder).toBe(0);
+    expect(opening).not.toBeNull();
+    expect(geometryArgs(opening!, "circleGeometry")[0]).toBeGreaterThan(0);
+    expect(irisBlades).toHaveLength(8);
+    expect(irisBlades.every((blade) => blade.props.renderOrder === 3)).toBe(true);
+  });
+
   it("uses one shared hollow procedural bellows mesh between canonical standards", () => {
     const opticsState = deriveOpticsState(
       cameraFor({ frontRiseMm: 12, rearRiseMm: 18, rearTiltDeg: 6 }),

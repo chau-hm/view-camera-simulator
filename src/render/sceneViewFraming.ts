@@ -46,10 +46,12 @@ export type SceneViewportFramingInput = {
   focalLengthMm: number;
   cameraRigTransform: CameraRigTransform;
   cameraInspectionTargetWorld?: [number, number, number];
+  cameraInspectionTarget?: CameraInspectionTarget;
 };
 
 const WORLD_SCALE = 0.001;
 const CAMERA_INSPECTION_DISTANCE_WORLD = 0.72;
+const APERTURE_INSPECTION_DISTANCE_WORLD = 0.38;
 const CAMERA_INSPECTION_FALLBACK_DIRECTION: [number, number, number] = [0.68, 0.42, -1];
 
 const normalize = (
@@ -139,6 +141,7 @@ const resolveInspectionPosition = (
   scene: Pick<SceneDefinition, "cameraInspectionPlacement">,
   sceneView: ObserverViewState,
   target: [number, number, number],
+  inspectionTarget?: CameraInspectionTarget,
 ): [number, number, number] => {
   if (scene.cameraInspectionPlacement) {
     return toWorldVector(scene.cameraInspectionPlacement.position);
@@ -156,10 +159,13 @@ const resolveInspectionPosition = (
   }
 
   const unitDirection = normalize(direction);
+  const distance = inspectionTarget === "aperture"
+    ? APERTURE_INSPECTION_DISTANCE_WORLD
+    : CAMERA_INSPECTION_DISTANCE_WORLD;
   return [
-    target[0] + unitDirection[0] * CAMERA_INSPECTION_DISTANCE_WORLD,
-    target[1] + unitDirection[1] * CAMERA_INSPECTION_DISTANCE_WORLD,
-    target[2] + unitDirection[2] * CAMERA_INSPECTION_DISTANCE_WORLD,
+    target[0] + unitDirection[0] * distance,
+    target[1] + unitDirection[1] * distance,
+    target[2] + unitDirection[2] * distance,
   ];
 };
 
@@ -167,8 +173,9 @@ export const createCameraInspectionView = (
   scene: Pick<SceneDefinition, "cameraInspectionPlacement">,
   sceneView: ObserverViewState,
   target: [number, number, number],
+  inspectionTarget?: CameraInspectionTarget,
 ): ObserverViewState => {
-  const position = resolveInspectionPosition(scene, sceneView, target);
+  const position = resolveInspectionPosition(scene, sceneView, target, inspectionTarget);
   return { target: [...target], position };
 };
 
@@ -184,6 +191,7 @@ export const resolveSceneViewportFraming = ({
   focalLengthMm,
   cameraRigTransform,
   cameraInspectionTargetWorld,
+  cameraInspectionTarget,
 }: SceneViewportFramingInput): SceneViewportFraming => {
   const sceneView: ObserverViewState = {
     position: toWorldVector(scene.cameraPlacement.position),
@@ -209,6 +217,7 @@ export const resolveSceneViewportFraming = ({
     scene,
     sceneView,
     calibratedCameraTarget,
+    cameraInspectionTarget,
   );
   const cameraView =
     usesCanonicalPhysicalPivot

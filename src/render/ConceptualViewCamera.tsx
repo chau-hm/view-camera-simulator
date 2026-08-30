@@ -40,6 +40,7 @@ import {
   type ConceptualBellowsAttachmentFrames,
 } from "./conceptualBellowsGeometry";
 import {
+  resolveConceptualApertureBlades,
   resolveConceptualApertureOpening,
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
@@ -384,6 +385,8 @@ const FrontStandardAssembly = ({
     state: frameState,
   };
   const apertureOpening = resolveConceptualApertureOpening({ aperture, focalLengthMm });
+  const apertureBlades = resolveConceptualApertureBlades({ aperture, focalLengthMm });
+  const apertureFocused = apertureState === "highlighted";
   const outerWidth = CAMERA_CONSTANTS.frontStandardWidthMm;
   const outerHeight = CAMERA_CONSTANTS.frontStandardHeightMm;
   const frameBar = 14;
@@ -486,13 +489,30 @@ const FrontStandardAssembly = ({
               {...frameMaterialProps({ ghost, state: lensState })}
             />
           </mesh>
-          <mesh name="lens-front-glass" position={[0, 0, toWorld(35.5)]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[toWorld(22), toWorld(22), toWorld(3), 32]} />
+          <mesh
+            name="lens-front-glass"
+            position={[0, 0, toWorld(35.5)]}
+            scale={[1, 1, 0.22]}
+            renderOrder={presentation.renderOrder}
+          >
+            <sphereGeometry args={[toWorld(22), 32, 16]} />
             <meshStandardMaterial
-              color={resolvePresentationColor("#38bdf8", "#cbd5e1", lensState, ghost)}
+              color={
+                apertureFocused
+                  ? "#7dd3fc"
+                  : resolvePresentationColor("#38bdf8", "#cbd5e1", lensState, ghost)
+              }
               transparent
-              opacity={ghost ? 0.28 : lensState === "dimmed" ? 0.18 : 0.68}
-              depthWrite={!ghost && lensState !== "dimmed"}
+              opacity={
+                ghost
+                  ? 0.2
+                  : apertureFocused
+                    ? 0.08
+                    : lensState === "dimmed"
+                      ? 0.14
+                      : 0.42
+              }
+              depthWrite={false}
               metalness={0.15}
               roughness={0.18}
               side={DoubleSide}
@@ -500,7 +520,7 @@ const FrontStandardAssembly = ({
           </mesh>
           <mesh
             name="lens-aperture-iris"
-            position={[0, 0, toWorld(26)]}
+            position={[0, 0, toWorld(30)]}
             renderOrder={presentation.renderOrder + 1}
           >
             <ringGeometry
@@ -515,10 +535,58 @@ const FrontStandardAssembly = ({
               transparent={ghost || apertureState === "dimmed"}
               opacity={ghost ? 0.38 : apertureState === "dimmed" ? 0.2 : 0.96}
               depthWrite={!ghost && apertureState !== "dimmed"}
+              depthTest={false}
               side={DoubleSide}
               roughness={0.82}
             />
           </mesh>
+          <mesh
+            name="lens-aperture-opening"
+            position={[0, 0, toWorld(30.5)]}
+            renderOrder={presentation.renderOrder + 2}
+          >
+            <circleGeometry args={[toWorld(apertureOpening.openingRadiusMm), 32]} />
+            <meshBasicMaterial
+              color="#020617"
+              transparent={ghost || apertureState === "dimmed"}
+              opacity={ghost ? 0.3 : apertureState === "dimmed" ? 0.18 : 0.92}
+              depthTest={false}
+              depthWrite={false}
+              side={DoubleSide}
+            />
+          </mesh>
+          {apertureBlades.map((blade) => (
+            <mesh
+              key={blade.index}
+              name={`lens-aperture-iris-blade-${blade.index}`}
+              position={[0, 0, toWorld(30.75)]}
+              renderOrder={presentation.renderOrder + 3}
+            >
+              <ringGeometry
+                args={[
+                  toWorld(blade.innerRadiusMm),
+                  toWorld(blade.outerRadiusMm),
+                  12,
+                  1,
+                  blade.thetaStartRad,
+                  blade.thetaLengthRad,
+                ]}
+              />
+              <meshStandardMaterial
+                color={
+                  apertureState === "highlighted"
+                    ? "#fef3c7"
+                    : resolvePresentationColor("#1e293b", "#64748b", apertureState, ghost)
+                }
+                transparent={ghost || apertureState === "dimmed"}
+                opacity={ghost ? 0.4 : apertureState === "dimmed" ? 0.2 : 0.98}
+                depthWrite={!ghost && apertureState !== "dimmed"}
+                depthTest={false}
+                side={DoubleSide}
+                roughness={0.76}
+              />
+            </mesh>
+          ))}
         </AnatomyPartGroup>
       </group>
     </AnatomyPartGroup>
