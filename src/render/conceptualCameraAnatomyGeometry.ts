@@ -107,13 +107,18 @@ export const resolveConceptualFilmHolderGeometry = (): ConceptualFilmHolderGeome
 export const CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM = 22;
 export const CONCEPTUAL_LENS_APERTURE_VISUAL_SCALE = 1.5;
 export const CONCEPTUAL_LENS_APERTURE_MIN_RADIUS_MM = 1.5;
-/** Six straight-edged blades provide a clearly photographic diaphragm silhouette. */
+/** Six blades keep the conceptual diaphragm legible without implying a brand-specific lens. */
 export const CONCEPTUAL_LENS_IRIS_BLADE_COUNT = 6;
 const CONCEPTUAL_LENS_APERTURE_RIM_MM = 0.5;
-const CONCEPTUAL_LENS_IRIS_BLADE_OUTER_MARGIN_MM = 0.75;
-const CONCEPTUAL_LENS_IRIS_BLADE_INNER_SPAN_RATIO = 0.58;
-const CONCEPTUAL_LENS_IRIS_BLADE_OUTER_SPAN_RATIO = 0.38;
-const CONCEPTUAL_LENS_IRIS_BLADE_SKEW_RATIO = 0.16;
+const CONCEPTUAL_LENS_IRIS_BLADE_PIVOT_RADIUS_MM = 19;
+const CONCEPTUAL_LENS_IRIS_BLADE_LENGTH_MM = 23;
+const CONCEPTUAL_LENS_IRIS_BLADE_OUTER_EXTENSION_MM = 2.5;
+const CONCEPTUAL_LENS_IRIS_BLADE_WIDTH_MM = 9;
+const CONCEPTUAL_LENS_IRIS_BLADE_TIP_WIDTH_MM = 5.5;
+const CONCEPTUAL_LENS_IRIS_BLADE_TIP_SKEW_MM = 4;
+const CONCEPTUAL_LENS_IRIS_BLADE_OPEN_ORIENTATION_RAD = Math.PI / 2;
+const CONCEPTUAL_LENS_IRIS_BLADE_MAX_CLOSURE_RAD = (34 * Math.PI) / 180;
+const CONCEPTUAL_LENS_IRIS_BLADE_LAYER_SPACING_MM = 0.08;
 
 type ConceptualApertureInput = {
   aperture?: number;
@@ -128,7 +133,7 @@ export type ConceptualAperturePoint = Readonly<{
 export type ConceptualApertureOpening = Readonly<{
   /** Physical entrance-pupil diameter before visual scaling. */
   entrancePupilDiameterMm: number;
-  /** Visual opening dimensions used by the conceptual iris mesh. */
+  /** Bounded visual opening dimensions used to select the blade pose. */
   openingDiameterMm: number;
   openingRadiusMm: number;
   outerRadiusMm: number;
@@ -172,73 +177,84 @@ const polarPoint = (radiusMm: number, angleRad: number): ConceptualAperturePoint
   y: radiusMm * Math.sin(angleRad),
 });
 
-/** Resolve the polygonal opening formed by the straight-edged diaphragm blades. */
-export const resolveConceptualApertureOpeningPolygon = (
-  input: ConceptualApertureInput = {},
-): readonly ConceptualAperturePoint[] => {
-  const opening = resolveConceptualApertureOpening(input);
-  const segmentAngleRad = (Math.PI * 2) / CONCEPTUAL_LENS_IRIS_BLADE_COUNT;
-  const rotationRad = segmentAngleRad / 2;
-
-  return Array.from(
-    { length: CONCEPTUAL_LENS_IRIS_BLADE_COUNT },
-    (_, index) => polarPoint(
-      opening.openingRadiusMm,
-      rotationRad + index * segmentAngleRad,
-    ),
-  );
-};
-
 export type ConceptualApertureBlade = Readonly<{
   index: number;
-  innerRadiusMm: number;
-  outerRadiusMm: number;
+  /** The pivot is intentionally off-axis, as on a real rotating diaphragm blade. */
+  pivot: ConceptualAperturePoint;
   centerAngleRad: number;
-  /** Four points describe a flat, straight-edged overlapping blade. */
+  /** Rotation around the blade's own pivot; aperture closure is driven by this value. */
+  rotationRad: number;
+  /** Small separation between stacked blades prevents coplanar depth ambiguity. */
+  layerOffsetMm: number;
+  /** One shared straight-edged blade profile, reused for every aperture value. */
   points: readonly ConceptualAperturePoint[];
 }>;
 
+const CONCEPTUAL_LENS_IRIS_BLADE_PROFILE: readonly ConceptualAperturePoint[] = Object.freeze([
+  { x: -CONCEPTUAL_LENS_IRIS_BLADE_LENGTH_MM, y: -CONCEPTUAL_LENS_IRIS_BLADE_TIP_WIDTH_MM / 2 },
+  {
+    x: -CONCEPTUAL_LENS_IRIS_BLADE_LENGTH_MM + CONCEPTUAL_LENS_IRIS_BLADE_TIP_SKEW_MM,
+    y: CONCEPTUAL_LENS_IRIS_BLADE_TIP_WIDTH_MM / 2,
+  },
+  {
+    x: CONCEPTUAL_LENS_IRIS_BLADE_OUTER_EXTENSION_MM,
+    y: CONCEPTUAL_LENS_IRIS_BLADE_WIDTH_MM / 2,
+  },
+  {
+    x: CONCEPTUAL_LENS_IRIS_BLADE_OUTER_EXTENSION_MM,
+    y: -CONCEPTUAL_LENS_IRIS_BLADE_WIDTH_MM / 2,
+  },
+]);
+
+const clampUnit = (value: number): number => Math.min(1, Math.max(0, value));
+
 /**
- * Resolve overlapping trapezoidal diaphragm blades from the canonical opening.
- * The inner edge spans slightly more than one blade sector so adjacent blades
- * overlap around the polygonal opening; the outer edge is narrower and skewed
- * to retain the mechanical spiral character of a photographic iris.
+ * Convert the canonical opening diameter into a blade rotation amount. The
+ * opening radius is used only to select the pose; blade dimensions stay fixed
+ * so the diaphragm closes by rotating overlapping blades instead of resizing
+ * radial wedges.
+ */
+const resolveConceptualApertureBladeClosure = (
+  opening: ConceptualApertureOpening,
+): number => {
+  const widestAperture = Math.min(...CAMERA_CONSTANTS.apertureOptions);
+  const smallestAperture = Math.max(...CAMERA_CONSTANTS.apertureOptions);
+  const widestOpening = resolveConceptualApertureOpening({ aperture: widestAperture });
+  const smallestOpening = resolveConceptualApertureOpening({ aperture: smallestAperture });
+  const openingRange = widestOpening.openingRadiusMm - smallestOpening.openingRadiusMm;
+  const openingFraction = openingRange > 0
+    ? clampUnit(
+        (opening.openingRadiusMm - smallestOpening.openingRadiusMm) / openingRange,
+      )
+    : 1;
+  return (1 - openingFraction) * CONCEPTUAL_LENS_IRIS_BLADE_MAX_CLOSURE_RAD;
+};
+
+/**
+ * Resolve one shared photographic blade profile at six off-axis pivots. Every
+ * blade is identical; the aperture value changes only the rotation of each
+ * blade around its pivot, which makes the inner cutting edges collectively
+ * define the opening.
  */
 export const resolveConceptualApertureBlades = (
   input: ConceptualApertureInput = {},
 ): readonly ConceptualApertureBlade[] => {
   const opening = resolveConceptualApertureOpening(input);
+  const closureRad = resolveConceptualApertureBladeClosure(opening);
   const segmentAngleRad = (Math.PI * 2) / CONCEPTUAL_LENS_IRIS_BLADE_COUNT;
-  const outerRadiusMm = Math.min(
-    opening.outerRadiusMm,
-    Math.max(
-      opening.openingRadiusMm + 0.75,
-      opening.outerRadiusMm - CONCEPTUAL_LENS_IRIS_BLADE_OUTER_MARGIN_MM,
-    ),
-  );
 
   return Array.from(
     { length: CONCEPTUAL_LENS_IRIS_BLADE_COUNT },
     (_, index) => {
       const centerAngleRad = index * segmentAngleRad;
-      const outerCenterAngleRad =
-        centerAngleRad + segmentAngleRad * CONCEPTUAL_LENS_IRIS_BLADE_SKEW_RATIO;
-      const innerHalfSpanRad =
-        segmentAngleRad * CONCEPTUAL_LENS_IRIS_BLADE_INNER_SPAN_RATIO;
-      const outerHalfSpanRad =
-        segmentAngleRad * CONCEPTUAL_LENS_IRIS_BLADE_OUTER_SPAN_RATIO;
 
       return {
         index,
-        innerRadiusMm: opening.openingRadiusMm,
-        outerRadiusMm,
+        pivot: polarPoint(CONCEPTUAL_LENS_IRIS_BLADE_PIVOT_RADIUS_MM, centerAngleRad),
         centerAngleRad,
-        points: [
-          polarPoint(opening.openingRadiusMm, centerAngleRad - innerHalfSpanRad),
-          polarPoint(opening.openingRadiusMm, centerAngleRad + innerHalfSpanRad),
-          polarPoint(outerRadiusMm, outerCenterAngleRad + outerHalfSpanRad),
-          polarPoint(outerRadiusMm, outerCenterAngleRad - outerHalfSpanRad),
-        ],
+        rotationRad: centerAngleRad + CONCEPTUAL_LENS_IRIS_BLADE_OPEN_ORIENTATION_RAD - closureRad,
+        layerOffsetMm: index * CONCEPTUAL_LENS_IRIS_BLADE_LAYER_SPACING_MM,
+        points: CONCEPTUAL_LENS_IRIS_BLADE_PROFILE,
       };
     },
   );

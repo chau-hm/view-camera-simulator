@@ -250,36 +250,49 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     expect(findNamedElement(filmHolderTree, "ground-glass-screen")).toBeNull();
   });
 
-  it("derives the visible iris opening from the canonical aperture input", () => {
+  it("derives a rotating off-axis diaphragm from the canonical aperture input", () => {
     const opticsState = deriveOpticsState(cameraFor(), architectureRiseScene);
     const wide = renderConceptualViewCamera({ opticsState, aperture: 5.6 });
     const narrow = renderConceptualViewCamera({ opticsState, aperture: 32 });
-    const wideOpening = findNamedElement(wide, "lens-aperture-opening");
-    const narrowOpening = findNamedElement(narrow, "lens-aperture-opening");
-    const wideBlades = collectNamedElements(
-      wide,
-      (name) => name.startsWith("lens-aperture-blade-"),
-    );
-    const narrowBlades = collectNamedElements(
-      narrow,
-      (name) => name.startsWith("lens-aperture-blade-"),
-    );
+    const wideInterior = findNamedElement(wide, "lens-aperture-interior");
+    const narrowInterior = findNamedElement(narrow, "lens-aperture-interior");
+    const isBladeGroup = (name: string) => /^lens-aperture-blade-\d+$/.test(name);
+    const wideBlades = collectNamedElements(wide, isBladeGroup);
+    const narrowBlades = collectNamedElements(narrow, isBladeGroup);
+    const wideBladeSurface = findNamedElement(wide, "lens-aperture-blade-0-surface");
+    const wideBladeMaterial = Children.toArray(wideBladeSurface?.props.children).find(
+      (child) =>
+        typeof child === "object" &&
+        child !== null &&
+        "props" in child &&
+        (child as ReactElement).type === "meshStandardMaterial",
+    ) as ReactElement<InspectableProps> | undefined;
 
     expect(findNamedElement(wide, "lens-aperture-iris")).not.toBeNull();
-    expect(wideOpening).not.toBeNull();
-    expect(narrowOpening).not.toBeNull();
-    expect(geometryArgs(wideOpening!, "shapeGeometry")).toHaveLength(1);
-    expect(geometryArgs(narrowOpening!, "shapeGeometry")).toHaveLength(1);
+    expect(wideInterior).not.toBeNull();
+    expect(narrowInterior).not.toBeNull();
+    expect(findNamedElement(wide, "lens-aperture-opening")).toBeNull();
+    expect(geometryArgs(wideInterior!, "circleGeometry")).toEqual(
+      geometryArgs(narrowInterior!, "circleGeometry"),
+    );
     expect(wideBlades).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
     expect(narrowBlades).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+    expect(wideBlades[0].props.position).toEqual(narrowBlades[0].props.position);
+    expect(wideBlades[0].props.position).not.toEqual([0, 0, 0]);
+    expect(wideBlades[0].props.rotation).not.toEqual(narrowBlades[0].props.rotation);
+    expect(wideBladeSurface).not.toBeNull();
+    expect(geometryArgs(wideBladeSurface!, "shapeGeometry")).toHaveLength(1);
+    expect(wideBladeMaterial?.props.depthTest).toBe(true);
+    expect(wideBladeMaterial?.props.depthWrite).toBe(true);
     expect(
       wideBlades.every((blade) =>
-        Children.toArray(blade.props.children).some(
-          (child) =>
-            typeof child === "object" &&
-            child !== null &&
-            "type" in child &&
-            child.type === "shapeGeometry",
+        blade.props.rotation &&
+        blade.props.position &&
+        Children.toArray(blade.props.children).some((child) =>
+          typeof child === "object" &&
+          child !== null &&
+          "props" in child &&
+          (child as ReactElement<{ name?: string }>).props.name?.endsWith("-surface"),
         ),
       ),
     ).toBe(true);

@@ -41,8 +41,8 @@ import {
   type ConceptualBellowsAttachmentFrames,
 } from "./conceptualBellowsGeometry";
 import {
+  CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
   resolveConceptualApertureBlades,
-  resolveConceptualApertureOpeningPolygon,
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
   type ConceptualAperturePoint,
@@ -401,9 +401,6 @@ const FrontStandardAssembly = ({
     renderOrder: ghost ? 10 : 0,
     state: frameState,
   };
-  const apertureOpeningShape = createConceptualShape(
-    resolveConceptualApertureOpeningPolygon({ aperture, focalLengthMm }),
-  );
   const apertureBlades = resolveConceptualApertureBlades({ aperture, focalLengthMm });
   const apertureFocused = apertureState === "highlighted";
   const outerWidth = CAMERA_CONSTANTS.frontStandardWidthMm;
@@ -543,42 +540,49 @@ const FrontStandardAssembly = ({
             renderOrder={presentation.renderOrder + 1}
           >
             <mesh
-              name="lens-aperture-opening"
-              position={[0, 0, toWorld(0.25)]}
+              name="lens-aperture-interior"
+              position={[0, 0, toWorld(-0.75)]}
               renderOrder={presentation.renderOrder + 1}
             >
-              <shapeGeometry args={[apertureOpeningShape]} />
+              <circleGeometry args={[toWorld(CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM), 32]} />
               <meshBasicMaterial
                 color="#020617"
                 transparent={ghost || apertureState === "dimmed"}
                 opacity={ghost ? 0.3 : apertureState === "dimmed" ? 0.18 : 0.92}
-                depthTest={false}
+                depthTest
                 depthWrite={false}
                 side={DoubleSide}
               />
             </mesh>
             {apertureBlades.map((blade) => (
-              <mesh
+              <group
                 key={blade.index}
                 name={`lens-aperture-blade-${blade.index}`}
-                position={[0, 0, toWorld(0.75)]}
-                renderOrder={presentation.renderOrder + 2}
+                position={[
+                  toWorld(blade.pivot.x),
+                  toWorld(blade.pivot.y),
+                  toWorld(blade.layerOffsetMm),
+                ]}
+                rotation={[0, 0, blade.rotationRad]}
+                renderOrder={presentation.renderOrder + 2 + blade.index}
               >
-                <shapeGeometry args={[createConceptualShape(blade.points)]} />
-                <meshStandardMaterial
-                  color={
-                    apertureState === "highlighted"
-                      ? "#fef3c7"
-                      : resolvePresentationColor("#1e293b", "#64748b", apertureState, ghost)
-                  }
-                  transparent={ghost || apertureState === "dimmed"}
-                  opacity={ghost ? 0.4 : apertureState === "dimmed" ? 0.2 : 0.98}
-                  depthTest={false}
-                  depthWrite={!ghost && apertureState !== "dimmed"}
-                  side={DoubleSide}
-                  roughness={0.76}
-                />
-              </mesh>
+                <mesh name={`lens-aperture-blade-${blade.index}-surface`}>
+                  <shapeGeometry args={[createConceptualShape(blade.points)]} />
+                  <meshStandardMaterial
+                    color={
+                      apertureState === "highlighted"
+                        ? "#fef3c7"
+                        : resolvePresentationColor("#1e293b", "#64748b", apertureState, ghost)
+                    }
+                    transparent={ghost || apertureState === "dimmed"}
+                    opacity={ghost ? 0.4 : apertureState === "dimmed" ? 0.2 : 0.98}
+                    depthTest
+                    depthWrite={!ghost && apertureState !== "dimmed"}
+                    side={DoubleSide}
+                    roughness={0.76}
+                  />
+                </mesh>
+              </group>
             ))}
           </group>
         </AnatomyPartGroup>

@@ -40,7 +40,7 @@ test("Lesson 0 presents the anatomy sequence and isolates its presentation state
     }
   }
 
-  await expect(next).toBeDisabled();
+  await expect(next).toHaveCount(0);
   await expect(panel.getByRole("status")).toHaveText("Lesson complete");
 
   await panel.getByRole("button", { name: "Restart lesson", exact: true }).click();

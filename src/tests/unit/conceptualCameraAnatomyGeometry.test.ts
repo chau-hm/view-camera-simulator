@@ -5,7 +5,6 @@ import {
   CONCEPTUAL_LENS_IRIS_BLADE_COUNT,
   resolveConceptualApertureBlades,
   resolveConceptualApertureOpening,
-  resolveConceptualApertureOpeningPolygon,
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
 } from "../../render/conceptualCameraAnatomyGeometry";
@@ -75,18 +74,28 @@ describe("conceptual aperture opening geometry", () => {
   it("resolves overlapping straight-edged diaphragm blades for every supported aperture", () => {
     const wide = resolveConceptualApertureBlades({ aperture: 5.6 });
     const narrow = resolveConceptualApertureBlades({ aperture: 32 });
-    const openingPolygon = resolveConceptualApertureOpeningPolygon({ aperture: 32 });
 
     expect(wide).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
-    expect(openingPolygon).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
-    expect(wide[0].innerRadiusMm).toBeGreaterThan(narrow[0].innerRadiusMm);
+    expect(wide[0].pivot.x).not.toBe(0);
+    expect(wide[0].pivot.y).toBe(0);
+    expect(wide[0].points).toBe(wide[1].points);
+    expect(wide[0].points).toEqual(narrow[0].points);
+    expect(wide[0].rotationRad).toBeGreaterThan(narrow[0].rotationRad);
+    expect(wide[1].rotationRad - narrow[1].rotationRad).toBeCloseTo(
+      wide[0].rotationRad - narrow[0].rotationRad,
+    );
     expect(wide.every((blade) => blade.points.length === 4)).toBe(true);
-    expect(wide.every((blade) => blade.outerRadiusMm > blade.innerRadiusMm)).toBe(true);
     expect(
       CAMERA_CONSTANTS.apertureOptions
         .flatMap((aperture) => resolveConceptualApertureBlades({ aperture }))
-        .flatMap((blade) => blade.points)
-        .every((point) => Number.isFinite(point.x) && Number.isFinite(point.y)),
+        .every((blade) =>
+          Number.isFinite(blade.pivot.x) &&
+          Number.isFinite(blade.pivot.y) &&
+          Number.isFinite(blade.rotationRad) &&
+          blade.points.every(
+            (point) => Number.isFinite(point.x) && Number.isFinite(point.y),
+          ),
+        ),
     ).toBe(true);
     expect(resolveConceptualApertureBlades({ aperture: 5.6 })).toEqual(wide);
   });
