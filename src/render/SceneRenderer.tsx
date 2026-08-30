@@ -8,7 +8,7 @@ import type { RefObject } from "react";
 import { Camera, DoubleSide, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { OrbitControls as OrbitControlsController } from "three-stdlib";
-import type { CameraState } from "../types/camera";
+import type { ApertureValue, CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
@@ -680,6 +680,7 @@ const SceneContent = ({
   showOpticalGeometry,
   showScheimpflugConstruction,
   focusFocalLengthMm,
+  activeAperture,
 }: {
   scene: SceneDefinition;
   cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
@@ -689,6 +690,7 @@ const SceneContent = ({
   showOpticalGeometry: boolean;
   showScheimpflugConstruction: boolean;
   focusFocalLengthMm: number;
+  activeAperture: ApertureValue;
 }) => {
   const registration = getSceneSubjectRegistration(scene.id);
   const RegisteredSubject = registration?.SceneSubject;
@@ -715,6 +717,8 @@ const SceneContent = ({
       <CameraBodyAssembly
         opticsState={opticsState}
         activeStandard={activeFocusStandard}
+        aperture={activeAperture}
+        focalLengthMm={focusFocalLengthMm}
       />
     ) : (
       <ConceptualViewCamera
@@ -722,6 +726,8 @@ const SceneContent = ({
         variant="current"
         coordinateSpace="world"
         activeStandard={activeFocusStandard}
+        aperture={activeAperture}
+        focalLengthMm={focusFocalLengthMm}
       />
     )}
     {focusFundamentalsReferenceOptics ? (
@@ -759,6 +765,9 @@ const OriginalGhostCamera = ({
   scene: SceneDefinition;
 }) => {
   const hasCapabilities = Boolean(scene.movementCapabilities);
+  const originalAperture = scene.cameraPreset.aperture;
+  const originalFocalLengthMm =
+    scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm;
 
   // Always derive original (zero-movement) optics from the scene preset
   const originalOptics = useMemo(() => {
@@ -787,6 +796,8 @@ const OriginalGhostCamera = ({
       <CameraBodyAssembly
         opticsState={originalOptics}
         ghost
+        aperture={originalAperture}
+        focalLengthMm={originalFocalLengthMm}
       />
     </group>
   ) : (
@@ -794,6 +805,8 @@ const OriginalGhostCamera = ({
       opticsState={originalOptics}
       variant="ghost"
       coordinateSpace="world"
+      aperture={originalAperture}
+      focalLengthMm={originalFocalLengthMm}
     />
   );
 };
@@ -817,6 +830,7 @@ export const SceneRenderer = ({
 }: SceneRendererProps) => {
   const { t } = useTranslation();
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
+  const activeAperture = useAppStore((state) => state.camera.aperture);
   const configuredTargetRegion = useAppStore((state) => state.scene.targetRegion);
   const effectiveCameraMovementCalibration = useAppStore(
     selectEffectiveCameraMovementCalibration,
@@ -1061,6 +1075,7 @@ export const SceneRenderer = ({
           showOpticalGeometry={Boolean(showOpticalGeometry)}
           showScheimpflugConstruction={Boolean(showScheimpflugConstruction)}
           focusFocalLengthMm={activeFocalLengthMm}
+          activeAperture={activeAperture}
         />
         <OrbitControls
           ref={controlsRef}

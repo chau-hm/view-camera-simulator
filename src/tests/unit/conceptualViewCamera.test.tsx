@@ -69,6 +69,23 @@ const collectNamedElements = (
   return result;
 };
 
+const geometryArgs = (
+  element: ReactElement<InspectableProps>,
+  type: string,
+): number[] => {
+  const child = Children.toArray(element.props.children).find(
+    (candidate) =>
+      typeof candidate === "object" &&
+      candidate !== null &&
+      "props" in candidate &&
+      (candidate as ReactElement).type === type,
+  );
+  if (!child || typeof child !== "object" || !("props" in child)) {
+    throw new Error(`Expected ${type} child`);
+  }
+  return (child as ReactElement<{ args: number[] }>).props.args;
+};
+
 const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
   ...architectureRiseScene.cameraPreset,
@@ -106,7 +123,7 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     const current = renderConceptualViewCamera({ opticsState, variant: "current" });
     const ghost = renderConceptualViewCamera({ opticsState, variant: "ghost" });
 
-    for (const part of CONCEPTUAL_CAMERA_ANATOMY_PARTS) {
+    for (const part of CONCEPTUAL_CAMERA_ANATOMY_PARTS.filter((part) => part !== "film-holder")) {
       const name = `camera-anatomy-${part}`;
       expect(findNamedElement(current, name), `current ${part}`).not.toBeNull();
       expect(findNamedElement(ghost, name), `ghost ${part}`).not.toBeNull();
@@ -150,6 +167,79 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     expect(rearFrame!.props.position).toEqual(expectedRear.position);
     expectQuaternionEqual(rearFrame!.props.quaternion, expectedRear.quaternion);
     expect(groundGlass!.props.position).toEqual([0, 0, 0]);
+  });
+
+  it("renders the film-holder variant through the same rear-standard hierarchy", () => {
+    const opticsState = deriveOpticsState(cameraFor(), architectureRiseScene);
+    const current = renderConceptualViewCamera({
+      opticsState,
+      rearBackMode: "film-holder",
+    });
+    const ghost = renderConceptualViewCamera({
+      opticsState,
+      variant: "ghost",
+      rearBackMode: "film-holder",
+    });
+
+    expect(findNamedElement(current, "camera-anatomy-film-holder")).not.toBeNull();
+    expect(findNamedElement(ghost, "camera-anatomy-film-holder")).not.toBeNull();
+    expect(findNamedElement(current, "camera-anatomy-ground-glass-back")).toBeNull();
+    expect(findNamedElement(current, "film-holder-body")).not.toBeNull();
+    expect(findNamedElement(current, "film-holder-film-surface")).not.toBeNull();
+    expect(findNamedElement(current, "rear-standard-frame")).not.toBeNull();
+  });
+
+  it("keeps the Ground Glass and film surface coincident under rear-standard movement", () => {
+    const opticsState = deriveOpticsState(
+      cameraFor({
+        rearRiseMm: 18,
+        rearShiftMm: -14,
+        rearTiltDeg: 6,
+        rearSwingDeg: -5,
+      }),
+      architectureRiseScene,
+    );
+    const groundGlassTree = renderConceptualViewCamera({ opticsState });
+    const filmHolderTree = renderConceptualViewCamera({
+      opticsState,
+      rearBackMode: "film-holder",
+    });
+    const screen = findNamedElement(groundGlassTree, "ground-glass-screen");
+    const film = findNamedElement(filmHolderTree, "film-holder-film-surface");
+    const rearFrame = findNamedElement(filmHolderTree, "rear-standard-frame");
+
+    expect(screen).not.toBeNull();
+    expect(film).not.toBeNull();
+    expect(rearFrame).not.toBeNull();
+    expect(screen!.props.position).toEqual([0, 0, 0]);
+    expect(film!.props.position).toEqual([0, 0, 0]);
+    expect(geometryArgs(screen!, "planeGeometry")).toEqual(
+      geometryArgs(film!, "planeGeometry"),
+    );
+    expectQuaternionEqual(
+      rearFrame!.props.quaternion,
+      resolveRearStandardRenderTransform(opticsState.rearStandardFrame).quaternion,
+    );
+    expect(findNamedElement(groundGlassTree, "film-holder-film-surface")).toBeNull();
+    expect(findNamedElement(filmHolderTree, "ground-glass-screen")).toBeNull();
+  });
+
+  it("derives the visible iris opening from the canonical aperture input", () => {
+    const opticsState = deriveOpticsState(cameraFor(), architectureRiseScene);
+    const wide = renderConceptualViewCamera({ opticsState, aperture: 5.6 });
+    const narrow = renderConceptualViewCamera({ opticsState, aperture: 32 });
+    const wideIris = findNamedElement(wide, "lens-aperture-iris");
+    const narrowIris = findNamedElement(narrow, "lens-aperture-iris");
+
+    expect(wideIris).not.toBeNull();
+    expect(narrowIris).not.toBeNull();
+    expect(geometryArgs(wideIris!, "ringGeometry")[0]).toBeGreaterThan(
+      geometryArgs(narrowIris!, "ringGeometry")[0],
+    );
+    expect(geometryArgs(wideIris!, "ringGeometry")[1]).toBe(
+      geometryArgs(narrowIris!, "ringGeometry")[1],
+    );
+    expect(findNamedElement(wide, "camera-anatomy-lens")).not.toBeNull();
   });
 
   it("uses one shared hollow procedural bellows mesh between canonical standards", () => {

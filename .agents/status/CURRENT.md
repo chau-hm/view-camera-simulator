@@ -1,12 +1,9 @@
-# PR 9C — Animated standards + deformable bellows
+# PR 9D — Ground Glass, Film Holder + Aperture Iris
 
-- Objective: replace the PR 9B static bellows with one canonical, procedural deformable bellows for current and ghost Conceptual View Camera variants; do not add Lesson 0 or new public movements.
-- Base: `origin/main` at `44049a31671e532c9ccf3c1eb58b2c25e89fb6f7`, merged PR #110.
-- Canonical sources: front centre/normal through `resolveFrontStandardRenderTransform`; rear centre/basis through `resolveRearStandardRenderTransform` and `StandardFrame`; rig-local placement remains `cameraBodyLocalGeometry` → body pitch → rig placement.
-- Bellows decision: 11 cross-sections (9 pleat transitions plus endpoint sections), linearly interpolated centres, quaternion-slerped orientations, locally tapered/alternating mouth dimensions, and one open indexed four-wall mesh with no caps.
-- Compatibility: endpoint offsets are local to each standard; fixed support remains independent of standard movement; no optics/state/animation model changes; Focus Fundamentals now renders the shared bellows so front/rear focus extension is visible.
-- Semantic reuse: `camera-anatomy-bellows` remains the single public anatomy group; `bellows-folded-surface` is an internal stable mesh name; current/ghost and world/rig-local paths use the same helper and mesh algorithm.
-- Runtime ownership: the rendered bellows keeps one component-owned `BufferGeometry`/attribute set, updates typed arrays in place, recomputes bounds, disables frustum culling for the deforming mesh, and disposes the geometry on unmount.
-- Validation: `npm run ci:local` passed (148 test files / 1,441 tests, CSS check, lint, typecheck, and build); focused bellows/camera-body tests pass (32 tests); final targeted Chromium movement/inspection suite passed 41/44, with the same three known baseline failures, and final Ground Glass interaction passed 3/3. Remaining browser failures are known RTT/GPU contentfulness, intermittent orbit, and pre-existing route-transition RTT baseline cases.
-- Manual: camera-focused captures show hollow accordion bellows under Focus Fundamentals front/rear focus, Architecture Rise, Table Tilt, Shelf Swing, Mirror Shift, and Understanding Camera Movements. No bellows visual adjustment beyond the procedural replacement was needed.
-- PR 9D note: Ground Glass, Film Holder, and Aperture Iris can consume the existing standard/bellows semantic boundaries without another bellows or standard-transform rewrite.
+- Objective: add rear-back anatomy and a visible canonical-aperture iris to the shared `ConceptualViewCamera`; no Lesson 0, new state, controls, optics, RTT, or bellows redesign.
+- Base: `origin/main` at `f173a39ff7b662e903bb4efde018a175d4f54d06`, merged PR #111.
+- Rear-back contract: `GroundGlassBack` and `FilmHolder` are mutually exclusive render variants under the existing `rear-standard-frame`; both sensitive surfaces use local `{ x: 0, y: 0, z: 0 }`, the canonical rear/film plane. Holder shell/frame geometry extends rearward.
+- Aperture contract: `resolveConceptualApertureOpening` derives a bounded visual opening from canonical focal length / f-number; `lens-aperture-iris` remains a child of the canonical front lens hierarchy.
+- Semantic reuse: existing `ground-glass-back` remains stable; `ground-glass-frame`, `ground-glass-screen`, `film-holder`, `film-holder-body`, `film-holder-film-surface`, and `lens-aperture-iris` provide stable anatomy names. Current/ghost and world/rig-local paths share the same implementation.
+- Compatibility: standards, deformable bellows, fixed support, canonical optics, and Ground Glass RTT remain unchanged; no learner-facing rear-back switch is exposed.
+- Validation: `npm run ci:local` passes (149 test files / 1,450 tests, CSS check, lint, typecheck, and build); focused anatomy/camera-body tests pass (29 tests); targeted Chromium smoke coverage passes 45/47, with only the pre-existing scene-orbit assertion and Understanding Camera Movements route-transition RTT race. Camera-focused screenshots show the rear screen/frame and hollow bellows; aperture UI changes were exercised at f/5.6 and f/32.

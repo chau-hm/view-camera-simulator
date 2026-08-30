@@ -186,6 +186,24 @@ describe("canonical camera-body render views", () => {
     ).toBe(true);
   });
 
+  it("keeps rear-back variants and lens aperture inside the calibrated local hierarchy", () => {
+    const opticsState = deriveOpticsState(
+      cameraFor(0),
+      understandingCameraMovementsScene,
+    );
+    const tree = CameraBodyAssembly({
+      opticsState,
+      rearBackMode: "film-holder",
+      aperture: 5.6,
+    }) as ReactElement<GroupProps>;
+    const pitchGroup = Children.only(tree.props.children) as ReactElement<GroupProps>;
+    const localGroup = Children.only(pitchGroup.props.children) as ReactElement<GroupProps>;
+
+    expect(hasNamedDescendant(localGroup.props.children, "camera-anatomy-film-holder")).toBe(true);
+    expect(hasNamedDescendant(localGroup.props.children, "film-holder-film-surface")).toBe(true);
+    expect(hasNamedDescendant(localGroup.props.children, "lens-aperture-iris")).toBe(true);
+  });
+
   it("applies outer rig placement after body pitch and matches resolved world standards", () => {
     const camera: CameraState = {
       ...cameraFor(8),
