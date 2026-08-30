@@ -3,6 +3,7 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   createObserverViewPresets,
   createCameraInspectionView,
+  resolveCameraInspectionTargetWorld,
   resolveCameraInspectionFocusTargetWorld,
   resolveSceneViewportFraming,
   resolveStableCameraInspectionTarget,
@@ -105,6 +106,33 @@ describe("3D observer view framing", () => {
       Math.hypot(...baseOffset),
       10,
     );
+  });
+
+  it("maps anatomy inspection targets to canonical camera geometry", () => {
+    const optics = deriveOpticsState(cameraState(), architectureRiseScene);
+    const lens = resolveCameraInspectionTargetWorld("lens", optics);
+    const rear = resolveCameraInspectionTargetWorld("ground-glass", optics);
+    const bellows = resolveCameraInspectionTargetWorld("bellows", optics);
+    const support = resolveCameraInspectionTargetWorld("camera-support", optics);
+
+    expect(lens).toEqual([
+      optics.lensCenterWorld.x * 0.001,
+      optics.lensCenterWorld.y * 0.001,
+      optics.lensCenterWorld.z * 0.001,
+    ]);
+    expect(rear).toEqual([
+      optics.filmCenterWorld.x * 0.001,
+      optics.filmCenterWorld.y * 0.001,
+      optics.filmCenterWorld.z * 0.001,
+    ]);
+    expect(bellows).toEqual([
+      (optics.lensCenterWorld.x + optics.filmCenterWorld.x) * 0.0005,
+      (optics.lensCenterWorld.y + optics.filmCenterWorld.y) * 0.0005,
+      (optics.lensCenterWorld.z + optics.filmCenterWorld.z) * 0.0005,
+    ]);
+    expect(support[0]).toBeCloseTo(bellows[0], 10);
+    expect(support[1]).toBeCloseTo(bellows[1] - 0.14, 10);
+    expect(support[2]).toBeCloseTo(bellows[2], 10);
   });
 
   it("preserves the canonical scene view and frames the camera around its stable body anchor", () => {

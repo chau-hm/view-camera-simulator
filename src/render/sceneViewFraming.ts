@@ -2,11 +2,23 @@ import type {
   CameraInspectionAnchorSide,
   SceneDefinition,
 } from "../types/scene";
-import type { Vec3 } from "../types/optics";
+import type { DerivedOpticsState, Vec3 } from "../types/optics";
 import { transformRigLocalPointToWorld } from "../core/optics/applyCameraBodyPitch";
 import type { CameraRigTransform } from "../types/optics";
 
 export type SceneViewFocus = "scene" | "camera";
+
+export type CameraInspectionTarget =
+  | "whole-camera"
+  | "front-standard"
+  | "lens"
+  | "lens-board"
+  | "aperture"
+  | "bellows"
+  | "rear-standard"
+  | "ground-glass"
+  | "film-holder"
+  | "camera-support";
 
 export type ObserverViewState = {
   position: [number, number, number];
@@ -33,6 +45,7 @@ export type SceneViewportFramingInput = {
   scene: SceneViewportFramingScene;
   focalLengthMm: number;
   cameraRigTransform: CameraRigTransform;
+  cameraInspectionTargetWorld?: [number, number, number];
 };
 
 const WORLD_SCALE = 0.001;
@@ -83,6 +96,45 @@ export const resolveStableCameraInspectionTarget = (
   return [0, 0, nominalBodyCenterZMm * WORLD_SCALE];
 };
 
+const midpoint = (first: Vec3, second: Vec3): Vec3 => ({
+  x: (first.x + second.x) / 2,
+  y: (first.y + second.y) / 2,
+  z: (first.z + second.z) / 2,
+});
+
+/**
+ * Resolve lesson-facing anatomy targets from canonical camera geometry. This
+ * is only an inspection pivot; it does not create an alternate camera model.
+ */
+export const resolveCameraInspectionTargetWorld = (
+  target: CameraInspectionTarget,
+  opticsState: Pick<DerivedOpticsState, "lensCenterWorld" | "filmCenterWorld">,
+): [number, number, number] => {
+  const lens = opticsState.lensCenterWorld;
+  const rear = opticsState.filmCenterWorld;
+  const center = midpoint(lens, rear);
+  const point = (() => {
+    switch (target) {
+      case "front-standard":
+      case "lens":
+      case "lens-board":
+      case "aperture":
+        return lens;
+      case "rear-standard":
+      case "ground-glass":
+      case "film-holder":
+        return rear;
+      case "camera-support":
+        return { ...center, y: center.y - 140 };
+      case "bellows":
+      case "whole-camera":
+      default:
+        return center;
+    }
+  })();
+  return toWorldVector(point);
+};
+
 const resolveInspectionPosition = (
   scene: Pick<SceneDefinition, "cameraInspectionPlacement">,
   sceneView: ObserverViewState,
@@ -131,18 +183,21 @@ export const resolveSceneViewportFraming = ({
   scene,
   focalLengthMm,
   cameraRigTransform,
+  cameraInspectionTargetWorld,
 }: SceneViewportFramingInput): SceneViewportFraming => {
   const sceneView: ObserverViewState = {
     position: toWorldVector(scene.cameraPlacement.position),
     target: toWorldVector(scene.cameraPlacement.target),
   };
   const usesCanonicalPhysicalPivot = scene.cameraBodyPitchCapability?.enabled === true;
-  const cameraTarget = usesCanonicalPhysicalPivot
-    ? resolveCameraInspectionFocusTargetWorld(cameraRigTransform)
-    : resolveStableCameraInspectionTarget(
-        scene.cameraInspectionAnchorSide,
-        focalLengthMm,
-      );
+  const cameraTarget = cameraInspectionTargetWorld ?? (
+    usesCanonicalPhysicalPivot
+      ? resolveCameraInspectionFocusTargetWorld(cameraRigTransform)
+      : resolveStableCameraInspectionTarget(
+          scene.cameraInspectionAnchorSide,
+          focalLengthMm,
+        )
+  );
   const calibratedCameraTarget = usesCanonicalPhysicalPivot
     ? resolveCameraInspectionFocusTargetWorld({
         ...cameraRigTransform,

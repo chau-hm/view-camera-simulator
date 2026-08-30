@@ -171,7 +171,10 @@ const isGuidedLessonObserveRoute = (
 ): boolean =>
   lessonEntry &&
   mode === "free" &&
-  Boolean(getPublicSceneEntryById(sceneId)?.guidedLesson) &&
+  Boolean(
+    getPublicSceneEntryById(sceneId)?.guidedLesson ||
+      getPublicSceneEntryById(sceneId)?.lesson?.kind === "anatomy",
+  ) &&
   taskId == null;
 
 const resolveGuidedLessonObserveFocus = (

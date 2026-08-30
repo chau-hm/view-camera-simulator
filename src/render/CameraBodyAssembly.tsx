@@ -21,6 +21,7 @@ export const CameraBodyAssembly = ({
   rearBackMode = "ground-glass",
   aperture,
   focalLengthMm,
+  presentation,
 }: CameraBodyAssemblyProps) => {
   return renderConceptualViewCamera({
     opticsState,
@@ -31,6 +32,7 @@ export const CameraBodyAssembly = ({
     rearBackMode,
     aperture,
     focalLengthMm,
+    presentation,
     rigRail: geometry.cameraBody.rail,
   });
 };

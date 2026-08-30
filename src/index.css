@@ -487,6 +487,26 @@ button {
 .guided-lesson-progress__completion--complete { color: #166534; font-weight: 700; }
 .guided-lesson-progress__completion-body { margin: 0; color: var(--text-muted); }
 
+/* Lesson 0 anatomy guide: compact, presentation-only progression in the existing aside. */
+.anatomy-lesson-panel { display: grid; gap: 16px; }
+.anatomy-lesson-panel__header { display: grid; gap: 4px; }
+.anatomy-lesson-panel__label,
+.anatomy-lesson-panel__progress,
+.anatomy-lesson-panel__cue,
+.anatomy-lesson-panel__complete { margin: 0; }
+.anatomy-lesson-panel__label { color: var(--text-muted); font-size: 12px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
+.anatomy-lesson-panel__progress { color: var(--text-muted); font-size: 13px; }
+.anatomy-lesson-panel__content { display: grid; gap: 8px; }
+.anatomy-lesson-panel__content h3 { margin: 0; font-size: 20px; }
+.anatomy-lesson-panel__content p { margin: 0; line-height: 1.5; }
+.anatomy-lesson-panel__cue { color: var(--text-muted); font-size: 13px; }
+.anatomy-lesson-panel__aperture-toggle { justify-self: start; }
+.anatomy-lesson-panel__actions,
+.anatomy-lesson-panel__footer { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.anatomy-lesson-panel__actions { justify-content: space-between; }
+.anatomy-lesson-panel__complete { color: #166534; font-weight: 700; }
+.anatomy-lesson-panel__footer { justify-content: space-between; border-top: 1px solid var(--border-soft); padding-top: 12px; }
+
 @media (max-width: 520px) {
  .guided-lesson-progress__stages { gap: 2px; }
  .guided-lesson-progress__stages li { font-size: 11px; }

@@ -38,7 +38,10 @@ import {
 import { useAppStore } from "../state/appStore";
 import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
 import { CameraBodyAssembly } from "./CameraBodyAssembly";
-import { ConceptualViewCamera } from "./ConceptualViewCamera";
+import {
+  ConceptualViewCamera,
+  type ConceptualCameraPresentation,
+} from "./ConceptualViewCamera";
 import {
   resolveCameraMovementLatticeRenderModel,
   type CameraMovementLatticeRenderModel,
@@ -67,6 +70,8 @@ type SceneRendererProps = {
   onAssetError: (message: string) => void;
   // optional container style allows embedding the renderer in different sized containers
   containerStyle?: React.CSSProperties;
+  /** Presentation-only anatomy/rear-back/aperture overrides for Lesson 0. */
+  cameraPresentation?: ConceptualCameraPresentation;
 };
 
 export const shouldRenderReferenceCamera = (
@@ -681,6 +686,7 @@ const SceneContent = ({
   showScheimpflugConstruction,
   focusFocalLengthMm,
   activeAperture,
+  cameraPresentation,
 }: {
   scene: SceneDefinition;
   cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
@@ -691,6 +697,7 @@ const SceneContent = ({
   showScheimpflugConstruction: boolean;
   focusFocalLengthMm: number;
   activeAperture: ApertureValue;
+  cameraPresentation?: ConceptualCameraPresentation;
 }) => {
   const registration = getSceneSubjectRegistration(scene.id);
   const RegisteredSubject = registration?.SceneSubject;
@@ -719,6 +726,7 @@ const SceneContent = ({
         activeStandard={activeFocusStandard}
         aperture={activeAperture}
         focalLengthMm={focusFocalLengthMm}
+        presentation={cameraPresentation}
       />
     ) : (
       <ConceptualViewCamera
@@ -728,6 +736,7 @@ const SceneContent = ({
         activeStandard={activeFocusStandard}
         aperture={activeAperture}
         focalLengthMm={focusFocalLengthMm}
+        presentation={cameraPresentation}
       />
     )}
     {focusFundamentalsReferenceOptics ? (
@@ -827,6 +836,7 @@ export const SceneRenderer = ({
   simulateAssetFailure,
   onAssetError,
   containerStyle,
+  cameraPresentation,
 }: SceneRendererProps) => {
   const { t } = useTranslation();
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
@@ -1076,6 +1086,7 @@ export const SceneRenderer = ({
           showScheimpflugConstruction={Boolean(showScheimpflugConstruction)}
           focusFocalLengthMm={activeFocalLengthMm}
           activeAperture={activeAperture}
+          cameraPresentation={cameraPresentation}
         />
         <OrbitControls
           ref={controlsRef}

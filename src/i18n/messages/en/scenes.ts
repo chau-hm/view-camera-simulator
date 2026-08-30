@@ -5,6 +5,16 @@ export const scenesMessages = {
       "Choose a scene to compare viewpoint, framing, perspective geometry and plane-of-sharp-focus control on the Ground Glass.",
     noScenesAvailable: "No scenes available.",
   },
+  viewCameraAnatomy: {
+    title: "Lesson 0 — Meet the View Camera",
+    description:
+      "Identify the major physical parts of a conceptual view camera before exploring its movements.",
+    topics: {
+      anatomy: "Camera anatomy",
+      focusing: "Focusing screen",
+      filmPlane: "Shared image plane",
+    },
+  },
   understanding: {
     title: "Understanding Camera Movements",
     description:

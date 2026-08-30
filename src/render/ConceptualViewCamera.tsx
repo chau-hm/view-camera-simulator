@@ -66,6 +66,85 @@ export type ConceptualCameraAnatomyPart =
 export type ConceptualCameraVariant = "current" | "ghost";
 export type ConceptualCameraCoordinateSpace = "world" | "rig-local";
 
+export type AnatomyPresentationState = "normal" | "highlighted" | "dimmed";
+
+export type ConceptualAnatomyTarget =
+  | {
+      kind: "part";
+      part: ConceptualCameraAnatomyPart;
+    }
+  | {
+      kind: "element";
+      name: "lens-aperture-iris";
+      parentPart: "lens";
+    };
+
+export type ConceptualCameraAnatomyPresentation = {
+  targets: readonly ConceptualAnatomyTarget[];
+};
+
+export type ConceptualCameraPresentation = {
+  anatomy?: ConceptualCameraAnatomyPresentation;
+  /** Physical rear-back presentation; this does not alter optical state. */
+  rearBackMode?: ConceptualRearBackMode;
+  /** Presentation-only aperture value; canonical state remains authoritative. */
+  aperture?: ApertureValue;
+};
+
+const isPartTarget = (
+  target: ConceptualAnatomyTarget,
+  part: ConceptualCameraAnatomyPart,
+): boolean => target.kind === "part" && target.part === part;
+
+/**
+ * Resolve the declarative presentation state for a semantic camera part.
+ * Structural targets include their visible child assemblies so a Front or
+ * Rear Standard remains comprehensible while a specific child can still be
+ * inspected on its own.
+ */
+export const resolveConceptualAnatomyPartState = (
+  part: ConceptualCameraAnatomyPart,
+  presentation?: ConceptualCameraAnatomyPresentation,
+): AnatomyPresentationState => {
+  const targets = presentation?.targets ?? [];
+  if (targets.length === 0) return "normal";
+
+  const highlighted = targets.some((target) => {
+    if (isPartTarget(target, part)) return true;
+    if (target.kind === "element" && target.parentPart === part) return true;
+    if (target.kind !== "part") return false;
+    if (target.part === "front-standard") {
+      return part === "lens-board" || part === "lens";
+    }
+    if (target.part === "rear-standard") {
+      return part === "ground-glass-back" || part === "film-holder";
+    }
+    return false;
+  });
+
+  return highlighted ? "highlighted" : "dimmed";
+};
+
+export const resolveConceptualAnatomyElementState = (
+  targetName: "lens-aperture-iris",
+  parentPart: "lens",
+  presentation?: ConceptualCameraAnatomyPresentation,
+): AnatomyPresentationState => {
+  const targets = presentation?.targets ?? [];
+  if (targets.length === 0) return "normal";
+  if (
+    targets.some(
+      (target) =>
+        target.kind === "element" &&
+        target.name === targetName &&
+        target.parentPart === parentPart,
+    )
+  ) {
+    return "highlighted";
+  }
+  return resolveConceptualAnatomyPartState(parentPart, presentation);
+};
+
 export type ConceptualCameraRail = {
   centerRigLocal: Vec3;
   dimensionsMm: Vec3;
@@ -118,6 +197,8 @@ export type ConceptualViewCameraProps = {
   focalLengthMm?: number;
   /** Existing canonical support rail for the calibrated rig scene. */
   rigRail?: ConceptualCameraRail;
+  /** Lesson/anatomy presentation only; never an input to optical derivation. */
+  presentation?: ConceptualCameraPresentation;
 };
 
 type CanonicalCameraGeometry = {
@@ -251,12 +332,23 @@ export const resolveConceptualSupportBeam = (
 
 type PresentationProps = {
   ghost: boolean;
+  state?: AnatomyPresentationState;
 };
 
-const frameMaterialProps = ({ ghost }: PresentationProps) => ({
-  transparent: ghost,
-  opacity: ghost ? 0.35 : 1,
-  depthWrite: !ghost,
+const resolvePresentationColor = (
+  baseColor: string,
+  ghostColor: string,
+  state: AnatomyPresentationState,
+  ghost: boolean,
+): string => {
+  if (state === "highlighted") return "#f59e0b";
+  return ghost ? ghostColor : baseColor;
+};
+
+const frameMaterialProps = ({ ghost, state = "normal" }: PresentationProps) => ({
+  transparent: ghost || state === "dimmed",
+  opacity: ghost ? 0.35 : state === "dimmed" ? 0.25 : 1,
+  depthWrite: !ghost && state !== "dimmed",
 });
 
 const FrontStandardAssembly = ({
@@ -266,6 +358,7 @@ const FrontStandardAssembly = ({
   active,
   aperture,
   focalLengthMm,
+  anatomy,
 }: {
   lensCenter: Vec3;
   lensNormal: Vec3;
@@ -273,10 +366,23 @@ const FrontStandardAssembly = ({
   active: boolean;
   aperture?: ApertureValue;
   focalLengthMm?: number;
+  anatomy?: ConceptualCameraAnatomyPresentation;
 }) => {
   const visual = resolveFocusStandardVisualState("front", active ? "front" : null);
   const transform = resolveFrontStandardRenderTransform(lensCenter, lensNormal);
-  const presentation = { ghost, renderOrder: ghost ? 10 : 0 };
+  const frameState = resolveConceptualAnatomyPartState("front-standard", anatomy);
+  const lensBoardState = resolveConceptualAnatomyPartState("lens-board", anatomy);
+  const lensState = resolveConceptualAnatomyPartState("lens", anatomy);
+  const apertureState = resolveConceptualAnatomyElementState(
+    "lens-aperture-iris",
+    "lens",
+    anatomy,
+  );
+  const presentation = {
+    ghost,
+    renderOrder: ghost ? 10 : 0,
+    state: frameState,
+  };
   const apertureOpening = resolveConceptualApertureOpening({ aperture, focalLengthMm });
   const outerWidth = CAMERA_CONSTANTS.frontStandardWidthMm;
   const outerHeight = CAMERA_CONSTANTS.frontStandardHeightMm;
@@ -297,7 +403,7 @@ const FrontStandardAssembly = ({
         >
           <boxGeometry args={[toWorld(outerWidth), toWorld(frameBar), toWorld(12)]} />
           <meshStandardMaterial
-            color={ghost ? "#94a3b8" : visual.bodyColor}
+            color={resolvePresentationColor(visual.bodyColor, "#94a3b8", frameState, ghost)}
             emissive={ghost ? "#000000" : visual.emissiveColor}
             emissiveIntensity={ghost ? 0 : visual.emissiveIntensity}
             {...frameMaterialProps(presentation)}
@@ -309,7 +415,7 @@ const FrontStandardAssembly = ({
         >
           <boxGeometry args={[toWorld(outerWidth), toWorld(frameBar), toWorld(12)]} />
           <meshStandardMaterial
-            color={ghost ? "#94a3b8" : visual.bodyColor}
+            color={resolvePresentationColor(visual.bodyColor, "#94a3b8", frameState, ghost)}
             emissive={ghost ? "#000000" : visual.emissiveColor}
             emissiveIntensity={ghost ? 0 : visual.emissiveIntensity}
             {...frameMaterialProps(presentation)}
@@ -321,7 +427,7 @@ const FrontStandardAssembly = ({
         >
           <boxGeometry args={[toWorld(frameBar), toWorld(innerHeight), toWorld(12)]} />
           <meshStandardMaterial
-            color={ghost ? "#94a3b8" : visual.bodyColor}
+            color={resolvePresentationColor(visual.bodyColor, "#94a3b8", frameState, ghost)}
             emissive={ghost ? "#000000" : visual.emissiveColor}
             emissiveIntensity={ghost ? 0 : visual.emissiveIntensity}
             {...frameMaterialProps(presentation)}
@@ -333,7 +439,7 @@ const FrontStandardAssembly = ({
         >
           <boxGeometry args={[toWorld(frameBar), toWorld(innerHeight), toWorld(12)]} />
           <meshStandardMaterial
-            color={ghost ? "#94a3b8" : visual.bodyColor}
+            color={resolvePresentationColor(visual.bodyColor, "#94a3b8", frameState, ghost)}
             emissive={ghost ? "#000000" : visual.emissiveColor}
             emissiveIntensity={ghost ? 0 : visual.emissiveIntensity}
             {...frameMaterialProps(presentation)}
@@ -348,8 +454,8 @@ const FrontStandardAssembly = ({
           <mesh name="lens-board-plate">
             <boxGeometry args={[toWorld(112), toWorld(104), toWorld(8)]} />
             <meshStandardMaterial
-              color={ghost ? "#cbd5e1" : visual.detailColor}
-              {...frameMaterialProps(presentation)}
+              color={resolvePresentationColor(visual.detailColor, "#cbd5e1", lensBoardState, ghost)}
+              {...frameMaterialProps({ ghost, state: lensBoardState })}
             />
           </mesh>
         </AnatomyPartGroup>
@@ -362,31 +468,31 @@ const FrontStandardAssembly = ({
           <mesh name="lens-rear-mount" position={[0, 0, toWorld(6)]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[toWorld(24), toWorld(24), toWorld(12), 24]} />
             <meshStandardMaterial
-              color={ghost ? "#6b7280" : visual.lensColor}
-              {...frameMaterialProps(presentation)}
+              color={resolvePresentationColor(visual.lensColor, "#6b7280", lensState, ghost)}
+              {...frameMaterialProps({ ghost, state: lensState })}
             />
           </mesh>
           <mesh name="lens-shutter-housing" position={[0, 0, toWorld(15)]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[toWorld(31), toWorld(31), toWorld(18), 32]} />
             <meshStandardMaterial
-              color={ghost ? "#94a3b8" : "#374151"}
-              {...frameMaterialProps(presentation)}
+              color={resolvePresentationColor("#374151", "#94a3b8", lensState, ghost)}
+              {...frameMaterialProps({ ghost, state: lensState })}
             />
           </mesh>
           <mesh name="lens-front-barrel" position={[0, 0, toWorld(27)]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[toWorld(27), toWorld(27), toWorld(14), 32, 1, true]} />
             <meshStandardMaterial
-              color={ghost ? "#6b7280" : "#1f2937"}
-              {...frameMaterialProps(presentation)}
+              color={resolvePresentationColor("#1f2937", "#6b7280", lensState, ghost)}
+              {...frameMaterialProps({ ghost, state: lensState })}
             />
           </mesh>
           <mesh name="lens-front-glass" position={[0, 0, toWorld(35.5)]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[toWorld(22), toWorld(22), toWorld(3), 32]} />
             <meshStandardMaterial
-              color={ghost ? "#cbd5e1" : "#38bdf8"}
+              color={resolvePresentationColor("#38bdf8", "#cbd5e1", lensState, ghost)}
               transparent
-              opacity={ghost ? 0.28 : 0.68}
-              depthWrite={!ghost}
+              opacity={ghost ? 0.28 : lensState === "dimmed" ? 0.18 : 0.68}
+              depthWrite={!ghost && lensState !== "dimmed"}
               metalness={0.15}
               roughness={0.18}
               side={DoubleSide}
@@ -405,10 +511,10 @@ const FrontStandardAssembly = ({
               ]}
             />
             <meshStandardMaterial
-              color={ghost ? "#475569" : "#020617"}
-              transparent={ghost}
-              opacity={ghost ? 0.38 : 0.96}
-              depthWrite={!ghost}
+              color={resolvePresentationColor("#020617", "#475569", apertureState, ghost)}
+              transparent={ghost || apertureState === "dimmed"}
+              opacity={ghost ? 0.38 : apertureState === "dimmed" ? 0.2 : 0.96}
+              depthWrite={!ghost && apertureState !== "dimmed"}
               side={DoubleSide}
               roughness={0.82}
             />
@@ -419,15 +525,15 @@ const FrontStandardAssembly = ({
   );
 };
 
-const GroundGlassBack = ({ ghost }: PresentationProps) => {
+const GroundGlassBack = ({ ghost, state = "normal" }: PresentationProps) => {
   const geometry = resolveConceptualGroundGlassGeometry();
   const { frame, surface } = geometry;
   const frameY = (frame.outerHeightMm - frame.barMm) / 2;
   const frameX = (frame.outerWidthMm - frame.barMm) / 2;
   const renderFrameMaterial = () => (
     <meshStandardMaterial
-      color={ghost ? "#cbd5e1" : "#64748b"}
-      {...frameMaterialProps({ ghost })}
+      color={resolvePresentationColor("#64748b", "#cbd5e1", state, ghost)}
+      {...frameMaterialProps({ ghost, state })}
     />
   );
 
@@ -465,10 +571,10 @@ const GroundGlassBack = ({ ghost }: PresentationProps) => {
       >
         <planeGeometry args={[toWorld(surface.widthMm), toWorld(surface.heightMm)]} />
         <meshStandardMaterial
-          color={ghost ? "#cbd5e1" : "#bae6fd"}
+          color={resolvePresentationColor("#bae6fd", "#cbd5e1", state, ghost)}
           transparent
-          opacity={ghost ? 0.22 : 0.28}
-          depthWrite={!ghost}
+          opacity={ghost ? 0.22 : state === "dimmed" ? 0.1 : 0.28}
+          depthWrite={!ghost && state !== "dimmed"}
           side={DoubleSide}
         />
       </mesh>
@@ -476,7 +582,7 @@ const GroundGlassBack = ({ ghost }: PresentationProps) => {
   );
 };
 
-const FilmHolder = ({ ghost }: PresentationProps) => {
+const FilmHolder = ({ ghost, state = "normal" }: PresentationProps) => {
   const geometry = resolveConceptualFilmHolderGeometry();
   const { frame, holder, surface } = geometry;
   const frameY = (frame.outerHeightMm - frame.barMm) / 2;
@@ -497,8 +603,8 @@ const FilmHolder = ({ ghost }: PresentationProps) => {
           args={[toWorld(holder.widthMm), toWorld(holder.heightMm), toWorld(holder.depthMm)]}
         />
         <meshStandardMaterial
-          color={ghost ? "#94a3b8" : "#1f2937"}
-          {...frameMaterialProps({ ghost })}
+          color={resolvePresentationColor("#1f2937", "#94a3b8", state, ghost)}
+          {...frameMaterialProps({ ghost, state })}
           roughness={0.86}
         />
       </mesh>
@@ -510,29 +616,29 @@ const FilmHolder = ({ ghost }: PresentationProps) => {
         <mesh name="film-holder-frame-top" position={[0, toWorld(frameY), 0]}>
           <boxGeometry args={[toWorld(frame.outerWidthMm), toWorld(frame.barMm), toWorld(frame.depthMm)]} />
           <meshStandardMaterial
-            color={ghost ? "#cbd5e1" : "#475569"}
-            {...frameMaterialProps({ ghost })}
+            color={resolvePresentationColor("#475569", "#cbd5e1", state, ghost)}
+            {...frameMaterialProps({ ghost, state })}
           />
         </mesh>
         <mesh name="film-holder-frame-bottom" position={[0, -toWorld(frameY), 0]}>
           <boxGeometry args={[toWorld(frame.outerWidthMm), toWorld(frame.barMm), toWorld(frame.depthMm)]} />
           <meshStandardMaterial
-            color={ghost ? "#cbd5e1" : "#475569"}
-            {...frameMaterialProps({ ghost })}
+            color={resolvePresentationColor("#475569", "#cbd5e1", state, ghost)}
+            {...frameMaterialProps({ ghost, state })}
           />
         </mesh>
         <mesh name="film-holder-frame-left" position={[-toWorld(frameX), 0, 0]}>
           <boxGeometry args={[toWorld(frame.barMm), toWorld(frame.outerHeightMm - frame.barMm * 2), toWorld(frame.depthMm)]} />
           <meshStandardMaterial
-            color={ghost ? "#cbd5e1" : "#475569"}
-            {...frameMaterialProps({ ghost })}
+            color={resolvePresentationColor("#475569", "#cbd5e1", state, ghost)}
+            {...frameMaterialProps({ ghost, state })}
           />
         </mesh>
         <mesh name="film-holder-frame-right" position={[toWorld(frameX), 0, 0]}>
           <boxGeometry args={[toWorld(frame.barMm), toWorld(frame.outerHeightMm - frame.barMm * 2), toWorld(frame.depthMm)]} />
           <meshStandardMaterial
-            color={ghost ? "#cbd5e1" : "#475569"}
-            {...frameMaterialProps({ ghost })}
+            color={resolvePresentationColor("#475569", "#cbd5e1", state, ghost)}
+            {...frameMaterialProps({ ghost, state })}
           />
         </mesh>
       </group>
@@ -543,10 +649,10 @@ const FilmHolder = ({ ghost }: PresentationProps) => {
       >
         <planeGeometry args={[toWorld(surface.widthMm), toWorld(surface.heightMm)]} />
         <meshStandardMaterial
-          color={ghost ? "#cbd5e1" : "#111827"}
-          transparent={ghost}
-          opacity={ghost ? 0.3 : 0.9}
-          depthWrite={!ghost}
+          color={resolvePresentationColor("#111827", "#cbd5e1", state, ghost)}
+          transparent={ghost || state === "dimmed"}
+          opacity={ghost ? 0.3 : state === "dimmed" ? 0.18 : 0.9}
+          depthWrite={!ghost && state !== "dimmed"}
           side={DoubleSide}
           roughness={0.92}
         />
@@ -560,15 +666,27 @@ const RearStandardAssembly = ({
   ghost,
   active,
   rearBackMode,
+  anatomy,
 }: {
   frame: StandardFrame;
   ghost: boolean;
   active: boolean;
   rearBackMode: ConceptualRearBackMode;
+  anatomy?: ConceptualCameraAnatomyPresentation;
 }) => {
   const visual = resolveFocusStandardVisualState("rear", active ? "rear" : null);
   const transform = resolveRearStandardRenderTransform(frame);
-  const presentation = { ghost, renderOrder: ghost ? 10 : 0 };
+  const frameState = resolveConceptualAnatomyPartState("rear-standard", anatomy);
+  const groundGlassState = resolveConceptualAnatomyPartState(
+    "ground-glass-back",
+    anatomy,
+  );
+  const filmHolderState = resolveConceptualAnatomyPartState("film-holder", anatomy);
+  const presentation = {
+    ghost,
+    renderOrder: ghost ? 10 : 0,
+    state: frameState,
+  };
   const outerWidth = CAMERA_CONSTANTS.frontStandardWidthMm;
   const outerHeight = CAMERA_CONSTANTS.frontStandardHeightMm;
   const frameBar = 14;
@@ -588,7 +706,7 @@ const RearStandardAssembly = ({
         >
           <boxGeometry args={[toWorld(outerWidth), toWorld(frameBar), toWorld(18)]} />
           <meshStandardMaterial
-            color={ghost ? "#94a3b8" : visual.bodyColor}
+            color={resolvePresentationColor(visual.bodyColor, "#94a3b8", frameState, ghost)}
             emissive={ghost ? "#000000" : visual.emissiveColor}
             emissiveIntensity={ghost ? 0 : visual.emissiveIntensity}
             {...frameMaterialProps(presentation)}
@@ -600,7 +718,7 @@ const RearStandardAssembly = ({
         >
           <boxGeometry args={[toWorld(outerWidth), toWorld(frameBar), toWorld(18)]} />
           <meshStandardMaterial
-            color={ghost ? "#94a3b8" : visual.bodyColor}
+            color={resolvePresentationColor(visual.bodyColor, "#94a3b8", frameState, ghost)}
             emissive={ghost ? "#000000" : visual.emissiveColor}
             emissiveIntensity={ghost ? 0 : visual.emissiveIntensity}
             {...frameMaterialProps(presentation)}
@@ -612,7 +730,7 @@ const RearStandardAssembly = ({
         >
           <boxGeometry args={[toWorld(frameBar), toWorld(innerHeight), toWorld(18)]} />
           <meshStandardMaterial
-            color={ghost ? "#94a3b8" : visual.bodyColor}
+            color={resolvePresentationColor(visual.bodyColor, "#94a3b8", frameState, ghost)}
             emissive={ghost ? "#000000" : visual.emissiveColor}
             emissiveIntensity={ghost ? 0 : visual.emissiveIntensity}
             {...frameMaterialProps(presentation)}
@@ -624,7 +742,7 @@ const RearStandardAssembly = ({
         >
           <boxGeometry args={[toWorld(frameBar), toWorld(innerHeight), toWorld(18)]} />
           <meshStandardMaterial
-            color={ghost ? "#94a3b8" : visual.bodyColor}
+            color={resolvePresentationColor(visual.bodyColor, "#94a3b8", frameState, ghost)}
             emissive={ghost ? "#000000" : visual.emissiveColor}
             emissiveIntensity={ghost ? 0 : visual.emissiveIntensity}
             {...frameMaterialProps(presentation)}
@@ -632,9 +750,9 @@ const RearStandardAssembly = ({
         </mesh>
 
         {rearBackMode === "ground-glass" ? (
-          <GroundGlassBack ghost={ghost} />
+          <GroundGlassBack ghost={ghost} state={groundGlassState} />
         ) : (
-          <FilmHolder ghost={ghost} />
+          <FilmHolder ghost={ghost} state={filmHolderState} />
         )}
       </group>
     </AnatomyPartGroup>
@@ -676,6 +794,7 @@ type DeformableBellowsMeshProps = {
   frustumCulled: boolean;
   ghost: boolean;
   name: string;
+  state: AnatomyPresentationState;
 };
 
 const sameBellowsEndpointFrame = (
@@ -697,6 +816,7 @@ const areDeformableBellowsMeshPropsEqual = (
   second: DeformableBellowsMeshProps,
 ): boolean =>
   first.ghost === second.ghost &&
+  first.state === second.state &&
   first.frustumCulled === second.frustumCulled &&
   first.name === second.name &&
   sameBellowsEndpointFrame(first.frames.rear, second.frames.rear) &&
@@ -707,6 +827,7 @@ const DeformableBellowsMesh = memo(({
   frustumCulled,
   ghost,
   name,
+  state,
 }: DeformableBellowsMeshProps) => {
   const geometryData = useMemo(
     () => buildConceptualBellowsGeometry(frames),
@@ -742,10 +863,10 @@ const DeformableBellowsMesh = memo(({
       renderOrder={ghost ? 10 : 0}
     >
       <meshStandardMaterial
-        color={ghost ? "#94a3b8" : "#111827"}
-        transparent
-        opacity={ghost ? 0.18 : 0.9}
-        depthWrite={!ghost}
+        color={resolvePresentationColor("#111827", "#94a3b8", state, ghost)}
+        transparent={ghost || state === "dimmed"}
+        opacity={ghost ? 0.18 : state === "dimmed" ? 0.16 : 0.9}
+        depthWrite={!ghost && state !== "dimmed"}
         roughness={0.88}
         side={DoubleSide}
       />
@@ -756,16 +877,22 @@ const DeformableBellowsMesh = memo(({
 const DeformableBellowsAssembly = ({
   frames,
   ghost,
+  anatomy,
 }: {
   frames: ConceptualBellowsAttachmentFrames;
   ghost: boolean;
+  anatomy?: ConceptualCameraAnatomyPresentation;
 }) => (
-  <AnatomyPartGroup part="bellows" renderOrder={ghost ? 10 : 0}>
+  <AnatomyPartGroup
+    part="bellows"
+    renderOrder={ghost ? 10 : 0}
+  >
     <DeformableBellowsMesh
       name="bellows-folded-surface"
       frames={frames}
       frustumCulled={false}
       ghost={ghost}
+      state={resolveConceptualAnatomyPartState("bellows", anatomy)}
     />
   </AnatomyPartGroup>
 );
@@ -775,13 +902,20 @@ const CameraSupport = ({
   rigTransform,
   ghost,
   rigRail,
+  anatomy,
 }: {
   coordinateSpace: ConceptualCameraCoordinateSpace;
   rigTransform: CameraRigTransform;
   ghost: boolean;
   rigRail?: ConceptualCameraRail;
+  anatomy?: ConceptualCameraAnatomyPresentation;
 }) => {
-  const presentation = { ghost, renderOrder: ghost ? 10 : 0 };
+  const supportState = resolveConceptualAnatomyPartState("camera-support", anatomy);
+  const presentation = {
+    ghost,
+    renderOrder: ghost ? 10 : 0,
+    state: supportState,
+  };
   const rail = rigRail ?? CONCEPTUAL_CAMERA_SUPPORT_RAIL;
   const rearMountRigLocal = resolveSupportMountRigLocal(rail, "rear");
   const frontMountRigLocal = resolveSupportMountRigLocal(rail, "front");
@@ -797,11 +931,11 @@ const CameraSupport = ({
       quaternion={quaternion}
       renderOrder={presentation.renderOrder}
     >
-      <mesh>
-        <boxGeometry args={[toWorld(52), toWorld(22), toWorld(38)]} />
-        <meshStandardMaterial
-          color={ghost ? "#cbd5e1" : "#475569"}
-          {...frameMaterialProps(presentation)}
+        <mesh>
+          <boxGeometry args={[toWorld(52), toWorld(22), toWorld(38)]} />
+          <meshStandardMaterial
+            color={resolvePresentationColor("#475569", "#cbd5e1", supportState, ghost)}
+            {...frameMaterialProps(presentation)}
         />
       </mesh>
     </group>
@@ -823,7 +957,7 @@ const CameraSupport = ({
             ]}
           />
           <meshStandardMaterial
-            color={ghost ? "#94a3b8" : "#334155"}
+            color={resolvePresentationColor("#334155", "#94a3b8", supportState, ghost)}
             {...frameMaterialProps(presentation)}
           />
         </mesh>
@@ -860,7 +994,7 @@ const CameraSupport = ({
             ]}
           />
           <meshStandardMaterial
-            color={ghost ? "#94a3b8" : "#334155"}
+            color={resolvePresentationColor("#334155", "#94a3b8", supportState, ghost)}
             {...frameMaterialProps(presentation)}
           />
         </mesh>
@@ -889,12 +1023,14 @@ const renderAnatomy = ({
   aperture,
   focalLengthMm,
   rigRail,
+  anatomy,
 }: Required<Pick<ConceptualViewCameraProps, "opticsState" | "coordinateSpace" | "variant" | "showBellows">> & {
   activeStandard?: FocusStandard | null;
   rearBackMode: ConceptualRearBackMode;
   aperture?: ApertureValue;
   focalLengthMm?: number;
   rigRail?: ConceptualCameraRail;
+  anatomy?: ConceptualCameraAnatomyPresentation;
 }) => {
   const canonical = resolveCanonicalCameraGeometry(opticsState, coordinateSpace);
   const ghost = variant === "ghost";
@@ -912,6 +1048,7 @@ const renderAnatomy = ({
         rigTransform={opticsState.cameraRigTransform}
         ghost={ghost}
         rigRail={rigRail}
+        anatomy={anatomy}
       />
       <FrontStandardAssembly
         lensCenter={canonical.lensCenter}
@@ -920,11 +1057,13 @@ const renderAnatomy = ({
         active={activeStandard === "front"}
         aperture={aperture}
         focalLengthMm={focalLengthMm}
+        anatomy={anatomy}
       />
       {showBellows ? (
         <DeformableBellowsAssembly
           frames={bellowsFrames!}
           ghost={ghost}
+          anatomy={anatomy}
         />
       ) : null}
       <RearStandardAssembly
@@ -932,6 +1071,7 @@ const renderAnatomy = ({
         ghost={ghost}
         active={activeStandard === "rear"}
         rearBackMode={rearBackMode}
+        anatomy={anatomy}
       />
     </>
   );
@@ -955,18 +1095,23 @@ export const renderConceptualViewCamera = ({
   aperture,
   focalLengthMm,
   rigRail,
+  presentation,
 }: ConceptualViewCameraProps) => {
   const ghost = variant === "ghost";
+  const anatomyPresentation = presentation?.anatomy;
+  const visualRearBackMode = presentation?.rearBackMode ?? rearBackMode;
+  const visualAperture = presentation?.aperture ?? aperture;
   const anatomy = renderAnatomy({
     opticsState,
     coordinateSpace,
     variant,
     showBellows,
     activeStandard,
-    rearBackMode,
-    aperture,
+    rearBackMode: visualRearBackMode,
+    aperture: visualAperture,
     focalLengthMm,
     rigRail,
+    anatomy: anatomyPresentation,
   });
 
   if (coordinateSpace === "rig-local") {
