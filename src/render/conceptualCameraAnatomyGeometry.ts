@@ -107,7 +107,23 @@ export const resolveConceptualFilmHolderGeometry = (): ConceptualFilmHolderGeome
 export const CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM = 22;
 export const CONCEPTUAL_LENS_APERTURE_VISUAL_SCALE = 1.5;
 export const CONCEPTUAL_LENS_APERTURE_MIN_RADIUS_MM = 1.5;
+/** Six straight-edged blades provide a clearly photographic diaphragm silhouette. */
+export const CONCEPTUAL_LENS_IRIS_BLADE_COUNT = 6;
 const CONCEPTUAL_LENS_APERTURE_RIM_MM = 0.5;
+const CONCEPTUAL_LENS_IRIS_BLADE_OUTER_MARGIN_MM = 0.75;
+const CONCEPTUAL_LENS_IRIS_BLADE_INNER_SPAN_RATIO = 0.58;
+const CONCEPTUAL_LENS_IRIS_BLADE_OUTER_SPAN_RATIO = 0.38;
+const CONCEPTUAL_LENS_IRIS_BLADE_SKEW_RATIO = 0.16;
+
+type ConceptualApertureInput = {
+  aperture?: number;
+  focalLengthMm?: number;
+};
+
+export type ConceptualAperturePoint = Readonly<{
+  x: number;
+  y: number;
+}>;
 
 export type ConceptualApertureOpening = Readonly<{
   /** Physical entrance-pupil diameter before visual scaling. */
@@ -126,10 +142,7 @@ export type ConceptualApertureOpening = Readonly<{
 export const resolveConceptualApertureOpening = ({
   aperture = CAMERA_CONSTANTS.apertureOptions[1],
   focalLengthMm = CAMERA_CONSTANTS.focalLengthMm,
-}: {
-  aperture?: number;
-  focalLengthMm?: number;
-} = {}): ConceptualApertureOpening => {
+}: ConceptualApertureInput = {}): ConceptualApertureOpening => {
   const safeAperture = Number.isFinite(aperture) && aperture > 0
     ? aperture
     : CAMERA_CONSTANTS.apertureOptions[1];
@@ -152,4 +165,81 @@ export const resolveConceptualApertureOpening = ({
     openingRadiusMm,
     outerRadiusMm,
   };
+};
+
+const polarPoint = (radiusMm: number, angleRad: number): ConceptualAperturePoint => ({
+  x: radiusMm * Math.cos(angleRad),
+  y: radiusMm * Math.sin(angleRad),
+});
+
+/** Resolve the polygonal opening formed by the straight-edged diaphragm blades. */
+export const resolveConceptualApertureOpeningPolygon = (
+  input: ConceptualApertureInput = {},
+): readonly ConceptualAperturePoint[] => {
+  const opening = resolveConceptualApertureOpening(input);
+  const segmentAngleRad = (Math.PI * 2) / CONCEPTUAL_LENS_IRIS_BLADE_COUNT;
+  const rotationRad = segmentAngleRad / 2;
+
+  return Array.from(
+    { length: CONCEPTUAL_LENS_IRIS_BLADE_COUNT },
+    (_, index) => polarPoint(
+      opening.openingRadiusMm,
+      rotationRad + index * segmentAngleRad,
+    ),
+  );
+};
+
+export type ConceptualApertureBlade = Readonly<{
+  index: number;
+  innerRadiusMm: number;
+  outerRadiusMm: number;
+  centerAngleRad: number;
+  /** Four points describe a flat, straight-edged overlapping blade. */
+  points: readonly ConceptualAperturePoint[];
+}>;
+
+/**
+ * Resolve overlapping trapezoidal diaphragm blades from the canonical opening.
+ * The inner edge spans slightly more than one blade sector so adjacent blades
+ * overlap around the polygonal opening; the outer edge is narrower and skewed
+ * to retain the mechanical spiral character of a photographic iris.
+ */
+export const resolveConceptualApertureBlades = (
+  input: ConceptualApertureInput = {},
+): readonly ConceptualApertureBlade[] => {
+  const opening = resolveConceptualApertureOpening(input);
+  const segmentAngleRad = (Math.PI * 2) / CONCEPTUAL_LENS_IRIS_BLADE_COUNT;
+  const outerRadiusMm = Math.min(
+    opening.outerRadiusMm,
+    Math.max(
+      opening.openingRadiusMm + 0.75,
+      opening.outerRadiusMm - CONCEPTUAL_LENS_IRIS_BLADE_OUTER_MARGIN_MM,
+    ),
+  );
+
+  return Array.from(
+    { length: CONCEPTUAL_LENS_IRIS_BLADE_COUNT },
+    (_, index) => {
+      const centerAngleRad = index * segmentAngleRad;
+      const outerCenterAngleRad =
+        centerAngleRad + segmentAngleRad * CONCEPTUAL_LENS_IRIS_BLADE_SKEW_RATIO;
+      const innerHalfSpanRad =
+        segmentAngleRad * CONCEPTUAL_LENS_IRIS_BLADE_INNER_SPAN_RATIO;
+      const outerHalfSpanRad =
+        segmentAngleRad * CONCEPTUAL_LENS_IRIS_BLADE_OUTER_SPAN_RATIO;
+
+      return {
+        index,
+        innerRadiusMm: opening.openingRadiusMm,
+        outerRadiusMm,
+        centerAngleRad,
+        points: [
+          polarPoint(opening.openingRadiusMm, centerAngleRad - innerHalfSpanRad),
+          polarPoint(opening.openingRadiusMm, centerAngleRad + innerHalfSpanRad),
+          polarPoint(outerRadiusMm, outerCenterAngleRad + outerHalfSpanRad),
+          polarPoint(outerRadiusMm, outerCenterAngleRad - outerHalfSpanRad),
+        ],
+      };
+    },
+  );
 };

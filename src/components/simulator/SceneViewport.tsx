@@ -99,6 +99,7 @@ export const SceneViewport = ({
         cameraInspectionTargetWorld: cameraInspectionTarget
           ? resolveCameraInspectionTargetWorld(cameraInspectionTarget, opticsState)
           : undefined,
+        cameraInspectionTarget,
       }),
     [activeFocalLengthMm, cameraInspectionTarget, opticsState, scene],
   );

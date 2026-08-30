@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   CONCEPTUAL_LENS_APERTURE_MIN_RADIUS_MM,
   CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
+  CONCEPTUAL_LENS_IRIS_BLADE_COUNT,
+  resolveConceptualApertureBlades,
   resolveConceptualApertureOpening,
+  resolveConceptualApertureOpeningPolygon,
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
 } from "../../render/conceptualCameraAnatomyGeometry";
@@ -67,5 +70,24 @@ describe("conceptual aperture opening geometry", () => {
     expect(opening.entrancePupilDiameterMm).toBe(
       CAMERA_CONSTANTS.focalLengthMm / CAMERA_CONSTANTS.apertureOptions[1],
     );
+  });
+
+  it("resolves overlapping straight-edged diaphragm blades for every supported aperture", () => {
+    const wide = resolveConceptualApertureBlades({ aperture: 5.6 });
+    const narrow = resolveConceptualApertureBlades({ aperture: 32 });
+    const openingPolygon = resolveConceptualApertureOpeningPolygon({ aperture: 32 });
+
+    expect(wide).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+    expect(openingPolygon).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+    expect(wide[0].innerRadiusMm).toBeGreaterThan(narrow[0].innerRadiusMm);
+    expect(wide.every((blade) => blade.points.length === 4)).toBe(true);
+    expect(wide.every((blade) => blade.outerRadiusMm > blade.innerRadiusMm)).toBe(true);
+    expect(
+      CAMERA_CONSTANTS.apertureOptions
+        .flatMap((aperture) => resolveConceptualApertureBlades({ aperture }))
+        .flatMap((blade) => blade.points)
+        .every((point) => Number.isFinite(point.x) && Number.isFinite(point.y)),
+    ).toBe(true);
+    expect(resolveConceptualApertureBlades({ aperture: 5.6 })).toEqual(wide);
   });
 });

@@ -18,6 +18,7 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import type { CameraState } from "../../types/camera";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { CONCEPTUAL_LENS_IRIS_BLADE_COUNT } from "../../render/conceptualCameraAnatomyGeometry";
 
 type InspectableProps = {
   name?: string;
@@ -253,18 +254,57 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     const opticsState = deriveOpticsState(cameraFor(), architectureRiseScene);
     const wide = renderConceptualViewCamera({ opticsState, aperture: 5.6 });
     const narrow = renderConceptualViewCamera({ opticsState, aperture: 32 });
-    const wideIris = findNamedElement(wide, "lens-aperture-iris");
-    const narrowIris = findNamedElement(narrow, "lens-aperture-iris");
+    const wideOpening = findNamedElement(wide, "lens-aperture-opening");
+    const narrowOpening = findNamedElement(narrow, "lens-aperture-opening");
+    const wideBlades = collectNamedElements(
+      wide,
+      (name) => name.startsWith("lens-aperture-blade-"),
+    );
+    const narrowBlades = collectNamedElements(
+      narrow,
+      (name) => name.startsWith("lens-aperture-blade-"),
+    );
 
-    expect(wideIris).not.toBeNull();
-    expect(narrowIris).not.toBeNull();
-    expect(geometryArgs(wideIris!, "ringGeometry")[0]).toBeGreaterThan(
-      geometryArgs(narrowIris!, "ringGeometry")[0],
-    );
-    expect(geometryArgs(wideIris!, "ringGeometry")[1]).toBe(
-      geometryArgs(narrowIris!, "ringGeometry")[1],
-    );
+    expect(findNamedElement(wide, "lens-aperture-iris")).not.toBeNull();
+    expect(wideOpening).not.toBeNull();
+    expect(narrowOpening).not.toBeNull();
+    expect(geometryArgs(wideOpening!, "shapeGeometry")).toHaveLength(1);
+    expect(geometryArgs(narrowOpening!, "shapeGeometry")).toHaveLength(1);
+    expect(wideBlades).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+    expect(narrowBlades).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+    expect(
+      wideBlades.every((blade) =>
+        Children.toArray(blade.props.children).some(
+          (child) =>
+            typeof child === "object" &&
+            child !== null &&
+            "type" in child &&
+            child.type === "shapeGeometry",
+        ),
+      ),
+    ).toBe(true);
     expect(findNamedElement(wide, "camera-anatomy-lens")).not.toBeNull();
+  });
+
+  it("uses a transparent convex front element so the highlighted diaphragm remains readable", () => {
+    const opticsState = deriveOpticsState(cameraFor(), architectureRiseScene);
+    const tree = renderConceptualViewCamera({
+      opticsState,
+      aperture: 5.6,
+      presentation: {
+        anatomy: {
+          targets: [{ kind: "element", name: "lens-aperture-iris", parentPart: "lens" }],
+        },
+      },
+    });
+    const glass = findNamedElement(tree, "lens-front-glass");
+    const iris = findNamedElement(tree, "lens-aperture-iris");
+
+    expect(glass).not.toBeNull();
+    expect(geometryArgs(glass!, "sphereGeometry")[0]).toBeGreaterThan(0);
+    expect(glass!.props.scale).toEqual([1, 1, 0.22]);
+    expect(glass!.props.renderOrder).toBe(0);
+    expect(iris).not.toBeNull();
   });
 
   it("uses one shared hollow procedural bellows mesh between canonical standards", () => {
