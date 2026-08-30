@@ -1,9 +1,8 @@
-# PR 9D — Ground Glass, Film Holder + Aperture Iris
+# PR #113 correction — canonical Lesson 0 entry and scene-card artwork
 
-- Objective: add rear-back anatomy and a visible canonical-aperture iris to the shared `ConceptualViewCamera`; no Lesson 0, new state, controls, optics, RTT, or bellows redesign.
-- Base: `origin/main` at `f173a39ff7b662e903bb4efde018a175d4f54d06`, merged PR #111.
-- Rear-back contract: `GroundGlassBack` and `FilmHolder` are mutually exclusive render variants under the existing `rear-standard-frame`; both sensitive surfaces use local `{ x: 0, y: 0, z: 0 }`, the canonical rear/film plane. Holder shell/frame geometry extends rearward.
-- Aperture contract: `resolveConceptualApertureOpening` derives a bounded visual opening from canonical focal length / f-number; `lens-aperture-iris` remains a child of the canonical front lens hierarchy.
-- Semantic reuse: existing `ground-glass-back` remains stable; `ground-glass-frame`, `ground-glass-screen`, `film-holder`, `film-holder-body`, `film-holder-film-surface`, and `lens-aperture-iris` provide stable anatomy names. Current/ghost and world/rig-local paths share the same implementation.
-- Compatibility: standards, deformable bellows, fixed support, canonical optics, and Ground Glass RTT remain unchanged; no learner-facing rear-back switch is exposed.
-- Validation: `npm run ci:local` passes (149 test files / 1,450 tests, CSS check, lint, typecheck, and build); focused anatomy/camera-body tests pass (29 tests); targeted Chromium smoke coverage passes 45/47, with only the pre-existing scene-orbit assertion and Understanding Camera Movements route-transition RTT race. Camera-focused screenshots show the rear screen/frame and hollow bellows; aperture UI changes were exercised at f/5.6 and f/32.
+- Objective: make `view-camera-anatomy` anatomy-enabled from its bare free route while preserving the existing `?lesson=1` catalog link, and replace the borrowed landing hero with a dedicated generated raster thumbnail. No PR 9F work or camera/optics changes.
+- Branch/base: `feature/lesson-0-view-camera-anatomy`, based on merged PR 9D `origin/main` at `2d61f6df144773b1dda82e2b3bda2fee9eac14d3`; existing PR #113 head before this correction was `91ae4cf68ff5876787f55e008b9dd6b3c20310ac`.
+- Route contract: `publicEntry.lesson.kind === "anatomy"` enables Lesson 0 for both `/simulator/free/view-camera-anatomy` and `/simulator/free/view-camera-anatomy?lesson=1`; both resolve the same lesson state.
+- Catalog contract: `view-camera-anatomy` remains the first public entry and uses `Start Lesson`; its thumbnail is `public/assets/scene-view-camera-anatomy.png`, generated with the built-in image-generation tool and committed as a normal PNG.
+- Tests: focused catalog/route suites pass (62 tests total including existing Lesson 0 unit/integration coverage); Lesson 0 Playwright walkthrough passes from the bare route and returns to Architecture Rise with ordinary controls. Aperture-step screenshot inspection confirms the highlighted iris remains visually identifiable; no presentation change was needed.
+- Full validation: `npm run ci:local` passes (152 test files / 1,464 tests, CSS check, lint, typecheck, build); `git diff --check` passes. The existing Understanding Camera Movements RTT diagnostic baseline remains documented from PR 9E and is unrelated to this correction.

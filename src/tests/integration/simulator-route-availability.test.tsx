@@ -9,17 +9,19 @@ vi.mock("../../components/layout/SimulatorWorkspace", () => ({
     sceneId,
     taskId,
     guidedLessonEnabled,
+    anatomyLessonEnabled,
     calibrationEnabled,
-  }: {
-    mode: string;
-    sceneId: string;
-    taskId: string | null;
-    guidedLessonEnabled?: boolean;
-    calibrationEnabled?: boolean;
-  }) => (
-    <div data-testid="simulator-workspace">
-      {mode}:{sceneId}:{taskId ?? "none"}:lesson={String(Boolean(guidedLessonEnabled))}:calibration={String(Boolean(calibrationEnabled))}
-    </div>
+    }: {
+      mode: string;
+      sceneId: string;
+      taskId: string | null;
+      guidedLessonEnabled?: boolean;
+      anatomyLessonEnabled?: boolean;
+      calibrationEnabled?: boolean;
+    }) => (
+      <div data-testid="simulator-workspace">
+      {mode}:{sceneId}:{taskId ?? "none"}:lesson={String(Boolean(guidedLessonEnabled))}:calibration={String(Boolean(calibrationEnabled))}:anatomy={String(Boolean(anatomyLessonEnabled))}
+      </div>
   ),
 }));
 
@@ -94,6 +96,8 @@ describe("simulator route availability", () => {
   });
 
   it.each([
+    ["/simulator/free/view-camera-anatomy", "free:view-camera-anatomy:none:lesson=false:calibration=false:anatomy=true"],
+    ["/simulator/free/view-camera-anatomy?lesson=1", "free:view-camera-anatomy:none:lesson=false:calibration=false:anatomy=true"],
     ["/simulator/free/oblique-architecture?lesson=1", "free:oblique-architecture:none:lesson=true"],
     ["/simulator/free/architecture-foreground?lesson=1", "free:architecture-foreground:none:lesson=true"],
     ["/simulator/free/table-tilt?lesson=1", "free:table-tilt:none:lesson=false"],

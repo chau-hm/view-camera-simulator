@@ -28,6 +28,7 @@ export const commonMessages = {
   },
   sceneCard: {
     openScene: "開啟場景",
+    startLesson: "開始課程",
     startGuidedTask: "開始引導任務",
     guidedLesson: "引導課程",
     inDevelopment: "開發中",

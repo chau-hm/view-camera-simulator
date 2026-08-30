@@ -278,6 +278,40 @@ describe("app store STA-001", () => {
     });
   });
 
+  it("enters Lesson 0 with a neutral canonical camera regardless of prior scene state", () => {
+    const store = useAppStore.getState();
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "mirror-shift", taskId: null });
+    store.setFrontShiftMm(40);
+    store.setMirrorShiftRigLateralMm(1200);
+    store.setInfinityFocus();
+
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "view-camera-anatomy",
+      taskId: null,
+      lessonEntry: true,
+    });
+
+    expect(useAppStore.getState().camera).toMatchObject({
+      activeSceneId: "view-camera-anatomy",
+      activeTaskId: null,
+      frontRiseMm: 0,
+      frontShiftMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      rearRiseMm: 0,
+      rearShiftMm: 0,
+      rearTiltDeg: 0,
+      rearSwingDeg: 0,
+      focusMode: "finite",
+      focusDistanceMm: 2000,
+      aperture: 11,
+      cameraBodyPitchDeg: 0,
+      cameraRigPlacement: { rigOriginWorld: { x: 0, y: 0, z: 0 } },
+    });
+  });
+
   it("freshly reinitializes lesson Observe after leaving while preserving same-route changes", () => {
     const store = useAppStore.getState();
     const lessonObserveRoute = {

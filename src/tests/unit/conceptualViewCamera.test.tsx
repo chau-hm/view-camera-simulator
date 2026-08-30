@@ -6,6 +6,8 @@ import {
   CONCEPTUAL_CAMERA_ANATOMY_PARTS,
   CONCEPTUAL_CAMERA_SUPPORT_RAIL,
   renderConceptualViewCamera,
+  resolveConceptualAnatomyElementState,
+  resolveConceptualAnatomyPartState,
   resolveConceptualSupportBeam,
 } from "../../render/ConceptualViewCamera";
 import {
@@ -118,6 +120,29 @@ const cameraSupportFor = (
 };
 
 describe("Conceptual View Camera v2 static anatomy", () => {
+  it("resolves semantic anatomy presentation without mutating shared materials", () => {
+    const bellowsPresentation = { targets: [{ kind: "part", part: "bellows" }] } as const;
+    expect(resolveConceptualAnatomyPartState("bellows", bellowsPresentation)).toBe("highlighted");
+    expect(resolveConceptualAnatomyPartState("lens", bellowsPresentation)).toBe("dimmed");
+    expect(resolveConceptualAnatomyPartState("camera-support", undefined)).toBe("normal");
+
+    const aperturePresentation = {
+      targets: [{ kind: "element", name: "lens-aperture-iris", parentPart: "lens" }],
+    } as const;
+    expect(resolveConceptualAnatomyPartState("lens", aperturePresentation)).toBe("highlighted");
+    expect(resolveConceptualAnatomyElementState("lens-aperture-iris", "lens", aperturePresentation)).toBe("highlighted");
+    expect(resolveConceptualAnatomyPartState("lens-board", aperturePresentation)).toBe("dimmed");
+
+    const tree = renderConceptualViewCamera({
+      opticsState: deriveOpticsState(cameraFor(), architectureRiseScene),
+      presentation: { anatomy: bellowsPresentation },
+    });
+    const bellows = findNamedElement(tree, "bellows-folded-surface");
+    const lens = findNamedElement(tree, "lens-front-barrel");
+    expect(bellows?.props).toMatchObject({ name: "bellows-folded-surface" });
+    expect(lens?.props).toMatchObject({ name: "lens-front-barrel" });
+  });
+
   it("provides stable semantic part IDs for current and ghost variants", () => {
     const opticsState = deriveOpticsState(cameraFor(), architectureRiseScene);
     const current = renderConceptualViewCamera({ opticsState, variant: "current" });
