@@ -714,7 +714,6 @@ const SceneContent = ({
     {scene.cameraBodyPitchCapability?.enabled ? (
       <CameraBodyAssembly
         opticsState={opticsState}
-        showBellows={scene.id !== "focus-fundamentals-two-targets"}
         activeStandard={activeFocusStandard}
       />
     ) : (
@@ -722,7 +721,6 @@ const SceneContent = ({
         opticsState={opticsState}
         variant="current"
         coordinateSpace="world"
-        showBellows={scene.id !== "focus-fundamentals-two-targets"}
         activeStandard={activeFocusStandard}
       />
     )}
@@ -789,7 +787,6 @@ const OriginalGhostCamera = ({
       <CameraBodyAssembly
         opticsState={originalOptics}
         ghost
-        showBellows={scene.id !== "focus-fundamentals-two-targets"}
       />
     </group>
   ) : (
@@ -797,7 +794,6 @@ const OriginalGhostCamera = ({
       opticsState={originalOptics}
       variant="ghost"
       coordinateSpace="world"
-      showBellows={scene.id !== "focus-fundamentals-two-targets"}
     />
   );
 };

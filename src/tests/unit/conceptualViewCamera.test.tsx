@@ -6,7 +6,6 @@ import {
   CONCEPTUAL_CAMERA_ANATOMY_PARTS,
   CONCEPTUAL_CAMERA_SUPPORT_RAIL,
   renderConceptualViewCamera,
-  resolveConceptualBellowsSpan,
   resolveConceptualSupportBeam,
 } from "../../render/ConceptualViewCamera";
 import {
@@ -153,24 +152,22 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     expect(groundGlass!.props.position).toEqual([0, 0, 0]);
   });
 
-  it("uses a deterministic accordion fold span between canonical film and lens centres", () => {
+  it("uses one shared hollow procedural bellows mesh between canonical standards", () => {
     const opticsState = deriveOpticsState(
       cameraFor({ frontRiseMm: 12, rearRiseMm: 18, rearTiltDeg: 6 }),
       architectureRiseScene,
     );
     const tree = renderConceptualViewCamera({ opticsState });
     const bellows = findNamedElement(tree, "camera-anatomy-bellows");
-    const expected = resolveConceptualBellowsSpan(
-      opticsState.filmCenterWorld,
-      opticsState.lensCenterWorld,
-    );
-    const folds = collectNamedElements(tree, (name) => name.startsWith("bellows-fold-"));
+    const surface = findNamedElement(tree, "bellows-folded-surface");
 
     expect(bellows).not.toBeNull();
-    expect(bellows!.props.position).toEqual(expected.position);
-    expectQuaternionEqual(bellows!.props.quaternion, expected.quaternion);
-    expect(folds).toHaveLength(9);
-    expect(new Set(folds.map((fold) => fold.props.name)).size).toBe(9);
+    expect(surface).not.toBeNull();
+    expect(surface!.props).toMatchObject({
+      name: "bellows-folded-surface",
+      frustumCulled: false,
+    });
+    expect(collectNamedElements(tree, (name) => name.startsWith("bellows-fold-"))).toHaveLength(0);
   });
 
   it("can omit the static bellows without changing the standard anatomy", () => {
