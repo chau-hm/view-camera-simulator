@@ -156,6 +156,9 @@ describe("canonical camera-body render views", () => {
       expect(
         hasNamedDescendant(localGroup.props.children, "camera-anatomy-camera-support"),
       ).toBe(true);
+      expect(
+        hasNamedDescendant(localGroup.props.children, "bellows-folded-surface"),
+      ).toBe(true);
     },
   );
 
@@ -177,6 +180,9 @@ describe("canonical camera-body render views", () => {
     ).toBe(true);
     expect(
       hasNamedDescendant(localGroup.props.children, "camera-anatomy-camera-support"),
+    ).toBe(true);
+    expect(
+      hasNamedDescendant(localGroup.props.children, "bellows-folded-surface"),
     ).toBe(true);
   });
 

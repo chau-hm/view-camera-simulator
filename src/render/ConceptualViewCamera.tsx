@@ -1,6 +1,20 @@
 /* eslint-disable react-refresh/only-export-components */
-import type { ReactNode } from "react";
-import { DoubleSide, Quaternion, Vector3 } from "three";
+import {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  BufferGeometry,
+  DoubleSide,
+  Float32BufferAttribute,
+  Quaternion,
+  Uint16BufferAttribute,
+  Vector3,
+} from "three";
 import { imageDistanceMm } from "../core/optics/thinLensModel";
 import { transformRigLocalPointToWorld } from "../core/optics/applyCameraBodyPitch";
 import type {
@@ -19,6 +33,12 @@ import {
 } from "./planeOrientation";
 import { resolveFocusStandardVisualState } from "./focusStandardPresentation";
 import { WORLD_SCALE } from "./rttUtils";
+import {
+  buildConceptualBellowsGeometry,
+  resolveConceptualBellowsAttachmentFrames,
+  type ConceptualBellowsGeometry,
+  type ConceptualBellowsAttachmentFrames,
+} from "./conceptualBellowsGeometry";
 
 /** Stable semantic part IDs reserved for future camera-anatomy inspection. */
 export const CONCEPTUAL_CAMERA_ANATOMY_PARTS = [
@@ -89,7 +109,6 @@ export type ConceptualViewCameraProps = {
 type CanonicalCameraGeometry = {
   lensCenter: Vec3;
   lensNormal: Vec3;
-  filmCenter: Vec3;
   rearStandardFrame: StandardFrame;
 };
 
@@ -138,7 +157,6 @@ const resolveCanonicalCameraGeometry = (
     return {
       lensCenter: local.lensCenterLocal,
       lensNormal: local.lensNormalLocal,
-      filmCenter: local.filmCenterLocal,
       rearStandardFrame: local.rearStandardFrameLocal,
     };
   }
@@ -146,7 +164,6 @@ const resolveCanonicalCameraGeometry = (
   return {
     lensCenter: opticsState.lensCenterWorld,
     lensNormal: opticsState.lensNormalWorld,
-    filmCenter: opticsState.filmCenterWorld,
     rearStandardFrame: opticsState.rearStandardFrame,
   };
 };
@@ -199,32 +216,6 @@ export const resolveConceptualSupportBeam = (
   const frontWorldMm = transformRigLocalPointToWorld(frontRigLocal, rigTransform);
   const rear = new Vector3(...vecToWorld(rearWorldMm));
   const front = new Vector3(...vecToWorld(frontWorldMm));
-  const direction = front.clone().sub(rear);
-  const length = Math.max(direction.length(), toWorld(20));
-  if (direction.lengthSq() <= 1e-12) direction.set(0, 0, 1);
-  else direction.normalize();
-
-  return {
-    position: [
-      (rear.x + front.x) / 2,
-      (rear.y + front.y) / 2,
-      (rear.z + front.z) / 2,
-    ],
-    quaternion: new Quaternion().setFromUnitVectors(
-      new Vector3(0, 0, 1),
-      direction,
-    ),
-    length,
-  };
-};
-
-/** Resolve the canonical endpoint span used by the static bellows folds. */
-export const resolveConceptualBellowsSpan = (
-  rearCenter: Vec3,
-  frontCenter: Vec3,
-): ConceptualBeamTransform => {
-  const rear = new Vector3(...vecToWorld(rearCenter));
-  const front = new Vector3(...vecToWorld(frontCenter));
   const direction = front.clone().sub(rear);
   const length = Math.max(direction.length(), toWorld(20));
   if (direction.lengthSq() <= 1e-12) direction.set(0, 0, 1);
@@ -503,57 +494,134 @@ const RearStandardAssembly = ({
   );
 };
 
-const StaticBellowsAssembly = ({
-  rearCenter,
-  frontCenter,
-  ghost,
-}: {
-  rearCenter: Vec3;
-  frontCenter: Vec3;
+type RenderableBellowsGeometry = {
+  geometry: BufferGeometry;
+  position: Float32BufferAttribute;
+  normal: Float32BufferAttribute;
+  index: Uint16BufferAttribute;
+};
+
+const createRenderableBellowsGeometry = (
+  data: ConceptualBellowsGeometry,
+): RenderableBellowsGeometry => {
+  const geometry = new BufferGeometry();
+  const position = new Float32BufferAttribute(
+    new Float32Array(data.positions.map(toWorld)),
+    3,
+  );
+  const normal = new Float32BufferAttribute(
+    new Float32Array(data.normals),
+    3,
+  );
+  const index = new Uint16BufferAttribute(
+    new Uint16Array(data.triangleIndices),
+    1,
+  );
+  geometry.setAttribute("position", position);
+  geometry.setAttribute("normal", normal);
+  geometry.setIndex(index);
+  geometry.computeBoundingSphere();
+  return { geometry, position, normal, index };
+};
+
+type DeformableBellowsMeshProps = {
+  frames: ConceptualBellowsAttachmentFrames;
+  frustumCulled: boolean;
   ghost: boolean;
-}) => {
-  const span = resolveConceptualBellowsSpan(rearCenter, frontCenter);
-  const foldCount = 9;
-  const segmentLength = span.length / foldCount;
-  const rearWidth = 128;
-  const frontWidth = 112;
-  const rearHeight = 98;
-  const frontHeight = 84;
+  name: string;
+};
+
+const sameBellowsEndpointFrame = (
+  first: ConceptualBellowsAttachmentFrames["rear"],
+  second: ConceptualBellowsAttachmentFrames["rear"],
+): boolean =>
+  first.center.x === second.center.x &&
+  first.center.y === second.center.y &&
+  first.center.z === second.center.z &&
+  first.quaternion.x === second.quaternion.x &&
+  first.quaternion.y === second.quaternion.y &&
+  first.quaternion.z === second.quaternion.z &&
+  first.quaternion.w === second.quaternion.w &&
+  first.widthMm === second.widthMm &&
+  first.heightMm === second.heightMm;
+
+const areDeformableBellowsMeshPropsEqual = (
+  first: DeformableBellowsMeshProps,
+  second: DeformableBellowsMeshProps,
+): boolean =>
+  first.ghost === second.ghost &&
+  first.frustumCulled === second.frustumCulled &&
+  first.name === second.name &&
+  sameBellowsEndpointFrame(first.frames.rear, second.frames.rear) &&
+  sameBellowsEndpointFrame(first.frames.front, second.frames.front);
+
+const DeformableBellowsMesh = memo(({
+  frames,
+  frustumCulled,
+  ghost,
+  name,
+}: DeformableBellowsMeshProps) => {
+  const geometryData = useMemo(
+    () => buildConceptualBellowsGeometry(frames),
+    [frames],
+  );
+  const [renderGeometry] = useState(() =>
+    createRenderableBellowsGeometry(geometryData),
+  );
+
+  useLayoutEffect(() => {
+    renderGeometry.position.copyArray(
+      new Float32Array(geometryData.positions.map(toWorld)),
+    );
+    renderGeometry.position.needsUpdate = true;
+    renderGeometry.normal.copyArray(new Float32Array(geometryData.normals));
+    renderGeometry.normal.needsUpdate = true;
+    renderGeometry.index.copyArray(
+      new Uint16Array(geometryData.triangleIndices),
+    );
+    renderGeometry.index.needsUpdate = true;
+    renderGeometry.geometry.computeBoundingSphere();
+  }, [geometryData, renderGeometry]);
+
+  useEffect(() => () => {
+    renderGeometry.geometry.dispose();
+  }, [renderGeometry]);
 
   return (
-    <AnatomyPartGroup
-      part="bellows"
-      position={span.position}
-      quaternion={span.quaternion}
+    <mesh
+      name={name}
+      geometry={renderGeometry.geometry}
+      frustumCulled={frustumCulled}
       renderOrder={ghost ? 10 : 0}
     >
-      {Array.from({ length: foldCount }, (_, index) => {
-        const t = (index + 0.5) / foldCount;
-        const width = rearWidth + (frontWidth - rearWidth) * t;
-        const height = rearHeight + (frontHeight - rearHeight) * t;
-        const z = -span.length / 2 + segmentLength * (index + 0.5);
-        return (
-          <mesh
-            key={`bellows-fold-${index + 1}`}
-            name={`bellows-fold-${index + 1}`}
-            position={[0, 0, z]}
-          >
-            <boxGeometry
-              args={[toWorld(width), toWorld(height), Math.max(segmentLength * 0.78, toWorld(4))]}
-            />
-            <meshStandardMaterial
-              color={ghost ? "#94a3b8" : "#111827"}
-              transparent
-              opacity={ghost ? 0.14 : 0.9}
-              depthWrite={!ghost}
-              roughness={0.88}
-            />
-          </mesh>
-        );
-      })}
-    </AnatomyPartGroup>
+      <meshStandardMaterial
+        color={ghost ? "#94a3b8" : "#111827"}
+        transparent
+        opacity={ghost ? 0.18 : 0.9}
+        depthWrite={!ghost}
+        roughness={0.88}
+        side={DoubleSide}
+      />
+    </mesh>
   );
-};
+}, areDeformableBellowsMeshPropsEqual);
+
+const DeformableBellowsAssembly = ({
+  frames,
+  ghost,
+}: {
+  frames: ConceptualBellowsAttachmentFrames;
+  ghost: boolean;
+}) => (
+  <AnatomyPartGroup part="bellows" renderOrder={ghost ? 10 : 0}>
+    <DeformableBellowsMesh
+      name="bellows-folded-surface"
+      frames={frames}
+      frustumCulled={false}
+      ghost={ghost}
+    />
+  </AnatomyPartGroup>
+);
 
 const CameraSupport = ({
   coordinateSpace,
@@ -677,6 +745,13 @@ const renderAnatomy = ({
 }) => {
   const canonical = resolveCanonicalCameraGeometry(opticsState, coordinateSpace);
   const ghost = variant === "ghost";
+  const bellowsFrames = showBellows
+    ? resolveConceptualBellowsAttachmentFrames({
+        frontCenter: canonical.lensCenter,
+        frontNormal: canonical.lensNormal,
+        rearFrame: canonical.rearStandardFrame,
+      })
+    : null;
   return (
     <>
       <CameraSupport
@@ -692,9 +767,8 @@ const renderAnatomy = ({
         active={activeStandard === "front"}
       />
       {showBellows ? (
-        <StaticBellowsAssembly
-          rearCenter={canonical.filmCenter}
-          frontCenter={canonical.lensCenter}
+        <DeformableBellowsAssembly
+          frames={bellowsFrames!}
           ghost={ghost}
         />
       ) : null}
@@ -708,7 +782,7 @@ const renderAnatomy = ({
 };
 
 /**
- * Shared static anatomy for the conceptual view camera.
+ * Shared anatomy for the conceptual view camera.
  *
  * Every placement input comes from DerivedOpticsState. The only distinction
  * between coordinate spaces is whether the existing canonical rig hierarchy
