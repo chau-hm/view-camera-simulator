@@ -24,7 +24,7 @@ import type {
   StandardFrame,
   Vec3,
 } from "../types/optics";
-import type { FocusStandard } from "../types/camera";
+import type { ApertureValue, FocusStandard } from "../types/camera";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import {
   resolveCameraRigRenderTransform,
@@ -39,6 +39,14 @@ import {
   type ConceptualBellowsGeometry,
   type ConceptualBellowsAttachmentFrames,
 } from "./conceptualBellowsGeometry";
+import {
+  resolveConceptualApertureOpening,
+  resolveConceptualFilmHolderGeometry,
+  resolveConceptualGroundGlassGeometry,
+  type ConceptualRearBackMode,
+} from "./conceptualCameraAnatomyGeometry";
+
+export type { ConceptualRearBackMode } from "./conceptualCameraAnatomyGeometry";
 
 /** Stable semantic part IDs reserved for future camera-anatomy inspection. */
 export const CONCEPTUAL_CAMERA_ANATOMY_PARTS = [
@@ -48,6 +56,7 @@ export const CONCEPTUAL_CAMERA_ANATOMY_PARTS = [
   "bellows",
   "rear-standard",
   "ground-glass-back",
+  "film-holder",
   "camera-support",
 ] as const;
 
@@ -102,6 +111,11 @@ export type ConceptualViewCameraProps = {
   coordinateSpace?: ConceptualCameraCoordinateSpace;
   showBellows?: boolean;
   activeStandard?: FocusStandard | null;
+  /** Physical rear-back anatomy to render; this does not alter optical state. */
+  rearBackMode?: ConceptualRearBackMode;
+  /** Canonical camera inputs used only for the visual aperture subcomponent. */
+  aperture?: ApertureValue;
+  focalLengthMm?: number;
   /** Existing canonical support rail for the calibrated rig scene. */
   rigRail?: ConceptualCameraRail;
 };
@@ -250,15 +264,20 @@ const FrontStandardAssembly = ({
   lensNormal,
   ghost,
   active,
+  aperture,
+  focalLengthMm,
 }: {
   lensCenter: Vec3;
   lensNormal: Vec3;
   ghost: boolean;
   active: boolean;
+  aperture?: ApertureValue;
+  focalLengthMm?: number;
 }) => {
   const visual = resolveFocusStandardVisualState("front", active ? "front" : null);
   const transform = resolveFrontStandardRenderTransform(lensCenter, lensNormal);
   const presentation = { ghost, renderOrder: ghost ? 10 : 0 };
+  const apertureOpening = resolveConceptualApertureOpening({ aperture, focalLengthMm });
   const outerWidth = CAMERA_CONSTANTS.frontStandardWidthMm;
   const outerHeight = CAMERA_CONSTANTS.frontStandardHeightMm;
   const frameBar = 14;
@@ -355,7 +374,7 @@ const FrontStandardAssembly = ({
             />
           </mesh>
           <mesh name="lens-front-barrel" position={[0, 0, toWorld(27)]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[toWorld(27), toWorld(27), toWorld(14), 32]} />
+            <cylinderGeometry args={[toWorld(27), toWorld(27), toWorld(14), 32, 1, true]} />
             <meshStandardMaterial
               color={ghost ? "#6b7280" : "#1f2937"}
               {...frameMaterialProps(presentation)}
@@ -373,8 +392,165 @@ const FrontStandardAssembly = ({
               side={DoubleSide}
             />
           </mesh>
+          <mesh
+            name="lens-aperture-iris"
+            position={[0, 0, toWorld(26)]}
+            renderOrder={presentation.renderOrder + 1}
+          >
+            <ringGeometry
+              args={[
+                toWorld(apertureOpening.openingRadiusMm),
+                toWorld(apertureOpening.outerRadiusMm),
+                32,
+              ]}
+            />
+            <meshStandardMaterial
+              color={ghost ? "#475569" : "#020617"}
+              transparent={ghost}
+              opacity={ghost ? 0.38 : 0.96}
+              depthWrite={!ghost}
+              side={DoubleSide}
+              roughness={0.82}
+            />
+          </mesh>
         </AnatomyPartGroup>
       </group>
+    </AnatomyPartGroup>
+  );
+};
+
+const GroundGlassBack = ({ ghost }: PresentationProps) => {
+  const geometry = resolveConceptualGroundGlassGeometry();
+  const { frame, surface } = geometry;
+  const frameY = (frame.outerHeightMm - frame.barMm) / 2;
+  const frameX = (frame.outerWidthMm - frame.barMm) / 2;
+  const renderFrameMaterial = () => (
+    <meshStandardMaterial
+      color={ghost ? "#cbd5e1" : "#64748b"}
+      {...frameMaterialProps({ ghost })}
+    />
+  );
+
+  return (
+    <AnatomyPartGroup
+      part="ground-glass-back"
+      position={[0, 0, 0]}
+      renderOrder={ghost ? 10 : 0}
+    >
+      <group
+        name="ground-glass-frame"
+        position={vecToWorld(frame.centerLocal)}
+        renderOrder={ghost ? 10 : 0}
+      >
+        <mesh name="ground-glass-frame-top" position={[0, toWorld(frameY), 0]}>
+          <boxGeometry args={[toWorld(frame.outerWidthMm), toWorld(frame.barMm), toWorld(frame.depthMm)]} />
+          {renderFrameMaterial()}
+        </mesh>
+        <mesh name="ground-glass-frame-bottom" position={[0, -toWorld(frameY), 0]}>
+          <boxGeometry args={[toWorld(frame.outerWidthMm), toWorld(frame.barMm), toWorld(frame.depthMm)]} />
+          {renderFrameMaterial()}
+        </mesh>
+        <mesh name="ground-glass-frame-left" position={[-toWorld(frameX), 0, 0]}>
+          <boxGeometry args={[toWorld(frame.barMm), toWorld(frame.outerHeightMm - frame.barMm * 2), toWorld(frame.depthMm)]} />
+          {renderFrameMaterial()}
+        </mesh>
+        <mesh name="ground-glass-frame-right" position={[toWorld(frameX), 0, 0]}>
+          <boxGeometry args={[toWorld(frame.barMm), toWorld(frame.outerHeightMm - frame.barMm * 2), toWorld(frame.depthMm)]} />
+          {renderFrameMaterial()}
+        </mesh>
+      </group>
+      <mesh
+        name="ground-glass-screen"
+        position={vecToWorld(surface.centerLocal)}
+      >
+        <planeGeometry args={[toWorld(surface.widthMm), toWorld(surface.heightMm)]} />
+        <meshStandardMaterial
+          color={ghost ? "#cbd5e1" : "#bae6fd"}
+          transparent
+          opacity={ghost ? 0.22 : 0.28}
+          depthWrite={!ghost}
+          side={DoubleSide}
+        />
+      </mesh>
+    </AnatomyPartGroup>
+  );
+};
+
+const FilmHolder = ({ ghost }: PresentationProps) => {
+  const geometry = resolveConceptualFilmHolderGeometry();
+  const { frame, holder, surface } = geometry;
+  const frameY = (frame.outerHeightMm - frame.barMm) / 2;
+  const frameX = (frame.outerWidthMm - frame.barMm) / 2;
+
+  return (
+    <AnatomyPartGroup
+      part="film-holder"
+      position={[0, 0, 0]}
+      renderOrder={ghost ? 10 : 0}
+    >
+      <mesh
+        name="film-holder-body"
+        position={vecToWorld(holder.centerLocal)}
+        renderOrder={ghost ? 10 : 0}
+      >
+        <boxGeometry
+          args={[toWorld(holder.widthMm), toWorld(holder.heightMm), toWorld(holder.depthMm)]}
+        />
+        <meshStandardMaterial
+          color={ghost ? "#94a3b8" : "#1f2937"}
+          {...frameMaterialProps({ ghost })}
+          roughness={0.86}
+        />
+      </mesh>
+      <group
+        name="film-holder-frame"
+        position={vecToWorld(frame.centerLocal)}
+        renderOrder={ghost ? 10 : 0}
+      >
+        <mesh name="film-holder-frame-top" position={[0, toWorld(frameY), 0]}>
+          <boxGeometry args={[toWorld(frame.outerWidthMm), toWorld(frame.barMm), toWorld(frame.depthMm)]} />
+          <meshStandardMaterial
+            color={ghost ? "#cbd5e1" : "#475569"}
+            {...frameMaterialProps({ ghost })}
+          />
+        </mesh>
+        <mesh name="film-holder-frame-bottom" position={[0, -toWorld(frameY), 0]}>
+          <boxGeometry args={[toWorld(frame.outerWidthMm), toWorld(frame.barMm), toWorld(frame.depthMm)]} />
+          <meshStandardMaterial
+            color={ghost ? "#cbd5e1" : "#475569"}
+            {...frameMaterialProps({ ghost })}
+          />
+        </mesh>
+        <mesh name="film-holder-frame-left" position={[-toWorld(frameX), 0, 0]}>
+          <boxGeometry args={[toWorld(frame.barMm), toWorld(frame.outerHeightMm - frame.barMm * 2), toWorld(frame.depthMm)]} />
+          <meshStandardMaterial
+            color={ghost ? "#cbd5e1" : "#475569"}
+            {...frameMaterialProps({ ghost })}
+          />
+        </mesh>
+        <mesh name="film-holder-frame-right" position={[toWorld(frameX), 0, 0]}>
+          <boxGeometry args={[toWorld(frame.barMm), toWorld(frame.outerHeightMm - frame.barMm * 2), toWorld(frame.depthMm)]} />
+          <meshStandardMaterial
+            color={ghost ? "#cbd5e1" : "#475569"}
+            {...frameMaterialProps({ ghost })}
+          />
+        </mesh>
+      </group>
+      <mesh
+        name="film-holder-film-surface"
+        position={vecToWorld(surface.centerLocal)}
+        renderOrder={ghost ? 11 : 1}
+      >
+        <planeGeometry args={[toWorld(surface.widthMm), toWorld(surface.heightMm)]} />
+        <meshStandardMaterial
+          color={ghost ? "#cbd5e1" : "#111827"}
+          transparent={ghost}
+          opacity={ghost ? 0.3 : 0.9}
+          depthWrite={!ghost}
+          side={DoubleSide}
+          roughness={0.92}
+        />
+      </mesh>
     </AnatomyPartGroup>
   );
 };
@@ -383,10 +559,12 @@ const RearStandardAssembly = ({
   frame,
   ghost,
   active,
+  rearBackMode,
 }: {
   frame: StandardFrame;
   ghost: boolean;
   active: boolean;
+  rearBackMode: ConceptualRearBackMode;
 }) => {
   const visual = resolveFocusStandardVisualState("rear", active ? "rear" : null);
   const transform = resolveRearStandardRenderTransform(frame);
@@ -453,42 +631,11 @@ const RearStandardAssembly = ({
           />
         </mesh>
 
-        <AnatomyPartGroup
-          part="ground-glass-back"
-          position={[0, 0, 0]}
-          renderOrder={presentation.renderOrder}
-        >
-          <mesh name="ground-glass-screen">
-            <boxGeometry
-              args={[
-                toWorld(CAMERA_CONSTANTS.filmWidthMm),
-                toWorld(CAMERA_CONSTANTS.filmHeightMm),
-                toWorld(3),
-              ]}
-            />
-            <meshStandardMaterial
-              color={ghost ? "#cbd5e1" : "#bae6fd"}
-              transparent
-              opacity={ghost ? 0.22 : 0.28}
-              depthWrite={!ghost}
-              side={DoubleSide}
-            />
-          </mesh>
-          <mesh name="ground-glass-frame-top" position={[0, toWorld(CAMERA_CONSTANTS.filmHeightMm / 2 + 5), toWorld(-3)]}>
-            <boxGeometry args={[toWorld(CAMERA_CONSTANTS.filmWidthMm + 10), toWorld(5), toWorld(2)]} />
-            <meshStandardMaterial
-              color={ghost ? "#cbd5e1" : "#64748b"}
-              {...frameMaterialProps(presentation)}
-            />
-          </mesh>
-          <mesh name="ground-glass-frame-bottom" position={[0, -toWorld(CAMERA_CONSTANTS.filmHeightMm / 2 + 5), toWorld(-3)]}>
-            <boxGeometry args={[toWorld(CAMERA_CONSTANTS.filmWidthMm + 10), toWorld(5), toWorld(2)]} />
-            <meshStandardMaterial
-              color={ghost ? "#cbd5e1" : "#64748b"}
-              {...frameMaterialProps(presentation)}
-            />
-          </mesh>
-        </AnatomyPartGroup>
+        {rearBackMode === "ground-glass" ? (
+          <GroundGlassBack ghost={ghost} />
+        ) : (
+          <FilmHolder ghost={ghost} />
+        )}
       </group>
     </AnatomyPartGroup>
   );
@@ -738,9 +885,15 @@ const renderAnatomy = ({
   variant,
   showBellows,
   activeStandard,
+  rearBackMode,
+  aperture,
+  focalLengthMm,
   rigRail,
 }: Required<Pick<ConceptualViewCameraProps, "opticsState" | "coordinateSpace" | "variant" | "showBellows">> & {
   activeStandard?: FocusStandard | null;
+  rearBackMode: ConceptualRearBackMode;
+  aperture?: ApertureValue;
+  focalLengthMm?: number;
   rigRail?: ConceptualCameraRail;
 }) => {
   const canonical = resolveCanonicalCameraGeometry(opticsState, coordinateSpace);
@@ -765,6 +918,8 @@ const renderAnatomy = ({
         lensNormal={canonical.lensNormal}
         ghost={ghost}
         active={activeStandard === "front"}
+        aperture={aperture}
+        focalLengthMm={focalLengthMm}
       />
       {showBellows ? (
         <DeformableBellowsAssembly
@@ -776,6 +931,7 @@ const renderAnatomy = ({
         frame={canonical.rearStandardFrame}
         ghost={ghost}
         active={activeStandard === "rear"}
+        rearBackMode={rearBackMode}
       />
     </>
   );
@@ -795,6 +951,9 @@ export const renderConceptualViewCamera = ({
   coordinateSpace = "world",
   showBellows = true,
   activeStandard = null,
+  rearBackMode = "ground-glass",
+  aperture,
+  focalLengthMm,
   rigRail,
 }: ConceptualViewCameraProps) => {
   const ghost = variant === "ghost";
@@ -804,6 +963,9 @@ export const renderConceptualViewCamera = ({
     variant,
     showBellows,
     activeStandard,
+    rearBackMode,
+    aperture,
+    focalLengthMm,
     rigRail,
   });
 

@@ -18,6 +18,9 @@ export const CameraBodyAssembly = ({
   ghost = false,
   showBellows = true,
   activeStandard = null,
+  rearBackMode = "ground-glass",
+  aperture,
+  focalLengthMm,
 }: CameraBodyAssemblyProps) => {
   return renderConceptualViewCamera({
     opticsState,
@@ -25,6 +28,9 @@ export const CameraBodyAssembly = ({
     coordinateSpace: "rig-local",
     showBellows,
     activeStandard,
+    rearBackMode,
+    aperture,
+    focalLengthMm,
     rigRail: geometry.cameraBody.rail,
   });
 };
