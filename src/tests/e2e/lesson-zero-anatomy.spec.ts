@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("Lesson 0 presents the anatomy sequence and isolates its presentation state", async ({ page }) => {
   test.setTimeout(120_000);
 
-  await page.goto("/simulator/free/view-camera-anatomy?lesson=1");
+  await page.goto("/simulator/free/view-camera-anatomy");
 
   const panel = page.locator(".anatomy-lesson-panel");
   const lessonHeading = panel.getByRole("heading", { level: 3 });

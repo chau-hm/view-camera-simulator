@@ -96,6 +96,7 @@ describe("simulator route availability", () => {
   });
 
   it.each([
+    ["/simulator/free/view-camera-anatomy", "free:view-camera-anatomy:none:lesson=false:calibration=false:anatomy=true"],
     ["/simulator/free/view-camera-anatomy?lesson=1", "free:view-camera-anatomy:none:lesson=false:calibration=false:anatomy=true"],
     ["/simulator/free/oblique-architecture?lesson=1", "free:oblique-architecture:none:lesson=true"],
     ["/simulator/free/architecture-foreground?lesson=1", "free:architecture-foreground:none:lesson=true"],

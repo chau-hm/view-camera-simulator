@@ -132,8 +132,7 @@ export const SimulatorRoutePage = () => {
   const scene = getSceneById(resolvedSceneId);
   const publicEntry = getPublicSceneEntryById(resolvedSceneId);
   const resolvedTask = taskId ? getTaskById(taskId) : undefined;
-  const anatomyLessonEnabled =
-    searchParams.get("lesson") === "1" && publicEntry?.lesson?.kind === "anatomy";
+  const anatomyLessonEnabled = publicEntry?.lesson?.kind === "anatomy";
 
   if (
     !scene ||

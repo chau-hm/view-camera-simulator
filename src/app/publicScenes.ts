@@ -69,7 +69,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free"],
-    thumbnailAsset: "assets/view-camera-hero-illustration.png",
+    thumbnailAsset: "assets/scene-view-camera-anatomy.png",
     lesson: {
       kind: "anatomy",
       id: "view-camera-anatomy",

@@ -53,6 +53,10 @@ describe("scenes page", () => {
     expect(scopedAnatomyCard.getByText("Camera anatomy")).toBeInTheDocument();
     expect(scopedAnatomyCard.getByText("Focusing screen")).toBeInTheDocument();
     expect(scopedAnatomyCard.getByText("Shared image plane")).toBeInTheDocument();
+    expect(anatomyCard!.querySelector("img")).toHaveAttribute(
+      "src",
+      "/assets/scene-view-camera-anatomy.png",
+    );
     expect(scopedAnatomyCard.getByRole("link", { name: "Start Lesson" })).toHaveAttribute(
       "href",
       "/simulator/free/view-camera-anatomy?lesson=1",

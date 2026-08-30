@@ -31,6 +31,9 @@ describe("public scene catalog integrity", () => {
       availableModes: ["free"],
       lesson: { kind: "anatomy", id: "view-camera-anatomy" },
     });
+    expect(entry.thumbnailAsset).toBe("assets/scene-view-camera-anatomy.png");
+    expect(entry.thumbnailAsset).not.toMatch(/\.svg$/);
+    expect(entry.thumbnailAsset).not.toBe("assets/view-camera-hero-illustration.png");
     expect(publicSceneIds[0]).toBe("view-camera-anatomy");
     expect(
       isValidSimulatorRoute({
