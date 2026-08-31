@@ -16,6 +16,7 @@ import {
 } from "../../render/planeOrientation";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import type { CameraState } from "../../types/camera";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import {
@@ -103,6 +104,13 @@ const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
   ...architectureRiseScene.cameraPreset,
   activeSceneId: architectureRiseScene.id,
+  ...overrides,
+});
+
+const anatomyCameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
+  ...DEFAULT_CAMERA_STATE,
+  ...viewCameraAnatomyScene.cameraPreset,
+  activeSceneId: viewCameraAnatomyScene.id,
   ...overrides,
 });
 
@@ -457,6 +465,37 @@ describe("Conceptual View Camera v2 static anatomy", () => {
       }
     },
   );
+
+  it("keeps the Lesson 0 support datum fixed while selectable focus moves a standard", () => {
+    const neutralOptics = deriveOpticsState(
+      anatomyCameraFor({ focusStandard: "front", focusDistanceMm: 2000 }),
+      viewCameraAnatomyScene,
+    );
+    const frontFocusOptics = deriveOpticsState(
+      anatomyCameraFor({ focusStandard: "front", focusDistanceMm: 2200 }),
+      viewCameraAnatomyScene,
+    );
+    const rearFocusOptics = deriveOpticsState(
+      anatomyCameraFor({ focusStandard: "rear", focusDistanceMm: 2200 }),
+      viewCameraAnatomyScene,
+    );
+    const neutralSupport = cameraSupportFor(
+      renderConceptualViewCamera({ opticsState: neutralOptics }),
+    );
+
+    for (const movedOptics of [frontFocusOptics, rearFocusOptics]) {
+      const movedSupport = cameraSupportFor(
+        renderConceptualViewCamera({ opticsState: movedOptics }),
+      );
+      expect(movedSupport.rail.props.position).toEqual(neutralSupport.rail.props.position);
+      expectQuaternionEqual(
+        movedSupport.rail.props.quaternion,
+        neutralSupport.rail.props.quaternion as Quaternion,
+      );
+      expect(movedSupport.frontMount.props.position).toEqual(neutralSupport.frontMount.props.position);
+      expect(movedSupport.rearMount.props.position).toEqual(neutralSupport.rearMount.props.position);
+    }
+  });
 
   it("applies whole-camera rig translation to the fixed support datum", () => {
     const neutralOptics = deriveOpticsState(

@@ -1,8 +1,8 @@
-# PR 9F — controls ↔ physical camera teaching
+# PR #115 follow-up — restore Lesson 0 camera assembly geometry
 
-- Objective: extend the merged Lesson 0 anatomy walkthrough with real canonical controls for Front Rise, Front Shift, Front Tilt, Front Swing, selectable Front/Rear Focus, and Aperture. No new movement state, optics model, public Rear Shift/Rear Swing exposure, or PR 9F+ lesson work.
-- Branch/base: `feature/controls-to-camera-anatomy-teaching` from merged PR #114 `origin/main` at `c9ef03ef79271f70cf0123bc6e7e4cd3e8b8112a`.
-- Architecture: `CAMERA_CONTROL_TEACHING` centralizes control → canonical field/standard → anatomy target mappings, including dormant rear mappings. Lesson 0 renders existing `SingleMovementControl`, `FocusControl`, and `ApertureControl` inside a scoped teaching panel; completion gates use reachable canonical values.
-- Scene isolation: the anatomy scene owns its front movement capabilities and selectable-focus capability; `showReferenceCamera: false` keeps it single-camera. Transitions reset movement/focus presentation state, and existing scenes retain their policies.
-- Optics: selectable-focus scenes reuse the existing Focus Fundamentals resolver; no optical formulas or RTT implementation changed. Lesson 0 focus geometry is covered by `focusFundamentalsFocusing.test.ts`.
-- Validation: `npm run ci:local` passed (153 files / 1,476 tests, typecheck, lint, CSS check, build). Focused PR 9F tests passed. Lesson 0 Playwright passed; camera inspection passed; Table Tilt/Shelf Swing smoke tests passed. Full `ci:local:e2e` stopped at the known Mirror Shift RTT contentful baseline; Understanding Camera Movements’ final SPA/lattice test reproduced its known RTT attribute baseline.
+- Objective: preserve PR 9F's interactive Lesson 0 focus teaching while restoring the pre-PR9F conceptual camera body datum and neutral assembly.
+- Branch: `feature/controls-to-camera-anatomy-teaching`; existing PR #115 branch. The PR is now merged into `origin/main` at `02ea5ca7dd7b70c36ce886365cb06322e02f793b`; this correction remains on the existing feature branch as requested.
+- Root cause: generalized selectable-focus construction applied Focus Fundamentals' absolute rear-datum `lensZMm`/`filmZMm` directly to Lesson 0, replacing its neutral `lens z=0` / `film z=-f` body baseline.
+- Fix: `SceneFocusStandardCapability.placement` declares `rear-datum` or `scene-baseline`; Lesson 0 uses baseline-relative standard travel derived from the shared focus solver, while Focus Fundamentals retains its absolute rear-datum contract.
+- Geometry contract: front focus moves only the lens/front standard from baseline; rear focus moves only the film/rear standard from baseline; rail/support remains a fixed rig datum and follows only whole-camera transforms.
+- Validation: focused optics, camera-render, scene, and Lesson 0 integration suites pass after the fix. Full `npm run ci:local` and Lesson 0 E2E remain to be rerun; no RTT/WebGL files are in scope.

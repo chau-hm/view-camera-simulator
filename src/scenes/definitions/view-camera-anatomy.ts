@@ -48,6 +48,7 @@ export const viewCameraAnatomyScene: SceneDefinition = {
     defaultStandard: "front",
     referenceFocusDepthMm: 2000,
     minimumFocusDepthMm: 800,
+    placement: "scene-baseline",
   },
   cameraControlPolicy: {
     infinityReset: false,

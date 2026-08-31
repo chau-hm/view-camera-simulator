@@ -3,7 +3,10 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { i18n } from "../../i18n";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import { useAppStore } from "../../state/appStore";
+import { CAMERA_CONSTANTS } from "../../utils/constants";
 
 beforeEach(async () => {
   await i18n.changeLanguage("en");
@@ -124,6 +127,18 @@ describe("Lesson 0 integration", () => {
     expect(screen.getByRole("heading", { name: "Controls recap" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Lesson complete");
     expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument();
+
+    const recapOptics = deriveOpticsState(
+      useAppStore.getState().camera,
+      viewCameraAnatomyScene,
+    );
+    expect(recapOptics.diagnostics.fallbackApplied).toBe(false);
+    expect(recapOptics.lensCenterWorld).toEqual({ x: 0, y: 0, z: 0 });
+    expect(recapOptics.filmCenterWorld).toEqual({
+      x: 0,
+      y: 0,
+      z: -CAMERA_CONSTANTS.focalLengthMm,
+    });
   });
 
   it("resets the lesson and restores normal presentation on scene exit", async () => {
