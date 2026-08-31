@@ -40,6 +40,7 @@ export const focusFundamentalsTwoTargets: SceneDefinition = {
     defaultStandard: "front",
     referenceFocusDepthMm: focusFundamentalsReferenceFocusDepthMm,
     minimumFocusDepthMm: focusFundamentalsSceneBoundsMm.min.z,
+    placement: "rear-datum",
   },
   cameraControlPolicy: {
     aperture: "fixed",

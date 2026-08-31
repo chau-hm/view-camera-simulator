@@ -63,6 +63,11 @@ describe("scene definitions", () => {
     expect(viewCameraAnatomyScene.movementCapabilities?.available).not.toContain("rearSwingDeg");
   });
 
+  it("declares Lesson 0's selectable focus as travel relative to its scene baseline", () => {
+    expect(viewCameraAnatomyScene.focusStandardCapability?.placement).toBe("scene-baseline");
+    expect(focusFundamentalsTwoTargets.focusStandardCapability?.placement).toBe("rear-datum");
+  });
+
   it("defines architecture composition targets for top and main building", () => {
     const compositionTargetIds = architectureRiseScene.compositionTargets.map(
       (target) => target.id,

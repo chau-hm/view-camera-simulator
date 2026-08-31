@@ -14,7 +14,7 @@ import {
   focusFundamentalsReferenceFocusDepthMm,
 } from "../../scenes/focusFundamentalsTargets";
 import type { CameraState } from "../../types/camera";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { selectDerivedOpticsState } from "../../state/selectors";
 
 const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
@@ -125,6 +125,28 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
     expect(atReference.filmCenterWorld.z).toBeLessThan(after.filmCenterWorld.z);
   });
 
+  it("keeps the Lesson 0 neutral body datum at the pre-selectable-focus placement", () => {
+    const anatomyCamera: CameraState = {
+      ...DEFAULT_CAMERA_STATE,
+      ...viewCameraAnatomyScene.cameraPreset,
+      activeSceneId: viewCameraAnatomyScene.id,
+      focusStandard: "front",
+      focusDistanceMm: viewCameraAnatomyScene.cameraPreset.focusDistanceMm,
+    };
+    const optics = deriveOpticsState(anatomyCamera, viewCameraAnatomyScene);
+
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expect(optics.lensCenterWorld).toEqual({ x: 0, y: 0, z: 0 });
+    expect(optics.filmCenterWorld).toEqual({
+      x: 0,
+      y: 0,
+      z: -CAMERA_CONSTANTS.focalLengthMm,
+    });
+    expect(optics.rearStandardFrame.centerWorld).toEqual(optics.filmCenterWorld);
+    expect(optics.cameraBodyLocalGeometry.lensCenterLocal).toEqual(optics.lensCenterWorld);
+    expect(optics.cameraBodyLocalGeometry.filmCenterLocal).toEqual(optics.filmCenterWorld);
+  });
+
   it("reuses the same selectable-focus geometry for Lesson 0", () => {
     const anatomyCamera = (overrides: Partial<CameraState> = {}): CameraState => ({
       ...DEFAULT_CAMERA_STATE,
@@ -145,10 +167,16 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
       viewCameraAnatomyScene,
     );
 
-    expect(movedFront.filmCenterWorld.z).toBeCloseTo(0, 12);
+    expect(referenceFront.lensCenterWorld.z).toBeCloseTo(0, 12);
+    expect(referenceFront.filmCenterWorld.z).toBeCloseTo(-CAMERA_CONSTANTS.focalLengthMm, 12);
+    expect(movedFront.filmCenterWorld.z).toBeCloseTo(referenceFront.filmCenterWorld.z, 12);
+    expect(movedFront.rearStandardFrame.centerWorld).toEqual(
+      referenceFront.rearStandardFrame.centerWorld,
+    );
     expect(movedFront.lensCenterWorld.z).not.toBeCloseTo(referenceFront.lensCenterWorld.z, 12);
     expect(movedRear.lensCenterWorld.z).toBeCloseTo(referenceFront.lensCenterWorld.z, 12);
-    expect(movedRear.filmCenterWorld.z).not.toBeCloseTo(0, 12);
+    expect(movedRear.lensCenterWorld).toEqual(referenceFront.lensCenterWorld);
+    expect(movedRear.filmCenterWorld.z).not.toBeCloseTo(referenceFront.filmCenterWorld.z, 12);
     expect(movedFront.focusPointWorld.z).toBeCloseTo(2200, 12);
     expect(movedRear.focusPointWorld.z).toBeCloseTo(2200, 12);
     expect(movedFront.diagnostics.fallbackApplied).toBe(false);

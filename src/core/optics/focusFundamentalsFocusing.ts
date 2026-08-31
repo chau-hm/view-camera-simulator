@@ -16,6 +16,14 @@ export type FocusFundamentalsFocusingResult = {
   fallbackReason: string | null;
 };
 
+export type BaselineRelativeFocusTravel = {
+  focusing: FocusFundamentalsFocusingResult;
+  /** Longitudinal travel for the front standard from the scene baseline. */
+  lensTravelMm: number;
+  /** Longitudinal travel for the rear standard from the scene baseline. */
+  filmTravelMm: number;
+};
+
 type FiniteLensSolution = {
   focusDepthMm: number;
   lensZMm: number;
@@ -187,5 +195,52 @@ export const resolveFocusFundamentalsFocusing = ({
     fallbackReason: reference
       ? "Invalid rear-standard focus distance; using front-standard geometry"
       : "Invalid rear-standard reference focus geometry; using front-standard geometry",
+  };
+};
+
+/**
+ * Convert the rear-datum focus solution into standard travel relative to a
+ * scene's own neutral lens/film placement. This keeps the shared selectable
+ * focus semantics reusable without forcing a conceptual camera scene to adopt
+ * the Focus Fundamentals absolute coordinate datum.
+ */
+export const resolveBaselineRelativeFocusTravel = ({
+  standard,
+  focusMode,
+  focusDepthMm,
+  focalLengthMm,
+  referenceFocusDepthMm,
+}: {
+  standard: FocusStandard;
+  focusMode: "finite" | "infinity";
+  focusDepthMm: number;
+  focalLengthMm: number;
+  referenceFocusDepthMm: number;
+}): BaselineRelativeFocusTravel => {
+  const focusing = resolveFocusFundamentalsFocusing({
+    standard,
+    focusMode,
+    focusDepthMm,
+    focalLengthMm,
+    referenceFocusDepthMm,
+  });
+  const reference = resolveFocusFundamentalsFocusing({
+    standard: "front",
+    focusMode,
+    focusDepthMm: referenceFocusDepthMm,
+    focalLengthMm,
+    referenceFocusDepthMm,
+  });
+
+  return {
+    focusing,
+    lensTravelMm:
+      focusing.standard === "front"
+        ? focusing.lensZMm - reference.lensZMm
+        : 0,
+    filmTravelMm:
+      focusing.standard === "rear"
+        ? focusing.filmZMm - reference.filmZMm
+        : 0,
   };
 };

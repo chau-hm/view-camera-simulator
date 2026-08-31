@@ -96,6 +96,12 @@ export type SceneFocusStandardCapability = {
   referenceFocusDepthMm: number;
   /** Smallest public focus depth that keeps both supported standards physical. */
   minimumFocusDepthMm?: number;
+  /**
+   * Selectable-focus placement contract for composing standard travel with the
+   * scene's body datum. The rear-datum mode preserves Focus Fundamentals'
+   * absolute construction; scene-baseline applies only the resolved travel.
+   */
+  placement?: "rear-datum" | "scene-baseline";
 };
 
 export type SceneFocusDistanceRangeMm = {
