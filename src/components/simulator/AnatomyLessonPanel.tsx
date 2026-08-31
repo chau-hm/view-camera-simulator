@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import type { ReactNode } from "react";
 import {
   getLessonZeroStep,
   LESSON_ZERO_STEPS,
@@ -13,6 +14,8 @@ type AnatomyLessonPanelProps = {
   showSmallAperture: boolean;
   onShowSmallApertureChange: (showSmallAperture: boolean) => void;
   onReset: () => void;
+  canAdvance?: boolean;
+  controlContent?: ReactNode;
 };
 
 export const AnatomyLessonPanel = ({
@@ -21,6 +24,8 @@ export const AnatomyLessonPanel = ({
   showSmallAperture,
   onShowSmallApertureChange,
   onReset,
+  canAdvance = true,
+  controlContent,
 }: AnatomyLessonPanelProps) => {
   const { t } = useTranslation();
   const step: LessonZeroStep = getLessonZeroStep(stepIndex);
@@ -48,6 +53,8 @@ export const AnatomyLessonPanel = ({
         <h3 id="anatomy-lesson-title">{t(step.titleKey)}</h3>
         <p>{t(step.bodyKey)}</p>
         <p className="anatomy-lesson-panel__cue">{t(step.cueKey)}</p>
+
+        {controlContent}
 
         {step.id === "aperture" ? (
           <button
@@ -78,6 +85,7 @@ export const AnatomyLessonPanel = ({
           <button
             type="button"
             className="btn btn--primary"
+            disabled={!canAdvance}
             onClick={() => onStepIndexChange(Math.min(LESSON_ZERO_STEPS.length - 1, stepIndex + 1))}
           >
             {t(lessonZeroMessageKeys.common.next)}

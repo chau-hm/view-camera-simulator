@@ -13,6 +13,9 @@ export const lessonZeroMessages = {
     backToScenes: "返回場景",
     showSmallAperture: "顯示較小光圈",
     showWideAperture: "顯示較大光圈",
+    tryControl: "試試這項控制",
+    controlComplete: "很好——現在可以清楚看到部件的變化。",
+    controlPending: "移動控制，直到部件的變化清晰可見。",
   },
   steps: {
     completeCamera: {
@@ -73,6 +76,52 @@ export const lessonZeroMessages = {
       body:
         "前組承托鏡頭板與鏡頭，光圈位於鏡頭內。皮腔連接後組；後組可放置對焦屏或底片夾，兩者位於相同影像平面，而相機支架支承整個結構。",
       cue: "你已準備好在後面的課程探索相機控制如何移動這些部件。",
+    },
+    controlsOverview: {
+      title: "現在試試相機控制",
+      body:
+        "這些控制會改變你剛才認識的相機部件。每個小練習都集中於一項實際控制及其可見結果。",
+      cue: "使用被標示的控制，清楚看到其關係後再繼續。",
+    },
+    frontRiseControl: {
+      title: "前組上移",
+      body: "上移會令前組向垂直方向移動，而相機支架保持原位。",
+      cue: "拖動「上移」，直至清楚看到前組的垂直移動。",
+    },
+    frontShiftControl: {
+      title: "前組橫移",
+      body: "橫移會令前組向側面移動，但不會旋轉。",
+      cue: "拖動「前組橫移」，直至清楚看到橫向移動。",
+    },
+    frontTiltControl: {
+      title: "前組傾斜",
+      body: "傾斜會令前組繞水平軸向前或向後旋轉。",
+      cue: "拖動「傾斜」，觀察前組的方向改變。",
+    },
+    frontSwingControl: {
+      title: "前組擺動",
+      body: "擺動會令前組繞垂直軸向左或向右旋轉。",
+      cue: "拖動「擺動」，觀察前組左右轉動。",
+    },
+    focusFrontControl: {
+      title: "對焦——前組",
+      body: "選擇前組對焦時，前組會沿光軸移動，皮腔長度亦會隨之改變。",
+      cue: "選擇前組，再移動對焦距離，直至清楚看到移動。",
+    },
+    focusRearControl: {
+      title: "對焦——後組",
+      body: "選擇後組對焦時，後組會沿光軸移動，皮腔長度亦會隨之改變。",
+      cue: "選擇後組，再移動對焦距離，直至清楚看到移動。",
+    },
+    apertureControl: {
+      title: "光圈控制",
+      body: "光圈控制會改變鏡頭內的光圈葉片。f 值越大，開口越小。",
+      cue: "選擇另一個光圈，觀察光圈開口改變。",
+    },
+    controlsRecap: {
+      title: "控制總結",
+      body: "現在你可以把控制與實體部件連繫起來：移軸會重新定位組件，對焦會移動所選組件及皮腔，而光圈會改變鏡頭內的光圈。",
+      cue: "你已準備好在後面的課程探索這些變化帶來的光學結果。",
     },
   },
 } satisfies MessageShape<typeof englishLessonZeroMessages>;

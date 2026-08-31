@@ -40,6 +40,44 @@ test("Lesson 0 presents the anatomy sequence and isolates its presentation state
     }
   }
 
+  await next.click();
+  await expect(lessonHeading).toHaveText("Now try the controls");
+
+  await next.click();
+  await expect(lessonHeading).toHaveText("Front Rise");
+  await expect(page.getByRole("slider", { name: "Front Rise", exact: true })).toBeEnabled();
+  await expect(next).toBeDisabled();
+  await page.getByRole("slider", { name: "Front Rise", exact: true }).fill("12");
+  await expect(next).toBeEnabled();
+
+  await next.click();
+  await expect(lessonHeading).toHaveText("Front Shift");
+  await page.getByRole("slider", { name: "Front Shift", exact: true }).fill("12");
+
+  await next.click();
+  await expect(lessonHeading).toHaveText("Front Tilt");
+  await page.getByRole("slider", { name: "Front Tilt", exact: true }).fill("3");
+
+  await next.click();
+  await expect(lessonHeading).toHaveText("Front Swing");
+  await page.getByRole("slider", { name: "Front Swing", exact: true }).fill("3");
+
+  await next.click();
+  await expect(lessonHeading).toHaveText("Focus — Front Standard");
+  await expect(page.getByRole("radio", { name: "Front standard", exact: true })).toBeChecked();
+  await page.getByRole("slider", { name: "Focus distance", exact: true }).fill("2200");
+
+  await next.click();
+  await expect(lessonHeading).toHaveText("Focus — Rear Standard");
+  await expect(page.getByRole("radio", { name: "Rear standard", exact: true })).toBeChecked();
+  await page.getByRole("slider", { name: "Focus distance", exact: true }).fill("2200");
+
+  await next.click();
+  await expect(lessonHeading).toHaveText("Aperture control");
+  await page.getByRole("combobox", { name: "Aperture", exact: true }).selectOption("5.6");
+
+  await next.click();
+  await expect(lessonHeading).toHaveText("Controls recap");
   await expect(next).toHaveCount(0);
   await expect(panel.getByRole("status")).toHaveText("Lesson complete");
 

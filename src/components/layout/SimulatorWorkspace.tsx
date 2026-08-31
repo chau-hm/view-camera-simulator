@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getLessonZeroStep,
+  isLessonZeroStepComplete,
   resolveLessonZeroCameraPresentation,
 } from "../../app/anatomyLesson";
+import { getCameraControlTeachingDefinition } from "../../app/cameraControlTeaching";
 import { getGuidedLessonContext } from "../../app/guidedLesson";
 import { getPublicSceneEntryById } from "../../app/publicScenes";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
@@ -43,6 +45,7 @@ import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { AnatomyLessonPanel } from "../simulator/AnatomyLessonPanel";
+import { AnatomyControlTeachingPanel } from "../simulator/AnatomyControlTeachingPanel";
 import { TaskPanel } from "../simulator/TaskPanel";
 import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
@@ -86,6 +89,8 @@ export const SimulatorWorkspace = ({
   const setMode = useAppStore((state) => state.setMode);
   const setActiveScene = useAppStore((state) => state.setActiveScene);
   const setActiveTask = useAppStore((state) => state.setActiveTask);
+  const resetMovements = useAppStore((state) => state.resetMovements);
+  const setFocusStandard = useAppStore((state) => state.setFocusStandard);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const setGroundGlassAssistEnabled = useAppStore(
     (state) => state.setGroundGlassAssistEnabled,
@@ -254,6 +259,12 @@ export const SimulatorWorkspace = ({
   const anatomyPresentation = isAnatomyLesson
     ? resolveLessonZeroCameraPresentation(anatomyStep, anatomyShowSmallAperture)
     : undefined;
+  const anatomyControlDefinition =
+    isAnatomyLesson && anatomyStep.controlTeachingId
+      ? getCameraControlTeachingDefinition(anatomyStep.controlTeachingId)
+      : null;
+  const anatomyStepComplete =
+    !isAnatomyLesson || isLessonZeroStepComplete(anatomyStep, camera);
   const guidedLessonContext = useMemo(
     () =>
       guidedLessonEnabled && publicSceneEntry
@@ -473,6 +484,29 @@ export const SimulatorWorkspace = ({
       lessonEntry: true,
     });
   }, [clearSimulatorRouteInitialization]);
+  const handleAnatomyStepIndexChange = useCallback(
+    (nextIndex: number) => {
+      const nextStep = getLessonZeroStep(nextIndex);
+      const leavingOrEnteringControls =
+        anatomyStep.section === "controls" || nextStep.section === "controls";
+
+      if (leavingOrEnteringControls) {
+        resetMovements();
+      }
+
+      if (nextStep.controlTeachingId) {
+        const definition = getCameraControlTeachingDefinition(nextStep.controlTeachingId);
+        if (definition.kind === "focus") {
+          setFocusStandard(definition.focusStandard);
+        }
+      }
+
+      setAnatomyShowSmallAperture(false);
+      setAnatomyViewResetNonce((value) => value + 1);
+      setAnatomyStepIndex(nextIndex);
+    },
+    [anatomyStep.section, resetMovements, setFocusStandard],
+  );
   const sceneExpanded = expandedViewport === "scene";
   const groundGlassExpanded = expandedViewport === "groundGlass";
   const geometryExpanded = expandedViewport === "geometry";
@@ -680,10 +714,19 @@ export const SimulatorWorkspace = ({
           {isAnatomyLesson ? (
             <AnatomyLessonPanel
               stepIndex={anatomyStepIndex}
-              onStepIndexChange={setAnatomyStepIndex}
+              onStepIndexChange={handleAnatomyStepIndexChange}
               showSmallAperture={anatomyShowSmallAperture}
               onShowSmallApertureChange={setAnatomyShowSmallAperture}
               onReset={resetAnatomyLesson}
+              canAdvance={anatomyStepComplete}
+              controlContent={
+                anatomyControlDefinition ? (
+                  <AnatomyControlTeachingPanel
+                    definition={anatomyControlDefinition}
+                    complete={anatomyStepComplete}
+                  />
+                ) : null
+              }
             />
           ) : <>
           <section aria-label={t(simulatorMessageKeys.controls.cameraControls)}>

@@ -1,9 +1,6 @@
 import type { SceneDefinition } from "../../types/scene";
 
-/**
- * A quiet, finite-focus scene used only to introduce the shared conceptual
- * camera anatomy. It intentionally exposes no movement or task controls.
- */
+/** A finite-focus scene used by Lesson 0's anatomy and control walkthrough. */
 export const viewCameraAnatomyScene: SceneDefinition = {
   id: "view-camera-anatomy",
   name: "Meet the View Camera",
@@ -21,8 +18,8 @@ export const viewCameraAnatomyScene: SceneDefinition = {
     rearSwingDeg: 0,
   },
   focusDistanceRangeMm: {
-    min: 2000,
-    max: 2000,
+    min: 800,
+    max: 4000,
   },
   cameraPlacement: {
     position: { x: 720, y: 360, z: 820 },
@@ -35,10 +32,24 @@ export const viewCameraAnatomyScene: SceneDefinition = {
   focusTargets: [],
   compositionTargets: [],
   cameraInspectionAnchorSide: "rear",
+  showReferenceCamera: false,
+  movementCapabilities: {
+    available: [
+      "frontRiseMm",
+      "frontShiftMm",
+      "frontTiltDeg",
+      "frontSwingDeg",
+    ],
+    selectionMode: "multiple",
+    defaultMovement: "frontRiseMm",
+  },
+  focusStandardCapability: {
+    enabled: true,
+    defaultStandard: "front",
+    referenceFocusDepthMm: 2000,
+    minimumFocusDepthMm: 800,
+  },
   cameraControlPolicy: {
-    movement: "fixed",
-    focusDistance: "fixed",
-    aperture: "fixed",
     infinityReset: false,
   },
 };

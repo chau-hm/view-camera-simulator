@@ -29,11 +29,10 @@ const renderAnatomyLesson = () =>
   );
 
 describe("Lesson 0 integration", () => {
-  it("progresses through anatomy without exposing movement controls", async () => {
+  it("progresses through anatomy and lets the learner use the canonical controls", async () => {
     renderAnatomyLesson();
 
     expect(await screen.findByRole("heading", { name: "The complete camera" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Camera Controls" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
@@ -59,6 +58,72 @@ describe("Lesson 0 integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByRole("heading", { name: "Film Holder", level: 3 })).toBeInTheDocument();
     expect(useAppStore.getState().camera.aperture).toBe(11);
+
+    for (let index = 0; index < 2; index += 1) {
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    }
+    expect(screen.getByRole("heading", { name: "Recap", level: 3 })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByRole("heading", { name: "Now try the controls" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByRole("heading", { name: "Front Rise" })).toBeInTheDocument();
+    const rise = screen.getByRole("slider", { name: "Front Rise" });
+    expect(rise).toHaveValue("0");
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+    fireEvent.change(rise, { target: { value: "12" } });
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(12);
+    expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    const frontShift = screen.getByRole("slider", { name: "Front Shift" });
+    fireEvent.change(frontShift, { target: { value: "12" } });
+    expect(useAppStore.getState().camera.frontShiftMm).toBe(12);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    const tilt = screen.getByRole("slider", { name: "Front Tilt" });
+    fireEvent.change(tilt, { target: { value: "3" } });
+    expect(useAppStore.getState().camera.frontTiltDeg).toBe(3);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    const swing = screen.getByRole("slider", { name: "Front Swing" });
+    fireEvent.change(swing, { target: { value: "3" } });
+    expect(useAppStore.getState().camera.frontSwingDeg).toBe(3);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByRole("heading", { name: "Focus — Front Standard" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Front standard" })).toBeChecked();
+    fireEvent.change(screen.getByRole("slider", { name: "Focus distance" }), {
+      target: { value: "2200" },
+    });
+    expect(useAppStore.getState().camera).toMatchObject({
+      focusStandard: "front",
+      focusDistanceMm: 2200,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByRole("heading", { name: "Focus — Rear Standard" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Rear standard" })).toBeChecked();
+    fireEvent.change(screen.getByRole("slider", { name: "Focus distance" }), {
+      target: { value: "2200" },
+    });
+    expect(useAppStore.getState().camera).toMatchObject({
+      focusStandard: "rear",
+      focusDistanceMm: 2200,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByRole("heading", { name: "Aperture control" })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Aperture" }), {
+      target: { value: "5.6" },
+    });
+    expect(useAppStore.getState().camera.aperture).toBe(5.6);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByRole("heading", { name: "Controls recap" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Lesson complete");
+    expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument();
   });
 
   it("resets the lesson and restores normal presentation on scene exit", async () => {

@@ -6,6 +6,7 @@ import {
 } from "../../core/optics/thinLensModel";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import {
   focusFundamentalsFocalLengthMm,
   focusFundamentalsFarFocusDepthMm,
@@ -122,6 +123,36 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
     expect(after.lensCenterWorld.z).toBeCloseTo(atReference.lensCenterWorld.z, 12);
     expect(before.filmCenterWorld.z).toBeLessThan(atReference.filmCenterWorld.z);
     expect(atReference.filmCenterWorld.z).toBeLessThan(after.filmCenterWorld.z);
+  });
+
+  it("reuses the same selectable-focus geometry for Lesson 0", () => {
+    const anatomyCamera = (overrides: Partial<CameraState> = {}): CameraState => ({
+      ...DEFAULT_CAMERA_STATE,
+      ...viewCameraAnatomyScene.cameraPreset,
+      activeSceneId: viewCameraAnatomyScene.id,
+      ...overrides,
+    });
+    const referenceFront = deriveOpticsState(
+      anatomyCamera({ focusStandard: "front", focusDistanceMm: 2000 }),
+      viewCameraAnatomyScene,
+    );
+    const movedFront = deriveOpticsState(
+      anatomyCamera({ focusStandard: "front", focusDistanceMm: 2200 }),
+      viewCameraAnatomyScene,
+    );
+    const movedRear = deriveOpticsState(
+      anatomyCamera({ focusStandard: "rear", focusDistanceMm: 2200 }),
+      viewCameraAnatomyScene,
+    );
+
+    expect(movedFront.filmCenterWorld.z).toBeCloseTo(0, 12);
+    expect(movedFront.lensCenterWorld.z).not.toBeCloseTo(referenceFront.lensCenterWorld.z, 12);
+    expect(movedRear.lensCenterWorld.z).toBeCloseTo(referenceFront.lensCenterWorld.z, 12);
+    expect(movedRear.filmCenterWorld.z).not.toBeCloseTo(0, 12);
+    expect(movedFront.focusPointWorld.z).toBeCloseTo(2200, 12);
+    expect(movedRear.focusPointWorld.z).toBeCloseTo(2200, 12);
+    expect(movedFront.diagnostics.fallbackApplied).toBe(false);
+    expect(movedRear.diagnostics.fallbackApplied).toBe(false);
   });
 
   it("preserves infinity semantics with a calibrated rear placement", () => {

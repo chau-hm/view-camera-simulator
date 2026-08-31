@@ -10,6 +10,9 @@ export const lessonZeroMessageKeys = {
     backToScenes: "lessonZero.common.backToScenes",
     showSmallAperture: "lessonZero.common.showSmallAperture",
     showWideAperture: "lessonZero.common.showWideAperture",
+    tryControl: "lessonZero.common.tryControl",
+    controlComplete: "lessonZero.common.controlComplete",
+    controlPending: "lessonZero.common.controlPending",
   },
   scene: {
     title: "scenes.viewCameraAnatomy.title",
@@ -70,6 +73,51 @@ export const lessonZeroMessageKeys = {
       title: "lessonZero.steps.recap.title",
       body: "lessonZero.steps.recap.body",
       cue: "lessonZero.steps.recap.cue",
+    },
+    controlsOverview: {
+      title: "lessonZero.steps.controlsOverview.title",
+      body: "lessonZero.steps.controlsOverview.body",
+      cue: "lessonZero.steps.controlsOverview.cue",
+    },
+    frontRiseControl: {
+      title: "lessonZero.steps.frontRiseControl.title",
+      body: "lessonZero.steps.frontRiseControl.body",
+      cue: "lessonZero.steps.frontRiseControl.cue",
+    },
+    frontShiftControl: {
+      title: "lessonZero.steps.frontShiftControl.title",
+      body: "lessonZero.steps.frontShiftControl.body",
+      cue: "lessonZero.steps.frontShiftControl.cue",
+    },
+    frontTiltControl: {
+      title: "lessonZero.steps.frontTiltControl.title",
+      body: "lessonZero.steps.frontTiltControl.body",
+      cue: "lessonZero.steps.frontTiltControl.cue",
+    },
+    frontSwingControl: {
+      title: "lessonZero.steps.frontSwingControl.title",
+      body: "lessonZero.steps.frontSwingControl.body",
+      cue: "lessonZero.steps.frontSwingControl.cue",
+    },
+    focusFrontControl: {
+      title: "lessonZero.steps.focusFrontControl.title",
+      body: "lessonZero.steps.focusFrontControl.body",
+      cue: "lessonZero.steps.focusFrontControl.cue",
+    },
+    focusRearControl: {
+      title: "lessonZero.steps.focusRearControl.title",
+      body: "lessonZero.steps.focusRearControl.body",
+      cue: "lessonZero.steps.focusRearControl.cue",
+    },
+    apertureControl: {
+      title: "lessonZero.steps.apertureControl.title",
+      body: "lessonZero.steps.apertureControl.body",
+      cue: "lessonZero.steps.apertureControl.cue",
+    },
+    controlsRecap: {
+      title: "lessonZero.steps.controlsRecap.title",
+      body: "lessonZero.steps.controlsRecap.body",
+      cue: "lessonZero.steps.controlsRecap.cue",
     },
   },
 } as const;

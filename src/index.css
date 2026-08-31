@@ -506,6 +506,13 @@ button {
 .anatomy-lesson-panel__actions { justify-content: space-between; }
 .anatomy-lesson-panel__complete { color: #166534; font-weight: 700; }
 .anatomy-lesson-panel__footer { justify-content: space-between; border-top: 1px solid var(--border-soft); padding-top: 12px; }
+.anatomy-control-teaching { display: grid; gap: 8px; border: 1px solid var(--border-soft); border-left: 3px solid var(--primary); border-radius: 8px; padding: 10px; background: rgba(248, 250, 252, 0.72); }
+.anatomy-control-teaching h4,
+.anatomy-control-teaching p { margin: 0; }
+.anatomy-control-teaching h4 { font-size: 14px; }
+.anatomy-control-teaching__prompt { color: var(--text-muted); font-size: 13px; font-weight: 700; }
+.anatomy-control-teaching__status { color: var(--text-muted); font-size: 12px; }
+.anatomy-control-teaching__status--complete { color: #166534; font-weight: 700; }
 
 @media (max-width: 520px) {
  .guided-lesson-progress__stages { gap: 2px; }
