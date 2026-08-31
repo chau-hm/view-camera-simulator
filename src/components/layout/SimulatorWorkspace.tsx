@@ -537,7 +537,11 @@ export const SimulatorWorkspace = ({
                 cameraInspectionTarget={isAnatomyLesson ? anatomyStep.inspectionTarget : undefined}
                 initialViewFocus={isAnatomyLesson ? "camera" : undefined}
                 suppressOpticalOverlays={isAnatomyLesson}
-                viewResetKey={isAnatomyLesson ? anatomyViewResetNonce : undefined}
+                viewResetKey={
+                  isAnatomyLesson
+                    ? `${anatomyStep.inspectionTarget}:${anatomyViewResetNonce}`
+                    : undefined
+                }
                 showHeader={false}
               />
             </div>}

@@ -108,6 +108,17 @@ describe("3D observer view framing", () => {
     );
   });
 
+  it("brings the Aperture anatomy target into a closer deterministic inspection view", () => {
+    const view = createCameraInspectionView(
+      architectureRiseScene,
+      sceneView,
+      [0, 0, 0],
+      "aperture",
+    );
+
+    expect(viewDistance(view)).toBeCloseTo(0.38, 8);
+  });
+
   it("maps anatomy inspection targets to canonical camera geometry", () => {
     const optics = deriveOpticsState(cameraState(), architectureRiseScene);
     const lens = resolveCameraInspectionTargetWorld("lens", optics);

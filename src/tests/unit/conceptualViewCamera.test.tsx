@@ -1,6 +1,6 @@
 import { Children, type ReactElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
-import { Quaternion } from "three";
+import { Quaternion, Shape } from "three";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   CONCEPTUAL_CAMERA_ANATOMY_PARTS,
@@ -18,6 +18,17 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import type { CameraState } from "../../types/camera";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import {
+  CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
+  CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT,
+  CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM,
+  CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM,
+  CONCEPTUAL_LENS_IRIS_BLADE_COUNT,
+  resolveConceptualApertureBladePolygons,
+  resolveConceptualApertureBlades,
+  resolveConceptualApertureOpening,
+} from "../../render/conceptualCameraAnatomyGeometry";
+import { WORLD_SCALE } from "../../render/rttUtils";
 
 type InspectableProps = {
   name?: string;
@@ -249,22 +260,127 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     expect(findNamedElement(filmHolderTree, "ground-glass-screen")).toBeNull();
   });
 
-  it("derives the visible iris opening from the canonical aperture input", () => {
+  it("derives a rotating off-axis diaphragm from the canonical aperture input", () => {
     const opticsState = deriveOpticsState(cameraFor(), architectureRiseScene);
     const wide = renderConceptualViewCamera({ opticsState, aperture: 5.6 });
     const narrow = renderConceptualViewCamera({ opticsState, aperture: 32 });
-    const wideIris = findNamedElement(wide, "lens-aperture-iris");
-    const narrowIris = findNamedElement(narrow, "lens-aperture-iris");
+    const wideInterior = findNamedElement(wide, "lens-aperture-interior");
+    const narrowInterior = findNamedElement(narrow, "lens-aperture-interior");
+    const isBladeGroup = (name: string) => /^lens-aperture-blade-\d+$/.test(name);
+    const wideBlades = collectNamedElements(wide, isBladeGroup);
+    const narrowBlades = collectNamedElements(narrow, isBladeGroup);
+    const wideBladeSurface = findNamedElement(wide, "lens-aperture-blade-0-surface");
+    const wideBladeMaterial = Children.toArray(wideBladeSurface?.props.children).find(
+      (child) =>
+        typeof child === "object" &&
+        child !== null &&
+        "props" in child &&
+        (child as ReactElement).type === "meshStandardMaterial",
+    ) as ReactElement<InspectableProps> | undefined;
 
-    expect(wideIris).not.toBeNull();
-    expect(narrowIris).not.toBeNull();
-    expect(geometryArgs(wideIris!, "ringGeometry")[0]).toBeGreaterThan(
-      geometryArgs(narrowIris!, "ringGeometry")[0],
+    expect(findNamedElement(wide, "lens-aperture-iris")).not.toBeNull();
+    expect(wideInterior).not.toBeNull();
+    expect(narrowInterior).not.toBeNull();
+    expect(findNamedElement(wide, "lens-aperture-opening")).toBeNull();
+    expect(geometryArgs(wideInterior!, "circleGeometry")).toEqual(
+      geometryArgs(narrowInterior!, "circleGeometry"),
     );
-    expect(geometryArgs(wideIris!, "ringGeometry")[1]).toBe(
-      geometryArgs(narrowIris!, "ringGeometry")[1],
-    );
+    expect(wideBlades).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+    expect(narrowBlades).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+    expect(wideBlades[0].props.position).toEqual([0, 0, 0]);
+    expect(wideBlades[0].props.position).toEqual(narrowBlades[0].props.position);
+    expect(wideBlades.every((blade) => blade.props.position?.[0] === 0 && blade.props.position?.[1] === 0)).toBe(true);
+    expect(wideBlades.every((blade) => blade.props.rotation === undefined)).toBe(true);
+    expect(wideBladeSurface).not.toBeNull();
+    expect(geometryArgs(wideBladeSurface!, "shapeGeometry")).toHaveLength(1);
+    expect(wideBladeMaterial?.props.depthTest).toBe(true);
+    expect(wideBladeMaterial?.props.depthWrite).toBe(true);
+    expect(
+      wideBlades.every((blade) =>
+        blade.props.position &&
+        Children.toArray(blade.props.children).some((child) =>
+          typeof child === "object" &&
+          child !== null &&
+          "props" in child &&
+          (child as ReactElement<{ name?: string }>).props.name?.endsWith("-surface"),
+        ),
+      ),
+    ).toBe(true);
+    for (const blade of wideBlades) {
+      const surface = findNamedElement(wide, `${blade.props.name}-surface`);
+      expect(surface).not.toBeNull();
+      const shape = geometryArgs(surface!, "shapeGeometry")[0] as unknown as Shape;
+      expect(shape.getPoints(1).every((point) =>
+        Math.hypot(point.x, point.y) <= CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM * WORLD_SCALE + 1e-6,
+      )).toBe(true);
+    }
     expect(findNamedElement(wide, "camera-anatomy-lens")).not.toBeNull();
+
+    const mask = findNamedElement(wide, "lens-aperture-housing-mask");
+    const maskMaterial = Children.toArray(mask?.props.children).find(
+      (child) =>
+        typeof child === "object" &&
+        child !== null &&
+        "props" in child &&
+        (child as ReactElement).type === "meshStandardMaterial",
+    ) as ReactElement<InspectableProps> | undefined;
+    const frontBarrel = findNamedElement(wide, "lens-front-barrel");
+
+    expect(mask).not.toBeNull();
+    expect(frontBarrel).not.toBeNull();
+    const maskGeometry = geometryArgs(mask!, "ringGeometry");
+    expect(maskGeometry).toEqual([
+      CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM * WORLD_SCALE,
+      CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM * WORLD_SCALE,
+      CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT,
+    ]);
+    expect(maskGeometry[0]).toBeGreaterThan(
+      resolveConceptualApertureOpening({ aperture: 32 }).openingRadiusMm * WORLD_SCALE,
+    );
+    expect(maskGeometry[1]).toBe(
+      geometryArgs(frontBarrel!, "cylinderGeometry")[0],
+    );
+    const maximumMechanicalRadius = Math.max(
+      ...resolveConceptualApertureBladePolygons(
+        resolveConceptualApertureBlades({ aperture: 5.6 }),
+      ).flatMap((polygon) => polygon.map((point) => Math.hypot(point.x, point.y))),
+    );
+    expect(maximumMechanicalRadius).toBeGreaterThan(
+      CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM,
+    );
+    expect(mask!.props.position).toEqual([
+      0,
+      0,
+      CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM * WORLD_SCALE,
+    ]);
+    expect(mask!.props.position![2]).toBeGreaterThan(wideBlades[0].props.position![2]);
+    expect(mask!.props.position![2]).toBeLessThan(
+      findNamedElement(wide, "lens-front-glass")!.props.position![2],
+    );
+    expect(maskMaterial?.props.color).toBe("#111827");
+    expect(maskMaterial?.props.depthTest).toBe(true);
+    expect(maskMaterial?.props.depthWrite).toBe(true);
+  });
+
+  it("uses a transparent convex front element so the highlighted diaphragm remains readable", () => {
+    const opticsState = deriveOpticsState(cameraFor(), architectureRiseScene);
+    const tree = renderConceptualViewCamera({
+      opticsState,
+      aperture: 5.6,
+      presentation: {
+        anatomy: {
+          targets: [{ kind: "element", name: "lens-aperture-iris", parentPart: "lens" }],
+        },
+      },
+    });
+    const glass = findNamedElement(tree, "lens-front-glass");
+    const iris = findNamedElement(tree, "lens-aperture-iris");
+
+    expect(glass).not.toBeNull();
+    expect(geometryArgs(glass!, "sphereGeometry")[0]).toBeGreaterThan(0);
+    expect(glass!.props.scale).toEqual([1, 1, 0.22]);
+    expect(glass!.props.renderOrder).toBe(0);
+    expect(iris).not.toBeNull();
   });
 
   it("uses one shared hollow procedural bellows mesh between canonical standards", () => {

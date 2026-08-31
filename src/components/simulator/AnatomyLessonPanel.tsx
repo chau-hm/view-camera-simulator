@@ -74,14 +74,15 @@ export const AnatomyLessonPanel = ({
         >
           {t(lessonZeroMessageKeys.common.previous)}
         </button>
-        <button
-          type="button"
-          className="btn btn--primary"
-          disabled={isLastStep}
-          onClick={() => onStepIndexChange(Math.min(LESSON_ZERO_STEPS.length - 1, stepIndex + 1))}
-        >
-          {t(lessonZeroMessageKeys.common.next)}
-        </button>
+        {!isLastStep ? (
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => onStepIndexChange(Math.min(LESSON_ZERO_STEPS.length - 1, stepIndex + 1))}
+          >
+            {t(lessonZeroMessageKeys.common.next)}
+          </button>
+        ) : null}
       </div>
 
       {isLastStep ? (
