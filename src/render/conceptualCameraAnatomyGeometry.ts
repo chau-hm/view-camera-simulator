@@ -107,6 +107,10 @@ export const resolveConceptualFilmHolderGeometry = (): ConceptualFilmHolderGeome
 export const CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM = 22;
 export const CONCEPTUAL_LENS_APERTURE_VISUAL_SCALE = 1.5;
 export const CONCEPTUAL_LENS_APERTURE_MIN_RADIUS_MM = 1.5;
+/** Fixed front-barrel datum that contains the visible diaphragm housing. */
+export const CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM = 27;
+/** Small forward offset from the blade plane; front glass remains farther forward. */
+export const CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM = 2;
 /** Six blades keep the conceptual diaphragm legible without implying a brand-specific lens. */
 export const CONCEPTUAL_LENS_IRIS_BLADE_COUNT = 6;
 const CONCEPTUAL_LENS_APERTURE_RIM_MM = 0.5;

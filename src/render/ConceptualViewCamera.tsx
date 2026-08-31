@@ -41,6 +41,8 @@ import {
   type ConceptualBellowsAttachmentFrames,
 } from "./conceptualBellowsGeometry";
 import {
+  CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM,
+  CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM,
   CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
   resolveConceptualApertureBlades,
   resolveConceptualFilmHolderGeometry,
@@ -500,7 +502,14 @@ const FrontStandardAssembly = ({
             />
           </mesh>
           <mesh name="lens-front-barrel" position={[0, 0, toWorld(27)]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[toWorld(27), toWorld(27), toWorld(14), 32, 1, true]} />
+            <cylinderGeometry args={[
+              toWorld(CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM),
+              toWorld(CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM),
+              toWorld(14),
+              32,
+              1,
+              true,
+            ]} />
             <meshStandardMaterial
               color={resolvePresentationColor("#1f2937", "#6b7280", lensState, ghost)}
               {...frameMaterialProps({ ghost, state: lensState })}
@@ -585,6 +594,29 @@ const FrontStandardAssembly = ({
                 </mesh>
               </group>
             ))}
+            <mesh
+              name="lens-aperture-housing-mask"
+              position={[0, 0, toWorld(CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM)]}
+              renderOrder={presentation.renderOrder + 10}
+            >
+              <ringGeometry
+                args={[
+                  toWorld(CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM),
+                  toWorld(CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM),
+                  64,
+                ]}
+              />
+              <meshStandardMaterial
+                color={ghost ? "#374151" : "#111827"}
+                transparent={ghost || lensState === "dimmed"}
+                opacity={ghost ? 0.4 : lensState === "dimmed" ? 0.28 : 0.96}
+                depthTest
+                depthWrite={!ghost && lensState !== "dimmed"}
+                side={DoubleSide}
+                metalness={0.08}
+                roughness={0.82}
+              />
+            </mesh>
           </group>
         </AnatomyPartGroup>
       </group>

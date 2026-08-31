@@ -18,7 +18,16 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import type { CameraState } from "../../types/camera";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
-import { CONCEPTUAL_LENS_IRIS_BLADE_COUNT } from "../../render/conceptualCameraAnatomyGeometry";
+import {
+  CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
+  CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM,
+  CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM,
+  CONCEPTUAL_LENS_IRIS_BLADE_COUNT,
+  resolveConceptualApertureBladePolygons,
+  resolveConceptualApertureBlades,
+  resolveConceptualApertureOpening,
+} from "../../render/conceptualCameraAnatomyGeometry";
+import { WORLD_SCALE } from "../../render/rttUtils";
 
 type InspectableProps = {
   name?: string;
@@ -297,6 +306,51 @@ describe("Conceptual View Camera v2 static anatomy", () => {
       ),
     ).toBe(true);
     expect(findNamedElement(wide, "camera-anatomy-lens")).not.toBeNull();
+
+    const mask = findNamedElement(wide, "lens-aperture-housing-mask");
+    const maskMaterial = Children.toArray(mask?.props.children).find(
+      (child) =>
+        typeof child === "object" &&
+        child !== null &&
+        "props" in child &&
+        (child as ReactElement).type === "meshStandardMaterial",
+    ) as ReactElement<InspectableProps> | undefined;
+    const frontBarrel = findNamedElement(wide, "lens-front-barrel");
+
+    expect(mask).not.toBeNull();
+    expect(frontBarrel).not.toBeNull();
+    const maskGeometry = geometryArgs(mask!, "ringGeometry");
+    expect(maskGeometry).toEqual([
+      CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM * WORLD_SCALE,
+      CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM * WORLD_SCALE,
+      64,
+    ]);
+    expect(maskGeometry[0]).toBeGreaterThan(
+      resolveConceptualApertureOpening({ aperture: 32 }).openingRadiusMm * WORLD_SCALE,
+    );
+    expect(maskGeometry[1]).toBe(
+      geometryArgs(frontBarrel!, "cylinderGeometry")[0],
+    );
+    const maximumMechanicalRadius = Math.max(
+      ...resolveConceptualApertureBladePolygons(
+        resolveConceptualApertureBlades({ aperture: 5.6 }),
+      ).flatMap((polygon) => polygon.map((point) => Math.hypot(point.x, point.y))),
+    );
+    expect(maximumMechanicalRadius).toBeGreaterThan(
+      CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM,
+    );
+    expect(mask!.props.position).toEqual([
+      0,
+      0,
+      CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM * WORLD_SCALE,
+    ]);
+    expect(mask!.props.position![2]).toBeGreaterThan(wideBlades[0].props.position![2]);
+    expect(mask!.props.position![2]).toBeLessThan(
+      findNamedElement(wide, "lens-front-glass")!.props.position![2],
+    );
+    expect(maskMaterial?.props.color).toBe("#111827");
+    expect(maskMaterial?.props.depthTest).toBe(true);
+    expect(maskMaterial?.props.depthWrite).toBe(true);
   });
 
   it("uses a transparent convex front element so the highlighted diaphragm remains readable", () => {
