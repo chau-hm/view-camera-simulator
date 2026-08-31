@@ -78,6 +78,7 @@ export const shouldRenderReferenceCamera = (
   scene: SceneDefinition,
   cameraMovementRenderModel?: CameraMovementLatticeRenderModel,
 ): boolean =>
+  scene.showReferenceCamera !== false &&
   Boolean(scene.movementCapabilities) &&
   (
     getSceneSubjectRegistration(scene.id)?.resolveShowReferenceCamera?.({

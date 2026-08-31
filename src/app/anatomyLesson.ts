@@ -1,4 +1,10 @@
 import { lessonZeroMessageKeys, type LessonZeroMessageKey } from "../i18n/lessonZeroMessageKeys";
+import {
+  CAMERA_CONTROL_TEACHING,
+  resolveCameraControlTeachingCompletion,
+  type CameraControlTeachingId,
+} from "./cameraControlTeaching";
+import type { CameraState } from "../types/camera";
 import type {
   ConceptualAnatomyTarget,
   ConceptualCameraPresentation,
@@ -50,7 +56,7 @@ export const LESSON_ZERO_ANATOMY: Record<
   aperture: { semanticTargets: [elementTarget()] },
 };
 
-type LessonZeroStepId =
+export type LessonZeroStepId =
   | "complete-camera"
   | "front-standard"
   | "lens-and-board"
@@ -60,21 +66,35 @@ type LessonZeroStepId =
   | "ground-glass"
   | "film-holder"
   | "camera-support"
-  | "recap";
+  | "recap"
+  | "controls-overview"
+  | "front-rise-control"
+  | "front-shift-control"
+  | "front-tilt-control"
+  | "front-swing-control"
+  | "focus-front-control"
+  | "focus-rear-control"
+  | "aperture-control"
+  | "controls-recap";
+
+export type LessonZeroStepSection = "anatomy" | "controls";
 
 export type LessonZeroStep = {
   id: LessonZeroStepId;
+  section: LessonZeroStepSection;
   titleKey: LessonZeroMessageKey;
   bodyKey: LessonZeroMessageKey;
   cueKey: LessonZeroMessageKey;
   anatomyTargets: readonly LessonZeroAnatomyTarget[];
   inspectionTarget: CameraInspectionTarget;
   rearBackMode: ConceptualRearBackMode;
+  controlTeachingId?: CameraControlTeachingId;
 };
 
 export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
   {
     id: "complete-camera",
+    section: "anatomy",
     titleKey: lessonZeroMessageKeys.steps.completeCamera.title,
     bodyKey: lessonZeroMessageKeys.steps.completeCamera.body,
     cueKey: lessonZeroMessageKeys.steps.completeCamera.cue,
@@ -84,6 +104,7 @@ export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
   },
   {
     id: "front-standard",
+    section: "anatomy",
     titleKey: lessonZeroMessageKeys.steps.frontStandard.title,
     bodyKey: lessonZeroMessageKeys.steps.frontStandard.body,
     cueKey: lessonZeroMessageKeys.steps.frontStandard.cue,
@@ -93,6 +114,7 @@ export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
   },
   {
     id: "lens-and-board",
+    section: "anatomy",
     titleKey: lessonZeroMessageKeys.steps.lensAndBoard.title,
     bodyKey: lessonZeroMessageKeys.steps.lensAndBoard.body,
     cueKey: lessonZeroMessageKeys.steps.lensAndBoard.cue,
@@ -102,6 +124,7 @@ export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
   },
   {
     id: "aperture",
+    section: "anatomy",
     titleKey: lessonZeroMessageKeys.steps.aperture.title,
     bodyKey: lessonZeroMessageKeys.steps.aperture.body,
     cueKey: lessonZeroMessageKeys.steps.aperture.cue,
@@ -111,6 +134,7 @@ export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
   },
   {
     id: "bellows",
+    section: "anatomy",
     titleKey: lessonZeroMessageKeys.steps.bellows.title,
     bodyKey: lessonZeroMessageKeys.steps.bellows.body,
     cueKey: lessonZeroMessageKeys.steps.bellows.cue,
@@ -120,6 +144,7 @@ export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
   },
   {
     id: "rear-standard",
+    section: "anatomy",
     titleKey: lessonZeroMessageKeys.steps.rearStandard.title,
     bodyKey: lessonZeroMessageKeys.steps.rearStandard.body,
     cueKey: lessonZeroMessageKeys.steps.rearStandard.cue,
@@ -129,6 +154,7 @@ export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
   },
   {
     id: "ground-glass",
+    section: "anatomy",
     titleKey: lessonZeroMessageKeys.steps.groundGlass.title,
     bodyKey: lessonZeroMessageKeys.steps.groundGlass.body,
     cueKey: lessonZeroMessageKeys.steps.groundGlass.cue,
@@ -138,6 +164,7 @@ export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
   },
   {
     id: "film-holder",
+    section: "anatomy",
     titleKey: lessonZeroMessageKeys.steps.filmHolder.title,
     bodyKey: lessonZeroMessageKeys.steps.filmHolder.body,
     cueKey: lessonZeroMessageKeys.steps.filmHolder.cue,
@@ -147,6 +174,7 @@ export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
   },
   {
     id: "camera-support",
+    section: "anatomy",
     titleKey: lessonZeroMessageKeys.steps.cameraSupport.title,
     bodyKey: lessonZeroMessageKeys.steps.cameraSupport.body,
     cueKey: lessonZeroMessageKeys.steps.cameraSupport.cue,
@@ -156,9 +184,107 @@ export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
   },
   {
     id: "recap",
+    section: "anatomy",
     titleKey: lessonZeroMessageKeys.steps.recap.title,
     bodyKey: lessonZeroMessageKeys.steps.recap.body,
     cueKey: lessonZeroMessageKeys.steps.recap.cue,
+    anatomyTargets: [],
+    inspectionTarget: "whole-camera",
+    rearBackMode: "ground-glass",
+  },
+  {
+    id: "controls-overview",
+    section: "controls",
+    titleKey: lessonZeroMessageKeys.steps.controlsOverview.title,
+    bodyKey: lessonZeroMessageKeys.steps.controlsOverview.body,
+    cueKey: lessonZeroMessageKeys.steps.controlsOverview.cue,
+    anatomyTargets: [],
+    inspectionTarget: "whole-camera",
+    rearBackMode: "ground-glass",
+  },
+  {
+    id: "front-rise-control",
+    section: "controls",
+    titleKey: lessonZeroMessageKeys.steps.frontRiseControl.title,
+    bodyKey: lessonZeroMessageKeys.steps.frontRiseControl.body,
+    cueKey: lessonZeroMessageKeys.steps.frontRiseControl.cue,
+    anatomyTargets: [],
+    inspectionTarget: "front-standard",
+    rearBackMode: "ground-glass",
+    controlTeachingId: "front-rise",
+  },
+  {
+    id: "front-shift-control",
+    section: "controls",
+    titleKey: lessonZeroMessageKeys.steps.frontShiftControl.title,
+    bodyKey: lessonZeroMessageKeys.steps.frontShiftControl.body,
+    cueKey: lessonZeroMessageKeys.steps.frontShiftControl.cue,
+    anatomyTargets: [],
+    inspectionTarget: "front-standard",
+    rearBackMode: "ground-glass",
+    controlTeachingId: "front-shift",
+  },
+  {
+    id: "front-tilt-control",
+    section: "controls",
+    titleKey: lessonZeroMessageKeys.steps.frontTiltControl.title,
+    bodyKey: lessonZeroMessageKeys.steps.frontTiltControl.body,
+    cueKey: lessonZeroMessageKeys.steps.frontTiltControl.cue,
+    anatomyTargets: [],
+    inspectionTarget: "front-standard",
+    rearBackMode: "ground-glass",
+    controlTeachingId: "front-tilt",
+  },
+  {
+    id: "front-swing-control",
+    section: "controls",
+    titleKey: lessonZeroMessageKeys.steps.frontSwingControl.title,
+    bodyKey: lessonZeroMessageKeys.steps.frontSwingControl.body,
+    cueKey: lessonZeroMessageKeys.steps.frontSwingControl.cue,
+    anatomyTargets: [],
+    inspectionTarget: "front-standard",
+    rearBackMode: "ground-glass",
+    controlTeachingId: "front-swing",
+  },
+  {
+    id: "focus-front-control",
+    section: "controls",
+    titleKey: lessonZeroMessageKeys.steps.focusFrontControl.title,
+    bodyKey: lessonZeroMessageKeys.steps.focusFrontControl.body,
+    cueKey: lessonZeroMessageKeys.steps.focusFrontControl.cue,
+    anatomyTargets: [],
+    inspectionTarget: "front-standard",
+    rearBackMode: "ground-glass",
+    controlTeachingId: "focus-front",
+  },
+  {
+    id: "focus-rear-control",
+    section: "controls",
+    titleKey: lessonZeroMessageKeys.steps.focusRearControl.title,
+    bodyKey: lessonZeroMessageKeys.steps.focusRearControl.body,
+    cueKey: lessonZeroMessageKeys.steps.focusRearControl.cue,
+    anatomyTargets: [],
+    inspectionTarget: "rear-standard",
+    rearBackMode: "ground-glass",
+    controlTeachingId: "focus-rear",
+  },
+  {
+    id: "aperture-control",
+    section: "controls",
+    titleKey: lessonZeroMessageKeys.steps.apertureControl.title,
+    bodyKey: lessonZeroMessageKeys.steps.apertureControl.body,
+    cueKey: lessonZeroMessageKeys.steps.apertureControl.cue,
+    anatomyTargets: [],
+    inspectionTarget: "aperture",
+    rearBackMode: "ground-glass",
+    controlTeachingId: "aperture",
+  },
+  {
+    id: "controls-recap",
+    section: "controls",
+    titleKey: lessonZeroMessageKeys.steps.controlsRecap.title,
+    bodyKey: lessonZeroMessageKeys.steps.controlsRecap.body,
+    cueKey: lessonZeroMessageKeys.steps.controlsRecap.cue,
     anatomyTargets: [],
     inspectionTarget: "whole-camera",
     rearBackMode: "ground-glass",
@@ -171,14 +297,28 @@ export const getLessonZeroStep = (index: number): LessonZeroStep =>
 export const resolveLessonZeroCameraPresentation = (
   step: LessonZeroStep,
   showSmallAperture = false,
-): ConceptualCameraPresentation => ({
-  anatomy: {
-    targets: step.anatomyTargets.flatMap(
-      (target) => LESSON_ZERO_ANATOMY[target].semanticTargets,
-    ),
-  },
-  rearBackMode: step.rearBackMode,
-  ...(step.id === "aperture"
-    ? { aperture: showSmallAperture ? 32 : 5.6 }
-    : {}),
-});
+): ConceptualCameraPresentation => {
+  const controlTargets = step.controlTeachingId
+    ? CAMERA_CONTROL_TEACHING[step.controlTeachingId].anatomyTargets
+    : [];
+  const anatomyTargets = [...step.anatomyTargets, ...controlTargets];
+
+  return {
+    anatomy: {
+      targets: anatomyTargets.flatMap(
+        (target) => LESSON_ZERO_ANATOMY[target].semanticTargets,
+      ),
+    },
+    rearBackMode: step.rearBackMode,
+    ...(step.id === "aperture"
+      ? { aperture: showSmallAperture ? 32 : 5.6 }
+      : {}),
+  };
+};
+
+export const isLessonZeroStepComplete = (
+  step: LessonZeroStep,
+  camera: CameraState,
+): boolean =>
+  step.controlTeachingId === undefined ||
+  resolveCameraControlTeachingCompletion(step.controlTeachingId, camera);

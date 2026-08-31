@@ -3,8 +3,11 @@ import {
   getLessonZeroStep,
   LESSON_ZERO_ANATOMY,
   LESSON_ZERO_STEPS,
+  isLessonZeroStepComplete,
   resolveLessonZeroCameraPresentation,
 } from "../../app/anatomyLesson";
+import { CAMERA_CONTROL_TEACHING } from "../../app/cameraControlTeaching";
+import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("Lesson 0 anatomy vocabulary", () => {
   it("maps each lesson-facing part to the shared semantic camera anatomy", () => {
@@ -41,7 +44,7 @@ describe("Lesson 0 anatomy vocabulary", () => {
     ]);
   });
 
-  it("keeps the ten-step progression deterministic and clamps invalid indexes", () => {
+  it("keeps the anatomy and control progression deterministic and clamps invalid indexes", () => {
     expect(LESSON_ZERO_STEPS.map((step) => step.id)).toEqual([
       "complete-camera",
       "front-standard",
@@ -53,9 +56,18 @@ describe("Lesson 0 anatomy vocabulary", () => {
       "film-holder",
       "camera-support",
       "recap",
+      "controls-overview",
+      "front-rise-control",
+      "front-shift-control",
+      "front-tilt-control",
+      "front-swing-control",
+      "focus-front-control",
+      "focus-rear-control",
+      "aperture-control",
+      "controls-recap",
     ]);
     expect(getLessonZeroStep(-1).id).toBe("complete-camera");
-    expect(getLessonZeroStep(999).id).toBe("recap");
+    expect(getLessonZeroStep(999).id).toBe("controls-recap");
   });
 
   it("keeps rear-back and aperture demonstrations presentation-only", () => {
@@ -69,5 +81,36 @@ describe("Lesson 0 anatomy vocabulary", () => {
     expect(wide.aperture).toBe(5.6);
     expect(small.aperture).toBe(32);
     expect(wide).not.toHaveProperty("visualAperture");
+  });
+
+  it("maps interactive steps to the centralized control teaching definitions", () => {
+    expect(CAMERA_CONTROL_TEACHING["front-rise"]).toMatchObject({
+      kind: "movement",
+      movementField: "frontRiseMm",
+      movementKind: "rise",
+      anatomyTargets: ["front-standard"],
+    });
+    expect(CAMERA_CONTROL_TEACHING["focus-rear"]).toMatchObject({
+      kind: "focus",
+      focusStandard: "rear",
+      anatomyTargets: ["rear-standard", "bellows"],
+    });
+    expect(CAMERA_CONTROL_TEACHING.aperture).toMatchObject({
+      kind: "aperture",
+      anatomyTargets: ["aperture"],
+    });
+  });
+
+  it("requires a reachable canonical control change before advancing", () => {
+    const riseStep = getLessonZeroStep(11);
+    const camera = { ...DEFAULT_CAMERA_STATE };
+
+    expect(isLessonZeroStepComplete(riseStep, camera)).toBe(false);
+    expect(isLessonZeroStepComplete(riseStep, { ...camera, frontRiseMm: 8 })).toBe(true);
+    expect(
+      resolveLessonZeroCameraPresentation(getLessonZeroStep(17)).anatomy?.targets,
+    ).toEqual([
+      { kind: "element", name: "lens-aperture-iris", parentPart: "lens" },
+    ]);
   });
 });

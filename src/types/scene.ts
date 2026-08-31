@@ -143,6 +143,8 @@ export type SceneDefinition = {
   cameraInspectionAnchorSide?: CameraInspectionAnchorSide;
   /** Optional camera-inspection observer position. The physical orbit target is resolved by viewport framing. */
   cameraInspectionPlacement?: CameraInspectionPlacement;
+  /** Optional visibility policy for the generic original/reference camera. */
+  showReferenceCamera?: boolean;
   /** Optional per-scene control policy. When absent, all controls are available. */
   cameraControlPolicy?: CameraControlPolicy;
 };

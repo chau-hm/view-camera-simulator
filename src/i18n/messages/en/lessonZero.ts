@@ -10,6 +10,9 @@ export const lessonZeroMessages = {
     backToScenes: "Back to Scenes",
     showSmallAperture: "Show a smaller opening",
     showWideAperture: "Show a wider opening",
+    tryControl: "Try this control",
+    controlComplete: "Good — the physical change is now visible.",
+    controlPending: "Move the control enough to make the physical change clear.",
   },
   steps: {
     completeCamera: {
@@ -71,6 +74,60 @@ export const lessonZeroMessages = {
       body:
         "The Front Standard carries the Lens Board and Lens, including the Aperture. Bellows connect it to the Rear Standard, where Ground Glass or Film Holder occupies the image-plane position; the Camera Support holds the structure together.",
       cue: "You are ready to explore how camera controls move these parts in later lessons.",
+    },
+    controlsOverview: {
+      title: "Now try the controls",
+      body:
+        "The controls change the physical camera parts you just identified. Each short exercise focuses on one real control and its visible result.",
+      cue: "Use the highlighted control, then continue when the relationship is clear.",
+    },
+    frontRiseControl: {
+      title: "Front Rise",
+      body:
+        "Rise moves the Front Standard vertically while the Camera Support stays in place.",
+      cue: "Drag Rise until the Front Standard's vertical movement is easy to see.",
+    },
+    frontShiftControl: {
+      title: "Front Shift",
+      body:
+        "Shift moves the Front Standard sideways without rotating it.",
+      cue: "Drag Front Shift until the lateral movement is easy to see.",
+    },
+    frontTiltControl: {
+      title: "Front Tilt",
+      body:
+        "Tilt rotates the Front Standard forward or backward around its horizontal axis.",
+      cue: "Drag Tilt and watch the Front Standard change orientation.",
+    },
+    frontSwingControl: {
+      title: "Front Swing",
+      body:
+        "Swing rotates the Front Standard left or right around its vertical axis.",
+      cue: "Drag Swing and watch the Front Standard turn from side to side.",
+    },
+    focusFrontControl: {
+      title: "Focus — Front Standard",
+      body:
+        "With Front Standard selected, focusing moves the Front Standard along the optical axis. The Bellows changes length with it.",
+      cue: "Choose Front Standard, then move Focus distance until the travel is easy to see.",
+    },
+    focusRearControl: {
+      title: "Focus — Rear Standard",
+      body:
+        "With Rear Standard selected, focusing moves the Rear Standard along the optical axis. The Bellows changes length with it.",
+      cue: "Choose Rear Standard, then move Focus distance until the travel is easy to see.",
+    },
+    apertureControl: {
+      title: "Aperture control",
+      body:
+        "The Aperture control changes the diaphragm blades inside the Lens. A larger f-number leaves a smaller opening.",
+      cue: "Choose another aperture and watch the diaphragm opening change.",
+    },
+    controlsRecap: {
+      title: "Controls recap",
+      body:
+        "Controls now have physical meaning: standard movements reposition a standard, focusing changes the selected standard and Bellows, and Aperture changes the diaphragm inside the Lens.",
+      cue: "You are ready for later lessons that study the optical results of these changes.",
     },
   },
 } as const;

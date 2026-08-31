@@ -402,6 +402,7 @@ export const deriveOpticsState = (
     scene,
     cameraMovementCalibration,
   );
+  const selectableFocusScene = scene.focusStandardCapability?.enabled === true;
   // Special handling for Infinity focus mode: branch early and produce a stable state
   if (cameraState.focusMode === "infinity") {
     if (!Number.isFinite(cameraState.focalLengthMm) || cameraState.focalLengthMm <= 0) {
@@ -437,7 +438,7 @@ export const deriveOpticsState = (
     }
     const f = cameraState.focalLengthMm;
     const focusFundamentalsFocusing =
-      scene.id === "focus-fundamentals-two-targets"
+      selectableFocusScene
         ? resolveFocusFundamentalsFocusing({
             standard:
               scene.focusStandardCapability?.enabled && cameraState.focusStandard === "rear"
@@ -641,10 +642,10 @@ export const deriveOpticsState = (
   let focusFundamentalsFocusing: FocusFundamentalsFocusingResult | null = null;
   let focusFundamentalsFocusDepthMm: number | null = null;
 
-  // For the Focus Fundamentals scene, the canonical front/rear resolver owns
+  // For selectable-focus scenes, the canonical front/rear resolver owns
   // lens and film placement in the rear-datum coordinate system.
   // All values remain in mm until conversion at render boundary.
-  if (scene.id === "focus-fundamentals-two-targets") {
+  if (selectableFocusScene) {
     focusFundamentalsFocusing = resolveFocusFundamentalsFocusing({
       standard:
         scene.focusStandardCapability?.enabled && cameraState.focusStandard === "rear"
@@ -669,10 +670,11 @@ export const deriveOpticsState = (
     focusFundamentalsFocusDepthMm = focusFundamentalsFocusing.focusDepthMm;
     filmCenterLocal = vec(0, 0, focusFundamentalsFocusing.filmZMm);
 
-    // Focus Fundamentals deliberately keeps both standards on the optical axis.
+    // Keep the selected standard's solved longitudinal position while
+    // preserving any canonical front translation already present in state.
     lensCenterLocal = vec(
       Number.isFinite(cameraState.frontShiftMm) ? cameraState.frontShiftMm : 0,
-      0,
+      Number.isFinite(cameraState.frontRiseMm) ? cameraState.frontRiseMm : 0,
       focusFundamentalsFocusing.lensZMm,
     );
     // recompute lensPlane with updated lens center
@@ -737,9 +739,9 @@ export const deriveOpticsState = (
 
   // Determine focus point / plane
   let focusPointWorld = calculateFocusPoint(cameraState, opticalAxis);
-  // For Focus Fundamentals, focusDistanceMm represents S (focus-plane depth
+  // For selectable-focus scenes, focusDistanceMm represents S (focus-plane depth
   // from the rear datum), independent of which standard is selected.
-  if (scene.id === "focus-fundamentals-two-targets") {
+  if (selectableFocusScene) {
     focusPointWorld = vec(
       0,
       0,

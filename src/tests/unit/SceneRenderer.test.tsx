@@ -15,6 +15,7 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import geometry from "../../scenes/shelfSwingGeometry";
 import { toWorld } from "../../render/rttUtils";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -35,6 +36,7 @@ describe("SceneRenderer Shelf Swing integration", () => {
     expect(
       shouldRenderReferenceCamera(understandingCameraMovementsScene),
     ).toBe(false);
+    expect(shouldRenderReferenceCamera(viewCameraAnatomyScene)).toBe(false);
   });
 
   it.each(["shelf-floor", "shelf-diagonal-structure", "shelf-decor"])(
