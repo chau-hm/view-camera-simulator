@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CONCEPTUAL_LENS_APERTURE_MIN_RADIUS_MM,
   CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
+  CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT,
   CONCEPTUAL_LENS_IRIS_EFFECTIVE_RADIUS_SAMPLE_COUNT,
   CONCEPTUAL_LENS_IRIS_BLADE_COUNT,
   resolveConceptualApertureBlades,
@@ -9,6 +10,7 @@ import {
   resolveConceptualApertureBladePolygons,
   resolveConceptualApertureEffectiveRadius,
   resolveConceptualApertureOpening,
+  resolveConceptualApertureVisibleBladePolygons,
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
 } from "../../render/conceptualCameraAnatomyGeometry";
@@ -150,5 +152,46 @@ describe("conceptual aperture opening geometry", () => {
     for (const { target, actual } of measurements) {
       expect(Math.abs(actual - target) / target).toBeLessThanOrEqual(0.05);
     }
+  });
+
+  it("clips only the rendered blade polygons to the fixed diaphragm window", () => {
+    const apertures = [5.6, 11, 22, 32];
+    const wideBlades = resolveConceptualApertureBlades({ aperture: apertures[0] });
+    const mechanicalPolygons = resolveConceptualApertureBladePolygons(wideBlades);
+    const maximumMechanicalRadius = Math.max(
+      ...mechanicalPolygons.flatMap((polygon) =>
+        polygon.map((point) => Math.hypot(point.x, point.y)),
+      ),
+    );
+
+    expect(CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT).toBe(64);
+    expect(maximumMechanicalRadius).toBeGreaterThan(CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM);
+
+    for (const aperture of apertures) {
+      const blades = resolveConceptualApertureBlades({ aperture });
+      const visiblePolygons = resolveConceptualApertureVisibleBladePolygons(blades);
+
+      expect(visiblePolygons).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+      expect(visiblePolygons.every((polygon) => polygon.length >= 3)).toBe(true);
+      expect(
+        visiblePolygons
+          .flatMap((polygon) => polygon)
+          .every(
+            (point) =>
+              Number.isFinite(point.x) &&
+              Number.isFinite(point.y) &&
+              Math.hypot(point.x, point.y) <= CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM + 1e-6,
+          ),
+      ).toBe(true);
+      expect(visiblePolygons).toEqual(
+        resolveConceptualApertureVisibleBladePolygons(
+          resolveConceptualApertureBlades({ aperture }),
+        ),
+      );
+    }
+
+    expect(
+      resolveConceptualApertureVisibleBladePolygons(wideBlades),
+    ).not.toEqual(mechanicalPolygons);
   });
 });

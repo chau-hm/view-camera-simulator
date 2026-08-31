@@ -111,6 +111,8 @@ export const CONCEPTUAL_LENS_APERTURE_MIN_RADIUS_MM = 1.5;
 export const CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM = 27;
 /** Small forward offset from the blade plane; front glass remains farther forward. */
 export const CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM = 2;
+/** Fixed clipping window used only for visible blade geometry. */
+export const CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT = 64;
 /** Six blades keep the conceptual diaphragm legible without implying a brand-specific lens. */
 export const CONCEPTUAL_LENS_IRIS_BLADE_COUNT = 6;
 const CONCEPTUAL_LENS_APERTURE_RIM_MM = 0.5;
@@ -238,6 +240,145 @@ export const resolveConceptualApertureBladePolygons = (
   blades: readonly ConceptualApertureBlade[],
 ): readonly (readonly ConceptualAperturePoint[])[] => blades.map(
   (blade) => resolveConceptualApertureBladePolygon(blade),
+);
+
+const appendDistinctPoint = (
+  points: ConceptualAperturePoint[],
+  point: ConceptualAperturePoint,
+): void => {
+  const previous = points[points.length - 1];
+  if (
+    previous &&
+    Math.abs(previous.x - point.x) <= CONCEPTUAL_LENS_IRIS_GEOMETRY_EPSILON &&
+    Math.abs(previous.y - point.y) <= CONCEPTUAL_LENS_IRIS_GEOMETRY_EPSILON
+  ) {
+    return;
+  }
+  points.push(point);
+};
+
+const removeClosingDuplicate = (
+  points: ConceptualAperturePoint[],
+): readonly ConceptualAperturePoint[] => {
+  if (points.length > 1) {
+    const first = points[0];
+    const last = points[points.length - 1];
+    if (
+      Math.abs(first.x - last.x) <= CONCEPTUAL_LENS_IRIS_GEOMETRY_EPSILON &&
+      Math.abs(first.y - last.y) <= CONCEPTUAL_LENS_IRIS_GEOMETRY_EPSILON
+    ) {
+      points.pop();
+    }
+  }
+  return points;
+};
+
+const clipPolygonAgainstConvexEdge = (
+  polygon: readonly ConceptualAperturePoint[],
+  edgeStart: ConceptualAperturePoint,
+  edgeEnd: ConceptualAperturePoint,
+): readonly ConceptualAperturePoint[] => {
+  if (polygon.length === 0) return [];
+
+  const edge = {
+    x: edgeEnd.x - edgeStart.x,
+    y: edgeEnd.y - edgeStart.y,
+  };
+  const signedDistance = (point: ConceptualAperturePoint): number =>
+    cross(edge, {
+      x: point.x - edgeStart.x,
+      y: point.y - edgeStart.y,
+    });
+  const intersection = (
+    start: ConceptualAperturePoint,
+    end: ConceptualAperturePoint,
+    startDistance: number,
+    endDistance: number,
+  ): ConceptualAperturePoint | null => {
+    const denominator = startDistance - endDistance;
+    if (Math.abs(denominator) <= CONCEPTUAL_LENS_IRIS_GEOMETRY_EPSILON) return null;
+    const fraction = startDistance / denominator;
+    return {
+      x: start.x + (end.x - start.x) * fraction,
+      y: start.y + (end.y - start.y) * fraction,
+    };
+  };
+
+  const clipped: ConceptualAperturePoint[] = [];
+  let previous = polygon[polygon.length - 1];
+  let previousDistance = signedDistance(previous);
+  let previousInside = previousDistance >= -CONCEPTUAL_LENS_IRIS_GEOMETRY_EPSILON;
+
+  for (const current of polygon) {
+    const currentDistance = signedDistance(current);
+    const currentInside = currentDistance >= -CONCEPTUAL_LENS_IRIS_GEOMETRY_EPSILON;
+
+    if (currentInside !== previousInside) {
+      const crossing = intersection(
+        previous,
+        current,
+        previousDistance,
+        currentDistance,
+      );
+      if (crossing) appendDistinctPoint(clipped, crossing);
+    }
+    if (currentInside) appendDistinctPoint(clipped, current);
+
+    previous = current;
+    previousDistance = currentDistance;
+    previousInside = currentInside;
+  }
+
+  return removeClosingDuplicate(clipped);
+};
+
+const CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW: readonly ConceptualAperturePoint[] =
+  Object.freeze(
+    Array.from(
+      { length: CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT },
+      (_, index) =>
+        polarPoint(
+          CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
+          (Math.PI * 2 * index) / CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT,
+        ),
+    ),
+  );
+
+const clipPolygonToApertureVisibilityWindow = (
+  polygon: readonly ConceptualAperturePoint[],
+): readonly ConceptualAperturePoint[] => {
+  let clipped = polygon;
+  for (
+    let index = 0;
+    index < CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW.length;
+    index += 1
+  ) {
+    clipped = clipPolygonAgainstConvexEdge(
+      clipped,
+      CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW[index],
+      CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW[
+        (index + 1) % CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW.length
+      ],
+    );
+    if (clipped.length === 0) return clipped;
+  }
+  return clipped;
+};
+
+/**
+ * Resolve only the portion of a transformed mechanical blade that is visible
+ * through the fixed diaphragm window. The mechanical polygon itself remains
+ * the solver authority; this helper is strictly for render-time containment.
+ */
+export const resolveConceptualApertureVisibleBladePolygon = (
+  blade: ConceptualApertureBlade,
+): readonly ConceptualAperturePoint[] =>
+  clipPolygonToApertureVisibilityWindow(resolveConceptualApertureBladePolygon(blade));
+
+export const resolveConceptualApertureVisibleBladePolygons = (
+  blades: readonly ConceptualApertureBlade[],
+): readonly (readonly ConceptualAperturePoint[])[] => blades.map(
+  (blade) => resolveConceptualApertureVisibleBladePolygon(blade),
 );
 
 const resolveConceptualApertureBladesAtClosure = (

@@ -1,6 +1,6 @@
 import { Children, type ReactElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
-import { Quaternion } from "three";
+import { Quaternion, Shape } from "three";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   CONCEPTUAL_CAMERA_ANATOMY_PARTS,
@@ -20,6 +20,7 @@ import type { CameraState } from "../../types/camera";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import {
   CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
+  CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT,
   CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM,
   CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM,
   CONCEPTUAL_LENS_IRIS_BLADE_COUNT,
@@ -286,16 +287,16 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     );
     expect(wideBlades).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
     expect(narrowBlades).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+    expect(wideBlades[0].props.position).toEqual([0, 0, 0]);
     expect(wideBlades[0].props.position).toEqual(narrowBlades[0].props.position);
-    expect(wideBlades[0].props.position).not.toEqual([0, 0, 0]);
-    expect(wideBlades[0].props.rotation).not.toEqual(narrowBlades[0].props.rotation);
+    expect(wideBlades.every((blade) => blade.props.position?.[0] === 0 && blade.props.position?.[1] === 0)).toBe(true);
+    expect(wideBlades.every((blade) => blade.props.rotation === undefined)).toBe(true);
     expect(wideBladeSurface).not.toBeNull();
     expect(geometryArgs(wideBladeSurface!, "shapeGeometry")).toHaveLength(1);
     expect(wideBladeMaterial?.props.depthTest).toBe(true);
     expect(wideBladeMaterial?.props.depthWrite).toBe(true);
     expect(
       wideBlades.every((blade) =>
-        blade.props.rotation &&
         blade.props.position &&
         Children.toArray(blade.props.children).some((child) =>
           typeof child === "object" &&
@@ -305,6 +306,14 @@ describe("Conceptual View Camera v2 static anatomy", () => {
         ),
       ),
     ).toBe(true);
+    for (const blade of wideBlades) {
+      const surface = findNamedElement(wide, `${blade.props.name}-surface`);
+      expect(surface).not.toBeNull();
+      const shape = geometryArgs(surface!, "shapeGeometry")[0] as unknown as Shape;
+      expect(shape.getPoints(1).every((point) =>
+        Math.hypot(point.x, point.y) <= CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM * WORLD_SCALE + 1e-6,
+      )).toBe(true);
+    }
     expect(findNamedElement(wide, "camera-anatomy-lens")).not.toBeNull();
 
     const mask = findNamedElement(wide, "lens-aperture-housing-mask");
@@ -323,7 +332,7 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     expect(maskGeometry).toEqual([
       CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM * WORLD_SCALE,
       CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM * WORLD_SCALE,
-      64,
+      CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT,
     ]);
     expect(maskGeometry[0]).toBeGreaterThan(
       resolveConceptualApertureOpening({ aperture: 32 }).openingRadiusMm * WORLD_SCALE,

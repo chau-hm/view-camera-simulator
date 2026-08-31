@@ -44,7 +44,9 @@ import {
   CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM,
   CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM,
   CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
+  CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT,
   resolveConceptualApertureBlades,
+  resolveConceptualApertureVisibleBladePolygons,
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
   type ConceptualAperturePoint,
@@ -404,7 +406,7 @@ const FrontStandardAssembly = ({
     state: frameState,
   };
   const apertureBlades = resolveConceptualApertureBlades({ aperture, focalLengthMm });
-  const apertureBladeShape = createConceptualShape(apertureBlades[0]?.points ?? []);
+  const visibleApertureBladePolygons = resolveConceptualApertureVisibleBladePolygons(apertureBlades);
   const apertureFocused = apertureState === "highlighted";
   const outerWidth = CAMERA_CONSTANTS.frontStandardWidthMm;
   const outerHeight = CAMERA_CONSTANTS.frontStandardHeightMm;
@@ -564,36 +566,36 @@ const FrontStandardAssembly = ({
                 side={DoubleSide}
               />
             </mesh>
-            {apertureBlades.map((blade) => (
-              <group
-                key={blade.index}
-                name={`lens-aperture-blade-${blade.index}`}
-                position={[
-                  toWorld(blade.pivot.x),
-                  toWorld(blade.pivot.y),
-                  toWorld(blade.layerOffsetMm),
-                ]}
-                rotation={[0, 0, blade.centerAngleRad + blade.rotationRad]}
-                renderOrder={presentation.renderOrder + 2 + blade.index}
-              >
-                <mesh name={`lens-aperture-blade-${blade.index}-surface`}>
-                  <shapeGeometry args={[apertureBladeShape]} />
-                  <meshStandardMaterial
-                    color={
-                      apertureState === "highlighted"
-                        ? "#fef3c7"
-                        : resolvePresentationColor("#1e293b", "#64748b", apertureState, ghost)
-                    }
-                    transparent={ghost || apertureState === "dimmed"}
-                    opacity={ghost ? 0.4 : apertureState === "dimmed" ? 0.2 : 0.98}
-                    depthTest
-                    depthWrite={!ghost && apertureState !== "dimmed"}
-                    side={DoubleSide}
-                    roughness={0.76}
-                  />
-                </mesh>
-              </group>
-            ))}
+            {apertureBlades.map((blade, index) => {
+              const visiblePolygon = visibleApertureBladePolygons[index] ?? [];
+              if (visiblePolygon.length < 3) return null;
+
+              return (
+                <group
+                  key={blade.index}
+                  name={`lens-aperture-blade-${blade.index}`}
+                  position={[0, 0, toWorld(blade.layerOffsetMm)]}
+                  renderOrder={presentation.renderOrder + 2 + blade.index}
+                >
+                  <mesh name={`lens-aperture-blade-${blade.index}-surface`}>
+                    <shapeGeometry args={[createConceptualShape(visiblePolygon)]} />
+                    <meshStandardMaterial
+                      color={
+                        apertureState === "highlighted"
+                          ? "#fef3c7"
+                          : resolvePresentationColor("#1e293b", "#64748b", apertureState, ghost)
+                      }
+                      transparent={ghost || apertureState === "dimmed"}
+                      opacity={ghost ? 0.4 : apertureState === "dimmed" ? 0.2 : 0.98}
+                      depthTest
+                      depthWrite={!ghost && apertureState !== "dimmed"}
+                      side={DoubleSide}
+                      roughness={0.76}
+                    />
+                  </mesh>
+                </group>
+              );
+            })}
             <mesh
               name="lens-aperture-housing-mask"
               position={[0, 0, toWorld(CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM)]}
@@ -603,7 +605,7 @@ const FrontStandardAssembly = ({
                 args={[
                   toWorld(CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM),
                   toWorld(CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM),
-                  64,
+                  CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT,
                 ]}
               />
               <meshStandardMaterial
