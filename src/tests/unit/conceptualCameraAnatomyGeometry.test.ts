@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   CONCEPTUAL_LENS_APERTURE_MIN_RADIUS_MM,
   CONCEPTUAL_LENS_APERTURE_OUTER_RADIUS_MM,
+  CONCEPTUAL_LENS_IRIS_EFFECTIVE_RADIUS_SAMPLE_COUNT,
   CONCEPTUAL_LENS_IRIS_BLADE_COUNT,
   resolveConceptualApertureBlades,
+  resolveConceptualApertureBladePolygon,
+  resolveConceptualApertureBladePolygons,
+  resolveConceptualApertureEffectiveRadius,
   resolveConceptualApertureOpening,
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
@@ -98,5 +102,53 @@ describe("conceptual aperture opening geometry", () => {
         ),
     ).toBe(true);
     expect(resolveConceptualApertureBlades({ aperture: 5.6 })).toEqual(wide);
+  });
+
+  it("calibrates the measured transformed opening to every supported aperture", () => {
+    const apertures = [5.6, 11, 22, 32];
+    const measurements = apertures.map((aperture) => {
+      const target = resolveConceptualApertureOpening({ aperture }).openingRadiusMm;
+      const blades = resolveConceptualApertureBlades({ aperture });
+      const actual = resolveConceptualApertureEffectiveRadius(
+        blades,
+        CONCEPTUAL_LENS_IRIS_EFFECTIVE_RADIUS_SAMPLE_COUNT,
+      );
+
+      return { aperture, target, actual };
+    });
+    for (const { target, actual } of measurements) {
+      expect(Math.abs(actual - target) / target).toBeLessThanOrEqual(0.05);
+    }
+    expect(measurements[0].actual).toBeGreaterThan(measurements[1].actual);
+    expect(measurements[1].actual).toBeGreaterThan(measurements[2].actual);
+    expect(measurements[2].actual).toBeGreaterThan(measurements[3].actual);
+    expect(measurements[3].actual).toBeLessThan(measurements[0].actual * 0.3);
+
+    const polygons = resolveConceptualApertureBladePolygons(
+      resolveConceptualApertureBlades({ aperture: 11 }),
+    );
+    expect(polygons).toHaveLength(CONCEPTUAL_LENS_IRIS_BLADE_COUNT);
+    expect(polygons[0]).not.toEqual(resolveConceptualApertureBlades({ aperture: 11 })[0].points);
+    expect(polygons[0]).toEqual(
+      resolveConceptualApertureBladePolygon(
+        resolveConceptualApertureBlades({ aperture: 11 })[0],
+      ),
+    );
+  });
+
+  it("uses the supplied focal length when solving blade closure", () => {
+    const focalLengthMm = 120;
+    const measurements = CAMERA_CONSTANTS.apertureOptions.map((aperture) => {
+      const target = resolveConceptualApertureOpening({ aperture, focalLengthMm }).openingRadiusMm;
+      const actual = resolveConceptualApertureEffectiveRadius(
+        resolveConceptualApertureBlades({ aperture, focalLengthMm }),
+      );
+
+      return { target, actual };
+    });
+
+    for (const { target, actual } of measurements) {
+      expect(Math.abs(actual - target) / target).toBeLessThanOrEqual(0.05);
+    }
   });
 });

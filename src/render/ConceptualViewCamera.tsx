@@ -402,6 +402,7 @@ const FrontStandardAssembly = ({
     state: frameState,
   };
   const apertureBlades = resolveConceptualApertureBlades({ aperture, focalLengthMm });
+  const apertureBladeShape = createConceptualShape(apertureBlades[0]?.points ?? []);
   const apertureFocused = apertureState === "highlighted";
   const outerWidth = CAMERA_CONSTANTS.frontStandardWidthMm;
   const outerHeight = CAMERA_CONSTANTS.frontStandardHeightMm;
@@ -563,11 +564,11 @@ const FrontStandardAssembly = ({
                   toWorld(blade.pivot.y),
                   toWorld(blade.layerOffsetMm),
                 ]}
-                rotation={[0, 0, blade.rotationRad]}
+                rotation={[0, 0, blade.centerAngleRad + blade.rotationRad]}
                 renderOrder={presentation.renderOrder + 2 + blade.index}
               >
                 <mesh name={`lens-aperture-blade-${blade.index}-surface`}>
-                  <shapeGeometry args={[createConceptualShape(blade.points)]} />
+                  <shapeGeometry args={[apertureBladeShape]} />
                   <meshStandardMaterial
                     color={
                       apertureState === "highlighted"
