@@ -5,6 +5,7 @@ import {
   LESSON_ZERO_STEPS,
   isLessonZeroStepComplete,
   resolveLessonZeroCameraPresentation,
+  resolveLessonZeroViewportInspectionTarget,
 } from "../../app/anatomyLesson";
 import { CAMERA_CONTROL_TEACHING } from "../../app/cameraControlTeaching";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -112,5 +113,14 @@ describe("Lesson 0 anatomy vocabulary", () => {
     ).toEqual([
       { kind: "element", name: "lens-aperture-iris", parentPart: "lens" },
     ]);
+  });
+
+  it("keeps moving control steps on the stable camera inspection anchor", () => {
+    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(1))).toBe("front-standard");
+    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(11))).toBeUndefined();
+    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(12))).toBeUndefined();
+    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(15))).toBeUndefined();
+    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(16))).toBeUndefined();
+    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(17))).toBe("aperture");
   });
 });

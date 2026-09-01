@@ -1,8 +1,7 @@
-# PR #116 follow-up — preserve Lesson 0 optical conjugacy
+# PR #117 follow-up — Lesson 0 interaction polish
 
-- Objective: keep PR #116's selectable-focus placement separation while restoring finite-focus optical conjugacy for Lesson 0.
-- Branch: `fix/lesson-zero-camera-assembly-regression`; existing PR #116 branch.
-- Root cause: `scene-baseline` previously added Focus Fundamentals travel deltas to the historical `film z=-f` baseline, so finite focus used a non-conjugate lens/film separation.
-- Fix: `resolveSceneRelativeSelectableFocus` translates the complete rear-datum lens/film solution by one reference-derived Z offset; the selectable focus point receives the same translation.
-- Geometry contract: Lesson 0 reference lens stays at its scene datum, film and focus plane use the solved reference image distance, front/rear focus preserve conjugacy, and rail/support remains a fixed rig datum.
-- Validation: fresh-branch CI, typecheck, lint, focused optics/assembly/Lesson 0 suites, and the Lesson 0 Playwright walkthrough pass. No RTT/WebGL files are in scope.
+- Branch: `feature/lesson-zero-ground-glass-rtt`
+- Baseline: `origin/main` `e65ef4e6bb99be6152d5a5624d3fb1b97540fd8f` (PR #116 merged); prior PR head `e3c389b73a75e20be6194b1f29a38688bbbb3cdc`.
+- Objective: keep Lesson 0 movement/focus teaching steps anchored to the stable whole-camera inspection datum, and make the `Next` presentation match its `canAdvance` state.
+- Decisions: anatomy inspection targets remain part-specific; control/focus steps pass through the existing stable camera anchor; Aperture keeps its close lens target. Semantic highlighting, thresholds, canonical optics, RTT, camera geometry, and lesson progression are unchanged.
+- Validation: focused tests (34 passed), `npm run ci:local` (154 files / 1,494 tests and build), standalone typecheck/lint, diff check, Lesson 0 Playwright walkthrough (1 passed), and representative Table Tilt/Understanding Camera Movements smoke tests (2 passed). Manual screenshots confirmed stable Front Rise/Shift framing, muted disabled `Next`, enabled completion state, and no `Next` on Recap.

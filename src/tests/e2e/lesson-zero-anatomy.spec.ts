@@ -8,8 +8,12 @@ test("Lesson 0 presents the anatomy sequence and isolates its presentation state
   const panel = page.locator(".anatomy-lesson-panel");
   const lessonHeading = panel.getByRole("heading", { level: 3 });
   const next = panel.getByRole("button", { name: "Next", exact: true });
+  const rtt = page.getByTestId("ground-glass-rtt");
 
   await expect(panel).toBeVisible();
+  await expect(rtt).toHaveAttribute("data-rtt-scene-id", "view-camera-anatomy");
+  await expect(page.getByTestId("ground-glass-scene")).toHaveCount(0);
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 120_000 });
   await expect(lessonHeading).toHaveText("The complete camera");
   await expect(panel.getByRole("button", { name: "Previous", exact: true })).toBeDisabled();
   await expect(page.getByRole("heading", { name: "Camera Controls", exact: true })).toHaveCount(0);
@@ -45,14 +49,37 @@ test("Lesson 0 presents the anatomy sequence and isolates its presentation state
 
   await next.click();
   await expect(lessonHeading).toHaveText("Front Rise");
-  await expect(page.getByRole("slider", { name: "Front Rise", exact: true })).toBeEnabled();
+  const sceneCanvas = page.getByTestId("scene-canvas");
+  await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");
+  const frontRiseOrbitTarget = await sceneCanvas.getAttribute("data-orbit-target");
+  if (!frontRiseOrbitTarget) throw new Error("Lesson 0 Front Rise view has no orbit target");
+
+  const frontRise = page.getByRole("slider", { name: "Front Rise", exact: true });
+  await expect(frontRise).toBeEnabled();
   await expect(next).toBeDisabled();
-  await page.getByRole("slider", { name: "Front Rise", exact: true }).fill("12");
+  await expect(next).toHaveClass(/\bbtn--disabled\b/);
+  await expect(panel.getByRole("status")).toHaveText("Move the control enough to make the physical change clear.");
+
+  await frontRise.fill("3");
+  await expect(frontRise).toHaveValue("3");
+  await expect(next).toBeDisabled();
+  await expect(next).toHaveClass(/\bbtn--disabled\b/);
+  await expect(sceneCanvas).toHaveAttribute("data-orbit-target", frontRiseOrbitTarget);
+
+  await frontRise.fill("12");
   await expect(next).toBeEnabled();
+  await expect(next).not.toHaveClass(/\bbtn--disabled\b/);
+  await expect(panel.getByRole("status")).toHaveText("Good — the physical change is now visible.");
+  await expect(sceneCanvas).toHaveAttribute("data-orbit-target", frontRiseOrbitTarget);
 
   await next.click();
   await expect(lessonHeading).toHaveText("Front Shift");
-  await page.getByRole("slider", { name: "Front Shift", exact: true }).fill("12");
+  const frontShift = page.getByRole("slider", { name: "Front Shift", exact: true });
+  const frontShiftOrbitTarget = await sceneCanvas.getAttribute("data-orbit-target");
+  if (!frontShiftOrbitTarget) throw new Error("Lesson 0 Front Shift view has no orbit target");
+  await frontShift.fill("12");
+  await expect(next).toBeEnabled();
+  await expect(sceneCanvas).toHaveAttribute("data-orbit-target", frontShiftOrbitTarget);
 
   await next.click();
   await expect(lessonHeading).toHaveText("Front Tilt");
@@ -103,4 +130,9 @@ test("Lesson 0 presents the anatomy sequence and isolates its presentation state
   await anatomyCard.getByRole("link", { name: "Start Lesson", exact: true }).click();
   await expect(page).toHaveURL(/\/simulator\/free\/view-camera-anatomy\?lesson=1$/);
   await expect(lessonHeading).toHaveText("The complete camera");
+  await expect(page.getByTestId("ground-glass-rtt")).toHaveAttribute(
+    "data-rtt-scene-id",
+    "view-camera-anatomy",
+  );
+  await expect(page.getByTestId("ground-glass-scene")).toHaveCount(0);
 });

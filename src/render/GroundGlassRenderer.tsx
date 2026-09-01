@@ -2,7 +2,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { GroundGlassStage } from "./GroundGlassStage";
 import { GroundGlassRenderSurface } from "./GroundGlassRenderSurface";
-import { LegacyGroundGlassScene } from "./LegacyGroundGlassScene";
 import { GroundGlassTransformedOverlays, GroundGlassFixedOverlays } from "./GroundGlassOverlays";
 import { GroundGlassFocusRing } from "./GroundGlassFocusRing";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
@@ -15,7 +14,6 @@ import { resolvePhysicalFocusTargetPresentationMetric } from "./postprocessing/F
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
-import { getRenderQualitySettings } from "./renderQuality";
 import { formatGroundGlassFocusLabel } from "./groundGlassFocusLabel";
 import { resolveGroundGlassPresentationPolicy } from "./groundGlassPresentationPolicy";
 import type {
@@ -126,7 +124,6 @@ export const GroundGlassRenderer = ({
     return createGroundGlassDofPipeline(opticsState, PANEL_WIDTH_PX, PANEL_HEIGHT_PX, renderQuality);
   }, [opticsState, renderQuality, sceneId]);
 
-  const qualitySettings = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const dofSample = useMemo(
     () =>
       createDepthOfFieldPass(
@@ -145,7 +142,6 @@ export const GroundGlassRenderer = ({
   );
 
   const blurOpacity = Math.min(0.85, dofSample.blurStrength * 1.2);
-  const blurRadiusPx = Math.max(0, dofSample.blurStrength * (qualitySettings.groundGlassScale > 0.8 ? 9 : 6));
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
   const presentationPolicy = resolveGroundGlassPresentationPolicy(scene);
   const isRttSceneFinal = isRttScene;
@@ -225,21 +221,6 @@ export const GroundGlassRenderer = ({
           runtimeInfo={runtimeInfo}
           onRuntimeInfoChange={onRuntimeInfoChange}
         />
-
-        {!isRttSceneFinal && (
-         <LegacyGroundGlassScene
-           sceneHasFocusTargets={!!(sceneDef.focusTargets && sceneDef.focusTargets.length)}
-           projectedTargets={projectedTargets}
-           blurRadiusPx={blurRadiusPx}
-           sceneShiftX={sceneShiftX}
-           sceneShiftY={sceneShiftY}
-           sceneRotationDeg={sceneRotationDeg}
-           focusScale={focusScale}
-           riseMm={riseMm}
-           tiltDeg={tiltDeg}
-           swingDeg={swingDeg}
-         />
-        )}
 
         <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} showDecorativeVignette={presentationPolicy.showDecorativeVignette} blurOpacity={blurOpacity} />
       </div>

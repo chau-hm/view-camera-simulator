@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import type { ComponentType } from "react";
 import * as THREE from "three";
-import type { Vec3 } from "../types/optics";
+import type { Bounds3, Vec3 } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
 import architectureRiseGeometry from "../scenes/architectureRiseGeometry";
 import tableTiltGeometry from "../scenes/tableTiltGeometry";
@@ -60,6 +60,14 @@ import {
   createArchitectureForegroundGroup,
   disposeArchitectureForegroundGroup,
 } from "./ArchitectureForegroundSubjectFactory";
+import {
+  LessonZeroGroundGlassSubject,
+  createLessonZeroGroundGlassGroup,
+} from "./LessonZeroGroundGlassSubjectFactory";
+import {
+  lessonZeroGroundGlassSubjectBoundsMm,
+  lessonZeroGroundGlassSubjectCenterMm,
+} from "../scenes/lessonZeroGroundGlassSubject";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -75,6 +83,8 @@ export type SceneSubjectRegistration = {
   SceneSubject: ComponentType<RegisteredSceneSubjectProps>;
   createRttGroup: (options?: SceneSubjectRttOptions) => THREE.Group;
   disposeRttGroup?: (group: THREE.Group) => void;
+  /** Optional subject bounds used for RTT clipping, independent of inspection bounds. */
+  rttBounds?: Bounds3;
   rttLighting?: SceneSubjectRttLighting;
   resolveRttLighting?: (options?: SceneSubjectRttOptions) => SceneSubjectRttLighting;
   showReferenceCamera?: boolean;
@@ -177,6 +187,16 @@ const architectureForegroundLightingTargetMm = {
 } as const;
 
 export const sceneSubjectRegistry = {
+  "view-camera-anatomy": {
+    SceneSubject: LessonZeroGroundGlassSubject,
+    createRttGroup: createLessonZeroGroundGlassGroup,
+    rttBounds: lessonZeroGroundGlassSubjectBoundsMm,
+    rttLighting: {
+      targetMm: lessonZeroGroundGlassSubjectCenterMm,
+      keyOffsetWorld: { x: -1.8, y: 2.5, z: -2.2 },
+      fillOffsetWorld: { x: 1.8, y: 1.25, z: -2.4 },
+    },
+  },
   "understanding-camera-movements": {
     SceneSubject: CameraMovementsSubject,
     createRttGroup: (options) => {

@@ -104,7 +104,9 @@ const createProfile = (
     return mountRegisteredSubject(scene, context, options);
   },
   resolveRenderBounds: (context) =>
-    definition.resolveRenderBounds?.(context) ?? context.scene.bounds,
+    definition.resolveRenderBounds?.(context) ??
+    getSceneSubjectRegistration(context.scene.id)?.rttBounds ??
+    context.scene.bounds,
 });
 
 const ordinarySceneProfile = createProfile();

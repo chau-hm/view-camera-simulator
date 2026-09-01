@@ -9,6 +9,7 @@ import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fund
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import { DEFAULT_CAMERA_STATE, CAMERA_CONSTANTS } from "../../utils/constants";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import { useAppStore } from "../../state/appStore";
@@ -240,6 +241,68 @@ describe("GroundGlassRenderer", () => {
 
     expect(isGroundGlassRttScene(mirrorShiftScene.id)).toBe(true);
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
+    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
+  });
+
+  it("routes Lesson 0 through RTT without the legacy placeholder", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...viewCameraAnatomyScene.cameraPreset,
+      activeSceneId: viewCameraAnatomyScene.id,
+      activeTaskId: null,
+      mode: "free" as const,
+    };
+    const opticsState = deriveOpticsState(camera, viewCameraAnatomyScene);
+
+    render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        gridEnabled={false}
+        riseMm={camera.frontRiseMm}
+        tiltDeg={camera.frontTiltDeg}
+        swingDeg={camera.frontSwingDeg}
+        focusDistanceMm={camera.focusDistanceMm}
+        aperture={camera.aperture}
+        renderQuality="standard"
+        previewMode="raw"
+        scene={viewCameraAnatomyScene}
+        focalLengthMm={camera.focalLengthMm}
+      />,
+    );
+
+    expect(isGroundGlassRttScene(viewCameraAnatomyScene.id)).toBe(true);
+    expect(screen.getByTestId("ground-glass-rtt")).toHaveAttribute(
+      "data-rtt-scene-id",
+      viewCameraAnatomyScene.id,
+    );
+    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
+  });
+
+  it("does not silently render the legacy placeholder for an unregistered scene", () => {
+    const unregisteredScene = {
+      ...architectureRiseScene,
+      id: "unregistered-test-scene",
+    };
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, unregisteredScene);
+
+    render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        gridEnabled={false}
+        riseMm={0}
+        tiltDeg={0}
+        swingDeg={0}
+        focusDistanceMm={DEFAULT_CAMERA_STATE.focusDistanceMm}
+        aperture={DEFAULT_CAMERA_STATE.aperture}
+        renderQuality="standard"
+        previewMode="raw"
+        scene={unregisteredScene}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+      />,
+    );
+
     expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
   });
 
