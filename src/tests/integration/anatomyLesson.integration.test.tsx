@@ -3,6 +3,9 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { i18n } from "../../i18n";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { resolveFocusFundamentalsFocusing } from "../../core/optics/focusFundamentalsFocusing";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import { useAppStore } from "../../state/appStore";
 
 beforeEach(async () => {
@@ -124,6 +127,42 @@ describe("Lesson 0 integration", () => {
     expect(screen.getByRole("heading", { name: "Controls recap" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Lesson complete");
     expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument();
+
+    const recapOptics = deriveOpticsState(
+      useAppStore.getState().camera,
+      viewCameraAnatomyScene,
+    );
+    const recapCamera = useAppStore.getState().camera;
+    const referenceFocusDepthMm =
+      viewCameraAnatomyScene.focusStandardCapability!.referenceFocusDepthMm;
+    const referenceSolution = resolveFocusFundamentalsFocusing({
+      standard: "front",
+      focusMode: "finite",
+      focusDepthMm: referenceFocusDepthMm,
+      focalLengthMm: recapCamera.focalLengthMm,
+      referenceFocusDepthMm,
+    });
+    const recapSolution = resolveFocusFundamentalsFocusing({
+      standard: "rear",
+      focusMode: "finite",
+      focusDepthMm: recapCamera.focusDistanceMm,
+      focalLengthMm: recapCamera.focalLengthMm,
+      referenceFocusDepthMm,
+    });
+    expect(recapOptics.diagnostics.fallbackApplied).toBe(false);
+    expect(recapOptics.lensCenterWorld).toEqual({ x: 0, y: 0, z: 0 });
+    expect(recapOptics.filmCenterWorld.z).toBeCloseTo(
+      recapSolution.filmZMm - referenceSolution.lensZMm,
+      12,
+    );
+    expect(Math.abs(recapOptics.lensCenterWorld.z - recapOptics.filmCenterWorld.z)).toBeCloseTo(
+      recapSolution.imageDistanceVMm,
+      12,
+    );
+    expect(recapOptics.focusPointWorld.z).toBeCloseTo(
+      recapCamera.focusDistanceMm - referenceSolution.lensZMm,
+      12,
+    );
   });
 
   it("resets the lesson and restores normal presentation on scene exit", async () => {

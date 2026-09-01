@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
+  resolveFocusFundamentalsFocusing,
+  resolveSceneRelativeSelectableFocus,
+} from "../../core/optics/focusFundamentalsFocusing";
+import {
   imageDistanceMm,
   solveLensExtensionForRearDatumFocusDepth,
 } from "../../core/optics/thinLensModel";
@@ -125,15 +129,102 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
     expect(atReference.filmCenterWorld.z).toBeLessThan(after.filmCenterWorld.z);
   });
 
-  it("reuses the same selectable-focus geometry for Lesson 0", () => {
+  it("keeps the Lesson 0 lens datum while preserving reference optical conjugacy", () => {
+    const anatomyCamera: CameraState = {
+      ...DEFAULT_CAMERA_STATE,
+      ...viewCameraAnatomyScene.cameraPreset,
+      activeSceneId: viewCameraAnatomyScene.id,
+      focusStandard: "front",
+      focusDistanceMm: viewCameraAnatomyScene.cameraPreset.focusDistanceMm,
+    };
+    const referenceFocusDepthMm =
+      viewCameraAnatomyScene.focusStandardCapability!.referenceFocusDepthMm;
+    const focalLengthMm = anatomyCamera.focalLengthMm;
+    const referenceSolution = resolveFocusFundamentalsFocusing({
+      standard: "front",
+      focusMode: "finite",
+      focusDepthMm: referenceFocusDepthMm,
+      focalLengthMm,
+      referenceFocusDepthMm,
+    });
+    const sceneRelativeReference = resolveSceneRelativeSelectableFocus({
+      standard: "front",
+      focusMode: "finite",
+      focusDepthMm: referenceFocusDepthMm,
+      focalLengthMm,
+      referenceFocusDepthMm,
+      sceneLensDatumZMm: 0,
+    });
+    const optics = deriveOpticsState(anatomyCamera, viewCameraAnatomyScene);
+
+    expect(referenceSolution.fallbackApplied).toBe(false);
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expect(optics.lensCenterWorld).toEqual({ x: 0, y: 0, z: 0 });
+    expect(sceneRelativeReference.sceneOffsetZMm).toBeCloseTo(-referenceSolution.lensZMm, 12);
+    expect(optics.filmCenterWorld.z).toBeCloseTo(sceneRelativeReference.filmZMm, 12);
+    expect(optics.filmCenterWorld.z).toBeCloseTo(-referenceSolution.imageDistanceVMm, 12);
+    expect(Math.abs(optics.lensCenterWorld.z - optics.filmCenterWorld.z)).toBeCloseTo(
+      referenceSolution.imageDistanceVMm,
+      12,
+    );
+    expect(optics.focusPointWorld.z).toBeCloseTo(
+      referenceFocusDepthMm + sceneRelativeReference.sceneOffsetZMm,
+      12,
+    );
+    expect(optics.rearStandardFrame.centerWorld).toEqual(optics.filmCenterWorld);
+    expect(optics.cameraBodyLocalGeometry.lensCenterLocal).toEqual(optics.lensCenterWorld);
+    expect(optics.cameraBodyLocalGeometry.filmCenterLocal).toEqual(optics.filmCenterWorld);
+  });
+
+  it("keeps Lesson 0 front and rear focus optically conjugate after translation", () => {
     const anatomyCamera = (overrides: Partial<CameraState> = {}): CameraState => ({
       ...DEFAULT_CAMERA_STATE,
       ...viewCameraAnatomyScene.cameraPreset,
       activeSceneId: viewCameraAnatomyScene.id,
       ...overrides,
     });
+    const referenceFocusDepthMm =
+      viewCameraAnatomyScene.focusStandardCapability!.referenceFocusDepthMm;
+    const focalLengthMm = anatomyCamera().focalLengthMm;
+    const referenceSolution = resolveFocusFundamentalsFocusing({
+      standard: "front",
+      focusMode: "finite",
+      focusDepthMm: referenceFocusDepthMm,
+      focalLengthMm,
+      referenceFocusDepthMm,
+    });
+    const frontSolution = resolveFocusFundamentalsFocusing({
+      standard: "front",
+      focusMode: "finite",
+      focusDepthMm: 2200,
+      focalLengthMm,
+      referenceFocusDepthMm,
+    });
+    const rearSolution = resolveFocusFundamentalsFocusing({
+      standard: "rear",
+      focusMode: "finite",
+      focusDepthMm: 2200,
+      focalLengthMm,
+      referenceFocusDepthMm,
+    });
+    const translatedFront = resolveSceneRelativeSelectableFocus({
+      standard: "front",
+      focusMode: "finite",
+      focusDepthMm: 2200,
+      focalLengthMm,
+      referenceFocusDepthMm,
+      sceneLensDatumZMm: 0,
+    });
+    const translatedRear = resolveSceneRelativeSelectableFocus({
+      standard: "rear",
+      focusMode: "finite",
+      focusDepthMm: 2200,
+      focalLengthMm,
+      referenceFocusDepthMm,
+      sceneLensDatumZMm: 0,
+    });
     const referenceFront = deriveOpticsState(
-      anatomyCamera({ focusStandard: "front", focusDistanceMm: 2000 }),
+      anatomyCamera({ focusStandard: "front", focusDistanceMm: referenceFocusDepthMm }),
       viewCameraAnatomyScene,
     );
     const movedFront = deriveOpticsState(
@@ -145,12 +236,59 @@ describe("Focus Fundamentals selectable focus standard geometry", () => {
       viewCameraAnatomyScene,
     );
 
-    expect(movedFront.filmCenterWorld.z).toBeCloseTo(0, 12);
-    expect(movedFront.lensCenterWorld.z).not.toBeCloseTo(referenceFront.lensCenterWorld.z, 12);
+    expect(referenceSolution.fallbackApplied).toBe(false);
+    expect(frontSolution.fallbackApplied).toBe(false);
+    expect(rearSolution.fallbackApplied).toBe(false);
+    expect(translatedFront.sceneOffsetZMm).toBeCloseTo(-referenceSolution.lensZMm, 12);
+    expect(translatedRear.sceneOffsetZMm).toBeCloseTo(-referenceSolution.lensZMm, 12);
+    expect(translatedFront.sceneOffsetZMm).toBeCloseTo(
+      translatedRear.sceneOffsetZMm,
+      12,
+    );
+    expect(referenceFront.lensCenterWorld.z).toBeCloseTo(0, 12);
+    expect(referenceFront.filmCenterWorld.z).toBeCloseTo(-referenceSolution.imageDistanceVMm, 12);
+    expect(Math.abs(referenceFront.lensCenterWorld.z - referenceFront.filmCenterWorld.z)).toBeCloseTo(
+      referenceSolution.imageDistanceVMm,
+      12,
+    );
+    expect(movedFront.filmCenterWorld.z).toBeCloseTo(referenceFront.filmCenterWorld.z, 12);
+    expect(movedFront.rearStandardFrame.centerWorld).toEqual(
+      referenceFront.rearStandardFrame.centerWorld,
+    );
+    expect(movedFront.lensCenterWorld.z).toBeCloseTo(
+      frontSolution.lensZMm - referenceSolution.lensZMm,
+      12,
+    );
+    expect(Math.abs(movedFront.lensCenterWorld.z - movedFront.filmCenterWorld.z)).toBeCloseTo(
+      frontSolution.imageDistanceVMm,
+      12,
+    );
     expect(movedRear.lensCenterWorld.z).toBeCloseTo(referenceFront.lensCenterWorld.z, 12);
-    expect(movedRear.filmCenterWorld.z).not.toBeCloseTo(0, 12);
-    expect(movedFront.focusPointWorld.z).toBeCloseTo(2200, 12);
-    expect(movedRear.focusPointWorld.z).toBeCloseTo(2200, 12);
+    expect(movedRear.lensCenterWorld).toEqual(referenceFront.lensCenterWorld);
+    expect(movedRear.filmCenterWorld.z).toBeCloseTo(
+      rearSolution.filmZMm - referenceSolution.lensZMm,
+      12,
+    );
+    expect(Math.abs(movedRear.lensCenterWorld.z - movedRear.filmCenterWorld.z)).toBeCloseTo(
+      rearSolution.imageDistanceVMm,
+      12,
+    );
+    expect(movedFront.focusPointWorld.z).toBeCloseTo(
+      2200 - referenceSolution.lensZMm,
+      12,
+    );
+    expect(movedRear.focusPointWorld.z).toBeCloseTo(
+      2200 - referenceSolution.lensZMm,
+      12,
+    );
+    expect(movedFront.diagnostics.imageDistanceMm).toBeCloseTo(
+      frontSolution.imageDistanceVMm,
+      12,
+    );
+    expect(movedRear.diagnostics.imageDistanceMm).toBeCloseTo(
+      rearSolution.imageDistanceVMm,
+      12,
+    );
     expect(movedFront.diagnostics.fallbackApplied).toBe(false);
     expect(movedRear.diagnostics.fallbackApplied).toBe(false);
   });
