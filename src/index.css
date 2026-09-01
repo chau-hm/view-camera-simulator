@@ -664,6 +664,19 @@ button {
  border-color: var(--primary);
 }
 
+.btn:disabled,
+.btn--disabled {
+ cursor: not-allowed;
+ opacity: 0.62;
+}
+
+.btn--primary:disabled,
+.btn--primary.btn--disabled {
+ background: #cbd5e1;
+ color: #475569;
+ border-color: #cbd5e1;
+}
+
 .btn--secondary {
  background: #f8fafc;
  color: var(--text);

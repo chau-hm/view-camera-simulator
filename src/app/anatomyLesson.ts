@@ -316,6 +316,22 @@ export const resolveLessonZeroCameraPresentation = (
   };
 };
 
+/**
+ * Anatomy steps may inspect a moving part directly. Control and focus steps
+ * keep the observer anchored to the stable generic camera datum so local
+ * standard movement remains visible against the rest of the camera. Aperture
+ * keeps its close lens view because changing the opening does not move the
+ * lens assembly.
+ */
+export const resolveLessonZeroViewportInspectionTarget = (
+  step: LessonZeroStep,
+): CameraInspectionTarget | undefined =>
+  step.section === "controls" &&
+  step.controlTeachingId !== undefined &&
+  step.controlTeachingId !== "aperture"
+    ? undefined
+    : step.inspectionTarget;
+
 export const isLessonZeroStepComplete = (
   step: LessonZeroStep,
   camera: CameraState,

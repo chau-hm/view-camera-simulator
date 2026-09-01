@@ -4,6 +4,7 @@ import {
   getLessonZeroStep,
   isLessonZeroStepComplete,
   resolveLessonZeroCameraPresentation,
+  resolveLessonZeroViewportInspectionTarget,
 } from "../../app/anatomyLesson";
 import { getCameraControlTeachingDefinition } from "../../app/cameraControlTeaching";
 import { getGuidedLessonContext } from "../../app/guidedLesson";
@@ -256,6 +257,9 @@ export const SimulatorWorkspace = ({
   const publicSceneEntry = getPublicSceneEntryById(sceneId);
   const isAnatomyLesson = anatomyLessonEnabled && sceneId === "view-camera-anatomy";
   const anatomyStep = getLessonZeroStep(anatomyStepIndex);
+  const anatomyViewportInspectionTarget = isAnatomyLesson
+    ? resolveLessonZeroViewportInspectionTarget(anatomyStep)
+    : undefined;
   const anatomyPresentation = isAnatomyLesson
     ? resolveLessonZeroCameraPresentation(anatomyStep, anatomyShowSmallAperture)
     : undefined;
@@ -568,12 +572,12 @@ export const SimulatorWorkspace = ({
                   requestViewportExpansion("geometry");
                 }}
                 cameraPresentation={anatomyPresentation}
-                cameraInspectionTarget={isAnatomyLesson ? anatomyStep.inspectionTarget : undefined}
+                cameraInspectionTarget={anatomyViewportInspectionTarget}
                 initialViewFocus={isAnatomyLesson ? "camera" : undefined}
                 suppressOpticalOverlays={isAnatomyLesson}
                 viewResetKey={
                   isAnatomyLesson
-                    ? `${anatomyStep.inspectionTarget}:${anatomyViewResetNonce}`
+                    ? `${anatomyViewportInspectionTarget ?? "stable-camera"}:${anatomyViewResetNonce}`
                     : undefined
                 }
                 showHeader={false}

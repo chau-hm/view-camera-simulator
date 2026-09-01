@@ -12,7 +12,7 @@ afterEach(() => {
   cleanup();
 });
 
-const renderPanel = (stepIndex = 0) => {
+const renderPanel = (stepIndex = 0, canAdvance = true) => {
   const onStepIndexChange = vi.fn();
   const onShowSmallApertureChange = vi.fn();
   const onReset = vi.fn();
@@ -24,6 +24,7 @@ const renderPanel = (stepIndex = 0) => {
         showSmallAperture={false}
         onShowSmallApertureChange={onShowSmallApertureChange}
         onReset={onReset}
+        canAdvance={canAdvance}
       />
     </MemoryRouter>,
   );
@@ -48,6 +49,23 @@ describe("AnatomyLessonPanel", () => {
     expect(screen.getByRole("heading", { name: "Aperture" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Show a smaller opening" }));
     expect(onShowSmallApertureChange).toHaveBeenCalledWith(true);
+  });
+
+  it("visually marks an incomplete step's Next action as disabled", () => {
+    renderPanel(11, false);
+
+    const next = screen.getByRole("button", { name: "Next" });
+    expect(next).toBeDisabled();
+    expect(next).toHaveClass("btn--disabled");
+  });
+
+  it("uses the enabled primary styling once a step can advance", () => {
+    renderPanel(11, true);
+
+    const next = screen.getByRole("button", { name: "Next" });
+    expect(next).toBeEnabled();
+    expect(next).not.toHaveClass("btn--disabled");
+    expect(next).toHaveClass("btn--primary");
   });
 
   it("supports Previous, reset, completion and a Scenes exit", () => {

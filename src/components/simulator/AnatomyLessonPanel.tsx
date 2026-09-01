@@ -84,7 +84,7 @@ export const AnatomyLessonPanel = ({
         {!isLastStep ? (
           <button
             type="button"
-            className="btn btn--primary"
+            className={`btn btn--primary${canAdvance ? "" : " btn--disabled"}`}
             disabled={!canAdvance}
             onClick={() => onStepIndexChange(Math.min(LESSON_ZERO_STEPS.length - 1, stepIndex + 1))}
           >

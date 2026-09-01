@@ -75,14 +75,29 @@ describe("Lesson 0 integration", () => {
     const rise = screen.getByRole("slider", { name: "Front Rise" });
     expect(rise).toHaveValue("0");
     expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next" })).toHaveClass("btn--disabled");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Move the control enough to make the physical change clear.",
+    );
+    fireEvent.change(rise, { target: { value: "3" } });
+    expect(rise).toHaveValue("3");
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next" })).toHaveClass("btn--disabled");
+
     fireEvent.change(rise, { target: { value: "12" } });
     expect(useAppStore.getState().camera.frontRiseMm).toBe(12);
     expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Next" })).not.toHaveClass("btn--disabled");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Good — the physical change is now visible.",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     const frontShift = screen.getByRole("slider", { name: "Front Shift" });
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
     fireEvent.change(frontShift, { target: { value: "12" } });
     expect(useAppStore.getState().camera.frontShiftMm).toBe(12);
+    expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     const tilt = screen.getByRole("slider", { name: "Front Tilt" });

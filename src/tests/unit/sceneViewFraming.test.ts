@@ -24,6 +24,11 @@ import {
   CAMERA_RIG_VIEWPOINT_ANCHORS,
 } from "../../scenes/understandingCameraMovementsGeometry";
 import { transformRigLocalPointToWorld } from "../../core/optics/applyCameraBodyPitch";
+import {
+  getLessonZeroStep,
+  resolveLessonZeroViewportInspectionTarget,
+} from "../../app/anatomyLesson";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import type { CameraState } from "../../types/camera";
 import type { CameraRigTransform } from "../../types/optics";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -44,6 +49,15 @@ const cameraState = (overrides: Partial<CameraState> = {}): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
   ...architectureRiseScene.cameraPreset,
   activeSceneId: architectureRiseScene.id,
+  activeTaskId: null,
+  mode: "free",
+  ...overrides,
+});
+
+const anatomyCameraState = (overrides: Partial<CameraState> = {}): CameraState => ({
+  ...DEFAULT_CAMERA_STATE,
+  ...viewCameraAnatomyScene.cameraPreset,
+  activeSceneId: viewCameraAnatomyScene.id,
   activeTaskId: null,
   mode: "free",
   ...overrides,
@@ -233,6 +247,40 @@ describe("3D observer view framing", () => {
     expect(risenOptics.lensCenterWorld.y).not.toBe(baselineOptics.lensCenterWorld.y);
     expect(focusedOptics.filmCenterWorld.z).not.toBe(baselineOptics.filmCenterWorld.z);
     expect(stableTarget).toEqual([0, 0, -0.075]);
+  });
+
+  it("keeps Lesson 0 movement-step framing stable while the front standard moves", () => {
+    const resolve = (
+      stepIndex: number,
+      overrides: Partial<CameraState>,
+    ) => {
+      const camera = anatomyCameraState(overrides);
+      const optics = deriveOpticsState(camera, viewCameraAnatomyScene);
+      const inspectionTarget = resolveLessonZeroViewportInspectionTarget(
+        getLessonZeroStep(stepIndex),
+      );
+      return {
+        optics,
+        framing: resolveSceneViewportFraming({
+          scene: viewCameraAnatomyScene,
+          focalLengthMm: camera.focalLengthMm,
+          cameraRigTransform: optics.cameraRigTransform,
+          cameraInspectionTargetWorld: inspectionTarget
+            ? resolveCameraInspectionTargetWorld(inspectionTarget, optics)
+            : undefined,
+          cameraInspectionTarget: inspectionTarget,
+        }),
+      };
+    };
+
+    const neutral = resolve(11, { frontRiseMm: 0, frontShiftMm: 0 });
+    const risen = resolve(11, { frontRiseMm: 32, frontShiftMm: 0 });
+    const shifted = resolve(12, { frontRiseMm: 0, frontShiftMm: 28 });
+
+    expect(risen.optics.lensCenterWorld.y).not.toBe(neutral.optics.lensCenterWorld.y);
+    expect(shifted.optics.lensCenterWorld.x).not.toBe(neutral.optics.lensCenterWorld.x);
+    expect(risen.framing.camera).toEqual(neutral.framing.camera);
+    expect(shifted.framing.camera).toEqual(neutral.framing.camera);
   });
 
   it("moves a saved camera view with a new camera center without changing its orbit offset", () => {
