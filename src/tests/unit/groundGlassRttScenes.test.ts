@@ -7,8 +7,22 @@ import {
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import geometry from "../../scenes/shelfSwingGeometry";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
+import { lessonZeroGroundGlassSubjectBoundsMm } from "../../scenes/lessonZeroGroundGlassSubject";
 
 describe("Ground Glass RTT scene registration", () => {
+  it("includes Lesson 0 in the centralized RTT scene set", () => {
+    expect(RTT_SCENES).toContain("view-camera-anatomy");
+    expect(isGroundGlassRttScene("view-camera-anatomy")).toBe(true);
+
+    const clip = getGroundGlassClipRangeWorld(
+      { ...viewCameraAnatomyScene, bounds: lessonZeroGroundGlassSubjectBoundsMm },
+      { x: 0, y: 0, z: 0 },
+      { x: 0, y: 0, z: 1 },
+    );
+    expect(clip.far).toBeGreaterThan(lessonZeroGroundGlassSubjectBoundsMm.max.z * 0.001);
+  });
+
   it("includes Shelf Swing in the centralized RTT scene set", () => {
     expect(RTT_SCENES).toContain("shelf-swing");
     expect(isGroundGlassRttScene("shelf-swing")).toBe(true);

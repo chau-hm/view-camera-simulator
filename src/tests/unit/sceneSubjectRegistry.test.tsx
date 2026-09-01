@@ -11,10 +11,16 @@ import {
   sceneSubjectRegistry,
 } from "../../render/sceneSubjectRegistry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { publicSceneCatalog } from "../../app/publicScenes";
 import geometry from "../../scenes/shelfSwingGeometry";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/CameraMovementsSubjectFactory";
+import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
+import {
+  lessonZeroGroundGlassSubjectBoundsMm,
+  lessonZeroGroundGlassSubjectGeometry,
+} from "../../scenes/lessonZeroGroundGlassSubject";
 
 afterEach(cleanup);
 
@@ -36,6 +42,7 @@ const collectDisposableSpies = (group: THREE.Group) => {
 describe("scene subject registry", () => {
   it("registers every canonical rendered scene and rejects unknown IDs", () => {
     expect(Object.keys(sceneSubjectRegistry)).toEqual([
+      "view-camera-anatomy",
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
       "architecture-rise",
@@ -52,6 +59,35 @@ describe("scene subject registry", () => {
     expect(getSceneSubjectRegistration("not-a-scene")).toBeUndefined();
     expect(getRegisteredSceneSubject("not-a-scene")).toBeUndefined();
     expect(createRegisteredRttSubject("not-a-scene")).toBeNull();
+  });
+
+  it("registers the Lesson 0 subject with canonical RTT bounds", () => {
+    const registration = getSceneSubjectRegistration("view-camera-anatomy");
+    expect(registration).toBeDefined();
+    expect(getRegisteredSceneSubject("view-camera-anatomy")).toBe(registration?.SceneSubject);
+    expect(registration?.rttBounds).toBe(lessonZeroGroundGlassSubjectBoundsMm);
+
+    const group = createRegisteredRttSubject("view-camera-anatomy");
+    expect(group?.name).toBe("view-camera-anatomy-subject");
+    expect(group?.getObjectByName("view-camera-anatomy-target-board")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.children.length).toBe(lessonZeroGroundGlassSubjectGeometry.boxes.length);
+    group?.traverse((object) => {
+      expect(Number.isFinite(object.position.x)).toBe(true);
+      expect(Number.isFinite(object.position.y)).toBe(true);
+      expect(Number.isFinite(object.position.z)).toBe(true);
+    });
+  });
+
+  it("requires every public scene to declare the RTT subject contract", () => {
+    for (const entry of publicSceneCatalog) {
+      expect(isGroundGlassRttScene(entry.id), `public scene ${entry.id} must use RTT`).toBe(true);
+      expect(getSceneSubjectRegistration(entry.id), `public scene ${entry.id} needs a subject registration`).toBeDefined();
+      expect(getRegisteredSceneSubject(entry.id), `public scene ${entry.id} needs a React subject`).toBeDefined();
+
+      const group = createRegisteredRttSubject(entry.id);
+      expect(group, `public scene ${entry.id} needs an RTT subject factory`).not.toBeNull();
+      if (group) disposeRegisteredRttSubject(entry.id, group);
+    }
   });
 
   it("resolves Shelf Swing to its shared React subject and canonical RTT factory", () => {
