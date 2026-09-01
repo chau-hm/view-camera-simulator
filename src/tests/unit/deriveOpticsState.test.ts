@@ -1,9 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { calculateGroundGlassFrameBoundsAtZ } from "../../core/tasks/calculateGroundGlassFrameBounds";
 import { imageDistanceMm } from "../../core/optics/thinLensModel";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import type { CameraState } from "../../types/camera";
 import type { SceneDefinition } from "../../types/scene";
+
+const anatomyCameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
+  ...DEFAULT_CAMERA_STATE,
+  ...viewCameraAnatomyScene.cameraPreset,
+  activeSceneId: viewCameraAnatomyScene.id,
+  ...overrides,
+});
 
 describe("deriveOpticsState", () => {
   it("returns computed optics state for valid inputs", () => {
@@ -253,5 +263,48 @@ describe("deriveOpticsState", () => {
 
     expect(result.diagnostics.fallbackApplied).toBe(true);
     expect(result.diagnostics.errorMessage).toBe("Invalid finite-focus image distance");
+  });
+
+  it("keeps Lesson 0 finite focus geometry valid for Ground Glass consumers", () => {
+    const referenceFocusDepthMm =
+      viewCameraAnatomyScene.focusStandardCapability!.referenceFocusDepthMm;
+    const focusCases = [
+      { focusStandard: "front" as const, focusDistanceMm: referenceFocusDepthMm },
+      { focusStandard: "front" as const, focusDistanceMm: 2200 },
+      { focusStandard: "rear" as const, focusDistanceMm: 2200 },
+    ];
+
+    for (const focusCase of focusCases) {
+      const optics = deriveOpticsState(
+        anatomyCameraFor(focusCase),
+        viewCameraAnatomyScene,
+      );
+
+      expect(optics.diagnostics.fallbackApplied).toBe(false);
+      expect(optics.focusPlane).not.toBeNull();
+      expect(optics.rearStandardFrame.centerWorld).toEqual(optics.filmCenterWorld);
+      expect(Math.abs(optics.lensCenterWorld.z - optics.filmCenterWorld.z)).toBeCloseTo(
+        optics.diagnostics.imageDistanceMm!,
+        12,
+      );
+
+      const focusPlane = optics.focusPlane!;
+      expect(Object.values(focusPlane.point).every(Number.isFinite)).toBe(true);
+      expect(Object.values(focusPlane.normal).every(Number.isFinite)).toBe(true);
+      expect(Number.isFinite(focusPlane.distance)).toBe(true);
+      expect(optics.offAxisProjectionMatrix.every(Number.isFinite)).toBe(true);
+      expect(
+        Object.values(optics.offAxisProjectionInput.lensCenterWorld).every(Number.isFinite),
+      ).toBe(true);
+      for (const corner of Object.values(optics.offAxisProjectionInput.filmCornersWorld)) {
+        expect(Object.values(corner).every(Number.isFinite)).toBe(true);
+      }
+
+      const frameBounds = calculateGroundGlassFrameBoundsAtZ(
+        optics,
+        optics.filmCenterWorld.z,
+      );
+      expect(Object.values(frameBounds).every(Number.isFinite)).toBe(true);
+    }
   });
 });
