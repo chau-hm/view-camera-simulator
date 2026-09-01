@@ -1,0 +1,328 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "View Camera Simulator Runtime Architecture",
+    "output": "runtime-architecture.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "https://github.com/chau-hm/view-camera-simulator.git",
+      "revision": "2d61f6df144773b1dda82e2b3bda2fee9eac14d3"
+    },
+    "views": [
+      {
+        "id": "learning-path",
+        "label": "Learning path",
+        "focus": [
+          "browser-user",
+          "app-shell",
+          "route-catalog",
+          "workspace",
+          "canonical-state",
+          "optics-core",
+          "render-pipeline"
+        ],
+        "note": "Follow a learner action from the browser through canonical optics to the rendered scene."
+      },
+      {
+        "id": "guided-evaluation",
+        "label": "Guided evaluation",
+        "focus": ["workspace", "canonical-state", "task-evaluator"],
+        "note": "See how guided tasks inspect the shared simulator state without owning it."
+      },
+      {
+        "id": "runtime-dependencies",
+        "label": "Runtime dependencies",
+        "focus": [
+          "app-shell",
+          "route-catalog",
+          "render-pipeline",
+          "react-runtime",
+          "router-runtime",
+          "i18n-runtime",
+          "three-runtime"
+        ],
+        "note": "Isolate the package dependencies that provide application, routing, localization, and WebGL runtime services."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "browser-user",
+      "type": "external",
+      "label": "Learner browser",
+      "sublabel": "Web browser",
+      "pos": [35, 340],
+      "size": [130, 68],
+      "tag": "external"
+    },
+    {
+      "id": "react-runtime",
+      "type": "external",
+      "label": "React runtime",
+      "sublabel": "React 19",
+      "pos": [220, 92],
+      "size": [160, 68],
+      "tag": "npm dependency"
+    },
+    {
+      "id": "router-runtime",
+      "type": "external",
+      "label": "Router runtime",
+      "sublabel": "React Router 7",
+      "pos": [405, 92],
+      "size": [160, 68],
+      "tag": "npm dependency"
+    },
+    {
+      "id": "i18n-runtime",
+      "type": "external",
+      "label": "Localization runtime",
+      "sublabel": "i18next",
+      "pos": [35, 92],
+      "size": [160, 68],
+      "tag": "npm dependency"
+    },
+    {
+      "id": "three-runtime",
+      "type": "external",
+      "label": "3D runtime",
+      "sublabel": "Three.js + R3F + Drei",
+      "pos": [1050, 92],
+      "size": [180, 68],
+      "tag": "npm dependency"
+    },
+    {
+      "id": "app-shell",
+      "type": "frontend",
+      "label": "React app shell",
+      "sublabel": "Providers + error boundary",
+      "pos": [190, 340],
+      "size": [160, 72],
+      "sources": [
+        { "path": "src/main.tsx", "label": "bootstrap" },
+        { "path": "src/app/App.tsx", "label": "composition" },
+        { "path": "src/app/providers.tsx", "label": "providers" }
+      ]
+    },
+    {
+      "id": "route-catalog",
+      "type": "frontend",
+      "label": "Scene catalog + routes",
+      "sublabel": "Scenes + modes",
+      "pos": [374, 340],
+      "size": [160, 72],
+      "sources": [
+        { "path": "src/app/router.tsx", "label": "routes" },
+        { "path": "src/app/publicScenes.ts", "label": "public catalog" },
+        { "path": "src/app/simulatorRouteValidation.ts", "label": "route guard" }
+      ]
+    },
+    {
+      "id": "workspace",
+      "type": "frontend",
+      "label": "Simulator workspace",
+      "sublabel": "Controls + canvas",
+      "pos": [558, 340],
+      "size": [160, 72],
+      "sources": [
+        { "path": "src/components/layout/SimulatorWorkspace.tsx", "label": "workspace" },
+        { "path": "src/components/controls/MovementControls.tsx", "label": "controls" },
+        { "path": "src/components/simulator/SceneViewport.tsx", "label": "viewport" }
+      ]
+    },
+    {
+      "id": "canonical-state",
+      "type": "backend",
+      "label": "Canonical camera state",
+      "sublabel": "Zustand camera state",
+      "pos": [742, 340],
+      "size": [160, 72],
+      "sources": [
+        { "path": "src/state/appStore.ts", "label": "single source of truth" },
+        { "path": "src/types/camera.ts", "label": "camera contract" }
+      ]
+    },
+    {
+      "id": "optics-core",
+      "type": "backend",
+      "label": "Optical geometry core",
+      "sublabel": "Planes + projection",
+      "pos": [926, 340],
+      "size": [160, 72],
+      "sources": [
+        { "path": "src/core/optics/deriveOpticsState.ts", "label": "optical calculations" },
+        { "path": "src/scenes/cameraMovementEffectiveCalibration.ts", "label": "calibration" },
+        { "path": "src/types/optics.ts", "label": "optics contract" }
+      ]
+    },
+    {
+      "id": "render-pipeline",
+      "type": "frontend",
+      "label": "Scene + Ground Glass",
+      "sublabel": "R3F + RTT",
+      "pos": [1110, 340],
+      "size": [170, 72],
+      "sources": [
+        { "path": "src/render/CameraMovementsSubjectFactory.tsx", "label": "render subjects" },
+        { "path": "src/render/cameraMovementRttSubjectLifecycle.ts", "label": "RTT lifecycle" },
+        { "path": "src/render/groundGlassDofShaders.ts", "label": "Ground Glass shader" }
+      ]
+    },
+    {
+      "id": "task-evaluator",
+      "type": "backend",
+      "label": "Guided task evaluator",
+      "sublabel": "Guided objective checks",
+      "pos": [742, 560],
+      "size": [160, 72],
+      "sources": [
+        { "path": "src/core/tasks/taskRegistry.ts", "label": "task registry" },
+        { "path": "src/core/tasks/evaluateTask.ts", "label": "task evaluation" },
+        { "path": "src/app/guidedLesson.ts", "label": "lesson stages" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Application trust boundary",
+      "wraps": [
+        "app-shell",
+        "route-catalog",
+        "workspace",
+        "canonical-state",
+        "optics-core",
+        "render-pipeline",
+        "task-evaluator"
+      ],
+      "pad": 28
+    },
+    {
+      "kind": "security-group",
+      "label": "Third-party runtime boundary",
+      "wraps": ["react-runtime", "router-runtime", "i18n-runtime", "three-runtime"],
+      "pad": 24
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-to-shell",
+      "from": "browser-user",
+      "to": "app-shell",
+      "label": "loads SPA",
+      "variant": "emphasis",
+      "labelDy": 58
+    },
+    {
+      "id": "react-renders-shell",
+      "from": "react-runtime",
+      "to": "app-shell",
+      "label": "renders",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24,
+      "labelDx": 8
+    },
+    {
+      "id": "router-resolves-catalog",
+      "from": "router-runtime",
+      "to": "route-catalog",
+      "label": "resolves routes",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "i18n-provides-copy",
+      "from": "i18n-runtime",
+      "to": "app-shell",
+      "label": "provides messages",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "shell-to-catalog",
+      "from": "app-shell",
+      "to": "route-catalog",
+      "label": "provides app context",
+      "labelDy": 60
+    },
+    {
+      "id": "catalog-to-workspace",
+      "from": "route-catalog",
+      "to": "workspace",
+      "label": "resolves scene + mode",
+      "labelDy": 60
+    },
+    {
+      "id": "workspace-to-state",
+      "from": "workspace",
+      "to": "canonical-state",
+      "label": "dispatches controls",
+      "labelDy": 60
+    },
+    {
+      "id": "state-to-optics",
+      "from": "canonical-state",
+      "to": "optics-core",
+      "label": "derives canonical optics",
+      "labelDy": 60
+    },
+    {
+      "id": "optics-to-render",
+      "from": "optics-core",
+      "to": "render-pipeline",
+      "label": "projects scene state",
+      "labelDy": 60
+    },
+    {
+      "id": "three-renders-scene",
+      "from": "three-runtime",
+      "to": "render-pipeline",
+      "label": "WebGL APIs",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "state-to-tasks",
+      "from": "canonical-state",
+      "to": "task-evaluator",
+      "label": "evaluates guided objective",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Runtime path",
+      "items": [
+        "main.tsx mounts App under React StrictMode",
+        "App composes the error boundary, i18n provider, and RouterProvider",
+        "Routes select public scenes, free or guided modes, and optional tasks"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Canonical learning loop",
+      "items": [
+        "appStore owns camera, movement, focus, aperture, calibration, and lesson state",
+        "Optics derive planes, projections, and scene geometry from canonical state",
+        "3D subjects, 2D diagrams, and Ground Glass RTT consume shared derived output"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Boundary + dependencies",
+      "items": [
+        "Application code runs in the browser; the repository defines no accounts or persistence layer",
+        "React Router, i18next, and Three.js/R3F/Drei are imported package dependencies",
+        "Guided tasks inspect public scene metadata and task constraints without owning simulator state"
+      ]
+    }
+  ]
+}

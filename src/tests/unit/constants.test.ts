@@ -10,6 +10,8 @@ describe("CAMERA_CONSTANTS", () => {
   it("matches movement ranges from spec", () => {
     expect(CAMERA_CONSTANTS.riseMinMm).toBe(0);
     expect(CAMERA_CONSTANTS.riseMaxMm).toBe(40);
+    expect(CAMERA_CONSTANTS.shiftMinMm).toBe(-60);
+    expect(CAMERA_CONSTANTS.shiftMaxMm).toBe(60);
     expect(CAMERA_CONSTANTS.tiltMinDeg).toBe(-10);
     expect(CAMERA_CONSTANTS.tiltMaxDeg).toBe(10);
     expect(CAMERA_CONSTANTS.swingMinDeg).toBe(-10);
@@ -19,6 +21,7 @@ describe("CAMERA_CONSTANTS", () => {
   it("shares the public camera-control precision", () => {
     expect(CAMERA_CONTROL_STEPS).toEqual({
       riseMm: 1,
+      shiftMm: 1,
       tiltDeg: 0.1,
       swingDeg: 0.1,
       focusDistanceMm: 10,

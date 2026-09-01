@@ -27,7 +27,11 @@ export type TaskInitialCameraState = Pick<
   Partial<
     Pick<
       CameraState,
-      "geometryView" | "frontShiftMm" | "mirrorShiftLessonState"
+      | "geometryView"
+      | "frontShiftMm"
+      | "rearShiftMm"
+      | "rearSwingDeg"
+      | "mirrorShiftLessonState"
     >
   >;
 
@@ -156,7 +160,12 @@ export type TaskEvaluation = {
     CameraState,
     "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "focusDistanceMm" | "aperture"
   > &
-    Partial<Pick<CameraState, "frontShiftMm" | "mirrorShiftLessonState">>;
+    Partial<
+      Pick<
+        CameraState,
+        "frontShiftMm" | "rearShiftMm" | "rearSwingDeg" | "mirrorShiftLessonState"
+      >
+    >;
 };
 
 export type TaskEvaluationContext = {

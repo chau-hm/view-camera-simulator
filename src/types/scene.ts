@@ -40,7 +40,14 @@ export type CameraInspectionPlacement = {
 export type CameraInspectionAnchorSide = "front" | "rear";
 
 export type CameraMovementField =
-  "frontRiseMm" | "frontTiltDeg" | "frontSwingDeg" | "rearRiseMm" | "rearTiltDeg";
+  | "frontRiseMm"
+  | "frontShiftMm"
+  | "frontTiltDeg"
+  | "frontSwingDeg"
+  | "rearRiseMm"
+  | "rearShiftMm"
+  | "rearTiltDeg"
+  | "rearSwingDeg";
 
 export type SceneMovementCapabilities = {
   /** Movement field names available for this scene. */
@@ -89,6 +96,12 @@ export type SceneFocusStandardCapability = {
   referenceFocusDepthMm: number;
   /** Smallest public focus depth that keeps both supported standards physical. */
   minimumFocusDepthMm?: number;
+  /**
+   * Selectable-focus placement contract for composing standard travel with the
+   * scene's body datum. The rear-datum mode preserves Focus Fundamentals'
+   * absolute construction; scene-baseline applies only the resolved travel.
+   */
+  placement?: "rear-datum" | "scene-baseline";
 };
 
 export type SceneFocusDistanceRangeMm = {
@@ -109,7 +122,9 @@ export type SceneDefinition = {
     | "frontTiltDeg"
     | "frontSwingDeg"
     | "rearRiseMm"
+    | "rearShiftMm"
     | "rearTiltDeg"
+    | "rearSwingDeg"
   > &
     Partial<Pick<CameraState, "focalLengthMm" | "frontShiftMm" | "cameraBodyPitchDeg" | "cameraBodyPivotWorld">>;
   cameraPlacement: CameraPlacement;
@@ -134,6 +149,8 @@ export type SceneDefinition = {
   cameraInspectionAnchorSide?: CameraInspectionAnchorSide;
   /** Optional camera-inspection observer position. The physical orbit target is resolved by viewport framing. */
   cameraInspectionPlacement?: CameraInspectionPlacement;
+  /** Optional visibility policy for the generic original/reference camera. */
+  showReferenceCamera?: boolean;
   /** Optional per-scene control policy. When absent, all controls are available. */
   cameraControlPolicy?: CameraControlPolicy;
 };

@@ -16,6 +16,7 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -37,6 +38,34 @@ describe("scene definitions", () => {
     expect(sceneOrder).toContain("table-tilt");
     expect(sceneOrder).toContain("mirror-shift");
     expect(getAllScenes().length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps canonical shift and rear swing dormant outside Lesson 0", () => {
+    for (const scene of getAllScenes().filter((candidate) => candidate.id !== viewCameraAnatomyScene.id)) {
+      expect(scene.movementCapabilities?.available ?? []).not.toContain("frontShiftMm");
+      expect(scene.movementCapabilities?.available ?? []).not.toContain("rearShiftMm");
+      expect(scene.movementCapabilities?.available ?? []).not.toContain("rearSwingDeg");
+    }
+  });
+
+  it("exposes only the front movement controls needed by Lesson 0", () => {
+    expect(viewCameraAnatomyScene.movementCapabilities).toEqual({
+      available: [
+        "frontRiseMm",
+        "frontShiftMm",
+        "frontTiltDeg",
+        "frontSwingDeg",
+      ],
+      selectionMode: "multiple",
+      defaultMovement: "frontRiseMm",
+    });
+    expect(viewCameraAnatomyScene.movementCapabilities?.available).not.toContain("rearShiftMm");
+    expect(viewCameraAnatomyScene.movementCapabilities?.available).not.toContain("rearSwingDeg");
+  });
+
+  it("declares Lesson 0's selectable focus as travel relative to its scene baseline", () => {
+    expect(viewCameraAnatomyScene.focusStandardCapability?.placement).toBe("scene-baseline");
+    expect(focusFundamentalsTwoTargets.focusStandardCapability?.placement).toBe("rear-datum");
   });
 
   it("defines architecture composition targets for top and main building", () => {

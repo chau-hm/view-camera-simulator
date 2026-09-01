@@ -41,7 +41,11 @@ export type CameraState = {
   frontTiltDeg: number;
   frontSwingDeg: number;
   rearRiseMm: number;
+  /** Physical horizontal translation of the rear standard in rig-local X. */
+  rearShiftMm: number;
   rearTiltDeg: number;
+  /** Vertical-axis rotation of the rear standard / film plane, in degrees. */
+  rearSwingDeg: number;
   /** Rigid camera-body pitch about rig-local +X, in degrees. */
   cameraBodyPitchDeg: number;
   /** @deprecated Compatibility name; this pivot value is rig-local millimetres. */

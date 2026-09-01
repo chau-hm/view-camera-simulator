@@ -27,7 +27,7 @@ describe("2D Original vs Current geometry data assertions", () => {
 
   function computeBoth(overrides: Partial<ReturnType<typeof useAppStore.getState>['camera']> = {}) {
     const currentCam = buildCamera(overrides);
-    const originalCam = { ...currentCam, frontRiseMm: 0, rearRiseMm: 0, frontTiltDeg: 0, rearTiltDeg: 0, frontSwingDeg: 0 };
+    const originalCam = { ...currentCam, frontRiseMm: 0, frontShiftMm: 0, rearRiseMm: 0, rearShiftMm: 0, frontTiltDeg: 0, rearTiltDeg: 0, frontSwingDeg: 0, rearSwingDeg: 0 };
     const currentOptics = deriveOpticsState(currentCam, understandingCameraMovementsScene);
     const originalOptics = deriveOpticsState(originalCam, understandingCameraMovementsScene);
     const currentProj = computeOpticalSectionData({

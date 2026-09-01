@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type Ref, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
+import type { ConceptualCameraPresentation } from "../../render/ConceptualViewCamera";
 import { SceneOverlayControls } from "./SceneOverlayControls";
 import { isWebGLAvailable } from "../../utils/webgl";
 import type { UiErrorState } from "../../types/ui";
@@ -13,6 +14,8 @@ import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugCons
 import { supportsScheimpflugConstruction as sceneSupportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
 import {
   resolveSceneViewportFraming,
+  resolveCameraInspectionTargetWorld,
+  type CameraInspectionTarget,
   type SceneViewFocus,
 } from "../../render/sceneViewFraming";
 import { useAppStore } from "../../state/appStore";
@@ -33,6 +36,11 @@ type SceneViewportProps = {
   geometryTriggerRef?: Ref<HTMLButtonElement>;
   showHeader?: boolean;
   overlayMenuResetGeneration: number;
+  cameraPresentation?: ConceptualCameraPresentation;
+  cameraInspectionTarget?: CameraInspectionTarget;
+  initialViewFocus?: SceneViewFocus;
+  suppressOpticalOverlays?: boolean;
+  viewResetKey?: string | number;
 };
 
 const parseRenderQuality = (value: string): RenderQualityProfile => {
@@ -58,6 +66,11 @@ export const SceneViewport = ({
   geometryTriggerRef,
   showHeader,
   overlayMenuResetGeneration,
+  cameraPresentation,
+  cameraInspectionTarget,
+  initialViewFocus = "scene",
+  suppressOpticalOverlays = false,
+  viewResetKey,
 }: SceneViewportProps) => {
   const { t } = useTranslation();
   const [attempt, setAttempt] = useState(0);
@@ -72,7 +85,7 @@ export const SceneViewport = ({
   const [viewFocusState, setViewFocusState] = useState<{
     sceneId: string;
     focus: SceneViewFocus;
-  }>({ sceneId: scene.id, focus: "scene" });
+  }>({ sceneId: scene.id, focus: initialViewFocus });
   const expandTriggerRef = useRef<HTMLButtonElement | null>(null);
   const restoreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const previouslyExpandedRef = useRef(expanded);
@@ -83,8 +96,12 @@ export const SceneViewport = ({
         scene,
         focalLengthMm: activeFocalLengthMm,
         cameraRigTransform: opticsState.cameraRigTransform,
+        cameraInspectionTargetWorld: cameraInspectionTarget
+          ? resolveCameraInspectionTargetWorld(cameraInspectionTarget, opticsState)
+          : undefined,
+        cameraInspectionTarget,
       }),
-    [activeFocalLengthMm, opticsState.cameraRigTransform, scene],
+    [activeFocalLengthMm, cameraInspectionTarget, opticsState, scene],
   );
   const webglAvailable = useMemo(() => isWebGLAvailable(), []);
   const scheimpflugConstruction = useMemo(
@@ -119,8 +136,13 @@ export const SceneViewport = ({
   })();
 
   useEffect(() => {
-    setViewFocusState({ sceneId: scene.id, focus: "scene" });
-  }, [scene.id]);
+    setViewFocusState({ sceneId: scene.id, focus: initialViewFocus });
+  }, [initialViewFocus, scene.id]);
+
+  useEffect(() => {
+    if (viewResetKey === undefined) return;
+    setViewResetNonce((value) => value + 1);
+  }, [viewResetKey]);
 
   useEffect(() => {
     const wasExpanded = previouslyExpandedRef.current;
@@ -193,7 +215,7 @@ export const SceneViewport = ({
                 ))}
               </div>
             </fieldset>
-            {onToggleGeometryPanel && (
+            {!suppressOpticalOverlays && onToggleGeometryPanel && (
               <button
                 ref={geometryTriggerRef}
                 type="button"
@@ -227,11 +249,12 @@ export const SceneViewport = ({
             scene={scene}
             opticsState={opticsState}
             attempt={attempt}
-            showFocusPlaneOverlay={showFocusPlaneOverlay}
-            showDofOverlay={showDofOverlay}
-            showLegends={showLegends}
-            showOpticalGeometry={showOpticalGeometry}
-            showScheimpflugConstruction={constructionActive}
+            showFocusPlaneOverlay={suppressOpticalOverlays ? false : showFocusPlaneOverlay}
+            showDofOverlay={suppressOpticalOverlays ? false : showDofOverlay}
+            showLegends={suppressOpticalOverlays ? false : showLegends}
+            showOpticalGeometry={suppressOpticalOverlays ? false : showOpticalGeometry}
+            showScheimpflugConstruction={suppressOpticalOverlays ? false : constructionActive}
+            cameraPresentation={cameraPresentation}
             renderQuality={renderQuality}
             viewResetNonce={viewResetNonce}
             viewFocus={viewFocus}
@@ -241,7 +264,7 @@ export const SceneViewport = ({
             containerStyle={{ width: "100%", height: "100%", border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
           />
 
-          <div className="scene-overlay-controls-wrap">
+          {!suppressOpticalOverlays ? <div className="scene-overlay-controls-wrap">
             <SceneOverlayControls
               resetGeneration={overlayMenuResetGeneration}
               sceneId={scene.id}
@@ -257,7 +280,7 @@ export const SceneViewport = ({
               onToggleOpticalGeometry={() => setShowOpticalGeometry(!showOpticalGeometry)}
               onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? onToggleScheimpflugConstruction : undefined}
             />
-          </div>
+          </div> : null}
 
           <button
             ref={expanded ? restoreTriggerRef : expandTriggerRef}

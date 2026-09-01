@@ -59,6 +59,8 @@ describe("Understanding Camera Movements scene definition", () => {
     expect(preset.frontTiltDeg).toBe(0);
     expect(preset.rearTiltDeg).toBe(0);
     expect(preset.frontSwingDeg).toBe(0);
+    expect(preset.rearShiftMm).toBe(0);
+    expect(preset.rearSwingDeg).toBe(0);
   });
 
   it("has a cube-and-grid subject with valid bounds", () => {

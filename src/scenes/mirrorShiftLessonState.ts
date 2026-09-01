@@ -1,5 +1,10 @@
 import type { MirrorShiftLessonState } from "../types/camera";
 import type { CameraRigPlacement } from "../types/optics";
+import {
+  CAMERA_CONSTANTS,
+  CAMERA_CONTROL_STEPS,
+  clampStandardShiftMm,
+} from "../utils/constants";
 
 export const MIRROR_SHIFT_RIG_LATERAL_RANGE_MM = {
   min: -2200,
@@ -13,17 +18,14 @@ export const DEFAULT_MIRROR_SHIFT_LESSON_STATE: MirrorShiftLessonState = {
 };
 
 export const MIRROR_SHIFT_FRONT_SHIFT_RANGE_MM = {
-  min: -60,
-  max: 60,
-  step: 1,
+  min: CAMERA_CONSTANTS.shiftMinMm,
+  max: CAMERA_CONSTANTS.shiftMaxMm,
+  step: CAMERA_CONTROL_STEPS.shiftMm,
   default: 0,
 } as const;
 
 export const clampMirrorShiftFrontShiftMm = (value: number): number =>
-  Math.min(
-    MIRROR_SHIFT_FRONT_SHIFT_RANGE_MM.max,
-    Math.max(MIRROR_SHIFT_FRONT_SHIFT_RANGE_MM.min, value),
-  );
+  clampStandardShiftMm(value);
 
 export const clampMirrorShiftRigLateralMm = (value: number): number =>
   Math.min(

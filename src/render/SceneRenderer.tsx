@@ -8,7 +8,7 @@ import type { RefObject } from "react";
 import { Camera, DoubleSide, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { OrbitControls as OrbitControlsController } from "three-stdlib";
-import type { CameraState } from "../types/camera";
+import type { ApertureValue, CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
 import type { RenderQualityProfile } from "../types/ui";
@@ -23,7 +23,7 @@ import {
   type ScenePlaneOverlayGeometry,
 } from "./scenePlaneOverlayGeometry";
 import { createScheimpflugConstructionGeometry } from "./scheimpflugConstructionGeometry";
-import { quaternionForPlaneNormal, resolveFrontStandardRenderTransform, resolveRearStandardRenderTransform } from "./planeOrientation";
+import { quaternionForPlaneNormal } from "./planeOrientation";
 import { deriveOpticsState } from "../core/optics/deriveOpticsState";
 import {
   getRegisteredSceneSubject,
@@ -39,11 +39,14 @@ import { useAppStore } from "../state/appStore";
 import { selectEffectiveCameraMovementCalibration } from "../state/selectors";
 import { CameraBodyAssembly } from "./CameraBodyAssembly";
 import {
+  ConceptualViewCamera,
+  type ConceptualCameraPresentation,
+} from "./ConceptualViewCamera";
+import {
   resolveCameraMovementLatticeRenderModel,
   type CameraMovementLatticeRenderModel,
 } from "./cameraMovementLatticeRenderModel";
 import { FocusFundamentalsTeachingCues } from "./FocusFundamentalsTeachingCues";
-import { resolveFocusStandardVisualState } from "./focusStandardPresentation";
 import {
   deriveFocusFundamentalsReferenceOptics,
   resolveFocusFundamentalsActiveStandard,
@@ -67,12 +70,15 @@ type SceneRendererProps = {
   onAssetError: (message: string) => void;
   // optional container style allows embedding the renderer in different sized containers
   containerStyle?: React.CSSProperties;
+  /** Presentation-only anatomy/rear-back/aperture overrides for Lesson 0. */
+  cameraPresentation?: ConceptualCameraPresentation;
 };
 
 export const shouldRenderReferenceCamera = (
   scene: SceneDefinition,
   cameraMovementRenderModel?: CameraMovementLatticeRenderModel,
 ): boolean =>
+  scene.showReferenceCamera !== false &&
   Boolean(scene.movementCapabilities) &&
   (
     getSceneSubjectRegistration(scene.id)?.resolveShowReferenceCamera?.({
@@ -253,78 +259,6 @@ export const OCCLUDED_PLANE_MATERIAL_SETTINGS = {
   polygonOffsetUnits: -1,
 } as const;
 
-const RearStandard = ({
-  opticsState,
-  active = false,
-}: {
-  opticsState?: DerivedOpticsState;
-  active?: boolean;
-}) => {
-  const visual = resolveFocusStandardVisualState("rear", active ? "rear" : null);
-  // Fallback only when no valid opticsState exists
-  if (!opticsState) {
-    return (
-      <>
-        <mesh position={[0, 0, toWorld(-CAMERA_CONSTANTS.focalLengthMm)]}>
-          <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
-          <meshStandardMaterial color={visual.bodyColor} />
-        </mesh>
-      </>
-    );
-  }
-
-  // Use the canonical frame transform so that the orientation
-  // preserves right/up/normal axes without reconstruction from normal alone.
-  const renderTransform = resolveRearStandardRenderTransform(opticsState.rearStandardFrame);
-  return (
-    <group position={renderTransform.position} quaternion={renderTransform.quaternion}>
-      <mesh>
-        <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
-        <meshStandardMaterial
-          color={visual.bodyColor}
-          emissive={visual.emissiveColor}
-          emissiveIntensity={visual.emissiveIntensity}
-        />
-      </mesh>
-    </group>
-  );
-};
-
-const FrontStandard = ({
-  opticsState,
-  active = false,
-}: {
-  opticsState: DerivedOpticsState;
-  active?: boolean;
-}) => {
-  const visual = resolveFocusStandardVisualState("front", active ? "front" : null);
-  const transform = resolveFrontStandardRenderTransform(
-    opticsState.lensCenterWorld,
-    opticsState.lensNormalWorld,
-  );
-
-  return (
-    <group position={transform.position} quaternion={transform.quaternion}>
-      <mesh>
-        <boxGeometry args={[toWorld(CAMERA_CONSTANTS.frontStandardWidthMm), toWorld(CAMERA_CONSTANTS.frontStandardHeightMm), toWorld(12)]} />
-        <meshStandardMaterial
-          color={visual.bodyColor}
-          emissive={visual.emissiveColor}
-          emissiveIntensity={visual.emissiveIntensity}
-        />
-      </mesh>
-      <mesh position={[0, 0, toWorld(8)]}>
-        <boxGeometry args={[toWorld(100), toWorld(100), toWorld(8)]} />
-        <meshStandardMaterial color={visual.detailColor} />
-      </mesh>
-      <mesh position={[0, 0, toWorld(16)]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[toWorld(18), toWorld(18), toWorld(18), 24]} />
-        <meshStandardMaterial color={visual.lensColor} />
-      </mesh>
-    </group>
-  );
-};
-
 const FilmPlane = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
   const filmPosition = vecToWorld(opticsState.filmPlane.point);
   return (
@@ -332,36 +266,6 @@ const FilmPlane = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
       <planeGeometry args={[toWorld(CAMERA_CONSTANTS.filmWidthMm), toWorld(CAMERA_CONSTANTS.filmHeightMm)]} />
       <meshStandardMaterial color="#38bdf8" transparent opacity={0.35} side={DoubleSide} />
     </mesh>
-  );
-};
-
-const Bellows = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
-  // Use film center (rear) and lens center (front) from opticsState so bellows follow focusing
-  const rear = vecToWorld(opticsState.filmCenterWorld);
-  const front = vecToWorld(opticsState.lensCenterWorld);
-
-  // midpoint between rear and front
-  const center: [number, number, number] = [
-    (rear[0] + front[0]) / 2,
-    (rear[1] + front[1]) / 2,
-    (rear[2] + front[2]) / 2,
-  ];
-
-  // depth is the Euclidean distance between front and rear
-  const dz = Math.hypot(front[0] - rear[0], front[1] - rear[1], front[2] - rear[2]);
-  const depth = Math.max(dz, toWorld(20));
-
-  return (
-    <group position={center} ref={(g) => {
-      if (!g) return;
-      // orient the bellows so its local +Z points towards the front (lens)
-      g.lookAt(front[0], front[1], front[2]);
-    }}>
-      <mesh>
-        <boxGeometry args={[toWorld(120), toWorld(90), depth]} />
-        <meshStandardMaterial color="#111827" transparent opacity={0.25} />
-      </mesh>
-    </group>
   );
 };
 
@@ -782,6 +686,8 @@ const SceneContent = ({
   showOpticalGeometry,
   showScheimpflugConstruction,
   focusFocalLengthMm,
+  activeAperture,
+  cameraPresentation,
 }: {
   scene: SceneDefinition;
   cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
@@ -791,6 +697,8 @@ const SceneContent = ({
   showOpticalGeometry: boolean;
   showScheimpflugConstruction: boolean;
   focusFocalLengthMm: number;
+  activeAperture: ApertureValue;
+  cameraPresentation?: ConceptualCameraPresentation;
 }) => {
   const registration = getSceneSubjectRegistration(scene.id);
   const RegisteredSubject = registration?.SceneSubject;
@@ -816,20 +724,21 @@ const SceneContent = ({
     {scene.cameraBodyPitchCapability?.enabled ? (
       <CameraBodyAssembly
         opticsState={opticsState}
-        showBellows={scene.id !== "focus-fundamentals-two-targets"}
+        activeStandard={activeFocusStandard}
+        aperture={activeAperture}
+        focalLengthMm={focusFocalLengthMm}
+        presentation={cameraPresentation}
       />
     ) : (
-      <>
-        <RearStandard
-          opticsState={opticsState}
-          active={activeFocusStandard === "rear"}
-        />
-        <FrontStandard
-          opticsState={opticsState}
-          active={activeFocusStandard === "front"}
-        />
-        {scene.id !== "focus-fundamentals-two-targets" && <Bellows opticsState={opticsState} />}
-      </>
+      <ConceptualViewCamera
+        opticsState={opticsState}
+        variant="current"
+        coordinateSpace="world"
+        activeStandard={activeFocusStandard}
+        aperture={activeAperture}
+        focalLengthMm={focusFocalLengthMm}
+        presentation={cameraPresentation}
+      />
     )}
     {focusFundamentalsReferenceOptics ? (
       <FocusFundamentalsTeachingCues
@@ -866,6 +775,9 @@ const OriginalGhostCamera = ({
   scene: SceneDefinition;
 }) => {
   const hasCapabilities = Boolean(scene.movementCapabilities);
+  const originalAperture = scene.cameraPreset.aperture;
+  const originalFocalLengthMm =
+    scene.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm;
 
   // Always derive original (zero-movement) optics from the scene preset
   const originalOptics = useMemo(() => {
@@ -874,10 +786,13 @@ const OriginalGhostCamera = ({
       ...DEFAULT_CAMERA_STATE,
       ...scene.cameraPreset,
       frontRiseMm: 0,
+      frontShiftMm: 0,
       frontTiltDeg: 0,
       frontSwingDeg: 0,
       rearRiseMm: 0,
+      rearShiftMm: 0,
       rearTiltDeg: 0,
+      rearSwingDeg: 0,
       cameraBodyPitchDeg: 0,
       activeSceneId: scene.id,
     };
@@ -886,98 +801,23 @@ const OriginalGhostCamera = ({
 
   if (!hasCapabilities || !originalOptics) return null;
 
-  if (scene.cameraBodyPitchCapability?.enabled) {
-    return (
-      <group name="original-ghost-camera">
-        <CameraBodyAssembly
-          opticsState={originalOptics}
-          ghost
-          showBellows={scene.id !== "focus-fundamentals-two-targets"}
-        />
-      </group>
-    );
-  }
-
-  return (
+  return scene.cameraBodyPitchCapability?.enabled ? (
     <group name="original-ghost-camera">
-      <GhostRearStandard opticsState={originalOptics} />
-      <GhostFrontStandard opticsState={originalOptics} />
-      {scene.id !== "focus-fundamentals-two-targets" && (
-        <GhostBellows opticsState={originalOptics} />
-      )}
+      <CameraBodyAssembly
+        opticsState={originalOptics}
+        ghost
+        aperture={originalAperture}
+        focalLengthMm={originalFocalLengthMm}
+      />
     </group>
-  );
-};
-
-const GhostRearStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
-  const renderTransform = resolveRearStandardRenderTransform(opticsState.rearStandardFrame);
-  return (
-    <group position={renderTransform.position} quaternion={renderTransform.quaternion}>
-      <mesh renderOrder={10}>
-        <boxGeometry args={[toWorld(180), toWorld(140), toWorld(18)]} />
-        <meshStandardMaterial
-          color="#94a3b8"
-          transparent
-          opacity={0.35}
-          depthWrite={false}
-        />
-      </mesh>
-    </group>
-  );
-};
-
-const GhostFrontStandard = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
-  const transform = resolveFrontStandardRenderTransform(
-    opticsState.lensCenterWorld,
-    opticsState.lensNormalWorld,
-  );
-  return (
-    <group position={transform.position} quaternion={transform.quaternion} renderOrder={10}>
-      <mesh>
-        <boxGeometry args={[toWorld(CAMERA_CONSTANTS.frontStandardWidthMm), toWorld(CAMERA_CONSTANTS.frontStandardHeightMm), toWorld(12)]} />
-        <meshStandardMaterial color="#94a3b8" transparent opacity={0.35} depthWrite={false} />
-      </mesh>
-      <mesh position={[0, 0, toWorld(8)]}>
-        <boxGeometry args={[toWorld(100), toWorld(100), toWorld(8)]} />
-        <meshStandardMaterial color="#cbd5e1" transparent opacity={0.35} depthWrite={false} />
-      </mesh>
-      <mesh position={[0, 0, toWorld(16)]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[toWorld(18), toWorld(18), toWorld(18), 24]} />
-        <meshStandardMaterial color="#6b7280" transparent opacity={0.35} depthWrite={false} />
-      </mesh>
-    </group>
-  );
-};
-
-const GhostBellows = ({ opticsState }: { opticsState: DerivedOpticsState }) => {
-  const film = vecToWorld(opticsState.filmCenterWorld);
-  const lens = vecToWorld(opticsState.lensCenterWorld);
-
-  return (
-    <group name="original-ghost-bellows">
-      <mesh
-        position={[
-          (film[0] + lens[0]) / 2,
-          (film[1] + lens[1]) / 2,
-          (film[2] + lens[2]) / 2,
-        ]}
-        renderOrder={10}
-      >
-        <boxGeometry
-          args={[
-            toWorld(CAMERA_CONSTANTS.frontStandardWidthMm) * 0.85,
-            toWorld(CAMERA_CONSTANTS.frontStandardHeightMm) * 0.85,
-            Math.hypot(lens[0] - film[0], lens[1] - film[1], lens[2] - film[2]),
-          ]}
-        />
-        <meshStandardMaterial
-          color="#94a3b8"
-          transparent
-          opacity={0.2}
-          depthWrite={false}
-        />
-      </mesh>
-    </group>
+  ) : (
+    <ConceptualViewCamera
+      opticsState={originalOptics}
+      variant="ghost"
+      coordinateSpace="world"
+      aperture={originalAperture}
+      focalLengthMm={originalFocalLengthMm}
+    />
   );
 };
 
@@ -997,9 +837,11 @@ export const SceneRenderer = ({
   simulateAssetFailure,
   onAssetError,
   containerStyle,
+  cameraPresentation,
 }: SceneRendererProps) => {
   const { t } = useTranslation();
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
+  const activeAperture = useAppStore((state) => state.camera.aperture);
   const configuredTargetRegion = useAppStore((state) => state.scene.targetRegion);
   const effectiveCameraMovementCalibration = useAppStore(
     selectEffectiveCameraMovementCalibration,
@@ -1244,6 +1086,8 @@ export const SceneRenderer = ({
           showOpticalGeometry={Boolean(showOpticalGeometry)}
           showScheimpflugConstruction={Boolean(showScheimpflugConstruction)}
           focusFocalLengthMm={activeFocalLengthMm}
+          activeAperture={activeAperture}
+          cameraPresentation={cameraPresentation}
         />
         <OrbitControls
           ref={controlsRef}

@@ -16,6 +16,16 @@ export type FocusFundamentalsFocusingResult = {
   fallbackReason: string | null;
 };
 
+export type SceneRelativeSelectableFocus = {
+  focusing: FocusFundamentalsFocusingResult;
+  /** Fixed translation from the rear-datum solution into the scene body datum. */
+  sceneOffsetZMm: number;
+  /** Complete solved lens position after applying the scene translation. */
+  lensZMm: number;
+  /** Complete solved film position after applying the scene translation. */
+  filmZMm: number;
+};
+
 type FiniteLensSolution = {
   focusDepthMm: number;
   lensZMm: number;
@@ -187,5 +197,55 @@ export const resolveFocusFundamentalsFocusing = ({
     fallbackReason: reference
       ? "Invalid rear-standard focus distance; using front-standard geometry"
       : "Invalid rear-standard reference focus geometry; using front-standard geometry",
+  };
+};
+
+/**
+ * Translate the complete selectable-focus solution into a scene's body datum.
+ *
+ * The shared solver is authoritative in the rear-datum coordinate system. The
+ * scene-baseline contract changes only that coordinate origin: its fixed
+ * translation is derived from the front-standard reference solution so the
+ * reference lens lands at the requested scene lens datum. Translating both
+ * solved lens and film coordinates preserves their optical separation.
+ */
+export const resolveSceneRelativeSelectableFocus = ({
+  standard,
+  focusMode,
+  focusDepthMm,
+  focalLengthMm,
+  referenceFocusDepthMm,
+  sceneLensDatumZMm,
+}: {
+  standard: FocusStandard;
+  focusMode: "finite" | "infinity";
+  focusDepthMm: number;
+  focalLengthMm: number;
+  referenceFocusDepthMm: number;
+  sceneLensDatumZMm: number;
+}): SceneRelativeSelectableFocus => {
+  const focusing = resolveFocusFundamentalsFocusing({
+    standard,
+    focusMode,
+    focusDepthMm,
+    focalLengthMm,
+    referenceFocusDepthMm,
+  });
+
+  const reference = resolveFocusFundamentalsFocusing({
+    standard: "front",
+    focusMode,
+    focusDepthMm: referenceFocusDepthMm,
+    focalLengthMm,
+    referenceFocusDepthMm,
+  });
+
+  const sceneOffsetZMm = sceneLensDatumZMm - reference.lensZMm;
+
+  return {
+    focusing,
+    sceneOffsetZMm,
+    lensZMm: focusing.lensZMm + sceneOffsetZMm,
+    filmZMm: focusing.filmZMm + sceneOffsetZMm,
   };
 };

@@ -8,6 +8,7 @@ import {
   isFiniteVec3,
   magnitude,
   rotateAroundX,
+  rotateAroundY,
   safeNormalize,
   scale,
   subtract,
@@ -51,18 +52,23 @@ export const isStandardFrameLevel = (
 
 /**
  * Construct the canonical rear-standard frame and oriented film corners
- * from a baseline film centre, rear rise, and rear tilt.
+ * from a baseline film centre, rear rise, rear shift, rear tilt, and rear
+ * swing.
  *
  * Transform order:
  * 1. Start with the existing baseline film centre.
- * 2. Translate the rear-standard centre by rearRiseMm along world +Y.
- * 3. Rotate the rear-standard local up and normal axes around world X by rearTiltDeg.
- * 4. Rotate around the translated film centre (centre-axis tilt).
+ * 2. Translate the rear-standard centre by rearShiftMm along world +X and
+ *    rearRiseMm along world +Y.
+ * 3. Rotate the rear-standard local up and normal axes around world X by
+ *    rearTiltDeg.
+ * 4. Rotate the resulting frame around world Y by rearSwingDeg, about the
+ *    translated film centre.
  * 5. Construct the film plane from the transformed centre and normal.
  * 6. Construct all four corners from the transformed centre, right axis, and up axis.
  *
- * At rearTiltDeg = 0: rightWorld = +X, upWorld = +Y, normalWorld = +Z.
- * At rearRiseMm = 0 and rearTiltDeg = 0: matches the previous world-aligned implementation.
+ * At rearTiltDeg = 0 and rearSwingDeg = 0: rightWorld = +X, upWorld = +Y, normalWorld = +Z.
+ * At rearRiseMm = 0, rearShiftMm = 0, rearTiltDeg = 0, and rearSwingDeg = 0:
+ * matches the previous world-aligned implementation.
  */
 export const calculateRearStandardFrame = (
   baselineFilmCenterWorld: Vec3,
@@ -70,16 +76,29 @@ export const calculateRearStandardFrame = (
   rearTiltDeg: number,
   filmWidthMm: number = CAMERA_CONSTANTS.filmWidthMm,
   filmHeightMm: number = CAMERA_CONSTANTS.filmHeightMm,
+  rearShiftMm = 0,
+  rearSwingDeg = 0,
 ): { frame: StandardFrame; corners: FilmPlaneCorners } => {
-  const rightWorld = vec(1, 0, 0);
-
   const baseUp = vec(0, 1, 0);
   const baseNormal = vec(0, 0, 1);
+  const baseRight = vec(1, 0, 0);
 
-  const upWorld = safeNormalize(rotateAroundX(baseUp, rearTiltDeg), baseUp);
-  const normalWorld = safeNormalize(rotateAroundX(baseNormal, rearTiltDeg), baseNormal);
+  const tiltedUp = safeNormalize(rotateAroundX(baseUp, rearTiltDeg), baseUp);
+  const tiltedNormal = safeNormalize(rotateAroundX(baseNormal, rearTiltDeg), baseNormal);
+  const rightWorld = rearSwingDeg === 0
+    ? baseRight
+    : safeNormalize(rotateAroundY(baseRight, rearSwingDeg), baseRight);
+  const upWorld = rearSwingDeg === 0
+    ? tiltedUp
+    : safeNormalize(rotateAroundY(tiltedUp, rearSwingDeg), tiltedUp);
+  const normalWorld = rearSwingDeg === 0
+    ? tiltedNormal
+    : safeNormalize(rotateAroundY(tiltedNormal, rearSwingDeg), tiltedNormal);
 
-  const centerWorld = add(baselineFilmCenterWorld, vec(0, rearRiseMm, 0));
+  const centerWorld = add(
+    baselineFilmCenterWorld,
+    vec(rearShiftMm, rearRiseMm, 0),
+  );
 
   const plane: Plane = planeFromPointNormal(centerWorld, normalWorld);
 

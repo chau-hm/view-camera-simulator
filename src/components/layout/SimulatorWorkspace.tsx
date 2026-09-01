@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  getLessonZeroStep,
+  isLessonZeroStepComplete,
+  resolveLessonZeroCameraPresentation,
+  resolveLessonZeroViewportInspectionTarget,
+} from "../../app/anatomyLesson";
+import { getCameraControlTeachingDefinition } from "../../app/cameraControlTeaching";
 import { getGuidedLessonContext } from "../../app/guidedLesson";
 import { getPublicSceneEntryById } from "../../app/publicScenes";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
@@ -38,6 +45,8 @@ import {
 import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
+import { AnatomyLessonPanel } from "../simulator/AnatomyLessonPanel";
+import { AnatomyControlTeachingPanel } from "../simulator/AnatomyControlTeachingPanel";
 import { TaskPanel } from "../simulator/TaskPanel";
 import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
@@ -61,6 +70,7 @@ type SimulatorWorkspaceProps = {
   sceneId: string;
   taskId: string | null;
   guidedLessonEnabled?: boolean;
+  anatomyLessonEnabled?: boolean;
   calibrationEnabled?: boolean;
   simulateAssetFailure: boolean;
 };
@@ -72,6 +82,7 @@ export const SimulatorWorkspace = ({
   sceneId,
   taskId,
   guidedLessonEnabled = false,
+  anatomyLessonEnabled = false,
   calibrationEnabled = false,
   simulateAssetFailure,
 }: SimulatorWorkspaceProps) => {
@@ -79,6 +90,8 @@ export const SimulatorWorkspace = ({
   const setMode = useAppStore((state) => state.setMode);
   const setActiveScene = useAppStore((state) => state.setActiveScene);
   const setActiveTask = useAppStore((state) => state.setActiveTask);
+  const resetMovements = useAppStore((state) => state.resetMovements);
+  const setFocusStandard = useAppStore((state) => state.setFocusStandard);
   const setCurrentTaskEvaluation = useAppStore((state) => state.setCurrentTaskEvaluation);
   const setGroundGlassAssistEnabled = useAppStore(
     (state) => state.setGroundGlassAssistEnabled,
@@ -106,6 +119,9 @@ export const SimulatorWorkspace = ({
   const [requestedScheimpflugConstruction, setRequestedScheimpflugConstruction] = useState(false);
   const [expandedViewport, setExpandedViewport] = useState<ExpandedViewport>(null);
   const [restoreViewportFocus, setRestoreViewportFocus] = useState(true);
+  const [anatomyStepIndex, setAnatomyStepIndex] = useState(0);
+  const [anatomyShowSmallAperture, setAnatomyShowSmallAperture] = useState(false);
+  const [anatomyViewResetNonce, setAnatomyViewResetNonce] = useState(0);
   const geometryTriggerRef = useRef<HTMLButtonElement | null>(null);
   const previousExpandedViewportRef = useRef<ExpandedViewport>(null);
   // All registered scenes still available through engine registry
@@ -129,7 +145,7 @@ export const SimulatorWorkspace = ({
           sceneId: sceneParam,
           taskId: taskParam ?? null,
           calibrationEnabled,
-          lessonEntry: guidedLessonEnabled,
+          lessonEntry: guidedLessonEnabled || anatomyLessonEnabled,
         });
       } else {
         // fall back to individual setters if the initialize action isn't available
@@ -142,6 +158,7 @@ export const SimulatorWorkspace = ({
     initRoute(mode, sceneId, taskId);
   }, [
     calibrationEnabled,
+    anatomyLessonEnabled,
     guidedLessonEnabled,
     mode,
     sceneId,
@@ -159,6 +176,7 @@ export const SimulatorWorkspace = ({
       // their in-memory state on leave-and-return.
       if (
         guidedLessonEnabled ||
+        anatomyLessonEnabled ||
         (sceneId === "understanding-camera-movements" &&
           mode === "free" &&
           !calibrationEnabled)
@@ -168,6 +186,7 @@ export const SimulatorWorkspace = ({
     },
     [
       calibrationEnabled,
+      anatomyLessonEnabled,
       clearCameraMovementCalibrationSession,
       clearSimulatorRouteInitialization,
       guidedLessonEnabled,
@@ -187,7 +206,13 @@ export const SimulatorWorkspace = ({
     }
     setExpandedViewport(null);
     setRequestedScheimpflugConstruction(false);
-  }, [guidedLessonEnabled, mode, sceneId, taskId]);
+  }, [anatomyLessonEnabled, guidedLessonEnabled, mode, sceneId, taskId]);
+
+  useEffect(() => {
+    setAnatomyStepIndex(0);
+    setAnatomyShowSmallAperture(false);
+    setAnatomyViewResetNonce((value) => value + 1);
+  }, [anatomyLessonEnabled, mode, sceneId, taskId]);
 
   const requestViewportExpansion = useCallback((viewport: Exclude<ExpandedViewport, null>) => {
     setRestoreViewportFocus(true);
@@ -230,6 +255,20 @@ export const SimulatorWorkspace = ({
       ? resolveCameraMovementLessonPresentationTargetRegion(camera.cameraMovementLessonState)
       : targetRegion;
   const publicSceneEntry = getPublicSceneEntryById(sceneId);
+  const isAnatomyLesson = anatomyLessonEnabled && sceneId === "view-camera-anatomy";
+  const anatomyStep = getLessonZeroStep(anatomyStepIndex);
+  const anatomyViewportInspectionTarget = isAnatomyLesson
+    ? resolveLessonZeroViewportInspectionTarget(anatomyStep)
+    : undefined;
+  const anatomyPresentation = isAnatomyLesson
+    ? resolveLessonZeroCameraPresentation(anatomyStep, anatomyShowSmallAperture)
+    : undefined;
+  const anatomyControlDefinition =
+    isAnatomyLesson && anatomyStep.controlTeachingId
+      ? getCameraControlTeachingDefinition(anatomyStep.controlTeachingId)
+      : null;
+  const anatomyStepComplete =
+    !isAnatomyLesson || isLessonZeroStepComplete(anatomyStep, camera);
   const guidedLessonContext = useMemo(
     () =>
       guidedLessonEnabled && publicSceneEntry
@@ -353,6 +392,7 @@ export const SimulatorWorkspace = ({
       } else {
         availableMovements.forEach((movement) => {
           if (movement === "frontRiseMm") controls.add("rise");
+          if (movement === "frontShiftMm") controls.add("frontShift");
           if (movement === "frontTiltDeg") controls.add("tilt");
           if (movement === "frontSwingDeg") controls.add("swing");
         });
@@ -435,6 +475,42 @@ export const SimulatorWorkspace = ({
   }, [mode, opticsState.focusTargets, safeScene.id]);
 
   const setInfinityFocus = useAppStore((state) => state.setInfinityFocus);
+
+  const resetAnatomyLesson = useCallback(() => {
+    setAnatomyStepIndex(0);
+    setAnatomyShowSmallAperture(false);
+    setAnatomyViewResetNonce((value) => value + 1);
+    clearSimulatorRouteInitialization();
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "view-camera-anatomy",
+      taskId: null,
+      lessonEntry: true,
+    });
+  }, [clearSimulatorRouteInitialization]);
+  const handleAnatomyStepIndexChange = useCallback(
+    (nextIndex: number) => {
+      const nextStep = getLessonZeroStep(nextIndex);
+      const leavingOrEnteringControls =
+        anatomyStep.section === "controls" || nextStep.section === "controls";
+
+      if (leavingOrEnteringControls) {
+        resetMovements();
+      }
+
+      if (nextStep.controlTeachingId) {
+        const definition = getCameraControlTeachingDefinition(nextStep.controlTeachingId);
+        if (definition.kind === "focus") {
+          setFocusStandard(definition.focusStandard);
+        }
+      }
+
+      setAnatomyShowSmallAperture(false);
+      setAnatomyViewResetNonce((value) => value + 1);
+      setAnatomyStepIndex(nextIndex);
+    },
+    [anatomyStep.section, resetMovements, setFocusStandard],
+  );
   const sceneExpanded = expandedViewport === "scene";
   const groundGlassExpanded = expandedViewport === "groundGlass";
   const geometryExpanded = expandedViewport === "geometry";
@@ -464,7 +540,7 @@ export const SimulatorWorkspace = ({
       <div role="region" aria-label={t(simulatorMessageKeys.viewport.bodyLabel)} className="simulator-body">
         {/* Main area: single scroll container for the active viewport(s) */}
         <main className={`simulator-main${viewportExpanded ? " simulator-main--viewport-expanded" : ""}`}>
-          {!viewportExpanded && opticsState.diagnostics.fallbackApplied && (
+          {!viewportExpanded && !isAnatomyLesson && opticsState.diagnostics.fallbackApplied && (
             <p role="alert">{t(simulatorMessageKeys.viewport.opticsFallbackPrefix)}: {opticsState.diagnostics.errorMessage}</p>
           )}
 
@@ -495,6 +571,15 @@ export const SimulatorWorkspace = ({
                   geometryTriggerRef.current = trigger;
                   requestViewportExpansion("geometry");
                 }}
+                cameraPresentation={anatomyPresentation}
+                cameraInspectionTarget={anatomyViewportInspectionTarget}
+                initialViewFocus={isAnatomyLesson ? "camera" : undefined}
+                suppressOpticalOverlays={isAnatomyLesson}
+                viewResetKey={
+                  isAnatomyLesson
+                    ? `${anatomyViewportInspectionTarget ?? "stable-camera"}:${anatomyViewResetNonce}`
+                    : undefined
+                }
                 showHeader={false}
               />
             </div>}
@@ -555,7 +640,7 @@ export const SimulatorWorkspace = ({
             )}
           </div>
 
-          {!viewportExpanded && <>
+          {!viewportExpanded && !isAnatomyLesson && <>
             {/* Row 1: scene-aware learner readouts */}
             <div className={`simulator-primary-info-grid${learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? "" : " simulator-primary-info-grid--single"}`}>
             <CurrentSettingsReadout
@@ -568,10 +653,13 @@ export const SimulatorWorkspace = ({
               activeMovement={activeSingleMovement ? { field: activeSingleMovement, value: (() => {
                 switch (activeSingleMovement) {
                   case "frontRiseMm": return camera.frontRiseMm;
+                  case "frontShiftMm": return camera.frontShiftMm;
                   case "rearRiseMm": return camera.rearRiseMm;
+                  case "rearShiftMm": return camera.rearShiftMm;
                   case "frontTiltDeg": return camera.frontTiltDeg;
                   case "rearTiltDeg": return camera.rearTiltDeg;
                   case "frontSwingDeg": return camera.frontSwingDeg;
+                  case "rearSwingDeg": return camera.rearSwingDeg;
                 }
               })() } : null}
               teachingReadout={teachingReadout}
@@ -627,6 +715,24 @@ export const SimulatorWorkspace = ({
 
         {/* Right aside: independent scroll */}
         <aside className="simulator-aside">
+          {isAnatomyLesson ? (
+            <AnatomyLessonPanel
+              stepIndex={anatomyStepIndex}
+              onStepIndexChange={handleAnatomyStepIndexChange}
+              showSmallAperture={anatomyShowSmallAperture}
+              onShowSmallApertureChange={setAnatomyShowSmallAperture}
+              onReset={resetAnatomyLesson}
+              canAdvance={anatomyStepComplete}
+              controlContent={
+                anatomyControlDefinition ? (
+                  <AnatomyControlTeachingPanel
+                    definition={anatomyControlDefinition}
+                    complete={anatomyStepComplete}
+                  />
+                ) : null
+              }
+            />
+          ) : <>
           <section aria-label={t(simulatorMessageKeys.controls.cameraControls)}>
             <div className="aside-header">
               <h3 style={{ margin: 0 }}>{t(simulatorMessageKeys.controls.cameraControls)}</h3>
@@ -705,6 +811,7 @@ export const SimulatorWorkspace = ({
               {calibrationEnabled && mode === "free" && sceneId === "understanding-camera-movements" ? <CameraMovementCalibrationWorkbench diagnostics={cameraMovementCalibrationDiagnostics} /> : null}
             </div>
           </section>
+          </>}
         </aside>
       </div>
 

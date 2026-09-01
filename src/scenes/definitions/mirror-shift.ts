@@ -16,7 +16,9 @@ export const mirrorShiftScene: SceneDefinition = {
     frontTiltDeg: 0,
     frontSwingDeg: 0,
     rearRiseMm: 0,
+    rearShiftMm: 0,
     rearTiltDeg: 0,
+    rearSwingDeg: 0,
   },
   cameraPlacement: {
     position: { x: 7600, y: 4200, z: -8200 },

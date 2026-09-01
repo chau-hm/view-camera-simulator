@@ -15,6 +15,7 @@ import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
 import {
+  resolveSceneRelativeSelectableFocus,
   resolveFocusFundamentalsFocusing,
   type FocusFundamentalsFocusingResult,
 } from "./focusFundamentalsFocusing";
@@ -181,12 +182,15 @@ const resolveCanonicalCameraState = (
   );
   return {
     ...cameraState,
+    frontShiftMm: 0,
     cameraMovementLessonState: derived.lessonState,
     frontRiseMm: derived.frontRiseMm,
     frontTiltDeg: derived.frontTiltDeg,
     frontSwingDeg: derived.frontSwingDeg,
     rearRiseMm: derived.rearRiseMm,
+    rearShiftMm: 0,
     rearTiltDeg: derived.rearTiltDeg,
+    rearSwingDeg: 0,
     cameraBodyPitchDeg: derived.cameraBodyPitchDeg,
     viewpointAnchor: derived.viewpointAnchor,
     cameraRigPlacement: derived.cameraRigPlacement,
@@ -236,7 +240,9 @@ const isFiniteCameraInput = (
     cameraState.frontTiltDeg,
     cameraState.frontSwingDeg,
     cameraState.rearRiseMm,
+    cameraState.rearShiftMm,
     cameraState.rearTiltDeg,
+    cameraState.rearSwingDeg,
   ].every((value) => Number.isFinite(value));
   if (!standardInputsFinite) return false;
   return hasFiniteCameraRigInput(cameraState, scene, cameraMovementCalibration);
@@ -262,7 +268,9 @@ const baseFallbackState = (
   const safeFrontTilt = Number.isFinite(cameraState.frontTiltDeg) ? cameraState.frontTiltDeg : 0;
   const safeFrontSwing = Number.isFinite(cameraState.frontSwingDeg) ? cameraState.frontSwingDeg : 0;
   const safeRearRise = Number.isFinite(cameraState.rearRiseMm) ? cameraState.rearRiseMm : 0;
+  const safeRearShift = Number.isFinite(cameraState.rearShiftMm) ? cameraState.rearShiftMm : 0;
   const safeRearTilt = Number.isFinite(cameraState.rearTiltDeg) ? cameraState.rearTiltDeg : 0;
+  const safeRearSwing = Number.isFinite(cameraState.rearSwingDeg) ? cameraState.rearSwingDeg : 0;
 
   // Use canonical helpers for lens and film geometry
   const lensCenterLocal = vec(safeFrontShift, safeFrontRise, 0);
@@ -275,7 +283,15 @@ const baseFallbackState = (
     lensNormalLocal,
   });
   const { frame: rearStandardFrameLocal, corners: filmPlaneCornersLocal } =
-    calculateRearStandardFrame(baselineFilmCenter, safeRearRise, safeRearTilt);
+    calculateRearStandardFrame(
+      baselineFilmCenter,
+      safeRearRise,
+      safeRearTilt,
+      CAMERA_CONSTANTS.filmWidthMm,
+      CAMERA_CONSTANTS.filmHeightMm,
+      safeRearShift,
+      safeRearSwing,
+    );
   const cameraBodyLocalGeometry = createCameraBodyLocalGeometry({
     lensCenterLocal,
     lensNormalLocal,
@@ -387,6 +403,52 @@ export const deriveOpticsState = (
     scene,
     cameraMovementCalibration,
   );
+  const selectableFocusScene = scene.focusStandardCapability?.enabled === true;
+  const selectableFocusPlacement = scene.focusStandardCapability?.placement ?? "rear-datum";
+  const usesSceneBaselineFocusPlacement =
+    selectableFocusScene && selectableFocusPlacement === "scene-baseline";
+  type ResolvedSelectableFocus = {
+    focusing: FocusFundamentalsFocusingResult;
+    sceneOffsetZMm: number;
+    lensZMm: number;
+    filmZMm: number;
+  };
+  const resolveSelectableFocus = ({
+    focusMode,
+    focusDepthMm,
+    focalLengthMm,
+    sceneLensDatumZMm = 0,
+  }: {
+    focusMode: "finite" | "infinity";
+    focusDepthMm: number;
+    focalLengthMm: number;
+    sceneLensDatumZMm?: number;
+  }): ResolvedSelectableFocus | null => {
+    if (!selectableFocusScene) return null;
+    const options = {
+      standard:
+        cameraState.focusStandard === "rear" ? ("rear" as const) : ("front" as const),
+      focusMode,
+      focusDepthMm,
+      focalLengthMm,
+      referenceFocusDepthMm:
+        scene.focusStandardCapability?.referenceFocusDepthMm ??
+        CAMERA_CONSTANTS.defaultFocusDistanceMm,
+    };
+    if (usesSceneBaselineFocusPlacement) {
+      return resolveSceneRelativeSelectableFocus({
+        ...options,
+        sceneLensDatumZMm,
+      });
+    }
+    const focusing = resolveFocusFundamentalsFocusing(options);
+    return {
+      focusing,
+      sceneOffsetZMm: 0,
+      lensZMm: focusing.lensZMm,
+      filmZMm: focusing.filmZMm,
+    };
+  };
   // Special handling for Infinity focus mode: branch early and produce a stable state
   if (cameraState.focusMode === "infinity") {
     if (!Number.isFinite(cameraState.focalLengthMm) || cameraState.focalLengthMm <= 0) {
@@ -405,7 +467,9 @@ export const deriveOpticsState = (
       Number.isFinite(cameraState.frontTiltDeg) &&
       Number.isFinite(cameraState.frontSwingDeg) &&
       Number.isFinite(cameraState.rearRiseMm) &&
+      Number.isFinite(cameraState.rearShiftMm) &&
       Number.isFinite(cameraState.rearTiltDeg) &&
+      Number.isFinite(cameraState.rearSwingDeg) &&
       hasFiniteCameraRigInput(cameraState, scene, cameraMovementCalibration) &&
       CAMERA_CONSTANTS.apertureOptions.includes(
         cameraState.aperture as (typeof CAMERA_CONSTANTS.apertureOptions)[number],
@@ -419,25 +483,19 @@ export const deriveOpticsState = (
       );
     }
     const f = cameraState.focalLengthMm;
-    const focusFundamentalsFocusing =
-      scene.id === "focus-fundamentals-two-targets"
-        ? resolveFocusFundamentalsFocusing({
-            standard:
-              scene.focusStandardCapability?.enabled && cameraState.focusStandard === "rear"
-                ? "rear"
-                : "front",
-            focusMode: "infinity",
-            focusDepthMm: cameraState.focusDistanceMm,
-            focalLengthMm: f,
-            referenceFocusDepthMm:
-              scene.focusStandardCapability?.referenceFocusDepthMm ??
-              CAMERA_CONSTANTS.defaultFocusDistanceMm,
-          })
-        : null;
+    const resolvedSelectableFocus = resolveSelectableFocus({
+      focusMode: "infinity",
+      focusDepthMm: cameraState.focusDistanceMm,
+      focalLengthMm: f,
+      sceneLensDatumZMm: f,
+    });
+    const focusFundamentalsFocusing = resolvedSelectableFocus?.focusing ?? null;
     const lensCenterLocal = vec(
       Number.isFinite(cameraState.frontShiftMm) ? cameraState.frontShiftMm : 0,
       cameraState.frontRiseMm,
-      focusFundamentalsFocusing?.lensZMm ?? f,
+      usesSceneBaselineFocusPlacement
+        ? resolvedSelectableFocus?.lensZMm ?? f
+        : focusFundamentalsFocusing?.lensZMm ?? f,
     );
     const lensNormalLocal = calculateLensNormal(
       cameraState.frontTiltDeg,
@@ -447,13 +505,19 @@ export const deriveOpticsState = (
     const baselineFilmCenter = vec(
       0,
       0,
-      focusFundamentalsFocusing?.filmZMm ?? 0,
+      usesSceneBaselineFocusPlacement
+        ? resolvedSelectableFocus?.filmZMm ?? 0
+        : focusFundamentalsFocusing?.filmZMm ?? 0,
     );
     const { frame: rearStandardFrameLocal, corners: filmPlaneCornersLocal } =
       calculateRearStandardFrame(
         baselineFilmCenter,
         cameraState.rearRiseMm,
         cameraState.rearTiltDeg,
+        CAMERA_CONSTANTS.filmWidthMm,
+        CAMERA_CONSTANTS.filmHeightMm,
+        cameraState.rearShiftMm,
+        cameraState.rearSwingDeg,
       );
     const cameraBodyLocalGeometry = createCameraBodyLocalGeometry({
       lensCenterLocal,
@@ -615,27 +679,30 @@ export const deriveOpticsState = (
   }
   let { filmCenterWorld: filmCenterLocal } = baselineFilm;
 
-  // Prepare to store the canonical Focus Fundamentals lens/film/U/v solution so
-  // every downstream geometry consumer uses exactly one resolved construction.
+  // Keep the shared selectable-focus solution for diagnostics and focus-plane
+  // calculations; the scene placement contract below decides how its travel
+  // composes with the camera body's neutral datum.
   let focusFundamentalsFocusing: FocusFundamentalsFocusingResult | null = null;
   let focusFundamentalsFocusDepthMm: number | null = null;
+  let selectableFocusSceneOffsetZMm = 0;
 
-  // For the Focus Fundamentals scene, the canonical front/rear resolver owns
-  // lens and film placement in the rear-datum coordinate system.
-  // All values remain in mm until conversion at render boundary.
-  if (scene.id === "focus-fundamentals-two-targets") {
-    focusFundamentalsFocusing = resolveFocusFundamentalsFocusing({
-      standard:
-        scene.focusStandardCapability?.enabled && cameraState.focusStandard === "rear"
-          ? "rear"
-          : "front",
+  // All values remain in mm until conversion at the render boundary.
+  if (selectableFocusScene) {
+    const resolvedSelectableFocus = resolveSelectableFocus({
       focusMode: "finite",
       focusDepthMm: cameraState.focusDistanceMm,
       focalLengthMm: cameraState.focalLengthMm,
-      referenceFocusDepthMm:
-        scene.focusStandardCapability?.referenceFocusDepthMm ??
-        CAMERA_CONSTANTS.defaultFocusDistanceMm,
+      sceneLensDatumZMm: lensCenterLocal.z,
     });
+    focusFundamentalsFocusing = resolvedSelectableFocus?.focusing ?? null;
+    if (!focusFundamentalsFocusing || !resolvedSelectableFocus) {
+      return baseFallbackState(
+        cameraState,
+        scene,
+        "Invalid selectable-focus geometry",
+        cameraMovementCalibration,
+      );
+    }
     if (focusFundamentalsFocusing.fallbackApplied) {
       return baseFallbackState(
         cameraState,
@@ -646,21 +713,40 @@ export const deriveOpticsState = (
       );
     }
     focusFundamentalsFocusDepthMm = focusFundamentalsFocusing.focusDepthMm;
-    filmCenterLocal = vec(0, 0, focusFundamentalsFocusing.filmZMm);
+    if (usesSceneBaselineFocusPlacement) {
+      selectableFocusSceneOffsetZMm = resolvedSelectableFocus.sceneOffsetZMm;
+      lensCenterLocal = vec(
+        lensCenterLocal.x,
+        lensCenterLocal.y,
+        resolvedSelectableFocus.lensZMm,
+      );
+      filmCenterLocal = vec(
+        filmCenterLocal.x,
+        filmCenterLocal.y,
+        resolvedSelectableFocus.filmZMm,
+      );
+    } else {
+      filmCenterLocal = vec(0, 0, focusFundamentalsFocusing.filmZMm);
 
-    // Focus Fundamentals deliberately keeps both standards on the optical axis.
-    lensCenterLocal = vec(
-      Number.isFinite(cameraState.frontShiftMm) ? cameraState.frontShiftMm : 0,
-      0,
-      focusFundamentalsFocusing.lensZMm,
-    );
+      // Focus Fundamentals keeps both standards on its rear-datum axis.
+      lensCenterLocal = vec(
+        Number.isFinite(cameraState.frontShiftMm) ? cameraState.frontShiftMm : 0,
+        0,
+        focusFundamentalsFocusing.lensZMm,
+      );
+    }
     // recompute lensPlane with updated lens center
     lensPlaneLocal = planeFromPointNormal(lensCenterLocal, lensNormalLocal);
 
     // focus plane world point is at z = S
   }
 
-  if (!Number.isFinite(cameraState.rearRiseMm) || !Number.isFinite(cameraState.rearTiltDeg)) {
+  if (
+    !Number.isFinite(cameraState.rearRiseMm) ||
+    !Number.isFinite(cameraState.rearShiftMm) ||
+    !Number.isFinite(cameraState.rearTiltDeg) ||
+    !Number.isFinite(cameraState.rearSwingDeg)
+  ) {
     return baseFallbackState(
       cameraState,
       scene,
@@ -669,7 +755,15 @@ export const deriveOpticsState = (
     );
   }
   const { frame: rearStandardFrameLocal, corners: filmPlaneCornersLocal } =
-    calculateRearStandardFrame(filmCenterLocal, cameraState.rearRiseMm, cameraState.rearTiltDeg);
+    calculateRearStandardFrame(
+      filmCenterLocal,
+      cameraState.rearRiseMm,
+      cameraState.rearTiltDeg,
+      CAMERA_CONSTANTS.filmWidthMm,
+      CAMERA_CONSTANTS.filmHeightMm,
+      cameraState.rearShiftMm,
+      cameraState.rearSwingDeg,
+    );
   const cameraBodyLocalGeometry = createCameraBodyLocalGeometry({
     lensCenterLocal,
     lensNormalLocal,
@@ -703,13 +797,16 @@ export const deriveOpticsState = (
 
   // Determine focus point / plane
   let focusPointWorld = calculateFocusPoint(cameraState, opticalAxis);
-  // For Focus Fundamentals, focusDistanceMm represents S (focus-plane depth
-  // from the rear datum), independent of which standard is selected.
-  if (scene.id === "focus-fundamentals-two-targets") {
+  // For selectable-focus scenes, focusDistanceMm represents S (focus-plane depth
+  // from the rear datum), independent of which standard is selected. A
+  // scene-baseline placement translates that rear datum along with the
+  // complete optical solution.
+  if (selectableFocusScene) {
     focusPointWorld = vec(
       0,
       0,
-      focusFundamentalsFocusDepthMm ?? cameraState.focusDistanceMm,
+      (focusFundamentalsFocusDepthMm ?? cameraState.focusDistanceMm) +
+        (usesSceneBaselineFocusPlacement ? selectableFocusSceneOffsetZMm : 0),
     );
   }
 

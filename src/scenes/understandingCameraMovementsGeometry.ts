@@ -286,7 +286,9 @@ const geometry = {
     frontTiltDeg: 0,
     frontSwingDeg: 0,
     rearRiseMm: 0,
+    rearShiftMm: 0,
     rearTiltDeg: 0,
+    rearSwingDeg: 0,
     cameraBodyPitchDeg: 0,
     /** Legacy state boundary; value is the canonical rig-local pivot. */
     cameraBodyPivotWorld: CAMERA_BODY_PIVOT_RIG_LOCAL,

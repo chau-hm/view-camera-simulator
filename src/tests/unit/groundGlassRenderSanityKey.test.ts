@@ -10,10 +10,13 @@ function buildOptics(overrides: Partial<ReturnType<typeof useAppStore.getState>[
   const base = useAppStore.getState().camera;
   const legacyMovementKeys = [
     "frontRiseMm",
+    "frontShiftMm",
     "frontTiltDeg",
     "frontSwingDeg",
     "rearRiseMm",
+    "rearShiftMm",
     "rearTiltDeg",
+    "rearSwingDeg",
     "cameraBodyPitchDeg",
     "viewpointAnchor",
     "cameraRigPlacement",
@@ -70,6 +73,18 @@ describe("groundGlassRenderSanityKey", () => {
     expect(makeKey(moved)).not.toBe(makeKey(zero));
   });
 
+  it("Front Shift changes the key", () => {
+    const zero = buildOptics();
+    const moved = buildOptics({ frontShiftMm: 20 });
+    expect(makeKey(moved)).not.toBe(makeKey(zero));
+  });
+
+  it("Rear Shift changes the key", () => {
+    const zero = buildOptics();
+    const moved = buildOptics({ rearShiftMm: 20 });
+    expect(makeKey(moved)).not.toBe(makeKey(zero));
+  });
+
   it("Front Tilt changes the key", () => {
     const zero = buildOptics();
     const moved = buildOptics({ frontTiltDeg: 5 });
@@ -79,6 +94,12 @@ describe("groundGlassRenderSanityKey", () => {
   it("Rear Tilt changes the key", () => {
     const zero = buildOptics();
     const moved = buildOptics({ rearTiltDeg: 5 });
+    expect(makeKey(moved)).not.toBe(makeKey(zero));
+  });
+
+  it("Rear Swing changes the key", () => {
+    const zero = buildOptics();
+    const moved = buildOptics({ rearSwingDeg: 5 });
     expect(makeKey(moved)).not.toBe(makeKey(zero));
   });
 

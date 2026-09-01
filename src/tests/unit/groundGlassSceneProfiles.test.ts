@@ -12,6 +12,8 @@ import {
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
+import { lessonZeroGroundGlassSubjectBoundsMm } from "../../scenes/lessonZeroGroundGlassSubject";
 import { resolveMirrorShiftTeachingState } from "../../scenes/mirrorShiftCalibration";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -42,6 +44,15 @@ const opticsForMirrorShift = (rigLateralMm: number, frontShiftMm: number) =>
   );
 
 describe("Ground Glass scene profiles", () => {
+  it("uses the Lesson 0 subject bounds for RTT clipping without changing inspection bounds", () => {
+    const scene = viewCameraAnatomyScene;
+    const profile = getGroundGlassSceneProfile(scene);
+    const context = contextFor(scene);
+
+    expect(scene.bounds).not.toBe(lessonZeroGroundGlassSubjectBoundsMm);
+    expect(profile.resolveRenderBounds(context)).toBe(lessonZeroGroundGlassSubjectBoundsMm);
+  });
+
   it("uses the ordinary registered lifecycle and SceneDefinition bounds", () => {
     const scene = architectureRiseScene;
     const profile = getGroundGlassSceneProfile(scene);

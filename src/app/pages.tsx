@@ -108,6 +108,7 @@ export const ScenesPage = () => {
               thumbnailAsset={meta.thumbnailAsset}
               guidedTaskId={meta.guidedTaskId}
               guidedLesson={Boolean(meta.guidedLesson)}
+              lesson={meta.lesson?.kind}
             />
           ))
         )}
@@ -131,6 +132,7 @@ export const SimulatorRoutePage = () => {
   const scene = getSceneById(resolvedSceneId);
   const publicEntry = getPublicSceneEntryById(resolvedSceneId);
   const resolvedTask = taskId ? getTaskById(taskId) : undefined;
+  const anatomyLessonEnabled = publicEntry?.lesson?.kind === "anatomy";
 
   if (
     !scene ||
@@ -156,6 +158,7 @@ export const SimulatorRoutePage = () => {
           sceneId={resolvedSceneId}
           taskId={taskId ?? null}
           guidedLessonEnabled={searchParams.get("lesson") === "1" && Boolean(publicEntry.guidedLesson)}
+          anatomyLessonEnabled={anatomyLessonEnabled}
           calibrationEnabled={parsedMode === "free" && resolvedSceneId === "understanding-camera-movements" && searchParams.get("cameraCalibration") === "1"}
           simulateAssetFailure={searchParams.get("assetError") === "1"}
         />

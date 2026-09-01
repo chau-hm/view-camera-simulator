@@ -36,7 +36,9 @@ export const architectureRiseScene: SceneDefinition = {
    frontTiltDeg: 0,
    frontSwingDeg: 0,
     rearRiseMm: 0,
+    rearShiftMm: 0,
     rearTiltDeg: 0,
+    rearSwingDeg: 0,
  },
   finiteFocusStrategy: {
     kind: "rear-standard-thin-lens",
