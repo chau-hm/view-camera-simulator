@@ -192,6 +192,25 @@ describe("scenes page", () => {
       "/simulator/guided/shelf-swing/swing-01",
     );
 
+    const tabletopHeading = await screen.findByRole("heading", { name: "Oblique Tabletop", level: 2 });
+    const tabletopCard = tabletopHeading.closest("article");
+    expect(tabletopCard).not.toBeNull();
+    const scopedTabletopCard = within(tabletopCard!);
+    expect(
+      scopedTabletopCard.getByText(
+        "Photograph an oblique tabletop from an angle. In the neutral setup, different parts of the table fall at different depths, so you cannot keep the whole surface sharp at once.",
+      ),
+    ).toBeInTheDocument();
+    expect(scopedTabletopCard.getByText("Oblique plane")).toBeInTheDocument();
+    expect(scopedTabletopCard.getByText("Depth variation")).toBeInTheDocument();
+    expect(scopedTabletopCard.getByText("Focus distance")).toBeInTheDocument();
+    expect(tabletopCard!.querySelector("img")).toHaveAttribute("src", "/assets/oblique-tabletop.png");
+    expect(scopedTabletopCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
+      "href",
+      "/simulator/free/oblique-tabletop",
+    );
+    expect(scopedTabletopCard.queryByRole("link", { name: "Start Guided Task" })).toBeNull();
+
     expect(publicSceneIds).toEqual([
       "view-camera-anatomy",
       "understanding-camera-movements",
@@ -199,6 +218,7 @@ describe("scenes page", () => {
       "architecture-rise",
       "table-tilt",
       "shelf-swing",
+      "oblique-tabletop",
       "mirror-shift",
       "oblique-architecture",
       "architecture-foreground",
@@ -220,6 +240,7 @@ describe("scenes page", () => {
       "Architecture Rise",
       "Table Tilt",
       "Shelf Swing",
+      "Oblique Tabletop",
       "Mirror Shift",
       "Oblique Architecture",
       "Architecture + Foreground",
@@ -272,6 +293,7 @@ describe("scenes page", () => {
       "建築構圖與上移",
       "桌面焦平面與傾斜",
       "斜向焦平面與擺動",
+      "斜向桌面",
       "鏡面構圖與視點",
       "斜向建築攝影",
       "建築物與前景",

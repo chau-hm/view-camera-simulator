@@ -86,6 +86,16 @@ export const scenesMessages = {
       scheimpflugPrinciple: "Scheimpflug 原理",
     },
   },
+  obliqueTabletop: {
+    title: "斜向桌面",
+    description:
+      "從斜角拍攝一張斜向桌面。在中性設定下，桌面不同部分處於不同深度，因此無法同時讓整個表面保持清晰。",
+    topics: {
+      obliquePlane: "斜向平面",
+      depthVariation: "深度變化",
+      focusDistance: "對焦距離",
+    },
+  },
   mirrorShift: {
     title: "鏡面構圖與視點",
     description:

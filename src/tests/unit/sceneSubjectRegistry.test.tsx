@@ -13,6 +13,7 @@ import {
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { publicSceneCatalog } from "../../app/publicScenes";
 import geometry from "../../scenes/shelfSwingGeometry";
+import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/CameraMovementsSubjectFactory";
@@ -50,6 +51,7 @@ describe("scene subject registry", () => {
       "oblique-architecture",
       "table-tilt",
       "shelf-swing",
+      "oblique-tabletop",
       "mirror-shift",
     ]);
     Object.keys(sceneSubjectRegistry).forEach((sceneId) => {
@@ -128,6 +130,32 @@ describe("scene subject registry", () => {
     expect(group?.getObjectByName("oblique-architecture-focus-facade-middle")).toBeInstanceOf(THREE.Object3D);
     const spies = collectDisposableSpies(group!);
     disposeRegisteredRttSubject("oblique-architecture", group!);
+    spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+  });
+
+  it("resolves Oblique Tabletop to one shared static subject for 3D and RTT", () => {
+    const registration = getSceneSubjectRegistration("oblique-tabletop");
+    expect(registration).toBeDefined();
+    const group = createRegisteredRttSubject("oblique-tabletop");
+    expect(group?.name).toBe("oblique-tabletop-subject");
+    expect(group?.getObjectByName("oblique-tabletop-tabletop")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.getObjectByName("oblique-tabletop-floor")).toBeInstanceOf(THREE.Mesh);
+
+    group?.updateMatrixWorld(true);
+    obliqueTabletopGeometry.markers.forEach((marker) => {
+      const markerGroup = group?.getObjectByName(`oblique-tabletop-marker-${marker.id}`);
+      expect(markerGroup).toBeInstanceOf(THREE.Group);
+      const probe = group?.getObjectByName(`oblique-tabletop-focus-${marker.id}`);
+      expect(probe).toBeInstanceOf(THREE.Object3D);
+      const probeWorld = new THREE.Vector3();
+      probe?.getWorldPosition(probeWorld);
+      expect(probeWorld.x).toBeCloseTo(marker.worldPosition.x * 0.001, 10);
+      expect(probeWorld.y).toBeCloseTo(marker.worldPosition.y * 0.001, 10);
+      expect(probeWorld.z).toBeCloseTo(marker.worldPosition.z * 0.001, 10);
+    });
+
+    const spies = collectDisposableSpies(group!);
+    disposeRegisteredRttSubject("oblique-tabletop", group!);
     spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
   });
 

@@ -13,6 +13,7 @@ import { mirrorShiftScene } from "./mirror-shift";
 import { obliqueArchitectureScene } from "./oblique-architecture";
 import { architectureForegroundScene } from "./architecture-foreground";
 import { viewCameraAnatomyScene } from "./view-camera-anatomy";
+import { obliqueTabletopScene } from "./oblique-tabletop";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
   [viewCameraAnatomyScene.id]: viewCameraAnatomyScene,
@@ -21,6 +22,7 @@ export const sceneRegistry: Record<string, SceneDefinition> = {
   [architectureForegroundScene.id]: architectureForegroundScene,
   [tableTiltScene.id]: tableTiltScene,
   [shelfSwingScene.id]: shelfSwingScene,
+  [obliqueTabletopScene.id]: obliqueTabletopScene,
   [focusFundamentalsTwoTargets.id]: focusFundamentalsTwoTargets,
   [mirrorShiftScene.id]: mirrorShiftScene,
   [obliqueArchitectureScene.id]: obliqueArchitectureScene,
@@ -33,6 +35,7 @@ export const sceneOrder = [
   architectureForegroundScene.id,
   tableTiltScene.id,
   shelfSwingScene.id,
+  obliqueTabletopScene.id,
   focusFundamentalsTwoTargets.id,
   mirrorShiftScene.id,
   obliqueArchitectureScene.id,

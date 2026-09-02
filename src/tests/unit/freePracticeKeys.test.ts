@@ -13,6 +13,7 @@ const publicSceneIds = [
   "oblique-architecture",
   "table-tilt",
   "shelf-swing",
+  "oblique-tabletop",
   "mirror-shift",
 ] as const;
 

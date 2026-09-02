@@ -16,9 +16,11 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
+import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
 import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
+import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("scene definitions", () => {
@@ -90,6 +92,45 @@ describe("scene definitions", () => {
   it("defines near/mid/far table focus targets", () => {
     const focusTargetIds = tableTiltScene.focusTargets.map((target) => target.id);
     expect(focusTargetIds).toEqual(["near-cup", "mid-notebook", "far-book"]);
+  });
+
+  it("defines Oblique Tabletop as a free-only neutral focus foundation", () => {
+    expect(obliqueTabletopScene.name).toBe("Oblique Tabletop");
+    expect(obliqueTabletopScene.cameraPreset.focusDistanceMm).toBe(
+      obliqueTabletopGeometry.canonicalFocusDistanceMm,
+    );
+    expect(obliqueTabletopScene.cameraPreset.aperture).toBe(11);
+    expect(obliqueTabletopScene.cameraControlPolicy).toEqual({
+      movement: "fixed",
+      aperture: "fixed",
+      infinityReset: false,
+    });
+    expect(obliqueTabletopScene.focusDistanceRangeMm).toEqual(
+      obliqueTabletopGeometry.focusDistanceRangeMm,
+    );
+    expect(obliqueTabletopScene.focusTargets).toEqual(
+      obliqueTabletopGeometry.focusTargets,
+    );
+    expect(obliqueTabletopScene.compositionTargets.map((target) => target.id)).toEqual([
+      "tabletop-surface",
+    ]);
+    expect(sceneOrder).toContain("oblique-tabletop");
+  });
+
+  it("keeps the canonical tabletop oblique in both surface directions", () => {
+    const nearToFarDepthVariation = Math.abs(
+      obliqueTabletopGeometry.tabletopExtents.far.topSurfaceCenterWorld.z -
+        obliqueTabletopGeometry.tabletopExtents.near.topSurfaceCenterWorld.z,
+    );
+    const leftToRightDepthVariation = Math.abs(
+      obliqueTabletopGeometry.tabletopExtents.right.topSurfaceCenterWorld.z -
+        obliqueTabletopGeometry.tabletopExtents.left.topSurfaceCenterWorld.z,
+    );
+    const normal = obliqueTabletopGeometry.tabletopTopSurfacePlane.normal;
+
+    expect(nearToFarDepthVariation).toBeGreaterThan(2000);
+    expect(leftToRightDepthVariation).toBeGreaterThan(200);
+    expect(Math.hypot(normal.x, normal.y, normal.z)).toBeCloseTo(1, 8);
   });
 
   it("locks Focus Fundamentals to its fixed f/32 teaching aperture", () => {
@@ -200,6 +241,37 @@ describe("scene definitions", () => {
 
     const allSharp = opticsState.focusTargets.every((target) => target.sharpness >= 0.8);
     expect(allSharp).toBe(false);
+  });
+
+  it("keeps the oblique tabletop neutral setup physically out of focus across depth", () => {
+    const opticsState = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...obliqueTabletopScene.cameraPreset,
+        activeSceneId: obliqueTabletopScene.id,
+        activeTaskId: null,
+        mode: "free",
+      },
+      obliqueTabletopScene,
+    );
+
+    expect(opticsState.diagnostics.fallbackApplied).toBe(false);
+    const sharpnessById = new Map(
+      opticsState.focusTargets.map((target) => [target.id, target.physicalPointSharpness]),
+    );
+    expect(opticsState.focusTargets).toHaveLength(3);
+    expect(sharpnessById.get("middle")).toBeGreaterThan(
+      sharpnessById.get("near-left") ?? 1,
+    );
+    expect(sharpnessById.get("middle")).toBeGreaterThan(
+      sharpnessById.get("far-right") ?? 1,
+    );
+    expect(opticsState.focusTargets.some((target) => target.status !== "sharp")).toBe(true);
+    expect(
+      opticsState.focusTargets.some((target) =>
+        (target.physicalPointSharpness ?? 1) < 0.8,
+      ),
+    ).toBe(true);
   });
 
   it("exposes required, lazy, and preload scene assets", () => {

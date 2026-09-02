@@ -23,6 +23,11 @@ describe("Ground Glass RTT scene registration", () => {
     expect(clip.far).toBeGreaterThan(lessonZeroGroundGlassSubjectBoundsMm.max.z * 0.001);
   });
 
+  it("includes Oblique Tabletop in the centralized RTT scene set", () => {
+    expect(RTT_SCENES).toContain("oblique-tabletop");
+    expect(isGroundGlassRttScene("oblique-tabletop")).toBe(true);
+  });
+
   it("includes Shelf Swing in the centralized RTT scene set", () => {
     expect(RTT_SCENES).toContain("shelf-swing");
     expect(isGroundGlassRttScene("shelf-swing")).toBe(true);

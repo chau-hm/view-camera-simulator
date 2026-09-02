@@ -55,6 +55,7 @@ import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTarg
 import { mirrorShiftGeometry } from "../scenes/mirrorShiftGeometry";
 import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../scenes/architectureForegroundGeometry";
+import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
 import {
   ArchitectureForegroundSubject,
   createArchitectureForegroundGroup,
@@ -64,6 +65,11 @@ import {
   LessonZeroGroundGlassSubject,
   createLessonZeroGroundGlassGroup,
 } from "./LessonZeroGroundGlassSubjectFactory";
+import {
+  ObliqueTabletopSubject,
+  createObliqueTabletopGroup,
+  disposeObliqueTabletopGroup,
+} from "./ObliqueTabletopSubjectFactory";
 import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectCenterMm,
@@ -186,6 +192,10 @@ const architectureForegroundLightingTargetMm = {
   z: architectureForegroundGeometry.facade.frontFacadeZ,
 } as const;
 
+const obliqueTabletopLightingTargetMm = {
+  ...obliqueTabletopGeometry.middleMarker.worldPosition,
+} as const;
+
 export const sceneSubjectRegistry = {
   "view-camera-anatomy": {
     SceneSubject: LessonZeroGroundGlassSubject,
@@ -304,6 +314,16 @@ export const sceneSubjectRegistry = {
     disposeRttGroup: disposeShelfSwingGroup,
     rttLighting: {
       targetMm: shelfSwingLightingTargetMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
+    },
+  },
+  "oblique-tabletop": {
+    SceneSubject: ObliqueTabletopSubject,
+    createRttGroup: createObliqueTabletopGroup,
+    disposeRttGroup: disposeObliqueTabletopGroup,
+    rttLighting: {
+      targetMm: obliqueTabletopLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },

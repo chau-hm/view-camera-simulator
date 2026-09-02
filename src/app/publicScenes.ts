@@ -15,6 +15,7 @@ export const publicSceneIds = [
   "architecture-rise",
   "table-tilt",
   "shelf-swing",
+  "oblique-tabletop",
   "mirror-shift",
   "oblique-architecture",
   "architecture-foreground",
@@ -143,6 +144,19 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/shelf-swing.png",
     guidedTaskId: "swing-01",
+  },
+  {
+    id: "oblique-tabletop",
+    titleKey: publicSceneMessageKeys.obliqueTabletop.title,
+    descriptionKey: publicSceneMessageKeys.obliqueTabletop.description,
+    topicKeys: [
+      publicSceneMessageKeys.obliqueTabletop.topics.obliquePlane,
+      publicSceneMessageKeys.obliqueTabletop.topics.depthVariation,
+      publicSceneMessageKeys.obliqueTabletop.topics.focusDistance,
+    ],
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/oblique-tabletop.png",
   },
   {
     id: "mirror-shift",

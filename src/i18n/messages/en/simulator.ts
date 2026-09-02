@@ -356,6 +356,20 @@ export const simulatorMessages = {
       observation:
         "Without Swing, changing Focus moves sharpness between subject depths. Front Swing rotates the plane of sharp focus through the diagonal arrangement. Compare the Top geometry view and Ground Glass as you refine Swing and Focus.",
     },
+    obliqueTabletop: {
+      objective:
+        "Explore the neutral focus problem across an oblique tabletop at fixed f/11.",
+      bullets: {
+        focusDistance:
+          "Move Focus between the near, middle, and far tabletop markers.",
+        depth:
+          "Compare how the tabletop spans depth from the camera's viewpoint.",
+        sharpness:
+          "Watch the Ground Glass and Focus Targets readout: one region can be sharp while other regions soften.",
+      },
+      observation:
+        "With the camera and aperture held neutral, the tabletop's oblique surface spans more than one depth. Focus can move sharpness from one region to another, but cannot make the whole surface sharp at once.",
+    },
     mirrorShift: {
       objective:
         "Separate viewpoint from framing: move the whole camera sideways, then use opposite Front Shift to restore the mirror framing without returning the camera to its original viewpoint.",

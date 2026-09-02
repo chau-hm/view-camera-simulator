@@ -40,6 +40,7 @@ describe("Ground Glass visual settings", () => {
       "architecture-rise",
       "table-tilt",
       "shelf-swing",
+      "oblique-tabletop",
       "oblique-architecture",
       "architecture-foreground",
     ]) {

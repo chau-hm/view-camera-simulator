@@ -332,6 +332,15 @@ export const simulatorMessages = {
       },
       observation: "沒有擺動時，改變對焦只會在不同主體深度之間移動清晰位置。前組擺動會令清晰焦平面穿過斜向排列。調整擺動及對焦時，比較 Top 幾何圖及對焦屏。",
     },
+    obliqueTabletop: {
+      objective: "在固定 f/11 下，探索斜向桌面的中性對焦問題。",
+      bullets: {
+        focusDistance: "在近處、中間及遠處桌面標記之間移動對焦。",
+        depth: "比較桌面從相機視點看來如何跨越不同深度。",
+        sharpness: "觀察對焦屏及 Focus Targets 讀數：一個區域清晰時，其他區域可能變得柔化。",
+      },
+      observation: "相機及光圈保持中性時，斜向桌面跨越多個深度。對焦可以將清晰位置由一個區域移到另一個區域，但無法令整個表面同時保持清晰。",
+    },
     mirrorShift: {
       objective: "分開視點與構圖：將整部相機向側面移動，然後使用相反方向的前組橫移恢復鏡面構圖，而不把相機移回原本的視點。",
       bullets: {
