@@ -75,6 +75,35 @@ describe("public scene catalog integrity", () => {
     ).toBe(false);
   });
 
+  it("publishes Oblique Tabletop as a free-only neutral focus problem", () => {
+    const entry = publicSceneCatalog.find(
+      (candidate) => candidate.id === "oblique-tabletop",
+    )!;
+    expect(entry).toMatchObject({
+      id: "oblique-tabletop",
+      availableModes: ["free"],
+      availability: "available",
+      thumbnailAsset: "assets/oblique-tabletop.png",
+    });
+    expect(entry.guidedTaskId).toBeUndefined();
+    expect(entry.thumbnailAsset).not.toMatch(/\.svg$/);
+    expect(
+      isValidSimulatorRoute({
+        mode: "free",
+        sceneId: entry.id,
+        publicEntry: entry,
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: "not-a-task",
+        publicEntry: entry,
+      }),
+    ).toBe(false);
+  });
+
   it("publishes Architecture + Foreground with its direct guided tasks", () => {
     const entry = publicSceneCatalog.find(
       (candidate) => candidate.id === "architecture-foreground",

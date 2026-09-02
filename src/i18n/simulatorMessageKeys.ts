@@ -322,6 +322,15 @@ export const simulatorMessageKeys = {
       },
       observation: "simulator.freePractice.shelfSwing.observation",
     },
+    obliqueTabletop: {
+      objective: "simulator.freePractice.obliqueTabletop.objective",
+      bullets: {
+        focusDistance: "simulator.freePractice.obliqueTabletop.bullets.focusDistance",
+        depth: "simulator.freePractice.obliqueTabletop.bullets.depth",
+        sharpness: "simulator.freePractice.obliqueTabletop.bullets.sharpness",
+      },
+      observation: "simulator.freePractice.obliqueTabletop.observation",
+    },
     mirrorShift: {
       objective: "simulator.freePractice.mirrorShift.objective",
       bullets: {

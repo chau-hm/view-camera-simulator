@@ -86,6 +86,16 @@ export const scenesMessages = {
       scheimpflugPrinciple: "Scheimpflug principle",
     },
   },
+  obliqueTabletop: {
+    title: "Oblique Tabletop",
+    description:
+      "Photograph an oblique tabletop from an angle. In the neutral setup, different parts of the table fall at different depths, so you cannot keep the whole surface sharp at once.",
+    topics: {
+      obliquePlane: "Oblique plane",
+      depthVariation: "Depth variation",
+      focusDistance: "Focus distance",
+    },
+  },
   mirrorShift: {
     title: "Mirror Shift",
     description:

@@ -84,6 +84,14 @@ const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
       simulatorMessageKeys.freePractice.shelfSwing.bullets.compare,
     ],
   },
+  "oblique-tabletop": {
+    objectiveKey: simulatorMessageKeys.freePractice.obliqueTabletop.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.focusDistance,
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.depth,
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.sharpness,
+    ],
+  },
   "mirror-shift": {
     objectiveKey: simulatorMessageKeys.freePractice.mirrorShift.objective,
     bulletKeys: [
@@ -124,6 +132,9 @@ const feedbackByScene: Record<string, FreePracticeFeedbackKey> = {
   },
   "shelf-swing": {
     observationKey: simulatorMessageKeys.freePractice.shelfSwing.observation,
+  },
+  "oblique-tabletop": {
+    observationKey: simulatorMessageKeys.freePractice.obliqueTabletop.observation,
   },
   "mirror-shift": {
     observationKey: simulatorMessageKeys.freePractice.mirrorShift.observation,

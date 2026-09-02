@@ -23,6 +23,10 @@ const SCENE_DOF_VISUAL_SETTINGS: Readonly<
     // plane. RTT should display those already-derived planes even at 0° swing.
     planeMode: "derived-planes",
   },
+  "oblique-tabletop": {
+    maximumBlurRadiusPx: 48,
+    planeMode: "automatic",
+  },
   "oblique-architecture": {
     maximumBlurRadiusPx: 48,
     planeMode: "automatic",

@@ -72,6 +72,15 @@ export const publicSceneMessageKeys = {
       scheimpflugPrinciple: "scenes.shelfSwing.topics.scheimpflugPrinciple",
     },
   },
+  obliqueTabletop: {
+    title: "scenes.obliqueTabletop.title",
+    description: "scenes.obliqueTabletop.description",
+    topics: {
+      obliquePlane: "scenes.obliqueTabletop.topics.obliquePlane",
+      depthVariation: "scenes.obliqueTabletop.topics.depthVariation",
+      focusDistance: "scenes.obliqueTabletop.topics.focusDistance",
+    },
+  },
   mirrorShift: {
     title: "scenes.mirrorShift.title",
     description: "scenes.mirrorShift.description",
@@ -98,4 +107,5 @@ export type PublicSceneTopicKey =
   | TopicValues<typeof publicSceneMessageKeys.obliqueArchitecture>
   | TopicValues<typeof publicSceneMessageKeys.tableTilt>
   | TopicValues<typeof publicSceneMessageKeys.shelfSwing>
+  | TopicValues<typeof publicSceneMessageKeys.obliqueTabletop>
   | TopicValues<typeof publicSceneMessageKeys.mirrorShift>;

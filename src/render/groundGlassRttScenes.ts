@@ -10,6 +10,7 @@ export const RTT_SCENES = [
   "oblique-architecture",
   "table-tilt",
   "shelf-swing",
+  "oblique-tabletop",
   "understanding-camera-movements",
   "mirror-shift",
 ] as const;
