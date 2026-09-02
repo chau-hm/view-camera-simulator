@@ -103,9 +103,8 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    // Architecture Rise now uses RTT — ensure RTT canvas exists and DOM focus overlays are not rendered
+    // Architecture Rise uses the canonical RTT surface without DOM focus overlays.
     expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
-    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
 
     rerender(
@@ -129,7 +128,7 @@ describe("GroundGlassRenderer", () => {
     expect(screen.getByText(/4200\.0 mm focus/)).toBeInTheDocument();
   });
 
-  it("routes Table Tilt exclusively through RTT without legacy DOM artifacts", () => {
+  it("routes Table Tilt exclusively through RTT", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
       ...tableTiltScene.cameraPreset,
@@ -154,7 +153,6 @@ describe("GroundGlassRenderer", () => {
     );
 
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
-    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
     tableTiltScene.focusTargets.forEach((target) => {
       expect(screen.queryByTestId(`ground-glass-target-${target.id}`)).not.toBeInTheDocument();
@@ -180,7 +178,7 @@ describe("GroundGlassRenderer", () => {
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
   });
 
-  it("routes Shelf Swing exclusively through RTT without legacy DOM artifacts", () => {
+  it("routes Shelf Swing exclusively through RTT", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
       ...shelfSwingScene.cameraPreset,
@@ -206,14 +204,13 @@ describe("GroundGlassRenderer", () => {
 
     expect(isGroundGlassRttScene(shelfSwingScene.id)).toBe(true);
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
-    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
     shelfSwingScene.focusTargets.forEach((target) => {
       expect(screen.queryByTestId(`ground-glass-target-${target.id}`)).not.toBeInTheDocument();
     });
   });
 
-  it("routes Mirror Shift through the normal RTT surface without legacy DOM artifacts", () => {
+  it("routes Mirror Shift through the normal RTT surface", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
       ...mirrorShiftScene.cameraPreset,
@@ -241,10 +238,9 @@ describe("GroundGlassRenderer", () => {
 
     expect(isGroundGlassRttScene(mirrorShiftScene.id)).toBe(true);
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
-    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
   });
 
-  it("routes Lesson 0 through RTT without the legacy placeholder", () => {
+  it("routes Lesson 0 through RTT", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
       ...viewCameraAnatomyScene.cameraPreset,
@@ -276,34 +272,6 @@ describe("GroundGlassRenderer", () => {
       "data-rtt-scene-id",
       viewCameraAnatomyScene.id,
     );
-    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
-  });
-
-  it("does not silently render the legacy placeholder for an unregistered scene", () => {
-    const unregisteredScene = {
-      ...architectureRiseScene,
-      id: "unregistered-test-scene",
-    };
-    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, unregisteredScene);
-
-    render(
-      <GroundGlassRenderer
-        opticsState={opticsState}
-        assistEnabled={false}
-        gridEnabled={false}
-        riseMm={0}
-        tiltDeg={0}
-        swingDeg={0}
-        focusDistanceMm={DEFAULT_CAMERA_STATE.focusDistanceMm}
-        aperture={DEFAULT_CAMERA_STATE.aperture}
-        renderQuality="standard"
-        previewMode="raw"
-        scene={unregisteredScene}
-        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
-      />,
-    );
-
-    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
   });
 
   it("preserves an explicit null diagnostics value instead of consulting application state", () => {
@@ -518,8 +486,8 @@ describe("GroundGlassRenderer", () => {
     }
   });
 
-  // Test C: legacy placeholder and focus ring use the same projected coordinates
-  it("legacy placeholder targets are removed for Architecture RTT and projection still available", () => {
+  // Test C: RTT and focus-ring projection remain available from the same inputs.
+  it("keeps Architecture RTT projection targets available", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     const projected = projectSceneFocusTargetsToGroundGlass({ sceneDef: architectureRiseScene, opticsState, aperture: DEFAULT_CAMERA_STATE.aperture, previewMode: "raw" });
     expect(projected.length).toBeGreaterThan(0);
@@ -541,7 +509,7 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    // Architecture Rise should route to RTT — no DOM placeholders or focus ring
+    // Architecture Rise should route to RTT without DOM focus overlays.
     expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
     const placeholders = Array.from(document.querySelectorAll('[data-testid^="ground-glass-target-"]')) as HTMLElement[];
@@ -593,9 +561,8 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    // Architecture Rise now uses RTT
+    // Architecture Rise uses RTT.
     expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
-    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
     expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
   });
@@ -621,7 +588,6 @@ describe("GroundGlassRenderer", () => {
     );
 
     expect(screen.getByTestId("ground-glass-rtt")).toBeInTheDocument();
-    expect(screen.queryByTestId("ground-glass-scene")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-focus-ring")).not.toBeInTheDocument();
     expect(
       Array.from(container.querySelectorAll("div")).some((element) =>

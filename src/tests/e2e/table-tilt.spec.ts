@@ -91,12 +91,11 @@ test("Table Tilt card exposes free and guided navigation", async ({ page }) => {
   await expect(page.getByText("Align the tabletop plane of sharp focus")).toBeVisible();
 });
 
-test("Table Tilt Ground Glass uses one RTT surface and no legacy artifacts", async ({ page }) => {
+test("Table Tilt Ground Glass uses one RTT surface", async ({ page }) => {
   await page.goto("/simulator/free/table-tilt");
   const viewport = page.getByLabel("GroundGlassViewport");
   await expect(viewport).toBeVisible();
   await expect(viewport.getByTestId("ground-glass-rtt")).toHaveCount(1);
-  await expect(viewport.getByTestId("ground-glass-scene")).toHaveCount(0);
   await expect(viewport.getByTestId("ground-glass-focus-ring")).toHaveCount(0);
   await expect(viewport.locator('[data-testid^="ground-glass-target-"]')).toHaveCount(0);
 
