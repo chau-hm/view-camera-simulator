@@ -2,7 +2,6 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { GroundGlassFocusRing } from "../../render/GroundGlassFocusRing";
 import { GroundGlassTransformedOverlays } from "../../render/GroundGlassOverlays";
-import { LegacyGroundGlassScene } from "../../render/LegacyGroundGlassScene";
 import { resolveGroundGlassPresentationPolicy } from "../../render/groundGlassPresentationPolicy";
 import type { ProjectedGroundGlassTarget } from "../../render/groundGlassTargetProjection";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
@@ -60,7 +59,7 @@ describe("Ground Glass presentation policy", () => {
   });
 });
 
-describe("legacy Ground Glass presentation components", () => {
+describe("Ground Glass presentation components", () => {
   it("renders the focus ring from explicit projected-target inputs", () => {
     const { getByTestId, rerender } = render(
       <GroundGlassFocusRing
@@ -92,24 +91,5 @@ describe("legacy Ground Glass presentation components", () => {
       top: "53%",
       display: "none",
     });
-  });
-
-  it("keeps generic legacy fallback artwork available without scene identity", () => {
-    const { getByTestId } = render(
-      <LegacyGroundGlassScene
-        sceneHasFocusTargets={false}
-        projectedTargets={[]}
-        blurRadiusPx={0}
-        sceneShiftX={0}
-        sceneShiftY={0}
-        sceneRotationDeg={0}
-        focusScale={1}
-        riseMm={0}
-        tiltDeg={0}
-        swingDeg={0}
-      />,
-    );
-
-    expect(getByTestId("ground-glass-scene").children).toHaveLength(3);
   });
 });
