@@ -142,6 +142,15 @@ describe("scene subject registry", () => {
     expect(group?.getObjectByName("oblique-tabletop-floor")).toBeInstanceOf(THREE.Mesh);
 
     group?.updateMatrixWorld(true);
+    const tabletopAssembly = group?.getObjectByName("oblique-tabletop-tabletop-assembly");
+    expect(tabletopAssembly).toBeInstanceOf(THREE.Group);
+    const renderedNormal = new THREE.Vector3(0, 1, 0).transformDirection(
+      tabletopAssembly!.matrixWorld,
+    );
+    expect(renderedNormal.x).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.x, 10);
+    expect(renderedNormal.y).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.y, 10);
+    expect(renderedNormal.z).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.z, 10);
+
     obliqueTabletopGeometry.markers.forEach((marker) => {
       const markerGroup = group?.getObjectByName(`oblique-tabletop-marker-${marker.id}`);
       expect(markerGroup).toBeInstanceOf(THREE.Group);

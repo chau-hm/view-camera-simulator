@@ -222,15 +222,22 @@ export function createObliqueTabletopGroup(): THREE.Group {
 
   const tabletopAssembly = new THREE.Group();
   tabletopAssembly.name = "oblique-tabletop-tabletop-assembly";
-  tabletopAssembly.position.set(
-    toWorld(geometry.tabletop.center.x),
-    toWorld(geometry.tabletop.center.y),
-    toWorld(geometry.tabletop.center.z),
+  // Use the canonical basis directly. Object3D.rotation.set(x, y, 0) uses
+  // the opposite composition for this subject and would erase the lateral
+  // component of the tilted surface normal.
+  const basis = geometry.tabletopTransformBasis;
+  tabletopAssembly.matrixAutoUpdate = false;
+  tabletopAssembly.matrix.makeBasis(
+    new THREE.Vector3(basis.localX.x, basis.localX.y, basis.localX.z),
+    new THREE.Vector3(basis.localY.x, basis.localY.y, basis.localY.z),
+    new THREE.Vector3(basis.localZ.x, basis.localZ.y, basis.localZ.z),
   );
-  tabletopAssembly.rotation.set(
-    geometry.tabletop.rotationXRad,
-    geometry.tabletop.rotationYRad,
-    0,
+  tabletopAssembly.matrix.setPosition(
+    new THREE.Vector3(
+      toWorld(geometry.tabletop.center.x),
+      toWorld(geometry.tabletop.center.y),
+      toWorld(geometry.tabletop.center.z),
+    ),
   );
 
   const tabletopMesh = new THREE.Mesh(

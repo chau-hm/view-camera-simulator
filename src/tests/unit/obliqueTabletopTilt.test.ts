@@ -107,7 +107,12 @@ describe("Oblique Tabletop Tilt limitation", () => {
     expect(camera.aperture).toBe(11);
   });
 
-  it("derives non-collinear coverage samples from the canonical tabletop plane", () => {
+  it("derives a compound plane and non-collinear coverage samples from canonical geometry", () => {
+    const normal = obliqueTabletopGeometry.tabletopTopSurfacePlane.normal;
+    expect(Math.abs(normal.x)).toBeGreaterThan(0.01);
+    expect(Math.abs(normal.z)).toBeGreaterThan(0.1);
+    expect(Math.hypot(normal.x, normal.y, normal.z)).toBeCloseTo(1, 10);
+
     const sampleIds = obliqueTabletopGeometry.tabletopSurfaceSamples.map((sample) => sample.id);
     expect(sampleIds).toEqual([
       "near-left",
@@ -184,15 +189,56 @@ describe("Oblique Tabletop Tilt limitation", () => {
       tilted,
       obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds,
     );
+    const oppositeSignAxisCoc = physicalCocValues(
+      targetMap(
+        -obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
+        obliqueTabletopGeometry.tiltOnlyCalibration.focusDistanceMm,
+      ),
+      obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds,
+    );
 
     expect(obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg).toBeLessThan(0);
     expect(spread(tiltedAxisCoc)).toBeLessThan(spread(neutralAxisCoc) * 0.7);
     expect(Math.max(...tiltedAxisCoc)).toBeLessThan(Math.max(...neutralAxisCoc) * 0.8);
+    expect(spread(tiltedAxisCoc)).toBeLessThan(spread(oppositeSignAxisCoc) * 0.7);
     expect(
       [...tilted.values()].some((target) =>
         (target.physicalPointSharpness ?? 0) >= 0.6,
       ),
     ).toBe(true);
+  });
+
+  it("proves no public Tilt + Focus state aligns the full compound tabletop", () => {
+    const focusRange = getSceneFocusDistanceRange(obliqueTabletopScene.id);
+    const tiltCount = Math.round(
+      (CAMERA_CONSTANTS.tiltMaxDeg - CAMERA_CONSTANTS.tiltMinDeg) /
+        CAMERA_CONTROL_STEPS.tiltDeg,
+    );
+    const focusCount = Math.round(
+      (focusRange.max - focusRange.min) / CAMERA_CONTROL_STEPS.focusDistanceMm,
+    );
+    let fullyAlignedStateCount = 0;
+    let bestMaximumCoc = Number.POSITIVE_INFINITY;
+
+    for (let tiltIndex = 0; tiltIndex <= tiltCount; tiltIndex += 1) {
+      const tilt = Number(
+        (CAMERA_CONSTANTS.tiltMinDeg + tiltIndex * CAMERA_CONTROL_STEPS.tiltDeg).toFixed(1),
+      );
+      for (let focusIndex = 0; focusIndex <= focusCount; focusIndex += 1) {
+        const focus = focusRange.min + focusIndex * CAMERA_CONTROL_STEPS.focusDistanceMm;
+        const result = evaluate(tilt, focus);
+        const maximumCoc = Math.max(
+          ...result.focusTargets.map(physicalCoc),
+        );
+        if (maximumCoc <= ACCEPTABLE_COC_DIAMETER_MM) {
+          fullyAlignedStateCount += 1;
+        }
+        bestMaximumCoc = Math.min(bestMaximumCoc, maximumCoc);
+      }
+    }
+
+    expect(fullyAlignedStateCount).toBe(0);
+    expect(bestMaximumCoc).toBeGreaterThan(ACCEPTABLE_COC_DIAMETER_MM);
   });
 
   it("leaves a measurable off-axis disagreement after Tilt + Focus", () => {

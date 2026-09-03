@@ -83,45 +83,40 @@ export const markerGeometry = {
 const topSurfaceLocalY = tabletop.thickness / 2;
 const markerSurfaceOffsetMm = markerGeometry.height + markerGeometry.surfaceGap;
 
-/** Rotate a tabletop-local point with the same XYZ Euler order used by R3F. */
-export const tabletopLocalPointToWorld = (
-  local: ObliqueTabletopLocalPosition,
-): Vec3 => {
-  // Three.js applies the Y rotation before the X rotation for the default
-  // XYZ Euler order used by Object3D.rotation.set(x, y, z).
-  const rotatedX =
-    local.x * Math.cos(tabletop.rotationYRad) +
-    local.z * Math.sin(tabletop.rotationYRad);
-  const rotatedZAfterY =
-    -local.x * Math.sin(tabletop.rotationYRad) +
-    local.z * Math.cos(tabletop.rotationYRad);
-
-  return {
-    x: tabletop.center.x + rotatedX,
+/** Rotate a tabletop-local direction without applying the tabletop translation. */
+export const tabletopLocalDirectionToWorld = (local: Vec3): Vec3 => {
+  // Apply the near-to-far X tilt first, then rotate that tilted plane around
+  // world Y. This explicit composition gives the surface both vertical and
+  // lateral slope components; the renderer consumes the same derived basis.
+  const afterX = {
+    x: local.x,
     y:
-      tabletop.center.y +
       local.y * Math.cos(tabletop.rotationXRad) -
-      rotatedZAfterY * Math.sin(tabletop.rotationXRad),
+      local.z * Math.sin(tabletop.rotationXRad),
     z:
-      tabletop.center.z +
       local.y * Math.sin(tabletop.rotationXRad) +
-      rotatedZAfterY * Math.cos(tabletop.rotationXRad),
+      local.z * Math.cos(tabletop.rotationXRad),
+  };
+  return {
+    x:
+      afterX.x * Math.cos(tabletop.rotationYRad) +
+      afterX.z * Math.sin(tabletop.rotationYRad),
+    y: afterX.y,
+    z:
+      -afterX.x * Math.sin(tabletop.rotationYRad) +
+      afterX.z * Math.cos(tabletop.rotationYRad),
   };
 };
 
-/** Rotate a tabletop-local direction without applying the tabletop translation. */
-export const tabletopLocalDirectionToWorld = (local: Vec3): Vec3 => {
-  const rotatedX =
-    local.x * Math.cos(tabletop.rotationYRad) +
-    local.z * Math.sin(tabletop.rotationYRad);
-  const rotatedZAfterY =
-    -local.x * Math.sin(tabletop.rotationYRad) +
-    local.z * Math.cos(tabletop.rotationYRad);
-
+/** Rotate a tabletop-local point with the canonical subject transform. */
+export const tabletopLocalPointToWorld = (
+  local: ObliqueTabletopLocalPosition,
+): Vec3 => {
+  const rotated = tabletopLocalDirectionToWorld(local);
   return {
-    x: rotatedX,
-    y: local.y * Math.cos(tabletop.rotationXRad) - rotatedZAfterY * Math.sin(tabletop.rotationXRad),
-    z: local.y * Math.sin(tabletop.rotationXRad) + rotatedZAfterY * Math.cos(tabletop.rotationXRad),
+    x: tabletop.center.x + rotated.x,
+    y: tabletop.center.y + rotated.y,
+    z: tabletop.center.z + rotated.z,
   };
 };
 
@@ -141,9 +136,15 @@ export const tabletopLocalToWorld = ({
     z: localDepth,
   });
 
+export const tabletopTransformBasis = {
+  localX: tabletopLocalDirectionToWorld({ x: 1, y: 0, z: 0 }),
+  localY: tabletopLocalDirectionToWorld({ x: 0, y: 1, z: 0 }),
+  localZ: tabletopLocalDirectionToWorld({ x: 0, y: 0, z: 1 }),
+} as const;
+
 export const tabletopTopSurfacePlane = {
   point: tabletopLocalToWorld({ localX: 0, localDepth: 0 }),
-  normal: tabletopLocalDirectionToWorld({ x: 0, y: 1, z: 0 }),
+  normal: tabletopTransformBasis.localY,
 } as const;
 
 export const tabletopExtents = {
@@ -274,11 +275,13 @@ export const focusTargets: FocusTarget[] = tabletopSurfaceSamples.map((sample) =
 
 /**
  * Public-step evidence state for the intentionally incomplete Tilt slice.
- * This is a learner-reachable calibration, not a compound solution.
+ * Under the canonical R_y(-8°) ∘ R_x(9°) subject transform, the existing
+ * Front Tilt convention reaches the near-to-far improvement in the negative
+ * direction. This is a learner-reachable calibration, not a compound solution.
  */
 export const tiltOnlyCalibration = {
-  frontTiltDeg: -9.7,
-  focusDistanceMm: 1770,
+  frontTiltDeg: -10,
+  focusDistanceMm: 1720,
   aperture: 11 as const,
 } as const;
 
@@ -417,6 +420,7 @@ export default {
   tabletopLocalPointToWorld,
   tabletopLocalDirectionToWorld,
   tabletopLocalToWorld,
+  tabletopTransformBasis,
   tabletopTopSurfacePlane,
   tabletopExtents,
   markers,
