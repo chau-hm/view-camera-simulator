@@ -100,8 +100,12 @@ describe("scene definitions", () => {
       obliqueTabletopGeometry.canonicalFocusDistanceMm,
     );
     expect(obliqueTabletopScene.cameraPreset.aperture).toBe(11);
+    expect(obliqueTabletopScene.movementCapabilities).toEqual({
+      available: ["frontTiltDeg"],
+      selectionMode: "single",
+      defaultMovement: "frontTiltDeg",
+    });
     expect(obliqueTabletopScene.cameraControlPolicy).toEqual({
-      movement: "fixed",
       aperture: "fixed",
       infinityReset: false,
     });
@@ -259,7 +263,7 @@ describe("scene definitions", () => {
     const sharpnessById = new Map(
       opticsState.focusTargets.map((target) => [target.id, target.physicalPointSharpness]),
     );
-    expect(opticsState.focusTargets).toHaveLength(3);
+    expect(opticsState.focusTargets).toHaveLength(7);
     expect(sharpnessById.get("middle")).toBeGreaterThan(
       sharpnessById.get("near-left") ?? 1,
     );

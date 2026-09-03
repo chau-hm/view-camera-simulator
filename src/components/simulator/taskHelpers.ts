@@ -88,8 +88,9 @@ const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
     objectiveKey: simulatorMessageKeys.freePractice.obliqueTabletop.objective,
     bulletKeys: [
       simulatorMessageKeys.freePractice.obliqueTabletop.bullets.focusDistance,
-      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.depth,
-      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.sharpness,
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.tilt,
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.refocus,
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.remaining,
     ],
   },
   "mirror-shift": {

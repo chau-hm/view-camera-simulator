@@ -44,6 +44,12 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText(/Stop down Aperture to expand usable depth/)).toBeInTheDocument();
 
     cleanup();
+    render(<TaskPanel task={null} sceneId="oblique-tabletop" />);
+    expect(screen.getByText(/Use Front Tilt to bring the near and far regions closer/)).toBeInTheDocument();
+    expect(screen.getByText(/Refine Focus after changing Front Tilt/)).toBeInTheDocument();
+    expect(screen.getByText(/regions across the tabletop still disagree/)).toBeInTheDocument();
+
+    cleanup();
     render(<FeedbackPanel mode="free" sceneId="understanding-camera-movements" task={null} evaluation={null} />);
     expect(
       screen.getByText(/Whole-camera Viewpoint movement changes perspective relationships and parallax/),
@@ -85,6 +91,12 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText(/使用前組傾斜，讓清晰焦平面/)).toBeInTheDocument();
     expect(screen.getByText(/調整對焦，將焦平面放置/)).toBeInTheDocument();
     expect(screen.getByText(/收細光圈，擴大已對齊清晰焦平面周圍的實用景深/)).toBeInTheDocument();
+
+    cleanup();
+    render(<TaskPanel task={null} sceneId="oblique-tabletop" />);
+    expect(screen.getByText(/使用前組傾斜，改善桌面近處與遠處之間的焦平面對齊/)).toBeInTheDocument();
+    expect(screen.getByText(/調整前組傾斜後，再微調對焦/)).toBeInTheDocument();
+    expect(screen.getByText(/桌面其他位置仍未能同時保持清晰/)).toBeInTheDocument();
   });
 });
 

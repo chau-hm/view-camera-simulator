@@ -326,8 +326,9 @@ export const simulatorMessageKeys = {
       objective: "simulator.freePractice.obliqueTabletop.objective",
       bullets: {
         focusDistance: "simulator.freePractice.obliqueTabletop.bullets.focusDistance",
-        depth: "simulator.freePractice.obliqueTabletop.bullets.depth",
-        sharpness: "simulator.freePractice.obliqueTabletop.bullets.sharpness",
+        tilt: "simulator.freePractice.obliqueTabletop.bullets.tilt",
+        refocus: "simulator.freePractice.obliqueTabletop.bullets.refocus",
+        remaining: "simulator.freePractice.obliqueTabletop.bullets.remaining",
       },
       observation: "simulator.freePractice.obliqueTabletop.observation",
     },

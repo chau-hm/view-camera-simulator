@@ -59,6 +59,24 @@ const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
   }
 };
 
+const addTabletopSurfaceSamples = (tabletopAssembly: THREE.Group): void => {
+  geometry.tabletopSurfaceSamples.forEach((sample) => {
+    const sampleNode = new THREE.Object3D();
+    sampleNode.name = `oblique-tabletop-surface-sample-${sample.id}`;
+    sampleNode.position.set(
+      toWorld(sample.localPosition.x),
+      toWorld(geometry.tabletop.thickness / 2),
+      toWorld(sample.localPosition.z),
+    );
+    sampleNode.userData = {
+      focusTargetId: sample.id,
+      focusCoverageSampleId: sample.id,
+      focusSampleWorldMm: { ...sample.worldPosition },
+    };
+    tabletopAssembly.add(sampleNode);
+  });
+};
+
 const addMarker = (
   tabletopAssembly: THREE.Group,
   marker: ObliqueTabletopMarker,
@@ -226,6 +244,7 @@ export function createObliqueTabletopGroup(): THREE.Group {
   tabletopMesh.name = "oblique-tabletop-tabletop";
   tabletopAssembly.add(tabletopMesh);
   addTabletopSurfaceGuides(tabletopAssembly);
+  addTabletopSurfaceSamples(tabletopAssembly);
 
   geometry.markers.forEach((marker) => addMarker(tabletopAssembly, marker));
   root.add(tabletopAssembly);

@@ -3,7 +3,7 @@
 
 import type { Bounds3, Vec3 } from "../types/optics";
 import type { CameraPlacement, FocusTarget } from "../types/scene";
-import { CAMERA_CONTROL_STEPS } from "../utils/constants";
+import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS } from "../utils/constants";
 import { roundToStep } from "../utils/roundToStep";
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
@@ -21,6 +21,23 @@ export type ObliqueTabletopMarker = {
   color: string;
   worldPosition: Vec3;
   focusSampleWorldPositions: Vec3[];
+};
+
+export type ObliqueTabletopSurfaceSampleId =
+  | "near-left"
+  | "near-centre"
+  | "near-right"
+  | "middle"
+  | "far-left"
+  | "far-centre"
+  | "far-right";
+
+/** Non-rendering coverage samples used to evaluate the entire tabletop plane. */
+export type ObliqueTabletopSurfaceSample = {
+  id: ObliqueTabletopSurfaceSampleId;
+  label: string;
+  localPosition: { x: number; z: number };
+  worldPosition: Vec3;
 };
 
 const tabletopRotationXDeg = 9;
@@ -209,13 +226,61 @@ export const markers: ObliqueTabletopMarker[] = markerInputs.map((marker) => {
   };
 });
 
-export const focusTargets: FocusTarget[] = markers.map((marker) => ({
-  id: marker.id,
-  label: marker.label,
-  worldPosition: marker.worldPosition,
-  sampleWorldPositions: marker.focusSampleWorldPositions,
+// Cover the full surface instead of relying on the three approximately
+// collinear visible markers. Every sample is derived from the same
+// tabletop-local transform and lies on the canonical top surface; the render
+// factory registers matching non-rendering Object3D nodes for RTT/3D
+// inspection.
+const tabletopSurfaceSampleInputs = [
+  { id: "near-left" as const, label: "Near-left tabletop surface", localPosition: { x: -820, z: -1250 } },
+  { id: "near-centre" as const, label: "Near-centre tabletop surface", localPosition: { x: 0, z: -1250 } },
+  { id: "near-right" as const, label: "Near-right tabletop surface", localPosition: { x: 820, z: -1250 } },
+  { id: "middle" as const, label: "Middle tabletop surface", localPosition: { x: 0, z: 0 } },
+  { id: "far-left" as const, label: "Far-left tabletop surface", localPosition: { x: -820, z: 1250 } },
+  { id: "far-centre" as const, label: "Far-centre tabletop surface", localPosition: { x: 0, z: 1250 } },
+  { id: "far-right" as const, label: "Far-right tabletop surface", localPosition: { x: 820, z: 1250 } },
+] as const;
+
+export const tabletopSurfaceSamples: ObliqueTabletopSurfaceSample[] =
+  tabletopSurfaceSampleInputs.map((sample) => ({
+    ...sample,
+    localPosition: { ...sample.localPosition },
+    worldPosition: tabletopLocalToWorld({
+      localX: sample.localPosition.x,
+      localDepth: sample.localPosition.z,
+    }),
+  }));
+
+export const tabletopPrincipalDepthSampleIds = [
+  "near-centre",
+  "middle",
+  "far-centre",
+] as const satisfies readonly ObliqueTabletopSurfaceSampleId[];
+
+export const tabletopOffAxisSampleIds = [
+  "near-left",
+  "near-right",
+  "far-left",
+  "far-right",
+] as const satisfies readonly ObliqueTabletopSurfaceSampleId[];
+
+/** The live optics/readout targets cover the canonical tabletop surface. */
+export const focusTargets: FocusTarget[] = tabletopSurfaceSamples.map((sample) => ({
+  id: sample.id,
+  label: sample.label,
+  worldPosition: sample.worldPosition,
   weight: 1,
 }));
+
+/**
+ * Public-step evidence state for the intentionally incomplete Tilt slice.
+ * This is a learner-reachable calibration, not a compound solution.
+ */
+export const tiltOnlyCalibration = {
+  frontTiltDeg: -9.7,
+  focusDistanceMm: 1770,
+  aperture: 11 as const,
+} as const;
 
 export const middleMarker = markers.find((marker) => marker.id === "middle")!;
 
@@ -337,7 +402,11 @@ export const sceneBounds = boundsFromPoints(allPhysicalGeometryPoints, 150);
 
 const focusTargetDepths = focusTargets.map((target) => target.worldPosition.z);
 export const focusDistanceRangeMm = {
-  min: roundToStep(Math.max(2000, Math.min(...focusTargetDepths) - 500), CAMERA_CONTROL_STEPS.focusDistanceMm),
+  // A tilted focus plane can intersect the optical axis much closer than the
+  // neutral tabletop depth. The real-image floor remains enforced centrally
+  // by getSceneFocusDistanceRange; this explicit lower bound keeps that
+  // physically valid Tilt + Focus state publicly reachable.
+  min: CAMERA_CONSTANTS.focalLengthMm + CAMERA_CONTROL_STEPS.focusDistanceMm,
   max: roundToStep(Math.max(...focusTargetDepths) + 500, CAMERA_CONTROL_STEPS.focusDistanceMm),
 } as const;
 
@@ -353,6 +422,10 @@ export default {
   markers,
   middleMarker,
   focusTargets,
+  tabletopSurfaceSamples,
+  tabletopPrincipalDepthSampleIds,
+  tabletopOffAxisSampleIds,
+  tiltOnlyCalibration,
   canonicalFocusDistanceMm,
   tableSupports,
   observerCamera,

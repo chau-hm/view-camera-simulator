@@ -35,8 +35,12 @@ export const obliqueTabletopScene: SceneDefinition = {
       worldBounds: geometry.compositionTargetBounds,
     },
   ],
+  movementCapabilities: {
+    available: ["frontTiltDeg"],
+    selectionMode: "single",
+    defaultMovement: "frontTiltDeg",
+  },
   cameraControlPolicy: {
-    movement: "fixed",
     aperture: "fixed",
     infinityReset: false,
   },

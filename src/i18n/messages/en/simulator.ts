@@ -358,17 +358,19 @@ export const simulatorMessages = {
     },
     obliqueTabletop: {
       objective:
-        "Explore the neutral focus problem across an oblique tabletop at fixed f/11.",
+        "Use Front Tilt and Focus to improve near-to-far focus alignment across the oblique tabletop at fixed f/11.",
       bullets: {
         focusDistance:
-          "Move Focus between the near, middle, and far tabletop markers.",
-        depth:
-          "Compare how the tabletop spans depth from the camera's viewpoint.",
-        sharpness:
-          "Watch the Ground Glass and Focus Targets readout: one region can be sharp while other regions soften.",
+          "Start at neutral and move Focus between the near, middle, and far tabletop regions.",
+        tilt:
+          "Use Front Tilt to bring the near and far regions closer to the same plane of focus.",
+        refocus:
+          "Refine Focus after changing Front Tilt.",
+        remaining:
+          "Notice that regions across the tabletop still disagree even after near-to-far alignment improves.",
       },
       observation:
-        "With the camera and aperture held neutral, the tabletop's oblique surface spans more than one depth. Focus can move sharpness from one region to another, but cannot make the whole surface sharp at once.",
+        "Front Tilt improves the near-to-far focus relationship, but the oblique tabletop still contains an unresolved orientation. Focus and Tilt alone cannot keep the whole surface sharp at once.",
     },
     mirrorShift: {
       objective:

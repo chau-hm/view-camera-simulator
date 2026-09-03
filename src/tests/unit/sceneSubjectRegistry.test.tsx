@@ -153,6 +153,19 @@ describe("scene subject registry", () => {
       expect(probeWorld.y).toBeCloseTo(marker.worldPosition.y * 0.001, 10);
       expect(probeWorld.z).toBeCloseTo(marker.worldPosition.z * 0.001, 10);
     });
+    obliqueTabletopGeometry.tabletopSurfaceSamples.forEach((sample) => {
+      const sampleNode = group?.getObjectByName(
+        `oblique-tabletop-surface-sample-${sample.id}`,
+      );
+      expect(sampleNode).toBeInstanceOf(THREE.Object3D);
+      const sampleWorld = new THREE.Vector3();
+      sampleNode?.getWorldPosition(sampleWorld);
+      expect(sampleWorld.x).toBeCloseTo(sample.worldPosition.x * 0.001, 10);
+      expect(sampleWorld.y).toBeCloseTo(sample.worldPosition.y * 0.001, 10);
+      expect(sampleWorld.z).toBeCloseTo(sample.worldPosition.z * 0.001, 10);
+      expect(sampleNode?.userData.focusTargetId).toBe(sample.id);
+      expect(sampleNode?.userData.focusCoverageSampleId).toBe(sample.id);
+    });
 
     const spies = collectDisposableSpies(group!);
     disposeRegisteredRttSubject("oblique-tabletop", group!);
