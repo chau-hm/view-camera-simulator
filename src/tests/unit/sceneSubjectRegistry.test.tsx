@@ -142,6 +142,15 @@ describe("scene subject registry", () => {
     expect(group?.getObjectByName("oblique-tabletop-floor")).toBeInstanceOf(THREE.Mesh);
 
     group?.updateMatrixWorld(true);
+    const tabletopAssembly = group?.getObjectByName("oblique-tabletop-tabletop-assembly");
+    expect(tabletopAssembly).toBeInstanceOf(THREE.Group);
+    const renderedNormal = new THREE.Vector3(0, 1, 0).transformDirection(
+      tabletopAssembly!.matrixWorld,
+    );
+    expect(renderedNormal.x).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.x, 10);
+    expect(renderedNormal.y).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.y, 10);
+    expect(renderedNormal.z).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.z, 10);
+
     obliqueTabletopGeometry.markers.forEach((marker) => {
       const markerGroup = group?.getObjectByName(`oblique-tabletop-marker-${marker.id}`);
       expect(markerGroup).toBeInstanceOf(THREE.Group);
@@ -152,6 +161,19 @@ describe("scene subject registry", () => {
       expect(probeWorld.x).toBeCloseTo(marker.worldPosition.x * 0.001, 10);
       expect(probeWorld.y).toBeCloseTo(marker.worldPosition.y * 0.001, 10);
       expect(probeWorld.z).toBeCloseTo(marker.worldPosition.z * 0.001, 10);
+    });
+    obliqueTabletopGeometry.tabletopSurfaceSamples.forEach((sample) => {
+      const sampleNode = group?.getObjectByName(
+        `oblique-tabletop-surface-sample-${sample.id}`,
+      );
+      expect(sampleNode).toBeInstanceOf(THREE.Object3D);
+      const sampleWorld = new THREE.Vector3();
+      sampleNode?.getWorldPosition(sampleWorld);
+      expect(sampleWorld.x).toBeCloseTo(sample.worldPosition.x * 0.001, 10);
+      expect(sampleWorld.y).toBeCloseTo(sample.worldPosition.y * 0.001, 10);
+      expect(sampleWorld.z).toBeCloseTo(sample.worldPosition.z * 0.001, 10);
+      expect(sampleNode?.userData.focusTargetId).toBe(sample.id);
+      expect(sampleNode?.userData.focusCoverageSampleId).toBe(sample.id);
     });
 
     const spies = collectDisposableSpies(group!);

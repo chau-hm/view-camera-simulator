@@ -59,6 +59,24 @@ const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
   }
 };
 
+const addTabletopSurfaceSamples = (tabletopAssembly: THREE.Group): void => {
+  geometry.tabletopSurfaceSamples.forEach((sample) => {
+    const sampleNode = new THREE.Object3D();
+    sampleNode.name = `oblique-tabletop-surface-sample-${sample.id}`;
+    sampleNode.position.set(
+      toWorld(sample.localPosition.x),
+      toWorld(geometry.tabletop.thickness / 2),
+      toWorld(sample.localPosition.z),
+    );
+    sampleNode.userData = {
+      focusTargetId: sample.id,
+      focusCoverageSampleId: sample.id,
+      focusSampleWorldMm: { ...sample.worldPosition },
+    };
+    tabletopAssembly.add(sampleNode);
+  });
+};
+
 const addMarker = (
   tabletopAssembly: THREE.Group,
   marker: ObliqueTabletopMarker,
@@ -204,15 +222,22 @@ export function createObliqueTabletopGroup(): THREE.Group {
 
   const tabletopAssembly = new THREE.Group();
   tabletopAssembly.name = "oblique-tabletop-tabletop-assembly";
-  tabletopAssembly.position.set(
-    toWorld(geometry.tabletop.center.x),
-    toWorld(geometry.tabletop.center.y),
-    toWorld(geometry.tabletop.center.z),
+  // Use the canonical basis directly. Object3D.rotation.set(x, y, 0) uses
+  // the opposite composition for this subject and would erase the lateral
+  // component of the tilted surface normal.
+  const basis = geometry.tabletopTransformBasis;
+  tabletopAssembly.matrixAutoUpdate = false;
+  tabletopAssembly.matrix.makeBasis(
+    new THREE.Vector3(basis.localX.x, basis.localX.y, basis.localX.z),
+    new THREE.Vector3(basis.localY.x, basis.localY.y, basis.localY.z),
+    new THREE.Vector3(basis.localZ.x, basis.localZ.y, basis.localZ.z),
   );
-  tabletopAssembly.rotation.set(
-    geometry.tabletop.rotationXRad,
-    geometry.tabletop.rotationYRad,
-    0,
+  tabletopAssembly.matrix.setPosition(
+    new THREE.Vector3(
+      toWorld(geometry.tabletop.center.x),
+      toWorld(geometry.tabletop.center.y),
+      toWorld(geometry.tabletop.center.z),
+    ),
   );
 
   const tabletopMesh = new THREE.Mesh(
@@ -226,6 +251,7 @@ export function createObliqueTabletopGroup(): THREE.Group {
   tabletopMesh.name = "oblique-tabletop-tabletop";
   tabletopAssembly.add(tabletopMesh);
   addTabletopSurfaceGuides(tabletopAssembly);
+  addTabletopSurfaceSamples(tabletopAssembly);
 
   geometry.markers.forEach((marker) => addMarker(tabletopAssembly, marker));
   root.add(tabletopAssembly);

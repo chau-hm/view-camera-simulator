@@ -1,9 +1,15 @@
-# Oblique Tabletop foundation (PR 10A)
+# PR 10B — Oblique Tabletop Tilt Limitation
 
-- Branch: `feature/oblique-tabletop-foundation`; baseline: `origin/main` `ae9b5c33358449d18c65b0282bd9fce747dd512c`.
-- Objective: add the public, free-only Oblique Tabletop scene as the neutral foundation for later compound Tilt + Swing work.
-- Scope: canonical millimetre geometry, 3D/RTT shared subject factory, scene/catalog/i18n registration, fixed f/11 neutral preset, focus-only public controls, and ImageGen raster catalog card. No guided task or Tilt/Swing solution is included.
-- Geometry: a 2800 × 3800 mm tabletop at 9° X / -8° Y with near-left, middle, and far-right focus markers; the middle marker supplies the rounded neutral focus distance and the tabletop surface supplies the composition target/bounds.
-- Neutral problem: the existing physical thin-lens focus/sharpness pipeline receives marker/sample world positions spanning depth in both tabletop directions; at neutral focus and f/11 the middle region is sharper while near/far regions are measurably soft.
-- Validation: `npm test` (154 files / 1,499 tests), `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`, `git diff --check`, and the focused Chromium `scene-switching.spec.ts` smoke (1 passed).
-- Remaining handoff: PR 10B/10C can add compound movement calibration and guided tasks against the registered tabletop plane; those behaviors are intentionally absent here.
+- Branch: `feature/oblique-tabletop-tilt`; base: `origin/main` `c3dc8a8d08fd13fcb0f02c36ebfa722fcc464644` (PR 10A squash merge).
+- Objective/scope: expose Front Tilt + Focus on the existing Oblique Tabletop scene; keep f/11 fixed and Front Swing, all rise/shift, and rear movements unavailable. No guided lesson or compound solution.
+- Canonical geometry: `tabletopTopSurfacePlane` and `tabletopLocalToWorld` remain the source of truth. Live focus coverage uses seven derived surface samples: near/middle/far rows with left/centre/right positions. The shared `ObliqueTabletopSubjectFactory` registers matching non-rendering RTT/3D sample nodes.
+- Canonical transform: apply the 9° X tilt first, then the -8° world-Y rotation (`R_y(-8°) ∘ R_x(9°)`) through one exported basis. The R3F/RTT factory uses that exact basis matrix; helper points, supports, markers, samples, and plane data use the same transform.
+- Corrected plane normal: approximately `(-0.021771, 0.987688, 0.154912)`. Both lateral (`x`) and near/far (`z`) components are meaningful; the registry test compares the rendered Three.js normal to this canonical normal.
+- Tilt sign: with the existing `calculateLensNormal` / Front Tilt convention, fresh public-grid calibration selects negative Front Tilt; the opposite positive sign produces materially worse principal-axis CoC. No optics sign or core model was changed.
+- Public evidence state: Front Tilt `-10.0°`, Focus `1720 mm`, f/11. Both are reachable on the shared `0.1°` Tilt and `10 mm` Focus steps within the scene's `160–6400 mm` range.
+- Physical evidence: neutral principal-axis CoC spread is approximately `0.1701 mm`; the selected Tilt + Focus state is approximately `0.0865 mm`, while its maximum falls from `0.1703 mm` to `0.1174 mm`. Selected off-axis samples remain materially worse (`0.1173 mm` average vs `0.0882 mm` on-axis; `0.1512 mm` maximum) and exceed the existing `0.1 mm` acceptable threshold.
+- Full-plane proof: an exhaustive public grid of 201 Tilt values × 625 Focus values found zero Tilt-only states with all seven canonical samples at or below the existing `0.1 mm` CoC threshold. This is physical compound-plane evidence, not a single poor calibration. The proof has an explicit `20_000 ms` per-test timeout for CI stability.
+- Files: canonical transform/basis and focus calibration, shared subject matrix registration, focused compound-plane/optics/scene/RTT/public-control tests, updated English/zh-HK guidance, and this status handoff.
+- Validation: focused scene/optics/control suite (5 files, 58 tests; exhaustive proof 2.86 s); `npm test` (155 files, 1,508 tests); `npm run typecheck`; `npm run lint`; `npm run check:css`; `npm run build`; `git diff --check`; focused Chromium `scene-switching.spec.ts` smoke (1 passed).
+- Not run: full `npm run ci:local:e2e`; shared renderer lifecycle and projection contracts were unchanged, and the focused public scene-switching smoke passed.
+- PR 10C: add Front Swing, calibrate the compound Tilt + Swing solution, and add the guided lesson. Those behaviors are intentionally not included here.
