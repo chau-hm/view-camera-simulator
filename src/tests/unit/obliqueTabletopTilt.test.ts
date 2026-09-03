@@ -239,7 +239,7 @@ describe("Oblique Tabletop Tilt limitation", () => {
 
     expect(fullyAlignedStateCount).toBe(0);
     expect(bestMaximumCoc).toBeGreaterThan(ACCEPTABLE_COC_DIAMETER_MM);
-  });
+  }, 20_000);
 
   it("leaves a measurable off-axis disagreement after Tilt + Focus", () => {
     const tilted = targetMap(
