@@ -94,15 +94,15 @@ describe("scene definitions", () => {
     expect(focusTargetIds).toEqual(["near-cup", "mid-notebook", "far-book"]);
   });
 
-  it("defines Oblique Tabletop as a free-only neutral focus foundation", () => {
+  it("defines Oblique Tabletop as a free-only compound-focus scene", () => {
     expect(obliqueTabletopScene.name).toBe("Oblique Tabletop");
     expect(obliqueTabletopScene.cameraPreset.focusDistanceMm).toBe(
       obliqueTabletopGeometry.canonicalFocusDistanceMm,
     );
     expect(obliqueTabletopScene.cameraPreset.aperture).toBe(11);
     expect(obliqueTabletopScene.movementCapabilities).toEqual({
-      available: ["frontTiltDeg"],
-      selectionMode: "single",
+      available: ["frontTiltDeg", "frontSwingDeg"],
+      selectionMode: "multiple",
       defaultMovement: "frontTiltDeg",
     });
     expect(obliqueTabletopScene.cameraControlPolicy).toEqual({
@@ -113,7 +113,10 @@ describe("scene definitions", () => {
       obliqueTabletopGeometry.focusDistanceRangeMm,
     );
     expect(obliqueTabletopScene.focusTargets).toEqual(
-      obliqueTabletopGeometry.focusTargets,
+      obliqueTabletopGeometry.tabletopVisibleFocusTargets,
+    );
+    expect(obliqueTabletopScene.focusTargets).not.toEqual(
+      obliqueTabletopGeometry.tabletopAnalyticalFocusTargets,
     );
     expect(obliqueTabletopScene.compositionTargets.map((target) => target.id)).toEqual([
       "tabletop-surface",

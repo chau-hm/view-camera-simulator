@@ -9,7 +9,7 @@ import { getPublicSceneEntries, getPublicSceneEntryById } from "./publicScenes";
 import { isValidSimulatorRoute } from "./simulatorRouteValidation";
 import type { SimulatorMode } from "../types/camera";
 
-import { ViewCameraHeroIllustration } from "../components/marketing/ViewCameraHeroIllustration";
+import { LandingHero } from "../components/marketing/LandingHero";
 import { InfoCard } from "../components/marketing/InfoCard";
 import { SceneCard } from "../components/marketing/SceneCard";
 import { DesktopExperienceNotice } from "../components/marketing/DesktopExperienceNotice";
@@ -23,49 +23,37 @@ export const HomePage = () => {
   const { t } = useTranslation();
 
   return (
-    <AppShell title="">
-      <section className="hero">
-        <div className="hero__content">
-          <div className="eyebrow">{t("home.hero.eyebrow")}</div>
-          <h1>{t("home.hero.title")}</h1>
-          <p>{t("home.hero.description")}</p>
-          <div className="hero__actions">
-            <Link className="btn btn--primary" to="/scenes">
-              {t("home.hero.exploreSimulator")}
-            </Link>
+    <AppShell title="" siteShellClassName="site-shell--landing-home">
+      <LandingHero />
+
+      <div className="landing-home__legacy">
+        <DesktopExperienceNotice />
+
+        <section id="why" className="landing-info-section" aria-label={t("home.why.ariaLabel")}>
+          <div className="landing-info-list">
+            <InfoCard
+              icon={<span className="material-symbols-outlined">architecture</span>}
+              title={t("home.info.control.title")}
+            >
+              {t("home.info.control.body")}
+            </InfoCard>
+
+            <InfoCard
+              icon={<span className="material-symbols-outlined">open_with</span>}
+              title={t("home.info.movements.title")}
+            >
+              {t("home.info.movements.body")}
+            </InfoCard>
+
+            <InfoCard
+              icon={<span className="material-symbols-outlined">person</span>}
+              title={t("home.info.artists.title")}
+            >
+              {t("home.info.artists.body")}
+            </InfoCard>
           </div>
-        </div>
-
-        <ViewCameraHeroIllustration />
-      </section>
-
-      <DesktopExperienceNotice />
-
-      <section id="why" className="landing-info-section" aria-label={t("home.why.ariaLabel")}>
-        <div className="landing-info-list">
-          <InfoCard
-            icon={<span className="material-symbols-outlined">architecture</span>}
-            title={t("home.info.control.title")}
-          >
-            {t("home.info.control.body")}
-          </InfoCard>
-
-          <InfoCard
-            icon={<span className="material-symbols-outlined">open_with</span>}
-            title={t("home.info.movements.title")}
-          >
-            {t("home.info.movements.body")}
-          </InfoCard>
-
-          <InfoCard
-            icon={<span className="material-symbols-outlined">person</span>}
-            title={t("home.info.artists.title")}
-          >
-            {t("home.info.artists.body")}
-          </InfoCard>
-        </div>
-      </section>
-
+        </section>
+      </div>
     </AppShell>
   );
 };

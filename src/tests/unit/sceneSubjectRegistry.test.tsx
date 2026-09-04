@@ -187,7 +187,7 @@ describe("scene subject registry", () => {
       expect(probeWorld.y).toBeCloseTo(marker.worldPosition.y * 0.001, 10);
       expect(probeWorld.z).toBeCloseTo(marker.worldPosition.z * 0.001, 10);
     });
-    obliqueTabletopGeometry.tabletopSurfaceSamples.forEach((sample) => {
+    obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples.forEach((sample) => {
       const sampleNode = group?.getObjectByName(
         `oblique-tabletop-surface-sample-${sample.id}`,
       );

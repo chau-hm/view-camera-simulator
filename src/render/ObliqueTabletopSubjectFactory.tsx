@@ -59,8 +59,8 @@ const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
   }
 };
 
-const addTabletopSurfaceSamples = (tabletopAssembly: THREE.Group): void => {
-  geometry.tabletopSurfaceSamples.forEach((sample) => {
+const addTabletopAnalyticalSurfaceSamples = (tabletopAssembly: THREE.Group): void => {
+  geometry.tabletopAnalyticalSurfaceSamples.forEach((sample) => {
     const sampleNode = new THREE.Object3D();
     sampleNode.name = `oblique-tabletop-surface-sample-${sample.id}`;
     sampleNode.position.set(
@@ -251,7 +251,7 @@ export function createObliqueTabletopGroup(): THREE.Group {
   tabletopMesh.name = "oblique-tabletop-tabletop";
   tabletopAssembly.add(tabletopMesh);
   addTabletopSurfaceGuides(tabletopAssembly);
-  addTabletopSurfaceSamples(tabletopAssembly);
+  addTabletopAnalyticalSurfaceSamples(tabletopAssembly);
 
   geometry.markers.forEach((marker) => addMarker(tabletopAssembly, marker));
   root.add(tabletopAssembly);
