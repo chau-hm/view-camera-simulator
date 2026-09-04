@@ -6,7 +6,7 @@ const completedHeading = (page: Page): Locator =>
 
 test("TST-E2E-002: user can open Architecture Rise from the Scenes page", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Explore the Simulator" }).click();
+  await page.getByRole("link", { name: "Start Exploring" }).click();
   await expect(page).toHaveURL(/\/scenes$/);
 
   const architectureCard = page.getByRole("article").filter({ has: page.getByRole("heading", { name: "Architecture Rise" }) });

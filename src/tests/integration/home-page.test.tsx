@@ -4,29 +4,29 @@ import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { routes } from "../../app/router";
 
 describe("home page", () => {
-  it("renders hero heading and CTAs", async () => {
+  it("renders the approved Hero heading and catalog CTA", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/"] });
     render(<RouterProvider router={memoryRouter} />);
 
     // landing should have exactly one H1 and it should be the hero heading
     const h1s = await screen.findAllByRole('heading', { level: 1 });
     expect(h1s.length).toBe(1);
-    expect(h1s[0]).toHaveTextContent("See how a view camera changes the image before the shutter is pressed.");
+    expect(h1s[0]).toHaveTextContent("Shape Perspective. Place Focus.");
 
-    // primary CTAs
-    const explore = await screen.findByText("Explore the Simulator");
+    // The Hero has one catalog CTA.
+    const explore = await screen.findByText("Start Exploring");
     expect(explore).toBeInTheDocument();
     expect(explore.closest('a')).toHaveAttribute('href', '/scenes');
 
-    // hero illustration wrapper present (decorative, aria-hidden)
-    const heroWrap = document.querySelector('.hero__illustration');
+    // approved hero artwork wrapper present (decorative, aria-hidden)
+    const heroWrap = document.querySelector('.landing-hero__artwork');
     expect(heroWrap).toBeTruthy();
 
-    // hero illustration should render the supplied image asset
-    const heroImg = document.querySelector('.hero__illustration img') as HTMLImageElement | null;
+    // hero artwork should render the supplied production asset
+    const heroImg = document.querySelector('.landing-hero__artwork img') as HTMLImageElement | null;
     expect(heroImg).toBeTruthy();
     const heroSrc = heroImg?.getAttribute('src') ?? '';
-    expect(heroSrc).toContain('view-camera-hero-illustration.png');
+    expect(heroSrc).toContain('assets/landing/hero.png');
 
     // Ensure BASE_URL is respected and no hard-coded root-relative '/assets/' is used unless BASE_URL is '/'
     const base = import.meta.env.BASE_URL ?? '/';

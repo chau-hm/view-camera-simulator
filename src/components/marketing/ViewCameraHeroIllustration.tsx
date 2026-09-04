@@ -1,18 +1,19 @@
 import { publicAssetUrl } from "../../utils/publicAssetUrl";
 
 export const ViewCameraHeroIllustration = () => (
-  <div className="hero__illustration" aria-hidden="true">
+  <figure className="landing-hero__artwork" aria-hidden="true">
     <picture>
       <img
-        src={publicAssetUrl("assets/view-camera-hero-illustration.png")}
+        src={publicAssetUrl("assets/landing/hero.png")}
         alt=""
-        width="1196"
-        height="958"
+        width="1672"
+        height="941"
         decoding="async"
         fetchPriority="high"
+        sizes="100vw"
       />
     </picture>
-  </div>
+  </figure>
 );
 
 export default ViewCameraHeroIllustration;
