@@ -69,8 +69,8 @@ const addTabletopAnalyticalSurfaceSamples = (tabletopAssembly: THREE.Group): voi
       toWorld(sample.localPosition.z),
     );
     sampleNode.userData = {
-      focusTargetId: sample.id,
-      focusCoverageSampleId: sample.id,
+      analyticalCoverageSampleId: sample.id,
+      geometryAnchor: "canonical-tabletop-surface",
       focusSampleWorldMm: { ...sample.worldPosition },
     };
     tabletopAssembly.add(sampleNode);
@@ -89,7 +89,8 @@ const addMarker = (
     toWorld(marker.localPosition.z),
   );
   markerGroup.userData = {
-    focusTargetId: marker.id,
+    markerId: marker.id,
+    geometryAnchor: "visible-marker",
     focusProbeWorldMm: { ...marker.worldPosition },
   };
 
@@ -164,7 +165,8 @@ const addMarker = (
     0,
   );
   focusProbe.userData = {
-    focusTargetId: marker.id,
+    markerId: marker.id,
+    geometryAnchor: "visible-marker-focus-probe",
     focusProbeWorldMm: { ...marker.worldPosition },
   };
   markerGroup.add(focusProbe);
@@ -189,7 +191,7 @@ const addMarker = (
       toWorld(sample.z),
     );
     sampleNode.userData = {
-      focusTargetId: marker.id,
+      markerId: marker.id,
       focusSampleIndex: index,
       focusSampleWorldMm: marker.focusSampleWorldPositions[index],
     };

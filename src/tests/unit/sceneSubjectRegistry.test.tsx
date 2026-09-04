@@ -179,8 +179,12 @@ describe("scene subject registry", () => {
     obliqueTabletopGeometry.markers.forEach((marker) => {
       const markerGroup = group?.getObjectByName(`oblique-tabletop-marker-${marker.id}`);
       expect(markerGroup).toBeInstanceOf(THREE.Group);
+      expect(markerGroup?.userData.markerId).toBe(marker.id);
+      expect(markerGroup?.userData.focusTargetId).toBeUndefined();
       const probe = group?.getObjectByName(`oblique-tabletop-focus-${marker.id}`);
       expect(probe).toBeInstanceOf(THREE.Object3D);
+      expect(probe?.userData.markerId).toBe(marker.id);
+      expect(probe?.userData.focusTargetId).toBeUndefined();
       const probeWorld = new THREE.Vector3();
       probe?.getWorldPosition(probeWorld);
       expect(probeWorld.x).toBeCloseTo(marker.worldPosition.x * 0.001, 10);
@@ -197,8 +201,9 @@ describe("scene subject registry", () => {
       expect(sampleWorld.x).toBeCloseTo(sample.worldPosition.x * 0.001, 10);
       expect(sampleWorld.y).toBeCloseTo(sample.worldPosition.y * 0.001, 10);
       expect(sampleWorld.z).toBeCloseTo(sample.worldPosition.z * 0.001, 10);
-      expect(sampleNode?.userData.focusTargetId).toBe(sample.id);
-      expect(sampleNode?.userData.focusCoverageSampleId).toBe(sample.id);
+      expect(sampleNode?.userData.analyticalCoverageSampleId).toBe(sample.id);
+      expect(sampleNode?.userData.geometryAnchor).toBe("canonical-tabletop-surface");
+      expect(sampleNode?.userData.focusTargetId).toBeUndefined();
     });
 
     const spies = collectDisposableSpies(group!);
