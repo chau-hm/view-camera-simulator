@@ -7,6 +7,8 @@ export const commonMessages = {
     scenes: "場景",
     faq: "常見問題",
     primaryNavigation: "主要導覽",
+    openMenu: "開啟導覽選單",
+    closeMenu: "關閉導覽選單",
   },
   language: {
     label: "語言",
