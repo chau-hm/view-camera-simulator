@@ -53,21 +53,22 @@ afterEach(() => {
 });
 
 describe("public camera movement controls in the workspace", () => {
-  it("exposes only Front Tilt for Oblique Tabletop while keeping Focus live and f/11 fixed", () => {
+  it("exposes Front Tilt and Front Swing for Oblique Tabletop while keeping Focus live and f/11 fixed", () => {
     render(obliqueTabletopWorkspace());
     const cameraControls = screen.getByRole("region", { name: "Camera Controls" });
-    const movementSelection = screen.getByRole("group", { name: "Movement" });
-    const tilt = within(cameraControls).getByRole("slider", { name: "Front Tilt" });
+    const tilt = within(cameraControls).getByRole("slider", { name: "Tilt" });
+    const swing = within(cameraControls).getByRole("slider", { name: "Swing" });
 
     expect(tilt).toBeEnabled();
-    expect(within(movementSelection).getByRole("radio", { name: "Front Tilt" })).toBeChecked();
-    expect(screen.queryByRole("slider", { name: "Rise" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("slider", { name: "Swing" })).not.toBeInTheDocument();
+    expect(swing).toBeEnabled();
+    expect(within(cameraControls).getByRole("slider", { name: "Rise" })).toBeDisabled();
     expect(screen.getByRole("slider", { name: "Focus distance" })).toBeEnabled();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
 
     fireEvent.change(tilt, { target: { value: "-9.7" } });
     expect(useAppStore.getState().camera.frontTiltDeg).toBe(-9.7);
+    fireEvent.change(swing, { target: { value: "-1.7" } });
+    expect(useAppStore.getState().camera.frontSwingDeg).toBe(-1.7);
   });
 
   it("renders one live Current Ground Glass and no comparison panes on the public route", () => {

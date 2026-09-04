@@ -40,8 +40,15 @@ export type ObliqueTabletopSurfaceSample = {
   worldPosition: Vec3;
 };
 
-const tabletopRotationXDeg = 9;
-const tabletopRotationYDeg = -8;
+// The original PR10A plane was too close to the physical lens datum for a
+// finite compound solution with the shared 150 mm lens. For a unit subject
+// normal N and plane point P, the optical-axis-conjugate model requires the
+// lens horizontal-normal magnitude s = f*|N_xy|/(N·P); the original plane
+// yielded s ≈ 1.31, outside the unit sphere before public movement limits
+// are considered. This moderate compound orientation and datum keep the
+// tabletop dimensions unchanged while making both public movements useful.
+const tabletopRotationXDeg = 20;
+const tabletopRotationYDeg = -35;
 const tabletopRotationXRad = degreesToRadians(tabletopRotationXDeg);
 const tabletopRotationYRad = degreesToRadians(tabletopRotationYDeg);
 
@@ -55,7 +62,7 @@ export const floor = {
 } as const;
 
 export const tabletop = {
-  center: { x: 0, y: -650, z: 4550 },
+  center: { x: 0, y: -332, z: 4550 },
   width: 2800,
   depth: 3800,
   thickness: 100,
@@ -233,13 +240,13 @@ export const markers: ObliqueTabletopMarker[] = markerInputs.map((marker) => {
 // factory registers matching non-rendering Object3D nodes for RTT/3D
 // inspection.
 const tabletopSurfaceSampleInputs = [
-  { id: "near-left" as const, label: "Near-left tabletop surface", localPosition: { x: -820, z: -1250 } },
-  { id: "near-centre" as const, label: "Near-centre tabletop surface", localPosition: { x: 0, z: -1250 } },
-  { id: "near-right" as const, label: "Near-right tabletop surface", localPosition: { x: 820, z: -1250 } },
+  { id: "near-left" as const, label: "Near-left tabletop surface", localPosition: { x: -1400, z: -1900 } },
+  { id: "near-centre" as const, label: "Near-centre tabletop surface", localPosition: { x: 0, z: -1900 } },
+  { id: "near-right" as const, label: "Near-right tabletop surface", localPosition: { x: 1400, z: -1900 } },
   { id: "middle" as const, label: "Middle tabletop surface", localPosition: { x: 0, z: 0 } },
-  { id: "far-left" as const, label: "Far-left tabletop surface", localPosition: { x: -820, z: 1250 } },
-  { id: "far-centre" as const, label: "Far-centre tabletop surface", localPosition: { x: 0, z: 1250 } },
-  { id: "far-right" as const, label: "Far-right tabletop surface", localPosition: { x: 820, z: 1250 } },
+  { id: "far-left" as const, label: "Far-left tabletop surface", localPosition: { x: -1400, z: 1900 } },
+  { id: "far-centre" as const, label: "Far-centre tabletop surface", localPosition: { x: 0, z: 1900 } },
+  { id: "far-right" as const, label: "Far-right tabletop surface", localPosition: { x: 1400, z: 1900 } },
 ] as const;
 
 export const tabletopSurfaceSamples: ObliqueTabletopSurfaceSample[] =
@@ -275,13 +282,13 @@ export const focusTargets: FocusTarget[] = tabletopSurfaceSamples.map((sample) =
 
 /**
  * Public-step evidence state for the intentionally incomplete Tilt slice.
- * Under the canonical R_y(-8°) ∘ R_x(9°) subject transform, the existing
- * Front Tilt convention reaches the near-to-far improvement in the negative
- * direction. This is a learner-reachable calibration, not a compound solution.
+ * The negative sign follows the shared Front Tilt convention and aligns the
+ * principal near-to-far sample axis. Focus is independently refined at the
+ * public 10 mm step; the state intentionally leaves the lateral samples soft.
  */
 export const tiltOnlyCalibration = {
-  frontTiltDeg: -10,
-  focusDistanceMm: 1720,
+  frontTiltDeg: -4.9,
+  focusDistanceMm: 3310,
   aperture: 11 as const,
 } as const;
 

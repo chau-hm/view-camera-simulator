@@ -358,19 +358,19 @@ export const simulatorMessages = {
     },
     obliqueTabletop: {
       objective:
-        "Use Front Tilt and Focus to improve near-to-far focus alignment across the oblique tabletop at fixed f/11.",
+        "Use Front Tilt, Front Swing, and Focus to align the oblique tabletop at fixed f/11.",
       bullets: {
         focusDistance:
-          "Start at neutral and move Focus between the near, middle, and far tabletop regions.",
+          "Start at neutral and compare the near, middle, and far tabletop regions.",
         tilt:
-          "Use Front Tilt to bring the near and far regions closer to the same plane of focus.",
+          "Use Front Tilt to improve near-to-far focus alignment.",
         refocus:
-          "Refine Focus after changing Front Tilt.",
+          "Refine Focus after changing either movement.",
         remaining:
-          "Notice that regions across the tabletop still disagree even after near-to-far alignment improves.",
+          "Add Front Swing to resolve the remaining side-to-side difference and compare the whole tabletop.",
       },
       observation:
-        "Front Tilt improves the near-to-far focus relationship, but the oblique tabletop still contains an unresolved orientation. Focus and Tilt alone cannot keep the whole surface sharp at once.",
+        "Front Tilt improves the near-to-far focus relationship. Front Swing resolves the remaining side-to-side difference; refine Focus after either movement and compare the whole tabletop.",
     },
     mirrorShift: {
       objective:

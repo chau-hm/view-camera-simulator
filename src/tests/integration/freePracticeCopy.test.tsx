@@ -45,9 +45,9 @@ describe("Free Practice teaching copy", () => {
 
     cleanup();
     render(<TaskPanel task={null} sceneId="oblique-tabletop" />);
-    expect(screen.getByText(/Use Front Tilt to bring the near and far regions closer/)).toBeInTheDocument();
-    expect(screen.getByText(/Refine Focus after changing Front Tilt/)).toBeInTheDocument();
-    expect(screen.getByText(/regions across the tabletop still disagree/)).toBeInTheDocument();
+    expect(screen.getByText(/Use Front Tilt to improve near-to-far focus alignment/)).toBeInTheDocument();
+    expect(screen.getByText(/Refine Focus after changing either movement/)).toBeInTheDocument();
+    expect(screen.getByText(/Add Front Swing to resolve the remaining side-to-side difference/)).toBeInTheDocument();
 
     cleanup();
     render(<FeedbackPanel mode="free" sceneId="understanding-camera-movements" task={null} evaluation={null} />);
@@ -94,9 +94,9 @@ describe("Free Practice teaching copy", () => {
 
     cleanup();
     render(<TaskPanel task={null} sceneId="oblique-tabletop" />);
-    expect(screen.getByText(/使用前組傾斜，改善桌面近處與遠處之間的焦平面對齊/)).toBeInTheDocument();
-    expect(screen.getByText(/調整前組傾斜後，再微調對焦/)).toBeInTheDocument();
-    expect(screen.getByText(/桌面其他位置仍未能同時保持清晰/)).toBeInTheDocument();
+    expect(screen.getByText(/使用前組傾斜，改善桌面近遠方向的焦平面對齊/)).toBeInTheDocument();
+    expect(screen.getByText(/調整任何一個動作後，再微調對焦/)).toBeInTheDocument();
+    expect(screen.getByText(/加入前組擺動，處理餘下的左右方向偏差/)).toBeInTheDocument();
   });
 });
 

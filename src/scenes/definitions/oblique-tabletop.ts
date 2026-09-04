@@ -36,8 +36,8 @@ export const obliqueTabletopScene: SceneDefinition = {
     },
   ],
   movementCapabilities: {
-    available: ["frontTiltDeg"],
-    selectionMode: "single",
+    available: ["frontTiltDeg", "frontSwingDeg"],
+    selectionMode: "multiple",
     defaultMovement: "frontTiltDeg",
   },
   cameraControlPolicy: {

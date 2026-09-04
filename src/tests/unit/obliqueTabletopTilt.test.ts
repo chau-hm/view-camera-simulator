@@ -49,10 +49,10 @@ afterEach(() => {
 });
 
 describe("Oblique Tabletop Tilt limitation", () => {
-  it("exposes Front Tilt and Focus while withholding every other movement", () => {
+  it("retains the Tilt boundary while exposing the compound movement capability", () => {
     expect(obliqueTabletopScene.movementCapabilities).toEqual({
-      available: ["frontTiltDeg"],
-      selectionMode: "single",
+      available: ["frontTiltDeg", "frontSwingDeg"],
+      selectionMode: "multiple",
       defaultMovement: "frontTiltDeg",
     });
     expect(obliqueTabletopScene.cameraControlPolicy).toEqual({
@@ -100,7 +100,7 @@ describe("Oblique Tabletop Tilt limitation", () => {
     store.setFocusDistance(calibration.focusDistanceMm);
 
     const camera = useAppStore.getState().camera;
-    expect(useAppStore.getState().selectedMovement).toBe("frontTiltDeg");
+    expect(useAppStore.getState().selectedMovement).toBeNull();
     expect(camera.frontTiltDeg).toBe(calibration.frontTiltDeg);
     expect(camera.focusDistanceMm).toBe(calibration.focusDistanceMm);
     expect(camera.frontSwingDeg).toBe(0);
