@@ -10,6 +10,8 @@ import { isValidSimulatorRoute } from "./simulatorRouteValidation";
 import type { SimulatorMode } from "../types/camera";
 
 import { LandingHero } from "../components/marketing/LandingHero";
+import { LandingFundamentalsSection } from "../components/marketing/LandingFundamentalsSection";
+import { LandingVisualizationSection } from "../components/marketing/LandingVisualizationSection";
 import { InfoCard } from "../components/marketing/InfoCard";
 import { SceneCard } from "../components/marketing/SceneCard";
 import { DesktopExperienceNotice } from "../components/marketing/DesktopExperienceNotice";
@@ -25,6 +27,11 @@ export const HomePage = () => {
   return (
     <AppShell title="" siteShellClassName="site-shell--landing-home">
       <LandingHero />
+
+      <div className="landing-concept-learning">
+        <LandingFundamentalsSection />
+        <LandingVisualizationSection />
+      </div>
 
       <div className="landing-home__legacy">
         <DesktopExperienceNotice />

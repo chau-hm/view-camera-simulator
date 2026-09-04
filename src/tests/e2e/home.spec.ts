@@ -121,6 +121,46 @@ test("Hero locale switching keeps the two-line composition and mobile catalog ac
   expect(overflowWidth).toBeLessThanOrEqual(2);
 });
 
+test("concept learning sections keep their responsive grids without overflow", async ({ page }) => {
+  const viewports = [
+    { width: 1440, height: 900, fundamentals: 4, visualization: 3 },
+    { width: 1024, height: 800, fundamentals: 2, visualization: 3 },
+    { width: 768, height: 900, fundamentals: 2, visualization: 2 },
+    { width: 390, height: 844, fundamentals: 1, visualization: 1 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto("/");
+
+    await expect(page.getByTestId("landing-fundamentals-section")).toBeVisible();
+    await expect(page.getByTestId("landing-visualization-section")).toBeVisible();
+
+    const columns = await page.evaluate(() => {
+      const getColumnCount = (selector: string) => {
+        const grid = document.querySelector<HTMLElement>(selector);
+        if (!grid) throw new Error(`Missing grid ${selector}`);
+        return getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length;
+      };
+
+      return {
+        fundamentals: getColumnCount(".landing-concept-grid--fundamentals"),
+        visualization: getColumnCount(".landing-concept-grid--visualization"),
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+
+    expect(columns.fundamentals).toBe(viewport.fundamentals);
+    expect(columns.visualization).toBe(viewport.visualization);
+    expect(columns.overflow).toBeLessThanOrEqual(2);
+  }
+
+  await page.locator(".language-selector select").selectOption("zh-HK");
+  await expect(page.getByRole("heading", { name: "學習基礎原理", level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "三種視覺化方式", level: 2 })).toBeVisible();
+  await expect(page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).resolves.toBeLessThanOrEqual(2);
+});
+
 test("compact-menu navigation restores toggle focus after a route change", async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 800 });
   await page.goto("/");
