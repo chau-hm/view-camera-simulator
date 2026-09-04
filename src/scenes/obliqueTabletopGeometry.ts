@@ -235,11 +235,11 @@ export const markers: ObliqueTabletopMarker[] = markerInputs.map((marker) => {
 });
 
 // Cover the full surface instead of relying on the three approximately
-// collinear visible markers. Every sample is derived from the same
+// collinear visible markers. Every analytical sample is derived from the same
 // tabletop-local transform and lies on the canonical top surface; the render
 // factory registers matching non-rendering Object3D nodes for RTT/3D
 // inspection.
-const tabletopSurfaceSampleInputs = [
+const tabletopAnalyticalSurfaceSampleInputs = [
   { id: "near-left" as const, label: "Near-left tabletop surface", localPosition: { x: -1400, z: -1900 } },
   { id: "near-centre" as const, label: "Near-centre tabletop surface", localPosition: { x: 0, z: -1900 } },
   { id: "near-right" as const, label: "Near-right tabletop surface", localPosition: { x: 1400, z: -1900 } },
@@ -249,8 +249,26 @@ const tabletopSurfaceSampleInputs = [
   { id: "far-right" as const, label: "Far-right tabletop surface", localPosition: { x: 1400, z: 1900 } },
 ] as const;
 
-export const tabletopSurfaceSamples: ObliqueTabletopSurfaceSample[] =
-  tabletopSurfaceSampleInputs.map((sample) => ({
+const tabletopVisibleFocusSampleInputs = [
+  { id: "near-left" as const, label: "Near-left tabletop focus region", localPosition: { x: -820, z: -1250 } },
+  { id: "near-centre" as const, label: "Near-centre tabletop focus region", localPosition: { x: 0, z: -1250 } },
+  { id: "near-right" as const, label: "Near-right tabletop focus region", localPosition: { x: 820, z: -1250 } },
+  { id: "middle" as const, label: "Middle tabletop focus region", localPosition: { x: 0, z: 0 } },
+  { id: "far-left" as const, label: "Far-left tabletop focus region", localPosition: { x: -820, z: 1250 } },
+  { id: "far-centre" as const, label: "Far-centre tabletop focus region", localPosition: { x: 0, z: 1250 } },
+  { id: "far-right" as const, label: "Far-right tabletop focus region", localPosition: { x: 820, z: 1250 } },
+] as const;
+
+type TabletopSurfaceSampleInput = {
+  id: ObliqueTabletopSurfaceSampleId;
+  label: string;
+  localPosition: { x: number; z: number };
+};
+
+const createTabletopSurfaceSamples = (
+  inputs: readonly TabletopSurfaceSampleInput[],
+): ObliqueTabletopSurfaceSample[] =>
+  inputs.map((sample) => ({
     ...sample,
     localPosition: { ...sample.localPosition },
     worldPosition: tabletopLocalToWorld({
@@ -258,6 +276,14 @@ export const tabletopSurfaceSamples: ObliqueTabletopSurfaceSample[] =
       localDepth: sample.localPosition.z,
     }),
   }));
+
+/** Full-surface analytical coverage retained for physical regression proof. */
+export const tabletopAnalyticalSurfaceSamples: ObliqueTabletopSurfaceSample[] =
+  createTabletopSurfaceSamples(tabletopAnalyticalSurfaceSampleInputs);
+
+/** Film-visible learner coverage, derived from the same canonical transform. */
+export const tabletopVisibleFocusSamples: ObliqueTabletopSurfaceSample[] =
+  createTabletopSurfaceSamples(tabletopVisibleFocusSampleInputs);
 
 export const tabletopPrincipalDepthSampleIds = [
   "near-centre",
@@ -272,13 +298,22 @@ export const tabletopOffAxisSampleIds = [
   "far-right",
 ] as const satisfies readonly ObliqueTabletopSurfaceSampleId[];
 
-/** The live optics/readout targets cover the canonical tabletop surface. */
-export const focusTargets: FocusTarget[] = tabletopSurfaceSamples.map((sample) => ({
+export const tabletopAnalyticalFocusTargets: FocusTarget[] = tabletopAnalyticalSurfaceSamples.map((sample) => ({
   id: sample.id,
   label: sample.label,
   worldPosition: sample.worldPosition,
   weight: 1,
 }));
+
+/** Live optics/readout targets stay within the physical Ground Glass footprint. */
+export const tabletopVisibleFocusTargets: FocusTarget[] = tabletopVisibleFocusSamples.map((sample) => ({
+  id: sample.id,
+  label: sample.label,
+  worldPosition: sample.worldPosition,
+  weight: 1,
+}));
+
+export const focusTargets: FocusTarget[] = tabletopVisibleFocusTargets;
 
 /**
  * Public-step evidence state for the intentionally incomplete Tilt slice.
@@ -410,7 +445,9 @@ const allPhysicalGeometryPoints = [
 
 export const sceneBounds = boundsFromPoints(allPhysicalGeometryPoints, 150);
 
-const focusTargetDepths = focusTargets.map((target) => target.worldPosition.z);
+// Keep the public focus range large enough to cover the full canonical plane,
+// including analytical edge samples that are intentionally not learner targets.
+const focusTargetDepths = tabletopAnalyticalSurfaceSamples.map((sample) => sample.worldPosition.z);
 export const focusDistanceRangeMm = {
   // A tilted focus plane can intersect the optical axis much closer than the
   // neutral tabletop depth. The real-image floor remains enforced centrally
@@ -433,7 +470,10 @@ export default {
   markers,
   middleMarker,
   focusTargets,
-  tabletopSurfaceSamples,
+  tabletopAnalyticalFocusTargets,
+  tabletopVisibleFocusTargets,
+  tabletopAnalyticalSurfaceSamples,
+  tabletopVisibleFocusSamples,
   tabletopPrincipalDepthSampleIds,
   tabletopOffAxisSampleIds,
   tiltOnlyCalibration,

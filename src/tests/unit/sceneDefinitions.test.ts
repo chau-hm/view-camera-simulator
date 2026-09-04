@@ -113,7 +113,10 @@ describe("scene definitions", () => {
       obliqueTabletopGeometry.focusDistanceRangeMm,
     );
     expect(obliqueTabletopScene.focusTargets).toEqual(
-      obliqueTabletopGeometry.focusTargets,
+      obliqueTabletopGeometry.tabletopVisibleFocusTargets,
+    );
+    expect(obliqueTabletopScene.focusTargets).not.toEqual(
+      obliqueTabletopGeometry.tabletopAnalyticalFocusTargets,
     );
     expect(obliqueTabletopScene.compositionTargets.map((target) => target.id)).toEqual([
       "tabletop-surface",

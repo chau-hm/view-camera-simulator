@@ -367,10 +367,10 @@ export const simulatorMessages = {
         refocus:
           "Refine Focus after changing either movement.",
         remaining:
-          "Add Front Swing to resolve the remaining side-to-side difference and compare the whole tabletop.",
+          "Add Front Swing to resolve the remaining side-to-side difference and compare regions across the tabletop.",
       },
       observation:
-        "Front Tilt improves the near-to-far focus relationship. Front Swing resolves the remaining side-to-side difference; refine Focus after either movement and compare the whole tabletop.",
+        "Front Tilt improves the near-to-far focus relationship. Front Swing resolves the remaining side-to-side difference; refine Focus after either movement and compare regions across the tabletop.",
     },
     mirrorShift: {
       objective:

@@ -4,6 +4,7 @@ import { pointToPlaneDistance, planeFromPointNormal } from "../../core/math/plan
 import { angleDeg, dot } from "../../core/math/vec";
 import { calculateLensNormal } from "../../core/optics/calculateLensPlane";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
+import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
 import { getSceneFocusDistanceRange } from "../../scenes/definitions";
 import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
@@ -24,7 +25,15 @@ const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
   ...overrides,
 });
 
+const analyticalObliqueTabletopScene = {
+  ...obliqueTabletopScene,
+  focusTargets: obliqueTabletopGeometry.tabletopAnalyticalFocusTargets,
+};
+
 const evaluate = (overrides: Partial<CameraState>) =>
+  deriveOpticsState(cameraFor(overrides), analyticalObliqueTabletopScene);
+
+const evaluatePublic = (overrides: Partial<CameraState>) =>
   deriveOpticsState(cameraFor(overrides), obliqueTabletopScene);
 
 const physicalCoc = (target: { pointEquivalentCoCDiameterMm?: number | null }): number =>
@@ -35,7 +44,7 @@ const cocValues = (overrides: Partial<CameraState>): number[] =>
 
 const valuesById = (values: number[]): Map<string, number> =>
   new Map(
-    obliqueTabletopGeometry.tabletopSurfaceSamples.map((sample, index) => [
+    obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples.map((sample, index) => [
       sample.id,
       values[index],
     ]),
@@ -50,6 +59,20 @@ const acuteAngle = (first: { x: number; y: number; z: number }, second: { x: num
   const angle = angleDeg(first, second);
   return Math.min(angle, 180 - angle);
 };
+
+const projectVisibleFocusTargets = (overrides: Partial<CameraState>) => {
+  const optics = evaluatePublic(overrides);
+  return obliqueTabletopScene.focusTargets.map((target) => ({
+    id: target.id,
+    projection: projectWorldPointToFilmPlaneGroundGlass({
+      worldPoint: target.worldPosition,
+      lensCenterWorld: optics.lensCenterWorld,
+      filmPlaneCornersWorld: optics.filmPlaneCornersWorld,
+    }),
+  }));
+};
+
+const publicCompoundSolution = obliqueTabletopCompoundCalibration.public;
 
 describe("Oblique Tabletop compound focus", () => {
   it("exposes exactly the compound front controls and keeps f/11 fixed", () => {
@@ -67,6 +90,41 @@ describe("Oblique Tabletop compound focus", () => {
     expect(obliqueTabletopScene.movementCapabilities?.available).not.toContain("frontShiftMm");
     expect(obliqueTabletopScene.movementCapabilities?.available).not.toContain("rearTiltDeg");
     expect(obliqueTabletopScene.movementCapabilities?.available).not.toContain("rearSwingDeg");
+  });
+
+  it("separates analytical full-surface samples from visible learner targets", () => {
+    const analytical = obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples;
+    const visible = obliqueTabletopGeometry.tabletopVisibleFocusSamples;
+
+    expect(analytical).toHaveLength(7);
+    expect(visible).toHaveLength(7);
+    expect(analytical).not.toBe(visible);
+    expect(visible.map((sample) => sample.id)).toEqual(analytical.map((sample) => sample.id));
+    expect(obliqueTabletopScene.focusTargets).toEqual(
+      obliqueTabletopGeometry.tabletopVisibleFocusTargets,
+    );
+    expect(obliqueTabletopScene.focusTargets).not.toEqual(
+      obliqueTabletopGeometry.tabletopAnalyticalFocusTargets,
+    );
+
+    visible.forEach((sample) => {
+      expect(sample.worldPosition).toEqual(
+        obliqueTabletopGeometry.tabletopLocalToWorld({
+          localX: sample.localPosition.x,
+          localDepth: sample.localPosition.z,
+        }),
+      );
+    });
+
+    const nearLeft = visible[0].localPosition;
+    const nearRight = visible[2].localPosition;
+    const farLeft = visible[4].localPosition;
+    expect((nearRight.x - nearLeft.x) * (farLeft.z - nearLeft.z)).not.toBe(0);
+    expect(visible.some((sample) => sample.localPosition.x < 0)).toBe(true);
+    expect(visible.some((sample) => sample.localPosition.x > 0)).toBe(true);
+    expect(visible.some((sample) => sample.localPosition.z < 0)).toBe(true);
+    expect(visible.some((sample) => sample.localPosition.z > 0)).toBe(true);
+    expect(visible.some((sample) => sample.localPosition.x === 0 && sample.localPosition.z === 0)).toBe(true);
   });
 
   it("rejects an infeasible plane before producing a calibration", () => {
@@ -151,6 +209,43 @@ describe("Oblique Tabletop compound focus", () => {
     expect(publicSolution.frontSwingDeg).toBeLessThanOrEqual(CAMERA_CONSTANTS.swingMaxDeg);
     expect(publicSolution.focusDistanceMm).toBeGreaterThanOrEqual(focusRange.min);
     expect(publicSolution.focusDistanceMm).toBeLessThanOrEqual(focusRange.max);
+  });
+
+  it("keeps every public focus target inside the physical film footprint", () => {
+    const states = [
+      {
+        name: "neutral",
+        overrides: {
+          frontTiltDeg: 0,
+          frontSwingDeg: 0,
+          focusDistanceMm: obliqueTabletopScene.cameraPreset.focusDistanceMm,
+          aperture: 11 as const,
+        },
+      },
+      {
+        name: "public compound solution",
+        overrides: {
+          frontTiltDeg: publicCompoundSolution.frontTiltDeg,
+          frontSwingDeg: publicCompoundSolution.frontSwingDeg,
+          focusDistanceMm: publicCompoundSolution.focusDistanceMm,
+          aperture: publicCompoundSolution.aperture,
+        },
+      },
+    ] as const;
+    const epsilon = 1e-9;
+
+    states.forEach(({ name, overrides }) => {
+      const projections = projectVisibleFocusTargets(overrides);
+      expect(projections).toHaveLength(obliqueTabletopScene.focusTargets.length);
+      projections.forEach(({ id, projection }) => {
+        expect(projection.visible, `${name} target ${id} should be visible`).toBe(true);
+        expect(projection.uRaw, `${name} target ${id} u`).toBeGreaterThanOrEqual(-epsilon);
+        expect(projection.uRaw, `${name} target ${id} u`).toBeLessThanOrEqual(1 + epsilon);
+        expect(projection.vRaw, `${name} target ${id} v`).toBeGreaterThanOrEqual(-epsilon);
+        expect(projection.vRaw, `${name} target ${id} v`).toBeLessThanOrEqual(1 + epsilon);
+        expect(projection.filmPointWorld).not.toBeNull();
+      });
+    });
   });
 
   it("brings all seven canonical samples under the physical CoC threshold", () => {
