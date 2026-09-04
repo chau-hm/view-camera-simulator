@@ -53,6 +53,7 @@ import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postp
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
+import { evaluateInteriorCornerRiseComposition } from "../../scenes/interiorCornerRiseComposition";
 import type {
   GroundGlassRttRuntimeInfoByChannel,
   GroundGlassRttRuntimeInfoChangeHandler,
@@ -405,6 +406,13 @@ export const SimulatorWorkspace = ({
   }, [apertureLocked, camera.activeSceneId, focusLocked, mode, safeScene, task]);
 
   const evaluation = useMemo(() => (task ? evaluateTask(task, safeScene, camera, opticsState) : null), [camera, opticsState, safeScene, task]);
+  const interiorCornerRiseEvaluation = useMemo(
+    () =>
+      mode === "free" && task === null && safeScene.id === "interior-corner"
+        ? evaluateInteriorCornerRiseComposition(opticsState)
+        : null,
+    [mode, opticsState, safeScene.id, task],
+  );
   useEffect(() => {
     setCurrentTaskEvaluation(evaluation);
   }, [evaluation, setCurrentTaskEvaluation]);
@@ -691,7 +699,14 @@ export const SimulatorWorkspace = ({
             </div>
             <div className="simulator-info-card simulator-info-card--feedback">
               <h4>{t(simulatorMessageKeys.feedback.title)}</h4>
-              <FeedbackPanel mode={mode} sceneId={safeScene.id} task={task} evaluation={evaluation} showTitle={false} />
+              <FeedbackPanel
+                mode={mode}
+                sceneId={safeScene.id}
+                task={task}
+                evaluation={evaluation}
+                freeCompositionEvaluation={interiorCornerRiseEvaluation}
+                showTitle={false}
+              />
             </div>
             </div>
 
