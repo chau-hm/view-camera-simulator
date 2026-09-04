@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 import { useAppStore } from "../../state/appStore";
+import { interiorCornerSwingFocusCalibration } from "../../scenes/interiorCornerSwingFocus";
 
 const workspace = (sceneId = "shelf-swing") => (
   <MemoryRouter>
@@ -235,7 +236,9 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     render(workspaceRoute("free", "interior-corner", null));
 
     const feedback = await screen.findByTestId("interior-corner-rise-composition-feedback");
+    const focusFeedback = await screen.findByTestId("interior-corner-focus-feedback");
     expect(feedback).toHaveTextContent(/upper architecture is still too close to the top edge/i);
+    expect(focusFeedback).toHaveTextContent(/Focus alone cannot hold the near, middle, and far details together/i);
 
     const rise = screen.getByLabelText("Rise");
     expect(rise).toHaveValue("0");
@@ -247,6 +250,24 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     });
     expect(rise).toHaveValue("33");
     expect(useAppStore.getState().camera.frontSwingDeg).toBe(0);
+
+    fireEvent.change(screen.getByLabelText("Swing"), {
+      target: { value: interiorCornerSwingFocusCalibration.public.frontSwingDeg },
+    });
+    fireEvent.change(screen.getByLabelText("Focus distance"), {
+      target: { value: interiorCornerSwingFocusCalibration.public.focusDistanceMm },
+    });
+    await waitFor(() => {
+      expect(focusFeedback).toHaveTextContent(
+        /near, middle, and far details on the receding side wall are acceptably sharp/i,
+      );
+    });
+    expect(useAppStore.getState().camera.frontSwingDeg).toBe(
+      interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+    );
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(
+      interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+    );
   });
 });
 
