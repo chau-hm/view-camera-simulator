@@ -2,7 +2,7 @@
 
 - Work: PR 11A review-fix pass on `feature/landing-redesign-hero`; base `origin/main` `bd6d113b127eb58f1acb89d6ab77124ea3ef5cb2`.
 - Objective: resolve the three PR #122 review findings without changing the approved Hero composition or simulator contracts.
-- Review fixes: mobile title lines now fit without forced no-wrap at `<=767px`; browser DOMRect assertions cover English and zh-HK at 390px. WebP Hero candidates are selected through `<picture>` with the PNG fallback. Compact-menu link activation closes the menu and restores toggle focus, including after route replacement via a bounded two-frame fallback; Escape behavior remains intact.
+- Review fixes: mobile title lines now fit without forced no-wrap at `<=767px`; browser DOMRect assertions cover English and zh-HK at 390px. WebP Hero candidates are selected through `<picture>` with the PNG fallback. Compact-menu link activation closes the menu and restores toggle focus, including after route replacement via a route-aware local handoff; Escape behavior remains intact.
 - Approved Hero assets: `public/assets/landing/hero.png` (1672 × 941, 2,225,947 bytes), `hero-640.webp` (640 × 361, 35,136 bytes), `hero-1024.webp` (1024 × 577, 72,972 bytes), and `hero-1672.webp` (1672 × 941, 157,470 bytes).
 - FAQ/Scenes audit: their existing React structure and information architecture are unchanged; shared dark tokens, typography, borders, focus styling, and existing responsive rules remain. The Scene Catalog stacking breakpoint was narrowed back to `880px` so no new tablet catalog layout is introduced.
 - i18n: English remains canonical; zh-HK matches `home.hero` and `common.nav` shapes. Approved copy, terminology, product name, locale switching, and `/scenes` CTA behavior are preserved.

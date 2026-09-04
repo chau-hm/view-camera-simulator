@@ -1,54 +1,63 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AppBrand } from "./AppBrand";
 import { LanguageSelector } from "./LanguageSelector";
 
+// Flat routes recreate the shared header, so carry only the next compact-link
+// focus request across that one local component boundary.
+let pendingCompactMenuFocusPath: string | null = null;
+
 export const SiteHeader = () => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
-  const restoreMenuToggleFocus = useCallback(() => {
-    menuButtonRef.current?.focus();
-    if (typeof window.requestAnimationFrame !== "function") return;
-
-    const focusCurrentMenuToggle = () => {
-      document.querySelector<HTMLButtonElement>(".site-header__menu-button")?.focus();
-    };
-
-    window.requestAnimationFrame(() => {
-      focusCurrentMenuToggle();
-      window.requestAnimationFrame(focusCurrentMenuToggle);
-    });
-  }, []);
-
   const closeCompactMenu = useCallback(
     (restoreFocus = false) => {
       setIsMenuOpen(false);
-      if (restoreFocus) restoreMenuToggleFocus();
+      if (restoreFocus) menuButtonRef.current?.focus();
     },
-    [restoreMenuToggleFocus],
+    [],
   );
 
-  const handleCompactMenuLinkClick = useCallback(() => {
-    if (isMenuOpen) closeCompactMenu(true);
-  }, [closeCompactMenu, isMenuOpen]);
+  const handleCompactMenuLinkClick = useCallback(
+    (destinationPath: string | null) => {
+      if (!isMenuOpen) return;
+
+      if (destinationPath) {
+        pendingCompactMenuFocusPath = destinationPath;
+        closeCompactMenu();
+        return;
+      }
+
+      closeCompactMenu(true);
+    },
+    [closeCompactMenu, isMenuOpen],
+  );
 
   useEffect(() => {
-    if (!isMenuOpen) return undefined;
+    if (!isMenuOpen) {
+      if (pendingCompactMenuFocusPath === pathname) {
+        pendingCompactMenuFocusPath = null;
+        menuButtonRef.current?.focus();
+      }
+      return undefined;
+    }
 
     navRef.current?.querySelector<HTMLElement>("a")?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      pendingCompactMenuFocusPath = null;
       closeCompactMenu(true);
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [closeCompactMenu, isMenuOpen]);
+  }, [closeCompactMenu, isMenuOpen, pathname]);
 
   return (
     <header className="site-header" role="banner">
@@ -64,6 +73,7 @@ export const SiteHeader = () => {
           aria-label={t(isMenuOpen ? "common.nav.closeMenu" : "common.nav.openMenu")}
           onClick={() => {
             if (isMenuOpen) {
+              pendingCompactMenuFocusPath = null;
               closeCompactMenu(true);
             } else {
               setIsMenuOpen(true);
@@ -86,7 +96,7 @@ export const SiteHeader = () => {
           <NavLink
             to="/"
             className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")}
-            onClick={handleCompactMenuLinkClick}
+            onClick={() => handleCompactMenuLinkClick("/")}
             end
           >
             {t("common.nav.home")}
@@ -95,7 +105,7 @@ export const SiteHeader = () => {
           <NavLink
             to="/scenes"
             className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")}
-            onClick={handleCompactMenuLinkClick}
+            onClick={() => handleCompactMenuLinkClick("/scenes")}
           >
             {t("common.nav.scenes")}
           </NavLink>
@@ -103,7 +113,7 @@ export const SiteHeader = () => {
           <NavLink
             to="/faq"
             className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")}
-            onClick={handleCompactMenuLinkClick}
+            onClick={() => handleCompactMenuLinkClick("/faq")}
           >
             {t("common.nav.faq")}
           </NavLink>
@@ -113,7 +123,7 @@ export const SiteHeader = () => {
             href="https://github.com/chau-hm/view-camera-simulator"
             rel="noopener noreferrer"
             target="_blank"
-            onClick={handleCompactMenuLinkClick}
+            onClick={() => handleCompactMenuLinkClick(null)}
           >
             GitHub
           </a>
