@@ -4,6 +4,8 @@
 
 import type { Bounds3, Vec3 } from "../types/optics";
 import type { CameraPlacement, FocusTarget } from "../types/scene";
+import { CAMERA_CONTROL_STEPS } from "../utils/constants";
+import { roundToStep } from "../utils/roundToStep";
 
 const floorY = -1400;
 const ceilingY = 4200;
@@ -96,7 +98,10 @@ export const canonicalFocusDistanceMm = wallDetails[1].z;
 
 export const focusDistanceRangeMm = {
   min: 4000,
-  max: room.farZ + 300,
+  // The future one-wall Front Swing focus intersection is beyond the visible
+  // wall depth. Keep a public ceiling with room for that later focus state;
+  // the focused reachability test derives the physical requirement.
+  max: roundToStep(40000, CAMERA_CONTROL_STEPS.focusDistanceMm),
 } as const;
 
 export const compositionTargets = {
