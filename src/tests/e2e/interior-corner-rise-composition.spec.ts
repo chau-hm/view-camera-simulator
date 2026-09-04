@@ -35,7 +35,7 @@ test("Interior Corner free mode exposes reachable Rise composition feedback", as
 
   await setStepRangeInput(page, "Rise", 33);
   await expect(rise).toHaveValue("33");
-  await expect(feedback).toContainText("upper architecture into a safer frame");
+  await expect(feedback).toContainText("upper architecture is now inside a safer frame");
   await expect(cameraControls.getByRole("slider", { name: "Swing" })).toBeEnabled();
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);

@@ -338,7 +338,7 @@ export const simulatorMessages = {
         needsAdjustment:
           "Keep the camera level. The upper architecture is still too close to the top edge; use Front Rise to move the framing upward.",
         ready:
-          "Front Rise has moved the upper architecture into a safer frame while the room corner remains usable. The camera remains level.",
+          "The upper architecture is now inside a safer frame while the room corner remains usable. The camera remains level.",
       },
     },
     obliqueArchitecture: {

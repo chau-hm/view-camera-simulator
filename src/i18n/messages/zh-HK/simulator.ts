@@ -323,7 +323,7 @@ export const simulatorMessages = {
         needsAdjustment:
           "保持相機水平。上方建築細節仍然太貼近畫面頂部；使用前組上移把構圖向上移動。",
         ready:
-          "前組上移已將上方建築細節移入較安全的畫面範圍，同時保留室內轉角。相機仍然保持水平。",
+          "上方建築細節現在已進入較安全的畫面範圍，同時保留室內轉角。相機仍然保持水平。",
       },
     },
     obliqueArchitecture: {

@@ -130,7 +130,7 @@ describe("Free Practice teaching copy", () => {
       />,
     );
     expect(screen.getByTestId("interior-corner-rise-composition-feedback")).toHaveTextContent(
-      /Front Rise has moved the upper architecture into a safer frame/i,
+      /upper architecture is now inside a safer frame/i,
     );
     expect(screen.getByText("Rise composition is acceptable")).toBeInTheDocument();
 

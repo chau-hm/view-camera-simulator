@@ -243,7 +243,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     fireEvent.change(rise, { target: { value: "33" } });
 
     await waitFor(() => {
-      expect(feedback).toHaveTextContent(/upper architecture into a safer frame/i);
+      expect(feedback).toHaveTextContent(/upper architecture is now inside a safer frame/i);
     });
     expect(rise).toHaveValue("33");
     expect(useAppStore.getState().camera.frontSwingDeg).toBe(0);
