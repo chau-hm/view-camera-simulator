@@ -116,6 +116,13 @@ export function getGeometryPresentationProfile(
     };
   }
 
+  if (scene.id === "interior-corner") {
+    return {
+      ...DEFAULT_GEOMETRY_PRESENTATION_PROFILE,
+      defaultSubjectView: "top",
+    };
+  }
+
   // Default: scene-bounds profile with minimal annotations
   return DEFAULT_GEOMETRY_PRESENTATION_PROFILE;
 }

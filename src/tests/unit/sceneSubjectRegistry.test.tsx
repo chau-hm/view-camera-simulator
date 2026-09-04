@@ -53,6 +53,7 @@ describe("scene subject registry", () => {
       "shelf-swing",
       "oblique-tabletop",
       "mirror-shift",
+      "interior-corner",
     ]);
     Object.keys(sceneSubjectRegistry).forEach((sceneId) => {
       expect(getSceneSubjectRegistration(sceneId)).toBeDefined();
@@ -115,6 +116,30 @@ describe("scene subject registry", () => {
     expect(group?.getObjectByName("mirror-shift-mirror-surface")).toBeInstanceOf(THREE.Mesh);
     expect(group?.getObjectByName("mirror-shift-camera-reflection")).toBeInstanceOf(THREE.Group);
     disposeRegisteredRttSubject("mirror-shift", group!);
+  });
+
+  it("resolves Interior Corner to one shared static subject for 3D and RTT", () => {
+    const registration = getSceneSubjectRegistration("interior-corner");
+    expect(registration).toBeDefined();
+    expect(getRegisteredSceneSubject("interior-corner")).toBe(registration?.SceneSubject);
+
+    const group = createRegisteredRttSubject("interior-corner");
+    expect(group?.name).toBe("interior-corner-subject");
+    expect(group?.getObjectByName("interior-corner-floor")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.getObjectByName("interior-corner-back-wall")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.getObjectByName("interior-corner-receding-side-wall")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.getObjectByName("interior-corner-room-corner")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.getObjectByName("interior-corner-side-cornice")).toBeInstanceOf(THREE.Mesh);
+    expect(group?.getObjectByName("interior-corner-wall-detail-interior-wall-near")).toBeInstanceOf(THREE.Group);
+    expect(group?.getObjectByName("interior-corner-wall-detail-interior-wall-middle")).toBeInstanceOf(THREE.Group);
+    expect(group?.getObjectByName("interior-corner-wall-detail-interior-wall-far")).toBeInstanceOf(THREE.Group);
+    expect(group?.getObjectByName("interior-corner-focus-interior-wall-near")).toBeInstanceOf(THREE.Object3D);
+    expect(group?.getObjectByName("interior-corner-focus-interior-wall-middle")).toBeInstanceOf(THREE.Object3D);
+    expect(group?.getObjectByName("interior-corner-focus-interior-wall-far")).toBeInstanceOf(THREE.Object3D);
+
+    const spies = collectDisposableSpies(group!);
+    disposeRegisteredRttSubject("interior-corner", group!);
+    spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
   });
 
   it("resolves Oblique Architecture to one shared static subject for 3D and RTT", () => {

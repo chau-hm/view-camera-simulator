@@ -14,6 +14,7 @@ import { obliqueArchitectureScene } from "./oblique-architecture";
 import { architectureForegroundScene } from "./architecture-foreground";
 import { viewCameraAnatomyScene } from "./view-camera-anatomy";
 import { obliqueTabletopScene } from "./oblique-tabletop";
+import { interiorCornerScene } from "./interior-corner";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
   [viewCameraAnatomyScene.id]: viewCameraAnatomyScene,
@@ -26,6 +27,7 @@ export const sceneRegistry: Record<string, SceneDefinition> = {
   [focusFundamentalsTwoTargets.id]: focusFundamentalsTwoTargets,
   [mirrorShiftScene.id]: mirrorShiftScene,
   [obliqueArchitectureScene.id]: obliqueArchitectureScene,
+  [interiorCornerScene.id]: interiorCornerScene,
 };
 
 export const sceneOrder = [
@@ -39,6 +41,7 @@ export const sceneOrder = [
   focusFundamentalsTwoTargets.id,
   mirrorShiftScene.id,
   obliqueArchitectureScene.id,
+  interiorCornerScene.id,
 ] as const;
 
 export const getSceneById = (sceneId: string): SceneDefinition | undefined =>

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   publicSceneCatalog,
   publicSceneIds,
@@ -33,6 +35,7 @@ describe("public scene catalog integrity", () => {
     });
     expect(entry.thumbnailAsset).toBe("assets/scene-view-camera-anatomy.png");
     expect(entry.thumbnailAsset).not.toMatch(/\.svg$/);
+    expect(existsSync(resolve(process.cwd(), "public", entry.thumbnailAsset))).toBe(true);
     expect(entry.thumbnailAsset).not.toBe("assets/view-camera-hero-illustration.png");
     expect(publicSceneIds[0]).toBe("view-camera-anatomy");
     expect(
@@ -94,6 +97,45 @@ describe("public scene catalog integrity", () => {
         publicEntry: entry,
       }),
     ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: "not-a-task",
+        publicEntry: entry,
+      }),
+    ).toBe(false);
+  });
+
+  it("publishes Interior Corner as a free-only neutral Rise/Swing foundation", () => {
+    const entry = publicSceneCatalog.find((candidate) => candidate.id === "interior-corner")!;
+    expect(entry).toMatchObject({
+      id: "interior-corner",
+      availability: "available",
+      availableModes: ["free"],
+      thumbnailAsset: "assets/interior-corner.png",
+    });
+    expect(entry.guidedTaskId).toBeUndefined();
+    expect(entry.guidedTaskIds).toBeUndefined();
+    expect(entry.guidedLesson).toBeUndefined();
+    expect(entry.thumbnailAsset).not.toMatch(/\.svg$/);
+    expect(existsSync(resolve(process.cwd(), "public", entry.thumbnailAsset))).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "free",
+        sceneId: entry.id,
+        publicEntry: entry,
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "free",
+        sceneId: entry.id,
+        taskId: "swing-01",
+        publicEntry: entry,
+        task: getTaskById("swing-01"),
+      }),
+    ).toBe(false);
     expect(
       isValidSimulatorRoute({
         mode: "guided",
@@ -211,9 +253,9 @@ describe("public scene catalog integrity", () => {
     ).toBe(true);
   });
 
-  it("places Architecture + Foreground last in the canonical public order", () => {
-    expect(publicSceneCatalog.at(-1)?.id).toBe("architecture-foreground");
-    expect(publicSceneIds.at(-1)).toBe("architecture-foreground");
+  it("places Interior Corner last in the canonical public order", () => {
+    expect(publicSceneCatalog.at(-1)?.id).toBe("interior-corner");
+    expect(publicSceneIds.at(-1)).toBe("interior-corner");
     expect(new Set(publicSceneCatalog.map((entry) => entry.id)).size).toBe(publicSceneCatalog.length);
     expect(new Set(publicSceneIds).size).toBe(publicSceneIds.length);
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual([...publicSceneIds]);

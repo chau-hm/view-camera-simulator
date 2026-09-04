@@ -54,6 +54,11 @@ describe("Ground Glass RTT scene registration", () => {
     expect(isGroundGlassRttScene("architecture-foreground")).toBe(true);
   });
 
+  it("includes Interior Corner in the centralized RTT scene set", () => {
+    expect(RTT_SCENES).toContain("interior-corner");
+    expect(isGroundGlassRttScene("interior-corner")).toBe(true);
+  });
+
   it("derives enough far clipping range for the back station and samples", () => {
     const lensCenter = { x: 0, y: 0, z: 0 };
     const clip = getGroundGlassClipRangeWorld(shelfSwingScene, lensCenter);

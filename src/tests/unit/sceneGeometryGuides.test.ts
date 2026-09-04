@@ -99,6 +99,7 @@ describe("scene geometry guides", () => {
     ["oblique-architecture", "oblique-architecture-target-facade", simulatorMessageKeys.geometry.targetFacadeDepthGuide],
     ["architecture-foreground", "architecture-foreground-ground", simulatorMessageKeys.geometry.architectureForegroundGroundGuide],
     ["architecture-foreground", "architecture-foreground-building-profile", simulatorMessageKeys.geometry.architectureForegroundBuildingGuide],
+    ["interior-corner", "interior-corner-receding-wall", simulatorMessageKeys.geometry.interiorCornerRecedingWallGuide],
   ] as const)("keeps the canonical message key for %s/%s", (sceneId, guideId, expectedKey) => {
     const guide = getSceneGeometryGuides(sceneId).find(({ id }) => id === guideId);
     expect(guide).toMatchObject({ id: guideId, labelMessageKey: expectedKey });
@@ -120,6 +121,9 @@ describe("scene geometry guides", () => {
     ["architecture-foreground", "foreground-middle", simulatorMessageKeys.geometry.architectureForegroundMiddleTarget],
     ["architecture-foreground", "building-base", simulatorMessageKeys.geometry.architectureForegroundBuildingBaseTarget],
     ["architecture-foreground", "building-middle", simulatorMessageKeys.geometry.architectureForegroundBuildingMiddleTarget],
+    ["interior-corner", "interior-wall-near", simulatorMessageKeys.geometry.interiorCornerNearWallTarget],
+    ["interior-corner", "interior-wall-middle", simulatorMessageKeys.geometry.interiorCornerMiddleWallTarget],
+    ["interior-corner", "interior-wall-far", simulatorMessageKeys.geometry.interiorCornerFarWallTarget],
   ] as const)("resolves the canonical target message key for %s/%s", (sceneId, targetId, expectedKey) => {
     expect(getSceneGeometryTargetMessageKey(sceneId, targetId)).toBe(expectedKey);
   });

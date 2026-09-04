@@ -56,6 +56,16 @@ export const scenesMessages = {
       sharpness: "Sharpness across depth",
     },
   },
+  interiorCorner: {
+    title: "Interior Corner — Rise + Swing",
+    description:
+      "Explore a neutral interior corner where upper architectural detail presses against the frame and one receding wall creates a future Front Swing and Focus problem.",
+    topics: {
+      frontRise: "Front Rise",
+      frontSwing: "Front Swing",
+      architecturalDepth: "Architectural depth",
+    },
+  },
   obliqueArchitecture: {
     title: "Oblique Architecture",
     description:

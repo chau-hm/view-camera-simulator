@@ -4,6 +4,7 @@ import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
+import interiorCornerGeometry from "../../scenes/interiorCornerGeometry";
 
 export type SceneGeometryGuide = {
   id: string;
@@ -104,6 +105,21 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
       labelAnchor: "start",
     },
   ],
+  "interior-corner": [
+    {
+      id: "interior-corner-receding-wall",
+      label: "Receding side wall",
+      labelMessageKey: simulatorMessageKeys.geometry.interiorCornerRecedingWallGuide,
+      view: "top",
+      startWorld: interiorCornerGeometry.focusTargets[0].worldPosition,
+      endWorld: interiorCornerGeometry.focusTargets[2].worldPosition,
+      color: "#115e59",
+      testId: "interior-corner-receding-wall",
+      labelPositionT: 0.52,
+      labelOffsetPx: { x: 0, y: -18 },
+      labelAnchor: "middle",
+    },
+  ],
 };
 
 export type SceneGeometryTargetMessageKeyMap = Readonly<Record<string, SimulatorMessageKey>>;
@@ -133,6 +149,11 @@ const targetMessageKeys: Readonly<Record<string, SceneGeometryTargetMessageKeyMa
     "foreground-middle": simulatorMessageKeys.geometry.architectureForegroundMiddleTarget,
     "building-base": simulatorMessageKeys.geometry.architectureForegroundBuildingBaseTarget,
     "building-middle": simulatorMessageKeys.geometry.architectureForegroundBuildingMiddleTarget,
+  },
+  "interior-corner": {
+    "interior-wall-near": simulatorMessageKeys.geometry.interiorCornerNearWallTarget,
+    "interior-wall-middle": simulatorMessageKeys.geometry.interiorCornerMiddleWallTarget,
+    "interior-wall-far": simulatorMessageKeys.geometry.interiorCornerFarWallTarget,
   },
 };
 

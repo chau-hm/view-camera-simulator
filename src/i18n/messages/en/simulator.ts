@@ -227,6 +227,10 @@ export const simulatorMessages = {
     architectureForegroundMiddleTarget: "Middle foreground",
     architectureForegroundBuildingBaseTarget: "Building base",
     architectureForegroundBuildingMiddleTarget: "Building middle",
+    interiorCornerRecedingWallGuide: "Receding side wall",
+    interiorCornerNearWallTarget: "Near wall detail",
+    interiorCornerMiddleWallTarget: "Middle wall detail",
+    interiorCornerFarWallTarget: "Far wall detail",
   },
   sceneLegend: {
     filmPlane: "Film plane (blue)",
@@ -312,6 +316,22 @@ export const simulatorMessages = {
       },
       observation:
         "Front Rise corrects framing without changing perspective or the parallel verticals. Front Tilt changes focus-plane orientation and Focus places it; Aperture then expands usable depth around that plane while the remaining depth of field stays finite.",
+    },
+    interiorCorner: {
+      objective:
+        "Explore the neutral Interior Corner setup before solving its framing and receding-wall focus problems.",
+      bullets: {
+        framing:
+          "Notice that the camera is level, but the upper moulding is cropped or uncomfortably close to the top edge.",
+        rise:
+          "Use Front Rise later to change framing without pitching the camera upward.",
+        depth:
+          "Follow the same side wall from its nearer artwork through the middle and far details.",
+        focus:
+          "At the open starting aperture, compare the different wall distances before using Front Swing and Focus in a later lesson.",
+      },
+      observation:
+        "The room remains level while the upper architecture presses against the frame. The three details on one receding wall sit at different distances, making the future Rise and Front Swing + Focus problems visible.",
     },
     obliqueArchitecture: {
       objective:

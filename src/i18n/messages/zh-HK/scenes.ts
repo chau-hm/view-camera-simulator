@@ -57,6 +57,16 @@ export const scenesMessages = {
       sharpness: "不同深度的清晰度",
     },
   },
+  interiorCorner: {
+    title: "室內轉角 — 上移與擺動",
+    description:
+      "探索一個中性室內轉角：上方建築細節略嫌貼近畫面邊緣，而一面向後延伸的側牆為前組擺動與對焦帶來深度問題。",
+    topics: {
+      frontRise: "前組上移",
+      frontSwing: "前組擺動",
+      architecturalDepth: "建築深度",
+    },
+  },
   obliqueArchitecture: {
     title: "斜向建築攝影",
     description:

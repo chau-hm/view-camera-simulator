@@ -56,6 +56,7 @@ import { mirrorShiftGeometry } from "../scenes/mirrorShiftGeometry";
 import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../scenes/architectureForegroundGeometry";
 import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
+import interiorCornerGeometry from "../scenes/interiorCornerGeometry";
 import {
   ArchitectureForegroundSubject,
   createArchitectureForegroundGroup,
@@ -70,6 +71,11 @@ import {
   createObliqueTabletopGroup,
   disposeObliqueTabletopGroup,
 } from "./ObliqueTabletopSubjectFactory";
+import {
+  InteriorCornerSubject,
+  createInteriorCornerGroup,
+  disposeInteriorCornerGroup,
+} from "./InteriorCornerSubjectFactory";
 import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectCenterMm,
@@ -194,6 +200,10 @@ const architectureForegroundLightingTargetMm = {
 
 const obliqueTabletopLightingTargetMm = {
   ...obliqueTabletopGeometry.middleMarker.worldPosition,
+} as const;
+
+const interiorCornerLightingTargetMm = {
+  ...interiorCornerGeometry.focusTargets[1].worldPosition,
 } as const;
 
 export const sceneSubjectRegistry = {
@@ -334,6 +344,16 @@ export const sceneSubjectRegistry = {
     disposeRttGroup: disposeMirrorShiftGroup,
     rttLighting: {
       targetMm: mirrorShiftGeometry.mirror.center,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
+    },
+  },
+  "interior-corner": {
+    SceneSubject: InteriorCornerSubject,
+    createRttGroup: createInteriorCornerGroup,
+    disposeRttGroup: disposeInteriorCornerGroup,
+    rttLighting: {
+      targetMm: interiorCornerLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },

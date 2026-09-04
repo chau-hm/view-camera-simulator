@@ -58,6 +58,15 @@ const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
       simulatorMessageKeys.freePractice.architectureForeground.bullets.aperture,
     ],
   },
+  "interior-corner": {
+    objectiveKey: simulatorMessageKeys.freePractice.interiorCorner.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.interiorCorner.bullets.framing,
+      simulatorMessageKeys.freePractice.interiorCorner.bullets.rise,
+      simulatorMessageKeys.freePractice.interiorCorner.bullets.depth,
+      simulatorMessageKeys.freePractice.interiorCorner.bullets.focus,
+    ],
+  },
   "oblique-architecture": {
     objectiveKey: simulatorMessageKeys.freePractice.obliqueArchitecture.objective,
     bulletKeys: [
@@ -124,6 +133,9 @@ const feedbackByScene: Record<string, FreePracticeFeedbackKey> = {
   },
   "architecture-foreground": {
     observationKey: simulatorMessageKeys.freePractice.architectureForeground.observation,
+  },
+  "interior-corner": {
+    observationKey: simulatorMessageKeys.freePractice.interiorCorner.observation,
   },
   "oblique-architecture": {
     observationKey: simulatorMessageKeys.freePractice.obliqueArchitecture.observation,
