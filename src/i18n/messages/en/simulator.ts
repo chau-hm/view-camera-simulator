@@ -324,7 +324,7 @@ export const simulatorMessages = {
         framing:
           "Notice that the camera is level, but the upper moulding is cropped or uncomfortably close to the top edge.",
         rise:
-          "Use Front Rise later to change framing without pitching the camera upward.",
+          "Use Front Rise to move the framing upward without pitching the camera upward.",
         depth:
           "Follow the same side wall from its nearer artwork through the middle and far details.",
         focus:
@@ -332,6 +332,14 @@ export const simulatorMessages = {
       },
       observation:
         "The room remains level while the upper architecture presses against the frame. The three details on one receding wall sit at different distances, making the future Rise and Front Swing + Focus problems visible.",
+      riseComposition: {
+        needsAdjustmentStatus: "Rise composition needs adjustment",
+        readyStatus: "Rise composition is acceptable",
+        needsAdjustment:
+          "Keep the camera level. The upper architecture is still too close to the top edge; use Front Rise to move the framing upward.",
+        ready:
+          "Front Rise has moved the upper architecture into a safer frame while the room corner remains usable. The camera remains level.",
+      },
     },
     obliqueArchitecture: {
       objective:

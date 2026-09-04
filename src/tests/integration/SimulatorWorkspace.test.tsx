@@ -230,6 +230,24 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
       "false",
     );
   });
+
+  it("shows the Interior Corner Rise composition state from the public free-mode control", async () => {
+    render(workspaceRoute("free", "interior-corner", null));
+
+    const feedback = await screen.findByTestId("interior-corner-rise-composition-feedback");
+    expect(feedback).toHaveTextContent(/upper architecture is still too close to the top edge/i);
+
+    const rise = screen.getByLabelText("Rise");
+    expect(rise).toHaveValue("0");
+    expect(rise).toBeEnabled();
+    fireEvent.change(rise, { target: { value: "33" } });
+
+    await waitFor(() => {
+      expect(feedback).toHaveTextContent(/upper architecture into a safer frame/i);
+    });
+    expect(rise).toHaveValue("33");
+    expect(useAppStore.getState().camera.frontSwingDeg).toBe(0);
+  });
 });
 
 describe("SimulatorWorkspace viewport expansion", () => {

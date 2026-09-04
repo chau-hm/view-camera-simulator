@@ -306,6 +306,12 @@ export const simulatorMessageKeys = {
         focus: "simulator.freePractice.interiorCorner.bullets.focus",
       },
       observation: "simulator.freePractice.interiorCorner.observation",
+      riseComposition: {
+        needsAdjustmentStatus: "simulator.freePractice.interiorCorner.riseComposition.needsAdjustmentStatus",
+        readyStatus: "simulator.freePractice.interiorCorner.riseComposition.readyStatus",
+        needsAdjustment: "simulator.freePractice.interiorCorner.riseComposition.needsAdjustment",
+        ready: "simulator.freePractice.interiorCorner.riseComposition.ready",
+      },
     },
     obliqueArchitecture: {
       objective: "simulator.freePractice.obliqueArchitecture.objective",
