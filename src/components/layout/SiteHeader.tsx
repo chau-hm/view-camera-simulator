@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AppBrand } from "./AppBrand";
@@ -10,6 +10,32 @@ export const SiteHeader = () => {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
+  const restoreMenuToggleFocus = useCallback(() => {
+    menuButtonRef.current?.focus();
+    if (typeof window.requestAnimationFrame !== "function") return;
+
+    const focusCurrentMenuToggle = () => {
+      document.querySelector<HTMLButtonElement>(".site-header__menu-button")?.focus();
+    };
+
+    window.requestAnimationFrame(() => {
+      focusCurrentMenuToggle();
+      window.requestAnimationFrame(focusCurrentMenuToggle);
+    });
+  }, []);
+
+  const closeCompactMenu = useCallback(
+    (restoreFocus = false) => {
+      setIsMenuOpen(false);
+      if (restoreFocus) restoreMenuToggleFocus();
+    },
+    [restoreMenuToggleFocus],
+  );
+
+  const handleCompactMenuLinkClick = useCallback(() => {
+    if (isMenuOpen) closeCompactMenu(true);
+  }, [closeCompactMenu, isMenuOpen]);
+
   useEffect(() => {
     if (!isMenuOpen) return undefined;
 
@@ -17,13 +43,12 @@ export const SiteHeader = () => {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      setIsMenuOpen(false);
-      menuButtonRef.current?.focus();
+      closeCompactMenu(true);
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isMenuOpen]);
+  }, [closeCompactMenu, isMenuOpen]);
 
   return (
     <header className="site-header" role="banner">
@@ -37,7 +62,13 @@ export const SiteHeader = () => {
           aria-expanded={isMenuOpen}
           aria-controls="site-primary-navigation"
           aria-label={t(isMenuOpen ? "common.nav.closeMenu" : "common.nav.openMenu")}
-          onClick={() => setIsMenuOpen((open) => !open)}
+          onClick={() => {
+            if (isMenuOpen) {
+              closeCompactMenu(true);
+            } else {
+              setIsMenuOpen(true);
+            }
+          }}
         >
           <span className="site-header__menu-icon" aria-hidden="true">
             <span />
@@ -51,21 +82,39 @@ export const SiteHeader = () => {
           id="site-primary-navigation"
           className={`site-nav ${isMenuOpen ? "site-nav--open" : "site-nav--closed"}`}
           aria-label={t("common.nav.primaryNavigation")}
-          onClick={() => setIsMenuOpen(false)}
         >
-          <NavLink to="/" className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")} end>
+          <NavLink
+            to="/"
+            className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")}
+            onClick={handleCompactMenuLinkClick}
+            end
+          >
             {t("common.nav.home")}
           </NavLink>
 
-          <NavLink to="/scenes" className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")}>
+          <NavLink
+            to="/scenes"
+            className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")}
+            onClick={handleCompactMenuLinkClick}
+          >
             {t("common.nav.scenes")}
           </NavLink>
 
-          <NavLink to="/faq" className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")}>
+          <NavLink
+            to="/faq"
+            className={({ isActive }) => (isActive ? "site-nav__link site-nav__link--active" : "site-nav__link")}
+            onClick={handleCompactMenuLinkClick}
+          >
             {t("common.nav.faq")}
           </NavLink>
 
-          <a className="site-nav__link" href="https://github.com/chau-hm/view-camera-simulator" rel="noopener noreferrer" target="_blank">
+          <a
+            className="site-nav__link"
+            href="https://github.com/chau-hm/view-camera-simulator"
+            rel="noopener noreferrer"
+            target="_blank"
+            onClick={handleCompactMenuLinkClick}
+          >
             GitHub
           </a>
         </nav>

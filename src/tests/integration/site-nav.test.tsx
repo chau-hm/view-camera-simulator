@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { RouterProvider, createMemoryRouter } from "react-router-dom";
+import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router-dom";
 import { routes } from "../../app/router";
+import { SiteHeader } from "../../components/layout/SiteHeader";
 
 afterEach(cleanup);
 
@@ -40,8 +41,11 @@ describe("site navigation", () => {
   });
 
   it("opens the compact navigation with keyboard-accessible focus restoration", async () => {
-    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/"] });
-    render(<RouterProvider router={memoryRouter} />);
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <SiteHeader />
+      </MemoryRouter>,
+    );
 
     const menuButton = screen.getByRole("button", { name: "Open navigation menu" });
     expect(menuButton).toHaveAttribute("aria-expanded", "false");
@@ -55,6 +59,18 @@ describe("site navigation", () => {
       );
       expect(screen.getByRole("link", { name: "Home" })).toHaveFocus();
     });
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Open navigation menu" })).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+      expect(screen.getByRole("button", { name: "Open navigation menu" })).toHaveFocus();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Open navigation menu" }));
 
     fireEvent.keyDown(document, { key: "Escape" });
 

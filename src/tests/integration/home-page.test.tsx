@@ -61,4 +61,29 @@ describe("home page", () => {
     expect(screen.queryByTestId("faq-section")).not.toBeInTheDocument();
     expect(screen.queryByText("Who is View Camera Simulator for?")).not.toBeInTheDocument();
   });
+
+  it("exposes responsive Hero image candidates with a PNG fallback", async () => {
+    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/"] });
+    render(<RouterProvider router={memoryRouter} />);
+
+    const artwork = document.querySelector(".landing-hero__artwork");
+    expect(artwork).toBeTruthy();
+    const source = artwork?.querySelector('source[type="image/webp"]');
+    expect(source).toBeTruthy();
+
+    const candidates = (source?.getAttribute("srcset") ?? "")
+      .split(",")
+      .map((candidate) => candidate.trim());
+    expect(candidates).toHaveLength(3);
+    expect(candidates.join(" ")).toMatch(/hero-640\.webp 640w/);
+    expect(candidates.join(" ")).toMatch(/hero-1024\.webp 1024w/);
+    expect(candidates.join(" ")).toMatch(/hero-1672\.webp 1672w/);
+    expect(source).toHaveAttribute("sizes", "100vw");
+
+    const fallback = document.querySelector(".landing-hero__artwork img");
+    expect(fallback).toHaveAttribute("src", expect.stringContaining("assets/landing/hero.png"));
+    expect(fallback).toHaveAttribute("srcset", expect.stringContaining("hero.png 1672w"));
+    expect(fallback).toHaveAttribute("decoding", "async");
+    expect(fallback).toHaveAttribute("fetchpriority", "high");
+  });
 });

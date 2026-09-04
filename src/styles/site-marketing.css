@@ -287,7 +287,6 @@
 .landing-hero__title-line {
   display: block;
   font: inherit;
-  white-space: nowrap;
 }
 
 .landing-hero__description {
@@ -830,13 +829,21 @@
   .site-shell--landing-home .marketing-container {
     padding-inline: 0;
   }
+}
 
+@media (min-width: 768px) {
+  .landing-hero__title-line {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 880px) {
   .site-shell .scene-feature-card {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .site-shell .scene-thumb {
-    height: 220px;
+    height: 180px;
   }
 }
 
@@ -915,7 +922,7 @@
 
   .landing-hero__title {
     max-width: 100%;
-    font-size: clamp(2.45rem, 10.7vw, 3.5rem);
+    font-size: clamp(2rem, 9.2vw, 3.5rem);
     line-height: 1;
   }
 
