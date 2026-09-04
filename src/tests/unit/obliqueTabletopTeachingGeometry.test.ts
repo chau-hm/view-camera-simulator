@@ -18,6 +18,8 @@ import { getSceneGeometryGuides } from "../../components/geometry/sceneGeometryG
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugConstruction";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
+import { simulatorMessages as enSimulatorMessages } from "../../i18n/messages/en/simulator";
+import { simulatorMessages as zhHkSimulatorMessages } from "../../i18n/messages/zh-HK/simulator";
 import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import type { CameraState } from "../../types/camera";
@@ -34,6 +36,24 @@ const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
 
 const opticsFor = (overrides: Partial<CameraState> = {}) =>
   deriveOpticsState(cameraFor(overrides), obliqueTabletopScene);
+
+const teachingFeedbackFor = (overrides: Partial<CameraState>): string => {
+  const { container, unmount } = render(
+    createElement(GeometryViewport, {
+      opticsState: opticsFor(overrides),
+      geometryView: "side",
+      onGeometryViewChange: () => undefined,
+      focalLengthMm: DEFAULT_CAMERA_STATE.focalLengthMm,
+      scene: obliqueTabletopScene,
+      riseMm: 0,
+    }),
+  );
+  const feedback = container.querySelector('[data-testid="oblique-tabletop-teaching-feedback"]');
+  if (!feedback) throw new Error("Missing Oblique Tabletop teaching feedback");
+  const text = feedback.textContent ?? "";
+  unmount();
+  return text;
+};
 
 const projectionFor = (opticsState: ReturnType<typeof opticsFor>) => {
   const profile = getGeometryPresentationProfile(obliqueTabletopScene);
@@ -176,6 +196,41 @@ describe("Oblique Tabletop compound teaching geometry", () => {
 
     expect(tiltResidual).toBeGreaterThan(0.005);
     expect(compoundResidual).toBeLessThan(tiltResidual * 0.2);
+  });
+
+  it("keeps movement-presence feedback direction-neutral across reachable signs", () => {
+    const negativeTilt = teachingFeedbackFor({ frontTiltDeg: -4.9, frontSwingDeg: 0 });
+    const positiveTilt = teachingFeedbackFor({ frontTiltDeg: 4.9, frontSwingDeg: 0 });
+    const positiveSwing = teachingFeedbackFor({ frontTiltDeg: 0, frontSwingDeg: 1.7 });
+    const wrongCompound = teachingFeedbackFor({ frontTiltDeg: 8, frontSwingDeg: 1.7 });
+
+    expect(getObliqueTabletopTeachingState({ tiltDeg: -4.9, swingDeg: 0 })).toBe("tilt");
+    expect(getObliqueTabletopTeachingState({ tiltDeg: 4.9, swingDeg: 0 })).toBe("tilt");
+    expect(positiveTilt).toBe(negativeTilt);
+    expect(positiveTilt).toContain("Front Tilt changes the near-to-far relationship");
+    expect(positiveTilt).not.toMatch(/improv|improved|alignment improves/i);
+
+    expect(getObliqueTabletopTeachingState({ tiltDeg: 0, swingDeg: 1.7 })).toBe("swing");
+    expect(positiveSwing).toContain("Front Swing changes the left-to-right relationship");
+    expect(positiveSwing).not.toMatch(/improv|improved|aligns|aligned/i);
+
+    expect(getObliqueTabletopTeachingState({ tiltDeg: 8, swingDeg: 1.7 })).toBe("compound");
+    expect(wrongCompound).toContain("changing two directional components");
+    expect(wrongCompound).not.toMatch(/correct|fully aligned|orienting one/i);
+
+    expect(zhHkSimulatorMessages.geometry.obliqueTabletopTiltFeedback).toContain(
+      "會改變近遠方向的關係",
+    );
+    expect(zhHkSimulatorMessages.geometry.obliqueTabletopTiltFeedback).not.toContain("改善");
+    expect(zhHkSimulatorMessages.geometry.obliqueTabletopSwingFeedback).toContain(
+      "會改變左右方向的關係",
+    );
+    expect(zhHkSimulatorMessages.geometry.obliqueTabletopCompoundFeedback).toContain(
+      "從兩個方向改變同一個三維清晰焦平面",
+    );
+    expect(enSimulatorMessages.geometry.obliqueTabletopCompoundFeedback).not.toMatch(
+      /correct|fully aligned|orienting one/i,
+    );
   });
 
   it("publishes live explanatory view and state copy without creating separate focus planes", () => {

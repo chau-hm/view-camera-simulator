@@ -239,11 +239,11 @@ export const simulatorMessages = {
     obliqueTabletopNeutralFeedback:
       "The tabletop and current focus plane disagree in more than one direction.",
     obliqueTabletopTiltFeedback:
-      "Near-to-far alignment improves, but the lateral component remains.",
+      "Front Tilt changes the near-to-far relationship. Compare the focus plane with the tabletop before adding Swing.",
     obliqueTabletopSwingFeedback:
-      "The lateral component is changing; compare it with the near-to-far relationship.",
+      "Front Swing changes the left-to-right relationship. Compare it with the near-to-far component.",
     obliqueTabletopCompoundFeedback:
-      "Tilt and Swing are orienting one three-dimensional plane of sharp focus together.",
+      "Tilt and Swing are changing two directional components of the same three-dimensional focus plane.",
     interiorCornerNearWallTarget: "Near wall detail",
     interiorCornerMiddleWallTarget: "Middle wall detail",
     interiorCornerFarWallTarget: "Far wall detail",

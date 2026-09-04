@@ -44,10 +44,17 @@ test("Oblique Tabletop exposes live Side, Top, and 3D compound teaching geometry
   );
 
   const neutralSideFocusLine = await readPlaneLine(page, "side", "focus");
+  await setStepRangeInput(page, "Tilt", 4.9);
+  await expect(page.getByTestId("oblique-tabletop-teaching-feedback")).toContainText(
+    "Front Tilt changes the near-to-far relationship",
+  );
+  await expect(page.getByTestId("oblique-tabletop-teaching-feedback")).not.toContainText(
+    "alignment improves",
+  );
   await setStepRangeInput(page, "Tilt", -8);
   await expect.poll(() => readPlaneLine(page, "side", "focus")).not.toEqual(neutralSideFocusLine);
   await expect(page.getByTestId("oblique-tabletop-teaching-feedback")).toContainText(
-    "Near-to-far alignment improves",
+    "Front Tilt changes the near-to-far relationship",
   );
 
   await page.getByRole("button", { name: "Top", exact: true }).click();
@@ -65,7 +72,7 @@ test("Oblique Tabletop exposes live Side, Top, and 3D compound teaching geometry
   await setStepRangeInput(page, "Swing", -1.7);
   await expect.poll(() => readPlaneLine(page, "top", "lens")).not.toEqual(tiltOnlyTopLensLine);
   await expect(page.getByTestId("oblique-tabletop-teaching-feedback")).toContainText(
-    "orienting one three-dimensional plane",
+    "changing two directional components",
   );
 
   await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
