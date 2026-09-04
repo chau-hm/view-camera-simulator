@@ -228,6 +228,22 @@ export const simulatorMessages = {
     architectureForegroundBuildingBaseTarget: "Building base",
     architectureForegroundBuildingMiddleTarget: "Building middle",
     interiorCornerRecedingWallGuide: "Receding side wall",
+    obliqueTabletopNearFarGuide: "Tabletop · near ↔ far",
+    obliqueTabletopLeftRightGuide: "Tabletop · left ↔ right",
+    obliqueTabletopSideView:
+      "Side view · inspect how Front Tilt changes the near-to-far component of the one focus plane.",
+    obliqueTabletopTopView:
+      "Top view · inspect how Front Swing changes the left-to-right component of the same focus plane.",
+    obliqueTabletopScheimpflugView:
+      "Scheimpflug view · film, lens, and one plane of sharp focus meet in a single 3D construction.",
+    obliqueTabletopNeutralFeedback:
+      "The tabletop and current focus plane disagree in more than one direction.",
+    obliqueTabletopTiltFeedback:
+      "Near-to-far alignment improves, but the lateral component remains.",
+    obliqueTabletopSwingFeedback:
+      "The lateral component is changing; compare it with the near-to-far relationship.",
+    obliqueTabletopCompoundFeedback:
+      "Tilt and Swing are orienting one three-dimensional plane of sharp focus together.",
     interiorCornerNearWallTarget: "Near wall detail",
     interiorCornerMiddleWallTarget: "Middle wall detail",
     interiorCornerFarWallTarget: "Far wall detail",
@@ -388,9 +404,11 @@ export const simulatorMessages = {
           "Refine Focus after changing either movement.",
         remaining:
           "Add Front Swing to resolve the remaining side-to-side difference and compare regions across the tabletop.",
+        geometry:
+          "Use the Side and Top geometry views together: they show two components of one three-dimensional focus plane.",
       },
       observation:
-        "Front Tilt improves the near-to-far focus relationship. Front Swing resolves the remaining side-to-side difference; refine Focus after either movement and compare regions across the tabletop.",
+        "Front Tilt improves the near-to-far focus relationship. Front Swing resolves the remaining side-to-side difference; refine Focus after either movement and compare regions across the tabletop. The two movements do not create two focus planes; together they orient one plane in 3D.",
     },
     mirrorShift: {
       objective:

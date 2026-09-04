@@ -20,6 +20,11 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { supportsScheimpflugConstruction } from "../../render/scheimpflugSceneSupport";
 import { deriveFocusFundamentalsReferenceOptics } from "../../scenes/focusFundamentalsPresentation";
+import {
+  getObliqueTabletopGeometryViewCopyKey,
+  getObliqueTabletopTeachingFeedbackKey,
+  getObliqueTabletopTeachingState,
+} from "../geometry/obliqueTabletopTeachingGeometry";
 
 type GeometryViewportProps = {
   opticsState: DerivedOpticsState;
@@ -242,6 +247,22 @@ const cameraProjection = constructionWindow
     .replace("Lower viewpoint", t(readoutMessageKeys.teaching.lowerViewpoint))
     .replace("Neutral viewpoint", t(readoutMessageKeys.teaching.neutralViewpoint))
     .replace("Body pitch", t(readoutMessageKeys.teaching.bodyPitch));
+  const obliqueTabletopTeachingState =
+    scene.id === "oblique-tabletop"
+      ? getObliqueTabletopTeachingState({
+          tiltDeg: opticsState.diagnostics.tiltAngleDeg,
+          swingDeg: opticsState.diagnostics.swingAngleDeg,
+        })
+      : null;
+  const geometryDescription = constructionLayoutActive
+    ? t(simulatorMessageKeys.geometry.constructionAndSubjectRelationship)
+    : scene.id === "oblique-tabletop"
+      ? t(getObliqueTabletopGeometryViewCopyKey(effectiveGeometryView))
+      : effectiveGeometryView === "side"
+        ? t(simulatorMessageKeys.geometry.sideView)
+        : effectiveGeometryView === "top"
+          ? t(simulatorMessageKeys.geometry.topView)
+          : t(simulatorMessageKeys.geometry.perpendicularScheimpflugSection);
 
   return (
     <section
@@ -324,16 +345,18 @@ const cameraProjection = constructionWindow
       </div>
 
       <p style={{ marginTop: 6, marginBottom: 8 }}>
-        {constructionLayoutActive
-          ? t(simulatorMessageKeys.geometry.constructionAndSubjectRelationship)
-          : effectiveGeometryView === "side"
-            ? t(simulatorMessageKeys.geometry.sideView)
-            : effectiveGeometryView === "top"
-              ? t(simulatorMessageKeys.geometry.topView)
-              : t(simulatorMessageKeys.geometry.perpendicularScheimpflugSection)}{localizedMovementSummary
+        {geometryDescription}{localizedMovementSummary
             ? ` | ${localizedMovementSummary}`
             : ` | ${t(simulatorMessageKeys.controls.riseLabel)}: ${(riseMm ?? 0).toFixed(1)} mm | ${t(simulatorMessageKeys.controls.tiltLabel)}: ${opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | ${t(simulatorMessageKeys.controls.swingLabel)}: ${opticsState.diagnostics.swingAngleDeg.toFixed(1)}°`}
       </p>
+      {obliqueTabletopTeachingState ? (
+        <p
+          data-testid="oblique-tabletop-teaching-feedback"
+          style={{ marginTop: 0, marginBottom: 8, color: "var(--text-muted)" }}
+        >
+          {t(getObliqueTabletopTeachingFeedbackKey(obliqueTabletopTeachingState))}
+        </p>
+      ) : null}
 
       <div ref={diagramRef} className="geometry-diagram-container" style={{ flex: 1, minHeight: 0 }}>
         {usesMirrorShiftTeachingDiagram && mirrorShiftNeutralOptics ? (
