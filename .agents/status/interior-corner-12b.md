@@ -1,7 +1,7 @@
 # Interior Corner 12B — Rise Composition
 
 - Objective: establish a free-mode composition slice where Front Rise improves the upper architectural framing while the camera remains level.
-- Branch / worktree / base / head: `feature/interior-corner-rise-composition` / `/Users/homan/repo/view-camera-interior-corner-12b` / `origin/main` `76010a2d96b11234a9044599ee0f94c83e80aa98` / implementation commit pending.
+- Branch / worktree / base / head: `feature/interior-corner-rise-composition` / `/Users/homan/repo/view-camera-interior-corner-12b` / `origin/main` `76010a2d96b11234a9044599ee0f94c83e80aa98` / implementation commit `986b904` (the final status-only handoff commit follows).
 - PR12A contracts preserved: 150 mm lens, 8000 mm focus, f/5.6, zero neutral movements, room geometry, one-wall near/mid/far anchors, widened Focus range, free-only scene identity, catalog/route/localization, RTT subject, and artwork.
 - Composition problem: neutral Rise 0 leaves the canonical upper-architecture landmark outside the Ground Glass frame while the room-corner anchor remains usable; the existing camera is level.
 - Composition evaluator contract: project the canonical upper landmark and room-corner bounds center through the existing Ground Glass film-plane projection; both must lie in normalized safe frame `u/v = 0.1–0.9`.
