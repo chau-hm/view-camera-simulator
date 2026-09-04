@@ -40,8 +40,15 @@ export type ObliqueTabletopSurfaceSample = {
   worldPosition: Vec3;
 };
 
-const tabletopRotationXDeg = 9;
-const tabletopRotationYDeg = -8;
+// The original PR10A plane was too close to the physical lens datum for a
+// finite compound solution with the shared 150 mm lens. For a unit subject
+// normal N and plane point P, the optical-axis-conjugate model requires the
+// lens horizontal-normal magnitude s = f*|N_xy|/(N·P); the original plane
+// yielded s ≈ 1.31, outside the unit sphere before public movement limits
+// are considered. This moderate compound orientation and datum keep the
+// tabletop dimensions unchanged while making both public movements useful.
+const tabletopRotationXDeg = 20;
+const tabletopRotationYDeg = -35;
 const tabletopRotationXRad = degreesToRadians(tabletopRotationXDeg);
 const tabletopRotationYRad = degreesToRadians(tabletopRotationYDeg);
 
@@ -55,7 +62,7 @@ export const floor = {
 } as const;
 
 export const tabletop = {
-  center: { x: 0, y: -650, z: 4550 },
+  center: { x: 0, y: -332, z: 4550 },
   width: 2800,
   depth: 3800,
   thickness: 100,
@@ -228,22 +235,40 @@ export const markers: ObliqueTabletopMarker[] = markerInputs.map((marker) => {
 });
 
 // Cover the full surface instead of relying on the three approximately
-// collinear visible markers. Every sample is derived from the same
+// collinear visible markers. Every analytical sample is derived from the same
 // tabletop-local transform and lies on the canonical top surface; the render
 // factory registers matching non-rendering Object3D nodes for RTT/3D
 // inspection.
-const tabletopSurfaceSampleInputs = [
-  { id: "near-left" as const, label: "Near-left tabletop surface", localPosition: { x: -820, z: -1250 } },
-  { id: "near-centre" as const, label: "Near-centre tabletop surface", localPosition: { x: 0, z: -1250 } },
-  { id: "near-right" as const, label: "Near-right tabletop surface", localPosition: { x: 820, z: -1250 } },
+const tabletopAnalyticalSurfaceSampleInputs = [
+  { id: "near-left" as const, label: "Near-left tabletop surface", localPosition: { x: -1400, z: -1900 } },
+  { id: "near-centre" as const, label: "Near-centre tabletop surface", localPosition: { x: 0, z: -1900 } },
+  { id: "near-right" as const, label: "Near-right tabletop surface", localPosition: { x: 1400, z: -1900 } },
   { id: "middle" as const, label: "Middle tabletop surface", localPosition: { x: 0, z: 0 } },
-  { id: "far-left" as const, label: "Far-left tabletop surface", localPosition: { x: -820, z: 1250 } },
-  { id: "far-centre" as const, label: "Far-centre tabletop surface", localPosition: { x: 0, z: 1250 } },
-  { id: "far-right" as const, label: "Far-right tabletop surface", localPosition: { x: 820, z: 1250 } },
+  { id: "far-left" as const, label: "Far-left tabletop surface", localPosition: { x: -1400, z: 1900 } },
+  { id: "far-centre" as const, label: "Far-centre tabletop surface", localPosition: { x: 0, z: 1900 } },
+  { id: "far-right" as const, label: "Far-right tabletop surface", localPosition: { x: 1400, z: 1900 } },
 ] as const;
 
-export const tabletopSurfaceSamples: ObliqueTabletopSurfaceSample[] =
-  tabletopSurfaceSampleInputs.map((sample) => ({
+const tabletopVisibleFocusSampleInputs = [
+  { id: "near-left" as const, label: "Near-left tabletop focus region", localPosition: { x: -820, z: -1250 } },
+  { id: "near-centre" as const, label: "Near-centre tabletop focus region", localPosition: { x: 0, z: -1250 } },
+  { id: "near-right" as const, label: "Near-right tabletop focus region", localPosition: { x: 820, z: -1250 } },
+  { id: "middle" as const, label: "Middle tabletop focus region", localPosition: { x: 0, z: 0 } },
+  { id: "far-left" as const, label: "Far-left tabletop focus region", localPosition: { x: -820, z: 1250 } },
+  { id: "far-centre" as const, label: "Far-centre tabletop focus region", localPosition: { x: 0, z: 1250 } },
+  { id: "far-right" as const, label: "Far-right tabletop focus region", localPosition: { x: 820, z: 1250 } },
+] as const;
+
+type TabletopSurfaceSampleInput = {
+  id: ObliqueTabletopSurfaceSampleId;
+  label: string;
+  localPosition: { x: number; z: number };
+};
+
+const createTabletopSurfaceSamples = (
+  inputs: readonly TabletopSurfaceSampleInput[],
+): ObliqueTabletopSurfaceSample[] =>
+  inputs.map((sample) => ({
     ...sample,
     localPosition: { ...sample.localPosition },
     worldPosition: tabletopLocalToWorld({
@@ -251,6 +276,14 @@ export const tabletopSurfaceSamples: ObliqueTabletopSurfaceSample[] =
       localDepth: sample.localPosition.z,
     }),
   }));
+
+/** Full-surface analytical coverage retained for physical regression proof. */
+export const tabletopAnalyticalSurfaceSamples: ObliqueTabletopSurfaceSample[] =
+  createTabletopSurfaceSamples(tabletopAnalyticalSurfaceSampleInputs);
+
+/** Film-visible learner coverage, derived from the same canonical transform. */
+export const tabletopVisibleFocusSamples: ObliqueTabletopSurfaceSample[] =
+  createTabletopSurfaceSamples(tabletopVisibleFocusSampleInputs);
 
 export const tabletopPrincipalDepthSampleIds = [
   "near-centre",
@@ -265,23 +298,32 @@ export const tabletopOffAxisSampleIds = [
   "far-right",
 ] as const satisfies readonly ObliqueTabletopSurfaceSampleId[];
 
-/** The live optics/readout targets cover the canonical tabletop surface. */
-export const focusTargets: FocusTarget[] = tabletopSurfaceSamples.map((sample) => ({
+export const tabletopAnalyticalFocusTargets: FocusTarget[] = tabletopAnalyticalSurfaceSamples.map((sample) => ({
   id: sample.id,
   label: sample.label,
   worldPosition: sample.worldPosition,
   weight: 1,
 }));
 
+/** Live optics/readout targets stay within the physical Ground Glass footprint. */
+export const tabletopVisibleFocusTargets: FocusTarget[] = tabletopVisibleFocusSamples.map((sample) => ({
+  id: sample.id,
+  label: sample.label,
+  worldPosition: sample.worldPosition,
+  weight: 1,
+}));
+
+export const focusTargets: FocusTarget[] = tabletopVisibleFocusTargets;
+
 /**
  * Public-step evidence state for the intentionally incomplete Tilt slice.
- * Under the canonical R_y(-8°) ∘ R_x(9°) subject transform, the existing
- * Front Tilt convention reaches the near-to-far improvement in the negative
- * direction. This is a learner-reachable calibration, not a compound solution.
+ * The negative sign follows the shared Front Tilt convention and aligns the
+ * principal near-to-far sample axis. Focus is independently refined at the
+ * public 10 mm step; the state intentionally leaves the lateral samples soft.
  */
 export const tiltOnlyCalibration = {
-  frontTiltDeg: -10,
-  focusDistanceMm: 1720,
+  frontTiltDeg: -4.9,
+  focusDistanceMm: 3310,
   aperture: 11 as const,
 } as const;
 
@@ -403,7 +445,9 @@ const allPhysicalGeometryPoints = [
 
 export const sceneBounds = boundsFromPoints(allPhysicalGeometryPoints, 150);
 
-const focusTargetDepths = focusTargets.map((target) => target.worldPosition.z);
+// Keep the public focus range large enough to cover the full canonical plane,
+// including analytical edge samples that are intentionally not learner targets.
+const focusTargetDepths = tabletopAnalyticalSurfaceSamples.map((sample) => sample.worldPosition.z);
 export const focusDistanceRangeMm = {
   // A tilted focus plane can intersect the optical axis much closer than the
   // neutral tabletop depth. The real-image floor remains enforced centrally
@@ -426,7 +470,10 @@ export default {
   markers,
   middleMarker,
   focusTargets,
-  tabletopSurfaceSamples,
+  tabletopAnalyticalFocusTargets,
+  tabletopVisibleFocusTargets,
+  tabletopAnalyticalSurfaceSamples,
+  tabletopVisibleFocusSamples,
   tabletopPrincipalDepthSampleIds,
   tabletopOffAxisSampleIds,
   tiltOnlyCalibration,

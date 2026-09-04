@@ -17,10 +17,15 @@ const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
   ...overrides,
 });
 
+const analyticalObliqueTabletopScene = {
+  ...obliqueTabletopScene,
+  focusTargets: obliqueTabletopGeometry.tabletopAnalyticalFocusTargets,
+};
+
 const evaluate = (frontTiltDeg: number, focusDistanceMm: number) =>
   deriveOpticsState(
     cameraFor({ frontTiltDeg, focusDistanceMm }),
-    obliqueTabletopScene,
+    analyticalObliqueTabletopScene,
   );
 
 const targetMap = (frontTiltDeg: number, focusDistanceMm: number) =>
@@ -49,10 +54,10 @@ afterEach(() => {
 });
 
 describe("Oblique Tabletop Tilt limitation", () => {
-  it("exposes Front Tilt and Focus while withholding every other movement", () => {
+  it("retains the Tilt boundary while exposing the compound movement capability", () => {
     expect(obliqueTabletopScene.movementCapabilities).toEqual({
-      available: ["frontTiltDeg"],
-      selectionMode: "single",
+      available: ["frontTiltDeg", "frontSwingDeg"],
+      selectionMode: "multiple",
       defaultMovement: "frontTiltDeg",
     });
     expect(obliqueTabletopScene.cameraControlPolicy).toEqual({
@@ -100,7 +105,7 @@ describe("Oblique Tabletop Tilt limitation", () => {
     store.setFocusDistance(calibration.focusDistanceMm);
 
     const camera = useAppStore.getState().camera;
-    expect(useAppStore.getState().selectedMovement).toBe("frontTiltDeg");
+    expect(useAppStore.getState().selectedMovement).toBeNull();
     expect(camera.frontTiltDeg).toBe(calibration.frontTiltDeg);
     expect(camera.focusDistanceMm).toBe(calibration.focusDistanceMm);
     expect(camera.frontSwingDeg).toBe(0);
@@ -113,7 +118,7 @@ describe("Oblique Tabletop Tilt limitation", () => {
     expect(Math.abs(normal.z)).toBeGreaterThan(0.1);
     expect(Math.hypot(normal.x, normal.y, normal.z)).toBeCloseTo(1, 10);
 
-    const sampleIds = obliqueTabletopGeometry.tabletopSurfaceSamples.map((sample) => sample.id);
+    const sampleIds = obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples.map((sample) => sample.id);
     expect(sampleIds).toEqual([
       "near-left",
       "near-centre",
@@ -124,7 +129,7 @@ describe("Oblique Tabletop Tilt limitation", () => {
       "far-right",
     ]);
 
-    obliqueTabletopGeometry.tabletopSurfaceSamples.forEach((sample) => {
+    obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples.forEach((sample) => {
       expect(sample.worldPosition).toEqual(
         obliqueTabletopGeometry.tabletopLocalToWorld({
           localX: sample.localPosition.x,
@@ -143,9 +148,9 @@ describe("Oblique Tabletop Tilt limitation", () => {
       ).toBeLessThan(1e-8);
     });
 
-    const nearLeft = obliqueTabletopGeometry.tabletopSurfaceSamples[0].localPosition;
-    const nearRight = obliqueTabletopGeometry.tabletopSurfaceSamples[2].localPosition;
-    const farLeft = obliqueTabletopGeometry.tabletopSurfaceSamples[4].localPosition;
+    const nearLeft = obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples[0].localPosition;
+    const nearRight = obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples[2].localPosition;
+    const farLeft = obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples[4].localPosition;
     expect((nearRight.x - nearLeft.x) * (farLeft.z - nearLeft.z)).not.toBe(0);
   });
 
