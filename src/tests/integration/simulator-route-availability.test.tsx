@@ -49,6 +49,7 @@ describe("simulator route availability", () => {
     ["/simulator/free/focus-fundamentals-two-targets", "free:focus-fundamentals-two-targets:none:lesson=false"],
     ["/simulator/free/architecture-rise", "free:architecture-rise:none:lesson=false"],
     ["/simulator/free/architecture-foreground", "free:architecture-foreground:none:lesson=false"],
+    ["/simulator/free/interior-corner", "free:interior-corner:none:lesson=false"],
     ["/simulator/free/oblique-architecture", "free:oblique-architecture:none:lesson=false"],
     ["/simulator/free/shelf-swing", "free:shelf-swing:none:lesson=false"],
     ["/simulator/free/mirror-shift", "free:mirror-shift:none:lesson=false"],
@@ -132,6 +133,7 @@ describe("simulator route availability", () => {
     "/simulator/guided/oblique-architecture/rise-01",
     "/simulator/guided/architecture-foreground",
     "/simulator/guided/architecture-foreground/architecture-foreground-not-a-task?lesson=1",
+    "/simulator/free/interior-corner/swing-01",
   ])("redirects invalid simulator route %s to Scenes", async (route) => {
     renderRoute(route);
 

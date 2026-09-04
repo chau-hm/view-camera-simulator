@@ -19,6 +19,7 @@ export const publicSceneIds = [
   "mirror-shift",
   "oblique-architecture",
   "architecture-foreground",
+  "interior-corner",
 ] as const;
 export type PublicSceneId = (typeof publicSceneIds)[number];
 export type SceneAvailability = "available" | "in-development";
@@ -217,6 +218,19 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       includeObserveStage: true,
       taskStageIds: ["compose", "align-focus", "depth-of-field", "final-challenge"],
     },
+  },
+  {
+    id: "interior-corner",
+    titleKey: publicSceneMessageKeys.interiorCorner.title,
+    descriptionKey: publicSceneMessageKeys.interiorCorner.description,
+    topicKeys: [
+      publicSceneMessageKeys.interiorCorner.topics.frontRise,
+      publicSceneMessageKeys.interiorCorner.topics.frontSwing,
+      publicSceneMessageKeys.interiorCorner.topics.architecturalDepth,
+    ],
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/interior-corner.png",
   },
 ];
 

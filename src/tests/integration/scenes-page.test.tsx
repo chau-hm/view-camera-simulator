@@ -117,6 +117,31 @@ describe("scenes page", () => {
       "/simulator/free/architecture-foreground?lesson=1",
     );
 
+    const interiorCornerHeading = await screen.findByRole("heading", {
+      name: "Interior Corner — Rise + Swing",
+      level: 2,
+    });
+    const interiorCornerCard = interiorCornerHeading.closest("article");
+    expect(interiorCornerCard).not.toBeNull();
+    const scopedInteriorCornerCard = within(interiorCornerCard!);
+    expect(
+      scopedInteriorCornerCard.getByText(
+        "Explore a neutral interior corner where upper architectural detail presses against the frame and one receding wall creates a future Front Swing and Focus problem.",
+      ),
+    ).toBeInTheDocument();
+    expect(scopedInteriorCornerCard.getByText("Front Rise")).toBeInTheDocument();
+    expect(scopedInteriorCornerCard.getByText("Front Swing")).toBeInTheDocument();
+    expect(scopedInteriorCornerCard.getByText("Architectural depth")).toBeInTheDocument();
+    expect(interiorCornerCard!.querySelector("img")).toHaveAttribute(
+      "src",
+      "/assets/interior-corner.png",
+    );
+    expect(scopedInteriorCornerCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner",
+    );
+    expect(scopedInteriorCornerCard.queryByRole("link", { name: "Start Guided Task" })).toBeNull();
+
     // Oblique Architecture remains directly available immediately before the final scene.
     const obliqueHeading = await screen.findByRole("heading", {
       name: "Oblique Architecture",
@@ -222,11 +247,12 @@ describe("scenes page", () => {
       "mirror-shift",
       "oblique-architecture",
       "architecture-foreground",
+      "interior-corner",
     ]);
-    expect(publicSceneIds.at(-1)).toBe("architecture-foreground");
+    expect(publicSceneIds.at(-1)).toBe("interior-corner");
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual(publicSceneIds);
     const visibleCards = screen.getAllByRole("article");
-    expect(within(visibleCards.at(-1)!).getByRole("heading", { name: "Architecture + Foreground", level: 2 })).toBeInTheDocument();
+    expect(within(visibleCards.at(-1)!).getByRole("heading", { name: "Interior Corner — Rise + Swing", level: 2 })).toBeInTheDocument();
     expect(getPublicSceneEntryById("focus-fundamentals-two-targets")?.availableModes).toEqual([
       "free",
     ]);
@@ -244,6 +270,7 @@ describe("scenes page", () => {
       "Mirror Shift",
       "Oblique Architecture",
       "Architecture + Foreground",
+      "Interior Corner — Rise + Swing",
     ]);
     expect(getPublicScenes().map((scene) => scene.id)).toContain("shelf-swing");
     expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("available");
@@ -297,6 +324,7 @@ describe("scenes page", () => {
       "鏡面構圖與視點",
       "斜向建築攝影",
       "建築物與前景",
+      "室內轉角 — 上移與擺動",
     ]);
 
     const cardFor = (title: string) => {
@@ -326,6 +354,16 @@ describe("scenes page", () => {
     expect(cardFor("斜向建築攝影").getByRole("link", { name: "引導課程" })).toHaveAttribute(
       "href",
       "/simulator/free/oblique-architecture?lesson=1",
+    );
+    expect(
+      cardFor("室內轉角 — 上移與擺動").getByText(/探索一個中性室內轉角/),
+    ).toBeInTheDocument();
+    expect(cardFor("室內轉角 — 上移與擺動").getByText("前組上移")).toBeInTheDocument();
+    expect(cardFor("室內轉角 — 上移與擺動").getByText("前組擺動")).toBeInTheDocument();
+    expect(cardFor("室內轉角 — 上移與擺動").getByText("建築深度")).toBeInTheDocument();
+    expect(cardFor("室內轉角 — 上移與擺動").getByRole("link", { name: "開啟場景" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner",
     );
   });
 

@@ -45,6 +45,15 @@ export const publicSceneMessageKeys = {
       sharpness: "scenes.architectureForeground.topics.sharpness",
     },
   },
+  interiorCorner: {
+    title: "scenes.interiorCorner.title",
+    description: "scenes.interiorCorner.description",
+    topics: {
+      frontRise: "scenes.interiorCorner.topics.frontRise",
+      frontSwing: "scenes.interiorCorner.topics.frontSwing",
+      architecturalDepth: "scenes.interiorCorner.topics.architecturalDepth",
+    },
+  },
   obliqueArchitecture: {
     title: "scenes.obliqueArchitecture.title",
     description: "scenes.obliqueArchitecture.description",
@@ -104,6 +113,7 @@ export type PublicSceneTopicKey =
   | TopicValues<typeof publicSceneMessageKeys.focusFundamentals>
   | TopicValues<typeof publicSceneMessageKeys.architectureRise>
   | TopicValues<typeof publicSceneMessageKeys.architectureForeground>
+  | TopicValues<typeof publicSceneMessageKeys.interiorCorner>
   | TopicValues<typeof publicSceneMessageKeys.obliqueArchitecture>
   | TopicValues<typeof publicSceneMessageKeys.tableTilt>
   | TopicValues<typeof publicSceneMessageKeys.shelfSwing>

@@ -288,8 +288,9 @@ describe("scene definitions", () => {
     expect(lazy.length).toBeGreaterThan(0);
     expect(nextSceneId).toBe("architecture-foreground");
     expect(preload.length).toBeGreaterThan(0);
-    expect(sceneOrder.at(-1)).toBe("oblique-architecture");
+    expect(sceneOrder.at(-1)).toBe("interior-corner");
     expect(getNextSceneId("mirror-shift")).toBe("oblique-architecture");
-    expect(getNextSceneId("oblique-architecture")).toBeNull();
+    expect(getNextSceneId("oblique-architecture")).toBe("interior-corner");
+    expect(getNextSceneId("interior-corner")).toBeNull();
   });
 });

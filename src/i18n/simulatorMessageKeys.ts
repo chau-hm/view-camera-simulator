@@ -226,6 +226,10 @@ export const simulatorMessageKeys = {
     architectureForegroundMiddleTarget: "simulator.geometry.architectureForegroundMiddleTarget",
     architectureForegroundBuildingBaseTarget: "simulator.geometry.architectureForegroundBuildingBaseTarget",
     architectureForegroundBuildingMiddleTarget: "simulator.geometry.architectureForegroundBuildingMiddleTarget",
+    interiorCornerRecedingWallGuide: "simulator.geometry.interiorCornerRecedingWallGuide",
+    interiorCornerNearWallTarget: "simulator.geometry.interiorCornerNearWallTarget",
+    interiorCornerMiddleWallTarget: "simulator.geometry.interiorCornerMiddleWallTarget",
+    interiorCornerFarWallTarget: "simulator.geometry.interiorCornerFarWallTarget",
   },
   sceneLegend: {
     filmPlane: "simulator.sceneLegend.filmPlane",
@@ -292,6 +296,16 @@ export const simulatorMessageKeys = {
         aperture: "simulator.freePractice.architectureForeground.bullets.aperture",
       },
       observation: "simulator.freePractice.architectureForeground.observation",
+    },
+    interiorCorner: {
+      objective: "simulator.freePractice.interiorCorner.objective",
+      bullets: {
+        framing: "simulator.freePractice.interiorCorner.bullets.framing",
+        rise: "simulator.freePractice.interiorCorner.bullets.rise",
+        depth: "simulator.freePractice.interiorCorner.bullets.depth",
+        focus: "simulator.freePractice.interiorCorner.bullets.focus",
+      },
+      observation: "simulator.freePractice.interiorCorner.observation",
     },
     obliqueArchitecture: {
       objective: "simulator.freePractice.obliqueArchitecture.objective",

@@ -8,6 +8,7 @@ import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-archi
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 
 describe("getGeometryPresentationProfile", () => {
   it.each([
@@ -15,6 +16,7 @@ describe("getGeometryPresentationProfile", () => {
     ["Shelf Swing", shelfSwingScene, "top", "optical-section"],
     ["Architecture Rise", architectureRiseScene, "side", "optical-section"],
     ["Architecture + Foreground", architectureForegroundScene, "side", "optical-section"],
+    ["Interior Corner", interiorCornerScene, "top", "optical-section"],
     ["Oblique Architecture", obliqueArchitectureScene, "top", "optical-section"],
     ["Focus Fundamentals", focusFundamentalsTwoTargets, "side", "optical-section"],
     ["Mirror Shift", mirrorShiftScene, "top", "mirror-shift-teaching"],

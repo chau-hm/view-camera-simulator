@@ -230,6 +230,10 @@ export const simulatorMessages = {
     architectureForegroundMiddleTarget: "中間前景",
     architectureForegroundBuildingBaseTarget: "建築物基座",
     architectureForegroundBuildingMiddleTarget: "建築物中段",
+    interiorCornerRecedingWallGuide: "向後延伸的側牆",
+    interiorCornerNearWallTarget: "近處牆面細節",
+    interiorCornerMiddleWallTarget: "中間牆面細節",
+    interiorCornerFarWallTarget: "遠處牆面細節",
   },
   sceneLegend: {
     filmPlane: "底片平面（藍色）",
@@ -302,6 +306,17 @@ export const simulatorMessages = {
       },
       observation:
         "前組上移會在不改變透視及垂直線平行關係的情況下修正構圖。前組傾斜會改變焦平面方向，而對焦會放置焦平面；光圈再擴大焦平面周圍的實用景深，但景深仍然有限。",
+    },
+    interiorCorner: {
+      objective: "在處理構圖及向後延伸牆面的對焦問題前，先探索中性的室內轉角設定。",
+      bullets: {
+        framing: "留意相機保持水平，但上方線腳被裁切，或與畫面頂部邊緣貼得不舒服。",
+        rise: "稍後使用前組上移改變構圖，而不需要向上仰起相機。",
+        depth: "沿著同一面側牆，從較近的畫作觀察到中間及遠處的細節。",
+        focus: "在較開的起始光圈下，比較牆面不同距離；前組擺動及對焦會留待稍後課程處理。",
+      },
+      observation:
+        "房間保持水平，而上方建築細節貼近畫面邊緣。同一面向後延伸側牆上的三個細節處於不同距離，讓日後的上移及前組擺動／對焦問題清晰可見。",
     },
     obliqueArchitecture: {
       objective: "在斜角建築場景中探索前組上移、前組擺動及對焦，同時保持後組水平。",

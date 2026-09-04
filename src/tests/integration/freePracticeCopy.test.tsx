@@ -44,6 +44,14 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText(/Stop down Aperture to expand usable depth/)).toBeInTheDocument();
 
     cleanup();
+    render(<TaskPanel task={null} sceneId="interior-corner" />);
+    expect(screen.getByText(/Explore the neutral Interior Corner setup/)).toBeInTheDocument();
+    expect(screen.getByText(/upper moulding is cropped/)).toBeInTheDocument();
+    expect(screen.getByText(/Use Front Rise later to change framing/)).toBeInTheDocument();
+    expect(screen.getByText(/same side wall from its nearer artwork/)).toBeInTheDocument();
+    expect(screen.getByText(/open starting aperture/)).toBeInTheDocument();
+
+    cleanup();
     render(<TaskPanel task={null} sceneId="oblique-tabletop" />);
     expect(screen.getByText(/Use Front Tilt to bring the near and far regions closer/)).toBeInTheDocument();
     expect(screen.getByText(/Refine Focus after changing Front Tilt/)).toBeInTheDocument();
@@ -91,6 +99,14 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText(/使用前組傾斜，讓清晰焦平面/)).toBeInTheDocument();
     expect(screen.getByText(/調整對焦，將焦平面放置/)).toBeInTheDocument();
     expect(screen.getByText(/收細光圈，擴大已對齊清晰焦平面周圍的實用景深/)).toBeInTheDocument();
+
+    cleanup();
+    render(<TaskPanel task={null} sceneId="interior-corner" />);
+    expect(screen.getByText(/在處理構圖及向後延伸牆面的對焦問題前/)).toBeInTheDocument();
+    expect(screen.getByText(/上方線腳被裁切/)).toBeInTheDocument();
+    expect(screen.getByText(/稍後使用前組上移改變構圖/)).toBeInTheDocument();
+    expect(screen.getByText(/從較近的畫作觀察到中間及遠處的細節/)).toBeInTheDocument();
+    expect(screen.getByText(/較開的起始光圈下/)).toBeInTheDocument();
 
     cleanup();
     render(<TaskPanel task={null} sceneId="oblique-tabletop" />);
