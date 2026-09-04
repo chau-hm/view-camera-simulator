@@ -4,6 +4,8 @@ export const commonMessages = {
     scenes: "Scenes",
     faq: "FAQ",
     primaryNavigation: "Primary navigation",
+    openMenu: "Open navigation menu",
+    closeMenu: "Close navigation menu",
   },
   language: {
     label: "Language",

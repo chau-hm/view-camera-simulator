@@ -4,6 +4,8 @@ import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { routes } from "../../app/router";
 import { i18n } from "../../i18n";
 import { LOCALE_STORAGE_KEY } from "../../i18n/localePreference";
+import { homeMessages as englishHomeMessages } from "../../i18n/messages/en/home";
+import { homeMessages as traditionalChineseHomeMessages } from "../../i18n/messages/zh-HK/home";
 
 const resetLocale = async () => {
   cleanup();
@@ -16,6 +18,14 @@ beforeEach(resetLocale);
 afterEach(resetLocale);
 
 describe("internationalization foundation", () => {
+  it("keeps the Hero message shape complete in English and Traditional Chinese", () => {
+    expect(Object.keys(traditionalChineseHomeMessages.hero)).toEqual(Object.keys(englishHomeMessages.hero));
+    expect(traditionalChineseHomeMessages.hero.titleLine1).toBe("掌控透視感");
+    expect(traditionalChineseHomeMessages.hero.titleLine2).toBe("定位焦平面");
+    expect(traditionalChineseHomeMessages.hero.startExploring).toBe("開始探索模擬器");
+    expect(traditionalChineseHomeMessages.hero.exploreScenes).toBe("瀏覽場景");
+  });
+
   it("renders the bundled English surface by default", () => {
     const router = createMemoryRouter(routes, { initialEntries: ["/"] });
     render(<RouterProvider router={router} />);
@@ -23,12 +33,14 @@ describe("internationalization foundation", () => {
     expect(document.documentElement.lang).toBe("en");
     expect(screen.getByRole("combobox", { name: "Language" })).toHaveValue("en");
     expect(screen.getByRole("link", { name: "View Camera Simulator home" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Shape Perspective. Place Focus.", level: 1 })).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", {
-        name: "See how a view camera changes the image before the shutter is pressed.",
-        level: 1,
-      }),
+      screen.getByText(
+        "Explore how rise, shift, tilt, swing, and focus reshape perspective, composition, and the plane of focus.",
+      ),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("landing-hero-cta")).toHaveAttribute("href", "/scenes");
+    expect(screen.queryByText(/See How It Works|Watch Video/)).not.toBeInTheDocument();
   });
 
   it("switches visible public copy immediately and persists without navigation", async () => {
@@ -40,16 +52,14 @@ describe("internationalization foundation", () => {
 
     await waitFor(() => {
       expect(document.documentElement.lang).toBe("zh-HK");
-      expect(screen.getByRole("heading", { name: "在按下快門前，了解大片幅相機如何改變影像。" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "掌控透視感 定位焦平面" })).toBeInTheDocument();
     });
     expect(screen.getByRole("link", { name: "場景" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View Camera Simulator 主頁" })).toBeInTheDocument();
+    expect(screen.getByText("親手操作上移、橫移、傾斜、擺動與對焦，看見它們如何改變透視、構圖與焦平面。")).toBeInTheDocument();
+    expect(screen.getByTestId("landing-hero-cta")).toHaveAttribute("href", "/scenes");
+    expect(screen.getByText("瀏覽場景")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "為甚麼相機移軸重要？", level: 2 })).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "移動整部相機，或調整前組及後組，然後在對焦屏上比較視點、構圖、透視及對焦如何改變。",
-      ),
-    ).toBeInTheDocument();
     expect(screen.queryByText(/前、後組移軸/)).not.toBeInTheDocument();
     expect(screen.getByText(/移動整部相機會改變視點/)).toBeInTheDocument();
     expect(document.body.textContent).not.toContain("大型相機");
@@ -59,7 +69,7 @@ describe("internationalization foundation", () => {
     fireEvent.change(selector, { target: { value: "en" } });
     await waitFor(() => {
       expect(document.documentElement.lang).toBe("en");
-      expect(screen.getByRole("heading", { name: "See how a view camera changes the image before the shutter is pressed." })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Shape Perspective. Place Focus." })).toBeInTheDocument();
     });
   });
 

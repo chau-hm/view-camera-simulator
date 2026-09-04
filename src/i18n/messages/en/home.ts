@@ -1,10 +1,12 @@
 export const homeMessages = {
   hero: {
-    eyebrow: "Interactive View Camera Learning",
-    title: "See how a view camera changes the image before the shutter is pressed.",
+    eyebrow: "View Camera Simulator",
+    titleLine1: "Shape Perspective.",
+    titleLine2: "Place Focus.",
     description:
-      "Move the whole camera or its Front and Rear standards, then compare how viewpoint, framing, perspective and focus change on the Ground Glass.",
-    exploreSimulator: "Explore the Simulator",
+      "Explore how rise, shift, tilt, swing, and focus reshape perspective, composition, and the plane of focus.",
+    startExploring: "Start Exploring",
+    exploreScenes: "Explore Scenes",
   },
   why: {
     ariaLabel: "Why use a view camera",

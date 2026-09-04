@@ -4,29 +4,29 @@ import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { routes } from "../../app/router";
 
 describe("home page", () => {
-  it("renders hero heading and CTAs", async () => {
+  it("renders the approved Hero heading and catalog CTA", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/"] });
     render(<RouterProvider router={memoryRouter} />);
 
     // landing should have exactly one H1 and it should be the hero heading
     const h1s = await screen.findAllByRole('heading', { level: 1 });
     expect(h1s.length).toBe(1);
-    expect(h1s[0]).toHaveTextContent("See how a view camera changes the image before the shutter is pressed.");
+    expect(h1s[0]).toHaveTextContent("Shape Perspective. Place Focus.");
 
-    // primary CTAs
-    const explore = await screen.findByText("Explore the Simulator");
+    // The Hero has one catalog CTA.
+    const explore = await screen.findByText("Start Exploring");
     expect(explore).toBeInTheDocument();
     expect(explore.closest('a')).toHaveAttribute('href', '/scenes');
 
-    // hero illustration wrapper present (decorative, aria-hidden)
-    const heroWrap = document.querySelector('.hero__illustration');
+    // approved hero artwork wrapper present (decorative, aria-hidden)
+    const heroWrap = document.querySelector('.landing-hero__artwork');
     expect(heroWrap).toBeTruthy();
 
-    // hero illustration should render the supplied image asset
-    const heroImg = document.querySelector('.hero__illustration img') as HTMLImageElement | null;
+    // hero artwork should render the supplied production asset
+    const heroImg = document.querySelector('.landing-hero__artwork img') as HTMLImageElement | null;
     expect(heroImg).toBeTruthy();
     const heroSrc = heroImg?.getAttribute('src') ?? '';
-    expect(heroSrc).toContain('view-camera-hero-illustration.png');
+    expect(heroSrc).toContain('assets/landing/hero.png');
 
     // Ensure BASE_URL is respected and no hard-coded root-relative '/assets/' is used unless BASE_URL is '/'
     const base = import.meta.env.BASE_URL ?? '/';
@@ -60,5 +60,30 @@ describe("home page", () => {
     expect(screen.getByText(/A view camera slows the process down. The upside-down image on the ground glass encourages careful looking, and every movement becomes a deliberate choice\./)).toBeTruthy();
     expect(screen.queryByTestId("faq-section")).not.toBeInTheDocument();
     expect(screen.queryByText("Who is View Camera Simulator for?")).not.toBeInTheDocument();
+  });
+
+  it("exposes responsive Hero image candidates with a PNG fallback", async () => {
+    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/"] });
+    render(<RouterProvider router={memoryRouter} />);
+
+    const artwork = document.querySelector(".landing-hero__artwork");
+    expect(artwork).toBeTruthy();
+    const source = artwork?.querySelector('source[type="image/webp"]');
+    expect(source).toBeTruthy();
+
+    const candidates = (source?.getAttribute("srcset") ?? "")
+      .split(",")
+      .map((candidate) => candidate.trim());
+    expect(candidates).toHaveLength(3);
+    expect(candidates.join(" ")).toMatch(/hero-640\.webp 640w/);
+    expect(candidates.join(" ")).toMatch(/hero-1024\.webp 1024w/);
+    expect(candidates.join(" ")).toMatch(/hero-1672\.webp 1672w/);
+    expect(source).toHaveAttribute("sizes", "100vw");
+
+    const fallback = document.querySelector(".landing-hero__artwork img");
+    expect(fallback).toHaveAttribute("src", expect.stringContaining("assets/landing/hero.png"));
+    expect(fallback).toHaveAttribute("srcset", expect.stringContaining("hero.png 1672w"));
+    expect(fallback).toHaveAttribute("decoding", "async");
+    expect(fallback).toHaveAttribute("fetchpriority", "high");
   });
 });

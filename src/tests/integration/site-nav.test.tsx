@@ -1,7 +1,10 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import { RouterProvider, createMemoryRouter } from "react-router-dom";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router-dom";
 import { routes } from "../../app/router";
+import { SiteHeader } from "../../components/layout/SiteHeader";
+
+afterEach(cleanup);
 
 describe("site navigation", () => {
   it("shows Home, Scenes, FAQ and GitHub links in header", async () => {
@@ -35,5 +38,48 @@ describe("site navigation", () => {
 
     // ensure old material-symbol text is no longer inside the brand link
     expect(brandLink.querySelector('.material-symbols-outlined')).toBeNull();
+  });
+
+  it("opens the compact navigation with keyboard-accessible focus restoration", async () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <SiteHeader />
+      </MemoryRouter>,
+    );
+
+    const menuButton = screen.getByRole("button", { name: "Open navigation menu" });
+    expect(menuButton).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(menuButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Close navigation menu" })).toHaveAttribute(
+        "aria-expanded",
+        "true",
+      );
+      expect(screen.getByRole("link", { name: "Home" })).toHaveFocus();
+    });
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Open navigation menu" })).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+      expect(screen.getByRole("button", { name: "Open navigation menu" })).toHaveFocus();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Open navigation menu" }));
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Open navigation menu" })).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+      expect(screen.getByRole("button", { name: "Open navigation menu" })).toHaveFocus();
+    });
   });
 });

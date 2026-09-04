@@ -3,11 +3,13 @@ import type { MessageShape } from "../types";
 
 export const homeMessages = {
   hero: {
-    eyebrow: "互動式大片幅相機學習",
-    title: "在按下快門前，了解大片幅相機如何改變影像。",
+    eyebrow: "View Camera Simulator",
+    titleLine1: "掌控透視感",
+    titleLine2: "定位焦平面",
     description:
-      "移動整部相機，或調整前組及後組，然後在對焦屏上比較視點、構圖、透視及對焦如何改變。",
-    exploreSimulator: "探索模擬器",
+      "親手操作上移、橫移、傾斜、擺動與對焦，看見它們如何改變透視、構圖與焦平面。",
+    startExploring: "開始探索模擬器",
+    exploreScenes: "瀏覽場景",
   },
   why: {
     ariaLabel: "為甚麼使用大片幅相機",
