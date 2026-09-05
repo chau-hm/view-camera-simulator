@@ -30,7 +30,7 @@ Harden the Interior Corner guided lesson integration so every guided task re-ent
 - Full Vitest: `165` files, `1600` tests passed.
 - Typecheck, lint, CSS structure check, production build, and `git diff --check` passed.
 - Required `CI=1 npm run ci:local:e2e` passed CSS/lint/typecheck/Vitest/build and the earlier Chromium specs, then stopped at the baseline-only `mirror-shift-teaching-geometry.spec.ts` failure (1 failed, 1 passed; missing RTT marker). The exact spec reproduced the same result in a clean detached `origin/main` worktree at `766332e95ca42066f2f05e6f2f93d234ba45a79e`.
-- Current-head GitHub CI: pending publication of this corrective head.
+- Current-head GitHub CI for corrective head `16a8824a`: run `33982329629` passed lint, type-check, and unit/integration tests; deploy was not a PR gate.
 
 ## Tests not run
 
