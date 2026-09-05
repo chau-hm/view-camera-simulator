@@ -1,5 +1,5 @@
-// Canonical world-space geometry for the Oblique Tabletop foundation scene.
-// Every distance and position in this module is expressed in millimetres.
+// Canonical world-space geometry for the Oblique Tabletop scene.
+// All distances and positions in this module are expressed in millimetres.
 
 import type { Bounds3, Vec3 } from "../types/optics";
 import type { CameraPlacement, FocusTarget } from "../types/scene";
@@ -14,16 +14,7 @@ export type ObliqueTabletopLocalPosition = {
   z: number;
 };
 
-export type ObliqueTabletopMarker = {
-  id: "near-left" | "middle" | "far-right";
-  label: string;
-  localPosition: { x: number; z: number };
-  color: string;
-  worldPosition: Vec3;
-  focusSampleWorldPositions: Vec3[];
-};
-
-export type ObliqueTabletopSurfaceSampleId =
+export type ObliqueTabletopSubjectSampleId =
   | "near-left"
   | "near-centre"
   | "near-right"
@@ -32,25 +23,46 @@ export type ObliqueTabletopSurfaceSampleId =
   | "far-centre"
   | "far-right";
 
-/** Non-rendering coverage samples used to evaluate the entire tabletop plane. */
-export type ObliqueTabletopSurfaceSample = {
-  id: ObliqueTabletopSurfaceSampleId;
+export type ObliqueTabletopBoardMarker = {
+  id: "near-left" | "middle" | "far-right";
+  label: string;
+  localPosition: { x: number; z: number };
+  color: string;
+  worldPosition: Vec3;
+  focusSampleWorldPositions: Vec3[];
+};
+
+export type ObliqueTabletopSubjectSample = {
+  id: ObliqueTabletopSubjectSampleId;
   label: string;
   localPosition: { x: number; z: number };
   worldPosition: Vec3;
 };
 
-// The original PR10A plane was too close to the physical lens datum for a
-// finite compound solution with the shared 150 mm lens. For a unit subject
-// normal N and plane point P, the optical-axis-conjugate model requires the
-// lens horizontal-normal magnitude s = f*|N_xy|/(N·P); the original plane
-// yielded s ≈ 1.31, outside the unit sphere before public movement limits
-// are considered. This moderate compound orientation and datum keep the
-// tabletop dimensions unchanged while making both public movements useful.
-const tabletopRotationXDeg = 20;
-const tabletopRotationYDeg = -35;
-const tabletopRotationXRad = degreesToRadians(tabletopRotationXDeg);
-const tabletopRotationYRad = degreesToRadians(tabletopRotationYDeg);
+/** The physical table is intentionally level; the inclined object is separate. */
+export const tabletop = {
+  center: { x: 0, y: -350, z: 4550 },
+  width: 4500,
+  depth: 4500,
+  thickness: 100,
+  nearLocalDepth: -2250,
+  farLocalDepth: 2250,
+  rotationXDeg: 0,
+  rotationYDeg: 0,
+  color: "#a98f73",
+  edgeColor: "#70553b",
+} as const;
+
+export const markerGeometry = {
+  width: 320,
+  depth: 220,
+  height: 14,
+  surfaceGap: 2,
+  topThickness: 3,
+  stripeCount: 5,
+  stripeWidth: 24,
+  stripeDepth: 164,
+} as const;
 
 export const floor = {
   center: { x: 0, y: -2050, z: 4400 },
@@ -58,76 +70,113 @@ export const floor = {
   depth: 9000,
   nearZ: 0,
   farZ: 9000,
-  color: "#e5e7eb",
+  color: "#d7d0c6",
 } as const;
 
-export const tabletop = {
-  center: { x: 0, y: -332, z: 4550 },
-  width: 2800,
-  depth: 3800,
-  thickness: 100,
-  rotationXDeg: tabletopRotationXDeg,
-  rotationYDeg: tabletopRotationYDeg,
-  rotationXRad: tabletopRotationXRad,
-  rotationYRad: tabletopRotationYRad,
-  nearLocalDepth: -1900,
-  farLocalDepth: 1900,
-  color: "#c8b79f",
-  edgeColor: "#8b7355",
+const subjectBoardRotationXDeg = 15;
+const subjectBoardRotationYDeg = -45;
+const subjectBoardRotationXRad = degreesToRadians(subjectBoardRotationXDeg);
+const subjectBoardRotationYRad = degreesToRadians(subjectBoardRotationYDeg);
+const tabletopTopY = tabletop.center.y + tabletop.thickness / 2;
+const subjectBoardWidthMm = 3200;
+const subjectBoardDepthMm = 3000;
+const subjectBoardThicknessMm = 60;
+
+/** A drafting/copy board resting on the level table's far edge. */
+export const subjectBoard = {
+  center: {
+    x: tabletop.center.x,
+    y:
+      tabletopTopY +
+      (subjectBoardThicknessMm / 2) * Math.cos(subjectBoardRotationXRad) +
+      (subjectBoardDepthMm / 2) * Math.sin(subjectBoardRotationXRad),
+    z: tabletop.center.z,
+  },
+  width: subjectBoardWidthMm,
+  depth: subjectBoardDepthMm,
+  thickness: subjectBoardThicknessMm,
+  rotationXDeg: subjectBoardRotationXDeg,
+  rotationYDeg: subjectBoardRotationYDeg,
+  rotationXRad: subjectBoardRotationXRad,
+  rotationYRad: subjectBoardRotationYRad,
+  nearLocalDepth: -1500,
+  farLocalDepth: 1500,
+  color: "#d7c7ad",
+  edgeColor: "#6b5845",
+  planLineColor: "#8f6f4e",
 } as const;
 
-export const markerGeometry = {
-  width: 360,
-  depth: 260,
-  height: 14,
-  surfaceGap: 2,
-  topThickness: 3,
-  stripeCount: 5,
-  stripeWidth: 26,
-  stripeDepth: 196,
-} as const;
-
-const topSurfaceLocalY = tabletop.thickness / 2;
 const markerSurfaceOffsetMm = markerGeometry.height + markerGeometry.surfaceGap;
 
-/** Rotate a tabletop-local direction without applying the tabletop translation. */
-export const tabletopLocalDirectionToWorld = (local: Vec3): Vec3 => {
-  // Apply the near-to-far X tilt first, then rotate that tilted plane around
-  // world Y. This explicit composition gives the surface both vertical and
-  // lateral slope components; the renderer consumes the same derived basis.
+/** The photographed face is the side facing the level camera. */
+export const subjectBoardFaceLocalY = -subjectBoard.thickness / 2;
+export const subjectBoardFocusSurfaceLocalY =
+  subjectBoardFaceLocalY - markerSurfaceOffsetMm;
+/** Presentation details on the upper side keep the board readable in the 3D observer view. */
+export const subjectBoardPresentationFaceLocalY = subjectBoard.thickness / 2;
+
+/** Rotate a board-local direction without applying the board translation. */
+export const subjectBoardLocalDirectionToWorld = (local: Vec3): Vec3 => {
   const afterX = {
     x: local.x,
     y:
-      local.y * Math.cos(tabletop.rotationXRad) -
-      local.z * Math.sin(tabletop.rotationXRad),
+      local.y * Math.cos(subjectBoard.rotationXRad) -
+      local.z * Math.sin(subjectBoard.rotationXRad),
     z:
-      local.y * Math.sin(tabletop.rotationXRad) +
-      local.z * Math.cos(tabletop.rotationXRad),
+      local.y * Math.sin(subjectBoard.rotationXRad) +
+      local.z * Math.cos(subjectBoard.rotationXRad),
   };
+
   return {
     x:
-      afterX.x * Math.cos(tabletop.rotationYRad) +
-      afterX.z * Math.sin(tabletop.rotationYRad),
+      afterX.x * Math.cos(subjectBoard.rotationYRad) +
+      afterX.z * Math.sin(subjectBoard.rotationYRad),
     y: afterX.y,
     z:
-      -afterX.x * Math.sin(tabletop.rotationYRad) +
-      afterX.z * Math.cos(tabletop.rotationYRad),
+      -afterX.x * Math.sin(subjectBoard.rotationYRad) +
+      afterX.z * Math.cos(subjectBoard.rotationYRad),
   };
 };
 
-/** Rotate a tabletop-local point with the canonical subject transform. */
-export const tabletopLocalPointToWorld = (
+/** Apply the canonical inclined-board transform to an arbitrary local point. */
+export const subjectBoardLocalPointToWorld = (
   local: ObliqueTabletopLocalPosition,
 ): Vec3 => {
-  const rotated = tabletopLocalDirectionToWorld(local);
+  const rotated = subjectBoardLocalDirectionToWorld(local);
   return {
-    x: tabletop.center.x + rotated.x,
-    y: tabletop.center.y + rotated.y,
-    z: tabletop.center.z + rotated.z,
+    x: subjectBoard.center.x + rotated.x,
+    y: subjectBoard.center.y + rotated.y,
+    z: subjectBoard.center.z + rotated.z,
   };
 };
 
-/** Convert a position on the tabletop surface to absolute world space. */
+/** Convert a point on the board's raised focus-detail surface to world space. */
+export const subjectBoardSurfaceToWorld = ({
+  localX,
+  localDepth,
+  verticalOffsetMm = 0,
+}: {
+  localX: number;
+  localDepth: number;
+  verticalOffsetMm?: number;
+}): Vec3 =>
+  subjectBoardLocalPointToWorld({
+    x: localX,
+    y: subjectBoardFocusSurfaceLocalY + verticalOffsetMm,
+    z: localDepth,
+  });
+
+/** The level table transform remains available for scene structure and bounds. */
+export const tabletopLocalDirectionToWorld = (local: Vec3): Vec3 => ({ ...local });
+
+export const tabletopLocalPointToWorld = (
+  local: ObliqueTabletopLocalPosition,
+): Vec3 => ({
+  x: tabletop.center.x + local.x,
+  y: tabletop.center.y + local.y,
+  z: tabletop.center.z + local.z,
+});
+
 export const tabletopLocalToWorld = ({
   localX,
   localDepth,
@@ -139,9 +188,15 @@ export const tabletopLocalToWorld = ({
 }): Vec3 =>
   tabletopLocalPointToWorld({
     x: localX,
-    y: topSurfaceLocalY + verticalOffsetMm,
+    y: tabletop.thickness / 2 + verticalOffsetMm,
     z: localDepth,
   });
+
+export const subjectBoardTransformBasis = {
+  localX: subjectBoardLocalDirectionToWorld({ x: 1, y: 0, z: 0 }),
+  localY: subjectBoardLocalDirectionToWorld({ x: 0, y: 1, z: 0 }),
+  localZ: subjectBoardLocalDirectionToWorld({ x: 0, y: 0, z: 1 }),
+} as const;
 
 export const tabletopTransformBasis = {
   localX: tabletopLocalDirectionToWorld({ x: 1, y: 0, z: 0 }),
@@ -152,6 +207,21 @@ export const tabletopTransformBasis = {
 export const tabletopTopSurfacePlane = {
   point: tabletopLocalToWorld({ localX: 0, localDepth: 0 }),
   normal: tabletopTransformBasis.localY,
+} as const;
+
+/** Plane through the visible target-detail surfaces on the inclined board. */
+export const subjectBoardPlane = {
+  point: subjectBoardSurfaceToWorld({ localX: 0, localDepth: 0 }),
+  normal: subjectBoardTransformBasis.localY,
+} as const;
+
+export const subjectBoardFrontSurfacePlane = {
+  point: subjectBoardLocalPointToWorld({
+    x: 0,
+    y: subjectBoardFaceLocalY,
+    z: 0,
+  }),
+  normal: subjectBoardTransformBasis.localY,
 } as const;
 
 export const tabletopExtents = {
@@ -185,23 +255,54 @@ export const tabletopExtents = {
   },
 } as const;
 
+export const subjectBoardExtents = {
+  near: {
+    localDepth: subjectBoard.nearLocalDepth,
+    surfaceCenterWorld: subjectBoardSurfaceToWorld({
+      localX: 0,
+      localDepth: subjectBoard.nearLocalDepth,
+    }),
+  },
+  far: {
+    localDepth: subjectBoard.farLocalDepth,
+    surfaceCenterWorld: subjectBoardSurfaceToWorld({
+      localX: 0,
+      localDepth: subjectBoard.farLocalDepth,
+    }),
+  },
+  left: {
+    localX: -subjectBoard.width / 2,
+    surfaceCenterWorld: subjectBoardSurfaceToWorld({
+      localX: -subjectBoard.width / 2,
+      localDepth: 0,
+    }),
+  },
+  right: {
+    localX: subjectBoard.width / 2,
+    surfaceCenterWorld: subjectBoardSurfaceToWorld({
+      localX: subjectBoard.width / 2,
+      localDepth: 0,
+    }),
+  },
+} as const;
+
 const markerInputs = [
   {
     id: "near-left" as const,
-    label: "Near-left tabletop marker",
-    localPosition: { x: -820, z: -1250 },
+    label: "Near-left plan-board marker",
+    localPosition: { x: -1250, z: -1050 },
     color: "#64748b",
   },
   {
     id: "middle" as const,
-    label: "Middle tabletop marker",
+    label: "Middle plan-board marker",
     localPosition: { x: 0, z: 0 },
     color: "#7c3aed",
   },
   {
     id: "far-right" as const,
-    label: "Far-right tabletop marker",
-    localPosition: { x: 820, z: 1250 },
+    label: "Far-right plan-board marker",
+    localPosition: { x: 1250, z: 1050 },
     color: "#0f766e",
   },
 ] as const;
@@ -214,124 +315,117 @@ const markerSampleOffsets = [
   { x: 0, z: markerGeometry.depth * 0.28 },
 ] as const;
 
-export const markers: ObliqueTabletopMarker[] = markerInputs.map((marker) => {
-  const worldPosition = tabletopLocalToWorld({
+export const boardMarkers: ObliqueTabletopBoardMarker[] = markerInputs.map((marker) => {
+  const worldPosition = subjectBoardSurfaceToWorld({
     localX: marker.localPosition.x,
     localDepth: marker.localPosition.z,
-    verticalOffsetMm: markerSurfaceOffsetMm,
   });
   return {
     ...marker,
     localPosition: { ...marker.localPosition },
     worldPosition,
     focusSampleWorldPositions: markerSampleOffsets.map((offset) =>
-      tabletopLocalToWorld({
+      subjectBoardSurfaceToWorld({
         localX: marker.localPosition.x + offset.x,
         localDepth: marker.localPosition.z + offset.z,
-        verticalOffsetMm: markerSurfaceOffsetMm,
       }),
     ),
   };
 });
 
-// Cover the full surface instead of relying on the three approximately
-// collinear visible markers. Every analytical sample is derived from the same
-// tabletop-local transform and lies on the canonical top surface; the render
-// factory registers matching non-rendering Object3D nodes for RTT/3D
-// inspection.
-const tabletopAnalyticalSurfaceSampleInputs = [
-  { id: "near-left" as const, label: "Near-left tabletop surface", localPosition: { x: -1400, z: -1900 } },
-  { id: "near-centre" as const, label: "Near-centre tabletop surface", localPosition: { x: 0, z: -1900 } },
-  { id: "near-right" as const, label: "Near-right tabletop surface", localPosition: { x: 1400, z: -1900 } },
-  { id: "middle" as const, label: "Middle tabletop surface", localPosition: { x: 0, z: 0 } },
-  { id: "far-left" as const, label: "Far-left tabletop surface", localPosition: { x: -1400, z: 1900 } },
-  { id: "far-centre" as const, label: "Far-centre tabletop surface", localPosition: { x: 0, z: 1900 } },
-  { id: "far-right" as const, label: "Far-right tabletop surface", localPosition: { x: 1400, z: 1900 } },
+/** Full-board validation coverage, inset only enough to avoid board-edge thickness. */
+const subjectBoardAnalyticalSurfaceSampleInputs = [
+  { id: "near-left" as const, label: "Near-left plan-board surface", localPosition: { x: -1550, z: -1450 } },
+  { id: "near-centre" as const, label: "Near-centre plan-board surface", localPosition: { x: 0, z: -1450 } },
+  { id: "near-right" as const, label: "Near-right plan-board surface", localPosition: { x: 1550, z: -1450 } },
+  { id: "middle" as const, label: "Middle plan-board surface", localPosition: { x: 0, z: 0 } },
+  { id: "far-left" as const, label: "Far-left plan-board surface", localPosition: { x: -1550, z: 1450 } },
+  { id: "far-centre" as const, label: "Far-centre plan-board surface", localPosition: { x: 0, z: 1450 } },
+  { id: "far-right" as const, label: "Far-right plan-board surface", localPosition: { x: 1550, z: 1450 } },
 ] as const;
 
-const tabletopVisibleFocusSampleInputs = [
-  { id: "near-left" as const, label: "Near-left tabletop focus region", localPosition: { x: -820, z: -1250 } },
-  { id: "near-centre" as const, label: "Near-centre tabletop focus region", localPosition: { x: 0, z: -1250 } },
-  { id: "near-right" as const, label: "Near-right tabletop focus region", localPosition: { x: 820, z: -1250 } },
-  { id: "middle" as const, label: "Middle tabletop focus region", localPosition: { x: 0, z: 0 } },
-  { id: "far-left" as const, label: "Far-left tabletop focus region", localPosition: { x: -820, z: 1250 } },
-  { id: "far-centre" as const, label: "Far-centre tabletop focus region", localPosition: { x: 0, z: 1250 } },
-  { id: "far-right" as const, label: "Far-right tabletop focus region", localPosition: { x: 820, z: 1250 } },
+/** Interior board details used as the learner-visible public focus targets. */
+const subjectBoardVisibleFocusSampleInputs = [
+  { id: "near-left" as const, label: "Near-left plan-board detail", localPosition: { x: -820, z: -1050 } },
+  { id: "near-centre" as const, label: "Near-centre plan-board detail", localPosition: { x: 0, z: -1050 } },
+  { id: "near-right" as const, label: "Near-right plan-board detail", localPosition: { x: 820, z: -1050 } },
+  { id: "middle" as const, label: "Middle plan-board detail", localPosition: { x: 0, z: 0 } },
+  { id: "far-left" as const, label: "Far-left plan-board detail", localPosition: { x: -820, z: 1050 } },
+  { id: "far-centre" as const, label: "Far-centre plan-board detail", localPosition: { x: 0, z: 1050 } },
+  { id: "far-right" as const, label: "Far-right plan-board detail", localPosition: { x: 820, z: 1050 } },
 ] as const;
 
-type TabletopSurfaceSampleInput = {
-  id: ObliqueTabletopSurfaceSampleId;
+type SubjectBoardSampleInput = {
+  id: ObliqueTabletopSubjectSampleId;
   label: string;
   localPosition: { x: number; z: number };
 };
 
-const createTabletopSurfaceSamples = (
-  inputs: readonly TabletopSurfaceSampleInput[],
-): ObliqueTabletopSurfaceSample[] =>
+const createSubjectBoardSamples = (
+  inputs: readonly SubjectBoardSampleInput[],
+): ObliqueTabletopSubjectSample[] =>
   inputs.map((sample) => ({
     ...sample,
     localPosition: { ...sample.localPosition },
-    worldPosition: tabletopLocalToWorld({
+    worldPosition: subjectBoardSurfaceToWorld({
       localX: sample.localPosition.x,
       localDepth: sample.localPosition.z,
     }),
   }));
 
-/** Full-surface analytical coverage retained for physical regression proof. */
-export const tabletopAnalyticalSurfaceSamples: ObliqueTabletopSurfaceSample[] =
-  createTabletopSurfaceSamples(tabletopAnalyticalSurfaceSampleInputs);
+/** Full-board analytical coverage used by physical regression and task criteria. */
+export const subjectBoardAnalyticalSurfaceSamples = createSubjectBoardSamples(
+  subjectBoardAnalyticalSurfaceSampleInputs,
+);
 
-/** Film-visible learner coverage, derived from the same canonical transform. */
-export const tabletopVisibleFocusSamples: ObliqueTabletopSurfaceSample[] =
-  createTabletopSurfaceSamples(tabletopVisibleFocusSampleInputs);
+/** Learner-visible details are derived from the same board transform and points. */
+export const subjectBoardVisibleFocusSamples = createSubjectBoardSamples(
+  subjectBoardVisibleFocusSampleInputs,
+);
 
-export const tabletopPrincipalDepthSampleIds = [
+export const subjectBoardPrincipalDepthSampleIds = [
   "near-centre",
   "middle",
   "far-centre",
-] as const satisfies readonly ObliqueTabletopSurfaceSampleId[];
+] as const satisfies readonly ObliqueTabletopSubjectSampleId[];
 
-export const tabletopOffAxisSampleIds = [
+export const subjectBoardOffAxisSampleIds = [
   "near-left",
   "near-right",
   "far-left",
   "far-right",
-] as const satisfies readonly ObliqueTabletopSurfaceSampleId[];
+] as const satisfies readonly ObliqueTabletopSubjectSampleId[];
 
-export const tabletopAnalyticalFocusTargets: FocusTarget[] = tabletopAnalyticalSurfaceSamples.map((sample) => ({
-  id: sample.id,
-  label: sample.label,
-  worldPosition: sample.worldPosition,
-  weight: 1,
-}));
+export const subjectBoardAnalyticalFocusTargets: FocusTarget[] =
+  subjectBoardAnalyticalSurfaceSamples.map((sample) => ({
+    id: sample.id,
+    label: sample.label,
+    worldPosition: sample.worldPosition,
+    weight: 1,
+  }));
 
-/** Live optics/readout targets stay within the physical Ground Glass footprint. */
-export const tabletopVisibleFocusTargets: FocusTarget[] = tabletopVisibleFocusSamples.map((sample) => ({
-  id: sample.id,
-  label: sample.label,
-  worldPosition: sample.worldPosition,
-  weight: 1,
-}));
+export const subjectBoardVisibleFocusTargets: FocusTarget[] =
+  subjectBoardVisibleFocusSamples.map((sample) => ({
+    id: sample.id,
+    label: sample.label,
+    worldPosition: sample.worldPosition,
+    weight: 1,
+  }));
 
-export const focusTargets: FocusTarget[] = tabletopVisibleFocusTargets;
+export const focusTargets: FocusTarget[] = subjectBoardVisibleFocusTargets;
 
-/**
- * Public-step evidence state for the intentionally incomplete Tilt slice.
- * The negative sign follows the shared Front Tilt convention and aligns the
- * principal near-to-far sample axis. Focus is independently refined at the
- * public 10 mm step; the state intentionally leaves the lateral samples soft.
- */
+/** Public Tilt + Focus evidence for the intentionally incomplete first movement stage. */
 export const tiltOnlyCalibration = {
-  frontTiltDeg: -4.9,
-  focusDistanceMm: 3310,
+  frontTiltDeg: -4.8,
+  focusDistanceMm: 4020,
   aperture: 11 as const,
 } as const;
 
-export const middleMarker = markers.find((marker) => marker.id === "middle")!;
+export const middleBoardMarker = boardMarkers.find((marker) => marker.id === "middle")!;
 
-/** Neutral focus is aligned to the middle marker on the canonical tabletop. */
+/** Neutral focus is aligned to the middle visible board detail. */
 export const canonicalFocusDistanceMm = roundToStep(
-  middleMarker.worldPosition.z,
+  middleBoardMarker.worldPosition.z,
   CAMERA_CONTROL_STEPS.focusDistanceMm,
 );
 
@@ -343,29 +437,56 @@ const supportLocalPositions = [
 ] as const;
 
 export const tableSupports = supportLocalPositions.map((support) => {
-  const topWorld = tabletopLocalPointToWorld({
+  const undersideWorld = tabletopLocalPointToWorld({
     x: support.x,
     y: -tabletop.thickness / 2,
     z: support.z,
   });
-  const height = topWorld.y - floor.center.y;
+  const height = undersideWorld.y - floor.center.y;
   return {
     ...support,
     width: 110,
     depth: 110,
     height,
     center: {
-      x: topWorld.x,
+      x: undersideWorld.x,
       y: floor.center.y + height / 2,
+      z: undersideWorld.z,
+    },
+    color: "#57534e",
+  };
+});
+
+/** Two simple upright copy-stand supports hold the board above the level table. */
+const boardSupportInputs = [
+  { id: "left", localX: -720, localDepth: -550 },
+  { id: "right", localX: 720, localDepth: -550 },
+] as const;
+
+export const subjectBoardSupports = boardSupportInputs.map((support) => {
+  const topWorld = subjectBoardLocalPointToWorld({
+    x: support.localX,
+    y: -subjectBoard.thickness / 2,
+    z: support.localDepth,
+  });
+  const height = topWorld.y - tabletopTopY;
+  return {
+    ...support,
+    width: 70,
+    depth: 70,
+    height,
+    center: {
+      x: topWorld.x,
+      y: tabletopTopY + height / 2,
       z: topWorld.z,
     },
-    color: "#6b7280",
+    color: "#6b6258",
   };
 });
 
 export const observerCamera: CameraPlacement = {
-  position: { x: 4300, y: 2500, z: -1500 },
-  target: { x: 0, y: -650, z: 4300 },
+  position: { x: 3600, y: 3400, z: 900 },
+  target: { x: 0, y: -80, z: 4550 },
 };
 
 const getBoxCorners = (center: Vec3, size: Vec3): Vec3[] => {
@@ -391,27 +512,41 @@ export function getTabletopWorldCorners(): Vec3[] {
   ).map((local) => tabletopLocalPointToWorld(local));
 }
 
-export function getFloorWorldCorners(): Vec3[] {
-  return [
-    { x: floor.center.x - floor.width / 2, y: floor.center.y, z: floor.nearZ },
-    { x: floor.center.x + floor.width / 2, y: floor.center.y, z: floor.nearZ },
-    { x: floor.center.x - floor.width / 2, y: floor.center.y, z: floor.farZ },
-    { x: floor.center.x + floor.width / 2, y: floor.center.y, z: floor.farZ },
-  ];
+export function getSubjectBoardWorldCorners(): Vec3[] {
+  return getBoxCorners(
+    { x: 0, y: 0, z: 0 },
+    { x: subjectBoard.width, y: subjectBoard.thickness, z: subjectBoard.depth },
+  ).map((local) => subjectBoardLocalPointToWorld(local));
 }
 
-const getMarkerWorldCorners = (marker: ObliqueTabletopMarker): Vec3[] =>
-  getBoxCorners(
-    { x: marker.localPosition.x, y: topSurfaceLocalY + markerGeometry.height / 2, z: marker.localPosition.z },
-    { x: markerGeometry.width, y: markerGeometry.height, z: markerGeometry.depth },
-  ).map((local) => tabletopLocalPointToWorld(local));
+export function getSubjectBoardFrontSurfaceCorners(): Vec3[] {
+  return [
+    { x: -subjectBoard.width / 2, y: subjectBoardFaceLocalY, z: subjectBoard.nearLocalDepth },
+    { x: subjectBoard.width / 2, y: subjectBoardFaceLocalY, z: subjectBoard.nearLocalDepth },
+    { x: -subjectBoard.width / 2, y: subjectBoardFaceLocalY, z: subjectBoard.farLocalDepth },
+    { x: subjectBoard.width / 2, y: subjectBoardFaceLocalY, z: subjectBoard.farLocalDepth },
+  ].map((local) => subjectBoardLocalPointToWorld(local));
+}
 
-const topSurfaceCorners = [
-  tabletopLocalToWorld({ localX: -tabletop.width / 2, localDepth: tabletop.nearLocalDepth }),
-  tabletopLocalToWorld({ localX: tabletop.width / 2, localDepth: tabletop.nearLocalDepth }),
-  tabletopLocalToWorld({ localX: -tabletop.width / 2, localDepth: tabletop.farLocalDepth }),
-  tabletopLocalToWorld({ localX: tabletop.width / 2, localDepth: tabletop.farLocalDepth }),
-];
+const getBoardMarkerWorldCorners = (marker: ObliqueTabletopBoardMarker): Vec3[] =>
+  getBoxCorners(
+    {
+      x: marker.localPosition.x,
+      y: subjectBoardFaceLocalY - markerGeometry.height / 2,
+      z: marker.localPosition.z,
+    },
+    { x: markerGeometry.width, y: markerGeometry.height, z: markerGeometry.depth },
+  ).map((local) => subjectBoardLocalPointToWorld(local));
+
+const getBoardDetailWorldCorners = (sample: ObliqueTabletopSubjectSample): Vec3[] =>
+  getBoxCorners(
+    {
+      x: sample.localPosition.x,
+      y: subjectBoardFaceLocalY - markerGeometry.height / 2,
+      z: sample.localPosition.z,
+    },
+    { x: 250, y: markerGeometry.height, z: 170 },
+  ).map((local) => subjectBoardLocalPointToWorld(local));
 
 const boundsFromPoints = (points: Vec3[], paddingMm = 0): Bounds3 => ({
   min: {
@@ -426,9 +561,20 @@ const boundsFromPoints = (points: Vec3[], paddingMm = 0): Bounds3 => ({
   },
 });
 
-export const compositionTargetBounds = boundsFromPoints(topSurfaceCorners, 100);
+export const compositionTargetBounds = boundsFromPoints(
+  getSubjectBoardFrontSurfaceCorners(),
+  100,
+);
 
-const supportCorners = tableSupports.flatMap((support) =>
+const tableSupportCorners = tableSupports.flatMap((support) =>
+  getBoxCorners(support.center, {
+    x: support.width,
+    y: support.height,
+    z: support.depth,
+  }),
+);
+
+const boardSupportCorners = subjectBoardSupports.flatMap((support) =>
   getBoxCorners(support.center, {
     x: support.width,
     y: support.height,
@@ -439,50 +585,77 @@ const supportCorners = tableSupports.flatMap((support) =>
 const allPhysicalGeometryPoints = [
   ...getFloorWorldCorners(),
   ...getTabletopWorldCorners(),
-  ...supportCorners,
-  ...markers.flatMap(getMarkerWorldCorners),
+  ...tableSupportCorners,
+  ...getSubjectBoardWorldCorners(),
+  ...boardSupportCorners,
+  ...boardMarkers.flatMap(getBoardMarkerWorldCorners),
+  ...subjectBoardVisibleFocusSamples.flatMap(getBoardDetailWorldCorners),
 ];
 
 export const sceneBounds = boundsFromPoints(allPhysicalGeometryPoints, 150);
 
-// Keep the public focus range large enough to cover the full canonical plane,
-// including analytical edge samples that are intentionally not learner targets.
-const focusTargetDepths = tabletopAnalyticalSurfaceSamples.map((sample) => sample.worldPosition.z);
+// Keep the public Focus range wide enough for the optical-axis intersection of
+// the compound plane, while retaining the real-image minimum centrally.
+const focusTargetDepths = subjectBoardAnalyticalSurfaceSamples.map(
+  (sample) => sample.worldPosition.z,
+);
 export const focusDistanceRangeMm = {
-  // A tilted focus plane can intersect the optical axis much closer than the
-  // neutral tabletop depth. The real-image floor remains enforced centrally
-  // by getSceneFocusDistanceRange; this explicit lower bound keeps that
-  // physically valid Tilt + Focus state publicly reachable.
   min: CAMERA_CONSTANTS.focalLengthMm + CAMERA_CONTROL_STEPS.focusDistanceMm,
-  max: roundToStep(Math.max(...focusTargetDepths) + 500, CAMERA_CONTROL_STEPS.focusDistanceMm),
+  max: roundToStep(
+    Math.max(...focusTargetDepths) + 600,
+    CAMERA_CONTROL_STEPS.focusDistanceMm,
+  ),
 } as const;
+
+export function getFloorWorldCorners(): Vec3[] {
+  return [
+    { x: floor.center.x - floor.width / 2, y: floor.center.y, z: floor.nearZ },
+    { x: floor.center.x + floor.width / 2, y: floor.center.y, z: floor.nearZ },
+    { x: floor.center.x - floor.width / 2, y: floor.center.y, z: floor.farZ },
+    { x: floor.center.x + floor.width / 2, y: floor.center.y, z: floor.farZ },
+  ];
+}
 
 export default {
   floor,
   tabletop,
+  subjectBoard,
   markerGeometry,
   tabletopLocalPointToWorld,
   tabletopLocalDirectionToWorld,
   tabletopLocalToWorld,
   tabletopTransformBasis,
   tabletopTopSurfacePlane,
+  subjectBoardLocalPointToWorld,
+  subjectBoardLocalDirectionToWorld,
+  subjectBoardSurfaceToWorld,
+  subjectBoardFaceLocalY,
+  subjectBoardFocusSurfaceLocalY,
+  subjectBoardPresentationFaceLocalY,
+  subjectBoardTransformBasis,
+  subjectBoardPlane,
+  subjectBoardFrontSurfacePlane,
   tabletopExtents,
-  markers,
-  middleMarker,
+  subjectBoardExtents,
+  boardMarkers,
+  middleBoardMarker,
   focusTargets,
-  tabletopAnalyticalFocusTargets,
-  tabletopVisibleFocusTargets,
-  tabletopAnalyticalSurfaceSamples,
-  tabletopVisibleFocusSamples,
-  tabletopPrincipalDepthSampleIds,
-  tabletopOffAxisSampleIds,
+  subjectBoardAnalyticalFocusTargets,
+  subjectBoardVisibleFocusTargets,
+  subjectBoardAnalyticalSurfaceSamples,
+  subjectBoardVisibleFocusSamples,
+  subjectBoardPrincipalDepthSampleIds,
+  subjectBoardOffAxisSampleIds,
   tiltOnlyCalibration,
   canonicalFocusDistanceMm,
   tableSupports,
+  subjectBoardSupports,
   observerCamera,
   compositionTargetBounds,
   focusDistanceRangeMm,
   sceneBounds,
   getTabletopWorldCorners,
+  getSubjectBoardWorldCorners,
+  getSubjectBoardFrontSurfaceCorners,
   getFloorWorldCorners,
 };

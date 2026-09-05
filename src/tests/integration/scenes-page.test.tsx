@@ -223,7 +223,7 @@ describe("scenes page", () => {
     const scopedTabletopCard = within(tabletopCard!);
     expect(
       scopedTabletopCard.getByText(
-        "Photograph an oblique tabletop from an angle. In the neutral setup, different parts of the table fall at different depths, so you cannot keep the whole surface sharp at once.",
+        "Photograph an inclined plan board resting on a normal table. Because the board recedes near-to-far and laterally, Tilt alone cannot align the whole subject plane; Swing is also required.",
       ),
     ).toBeInTheDocument();
     expect(scopedTabletopCard.getByText("Oblique plane")).toBeInTheDocument();
@@ -234,7 +234,10 @@ describe("scenes page", () => {
       "href",
       "/simulator/free/oblique-tabletop",
     );
-    expect(scopedTabletopCard.queryByRole("link", { name: "Start Guided Task" })).toBeNull();
+    expect(scopedTabletopCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
+      "href",
+      "/simulator/free/oblique-tabletop?lesson=1",
+    );
 
     expect(publicSceneIds).toEqual([
       "view-camera-anatomy",
@@ -346,6 +349,15 @@ describe("scenes page", () => {
     ).toBeInTheDocument();
     expect(cardFor("桌面焦平面與傾斜").getByText(/理解前組傾斜如何改變清晰焦平面/)).toBeInTheDocument();
     expect(cardFor("斜向焦平面與擺動").getByText(/理解前組擺動如何改變清晰焦平面/)).toBeInTheDocument();
+    expect(
+      cardFor("斜向桌面").getByText(
+        "從斜角拍攝一塊放在普通桌面上的傾斜圖板。圖板同時沿近遠及左右方向延伸，因此單靠俯仰無法對齊整個主體平面，還需要擺動。",
+      ),
+    ).toBeInTheDocument();
+    expect(cardFor("斜向桌面").getByRole("link", { name: "引導課程" })).toHaveAttribute(
+      "href",
+      "/simulator/free/oblique-tabletop?lesson=1",
+    );
     expect(
       cardFor("斜向建築攝影").getByText(
         "結合前組上移與前組擺動，在斜角拍攝建築物時保持垂直線平行，並讓延伸的立面由近至遠保持清晰。",

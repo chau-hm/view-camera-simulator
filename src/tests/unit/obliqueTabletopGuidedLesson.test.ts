@@ -10,6 +10,7 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { getSceneById } from "../../scenes/definitions";
 import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
+import { obliqueTabletopCompoundCalibration } from "../../scenes/obliqueTabletopCompoundCalibration";
 import { useAppStore } from "../../state/appStore";
 import type { CameraState } from "../../types/camera";
 import type { TaskDefinition } from "../../types/task";
@@ -53,9 +54,9 @@ const evaluate = (taskId: string, overrides: Partial<CameraState> = {}) => {
 };
 
 const swingStageState = {
-  frontTiltDeg: -7.4,
-  frontSwingDeg: -1.4,
-  focusDistanceMm: 2630,
+  frontTiltDeg: -7.3,
+  frontSwingDeg: -1.7,
+  focusDistanceMm: 3250,
 } as const;
 
 const physicalScores = (overrides: Partial<CameraState> = {}) => {
@@ -71,10 +72,10 @@ const physicalScores = (overrides: Partial<CameraState> = {}) => {
 const minimumScore = (scores: Map<string, number>, targetIds: readonly string[]) =>
   Math.min(...targetIds.map((targetId) => scores.get(targetId) ?? 0));
 
-const visibleTargetIds = obliqueTabletopGeometry.tabletopVisibleFocusSamples.map(
+const visibleTargetIds = obliqueTabletopGeometry.subjectBoardVisibleFocusSamples.map(
   (sample) => sample.id,
 );
-const principalTargetIds = [...obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds];
+const principalTargetIds = [...obliqueTabletopGeometry.subjectBoardPrincipalDepthSampleIds];
 const lateralTargetIds = ["far-left", "far-right"] as const;
 
 describe("Oblique Tabletop Guided Lesson", () => {
@@ -147,7 +148,7 @@ describe("Oblique Tabletop Guided Lesson", () => {
     );
   });
 
-  it("uses Focus alone to establish the central reference without solving the tabletop", () => {
+  it("uses Focus alone to establish the central reference without solving the subject board", () => {
     const task = requireTask("oblique-tabletop-focus-01");
     const starting = evaluate(task.id);
     const focused = evaluate(task.id, {
@@ -254,20 +255,21 @@ describe("Oblique Tabletop Guided Lesson", () => {
   it("requires Focus refinement before the final aperture stage", () => {
     const refineTask = requireTask("oblique-tabletop-refine-01");
     const focusRefined = evaluate(refineTask.id, {
-      ...swingStageState,
-      focusDistanceMm: 2580,
+      frontTiltDeg: obliqueTabletopCompoundCalibration.public.frontTiltDeg,
+      frontSwingDeg: obliqueTabletopCompoundCalibration.public.frontSwingDeg,
+      focusDistanceMm: obliqueTabletopCompoundCalibration.public.focusDistanceMm,
     });
     const refined = evaluate(refineTask.id, {
-      frontTiltDeg: -8,
-      frontSwingDeg: -1.7,
-      focusDistanceMm: 2450,
+      frontTiltDeg: obliqueTabletopCompoundCalibration.public.frontTiltDeg,
+      frontSwingDeg: obliqueTabletopCompoundCalibration.public.frontSwingDeg,
+      focusDistanceMm: obliqueTabletopCompoundCalibration.public.focusDistanceMm,
       aperture: 11,
     });
     const notRefined = evaluate(refineTask.id, swingStageState);
     const wrongCompound = evaluate(refineTask.id, {
       frontTiltDeg: 8,
-      frontSwingDeg: 1.7,
-      focusDistanceMm: 2450,
+      frontSwingDeg: 1.6,
+      focusDistanceMm: 3030,
       aperture: 22,
     });
 
@@ -288,8 +290,8 @@ describe("Oblique Tabletop Guided Lesson", () => {
     const stoppedDown = evaluate(task.id, { aperture: 22 });
     const stoppedDownWrongPlane = evaluate(task.id, {
       frontTiltDeg: 8,
-      frontSwingDeg: 1.7,
-      focusDistanceMm: 2450,
+      frontSwingDeg: 1.6,
+      focusDistanceMm: 3030,
       aperture: 22,
     });
 

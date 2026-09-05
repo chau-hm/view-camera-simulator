@@ -169,14 +169,23 @@ describe("scene subject registry", () => {
     group?.updateMatrixWorld(true);
     const tabletopAssembly = group?.getObjectByName("oblique-tabletop-tabletop-assembly");
     expect(tabletopAssembly).toBeInstanceOf(THREE.Group);
-    const renderedNormal = new THREE.Vector3(0, 1, 0).transformDirection(
+    const renderedTableNormal = new THREE.Vector3(0, 1, 0).transformDirection(
       tabletopAssembly!.matrixWorld,
     );
-    expect(renderedNormal.x).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.x, 10);
-    expect(renderedNormal.y).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.y, 10);
-    expect(renderedNormal.z).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.z, 10);
+    expect(renderedTableNormal.x).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.x, 10);
+    expect(renderedTableNormal.y).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.y, 10);
+    expect(renderedTableNormal.z).toBeCloseTo(obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.z, 10);
 
-    obliqueTabletopGeometry.markers.forEach((marker) => {
+    const boardAssembly = group?.getObjectByName("oblique-tabletop-subject-board-assembly");
+    expect(boardAssembly).toBeInstanceOf(THREE.Group);
+    const renderedBoardNormal = new THREE.Vector3(0, 1, 0).transformDirection(
+      boardAssembly!.matrixWorld,
+    );
+    expect(renderedBoardNormal.x).toBeCloseTo(obliqueTabletopGeometry.subjectBoardPlane.normal.x, 10);
+    expect(renderedBoardNormal.y).toBeCloseTo(obliqueTabletopGeometry.subjectBoardPlane.normal.y, 10);
+    expect(renderedBoardNormal.z).toBeCloseTo(obliqueTabletopGeometry.subjectBoardPlane.normal.z, 10);
+
+    obliqueTabletopGeometry.boardMarkers.forEach((marker) => {
       const markerGroup = group?.getObjectByName(`oblique-tabletop-marker-${marker.id}`);
       expect(markerGroup).toBeInstanceOf(THREE.Group);
       expect(markerGroup?.userData.markerId).toBe(marker.id);
@@ -191,9 +200,9 @@ describe("scene subject registry", () => {
       expect(probeWorld.y).toBeCloseTo(marker.worldPosition.y * 0.001, 10);
       expect(probeWorld.z).toBeCloseTo(marker.worldPosition.z * 0.001, 10);
     });
-    obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples.forEach((sample) => {
+    obliqueTabletopGeometry.subjectBoardAnalyticalSurfaceSamples.forEach((sample) => {
       const sampleNode = group?.getObjectByName(
-        `oblique-tabletop-surface-sample-${sample.id}`,
+        `oblique-tabletop-board-surface-sample-${sample.id}`,
       );
       expect(sampleNode).toBeInstanceOf(THREE.Object3D);
       const sampleWorld = new THREE.Vector3();
@@ -202,8 +211,28 @@ describe("scene subject registry", () => {
       expect(sampleWorld.y).toBeCloseTo(sample.worldPosition.y * 0.001, 10);
       expect(sampleWorld.z).toBeCloseTo(sample.worldPosition.z * 0.001, 10);
       expect(sampleNode?.userData.analyticalCoverageSampleId).toBe(sample.id);
-      expect(sampleNode?.userData.geometryAnchor).toBe("canonical-tabletop-surface");
+      expect(sampleNode?.userData.geometryAnchor).toBe("canonical-subject-board-surface");
       expect(sampleNode?.userData.focusTargetId).toBeUndefined();
+    });
+    obliqueTabletopGeometry.subjectBoardVisibleFocusSamples.forEach((sample) => {
+      const detail = group?.getObjectByName(
+        `oblique-tabletop-board-detail-${sample.id}`,
+      );
+      expect(detail).toBeInstanceOf(THREE.Group);
+      expect(detail?.userData.focusTargetId).toBe(sample.id);
+      expect(detail?.userData.geometryAnchor).toBe("visible-subject-board-detail");
+
+      const focusProbe = group?.getObjectByName(
+        `oblique-tabletop-focus-detail-${sample.id}`,
+      );
+      expect(focusProbe).toBeInstanceOf(THREE.Object3D);
+      const focusWorld = new THREE.Vector3();
+      focusProbe?.getWorldPosition(focusWorld);
+      expect(focusWorld.x).toBeCloseTo(sample.worldPosition.x * 0.001, 10);
+      expect(focusWorld.y).toBeCloseTo(sample.worldPosition.y * 0.001, 10);
+      expect(focusWorld.z).toBeCloseTo(sample.worldPosition.z * 0.001, 10);
+      expect(focusProbe?.userData.focusTargetId).toBe(sample.id);
+      expect(focusProbe?.userData.geometryAnchor).toBe("visible-subject-board-focus-probe");
     });
 
     const spies = collectDisposableSpies(group!);

@@ -19,7 +19,7 @@ const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
 
 const analyticalObliqueTabletopScene = {
   ...obliqueTabletopScene,
-  focusTargets: obliqueTabletopGeometry.tabletopAnalyticalFocusTargets,
+  focusTargets: obliqueTabletopGeometry.subjectBoardAnalyticalFocusTargets,
 };
 
 const evaluate = (frontTiltDeg: number, focusDistanceMm: number) =>
@@ -113,12 +113,16 @@ describe("Oblique Tabletop Tilt limitation", () => {
   });
 
   it("derives a compound plane and non-collinear coverage samples from canonical geometry", () => {
-    const normal = obliqueTabletopGeometry.tabletopTopSurfacePlane.normal;
-    expect(Math.abs(normal.x)).toBeGreaterThan(0.01);
-    expect(Math.abs(normal.z)).toBeGreaterThan(0.1);
-    expect(Math.hypot(normal.x, normal.y, normal.z)).toBeCloseTo(1, 10);
+    const tableNormal = obliqueTabletopGeometry.tabletopTopSurfacePlane.normal;
+    const boardNormal = obliqueTabletopGeometry.subjectBoardPlane.normal;
+    expect(tableNormal).toEqual({ x: 0, y: 1, z: 0 });
+    expect(obliqueTabletopGeometry.tabletop.rotationXDeg).toBe(0);
+    expect(obliqueTabletopGeometry.tabletop.rotationYDeg).toBe(0);
+    expect(Math.abs(boardNormal.x)).toBeGreaterThan(0.1);
+    expect(Math.abs(boardNormal.z)).toBeGreaterThan(0.1);
+    expect(Math.hypot(boardNormal.x, boardNormal.y, boardNormal.z)).toBeCloseTo(1, 10);
 
-    const sampleIds = obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples.map((sample) => sample.id);
+    const sampleIds = obliqueTabletopGeometry.subjectBoardAnalyticalSurfaceSamples.map((sample) => sample.id);
     expect(sampleIds).toEqual([
       "near-left",
       "near-centre",
@@ -129,43 +133,43 @@ describe("Oblique Tabletop Tilt limitation", () => {
       "far-right",
     ]);
 
-    obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples.forEach((sample) => {
+    obliqueTabletopGeometry.subjectBoardAnalyticalSurfaceSamples.forEach((sample) => {
       expect(sample.worldPosition).toEqual(
-        obliqueTabletopGeometry.tabletopLocalToWorld({
+        obliqueTabletopGeometry.subjectBoardSurfaceToWorld({
           localX: sample.localPosition.x,
           localDepth: sample.localPosition.z,
         }),
       );
       expect(
         Math.abs(
-          obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.x *
-              (sample.worldPosition.x - obliqueTabletopGeometry.tabletopTopSurfacePlane.point.x) +
-            obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.y *
-              (sample.worldPosition.y - obliqueTabletopGeometry.tabletopTopSurfacePlane.point.y) +
-            obliqueTabletopGeometry.tabletopTopSurfacePlane.normal.z *
-              (sample.worldPosition.z - obliqueTabletopGeometry.tabletopTopSurfacePlane.point.z),
+          obliqueTabletopGeometry.subjectBoardPlane.normal.x *
+              (sample.worldPosition.x - obliqueTabletopGeometry.subjectBoardPlane.point.x) +
+            obliqueTabletopGeometry.subjectBoardPlane.normal.y *
+              (sample.worldPosition.y - obliqueTabletopGeometry.subjectBoardPlane.point.y) +
+            obliqueTabletopGeometry.subjectBoardPlane.normal.z *
+              (sample.worldPosition.z - obliqueTabletopGeometry.subjectBoardPlane.point.z),
         ),
       ).toBeLessThan(1e-8);
     });
 
-    const nearLeft = obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples[0].localPosition;
-    const nearRight = obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples[2].localPosition;
-    const farLeft = obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples[4].localPosition;
+    const nearLeft = obliqueTabletopGeometry.subjectBoardAnalyticalSurfaceSamples[0].localPosition;
+    const nearRight = obliqueTabletopGeometry.subjectBoardAnalyticalSurfaceSamples[2].localPosition;
+    const farLeft = obliqueTabletopGeometry.subjectBoardAnalyticalSurfaceSamples[4].localPosition;
     expect((nearRight.x - nearLeft.x) * (farLeft.z - nearLeft.z)).not.toBe(0);
   });
 
-  it("keeps the neutral f/11 setup physically inconsistent across the tabletop", () => {
+  it("keeps the neutral f/11 setup physically inconsistent across the subject board", () => {
     const neutral = targetMap(
       0,
       obliqueTabletopScene.cameraPreset.focusDistanceMm,
     );
     const axisCoc = physicalCocValues(
       neutral,
-      obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds,
+      obliqueTabletopGeometry.subjectBoardPrincipalDepthSampleIds,
     );
     const offAxisCoc = physicalCocValues(
       neutral,
-      obliqueTabletopGeometry.tabletopOffAxisSampleIds,
+      obliqueTabletopGeometry.subjectBoardOffAxisSampleIds,
     );
 
     expect(spread(axisCoc)).toBeGreaterThan(ACCEPTABLE_COC_DIAMETER_MM);
@@ -188,18 +192,18 @@ describe("Oblique Tabletop Tilt limitation", () => {
     );
     const neutralAxisCoc = physicalCocValues(
       neutral,
-      obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds,
+      obliqueTabletopGeometry.subjectBoardPrincipalDepthSampleIds,
     );
     const tiltedAxisCoc = physicalCocValues(
       tilted,
-      obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds,
+      obliqueTabletopGeometry.subjectBoardPrincipalDepthSampleIds,
     );
     const oppositeSignAxisCoc = physicalCocValues(
       targetMap(
         -obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
         obliqueTabletopGeometry.tiltOnlyCalibration.focusDistanceMm,
       ),
-      obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds,
+      obliqueTabletopGeometry.subjectBoardPrincipalDepthSampleIds,
     );
 
     expect(obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg).toBeLessThan(0);
@@ -213,7 +217,7 @@ describe("Oblique Tabletop Tilt limitation", () => {
     ).toBe(true);
   });
 
-  it("proves no public Tilt + Focus state aligns the full compound tabletop", () => {
+  it("proves no public Tilt + Focus state aligns the full subject board", () => {
     const focusRange = getSceneFocusDistanceRange(obliqueTabletopScene.id);
     const tiltCount = Math.round(
       (CAMERA_CONSTANTS.tiltMaxDeg - CAMERA_CONSTANTS.tiltMinDeg) /
@@ -253,18 +257,18 @@ describe("Oblique Tabletop Tilt limitation", () => {
     );
     const axisCoc = physicalCocValues(
       tilted,
-      obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds,
+      obliqueTabletopGeometry.subjectBoardPrincipalDepthSampleIds,
     );
     const offAxisCoc = physicalCocValues(
       tilted,
-      obliqueTabletopGeometry.tabletopOffAxisSampleIds,
+      obliqueTabletopGeometry.subjectBoardOffAxisSampleIds,
     );
 
     expect(average(offAxisCoc)).toBeGreaterThan(average(axisCoc) * 1.1);
     expect(Math.max(...offAxisCoc)).toBeGreaterThan(Math.max(...axisCoc) * 1.1);
     expect(offAxisCoc.some((coc) => coc > ACCEPTABLE_COC_DIAMETER_MM)).toBe(true);
     expect(
-      obliqueTabletopGeometry.tabletopOffAxisSampleIds.some(
+      obliqueTabletopGeometry.subjectBoardOffAxisSampleIds.some(
         (id) => (tilted.get(id)?.physicalPointSharpness ?? 0) < 0.8,
       ),
     ).toBe(true);
