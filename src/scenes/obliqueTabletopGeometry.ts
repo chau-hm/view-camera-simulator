@@ -42,11 +42,11 @@ export type ObliqueTabletopSubjectSample = {
 /** The physical table is intentionally level; the inclined object is separate. */
 export const tabletop = {
   center: { x: 0, y: -350, z: 4550 },
-  width: 4500,
-  depth: 4500,
+  width: 4000,
+  depth: 4200,
   thickness: 100,
-  nearLocalDepth: -2250,
-  farLocalDepth: 2250,
+  nearLocalDepth: -2100,
+  farLocalDepth: 2100,
   rotationXDeg: 0,
   rotationYDeg: 0,
   color: "#a98f73",
@@ -78,7 +78,7 @@ const subjectBoardRotationYDeg = -45;
 const subjectBoardRotationXRad = degreesToRadians(subjectBoardRotationXDeg);
 const subjectBoardRotationYRad = degreesToRadians(subjectBoardRotationYDeg);
 const tabletopTopY = tabletop.center.y + tabletop.thickness / 2;
-const subjectBoardWidthMm = 3200;
+const subjectBoardWidthMm = 2600;
 const subjectBoardDepthMm = 3000;
 const subjectBoardThicknessMm = 60;
 
@@ -290,7 +290,7 @@ const markerInputs = [
   {
     id: "near-left" as const,
     label: "Near-left plan-board marker",
-    localPosition: { x: -1250, z: -1050 },
+    localPosition: { x: -900, z: -800 },
     color: "#64748b",
   },
   {
@@ -302,7 +302,7 @@ const markerInputs = [
   {
     id: "far-right" as const,
     label: "Far-right plan-board marker",
-    localPosition: { x: 1250, z: 1050 },
+    localPosition: { x: 900, z: 800 },
     color: "#0f766e",
   },
 ] as const;
@@ -335,24 +335,24 @@ export const boardMarkers: ObliqueTabletopBoardMarker[] = markerInputs.map((mark
 
 /** Full-board validation coverage, inset only enough to avoid board-edge thickness. */
 const subjectBoardAnalyticalSurfaceSampleInputs = [
-  { id: "near-left" as const, label: "Near-left plan-board surface", localPosition: { x: -1550, z: -1450 } },
+  { id: "near-left" as const, label: "Near-left plan-board surface", localPosition: { x: -1250, z: -1450 } },
   { id: "near-centre" as const, label: "Near-centre plan-board surface", localPosition: { x: 0, z: -1450 } },
-  { id: "near-right" as const, label: "Near-right plan-board surface", localPosition: { x: 1550, z: -1450 } },
+  { id: "near-right" as const, label: "Near-right plan-board surface", localPosition: { x: 1250, z: -1450 } },
   { id: "middle" as const, label: "Middle plan-board surface", localPosition: { x: 0, z: 0 } },
-  { id: "far-left" as const, label: "Far-left plan-board surface", localPosition: { x: -1550, z: 1450 } },
+  { id: "far-left" as const, label: "Far-left plan-board surface", localPosition: { x: -1250, z: 1450 } },
   { id: "far-centre" as const, label: "Far-centre plan-board surface", localPosition: { x: 0, z: 1450 } },
-  { id: "far-right" as const, label: "Far-right plan-board surface", localPosition: { x: 1550, z: 1450 } },
+  { id: "far-right" as const, label: "Far-right plan-board surface", localPosition: { x: 1250, z: 1450 } },
 ] as const;
 
 /** Interior board details used as the learner-visible public focus targets. */
 const subjectBoardVisibleFocusSampleInputs = [
-  { id: "near-left" as const, label: "Near-left plan-board detail", localPosition: { x: -820, z: -1050 } },
-  { id: "near-centre" as const, label: "Near-centre plan-board detail", localPosition: { x: 0, z: -1050 } },
-  { id: "near-right" as const, label: "Near-right plan-board detail", localPosition: { x: 820, z: -1050 } },
+  { id: "near-left" as const, label: "Near-left plan-board detail", localPosition: { x: -700, z: -900 } },
+  { id: "near-centre" as const, label: "Near-centre plan-board detail", localPosition: { x: 0, z: -900 } },
+  { id: "near-right" as const, label: "Near-right plan-board detail", localPosition: { x: 700, z: -900 } },
   { id: "middle" as const, label: "Middle plan-board detail", localPosition: { x: 0, z: 0 } },
-  { id: "far-left" as const, label: "Far-left plan-board detail", localPosition: { x: -820, z: 1050 } },
-  { id: "far-centre" as const, label: "Far-centre plan-board detail", localPosition: { x: 0, z: 1050 } },
-  { id: "far-right" as const, label: "Far-right plan-board detail", localPosition: { x: 820, z: 1050 } },
+  { id: "far-left" as const, label: "Far-left plan-board detail", localPosition: { x: -700, z: 900 } },
+  { id: "far-centre" as const, label: "Far-centre plan-board detail", localPosition: { x: 0, z: 900 } },
+  { id: "far-right" as const, label: "Far-right plan-board detail", localPosition: { x: 700, z: 900 } },
 ] as const;
 
 type SubjectBoardSampleInput = {
@@ -459,8 +459,8 @@ export const tableSupports = supportLocalPositions.map((support) => {
 
 /** Two simple upright copy-stand supports hold the board above the level table. */
 const boardSupportInputs = [
-  { id: "left", localX: -720, localDepth: -550 },
-  { id: "right", localX: 720, localDepth: -550 },
+  { id: "left", localX: -500, localDepth: -450 },
+  { id: "right", localX: 500, localDepth: -450 },
 ] as const;
 
 export const subjectBoardSupports = boardSupportInputs.map((support) => {

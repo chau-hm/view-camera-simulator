@@ -1,53 +1,41 @@
 # Oblique Tabletop — Photographic Plausibility
 
-## Objective
+## Scope
 
-Replace the implausible tilted whole-table subject with a normal horizontal table supporting a separate inclined plan board. The board is the canonical optical subject for the existing Tilt + Swing + Focus lesson.
+Focused corrective PR replacing the implausible tilted whole-table subject with a level worktable supporting a separate inclined drafting/copy board. The board is the canonical optical subject for the existing Tilt + Swing + Focus sequence; PR10C/10D/10E architecture remains bounded to the existing public lesson and geometry paths.
 
-## Branch / worktree / base / head
+## Branch / worktree / base
 
-`fix/oblique-tabletop-photographic-plausibility` · `/Users/homan/repo/view-camera-oblique-tabletop-plausibility` · base `766332e95ca42066f2f05e6f2f93d234ba45a79e` · head recorded in the final report
+`fix/oblique-tabletop-photographic-plausibility` · `/Users/homan/repo/view-camera-oblique-tabletop-plausibility` · base `766332e95ca42066f2f05e6f2f93d234ba45a79e`
 
-## Corrective geometry
+## Canonical scene geometry
 
-- Table: level, `4500 × 4500 × 100 mm`, centre `{x: 0, y: -350, z: 4550}`, with four normal supports.
-- Subject: separate `3200 × 3000 × 60 mm` board, centre `{x: 0, y: 117.21, z: 4550}`, orientation `rotationX=15°`, `rotationY=-45°`; canonical normal `(-0.1830, 0.9659, 0.1830)`.
-- One board-local transform drives rendering, RTT registration, guides, visible/analytical samples, markers, bounds, and calibration. The physical camera rig remains at the existing level origin/base pitch.
+- Table: level, `4000 × 4200 × 100 mm`, centre `{x: 0, y: -350, z: 4550}`, four normal supports.
+- Subject: `2600 × 3000 × 60 mm` board, centre `{x: 0, y: 117.206, z: 4550}`, supported at the table's far edge, orientation `rotationX=15°`, `rotationY=-45°`.
+- Board focus-surface plane: normal `(-0.183012702, 0.965925826, 0.183012702)`, signed distance `899.920427 mm`.
+- The rejected old whole-table plane was approximately normal `(-0.021771, 0.987688, 0.154912)` at signed distance `112.85 mm`; its 150 mm lens feasibility ratio exceeded one.
+- One explicit board-local Rx-then-Ry basis drives board mesh, details, markers, analytical samples, visible targets, bounds, guides, RTT registration, and calibration. The photographic rig remains the existing level origin/base pitch.
 
 ## Optical evidence
 
-- Seven canonical samples cover near-left/centre/right, middle, and far-left/centre/right on the same board plane.
-- Raw continuous calibration: Front Tilt `-9.265053°`, Front Swing `-1.771182°`, Focus `2634.139 mm`.
+- Seven analytical samples cover near-left/centre/right, middle, and far-left/centre/right on the board plane; seven separate interior samples are the learner-visible targets.
+- Continuous calibration: Front Tilt `-9.265053°`, Front Swing `-1.771182°`, Focus `2634.139 mm`.
 - Public calibration: Front Tilt `-9.3°`, Front Swing `-1.8°`, Focus `2630 mm`, f/11.
-- Tilt-only evidence remains incomplete; Swing removes the material lateral CoC error, and opposite-sign Swing remains materially worse. Existing CoC threshold is unchanged.
-- Public target CoC at the compound state: `[0.000056, 0.002793, 0.004218, 0.001766, 0.000804, 0.001112, 0.002388] mm`; maximum `0.004218 mm`.
+- PR10B Tilt-only calibration remains `-4.8° / 4020 mm`; it materially improves the principal near/far samples but leaves the full analytical surface incomplete. Swing remains materially necessary and the opposite sign is worse.
+- Public compound analytical CoC values: `[0.000766, 0.002793, 0.003998, 0.001766, 0.000362, 0.001112, 0.002175] mm`; maximum `0.003998 mm`. Existing threshold is unchanged.
 
-## Ground Glass / visual evidence
+## Ground Glass / visual contract
 
-- Neutral, Tilt-only, and compound projection tests keep all seven learner targets visible with useful horizontal and vertical spread; board corners remain meaningfully in frame.
-- Manual browser capture showed a stable, contentful Ground Glass with the plan board as the primary subject and a 3D observer view showing the level table, inclined board, supports, and target details.
-- The generated raster thumbnail was replaced with an architectural scene showing the same normal-table/inclined-board concept.
+- Actual film-plane projection keeps every learner-visible target inside the physical frame at neutral, Tilt-only, and compound states. Target bounds are approximately `u=.191–.789, v=.448–.636` at neutral and `u=.188–.792, v=.447–.638` at compound; spans remain useful (`Δu≈.60`, `Δv≈.19`).
+- Board front-corner bounds remain within a small meaningful intersection (`u≈-.042–1.015`, `v≈.400–.783`) with two corners directly visible; the subject board and its target details remain the primary readable Ground Glass object.
+- Manual browser capture showed the normal table, inclined supported board, details, stable RTT, and final public compound state through the real UI. The catalog remains a committed raster scene card.
 
-## Guided/free integration
+## Integration / validation state
 
-Existing Oblique Tabletop guided stages and free-mode controls remain in place. Task criteria and copy now refer to the board/subject plane while preserving the existing lesson sequence and public control grids.
+Existing guided/free routes, task criteria, copy, teaching geometry, and RTT lifecycle are updated to refer to the board while retaining the accepted public behavior. `.agents/status/CURRENT.md` is intentionally untouched; this file is the work-specific handoff.
 
-## Validation run
-
-- Focused Vitest: 9 files, 115 tests passed.
-- Full `npm test`: 164 files, 1595 tests passed.
-- `npm run typecheck`: passed.
-- `npm run lint`: passed.
-- `npm run check:css`: passed.
-- `npm run build`: passed; 582 modules transformed.
-- Focused Oblique Tabletop Playwright: 2 passed.
-- Manual 3D/Ground Glass visual capture completed.
-- `git diff --check`: passed.
-
-## Validation not run / known limitation
-
-`CI=1 npm run ci:local:e2e` completed CSS, lint, typecheck, unit/integration, and build, then stopped at the unrelated existing `src/tests/e2e/camera-movement-ground-glass-comparison.spec.ts` test `public camera-movement Ground Glass renders one live Current view through the default RTT channel`: timeout clicking `Reset Ground Glass preview view` at line 138. The Oblique Tabletop specs passed before this stop in the focused run.
+Final validation: focused Vitest 9 files / 115 tests passed; full `npm test` 164 files / 1595 tests passed; typecheck, lint, CSS, and build passed; focused Oblique Tabletop Chromium specs passed serially (2/2, 1.7 minutes). The required `CI=1 npm run ci:local:e2e` passed CSS, lint, typecheck, unit/integration, and build, then stopped at the unrelated `camera-movement-ground-glass-comparison.spec.ts` Current-RTT test after its 150-second timeout. The exact test was reproduced on clean `main` and failed in the same test with the same 150-second timeout during the post-navigation RTT identity/contentfulness checks, confirming a baseline renderer/E2E issue rather than an Oblique regression.
 
 ## Reviewer focus
 
-Photographic plausibility of the normal table plus separate board, canonical transform consistency, Ground Glass visibility, re-derived compound calibration, Tilt-only insufficiency, public-grid reachability, and guided-lesson regression. `CURRENT.md` is intentionally untouched.
+Photographic plausibility of the level table plus separate board, canonical transform consistency, real film-footprint visibility, re-derived compound calibration, Tilt-only insufficiency, public reachability, and preservation of guided/free integration.
