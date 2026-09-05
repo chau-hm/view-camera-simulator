@@ -56,6 +56,8 @@ import {
   resolveCameraMovementLessonState,
 } from "../scenes/cameraMovementLessonState";
 import { getPublicSceneEntryById } from "../app/publicScenes";
+import { INTERIOR_CORNER_GUIDED_TASK_IDS } from "../scenes/interiorCornerGuidedLesson";
+import { INTERIOR_CORNER_CALIBRATION_APERTURE } from "../scenes/interiorCornerSwingFocus";
 import {
   clampMirrorShiftRigLateralMm,
   DEFAULT_MIRROR_SHIFT_LESSON_STATE,
@@ -178,12 +180,13 @@ const isGuidedLessonObserveRoute = (
   taskId == null;
 
 /**
- * The Interior Corner lesson is staged across separate task routes. Forward
- * navigation must retain the solved photographic state while direct task
- * entry and backward navigation continue to receive their declared neutral
- * task initial state.
+ * The Interior Corner lesson is one in-session photographic state spread over
+ * several task routes. A task route may therefore be entered in either
+ * direction without reapplying its neutral task preset. Direct entry is not
+ * considered a session and is initialized normally (later lesson deep links
+ * are guarded by the route page).
  */
-const isInteriorCornerGuidedLessonForwardRoute = (
+const shouldPreserveInteriorCornerGuidedState = (
   state: {
     camera: Pick<CameraState, "activeSceneId" | "activeTaskId">;
     lastInitializedRouteKey?: string | null;
@@ -207,15 +210,20 @@ const isInteriorCornerGuidedLessonForwardRoute = (
   const guidedTaskIds = getPublicSceneEntryById(sceneId)?.guidedTaskIds;
   if (!guidedTaskIds?.length) return false;
 
-  const previousTaskIndex = state.camera.activeTaskId
-    ? guidedTaskIds.indexOf(state.camera.activeTaskId)
-    : -1;
-  const nextTaskIndex = guidedTaskIds.indexOf(taskId);
-  return (
-    nextTaskIndex >= 0 &&
-    ((previousTaskIndex === -1 && nextTaskIndex === 0) ||
-      nextTaskIndex === previousTaskIndex + 1)
-  );
+  const currentTaskId = state.camera.activeTaskId;
+  const nextTaskIsKnown = guidedTaskIds.includes(taskId);
+  if (!nextTaskIsKnown) return false;
+
+  // The only task transition from the neutral Observe route is Compose. A
+  // later task requires an already active Interior Corner task session.
+  if (currentTaskId == null) {
+    return (
+      taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.compose &&
+      state.lastInitializedRouteKey.startsWith(`free:${sceneId}:`)
+    );
+  }
+
+  return guidedTaskIds.includes(currentTaskId);
 };
 
 const resolveGuidedLessonObserveFocus = (
@@ -1048,7 +1056,7 @@ export const useAppStore = create<AppStore>((set) => ({
         calibrationRoute,
       );
       const cameraMovementRoute = isCameraMovementsScene(sceneId);
-      const preserveInteriorCornerLessonState = isInteriorCornerGuidedLessonForwardRoute(
+      const preserveInteriorCornerLessonState = shouldPreserveInteriorCornerGuidedState(
         state,
         mode,
         sceneId,
@@ -1153,6 +1161,19 @@ export const useAppStore = create<AppStore>((set) => ({
         ...nextCamera,
         aperture: resolveSceneAperture(sceneId, nextCamera.aperture),
       };
+
+      // Returning to Align Focus from the final aperture stage must restore
+      // the open calibration aperture without disturbing the solved Rise,
+      // Swing, or Focus values.
+      if (
+        preserveInteriorCornerLessonState &&
+        taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus
+      ) {
+        nextCamera = {
+          ...nextCamera,
+          aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
+        };
+      }
 
       // Guided Lesson Observe is the explicit neutral entry point for every
       // configured public lesson. Restore finite focus metadata as well as the

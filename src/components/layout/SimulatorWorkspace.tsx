@@ -177,7 +177,7 @@ export const SimulatorWorkspace = ({
       // that require a fresh entry. Other free scenes intentionally preserve
       // their in-memory state on leave-and-return.
       if (
-        guidedLessonEnabled ||
+        (guidedLessonEnabled && sceneId !== "interior-corner") ||
         anatomyLessonEnabled ||
         (sceneId === "understanding-camera-movements" &&
           mode === "free" &&
@@ -287,6 +287,7 @@ export const SimulatorWorkspace = ({
   const interiorCornerGuidedObserve =
     guidedLessonContext?.lessonId === "interior-corner" &&
     guidedLessonContext.stage === "observe";
+  const interiorCornerGuidedLesson = guidedLessonContext?.lessonId === "interior-corner";
   const activeSingleMovement =
     safeScene.movementCapabilities?.selectionMode === "single"
       ? selectedMovement
@@ -824,12 +825,14 @@ export const SimulatorWorkspace = ({
                 <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? t(simulatorMessageKeys.controls.apertureFixedReason) : lockReason} showTitle={false} />
               </div>
 
-              {(!movementLocked || task !== null || safeScene.cameraRigTranslationCapability?.enabled) && (
+              {(interiorCornerGuidedLesson
+                ? task !== null
+                : !movementLocked || task !== null || safeScene.cameraRigTranslationCapability?.enabled) && (
                 <div className="sim-section reset" style={{ paddingBottom: 0 }}>
                   <div className="sim-section-label">{t(simulatorMessageKeys.controls.resetTitle)}</div>
                   <ResetControls
                     showTitle={false}
-                    showMovementReset={!movementLocked || safeScene.cameraRigTranslationCapability?.enabled === true}
+                    showMovementReset={!interiorCornerGuidedLesson && (!movementLocked || safeScene.cameraRigTranslationCapability?.enabled === true)}
                     restartHref={
                       guidedLessonContext?.lessonId === "interior-corner"
                         ? `/simulator/free/${sceneId}?lesson=1`

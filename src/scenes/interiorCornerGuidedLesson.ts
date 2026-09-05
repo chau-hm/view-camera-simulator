@@ -55,6 +55,59 @@ export const evaluateInteriorCornerFocusAtCalibrationAperture = (
   );
 };
 
+/**
+ * A later Interior Corner lesson route is only safe to enter when the current
+ * in-memory lesson session still contains the prerequisite photographic
+ * result. This keeps a fresh deep link or a browser reload from presenting a
+ * locked, neutral stage that cannot be repaired with its visible controls.
+ */
+export const isInteriorCornerGuidedStageEntryRecoverable = ({
+  taskId,
+  camera,
+  lastInitializedRouteKey,
+}: {
+  taskId: string;
+  camera: CameraState;
+  lastInitializedRouteKey?: string | null;
+}): boolean => {
+  if (taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.compose) return true;
+  if (
+    camera.activeSceneId !== interiorCornerScene.id ||
+    !lastInitializedRouteKey?.endsWith(":lesson")
+  ) {
+    return false;
+  }
+
+  const currentTaskId = camera.activeTaskId;
+  const isInteriorCornerTask = (candidate: string | null): boolean =>
+    candidate === INTERIOR_CORNER_GUIDED_TASK_IDS.compose ||
+    candidate === INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus ||
+    candidate === INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField;
+  if (!isInteriorCornerTask(currentTaskId)) return false;
+
+  const opticsState = deriveOpticsState(camera, interiorCornerScene);
+  const compositionPassed = evaluateInteriorCornerRiseComposition(opticsState).passed;
+
+  if (taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus) {
+    return compositionPassed;
+  }
+
+  if (taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField) {
+    if (
+      currentTaskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus &&
+      currentTaskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField
+    ) {
+      return false;
+    }
+    return (
+      compositionPassed &&
+      evaluateInteriorCornerFocusAtCalibrationAperture(camera, opticsState).passed
+    );
+  }
+
+  return false;
+};
+
 const evaluateSwingOrientationCriterion = (
   camera: CameraState,
   opticsState: DerivedOpticsState,

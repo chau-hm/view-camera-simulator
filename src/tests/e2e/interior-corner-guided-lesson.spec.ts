@@ -156,14 +156,56 @@ test("Interior Corner guided lesson preserves the photographic sequence", async 
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
 });
 
-test("Interior Corner guided lesson restart returns to neutral Observe", async ({ page }) => {
+test("Interior Corner guided lesson deep links restart at neutral Observe", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/simulator/guided/interior-corner/interior-corner-depth-of-field-01?lesson=1");
-  await expectLessonStage(page, "Step 4 of 4", "Depth of Field");
+  await expect(page).toHaveURL(/\/simulator\/free\/interior-corner\?lesson=1$/);
+  await expectLessonStage(page, "Step 1 of 4", "Observe");
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Focus distance" })).toHaveValue("8000");
   await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+});
+
+test("Interior Corner guided lesson preserves prerequisites when navigating backward", async ({ page }) => {
+  test.setTimeout(240_000);
+
+  await page.goto("/simulator/free/interior-corner?lesson=1");
+  await expectLessonStage(page, "Step 1 of 4", "Observe");
+  await page.getByRole("link", { name: "Continue" }).click();
+
+  await expectLessonStage(page, "Step 2 of 4", "Compose");
+  await setStepRangeInput(page, "Rise", 33);
+  await page.getByRole("link", { name: "Continue" }).click();
+
+  await expectLessonStage(page, "Step 3 of 4", "Align Focus");
+  await setStepRangeInput(page, "Swing", 3.6);
+  await setReachableFocusValue(page, 38140);
+  await page.getByRole("link", { name: "Continue" }).click();
+
+  await expectLessonStage(page, "Step 4 of 4", "Depth of Field");
+  await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("33");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
+  await expect(page.getByRole("slider", { name: "Focus distance" })).toHaveValue("38140");
+  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible();
+
+  await page.getByRole("link", { name: "Previous" }).click();
+  await expectLessonStage(page, "Step 3 of 4", "Align Focus");
+  await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("33");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
+  await expect(page.getByRole("slider", { name: "Focus distance" })).toHaveValue("38140");
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+  await page.getByRole("link", { name: "Continue" }).click();
+
+  await expectLessonStage(page, "Step 4 of 4", "Depth of Field");
+  await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("33");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
+  await expect(page.getByRole("slider", { name: "Focus distance" })).toHaveValue("38140");
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible();
+
   await page.getByRole("link", { name: "Restart lesson" }).click();
   await expect(page).toHaveURL(/\/simulator\/free\/interior-corner\?lesson=1$/);
   await expectLessonStage(page, "Step 1 of 4", "Observe");

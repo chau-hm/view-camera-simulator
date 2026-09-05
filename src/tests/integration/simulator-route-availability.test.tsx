@@ -1,7 +1,8 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { ScenesPage, SimulatorRoutePage } from "../../app/pages";
+import { useAppStore } from "../../state/appStore";
 
 vi.mock("../../components/layout/SimulatorWorkspace", () => ({
   SimulatorWorkspace: ({
@@ -25,7 +26,14 @@ vi.mock("../../components/layout/SimulatorWorkspace", () => ({
   ),
 }));
 
-afterEach(cleanup);
+beforeEach(() => {
+  useAppStore.getState().resetCamera();
+});
+
+afterEach(() => {
+  cleanup();
+  useAppStore.getState().resetCamera();
+});
 
 const LocationProbe = () => {
   const location = useLocation();
@@ -51,7 +59,6 @@ describe("simulator route availability", () => {
     ["/simulator/free/architecture-foreground", "free:architecture-foreground:none:lesson=false"],
     ["/simulator/free/interior-corner", "free:interior-corner:none:lesson=false"],
     ["/simulator/guided/interior-corner/interior-corner-compose-01", "guided:interior-corner:interior-corner-compose-01:lesson=false"],
-    ["/simulator/guided/interior-corner/interior-corner-align-focus-01?lesson=1", "guided:interior-corner:interior-corner-align-focus-01:lesson=true"],
     ["/simulator/guided/interior-corner/interior-corner-depth-of-field-01", "guided:interior-corner:interior-corner-depth-of-field-01:lesson=false"],
     ["/simulator/free/oblique-architecture", "free:oblique-architecture:none:lesson=false"],
     ["/simulator/free/shelf-swing", "free:shelf-swing:none:lesson=false"],
@@ -97,6 +104,22 @@ describe("simulator route availability", () => {
 
     expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(expectedWorkspace);
     expect(screen.getByTestId("route-location")).toHaveTextContent(route);
+  });
+
+  it.each([
+    "/simulator/guided/interior-corner/interior-corner-align-focus-01?lesson=1",
+    "/simulator/guided/interior-corner/interior-corner-depth-of-field-01?lesson=1",
+  ])("restarts a fresh later Interior Corner lesson entry at Observe: %s", async (route) => {
+    renderRoute(route);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("route-location")).toHaveTextContent(
+        "/simulator/free/interior-corner?lesson=1",
+      ),
+    );
+    expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(
+      "free:interior-corner:none:lesson=true",
+    );
   });
 
   it.each([

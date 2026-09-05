@@ -6,7 +6,7 @@ Turn the validated Interior Corner free-mode foundation into a deterministic Obs
 
 ## Branch / worktree / base / head
 
-`feature/interior-corner-guided-lesson` · `/Users/homan/repo/view-camera-interior-corner-12d` · base `1fd8b0b1e6c9fd4a657c922c3c2af538c82a55b9` · implementation `b701ee3`; pre-publication handoff `96ce222`; final publication commit is this handoff update and is recorded in the completion report
+`feature/interior-corner-guided-lesson` · `/Users/homan/repo/view-camera-interior-corner-12d` · base `1fd8b0b1e6c9fd4a657c922c3c2af538c82a55b9` · implementation `b701ee3`; review-fix head is recorded in the completion report
 
 ## PR12A–12C prerequisites verified
 
@@ -30,13 +30,22 @@ Guided task criteria/registry, Interior Corner guided evaluation adapter, public
 
 ## Validation run
 
-Focused Vitest: 125 tests passed. Focused Playwright: 2 tests passed in 1.1 minutes. Full Vitest: 1,581 tests passed. Typecheck, lint, CSS structure, build, and diff check passed.
+Focused Vitest: 74 tests passed. Focused Playwright: 3 tests passed. Full Vitest: 1,582 tests passed. Typecheck, lint, CSS structure, build, and diff check passed.
 
-The repository local CI gate was attempted end to end. All checks and earlier E2E specs passed, but the existing `groundglass-interaction.spec.ts` Architecture Rise drag/re-zoom test timed out at 120 seconds; its neighboring tests passed. No renderer or existing Ground Glass code is changed here.
+The repository local CI gate was attempted end to end. Its Interior Corner guided-lesson, Architecture Rise Ground Glass, and preceding E2E groups passed, but the gate stopped on the unrelated `mirror-shift-teaching-geometry.spec.ts` RTT-content assertion (`ground-glass-rtt` was not found). No renderer or existing Ground Glass code is changed here.
 
 ## Validation not run
 
-No required check was omitted. The local CI gate did not complete because of the unrelated existing E2E timeout above.
+The broader local E2E gate did not complete because of the unrelated Mirror Shift failure above. The previously known Architecture Rise Ground Glass timeout did not recur in this run.
+
+## Since review
+
+- The previous head `62e2cebc5062bc4cd9bfb6fbb71662a68877d662` lost solved Rise when route cleanup cleared the initialization marker during the free Observe → guided Compose transition.
+- Interior Corner guided task routes now preserve the in-session photographic state in either navigation direction; returning to Align Focus restores f/5.6 without resetting Rise, Swing, or Focus.
+- Fresh lesson deep links/reloads to later stages restart at canonical Observe when no recoverable prerequisite session exists.
+- Guided Interior Corner stages expose Restart Lesson instead of destructive Reset Movements; free-mode Reset Movements remains unchanged.
+- The exact-head full Vitest suite now passes; focused lifecycle and browser regression evidence was added.
+- Optics, calibration, CoC thresholds, geometry, RTT, routing identity, and guided task criteria are unchanged.
 
 ## Known limitations
 
@@ -44,7 +53,7 @@ Ground Glass assertions verify the existing RTT surface remains present/contentf
 
 ## Publication
 
-Implementation commit `b701ee3` and pre-publication handoff `96ce222` are complete. Draft PR #129 is open as a draft; final handoff publication and remote verification are recorded in the completion report.
+Implementation commit `b701ee3` and pre-publication handoff `96ce222` remain unchanged. Draft PR #129 remains open as a draft; this focused lifecycle fix updates the same feature branch.
 
 ## Reviewer focus
 

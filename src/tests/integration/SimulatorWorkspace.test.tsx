@@ -255,6 +255,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     const rise = screen.getByLabelText("Rise");
     expect(rise).toHaveValue("0");
     expect(rise).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Reset movements" })).toBeInTheDocument();
     fireEvent.change(rise, { target: { value: "33" } });
 
     await waitFor(() => {
@@ -290,6 +291,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByLabelText("Swing")).toBeDisabled();
     expect(screen.getByLabelText("Focus distance")).toBeDisabled();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
 
     useAppStore.getState().setRise(33);
     view.rerender(
@@ -302,6 +304,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
     expect(useAppStore.getState().camera.frontRiseMm).toBe(33);
     expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
 
     view.rerender(
       interiorCornerLessonWorkspace("guided", "interior-corner-align-focus-01"),
@@ -312,6 +315,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByLabelText("Focus distance")).toBeEnabled();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
     expect(useAppStore.getState().camera.frontRiseMm).toBe(33);
+    expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Swing"), {
       target: { value: interiorCornerSwingFocusCalibration.public.frontSwingDeg },
@@ -335,6 +339,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
       focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
       aperture: 5.6,
     });
+    expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByRole("combobox", { name: "Aperture" }), { target: { value: "11" } });
     await waitFor(() => expect(screen.getByText("Lesson complete")).toBeInTheDocument());

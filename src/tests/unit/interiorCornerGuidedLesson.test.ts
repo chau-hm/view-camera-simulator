@@ -192,7 +192,7 @@ describe("Interior Corner guided lesson", () => {
     expect(open.evaluation.status).toBe("failed");
   });
 
-  it("preserves solved state across forward lesson routes and resets on Observe", () => {
+  it("preserves solved state across forward and backward lesson routes and resets on Observe", () => {
     const store = useAppStore.getState();
     store.initializeSimulatorRoute({
       mode: "free",
@@ -238,6 +238,50 @@ describe("Interior Corner guided lesson", () => {
       frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
       focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
       aperture: 11,
+    });
+
+    store.initializeSimulatorRoute({
+      mode: "guided",
+      sceneId: interiorCornerScene.id,
+      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus,
+      lessonEntry: true,
+    });
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
+    });
+
+    store.initializeSimulatorRoute({
+      mode: "guided",
+      sceneId: interiorCornerScene.id,
+      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.compose,
+      lessonEntry: true,
+    });
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+    });
+
+    store.initializeSimulatorRoute({
+      mode: "guided",
+      sceneId: interiorCornerScene.id,
+      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus,
+      lessonEntry: true,
+    });
+    store.initializeSimulatorRoute({
+      mode: "guided",
+      sceneId: interiorCornerScene.id,
+      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField,
+      lessonEntry: true,
+    });
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
     });
 
     store.initializeSimulatorRoute({
