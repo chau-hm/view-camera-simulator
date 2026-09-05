@@ -13,6 +13,11 @@ export const guidedLessonMessages = {
   },
   stages: {
     observe: "Observe",
+    focus: "Focus",
+    tilt: "Front Tilt",
+    swing: "Front Swing",
+    refine: "Refine Focus",
+    aperture: "Aperture",
     compose: "Compose",
     alignFocus: "Align Focus",
     depthOfField: "Depth of Field",
@@ -42,6 +47,14 @@ export const guidedLessonMessages = {
         "Inspect the Ground Glass before changing the camera. The upper architecture is tight in the frame, while details on one receding wall span several focus distances. The opposite wall is context, not a second sharpness target.",
       completionBody:
         "You corrected the framing with Rise, aligned the focus plane through the receding wall with Swing and Focus, then used Aperture to add finishing depth.",
+    },
+    obliqueTabletop: {
+      lessonName: "Oblique Tabletop Guided Lesson",
+      observeTitle: "Observe the Problem",
+      observeBody:
+        "Before changing the camera, compare the visible tabletop regions in the Ground Glass. Focus can move the sharp region, but the oblique surface varies in depth and direction.",
+      completionBody:
+        "You used Tilt and Swing to orient one three-dimensional focus plane, Focus to place it on the tabletop, and Aperture to add depth around that aligned plane.",
     },
   },
 } as const;

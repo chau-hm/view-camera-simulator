@@ -26,6 +26,11 @@ export type PublicSceneId = (typeof publicSceneIds)[number];
 export type SceneAvailability = "available" | "in-development";
 
 export type PublicGuidedLessonTaskStageId =
+  | "focus"
+  | "tilt"
+  | "swing"
+  | "refine"
+  | "aperture"
   | "compose"
   | "align-focus"
   | "depth-of-field"
@@ -157,8 +162,21 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       publicSceneMessageKeys.obliqueTabletop.topics.focusDistance,
     ],
     availability: "available",
-    availableModes: ["free"],
+    availableModes: ["free", "guided"],
     thumbnailAsset: "assets/oblique-tabletop.png",
+    guidedTaskId: "oblique-tabletop-aperture-01",
+    guidedTaskIds: [
+      "oblique-tabletop-focus-01",
+      "oblique-tabletop-tilt-01",
+      "oblique-tabletop-swing-01",
+      "oblique-tabletop-refine-01",
+      "oblique-tabletop-aperture-01",
+    ],
+    guidedLesson: {
+      id: "oblique-tabletop",
+      includeObserveStage: true,
+      taskStageIds: ["focus", "tilt", "swing", "refine", "aperture"],
+    },
   },
   {
     id: "mirror-shift",

@@ -1,7 +1,9 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { routes } from "../../app/router";
+
+afterEach(cleanup);
 
 describe("home page", () => {
   it("renders the approved Hero heading and catalog CTA", async () => {
@@ -85,5 +87,40 @@ describe("home page", () => {
     expect(fallback).toHaveAttribute("srcset", expect.stringContaining("hero.png 1672w"));
     expect(fallback).toHaveAttribute("decoding", "async");
     expect(fallback).toHaveAttribute("fetchpriority", "high");
+  });
+
+  it("renders the static Fundamentals and Three Ways conceptual learning sections", async () => {
+    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/"] });
+    render(<RouterProvider router={memoryRouter} />);
+
+    const fundamentals = await screen.findByTestId("landing-fundamentals-section");
+    const visualization = await screen.findByTestId("landing-visualization-section");
+
+    expect(screen.getByRole("heading", { name: "Learn the Fundamentals", level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Three Ways to Visualize", level: 2 })).toBeInTheDocument();
+    expect(fundamentals.querySelectorAll(".landing-concept-card")).toHaveLength(4);
+    expect(visualization.querySelectorAll(".landing-concept-card")).toHaveLength(3);
+
+    const assetPaths = [
+      "fundamentals-perspective-control.webp",
+      "fundamentals-focus-plane.webp",
+      "fundamentals-ground-glass.webp",
+      "fundamentals-optical-geometry.webp",
+      "visualize-3d-scene.webp",
+      "visualize-ground-glass.webp",
+      "visualize-geometry.webp",
+    ];
+    const referencedAssets = Array.from(document.querySelectorAll(".landing-concept-card img"));
+    expect(referencedAssets).toHaveLength(7);
+    for (const assetPath of assetPaths) {
+      expect(referencedAssets.some((image) => image.getAttribute("src")?.includes(assetPath))).toBe(true);
+    }
+
+    expect(fundamentals.querySelectorAll("input, button, select, textarea")).toHaveLength(0);
+    expect(visualization.querySelectorAll("input, button, select, textarea")).toHaveLength(0);
+    expect(screen.queryByText("Scene Gallery")).not.toBeInTheDocument();
+    expect(screen.queryByText("Learn Through Scenes")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByTestId("landing-hero-cta")).toHaveAttribute("href", "/scenes");
   });
 });

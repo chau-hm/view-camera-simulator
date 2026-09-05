@@ -78,17 +78,29 @@ describe("public scene catalog integrity", () => {
     ).toBe(false);
   });
 
-  it("publishes Oblique Tabletop as a free-only neutral focus problem", () => {
+  it("publishes Oblique Tabletop with Free Practice and a five-stage guided lesson", () => {
     const entry = publicSceneCatalog.find(
       (candidate) => candidate.id === "oblique-tabletop",
     )!;
     expect(entry).toMatchObject({
       id: "oblique-tabletop",
-      availableModes: ["free"],
+      availableModes: ["free", "guided"],
       availability: "available",
       thumbnailAsset: "assets/oblique-tabletop.png",
     });
-    expect(entry.guidedTaskId).toBeUndefined();
+    expect(entry.guidedTaskId).toBe("oblique-tabletop-aperture-01");
+    expect(entry.guidedTaskIds).toEqual([
+      "oblique-tabletop-focus-01",
+      "oblique-tabletop-tilt-01",
+      "oblique-tabletop-swing-01",
+      "oblique-tabletop-refine-01",
+      "oblique-tabletop-aperture-01",
+    ]);
+    expect(entry.guidedLesson).toMatchObject({
+      id: "oblique-tabletop",
+      includeObserveStage: true,
+      taskStageIds: ["focus", "tilt", "swing", "refine", "aperture"],
+    });
     expect(entry.thumbnailAsset).not.toMatch(/\.svg$/);
     expect(
       isValidSimulatorRoute({
@@ -101,10 +113,11 @@ describe("public scene catalog integrity", () => {
       isValidSimulatorRoute({
         mode: "guided",
         sceneId: entry.id,
-        taskId: "not-a-task",
+        taskId: entry.guidedTaskId,
         publicEntry: entry,
+        task: getTaskById(entry.guidedTaskId!),
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("publishes Interior Corner with its ordered guided lesson stages", () => {

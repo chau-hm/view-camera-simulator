@@ -11,6 +11,48 @@ export const homeMessages = {
     startExploring: "開始探索模擬器",
     exploreScenes: "瀏覽場景",
   },
+  fundamentals: {
+    eyebrow: "掌握相機移軸",
+    title: "學習基礎原理",
+    description: "理解影響相機取景、移軸與對焦方式的核心原理。",
+    items: {
+      perspective: {
+        title: "透視控制",
+        description: "理解視點、構圖與相機移軸如何影響透視關係及匯聚線條。",
+      },
+      focusPlane: {
+        title: "焦平面",
+        description: "觀察清晰焦平面位於哪裏，以及對焦、傾斜與擺動如何改變它與主體的關係。",
+      },
+      groundGlass: {
+        title: "對焦屏",
+        description: "從攝影者的視角查看對焦屏上的影像，理解取景、構圖與對焦結果。",
+      },
+      opticalGeometry: {
+        title: "光學幾何",
+        description: "理解鏡頭、主體、成像平面與影像形成之間的幾何關係。",
+      },
+    },
+  },
+  visualize: {
+    eyebrow: "看見．研究．理解",
+    title: "三種視覺化方式",
+    description: "同一個相機狀態，可以從三種互補視圖理解；每一種都揭示不同的關係。",
+    items: {
+      scene3d: {
+        title: "3D 場景",
+        description: "在 3D 空間中理解相機、主體與視點之間的相對位置。",
+      },
+      groundGlass: {
+        title: "對焦屏",
+        description: "查看相機形成的影像，理解取景、構圖與對焦結果。",
+      },
+      geometry: {
+        title: "幾何視圖",
+        description: "顯示光路、鏡頭與成像平面、焦平面及透視幾何。",
+      },
+    },
+  },
   why: {
     ariaLabel: "為甚麼使用大片幅相機",
   },

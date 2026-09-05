@@ -47,6 +47,14 @@ The broader local E2E gate did not complete because of the unrelated Mirror Shif
 - The exact-head full Vitest suite now passes; focused lifecycle and browser regression evidence was added.
 - Optics, calibration, CoC thresholds, geometry, RTT, routing identity, and guided task criteria are unchanged.
 
+## Since main sync
+
+- Integrated `origin/main` at `739b744a880826b3c34200645bac90f988a9436e` with a normal non-fast-forward merge; shared route, store, task, catalog, progress, localization, and test surfaces were reconciled additively.
+- PR128 Oblique Tabletop guided metadata, task progression, staged controls, localized copy, and tests are preserved. PR129 Interior Corner bidirectional state persistence, deep-link recovery, Restart Lesson, and guided Reset protection are preserved.
+- Post-sync focused Vitest passed (181 tests across the Interior/Oblique/shared suites); full Vitest passed (164 files, 1,593 tests). Typecheck, lint, CSS structure, build, and diff checks passed.
+- Focused Interior Corner and Oblique Tabletop Playwright passed (4 tests). The broader local E2E gate passed through Interior Corner and all preceding groups, then stopped at the pre-existing `mirror-shift-teaching-geometry.spec.ts` RTT-content assertion (`ground-glass-rtt` not found); no Interior/Oblique failure occurred.
+- The final post-sync branch head is recorded in the completion report after the integration commit.
+
 ## Known limitations
 
 Ground Glass assertions verify the existing RTT surface remains present/contentful; physical success remains evaluator-based. The final stage uses the existing modest f/11 aperture option.

@@ -322,6 +322,119 @@
   display: none;
 }
 
+/* Static conceptual learning slice. Keep the two sections visually unified while
+   allowing each section to own its semantic heading and card grid. */
+
+.site-shell .landing-concept-learning {
+  max-width: var(--marketing-content-width);
+  margin: 0 auto;
+  padding: clamp(72px, 9vw, 128px) clamp(20px, 4vw, 48px) clamp(84px, 10vw, 136px);
+}
+
+.site-shell .landing-learning-section + .landing-learning-section {
+  margin-top: clamp(88px, 10vw, 144px);
+}
+
+.site-shell .landing-learning-section__header {
+  max-width: 780px;
+  margin: 0 auto 42px;
+  text-align: center;
+}
+
+.site-shell .landing-learning-section__eyebrow {
+  margin: 0 0 18px;
+  color: var(--marketing-accent);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.18em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.site-shell .landing-learning-section__header h2 {
+  margin: 0;
+  color: var(--marketing-text);
+  font-family: ui-serif, "Iowan Old Style", "Baskerville", "Noto Serif TC", "Songti TC", serif;
+  font-size: clamp(2.35rem, 4.8vw, 4.45rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.site-shell .landing-learning-section__description {
+  max-width: 660px;
+  margin: 22px auto 0;
+  color: var(--marketing-text-muted);
+  font-size: clamp(1rem, 1.4vw, 1.13rem);
+  line-height: 1.7;
+  text-wrap: balance;
+}
+
+.site-shell .landing-concept-grid {
+  display: grid;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.site-shell .landing-concept-grid--fundamentals {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.site-shell .landing-concept-grid--visualization {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.site-shell .landing-concept-card {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  flex-direction: column;
+  background: var(--marketing-surface);
+  border: 1px solid var(--marketing-border);
+  border-radius: var(--marketing-card-radius);
+}
+
+.site-shell .landing-concept-card__artwork {
+  flex: 0 0 auto;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--marketing-bg);
+  border-bottom: 1px solid rgba(176, 224, 241, 0.14);
+}
+
+.site-shell .landing-concept-card__artwork img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.site-shell .landing-concept-card__content {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  padding: 23px 22px 26px;
+}
+
+.site-shell .landing-concept-card__content h3 {
+  margin: 0;
+  color: var(--marketing-text);
+  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+  font-weight: 720;
+  line-height: 1.25;
+}
+
+.site-shell .landing-concept-card__content p {
+  margin: 0;
+  color: var(--marketing-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
 /* The existing home copy remains below the new hero until later landing slices. */
 
 .landing-home__legacy {
@@ -822,6 +935,10 @@
     font-size: clamp(3rem, 6.4vw, 4.5rem);
   }
 
+  .site-shell .landing-concept-grid--fundamentals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .site-shell .marketing-container {
     padding-inline: 20px;
   }
@@ -844,6 +961,10 @@
 
   .site-shell .scene-thumb {
     height: 180px;
+  }
+
+  .site-shell .landing-concept-grid--visualization {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -947,6 +1068,41 @@
 
   .landing-home__legacy {
     padding: 20px 16px 64px;
+  }
+
+  .site-shell .landing-concept-learning {
+    padding: 64px 16px 80px;
+  }
+
+  .site-shell .landing-learning-section + .landing-learning-section {
+    margin-top: 88px;
+  }
+
+  .site-shell .landing-learning-section__header {
+    margin-bottom: 30px;
+  }
+
+  .site-shell .landing-learning-section__eyebrow {
+    margin-bottom: 14px;
+    font-size: 0.68rem;
+  }
+
+  .site-shell .landing-learning-section__header h2 {
+    font-size: clamp(2.15rem, 10.5vw, 3.4rem);
+  }
+
+  .site-shell .landing-learning-section__description {
+    margin-top: 18px;
+    font-size: 0.98rem;
+  }
+
+  .site-shell .landing-concept-grid--fundamentals,
+  .site-shell .landing-concept-grid--visualization {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .site-shell .landing-concept-card__content {
+    padding: 20px 20px 23px;
   }
 
   .site-shell .landing-info-section {

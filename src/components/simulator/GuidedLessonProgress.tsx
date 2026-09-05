@@ -17,6 +17,16 @@ const stageMessageKey = (stage: GuidedLessonStageId): GuidedLessonMessageKey => 
   switch (stage) {
     case "observe":
       return guidedLessonMessageKeys.stages.observe;
+    case "focus":
+      return guidedLessonMessageKeys.stages.focus;
+    case "tilt":
+      return guidedLessonMessageKeys.stages.tilt;
+    case "swing":
+      return guidedLessonMessageKeys.stages.swing;
+    case "refine":
+      return guidedLessonMessageKeys.stages.refine;
+    case "aperture":
+      return guidedLessonMessageKeys.stages.aperture;
     case "compose":
       return guidedLessonMessageKeys.stages.compose;
     case "align-focus":

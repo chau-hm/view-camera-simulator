@@ -1,13 +1,12 @@
-# PR10D — Oblique Tabletop Compound Teaching Geometry
+# PR 11B — Review correction: Geometry View optical correctness
 
-- Branch/base: `feature/oblique-tabletop-teaching-geometry` from `origin/main` at `76010a2d96b11234a9044599ee0f94c83e80aa98`.
-- Objective: explain the accepted PR10C compound Tilt + Swing solution through live side, top, and Scheimpflug views; guided tasks and aperture teaching remain deferred.
-- Canonical sources: `tabletopTopSurfacePlane` and canonical tabletop extent traces; film, lens, focus, optical-axis, and Scheimpflug construction geometry come from the live `DerivedOpticsState`. No optical calibration or scene geometry changed.
-- Views: side projects the canonical near↔far tabletop trace and current one focus plane; top projects the left↔right trace and the same focus plane; the 3D Scheimpflug overlay reuses the existing finite film/lens/focus planes and common line while the static tabletop remains the subject.
-- Single-plane contract: `deriveObliqueTabletopTeachingGeometry` keeps one `focusPlane` reference and derives the construction from the same live film/lens/focus planes. No separate Tilt or Swing focus planes are introduced.
-- Anchor semantics: analytical RTT sample nodes now identify `analyticalCoverageSampleId` / `canonical-tabletop-surface`; visible markers use `markerId` / visible-anchor metadata, so analytical nodes cannot masquerade as public focus targets.
-- Public verification state: Tilt `-8.0°`, Swing `-1.7°`, Focus `2450 mm`, fixed f/11; live neutral, Tilt-only, Swing-only, and compound feedback copy is present in English and zh-HK.
-- Feedback semantics: movement-presence states now use direction-neutral relationship language; reachable opposite-sign Tilt/Swing and wrong-sign compound feedback are covered by regression tests.
-- Validation: focused teaching/geometry/scene/optics/copy suites passed; full `npm test` passed (160 files, 1,545 tests); typecheck, lint, CSS structure, build, diff check, and focused Chromium smoke passed. Chromium smoke covered side/top updates, reachable opposite-sign Tilt feedback, public Tilt/Swing controls, Scheimpflug overlay, Ground Glass, and SPA scene switching.
-- Not run: full `npm run ci:local:e2e`; shared renderer/projection lifecycle was not changed and the focused Chromium smoke covers the new public path.
-- Remaining: PR10E guided lesson and final aperture step; no lesson completion state or teaching-geometry overlays beyond this slice.
+- Objective: update PR #126 onto latest `origin/main` and correct only the Geometry View artwork so the three visualization cards communicate one shared camera/subject state with physically correct image-plane placement.
+- Branch/worktree: `feature/landing-redesign-fundamentals` / `/Users/homan/repo/view-camera-landing-fundamentals`; existing PR #126, no new branch or PR.
+- Base/update: original branch base `76010a2d96b11234a9044599ee0f94c83e80aa98`; prior update commits `f30de7e12e2b9f81e733ddcb5adcfc1a195102c7` (abe81a2) and `9ad10032cf8f9023b82cdc748e6eb9de9820dcb1` (1fd8b0b); latest `origin/main` `51979423d0279691da81022054cf1659763f9b44` was merged in `8eea41d85d056cbe2ae7ea0158c16b3fedcb4c83`; PR11A `6971b0a9f1cdcdff033cba6431f351d5345a9f5d` remains an ancestor.
+- Since previous review: the P2 finding was confirmed on the current binary. Regenerated only `public/assets/landing/visualize-geometry.webp` with built-in ImageGen using the sibling visualization assets as references. The other six Part E assets and all landing code/copy/layout remain unchanged.
+- Optical evidence: subjects are on the lens-facing/front side; the single rear film/Ground Glass plane is inside the camera behind the lens; rays connect subjects through the lens and terminate on that rear plane; the formed cube/sphere/cone images are vertically inverted and left-right reversed.
+- Shared state: the Geometry View preserves one cube, one sphere, and one cone in the same recognizable relative arrangement as `visualize-3d-scene.webp` and `visualize-ground-glass.webp`.
+- Asset: `visualize-geometry.webp` — 1448×1086, 4:3, 107206 bytes.
+- Landing preservation: current fetched main still has no distinct Why It Matters or Final CTA components; HomePage remains Hero → Fundamentals → Three Ways → existing informational block. No out-of-scope Part F/CTA was added.
+- Validation: focused landing/i18n integration tests passed (8 tests); `ci:local` passed CSS structure, lint, typecheck, full Vitest (163 files, 1,574 tests), and production build; focused Chromium home E2E passed (7/7). Runtime Home inspection at 1440×900 and 390×844 (English and zh-HK) showed all seven decoded assets, the corrected trio, and zero horizontal overflow; `git diff --check` passed. The P2 review thread is resolved after this visual verification.
+- Deferred: Part F / Why It Matters, final CTA, motion, Scene Gallery, simulator mini-demos, and new simulator functionality.

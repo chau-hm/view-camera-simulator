@@ -13,6 +13,11 @@ export const guidedLessonMessageKeys = {
   },
   stages: {
     observe: "guidedLesson.stages.observe",
+    focus: "guidedLesson.stages.focus",
+    tilt: "guidedLesson.stages.tilt",
+    swing: "guidedLesson.stages.swing",
+    refine: "guidedLesson.stages.refine",
+    aperture: "guidedLesson.stages.aperture",
     compose: "guidedLesson.stages.compose",
     alignFocus: "guidedLesson.stages.alignFocus",
     depthOfField: "guidedLesson.stages.depthOfField",
@@ -37,6 +42,12 @@ export const guidedLessonMessageKeys = {
       observeBody: "guidedLesson.lessons.interiorCorner.observeBody",
       completionBody: "guidedLesson.lessons.interiorCorner.completionBody",
     },
+    obliqueTabletop: {
+      lessonName: "guidedLesson.lessons.obliqueTabletop.lessonName",
+      observeTitle: "guidedLesson.lessons.obliqueTabletop.observeTitle",
+      observeBody: "guidedLesson.lessons.obliqueTabletop.observeBody",
+      completionBody: "guidedLesson.lessons.obliqueTabletop.completionBody",
+    },
   },
 } as const;
 
@@ -59,6 +70,7 @@ const guidedLessonCopyById: Record<string, GuidedLessonCopyMessageKeys> = {
   "oblique-architecture": guidedLessonMessageKeys.lessons.obliqueArchitecture,
   "architecture-foreground": guidedLessonMessageKeys.lessons.architectureForeground,
   "interior-corner": guidedLessonMessageKeys.lessons.interiorCorner,
+  "oblique-tabletop": guidedLessonMessageKeys.lessons.obliqueTabletop,
 };
 
 export const getGuidedLessonCopyKeys = (lessonId: string): GuidedLessonCopyMessageKeys =>

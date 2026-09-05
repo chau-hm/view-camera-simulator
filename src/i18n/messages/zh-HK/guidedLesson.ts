@@ -16,6 +16,11 @@ export const guidedLessonMessages = {
   },
   stages: {
     observe: "觀察",
+    focus: "對焦",
+    tilt: "前組俯仰",
+    swing: "前組擺動",
+    refine: "微調對焦",
+    aperture: "光圈",
     compose: "構圖",
     alignFocus: "對齊焦平面",
     depthOfField: "景深",
@@ -44,6 +49,14 @@ export const guidedLessonMessages = {
         "調整相機之前，先觀察對焦屏。上方建築細節在畫面中過於貼近邊緣，而其中一面延伸側牆上的細節跨越不同對焦距離。另一面牆只是空間背景，不是另一個清晰目標。",
       completionBody:
         "你以 Rise 修正構圖，以 Swing 和 Focus 將焦平面對齊延伸側牆，最後使用 Aperture 增加可用景深。",
+    },
+    obliqueTabletop: {
+      lessonName: "斜向桌面攝影引導課程",
+      observeTitle: "觀察問題",
+      observeBody:
+        "調整相機之前，先比較對焦屏內看得見的桌面位置。對焦可以移動清晰位置，但斜向桌面在不同方向都有深度差異。",
+      completionBody:
+        "你利用前組俯仰與擺動定位同一個三維清晰焦平面，再用對焦把它放到桌面上，最後以光圈在已對齊的焦平面周圍增加景深。",
     },
   },
 } satisfies MessageShape<typeof englishGuidedLessonMessages>;
