@@ -495,9 +495,9 @@ const obliqueTabletopCompoundSwingRange = {
   max: obliqueTabletopCompound.frontSwingDeg + 0.5,
 };
 const obliqueTabletopSwingStage = {
-  frontTiltDeg: -7.1,
-  frontSwingDeg: -1.2,
-  focusDistanceMm: 2680,
+  frontTiltDeg: -7.4,
+  frontSwingDeg: -1.4,
+  focusDistanceMm: 2630,
 } as const;
 const obliqueTabletopSwingStageTiltRange = {
   min: obliqueTabletopSwingStage.frontTiltDeg - 0.5,

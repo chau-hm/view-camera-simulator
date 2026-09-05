@@ -53,9 +53,9 @@ const evaluate = (taskId: string, overrides: Partial<CameraState> = {}) => {
 };
 
 const swingStageState = {
-  frontTiltDeg: -7.1,
-  frontSwingDeg: -1.2,
-  focusDistanceMm: 2680,
+  frontTiltDeg: -7.4,
+  frontSwingDeg: -1.4,
+  focusDistanceMm: 2630,
 } as const;
 
 const physicalScores = (overrides: Partial<CameraState> = {}) => {
@@ -253,6 +253,10 @@ describe("Oblique Tabletop Guided Lesson", () => {
 
   it("requires Focus refinement before the final aperture stage", () => {
     const refineTask = requireTask("oblique-tabletop-refine-01");
+    const focusRefined = evaluate(refineTask.id, {
+      ...swingStageState,
+      focusDistanceMm: 2580,
+    });
     const refined = evaluate(refineTask.id, {
       frontTiltDeg: -8,
       frontSwingDeg: -1.7,
@@ -267,6 +271,7 @@ describe("Oblique Tabletop Guided Lesson", () => {
       aperture: 22,
     });
 
+    expect(focusRefined.status).toBe("passed");
     expect(refined.status).toBe("passed");
     expect(notRefined.status).toBe("failed");
     expect(
