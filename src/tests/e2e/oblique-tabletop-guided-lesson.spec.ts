@@ -87,11 +87,13 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   );
   await expectLessonStage(page, "Step 4 of 6", "Front Swing");
   await expect(page.getByRole("heading", { name: "Add the lateral component" })).toBeVisible();
-  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("-8");
+  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("-4.9");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
-  await expect(page.getByLabel("Focus distance")).toHaveValue("2450");
+  await expect(page.getByLabel("Focus distance")).toHaveValue("3310");
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
-  await setStepRangeInput(page, "Swing", -1.7);
+  await setStepRangeInput(page, "Tilt", -7.1);
+  await setStepRangeInput(page, "Swing", -1.2);
+  await setRangeDirect(page, "Focus distance", 2680);
   await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole("link", { name: "Continue" }).click();
@@ -100,10 +102,12 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   );
   await expectLessonStage(page, "Step 5 of 6", "Refine Focus");
   await expect(page.getByRole("heading", { name: "Place the compound focus plane" })).toBeVisible();
-  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("-8");
-  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("-1.7");
-  await expect(page.getByLabel("Focus distance")).toHaveValue("2550");
+  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("-7.1");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("-1.2");
+  await expect(page.getByLabel("Focus distance")).toHaveValue("2680");
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await setStepRangeInput(page, "Tilt", -8);
+  await setStepRangeInput(page, "Swing", -1.7);
   await setRangeDirect(page, "Focus distance", 2450);
   await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
 

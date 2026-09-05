@@ -52,6 +52,31 @@ const evaluate = (taskId: string, overrides: Partial<CameraState> = {}) => {
   return evaluateTask(task, scene, camera, deriveOpticsState(camera, scene));
 };
 
+const swingStageState = {
+  frontTiltDeg: -7.1,
+  frontSwingDeg: -1.2,
+  focusDistanceMm: 2680,
+} as const;
+
+const physicalScores = (overrides: Partial<CameraState> = {}) => {
+  const optics = deriveOpticsState(
+    cameraFor("oblique-tabletop-swing-01", overrides),
+    scene,
+  );
+  return new Map(
+    optics.focusTargets.map((target) => [target.id, target.physicalPatchSharpness ?? 0]),
+  );
+};
+
+const minimumScore = (scores: Map<string, number>, targetIds: readonly string[]) =>
+  Math.min(...targetIds.map((targetId) => scores.get(targetId) ?? 0));
+
+const visibleTargetIds = obliqueTabletopGeometry.tabletopVisibleFocusSamples.map(
+  (sample) => sample.id,
+);
+const principalTargetIds = [...obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds];
+const lateralTargetIds = ["far-left", "far-right"] as const;
+
 describe("Oblique Tabletop Guided Lesson", () => {
   afterEach(() => {
     useAppStore.getState().resetCamera();
@@ -157,18 +182,63 @@ describe("Oblique Tabletop Guided Lesson", () => {
     expect(wrongSign.criteria.filter((criterion) => criterion.criterionId.includes("sharp")).some((criterion) => !criterion.passed)).toBe(true);
   });
 
-  it("requires negative Swing to resolve the compound visible tabletop", () => {
+  it("starts Swing from the accepted Tilt-only state and keeps the full gate for Refine", () => {
+    const swingTask = requireTask("oblique-tabletop-swing-01");
+    const refineTask = requireTask("oblique-tabletop-refine-01");
+
+    expect(swingTask.initialCameraState).toEqual(
+      expect.objectContaining({
+        frontTiltDeg: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
+        frontSwingDeg: 0,
+        focusDistanceMm: obliqueTabletopGeometry.tiltOnlyCalibration.focusDistanceMm,
+      }),
+    );
+
+    const neutralScores = physicalScores({
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      focusDistanceMm: obliqueTabletopGeometry.canonicalFocusDistanceMm,
+    });
+    const tiltOnlyScores = physicalScores({
+      frontTiltDeg: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
+      frontSwingDeg: 0,
+      focusDistanceMm: obliqueTabletopGeometry.tiltOnlyCalibration.focusDistanceMm,
+    });
+    const swingStartScores = physicalScores(swingTask.initialCameraState);
+    const swingPassScores = physicalScores(swingStageState);
+
+    expect(minimumScore(tiltOnlyScores, principalTargetIds)).toBeGreaterThan(
+      minimumScore(neutralScores, principalTargetIds) + 0.2,
+    );
+    expect(minimumScore(tiltOnlyScores, lateralTargetIds)).toBeLessThan(0.8);
+    expect(minimumScore(swingStartScores, lateralTargetIds)).toBeLessThan(0.8);
+    expect(minimumScore(swingPassScores, lateralTargetIds)).toBeGreaterThanOrEqual(0.8);
+    expect(minimumScore(swingPassScores, lateralTargetIds)).toBeGreaterThan(
+      minimumScore(tiltOnlyScores, lateralTargetIds) + 0.2,
+    );
+    expect(minimumScore(swingPassScores, visibleTargetIds)).toBeLessThan(0.8);
+
+    expect(evaluate(swingTask.id, swingStageState).status).toBe("passed");
+    expect(evaluate(refineTask.id, swingStageState).status).toBe("failed");
+    expect(
+      evaluate(refineTask.id, swingStageState).criteria.find((criterion) =>
+        criterion.criterionId.endsWith("all-targets-sharp"),
+      )?.passed,
+    ).toBe(false);
+  });
+
+  it("requires the correct negative Swing direction for the partial lateral stage", () => {
     const task = requireTask("oblique-tabletop-swing-01");
-    const correct = evaluate(task.id, {
-      frontTiltDeg: -8,
-      frontSwingDeg: -1.7,
-      focusDistanceMm: 2450,
-    });
+    const correct = evaluate(task.id, swingStageState);
     const wrongSign = evaluate(task.id, {
-      frontTiltDeg: -8,
-      frontSwingDeg: 1.7,
-      focusDistanceMm: 2450,
+      ...swingStageState,
+      frontSwingDeg: 1.2,
     });
+    const correctLateral = minimumScore(physicalScores(swingStageState), lateralTargetIds);
+    const wrongLateral = minimumScore(
+      physicalScores({ ...swingStageState, frontSwingDeg: 1.2 }),
+      lateralTargetIds,
+    );
 
     expect(correct.status).toBe("passed");
     expect(wrongSign.status).toBe("failed");
@@ -176,8 +246,9 @@ describe("Oblique Tabletop Guided Lesson", () => {
       wrongSign.criteria.find((criterion) => criterion.criterionId.endsWith("movement-range"))?.passed,
     ).toBe(false);
     expect(
-      wrongSign.criteria.find((criterion) => criterion.criterionId.endsWith("all-targets-sharp"))?.passed,
+      wrongSign.criteria.find((criterion) => criterion.criterionId.endsWith("lateral-sharp"))?.passed,
     ).toBe(false);
+    expect(wrongLateral).toBeLessThan(correctLateral - 0.2);
   });
 
   it("requires Focus refinement before the final aperture stage", () => {
@@ -188,12 +259,7 @@ describe("Oblique Tabletop Guided Lesson", () => {
       focusDistanceMm: 2450,
       aperture: 11,
     });
-    const notRefined = evaluate(refineTask.id, {
-      frontTiltDeg: -8,
-      frontSwingDeg: -1.7,
-      focusDistanceMm: 2550,
-      aperture: 11,
-    });
+    const notRefined = evaluate(refineTask.id, swingStageState);
     const wrongCompound = evaluate(refineTask.id, {
       frontTiltDeg: 8,
       frontSwingDeg: 1.7,
@@ -203,6 +269,11 @@ describe("Oblique Tabletop Guided Lesson", () => {
 
     expect(refined.status).toBe("passed");
     expect(notRefined.status).toBe("failed");
+    expect(
+      notRefined.criteria.find((criterion) =>
+        criterion.criterionId.endsWith("all-targets-sharp"),
+      )?.passed,
+    ).toBe(false);
     expect(wrongCompound.status).toBe("failed");
   });
 

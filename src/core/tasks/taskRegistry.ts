@@ -494,6 +494,26 @@ const obliqueTabletopCompoundSwingRange = {
   min: obliqueTabletopCompound.frontSwingDeg - 0.5,
   max: obliqueTabletopCompound.frontSwingDeg + 0.5,
 };
+const obliqueTabletopSwingStage = {
+  frontTiltDeg: -7.1,
+  frontSwingDeg: -1.2,
+  focusDistanceMm: 2680,
+} as const;
+const obliqueTabletopSwingStageTiltRange = {
+  min: obliqueTabletopSwingStage.frontTiltDeg - 0.5,
+  max: obliqueTabletopSwingStage.frontTiltDeg + 0.5,
+};
+const obliqueTabletopSwingStageSwingRange = {
+  min: obliqueTabletopSwingStage.frontSwingDeg - 0.5,
+  max: obliqueTabletopSwingStage.frontSwingDeg + 0.5,
+};
+const obliqueTabletopRefineTiltRange = {
+  min: Math.min(obliqueTabletopCompoundTiltRange.min, obliqueTabletopSwingStageTiltRange.min),
+  max: Math.max(obliqueTabletopCompoundTiltRange.max, obliqueTabletopSwingStageTiltRange.max),
+};
+const obliqueTabletopSwingLateralTargetIds = obliqueTabletopGeometry.tabletopVisibleFocusSamples
+  .filter(({ id }) => id === "far-left" || id === "far-right")
+  .map(({ id }) => id);
 const obliqueTabletopSharpnessMinimum = 0.8;
 
 const obliqueTabletopTaskCameraState = {
@@ -644,29 +664,34 @@ const obliqueTabletopSwingTask: TaskDefinition = {
       id: "oblique-tabletop-swing-tilt-range",
       type: "movement-range",
       movement: "tilt",
-      min: obliqueTabletopCompoundTiltRange.min,
-      max: obliqueTabletopCompoundTiltRange.max,
+      min: obliqueTabletopSwingStageTiltRange.min,
+      max: obliqueTabletopSwingStageTiltRange.max,
       valueMode: "signed",
     },
     {
       id: "oblique-tabletop-swing-movement-range",
       type: "movement-range",
       movement: "swing",
-      min: obliqueTabletopCompoundSwingRange.min,
-      max: obliqueTabletopCompoundSwingRange.max,
+      min: obliqueTabletopSwingStageSwingRange.min,
+      max: obliqueTabletopSwingStageSwingRange.max,
       valueMode: "signed",
     },
     {
-      id: "oblique-tabletop-swing-all-targets-sharp",
+      id: "oblique-tabletop-swing-focus-used",
+      type: "focus-used",
+      minimumAbsMm: 50,
+    },
+    {
+      id: "oblique-tabletop-swing-lateral-sharp",
       type: "focus-targets-sharp",
-      targetIds: obliqueTabletopVisibleTargetIds,
+      targetIds: obliqueTabletopSwingLateralTargetIds,
       minimumSharpness: obliqueTabletopSharpnessMinimum,
     },
   ],
   initialCameraState: {
     ...obliqueTabletopTaskCameraState,
-    frontTiltDeg: obliqueTabletopCompound.frontTiltDeg,
-    focusDistanceMm: obliqueTabletopCompound.focusDistanceMm,
+    frontTiltDeg: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
+    focusDistanceMm: obliqueTabletopGeometry.tiltOnlyCalibration.focusDistanceMm,
     geometryView: "top",
   },
 };
@@ -694,8 +719,8 @@ const obliqueTabletopRefineTask: TaskDefinition = {
       id: "oblique-tabletop-refine-tilt-range",
       type: "movement-range",
       movement: "tilt",
-      min: obliqueTabletopCompoundTiltRange.min,
-      max: obliqueTabletopCompoundTiltRange.max,
+      min: obliqueTabletopRefineTiltRange.min,
+      max: obliqueTabletopRefineTiltRange.max,
       valueMode: "signed",
     },
     {
@@ -720,9 +745,9 @@ const obliqueTabletopRefineTask: TaskDefinition = {
   ],
   initialCameraState: {
     ...obliqueTabletopTaskCameraState,
-    frontTiltDeg: obliqueTabletopCompound.frontTiltDeg,
-    frontSwingDeg: obliqueTabletopCompound.frontSwingDeg,
-    focusDistanceMm: obliqueTabletopCompound.focusDistanceMm + 100,
+    frontTiltDeg: obliqueTabletopSwingStage.frontTiltDeg,
+    frontSwingDeg: obliqueTabletopSwingStage.frontSwingDeg,
+    focusDistanceMm: obliqueTabletopSwingStage.focusDistanceMm,
     geometryView: "scheimpflug",
   },
 };

@@ -240,8 +240,8 @@ describe("physical guided-task focus evaluation", () => {
       },
       {
         taskId: "oblique-tabletop-swing-01",
-        criterionId: "oblique-tabletop-swing-all-targets-sharp",
-        targetIds: ["near-left", "near-centre", "near-right", "middle", "far-left", "far-centre", "far-right"],
+        criterionId: "oblique-tabletop-swing-lateral-sharp",
+        targetIds: ["far-left", "far-right"],
         minimumSharpness: 0.8,
       },
       {

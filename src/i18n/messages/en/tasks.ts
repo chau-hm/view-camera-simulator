@@ -486,37 +486,40 @@ export const tasksMessages = {
   obliqueTabletopSwing: {
     title: "Add the lateral component",
     objective:
-      "Now use Front Swing and the Top view to correct the remaining left-to-right difference.",
+      "Add Front Swing to improve the remaining left-to-right relationship while preserving the useful near-to-far Tilt relationship.",
     notes: {
-      swing: "Keep the useful Front Tilt relationship, then add the negative Front Swing direction to resolve the lateral component.",
+      swing: "Keep the useful near-to-far Tilt relationship, then add negative Front Swing and refine Focus to improve the lateral component.",
       constraints:
-        "Keep Front Rise at zero and leave the aperture at f/11. Use the visible tabletop regions to judge the compound result.",
+        "Keep Front Rise at zero and leave the aperture at f/11. Compare the left and right regions; full visible-tabletop sharpness belongs to Refine Focus.",
     },
     criteria: {
       allowedAperture: "Aperture remains at f/11",
       riseZero: "Front Rise remains at 0 mm",
-      tiltRange: "Front Tilt remains near the calibrated compound relationship",
-      movementRange: "Front Swing is in the calibrated negative range",
-      allTargetsSharp: "All visible tabletop regions are sharp",
+      tiltRange: "Front Tilt preserves a useful negative near-to-far relationship",
+      movementRange: "Front Swing is in the useful negative range",
+      focusUsed: "Focus is refined after changing the movements",
+      lateralSharp: "The far-row left and right regions show lateral improvement",
     },
     feedback: {
       passPrimary:
-        "Good. Front Swing resolved the remaining lateral component while Front Tilt kept the near-to-far relationship aligned.",
+        "Good. Swing has improved the lateral relationship. The compound plane is oriented more closely to the tabletop; refine Focus next to place it accurately.",
       defaultFailPrimary:
-        "Keep the calibrated negative Front Tilt relationship, add negative Front Swing in the Top view, and compare all visible tabletop regions.",
+        "Keep the useful negative Tilt relationship, add negative Swing in the Top view, and compare the left and right regions. Full tabletop sharpness is intentionally left for Refine Focus.",
       primary: {
         allowedAperture: "Keep the aperture at f/11; the movement combination must solve the plane before stopping down.",
         riseZero: "Return Front Rise to 0 mm; this stage adds the lateral optical component.",
-        tiltRange: "Keep Front Tilt near the calibrated compound relationship so Swing is correcting the remaining component.",
-        movementRange: "Use the calibrated negative Front Swing range; the opposite sign turns the lateral relationship the wrong way.",
-        allTargetsSharp: "Some visible tabletop regions remain soft. Refine the negative Front Swing and Focus while keeping the Tilt relationship.",
+        tiltRange: "Keep Front Tilt in the useful negative range so the near-to-far relationship remains available while Swing changes the lateral component.",
+        movementRange: "Use the useful negative Front Swing range; the opposite sign turns the lateral relationship the wrong way.",
+        focusUsed: "Refine Focus after changing the movements so the visible lateral comparison is meaningful.",
+        lateralSharp: "The far-row left and right regions are not yet close enough. Keep the useful Tilt relationship, add negative Swing, and refine Focus.",
       },
       secondary: {
         allowedAperture: "Use the Top view and f/11 to compare the movement solution without extra depth of field.",
         riseZero: "Do not change the camera position while comparing the left and right regions.",
-        tiltRange: "The Top view shows Swing's contribution only when the useful near-to-far Tilt relationship is retained.",
+        tiltRange: "The Top view shows Swing's contribution most clearly when the useful near-to-far Tilt relationship is retained.",
         movementRange: "Compare the green focus plane with the lateral tabletop trace; positive Swing rotates it away from the surface.",
-        allTargetsSharp: "Check the left, centre, and right regions in both the near and far rows, not just one marker.",
+        focusUsed: "Changing either movement can change plane placement, so refine Focus before judging the result.",
+        lateralSharp: "Check the left and right regions in the far row, then remember that full visible-tabletop sharpness is the next stage.",
       },
     },
   },
