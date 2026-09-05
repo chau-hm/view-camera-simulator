@@ -85,6 +85,22 @@ export const tasksMessages = {
       pass: "相機及底片平面保持水平",
       fail: "相機或底片平面方向不再水平",
     },
+    interiorCornerRiseComposition: {
+      pass: "室內構圖已達到合適取景",
+      fail: "上方建築細節或室內轉角仍在安全畫面範圍以外",
+    },
+    interiorCornerSwingOrientation: {
+      pass: "清晰焦平面方向大致正確",
+      fail: "清晰焦平面方向尚未轉向延伸的側牆",
+    },
+    interiorCornerWallFocus: {
+      pass: "延伸側牆的細節已足夠清晰",
+      fail: "延伸側牆仍有部分細節太模糊",
+    },
+    interiorCornerFocusPreserved: {
+      pass: "開放光圈下的牆面對焦保持正確",
+      fail: "開放光圈下的牆面焦平面尚未對齊",
+    },
     mirrorReflectionClear: {
       pass: "相機倒影已離開鏡面範圍",
       fail: "相機倒影仍然透過鏡面可見",
@@ -661,6 +677,94 @@ export const tasksMessages = {
         reflectionClear: "暫時不要使用前組橫移隱藏相機；移動整部相機才會改變視點。",
         framingRestored: "查看對焦屏。前組橫移會改變構圖，但不會把相機移回原本的視點。",
         viewpointRetained: "將整部相機再向側面移動，然後再次用前組橫移補償。比較兩件反射道具，以視差作為線索。",
+      },
+    },
+  },
+  interiorCornerCompose: {
+    title: "使用前組上移為室內轉角構圖",
+    objective: "保持相機水平，使用前組上移把上方建築細節帶入舒適的畫面範圍，同時保留室內轉角。",
+    notes: {
+      level: "不要向上仰起相機。保持相機水平可保留有用的建築垂直線。",
+      rise: "使用前組上移向上移動畫面構圖，不會改變視點或透視效果。",
+    },
+    criteria: {
+      composition: "上方建築細節及室內轉角已達到合適取景",
+      cameraLevel: "相機及底片平面保持水平",
+    },
+    feedback: {
+      passPrimary: "前組上移改善了構圖，而相機仍然保持水平。下一步再處理對焦問題。",
+      defaultFailPrimary: "保持相機水平，使用前組上移，直到上方建築細節及室內轉角都在舒適的畫面範圍內。",
+      primary: {
+        composition: "上方建築細節仍然太接近畫面頂部。調整前組上移，同時保留室內轉角。",
+        cameraLevel: "保持相機及底片平面水平；使用前組上移構圖，不要仰起相機。",
+      },
+      secondary: {
+        composition: "以對焦屏邊緣作為界線。上移會改變構圖，但不會改變建築透視。",
+        cameraLevel: "保持相機水平可保留垂直線參考，而前組上移會向上移動畫面構圖。",
+      },
+    },
+  },
+  interiorCornerAlignFocus: {
+    title: "對齊延伸側牆的焦平面",
+    objective: "使用前組擺動調整焦平面方向，再使用對焦，讓焦平面穿過同一面延伸側牆上的近、中、遠處細節。",
+    notes: {
+      composition: "保留前一階段完成的上移構圖；構圖和對焦是兩個不同的攝影決定。",
+      swing: "前組擺動會把焦平面方向轉向延伸的側牆。",
+      focus: "當方向大致正確後，微調對焦，讓焦平面放置在牆面細節上。",
+      wall: "目標只是延伸的側牆；垂直的另一面牆用作空間背景，不需要同樣清晰。",
+    },
+    criteria: {
+      aperture: "光圈保持在開放的校準設定",
+      orientation: "清晰焦平面方向位於預期一側",
+      wall: "延伸側牆的近、中、遠處細節都足夠清晰",
+      cameraLevel: "相機及底片平面保持水平",
+    },
+    feedback: {
+      passPrimary: "開放光圈下，焦平面已對齊延伸的側牆。另一面牆只是空間背景。",
+      defaultFailPrimary: "保留已完成的上移構圖，然後在開放光圈下調整焦平面方向及位置，使其穿過延伸側牆。",
+      primary: {
+        aperture: "先恢復開放光圈，再校準焦平面。",
+        orientation: "焦平面尚未轉向延伸的側牆。先調整前組擺動，再微調對焦。",
+        wall: "焦平面方向已較接近。微調對焦，將其放置在延伸側牆上。",
+        cameraLevel: "校準擺動及對焦時，保持相機及底片平面水平。",
+      },
+      secondary: {
+        aperture: "這一階段保持開放光圈，讓前組擺動及對焦的對齊關係清楚可見。",
+        orientation: "方向錯誤不能單靠對焦修正；先把焦平面轉向牆面。",
+        wall: "比較牆面近、中、遠處細節，不要以垂直的另一面牆判斷。",
+        cameraLevel: "前組擺動會改變鏡頭及焦平面方向，不會令相機仰起。",
+      },
+    },
+  },
+  interiorCornerDepthOfField: {
+    title: "使用光圈增加可用景深",
+    objective: "當延伸側牆的焦平面已經對齊後，適度收細光圈以增加可用景深，同時不要破壞構圖或對焦。",
+    notes: {
+      composition: "保留第一階段完成的前組上移構圖。",
+      focus: "開放光圈下的延伸側牆對焦必須已經正確；光圈不會移動焦平面。",
+      aperture: "使用第一個適度的支援光圈，為已對齊的焦平面增加最後的景深。",
+      wall: "清晰目標是延伸的側牆，而不是轉角兩面互相垂直的牆。",
+    },
+    criteria: {
+      composition: "室內構圖保持合適",
+      focus: "開放光圈下延伸側牆的對焦保持對齊",
+      aperture: "光圈已適度收細",
+      cameraLevel: "相機及底片平面保持水平",
+    },
+    feedback: {
+      passPrimary: "焦平面原本已經對齊；現在收細光圈，為延伸側牆增加可用景深，同時保留原有構圖。",
+      defaultFailPrimary: "保留已完成的構圖及焦平面对齊，然後適度收細光圈完成攝影。",
+      primary: {
+        composition: "先恢復已完成的前組上移構圖，再調整光圈。",
+        focus: "光圈不能掩蓋錯誤的焦平面。返回上一階段，重新調整前組擺動及對焦。",
+        aperture: "在保留延伸側牆對焦對齊後，適度收細光圈。",
+        cameraLevel: "保持相機及底片平面水平；光圈不需要改變透視。",
+      },
+      secondary: {
+        composition: "光圈會改變可用清晰度，不會改變構圖。保留前組上移的位置。",
+        focus: "開放光圈檢查可避免只靠模糊容許度掩蓋焦平面錯誤。",
+        aperture: "使用下一個較小的支援光圈；在最後階段不要改變擺動或對焦。",
+        cameraLevel: "收細光圈會在現有焦平面周圍擴闊可用景深，不會令相機仰起。",
       },
     },
   },

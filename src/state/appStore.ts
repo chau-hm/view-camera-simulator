@@ -56,6 +56,8 @@ import {
   resolveCameraMovementLessonState,
 } from "../scenes/cameraMovementLessonState";
 import { getPublicSceneEntryById } from "../app/publicScenes";
+import { INTERIOR_CORNER_GUIDED_TASK_IDS } from "../scenes/interiorCornerGuidedLesson";
+import { INTERIOR_CORNER_CALIBRATION_APERTURE } from "../scenes/interiorCornerSwingFocus";
 import {
   clampMirrorShiftRigLateralMm,
   DEFAULT_MIRROR_SHIFT_LESSON_STATE,
@@ -176,6 +178,53 @@ const isGuidedLessonObserveRoute = (
       getPublicSceneEntryById(sceneId)?.lesson?.kind === "anatomy",
   ) &&
   taskId == null;
+
+/**
+ * The Interior Corner lesson is one in-session photographic state spread over
+ * several task routes. A task route may therefore be entered in either
+ * direction without reapplying its neutral task preset. Direct entry is not
+ * considered a session and is initialized normally (later lesson deep links
+ * are guarded by the route page).
+ */
+const shouldPreserveInteriorCornerGuidedState = (
+  state: {
+    camera: Pick<CameraState, "activeSceneId" | "activeTaskId">;
+    lastInitializedRouteKey?: string | null;
+  },
+  mode: CameraState["mode"],
+  sceneId: string,
+  taskId: string | null | undefined,
+  lessonEntry: boolean,
+): boolean => {
+  if (
+    !lessonEntry ||
+    mode !== "guided" ||
+    sceneId !== "interior-corner" ||
+    taskId == null ||
+    state.camera.activeSceneId !== sceneId ||
+    !state.lastInitializedRouteKey?.endsWith(":lesson")
+  ) {
+    return false;
+  }
+
+  const guidedTaskIds = getPublicSceneEntryById(sceneId)?.guidedTaskIds;
+  if (!guidedTaskIds?.length) return false;
+
+  const currentTaskId = state.camera.activeTaskId;
+  const nextTaskIsKnown = guidedTaskIds.includes(taskId);
+  if (!nextTaskIsKnown) return false;
+
+  // The only task transition from the neutral Observe route is Compose. A
+  // later task requires an already active Interior Corner task session.
+  if (currentTaskId == null) {
+    return (
+      taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.compose &&
+      state.lastInitializedRouteKey.startsWith(`free:${sceneId}:`)
+    );
+  }
+
+  return guidedTaskIds.includes(currentTaskId);
+};
 
 const resolveGuidedLessonObserveFocus = (
   sceneId: string,
@@ -1028,6 +1077,13 @@ export const useAppStore = create<AppStore>((set) => ({
         calibrationRoute,
       );
       const cameraMovementRoute = isCameraMovementsScene(sceneId);
+      const preserveInteriorCornerLessonState = shouldPreserveInteriorCornerGuidedState(
+        state,
+        mode,
+        sceneId,
+        taskId,
+        lessonEntry,
+      );
 
       let nextCamera: CameraState = { ...state.camera };
       const routeTask = taskId ? getTaskById(taskId) : undefined;
@@ -1055,39 +1111,47 @@ export const useAppStore = create<AppStore>((set) => ({
             0
           : 0;
 
-      try {
-        const scene = getSceneById(sceneId);
-        if (scene) {
-          const preset = scene.cameraPreset ?? {};
-          nextCamera = {
-            ...nextCamera,
-            ...resolveCameraBodyReset(sceneId),
-            focalLengthMm:
-              preset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm,
-            ...preset,
-            activeSceneId: sceneId,
-          };
-        } else {
+      if (!preserveInteriorCornerLessonState) {
+        try {
+          const scene = getSceneById(sceneId);
+          if (scene) {
+            const preset = scene.cameraPreset ?? {};
+            nextCamera = {
+              ...nextCamera,
+              ...resolveCameraBodyReset(sceneId),
+              focalLengthMm:
+                preset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm,
+              ...preset,
+              activeSceneId: sceneId,
+            };
+          } else {
+            nextCamera.activeSceneId = sceneId;
+          }
+        } catch {
           nextCamera.activeSceneId = sceneId;
         }
-      } catch {
+      } else {
         nextCamera.activeSceneId = sceneId;
       }
 
       if (taskId) {
-        try {
-          const task = routeTask;
-          if (task && task.initialCameraState) {
-            nextCamera = {
-              ...nextCamera,
-              ...task.initialCameraState,
-              activeTaskId: taskId,
-            };
-          } else {
+        if (preserveInteriorCornerLessonState) {
+          nextCamera.activeTaskId = taskId;
+        } else {
+          try {
+            const task = routeTask;
+            if (task && task.initialCameraState) {
+              nextCamera = {
+                ...nextCamera,
+                ...task.initialCameraState,
+                activeTaskId: taskId,
+              };
+            } else {
+              nextCamera.activeTaskId = taskId;
+            }
+          } catch {
             nextCamera.activeTaskId = taskId;
           }
-        } catch {
-          nextCamera.activeTaskId = taskId;
         }
       }
 
@@ -1107,7 +1171,7 @@ export const useAppStore = create<AppStore>((set) => ({
         };
       }
 
-      if (supportsFocusStandard(sceneId)) {
+      if (supportsFocusStandard(sceneId) && !preserveInteriorCornerLessonState) {
         nextCamera = {
           ...nextCamera,
           ...resolveSceneFocusDefaults(sceneId),
@@ -1118,6 +1182,19 @@ export const useAppStore = create<AppStore>((set) => ({
         ...nextCamera,
         aperture: resolveSceneAperture(sceneId, nextCamera.aperture, taskId),
       };
+
+      // Returning to Align Focus from the final aperture stage must restore
+      // the open calibration aperture without disturbing the solved Rise,
+      // Swing, or Focus values.
+      if (
+        preserveInteriorCornerLessonState &&
+        taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus
+      ) {
+        nextCamera = {
+          ...nextCamera,
+          aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
+        };
+      }
 
       // Guided Lesson Observe is the explicit neutral entry point for every
       // configured public lesson. Restore finite focus metadata as well as the

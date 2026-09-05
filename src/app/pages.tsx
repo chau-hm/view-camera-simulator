@@ -5,6 +5,11 @@ import "../i18n";
 import { AppShell } from "../components/layout/AppShell";
 import { getTaskById } from "../core/tasks/taskRegistry";
 import { getSceneById } from "../scenes/definitions";
+import {
+  INTERIOR_CORNER_GUIDED_TASK_IDS,
+  isInteriorCornerGuidedStageEntryRecoverable,
+} from "../scenes/interiorCornerGuidedLesson";
+import { useAppStore } from "../state/appStore";
 import { getPublicSceneEntries, getPublicSceneEntryById } from "./publicScenes";
 import { isValidSimulatorRoute } from "./simulatorRouteValidation";
 import type { SimulatorMode } from "../types/camera";
@@ -121,6 +126,10 @@ export const SimulatorRoutePage = () => {
     taskId?: string;
   }>();
   const [searchParams] = useSearchParams();
+  const camera = useAppStore((state) => state.camera);
+  const lastInitializedRouteKey = useAppStore(
+    (state) => state.lastInitializedRouteKey,
+  );
   const parsedMode: SimulatorMode | null =
     mode === "free" || mode === "guided" ? mode : null;
   const resolvedSceneId = sceneId ?? "architecture-rise";
@@ -128,6 +137,8 @@ export const SimulatorRoutePage = () => {
   const publicEntry = getPublicSceneEntryById(resolvedSceneId);
   const resolvedTask = taskId ? getTaskById(taskId) : undefined;
   const anatomyLessonEnabled = publicEntry?.lesson?.kind === "anatomy";
+  const guidedLessonEnabled =
+    searchParams.get("lesson") === "1" && Boolean(publicEntry?.guidedLesson);
 
   if (
     !scene ||
@@ -145,6 +156,21 @@ export const SimulatorRoutePage = () => {
     return <Navigate to="/scenes" replace />;
   }
 
+  if (
+    guidedLessonEnabled &&
+    parsedMode === "guided" &&
+    resolvedSceneId === "interior-corner" &&
+    taskId &&
+    taskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.compose &&
+    !isInteriorCornerGuidedStageEntryRecoverable({
+      taskId,
+      camera,
+      lastInitializedRouteKey,
+    })
+  ) {
+    return <Navigate to="/simulator/free/interior-corner?lesson=1" replace />;
+  }
+
   return (
     <AppShell title="" fullBleed>
       <Suspense fallback={<p>Loading simulator workspace…</p>}>
@@ -152,7 +178,7 @@ export const SimulatorRoutePage = () => {
           mode={parsedMode}
           sceneId={resolvedSceneId}
           taskId={taskId ?? null}
-          guidedLessonEnabled={searchParams.get("lesson") === "1" && Boolean(publicEntry.guidedLesson)}
+          guidedLessonEnabled={guidedLessonEnabled}
           anatomyLessonEnabled={anatomyLessonEnabled}
           calibrationEnabled={parsedMode === "free" && resolvedSceneId === "understanding-camera-movements" && searchParams.get("cameraCalibration") === "1"}
           simulateAssetFailure={searchParams.get("assetError") === "1"}

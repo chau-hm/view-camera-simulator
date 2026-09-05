@@ -650,6 +650,91 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
       },
     },
   },
+  "interior-corner-compose-01": {
+    title: k.interiorCornerCompose.title,
+    objective: k.interiorCornerCompose.objective,
+    notes: [k.interiorCornerCompose.notes.level, k.interiorCornerCompose.notes.rise],
+    criteria: {
+      "interior-corner-compose-composition": k.interiorCornerCompose.criteria.composition,
+      "interior-corner-compose-camera-level": k.interiorCornerCompose.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerCompose.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerCompose.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-compose-composition": k.interiorCornerCompose.feedback.primary.composition,
+        "interior-corner-compose-camera-level": k.interiorCornerCompose.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-compose-composition": k.interiorCornerCompose.feedback.secondary.composition,
+        "interior-corner-compose-camera-level": k.interiorCornerCompose.feedback.secondary.cameraLevel,
+      },
+    },
+  },
+  "interior-corner-align-focus-01": {
+    title: k.interiorCornerAlignFocus.title,
+    objective: k.interiorCornerAlignFocus.objective,
+    notes: [
+      k.interiorCornerAlignFocus.notes.composition,
+      k.interiorCornerAlignFocus.notes.swing,
+      k.interiorCornerAlignFocus.notes.focus,
+      k.interiorCornerAlignFocus.notes.wall,
+    ],
+    criteria: {
+      "interior-corner-align-focus-aperture": k.interiorCornerAlignFocus.criteria.aperture,
+      "interior-corner-align-focus-orientation": k.interiorCornerAlignFocus.criteria.orientation,
+      "interior-corner-align-focus-wall": k.interiorCornerAlignFocus.criteria.wall,
+      "interior-corner-align-focus-camera-level": k.interiorCornerAlignFocus.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerAlignFocus.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerAlignFocus.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-align-focus-aperture": k.interiorCornerAlignFocus.feedback.primary.aperture,
+        "interior-corner-align-focus-orientation": k.interiorCornerAlignFocus.feedback.primary.orientation,
+        "interior-corner-align-focus-wall": k.interiorCornerAlignFocus.feedback.primary.wall,
+        "interior-corner-align-focus-camera-level": k.interiorCornerAlignFocus.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-align-focus-aperture": k.interiorCornerAlignFocus.feedback.secondary.aperture,
+        "interior-corner-align-focus-orientation": k.interiorCornerAlignFocus.feedback.secondary.orientation,
+        "interior-corner-align-focus-wall": k.interiorCornerAlignFocus.feedback.secondary.wall,
+        "interior-corner-align-focus-camera-level": k.interiorCornerAlignFocus.feedback.secondary.cameraLevel,
+      },
+    },
+  },
+  "interior-corner-depth-of-field-01": {
+    title: k.interiorCornerDepthOfField.title,
+    objective: k.interiorCornerDepthOfField.objective,
+    notes: [
+      k.interiorCornerDepthOfField.notes.composition,
+      k.interiorCornerDepthOfField.notes.focus,
+      k.interiorCornerDepthOfField.notes.aperture,
+      k.interiorCornerDepthOfField.notes.wall,
+    ],
+    criteria: {
+      "interior-corner-depth-composition": k.interiorCornerDepthOfField.criteria.composition,
+      "interior-corner-depth-focus-preserved": k.interiorCornerDepthOfField.criteria.focus,
+      "interior-corner-depth-aperture": k.interiorCornerDepthOfField.criteria.aperture,
+      "interior-corner-depth-camera-level": k.interiorCornerDepthOfField.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerDepthOfField.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerDepthOfField.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-depth-composition": k.interiorCornerDepthOfField.feedback.primary.composition,
+        "interior-corner-depth-focus-preserved": k.interiorCornerDepthOfField.feedback.primary.focus,
+        "interior-corner-depth-aperture": k.interiorCornerDepthOfField.feedback.primary.aperture,
+        "interior-corner-depth-camera-level": k.interiorCornerDepthOfField.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-depth-composition": k.interiorCornerDepthOfField.feedback.secondary.composition,
+        "interior-corner-depth-focus-preserved": k.interiorCornerDepthOfField.feedback.secondary.focus,
+        "interior-corner-depth-aperture": k.interiorCornerDepthOfField.feedback.secondary.aperture,
+        "interior-corner-depth-camera-level": k.interiorCornerDepthOfField.feedback.secondary.cameraLevel,
+      },
+    },
+  },
 };
 
 const genericCopyKeyMap: GuidedTaskCopyKeyMap = {
@@ -757,6 +842,14 @@ export const getCriterionResultMessageRef = (
       return ref(k.results.compositionVisible[variant]);
     case "camera-level":
       return ref(k.results.cameraLevel[variant]);
+    case "interior-corner-rise-composition":
+      return ref(k.results.interiorCornerRiseComposition[variant]);
+    case "interior-corner-swing-orientation":
+      return ref(k.results.interiorCornerSwingOrientation[variant]);
+    case "interior-corner-wall-focus":
+      return ref(k.results.interiorCornerWallFocus[variant]);
+    case "interior-corner-focus-preserved":
+      return ref(k.results.interiorCornerFocusPreserved[variant]);
     case "mirror-reflection-clear":
       return ref(k.results.mirrorReflectionClear[variant]);
     case "mirror-framing-restored":

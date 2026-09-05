@@ -9,6 +9,11 @@ import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-archi
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import obliqueTabletopCompoundCalibration from "../../scenes/obliqueTabletopCompoundCalibration";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
+import {
+  INTERIOR_CORNER_GUIDED_FINAL_APERTURE,
+  INTERIOR_CORNER_GUIDED_TASK_IDS,
+} from "../../scenes/interiorCornerGuidedLesson";
 import {
   MIRROR_SHIFT_SCENE_CALIBRATION,
   resolveMirrorShiftTeachingState,
@@ -988,6 +993,94 @@ const mirrorShiftTask: TaskDefinition = {
   },
 };
 
+const interiorCornerInitialCameraState: NonNullable<TaskDefinition["initialCameraState"]> = {
+  frontRiseMm: 0,
+  frontTiltDeg: 0,
+  frontSwingDeg: 0,
+  rearRiseMm: 0,
+  rearTiltDeg: 0,
+  focusDistanceMm: interiorCornerScene.cameraPreset.focusDistanceMm,
+  aperture: interiorCornerScene.cameraPreset.aperture,
+  geometryView: "top",
+  groundGlassAssistEnabled: false,
+  gridEnabled: true,
+};
+
+const interiorCornerComposeTask: TaskDefinition = {
+  id: INTERIOR_CORNER_GUIDED_TASK_IDS.compose,
+  sceneId: interiorCornerScene.id,
+  mode: "guided",
+  enabledControls: ["rise", "geometryView"],
+  constraints: { movement: "rise-only" },
+  criteria: [
+    {
+      id: "interior-corner-compose-composition",
+      type: "interior-corner-rise-composition",
+    },
+    {
+      id: "interior-corner-compose-camera-level",
+      type: "camera-level",
+    },
+  ],
+  initialCameraState: interiorCornerInitialCameraState,
+};
+
+const interiorCornerAlignFocusTask: TaskDefinition = {
+  id: INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus,
+  sceneId: interiorCornerScene.id,
+  mode: "guided",
+  enabledControls: ["swing", "focusDistance", "geometryView"],
+  constraints: { movement: "swing-only" },
+  criteria: [
+    {
+      id: "interior-corner-align-focus-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [5.6],
+    },
+    {
+      id: "interior-corner-align-focus-orientation",
+      type: "interior-corner-swing-orientation",
+    },
+    {
+      id: "interior-corner-align-focus-wall",
+      type: "interior-corner-wall-focus",
+    },
+    {
+      id: "interior-corner-align-focus-camera-level",
+      type: "camera-level",
+    },
+  ],
+  initialCameraState: interiorCornerInitialCameraState,
+};
+
+const interiorCornerDepthOfFieldTask: TaskDefinition = {
+  id: INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField,
+  sceneId: interiorCornerScene.id,
+  mode: "guided",
+  enabledControls: ["aperture", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "interior-corner-depth-composition",
+      type: "interior-corner-rise-composition",
+    },
+    {
+      id: "interior-corner-depth-focus-preserved",
+      type: "interior-corner-focus-preserved",
+    },
+    {
+      id: "interior-corner-depth-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [INTERIOR_CORNER_GUIDED_FINAL_APERTURE],
+    },
+    {
+      id: "interior-corner-depth-camera-level",
+      type: "camera-level",
+    },
+  ],
+  initialCameraState: interiorCornerInitialCameraState,
+};
+
 export const taskRegistry: Record<string, TaskDefinition> = {
   "rise-01": riseTask,
   "oblique-rise-01": obliqueRiseTask,
@@ -1005,6 +1098,9 @@ export const taskRegistry: Record<string, TaskDefinition> = {
   "tilt-01": tiltTask,
   "swing-01": swingTask,
   "mirror-shift-01": mirrorShiftTask,
+  [interiorCornerComposeTask.id]: interiorCornerComposeTask,
+  [interiorCornerAlignFocusTask.id]: interiorCornerAlignFocusTask,
+  [interiorCornerDepthOfFieldTask.id]: interiorCornerDepthOfFieldTask,
 };
 
 export const getTaskById = (taskId: string): TaskDefinition | undefined => taskRegistry[taskId];

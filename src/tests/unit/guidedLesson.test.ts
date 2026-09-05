@@ -9,6 +9,8 @@ const entry = getPublicSceneEntryById("oblique-architecture");
 if (!entry) throw new Error("Missing Oblique Architecture public scene entry");
 const architectureForegroundEntry = getPublicSceneEntryById("architecture-foreground");
 if (!architectureForegroundEntry) throw new Error("Missing Architecture + Foreground public scene entry");
+const interiorCornerEntry = getPublicSceneEntryById("interior-corner");
+if (!interiorCornerEntry) throw new Error("Missing Interior Corner public scene entry");
 
 describe("Oblique Architecture guided lesson routing", () => {
   it("derives the four-stage sequence from the public guided task order", () => {
@@ -173,5 +175,32 @@ describe("Architecture + Foreground guided lesson routing", () => {
         search: "",
       }),
     ).toBeNull();
+  });
+});
+
+describe("Interior Corner guided lesson routing", () => {
+  it("orders Observe, Rise, focus-plane alignment, and Aperture", () => {
+    expect(getGuidedLessonStages(interiorCornerEntry)).toEqual([
+      { id: "observe" },
+      { id: "compose", taskId: "interior-corner-compose-01" },
+      { id: "align-focus", taskId: "interior-corner-align-focus-01" },
+      { id: "depth-of-field", taskId: "interior-corner-depth-of-field-01" },
+    ]);
+
+    const context = getGuidedLessonContext({
+      entry: interiorCornerEntry,
+      mode: "guided",
+      sceneId: "interior-corner",
+      taskId: "interior-corner-depth-of-field-01",
+      search: "?lesson=1",
+    });
+    expect(context).toMatchObject({
+      lessonId: "interior-corner",
+      stage: "depth-of-field",
+      stageIndex: 3,
+      previousHref:
+        "/simulator/guided/interior-corner/interior-corner-align-focus-01?lesson=1",
+      nextHref: null,
+    });
   });
 });

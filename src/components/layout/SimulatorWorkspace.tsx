@@ -177,7 +177,7 @@ export const SimulatorWorkspace = ({
       // that require a fresh entry. Other free scenes intentionally preserve
       // their in-memory state on leave-and-return.
       if (
-        guidedLessonEnabled ||
+        (guidedLessonEnabled && sceneId !== "interior-corner") ||
         anatomyLessonEnabled ||
         (sceneId === "understanding-camera-movements" &&
           mode === "free" &&
@@ -284,6 +284,10 @@ export const SimulatorWorkspace = ({
         : null,
     [guidedLessonEnabled, mode, publicSceneEntry, sceneId, taskId],
   );
+  const interiorCornerGuidedObserve =
+    guidedLessonContext?.lessonId === "interior-corner" &&
+    guidedLessonContext.stage === "observe";
+  const interiorCornerGuidedLesson = guidedLessonContext?.lessonId === "interior-corner";
   const activeSingleMovement =
     safeScene.movementCapabilities?.selectionMode === "single"
       ? selectedMovement
@@ -386,6 +390,10 @@ export const SimulatorWorkspace = ({
       return new Set(["focusDistance", "aperture", "geometryView", "grid"]);
     }
 
+    if (interiorCornerGuidedObserve) {
+      return new Set(["geometryView", "grid"]);
+    }
+
     if (mode === "free" || !task) {
       const controls = new Set(["geometryView", "grid"]);
       const availableMovements = safeScene.movementCapabilities?.available;
@@ -406,7 +414,15 @@ export const SimulatorWorkspace = ({
       return controls;
     }
     return new Set([...task.enabledControls]);
-  }, [apertureLocked, camera.activeSceneId, focusLocked, mode, safeScene, task]);
+  }, [
+    apertureLocked,
+    camera.activeSceneId,
+    focusLocked,
+    interiorCornerGuidedObserve,
+    mode,
+    safeScene,
+    task,
+  ]);
 
   const evaluation = useMemo(() => (task ? evaluateTask(task, safeScene, camera, opticsState) : null), [camera, opticsState, safeScene, task]);
   const interiorCornerRiseEvaluation = useMemo(
@@ -811,12 +827,19 @@ export const SimulatorWorkspace = ({
                 <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? t(simulatorMessageKeys.controls.apertureFixedReason) : lockReason} showTitle={false} />
               </div>
 
-              {(!movementLocked || task !== null || safeScene.cameraRigTranslationCapability?.enabled) && (
+              {(interiorCornerGuidedLesson
+                ? task !== null
+                : !movementLocked || task !== null || safeScene.cameraRigTranslationCapability?.enabled) && (
                 <div className="sim-section reset" style={{ paddingBottom: 0 }}>
                   <div className="sim-section-label">{t(simulatorMessageKeys.controls.resetTitle)}</div>
                   <ResetControls
                     showTitle={false}
-                    showMovementReset={!movementLocked || safeScene.cameraRigTranslationCapability?.enabled === true}
+                    showMovementReset={!interiorCornerGuidedLesson && (!movementLocked || safeScene.cameraRigTranslationCapability?.enabled === true)}
+                    restartHref={
+                      guidedLessonContext?.lessonId === "interior-corner"
+                        ? `/simulator/free/${sceneId}?lesson=1`
+                        : undefined
+                    }
                   />
                 </div>
               )}

@@ -15,6 +15,7 @@ import {
   measureMirrorShiftTeachingState,
   resolveMirrorShiftTeachingState,
 } from "../../scenes/mirrorShiftCalibration";
+import { evaluateInteriorCornerGuidedCriterion } from "../../scenes/interiorCornerGuidedLesson";
 import type { CameraState } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
@@ -220,6 +221,19 @@ export const evaluateTask = (
           passed,
           score: passed ? 1 : 0,
           message: getCriterionResultMessageRef(criterion, passed),
+        };
+      }
+      case "interior-corner-rise-composition":
+      case "interior-corner-swing-orientation":
+      case "interior-corner-wall-focus":
+      case "interior-corner-focus-preserved": {
+        const result = evaluateInteriorCornerGuidedCriterion(criterion, camera, opticsState);
+        return {
+          criterionId: criterion.id,
+          label: guidedCopy.criteria[criterion.id],
+          passed: result.passed,
+          score: result.score,
+          message: getCriterionResultMessageRef(criterion, result.passed),
         };
       }
       case "mirror-reflection-clear": {

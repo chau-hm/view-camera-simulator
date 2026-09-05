@@ -7,6 +7,7 @@ import {
   type PublicSceneTitleKey,
   type PublicSceneTopicKey,
 } from "../i18n/messageKeys";
+import { INTERIOR_CORNER_GUIDED_TASK_IDS } from "../scenes/interiorCornerGuidedLesson";
 
 export const publicSceneIds = [
   "view-camera-anatomy",
@@ -247,8 +248,19 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       publicSceneMessageKeys.interiorCorner.topics.architecturalDepth,
     ],
     availability: "available",
-    availableModes: ["free"],
+    availableModes: ["free", "guided"],
     thumbnailAsset: "assets/interior-corner.png",
+    guidedTaskId: INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField,
+    guidedTaskIds: [
+      INTERIOR_CORNER_GUIDED_TASK_IDS.compose,
+      INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus,
+      INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField,
+    ],
+    guidedLesson: {
+      id: "interior-corner",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "align-focus", "depth-of-field"],
+    },
   },
 ];
 
