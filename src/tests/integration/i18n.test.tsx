@@ -26,6 +26,21 @@ describe("internationalization foundation", () => {
     expect(traditionalChineseHomeMessages.hero.exploreScenes).toBe("瀏覽場景");
   });
 
+  it("keeps the Fundamentals and visualization message shapes complete in both locales", () => {
+    expect(Object.keys(traditionalChineseHomeMessages.fundamentals)).toEqual(
+      Object.keys(englishHomeMessages.fundamentals),
+    );
+    expect(Object.keys(traditionalChineseHomeMessages.fundamentals.items)).toEqual(
+      Object.keys(englishHomeMessages.fundamentals.items),
+    );
+    expect(Object.keys(traditionalChineseHomeMessages.visualize)).toEqual(
+      Object.keys(englishHomeMessages.visualize),
+    );
+    expect(Object.keys(traditionalChineseHomeMessages.visualize.items)).toEqual(
+      Object.keys(englishHomeMessages.visualize.items),
+    );
+  });
+
   it("renders the bundled English surface by default", () => {
     const router = createMemoryRouter(routes, { initialEntries: ["/"] });
     render(<RouterProvider router={router} />);
@@ -54,6 +69,35 @@ describe("internationalization foundation", () => {
       expect(document.documentElement.lang).toBe("zh-HK");
       expect(screen.getByRole("heading", { name: "掌控透視感 定位焦平面" })).toBeInTheDocument();
     });
+    expect(screen.getByRole("heading", { name: "學習基礎原理", level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "三種視覺化方式", level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "透視控制", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "焦平面", level: 3 })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: "對焦屏", level: 3 })).toHaveLength(2);
+    expect(screen.getByRole("heading", { name: "幾何視圖", level: 3 })).toBeInTheDocument();
+    expect(screen.getByText("看見．研究．理解")).toBeInTheDocument();
+
+    const partECopy = [
+      "掌握相機移軸",
+      "學習基礎原理",
+      "理解影響相機取景、移軸與對焦方式的核心原理。",
+      "透視控制",
+      "理解視點、構圖與相機移軸如何影響透視關係及匯聚線條。",
+      "焦平面",
+      "觀察清晰焦平面位於哪裏，以及對焦、傾斜與擺動如何改變它與主體的關係。",
+      "從攝影者的視角查看對焦屏上的影像，理解取景、構圖與對焦結果。",
+      "光學幾何",
+      "理解鏡頭、主體、成像平面與影像形成之間的幾何關係。",
+      "看見．研究．理解",
+      "三種視覺化方式",
+      "同一個相機狀態，可以從三種互補視圖理解；每一種都揭示不同的關係。",
+      "3D 場景",
+      "在 3D 空間中理解相機、主體與視點之間的相對位置。",
+      "查看相機形成的影像，理解取景、構圖與對焦結果。",
+      "幾何視圖",
+      "顯示光路、鏡頭與成像平面、焦平面及透視幾何。",
+    ];
+    for (const copy of partECopy) expect(screen.getByText(copy)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "場景" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View Camera Simulator 主頁" })).toBeInTheDocument();
     expect(screen.getByText("親手操作上移、橫移、傾斜、擺動與對焦，看見它們如何改變透視、構圖與焦平面。")).toBeInTheDocument();

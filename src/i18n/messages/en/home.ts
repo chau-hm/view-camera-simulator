@@ -8,6 +8,57 @@ export const homeMessages = {
     startExploring: "Start Exploring",
     exploreScenes: "Explore Scenes",
   },
+  fundamentals: {
+    eyebrow: "MASTER CAMERA MOVEMENTS",
+    title: "Learn the Fundamentals",
+    description:
+      "Understand the core principles that shape how your camera sees, moves, and focuses on the world.",
+    items: {
+      perspective: {
+        title: "Perspective Control",
+        description:
+          "See how viewpoint, framing, and camera movements affect perspective relationships and converging lines.",
+      },
+      focusPlane: {
+        title: "Focus Plane",
+        description:
+          "See where the plane of sharp focus lies and how focusing, tilt, and swing change its relationship to the subject.",
+      },
+      groundGlass: {
+        title: "Ground Glass View",
+        description:
+          "See the image from the photographer's point of view—framing, composition, and focus on the Ground Glass.",
+      },
+      opticalGeometry: {
+        title: "Optical Geometry",
+        description:
+          "Understand the geometric relationship between the lens, subject, image plane, and image formation.",
+      },
+    },
+  },
+  visualize: {
+    eyebrow: "SEE IT. STUDY IT. UNDERSTAND IT.",
+    title: "Three Ways to Visualize",
+    description:
+      "The same camera state can be understood from three complementary views—each revealing something different.",
+    items: {
+      scene3d: {
+        title: "3D Scene",
+        description:
+          "Understand the camera, subject, and viewpoint as a spatial relationship in 3D.",
+      },
+      groundGlass: {
+        title: "Ground Glass",
+        description:
+          "See the image formed by the camera and inspect framing, composition, and focus.",
+      },
+      geometry: {
+        title: "Geometry View",
+        description:
+          "Reveal the optical path, lens and image planes, focus plane, and perspective geometry.",
+      },
+    },
+  },
   why: {
     ariaLabel: "Why use a view camera",
   },
