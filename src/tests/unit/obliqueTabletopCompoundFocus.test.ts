@@ -27,7 +27,7 @@ const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
 
 const analyticalObliqueTabletopScene = {
   ...obliqueTabletopScene,
-  focusTargets: obliqueTabletopGeometry.tabletopAnalyticalFocusTargets,
+  focusTargets: obliqueTabletopGeometry.subjectBoardAnalyticalFocusTargets,
 };
 
 const evaluate = (overrides: Partial<CameraState>) =>
@@ -44,7 +44,7 @@ const cocValues = (overrides: Partial<CameraState>): number[] =>
 
 const valuesById = (values: number[]): Map<string, number> =>
   new Map(
-    obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples.map((sample, index) => [
+    obliqueTabletopGeometry.subjectBoardAnalyticalSurfaceSamples.map((sample, index) => [
       sample.id,
       values[index],
     ]),
@@ -72,6 +72,17 @@ const projectVisibleFocusTargets = (overrides: Partial<CameraState>) => {
   }));
 };
 
+const projectSubjectBoardFrontCorners = (overrides: Partial<CameraState>) => {
+  const optics = evaluatePublic(overrides);
+  return obliqueTabletopGeometry.getSubjectBoardFrontSurfaceCorners().map((worldPoint) =>
+    projectWorldPointToFilmPlaneGroundGlass({
+      worldPoint,
+      lensCenterWorld: optics.lensCenterWorld,
+      filmPlaneCornersWorld: optics.filmPlaneCornersWorld,
+    }),
+  );
+};
+
 const publicCompoundSolution = obliqueTabletopCompoundCalibration.public;
 
 describe("Oblique Tabletop compound focus", () => {
@@ -93,23 +104,23 @@ describe("Oblique Tabletop compound focus", () => {
   });
 
   it("separates analytical full-surface samples from visible learner targets", () => {
-    const analytical = obliqueTabletopGeometry.tabletopAnalyticalSurfaceSamples;
-    const visible = obliqueTabletopGeometry.tabletopVisibleFocusSamples;
+    const analytical = obliqueTabletopGeometry.subjectBoardAnalyticalSurfaceSamples;
+    const visible = obliqueTabletopGeometry.subjectBoardVisibleFocusSamples;
 
     expect(analytical).toHaveLength(7);
     expect(visible).toHaveLength(7);
     expect(analytical).not.toBe(visible);
     expect(visible.map((sample) => sample.id)).toEqual(analytical.map((sample) => sample.id));
     expect(obliqueTabletopScene.focusTargets).toEqual(
-      obliqueTabletopGeometry.tabletopVisibleFocusTargets,
+      obliqueTabletopGeometry.subjectBoardVisibleFocusTargets,
     );
     expect(obliqueTabletopScene.focusTargets).not.toEqual(
-      obliqueTabletopGeometry.tabletopAnalyticalFocusTargets,
+      obliqueTabletopGeometry.subjectBoardAnalyticalFocusTargets,
     );
 
     visible.forEach((sample) => {
       expect(sample.worldPosition).toEqual(
-        obliqueTabletopGeometry.tabletopLocalToWorld({
+        obliqueTabletopGeometry.subjectBoardSurfaceToWorld({
           localX: sample.localPosition.x,
           localDepth: sample.localPosition.z,
         }),
@@ -140,14 +151,18 @@ describe("Oblique Tabletop compound focus", () => {
 
   it("derives a feasible continuous lens orientation from the canonical plane", () => {
     const calibration = obliqueTabletopCompoundCalibration;
-    const canonicalPlane = obliqueTabletopGeometry.tabletopTopSurfacePlane;
+    const canonicalPlane = obliqueTabletopGeometry.subjectBoardPlane;
 
-    expect(calibration.subjectPlane.normal).toEqual(canonicalPlane.normal);
-    expect(calibration.subjectPlane.point).toEqual(canonicalPlane.point);
+    expect(calibration.subjectPlane.normal.x).toBeCloseTo(canonicalPlane.normal.x, 12);
+    expect(calibration.subjectPlane.normal.y).toBeCloseTo(canonicalPlane.normal.y, 12);
+    expect(calibration.subjectPlane.normal.z).toBeCloseTo(canonicalPlane.normal.z, 12);
+    expect(calibration.subjectPlane.point.x).toBeCloseTo(canonicalPlane.point.x, 12);
+    expect(calibration.subjectPlane.point.y).toBeCloseTo(canonicalPlane.point.y, 12);
+    expect(calibration.subjectPlane.point.z).toBeCloseTo(canonicalPlane.point.z, 12);
     expect(calibration.requiredLensHorizontalNormalMagnitude).toBeGreaterThan(0);
     expect(calibration.requiredLensHorizontalNormalMagnitude).toBeLessThan(1);
     expect(Math.abs(canonicalPlane.normal.x)).toBeGreaterThan(0.1);
-    expect(Math.abs(canonicalPlane.normal.z)).toBeGreaterThan(0.2);
+    expect(Math.abs(canonicalPlane.normal.z)).toBeGreaterThan(0.1);
     expect(calibration.continuous.frontTiltDeg).toBeLessThan(0);
     expect(calibration.continuous.frontSwingDeg).toBeLessThan(0);
     expect(calibration.continuous.frontSwingDeg).toBeLessThan(-1);
@@ -161,7 +176,7 @@ describe("Oblique Tabletop compound focus", () => {
     )).toEqual(calibration.continuous.lensNormal);
   });
 
-  it("makes the continuous focus plane coincide with the canonical tabletop plane", () => {
+  it("makes the continuous focus plane coincide with the canonical subject-board plane", () => {
     const calibration = obliqueTabletopCompoundCalibration;
     const continuous = evaluate({
       frontTiltDeg: calibration.continuous.frontTiltDeg,
@@ -223,6 +238,15 @@ describe("Oblique Tabletop compound focus", () => {
         },
       },
       {
+        name: "tilt-only",
+        overrides: {
+          frontTiltDeg: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
+          frontSwingDeg: 0,
+          focusDistanceMm: obliqueTabletopGeometry.tiltOnlyCalibration.focusDistanceMm,
+          aperture: 11 as const,
+        },
+      },
+      {
         name: "public compound solution",
         overrides: {
           frontTiltDeg: publicCompoundSolution.frontTiltDeg,
@@ -245,6 +269,68 @@ describe("Oblique Tabletop compound focus", () => {
         expect(projection.vRaw, `${name} target ${id} v`).toBeLessThanOrEqual(1 + epsilon);
         expect(projection.filmPointWorld).not.toBeNull();
       });
+    });
+  });
+
+  it("keeps the normal table and inclined board composition meaningfully visible", () => {
+    const states = [
+      {
+        name: "neutral",
+        overrides: {
+          frontTiltDeg: 0,
+          frontSwingDeg: 0,
+          focusDistanceMm: obliqueTabletopScene.cameraPreset.focusDistanceMm,
+          aperture: 11 as const,
+        },
+      },
+      {
+        name: "tilt-only",
+        overrides: {
+          frontTiltDeg: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
+          frontSwingDeg: 0,
+          focusDistanceMm: obliqueTabletopGeometry.tiltOnlyCalibration.focusDistanceMm,
+          aperture: 11 as const,
+        },
+      },
+      {
+        name: "compound",
+        overrides: {
+          frontTiltDeg: publicCompoundSolution.frontTiltDeg,
+          frontSwingDeg: publicCompoundSolution.frontSwingDeg,
+          focusDistanceMm: publicCompoundSolution.focusDistanceMm,
+          aperture: publicCompoundSolution.aperture,
+        },
+      },
+    ] as const;
+    const meaningfulIntersection = 0.12;
+
+    states.forEach(({ name, overrides }) => {
+      const targets = projectVisibleFocusTargets(overrides);
+      const corners = projectSubjectBoardFrontCorners(overrides);
+
+      expect(
+        targets.every(({ projection }) => projection.visible),
+        `${name} focus details should remain visible`,
+      ).toBe(true);
+      expect(
+        corners.every(
+          (projection) =>
+            projection.uRaw >= -meaningfulIntersection &&
+            projection.uRaw <= 1 + meaningfulIntersection &&
+            projection.vRaw >= -meaningfulIntersection &&
+            projection.vRaw <= 1 + meaningfulIntersection,
+        ),
+        `${name} board corners should be visible or meaningfully intersect the frame`,
+      ).toBe(true);
+      expect(
+        corners.filter(({ visible }) => visible).length,
+        `${name} should show multiple board corners`,
+      ).toBeGreaterThanOrEqual(2);
+
+      const targetUs = targets.map(({ projection }) => projection.uRaw);
+      const targetVs = targets.map(({ projection }) => projection.vRaw);
+      expect(Math.max(...targetUs) - Math.min(...targetUs), `${name} horizontal target spread`).toBeGreaterThan(0.25);
+      expect(Math.max(...targetVs) - Math.min(...targetVs), `${name} vertical target spread`).toBeGreaterThan(0.1);
     });
   });
 
@@ -277,8 +363,8 @@ describe("Oblique Tabletop compound focus", () => {
     });
     const tiltOnlyById = valuesById(tiltOnlyAtCompoundFocus);
     const compoundById = valuesById(compound);
-    const tiltOnlyOffAxis = obliqueTabletopGeometry.tabletopOffAxisSampleIds.map((id) => tiltOnlyById.get(id)!);
-    const compoundOffAxis = obliqueTabletopGeometry.tabletopOffAxisSampleIds.map((id) => compoundById.get(id)!);
+    const tiltOnlyOffAxis = obliqueTabletopGeometry.subjectBoardOffAxisSampleIds.map((id) => tiltOnlyById.get(id)!);
+    const compoundOffAxis = obliqueTabletopGeometry.subjectBoardOffAxisSampleIds.map((id) => compoundById.get(id)!);
 
     expect(max(tiltOnlyAtCompoundFocus)).toBeGreaterThan(ACCEPTABLE_COC_DIAMETER_MM);
     expect(mean(compoundOffAxis)).toBeLessThan(mean(tiltOnlyOffAxis) * 0.25);
@@ -304,7 +390,7 @@ describe("Oblique Tabletop compound focus", () => {
     expect(mean(opposite)).toBeGreaterThan(mean(selected) * 10);
   });
 
-  it("retains the PR10B Tilt-only incomplete boundary", () => {
+  it("retains the Tilt-only incomplete boundary", () => {
     const tiltOnly = cocValues({
       frontTiltDeg: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
       frontSwingDeg: 0,

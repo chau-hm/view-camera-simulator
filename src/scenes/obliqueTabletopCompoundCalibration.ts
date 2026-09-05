@@ -58,7 +58,7 @@ const assertWithin = (
  * steps and are validated separately by physical tests.
  */
 export const deriveObliqueTabletopCompoundCalibration = (
-  canonicalSubjectPlane: Pick<Plane, "point" | "normal"> = obliqueTabletopGeometry.tabletopTopSurfacePlane,
+  canonicalSubjectPlane: Pick<Plane, "point" | "normal"> = obliqueTabletopGeometry.subjectBoardPlane,
 ): ObliqueTabletopCompoundCalibration => {
   const focalLengthMm = CAMERA_CONSTANTS.focalLengthMm;
   const subjectPlane = planeFromPointNormal(

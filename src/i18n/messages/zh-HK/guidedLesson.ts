@@ -51,12 +51,12 @@ export const guidedLessonMessages = {
         "你以 Rise 修正構圖，以 Swing 和 Focus 將焦平面對齊延伸側牆，最後使用 Aperture 增加可用景深。",
     },
     obliqueTabletop: {
-      lessonName: "斜向桌面攝影引導課程",
+      lessonName: "傾斜主體圖板攝影引導課程",
       observeTitle: "觀察問題",
       observeBody:
-        "調整相機之前，先比較對焦屏內看得見的桌面位置。對焦可以移動清晰位置，但斜向桌面在不同方向都有深度差異。",
+        "調整相機之前，先比較對焦屏內看得見的主體圖板細節。對焦可以移動清晰位置，但傾斜圖板在不同方向都有深度差異。",
       completionBody:
-        "你利用前組俯仰與擺動定位同一個三維清晰焦平面，再用對焦把它放到桌面上，最後以光圈在已對齊的焦平面周圍增加景深。",
+        "你利用前組俯仰與擺動定位同一個三維清晰焦平面，再用對焦把它放到傾斜圖板上，最後以光圈在已對齊的焦平面周圍增加景深。",
     },
   },
 } satisfies MessageShape<typeof englishGuidedLessonMessages>;

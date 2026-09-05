@@ -94,7 +94,7 @@ describe("scene definitions", () => {
     expect(focusTargetIds).toEqual(["near-cup", "mid-notebook", "far-book"]);
   });
 
-  it("defines Oblique Tabletop as a free-only compound-focus scene", () => {
+  it("defines Oblique Tabletop as a compound-focus scene", () => {
     expect(obliqueTabletopScene.name).toBe("Oblique Tabletop");
     expect(obliqueTabletopScene.cameraPreset.focusDistanceMm).toBe(
       obliqueTabletopGeometry.canonicalFocusDistanceMm,
@@ -113,31 +113,61 @@ describe("scene definitions", () => {
       obliqueTabletopGeometry.focusDistanceRangeMm,
     );
     expect(obliqueTabletopScene.focusTargets).toEqual(
-      obliqueTabletopGeometry.tabletopVisibleFocusTargets,
+      obliqueTabletopGeometry.subjectBoardVisibleFocusTargets,
     );
     expect(obliqueTabletopScene.focusTargets).not.toEqual(
-      obliqueTabletopGeometry.tabletopAnalyticalFocusTargets,
+      obliqueTabletopGeometry.subjectBoardAnalyticalFocusTargets,
     );
     expect(obliqueTabletopScene.compositionTargets.map((target) => target.id)).toEqual([
-      "tabletop-surface",
+      "subject-board-plane",
     ]);
     expect(sceneOrder).toContain("oblique-tabletop");
   });
 
-  it("keeps the canonical tabletop oblique in both surface directions", () => {
+  it("keeps the table level while the subject board is oblique in both directions", () => {
     const nearToFarDepthVariation = Math.abs(
-      obliqueTabletopGeometry.tabletopExtents.far.topSurfaceCenterWorld.z -
-        obliqueTabletopGeometry.tabletopExtents.near.topSurfaceCenterWorld.z,
+      obliqueTabletopGeometry.subjectBoardExtents.far.surfaceCenterWorld.z -
+        obliqueTabletopGeometry.subjectBoardExtents.near.surfaceCenterWorld.z,
     );
     const leftToRightDepthVariation = Math.abs(
-      obliqueTabletopGeometry.tabletopExtents.right.topSurfaceCenterWorld.z -
-        obliqueTabletopGeometry.tabletopExtents.left.topSurfaceCenterWorld.z,
+      obliqueTabletopGeometry.subjectBoardExtents.right.surfaceCenterWorld.z -
+        obliqueTabletopGeometry.subjectBoardExtents.left.surfaceCenterWorld.z,
     );
-    const normal = obliqueTabletopGeometry.tabletopTopSurfacePlane.normal;
+    const tableNormal = obliqueTabletopGeometry.tabletopTopSurfacePlane.normal;
+    const boardNormal = obliqueTabletopGeometry.subjectBoardPlane.normal;
 
     expect(nearToFarDepthVariation).toBeGreaterThan(2000);
     expect(leftToRightDepthVariation).toBeGreaterThan(200);
-    expect(Math.hypot(normal.x, normal.y, normal.z)).toBeCloseTo(1, 8);
+    expect(tableNormal).toEqual({ x: 0, y: 1, z: 0 });
+    expect(Math.abs(boardNormal.x)).toBeGreaterThan(0.1);
+    expect(Math.abs(boardNormal.z)).toBeGreaterThan(0.1);
+    expect(Math.hypot(boardNormal.x, boardNormal.y, boardNormal.z)).toBeCloseTo(1, 8);
+  });
+
+  it("keeps the inclined subject board supported within the level table footprint", () => {
+    const tableHalfWidth = obliqueTabletopGeometry.tabletop.width / 2;
+    const tableHalfDepth = obliqueTabletopGeometry.tabletop.depth / 2;
+    const tableTopY =
+      obliqueTabletopGeometry.tabletop.center.y +
+      obliqueTabletopGeometry.tabletop.thickness / 2;
+    const boardCorners = obliqueTabletopGeometry.getSubjectBoardWorldCorners();
+
+    boardCorners.forEach((corner) => {
+      expect(Math.abs(corner.x - obliqueTabletopGeometry.tabletop.center.x)).toBeLessThanOrEqual(
+        tableHalfWidth,
+      );
+      expect(Math.abs(corner.z - obliqueTabletopGeometry.tabletop.center.z)).toBeLessThanOrEqual(
+        tableHalfDepth,
+      );
+    });
+
+    const farEdgeBottom = obliqueTabletopGeometry.subjectBoardLocalPointToWorld({
+      x: 0,
+      y: -obliqueTabletopGeometry.subjectBoard.thickness / 2,
+      z: obliqueTabletopGeometry.subjectBoard.farLocalDepth,
+    });
+    expect(farEdgeBottom.y).toBeCloseTo(tableTopY, 8);
+    expect(obliqueTabletopGeometry.subjectBoardSupports.every((support) => support.height > 0)).toBe(true);
   });
 
   it("locks Focus Fundamentals to its fixed f/32 teaching aperture", () => {

@@ -99,7 +99,7 @@ export const scenesMessages = {
   obliqueTabletop: {
     title: "斜向桌面",
     description:
-      "從斜角拍攝一張斜向桌面。在中性設定下，桌面不同部分處於不同深度，因此無法同時讓整個表面保持清晰。",
+      "從斜角拍攝一塊放在普通桌面上的傾斜圖板。圖板同時沿近遠及左右方向延伸，因此單靠俯仰無法對齊整個主體平面，還需要擺動。",
     topics: {
       obliquePlane: "斜向平面",
       depthVariation: "深度變化",

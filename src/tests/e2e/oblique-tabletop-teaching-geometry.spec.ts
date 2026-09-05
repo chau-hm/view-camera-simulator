@@ -66,10 +66,10 @@ test("Oblique Tabletop exposes live Side, Top, and 3D compound teaching geometry
   await expect(
     page.getByTestId("geometry-construction-current").getByTestId("oblique-tabletop-left-right-plane"),
   ).toBeVisible();
-  // At the exact PR10B public Tilt state the focus plane can be parallel to
-  // this top section, so the live lens-plane trace is the stable Swing cue.
+  // At the calibrated Tilt-only public state the focus plane can be parallel
+  // to this top section, so the live lens-plane trace is the stable Swing cue.
   const tiltOnlyTopLensLine = await readPlaneLine(page, "top", "lens");
-  await setStepRangeInput(page, "Swing", -1.7);
+  await setStepRangeInput(page, "Swing", -1.8);
   await expect.poll(() => readPlaneLine(page, "top", "lens")).not.toEqual(tiltOnlyTopLensLine);
   await expect(page.getByTestId("oblique-tabletop-teaching-feedback")).toContainText(
     "changing two directional components",
@@ -77,8 +77,8 @@ test("Oblique Tabletop exposes live Side, Top, and 3D compound teaching geometry
 
   await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
   await expect(page.getByTestId("scene-canvas")).toBeVisible();
-  await setStepRangeInput(page, "Tilt", -8);
-  await setStepRangeInput(page, "Swing", -1.7);
+  await setStepRangeInput(page, "Tilt", -9.3);
+  await setStepRangeInput(page, "Swing", -1.8);
   await page.getByRole("button", { name: "View overlays" }).click();
   await page.getByRole("button", { name: "Show Scheimpflug construction" }).click();
   await expect(page.getByRole("button", { name: "Hide Scheimpflug construction" })).toBeVisible();

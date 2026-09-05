@@ -481,11 +481,11 @@ const obliqueCompoundTask: TaskDefinition = {
 };
 
 const obliqueTabletopCompound = obliqueTabletopCompoundCalibration.public;
-const obliqueTabletopVisibleTargetIds = obliqueTabletopGeometry.tabletopVisibleFocusSamples.map(
+const obliqueTabletopVisibleTargetIds = obliqueTabletopGeometry.subjectBoardVisibleFocusSamples.map(
   (sample) => sample.id,
 );
 const obliqueTabletopPrincipalTargetIds = [
-  ...obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds,
+  ...obliqueTabletopGeometry.subjectBoardPrincipalDepthSampleIds,
 ];
 const obliqueTabletopTiltOnlyRange = {
   min: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg - 0.5,
@@ -500,9 +500,9 @@ const obliqueTabletopCompoundSwingRange = {
   max: obliqueTabletopCompound.frontSwingDeg + 0.5,
 };
 const obliqueTabletopSwingStage = {
-  frontTiltDeg: -7.4,
-  frontSwingDeg: -1.4,
-  focusDistanceMm: 2630,
+  frontTiltDeg: -7.3,
+  frontSwingDeg: -1.7,
+  focusDistanceMm: 3250,
 } as const;
 const obliqueTabletopSwingStageTiltRange = {
   min: obliqueTabletopSwingStage.frontTiltDeg - 0.5,
@@ -516,7 +516,7 @@ const obliqueTabletopRefineTiltRange = {
   min: Math.min(obliqueTabletopCompoundTiltRange.min, obliqueTabletopSwingStageTiltRange.min),
   max: Math.max(obliqueTabletopCompoundTiltRange.max, obliqueTabletopSwingStageTiltRange.max),
 };
-const obliqueTabletopSwingLateralTargetIds = obliqueTabletopGeometry.tabletopVisibleFocusSamples
+const obliqueTabletopSwingLateralTargetIds = obliqueTabletopGeometry.subjectBoardVisibleFocusSamples
   .filter(({ id }) => id === "far-left" || id === "far-right")
   .map(({ id }) => id);
 const obliqueTabletopSharpnessMinimum = 0.8;

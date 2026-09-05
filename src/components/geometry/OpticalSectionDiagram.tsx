@@ -603,7 +603,7 @@ export const OpticalSectionDiagram = ({
       data-depth-max-mm={projection.diagramMaxDepthMm}
       data-teaching-geometry={obliqueTabletopTeachingGeometry ? "oblique-tabletop" : undefined}
       data-teaching-subject-plane-source={
-        obliqueTabletopTeachingGeometry ? "tabletopTopSurfacePlane" : undefined
+        obliqueTabletopTeachingGeometry ? "subjectBoardPlane" : undefined
       }
       data-teaching-focus-plane-source={
         obliqueTabletopTeachingGeometry ? "DerivedOpticsState.focusPlane" : undefined

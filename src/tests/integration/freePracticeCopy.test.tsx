@@ -101,7 +101,7 @@ describe("Free Practice teaching copy", () => {
 
     cleanup();
     render(<TaskPanel task={null} sceneId="oblique-tabletop" />);
-    expect(screen.getByText(/Use Front Tilt to improve near-to-far focus alignment/)).toBeInTheDocument();
+    expect(screen.getByText(/Use Front Tilt to improve the board's near-to-far focus alignment/)).toBeInTheDocument();
     expect(screen.getByText(/Refine Focus after changing either movement/)).toBeInTheDocument();
     expect(screen.getByText(/Add Front Swing to resolve the remaining side-to-side difference/)).toBeInTheDocument();
 
@@ -285,7 +285,7 @@ describe("Free Practice teaching copy", () => {
 
     cleanup();
     render(<TaskPanel task={null} sceneId="oblique-tabletop" />);
-    expect(screen.getByText(/使用前組傾斜，改善桌面近遠方向的焦平面對齊/)).toBeInTheDocument();
+    expect(screen.getByText(/使用前組傾斜，改善主體圖板近遠方向的焦平面對齊/)).toBeInTheDocument();
     expect(screen.getByText(/調整任何一個動作後，再微調對焦/)).toBeInTheDocument();
     expect(screen.getByText(/加入前組擺動，處理餘下的左右方向差異/)).toBeInTheDocument();
   });

@@ -49,12 +49,12 @@ export const guidedLessonMessages = {
         "You corrected the framing with Rise, aligned the focus plane through the receding wall with Swing and Focus, then used Aperture to add finishing depth.",
     },
     obliqueTabletop: {
-      lessonName: "Oblique Tabletop Guided Lesson",
+      lessonName: "Inclined Subject Board Guided Lesson",
       observeTitle: "Observe the Problem",
       observeBody:
-        "Before changing the camera, compare the visible tabletop regions in the Ground Glass. Focus can move the sharp region, but the oblique surface varies in depth and direction.",
+        "Before changing the camera, compare the visible subject-board details in the Ground Glass. Focus can move the sharp region, but the inclined board varies in depth and direction.",
       completionBody:
-        "You used Tilt and Swing to orient one three-dimensional focus plane, Focus to place it on the tabletop, and Aperture to add depth around that aligned plane.",
+        "You used Tilt and Swing to orient one three-dimensional focus plane, Focus to place it on the inclined board, and Aperture to add depth around that aligned plane.",
     },
   },
 } as const;
