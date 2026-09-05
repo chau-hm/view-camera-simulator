@@ -1,19 +1,12 @@
-# PR 11B — Fundamentals + Three Ways to Visualize
+# PR 11B — Review correction: Geometry View consistency
 
-- Objective: add the static conceptual-learning slice immediately below the PR 11A Hero, with E1 Fundamentals and E2 Three Ways to Visualize in English and zh-HK.
-- Base at branch creation: `origin/main` `76010a2d96b11234a9044599ee0f94c83e80aa98`; PR 11A merge `6971b0a9f1cdcdff033cba6431f351d5345a9f5d` is an ancestor. `origin/main` subsequently advanced concurrently to `abe81a2fcc812ec516215dad4bc884df7114de5e` through unrelated simulator commits.
-- Worktree/branch: `/Users/homan/repo/view-camera-landing-fundamentals` / `feature/landing-redesign-fundamentals`; clean dedicated worktree, no upstream tracking.
-- Component structure: `LandingFundamentalsSection` and `LandingVisualizationSection` own semantic H2 sections and local card data; shared `LandingConceptCard` renders only image, title, and description. `HomePage` keeps the existing legacy informational block after both sections.
-- ImageGen assets: seven independently generated built-in ImageGen source renders, finalized as 4:3 WebP assets under `public/assets/landing/`; no mockup crops, composite sheet, placeholders, SVG, CSS drawing, or simulator captures.
-  - `fundamentals-perspective-control.webp` — 1448×1086, 140834 bytes.
-  - `fundamentals-focus-plane.webp` — 1448×1086, 94802 bytes.
-  - `fundamentals-ground-glass.webp` — 1448×1086, 102270 bytes.
-  - `fundamentals-optical-geometry.webp` — 1448×1086, 74596 bytes.
-  - `visualize-3d-scene.webp` — 1448×1086, 87352 bytes.
-  - `visualize-ground-glass.webp` — 1448×1086, 110834 bytes.
-  - `visualize-geometry.webp` — 1448×1086, 63794 bytes.
-- i18n: added semantic `home.fundamentals.*` and `home.visualize.*` message trees to English and zh-HK; all learner-facing Part E copy is translated through i18next.
-- Responsive decisions: E1 uses four columns at desktop, two columns through tablet, and one column on mobile; E2 uses three columns at desktop/1024, two at 768, and one at mobile. Cards preserve 4:3 artwork with intrinsic dimensions, lazy loading, and no controls or links.
-- Validation: focused landing integration tests pass (8/8); full Vitest suite passes (159 files, 1540 tests); bundled-runtime typecheck, lint, CSS structure check, production Vite build, and `git diff --check` pass.
-- Browser evidence: focused Chromium landing E2E passes all 7 tests, including Hero CTA/H1 preservation, keyboard behavior, 1440×900, 1024×800, 768×900, 390×844 grid/overflow checks, and zh-HK headings. Manual loaded-image screenshots were inspected for desktop, tablet, and mobile layouts.
-- Deferred: Part F / Why It Matters redesign, final CTA, motion/scroll reveal/parallax, Scene Gallery, simulator mini-demos, and new simulator functionality.
+- Objective: update PR #126 onto the latest `origin/main` and correct only the Geometry View artwork so the three visualization cards communicate one shared camera/subject state.
+- Branch/worktree: `feature/landing-redesign-fundamentals` / `/Users/homan/repo/view-camera-landing-fundamentals`.
+- Base/update: original branch base `76010a2d96b11234a9044599ee0f94c83e80aa98`; merged latest `origin/main` `abe81a2fcc812ec516215dad4bc884df7114de5e`; PR 11A merge `6971b0a9f1cdcdff033cba6431f351d5345a9f5d` remains an ancestor.
+- Since previous review: merged `origin/main` normally; the only conflict was this shared status file. Landing source files merged without conflicts, and the simulator changes from main were retained unchanged.
+- Landing preservation: `HomePage` still renders Hero → Fundamentals → Three Ways to Visualize, with the existing informational block after Part E. The fetched `origin/main` does not contain later Why It Matters or Final CTA components, so neither out-of-scope section was invented or restored here.
+- Geometry View correction: regenerated only `public/assets/landing/visualize-geometry.webp` with built-in ImageGen, using the two sibling assets as references. The corrected image contains the same single cube, sphere, and cone arrangement, camera/lens, mapped rays, and image plane; the other six Part E assets are unchanged.
+- Asset: `visualize-geometry.webp` is 1448×1086, 4:3, 95148 bytes after WebP encoding.
+- i18n/responsive/code: no copy, component, layout, or simulator changes in this correction pass.
+- Validation: post-update focused tests and required integration checks are pending at this handoff.
+- Deferred: Part F / Why It Matters, final CTA, motion/scroll reveal/parallax, Scene Gallery, simulator mini-demos, and new simulator functionality.

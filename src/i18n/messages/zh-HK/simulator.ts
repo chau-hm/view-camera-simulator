@@ -231,6 +231,15 @@ export const simulatorMessages = {
     architectureForegroundBuildingBaseTarget: "建築物基座",
     architectureForegroundBuildingMiddleTarget: "建築物中段",
     interiorCornerRecedingWallGuide: "向後延伸的側牆",
+    obliqueTabletopNearFarGuide: "桌面 · 近 ↔ 遠",
+    obliqueTabletopLeftRightGuide: "桌面 · 左 ↔ 右",
+    obliqueTabletopSideView: "側面檢視 · 觀察前組俯仰如何改變同一個清晰焦平面的近遠方向部分。",
+    obliqueTabletopTopView: "頂部檢視 · 觀察前組擺動如何改變同一個清晰焦平面的左右方向部分。",
+    obliqueTabletopScheimpflugView: "Scheimpflug 檢視 · 底片、鏡頭及同一個清晰焦平面在三維構造中沿同一條線相交。",
+    obliqueTabletopNeutralFeedback: "桌面與目前清晰焦平面在多於一個方向上未能對齊。",
+    obliqueTabletopTiltFeedback: "前組俯仰會改變近遠方向的關係；加入前組擺動之前，先比較清晰焦平面與桌面的方向。",
+    obliqueTabletopSwingFeedback: "前組擺動會改變左右方向的關係；同時比較近遠方向的狀態。",
+    obliqueTabletopCompoundFeedback: "前組俯仰與前組擺動正從兩個方向改變同一個三維清晰焦平面。",
     interiorCornerNearWallTarget: "近處牆面細節",
     interiorCornerMiddleWallTarget: "中間牆面細節",
     interiorCornerFarWallTarget: "遠處牆面細節",
@@ -311,12 +320,20 @@ export const simulatorMessages = {
       objective: "在處理構圖及向後延伸牆面的對焦問題前，先探索中性的室內轉角設定。",
       bullets: {
         framing: "留意相機保持水平，但上方線腳被裁切，或與畫面頂部邊緣貼得不舒服。",
-        rise: "稍後使用前組上移改變構圖，而不需要向上仰起相機。",
+        rise: "使用前組上移把構圖向上移動，而不需要向上仰起相機。",
         depth: "沿著同一面側牆，從較近的畫作觀察到中間及遠處的細節。",
         focus: "在較開的起始光圈下，比較牆面不同距離；前組擺動及對焦會留待稍後課程處理。",
       },
       observation:
         "房間保持水平，而上方建築細節貼近畫面邊緣。同一面向後延伸側牆上的三個細節處於不同距離，讓日後的上移及前組擺動／對焦問題清晰可見。",
+      riseComposition: {
+        needsAdjustmentStatus: "上移構圖仍需調整",
+        readyStatus: "上移後構圖可接受",
+        needsAdjustment:
+          "保持相機水平。上方建築細節仍然太貼近畫面頂部；使用前組上移把構圖向上移動。",
+        ready:
+          "上方建築細節現在已進入較安全的畫面範圍，同時保留室內轉角。相機仍然保持水平。",
+      },
     },
     obliqueArchitecture: {
       objective: "在斜角建築場景中探索前組上移、前組擺動及對焦，同時保持後組水平。",
@@ -354,8 +371,9 @@ export const simulatorMessages = {
         tilt: "使用前組傾斜，改善桌面近遠方向的焦平面對齊。",
         refocus: "調整任何一個動作後，再微調對焦。",
         remaining: "加入前組擺動，處理餘下的左右方向差異，並比較桌面不同位置的清晰度。",
+        geometry: "一同使用側面及頂部幾何圖：兩者顯示同一個三維清晰焦平面的不同方向部分。",
       },
-      observation: "前組俯仰改善近遠方向的對焦關係；前組擺動處理餘下的左右方向差異。調整任何移軸動作後，再微調對焦，並比較桌面不同位置。",
+      observation: "前組俯仰改善近遠方向的對焦關係；前組擺動處理餘下的左右方向差異。調整任何移軸動作後，再微調對焦，並比較桌面不同位置。兩種移軸並唔係產生兩個焦平面，而係共同定位同一個三維清晰焦平面。",
     },
     mirrorShift: {
       objective: "分開視點與構圖：將整部相機向側面移動，然後使用相反方向的前組橫移恢復鏡面構圖，而不把相機移回原本的視點。",

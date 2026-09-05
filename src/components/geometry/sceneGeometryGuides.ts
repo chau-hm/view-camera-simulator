@@ -5,6 +5,7 @@ import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
 import interiorCornerGeometry from "../../scenes/interiorCornerGeometry";
+import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 
 export type SceneGeometryGuide = {
   id: string;
@@ -21,6 +22,10 @@ export type SceneGeometryGuide = {
     y: number;
   };
   labelAnchor?: "start" | "middle" | "end";
+  /** Semantic source for scene-specific subject-plane traces. */
+  sourcePlaneId?: "tabletopTopSurfacePlane";
+  /** Which component the trace is intended to reveal. */
+  teachingComponent?: "near-far" | "left-right";
 };
 
 const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]>> = {
@@ -116,6 +121,38 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
       color: "#115e59",
       testId: "interior-corner-receding-wall",
       labelPositionT: 0.52,
+      labelOffsetPx: { x: 0, y: -18 },
+      labelAnchor: "middle",
+    },
+  ],
+  "oblique-tabletop": [
+    {
+      id: "oblique-tabletop-near-far-plane",
+      label: "Tabletop · near ↔ far",
+      labelMessageKey: simulatorMessageKeys.geometry.obliqueTabletopNearFarGuide,
+      view: "side",
+      startWorld: obliqueTabletopGeometry.tabletopExtents.near.topSurfaceCenterWorld,
+      endWorld: obliqueTabletopGeometry.tabletopExtents.far.topSurfaceCenterWorld,
+      color: "#92400e",
+      testId: "oblique-tabletop-near-far-plane",
+      sourcePlaneId: "tabletopTopSurfacePlane",
+      teachingComponent: "near-far",
+      labelPositionT: 0.78,
+      labelOffsetPx: { x: 0, y: 18 },
+      labelAnchor: "middle",
+    },
+    {
+      id: "oblique-tabletop-left-right-plane",
+      label: "Tabletop · left ↔ right",
+      labelMessageKey: simulatorMessageKeys.geometry.obliqueTabletopLeftRightGuide,
+      view: "top",
+      startWorld: obliqueTabletopGeometry.tabletopExtents.left.topSurfaceCenterWorld,
+      endWorld: obliqueTabletopGeometry.tabletopExtents.right.topSurfaceCenterWorld,
+      color: "#92400e",
+      testId: "oblique-tabletop-left-right-plane",
+      sourcePlaneId: "tabletopTopSurfacePlane",
+      teachingComponent: "left-right",
+      labelPositionT: 0.5,
       labelOffsetPx: { x: 0, y: -18 },
       labelAnchor: "middle",
     },

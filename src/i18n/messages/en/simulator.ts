@@ -228,6 +228,22 @@ export const simulatorMessages = {
     architectureForegroundBuildingBaseTarget: "Building base",
     architectureForegroundBuildingMiddleTarget: "Building middle",
     interiorCornerRecedingWallGuide: "Receding side wall",
+    obliqueTabletopNearFarGuide: "Tabletop · near ↔ far",
+    obliqueTabletopLeftRightGuide: "Tabletop · left ↔ right",
+    obliqueTabletopSideView:
+      "Side view · inspect how Front Tilt changes the near-to-far component of the one focus plane.",
+    obliqueTabletopTopView:
+      "Top view · inspect how Front Swing changes the left-to-right component of the same focus plane.",
+    obliqueTabletopScheimpflugView:
+      "Scheimpflug view · film, lens, and one plane of sharp focus meet in a single 3D construction.",
+    obliqueTabletopNeutralFeedback:
+      "The tabletop and current focus plane disagree in more than one direction.",
+    obliqueTabletopTiltFeedback:
+      "Front Tilt changes the near-to-far relationship. Compare the focus plane with the tabletop before adding Swing.",
+    obliqueTabletopSwingFeedback:
+      "Front Swing changes the left-to-right relationship. Compare it with the near-to-far component.",
+    obliqueTabletopCompoundFeedback:
+      "Tilt and Swing are changing two directional components of the same three-dimensional focus plane.",
     interiorCornerNearWallTarget: "Near wall detail",
     interiorCornerMiddleWallTarget: "Middle wall detail",
     interiorCornerFarWallTarget: "Far wall detail",
@@ -324,7 +340,7 @@ export const simulatorMessages = {
         framing:
           "Notice that the camera is level, but the upper moulding is cropped or uncomfortably close to the top edge.",
         rise:
-          "Use Front Rise later to change framing without pitching the camera upward.",
+          "Use Front Rise to move the framing upward without pitching the camera upward.",
         depth:
           "Follow the same side wall from its nearer artwork through the middle and far details.",
         focus:
@@ -332,6 +348,14 @@ export const simulatorMessages = {
       },
       observation:
         "The room remains level while the upper architecture presses against the frame. The three details on one receding wall sit at different distances, making the future Rise and Front Swing + Focus problems visible.",
+      riseComposition: {
+        needsAdjustmentStatus: "Rise composition needs adjustment",
+        readyStatus: "Rise composition is acceptable",
+        needsAdjustment:
+          "Keep the camera level. The upper architecture is still too close to the top edge; use Front Rise to move the framing upward.",
+        ready:
+          "The upper architecture is now inside a safer frame while the room corner remains usable. The camera remains level.",
+      },
     },
     obliqueArchitecture: {
       objective:
@@ -388,9 +412,11 @@ export const simulatorMessages = {
           "Refine Focus after changing either movement.",
         remaining:
           "Add Front Swing to resolve the remaining side-to-side difference and compare regions across the tabletop.",
+        geometry:
+          "Use the Side and Top geometry views together: they show two components of one three-dimensional focus plane.",
       },
       observation:
-        "Front Tilt improves the near-to-far focus relationship. Front Swing resolves the remaining side-to-side difference; refine Focus after either movement and compare regions across the tabletop.",
+        "Front Tilt improves the near-to-far focus relationship. Front Swing resolves the remaining side-to-side difference; refine Focus after either movement and compare regions across the tabletop. The two movements do not create two focus planes; together they orient one plane in 3D.",
     },
     mirrorShift: {
       objective:

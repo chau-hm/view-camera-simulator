@@ -20,6 +20,7 @@ import {
   getSceneGeometryGuides,
   getSceneGeometryTargetMessageKey,
 } from "./sceneGeometryGuides";
+import { deriveObliqueTabletopTeachingGeometry } from "./obliqueTabletopTeachingGeometry";
 
 type Props = {
   projection: OpticalSectionData;
@@ -572,6 +573,10 @@ export const OpticalSectionDiagram = ({
 }: Props) => {
   const showCurrentLayer = true; // Always render the current layer
   const isFocusFundamentals = scene.id === "focus-fundamentals-two-targets";
+  const obliqueTabletopTeachingGeometry =
+    scene.id === "oblique-tabletop"
+      ? deriveObliqueTabletopTeachingGeometry(opticsState)
+      : null;
   const hasOriginal =
     Boolean(referenceProjection) && displayMode === "full" && !isFocusFundamentals;
 
@@ -596,6 +601,16 @@ export const OpticalSectionDiagram = ({
       data-projection-linear="true"
       data-depth-min-mm={projection.diagramMinDepthMm}
       data-depth-max-mm={projection.diagramMaxDepthMm}
+      data-teaching-geometry={obliqueTabletopTeachingGeometry ? "oblique-tabletop" : undefined}
+      data-teaching-subject-plane-source={
+        obliqueTabletopTeachingGeometry ? "tabletopTopSurfacePlane" : undefined
+      }
+      data-teaching-focus-plane-source={
+        obliqueTabletopTeachingGeometry ? "DerivedOpticsState.focusPlane" : undefined
+      }
+      data-teaching-focus-plane-present={
+        obliqueTabletopTeachingGeometry?.focusPlane ? "true" : undefined
+      }
       viewBox={`0 0 ${svgWidth} ${svgHeight}`}
       width="100%"
       style={{
