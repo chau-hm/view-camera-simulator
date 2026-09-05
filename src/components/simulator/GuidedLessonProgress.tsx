@@ -110,7 +110,11 @@ export const GuidedLessonProgress = ({
             >
               {isComplete
                 ? t(guidedLessonMessageKeys.common.lessonComplete)
-                : t(guidedLessonMessageKeys.common.finalChallengePending)}
+                : t(
+                    context.stage === "depth-of-field"
+                      ? guidedLessonMessageKeys.common.lastStagePending
+                      : guidedLessonMessageKeys.common.finalChallengePending,
+                  )}
             </span>
             <Link className="btn btn--secondary" to="/scenes">
               {t(guidedLessonMessageKeys.common.backToScenes)}

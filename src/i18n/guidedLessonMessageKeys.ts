@@ -7,7 +7,9 @@ export const guidedLessonMessageKeys = {
     continue: "guidedLesson.common.continue",
     lessonComplete: "guidedLesson.common.lessonComplete",
     finalChallengePending: "guidedLesson.common.finalChallengePending",
+    lastStagePending: "guidedLesson.common.lastStagePending",
     backToScenes: "guidedLesson.common.backToScenes",
+    restartLesson: "guidedLesson.common.restartLesson",
   },
   stages: {
     observe: "guidedLesson.stages.observe",
@@ -28,6 +30,12 @@ export const guidedLessonMessageKeys = {
       observeTitle: "guidedLesson.lessons.architectureForeground.observeTitle",
       observeBody: "guidedLesson.lessons.architectureForeground.observeBody",
       completionBody: "guidedLesson.lessons.architectureForeground.completionBody",
+    },
+    interiorCorner: {
+      lessonName: "guidedLesson.lessons.interiorCorner.lessonName",
+      observeTitle: "guidedLesson.lessons.interiorCorner.observeTitle",
+      observeBody: "guidedLesson.lessons.interiorCorner.observeBody",
+      completionBody: "guidedLesson.lessons.interiorCorner.completionBody",
     },
   },
 } as const;
@@ -50,6 +58,7 @@ export type GuidedLessonCopyMessageKeys = {
 const guidedLessonCopyById: Record<string, GuidedLessonCopyMessageKeys> = {
   "oblique-architecture": guidedLessonMessageKeys.lessons.obliqueArchitecture,
   "architecture-foreground": guidedLessonMessageKeys.lessons.architectureForeground,
+  "interior-corner": guidedLessonMessageKeys.lessons.interiorCorner,
 };
 
 export const getGuidedLessonCopyKeys = (lessonId: string): GuidedLessonCopyMessageKeys =>

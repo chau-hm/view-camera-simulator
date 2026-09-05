@@ -83,6 +83,22 @@ export const tasksMessages = {
       pass: "Camera and film plane remain level",
       fail: "Camera or film-plane orientation is no longer level",
     },
+    interiorCornerRiseComposition: {
+      pass: "Interior composition is acceptably framed",
+      fail: "Upper architecture or the room corner is outside the safe frame",
+    },
+    interiorCornerSwingOrientation: {
+      pass: "Focus-plane orientation is plausible",
+      fail: "Focus-plane orientation is not yet toward the receding wall",
+    },
+    interiorCornerWallFocus: {
+      pass: "Receding-wall details are acceptably sharp",
+      fail: "Some receding-wall details are still too soft",
+    },
+    interiorCornerFocusPreserved: {
+      pass: "Open-aperture wall focus is preserved",
+      fail: "Open-aperture wall focus is not yet aligned",
+    },
     mirrorReflectionClear: {
       pass: "Camera reflection is outside the mirror aperture",
       fail: "Camera reflection is still visible through the mirror",
@@ -523,6 +539,108 @@ export const tasksMessages = {
           "Watch the Ground Glass. Front Shift changes framing without moving the camera back to the original viewpoint.",
         viewpointRetained:
           "Move the whole camera farther sideways, then compensate again with Front Shift. Compare the two reflected props as a parallax cue.",
+      },
+    },
+  },
+  interiorCornerCompose: {
+    title: "Compose the Interior Corner with Rise",
+    objective:
+      "Keep the camera level and use Front Rise to bring the upper architecture into a comfortable frame while preserving the room corner.",
+    notes: {
+      level: "Do not pitch the camera. A level camera keeps the architectural verticals useful.",
+      rise: "Use Front Rise to move the framing upward without changing the viewpoint or perspective.",
+    },
+    criteria: {
+      composition: "Upper architecture and room corner are acceptably framed",
+      cameraLevel: "Camera and film plane remain level",
+    },
+    feedback: {
+      passPrimary:
+        "Front Rise improved the framing while the camera stayed level. The focus problem remains for the next stage.",
+      defaultFailPrimary:
+        "Keep the camera level and use Front Rise until the upper architecture and room corner are comfortably framed.",
+      primary: {
+        composition:
+          "The upper architecture is still too close to the top edge. Adjust Front Rise while keeping the room corner usable.",
+        cameraLevel:
+          "Keep the camera and film plane level; use Front Rise for framing rather than pitching the camera.",
+      },
+      secondary: {
+        composition:
+          "Use the Ground Glass edges as guardrails. Rise changes framing without changing architectural perspective.",
+        cameraLevel:
+          "A level camera preserves the vertical references while Front Rise moves the framing upward.",
+      },
+    },
+  },
+  interiorCornerAlignFocus: {
+    title: "Align the Receding-Wall Focus",
+    objective:
+      "Use Front Swing to orient the focus plane, then Focus to place it through the near, middle, and far details on the one receding side wall.",
+    notes: {
+      composition: "Keep the solved Rise framing intact; composition and focus are separate photographic decisions.",
+      swing: "Front Swing rotates the focus-plane orientation toward the receding wall.",
+      focus: "After the orientation is plausible, refine Focus to place that plane through the wall details.",
+      wall: "Target the receding side wall only. The perpendicular wall provides context and does not need to be equally sharp.",
+    },
+    criteria: {
+      aperture: "Aperture remains at the open calibration setting",
+      orientation: "Focus-plane orientation is on the intended side",
+      wall: "Near, middle, and far receding-wall details are acceptably sharp",
+      cameraLevel: "Camera and film plane remain level",
+    },
+    feedback: {
+      passPrimary:
+        "The focus plane is aligned through the receding side wall at the open aperture. The opposite wall remains contextual.",
+      defaultFailPrimary:
+        "Keep the solved Rise framing, then orient and place the focus plane through the receding wall at the open aperture.",
+      primary: {
+        aperture: "Return to the open aperture before calibrating the focus plane.",
+        orientation:
+          "The focus plane is not yet turning toward the receding wall. Adjust Front Swing before refining Focus.",
+        wall: "The focus-plane orientation is closer. Refine Focus to place it through the receding wall.",
+        cameraLevel: "Keep the camera and film plane level while calibrating Swing and Focus.",
+      },
+      secondary: {
+        aperture: "Aperture is held open here so the Swing + Focus alignment remains visible.",
+        orientation: "A wrong orientation cannot be corrected by Focus alone; first turn the plane toward the wall.",
+        wall: "Compare the near, middle, and far wall details rather than judging the perpendicular wall.",
+        cameraLevel: "Swing changes the lens and focus-plane orientation without pitching the camera.",
+      },
+    },
+  },
+  interiorCornerDepthOfField: {
+    title: "Add Usable Depth with Aperture",
+    objective:
+      "With the receding-wall focus plane aligned, stop down modestly to add usable depth without disturbing composition or focus.",
+    notes: {
+      composition: "Preserve the Rise composition from the first stage.",
+      focus: "The receding-wall focus alignment must already be valid at the open aperture; Aperture does not move the focus plane.",
+      aperture: "Use the first modest supported stop-down to add finishing depth around the aligned focus plane.",
+      wall: "The sharpness target is the receding side wall, not both perpendicular walls of the corner.",
+    },
+    criteria: {
+      composition: "Interior composition remains acceptably framed",
+      focus: "Open-aperture receding-wall focus remains aligned",
+      aperture: "Aperture is stopped down modestly",
+      cameraLevel: "Camera and film plane remain level",
+    },
+    feedback: {
+      passPrimary:
+        "The focus plane was already aligned; stopping down now adds usable depth around the receding wall while the composition remains intact.",
+      defaultFailPrimary:
+        "Keep the solved composition and focus-plane alignment, then stop down Aperture modestly to finish the photograph.",
+      primary: {
+        composition: "Restore the solved Rise composition before changing Aperture.",
+        focus: "Aperture cannot hide a misplaced focus plane. Return to the earlier stage and refine Swing + Focus.",
+        aperture: "Stop down Aperture modestly after preserving the receding-wall focus alignment.",
+        cameraLevel: "Keep the camera and film plane level; Aperture does not require a perspective change.",
+      },
+      secondary: {
+        composition: "Aperture changes usable sharpness, not framing. Leave the Rise composition intact.",
+        focus: "The open-aperture check protects the focus-plane lesson from being solved by blur tolerance alone.",
+        aperture: "Use the next smaller supported aperture; do not change Swing or Focus at this finishing stage.",
+        cameraLevel: "Stopping down broadens usable depth around the existing plane without pitching the camera.",
       },
     },
   },

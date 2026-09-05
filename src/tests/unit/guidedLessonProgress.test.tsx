@@ -11,6 +11,8 @@ const entry = getPublicSceneEntryById("oblique-architecture");
 if (!entry) throw new Error("Missing Oblique Architecture public scene entry");
 const architectureForegroundEntry = getPublicSceneEntryById("architecture-foreground");
 if (!architectureForegroundEntry) throw new Error("Missing Architecture + Foreground public scene entry");
+const interiorCornerEntry = getPublicSceneEntryById("interior-corner");
+if (!interiorCornerEntry) throw new Error("Missing Interior Corner public scene entry");
 
 const passingEvaluation: TaskEvaluation = {
   taskId: "oblique-rise-01",
@@ -42,6 +44,18 @@ const architectureContextFor = (mode: "free" | "guided", taskId: string | null) 
     search: "?lesson=1",
   });
   if (!context) throw new Error("Expected Architecture + Foreground lesson context");
+  return context;
+};
+
+const interiorCornerContextFor = (mode: "free" | "guided", taskId: string | null) => {
+  const context = getGuidedLessonContext({
+    entry: interiorCornerEntry,
+    mode,
+    sceneId: "interior-corner",
+    taskId,
+    search: "?lesson=1",
+  });
+  if (!context) throw new Error("Expected Interior Corner lesson context");
   return context;
 };
 
@@ -219,5 +233,53 @@ describe("GuidedLessonProgress", () => {
     );
     expect(screen.getByText("Lesson complete")).toBeInTheDocument();
     expect(screen.getByText(/You corrected the framing with Rise/)).toBeInTheDocument();
+  });
+
+  it("renders the Interior Corner four-stage copy and final-stage wording", () => {
+    render(
+      <MemoryRouter>
+        <GuidedLessonProgress
+          context={interiorCornerContextFor("free", null)}
+          evaluation={null}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Interior Corner — Rise + Swing Guided Lesson")).toBeInTheDocument();
+    expect(screen.getByText(/one receding wall span several focus distances/)).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem").map((stage) => stage.textContent)).toEqual([
+      "1Observe",
+      "2Compose",
+      "3Align Focus",
+      "4Depth of Field",
+    ]);
+
+    cleanup();
+    render(
+      <MemoryRouter>
+        <GuidedLessonProgress
+          context={interiorCornerContextFor("guided", "interior-corner-depth-of-field-01")}
+          evaluation={null}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("Complete this stage to finish the lesson.")).toBeInTheDocument();
+    expect(screen.queryByText("Complete the final challenge to finish the lesson.")).not.toBeInTheDocument();
+  });
+
+  it("renders the Interior Corner lesson copy in Traditional Chinese", async () => {
+    await i18n.changeLanguage("zh-HK");
+    render(
+      <MemoryRouter>
+        <GuidedLessonProgress
+          context={interiorCornerContextFor("free", null)}
+          evaluation={null}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("室內轉角——Rise + Swing 引導課程")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "觀察問題" })).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem").map((stage) => stage.textContent)).toContain("4景深");
   });
 });

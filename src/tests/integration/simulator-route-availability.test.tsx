@@ -50,6 +50,9 @@ describe("simulator route availability", () => {
     ["/simulator/free/architecture-rise", "free:architecture-rise:none:lesson=false"],
     ["/simulator/free/architecture-foreground", "free:architecture-foreground:none:lesson=false"],
     ["/simulator/free/interior-corner", "free:interior-corner:none:lesson=false"],
+    ["/simulator/guided/interior-corner/interior-corner-compose-01", "guided:interior-corner:interior-corner-compose-01:lesson=false"],
+    ["/simulator/guided/interior-corner/interior-corner-align-focus-01?lesson=1", "guided:interior-corner:interior-corner-align-focus-01:lesson=true"],
+    ["/simulator/guided/interior-corner/interior-corner-depth-of-field-01", "guided:interior-corner:interior-corner-depth-of-field-01:lesson=false"],
     ["/simulator/free/oblique-architecture", "free:oblique-architecture:none:lesson=false"],
     ["/simulator/free/shelf-swing", "free:shelf-swing:none:lesson=false"],
     ["/simulator/free/mirror-shift", "free:mirror-shift:none:lesson=false"],
@@ -101,6 +104,7 @@ describe("simulator route availability", () => {
     ["/simulator/free/view-camera-anatomy?lesson=1", "free:view-camera-anatomy:none:lesson=false:calibration=false:anatomy=true"],
     ["/simulator/free/oblique-architecture?lesson=1", "free:oblique-architecture:none:lesson=true"],
     ["/simulator/free/architecture-foreground?lesson=1", "free:architecture-foreground:none:lesson=true"],
+    ["/simulator/free/interior-corner?lesson=1", "free:interior-corner:none:lesson=true"],
     ["/simulator/free/table-tilt?lesson=1", "free:table-tilt:none:lesson=false"],
   ])("only enables lesson UI for configured lessons: %s", async (route, expectedWorkspace) => {
     renderRoute(route);
@@ -126,6 +130,7 @@ describe("simulator route availability", () => {
     "/simulator/guided/shelf-swing/not-a-task",
     "/simulator/free/shelf-swing/swing-01",
     "/simulator/guided/table-tilt/swing-01",
+    "/simulator/guided/interior-corner/not-a-task",
     "/simulator/free/table-tilt/tilt-01",
     "/simulator/guided/focus-fundamentals-two-targets",
     "/simulator/guided/focus-fundamentals-two-targets/rise-01",

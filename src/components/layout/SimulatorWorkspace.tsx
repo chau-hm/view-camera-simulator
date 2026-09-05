@@ -284,6 +284,9 @@ export const SimulatorWorkspace = ({
         : null,
     [guidedLessonEnabled, mode, publicSceneEntry, sceneId, taskId],
   );
+  const interiorCornerGuidedObserve =
+    guidedLessonContext?.lessonId === "interior-corner" &&
+    guidedLessonContext.stage === "observe";
   const activeSingleMovement =
     safeScene.movementCapabilities?.selectionMode === "single"
       ? selectedMovement
@@ -384,6 +387,10 @@ export const SimulatorWorkspace = ({
       return new Set(["focusDistance", "aperture", "geometryView", "grid"]);
     }
 
+    if (interiorCornerGuidedObserve) {
+      return new Set(["geometryView", "grid"]);
+    }
+
     if (mode === "free" || !task) {
       const controls = new Set(["geometryView", "grid"]);
       const availableMovements = safeScene.movementCapabilities?.available;
@@ -404,7 +411,15 @@ export const SimulatorWorkspace = ({
       return controls;
     }
     return new Set([...task.enabledControls]);
-  }, [apertureLocked, camera.activeSceneId, focusLocked, mode, safeScene, task]);
+  }, [
+    apertureLocked,
+    camera.activeSceneId,
+    focusLocked,
+    interiorCornerGuidedObserve,
+    mode,
+    safeScene,
+    task,
+  ]);
 
   const evaluation = useMemo(() => (task ? evaluateTask(task, safeScene, camera, opticsState) : null), [camera, opticsState, safeScene, task]);
   const interiorCornerRiseEvaluation = useMemo(
@@ -815,6 +830,11 @@ export const SimulatorWorkspace = ({
                   <ResetControls
                     showTitle={false}
                     showMovementReset={!movementLocked || safeScene.cameraRigTranslationCapability?.enabled === true}
+                    restartHref={
+                      guidedLessonContext?.lessonId === "interior-corner"
+                        ? `/simulator/free/${sceneId}?lesson=1`
+                        : undefined
+                    }
                   />
                 </div>
               )}

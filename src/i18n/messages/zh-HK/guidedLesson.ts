@@ -10,7 +10,9 @@ export const guidedLessonMessages = {
     continue: "繼續",
     lessonComplete: "課程完成",
     finalChallengePending: "完成最終挑戰以完成課程。",
+    lastStagePending: "完成此階段以完成課程。",
     backToScenes: "返回場景",
+    restartLesson: "重新開始課程",
   },
   stages: {
     observe: "觀察",
@@ -34,6 +36,14 @@ export const guidedLessonMessages = {
         "調整相機之前，先觀察對焦屏。相機保持水平、建築垂直線平行，但屋頂被裁掉，而近處前景仍然偏柔。",
       completionBody:
         "你以 Rise 修正構圖，以 Tilt 和 Focus 對齊及放置焦平面，最後用 Aperture 擴闊由前景到建築物的可用景深。",
+    },
+    interiorCorner: {
+      lessonName: "室內轉角——Rise + Swing 引導課程",
+      observeTitle: "觀察問題",
+      observeBody:
+        "調整相機之前，先觀察對焦屏。上方建築細節在畫面中過於貼近邊緣，而其中一面延伸側牆上的細節跨越不同對焦距離。另一面牆只是空間背景，不是另一個清晰目標。",
+      completionBody:
+        "你以 Rise 修正構圖，以 Swing 和 Focus 將焦平面對齊延伸側牆，最後使用 Aperture 增加可用景深。",
     },
   },
 } satisfies MessageShape<typeof englishGuidedLessonMessages>;

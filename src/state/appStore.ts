@@ -177,6 +177,47 @@ const isGuidedLessonObserveRoute = (
   ) &&
   taskId == null;
 
+/**
+ * The Interior Corner lesson is staged across separate task routes. Forward
+ * navigation must retain the solved photographic state while direct task
+ * entry and backward navigation continue to receive their declared neutral
+ * task initial state.
+ */
+const isInteriorCornerGuidedLessonForwardRoute = (
+  state: {
+    camera: Pick<CameraState, "activeSceneId" | "activeTaskId">;
+    lastInitializedRouteKey?: string | null;
+  },
+  mode: CameraState["mode"],
+  sceneId: string,
+  taskId: string | null | undefined,
+  lessonEntry: boolean,
+): boolean => {
+  if (
+    !lessonEntry ||
+    mode !== "guided" ||
+    sceneId !== "interior-corner" ||
+    taskId == null ||
+    state.camera.activeSceneId !== sceneId ||
+    !state.lastInitializedRouteKey?.endsWith(":lesson")
+  ) {
+    return false;
+  }
+
+  const guidedTaskIds = getPublicSceneEntryById(sceneId)?.guidedTaskIds;
+  if (!guidedTaskIds?.length) return false;
+
+  const previousTaskIndex = state.camera.activeTaskId
+    ? guidedTaskIds.indexOf(state.camera.activeTaskId)
+    : -1;
+  const nextTaskIndex = guidedTaskIds.indexOf(taskId);
+  return (
+    nextTaskIndex >= 0 &&
+    ((previousTaskIndex === -1 && nextTaskIndex === 0) ||
+      nextTaskIndex === previousTaskIndex + 1)
+  );
+};
+
 const resolveGuidedLessonObserveFocus = (
   sceneId: string,
 ): Pick<CameraState, "focusMode" | "focusDistanceMm" | "lastFiniteFocusDepthMm"> => {
@@ -1007,6 +1048,13 @@ export const useAppStore = create<AppStore>((set) => ({
         calibrationRoute,
       );
       const cameraMovementRoute = isCameraMovementsScene(sceneId);
+      const preserveInteriorCornerLessonState = isInteriorCornerGuidedLessonForwardRoute(
+        state,
+        mode,
+        sceneId,
+        taskId,
+        lessonEntry,
+      );
 
       let nextCamera: CameraState = { ...state.camera };
       const routeTask = taskId ? getTaskById(taskId) : undefined;
@@ -1034,39 +1082,47 @@ export const useAppStore = create<AppStore>((set) => ({
             0
           : 0;
 
-      try {
-        const scene = getSceneById(sceneId);
-        if (scene) {
-          const preset = scene.cameraPreset ?? {};
-          nextCamera = {
-            ...nextCamera,
-            ...resolveCameraBodyReset(sceneId),
-            focalLengthMm:
-              preset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm,
-            ...preset,
-            activeSceneId: sceneId,
-          };
-        } else {
+      if (!preserveInteriorCornerLessonState) {
+        try {
+          const scene = getSceneById(sceneId);
+          if (scene) {
+            const preset = scene.cameraPreset ?? {};
+            nextCamera = {
+              ...nextCamera,
+              ...resolveCameraBodyReset(sceneId),
+              focalLengthMm:
+                preset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm,
+              ...preset,
+              activeSceneId: sceneId,
+            };
+          } else {
+            nextCamera.activeSceneId = sceneId;
+          }
+        } catch {
           nextCamera.activeSceneId = sceneId;
         }
-      } catch {
+      } else {
         nextCamera.activeSceneId = sceneId;
       }
 
       if (taskId) {
-        try {
-          const task = routeTask;
-          if (task && task.initialCameraState) {
-            nextCamera = {
-              ...nextCamera,
-              ...task.initialCameraState,
-              activeTaskId: taskId,
-            };
-          } else {
+        if (preserveInteriorCornerLessonState) {
+          nextCamera.activeTaskId = taskId;
+        } else {
+          try {
+            const task = routeTask;
+            if (task && task.initialCameraState) {
+              nextCamera = {
+                ...nextCamera,
+                ...task.initialCameraState,
+                activeTaskId: taskId,
+              };
+            } else {
+              nextCamera.activeTaskId = taskId;
+            }
+          } catch {
             nextCamera.activeTaskId = taskId;
           }
-        } catch {
-          nextCamera.activeTaskId = taskId;
         }
       }
 
@@ -1086,7 +1142,7 @@ export const useAppStore = create<AppStore>((set) => ({
         };
       }
 
-      if (supportsFocusStandard(sceneId)) {
+      if (supportsFocusStandard(sceneId) && !preserveInteriorCornerLessonState) {
         nextCamera = {
           ...nextCamera,
           ...resolveSceneFocusDefaults(sceneId),

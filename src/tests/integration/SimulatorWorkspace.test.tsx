@@ -31,6 +31,18 @@ const workspaceRoute = (
   </MemoryRouter>
 );
 
+const interiorCornerLessonWorkspace = (mode: "guided" | "free", taskId: string | null) => (
+  <MemoryRouter>
+    <SimulatorWorkspace
+      mode={mode}
+      sceneId="interior-corner"
+      taskId={taskId}
+      guidedLessonEnabled
+      simulateAssetFailure={false}
+    />
+  </MemoryRouter>
+);
+
 describe("SimulatorWorkspace expanded Geometry accessibility", () => {
   afterEach(() => {
     cleanup();
@@ -267,6 +279,68 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     );
     expect(useAppStore.getState().camera.focusDistanceMm).toBe(
       interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+    );
+  });
+
+  it("stages Interior Corner controls and preserves solved state between lesson stages", async () => {
+    const view = render(interiorCornerLessonWorkspace("free", null));
+
+    expect(screen.getByRole("heading", { name: "Observe the Problem" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Rise")).toBeDisabled();
+    expect(screen.getByLabelText("Swing")).toBeDisabled();
+    expect(screen.getByLabelText("Focus distance")).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+
+    useAppStore.getState().setRise(33);
+    view.rerender(
+      interiorCornerLessonWorkspace("guided", "interior-corner-compose-01"),
+    );
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Compose the Interior Corner with Rise" })).toBeInTheDocument());
+    expect(screen.getByLabelText("Rise")).toBeEnabled();
+    expect(screen.getByLabelText("Swing")).toBeDisabled();
+    expect(screen.getByLabelText("Focus distance")).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(33);
+    expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+
+    view.rerender(
+      interiorCornerLessonWorkspace("guided", "interior-corner-align-focus-01"),
+    );
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Align the Receding-Wall Focus" })).toBeInTheDocument());
+    expect(screen.getByLabelText("Rise")).toBeDisabled();
+    expect(screen.getByLabelText("Swing")).toBeEnabled();
+    expect(screen.getByLabelText("Focus distance")).toBeEnabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(33);
+
+    fireEvent.change(screen.getByLabelText("Swing"), {
+      target: { value: interiorCornerSwingFocusCalibration.public.frontSwingDeg },
+    });
+    fireEvent.change(screen.getByLabelText("Focus distance"), {
+      target: { value: interiorCornerSwingFocusCalibration.public.focusDistanceMm },
+    });
+    await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
+
+    view.rerender(
+      interiorCornerLessonWorkspace("guided", "interior-corner-depth-of-field-01"),
+    );
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Add Usable Depth with Aperture" })).toBeInTheDocument());
+    expect(screen.getByLabelText("Rise")).toBeDisabled();
+    expect(screen.getByLabelText("Swing")).toBeDisabled();
+    expect(screen.getByLabelText("Focus distance")).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      aperture: 5.6,
+    });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Aperture" }), { target: { value: "11" } });
+    await waitFor(() => expect(screen.getByText("Lesson complete")).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: "Restart lesson" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner?lesson=1",
     );
   });
 });

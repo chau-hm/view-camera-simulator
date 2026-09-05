@@ -12,7 +12,7 @@ import { LOCALE_STORAGE_KEY } from "../../i18n/localePreference";
 import { guidedTaskMessageKeys } from "../../i18n/guidedTaskMessageKeys";
 import type { TaskDefinition, TaskEvaluation } from "../../types/task";
 
-const guidedTaskIds = ["rise-01", "oblique-rise-01", "architecture-foreground-rise-01", "architecture-foreground-tilt-focus-01", "architecture-foreground-dof-01", "architecture-foreground-compound-01", "oblique-swing-focus-01", "oblique-compound-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
+const guidedTaskIds = ["rise-01", "oblique-rise-01", "architecture-foreground-rise-01", "architecture-foreground-tilt-focus-01", "architecture-foreground-dof-01", "architecture-foreground-compound-01", "oblique-swing-focus-01", "oblique-compound-01", "tilt-01", "swing-01", "mirror-shift-01", "interior-corner-compose-01", "interior-corner-align-focus-01", "interior-corner-depth-of-field-01"] as const;
 
 const resetLocale = async () => {
   cleanup();
@@ -200,6 +200,24 @@ describe("Guided Task presentation", () => {
     expect(document.body).toHaveTextContent(/parallax/);
     expect(screen.getAllByText("Guided task").length).toBeGreaterThan(0);
     expect(screen.getByText("Allowed controls:")).toBeInTheDocument();
+
+    cleanup();
+    renderGuidedTask("interior-corner-compose-01", "interior-corner-compose-composition");
+    expect(document.body).toHaveTextContent(/Compose the Interior Corner with Rise/);
+    expect(document.body).toHaveTextContent(/upper architecture/);
+    expect(document.body).toHaveTextContent(/room corner/);
+
+    cleanup();
+    renderGuidedTask("interior-corner-align-focus-01", "interior-corner-align-focus-wall");
+    expect(document.body).toHaveTextContent(/Align the Receding-Wall Focus/);
+    expect(document.body).toHaveTextContent(/one receding side wall/);
+    expect(document.body).toHaveTextContent(/perpendicular wall provides context/);
+
+    cleanup();
+    renderGuidedTask("interior-corner-depth-of-field-01", "interior-corner-depth-focus-preserved");
+    expect(document.body).toHaveTextContent(/Add Usable Depth with Aperture/);
+    expect(document.body).toHaveTextContent(/Aperture does not move the focus plane/);
+    expect(document.body).toHaveTextContent(/receding side wall/);
   });
 
   it("renders representative zh-HK teaching relationships and structural labels", async () => {
