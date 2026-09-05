@@ -40,6 +40,12 @@ export const guidedLessonMessageKeys = {
       observeBody: "guidedLesson.lessons.obliqueTabletop.observeBody",
       completionBody: "guidedLesson.lessons.obliqueTabletop.completionBody",
     },
+    interiorCorner: {
+      lessonName: "guidedLesson.lessons.interiorCorner.lessonName",
+      observeTitle: "guidedLesson.lessons.interiorCorner.observeTitle",
+      observeBody: "guidedLesson.lessons.interiorCorner.observeBody",
+      completionBody: "guidedLesson.lessons.interiorCorner.completionBody",
+    },
   },
 } as const;
 
@@ -62,6 +68,7 @@ const guidedLessonCopyById: Record<string, GuidedLessonCopyMessageKeys> = {
   "oblique-architecture": guidedLessonMessageKeys.lessons.obliqueArchitecture,
   "architecture-foreground": guidedLessonMessageKeys.lessons.architectureForeground,
   "oblique-tabletop": guidedLessonMessageKeys.lessons.obliqueTabletop,
+  "interior-corner": guidedLessonMessageKeys.lessons.interiorCorner,
 };
 
 export const getGuidedLessonCopyKeys = (lessonId: string): GuidedLessonCopyMessageKeys =>

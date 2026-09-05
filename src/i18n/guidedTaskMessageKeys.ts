@@ -82,6 +82,22 @@ export const guidedTaskMessageKeys = {
       pass: "tasks.results.cameraLevel.pass",
       fail: "tasks.results.cameraLevel.fail",
     },
+    interiorCornerRiseComposition: {
+      pass: "tasks.results.interiorCornerRiseComposition.pass",
+      fail: "tasks.results.interiorCornerRiseComposition.fail",
+    },
+    interiorCornerSwingOrientation: {
+      pass: "tasks.results.interiorCornerSwingOrientation.pass",
+      fail: "tasks.results.interiorCornerSwingOrientation.fail",
+    },
+    interiorCornerWallFocus: {
+      pass: "tasks.results.interiorCornerWallFocus.pass",
+      fail: "tasks.results.interiorCornerWallFocus.fail",
+    },
+    interiorCornerFocusPreserved: {
+      pass: "tasks.results.interiorCornerFocusPreserved.pass",
+      fail: "tasks.results.interiorCornerFocusPreserved.fail",
+    },
     mirrorReflectionClear: {
       pass: "tasks.results.mirrorReflectionClear.pass",
       fail: "tasks.results.mirrorReflectionClear.fail",
@@ -551,6 +567,135 @@ export const guidedTaskMessageKeys = {
         tiltRange: "tasks.obliqueTabletopAperture.feedback.secondary.tiltRange",
         swingRange: "tasks.obliqueTabletopAperture.feedback.secondary.swingRange",
         allTargetsSharp: "tasks.obliqueTabletopAperture.feedback.secondary.allTargetsSharp",
+      },
+    },
+  },
+  interiorCornerCompose: {
+    title: "tasks.interiorCornerCompose.title",
+    objective: "tasks.interiorCornerCompose.objective",
+    notes: {
+      composition: "tasks.interiorCornerCompose.notes.composition",
+      level: "tasks.interiorCornerCompose.notes.level",
+    },
+    criteria: {
+      composition: "tasks.interiorCornerCompose.criteria.composition",
+      cameraLevel: "tasks.interiorCornerCompose.criteria.cameraLevel",
+    },
+    feedback: {
+      passPrimary: "tasks.interiorCornerCompose.feedback.passPrimary",
+      defaultFailPrimary: "tasks.interiorCornerCompose.feedback.defaultFailPrimary",
+      primary: {
+        composition: "tasks.interiorCornerCompose.feedback.primary.composition",
+        cameraLevel: "tasks.interiorCornerCompose.feedback.primary.cameraLevel",
+      },
+      secondary: {
+        composition: "tasks.interiorCornerCompose.feedback.secondary.composition",
+        cameraLevel: "tasks.interiorCornerCompose.feedback.secondary.cameraLevel",
+      },
+    },
+  },
+  interiorCornerSwing: {
+    title: "tasks.interiorCornerSwing.title",
+    objective: "tasks.interiorCornerSwing.objective",
+    notes: {
+      swing: "tasks.interiorCornerSwing.notes.swing",
+      orientation: "tasks.interiorCornerSwing.notes.orientation",
+      level: "tasks.interiorCornerSwing.notes.level",
+    },
+    criteria: {
+      allowedAperture: "tasks.interiorCornerSwing.criteria.allowedAperture",
+      composition: "tasks.interiorCornerSwing.criteria.composition",
+      swingRange: "tasks.interiorCornerSwing.criteria.swingRange",
+      orientation: "tasks.interiorCornerSwing.criteria.orientation",
+      cameraLevel: "tasks.interiorCornerSwing.criteria.cameraLevel",
+    },
+    feedback: {
+      passPrimary: "tasks.interiorCornerSwing.feedback.passPrimary",
+      defaultFailPrimary: "tasks.interiorCornerSwing.feedback.defaultFailPrimary",
+      primary: {
+        allowedAperture: "tasks.interiorCornerSwing.feedback.primary.allowedAperture",
+        composition: "tasks.interiorCornerSwing.feedback.primary.composition",
+        swingRange: "tasks.interiorCornerSwing.feedback.primary.swingRange",
+        orientation: "tasks.interiorCornerSwing.feedback.primary.orientation",
+        cameraLevel: "tasks.interiorCornerSwing.feedback.primary.cameraLevel",
+      },
+      secondary: {
+        allowedAperture: "tasks.interiorCornerSwing.feedback.secondary.allowedAperture",
+        composition: "tasks.interiorCornerSwing.feedback.secondary.composition",
+        swingRange: "tasks.interiorCornerSwing.feedback.secondary.swingRange",
+        orientation: "tasks.interiorCornerSwing.feedback.secondary.orientation",
+        cameraLevel: "tasks.interiorCornerSwing.feedback.secondary.cameraLevel",
+      },
+    },
+  },
+  interiorCornerRefine: {
+    title: "tasks.interiorCornerRefine.title",
+    objective: "tasks.interiorCornerRefine.objective",
+    notes: {
+      focus: "tasks.interiorCornerRefine.notes.focus",
+      wall: "tasks.interiorCornerRefine.notes.wall",
+      level: "tasks.interiorCornerRefine.notes.level",
+    },
+    criteria: {
+      allowedAperture: "tasks.interiorCornerRefine.criteria.allowedAperture",
+      composition: "tasks.interiorCornerRefine.criteria.composition",
+      swingRange: "tasks.interiorCornerRefine.criteria.swingRange",
+      focusUsed: "tasks.interiorCornerRefine.criteria.focusUsed",
+      wallFocus: "tasks.interiorCornerRefine.criteria.wallFocus",
+      cameraLevel: "tasks.interiorCornerRefine.criteria.cameraLevel",
+    },
+    feedback: {
+      passPrimary: "tasks.interiorCornerRefine.feedback.passPrimary",
+      defaultFailPrimary: "tasks.interiorCornerRefine.feedback.defaultFailPrimary",
+      primary: {
+        allowedAperture: "tasks.interiorCornerRefine.feedback.primary.allowedAperture",
+        composition: "tasks.interiorCornerRefine.feedback.primary.composition",
+        swingRange: "tasks.interiorCornerRefine.feedback.primary.swingRange",
+        focusUsed: "tasks.interiorCornerRefine.feedback.primary.focusUsed",
+        wallFocus: "tasks.interiorCornerRefine.feedback.primary.wallFocus",
+        cameraLevel: "tasks.interiorCornerRefine.feedback.primary.cameraLevel",
+      },
+      secondary: {
+        allowedAperture: "tasks.interiorCornerRefine.feedback.secondary.allowedAperture",
+        composition: "tasks.interiorCornerRefine.feedback.secondary.composition",
+        swingRange: "tasks.interiorCornerRefine.feedback.secondary.swingRange",
+        focusUsed: "tasks.interiorCornerRefine.feedback.secondary.focusUsed",
+        wallFocus: "tasks.interiorCornerRefine.feedback.secondary.wallFocus",
+        cameraLevel: "tasks.interiorCornerRefine.feedback.secondary.cameraLevel",
+      },
+    },
+  },
+  interiorCornerAperture: {
+    title: "tasks.interiorCornerAperture.title",
+    objective: "tasks.interiorCornerAperture.objective",
+    notes: {
+      aperture: "tasks.interiorCornerAperture.notes.aperture",
+      preserve: "tasks.interiorCornerAperture.notes.preserve",
+      level: "tasks.interiorCornerAperture.notes.level",
+    },
+    criteria: {
+      allowedAperture: "tasks.interiorCornerAperture.criteria.allowedAperture",
+      composition: "tasks.interiorCornerAperture.criteria.composition",
+      swingRange: "tasks.interiorCornerAperture.criteria.swingRange",
+      focusPreserved: "tasks.interiorCornerAperture.criteria.focusPreserved",
+      cameraLevel: "tasks.interiorCornerAperture.criteria.cameraLevel",
+    },
+    feedback: {
+      passPrimary: "tasks.interiorCornerAperture.feedback.passPrimary",
+      defaultFailPrimary: "tasks.interiorCornerAperture.feedback.defaultFailPrimary",
+      primary: {
+        allowedAperture: "tasks.interiorCornerAperture.feedback.primary.allowedAperture",
+        composition: "tasks.interiorCornerAperture.feedback.primary.composition",
+        swingRange: "tasks.interiorCornerAperture.feedback.primary.swingRange",
+        focusPreserved: "tasks.interiorCornerAperture.feedback.primary.focusPreserved",
+        cameraLevel: "tasks.interiorCornerAperture.feedback.primary.cameraLevel",
+      },
+      secondary: {
+        allowedAperture: "tasks.interiorCornerAperture.feedback.secondary.allowedAperture",
+        composition: "tasks.interiorCornerAperture.feedback.secondary.composition",
+        swingRange: "tasks.interiorCornerAperture.feedback.secondary.swingRange",
+        focusPreserved: "tasks.interiorCornerAperture.feedback.secondary.focusPreserved",
+        cameraLevel: "tasks.interiorCornerAperture.feedback.secondary.cameraLevel",
       },
     },
   },

@@ -48,5 +48,13 @@ export const guidedLessonMessages = {
       completionBody:
         "你利用前組俯仰與擺動定位同一個三維清晰焦平面，再用對焦把它放到桌面上，最後以光圈在已對齊的焦平面周圍增加景深。",
     },
+    interiorCorner: {
+      lessonName: "室內角落引導課程",
+      observeTitle: "觀察問題",
+      observeBody:
+        "調整相機之前，先觀察室內角落。上方細節需要仔細構圖，而延伸牆面橫跨不同深度，單靠對焦無法令近處至遠處同時保持清晰。",
+      completionBody:
+        "你以前組上移完成角落構圖，以前組擺動定位焦平面，再用對焦將它放到延伸牆面上，最後適度收細光圈增加景深。",
+    },
   },
 } satisfies MessageShape<typeof englishGuidedLessonMessages>;

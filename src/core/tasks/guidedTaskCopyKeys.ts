@@ -549,6 +549,132 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
       },
     },
   },
+  "interior-corner-compose-01": {
+    title: k.interiorCornerCompose.title,
+    objective: k.interiorCornerCompose.objective,
+    notes: [k.interiorCornerCompose.notes.composition, k.interiorCornerCompose.notes.level],
+    criteria: {
+      "interior-corner-compose-composition": k.interiorCornerCompose.criteria.composition,
+      "interior-corner-compose-camera-level": k.interiorCornerCompose.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerCompose.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerCompose.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-compose-composition": k.interiorCornerCompose.feedback.primary.composition,
+        "interior-corner-compose-camera-level": k.interiorCornerCompose.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-compose-composition": k.interiorCornerCompose.feedback.secondary.composition,
+        "interior-corner-compose-camera-level": k.interiorCornerCompose.feedback.secondary.cameraLevel,
+      },
+    },
+  },
+  "interior-corner-swing-01": {
+    title: k.interiorCornerSwing.title,
+    objective: k.interiorCornerSwing.objective,
+    notes: [
+      k.interiorCornerSwing.notes.swing,
+      k.interiorCornerSwing.notes.orientation,
+      k.interiorCornerSwing.notes.level,
+    ],
+    criteria: {
+      "interior-corner-swing-allowed-aperture": k.interiorCornerSwing.criteria.allowedAperture,
+      "interior-corner-swing-composition": k.interiorCornerSwing.criteria.composition,
+      "interior-corner-swing-range": k.interiorCornerSwing.criteria.swingRange,
+      "interior-corner-swing-orientation": k.interiorCornerSwing.criteria.orientation,
+      "interior-corner-swing-camera-level": k.interiorCornerSwing.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerSwing.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerSwing.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-swing-allowed-aperture": k.interiorCornerSwing.feedback.primary.allowedAperture,
+        "interior-corner-swing-composition": k.interiorCornerSwing.feedback.primary.composition,
+        "interior-corner-swing-range": k.interiorCornerSwing.feedback.primary.swingRange,
+        "interior-corner-swing-orientation": k.interiorCornerSwing.feedback.primary.orientation,
+        "interior-corner-swing-camera-level": k.interiorCornerSwing.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-swing-allowed-aperture": k.interiorCornerSwing.feedback.secondary.allowedAperture,
+        "interior-corner-swing-composition": k.interiorCornerSwing.feedback.secondary.composition,
+        "interior-corner-swing-range": k.interiorCornerSwing.feedback.secondary.swingRange,
+        "interior-corner-swing-orientation": k.interiorCornerSwing.feedback.secondary.orientation,
+        "interior-corner-swing-camera-level": k.interiorCornerSwing.feedback.secondary.cameraLevel,
+      },
+    },
+  },
+  "interior-corner-refine-01": {
+    title: k.interiorCornerRefine.title,
+    objective: k.interiorCornerRefine.objective,
+    notes: [
+      k.interiorCornerRefine.notes.focus,
+      k.interiorCornerRefine.notes.wall,
+      k.interiorCornerRefine.notes.level,
+    ],
+    criteria: {
+      "interior-corner-refine-allowed-aperture": k.interiorCornerRefine.criteria.allowedAperture,
+      "interior-corner-refine-composition": k.interiorCornerRefine.criteria.composition,
+      "interior-corner-refine-swing-range": k.interiorCornerRefine.criteria.swingRange,
+      "interior-corner-refine-focus-used": k.interiorCornerRefine.criteria.focusUsed,
+      "interior-corner-refine-wall-focus": k.interiorCornerRefine.criteria.wallFocus,
+      "interior-corner-refine-camera-level": k.interiorCornerRefine.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerRefine.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerRefine.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-refine-allowed-aperture": k.interiorCornerRefine.feedback.primary.allowedAperture,
+        "interior-corner-refine-composition": k.interiorCornerRefine.feedback.primary.composition,
+        "interior-corner-refine-swing-range": k.interiorCornerRefine.feedback.primary.swingRange,
+        "interior-corner-refine-focus-used": k.interiorCornerRefine.feedback.primary.focusUsed,
+        "interior-corner-refine-wall-focus": k.interiorCornerRefine.feedback.primary.wallFocus,
+        "interior-corner-refine-camera-level": k.interiorCornerRefine.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-refine-allowed-aperture": k.interiorCornerRefine.feedback.secondary.allowedAperture,
+        "interior-corner-refine-composition": k.interiorCornerRefine.feedback.secondary.composition,
+        "interior-corner-refine-swing-range": k.interiorCornerRefine.feedback.secondary.swingRange,
+        "interior-corner-refine-focus-used": k.interiorCornerRefine.feedback.secondary.focusUsed,
+        "interior-corner-refine-wall-focus": k.interiorCornerRefine.feedback.secondary.wallFocus,
+        "interior-corner-refine-camera-level": k.interiorCornerRefine.feedback.secondary.cameraLevel,
+      },
+    },
+  },
+  "interior-corner-aperture-01": {
+    title: k.interiorCornerAperture.title,
+    objective: k.interiorCornerAperture.objective,
+    notes: [
+      k.interiorCornerAperture.notes.aperture,
+      k.interiorCornerAperture.notes.preserve,
+      k.interiorCornerAperture.notes.level,
+    ],
+    criteria: {
+      "interior-corner-aperture-allowed-aperture": k.interiorCornerAperture.criteria.allowedAperture,
+      "interior-corner-aperture-composition": k.interiorCornerAperture.criteria.composition,
+      "interior-corner-aperture-swing-range": k.interiorCornerAperture.criteria.swingRange,
+      "interior-corner-aperture-focus-preserved": k.interiorCornerAperture.criteria.focusPreserved,
+      "interior-corner-aperture-camera-level": k.interiorCornerAperture.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerAperture.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerAperture.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-aperture-allowed-aperture": k.interiorCornerAperture.feedback.primary.allowedAperture,
+        "interior-corner-aperture-composition": k.interiorCornerAperture.feedback.primary.composition,
+        "interior-corner-aperture-swing-range": k.interiorCornerAperture.feedback.primary.swingRange,
+        "interior-corner-aperture-focus-preserved": k.interiorCornerAperture.feedback.primary.focusPreserved,
+        "interior-corner-aperture-camera-level": k.interiorCornerAperture.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-aperture-allowed-aperture": k.interiorCornerAperture.feedback.secondary.allowedAperture,
+        "interior-corner-aperture-composition": k.interiorCornerAperture.feedback.secondary.composition,
+        "interior-corner-aperture-swing-range": k.interiorCornerAperture.feedback.secondary.swingRange,
+        "interior-corner-aperture-focus-preserved": k.interiorCornerAperture.feedback.secondary.focusPreserved,
+        "interior-corner-aperture-camera-level": k.interiorCornerAperture.feedback.secondary.cameraLevel,
+      },
+    },
+  },
   "tilt-01": {
     title: k.tableTilt.title,
     objective: k.tableTilt.objective,
@@ -757,6 +883,14 @@ export const getCriterionResultMessageRef = (
       return ref(k.results.compositionVisible[variant]);
     case "camera-level":
       return ref(k.results.cameraLevel[variant]);
+    case "interior-corner-rise-composition":
+      return ref(k.results.interiorCornerRiseComposition[variant]);
+    case "interior-corner-swing-orientation":
+      return ref(k.results.interiorCornerSwingOrientation[variant]);
+    case "interior-corner-wall-focus":
+      return ref(k.results.interiorCornerWallFocus[variant]);
+    case "interior-corner-focus-preserved":
+      return ref(k.results.interiorCornerFocusPreserved[variant]);
     case "mirror-reflection-clear":
       return ref(k.results.mirrorReflectionClear[variant]);
     case "mirror-framing-restored":

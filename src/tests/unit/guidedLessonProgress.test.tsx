@@ -11,6 +11,8 @@ const entry = getPublicSceneEntryById("oblique-architecture");
 if (!entry) throw new Error("Missing Oblique Architecture public scene entry");
 const architectureForegroundEntry = getPublicSceneEntryById("architecture-foreground");
 if (!architectureForegroundEntry) throw new Error("Missing Architecture + Foreground public scene entry");
+const interiorCornerEntry = getPublicSceneEntryById("interior-corner");
+if (!interiorCornerEntry) throw new Error("Missing Interior Corner public scene entry");
 
 const passingEvaluation: TaskEvaluation = {
   taskId: "oblique-rise-01",
@@ -42,6 +44,18 @@ const architectureContextFor = (mode: "free" | "guided", taskId: string | null) 
     search: "?lesson=1",
   });
   if (!context) throw new Error("Expected Architecture + Foreground lesson context");
+  return context;
+};
+
+const interiorCornerContextFor = (mode: "free" | "guided", taskId: string | null) => {
+  const context = getGuidedLessonContext({
+    entry: interiorCornerEntry,
+    mode,
+    sceneId: "interior-corner",
+    taskId,
+    search: "?lesson=1",
+  });
+  if (!context) throw new Error("Expected Interior Corner lesson context");
   return context;
 };
 
@@ -219,5 +233,48 @@ describe("GuidedLessonProgress", () => {
     );
     expect(screen.getByText("Lesson complete")).toBeInTheDocument();
     expect(screen.getByText(/You corrected the framing with Rise/)).toBeInTheDocument();
+  });
+
+  it("renders Interior Corner with Observe plus four task stages", () => {
+    render(
+      <MemoryRouter>
+        <GuidedLessonProgress context={interiorCornerContextFor("free", null)} evaluation={null} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Interior Corner Guided Lesson")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Observe the Problem" })).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem").map((stage) => stage.textContent)).toEqual([
+      "1Observe",
+      "2Compose",
+      "3Front Swing",
+      "4Refine Focus",
+      "5Aperture",
+    ]);
+    expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/interior-corner/interior-corner-compose-01?lesson=1",
+    );
+  });
+
+  it("gates Interior Corner advancement on each task evaluation", () => {
+    const context = interiorCornerContextFor("guided", "interior-corner-swing-01");
+    const { rerender } = render(
+      <MemoryRouter>
+        <GuidedLessonProgress context={context} evaluation={null} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+
+    rerender(
+      <MemoryRouter>
+        <GuidedLessonProgress context={context} evaluation={passingEvaluation} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/interior-corner/interior-corner-refine-01?lesson=1",
+    );
   });
 });

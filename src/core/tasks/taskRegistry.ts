@@ -4,6 +4,7 @@ import architectureForegroundGeometry from "../../scenes/architectureForegroundG
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
@@ -13,6 +14,12 @@ import {
   MIRROR_SHIFT_SCENE_CALIBRATION,
   resolveMirrorShiftTeachingState,
 } from "../../scenes/mirrorShiftCalibration";
+import {
+  INTERIOR_CORNER_GUIDED_FINAL_APERTURE,
+  INTERIOR_CORNER_GUIDED_SWING_RANGE,
+  INTERIOR_CORNER_GUIDED_TASK_IDS,
+} from "../../scenes/interiorCornerGuidedLesson";
+import { interiorCornerSwingFocusCalibration } from "../../scenes/interiorCornerSwingFocus";
 
 const riseTask: TaskDefinition = {
   id: "rise-01",
@@ -803,6 +810,178 @@ const obliqueTabletopApertureTask: TaskDefinition = {
   },
 };
 
+const interiorCornerComposedRiseMm = 33;
+const interiorCornerSwingRange = INTERIOR_CORNER_GUIDED_SWING_RANGE;
+const interiorCornerSwingFocus = interiorCornerSwingFocusCalibration.public;
+
+const interiorCornerInitialCameraState: NonNullable<TaskDefinition["initialCameraState"]> = {
+  frontRiseMm: 0,
+  frontTiltDeg: 0,
+  frontSwingDeg: 0,
+  rearRiseMm: 0,
+  rearTiltDeg: 0,
+  focusDistanceMm: interiorCornerScene.cameraPreset.focusDistanceMm,
+  aperture: interiorCornerScene.cameraPreset.aperture,
+  geometryView: "top",
+  groundGlassAssistEnabled: false,
+  gridEnabled: true,
+};
+
+const interiorCornerComposeTask: TaskDefinition = {
+  id: INTERIOR_CORNER_GUIDED_TASK_IDS.compose,
+  sceneId: interiorCornerScene.id,
+  mode: "guided",
+  enabledControls: ["rise", "geometryView"],
+  constraints: {
+    movement: "rise-only",
+  },
+  criteria: [
+    {
+      id: "interior-corner-compose-composition",
+      type: "interior-corner-rise-composition",
+    },
+    {
+      id: "interior-corner-compose-camera-level",
+      type: "camera-level",
+    },
+  ],
+  initialCameraState: interiorCornerInitialCameraState,
+};
+
+const interiorCornerSwingTask: TaskDefinition = {
+  id: INTERIOR_CORNER_GUIDED_TASK_IDS.swing,
+  sceneId: interiorCornerScene.id,
+  mode: "guided",
+  enabledControls: ["swing", "geometryView"],
+  constraints: {
+    movement: "swing-only",
+  },
+  criteria: [
+    {
+      id: "interior-corner-swing-allowed-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [interiorCornerScene.cameraPreset.aperture],
+    },
+    {
+      id: "interior-corner-swing-composition",
+      type: "interior-corner-rise-composition",
+    },
+    {
+      id: "interior-corner-swing-range",
+      type: "movement-range",
+      movement: "swing",
+      min: interiorCornerSwingRange.min,
+      max: interiorCornerSwingRange.max,
+      valueMode: "signed",
+    },
+    {
+      id: "interior-corner-swing-orientation",
+      type: "interior-corner-swing-orientation",
+    },
+    {
+      id: "interior-corner-swing-camera-level",
+      type: "camera-level",
+    },
+  ],
+  initialCameraState: {
+    ...interiorCornerInitialCameraState,
+    frontRiseMm: interiorCornerComposedRiseMm,
+    frontSwingDeg: 0,
+    focusDistanceMm: interiorCornerScene.cameraPreset.focusDistanceMm,
+    geometryView: "top",
+  },
+};
+
+const interiorCornerRefineTask: TaskDefinition = {
+  id: INTERIOR_CORNER_GUIDED_TASK_IDS.refine,
+  sceneId: interiorCornerScene.id,
+  mode: "guided",
+  enabledControls: ["swing", "focusDistance", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "interior-corner-refine-allowed-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [interiorCornerScene.cameraPreset.aperture],
+    },
+    {
+      id: "interior-corner-refine-composition",
+      type: "interior-corner-rise-composition",
+    },
+    {
+      id: "interior-corner-refine-swing-range",
+      type: "movement-range",
+      movement: "swing",
+      min: interiorCornerSwingRange.min,
+      max: interiorCornerSwingRange.max,
+      valueMode: "signed",
+    },
+    {
+      id: "interior-corner-refine-focus-used",
+      type: "focus-used",
+      minimumAbsMm: 100,
+    },
+    {
+      id: "interior-corner-refine-wall-focus",
+      type: "interior-corner-wall-focus",
+    },
+    {
+      id: "interior-corner-refine-camera-level",
+      type: "camera-level",
+    },
+  ],
+  initialCameraState: {
+    ...interiorCornerInitialCameraState,
+    frontRiseMm: interiorCornerComposedRiseMm,
+    frontSwingDeg: interiorCornerSwingFocus.frontSwingDeg,
+    focusDistanceMm: interiorCornerScene.cameraPreset.focusDistanceMm,
+    geometryView: "top",
+  },
+};
+
+const interiorCornerApertureTask: TaskDefinition = {
+  id: INTERIOR_CORNER_GUIDED_TASK_IDS.aperture,
+  sceneId: interiorCornerScene.id,
+  mode: "guided",
+  enabledControls: ["aperture", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "interior-corner-aperture-allowed-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [INTERIOR_CORNER_GUIDED_FINAL_APERTURE],
+    },
+    {
+      id: "interior-corner-aperture-composition",
+      type: "interior-corner-rise-composition",
+    },
+    {
+      id: "interior-corner-aperture-swing-range",
+      type: "movement-range",
+      movement: "swing",
+      min: interiorCornerSwingRange.min,
+      max: interiorCornerSwingRange.max,
+      valueMode: "signed",
+    },
+    {
+      id: "interior-corner-aperture-focus-preserved",
+      type: "interior-corner-focus-preserved",
+    },
+    {
+      id: "interior-corner-aperture-camera-level",
+      type: "camera-level",
+    },
+  ],
+  initialCameraState: {
+    ...interiorCornerInitialCameraState,
+    frontRiseMm: interiorCornerComposedRiseMm,
+    frontSwingDeg: interiorCornerSwingFocus.frontSwingDeg,
+    focusDistanceMm: interiorCornerSwingFocus.focusDistanceMm,
+    aperture: interiorCornerScene.cameraPreset.aperture,
+    geometryView: "scheimpflug",
+  },
+};
+
 const tiltTask: TaskDefinition = {
   id: "tilt-01",
   sceneId: "table-tilt",
@@ -1002,6 +1181,10 @@ export const taskRegistry: Record<string, TaskDefinition> = {
   "oblique-tabletop-swing-01": obliqueTabletopSwingTask,
   "oblique-tabletop-refine-01": obliqueTabletopRefineTask,
   "oblique-tabletop-aperture-01": obliqueTabletopApertureTask,
+  [interiorCornerComposeTask.id]: interiorCornerComposeTask,
+  [interiorCornerSwingTask.id]: interiorCornerSwingTask,
+  [interiorCornerRefineTask.id]: interiorCornerRefineTask,
+  [interiorCornerApertureTask.id]: interiorCornerApertureTask,
   "tilt-01": tiltTask,
   "swing-01": swingTask,
   "mirror-shift-01": mirrorShiftTask,

@@ -9,6 +9,8 @@ const entry = getPublicSceneEntryById("oblique-architecture");
 if (!entry) throw new Error("Missing Oblique Architecture public scene entry");
 const architectureForegroundEntry = getPublicSceneEntryById("architecture-foreground");
 if (!architectureForegroundEntry) throw new Error("Missing Architecture + Foreground public scene entry");
+const interiorCornerEntry = getPublicSceneEntryById("interior-corner");
+if (!interiorCornerEntry) throw new Error("Missing Interior Corner public scene entry");
 
 describe("Oblique Architecture guided lesson routing", () => {
   it("derives the four-stage sequence from the public guided task order", () => {
@@ -173,5 +175,60 @@ describe("Architecture + Foreground guided lesson routing", () => {
         search: "",
       }),
     ).toBeNull();
+  });
+});
+
+describe("Interior Corner guided lesson routing", () => {
+  it("derives the five-stage sequence from the ordered public task metadata", () => {
+    expect(getGuidedLessonStages(interiorCornerEntry)).toEqual([
+      { id: "observe" },
+      { id: "compose", taskId: "interior-corner-compose-01" },
+      { id: "swing", taskId: "interior-corner-swing-01" },
+      { id: "refine", taskId: "interior-corner-refine-01" },
+      { id: "aperture", taskId: "interior-corner-aperture-01" },
+    ]);
+  });
+
+  it("constructs the complete Interior Corner lesson route context in order", () => {
+    const observe = getGuidedLessonContext({
+      entry: interiorCornerEntry,
+      mode: "free",
+      sceneId: "interior-corner",
+      taskId: null,
+      search: "?lesson=1",
+    });
+    expect(observe).toMatchObject({
+      lessonId: "interior-corner",
+      stage: "observe",
+      stageIndex: 0,
+      previousHref: null,
+      nextHref: "/simulator/guided/interior-corner/interior-corner-compose-01?lesson=1",
+    });
+
+    const swing = getGuidedLessonContext({
+      entry: interiorCornerEntry,
+      mode: "guided",
+      sceneId: "interior-corner",
+      taskId: "interior-corner-swing-01",
+      search: "?lesson=1",
+    });
+    expect(swing).toMatchObject({
+      stage: "swing",
+      previousHref: "/simulator/guided/interior-corner/interior-corner-compose-01?lesson=1",
+      nextHref: "/simulator/guided/interior-corner/interior-corner-refine-01?lesson=1",
+    });
+
+    const aperture = getGuidedLessonContext({
+      entry: interiorCornerEntry,
+      mode: "guided",
+      sceneId: "interior-corner",
+      taskId: "interior-corner-aperture-01",
+      search: "?lesson=1",
+    });
+    expect(aperture).toMatchObject({
+      stage: "aperture",
+      previousHref: "/simulator/guided/interior-corner/interior-corner-refine-01?lesson=1",
+      nextHref: null,
+    });
   });
 });
