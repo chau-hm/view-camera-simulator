@@ -388,13 +388,30 @@ const isApertureLocked = (sceneId: string): boolean => {
   return scene?.cameraControlPolicy?.aperture === "fixed";
 };
 
+/** A guided task may explicitly unlock a scene-fixed aperture for its final stage. */
+const isTaskApertureEnabled = (
+  sceneId: string,
+  taskId: string | null | undefined,
+): boolean => {
+  if (!taskId) return false;
+  const task = getTaskById(taskId);
+  return Boolean(
+    task &&
+      task.mode === "guided" &&
+      task.sceneId === sceneId &&
+      task.enabledControls.includes("aperture"),
+  );
+};
+
 /** Resolve a locked scene's aperture from its canonical camera preset. */
 const resolveSceneAperture = (
   sceneId: string,
   fallback: ApertureValue,
+  taskId?: string | null,
 ): ApertureValue => {
   const scene = getSceneById(sceneId);
-  return scene?.cameraControlPolicy?.aperture === "fixed"
+  return scene?.cameraControlPolicy?.aperture === "fixed" &&
+    !isTaskApertureEnabled(sceneId, taskId)
     ? scene.cameraPreset.aperture
     : fallback;
 };
@@ -989,7 +1006,11 @@ export const useAppStore = create<AppStore>((set) => ({
             ...state.camera,
             mode,
             activeTaskId: taskId ?? null,
-            aperture: resolveSceneAperture(sceneId, state.camera.aperture),
+            aperture: resolveSceneAperture(
+              sceneId,
+              state.camera.aperture,
+              taskId,
+            ),
           },
           scene: { ...state.scene, activeSceneId: sceneId },
           task: { ...state.task, activeTaskId: taskId ?? null },
@@ -1095,7 +1116,7 @@ export const useAppStore = create<AppStore>((set) => ({
 
       nextCamera = {
         ...nextCamera,
-        aperture: resolveSceneAperture(sceneId, nextCamera.aperture),
+        aperture: resolveSceneAperture(sceneId, nextCamera.aperture, taskId),
       };
 
       // Guided Lesson Observe is the explicit neutral entry point for every
@@ -1482,14 +1503,25 @@ export const useAppStore = create<AppStore>((set) => ({
     }),
 
   setAperture: (value) =>
-    set((state) => ({
-      camera: {
-        ...state.camera,
-        aperture: isApertureLocked(state.camera.activeSceneId)
-          ? resolveSceneAperture(state.camera.activeSceneId, state.camera.aperture)
-          : isApertureValue(value) ? value : state.camera.aperture,
-      },
-    })),
+    set((state) => {
+      const sceneId = state.camera.activeSceneId;
+      const taskId = state.camera.activeTaskId ?? state.task.activeTaskId;
+      const taskApertureEnabled =
+        state.camera.mode === "guided" && isTaskApertureEnabled(sceneId, taskId);
+      const canChangeAperture = !isApertureLocked(sceneId) || taskApertureEnabled;
+      return {
+        camera: {
+          ...state.camera,
+          aperture: canChangeAperture && isApertureValue(value)
+            ? value
+            : resolveSceneAperture(
+                sceneId,
+                state.camera.aperture,
+                taskApertureEnabled ? taskId : null,
+              ),
+        },
+      };
+    }),
 
   setGeometryView: (value) =>
     set((state) => ({
@@ -1586,6 +1618,7 @@ export const useAppStore = create<AppStore>((set) => ({
           aperture: resolveSceneAperture(
             sceneId,
             (resetValues as Partial<CameraState>).aperture ?? state.camera.aperture,
+            state.task.activeTaskId,
           ),
           cameraBodyPitchDeg: 0,
           cameraRigPlacement:
@@ -1679,6 +1712,7 @@ export const useAppStore = create<AppStore>((set) => ({
           aperture: resolveSceneAperture(
             nextSceneId,
             (nextControlState as Partial<CameraState>).aperture ?? state.camera.aperture,
+            activeTask?.id,
           ),
           frontShiftMm: isCanonicalMovementAvailable(nextSceneId, "frontShiftMm")
             ? (nextControlState as Partial<CameraState>).frontShiftMm ??
