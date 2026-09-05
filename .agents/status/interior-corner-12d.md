@@ -53,7 +53,7 @@ The broader local E2E gate did not complete because of the unrelated Mirror Shif
 - PR128 Oblique Tabletop guided metadata, task progression, staged controls, localized copy, and tests are preserved. PR129 Interior Corner bidirectional state persistence, deep-link recovery, Restart Lesson, and guided Reset protection are preserved.
 - Post-sync focused Vitest passed (181 tests across the Interior/Oblique/shared suites); full Vitest passed (164 files, 1,593 tests). Typecheck, lint, CSS structure, build, and diff checks passed.
 - Focused Interior Corner and Oblique Tabletop Playwright passed (4 tests). The broader local E2E gate passed through Interior Corner and all preceding groups, then stopped at the pre-existing `mirror-shift-teaching-geometry.spec.ts` RTT-content assertion (`ground-glass-rtt` not found); no Interior/Oblique failure occurred.
-- The final post-sync branch head is recorded in the completion report after the integration commit.
+- Integration commit and current post-sync branch head: `e10d8ae6f8b75005e806ce08064803de0acaf284`.
 
 ## Known limitations
 
