@@ -6,7 +6,7 @@ Turn the validated Interior Corner free-mode foundation into a deterministic Obs
 
 ## Branch / worktree / base / head
 
-`feature/interior-corner-guided-lesson` · `/Users/homan/repo/view-camera-interior-corner-12d` · base `1fd8b0b1e6c9fd4a657c922c3c2af538c82a55b9` · implementation commit `b701ee3`; final handoff head is recorded in the completion report
+`feature/interior-corner-guided-lesson` · `/Users/homan/repo/view-camera-interior-corner-12d` · base `1fd8b0b1e6c9fd4a657c922c3c2af538c82a55b9` · implementation `b701ee3`; pre-publication handoff `96ce222`; final publication commit is this handoff update and is recorded in the completion report
 
 ## PR12A–12C prerequisites verified
 
@@ -44,7 +44,7 @@ Ground Glass assertions verify the existing RTT surface remains present/contentf
 
 ## Publication
 
-Implementation commit `b701ee3` is complete. Pending the focused handoff update, explicit feature-branch push, remote verification, and Draft PR creation.
+Implementation commit `b701ee3` and pre-publication handoff `96ce222` are complete. Draft PR #129 is open as a draft; final handoff publication and remote verification are recorded in the completion report.
 
 ## Reviewer focus
 
