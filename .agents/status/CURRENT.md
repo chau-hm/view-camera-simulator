@@ -8,5 +8,5 @@
 - Geometry View correction: regenerated only `public/assets/landing/visualize-geometry.webp` with built-in ImageGen, using the two sibling assets as references. The corrected image contains the same single cube, sphere, and cone arrangement, camera/lens, mapped rays, and image plane; the other six Part E assets are unchanged.
 - Asset: `visualize-geometry.webp` is 1448×1086, 4:3, 95148 bytes after WebP encoding.
 - i18n/responsive/code: no copy, component, layout, or simulator changes in this correction pass.
-- Validation: final-head validation after the second main update is pending; prior updated-head checks passed before the second upstream simulator-only merge.
+- Validation: after the second main update, `ci:local` passes CSS structure, lint, typecheck, full Vitest (162 files, 1565 tests), and production build; focused Chromium home E2E passes (7/7); runtime screenshots at 1440×900 and 390×844 show the corrected asset in its card crop with zero horizontal overflow; `git diff --check` passes.
 - Deferred: Part F / Why It Matters, final CTA, motion/scroll reveal/parallax, Scene Gallery, simulator mini-demos, and new simulator functionality.
