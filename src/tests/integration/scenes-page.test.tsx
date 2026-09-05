@@ -140,7 +140,10 @@ describe("scenes page", () => {
       "href",
       "/simulator/free/interior-corner",
     );
-    expect(scopedInteriorCornerCard.queryByRole("link", { name: "Start Guided Task" })).toBeNull();
+    expect(scopedInteriorCornerCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner?lesson=1",
+    );
 
     // Oblique Architecture remains directly available immediately before the final scene.
     const obliqueHeading = await screen.findByRole("heading", {
@@ -364,6 +367,10 @@ describe("scenes page", () => {
     expect(cardFor("室內轉角 — 上移與擺動").getByRole("link", { name: "開啟場景" })).toHaveAttribute(
       "href",
       "/simulator/free/interior-corner",
+    );
+    expect(cardFor("室內轉角 — 上移與擺動").getByRole("link", { name: "引導課程" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner?lesson=1",
     );
   });
 

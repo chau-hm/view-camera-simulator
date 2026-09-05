@@ -46,5 +46,13 @@ export const guidedLessonMessages = {
       completionBody:
         "You used Tilt and Swing to orient one three-dimensional focus plane, Focus to place it on the tabletop, and Aperture to add depth around that aligned plane.",
     },
+    interiorCorner: {
+      lessonName: "Interior Corner Guided Lesson",
+      observeTitle: "Observe the Problem",
+      observeBody:
+        "Before changing the camera, inspect the interior corner. The upper detail needs careful framing, while the receding wall spans depth and cannot be held sharp from near to far with Focus alone.",
+      completionBody:
+        "You composed the corner with Front Rise, oriented the focus plane with Front Swing, placed it on the receding wall with Focus, and added depth with a modest aperture change.",
+    },
   },
 } as const;

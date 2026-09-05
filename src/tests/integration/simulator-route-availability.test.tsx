@@ -88,6 +88,14 @@ describe("simulator route availability", () => {
     ],
     ["/simulator/guided/shelf-swing/swing-01", "guided:shelf-swing:swing-01:lesson=false"],
     ["/simulator/free/table-tilt", "free:table-tilt:none:lesson=false"],
+    [
+      "/simulator/guided/interior-corner/interior-corner-compose-01",
+      "guided:interior-corner:interior-corner-compose-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-swing-01?lesson=1",
+      "guided:interior-corner:interior-corner-swing-01:lesson=true",
+    ],
     ["/simulator/guided/table-tilt/tilt-01", "guided:table-tilt:tilt-01:lesson=false"],
   ])("keeps available simulator route %s open", async (route, expectedWorkspace) => {
     renderRoute(route);
@@ -101,6 +109,7 @@ describe("simulator route availability", () => {
     ["/simulator/free/view-camera-anatomy?lesson=1", "free:view-camera-anatomy:none:lesson=false:calibration=false:anatomy=true"],
     ["/simulator/free/oblique-architecture?lesson=1", "free:oblique-architecture:none:lesson=true"],
     ["/simulator/free/architecture-foreground?lesson=1", "free:architecture-foreground:none:lesson=true"],
+    ["/simulator/free/interior-corner?lesson=1", "free:interior-corner:none:lesson=true"],
     ["/simulator/free/table-tilt?lesson=1", "free:table-tilt:none:lesson=false"],
   ])("only enables lesson UI for configured lessons: %s", async (route, expectedWorkspace) => {
     renderRoute(route);
@@ -134,6 +143,7 @@ describe("simulator route availability", () => {
     "/simulator/guided/architecture-foreground",
     "/simulator/guided/architecture-foreground/architecture-foreground-not-a-task?lesson=1",
     "/simulator/free/interior-corner/swing-01",
+    "/simulator/guided/interior-corner/not-a-task",
   ])("redirects invalid simulator route %s to Scenes", async (route) => {
     renderRoute(route);
 

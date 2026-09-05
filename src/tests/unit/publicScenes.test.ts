@@ -120,17 +120,26 @@ describe("public scene catalog integrity", () => {
     ).toBe(true);
   });
 
-  it("publishes Interior Corner as a free-only neutral Rise/Swing foundation", () => {
+  it("publishes Interior Corner with its four-stage Rise/Swing guided lesson", () => {
     const entry = publicSceneCatalog.find((candidate) => candidate.id === "interior-corner")!;
     expect(entry).toMatchObject({
       id: "interior-corner",
       availability: "available",
-      availableModes: ["free"],
+      availableModes: ["free", "guided"],
       thumbnailAsset: "assets/interior-corner.png",
     });
-    expect(entry.guidedTaskId).toBeUndefined();
-    expect(entry.guidedTaskIds).toBeUndefined();
-    expect(entry.guidedLesson).toBeUndefined();
+    expect(entry.guidedTaskId).toBe("interior-corner-aperture-01");
+    expect(entry.guidedTaskIds).toEqual([
+      "interior-corner-compose-01",
+      "interior-corner-swing-01",
+      "interior-corner-refine-01",
+      "interior-corner-aperture-01",
+    ]);
+    expect(entry.guidedLesson).toEqual({
+      id: "interior-corner",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "swing", "refine", "aperture"],
+    });
     expect(entry.thumbnailAsset).not.toMatch(/\.svg$/);
     expect(existsSync(resolve(process.cwd(), "public", entry.thumbnailAsset))).toBe(true);
     expect(
@@ -153,10 +162,11 @@ describe("public scene catalog integrity", () => {
       isValidSimulatorRoute({
         mode: "guided",
         sceneId: entry.id,
-        taskId: "not-a-task",
+        taskId: entry.guidedTaskId,
         publicEntry: entry,
+        task: getTaskById(entry.guidedTaskId!),
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("publishes Architecture + Foreground with its direct guided tasks", () => {
