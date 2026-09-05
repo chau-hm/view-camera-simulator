@@ -126,11 +126,17 @@ export const evaluateInteriorCornerSwingFocus = (
     : null;
   const apertureEligible = apertureFNumber === INTERIOR_CORNER_CALIBRATION_APERTURE;
   const passed = apertureEligible && targets.every((target) => target.passed);
+  const calibratedSwingSign = Math.sign(interiorCornerSwingFocusCalibration.public.frontSwingDeg);
+  const currentSwingAngleDeg = opticsState.diagnostics.swingAngleDeg;
+  const hasMeaningfulSwing =
+    Math.abs(currentSwingAngleDeg) >= CAMERA_CONTROL_STEPS.swingDeg / 2;
+  const swingOrientationPlausiblyCorrect =
+    hasMeaningfulSwing && Math.sign(currentSwingAngleDeg) === calibratedSwingSign;
   const status: InteriorCornerFocusAlignmentStatus = !apertureEligible
     ? "open-aperture-required"
     : passed
       ? "aligned"
-      : Math.abs(opticsState.diagnostics.swingAngleDeg) >= CAMERA_CONTROL_STEPS.swingDeg / 2
+      : swingOrientationPlausiblyCorrect
         ? "refine-focus"
         : "misaligned";
 

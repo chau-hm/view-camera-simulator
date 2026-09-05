@@ -254,6 +254,8 @@ describe("Interior Corner Swing + Focus calibration", () => {
     }));
 
     expect(wrongSign.evaluation.passed).toBe(false);
+    expect(wrongSign.evaluation.status).toBe("misaligned");
+    expect(wrongSign.evaluation.status).not.toBe("refine-focus");
     expect(wrongSign.evaluation.maximumCoCDiameterMm).toBeGreaterThan(0.1);
     expect(wrongSign.evaluation.maximumCoCDiameterMm).toBeGreaterThan(
       (correct.evaluation.maximumCoCDiameterMm ?? 0) * 10,

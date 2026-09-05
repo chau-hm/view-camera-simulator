@@ -190,6 +190,27 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText("Receding-wall focus needs adjustment")).toBeInTheDocument();
 
     cleanup();
+    const wrongSignFocus = interiorCornerFocusEvaluationAt({
+      frontSwingDeg: -interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      aperture: interiorCornerSwingFocusCalibration.public.aperture,
+    });
+    render(
+      <FeedbackPanel
+        mode="free"
+        sceneId="interior-corner"
+        task={null}
+        evaluation={null}
+        freeFocusEvaluation={wrongSignFocus}
+      />,
+    );
+    expect(screen.getByTestId("interior-corner-focus-feedback")).toHaveTextContent(
+      /Focus alone cannot hold the near, middle, and far details together/i,
+    );
+    expect(screen.getByText("Receding-wall focus needs adjustment")).toBeInTheDocument();
+    expect(screen.queryByText("Refine receding-wall focus")).not.toBeInTheDocument();
+
+    cleanup();
     const passingFocus = interiorCornerFocusEvaluationAt({
       frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
       focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,

@@ -86,6 +86,11 @@ test("Interior Corner free mode exposes public Swing + Focus wall alignment", as
   await expect(compositionFeedback).toContainText("upper architecture is now inside a safer frame");
   await expect(swing).toBeEnabled();
 
+  await setStepRangeInput(page, "Swing", -3.6);
+  await expect(swing).toHaveValue("-3.6");
+  await expect(focusFeedback).toContainText("Focus alone cannot hold the near, middle, and far details together");
+  await expect(focusFeedback).not.toContainText("Refine receding-wall focus");
+
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
 });

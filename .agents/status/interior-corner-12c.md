@@ -6,7 +6,13 @@ Establish the finite-focus Front Swing + Focus solution for the one receding ver
 
 ## Branch / worktree / base / head
 
-`feature/interior-swing-focus-calibration` · `/Users/homan/repo/view-camera-interior-corner-12c` · base `abe81a2fcc812ec516215dad4bc884df7114de5e` · head `8f2fab8`
+`feature/interior-swing-focus-calibration` · `/Users/homan/repo/view-camera-interior-corner-12c` · base `abe81a2fcc812ec516215dad4bc884df7114de5e` · implementation commit `8f2fab8`; review-fix head is this review-fix commit (SHA recorded in the completion report)
+
+## Since review
+
+- Wrong-sign Swing remains `misaligned` instead of being classified as `refine-focus`; meaningful correct-sign Swing can still enter `refine-focus` before Focus placement is complete.
+- Final `+3.6° / 38140 mm / f/5.6` calibration is unchanged.
+- No calibration, CoC threshold, geometry, RTT, routing, or guided-task behavior changed.
 
 ## PR12A / PR12B contracts preserved
 
