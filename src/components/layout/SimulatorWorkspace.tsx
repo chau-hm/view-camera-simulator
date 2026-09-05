@@ -367,7 +367,9 @@ export const SimulatorWorkspace = ({
   const controlPolicy = safeScene.cameraControlPolicy ?? {};
   const movementLocked = controlPolicy.movement === "fixed";
   const focusLocked = controlPolicy.focusDistance === "fixed";
-  const apertureLocked = controlPolicy.aperture === "fixed";
+  const taskCanChangeAperture =
+    mode === "guided" && task?.enabledControls.includes("aperture") === true;
+  const apertureLocked = controlPolicy.aperture === "fixed" && !taskCanChangeAperture;
   const infinityResetHidden = controlPolicy.infinityReset === false;
   const [rawRttDebug, setRawRttDebug] = useState(false);
   const showPublicTeachingControls =

@@ -400,6 +400,203 @@ export const tasksMessages = {
       },
     },
   },
+  obliqueTabletopFocus: {
+    title: "Focus the tabletop centre",
+    objective:
+      "Focus the middle region first. Notice that Focus moves the plane through space but does not match the tabletop's orientation.",
+    notes: {
+      focus: "Use the middle tabletop region as your reference, then compare it with the other visible regions.",
+      constraints:
+        "Keep Front Tilt and Front Swing at zero. Aperture stays at f/11; do not try to solve the whole tabletop yet.",
+    },
+    criteria: {
+      allowedAperture: "Aperture remains at f/11",
+      riseZero: "Front Rise remains at 0 mm",
+      tiltZero: "Front Tilt remains at 0°",
+      swingZero: "Front Swing remains at 0°",
+      focusUsed: "Focus moves at least 100 mm from the starting position",
+      middleSharp: "The middle tabletop region is sharp",
+    },
+    feedback: {
+      passPrimary:
+        "Good. Focus placed the plane through the middle region; the tabletop still disagrees with it in other directions.",
+      defaultFailPrimary:
+        "Focus the middle tabletop region first, then compare it with the surrounding near, far, left, and right regions.",
+      primary: {
+        allowedAperture: "Keep the aperture at f/11; aperture is not part of this first focus step.",
+        riseZero: "Return Front Rise to 0 mm; this scene begins with focusing, not a camera movement.",
+        tiltZero: "Keep Front Tilt at 0° until the focus reference is established.",
+        swingZero: "Keep Front Swing at 0° until the focus reference is established.",
+        focusUsed: "Move Focus from the starting position so the focus change is observable.",
+        middleSharp: "Use the middle tabletop region as the focus reference and refine Focus until it is sharp.",
+      },
+      secondary: {
+        allowedAperture: "The fixed f/11 aperture keeps this comparison about focus placement.",
+        riseZero: "The tabletop is already framed; leave the camera position unchanged.",
+        tiltZero: "Focus moves a plane through space; Front Tilt will address its near-to-far direction later.",
+        swingZero: "Focus on the central reference before changing the tabletop plane's orientation.",
+        focusUsed: "Compare the focus readout before and after moving the plane onto the middle region.",
+        middleSharp: "After the middle region sharpens, observe that other tabletop regions remain soft.",
+      },
+    },
+  },
+  obliqueTabletopTilt: {
+    title: "Improve near-to-far focus",
+    objective:
+      "Use Front Tilt and the Side view to improve the near-to-far relationship. Refine Focus if needed.",
+    notes: {
+      tilt: "Use the negative Front Tilt direction that brings the near, middle, and far depth regions closer to one focus plane.",
+      constraints:
+        "Keep Front Rise and Front Swing at zero. Aperture stays at f/11; the side-view improvement is intentionally partial.",
+    },
+    criteria: {
+      allowedAperture: "Aperture remains at f/11",
+      riseZero: "Front Rise remains at 0 mm",
+      swingZero: "Front Swing remains at 0°",
+      movementRange: "Front Tilt is in the calibrated negative range",
+      nearSharp: "The near-centre tabletop region is sharp",
+      middleSharp: "The middle tabletop region is sharp",
+      farSharp: "The far-centre tabletop region is sharp",
+    },
+    feedback: {
+      passPrimary:
+        "Good. Front Tilt and Focus improved the principal near-to-far relationship. The lateral difference remains for the next stage.",
+      defaultFailPrimary:
+        "Use the calibrated negative Front Tilt direction in the Side view, then refine Focus across the near, middle, and far regions.",
+      primary: {
+        allowedAperture: "Keep the aperture at f/11; do not use depth of field to hide an incorrect plane.",
+        riseZero: "Return Front Rise to 0 mm; this stage changes the focus-plane orientation with Front Tilt.",
+        swingZero: "Keep Front Swing at 0°; the remaining lateral component is deliberate here.",
+        movementRange: "Use the negative Front Tilt range; the opposite sign turns the near-to-far relationship the wrong way.",
+        nearSharp: "The near-centre region is still soft. Set the negative Front Tilt direction, then refine Focus.",
+        middleSharp: "Keep the middle region as a reference while adjusting Front Tilt and Focus.",
+        farSharp: "The far-centre region is still soft. Continue with the negative Front Tilt direction and refine Focus.",
+      },
+      secondary: {
+        allowedAperture: "The fixed f/11 aperture keeps this stage about plane orientation, not extra depth of field.",
+        riseZero: "Use the Side geometry view to inspect the focus plane without changing the camera position.",
+        swingZero: "Leave the lateral component unresolved so the effect of Front Tilt is clear.",
+        movementRange: "Compare the green focus plane with the tabletop trace from near to far; do not use a positive tilt as a shortcut.",
+        nearSharp: "Compare the near-centre readout with the middle and far-centre readouts.",
+        middleSharp: "Refine Focus around the middle after each Tilt adjustment.",
+        farSharp: "The improvement is along one direction only; the side view should still leave the lateral problem visible.",
+      },
+    },
+  },
+  obliqueTabletopSwing: {
+    title: "Add the lateral component",
+    objective:
+      "Now use Front Swing and the Top view to correct the remaining left-to-right difference.",
+    notes: {
+      swing: "Keep the useful Front Tilt relationship, then add the negative Front Swing direction to resolve the lateral component.",
+      constraints:
+        "Keep Front Rise at zero and leave the aperture at f/11. Use the visible tabletop regions to judge the compound result.",
+    },
+    criteria: {
+      allowedAperture: "Aperture remains at f/11",
+      riseZero: "Front Rise remains at 0 mm",
+      tiltRange: "Front Tilt remains near the calibrated compound relationship",
+      movementRange: "Front Swing is in the calibrated negative range",
+      allTargetsSharp: "All visible tabletop regions are sharp",
+    },
+    feedback: {
+      passPrimary:
+        "Good. Front Swing resolved the remaining lateral component while Front Tilt kept the near-to-far relationship aligned.",
+      defaultFailPrimary:
+        "Keep the calibrated negative Front Tilt relationship, add negative Front Swing in the Top view, and compare all visible tabletop regions.",
+      primary: {
+        allowedAperture: "Keep the aperture at f/11; the movement combination must solve the plane before stopping down.",
+        riseZero: "Return Front Rise to 0 mm; this stage adds the lateral optical component.",
+        tiltRange: "Keep Front Tilt near the calibrated compound relationship so Swing is correcting the remaining component.",
+        movementRange: "Use the calibrated negative Front Swing range; the opposite sign turns the lateral relationship the wrong way.",
+        allTargetsSharp: "Some visible tabletop regions remain soft. Refine the negative Front Swing and Focus while keeping the Tilt relationship.",
+      },
+      secondary: {
+        allowedAperture: "Use the Top view and f/11 to compare the movement solution without extra depth of field.",
+        riseZero: "Do not change the camera position while comparing the left and right regions.",
+        tiltRange: "The Top view shows Swing's contribution only when the useful near-to-far Tilt relationship is retained.",
+        movementRange: "Compare the green focus plane with the lateral tabletop trace; positive Swing rotates it away from the surface.",
+        allTargetsSharp: "Check the left, centre, and right regions in both the near and far rows, not just one marker.",
+      },
+    },
+  },
+  obliqueTabletopRefine: {
+    title: "Place the compound focus plane",
+    objective:
+      "With Tilt and Swing setting the plane orientation, refine Focus until the visible tabletop regions fall on the same plane of sharp focus.",
+    notes: {
+      focus: "Keep both movement components near their useful relationship and use Focus to place the resulting plane on the tabletop.",
+      constraints:
+        "Keep Front Rise at zero and the aperture at f/11. Judge the result across the visible tabletop, not from one target alone.",
+    },
+    criteria: {
+      allowedAperture: "Aperture remains at f/11",
+      riseZero: "Front Rise remains at 0 mm",
+      tiltRange: "Front Tilt remains near the calibrated compound relationship",
+      swingRange: "Front Swing remains near the calibrated compound relationship",
+      focusUsed: "Focus is refined from the starting position",
+      allTargetsSharp: "All visible tabletop regions are sharp",
+    },
+    feedback: {
+      passPrimary:
+        "The compound plane is now placed on the tabletop at f/11. The final step will add depth around this aligned plane.",
+      defaultFailPrimary:
+        "Keep Tilt and Swing near their useful compound relationship, then refine Focus across the visible tabletop regions.",
+      primary: {
+        allowedAperture: "Keep the aperture at f/11; first place the compound plane before adding depth around it.",
+        riseZero: "Return Front Rise to 0 mm; only Tilt, Swing, and Focus belong to this plane-placement step.",
+        tiltRange: "Keep Front Tilt near its calibrated compound relationship while refining the plane placement.",
+        swingRange: "Keep Front Swing near its calibrated compound relationship while refining the plane placement.",
+        focusUsed: "Refine Focus from the starting position so the compound plane moves onto the tabletop.",
+        allTargetsSharp: "Some visible regions are still soft. Compare the whole visible set and refine Focus without losing the compound movement relationship.",
+      },
+      secondary: {
+        allowedAperture: "The f/11 setting makes the plane placement visible before the aperture step.",
+        riseZero: "Use the geometry views to inspect the same focus plane without changing framing.",
+        tiltRange: "Side view shows the near-to-far component of the one compound plane.",
+        swingRange: "Top view shows the lateral component of that same plane.",
+        focusUsed: "After changing either movement, refocus because the plane's position changes as well as its orientation.",
+        allTargetsSharp: "Compare near/far and left/right rows; one sharp marker is not enough evidence of alignment.",
+      },
+    },
+  },
+  obliqueTabletopAperture: {
+    title: "Add depth around the plane",
+    objective:
+      "The plane is aligned. Now stop down to add depth around that plane — not to replace the movements.",
+    notes: {
+      aperture: "Keep the compound Tilt, Swing, and Focus relationship, then choose the next modest smaller aperture.",
+      constraints:
+        "Do not change the movements or Focus in this final stage. Aperture changes usable depth around the aligned plane.",
+    },
+    criteria: {
+      allowedAperture: "Aperture is set to the modest final stop-down",
+      riseZero: "Front Rise remains at 0 mm",
+      tiltRange: "Front Tilt remains near the calibrated compound relationship",
+      swingRange: "Front Swing remains near the calibrated compound relationship",
+      allTargetsSharp: "The aligned visible tabletop regions remain sharp",
+    },
+    feedback: {
+      passPrimary:
+        "Complete. Tilt and Swing oriented one three-dimensional focus plane, Focus placed it on the tabletop, and the smaller aperture added depth around it.",
+      defaultFailPrimary:
+        "Keep the compound plane aligned, then stop down one modest step. Aperture adds depth around the plane; it cannot replace the movements.",
+      primary: {
+        allowedAperture: "Choose the modest smaller aperture for this final step; do not leave the starting f/11 setting.",
+        riseZero: "Keep Front Rise at 0 mm; aperture should not change the established framing.",
+        tiltRange: "Restore Front Tilt to the useful compound relationship before relying on the final aperture.",
+        swingRange: "Restore Front Swing to the useful compound relationship before relying on the final aperture.",
+        allTargetsSharp: "The visible tabletop is not aligned yet. Aperture cannot substitute for the correct Tilt, Swing, and Focus state.",
+      },
+      secondary: {
+        allowedAperture: "The stop-down is deliberately modest: it adds tolerance around an already aligned plane.",
+        riseZero: "Keep the camera and tabletop framing unchanged while comparing depth around the plane.",
+        tiltRange: "The Side view still represents the same near-to-far component after the aperture change.",
+        swingRange: "The Top view still represents the same lateral component after the aperture change.",
+        allTargetsSharp: "If a stopped-down image is soft in the wrong regions, return to plane alignment instead of stopping down further.",
+      },
+    },
+  },
   tableTilt: {
     title: "Align the tabletop plane of sharp focus",
     objective:

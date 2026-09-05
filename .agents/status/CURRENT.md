@@ -1,13 +1,11 @@
-# PR10D — Oblique Tabletop Compound Teaching Geometry
+# PR10E — Oblique Tabletop Guided Lesson
 
-- Branch/base: `feature/oblique-tabletop-teaching-geometry` from `origin/main` at `76010a2d96b11234a9044599ee0f94c83e80aa98`.
-- Objective: explain the accepted PR10C compound Tilt + Swing solution through live side, top, and Scheimpflug views; guided tasks and aperture teaching remain deferred.
-- Canonical sources: `tabletopTopSurfacePlane` and canonical tabletop extent traces; film, lens, focus, optical-axis, and Scheimpflug construction geometry come from the live `DerivedOpticsState`. No optical calibration or scene geometry changed.
-- Views: side projects the canonical near↔far tabletop trace and current one focus plane; top projects the left↔right trace and the same focus plane; the 3D Scheimpflug overlay reuses the existing finite film/lens/focus planes and common line while the static tabletop remains the subject.
-- Single-plane contract: `deriveObliqueTabletopTeachingGeometry` keeps one `focusPlane` reference and derives the construction from the same live film/lens/focus planes. No separate Tilt or Swing focus planes are introduced.
-- Anchor semantics: analytical RTT sample nodes now identify `analyticalCoverageSampleId` / `canonical-tabletop-surface`; visible markers use `markerId` / visible-anchor metadata, so analytical nodes cannot masquerade as public focus targets.
-- Public verification state: Tilt `-8.0°`, Swing `-1.7°`, Focus `2450 mm`, fixed f/11; live neutral, Tilt-only, Swing-only, and compound feedback copy is present in English and zh-HK.
-- Feedback semantics: movement-presence states now use direction-neutral relationship language; reachable opposite-sign Tilt/Swing and wrong-sign compound feedback are covered by regression tests.
-- Validation: focused teaching/geometry/scene/optics/copy suites passed; full `npm test` passed (160 files, 1,545 tests); typecheck, lint, CSS structure, build, diff check, and focused Chromium smoke passed. Chromium smoke covered side/top updates, reachable opposite-sign Tilt feedback, public Tilt/Swing controls, Scheimpflug overlay, Ground Glass, and SPA scene switching.
-- Not run: full `npm run ci:local:e2e`; shared renderer/projection lifecycle was not changed and the focused Chromium smoke covers the new public path.
-- Remaining: PR10E guided lesson and final aperture step; no lesson completion state or teaching-geometry overlays beyond this slice.
+- Branch/base: `feature/oblique-tabletop-guided-lesson` from `origin/main` at `e5bc750ac1019c9942698ea205a6913179338681` (merged PR10D state verified in the base tree).
+- Objective: add the bounded public Oblique Tabletop progression `Observe → Focus → Front Tilt → Front Swing → Refine Focus → Aperture`; guided lesson and final modest stop-down only. PR10C optics and PR10D teaching geometry remain unchanged.
+- Task sequence: `oblique-tabletop-focus-01`, `oblique-tabletop-tilt-01`, `oblique-tabletop-swing-01`, `oblique-tabletop-refine-01`, and `oblique-tabletop-aperture-01`. Early stages keep f/11 and withhold aperture; the final stage starts from the accepted compound state at f/11 and permits f/22.
+- Physical criteria: Focus uses the visible middle target; Tilt requires the signed negative PR10B range and sharp near/middle/far principal targets; Swing requires the accepted compound Tilt plus signed negative Swing and all visible targets; Refine requires a public Focus adjustment and all visible targets; Aperture requires f/22 while preserving the compound movement ranges and sharp targets. Wrong-sign and stopped-down wrong-plane states fail.
+- Aperture policy: Free Practice and early guided tasks remain fixed at f/11. The final guided task is the only task-enabled exception to the scene-level fixed-aperture policy; switching back to Free mode restores the lock.
+- Copy/locales: complete English and zh-HK task and lesson copy explains that movements orient one plane, Focus places it, and Aperture adds depth around it.
+- Validation: focused guided-task/route/store/scene/lesson suites passed (138 tests); focused public Chromium lesson flow passed (1 test, ~1.1 minutes); full `npm test` passed (161 files, 1,553 tests); typecheck, lint, CSS structure, build, and diff check passed.
+- Not run: full `npm run ci:local:e2e`; the new public Chromium flow is covered directly and no renderer/lifecycle infrastructure changed.
+- Remaining: no additional lesson stages, aperture teaching beyond the f/22 step, guided completion redesign, or PR10F work in this slice.
