@@ -23,8 +23,9 @@ test("Architecture + Foreground is discoverable from the Scenes page", async ({ 
   );
 
   const sceneHeadings = await page.getByRole("heading", { level: 2 }).allTextContents();
-  expect(sceneHeadings.at(-2)).toBe("Oblique Architecture");
-  expect(sceneHeadings.at(-1)).toBe("Architecture + Foreground");
+  expect(sceneHeadings.at(-3)).toBe("Oblique Architecture");
+  expect(sceneHeadings.at(-2)).toBe("Architecture + Foreground");
+  expect(sceneHeadings.at(-1)).toBe("Interior Corner — Rise + Swing");
 
   await card.getByRole("link", { name: "Open Scene" }).click();
   await expect(page).toHaveURL(/\/simulator\/free\/architecture-foreground$/);
