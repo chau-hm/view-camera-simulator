@@ -1,12 +1,12 @@
-# PR 11B — Review correction: Geometry View consistency
+# PR 11B — Review correction: Geometry View optical correctness
 
-- Objective: update PR #126 onto the latest `origin/main` and correct only the Geometry View artwork so the three visualization cards communicate one shared camera/subject state.
-- Branch/worktree: `feature/landing-redesign-fundamentals` / `/Users/homan/repo/view-camera-landing-fundamentals`; correction is being applied to existing PR #126, with no new branch or PR.
-- Base/update: original branch base `76010a2d96b11234a9044599ee0f94c83e80aa98`; merged `origin/main` `abe81a2fcc812ec516215dad4bc884df7114de5e` in `f30de7e12e2b9f81e733ddcb5adcfc1a195102c7`, then merged the newly advanced latest `origin/main` `1fd8b0b1e6c9fd4a657c922c3c2af538c82a55b9` in `9ad10032cf8f9023b82cdc748e6eb9de9820dcb1`; PR 11A merge `6971b0a9f1cdcdff033cba6431f351d5345a9f5d` remains an ancestor.
-- Since previous review: both normal branch updates merged cleanly for landing source; the first update required only this shared status-file conflict. Upstream simulator changes were retained unchanged, and the Geometry View correction remained the only implementation change after the first update.
-- Landing preservation: `HomePage` still renders Hero → Fundamentals → Three Ways to Visualize, with the existing informational block after Part E. The fetched `origin/main` does not contain later Why It Matters or Final CTA components, so neither out-of-scope section was invented or restored here.
-- Geometry View correction: regenerated only `public/assets/landing/visualize-geometry.webp` with built-in ImageGen, using the two sibling assets as references. The corrected image contains the same single cube, sphere, and cone arrangement, camera/lens, mapped rays, and image plane; the other six Part E assets are unchanged.
-- Asset: `visualize-geometry.webp` is 1448×1086, 4:3, 95148 bytes after WebP encoding.
-- i18n/responsive/code: no copy, component, layout, or simulator changes in this correction pass.
-- Validation: after the second main update, `ci:local` passes CSS structure, lint, typecheck, full Vitest (162 files, 1565 tests), and production build; focused Chromium home E2E passes (7/7); runtime screenshots at 1440×900 and 390×844 show the corrected asset in its card crop with zero horizontal overflow; `git diff --check` passes.
-- Deferred: Part F / Why It Matters, final CTA, motion/scroll reveal/parallax, Scene Gallery, simulator mini-demos, and new simulator functionality.
+- Objective: update PR #126 onto latest `origin/main` and correct only the Geometry View artwork so the three visualization cards communicate one shared camera/subject state with physically correct image-plane placement.
+- Branch/worktree: `feature/landing-redesign-fundamentals` / `/Users/homan/repo/view-camera-landing-fundamentals`; existing PR #126, no new branch or PR.
+- Base/update: original branch base `76010a2d96b11234a9044599ee0f94c83e80aa98`; prior update commits `f30de7e12e2b9f81e733ddcb5adcfc1a195102c7` (abe81a2) and `9ad10032cf8f9023b82cdc748e6eb9de9820dcb1` (1fd8b0b); latest `origin/main` `51979423d0279691da81022054cf1659763f9b44` is being merged now; PR11A `6971b0a9f1cdcdff033cba6431f351d5345a9f5d` remains an ancestor.
+- Since previous review: the P2 finding was confirmed on the current binary. Regenerated only `public/assets/landing/visualize-geometry.webp` with built-in ImageGen using the sibling visualization assets as references. The other six Part E assets and all landing code/copy/layout remain unchanged.
+- Optical evidence: subjects are on the lens-facing/front side; the single rear film/Ground Glass plane is inside the camera behind the lens; rays connect subjects through the lens and terminate on that rear plane; the formed cube/sphere/cone images are vertically inverted and left-right reversed.
+- Shared state: the Geometry View preserves one cube, one sphere, and one cone in the same recognizable relative arrangement as `visualize-3d-scene.webp` and `visualize-ground-glass.webp`.
+- Asset: `visualize-geometry.webp` — 1448×1086, 4:3, 107206 bytes.
+- Landing preservation: current fetched main still has no distinct Why It Matters or Final CTA components; HomePage remains Hero → Fundamentals → Three Ways → existing informational block. No out-of-scope Part F/CTA was added.
+- Validation: pending after latest-main merge and final asset replacement.
+- Deferred: Part F / Why It Matters, final CTA, motion, Scene Gallery, simulator mini-demos, and new simulator functionality.

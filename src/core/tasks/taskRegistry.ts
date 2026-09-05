@@ -6,6 +6,8 @@ import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
+import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
+import obliqueTabletopCompoundCalibration from "../../scenes/obliqueTabletopCompoundCalibration";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import {
   MIRROR_SHIFT_SCENE_CALIBRATION,
@@ -473,6 +475,334 @@ const obliqueCompoundTask: TaskDefinition = {
   },
 };
 
+const obliqueTabletopCompound = obliqueTabletopCompoundCalibration.public;
+const obliqueTabletopVisibleTargetIds = obliqueTabletopGeometry.tabletopVisibleFocusSamples.map(
+  (sample) => sample.id,
+);
+const obliqueTabletopPrincipalTargetIds = [
+  ...obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds,
+];
+const obliqueTabletopTiltOnlyRange = {
+  min: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg - 0.5,
+  max: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg + 0.5,
+};
+const obliqueTabletopCompoundTiltRange = {
+  min: obliqueTabletopCompound.frontTiltDeg - 0.5,
+  max: obliqueTabletopCompound.frontTiltDeg + 0.5,
+};
+const obliqueTabletopCompoundSwingRange = {
+  min: obliqueTabletopCompound.frontSwingDeg - 0.5,
+  max: obliqueTabletopCompound.frontSwingDeg + 0.5,
+};
+const obliqueTabletopSwingStage = {
+  frontTiltDeg: -7.4,
+  frontSwingDeg: -1.4,
+  focusDistanceMm: 2630,
+} as const;
+const obliqueTabletopSwingStageTiltRange = {
+  min: obliqueTabletopSwingStage.frontTiltDeg - 0.5,
+  max: obliqueTabletopSwingStage.frontTiltDeg + 0.5,
+};
+const obliqueTabletopSwingStageSwingRange = {
+  min: obliqueTabletopSwingStage.frontSwingDeg - 0.5,
+  max: obliqueTabletopSwingStage.frontSwingDeg + 0.5,
+};
+const obliqueTabletopRefineTiltRange = {
+  min: Math.min(obliqueTabletopCompoundTiltRange.min, obliqueTabletopSwingStageTiltRange.min),
+  max: Math.max(obliqueTabletopCompoundTiltRange.max, obliqueTabletopSwingStageTiltRange.max),
+};
+const obliqueTabletopSwingLateralTargetIds = obliqueTabletopGeometry.tabletopVisibleFocusSamples
+  .filter(({ id }) => id === "far-left" || id === "far-right")
+  .map(({ id }) => id);
+const obliqueTabletopSharpnessMinimum = 0.8;
+
+const obliqueTabletopTaskCameraState = {
+  frontRiseMm: 0,
+  frontTiltDeg: 0,
+  frontSwingDeg: 0,
+  focusDistanceMm: obliqueTabletopGeometry.canonicalFocusDistanceMm,
+  rearRiseMm: 0,
+  rearTiltDeg: 0,
+  aperture: 11 as const,
+  geometryView: "side" as const,
+  groundGlassAssistEnabled: false,
+  gridEnabled: true,
+};
+
+const obliqueTabletopFocusTask: TaskDefinition = {
+  id: "oblique-tabletop-focus-01",
+  sceneId: "oblique-tabletop",
+  mode: "guided",
+  enabledControls: ["focusDistance", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "oblique-tabletop-focus-allowed-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [11],
+    },
+    {
+      id: "oblique-tabletop-focus-rise-zero",
+      type: "movement-range",
+      movement: "rise",
+      min: 0,
+      max: 0,
+    },
+    {
+      id: "oblique-tabletop-focus-tilt-zero",
+      type: "movement-range",
+      movement: "tilt",
+      min: 0,
+      max: 0,
+    },
+    {
+      id: "oblique-tabletop-focus-swing-zero",
+      type: "movement-range",
+      movement: "swing",
+      min: 0,
+      max: 0,
+    },
+    {
+      id: "oblique-tabletop-focus-used",
+      type: "focus-used",
+      minimumAbsMm: 100,
+    },
+    {
+      id: "oblique-tabletop-focus-middle-sharp",
+      type: "focus-targets-sharp",
+      targetIds: ["middle"],
+      minimumSharpness: obliqueTabletopSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    ...obliqueTabletopTaskCameraState,
+    focusDistanceMm: obliqueTabletopGeometry.canonicalFocusDistanceMm + 200,
+  },
+};
+
+const obliqueTabletopTiltTask: TaskDefinition = {
+  id: "oblique-tabletop-tilt-01",
+  sceneId: "oblique-tabletop",
+  mode: "guided",
+  enabledControls: ["tilt", "focusDistance", "geometryView"],
+  constraints: {
+    movement: "tilt-only",
+  },
+  criteria: [
+    {
+      id: "oblique-tabletop-tilt-allowed-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [11],
+    },
+    {
+      id: "oblique-tabletop-tilt-rise-zero",
+      type: "movement-range",
+      movement: "rise",
+      min: 0,
+      max: 0,
+    },
+    {
+      id: "oblique-tabletop-tilt-swing-zero",
+      type: "movement-range",
+      movement: "swing",
+      min: 0,
+      max: 0,
+    },
+    {
+      id: "oblique-tabletop-tilt-movement-range",
+      type: "movement-range",
+      movement: "tilt",
+      min: obliqueTabletopTiltOnlyRange.min,
+      max: obliqueTabletopTiltOnlyRange.max,
+      valueMode: "signed",
+    },
+    {
+      id: "oblique-tabletop-tilt-near-sharp",
+      type: "focus-targets-sharp",
+      targetIds: [obliqueTabletopPrincipalTargetIds[0]],
+      minimumSharpness: obliqueTabletopSharpnessMinimum,
+    },
+    {
+      id: "oblique-tabletop-tilt-middle-sharp",
+      type: "focus-targets-sharp",
+      targetIds: [obliqueTabletopPrincipalTargetIds[1]],
+      minimumSharpness: obliqueTabletopSharpnessMinimum,
+    },
+    {
+      id: "oblique-tabletop-tilt-far-sharp",
+      type: "focus-targets-sharp",
+      targetIds: [obliqueTabletopPrincipalTargetIds[2]],
+      minimumSharpness: obliqueTabletopSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    ...obliqueTabletopTaskCameraState,
+    focusDistanceMm: obliqueTabletopGeometry.canonicalFocusDistanceMm,
+  },
+};
+
+const obliqueTabletopSwingTask: TaskDefinition = {
+  id: "oblique-tabletop-swing-01",
+  sceneId: "oblique-tabletop",
+  mode: "guided",
+  enabledControls: ["tilt", "swing", "focusDistance", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "oblique-tabletop-swing-allowed-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [11],
+    },
+    {
+      id: "oblique-tabletop-swing-rise-zero",
+      type: "movement-range",
+      movement: "rise",
+      min: 0,
+      max: 0,
+    },
+    {
+      id: "oblique-tabletop-swing-tilt-range",
+      type: "movement-range",
+      movement: "tilt",
+      min: obliqueTabletopSwingStageTiltRange.min,
+      max: obliqueTabletopSwingStageTiltRange.max,
+      valueMode: "signed",
+    },
+    {
+      id: "oblique-tabletop-swing-movement-range",
+      type: "movement-range",
+      movement: "swing",
+      min: obliqueTabletopSwingStageSwingRange.min,
+      max: obliqueTabletopSwingStageSwingRange.max,
+      valueMode: "signed",
+    },
+    {
+      id: "oblique-tabletop-swing-focus-used",
+      type: "focus-used",
+      minimumAbsMm: 50,
+    },
+    {
+      id: "oblique-tabletop-swing-lateral-sharp",
+      type: "focus-targets-sharp",
+      targetIds: obliqueTabletopSwingLateralTargetIds,
+      minimumSharpness: obliqueTabletopSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    ...obliqueTabletopTaskCameraState,
+    frontTiltDeg: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
+    focusDistanceMm: obliqueTabletopGeometry.tiltOnlyCalibration.focusDistanceMm,
+    geometryView: "top",
+  },
+};
+
+const obliqueTabletopRefineTask: TaskDefinition = {
+  id: "oblique-tabletop-refine-01",
+  sceneId: "oblique-tabletop",
+  mode: "guided",
+  enabledControls: ["tilt", "swing", "focusDistance", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "oblique-tabletop-refine-allowed-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [11],
+    },
+    {
+      id: "oblique-tabletop-refine-rise-zero",
+      type: "movement-range",
+      movement: "rise",
+      min: 0,
+      max: 0,
+    },
+    {
+      id: "oblique-tabletop-refine-tilt-range",
+      type: "movement-range",
+      movement: "tilt",
+      min: obliqueTabletopRefineTiltRange.min,
+      max: obliqueTabletopRefineTiltRange.max,
+      valueMode: "signed",
+    },
+    {
+      id: "oblique-tabletop-refine-swing-range",
+      type: "movement-range",
+      movement: "swing",
+      min: obliqueTabletopCompoundSwingRange.min,
+      max: obliqueTabletopCompoundSwingRange.max,
+      valueMode: "signed",
+    },
+    {
+      id: "oblique-tabletop-refine-focus-used",
+      type: "focus-used",
+      minimumAbsMm: 50,
+    },
+    {
+      id: "oblique-tabletop-refine-all-targets-sharp",
+      type: "focus-targets-sharp",
+      targetIds: obliqueTabletopVisibleTargetIds,
+      minimumSharpness: obliqueTabletopSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    ...obliqueTabletopTaskCameraState,
+    frontTiltDeg: obliqueTabletopSwingStage.frontTiltDeg,
+    frontSwingDeg: obliqueTabletopSwingStage.frontSwingDeg,
+    focusDistanceMm: obliqueTabletopSwingStage.focusDistanceMm,
+    geometryView: "scheimpflug",
+  },
+};
+
+const obliqueTabletopApertureTask: TaskDefinition = {
+  id: "oblique-tabletop-aperture-01",
+  sceneId: "oblique-tabletop",
+  mode: "guided",
+  enabledControls: ["aperture", "geometryView"],
+  constraints: {},
+  criteria: [
+    {
+      id: "oblique-tabletop-aperture-allowed-aperture",
+      type: "allowed-aperture",
+      allowedApertures: [22],
+    },
+    {
+      id: "oblique-tabletop-aperture-rise-zero",
+      type: "movement-range",
+      movement: "rise",
+      min: 0,
+      max: 0,
+    },
+    {
+      id: "oblique-tabletop-aperture-tilt-range",
+      type: "movement-range",
+      movement: "tilt",
+      min: obliqueTabletopCompoundTiltRange.min,
+      max: obliqueTabletopCompoundTiltRange.max,
+      valueMode: "signed",
+    },
+    {
+      id: "oblique-tabletop-aperture-swing-range",
+      type: "movement-range",
+      movement: "swing",
+      min: obliqueTabletopCompoundSwingRange.min,
+      max: obliqueTabletopCompoundSwingRange.max,
+      valueMode: "signed",
+    },
+    {
+      id: "oblique-tabletop-aperture-all-targets-sharp",
+      type: "focus-targets-sharp",
+      targetIds: obliqueTabletopVisibleTargetIds,
+      minimumSharpness: obliqueTabletopSharpnessMinimum,
+    },
+  ],
+  initialCameraState: {
+    ...obliqueTabletopTaskCameraState,
+    frontTiltDeg: obliqueTabletopCompound.frontTiltDeg,
+    frontSwingDeg: obliqueTabletopCompound.frontSwingDeg,
+    focusDistanceMm: obliqueTabletopCompound.focusDistanceMm,
+    geometryView: "scheimpflug",
+  },
+};
+
 const tiltTask: TaskDefinition = {
   id: "tilt-01",
   sceneId: "table-tilt",
@@ -667,6 +997,11 @@ export const taskRegistry: Record<string, TaskDefinition> = {
   "architecture-foreground-compound-01": architectureForegroundCompoundTask,
   "oblique-swing-focus-01": obliqueSwingFocusTask,
   "oblique-compound-01": obliqueCompoundTask,
+  "oblique-tabletop-focus-01": obliqueTabletopFocusTask,
+  "oblique-tabletop-tilt-01": obliqueTabletopTiltTask,
+  "oblique-tabletop-swing-01": obliqueTabletopSwingTask,
+  "oblique-tabletop-refine-01": obliqueTabletopRefineTask,
+  "oblique-tabletop-aperture-01": obliqueTabletopApertureTask,
   "tilt-01": tiltTask,
   "swing-01": swingTask,
   "mirror-shift-01": mirrorShiftTask,
