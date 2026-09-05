@@ -94,6 +94,15 @@ describe("Interior Corner guided lesson", () => {
     expect(task(taskIds.compose).constraints).toEqual({ movement: "rise-only" });
     expect(task(taskIds.swing).constraints).toEqual({ movement: "swing-only" });
     expect(CAMERA_CONSTANTS.apertureOptions).toEqual([5.6, 11, 22, 32]);
+    for (const taskId of Object.values(taskIds)) {
+      expect(task(taskId).initialCameraState).toMatchObject({
+        focusMode: "finite",
+      });
+    }
+    expect(task(taskIds.compose).initialCameraState?.focusDistanceMm).toBe(8000);
+    expect(task(taskIds.swing).initialCameraState?.focusDistanceMm).toBe(8000);
+    expect(task(taskIds.refine).initialCameraState?.focusDistanceMm).toBe(8000);
+    expect(task(taskIds.aperture).initialCameraState?.focusDistanceMm).toBe(38140);
   });
 
   it("keeps Compose neutral until public Rise produces a valid level composition", () => {

@@ -820,6 +820,7 @@ const interiorCornerInitialCameraState: NonNullable<TaskDefinition["initialCamer
   frontSwingDeg: 0,
   rearRiseMm: 0,
   rearTiltDeg: 0,
+  focusMode: "finite",
   focusDistanceMm: interiorCornerScene.cameraPreset.focusDistanceMm,
   aperture: interiorCornerScene.cameraPreset.aperture,
   geometryView: "top",

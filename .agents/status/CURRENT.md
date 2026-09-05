@@ -1,12 +1,41 @@
-# PR 11B — Review correction: Geometry View optical correctness
+# PR #130 / PR12D — Review-fix handoff
 
-- Objective: update PR #126 onto latest `origin/main` and correct only the Geometry View artwork so the three visualization cards communicate one shared camera/subject state with physically correct image-plane placement.
-- Branch/worktree: `feature/landing-redesign-fundamentals` / `/Users/homan/repo/view-camera-landing-fundamentals`; existing PR #126, no new branch or PR.
-- Base/update: original branch base `76010a2d96b11234a9044599ee0f94c83e80aa98`; prior update commits `f30de7e12e2b9f81e733ddcb5adcfc1a195102c7` (abe81a2) and `9ad10032cf8f9023b82cdc748e6eb9de9820dcb1` (1fd8b0b); latest `origin/main` `51979423d0279691da81022054cf1659763f9b44` was merged in `8eea41d85d056cbe2ae7ea0158c16b3fedcb4c83`; PR11A `6971b0a9f1cdcdff033cba6431f351d5345a9f5d` remains an ancestor.
-- Since previous review: the P2 finding was confirmed on the current binary. Regenerated only `public/assets/landing/visualize-geometry.webp` with built-in ImageGen using the sibling visualization assets as references. The other six Part E assets and all landing code/copy/layout remain unchanged.
-- Optical evidence: subjects are on the lens-facing/front side; the single rear film/Ground Glass plane is inside the camera behind the lens; rays connect subjects through the lens and terminate on that rear plane; the formed cube/sphere/cone images are vertically inverted and left-right reversed.
-- Shared state: the Geometry View preserves one cube, one sphere, and one cone in the same recognizable relative arrangement as `visualize-3d-scene.webp` and `visualize-ground-glass.webp`.
-- Asset: `visualize-geometry.webp` — 1448×1086, 4:3, 107206 bytes.
-- Landing preservation: current fetched main still has no distinct Why It Matters or Final CTA components; HomePage remains Hero → Fundamentals → Three Ways → existing informational block. No out-of-scope Part F/CTA was added.
-- Validation: focused landing/i18n integration tests passed (8 tests); `ci:local` passed CSS structure, lint, typecheck, full Vitest (163 files, 1,574 tests), and production build; focused Chromium home E2E passed (7/7). Runtime Home inspection at 1440×900 and 390×844 (English and zh-HK) showed all seven decoded assets, the corrected trio, and zero horizontal overflow; `git diff --check` passed. The P2 review thread is resolved after this visual verification.
-- Deferred: Part F / Why It Matters, final CTA, motion, Scene Gallery, simulator mini-demos, and new simulator functionality.
+## Branch / base
+
+`feature/interior-corner-guided-lesson-12d` · `/private/tmp/view-camera-interior-corner-12d-fresh` · base `main` (latest fetched `origin/main` `766332e95ca42066f2f05e6f2f93d234ba45a79e`)
+
+## Objective
+
+Harden the Interior Corner guided lesson integration so every guided task re-enters with the declarative finite-focus state while preserving the accepted Rise, Swing + Focus, and final Aperture contracts.
+
+## Lesson contract
+
+- Observe → Compose with Rise → Front Swing orientation → Refine Focus → Aperture.
+- Compose reaches the first valid public Rise at approximately `+33 mm`.
+- Swing is partial orientation only: `Swing +3.6° / Focus 8000 mm` passes Swing while still failing Refine.
+- Refine Focus is the first full near/middle/far wall-sharpness gate at `Swing +3.6° / Focus 38140 mm / f/5.6`.
+- Aperture preserves the aligned plane and completes at `f/11`; unrelated controls remain locked.
+- One receding wall remains the subject-plane contract; Free Practice remains unchanged at `f/5.6` with Rise, Swing, and Focus available.
+
+## Review-fix delta
+
+- Shared Interior Corner guided initial camera state now explicitly includes `focusMode: "finite"`; existing route clamping records the same finite distance in `lastFiniteFocusDepthMm`.
+- Route/store regression starts from the real public Infinity action in another scene, enters the guided Aperture route, verifies finite `38140 mm` focus and physical focus preservation, then completes at `f/11`.
+- Re-entry after clearing route initialization and Restart Task both restore the finite task state.
+- Canonical durable handoff is this file; stale PR11B content was overwritten and duplicate `.agents/status/interior-corner-12d.md` was removed.
+
+## Validation
+
+- Focused affected suite: `15` files, `146` tests passed.
+- Full Vitest: `165` files, `1600` tests passed.
+- Typecheck, lint, CSS structure check, production build, and `git diff --check` passed.
+- Required `CI=1 npm run ci:local:e2e` passed CSS/lint/typecheck/Vitest/build and the earlier Chromium specs, then stopped at the baseline-only `mirror-shift-teaching-geometry.spec.ts` failure (1 failed, 1 passed; missing RTT marker). The exact spec reproduced the same result in a clean detached `origin/main` worktree at `766332e95ca42066f2f05e6f2f93d234ba45a79e`.
+- Current-head GitHub CI: pending publication of this corrective head.
+
+## Tests not run
+
+The remaining E2E specs after the baseline-only fail-fast stop were not run by `ci:local:e2e`; no new browser spec was added because the existing Interior Corner public lesson spec ran successfully within the required command.
+
+## Deferred
+
+No new Interior Corner slice, lesson engine, optics/geometry change, renderer change, or task-boundary change is included. Further lesson work remains outside PR12D.
