@@ -321,6 +321,16 @@ export const simulatorMessageKeys = {
         needsAdjustment: "simulator.freePractice.interiorCorner.riseComposition.needsAdjustment",
         ready: "simulator.freePractice.interiorCorner.riseComposition.ready",
       },
+      focusAlignment: {
+        openApertureRequiredStatus: "simulator.freePractice.interiorCorner.focusAlignment.openApertureRequiredStatus",
+        misalignedStatus: "simulator.freePractice.interiorCorner.focusAlignment.misalignedStatus",
+        refineFocusStatus: "simulator.freePractice.interiorCorner.focusAlignment.refineFocusStatus",
+        alignedStatus: "simulator.freePractice.interiorCorner.focusAlignment.alignedStatus",
+        openApertureRequired: "simulator.freePractice.interiorCorner.focusAlignment.openApertureRequired",
+        misaligned: "simulator.freePractice.interiorCorner.focusAlignment.misaligned",
+        refineFocus: "simulator.freePractice.interiorCorner.focusAlignment.refineFocus",
+        aligned: "simulator.freePractice.interiorCorner.focusAlignment.aligned",
+      },
     },
     obliqueArchitecture: {
       objective: "simulator.freePractice.obliqueArchitecture.objective",

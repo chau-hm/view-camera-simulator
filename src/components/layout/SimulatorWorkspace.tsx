@@ -54,6 +54,7 @@ import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMove
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
 import { evaluateInteriorCornerRiseComposition } from "../../scenes/interiorCornerRiseComposition";
+import { evaluateInteriorCornerSwingFocus } from "../../scenes/interiorCornerSwingFocus";
 import type {
   GroundGlassRttRuntimeInfoByChannel,
   GroundGlassRttRuntimeInfoChangeHandler,
@@ -413,6 +414,13 @@ export const SimulatorWorkspace = ({
         : null,
     [mode, opticsState, safeScene.id, task],
   );
+  const interiorCornerFocusEvaluation = useMemo(
+    () =>
+      mode === "free" && task === null && safeScene.id === "interior-corner"
+        ? evaluateInteriorCornerSwingFocus(opticsState, camera.aperture)
+        : null,
+    [camera.aperture, mode, opticsState, safeScene.id, task],
+  );
   useEffect(() => {
     setCurrentTaskEvaluation(evaluation);
   }, [evaluation, setCurrentTaskEvaluation]);
@@ -705,6 +713,7 @@ export const SimulatorWorkspace = ({
                 task={task}
                 evaluation={evaluation}
                 freeCompositionEvaluation={interiorCornerRiseEvaluation}
+                freeFocusEvaluation={interiorCornerFocusEvaluation}
                 showTitle={false}
               />
             </div>

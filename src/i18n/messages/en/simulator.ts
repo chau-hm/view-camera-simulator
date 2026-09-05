@@ -344,10 +344,10 @@ export const simulatorMessages = {
         depth:
           "Follow the same side wall from its nearer artwork through the middle and far details.",
         focus:
-          "At the open starting aperture, compare the different wall distances before using Front Swing and Focus in a later lesson.",
+          "At f/5.6, use Front Swing to turn the focus plane toward the receding wall, then refine Focus to place it through the near, middle, and far details.",
       },
       observation:
-        "The room remains level while the upper architecture presses against the frame. The three details on one receding wall sit at different distances, making the future Rise and Front Swing + Focus problems visible.",
+        "The room remains level while the upper architecture presses against the frame. The three details on one receding wall sit at different distances, making the Rise and receding-wall Front Swing + Focus problems visible.",
       riseComposition: {
         needsAdjustmentStatus: "Rise composition needs adjustment",
         readyStatus: "Rise composition is acceptable",
@@ -355,6 +355,20 @@ export const simulatorMessages = {
           "Keep the camera level. The upper architecture is still too close to the top edge; use Front Rise to move the framing upward.",
         ready:
           "The upper architecture is now inside a safer frame while the room corner remains usable. The camera remains level.",
+      },
+      focusAlignment: {
+        openApertureRequiredStatus: "Use the open aperture for focus alignment",
+        misalignedStatus: "Receding-wall focus needs adjustment",
+        refineFocusStatus: "Refine receding-wall focus",
+        alignedStatus: "Receding-wall focus is acceptable",
+        openApertureRequired:
+          "Keep f/5.6 while checking the receding wall; Aperture is a later finishing step.",
+        misaligned:
+          "At f/5.6, the receding wall spans different depths. Focus alone cannot hold the near, middle, and far details together; use Front Swing, then refine Focus.",
+        refineFocus:
+          "The receding wall is not yet consistently sharp. Front Swing changes focus-plane orientation; refine Focus to place it through the wall.",
+        aligned:
+          "The near, middle, and far details on the receding side wall are acceptably sharp at f/5.6. The opposite wall remains contextual.",
       },
     },
     obliqueArchitecture: {
