@@ -74,7 +74,7 @@ export const homeMessages = {
       movements: {
         title: "Why do camera movements matter?",
         description:
-          "Rise and shift can recompose while the lens position stays fixed. Tilt and swing change the orientation of the plane of sharp focus. Move the whole camera, and viewpoint, perspective, and parallax change.",
+          "Rise and shift can recompose while the whole-camera viewpoint stays fixed. Tilt and swing change the orientation of the plane of sharp focus. Move the whole camera, and viewpoint, perspective, and parallax change.",
       },
       learning: {
         title: "Why is large-format camera still worth learning?",

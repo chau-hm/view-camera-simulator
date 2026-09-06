@@ -122,7 +122,7 @@ describe("home page", () => {
     ).toBeInTheDocument();
     expect(
       within(why).getByText(
-        "Rise and shift can recompose while the lens position stays fixed. Tilt and swing change the orientation of the plane of sharp focus. Move the whole camera, and viewpoint, perspective, and parallax change.",
+        "Rise and shift can recompose while the whole-camera viewpoint stays fixed. Tilt and swing change the orientation of the plane of sharp focus. Move the whole camera, and viewpoint, perspective, and parallax change.",
       ),
     ).toBeInTheDocument();
     expect(

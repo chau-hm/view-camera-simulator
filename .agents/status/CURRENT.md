@@ -3,6 +3,7 @@
 - Objective: replace the temporary Home informational block with the static Why It Matters section after Part E.
 - Base/update: latest `origin/main` `766332e95ca42066f2f05e6f2f93d234ba45a79e`, containing PR 11B `739b744a880826b3c34200645bac90f988a9436e`.
 - Branch/worktree: `feature/landing-redesign-why-it-matters` / `/Users/homan/repo/view-camera-landing-why-it-matters`.
+- Since previous review: the P2 fixed-lens wording was confirmed incorrect against `docs/LEARNING_MODEL.md`; English and zh-HK Why It Matters copy now say the whole-camera viewpoint stays fixed for rise/shift, and matching test expectations were corrected. No layout, assets, simulator, optics, or renderer behaviour changed.
 - Landing flow: `LandingHero` → `LandingFundamentalsSection` → `LandingVisualizationSection` → `LandingWhyItMattersSection`; no Final CTA or Scene Gallery.
 - Legacy replacement: Home no longer renders `DesktopExperienceNotice`, `InfoCard`, `.landing-home__legacy`, or `.landing-info-section`; `DesktopExperienceNotice` remains on `/scenes`.
 - Components: added `LandingWhyItMattersSection` and local `LandingWhyCard`; Part E, Hero, navigation, simulator, and shared catalog components remain unchanged.
