@@ -29,7 +29,7 @@ export const LandingVisualizationSection = () => {
       aria-labelledby="landing-visualization-title"
       data-testid="landing-visualization-section"
     >
-      <header className="landing-learning-section__header">
+      <header className="landing-learning-section__header" data-landing-reveal="header">
         <p className="landing-learning-section__eyebrow">{t("home.visualize.eyebrow")}</p>
         <h2 id="landing-visualization-title">{t("home.visualize.title")}</h2>
         <p className="landing-learning-section__description">{t("home.visualize.description")}</p>

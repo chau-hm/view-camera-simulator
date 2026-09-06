@@ -10,14 +10,23 @@ export const LandingHero = () => {
       <ViewCameraHeroIllustration />
 
       <div className="landing-hero__content">
-        <p className="landing-hero__eyebrow">{t("home.hero.eyebrow")}</p>
-        <h1 id="landing-hero-title" className="landing-hero__title">
+        <p className="landing-hero__eyebrow" data-landing-hero-copy="eyebrow">
+          {t("home.hero.eyebrow")}
+        </p>
+        <h1 id="landing-hero-title" className="landing-hero__title" data-landing-hero-copy="title">
           <span className="landing-hero__title-line">{t("home.hero.titleLine1")}</span>
           {" "}
           <span className="landing-hero__title-line">{t("home.hero.titleLine2")}</span>
         </h1>
-        <p className="landing-hero__description">{t("home.hero.description")}</p>
-        <Link className="btn btn--primary landing-hero__cta" data-testid="landing-hero-cta" to="/scenes">
+        <p className="landing-hero__description" data-landing-hero-copy="description">
+          {t("home.hero.description")}
+        </p>
+        <Link
+          className="btn btn--primary landing-hero__cta"
+          data-testid="landing-hero-cta"
+          data-landing-hero-copy="cta"
+          to="/scenes"
+        >
           <span className="landing-hero__cta-label landing-hero__cta-label--desktop">
             {t("home.hero.startExploring")}
           </span>

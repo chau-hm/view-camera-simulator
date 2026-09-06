@@ -5,7 +5,7 @@ type LandingConceptCardProps = {
 };
 
 export const LandingConceptCard = ({ imageSrc, title, description }: LandingConceptCardProps) => (
-  <article className="landing-concept-card">
+  <article className="landing-concept-card" data-landing-reveal="card">
     <div className="landing-concept-card__artwork">
       <img
         src={imageSrc}
