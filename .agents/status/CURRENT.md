@@ -44,7 +44,7 @@ The Oblique Tabletop raster scene card was regenerated earlier in PR131 to match
 - Typecheck, lint, `check:css`, build, and `git diff --check`: passed.
 - Focused Oblique Tabletop Chromium: 2/2 passed in `59.0s`; manual neutral, Tilt-only, and compound Ground Glass inspection passed.
 - `CI=1 npm run ci:local:e2e` passed CSS, lint, typecheck, unit/integration, and build, then stopped at the unrelated `architecture-foreground-tilt-focus.spec.ts` because two tests timed out waiting for the shared `Focus distance` slider. The exact two failures reproduced on clean `main` at `766332e95ca42066f2f05e6f2f93d234ba45a79e`.
-- Current-head GitHub CI for the previously published bookkeeping correction passed lint, type-check, and unit/integration; exact-head CI will be rechecked after this base update.
+- Current-head GitHub CI for the published base-updated PR131 tip passed lint, type-check, and unit/integration; deploy was skipped as expected for the PR.
 
 ## Scope and known gaps
 
