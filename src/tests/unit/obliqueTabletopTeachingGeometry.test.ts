@@ -22,6 +22,7 @@ import { simulatorMessages as enSimulatorMessages } from "../../i18n/messages/en
 import { simulatorMessages as zhHkSimulatorMessages } from "../../i18n/messages/zh-HK/simulator";
 import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
+import { obliqueTabletopCompoundCalibration } from "../../scenes/obliqueTabletopCompoundCalibration";
 import type { CameraState } from "../../types/camera";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -36,6 +37,18 @@ const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
 
 const opticsFor = (overrides: Partial<CameraState> = {}) =>
   deriveOpticsState(cameraFor(overrides), obliqueTabletopScene);
+
+const tiltOnlyState = {
+  frontTiltDeg: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
+  frontSwingDeg: 0,
+  focusDistanceMm: obliqueTabletopGeometry.tiltOnlyCalibration.focusDistanceMm,
+};
+
+const compoundState = {
+  frontTiltDeg: obliqueTabletopCompoundCalibration.public.frontTiltDeg,
+  frontSwingDeg: obliqueTabletopCompoundCalibration.public.frontSwingDeg,
+  focusDistanceMm: obliqueTabletopCompoundCalibration.public.focusDistanceMm,
+};
 
 const teachingFeedbackFor = (overrides: Partial<CameraState>): string => {
   const { container, unmount } = render(
@@ -107,15 +120,15 @@ const signedDistance = (
 describe("Oblique Tabletop compound teaching geometry", () => {
   afterEach(() => cleanup());
 
-  it("derives the canonical tabletop and one live focus plane for every view", () => {
+  it("derives the canonical subject board and one live focus plane for every view", () => {
     for (const overrides of [
       { frontTiltDeg: 0, frontSwingDeg: 0, focusDistanceMm: obliqueTabletopScene.cameraPreset.focusDistanceMm },
-      { frontTiltDeg: -4.9, frontSwingDeg: 0, focusDistanceMm: 3310 },
-      { frontTiltDeg: -8, frontSwingDeg: -1.7, focusDistanceMm: 2450 },
+      tiltOnlyState,
+      compoundState,
     ]) {
       const optics = opticsFor(overrides);
       const teaching = deriveObliqueTabletopTeachingGeometry(optics);
-      expect(teaching.subjectPlane).toBe(obliqueTabletopGeometry.tabletopTopSurfacePlane);
+      expect(teaching.subjectPlane).toBe(obliqueTabletopGeometry.subjectBoardPlane);
       expect(teaching.filmPlane).toBe(optics.filmPlane);
       expect(teaching.lensPlane).toBe(optics.lensPlane);
       expect(teaching.focusPlane).toBe(optics.focusPlane);
@@ -130,12 +143,29 @@ describe("Oblique Tabletop compound teaching geometry", () => {
 
       const projection = projectionFor(optics);
       for (const view of ["side", "top", "scheimpflug"] as const) {
+        if (view === "scheimpflug") {
+          // This section views the common line end-on. Its focus-plane
+          // evidence is the shared validated construction, not a second
+          // clipped focus-line segment.
+          const construction = teaching.scheimpflugConstruction;
+          const hasMovement =
+            overrides.frontTiltDeg !== 0 || overrides.frontSwingDeg !== 0;
+          expect(construction.isValid).toBe(hasMovement);
+          if (hasMovement) {
+            expect(construction.commonLine).not.toBeNull();
+            expect(construction.pointResidualMm).toBe(0);
+            expect(construction.directionResidual).toBe(0);
+          } else {
+            expect(construction.commonLine).toBeNull();
+          }
+          continue;
+        }
         expect(projection.views[view].planeSegments.find(({ id }) => id === "focus")).toBeDefined();
       }
     }
   });
 
-  it("registers side and top traces from the same canonical tabletop plane", () => {
+  it("registers side and top traces from the same canonical subject-board plane", () => {
     const guides = getSceneGeometryGuides(obliqueTabletopScene.id);
     expect(guides).toHaveLength(2);
     expect(guides.map(({ teachingComponent }) => teachingComponent)).toEqual([
@@ -143,27 +173,27 @@ describe("Oblique Tabletop compound teaching geometry", () => {
       "left-right",
     ]);
     guides.forEach((guide) => {
-      expect(guide.sourcePlaneId).toBe("tabletopTopSurfacePlane");
-      expect(signedDistance(guide.startWorld, obliqueTabletopGeometry.tabletopTopSurfacePlane)).toBeCloseTo(0, 9);
-      expect(signedDistance(guide.endWorld, obliqueTabletopGeometry.tabletopTopSurfacePlane)).toBeCloseTo(0, 9);
+      expect(guide.sourcePlaneId).toBe("subjectBoardPlane");
+      expect(signedDistance(guide.startWorld, obliqueTabletopGeometry.subjectBoardPlane)).toBeCloseTo(0, 9);
+      expect(signedDistance(guide.endWorld, obliqueTabletopGeometry.subjectBoardPlane)).toBeCloseTo(0, 9);
     });
     expect(guides[0].startWorld).toEqual(
-      obliqueTabletopGeometry.tabletopExtents.near.topSurfaceCenterWorld,
+      obliqueTabletopGeometry.subjectBoardExtents.near.surfaceCenterWorld,
     );
     expect(guides[0].endWorld).toEqual(
-      obliqueTabletopGeometry.tabletopExtents.far.topSurfaceCenterWorld,
+      obliqueTabletopGeometry.subjectBoardExtents.far.surfaceCenterWorld,
     );
     expect(guides[1].startWorld).toEqual(
-      obliqueTabletopGeometry.tabletopExtents.left.topSurfaceCenterWorld,
+      obliqueTabletopGeometry.subjectBoardExtents.left.surfaceCenterWorld,
     );
     expect(guides[1].endWorld).toEqual(
-      obliqueTabletopGeometry.tabletopExtents.right.topSurfaceCenterWorld,
+      obliqueTabletopGeometry.subjectBoardExtents.right.surfaceCenterWorld,
     );
   });
 
   it("makes the Side trace expose the near-to-far Tilt component", () => {
     const neutral = projectionFor(opticsFor({ frontTiltDeg: 0, frontSwingDeg: 0 }));
-    const tiltOnly = projectionFor(opticsFor({ frontTiltDeg: -4.9, frontSwingDeg: 0, focusDistanceMm: 3310 }));
+    const tiltOnly = projectionFor(opticsFor(tiltOnlyState));
     const neutralResidual = normalizedSegmentCrossResidual(
       guideSegment("side", neutral),
       focusSegment("side", neutral),
@@ -180,10 +210,10 @@ describe("Oblique Tabletop compound teaching geometry", () => {
 
   it("makes the Top trace expose the remaining Swing contribution", () => {
     const tiltOnly = projectionFor(
-      opticsFor({ frontTiltDeg: -4.9, frontSwingDeg: 0, focusDistanceMm: 3310 }),
+      opticsFor(tiltOnlyState),
     );
     const compound = projectionFor(
-      opticsFor({ frontTiltDeg: -8, frontSwingDeg: -1.7, focusDistanceMm: 2450 }),
+      opticsFor(compoundState),
     );
     const tiltResidual = normalizedSegmentCrossResidual(
       guideSegment("top", tiltOnly),
@@ -199,13 +229,13 @@ describe("Oblique Tabletop compound teaching geometry", () => {
   });
 
   it("keeps movement-presence feedback direction-neutral across reachable signs", () => {
-    const negativeTilt = teachingFeedbackFor({ frontTiltDeg: -4.9, frontSwingDeg: 0 });
-    const positiveTilt = teachingFeedbackFor({ frontTiltDeg: 4.9, frontSwingDeg: 0 });
+    const negativeTilt = teachingFeedbackFor({ frontTiltDeg: -4.8, frontSwingDeg: 0 });
+    const positiveTilt = teachingFeedbackFor({ frontTiltDeg: 4.8, frontSwingDeg: 0 });
     const positiveSwing = teachingFeedbackFor({ frontTiltDeg: 0, frontSwingDeg: 1.7 });
     const wrongCompound = teachingFeedbackFor({ frontTiltDeg: 8, frontSwingDeg: 1.7 });
 
-    expect(getObliqueTabletopTeachingState({ tiltDeg: -4.9, swingDeg: 0 })).toBe("tilt");
-    expect(getObliqueTabletopTeachingState({ tiltDeg: 4.9, swingDeg: 0 })).toBe("tilt");
+    expect(getObliqueTabletopTeachingState({ tiltDeg: tiltOnlyState.frontTiltDeg, swingDeg: 0 })).toBe("tilt");
+    expect(getObliqueTabletopTeachingState({ tiltDeg: 4.8, swingDeg: 0 })).toBe("tilt");
     expect(positiveTilt).toBe(negativeTilt);
     expect(positiveTilt).toContain("Front Tilt changes the near-to-far relationship");
     expect(positiveTilt).not.toMatch(/improv|improved|alignment improves/i);
@@ -244,14 +274,14 @@ describe("Oblique Tabletop compound teaching geometry", () => {
       simulatorMessageKeys.geometry.obliqueTabletopScheimpflugView,
     );
     expect(getObliqueTabletopTeachingState({ tiltDeg: 0, swingDeg: 0 })).toBe("neutral");
-    expect(getObliqueTabletopTeachingState({ tiltDeg: -4.9, swingDeg: 0 })).toBe("tilt");
-    expect(getObliqueTabletopTeachingState({ tiltDeg: 0, swingDeg: -1.7 })).toBe("swing");
-    expect(getObliqueTabletopTeachingState({ tiltDeg: -8, swingDeg: -1.7 })).toBe("compound");
+    expect(getObliqueTabletopTeachingState({ tiltDeg: -4.8, swingDeg: 0 })).toBe("tilt");
+    expect(getObliqueTabletopTeachingState({ tiltDeg: 0, swingDeg: -1.6 })).toBe("swing");
+    expect(getObliqueTabletopTeachingState({ tiltDeg: compoundState.frontTiltDeg, swingDeg: compoundState.frontSwingDeg })).toBe("compound");
     expect(getObliqueTabletopTeachingFeedbackKey("compound")).toBe(
       simulatorMessageKeys.geometry.obliqueTabletopCompoundFeedback,
     );
 
-    const optics = opticsFor({ frontTiltDeg: -8, frontSwingDeg: -1.7, focusDistanceMm: 2450 });
+    const optics = opticsFor(compoundState);
     const { container } = render(
       createElement(GeometryViewport, {
         opticsState: optics,
@@ -264,7 +294,7 @@ describe("Oblique Tabletop compound teaching geometry", () => {
     );
     const svg = container.querySelector('[data-testid="geometry-svg-top"]');
     expect(svg).toHaveAttribute("data-teaching-geometry", "oblique-tabletop");
-    expect(svg).toHaveAttribute("data-teaching-subject-plane-source", "tabletopTopSurfacePlane");
+    expect(svg).toHaveAttribute("data-teaching-subject-plane-source", "subjectBoardPlane");
     expect(svg).toHaveAttribute("data-teaching-focus-plane-source", "DerivedOpticsState.focusPlane");
     expect(svg).toHaveAttribute("data-teaching-focus-plane-present", "true");
     expect(container.querySelector('[data-testid="oblique-tabletop-left-right-plane"]')).not.toBeNull();

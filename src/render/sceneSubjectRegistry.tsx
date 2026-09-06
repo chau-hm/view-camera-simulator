@@ -199,7 +199,7 @@ const architectureForegroundLightingTargetMm = {
 } as const;
 
 const obliqueTabletopLightingTargetMm = {
-  ...obliqueTabletopGeometry.middleMarker.worldPosition,
+  ...obliqueTabletopGeometry.middleBoardMarker.worldPosition,
 } as const;
 
 const interiorCornerLightingTargetMm = {

@@ -228,8 +228,8 @@ export const simulatorMessages = {
     architectureForegroundBuildingBaseTarget: "Building base",
     architectureForegroundBuildingMiddleTarget: "Building middle",
     interiorCornerRecedingWallGuide: "Receding side wall",
-    obliqueTabletopNearFarGuide: "Tabletop · near ↔ far",
-    obliqueTabletopLeftRightGuide: "Tabletop · left ↔ right",
+    obliqueTabletopNearFarGuide: "Subject board · near ↔ far",
+    obliqueTabletopLeftRightGuide: "Subject board · left ↔ right",
     obliqueTabletopSideView:
       "Side view · inspect how Front Tilt changes the near-to-far component of the one focus plane.",
     obliqueTabletopTopView:
@@ -237,9 +237,9 @@ export const simulatorMessages = {
     obliqueTabletopScheimpflugView:
       "Scheimpflug view · film, lens, and one plane of sharp focus meet in a single 3D construction.",
     obliqueTabletopNeutralFeedback:
-      "The tabletop and current focus plane disagree in more than one direction.",
+      "The subject board and current focus plane disagree in more than one direction.",
     obliqueTabletopTiltFeedback:
-      "Front Tilt changes the near-to-far relationship. Compare the focus plane with the tabletop before adding Swing.",
+      "Front Tilt changes the near-to-far relationship. Compare the focus plane with the subject board before adding Swing.",
     obliqueTabletopSwingFeedback:
       "Front Swing changes the left-to-right relationship. Compare it with the near-to-far component.",
     obliqueTabletopCompoundFeedback:
@@ -416,21 +416,21 @@ export const simulatorMessages = {
     },
     obliqueTabletop: {
       objective:
-        "Use Front Tilt, Front Swing, and Focus to align the oblique tabletop at fixed f/11.",
+        "Use Front Tilt, Front Swing, and Focus to align the inclined subject board at fixed f/11.",
       bullets: {
         focusDistance:
-          "Start at neutral and compare the near, middle, and far tabletop regions.",
+          "Start at neutral and compare the near, middle, and far subject-board details.",
         tilt:
-          "Use Front Tilt to improve near-to-far focus alignment.",
+          "Use Front Tilt to improve the board's near-to-far focus alignment.",
         refocus:
           "Refine Focus after changing either movement.",
         remaining:
-          "Add Front Swing to resolve the remaining side-to-side difference and compare regions across the tabletop.",
+          "Add Front Swing to resolve the remaining side-to-side difference and compare details across the board.",
         geometry:
           "Use the Side and Top geometry views together: they show two components of one three-dimensional focus plane.",
       },
       observation:
-        "Front Tilt improves the near-to-far focus relationship. Front Swing resolves the remaining side-to-side difference; refine Focus after either movement and compare regions across the tabletop. The two movements do not create two focus planes; together they orient one plane in 3D.",
+        "Front Tilt improves the board's near-to-far focus relationship. Front Swing resolves the remaining side-to-side difference; refine Focus after either movement and compare details across the board. The two movements do not create two focus planes; together they orient one plane in 3D.",
     },
     mirrorShift: {
       objective:

@@ -5,7 +5,7 @@ export const obliqueTabletopScene: SceneDefinition = {
   id: "oblique-tabletop",
   name: "Oblique Tabletop",
   description:
-    "Photograph an oblique tabletop from an angle. In the neutral setup, different parts of the table fall at different depths, so you cannot keep the whole surface sharp at once.",
+    "Photograph an inclined plan board resting on a normal table. Because the board recedes near-to-far and laterally, Tilt alone cannot align the whole subject plane; Swing is also required.",
   assets: [],
   cameraPreset: {
     focusDistanceMm: geometry.canonicalFocusDistanceMm,
@@ -30,8 +30,8 @@ export const obliqueTabletopScene: SceneDefinition = {
   focusTargets: geometry.focusTargets,
   compositionTargets: [
     {
-      id: "tabletop-surface",
-      label: "Canonical tabletop surface",
+      id: "subject-board-plane",
+      label: "Canonical inclined subject board plane",
       worldBounds: geometry.compositionTargetBounds,
     },
   ],

@@ -18,6 +18,7 @@ import {
   MIRROR_SHIFT_SCENE_CALIBRATION,
   resolveMirrorShiftTeachingState,
 } from "../../scenes/mirrorShiftCalibration";
+import { CAMERA_CONTROL_STEPS } from "../../utils/constants";
 
 const riseTask: TaskDefinition = {
   id: "rise-01",
@@ -481,11 +482,11 @@ const obliqueCompoundTask: TaskDefinition = {
 };
 
 const obliqueTabletopCompound = obliqueTabletopCompoundCalibration.public;
-const obliqueTabletopVisibleTargetIds = obliqueTabletopGeometry.tabletopVisibleFocusSamples.map(
+const obliqueTabletopVisibleTargetIds = obliqueTabletopGeometry.subjectBoardVisibleFocusSamples.map(
   (sample) => sample.id,
 );
 const obliqueTabletopPrincipalTargetIds = [
-  ...obliqueTabletopGeometry.tabletopPrincipalDepthSampleIds,
+  ...obliqueTabletopGeometry.subjectBoardPrincipalDepthSampleIds,
 ];
 const obliqueTabletopTiltOnlyRange = {
   min: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg - 0.5,
@@ -500,9 +501,13 @@ const obliqueTabletopCompoundSwingRange = {
   max: obliqueTabletopCompound.frontSwingDeg + 0.5,
 };
 const obliqueTabletopSwingStage = {
-  frontTiltDeg: -7.4,
-  frontSwingDeg: -1.4,
-  focusDistanceMm: 2630,
+    // Swing establishes the final orientation; the six-step focus offset keeps
+  // this stage partial so Refine Focus owns the first full-target gate.
+  frontTiltDeg: obliqueTabletopCompound.frontTiltDeg,
+  frontSwingDeg: obliqueTabletopCompound.frontSwingDeg,
+  focusDistanceMm:
+    obliqueTabletopCompound.focusDistanceMm -
+    CAMERA_CONTROL_STEPS.focusDistanceMm * 6,
 } as const;
 const obliqueTabletopSwingStageTiltRange = {
   min: obliqueTabletopSwingStage.frontTiltDeg - 0.5,
@@ -512,11 +517,7 @@ const obliqueTabletopSwingStageSwingRange = {
   min: obliqueTabletopSwingStage.frontSwingDeg - 0.5,
   max: obliqueTabletopSwingStage.frontSwingDeg + 0.5,
 };
-const obliqueTabletopRefineTiltRange = {
-  min: Math.min(obliqueTabletopCompoundTiltRange.min, obliqueTabletopSwingStageTiltRange.min),
-  max: Math.max(obliqueTabletopCompoundTiltRange.max, obliqueTabletopSwingStageTiltRange.max),
-};
-const obliqueTabletopSwingLateralTargetIds = obliqueTabletopGeometry.tabletopVisibleFocusSamples
+const obliqueTabletopSwingLateralTargetIds = obliqueTabletopGeometry.subjectBoardVisibleFocusSamples
   .filter(({ id }) => id === "far-left" || id === "far-right")
   .map(({ id }) => id);
 const obliqueTabletopSharpnessMinimum = 0.8;
@@ -705,7 +706,7 @@ const obliqueTabletopRefineTask: TaskDefinition = {
   id: "oblique-tabletop-refine-01",
   sceneId: "oblique-tabletop",
   mode: "guided",
-  enabledControls: ["tilt", "swing", "focusDistance", "geometryView"],
+  enabledControls: ["focusDistance", "geometryView"],
   constraints: {},
   criteria: [
     {
@@ -724,8 +725,8 @@ const obliqueTabletopRefineTask: TaskDefinition = {
       id: "oblique-tabletop-refine-tilt-range",
       type: "movement-range",
       movement: "tilt",
-      min: obliqueTabletopRefineTiltRange.min,
-      max: obliqueTabletopRefineTiltRange.max,
+      min: obliqueTabletopCompoundTiltRange.min,
+      max: obliqueTabletopCompoundTiltRange.max,
       valueMode: "signed",
     },
     {
