@@ -5,5 +5,5 @@ test("smoke: app boots at home", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Shape Perspective. Place Focus." }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Start Exploring" })).toBeVisible();
+  await expect(page.getByTestId("landing-hero-cta")).toBeVisible();
 });

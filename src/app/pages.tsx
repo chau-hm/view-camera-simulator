@@ -18,6 +18,7 @@ import { LandingHero } from "../components/marketing/LandingHero";
 import { LandingFundamentalsSection } from "../components/marketing/LandingFundamentalsSection";
 import { LandingVisualizationSection } from "../components/marketing/LandingVisualizationSection";
 import { LandingWhyItMattersSection } from "../components/marketing/LandingWhyItMattersSection";
+import { LandingFinalCtaSection } from "../components/marketing/LandingFinalCtaSection";
 import { SceneCard } from "../components/marketing/SceneCard";
 import { DesktopExperienceNotice } from "../components/marketing/DesktopExperienceNotice";
 import { FaqSection } from "../components/marketing/FaqSection";
@@ -37,6 +38,7 @@ export const HomePage = () => {
       </div>
 
       <LandingWhyItMattersSection />
+      <LandingFinalCtaSection />
     </AppShell>
   );
 };

@@ -328,7 +328,7 @@
 .site-shell .landing-concept-learning {
   max-width: var(--marketing-content-width);
   margin: 0 auto;
-  padding: clamp(72px, 9vw, 128px) clamp(20px, 4vw, 48px) clamp(84px, 10vw, 136px);
+  padding: clamp(72px, 9vw, 128px) clamp(20px, 4vw, 48px) clamp(48px, 5vw, 68px);
 }
 
 .site-shell .landing-learning-section + .landing-learning-section {
@@ -342,9 +342,10 @@
 }
 
 .site-shell .landing-learning-section__eyebrow {
-  margin: 0 0 18px;
+  width: fit-content;
+  margin: 0 auto 18px;
   color: var(--marketing-accent);
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   font-weight: 750;
   letter-spacing: 0.18em;
   line-height: 1.25;
@@ -441,7 +442,7 @@
 .site-shell .landing-why-section {
   max-width: var(--marketing-content-width);
   margin: 0 auto;
-  padding: clamp(88px, 11vw, 160px) clamp(20px, 4vw, 48px) clamp(88px, 10vw, 136px);
+  padding: clamp(48px, 5vw, 68px) clamp(20px, 4vw, 48px) clamp(88px, 10vw, 136px);
   scroll-margin-top: 96px;
 }
 
@@ -452,9 +453,10 @@
 }
 
 .site-shell .landing-why-section__eyebrow {
-  margin: 0 0 18px;
+  width: fit-content;
+  margin: 0 auto 18px;
   color: var(--marketing-accent);
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   font-weight: 750;
   letter-spacing: 0.18em;
   line-height: 1.25;
@@ -531,6 +533,105 @@
   font-size: 0.95rem;
   line-height: 1.68;
   text-wrap: pretty;
+}
+
+/* Static closing CTA. Keep the artwork panoramic and the copy in its quiet
+   left-hand region without introducing a second hero composition. */
+
+.site-shell .landing-final-cta-section {
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(420px, 34vw, 520px);
+  overflow: hidden;
+  background: var(--marketing-bg);
+  color: var(--marketing-text);
+}
+
+.site-shell .landing-final-cta-section::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  background:
+    linear-gradient(90deg, rgba(3, 9, 16, 0.98) 0%, rgba(3, 9, 16, 0.9) 24%, rgba(3, 9, 16, 0.62) 47%, rgba(3, 9, 16, 0.2) 72%, rgba(3, 9, 16, 0.06) 100%),
+    linear-gradient(0deg, rgba(3, 9, 16, 0.7) 0%, rgba(3, 9, 16, 0.08) 52%, rgba(3, 9, 16, 0.18) 100%);
+  pointer-events: none;
+}
+
+.site-shell .landing-final-cta-section::after {
+  position: absolute;
+  inset: 14px;
+  z-index: 2;
+  content: "";
+  border: 1px solid rgba(204, 243, 255, 0.12);
+  pointer-events: none;
+}
+
+.site-shell .landing-final-cta-section__artwork {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  background: #071422;
+}
+
+.site-shell .landing-final-cta-section__artwork img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.site-shell .landing-final-cta-section__content {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: var(--marketing-content-width);
+  min-height: inherit;
+  margin: 0 auto;
+  padding: 84px clamp(24px, 6vw, 96px);
+  display: flex;
+  align-items: center;
+}
+
+.site-shell .landing-final-cta-section__copy {
+  max-width: 540px;
+}
+
+.site-shell .landing-final-cta-section__copy h2 {
+  margin: 0;
+  color: var(--marketing-text);
+  font-family: ui-serif, "Iowan Old Style", "Baskerville", "Noto Serif TC", "Songti TC", serif;
+  font-size: clamp(2.55rem, 5vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+  text-wrap: balance;
+  text-shadow: 0 3px 26px rgba(0, 0, 0, 0.3);
+}
+
+.site-shell .landing-final-cta-section__copy p {
+  max-width: 500px;
+  margin: 24px 0 0;
+  color: rgba(244, 245, 241, 0.82);
+  font-size: clamp(1rem, 1.25vw, 1.15rem);
+  line-height: 1.65;
+  text-wrap: balance;
+}
+
+.site-shell .landing-final-cta-section__cta {
+  min-height: 48px;
+  margin-top: 30px;
+  padding: 0 21px;
+  border: 1px solid rgba(204, 243, 255, 0.66);
+  border-radius: 999px;
+  box-shadow: var(--marketing-cta-glow);
+  color: #06202d;
+  font-size: 0.96rem;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  text-decoration: none;
 }
 
 /* Shared marketing notices and buttons */
@@ -1095,7 +1196,7 @@
   }
 
   .site-shell .landing-concept-learning {
-    padding: 64px 16px 80px;
+    padding: 64px 16px 40px;
   }
 
   .site-shell .landing-learning-section + .landing-learning-section {
@@ -1108,7 +1209,7 @@
 
   .site-shell .landing-learning-section__eyebrow {
     margin-bottom: 14px;
-    font-size: 0.68rem;
+    font-size: 0.875rem;
   }
 
   .site-shell .landing-learning-section__header h2 {
@@ -1134,7 +1235,7 @@
   }
 
   .site-shell .landing-why-section {
-    padding: 72px 16px 80px;
+    padding: 48px 16px 80px;
   }
 
   .site-shell .landing-why-section__header {
@@ -1143,7 +1244,7 @@
 
   .site-shell .landing-why-section__eyebrow {
     margin-bottom: 14px;
-    font-size: 0.68rem;
+    font-size: 0.875rem;
   }
 
   .site-shell .landing-why-section__header h2 {
@@ -1152,6 +1253,47 @@
 
   .site-shell .landing-why-card__content {
     padding: 20px 20px 23px;
+  }
+
+  .site-shell .landing-final-cta-section {
+    min-height: 520px;
+  }
+
+  .site-shell .landing-final-cta-section::before {
+    background:
+      linear-gradient(180deg, rgba(3, 9, 16, 0.9) 0%, rgba(3, 9, 16, 0.66) 42%, rgba(3, 9, 16, 0.84) 100%),
+      linear-gradient(90deg, rgba(3, 9, 16, 0.9) 0%, rgba(3, 9, 16, 0.24) 100%);
+  }
+
+  .site-shell .landing-final-cta-section::after {
+    inset: 10px;
+  }
+
+  .site-shell .landing-final-cta-section__artwork img {
+    object-position: 68% center;
+  }
+
+  .site-shell .landing-final-cta-section__content {
+    align-items: flex-start;
+    padding: 72px 24px 64px;
+  }
+
+  .site-shell .landing-final-cta-section__copy {
+    max-width: 34rem;
+  }
+
+  .site-shell .landing-final-cta-section__copy h2 {
+    font-size: clamp(2.25rem, 11vw, 3.4rem);
+  }
+
+  .site-shell .landing-final-cta-section__copy p {
+    margin-top: 18px;
+    font-size: 0.98rem;
+  }
+
+  .site-shell .landing-final-cta-section__cta {
+    min-height: 46px;
+    margin-top: 24px;
   }
 
   .site-shell .site-footer__inner {

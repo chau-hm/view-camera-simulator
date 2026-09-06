@@ -40,7 +40,7 @@ const expectHeroTitleToFit = async (page: Page) => {
 
 test("home can navigate to Scenes page", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Start Exploring" }).click();
+  await page.getByTestId("landing-hero-cta").click();
   await expect(page).toHaveURL(/\/scenes$/);
   await expect(page.getByRole("heading", { name: "Scenes" })).toBeVisible();
 
@@ -136,6 +136,11 @@ test("concept learning sections keep their responsive grids without overflow", a
     await expect(page.getByTestId("landing-fundamentals-section")).toBeVisible();
     await expect(page.getByTestId("landing-visualization-section")).toBeVisible();
     await expect(page.getByTestId("landing-why-section")).toBeVisible();
+    const finalCta = page.getByTestId("landing-final-cta-section");
+    await expect(finalCta).toBeVisible();
+    await expect(finalCta.getByRole("heading", { name: "Step into the simulator.", level: 2 })).toBeVisible();
+    await expect(finalCta.getByRole("link")).toHaveCount(1);
+    await expect(finalCta.getByRole("link")).toHaveAttribute("href", "/scenes");
 
     const columns = await page.evaluate(() => {
       const getColumnCount = (selector: string) => {
@@ -163,6 +168,8 @@ test("concept learning sections keep their responsive grids without overflow", a
   await expect(page.getByRole("heading", { name: "三種視覺化方式", level: 2 })).toBeVisible();
   await expect(page.getByText("為甚麼重要")).toBeVisible();
   await expect(page.getByRole("heading", { name: "為甚麼仍然值得學大片幅相機？", level: 3 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "進入模擬器。", level: 2 })).toBeVisible();
+  await expect(page.getByRole("link", { name: "開始探索" })).toHaveAttribute("href", "/scenes");
   await expect(page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).resolves.toBeLessThanOrEqual(2);
 });
 
