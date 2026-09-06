@@ -9,7 +9,8 @@ Correct the learner-facing Ground Glass presentation mismatch observed in PR131 
 - Branch: `fix/ground-glass-focus-inspection-fidelity`
 - Worktree: `/Users/homan/repo/view-camera-ground-glass-focus-inspection-fidelity`
 - Base: `origin/main` at `13c2ad9c46b473584162b2eb05c7cd65a113d61a` (PR131 merged)
-- Starting head: `13c2ad9c46b473584162b2eb05c7cd65a113d61a`; final head will be recorded after publication.
+- Starting head: `13c2ad9c46b473584162b2eb05c7cd65a113d61a`.
+- Published implementation head: `e89b06fe05e7a8e5308b11f18b25b69239efe37b`.
 
 ## Presentation model
 
@@ -39,8 +40,8 @@ At normal/high Ground Glass quality in the real browser profiling path (CPU fall
 - Cross-scene Chromium smoke: `8/8` passed across Oblique Architecture, Interior Corner, Ground Glass profiling, and Raw RTT bypass.
 - Temporary three-state profiling probe passed and was removed before commit. At high quality / CPU fallback / DPR 2 / internal-gather `784×628` / 32 samples, neutral/Tilt-only/compound averaged `434.7/418.5/383.1 ms` per frame.
 - `CI=1 npm run ci:local:e2e`: CSS, lint, typecheck, `164/1607` unit/integration tests, build, and preceding browser specs passed; it stopped in `groundglass-interaction.spec.ts` with the Architecture Rise re-zoom/reset test timing out. The exact test was rerun on clean current `origin/main` `13c2ad9c46b473584162b2eb05c7cd65a113d61a`: one run passed, while a two-worker repeat reproduced the same test's timeout twice at separate interaction points. This is retained as an existing intermittent baseline issue; no unrelated test was weakened.
-- Current-head GitHub CI: pending publication; the new PR head must be checked after push.
+- GitHub CI for the published implementation head: `ci` passed in 2m11s (PR run `34048416606`); the push-triggered `ci` also passed in 2m04s (run `34048370091`), with deploy skipped as expected.
 
 ## Scope / known gaps
 
-This work changes only the Ground Glass presentation layer, its shared shader/CPU conversion path, a localized transparency indicator, related tests, and this handoff. It does not change camera state, optics, scene geometry, calibration, task thresholds, aperture policy, or the catalog asset. The full local E2E result is limited by the clean-main-reproduced `groundglass-interaction` baseline timeout; current-head GitHub CI remains to be checked after publication.
+This work changes only the Ground Glass presentation layer, its shared shader/CPU conversion path, a localized transparency indicator, related tests, and this handoff. It does not change camera state, optics, scene geometry, calibration, task thresholds, aperture policy, or the catalog asset. The full local E2E result is limited by the clean-main-reproduced `groundglass-interaction` baseline timeout; the published implementation head is green in GitHub CI.
