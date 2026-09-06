@@ -41,6 +41,22 @@ describe("internationalization foundation", () => {
     );
   });
 
+  it("keeps the Why It Matters message shape complete in both locales", () => {
+    expect(Object.keys(traditionalChineseHomeMessages.why)).toEqual(Object.keys(englishHomeMessages.why));
+    expect(Object.keys(traditionalChineseHomeMessages.why.title)).toEqual(
+      Object.keys(englishHomeMessages.why.title),
+    );
+    expect(Object.keys(traditionalChineseHomeMessages.why.items)).toEqual(
+      Object.keys(englishHomeMessages.why.items),
+    );
+
+    for (const itemKey of Object.keys(englishHomeMessages.why.items) as Array<keyof typeof englishHomeMessages.why.items>) {
+      expect(Object.keys(traditionalChineseHomeMessages.why.items[itemKey])).toEqual(
+        Object.keys(englishHomeMessages.why.items[itemKey]),
+      );
+    }
+  });
+
   it("renders the bundled English surface by default", () => {
     const router = createMemoryRouter(routes, { initialEntries: ["/"] });
     render(<RouterProvider router={router} />);
@@ -71,6 +87,10 @@ describe("internationalization foundation", () => {
     });
     expect(screen.getByRole("heading", { name: "學習基礎原理", level: 2 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "三種視覺化方式", level: 2 })).toBeInTheDocument();
+    const why = screen.getByTestId("landing-why-section");
+    expect(within(why).getByText("為甚麼重要")).toBeInTheDocument();
+    expect(within(why).getByRole("heading", { level: 2 })).toHaveTextContent("曝光前，掌控更多。");
+    expect(within(why).getByRole("heading", { level: 2 })).toHaveTextContent("以更深入的方式觀看。");
     expect(screen.getByRole("heading", { name: "透視控制", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "焦平面", level: 3 })).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { name: "對焦屏", level: 3 })).toHaveLength(2);
@@ -96,6 +116,13 @@ describe("internationalization foundation", () => {
       "查看相機形成的影像，理解取景、構圖與對焦結果。",
       "幾何視圖",
       "顯示光路、鏡頭與成像平面、焦平面及透視幾何。",
+      "為甚麼重要",
+      "曝光前，你可以控制甚麼？",
+      "相機位置、構圖、影像幾何與焦平面，是幾個可以分開思考的決定。大片幅相機讓這些關係在曝光前清楚呈現。",
+      "為甚麼相機移軸重要？",
+      "上移與橫移可以在鏡頭位置不變時重新構圖；傾斜與擺動改變焦平面的方向；移動整部相機則會改變視點、透視與視差。",
+      "為甚麼仍然值得學大片幅相機？",
+      "較慢的操作過程，讓每一個調整都成為有意識的決定。倒轉而左右相反的對焦屏影像，亦讓你更仔細觀察邊緣、平面、對焦與空間關係。",
     ];
     for (const copy of partECopy) expect(screen.getByText(copy)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "場景" })).toBeInTheDocument();
@@ -103,9 +130,10 @@ describe("internationalization foundation", () => {
     expect(screen.getByText("親手操作上移、橫移、傾斜、擺動與對焦，看見它們如何改變透視、構圖與焦平面。")).toBeInTheDocument();
     expect(screen.getByTestId("landing-hero-cta")).toHaveAttribute("href", "/scenes");
     expect(screen.getByText("瀏覽場景")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "為甚麼相機移軸重要？", level: 2 })).toBeInTheDocument();
+    expect(within(why).getByRole("heading", { name: "曝光前，你可以控制甚麼？", level: 3 })).toBeInTheDocument();
+    expect(within(why).getByRole("heading", { name: "為甚麼相機移軸重要？", level: 3 })).toBeInTheDocument();
+    expect(within(why).getByRole("heading", { name: "為甚麼仍然值得學大片幅相機？", level: 3 })).toBeInTheDocument();
     expect(screen.queryByText(/前、後組移軸/)).not.toBeInTheDocument();
-    expect(screen.getByText(/移動整部相機會改變視點/)).toBeInTheDocument();
     expect(document.body.textContent).not.toContain("大型相機");
     expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-HK");
     expect(router.state.location.pathname).toBe("/");
@@ -115,6 +143,8 @@ describe("internationalization foundation", () => {
       expect(document.documentElement.lang).toBe("en");
       expect(screen.getByRole("heading", { name: "Shape Perspective. Place Focus." })).toBeInTheDocument();
     });
+    expect(screen.getByTestId("landing-why-section")).toHaveTextContent("More control before the shot.");
+    expect(screen.getByTestId("landing-why-section")).toHaveTextContent("Why is large-format camera still worth learning?");
   });
 
   it("keeps the selected locale when entering Scenes and translates Mirror Shift at the presentation boundary", async () => {
