@@ -19,6 +19,7 @@ import { LandingFundamentalsSection } from "../components/marketing/LandingFunda
 import { LandingVisualizationSection } from "../components/marketing/LandingVisualizationSection";
 import { LandingWhyItMattersSection } from "../components/marketing/LandingWhyItMattersSection";
 import { LandingFinalCtaSection } from "../components/marketing/LandingFinalCtaSection";
+import { useLandingMotion } from "../components/marketing/useLandingMotion";
 import { SceneCard } from "../components/marketing/SceneCard";
 import { DesktopExperienceNotice } from "../components/marketing/DesktopExperienceNotice";
 import { FaqSection } from "../components/marketing/FaqSection";
@@ -28,6 +29,8 @@ const SimulatorWorkspace = lazy(() =>
 );
 
 export const HomePage = () => {
+  useLandingMotion();
+
   return (
     <AppShell title="" siteShellClassName="site-shell--landing-home">
       <LandingHero />

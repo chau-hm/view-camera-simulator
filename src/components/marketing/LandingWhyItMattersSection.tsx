@@ -30,7 +30,7 @@ export const LandingWhyItMattersSection = () => {
       aria-labelledby="landing-why-title"
       data-testid="landing-why-section"
     >
-      <header className="landing-why-section__header">
+      <header className="landing-why-section__header" data-landing-reveal="header">
         <p className="landing-why-section__eyebrow">{t("home.why.eyebrow")}</p>
         <h2 id="landing-why-title">
           <span className="landing-why-section__title-line">{t("home.why.title.line1")}</span>

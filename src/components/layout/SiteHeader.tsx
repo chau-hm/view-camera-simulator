@@ -12,6 +12,7 @@ export const SiteHeader = () => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLandingScrolled, setIsLandingScrolled] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
@@ -39,6 +40,53 @@ export const SiteHeader = () => {
   );
 
   useEffect(() => {
+    if (pathname !== "/") {
+      setIsLandingScrolled(false);
+      return undefined;
+    }
+
+    let frameId: number | null = null;
+    let frameUsesTimeout = false;
+
+    const updateScrollState = () => {
+      setIsLandingScrolled(window.scrollY > 96);
+    };
+
+    const scheduleScrollState = () => {
+      if (frameId !== null) return;
+
+      if (typeof window.requestAnimationFrame === "function") {
+        frameUsesTimeout = false;
+        frameId = window.requestAnimationFrame(() => {
+          frameId = null;
+          updateScrollState();
+        });
+        return;
+      }
+
+      frameUsesTimeout = true;
+      frameId = window.setTimeout(() => {
+        frameId = null;
+        updateScrollState();
+      }, 0);
+    };
+
+    updateScrollState();
+    window.addEventListener("scroll", scheduleScrollState, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", scheduleScrollState);
+      if (frameId === null) return;
+
+      if (frameUsesTimeout) {
+        window.clearTimeout(frameId);
+      } else {
+        window.cancelAnimationFrame(frameId);
+      }
+    };
+  }, [pathname]);
+
+  useEffect(() => {
     if (!isMenuOpen) {
       if (pendingCompactMenuFocusPath === pathname) {
         pendingCompactMenuFocusPath = null;
@@ -60,7 +108,10 @@ export const SiteHeader = () => {
   }, [closeCompactMenu, isMenuOpen, pathname]);
 
   return (
-    <header className="site-header" role="banner">
+    <header
+      className={`site-header ${pathname === "/" && isLandingScrolled ? "site-header--scrolled" : ""}`.trim()}
+      role="banner"
+    >
       <div className="site-header__inner">
         <AppBrand homeLabel={t("common.brand.homeLabel")} />
 
