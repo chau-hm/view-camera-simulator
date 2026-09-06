@@ -6,7 +6,7 @@ Turn the validated Interior Corner free-mode foundation into a deterministic Obs
 
 ## Branch / worktree / base / head
 
-`feature/interior-corner-guided-lesson` · `/Users/homan/repo/view-camera-interior-corner-12d` · base `1fd8b0b1e6c9fd4a657c922c3c2af538c82a55b9` · implementation `b701ee3`; review-fix head is recorded in the completion report
+`feature/interior-corner-guided-lesson-12d` · `/private/tmp/view-camera-interior-corner-12d-fresh` · base `13c2ad9c46b473584162b2eb05c7cd65a113d61a` · pre-reconciliation head `69bb824`; current head is recorded in the completion report
 
 ## PR12A–12C prerequisites verified
 
@@ -14,11 +14,11 @@ Merged `origin/main` contains the Interior Corner scene, projected Rise evaluato
 
 ## Guided stage sequence
 
-Observe (neutral and non-interactive) → Compose with public-grid Rise → Align the one receding side-wall focus plane with Swing + Focus at f/5.6 → stop down to f/11 while preserving the solved composition and open-aperture focus alignment. The opposite wall remains contextual.
+Observe (neutral and non-interactive) → Compose with public-grid Rise → Front Swing orientation → Refine Focus placement on the one receding side-wall plane at f/5.6 → stop down to f/11 while preserving the solved composition and open-aperture focus alignment. The opposite wall remains contextual.
 
 ## Control staging
 
-Observe exposes navigation/readout access only; Compose exposes Rise; Align Focus exposes Swing + Focus with Rise preserved; Depth of Field exposes Aperture with Rise/Swing/Focus locked. Direct guided task metadata matches the visible stage controls.
+Observe exposes navigation/readout access only; Compose exposes Rise; Front Swing exposes Swing; Refine Focus exposes Swing + Focus; Aperture exposes only Aperture with Rise/Swing/Focus locked. Direct guided task metadata matches the visible stage controls.
 
 ## Completion contracts
 
@@ -30,13 +30,13 @@ Guided task criteria/registry, Interior Corner guided evaluation adapter, public
 
 ## Validation run
 
-Focused Vitest: 74 tests passed. Focused Playwright: 3 tests passed. Full Vitest: 1,582 tests passed. Typecheck, lint, CSS structure, build, and diff check passed.
+Focused reconciliation Vitest: 86 tests passed across the four formerly failing files. Full Vitest: 1,613 tests passed. Focused Interior Corner and Oblique Tabletop Playwright: 2 tests passed. Typecheck, lint, CSS structure, build, and diff check passed.
 
-The repository local CI gate was attempted end to end. Its Interior Corner guided-lesson, Architecture Rise Ground Glass, and preceding E2E groups passed, but the gate stopped on the unrelated `mirror-shift-teaching-geometry.spec.ts` RTT-content assertion (`ground-glass-rtt` was not found). No renderer or existing Ground Glass code is changed here.
+The broader local CI gate passed CSS, lint, typecheck, full Vitest, and build, then stopped at the unrelated `camera-movement-public-controls.spec.ts` test `3D Scene layout stays stable across continuous movement sliders`: 3 passed, 1 timed out waiting for the scene-panel predicate. No affected Interior Corner or Oblique Tabletop E2E failed.
 
 ## Validation not run
 
-The broader local E2E gate did not complete because of the unrelated Mirror Shift failure above. The previously known Architecture Rise Ground Glass timeout did not recur in this run.
+The broader local E2E gate did not complete because of the unrelated camera-movement-public-controls timeout above. No production renderer, scene, optics, or route behavior changed.
 
 ## Since review
 
@@ -47,13 +47,13 @@ The broader local E2E gate did not complete because of the unrelated Mirror Shif
 - The exact-head full Vitest suite now passes; focused lifecycle and browser regression evidence was added.
 - Optics, calibration, CoC thresholds, geometry, RTT, routing identity, and guided task criteria are unchanged.
 
-## Since main sync
+## Since test reconciliation
 
-- Integrated `origin/main` at `739b744a880826b3c34200645bac90f988a9436e` with a normal non-fast-forward merge; shared route, store, task, catalog, progress, localization, and test surfaces were reconciled additively.
-- PR128 Oblique Tabletop guided metadata, task progression, staged controls, localized copy, and tests are preserved. PR129 Interior Corner bidirectional state persistence, deep-link recovery, Restart Lesson, and guided Reset protection are preserved.
-- Post-sync focused Vitest passed (181 tests across the Interior/Oblique/shared suites); full Vitest passed (164 files, 1,593 tests). Typecheck, lint, CSS structure, build, and diff checks passed.
-- Focused Interior Corner and Oblique Tabletop Playwright passed (4 tests). The broader local E2E gate passed through Interior Corner and all preceding groups, then stopped at the pre-existing `mirror-shift-teaching-geometry.spec.ts` RTT-content assertion (`ground-glass-rtt` not found); no Interior/Oblique failure occurred.
-- Integration commit and current post-sync branch head: `e10d8ae6f8b75005e806ce08064803de0acaf284`.
+- `origin/main` at `13c2ad9c46b473584162b2eb05c7cd65a113d61a` was already integrated; the branch was 0 behind / 4 ahead at the start of this reconciliation.
+- Reconciled stale expectations for the PR #131 Oblique Tabletop description, the final five-stage Interior Corner title/order, and safe later-stage lesson deep-link restart behavior.
+- Reworked the workspace integration test to drive the actual route transitions through Observe → Compose → Front Swing → Refine Focus → Aperture, preserving Rise/Swing/Focus and final f/11 staging.
+- PR128 Oblique Tabletop behavior and PR129 Interior Corner lifecycle protection remain preserved. No production implementation, optics, geometry, RTT, catalog, or localization behavior changed.
+- The post-reconciliation broad E2E attempt passed the shared prerequisite checks and stopped only at the unrelated camera-movement-public-controls timeout; affected Interior Corner and Oblique Tabletop browser flows passed.
 
 ## Known limitations
 
@@ -61,7 +61,7 @@ Ground Glass assertions verify the existing RTT surface remains present/contentf
 
 ## Publication
 
-Implementation commit `b701ee3` and pre-publication handoff `96ce222` remain unchanged. Draft PR #129 remains open as a draft; this focused lifecycle fix updates the same feature branch.
+Draft PR #130 remains open as a draft and is updated on the same feature branch; implementation and reconciliation commit details are recorded in the completion report.
 
 ## Reviewer focus
 

@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { SimulatorRoutePage } from "../../app/pages";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 import { useAppStore } from "../../state/appStore";
 import { interiorCornerSwingFocusCalibration } from "../../scenes/interiorCornerSwingFocus";
@@ -31,15 +32,12 @@ const workspaceRoute = (
   </MemoryRouter>
 );
 
-const interiorCornerLessonWorkspace = (mode: "guided" | "free", taskId: string | null) => (
-  <MemoryRouter>
-    <SimulatorWorkspace
-      mode={mode}
-      sceneId="interior-corner"
-      taskId={taskId}
-      guidedLessonEnabled
-      simulateAssetFailure={false}
-    />
+const interiorCornerLessonWorkspace = () => (
+  <MemoryRouter initialEntries={["/simulator/free/interior-corner?lesson=1"]}>
+    <Routes>
+      <Route path="/simulator/:mode/:sceneId" element={<SimulatorRoutePage />} />
+      <Route path="/simulator/:mode/:sceneId/:taskId" element={<SimulatorRoutePage />} />
+    </Routes>
   </MemoryRouter>
 );
 
@@ -283,36 +281,33 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     );
   });
 
-  it("stages Interior Corner controls and preserves solved state between lesson stages", async () => {
-    const view = render(interiorCornerLessonWorkspace("free", null));
+  it("stages the five Interior Corner controls and preserves solved state between lesson stages", async () => {
+    render(interiorCornerLessonWorkspace());
 
-    expect(screen.getByRole("heading", { name: "Observe the Problem" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Observe the Problem" })).toBeInTheDocument();
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeDisabled();
     expect(screen.getByLabelText("Focus distance")).toBeDisabled();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
 
-    useAppStore.getState().setRise(33);
-    view.rerender(
-      interiorCornerLessonWorkspace("guided", "interior-corner-compose-01"),
-    );
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
     await waitFor(() => expect(screen.getByRole("heading", { name: "Compose the Interior Corner with Rise" })).toBeInTheDocument());
     expect(screen.getByLabelText("Rise")).toBeEnabled();
     expect(screen.getByLabelText("Swing")).toBeDisabled();
     expect(screen.getByLabelText("Focus distance")).toBeDisabled();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(0);
+    fireEvent.change(screen.getByLabelText("Rise"), { target: { value: "33" } });
+    await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
     expect(useAppStore.getState().camera.frontRiseMm).toBe(33);
-    expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
 
-    view.rerender(
-      interiorCornerLessonWorkspace("guided", "interior-corner-align-focus-01"),
-    );
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Align the Receding-Wall Focus" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Turn the Focus Plane with Swing" })).toBeInTheDocument());
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeEnabled();
-    expect(screen.getByLabelText("Focus distance")).toBeEnabled();
+    expect(screen.getByLabelText("Focus distance")).toBeDisabled();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
     expect(useAppStore.getState().camera.frontRiseMm).toBe(33);
     expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
@@ -320,15 +315,32 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     fireEvent.change(screen.getByLabelText("Swing"), {
       target: { value: interiorCornerSwingFocusCalibration.public.frontSwingDeg },
     });
+    await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Place the Focus Plane on the Wall" })).toBeInTheDocument());
+    expect(screen.getByLabelText("Rise")).toBeDisabled();
+    expect(screen.getByLabelText("Swing")).toBeEnabled();
+    expect(screen.getByLabelText("Focus distance")).toBeEnabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: 8000,
+      aperture: 5.6,
+    });
+    expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
+
     fireEvent.change(screen.getByLabelText("Focus distance"), {
       target: { value: interiorCornerSwingFocusCalibration.public.focusDistanceMm },
     });
     await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
-
-    view.rerender(
-      interiorCornerLessonWorkspace("guided", "interior-corner-depth-of-field-01"),
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(
+      interiorCornerSwingFocusCalibration.public.focusDistanceMm,
     );
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Add Usable Depth with Aperture" })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Add Depth around the Aligned Plane" })).toBeInTheDocument());
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeDisabled();
     expect(screen.getByLabelText("Focus distance")).toBeDisabled();

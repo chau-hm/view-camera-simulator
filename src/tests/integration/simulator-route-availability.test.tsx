@@ -93,8 +93,20 @@ describe("simulator route availability", () => {
       "guided:interior-corner:interior-corner-compose-01:lesson=false",
     ],
     [
-      "/simulator/guided/interior-corner/interior-corner-swing-01?lesson=1",
-      "guided:interior-corner:interior-corner-swing-01:lesson=true",
+      "/simulator/guided/interior-corner/interior-corner-swing-01",
+      "guided:interior-corner:interior-corner-swing-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-refine-01",
+      "guided:interior-corner:interior-corner-refine-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-aperture-01",
+      "guided:interior-corner:interior-corner-aperture-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-compose-01?lesson=1",
+      "guided:interior-corner:interior-corner-compose-01:lesson=true",
     ],
     ["/simulator/guided/table-tilt/tilt-01", "guided:table-tilt:tilt-01:lesson=false"],
   ])("keeps available simulator route %s open", async (route, expectedWorkspace) => {
@@ -102,6 +114,23 @@ describe("simulator route availability", () => {
 
     expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(expectedWorkspace);
     expect(screen.getByTestId("route-location")).toHaveTextContent(route);
+  });
+
+  it.each([
+    "/simulator/guided/interior-corner/interior-corner-swing-01?lesson=1",
+    "/simulator/guided/interior-corner/interior-corner-refine-01?lesson=1",
+    "/simulator/guided/interior-corner/interior-corner-aperture-01?lesson=1",
+  ])("restarts a fresh later Interior Corner lesson entry at Observe: %s", async (route) => {
+    renderRoute(route);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("route-location")).toHaveTextContent(
+        "/simulator/free/interior-corner?lesson=1",
+      ),
+    );
+    expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(
+      "free:interior-corner:none:lesson=true",
+    );
   });
 
   it.each([

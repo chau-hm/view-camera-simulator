@@ -226,7 +226,7 @@ describe("scenes page", () => {
     const scopedTabletopCard = within(tabletopCard!);
     expect(
       scopedTabletopCard.getByText(
-        "Photograph an oblique tabletop from an angle. In the neutral setup, different parts of the table fall at different depths, so you cannot keep the whole surface sharp at once.",
+        "Photograph an inclined plan board resting on a normal table. Because the board recedes near-to-far and laterally, Tilt alone cannot align the whole subject plane; Swing is also required.",
       ),
     ).toBeInTheDocument();
     expect(scopedTabletopCard.getByText("Oblique plane")).toBeInTheDocument();

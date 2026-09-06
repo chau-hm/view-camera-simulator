@@ -242,7 +242,7 @@ describe("GuidedLessonProgress", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Interior Corner Guided Lesson")).toBeInTheDocument();
+    expect(screen.getByText("Interior Corner — Rise + Swing Guided Lesson")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Observe the Problem" })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem").map((stage) => stage.textContent)).toEqual([
       "1Observe",
