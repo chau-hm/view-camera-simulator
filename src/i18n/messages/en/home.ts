@@ -60,23 +60,27 @@ export const homeMessages = {
     },
   },
   why: {
-    ariaLabel: "Why use a view camera",
-  },
-  info: {
-    control: {
-      title: "What can a view camera control before exposure?",
-      body:
-        "A view camera separates decisions that are often bundled together: where the camera observes from, how the subject is framed, how the image geometry is controlled, and where the plane of sharp focus lies. These relationships can be shaped at the camera before exposure rather than treated only as corrections afterwards.",
+    eyebrow: "WHY IT MATTERS",
+    title: {
+      line1: "More control before the shot.",
+      line2: "A deeper way to see.",
     },
-    movements: {
-      title: "Why do camera movements matter?",
-      body:
-        "Rise and shift can change framing without moving the viewpoint. Tilt and swing can rotate the plane of sharp focus. Moving the whole camera changes viewpoint, perspective relationships and parallax. The useful question is which physical relationship you want to change.",
-    },
-    artists: {
-      title: "Why do artists still use view cameras?",
-      body:
-        "A view camera slows the process down. The upside-down image on the ground glass encourages careful looking, and every movement becomes a deliberate choice. Artists use it not only for image quality, but because the method changes how a photograph is seen and made.",
+    items: {
+      control: {
+        title: "What can you control before exposure?",
+        description:
+          "Camera position, composition, image geometry, and the plane of sharp focus are separate decisions. A view camera makes those relationships explicit before exposure.",
+      },
+      movements: {
+        title: "Why do camera movements matter?",
+        description:
+          "Rise and shift can recompose while the whole-camera viewpoint stays fixed. Tilt and swing change the orientation of the plane of sharp focus. Move the whole camera, and viewpoint, perspective, and parallax change.",
+      },
+      learning: {
+        title: "Why is large-format camera still worth learning?",
+        description:
+          "The slower process turns each adjustment into a deliberate decision. An inverted Ground Glass encourages you to inspect edges, planes, focus, and spatial relationships before exposure.",
+      },
     },
   },
   faq: {

@@ -435,78 +435,102 @@
   text-wrap: pretty;
 }
 
-/* The existing home copy remains below the new hero until later landing slices. */
+/* Part F keeps the learning slice dark but shifts from diagrams to quiet,
+   image-led editorial cards. */
 
-.landing-home__legacy {
+.site-shell .landing-why-section {
   max-width: var(--marketing-content-width);
   margin: 0 auto;
-  padding: 28px clamp(20px, 4vw, 48px) var(--marketing-section-space);
-  border-top: 1px solid var(--marketing-border);
-  background: var(--marketing-bg);
-}
-
-.site-shell .landing-home__legacy .desktop-experience-notice {
-  margin: 0 0 24px;
-}
-
-.site-shell .landing-info-section {
-  padding: 16px 0 0;
+  padding: clamp(88px, 11vw, 160px) clamp(20px, 4vw, 48px) clamp(88px, 10vw, 136px);
   scroll-margin-top: 96px;
 }
 
-.site-shell .landing-info-list {
-  display: grid;
-  gap: 14px;
+.site-shell .landing-why-section__header {
+  max-width: 900px;
+  margin: 0 auto clamp(52px, 6vw, 76px);
+  text-align: center;
 }
 
-.site-shell .info-card {
+.site-shell .landing-why-section__eyebrow {
+  margin: 0 0 18px;
+  color: var(--marketing-accent);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.18em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.site-shell .landing-why-section__header h2 {
+  margin: 0;
+  color: var(--marketing-text);
+  font-family: ui-serif, "Iowan Old Style", "Baskerville", "Noto Serif TC", "Songti TC", serif;
+  font-size: clamp(2.35rem, 4.8vw, 4.45rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.03;
+  text-wrap: balance;
+}
+
+.site-shell .landing-why-section__title-line {
+  display: block;
+}
+
+.site-shell .landing-why-grid {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 22px;
-  align-items: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+
+.site-shell .landing-why-card {
+  display: flex;
   min-width: 0;
-  padding: 24px 28px;
+  overflow: hidden;
+  flex-direction: column;
   background: var(--marketing-surface);
   border: 1px solid var(--marketing-border);
   border-radius: var(--marketing-card-radius);
-  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.2);
 }
 
-.site-shell .info-card__icon {
-  width: 56px;
-  height: 56px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(143, 234, 255, 0.2);
-  border-radius: 999px;
-  background: var(--marketing-accent-soft);
-  color: var(--marketing-accent);
+.site-shell .landing-why-card__artwork {
+  flex: 0 0 auto;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--marketing-bg);
+  border-bottom: 1px solid rgba(176, 224, 241, 0.14);
 }
 
-.site-shell .info-card__content {
+.site-shell .landing-why-card__artwork img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.site-shell .landing-why-card__content {
+  display: flex;
   min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 22px 28px;
 }
 
-.site-shell .info-card h2,
-.site-shell .info-card p {
-  margin-left: 0;
-}
-
-.site-shell .info-card h2 {
-  margin-top: 0;
+.site-shell .landing-why-card__content h3 {
+  margin: 0;
   color: var(--marketing-text);
-  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  font-size: clamp(1.05rem, 1.55vw, 1.24rem);
+  font-weight: 720;
   line-height: 1.3;
 }
 
-.site-shell .info-card p {
-  max-width: 900px;
-  margin-top: 8px;
-  margin-bottom: 0;
+.site-shell .landing-why-card__content p {
+  margin: 0;
   color: var(--marketing-text-muted);
-  font-size: 0.98rem;
-  line-height: 1.7;
+  font-size: 0.95rem;
+  line-height: 1.68;
+  text-wrap: pretty;
 }
 
 /* Shared marketing notices and buttons */
@@ -966,6 +990,10 @@
   .site-shell .landing-concept-grid--visualization {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .site-shell .landing-why-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* Mobile is catalog-oriented: keep the crop readable and swap the CTA label. */
@@ -1066,10 +1094,6 @@
     display: inline;
   }
 
-  .landing-home__legacy {
-    padding: 20px 16px 64px;
-  }
-
   .site-shell .landing-concept-learning {
     padding: 64px 16px 80px;
   }
@@ -1101,23 +1125,33 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .site-shell .landing-why-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .site-shell .landing-concept-card__content {
     padding: 20px 20px 23px;
   }
 
-  .site-shell .landing-info-section {
-    padding-top: 8px;
+  .site-shell .landing-why-section {
+    padding: 72px 16px 80px;
   }
 
-  .site-shell .info-card {
-    grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 20px;
+  .site-shell .landing-why-section__header {
+    margin-bottom: 34px;
   }
 
-  .site-shell .info-card__icon {
-    width: 46px;
-    height: 46px;
+  .site-shell .landing-why-section__eyebrow {
+    margin-bottom: 14px;
+    font-size: 0.68rem;
+  }
+
+  .site-shell .landing-why-section__header h2 {
+    font-size: clamp(2.15rem, 10.5vw, 3.4rem);
+  }
+
+  .site-shell .landing-why-card__content {
+    padding: 20px 20px 23px;
   }
 
   .site-shell .site-footer__inner {

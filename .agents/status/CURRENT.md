@@ -1,12 +1,15 @@
-# PR 11B — Review correction: Geometry View optical correctness
+# PR 11C — Why It Matters
 
-- Objective: update PR #126 onto latest `origin/main` and correct only the Geometry View artwork so the three visualization cards communicate one shared camera/subject state with physically correct image-plane placement.
-- Branch/worktree: `feature/landing-redesign-fundamentals` / `/Users/homan/repo/view-camera-landing-fundamentals`; existing PR #126, no new branch or PR.
-- Base/update: original branch base `76010a2d96b11234a9044599ee0f94c83e80aa98`; prior update commits `f30de7e12e2b9f81e733ddcb5adcfc1a195102c7` (abe81a2) and `9ad10032cf8f9023b82cdc748e6eb9de9820dcb1` (1fd8b0b); latest `origin/main` `51979423d0279691da81022054cf1659763f9b44` was merged in `8eea41d85d056cbe2ae7ea0158c16b3fedcb4c83`; PR11A `6971b0a9f1cdcdff033cba6431f351d5345a9f5d` remains an ancestor.
-- Since previous review: the P2 finding was confirmed on the current binary. Regenerated only `public/assets/landing/visualize-geometry.webp` with built-in ImageGen using the sibling visualization assets as references. The other six Part E assets and all landing code/copy/layout remain unchanged.
-- Optical evidence: subjects are on the lens-facing/front side; the single rear film/Ground Glass plane is inside the camera behind the lens; rays connect subjects through the lens and terminate on that rear plane; the formed cube/sphere/cone images are vertically inverted and left-right reversed.
-- Shared state: the Geometry View preserves one cube, one sphere, and one cone in the same recognizable relative arrangement as `visualize-3d-scene.webp` and `visualize-ground-glass.webp`.
-- Asset: `visualize-geometry.webp` — 1448×1086, 4:3, 107206 bytes.
-- Landing preservation: current fetched main still has no distinct Why It Matters or Final CTA components; HomePage remains Hero → Fundamentals → Three Ways → existing informational block. No out-of-scope Part F/CTA was added.
-- Validation: focused landing/i18n integration tests passed (8 tests); `ci:local` passed CSS structure, lint, typecheck, full Vitest (163 files, 1,574 tests), and production build; focused Chromium home E2E passed (7/7). Runtime Home inspection at 1440×900 and 390×844 (English and zh-HK) showed all seven decoded assets, the corrected trio, and zero horizontal overflow; `git diff --check` passed. The P2 review thread is resolved after this visual verification.
-- Deferred: Part F / Why It Matters, final CTA, motion, Scene Gallery, simulator mini-demos, and new simulator functionality.
+- Objective: replace the temporary Home informational block with the static Why It Matters section after Part E.
+- Base/update: latest `origin/main` `766332e95ca42066f2f05e6f2f93d234ba45a79e`, containing PR 11B `739b744a880826b3c34200645bac90f988a9436e`.
+- Branch/worktree: `feature/landing-redesign-why-it-matters` / `/Users/homan/repo/view-camera-landing-why-it-matters`.
+- Since previous review: the P2 fixed-lens wording was confirmed incorrect against `docs/LEARNING_MODEL.md`; English and zh-HK Why It Matters copy now say the whole-camera viewpoint stays fixed for rise/shift, and matching test expectations were corrected. No layout, assets, simulator, optics, or renderer behaviour changed.
+- Landing flow: `LandingHero` → `LandingFundamentalsSection` → `LandingVisualizationSection` → `LandingWhyItMattersSection`; no Final CTA or Scene Gallery.
+- Legacy replacement: Home no longer renders `DesktopExperienceNotice`, `InfoCard`, `.landing-home__legacy`, or `.landing-info-section`; `DesktopExperienceNotice` remains on `/scenes`.
+- Components: added `LandingWhyItMattersSection` and local `LandingWhyCard`; Part E, Hero, navigation, simulator, and shared catalog components remain unchanged.
+- ImageGen assets: independently generated and inspected photorealistic 4:3 WebP photos — `why-control-before-shot.webp` (1448×1086, 140,628 bytes), `why-camera-movements.webp` (1448×1086, 118,206 bytes), and `why-large-format-learning.webp` (1448×1086, 157,300 bytes).
+- i18n: replaced temporary `home.why`/`home.info` Home shape with `home.why.eyebrow`, two-line `home.why.title`, and three `home.why.items.*.title/description` keys in English and zh-HK; locale resolution is unchanged.
+- Responsive/accessibility: Why cards use a 3-column desktop grid, 2 columns at ≤880px, and one column at ≤767px; images reserve 4:3 space, lazy-load, and use empty alt text beside HTML headings/body. Exactly one page H1 remains.
+- Browser evidence: direct Chromium inspection at 1440×900, 1024×800, 768×900, 390×844 English, and 390×844 zh-HK; Why grid was 3/3/2/1/1 columns with zero horizontal overflow, readable crops/copy, and the intended dark editorial transition.
+- Validation: focused integrations passed (Home, i18n, marketing warning); focused Home/marketing Chromium E2E passed (11/11); `npm run ci:local` passed CSS structure, lint, typecheck, all Vitest (164 files, 1,595 tests), and production build; `git diff --check` passed.
+- Deferred: PR 11D Final CTA; PR 11E motion and accessibility polish.

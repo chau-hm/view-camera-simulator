@@ -19,17 +19,13 @@ test.describe('Marketing responsive', () => {
     expect(openSceneCount).toBeGreaterThan(0);
   });
 
-  test('Narrow Home (390x844) shows warning without overflow', async ({ page }) => {
+  test('Narrow Home (390x844) keeps the landing flow without overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
 
-    await expect(page.locator('role=note')).toBeVisible();
-
-    // Ensure the desktop experience notice stays within the viewport
-    const notice = page.locator('.desktop-experience-notice');
-    const noticeBox = await notice.boundingBox();
-    expect(noticeBox).not.toBeNull();
-    expect(noticeBox!.x + noticeBox!.width).toBeLessThanOrEqual(391);
+    // Home no longer renders the catalog-only desktop notice.
+    await expect(page.locator('role=note')).toHaveCount(0);
+    await expect(page.getByTestId('landing-why-section')).toBeVisible();
 
     // check no horizontal overflow (allow small rounding noise)
     const overflowWidth = await page.evaluate(() => {

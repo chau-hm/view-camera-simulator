@@ -17,7 +17,7 @@ import type { SimulatorMode } from "../types/camera";
 import { LandingHero } from "../components/marketing/LandingHero";
 import { LandingFundamentalsSection } from "../components/marketing/LandingFundamentalsSection";
 import { LandingVisualizationSection } from "../components/marketing/LandingVisualizationSection";
-import { InfoCard } from "../components/marketing/InfoCard";
+import { LandingWhyItMattersSection } from "../components/marketing/LandingWhyItMattersSection";
 import { SceneCard } from "../components/marketing/SceneCard";
 import { DesktopExperienceNotice } from "../components/marketing/DesktopExperienceNotice";
 import { FaqSection } from "../components/marketing/FaqSection";
@@ -27,8 +27,6 @@ const SimulatorWorkspace = lazy(() =>
 );
 
 export const HomePage = () => {
-  const { t } = useTranslation();
-
   return (
     <AppShell title="" siteShellClassName="site-shell--landing-home">
       <LandingHero />
@@ -38,34 +36,7 @@ export const HomePage = () => {
         <LandingVisualizationSection />
       </div>
 
-      <div className="landing-home__legacy">
-        <DesktopExperienceNotice />
-
-        <section id="why" className="landing-info-section" aria-label={t("home.why.ariaLabel")}>
-          <div className="landing-info-list">
-            <InfoCard
-              icon={<span className="material-symbols-outlined">architecture</span>}
-              title={t("home.info.control.title")}
-            >
-              {t("home.info.control.body")}
-            </InfoCard>
-
-            <InfoCard
-              icon={<span className="material-symbols-outlined">open_with</span>}
-              title={t("home.info.movements.title")}
-            >
-              {t("home.info.movements.body")}
-            </InfoCard>
-
-            <InfoCard
-              icon={<span className="material-symbols-outlined">person</span>}
-              title={t("home.info.artists.title")}
-            >
-              {t("home.info.artists.body")}
-            </InfoCard>
-          </div>
-        </section>
-      </div>
+      <LandingWhyItMattersSection />
     </AppShell>
   );
 };
