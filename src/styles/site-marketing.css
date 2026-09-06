@@ -328,7 +328,7 @@
 .site-shell .landing-concept-learning {
   max-width: var(--marketing-content-width);
   margin: 0 auto;
-  padding: clamp(72px, 9vw, 128px) clamp(20px, 4vw, 48px) clamp(84px, 10vw, 136px);
+  padding: clamp(72px, 9vw, 128px) clamp(20px, 4vw, 48px) clamp(48px, 5vw, 68px);
 }
 
 .site-shell .landing-learning-section + .landing-learning-section {
@@ -345,7 +345,7 @@
   width: fit-content;
   margin: 0 auto 18px;
   color: var(--marketing-accent);
-  font-size: 0.75rem;
+  font-size: 0.86rem;
   font-weight: 750;
   letter-spacing: 0.18em;
   line-height: 1.25;
@@ -442,7 +442,7 @@
 .site-shell .landing-why-section {
   max-width: var(--marketing-content-width);
   margin: 0 auto;
-  padding: clamp(88px, 11vw, 160px) clamp(20px, 4vw, 48px) clamp(88px, 10vw, 136px);
+  padding: clamp(48px, 5vw, 68px) clamp(20px, 4vw, 48px) clamp(88px, 10vw, 136px);
   scroll-margin-top: 96px;
 }
 
@@ -453,9 +453,10 @@
 }
 
 .site-shell .landing-why-section__eyebrow {
-  margin: 0 0 18px;
+  width: fit-content;
+  margin: 0 auto 18px;
   color: var(--marketing-accent);
-  font-size: 0.75rem;
+  font-size: 0.86rem;
   font-weight: 750;
   letter-spacing: 0.18em;
   line-height: 1.25;
@@ -1195,7 +1196,7 @@
   }
 
   .site-shell .landing-concept-learning {
-    padding: 64px 16px 80px;
+    padding: 64px 16px 40px;
   }
 
   .site-shell .landing-learning-section + .landing-learning-section {
@@ -1208,7 +1209,7 @@
 
   .site-shell .landing-learning-section__eyebrow {
     margin-bottom: 14px;
-    font-size: 0.68rem;
+    font-size: 0.78rem;
   }
 
   .site-shell .landing-learning-section__header h2 {
@@ -1234,7 +1235,7 @@
   }
 
   .site-shell .landing-why-section {
-    padding: 72px 16px 80px;
+    padding: 48px 16px 80px;
   }
 
   .site-shell .landing-why-section__header {
@@ -1243,7 +1244,7 @@
 
   .site-shell .landing-why-section__eyebrow {
     margin-bottom: 14px;
-    font-size: 0.68rem;
+    font-size: 0.78rem;
   }
 
   .site-shell .landing-why-section__header h2 {
