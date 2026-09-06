@@ -17,7 +17,7 @@
 
 - Focused integration: 4 files, 16 tests passed.
 - Focused Chromium Home/landing/responsive E2E: 17/17 passed against an isolated PR-worktree server, including reduced-motion/fallback behavior, first-paint evidence, CTA opacity, and desktop/mobile Why transform end states.
-- `npm run ci:local`: passed CSS structure, lint, typecheck, 165 test files / 1,603 tests, and production build. Current-head hosted CI is pending final publication.
+- `npm run ci:local`: passed CSS structure, lint, typecheck, 165 test files / 1,603 tests, and production build. Hosted push and pull-request CI both passed for exact head `b91975b663a12960cbe5271efb85bff7109d7edd`; deploy was skipped.
 - `git diff --check`: passed. Production output contains the referenced PNG family and both favicon paths.
 
 Unchanged: static landing design, copy/i18n, spacing/typography, landing production imagery, routes, simulator, optics, RTT, renderer, camera state, and scene definitions. No ImageGen work was performed; renderer-wide E2E remains out of scope. Independent PR review remains the merge-gate step.
