@@ -6,7 +6,7 @@ Turn the validated Interior Corner free-mode foundation into a deterministic Obs
 
 ## Branch / worktree / base / head
 
-`feature/interior-corner-guided-lesson-12d` · `/private/tmp/view-camera-interior-corner-12d-fresh` · base `13c2ad9c46b473584162b2eb05c7cd65a113d61a` · pre-reconciliation head `69bb824`; current head is recorded in the completion report
+`feature/interior-corner-guided-lesson-12d` · `/private/tmp/view-camera-interior-corner-12d-fresh` · base `13c2ad9c46b473584162b2eb05c7cd65a113d61a` · pre-reconciliation head `69bb824`; reconciliation commit `cd6f3bd`; current head is recorded in the completion report
 
 ## PR12A–12C prerequisites verified
 
@@ -61,7 +61,7 @@ Ground Glass assertions verify the existing RTT surface remains present/contentf
 
 ## Publication
 
-Draft PR #130 remains open as a draft and is updated on the same feature branch; implementation and reconciliation commit details are recorded in the completion report.
+PR #130 is updated on the same feature branch. No PR state transition was performed; GitHub reported `isDraft=false` before and after publication. Implementation and reconciliation commit details are recorded in the completion report.
 
 ## Reviewer focus
 
