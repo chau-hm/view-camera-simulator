@@ -40,6 +40,23 @@ const collectDisposableSpies = (group: THREE.Group) => {
   ];
 };
 
+type BoardFootprint = {
+  center: { x: number; z: number };
+  width: number;
+  depth: number;
+};
+
+const boardFootprintFullyCovers = (
+  outer: BoardFootprint,
+  inner: BoardFootprint,
+) =>
+  Math.abs(outer.center.x - inner.center.x) + inner.width / 2 <= outer.width / 2 &&
+  Math.abs(outer.center.z - inner.center.z) + inner.depth / 2 <= outer.depth / 2;
+
+const boardFootprintsSeparated = (first: BoardFootprint, second: BoardFootprint) =>
+  Math.abs(first.center.x - second.center.x) >= (first.width + second.width) / 2 ||
+  Math.abs(first.center.z - second.center.z) >= (first.depth + second.depth) / 2;
+
 describe("scene subject registry", () => {
   it("registers every canonical rendered scene and rejects unknown IDs", () => {
     expect(Object.keys(sceneSubjectRegistry)).toEqual([
@@ -281,6 +298,52 @@ describe("scene subject registry", () => {
       expect(detailOuterSurfaceWorld.y).toBeCloseTo(focusWorld.y, 10);
       expect(detailOuterSurfaceWorld.z).toBeCloseTo(focusWorld.z, 10);
     });
+
+    const visibleDetailFootprints = obliqueTabletopGeometry.subjectBoardVisibleFocusSamples.map(
+      (sample) => ({
+        center: sample.localPosition,
+        width: obliqueTabletopGeometry.focusDetailGeometry.width,
+        depth: obliqueTabletopGeometry.focusDetailGeometry.depth,
+      }),
+    );
+    obliqueTabletopGeometry.boardMarkers.forEach((marker) => {
+      const markerFootprint = {
+        center: marker.localPosition,
+        width: obliqueTabletopGeometry.markerGeometry.width,
+        depth: obliqueTabletopGeometry.markerGeometry.depth,
+      };
+      visibleDetailFootprints.forEach((detailFootprint) => {
+        expect(boardFootprintFullyCovers(markerFootprint, detailFootprint)).toBe(false);
+      });
+    });
+
+    const middleMarkerFootprint = {
+      center: obliqueTabletopGeometry.middleBoardMarker.localPosition,
+      width: obliqueTabletopGeometry.markerGeometry.width,
+      depth: obliqueTabletopGeometry.markerGeometry.depth,
+    };
+    const middleDetail = obliqueTabletopGeometry.subjectBoardVisibleFocusSamples.find(
+      (sample) => sample.id === "middle",
+    )!;
+    const middleDetailFootprint = {
+      center: middleDetail.localPosition,
+      width: obliqueTabletopGeometry.focusDetailGeometry.width,
+      depth: obliqueTabletopGeometry.focusDetailGeometry.depth,
+    };
+    expect(middleDetail.localPosition).toEqual({ x: 0, z: 0 });
+    expect(boardFootprintsSeparated(middleMarkerFootprint, middleDetailFootprint)).toBe(true);
+
+    const renderedMiddleMarker = group?.getObjectByName("oblique-tabletop-marker-middle");
+    const renderedMiddleMarkerWorld = new THREE.Vector3();
+    renderedMiddleMarker?.getWorldPosition(renderedMiddleMarkerWorld);
+    const expectedMiddleMarkerWorld = obliqueTabletopGeometry.subjectBoardLocalPointToWorld({
+      x: obliqueTabletopGeometry.middleBoardMarker.localPosition.x,
+      y: 0,
+      z: obliqueTabletopGeometry.middleBoardMarker.localPosition.z,
+    });
+    expect(renderedMiddleMarkerWorld.x).toBeCloseTo(expectedMiddleMarkerWorld.x * 0.001, 10);
+    expect(renderedMiddleMarkerWorld.y).toBeCloseTo(expectedMiddleMarkerWorld.y * 0.001, 10);
+    expect(renderedMiddleMarkerWorld.z).toBeCloseTo(expectedMiddleMarkerWorld.z * 0.001, 10);
 
     const spies = collectDisposableSpies(group!);
     disposeRegisteredRttSubject("oblique-tabletop", group!);

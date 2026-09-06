@@ -302,7 +302,9 @@ const markerInputs = [
   {
     id: "middle" as const,
     label: "Middle plan-board marker",
-    localPosition: { x: 0, z: 0 },
+    // Keep the canonical middle focus detail at the board centre; this nearby
+    // marker is a visual reference and must not cover the learner target.
+    localPosition: { x: 360, z: 0 },
     color: "#7c3aed",
   },
   {
@@ -430,8 +432,11 @@ export const tiltOnlyCalibration = {
 export const middleBoardMarker = boardMarkers.find((marker) => marker.id === "middle")!;
 
 /** Neutral focus is aligned to the middle visible board detail. */
+const middleVisibleFocusSample = subjectBoardVisibleFocusSamples.find(
+  (sample) => sample.id === "middle",
+)!;
 export const canonicalFocusDistanceMm = roundToStep(
-  middleBoardMarker.worldPosition.z,
+  middleVisibleFocusSample.worldPosition.z,
   CAMERA_CONTROL_STEPS.focusDistanceMm,
 );
 
