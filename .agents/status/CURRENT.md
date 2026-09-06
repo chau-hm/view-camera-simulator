@@ -10,7 +10,7 @@ Make Oblique Tabletop photographically plausible with a normal level worktable s
 - Worktree: `/Users/homan/repo/view-camera-oblique-tabletop-plausibility`
 - Base: `origin/main` at `766332e95ca42066f2f05e6f2f93d234ba45a79e`
 - Reviewed head before this bookkeeping correction: `24bcf5edac0e5da25859ff15efe599cf7ad87270`
-- Final head: documentation-only descendant at the PR tip; see PR #131 metadata.
+- Final head: current documentation-only PR tip; see PR #131 metadata.
 
 ## Canonical geometry and surface
 
@@ -44,7 +44,7 @@ The Oblique Tabletop raster scene card was regenerated earlier in PR131 to match
 - Typecheck, lint, `check:css`, build, and `git diff --check`: passed.
 - Focused Oblique Tabletop Chromium: 2/2 passed; manual neutral, Tilt-only, and compound Ground Glass inspection passed.
 - `CI=1 npm run ci:local:e2e` passed CSS, lint, typecheck, unit/integration, and build, then stopped at the unrelated `architecture-foreground-tilt-focus.spec.ts` because two tests timed out waiting for the shared `Focus distance` slider. The exact two failures reproduced on clean `main` at `766332e95ca42066f2f05e6f2f93d234ba45a79e`.
-- Current-head GitHub CI at reviewed head `24bcf5e` passed lint, type-check, and unit/integration; this bookkeeping commit requires its own exact-head check.
+- Current-head GitHub CI for the published bookkeeping correction passed lint, type-check, and unit/integration; deploy was skipped as expected for the PR.
 
 ## Scope and known gaps
 
