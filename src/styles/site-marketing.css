@@ -345,7 +345,7 @@
   width: fit-content;
   margin: 0 auto 18px;
   color: var(--marketing-accent);
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   font-weight: 750;
   letter-spacing: 0.18em;
   line-height: 1.25;
@@ -456,7 +456,7 @@
   width: fit-content;
   margin: 0 auto 18px;
   color: var(--marketing-accent);
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   font-weight: 750;
   letter-spacing: 0.18em;
   line-height: 1.25;
@@ -1209,7 +1209,7 @@
 
   .site-shell .landing-learning-section__eyebrow {
     margin-bottom: 14px;
-    font-size: 0.78rem;
+    font-size: 0.875rem;
   }
 
   .site-shell .landing-learning-section__header h2 {
@@ -1244,7 +1244,7 @@
 
   .site-shell .landing-why-section__eyebrow {
     margin-bottom: 14px;
-    font-size: 0.78rem;
+    font-size: 0.875rem;
   }
 
   .site-shell .landing-why-section__header h2 {
