@@ -10,7 +10,8 @@ Make Oblique Tabletop photographically plausible with a normal level worktable s
 - Worktree: `/Users/homan/repo/view-camera-oblique-tabletop-plausibility`
 - Base: `origin/main` at `8c8a211796ac81f20f560bc5076217251a4a13f2` (PR 11D.1 merged)
 - Previous reviewed PR131 head: `b51285ca7cd8d6398d0c4ac55aa85c99a4cb098b`
-- Final post-sync handoff: recorded with the completed synchronization commits.
+- Post-sync merge commit: `3970a19ed2e567ad82a4dfd66a03e3c243926bdb`.
+- Final validation handoff: this file is refreshed at the post-sync branch tip; the exact final head is reported with the publication record.
 
 ## Canonical geometry and surface
 
@@ -39,12 +40,13 @@ The Oblique Tabletop raster scene card was regenerated earlier in PR131 to match
 
 ## Validation
 
-- Focused Oblique Tabletop Vitest: rerun after the main sync.
-- Full `npm test`: rerun after the main sync.
-- Typecheck, lint, `check:css`, build, and `git diff --check`: rerun after the main sync.
-- Focused Oblique Tabletop Chromium: rerun after the main sync; manual neutral, Tilt-only, and compound Ground Glass inspection remains required.
-- Full `CI=1 npm run ci:local:e2e`: rerun after the main sync and classify any unrelated baseline failure against the new clean base.
-- Current-head GitHub CI: required for the final post-sync tip; deploy is expected to be skipped for the PR.
+- Focused Oblique Tabletop Vitest: 7 files / 106 tests passed, including marker/detail separation; the exhaustive Tilt-only proof completed in 3,163 ms.
+- Full `npm test`: 164 files / 1,599 tests passed in 14.06 s.
+- Typecheck, lint, `check:css`, build, and `git diff --check`: passed.
+- Focused Oblique Tabletop Chromium: 2/2 public guided-lesson and teaching-geometry specs passed in 1.1 min; Ground Glass remained present through both flows.
+- `CI=1 npm run ci:local:e2e`: CSS, lint, typecheck, 164/1,599 unit/integration tests, build, and earlier E2E specs passed; it stopped at `mirror-shift-teaching-geometry.spec.ts` because `data-rtt-final-contentful=true` was not observed within 30 s (1 test failed, 1 passed).
+- The same exact Mirror Shift spec reproduced on clean `origin/main` `8c8a211796ac81f20f560bc5076217251a4a13f2` with the same 1 failure / 1 pass result, so this remains an unrelated baseline E2E issue.
+- Current-head GitHub CI: pending for the final post-sync tip; deploy is expected to be skipped for the PR.
 
 ## Scope and known gaps
 
