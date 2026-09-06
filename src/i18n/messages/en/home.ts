@@ -83,6 +83,11 @@ export const homeMessages = {
       },
     },
   },
+  finalCta: {
+    title: "Step into the simulator.",
+    description: "Put these ideas into practice through guided large-format camera scenes.",
+    action: "Start Exploring",
+  },
   faq: {
     title: "Frequently Asked Questions",
     items: {

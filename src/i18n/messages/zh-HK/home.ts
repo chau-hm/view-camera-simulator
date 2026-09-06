@@ -77,6 +77,11 @@ export const homeMessages = {
       },
     },
   },
+  finalCta: {
+    title: "進入模擬器。",
+    description: "透過引導場景，親手實踐大片幅相機的移軸、構圖與對焦原理。",
+    action: "開始探索",
+  },
   faq: {
     title: "常見問題",
     items: {

@@ -16,9 +16,9 @@ describe("home page", () => {
     expect(h1s[0]).toHaveTextContent("Shape Perspective. Place Focus.");
 
     // The Hero has one catalog CTA.
-    const explore = await screen.findByText("Start Exploring");
-    expect(explore).toBeInTheDocument();
-    expect(explore.closest('a')).toHaveAttribute('href', '/scenes');
+    const explore = await screen.findByTestId("landing-hero-cta");
+    expect(explore).toHaveTextContent("Start Exploring");
+    expect(explore).toHaveAttribute("href", "/scenes");
 
     // approved hero artwork wrapper present (decorative, aria-hidden)
     const heroWrap = document.querySelector('.landing-hero__artwork');
@@ -75,6 +75,7 @@ describe("home page", () => {
     const fundamentals = await screen.findByTestId("landing-fundamentals-section");
     const visualization = await screen.findByTestId("landing-visualization-section");
     const why = await screen.findByTestId("landing-why-section");
+    const finalCta = await screen.findByTestId("landing-final-cta-section");
 
     expect(screen.getByRole("heading", { name: "Learn the Fundamentals", level: 2 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Three Ways to Visualize", level: 2 })).toBeInTheDocument();
@@ -85,6 +86,13 @@ describe("home page", () => {
     expect(fundamentals.querySelectorAll(".landing-concept-card")).toHaveLength(4);
     expect(visualization.querySelectorAll(".landing-concept-card")).toHaveLength(3);
     expect(why.querySelectorAll(".landing-why-card")).toHaveLength(3);
+    expect(within(finalCta).getByRole("heading", { name: "Step into the simulator.", level: 2 })).toBeInTheDocument();
+    expect(
+      within(finalCta).getByText("Put these ideas into practice through guided large-format camera scenes."),
+    ).toBeInTheDocument();
+    expect(within(finalCta).getByRole("link", { name: "Start Exploring" })).toHaveAttribute("href", "/scenes");
+    expect(finalCta.querySelectorAll("a")).toHaveLength(1);
+    expect(finalCta.querySelector("img")).toHaveAttribute("src", expect.stringContaining("assets/landing/final-cta.webp"));
 
     const assetPaths = [
       "fundamentals-perspective-control.webp",
@@ -140,13 +148,13 @@ describe("home page", () => {
     expect(document.querySelector(".landing-home__legacy")).toBeNull();
     expect(document.querySelector(".site-shell--landing-home .desktop-experience-notice")).toBeNull();
     expect(document.querySelector(".landing-info-section")).toBeNull();
-    expect(screen.queryByTestId("landing-final-cta")).not.toBeInTheDocument();
-    expect(screen.queryByText("Step into the simulator.")).not.toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByTestId("landing-hero-cta")).toHaveAttribute("href", "/scenes");
 
     expect(
       visualization.compareDocumentPosition(why) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+    expect(why.compareDocumentPosition(finalCta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.querySelector(".site-shell--landing-home .marketing-container")?.lastElementChild).toBe(finalCta);
   });
 });

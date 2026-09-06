@@ -57,6 +57,12 @@ describe("internationalization foundation", () => {
     }
   });
 
+  it("keeps the Final CTA message shape complete in both locales", () => {
+    expect(Object.keys(traditionalChineseHomeMessages.finalCta)).toEqual(
+      Object.keys(englishHomeMessages.finalCta),
+    );
+  });
+
   it("renders the bundled English surface by default", () => {
     const router = createMemoryRouter(routes, { initialEntries: ["/"] });
     render(<RouterProvider router={router} />);
@@ -133,6 +139,12 @@ describe("internationalization foundation", () => {
     expect(within(why).getByRole("heading", { name: "曝光前，你可以控制甚麼？", level: 3 })).toBeInTheDocument();
     expect(within(why).getByRole("heading", { name: "為甚麼相機移軸重要？", level: 3 })).toBeInTheDocument();
     expect(within(why).getByRole("heading", { name: "為甚麼仍然值得學大片幅相機？", level: 3 })).toBeInTheDocument();
+    const finalCta = screen.getByTestId("landing-final-cta-section");
+    expect(within(finalCta).getByRole("heading", { name: "進入模擬器。", level: 2 })).toBeInTheDocument();
+    expect(
+      within(finalCta).getByText("透過引導場景，親手實踐大片幅相機的移軸、構圖與對焦原理。"),
+    ).toBeInTheDocument();
+    expect(within(finalCta).getByRole("link", { name: "開始探索" })).toHaveAttribute("href", "/scenes");
     expect(screen.queryByText(/前、後組移軸/)).not.toBeInTheDocument();
     expect(document.body.textContent).not.toContain("大型相機");
     expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-HK");
@@ -145,6 +157,8 @@ describe("internationalization foundation", () => {
     });
     expect(screen.getByTestId("landing-why-section")).toHaveTextContent("More control before the shot.");
     expect(screen.getByTestId("landing-why-section")).toHaveTextContent("Why is large-format camera still worth learning?");
+    expect(screen.getByTestId("landing-final-cta-section")).toHaveTextContent("Step into the simulator.");
+    expect(screen.getByTestId("landing-final-cta-section")).toHaveTextContent("Start Exploring");
   });
 
   it("keeps the selected locale when entering Scenes and translates Mirror Shift at the presentation boundary", async () => {
