@@ -23,7 +23,7 @@ export type SceneGeometryGuide = {
   };
   labelAnchor?: "start" | "middle" | "end";
   /** Semantic source for scene-specific subject-plane traces. */
-  sourcePlaneId?: "tabletopTopSurfacePlane";
+  sourcePlaneId?: "subjectBoardPlane";
   /** Which component the trace is intended to reveal. */
   teachingComponent?: "near-far" | "left-right";
 };
@@ -128,14 +128,14 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
   "oblique-tabletop": [
     {
       id: "oblique-tabletop-near-far-plane",
-      label: "Tabletop · near ↔ far",
+      label: "Plan board · near ↔ far",
       labelMessageKey: simulatorMessageKeys.geometry.obliqueTabletopNearFarGuide,
       view: "side",
-      startWorld: obliqueTabletopGeometry.tabletopExtents.near.topSurfaceCenterWorld,
-      endWorld: obliqueTabletopGeometry.tabletopExtents.far.topSurfaceCenterWorld,
+      startWorld: obliqueTabletopGeometry.subjectBoardExtents.near.surfaceCenterWorld,
+      endWorld: obliqueTabletopGeometry.subjectBoardExtents.far.surfaceCenterWorld,
       color: "#92400e",
       testId: "oblique-tabletop-near-far-plane",
-      sourcePlaneId: "tabletopTopSurfacePlane",
+      sourcePlaneId: "subjectBoardPlane",
       teachingComponent: "near-far",
       labelPositionT: 0.78,
       labelOffsetPx: { x: 0, y: 18 },
@@ -143,14 +143,14 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
     },
     {
       id: "oblique-tabletop-left-right-plane",
-      label: "Tabletop · left ↔ right",
+      label: "Plan board · left ↔ right",
       labelMessageKey: simulatorMessageKeys.geometry.obliqueTabletopLeftRightGuide,
       view: "top",
-      startWorld: obliqueTabletopGeometry.tabletopExtents.left.topSurfaceCenterWorld,
-      endWorld: obliqueTabletopGeometry.tabletopExtents.right.topSurfaceCenterWorld,
+      startWorld: obliqueTabletopGeometry.subjectBoardExtents.left.surfaceCenterWorld,
+      endWorld: obliqueTabletopGeometry.subjectBoardExtents.right.surfaceCenterWorld,
       color: "#92400e",
       testId: "oblique-tabletop-left-right-plane",
-      sourcePlaneId: "tabletopTopSurfacePlane",
+      sourcePlaneId: "subjectBoardPlane",
       teachingComponent: "left-right",
       labelPositionT: 0.5,
       labelOffsetPx: { x: 0, y: -18 },

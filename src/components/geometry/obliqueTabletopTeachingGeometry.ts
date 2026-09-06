@@ -21,7 +21,7 @@ export type ObliqueTabletopTeachingGeometry = {
 export const deriveObliqueTabletopTeachingGeometry = (
   opticsState: DerivedOpticsState,
 ): ObliqueTabletopTeachingGeometry => ({
-  subjectPlane: obliqueTabletopGeometry.tabletopTopSurfacePlane,
+  subjectPlane: obliqueTabletopGeometry.subjectBoardPlane,
   filmPlane: opticsState.filmPlane,
   lensPlane: opticsState.lensPlane,
   focusPlane: opticsState.focusPlane,

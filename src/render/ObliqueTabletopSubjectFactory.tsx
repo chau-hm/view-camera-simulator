@@ -1,14 +1,33 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import geometry, { type ObliqueTabletopMarker } from "../scenes/obliqueTabletopGeometry";
+import geometry, {
+  type ObliqueTabletopBoardMarker,
+  type ObliqueTabletopSubjectSample,
+} from "../scenes/obliqueTabletopGeometry";
 import { toWorld } from "./rttUtils";
 
 const standardMaterial = (color: string, roughness = 0.84) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
 
-const basicMaterial = (color: string) =>
-  new THREE.MeshBasicMaterial({ color });
+const basicMaterial = (color: string) => new THREE.MeshBasicMaterial({ color });
+
+const setSubjectBoardTransform = (boardAssembly: THREE.Group): void => {
+  const basis = geometry.subjectBoardTransformBasis;
+  boardAssembly.matrixAutoUpdate = false;
+  boardAssembly.matrix.makeBasis(
+    new THREE.Vector3(basis.localX.x, basis.localX.y, basis.localX.z),
+    new THREE.Vector3(basis.localY.x, basis.localY.y, basis.localY.z),
+    new THREE.Vector3(basis.localZ.x, basis.localZ.y, basis.localZ.z),
+  );
+  boardAssembly.matrix.setPosition(
+    new THREE.Vector3(
+      toWorld(geometry.subjectBoard.center.x),
+      toWorld(geometry.subjectBoard.center.y),
+      toWorld(geometry.subjectBoard.center.z),
+    ),
+  );
+};
 
 const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
   const guideMaterial = basicMaterial(geometry.tabletop.edgeColor);
@@ -25,7 +44,7 @@ const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
       ),
       guideMaterial,
     );
-    guide.name = `oblique-tabletop-depth-guide-${index + 1}`;
+    guide.name = `oblique-tabletop-table-depth-guide-${index + 1}`;
     guide.position.set(
       toWorld(
         -geometry.tabletop.width / 2 +
@@ -46,7 +65,7 @@ const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
       ),
       guideMaterial,
     );
-    guide.name = `oblique-tabletop-width-guide-${index + 1}`;
+    guide.name = `oblique-tabletop-table-width-guide-${index + 1}`;
     guide.position.set(
       0,
       toWorld(geometry.tabletop.thickness / 2 + guideGap + guideHeight / 2),
@@ -59,27 +78,172 @@ const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
   }
 };
 
-const addTabletopAnalyticalSurfaceSamples = (tabletopAssembly: THREE.Group): void => {
-  geometry.tabletopAnalyticalSurfaceSamples.forEach((sample) => {
+const addBoardPlanSurface = (boardAssembly: THREE.Group): void => {
+  const surfaceMaterial = basicMaterial(geometry.subjectBoard.color);
+  const surface = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      toWorld(geometry.subjectBoard.width - 80),
+      toWorld(3),
+      toWorld(geometry.subjectBoard.depth - 80),
+    ),
+    surfaceMaterial,
+  );
+  surface.name = "oblique-tabletop-subject-board-plan-surface";
+  surface.position.y = toWorld(geometry.subjectBoardFaceLocalY + 1.5);
+  boardAssembly.add(surface);
+
+  const lineMaterial = basicMaterial(geometry.subjectBoard.planLineColor);
+  const lineY = toWorld(geometry.subjectBoardFaceLocalY + 3.5);
+  const horizontalLineDepths = [-1050, -350, 350, 1050];
+  horizontalLineDepths.forEach((localDepth, index) => {
+    const line = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toWorld(geometry.subjectBoard.width - 220),
+        toWorld(2),
+        toWorld(5),
+      ),
+      lineMaterial,
+    );
+    line.name = `oblique-tabletop-subject-board-plan-horizontal-${index + 1}`;
+    line.position.set(0, lineY, toWorld(localDepth));
+    boardAssembly.add(line);
+  });
+
+  const verticalLineXs = [-1100, -550, 550, 1100];
+  verticalLineXs.forEach((localX, index) => {
+    const line = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toWorld(5),
+        toWorld(2),
+        toWorld(geometry.subjectBoard.depth - 220),
+      ),
+      lineMaterial,
+    );
+    line.name = `oblique-tabletop-subject-board-plan-vertical-${index + 1}`;
+    line.position.set(toWorld(localX), lineY, 0);
+    boardAssembly.add(line);
+  });
+
+  const borderMaterial = basicMaterial(geometry.subjectBoard.edgeColor);
+  [
+    {
+      name: "near",
+      x: 0,
+      z: -geometry.subjectBoard.depth / 2 + 55,
+      width: geometry.subjectBoard.width - 80,
+      depth: 6,
+    },
+    {
+      name: "far",
+      x: 0,
+      z: geometry.subjectBoard.depth / 2 - 55,
+      width: geometry.subjectBoard.width - 80,
+      depth: 6,
+    },
+    {
+      name: "left",
+      x: -geometry.subjectBoard.width / 2 + 55,
+      z: 0,
+      width: 6,
+      depth: geometry.subjectBoard.depth - 80,
+    },
+    {
+      name: "right",
+      x: geometry.subjectBoard.width / 2 - 55,
+      z: 0,
+      width: 6,
+      depth: geometry.subjectBoard.depth - 80,
+    },
+  ].forEach(({ name, x, z, width, depth }) => {
+    const border = new THREE.Mesh(
+      new THREE.BoxGeometry(toWorld(width), toWorld(2), toWorld(depth)),
+      borderMaterial,
+    );
+    border.name = `oblique-tabletop-subject-board-border-${name}`;
+    border.position.set(toWorld(x), lineY, toWorld(z));
+    boardAssembly.add(border);
+  });
+};
+
+const addAnalyticalSurfaceSamples = (boardAssembly: THREE.Group): void => {
+  geometry.subjectBoardAnalyticalSurfaceSamples.forEach((sample) => {
     const sampleNode = new THREE.Object3D();
-    sampleNode.name = `oblique-tabletop-surface-sample-${sample.id}`;
+    sampleNode.name = `oblique-tabletop-board-surface-sample-${sample.id}`;
     sampleNode.position.set(
       toWorld(sample.localPosition.x),
-      toWorld(geometry.tabletop.thickness / 2),
+      toWorld(geometry.subjectBoardFocusSurfaceLocalY),
       toWorld(sample.localPosition.z),
     );
     sampleNode.userData = {
       analyticalCoverageSampleId: sample.id,
-      geometryAnchor: "canonical-tabletop-surface",
+      geometryAnchor: "canonical-subject-board-surface",
       focusSampleWorldMm: { ...sample.worldPosition },
     };
-    tabletopAssembly.add(sampleNode);
+    boardAssembly.add(sampleNode);
   });
 };
 
+const addBoardFocusDetail = (
+  boardAssembly: THREE.Group,
+  sample: ObliqueTabletopSubjectSample,
+): void => {
+  const detailGroup = new THREE.Group();
+  detailGroup.name = `oblique-tabletop-board-detail-${sample.id}`;
+  detailGroup.position.set(
+    toWorld(sample.localPosition.x),
+    0,
+    toWorld(sample.localPosition.z),
+  );
+  detailGroup.userData = {
+    focusTargetId: sample.id,
+    geometryAnchor: "visible-subject-board-detail",
+    focusSampleWorldMm: { ...sample.worldPosition },
+  };
+
+  const detail = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      toWorld(geometry.focusDetailGeometry.width),
+      toWorld(geometry.focusDetailGeometry.height),
+      toWorld(geometry.focusDetailGeometry.depth),
+    ),
+    basicMaterial(sample.id === "middle" ? "#7c3aed" : "#b45309"),
+  );
+  detail.name = `oblique-tabletop-board-detail-${sample.id}-surface`;
+  detail.position.y = toWorld(
+    geometry.subjectBoardFaceLocalY + geometry.focusDetailGeometry.height / 2,
+  );
+  detailGroup.add(detail);
+
+  const detailLineMaterial = basicMaterial("#f8fafc");
+  [-45, 0, 45].forEach((localX, index) => {
+    const line = new THREE.Mesh(
+      new THREE.BoxGeometry(toWorld(3), toWorld(1.5), toWorld(140)),
+      detailLineMaterial,
+    );
+    line.name = `oblique-tabletop-board-detail-${sample.id}-line-${index + 1}`;
+    line.position.set(
+      toWorld(localX),
+      toWorld(geometry.subjectBoardFocusSurfaceLocalY + 0.5),
+      0,
+    );
+    detailGroup.add(line);
+  });
+
+  const focusProbe = new THREE.Object3D();
+  focusProbe.name = `oblique-tabletop-focus-detail-${sample.id}`;
+  focusProbe.position.y = toWorld(geometry.subjectBoardFocusSurfaceLocalY);
+  focusProbe.userData = {
+    focusTargetId: sample.id,
+    geometryAnchor: "visible-subject-board-focus-probe",
+    focusProbeWorldMm: { ...sample.worldPosition },
+  };
+  detailGroup.add(focusProbe);
+  boardAssembly.add(detailGroup);
+};
+
 const addMarker = (
-  tabletopAssembly: THREE.Group,
-  marker: ObliqueTabletopMarker,
+  boardAssembly: THREE.Group,
+  marker: ObliqueTabletopBoardMarker,
 ): void => {
   const markerGroup = new THREE.Group();
   markerGroup.name = `oblique-tabletop-marker-${marker.id}`;
@@ -90,7 +254,7 @@ const addMarker = (
   );
   markerGroup.userData = {
     markerId: marker.id,
-    geometryAnchor: "visible-marker",
+    geometryAnchor: "visible-subject-board-marker",
     focusProbeWorldMm: { ...marker.worldPosition },
   };
 
@@ -100,11 +264,11 @@ const addMarker = (
       toWorld(geometry.markerGeometry.height),
       toWorld(geometry.markerGeometry.depth),
     ),
-    standardMaterial(marker.color, 0.76),
+    basicMaterial(marker.color),
   );
   base.name = `oblique-tabletop-marker-${marker.id}-base`;
   base.position.y = toWorld(
-    geometry.tabletop.thickness / 2 + geometry.markerGeometry.height / 2,
+    geometry.subjectBoardFaceLocalY + geometry.markerGeometry.height / 2,
   );
   markerGroup.add(base);
 
@@ -114,11 +278,11 @@ const addMarker = (
       toWorld(geometry.markerGeometry.topThickness),
       toWorld(geometry.markerGeometry.depth - 24),
     ),
-    standardMaterial("#f8fafc", 0.92),
+    basicMaterial("#f8fafc"),
   );
   top.name = `oblique-tabletop-marker-${marker.id}-surface`;
   top.position.y = toWorld(
-    geometry.tabletop.thickness / 2 +
+    geometry.subjectBoardFaceLocalY +
       geometry.markerGeometry.height +
       geometry.markerGeometry.topThickness / 2,
   );
@@ -143,7 +307,7 @@ const addMarker = (
           index * stripeWidth,
       ),
       toWorld(
-        geometry.tabletop.thickness / 2 +
+        geometry.subjectBoardFaceLocalY +
           geometry.markerGeometry.height +
           geometry.markerGeometry.topThickness +
           0.75,
@@ -155,50 +319,43 @@ const addMarker = (
 
   const focusProbe = new THREE.Object3D();
   focusProbe.name = `oblique-tabletop-focus-${marker.id}`;
-  focusProbe.position.set(
-    0,
-    toWorld(
-      geometry.tabletop.thickness / 2 +
-        geometry.markerGeometry.height +
-        geometry.markerGeometry.surfaceGap,
-    ),
-    0,
-  );
+  focusProbe.position.y = toWorld(geometry.subjectBoardFocusSurfaceLocalY);
   focusProbe.userData = {
     markerId: marker.id,
-    geometryAnchor: "visible-marker-focus-probe",
+    geometryAnchor: "visible-subject-board-marker-focus-probe",
     focusProbeWorldMm: { ...marker.worldPosition },
   };
   markerGroup.add(focusProbe);
 
-  const sampleOffsets = [
-    { id: "centre", x: 0, z: 0 },
-    { id: "left", x: -geometry.markerGeometry.width * 0.28, z: 0 },
-    { id: "right", x: geometry.markerGeometry.width * 0.28, z: 0 },
-    { id: "near", x: 0, z: -geometry.markerGeometry.depth * 0.28 },
-    { id: "far", x: 0, z: geometry.markerGeometry.depth * 0.28 },
-  ] as const;
-  sampleOffsets.forEach((sample, index) => {
+  marker.focusSampleWorldPositions.forEach((worldPosition, index) => {
     const sampleNode = new THREE.Object3D();
-    sampleNode.name = `oblique-tabletop-marker-${marker.id}-focus-sample-${sample.id}`;
+    sampleNode.name = `oblique-tabletop-marker-${marker.id}-focus-sample-${index + 1}`;
     sampleNode.position.set(
-      toWorld(sample.x),
       toWorld(
-        geometry.tabletop.thickness / 2 +
-          geometry.markerGeometry.height +
-          geometry.markerGeometry.surfaceGap,
+        index === 1
+          ? -geometry.markerGeometry.width * 0.28
+          : index === 2
+            ? geometry.markerGeometry.width * 0.28
+            : 0,
       ),
-      toWorld(sample.z),
+      toWorld(geometry.subjectBoardFocusSurfaceLocalY),
+      toWorld(
+        index === 3
+          ? -geometry.markerGeometry.depth * 0.28
+          : index === 4
+            ? geometry.markerGeometry.depth * 0.28
+            : 0,
+      ),
     );
     sampleNode.userData = {
       markerId: marker.id,
       focusSampleIndex: index,
-      focusSampleWorldMm: marker.focusSampleWorldPositions[index],
+      focusSampleWorldMm: { ...worldPosition },
     };
     markerGroup.add(sampleNode);
   });
 
-  tabletopAssembly.add(markerGroup);
+  boardAssembly.add(markerGroup);
 };
 
 /** Create the canonical Oblique Tabletop subject for R3F and Ground Glass RTT. */
@@ -224,22 +381,10 @@ export function createObliqueTabletopGroup(): THREE.Group {
 
   const tabletopAssembly = new THREE.Group();
   tabletopAssembly.name = "oblique-tabletop-tabletop-assembly";
-  // Use the canonical basis directly. Object3D.rotation.set(x, y, 0) uses
-  // the opposite composition for this subject and would erase the lateral
-  // component of the tilted surface normal.
-  const basis = geometry.tabletopTransformBasis;
-  tabletopAssembly.matrixAutoUpdate = false;
-  tabletopAssembly.matrix.makeBasis(
-    new THREE.Vector3(basis.localX.x, basis.localX.y, basis.localX.z),
-    new THREE.Vector3(basis.localY.x, basis.localY.y, basis.localY.z),
-    new THREE.Vector3(basis.localZ.x, basis.localZ.y, basis.localZ.z),
-  );
-  tabletopAssembly.matrix.setPosition(
-    new THREE.Vector3(
-      toWorld(geometry.tabletop.center.x),
-      toWorld(geometry.tabletop.center.y),
-      toWorld(geometry.tabletop.center.z),
-    ),
+  tabletopAssembly.position.set(
+    toWorld(geometry.tabletop.center.x),
+    toWorld(geometry.tabletop.center.y),
+    toWorld(geometry.tabletop.center.z),
   );
 
   const tabletopMesh = new THREE.Mesh(
@@ -253,10 +398,32 @@ export function createObliqueTabletopGroup(): THREE.Group {
   tabletopMesh.name = "oblique-tabletop-tabletop";
   tabletopAssembly.add(tabletopMesh);
   addTabletopSurfaceGuides(tabletopAssembly);
-  addTabletopAnalyticalSurfaceSamples(tabletopAssembly);
-
-  geometry.markers.forEach((marker) => addMarker(tabletopAssembly, marker));
   root.add(tabletopAssembly);
+
+  const boardAssembly = new THREE.Group();
+  boardAssembly.name = "oblique-tabletop-subject-board-assembly";
+  setSubjectBoardTransform(boardAssembly);
+  const boardMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      toWorld(geometry.subjectBoard.width),
+      toWorld(geometry.subjectBoard.thickness),
+      toWorld(geometry.subjectBoard.depth),
+    ),
+    standardMaterial(geometry.subjectBoard.edgeColor, 0.84),
+  );
+  boardMesh.name = "oblique-tabletop-subject-board";
+  boardAssembly.add(boardMesh);
+  // The same physical upper board face is used by the observer and the
+  // photographic camera, Ground Glass RTT, focus probes, and plan details.
+  addBoardPlanSurface(boardAssembly);
+  addAnalyticalSurfaceSamples(boardAssembly);
+  geometry.subjectBoardVisibleFocusSamples.forEach((sample) =>
+    addBoardFocusDetail(boardAssembly, sample),
+  );
+  geometry.boardMarkers.forEach((marker) =>
+    addMarker(boardAssembly, marker),
+  );
+  root.add(boardAssembly);
 
   geometry.tableSupports.forEach((support) => {
     const leg = new THREE.Mesh(
@@ -274,6 +441,24 @@ export function createObliqueTabletopGroup(): THREE.Group {
       toWorld(support.center.z),
     );
     root.add(leg);
+  });
+
+  geometry.subjectBoardSupports.forEach((support) => {
+    const supportMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toWorld(support.width),
+        toWorld(support.height),
+        toWorld(support.depth),
+      ),
+      standardMaterial(support.color, 0.88),
+    );
+    supportMesh.name = `oblique-tabletop-board-support-${support.id}`;
+    supportMesh.position.set(
+      toWorld(support.center.x),
+      toWorld(support.center.y),
+      toWorld(support.center.z),
+    );
+    root.add(supportMesh);
   });
 
   return root;
