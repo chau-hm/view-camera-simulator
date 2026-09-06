@@ -181,7 +181,7 @@ describe("Oblique Tabletop Tilt limitation", () => {
     ).toBe(true);
   });
 
-  it("uses the correct negative Tilt sign and materially improves one depth axis", () => {
+  it("uses the correct positive Tilt sign and materially improves one depth axis", () => {
     const neutral = targetMap(
       0,
       obliqueTabletopScene.cameraPreset.focusDistanceMm,
@@ -206,7 +206,7 @@ describe("Oblique Tabletop Tilt limitation", () => {
       obliqueTabletopGeometry.subjectBoardPrincipalDepthSampleIds,
     );
 
-    expect(obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg).toBeLessThan(0);
+    expect(obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg).toBeGreaterThan(0);
     expect(spread(tiltedAxisCoc)).toBeLessThan(spread(neutralAxisCoc) * 0.7);
     expect(Math.max(...tiltedAxisCoc)).toBeLessThan(Math.max(...neutralAxisCoc) * 0.8);
     expect(spread(tiltedAxisCoc)).toBeLessThan(spread(oppositeSignAxisCoc) * 0.7);

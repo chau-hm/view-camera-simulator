@@ -64,6 +64,13 @@ export const markerGeometry = {
   stripeDepth: 164,
 } as const;
 
+/** Raised detail blocks are the visible focus-surface features on the board. */
+export const focusDetailGeometry = {
+  width: 250,
+  depth: 170,
+  height: 10,
+} as const;
+
 export const floor = {
   center: { x: 0, y: -2050, z: 4400 },
   width: 8200,
@@ -73,23 +80,26 @@ export const floor = {
   color: "#d7d0c6",
 } as const;
 
-const subjectBoardRotationXDeg = 15;
-const subjectBoardRotationYDeg = -45;
+const subjectBoardRotationXDeg = -25;
+const subjectBoardRotationYDeg = 40;
 const subjectBoardRotationXRad = degreesToRadians(subjectBoardRotationXDeg);
 const subjectBoardRotationYRad = degreesToRadians(subjectBoardRotationYDeg);
 const tabletopTopY = tabletop.center.y + tabletop.thickness / 2;
 const subjectBoardWidthMm = 2600;
 const subjectBoardDepthMm = 3000;
 const subjectBoardThicknessMm = 60;
+const subjectBoardSupportedEdgeLocalDepth = -subjectBoardDepthMm / 2;
+const subjectBoardUndersideLocalY = -subjectBoardThicknessMm / 2;
+const subjectBoardSupportedEdgeOffsetY =
+  subjectBoardUndersideLocalY * Math.cos(subjectBoardRotationXRad) -
+  subjectBoardSupportedEdgeLocalDepth * Math.sin(subjectBoardRotationXRad);
 
-/** A drafting/copy board resting on the level table's far edge. */
+/** A drafting/copy board resting on the level table's near edge. */
 export const subjectBoard = {
   center: {
     x: tabletop.center.x,
-    y:
-      tabletopTopY +
-      (subjectBoardThicknessMm / 2) * Math.cos(subjectBoardRotationXRad) +
-      (subjectBoardDepthMm / 2) * Math.sin(subjectBoardRotationXRad),
+    // Keep the underside of the board's near edge on the level table.
+    y: tabletopTopY - subjectBoardSupportedEdgeOffsetY,
     z: tabletop.center.z,
   },
   width: subjectBoardWidthMm,
@@ -106,14 +116,10 @@ export const subjectBoard = {
   planLineColor: "#8f6f4e",
 } as const;
 
-const markerSurfaceOffsetMm = markerGeometry.height + markerGeometry.surfaceGap;
-
-/** The photographed face is the side facing the level camera. */
-export const subjectBoardFaceLocalY = -subjectBoard.thickness / 2;
+/** The single photographed face is the board's upper, camera-facing surface. */
+export const subjectBoardFaceLocalY = subjectBoard.thickness / 2;
 export const subjectBoardFocusSurfaceLocalY =
-  subjectBoardFaceLocalY - markerSurfaceOffsetMm;
-/** Presentation details on the upper side keep the board readable in the 3D observer view. */
-export const subjectBoardPresentationFaceLocalY = subjectBoard.thickness / 2;
+  subjectBoardFaceLocalY + focusDetailGeometry.height;
 
 /** Rotate a board-local direction without applying the board translation. */
 export const subjectBoardLocalDirectionToWorld = (local: Vec3): Vec3 => {
@@ -150,7 +156,7 @@ export const subjectBoardLocalPointToWorld = (
   };
 };
 
-/** Convert a point on the board's raised focus-detail surface to world space. */
+/** Convert a point on the board's visible raised focus-detail surface to world space. */
 export const subjectBoardSurfaceToWorld = ({
   localX,
   localDepth,
@@ -416,8 +422,8 @@ export const focusTargets: FocusTarget[] = subjectBoardVisibleFocusTargets;
 
 /** Public Tilt + Focus evidence for the intentionally incomplete first movement stage. */
 export const tiltOnlyCalibration = {
-  frontTiltDeg: -4.8,
-  focusDistanceMm: 4020,
+  frontTiltDeg: 3.6,
+  focusDistanceMm: 3530,
   aperture: 11 as const,
 } as const;
 
@@ -532,7 +538,7 @@ const getBoardMarkerWorldCorners = (marker: ObliqueTabletopBoardMarker): Vec3[] 
   getBoxCorners(
     {
       x: marker.localPosition.x,
-      y: subjectBoardFaceLocalY - markerGeometry.height / 2,
+      y: subjectBoardFaceLocalY + markerGeometry.height / 2,
       z: marker.localPosition.z,
     },
     { x: markerGeometry.width, y: markerGeometry.height, z: markerGeometry.depth },
@@ -542,10 +548,14 @@ const getBoardDetailWorldCorners = (sample: ObliqueTabletopSubjectSample): Vec3[
   getBoxCorners(
     {
       x: sample.localPosition.x,
-      y: subjectBoardFaceLocalY - markerGeometry.height / 2,
+      y: subjectBoardFaceLocalY + focusDetailGeometry.height / 2,
       z: sample.localPosition.z,
     },
-    { x: 250, y: markerGeometry.height, z: 170 },
+    {
+      x: focusDetailGeometry.width,
+      y: focusDetailGeometry.height,
+      z: focusDetailGeometry.depth,
+    },
   ).map((local) => subjectBoardLocalPointToWorld(local));
 
 const boundsFromPoints = (points: Vec3[], paddingMm = 0): Bounds3 => ({
@@ -631,7 +641,7 @@ export default {
   subjectBoardSurfaceToWorld,
   subjectBoardFaceLocalY,
   subjectBoardFocusSurfaceLocalY,
-  subjectBoardPresentationFaceLocalY,
+  focusDetailGeometry,
   subjectBoardTransformBasis,
   subjectBoardPlane,
   subjectBoardFrontSurfacePlane,

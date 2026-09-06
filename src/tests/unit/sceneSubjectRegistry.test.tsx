@@ -185,6 +185,40 @@ describe("scene subject registry", () => {
     expect(renderedBoardNormal.y).toBeCloseTo(obliqueTabletopGeometry.subjectBoardPlane.normal.y, 10);
     expect(renderedBoardNormal.z).toBeCloseTo(obliqueTabletopGeometry.subjectBoardPlane.normal.z, 10);
 
+    const boardMesh = group?.getObjectByName("oblique-tabletop-subject-board");
+    expect(boardMesh).toBeInstanceOf(THREE.Mesh);
+    const renderedFacePoint = new THREE.Vector3(
+      0,
+      obliqueTabletopGeometry.subjectBoard.thickness * 0.001 / 2,
+      0,
+    ).applyMatrix4(boardMesh!.matrixWorld);
+    expect(renderedFacePoint.x).toBeCloseTo(
+      obliqueTabletopGeometry.subjectBoardFrontSurfacePlane.point.x * 0.001,
+      10,
+    );
+    expect(renderedFacePoint.y).toBeCloseTo(
+      obliqueTabletopGeometry.subjectBoardFrontSurfacePlane.point.y * 0.001,
+      10,
+    );
+    expect(renderedFacePoint.z).toBeCloseTo(
+      obliqueTabletopGeometry.subjectBoardFrontSurfacePlane.point.z * 0.001,
+      10,
+    );
+
+    const presentationNodes: THREE.Object3D[] = [];
+    const planSurfaceNodes: THREE.Object3D[] = [];
+    group?.traverse((object) => {
+      if (object.name.includes("presentation")) presentationNodes.push(object);
+      if (object.name === "oblique-tabletop-subject-board-plan-surface") {
+        planSurfaceNodes.push(object);
+      }
+    });
+    expect(presentationNodes).toHaveLength(0);
+    expect(planSurfaceNodes).toHaveLength(1);
+    expect(
+      group?.getObjectByName("oblique-tabletop-subject-board-plan-surface-presentation"),
+    ).toBeUndefined();
+
     obliqueTabletopGeometry.boardMarkers.forEach((marker) => {
       const markerGroup = group?.getObjectByName(`oblique-tabletop-marker-${marker.id}`);
       expect(markerGroup).toBeInstanceOf(THREE.Group);
@@ -233,6 +267,19 @@ describe("scene subject registry", () => {
       expect(focusWorld.z).toBeCloseTo(sample.worldPosition.z * 0.001, 10);
       expect(focusProbe?.userData.focusTargetId).toBe(sample.id);
       expect(focusProbe?.userData.geometryAnchor).toBe("visible-subject-board-focus-probe");
+
+      const detailSurface = detail?.getObjectByName(
+        `oblique-tabletop-board-detail-${sample.id}-surface`,
+      );
+      expect(detailSurface).toBeInstanceOf(THREE.Mesh);
+      const detailOuterSurfaceWorld = new THREE.Vector3(
+        0,
+        obliqueTabletopGeometry.focusDetailGeometry.height * 0.001 / 2,
+        0,
+      ).applyMatrix4(detailSurface!.matrixWorld);
+      expect(detailOuterSurfaceWorld.x).toBeCloseTo(focusWorld.x, 10);
+      expect(detailOuterSurfaceWorld.y).toBeCloseTo(focusWorld.y, 10);
+      expect(detailOuterSurfaceWorld.z).toBeCloseTo(focusWorld.z, 10);
     });
 
     const spies = collectDisposableSpies(group!);

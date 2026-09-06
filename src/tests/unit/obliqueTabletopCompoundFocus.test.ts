@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { pointToPlaneDistance, planeFromPointNormal } from "../../core/math/plane";
-import { angleDeg, dot } from "../../core/math/vec";
+import { angleDeg, dot, safeNormalize, subtract } from "../../core/math/vec";
 import { calculateLensNormal } from "../../core/optics/calculateLensPlane";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
 import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
@@ -163,9 +163,9 @@ describe("Oblique Tabletop compound focus", () => {
     expect(calibration.requiredLensHorizontalNormalMagnitude).toBeLessThan(1);
     expect(Math.abs(canonicalPlane.normal.x)).toBeGreaterThan(0.1);
     expect(Math.abs(canonicalPlane.normal.z)).toBeGreaterThan(0.1);
-    expect(calibration.continuous.frontTiltDeg).toBeLessThan(0);
-    expect(calibration.continuous.frontSwingDeg).toBeLessThan(0);
-    expect(calibration.continuous.frontSwingDeg).toBeLessThan(-1);
+    expect(calibration.continuous.frontTiltDeg).toBeGreaterThan(0);
+    expect(calibration.continuous.frontSwingDeg).toBeGreaterThan(0);
+    expect(calibration.continuous.frontSwingDeg).toBeGreaterThan(1);
     expect(calibration.continuous.frontTiltDeg).toBeGreaterThan(CAMERA_CONSTANTS.tiltMinDeg);
     expect(calibration.continuous.frontTiltDeg).toBeLessThan(CAMERA_CONSTANTS.tiltMaxDeg);
     expect(calibration.continuous.frontSwingDeg).toBeGreaterThan(CAMERA_CONSTANTS.swingMinDeg);
@@ -174,6 +174,19 @@ describe("Oblique Tabletop compound focus", () => {
       calibration.continuous.frontTiltDeg,
       calibration.continuous.frontSwingDeg,
     )).toEqual(calibration.continuous.lensNormal);
+  });
+
+  it("uses the actual upper board face as the camera-facing subject", () => {
+    const optics = evaluatePublic({ frontTiltDeg: 0, frontSwingDeg: 0 });
+    const facePoint = obliqueTabletopGeometry.subjectBoardFrontSurfacePlane.point;
+    const viewDirection = safeNormalize(subtract(optics.lensCenterWorld, facePoint));
+
+    expect(obliqueTabletopGeometry.subjectBoardFaceLocalY).toBe(
+      obliqueTabletopGeometry.subjectBoard.thickness / 2,
+    );
+    expect(
+      dot(obliqueTabletopGeometry.subjectBoardFrontSurfacePlane.normal, viewDirection),
+    ).toBeGreaterThan(0.05);
   });
 
   it("makes the continuous focus plane coincide with the canonical subject-board plane", () => {
@@ -406,6 +419,6 @@ describe("Oblique Tabletop compound focus", () => {
 
     expect(max(tiltOnly)).toBeGreaterThan(ACCEPTABLE_COC_DIAMETER_MM);
     expect(max(compound)).toBeLessThanOrEqual(ACCEPTABLE_COC_DIAMETER_MM);
-    expect(obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg).toBeLessThan(0);
+    expect(obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg).toBeGreaterThan(0);
   });
 });

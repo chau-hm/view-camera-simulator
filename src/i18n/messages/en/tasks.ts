@@ -461,7 +461,7 @@ export const tasksMessages = {
     objective:
       "Use Front Tilt and the Side view to improve the subject board's near-to-far relationship. Refine Focus if needed.",
     notes: {
-      tilt: "Use the negative Front Tilt direction that brings the near, middle, and far board details closer to one focus plane.",
+      tilt: "Use the positive Front Tilt direction that brings the near, middle, and far board details closer to one focus plane.",
       constraints:
         "Keep Front Rise and Front Swing at zero. Aperture stays at f/11; the side-view improvement is intentionally partial.",
     },
@@ -469,7 +469,7 @@ export const tasksMessages = {
       allowedAperture: "Aperture remains at f/11",
       riseZero: "Front Rise remains at 0 mm",
       swingZero: "Front Swing remains at 0°",
-      movementRange: "Front Tilt is in the calibrated negative range",
+      movementRange: "Front Tilt is in the calibrated positive range",
       nearSharp: "The near-centre board detail is sharp",
       middleSharp: "The middle board detail is sharp",
       farSharp: "The far-centre board detail is sharp",
@@ -478,21 +478,21 @@ export const tasksMessages = {
       passPrimary:
         "Good. Front Tilt and Focus improved the principal near-to-far relationship. The lateral difference remains for the next stage.",
       defaultFailPrimary:
-        "Use the calibrated negative Front Tilt direction in the Side view, then refine Focus across the near, middle, and far regions.",
+        "Use the calibrated positive Front Tilt direction in the Side view, then refine Focus across the near, middle, and far regions.",
       primary: {
         allowedAperture: "Keep the aperture at f/11; do not use depth of field to hide an incorrect plane.",
         riseZero: "Return Front Rise to 0 mm; this stage changes the focus-plane orientation with Front Tilt.",
         swingZero: "Keep Front Swing at 0°; the remaining lateral component is deliberate here.",
-        movementRange: "Use the negative Front Tilt range; the opposite sign turns the near-to-far relationship the wrong way.",
-        nearSharp: "The near-centre board detail is still soft. Set the negative Front Tilt direction, then refine Focus.",
+        movementRange: "Use the positive Front Tilt range; the opposite sign turns the near-to-far relationship the wrong way.",
+        nearSharp: "The near-centre board detail is still soft. Set the positive Front Tilt direction, then refine Focus.",
         middleSharp: "Keep the middle board detail as a reference while adjusting Front Tilt and Focus.",
-        farSharp: "The far-centre board detail is still soft. Continue with the negative Front Tilt direction and refine Focus.",
+        farSharp: "The far-centre board detail is still soft. Continue with the positive Front Tilt direction and refine Focus.",
       },
       secondary: {
         allowedAperture: "The fixed f/11 aperture keeps this stage about plane orientation, not extra depth of field.",
         riseZero: "Use the Side geometry view to inspect the focus plane without changing the camera position.",
         swingZero: "Leave the lateral component unresolved so the effect of Front Tilt is clear.",
-        movementRange: "Compare the green focus plane with the board trace from near to far; do not use a positive tilt as a shortcut.",
+        movementRange: "Compare the green focus plane with the board trace from near to far; do not use the opposite Tilt sign as a shortcut.",
         nearSharp: "Compare the near-centre readout with the middle and far-centre board details.",
         middleSharp: "Refine Focus around the middle after each Tilt adjustment.",
         farSharp: "The improvement is along one direction only; the side view should still leave the board's lateral problem visible.",
@@ -504,15 +504,15 @@ export const tasksMessages = {
     objective:
       "Add Front Swing to improve the remaining left-to-right relationship while preserving the useful near-to-far board relationship.",
     notes: {
-      swing: "Keep the useful near-to-far Tilt relationship, then add negative Front Swing and refine Focus to improve the board's lateral component.",
+      swing: "Keep the useful near-to-far Tilt relationship, then add positive Front Swing and refine Focus to improve the board's lateral component.",
       constraints:
         "Keep Front Rise at zero and leave the aperture at f/11. Compare the left and right details; full board sharpness belongs to Refine Focus.",
     },
     criteria: {
       allowedAperture: "Aperture remains at f/11",
       riseZero: "Front Rise remains at 0 mm",
-      tiltRange: "Front Tilt preserves a useful negative near-to-far relationship",
-      movementRange: "Front Swing is in the useful negative range",
+      tiltRange: "Front Tilt preserves a useful positive near-to-far relationship",
+      movementRange: "Front Swing is in the useful positive range",
       focusUsed: "Focus is refined after changing the movements",
       lateralSharp: "The far-row left and right regions show lateral improvement",
     },
@@ -520,20 +520,20 @@ export const tasksMessages = {
       passPrimary:
         "Good. Swing has improved the lateral relationship. The compound plane is oriented more closely to the subject board; refine Focus next to place it accurately.",
       defaultFailPrimary:
-        "Keep the useful negative Tilt relationship, add negative Swing in the Top view, and compare the left and right details. Full board sharpness is intentionally left for Refine Focus.",
+        "Keep the useful positive Tilt relationship, add positive Swing in the Top view, and compare the left and right details. Full board sharpness is intentionally left for Refine Focus.",
       primary: {
         allowedAperture: "Keep the aperture at f/11; the movement combination must solve the plane before stopping down.",
         riseZero: "Return Front Rise to 0 mm; this stage adds the lateral optical component.",
-        tiltRange: "Keep Front Tilt in the useful negative range so the near-to-far relationship remains available while Swing changes the lateral component.",
-        movementRange: "Use the useful negative Front Swing range; the opposite sign turns the lateral relationship the wrong way.",
+        tiltRange: "Keep Front Tilt in the useful positive range so the near-to-far relationship remains available while Swing changes the lateral component.",
+        movementRange: "Use the useful positive Front Swing range; the opposite sign turns the lateral relationship the wrong way.",
         focusUsed: "Refine Focus after changing the movements so the visible lateral comparison is meaningful.",
-        lateralSharp: "The far-row left and right details are not yet close enough. Keep the useful Tilt relationship, add negative Swing, and refine Focus.",
+        lateralSharp: "The far-row left and right details are not yet close enough. Keep the useful Tilt relationship, add positive Swing, and refine Focus.",
       },
       secondary: {
         allowedAperture: "Use the Top view and f/11 to compare the movement solution without extra depth of field.",
         riseZero: "Do not change the camera position while comparing the left and right regions.",
         tiltRange: "The Top view shows Swing's contribution most clearly when the useful near-to-far Tilt relationship is retained.",
-        movementRange: "Compare the green focus plane with the board's lateral trace; positive Swing rotates it away from the surface.",
+        movementRange: "Compare the green focus plane with the board's lateral trace; negative Swing rotates it away from the surface.",
         focusUsed: "Changing either movement can change plane placement, so refine Focus before judging the result.",
         lateralSharp: "Check the left and right details in the far row, then remember that full board sharpness is the next stage.",
       },
@@ -544,9 +544,9 @@ export const tasksMessages = {
     objective:
       "With Tilt and Swing setting the plane orientation, refine Focus until the visible board details fall on the same plane of sharp focus.",
     notes: {
-      focus: "Keep both movement components near their useful relationship and use Focus to place the resulting plane on the subject board.",
+      focus: "Keep the established Tilt and Swing orientation and use Focus to place the resulting plane on the subject board.",
       constraints:
-        "Keep Front Rise at zero and the aperture at f/11. Judge the result across the visible board, not from one target alone.",
+        "Keep Front Rise at zero and the aperture at f/11. Refine Focus only and judge the result across the visible board, not from one target alone.",
     },
     criteria: {
       allowedAperture: "Aperture remains at f/11",
@@ -560,14 +560,14 @@ export const tasksMessages = {
       passPrimary:
         "The compound plane is now placed on the subject board at f/11. The final step will add depth around this aligned plane.",
       defaultFailPrimary:
-        "Keep Tilt and Swing near their useful compound relationship, then refine Focus across the visible board details.",
+        "Keep the established Tilt and Swing orientation, then refine Focus across the visible board details.",
       primary: {
         allowedAperture: "Keep the aperture at f/11; first place the compound plane before adding depth around it.",
         riseZero: "Return Front Rise to 0 mm; only Tilt, Swing, and Focus belong to this plane-placement step.",
         tiltRange: "Keep Front Tilt near its calibrated compound relationship while refining the plane placement.",
         swingRange: "Keep Front Swing near its calibrated compound relationship while refining the plane placement.",
         focusUsed: "Refine Focus from the starting position so the compound plane moves onto the subject board.",
-        allTargetsSharp: "Some visible board details are still soft. Compare the whole visible set and refine Focus without losing the compound movement relationship.",
+        allTargetsSharp: "Some visible board details are still soft. Compare the whole visible set and refine Focus while keeping the established movement relationship.",
       },
       secondary: {
         allowedAperture: "The f/11 setting makes the plane placement visible before the aperture step.",

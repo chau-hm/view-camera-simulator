@@ -77,8 +77,8 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByRole("heading", { name: "Improve near-to-far focus" })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
-  await setStepRangeInput(page, "Tilt", -4.8);
-  await setRangeDirect(page, "Focus distance", 4020);
+  await setStepRangeInput(page, "Tilt", 3.6);
+  await setRangeDirect(page, "Focus distance", 3530);
   await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole("link", { name: "Continue" }).click();
@@ -87,13 +87,13 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   );
   await expectLessonStage(page, "Step 4 of 6", "Front Swing");
   await expect(page.getByRole("heading", { name: "Add the lateral component" })).toBeVisible();
-  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("-4.8");
+  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("3.6");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
-  await expect(page.getByLabel("Focus distance")).toHaveValue("4020");
+  await expect(page.getByLabel("Focus distance")).toHaveValue("3530");
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
-  await setRangeDirect(page, "Tilt", -7.3);
-  await setRangeDirect(page, "Swing", -1.7);
-  await setRangeDirect(page, "Focus distance", 3250);
+  await setRangeDirect(page, "Tilt", 7.1);
+  await setRangeDirect(page, "Swing", 2.1);
+  await setRangeDirect(page, "Focus distance", 2440);
   await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole("link", { name: "Continue" }).click();
@@ -102,13 +102,13 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   );
   await expectLessonStage(page, "Step 5 of 6", "Refine Focus");
   await expect(page.getByRole("heading", { name: "Place the compound focus plane" })).toBeVisible();
-  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("-7.3");
-  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("-1.7");
-  await expect(page.getByLabel("Focus distance")).toHaveValue("3250");
+  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("7.1");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("2.1");
+  await expect(page.getByLabel("Focus distance")).toHaveValue("2440");
+  await expect(page.getByRole("slider", { name: "Tilt" })).toBeDisabled();
+  await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
-  await setRangeDirect(page, "Tilt", -9.3);
-  await setRangeDirect(page, "Swing", -1.8);
-  await setRangeDirect(page, "Focus distance", 2630);
+  await setRangeDirect(page, "Focus distance", 2500);
   await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole("link", { name: "Continue" }).click();

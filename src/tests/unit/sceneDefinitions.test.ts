@@ -161,12 +161,12 @@ describe("scene definitions", () => {
       );
     });
 
-    const farEdgeBottom = obliqueTabletopGeometry.subjectBoardLocalPointToWorld({
+    const supportedEdgeBottom = obliqueTabletopGeometry.subjectBoardLocalPointToWorld({
       x: 0,
       y: -obliqueTabletopGeometry.subjectBoard.thickness / 2,
-      z: obliqueTabletopGeometry.subjectBoard.farLocalDepth,
+      z: obliqueTabletopGeometry.subjectBoard.nearLocalDepth,
     });
-    expect(farEdgeBottom.y).toBeCloseTo(tableTopY, 8);
+    expect(supportedEdgeBottom.y).toBeCloseTo(tableTopY, 8);
     expect(obliqueTabletopGeometry.subjectBoardSupports.every((support) => support.height > 0)).toBe(true);
   });
 

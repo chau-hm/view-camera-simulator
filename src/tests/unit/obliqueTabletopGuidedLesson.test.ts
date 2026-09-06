@@ -14,7 +14,7 @@ import { obliqueTabletopCompoundCalibration } from "../../scenes/obliqueTabletop
 import { useAppStore } from "../../state/appStore";
 import type { CameraState } from "../../types/camera";
 import type { TaskDefinition } from "../../types/task";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { CAMERA_CONTROL_STEPS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const scene = obliqueTabletopScene;
 const taskIds = [
@@ -54,9 +54,11 @@ const evaluate = (taskId: string, overrides: Partial<CameraState> = {}) => {
 };
 
 const swingStageState = {
-  frontTiltDeg: -7.3,
-  frontSwingDeg: -1.7,
-  focusDistanceMm: 3250,
+  frontTiltDeg: obliqueTabletopCompoundCalibration.public.frontTiltDeg,
+  frontSwingDeg: obliqueTabletopCompoundCalibration.public.frontSwingDeg,
+  focusDistanceMm:
+    obliqueTabletopCompoundCalibration.public.focusDistanceMm -
+    CAMERA_CONTROL_STEPS.focusDistanceMm * 6,
 } as const;
 
 const physicalScores = (overrides: Partial<CameraState> = {}) => {
@@ -129,12 +131,7 @@ describe("Oblique Tabletop Guided Lesson", () => {
       "focusDistance",
       "geometryView",
     ]);
-    expect(requireTask(taskIds[3]).enabledControls).toEqual([
-      "tilt",
-      "swing",
-      "focusDistance",
-      "geometryView",
-    ]);
+    expect(requireTask(taskIds[3]).enabledControls).toEqual(["focusDistance", "geometryView"]);
     expect(requireTask(taskIds[4]).enabledControls).toEqual(["aperture", "geometryView"]);
     expect(requireTask(taskIds.slice(0, 4)[0]).criteria).toEqual(
       expect.arrayContaining([
@@ -164,7 +161,7 @@ describe("Oblique Tabletop Guided Lesson", () => {
     ).toBe(true);
   });
 
-  it("requires the calibrated negative Tilt direction for the near-to-far stage", () => {
+  it("requires the calibrated positive Tilt direction for the near-to-far stage", () => {
     const task = requireTask("oblique-tabletop-tilt-01");
     const correct = evaluate(task.id, {
       frontTiltDeg: obliqueTabletopGeometry.tiltOnlyCalibration.frontTiltDeg,
@@ -193,6 +190,9 @@ describe("Oblique Tabletop Guided Lesson", () => {
         frontSwingDeg: 0,
         focusDistanceMm: obliqueTabletopGeometry.tiltOnlyCalibration.focusDistanceMm,
       }),
+    );
+    expect(refineTask.initialCameraState).toEqual(
+      expect.objectContaining(swingStageState),
     );
 
     const neutralScores = physicalScores({
@@ -228,16 +228,19 @@ describe("Oblique Tabletop Guided Lesson", () => {
     ).toBe(false);
   });
 
-  it("requires the correct negative Swing direction for the partial lateral stage", () => {
+  it("requires the correct positive Swing direction for the partial lateral stage", () => {
     const task = requireTask("oblique-tabletop-swing-01");
     const correct = evaluate(task.id, swingStageState);
     const wrongSign = evaluate(task.id, {
       ...swingStageState,
-      frontSwingDeg: 1.2,
+      frontSwingDeg: -obliqueTabletopCompoundCalibration.public.frontSwingDeg,
     });
     const correctLateral = minimumScore(physicalScores(swingStageState), lateralTargetIds);
     const wrongLateral = minimumScore(
-      physicalScores({ ...swingStageState, frontSwingDeg: 1.2 }),
+      physicalScores({
+        ...swingStageState,
+        frontSwingDeg: -obliqueTabletopCompoundCalibration.public.frontSwingDeg,
+      }),
       lateralTargetIds,
     );
 
@@ -267,9 +270,9 @@ describe("Oblique Tabletop Guided Lesson", () => {
     });
     const notRefined = evaluate(refineTask.id, swingStageState);
     const wrongCompound = evaluate(refineTask.id, {
-      frontTiltDeg: 8,
-      frontSwingDeg: 1.6,
-      focusDistanceMm: 3030,
+      frontTiltDeg: -obliqueTabletopCompoundCalibration.public.frontTiltDeg,
+      frontSwingDeg: -obliqueTabletopCompoundCalibration.public.frontSwingDeg,
+      focusDistanceMm: obliqueTabletopCompoundCalibration.public.focusDistanceMm,
       aperture: 22,
     });
 
@@ -289,9 +292,9 @@ describe("Oblique Tabletop Guided Lesson", () => {
     const starting = evaluate(task.id, { aperture: 11 });
     const stoppedDown = evaluate(task.id, { aperture: 22 });
     const stoppedDownWrongPlane = evaluate(task.id, {
-      frontTiltDeg: 8,
-      frontSwingDeg: 1.6,
-      focusDistanceMm: 3030,
+      frontTiltDeg: -obliqueTabletopCompoundCalibration.public.frontTiltDeg,
+      frontSwingDeg: -obliqueTabletopCompoundCalibration.public.frontSwingDeg,
+      focusDistanceMm: obliqueTabletopCompoundCalibration.public.focusDistanceMm,
       aperture: 22,
     });
 

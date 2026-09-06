@@ -3,7 +3,7 @@ import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS } from "../utils/constants";
 import { roundToStep } from "../utils/roundToStep";
 import { planeFromPointNormal } from "../core/math/plane";
 import { calculateLensNormal } from "../core/optics/calculateLensPlane";
-import { dot, isFiniteVec3, safeNormalize } from "../core/math/vec";
+import { dot, isFiniteVec3, safeNormalize, scale } from "../core/math/vec";
 import obliqueTabletopGeometry from "./obliqueTabletopGeometry";
 
 const radiansToDegrees = (radians: number): number => (radians * 180) / Math.PI;
@@ -65,11 +65,19 @@ export const deriveObliqueTabletopCompoundCalibration = (
     canonicalSubjectPlane.point,
     canonicalSubjectPlane.normal,
   );
-  const horizontalNormalMagnitude = Math.hypot(
-    subjectPlane.normal.x,
-    subjectPlane.normal.y,
+  // A plane has no physical front/back orientation. Keep the canonical
+  // photographed-face normal in scene geometry, but use the equivalent
+  // +Z-facing orientation here so the existing finite-focus contract has a
+  // positive lens-to-subject signed distance.
+  const opticalSubjectPlane = planeFromPointNormal(
+    subjectPlane.point,
+    subjectPlane.normal.z < 0 ? scale(subjectPlane.normal, -1) : subjectPlane.normal,
   );
-  const signedPlaneDistanceMm = subjectPlane.distance;
+  const horizontalNormalMagnitude = Math.hypot(
+    opticalSubjectPlane.normal.x,
+    opticalSubjectPlane.normal.y,
+  );
+  const signedPlaneDistanceMm = opticalSubjectPlane.distance;
 
   if (
     !Number.isFinite(horizontalNormalMagnitude) ||
@@ -95,8 +103,8 @@ export const deriveObliqueTabletopCompoundCalibration = (
 
   const horizontalDirection = safeNormalize(
     {
-      x: subjectPlane.normal.x,
-      y: subjectPlane.normal.y,
+      x: opticalSubjectPlane.normal.x,
+      y: opticalSubjectPlane.normal.y,
       z: 0,
     },
     { x: 0, y: 1, z: 0 },
@@ -117,7 +125,7 @@ export const deriveObliqueTabletopCompoundCalibration = (
   // These inverse mappings therefore preserve the repository's public signs.
   const frontTiltDeg = radiansToDegrees(Math.asin(-lensNormal.y));
   const frontSwingDeg = radiansToDegrees(Math.atan2(lensNormal.x, lensNormal.z));
-  const normalAlignment = dot(subjectPlane.normal, lensNormal);
+  const normalAlignment = dot(opticalSubjectPlane.normal, lensNormal);
   const focusDistanceMm = signedPlaneDistanceMm / normalAlignment;
 
   assertWithin(
