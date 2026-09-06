@@ -10,6 +10,9 @@ test.describe("Landing motion progressive enhancement", () => {
     const root = page.locator(".site-shell--landing-home");
     const header = page.locator(".site-header");
     const firstCard = page.locator(".landing-concept-grid--fundamentals [data-landing-reveal=card]").first();
+    const whyHeader = page.locator(".landing-why-section [data-landing-reveal=header]");
+    const whyCard = page.locator(".landing-why-section [data-landing-reveal=card]").first();
+    const ctaArtwork = page.locator(".landing-final-cta-section__artwork");
 
     await expect(root).toHaveAttribute("data-landing-motion", "enabled");
     await expect(page.locator(".landing-hero__title")).toBeVisible();
@@ -20,6 +23,18 @@ test.describe("Landing motion progressive enhancement", () => {
 
     await firstCard.scrollIntoViewIfNeeded();
     await expect(firstCard).toHaveAttribute("data-landing-revealed", "true");
+
+    await whyHeader.scrollIntoViewIfNeeded();
+    await expect(whyHeader).toHaveAttribute("data-landing-revealed", "true");
+    await expect(whyHeader).toHaveCSS("transform", "none");
+
+    await whyCard.scrollIntoViewIfNeeded();
+    await expect(whyCard).toHaveAttribute("data-landing-revealed", "true");
+    await expect(whyCard).toHaveCSS("transform", "none");
+
+    await ctaArtwork.scrollIntoViewIfNeeded();
+    await expect(ctaArtwork).toHaveAttribute("data-landing-revealed", "true");
+    await expect(ctaArtwork).toHaveCSS("opacity", "1");
 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -49,6 +64,42 @@ test.describe("Landing motion progressive enhancement", () => {
     );
 
     expect(state.every(({ opacity, transform }) => opacity === "1" && transform === "none")).toBe(true);
+  });
+
+  test("enables motion before the first landing-root mutation is observed", async ({ page }) => {
+    await page.addInitScript(() => {
+      const state = window as Window & {
+        __landingMotionFirstRootObservation?: string | null;
+      };
+      let recorded = false;
+      const observer = new MutationObserver(() => {
+        if (recorded) return;
+
+        const root = document.querySelector<HTMLElement>(".site-shell--landing-home");
+        if (!root) return;
+
+        recorded = true;
+        state.__landingMotionFirstRootObservation = root.dataset.landingMotion ?? null;
+        observer.disconnect();
+      });
+
+      observer.observe(document, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+      });
+    });
+    await page.goto("/");
+
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & { __landingMotionFirstRootObservation?: string | null })
+              .__landingMotionFirstRootObservation ?? "pending",
+        ),
+      )
+      .toBe("enabled");
   });
 
   test("shows the static landing immediately and disables motion under reduced motion", async ({ page }) => {
@@ -86,5 +137,22 @@ test.describe("Landing motion progressive enhancement", () => {
     await page.goForward();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.locator(".site-shell--landing-home")).toHaveAttribute("data-landing-motion", "enabled");
+  });
+
+  test("settles Why elements to their static position on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+
+    const whyHeader = page.locator(".landing-why-section [data-landing-reveal=header]");
+    const whyCard = page.locator(".landing-why-section [data-landing-reveal=card]").first();
+
+    await whyHeader.scrollIntoViewIfNeeded();
+    await expect(whyHeader).toHaveAttribute("data-landing-revealed", "true");
+    await expect(whyHeader).toHaveCSS("transform", "none");
+
+    await whyCard.scrollIntoViewIfNeeded();
+    await expect(whyCard).toHaveAttribute("data-landing-revealed", "true");
+    await expect(whyCard).toHaveCSS("transform", "none");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
   });
 });

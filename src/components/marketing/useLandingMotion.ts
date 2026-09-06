@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
 
@@ -13,7 +13,7 @@ const prefersReducedMotion = () => {
 };
 
 export const useLandingMotion = () => {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.querySelector<HTMLElement>(".site-shell--landing-home");
 
     if (

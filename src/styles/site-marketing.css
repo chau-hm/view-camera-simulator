@@ -536,6 +536,10 @@
   transition: opacity var(--marketing-motion-settle) var(--marketing-ease-cinematic);
 }
 
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-final-cta-section__artwork[data-landing-reveal="cta-artwork"][data-landing-revealed="true"] {
+  opacity: 1;
+}
+
 .site-shell--landing-home[data-landing-motion="enabled"] .landing-why-section :is(
   [data-landing-reveal="header"],
   [data-landing-reveal="card"]
@@ -550,6 +554,10 @@
 
 .site-shell--landing-home[data-landing-motion="enabled"] .landing-why-grid [data-landing-reveal="card"]:nth-child(3) {
   transition-delay: 120ms;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-why-section [data-landing-reveal][data-landing-revealed="true"] {
+  transform: none;
 }
 
 /* Part F keeps the learning slice dark but shifts from diagrams to quiet,
