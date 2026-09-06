@@ -10,7 +10,9 @@ export const guidedLessonMessages = {
     continue: "繼續",
     lessonComplete: "課程完成",
     finalChallengePending: "完成最終挑戰以完成課程。",
+    lastStagePending: "完成此階段以完成課程。",
     backToScenes: "返回場景",
+    restartLesson: "重新開始課程",
   },
   stages: {
     observe: "觀察",
@@ -40,21 +42,21 @@ export const guidedLessonMessages = {
       completionBody:
         "你以 Rise 修正構圖，以 Tilt 和 Focus 對齊及放置焦平面，最後用 Aperture 擴闊由前景到建築物的可用景深。",
     },
-    obliqueTabletop: {
-      lessonName: "斜向桌面攝影引導課程",
-      observeTitle: "觀察問題",
-      observeBody:
-        "調整相機之前，先比較對焦屏內看得見的桌面位置。對焦可以移動清晰位置，但斜向桌面在不同方向都有深度差異。",
-      completionBody:
-        "你利用前組俯仰與擺動定位同一個三維清晰焦平面，再用對焦把它放到桌面上，最後以光圈在已對齊的焦平面周圍增加景深。",
-    },
     interiorCorner: {
-      lessonName: "室內角落引導課程",
+      lessonName: "室內轉角——Rise + Swing 引導課程",
       observeTitle: "觀察問題",
       observeBody:
-        "調整相機之前，先觀察室內角落。上方細節需要仔細構圖，而延伸牆面橫跨不同深度，單靠對焦無法令近處至遠處同時保持清晰。",
+        "調整相機之前，先觀察對焦屏。上方建築細節在畫面中過於貼近邊緣，而其中一面延伸側牆上的細節跨越不同對焦距離。另一面牆只是空間背景，不是另一個清晰目標。",
       completionBody:
-        "你以前組上移完成角落構圖，以前組擺動定位焦平面，再用對焦將它放到延伸牆面上，最後適度收細光圈增加景深。",
+        "你以 Rise 修正構圖，以 Swing 和 Focus 將焦平面對齊延伸側牆，最後使用 Aperture 增加可用景深。",
+    },
+    obliqueTabletop: {
+      lessonName: "傾斜主體圖板攝影引導課程",
+      observeTitle: "觀察問題",
+      observeBody:
+        "調整相機之前，先比較對焦屏內看得見的主體圖板細節。對焦可以移動清晰位置，但傾斜圖板在不同方向都有深度差異。",
+      completionBody:
+        "你利用前組俯仰與擺動定位同一個三維清晰焦平面，再用對焦把它放到傾斜圖板上，最後以光圈在已對齊的焦平面周圍增加景深。",
     },
   },
 } satisfies MessageShape<typeof englishGuidedLessonMessages>;

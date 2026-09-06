@@ -1,14 +1,18 @@
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { useAppStore } from "../../state/appStore";
 import "../../i18n";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
+import { guidedLessonMessageKeys } from "../../i18n/guidedLessonMessageKeys";
 
 export const ResetControls = ({
   showTitle = true,
   showMovementReset = true,
+  restartHref,
 }: {
   showTitle?: boolean;
   showMovementReset?: boolean;
+  restartHref?: string;
 }) => {
   const { t } = useTranslation();
   const resetMovements = useAppStore((state) => state.resetMovements);
@@ -26,11 +30,15 @@ export const ResetControls = ({
             {t(simulatorMessageKeys.controls.resetMovementsButton)}
           </button>
         )}
-        {hasTask && (
+        {hasTask && restartHref ? (
+          <Link to={restartHref} aria-label={t(guidedLessonMessageKeys.common.restartLesson)} className="btn btn--secondary">
+            {t(guidedLessonMessageKeys.common.restartLesson)}
+          </Link>
+        ) : hasTask ? (
           <button type="button" onClick={restartTask} aria-label={t(simulatorMessageKeys.controls.restartTaskButton)} className="btn btn--secondary">
             {t(simulatorMessageKeys.controls.restartTaskButton)}
           </button>
-        )}
+        ) : null}
       </div>
     </section>
   );

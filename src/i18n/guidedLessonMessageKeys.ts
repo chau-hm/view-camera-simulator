@@ -7,7 +7,9 @@ export const guidedLessonMessageKeys = {
     continue: "guidedLesson.common.continue",
     lessonComplete: "guidedLesson.common.lessonComplete",
     finalChallengePending: "guidedLesson.common.finalChallengePending",
+    lastStagePending: "guidedLesson.common.lastStagePending",
     backToScenes: "guidedLesson.common.backToScenes",
+    restartLesson: "guidedLesson.common.restartLesson",
   },
   stages: {
     observe: "guidedLesson.stages.observe",
@@ -34,17 +36,17 @@ export const guidedLessonMessageKeys = {
       observeBody: "guidedLesson.lessons.architectureForeground.observeBody",
       completionBody: "guidedLesson.lessons.architectureForeground.completionBody",
     },
-    obliqueTabletop: {
-      lessonName: "guidedLesson.lessons.obliqueTabletop.lessonName",
-      observeTitle: "guidedLesson.lessons.obliqueTabletop.observeTitle",
-      observeBody: "guidedLesson.lessons.obliqueTabletop.observeBody",
-      completionBody: "guidedLesson.lessons.obliqueTabletop.completionBody",
-    },
     interiorCorner: {
       lessonName: "guidedLesson.lessons.interiorCorner.lessonName",
       observeTitle: "guidedLesson.lessons.interiorCorner.observeTitle",
       observeBody: "guidedLesson.lessons.interiorCorner.observeBody",
       completionBody: "guidedLesson.lessons.interiorCorner.completionBody",
+    },
+    obliqueTabletop: {
+      lessonName: "guidedLesson.lessons.obliqueTabletop.lessonName",
+      observeTitle: "guidedLesson.lessons.obliqueTabletop.observeTitle",
+      observeBody: "guidedLesson.lessons.obliqueTabletop.observeBody",
+      completionBody: "guidedLesson.lessons.obliqueTabletop.completionBody",
     },
   },
 } as const;
@@ -67,8 +69,8 @@ export type GuidedLessonCopyMessageKeys = {
 const guidedLessonCopyById: Record<string, GuidedLessonCopyMessageKeys> = {
   "oblique-architecture": guidedLessonMessageKeys.lessons.obliqueArchitecture,
   "architecture-foreground": guidedLessonMessageKeys.lessons.architectureForeground,
-  "oblique-tabletop": guidedLessonMessageKeys.lessons.obliqueTabletop,
   "interior-corner": guidedLessonMessageKeys.lessons.interiorCorner,
+  "oblique-tabletop": guidedLessonMessageKeys.lessons.obliqueTabletop,
 };
 
 export const getGuidedLessonCopyKeys = (lessonId: string): GuidedLessonCopyMessageKeys =>

@@ -1,41 +1,55 @@
-# PR #130 / PR12D — Review-fix handoff
-
-## Branch / base
-
-`feature/interior-corner-guided-lesson-12d` · `/private/tmp/view-camera-interior-corner-12d-fresh` · base `main` (latest fetched `origin/main` `766332e95ca42066f2f05e6f2f93d234ba45a79e`)
+# PR131 — Oblique Tabletop photographic plausibility
 
 ## Objective
 
-Harden the Interior Corner guided lesson integration so every guided task re-enters with the declarative finite-focus state while preserving the accepted Rise, Swing + Focus, and final Aperture contracts.
+Make Oblique Tabletop photographically plausible with a normal level worktable supporting one separate inclined subject/plan board, while preserving the existing optical, RTT, and guided-lesson contracts.
 
-## Lesson contract
+## Branch / base / head
 
-- Observe → Compose with Rise → Front Swing orientation → Refine Focus → Aperture.
-- Compose reaches the first valid public Rise at approximately `+33 mm`.
-- Swing is partial orientation only: `Swing +3.6° / Focus 8000 mm` passes Swing while still failing Refine.
-- Refine Focus is the first full near/middle/far wall-sharpness gate at `Swing +3.6° / Focus 38140 mm / f/5.6`.
-- Aperture preserves the aligned plane and completes at `f/11`; unrelated controls remain locked.
-- One receding wall remains the subject-plane contract; Free Practice remains unchanged at `f/5.6` with Rise, Swing, and Focus available.
+- Branch: `fix/oblique-tabletop-photographic-plausibility`
+- Worktree: `/Users/homan/repo/view-camera-oblique-tabletop-plausibility`
+- Base: `origin/main` at `8c8a211796ac81f20f560bc5076217251a4a13f2` (PR 11D.1 merged)
+- Previous reviewed PR131 head: `b51285ca7cd8d6398d0c4ac55aa85c99a4cb098b`
+- Post-sync merge commit: `3970a19ed2e567ad82a4dfd66a03e3c243926bdb`.
+- Final validation handoff: this file is refreshed at the post-sync branch tip; the exact final head is reported with the publication record.
 
-## Review-fix delta
+## Canonical geometry and surface
 
-- Shared Interior Corner guided initial camera state now explicitly includes `focusMode: "finite"`; existing route clamping records the same finite distance in `lastFiniteFocusDepthMm`.
-- Route/store regression starts from the real public Infinity action in another scene, enters the guided Aperture route, verifies finite `38140 mm` focus and physical focus preservation, then completes at `f/11`.
-- Re-entry after clearing route initialization and Restart Task both restore the finite task state.
-- Canonical durable handoff is this file; stale PR11B content was overwritten and duplicate `.agents/status/interior-corner-12d.md` was removed.
+- Level table: `4000 × 4200 × 100 mm`, with zero X/Y rotation.
+- Subject board: `2600 × 3000 × 60 mm`, `rotationX=-25°`, `rotationY=+40°`, centre `{x: 0, y: 361.116626, z: 4550}`.
+- `subjectBoardPlane` is the canonical optical and teaching subject plane. The upper physical board face is the single rendered photographed surface; the raised visible detail outer surface is the focus sample plane. The 3D subject, RTT, markers, samples, bounds, guides, and calibration all derive from the same board transform. No mirrored presentation copy remains.
+- Canonical board normal: `(-0.271654, 0.906308, -0.323744)`; camera-facing face dot-product evidence is `0.244851`.
+
+## Calibration and physical evidence
+
+- Continuous compound solution: Tilt `+7.062058°`, Swing `+2.128033°`, Focus `2498.863421 mm`.
+- Public compound solution: Tilt `+7.1°`, Swing `+2.1°`, Focus `2500 mm`, f/11.
+- Tilt-only state: Tilt `+3.6°`, Swing `0°`, Focus `3530 mm`, f/11.
+- All seven analytical samples pass at the public compound state; maximum measured CoC is `0.006784 mm`. The exhaustive public Tilt + Focus search still finds zero full-plane solutions, and opposite Swing remains materially worse.
+- Learner-visible interior targets remain inside the physical film footprint at neutral and compound states.
+
+## Guided progression
+
+- Swing stage: `+7.1° / +2.1° / 2440 mm` establishes lateral improvement while the full-target gate remains incomplete.
+- Refine Focus: preserves the same Tilt/Swing, changes Focus `2440 → 2500 mm`, and is the first full learner-visible-target sharpness gate.
+- Aperture remains the final f/22 stage; Free Practice remains fixed at f/11.
+
+## Thumbnail provenance
+
+The Oblique Tabletop raster scene card was regenerated earlier in PR131 to match the corrected normal-table / inclined-board concept. Later geometry refinements did not require another regeneration, and the current asset remains representative of the final scene. Current blob: `aec6f62a245458608a06aa54f69e9e5b59b133e0`.
 
 ## Validation
 
-- Focused affected suite: `15` files, `146` tests passed.
-- Full Vitest: `165` files, `1600` tests passed.
-- Typecheck, lint, CSS structure check, production build, and `git diff --check` passed.
-- Required `CI=1 npm run ci:local:e2e` passed CSS/lint/typecheck/Vitest/build and the earlier Chromium specs, then stopped at the baseline-only `mirror-shift-teaching-geometry.spec.ts` failure (1 failed, 1 passed; missing RTT marker). The exact spec reproduced the same result in a clean detached `origin/main` worktree at `766332e95ca42066f2f05e6f2f93d234ba45a79e`.
-- Current-head GitHub CI for corrective head `16a8824a`: run `33982329629` passed lint, type-check, and unit/integration tests; deploy was not a PR gate.
+- Focused Oblique Tabletop Vitest: 7 files / 106 tests passed, including marker/detail separation; the exhaustive Tilt-only proof completed in 3,163 ms.
+- Full `npm test`: 164 files / 1,599 tests passed in 14.06 s.
+- Typecheck, lint, `check:css`, build, and `git diff --check`: passed.
+- Focused Oblique Tabletop Chromium: 2/2 public guided-lesson and teaching-geometry specs passed in 1.1 min; Ground Glass remained present through both flows.
+- `CI=1 npm run ci:local:e2e`: CSS, lint, typecheck, 164/1,599 unit/integration tests, build, and earlier E2E specs passed; it stopped at `mirror-shift-teaching-geometry.spec.ts` because `data-rtt-final-contentful=true` was not observed within 30 s (1 test failed, 1 passed).
+- The same exact Mirror Shift spec reproduced on clean `origin/main` `8c8a211796ac81f20f560bc5076217251a4a13f2` with the same 1 failure / 1 pass result, so this remains an unrelated baseline E2E issue.
+- Current-head GitHub CI: pending for the final post-sync tip; deploy is expected to be skipped for the PR.
 
-## Tests not run
+## Scope and known gaps
 
-The remaining E2E specs after the baseline-only fail-fast stop were not run by `ci:local:e2e`; no new browser spec was added because the existing Interior Corner public lesson spec ran successfully within the required command.
+PR131 is a high-risk Oblique Tabletop simulation correction. Relative to its current main base it changes the subject geometry from a tilted whole table to a level table plus inclined board; updates the shared 3D/RTT renderer, optical calibration, teaching geometry, guided-task states/copy, physical regressions, and scene-card asset. Subsequent review corrections updated the canonical handoff, fixed asset provenance, and separated the learner-visible middle focus detail from the visual middle marker. No further recalibration or lesson redesign was introduced by the review fixes.
 
-## Deferred
-
-No new Interior Corner slice, lesson engine, optics/geometry change, renderer change, or task-boundary change is included. Further lesson work remains outside PR12D.
+The middle focus detail remains canonical at board-local `{x: 0, z: 0}`, while its marker is a nearby marker-only reference at `{x: 360, z: 0}`; a board-local regression prevents marker/detail coverage and the existing rendered-surface/probe contract remains intact. PR11D.1 landing files are part of the synchronized base, not PR131 scope. The current thumbnail remains unchanged at blob `aec6f62a245458608a06aa54f69e9e5b59b133e0`.

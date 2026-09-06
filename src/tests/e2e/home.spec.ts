@@ -40,7 +40,7 @@ const expectHeroTitleToFit = async (page: Page) => {
 
 test("home can navigate to Scenes page", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Start Exploring" }).click();
+  await page.getByTestId("landing-hero-cta").click();
   await expect(page).toHaveURL(/\/scenes$/);
   await expect(page.getByRole("heading", { name: "Scenes" })).toBeVisible();
 
@@ -123,10 +123,10 @@ test("Hero locale switching keeps the two-line composition and mobile catalog ac
 
 test("concept learning sections keep their responsive grids without overflow", async ({ page }) => {
   const viewports = [
-    { width: 1440, height: 900, fundamentals: 4, visualization: 3 },
-    { width: 1024, height: 800, fundamentals: 2, visualization: 3 },
-    { width: 768, height: 900, fundamentals: 2, visualization: 2 },
-    { width: 390, height: 844, fundamentals: 1, visualization: 1 },
+    { width: 1440, height: 900, fundamentals: 4, visualization: 3, why: 3 },
+    { width: 1024, height: 800, fundamentals: 2, visualization: 3, why: 3 },
+    { width: 768, height: 900, fundamentals: 2, visualization: 2, why: 2 },
+    { width: 390, height: 844, fundamentals: 1, visualization: 1, why: 1 },
   ];
 
   for (const viewport of viewports) {
@@ -135,6 +135,12 @@ test("concept learning sections keep their responsive grids without overflow", a
 
     await expect(page.getByTestId("landing-fundamentals-section")).toBeVisible();
     await expect(page.getByTestId("landing-visualization-section")).toBeVisible();
+    await expect(page.getByTestId("landing-why-section")).toBeVisible();
+    const finalCta = page.getByTestId("landing-final-cta-section");
+    await expect(finalCta).toBeVisible();
+    await expect(finalCta.getByRole("heading", { name: "Step into the simulator.", level: 2 })).toBeVisible();
+    await expect(finalCta.getByRole("link")).toHaveCount(1);
+    await expect(finalCta.getByRole("link")).toHaveAttribute("href", "/scenes");
 
     const columns = await page.evaluate(() => {
       const getColumnCount = (selector: string) => {
@@ -146,18 +152,24 @@ test("concept learning sections keep their responsive grids without overflow", a
       return {
         fundamentals: getColumnCount(".landing-concept-grid--fundamentals"),
         visualization: getColumnCount(".landing-concept-grid--visualization"),
+        why: getColumnCount(".landing-why-grid"),
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       };
     });
 
     expect(columns.fundamentals).toBe(viewport.fundamentals);
     expect(columns.visualization).toBe(viewport.visualization);
+    expect(columns.why).toBe(viewport.why);
     expect(columns.overflow).toBeLessThanOrEqual(2);
   }
 
   await page.locator(".language-selector select").selectOption("zh-HK");
   await expect(page.getByRole("heading", { name: "學習基礎原理", level: 2 })).toBeVisible();
   await expect(page.getByRole("heading", { name: "三種視覺化方式", level: 2 })).toBeVisible();
+  await expect(page.getByText("為甚麼重要")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "為甚麼仍然值得學大片幅相機？", level: 3 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "進入模擬器。", level: 2 })).toBeVisible();
+  await expect(page.getByRole("link", { name: "開始探索" })).toHaveAttribute("href", "/scenes");
   await expect(page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).resolves.toBeLessThanOrEqual(2);
 });
 

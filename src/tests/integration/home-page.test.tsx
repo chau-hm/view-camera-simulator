@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { routes } from "../../app/router";
@@ -16,9 +16,9 @@ describe("home page", () => {
     expect(h1s[0]).toHaveTextContent("Shape Perspective. Place Focus.");
 
     // The Hero has one catalog CTA.
-    const explore = await screen.findByText("Start Exploring");
-    expect(explore).toBeInTheDocument();
-    expect(explore.closest('a')).toHaveAttribute('href', '/scenes');
+    const explore = await screen.findByTestId("landing-hero-cta");
+    expect(explore).toHaveTextContent("Start Exploring");
+    expect(explore).toHaveAttribute("href", "/scenes");
 
     // approved hero artwork wrapper present (decorative, aria-hidden)
     const heroWrap = document.querySelector('.landing-hero__artwork');
@@ -39,27 +39,6 @@ describe("home page", () => {
       expect(heroSrc.startsWith(base)).toBe(true);
     }
 
-    // info cards: headings should be h2 and present exactly once each
-    const cardHeadings = [
-      'What can a view camera control before exposure?',
-      'Why do camera movements matter?',
-      'Why do artists still use view cameras?'
-    ];
-
-    for (const h of cardHeadings) {
-      const el = await screen.findByRole('heading', { name: h, level: 2 });
-      expect(el).toBeInTheDocument();
-    }
-
-    // ensure short previous headings are not present
-    expect(screen.queryByText('Why use a view camera?')).toBeNull();
-    expect(screen.queryByText('When is the camera simpler?')).toBeNull();
-    expect(screen.queryByText('Why artists still use it')).toBeNull();
-
-    // verify full paragraphs are present
-    expect(screen.getByText(/A view camera separates decisions that are often bundled together: where the camera observes from, how the subject is framed, how the image geometry is controlled, and where the plane of sharp focus lies\./)).toBeTruthy();
-    expect(screen.getByText(/Rise and shift can change framing without moving the viewpoint\. Tilt and swing can rotate the plane of sharp focus\./)).toBeTruthy();
-    expect(screen.getByText(/A view camera slows the process down. The upside-down image on the ground glass encourages careful looking, and every movement becomes a deliberate choice\./)).toBeTruthy();
     expect(screen.queryByTestId("faq-section")).not.toBeInTheDocument();
     expect(screen.queryByText("Who is View Camera Simulator for?")).not.toBeInTheDocument();
   });
@@ -95,11 +74,25 @@ describe("home page", () => {
 
     const fundamentals = await screen.findByTestId("landing-fundamentals-section");
     const visualization = await screen.findByTestId("landing-visualization-section");
+    const why = await screen.findByTestId("landing-why-section");
+    const finalCta = await screen.findByTestId("landing-final-cta-section");
 
     expect(screen.getByRole("heading", { name: "Learn the Fundamentals", level: 2 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Three Ways to Visualize", level: 2 })).toBeInTheDocument();
+    expect(screen.getByText("WHY IT MATTERS")).toBeInTheDocument();
+    expect(why.querySelectorAll(".landing-why-section__title-line")).toHaveLength(2);
+    expect(within(why).getByRole("heading", { level: 2 })).toHaveTextContent("More control before the shot.");
+    expect(within(why).getByRole("heading", { level: 2 })).toHaveTextContent("A deeper way to see.");
     expect(fundamentals.querySelectorAll(".landing-concept-card")).toHaveLength(4);
     expect(visualization.querySelectorAll(".landing-concept-card")).toHaveLength(3);
+    expect(why.querySelectorAll(".landing-why-card")).toHaveLength(3);
+    expect(within(finalCta).getByRole("heading", { name: "Step into the simulator.", level: 2 })).toBeInTheDocument();
+    expect(
+      within(finalCta).getByText("Put these ideas into practice through guided large-format camera scenes."),
+    ).toBeInTheDocument();
+    expect(within(finalCta).getByRole("link", { name: "Start Exploring" })).toHaveAttribute("href", "/scenes");
+    expect(finalCta.querySelectorAll("a")).toHaveLength(1);
+    expect(finalCta.querySelector("img")).toHaveAttribute("src", expect.stringContaining("assets/landing/final-cta.webp"));
 
     const assetPaths = [
       "fundamentals-perspective-control.webp",
@@ -116,11 +109,52 @@ describe("home page", () => {
       expect(referencedAssets.some((image) => image.getAttribute("src")?.includes(assetPath))).toBe(true);
     }
 
+    const whyAssetPaths = [
+      "why-control-before-shot.webp",
+      "why-camera-movements.webp",
+      "why-large-format-learning.webp",
+    ];
+    const whyImages = Array.from(why.querySelectorAll(".landing-why-card img"));
+    expect(whyImages).toHaveLength(3);
+    for (const assetPath of whyAssetPaths) {
+      expect(whyImages.some((image) => image.getAttribute("src")?.includes(assetPath))).toBe(true);
+    }
+
+    expect(within(why).getByRole("heading", { name: "What can you control before exposure?", level: 3 })).toBeInTheDocument();
+    expect(within(why).getByRole("heading", { name: "Why do camera movements matter?", level: 3 })).toBeInTheDocument();
+    expect(within(why).getByRole("heading", { name: "Why is large-format camera still worth learning?", level: 3 })).toBeInTheDocument();
+    expect(
+      within(why).getByText(
+        "Camera position, composition, image geometry, and the plane of sharp focus are separate decisions. A view camera makes those relationships explicit before exposure.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(why).getByText(
+        "Rise and shift can recompose while the whole-camera viewpoint stays fixed. Tilt and swing change the orientation of the plane of sharp focus. Move the whole camera, and viewpoint, perspective, and parallax change.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(why).getByText(
+        "The slower process turns each adjustment into a deliberate decision. An inverted Ground Glass encourages you to inspect edges, planes, focus, and spatial relationships before exposure.",
+      ),
+    ).toBeInTheDocument();
+
     expect(fundamentals.querySelectorAll("input, button, select, textarea")).toHaveLength(0);
     expect(visualization.querySelectorAll("input, button, select, textarea")).toHaveLength(0);
+    expect(why.querySelectorAll("input, button, select, textarea")).toHaveLength(0);
     expect(screen.queryByText("Scene Gallery")).not.toBeInTheDocument();
     expect(screen.queryByText("Learn Through Scenes")).not.toBeInTheDocument();
+    expect(screen.queryByText("Why do artists still use view cameras?")).not.toBeInTheDocument();
+    expect(document.querySelector(".landing-home__legacy")).toBeNull();
+    expect(document.querySelector(".site-shell--landing-home .desktop-experience-notice")).toBeNull();
+    expect(document.querySelector(".landing-info-section")).toBeNull();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByTestId("landing-hero-cta")).toHaveAttribute("href", "/scenes");
+
+    expect(
+      visualization.compareDocumentPosition(why) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(why.compareDocumentPosition(finalCta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.querySelector(".site-shell--landing-home .marketing-container")?.lastElementChild).toBe(finalCta);
   });
 });

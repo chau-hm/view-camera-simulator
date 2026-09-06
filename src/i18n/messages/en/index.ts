@@ -4,6 +4,7 @@ import { readoutsMessages } from "./readouts";
 import { scenesMessages } from "./scenes";
 import { simulatorMessages } from "./simulator";
 import { tasksMessages } from "./tasks";
+import { interiorCornerTaskMessages } from "./interiorCornerTasks";
 import { guidedLessonMessages } from "./guidedLesson";
 import { lessonZeroMessages } from "./lessonZero";
 
@@ -13,7 +14,10 @@ export const enMessages = {
   readouts: readoutsMessages,
   scenes: scenesMessages,
   simulator: simulatorMessages,
-  tasks: tasksMessages,
+  tasks: {
+    ...tasksMessages,
+    ...interiorCornerTaskMessages,
+  },
   guidedLesson: guidedLessonMessages,
   lessonZero: lessonZeroMessages,
 } as const;

@@ -5,6 +5,11 @@ import "../i18n";
 import { AppShell } from "../components/layout/AppShell";
 import { getTaskById } from "../core/tasks/taskRegistry";
 import { getSceneById } from "../scenes/definitions";
+import {
+  INTERIOR_CORNER_GUIDED_TASK_IDS,
+  isInteriorCornerGuidedStageEntryRecoverable,
+} from "../scenes/interiorCornerGuidedLesson";
+import { useAppStore } from "../state/appStore";
 import { getPublicSceneEntries, getPublicSceneEntryById } from "./publicScenes";
 import { isValidSimulatorRoute } from "./simulatorRouteValidation";
 import type { SimulatorMode } from "../types/camera";
@@ -12,7 +17,8 @@ import type { SimulatorMode } from "../types/camera";
 import { LandingHero } from "../components/marketing/LandingHero";
 import { LandingFundamentalsSection } from "../components/marketing/LandingFundamentalsSection";
 import { LandingVisualizationSection } from "../components/marketing/LandingVisualizationSection";
-import { InfoCard } from "../components/marketing/InfoCard";
+import { LandingWhyItMattersSection } from "../components/marketing/LandingWhyItMattersSection";
+import { LandingFinalCtaSection } from "../components/marketing/LandingFinalCtaSection";
 import { SceneCard } from "../components/marketing/SceneCard";
 import { DesktopExperienceNotice } from "../components/marketing/DesktopExperienceNotice";
 import { FaqSection } from "../components/marketing/FaqSection";
@@ -22,8 +28,6 @@ const SimulatorWorkspace = lazy(() =>
 );
 
 export const HomePage = () => {
-  const { t } = useTranslation();
-
   return (
     <AppShell title="" siteShellClassName="site-shell--landing-home">
       <LandingHero />
@@ -33,34 +37,8 @@ export const HomePage = () => {
         <LandingVisualizationSection />
       </div>
 
-      <div className="landing-home__legacy">
-        <DesktopExperienceNotice />
-
-        <section id="why" className="landing-info-section" aria-label={t("home.why.ariaLabel")}>
-          <div className="landing-info-list">
-            <InfoCard
-              icon={<span className="material-symbols-outlined">architecture</span>}
-              title={t("home.info.control.title")}
-            >
-              {t("home.info.control.body")}
-            </InfoCard>
-
-            <InfoCard
-              icon={<span className="material-symbols-outlined">open_with</span>}
-              title={t("home.info.movements.title")}
-            >
-              {t("home.info.movements.body")}
-            </InfoCard>
-
-            <InfoCard
-              icon={<span className="material-symbols-outlined">person</span>}
-              title={t("home.info.artists.title")}
-            >
-              {t("home.info.artists.body")}
-            </InfoCard>
-          </div>
-        </section>
-      </div>
+      <LandingWhyItMattersSection />
+      <LandingFinalCtaSection />
     </AppShell>
   );
 };
@@ -121,6 +99,10 @@ export const SimulatorRoutePage = () => {
     taskId?: string;
   }>();
   const [searchParams] = useSearchParams();
+  const camera = useAppStore((state) => state.camera);
+  const lastInitializedRouteKey = useAppStore(
+    (state) => state.lastInitializedRouteKey,
+  );
   const parsedMode: SimulatorMode | null =
     mode === "free" || mode === "guided" ? mode : null;
   const resolvedSceneId = sceneId ?? "architecture-rise";
@@ -128,6 +110,8 @@ export const SimulatorRoutePage = () => {
   const publicEntry = getPublicSceneEntryById(resolvedSceneId);
   const resolvedTask = taskId ? getTaskById(taskId) : undefined;
   const anatomyLessonEnabled = publicEntry?.lesson?.kind === "anatomy";
+  const guidedLessonEnabled =
+    searchParams.get("lesson") === "1" && Boolean(publicEntry?.guidedLesson);
 
   if (
     !scene ||
@@ -145,6 +129,21 @@ export const SimulatorRoutePage = () => {
     return <Navigate to="/scenes" replace />;
   }
 
+  if (
+    guidedLessonEnabled &&
+    parsedMode === "guided" &&
+    resolvedSceneId === "interior-corner" &&
+    taskId &&
+    taskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.compose &&
+    !isInteriorCornerGuidedStageEntryRecoverable({
+      taskId,
+      camera,
+      lastInitializedRouteKey,
+    })
+  ) {
+    return <Navigate to="/simulator/free/interior-corner?lesson=1" replace />;
+  }
+
   return (
     <AppShell title="" fullBleed>
       <Suspense fallback={<p>Loading simulator workspace…</p>}>
@@ -152,7 +151,7 @@ export const SimulatorRoutePage = () => {
           mode={parsedMode}
           sceneId={resolvedSceneId}
           taskId={taskId ?? null}
-          guidedLessonEnabled={searchParams.get("lesson") === "1" && Boolean(publicEntry.guidedLesson)}
+          guidedLessonEnabled={guidedLessonEnabled}
           anatomyLessonEnabled={anatomyLessonEnabled}
           calibrationEnabled={parsedMode === "free" && resolvedSceneId === "understanding-camera-movements" && searchParams.get("cameraCalibration") === "1"}
           simulateAssetFailure={searchParams.get("assetError") === "1"}

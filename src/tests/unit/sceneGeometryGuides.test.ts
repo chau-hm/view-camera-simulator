@@ -150,7 +150,7 @@ describe("scene geometry guides", () => {
     expect(guides[0].endWorld).toEqual(obliqueArchitectureGeometry.focusTargets[2].worldPosition);
   });
 
-  it("registers Oblique Tabletop side and top traces from the canonical subject plane", () => {
+  it("registers Oblique Tabletop side and top traces from the canonical subject-board plane", () => {
     const guides = getSceneGeometryGuides("oblique-tabletop");
     expect(guides).toHaveLength(2);
     expect(guides).toEqual(
@@ -158,30 +158,30 @@ describe("scene geometry guides", () => {
         expect.objectContaining({
           id: "oblique-tabletop-near-far-plane",
           view: "side",
-          sourcePlaneId: "tabletopTopSurfacePlane",
+          sourcePlaneId: "subjectBoardPlane",
           teachingComponent: "near-far",
           labelMessageKey: simulatorMessageKeys.geometry.obliqueTabletopNearFarGuide,
         }),
         expect.objectContaining({
           id: "oblique-tabletop-left-right-plane",
           view: "top",
-          sourcePlaneId: "tabletopTopSurfacePlane",
+          sourcePlaneId: "subjectBoardPlane",
           teachingComponent: "left-right",
           labelMessageKey: simulatorMessageKeys.geometry.obliqueTabletopLeftRightGuide,
         }),
       ]),
     );
     expect(guides[0].startWorld).toEqual(
-      obliqueTabletopGeometry.tabletopExtents.near.topSurfaceCenterWorld,
+      obliqueTabletopGeometry.subjectBoardExtents.near.surfaceCenterWorld,
     );
     expect(guides[0].endWorld).toEqual(
-      obliqueTabletopGeometry.tabletopExtents.far.topSurfaceCenterWorld,
+      obliqueTabletopGeometry.subjectBoardExtents.far.surfaceCenterWorld,
     );
     expect(guides[1].startWorld).toEqual(
-      obliqueTabletopGeometry.tabletopExtents.left.topSurfaceCenterWorld,
+      obliqueTabletopGeometry.subjectBoardExtents.left.surfaceCenterWorld,
     );
     expect(guides[1].endWorld).toEqual(
-      obliqueTabletopGeometry.tabletopExtents.right.topSurfaceCenterWorld,
+      obliqueTabletopGeometry.subjectBoardExtents.right.surfaceCenterWorld,
     );
   });
 
