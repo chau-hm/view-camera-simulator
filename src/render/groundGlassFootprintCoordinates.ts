@@ -19,6 +19,8 @@ export const groundGlassFootprintAxesToRttPixels = (input: {
   renderHeightPx: number;
   filmWidthMm: number;
   filmHeightMm: number;
+  /** Presentation-only scale applied after physical film-to-pixel conversion. */
+  inspectionMagnification?: number;
 }): GroundGlassFootprintPixelAxes => {
   const values = [
     input.majorRadiusMm,
@@ -28,6 +30,7 @@ export const groundGlassFootprintAxesToRttPixels = (input: {
     input.renderHeightPx,
     input.filmWidthMm,
     input.filmHeightMm,
+    input.inspectionMagnification ?? 1,
   ];
   if (!values.every(Number.isFinite) ||
       input.majorRadiusMm <= 0 ||
@@ -38,6 +41,10 @@ export const groundGlassFootprintAxesToRttPixels = (input: {
       input.filmHeightMm <= 0) {
     return { majorAxisPx: [0, 0], minorAxisPx: [0, 0] };
   }
+  const inspectionMagnification = input.inspectionMagnification ?? 1;
+  if (!Number.isFinite(inspectionMagnification) || inspectionMagnification <= 0) {
+    return { majorAxisPx: [0, 0], minorAxisPx: [0, 0] };
+  }
 
   const cos = Math.cos(input.orientationRad);
   const sin = Math.sin(input.orientationRad);
@@ -46,12 +53,12 @@ export const groundGlassFootprintAxesToRttPixels = (input: {
 
   return {
     majorAxisPx: [
-      cos * input.majorRadiusMm * scaleX,
-      -sin * input.majorRadiusMm * scaleY,
+      cos * input.majorRadiusMm * scaleX * inspectionMagnification,
+      -sin * input.majorRadiusMm * scaleY * inspectionMagnification,
     ],
     minorAxisPx: [
-      -sin * input.minorRadiusMm * scaleX,
-      -cos * input.minorRadiusMm * scaleY,
+      -sin * input.minorRadiusMm * scaleX * inspectionMagnification,
+      -cos * input.minorRadiusMm * scaleY * inspectionMagnification,
     ],
   };
 };

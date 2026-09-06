@@ -27,6 +27,7 @@ describe("Ground Glass visual settings", () => {
     expect(getGroundGlassDofVisualSettings(shelfSwingScene.id)).toEqual({
       maximumBlurRadiusPx: 42,
       planeMode: "derived-planes",
+      inspectionMagnification: 4,
     });
     expect(optics.diagnostics.groundGlassDofModel).toBe("parallel-thin-lens");
     expect(display.diagnostics.groundGlassDofModel).toBe("derived-planes");
@@ -46,6 +47,7 @@ describe("Ground Glass visual settings", () => {
     ]) {
       const settings = getGroundGlassDofVisualSettings(sceneId);
       expect("displayBlurScale" in settings).toBe(false);
+      expect(settings.inspectionMagnification).toBe(4);
     }
   });
 

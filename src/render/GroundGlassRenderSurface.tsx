@@ -8,6 +8,7 @@ import type {
   GroundGlassRttRuntimeInfo,
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "./groundGlassRttDimensions";
+import { getGroundGlassDofVisualSettings } from "./groundGlassVisualSettings";
 
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
@@ -55,12 +56,15 @@ export const GroundGlassRenderSurface = ({
   const rttRuntimeInfo = explicitRuntimeInfo;
   const runtimeInfoChange = explicitRuntimeInfoChange;
   const sceneId = scene.id;
+  const inspectionMagnification = getGroundGlassDofVisualSettings(sceneId).inspectionMagnification;
   if (isGroundGlassRttScene(sceneId)) {
     return (
       <div
         data-testid="ground-glass-rtt"
         data-rtt-channel={channel}
         data-rtt-scene-id={sceneId}
+        data-focus-inspection-magnification={inspectionMagnification}
+        data-focus-inspection-active={!rawDebug ? "true" : "false"}
         data-rtt-camera-ok={rttRuntimeInfo?.cameraConfigurationOk === undefined ? undefined : String(rttRuntimeInfo.cameraConfigurationOk)}
         data-rtt-depth-available={rttRuntimeInfo?.depthTextureAvailable === undefined ? undefined : String(rttRuntimeInfo.depthTextureAvailable)}
         data-rtt-uniforms-finite={rttRuntimeInfo?.uniformsFinite === undefined ? undefined : String(rttRuntimeInfo.uniformsFinite)}

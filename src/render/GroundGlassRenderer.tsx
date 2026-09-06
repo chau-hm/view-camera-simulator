@@ -1,5 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import "../i18n";
+import { simulatorMessageKeys } from "../i18n/simulatorMessageKeys";
 import { GroundGlassStage } from "./GroundGlassStage";
 import { GroundGlassRenderSurface } from "./GroundGlassRenderSurface";
 import { GroundGlassTransformedOverlays, GroundGlassFixedOverlays } from "./GroundGlassOverlays";
@@ -16,6 +19,7 @@ import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { formatGroundGlassFocusLabel } from "./groundGlassFocusLabel";
 import { resolveGroundGlassPresentationPolicy } from "./groundGlassPresentationPolicy";
+import { getGroundGlassDofVisualSettings } from "./groundGlassVisualSettings";
 import type {
   GroundGlassRttChannel,
   GroundGlassRttRuntimeInfo,
@@ -99,9 +103,11 @@ export const GroundGlassRenderer = ({
   resetActionLabel,
   lastFiniteFocusDepthMm: explicitLastFiniteFocusDepthMm,
 }: GroundGlassRendererProps) => {
+  const { t } = useTranslation();
   const resolvedFocusDistanceMm = cameraState?.focusDistanceMm ?? focusDistanceMm;
   const resolvedAperture = cameraState?.aperture ?? aperture;
   const sceneId = scene.id;
+  const inspectionMagnification = getGroundGlassDofVisualSettings(sceneId).inspectionMagnification;
   // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
   const isRttScene = isGroundGlassRttScene(sceneId);
   const [rttLogicalSize, setRttLogicalSize] = useState({
@@ -263,6 +269,21 @@ export const GroundGlassRenderer = ({
         imageLayer={transformedImageLayer}
         fixedOverlayLayer={fixedOverlayLayer}
       />
+      {isRttSceneFinal && !rawDebug && (
+        <div
+          data-testid="ground-glass-focus-inspection"
+          style={{
+            color: "#64748b",
+            fontSize: "0.75rem",
+            lineHeight: 1.25,
+            textAlign: "right",
+          }}
+        >
+          {t(simulatorMessageKeys.viewport.focusInspection, {
+            magnification: inspectionMagnification,
+          })}
+        </div>
+      )}
       {/* Current Settings & Focus Fundamentals Debug and Focus Targets are rendered by the parent GroundGlassViewport to allow controls to appear immediately after the canvas. */}
     </div>
   );

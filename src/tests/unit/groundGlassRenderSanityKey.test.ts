@@ -159,6 +159,13 @@ describe("groundGlassRenderSanityKey", () => {
     expect(makeKey(o)).not.toBe(makeKey(o, { internalWidthPx: 320 }));
   });
 
+  it("changing inspection magnification changes the key", () => {
+    const o = buildOptics();
+    expect(makeKey(o, { inspectionMagnification: 4 })).not.toBe(
+      makeKey(o, { inspectionMagnification: 1 }),
+    );
+  });
+
   it("null focus/DOF planes serialize deterministically", () => {
     const o = buildOptics();
     const key1 = makeKey(o);

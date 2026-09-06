@@ -120,7 +120,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     : CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
   const resolvedSceneId = sceneDefinition.id;
   const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
-  const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
+  const { maximumBlurRadiusPx, inspectionMagnification } =
+    getGroundGlassDofVisualSettings(resolvedSceneId);
   const profilingEnabled = isGroundGlassProfilingEnabled();
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
@@ -273,6 +274,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       renderWidthPx: dimsRef.current.internalWidthPx,
+      inspectionMagnification,
     });
     const initialFootprintStorageMaxMm = Math.max(1e-6, initialCocStorageMaxMm * 0.5);
     const gatherRT = new THREE.WebGLRenderTarget(
@@ -348,6 +350,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
+        inspectionMagnification: { value: inspectionMagnification },
         circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
         filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
@@ -393,6 +396,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
+        inspectionMagnification: { value: inspectionMagnification },
         circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
         filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
@@ -512,6 +516,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           gatherScale: initialQualitySettings.gatherScale,
           sampleCount: initialQualitySettings.sampleCount,
           maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
+          inspectionMagnification,
           cocStorageFormat: cocStorage.storageFormat,
           cocAvailable: true,
           cocTargetWidthPx: cocW,
@@ -615,6 +620,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   }, [
     gl,
     maximumBlurRadiusPx,
+    inspectionMagnification,
     profilingEnabled,
     readRuntimeInfo,
     resolvedSceneId,
@@ -770,6 +776,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       maximumCoCRadiusPx: resizedMaximumCoCRadiusPx,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       renderWidthPx: dims.internalWidthPx,
+      inspectionMagnification,
     });
     cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
     gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
@@ -830,6 +837,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         maximumBlurRadiusPx,
         qualitySettings.maximumCoCRadiusPx,
       ),
+      inspectionMagnification,
       cocStorageFormat: post.cocStorageFormat,
       cocAvailable: true,
       cocTargetWidthPx: post.cocRT.width,
@@ -849,7 +857,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       resourceGeneration: resourceGenerationRef.current,
       profilingSnapshot: undefined,
     });
-  }, [gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
+  }, [gl, heightPx, inspectionMagnification, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
 
   useFrame((_state, frameDelta) => {
     if (!renderTarget.current || !offscreenScene.current) return;
@@ -1071,6 +1079,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         maximumCoCRadiusPx: currentMaximumCoCRadiusPx,
         filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
         renderWidthPx: dimsRef.current.internalWidthPx,
+        inspectionMagnification,
       });
       const footprintStorageMaxMm = Math.max(1e-6, cocStorageMaxMm * 0.5);
 
@@ -1108,6 +1117,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           dimsRef.current.internalWidthPx,
           dimsRef.current.internalHeightPx,
           currentMaximumCoCRadiusPx,
+          inspectionMagnification,
         );
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);
@@ -1199,6 +1209,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         aperture: aperture,
         internalWidthPx: dimsRef.current.internalWidthPx,
         internalHeightPx: dimsRef.current.internalHeightPx,
+        inspectionMagnification,
         opticsState,
         configuredCameraPose: configuredPose,
       });

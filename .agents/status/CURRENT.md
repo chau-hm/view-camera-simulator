@@ -1,55 +1,46 @@
-# PR131 — Oblique Tabletop photographic plausibility
+# Ground Glass focus inspection fidelity
 
 ## Objective
 
-Make Oblique Tabletop photographically plausible with a normal level worktable supporting one separate inclined subject/plan board, while preserving the existing optical, RTT, and guided-lesson contracts.
+Correct the learner-facing Ground Glass presentation mismatch observed in PR131 by adding an explicit presentation-only focus-inspection magnification. Physical optics, task evaluation, calibration, and thresholds remain unchanged.
 
-## Branch / base / head
+## Branch / base
 
-- Branch: `fix/oblique-tabletop-photographic-plausibility`
-- Worktree: `/Users/homan/repo/view-camera-oblique-tabletop-plausibility`
-- Base: `origin/main` at `8c8a211796ac81f20f560bc5076217251a4a13f2` (PR 11D.1 merged)
-- Previous reviewed PR131 head: `b51285ca7cd8d6398d0c4ac55aa85c99a4cb098b`
-- Post-sync merge commit: `3970a19ed2e567ad82a4dfd66a03e3c243926bdb`.
-- Final validation handoff: this file is refreshed at the post-sync branch tip; the exact final head is reported with the publication record.
+- Branch: `fix/ground-glass-focus-inspection-fidelity`
+- Worktree: `/Users/homan/repo/view-camera-ground-glass-focus-inspection-fidelity`
+- Base: `origin/main` at `13c2ad9c46b473584162b2eb05c7cd65a113d61a` (PR131 merged)
+- Starting head: `13c2ad9c46b473584162b2eb05c7cd65a113d61a`; final head will be recorded after publication.
 
-## Canonical geometry and surface
+## Presentation model
 
-- Level table: `4000 × 4200 × 100 mm`, with zero X/Y rotation.
-- Subject board: `2600 × 3000 × 60 mm`, `rotationX=-25°`, `rotationY=+40°`, centre `{x: 0, y: 361.116626, z: 4550}`.
-- `subjectBoardPlane` is the canonical optical and teaching subject plane. The upper physical board face is the single rendered photographed surface; the raised visible detail outer surface is the focus sample plane. The 3D subject, RTT, markers, samples, bounds, guides, and calibration all derive from the same board transform. No mirrored presentation copy remains.
-- Canonical board normal: `(-0.271654, 0.906308, -0.323744)`; camera-facing face dot-product evidence is `0.244851`.
+- `inspectionMagnification` is owned by Ground Glass visual settings and defaults to `4×` for all scenes; no scene-specific blur multiplier was added.
+- The display path is physical CoC/ellipse in millimetres → film-mm-to-pixel conversion → `4×` inspection magnification → existing display-radius cap → gather. Scalar and oriented ellipse paths use the same factor, with orientation and signed physical values preserved.
+- The CPU display helpers and GLSL uniforms share the same conversion. `signedCocMm`, physical ellipse radii, equivalent CoC, learner sharpness, task thresholds, and the `0.1 mm` acceptable CoC contract remain unchanged.
+- Encoded-byte storage accounts for magnification when resolving the physical range represented by the display cap; half-float physical-mm storage remains unchanged. `displayBlurScale` remains rejected.
+- Raw RTT developer bypass remains an unmodified sharp-source path; the public focus-inspection label is localized as `Focus inspection · 4×` / `對焦檢視 · 4×`.
 
-## Calibration and physical evidence
+## Evidence
 
-- Continuous compound solution: Tilt `+7.062058°`, Swing `+2.128033°`, Focus `2498.863421 mm`.
-- Public compound solution: Tilt `+7.1°`, Swing `+2.1°`, Focus `2500 mm`, f/11.
-- Tilt-only state: Tilt `+3.6°`, Swing `0°`, Focus `3530 mm`, f/11.
-- All seven analytical samples pass at the public compound state; maximum measured CoC is `0.006784 mm`. The exhaustive public Tilt + Focus search still finds zero full-plane solutions, and opposite Swing remains materially worse.
-- Learner-visible interior targets remain inside the physical film footprint at neutral and compound states.
+- Pre-change neutral Oblique Tabletop evidence showed physical CoCs from `0.000303 mm` (middle) to `0.145038 mm` (near-right), while at 1× the `0.1 mm` boundary was only about `0.307 CSS px` diameter on the normal Ground Glass. The learner scores were unchanged: middle `100%`, near-centre `25%`, near-right `0%`, far-left `11%`.
+- Magnification candidates `1×`, `2×`, `4×`, and `6×` were evaluated; `4×` was selected as the smallest plausible setting that made the accepted neutral ordering inspectable without changing the physics. Normal and expanded Oblique Tabletop browser captures showed the middle reference visibly sharper than the soft targets.
+- Accepted Oblique states were visually checked: neutral, Tilt-only `+3.6° / 3530 mm`, compound `+7.1° / +2.1° / 2500 mm`, Swing partial `2440 mm`, Refine `2500 mm`, and f/11 versus f/22. Existing physical score and calibration assertions remain green.
+- Cross-scene focused rendering/profiling remains on the shared pipeline; no scene geometry or calibration was changed.
 
-## Guided progression
+## Performance
 
-- Swing stage: `+7.1° / +2.1° / 2440 mm` establishes lateral improvement while the full-target gate remains incomplete.
-- Refine Focus: preserves the same Tilt/Swing, changes Focus `2440 → 2500 mm`, and is the first full learner-visible-target sharpness gate.
-- Aperture remains the final f/22 stage; Free Practice remains fixed at f/11.
-
-## Thumbnail provenance
-
-The Oblique Tabletop raster scene card was regenerated earlier in PR131 to match the corrected normal-table / inclined-board concept. Later geometry refinements did not require another regeneration, and the current asset remains representative of the final scene. Current blob: `aec6f62a245458608a06aa54f69e9e5b59b133e0`.
+At normal/high Ground Glass quality in the real browser profiling path (CPU fallback, DPR 2, internal/gather `784×628`, 32 samples): neutral averaged `434.7 ms` frame, Tilt-only `418.5 ms`, and compound `383.1 ms`; physical DOF submit averages were `3.01 ms`, `0.03 ms`, and `0.04 ms` respectively in the sampled windows. The gather configuration and sample count did not increase.
 
 ## Validation
 
-- Focused Oblique Tabletop Vitest: 7 files / 106 tests passed, including marker/detail separation; the exhaustive Tilt-only proof completed in 3,163 ms.
-- Full `npm test`: 164 files / 1,599 tests passed in 14.06 s.
+- Focused Ground Glass Vitest: `7` files / `72` tests passed, including settings, shader, uniform, storage, footprint, CPU/RTT, renderer, stability, physical invariance, and byte-ordering coverage.
+- Full `npm test`: `164` files / `1607` tests passed in `19.81 s`.
 - Typecheck, lint, `check:css`, build, and `git diff --check`: passed.
-- Focused Oblique Tabletop Chromium: 2/2 public guided-lesson and teaching-geometry specs passed in 1.1 min; Ground Glass remained present through both flows.
-- `CI=1 npm run ci:local:e2e`: CSS, lint, typecheck, 164/1,599 unit/integration tests, build, and earlier E2E specs passed; it stopped at `mirror-shift-teaching-geometry.spec.ts` because `data-rtt-final-contentful=true` was not observed within 30 s (1 test failed, 1 passed).
-- The same exact Mirror Shift spec reproduced on clean `origin/main` `8c8a211796ac81f20f560bc5076217251a4a13f2` with the same 1 failure / 1 pass result, so this remains an unrelated baseline E2E issue.
-- Current-head GitHub CI: pending for the final post-sync tip; deploy is expected to be skipped for the PR.
+- Focused Oblique Tabletop Chromium: `2/2` passed (`oblique-tabletop-guided-lesson.spec.ts`, `oblique-tabletop-teaching-geometry.spec.ts`); the real route showed the inspection indicator, healthy canvas, and normal/expanded presentation.
+- Cross-scene Chromium smoke: `8/8` passed across Oblique Architecture, Interior Corner, Ground Glass profiling, and Raw RTT bypass.
+- Temporary three-state profiling probe passed and was removed before commit. At high quality / CPU fallback / DPR 2 / internal-gather `784×628` / 32 samples, neutral/Tilt-only/compound averaged `434.7/418.5/383.1 ms` per frame.
+- `CI=1 npm run ci:local:e2e`: CSS, lint, typecheck, `164/1607` unit/integration tests, build, and preceding browser specs passed; it stopped in `groundglass-interaction.spec.ts` with the Architecture Rise re-zoom/reset test timing out. The exact test was rerun on clean current `origin/main` `13c2ad9c46b473584162b2eb05c7cd65a113d61a`: one run passed, while a two-worker repeat reproduced the same test's timeout twice at separate interaction points. This is retained as an existing intermittent baseline issue; no unrelated test was weakened.
+- Current-head GitHub CI: pending publication; the new PR head must be checked after push.
 
-## Scope and known gaps
+## Scope / known gaps
 
-PR131 is a high-risk Oblique Tabletop simulation correction. Relative to its current main base it changes the subject geometry from a tilted whole table to a level table plus inclined board; updates the shared 3D/RTT renderer, optical calibration, teaching geometry, guided-task states/copy, physical regressions, and scene-card asset. Subsequent review corrections updated the canonical handoff, fixed asset provenance, and separated the learner-visible middle focus detail from the visual middle marker. No further recalibration or lesson redesign was introduced by the review fixes.
-
-The middle focus detail remains canonical at board-local `{x: 0, z: 0}`, while its marker is a nearby marker-only reference at `{x: 360, z: 0}`; a board-local regression prevents marker/detail coverage and the existing rendered-surface/probe contract remains intact. PR11D.1 landing files are part of the synchronized base, not PR131 scope. The current thumbnail remains unchanged at blob `aec6f62a245458608a06aa54f69e9e5b59b133e0`.
+This work changes only the Ground Glass presentation layer, its shared shader/CPU conversion path, a localized transparency indicator, related tests, and this handoff. It does not change camera state, optics, scene geometry, calibration, task thresholds, aperture policy, or the catalog asset. The full local E2E result is limited by the clean-main-reproduced `groundglass-interaction` baseline timeout; current-head GitHub CI remains to be checked after publication.

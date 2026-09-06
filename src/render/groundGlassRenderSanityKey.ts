@@ -25,6 +25,7 @@ export type RenderSanityKeyInputs = {
   aperture: number;
   internalWidthPx: number;
   internalHeightPx: number;
+  inspectionMagnification?: number;
   opticsState: DerivedOpticsState;
   configuredCameraPose?: GroundGlassCameraPose;
 };
@@ -47,7 +48,8 @@ export function createGroundGlassRenderSanityStateKey(
   inputs: RenderSanityKeyInputs,
 ): string {
   const { resourceGeneration, sceneId, previewMode, rawDebug, zoomEnabled, aperture,
-    internalWidthPx, internalHeightPx, opticsState: o, configuredCameraPose } = inputs;
+    internalWidthPx, internalHeightPx, inspectionMagnification = 1,
+    opticsState: o, configuredCameraPose } = inputs;
 
   const parts: string[] = [
     String(resourceGeneration),
@@ -58,6 +60,7 @@ export function createGroundGlassRenderSanityStateKey(
     String(aperture),
     String(internalWidthPx),
     String(internalHeightPx),
+    String(inspectionMagnification),
 
     // Canonical rigid rig pose is an explicit renderer input even when other
     // derived world points happen to be numerically unchanged.

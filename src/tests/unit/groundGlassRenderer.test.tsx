@@ -43,7 +43,37 @@ describe("GroundGlassRenderer", () => {
     // The preview and physical focus-distance overlays remain visible.
     expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-focus-label")).toBeInTheDocument();
+    expect(screen.getByTestId("ground-glass-focus-inspection")).toHaveTextContent(
+      "Focus inspection · 4×",
+    );
     expect(screen.queryByText("Focus assist")).not.toBeInTheDocument();
+  });
+
+  it("does not advertise inspection magnification for the raw RTT debug bypass", () => {
+    const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        gridEnabled={false}
+        riseMm={0}
+        tiltDeg={0}
+        swingDeg={0}
+        focusDistanceMm={DEFAULT_CAMERA_STATE.focusDistanceMm}
+        aperture={DEFAULT_CAMERA_STATE.aperture}
+        renderQuality="standard"
+        scene={architectureRiseScene}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        previewMode="raw"
+        rawDebug
+      />,
+    );
+
+    expect(screen.queryByTestId("ground-glass-focus-inspection")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ground-glass-rtt")).toHaveAttribute(
+      "data-focus-inspection-active",
+      "false",
+    );
   });
 
   it("supports zoom mode (control belongs to viewport) without changing camera state", () => {

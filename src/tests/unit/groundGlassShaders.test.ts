@@ -62,6 +62,7 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassUniformDecls).toContain("lensPlaneBasisX");
     expect(groundGlassUniformDecls).toContain("filmPlaneBasisY");
     expect(groundGlassUniformDecls).toContain("footprintStorageMaxMm");
+    expect(groundGlassUniformDecls).toContain("inspectionMagnification");
   });
 
   test("shared GLSL helpers do not contain GLSL Infinity hacks or old formula", () => {
@@ -101,6 +102,10 @@ describe("GroundGlass DOF shader source", () => {
     );
     expect(groundGlassSharedGlsl).toContain(
       "-cos(angle) * minorRadiusMm * renderHeight / filmHeightMm",
+    );
+    expect(groundGlassSharedGlsl).toContain("inspectionMagnification * vec2(");
+    expect(groundGlassSharedGlsl).toContain(
+      "diameterPx * 0.5 * inspectionMagnification",
     );
     expect(groundGlassSharedGlsl).not.toContain(
       "float focusDist = tFocus > 0.0 ? tFocus : targetDist",

@@ -5,6 +5,8 @@ export type DofBlurInput = {
   filmWidthMm: number;
   renderWidthPx: number;
   maximumBlurRadiusPx: number;
+  /** Presentation-only scale applied after physical CoC-to-pixel conversion. */
+  inspectionMagnification?: number;
 };
 
 export function calculateBoundaryCoCDiameterPx(
@@ -28,6 +30,29 @@ export function calculateBoundaryBlurRadiusPx(
   return diameter / 2;
 }
 
+/**
+ * Converts a physical CoC diameter to display pixels for the focus-inspection
+ * view. The physical film-to-pixel conversion remains unchanged; magnification
+ * is applied only to the presentation result.
+ */
+export function calculateInspectedCoCDiameterPx(
+  circleOfConfusionMm: number,
+  filmWidthMm: number,
+  renderWidthPx: number,
+  inspectionMagnification = 1,
+): number {
+  const physicalDiameterPx = calculateBoundaryCoCDiameterPx(
+    circleOfConfusionMm,
+    filmWidthMm,
+    renderWidthPx,
+  );
+  if (!Number.isFinite(inspectionMagnification) || inspectionMagnification <= 0) return 0;
+  const inspectedDiameterPx = physicalDiameterPx * inspectionMagnification;
+  return Number.isFinite(inspectedDiameterPx) && inspectedDiameterPx >= 0
+    ? inspectedDiameterPx
+    : 0;
+}
+
 export function calculateDofBlurRadiusPx(input: DofBlurInput): number {
   const {
     normalizedDefocus,
@@ -35,13 +60,19 @@ export function calculateDofBlurRadiusPx(input: DofBlurInput): number {
     filmWidthMm,
     renderWidthPx,
     maximumBlurRadiusPx,
+    inspectionMagnification = 1,
   } = input;
 
-  const boundaryRadiusPx = calculateBoundaryBlurRadiusPx(
+  if (!Number.isFinite(inspectionMagnification) || inspectionMagnification <= 0) {
+    return 0;
+  }
+
+  const boundaryRadiusPx = calculateInspectedCoCDiameterPx(
     circleOfConfusionMm,
     filmWidthMm,
     renderWidthPx,
-  );
+    inspectionMagnification,
+  ) / 2;
 
   // An unresolved sample must fail closed. Returning the maximum radius here
   // turns an upstream invalid wedge into a full-frame-looking blur and makes

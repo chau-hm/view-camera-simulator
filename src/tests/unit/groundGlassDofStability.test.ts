@@ -184,6 +184,7 @@ describe("Ground Glass DOF numerical stability", () => {
       500,
       400,
       visual.maximumBlurRadiusPx,
+      visual.inspectionMagnification,
     );
     const values = [
       ...uniforms.lensCenterWorld,
@@ -201,6 +202,7 @@ describe("Ground Glass DOF numerical stability", () => {
       uniforms.renderWidth,
       uniforms.renderHeight,
       uniforms.maximumBlurRadiusPx,
+      uniforms.inspectionMagnification,
       uniforms.circleOfConfusionMm,
       uniforms.boundaryCoCDiameterPx,
       uniforms.boundaryBlurRadiusPx,
@@ -208,6 +210,7 @@ describe("Ground Glass DOF numerical stability", () => {
       uniforms.filmHeightMm,
     ];
     expect(values.every(Number.isFinite)).toBe(true);
+    expect(uniforms.inspectionMagnification).toBe(visual.inspectionMagnification);
     expect(uniforms.boundaryBlurRadiusPx).toBeLessThanOrEqual(uniforms.maximumBlurRadiusPx);
   });
 

@@ -15,6 +15,9 @@ const expectLessonStage = async (page: Page, step: string, label: string) => {
 const expectGroundGlass = async (page: Page) => {
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "oblique-tabletop");
+  await expect(rtt).toHaveAttribute("data-focus-inspection-magnification", "4");
+  await expect(rtt).toHaveAttribute("data-focus-inspection-active", "true");
+  await expect(page.getByTestId("ground-glass-focus-inspection")).toHaveText("Focus inspection · 4×");
   await expect(rtt.locator("canvas")).toBeVisible();
 };
 

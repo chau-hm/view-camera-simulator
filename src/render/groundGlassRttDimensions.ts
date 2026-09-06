@@ -59,6 +59,8 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   gatherScale?: number;
   sampleCount?: number;
   maximumCoCRadiusPx?: number;
+  /** Presentation-only magnification applied after physical CoC conversion. */
+  inspectionMagnification?: number;
   cocStorageFormat?: GroundGlassCocStorageFormat;
   cocAvailable?: boolean;
   cocTargetWidthPx?: number;
