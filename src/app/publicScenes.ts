@@ -250,16 +250,17 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availability: "available",
     availableModes: ["free", "guided"],
     thumbnailAsset: "assets/interior-corner.png",
-    guidedTaskId: INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField,
+    guidedTaskId: INTERIOR_CORNER_GUIDED_TASK_IDS.aperture,
     guidedTaskIds: [
       INTERIOR_CORNER_GUIDED_TASK_IDS.compose,
-      INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus,
-      INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField,
+      INTERIOR_CORNER_GUIDED_TASK_IDS.swing,
+      INTERIOR_CORNER_GUIDED_TASK_IDS.refine,
+      INTERIOR_CORNER_GUIDED_TASK_IDS.aperture,
     ],
     guidedLesson: {
       id: "interior-corner",
       includeObserveStage: true,
-      taskStageIds: ["compose", "align-focus", "depth-of-field"],
+      taskStageIds: ["compose", "swing", "refine", "aperture"],
     },
   },
 ];

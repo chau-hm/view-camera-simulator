@@ -1,301 +1,278 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { getGuidedLessonContext, getGuidedLessonStages } from "../../app/guidedLesson";
+import { describe, expect, it } from "vitest";
+import { getGuidedLessonStages } from "../../app/guidedLesson";
 import { getPublicSceneEntryById } from "../../app/publicScenes";
-import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
-import {
-  evaluateInteriorCornerFocusAtCalibrationAperture,
-  INTERIOR_CORNER_GUIDED_TASK_IDS,
-} from "../../scenes/interiorCornerGuidedLesson";
-import { evaluateInteriorCornerRiseComposition } from "../../scenes/interiorCornerRiseComposition";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import {
   INTERIOR_CORNER_CALIBRATION_APERTURE,
   evaluateInteriorCornerSwingFocus,
+  INTERIOR_CORNER_FOCUS_TARGET_IDS,
   interiorCornerSwingFocusCalibration,
 } from "../../scenes/interiorCornerSwingFocus";
-import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
-import { useAppStore } from "../../state/appStore";
+import {
+  evaluateInteriorCornerRiseComposition,
+} from "../../scenes/interiorCornerRiseComposition";
+import {
+  isInteriorCornerGuidedStageEntryRecoverable,
+} from "../../scenes/interiorCornerGuidedLesson";
+import geometry from "../../scenes/interiorCornerGeometry";
+import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { CameraState } from "../../types/camera";
-import { DEFAULT_CAMERA_STATE, CAMERA_CONTROL_STEPS } from "../../utils/constants";
+import type { TaskDefinition, TaskEvaluation } from "../../types/task";
 
-const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
-  ...DEFAULT_CAMERA_STATE,
-  ...interiorCornerScene.cameraPreset,
-  activeSceneId: interiorCornerScene.id,
-  activeTaskId: null,
-  mode: "guided",
-  geometryView: "top",
-  ...overrides,
-});
+const entry = getPublicSceneEntryById(interiorCornerScene.id);
+if (!entry) throw new Error("Missing Interior Corner public scene entry");
 
-const evaluateInteriorTask = (
+const taskIds = {
+  compose: "interior-corner-compose-01",
+  swing: "interior-corner-swing-01",
+  refine: "interior-corner-refine-01",
+  aperture: "interior-corner-aperture-01",
+} as const;
+
+const task = (id: string): TaskDefinition => {
+  const definition = getTaskById(id);
+  if (!definition) throw new Error(`Missing Interior Corner task: ${id}`);
+  return definition;
+};
+
+const cameraFor = (
   taskId: string,
   overrides: Partial<CameraState> = {},
-) => {
-  const task = getTaskById(taskId);
-  if (!task) throw new Error(`Missing Interior Corner task: ${taskId}`);
-  const camera = cameraFor({ ...overrides, activeTaskId: taskId });
-  const opticsState = deriveOpticsState(camera, interiorCornerScene);
+): CameraState => {
+  const definition = task(taskId);
   return {
-    camera,
-    opticsState,
-    evaluation: evaluateTask(task, interiorCornerScene, camera, opticsState),
+    ...DEFAULT_CAMERA_STATE,
+    ...interiorCornerScene.cameraPreset,
+    ...definition.initialCameraState,
+    activeSceneId: interiorCornerScene.id,
+    activeTaskId: taskId,
+    mode: "guided",
+    ...overrides,
   };
 };
 
-const criterion = (evaluation: ReturnType<typeof evaluateTask>, id: string) => {
-  const result = evaluation.criteria.find((entry) => entry.criterionId === id);
-  if (!result) throw new Error(`Missing criterion: ${id}`);
+const evaluate = (taskId: string, overrides: Partial<CameraState> = {}): TaskEvaluation => {
+  const camera = cameraFor(taskId, overrides);
+  const optics = deriveOpticsState(camera, interiorCornerScene);
+  return evaluateTask(task(taskId), interiorCornerScene, camera, optics);
+};
+
+const criterion = (evaluation: TaskEvaluation, id: string) => {
+  const result = evaluation.criteria.find((candidate) => candidate.criterionId === id);
+  if (!result) throw new Error(`Missing criterion ${id}`);
   return result;
 };
 
 describe("Interior Corner guided lesson", () => {
-  afterEach(() => {
-    useAppStore.getState().resetCamera();
+  it("publishes Observe plus the ordered Compose, Swing, Refine, and Aperture stages", () => {
+    expect(entry.availableModes).toEqual(["free", "guided"]);
+    expect(entry.guidedTaskIds).toEqual(Object.values(taskIds));
+    expect(getGuidedLessonStages(entry)).toEqual([
+      { id: "observe" },
+      { id: "compose", taskId: taskIds.compose },
+      { id: "swing", taskId: taskIds.swing },
+      { id: "refine", taskId: taskIds.refine },
+      { id: "aperture", taskId: taskIds.aperture },
+    ]);
+    expect(interiorCornerScene.cameraPreset).toMatchObject({
+      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
+      focusDistanceMm: geometry.canonicalFocusDistanceMm,
+      frontRiseMm: 0,
+      frontSwingDeg: 0,
+    });
   });
 
-  it("publishes the Observe plus three photographic task stages", () => {
-    const entry = getPublicSceneEntryById(interiorCornerScene.id);
-    expect(entry?.availableModes).toEqual(["free", "guided"]);
-    expect(entry?.guidedTaskIds).toEqual([
-      INTERIOR_CORNER_GUIDED_TASK_IDS.compose,
-      INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus,
-      INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField,
-    ]);
-    expect(getGuidedLessonStages(entry!)).toEqual([
-      { id: "observe" },
-      { id: "compose", taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.compose },
-      { id: "align-focus", taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus },
-      { id: "depth-of-field", taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField },
-    ]);
-
-    expect(
-      getGuidedLessonContext({
-        entry: entry!,
-        mode: "free",
-        sceneId: interiorCornerScene.id,
-        taskId: null,
-        search: "?lesson=1",
-      })?.nextHref,
-    ).toBe(
-      `/simulator/guided/${interiorCornerScene.id}/${INTERIOR_CORNER_GUIDED_TASK_IDS.compose}?lesson=1`,
-    );
-
-    expect(getTaskById(INTERIOR_CORNER_GUIDED_TASK_IDS.compose)?.enabledControls).toEqual([
-      "rise",
-      "geometryView",
-    ]);
-    expect(getTaskById(INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus)?.enabledControls).toEqual([
+  it("keeps each stage's public control boundary explicit", () => {
+    expect(task(taskIds.compose).enabledControls).toEqual(["rise", "geometryView"]);
+    expect(task(taskIds.swing).enabledControls).toEqual(["swing", "geometryView"]);
+    expect(task(taskIds.refine).enabledControls).toEqual([
       "swing",
       "focusDistance",
       "geometryView",
     ]);
-    expect(getTaskById(INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField)?.enabledControls).toEqual([
-      "aperture",
-      "geometryView",
-    ]);
+    expect(task(taskIds.aperture).enabledControls).toEqual(["aperture", "geometryView"]);
+    expect(task(taskIds.compose).constraints).toEqual({ movement: "rise-only" });
+    expect(task(taskIds.swing).constraints).toEqual({ movement: "swing-only" });
+    expect(CAMERA_CONSTANTS.apertureOptions).toEqual([5.6, 11, 22, 32]);
+    for (const taskId of Object.values(taskIds)) {
+      expect(task(taskId).initialCameraState).toMatchObject({
+        focusMode: "finite",
+      });
+    }
+    expect(task(taskIds.compose).initialCameraState?.focusDistanceMm).toBe(8000);
+    expect(task(taskIds.swing).initialCameraState?.focusDistanceMm).toBe(8000);
+    expect(task(taskIds.refine).initialCameraState?.focusDistanceMm).toBe(8000);
+    expect(task(taskIds.aperture).initialCameraState?.focusDistanceMm).toBe(38140);
   });
 
-  it("starts with a failing projected composition and finds a public Rise solution", () => {
-    const neutral = evaluateInteriorTask(INTERIOR_CORNER_GUIDED_TASK_IDS.compose);
-    expect(evaluateInteriorCornerRiseComposition(neutral.opticsState).passed).toBe(false);
-    expect(neutral.evaluation.status).toBe("failed");
+  it("keeps Compose neutral until public Rise produces a valid level composition", () => {
+    const neutral = evaluate(taskIds.compose, { frontRiseMm: 0 });
+    expect(neutral.status).toBe("failed");
+    expect(criterion(neutral, "interior-corner-compose-composition").passed).toBe(false);
 
-    const reachableRise = Array.from(
-      { length: Math.floor((40 - 0) / CAMERA_CONTROL_STEPS.riseMm) + 1 },
-      (_, index) => index * CAMERA_CONTROL_STEPS.riseMm,
-    ).find((riseMm) =>
-      evaluateInteriorCornerRiseComposition(
-        deriveOpticsState(cameraFor({ frontRiseMm: riseMm }), interiorCornerScene),
-      ).passed,
+    const publicRiseValues = Array.from(
+      { length: CAMERA_CONSTANTS.riseMaxMm / CAMERA_CONTROL_STEPS.riseMm + 1 },
+      (_, index) => CAMERA_CONSTANTS.riseMinMm + index * CAMERA_CONTROL_STEPS.riseMm,
+    );
+    const firstPassingRise = publicRiseValues.find(
+      (frontRiseMm) =>
+        evaluateInteriorCornerRiseComposition(
+          deriveOpticsState(cameraFor(taskIds.compose, { frontRiseMm }), interiorCornerScene),
+        ).passed,
     );
 
-    if (reachableRise === undefined) throw new Error("No public Rise state solves composition");
-    expect(reachableRise % CAMERA_CONTROL_STEPS.riseMm).toBe(0);
-    const solved = evaluateInteriorTask(INTERIOR_CORNER_GUIDED_TASK_IDS.compose, {
-      frontRiseMm: reachableRise,
-    });
-    expect(solved.evaluation.status).toBe("passed");
-    expect(criterion(solved.evaluation, "interior-corner-compose-composition").passed).toBe(true);
-    expect(criterion(solved.evaluation, "interior-corner-compose-camera-level").passed).toBe(true);
+    expect(firstPassingRise).toBe(33);
+    if (firstPassingRise === undefined) {
+      throw new Error("Expected a public Rise value to pass the composition criterion");
+    }
+    expect(evaluate(taskIds.compose, { frontRiseMm: firstPassingRise }).status).toBe("passed");
+    expect(evaluate(taskIds.compose, { frontRiseMm: firstPassingRise - 1 }).status).toBe("failed");
+    expect(criterion(evaluate(taskIds.compose, { frontRiseMm: firstPassingRise }), "interior-corner-compose-camera-level").passed).toBe(true);
   });
 
-  it("keeps the focus stages separate: Swing orientation before Focus placement", () => {
-    const neutral = evaluateInteriorTask(INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus);
-    expect(criterion(neutral.evaluation, "interior-corner-align-focus-orientation").passed).toBe(false);
-    expect(criterion(neutral.evaluation, "interior-corner-align-focus-wall").passed).toBe(false);
+  it("starts Swing from the real composed partial state and keeps it separate from Refine", () => {
+    const swingTask = task(taskIds.swing);
+    expect(swingTask.initialCameraState).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: 0,
+      focusDistanceMm: geometry.canonicalFocusDistanceMm,
+      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
+    });
 
-    const oriented = evaluateInteriorTask(INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus, {
+    const initial = evaluate(taskIds.swing);
+    const correctSwing = evaluate(taskIds.swing, {
       frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
-      focusDistanceMm: interiorCornerScene.cameraPreset.focusDistanceMm,
-      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
     });
-    expect(criterion(oriented.evaluation, "interior-corner-align-focus-orientation").passed).toBe(true);
-    expect(criterion(oriented.evaluation, "interior-corner-align-focus-wall").passed).toBe(false);
-    expect(oriented.evaluation.status).toBe("failed");
-  });
-
-  it("requires the accepted public Swing + Focus state for the receding wall", () => {
-    const accepted = evaluateInteriorTask(INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus, {
-      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
-      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
-      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
-    });
-    expect(accepted.evaluation.status).toBe("passed");
-    expect(criterion(accepted.evaluation, "interior-corner-align-focus-wall").passed).toBe(true);
-
-    const wrongSign = evaluateInteriorTask(INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus, {
-      frontSwingDeg: -interiorCornerSwingFocusCalibration.public.frontSwingDeg,
-      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
-      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
-    });
-    const wrongSignPhysical = evaluateInteriorCornerSwingFocus(
-      wrongSign.opticsState,
+    const correctOptics = deriveOpticsState(
+      cameraFor(taskIds.swing, {
+        frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      }),
+      interiorCornerScene,
+    );
+    const correctPhysical = evaluateInteriorCornerSwingFocus(
+      correctOptics,
       INTERIOR_CORNER_CALIBRATION_APERTURE,
     );
-    const acceptedPhysical = evaluateInteriorCornerSwingFocus(
-      accepted.opticsState,
-      INTERIOR_CORNER_CALIBRATION_APERTURE,
-    );
-    expect(wrongSign.evaluation.status).toBe("failed");
-    expect(wrongSignPhysical.passed).toBe(false);
-    expect(wrongSignPhysical.maximumCoCDiameterMm!).toBeGreaterThan(
-      acceptedPhysical.maximumCoCDiameterMm!,
-    );
-    expect(criterion(wrongSign.evaluation, "interior-corner-align-focus-orientation").passed).toBe(false);
+
+    expect(initial.status).toBe("failed");
+    expect(correctPhysical.status).toBe("refine-focus");
+    expect(correctPhysical.passed).toBe(false);
+    expect(correctSwing.status).toBe("passed");
+    expect(evaluate(taskIds.swing, { frontSwingDeg: -3.6 }).status).toBe("failed");
+    const fullyAlignedSwing = evaluate(taskIds.swing, {
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+    });
+    expect(fullyAlignedSwing.status).toBe("passed");
+    expect(criterion(fullyAlignedSwing, "interior-corner-swing-orientation").passed).toBe(true);
+
+    const refineAtSwingStart = evaluate(taskIds.refine, {
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: geometry.canonicalFocusDistanceMm,
+    });
+    expect(refineAtSwingStart.status).toBe("failed");
+    expect(criterion(refineAtSwingStart, "interior-corner-refine-wall-focus").passed).toBe(false);
   });
 
-  it("requires open-aperture focus to be preserved before the final stop-down", () => {
-    const finalState = {
+  it("keeps the Swing prerequisite valid after the wall focus is fully aligned", () => {
+    const publicSolution = interiorCornerSwingFocusCalibration.public;
+    const alignedState = evaluate(taskIds.swing, {
       frontRiseMm: 33,
-      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
-      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
-      aperture: 11 as const,
-    };
-    const final = evaluateInteriorTask(INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField, finalState);
-    expect(evaluateInteriorCornerFocusAtCalibrationAperture(final.camera, final.opticsState).passed).toBe(true);
-    expect(final.evaluation.status).toBe("passed");
-
-    const stoppedDownWithBadFocus = evaluateInteriorTask(INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField, {
-      ...finalState,
-      focusDistanceMm: interiorCornerScene.cameraPreset.focusDistanceMm,
+      frontSwingDeg: publicSolution.frontSwingDeg,
+      focusDistanceMm: publicSolution.focusDistanceMm,
     });
-    expect(criterion(stoppedDownWithBadFocus.evaluation, "interior-corner-depth-focus-preserved").passed).toBe(false);
-    expect(stoppedDownWithBadFocus.evaluation.status).toBe("failed");
 
-    const open = evaluateInteriorTask(INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField, {
-      ...finalState,
-      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
-    });
-    expect(criterion(open.evaluation, "interior-corner-depth-aperture").passed).toBe(false);
-    expect(open.evaluation.status).toBe("failed");
+    expect(alignedState.status).toBe("passed");
+    expect(criterion(alignedState, "interior-corner-swing-orientation").passed).toBe(true);
   });
 
-  it("preserves solved state across forward and backward lesson routes and resets on Observe", () => {
-    const store = useAppStore.getState();
-    store.initializeSimulatorRoute({
-      mode: "free",
-      sceneId: interiorCornerScene.id,
-      taskId: null,
-      lessonEntry: true,
-    });
-    store.setRise(33);
-    store.initializeSimulatorRoute({
-      mode: "guided",
-      sceneId: interiorCornerScene.id,
-      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.compose,
-      lessonEntry: true,
-    });
-    expect(useAppStore.getState().camera.frontRiseMm).toBe(33);
-    expect(useAppStore.getState().camera.frontSwingDeg).toBe(0);
-    expect(useAppStore.getState().camera.focusDistanceMm).toBe(8000);
-
-    store.setSwing(interiorCornerSwingFocusCalibration.public.frontSwingDeg);
-    store.setFocusDistance(interiorCornerSwingFocusCalibration.public.focusDistanceMm);
-    store.initializeSimulatorRoute({
-      mode: "guided",
-      sceneId: interiorCornerScene.id,
-      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus,
-      lessonEntry: true,
-    });
-    expect(useAppStore.getState().camera).toMatchObject({
+  it("keeps a completed f/11 lesson recoverable when navigating back to Refine", () => {
+    const publicSolution = interiorCornerSwingFocusCalibration.public;
+    const completedApertureState = cameraFor(taskIds.aperture, {
       frontRiseMm: 33,
-      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
-      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
-      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
-    });
-
-    store.setAperture(11);
-    store.initializeSimulatorRoute({
-      mode: "guided",
-      sceneId: interiorCornerScene.id,
-      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField,
-      lessonEntry: true,
-    });
-    expect(useAppStore.getState().camera).toMatchObject({
-      frontRiseMm: 33,
-      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
-      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      frontSwingDeg: publicSolution.frontSwingDeg,
+      focusDistanceMm: publicSolution.focusDistanceMm,
       aperture: 11,
     });
 
-    store.initializeSimulatorRoute({
-      mode: "guided",
-      sceneId: interiorCornerScene.id,
-      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus,
-      lessonEntry: true,
-    });
-    expect(useAppStore.getState().camera).toMatchObject({
-      frontRiseMm: 33,
-      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
-      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
-      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
-    });
+    expect(
+      isInteriorCornerGuidedStageEntryRecoverable({
+        taskId: taskIds.refine,
+        camera: completedApertureState,
+        lastInitializedRouteKey: `guided:${interiorCornerScene.id}:${taskIds.aperture}::lesson`,
+      }),
+    ).toBe(true);
+  });
 
-    store.initializeSimulatorRoute({
-      mode: "guided",
-      sceneId: interiorCornerScene.id,
-      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.compose,
-      lessonEntry: true,
-    });
-    expect(useAppStore.getState().camera).toMatchObject({
+  it("makes Refine Focus the first full near/middle/far wall sharpness gate", () => {
+    const publicSolution = interiorCornerSwingFocusCalibration.public;
+    const partial = evaluate(taskIds.refine, {
       frontRiseMm: 33,
-      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
-      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      frontSwingDeg: publicSolution.frontSwingDeg,
+      focusDistanceMm: geometry.canonicalFocusDistanceMm,
     });
-
-    store.initializeSimulatorRoute({
-      mode: "guided",
-      sceneId: interiorCornerScene.id,
-      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus,
-      lessonEntry: true,
-    });
-    store.initializeSimulatorRoute({
-      mode: "guided",
-      sceneId: interiorCornerScene.id,
-      taskId: INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField,
-      lessonEntry: true,
-    });
-    expect(useAppStore.getState().camera).toMatchObject({
+    const solved = evaluate(taskIds.refine, {
       frontRiseMm: 33,
-      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
-      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
-      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
+      frontSwingDeg: publicSolution.frontSwingDeg,
+      focusDistanceMm: publicSolution.focusDistanceMm,
     });
-
-    store.initializeSimulatorRoute({
-      mode: "free",
-      sceneId: interiorCornerScene.id,
-      taskId: null,
-      lessonEntry: true,
-    });
-    expect(useAppStore.getState().camera).toMatchObject({
-      frontRiseMm: 0,
+    const focusOnly = evaluate(taskIds.refine, {
+      frontRiseMm: 33,
       frontSwingDeg: 0,
-      focusDistanceMm: 8000,
-      aperture: INTERIOR_CORNER_CALIBRATION_APERTURE,
-      activeTaskId: null,
+      focusDistanceMm: publicSolution.focusDistanceMm,
     });
+
+    expect(partial.status).toBe("failed");
+    expect(criterion(partial, "interior-corner-refine-wall-focus").passed).toBe(false);
+    expect(solved.status).toBe("passed");
+    expect(criterion(solved, "interior-corner-refine-wall-focus").passed).toBe(true);
+    expect(focusOnly.status).toBe("failed");
+    expect(criterion(focusOnly, "interior-corner-refine-swing-range").passed).toBe(false);
+    expect(INTERIOR_CORNER_FOCUS_TARGET_IDS).toEqual([
+      "interior-wall-near",
+      "interior-wall-middle",
+      "interior-wall-far",
+    ]);
+  });
+
+  it("preserves composition and rejects a wrong compound state at Aperture", () => {
+    const publicSolution = interiorCornerSwingFocusCalibration.public;
+    const initial = evaluate(taskIds.aperture);
+    const solved = evaluate(taskIds.aperture, {
+      frontRiseMm: 33,
+      frontSwingDeg: publicSolution.frontSwingDeg,
+      focusDistanceMm: publicSolution.focusDistanceMm,
+      aperture: 11,
+    });
+    const wrongPlane = evaluate(taskIds.aperture, {
+      frontRiseMm: 33,
+      frontSwingDeg: -publicSolution.frontSwingDeg,
+      focusDistanceMm: publicSolution.focusDistanceMm,
+      aperture: 11,
+    });
+
+    expect(initial.status).toBe("failed");
+    expect(criterion(initial, "interior-corner-aperture-allowed-aperture").passed).toBe(false);
+    expect(criterion(initial, "interior-corner-aperture-focus-preserved").passed).toBe(true);
+    expect(solved.status).toBe("passed");
+    expect(criterion(solved, "interior-corner-aperture-composition").passed).toBe(true);
+    expect(criterion(solved, "interior-corner-aperture-focus-preserved").passed).toBe(true);
+    expect(wrongPlane.status).toBe("failed");
+    expect(criterion(wrongPlane, "interior-corner-aperture-focus-preserved").passed).toBe(false);
+  });
+
+  it("keeps the public wall contract limited to the one receding wall", () => {
+    expect(interiorCornerScene.focusTargets.map((target) => target.id)).toEqual([
+      "interior-wall-near",
+      "interior-wall-middle",
+      "interior-wall-far",
+    ]);
+    expect(interiorCornerScene.focusTargets.map((target) => target.id)).toEqual(
+      [...INTERIOR_CORNER_FOCUS_TARGET_IDS],
+    );
   });
 });

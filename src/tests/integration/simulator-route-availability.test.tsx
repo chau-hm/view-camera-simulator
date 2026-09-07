@@ -1,8 +1,7 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { ScenesPage, SimulatorRoutePage } from "../../app/pages";
-import { useAppStore } from "../../state/appStore";
 
 vi.mock("../../components/layout/SimulatorWorkspace", () => ({
   SimulatorWorkspace: ({
@@ -26,14 +25,7 @@ vi.mock("../../components/layout/SimulatorWorkspace", () => ({
   ),
 }));
 
-beforeEach(() => {
-  useAppStore.getState().resetCamera();
-});
-
-afterEach(() => {
-  cleanup();
-  useAppStore.getState().resetCamera();
-});
+afterEach(cleanup);
 
 const LocationProbe = () => {
   const location = useLocation();
@@ -58,8 +50,6 @@ describe("simulator route availability", () => {
     ["/simulator/free/architecture-rise", "free:architecture-rise:none:lesson=false"],
     ["/simulator/free/architecture-foreground", "free:architecture-foreground:none:lesson=false"],
     ["/simulator/free/interior-corner", "free:interior-corner:none:lesson=false"],
-    ["/simulator/guided/interior-corner/interior-corner-compose-01", "guided:interior-corner:interior-corner-compose-01:lesson=false"],
-    ["/simulator/guided/interior-corner/interior-corner-depth-of-field-01", "guided:interior-corner:interior-corner-depth-of-field-01:lesson=false"],
     ["/simulator/free/oblique-architecture", "free:oblique-architecture:none:lesson=false"],
     ["/simulator/free/shelf-swing", "free:shelf-swing:none:lesson=false"],
     ["/simulator/free/mirror-shift", "free:mirror-shift:none:lesson=false"],
@@ -98,6 +88,26 @@ describe("simulator route availability", () => {
     ],
     ["/simulator/guided/shelf-swing/swing-01", "guided:shelf-swing:swing-01:lesson=false"],
     ["/simulator/free/table-tilt", "free:table-tilt:none:lesson=false"],
+    [
+      "/simulator/guided/interior-corner/interior-corner-compose-01",
+      "guided:interior-corner:interior-corner-compose-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-swing-01",
+      "guided:interior-corner:interior-corner-swing-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-refine-01",
+      "guided:interior-corner:interior-corner-refine-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-aperture-01",
+      "guided:interior-corner:interior-corner-aperture-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-compose-01?lesson=1",
+      "guided:interior-corner:interior-corner-compose-01:lesson=true",
+    ],
     ["/simulator/guided/table-tilt/tilt-01", "guided:table-tilt:tilt-01:lesson=false"],
   ])("keeps available simulator route %s open", async (route, expectedWorkspace) => {
     renderRoute(route);
@@ -107,8 +117,9 @@ describe("simulator route availability", () => {
   });
 
   it.each([
-    "/simulator/guided/interior-corner/interior-corner-align-focus-01?lesson=1",
-    "/simulator/guided/interior-corner/interior-corner-depth-of-field-01?lesson=1",
+    "/simulator/guided/interior-corner/interior-corner-swing-01?lesson=1",
+    "/simulator/guided/interior-corner/interior-corner-refine-01?lesson=1",
+    "/simulator/guided/interior-corner/interior-corner-aperture-01?lesson=1",
   ])("restarts a fresh later Interior Corner lesson entry at Observe: %s", async (route) => {
     renderRoute(route);
 
@@ -153,7 +164,6 @@ describe("simulator route availability", () => {
     "/simulator/guided/shelf-swing/not-a-task",
     "/simulator/free/shelf-swing/swing-01",
     "/simulator/guided/table-tilt/swing-01",
-    "/simulator/guided/interior-corner/not-a-task",
     "/simulator/free/table-tilt/tilt-01",
     "/simulator/guided/focus-fundamentals-two-targets",
     "/simulator/guided/focus-fundamentals-two-targets/rise-01",
@@ -162,6 +172,7 @@ describe("simulator route availability", () => {
     "/simulator/guided/architecture-foreground",
     "/simulator/guided/architecture-foreground/architecture-foreground-not-a-task?lesson=1",
     "/simulator/free/interior-corner/swing-01",
+    "/simulator/guided/interior-corner/not-a-task",
   ])("redirects invalid simulator route %s to Scenes", async (route) => {
     renderRoute(route);
 

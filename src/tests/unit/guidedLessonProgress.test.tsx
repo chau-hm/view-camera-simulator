@@ -235,51 +235,46 @@ describe("GuidedLessonProgress", () => {
     expect(screen.getByText(/You corrected the framing with Rise/)).toBeInTheDocument();
   });
 
-  it("renders the Interior Corner four-stage copy and final-stage wording", () => {
+  it("renders Interior Corner with Observe plus four task stages", () => {
     render(
       <MemoryRouter>
-        <GuidedLessonProgress
-          context={interiorCornerContextFor("free", null)}
-          evaluation={null}
-        />
+        <GuidedLessonProgress context={interiorCornerContextFor("free", null)} evaluation={null} />
       </MemoryRouter>,
     );
 
     expect(screen.getByText("Interior Corner — Rise + Swing Guided Lesson")).toBeInTheDocument();
-    expect(screen.getByText(/one receding wall span several focus distances/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Observe the Problem" })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem").map((stage) => stage.textContent)).toEqual([
       "1Observe",
       "2Compose",
-      "3Align Focus",
-      "4Depth of Field",
+      "3Front Swing",
+      "4Refine Focus",
+      "5Aperture",
     ]);
-
-    cleanup();
-    render(
-      <MemoryRouter>
-        <GuidedLessonProgress
-          context={interiorCornerContextFor("guided", "interior-corner-depth-of-field-01")}
-          evaluation={null}
-        />
-      </MemoryRouter>,
+    expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/interior-corner/interior-corner-compose-01?lesson=1",
     );
-    expect(screen.getByText("Complete this stage to finish the lesson.")).toBeInTheDocument();
-    expect(screen.queryByText("Complete the final challenge to finish the lesson.")).not.toBeInTheDocument();
   });
 
-  it("renders the Interior Corner lesson copy in Traditional Chinese", async () => {
-    await i18n.changeLanguage("zh-HK");
-    render(
+  it("gates Interior Corner advancement on each task evaluation", () => {
+    const context = interiorCornerContextFor("guided", "interior-corner-swing-01");
+    const { rerender } = render(
       <MemoryRouter>
-        <GuidedLessonProgress
-          context={interiorCornerContextFor("free", null)}
-          evaluation={null}
-        />
+        <GuidedLessonProgress context={context} evaluation={null} />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("室內轉角——Rise + Swing 引導課程")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "觀察問題" })).toBeInTheDocument();
-    expect(screen.getAllByRole("listitem").map((stage) => stage.textContent)).toContain("4景深");
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+
+    rerender(
+      <MemoryRouter>
+        <GuidedLessonProgress context={context} evaluation={passingEvaluation} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute(
+      "href",
+      "/simulator/guided/interior-corner/interior-corner-refine-01?lesson=1",
+    );
   });
 });

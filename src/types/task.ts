@@ -28,6 +28,7 @@ export type TaskInitialCameraState = Pick<
     Pick<
       CameraState,
       | "geometryView"
+      | "focusMode"
       | "frontShiftMm"
       | "rearShiftMm"
       | "rearSwingDeg"

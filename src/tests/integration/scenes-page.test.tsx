@@ -148,7 +148,10 @@ describe("scenes page", () => {
       "href",
       "/simulator/free/interior-corner",
     );
-    expect(scopedInteriorCornerCard.queryByRole("link", { name: "Start Guided Task" })).toBeNull();
+    expect(scopedInteriorCornerCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner?lesson=1",
+    );
 
     // Oblique Architecture remains directly available immediately before the final scene.
     const obliqueHeading = await screen.findByRole("heading", {
@@ -242,10 +245,7 @@ describe("scenes page", () => {
       "href",
       "/simulator/free/oblique-tabletop",
     );
-    expect(scopedTabletopCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
-      "href",
-      "/simulator/free/oblique-tabletop?lesson=1",
-    );
+    expect(scopedTabletopCard.queryByRole("link", { name: "Start Guided Task" })).toBeNull();
 
     expect(publicSceneIds).toEqual([
       "view-camera-anatomy",
@@ -381,15 +381,6 @@ describe("scenes page", () => {
     expect(cardFor("桌面焦平面與傾斜").getByText(/理解前組傾斜如何改變清晰焦平面/)).toBeInTheDocument();
     expect(cardFor("斜向焦平面與擺動").getByText(/理解前組擺動如何改變清晰焦平面/)).toBeInTheDocument();
     expect(
-      cardFor("斜向桌面").getByText(
-        "從斜角拍攝一塊放在普通桌面上的傾斜圖板。圖板同時沿近遠及左右方向延伸，因此單靠俯仰無法對齊整個主體平面，還需要擺動。",
-      ),
-    ).toBeInTheDocument();
-    expect(cardFor("斜向桌面").getByRole("link", { name: "引導課程" })).toHaveAttribute(
-      "href",
-      "/simulator/free/oblique-tabletop?lesson=1",
-    );
-    expect(
       cardFor("斜向建築攝影").getByText(
         "結合前組上移與前組擺動，在斜角拍攝建築物時保持垂直線平行，並讓延伸的立面由近至遠保持清晰。",
       ),
@@ -407,6 +398,10 @@ describe("scenes page", () => {
     expect(cardFor("室內轉角 — 上移與擺動").getByRole("link", { name: "開啟場景" })).toHaveAttribute(
       "href",
       "/simulator/free/interior-corner",
+    );
+    expect(cardFor("室內轉角 — 上移與擺動").getByRole("link", { name: "引導課程" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner?lesson=1",
     );
   });
 

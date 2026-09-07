@@ -1,5 +1,8 @@
 import { deriveOpticsState } from "../core/optics/deriveOpticsState";
-import { INTERIOR_CORNER_CALIBRATION_APERTURE, evaluateInteriorCornerSwingFocus } from "./interiorCornerSwingFocus";
+import {
+  INTERIOR_CORNER_CALIBRATION_APERTURE,
+  evaluateInteriorCornerSwingFocus,
+} from "./interiorCornerSwingFocus";
 import { evaluateInteriorCornerRiseComposition } from "./interiorCornerRiseComposition";
 import { interiorCornerScene } from "./definitions/interior-corner";
 import type { CameraState } from "../types/camera";
@@ -8,16 +11,38 @@ import type { InteriorCornerGuidedCriterion } from "../types/task";
 
 export const INTERIOR_CORNER_GUIDED_TASK_IDS = {
   compose: "interior-corner-compose-01",
-  alignFocus: "interior-corner-align-focus-01",
-  depthOfField: "interior-corner-depth-of-field-01",
+  swing: "interior-corner-swing-01",
+  refine: "interior-corner-refine-01",
+  aperture: "interior-corner-aperture-01",
+  // Compatibility aliases retained for the PR129 lifecycle/store consumers.
+  // They intentionally point at the semantically equivalent PR130 stages.
+  alignFocus: "interior-corner-refine-01",
+  depthOfField: "interior-corner-aperture-01",
 } as const;
 
 export const INTERIOR_CORNER_GUIDED_FINAL_APERTURE = 11 as const;
+
+/**
+ * Robust public range used by the Swing, Refine, and Aperture stages. The
+ * physical calibration remains the source of truth; this range only keeps
+ * the task operable across neighboring public control steps.
+ */
+export const INTERIOR_CORNER_GUIDED_SWING_RANGE = {
+  min: 3.0,
+  max: 4.2,
+} as const;
 
 export type InteriorCornerGuidedCriterionResult = {
   passed: boolean;
   score: number;
 };
+
+const passingTargetScore = (
+  targets: readonly { passed: boolean }[],
+): number =>
+  targets.length === 0
+    ? 0
+    : targets.filter((target) => target.passed).length / targets.length;
 
 const evaluateRiseCompositionCriterion = (
   opticsState: DerivedOpticsState,
@@ -55,11 +80,29 @@ export const evaluateInteriorCornerFocusAtCalibrationAperture = (
   );
 };
 
+const isInteriorCornerGuidedTask = (taskId: string | null): boolean =>
+  taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.compose ||
+  taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.swing ||
+  taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.refine ||
+  taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.aperture;
+
+const hasPlausibleSwingOrientation = (
+  camera: CameraState,
+  opticsState: DerivedOpticsState,
+): boolean => {
+  // A backward transition from Aperture arrives with the learner's completed
+  // f/11 state still in memory. The route initializer restores f/5.6 after
+  // this guard runs, so evaluate the orientation against the calibration
+  // aperture rather than rejecting an otherwise recoverable lesson state.
+  const evaluation = evaluateInteriorCornerFocusAtCalibrationAperture(camera, opticsState);
+  return evaluation.status === "refine-focus" || evaluation.status === "aligned";
+};
+
 /**
  * A later Interior Corner lesson route is only safe to enter when the current
  * in-memory lesson session still contains the prerequisite photographic
- * result. This keeps a fresh deep link or a browser reload from presenting a
- * locked, neutral stage that cannot be repaired with its visible controls.
+ * result. Fresh deep links or reloads therefore restart at Observe rather
+ * than presenting a locked stage whose prerequisite cannot be repaired.
  */
 export const isInteriorCornerGuidedStageEntryRecoverable = ({
   taskId,
@@ -73,36 +116,39 @@ export const isInteriorCornerGuidedStageEntryRecoverable = ({
   if (taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.compose) return true;
   if (
     camera.activeSceneId !== interiorCornerScene.id ||
-    !lastInitializedRouteKey?.endsWith(":lesson")
+    !lastInitializedRouteKey?.endsWith(":lesson") ||
+    !isInteriorCornerGuidedTask(camera.activeTaskId)
   ) {
     return false;
   }
 
-  const currentTaskId = camera.activeTaskId;
-  const isInteriorCornerTask = (candidate: string | null): boolean =>
-    candidate === INTERIOR_CORNER_GUIDED_TASK_IDS.compose ||
-    candidate === INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus ||
-    candidate === INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField;
-  if (!isInteriorCornerTask(currentTaskId)) return false;
-
   const opticsState = deriveOpticsState(camera, interiorCornerScene);
   const compositionPassed = evaluateInteriorCornerRiseComposition(opticsState).passed;
+  if (!compositionPassed) return false;
 
-  if (taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus) {
-    return compositionPassed;
+  if (taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.swing) {
+    return true;
   }
 
-  if (taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField) {
+  if (taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.refine) {
     if (
-      currentTaskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.alignFocus &&
-      currentTaskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.depthOfField
+      camera.activeTaskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.swing &&
+      camera.activeTaskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.refine &&
+      camera.activeTaskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.aperture
     ) {
       return false;
     }
-    return (
-      compositionPassed &&
-      evaluateInteriorCornerFocusAtCalibrationAperture(camera, opticsState).passed
-    );
+    return hasPlausibleSwingOrientation(camera, opticsState);
+  }
+
+  if (taskId === INTERIOR_CORNER_GUIDED_TASK_IDS.aperture) {
+    if (
+      camera.activeTaskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.refine &&
+      camera.activeTaskId !== INTERIOR_CORNER_GUIDED_TASK_IDS.aperture
+    ) {
+      return false;
+    }
+    return evaluateInteriorCornerFocusAtCalibrationAperture(camera, opticsState).passed;
   }
 
   return false;
@@ -113,6 +159,9 @@ const evaluateSwingOrientationCriterion = (
   opticsState: DerivedOpticsState,
 ): InteriorCornerGuidedCriterionResult => {
   const evaluation = evaluateInteriorCornerSwingFocus(opticsState, camera.aperture);
+  // Swing is an orientation prerequisite for Refine Focus. Keep that
+  // prerequisite monotonic so a fully aligned later-stage state remains valid
+  // when the learner navigates back to this earlier stage.
   const passed = evaluation.status === "refine-focus" || evaluation.status === "aligned";
   return {
     passed,
@@ -125,10 +174,9 @@ const evaluateWallFocusCriterion = (
   opticsState: DerivedOpticsState,
 ): InteriorCornerGuidedCriterionResult => {
   const evaluation = evaluateInteriorCornerSwingFocus(opticsState, camera.aperture);
-  const passingTargets = evaluation.targets.filter((target) => target.passed).length;
   return {
     passed: evaluation.passed,
-    score: passingTargets / evaluation.targets.length,
+    score: passingTargetScore(evaluation.targets),
   };
 };
 
@@ -137,10 +185,9 @@ const evaluateFocusPreservedCriterion = (
   opticsState: DerivedOpticsState,
 ): InteriorCornerGuidedCriterionResult => {
   const evaluation = evaluateInteriorCornerFocusAtCalibrationAperture(camera, opticsState);
-  const passingTargets = evaluation.targets.filter((target) => target.passed).length;
   return {
     passed: evaluation.passed,
-    score: passingTargets / evaluation.targets.length,
+    score: passingTargetScore(evaluation.targets),
   };
 };
 

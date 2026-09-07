@@ -6,7 +6,7 @@ Turn the validated Interior Corner free-mode foundation into a deterministic Obs
 
 ## Branch / worktree / base / head
 
-`feature/interior-corner-guided-lesson` · `/Users/homan/repo/view-camera-interior-corner-12d` · base `1fd8b0b1e6c9fd4a657c922c3c2af538c82a55b9` · implementation `b701ee3`; review-fix head is recorded in the completion report
+`feature/interior-corner-guided-lesson-12d` · `/private/tmp/view-camera-interior-corner-12d-fresh` · base `13c2ad9c46b473584162b2eb05c7cd65a113d61a` · main syncs `8d8d378bcaa92b76ae1372555f480e2de00f158a`, `ee92962fa9ee0de46f6185b7bb70dec8ace830c9`; review-fix implementation `22063c4`; handoff correction `10016f08461fc230614a508b802030d7a66ad6fa`
 
 ## PR12A–12C prerequisites verified
 
@@ -14,11 +14,11 @@ Merged `origin/main` contains the Interior Corner scene, projected Rise evaluato
 
 ## Guided stage sequence
 
-Observe (neutral and non-interactive) → Compose with public-grid Rise → Align the one receding side-wall focus plane with Swing + Focus at f/5.6 → stop down to f/11 while preserving the solved composition and open-aperture focus alignment. The opposite wall remains contextual.
+Observe (neutral and non-interactive) → Compose with public-grid Rise → Front Swing orientation → Refine Focus placement on the one receding side-wall plane at f/5.6 → stop down to f/11 while preserving the solved composition and open-aperture focus alignment. The opposite wall remains contextual.
 
 ## Control staging
 
-Observe exposes navigation/readout access only; Compose exposes Rise; Align Focus exposes Swing + Focus with Rise preserved; Depth of Field exposes Aperture with Rise/Swing/Focus locked. Direct guided task metadata matches the visible stage controls.
+Observe exposes navigation/readout access only; Compose exposes Rise; Front Swing exposes Swing; Refine Focus exposes Swing + Focus; Aperture exposes only Aperture with Rise/Swing/Focus locked. Direct guided task metadata matches the visible stage controls.
 
 ## Completion contracts
 
@@ -30,13 +30,13 @@ Guided task criteria/registry, Interior Corner guided evaluation adapter, public
 
 ## Validation run
 
-Focused Vitest: 74 tests passed. Focused Playwright: 3 tests passed. Full Vitest: 1,582 tests passed. Typecheck, lint, CSS structure, build, and diff check passed.
+Focused Vitest: 6 files, 103 tests passed. Full Vitest: 166 files, 1,621 tests passed. Typecheck, lint, CSS structure, build, and diff check passed. The focused Interior Corner Playwright scenarios each passed independently, and the final full local gate passed both Interior Corner E2E tests, including completed f/11 → Previous → Refine f/5.6 → Previous → Swing.
 
-The repository local CI gate was attempted end to end. Its Interior Corner guided-lesson, Architecture Rise Ground Glass, and preceding E2E groups passed, but the gate stopped on the unrelated `mirror-shift-teaching-geometry.spec.ts` RTT-content assertion (`ground-glass-rtt` was not found). No renderer or existing Ground Glass code is changed here.
+The final `CI=1 npm run ci:local:e2e` run passed all checks and reached the Interior Corner and Swing + Focus specs, then stopped at `mirror-shift-teaching-geometry.spec.ts:3` because its first test could not find the RTT element within 30 seconds; its second test passed. The exact same spec/test/line-32 RTT failure reproduced on clean current `origin/main` `ee92962fa9ee0de46f6185b7bb70dec8ace830c9`, establishing the documented baseline.
 
 ## Validation not run
 
-The broader local E2E gate did not complete because of the unrelated Mirror Shift failure above. The previously known Architecture Rise Ground Glass timeout did not recur in this run.
+The full local E2E matrix did not complete because of the reproduced clean-main Mirror Shift RTT baseline failure. No PR-owned Interior Corner failure remained; all PR-owned focused and full Vitest/browser checks passed.
 
 ## Since review
 
@@ -45,15 +45,15 @@ The broader local E2E gate did not complete because of the unrelated Mirror Shif
 - Fresh lesson deep links/reloads to later stages restart at canonical Observe when no recoverable prerequisite session exists.
 - Guided Interior Corner stages expose Restart Lesson instead of destructive Reset Movements; free-mode Reset Movements remains unchanged.
 - The exact-head full Vitest suite now passes; focused lifecycle and browser regression evidence was added.
-- Optics, calibration, CoC thresholds, geometry, RTT, routing identity, and guided task criteria are unchanged.
+- Optics, calibration, CoC thresholds, geometry, RTT, routing identity, and the accepted physical task contracts remain unchanged; Swing prerequisite acceptance is now monotonic for backward navigation.
 
-## Since main sync
+## Since current review
 
-- Integrated `origin/main` at `739b744a880826b3c34200645bac90f988a9436e` with a normal non-fast-forward merge; shared route, store, task, catalog, progress, localization, and test surfaces were reconciled additively.
-- PR128 Oblique Tabletop guided metadata, task progression, staged controls, localized copy, and tests are preserved. PR129 Interior Corner bidirectional state persistence, deep-link recovery, Restart Lesson, and guided Reset protection are preserved.
-- Post-sync focused Vitest passed (181 tests across the Interior/Oblique/shared suites); full Vitest passed (164 files, 1,593 tests). Typecheck, lint, CSS structure, build, and diff checks passed.
-- Focused Interior Corner and Oblique Tabletop Playwright passed (4 tests). The broader local E2E gate passed through Interior Corner and all preceding groups, then stopped at the pre-existing `mirror-shift-teaching-geometry.spec.ts` RTT-content assertion (`ground-glass-rtt` not found); no Interior/Oblique failure occurred.
-- Integration commit and current post-sync branch head: `e10d8ae6f8b75005e806ce08064803de0acaf284`.
+- Synced current main through normal non-rebasing merges at `8d8d378` and `ee92962`; the branch is 0 behind main.
+- Completed-Aperture browser coverage now sets f/11, verifies the solved Rise/Swing/Focus state, then proves Previous restores f/5.6 while preserving those movements and focus; revisited Swing remains passed with Continue available.
+- The stage-entry guard evaluates the existing f/5.6 calibration contract before restoring f/5.6 on a backward Aperture → Refine transition, preventing a valid completed state from redirecting to Observe.
+- The monotonic Swing prerequisite remains intact: both `refine-focus` and `aligned` pass, while neutral and wrong-sign Swing still fail.
+- No optics, calibration, CoC threshold, geometry, RTT, or unrelated task behavior changed.
 
 ## Known limitations
 
@@ -61,11 +61,11 @@ Ground Glass assertions verify the existing RTT surface remains present/contentf
 
 ## Publication
 
-Implementation commit `b701ee3` and pre-publication handoff `96ce222` remain unchanged. Draft PR #129 remains open as a draft; this focused lifecycle fix updates the same feature branch.
+PR #130 is updated on the same feature branch. No PR state transition was performed; GitHub reported `isDraft=false` before and after publication. Implementation and reconciliation commit details are recorded in the completion report.
 
 ## Reviewer focus
 
-Check stage route identity and persistence, public control staging, wrong-sign protection, independent open-aperture focus recheck before stop-down, final Rise/Swing/Focus preservation, bilingual copy, and free-mode non-regression.
+Check stage route identity and persistence, monotonic Swing prerequisite acceptance, backward-navigation preservation, public control staging, wrong-sign protection, independent open-aperture focus recheck before stop-down, final Rise/Swing/Focus preservation, bilingual copy, and free-mode non-regression.
 
 ## Deferred
 
