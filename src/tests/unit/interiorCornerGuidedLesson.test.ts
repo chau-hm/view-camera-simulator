@@ -14,6 +14,9 @@ import {
 import {
   evaluateInteriorCornerRiseComposition,
 } from "../../scenes/interiorCornerRiseComposition";
+import {
+  isInteriorCornerGuidedStageEntryRecoverable,
+} from "../../scenes/interiorCornerGuidedLesson";
 import geometry from "../../scenes/interiorCornerGeometry";
 import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { CameraState } from "../../types/camera";
@@ -185,6 +188,24 @@ describe("Interior Corner guided lesson", () => {
 
     expect(alignedState.status).toBe("passed");
     expect(criterion(alignedState, "interior-corner-swing-orientation").passed).toBe(true);
+  });
+
+  it("keeps a completed f/11 lesson recoverable when navigating back to Refine", () => {
+    const publicSolution = interiorCornerSwingFocusCalibration.public;
+    const completedApertureState = cameraFor(taskIds.aperture, {
+      frontRiseMm: 33,
+      frontSwingDeg: publicSolution.frontSwingDeg,
+      focusDistanceMm: publicSolution.focusDistanceMm,
+      aperture: 11,
+    });
+
+    expect(
+      isInteriorCornerGuidedStageEntryRecoverable({
+        taskId: taskIds.refine,
+        camera: completedApertureState,
+        lastInitializedRouteKey: `guided:${interiorCornerScene.id}:${taskIds.aperture}::lesson`,
+      }),
+    ).toBe(true);
   });
 
   it("makes Refine Focus the first full near/middle/far wall sharpness gate", () => {

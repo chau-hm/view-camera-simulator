@@ -90,7 +90,11 @@ const hasPlausibleSwingOrientation = (
   camera: CameraState,
   opticsState: DerivedOpticsState,
 ): boolean => {
-  const evaluation = evaluateInteriorCornerSwingFocus(opticsState, camera.aperture);
+  // A backward transition from Aperture arrives with the learner's completed
+  // f/11 state still in memory. The route initializer restores f/5.6 after
+  // this guard runs, so evaluate the orientation against the calibration
+  // aperture rather than rejecting an otherwise recoverable lesson state.
+  const evaluation = evaluateInteriorCornerFocusAtCalibrationAperture(camera, opticsState);
   return evaluation.status === "refine-focus" || evaluation.status === "aligned";
 };
 

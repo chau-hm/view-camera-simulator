@@ -151,7 +151,10 @@ test("Interior Corner keeps the solved focus state when returning to Swing", asy
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expectLessonStage(page, "Step 3 of 5", "Front Swing");
-  await setStepRangeInput(page, "Swing", 3.6);
+  // The accepted 3.6° value is on the public 0.1° grid. Dispatch it once in
+  // this backward-navigation regression so the WebGL render loop does not
+  // spend several seconds processing each intermediate slider keypress.
+  await setRangeDirect(page, "Swing", 3.6);
   await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole("link", { name: "Continue" }).click();
@@ -163,9 +166,23 @@ test("Interior Corner keeps the solved focus state when returning to Swing", asy
   await expectLessonStage(page, "Step 5 of 5", "Aperture");
   await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
 
+  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("33");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
+  await expect(page.getByLabel("Focus distance")).toHaveValue("38140");
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+
   await page.getByRole("link", { name: "Previous" }).click();
   await expectLessonStage(page, "Step 4 of 5", "Refine Focus");
+  await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("33");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
   await expect(page.getByLabel("Focus distance")).toHaveValue("38140");
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
 
   await page.getByRole("link", { name: "Previous" }).click();
   await expect(page).toHaveURL(
