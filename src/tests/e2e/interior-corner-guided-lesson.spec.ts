@@ -137,3 +137,61 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
 });
+
+test("Interior Corner keeps the solved focus state when returning to Swing", async ({ page }) => {
+  test.setTimeout(360_000);
+
+  await page.goto("/simulator/free/interior-corner?lesson=1&rttDiagnostics=1");
+  await expectLessonStage(page, "Step 1 of 5", "Observe");
+
+  await page.getByRole("link", { name: "Continue" }).click();
+  await expectLessonStage(page, "Step 2 of 5", "Compose");
+  await setStepRangeInput(page, "Rise", 33);
+  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+
+  await page.getByRole("link", { name: "Continue" }).click();
+  await expectLessonStage(page, "Step 3 of 5", "Front Swing");
+  await setStepRangeInput(page, "Swing", 3.6);
+  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+
+  await page.getByRole("link", { name: "Continue" }).click();
+  await expectLessonStage(page, "Step 4 of 5", "Refine Focus");
+  await setRangeDirect(page, "Focus distance", 38140);
+  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+
+  await page.getByRole("link", { name: "Continue" }).click();
+  await expectLessonStage(page, "Step 5 of 5", "Aperture");
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+
+  await page.getByRole("link", { name: "Previous" }).click();
+  await expectLessonStage(page, "Step 4 of 5", "Refine Focus");
+  await expect(page.getByLabel("Focus distance")).toHaveValue("38140");
+
+  await page.getByRole("link", { name: "Previous" }).click();
+  await expect(page).toHaveURL(
+    /\/simulator\/guided\/interior-corner\/interior-corner-swing-01\?lesson=1$/,
+  );
+  await expectLessonStage(page, "Step 3 of 5", "Front Swing");
+  await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("33");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
+  await expect(page.getByLabel("Focus distance")).toHaveValue("38140");
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+  await expect(page.getByRole("slider", { name: "Rise" })).toBeDisabled();
+  await expect(page.getByRole("slider", { name: "Swing" })).toBeEnabled();
+  await expect(page.getByLabel("Focus distance")).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Continue" }).click();
+  await expectLessonStage(page, "Step 4 of 5", "Refine Focus");
+  await expect(page.getByLabel("Focus distance")).toHaveValue("38140");
+  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+
+  await page.getByRole("link", { name: "Continue" }).click();
+  await expectLessonStage(page, "Step 5 of 5", "Aperture");
+  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({
+    timeout: 20_000,
+  });
+});

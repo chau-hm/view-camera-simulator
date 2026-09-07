@@ -30,7 +30,7 @@ Guided task criteria/registry, Interior Corner guided evaluation adapter, public
 
 ## Validation run
 
-Focused and full Vitest: 1,615 tests passed. Focused Interior Corner Playwright: 1 test passed. Typecheck, lint, CSS structure, build, and diff check passed.
+Focused and full Vitest: 1,615 tests passed. Focused Interior Corner Playwright: 2 tests passed, including backward navigation from Aperture through Refine Focus to Swing. Typecheck, lint, CSS structure, build, and diff check passed.
 
 The full local CI gate passed CSS, lint, typecheck, full Vitest, and build, then stopped at the unrelated `groundglass-interaction.spec.ts` Architecture Rise test after its 120-second timeout. The same named test timed out on clean current `origin/main` `8d8d378bcaa92b76ae1372555f480e2de00f158a`; no affected Interior Corner test failed.
 
@@ -50,7 +50,7 @@ The full local E2E gate did not complete because the clean-main baseline reprodu
 ## Since monotonic-stage review
 
 - The Swing prerequisite now accepts both its intermediate `refine-focus` state and an already aligned state, so backward navigation cannot strand a solved learner at Swing.
-- Added unit and route-backed integration coverage for fully aligned Swing state and Refine Focus → Previous → Swing → Continue, including preserved Rise/Swing/Focus and final f/11 completion.
+- Added unit, route-backed integration, and browser coverage for fully aligned Swing state and Refine Focus → Previous → Swing → Continue, including preserved Rise/Swing/Focus, f/5.6 restoration, and final f/11 completion.
 - Full local CI reached the unrelated Architecture Rise timeout; clean current `origin/main` reproduced the same 120-second test timeout. `origin/main` advanced to `8d8d378` during validation and was not merged into this focused fix.
 - No optics, calibration, CoC threshold, geometry, RTT, or unrelated task behavior changed.
 
