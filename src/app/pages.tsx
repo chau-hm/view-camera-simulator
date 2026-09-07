@@ -64,8 +64,8 @@ export const ScenesPage = () => {
   const entries = getPublicSceneEntries();
 
   return (
-    <AppShell title={t("scenes.page.title")} useSiteShell>
-      <p>{t("scenes.page.intro")}</p>
+    <AppShell title={t("scenes.page.title")} useSiteShell siteShellClassName="site-shell--scenes">
+      <p className="scenes-page-intro">{t("scenes.page.intro")}</p>
 
       <DesktopExperienceNotice />
 
