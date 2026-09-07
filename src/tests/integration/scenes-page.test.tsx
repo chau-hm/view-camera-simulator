@@ -16,6 +16,7 @@ import {
 } from "../../app/publicScenes";
 import { routes } from "../../app/router";
 import { ScenesPage } from "../../app/pages";
+import { SceneCard } from "../../components/marketing/SceneCard";
 import { i18n } from "../../i18n";
 
 beforeEach(async () => {
@@ -31,6 +32,13 @@ describe("scenes page", () => {
   it("shows the enabled public scene cards in catalog order", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
+
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getAllByRole("article")).toHaveLength(publicSceneIds.length);
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(publicSceneIds.length);
+    screen.getAllByRole("article").forEach((card) => {
+      expect(card.querySelector("article > a")).toBeNull();
+    });
 
     // Focus Fundamentals card
     expect(
@@ -306,6 +314,29 @@ describe("scenes page", () => {
     expect(
       screen.queryByText("The guided Shelf Swing lesson is still being prepared."),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps in-development scenes non-actionable", () => {
+    render(
+      <MemoryRouter>
+        <SceneCard
+          sceneId="architecture-rise"
+          title="Architecture Rise"
+          description="A scene in progress."
+          topics={["Front Rise"]}
+          availability="in-development"
+          thumbnailAsset="assets/architecture-rise.png"
+          guidedTaskId="rise-01"
+        />
+      </MemoryRouter>,
+    );
+
+    const card = screen.getByRole("article");
+    expect(within(card).getByRole("status")).toHaveAttribute(
+      "data-scene-availability",
+      "in-development",
+    );
+    expect(within(card).queryByRole("link")).not.toBeInTheDocument();
   });
 
   it("renders canonical zh-HK titles and learning-purpose descriptions", async () => {
