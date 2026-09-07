@@ -54,14 +54,6 @@ The full local E2E gate did not complete because the clean-main baseline reprodu
 - Full local CI reached the unrelated Architecture Rise timeout; clean current `origin/main` reproduced the same 120-second test timeout. `origin/main` advanced to `8d8d378` during validation and was not merged into this focused fix.
 - No optics, calibration, CoC threshold, geometry, RTT, or unrelated task behavior changed.
 
-## Since test reconciliation
-
-- `origin/main` at `13c2ad9c46b473584162b2eb05c7cd65a113d61a` was already integrated; the branch was 0 behind / 4 ahead at the start of this reconciliation.
-- Reconciled stale expectations for the PR #131 Oblique Tabletop description, the final five-stage Interior Corner title/order, and safe later-stage lesson deep-link restart behavior.
-- Reworked the workspace integration test to drive the actual route transitions through Observe → Compose → Front Swing → Refine Focus → Aperture, preserving Rise/Swing/Focus and final f/11 staging.
-- PR128 Oblique Tabletop behavior and PR129 Interior Corner lifecycle protection remain preserved. No production implementation, optics, geometry, RTT, catalog, or localization behavior changed.
-- The post-reconciliation broad E2E attempt passed the shared prerequisite checks and stopped only at the unrelated camera-movement-public-controls timeout; affected Interior Corner and Oblique Tabletop browser flows passed.
-
 ## Known limitations
 
 Ground Glass assertions verify the existing RTT surface remains present/contentful; physical success remains evaluator-based. The final stage uses the existing modest f/11 aperture option.
@@ -72,7 +64,7 @@ PR #130 is updated on the same feature branch. No PR state transition was perfor
 
 ## Reviewer focus
 
-Check stage route identity and persistence, public control staging, wrong-sign protection, independent open-aperture focus recheck before stop-down, final Rise/Swing/Focus preservation, bilingual copy, and free-mode non-regression.
+Check stage route identity and persistence, monotonic Swing prerequisite acceptance, backward-navigation preservation, public control staging, wrong-sign protection, independent open-aperture focus recheck before stop-down, final Rise/Swing/Focus preservation, bilingual copy, and free-mode non-regression.
 
 ## Deferred
 
