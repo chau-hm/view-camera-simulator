@@ -6,7 +6,7 @@ Turn the validated Interior Corner free-mode foundation into a deterministic Obs
 
 ## Branch / worktree / base / head
 
-`feature/interior-corner-guided-lesson-12d` · `/private/tmp/view-camera-interior-corner-12d-fresh` · base `13c2ad9c46b473584162b2eb05c7cd65a113d61a` · main syncs `8d8d378bcaa92b76ae1372555f480e2de00f158a`, `ee92962fa9ee0de46f6185b7bb70dec8ace830c9`; review-fix implementation `22063c4`; final handoff head is recorded in the completion report
+`feature/interior-corner-guided-lesson-12d` · `/private/tmp/view-camera-interior-corner-12d-fresh` · base `13c2ad9c46b473584162b2eb05c7cd65a113d61a` · main syncs `8d8d378bcaa92b76ae1372555f480e2de00f158a`, `ee92962fa9ee0de46f6185b7bb70dec8ace830c9`; review-fix implementation `22063c4`; handoff correction `10016f08461fc230614a508b802030d7a66ad6fa`
 
 ## PR12A–12C prerequisites verified
 
