@@ -6,7 +6,7 @@ Turn the validated Interior Corner free-mode foundation into a deterministic Obs
 
 ## Branch / worktree / base / head
 
-`feature/interior-corner-guided-lesson-12d` · `/private/tmp/view-camera-interior-corner-12d-fresh` · base `13c2ad9c46b473584162b2eb05c7cd65a113d61a` · pre-reconciliation head `69bb824`; reconciliation commit `cd6f3bd`; current head is recorded in the completion report
+`feature/interior-corner-guided-lesson-12d` · `/private/tmp/view-camera-interior-corner-12d-fresh` · base `13c2ad9c46b473584162b2eb05c7cd65a113d61a` · main syncs `8d8d378bcaa92b76ae1372555f480e2de00f158a`, `ee92962fa9ee0de46f6185b7bb70dec8ace830c9`; review-fix implementation `22063c4`; final handoff head is recorded in the completion report
 
 ## PR12A–12C prerequisites verified
 
@@ -30,13 +30,13 @@ Guided task criteria/registry, Interior Corner guided evaluation adapter, public
 
 ## Validation run
 
-Focused and full Vitest: 1,615 tests passed. Focused Interior Corner Playwright: 2 tests passed, including backward navigation from Aperture through Refine Focus to Swing. Typecheck, lint, CSS structure, build, and diff check passed.
+Focused Vitest: 6 files, 103 tests passed. Full Vitest: 166 files, 1,621 tests passed. Typecheck, lint, CSS structure, build, and diff check passed. The focused Interior Corner Playwright scenarios each passed independently, and the final full local gate passed both Interior Corner E2E tests, including completed f/11 → Previous → Refine f/5.6 → Previous → Swing.
 
-The full local CI gate passed CSS, lint, typecheck, full Vitest, and build, then stopped at the unrelated `groundglass-interaction.spec.ts` Architecture Rise test after its 120-second timeout. The same named test timed out on clean current `origin/main` `8d8d378bcaa92b76ae1372555f480e2de00f158a`; no affected Interior Corner test failed.
+The final `CI=1 npm run ci:local:e2e` run passed all checks and reached the Interior Corner and Swing + Focus specs, then stopped at `mirror-shift-teaching-geometry.spec.ts` because its second test could not find the RTT element within 30 seconds. The exact same first-test-pass/second-test RTT failure reproduced on clean current `origin/main` `ee92962fa9ee0de46f6185b7bb70dec8ace830c9`; the PR branch passes that spec when run standalone.
 
 ## Validation not run
 
-The full local E2E gate did not complete because the clean-main baseline reproduced the unrelated Architecture Rise Ground Glass timeout. The monotonic Swing criterion and route-backed backward-navigation regression passed.
+The full local E2E matrix did not complete because of the reproduced clean-main Mirror Shift RTT baseline failure. No PR-owned Interior Corner failure remained; all PR-owned focused and full Vitest/browser checks passed.
 
 ## Since review
 
@@ -47,11 +47,12 @@ The full local E2E gate did not complete because the clean-main baseline reprodu
 - The exact-head full Vitest suite now passes; focused lifecycle and browser regression evidence was added.
 - Optics, calibration, CoC thresholds, geometry, RTT, routing identity, and the accepted physical task contracts remain unchanged; Swing prerequisite acceptance is now monotonic for backward navigation.
 
-## Since monotonic-stage review
+## Since current review
 
-- The Swing prerequisite now accepts both its intermediate `refine-focus` state and an already aligned state, so backward navigation cannot strand a solved learner at Swing.
-- Added unit, route-backed integration, and browser coverage for fully aligned Swing state and Refine Focus → Previous → Swing → Continue, including preserved Rise/Swing/Focus, f/5.6 restoration, and final f/11 completion.
-- Full local CI reached the unrelated Architecture Rise timeout; clean current `origin/main` reproduced the same 120-second test timeout. `origin/main` advanced to `8d8d378` during validation and was not merged into this focused fix.
+- Synced current main through normal non-rebasing merges at `8d8d378` and `ee92962`; the branch is 0 behind main.
+- Completed-Aperture browser coverage now sets f/11, verifies the solved Rise/Swing/Focus state, then proves Previous restores f/5.6 while preserving those movements and focus; revisited Swing remains passed with Continue available.
+- The stage-entry guard evaluates the existing f/5.6 calibration contract before restoring f/5.6 on a backward Aperture → Refine transition, preventing a valid completed state from redirecting to Observe.
+- The monotonic Swing prerequisite remains intact: both `refine-focus` and `aligned` pass, while neutral and wrong-sign Swing still fail.
 - No optics, calibration, CoC threshold, geometry, RTT, or unrelated task behavior changed.
 
 ## Known limitations
