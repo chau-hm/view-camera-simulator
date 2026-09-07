@@ -32,7 +32,7 @@ Guided task criteria/registry, Interior Corner guided evaluation adapter, public
 
 Focused Vitest: 6 files, 103 tests passed. Full Vitest: 166 files, 1,621 tests passed. Typecheck, lint, CSS structure, build, and diff check passed. The focused Interior Corner Playwright scenarios each passed independently, and the final full local gate passed both Interior Corner E2E tests, including completed f/11 → Previous → Refine f/5.6 → Previous → Swing.
 
-The final `CI=1 npm run ci:local:e2e` run passed all checks and reached the Interior Corner and Swing + Focus specs, then stopped at `mirror-shift-teaching-geometry.spec.ts` because its second test could not find the RTT element within 30 seconds. The exact same first-test-pass/second-test RTT failure reproduced on clean current `origin/main` `ee92962fa9ee0de46f6185b7bb70dec8ace830c9`; the PR branch passes that spec when run standalone.
+The final `CI=1 npm run ci:local:e2e` run passed all checks and reached the Interior Corner and Swing + Focus specs, then stopped at `mirror-shift-teaching-geometry.spec.ts:3` because its first test could not find the RTT element within 30 seconds; its second test passed. The exact same spec/test/line-32 RTT failure reproduced on clean current `origin/main` `ee92962fa9ee0de46f6185b7bb70dec8ace830c9`, establishing the documented baseline.
 
 ## Validation not run
 
