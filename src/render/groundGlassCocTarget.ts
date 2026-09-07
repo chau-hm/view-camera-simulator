@@ -321,32 +321,23 @@ export const createGroundGlassCocTarget = (
 };
 
 /**
- * Physical CoC diameter range represented by the display-radius cap. This is
- * used only for byte storage normalization. The inspection magnification is
- * included because the display cap is reached at a smaller physical CoC after
- * presentation scaling; optical CoC calculation remains unchanged.
+ * Physical CoC diameter range represented by the source-render radius cap.
+ * This is used only for byte storage normalization; the Focus Loupe is applied
+ * later to the completed Ground Glass image and does not change this range.
  */
 export const resolveGroundGlassCocStorageMaxMm = (input: {
   maximumCoCRadiusPx: number;
   filmWidthMm: number;
   renderWidthPx: number;
-  inspectionMagnification?: number;
 }): number => {
-  const {
-    maximumCoCRadiusPx,
-    filmWidthMm,
-    renderWidthPx,
-    inspectionMagnification = 1,
-  } = input;
+  const { maximumCoCRadiusPx, filmWidthMm, renderWidthPx } = input;
   if (
     !Number.isFinite(maximumCoCRadiusPx) ||
     maximumCoCRadiusPx < 0 ||
     !Number.isFinite(filmWidthMm) ||
     filmWidthMm <= 0 ||
     !Number.isFinite(renderWidthPx) ||
-    renderWidthPx <= 0 ||
-    !Number.isFinite(inspectionMagnification) ||
-    inspectionMagnification <= 0
+    renderWidthPx <= 0
   ) {
     return 1;
   }
@@ -354,6 +345,6 @@ export const resolveGroundGlassCocStorageMaxMm = (input: {
   return Math.max(
     1e-6,
     (maximumCoCRadiusPx * 2 * filmWidthMm) /
-      (renderWidthPx * inspectionMagnification),
+      renderWidthPx,
   );
 };

@@ -96,7 +96,7 @@ describe("public camera movement controls in the workspace", () => {
     expect(screen.queryByRole("region", { name: "Original and Current Ground Glass comparison" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Original", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Current", level: 3 })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Zoom in Ground Glass preview view" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Focus loupe · 4× Ground Glass preview view" })).toHaveLength(1);
     expect(screen.queryByRole("radiogroup", { name: "Camera movement calibration workbench" })).not.toBeInTheDocument();
     expect(screen.queryByText("Camera Movement Calibration")).not.toBeInTheDocument();
   });
@@ -165,18 +165,18 @@ describe("public camera movement controls in the workspace", () => {
     expect(document.querySelectorAll('[data-rtt-channel="default"]')).toHaveLength(0);
 
     expect(
-      screen.getByRole("button", { name: "Zoom in Original Ground Glass view" }),
+      screen.getByRole("button", { name: "Focus loupe · 4× Original Ground Glass view" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Zoom in Current Ground Glass view" }),
+      screen.getByRole("button", { name: "Focus loupe · 4× Current Ground Glass view" }),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Zoom in Original Ground Glass view" }));
+    fireEvent.click(screen.getByRole("button", { name: "Focus loupe · 4× Original Ground Glass view" }));
     expect(
       screen.getByRole("button", { name: "Reset Original Ground Glass view" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Zoom in Current Ground Glass view" }),
+      screen.getByRole("button", { name: "Focus loupe · 4× Current Ground Glass view" }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Reset Current Ground Glass view" }),
@@ -193,7 +193,7 @@ describe("public camera movement controls in the workspace", () => {
     expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
     expect(screen.getByTestId("ground-glass-rtt")).toHaveAttribute("data-rtt-channel", "default");
 
-    fireEvent.click(screen.getByRole("button", { name: "Zoom in Ground Glass preview view" }));
+    fireEvent.click(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass preview view" }));
 
     expect(screen.getByRole("button", { name: "Reset Ground Glass preview view" })).toBeInTheDocument();
     fireEvent.change(screen.getByRole("slider", { name: "Tilt" }), {
@@ -233,7 +233,7 @@ describe("public camera movement controls in the workspace", () => {
 
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
-    expect(screen.getByRole("button", { name: "Zoom in Ground Glass preview view" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass preview view" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Original", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Current", level: 3 })).not.toBeInTheDocument();
   });
@@ -245,7 +245,7 @@ describe("public camera movement controls in the workspace", () => {
     expect(screen.queryByText("Movement examples")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Original", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Current", level: 3 })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Zoom in Ground Glass preview view" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Focus loupe · 4× Ground Glass preview view" })).toHaveLength(1);
   });
 
   it("keeps the continuous Viewpoint state after rerender", () => {

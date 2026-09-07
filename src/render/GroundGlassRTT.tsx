@@ -78,6 +78,7 @@ export type GroundGlassRTTProps = {
   previewMode?: "raw" | "upright";
   rawDebug?: boolean;
   renderQuality?: import("../types/ui").RenderQualityProfile;
+  /** Deprecated presentation input; loupe scaling is owned by GroundGlassStage. */
   zoomEnabled?: boolean;
   /** Independent RTT resource/diagnostic channel for comparison panes. */
   channel?: GroundGlassRttChannel;
@@ -95,7 +96,7 @@ const tupleMatches = (
 ): boolean =>
   Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
-function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', rawDebug = false, renderQuality = "standard", zoomEnabled = false, channel = "default", presentationRegion: explicitPresentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange, }: GroundGlassRTTProps) {
+function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', rawDebug = false, renderQuality = "standard", channel = "default", presentationRegion: explicitPresentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange, }: GroundGlassRTTProps) {
   // React gives each mounted renderer a stable identity without a module-level
   // mutable registry. It survives ordinary prop changes and is replaced only
   // when this OffscreenRenderer instance is actually remounted.
@@ -120,12 +121,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     : CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
   const resolvedSceneId = sceneDefinition.id;
   const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
-  const { maximumBlurRadiusPx, inspectionMagnification } =
-    getGroundGlassDofVisualSettings(resolvedSceneId);
+  const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
   const profilingEnabled = isGroundGlassProfilingEnabled();
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
-  const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1, zoomEnabled }));
+  const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1 }));
 
   // refs for instance-owned resources (avoid storing on function object)
   type PostResources = {
@@ -155,8 +155,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     target: THREE.Object3D;
   } | null>(null);
   const mountedSceneSubjectRef = useRef<MountedGroundGlassSceneSubject | null>(null);
-  const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality, zoomEnabled });
-  sizeInputsRef.current = { widthPx, heightPx, renderQuality, zoomEnabled };
+  const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality });
+  sizeInputsRef.current = { widthPx, heightPx, renderQuality };
 
   const readRuntimeInfo = React.useCallback(() => runtimeInfoRef.current, []);
   const setRuntimeInfo = React.useCallback(
@@ -190,7 +190,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       maximumBlurRadiusPx,
       initialQualitySettings.maximumCoCRadiusPx,
     );
-    // resolve desired internal RTT dimensions from quality profile, DPR and zoom state
+    // resolve desired internal RTT dimensions from quality profile and DPR
     const rendererPixelRatio = (gl && typeof gl.getPixelRatio === 'function') ? gl.getPixelRatio() : (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
 
     // collect canvas DOM and size info. Canvas DPR is authoritative from parent Canvas dpr prop
@@ -206,7 +206,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       logicalHeight: sizeInputs.heightPx,
       renderQuality: sizeInputs.renderQuality || "standard",
       devicePixelRatio: rendererPixelRatio,
-      zoomEnabled: sizeInputs.zoomEnabled,
     });
     dimsRef.current = dims;
 
@@ -274,7 +273,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       renderWidthPx: dimsRef.current.internalWidthPx,
-      inspectionMagnification,
     });
     const initialFootprintStorageMaxMm = Math.max(1e-6, initialCocStorageMaxMm * 0.5);
     const gatherRT = new THREE.WebGLRenderTarget(
@@ -350,7 +348,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
-        inspectionMagnification: { value: inspectionMagnification },
         circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
         filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
@@ -396,7 +393,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
-        inspectionMagnification: { value: inspectionMagnification },
         circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
         filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
         filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
@@ -516,7 +512,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           gatherScale: initialQualitySettings.gatherScale,
           sampleCount: initialQualitySettings.sampleCount,
           maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
-          inspectionMagnification,
           cocStorageFormat: cocStorage.storageFormat,
           cocAvailable: true,
           cocTargetWidthPx: cocW,
@@ -620,7 +615,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   }, [
     gl,
     maximumBlurRadiusPx,
-    inspectionMagnification,
     profilingEnabled,
     readRuntimeInfo,
     resolvedSceneId,
@@ -757,7 +751,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       logicalHeight: heightPx,
       renderQuality: renderQuality || "standard",
       devicePixelRatio: rendererPixelRatio,
-      zoomEnabled,
     });
     const cocMaterial = (post.postSceneCoc.children[0] as THREE.Mesh)
       .material as THREE.ShaderMaterial;
@@ -776,7 +769,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       maximumCoCRadiusPx: resizedMaximumCoCRadiusPx,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       renderWidthPx: dims.internalWidthPx,
-      inspectionMagnification,
     });
     cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
     gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
@@ -837,7 +829,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         maximumBlurRadiusPx,
         qualitySettings.maximumCoCRadiusPx,
       ),
-      inspectionMagnification,
       cocStorageFormat: post.cocStorageFormat,
       cocAvailable: true,
       cocTargetWidthPx: post.cocRT.width,
@@ -857,7 +848,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       resourceGeneration: resourceGenerationRef.current,
       profilingSnapshot: undefined,
     });
-  }, [gl, heightPx, inspectionMagnification, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
+  }, [gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx]);
 
   useFrame((_state, frameDelta) => {
     if (!renderTarget.current || !offscreenScene.current) return;
@@ -1024,7 +1015,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             : typeof window !== "undefined"
               ? window.devicePixelRatio
               : 1,
-        zoomEnabled: Boolean(zoomEnabled),
       };
       profiler.beginFrame(
         profilingConfiguration,
@@ -1079,7 +1069,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         maximumCoCRadiusPx: currentMaximumCoCRadiusPx,
         filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
         renderWidthPx: dimsRef.current.internalWidthPx,
-        inspectionMagnification,
       });
       const footprintStorageMaxMm = Math.max(1e-6, cocStorageMaxMm * 0.5);
 
@@ -1117,7 +1106,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           dimsRef.current.internalWidthPx,
           dimsRef.current.internalHeightPx,
           currentMaximumCoCRadiusPx,
-          inspectionMagnification,
         );
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);
@@ -1205,11 +1193,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         sceneId: resolvedSceneId,
         previewMode,
         rawDebug: rawDebug,
-        zoomEnabled: zoomEnabled,
         aperture: aperture,
         internalWidthPx: dimsRef.current.internalWidthPx,
         internalHeightPx: dimsRef.current.internalHeightPx,
-        inspectionMagnification,
         opticsState,
         configuredCameraPose: configuredPose,
       });
@@ -1300,7 +1286,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, scene, widthPx, heightPx, aperture, previewMode, rawDebug, renderQuality, zoomEnabled, channel = "default", presentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, scene, widthPx, heightPx, aperture, previewMode, rawDebug, renderQuality, channel = "default", presentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
@@ -1314,7 +1300,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
         gl={GROUND_GLASS_GL_OPTIONS}
         orthographic={false}
       >
-        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} rawDebug={rawDebug} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
+        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} rawDebug={rawDebug} renderQuality={renderQuality} channel={channel} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
       </Canvas>
     </div>
   );

@@ -28,11 +28,7 @@ export type GroundGlassDofUniformState = {
   renderWidth: number;
   renderHeight: number;
   maximumBlurRadiusPx: number;
-  /** Presentation-only multiplier applied by the gather after film conversion. */
-  inspectionMagnification: number;
-  // Physical CoC / calibration values. The boundary pixel values are the
-  // unscaled physical film-to-pixel reference; inspectionMagnification is
-  // carried separately for display-space gather calculations.
+  // Physical CoC / calibration values.
   circleOfConfusionMm: number;
   boundaryCoCDiameterPx: number;
   boundaryBlurRadiusPx: number;
@@ -83,9 +79,6 @@ export function applyGroundGlassDofUniformState(
   if (material.uniforms.maximumCoCRadiusPx) {
     material.uniforms.maximumCoCRadiusPx.value = state.maximumBlurRadiusPx;
   }
-  if (material.uniforms.inspectionMagnification) {
-    material.uniforms.inspectionMagnification.value = state.inspectionMagnification;
-  }
   if (material.uniforms.focalLengthMm) material.uniforms.focalLengthMm.value = state.focalLengthMm;
   if (material.uniforms.filmWidthMm) material.uniforms.filmWidthMm.value = state.filmWidthMm;
   if (material.uniforms.filmHeightMm) material.uniforms.filmHeightMm.value = state.filmHeightMm;
@@ -106,7 +99,6 @@ export function createGroundGlassDofUniformState(
   width: number,
   height: number,
   maximumBlurRadiusPx: number,
-  inspectionMagnification = 1,
 ): GroundGlassDofUniformState {
   const groundGlassDofModel =
     opticsState.diagnostics.groundGlassDofModel ??
@@ -125,9 +117,6 @@ export function createGroundGlassDofUniformState(
   if (!Number.isFinite(aperture) || aperture <= 0) throw new Error("Invalid aperture");
   if (!Number.isFinite(maximumBlurRadiusPx) || maximumBlurRadiusPx < 0) {
     throw new Error("Invalid maximumBlurRadiusPx");
-  }
-  if (!Number.isFinite(inspectionMagnification) || inspectionMagnification <= 0) {
-    throw new Error("Invalid inspectionMagnification");
   }
   const lens = opticsState.lensCenterWorld;
   const lensBasis = deriveOrthonormalPlaneBasis(
@@ -225,7 +214,6 @@ export function createGroundGlassDofUniformState(
     renderWidth: width,
     renderHeight: height,
     maximumBlurRadiusPx,
-    inspectionMagnification,
     circleOfConfusionMm,
     boundaryCoCDiameterPx,
     boundaryBlurRadiusPx,

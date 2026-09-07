@@ -7,12 +7,12 @@ import { simulatorMessageKeys } from "../i18n/simulatorMessageKeys";
 import {
   calculateGroundGlassAnchoredPan,
   denormalizeGroundGlassPan,
-  GROUND_GLASS_ZOOM_SCALE,
+  GROUND_GLASS_FOCUS_LOUPE_SCALE,
   normalizeGroundGlassPan,
   type GroundGlassPanOffset,
 } from "./groundGlassStageTransform";
 
-const ZOOM_SCALE = GROUND_GLASS_ZOOM_SCALE;
+const FOCUS_LOUPE_SCALE = GROUND_GLASS_FOCUS_LOUPE_SCALE;
 
 export const GROUND_GLASS_POINTER_THRESHOLDS_PX = {
   mouse: 8,
@@ -87,7 +87,7 @@ export const GroundGlassStage = ({
 }: GroundGlassStageProps) => {
   const { t } = useTranslation();
   const resolvedStageLabel = stageLabel ?? accessibleLabel ?? t(simulatorMessageKeys.viewport.groundGlassTitle);
-  const resolvedZoomInLabel = zoomInLabel ?? t(simulatorMessageKeys.viewport.zoomIn);
+  const resolvedFocusLoupeLabel = zoomInLabel ?? t(simulatorMessageKeys.viewport.focusLoupe);
   const resolvedPanLabel = panLabel ?? t(simulatorMessageKeys.viewport.pan);
   const resolvedResetViewLabel = resetViewLabel ?? t(simulatorMessageKeys.viewport.resetView);
   const resolvedResetActionLabel = resetActionLabel ?? t(simulatorMessageKeys.viewport.resetAction);
@@ -191,7 +191,7 @@ export const GroundGlassStage = ({
     [releaseCurrentPointerCapture],
   );
 
-  const zoomScale = zoomEnabled ? ZOOM_SCALE : 1;
+  const zoomScale = zoomEnabled ? FOCUS_LOUPE_SCALE : 1;
   const effectivePan = zoomEnabled
     ? denormalizeGroundGlassPan(normalizedPan, viewportSize, zoomScale)
     : ZERO_PAN;
@@ -282,13 +282,13 @@ export const GroundGlassStage = ({
     const startPanPx = denormalizeGroundGlassPan(
       { x: gesture.startPanX, y: gesture.startPanY },
       viewportSize,
-      ZOOM_SCALE,
+      FOCUS_LOUPE_SCALE,
     );
     setNormalizedPan(
       normalizeGroundGlassPan(
         { x: startPanPx.x + dx, y: startPanPx.y + dy },
         viewportSize,
-        ZOOM_SCALE,
+        FOCUS_LOUPE_SCALE,
       ),
     );
   };
@@ -324,6 +324,8 @@ export const GroundGlassStage = ({
         role={zoomEnabled ? "region" : "button"}
         tabIndex={0}
         data-zoomed={zoomEnabled ? "true" : "false"}
+        data-focus-loupe-active={zoomEnabled ? "true" : "false"}
+        data-focus-loupe-scale={zoomScale}
         data-pan-x={effectivePan.x}
         data-pan-y={effectivePan.y}
         data-scale={zoomScale}
@@ -332,7 +334,7 @@ export const GroundGlassStage = ({
         data-dragging={isDragging ? "true" : "false"}
         data-pointer-active={dragRef.current.pointerId === null ? "false" : "true"}
         data-pointer-captured={dragRef.current.captured ? "true" : "false"}
-        aria-label={`${zoomEnabled ? resolvedPanLabel : resolvedZoomInLabel} ${resolvedStageLabel}`}
+        aria-label={`${zoomEnabled ? resolvedPanLabel : resolvedFocusLoupeLabel} ${resolvedStageLabel}`}
         onKeyDown={handleKeyDown}
         style={{
           position: "relative",
@@ -370,7 +372,7 @@ export const GroundGlassStage = ({
       <button
         type="button"
         className="btn btn--compact btn--secondary groundglass-view-control"
-        aria-label={zoomEnabled ? `${resolvedResetActionLabel} ${resolvedStageLabel} view` : `${resolvedZoomInLabel} ${resolvedStageLabel} view`}
+        aria-label={zoomEnabled ? `${resolvedResetActionLabel} ${resolvedStageLabel} view` : `${resolvedFocusLoupeLabel} ${resolvedStageLabel} view`}
         onClick={zoomEnabled ? resetGroundGlassInteraction : () => requestZoomIn()}
         style={{
           position: "absolute",
@@ -380,7 +382,7 @@ export const GroundGlassStage = ({
           boxShadow: "0 1px 4px rgba(15, 23, 42, 0.25)",
         }}
       >
-        {zoomEnabled ? resolvedResetViewLabel : resolvedZoomInLabel}
+        {zoomEnabled ? resolvedResetViewLabel : resolvedFocusLoupeLabel}
       </button>
     </div>
   );

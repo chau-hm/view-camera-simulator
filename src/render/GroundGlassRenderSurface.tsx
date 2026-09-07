@@ -8,7 +8,6 @@ import type {
   GroundGlassRttRuntimeInfo,
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "./groundGlassRttDimensions";
-import { getGroundGlassDofVisualSettings } from "./groundGlassVisualSettings";
 
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
@@ -24,7 +23,6 @@ export type GroundGlassRenderSurfaceProps = {
   widthPx: number;
   heightPx: number;
   renderQuality: import("../types/ui").RenderQualityProfile;
-  zoomEnabled?: boolean;
   channel?: GroundGlassRttChannel;
   presentationRegion?: import("../scenes/cameraMovementSceneCalibration").CameraMovementPresentationRegion;
   effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
@@ -46,7 +44,6 @@ export const GroundGlassRenderSurface = ({
   widthPx,
   heightPx,
   renderQuality,
-  zoomEnabled,
   channel = "default",
   presentationRegion,
   effectiveCameraMovementCalibration,
@@ -56,15 +53,12 @@ export const GroundGlassRenderSurface = ({
   const rttRuntimeInfo = explicitRuntimeInfo;
   const runtimeInfoChange = explicitRuntimeInfoChange;
   const sceneId = scene.id;
-  const inspectionMagnification = getGroundGlassDofVisualSettings(sceneId).inspectionMagnification;
   if (isGroundGlassRttScene(sceneId)) {
     return (
       <div
         data-testid="ground-glass-rtt"
         data-rtt-channel={channel}
         data-rtt-scene-id={sceneId}
-        data-focus-inspection-magnification={inspectionMagnification}
-        data-focus-inspection-active={!rawDebug ? "true" : "false"}
         data-rtt-camera-ok={rttRuntimeInfo?.cameraConfigurationOk === undefined ? undefined : String(rttRuntimeInfo.cameraConfigurationOk)}
         data-rtt-depth-available={rttRuntimeInfo?.depthTextureAvailable === undefined ? undefined : String(rttRuntimeInfo.depthTextureAvailable)}
         data-rtt-uniforms-finite={rttRuntimeInfo?.uniformsFinite === undefined ? undefined : String(rttRuntimeInfo.uniformsFinite)}
@@ -133,7 +127,6 @@ export const GroundGlassRenderSurface = ({
           previewMode={previewMode}
           rawDebug={rawDebug}
           renderQuality={renderQuality}
-          zoomEnabled={zoomEnabled}
           channel={channel}
           presentationRegion={presentationRegion}
           effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}

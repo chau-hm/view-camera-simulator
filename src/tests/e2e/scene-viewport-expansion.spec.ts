@@ -309,12 +309,12 @@ test("simulator viewports expand in main without replacing their active canvases
   await tilt.press("ArrowRight");
   await expect(tilt).not.toHaveValue(tiltBefore);
 
-  await page.getByRole("button", { name: "Zoom in Ground Glass view" }).click();
+  await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view" }).click();
   const zoomedGroundGlass = page.getByRole("region", { name: "Pan Ground Glass" });
   await expect(zoomedGroundGlass).toHaveAttribute("data-zoomed", "true");
   await zoomedGroundGlass.focus();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("button", { name: "Zoom in Ground Glass", exact: true })).toHaveAttribute(
+  await expect(page.getByRole("button", { name: "Focus loupe · 4× Ground Glass", exact: true })).toHaveAttribute(
     "data-zoomed",
     "false",
   );
@@ -449,10 +449,12 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'), canvasHandle)).toBe(true);
 
   const beforeZoom = await readRttSnapshot(page);
-  await page.getByRole("button", { name: "Zoom in Ground Glass view" }).click();
-  await expect.poll(async () => (await readRttSnapshot(page)).internalWidth, { timeout: 30_000 }).toBeGreaterThan(beforeZoom.internalWidth);
+  await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view" }).click();
+  await expect.poll(async () => (await readRttSnapshot(page)).internalWidth, { timeout: 30_000 }).toBe(beforeZoom.internalWidth);
   const zoomed = await readRttSnapshot(page);
   expect(zoomed.generation).toBe(normal.generation);
+  expect(zoomed.internalWidth).toBe(beforeZoom.internalWidth);
+  expect(zoomed.internalHeight).toBe(beforeZoom.internalHeight);
   expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"]'), rttHandle)).toBe(true);
   expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'), canvasHandle)).toBe(true);
   await page.getByRole("button", { name: "Reset Ground Glass view" }).click();

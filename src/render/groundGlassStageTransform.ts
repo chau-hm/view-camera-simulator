@@ -1,6 +1,7 @@
 export type GroundGlassPanOffset = { x: number; y: number };
 
-export const GROUND_GLASS_ZOOM_SCALE = 1.9;
+/** Presentation scale for the whole completed Ground Glass focus loupe. */
+export const GROUND_GLASS_FOCUS_LOUPE_SCALE = 4;
 
 export const getGroundGlassPanBounds = (
   viewport: { width: number; height: number },
@@ -38,7 +39,7 @@ export const calculateGroundGlassAnchoredPan = (
   clientX: number,
   clientY: number,
   rect: Pick<DOMRect, "left" | "top" | "width" | "height">,
-  scale = GROUND_GLASS_ZOOM_SCALE,
+  scale = GROUND_GLASS_FOCUS_LOUPE_SCALE,
 ): GroundGlassPanOffset => {
   const offsetX = clientX - (rect.left + rect.width / 2);
   const offsetY = clientY - (rect.top + rect.height / 2);

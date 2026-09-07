@@ -76,7 +76,14 @@ describe("resolveGroundGlassRttDimensions", () => {
     expect(low.internalWidthPx).toBe(Math.round(500 * 0.65 * 1));
   });
 
-  it("matches the stage zoom scale and clamps to max dimensions", () => {
+  it("keeps the source RTT dimensions unchanged when the focus loupe toggles", () => {
+    const unzoomed = resolveGroundGlassRttDimensions({
+      logicalWidth: 500,
+      logicalHeight: 400,
+      renderQuality: "standard",
+      devicePixelRatio: 1,
+      zoomEnabled: false,
+    });
     const zoomed = resolveGroundGlassRttDimensions({
       logicalWidth: 500,
       logicalHeight: 400,
@@ -84,8 +91,9 @@ describe("resolveGroundGlassRttDimensions", () => {
       devicePixelRatio: 1,
       zoomEnabled: true,
     });
-    expect(zoomed.zoomRenderScale).toBe(1.9);
-    expect(zoomed.internalWidthPx).toBe(Math.round(500 * 0.85 * 1.9));
+    expect(zoomed.zoomRenderScale).toBe(1);
+    expect(zoomed.internalWidthPx).toBe(unzoomed.internalWidthPx);
+    expect(zoomed.internalHeightPx).toBe(unzoomed.internalHeightPx);
 
     const logicalW = 1000;
     const logicalH = 800;

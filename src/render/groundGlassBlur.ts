@@ -69,8 +69,6 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   filmWidthMm: number;
   renderWidthPx: number;
   maximumBlurRadiusPx: number;
-  /** Presentation-only scale applied after physical CoC conversion. */
-  inspectionMagnification?: number;
 }): GroundGlassWorldBlurSample {
   const {
     worldPoint,
@@ -81,7 +79,6 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
     filmWidthMm,
     renderWidthPx,
     maximumBlurRadiusPx,
-    inspectionMagnification = 1,
   } = input;
 
   const lensCenter = opticsState.lensCenterWorld;
@@ -125,9 +122,6 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   if (!Number.isFinite(maximumBlurRadiusPx) || maximumBlurRadiusPx < 0) {
     return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid maximumBlurRadiusPx");
   }
-  if (!Number.isFinite(inspectionMagnification) || inspectionMagnification <= 0) {
-    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid inspectionMagnification");
-  }
   if (model === "scheimpflug-wedge") {
     // form ray and sample wedge
     const ray = {
@@ -164,11 +158,10 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
       return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Non-finite CoC in wedge path");
     }
 
-    const cocDiameterPx = dofBlurModel.calculateInspectedCoCDiameterPx(
+    const cocDiameterPx = dofBlurModel.calculateBoundaryCoCDiameterPx(
       cocDiameterMm,
       filmWidthMm,
       renderWidthPx,
-      inspectionMagnification,
     );
     if (!Number.isFinite(cocDiameterPx) || cocDiameterPx < 0) {
       return createUnresolvedGroundGlassBlurSample(
@@ -184,7 +177,6 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
       filmWidthMm,
       renderWidthPx,
       maximumBlurRadiusPx,
-      inspectionMagnification,
     });
     if (
       !Number.isFinite(blurRadiusPx) ||
@@ -257,11 +249,10 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   }
 
   // convert to pixels and radius
-  const circleOfConfusionDiameterPx = dofBlurModel.calculateInspectedCoCDiameterPx(
+  const circleOfConfusionDiameterPx = dofBlurModel.calculateBoundaryCoCDiameterPx(
     cocDiameterMmFinal,
     filmWidthMm,
     renderWidthPx,
-    inspectionMagnification,
   );
   const blurRadiusPxRaw = circleOfConfusionDiameterPx * 0.5;
   const blurRadiusPxClamped = Math.min(maximumBlurRadiusPx, Math.max(0, blurRadiusPxRaw));

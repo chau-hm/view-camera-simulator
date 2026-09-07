@@ -466,7 +466,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     fireEvent.click(screen.getByLabelText("Upright Assist"));
-    fireEvent.click(screen.getByRole("button", { name: "Zoom in Ground Glass view" }));
+    fireEvent.click(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass view" }));
     expect(screen.getByRole("region", { name: "Pan Ground Glass" })).toHaveAttribute("data-zoomed", "true");
 
     fireEvent.click(screen.getByRole("button", { name: "Expand Ground Glass" }));
@@ -497,7 +497,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
 
     expect(screen.getByRole("button", { name: "Restore Ground Glass" })).toBeInTheDocument();
     expect(screen.queryByTestId("scene-canvas")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Zoom in Ground Glass" })).toHaveAttribute("data-zoomed", "false");
+    expect(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass" })).toHaveAttribute("data-zoomed", "false");
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     expect(screen.getByTestId("ground-glass-rtt")).toBe(originalGroundGlassRenderer);
 
@@ -508,7 +508,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
     expect(screen.getByTestId("current-settings-readout")).toBeInTheDocument();
     expect(screen.getByLabelText("Upright Assist")).toBeChecked();
-    expect(screen.getByRole("button", { name: "Zoom in Ground Glass" })).toHaveAttribute("data-zoomed", "false");
+    expect(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass" })).toHaveAttribute("data-zoomed", "false");
   });
 
   it("restores Ground Glass expansion with Escape and on route identity changes", async () => {

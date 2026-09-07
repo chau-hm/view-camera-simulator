@@ -1,22 +1,17 @@
 import type { DerivedOpticsState } from "../types/optics";
 
-/** Presentation-only magnification used to make subpixel CoC differences inspectable. */
-export const DEFAULT_GROUND_GLASS_INSPECTION_MAGNIFICATION = 4;
-
 export type GroundGlassDofVisualSettings = {
   maximumBlurRadiusPx: number;
   planeMode: "automatic" | "derived-planes";
-  inspectionMagnification: number;
 };
 
 const DEFAULT_DOF_VISUAL_SETTINGS: GroundGlassDofVisualSettings = {
   maximumBlurRadiusPx: 60,
   planeMode: "automatic",
-  inspectionMagnification: DEFAULT_GROUND_GLASS_INSPECTION_MAGNIFICATION,
 };
 
 const SCENE_DOF_VISUAL_SETTINGS: Readonly<
-  Record<string, Partial<Omit<GroundGlassDofVisualSettings, "inspectionMagnification">>>
+  Record<string, Partial<GroundGlassDofVisualSettings>>
 > = {
   "table-tilt": {
     maximumBlurRadiusPx: 42,

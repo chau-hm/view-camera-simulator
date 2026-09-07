@@ -700,7 +700,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     disposeRegisteredRttSubject("shelf-swing", replacement);
   });
 
-  it("resizes zoom-dependent targets without replacing the subject or resource generation", () => {
+  it("keeps physical RTT targets unchanged when the focus loupe toggles", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
       ...architectureRiseScene.cameraPreset,
@@ -733,7 +733,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const zoomedInfo = diagnostics.get();
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(zoomedInfo?.resourceGeneration).toBe(initialInfo?.resourceGeneration);
-    expect(zoomedInfo?.internalWidthPx).toBeGreaterThan(initialInfo?.internalWidthPx ?? 0);
+    expect(zoomedInfo?.internalWidthPx).toBe(initialInfo?.internalWidthPx);
+    expect(zoomedInfo?.internalHeightPx).toBe(initialInfo?.internalHeightPx);
     expect(zoomedInfo?.colorTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
     expect(zoomedInfo?.depthTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
     expect(zoomedInfo?.blurTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
@@ -741,7 +742,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(zoomedInfo?.gatherTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
     expect(zoomedInfo?.dofTechnique).toBe("physical-coc-near-far-oriented-gather");
     expect(zoomedInfo?.sampleCount).toBe(32);
-    expect(setSize).toHaveBeenCalledTimes(5);
+    expect(setSize).not.toHaveBeenCalled();
     expect(diagnostics.updates.some(([, info]) => info === null)).toBe(false);
 
     diagnostics.updates.length = 0;
@@ -752,7 +753,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(resetInfo?.resourceGeneration).toBe(initialInfo?.resourceGeneration);
     expect(resetInfo?.internalWidthPx).toBe(initialInfo?.internalWidthPx);
-    expect(setSize).toHaveBeenCalledTimes(5);
+    expect(setSize).not.toHaveBeenCalled();
     expect(diagnostics.updates.some(([, info]) => info === null)).toBe(false);
   });
 

@@ -159,11 +159,9 @@ describe("groundGlassRenderSanityKey", () => {
     expect(makeKey(o)).not.toBe(makeKey(o, { internalWidthPx: 320 }));
   });
 
-  it("changing inspection magnification changes the key", () => {
+  it("does not include presentation loupe state in the source render key", () => {
     const o = buildOptics();
-    expect(makeKey(o, { inspectionMagnification: 4 })).not.toBe(
-      makeKey(o, { inspectionMagnification: 1 }),
-    );
+    expect(makeKey(o, { zoomEnabled: false })).toBe(makeKey(o, { zoomEnabled: true }));
   });
 
   it("null focus/DOF planes serialize deterministically", () => {

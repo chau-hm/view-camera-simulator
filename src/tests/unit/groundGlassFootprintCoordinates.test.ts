@@ -82,25 +82,4 @@ describe("physical film footprint to raw RTT coordinates", () => {
     expect(oneMmAtDoubleResolution.minorAxisPx[1]).toBeCloseTo(-20, 12);
   });
 
-  it("applies inspection magnification after the physical film conversion", () => {
-    const oneX = groundGlassFootprintAxesToRttPixels({
-      ...baseInput,
-      majorRadiusMm: 2,
-      minorRadiusMm: 1,
-      orientationRad: Math.PI / 4,
-      inspectionMagnification: 1,
-    });
-    const fourX = groundGlassFootprintAxesToRttPixels({
-      ...baseInput,
-      majorRadiusMm: 2,
-      minorRadiusMm: 1,
-      orientationRad: Math.PI / 4,
-      inspectionMagnification: 4,
-    });
-
-    expect(fourX.majorAxisPx[0]).toBeCloseTo(oneX.majorAxisPx[0] * 4, 12);
-    expect(fourX.majorAxisPx[1]).toBeCloseTo(oneX.majorAxisPx[1] * 4, 12);
-    expect(fourX.minorAxisPx[0]).toBeCloseTo(oneX.minorAxisPx[0] * 4, 12);
-    expect(fourX.minorAxisPx[1]).toBeCloseTo(oneX.minorAxisPx[1] * 4, 12);
-  });
 });

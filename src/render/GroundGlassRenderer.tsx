@@ -19,7 +19,6 @@ import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { formatGroundGlassFocusLabel } from "./groundGlassFocusLabel";
 import { resolveGroundGlassPresentationPolicy } from "./groundGlassPresentationPolicy";
-import { getGroundGlassDofVisualSettings } from "./groundGlassVisualSettings";
 import type {
   GroundGlassRttChannel,
   GroundGlassRttRuntimeInfo,
@@ -107,8 +106,8 @@ export const GroundGlassRenderer = ({
   const resolvedFocusDistanceMm = cameraState?.focusDistanceMm ?? focusDistanceMm;
   const resolvedAperture = cameraState?.aperture ?? aperture;
   const sceneId = scene.id;
-  const inspectionMagnification = getGroundGlassDofVisualSettings(sceneId).inspectionMagnification;
-  // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
+  // GroundGlassStage owns the presentation-only focus loupe transform and
+  // pointer capture. The RTT remains a completed physical source image.
   const isRttScene = isGroundGlassRttScene(sceneId);
   const [rttLogicalSize, setRttLogicalSize] = useState({
     width: PANEL_WIDTH_PX,
@@ -220,7 +219,6 @@ export const GroundGlassRenderer = ({
           widthPx={isRttSceneFinal ? rttLogicalSize.width : PANEL_WIDTH_PX}
           heightPx={isRttSceneFinal ? rttLogicalSize.height : PANEL_HEIGHT_PX}
           renderQuality={renderQuality}
-          zoomEnabled={zoomEnabled}
           channel={channel}
           presentationRegion={presentationRegion}
           effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
@@ -269,9 +267,9 @@ export const GroundGlassRenderer = ({
         imageLayer={transformedImageLayer}
         fixedOverlayLayer={fixedOverlayLayer}
       />
-      {isRttSceneFinal && !rawDebug && (
+      {isRttSceneFinal && !rawDebug && zoomEnabled && (
         <div
-          data-testid="ground-glass-focus-inspection"
+          data-testid="ground-glass-focus-loupe"
           style={{
             color: "#64748b",
             fontSize: "0.75rem",
@@ -279,9 +277,7 @@ export const GroundGlassRenderer = ({
             textAlign: "right",
           }}
         >
-          {t(simulatorMessageKeys.viewport.focusInspection, {
-            magnification: inspectionMagnification,
-          })}
+          {t(simulatorMessageKeys.viewport.focusLoupe)}
         </div>
       )}
       {/* Current Settings & Focus Fundamentals Debug and Focus Targets are rendered by the parent GroundGlassViewport to allow controls to appear immediately after the canvas. */}

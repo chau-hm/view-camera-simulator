@@ -43,13 +43,11 @@ describe("GroundGlassRenderer", () => {
     // The preview and physical focus-distance overlays remain visible.
     expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-focus-label")).toBeInTheDocument();
-    expect(screen.getByTestId("ground-glass-focus-inspection")).toHaveTextContent(
-      "Focus inspection · 4×",
-    );
+    expect(screen.queryByTestId("ground-glass-focus-loupe")).not.toBeInTheDocument();
     expect(screen.queryByText("Focus assist")).not.toBeInTheDocument();
   });
 
-  it("does not advertise inspection magnification for the raw RTT debug bypass", () => {
+  it("does not advertise the focus loupe for the raw RTT debug bypass", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     render(
       <GroundGlassRenderer
@@ -69,11 +67,8 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    expect(screen.queryByTestId("ground-glass-focus-inspection")).not.toBeInTheDocument();
-    expect(screen.getByTestId("ground-glass-rtt")).toHaveAttribute(
-      "data-focus-inspection-active",
-      "false",
-    );
+    expect(screen.queryByTestId("ground-glass-focus-loupe")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ground-glass-rtt")).not.toHaveAttribute("data-focus-loupe-active");
   });
 
   it("supports zoom mode (control belongs to viewport) without changing camera state", () => {
@@ -107,9 +102,11 @@ describe("GroundGlassRenderer", () => {
       />,
     );
 
-    const zoomIn = screen.getByRole("button", { name: "Zoom in Ground Glass" });
+    const zoomIn = screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass view" });
     fireEvent.click(zoomIn);
     expect(screen.getByRole("button", { name: "Reset Ground Glass view" })).toBeInTheDocument();
+    expect(screen.getByTestId("ground-glass-focus-loupe")).toHaveTextContent("Focus loupe · 4×");
+    expect(screen.getByRole("region", { name: "Pan Ground Glass" })).toHaveAttribute("data-focus-loupe-scale", "4");
     fireEvent.click(screen.getByRole("radio", { name: "Upright Assist" }));
     expect(onGroundGlassAssistEnabledChange).toHaveBeenCalledWith(true);
   });

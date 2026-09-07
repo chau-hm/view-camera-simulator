@@ -56,14 +56,14 @@ test.describe('Ground Glass interaction', () => {
     expect(initialSanityState).toBeTruthy();
 
     await viewport
-      .getByRole('button', { name: 'Zoom in Ground Glass view', exact: true })
+      .getByRole('button', { name: 'Focus loupe · 4× Ground Glass view', exact: true })
       .click();
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('data-scale', '1.9');
-    await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).not.toBe(initialSanityState);
+    await expect(stage).toHaveAttribute('data-scale', '4');
+    await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(initialSanityState);
     await expectContentfulRtt();
-    const stableZoomedSanityState = await rtt.getAttribute('data-rtt-sanity-state');
-    expect(stableZoomedSanityState).toBeTruthy();
+    const stableLoupeSanityState = await rtt.getAttribute('data-rtt-sanity-state');
+    expect(stableLoupeSanityState).toBe(initialSanityState);
 
     const box = await readFreshElementBounds(stage);
     const centerX = box.x + box.width / 2;
@@ -96,11 +96,11 @@ test.describe('Ground Glass interaction', () => {
 
     for (let cycle = 0; cycle < 5; cycle += 1) {
       await viewport
-        .getByRole('button', { name: 'Zoom in Ground Glass view', exact: true })
+        .getByRole('button', { name: 'Focus loupe · 4× Ground Glass view', exact: true })
         .click();
       await expect(stage).toHaveAttribute('data-zoomed', 'true');
-      await expect(stage).toHaveAttribute('data-scale', '1.9');
-      await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(stableZoomedSanityState);
+      await expect(stage).toHaveAttribute('data-scale', '4');
+      await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(stableLoupeSanityState);
       await expectContentfulRtt();
 
       await viewport
@@ -150,10 +150,10 @@ test.describe('Ground Glass interaction', () => {
     await expect(viewport.getByRole('region', { name: 'Pan Ground Glass', exact: true })).toHaveCount(1);
     await expect(viewport.getByRole('button', { name: 'Pan Ground Glass', exact: true })).toHaveCount(0);
 
-    // scale becomes ~1.9 and translates positive — poll once for all conditions
+    // scale becomes 4× and translates positive — poll once for all conditions
     await expect.poll(async () => {
       const t = await readStageTransform(transformedLayer());
-      return Math.abs(t.scaleX - 1.9) < 0.6 && t.translateX > 1 && t.translateY > 1;
+      return Math.abs(t.scaleX - 4) < 0.6 && t.translateX > 1 && t.translateY > 1;
     }, { timeout: 8000 }).toBeTruthy();
 
     // store pre-drag transform
@@ -173,7 +173,7 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('aria-label', 'Pan Ground Glass');
 
     const postDrag = await readStageTransform(transformedLayer());
-    await expect(postDrag.scaleX).toBeCloseTo(1.9, 1);
+    await expect(postDrag.scaleX).toBeCloseTo(4, 1);
     // at least one of the translate axes should change (pan applied)
     const dx = Math.abs(postDrag.translateX - preDrag.translateX);
     const dy = Math.abs(postDrag.translateY - preDrag.translateY);
@@ -215,7 +215,7 @@ test.describe('Ground Glass interaction', () => {
     await expect.poll(async () => {
       const t = await readStageTransform(transformedLayer());
       // scale near expected and both translates negative (right-bottom click should push image left/up)
-      const scaleOk = Math.abs(t.scaleX - 1.9) < 0.6; // tolerant window
+      const scaleOk = Math.abs(t.scaleX - 4) < 0.6; // tolerant window
       const txOk = t.translateX < -1;
       const tyOk = t.translateY < -1;
       return scaleOk && txOk && tyOk;
@@ -236,7 +236,7 @@ test.describe('Ground Glass interaction', () => {
       await expect(stage).toHaveAttribute('data-zoomed', 'true');
       await expect.poll(async () => {
         const t = await readStageTransform(transformedLayer());
-        return Math.abs(t.scaleX - 1.9) < 0.6;
+        return Math.abs(t.scaleX - 4) < 0.6;
       }, { timeout: 8000 }).toBeTruthy();
     }
   });
@@ -261,20 +261,20 @@ test.describe('Ground Glass interaction', () => {
     // click 1
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('data-scale', '1.9');
+    await expect(stage).toHaveAttribute('data-scale', '4');
     await expect.poll(
       async () => (await readStageTransform(transformedLayer())).scaleX,
       { timeout: 15_000 },
-    ).toBeCloseTo(1.9, 1);
+    ).toBeCloseTo(4, 1);
 
     // A second image click does not reset a zoomed stage.
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('data-scale', '1.9');
+    await expect(stage).toHaveAttribute('data-scale', '4');
     await expect.poll(
       async () => (await readStageTransform(transformedLayer())).scaleX,
       { timeout: 15_000 },
-    ).toBeCloseTo(1.9, 1);
+    ).toBeCloseTo(4, 1);
 
     // The explicit Reset View control restores the identity transform.
     await viewport.getByRole('button', { name: 'Reset Ground Glass view', exact: true }).click();
@@ -284,10 +284,10 @@ test.describe('Ground Glass interaction', () => {
     // A subsequent image click can zoom in again.
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('data-scale', '1.9');
+    await expect(stage).toHaveAttribute('data-scale', '4');
     await expect.poll(
       async () => (await readStageTransform(transformedLayer())).scaleX,
       { timeout: 15_000 },
-    ).toBeCloseTo(1.9, 1);
+    ).toBeCloseTo(4, 1);
   });
 });
