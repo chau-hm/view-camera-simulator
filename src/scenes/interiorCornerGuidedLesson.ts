@@ -155,9 +155,10 @@ const evaluateSwingOrientationCriterion = (
   opticsState: DerivedOpticsState,
 ): InteriorCornerGuidedCriterionResult => {
   const evaluation = evaluateInteriorCornerSwingFocus(opticsState, camera.aperture);
-  // Swing is deliberately a partial orientation stage. A fully aligned state
-  // belongs to Refine Focus, so only the evaluator's refine-focus status passes.
-  const passed = evaluation.status === "refine-focus";
+  // Swing is an orientation prerequisite for Refine Focus. Keep that
+  // prerequisite monotonic so a fully aligned later-stage state remains valid
+  // when the learner navigates back to this earlier stage.
+  const passed = evaluation.status === "refine-focus" || evaluation.status === "aligned";
   return {
     passed,
     score: passed ? 1 : 0,

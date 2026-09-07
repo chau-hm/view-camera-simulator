@@ -30,13 +30,13 @@ Guided task criteria/registry, Interior Corner guided evaluation adapter, public
 
 ## Validation run
 
-Focused reconciliation Vitest: 86 tests passed across the four formerly failing files. Full Vitest: 1,613 tests passed. Focused Interior Corner and Oblique Tabletop Playwright: 2 tests passed. Typecheck, lint, CSS structure, build, and diff check passed.
+Focused and full Vitest: 1,615 tests passed. Focused Interior Corner Playwright: 1 test passed. Typecheck, lint, CSS structure, build, and diff check passed.
 
-The broader local CI gate passed CSS, lint, typecheck, full Vitest, and build, then stopped at the unrelated `camera-movement-public-controls.spec.ts` test `3D Scene layout stays stable across continuous movement sliders`: 3 passed, 1 timed out waiting for the scene-panel predicate. No affected Interior Corner or Oblique Tabletop E2E failed.
+The full local CI gate passed CSS, lint, typecheck, full Vitest, and build, then stopped at the unrelated `groundglass-interaction.spec.ts` Architecture Rise test after its 120-second timeout. The same named test timed out on clean current `origin/main` `8d8d378bcaa92b76ae1372555f480e2de00f158a`; no affected Interior Corner test failed.
 
 ## Validation not run
 
-The broader local E2E gate did not complete because of the unrelated camera-movement-public-controls timeout above. No production renderer, scene, optics, or route behavior changed.
+The full local E2E gate did not complete because the clean-main baseline reproduced the unrelated Architecture Rise Ground Glass timeout. The monotonic Swing criterion and route-backed backward-navigation regression passed.
 
 ## Since review
 
@@ -45,7 +45,14 @@ The broader local E2E gate did not complete because of the unrelated camera-move
 - Fresh lesson deep links/reloads to later stages restart at canonical Observe when no recoverable prerequisite session exists.
 - Guided Interior Corner stages expose Restart Lesson instead of destructive Reset Movements; free-mode Reset Movements remains unchanged.
 - The exact-head full Vitest suite now passes; focused lifecycle and browser regression evidence was added.
-- Optics, calibration, CoC thresholds, geometry, RTT, routing identity, and guided task criteria are unchanged.
+- Optics, calibration, CoC thresholds, geometry, RTT, routing identity, and the accepted physical task contracts remain unchanged; Swing prerequisite acceptance is now monotonic for backward navigation.
+
+## Since monotonic-stage review
+
+- The Swing prerequisite now accepts both its intermediate `refine-focus` state and an already aligned state, so backward navigation cannot strand a solved learner at Swing.
+- Added unit and route-backed integration coverage for fully aligned Swing state and Refine Focus → Previous → Swing → Continue, including preserved Rise/Swing/Focus and final f/11 completion.
+- Full local CI reached the unrelated Architecture Rise timeout; clean current `origin/main` reproduced the same 120-second test timeout. `origin/main` advanced to `8d8d378` during validation and was not merged into this focused fix.
+- No optics, calibration, CoC threshold, geometry, RTT, or unrelated task behavior changed.
 
 ## Since test reconciliation
 

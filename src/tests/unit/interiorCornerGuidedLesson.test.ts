@@ -159,10 +159,12 @@ describe("Interior Corner guided lesson", () => {
     expect(correctPhysical.passed).toBe(false);
     expect(correctSwing.status).toBe("passed");
     expect(evaluate(taskIds.swing, { frontSwingDeg: -3.6 }).status).toBe("failed");
-    expect(evaluate(taskIds.swing, {
+    const fullyAlignedSwing = evaluate(taskIds.swing, {
       frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
       focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
-    }).status).toBe("failed");
+    });
+    expect(fullyAlignedSwing.status).toBe("passed");
+    expect(criterion(fullyAlignedSwing, "interior-corner-swing-orientation").passed).toBe(true);
 
     const refineAtSwingStart = evaluate(taskIds.refine, {
       frontRiseMm: 33,
@@ -171,6 +173,18 @@ describe("Interior Corner guided lesson", () => {
     });
     expect(refineAtSwingStart.status).toBe("failed");
     expect(criterion(refineAtSwingStart, "interior-corner-refine-wall-focus").passed).toBe(false);
+  });
+
+  it("keeps the Swing prerequisite valid after the wall focus is fully aligned", () => {
+    const publicSolution = interiorCornerSwingFocusCalibration.public;
+    const alignedState = evaluate(taskIds.swing, {
+      frontRiseMm: 33,
+      frontSwingDeg: publicSolution.frontSwingDeg,
+      focusDistanceMm: publicSolution.focusDistanceMm,
+    });
+
+    expect(alignedState.status).toBe("passed");
+    expect(criterion(alignedState, "interior-corner-swing-orientation").passed).toBe(true);
   });
 
   it("makes Refine Focus the first full near/middle/far wall sharpness gate", () => {
