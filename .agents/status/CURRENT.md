@@ -29,12 +29,13 @@ PR136 makes the Ground Glass focus inspection a true presentation-only 4× loupe
 
 ## Validation
 
-- Pre-sync branch-local full Vitest: `164` files / `1601` tests passed.
-- Pre-sync focused renderer/RTT Vitest: `15` files / `173` tests passed; public-control/workspace integration: `2` files / `31` tests passed.
-- Typecheck, lint, CSS structure, and production build passed; the default build output directory was sandbox-protected, so the same build completed successfully with an isolated temporary `--outDir`.
-- Focused Chromium: Oblique guided lesson and teaching geometry `2/2` passed; Ground Glass interaction `3/3` passed, including 4× pan/reset and unchanged RTT identity.
-- Post-sync full validation and `CI=1 npm run ci:local:e2e` remain required before publication; update this section with exact post-sync totals and any clean-main baseline classification.
+- Post-sync full Vitest: `165` files / `1605` tests passed.
+- Post-sync typecheck, lint, CSS structure, and production build passed.
+- `git diff --check` passed before final handoff updates.
+- Focused Ground Glass/renderer/RTT validation: `23` files / `216` tests passed.
+- Focused Chromium on the merged branch: `5/5` passed across Oblique teaching geometry, Oblique guided lesson, Ground Glass Architecture Rise reset/off-center flows, and Focus Fundamentals loupe/reset. The Ground Glass loupe remained presentation-only and the RTT identity stayed unchanged.
+- `CI=1 npm run ci:local:e2e` passed CSS, lint, typecheck, unit/integration (`165` / `1605`), and build, then stopped at `src/tests/e2e/mirror-shift-teaching-geometry.spec.ts` test `Mirror Shift top-view geometry follows canonical A/B/C state relationships` because `ground-glass-rtt` disappeared after the Front Shift update. The exact two-test spec was rerun on clean latest `origin/main` `8d8d378bcaa92b76ae1372555f480e2de00f158a` with the same result: one pass and the same failure. This is a current-main baseline failure, not a PR136 failure.
 
 ## Scope / known gaps
 
-The branch contains the PR136 Ground Glass presentation correction plus the latest `origin/main` landing changes as base history. No PR11E files are part of the PR136 diff against current main. The remaining work is post-sync validation, final handoff/PR-body refresh, explicit safe publication, and current-head GitHub CI verification.
+The branch contains the PR136 Ground Glass presentation correction plus the latest `origin/main` landing changes as base history. No PR11E files are part of the PR136 diff against current main. The physical CoC/DOF/RTT path remains unchanged; the 4× loupe is owned by `GroundGlassStage`. Full local E2E is not green because of the reproduced unrelated Mirror Shift baseline failure above; no test was weakened or skipped.
