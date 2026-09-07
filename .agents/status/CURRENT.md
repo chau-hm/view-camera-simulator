@@ -27,6 +27,15 @@ PR136 makes the Ground Glass focus inspection a true presentation-only 4× loupe
 - Stage unit coverage proves 4× anchoring, pan bounds, reset, keyboard/pointer behavior, and fixed-overlay separation.
 - Public Oblique Tabletop checks exercise neutral, guided, teaching-geometry, and Ground Glass interaction routes with the loupe at 4×.
 
+## Visual acceptance evidence
+
+- Tested PR head: `7e587cf8622eb39eb775a5f5efbff9d6581634d1`; tested base: `8d8d378bcaa92b76ae1372555f480e2de00f158a`.
+- Public neutral state: Tilt `0°`, Swing `0°`, Focus `4540 mm`, f/11. Learner-visible sharpness was `near-left 81%`, `near-centre 25%`, `near-right 0%`, `middle 100%`, `far-left 11%`, `far-centre 44%`, `far-right 83%`.
+- The 1× overview remained composition-oriented and subtle. At 4×, the middle detail was visibly crisp while Near Right and Far Left were visibly softer; Near Centre was also visibly softer than the middle reference. The active Stage reported scale `4` and the transformed image layer reported `matrix(4, 0, 0, 4, ...)`.
+- The accepted compound state (+7.1° Tilt, +2.1° Swing, 2500 mm Focus, f/11) returned the visible targets to `100/99/98/97/97/96/95%`, with the 4× aligned view visually consistent across the inspected details.
+- Loupe OFF/ON kept RTT internal dimensions at `944×756`, resource generation at `1`, and the render sanity identity unchanged; learner percentages were unchanged by activation. Evidence is temporary and uncommitted at `/tmp/pr136-visual-acceptance/01-neutral-1x-overview.png`, `/tmp/pr136-visual-acceptance/02-neutral-4x-middle.png`, `/tmp/pr136-visual-acceptance/03-neutral-4x-near-right.png`, `/tmp/pr136-visual-acceptance/04-neutral-4x-far-left.png`, and `/tmp/pr136-visual-acceptance/05-aligned-4x.png`.
+- No renderer, optics, calibration, scene, task, or test code changes were required for this evidence pass.
+
 ## Validation
 
 - Post-sync full Vitest: `165` files / `1605` tests passed.
