@@ -125,6 +125,7 @@ export const simulatorMessageKeys = {
     preview: "simulator.viewport.preview",
     rawGroundGlass: "simulator.viewport.rawGroundGlass",
     uprightAssist: "simulator.viewport.uprightAssist",
+    focusLoupe: "simulator.viewport.focusLoupe",
     viewOptions: "simulator.viewport.viewOptions",
     comparisonHeading: "simulator.viewport.comparisonHeading",
     comparisonDescription: "simulator.viewport.comparisonDescription",

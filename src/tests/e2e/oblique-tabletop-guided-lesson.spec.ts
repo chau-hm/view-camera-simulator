@@ -14,7 +14,12 @@ const expectLessonStage = async (page: Page, step: string, label: string) => {
 
 const expectGroundGlass = async (page: Page) => {
   const rtt = page.getByTestId("ground-glass-rtt");
+  const stage = page.getByLabel("GroundGlassViewport").locator("[data-focus-loupe-active]");
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "oblique-tabletop");
+  await expect(rtt).not.toHaveAttribute("data-focus-inspection-magnification");
+  await expect(rtt).not.toHaveAttribute("data-focus-inspection-active");
+  await expect(stage).toHaveAttribute("data-focus-loupe-active", "false");
+  await expect(stage).toHaveAttribute("data-focus-loupe-scale", "1");
   await expect(rtt.locator("canvas")).toBeVisible();
 };
 
@@ -55,6 +60,13 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByLabel("Focus distance")).toHaveValue("4540");
   await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
   await expectGroundGlass(page);
+  await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Pan Ground Glass", exact: true })).toHaveAttribute(
+    "data-focus-loupe-scale",
+    "4",
+  );
+  await expect(page.getByTestId("ground-glass-focus-loupe")).toHaveText("Focus loupe · 4×");
+  await page.getByRole("button", { name: "Reset Ground Glass view", exact: true }).click();
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expect(page).toHaveURL(

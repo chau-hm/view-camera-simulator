@@ -1,5 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import "../i18n";
+import { simulatorMessageKeys } from "../i18n/simulatorMessageKeys";
 import { GroundGlassStage } from "./GroundGlassStage";
 import { GroundGlassRenderSurface } from "./GroundGlassRenderSurface";
 import { GroundGlassTransformedOverlays, GroundGlassFixedOverlays } from "./GroundGlassOverlays";
@@ -23,6 +26,11 @@ import type {
 } from "./groundGlassRttDimensions";
 import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementSceneCalibration";
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
+import {
+  FULL_GROUND_GLASS_INSPECTION_WINDOW,
+  mapGroundGlassInspectionWindowToFilmSpace,
+  type GroundGlassInspectionWindow,
+} from "./groundGlassInspectionWindow";
 
 export type GroundGlassRendererProps = {
   opticsState: DerivedOpticsState;
@@ -99,11 +107,31 @@ export const GroundGlassRenderer = ({
   resetActionLabel,
   lastFiniteFocusDepthMm: explicitLastFiniteFocusDepthMm,
 }: GroundGlassRendererProps) => {
+  const { t } = useTranslation();
   const resolvedFocusDistanceMm = cameraState?.focusDistanceMm ?? focusDistanceMm;
   const resolvedAperture = cameraState?.aperture ?? aperture;
   const sceneId = scene.id;
-  // Stage component handles pan/zoom and pointer capture. Pass zoomEnabled through to it.
+  // GroundGlassStage owns pointer capture and normalized inspection pan. RTT
+  // scenes consume the resulting physical film window; legacy canvas scenes
+  // retain the existing CSS presentation path.
   const isRttScene = isGroundGlassRttScene(sceneId);
+  const [inspectionWindow, setInspectionWindow] = useState<GroundGlassInspectionWindow>(
+    FULL_GROUND_GLASS_INSPECTION_WINDOW,
+  );
+  const handleInspectionWindowChange = useCallback((nextWindow: GroundGlassInspectionWindow) => {
+    setInspectionWindow((current) =>
+      current.active === nextWindow.active &&
+      current.centerU === nextWindow.centerU &&
+      current.centerV === nextWindow.centerV &&
+      current.widthFraction === nextWindow.widthFraction &&
+      current.heightFraction === nextWindow.heightFraction
+        ? current
+        : nextWindow,
+    );
+  }, []);
+  useEffect(() => {
+    if (!zoomEnabled) setInspectionWindow(FULL_GROUND_GLASS_INSPECTION_WINDOW);
+  }, [zoomEnabled]);
   const [rttLogicalSize, setRttLogicalSize] = useState({
     width: PANEL_WIDTH_PX,
     height: PANEL_HEIGHT_PX,
@@ -145,6 +173,10 @@ export const GroundGlassRenderer = ({
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
   const presentationPolicy = resolveGroundGlassPresentationPolicy(scene);
   const isRttSceneFinal = isRttScene;
+  const physicalInspectionWindow = useMemo(
+    () => mapGroundGlassInspectionWindowToFilmSpace(inspectionWindow, previewMode),
+    [inspectionWindow, previewMode],
+  );
   const sceneShiftX = isRttSceneFinal ? 0 : clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
   const sceneShiftY = isRttSceneFinal ? 0 : clamp(-riseMm * 2 + tiltDeg * 4 - pipeline.verticalFrameOffsetPx * 0.15, -80, 80);
   const sceneRotationDeg = isRttSceneFinal ? 0 : clamp(tiltDeg * 1.25 + swingDeg * 0.75, -18, 18);
@@ -214,8 +246,8 @@ export const GroundGlassRenderer = ({
           widthPx={isRttSceneFinal ? rttLogicalSize.width : PANEL_WIDTH_PX}
           heightPx={isRttSceneFinal ? rttLogicalSize.height : PANEL_HEIGHT_PX}
           renderQuality={renderQuality}
-          zoomEnabled={zoomEnabled}
           channel={channel}
+          inspectionWindow={physicalInspectionWindow}
           presentationRegion={presentationRegion}
           effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
           runtimeInfo={runtimeInfo}
@@ -252,6 +284,8 @@ export const GroundGlassRenderer = ({
       <GroundGlassStage
         zoomEnabled={zoomEnabled}
         onZoomChange={onZoomChange}
+        onInspectionWindowChange={handleInspectionWindowChange}
+        useRttInspectionWindow={isRttSceneFinal}
         onViewportSizeChange={handleViewportSizeChange}
         interactionResetKey={interactionResetKey}
         accessibleLabel={accessibleLabel}
@@ -263,6 +297,19 @@ export const GroundGlassRenderer = ({
         imageLayer={transformedImageLayer}
         fixedOverlayLayer={fixedOverlayLayer}
       />
+      {isRttSceneFinal && !rawDebug && zoomEnabled && (
+        <div
+          data-testid="ground-glass-focus-loupe"
+          style={{
+            color: "#64748b",
+            fontSize: "0.75rem",
+            lineHeight: 1.25,
+            textAlign: "right",
+          }}
+        >
+          {t(simulatorMessageKeys.viewport.focusLoupe)}
+        </div>
+      )}
       {/* Current Settings & Focus Fundamentals Debug and Focus Targets are rendered by the parent GroundGlassViewport to allow controls to appear immediately after the canvas. */}
     </div>
   );

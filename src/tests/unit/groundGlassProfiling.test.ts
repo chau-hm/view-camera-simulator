@@ -26,7 +26,6 @@ const makeConfiguration = (
   previewMode: "upright",
   rawDebug,
   devicePixelRatio: 1,
-  zoomEnabled: false,
 });
 
 type FakeGpuContext = GroundGlassGpuTimerContext & {

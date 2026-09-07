@@ -11,7 +11,7 @@ const DEFAULT_DOF_VISUAL_SETTINGS: GroundGlassDofVisualSettings = {
 };
 
 const SCENE_DOF_VISUAL_SETTINGS: Readonly<
-  Record<string, GroundGlassDofVisualSettings>
+  Record<string, Partial<GroundGlassDofVisualSettings>>
 > = {
   "table-tilt": {
     maximumBlurRadiusPx: 42,
@@ -39,9 +39,10 @@ const SCENE_DOF_VISUAL_SETTINGS: Readonly<
 
 export const getGroundGlassDofVisualSettings = (
   sceneId?: string,
-): GroundGlassDofVisualSettings =>
-  (sceneId ? SCENE_DOF_VISUAL_SETTINGS[sceneId] : undefined) ??
-  DEFAULT_DOF_VISUAL_SETTINGS;
+): GroundGlassDofVisualSettings => ({
+  ...DEFAULT_DOF_VISUAL_SETTINGS,
+  ...(sceneId ? SCENE_DOF_VISUAL_SETTINGS[sceneId] : undefined),
+});
 
 export const resolveGroundGlassDisplayOpticsState = (
   sceneId: string | undefined,

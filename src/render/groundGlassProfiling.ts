@@ -80,7 +80,6 @@ export type GroundGlassProfilingConfiguration = {
   previewMode: "raw" | "upright";
   rawDebug: boolean;
   devicePixelRatio: number;
-  zoomEnabled: boolean;
 };
 
 export type GroundGlassProfilingSnapshot = GroundGlassProfilingConfiguration & {
@@ -672,7 +671,6 @@ export class GroundGlassProfiler {
       configuration.cocStorageFormat,
       configuration.previewMode,
       configuration.rawDebug,
-      configuration.zoomEnabled,
     ]);
     if (this.measurementKey !== key) {
       this.resetSession("measurement-key-change");
@@ -823,7 +821,6 @@ export class GroundGlassProfiler {
       previewMode: "upright" as const,
       rawDebug: false,
       devicePixelRatio: 1,
-      zoomEnabled: false,
     };
     const rawDebug = config.rawDebug;
     const passStats = (pass: GroundGlassProfilingPass): GroundGlassProfilingTimingStats | null =>

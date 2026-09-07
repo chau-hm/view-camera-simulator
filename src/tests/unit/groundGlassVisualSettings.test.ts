@@ -46,6 +46,7 @@ describe("Ground Glass visual settings", () => {
     ]) {
       const settings = getGroundGlassDofVisualSettings(sceneId);
       expect("displayBlurScale" in settings).toBe(false);
+      expect("inspectionMagnification" in settings).toBe(false);
     }
   });
 

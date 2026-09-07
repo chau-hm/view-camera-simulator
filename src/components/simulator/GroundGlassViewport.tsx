@@ -93,7 +93,7 @@ export const GroundGlassViewport = ({
     sceneId === "understanding-camera-movements"
       ? t(simulatorMessageKeys.viewport.previewLabel)
       : t(simulatorMessageKeys.viewport.groundGlassTitle);
-  const zoomInLabel = t(simulatorMessageKeys.viewport.zoomIn);
+  const focusLoupeLabel = t(simulatorMessageKeys.viewport.focusLoupe);
   const panLabel = t(simulatorMessageKeys.viewport.pan);
   const resetViewLabel = t(simulatorMessageKeys.viewport.resetView);
   const resetActionLabel = t(simulatorMessageKeys.viewport.resetAction);
@@ -165,7 +165,7 @@ export const GroundGlassViewport = ({
           onRuntimeInfoChange={onRuntimeInfoChange}
           accessibleLabel={label === "Original" ? originalStageLabel : currentStageLabel}
           stageLabel={label === "Original" ? originalStageLabel : currentStageLabel}
-          zoomInLabel={zoomInLabel}
+          zoomInLabel={focusLoupeLabel}
           panLabel={panLabel}
           resetViewLabel={resetViewLabel}
           resetActionLabel={resetActionLabel}
@@ -173,7 +173,7 @@ export const GroundGlassViewport = ({
         />
       </section>
     ),
-    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusMetric, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, panLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t, zoomInLabel],
+    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusMetric, focusLoupeLabel, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, panLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t],
   );
 
   useEffect(() => {
@@ -308,7 +308,7 @@ export const GroundGlassViewport = ({
               interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}`}
               accessibleLabel={singleViewAccessibleLabel}
               stageLabel={singleViewAccessibleLabel}
-              zoomInLabel={zoomInLabel}
+              zoomInLabel={focusLoupeLabel}
               panLabel={panLabel}
               resetViewLabel={resetViewLabel}
               resetActionLabel={resetActionLabel}

@@ -125,6 +125,7 @@ export const simulatorMessages = {
     preview: "Preview",
     rawGroundGlass: "Raw Ground Glass",
     uprightAssist: "Upright Assist",
+    focusLoupe: "Focus loupe · 4×",
     viewOptions: "View Options",
     comparisonHeading: "Original and Current Ground Glass comparison",
     comparisonDescription: "Compare the neutral camera with the selected movement.",

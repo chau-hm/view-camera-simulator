@@ -1,5 +1,9 @@
 import type { DerivedOpticsState } from "../types/optics";
 import type { GroundGlassCameraPose } from "./configureGroundGlassCamera";
+import {
+  FULL_GROUND_GLASS_INSPECTION_WINDOW,
+  type GroundGlassInspectionWindow,
+} from "./groundGlassInspectionWindow";
 
 const finiteOrNull = (value: number): string =>
   Number.isFinite(value) ? value.toFixed(6) : "null";
@@ -21,12 +25,14 @@ export type RenderSanityKeyInputs = {
   sceneId?: string;
   previewMode?: string;
   rawDebug: boolean;
-  zoomEnabled: boolean;
+  /** Deprecated presentation input; loupe state does not alter source output. */
+  zoomEnabled?: boolean;
   aperture: number;
   internalWidthPx: number;
   internalHeightPx: number;
   opticsState: DerivedOpticsState;
   configuredCameraPose?: GroundGlassCameraPose;
+  inspectionWindow?: GroundGlassInspectionWindow;
 };
 
 /**
@@ -46,15 +52,21 @@ export type RenderSanityKeyInputs = {
 export function createGroundGlassRenderSanityStateKey(
   inputs: RenderSanityKeyInputs,
 ): string {
-  const { resourceGeneration, sceneId, previewMode, rawDebug, zoomEnabled, aperture,
-    internalWidthPx, internalHeightPx, opticsState: o, configuredCameraPose } = inputs;
+  const { resourceGeneration, sceneId, previewMode, rawDebug, aperture,
+    internalWidthPx, internalHeightPx,
+    opticsState: o, configuredCameraPose,
+    inspectionWindow = FULL_GROUND_GLASS_INSPECTION_WINDOW } = inputs;
 
   const parts: string[] = [
     String(resourceGeneration),
     sceneId ?? "no-scene",
     previewMode ?? "raw",
     rawDebug ? "1" : "0",
-    zoomEnabled ? "1" : "0",
+    inspectionWindow.active ? "1" : "0",
+    finiteOrNull(inspectionWindow.centerU),
+    finiteOrNull(inspectionWindow.centerV),
+    finiteOrNull(inspectionWindow.widthFraction),
+    finiteOrNull(inspectionWindow.heightFraction),
     String(aperture),
     String(internalWidthPx),
     String(internalHeightPx),

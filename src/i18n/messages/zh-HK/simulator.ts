@@ -128,6 +128,7 @@ export const simulatorMessages = {
     preview: "預覽",
     rawGroundGlass: "原始對焦屏",
     uprightAssist: "正立輔助",
+    focusLoupe: "對焦放大鏡 · 4×",
     viewOptions: "檢視選項",
     comparisonHeading: "原始及目前對焦屏比較",
     comparisonDescription: "比較中立相機與所選移軸。",

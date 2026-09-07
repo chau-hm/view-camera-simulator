@@ -321,9 +321,9 @@ export const createGroundGlassCocTarget = (
 };
 
 /**
- * Physical CoC diameter range represented by the display-radius cap. This is
- * used only for byte storage normalization; optical CoC calculation remains
- * unchanged and full resolution.
+ * Physical CoC diameter range represented by the source-render radius cap.
+ * This is used only for byte storage normalization; the Focus Loupe is applied
+ * later to the completed Ground Glass image and does not change this range.
  */
 export const resolveGroundGlassCocStorageMaxMm = (input: {
   maximumCoCRadiusPx: number;
