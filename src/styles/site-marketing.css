@@ -23,7 +23,13 @@
   --marketing-section-space: clamp(56px, 8vw, 112px);
   --marketing-card-radius: 18px;
   --marketing-control-radius: 10px;
-  --marketing-motion-duration: 220ms;
+  --marketing-motion-fast: 120ms;
+  --marketing-motion-ui: 180ms;
+  --marketing-motion-reveal: 480ms;
+  --marketing-motion-cinematic: 650ms;
+  --marketing-motion-settle: 900ms;
+  --marketing-ease-ui: cubic-bezier(0.2, 0, 0, 1);
+  --marketing-ease-cinematic: cubic-bezier(0.22, 1, 0.36, 1);
 
   min-height: 100dvh;
   overflow-x: clip;
@@ -49,7 +55,7 @@
 }
 
 .site-shell--landing-home .site-header {
-  position: absolute;
+  position: fixed;
   inset: 0 0 auto;
   background: linear-gradient(180deg, rgba(3, 9, 16, 0.72), rgba(3, 9, 16, 0));
   border-bottom-color: transparent;
@@ -78,6 +84,14 @@
 .site-shell--landing-home .site-header {
   background: linear-gradient(180deg, rgba(3, 9, 16, 0.72), rgba(3, 9, 16, 0));
   border-bottom-color: transparent;
+  transition:
+    background var(--marketing-motion-ui) var(--marketing-ease-ui),
+    border-bottom-color var(--marketing-motion-ui) var(--marketing-ease-ui);
+}
+
+.site-shell--landing-home .site-header.site-header--scrolled {
+  background: var(--marketing-glass);
+  border-bottom-color: var(--marketing-border);
 }
 
 .site-shell .site-header__inner {
@@ -127,6 +141,9 @@
   padding: 9px 12px;
   font-size: 0.9rem;
   font-weight: 650;
+  transition:
+    color var(--marketing-motion-fast) var(--marketing-ease-ui),
+    background-color var(--marketing-motion-fast) var(--marketing-ease-ui);
 }
 
 .site-shell .site-nav__link:hover {
@@ -322,6 +339,34 @@
   display: none;
 }
 
+@keyframes landing-hero-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] [data-landing-hero-copy] {
+  animation: landing-hero-copy-in var(--marketing-motion-cinematic) var(--marketing-ease-cinematic) both;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] [data-landing-hero-copy="title"] {
+  animation-delay: 90ms;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] [data-landing-hero-copy="description"] {
+  animation-delay: 180ms;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] [data-landing-hero-copy="cta"] {
+  animation-delay: 270ms;
+}
+
 /* Static conceptual learning slice. Keep the two sections visually unified while
    allowing each section to own its semantic heading and card grid. */
 
@@ -434,6 +479,85 @@
   font-size: 0.95rem;
   line-height: 1.65;
   text-wrap: pretty;
+}
+
+/* Progressive-enhancement reveals. Without the marker, these elements keep
+   their static layout and remain visible when JS or IntersectionObserver is
+   unavailable. */
+
+.site-shell--landing-home[data-landing-motion="enabled"] :is(
+  [data-landing-reveal="header"],
+  [data-landing-reveal="card"],
+  [data-landing-reveal="cta-title"],
+  [data-landing-reveal="cta-description"],
+  [data-landing-reveal="cta-action"]
+) {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity var(--marketing-motion-reveal) var(--marketing-ease-cinematic),
+    transform var(--marketing-motion-reveal) var(--marketing-ease-cinematic);
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] [data-landing-reveal][data-landing-revealed="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] [data-landing-reveal]:focus-within,
+.site-shell--landing-home[data-landing-motion="enabled"] [data-landing-reveal]:focus-visible {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-concept-grid [data-landing-reveal="card"]:nth-child(2) {
+  transition-delay: 80ms;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-concept-grid [data-landing-reveal="card"]:nth-child(3) {
+  transition-delay: 160ms;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-concept-grid [data-landing-reveal="card"]:nth-child(4) {
+  transition-delay: 240ms;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] [data-landing-reveal="cta-description"] {
+  transition-delay: 120ms;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] [data-landing-reveal="cta-action"] {
+  transition-delay: 240ms;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-final-cta-section__artwork[data-landing-reveal="cta-artwork"] {
+  opacity: 0.72;
+  transition: opacity var(--marketing-motion-settle) var(--marketing-ease-cinematic);
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-final-cta-section__artwork[data-landing-reveal="cta-artwork"][data-landing-revealed="true"] {
+  opacity: 1;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-why-section :is(
+  [data-landing-reveal="header"],
+  [data-landing-reveal="card"]
+) {
+  transform: translateY(10px);
+  transition-duration: var(--marketing-motion-ui);
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-why-grid [data-landing-reveal="card"]:nth-child(2) {
+  transition-delay: 60ms;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-why-grid [data-landing-reveal="card"]:nth-child(3) {
+  transition-delay: 120ms;
+}
+
+.site-shell--landing-home[data-landing-motion="enabled"] .landing-why-section [data-landing-reveal][data-landing-revealed="true"] {
+  transform: none;
 }
 
 /* Part F keeps the learning slice dark but shifts from diagrams to quiet,
@@ -632,6 +756,15 @@
   font-weight: 750;
   letter-spacing: 0.01em;
   text-decoration: none;
+  transition:
+    transform var(--marketing-motion-ui) var(--marketing-ease-ui),
+    box-shadow var(--marketing-motion-ui) var(--marketing-ease-ui);
+}
+
+.site-shell .landing-final-cta-section__cta:hover,
+.site-shell .landing-final-cta-section__cta:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(143, 234, 255, 0.44), 0 15px 38px rgba(53, 200, 237, 0.3);
 }
 
 /* Shared marketing notices and buttons */
@@ -1344,5 +1477,87 @@
 
   .site-shell .scene-thumb {
     height: 180px;
+  }
+}
+
+@media (max-width: 767px) {
+  .site-shell--landing-home[data-landing-motion="enabled"] [data-landing-hero-copy] {
+    animation-duration: var(--marketing-motion-reveal);
+  }
+
+  .site-shell--landing-home[data-landing-motion="enabled"] [data-landing-hero-copy="title"] {
+    animation-delay: 60ms;
+  }
+
+  .site-shell--landing-home[data-landing-motion="enabled"] [data-landing-hero-copy="description"] {
+    animation-delay: 120ms;
+  }
+
+  .site-shell--landing-home[data-landing-motion="enabled"] [data-landing-hero-copy="cta"] {
+    animation-delay: 180ms;
+  }
+
+  .site-shell--landing-home[data-landing-motion="enabled"] :is(
+    [data-landing-reveal="header"],
+    [data-landing-reveal="card"],
+    [data-landing-reveal="cta-title"],
+    [data-landing-reveal="cta-description"],
+    [data-landing-reveal="cta-action"]
+  ) {
+    transform: translateY(10px);
+    transition-duration: var(--marketing-motion-reveal);
+  }
+
+  .site-shell--landing-home[data-landing-motion="enabled"] .landing-final-cta-section__artwork[data-landing-reveal="cta-artwork"] {
+    transition-duration: var(--marketing-motion-reveal);
+  }
+
+  .site-shell--landing-home[data-landing-motion="enabled"] .landing-why-section :is(
+    [data-landing-reveal="header"],
+    [data-landing-reveal="card"]
+  ) {
+    transform: translateY(8px);
+    transition-duration: var(--marketing-motion-ui);
+  }
+
+  .site-shell--landing-home[data-landing-motion="enabled"] .landing-why-grid [data-landing-reveal="card"]:nth-child(2) {
+    transition-delay: 60ms;
+  }
+
+  .site-shell--landing-home[data-landing-motion="enabled"] .landing-why-grid [data-landing-reveal="card"]:nth-child(3) {
+    transition-delay: 120ms;
+  }
+
+  .site-shell--landing-home[data-landing-motion="enabled"] [data-landing-reveal="cta-description"] {
+    transition-delay: 60ms;
+  }
+
+  .site-shell--landing-home[data-landing-motion="enabled"] [data-landing-reveal="cta-action"] {
+    transition-delay: 120ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-shell--landing-home[data-landing-motion="enabled"] [data-landing-hero-copy],
+  .site-shell--landing-home[data-landing-motion="enabled"] [data-landing-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .site-shell .landing-final-cta-section__cta,
+  .site-shell .landing-final-cta-section__cta:hover,
+  .site-shell .landing-final-cta-section__cta:focus-visible {
+    transform: none;
+    transition: none;
+  }
+
+  .site-shell .site-nav__link {
+    transition: none;
+  }
+
+  .site-shell--landing-home .site-header {
+    transition: none;
   }
 }
