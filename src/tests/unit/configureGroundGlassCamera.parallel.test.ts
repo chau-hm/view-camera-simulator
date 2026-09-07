@@ -5,6 +5,10 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import geometry from "../../scenes/architectureRiseGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import {
+  FULL_GROUND_GLASS_INSPECTION_WINDOW,
+  resolveGroundGlassInspectionWindow,
+} from "../../render/groundGlassInspectionWindow";
 
 // tolerance for NDC equality
 const TOL = 1e-3;
@@ -104,4 +108,43 @@ describe("configureGroundGlassCamera projection parity (pure rise)", () => {
       }
     });
   }
+});
+
+describe("configureGroundGlassCamera physical inspection crop", () => {
+  it("changes only the projection sub-frustum, not the camera pose", () => {
+    const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
+    const fullCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
+    const croppedCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
+    const full = configureGroundGlassCamera(
+      fullCamera,
+      optics,
+      0.01,
+      1000,
+      FULL_GROUND_GLASS_INSPECTION_WINDOW,
+    );
+    const cropped = configureGroundGlassCamera(
+      croppedCamera,
+      optics,
+      0.01,
+      1000,
+      resolveGroundGlassInspectionWindow({
+        active: true,
+        normalizedPan: { x: 0, y: 0 },
+        magnification: 4,
+      }),
+    );
+
+    expect(full.ok).toBe(true);
+    expect(cropped.ok).toBe(true);
+    if (!full.ok || !cropped.ok) return;
+
+    expect(cropped.pose.positionWorld).toEqual(full.pose.positionWorld);
+    expect(cropped.pose.upWorld).toEqual(full.pose.upWorld);
+    expect(cropped.pose.forwardWorld).toEqual(full.pose.forwardWorld);
+    expect(cropped.near).toBe(full.near);
+    expect(cropped.far).toBe(full.far);
+    expect(cropped.right - cropped.left).toBeCloseTo((full.right - full.left) / 4, 10);
+    expect(cropped.top - cropped.bottom).toBeCloseTo((full.top - full.bottom) / 4, 10);
+    expect(croppedCamera.projectionMatrix.equals(fullCamera.projectionMatrix)).toBe(false);
+  });
 });

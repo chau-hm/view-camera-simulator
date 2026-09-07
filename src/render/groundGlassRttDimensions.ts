@@ -99,6 +99,11 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   renderSanitySampleCount?: number;
   renderSanityStateKey?: string;
   renderSanityError?: string | null;
+  inspectionWindowActive?: boolean;
+  inspectionCenterU?: number;
+  inspectionCenterV?: number;
+  sampledFilmWidthMm?: number;
+  sampledFilmHeightMm?: number;
   profilingEnabled?: boolean;
   profilingBackend?: GroundGlassProfilingBackend;
   profilingSnapshot?: GroundGlassProfilingSnapshot;
@@ -134,7 +139,7 @@ export function resolveGroundGlassRttDimensions(opts: {
   logicalHeight: number;
   renderQuality: RenderQualityProfile;
   devicePixelRatio: number;
-  /** Deprecated presentation input; source RTT dimensions are loupe-independent. */
+  /** Deprecated presentation input; source RTT dimensions remain stable while the film window changes. */
   zoomEnabled?: boolean;
 }): GroundGlassRttDimensions {
   const { logicalWidth, logicalHeight, renderQuality, devicePixelRatio } = opts;
@@ -147,8 +152,8 @@ export function resolveGroundGlassRttDimensions(opts: {
     Math.round(Number.isFinite(logicalHeight) ? logicalHeight : 1),
   );
   const quality = getRenderQualitySettings(renderQuality);
-  // Focus Loupe is applied to the completed image by GroundGlassStage. Keep
-  // the physical RTT source independent of loupe state.
+  // Focus Loupe changes the physical film sub-frustum and sampled-film scale,
+  // not the owned RTT dimensions. Keep this resource-size scale stable.
   const zoomRenderScale = 1.0;
   const resolutionScale = quality.groundGlassScale * zoomRenderScale;
   // effective DPR limited by profile dpr

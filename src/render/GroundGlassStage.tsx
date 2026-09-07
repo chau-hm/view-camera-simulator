@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 import "../i18n";
@@ -11,6 +11,10 @@ import {
   normalizeGroundGlassPan,
   type GroundGlassPanOffset,
 } from "./groundGlassStageTransform";
+import {
+  resolveGroundGlassInspectionWindow,
+  type GroundGlassInspectionWindow,
+} from "./groundGlassInspectionWindow";
 
 const FOCUS_LOUPE_SCALE = GROUND_GLASS_FOCUS_LOUPE_SCALE;
 
@@ -59,6 +63,9 @@ type GroundGlassStageProps = {
   imageLayer: ReactNode;
   fixedOverlayLayer?: ReactNode;
   onZoomChange?: (nextZoomed: boolean) => void;
+  onInspectionWindowChange?: (window: GroundGlassInspectionWindow) => void;
+  /** RTT scenes sample a film crop instead of CSS-scaling the completed image. */
+  useRttInspectionWindow?: boolean;
   onViewportSizeChange?: (size: { width: number; height: number }) => void;
   /** Changes when navigation or preview state must discard the current interaction. */
   interactionResetKey?: string;
@@ -76,6 +83,8 @@ export const GroundGlassStage = ({
   imageLayer,
   fixedOverlayLayer,
   onZoomChange,
+  onInspectionWindowChange,
+  useRttInspectionWindow = false,
   onViewportSizeChange,
   interactionResetKey,
   accessibleLabel,
@@ -195,7 +204,24 @@ export const GroundGlassStage = ({
   const effectivePan = zoomEnabled
     ? denormalizeGroundGlassPan(normalizedPan, viewportSize, zoomScale)
     : ZERO_PAN;
-  const transform = `translate3d(${effectivePan.x}px, ${effectivePan.y}px, 0) scale(${zoomScale})`;
+  const inspectionWindow = useMemo(
+    () => resolveGroundGlassInspectionWindow({
+      active: zoomEnabled,
+      normalizedPan,
+      magnification: FOCUS_LOUPE_SCALE,
+    }),
+    [normalizedPan, zoomEnabled],
+  );
+  const presentationCssScale = useRttInspectionWindow ? 1 : zoomScale;
+  const presentationCssPan = useRttInspectionWindow ? ZERO_PAN : effectivePan;
+  const transform = `translate3d(${presentationCssPan.x}px, ${presentationCssPan.y}px, 0) scale(${presentationCssScale})`;
+
+  useEffect(() => {
+    onInspectionWindowChange?.(inspectionWindow);
+  }, [
+    inspectionWindow,
+    onInspectionWindowChange,
+  ]);
 
   const isInteractiveDescendant = (target: EventTarget | null, root: Element | null): boolean => {
     if (!(target instanceof Element)) return false;
@@ -326,9 +352,16 @@ export const GroundGlassStage = ({
         data-zoomed={zoomEnabled ? "true" : "false"}
         data-focus-loupe-active={zoomEnabled ? "true" : "false"}
         data-focus-loupe-scale={zoomScale}
-        data-pan-x={effectivePan.x}
-        data-pan-y={effectivePan.y}
-        data-scale={zoomScale}
+        data-pan-x={presentationCssPan.x}
+        data-pan-y={presentationCssPan.y}
+        data-inspection-pan-x={normalizedPan.x}
+        data-inspection-pan-y={normalizedPan.y}
+        data-focus-loupe-center-u={inspectionWindow.centerU}
+        data-focus-loupe-center-v={inspectionWindow.centerV}
+        data-focus-loupe-window-width={inspectionWindow.widthFraction}
+        data-focus-loupe-window-height={inspectionWindow.heightFraction}
+        data-presentation-css-scale={presentationCssScale}
+        data-scale={presentationCssScale}
         data-normalized-pan-x={normalizedPan.x}
         data-normalized-pan-y={normalizedPan.y}
         data-dragging={isDragging ? "true" : "false"}

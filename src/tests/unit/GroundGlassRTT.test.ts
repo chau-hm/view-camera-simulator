@@ -33,6 +33,7 @@ import type {
   GroundGlassRttRuntimeInfo,
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "../../render/groundGlassRttDimensions";
+import { resolveGroundGlassInspectionWindow } from "../../render/groundGlassInspectionWindow";
 
 const fiberTestState = vi.hoisted(() => ({
   frameCallback: null as ((state?: unknown, delta?: number) => void) | null,
@@ -700,7 +701,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     disposeRegisteredRttSubject("shelf-swing", replacement);
   });
 
-  it("keeps physical RTT targets unchanged when the focus loupe toggles", () => {
+  it("keeps RTT resources stable while a focus loupe crop changes sampled film density", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
       ...architectureRiseScene.cameraPreset,
@@ -728,7 +729,17 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
 
     diagnostics.updates.length = 0;
     setSize.mockClear();
-    view.rerender(React.createElement(UnconnectedGroundGlassRTT, { ...props, zoomEnabled: true }));
+    const cropWindow = resolveGroundGlassInspectionWindow({
+      active: true,
+      normalizedPan: { x: 0, y: 0 },
+      magnification: 4,
+    });
+    view.rerender(React.createElement(UnconnectedGroundGlassRTT, {
+      ...props,
+      inspectionWindow: cropWindow,
+      zoomEnabled: true,
+    }));
+    act(() => fiberTestState.frameCallback?.());
 
     const zoomedInfo = diagnostics.get();
     expect(createSubject).toHaveBeenCalledTimes(1);
@@ -742,17 +753,26 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(zoomedInfo?.gatherTargetWidthPx).toBe(zoomedInfo?.internalWidthPx);
     expect(zoomedInfo?.dofTechnique).toBe("physical-coc-near-far-oriented-gather");
     expect(zoomedInfo?.sampleCount).toBe(32);
+    expect(zoomedInfo?.inspectionWindowActive).toBe(true);
+    expect(zoomedInfo?.inspectionCenterU).toBeCloseTo(0.5, 12);
+    expect(zoomedInfo?.inspectionCenterV).toBeCloseTo(0.5, 12);
+    expect(zoomedInfo?.sampledFilmWidthMm).toBeCloseTo(31.75, 12);
+    expect(zoomedInfo?.sampledFilmHeightMm).toBeCloseTo(25.4, 12);
     expect(setSize).not.toHaveBeenCalled();
     expect(diagnostics.updates.some(([, info]) => info === null)).toBe(false);
 
     diagnostics.updates.length = 0;
     setSize.mockClear();
     view.rerender(React.createElement(UnconnectedGroundGlassRTT, props));
+    act(() => fiberTestState.frameCallback?.());
 
     const resetInfo = diagnostics.get();
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(resetInfo?.resourceGeneration).toBe(initialInfo?.resourceGeneration);
     expect(resetInfo?.internalWidthPx).toBe(initialInfo?.internalWidthPx);
+    expect(resetInfo?.inspectionWindowActive).toBe(false);
+    expect(resetInfo?.sampledFilmWidthMm).toBeCloseTo(127, 12);
+    expect(resetInfo?.sampledFilmHeightMm).toBeCloseTo(101.6, 12);
     expect(setSize).not.toHaveBeenCalled();
     expect(diagnostics.updates.some(([, info]) => info === null)).toBe(false);
   });

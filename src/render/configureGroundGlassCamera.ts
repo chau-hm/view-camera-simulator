@@ -1,6 +1,11 @@
 import * as THREE from "three";
 import { WORLD_SCALE } from "./rttUtils";
 import type { DerivedOpticsState } from "../types/optics";
+import {
+  FULL_GROUND_GLASS_INSPECTION_WINDOW,
+  resolveGroundGlassInspectionFrustum,
+  type GroundGlassInspectionWindow,
+} from "./groundGlassInspectionWindow";
 
 export type GroundGlassCameraPose = {
   positionWorld: [number, number, number];
@@ -47,6 +52,7 @@ export function configureGroundGlassCamera(
   opticsState: DerivedOpticsState,
   nearWorld: number,
   farWorld: number,
+  inspectionWindow: GroundGlassInspectionWindow = FULL_GROUND_GLASS_INSPECTION_WINDOW,
 ): GroundGlassCameraConfigResult {
   const film = opticsState.filmPlaneCornersWorld;
   const lens = opticsState.lensCenterWorld;
@@ -139,8 +145,22 @@ export function configureGroundGlassCamera(
     return { ok: false, reason: "degenerate frustum extents" };
   }
 
-  // Set custom off-axis projection
-  (camera.projectionMatrix as THREE.Matrix4).makePerspective(left, right, top, bottom, near, far);
+  const frustum = resolveGroundGlassInspectionFrustum(
+    { left, right, top, bottom, near, far },
+    inspectionWindow,
+  );
+
+  // Set custom off-axis projection. The camera pose and clip range remain
+  // physical; an active inspection window only selects a sub-frustum of the
+  // canonical full-film projection.
+  (camera.projectionMatrix as THREE.Matrix4).makePerspective(
+    frustum.left,
+    frustum.right,
+    frustum.top,
+    frustum.bottom,
+    frustum.near,
+    frustum.far,
+  );
   camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
 
   // Ensure camera world/inverse are current
@@ -154,12 +174,12 @@ export function configureGroundGlassCamera(
 
   return {
     ok: true,
-    left,
-    right,
-    top,
-    bottom,
-    near,
-    far,
+    left: frustum.left,
+    right: frustum.right,
+    top: frustum.top,
+    bottom: frustum.bottom,
+    near: frustum.near,
+    far: frustum.far,
     determinant: det,
     pose: readGroundGlassCameraPose(camera),
   };

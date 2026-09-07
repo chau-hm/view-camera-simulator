@@ -4,47 +4,38 @@
 
 - Branch: `fix/ground-glass-focus-inspection-fidelity`
 - Worktree: `/Users/homan/repo/view-camera-ground-glass-focus-inspection-fidelity`
-- Reviewed starting head: `42bb61dc4ee95e3b8d40d144f68adadb24c50789`
-- Presentation correction commit: `23f1a8d`
-- Base after sync: `origin/main` at `ee92962fa9ee0de46f6185b7bb70dec8ace830c9` (PR137 merged after PR11E)
+- Reviewed implementation head before this corrective pass: `1dd31d5b635fdb15f8ec9cbacf8612e1c2a91768`
+- Reviewed PR base / merge base: `ee92962fa9ee0de46f6185b7bb70dec8ace830c9`
+- Latest fetched `origin/main`: `cda5e8ab352e861f44b133502b2f200440562fdd`; it advanced after the reviewed PR base and was not merged in this bounded correction.
 
-## Objective and correction
+## Objective and runtime contract
 
-PR136 makes the Ground Glass focus inspection a true presentation-only 4× loupe. The reviewed implementation had incorrectly routed `inspectionMagnification` through physical CoC conversion, blur footprints, storage normalization, shader uniforms, RTT dimensions, and diagnostics. The correction removes that coupling: physical CoC/DOF, RTT source resolution, learner scores, thresholds, and calibration remain unchanged; the completed RTT image plus transformed overlays are scaled together by `GroundGlassStage` at 4×, while fixed overlays remain outside the transformed image layer.
+PR136 makes the Ground Glass focus inspection a physical film-window crop rather than a CSS-only magnification. Normal mode samples the complete `127 × 101.6 mm` film window at the normal RTT dimensions. A 4× loupe selects a `31.75 × 25.4 mm` sub-frustum with the same camera pose and unchanged RTT resource dimensions, so subject detail and the physical CoC/footprint are sampled at approximately 4× film-plane density.
 
-## Runtime contract
-
-- Physical path: physical CoC in millimetres → film-mm-to-RTT-pixel conversion → physical source blur/storage/gather.
-- Presentation path: `GroundGlassStage` owns the 4× focus loupe, anchored pan, keyboard/pointer interaction, reset, and accessibility state.
-- RTT dimensions, resource generation, render sanity key, profiler identity, and raw RTT bypass are loupe-independent.
-- The active indicator is Stage-owned and localized as `Focus loupe · 4×` / `對焦放大鏡 · 4×`; the inactive control exposes the same localized 4× action. The outer Ground Glass expand control remains separate.
-- No optics, scene geometry, calibration, CoC threshold, task criterion, or aperture-policy changes were introduced.
+- `GroundGlassStage` owns loupe interaction, pan, reset, and accessibility state.
+- RTT scenes keep the completed image at CSS scale `1`; the active inspection window is passed to the physical camera projection.
+- Raw preview pan is mapped back to the camera frustum before cropping; upright preview keeps its film orientation.
+- Physical CoC equations, thresholds, learner scores, calibration, scene geometry, task criteria, aperture policy, and RTT resource generation remain unchanged.
+- Sampled film dimensions are used only for physical-mm-to-RTT-pixel conversion and diagnostics; no blur multiplier or `inspectionMagnification` is present in the physical shader path.
 
 ## Evidence
 
-- CPU and GLSL blur/footprint helpers no longer accept or apply inspection magnification; physical storage maximums use only the source render cap.
-- RTT unit coverage proves loupe toggles do not change source dimensions, resize resources, or physical sanity identity.
-- Stage unit coverage proves 4× anchoring, pan bounds, reset, keyboard/pointer behavior, and fixed-overlay separation.
-- Public Oblique Tabletop checks exercise neutral, guided, teaching-geometry, and Ground Glass interaction routes with the loupe at 4×.
-
-## Visual acceptance evidence
-
-- Tested PR head: `7e587cf8622eb39eb775a5f5efbff9d6581634d1`; visual evidence was captured against `8d8d378bcaa92b76ae1372555f480e2de00f158a` before the unrelated PR137 catalog/status sync. PR137 changes only marketing/catalog/status surfaces and does not alter the tested renderer path.
-- Public neutral state: Tilt `0°`, Swing `0°`, Focus `4540 mm`, f/11. Learner-visible sharpness was `near-left 81%`, `near-centre 25%`, `near-right 0%`, `middle 100%`, `far-left 11%`, `far-centre 44%`, `far-right 83%`.
-- The 1× overview remained composition-oriented and subtle. At 4×, the middle detail was visibly crisp while Near Right and Far Left were visibly softer; Near Centre was also visibly softer than the middle reference. The active Stage reported scale `4` and the transformed image layer reported `matrix(4, 0, 0, 4, ...)`.
-- The accepted compound state (+7.1° Tilt, +2.1° Swing, 2500 mm Focus, f/11) returned the visible targets to `100/99/98/97/97/96/95%`, with the 4× aligned view visually consistent across the inspected details.
-- Loupe OFF/ON kept RTT internal dimensions at `944×756`, resource generation at `1`, and the render sanity identity unchanged; learner percentages were unchanged by activation. Evidence is temporary and uncommitted at `/tmp/pr136-visual-acceptance/01-neutral-1x-overview.png`, `/tmp/pr136-visual-acceptance/02-neutral-4x-middle.png`, `/tmp/pr136-visual-acceptance/03-neutral-4x-near-right.png`, `/tmp/pr136-visual-acceptance/04-neutral-4x-far-left.png`, and `/tmp/pr136-visual-acceptance/05-aligned-4x.png`.
-- No renderer, optics, calibration, scene, task, or test code changes were required for this evidence pass.
+- The crop helper preserves the full-film frustum range and constrains the 4× window to the film bounds.
+- RTT diagnostics expose the active window, sampled film span, stable internal dimensions, resource generation, and render-sanity key.
+- Neutral public Oblique Tabletop: Tilt `0°`, Swing `0°`, Focus `4540 mm`, f/11; learner readout remained `81 / 25 / 0 / 100 / 11 / 44 / 83%` for Near Left, Near Centre, Near Right, Middle, Far Left, Far Centre, Far Right.
+- Public 4× inspection capture made the Middle reference visibly crisp and the neutral Near Right / Far Left regions visibly softer; the accepted compound state `+7.1° / +2.1° / 2500 mm / f/11` rendered the inspected board consistently sharp.
+- Loupe activation kept RTT dimensions at `944 × 756`, resource generation at `1`, learner scores unchanged, and render sanity identity tied to the crop state rather than resource replacement.
+- Temporary visual evidence is uncommitted at `/tmp/pr136-cropped-loupe-final/01-neutral-1x-overview.png`, `02-neutral-middle-target-rawmapped.png`, `03-neutral-near-right-target-rawmapped.png`, `04-neutral-far-left-target-rawmapped.png`, and `05-aligned-compound-4x.png`.
 
 ## Validation
 
-- Post-sync full Vitest: `165` files / `1605` tests passed.
-- Post-sync typecheck, lint, CSS structure, and production build passed.
-- `git diff --check` passed before final handoff updates.
-- Focused Ground Glass/renderer/RTT validation: `23` files / `216` tests passed.
-- Focused Chromium on the merged branch: `5/5` passed across Oblique teaching geometry, Oblique guided lesson, Ground Glass Architecture Rise reset/off-center flows, and Focus Fundamentals loupe/reset. The Ground Glass loupe remained presentation-only and the RTT identity stayed unchanged.
-- `CI=1 npm run ci:local:e2e` passed CSS, lint, typecheck, unit/integration (`165` / `1605`), and build, then stopped at `src/tests/e2e/mirror-shift-teaching-geometry.spec.ts` test `Mirror Shift top-view geometry follows canonical A/B/C state relationships` because `ground-glass-rtt` disappeared after the Front Shift update. The exact two-test spec was rerun on clean latest `origin/main` `8d8d378bcaa92b76ae1372555f480e2de00f158a` with the same result: one pass and the same failure. This is a current-main baseline failure, not a PR136 failure.
+- Full Vitest: `166` files / `1615` tests passed.
+- Typecheck, lint, CSS structure check, production build, and `git diff --check` passed.
+- Focused unit coverage includes the inspection-window helper, camera sub-frustum, sampled-film physical scale, shader uniforms, RTT diagnostics, render sanity, Stage, Renderer, and RTT suites.
+- Focused Chromium passed: Ground Glass interaction `3/3`; Oblique teaching geometry `1/1`; Oblique guided lesson `1/1`; viewport expansion/RTT/reset flows `3/3`. The temporary target-centered visual capture also passed and was deleted from the repository.
+- The viewport quality assertion expecting blur-target dimensions to equal color-target dimensions fails on clean current `origin/main` (`cda5e8a`) with the same `172` vs `86` result; it was not changed.
+- `CI=1 npm run ci:local:e2e` passed CSS, lint, typecheck, unit/integration (`166` files / `1615` tests), and build, then stopped at `src/tests/e2e/mirror-shift-teaching-geometry.spec.ts` because `ground-glass-rtt` disappeared after the Mirror Shift update. The exact spec reproduced the same result on clean current `origin/main` `cda5e8a` (one failing A/B/C test, one passing navigation test); no unrelated baseline test is weakened or skipped.
 
 ## Scope / known gaps
 
-The branch contains the PR136 Ground Glass presentation correction plus the latest `origin/main` landing changes as base history. No PR11E files are part of the PR136 diff against current main. The physical CoC/DOF/RTT path remains unchanged; the 4× loupe is owned by `GroundGlassStage`. Full local E2E is not green because of the reproduced unrelated Mirror Shift baseline failure above; no test was weakened or skipped.
+This correction is limited to the physical Ground Glass inspection-window pipeline, its diagnostics, focused tests, and the canonical reviewer handoff. It does not change optics, scene calibration, focus-target geometry, task thresholds, aperture policy, or product assets. The PR remains unmerged; latest `origin/main` advancement is recorded above and must be considered before final publication.

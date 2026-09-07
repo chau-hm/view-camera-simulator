@@ -59,11 +59,16 @@ test.describe('Ground Glass interaction', () => {
       .getByRole('button', { name: 'Focus loupe · 4× Ground Glass view', exact: true })
       .click();
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('data-scale', '4');
-    await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(initialSanityState);
+    await expect(stage).toHaveAttribute('data-focus-loupe-scale', '4');
+    await expect(stage).toHaveAttribute('data-presentation-css-scale', '1');
+    await expect(stage).toHaveAttribute('data-scale', '1');
+    await expect(stage).toHaveAttribute('data-focus-loupe-window-width', '0.25');
+    await expect(stage).toHaveAttribute('data-focus-loupe-window-height', '0.25');
+    await expect.poll(() => rtt.getAttribute('data-rtt-sampled-film-width-mm'), { timeout: 120_000 }).toBe('31.75');
+    await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).not.toBe(initialSanityState);
     await expectContentfulRtt();
     const stableLoupeSanityState = await rtt.getAttribute('data-rtt-sanity-state');
-    expect(stableLoupeSanityState).toBe(initialSanityState);
+    expect(stableLoupeSanityState).not.toBe(initialSanityState);
 
     const box = await readFreshElementBounds(stage);
     const centerX = box.x + box.width / 2;
@@ -73,8 +78,8 @@ test.describe('Ground Glass interaction', () => {
     await page.mouse.move(centerX + 60, centerY + 40, { steps: 6 });
     await page.mouse.up();
     await expect.poll(async () => {
-      const panX = Number(await stage.getAttribute('data-pan-x'));
-      const panY = Number(await stage.getAttribute('data-pan-y'));
+      const panX = Number(await stage.getAttribute('data-inspection-pan-x'));
+      const panY = Number(await stage.getAttribute('data-inspection-pan-y'));
       return Math.abs(panX) > 0 || Math.abs(panY) > 0;
     }).toBe(true);
 
@@ -83,6 +88,8 @@ test.describe('Ground Glass interaction', () => {
       .click();
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
     await expect(stage).toHaveAttribute('data-scale', '1');
+    await expect(stage).toHaveAttribute('data-focus-loupe-window-width', '1');
+    await expect(stage).toHaveAttribute('data-focus-loupe-window-height', '1');
     await expect(stage).toHaveAttribute('data-pan-x', '0');
     await expect(stage).toHaveAttribute('data-pan-y', '0');
     await expect(stage).toHaveAttribute('data-dragging', 'false');
@@ -99,7 +106,8 @@ test.describe('Ground Glass interaction', () => {
         .getByRole('button', { name: 'Focus loupe · 4× Ground Glass view', exact: true })
         .click();
       await expect(stage).toHaveAttribute('data-zoomed', 'true');
-      await expect(stage).toHaveAttribute('data-scale', '4');
+      await expect(stage).toHaveAttribute('data-scale', '1');
+      await expect(stage).toHaveAttribute('data-focus-loupe-scale', '4');
       await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(stableLoupeSanityState);
       await expectContentfulRtt();
 
@@ -150,14 +158,20 @@ test.describe('Ground Glass interaction', () => {
     await expect(viewport.getByRole('region', { name: 'Pan Ground Glass', exact: true })).toHaveCount(1);
     await expect(viewport.getByRole('button', { name: 'Pan Ground Glass', exact: true })).toHaveCount(0);
 
-    // scale becomes 4× and translates positive — poll once for all conditions
+    // RTT loupe keeps the CSS image at identity; the physical crop is exposed
+    // through the inspection-window diagnostics instead.
     await expect.poll(async () => {
-      const t = await readStageTransform(transformedLayer());
-      return Math.abs(t.scaleX - 4) < 0.6 && t.translateX > 1 && t.translateY > 1;
+      const cssScale = Number(await stage.getAttribute('data-presentation-css-scale'));
+      const centerU = Number(await stage.getAttribute('data-focus-loupe-center-u'));
+      const centerV = Number(await stage.getAttribute('data-focus-loupe-center-v'));
+      return cssScale === 1 && centerU < 0.5 && centerV < 0.5;
     }, { timeout: 8000 }).toBeTruthy();
 
     // store pre-drag transform
-    const preDrag = await readStageTransform(transformedLayer());
+    const preInspectionPan = {
+      x: await stage.getAttribute('data-inspection-pan-x'),
+      y: await stage.getAttribute('data-inspection-pan-y'),
+    };
 
     // drag from center by +60, +40 using real page.mouse
     const centerBox = await readFreshElementBounds(stage);
@@ -165,19 +179,19 @@ test.describe('Ground Glass interaction', () => {
     const centerY = centerBox.y + centerBox.height / 2;
     await page.mouse.move(centerX, centerY);
     await page.mouse.down();
-    await page.mouse.move(centerX + 60, centerY + 40, { steps: 6 });
+    await page.mouse.move(centerX - 60, centerY - 40, { steps: 6 });
     await page.mouse.up();
 
     // should remain zoomed and expose the pan action
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('aria-label', 'Pan Ground Glass');
 
-    const postDrag = await readStageTransform(transformedLayer());
-    await expect(postDrag.scaleX).toBeCloseTo(4, 1);
-    // at least one of the translate axes should change (pan applied)
-    const dx = Math.abs(postDrag.translateX - preDrag.translateX);
-    const dy = Math.abs(postDrag.translateY - preDrag.translateY);
-    expect(dx > 0 || dy > 0).toBeTruthy();
+    const postInspectionPan = {
+      x: await stage.getAttribute('data-inspection-pan-x'),
+      y: await stage.getAttribute('data-inspection-pan-y'),
+    };
+    expect(postInspectionPan.x !== preInspectionPan.x || postInspectionPan.y !== preInspectionPan.y).toBeTruthy();
+    await expect(transformedLayer()).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
 
     // assert fixed overlay visibility (preview label)
     const previewOverlay = viewport.getByText('Ground glass preview');
@@ -198,7 +212,7 @@ test.describe('Ground Glass interaction', () => {
     await viewport.getByRole('button', { name: 'Reset Ground Glass view', exact: true }).click();
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
 
-    // read transform and assert identity (scale ~1, translations near zero) — poll once
+    // read the presentation transform and assert identity — crop state resets separately.
     await expect.poll(async () => {
       const t = await readStageTransform(transformedLayer());
       return Math.abs(t.scaleX - 1) < 0.2 && Math.abs(t.translateX) <= 0.5 && Math.abs(t.translateY) <= 0.5;
@@ -211,14 +225,12 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
     await expect(stage).toHaveAttribute('aria-label', 'Pan Ground Glass');
 
-    // scale and translate sign checks — poll once for all conditions to reduce overhead
+    // right-bottom click selects the corresponding physical film crop.
     await expect.poll(async () => {
-      const t = await readStageTransform(transformedLayer());
-      // scale near expected and both translates negative (right-bottom click should push image left/up)
-      const scaleOk = Math.abs(t.scaleX - 4) < 0.6; // tolerant window
-      const txOk = t.translateX < -1;
-      const tyOk = t.translateY < -1;
-      return scaleOk && txOk && tyOk;
+      const scaleOk = Number(await stage.getAttribute('data-presentation-css-scale')) === 1;
+      const uOk = Number(await stage.getAttribute('data-focus-loupe-center-u')) > 0.5;
+      const vOk = Number(await stage.getAttribute('data-focus-loupe-center-v')) > 0.5;
+      return scaleOk && uOk && vOk;
     }, { timeout: 8000 }).toBeTruthy();
 
     // repeated centered cycles (3x) using real Playwright clicks
@@ -227,16 +239,14 @@ test.describe('Ground Glass interaction', () => {
       await viewport.getByRole('button', { name: 'Reset Ground Glass view', exact: true }).click();
       await expect(stage).toHaveAttribute('data-zoomed', 'false');
       await expect.poll(async () => {
-        const t = await readStageTransform(transformedLayer());
-        return Math.abs(t.scaleX - 1) < 0.2 && Math.abs(t.translateX) <= 0.5 && Math.abs(t.translateY) <= 0.5;
+        return Number(await stage.getAttribute('data-focus-loupe-window-width')) === 1;
       }, { timeout: 8000 }).toBeTruthy();
 
       // zoom in (center)
       await clickStageAt(page, stage, 0.5, 0.5);
       await expect(stage).toHaveAttribute('data-zoomed', 'true');
       await expect.poll(async () => {
-        const t = await readStageTransform(transformedLayer());
-        return Math.abs(t.scaleX - 4) < 0.6;
+        return Number(await stage.getAttribute('data-focus-loupe-window-width')) === 0.25;
       }, { timeout: 8000 }).toBeTruthy();
     }
   });
@@ -261,33 +271,37 @@ test.describe('Ground Glass interaction', () => {
     // click 1
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('data-scale', '4');
+    await expect(stage).toHaveAttribute('data-focus-loupe-scale', '4');
+    await expect(stage).toHaveAttribute('data-presentation-css-scale', '1');
+    await expect(stage).toHaveAttribute('data-scale', '1');
     await expect.poll(
-      async () => (await readStageTransform(transformedLayer())).scaleX,
+      async () => Number(await stage.getAttribute('data-focus-loupe-window-width')),
       { timeout: 15_000 },
-    ).toBeCloseTo(4, 1);
+    ).toBeCloseTo(0.25, 2);
+    await expect(transformedLayer()).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
 
     // A second image click does not reset a zoomed stage.
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('data-scale', '4');
+    await expect(stage).toHaveAttribute('data-scale', '1');
     await expect.poll(
-      async () => (await readStageTransform(transformedLayer())).scaleX,
+      async () => Number(await stage.getAttribute('data-focus-loupe-window-width')),
       { timeout: 15_000 },
-    ).toBeCloseTo(4, 1);
+    ).toBeCloseTo(0.25, 2);
 
     // The explicit Reset View control restores the identity transform.
     await viewport.getByRole('button', { name: 'Reset Ground Glass view', exact: true }).click();
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
     await expect(stage).toHaveAttribute('data-scale', '1');
+    await expect(stage).toHaveAttribute('data-focus-loupe-window-width', '1');
 
     // A subsequent image click can zoom in again.
     await stage.click({ position: { x: cx, y: cy } });
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
-    await expect(stage).toHaveAttribute('data-scale', '4');
+    await expect(stage).toHaveAttribute('data-scale', '1');
     await expect.poll(
-      async () => (await readStageTransform(transformedLayer())).scaleX,
+      async () => Number(await stage.getAttribute('data-focus-loupe-window-width')),
       { timeout: 15_000 },
-    ).toBeCloseTo(4, 1);
+    ).toBeCloseTo(0.25, 2);
   });
 });

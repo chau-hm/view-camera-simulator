@@ -171,6 +171,35 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(stage).toHaveAttribute("data-zoomed", "true");
   });
 
+  it("uses a physical film crop for RTT loupe mode without CSS magnification", () => {
+    const onInspectionWindowChange = vi.fn();
+    const view = render(
+      <GroundGlassStage
+        zoomEnabled
+        useRttInspectionWindow
+        onInspectionWindowChange={onInspectionWindowChange}
+        imageLayer={<div />}
+      />,
+    );
+    const stage = view.getByRole("region", { name: "Pan Ground Glass" });
+
+    expect(stage).toHaveAttribute("data-focus-loupe-active", "true");
+    expect(stage).toHaveAttribute("data-focus-loupe-scale", "4");
+    expect(stage).toHaveAttribute("data-presentation-css-scale", "1");
+    expect(stage).toHaveAttribute("data-scale", "1");
+    expect(stage).toHaveAttribute("data-focus-loupe-center-u", "0.5");
+    expect(stage).toHaveAttribute("data-focus-loupe-center-v", "0.5");
+    expect(stage).toHaveAttribute("data-focus-loupe-window-width", "0.25");
+    expect(stage).toHaveAttribute("data-focus-loupe-window-height", "0.25");
+    expect(onInspectionWindowChange).toHaveBeenLastCalledWith({
+      active: true,
+      centerU: 0.5,
+      centerV: 0.5,
+      widthFraction: 0.25,
+      heightFraction: 0.25,
+    });
+  });
+
   it("keeps repeated explicit zoom-out requests false", () => {
     const onZoomChange = vi.fn();
     const view = render(

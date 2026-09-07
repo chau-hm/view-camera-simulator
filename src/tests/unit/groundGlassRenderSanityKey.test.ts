@@ -5,6 +5,7 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import type { DerivedOpticsState } from "../../types/optics";
 import geometry from "../../scenes/understandingCameraMovementsGeometry";
+import { resolveGroundGlassInspectionWindow } from "../../render/groundGlassInspectionWindow";
 
 function buildOptics(overrides: Partial<ReturnType<typeof useAppStore.getState>['camera']> = {}): DerivedOpticsState {
   const base = useAppStore.getState().camera;
@@ -162,6 +163,19 @@ describe("groundGlassRenderSanityKey", () => {
   it("does not include presentation loupe state in the source render key", () => {
     const o = buildOptics();
     expect(makeKey(o, { zoomEnabled: false })).toBe(makeKey(o, { zoomEnabled: true }));
+  });
+
+  it("includes the physical inspection crop in the source render key", () => {
+    const o = buildOptics();
+    const croppedWindow = resolveGroundGlassInspectionWindow({
+      active: true,
+      normalizedPan: { x: 0, y: 0 },
+      magnification: 4,
+    });
+    expect(makeKey(o, { inspectionWindow: croppedWindow })).not.toBe(makeKey(o));
+    expect(makeKey(o, { inspectionWindow: croppedWindow })).toBe(
+      makeKey(o, { inspectionWindow: croppedWindow }),
+    );
   });
 
   it("null focus/DOF planes serialize deterministically", () => {

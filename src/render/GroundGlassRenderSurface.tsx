@@ -8,6 +8,7 @@ import type {
   GroundGlassRttRuntimeInfo,
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "./groundGlassRttDimensions";
+import type { GroundGlassInspectionWindow } from "./groundGlassInspectionWindow";
 
 export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
@@ -24,6 +25,7 @@ export type GroundGlassRenderSurfaceProps = {
   heightPx: number;
   renderQuality: import("../types/ui").RenderQualityProfile;
   channel?: GroundGlassRttChannel;
+  inspectionWindow?: GroundGlassInspectionWindow;
   presentationRegion?: import("../scenes/cameraMovementSceneCalibration").CameraMovementPresentationRegion;
   effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
   runtimeInfo?: GroundGlassRttRuntimeInfo | null;
@@ -45,6 +47,7 @@ export const GroundGlassRenderSurface = ({
   heightPx,
   renderQuality,
   channel = "default",
+  inspectionWindow,
   presentationRegion,
   effectiveCameraMovementCalibration,
   runtimeInfo: explicitRuntimeInfo,
@@ -103,6 +106,11 @@ export const GroundGlassRenderSurface = ({
         data-rtt-was-clamped={rttRuntimeInfo?.wasClamped === undefined ? undefined : String(rttRuntimeInfo.wasClamped)}
         data-rtt-sanity-state={rttRuntimeInfo?.renderSanityStateKey}
         data-rtt-sanity-error={rttRuntimeInfo?.renderSanityError ?? undefined}
+        data-rtt-inspection-window-active={rttRuntimeInfo?.inspectionWindowActive === undefined ? undefined : String(rttRuntimeInfo.inspectionWindowActive)}
+        data-rtt-inspection-center-u={rttRuntimeInfo?.inspectionCenterU}
+        data-rtt-inspection-center-v={rttRuntimeInfo?.inspectionCenterV}
+        data-rtt-sampled-film-width-mm={rttRuntimeInfo?.sampledFilmWidthMm}
+        data-rtt-sampled-film-height-mm={rttRuntimeInfo?.sampledFilmHeightMm}
         data-rtt-profiling-enabled={rttRuntimeInfo?.profilingEnabled === undefined ? undefined : String(rttRuntimeInfo.profilingEnabled)}
         data-rtt-profiling-backend={rttRuntimeInfo?.profilingBackend}
         data-rtt-profiling-raw-debug={rttRuntimeInfo?.profilingSnapshot?.rawDebug === undefined ? undefined : String(rttRuntimeInfo.profilingSnapshot.rawDebug)}
@@ -128,6 +136,7 @@ export const GroundGlassRenderSurface = ({
           rawDebug={rawDebug}
           renderQuality={renderQuality}
           channel={channel}
+          inspectionWindow={inspectionWindow}
           presentationRegion={presentationRegion}
           effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
           onRuntimeInfoChange={runtimeInfoChange}

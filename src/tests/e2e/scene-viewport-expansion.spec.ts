@@ -61,6 +61,9 @@ type GroundGlassPresentationSnapshot = {
   zoomed: string | undefined;
   internalWidth: number;
   internalHeight: number;
+  sampledFilmWidthMm: number;
+  sampledFilmHeightMm: number;
+  cssScale: number;
 };
 
 const readGroundGlassPresentationSnapshot = async (
@@ -68,7 +71,7 @@ const readGroundGlassPresentationSnapshot = async (
 ): Promise<GroundGlassPresentationSnapshot> =>
   page.evaluate(() => {
     const stage = document.querySelector<HTMLElement>(
-      '[aria-label="GroundGlassViewport"] [role="button"][data-zoomed]',
+      '[aria-label="GroundGlassViewport"] [data-zoomed]',
     );
     const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="ground-glass-rtt"] canvas');
     const rtt = document.querySelector<HTMLElement>('[data-testid="ground-glass-rtt"]');
@@ -82,6 +85,9 @@ const readGroundGlassPresentationSnapshot = async (
       zoomed: stage.dataset.zoomed,
       internalWidth: Number(rtt.dataset.rttInternalWidth),
       internalHeight: Number(rtt.dataset.rttInternalHeight),
+      sampledFilmWidthMm: Number(rtt.dataset.rttSampledFilmWidthMm),
+      sampledFilmHeightMm: Number(rtt.dataset.rttSampledFilmHeightMm),
+      cssScale: Number(stage.dataset.presentationCssScale),
     };
   });
 
@@ -455,11 +461,14 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   expect(zoomed.generation).toBe(normal.generation);
   expect(zoomed.internalWidth).toBe(beforeZoom.internalWidth);
   expect(zoomed.internalHeight).toBe(beforeZoom.internalHeight);
+  await expect(rtt).toHaveAttribute("data-rtt-sampled-film-width-mm", "31.75");
+  await expect(page.getByLabel("GroundGlassViewport").locator("[data-zoomed]")).toHaveAttribute("data-presentation-css-scale", "1");
   expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"]'), rttHandle)).toBe(true);
   expect(await page.evaluate((node) => node === document.querySelector('[data-testid="ground-glass-rtt"] canvas'), canvasHandle)).toBe(true);
   await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
   await expect.poll(async () => (await readRttSnapshot(page)).internalWidth, { timeout: 30_000 }).toBe(beforeZoom.internalWidth);
   expect((await readRttSnapshot(page)).generation).toBe(normal.generation);
+  await expect(rtt).toHaveAttribute("data-rtt-sampled-film-width-mm", "127");
   const groundGlassStage = page.getByLabel("GroundGlassViewport").locator('[data-zoomed]');
   await expect(groundGlassStage).toHaveAttribute("data-pan-x", "0");
   await expect(groundGlassStage).toHaveAttribute("data-pan-y", "0");
@@ -476,7 +485,7 @@ test("Ground Glass reset restores RTT framing after zoomed expand and restore", 
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 120_000 });
   const stage = page
     .getByLabel("GroundGlassViewport")
-    .locator('[role="button"][data-zoomed]');
+    .locator('[data-zoomed]');
   const normal = await readGroundGlassPresentationSnapshot(page);
 
   await stage.click();
@@ -493,6 +502,8 @@ test("Ground Glass reset restores RTT framing after zoomed expand and restore", 
   expect(immediateReset.zoomed).toBe("false");
   expect(immediateReset.canvasWidth).toBeCloseTo(normal.canvasWidth, 0);
   expect(immediateReset.canvasHeight).toBeCloseTo(normal.canvasHeight, 0);
+  expect(immediateReset.sampledFilmWidthMm).toBeCloseTo(127, 6);
+  expect(immediateReset.cssScale).toBe(1);
   await expect
     .poll(async () => (await readGroundGlassPresentationSnapshot(page)).internalWidth, {
       timeout: 30_000,
@@ -505,12 +516,15 @@ test("Ground Glass reset restores RTT framing after zoomed expand and restore", 
   await stage.click();
   await expect(stage).toHaveAttribute("data-zoomed", "true");
   const zoomedAgain = await readGroundGlassPresentationSnapshot(page);
-  expect(zoomedAgain.canvasWidth).toBeGreaterThan(normal.canvasWidth * 1.5);
+  expect(zoomedAgain.canvasWidth).toBeCloseTo(normal.canvasWidth, 0);
+  expect(zoomedAgain.sampledFilmWidthMm).toBeCloseTo(31.75, 6);
+  expect(zoomedAgain.cssScale).toBe(1);
   await page.getByRole("button", { name: "Reset Ground Glass view" }).click();
   const immediateSecondReset = await readGroundGlassPresentationSnapshot(page);
   expect(immediateSecondReset.zoomed).toBe("false");
   expect(immediateSecondReset.canvasWidth).toBeCloseTo(normal.canvasWidth, 0);
   expect(immediateSecondReset.canvasHeight).toBeCloseTo(normal.canvasHeight, 0);
+  expect(immediateSecondReset.sampledFilmWidthMm).toBeCloseTo(127, 6);
 });
 
 test("Ground Glass RTT quality changes resize targets in place", async ({ page }) => {

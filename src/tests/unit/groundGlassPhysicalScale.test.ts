@@ -66,6 +66,30 @@ describe("physical Ground Glass blur scale", () => {
     expect(doubled.minorAxisPx[1]).toBeCloseTo(base.minorAxisPx[1] * 2, 12);
   });
 
+  it("maps the same physical CoC footprint to four times as many pixels in a 4x crop", () => {
+    const full = groundGlassFootprintAxesToRttPixels({
+      majorRadiusMm: 2,
+      minorRadiusMm: 1,
+      orientationRad: 0,
+      renderWidthPx: 1270,
+      renderHeightPx: 1016,
+      filmWidthMm: 127,
+      filmHeightMm: 101.6,
+    });
+    const crop = groundGlassFootprintAxesToRttPixels({
+      majorRadiusMm: 2,
+      minorRadiusMm: 1,
+      orientationRad: 0,
+      renderWidthPx: 1270,
+      renderHeightPx: 1016,
+      filmWidthMm: 31.75,
+      filmHeightMm: 25.4,
+    });
+
+    expect(crop.majorAxisPx[0]).toBeCloseTo(full.majorAxisPx[0] * 4, 12);
+    expect(crop.minorAxisPx[1]).toBeCloseTo(full.minorAxisPx[1] * 4, 12);
+  });
+
   it("is scene-independent for identical physical film geometry", () => {
     const input = {
       majorRadiusMm: 3,
