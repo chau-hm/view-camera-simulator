@@ -1,13 +1,13 @@
-# Scene Catalog Visual Harmonization
+# Scene Catalog Thumbnail Visual Harmonization
 
-- Objective: align `/scenes` with the merged landing visual language while preserving catalog structure, routes, copy, thumbnails, and simulator boundaries.
-- Base: `origin/main` at `8d8d378bcaa92b76ae1372555f480e2de00f158a` (PR #135 contained).
-- Worktree / branch: `/Users/homan/repo/view-camera-scene-catalog-style` / `feature/scene-catalog-visual-harmonization`.
-- Scope: `ScenesPage` now uses `site-shell--scenes` and `scenes-page-intro`; no `InfoCard` or shared-card refactor.
-- SceneCard: scoped navy surface, cool border and edge light, 3:2 framed thumbnails, compact title/description hierarchy, metadata pills, bottom-aligned actions, restrained hover, and neutral non-actionable in-development status.
-- DesktopExperienceNotice: compact elevated technical advisory with icon well, restrained cyan-gray border, and preserved role/label, suitability logic, and copy.
-- Responsive: horizontal cards on wide desktop; stacked cards below 880px; full-width stacked actions and 3:2 thumbnails on narrow mobile with no horizontal overflow.
-- Accessibility: one H1, H2 card titles, explicit keyboard links, non-interactive metadata, preserved notice semantics, and non-actionable in-development status covered by integration tests.
-- Browser evidence: Chromium inspection at `1440×900`, `1288×904`, `1024×800`, `768×900`, `390×844`; English at all sizes; zh-HK at `1288×904` and `390×844`; every current public card inspected in full-page passes.
-- Validation: Scenes integration `5/5`; marketing responsive Chromium `4/4`; `npm run ci:local` passed CSS, lint, typecheck, `165` test files / `1604` tests, and production build; `git diff --check` passed.
+- Objective: replace the 11 public scene catalog thumbnails with independently generated, semantically faithful images under one Dark Technical 3D Diorama visual contract; preserve catalog code, routes, copy, controls, and simulator behavior.
+- Base: `origin/main` at `ee92962fa9ee0de46f6185b7bb70dec8ace830c9` (PR #137 squash merge). Reviewed head `0446e0da8414f9c47132c6896145c0f156e97567` is tree-identical to this base even though it is not a direct ancestor.
+- Worktree / branch: `/Users/homan/repo/view-camera-scene-thumbnail-harmonization` / `feature/scene-catalog-thumbnail-harmonization`.
+- Scope: asset-only replacements; `src/app/publicScenes.ts`, `SceneCard.tsx`, catalog CSS, routes, copy, and simulator files remain unchanged.
+- Visual contract: dark navy/charcoal studio background, graphite or dark-steel large-format camera, cool cyan optical or framing cues, restrained contrast, no text, no people, no UI, no white/purple or warm-photo outliers.
+- Final assets: all 11 were generated independently with ImageGen and copied to the existing paths; final files are RGB, non-interlaced PNG, `1536×1024` (3:2): `public/assets/scene-view-camera-anatomy.png`, `public/assets/understanding-camera-movements.png`, `public/assets/two-targets-illustration.png`, `public/assets/architecture-rise.png`, `public/assets/table-tilt.png`, `public/assets/shelf-swing.png`, `public/assets/oblique-tabletop.png`, `public/assets/mirror-shift.png`, `public/assets/oblique-architecture.png`, `public/assets/architecture-foreground.png`, `public/assets/interior-corner.png`.
+- Semantic QA: anatomy parts are coherent; movement comparison shows one camera plus one subtle viewpoint cue; focus fundamentals has two depths on one connected rail; rise keeps camera level and building verticals upright; table tilt and shelf swing show receding subjects and one focus plane; oblique tabletop clearly separates a level main table from a separate inclined subject board; mirror shift shows lateral framing/parallax; oblique architecture keeps verticals upright; architecture foreground has meaningful near balustrade/pillar depth; interior corner has two wall planes, floor recession, and near/far details.
+- Cross-set QA: 4×3 contact sheets at 360px and 240px cells show consistent materials, palette, lighting, camera language, and scene differentiation. Small-size review kept the camera, targets, planes, buildings, mirror, foreground, and interior depth legible.
+- Browser evidence: Chromium catalog inspection at `1440×900`, `1288×904`, `768×900`, and `390×844`; 11/11 thumbnail images decoded at every size, all natural dimensions were `1536×1024`, and no viewport had horizontal overflow. Full-page desktop and mobile screenshots were inspected after forcing image decode/paint.
+- Validation: focused scenes integration `5/5`; `npm run ci:local` passed CSS, lint, typecheck, `165` test files / `1604` tests, and production build; `git diff --check` passed.
 - Deferred: Simulator Shared Visual Skin.
