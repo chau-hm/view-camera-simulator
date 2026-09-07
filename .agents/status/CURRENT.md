@@ -6,7 +6,7 @@
 - Worktree: `/Users/homan/repo/view-camera-ground-glass-focus-inspection-fidelity`
 - Reviewed starting head: `42bb61dc4ee95e3b8d40d144f68adadb24c50789`
 - Presentation correction commit: `23f1a8d`
-- Base after sync: `origin/main` at `8d8d378bcaa92b76ae1372555f480e2de00f158a` (PR11E merged)
+- Base after sync: `origin/main` at `ee92962fa9ee0de46f6185b7bb70dec8ace830c9` (PR137 merged after PR11E)
 
 ## Objective and correction
 
@@ -29,7 +29,7 @@ PR136 makes the Ground Glass focus inspection a true presentation-only 4× loupe
 
 ## Visual acceptance evidence
 
-- Tested PR head: `7e587cf8622eb39eb775a5f5efbff9d6581634d1`; tested base: `8d8d378bcaa92b76ae1372555f480e2de00f158a`.
+- Tested PR head: `7e587cf8622eb39eb775a5f5efbff9d6581634d1`; visual evidence was captured against `8d8d378bcaa92b76ae1372555f480e2de00f158a` before the unrelated PR137 catalog/status sync. PR137 changes only marketing/catalog/status surfaces and does not alter the tested renderer path.
 - Public neutral state: Tilt `0°`, Swing `0°`, Focus `4540 mm`, f/11. Learner-visible sharpness was `near-left 81%`, `near-centre 25%`, `near-right 0%`, `middle 100%`, `far-left 11%`, `far-centre 44%`, `far-right 83%`.
 - The 1× overview remained composition-oriented and subtle. At 4×, the middle detail was visibly crisp while Near Right and Far Left were visibly softer; Near Centre was also visibly softer than the middle reference. The active Stage reported scale `4` and the transformed image layer reported `matrix(4, 0, 0, 4, ...)`.
 - The accepted compound state (+7.1° Tilt, +2.1° Swing, 2500 mm Focus, f/11) returned the visible targets to `100/99/98/97/97/96/95%`, with the 4× aligned view visually consistent across the inspected details.
