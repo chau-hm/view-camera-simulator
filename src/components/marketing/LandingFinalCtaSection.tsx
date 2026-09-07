@@ -13,7 +13,11 @@ export const LandingFinalCtaSection = () => {
       aria-labelledby="landing-final-cta-title"
       data-testid="landing-final-cta-section"
     >
-      <div className="landing-final-cta-section__artwork" aria-hidden="true">
+      <div
+        className="landing-final-cta-section__artwork"
+        aria-hidden="true"
+        data-landing-reveal="cta-artwork"
+      >
         <img
           src={finalCtaImage}
           alt=""
@@ -26,9 +30,15 @@ export const LandingFinalCtaSection = () => {
 
       <div className="landing-final-cta-section__content">
         <div className="landing-final-cta-section__copy">
-          <h2 id="landing-final-cta-title">{t("home.finalCta.title")}</h2>
-          <p>{t("home.finalCta.description")}</p>
-          <Link className="btn btn--primary landing-final-cta-section__cta" to="/scenes">
+          <h2 id="landing-final-cta-title" data-landing-reveal="cta-title">
+            {t("home.finalCta.title")}
+          </h2>
+          <p data-landing-reveal="cta-description">{t("home.finalCta.description")}</p>
+          <Link
+            className="btn btn--primary landing-final-cta-section__cta"
+            data-landing-reveal="cta-action"
+            to="/scenes"
+          >
             {t("home.finalCta.action")}
           </Link>
         </div>
