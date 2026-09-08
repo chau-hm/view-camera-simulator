@@ -9,10 +9,10 @@ description: Analyze or change View Camera Simulator Three.js/R3F rendering, Gro
 
 Use this skill only when the task depends on renderer/WebGL reasoning or lifecycle invariants.
 
-Do **not** activate it solely because:
+Do not activate it solely because:
 
 - the edited file lives under `src/render/**`;
-- a renderer-adjacent button, label, CSS rule, or local presentation value changes;
+- a renderer-adjacent button, label, CSS rule, or presentation value changes;
 - a known local conditional can be fixed without changing render ownership or projection contracts.
 
 ## Use this skill when
@@ -39,40 +39,31 @@ renderer-specific tests
 
 Ownership is a boundary, not an activation trigger.
 
-## Trace the render path
+## Context discipline
 
-When the problem is genuinely renderer-related, follow:
+Work from the smallest sufficient assigned context.
+
+When the problem is genuinely renderer-related, trace only the relevant path:
 
 ```text
 canonical state
 → scene subject / camera
 → RTT target
-→ shader or post-process
+→ shader/post-process
 → displayed canvas
-→ cleanup / replacement
+→ cleanup/replacement
 ```
 
-Identify the owner and teardown path for resources relevant to the defect, including as applicable:
-
-- geometries;
-- materials;
-- textures;
-- depth textures;
-- render targets;
-- post-processing scenes;
-- controls;
-- registered scene groups.
-
-Dispose only resources owned by the component or registered subject.
+Identify ownership/teardown only for resources relevant to the defect.
 
 ## Required principles
 
 - Renderer visualizes canonical physical state; it must not reinterpret movement signs.
-- Visual clipping or display caps must not mutate physical geometry.
-- Diagnostics must expose meaningful internal state, not merely mirror incoming props.
+- Visual clipping/display caps must not mutate physical geometry.
+- Diagnostics must expose meaningful internal state, not mirror incoming props.
 - Separate WebGL-independent from WebGL-dependent tests.
-- Use true client-side navigation when claiming SPA lifecycle behaviour.
-- Prefer semantic evidence over screenshot size or incidental rendering output.
+- Use true client-side navigation for SPA lifecycle claims.
+- Dispose only resources owned by the component or registered subject.
 
 ## Must not
 
@@ -81,23 +72,27 @@ Dispose only resources owned by the component or registered subject.
 - add decorative DOM fallbacks that conceal renderer failure;
 - use full page reloads to prove cleanup;
 - broadly suppress unknown WebGL warnings;
-- refactor unrelated renderer infrastructure during a focused fix.
+- refactor unrelated renderer infrastructure.
 
 ## Validation
 
-For a focused known renderer defect:
+For a focused renderer defect:
 
-- run the nearest renderer/unit/integration test;
+- run nearest renderer/unit/integration evidence;
 - prove the original failure observable;
 - inspect relevant lifecycle diagnostics if needed.
 
-For lifecycle or resource-ownership changes:
+For lifecycle/resource-ownership changes:
 
 - use SPA navigation;
 - verify meaningful replacement/disposal evidence;
-- run relevant E2E and integration checks.
+- run relevant integration/E2E.
 
-Run full E2E only when the work reaches the appropriate integration/merge gate or when the public workflow is the only valid proof.
+## Release safety
+
+A renderer slice may merge to `main` only if the merged state remains production-safe.
+
+Use an integration branch when a renderer migration requires non-functional or incompatible intermediate states across child PRs.
 
 ## Escalation
 
@@ -113,7 +108,8 @@ Return:
 - render-path segment affected;
 - ownership/disposal decision when relevant;
 - files changed;
-- tests and runtime evidence;
+- tests/runtime evidence;
 - tests not run;
 - remaining risks;
+- release-safety note when relevant;
 - commit SHA when applicable.

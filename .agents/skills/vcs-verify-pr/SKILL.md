@@ -1,80 +1,90 @@
 ---
 name: vcs-verify-pr
-description: Independently review View Camera Simulator branches or PRs, validate evidence, and issue a merge verdict without becoming a mandatory step for every local edit.
+description: Independently review View Camera Simulator branches or PRs when an internal merge verdict or high-risk pre-review is explicitly needed.
 ---
 
 # VCS Verify PR
 
 ## Purpose
 
-Provide independent review when a merge verdict, explicit PR review, or independent challenge is required.
+Provide an optional internal independent review.
 
-This skill is a merge-gate tool, not a mandatory post-step for every implementation.
+The normal project flow publishes the implementation PR first and then uses an external independent reviewer.
+
+This skill is not a mandatory post-step for implementation.
 
 ## Use this skill when
 
-- the user explicitly asks to review a branch or PR;
-- the branch is ready for a merge verdict;
-- review comments were allegedly fixed;
-- current-head CI/review-thread evidence must be checked;
-- the change is high-risk enough to require independent challenge.
+- the user explicitly requests internal branch/PR review;
+- an unusually high-risk change materially benefits from a pre-review;
+- current-head CI/review evidence must be independently challenged before external review;
+- the normal external review path is unavailable.
 
 ## Do not require this skill when
 
-- a micro edit was completed and locally proven;
-- a focused fix is not yet at a merge gate;
-- no independent verdict was requested;
-- invoking review would only repeat the implementation agent's local checks.
-
-If a micro edit later becomes part of a merge-critical PR, review the PR at that merge gate rather than reviewing each micro edit separately.
+- ordinary implementation is ready for PR publication;
+- a Micro/Focused change has already been proportionally proven;
+- invoking this review would simply repeat the implementation agent's checks.
 
 ## Independence
 
-The primary implementation agent must not be the sole final reviewer when a merge verdict is required.
+The implementation owner must not be the sole final reviewer when a merge verdict is required.
 
-Verification should not become the implementation owner unless the correction is limited to review/test tooling and explicitly assigned.
+Verification should not become the production implementation owner.
 
 ## Review discovery
 
-Inspect:
+Read the actual PR metadata first:
 
-- intended base and current head;
-- merge base and commit list when relevant;
-- working-tree state for branch reviews;
-- focused changed files;
+- actual base branch;
+- actual head;
+- merge base/commits when relevant;
+- changed files;
 - current-head CI;
 - unresolved review threads;
 - implementation claims;
-- tests and runtime evidence relevant to those claims.
+- runtime/test evidence.
 
-Do not re-read unrelated project history.
+For PRs targeting an integration branch, review against that integration base.
 
-### Durable handoff orientation
+For the final integration PR to `main`, review the complete integrated change and verify that `main` remains production-releasable.
 
-When `.agents/status/CURRENT.md` exists and is relevant to the branch under review:
+## Durable handoff orientation
 
-1. read it early for orientation;
-2. use it to identify the objective, expected scope, changed surfaces, claimed validation, known gaps, reviewer-focus areas, and any `Since previous review` delta;
-3. independently inspect the actual PR/branch diff and merge-critical evidence against those claims;
-4. detect and report stale or contradictory handoff data rather than silently trusting it.
+Use the PR body's `Implementation handoff` section as navigation only.
 
-`CURRENT.md` is a navigation aid and implementation claim, not review evidence. Its presence does not require a full repository scan; use it to make focused review discovery more efficient.
+It may identify:
+
+- objective;
+- expected scope;
+- changed surfaces;
+- claimed validation;
+- known gaps;
+- reviewer focus;
+- `Since previous review` mapping.
+
+It is an implementation claim, not evidence.
+
+Do not depend on a tracked `.agents/status/CURRENT.md`. That file is worktree-local and ignored.
 
 ## Review priorities
 
-1. optical and canonical-geometry correctness when changed;
-2. renderer and GPU/resource lifecycle when changed;
+Inspect only changed risk surfaces, prioritizing as applicable:
+
+1. optical/canonical correctness;
+2. renderer/GPU lifecycle;
 3. route/catalog/task identity;
 4. public-control reachability;
-5. accessibility and responsive behaviour;
-6. whether tests detect the original defect;
-7. scope control and cleanup.
+5. accessibility/responsive behaviour;
+6. test ability to detect the original defect;
+7. scope control;
+8. release safety and correct PR-base topology.
 
-Do not activate every domain checklist when the PR did not change that domain.
+Do not activate every domain checklist merely because the repository contains those domains.
 
 ## Test-integrity challenges
 
-Reject evidence that can hide the claimed defect, including:
+Reject evidence hidden by:
 
 - full reloads used to prove SPA lifecycle;
 - direct injection of unreachable slider values;
@@ -92,13 +102,29 @@ Would the original defect fail this evidence?
 Does the test use the real public workflow when that is part of the claim?
 ```
 
+## Release-safety review
+
+For a PR targeting `main`, ask:
+
+> If this PR merged now and `origin/main` were promoted immediately, would production remain safe?
+
+If not, the PR should not merge to `main` in its current form.
+
+Possible corrections:
+
+- keep the incomplete feature dormant/non-public;
+- retarget non-releasable child work to an integration branch;
+- complete the missing atomic integration before merging.
+
+Do not recommend selective cherry-picking into production as the normal solution.
+
 ## Validation depth
 
-Review validation should match PR risk.
+Match review validation to risk.
 
 Do not demand full E2E merely because a PR exists.
 
-Require full repository integration checks at a standard/high-risk merge gate when appropriate. Require E2E when the changed behaviour genuinely depends on a public browser workflow, SPA lifecycle, or renderer integration.
+Require broader integration/E2E only when the changed behaviour genuinely depends on it.
 
 ## Verdict
 
@@ -108,19 +134,20 @@ Issue exactly one:
 - **Ready after minor fixes**
 - **Not ready**
 
-Lead with concrete blockers if any.
+Lead with blockers.
 
 Cite paths, tests, logs, CI state, review threads, and runtime evidence.
 
-Give the smallest exact correction scope. Do not propose opportunistic refactors.
+Give the smallest exact correction scope.
 
 ## Output
 
 Include:
 
 - verdict;
-- blockers, ordered by severity;
+- blockers ordered by severity;
 - verified completed work;
 - validation evidence checked;
-- tests/evidence missing or weak;
+- missing/weak evidence;
+- release-safety/base-topology assessment;
 - smallest required next correction.
