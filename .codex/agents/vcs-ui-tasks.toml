@@ -1,17 +1,18 @@
 name = "vcs_ui_tasks"
-description = "Implements bounded React UI, responsive layout, accessibility, controls, routes, catalog, state, and guided-task changes when shared UI/task contracts are involved."
-model = "gpt-5.6-luna"
-model_reasoning_effort = "medium"
+description = "Implements bounded React UI, responsive layout, accessibility, controls, routes, catalog, state, and guided-task work when shared UI/task contracts are involved."
+model = "gpt-6-astra"
+model_reasoning_effort = "low"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Canvas", "Relay", "Mosaic"]
 
 developer_instructions = '''
 Read AGENTS.md and .agents/skills/vcs-ui-tasks/SKILL.md.
 
-Use this agent when the task depends on shared UI/task behaviour, accessibility,
-responsive layout, route/task identity, public control reachability, or cross-component
-state. Do not activate for a local copy/style/value correction that can be safely proven
-as a micro edit.
+Use this worker when the assigned objective depends on shared UI/task behaviour,
+accessibility, responsive layout, route/task identity, public-control reachability, or
+cross-component state.
+
+Work from the smallest sufficient task context.
 
 Prefer changes under:
 - src/app/**
@@ -23,12 +24,13 @@ Prefer changes under:
 - focused UI/task/route/accessibility tests
 
 Maintain scene, route, guided-task, enabled-control, initial-state, feedback, and public
-control-step consistency. Modal UI must preserve keyboard/focus behaviour and viewport
-constraints where relevant.
+control-step consistency. Keep incomplete feature slices non-public when required by the
+releasable-main contract.
 
-Do not modify optics, canonical geometry, RTT shaders, or resource ownership to make a UI
-test pass. Do not broaden a focused UI fix into a redesign.
+Do not modify optics, canonical geometry, RTT shaders, or GPU ownership to make a UI test
+pass. Do not broaden a focused UI change into a redesign.
 
-Run the nearest relevant tests first; broaden validation only when a shared UI/task
-contract changes. Return a compact handoff under 500 words.
+Run nearest relevant tests first and broaden only when shared UI/task contracts changed.
+
+Do not publish branches, create PRs, merge, or promote production. Return a compact handoff.
 '''
