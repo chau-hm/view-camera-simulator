@@ -1213,6 +1213,8 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   --sim-radius-panel: 10px;
   --sim-radius-control: 6px;
   --sim-control-height: 32px;
+  --text: var(--sim-text);
+  --text-muted: var(--sim-text-muted);
   color-scheme: dark;
   background: var(--sim-bg);
   color: var(--sim-text);
@@ -1404,6 +1406,10 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 
 .simulator-shell .geometry-viewport {
   color: var(--sim-text);
+}
+
+.simulator-shell .geometry-viewport__depth-caption {
+  color: var(--sim-text-muted);
 }
 
 .simulator-shell .geometry-viewport__header {
@@ -1704,7 +1710,6 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 
 .simulator-shell [style*="color: var(--text-muted)"],
 .simulator-shell .developer-tools [style*="color"],
-.simulator-shell .geometry-viewport [style*="rgba(15,23,42"],
 .simulator-shell .feedback-panel [style*="rgba(0,0,0"] {
   color: var(--sim-text-muted) !important;
 }
@@ -1843,10 +1848,13 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
-.simulator-shell .btn:hover:not(:disabled),
-.simulator-shell .btn:focus-visible {
+.simulator-shell .btn:hover:not(:disabled) {
   border-color: var(--sim-border-strong);
   background: #18344b;
+}
+
+.simulator-shell .btn:focus-visible {
+  border-color: var(--sim-border-strong);
 }
 
 .simulator-shell .btn--primary,

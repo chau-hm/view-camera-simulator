@@ -49,6 +49,10 @@ describe("GeometryViewport", () => {
     // Optical axis annotation exists in annotations layer
     const axisText = Array.from(svg!.querySelectorAll("text")).find((t) => t.textContent === "Optical axis");
     expect(axisText).toBeTruthy();
+
+    const depthCaption = container.querySelector(".geometry-viewport__depth-caption");
+    expect(depthCaption).toBeTruthy();
+    expect(depthCaption).toHaveTextContent(/Optical axis/i);
   });
 
   it("renders Architecture + Foreground labels from scene Geometry metadata", () => {
