@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   publicSceneCatalog,
@@ -26,6 +26,21 @@ describe("public scene catalog integrity", () => {
     expect(validate(publicSceneCatalog)).toEqual({ valid: true, errors: [] });
   });
 
+  it("publishes an existing WebP thumbnail for every public scene", () => {
+    expect(publicSceneCatalog).toHaveLength(publicSceneIds.length);
+
+    for (const entry of publicSceneCatalog) {
+      expect(entry.thumbnailAsset).toMatch(/^assets\/[^/]+\.webp$/);
+      const assetPath = resolve(process.cwd(), "public", entry.thumbnailAsset);
+      expect(existsSync(assetPath)).toBe(true);
+      const bytes = readFileSync(assetPath);
+      expect(bytes.subarray(0, 4).toString("ascii")).toBe("RIFF");
+      expect(bytes.subarray(8, 12).toString("ascii")).toBe("WEBP");
+      expect(bytes.length).toBeGreaterThan(0);
+      expect(existsSync(assetPath.replace(/\.webp$/, ".png"))).toBe(false);
+    }
+  });
+
   it("publishes Lesson 0 as the first free-only anatomy lesson", () => {
     const entry = publicSceneCatalog[0];
     expect(entry).toMatchObject({
@@ -33,7 +48,7 @@ describe("public scene catalog integrity", () => {
       availableModes: ["free"],
       lesson: { kind: "anatomy", id: "view-camera-anatomy" },
     });
-    expect(entry.thumbnailAsset).toBe("assets/scene-view-camera-anatomy.png");
+    expect(entry.thumbnailAsset).toBe("assets/scene-view-camera-anatomy.webp");
     expect(entry.thumbnailAsset).not.toMatch(/\.svg$/);
     expect(existsSync(resolve(process.cwd(), "public", entry.thumbnailAsset))).toBe(true);
     expect(entry.thumbnailAsset).not.toBe("assets/view-camera-hero-illustration.png");
@@ -86,7 +101,7 @@ describe("public scene catalog integrity", () => {
       id: "oblique-tabletop",
       availableModes: ["free", "guided"],
       availability: "available",
-      thumbnailAsset: "assets/oblique-tabletop.png",
+      thumbnailAsset: "assets/oblique-tabletop.webp",
     });
     expect(entry.guidedTaskId).toBe("oblique-tabletop-aperture-01");
     expect(entry.guidedTaskIds).toEqual([
@@ -126,7 +141,7 @@ describe("public scene catalog integrity", () => {
       id: "interior-corner",
       availability: "available",
       availableModes: ["free", "guided"],
-      thumbnailAsset: "assets/interior-corner.png",
+      thumbnailAsset: "assets/interior-corner.webp",
     });
     expect(entry.guidedTaskId).toBe("interior-corner-aperture-01");
     expect(entry.guidedTaskIds).toEqual([
@@ -187,7 +202,7 @@ describe("public scene catalog integrity", () => {
       includeObserveStage: true,
       taskStageIds: ["compose", "align-focus", "depth-of-field", "final-challenge"],
     });
-    expect(entry.thumbnailAsset).toBe("assets/architecture-foreground.png");
+    expect(entry.thumbnailAsset).toBe("assets/architecture-foreground.webp");
     expect(
       isValidSimulatorRoute({
         mode: "free",

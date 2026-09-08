@@ -44,7 +44,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   const card = page
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: "Architecture + Foreground" }) });
-  await expect(card.locator("img")).toHaveAttribute("src", "/assets/architecture-foreground.png");
+  await expect(card.locator("img")).toHaveAttribute("src", "/assets/architecture-foreground.webp");
   await expect(card.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
     "href",
     "/simulator/free/architecture-foreground",
