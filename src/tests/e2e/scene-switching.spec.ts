@@ -11,6 +11,7 @@ const visits: SceneVisit[] = [
   { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
   { heading: "Table Tilt", sceneId: "table-tilt" },
   { heading: "Shelf Swing", sceneId: "shelf-swing" },
+  { heading: "Oblique Tabletop", sceneId: "oblique-tabletop" },
   { heading: "Mirror Shift", sceneId: "mirror-shift" },
   { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
   { heading: "Architecture Rise", sceneId: "architecture-rise" },
@@ -86,8 +87,6 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
       await expect(pane).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 60_000 });
       await expect(pane).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
     }
-    await expect(page.getByTestId("ground-glass-scene")).toHaveCount(0);
-
     const sanityState = await groundGlass.getAttribute("data-rtt-sanity-state");
     expect(sanityState).toBeTruthy();
     if (previousSceneId && previousSceneId !== visit.sceneId) {

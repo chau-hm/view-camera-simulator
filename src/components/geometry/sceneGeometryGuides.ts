@@ -4,6 +4,8 @@ import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
+import interiorCornerGeometry from "../../scenes/interiorCornerGeometry";
+import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 
 export type SceneGeometryGuide = {
   id: string;
@@ -20,6 +22,10 @@ export type SceneGeometryGuide = {
     y: number;
   };
   labelAnchor?: "start" | "middle" | "end";
+  /** Semantic source for scene-specific subject-plane traces. */
+  sourcePlaneId?: "subjectBoardPlane";
+  /** Which component the trace is intended to reveal. */
+  teachingComponent?: "near-far" | "left-right";
 };
 
 const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]>> = {
@@ -104,6 +110,53 @@ const sceneGeometryGuides: Readonly<Record<string, readonly SceneGeometryGuide[]
       labelAnchor: "start",
     },
   ],
+  "interior-corner": [
+    {
+      id: "interior-corner-receding-wall",
+      label: "Receding side wall",
+      labelMessageKey: simulatorMessageKeys.geometry.interiorCornerRecedingWallGuide,
+      view: "top",
+      startWorld: interiorCornerGeometry.focusTargets[0].worldPosition,
+      endWorld: interiorCornerGeometry.focusTargets[2].worldPosition,
+      color: "#115e59",
+      testId: "interior-corner-receding-wall",
+      labelPositionT: 0.52,
+      labelOffsetPx: { x: 0, y: -18 },
+      labelAnchor: "middle",
+    },
+  ],
+  "oblique-tabletop": [
+    {
+      id: "oblique-tabletop-near-far-plane",
+      label: "Plan board · near ↔ far",
+      labelMessageKey: simulatorMessageKeys.geometry.obliqueTabletopNearFarGuide,
+      view: "side",
+      startWorld: obliqueTabletopGeometry.subjectBoardExtents.near.surfaceCenterWorld,
+      endWorld: obliqueTabletopGeometry.subjectBoardExtents.far.surfaceCenterWorld,
+      color: "#92400e",
+      testId: "oblique-tabletop-near-far-plane",
+      sourcePlaneId: "subjectBoardPlane",
+      teachingComponent: "near-far",
+      labelPositionT: 0.78,
+      labelOffsetPx: { x: 0, y: 18 },
+      labelAnchor: "middle",
+    },
+    {
+      id: "oblique-tabletop-left-right-plane",
+      label: "Plan board · left ↔ right",
+      labelMessageKey: simulatorMessageKeys.geometry.obliqueTabletopLeftRightGuide,
+      view: "top",
+      startWorld: obliqueTabletopGeometry.subjectBoardExtents.left.surfaceCenterWorld,
+      endWorld: obliqueTabletopGeometry.subjectBoardExtents.right.surfaceCenterWorld,
+      color: "#92400e",
+      testId: "oblique-tabletop-left-right-plane",
+      sourcePlaneId: "subjectBoardPlane",
+      teachingComponent: "left-right",
+      labelPositionT: 0.5,
+      labelOffsetPx: { x: 0, y: -18 },
+      labelAnchor: "middle",
+    },
+  ],
 };
 
 export type SceneGeometryTargetMessageKeyMap = Readonly<Record<string, SimulatorMessageKey>>;
@@ -133,6 +186,11 @@ const targetMessageKeys: Readonly<Record<string, SceneGeometryTargetMessageKeyMa
     "foreground-middle": simulatorMessageKeys.geometry.architectureForegroundMiddleTarget,
     "building-base": simulatorMessageKeys.geometry.architectureForegroundBuildingBaseTarget,
     "building-middle": simulatorMessageKeys.geometry.architectureForegroundBuildingMiddleTarget,
+  },
+  "interior-corner": {
+    "interior-wall-near": simulatorMessageKeys.geometry.interiorCornerNearWallTarget,
+    "interior-wall-middle": simulatorMessageKeys.geometry.interiorCornerMiddleWallTarget,
+    "interior-wall-far": simulatorMessageKeys.geometry.interiorCornerFarWallTarget,
   },
 };
 

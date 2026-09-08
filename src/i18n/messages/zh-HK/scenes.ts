@@ -57,6 +57,16 @@ export const scenesMessages = {
       sharpness: "不同深度的清晰度",
     },
   },
+  interiorCorner: {
+    title: "室內轉角 — 上移與擺動",
+    description:
+      "探索一個中性室內轉角：上方建築細節略嫌貼近畫面邊緣，而一面向後延伸的側牆為前組擺動與對焦帶來深度問題。",
+    topics: {
+      frontRise: "前組上移",
+      frontSwing: "前組擺動",
+      architecturalDepth: "建築深度",
+    },
+  },
   obliqueArchitecture: {
     title: "斜向建築攝影",
     description:
@@ -84,6 +94,16 @@ export const scenesMessages = {
       frontSwing: "前組擺動",
       planeOfSharpFocus: "清晰焦平面",
       scheimpflugPrinciple: "Scheimpflug 原理",
+    },
+  },
+  obliqueTabletop: {
+    title: "斜向桌面",
+    description:
+      "從斜角拍攝一塊放在普通桌面上的傾斜圖板。圖板同時沿近遠及左右方向延伸，因此單靠俯仰無法對齊整個主體平面，還需要擺動。",
+    topics: {
+      obliquePlane: "斜向平面",
+      depthVariation: "深度變化",
+      focusDistance: "對焦距離",
     },
   },
   mirrorShift: {

@@ -13,6 +13,8 @@ import { mirrorShiftScene } from "./mirror-shift";
 import { obliqueArchitectureScene } from "./oblique-architecture";
 import { architectureForegroundScene } from "./architecture-foreground";
 import { viewCameraAnatomyScene } from "./view-camera-anatomy";
+import { obliqueTabletopScene } from "./oblique-tabletop";
+import { interiorCornerScene } from "./interior-corner";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
   [viewCameraAnatomyScene.id]: viewCameraAnatomyScene,
@@ -21,9 +23,11 @@ export const sceneRegistry: Record<string, SceneDefinition> = {
   [architectureForegroundScene.id]: architectureForegroundScene,
   [tableTiltScene.id]: tableTiltScene,
   [shelfSwingScene.id]: shelfSwingScene,
+  [obliqueTabletopScene.id]: obliqueTabletopScene,
   [focusFundamentalsTwoTargets.id]: focusFundamentalsTwoTargets,
   [mirrorShiftScene.id]: mirrorShiftScene,
   [obliqueArchitectureScene.id]: obliqueArchitectureScene,
+  [interiorCornerScene.id]: interiorCornerScene,
 };
 
 export const sceneOrder = [
@@ -33,9 +37,11 @@ export const sceneOrder = [
   architectureForegroundScene.id,
   tableTiltScene.id,
   shelfSwingScene.id,
+  obliqueTabletopScene.id,
   focusFundamentalsTwoTargets.id,
   mirrorShiftScene.id,
   obliqueArchitectureScene.id,
+  interiorCornerScene.id,
 ] as const;
 
 export const getSceneById = (sceneId: string): SceneDefinition | undefined =>

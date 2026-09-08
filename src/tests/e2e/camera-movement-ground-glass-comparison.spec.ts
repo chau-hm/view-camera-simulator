@@ -32,7 +32,7 @@ test("public camera-movement Ground Glass renders one live Current view through 
   await expect(page.getByRole("region", { name: "Original and Current Ground Glass comparison" })).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "Raw Ground Glass" })).toHaveCount(1);
   await expect(page.getByRole("radio", { name: "Upright Assist" })).toHaveCount(1);
-  await expect(page.getByRole("button", { name: "Zoom in Ground Glass preview view", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Focus loupe · 4× Ground Glass preview view", exact: true })).toHaveCount(1);
   await expect(page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel^="camera-movement-"]')).toHaveCount(0);
   await expect(currentRtt(page)).toHaveCount(1);
 
@@ -133,10 +133,10 @@ test("public camera-movement Ground Glass renders one live Current view through 
   const rttHandle = await current.elementHandle();
   const canvasHandle = await current.locator("canvas").elementHandle();
   if (!rttHandle || !canvasHandle) throw new Error("Current Ground Glass identities unavailable");
-  await page.getByRole("button", { name: "Zoom in Ground Glass preview view", exact: true }).click();
+  await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass preview view", exact: true }).click();
   await expect(page.getByRole("button", { name: "Reset Ground Glass preview view", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Reset Ground Glass preview view", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Zoom in Ground Glass preview view", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Focus loupe · 4× Ground Glass preview view", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Expand Ground Glass" }).click();
   await expect(page.getByRole("heading", { name: "Original", exact: true })).toHaveCount(0);

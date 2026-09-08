@@ -55,6 +55,8 @@ import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTarg
 import { mirrorShiftGeometry } from "../scenes/mirrorShiftGeometry";
 import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../scenes/architectureForegroundGeometry";
+import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
+import interiorCornerGeometry from "../scenes/interiorCornerGeometry";
 import {
   ArchitectureForegroundSubject,
   createArchitectureForegroundGroup,
@@ -64,6 +66,16 @@ import {
   LessonZeroGroundGlassSubject,
   createLessonZeroGroundGlassGroup,
 } from "./LessonZeroGroundGlassSubjectFactory";
+import {
+  ObliqueTabletopSubject,
+  createObliqueTabletopGroup,
+  disposeObliqueTabletopGroup,
+} from "./ObliqueTabletopSubjectFactory";
+import {
+  InteriorCornerSubject,
+  createInteriorCornerGroup,
+  disposeInteriorCornerGroup,
+} from "./InteriorCornerSubjectFactory";
 import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectCenterMm,
@@ -184,6 +196,14 @@ const architectureForegroundLightingTargetMm = {
   x: architectureForegroundGeometry.building.center.x,
   y: architectureForegroundGeometry.building.center.y,
   z: architectureForegroundGeometry.facade.frontFacadeZ,
+} as const;
+
+const obliqueTabletopLightingTargetMm = {
+  ...obliqueTabletopGeometry.middleBoardMarker.worldPosition,
+} as const;
+
+const interiorCornerLightingTargetMm = {
+  ...interiorCornerGeometry.focusTargets[1].worldPosition,
 } as const;
 
 export const sceneSubjectRegistry = {
@@ -308,12 +328,32 @@ export const sceneSubjectRegistry = {
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },
+  "oblique-tabletop": {
+    SceneSubject: ObliqueTabletopSubject,
+    createRttGroup: createObliqueTabletopGroup,
+    disposeRttGroup: disposeObliqueTabletopGroup,
+    rttLighting: {
+      targetMm: obliqueTabletopLightingTargetMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
+    },
+  },
   "mirror-shift": {
     SceneSubject: MirrorShiftSubject,
     createRttGroup: createMirrorShiftRttGroup,
     disposeRttGroup: disposeMirrorShiftGroup,
     rttLighting: {
       targetMm: mirrorShiftGeometry.mirror.center,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
+    },
+  },
+  "interior-corner": {
+    SceneSubject: InteriorCornerSubject,
+    createRttGroup: createInteriorCornerGroup,
+    disposeRttGroup: disposeInteriorCornerGroup,
+    rttLighting: {
+      targetMm: interiorCornerLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 import "../i18n";
@@ -7,12 +7,16 @@ import { simulatorMessageKeys } from "../i18n/simulatorMessageKeys";
 import {
   calculateGroundGlassAnchoredPan,
   denormalizeGroundGlassPan,
-  GROUND_GLASS_ZOOM_SCALE,
+  GROUND_GLASS_FOCUS_LOUPE_SCALE,
   normalizeGroundGlassPan,
   type GroundGlassPanOffset,
 } from "./groundGlassStageTransform";
+import {
+  resolveGroundGlassInspectionWindow,
+  type GroundGlassInspectionWindow,
+} from "./groundGlassInspectionWindow";
 
-const ZOOM_SCALE = GROUND_GLASS_ZOOM_SCALE;
+const FOCUS_LOUPE_SCALE = GROUND_GLASS_FOCUS_LOUPE_SCALE;
 
 export const GROUND_GLASS_POINTER_THRESHOLDS_PX = {
   mouse: 8,
@@ -59,6 +63,9 @@ type GroundGlassStageProps = {
   imageLayer: ReactNode;
   fixedOverlayLayer?: ReactNode;
   onZoomChange?: (nextZoomed: boolean) => void;
+  onInspectionWindowChange?: (window: GroundGlassInspectionWindow) => void;
+  /** RTT scenes sample a film crop instead of CSS-scaling the completed image. */
+  useRttInspectionWindow?: boolean;
   onViewportSizeChange?: (size: { width: number; height: number }) => void;
   /** Changes when navigation or preview state must discard the current interaction. */
   interactionResetKey?: string;
@@ -76,6 +83,8 @@ export const GroundGlassStage = ({
   imageLayer,
   fixedOverlayLayer,
   onZoomChange,
+  onInspectionWindowChange,
+  useRttInspectionWindow = false,
   onViewportSizeChange,
   interactionResetKey,
   accessibleLabel,
@@ -87,7 +96,7 @@ export const GroundGlassStage = ({
 }: GroundGlassStageProps) => {
   const { t } = useTranslation();
   const resolvedStageLabel = stageLabel ?? accessibleLabel ?? t(simulatorMessageKeys.viewport.groundGlassTitle);
-  const resolvedZoomInLabel = zoomInLabel ?? t(simulatorMessageKeys.viewport.zoomIn);
+  const resolvedFocusLoupeLabel = zoomInLabel ?? t(simulatorMessageKeys.viewport.focusLoupe);
   const resolvedPanLabel = panLabel ?? t(simulatorMessageKeys.viewport.pan);
   const resolvedResetViewLabel = resetViewLabel ?? t(simulatorMessageKeys.viewport.resetView);
   const resolvedResetActionLabel = resetActionLabel ?? t(simulatorMessageKeys.viewport.resetAction);
@@ -191,11 +200,28 @@ export const GroundGlassStage = ({
     [releaseCurrentPointerCapture],
   );
 
-  const zoomScale = zoomEnabled ? ZOOM_SCALE : 1;
+  const zoomScale = zoomEnabled ? FOCUS_LOUPE_SCALE : 1;
   const effectivePan = zoomEnabled
     ? denormalizeGroundGlassPan(normalizedPan, viewportSize, zoomScale)
     : ZERO_PAN;
-  const transform = `translate3d(${effectivePan.x}px, ${effectivePan.y}px, 0) scale(${zoomScale})`;
+  const inspectionWindow = useMemo(
+    () => resolveGroundGlassInspectionWindow({
+      active: zoomEnabled,
+      normalizedPan,
+      magnification: FOCUS_LOUPE_SCALE,
+    }),
+    [normalizedPan, zoomEnabled],
+  );
+  const presentationCssScale = useRttInspectionWindow ? 1 : zoomScale;
+  const presentationCssPan = useRttInspectionWindow ? ZERO_PAN : effectivePan;
+  const transform = `translate3d(${presentationCssPan.x}px, ${presentationCssPan.y}px, 0) scale(${presentationCssScale})`;
+
+  useEffect(() => {
+    onInspectionWindowChange?.(inspectionWindow);
+  }, [
+    inspectionWindow,
+    onInspectionWindowChange,
+  ]);
 
   const isInteractiveDescendant = (target: EventTarget | null, root: Element | null): boolean => {
     if (!(target instanceof Element)) return false;
@@ -282,13 +308,13 @@ export const GroundGlassStage = ({
     const startPanPx = denormalizeGroundGlassPan(
       { x: gesture.startPanX, y: gesture.startPanY },
       viewportSize,
-      ZOOM_SCALE,
+      FOCUS_LOUPE_SCALE,
     );
     setNormalizedPan(
       normalizeGroundGlassPan(
         { x: startPanPx.x + dx, y: startPanPx.y + dy },
         viewportSize,
-        ZOOM_SCALE,
+        FOCUS_LOUPE_SCALE,
       ),
     );
   };
@@ -324,15 +350,24 @@ export const GroundGlassStage = ({
         role={zoomEnabled ? "region" : "button"}
         tabIndex={0}
         data-zoomed={zoomEnabled ? "true" : "false"}
-        data-pan-x={effectivePan.x}
-        data-pan-y={effectivePan.y}
-        data-scale={zoomScale}
+        data-focus-loupe-active={zoomEnabled ? "true" : "false"}
+        data-focus-loupe-scale={zoomScale}
+        data-pan-x={presentationCssPan.x}
+        data-pan-y={presentationCssPan.y}
+        data-inspection-pan-x={normalizedPan.x}
+        data-inspection-pan-y={normalizedPan.y}
+        data-focus-loupe-center-u={inspectionWindow.centerU}
+        data-focus-loupe-center-v={inspectionWindow.centerV}
+        data-focus-loupe-window-width={inspectionWindow.widthFraction}
+        data-focus-loupe-window-height={inspectionWindow.heightFraction}
+        data-presentation-css-scale={presentationCssScale}
+        data-scale={presentationCssScale}
         data-normalized-pan-x={normalizedPan.x}
         data-normalized-pan-y={normalizedPan.y}
         data-dragging={isDragging ? "true" : "false"}
         data-pointer-active={dragRef.current.pointerId === null ? "false" : "true"}
         data-pointer-captured={dragRef.current.captured ? "true" : "false"}
-        aria-label={`${zoomEnabled ? resolvedPanLabel : resolvedZoomInLabel} ${resolvedStageLabel}`}
+        aria-label={`${zoomEnabled ? resolvedPanLabel : resolvedFocusLoupeLabel} ${resolvedStageLabel}`}
         onKeyDown={handleKeyDown}
         style={{
           position: "relative",
@@ -370,7 +405,7 @@ export const GroundGlassStage = ({
       <button
         type="button"
         className="btn btn--compact btn--secondary groundglass-view-control"
-        aria-label={zoomEnabled ? `${resolvedResetActionLabel} ${resolvedStageLabel} view` : `${resolvedZoomInLabel} ${resolvedStageLabel} view`}
+        aria-label={zoomEnabled ? `${resolvedResetActionLabel} ${resolvedStageLabel} view` : `${resolvedFocusLoupeLabel} ${resolvedStageLabel} view`}
         onClick={zoomEnabled ? resetGroundGlassInteraction : () => requestZoomIn()}
         style={{
           position: "absolute",
@@ -380,7 +415,7 @@ export const GroundGlassStage = ({
           boxShadow: "0 1px 4px rgba(15, 23, 42, 0.25)",
         }}
       >
-        {zoomEnabled ? resolvedResetViewLabel : resolvedZoomInLabel}
+        {zoomEnabled ? resolvedResetViewLabel : resolvedFocusLoupeLabel}
       </button>
     </div>
   );

@@ -16,6 +16,7 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
+import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const createProjection = (frontSwingDeg: number, focusDistanceMm: number) => {
@@ -99,6 +100,7 @@ describe("scene geometry guides", () => {
     ["oblique-architecture", "oblique-architecture-target-facade", simulatorMessageKeys.geometry.targetFacadeDepthGuide],
     ["architecture-foreground", "architecture-foreground-ground", simulatorMessageKeys.geometry.architectureForegroundGroundGuide],
     ["architecture-foreground", "architecture-foreground-building-profile", simulatorMessageKeys.geometry.architectureForegroundBuildingGuide],
+    ["interior-corner", "interior-corner-receding-wall", simulatorMessageKeys.geometry.interiorCornerRecedingWallGuide],
   ] as const)("keeps the canonical message key for %s/%s", (sceneId, guideId, expectedKey) => {
     const guide = getSceneGeometryGuides(sceneId).find(({ id }) => id === guideId);
     expect(guide).toMatchObject({ id: guideId, labelMessageKey: expectedKey });
@@ -120,6 +122,9 @@ describe("scene geometry guides", () => {
     ["architecture-foreground", "foreground-middle", simulatorMessageKeys.geometry.architectureForegroundMiddleTarget],
     ["architecture-foreground", "building-base", simulatorMessageKeys.geometry.architectureForegroundBuildingBaseTarget],
     ["architecture-foreground", "building-middle", simulatorMessageKeys.geometry.architectureForegroundBuildingMiddleTarget],
+    ["interior-corner", "interior-wall-near", simulatorMessageKeys.geometry.interiorCornerNearWallTarget],
+    ["interior-corner", "interior-wall-middle", simulatorMessageKeys.geometry.interiorCornerMiddleWallTarget],
+    ["interior-corner", "interior-wall-far", simulatorMessageKeys.geometry.interiorCornerFarWallTarget],
   ] as const)("resolves the canonical target message key for %s/%s", (sceneId, targetId, expectedKey) => {
     expect(getSceneGeometryTargetMessageKey(sceneId, targetId)).toBe(expectedKey);
   });
@@ -143,6 +148,41 @@ describe("scene geometry guides", () => {
     });
     expect(guides[0].startWorld).toEqual(obliqueArchitectureGeometry.focusTargets[0].worldPosition);
     expect(guides[0].endWorld).toEqual(obliqueArchitectureGeometry.focusTargets[2].worldPosition);
+  });
+
+  it("registers Oblique Tabletop side and top traces from the canonical subject-board plane", () => {
+    const guides = getSceneGeometryGuides("oblique-tabletop");
+    expect(guides).toHaveLength(2);
+    expect(guides).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "oblique-tabletop-near-far-plane",
+          view: "side",
+          sourcePlaneId: "subjectBoardPlane",
+          teachingComponent: "near-far",
+          labelMessageKey: simulatorMessageKeys.geometry.obliqueTabletopNearFarGuide,
+        }),
+        expect.objectContaining({
+          id: "oblique-tabletop-left-right-plane",
+          view: "top",
+          sourcePlaneId: "subjectBoardPlane",
+          teachingComponent: "left-right",
+          labelMessageKey: simulatorMessageKeys.geometry.obliqueTabletopLeftRightGuide,
+        }),
+      ]),
+    );
+    expect(guides[0].startWorld).toEqual(
+      obliqueTabletopGeometry.subjectBoardExtents.near.surfaceCenterWorld,
+    );
+    expect(guides[0].endWorld).toEqual(
+      obliqueTabletopGeometry.subjectBoardExtents.far.surfaceCenterWorld,
+    );
+    expect(guides[1].startWorld).toEqual(
+      obliqueTabletopGeometry.subjectBoardExtents.left.surfaceCenterWorld,
+    );
+    expect(guides[1].endWorld).toEqual(
+      obliqueTabletopGeometry.subjectBoardExtents.right.surfaceCenterWorld,
+    );
   });
 
   it("selects a dedicated Top-view-compatible Shelf Swing presentation profile", () => {

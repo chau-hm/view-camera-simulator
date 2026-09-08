@@ -3,31 +3,84 @@ import type { MessageShape } from "../types";
 
 export const homeMessages = {
   hero: {
-    eyebrow: "互動式大片幅相機學習",
-    title: "在按下快門前，了解大片幅相機如何改變影像。",
+    eyebrow: "View Camera Simulator",
+    titleLine1: "掌控透視感",
+    titleLine2: "定位焦平面",
     description:
-      "移動整部相機，或調整前組及後組，然後在對焦屏上比較視點、構圖、透視及對焦如何改變。",
-    exploreSimulator: "探索模擬器",
+      "親手操作上移、橫移、傾斜、擺動與對焦，看見它們如何改變透視、構圖與焦平面。",
+    startExploring: "開始探索模擬器",
+    exploreScenes: "瀏覽場景",
+  },
+  fundamentals: {
+    eyebrow: "掌握相機移軸",
+    title: "學習基礎原理",
+    description: "理解影響相機取景、移軸與對焦方式的核心原理。",
+    items: {
+      perspective: {
+        title: "透視控制",
+        description: "理解視點、構圖與相機移軸如何影響透視關係及匯聚線條。",
+      },
+      focusPlane: {
+        title: "焦平面",
+        description: "觀察清晰焦平面位於哪裏，以及對焦、傾斜與擺動如何改變它與主體的關係。",
+      },
+      groundGlass: {
+        title: "對焦屏",
+        description: "從攝影者的視角查看對焦屏上的影像，理解取景、構圖與對焦結果。",
+      },
+      opticalGeometry: {
+        title: "光學幾何",
+        description: "理解鏡頭、主體、成像平面與影像形成之間的幾何關係。",
+      },
+    },
+  },
+  visualize: {
+    eyebrow: "看見．研究．理解",
+    title: "三種視覺化方式",
+    description: "同一個相機狀態，可以從三種互補視圖理解；每一種都揭示不同的關係。",
+    items: {
+      scene3d: {
+        title: "3D 場景",
+        description: "在 3D 空間中理解相機、主體與視點之間的相對位置。",
+      },
+      groundGlass: {
+        title: "對焦屏",
+        description: "查看相機形成的影像，理解取景、構圖與對焦結果。",
+      },
+      geometry: {
+        title: "幾何視圖",
+        description: "顯示光路、鏡頭與成像平面、焦平面及透視幾何。",
+      },
+    },
   },
   why: {
-    ariaLabel: "為甚麼使用大片幅相機",
+    eyebrow: "為甚麼重要",
+    title: {
+      line1: "曝光前，掌控更多。",
+      line2: "以更深入的方式觀看。",
+    },
+    items: {
+      control: {
+        title: "曝光前，你可以控制甚麼？",
+        description:
+          "相機位置、構圖、影像幾何與焦平面，是幾個可以分開思考的決定。大片幅相機讓這些關係在曝光前清楚呈現。",
+      },
+      movements: {
+        title: "為甚麼相機移軸重要？",
+        description:
+          "上移與橫移可以在整部相機的視點不變時重新構圖；傾斜與擺動改變焦平面的方向；移動整部相機則會改變視點、透視與視差。",
+      },
+      learning: {
+        title: "為甚麼仍然值得學大片幅相機？",
+        description:
+          "較慢的操作過程，讓每一個調整都成為有意識的決定。倒轉而左右相反的對焦屏影像，亦讓你更仔細觀察邊緣、平面、對焦與空間關係。",
+      },
+    },
   },
-  info: {
-    control: {
-      title: "大片幅相機在曝光前可以控制甚麼？",
-      body:
-        "大片幅相機把一些經常混在一起的決定分開：相機從哪個位置觀察、主體如何構圖、影像幾何如何控制，以及清晰焦平面位於哪裏。這些關係可以在曝光前於相機上調整，而不只是事後當作修正。",
-    },
-    movements: {
-      title: "為甚麼相機移軸重要？",
-      body:
-        "上移及橫移可以在不改變視點的情況下改變構圖。傾斜及擺動可以旋轉清晰焦平面。移動整部相機會改變視點、透視關係及視差。實用的問題是：你想改變哪一種實體關係？",
-    },
-    artists: {
-      title: "為甚麼藝術家仍然使用大片幅相機？",
-      body:
-        "大片幅相機令拍攝過程慢下來。對焦屏上的倒置影像鼓勵細心觀察，而每一項移軸都成為有意識的選擇。藝術家使用它不只是為了影像質素，也因為這種方法改變了觀看及創作相片的方式。",
-    },
+  finalCta: {
+    title: "進入模擬器。",
+    description: "透過引導場景，親手實踐大片幅相機的移軸、構圖與對焦原理。",
+    action: "開始探索",
   },
   faq: {
     title: "常見問題",

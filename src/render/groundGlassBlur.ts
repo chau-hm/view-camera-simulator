@@ -249,7 +249,11 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   }
 
   // convert to pixels and radius
-  const circleOfConfusionDiameterPx = (cocDiameterMmFinal * renderWidthPx) / filmWidthMm;
+  const circleOfConfusionDiameterPx = dofBlurModel.calculateBoundaryCoCDiameterPx(
+    cocDiameterMmFinal,
+    filmWidthMm,
+    renderWidthPx,
+  );
   const blurRadiusPxRaw = circleOfConfusionDiameterPx * 0.5;
   const blurRadiusPxClamped = Math.min(maximumBlurRadiusPx, Math.max(0, blurRadiusPxRaw));
 

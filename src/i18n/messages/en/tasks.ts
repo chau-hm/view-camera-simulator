@@ -83,6 +83,22 @@ export const tasksMessages = {
       pass: "Camera and film plane remain level",
       fail: "Camera or film-plane orientation is no longer level",
     },
+    interiorCornerRiseComposition: {
+      pass: "Interior composition is acceptably framed",
+      fail: "Upper architecture or the room corner is outside the safe frame",
+    },
+    interiorCornerSwingOrientation: {
+      pass: "Focus-plane orientation is plausible",
+      fail: "Focus-plane orientation is not yet toward the receding wall",
+    },
+    interiorCornerWallFocus: {
+      pass: "Receding-wall details are acceptably sharp",
+      fail: "Some receding-wall details are still too soft",
+    },
+    interiorCornerFocusPreserved: {
+      pass: "Open-aperture wall focus is preserved",
+      fail: "Open-aperture wall focus is not yet aligned",
+    },
     mirrorReflectionClear: {
       pass: "Camera reflection is outside the mirror aperture",
       fail: "Camera reflection is still visible through the mirror",
@@ -400,6 +416,206 @@ export const tasksMessages = {
       },
     },
   },
+  obliqueTabletopFocus: {
+    title: "Focus the subject-board centre",
+    objective:
+      "Focus the middle region first. Notice that Focus moves the plane through space but does not match the inclined board's orientation.",
+    notes: {
+      focus: "Use the middle subject-board detail as your reference, then compare it with the other visible details.",
+      constraints:
+        "Keep Front Tilt and Front Swing at zero. Aperture stays at f/11; do not try to solve the whole board yet.",
+    },
+    criteria: {
+      allowedAperture: "Aperture remains at f/11",
+      riseZero: "Front Rise remains at 0 mm",
+      tiltZero: "Front Tilt remains at 0°",
+      swingZero: "Front Swing remains at 0°",
+      focusUsed: "Focus moves at least 100 mm from the starting position",
+      middleSharp: "The middle subject-board detail is sharp",
+    },
+    feedback: {
+      passPrimary:
+        "Good. Focus placed the plane through the middle detail; the subject board still disagrees with it in other directions.",
+      defaultFailPrimary:
+        "Focus the middle subject-board detail first, then compare it with the surrounding near, far, left, and right details.",
+      primary: {
+        allowedAperture: "Keep the aperture at f/11; aperture is not part of this first focus step.",
+        riseZero: "Return Front Rise to 0 mm; this scene begins with focusing, not a camera movement.",
+        tiltZero: "Keep Front Tilt at 0° until the focus reference is established.",
+        swingZero: "Keep Front Swing at 0° until the focus reference is established.",
+        focusUsed: "Move Focus from the starting position so the focus change is observable.",
+        middleSharp: "Use the middle subject-board detail as the focus reference and refine Focus until it is sharp.",
+      },
+      secondary: {
+        allowedAperture: "The fixed f/11 aperture keeps this comparison about focus placement.",
+        riseZero: "The subject board is already framed; leave the camera position unchanged.",
+        tiltZero: "Focus moves a plane through space; Front Tilt will address the board's near-to-far direction later.",
+        swingZero: "Focus on the central reference before changing the subject board plane's orientation.",
+        focusUsed: "Compare the focus readout before and after moving the plane onto the middle region.",
+        middleSharp: "After the middle detail sharpens, observe that other board details remain soft.",
+      },
+    },
+  },
+  obliqueTabletopTilt: {
+    title: "Improve near-to-far focus",
+    objective:
+      "Use Front Tilt and the Side view to improve the subject board's near-to-far relationship. Refine Focus if needed.",
+    notes: {
+      tilt: "Use the positive Front Tilt direction that brings the near, middle, and far board details closer to one focus plane.",
+      constraints:
+        "Keep Front Rise and Front Swing at zero. Aperture stays at f/11; the side-view improvement is intentionally partial.",
+    },
+    criteria: {
+      allowedAperture: "Aperture remains at f/11",
+      riseZero: "Front Rise remains at 0 mm",
+      swingZero: "Front Swing remains at 0°",
+      movementRange: "Front Tilt is in the calibrated positive range",
+      nearSharp: "The near-centre board detail is sharp",
+      middleSharp: "The middle board detail is sharp",
+      farSharp: "The far-centre board detail is sharp",
+    },
+    feedback: {
+      passPrimary:
+        "Good. Front Tilt and Focus improved the principal near-to-far relationship. The lateral difference remains for the next stage.",
+      defaultFailPrimary:
+        "Use the calibrated positive Front Tilt direction in the Side view, then refine Focus across the near, middle, and far regions.",
+      primary: {
+        allowedAperture: "Keep the aperture at f/11; do not use depth of field to hide an incorrect plane.",
+        riseZero: "Return Front Rise to 0 mm; this stage changes the focus-plane orientation with Front Tilt.",
+        swingZero: "Keep Front Swing at 0°; the remaining lateral component is deliberate here.",
+        movementRange: "Use the positive Front Tilt range; the opposite sign turns the near-to-far relationship the wrong way.",
+        nearSharp: "The near-centre board detail is still soft. Set the positive Front Tilt direction, then refine Focus.",
+        middleSharp: "Keep the middle board detail as a reference while adjusting Front Tilt and Focus.",
+        farSharp: "The far-centre board detail is still soft. Continue with the positive Front Tilt direction and refine Focus.",
+      },
+      secondary: {
+        allowedAperture: "The fixed f/11 aperture keeps this stage about plane orientation, not extra depth of field.",
+        riseZero: "Use the Side geometry view to inspect the focus plane without changing the camera position.",
+        swingZero: "Leave the lateral component unresolved so the effect of Front Tilt is clear.",
+        movementRange: "Compare the green focus plane with the board trace from near to far; do not use the opposite Tilt sign as a shortcut.",
+        nearSharp: "Compare the near-centre readout with the middle and far-centre board details.",
+        middleSharp: "Refine Focus around the middle after each Tilt adjustment.",
+        farSharp: "The improvement is along one direction only; the side view should still leave the board's lateral problem visible.",
+      },
+    },
+  },
+  obliqueTabletopSwing: {
+    title: "Add the lateral component",
+    objective:
+      "Add Front Swing to improve the remaining left-to-right relationship while preserving the useful near-to-far board relationship.",
+    notes: {
+      swing: "Keep the useful near-to-far Tilt relationship, then add positive Front Swing and refine Focus to improve the board's lateral component.",
+      constraints:
+        "Keep Front Rise at zero and leave the aperture at f/11. Compare the left and right details; full board sharpness belongs to Refine Focus.",
+    },
+    criteria: {
+      allowedAperture: "Aperture remains at f/11",
+      riseZero: "Front Rise remains at 0 mm",
+      tiltRange: "Front Tilt preserves a useful positive near-to-far relationship",
+      movementRange: "Front Swing is in the useful positive range",
+      focusUsed: "Focus is refined after changing the movements",
+      lateralSharp: "The far-row left and right regions show lateral improvement",
+    },
+    feedback: {
+      passPrimary:
+        "Good. Swing has improved the lateral relationship. The compound plane is oriented more closely to the subject board; refine Focus next to place it accurately.",
+      defaultFailPrimary:
+        "Keep the useful positive Tilt relationship, add positive Swing in the Top view, and compare the left and right details. Full board sharpness is intentionally left for Refine Focus.",
+      primary: {
+        allowedAperture: "Keep the aperture at f/11; the movement combination must solve the plane before stopping down.",
+        riseZero: "Return Front Rise to 0 mm; this stage adds the lateral optical component.",
+        tiltRange: "Keep Front Tilt in the useful positive range so the near-to-far relationship remains available while Swing changes the lateral component.",
+        movementRange: "Use the useful positive Front Swing range; the opposite sign turns the lateral relationship the wrong way.",
+        focusUsed: "Refine Focus after changing the movements so the visible lateral comparison is meaningful.",
+        lateralSharp: "The far-row left and right details are not yet close enough. Keep the useful Tilt relationship, add positive Swing, and refine Focus.",
+      },
+      secondary: {
+        allowedAperture: "Use the Top view and f/11 to compare the movement solution without extra depth of field.",
+        riseZero: "Do not change the camera position while comparing the left and right regions.",
+        tiltRange: "The Top view shows Swing's contribution most clearly when the useful near-to-far Tilt relationship is retained.",
+        movementRange: "Compare the green focus plane with the board's lateral trace; negative Swing rotates it away from the surface.",
+        focusUsed: "Changing either movement can change plane placement, so refine Focus before judging the result.",
+        lateralSharp: "Check the left and right details in the far row, then remember that full board sharpness is the next stage.",
+      },
+    },
+  },
+  obliqueTabletopRefine: {
+    title: "Place the compound focus plane",
+    objective:
+      "With Tilt and Swing setting the plane orientation, refine Focus until the visible board details fall on the same plane of sharp focus.",
+    notes: {
+      focus: "Keep the established Tilt and Swing orientation and use Focus to place the resulting plane on the subject board.",
+      constraints:
+        "Keep Front Rise at zero and the aperture at f/11. Refine Focus only and judge the result across the visible board, not from one target alone.",
+    },
+    criteria: {
+      allowedAperture: "Aperture remains at f/11",
+      riseZero: "Front Rise remains at 0 mm",
+      tiltRange: "Front Tilt remains near the calibrated compound relationship",
+      swingRange: "Front Swing remains near the calibrated compound relationship",
+      focusUsed: "Focus is refined from the starting position",
+      allTargetsSharp: "All visible subject-board details are sharp",
+    },
+    feedback: {
+      passPrimary:
+        "The compound plane is now placed on the subject board at f/11. The final step will add depth around this aligned plane.",
+      defaultFailPrimary:
+        "Keep the established Tilt and Swing orientation, then refine Focus across the visible board details.",
+      primary: {
+        allowedAperture: "Keep the aperture at f/11; first place the compound plane before adding depth around it.",
+        riseZero: "Return Front Rise to 0 mm; only Tilt, Swing, and Focus belong to this plane-placement step.",
+        tiltRange: "Keep Front Tilt near its calibrated compound relationship while refining the plane placement.",
+        swingRange: "Keep Front Swing near its calibrated compound relationship while refining the plane placement.",
+        focusUsed: "Refine Focus from the starting position so the compound plane moves onto the subject board.",
+        allTargetsSharp: "Some visible board details are still soft. Compare the whole visible set and refine Focus while keeping the established movement relationship.",
+      },
+      secondary: {
+        allowedAperture: "The f/11 setting makes the plane placement visible before the aperture step.",
+        riseZero: "Use the geometry views to inspect the same focus plane without changing framing.",
+        tiltRange: "Side view shows the near-to-far component of the one compound plane.",
+        swingRange: "Top view shows the lateral component of that same plane.",
+        focusUsed: "After changing either movement, refocus because the plane's position changes as well as its orientation.",
+        allTargetsSharp: "Compare near/far and left/right rows; one sharp detail is not enough evidence of alignment.",
+      },
+    },
+  },
+  obliqueTabletopAperture: {
+    title: "Add depth around the plane",
+    objective:
+      "The plane is aligned. Now stop down to add depth around that plane — not to replace the movements.",
+    notes: {
+      aperture: "Keep the compound Tilt, Swing, and Focus relationship, then choose the next modest smaller aperture.",
+      constraints:
+        "Do not change the movements or Focus in this final stage. Aperture changes usable depth around the aligned plane.",
+    },
+    criteria: {
+      allowedAperture: "Aperture is set to the modest final stop-down",
+      riseZero: "Front Rise remains at 0 mm",
+      tiltRange: "Front Tilt remains near the calibrated compound relationship",
+      swingRange: "Front Swing remains near the calibrated compound relationship",
+      allTargetsSharp: "The aligned visible subject-board details remain sharp",
+    },
+    feedback: {
+      passPrimary:
+        "Complete. Tilt and Swing oriented one three-dimensional focus plane, Focus placed it on the subject board, and the smaller aperture added depth around it.",
+      defaultFailPrimary:
+        "Keep the compound plane aligned, then stop down one modest step. Aperture adds depth around the plane; it cannot replace the movements.",
+      primary: {
+        allowedAperture: "Choose the modest smaller aperture for this final step; do not leave the starting f/11 setting.",
+        riseZero: "Keep Front Rise at 0 mm; aperture should not change the established framing.",
+        tiltRange: "Restore Front Tilt to the useful compound relationship before relying on the final aperture.",
+        swingRange: "Restore Front Swing to the useful compound relationship before relying on the final aperture.",
+        allTargetsSharp: "The subject board is not aligned yet. Aperture cannot substitute for the correct Tilt, Swing, and Focus state.",
+      },
+      secondary: {
+        allowedAperture: "The stop-down is deliberately modest: it adds tolerance around an already aligned plane.",
+        riseZero: "Keep the camera and subject-board framing unchanged while comparing depth around the plane.",
+        tiltRange: "The Side view still represents the same near-to-far component after the aperture change.",
+        swingRange: "The Top view still represents the same lateral component after the aperture change.",
+        allTargetsSharp: "If a stopped-down image is soft in the wrong regions, return to plane alignment instead of stopping down further.",
+      },
+    },
+  },
   tableTilt: {
     title: "Align the tabletop plane of sharp focus",
     objective:
@@ -523,6 +739,108 @@ export const tasksMessages = {
           "Watch the Ground Glass. Front Shift changes framing without moving the camera back to the original viewpoint.",
         viewpointRetained:
           "Move the whole camera farther sideways, then compensate again with Front Shift. Compare the two reflected props as a parallax cue.",
+      },
+    },
+  },
+  interiorCornerCompose: {
+    title: "Compose the Interior Corner with Rise",
+    objective:
+      "Keep the camera level and use Front Rise to bring the upper architecture into a comfortable frame while preserving the room corner.",
+    notes: {
+      level: "Do not pitch the camera. A level camera keeps the architectural verticals useful.",
+      rise: "Use Front Rise to move the framing upward without changing the viewpoint or perspective.",
+    },
+    criteria: {
+      composition: "Upper architecture and room corner are acceptably framed",
+      cameraLevel: "Camera and film plane remain level",
+    },
+    feedback: {
+      passPrimary:
+        "Front Rise improved the framing while the camera stayed level. The focus problem remains for the next stage.",
+      defaultFailPrimary:
+        "Keep the camera level and use Front Rise until the upper architecture and room corner are comfortably framed.",
+      primary: {
+        composition:
+          "The upper architecture is still too close to the top edge. Adjust Front Rise while keeping the room corner usable.",
+        cameraLevel:
+          "Keep the camera and film plane level; use Front Rise for framing rather than pitching the camera.",
+      },
+      secondary: {
+        composition:
+          "Use the Ground Glass edges as guardrails. Rise changes framing without changing architectural perspective.",
+        cameraLevel:
+          "A level camera preserves the vertical references while Front Rise moves the framing upward.",
+      },
+    },
+  },
+  interiorCornerAlignFocus: {
+    title: "Align the Receding-Wall Focus",
+    objective:
+      "Use Front Swing to orient the focus plane, then Focus to place it through the near, middle, and far details on the one receding side wall.",
+    notes: {
+      composition: "Keep the solved Rise framing intact; composition and focus are separate photographic decisions.",
+      swing: "Front Swing rotates the focus-plane orientation toward the receding wall.",
+      focus: "After the orientation is plausible, refine Focus to place that plane through the wall details.",
+      wall: "Target the receding side wall only. The perpendicular wall provides context and does not need to be equally sharp.",
+    },
+    criteria: {
+      aperture: "Aperture remains at the open calibration setting",
+      orientation: "Focus-plane orientation is on the intended side",
+      wall: "Near, middle, and far receding-wall details are acceptably sharp",
+      cameraLevel: "Camera and film plane remain level",
+    },
+    feedback: {
+      passPrimary:
+        "The focus plane is aligned through the receding side wall at the open aperture. The opposite wall remains contextual.",
+      defaultFailPrimary:
+        "Keep the solved Rise framing, then orient and place the focus plane through the receding wall at the open aperture.",
+      primary: {
+        aperture: "Return to the open aperture before calibrating the focus plane.",
+        orientation:
+          "The focus plane is not yet turning toward the receding wall. Adjust Front Swing before refining Focus.",
+        wall: "The focus-plane orientation is closer. Refine Focus to place it through the receding wall.",
+        cameraLevel: "Keep the camera and film plane level while calibrating Swing and Focus.",
+      },
+      secondary: {
+        aperture: "Aperture is held open here so the Swing + Focus alignment remains visible.",
+        orientation: "A wrong orientation cannot be corrected by Focus alone; first turn the plane toward the wall.",
+        wall: "Compare the near, middle, and far wall details rather than judging the perpendicular wall.",
+        cameraLevel: "Swing changes the lens and focus-plane orientation without pitching the camera.",
+      },
+    },
+  },
+  interiorCornerDepthOfField: {
+    title: "Add Usable Depth with Aperture",
+    objective:
+      "With the receding-wall focus plane aligned, stop down modestly to add usable depth without disturbing composition or focus.",
+    notes: {
+      composition: "Preserve the Rise composition from the first stage.",
+      focus: "The receding-wall focus alignment must already be valid at the open aperture; Aperture does not move the focus plane.",
+      aperture: "Use the first modest supported stop-down to add finishing depth around the aligned focus plane.",
+      wall: "The sharpness target is the receding side wall, not both perpendicular walls of the corner.",
+    },
+    criteria: {
+      composition: "Interior composition remains acceptably framed",
+      focus: "Open-aperture receding-wall focus remains aligned",
+      aperture: "Aperture is stopped down modestly",
+      cameraLevel: "Camera and film plane remain level",
+    },
+    feedback: {
+      passPrimary:
+        "The focus plane was already aligned; stopping down now adds usable depth around the receding wall while the composition remains intact.",
+      defaultFailPrimary:
+        "Keep the solved composition and focus-plane alignment, then stop down Aperture modestly to finish the photograph.",
+      primary: {
+        composition: "Restore the solved Rise composition before changing Aperture.",
+        focus: "Aperture cannot hide a misplaced focus plane. Return to the earlier stage and refine Swing + Focus.",
+        aperture: "Stop down Aperture modestly after preserving the receding-wall focus alignment.",
+        cameraLevel: "Keep the camera and film plane level; Aperture does not require a perspective change.",
+      },
+      secondary: {
+        composition: "Aperture changes usable sharpness, not framing. Leave the Rise composition intact.",
+        focus: "The open-aperture check protects the focus-plane lesson from being solved by blur tolerance alone.",
+        aperture: "Use the next smaller supported aperture; do not change Swing or Focus at this finishing stage.",
+        cameraLevel: "Stopping down broadens usable depth around the existing plane without pitching the camera.",
       },
     },
   },

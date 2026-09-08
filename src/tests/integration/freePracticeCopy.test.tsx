@@ -3,8 +3,17 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { MovementControls } from "../../components/controls/MovementControls";
 import { FeedbackPanel } from "../../components/simulator/FeedbackPanel";
 import { TaskPanel } from "../../components/simulator/TaskPanel";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { changeLocale, i18n } from "../../i18n";
 import { LOCALE_STORAGE_KEY } from "../../i18n/localePreference";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
+import { evaluateInteriorCornerRiseComposition } from "../../scenes/interiorCornerRiseComposition";
+import {
+  evaluateInteriorCornerSwingFocus,
+  interiorCornerSwingFocusCalibration,
+} from "../../scenes/interiorCornerSwingFocus";
+import type { CameraState } from "../../types/camera";
+import { CAMERA_CONSTANTS, CAMERA_CONTROL_STEPS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const resetLocale = async () => {
   cleanup();
@@ -15,6 +24,45 @@ const resetLocale = async () => {
 
 beforeEach(resetLocale);
 afterEach(resetLocale);
+
+const interiorCornerEvaluationAtRise = (frontRiseMm: number) =>
+  evaluateInteriorCornerRiseComposition(
+    deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...interiorCornerScene.cameraPreset,
+        activeSceneId: interiorCornerScene.id,
+        activeTaskId: null,
+        mode: "free",
+        frontRiseMm,
+      },
+      interiorCornerScene,
+    ),
+  );
+
+const firstPassingInteriorCornerRise = (): number => {
+  for (
+    let riseMm = CAMERA_CONSTANTS.riseMinMm;
+    riseMm <= CAMERA_CONSTANTS.riseMaxMm;
+    riseMm += CAMERA_CONTROL_STEPS.riseMm
+  ) {
+    if (interiorCornerEvaluationAtRise(riseMm).passed) return riseMm;
+  }
+  throw new Error("Interior Corner has no passing public Rise state");
+};
+
+const interiorCornerFocusEvaluationAt = (overrides: Partial<CameraState> = {}) => {
+  const camera: CameraState = {
+    ...DEFAULT_CAMERA_STATE,
+    ...interiorCornerScene.cameraPreset,
+    activeSceneId: interiorCornerScene.id,
+    activeTaskId: null,
+    mode: "free",
+    ...overrides,
+  };
+  const optics = deriveOpticsState(camera, interiorCornerScene);
+  return evaluateInteriorCornerSwingFocus(optics, camera.aperture);
+};
 
 describe("Free Practice teaching copy", () => {
   it("renders English scene-specific guidance and observations", () => {
@@ -44,6 +92,20 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText(/Stop down Aperture to expand usable depth/)).toBeInTheDocument();
 
     cleanup();
+    render(<TaskPanel task={null} sceneId="interior-corner" />);
+    expect(screen.getByText(/Explore the neutral Interior Corner setup/)).toBeInTheDocument();
+    expect(screen.getByText(/upper moulding is cropped/)).toBeInTheDocument();
+    expect(screen.getByText(/Use Front Rise to move the framing upward/)).toBeInTheDocument();
+    expect(screen.getByText(/same side wall from its nearer artwork/)).toBeInTheDocument();
+    expect(screen.getByText(/At f\/5\.6, use Front Swing/)).toBeInTheDocument();
+
+    cleanup();
+    render(<TaskPanel task={null} sceneId="oblique-tabletop" />);
+    expect(screen.getByText(/Use Front Tilt to improve the board's near-to-far focus alignment/)).toBeInTheDocument();
+    expect(screen.getByText(/Refine Focus after changing either movement/)).toBeInTheDocument();
+    expect(screen.getByText(/Add Front Swing to resolve the remaining side-to-side difference/)).toBeInTheDocument();
+
+    cleanup();
     render(<FeedbackPanel mode="free" sceneId="understanding-camera-movements" task={null} evaluation={null} />);
     expect(
       screen.getByText(/Whole-camera Viewpoint movement changes perspective relationships and parallax/),
@@ -56,6 +118,133 @@ describe("Free Practice teaching copy", () => {
     expect(tableTiltObservation).toHaveTextContent(/Ground Glass/);
     expect(tableTiltObservation).toHaveTextContent(/depth-of-field/);
     expect(tableTiltObservation).toHaveTextContent(/Focus Targets/);
+  });
+
+  it("renders projected Rise feedback for neutral and acceptable framing in both locales", () => {
+    const neutralEvaluation = interiorCornerEvaluationAtRise(0);
+    render(
+      <FeedbackPanel
+        mode="free"
+        sceneId="interior-corner"
+        task={null}
+        evaluation={null}
+        freeCompositionEvaluation={neutralEvaluation}
+      />,
+    );
+    expect(screen.getByTestId("interior-corner-rise-composition-feedback")).toHaveTextContent(
+      /Keep the camera level.*upper architecture is still too close to the top edge/i,
+    );
+    expect(screen.getByText("Rise composition needs adjustment")).toBeInTheDocument();
+
+    cleanup();
+    const passingRiseMm = firstPassingInteriorCornerRise();
+    render(
+      <FeedbackPanel
+        mode="free"
+        sceneId="interior-corner"
+        task={null}
+        evaluation={null}
+        freeCompositionEvaluation={interiorCornerEvaluationAtRise(passingRiseMm)}
+      />,
+    );
+    expect(screen.getByTestId("interior-corner-rise-composition-feedback")).toHaveTextContent(
+      /upper architecture is now inside a safer frame/i,
+    );
+    expect(screen.getByText("Rise composition is acceptable")).toBeInTheDocument();
+
+    cleanup();
+    changeLocale("zh-HK");
+    render(
+      <FeedbackPanel
+        mode="free"
+        sceneId="interior-corner"
+        task={null}
+        evaluation={null}
+        freeCompositionEvaluation={neutralEvaluation}
+      />,
+    );
+    expect(screen.getByTestId("interior-corner-rise-composition-feedback")).toHaveTextContent(
+      /保持相機水平.*上方建築細節仍然太貼近畫面頂部/,
+    );
+    expect(screen.getByText("上移構圖仍需調整")).toBeInTheDocument();
+  });
+
+  it("renders separate physical receding-wall focus feedback in both locales", () => {
+    const neutralFocus = interiorCornerFocusEvaluationAt({
+      frontSwingDeg: 0,
+      focusDistanceMm: interiorCornerScene.cameraPreset.focusDistanceMm,
+      aperture: 5.6,
+    });
+    render(
+      <FeedbackPanel
+        mode="free"
+        sceneId="interior-corner"
+        task={null}
+        evaluation={null}
+        freeFocusEvaluation={neutralFocus}
+      />,
+    );
+    expect(screen.getByTestId("interior-corner-focus-feedback")).toHaveTextContent(
+      /Focus alone cannot hold the near, middle, and far details together/i,
+    );
+    expect(screen.getByText("Receding-wall focus needs adjustment")).toBeInTheDocument();
+
+    cleanup();
+    const wrongSignFocus = interiorCornerFocusEvaluationAt({
+      frontSwingDeg: -interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      aperture: interiorCornerSwingFocusCalibration.public.aperture,
+    });
+    render(
+      <FeedbackPanel
+        mode="free"
+        sceneId="interior-corner"
+        task={null}
+        evaluation={null}
+        freeFocusEvaluation={wrongSignFocus}
+      />,
+    );
+    expect(screen.getByTestId("interior-corner-focus-feedback")).toHaveTextContent(
+      /Focus alone cannot hold the near, middle, and far details together/i,
+    );
+    expect(screen.getByText("Receding-wall focus needs adjustment")).toBeInTheDocument();
+    expect(screen.queryByText("Refine receding-wall focus")).not.toBeInTheDocument();
+
+    cleanup();
+    const passingFocus = interiorCornerFocusEvaluationAt({
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      aperture: interiorCornerSwingFocusCalibration.public.aperture,
+    });
+    render(
+      <FeedbackPanel
+        mode="free"
+        sceneId="interior-corner"
+        task={null}
+        evaluation={null}
+        freeFocusEvaluation={passingFocus}
+      />,
+    );
+    expect(screen.getByTestId("interior-corner-focus-feedback")).toHaveTextContent(
+      /near, middle, and far details on the receding side wall are acceptably sharp/i,
+    );
+    expect(screen.getByText("Receding-wall focus is acceptable")).toBeInTheDocument();
+
+    cleanup();
+    changeLocale("zh-HK");
+    render(
+      <FeedbackPanel
+        mode="free"
+        sceneId="interior-corner"
+        task={null}
+        evaluation={null}
+        freeFocusEvaluation={passingFocus}
+      />,
+    );
+    expect(screen.getByTestId("interior-corner-focus-feedback")).toHaveTextContent(
+      /近、中、遠細節在 f\/5\.6 下已達到可接受的清晰度/,
+    );
+    expect(screen.getByText("向後延伸牆面的對焦可接受")).toBeInTheDocument();
   });
 
   it("renders representative zh-HK scene-specific guidance and observations", async () => {
@@ -85,6 +274,20 @@ describe("Free Practice teaching copy", () => {
     expect(screen.getByText(/使用前組傾斜，讓清晰焦平面/)).toBeInTheDocument();
     expect(screen.getByText(/調整對焦，將焦平面放置/)).toBeInTheDocument();
     expect(screen.getByText(/收細光圈，擴大已對齊清晰焦平面周圍的實用景深/)).toBeInTheDocument();
+
+    cleanup();
+    render(<TaskPanel task={null} sceneId="interior-corner" />);
+    expect(screen.getByText(/在處理構圖及向後延伸牆面的對焦問題前/)).toBeInTheDocument();
+    expect(screen.getByText(/上方線腳被裁切/)).toBeInTheDocument();
+    expect(screen.getByText(/使用前組上移把構圖向上移動/)).toBeInTheDocument();
+    expect(screen.getByText(/從較近的畫作觀察到中間及遠處的細節/)).toBeInTheDocument();
+    expect(screen.getByText(/在 f\/5\.6 下，使用前組擺動/)).toBeInTheDocument();
+
+    cleanup();
+    render(<TaskPanel task={null} sceneId="oblique-tabletop" />);
+    expect(screen.getByText(/使用前組傾斜，改善主體圖板近遠方向的焦平面對齊/)).toBeInTheDocument();
+    expect(screen.getByText(/調整任何一個動作後，再微調對焦/)).toBeInTheDocument();
+    expect(screen.getByText(/加入前組擺動，處理餘下的左右方向差異/)).toBeInTheDocument();
   });
 });
 

@@ -28,12 +28,16 @@ export type GroundGlassDofUniformState = {
   renderWidth: number;
   renderHeight: number;
   maximumBlurRadiusPx: number;
-  // Physical CoC / calibration values
+  // Physical CoC / calibration values.
   circleOfConfusionMm: number;
   boundaryCoCDiameterPx: number;
   boundaryBlurRadiusPx: number;
+  /** Complete physical film dimensions retained for diagnostics/compatibility. */
   filmWidthMm: number;
   filmHeightMm: number;
+  /** Film span actually sampled by the current RTT projection. */
+  sampledFilmWidthMm: number;
+  sampledFilmHeightMm: number;
 };
 
 /** Keep depth linearization on every DOF stage aligned with the live RTT camera. */
@@ -82,6 +86,12 @@ export function applyGroundGlassDofUniformState(
   if (material.uniforms.focalLengthMm) material.uniforms.focalLengthMm.value = state.focalLengthMm;
   if (material.uniforms.filmWidthMm) material.uniforms.filmWidthMm.value = state.filmWidthMm;
   if (material.uniforms.filmHeightMm) material.uniforms.filmHeightMm.value = state.filmHeightMm;
+  if (material.uniforms.sampledFilmWidthMm) {
+    material.uniforms.sampledFilmWidthMm.value = state.sampledFilmWidthMm;
+  }
+  if (material.uniforms.sampledFilmHeightMm) {
+    material.uniforms.sampledFilmHeightMm.value = state.sampledFilmHeightMm;
+  }
   if (material.uniforms.fNumber) material.uniforms.fNumber.value = state.fNumber;
   if (material.uniforms.imageDistanceMm) material.uniforms.imageDistanceMm.value = state.imageDistanceMm;
   if (material.uniforms.renderWidth) material.uniforms.renderWidth.value = state.renderWidth;
@@ -99,6 +109,8 @@ export function createGroundGlassDofUniformState(
   width: number,
   height: number,
   maximumBlurRadiusPx: number,
+  sampledFilmWidthMm = filmWidthMm,
+  sampledFilmHeightMm = filmHeightMm,
 ): GroundGlassDofUniformState {
   const groundGlassDofModel =
     opticsState.diagnostics.groundGlassDofModel ??
@@ -111,6 +123,12 @@ export function createGroundGlassDofUniformState(
   if (!Number.isFinite(focalLengthMm) || focalLengthMm <= 0) throw new Error("Invalid focalLengthMm");
   if (!Number.isFinite(filmWidthMm) || filmWidthMm <= 0) throw new Error("Invalid filmWidthMm");
   if (!Number.isFinite(filmHeightMm) || filmHeightMm <= 0) throw new Error("Invalid filmHeightMm");
+  if (!Number.isFinite(sampledFilmWidthMm) || sampledFilmWidthMm <= 0) {
+    throw new Error("Invalid sampledFilmWidthMm");
+  }
+  if (!Number.isFinite(sampledFilmHeightMm) || sampledFilmHeightMm <= 0) {
+    throw new Error("Invalid sampledFilmHeightMm");
+  }
   if (!Number.isFinite(circleOfConfusionMm) || circleOfConfusionMm <= 0) throw new Error("Invalid circleOfConfusionMm");
   if (!Number.isFinite(width) || width <= 0) throw new Error("Invalid render width");
   if (!Number.isFinite(height) || height <= 0) throw new Error("Invalid render height");
@@ -167,7 +185,7 @@ export function createGroundGlassDofUniformState(
     }
   }
 
-  const boundaryCoCDiameterPx = (circleOfConfusionMm * width) / filmWidthMm;
+  const boundaryCoCDiameterPx = (circleOfConfusionMm * width) / sampledFilmWidthMm;
   const boundaryBlurRadiusPx = boundaryCoCDiameterPx / 2;
   if (!Number.isFinite(boundaryCoCDiameterPx) || !Number.isFinite(boundaryBlurRadiusPx)) {
     throw new Error("Ground Glass boundary blur calibration is non-finite");
@@ -219,5 +237,7 @@ export function createGroundGlassDofUniformState(
     boundaryBlurRadiusPx,
     filmWidthMm,
     filmHeightMm,
+    sampledFilmWidthMm,
+    sampledFilmHeightMm,
   };
 }

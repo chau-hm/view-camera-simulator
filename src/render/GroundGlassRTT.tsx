@@ -55,6 +55,11 @@ import {
   type GroundGlassCocStorageFormat,
 } from "./groundGlassCocTarget";
 import {
+  FULL_GROUND_GLASS_INSPECTION_WINDOW,
+  resolveSampledFilmDimensionsMm,
+  type GroundGlassInspectionWindow,
+} from "./groundGlassInspectionWindow";
+import {
   GroundGlassProfiler,
   isGroundGlassProfilingEnabled,
   type GroundGlassProfilingConfiguration,
@@ -78,7 +83,10 @@ export type GroundGlassRTTProps = {
   previewMode?: "raw" | "upright";
   rawDebug?: boolean;
   renderQuality?: import("../types/ui").RenderQualityProfile;
+  /** Deprecated presentation input; loupe scaling is owned by GroundGlassStage. */
   zoomEnabled?: boolean;
+  /** Physical film window sampled by the RTT; presentation stays at CSS scale 1. */
+  inspectionWindow?: GroundGlassInspectionWindow;
   /** Independent RTT resource/diagnostic channel for comparison panes. */
   channel?: GroundGlassRttChannel;
   /** Explicit visual lattice presentation for comparison panes. */
@@ -95,7 +103,7 @@ const tupleMatches = (
 ): boolean =>
   Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
-function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', rawDebug = false, renderQuality = "standard", zoomEnabled = false, channel = "default", presentationRegion: explicitPresentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange, }: GroundGlassRTTProps) {
+function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', rawDebug = false, renderQuality = "standard", channel = "default", inspectionWindow: explicitInspectionWindow, presentationRegion: explicitPresentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange, }: GroundGlassRTTProps) {
   // React gives each mounted renderer a stable identity without a module-level
   // mutable registry. It survives ordinary prop changes and is replaced only
   // when this OffscreenRenderer instance is actually remounted.
@@ -124,7 +132,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   const profilingEnabled = isGroundGlassProfilingEnabled();
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
-  const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1, zoomEnabled }));
+  const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1 }));
 
   // refs for instance-owned resources (avoid storing on function object)
   type PostResources = {
@@ -154,8 +162,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     target: THREE.Object3D;
   } | null>(null);
   const mountedSceneSubjectRef = useRef<MountedGroundGlassSceneSubject | null>(null);
-  const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality, zoomEnabled });
-  sizeInputsRef.current = { widthPx, heightPx, renderQuality, zoomEnabled };
+  const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality });
+  const inspectionWindowRef = React.useRef<GroundGlassInspectionWindow>(
+    explicitInspectionWindow ?? FULL_GROUND_GLASS_INSPECTION_WINDOW,
+  );
+  inspectionWindowRef.current =
+    explicitInspectionWindow ?? FULL_GROUND_GLASS_INSPECTION_WINDOW;
+  sizeInputsRef.current = { widthPx, heightPx, renderQuality };
 
   const readRuntimeInfo = React.useCallback(() => runtimeInfoRef.current, []);
   const setRuntimeInfo = React.useCallback(
@@ -189,7 +202,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       maximumBlurRadiusPx,
       initialQualitySettings.maximumCoCRadiusPx,
     );
-    // resolve desired internal RTT dimensions from quality profile, DPR and zoom state
+    // resolve desired internal RTT dimensions from quality profile and DPR
     const rendererPixelRatio = (gl && typeof gl.getPixelRatio === 'function') ? gl.getPixelRatio() : (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
 
     // collect canvas DOM and size info. Canvas DPR is authoritative from parent Canvas dpr prop
@@ -205,7 +218,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       logicalHeight: sizeInputs.heightPx,
       renderQuality: sizeInputs.renderQuality || "standard",
       devicePixelRatio: rendererPixelRatio,
-      zoomEnabled: sizeInputs.zoomEnabled,
     });
     dimsRef.current = dims;
 
@@ -269,9 +281,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     );
     const cocRT = cocStorage.target;
     cocRT.depthBuffer = false;
+    const initialSampledFilmDimensions = resolveSampledFilmDimensionsMm({
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      inspectionWindow: FULL_GROUND_GLASS_INSPECTION_WINDOW,
+    });
     const initialCocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
       maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
-      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmWidthMm: initialSampledFilmDimensions.widthMm,
       renderWidthPx: dimsRef.current.internalWidthPx,
     });
     const initialFootprintStorageMaxMm = Math.max(1e-6, initialCocStorageMaxMm * 0.5);
@@ -349,8 +366,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
         circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
-        filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
-        filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
+        sampledFilmWidthMm: { value: initialSampledFilmDimensions.widthMm },
+        sampledFilmHeightMm: { value: initialSampledFilmDimensions.heightMm },
         sampleCount: { value: initialQualitySettings.sampleCount },
         cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
         cocStorageMaxMm: { value: initialCocStorageMaxMm },
@@ -394,8 +411,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
         circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
-        filmWidthMm: { value: CAMERA_CONSTANTS.filmWidthMm },
-        filmHeightMm: { value: CAMERA_CONSTANTS.filmHeightMm },
+        sampledFilmWidthMm: { value: initialSampledFilmDimensions.widthMm },
+        sampledFilmHeightMm: { value: initialSampledFilmDimensions.heightMm },
         sampleCount: { value: initialQualitySettings.sampleCount },
         cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
         cocStorageMaxMm: { value: initialCocStorageMaxMm },
@@ -532,6 +549,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture,
           ),
           resourceGeneration: resourceGenerationRef.current,
+          inspectionWindowActive: FULL_GROUND_GLASS_INSPECTION_WINDOW.active,
+          inspectionCenterU: FULL_GROUND_GLASS_INSPECTION_WINDOW.centerU,
+          inspectionCenterV: FULL_GROUND_GLASS_INSPECTION_WINDOW.centerV,
+          sampledFilmWidthMm: initialSampledFilmDimensions.widthMm,
+          sampledFilmHeightMm: initialSampledFilmDimensions.heightMm,
           profilingEnabled,
           profilingBackend: profiler.backend,
         });
@@ -751,7 +773,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       logicalHeight: heightPx,
       renderQuality: renderQuality || "standard",
       devicePixelRatio: rendererPixelRatio,
-      zoomEnabled,
     });
     const cocMaterial = (post.postSceneCoc.children[0] as THREE.Mesh)
       .material as THREE.ShaderMaterial;
@@ -766,9 +787,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       maximumBlurRadiusPx,
       qualitySettings.maximumCoCRadiusPx,
     );
+    const sampledFilmDimensions = resolveSampledFilmDimensionsMm({
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      inspectionWindow: inspectionWindowRef.current,
+    });
     const cocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
       maximumCoCRadiusPx: resizedMaximumCoCRadiusPx,
-      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmWidthMm: sampledFilmDimensions.widthMm,
       renderWidthPx: dims.internalWidthPx,
     });
     cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
@@ -847,15 +873,26 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       verticalShaderRenderWidthPx: gatherMaterial.uniforms.renderWidth.value as number,
       verticalShaderRenderHeightPx: gatherMaterial.uniforms.renderHeight.value as number,
       resourceGeneration: resourceGenerationRef.current,
+      inspectionWindowActive: inspectionWindowRef.current.active,
+      inspectionCenterU: inspectionWindowRef.current.centerU,
+      inspectionCenterV: inspectionWindowRef.current.centerV,
+      sampledFilmWidthMm: sampledFilmDimensions.widthMm,
+      sampledFilmHeightMm: sampledFilmDimensions.heightMm,
       profilingSnapshot: undefined,
     });
-  }, [gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx, zoomEnabled]);
+  }, [gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx]);
 
   useFrame((_state, frameDelta) => {
     if (!renderTarget.current || !offscreenScene.current) return;
     const imgDist = resolveGroundGlassImageDistanceMm(opticsState);
     const cam = groundGlassCamera.current;
     if (!cam) return;
+    const inspectionWindow = inspectionWindowRef.current;
+    const sampledFilmDimensions = resolveSampledFilmDimensionsMm({
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      inspectionWindow,
+    });
 
     // Configure once with a conservative preliminary range so the actual
     // Three.js camera forward vector can drive the final pitch-safe range.
@@ -880,7 +917,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     cam.far = farWorld;
 
     // configure an off-axis projection matrix that matches opticsState.filmPlaneCornersWorld and lens center
-    let cfg = configureGroundGlassCamera(cam, opticsState, nearWorld, farWorld);
+    let cfg = configureGroundGlassCamera(
+      cam,
+      opticsState,
+      nearWorld,
+      farWorld,
+      inspectionWindow,
+    );
     if (cfg.ok) {
       const [forwardX, forwardY, forwardZ] = cfg.pose.forwardWorld;
       const finalClipRange = getGroundGlassClipRangeWorld(
@@ -892,7 +935,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       farWorld = finalClipRange.far;
       cam.near = nearWorld;
       cam.far = farWorld;
-      cfg = configureGroundGlassCamera(cam, opticsState, nearWorld, farWorld);
+      cfg = configureGroundGlassCamera(
+        cam,
+        opticsState,
+        nearWorld,
+        farWorld,
+        inspectionWindow,
+      );
     }
     if (!cfg.ok) {
       // Do not silently swallow errors — record diagnostic and fall back to symmetric perspective
@@ -931,6 +980,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         currentCameraInfo.cameraConfigurationOk !== cfg.ok ||
         currentCameraInfo.cameraConfigurationError !== (cfg.ok ? null : cfg.reason) ||
         currentCameraInfo.projectionDeterminant !== projectionDeterminant ||
+        currentCameraInfo.inspectionWindowActive !== inspectionWindow.active ||
+        currentCameraInfo.inspectionCenterU !== inspectionWindow.centerU ||
+        currentCameraInfo.inspectionCenterV !== inspectionWindow.centerV ||
+        currentCameraInfo.sampledFilmWidthMm !== sampledFilmDimensions.widthMm ||
+        currentCameraInfo.sampledFilmHeightMm !== sampledFilmDimensions.heightMm ||
         !tupleMatches(currentCameraInfo.cameraPositionWorld, configuredPose.positionWorld) ||
         !tupleMatches(currentCameraInfo.cameraUpWorld, configuredPose.upWorld) ||
         !tupleMatches(currentCameraInfo.cameraForwardWorld, configuredPose.forwardWorld)
@@ -946,6 +1000,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         cameraPositionWorld: configuredPose.positionWorld,
         cameraUpWorld: configuredPose.upWorld,
         cameraForwardWorld: configuredPose.forwardWorld,
+        inspectionWindowActive: inspectionWindow.active,
+        inspectionCenterU: inspectionWindow.centerU,
+        inspectionCenterV: inspectionWindow.centerV,
+        sampledFilmWidthMm: sampledFilmDimensions.widthMm,
+        sampledFilmHeightMm: sampledFilmDimensions.heightMm,
       });
     }
 
@@ -1016,7 +1075,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             : typeof window !== "undefined"
               ? window.devicePixelRatio
               : 1,
-        zoomEnabled: Boolean(zoomEnabled),
       };
       profiler.beginFrame(
         profilingConfiguration,
@@ -1069,7 +1127,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       const isFallbackDepth = depthTex === fallbackDepthRef.current;
       const cocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
         maximumCoCRadiusPx: currentMaximumCoCRadiusPx,
-        filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+        filmWidthMm: sampledFilmDimensions.widthMm,
         renderWidthPx: dimsRef.current.internalWidthPx,
       });
       const footprintStorageMaxMm = Math.max(1e-6, cocStorageMaxMm * 0.5);
@@ -1108,6 +1166,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           dimsRef.current.internalWidthPx,
           dimsRef.current.internalHeightPx,
           currentMaximumCoCRadiusPx,
+          sampledFilmDimensions.widthMm,
+          sampledFilmDimensions.heightMm,
         );
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);
@@ -1195,12 +1255,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         sceneId: resolvedSceneId,
         previewMode,
         rawDebug: rawDebug,
-        zoomEnabled: zoomEnabled,
         aperture: aperture,
         internalWidthPx: dimsRef.current.internalWidthPx,
         internalHeightPx: dimsRef.current.internalHeightPx,
         opticsState,
         configuredCameraPose: configuredPose,
+        inspectionWindow,
       });
 
       const renderSanityEnabled =
@@ -1289,7 +1349,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, scene, widthPx, heightPx, aperture, previewMode, rawDebug, renderQuality, zoomEnabled, channel = "default", presentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, scene, widthPx, heightPx, aperture, previewMode, rawDebug, renderQuality, channel = "default", inspectionWindow, presentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange }) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
@@ -1303,7 +1363,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
         gl={GROUND_GLASS_GL_OPTIONS}
         orthographic={false}
       >
-        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} rawDebug={rawDebug} renderQuality={renderQuality} zoomEnabled={zoomEnabled} channel={channel} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
+        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} rawDebug={rawDebug} renderQuality={renderQuality} channel={channel} inspectionWindow={inspectionWindow} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
       </Canvas>
     </div>
   );

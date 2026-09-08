@@ -81,4 +81,5 @@ describe("physical film footprint to raw RTT coordinates", () => {
     expect(oneMmAtDoubleResolution.minorAxisPx[0]).toBeCloseTo(0, 12);
     expect(oneMmAtDoubleResolution.minorAxisPx[1]).toBeCloseTo(-20, 12);
   });
+
 });

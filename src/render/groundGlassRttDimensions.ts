@@ -1,6 +1,5 @@
 import { getRenderQualitySettings } from "./renderQuality";
 import type { RenderQualityProfile } from "../types/ui";
-import { GROUND_GLASS_ZOOM_SCALE } from "./groundGlassStageTransform";
 import type { GroundGlassCocStorageFormat } from "./groundGlassCocTarget";
 import type {
   GroundGlassProfilingBackend,
@@ -100,6 +99,11 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   renderSanitySampleCount?: number;
   renderSanityStateKey?: string;
   renderSanityError?: string | null;
+  inspectionWindowActive?: boolean;
+  inspectionCenterU?: number;
+  inspectionCenterV?: number;
+  sampledFilmWidthMm?: number;
+  sampledFilmHeightMm?: number;
   profilingEnabled?: boolean;
   profilingBackend?: GroundGlassProfilingBackend;
   profilingSnapshot?: GroundGlassProfilingSnapshot;
@@ -135,9 +139,10 @@ export function resolveGroundGlassRttDimensions(opts: {
   logicalHeight: number;
   renderQuality: RenderQualityProfile;
   devicePixelRatio: number;
+  /** Deprecated presentation input; source RTT dimensions remain stable while the film window changes. */
   zoomEnabled?: boolean;
 }): GroundGlassRttDimensions {
-  const { logicalWidth, logicalHeight, renderQuality, devicePixelRatio, zoomEnabled } = opts;
+  const { logicalWidth, logicalHeight, renderQuality, devicePixelRatio } = opts;
   const logicalWidthPx = Math.max(
     1,
     Math.round(Number.isFinite(logicalWidth) ? logicalWidth : 1),
@@ -147,11 +152,9 @@ export function resolveGroundGlassRttDimensions(opts: {
     Math.round(Number.isFinite(logicalHeight) ? logicalHeight : 1),
   );
   const quality = getRenderQualitySettings(renderQuality);
-  // map zoomEnabled -> zoomScale used by stage
-  const stageZoomScale = zoomEnabled ? GROUND_GLASS_ZOOM_SCALE : 1.0;
-  // Match the CSS magnification so zooming does not upscale a lower-resolution
-  // RTT. Hard texture caps below still protect memory on large/high-DPR panels.
-  const zoomRenderScale = stageZoomScale;
+  // Focus Loupe changes the physical film sub-frustum and sampled-film scale,
+  // not the owned RTT dimensions. Keep this resource-size scale stable.
+  const zoomRenderScale = 1.0;
   const resolutionScale = quality.groundGlassScale * zoomRenderScale;
   // effective DPR limited by profile dpr
   const effectiveDevicePixelRatio = Math.min(devicePixelRatio || 1, quality.dpr);

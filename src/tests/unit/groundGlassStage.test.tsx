@@ -137,11 +137,11 @@ describe("GroundGlassStage explicit zoom interaction", () => {
   it("normalizes anchored pan and clamps it to viewport bounds", () => {
     const anchored = calculateGroundGlassAnchoredPan(currentRect.left, currentRect.top, currentRect);
     expect(anchored).toEqual({ x: 1, y: 1 });
-    const normalized = normalizeGroundGlassPan({ x: 999, y: -999 }, currentRect, 1.9);
+    const normalized = normalizeGroundGlassPan({ x: 999, y: -999 }, currentRect, 4);
     expect(normalized).toEqual({ x: 1, y: -1 });
-    const denormalized = denormalizeGroundGlassPan(normalized, currentRect, 1.9);
-    expect(denormalized.x).toBeCloseTo(225, 8);
-    expect(denormalized.y).toBeCloseTo(-180, 8);
+    const denormalized = denormalizeGroundGlassPan(normalized, currentRect, 4);
+    expect(denormalized.x).toBeCloseTo(750, 8);
+    expect(denormalized.y).toBeCloseTo(-600, 8);
   });
 
   it("uses pointer-type-aware displacement thresholds", () => {
@@ -159,7 +159,8 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(stage).toHaveAttribute("role", "button");
     pointerGesture(stage, { pointerId: 1, startX: 350, startY: 250 });
     expect(stage).toHaveAttribute("data-zoomed", "true");
-    expect(stage).toHaveAttribute("data-scale", "1.9");
+    expect(stage).toHaveAttribute("data-scale", "4");
+    expect(stage).toHaveAttribute("data-focus-loupe-scale", "4");
     expect(stage).toHaveAttribute("aria-label", "Pan Ground Glass");
     expect(stage).toHaveAttribute("role", "region");
     expect(view.getByRole("region", { name: "Pan Ground Glass" })).toBe(stage);
@@ -168,6 +169,35 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     // A duplicate pointer-up for the completed gesture is inert.
     fireEvent.pointerUp(stage, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 350, clientY: 250 });
     expect(stage).toHaveAttribute("data-zoomed", "true");
+  });
+
+  it("uses a physical film crop for RTT loupe mode without CSS magnification", () => {
+    const onInspectionWindowChange = vi.fn();
+    const view = render(
+      <GroundGlassStage
+        zoomEnabled
+        useRttInspectionWindow
+        onInspectionWindowChange={onInspectionWindowChange}
+        imageLayer={<div />}
+      />,
+    );
+    const stage = view.getByRole("region", { name: "Pan Ground Glass" });
+
+    expect(stage).toHaveAttribute("data-focus-loupe-active", "true");
+    expect(stage).toHaveAttribute("data-focus-loupe-scale", "4");
+    expect(stage).toHaveAttribute("data-presentation-css-scale", "1");
+    expect(stage).toHaveAttribute("data-scale", "1");
+    expect(stage).toHaveAttribute("data-focus-loupe-center-u", "0.5");
+    expect(stage).toHaveAttribute("data-focus-loupe-center-v", "0.5");
+    expect(stage).toHaveAttribute("data-focus-loupe-window-width", "0.25");
+    expect(stage).toHaveAttribute("data-focus-loupe-window-height", "0.25");
+    expect(onInspectionWindowChange).toHaveBeenLastCalledWith({
+      active: true,
+      centerU: 0.5,
+      centerV: 0.5,
+      widthFraction: 0.25,
+      heightFraction: 0.25,
+    });
   });
 
   it("keeps repeated explicit zoom-out requests false", () => {
@@ -184,7 +214,7 @@ describe("GroundGlassStage explicit zoom interaction", () => {
 
   it("preserves focus on the fixed view-control button when its zoom label changes", () => {
     const view = render(<ControlledGroundGlassStage />);
-    const button = view.getByRole("button", { name: "Zoom in Ground Glass view" });
+    const button = view.getByRole("button", { name: "Focus loupe · 4× Ground Glass view" });
     button.focus();
     expect(button).toHaveFocus();
     fireEvent.click(button);
@@ -216,7 +246,7 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(stage).toHaveAttribute("data-pan-y", panY);
     expect(stage).toHaveAttribute("data-normalized-pan-x", normalizedPanX);
     expect(stage).toHaveAttribute("data-normalized-pan-y", normalizedPanY);
-    expect(stage).toHaveAttribute("data-scale", "1.9");
+    expect(stage).toHaveAttribute("data-scale", "4");
     expect(stage).toHaveAttribute("data-dragging", "false");
     expect(stage).toHaveAttribute("data-pointer-active", "false");
     expect(stage).toHaveAttribute("data-pointer-captured", "false");
@@ -401,8 +431,8 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     pointerGesture(stage, { pointerId: 61, startX: 350, startY: 250, endX: 900, endY: 700 });
     currentRect = { ...currentRect, width: 200, height: 160, right: 300, bottom: 210 };
     act(() => resizeCallback?.([], {} as ResizeObserver));
-    expect(Math.abs(Number(stage.getAttribute("data-pan-x")))).toBeLessThanOrEqual(90);
-    expect(Math.abs(Number(stage.getAttribute("data-pan-y")))).toBeLessThanOrEqual(72);
+    expect(Math.abs(Number(stage.getAttribute("data-pan-x")))).toBeLessThanOrEqual(300);
+    expect(Math.abs(Number(stage.getAttribute("data-pan-y")))).toBeLessThanOrEqual(240);
 
     fireEvent.click(view.getByRole("button", { name: "Reset Ground Glass view" }));
     act(() => resizeCallback?.([], {} as ResizeObserver));

@@ -49,6 +49,7 @@ describe("simulator route availability", () => {
     ["/simulator/free/focus-fundamentals-two-targets", "free:focus-fundamentals-two-targets:none:lesson=false"],
     ["/simulator/free/architecture-rise", "free:architecture-rise:none:lesson=false"],
     ["/simulator/free/architecture-foreground", "free:architecture-foreground:none:lesson=false"],
+    ["/simulator/free/interior-corner", "free:interior-corner:none:lesson=false"],
     ["/simulator/free/oblique-architecture", "free:oblique-architecture:none:lesson=false"],
     ["/simulator/free/shelf-swing", "free:shelf-swing:none:lesson=false"],
     ["/simulator/free/mirror-shift", "free:mirror-shift:none:lesson=false"],
@@ -87,6 +88,26 @@ describe("simulator route availability", () => {
     ],
     ["/simulator/guided/shelf-swing/swing-01", "guided:shelf-swing:swing-01:lesson=false"],
     ["/simulator/free/table-tilt", "free:table-tilt:none:lesson=false"],
+    [
+      "/simulator/guided/interior-corner/interior-corner-compose-01",
+      "guided:interior-corner:interior-corner-compose-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-swing-01",
+      "guided:interior-corner:interior-corner-swing-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-refine-01",
+      "guided:interior-corner:interior-corner-refine-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-aperture-01",
+      "guided:interior-corner:interior-corner-aperture-01:lesson=false",
+    ],
+    [
+      "/simulator/guided/interior-corner/interior-corner-compose-01?lesson=1",
+      "guided:interior-corner:interior-corner-compose-01:lesson=true",
+    ],
     ["/simulator/guided/table-tilt/tilt-01", "guided:table-tilt:tilt-01:lesson=false"],
   ])("keeps available simulator route %s open", async (route, expectedWorkspace) => {
     renderRoute(route);
@@ -96,10 +117,28 @@ describe("simulator route availability", () => {
   });
 
   it.each([
+    "/simulator/guided/interior-corner/interior-corner-swing-01?lesson=1",
+    "/simulator/guided/interior-corner/interior-corner-refine-01?lesson=1",
+    "/simulator/guided/interior-corner/interior-corner-aperture-01?lesson=1",
+  ])("restarts a fresh later Interior Corner lesson entry at Observe: %s", async (route) => {
+    renderRoute(route);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("route-location")).toHaveTextContent(
+        "/simulator/free/interior-corner?lesson=1",
+      ),
+    );
+    expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(
+      "free:interior-corner:none:lesson=true",
+    );
+  });
+
+  it.each([
     ["/simulator/free/view-camera-anatomy", "free:view-camera-anatomy:none:lesson=false:calibration=false:anatomy=true"],
     ["/simulator/free/view-camera-anatomy?lesson=1", "free:view-camera-anatomy:none:lesson=false:calibration=false:anatomy=true"],
     ["/simulator/free/oblique-architecture?lesson=1", "free:oblique-architecture:none:lesson=true"],
     ["/simulator/free/architecture-foreground?lesson=1", "free:architecture-foreground:none:lesson=true"],
+    ["/simulator/free/interior-corner?lesson=1", "free:interior-corner:none:lesson=true"],
     ["/simulator/free/table-tilt?lesson=1", "free:table-tilt:none:lesson=false"],
   ])("only enables lesson UI for configured lessons: %s", async (route, expectedWorkspace) => {
     renderRoute(route);
@@ -132,6 +171,8 @@ describe("simulator route availability", () => {
     "/simulator/guided/oblique-architecture/rise-01",
     "/simulator/guided/architecture-foreground",
     "/simulator/guided/architecture-foreground/architecture-foreground-not-a-task?lesson=1",
+    "/simulator/free/interior-corner/swing-01",
+    "/simulator/guided/interior-corner/not-a-task",
   ])("redirects invalid simulator route %s to Scenes", async (route) => {
     renderRoute(route);
 

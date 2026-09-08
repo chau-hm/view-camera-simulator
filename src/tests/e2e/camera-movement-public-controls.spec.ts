@@ -214,7 +214,7 @@ test("teaching controls stay usable and non-overflowing at 1024px and narrow wid
     await expect(page.getByRole("slider", { name: "Vertical framing" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Original", exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Current", exact: true })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Zoom in Ground Glass preview view", exact: true })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Focus loupe · 4× Ground Glass preview view", exact: true })).toHaveCount(1);
     await expect(page.locator(".groundglass-comparison")).toHaveCount(0);
 
     const overflow = await page.evaluate(() => {

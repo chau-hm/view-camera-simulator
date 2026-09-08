@@ -16,9 +16,11 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
+import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
 import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
+import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("scene definitions", () => {
@@ -90,6 +92,82 @@ describe("scene definitions", () => {
   it("defines near/mid/far table focus targets", () => {
     const focusTargetIds = tableTiltScene.focusTargets.map((target) => target.id);
     expect(focusTargetIds).toEqual(["near-cup", "mid-notebook", "far-book"]);
+  });
+
+  it("defines Oblique Tabletop as a compound-focus scene", () => {
+    expect(obliqueTabletopScene.name).toBe("Oblique Tabletop");
+    expect(obliqueTabletopScene.cameraPreset.focusDistanceMm).toBe(
+      obliqueTabletopGeometry.canonicalFocusDistanceMm,
+    );
+    expect(obliqueTabletopScene.cameraPreset.aperture).toBe(11);
+    expect(obliqueTabletopScene.movementCapabilities).toEqual({
+      available: ["frontTiltDeg", "frontSwingDeg"],
+      selectionMode: "multiple",
+      defaultMovement: "frontTiltDeg",
+    });
+    expect(obliqueTabletopScene.cameraControlPolicy).toEqual({
+      aperture: "fixed",
+      infinityReset: false,
+    });
+    expect(obliqueTabletopScene.focusDistanceRangeMm).toEqual(
+      obliqueTabletopGeometry.focusDistanceRangeMm,
+    );
+    expect(obliqueTabletopScene.focusTargets).toEqual(
+      obliqueTabletopGeometry.subjectBoardVisibleFocusTargets,
+    );
+    expect(obliqueTabletopScene.focusTargets).not.toEqual(
+      obliqueTabletopGeometry.subjectBoardAnalyticalFocusTargets,
+    );
+    expect(obliqueTabletopScene.compositionTargets.map((target) => target.id)).toEqual([
+      "subject-board-plane",
+    ]);
+    expect(sceneOrder).toContain("oblique-tabletop");
+  });
+
+  it("keeps the table level while the subject board is oblique in both directions", () => {
+    const nearToFarDepthVariation = Math.abs(
+      obliqueTabletopGeometry.subjectBoardExtents.far.surfaceCenterWorld.z -
+        obliqueTabletopGeometry.subjectBoardExtents.near.surfaceCenterWorld.z,
+    );
+    const leftToRightDepthVariation = Math.abs(
+      obliqueTabletopGeometry.subjectBoardExtents.right.surfaceCenterWorld.z -
+        obliqueTabletopGeometry.subjectBoardExtents.left.surfaceCenterWorld.z,
+    );
+    const tableNormal = obliqueTabletopGeometry.tabletopTopSurfacePlane.normal;
+    const boardNormal = obliqueTabletopGeometry.subjectBoardPlane.normal;
+
+    expect(nearToFarDepthVariation).toBeGreaterThan(2000);
+    expect(leftToRightDepthVariation).toBeGreaterThan(200);
+    expect(tableNormal).toEqual({ x: 0, y: 1, z: 0 });
+    expect(Math.abs(boardNormal.x)).toBeGreaterThan(0.1);
+    expect(Math.abs(boardNormal.z)).toBeGreaterThan(0.1);
+    expect(Math.hypot(boardNormal.x, boardNormal.y, boardNormal.z)).toBeCloseTo(1, 8);
+  });
+
+  it("keeps the inclined subject board supported within the level table footprint", () => {
+    const tableHalfWidth = obliqueTabletopGeometry.tabletop.width / 2;
+    const tableHalfDepth = obliqueTabletopGeometry.tabletop.depth / 2;
+    const tableTopY =
+      obliqueTabletopGeometry.tabletop.center.y +
+      obliqueTabletopGeometry.tabletop.thickness / 2;
+    const boardCorners = obliqueTabletopGeometry.getSubjectBoardWorldCorners();
+
+    boardCorners.forEach((corner) => {
+      expect(Math.abs(corner.x - obliqueTabletopGeometry.tabletop.center.x)).toBeLessThanOrEqual(
+        tableHalfWidth,
+      );
+      expect(Math.abs(corner.z - obliqueTabletopGeometry.tabletop.center.z)).toBeLessThanOrEqual(
+        tableHalfDepth,
+      );
+    });
+
+    const supportedEdgeBottom = obliqueTabletopGeometry.subjectBoardLocalPointToWorld({
+      x: 0,
+      y: -obliqueTabletopGeometry.subjectBoard.thickness / 2,
+      z: obliqueTabletopGeometry.subjectBoard.nearLocalDepth,
+    });
+    expect(supportedEdgeBottom.y).toBeCloseTo(tableTopY, 8);
+    expect(obliqueTabletopGeometry.subjectBoardSupports.every((support) => support.height > 0)).toBe(true);
   });
 
   it("locks Focus Fundamentals to its fixed f/32 teaching aperture", () => {
@@ -202,6 +280,37 @@ describe("scene definitions", () => {
     expect(allSharp).toBe(false);
   });
 
+  it("keeps the oblique tabletop neutral setup physically out of focus across depth", () => {
+    const opticsState = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...obliqueTabletopScene.cameraPreset,
+        activeSceneId: obliqueTabletopScene.id,
+        activeTaskId: null,
+        mode: "free",
+      },
+      obliqueTabletopScene,
+    );
+
+    expect(opticsState.diagnostics.fallbackApplied).toBe(false);
+    const sharpnessById = new Map(
+      opticsState.focusTargets.map((target) => [target.id, target.physicalPointSharpness]),
+    );
+    expect(opticsState.focusTargets).toHaveLength(7);
+    expect(sharpnessById.get("middle")).toBeGreaterThan(
+      sharpnessById.get("near-left") ?? 1,
+    );
+    expect(sharpnessById.get("middle")).toBeGreaterThan(
+      sharpnessById.get("far-right") ?? 1,
+    );
+    expect(opticsState.focusTargets.some((target) => target.status !== "sharp")).toBe(true);
+    expect(
+      opticsState.focusTargets.some((target) =>
+        (target.physicalPointSharpness ?? 1) < 0.8,
+      ),
+    ).toBe(true);
+  });
+
   it("exposes required, lazy, and preload scene assets", () => {
     const required = getRequiredSceneAssets("architecture-rise");
     const lazy = getLazySceneAssets("architecture-rise");
@@ -212,8 +321,9 @@ describe("scene definitions", () => {
     expect(lazy.length).toBeGreaterThan(0);
     expect(nextSceneId).toBe("architecture-foreground");
     expect(preload.length).toBeGreaterThan(0);
-    expect(sceneOrder.at(-1)).toBe("oblique-architecture");
+    expect(sceneOrder.at(-1)).toBe("interior-corner");
     expect(getNextSceneId("mirror-shift")).toBe("oblique-architecture");
-    expect(getNextSceneId("oblique-architecture")).toBeNull();
+    expect(getNextSceneId("oblique-architecture")).toBe("interior-corner");
+    expect(getNextSceneId("interior-corner")).toBeNull();
   });
 });

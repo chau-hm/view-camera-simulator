@@ -54,9 +54,10 @@ const expectValidConstruction = (
 };
 
 describe("Scheimpflug construction model", () => {
-  it("exposes the teaching control for Table Tilt and Shelf Swing only", () => {
+  it("exposes the teaching control for Table Tilt, Shelf Swing, and Oblique Tabletop", () => {
     expect(supportsScheimpflugConstruction("table-tilt")).toBe(true);
     expect(supportsScheimpflugConstruction("shelf-swing")).toBe(true);
+    expect(supportsScheimpflugConstruction("oblique-tabletop")).toBe(true);
     expect(supportsScheimpflugConstruction("architecture-rise")).toBe(false);
     expect(supportsScheimpflugConstruction("focus-fundamentals-two-targets")).toBe(false);
   });

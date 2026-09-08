@@ -16,6 +16,7 @@ import {
 } from "../../app/publicScenes";
 import { routes } from "../../app/router";
 import { ScenesPage } from "../../app/pages";
+import { SceneCard } from "../../components/marketing/SceneCard";
 import { i18n } from "../../i18n";
 
 beforeEach(async () => {
@@ -31,6 +32,13 @@ describe("scenes page", () => {
   it("shows the enabled public scene cards in catalog order", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
+
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getAllByRole("article")).toHaveLength(publicSceneIds.length);
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(publicSceneIds.length);
+    screen.getAllByRole("article").forEach((card) => {
+      expect(card.querySelector("article > a")).toBeNull();
+    });
 
     // Focus Fundamentals card
     expect(
@@ -55,7 +63,7 @@ describe("scenes page", () => {
     expect(scopedAnatomyCard.getByText("Shared image plane")).toBeInTheDocument();
     expect(anatomyCard!.querySelector("img")).toHaveAttribute(
       "src",
-      "/assets/scene-view-camera-anatomy.png",
+      "/assets/scene-view-camera-anatomy.webp",
     );
     expect(scopedAnatomyCard.getByRole("link", { name: "Start Lesson" })).toHaveAttribute(
       "href",
@@ -106,7 +114,7 @@ describe("scenes page", () => {
     expect(scopedArchitectureForegroundCard.getByText("Sharpness across depth")).toBeInTheDocument();
     expect(architectureForegroundCard!.querySelector("img")).toHaveAttribute(
       "src",
-      "/assets/architecture-foreground.png",
+      "/assets/architecture-foreground.webp",
     );
     expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
@@ -115,6 +123,34 @@ describe("scenes page", () => {
     expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
       "href",
       "/simulator/free/architecture-foreground?lesson=1",
+    );
+
+    const interiorCornerHeading = await screen.findByRole("heading", {
+      name: "Interior Corner — Rise + Swing",
+      level: 2,
+    });
+    const interiorCornerCard = interiorCornerHeading.closest("article");
+    expect(interiorCornerCard).not.toBeNull();
+    const scopedInteriorCornerCard = within(interiorCornerCard!);
+    expect(
+      scopedInteriorCornerCard.getByText(
+        "Explore a neutral interior corner where upper architectural detail presses against the frame and one receding wall creates a future Front Swing and Focus problem.",
+      ),
+    ).toBeInTheDocument();
+    expect(scopedInteriorCornerCard.getByText("Front Rise")).toBeInTheDocument();
+    expect(scopedInteriorCornerCard.getByText("Front Swing")).toBeInTheDocument();
+    expect(scopedInteriorCornerCard.getByText("Architectural depth")).toBeInTheDocument();
+    expect(interiorCornerCard!.querySelector("img")).toHaveAttribute(
+      "src",
+      "/assets/interior-corner.webp",
+    );
+    expect(scopedInteriorCornerCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner",
+    );
+    expect(scopedInteriorCornerCard.getByRole("link", { name: "Guided Lesson" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner?lesson=1",
     );
 
     // Oblique Architecture remains directly available immediately before the final scene.
@@ -135,7 +171,7 @@ describe("scenes page", () => {
     expect(scopedObliqueCard.getByText("Compound movements")).toBeInTheDocument();
     expect(obliqueCard!.querySelector("img")).toHaveAttribute(
       "src",
-      "/assets/oblique-architecture.png",
+      "/assets/oblique-architecture.webp",
     );
     expect(scopedObliqueCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
@@ -159,7 +195,7 @@ describe("scenes page", () => {
     expect(scopedTableCard.getByText("Front Tilt")).toBeInTheDocument();
     expect(scopedTableCard.getByText("Plane of sharp focus")).toBeInTheDocument();
     expect(scopedTableCard.getByText("Scheimpflug principle")).toBeInTheDocument();
-    expect(tableCard!.querySelector("img")).toHaveAttribute("src", "/assets/table-tilt.png");
+    expect(tableCard!.querySelector("img")).toHaveAttribute("src", "/assets/table-tilt.webp");
     expect(scopedTableCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
       "/simulator/free/table-tilt",
@@ -181,7 +217,7 @@ describe("scenes page", () => {
     expect(scopedShelfCard.getByText("Front Swing")).toBeInTheDocument();
     expect(scopedShelfCard.getByText("Plane of sharp focus")).toBeInTheDocument();
     expect(scopedShelfCard.getByText("Scheimpflug principle")).toBeInTheDocument();
-    expect(shelfCard!.querySelector("img")).toHaveAttribute("src", "/assets/shelf-swing.png");
+    expect(shelfCard!.querySelector("img")).toHaveAttribute("src", "/assets/shelf-swing.webp");
     expect(scopedShelfCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
       "/simulator/free/shelf-swing",
@@ -192,6 +228,25 @@ describe("scenes page", () => {
       "/simulator/guided/shelf-swing/swing-01",
     );
 
+    const tabletopHeading = await screen.findByRole("heading", { name: "Oblique Tabletop", level: 2 });
+    const tabletopCard = tabletopHeading.closest("article");
+    expect(tabletopCard).not.toBeNull();
+    const scopedTabletopCard = within(tabletopCard!);
+    expect(
+      scopedTabletopCard.getByText(
+        "Photograph an inclined plan board resting on a normal table. Because the board recedes near-to-far and laterally, Tilt alone cannot align the whole subject plane; Swing is also required.",
+      ),
+    ).toBeInTheDocument();
+    expect(scopedTabletopCard.getByText("Oblique plane")).toBeInTheDocument();
+    expect(scopedTabletopCard.getByText("Depth variation")).toBeInTheDocument();
+    expect(scopedTabletopCard.getByText("Focus distance")).toBeInTheDocument();
+    expect(tabletopCard!.querySelector("img")).toHaveAttribute("src", "/assets/oblique-tabletop.webp");
+    expect(scopedTabletopCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
+      "href",
+      "/simulator/free/oblique-tabletop",
+    );
+    expect(scopedTabletopCard.queryByRole("link", { name: "Start Guided Task" })).toBeNull();
+
     expect(publicSceneIds).toEqual([
       "view-camera-anatomy",
       "understanding-camera-movements",
@@ -199,14 +254,16 @@ describe("scenes page", () => {
       "architecture-rise",
       "table-tilt",
       "shelf-swing",
+      "oblique-tabletop",
       "mirror-shift",
       "oblique-architecture",
       "architecture-foreground",
+      "interior-corner",
     ]);
-    expect(publicSceneIds.at(-1)).toBe("architecture-foreground");
+    expect(publicSceneIds.at(-1)).toBe("interior-corner");
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual(publicSceneIds);
     const visibleCards = screen.getAllByRole("article");
-    expect(within(visibleCards.at(-1)!).getByRole("heading", { name: "Architecture + Foreground", level: 2 })).toBeInTheDocument();
+    expect(within(visibleCards.at(-1)!).getByRole("heading", { name: "Interior Corner — Rise + Swing", level: 2 })).toBeInTheDocument();
     expect(getPublicSceneEntryById("focus-fundamentals-two-targets")?.availableModes).toEqual([
       "free",
     ]);
@@ -220,9 +277,11 @@ describe("scenes page", () => {
       "Architecture Rise",
       "Table Tilt",
       "Shelf Swing",
+      "Oblique Tabletop",
       "Mirror Shift",
       "Oblique Architecture",
       "Architecture + Foreground",
+      "Interior Corner — Rise + Swing",
     ]);
     expect(getPublicScenes().map((scene) => scene.id)).toContain("shelf-swing");
     expect(getPublicSceneEntryById("shelf-swing")?.availability).toBe("available");
@@ -257,6 +316,50 @@ describe("scenes page", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("uses lazy-loaded WebP thumbnails for every public scene", async () => {
+    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
+    render(<RouterProvider router={memoryRouter} />);
+
+    const cards = await screen.findAllByRole("article");
+    expect(cards).toHaveLength(publicSceneCatalog.length);
+
+    cards.forEach((card, index) => {
+      const image = card.querySelector("img");
+      expect(image).not.toBeNull();
+      expect(image).toHaveAttribute(
+        "src",
+        `/assets/${publicSceneCatalog[index].thumbnailAsset.replace(/^assets\//, "")}`,
+      );
+      expect(image).toHaveAttribute("width", "360");
+      expect(image).toHaveAttribute("height", "240");
+      expect(image).toHaveAttribute("loading", "lazy");
+      expect(image).toHaveAttribute("decoding", "async");
+    });
+  });
+
+  it("keeps in-development scenes non-actionable", () => {
+    render(
+      <MemoryRouter>
+        <SceneCard
+          sceneId="architecture-rise"
+          title="Architecture Rise"
+          description="A scene in progress."
+          topics={["Front Rise"]}
+          availability="in-development"
+          thumbnailAsset="assets/architecture-rise.webp"
+          guidedTaskId="rise-01"
+        />
+      </MemoryRouter>,
+    );
+
+    const card = screen.getByRole("article");
+    expect(within(card).getByRole("status")).toHaveAttribute(
+      "data-scene-availability",
+      "in-development",
+    );
+    expect(within(card).queryByRole("link")).not.toBeInTheDocument();
+  });
+
   it("renders canonical zh-HK titles and learning-purpose descriptions", async () => {
     await i18n.changeLanguage("zh-HK");
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
@@ -272,9 +375,11 @@ describe("scenes page", () => {
       "建築構圖與上移",
       "桌面焦平面與傾斜",
       "斜向焦平面與擺動",
+      "斜向桌面",
       "鏡面構圖與視點",
       "斜向建築攝影",
       "建築物與前景",
+      "室內轉角 — 上移與擺動",
     ]);
 
     const cardFor = (title: string) => {
@@ -304,6 +409,20 @@ describe("scenes page", () => {
     expect(cardFor("斜向建築攝影").getByRole("link", { name: "引導課程" })).toHaveAttribute(
       "href",
       "/simulator/free/oblique-architecture?lesson=1",
+    );
+    expect(
+      cardFor("室內轉角 — 上移與擺動").getByText(/探索一個中性室內轉角/),
+    ).toBeInTheDocument();
+    expect(cardFor("室內轉角 — 上移與擺動").getByText("前組上移")).toBeInTheDocument();
+    expect(cardFor("室內轉角 — 上移與擺動").getByText("前組擺動")).toBeInTheDocument();
+    expect(cardFor("室內轉角 — 上移與擺動").getByText("建築深度")).toBeInTheDocument();
+    expect(cardFor("室內轉角 — 上移與擺動").getByRole("link", { name: "開啟場景" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner",
+    );
+    expect(cardFor("室內轉角 — 上移與擺動").getByRole("link", { name: "引導課程" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner?lesson=1",
     );
   });
 

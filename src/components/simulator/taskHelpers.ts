@@ -58,6 +58,15 @@ const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
       simulatorMessageKeys.freePractice.architectureForeground.bullets.aperture,
     ],
   },
+  "interior-corner": {
+    objectiveKey: simulatorMessageKeys.freePractice.interiorCorner.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.interiorCorner.bullets.framing,
+      simulatorMessageKeys.freePractice.interiorCorner.bullets.rise,
+      simulatorMessageKeys.freePractice.interiorCorner.bullets.depth,
+      simulatorMessageKeys.freePractice.interiorCorner.bullets.focus,
+    ],
+  },
   "oblique-architecture": {
     objectiveKey: simulatorMessageKeys.freePractice.obliqueArchitecture.objective,
     bulletKeys: [
@@ -82,6 +91,16 @@ const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
       simulatorMessageKeys.freePractice.shelfSwing.bullets.geometry,
       simulatorMessageKeys.freePractice.shelfSwing.bullets.refine,
       simulatorMessageKeys.freePractice.shelfSwing.bullets.compare,
+    ],
+  },
+  "oblique-tabletop": {
+    objectiveKey: simulatorMessageKeys.freePractice.obliqueTabletop.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.focusDistance,
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.tilt,
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.refocus,
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.remaining,
+      simulatorMessageKeys.freePractice.obliqueTabletop.bullets.geometry,
     ],
   },
   "mirror-shift": {
@@ -116,6 +135,9 @@ const feedbackByScene: Record<string, FreePracticeFeedbackKey> = {
   "architecture-foreground": {
     observationKey: simulatorMessageKeys.freePractice.architectureForeground.observation,
   },
+  "interior-corner": {
+    observationKey: simulatorMessageKeys.freePractice.interiorCorner.observation,
+  },
   "oblique-architecture": {
     observationKey: simulatorMessageKeys.freePractice.obliqueArchitecture.observation,
   },
@@ -124,6 +146,9 @@ const feedbackByScene: Record<string, FreePracticeFeedbackKey> = {
   },
   "shelf-swing": {
     observationKey: simulatorMessageKeys.freePractice.shelfSwing.observation,
+  },
+  "oblique-tabletop": {
+    observationKey: simulatorMessageKeys.freePractice.obliqueTabletop.observation,
   },
   "mirror-shift": {
     observationKey: simulatorMessageKeys.freePractice.mirrorShift.observation,

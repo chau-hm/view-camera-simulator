@@ -45,6 +45,15 @@ export const publicSceneMessageKeys = {
       sharpness: "scenes.architectureForeground.topics.sharpness",
     },
   },
+  interiorCorner: {
+    title: "scenes.interiorCorner.title",
+    description: "scenes.interiorCorner.description",
+    topics: {
+      frontRise: "scenes.interiorCorner.topics.frontRise",
+      frontSwing: "scenes.interiorCorner.topics.frontSwing",
+      architecturalDepth: "scenes.interiorCorner.topics.architecturalDepth",
+    },
+  },
   obliqueArchitecture: {
     title: "scenes.obliqueArchitecture.title",
     description: "scenes.obliqueArchitecture.description",
@@ -72,6 +81,15 @@ export const publicSceneMessageKeys = {
       scheimpflugPrinciple: "scenes.shelfSwing.topics.scheimpflugPrinciple",
     },
   },
+  obliqueTabletop: {
+    title: "scenes.obliqueTabletop.title",
+    description: "scenes.obliqueTabletop.description",
+    topics: {
+      obliquePlane: "scenes.obliqueTabletop.topics.obliquePlane",
+      depthVariation: "scenes.obliqueTabletop.topics.depthVariation",
+      focusDistance: "scenes.obliqueTabletop.topics.focusDistance",
+    },
+  },
   mirrorShift: {
     title: "scenes.mirrorShift.title",
     description: "scenes.mirrorShift.description",
@@ -95,7 +113,9 @@ export type PublicSceneTopicKey =
   | TopicValues<typeof publicSceneMessageKeys.focusFundamentals>
   | TopicValues<typeof publicSceneMessageKeys.architectureRise>
   | TopicValues<typeof publicSceneMessageKeys.architectureForeground>
+  | TopicValues<typeof publicSceneMessageKeys.interiorCorner>
   | TopicValues<typeof publicSceneMessageKeys.obliqueArchitecture>
   | TopicValues<typeof publicSceneMessageKeys.tableTilt>
   | TopicValues<typeof publicSceneMessageKeys.shelfSwing>
+  | TopicValues<typeof publicSceneMessageKeys.obliqueTabletop>
   | TopicValues<typeof publicSceneMessageKeys.mirrorShift>;

@@ -37,11 +37,22 @@ describe('marketing desktop experience notice', () => {
     expect(screen.queryByRole('note')).toBeNull();
   });
 
-  it('shows notice on narrow viewport', async () => {
+  it('does not show the catalog notice on narrow Home', async () => {
     (window as unknown as { innerWidth: number }).innerWidth = 390;
     mockMatchMedia({ '(max-width: 899px)': true, '(pointer: coarse)': true });
 
     const narrowRouter = createMemoryRouter(routes, { initialEntries: ['/'] });
+    render(<RouterProvider router={narrowRouter} />);
+
+    const note = await screen.queryByRole('note');
+    expect(note).toBeNull();
+  });
+
+  it('keeps the notice on narrow Scenes', async () => {
+    (window as unknown as { innerWidth: number }).innerWidth = 390;
+    mockMatchMedia({ '(max-width: 899px)': true, '(pointer: coarse)': true });
+
+    const narrowRouter = createMemoryRouter(routes, { initialEntries: ['/scenes'] });
     render(<RouterProvider router={narrowRouter} />);
 
     const note = await screen.findByRole('note');

@@ -1,8 +1,10 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { SimulatorRoutePage } from "../../app/pages";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 import { useAppStore } from "../../state/appStore";
+import { interiorCornerSwingFocusCalibration } from "../../scenes/interiorCornerSwingFocus";
 
 const workspace = (sceneId = "shelf-swing") => (
   <MemoryRouter>
@@ -27,6 +29,15 @@ const workspaceRoute = (
       taskId={taskId}
       simulateAssetFailure={false}
     />
+  </MemoryRouter>
+);
+
+const interiorCornerLessonWorkspace = () => (
+  <MemoryRouter initialEntries={["/simulator/free/interior-corner?lesson=1"]}>
+    <Routes>
+      <Route path="/simulator/:mode/:sceneId" element={<SimulatorRoutePage />} />
+      <Route path="/simulator/:mode/:sceneId/:taskId" element={<SimulatorRoutePage />} />
+    </Routes>
   </MemoryRouter>
 );
 
@@ -230,6 +241,196 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
       "false",
     );
   });
+
+  it("shows the Interior Corner Rise composition state from the public free-mode control", async () => {
+    render(workspaceRoute("free", "interior-corner", null));
+
+    const feedback = await screen.findByTestId("interior-corner-rise-composition-feedback");
+    const focusFeedback = await screen.findByTestId("interior-corner-focus-feedback");
+    expect(feedback).toHaveTextContent(/upper architecture is still too close to the top edge/i);
+    expect(focusFeedback).toHaveTextContent(/Focus alone cannot hold the near, middle, and far details together/i);
+
+    const rise = screen.getByLabelText("Rise");
+    expect(rise).toHaveValue("0");
+    expect(rise).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Reset movements" })).toBeInTheDocument();
+    fireEvent.change(rise, { target: { value: "33" } });
+
+    await waitFor(() => {
+      expect(feedback).toHaveTextContent(/upper architecture is now inside a safer frame/i);
+    });
+    expect(rise).toHaveValue("33");
+    expect(useAppStore.getState().camera.frontSwingDeg).toBe(0);
+
+    fireEvent.change(screen.getByLabelText("Swing"), {
+      target: { value: interiorCornerSwingFocusCalibration.public.frontSwingDeg },
+    });
+    fireEvent.change(screen.getByLabelText("Focus distance"), {
+      target: { value: interiorCornerSwingFocusCalibration.public.focusDistanceMm },
+    });
+    await waitFor(() => {
+      expect(focusFeedback).toHaveTextContent(
+        /near, middle, and far details on the receding side wall are acceptably sharp/i,
+      );
+    });
+    expect(useAppStore.getState().camera.frontSwingDeg).toBe(
+      interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+    );
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(
+      interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+    );
+  });
+
+  it("stages the five Interior Corner controls and preserves solved state between lesson stages", async () => {
+    render(interiorCornerLessonWorkspace());
+
+    expect(await screen.findByRole("heading", { name: "Observe the Problem" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Rise")).toBeDisabled();
+    expect(screen.getByLabelText("Swing")).toBeDisabled();
+    expect(screen.getByLabelText("Focus distance")).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Compose the Interior Corner with Rise" })).toBeInTheDocument());
+    expect(screen.getByLabelText("Rise")).toBeEnabled();
+    expect(screen.getByLabelText("Swing")).toBeDisabled();
+    expect(screen.getByLabelText("Focus distance")).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(0);
+    fireEvent.change(screen.getByLabelText("Rise"), { target: { value: "33" } });
+    await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(33);
+    expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Turn the Focus Plane with Swing" })).toBeInTheDocument());
+    expect(screen.getByLabelText("Rise")).toBeDisabled();
+    expect(screen.getByLabelText("Swing")).toBeEnabled();
+    expect(screen.getByLabelText("Focus distance")).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(useAppStore.getState().camera.frontRiseMm).toBe(33);
+    expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Swing"), {
+      target: { value: interiorCornerSwingFocusCalibration.public.frontSwingDeg },
+    });
+    await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Place the Focus Plane on the Wall" })).toBeInTheDocument());
+    expect(screen.getByLabelText("Rise")).toBeDisabled();
+    expect(screen.getByLabelText("Swing")).toBeEnabled();
+    expect(screen.getByLabelText("Focus distance")).toBeEnabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: 8000,
+      aperture: 5.6,
+    });
+    expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Focus distance"), {
+      target: { value: interiorCornerSwingFocusCalibration.public.focusDistanceMm },
+    });
+    await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(
+      interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+    );
+
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Add Depth around the Aligned Plane" })).toBeInTheDocument());
+    expect(screen.getByLabelText("Rise")).toBeDisabled();
+    expect(screen.getByLabelText("Swing")).toBeDisabled();
+    expect(screen.getByLabelText("Focus distance")).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      aperture: 5.6,
+    });
+    expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Aperture" }), { target: { value: "11" } });
+    await waitFor(() => expect(screen.getByText("Lesson complete")).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: "Restart lesson" })).toHaveAttribute(
+      "href",
+      "/simulator/free/interior-corner?lesson=1",
+    );
+  });
+
+  it("preserves a solved Refine state when navigating back to Swing and forward again", async () => {
+    render(interiorCornerLessonWorkspace());
+
+    fireEvent.click(await screen.findByRole("link", { name: "Continue" }));
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Compose the Interior Corner with Rise" })).toBeInTheDocument(),
+    );
+    fireEvent.change(screen.getByLabelText("Rise"), { target: { value: "33" } });
+    await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Turn the Focus Plane with Swing" })).toBeInTheDocument(),
+    );
+    fireEvent.change(screen.getByLabelText("Swing"), {
+      target: { value: interiorCornerSwingFocusCalibration.public.frontSwingDeg },
+    });
+    await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Place the Focus Plane on the Wall" })).toBeInTheDocument(),
+    );
+    fireEvent.change(screen.getByLabelText("Focus distance"), {
+      target: { value: interiorCornerSwingFocusCalibration.public.focusDistanceMm },
+    });
+    await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      aperture: 5.6,
+    });
+
+    fireEvent.click(screen.getByRole("link", { name: "Previous" }));
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Turn the Focus Plane with Swing" })).toBeInTheDocument(),
+    );
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      aperture: 5.6,
+    });
+    expect(screen.getByLabelText("Rise")).toBeDisabled();
+    expect(screen.getByLabelText("Swing")).toBeEnabled();
+    expect(screen.getByLabelText("Focus distance")).toBeDisabled();
+    expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Place the Focus Plane on the Wall" })).toBeInTheDocument(),
+    );
+    expect(useAppStore.getState().camera).toMatchObject({
+      frontRiseMm: 33,
+      frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
+      focusDistanceMm: interiorCornerSwingFocusCalibration.public.focusDistanceMm,
+      aperture: 5.6,
+    });
+    expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Add Depth around the Aligned Plane" })).toBeInTheDocument(),
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Aperture" }), {
+      target: { value: "11" },
+    });
+    await waitFor(() => expect(screen.getByText("Lesson complete")).toBeInTheDocument());
+  });
 });
 
 describe("SimulatorWorkspace viewport expansion", () => {
@@ -348,7 +549,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     fireEvent.click(screen.getByLabelText("Upright Assist"));
-    fireEvent.click(screen.getByRole("button", { name: "Zoom in Ground Glass view" }));
+    fireEvent.click(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass view" }));
     expect(screen.getByRole("region", { name: "Pan Ground Glass" })).toHaveAttribute("data-zoomed", "true");
 
     fireEvent.click(screen.getByRole("button", { name: "Expand Ground Glass" }));
@@ -379,7 +580,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
 
     expect(screen.getByRole("button", { name: "Restore Ground Glass" })).toBeInTheDocument();
     expect(screen.queryByTestId("scene-canvas")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Zoom in Ground Glass" })).toHaveAttribute("data-zoomed", "false");
+    expect(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass" })).toHaveAttribute("data-zoomed", "false");
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     expect(screen.getByTestId("ground-glass-rtt")).toBe(originalGroundGlassRenderer);
 
@@ -390,7 +591,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
     expect(screen.getByTestId("current-settings-readout")).toBeInTheDocument();
     expect(screen.getByLabelText("Upright Assist")).toBeChecked();
-    expect(screen.getByRole("button", { name: "Zoom in Ground Glass" })).toHaveAttribute("data-zoomed", "false");
+    expect(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass" })).toHaveAttribute("data-zoomed", "false");
   });
 
   it("restores Ground Glass expansion with Escape and on route identity changes", async () => {

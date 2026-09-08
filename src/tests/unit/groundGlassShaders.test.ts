@@ -55,13 +55,14 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassUniformDecls).not.toContain("displayBlurScale");
     expect(groundGlassUniformDecls).toContain("maximumCoCRadiusPx");
     expect(groundGlassUniformDecls).toContain("sampleCount");
-    expect(groundGlassUniformDecls).toContain("filmWidthMm");
-    expect(groundGlassUniformDecls).toContain("filmHeightMm");
+    expect(groundGlassUniformDecls).toContain("sampledFilmWidthMm");
+    expect(groundGlassUniformDecls).toContain("sampledFilmHeightMm");
     expect(groundGlassUniformDecls).toContain("cocStorageEncoded");
     expect(groundGlassUniformDecls).toContain("cocStorageMaxMm");
     expect(groundGlassUniformDecls).toContain("lensPlaneBasisX");
     expect(groundGlassUniformDecls).toContain("filmPlaneBasisY");
     expect(groundGlassUniformDecls).toContain("footprintStorageMaxMm");
+    expect(groundGlassUniformDecls).not.toContain("inspectionMagnification");
   });
 
   test("shared GLSL helpers do not contain GLSL Infinity hacks or old formula", () => {
@@ -97,11 +98,12 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassSharedGlsl).toContain("decodeStoredGroundGlassFootprintAxesMm");
     expect(groundGlassSharedGlsl).toContain("decodeStoredGroundGlassFootprintOrientation");
     expect(groundGlassSharedGlsl).toContain(
-      "-sin(angle) * majorRadiusMm * renderHeight / filmHeightMm",
+      "-sin(angle) * majorRadiusMm * renderHeight / sampledFilmHeightMm",
     );
     expect(groundGlassSharedGlsl).toContain(
-      "-cos(angle) * minorRadiusMm * renderHeight / filmHeightMm",
+      "-cos(angle) * minorRadiusMm * renderHeight / sampledFilmHeightMm",
     );
+    expect(groundGlassSharedGlsl).not.toContain("inspectionMagnification");
     expect(groundGlassSharedGlsl).not.toContain(
       "float focusDist = tFocus > 0.0 ? tFocus : targetDist",
     );

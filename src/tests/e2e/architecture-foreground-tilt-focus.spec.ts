@@ -12,7 +12,7 @@ test("Architecture + Foreground is discoverable from the Scenes page", async ({ 
   const heading = page.getByRole("heading", { name: "Architecture + Foreground", level: 2 });
   await expect(heading).toBeVisible();
   const card = heading.locator("xpath=ancestor::article");
-  await expect(card.locator("img")).toHaveAttribute("src", "/assets/architecture-foreground.png");
+  await expect(card.locator("img")).toHaveAttribute("src", "/assets/architecture-foreground.webp");
   await expect(card.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
     "href",
     "/simulator/free/architecture-foreground",
@@ -23,8 +23,9 @@ test("Architecture + Foreground is discoverable from the Scenes page", async ({ 
   );
 
   const sceneHeadings = await page.getByRole("heading", { level: 2 }).allTextContents();
-  expect(sceneHeadings.at(-2)).toBe("Oblique Architecture");
-  expect(sceneHeadings.at(-1)).toBe("Architecture + Foreground");
+  expect(sceneHeadings.at(-3)).toBe("Oblique Architecture");
+  expect(sceneHeadings.at(-2)).toBe("Architecture + Foreground");
+  expect(sceneHeadings.at(-1)).toBe("Interior Corner — Rise + Swing");
 
   await card.getByRole("link", { name: "Open Scene" }).click();
   await expect(page).toHaveURL(/\/simulator\/free\/architecture-foreground$/);

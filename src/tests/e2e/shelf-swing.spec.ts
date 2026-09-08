@@ -174,7 +174,6 @@ test("Shelf Swing free scene uses canonical R3F and contentful RTT rendering", a
   );
   await expect(page.getByText(/WebGL is unavailable/)).toHaveCount(0);
   await expect(page.getByTestId("ground-glass-rtt")).toHaveCount(1);
-  await expect(page.getByTestId("ground-glass-scene")).toHaveCount(0);
   await expectRttContent(page);
 });
 

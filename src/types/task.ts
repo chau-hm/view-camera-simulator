@@ -28,6 +28,7 @@ export type TaskInitialCameraState = Pick<
     Pick<
       CameraState,
       | "geometryView"
+      | "focusMode"
       | "frontShiftMm"
       | "rearShiftMm"
       | "rearSwingDeg"
@@ -111,6 +112,32 @@ export type CameraLevelCriterion = {
   type: "camera-level";
 };
 
+export type InteriorCornerRiseCompositionCriterion = {
+  id: string;
+  type: "interior-corner-rise-composition";
+};
+
+export type InteriorCornerSwingOrientationCriterion = {
+  id: string;
+  type: "interior-corner-swing-orientation";
+};
+
+export type InteriorCornerWallFocusCriterion = {
+  id: string;
+  type: "interior-corner-wall-focus";
+};
+
+export type InteriorCornerFocusPreservedCriterion = {
+  id: string;
+  type: "interior-corner-focus-preserved";
+};
+
+export type InteriorCornerGuidedCriterion =
+  | InteriorCornerRiseCompositionCriterion
+  | InteriorCornerSwingOrientationCriterion
+  | InteriorCornerWallFocusCriterion
+  | InteriorCornerFocusPreservedCriterion;
+
 export type MirrorReflectionClearCriterion = {
   id: string;
   type: "mirror-reflection-clear";
@@ -137,6 +164,10 @@ export type TaskSuccessCriterion =
   | AllowedApertureCriterion
   | CompositionVisibleCriterion
   | CameraLevelCriterion
+  | InteriorCornerRiseCompositionCriterion
+  | InteriorCornerSwingOrientationCriterion
+  | InteriorCornerWallFocusCriterion
+  | InteriorCornerFocusPreservedCriterion
   | MirrorReflectionClearCriterion
   | MirrorFramingRestoredCriterion
   | MirrorViewpointRetainedCriterion;

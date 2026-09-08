@@ -1,30 +1,92 @@
 export const homeMessages = {
   hero: {
-    eyebrow: "Interactive View Camera Learning",
-    title: "See how a view camera changes the image before the shutter is pressed.",
+    eyebrow: "View Camera Simulator",
+    titleLine1: "Shape Perspective.",
+    titleLine2: "Place Focus.",
     description:
-      "Move the whole camera or its Front and Rear standards, then compare how viewpoint, framing, perspective and focus change on the Ground Glass.",
-    exploreSimulator: "Explore the Simulator",
+      "Explore how rise, shift, tilt, swing, and focus reshape perspective, composition, and the plane of focus.",
+    startExploring: "Start Exploring",
+    exploreScenes: "Explore Scenes",
+  },
+  fundamentals: {
+    eyebrow: "MASTER CAMERA MOVEMENTS",
+    title: "Learn the Fundamentals",
+    description:
+      "Understand the core principles that shape how your camera sees, moves, and focuses on the world.",
+    items: {
+      perspective: {
+        title: "Perspective Control",
+        description:
+          "See how viewpoint, framing, and camera movements affect perspective relationships and converging lines.",
+      },
+      focusPlane: {
+        title: "Focus Plane",
+        description:
+          "See where the plane of sharp focus lies and how focusing, tilt, and swing change its relationship to the subject.",
+      },
+      groundGlass: {
+        title: "Ground Glass View",
+        description:
+          "See the image from the photographer's point of view—framing, composition, and focus on the Ground Glass.",
+      },
+      opticalGeometry: {
+        title: "Optical Geometry",
+        description:
+          "Understand the geometric relationship between the lens, subject, image plane, and image formation.",
+      },
+    },
+  },
+  visualize: {
+    eyebrow: "SEE IT. STUDY IT. UNDERSTAND IT.",
+    title: "Three Ways to Visualize",
+    description:
+      "The same camera state can be understood from three complementary views—each revealing something different.",
+    items: {
+      scene3d: {
+        title: "3D Scene",
+        description:
+          "Understand the camera, subject, and viewpoint as a spatial relationship in 3D.",
+      },
+      groundGlass: {
+        title: "Ground Glass",
+        description:
+          "See the image formed by the camera and inspect framing, composition, and focus.",
+      },
+      geometry: {
+        title: "Geometry View",
+        description:
+          "Reveal the optical path, lens and image planes, focus plane, and perspective geometry.",
+      },
+    },
   },
   why: {
-    ariaLabel: "Why use a view camera",
+    eyebrow: "WHY IT MATTERS",
+    title: {
+      line1: "More control before the shot.",
+      line2: "A deeper way to see.",
+    },
+    items: {
+      control: {
+        title: "What can you control before exposure?",
+        description:
+          "Camera position, composition, image geometry, and the plane of sharp focus are separate decisions. A view camera makes those relationships explicit before exposure.",
+      },
+      movements: {
+        title: "Why do camera movements matter?",
+        description:
+          "Rise and shift can recompose while the whole-camera viewpoint stays fixed. Tilt and swing change the orientation of the plane of sharp focus. Move the whole camera, and viewpoint, perspective, and parallax change.",
+      },
+      learning: {
+        title: "Why is large-format camera still worth learning?",
+        description:
+          "The slower process turns each adjustment into a deliberate decision. An inverted Ground Glass encourages you to inspect edges, planes, focus, and spatial relationships before exposure.",
+      },
+    },
   },
-  info: {
-    control: {
-      title: "What can a view camera control before exposure?",
-      body:
-        "A view camera separates decisions that are often bundled together: where the camera observes from, how the subject is framed, how the image geometry is controlled, and where the plane of sharp focus lies. These relationships can be shaped at the camera before exposure rather than treated only as corrections afterwards.",
-    },
-    movements: {
-      title: "Why do camera movements matter?",
-      body:
-        "Rise and shift can change framing without moving the viewpoint. Tilt and swing can rotate the plane of sharp focus. Moving the whole camera changes viewpoint, perspective relationships and parallax. The useful question is which physical relationship you want to change.",
-    },
-    artists: {
-      title: "Why do artists still use view cameras?",
-      body:
-        "A view camera slows the process down. The upside-down image on the ground glass encourages careful looking, and every movement becomes a deliberate choice. Artists use it not only for image quality, but because the method changes how a photograph is seen and made.",
-    },
+  finalCta: {
+    title: "Step into the simulator.",
+    description: "Put these ideas into practice through guided large-format camera scenes.",
+    action: "Start Exploring",
   },
   faq: {
     title: "Frequently Asked Questions",

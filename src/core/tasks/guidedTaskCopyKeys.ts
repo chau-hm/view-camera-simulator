@@ -384,6 +384,297 @@ export const guidedTaskCopyKeyMap: Record<string, GuidedTaskCopyKeyMap> = {
       },
     },
   },
+  "oblique-tabletop-focus-01": {
+    title: k.obliqueTabletopFocus.title,
+    objective: k.obliqueTabletopFocus.objective,
+    notes: [k.obliqueTabletopFocus.notes.focus, k.obliqueTabletopFocus.notes.constraints],
+    criteria: {
+      "oblique-tabletop-focus-allowed-aperture": k.obliqueTabletopFocus.criteria.allowedAperture,
+      "oblique-tabletop-focus-rise-zero": k.obliqueTabletopFocus.criteria.riseZero,
+      "oblique-tabletop-focus-tilt-zero": k.obliqueTabletopFocus.criteria.tiltZero,
+      "oblique-tabletop-focus-swing-zero": k.obliqueTabletopFocus.criteria.swingZero,
+      "oblique-tabletop-focus-used": k.obliqueTabletopFocus.criteria.focusUsed,
+      "oblique-tabletop-focus-middle-sharp": k.obliqueTabletopFocus.criteria.middleSharp,
+    },
+    feedback: {
+      passPrimary: k.obliqueTabletopFocus.feedback.passPrimary,
+      defaultFailPrimary: k.obliqueTabletopFocus.feedback.defaultFailPrimary,
+      primary: {
+        "oblique-tabletop-focus-allowed-aperture": k.obliqueTabletopFocus.feedback.primary.allowedAperture,
+        "oblique-tabletop-focus-rise-zero": k.obliqueTabletopFocus.feedback.primary.riseZero,
+        "oblique-tabletop-focus-tilt-zero": k.obliqueTabletopFocus.feedback.primary.tiltZero,
+        "oblique-tabletop-focus-swing-zero": k.obliqueTabletopFocus.feedback.primary.swingZero,
+        "oblique-tabletop-focus-used": k.obliqueTabletopFocus.feedback.primary.focusUsed,
+        "oblique-tabletop-focus-middle-sharp": k.obliqueTabletopFocus.feedback.primary.middleSharp,
+      },
+      secondary: {
+        "oblique-tabletop-focus-allowed-aperture": k.obliqueTabletopFocus.feedback.secondary.allowedAperture,
+        "oblique-tabletop-focus-rise-zero": k.obliqueTabletopFocus.feedback.secondary.riseZero,
+        "oblique-tabletop-focus-tilt-zero": k.obliqueTabletopFocus.feedback.secondary.tiltZero,
+        "oblique-tabletop-focus-swing-zero": k.obliqueTabletopFocus.feedback.secondary.swingZero,
+        "oblique-tabletop-focus-used": k.obliqueTabletopFocus.feedback.secondary.focusUsed,
+        "oblique-tabletop-focus-middle-sharp": k.obliqueTabletopFocus.feedback.secondary.middleSharp,
+      },
+    },
+  },
+  "oblique-tabletop-tilt-01": {
+    title: k.obliqueTabletopTilt.title,
+    objective: k.obliqueTabletopTilt.objective,
+    notes: [k.obliqueTabletopTilt.notes.tilt, k.obliqueTabletopTilt.notes.constraints],
+    criteria: {
+      "oblique-tabletop-tilt-allowed-aperture": k.obliqueTabletopTilt.criteria.allowedAperture,
+      "oblique-tabletop-tilt-rise-zero": k.obliqueTabletopTilt.criteria.riseZero,
+      "oblique-tabletop-tilt-swing-zero": k.obliqueTabletopTilt.criteria.swingZero,
+      "oblique-tabletop-tilt-movement-range": k.obliqueTabletopTilt.criteria.movementRange,
+      "oblique-tabletop-tilt-near-sharp": k.obliqueTabletopTilt.criteria.nearSharp,
+      "oblique-tabletop-tilt-middle-sharp": k.obliqueTabletopTilt.criteria.middleSharp,
+      "oblique-tabletop-tilt-far-sharp": k.obliqueTabletopTilt.criteria.farSharp,
+    },
+    feedback: {
+      passPrimary: k.obliqueTabletopTilt.feedback.passPrimary,
+      defaultFailPrimary: k.obliqueTabletopTilt.feedback.defaultFailPrimary,
+      primary: {
+        "oblique-tabletop-tilt-allowed-aperture": k.obliqueTabletopTilt.feedback.primary.allowedAperture,
+        "oblique-tabletop-tilt-rise-zero": k.obliqueTabletopTilt.feedback.primary.riseZero,
+        "oblique-tabletop-tilt-swing-zero": k.obliqueTabletopTilt.feedback.primary.swingZero,
+        "oblique-tabletop-tilt-movement-range": k.obliqueTabletopTilt.feedback.primary.movementRange,
+        "oblique-tabletop-tilt-near-sharp": k.obliqueTabletopTilt.feedback.primary.nearSharp,
+        "oblique-tabletop-tilt-middle-sharp": k.obliqueTabletopTilt.feedback.primary.middleSharp,
+        "oblique-tabletop-tilt-far-sharp": k.obliqueTabletopTilt.feedback.primary.farSharp,
+      },
+      secondary: {
+        "oblique-tabletop-tilt-allowed-aperture": k.obliqueTabletopTilt.feedback.secondary.allowedAperture,
+        "oblique-tabletop-tilt-rise-zero": k.obliqueTabletopTilt.feedback.secondary.riseZero,
+        "oblique-tabletop-tilt-swing-zero": k.obliqueTabletopTilt.feedback.secondary.swingZero,
+        "oblique-tabletop-tilt-movement-range": k.obliqueTabletopTilt.feedback.secondary.movementRange,
+        "oblique-tabletop-tilt-near-sharp": k.obliqueTabletopTilt.feedback.secondary.nearSharp,
+        "oblique-tabletop-tilt-middle-sharp": k.obliqueTabletopTilt.feedback.secondary.middleSharp,
+        "oblique-tabletop-tilt-far-sharp": k.obliqueTabletopTilt.feedback.secondary.farSharp,
+      },
+    },
+  },
+  "oblique-tabletop-swing-01": {
+    title: k.obliqueTabletopSwing.title,
+    objective: k.obliqueTabletopSwing.objective,
+    notes: [k.obliqueTabletopSwing.notes.swing, k.obliqueTabletopSwing.notes.constraints],
+    criteria: {
+      "oblique-tabletop-swing-allowed-aperture": k.obliqueTabletopSwing.criteria.allowedAperture,
+      "oblique-tabletop-swing-rise-zero": k.obliqueTabletopSwing.criteria.riseZero,
+      "oblique-tabletop-swing-tilt-range": k.obliqueTabletopSwing.criteria.tiltRange,
+      "oblique-tabletop-swing-movement-range": k.obliqueTabletopSwing.criteria.movementRange,
+      "oblique-tabletop-swing-focus-used": k.obliqueTabletopSwing.criteria.focusUsed,
+      "oblique-tabletop-swing-lateral-sharp": k.obliqueTabletopSwing.criteria.lateralSharp,
+    },
+    feedback: {
+      passPrimary: k.obliqueTabletopSwing.feedback.passPrimary,
+      defaultFailPrimary: k.obliqueTabletopSwing.feedback.defaultFailPrimary,
+      primary: {
+        "oblique-tabletop-swing-allowed-aperture": k.obliqueTabletopSwing.feedback.primary.allowedAperture,
+        "oblique-tabletop-swing-rise-zero": k.obliqueTabletopSwing.feedback.primary.riseZero,
+        "oblique-tabletop-swing-tilt-range": k.obliqueTabletopSwing.feedback.primary.tiltRange,
+        "oblique-tabletop-swing-movement-range": k.obliqueTabletopSwing.feedback.primary.movementRange,
+        "oblique-tabletop-swing-focus-used": k.obliqueTabletopSwing.feedback.primary.focusUsed,
+        "oblique-tabletop-swing-lateral-sharp": k.obliqueTabletopSwing.feedback.primary.lateralSharp,
+      },
+      secondary: {
+        "oblique-tabletop-swing-allowed-aperture": k.obliqueTabletopSwing.feedback.secondary.allowedAperture,
+        "oblique-tabletop-swing-rise-zero": k.obliqueTabletopSwing.feedback.secondary.riseZero,
+        "oblique-tabletop-swing-tilt-range": k.obliqueTabletopSwing.feedback.secondary.tiltRange,
+        "oblique-tabletop-swing-movement-range": k.obliqueTabletopSwing.feedback.secondary.movementRange,
+        "oblique-tabletop-swing-focus-used": k.obliqueTabletopSwing.feedback.secondary.focusUsed,
+        "oblique-tabletop-swing-lateral-sharp": k.obliqueTabletopSwing.feedback.secondary.lateralSharp,
+      },
+    },
+  },
+  "oblique-tabletop-refine-01": {
+    title: k.obliqueTabletopRefine.title,
+    objective: k.obliqueTabletopRefine.objective,
+    notes: [k.obliqueTabletopRefine.notes.focus, k.obliqueTabletopRefine.notes.constraints],
+    criteria: {
+      "oblique-tabletop-refine-allowed-aperture": k.obliqueTabletopRefine.criteria.allowedAperture,
+      "oblique-tabletop-refine-rise-zero": k.obliqueTabletopRefine.criteria.riseZero,
+      "oblique-tabletop-refine-tilt-range": k.obliqueTabletopRefine.criteria.tiltRange,
+      "oblique-tabletop-refine-swing-range": k.obliqueTabletopRefine.criteria.swingRange,
+      "oblique-tabletop-refine-focus-used": k.obliqueTabletopRefine.criteria.focusUsed,
+      "oblique-tabletop-refine-all-targets-sharp": k.obliqueTabletopRefine.criteria.allTargetsSharp,
+    },
+    feedback: {
+      passPrimary: k.obliqueTabletopRefine.feedback.passPrimary,
+      defaultFailPrimary: k.obliqueTabletopRefine.feedback.defaultFailPrimary,
+      primary: {
+        "oblique-tabletop-refine-allowed-aperture": k.obliqueTabletopRefine.feedback.primary.allowedAperture,
+        "oblique-tabletop-refine-rise-zero": k.obliqueTabletopRefine.feedback.primary.riseZero,
+        "oblique-tabletop-refine-tilt-range": k.obliqueTabletopRefine.feedback.primary.tiltRange,
+        "oblique-tabletop-refine-swing-range": k.obliqueTabletopRefine.feedback.primary.swingRange,
+        "oblique-tabletop-refine-focus-used": k.obliqueTabletopRefine.feedback.primary.focusUsed,
+        "oblique-tabletop-refine-all-targets-sharp": k.obliqueTabletopRefine.feedback.primary.allTargetsSharp,
+      },
+      secondary: {
+        "oblique-tabletop-refine-allowed-aperture": k.obliqueTabletopRefine.feedback.secondary.allowedAperture,
+        "oblique-tabletop-refine-rise-zero": k.obliqueTabletopRefine.feedback.secondary.riseZero,
+        "oblique-tabletop-refine-tilt-range": k.obliqueTabletopRefine.feedback.secondary.tiltRange,
+        "oblique-tabletop-refine-swing-range": k.obliqueTabletopRefine.feedback.secondary.swingRange,
+        "oblique-tabletop-refine-focus-used": k.obliqueTabletopRefine.feedback.secondary.focusUsed,
+        "oblique-tabletop-refine-all-targets-sharp": k.obliqueTabletopRefine.feedback.secondary.allTargetsSharp,
+      },
+    },
+  },
+  "oblique-tabletop-aperture-01": {
+    title: k.obliqueTabletopAperture.title,
+    objective: k.obliqueTabletopAperture.objective,
+    notes: [k.obliqueTabletopAperture.notes.aperture, k.obliqueTabletopAperture.notes.constraints],
+    criteria: {
+      "oblique-tabletop-aperture-allowed-aperture": k.obliqueTabletopAperture.criteria.allowedAperture,
+      "oblique-tabletop-aperture-rise-zero": k.obliqueTabletopAperture.criteria.riseZero,
+      "oblique-tabletop-aperture-tilt-range": k.obliqueTabletopAperture.criteria.tiltRange,
+      "oblique-tabletop-aperture-swing-range": k.obliqueTabletopAperture.criteria.swingRange,
+      "oblique-tabletop-aperture-all-targets-sharp": k.obliqueTabletopAperture.criteria.allTargetsSharp,
+    },
+    feedback: {
+      passPrimary: k.obliqueTabletopAperture.feedback.passPrimary,
+      defaultFailPrimary: k.obliqueTabletopAperture.feedback.defaultFailPrimary,
+      primary: {
+        "oblique-tabletop-aperture-allowed-aperture": k.obliqueTabletopAperture.feedback.primary.allowedAperture,
+        "oblique-tabletop-aperture-rise-zero": k.obliqueTabletopAperture.feedback.primary.riseZero,
+        "oblique-tabletop-aperture-tilt-range": k.obliqueTabletopAperture.feedback.primary.tiltRange,
+        "oblique-tabletop-aperture-swing-range": k.obliqueTabletopAperture.feedback.primary.swingRange,
+        "oblique-tabletop-aperture-all-targets-sharp": k.obliqueTabletopAperture.feedback.primary.allTargetsSharp,
+      },
+      secondary: {
+        "oblique-tabletop-aperture-allowed-aperture": k.obliqueTabletopAperture.feedback.secondary.allowedAperture,
+        "oblique-tabletop-aperture-rise-zero": k.obliqueTabletopAperture.feedback.secondary.riseZero,
+        "oblique-tabletop-aperture-tilt-range": k.obliqueTabletopAperture.feedback.secondary.tiltRange,
+        "oblique-tabletop-aperture-swing-range": k.obliqueTabletopAperture.feedback.secondary.swingRange,
+        "oblique-tabletop-aperture-all-targets-sharp": k.obliqueTabletopAperture.feedback.secondary.allTargetsSharp,
+      },
+    },
+  },
+  "interior-corner-compose-01": {
+    title: k.interiorCornerCompose.title,
+    objective: k.interiorCornerCompose.objective,
+    notes: [k.interiorCornerCompose.notes.composition, k.interiorCornerCompose.notes.level],
+    criteria: {
+      "interior-corner-compose-composition": k.interiorCornerCompose.criteria.composition,
+      "interior-corner-compose-camera-level": k.interiorCornerCompose.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerCompose.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerCompose.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-compose-composition": k.interiorCornerCompose.feedback.primary.composition,
+        "interior-corner-compose-camera-level": k.interiorCornerCompose.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-compose-composition": k.interiorCornerCompose.feedback.secondary.composition,
+        "interior-corner-compose-camera-level": k.interiorCornerCompose.feedback.secondary.cameraLevel,
+      },
+    },
+  },
+  "interior-corner-swing-01": {
+    title: k.interiorCornerSwing.title,
+    objective: k.interiorCornerSwing.objective,
+    notes: [
+      k.interiorCornerSwing.notes.swing,
+      k.interiorCornerSwing.notes.orientation,
+      k.interiorCornerSwing.notes.level,
+    ],
+    criteria: {
+      "interior-corner-swing-allowed-aperture": k.interiorCornerSwing.criteria.allowedAperture,
+      "interior-corner-swing-composition": k.interiorCornerSwing.criteria.composition,
+      "interior-corner-swing-range": k.interiorCornerSwing.criteria.swingRange,
+      "interior-corner-swing-orientation": k.interiorCornerSwing.criteria.orientation,
+      "interior-corner-swing-camera-level": k.interiorCornerSwing.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerSwing.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerSwing.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-swing-allowed-aperture": k.interiorCornerSwing.feedback.primary.allowedAperture,
+        "interior-corner-swing-composition": k.interiorCornerSwing.feedback.primary.composition,
+        "interior-corner-swing-range": k.interiorCornerSwing.feedback.primary.swingRange,
+        "interior-corner-swing-orientation": k.interiorCornerSwing.feedback.primary.orientation,
+        "interior-corner-swing-camera-level": k.interiorCornerSwing.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-swing-allowed-aperture": k.interiorCornerSwing.feedback.secondary.allowedAperture,
+        "interior-corner-swing-composition": k.interiorCornerSwing.feedback.secondary.composition,
+        "interior-corner-swing-range": k.interiorCornerSwing.feedback.secondary.swingRange,
+        "interior-corner-swing-orientation": k.interiorCornerSwing.feedback.secondary.orientation,
+        "interior-corner-swing-camera-level": k.interiorCornerSwing.feedback.secondary.cameraLevel,
+      },
+    },
+  },
+  "interior-corner-refine-01": {
+    title: k.interiorCornerRefine.title,
+    objective: k.interiorCornerRefine.objective,
+    notes: [
+      k.interiorCornerRefine.notes.focus,
+      k.interiorCornerRefine.notes.wall,
+      k.interiorCornerRefine.notes.level,
+    ],
+    criteria: {
+      "interior-corner-refine-allowed-aperture": k.interiorCornerRefine.criteria.allowedAperture,
+      "interior-corner-refine-composition": k.interiorCornerRefine.criteria.composition,
+      "interior-corner-refine-swing-range": k.interiorCornerRefine.criteria.swingRange,
+      "interior-corner-refine-focus-used": k.interiorCornerRefine.criteria.focusUsed,
+      "interior-corner-refine-wall-focus": k.interiorCornerRefine.criteria.wallFocus,
+      "interior-corner-refine-camera-level": k.interiorCornerRefine.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerRefine.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerRefine.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-refine-allowed-aperture": k.interiorCornerRefine.feedback.primary.allowedAperture,
+        "interior-corner-refine-composition": k.interiorCornerRefine.feedback.primary.composition,
+        "interior-corner-refine-swing-range": k.interiorCornerRefine.feedback.primary.swingRange,
+        "interior-corner-refine-focus-used": k.interiorCornerRefine.feedback.primary.focusUsed,
+        "interior-corner-refine-wall-focus": k.interiorCornerRefine.feedback.primary.wallFocus,
+        "interior-corner-refine-camera-level": k.interiorCornerRefine.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-refine-allowed-aperture": k.interiorCornerRefine.feedback.secondary.allowedAperture,
+        "interior-corner-refine-composition": k.interiorCornerRefine.feedback.secondary.composition,
+        "interior-corner-refine-swing-range": k.interiorCornerRefine.feedback.secondary.swingRange,
+        "interior-corner-refine-focus-used": k.interiorCornerRefine.feedback.secondary.focusUsed,
+        "interior-corner-refine-wall-focus": k.interiorCornerRefine.feedback.secondary.wallFocus,
+        "interior-corner-refine-camera-level": k.interiorCornerRefine.feedback.secondary.cameraLevel,
+      },
+    },
+  },
+  "interior-corner-aperture-01": {
+    title: k.interiorCornerAperture.title,
+    objective: k.interiorCornerAperture.objective,
+    notes: [
+      k.interiorCornerAperture.notes.aperture,
+      k.interiorCornerAperture.notes.preserve,
+      k.interiorCornerAperture.notes.level,
+    ],
+    criteria: {
+      "interior-corner-aperture-allowed-aperture": k.interiorCornerAperture.criteria.allowedAperture,
+      "interior-corner-aperture-composition": k.interiorCornerAperture.criteria.composition,
+      "interior-corner-aperture-swing-range": k.interiorCornerAperture.criteria.swingRange,
+      "interior-corner-aperture-focus-preserved": k.interiorCornerAperture.criteria.focusPreserved,
+      "interior-corner-aperture-camera-level": k.interiorCornerAperture.criteria.cameraLevel,
+    },
+    feedback: {
+      passPrimary: k.interiorCornerAperture.feedback.passPrimary,
+      defaultFailPrimary: k.interiorCornerAperture.feedback.defaultFailPrimary,
+      primary: {
+        "interior-corner-aperture-allowed-aperture": k.interiorCornerAperture.feedback.primary.allowedAperture,
+        "interior-corner-aperture-composition": k.interiorCornerAperture.feedback.primary.composition,
+        "interior-corner-aperture-swing-range": k.interiorCornerAperture.feedback.primary.swingRange,
+        "interior-corner-aperture-focus-preserved": k.interiorCornerAperture.feedback.primary.focusPreserved,
+        "interior-corner-aperture-camera-level": k.interiorCornerAperture.feedback.primary.cameraLevel,
+      },
+      secondary: {
+        "interior-corner-aperture-allowed-aperture": k.interiorCornerAperture.feedback.secondary.allowedAperture,
+        "interior-corner-aperture-composition": k.interiorCornerAperture.feedback.secondary.composition,
+        "interior-corner-aperture-swing-range": k.interiorCornerAperture.feedback.secondary.swingRange,
+        "interior-corner-aperture-focus-preserved": k.interiorCornerAperture.feedback.secondary.focusPreserved,
+        "interior-corner-aperture-camera-level": k.interiorCornerAperture.feedback.secondary.cameraLevel,
+      },
+    },
+  },
   "tilt-01": {
     title: k.tableTilt.title,
     objective: k.tableTilt.objective,
@@ -592,6 +883,14 @@ export const getCriterionResultMessageRef = (
       return ref(k.results.compositionVisible[variant]);
     case "camera-level":
       return ref(k.results.cameraLevel[variant]);
+    case "interior-corner-rise-composition":
+      return ref(k.results.interiorCornerRiseComposition[variant]);
+    case "interior-corner-swing-orientation":
+      return ref(k.results.interiorCornerSwingOrientation[variant]);
+    case "interior-corner-wall-focus":
+      return ref(k.results.interiorCornerWallFocus[variant]);
+    case "interior-corner-focus-preserved":
+      return ref(k.results.interiorCornerFocusPreserved[variant]);
     case "mirror-reflection-clear":
       return ref(k.results.mirrorReflectionClear[variant]);
     case "mirror-framing-restored":

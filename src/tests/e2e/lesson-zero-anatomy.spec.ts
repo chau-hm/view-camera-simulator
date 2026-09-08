@@ -12,7 +12,6 @@ test("Lesson 0 presents the anatomy sequence and isolates its presentation state
 
   await expect(panel).toBeVisible();
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "view-camera-anatomy");
-  await expect(page.getByTestId("ground-glass-scene")).toHaveCount(0);
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 120_000 });
   await expect(lessonHeading).toHaveText("The complete camera");
   await expect(panel.getByRole("button", { name: "Previous", exact: true })).toBeDisabled();
@@ -134,5 +133,4 @@ test("Lesson 0 presents the anatomy sequence and isolates its presentation state
     "data-rtt-scene-id",
     "view-camera-anatomy",
   );
-  await expect(page.getByTestId("ground-glass-scene")).toHaveCount(0);
 });

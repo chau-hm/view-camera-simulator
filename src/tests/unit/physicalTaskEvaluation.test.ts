@@ -215,6 +215,48 @@ describe("physical guided-task focus evaluation", () => {
         minimumSharpness: 0.8,
       },
       {
+        taskId: "oblique-tabletop-focus-01",
+        criterionId: "oblique-tabletop-focus-middle-sharp",
+        targetIds: ["middle"],
+        minimumSharpness: 0.8,
+      },
+      {
+        taskId: "oblique-tabletop-tilt-01",
+        criterionId: "oblique-tabletop-tilt-near-sharp",
+        targetIds: ["near-centre"],
+        minimumSharpness: 0.8,
+      },
+      {
+        taskId: "oblique-tabletop-tilt-01",
+        criterionId: "oblique-tabletop-tilt-middle-sharp",
+        targetIds: ["middle"],
+        minimumSharpness: 0.8,
+      },
+      {
+        taskId: "oblique-tabletop-tilt-01",
+        criterionId: "oblique-tabletop-tilt-far-sharp",
+        targetIds: ["far-centre"],
+        minimumSharpness: 0.8,
+      },
+      {
+        taskId: "oblique-tabletop-swing-01",
+        criterionId: "oblique-tabletop-swing-lateral-sharp",
+        targetIds: ["far-left", "far-right"],
+        minimumSharpness: 0.8,
+      },
+      {
+        taskId: "oblique-tabletop-refine-01",
+        criterionId: "oblique-tabletop-refine-all-targets-sharp",
+        targetIds: ["near-left", "near-centre", "near-right", "middle", "far-left", "far-centre", "far-right"],
+        minimumSharpness: 0.8,
+      },
+      {
+        taskId: "oblique-tabletop-aperture-01",
+        criterionId: "oblique-tabletop-aperture-all-targets-sharp",
+        targetIds: ["near-left", "near-centre", "near-right", "middle", "far-left", "far-centre", "far-right"],
+        minimumSharpness: 0.8,
+      },
+      {
         taskId: "tilt-01",
         criterionId: "tilt-near-sharp",
         targetIds: ["near-cup"],

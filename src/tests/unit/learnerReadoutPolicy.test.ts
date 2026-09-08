@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveLearnerReadoutPolicy } from "../../components/simulator/learnerReadoutPolicy";
 
 describe("learner readout policy", () => {
-  it("maps the six public scenes to their current presentation variants", () => {
+  it("maps public scenes to their current presentation variants", () => {
     expect(resolveLearnerReadoutPolicy("understanding-camera-movements", { hasFocusTargets: false })).toEqual({
       showFocusTargets: false,
       settingsVariant: "movement",
@@ -20,6 +20,10 @@ describe("learner readout policy", () => {
       settingsVariant: "standard",
     });
     expect(resolveLearnerReadoutPolicy("shelf-swing", { hasFocusTargets: true })).toEqual({
+      showFocusTargets: true,
+      settingsVariant: "standard",
+    });
+    expect(resolveLearnerReadoutPolicy("oblique-tabletop", { hasFocusTargets: true })).toEqual({
       showFocusTargets: true,
       settingsVariant: "standard",
     });

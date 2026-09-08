@@ -7,6 +7,7 @@ import {
   type PublicSceneTitleKey,
   type PublicSceneTopicKey,
 } from "../i18n/messageKeys";
+import { INTERIOR_CORNER_GUIDED_TASK_IDS } from "../scenes/interiorCornerGuidedLesson";
 
 export const publicSceneIds = [
   "view-camera-anatomy",
@@ -15,14 +16,21 @@ export const publicSceneIds = [
   "architecture-rise",
   "table-tilt",
   "shelf-swing",
+  "oblique-tabletop",
   "mirror-shift",
   "oblique-architecture",
   "architecture-foreground",
+  "interior-corner",
 ] as const;
 export type PublicSceneId = (typeof publicSceneIds)[number];
 export type SceneAvailability = "available" | "in-development";
 
 export type PublicGuidedLessonTaskStageId =
+  | "focus"
+  | "tilt"
+  | "swing"
+  | "refine"
+  | "aperture"
   | "compose"
   | "align-focus"
   | "depth-of-field"
@@ -69,7 +77,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free"],
-    thumbnailAsset: "assets/scene-view-camera-anatomy.png",
+    thumbnailAsset: "assets/scene-view-camera-anatomy.webp",
     lesson: {
       kind: "anatomy",
       id: "view-camera-anatomy",
@@ -87,7 +95,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free"],
-    thumbnailAsset: "assets/understanding-camera-movements.png",
+    thumbnailAsset: "assets/understanding-camera-movements.webp",
   },
   {
     id: "focus-fundamentals-two-targets",
@@ -100,7 +108,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free"],
-    thumbnailAsset: "assets/two-targets-illustration.png",
+    thumbnailAsset: "assets/two-targets-illustration.webp",
   },
   {
     id: "architecture-rise",
@@ -113,7 +121,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/architecture-rise.png",
+    thumbnailAsset: "assets/architecture-rise.webp",
     guidedTaskId: "rise-01",
   },
   {
@@ -127,7 +135,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/table-tilt.png",
+    thumbnailAsset: "assets/table-tilt.webp",
     guidedTaskId: "tilt-01",
   },
   {
@@ -141,8 +149,34 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/shelf-swing.png",
+    thumbnailAsset: "assets/shelf-swing.webp",
     guidedTaskId: "swing-01",
+  },
+  {
+    id: "oblique-tabletop",
+    titleKey: publicSceneMessageKeys.obliqueTabletop.title,
+    descriptionKey: publicSceneMessageKeys.obliqueTabletop.description,
+    topicKeys: [
+      publicSceneMessageKeys.obliqueTabletop.topics.obliquePlane,
+      publicSceneMessageKeys.obliqueTabletop.topics.depthVariation,
+      publicSceneMessageKeys.obliqueTabletop.topics.focusDistance,
+    ],
+    availability: "available",
+    availableModes: ["free", "guided"],
+    thumbnailAsset: "assets/oblique-tabletop.webp",
+    guidedTaskId: "oblique-tabletop-aperture-01",
+    guidedTaskIds: [
+      "oblique-tabletop-focus-01",
+      "oblique-tabletop-tilt-01",
+      "oblique-tabletop-swing-01",
+      "oblique-tabletop-refine-01",
+      "oblique-tabletop-aperture-01",
+    ],
+    guidedLesson: {
+      id: "oblique-tabletop",
+      includeObserveStage: true,
+      taskStageIds: ["focus", "tilt", "swing", "refine", "aperture"],
+    },
   },
   {
     id: "mirror-shift",
@@ -156,7 +190,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/mirror-shift.png",
+    thumbnailAsset: "assets/mirror-shift.webp",
     guidedTaskId: "mirror-shift-01",
   },
   {
@@ -170,7 +204,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/oblique-architecture.png",
+    thumbnailAsset: "assets/oblique-architecture.webp",
     guidedTaskId: "oblique-compound-01",
     guidedTaskIds: ["oblique-rise-01", "oblique-swing-focus-01", "oblique-compound-01"],
     guidedLesson: {
@@ -190,7 +224,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/architecture-foreground.png",
+    thumbnailAsset: "assets/architecture-foreground.webp",
     guidedTaskId: "architecture-foreground-compound-01",
     guidedTaskIds: [
       "architecture-foreground-rise-01",
@@ -202,6 +236,31 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       id: "architecture-foreground",
       includeObserveStage: true,
       taskStageIds: ["compose", "align-focus", "depth-of-field", "final-challenge"],
+    },
+  },
+  {
+    id: "interior-corner",
+    titleKey: publicSceneMessageKeys.interiorCorner.title,
+    descriptionKey: publicSceneMessageKeys.interiorCorner.description,
+    topicKeys: [
+      publicSceneMessageKeys.interiorCorner.topics.frontRise,
+      publicSceneMessageKeys.interiorCorner.topics.frontSwing,
+      publicSceneMessageKeys.interiorCorner.topics.architecturalDepth,
+    ],
+    availability: "available",
+    availableModes: ["free", "guided"],
+    thumbnailAsset: "assets/interior-corner.webp",
+    guidedTaskId: INTERIOR_CORNER_GUIDED_TASK_IDS.aperture,
+    guidedTaskIds: [
+      INTERIOR_CORNER_GUIDED_TASK_IDS.compose,
+      INTERIOR_CORNER_GUIDED_TASK_IDS.swing,
+      INTERIOR_CORNER_GUIDED_TASK_IDS.refine,
+      INTERIOR_CORNER_GUIDED_TASK_IDS.aperture,
+    ],
+    guidedLesson: {
+      id: "interior-corner",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "swing", "refine", "aperture"],
     },
   },
 ];

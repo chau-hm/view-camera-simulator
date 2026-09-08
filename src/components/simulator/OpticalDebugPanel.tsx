@@ -7,6 +7,7 @@ import {
 } from "../../scenes/architectureRiseGeometry";
 import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur";
 import type { GroundGlassWorldBlurSample } from "../../render/groundGlassBlur";
+import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 import type {
   GroundGlassRttChannel,
@@ -127,6 +128,7 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
 
   const refDiagnostics = React.useMemo(() => {
     if (sceneId !== "architecture-rise") return null;
+    const visualSettings = getGroundGlassDofVisualSettings(sceneId);
     return referenceObjects.map((obj: ReferenceObjectDef) => {
       const probe = getArchitectureReferenceObjectProbePoint(obj);
       const sample = sampleGroundGlassBlurAtWorldPoint({
@@ -137,7 +139,7 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
         circleOfConfusionMm: ACCEPTABLE_COC_DIAMETER_MM,
         filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
         renderWidthPx: internalWidth,
-        maximumBlurRadiusPx: 60,
+        maximumBlurRadiusPx: visualSettings.maximumBlurRadiusPx,
       });
       const logicalBlurRadiusPx = sample.blurRadiusPx * (logicalWidth / Math.max(1, internalWidth));
       return { id: obj.id, role: obj.role, probe, sample, logicalBlurRadiusPx };

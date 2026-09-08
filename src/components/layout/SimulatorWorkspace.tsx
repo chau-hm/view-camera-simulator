@@ -53,6 +53,8 @@ import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postp
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
+import { evaluateInteriorCornerRiseComposition } from "../../scenes/interiorCornerRiseComposition";
+import { evaluateInteriorCornerSwingFocus } from "../../scenes/interiorCornerSwingFocus";
 import type {
   GroundGlassRttRuntimeInfoByChannel,
   GroundGlassRttRuntimeInfoChangeHandler,
@@ -175,7 +177,7 @@ export const SimulatorWorkspace = ({
       // that require a fresh entry. Other free scenes intentionally preserve
       // their in-memory state on leave-and-return.
       if (
-        guidedLessonEnabled ||
+        (guidedLessonEnabled && sceneId !== "interior-corner") ||
         anatomyLessonEnabled ||
         (sceneId === "understanding-camera-movements" &&
           mode === "free" &&
@@ -282,6 +284,10 @@ export const SimulatorWorkspace = ({
         : null,
     [guidedLessonEnabled, mode, publicSceneEntry, sceneId, taskId],
   );
+  const interiorCornerGuidedObserve =
+    guidedLessonContext?.lessonId === "interior-corner" &&
+    guidedLessonContext.stage === "observe";
+  const interiorCornerGuidedLesson = guidedLessonContext?.lessonId === "interior-corner";
   const activeSingleMovement =
     safeScene.movementCapabilities?.selectionMode === "single"
       ? selectedMovement
@@ -366,7 +372,9 @@ export const SimulatorWorkspace = ({
   const controlPolicy = safeScene.cameraControlPolicy ?? {};
   const movementLocked = controlPolicy.movement === "fixed";
   const focusLocked = controlPolicy.focusDistance === "fixed";
-  const apertureLocked = controlPolicy.aperture === "fixed";
+  const taskCanChangeAperture =
+    mode === "guided" && task?.enabledControls.includes("aperture") === true;
+  const apertureLocked = controlPolicy.aperture === "fixed" && !taskCanChangeAperture;
   const infinityResetHidden = controlPolicy.infinityReset === false;
   const [rawRttDebug, setRawRttDebug] = useState(false);
   const showPublicTeachingControls =
@@ -380,6 +388,10 @@ export const SimulatorWorkspace = ({
     const focusFundamentals = camera.activeSceneId === "focus-fundamentals-two-targets";
     if (focusFundamentals) {
       return new Set(["focusDistance", "aperture", "geometryView", "grid"]);
+    }
+
+    if (interiorCornerGuidedObserve) {
+      return new Set(["geometryView", "grid"]);
     }
 
     if (mode === "free" || !task) {
@@ -402,9 +414,31 @@ export const SimulatorWorkspace = ({
       return controls;
     }
     return new Set([...task.enabledControls]);
-  }, [apertureLocked, camera.activeSceneId, focusLocked, mode, safeScene, task]);
+  }, [
+    apertureLocked,
+    camera.activeSceneId,
+    focusLocked,
+    interiorCornerGuidedObserve,
+    mode,
+    safeScene,
+    task,
+  ]);
 
   const evaluation = useMemo(() => (task ? evaluateTask(task, safeScene, camera, opticsState) : null), [camera, opticsState, safeScene, task]);
+  const interiorCornerRiseEvaluation = useMemo(
+    () =>
+      mode === "free" && task === null && safeScene.id === "interior-corner"
+        ? evaluateInteriorCornerRiseComposition(opticsState)
+        : null,
+    [mode, opticsState, safeScene.id, task],
+  );
+  const interiorCornerFocusEvaluation = useMemo(
+    () =>
+      mode === "free" && task === null && safeScene.id === "interior-corner"
+        ? evaluateInteriorCornerSwingFocus(opticsState, camera.aperture)
+        : null,
+    [camera.aperture, mode, opticsState, safeScene.id, task],
+  );
   useEffect(() => {
     setCurrentTaskEvaluation(evaluation);
   }, [evaluation, setCurrentTaskEvaluation]);
@@ -691,7 +725,15 @@ export const SimulatorWorkspace = ({
             </div>
             <div className="simulator-info-card simulator-info-card--feedback">
               <h4>{t(simulatorMessageKeys.feedback.title)}</h4>
-              <FeedbackPanel mode={mode} sceneId={safeScene.id} task={task} evaluation={evaluation} showTitle={false} />
+              <FeedbackPanel
+                mode={mode}
+                sceneId={safeScene.id}
+                task={task}
+                evaluation={evaluation}
+                freeCompositionEvaluation={interiorCornerRiseEvaluation}
+                freeFocusEvaluation={interiorCornerFocusEvaluation}
+                showTitle={false}
+              />
             </div>
             </div>
 
@@ -785,12 +827,19 @@ export const SimulatorWorkspace = ({
                 <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? t(simulatorMessageKeys.controls.apertureFixedReason) : lockReason} showTitle={false} />
               </div>
 
-              {(!movementLocked || task !== null || safeScene.cameraRigTranslationCapability?.enabled) && (
+              {(interiorCornerGuidedLesson
+                ? task !== null
+                : !movementLocked || task !== null || safeScene.cameraRigTranslationCapability?.enabled) && (
                 <div className="sim-section reset" style={{ paddingBottom: 0 }}>
                   <div className="sim-section-label">{t(simulatorMessageKeys.controls.resetTitle)}</div>
                   <ResetControls
                     showTitle={false}
-                    showMovementReset={!movementLocked || safeScene.cameraRigTranslationCapability?.enabled === true}
+                    showMovementReset={!interiorCornerGuidedLesson && (!movementLocked || safeScene.cameraRigTranslationCapability?.enabled === true)}
+                    restartHref={
+                      guidedLessonContext?.lessonId === "interior-corner"
+                        ? `/simulator/free/${sceneId}?lesson=1`
+                        : undefined
+                    }
                   />
                 </div>
               )}

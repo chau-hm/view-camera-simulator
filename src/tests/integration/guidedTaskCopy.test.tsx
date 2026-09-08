@@ -12,7 +12,7 @@ import { LOCALE_STORAGE_KEY } from "../../i18n/localePreference";
 import { guidedTaskMessageKeys } from "../../i18n/guidedTaskMessageKeys";
 import type { TaskDefinition, TaskEvaluation } from "../../types/task";
 
-const guidedTaskIds = ["rise-01", "oblique-rise-01", "architecture-foreground-rise-01", "architecture-foreground-tilt-focus-01", "architecture-foreground-dof-01", "architecture-foreground-compound-01", "oblique-swing-focus-01", "oblique-compound-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
+const guidedTaskIds = ["rise-01", "oblique-rise-01", "architecture-foreground-rise-01", "architecture-foreground-tilt-focus-01", "architecture-foreground-dof-01", "architecture-foreground-compound-01", "oblique-swing-focus-01", "oblique-compound-01", "oblique-tabletop-focus-01", "oblique-tabletop-tilt-01", "oblique-tabletop-swing-01", "oblique-tabletop-refine-01", "oblique-tabletop-aperture-01", "interior-corner-compose-01", "interior-corner-swing-01", "interior-corner-refine-01", "interior-corner-aperture-01", "tilt-01", "swing-01", "mirror-shift-01"] as const;
 
 const resetLocale = async () => {
   cleanup();

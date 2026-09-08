@@ -10,9 +10,11 @@ const publicSceneIds = [
   "focus-fundamentals-two-targets",
   "architecture-rise",
   "architecture-foreground",
+  "interior-corner",
   "oblique-architecture",
   "table-tilt",
   "shelf-swing",
+  "oblique-tabletop",
   "mirror-shift",
 ] as const;
 

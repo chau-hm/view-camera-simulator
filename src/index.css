@@ -1182,3 +1182,749 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   }
   .geometry-construction-continuation span:last-child { transform: rotate(90deg); }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Simulator visual skin                                                     */
+/*                                                                            */
+/* The simulator deliberately keeps its own compact token layer. Marketing   */
+/* surfaces continue to use the global tokens and their scoped stylesheet.   */
+/* Layout, canvas sizing, and the existing independent scroll regions stay   */
+/* unchanged; this block only supplies the instrument-panel presentation.    */
+/* -------------------------------------------------------------------------- */
+.simulator-shell {
+  --sim-bg: #06111d;
+  --sim-surface: #0d1b2b;
+  --sim-surface-raised: #12283b;
+  --sim-surface-muted: #0a1624;
+  --sim-surface-inset: #08131f;
+  --sim-border: rgba(176, 224, 241, 0.2);
+  --sim-border-strong: rgba(143, 234, 255, 0.42);
+  --sim-border-subtle: rgba(176, 224, 241, 0.12);
+  --sim-text: #f2f7f6;
+  --sim-text-muted: #a9bac7;
+  --sim-text-subtle: #7f95a7;
+  --sim-accent: #8feaff;
+  --sim-accent-strong: #35c8ed;
+  --sim-accent-soft: rgba(101, 224, 255, 0.13);
+  --sim-accent-border: rgba(143, 234, 255, 0.36);
+  --sim-success: #7fe2a6;
+  --sim-warning: #f2ca78;
+  --sim-danger: #ff9aaa;
+  --sim-radius-panel: 10px;
+  --sim-radius-control: 6px;
+  --sim-control-height: 32px;
+  --text: var(--sim-text);
+  --text-muted: var(--sim-text-muted);
+  color-scheme: dark;
+  background: var(--sim-bg);
+  color: var(--sim-text);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+.simulator-shell ::selection {
+  color: #03101a;
+  background: var(--sim-accent);
+}
+
+.simulator-shell .simulator-body {
+  background: var(--sim-bg);
+}
+
+.simulator-shell .simulator-main {
+  color: var(--sim-text);
+  scrollbar-color: rgba(143, 234, 255, 0.32) transparent;
+  scrollbar-width: thin;
+}
+
+.simulator-shell .simulator-aside {
+  background: var(--sim-surface);
+  border: 1px solid var(--sim-border);
+  border-radius: var(--sim-radius-panel);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+  color: var(--sim-text);
+  scrollbar-color: rgba(143, 234, 255, 0.32) transparent;
+  scrollbar-width: thin;
+}
+
+.simulator-shell .simulator-main::-webkit-scrollbar,
+.simulator-shell .simulator-aside::-webkit-scrollbar {
+  width: 8px;
+}
+
+.simulator-shell .simulator-main::-webkit-scrollbar-track,
+.simulator-shell .simulator-aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.simulator-shell .simulator-main::-webkit-scrollbar-thumb,
+.simulator-shell .simulator-aside::-webkit-scrollbar-thumb {
+  background: rgba(143, 234, 255, 0.28);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.simulator-shell .simulator-header {
+  background: #091827;
+  border-bottom: 1px solid var(--sim-border);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.2);
+}
+
+.simulator-shell .app-brand__link {
+  color: var(--sim-text);
+}
+
+.simulator-shell .app-brand__link:focus-visible,
+.simulator-shell .sim-header-actions a:focus-visible,
+.simulator-shell .sim-header-actions button:focus-visible,
+.simulator-shell summary:focus-visible,
+.simulator-shell a:focus-visible,
+.simulator-shell button:focus-visible,
+.simulator-shell input:focus-visible,
+.simulator-shell select:focus-visible {
+  outline: 2px solid var(--sim-accent);
+  outline-offset: 2px;
+}
+
+.simulator-shell .language-selector {
+  color: var(--sim-text-muted);
+  font-size: 12px;
+}
+
+.simulator-shell .language-selector select {
+  min-height: var(--sim-control-height);
+  padding: 5px 28px 5px 8px;
+  border: 1px solid var(--sim-border);
+  border-radius: var(--sim-radius-control);
+  background: var(--sim-surface-inset);
+  color: var(--sim-text);
+}
+
+.simulator-shell .simulator-card,
+.simulator-shell .simulator-info-card {
+  background: var(--sim-surface);
+  border: 1px solid var(--sim-border);
+  border-radius: var(--sim-radius-panel);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+  color: var(--sim-text);
+}
+
+.simulator-shell .simulator-card-header {
+  border-bottom: 1px solid var(--sim-border-subtle);
+  padding-bottom: 10px;
+}
+
+.simulator-shell .simulator-card-title {
+  color: var(--sim-text);
+  font-size: 18px;
+  letter-spacing: 0.01em;
+}
+
+.simulator-shell .panel-icon {
+  background: var(--sim-accent-soft);
+  border: 1px solid var(--sim-accent-border);
+  color: var(--sim-accent);
+}
+
+.simulator-shell .panel-icon--muted {
+  background: rgba(169, 186, 199, 0.1);
+  border-color: var(--sim-border);
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .scene-viewport-host,
+.simulator-shell .groundglass-viewport-frame,
+.simulator-shell .geometry-diagram-container {
+  background: var(--sim-surface-inset);
+  border: 1px solid var(--sim-border);
+  border-radius: var(--sim-radius-panel);
+}
+
+/* SceneRenderer owns this wrapper's inline border. Keep the override at the
+   viewport boundary so renderer/canvas geometry and lifecycle remain intact. */
+.simulator-shell .scene-viewport-host > div[style*="border"] {
+  border-color: var(--sim-border-strong) !important;
+  border-radius: var(--sim-radius-panel) !important;
+}
+
+.simulator-shell .scene-viewport-host > canvas,
+.simulator-shell .groundglass-renderer-host canvas {
+  display: block;
+}
+
+.simulator-shell .scene-toolbar,
+.simulator-shell .scene-panel__controls,
+.simulator-shell .groundglass-controls {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .scene-toolbar__quality,
+.simulator-shell .scene-view-focus legend,
+.simulator-shell .groundglass-comparison__heading,
+.simulator-shell .groundglass-comparison__title {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .scene-construction-note,
+.simulator-shell .groundglass-comparison__intro,
+.simulator-shell .groundglass-comparison__label {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .scene-overlay-controls {
+  background: rgba(9, 24, 39, 0.94);
+  border: 1px solid var(--sim-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+}
+
+.simulator-shell .scene-overlay-controls--collapsed {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.simulator-shell .scene-overlay-menu__trigger,
+.simulator-shell .scene-overlay-menu__panel {
+  background: rgba(9, 24, 39, 0.97);
+  border-color: var(--sim-border);
+  color: var(--sim-text);
+}
+
+.simulator-shell .scene-overlay-menu__panel {
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.36);
+}
+
+.simulator-shell .groundglass-control-group {
+  border-bottom: 1px solid var(--sim-border-subtle);
+  padding-bottom: 10px;
+}
+
+.simulator-shell .groundglass-control-group:last-child {
+  border-bottom: 0;
+}
+
+.simulator-shell .geometry-viewport {
+  color: var(--sim-text);
+}
+
+.simulator-shell .geometry-viewport__depth-caption {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .geometry-viewport__header {
+  border-bottom: 1px solid var(--sim-border-subtle);
+  padding-bottom: 10px;
+}
+
+.simulator-shell .geometry-viewport__header h2 {
+  color: var(--sim-text);
+  font-size: 18px;
+}
+
+.simulator-shell .geometry-viewport__framing-controls {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .geometry-construction-region {
+  background: var(--sim-surface-raised);
+  border-color: var(--sim-border);
+}
+
+.simulator-shell .geometry-construction-region h3 {
+  color: var(--sim-text);
+}
+
+.simulator-shell .geometry-construction-continuation,
+.simulator-shell .mirror-shift-teaching-diagram__legend {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .mirror-shift-teaching-diagram svg {
+  border-color: var(--sim-border-strong);
+}
+
+.simulator-shell .simulator-info-card h4,
+.simulator-shell .sim-section-label {
+  color: var(--sim-text-subtle);
+}
+
+.simulator-shell .sim-section-label {
+  font-size: 12px;
+}
+
+.simulator-shell .current-settings-groups {
+  color: var(--sim-text);
+}
+
+.simulator-shell .current-settings-group {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--sim-border-subtle);
+}
+
+.simulator-shell .current-settings-group:last-child {
+  border-bottom: 0;
+}
+
+.simulator-shell .current-settings-group dt {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .current-settings-row {
+  color: var(--sim-text);
+}
+
+.simulator-shell .focus-target-row {
+  background: var(--sim-surface-inset);
+  border: 1px solid var(--sim-border-subtle);
+}
+
+.simulator-shell .focus-target-row__name,
+.simulator-shell .focus-target-row__value {
+  color: var(--sim-text);
+}
+
+.simulator-shell .focus-target-progress {
+  background: rgba(3, 12, 22, 0.85);
+  border: 1px solid var(--sim-border-subtle);
+}
+
+.simulator-shell .focus-target-progress__fill {
+  background: var(--sim-accent-strong);
+}
+
+.simulator-shell .focus-target-row--sharp {
+  border-left-color: var(--sim-success);
+}
+
+.simulator-shell .focus-target-row--acceptable {
+  border-left-color: var(--sim-warning);
+}
+
+.simulator-shell .focus-target-row--soft {
+  border-left-color: var(--sim-danger);
+}
+
+.simulator-shell .focus-target-row__meta,
+.simulator-shell .control-help,
+.simulator-shell .camera-movement-controls__copy,
+.simulator-shell .camera-movement-controls__range-labels,
+.simulator-shell .anatomy-lesson-panel__progress,
+.simulator-shell .anatomy-lesson-panel__cue,
+.simulator-shell .guided-lesson-progress__header > span,
+.simulator-shell .guided-lesson-progress__completion,
+.simulator-shell .guided-lesson-progress__completion-body {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .camera-movement-controls__range-labels,
+.simulator-shell .camera-movement-controls__standard legend {
+  font-size: 12px;
+}
+
+.simulator-shell .camera-movement-controls__range-labels span:nth-child(2) {
+  color: var(--sim-text) !important;
+}
+
+.simulator-shell .task-panel,
+.simulator-shell .feedback-panel {
+  color: var(--sim-text);
+}
+
+.simulator-shell .simulator-info-card--task,
+.simulator-shell .simulator-info-card--feedback {
+  background: var(--sim-surface);
+}
+
+.simulator-shell .task-status--free {
+  background: var(--sim-accent-soft);
+  color: var(--sim-accent);
+}
+
+.simulator-shell .task-status--progress {
+  background: rgba(242, 202, 120, 0.14);
+  color: var(--sim-warning);
+}
+
+.simulator-shell .chip {
+  background: rgba(169, 186, 199, 0.12);
+  border: 1px solid var(--sim-border-subtle);
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .task-panel details,
+.simulator-shell .feedback-panel details,
+.simulator-shell .optical-debug details {
+  border-top: 1px solid var(--sim-border-subtle);
+  padding-top: 10px;
+}
+
+.simulator-shell summary {
+  color: var(--sim-text-muted);
+  cursor: pointer;
+}
+
+.simulator-shell summary:hover {
+  color: var(--sim-text);
+}
+
+.simulator-shell .feedback-panel--progress {
+  border-left-color: var(--sim-warning);
+}
+
+.simulator-shell .feedback-panel--complete {
+  border-left-color: var(--sim-success);
+}
+
+.simulator-shell .feedback-criterion {
+  border: 1px solid var(--sim-border-subtle);
+}
+
+.simulator-shell .feedback-criterion--passed {
+  background: rgba(127, 226, 166, 0.1);
+  border-color: rgba(127, 226, 166, 0.28);
+}
+
+.simulator-shell .feedback-criterion--failed {
+  background: rgba(242, 202, 120, 0.1);
+  border-color: rgba(242, 202, 120, 0.28);
+}
+
+.simulator-shell .feedback-panel [role="progressbar"] > div {
+  background: var(--sim-accent-strong) !important;
+}
+
+.simulator-shell .guided-lesson-progress__stage-index {
+  background: rgba(169, 186, 199, 0.12);
+  border: 1px solid var(--sim-border-subtle);
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .guided-lesson-progress__stages li[aria-current="step"] {
+  color: var(--sim-text);
+}
+
+.simulator-shell .guided-lesson-progress__stages li[aria-current="step"] .guided-lesson-progress__stage-index {
+  background: var(--sim-accent);
+  border-color: var(--sim-accent);
+  color: #03101a;
+  box-shadow: 0 0 12px rgba(143, 234, 255, 0.24);
+}
+
+.simulator-shell .guided-lesson-progress__stages li[data-stage-status="previous"] .guided-lesson-progress__stage-index {
+  background: rgba(127, 226, 166, 0.16);
+  border-color: rgba(127, 226, 166, 0.38);
+  color: var(--sim-success);
+}
+
+.simulator-shell .guided-lesson-progress__observe {
+  border-left-color: var(--sim-accent-strong);
+}
+
+.simulator-shell .guided-lesson-progress__completion--complete,
+.simulator-shell .anatomy-lesson-panel__complete,
+.simulator-shell .anatomy-control-teaching__status--complete {
+  color: var(--sim-success);
+}
+
+.simulator-shell .anatomy-control-teaching {
+  background: var(--sim-surface-inset);
+  border-color: var(--sim-border);
+  border-left-color: var(--sim-accent-strong);
+}
+
+.simulator-shell .anatomy-control-teaching__prompt {
+  color: var(--sim-accent);
+}
+
+.simulator-shell .anatomy-control-teaching__status {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .anatomy-lesson-panel__footer {
+  border-top-color: var(--sim-border-subtle);
+}
+
+.simulator-shell .optical-debug {
+  background: var(--sim-surface-muted);
+  border-color: var(--sim-border-subtle);
+  box-shadow: none;
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .optical-debug__summary {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .optical-debug__summary-meta,
+.simulator-shell .optical-debug__layer h3,
+.simulator-shell .optical-debug__layer > p {
+  color: var(--sim-text-subtle);
+}
+
+.simulator-shell .optical-debug__content,
+.simulator-shell .optical-debug__group-content {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .camera-calibration-workbench {
+  background: var(--sim-surface-muted);
+  border-color: var(--sim-border);
+  color: var(--sim-text);
+}
+
+.simulator-shell .camera-calibration-workbench p,
+.simulator-shell .camera-calibration-workbench__field,
+.simulator-shell .camera-calibration-workbench__status {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .camera-calibration-workbench fieldset {
+  border-color: var(--sim-border-subtle);
+}
+
+.simulator-shell .camera-calibration-workbench__field input,
+.simulator-shell .camera-calibration-workbench__field select {
+  background: var(--sim-surface-inset);
+  border-color: var(--sim-border);
+  color: var(--sim-text);
+}
+
+.simulator-shell .camera-calibration-workbench__diagnostics {
+  border-color: var(--sim-border-subtle);
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .camera-calibration-workbench__diagnostics th,
+.simulator-shell .camera-calibration-workbench__diagnostics td {
+  border-color: var(--sim-border-subtle);
+}
+
+.simulator-shell .camera-calibration-workbench__diagnostics th {
+  color: var(--sim-text);
+}
+
+.simulator-shell .developer-tools {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell [style*="color: var(--text-muted)"],
+.simulator-shell .developer-tools [style*="color"],
+.simulator-shell .feedback-panel [style*="rgba(0,0,0"] {
+  color: var(--sim-text-muted) !important;
+}
+
+.simulator-shell [aria-label="FocusFundamentalsDebugPanel"] {
+  border-top-color: var(--sim-border-subtle) !important;
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell [aria-label="FocusFundamentalsDebugPanel"] [style*="#e5e7eb"] {
+  color: var(--sim-text-muted) !important;
+}
+
+.simulator-shell .sim-section {
+  border-bottom-color: var(--sim-border-subtle);
+}
+
+.simulator-shell .simulator-aside .aside-header h3 {
+  color: var(--sim-text);
+  font-size: 16px;
+}
+
+.simulator-shell .control-label,
+.simulator-shell .choice-label,
+.simulator-shell .choice-item,
+.simulator-shell .camera-movement-controls__heading,
+.simulator-shell .camera-movement-controls__status,
+.simulator-shell .control-group-title {
+  color: var(--sim-text);
+}
+
+.simulator-shell .choice-item,
+.simulator-shell .choice-label {
+  border-radius: var(--sim-radius-control);
+}
+
+.simulator-shell .choice-item:hover,
+.simulator-shell .choice-label:hover {
+  color: var(--sim-accent);
+}
+
+.simulator-shell .value-box,
+.simulator-shell .form-select,
+.simulator-shell .form-input,
+.simulator-shell input[type="text"],
+.simulator-shell input[type="number"],
+.simulator-shell select {
+  background: var(--sim-surface-inset);
+  border: 1px solid var(--sim-border);
+  border-radius: var(--sim-radius-control);
+  color: var(--sim-text);
+}
+
+.simulator-shell .value-box {
+  border-color: var(--sim-border);
+}
+
+.simulator-shell select option {
+  background: var(--sim-surface);
+  color: var(--sim-text);
+}
+
+.simulator-shell input::placeholder {
+  color: var(--sim-text-subtle);
+}
+
+.simulator-shell input[type="checkbox"],
+.simulator-shell input[type="radio"] {
+  accent-color: var(--sim-accent-strong);
+}
+
+.simulator-shell input[type="range"] {
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  accent-color: var(--sim-accent-strong);
+}
+
+.simulator-shell input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(169, 186, 199, 0.26);
+}
+
+.simulator-shell input[type="range"]::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  appearance: none;
+  border: 2px solid var(--sim-accent);
+  border-radius: 50%;
+  background: var(--sim-surface);
+  box-shadow: 0 0 0 2px rgba(143, 234, 255, 0.1);
+}
+
+.simulator-shell input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(169, 186, 199, 0.26);
+}
+
+.simulator-shell input[type="range"]::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--sim-accent-strong);
+}
+
+.simulator-shell input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--sim-accent);
+  border-radius: 50%;
+  background: var(--sim-surface);
+  box-shadow: 0 0 0 2px rgba(143, 234, 255, 0.1);
+}
+
+.simulator-shell input[type="range"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.simulator-shell input[type="range"]:disabled::-webkit-slider-thumb,
+.simulator-shell input[type="range"]:disabled::-moz-range-thumb {
+  border-color: var(--sim-text-subtle);
+  box-shadow: none;
+}
+
+.simulator-shell .btn {
+  min-height: var(--sim-control-height);
+  border: 1px solid var(--sim-border);
+  border-radius: var(--sim-radius-control);
+  background: var(--sim-surface-raised);
+  color: var(--sim-text);
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.simulator-shell .btn:hover:not(:disabled) {
+  border-color: var(--sim-border-strong);
+  background: #18344b;
+}
+
+.simulator-shell .btn:focus-visible {
+  border-color: var(--sim-border-strong);
+}
+
+.simulator-shell .btn--primary,
+.simulator-shell .scene-view-focus__options .btn[aria-pressed="true"] {
+  border-color: var(--sim-accent);
+  background: var(--sim-accent);
+  color: #03101a;
+  box-shadow: 0 0 14px rgba(143, 234, 255, 0.14);
+}
+
+.simulator-shell .btn--primary:hover:not(:disabled),
+.simulator-shell .scene-view-focus__options .btn[aria-pressed="true"]:hover {
+  border-color: #b5f2ff;
+  background: #b5f2ff;
+}
+
+.simulator-shell :is(.btn--secondary) {
+  border-color: var(--sim-border);
+  background: var(--sim-surface-raised);
+  color: var(--sim-text);
+}
+
+.simulator-shell .btn--ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .btn--ghost:hover:not(:disabled) {
+  border-color: var(--sim-border-subtle);
+  background: var(--sim-accent-soft);
+  color: var(--sim-accent);
+}
+
+.simulator-shell .btn--danger,
+.simulator-shell .sim-section.reset .btn {
+  border-color: rgba(255, 154, 170, 0.56);
+  background: rgba(255, 154, 170, 0.08);
+  color: var(--sim-danger);
+}
+
+.simulator-shell .btn--danger:hover:not(:disabled),
+.simulator-shell .sim-section.reset .btn:hover:not(:disabled) {
+  border-color: var(--sim-danger);
+  background: rgba(255, 154, 170, 0.16);
+}
+
+.simulator-shell .btn:disabled,
+.simulator-shell .btn--disabled,
+.simulator-shell input:disabled,
+.simulator-shell select:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.simulator-shell .btn--primary:disabled,
+.simulator-shell .btn--primary.btn--disabled {
+  border-color: var(--sim-border);
+  background: var(--sim-surface-muted);
+  color: var(--sim-text-subtle);
+  box-shadow: none;
+}
+
+.simulator-shell .btn--viewport-action {
+  background: rgba(9, 24, 39, 0.94);
+  border-color: var(--sim-border-strong);
+  color: var(--sim-accent);
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.34);
+}
+
+.simulator-shell .btn--viewport-action:hover:not(:disabled) {
+  background: #18344b;
+}

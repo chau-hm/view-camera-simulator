@@ -1,81 +1,81 @@
 ---
 name: vcs-orchestrate-pr
-description: Coordinate multi-domain or high-risk View Camera Simulator work, decompose it into bounded packets, and control integration without over-orchestrating local fixes.
+description: Coordinate genuinely multi-domain, ambiguous, integration-sensitive, or high-risk View Camera Simulator work when bounded context, ownership, sequencing, or parallelism adds real value.
 ---
 
 # VCS Orchestrate PR
 
 ## Purpose
 
-Coordinate work only when orchestration adds real decision, ownership, or integration value.
+Coordinate work only when coordination adds real decision, context-isolation, ownership, sequencing, or integration value.
 
 This skill is an escalation tool, not the default entry point.
 
-## First decision: should this task be orchestrated?
+## First decision
 
-Before decomposing anything, check whether the task qualifies as a micro edit or focused fix under `AGENTS.md`.
+Determine separately:
 
-Do **not** orchestrate when:
+1. task complexity under `AGENTS.md`;
+2. delivery mode: Local-only or PR delivery.
+
+Do not treat "this will become a PR" as a reason to escalate task complexity.
+
+## Do not orchestrate when
 
 - the requested behaviour is explicit;
-- the root cause is known or locally obvious;
-- one concern can be fixed and proven locally;
-- no shared domain contract changes;
-- no multi-agent coordination is required.
+- the root cause is locally understood;
+- one coherent implementation can solve and prove the issue;
+- delegation would require transferring most of the same context;
+- no shared-contract or ownership decision needs coordination.
 
-If the task can be completed safely as a micro edit, recommend or return the lighter path instead of creating work packets.
-
-Do not create artificial packets merely to use the harness.
+If direct implementation is safer and simpler, return the lighter path.
 
 ## Use this skill when
 
-- multiple domains must change together;
-- ownership is ambiguous after focused inspection;
+- several technical domains must agree;
+- ownership remains ambiguous after focused inspection;
 - integration order matters;
-- parallel work needs non-overlapping file ownership;
-- optics/geometry, renderer, UI/task, and test contracts must be reconciled;
-- a high-risk PR needs explicit merge gates.
+- a worker benefits materially from a smaller context;
+- a fresh independent reasoning pass is valuable;
+- safe parallel work exists;
+- a high-risk PR needs explicit contract decisions.
+
+## Delegation rationale
+
+Use a worker only when at least one is materially useful:
+
+- **context isolation**;
+- **independent reasoning**;
+- **parallelism**.
+
+Do not delegate merely because a specialist exists or because the task is large.
 
 ## Discovery
 
-Inspect only what is needed to classify and bound the work:
+Inspect only what is needed to bound the work:
 
-- current branch and intended base;
-- working-tree status;
-- focused diff or failing surface;
-- relevant architecture and tests;
-- current PR review/CI evidence when applicable.
+- current branch/worktree;
+- intended PR base;
+- working-tree state;
+- focused diff/failing surface;
+- relevant architecture/tests;
+- current PR/CI/review state when applicable.
 
 Do not read the entire repository by default.
 
-## Routing rule
-
-A file path does not automatically imply a specialist.
-
-Invoke a specialist only if the task depends on that specialist's reasoning or invariants.
-
-Examples:
-
-- local copy change in a renderer component → no renderer specialist;
-- changing render-target ownership → `$vcs-threejs-rtt`;
-- established camera constant adjustment → local/focused path;
-- deriving a camera solution from physical geometry → `$vcs-optics-geometry`.
-
 ## Work packets
 
-Create two to four packets only when decomposition is useful.
-
-Each packet must include:
+Create two to four packets only when decomposition helps.
 
 ```text
 WORK PACKET
 
 ID:
 Objective:
-Owner skill:
-Branch and base:
+Owner:
+Branch / intended PR base:
 Known evidence:
-Allowed files or ownership:
+Allowed files / ownership:
 Do not modify:
 Required behaviour:
 Required validation:
@@ -87,74 +87,97 @@ Rules:
 
 - one concern per packet;
 - explicit, non-overlapping ownership where possible;
+- compact context;
 - no complete project history;
-- no full diffs;
-- no speculative extra work;
-- more than four packets usually means the PR should be split.
+- no full diff paste;
+- no speculative extras;
+- workers do not publish branches or create PRs independently.
 
 ## Parallel work
 
 Parallelize only when:
 
-- file ownership does not overlap;
-- dependencies are resolved;
 - shared contracts are already established;
-- integration order is explicit.
+- ownership does not overlap or sequencing is explicit;
+- dependencies are resolved.
 
-Do not parallelize optics and renderer implementation while their shared coordinate/state contract is still unresolved.
+Do not parallelize optics and renderer implementation while their shared coordinate/state contract is unresolved.
+
+## Releasable-main decision
+
+Before deciding PR bases, ask:
+
+> Can each child PR be independently safe in production after merge?
+
+If yes:
+
+```text
+child PRs → main
+```
+
+Keep incomplete functionality dormant/non-public until final activation when needed.
+
+If no:
+
+```text
+child PRs → integration/<feature>
+final integration PR → main
+```
+
+Do not merge non-releasable intermediate states to main.
+
+Do not use selective production cherry-picks as a substitute for correct integration topology.
 
 ## Integration
 
-After implementation:
+After worker handoffs:
 
-- review compact handoffs;
 - reconcile shared assumptions;
 - inspect final focused diff;
-- run validation appropriate to the task level;
-- for Standard or High-risk integrated work, ensure `.agents/status/CURRENT.md` is current before the final implementation handoff; update it at the integration boundary, not for every internal packet;
-- for review-fix rounds, include a compact `Since previous review` mapping of material findings to resulting changes and note material areas intentionally unchanged when useful;
-- use `$vcs-verify-pr` only when a merge verdict or explicit independent review is needed.
+- run validation appropriate to complexity;
+- maintain local ignored `.agents/status/CURRENT.md` for Coordinated/High-risk work when useful;
+- prepare the durable PR implementation handoff.
 
-### PR publication boundary
+## PR-delivery boundary
 
-If the integrated work is being published as a PR, the orchestration boundary
-must apply the repository publishing contract before any PR-creation call:
+For normal PR delivery:
 
-- validate the current non-main feature branch and intended PR head/base;
-- resolve origin and the destination ref explicitly, independent of upstream
-  and push.default;
-- record remote refs/heads/main before publication;
-- publish with HEAD:refs/heads/<same-feature-branch>, never a bare push or a
-  direct-to-main refspec;
-- verify the remote feature ref equals local HEAD and remote main is unchanged
-  before PR creation;
-- stop on missing/mismatched refs, concurrent main movement, or a divergent
-  remote feature branch; never force-push or automatically repair it.
+1. commit integrated work;
+2. resolve intended feature branch and intended PR base explicitly;
+3. publish only with `HEAD:refs/heads/<feature-branch>`;
+4. verify the remote feature ref equals local HEAD;
+5. create or update the PR with explicit head/base;
+6. copy the useful current-work summary into the PR body;
+7. stop for independent review.
 
-Subagents do not publish branches independently. Keep this guard at the
-integrated publication boundary and retain lightweight local work for tasks
-that are not being published as PR branches.
+Do not use upstream or `push.default` to select publication destination.
 
-Do not automatically invoke a reviewer merely because implementation completed.
+If the PR base advanced concurrently, refetch and verify the PR still targets the correct base.
+
+Never use bare push, direct-to-base publication, or force push.
+
+## Internal review
+
+Do not automatically invoke `$vcs-verify-pr` before normal PR publication.
+
+Use it only when explicitly requested, unusually high-risk, or needed because the normal external review path is unavailable.
 
 ## Stop condition
 
-Do not broaden the task beyond the requested behaviour.
+Do not broaden the task beyond the requested outcome.
 
-If a local implementation proves sufficient:
-
-- stop;
-- do not refactor unrelated modules;
-- do not add general infrastructure;
-- do not create extra packets to consume available agents.
+If a direct implementation proves sufficient, stop rather than manufacturing extra workers or packets.
 
 ## Output
 
 Return:
 
-- task level;
-- why orchestration is or is not necessary;
+- complexity level;
+- delivery mode;
+- why orchestration is or is not useful;
 - packet list when used;
+- intended PR base topology;
 - dependencies/integration order;
 - required validation;
+- release-safety decision;
 - known risks.

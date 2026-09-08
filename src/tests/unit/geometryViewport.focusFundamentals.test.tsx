@@ -297,7 +297,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
     expect(getReferenceLensX()).not.toBe(referenceLensAt150);
   });
 
-  it("F: Raw RTT isolation — GroundGlassRenderer uses RTT and not legacy overlay for Focus Fundamentals", () => {
+  it("F: Raw RTT isolation — GroundGlassRenderer uses RTT for Focus Fundamentals", () => {
     const scene = focusFundamentalsTwoTargets;
     const optics = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, ...scene.cameraPreset }, scene);
     const { container } = render(
@@ -317,9 +317,7 @@ describe("GeometryViewport - Focus Fundamentals specific regression", () => {
       />,
     );
 
-    // legacy overlay should not be present
-    expect(container.querySelector('[data-testid="ground-glass-scene"]')).toBeNull();
-    // RTT container should be present
+    // RTT container should be present.
     expect(container.querySelector('[data-testid="ground-glass-rtt"]')).toBeTruthy();
 
     // check debug global value if set (camera far should not be 10000)

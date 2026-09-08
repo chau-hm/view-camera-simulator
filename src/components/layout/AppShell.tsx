@@ -6,11 +6,19 @@ type AppShellProps = {
   globalErrorMessage?: string | null;
   fullBleed?: boolean;
   useSiteShell?: boolean;
+  siteShellClassName?: string;
 };
 
 import { SiteShell } from "./SiteShell";
 
-export const AppShell = ({ title, children, globalErrorMessage = null, fullBleed = false, useSiteShell = false }: AppShellProps) => {
+export const AppShell = ({
+  title,
+  children,
+  globalErrorMessage = null,
+  fullBleed = false,
+  useSiteShell = false,
+  siteShellClassName = "",
+}: AppShellProps) => {
   if (fullBleed) {
     // Simulator and other full-bleed pages render without the site header/footer
     return (
@@ -31,7 +39,7 @@ export const AppShell = ({ title, children, globalErrorMessage = null, fullBleed
   // If caller requests the shared site shell, or no title is provided, render SiteShell.
   if (useSiteShell || !title) {
     return (
-      <SiteShell>
+      <SiteShell className={siteShellClassName}>
         <section aria-live="polite" data-testid="global-error-area" role={globalErrorMessage ? "alert" : "status"}>
           {globalErrorMessage}
         </section>

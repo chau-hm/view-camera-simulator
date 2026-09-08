@@ -35,6 +35,17 @@ const calibrationWorkspace = () => (
   </MemoryRouter>
 );
 
+const obliqueTabletopWorkspace = () => (
+  <MemoryRouter>
+    <SimulatorWorkspace
+      mode="free"
+      sceneId="oblique-tabletop"
+      taskId={null}
+      simulateAssetFailure={false}
+    />
+  </MemoryRouter>
+);
+
 afterEach(() => {
   cleanup();
   useAppStore.getState().resetCamera();
@@ -42,6 +53,24 @@ afterEach(() => {
 });
 
 describe("public camera movement controls in the workspace", () => {
+  it("exposes Front Tilt and Front Swing for Oblique Tabletop while keeping Focus live and f/11 fixed", () => {
+    render(obliqueTabletopWorkspace());
+    const cameraControls = screen.getByRole("region", { name: "Camera Controls" });
+    const tilt = within(cameraControls).getByRole("slider", { name: "Tilt" });
+    const swing = within(cameraControls).getByRole("slider", { name: "Swing" });
+
+    expect(tilt).toBeEnabled();
+    expect(swing).toBeEnabled();
+    expect(within(cameraControls).getByRole("slider", { name: "Rise" })).toBeDisabled();
+    expect(screen.getByRole("slider", { name: "Focus distance" })).toBeEnabled();
+    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+
+    fireEvent.change(tilt, { target: { value: "-9.7" } });
+    expect(useAppStore.getState().camera.frontTiltDeg).toBe(-9.7);
+    fireEvent.change(swing, { target: { value: "-1.7" } });
+    expect(useAppStore.getState().camera.frontSwingDeg).toBe(-1.7);
+  });
+
   it("renders one live Current Ground Glass and no comparison panes on the public route", () => {
     render(publicWorkspace());
     const movementControls = screen.getByRole("region", { name: "Camera Movement" });
@@ -67,7 +96,7 @@ describe("public camera movement controls in the workspace", () => {
     expect(screen.queryByRole("region", { name: "Original and Current Ground Glass comparison" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Original", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Current", level: 3 })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Zoom in Ground Glass preview view" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Focus loupe · 4× Ground Glass preview view" })).toHaveLength(1);
     expect(screen.queryByRole("radiogroup", { name: "Camera movement calibration workbench" })).not.toBeInTheDocument();
     expect(screen.queryByText("Camera Movement Calibration")).not.toBeInTheDocument();
   });
@@ -136,18 +165,18 @@ describe("public camera movement controls in the workspace", () => {
     expect(document.querySelectorAll('[data-rtt-channel="default"]')).toHaveLength(0);
 
     expect(
-      screen.getByRole("button", { name: "Zoom in Original Ground Glass view" }),
+      screen.getByRole("button", { name: "Focus loupe · 4× Original Ground Glass view" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Zoom in Current Ground Glass view" }),
+      screen.getByRole("button", { name: "Focus loupe · 4× Current Ground Glass view" }),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Zoom in Original Ground Glass view" }));
+    fireEvent.click(screen.getByRole("button", { name: "Focus loupe · 4× Original Ground Glass view" }));
     expect(
       screen.getByRole("button", { name: "Reset Original Ground Glass view" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Zoom in Current Ground Glass view" }),
+      screen.getByRole("button", { name: "Focus loupe · 4× Current Ground Glass view" }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Reset Current Ground Glass view" }),
@@ -164,7 +193,7 @@ describe("public camera movement controls in the workspace", () => {
     expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
     expect(screen.getByTestId("ground-glass-rtt")).toHaveAttribute("data-rtt-channel", "default");
 
-    fireEvent.click(screen.getByRole("button", { name: "Zoom in Ground Glass preview view" }));
+    fireEvent.click(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass preview view" }));
 
     expect(screen.getByRole("button", { name: "Reset Ground Glass preview view" })).toBeInTheDocument();
     fireEvent.change(screen.getByRole("slider", { name: "Tilt" }), {
@@ -204,7 +233,7 @@ describe("public camera movement controls in the workspace", () => {
 
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
     expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
-    expect(screen.getByRole("button", { name: "Zoom in Ground Glass preview view" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass preview view" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Original", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Current", level: 3 })).not.toBeInTheDocument();
   });
@@ -216,7 +245,7 @@ describe("public camera movement controls in the workspace", () => {
     expect(screen.queryByText("Movement examples")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Original", level: 3 })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Current", level: 3 })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Zoom in Ground Glass preview view" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Focus loupe · 4× Ground Glass preview view" })).toHaveLength(1);
   });
 
   it("keeps the continuous Viewpoint state after rerender", () => {

@@ -125,6 +125,7 @@ export const simulatorMessages = {
     preview: "Preview",
     rawGroundGlass: "Raw Ground Glass",
     uprightAssist: "Upright Assist",
+    focusLoupe: "Focus loupe · 4×",
     viewOptions: "View Options",
     comparisonHeading: "Original and Current Ground Glass comparison",
     comparisonDescription: "Compare the neutral camera with the selected movement.",
@@ -227,6 +228,26 @@ export const simulatorMessages = {
     architectureForegroundMiddleTarget: "Middle foreground",
     architectureForegroundBuildingBaseTarget: "Building base",
     architectureForegroundBuildingMiddleTarget: "Building middle",
+    interiorCornerRecedingWallGuide: "Receding side wall",
+    obliqueTabletopNearFarGuide: "Subject board · near ↔ far",
+    obliqueTabletopLeftRightGuide: "Subject board · left ↔ right",
+    obliqueTabletopSideView:
+      "Side view · inspect how Front Tilt changes the near-to-far component of the one focus plane.",
+    obliqueTabletopTopView:
+      "Top view · inspect how Front Swing changes the left-to-right component of the same focus plane.",
+    obliqueTabletopScheimpflugView:
+      "Scheimpflug view · film, lens, and one plane of sharp focus meet in a single 3D construction.",
+    obliqueTabletopNeutralFeedback:
+      "The subject board and current focus plane disagree in more than one direction.",
+    obliqueTabletopTiltFeedback:
+      "Front Tilt changes the near-to-far relationship. Compare the focus plane with the subject board before adding Swing.",
+    obliqueTabletopSwingFeedback:
+      "Front Swing changes the left-to-right relationship. Compare it with the near-to-far component.",
+    obliqueTabletopCompoundFeedback:
+      "Tilt and Swing are changing two directional components of the same three-dimensional focus plane.",
+    interiorCornerNearWallTarget: "Near wall detail",
+    interiorCornerMiddleWallTarget: "Middle wall detail",
+    interiorCornerFarWallTarget: "Far wall detail",
   },
   sceneLegend: {
     filmPlane: "Film plane (blue)",
@@ -313,6 +334,44 @@ export const simulatorMessages = {
       observation:
         "Front Rise corrects framing without changing perspective or the parallel verticals. Front Tilt changes focus-plane orientation and Focus places it; Aperture then expands usable depth around that plane while the remaining depth of field stays finite.",
     },
+    interiorCorner: {
+      objective:
+        "Explore the neutral Interior Corner setup before solving its framing and receding-wall focus problems.",
+      bullets: {
+        framing:
+          "Notice that the camera is level, but the upper moulding is cropped or uncomfortably close to the top edge.",
+        rise:
+          "Use Front Rise to move the framing upward without pitching the camera upward.",
+        depth:
+          "Follow the same side wall from its nearer artwork through the middle and far details.",
+        focus:
+          "At f/5.6, use Front Swing to turn the focus plane toward the receding wall, then refine Focus to place it through the near, middle, and far details.",
+      },
+      observation:
+        "The room remains level while the upper architecture presses against the frame. The three details on one receding wall sit at different distances, making the Rise and receding-wall Front Swing + Focus problems visible.",
+      riseComposition: {
+        needsAdjustmentStatus: "Rise composition needs adjustment",
+        readyStatus: "Rise composition is acceptable",
+        needsAdjustment:
+          "Keep the camera level. The upper architecture is still too close to the top edge; use Front Rise to move the framing upward.",
+        ready:
+          "The upper architecture is now inside a safer frame while the room corner remains usable. The camera remains level.",
+      },
+      focusAlignment: {
+        openApertureRequiredStatus: "Use the open aperture for focus alignment",
+        misalignedStatus: "Receding-wall focus needs adjustment",
+        refineFocusStatus: "Refine receding-wall focus",
+        alignedStatus: "Receding-wall focus is acceptable",
+        openApertureRequired:
+          "Keep f/5.6 while checking the receding wall; Aperture is a later finishing step.",
+        misaligned:
+          "At f/5.6, the receding wall spans different depths. Focus alone cannot hold the near, middle, and far details together; use Front Swing, then refine Focus.",
+        refineFocus:
+          "The receding wall is not yet consistently sharp. Front Swing changes focus-plane orientation; refine Focus to place it through the wall.",
+        aligned:
+          "The near, middle, and far details on the receding side wall are acceptably sharp at f/5.6. The opposite wall remains contextual.",
+      },
+    },
     obliqueArchitecture: {
       objective:
         "Explore Front Rise, Front Swing, and Focus while keeping the rear standard level in an oblique architectural view.",
@@ -355,6 +414,24 @@ export const simulatorMessages = {
       },
       observation:
         "Without Swing, changing Focus moves sharpness between subject depths. Front Swing rotates the plane of sharp focus through the diagonal arrangement. Compare the Top geometry view and Ground Glass as you refine Swing and Focus.",
+    },
+    obliqueTabletop: {
+      objective:
+        "Use Front Tilt, Front Swing, and Focus to align the inclined subject board at fixed f/11.",
+      bullets: {
+        focusDistance:
+          "Start at neutral and compare the near, middle, and far subject-board details.",
+        tilt:
+          "Use Front Tilt to improve the board's near-to-far focus alignment.",
+        refocus:
+          "Refine Focus after changing either movement.",
+        remaining:
+          "Add Front Swing to resolve the remaining side-to-side difference and compare details across the board.",
+        geometry:
+          "Use the Side and Top geometry views together: they show two components of one three-dimensional focus plane.",
+      },
+      observation:
+        "Front Tilt improves the board's near-to-far focus relationship. Front Swing resolves the remaining side-to-side difference; refine Focus after either movement and compare details across the board. The two movements do not create two focus planes; together they orient one plane in 3D.",
     },
     mirrorShift: {
       objective:

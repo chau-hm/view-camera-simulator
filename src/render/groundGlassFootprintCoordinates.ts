@@ -38,7 +38,6 @@ export const groundGlassFootprintAxesToRttPixels = (input: {
       input.filmHeightMm <= 0) {
     return { majorAxisPx: [0, 0], minorAxisPx: [0, 0] };
   }
-
   const cos = Math.cos(input.orientationRad);
   const sin = Math.sin(input.orientationRad);
   const scaleX = input.renderWidthPx / input.filmWidthMm;

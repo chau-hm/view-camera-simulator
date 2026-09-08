@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   publicSceneCatalog,
   publicSceneIds,
@@ -24,6 +26,21 @@ describe("public scene catalog integrity", () => {
     expect(validate(publicSceneCatalog)).toEqual({ valid: true, errors: [] });
   });
 
+  it("publishes an existing WebP thumbnail for every public scene", () => {
+    expect(publicSceneCatalog).toHaveLength(publicSceneIds.length);
+
+    for (const entry of publicSceneCatalog) {
+      expect(entry.thumbnailAsset).toMatch(/^assets\/[^/]+\.webp$/);
+      const assetPath = resolve(process.cwd(), "public", entry.thumbnailAsset);
+      expect(existsSync(assetPath)).toBe(true);
+      const bytes = readFileSync(assetPath);
+      expect(bytes.subarray(0, 4).toString("ascii")).toBe("RIFF");
+      expect(bytes.subarray(8, 12).toString("ascii")).toBe("WEBP");
+      expect(bytes.length).toBeGreaterThan(0);
+      expect(existsSync(assetPath.replace(/\.webp$/, ".png"))).toBe(false);
+    }
+  });
+
   it("publishes Lesson 0 as the first free-only anatomy lesson", () => {
     const entry = publicSceneCatalog[0];
     expect(entry).toMatchObject({
@@ -31,8 +48,9 @@ describe("public scene catalog integrity", () => {
       availableModes: ["free"],
       lesson: { kind: "anatomy", id: "view-camera-anatomy" },
     });
-    expect(entry.thumbnailAsset).toBe("assets/scene-view-camera-anatomy.png");
+    expect(entry.thumbnailAsset).toBe("assets/scene-view-camera-anatomy.webp");
     expect(entry.thumbnailAsset).not.toMatch(/\.svg$/);
+    expect(existsSync(resolve(process.cwd(), "public", entry.thumbnailAsset))).toBe(true);
     expect(entry.thumbnailAsset).not.toBe("assets/view-camera-hero-illustration.png");
     expect(publicSceneIds[0]).toBe("view-camera-anatomy");
     expect(
@@ -75,6 +93,97 @@ describe("public scene catalog integrity", () => {
     ).toBe(false);
   });
 
+  it("publishes Oblique Tabletop with Free Practice and a five-stage guided lesson", () => {
+    const entry = publicSceneCatalog.find(
+      (candidate) => candidate.id === "oblique-tabletop",
+    )!;
+    expect(entry).toMatchObject({
+      id: "oblique-tabletop",
+      availableModes: ["free", "guided"],
+      availability: "available",
+      thumbnailAsset: "assets/oblique-tabletop.webp",
+    });
+    expect(entry.guidedTaskId).toBe("oblique-tabletop-aperture-01");
+    expect(entry.guidedTaskIds).toEqual([
+      "oblique-tabletop-focus-01",
+      "oblique-tabletop-tilt-01",
+      "oblique-tabletop-swing-01",
+      "oblique-tabletop-refine-01",
+      "oblique-tabletop-aperture-01",
+    ]);
+    expect(entry.guidedLesson).toMatchObject({
+      id: "oblique-tabletop",
+      includeObserveStage: true,
+      taskStageIds: ["focus", "tilt", "swing", "refine", "aperture"],
+    });
+    expect(entry.thumbnailAsset).not.toMatch(/\.svg$/);
+    expect(
+      isValidSimulatorRoute({
+        mode: "free",
+        sceneId: entry.id,
+        publicEntry: entry,
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: entry.guidedTaskId,
+        publicEntry: entry,
+        task: getTaskById(entry.guidedTaskId!),
+      }),
+    ).toBe(true);
+  });
+
+  it("publishes Interior Corner with its four-stage Rise/Swing guided lesson", () => {
+    const entry = publicSceneCatalog.find((candidate) => candidate.id === "interior-corner")!;
+    expect(entry).toMatchObject({
+      id: "interior-corner",
+      availability: "available",
+      availableModes: ["free", "guided"],
+      thumbnailAsset: "assets/interior-corner.webp",
+    });
+    expect(entry.guidedTaskId).toBe("interior-corner-aperture-01");
+    expect(entry.guidedTaskIds).toEqual([
+      "interior-corner-compose-01",
+      "interior-corner-swing-01",
+      "interior-corner-refine-01",
+      "interior-corner-aperture-01",
+    ]);
+    expect(entry.guidedLesson).toEqual({
+      id: "interior-corner",
+      includeObserveStage: true,
+      taskStageIds: ["compose", "swing", "refine", "aperture"],
+    });
+    expect(entry.thumbnailAsset).not.toMatch(/\.svg$/);
+    expect(existsSync(resolve(process.cwd(), "public", entry.thumbnailAsset))).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "free",
+        sceneId: entry.id,
+        publicEntry: entry,
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "free",
+        sceneId: entry.id,
+        taskId: "swing-01",
+        publicEntry: entry,
+        task: getTaskById("swing-01"),
+      }),
+    ).toBe(false);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: entry.guidedTaskId,
+        publicEntry: entry,
+        task: getTaskById(entry.guidedTaskId!),
+      }),
+    ).toBe(true);
+  });
+
   it("publishes Architecture + Foreground with its direct guided tasks", () => {
     const entry = publicSceneCatalog.find(
       (candidate) => candidate.id === "architecture-foreground",
@@ -93,7 +202,7 @@ describe("public scene catalog integrity", () => {
       includeObserveStage: true,
       taskStageIds: ["compose", "align-focus", "depth-of-field", "final-challenge"],
     });
-    expect(entry.thumbnailAsset).toBe("assets/architecture-foreground.png");
+    expect(entry.thumbnailAsset).toBe("assets/architecture-foreground.webp");
     expect(
       isValidSimulatorRoute({
         mode: "free",
@@ -182,9 +291,9 @@ describe("public scene catalog integrity", () => {
     ).toBe(true);
   });
 
-  it("places Architecture + Foreground last in the canonical public order", () => {
-    expect(publicSceneCatalog.at(-1)?.id).toBe("architecture-foreground");
-    expect(publicSceneIds.at(-1)).toBe("architecture-foreground");
+  it("places Interior Corner last in the canonical public order", () => {
+    expect(publicSceneCatalog.at(-1)?.id).toBe("interior-corner");
+    expect(publicSceneIds.at(-1)).toBe("interior-corner");
     expect(new Set(publicSceneCatalog.map((entry) => entry.id)).size).toBe(publicSceneCatalog.length);
     expect(new Set(publicSceneIds).size).toBe(publicSceneIds.length);
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual([...publicSceneIds]);

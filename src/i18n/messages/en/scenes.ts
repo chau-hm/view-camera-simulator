@@ -56,6 +56,16 @@ export const scenesMessages = {
       sharpness: "Sharpness across depth",
     },
   },
+  interiorCorner: {
+    title: "Interior Corner — Rise + Swing",
+    description:
+      "Explore a neutral interior corner where upper architectural detail presses against the frame and one receding wall creates a future Front Swing and Focus problem.",
+    topics: {
+      frontRise: "Front Rise",
+      frontSwing: "Front Swing",
+      architecturalDepth: "Architectural depth",
+    },
+  },
   obliqueArchitecture: {
     title: "Oblique Architecture",
     description:
@@ -84,6 +94,16 @@ export const scenesMessages = {
       frontSwing: "Front Swing",
       planeOfSharpFocus: "Plane of sharp focus",
       scheimpflugPrinciple: "Scheimpflug principle",
+    },
+  },
+  obliqueTabletop: {
+    title: "Oblique Tabletop",
+    description:
+      "Photograph an inclined plan board resting on a normal table. Because the board recedes near-to-far and laterally, Tilt alone cannot align the whole subject plane; Swing is also required.",
+    topics: {
+      obliquePlane: "Oblique plane",
+      depthVariation: "Depth variation",
+      focusDistance: "Focus distance",
     },
   },
   mirrorShift: {

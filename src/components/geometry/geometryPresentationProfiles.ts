@@ -101,6 +101,21 @@ export function getGeometryPresentationProfile(
     };
   }
 
+  if (scene.id === "oblique-tabletop") {
+    return {
+      ...DEFAULT_GEOMETRY_PRESENTATION_PROFILE,
+      defaultSubjectView: "side",
+      depthWindow: { mode: "fixed", minMm: -250, maxMm: 7000 },
+      lateralWindow: {
+        side: { minMm: -2300, maxMm: 750 },
+        top: { minMm: -3000, maxMm: 3000 },
+      },
+      diagramPaddingPx: 36,
+      dofFillOpacity: 0.08,
+      depthPlaneGeometryViews: ["side", "top", "scheimpflug"],
+    };
+  }
+
   if (scene.id === "oblique-architecture") {
     return {
       ...DEFAULT_GEOMETRY_PRESENTATION_PROFILE,
@@ -113,6 +128,13 @@ export function getGeometryPresentationProfile(
       ...DEFAULT_GEOMETRY_PRESENTATION_PROFILE,
       defaultSubjectView: "top",
       diagramVariant: "mirror-shift-teaching",
+    };
+  }
+
+  if (scene.id === "interior-corner") {
+    return {
+      ...DEFAULT_GEOMETRY_PRESENTATION_PROFILE,
+      defaultSubjectView: "top",
     };
   }
 

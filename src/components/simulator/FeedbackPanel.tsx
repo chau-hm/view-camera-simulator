@@ -1,8 +1,16 @@
 import { useTranslation } from "react-i18next";
 import type { GuidedTaskMessageRef, TaskEvaluation, TaskDefinition } from "../../types/task";
 import "../../i18n";
-import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
+import {
+  simulatorMessageKeys,
+  type SimulatorMessageKey,
+} from "../../i18n/simulatorMessageKeys";
 import { guidedTaskMessageKeys } from "../../i18n/guidedTaskMessageKeys";
+import type { InteriorCornerRiseCompositionEvaluation } from "../../scenes/interiorCornerRiseComposition";
+import type {
+  InteriorCornerFocusAlignmentStatus,
+  InteriorCornerSwingFocusEvaluation,
+} from "../../scenes/interiorCornerSwingFocus";
 import {
   getFeedbackStatus,
   getPassedCriteriaCount,
@@ -16,10 +24,33 @@ type FeedbackPanelProps = {
   sceneId: string;
   task: TaskDefinition | null;
   evaluation: TaskEvaluation | null;
+  freeCompositionEvaluation?: InteriorCornerRiseCompositionEvaluation | null;
+  freeFocusEvaluation?: InteriorCornerSwingFocusEvaluation | null;
   showTitle?: boolean;
 };
 
-export const FeedbackPanel = ({ mode, sceneId, evaluation, showTitle = true }: FeedbackPanelProps) => {
+const interiorCornerFocusStatusKeys: Record<InteriorCornerFocusAlignmentStatus, SimulatorMessageKey> = {
+  "open-aperture-required": simulatorMessageKeys.freePractice.interiorCorner.focusAlignment.openApertureRequiredStatus,
+  misaligned: simulatorMessageKeys.freePractice.interiorCorner.focusAlignment.misalignedStatus,
+  "refine-focus": simulatorMessageKeys.freePractice.interiorCorner.focusAlignment.refineFocusStatus,
+  aligned: simulatorMessageKeys.freePractice.interiorCorner.focusAlignment.alignedStatus,
+};
+
+const interiorCornerFocusMessageKeys: Record<InteriorCornerFocusAlignmentStatus, SimulatorMessageKey> = {
+  "open-aperture-required": simulatorMessageKeys.freePractice.interiorCorner.focusAlignment.openApertureRequired,
+  misaligned: simulatorMessageKeys.freePractice.interiorCorner.focusAlignment.misaligned,
+  "refine-focus": simulatorMessageKeys.freePractice.interiorCorner.focusAlignment.refineFocus,
+  aligned: simulatorMessageKeys.freePractice.interiorCorner.focusAlignment.aligned,
+};
+
+export const FeedbackPanel = ({
+  mode,
+  sceneId,
+  evaluation,
+  freeCompositionEvaluation,
+  freeFocusEvaluation,
+  showTitle = true,
+}: FeedbackPanelProps) => {
   const { t } = useTranslation();
   const translateMessage = (message: GuidedTaskMessageRef): string =>
     String(message.values ? t(message.key, message.values as never) : t(message.key));
@@ -31,16 +62,62 @@ export const FeedbackPanel = ({ mode, sceneId, evaluation, showTitle = true }: F
     // Free mode neutral observation: use scene-specific observation and a single live badge
     const freeObs = getFreePracticeFeedbackKey(sceneId);
     const genericObservationKey = simulatorMessageKeys.freePractice.generic.observation;
+    const riseCompositionKey =
+      sceneId === "interior-corner" && freeCompositionEvaluation
+        ? freeCompositionEvaluation.passed
+          ? simulatorMessageKeys.freePractice.interiorCorner.riseComposition.ready
+          : simulatorMessageKeys.freePractice.interiorCorner.riseComposition.needsAdjustment
+        : null;
+    const riseCompositionStatusKey =
+      sceneId === "interior-corner" && freeCompositionEvaluation
+        ? freeCompositionEvaluation.passed
+          ? simulatorMessageKeys.freePractice.interiorCorner.riseComposition.readyStatus
+          : simulatorMessageKeys.freePractice.interiorCorner.riseComposition.needsAdjustmentStatus
+          : null;
+    const focusAlignmentStatusKey =
+      sceneId === "interior-corner" && freeFocusEvaluation
+        ? interiorCornerFocusStatusKeys[freeFocusEvaluation.status]
+        : null;
+    const focusAlignmentMessageKey =
+      sceneId === "interior-corner" && freeFocusEvaluation
+        ? interiorCornerFocusMessageKeys[freeFocusEvaluation.status]
+        : null;
     return (
       <section aria-label={t(simulatorMessageKeys.feedback.title)} className="feedback-panel feedback-panel--idle">
         {showTitle ? <h2>{t(simulatorMessageKeys.feedback.title)}</h2> : null}
         <div className="feedback-summary">
           <div className="feedback-summary__header">
             <span className="feedback-status">{t(simulatorMessageKeys.feedback.liveObservation)}</span>
+            {riseCompositionStatusKey ? (
+              <span style={{ marginLeft: 8 }}>{t(riseCompositionStatusKey)}</span>
+            ) : null}
+            {focusAlignmentStatusKey ? (
+              <span style={{ marginLeft: 8 }}>{t(focusAlignmentStatusKey)}</span>
+            ) : null}
           </div>
           <p style={{ marginTop: 8 }}>{t(genericObservationKey)}</p>
           {freeObs.observationKey !== genericObservationKey ? (
             <p style={{ marginTop: 6, color: 'var(--text-muted)' }}>{t(freeObs.observationKey)}</p>
+          ) : null}
+          {riseCompositionKey ? (
+            <p
+              data-testid="interior-corner-rise-composition-feedback"
+              role="status"
+              aria-live="polite"
+              style={{ marginTop: 8 }}
+            >
+              {t(riseCompositionKey)}
+            </p>
+          ) : null}
+          {focusAlignmentMessageKey ? (
+            <p
+              data-testid="interior-corner-focus-feedback"
+              role="status"
+              aria-live="polite"
+              style={{ marginTop: 8 }}
+            >
+              {t(focusAlignmentMessageKey)}
+            </p>
           ) : null}
         </div>
       </section>
