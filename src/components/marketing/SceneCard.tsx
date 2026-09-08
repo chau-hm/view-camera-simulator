@@ -37,6 +37,7 @@ export const SceneCard = ({
             alt=""
             width="360"
             height="240"
+            loading="lazy"
             decoding="async"
           />
         </picture>
