@@ -419,13 +419,15 @@ const cameraProjection = constructionWindow
 
       {profile.showDepthStrip ? (
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 12, color: "rgba(15,23,42,0.7)" }}>{t(simulatorMessageKeys.geometry.opticalAxisAndFov)}</div>
+          <div className="geometry-viewport__depth-caption" style={{ fontSize: 12 }}>
+            {t(simulatorMessageKeys.geometry.opticalAxisAndFov)}
+          </div>
           {constructionLayoutActive ? (
-            <div style={{ fontSize: 12, color: "rgba(15,23,42,0.7)" }}>
+            <div className="geometry-viewport__depth-caption" style={{ fontSize: 12 }}>
               {t(simulatorMessageKeys.geometry.constructionScaleNote)}
             </div>
           ) : effectiveGeometryView === "scheimpflug" ? (
-            <div style={{ fontSize: 12, color: "rgba(15,23,42,0.7)" }}>
+            <div className="geometry-viewport__depth-caption" style={{ fontSize: 12 }}>
               {opticsState.lensFilmHingeLine
                 ? t(simulatorMessageKeys.geometry.scheimpflugValidNote)
                 : t(simulatorMessageKeys.geometry.scheimpflugZeroNote)}
