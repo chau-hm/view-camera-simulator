@@ -63,7 +63,7 @@ describe("scenes page", () => {
     expect(scopedAnatomyCard.getByText("Shared image plane")).toBeInTheDocument();
     expect(anatomyCard!.querySelector("img")).toHaveAttribute(
       "src",
-      "/assets/scene-view-camera-anatomy.png",
+      "/assets/scene-view-camera-anatomy.webp",
     );
     expect(scopedAnatomyCard.getByRole("link", { name: "Start Lesson" })).toHaveAttribute(
       "href",
@@ -114,7 +114,7 @@ describe("scenes page", () => {
     expect(scopedArchitectureForegroundCard.getByText("Sharpness across depth")).toBeInTheDocument();
     expect(architectureForegroundCard!.querySelector("img")).toHaveAttribute(
       "src",
-      "/assets/architecture-foreground.png",
+      "/assets/architecture-foreground.webp",
     );
     expect(scopedArchitectureForegroundCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
@@ -142,7 +142,7 @@ describe("scenes page", () => {
     expect(scopedInteriorCornerCard.getByText("Architectural depth")).toBeInTheDocument();
     expect(interiorCornerCard!.querySelector("img")).toHaveAttribute(
       "src",
-      "/assets/interior-corner.png",
+      "/assets/interior-corner.webp",
     );
     expect(scopedInteriorCornerCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
@@ -171,7 +171,7 @@ describe("scenes page", () => {
     expect(scopedObliqueCard.getByText("Compound movements")).toBeInTheDocument();
     expect(obliqueCard!.querySelector("img")).toHaveAttribute(
       "src",
-      "/assets/oblique-architecture.png",
+      "/assets/oblique-architecture.webp",
     );
     expect(scopedObliqueCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
@@ -195,7 +195,7 @@ describe("scenes page", () => {
     expect(scopedTableCard.getByText("Front Tilt")).toBeInTheDocument();
     expect(scopedTableCard.getByText("Plane of sharp focus")).toBeInTheDocument();
     expect(scopedTableCard.getByText("Scheimpflug principle")).toBeInTheDocument();
-    expect(tableCard!.querySelector("img")).toHaveAttribute("src", "/assets/table-tilt.png");
+    expect(tableCard!.querySelector("img")).toHaveAttribute("src", "/assets/table-tilt.webp");
     expect(scopedTableCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
       "/simulator/free/table-tilt",
@@ -217,7 +217,7 @@ describe("scenes page", () => {
     expect(scopedShelfCard.getByText("Front Swing")).toBeInTheDocument();
     expect(scopedShelfCard.getByText("Plane of sharp focus")).toBeInTheDocument();
     expect(scopedShelfCard.getByText("Scheimpflug principle")).toBeInTheDocument();
-    expect(shelfCard!.querySelector("img")).toHaveAttribute("src", "/assets/shelf-swing.png");
+    expect(shelfCard!.querySelector("img")).toHaveAttribute("src", "/assets/shelf-swing.webp");
     expect(scopedShelfCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
       "/simulator/free/shelf-swing",
@@ -240,7 +240,7 @@ describe("scenes page", () => {
     expect(scopedTabletopCard.getByText("Oblique plane")).toBeInTheDocument();
     expect(scopedTabletopCard.getByText("Depth variation")).toBeInTheDocument();
     expect(scopedTabletopCard.getByText("Focus distance")).toBeInTheDocument();
-    expect(tabletopCard!.querySelector("img")).toHaveAttribute("src", "/assets/oblique-tabletop.png");
+    expect(tabletopCard!.querySelector("img")).toHaveAttribute("src", "/assets/oblique-tabletop.webp");
     expect(scopedTabletopCard.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
       "href",
       "/simulator/free/oblique-tabletop",
@@ -316,6 +316,27 @@ describe("scenes page", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("uses lazy-loaded WebP thumbnails for every public scene", async () => {
+    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
+    render(<RouterProvider router={memoryRouter} />);
+
+    const cards = await screen.findAllByRole("article");
+    expect(cards).toHaveLength(publicSceneCatalog.length);
+
+    cards.forEach((card, index) => {
+      const image = card.querySelector("img");
+      expect(image).not.toBeNull();
+      expect(image).toHaveAttribute(
+        "src",
+        `/assets/${publicSceneCatalog[index].thumbnailAsset.replace(/^assets\//, "")}`,
+      );
+      expect(image).toHaveAttribute("width", "360");
+      expect(image).toHaveAttribute("height", "240");
+      expect(image).toHaveAttribute("loading", "lazy");
+      expect(image).toHaveAttribute("decoding", "async");
+    });
+  });
+
   it("keeps in-development scenes non-actionable", () => {
     render(
       <MemoryRouter>
@@ -325,7 +346,7 @@ describe("scenes page", () => {
           description="A scene in progress."
           topics={["Front Rise"]}
           availability="in-development"
-          thumbnailAsset="assets/architecture-rise.png"
+          thumbnailAsset="assets/architecture-rise.webp"
           guidedTaskId="rise-01"
         />
       </MemoryRouter>,

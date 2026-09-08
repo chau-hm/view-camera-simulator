@@ -12,7 +12,7 @@ test("Architecture + Foreground is discoverable from the Scenes page", async ({ 
   const heading = page.getByRole("heading", { name: "Architecture + Foreground", level: 2 });
   await expect(heading).toBeVisible();
   const card = heading.locator("xpath=ancestor::article");
-  await expect(card.locator("img")).toHaveAttribute("src", "/assets/architecture-foreground.png");
+  await expect(card.locator("img")).toHaveAttribute("src", "/assets/architecture-foreground.webp");
   await expect(card.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
     "href",
     "/simulator/free/architecture-foreground",

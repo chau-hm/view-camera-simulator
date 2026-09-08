@@ -77,7 +77,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free"],
-    thumbnailAsset: "assets/scene-view-camera-anatomy.png",
+    thumbnailAsset: "assets/scene-view-camera-anatomy.webp",
     lesson: {
       kind: "anatomy",
       id: "view-camera-anatomy",
@@ -95,7 +95,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free"],
-    thumbnailAsset: "assets/understanding-camera-movements.png",
+    thumbnailAsset: "assets/understanding-camera-movements.webp",
   },
   {
     id: "focus-fundamentals-two-targets",
@@ -108,7 +108,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free"],
-    thumbnailAsset: "assets/two-targets-illustration.png",
+    thumbnailAsset: "assets/two-targets-illustration.webp",
   },
   {
     id: "architecture-rise",
@@ -121,7 +121,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/architecture-rise.png",
+    thumbnailAsset: "assets/architecture-rise.webp",
     guidedTaskId: "rise-01",
   },
   {
@@ -135,7 +135,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/table-tilt.png",
+    thumbnailAsset: "assets/table-tilt.webp",
     guidedTaskId: "tilt-01",
   },
   {
@@ -149,7 +149,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/shelf-swing.png",
+    thumbnailAsset: "assets/shelf-swing.webp",
     guidedTaskId: "swing-01",
   },
   {
@@ -163,7 +163,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/oblique-tabletop.png",
+    thumbnailAsset: "assets/oblique-tabletop.webp",
     guidedTaskId: "oblique-tabletop-aperture-01",
     guidedTaskIds: [
       "oblique-tabletop-focus-01",
@@ -190,7 +190,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/mirror-shift.png",
+    thumbnailAsset: "assets/mirror-shift.webp",
     guidedTaskId: "mirror-shift-01",
   },
   {
@@ -204,7 +204,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/oblique-architecture.png",
+    thumbnailAsset: "assets/oblique-architecture.webp",
     guidedTaskId: "oblique-compound-01",
     guidedTaskIds: ["oblique-rise-01", "oblique-swing-focus-01", "oblique-compound-01"],
     guidedLesson: {
@@ -224,7 +224,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/architecture-foreground.png",
+    thumbnailAsset: "assets/architecture-foreground.webp",
     guidedTaskId: "architecture-foreground-compound-01",
     guidedTaskIds: [
       "architecture-foreground-rise-01",
@@ -249,7 +249,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     ],
     availability: "available",
     availableModes: ["free", "guided"],
-    thumbnailAsset: "assets/interior-corner.png",
+    thumbnailAsset: "assets/interior-corner.webp",
     guidedTaskId: INTERIOR_CORNER_GUIDED_TASK_IDS.aperture,
     guidedTaskIds: [
       INTERIOR_CORNER_GUIDED_TASK_IDS.compose,
