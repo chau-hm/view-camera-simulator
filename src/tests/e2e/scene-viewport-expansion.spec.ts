@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
 
 type RttSnapshot = {
@@ -13,6 +14,7 @@ type RttSnapshot = {
   depthHeight: number;
   blurWidth: number;
   blurHeight: number;
+  gatherScale: number;
   finalWidth: number;
   finalHeight: number;
   horizontalShaderWidth: number;
@@ -45,6 +47,7 @@ const readRttSnapshot = async (page: import("@playwright/test").Page): Promise<R
       depthHeight: number("rttDepthTargetHeight"),
       blurWidth: number("rttBlurTargetWidth"),
       blurHeight: number("rttBlurTargetHeight"),
+      gatherScale: number("rttGatherScale"),
       finalWidth: number("rttFinalTargetWidth"),
       finalHeight: number("rttFinalTargetHeight"),
       horizontalShaderWidth: number("rttHorizontalShaderWidth"),
@@ -360,6 +363,7 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   const rendererWarnings: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     const text = message.text();
     if (/GPU stall due to ReadPixels/i.test(text)) return;
     if (message.type() === "error" || (message.type() === "warning" && /React|Three|WebGL|render target|disposed|context lost/i.test(text))) {
@@ -387,8 +391,8 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   expect(normal.internalHeight).toBe(normal.colorHeight);
   expect(normal.colorWidth).toBe(normal.depthWidth);
   expect(normal.colorHeight).toBe(normal.depthHeight);
-  expect(normal.colorWidth).toBe(normal.blurWidth);
-  expect(normal.colorHeight).toBe(normal.blurHeight);
+  expect(normal.blurWidth).toBe(Math.max(1, Math.floor(normal.internalWidth * normal.gatherScale)));
+  expect(normal.blurHeight).toBe(Math.max(1, Math.floor(normal.internalHeight * normal.gatherScale)));
   expect(normal.colorWidth).toBe(normal.finalWidth);
   expect(normal.colorHeight).toBe(normal.finalHeight);
   expect(normal.horizontalShaderWidth).toBe(normal.internalWidth);
@@ -430,8 +434,8 @@ test("Ground Glass RTT follows expanded and live browser sizes without reallocat
   expect(resizedBack.internalHeight).toBe(resizedBack.colorHeight);
   expect(resizedBack.colorWidth).toBe(resizedBack.depthWidth);
   expect(resizedBack.colorHeight).toBe(resizedBack.depthHeight);
-  expect(resizedBack.colorWidth).toBe(resizedBack.blurWidth);
-  expect(resizedBack.colorHeight).toBe(resizedBack.blurHeight);
+  expect(resizedBack.blurWidth).toBe(Math.max(1, Math.floor(resizedBack.internalWidth * resizedBack.gatherScale)));
+  expect(resizedBack.blurHeight).toBe(Math.max(1, Math.floor(resizedBack.internalHeight * resizedBack.gatherScale)));
   expect(resizedBack.colorWidth).toBe(resizedBack.finalWidth);
   expect(resizedBack.colorHeight).toBe(resizedBack.finalHeight);
   expect(resizedBack.horizontalShaderWidth).toBe(resizedBack.internalWidth);
@@ -515,6 +519,11 @@ test("Ground Glass reset restores RTT framing after zoomed expand and restore", 
   // A second zoom/reset cycle remains stable and still permits zooming again.
   await stage.click();
   await expect(stage).toHaveAttribute("data-zoomed", "true");
+  await expect
+    .poll(async () => (await readGroundGlassPresentationSnapshot(page)).sampledFilmWidthMm, {
+      timeout: 30_000,
+    })
+    .toBeCloseTo(31.75, 6);
   const zoomedAgain = await readGroundGlassPresentationSnapshot(page);
   expect(zoomedAgain.canvasWidth).toBeCloseTo(normal.canvasWidth, 0);
   expect(zoomedAgain.sampledFilmWidthMm).toBeCloseTo(31.75, 6);
@@ -533,6 +542,7 @@ test("Ground Glass RTT quality changes resize targets in place", async ({ page }
   const rendererWarnings: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     const text = message.text();
     if (/GPU stall due to ReadPixels/i.test(text)) return;
     if (message.type() === "error" || (message.type() === "warning" && /React|Three|WebGL|render target|disposed|context lost/i.test(text))) {
@@ -558,8 +568,8 @@ test("Ground Glass RTT quality changes resize targets in place", async ({ page }
     expect(snapshot.internalHeight).toBe(snapshot.colorHeight);
     expect(snapshot.colorWidth).toBe(snapshot.depthWidth);
     expect(snapshot.colorHeight).toBe(snapshot.depthHeight);
-    expect(snapshot.colorWidth).toBe(snapshot.blurWidth);
-    expect(snapshot.colorHeight).toBe(snapshot.blurHeight);
+    expect(snapshot.blurWidth).toBe(Math.max(1, Math.floor(snapshot.internalWidth * snapshot.gatherScale)));
+    expect(snapshot.blurHeight).toBe(Math.max(1, Math.floor(snapshot.internalHeight * snapshot.gatherScale)));
     expect(snapshot.colorWidth).toBe(snapshot.finalWidth);
     expect(snapshot.colorHeight).toBe(snapshot.finalHeight);
     expect(snapshot.horizontalShaderWidth).toBe(snapshot.internalWidth);
@@ -579,6 +589,11 @@ test("Ground Glass RTT quality changes resize targets in place", async ({ page }
     await expect.poll(() => rtt.getAttribute("data-rtt-internal-width"), { timeout: 120_000 }).not.toBe(String(previousInternalWidth));
     await expect.poll(() => rtt.getAttribute("data-rtt-sanity-state"), { timeout: 120_000 }).not.toBe(previousSanityState);
     await expect.poll(() => rtt.getAttribute("data-rtt-final-contentful"), { timeout: 120_000 }).toBe("true");
+    await expect.poll(async () => {
+      const snapshot = await readRttSnapshot(page);
+      return snapshot.blurWidth === Math.max(1, Math.floor(snapshot.internalWidth * snapshot.gatherScale)) &&
+        snapshot.blurHeight === Math.max(1, Math.floor(snapshot.internalHeight * snapshot.gatherScale));
+    }, { timeout: 120_000 }).toBe(true);
     const snapshot = await readRttSnapshot(page);
     await assertSnapshot(snapshot);
     previousInternalWidth = snapshot.internalWidth;

@@ -27,6 +27,8 @@ const setSubjectBoardTransform = (boardAssembly: THREE.Group): void => {
       toWorld(geometry.subjectBoard.center.z),
     ),
   );
+  // r185 world-position queries require manually assigned matrices to be dirty.
+  boardAssembly.matrixWorldNeedsUpdate = true;
 };
 
 const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {

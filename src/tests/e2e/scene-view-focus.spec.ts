@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 type ViewState = {
@@ -80,6 +81,7 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (
       (message.type() === "error" || message.type() === "warning") &&
       !/GL Driver Message .*GPU stall due to ReadPixels/.test(message.text())

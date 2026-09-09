@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { test, expect, type Locator } from '@playwright/test';
 import { clickStageAt, readFreshElementBounds, readStageTransform } from './helpers/groundGlass';
 
@@ -11,6 +12,7 @@ test.describe('Ground Glass interaction', () => {
     const rendererWarnings: string[] = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
     page.on('console', (message) => {
+      if (isKnownFiberClockDeprecation(message)) return;
       const text = message.text();
       if (/GL Driver Message .*GPU stall due to ReadPixels/.test(text)) return;
       if (

@@ -29,9 +29,10 @@ test("Mirror Shift top-view geometry follows canonical A/B/C state relationships
   await expect(geometry).toHaveAttribute("data-front-shift-mm", "-55");
   await expect(geometry).toHaveAttribute("data-current-film-x-mm", "2000");
   await expect(geometry).toHaveAttribute("data-current-lens-x-mm", "1945");
-  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 30_000 });
-
+  // Expanded Geometry unmounts the other viewports. Restore via the public
+  // control before verifying that Ground Glass renders the changed state.
   await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 30_000 });
   await page.getByRole("button", { name: "Reset movements" }).click();
   await expect(position).toHaveValue("0");
   await expect(frontShift).toHaveValue("0");

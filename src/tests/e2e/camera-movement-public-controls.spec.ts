@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { test, expect, type Page } from "@playwright/test";
 
 const disableOpticalGeometry = async (page: Page) => {
@@ -26,6 +27,7 @@ test("public camera movement controls on the normal route", async ({ page }) => 
   const unexpectedGraphicsMessages: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     const text = message.text();
     if (!(message.type() === "warning" || message.type() === "error") || !/(WebGL|THREE|GPU)/i.test(text)) return;
     if (/GPU stall due to ReadPixels/i.test(text)) return;
