@@ -75,4 +75,41 @@ describe("teaching lighting", () => {
     expect(guide.receiveShadow).toBe(false);
     expect(summary).toEqual({ casterCount: 2, receiverCount: 1 });
   });
+
+  it("configures only the explicit photographic subject root", () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshStandardMaterial(),
+    );
+    camera.name = "conceptual-camera-body";
+    const filmPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshStandardMaterial(),
+    );
+    filmPlane.name = "optical-film-plane";
+
+    const subjectRoot = new THREE.Group();
+    const subject = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshStandardMaterial(),
+    );
+    subject.name = "photographic-subject";
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      new THREE.MeshStandardMaterial(),
+    );
+    floor.name = "subject-floor";
+    subjectRoot.add(subject, floor);
+    scene.add(camera, filmPlane, subjectRoot);
+
+    configureTeachingShadowParticipation(subjectRoot);
+
+    expect(subject.castShadow).toBe(true);
+    expect(floor.receiveShadow).toBe(true);
+    expect(camera.castShadow).toBe(false);
+    expect(camera.receiveShadow).toBe(false);
+    expect(filmPlane.castShadow).toBe(false);
+    expect(filmPlane.receiveShadow).toBe(false);
+  });
 });

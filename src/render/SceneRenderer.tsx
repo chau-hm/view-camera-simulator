@@ -732,7 +732,6 @@ const SceneContent = ({
     <>
     <color attach="background" args={["#f8fafc"]} />
     <TeachingLighting placement={teachingLightingPlacement} />
-    <TeachingShadowParticipation subjectKey={scene.id} />
     <SceneAssets assets={scene.assets} />
     {scene.cameraBodyPitchCapability?.enabled ? (
       <CameraBodyAssembly
@@ -767,16 +766,18 @@ const SceneContent = ({
       showOpticalGeometry={showOpticalGeometry}
       showScheimpflugConstruction={showScheimpflugConstruction}
     />
-    {RegisteredSubject ? (
-      <RegisteredSubject scene={scene} />
-    ) : (
-      scene.focusTargets.map((target) => (
-        <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
-          <sphereGeometry args={[toWorld(50), 16, 16]} />
-          <meshStandardMaterial color="#ef4444" />
-        </mesh>
-      ))
-    )}
+    <TeachingShadowParticipation subjectKey={scene.id}>
+      {RegisteredSubject ? (
+        <RegisteredSubject scene={scene} />
+      ) : (
+        scene.focusTargets.map((target) => (
+          <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
+            <sphereGeometry args={[toWorld(50), 16, 16]} />
+            <meshStandardMaterial color="#ef4444" />
+          </mesh>
+        ))
+      )}
+    </TeachingShadowParticipation>
     {referenceCameraVisible ? <OriginalGhostCamera scene={scene} /> : null}
     </>
   );

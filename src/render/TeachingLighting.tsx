@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useLayoutEffect, useMemo, useRef } from "react";
-import { useThree } from "@react-three/fiber";
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import type { SceneSubjectRttLighting } from "./sceneSubjectRegistry";
 import { vecToWorld } from "./rttUtils";
@@ -225,12 +224,24 @@ export const TeachingLighting = ({
   );
 };
 
-export const TeachingShadowParticipation = ({ subjectKey }: { subjectKey: string }) => {
-  const { scene } = useThree();
+export const TeachingShadowParticipation = ({
+  subjectKey,
+  children,
+}: {
+  subjectKey: string;
+  children: ReactNode;
+}) => {
+  const subjectRootRef = useRef<THREE.Group>(null);
 
   useLayoutEffect(() => {
-    configureTeachingShadowParticipation(scene);
-  }, [scene, subjectKey]);
+    const subjectRoot = subjectRootRef.current;
+    if (!subjectRoot) return;
+    configureTeachingShadowParticipation(subjectRoot);
+  }, [subjectKey]);
 
-  return null;
+  return (
+    <group ref={subjectRootRef} name="teaching-shadow-subject">
+      {children}
+    </group>
+  );
 };
