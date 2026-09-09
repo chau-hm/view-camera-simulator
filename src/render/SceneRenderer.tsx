@@ -52,6 +52,12 @@ import {
   resolveFocusFundamentalsActiveStandard,
   resolveFocusFundamentalsTeachingCue,
 } from "../scenes/focusFundamentalsPresentation";
+import {
+  TEACHING_LIGHTING_CONFIG,
+  resolveTeachingLightingPlacement,
+  TeachingLighting,
+  TeachingShadowParticipation,
+} from "./TeachingLighting";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -713,13 +719,20 @@ const SceneContent = ({
     scene,
     cameraMovementRenderModel,
   );
+  const teachingLightingPlacement = useMemo(() => {
+    const lighting =
+      registration?.resolveRttLighting?.({
+        cameraMovementRenderModel,
+        presentationRegion: "middle",
+      }) ?? registration?.rttLighting;
+    return resolveTeachingLightingPlacement(lighting);
+  }, [cameraMovementRenderModel, registration]);
 
   return (
     <>
     <color attach="background" args={["#f8fafc"]} />
-    <ambientLight intensity={0.65} />
-    <directionalLight position={[2, 4, 2]} intensity={0.7} />
-    <hemisphereLight args={["#ffffff", "#d1d5db", 0.45]} />
+    <TeachingLighting placement={teachingLightingPlacement} />
+    <TeachingShadowParticipation subjectKey={scene.id} />
     <SceneAssets assets={scene.assets} />
     {scene.cameraBodyPitchCapability?.enabled ? (
       <CameraBodyAssembly
@@ -1073,6 +1086,7 @@ export const SceneRenderer = ({
         dpr={qualityConfig.dpr}
         camera={{ position: observerCameraPosition, fov: 45, near: 0.01, far: 200 }}
         gl={{ antialias: qualityConfig.antialias }}
+        shadows={{ type: TEACHING_LIGHTING_CONFIG.shadowMapType }}
       >
         {/* LegendUpdater runs inside the r3f context so it can access camera and gl */}
         {/**/}

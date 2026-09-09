@@ -93,6 +93,7 @@ export function createArchitectureRiseGroup(): THREE.Group {
 
   // ground plane
   const ground = new THREE.Mesh(floorPlaneGeom!, groundMaterial!);
+  ground.name = "architecture-rise-ground";
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   g.add(ground);
@@ -227,7 +228,7 @@ export const ArchitectureRiseSubject: React.FC = () => {
       })}
 
       {/* ground plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toW(geometry.ground.y), toW(geometry.ground.centerZ)]}>
+      <mesh name="architecture-rise-ground" rotation={[-Math.PI / 2, 0, 0]} position={[0, toW(geometry.ground.y), toW(geometry.ground.centerZ)]}>
         <planeGeometry args={[toW(geometry.ground.width), toW(geometry.ground.depth)]} />
         <meshStandardMaterial color="#e6eef7" roughness={1} metalness={0} />
       </mesh>
