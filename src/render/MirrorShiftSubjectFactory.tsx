@@ -242,6 +242,32 @@ const addWallAndFloor = (root: THREE.Group): void => {
   root.add(floor);
 };
 
+const addReflectedFloor = (root: THREE.Group): void => {
+  // The RTT reflection needs its own receiver on the virtual side of the mirror;
+  // the transparent aperture intentionally remains outside shadow participation.
+  const floorMaterial = material("#e2e8f0", { roughness: 0.95, metalness: 0 });
+  const reflectedFloorCenter = reflectPointAcrossMirrorPlane({
+    x: 0,
+    y: mirrorShiftGeometry.floor.y,
+    z: mirrorShiftGeometry.floor.centerZ,
+  });
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      toWorld(mirrorShiftGeometry.floor.widthMm),
+      toWorld(mirrorShiftGeometry.floor.depthMm),
+    ),
+    floorMaterial,
+  );
+  floor.name = "mirror-shift-reflected-floor";
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(
+    toWorld(reflectedFloorCenter.x),
+    toWorld(reflectedFloorCenter.y),
+    toWorld(reflectedFloorCenter.z),
+  );
+  root.add(floor);
+};
+
 const addMirrorAperture = (root: THREE.Group): void => {
   const { mirror } = mirrorShiftGeometry;
   const surface = new THREE.Mesh(
@@ -471,6 +497,7 @@ export const createMirrorShiftGroup = ({
     const reflectedGroup = new THREE.Group();
     reflectedGroup.name = "mirror-shift-reflected-props";
     reflectedGroup.userData = { representation: "planar-mirror-reflection" };
+    addReflectedFloor(reflectedGroup);
     mirrorShiftGeometry.props.forEach((sourceProp, index) =>
       addProp(
         reflectedGroup,

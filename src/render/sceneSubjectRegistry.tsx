@@ -52,7 +52,10 @@ import {
 } from "../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
 import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTargets";
-import { mirrorShiftGeometry } from "../scenes/mirrorShiftGeometry";
+import {
+  mirrorShiftGeometry,
+  reflectPointAcrossMirrorPlane,
+} from "../scenes/mirrorShiftGeometry";
 import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../scenes/architectureForegroundGeometry";
 import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
@@ -206,6 +209,12 @@ const interiorCornerLightingTargetMm = {
   ...interiorCornerGeometry.focusTargets[1].worldPosition,
 } as const;
 
+const mirrorShiftLightingTargetMm = reflectPointAcrossMirrorPlane({
+  x: mirrorShiftGeometry.mirror.center.x,
+  y: mirrorShiftGeometry.mirror.center.y,
+  z: mirrorShiftGeometry.floor.centerZ,
+});
+
 export const sceneSubjectRegistry = {
   "view-camera-anatomy": {
     SceneSubject: LessonZeroGroundGlassSubject,
@@ -343,8 +352,8 @@ export const sceneSubjectRegistry = {
     createRttGroup: createMirrorShiftRttGroup,
     disposeRttGroup: disposeMirrorShiftGroup,
     rttLighting: {
-      targetMm: mirrorShiftGeometry.mirror.center,
-      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      targetMm: mirrorShiftLightingTargetMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: 2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },

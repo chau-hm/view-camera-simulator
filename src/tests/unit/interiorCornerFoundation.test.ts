@@ -106,6 +106,8 @@ describe("Interior Corner scene foundation", () => {
     expect(group.getObjectByName("interior-corner-ceiling")).toBeInstanceOf(THREE.Mesh);
     expect(group.getObjectByName("interior-corner-side-cornice")).toBeInstanceOf(THREE.Mesh);
     expect(group.getObjectByName("interior-corner-rear-wall-artwork")).toBeInstanceOf(THREE.Group);
+    expect(group.getObjectByName("interior-corner-local-light")).toBeInstanceOf(THREE.PointLight);
+    expect((group.getObjectByName("interior-corner-local-light") as THREE.PointLight).intensity).toBe(5);
 
     geometry.focusTargets.forEach((target) => {
       const probe = group.getObjectByName(`interior-corner-focus-${target.id}`);
