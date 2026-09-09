@@ -18,6 +18,7 @@ import {
 } from "../../render/MirrorShiftSubjectFactory";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
+import { configureTeachingShadowParticipation } from "../../render/TeachingLighting";
 
 const toWorldMm = (millimetres: number): number => millimetres * 0.001;
 
@@ -196,8 +197,12 @@ describe("Mirror Shift planar reflection geometry", () => {
     const group = createMirrorShiftGroup();
     try {
       group.updateMatrixWorld(true);
+      configureTeachingShadowParticipation(group);
       expect(group.name).toBe("mirror-shift-subject");
       expect(group.getObjectByName("mirror-shift-mirror-surface")).toBeInstanceOf(THREE.Mesh);
+      expect(group.getObjectByName("mirror-shift-reflected-floor")).toBeInstanceOf(THREE.Mesh);
+      expect((group.getObjectByName("mirror-shift-reflected-floor") as THREE.Mesh).receiveShadow).toBe(true);
+      expect((group.getObjectByName("mirror-shift-mirror-surface") as THREE.Mesh).receiveShadow).toBe(false);
       expect(group.getObjectByName("mirror-shift-camera-reflection")).toBeInstanceOf(THREE.Group);
 
       mirrorShiftGeometry.props.forEach((prop) => {
@@ -390,9 +395,11 @@ describe("Mirror Shift planar reflection geometry", () => {
       expect(viewportGroup.getObjectByName("mirror-shift-mirror-surface")).toBeInstanceOf(THREE.Mesh);
       expect(viewportGroup.getObjectByName("mirror-shift-real-tall-marker")).toBeInstanceOf(THREE.Mesh);
       expect(viewportGroup.getObjectByName("mirror-shift-reflected-props")).toBeUndefined();
+      expect(viewportGroup.getObjectByName("mirror-shift-reflected-floor")).toBeUndefined();
       expect(viewportGroup.getObjectByName("mirror-shift-camera-reflection")).toBeUndefined();
 
       expect(rttGroup.getObjectByName("mirror-shift-reflected-props")).toBeInstanceOf(THREE.Group);
+      expect(rttGroup.getObjectByName("mirror-shift-reflected-floor")).toBeInstanceOf(THREE.Mesh);
       expect(rttGroup.getObjectByName("mirror-shift-reflected-tall-marker")).toBeInstanceOf(THREE.Mesh);
       expect(rttGroup.getObjectByName("mirror-shift-camera-reflection")).toBeInstanceOf(THREE.Group);
     } finally {

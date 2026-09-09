@@ -19,6 +19,10 @@ import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSc
 import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/CameraMovementsSubjectFactory";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import {
+  mirrorShiftGeometry,
+  reflectPointAcrossMirrorPlane,
+} from "../../scenes/mirrorShiftGeometry";
+import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectGeometry,
 } from "../../scenes/lessonZeroGroundGlassSubject";
@@ -420,5 +424,17 @@ describe("scene subject registry", () => {
     expect(lighting?.targetMm).toEqual(geometry.middleSubject.focusDetailProbeWorld);
     expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -2.5 });
     expect(lighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: -1.5 });
+  });
+
+  it("aims Mirror Shift lighting into the reflected chamber", () => {
+    const lighting = getSceneSubjectRegistration("mirror-shift")?.rttLighting;
+    expect(lighting?.targetMm).toEqual(
+      reflectPointAcrossMirrorPlane({
+        x: mirrorShiftGeometry.mirror.center.x,
+        y: mirrorShiftGeometry.mirror.center.y,
+        z: mirrorShiftGeometry.floor.centerZ,
+      }),
+    );
+    expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: 2.5 });
   });
 });
