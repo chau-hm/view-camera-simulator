@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
@@ -11,6 +12,7 @@ test("Architecture + Foreground compound task solves the photograph from neutral
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (
       (message.type() === "error" || message.type() === "warning") &&
       !isAllowedEnvironmentConsoleMessage(message.text())

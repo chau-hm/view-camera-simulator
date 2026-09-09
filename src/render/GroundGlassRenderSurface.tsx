@@ -97,6 +97,7 @@ export const GroundGlassRenderSurface = ({
         data-rtt-depth-target-height={rttRuntimeInfo?.depthTargetHeightPx}
         data-rtt-blur-target-width={rttRuntimeInfo?.blurTargetWidthPx}
         data-rtt-blur-target-height={rttRuntimeInfo?.blurTargetHeightPx}
+        data-rtt-gather-scale={rttRuntimeInfo?.gatherScale}
         data-rtt-final-target-width={rttRuntimeInfo?.finalTargetWidthPx}
         data-rtt-final-target-height={rttRuntimeInfo?.finalTargetHeightPx}
         data-rtt-horizontal-shader-width={rttRuntimeInfo?.horizontalShaderRenderWidthPx}

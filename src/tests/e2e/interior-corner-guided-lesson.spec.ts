@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
@@ -36,6 +37,7 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (
       (message.type() === "error" || message.type() === "warning") &&
       !isAllowedEnvironmentConsoleMessage(message.text())

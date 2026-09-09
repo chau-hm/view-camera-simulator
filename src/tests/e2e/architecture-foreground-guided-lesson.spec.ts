@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
@@ -33,6 +34,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (message.type() === "error" || message.type() === "warning") {
       if (!/GL Driver Message .*GPU stall due to ReadPixels/.test(message.text())) {
         consoleProblems.push(message.text());

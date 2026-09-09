@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
@@ -31,6 +32,7 @@ test("Architecture + Foreground DOF task starts solved through PR7C and complete
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (
       (message.type() === "error" || message.type() === "warning") &&
       !isAllowedEnvironmentConsoleMessage(message.text())

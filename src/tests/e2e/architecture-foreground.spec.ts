@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
 import { setRangeDirect } from "./helpers/rangeInput";
 
@@ -10,6 +11,7 @@ test("Architecture + Foreground exposes the cumulative photographic problem in F
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (
       (message.type() === "error" || message.type() === "warning") &&
       !isAllowedEnvironmentConsoleMessage(message.text())
@@ -80,6 +82,7 @@ test("Architecture + Foreground focus propagates to the physical film plane and 
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (
       (message.type() === "error" || message.type() === "warning") &&
       !isAllowedEnvironmentConsoleMessage(message.text())

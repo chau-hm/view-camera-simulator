@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { test, expect, type Locator, type Page } from "@playwright/test";
 
 const disableOpticalGeometry = async (page: Page, scene: Locator) => {
@@ -185,6 +186,7 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
   const unexpectedGraphicsMessages: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     const text = message.text();
     if (!(message.type() === "warning" || message.type() === "error") || !/(WebGL|THREE|GPU)/i.test(text)) return;
     if (/GPU stall due to ReadPixels/i.test(text)) return;
@@ -298,6 +300,7 @@ test("canonical lattice remains stable across controls and SPA routes", async ({
     .filter({ has: page.getByRole("heading", { name: "Architecture Rise" }) })
     .getByRole("link", { name: "Open Scene" })
     .click();
+  await enableRttDiagnosticsWithoutNavigation(page);
   const architectureScene = page.locator('[data-testid="scene-canvas"]');
   await expect(architectureScene).not.toHaveAttribute("data-mounted-lattice", "true");
   await expect(architectureScene).not.toHaveAttribute(

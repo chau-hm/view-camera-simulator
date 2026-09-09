@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
 
 const currentRtt = (page: import("@playwright/test").Page) =>
@@ -18,6 +19,7 @@ test("public camera-movement Ground Glass renders one live Current view through 
   const graphicsErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (!["warning", "error"].includes(message.type())) return;
     const text = message.text();
     if (!/(WebGL|THREE|GPU)/i.test(text) || /GPU stall due to ReadPixels/i.test(text)) return;

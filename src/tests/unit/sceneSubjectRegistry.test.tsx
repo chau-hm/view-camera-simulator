@@ -175,6 +175,23 @@ describe("scene subject registry", () => {
     spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
   });
 
+  it("resolves Oblique Tabletop focus probes before the first render", () => {
+    const group = createRegisteredRttSubject("oblique-tabletop")!;
+    try {
+      for (const marker of obliqueTabletopGeometry.boardMarkers) {
+        const probe = group.getObjectByName(`oblique-tabletop-focus-${marker.id}`)!;
+        // Do not force updateMatrixWorld: getWorldPosition must update the
+        // manually assigned board matrix even before a renderer has visited it.
+        const position = probe.getWorldPosition(new THREE.Vector3());
+        expect(position.x).toBeCloseTo(marker.worldPosition.x * 0.001, 10);
+        expect(position.y).toBeCloseTo(marker.worldPosition.y * 0.001, 10);
+        expect(position.z).toBeCloseTo(marker.worldPosition.z * 0.001, 10);
+      }
+    } finally {
+      disposeRegisteredRttSubject("oblique-tabletop", group);
+    }
+  });
+
   it("resolves Oblique Tabletop to one shared static subject for 3D and RTT", () => {
     const registration = getSceneSubjectRegistration("oblique-tabletop");
     expect(registration).toBeDefined();
