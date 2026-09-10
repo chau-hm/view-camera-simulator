@@ -380,6 +380,58 @@ const addProp = (
   }
 };
 
+const mirrorShiftContextProp = {
+  position: {
+    x: 0,
+    y: mirrorShiftGeometry.floor.y + 260,
+    z: 1700,
+  },
+  dimensions: { x: 1500, y: 520, z: 480 },
+} as const;
+
+const addMirrorShiftContextProp = (
+  parent: THREE.Object3D,
+  namePrefix: "real" | "reflected",
+): void => {
+  const contextMaterial = createFocusFriendlyMaterial({
+    pattern: "bands",
+    primaryColor: "#64748b",
+    secondaryColor: "#cbd5e1",
+    repeat: [3, 2],
+    roughness: 0.84,
+  });
+  const topMaterial = material("#e2e8f0", { roughness: 0.72 });
+  const sourcePosition = mirrorShiftContextProp.position;
+  const position =
+    namePrefix === "reflected"
+      ? reflectPointAcrossMirrorPlane(sourcePosition)
+      : sourcePosition;
+  addBox(
+    parent,
+    `mirror-shift-${namePrefix}-context-plinth`,
+    position,
+    mirrorShiftContextProp.dimensions,
+    contextMaterial,
+  );
+
+  const sourceTopPosition = {
+    x: sourcePosition.x,
+    y: sourcePosition.y + mirrorShiftContextProp.dimensions.y / 2 + 24,
+    z: sourcePosition.z,
+  };
+  const topPosition =
+    namePrefix === "reflected"
+      ? reflectPointAcrossMirrorPlane(sourceTopPosition)
+      : sourceTopPosition;
+  addBox(
+    parent,
+    `mirror-shift-${namePrefix}-context-plinth-top`,
+    topPosition,
+    { x: mirrorShiftContextProp.dimensions.x + 60, y: 48, z: mirrorShiftContextProp.dimensions.z + 40 },
+    topMaterial,
+  );
+};
+
 const addCameraReflection = (
   root: THREE.Group,
   anchors: ReturnType<typeof resolveMirrorShiftCameraAnchors>["reflected"] =
@@ -507,6 +559,7 @@ export const createMirrorShiftGroup = ({
   const realGroup = new THREE.Group();
   realGroup.name = "mirror-shift-real-props";
   mirrorShiftGeometry.props.forEach((prop) => addProp(realGroup, prop, "real"));
+  addMirrorShiftContextProp(realGroup, "real");
   root.add(realGroup);
 
   if (includeVirtualReflection) {
@@ -522,6 +575,7 @@ export const createMirrorShiftGroup = ({
         sourceProp,
       ),
     );
+    addMirrorShiftContextProp(reflectedGroup, "reflected");
     addCameraReflection(reflectedGroup);
     root.add(reflectedGroup);
   }
