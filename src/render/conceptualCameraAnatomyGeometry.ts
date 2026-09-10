@@ -1,5 +1,5 @@
 import type { Vec3 } from "../types/optics";
-import { CAMERA_CONSTANTS } from "../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../utils/constants";
 
 export type ConceptualRearBackMode = "ground-glass" | "film-holder";
 
@@ -156,12 +156,12 @@ export type ConceptualApertureOpening = Readonly<{
  * inside the existing lens-barrel diameter.
  */
 export const resolveConceptualApertureOpening = ({
-  aperture = CAMERA_CONSTANTS.apertureOptions[1],
+  aperture = DEFAULT_CAMERA_STATE.aperture,
   focalLengthMm = CAMERA_CONSTANTS.focalLengthMm,
 }: ConceptualApertureInput = {}): ConceptualApertureOpening => {
   const safeAperture = Number.isFinite(aperture) && aperture > 0
     ? aperture
-    : CAMERA_CONSTANTS.apertureOptions[1];
+    : DEFAULT_CAMERA_STATE.aperture;
   const safeFocalLengthMm = Number.isFinite(focalLengthMm) && focalLengthMm > 0
     ? focalLengthMm
     : CAMERA_CONSTANTS.focalLengthMm;
