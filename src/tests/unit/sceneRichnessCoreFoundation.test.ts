@@ -36,14 +36,14 @@ describe("core scene visual richness foundation", () => {
     expect(sideReturn).toBeInstanceOf(THREE.Mesh);
     expect(entryLintel).toBeInstanceOf(THREE.Mesh);
     expect(worldBounds(sideReturn!)).toMatchObject({
-      x: expect.closeTo(toWorld(520), 1e-8),
-      y: expect.closeTo(toWorld(3000), 1e-8),
-      z: expect.closeTo(toWorld(760), 1e-8),
+      x: expect.closeTo(toWorld(520), 6),
+      y: expect.closeTo(toWorld(3000), 6),
+      z: expect.closeTo(toWorld(760), 6),
     });
     expect(worldBounds(entryLintel!)).toMatchObject({
-      x: expect.closeTo(toWorld(652), 1e-8),
-      y: expect.closeTo(toWorld(72), 1e-8),
-      z: expect.closeTo(toWorld(90), 1e-8),
+      x: expect.closeTo(toWorld(652), 6),
+      y: expect.closeTo(toWorld(72), 6),
+      z: expect.closeTo(toWorld(90), 6),
     });
     expect(architectureRiseGeometry.focusTarget.worldPosition).toEqual({
       x: 0,
@@ -65,8 +65,8 @@ describe("core scene visual richness foundation", () => {
       expect(reveal).toBeInstanceOf(THREE.Mesh);
       expect(sideLedge).toBeInstanceOf(THREE.Mesh);
       expect(worldBounds(reveal!)).toMatchObject({
-        x: expect.closeTo(toWorld(84), 1e-8),
-        z: expect.closeTo(toWorld(100), 1e-8),
+        x: expect.closeTo(toWorld(84), 6),
+        z: expect.closeTo(toWorld(100), 6),
       });
       expect(group.getObjectByName("oblique-architecture-focus-facade-middle")).toBeInstanceOf(
         THREE.Object3D,
@@ -101,9 +101,9 @@ describe("core scene visual richness foundation", () => {
       expect(nearWorld.z).toBeLessThan(middleWorld.z);
       expect(middleWorld.z).toBeLessThan(farWorld.z);
       expect(worldBounds(near!)).toMatchObject({
-        x: expect.closeTo(toWorld(360), 1e-8),
-        y: expect.closeTo(toWorld(70), 1e-8),
-        z: expect.closeTo(toWorld(240), 1e-8),
+        x: expect.closeTo(toWorld(360), 6),
+        y: expect.closeTo(toWorld(70), 6),
+        z: expect.closeTo(toWorld(240), 6),
       });
       for (const subject of tableTiltGeometry.subjects) {
         const anchor = group.getObjectByName(`${subject.semanticName}-anchor`);
