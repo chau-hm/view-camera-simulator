@@ -281,7 +281,7 @@ const geometry = {
   cameraPreset: {
     focalLengthMm: CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
     focusDistanceMm: CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocusDistanceMm,
-    aperture: 32 as const,
+    aperture: 11 as const,
     frontRiseMm: 0,
     frontTiltDeg: 0,
     frontSwingDeg: 0,

@@ -144,10 +144,11 @@ describe("Understanding Camera Movements focal calibration", () => {
     },
   );
 
-  it("keeps the provisional lattice depth within the selected f/32 depth of field", () => {
+  it("keeps the provisional lattice depth within the explicit f/32 depth of field", () => {
     const focalLengthMm = CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm;
+    const aperture = 32 as const;
     const optics = deriveOpticsState(
-      cameraAtFocalLength(focalLengthMm),
+      cameraAtFocalLength(focalLengthMm, { aperture }),
       understandingCameraMovementsScene,
     );
     const nearSubjectSurfaceMm = CAMERA_MOVEMENT_LATTICE.bounds.min.z;
@@ -162,7 +163,7 @@ describe("Understanding Camera Movements focal calibration", () => {
     expect(
       cocDiameterMm(
         focalLengthMm,
-        geometry.cameraPreset.aperture,
+        aperture,
         focusImageDistanceMm,
         nearSubjectSurfaceMm,
       ),
@@ -170,7 +171,7 @@ describe("Understanding Camera Movements focal calibration", () => {
     expect(
       cocDiameterMm(
         focalLengthMm,
-        geometry.cameraPreset.aperture,
+        aperture,
         focusImageDistanceMm,
         farSubjectSurfaceMm,
       ),

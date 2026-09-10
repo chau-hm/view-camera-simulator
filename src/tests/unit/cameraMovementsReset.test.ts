@@ -30,7 +30,7 @@ describe("Reset and restart preserve scene preset overlap", () => {
     expect(s.camera.frontSwingDeg).toBe(0);
     expect(s.camera.rearSwingDeg).toBe(0);
     expect(s.camera.focusDistanceMm).toBe(2000);
-    expect(s.camera.aperture).toBe(32);
+    expect(s.camera.aperture).toBe(11);
     expect(s.camera.focusMode).toBe("finite");
     expect(s.selectedMovement).toBe("frontRiseMm");
 
@@ -52,7 +52,7 @@ describe("Reset and restart preserve scene preset overlap", () => {
 
     expect(s.camera.rearTiltDeg).toBe(0);
     expect(s.camera.focusDistanceMm).toBe(2000);
-    expect(s.camera.aperture).toBe(32);
+    expect(s.camera.aperture).toBe(11);
     expect(s.selectedMovement).toBe("frontRiseMm");
   });
 

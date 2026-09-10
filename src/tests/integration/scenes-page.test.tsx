@@ -72,7 +72,7 @@ describe("scenes page", () => {
     expect(screen.getByText(/Understand how Front and Rear focusing differ/)).toBeInTheDocument();
     expect(screen.getByText("Front / Rear focusing")).toBeInTheDocument();
     expect(screen.getByText("Image alignment")).toBeInTheDocument();
-    expect(screen.getByText("Fixed f/32")).toBeInTheDocument();
+    expect(screen.getByText("Fixed f/11")).toBeInTheDocument();
     const focusHeading = await screen.findByRole("heading", {
       name: "Focus Fundamentals — Two Targets",
       level: 2,
