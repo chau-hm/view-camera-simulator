@@ -3,6 +3,10 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry, { type TableTiltSubjectDefinition } from "../scenes/tableTiltGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
@@ -453,7 +457,13 @@ export function createTableTiltGroup(): THREE.Group {
       toWorld(geometry.tabletop.thickness),
       toWorld(geometry.tabletop.depth),
     ),
-    standardMaterial(geometry.tabletop.color, 0.82),
+    createFocusFriendlyMaterial({
+      pattern: "linear-grain",
+      primaryColor: geometry.tabletop.color,
+      secondaryColor: "#9a7655",
+      repeat: [2, 12],
+      roughness: 0.82,
+    }),
   );
   tabletopMesh.name = "table-tilt-tabletop";
   tabletopAssembly.add(tabletopMesh);
@@ -508,16 +518,7 @@ export function createTableTiltGroup(): THREE.Group {
 }
 
 export function disposeTableTiltGroup(group: THREE.Group): void {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((geometryResource) => geometryResource.dispose());
-  materials.forEach((material) => material.dispose());
+  disposeTeachingSubjectResources(group);
 }
 
 /** React Three Fiber boundary backed by the exact same group factory as RTT. */

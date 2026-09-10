@@ -9,6 +9,10 @@ import {
 } from "../scenes/mirrorShiftGeometry";
 import type { Vec3 } from "../types/optics";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 const material = (color: string, options: THREE.MeshStandardMaterialParameters = {}) =>
   new THREE.MeshStandardMaterial({
@@ -332,7 +336,19 @@ const addProp = (
   namePrefix: "real" | "reflected",
   sourceProp: MirrorShiftProp = prop,
 ): void => {
-  const propMaterial = material(prop.color, { roughness: namePrefix === "reflected" ? 0.62 : 0.78 });
+  const propMaterial =
+    prop.shape === "box"
+      ? createFocusFriendlyMaterial({
+          pattern: "bands",
+          primaryColor: prop.color,
+          secondaryColor: "#f3f7fb",
+          repeat: [3, 5],
+          roughness: namePrefix === "reflected" ? 0.62 : 0.78,
+          metalness: 0.05,
+        })
+      : material(prop.color, {
+          roughness: namePrefix === "reflected" ? 0.62 : 0.78,
+        });
   const name = `mirror-shift-${namePrefix}-${prop.id}`;
   if (prop.shape === "cylinder") {
     addCylinder(parent, name, prop.position, prop.dimensions, propMaterial);
@@ -540,16 +556,7 @@ export const updateMirrorShiftCameraReflection = (
 };
 
 export const disposeMirrorShiftGroup = (group: THREE.Group): void => {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((meshMaterial) => materials.add(meshMaterial));
-  });
-  geometries.forEach((geometry) => geometry.dispose());
-  materials.forEach((meshMaterial) => meshMaterial.dispose());
+  disposeTeachingSubjectResources(group);
 };
 
 /** React Three Fiber boundary for the physical viewport representation. */

@@ -3,6 +3,10 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry, { type ShelfSwingSubjectDefinition } from "../scenes/shelfSwingGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
@@ -136,13 +140,20 @@ const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
     geometry.detailGeometry;
   const chart = subject.focusChart;
   const frameMaterial = standardMaterial(subject.materialHints.primary, 0.82);
+  const backingMaterial = createFocusFriendlyMaterial({
+    pattern: "fine-grid",
+    primaryColor: subject.materialHints.secondary,
+    secondaryColor: subject.materialHints.detail,
+    repeat: [4, 4],
+    roughness: 0.94,
+  });
   const backing = new THREE.Mesh(
     new THREE.BoxGeometry(
       toWorld(chart.width + frameThickness * 2),
       toWorld(chart.height + frameThickness * 2),
       toWorld(backingThickness),
     ),
-    standardMaterial(subject.materialHints.secondary, 0.94),
+    backingMaterial,
   );
   backing.name = `${subject.semanticName}-chart-backing`;
   // The chart and semantic samples stay on the canonical subject plane. Only
@@ -284,16 +295,7 @@ export function createShelfSwingGroup(): THREE.Group {
 }
 
 export function disposeShelfSwingGroup(group: THREE.Group): void {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((geometryResource) => geometryResource.dispose());
-  materials.forEach((material) => material.dispose());
+  disposeTeachingSubjectResources(group);
 }
 
 /** React Three Fiber boundary backed by the exact same group factory as future RTT. */
