@@ -49,7 +49,12 @@ test("Architecture + Foreground exposes the cumulative photographic problem in F
   await expect(rtt.locator("canvas")).toBeVisible();
 
   const sharpness = Object.values(
-    await readFocusDistributionScores(page, ["Near left", "Middle", "Far left", "Far right"]),
+    await readFocusDistributionScores(page, [
+      "foreground-near",
+      "foreground-middle",
+      "building-base",
+      "building-middle",
+    ]),
   );
   expect(sharpness[0]).toBeLessThan(sharpness[3]);
   expect(sharpness[1]).toBeGreaterThan(sharpness[0]);

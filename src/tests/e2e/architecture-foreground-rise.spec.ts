@@ -45,8 +45,8 @@ test("Architecture + Foreground Free Practice exposes cumulative Rise, Tilt, Foc
   await setStepRangeInput(page, "Rise", 20);
   await expect(rise).toHaveValue("20");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
-  expect(await readFocusDistributionPercent(page, "Near left")).toBeLessThan(
-    await readFocusDistributionPercent(page, "Far right"),
+  expect(await readFocusDistributionPercent(page, { targetId: "foreground-near" })).toBeLessThan(
+    await readFocusDistributionPercent(page, { targetId: "building-middle" }),
   );
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);

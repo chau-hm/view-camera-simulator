@@ -29,7 +29,7 @@ const assertSharedObliqueRendering = async (page: Page) => {
   await expect(rtt.locator("canvas")).toBeVisible();
 
   const sharpness = Object.values(
-    await readFocusDistributionScores(page, ["Near centre", "Middle", "Far centre"]),
+    await readFocusDistributionScores(page, ["facade-near", "facade-middle", "facade-far"]),
   );
   expect(sharpness[1]).toBeGreaterThan(sharpness[0]);
   expect(sharpness[1]).toBeGreaterThan(sharpness[2]);

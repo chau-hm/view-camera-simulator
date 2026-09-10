@@ -14,9 +14,14 @@ const assertFiniteGroundGlass = async (page: Page) => {
   if (finalContentful !== null) expect(finalContentful).toBe("true");
 
   expect(await page.locator("body").innerText()).not.toMatch(/NaN|Infinity/);
-  const scores = await readFocusDistributionScores(page, ["Near left", "Middle", "Far left", "Far right"]);
-  for (const [position, score] of Object.entries(scores)) {
-    expect(Number.isFinite(score), `${position} sharpness must be finite`).toBe(true);
+  const scores = await readFocusDistributionScores(page, [
+    "foreground-near",
+    "foreground-middle",
+    "building-base",
+    "building-middle",
+  ]);
+  for (const [targetId, score] of Object.entries(scores)) {
+    expect(Number.isFinite(score), `${targetId} sharpness must be finite`).toBe(true);
   }
   expect(await page.locator("body").innerText()).not.toMatch(/NaN|Infinity/);
 };

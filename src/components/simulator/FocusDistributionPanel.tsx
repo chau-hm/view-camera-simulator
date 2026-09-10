@@ -71,7 +71,7 @@ export const FocusDistributionPanel = ({
   const { t } = useTranslation();
   if (!focusTargets || focusTargets.length === 0) return null;
 
-  const layout = createFocusDistributionLayout(sceneId, focusTargets, previewMode);
+  const layout = createFocusDistributionLayout(sceneId, focusTargets);
   const title = t(readoutMessageKeys.focusDistribution.title);
   const orientationLabel = t(
     previewMode === "raw"
@@ -113,7 +113,7 @@ export const FocusDistributionPanel = ({
 
                 const target = cell.target;
                 const display = clampSharpnessPercent(target.sharpnessPercent);
-                const positionLabel = t(target.slotLabelKey);
+                const positionLabel = t(cell.positionLabelKey);
                 const targetLabel = target.targetLabelKey ? t(target.targetLabelKey) : positionLabel;
                 const accessibleTargetLabel = targetLabel === positionLabel
                   ? positionLabel
@@ -132,10 +132,11 @@ export const FocusDistributionPanel = ({
                       closest: closestLabel,
                     })}
                     className={`focus-distribution-cell ${statusClass(target.status)}`}
+                    data-focus-target-id={target.id}
                     key={`${cell.rowIndex}-${cell.columnIndex}`}
                     style={focusDistributionCellStyle(display)}
                   >
-                    <span className="focus-distribution-cell__position" title={targetLabel}>{positionLabel}</span>
+                    <span className="focus-distribution-cell__position" title={positionLabel}>{targetLabel}</span>
                     <span className="focus-distribution-cell__value">
                       {display}%
                       <span aria-hidden="true" className="focus-distribution-cell__status">
@@ -172,6 +173,7 @@ export const FocusDistributionPanel = ({
                     : "",
                 })}
                 className={`focus-distribution-panel__additional-item ${statusClass(target.status)}`}
+                data-focus-target-id={target.id}
                 key={target.id}
               >
                 <span>{targetLabel}</span>

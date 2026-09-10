@@ -69,8 +69,8 @@ test("Architecture + Foreground Free Practice exposes Rise, Tilt, Focus, and Ape
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
   await expect(page.getByTestId("focus-distribution-panel")).toBeVisible();
-  const readNearSharpness = () => readFocusDistributionPercent(page, "Near left");
-  const readBuildingSharpness = () => readFocusDistributionPercent(page, "Far right");
+  const readNearSharpness = () => readFocusDistributionPercent(page, { targetId: "foreground-near" });
+  const readBuildingSharpness = () => readFocusDistributionPercent(page, { targetId: "building-middle" });
   const initialBuildingSharpness = await readBuildingSharpness();
 
   await setStepRangeInput(page, "Rise", 20);

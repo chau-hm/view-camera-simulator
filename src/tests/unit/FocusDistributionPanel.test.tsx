@@ -4,14 +4,19 @@ import { FocusDistributionPanel } from "../../components/simulator/FocusDistribu
 import { i18n } from "../../i18n";
 
 const allTargets = [
-  { id: "near-left", sharpnessPercent: 81.6, status: "sharp" },
-  { id: "near-centre", sharpnessPercent: 25.2, status: "soft" },
-  { id: "near-right", sharpnessPercent: -4, status: "soft" },
-  { id: "middle", sharpnessPercent: 100.4, status: "sharp" },
-  { id: "far-left", sharpnessPercent: 11.4, status: "soft" },
-  { id: "far-centre", sharpnessPercent: 44.5, status: "acceptable" },
-  { id: "far-right", sharpnessPercent: 83.2, status: "sharp" },
+  { id: "near-left", sharpnessPercent: 81.6, status: "sharp", displayUv: { u: 0.1, v: 0.1 }, visible: true },
+  { id: "near-centre", sharpnessPercent: 25.2, status: "soft", displayUv: { u: 0.5, v: 0.1 }, visible: true },
+  { id: "near-right", sharpnessPercent: -4, status: "soft", displayUv: { u: 0.9, v: 0.1 }, visible: true },
+  { id: "middle", sharpnessPercent: 100.4, status: "sharp", displayUv: { u: 0.5, v: 0.5 }, visible: true },
+  { id: "far-left", sharpnessPercent: 11.4, status: "soft", displayUv: { u: 0.1, v: 0.9 }, visible: true },
+  { id: "far-centre", sharpnessPercent: 44.5, status: "acceptable", displayUv: { u: 0.5, v: 0.9 }, visible: true },
+  { id: "far-right", sharpnessPercent: 83.2, status: "sharp", displayUv: { u: 0.9, v: 0.9 }, visible: true },
 ];
+
+const rawTargets = allTargets.map((target) => ({
+  ...target,
+  displayUv: { u: 1 - target.displayUv.u, v: 1 - target.displayUv.v },
+}));
 
 const renderPanel = (focusTargets = allTargets, previewMode: "raw" | "upright" = "upright") =>
   render(
@@ -48,7 +53,7 @@ describe("FocusDistributionPanel", () => {
   });
 
   it("moves populated cells with the raw Ground Glass orientation", () => {
-    renderPanel(allTargets, "raw");
+    renderPanel(rawTargets, "raw");
 
     const panel = screen.getByTestId("focus-distribution-panel");
     const rows = within(panel).getAllByRole("row");
@@ -56,6 +61,31 @@ describe("FocusDistributionPanel", () => {
     expect(within(rows[2]).getByRole("cell", { name: /Near left/ })).toHaveTextContent("82%");
     expect(within(rows[1]).getByRole("cell", { name: /Middle/ })).toHaveTextContent("100%");
     expect(screen.getByTestId("focus-distribution-orientation")).toHaveTextContent("Raw");
+  });
+
+  it("keeps semantic target labels separate from the projected display cell", () => {
+    render(
+      <FocusDistributionPanel
+        sceneId="architecture-foreground"
+        focusTargets={[
+          {
+            id: "building-middle",
+            sharpnessPercent: 68,
+            status: "acceptable",
+            displayUv: { u: 0.1, v: 0.5 },
+            visible: true,
+          },
+        ]}
+        previewMode="upright"
+        metric="focus"
+      />,
+    );
+
+    const target = screen.getByTestId("focus-distribution-panel").querySelector(
+      '[data-focus-target-id="building-middle"]',
+    );
+    expect(target).toHaveTextContent("Building middle");
+    expect(target).toHaveAccessibleName(/Middle left.*Building middle.*68%.*Acceptable/);
   });
 
   it("keeps percentage bounds and semantic status available without relying on color", () => {
@@ -69,8 +99,8 @@ describe("FocusDistributionPanel", () => {
 
   it("renders only supplied positions when focus data is partial", () => {
     renderPanel([
-      { id: "near-left", sharpnessPercent: 35, status: "soft" },
-      { id: "middle", sharpnessPercent: 75, status: "acceptable" },
+      { id: "near-left", sharpnessPercent: 35, status: "soft", displayUv: { u: 0.1, v: 0.1 }, visible: true },
+      { id: "middle", sharpnessPercent: 75, status: "acceptable", displayUv: { u: 0.5, v: 0.5 }, visible: true },
     ]);
 
     expect(screen.getByRole("cell", { name: /Near left/ })).toHaveTextContent("35%");

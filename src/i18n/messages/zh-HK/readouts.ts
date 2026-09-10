@@ -82,6 +82,8 @@ export const readoutsMessages = {
       nearLeft: "近左",
       nearCentre: "近中",
       nearRight: "近右",
+      middleLeft: "中左",
+      middleRight: "中右",
       middle: "中間",
       farLeft: "遠左",
       farCentre: "遠中",

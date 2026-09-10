@@ -79,6 +79,8 @@ export const readoutsMessages = {
       nearLeft: "Near left",
       nearCentre: "Near centre",
       nearRight: "Near right",
+      middleLeft: "Middle left",
+      middleRight: "Middle right",
       middle: "Middle",
       farLeft: "Far left",
       farCentre: "Far centre",

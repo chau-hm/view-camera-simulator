@@ -3,16 +3,21 @@ import { expect, type Locator, type Page } from "@playwright/test";
 const focusDistributionPanel = (page: Page) =>
   page.getByTestId("focus-distribution-panel");
 
-const focusDistributionCell = (page: Page, position: string): Locator =>
-  focusDistributionPanel(page).getByRole("cell", { name: new RegExp(`^${position}(?: ·|:)`) });
+type FocusDistributionTargetQuery = {
+  targetId: string;
+};
+
+const focusDistributionTarget = (page: Page, targetId: string): Locator =>
+  focusDistributionPanel(page).locator(`[data-focus-target-id="${targetId}"]`);
 
 export const readFocusDistributionPercent = async (
   page: Page,
-  position: string,
+  { targetId }: FocusDistributionTargetQuery,
 ): Promise<number> => {
-  const cell = focusDistributionCell(page, position);
-  await expect(cell).toBeVisible();
-  const label = await cell.getAttribute("aria-label");
+  const target = focusDistributionTarget(page, targetId);
+  await expect(target).toHaveCount(1);
+  await expect(target).toBeVisible();
+  const label = await target.getAttribute("aria-label");
   const match = label?.match(/(\d+)%/);
   if (!match) throw new Error(`Focus distribution cell has no percentage: ${label ?? "(missing label)"}`);
   return Number(match[1]);
@@ -20,13 +25,13 @@ export const readFocusDistributionPercent = async (
 
 export const readFocusDistributionScores = async (
   page: Page,
-  positions: readonly string[],
+  targetIds: readonly string[],
 ): Promise<Record<string, number>> =>
   Object.fromEntries(
     await Promise.all(
-      positions.map(async (position) => [
-        position,
-        await readFocusDistributionPercent(page, position),
+      targetIds.map(async (targetId) => [
+        targetId,
+        await readFocusDistributionPercent(page, { targetId }),
       ] as const),
     ),
   );

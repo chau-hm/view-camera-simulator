@@ -49,7 +49,10 @@ import { AnatomyControlTeachingPanel } from "../simulator/AnatomyControlTeaching
 import { TaskPanel } from "../simulator/TaskPanel";
 import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
-import { resolveGroundGlassPreviewMode } from "../../render/groundGlassTargetProjection";
+import {
+  projectSceneFocusTargetsToGroundGlass,
+  resolveGroundGlassPreviewMode,
+} from "../../render/groundGlassTargetProjection";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
@@ -478,17 +481,30 @@ export const SimulatorWorkspace = ({
 
   const tableTiltFocusMetric =
     safeScene.id === "table-tilt" && mode === "free" ? "point" : "patch";
+  const groundGlassPreviewMode = resolveGroundGlassPreviewMode(camera.groundGlassAssistEnabled);
   const focusTargetReadouts = useMemo(
-    () =>
-      opticsState.focusTargets.map((target) => {
+    () => {
+      const projectedTargets = projectSceneFocusTargetsToGroundGlass({
+        sceneDef: safeScene,
+        opticsState,
+        aperture: camera.aperture,
+        previewMode: groundGlassPreviewMode,
+      });
+      const projectedTargetById = new Map(projectedTargets.map((target) => [target.id, target]));
+
+      return opticsState.focusTargets.map((target) => {
         const metric = resolvePhysicalFocusTargetPresentationMetric(target, tableTiltFocusMetric);
+        const projection = projectedTargetById.get(target.id);
         return {
           id: target.id,
           status: metric.status,
           sharpnessPercent: Math.round(metric.sharpness * 100),
+          displayUv: projection?.displayUv ?? null,
+          visible: projection?.visible ?? false,
         };
-      }),
-    [opticsState.focusTargets, tableTiltFocusMetric],
+      });
+    },
+    [camera.aperture, groundGlassPreviewMode, opticsState, safeScene, tableTiltFocusMetric],
   );
   const learnerReadoutPolicy = useMemo(
     () => resolveLearnerReadoutPolicy(safeScene.id, { hasFocusTargets: focusTargetReadouts.length > 0 }),
@@ -496,7 +512,6 @@ export const SimulatorWorkspace = ({
   );
   const focusTargetMetric: FocusTargetMetric =
     tableTiltFocusMetric === "point" ? "point" : safeScene.id === "table-tilt" ? "patch" : "focus";
-  const groundGlassPreviewMode = resolveGroundGlassPreviewMode(camera.groundGlassAssistEnabled);
   const closestPointTargetId = useMemo(() => {
     if (safeScene.id !== "table-tilt" || mode !== "free") return undefined;
     return opticsState.focusTargets.reduce<string | undefined>((closestId, target) => {

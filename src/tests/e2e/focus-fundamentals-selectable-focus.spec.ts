@@ -114,8 +114,8 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   const front = page.getByRole("radio", { name: "Front standard" });
   const rear = page.getByRole("radio", { name: "Rear standard" });
   const focusStandard = page.getByRole("group", { name: "Focus standard" });
-  const readNearSharpness = () => readFocusDistributionPercent(page, "Near centre");
-  const readFarSharpness = () => readFocusDistributionPercent(page, "Far centre");
+  const readNearSharpness = () => readFocusDistributionPercent(page, { targetId: "focus-near-detail" });
+  const readFarSharpness = () => readFocusDistributionPercent(page, { targetId: "focus-far-detail" });
 
   await expect(scene).toHaveAttribute("data-scene-subject-id", "focus-fundamentals-two-targets");
   await expect(page.getByRole("group", { name: "Focus standard" })).toBeVisible();

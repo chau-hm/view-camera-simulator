@@ -15,9 +15,14 @@ const numericAttribute = async (
 const expectFiniteFocusDiagnostics = async (
   page: import("@playwright/test").Page,
 ) => {
-  const scores = await readFocusDistributionScores(page, ["Near left", "Middle", "Far left", "Far right"]);
-  for (const [position, value] of Object.entries(scores)) {
-    expect(Number.isFinite(value), `${position} sharpness must be finite`).toBe(true);
+  const scores = await readFocusDistributionScores(page, [
+    "foreground-near",
+    "foreground-middle",
+    "building-base",
+    "building-middle",
+  ]);
+  for (const [targetId, value] of Object.entries(scores)) {
+    expect(Number.isFinite(value), `${targetId} sharpness must be finite`).toBe(true);
     expect(value).toBeGreaterThanOrEqual(0);
     expect(value).toBeLessThanOrEqual(100);
   }

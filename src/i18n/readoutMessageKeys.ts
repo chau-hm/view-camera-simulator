@@ -79,6 +79,8 @@ export const readoutMessageKeys = {
       nearLeft: "readouts.focusDistribution.positions.nearLeft",
       nearCentre: "readouts.focusDistribution.positions.nearCentre",
       nearRight: "readouts.focusDistribution.positions.nearRight",
+      middleLeft: "readouts.focusDistribution.positions.middleLeft",
+      middleRight: "readouts.focusDistribution.positions.middleRight",
       middle: "readouts.focusDistribution.positions.middle",
       farLeft: "readouts.focusDistribution.positions.farLeft",
       farCentre: "readouts.focusDistribution.positions.farCentre",
