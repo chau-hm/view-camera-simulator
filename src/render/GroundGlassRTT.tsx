@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../core/optics/physicalSharpness";
+import { resolveGroundGlassRelativeIlluminance } from "../core/optics/groundGlassIlluminance";
 
 const SKY_COLOR = new THREE.Color("#dfe5ec");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
@@ -436,6 +437,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
         displayUpright: { value: 0.0 },
+        apertureIlluminanceGain: { value: 1.0 },
       },
     });
 
@@ -1141,6 +1143,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       // Prepare typed optical state once and apply it to both CoC and gather.
       let uniformPreparationError: string | null = null;
       let preparedDofState: ReturnType<typeof createGroundGlassDofUniformState> | null = null;
+      let apertureIlluminanceGain: number | null = rawDebug ? 1.0 : null;
       try {
         const displayOpticsState = resolveGroundGlassDisplayOpticsState(resolvedSceneId, opticsState);
         preparedDofState = createGroundGlassDofUniformState(
@@ -1157,6 +1160,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           sampledFilmDimensions.widthMm,
           sampledFilmDimensions.heightMm,
         );
+        if (!rawDebug) {
+          apertureIlluminanceGain = resolveGroundGlassRelativeIlluminance(aperture);
+        }
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);
       }
@@ -1227,6 +1233,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       compositeMaterial.uniforms.displayUpright.value = previewMode === "raw" ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
+      if (apertureIlluminanceGain !== null) {
+        compositeMaterial.uniforms.apertureIlluminanceGain.value = apertureIlluminanceGain;
+      }
 
       // Keep the final DOF result in an owned target. Besides enabling a
       // deterministic render sanity readback, this prevents a transient empty
