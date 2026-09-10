@@ -8,9 +8,10 @@ current implementation and provides the terminology and relationships that
 future learner-facing copy should preserve.
 
 It is a content reference, not a product roadmap, optics specification, or
-mandatory curriculum sequence. The six public lessons are described by role;
-runtime scene order and homepage navigation are intentionally outside this
-document's authority.
+mandatory curriculum sequence. The current public lessons are described by
+role. This section follows the public catalog for discoverability, but the
+runtime catalog, order, modes, and identifiers remain defined by
+`src/app/publicScenes.ts` rather than by this document.
 
 ## Core mental model
 
@@ -131,19 +132,17 @@ not claim metrological precision.
 
 ## Current public lessons
 
-These are the six current public scenes. Their inclusion here does not assert
-a required course order.
+These are the current public lessons and scenes. Their inclusion here does not
+assert a required course order.
 
-### Focus Fundamentals — Two Targets
+### Lesson 0 — Meet the View Camera
 
-This lesson compares focusing with the Front versus Rear standard using two
-depths on the same connected object. The learner moves focus between the near
-and far detail and observes the white near gate and far pointer. Front
-focusing changes their image alignment/framing differently; Rear focusing
-keeps them aligned because the lens and whole-camera viewpoint stay fixed.
-
-The aperture is fixed at f/32 in the current lesson. Aperture choice is not a
-learning variable for this scene and must not be described as one.
+This free-only anatomy lesson introduces the conceptual view camera before the
+movement studies. The learner identifies the Front Standard, Lens Board, Lens,
+Aperture, Bellows, Rear Standard, Ground Glass, Film Holder, and Camera
+Support, then connects Front Rise, Front Shift, Front Tilt, Front Swing,
+Front/Rear focusing, and Aperture controls to the physical parts they change.
+It is an anatomy and control walkthrough, not a scored movement task.
 
 ### Understanding Camera Movements
 
@@ -159,6 +158,17 @@ The learner compares the consequences in camera geometry and Ground Glass.
 The historical A/B/C1/C2/C3/D1/D2/D3 calibration cases support implementation
 and diagnostics, but they are not the learner-facing conceptual structure of
 the current continuous lesson.
+
+### Focus Fundamentals — Two Targets
+
+This lesson compares focusing with the Front versus Rear standard using two
+depths on the same connected object. The learner moves focus between the near
+and far detail and observes the white near gate and far pointer. Front
+focusing changes their image alignment/framing differently; Rear focusing
+keeps them aligned because the lens and whole-camera viewpoint stay fixed.
+
+The aperture is fixed at f/32 in the current lesson. Aperture choice is not a
+learning variable for this scene and must not be described as one.
 
 ### Architecture Rise
 
@@ -191,6 +201,14 @@ to rotate the plane of sharp focus through subjects arranged diagonally in
 depth, using the Top view to compare the focus plane with the diagonal subject
 trace.
 
+### Oblique Tabletop
+
+This lesson uses an inclined plan board resting on a normal table. The subject
+plane varies both near-to-far and laterally, so Front Tilt addresses one
+direction while Front Swing addresses the other. The guided progression keeps
+focus, Tilt, Swing, refinement of Focus, and the final Aperture/depth-of-field
+tolerance comparison as distinct learning steps.
+
 ### Mirror Shift
 
 This lesson demonstrates that Viewpoint and Framing are distinct. The learner
@@ -203,6 +221,32 @@ remain those of the changed viewpoint.
 Mirror Shift is therefore a viewpoint-versus-framing lesson, not merely a
 static mirror inspection scene. The task keeps the film plane parallel to the
 mirror while separating whole-camera movement from Front Shift.
+
+### Oblique Architecture
+
+This lesson combines Front Rise and Front Swing for an oblique building. The
+learner keeps the camera level so the architectural verticals remain parallel,
+uses Rise to establish framing, and turns the plane of sharp focus toward the
+receding façade with Swing and Focus. The guided lesson progresses from
+composition to focus-plane alignment and then a compound challenge.
+
+### Architecture + Foreground
+
+This lesson places a nearer foreground problem in front of level architecture.
+The learner uses Front Rise to include the roof while keeping the camera level,
+Front Tilt and Focus to align the plane of sharp focus across the foreground
+and building, and Aperture to add usable depth around that aligned plane. The
+compound guided task keeps framing, focus-plane alignment, and depth of field
+as related but separate decisions.
+
+### Interior Corner — Rise + Swing
+
+This lesson uses a level interior corner where upper architectural detail
+presses against the frame and a side wall recedes through near, middle, and far
+details. The learner uses Front Rise for composition, Front Swing to orient the
+focus plane toward the wall, Focus to place that plane on the wall, and a
+modestly smaller Aperture to add tolerance around the aligned plane. The
+guided sequence makes those four relationships explicit.
 
 ## Cross-scene teaching principles
 
@@ -241,24 +285,18 @@ merely which control to move.
 
 ## Content and localization contract
 
-This document prepares the content model for PR 6B and later content work; it
-does not implement internationalization.
-
 - English is the canonical source language.
 - Learner-facing terminology follows the canonical glossary in this document.
 - Learner-facing prose must be written so it can be localized without losing
   the physical relationship or teaching intent.
 - Scene and task domain state must never depend on translated display strings.
-- Translations must preserve optical and pedagogical semantics.
+- The application currently supports bundled `en` and `zh-HK` presentation
+  resources. Translations must preserve optical and pedagogical semantics.
 - Locale-specific wording may differ where natural language requires it, but
   the instructional meaning must remain equivalent.
-- Future learner-facing strings should not be unnecessarily embedded directly
-  in rendering, business, or domain logic.
-- Translation keys and locale files will be introduced separately from this
-  learning-model document.
-
-The intended initial locales are `en` and `zh-HK`. PR 6A adds no i18n
-library, locale files, language selector, routing change, or translated UI.
+- Current locale resolution, persistence, language-selector surfaces, and
+  intentional localization exclusions are defined in [the internationalization
+  contract](I18N.md).
 
 ## Scope and authority
 
