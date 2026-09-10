@@ -129,7 +129,7 @@ describe("scene-aware learner readouts", () => {
     expect(current).toHaveTextContent("Focus method");
     expect(current).toHaveTextContent("Front standard");
     expect(current).toHaveTextContent("Focus");
-    expect(current).toHaveTextContent("Aperture: f/32");
+    expect(current).toHaveTextContent("Aperture: f/11");
     expect(current.querySelector("dt")).not.toHaveTextContent("Movement");
     expect(current).not.toHaveTextContent("Rise");
     expect(current).not.toHaveTextContent("Tilt");
@@ -140,7 +140,7 @@ describe("scene-aware learner readouts", () => {
     const localizedCurrent = screen.getByTestId("current-settings-readout");
     expect(localizedCurrent).toHaveTextContent("對焦方式");
     expect(localizedCurrent).toHaveTextContent("前組");
-    expect(localizedCurrent).toHaveTextContent("光圈: f/32");
+    expect(localizedCurrent).toHaveTextContent("光圈: f/11");
     expect(screen.getByTestId("focus-targets-readout")).toHaveTextContent("對焦目標 · 對焦");
   });
 

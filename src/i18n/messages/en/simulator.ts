@@ -298,7 +298,7 @@ export const simulatorMessages = {
     },
     focusFundamentals: {
       objective:
-        "Explore Front and Rear focusing across two depths of the same object at fixed f/32.",
+        "Explore Front and Rear focusing across two depths of the same object at fixed f/11.",
       bullets: {
         focusDistance: "Move focus between the near and far detail.",
         readouts: "Watch the white near gate and far pointer.",

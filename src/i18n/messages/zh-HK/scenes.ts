@@ -34,7 +34,7 @@ export const scenesMessages = {
     topics: {
       frontRearFocusing: "前組／後組對焦",
       imageAlignment: "影像對齊",
-      fixedAperture: "固定 f/32",
+      fixedAperture: "固定 f/11",
     },
   },
   architectureRise: {

@@ -167,7 +167,7 @@ and far detail and observes the white near gate and far pointer. Front
 focusing changes their image alignment/framing differently; Rear focusing
 keeps them aligned because the lens and whole-camera viewpoint stay fixed.
 
-The aperture is fixed at f/32 in the current lesson. Aperture choice is not a
+The aperture is fixed at f/11 in the current lesson. Aperture choice is not a
 learning variable for this scene and must not be described as one.
 
 ### Architecture Rise

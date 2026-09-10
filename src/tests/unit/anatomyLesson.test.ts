@@ -71,7 +71,7 @@ describe("Lesson 0 anatomy vocabulary", () => {
     expect(getLessonZeroStep(999).id).toBe("controls-recap");
   });
 
-  it("keeps rear-back and aperture demonstrations presentation-only", () => {
+  it("keeps rear-back and the intentional f/32 aperture demonstration presentation-only", () => {
     const groundGlass = resolveLessonZeroCameraPresentation(getLessonZeroStep(6));
     const filmHolder = resolveLessonZeroCameraPresentation(getLessonZeroStep(7));
     const wide = resolveLessonZeroCameraPresentation(getLessonZeroStep(3));
@@ -80,6 +80,7 @@ describe("Lesson 0 anatomy vocabulary", () => {
     expect(groundGlass.rearBackMode).toBe("ground-glass");
     expect(filmHolder.rearBackMode).toBe("film-holder");
     expect(wide.aperture).toBe(5.6);
+    // The small-diaphragm comparison deliberately remains f/32; this is not a lesson start.
     expect(small.aperture).toBe(32);
     expect(wide).not.toHaveProperty("visualAperture");
   });
