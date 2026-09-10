@@ -39,9 +39,8 @@ import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
 import {
   CurrentSettingsReadout,
-  FocusTargetsReadout,
-  type FocusTargetMetric,
 } from "../simulator/GroundGlassReadouts";
+import { FocusDistributionPanel, type FocusTargetMetric } from "../simulator/FocusDistributionPanel";
 import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
@@ -50,6 +49,7 @@ import { AnatomyControlTeachingPanel } from "../simulator/AnatomyControlTeaching
 import { TaskPanel } from "../simulator/TaskPanel";
 import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
+import { resolveGroundGlassPreviewMode } from "../../render/groundGlassTargetProjection";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
@@ -496,6 +496,7 @@ export const SimulatorWorkspace = ({
   );
   const focusTargetMetric: FocusTargetMetric =
     tableTiltFocusMetric === "point" ? "point" : safeScene.id === "table-tilt" ? "patch" : "focus";
+  const groundGlassPreviewMode = resolveGroundGlassPreviewMode(camera.groundGlassAssistEnabled);
   const closestPointTargetId = useMemo(() => {
     if (safeScene.id !== "table-tilt" || mode !== "free") return undefined;
     return opticsState.focusTargets.reduce<string | undefined>((closestId, target) => {
@@ -704,9 +705,11 @@ export const SimulatorWorkspace = ({
             />
 
             {learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? (
-              <FocusTargetsReadout
+              <FocusDistributionPanel
+                sceneId={safeScene.id}
                 focusTargets={focusTargetReadouts}
                 metric={focusTargetMetric}
+                previewMode={groundGlassPreviewMode}
                 closestTargetId={closestPointTargetId}
               />
             ) : null}

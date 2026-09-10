@@ -5,6 +5,7 @@ import {
   readFreshElementBounds,
   readStageTransform,
 } from "./helpers/groundGlass";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -18,19 +19,8 @@ const shelfCard = (page: Page) =>
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
-const readSharpness = async (page: Page) =>
-  Object.fromEntries(
-    await Promise.all(
-      ["shelf-front", "shelf-middle", "shelf-back"].map(async (id) => [
-        id,
-        Number(
-          await page
-            .getByRole("progressbar", { name: `${id} sharpness` })
-            .getAttribute("aria-valuenow"),
-        ),
-      ] as const),
-    ),
-  );
+const readSharpness = (page: Page) =>
+  readFocusDistributionScores(page, ["Near left", "Middle", "Far right"]);
 
 const expectGuideLabelClearOfMiddleTarget = async (svg: Locator) => {
   const guideLabel = svg.getByTestId("shelf-swing-subject-trace-label");
@@ -214,8 +204,8 @@ test("Shelf Swing physical focus becomes near-sharp and approaches the Raw RTT c
   await setRangeDirect(page, "Swing", 3.802);
   await expect.poll(async () => Object.values(await readSharpness(page)).every((score) => score >= 80)).toBe(false);
   const opposite = await readSharpness(page);
-  expect(Math.min(opposite["shelf-front"], opposite["shelf-back"])).toBeLessThan(
-    Math.min(calibrated["shelf-front"], calibrated["shelf-back"]),
+  expect(Math.min(opposite["Near left"], opposite["Far right"])).toBeLessThan(
+    Math.min(calibrated["Near left"], calibrated["Far right"]),
   );
   await expect
     .poll(() => page.getByTestId("ground-glass-rtt").getAttribute("data-rtt-sanity-state"))

@@ -66,4 +66,23 @@ export const readoutsMessages = {
     closestPoint: "Closest point",
     sharpnessAria: "{{target}} sharpness",
   },
+  focusDistribution: {
+    title: "Focus distribution",
+    ariaLabel: "Focus distribution",
+    raw: "Raw",
+    upright: "Upright",
+    orientationAria: "Ground Glass orientation: {{orientation}}",
+    targetAria: "{{target}}: {{percent}} · {{status}}{{closest}}",
+    additionalTargetsAria: "Additional focus targets",
+    unplacedTarget: "Target",
+    positions: {
+      nearLeft: "Near left",
+      nearCentre: "Near centre",
+      nearRight: "Near right",
+      middle: "Middle",
+      farLeft: "Far left",
+      farCentre: "Far centre",
+      farRight: "Far right",
+    },
+  },
 } as const;

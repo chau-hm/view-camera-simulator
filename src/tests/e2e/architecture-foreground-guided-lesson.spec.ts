@@ -1,5 +1,6 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -13,10 +14,9 @@ const assertFiniteGroundGlass = async (page: Page) => {
   if (finalContentful !== null) expect(finalContentful).toBe("true");
 
   expect(await page.locator("body").innerText()).not.toMatch(/NaN|Infinity/);
-  for (const targetId of ["foreground-near", "foreground-middle", "building-base", "building-middle"]) {
-    const progress = page.getByRole("progressbar", { name: `${targetId} sharpness` });
-    await expect(progress).toBeVisible();
-    expect(Number.isFinite(Number(await progress.getAttribute("aria-valuenow")))).toBe(true);
+  const scores = await readFocusDistributionScores(page, ["Near left", "Middle", "Far left", "Far right"]);
+  for (const [position, score] of Object.entries(scores)) {
+    expect(Number.isFinite(score), `${position} sharpness must be finite`).toBe(true);
   }
   expect(await page.locator("body").innerText()).not.toMatch(/NaN|Infinity/);
 };

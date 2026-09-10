@@ -1,5 +1,6 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
+import { readFocusDistributionPercent } from "./helpers/focusDistribution";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const completedHeading = (page: Page) => page.getByRole("heading", { name: "Task completed" });
@@ -39,16 +40,13 @@ test("Architecture + Foreground Free Practice exposes cumulative Rise, Tilt, Foc
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
-  const nearSharpness = page.getByRole("progressbar", { name: "foreground-near sharpness" });
-  const buildingSharpness = page.getByRole("progressbar", { name: "building-middle sharpness" });
-  await expect(nearSharpness).toBeVisible();
-  await expect(buildingSharpness).toBeVisible();
+  await expect(page.getByTestId("focus-distribution-panel")).toBeVisible();
 
   await setStepRangeInput(page, "Rise", 20);
   await expect(rise).toHaveValue("20");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
-  expect(Number(await nearSharpness.getAttribute("aria-valuenow"))).toBeLessThan(
-    Number(await buildingSharpness.getAttribute("aria-valuenow")),
+  expect(await readFocusDistributionPercent(page, "Near left")).toBeLessThan(
+    await readFocusDistributionPercent(page, "Far right"),
   );
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);

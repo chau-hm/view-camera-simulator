@@ -459,7 +459,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getByTestId("scene-canvas")).toBe(originalSceneRenderer);
     expect(screen.queryByLabelText("GroundGlassColumn")).not.toBeInTheDocument();
     expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("focus-targets-readout")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Task")).not.toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -563,7 +563,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getByLabelText("Upright Assist")).toBeChecked();
     expect(screen.getByRole("region", { name: "Pan Ground Glass" })).toHaveAttribute("data-zoomed", "true");
     expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("focus-targets-readout")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Task")).not.toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

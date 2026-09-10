@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
+import { resolveGroundGlassPreviewMode } from "../../render/groundGlassTargetProjection";
 import { ViewOptions } from "../controls/ViewOptions";
 import "../../i18n";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
@@ -83,8 +84,7 @@ export const GroundGlassViewport = ({
 }: GroundGlassViewportProps) => {
   const { t } = useTranslation();
   const sceneId = scene.id;
-  // Preview mode control local to the Ground Glass panel. Default to camera state
-  const [previewMode, setPreviewMode] = useState<"raw" | "upright">(groundGlassAssistEnabled ? "upright" : "raw");
+  const previewMode = resolveGroundGlassPreviewMode(groundGlassAssistEnabled);
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [originalZoomEnabled, setOriginalZoomEnabled] = useState(false);
@@ -207,7 +207,7 @@ export const GroundGlassViewport = ({
                     type="radio"
                     name={`gg-preview-${sceneId}`}
                     checked={previewMode === "raw"}
-                    onChange={() => { setPreviewMode("raw"); onGroundGlassAssistEnabledChange(false); }}
+                    onChange={() => onGroundGlassAssistEnabledChange(false)}
                   />
                   <span>{t(simulatorMessageKeys.viewport.rawGroundGlass)}</span>
                 </label>
@@ -218,7 +218,7 @@ export const GroundGlassViewport = ({
                     type="radio"
                     name={`gg-preview-${sceneId}`}
                     checked={previewMode === "upright"}
-                    onChange={() => { setPreviewMode("upright"); onGroundGlassAssistEnabledChange(true); }}
+                    onChange={() => onGroundGlassAssistEnabledChange(true)}
                   />
                   <span>{t(simulatorMessageKeys.viewport.uprightAssist)}</span>
                 </label>

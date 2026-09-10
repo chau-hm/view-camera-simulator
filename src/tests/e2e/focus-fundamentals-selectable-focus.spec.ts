@@ -1,5 +1,6 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type ElementHandle, type Locator, type Page } from "@playwright/test";
+import { readFocusDistributionPercent } from "./helpers/focusDistribution";
 import {
   focusFundamentalsFarFocusDepthMm,
   focusFundamentalsFocusDepthRangeMm,
@@ -113,8 +114,8 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   const front = page.getByRole("radio", { name: "Front standard" });
   const rear = page.getByRole("radio", { name: "Rear standard" });
   const focusStandard = page.getByRole("group", { name: "Focus standard" });
-  const nearSharpness = page.getByRole("progressbar", { name: "focus-near-detail sharpness" });
-  const farSharpness = page.getByRole("progressbar", { name: "focus-far-detail sharpness" });
+  const readNearSharpness = () => readFocusDistributionPercent(page, "Near centre");
+  const readFarSharpness = () => readFocusDistributionPercent(page, "Far centre");
 
   await expect(scene).toHaveAttribute("data-scene-subject-id", "focus-fundamentals-two-targets");
   await expect(page.getByRole("group", { name: "Focus standard" })).toBeVisible();
@@ -180,7 +181,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expectRttCameraAtLens(scene, rtt);
   const frontNearRttPosition = await readVector(rtt, "data-rtt-camera-position");
   await expect
-    .poll(async () => Number(await nearSharpness.getAttribute("aria-valuenow")) - Number(await farSharpness.getAttribute("aria-valuenow")))
+    .poll(async () => (await readNearSharpness()) - (await readFarSharpness()))
     .toBeGreaterThan(0);
   await expect.poll(() => rtt.getAttribute("data-rtt-sanity-state"), { timeout: 120_000 }).not.toBe(initialSanityState);
   await expectContentfulRtt(rtt);
@@ -196,7 +197,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expectRttCameraAtLens(scene, rtt);
   expect(await readZ(rtt, "data-rtt-camera-position")).not.toBeCloseTo(frontNearRttPosition[2], 6);
   await expect
-    .poll(async () => Number(await farSharpness.getAttribute("aria-valuenow")) - Number(await nearSharpness.getAttribute("aria-valuenow")))
+    .poll(async () => (await readFarSharpness()) - (await readNearSharpness()))
     .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
@@ -228,7 +229,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   const rearNearRttPosition = await readVector(rtt, "data-rtt-camera-position");
   expect(Math.hypot(...rearNearRttPosition.map((value, index) => value - rearFarRttPosition[index]))).toBeLessThan(1e-7);
   await expect
-    .poll(async () => Number(await nearSharpness.getAttribute("aria-valuenow")) - Number(await farSharpness.getAttribute("aria-valuenow")))
+    .poll(async () => (await readNearSharpness()) - (await readFarSharpness()))
     .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
@@ -239,7 +240,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(rearFarFilmZ, 8);
   await expectRttCameraAtLens(scene, rtt);
   await expect
-    .poll(async () => Number(await farSharpness.getAttribute("aria-valuenow")) - Number(await nearSharpness.getAttribute("aria-valuenow")))
+    .poll(async () => (await readFarSharpness()) - (await readNearSharpness()))
     .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);

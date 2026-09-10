@@ -69,4 +69,23 @@ export const readoutsMessages = {
     closestPoint: "最近點",
     sharpnessAria: "{{target}} 清晰度",
   },
+  focusDistribution: {
+    title: "對焦分佈",
+    ariaLabel: "對焦分佈",
+    raw: "原始",
+    upright: "正像",
+    orientationAria: "對焦屏方向：{{orientation}}",
+    targetAria: "{{target}}：{{percent}} · {{status}}{{closest}}",
+    additionalTargetsAria: "其他對焦目標",
+    unplacedTarget: "目標",
+    positions: {
+      nearLeft: "近左",
+      nearCentre: "近中",
+      nearRight: "近右",
+      middle: "中間",
+      farLeft: "遠左",
+      farCentre: "遠中",
+      farRight: "遠右",
+    },
+  },
 } satisfies MessageShape<typeof englishReadoutsMessages>;

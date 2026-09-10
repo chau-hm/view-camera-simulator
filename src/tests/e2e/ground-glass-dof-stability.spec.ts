@@ -1,5 +1,6 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -14,18 +15,9 @@ const numericAttribute = async (
 const expectFiniteFocusDiagnostics = async (
   page: import("@playwright/test").Page,
 ) => {
-  for (const id of [
-    "foreground-near",
-    "foreground-middle",
-    "building-base",
-    "building-middle",
-  ]) {
-    const value = Number(
-      await page
-        .getByRole("progressbar", { name: `${id} sharpness` })
-        .getAttribute("aria-valuenow"),
-    );
-    expect(Number.isFinite(value), `${id} sharpness must be finite`).toBe(true);
+  const scores = await readFocusDistributionScores(page, ["Near left", "Middle", "Far left", "Far right"]);
+  for (const [position, value] of Object.entries(scores)) {
+    expect(Number.isFinite(value), `${position} sharpness must be finite`).toBe(true);
     expect(value).toBeGreaterThanOrEqual(0);
     expect(value).toBeLessThanOrEqual(100);
   }

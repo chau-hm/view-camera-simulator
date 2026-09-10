@@ -1,5 +1,6 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -27,10 +28,8 @@ const assertSharedObliqueRendering = async (page: Page) => {
   expect(Number(await rtt.getAttribute("data-rtt-final-non-background"))).toBeGreaterThan(0);
   await expect(rtt.locator("canvas")).toBeVisible();
 
-  const sharpness = await Promise.all(
-    ["facade-near", "facade-middle", "facade-far"].map(async (id) =>
-      Number(await page.getByRole("progressbar", { name: `${id} sharpness` }).getAttribute("aria-valuenow")),
-    ),
+  const sharpness = Object.values(
+    await readFocusDistributionScores(page, ["Near centre", "Middle", "Far centre"]),
   );
   expect(sharpness[1]).toBeGreaterThan(sharpness[0]);
   expect(sharpness[1]).toBeGreaterThan(sharpness[2]);

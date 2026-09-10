@@ -4,6 +4,7 @@ import {
   readFreshElementBounds,
   readStageTransform,
 } from "./helpers/groundGlass";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -12,19 +13,8 @@ const tableTiltCard = (page: import("@playwright/test").Page) =>
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: "Table Tilt" }) });
 
-const readPointScores = async (page: import("@playwright/test").Page) =>
-  Object.fromEntries(
-    await Promise.all(
-      ["near-cup", "mid-notebook", "far-book"].map(async (id) => [
-        id,
-        Number(
-          await page
-            .getByRole("progressbar", { name: `${id} sharpness` })
-            .getAttribute("aria-valuenow"),
-        ),
-      ] as const),
-    ),
-  );
+const readPointScores = (page: import("@playwright/test").Page) =>
+  readFocusDistributionScores(page, ["Near centre", "Middle", "Far centre"]);
 
 type ProjectedLine = { x1: number; y1: number; x2: number; y2: number };
 
@@ -107,13 +97,13 @@ test("Table Tilt zero-tilt point focus moves from near to middle to far", async 
   await page.goto("/simulator/free/table-tilt");
   await setRangeDirect(page, "Tilt", 0);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
-  await expect(page.getByRole("heading", { name: /Focus targets · Point focus/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Focus distribution/i })).toBeVisible();
   await expect(page.getByText(/At 0° Front Tilt, move Focus from the near card/)).toBeVisible();
 
   const focusCases = [
-    { focus: 3150, expected: "near-cup" },
-    { focus: 4600, expected: "mid-notebook" },
-    { focus: 5900, expected: "far-book" },
+    { focus: 3150, expected: "Near centre" },
+    { focus: 4600, expected: "Middle" },
+    { focus: 5900, expected: "Far centre" },
   ] as const;
 
   for (const focusCase of focusCases) {
@@ -133,7 +123,7 @@ test("Table Tilt zero-tilt point focus moves from near to middle to far", async 
   await setRangeDirect(page, "Focus distance", 6050);
   await setRangeDirect(page, "Tilt", 0);
   await setRangeDirect(page, "Focus distance", 4600);
-  await expect.poll(async () => (await readPointScores(page))["mid-notebook"]).toBeGreaterThanOrEqual(95);
+  await expect.poll(async () => (await readPointScores(page))["Middle"]).toBeGreaterThanOrEqual(95);
   await expect(page.getByTestId("ground-glass-rtt").locator("canvas")).toBeVisible();
 });
 
