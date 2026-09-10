@@ -444,8 +444,10 @@ export const createInteriorCornerGroup = (): THREE.Group => {
   addBox({
     root,
     name: "interior-corner-console",
-    size: [1700, 620, 420],
-    position: [-1050, geometry.room.floorY + 310, 9850],
+    // Keep the original footprint and upper surface, but leave an open
+    // underframe so the added legs and shelf remain visible in the subject.
+    size: [1700, 260, 420],
+    position: [-1050, geometry.room.floorY + 490, 9850],
     material: materials.wood,
   });
   addBox({

@@ -40,6 +40,15 @@ describe("scene complexity foundation", () => {
       );
       expect(group.getObjectByName("architecture-foreground-building")).toBeInstanceOf(THREE.Mesh);
       expect(group.getObjectByName("architecture-foreground-ground")).toBeInstanceOf(THREE.Mesh);
+      group.updateMatrixWorld(true);
+      const reveal = group.getObjectByName(
+        "architecture-foreground-window-1-1-recess-left",
+      );
+      expect(reveal).toBeInstanceOf(THREE.Mesh);
+      const revealBounds = new THREE.Box3().setFromObject(reveal!);
+      const revealSize = revealBounds.getSize(new THREE.Vector3());
+      expect(revealSize.x).toBeCloseTo(toWorld(34), 6);
+      expect(revealSize.z).toBeCloseTo(toWorld(76), 6);
       expect(architectureGeometry.focusTargets.map((target) => target.worldPosition)).toEqual([
         {
           x: 0,
@@ -83,6 +92,23 @@ describe("scene complexity foundation", () => {
         THREE.Mesh,
       );
       expect(group.getObjectByName("interior-corner-console-vase")).toBeInstanceOf(THREE.Mesh);
+      group.updateMatrixWorld(true);
+      const consoleLeg = group.getObjectByName("interior-corner-console-leg-left-near");
+      const consoleBody = group.getObjectByName("interior-corner-console");
+      const lowerShelf = group.getObjectByName("interior-corner-console-lower-shelf");
+      expect(consoleLeg).toBeInstanceOf(THREE.Mesh);
+      expect(consoleBody).toBeInstanceOf(THREE.Mesh);
+      expect(lowerShelf).toBeInstanceOf(THREE.Mesh);
+      const legBounds = new THREE.Box3().setFromObject(consoleLeg!);
+      const legSize = legBounds.getSize(new THREE.Vector3());
+      const bodyBounds = new THREE.Box3().setFromObject(consoleBody!);
+      const shelfBounds = new THREE.Box3().setFromObject(lowerShelf!);
+      expect(legSize.x).toBeCloseTo(toWorld(80), 6);
+      expect(legSize.y).toBeCloseTo(toWorld(480), 6);
+      expect(legSize.z).toBeCloseTo(toWorld(80), 6);
+      expect(legBounds.min.y).toBeCloseTo(toWorld(interiorGeometry.room.floorY), 6);
+      expect(bodyBounds.min.y).toBeGreaterThan(legBounds.min.y + toWorld(250));
+      expect(shelfBounds.max.y).toBeLessThan(bodyBounds.min.y);
       expect(interiorGeometry.focusTargets.map((target) => target.worldPosition.z)).toEqual([
         5800,
         8000,
