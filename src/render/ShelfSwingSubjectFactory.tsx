@@ -122,6 +122,72 @@ const addComparisonMotif = (
   chartGroup.add(motifGroup);
 };
 
+const addStationContext = (
+  station: THREE.Group,
+  subject: ShelfSwingSubjectDefinition,
+  frameMaterial: THREE.Material,
+): void => {
+  const context = new THREE.Group();
+  context.name = `${subject.semanticName}-context-structure`;
+
+  const { frameThickness, shelfThickness } = geometry.detailGeometry;
+  const backdrop = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      toWorld(subject.dimensions.width - frameThickness * 2),
+      toWorld(subject.dimensions.height - shelfThickness * 2),
+      toWorld(28),
+    ),
+    frameMaterial,
+  );
+  backdrop.name = `${subject.semanticName}-backdrop-panel`;
+  backdrop.position.set(
+    0,
+    toWorld(subject.dimensions.height / 2),
+    toWorld(subject.dimensions.depth - 14),
+  );
+  context.add(backdrop);
+
+  const bookMaterials = [
+    standardMaterial(subject.materialHints.primary, 0.78),
+    standardMaterial(subject.materialHints.secondary, 0.86),
+    standardMaterial(subject.materialHints.detail, 0.82),
+  ];
+  const bookGeometries = [
+    new THREE.BoxGeometry(toWorld(58), toWorld(230), toWorld(105)),
+    new THREE.BoxGeometry(toWorld(72), toWorld(190), toWorld(112)),
+    new THREE.BoxGeometry(toWorld(48), toWorld(270), toWorld(98)),
+  ];
+  const bookGroup = new THREE.Group();
+  bookGroup.name = `${subject.semanticName}-context-books`;
+
+  const bookRows = [
+    { y: shelfThickness + 115, z: subject.dimensions.depth * 0.68, rotation: 0 },
+    {
+      y: subject.dimensions.height - shelfThickness - 145,
+      z: subject.dimensions.depth * 0.68,
+      rotation: 0.035,
+    },
+  ];
+  bookRows.forEach((row, rowIndex) => {
+    for (let index = 0; index < 4; index += 1) {
+      const book = new THREE.Mesh(
+        bookGeometries[(index + rowIndex) % bookGeometries.length],
+        bookMaterials[(index + rowIndex) % bookMaterials.length],
+      );
+      book.name = `${subject.semanticName}-context-book-${rowIndex + 1}-${index + 1}`;
+      book.position.set(
+        toWorld(-165 + index * 72),
+        toWorld(row.y),
+        toWorld(row.z),
+      );
+      book.rotation.z = row.rotation * (index % 2 === 0 ? 1 : -1);
+      bookGroup.add(book);
+    }
+  });
+  context.add(bookGroup);
+  station.add(context);
+};
+
 const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
   const station = new THREE.Group();
   station.name = subject.semanticName;
@@ -196,6 +262,8 @@ const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
     shelf.position.set(0, toWorld(y), toWorld(subject.dimensions.depth / 2));
     station.add(shelf);
   }
+
+  addStationContext(station, subject, frameMaterial);
 
   subject.displayObjects.forEach((definition) => {
     const objectGeometry =

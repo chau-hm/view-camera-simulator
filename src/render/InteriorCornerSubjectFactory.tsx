@@ -247,6 +247,85 @@ const addInteriorLocalLight = (root: THREE.Group): void => {
   root.add(light);
 };
 
+const addInteriorFurnitureStructure = (
+  root: THREE.Group,
+  materials: InteriorCornerMaterials,
+): void => {
+  const structure = new THREE.Group();
+  structure.name = "interior-corner-furniture-structure";
+
+  const consoleLegGeometry = new THREE.BoxGeometry(toWorld(80), toWorld(480), toWorld(80));
+  [-1, 1].forEach((xSign) => {
+    [-1, 1].forEach((zSign) => {
+      const leg = new THREE.Mesh(consoleLegGeometry, materials.wood);
+      leg.name = `interior-corner-console-leg-${xSign < 0 ? "left" : "right"}-${zSign < 0 ? "near" : "far"}`;
+      leg.position.set(
+        toWorld(-1050 + xSign * 760),
+        toWorld(geometry.room.floorY + 240),
+        toWorld(9850 + zSign * 150),
+      );
+      structure.add(leg);
+    });
+  });
+
+  addBox({
+    root: structure,
+    name: "interior-corner-console-lower-shelf",
+    size: [1400, 50, 300],
+    position: [-1050, geometry.room.floorY + 185, 9850],
+    material: materials.wood,
+  });
+
+  const benchLegGeometry = new THREE.BoxGeometry(toWorld(72), toWorld(260), toWorld(72));
+  [-1, 1].forEach((xSign) => {
+    [-1, 1].forEach((zSign) => {
+      const leg = new THREE.Mesh(benchLegGeometry, materials.wood);
+      leg.name = `interior-corner-bench-leg-${xSign < 0 ? "left" : "right"}-${zSign < 0 ? "near" : "far"}`;
+      leg.position.set(
+        toWorld(-850 + xSign * 720),
+        toWorld(geometry.room.floorY + 130),
+        toWorld(6500 + zSign * 190),
+      );
+      structure.add(leg);
+    });
+  });
+
+  const floorJointMaterial = materials.trim;
+  const floorJointGeometry = new THREE.BoxGeometry(
+    toWorld(geometry.room.width - 220),
+    toWorld(8),
+    toWorld(14),
+  );
+  [3300, 4700, 6100, 7500, 8900, 10300].forEach((z, index) => {
+    const joint = new THREE.Mesh(floorJointGeometry, floorJointMaterial);
+    joint.name = `interior-corner-floor-joint-${index + 1}`;
+    joint.position.set(
+      0,
+      toWorld(geometry.room.floorY + 4),
+      toWorld(z),
+    );
+    structure.add(joint);
+  });
+
+  const vase = new THREE.Mesh(
+    new THREE.CylinderGeometry(toWorld(85), toWorld(110), toWorld(260), 16),
+    materials.artworkAccent,
+  );
+  vase.name = "interior-corner-console-vase";
+  vase.position.set(toWorld(-1050), toWorld(geometry.room.floorY + 820), toWorld(9850));
+  structure.add(vase);
+
+  const finial = new THREE.Mesh(
+    new THREE.CylinderGeometry(toWorld(32), toWorld(42), toWorld(90), 12),
+    materials.metal,
+  );
+  finial.name = "interior-corner-lamp-finial";
+  finial.position.set(toWorld(420), toWorld(geometry.room.floorY + 1495), toWorld(8300));
+  structure.add(finial);
+
+  root.add(structure);
+};
+
 export const createInteriorCornerGroup = (): THREE.Group => {
   const root = new THREE.Group();
   root.name = "interior-corner-subject";
@@ -365,8 +444,10 @@ export const createInteriorCornerGroup = (): THREE.Group => {
   addBox({
     root,
     name: "interior-corner-console",
-    size: [1700, 620, 420],
-    position: [-1050, geometry.room.floorY + 310, 9850],
+    // Keep the original footprint and upper surface, but leave an open
+    // underframe so the added legs and shelf remain visible in the subject.
+    size: [1700, 260, 420],
+    position: [-1050, geometry.room.floorY + 490, 9850],
     material: materials.wood,
   });
   addBox({
@@ -405,6 +486,7 @@ export const createInteriorCornerGroup = (): THREE.Group => {
     material: materials.artworkAccent,
   });
 
+  addInteriorFurnitureStructure(root, materials);
   addInteriorLocalLight(root);
   addFocusProbes(root);
   return root;

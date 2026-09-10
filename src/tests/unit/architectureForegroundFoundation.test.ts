@@ -142,9 +142,10 @@ describe("Architecture + Foreground foundation", () => {
     const group = createRegisteredRttSubject(architectureForegroundScene.id);
     expect(group).not.toBeNull();
     expect(group?.name).toBe("architecture-foreground-subject");
-    expect(group?.children.length).toBeGreaterThan(20);
     expect(group?.getObjectByName("architecture-foreground-building")).toBeDefined();
     expect(group?.getObjectByName("architecture-foreground-ground")).toBeDefined();
+    expect(group?.getObjectByName("architecture-foreground-window-1-1-recess")).toBeDefined();
+    expect(group?.getObjectByName("architecture-foreground-forecourt-structure")).toBeDefined();
     disposeRegisteredRttSubject(architectureForegroundScene.id, group!);
   });
 

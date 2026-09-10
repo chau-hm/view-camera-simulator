@@ -84,6 +84,83 @@ const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
   }
 };
 
+const addTabletopContext = (tabletopAssembly: THREE.Group): void => {
+  const context = new THREE.Group();
+  context.name = "oblique-tabletop-context-props";
+
+  const woodMaterial = createFocusFriendlyMaterial({
+    pattern: "linear-grain",
+    primaryColor: "#79624b",
+    secondaryColor: "#a98762",
+    repeat: [2, 8],
+    roughness: 0.82,
+  });
+  const darkMaterial = standardMaterial("#4b5563", 0.72);
+  const lightMaterial = standardMaterial("#c2a886", 0.86);
+
+  const nearProp = new THREE.Mesh(
+    new THREE.BoxGeometry(toWorld(520), toWorld(240), toWorld(420)),
+    woodMaterial,
+  );
+  nearProp.name = "oblique-tabletop-context-near-prop";
+  nearProp.position.set(
+    toWorld(-1450),
+    toWorld(geometry.tabletop.thickness / 2 + 120),
+    toWorld(-1250),
+  );
+  context.add(nearProp);
+
+  const middleProp = new THREE.Mesh(
+    new THREE.CylinderGeometry(toWorld(140), toWorld(170), toWorld(320), 16),
+    darkMaterial,
+  );
+  middleProp.name = "oblique-tabletop-context-middle-prop";
+  middleProp.position.set(
+    toWorld(1450),
+    toWorld(geometry.tabletop.thickness / 2 + 160),
+    toWorld(250),
+  );
+  context.add(middleProp);
+
+  const farProp = new THREE.Mesh(
+    new THREE.BoxGeometry(toWorld(460), toWorld(200), toWorld(380)),
+    lightMaterial,
+  );
+  farProp.name = "oblique-tabletop-context-far-prop";
+  farProp.position.set(
+    toWorld(1250),
+    toWorld(geometry.tabletop.thickness / 2 + 100),
+    toWorld(1450),
+  );
+  context.add(farProp);
+
+  const farDetail = new THREE.Mesh(
+    new THREE.BoxGeometry(toWorld(390), toWorld(110), toWorld(320)),
+    darkMaterial,
+  );
+  farDetail.name = "oblique-tabletop-context-far-prop-detail";
+  farDetail.position.set(
+    toWorld(1250),
+    toWorld(geometry.tabletop.thickness / 2 + 255),
+    toWorld(1450),
+  );
+  context.add(farDetail);
+
+  const apronGeometry = new THREE.BoxGeometry(
+    toWorld(3600),
+    toWorld(180),
+    toWorld(100),
+  );
+  [-1, 1].forEach((zSign) => {
+    const apron = new THREE.Mesh(apronGeometry, darkMaterial);
+    apron.name = `oblique-tabletop-table-apron-${zSign < 0 ? "near" : "far"}`;
+    apron.position.set(0, toWorld(-150), toWorld(zSign * 1750));
+    context.add(apron);
+  });
+
+  tabletopAssembly.add(context);
+};
+
 const addBoardPlanSurface = (boardAssembly: THREE.Group): void => {
   const surfaceMaterial = createFocusFriendlyMaterial({
     pattern: "subtle-checker",
@@ -410,6 +487,7 @@ export function createObliqueTabletopGroup(): THREE.Group {
   tabletopMesh.name = "oblique-tabletop-tabletop";
   tabletopAssembly.add(tabletopMesh);
   addTabletopSurfaceGuides(tabletopAssembly);
+  addTabletopContext(tabletopAssembly);
   root.add(tabletopAssembly);
 
   const boardAssembly = new THREE.Group();
