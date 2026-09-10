@@ -6,6 +6,10 @@ import geometry, {
   type ObliqueTabletopSubjectSample,
 } from "../scenes/obliqueTabletopGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 const standardMaterial = (color: string, roughness = 0.84) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
@@ -81,7 +85,13 @@ const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
 };
 
 const addBoardPlanSurface = (boardAssembly: THREE.Group): void => {
-  const surfaceMaterial = basicMaterial(geometry.subjectBoard.color);
+  const surfaceMaterial = createFocusFriendlyMaterial({
+    pattern: "subtle-checker",
+    primaryColor: geometry.subjectBoard.color,
+    secondaryColor: "#d7c9ae",
+    repeat: [6, 6],
+    roughness: 0.84,
+  });
   const surface = new THREE.Mesh(
     new THREE.BoxGeometry(
       toWorld(geometry.subjectBoard.width - 80),
@@ -467,16 +477,7 @@ export function createObliqueTabletopGroup(): THREE.Group {
 }
 
 export function disposeObliqueTabletopGroup(group: THREE.Group): void {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((geometryResource) => geometryResource.dispose());
-  materials.forEach((material) => material.dispose());
+  disposeTeachingSubjectResources(group);
 }
 
 /** React Three Fiber boundary backed by the same group factory used by RTT. */

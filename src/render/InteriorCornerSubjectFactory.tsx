@@ -3,6 +3,10 @@ import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry from "../scenes/interiorCornerGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 type InteriorCornerMaterials = {
   wall: THREE.Material;
@@ -248,14 +252,32 @@ export const createInteriorCornerGroup = (): THREE.Group => {
   root.name = "interior-corner-subject";
 
   const materials: InteriorCornerMaterials = {
-    wall: createStandardMaterial("#d8d2c5", 0.96),
+    wall: createFocusFriendlyMaterial({
+      pattern: "fine-grid",
+      primaryColor: "#d8d2c5",
+      secondaryColor: "#cfc7b8",
+      repeat: [4, 6],
+      roughness: 0.96,
+    }),
     ceiling: createStandardMaterial("#e8e3d9", 0.98),
     floor: createStandardMaterial("#8e7963", 0.94),
     trim: createStandardMaterial("#f0ece3", 0.84),
-    wood: createStandardMaterial("#594c40", 0.76),
+    wood: createFocusFriendlyMaterial({
+      pattern: "linear-grain",
+      primaryColor: "#594c40",
+      secondaryColor: "#765f4d",
+      repeat: [2, 10],
+      roughness: 0.76,
+    }),
     artwork: createStandardMaterial("#66808a", 0.72),
     artworkAccent: createStandardMaterial("#c48b62", 0.7),
-    fabric: createStandardMaterial("#6d7b78", 0.98),
+    fabric: createFocusFriendlyMaterial({
+      pattern: "subtle-checker",
+      primaryColor: "#6d7b78",
+      secondaryColor: "#788782",
+      repeat: [8, 8],
+      roughness: 0.98,
+    }),
     rug: createStandardMaterial("#b7a995", 1),
     metal: createStandardMaterial("#7f8b88", 0.42),
   };
@@ -389,16 +411,7 @@ export const createInteriorCornerGroup = (): THREE.Group => {
 };
 
 export const disposeInteriorCornerGroup = (group: THREE.Group): void => {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((resource) => resource.dispose());
-  materials.forEach((resource) => resource.dispose());
+  disposeTeachingSubjectResources(group);
 };
 
 /** React Three Fiber boundary backed by the same group factory used by RTT. */

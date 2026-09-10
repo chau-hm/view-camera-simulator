@@ -3,6 +3,10 @@ import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry from "../scenes/architectureForegroundGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 const createStandardMaterial = (color: string, roughness = 0.9) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
@@ -86,7 +90,13 @@ export const createArchitectureForegroundGroup = (): THREE.Group => {
   root.name = "architecture-foreground-subject";
 
   const buildingMaterial = createStandardMaterial("#92a7b8", 0.92);
-  const facadeMaterial = createStandardMaterial("#b3c1cc", 0.88);
+  const facadeMaterial = createFocusFriendlyMaterial({
+    pattern: "fine-grid",
+    primaryColor: "#b3c1cc",
+    secondaryColor: "#a2b3bf",
+    repeat: [5, 4],
+    roughness: 0.88,
+  });
   const roofMaterial = createStandardMaterial("#dbe5ec", 0.8);
   const windowMaterial = createStandardMaterial("#20384b", 0.62);
   const frameMaterial = createStandardMaterial("#e5edf2", 0.82);
@@ -226,16 +236,7 @@ const facadeTopY = () =>
   geometry.facade.mainBodyTopY + geometry.building.topHeight / 2;
 
 export const disposeArchitectureForegroundGroup = (group: THREE.Group): void => {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((resource) => resource.dispose());
-  materials.forEach((resource) => resource.dispose());
+  disposeTeachingSubjectResources(group);
 };
 
 /** React Three Fiber boundary backed by the same group factory used by RTT. */

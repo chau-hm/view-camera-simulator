@@ -3,6 +3,10 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry from "../scenes/obliqueArchitectureGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 const createStandardMaterial = (color: string, roughness = 0.88) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
@@ -102,7 +106,13 @@ export const createObliqueArchitectureGroup = (): THREE.Group => {
   root.name = "oblique-architecture-subject";
 
   const buildingMaterial = createStandardMaterial("#8fa3b6", 0.9);
-  const frontFacadeMaterial = createStandardMaterial("#a9bbca", 0.9);
+  const frontFacadeMaterial = createFocusFriendlyMaterial({
+    pattern: "fine-grid",
+    primaryColor: "#a9bbca",
+    secondaryColor: "#97adbd",
+    repeat: [5, 4],
+    roughness: 0.9,
+  });
   const sideFacadeMaterial = createStandardMaterial("#71879a", 0.92);
   const parapetMaterial = createStandardMaterial("#d4dee7", 0.82);
   const cornerMaterial = createStandardMaterial("#e2e8f0", 0.8);
@@ -248,16 +258,7 @@ export const createObliqueArchitectureGroup = (): THREE.Group => {
 };
 
 export const disposeObliqueArchitectureGroup = (group: THREE.Group): void => {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((geometryResource) => geometryResource.dispose());
-  materials.forEach((material) => material.dispose());
+  disposeTeachingSubjectResources(group);
 };
 
 /** React Three Fiber boundary backed by the same group factory used by RTT. */
