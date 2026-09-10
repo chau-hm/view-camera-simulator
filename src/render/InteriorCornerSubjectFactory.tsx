@@ -254,12 +254,11 @@ const addInteriorFurnitureStructure = (
   const structure = new THREE.Group();
   structure.name = "interior-corner-furniture-structure";
 
-  const consoleLegGeometry = new THREE.BoxGeometry(toWorld(80), toWorld(1), toWorld(80));
+  const consoleLegGeometry = new THREE.BoxGeometry(toWorld(80), toWorld(480), toWorld(80));
   [-1, 1].forEach((xSign) => {
     [-1, 1].forEach((zSign) => {
       const leg = new THREE.Mesh(consoleLegGeometry, materials.wood);
       leg.name = `interior-corner-console-leg-${xSign < 0 ? "left" : "right"}-${zSign < 0 ? "near" : "far"}`;
-      leg.scale.y = toWorld(480);
       leg.position.set(
         toWorld(-1050 + xSign * 760),
         toWorld(geometry.room.floorY + 240),

@@ -302,7 +302,8 @@ export const createArchitectureForegroundGroup = (): THREE.Group => {
     toWorld(20),
   );
   const frameGeometry = new THREE.BoxGeometry(toWorld(1), toWorld(1), toWorld(26));
-  const recessGeometry = new THREE.BoxGeometry(toWorld(1), toWorld(1), toWorld(1));
+  // Unit geometry lets each reveal scale directly from its millimetre dimensions.
+  const recessGeometry = new THREE.BoxGeometry(1, 1, 1);
   geometry.getWindows().forEach((window) => {
     addWindow({
       root,
