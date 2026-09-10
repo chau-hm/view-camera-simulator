@@ -1,17 +1,60 @@
 import type { Plane, Ray, Vec3, Line3 } from "../../types/optics";
 import { planeFromPointNormal, intersectPlanes, planeFromLineAndPoint } from "../math/plane";
 import { add, scale, normalize, subtract, dot } from "../math/vec";
+import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { imageDistanceMm } from "./thinLensModel";
 
-const APERTURE_TOLERANCE_MM: Record<number, number> = {
+type CanonicalAperture = (typeof CAMERA_CONSTANTS.apertureOptions)[number];
+
+/**
+ * Legacy presentation/readout anchors, not the authoritative physical CoC
+ * model. Existing values remain exact for compatibility; newly supported
+ * stops are interpolated by their position in the canonical stop sequence.
+ */
+const APERTURE_TOLERANCE_ANCHORS_MM: Partial<Record<CanonicalAperture, number>> = {
   5.6: 800,
   11: 1600,
   22: 3200,
   32: 4800,
 };
 
-export const mapApertureToToleranceMm = (aperture: number): number =>
-  APERTURE_TOLERANCE_MM[aperture] ?? 16;
+const getApertureToleranceAnchor = (aperture: CanonicalAperture): number | undefined =>
+  APERTURE_TOLERANCE_ANCHORS_MM[aperture];
+
+export const mapApertureToToleranceMm = (aperture: number): number => {
+  const canonicalApertures = CAMERA_CONSTANTS.apertureOptions;
+  const canonicalAperture = aperture as CanonicalAperture;
+  const exactAnchor = getApertureToleranceAnchor(canonicalAperture);
+  if (exactAnchor !== undefined) return exactAnchor;
+
+  const apertureIndex = canonicalApertures.indexOf(canonicalAperture);
+  if (apertureIndex < 0) return 16;
+
+  let lowerIndex = apertureIndex - 1;
+  while (
+    lowerIndex >= 0 &&
+    getApertureToleranceAnchor(canonicalApertures[lowerIndex]) === undefined
+  ) {
+    lowerIndex -= 1;
+  }
+
+  let upperIndex = apertureIndex + 1;
+  while (
+    upperIndex < canonicalApertures.length &&
+    getApertureToleranceAnchor(canonicalApertures[upperIndex]) === undefined
+  ) {
+    upperIndex += 1;
+  }
+
+  if (lowerIndex < 0 || upperIndex >= canonicalApertures.length) return 16;
+
+  const lowerTolerance = getApertureToleranceAnchor(canonicalApertures[lowerIndex]);
+  const upperTolerance = getApertureToleranceAnchor(canonicalApertures[upperIndex]);
+  if (lowerTolerance === undefined || upperTolerance === undefined) return 16;
+
+  const interpolation = (apertureIndex - lowerIndex) / (upperIndex - lowerIndex);
+  return lowerTolerance + interpolation * (upperTolerance - lowerTolerance);
+};
 
 // Thin-lens hyperfocal DOF calculation
 // Inputs:

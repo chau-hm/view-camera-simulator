@@ -9,8 +9,9 @@ import {
   linearizeDepthSample,
   reconstructWorldPosition,
 } from "../../render/groundGlassPipeline";
+import { mapApertureToToleranceMm } from "../../core/optics/calculateDepthOfField";
 import { createDepthOfFieldPass } from "../../render/postprocessing/DepthOfFieldPass";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { RenderQualityProfile } from "../../types/ui";
 
 describe("ground glass pipeline", () => {
@@ -75,6 +76,17 @@ describe("ground glass pipeline", () => {
     expect(calculateApertureBlurStrength(distance, 5.6)).toBeGreaterThan(
       calculateApertureBlurStrength(distance, 32),
     );
+  });
+
+  it("interpolates legacy aperture tolerance in canonical stop order", () => {
+    const tolerances = CAMERA_CONSTANTS.apertureOptions.map(mapApertureToToleranceMm);
+
+    expect(tolerances).toEqual([800, 1200, 1600, 2400, 3200, 4800]);
+    for (let index = 1; index < tolerances.length; index += 1) {
+      expect(tolerances[index]).toBeGreaterThan(tolerances[index - 1]);
+    }
+    expect(mapApertureToToleranceMm(7.1)).toBe(16);
+    expect(mapApertureToToleranceMm(Number.NaN)).toBe(16);
   });
 
   it("creates half-resolution blur pass", () => {

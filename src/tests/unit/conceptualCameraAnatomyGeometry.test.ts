@@ -14,7 +14,7 @@ import {
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
 } from "../../render/conceptualCameraAnatomyGeometry";
-import { CAMERA_CONSTANTS } from "../../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("conceptual rear-back anatomy geometry", () => {
   it("keeps the Ground Glass and Film Holder sensitive surfaces on the same local plane", () => {
@@ -43,12 +43,13 @@ describe("conceptual rear-back anatomy geometry", () => {
 
 describe("conceptual aperture opening geometry", () => {
   it("decreases monotonically as the canonical f-number increases", () => {
-    const openings = [8, 16, 32].map((aperture) =>
+    const openings = CAMERA_CONSTANTS.apertureOptions.map((aperture) =>
       resolveConceptualApertureOpening({ aperture }).openingDiameterMm,
     );
 
-    expect(openings[0]).toBeGreaterThan(openings[1]);
-    expect(openings[1]).toBeGreaterThan(openings[2]);
+    for (let index = 1; index < openings.length; index += 1) {
+      expect(openings[index - 1]).toBeGreaterThan(openings[index]);
+    }
   });
 
   it("keeps every supported aperture finite, positive, and inside the lens barrel", () => {
@@ -73,7 +74,7 @@ describe("conceptual aperture opening geometry", () => {
     expect(opening.openingRadiusMm).toBeGreaterThan(0);
     expect(opening.openingRadiusMm).toBeLessThan(opening.outerRadiusMm);
     expect(opening.entrancePupilDiameterMm).toBe(
-      CAMERA_CONSTANTS.focalLengthMm / CAMERA_CONSTANTS.apertureOptions[1],
+      CAMERA_CONSTANTS.focalLengthMm / DEFAULT_CAMERA_STATE.aperture,
     );
   });
 
@@ -107,7 +108,7 @@ describe("conceptual aperture opening geometry", () => {
   });
 
   it("calibrates the measured transformed opening to every supported aperture", () => {
-    const apertures = [5.6, 11, 22, 32];
+    const apertures = CAMERA_CONSTANTS.apertureOptions;
     const measurements = apertures.map((aperture) => {
       const target = resolveConceptualApertureOpening({ aperture }).openingRadiusMm;
       const blades = resolveConceptualApertureBlades({ aperture });
@@ -121,10 +122,10 @@ describe("conceptual aperture opening geometry", () => {
     for (const { target, actual } of measurements) {
       expect(Math.abs(actual - target) / target).toBeLessThanOrEqual(0.05);
     }
-    expect(measurements[0].actual).toBeGreaterThan(measurements[1].actual);
-    expect(measurements[1].actual).toBeGreaterThan(measurements[2].actual);
-    expect(measurements[2].actual).toBeGreaterThan(measurements[3].actual);
-    expect(measurements[3].actual).toBeLessThan(measurements[0].actual * 0.3);
+    for (let index = 1; index < measurements.length; index += 1) {
+      expect(measurements[index - 1].actual).toBeGreaterThan(measurements[index].actual);
+    }
+    expect(measurements.at(-1)!.actual).toBeLessThan(measurements[0].actual * 0.3);
 
     const polygons = resolveConceptualApertureBladePolygons(
       resolveConceptualApertureBlades({ aperture: 11 }),
@@ -155,7 +156,7 @@ describe("conceptual aperture opening geometry", () => {
   });
 
   it("clips only the rendered blade polygons to the fixed diaphragm window", () => {
-    const apertures = [5.6, 11, 22, 32];
+    const apertures = CAMERA_CONSTANTS.apertureOptions;
     const wideBlades = resolveConceptualApertureBlades({ aperture: apertures[0] });
     const mechanicalPolygons = resolveConceptualApertureBladePolygons(wideBlades);
     const maximumMechanicalRadius = Math.max(

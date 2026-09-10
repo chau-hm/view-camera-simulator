@@ -142,7 +142,7 @@ describe("physical focus readout", () => {
     });
   });
 
-  it("makes presentation sharpness respond monotonically to aperture", () => {
+  it("makes presentation sharpness respond monotonically across full-stop apertures", () => {
     const focusTarget = architectureForegroundScene.focusTargets.find(
       (target) => target.id === "foreground-middle",
     )!;
@@ -154,8 +154,35 @@ describe("physical focus readout", () => {
       return optics.focusTargets.find((target) => target.id === focusTarget.id)!.physicalPointSharpness!;
     };
 
-    expect(scoreAt(5.6)).toBeLessThan(scoreAt(11));
-    expect(scoreAt(11)).toBeLessThan(scoreAt(22));
+    const apertures: ApertureValue[] = [5.6, 8, 11, 16, 22, 32];
+    const scores = apertures.map(scoreAt);
+    for (let index = 1; index < scores.length; index += 1) {
+      expect(scores[index]).toBeGreaterThanOrEqual(scores[index - 1]);
+    }
+    expect(scores.at(-1)).toBeGreaterThan(scores[0]);
+  });
+
+  it("keeps the physical CoC monotonic across full-stop apertures", () => {
+    const focusTarget = architectureForegroundScene.focusTargets.find(
+      (target) => target.id === "foreground-middle",
+    )!;
+    const apertures: ApertureValue[] = [5.6, 8, 11, 16, 22, 32];
+    const cocDiameters = apertures.map((aperture) => {
+      const camera = cameraFor(architectureForegroundScene, { aperture });
+      const optics = deriveOpticsState(camera, architectureForegroundScene);
+      const footprint = directPointFootprint(
+        optics,
+        focusTarget.worldPosition,
+        camera.focalLengthMm,
+        aperture,
+      );
+      expect(footprint.valid).toBe(true);
+      return Math.abs(footprint.signedCoCDiameterMm);
+    });
+
+    for (let index = 1; index < cocDiameters.length; index += 1) {
+      expect(cocDiameters[index - 1]).toBeGreaterThan(cocDiameters[index]);
+    }
   });
 
   it("uses the worst physical sample for patch presentation", () => {
