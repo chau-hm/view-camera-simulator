@@ -26,7 +26,7 @@ export type MirrorShiftLessonState = Readonly<{
   rigLateralMm: number;
 }>;
 
-export type ApertureValue = 5.6 | 11 | 22 | 32;
+export type ApertureValue = 5.6 | 8 | 11 | 16 | 22 | 32;
 
 export type GeometryView = "side" | "top" | "scheimpflug";
 

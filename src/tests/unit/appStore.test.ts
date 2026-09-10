@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { useAppStore } from "../../state/appStore";
 import { getSceneFocusDistanceRange } from "../../scenes/definitions";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE, isApertureValue } from "../../utils/constants";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
 import { resolveInitialOpticalGeometryVisibility } from "../../state/sceneViewDefaults";
@@ -194,11 +194,21 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera.focusDistanceMm).toBe(tableTiltRange.max);
   });
 
-  it("rejects invalid aperture values", () => {
+  it("accepts only the canonical full-stop aperture values", () => {
     const { setAperture } = useAppStore.getState();
-    setAperture(22);
-    expect(useAppStore.getState().camera.aperture).toBe(22);
+    const supported = CAMERA_CONSTANTS.apertureOptions;
+    expect(supported).toEqual([5.6, 8, 11, 16, 22, 32]);
+    expect(supported.every(isApertureValue)).toBe(true);
+    expect([4, 6.3, 10, 13, 18, 64, Number.NaN, Number.POSITIVE_INFINITY].every(
+      (value) => !isApertureValue(value),
+    )).toBe(true);
 
+    for (const aperture of supported) {
+      setAperture(aperture);
+      expect(useAppStore.getState().camera.aperture).toBe(aperture);
+    }
+
+    setAperture(22);
     Reflect.apply(setAperture, undefined, [7.1]);
     expect(useAppStore.getState().camera.aperture).toBe(22);
   });

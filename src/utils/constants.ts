@@ -23,7 +23,7 @@ export const CAMERA_CONSTANTS = {
   tiltMaxDeg: 10,
   swingMinDeg: -10,
   swingMaxDeg: 10,
-  apertureOptions: [5.6, 11, 22, 32] as const,
+  apertureOptions: [5.6, 8, 11, 16, 22, 32] as const,
   tiltParallelThresholdDeg: 0.1,
   tableTiltParallelThresholdDeg: 1e-6,
   defaultFocusDistanceMm: 2000,
