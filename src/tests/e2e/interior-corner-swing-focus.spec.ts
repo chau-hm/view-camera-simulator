@@ -1,6 +1,7 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
+import { openLearningFeedback } from "./helpers/learningOverlay";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
@@ -62,8 +63,9 @@ test("Interior Corner free mode exposes public Swing + Focus wall alignment", as
   const rise = cameraControls.getByRole("slider", { name: "Rise" });
   const swing = cameraControls.getByRole("slider", { name: "Swing" });
   const focus = cameraControls.getByRole("slider", { name: "Focus distance" });
-  const compositionFeedback = page.getByTestId("interior-corner-rise-composition-feedback");
-  const focusFeedback = page.getByTestId("interior-corner-focus-feedback");
+  const feedbackView = await openLearningFeedback(page);
+  const compositionFeedback = feedbackView.getByTestId("interior-corner-rise-composition-feedback");
+  const focusFeedback = feedbackView.getByTestId("interior-corner-focus-feedback");
 
   await expect(rise).toHaveValue("0");
   await expect(swing).toHaveValue("0");

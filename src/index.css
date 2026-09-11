@@ -593,8 +593,8 @@ button {
  display: grid;
  grid-template-rows: auto minmax(0, 1fr);
  width: min(720px, calc(100% - 32px));
- height: min(260px, 38vh);
- max-height: min(260px, 38vh);
+ height: min(220px, 32vh);
+ max-height: min(220px, 32vh);
  min-height: 0;
  transform: translateX(-50%);
  overflow: hidden;
@@ -605,6 +605,7 @@ button {
  color: var(--sim-text, #f2f7f6);
  backdrop-filter: blur(8px);
  -webkit-backdrop-filter: blur(8px);
+ pointer-events: none;
 }
 
 .learning-overlay-panel--collapsed {
@@ -615,11 +616,16 @@ button {
 .learning-overlay-panel__header {
  display: flex;
  align-items: center;
- justify-content: space-between;
+ justify-content: flex-start;
  gap: 10px;
  min-width: 0;
  padding: 7px 9px;
  border-bottom: 1px solid var(--sim-border-subtle, rgba(176, 224, 241, 0.12));
+}
+
+.learning-overlay-panel__header button,
+.learning-overlay-panel__content :is(a, button, summary, [role="button"], input, select, textarea) {
+ pointer-events: auto;
 }
 
 .learning-overlay-panel__views {
@@ -645,6 +651,7 @@ button {
 }
 
 .learning-overlay-panel__view-button {
+ gap: 4px;
  padding: 4px 9px;
 }
 
@@ -652,6 +659,12 @@ button {
  border-color: var(--sim-accent-border, rgba(143, 234, 255, 0.36));
  background: var(--sim-accent-soft, rgba(101, 224, 255, 0.13));
  color: var(--sim-text, #f2f7f6);
+}
+
+.learning-overlay-panel__completion-cue {
+ color: var(--sim-accent, #8feaff);
+ font-size: 13px;
+ line-height: 1;
 }
 
 .learning-overlay-panel__view-button:hover,
@@ -662,6 +675,7 @@ button {
 
 .learning-overlay-panel__collapse-button {
  flex: 0 0 auto;
+ margin-left: 4px;
  gap: 4px;
  padding: 4px 6px;
  color: var(--sim-text-muted, #a9bac7);
@@ -713,6 +727,13 @@ button {
  border-left: 0;
 }
 
+/* Keep viewport-local controls usable when their dropdowns extend into the
+   learning overlay's lower presentation area. */
+.simulator-viewport-context .scene-overlay-controls-wrap,
+.simulator-viewport-context .btn--viewport-action {
+ z-index: 30;
+}
+
 @media (max-width: 900px) {
  .learning-overlay-panel__header {
    flex-wrap: wrap;
@@ -740,6 +761,12 @@ button {
  .simulator-viewport-context:not(.simulator-viewport-context--expanded) .learning-overlay-panel--collapsed {
    height: auto;
    max-height: none;
+ }
+}
+
+@media (min-width: 901px) and (max-width: 1100px) {
+ .learning-overlay-panel__header {
+   justify-content: flex-end;
  }
 }
 

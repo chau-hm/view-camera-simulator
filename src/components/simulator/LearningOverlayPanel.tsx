@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { GuidedLessonContext } from "../../app/guidedLesson";
+import { guidedTaskMessageKeys } from "../../i18n/guidedTaskMessageKeys";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import type { InteriorCornerRiseCompositionEvaluation } from "../../scenes/interiorCornerRiseComposition";
 import type { InteriorCornerSwingFocusEvaluation } from "../../scenes/interiorCornerSwingFocus";
@@ -44,6 +45,11 @@ export const LearningOverlayPanel = ({
 
   const taskLabel = t(simulatorMessageKeys.task.title);
   const feedbackLabel = t(simulatorMessageKeys.feedback.title);
+  const hasCompletedEvaluation = mode === "guided" && evaluation?.status === "passed";
+  const completedLabel = t(guidedTaskMessageKeys.common.taskCompleted);
+  const feedbackButtonLabel = hasCompletedEvaluation
+    ? `${feedbackLabel} — ${completedLabel}`
+    : feedbackLabel;
   const activeLabel = activeView === "task" ? taskLabel : feedbackLabel;
 
   return (
@@ -71,12 +77,19 @@ export const LearningOverlayPanel = ({
               {taskLabel}
             </button>
             <button
+              aria-label={feedbackButtonLabel}
               aria-pressed={activeView === "feedback"}
               className="learning-overlay-panel__view-button"
+              data-status={hasCompletedEvaluation ? "completed" : "in-progress"}
               type="button"
               onClick={() => setActiveView("feedback")}
             >
               {feedbackLabel}
+              {hasCompletedEvaluation ? (
+                <span aria-hidden="true" className="learning-overlay-panel__completion-cue">
+                  ✓
+                </span>
+              ) : null}
             </button>
           </div>
         )}
@@ -95,7 +108,12 @@ export const LearningOverlayPanel = ({
         </button>
       </header>
 
-      <div className="learning-overlay-panel__content" hidden={collapsed} id={contentId}>
+      <div
+        className="learning-overlay-panel__content"
+        hidden={collapsed}
+        id={contentId}
+        tabIndex={0}
+      >
         {activeView === "task" ? (
           <div
             aria-label={taskLabel}

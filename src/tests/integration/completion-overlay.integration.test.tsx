@@ -41,7 +41,12 @@ describe("phase 12 completion overlay", () => {
         <SimulatorWorkspace mode="guided" sceneId="architecture-rise" taskId="rise-01" simulateAssetFailure={false} />
       </MemoryRouter>,
     );
-    fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
+    expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
+    const feedbackButton = screen.getByRole("button", {
+      name: "Feedback — Task completed",
+    });
+    expect(feedbackButton).toHaveAttribute("data-status", "completed");
+    fireEvent.click(feedbackButton);
     expect(await screen.findByText("Task completed")).toBeInTheDocument();
   });
 });

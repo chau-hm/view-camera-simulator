@@ -1,9 +1,12 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { readFocusDistributionPercent } from "./helpers/focusDistribution";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
-
-const completedHeading = (page: Page) => page.getByRole("heading", { name: "Task completed" });
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
@@ -69,7 +72,7 @@ test("Architecture + Foreground Rise guided task is observable, reachable, and r
     ),
   ).toBeVisible();
   await expect(page.getByRole("region", { name: "Guided lesson progress" })).not.toBeVisible();
-  await expect(completedHeading(page)).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
 
   const cameraControls = page.getByRole("region", { name: "Camera Controls" });
   const rise = cameraControls.getByRole("slider", { name: "Rise" });
@@ -86,13 +89,17 @@ test("Architecture + Foreground Rise guided task is observable, reachable, and r
 
   await setStepRangeInput(page, "Rise", 10);
   await expect(rise).toHaveValue("10");
-  await expect(completedHeading(page)).toBeVisible();
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
   await expect(
-    page.getByText(/foreground sharpness problem remains for a later lesson/i),
+    feedback.getByText(/foreground sharpness problem remains for a later lesson/i),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Restart task" }).click();
-  await expect(completedHeading(page)).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
+  const resetFeedback = await openLearningFeedback(page);
+  await expect(resetFeedback.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
   await expect(rise).toHaveValue("0");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 });

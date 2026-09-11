@@ -1,8 +1,10 @@
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
-
-const completedHeading = (page: Page): Locator =>
-  page.getByRole("heading", { name: "Task completed" });
 
 test("TST-E2E-002: user can open Architecture Rise from the Scenes page", async ({ page }) => {
   await page.goto("/");
@@ -21,25 +23,31 @@ test("TST-E2E-002: user can open Architecture Rise from the Scenes page", async 
 
 test("TST-E2E-003: rise task starts in failed state", async ({ page }) => {
   await page.goto("/simulator/guided/architecture-rise/rise-01");
-  await expect(completedHeading(page)).not.toBeVisible();
-  await expect(page.getByRole("heading", { name: "Feedback", exact: true })).toBeVisible();
-  await expect(page.getByText(/^Score:/)).toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback).toContainText("Score:");
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
 });
 
 test("TST-E2E-004: rise task can be completed with valid rise", async ({ page }) => {
   await page.goto("/simulator/guided/architecture-rise/rise-01");
   await setStepRangeInput(page, "Rise", 12);
-  await expect(completedHeading(page)).toBeVisible();
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
 });
 
 test("TST-E2E-005: restart resets Architecture Rise guided task", async ({ page }) => {
   await page.goto("/simulator/guided/architecture-rise/rise-01");
   await setStepRangeInput(page, "Rise", 12);
-  await expect(completedHeading(page)).toBeVisible();
+  await expectLearningFeedbackCompleted(page);
+  await openLearningFeedback(page);
 
   await page.getByRole("button", { name: "Restart task" }).click();
 
-  await expect(completedHeading(page)).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
   await expect(page.getByLabel("Rise")).toHaveValue("0");
   // Confirm tilt and swing remain at 0
   await expect(page.getByLabel("Tilt")).toHaveValue("0");

@@ -1,7 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
+import {
+  expectLearningFeedbackNotCompleted,
+  getLearningFeedbackButton,
+  getLearningOverlay,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
-const overlay = (page: Page) => page.getByTestId("learning-overlay-panel");
+const overlay = (page: Page) => getLearningOverlay(page);
 
 test("guided learning stays available over the viewport and preserves the camera loop", async ({ page }) => {
   test.setTimeout(120_000);
@@ -15,11 +21,11 @@ test("guided learning stays available over the viewport and preserves the camera
     "aria-pressed",
     "true",
   );
+  await expectLearningFeedbackNotCompleted(page);
   await expect(page.getByRole("region", { name: "Guided lesson progress" })).toBeVisible();
   await expect(page.locator(".simulator-task-feedback-grid")).toHaveCount(0);
 
-  await learning.getByRole("button", { name: "Feedback", exact: true }).click();
-  await expect(learning.getByTestId("learning-overlay-feedback-view")).toContainText("In progress");
+  await expect(await openLearningFeedback(page)).toContainText("In progress");
 
   const rise = page.getByLabel("Rise", { exact: true });
   await expect(rise).toBeEnabled();
@@ -41,7 +47,7 @@ test("guided learning stays available over the viewport and preserves the camera
   await page.getByRole("button", { name: "Expand Ground Glass" }).click();
   await expect(page.getByRole("button", { name: "Restore Ground Glass" })).toBeVisible();
   await expect(learning).toBeVisible();
-  await expect(learning.getByRole("button", { name: "Feedback", exact: true })).toBeVisible();
+  await expect(getLearningFeedbackButton(page)).toBeVisible();
 });
 
 test("Free Practice keeps the compact learning views usable at a narrow width", async ({ page }) => {
@@ -57,8 +63,7 @@ test("Free Practice keeps the compact learning views usable at a narrow width", 
   );
   await expect(learning.getByTestId("learning-overlay-task-view")).toContainText("Free practice");
 
-  await learning.getByRole("button", { name: "Feedback", exact: true }).click();
-  await expect(learning.getByTestId("learning-overlay-feedback-view")).toContainText("Live observation");
+  await expect(await openLearningFeedback(page)).toContainText("Live observation");
   await learning.getByRole("button", { name: "Task", exact: true }).click();
   await expect(learning.getByTestId("learning-overlay-task-view")).toBeVisible();
 

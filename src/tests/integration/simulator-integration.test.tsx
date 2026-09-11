@@ -197,7 +197,7 @@ describe("phase 12 integration", () => {
       fireEvent.keyDown(riseInput, { key: "ArrowRight", code: "ArrowRight" });
     }
 
-    fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Feedback — Task completed" }));
     expect(screen.getByRole("heading", { name: "Task completed" })).toBeInTheDocument();
   });
 

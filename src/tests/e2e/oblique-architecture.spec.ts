@@ -1,11 +1,29 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
 import { readFocusDistributionScores } from "./helpers/focusDistribution";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  getLearningOverlay,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
+
+const openCompletedFeedback = async (page: Page) => {
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  return feedback;
+};
+
+const inspectCompletedFeedbackAndReturnToTask = async (page: Page) => {
+  await openCompletedFeedback(page);
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
+};
 
 const assertSharedObliqueRendering = async (page: Page) => {
   await expect(page.getByRole("heading", { name: "3D Scene" })).toBeVisible();
@@ -130,7 +148,7 @@ test("Oblique Architecture guided Rise task solves observable framing and restar
   const { rtt } = await assertSharedObliqueRendering(page);
   const rise = await assertRiseTaskControls(page);
   await expect(rise).toHaveValue("0");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
   await expect(page.getByRole("button", { name: "Restart task" })).toBeVisible();
 
   const neutralSanityState = await rtt.getAttribute("data-rtt-sanity-state");
@@ -138,15 +156,16 @@ test("Oblique Architecture guided Rise task solves observable framing and restar
   await expect(rise).toHaveValue("20");
   await expect.poll(async () => rtt.getAttribute("data-rtt-sanity-state")).not.toBe(neutralSanityState);
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await expect(page.getByRole("progressbar", { name: "Task requirements completed" })).toHaveAttribute(
+  const riseFeedback = await openCompletedFeedback(page);
+  await expect(riseFeedback.getByRole("progressbar", { name: "Task requirements completed" })).toHaveAttribute(
     "aria-valuenow",
     "4",
   );
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 
   await page.getByRole("button", { name: "Restart task" }).click();
   await expect(rise).toHaveValue("0");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
   await expect(page.getByRole("button", { name: "Restart task" })).toBeVisible();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 });
@@ -178,14 +197,14 @@ test("Oblique Architecture guided Swing + Focus task starts from solved Rise and
   await expect(focus).toHaveValue("13200");
   await expect(focus).toBeEnabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
 
   const neutralSanityState = await rtt.getAttribute("data-rtt-sanity-state");
   await setStepRangeInput(page, "Swing", 9.8);
   await setRangeDirect(page, "Focus distance", 5190);
   await expect.poll(async () => rtt.getAttribute("data-rtt-sanity-state")).not.toBe(neutralSanityState);
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await expect(page.getByRole("progressbar", { name: "Task requirements completed" })).toHaveAttribute(
+  const swingFeedback = await openCompletedFeedback(page);
+  await expect(swingFeedback.getByRole("progressbar", { name: "Task requirements completed" })).toHaveAttribute(
     "aria-valuenow",
     "6",
   );
@@ -193,12 +212,13 @@ test("Oblique Architecture guided Swing + Focus task starts from solved Rise and
   await expect(currentSettings).toContainText("Front Rise: 20.0 mm");
   await expect(currentSettings).toContainText("Front Swing: 9.8°");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 
   await page.getByRole("button", { name: "Restart task" }).click();
   await expect(rise).toHaveValue("20");
   await expect(swing).toHaveValue("0");
   await expect(focus).toHaveValue("13200");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 });
 
@@ -230,22 +250,22 @@ test("Oblique Architecture compound task solves Rise, Swing, and Focus from neut
   await expect(focus).toBeEnabled();
   await expect(page.getByRole("button", { name: "Expand 2D Geometry" })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
 
   const neutralSanityState = await rtt.getAttribute("data-rtt-sanity-state");
   await setStepRangeInput(page, "Rise", 20);
   await expect(rise).toHaveValue("20");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
 
   await setStepRangeInput(page, "Swing", 9.8);
   await expect(swing).toHaveValue("9.8");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
 
   await setRangeDirect(page, "Focus distance", 5190);
   await expect(focus).toHaveValue("5190");
   await expect.poll(async () => rtt.getAttribute("data-rtt-sanity-state")).not.toBe(neutralSanityState);
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await expect(page.getByRole("progressbar", { name: "Task requirements completed" })).toHaveAttribute(
+  const compoundFeedback = await openCompletedFeedback(page);
+  await expect(compoundFeedback.getByRole("progressbar", { name: "Task requirements completed" })).toHaveAttribute(
     "aria-valuenow",
     "6",
   );
@@ -255,12 +275,13 @@ test("Oblique Architecture compound task solves Rise, Swing, and Focus from neut
   await expect(currentSettings).toContainText("Front Swing: 9.8°");
   await expect(currentSettings).toContainText("Focus: 5190.0 mm");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 
   await page.getByRole("button", { name: "Restart task" }).click();
   await expect(rise).toHaveValue("0");
   await expect(swing).toHaveValue("0");
   await expect(focus).toHaveValue("13200");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 });
 
@@ -307,6 +328,7 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
   await setStepRangeInput(page, "Rise", 20);
   await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
+  await inspectCompletedFeedbackAndReturnToTask(page);
   await page.getByRole("link", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-swing-focus-01\?lesson=1$/);
@@ -315,6 +337,7 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   await setStepRangeInput(page, "Swing", 9.8);
   await setRangeDirect(page, "Focus distance", 5190);
   await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
+  await inspectCompletedFeedbackAndReturnToTask(page);
   await page.getByRole("link", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-compound-01\?lesson=1$/);
@@ -325,6 +348,7 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   await setStepRangeInput(page, "Rise", 20);
   await setStepRangeInput(page, "Swing", 9.8);
   await setRangeDirect(page, "Focus distance", 5190);
+  await inspectCompletedFeedbackAndReturnToTask(page);
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible();
   await expect(page.getByTestId("current-settings-readout")).toContainText("Front Rise: 20.0 mm");
   await expect(page.getByTestId("current-settings-readout")).toContainText("Front Swing: 9.8°");

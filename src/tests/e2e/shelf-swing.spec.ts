@@ -6,6 +6,12 @@ import {
   readStageTransform,
 } from "./helpers/groundGlass";
 import { readFocusDistributionScores } from "./helpers/focusDistribution";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  getLearningOverlay,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -139,10 +145,8 @@ test("Shelf Swing free and guided workflows stay accessible without console erro
   await expect(page.getByLabel("Tilt")).toBeDisabled();
   await expect(page.getByLabel("Rise").locator("..")).toContainText("Disabled for this guided task");
   await expect(page.getByLabel("Tilt").locator("..")).toContainText("Disabled for this guided task");
-  const progress = page.getByRole("progressbar", { name: "Task requirements completed" });
-  await expect(progress).toHaveAttribute("aria-valuemin", "0");
-  await expect(progress).toHaveAttribute("aria-valuemax", /\d+/);
-  await expect(progress).toHaveAttribute("aria-valuenow", /\d+/);
+  await expect(page.getByText("Align the diagonal plane of sharp focus", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Guided lesson progress" })).toHaveCount(0);
 
   const overlayTrigger = page.getByRole("button", { name: "View overlays" }).first();
   await overlayTrigger.click();
@@ -294,28 +298,33 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
   await expect(page.getByLabel("Swing")).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("3800");
   await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
 
   await setStepRangeInput(page, "Swing", 3.8);
   await setStepRangeInput(page, "Focus distance", 3410);
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
-  await expect(page.getByText(/Use negative Front Swing near -4\.0°/)).toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback).toContainText(/Use negative Front Swing near -4\.0°/);
 
   await setStepRangeInput(page, "Swing", -3.8);
   await expect
     .poll(async () => Object.values(await readSharpness(page)).every((score) => score >= 80))
     .toBe(true);
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await expect(page.getByText(/Negative Front Swing rotated the plane of sharp focus/)).toBeVisible();
+  await expectLearningFeedbackCompleted(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await expect(feedback).toContainText("Negative Front Swing rotated the plane of sharp focus");
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 
   await page.getByRole("button", { name: "Restart task" }).click();
   await expect(page.getByLabel("Swing")).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("3800");
   await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
+  const resetFeedback = await openLearningFeedback(page);
+  await expect(resetFeedback.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
 });
 
 test("Shelf Swing geometry limits projected depth planes to the movement-relevant Top view", async ({ page }) => {
@@ -369,7 +378,9 @@ test("Shelf Swing solved geometry and RTT remain coherent at the public solution
   await page.goto("/simulator/guided/shelf-swing/swing-01?rttDiagnostics=1");
   await setStepRangeInput(page, "Swing", -4);
   await setStepRangeInput(page, "Focus distance", 3400);
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
   await expectRttContent(page);
 
   const sceneCanvas = page.getByTestId("scene-canvas");

@@ -6,6 +6,7 @@ import { getPublicSceneEntryById } from "../../app/publicScenes";
 import { LearningOverlayPanel } from "../../components/simulator/LearningOverlayPanel";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { i18n } from "../../i18n";
+import type { TaskEvaluation } from "../../types/task";
 
 const guidedEntry = getPublicSceneEntryById("oblique-architecture");
 if (!guidedEntry) throw new Error("Missing Oblique Architecture public scene entry");
@@ -22,14 +23,35 @@ const guidedContext = getGuidedLessonContext({
 });
 if (!guidedContext) throw new Error("Expected guided lesson context");
 
-const renderPanel = (mode: "guided" | "free" = "guided") =>
+const completedEvaluation: TaskEvaluation = {
+  taskId: guidedTask.id,
+  status: "passed",
+  score: 1,
+  criteria: [],
+  primaryFeedback: { key: "tasks.common.genericPassPrimary" },
+  secondaryFeedback: [],
+};
+
+const failedEvaluation: TaskEvaluation = {
+  taskId: guidedTask.id,
+  status: "failed",
+  score: 0.5,
+  criteria: [],
+  primaryFeedback: { key: "tasks.common.genericFailPrimary" },
+  secondaryFeedback: [],
+};
+
+const renderPanel = (
+  mode: "guided" | "free" = "guided",
+  evaluation: TaskEvaluation | null = null,
+) =>
   render(
     <MemoryRouter>
       <LearningOverlayPanel
         mode={mode}
         sceneId="oblique-architecture"
         task={mode === "guided" ? guidedTask : null}
-        evaluation={null}
+        evaluation={evaluation}
         guidedLessonContext={mode === "guided" ? guidedContext : null}
       />
     </MemoryRouter>,
@@ -56,6 +78,10 @@ describe("LearningOverlayPanel", () => {
       "aria-pressed",
       "false",
     );
+    expect(screen.getByRole("button", { name: /^Feedback$/ })).toHaveAttribute(
+      "data-status",
+      "in-progress",
+    );
     expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Guided lesson progress" })).toBeInTheDocument();
     expect(container.querySelector(".simulator-task-feedback-grid")).not.toBeInTheDocument();
@@ -77,14 +103,7 @@ describe("LearningOverlayPanel", () => {
           mode="guided"
           sceneId="oblique-architecture"
           task={guidedTask}
-          evaluation={{
-            taskId: guidedTask.id,
-            status: "failed",
-            score: 0.5,
-            criteria: [],
-            primaryFeedback: { key: "tasks.common.genericPassPrimary" },
-            secondaryFeedback: [],
-          }}
+          evaluation={failedEvaluation}
           guidedLessonContext={guidedContext}
         />
       </MemoryRouter>,
@@ -102,6 +121,51 @@ describe("LearningOverlayPanel", () => {
       "aria-pressed",
       "true",
     );
+
+    rerender(
+      <MemoryRouter>
+        <LearningOverlayPanel
+          mode="guided"
+          sceneId="oblique-architecture"
+          task={guidedTask}
+          evaluation={completedEvaluation}
+          guidedLessonContext={guidedContext}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Task$/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    const completedFeedback = screen.getByRole("button", {
+      name: "Feedback — Task completed",
+    });
+    expect(completedFeedback).toHaveAttribute("aria-pressed", "false");
+    expect(completedFeedback).toHaveAttribute("data-status", "completed");
+    expect(completedFeedback).toContainElement(screen.getByText("✓"));
+
+    fireEvent.click(completedFeedback);
+    expect(screen.getByTestId("learning-overlay-feedback-view")).toHaveTextContent("Task completed");
+
+    rerender(
+      <MemoryRouter>
+        <LearningOverlayPanel
+          mode="guided"
+          sceneId="oblique-architecture"
+          task={guidedTask}
+          evaluation={failedEvaluation}
+          guidedLessonContext={guidedContext}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: /^Feedback$/ })).toHaveAttribute(
+      "data-status",
+      "in-progress",
+    );
+    expect(screen.queryByText("Task completed")).not.toBeInTheDocument();
   });
 
   it("collapses to a labelled control and restores the active content", () => {
@@ -135,12 +199,15 @@ describe("LearningOverlayPanel", () => {
   });
 
   it("localizes the compact controls", async () => {
-    renderPanel();
+    renderPanel("guided", completedEvaluation);
     await i18n.changeLanguage("zh-HK");
 
     expect(screen.getByRole("region", { name: "任務及回饋" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^任務$/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^回饋$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "回饋 — 任務完成" })).toHaveAttribute(
+      "data-status",
+      "completed",
+    );
     expect(screen.getByRole("button", { name: "收起任務及回饋" })).toHaveAttribute(
       "aria-expanded",
       "true",
