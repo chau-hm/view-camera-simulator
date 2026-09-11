@@ -416,6 +416,11 @@ test.describe("scene capacity benchmark", () => {
       });
 
       if (loupeScenes.has(sceneId)) {
+        await page.goto(`/simulator/free/${sceneId}?sceneCapacityProfiling=1&dofProfiling=1&rttDiagnostics=1`);
+        await waitForMeasurementState(page, sceneId, {
+          rawDebug: false,
+          inspectionWindowActive: false,
+        });
         const loupeButton = page.getByRole("button", { name: /Focus Loupe .*view/i }).first();
         await expect(loupeButton).toHaveCount(1);
         await loupeButton.click();
