@@ -15,6 +15,10 @@ import {
   classifyGraphicsBackend,
   type GraphicsBackendQualification,
 } from "../../render/sceneCapacityBenchmarkQualification";
+import {
+  classifyGroundGlassProfilingReadiness,
+  profilingProgressForSnapshot,
+} from "../helpers/sceneCapacityBenchmarkReadiness";
 
 const benchmarkEnabled = process.env.SCENE_CAPACITY_BENCHMARK === "1";
 const benchmarkOutputDirectory = process.env.SCENE_CAPACITY_BENCHMARK_OUTPUT_DIR ?? "test-results";
@@ -113,24 +117,13 @@ const activeAggregateStats = (
   return null;
 };
 
-const progressForSnapshot = (snapshot: GroundGlassProfilingSnapshot): number | null => {
-  if (snapshot.profilingBackend === "cpu-fallback") {
-    return snapshot.profilingDiagnostics.framesAccepted;
-  }
-  if (snapshot.profilingBackend === "gpu-query") {
-    return snapshot.profilingDiagnostics.framesCompletedGpu;
-  }
-  return null;
-};
-
 const assertBackendHealth = (snapshot: GroundGlassProfilingSnapshot): void => {
-  if (snapshot.profilingBackend === "cpu-fallback") return;
-  if (snapshot.profilingBackend !== "gpu-query") {
-    throw new Error(`Scene capacity benchmark has no active timing backend: ${snapshot.profilingBackend}`);
+  const readiness = classifyGroundGlassProfilingReadiness(snapshot);
+  if (readiness === "fatal") {
+    throw new Error(`Scene capacity benchmark GPU timing degraded: ${snapshot.profilingDiagnostics.gpuQueryState}`);
   }
-  const state = snapshot.profilingDiagnostics.gpuQueryState;
-  if (state === "stalled" || state === "disjoint" || state === "error") {
-    throw new Error(`Scene capacity benchmark GPU timing degraded: ${state}`);
+  if (readiness === "unavailable") {
+    throw new Error(`Scene capacity benchmark has no active timing backend: ${snapshot.profilingBackend}`);
   }
 };
 
@@ -226,7 +219,7 @@ const readProgressMarker = (snapshot: SceneCapacitySnapshot | null): ProgressMar
   if (groundGlass.profilingBackend !== "cpu-fallback" && groundGlass.profilingBackend !== "gpu-query") {
     return null;
   }
-  const progress = progressForSnapshot(groundGlass);
+  const progress = profilingProgressForSnapshot(groundGlass);
   if (progress === null) return null;
   return {
     backend: groundGlass.profilingBackend,
@@ -235,26 +228,62 @@ const readProgressMarker = (snapshot: SceneCapacitySnapshot | null): ProgressMar
   };
 };
 
+const formatProfilingDiagnostics = (snapshot: SceneCapacitySnapshot | null): string => {
+  const groundGlass = snapshot?.groundGlass;
+  if (!groundGlass) return JSON.stringify({ groundGlass: null });
+  const diagnostics = groundGlass.profilingDiagnostics;
+  return JSON.stringify({
+    sceneId: groundGlass.sceneId,
+    rawDebug: groundGlass.rawDebug,
+    profilingBackend: groundGlass.profilingBackend,
+    timingUnit: groundGlass.timingUnit,
+    gpuQueryState: diagnostics.gpuQueryState,
+    frameCount: groundGlass.frame.count,
+    framesAttempted: diagnostics.framesAttempted,
+    framesAccepted: diagnostics.framesAccepted,
+    framesCompletedGpu: diagnostics.framesCompletedGpu,
+    framesRejectedCapacity: diagnostics.framesRejectedCapacity,
+    framesInvalidated: diagnostics.framesInvalidated,
+    pendingQueries: diagnostics.pendingQueries,
+    pendingFrames: diagnostics.pendingFrames,
+    queriesBegun: diagnostics.queriesBegun,
+    queriesCompleted: diagnostics.queriesCompleted,
+    queriesUnavailable: diagnostics.queriesUnavailable,
+    sessionResets: diagnostics.sessionResets,
+    lastResetReason: diagnostics.lastResetReason,
+    lastRejectedReason: diagnostics.lastRejectedReason,
+    lastGpuQueryError: diagnostics.lastGpuQueryError,
+  });
+};
+
+const waitForProgressMarker = async (
+  page: Page,
+  sceneId: string,
+  state: RequestedMeasurementState,
+  timeoutMs = 120_000,
+): Promise<ProgressMarker> => {
+  const deadline = Date.now() + timeoutMs;
+  let latestSnapshot: SceneCapacitySnapshot | null = null;
+  while (Date.now() < deadline) {
+    latestSnapshot = await readCapacitySnapshot(page);
+    if (latestSnapshot?.sceneId === sceneId && latestSnapshot.groundGlass?.rawDebug === state.rawDebug) {
+      const marker = readProgressMarker(latestSnapshot);
+      if (marker !== null) return marker;
+    }
+    await page.waitForTimeout(250);
+  }
+  throw new Error(
+    `Timed out waiting for a profiling progress marker after ${timeoutMs}ms: ${formatProfilingDiagnostics(latestSnapshot)}`,
+  );
+};
+
 const waitForFreshStableSnapshot = async (
   page: Page,
   sceneId: string,
   state: RequestedMeasurementState,
 ): Promise<{ snapshot: SceneCapacitySnapshot; sampling: BenchmarkSamplingEvidence }> => {
   await waitForMeasurementState(page, sceneId, state);
-  await expect.poll(
-    async () => {
-      const candidate = await readCapacitySnapshot(page);
-      if (!candidate || candidate.sceneId !== sceneId || !candidate.groundGlass) return false;
-      if (candidate.groundGlass.rawDebug !== state.rawDebug) return false;
-      return readProgressMarker(candidate) !== null;
-    },
-    { timeout: 120_000, intervals: [250, 500, 1_000] },
-  ).toBe(true);
-
-  const markerSnapshot = await readCapacitySnapshot(page);
-  if (!markerSnapshot) throw new Error("Scene capacity benchmark could not read its profiling progress marker");
-  const initialMarker = readProgressMarker(markerSnapshot);
-  if (initialMarker === null) throw new Error("Scene capacity benchmark could not establish a profiling progress marker");
+  const initialMarker = await waitForProgressMarker(page, sceneId, state);
   await expect.poll(
     async () => {
       const candidate = await readCapacitySnapshot(page);
