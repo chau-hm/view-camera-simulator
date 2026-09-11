@@ -14,6 +14,7 @@ const KNOWN_SOFTWARE_RENDERER_PATTERNS = [
   /swiftshader/i,
   /llvmpipe/i,
   /software\s+rasterizer/i,
+  /microsoft\s+basic\s+render\s+driver/i,
 ] as const;
 
 export const classifyGraphicsBackend = ({
@@ -29,6 +30,10 @@ export const classifyGraphicsBackend = ({
   return {
     softwareRendererDetected,
     hardwareRendererQualified: rendererName.length > 0 && !softwareRendererDetected,
-    gpuTimingQualified: profilingBackend === "gpu-query" && timingUnit === "gpu-ms",
+    gpuTimingQualified:
+      rendererName.length > 0 &&
+      !softwareRendererDetected &&
+      profilingBackend === "gpu-query" &&
+      timingUnit === "gpu-ms",
   };
 };

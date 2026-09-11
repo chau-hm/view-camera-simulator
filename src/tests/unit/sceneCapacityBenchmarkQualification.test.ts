@@ -6,6 +6,7 @@ describe("classifyGraphicsBackend", () => {
     "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0)))",
     "llvmpipe (LLVM 17.0.6, 256 bits)",
     "Software Rasterizer",
+    "ANGLE (Microsoft, Microsoft Basic Render Driver (0x0000008C) Direct3D11 vs_5_0 ps_5_0, D3D11)",
   ])("recognizes %s as a known software renderer", (renderer) => {
     const result = classifyGraphicsBackend({
       renderer,
@@ -53,6 +54,18 @@ describe("classifyGraphicsBackend", () => {
     });
 
     expect(result.hardwareRendererQualified).toBe(false);
-    expect(result.gpuTimingQualified).toBe(true);
+    expect(result.gpuTimingQualified).toBe(false);
+  });
+
+  it("does not qualify GPU timing for a known software renderer", () => {
+    const result = classifyGraphicsBackend({
+      renderer: "ANGLE (Microsoft, Microsoft Basic Render Driver (0x0000008C) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      profilingBackend: "gpu-query",
+      timingUnit: "gpu-ms",
+    });
+
+    expect(result.softwareRendererDetected).toBe(true);
+    expect(result.hardwareRendererQualified).toBe(false);
+    expect(result.gpuTimingQualified).toBe(false);
   });
 });
