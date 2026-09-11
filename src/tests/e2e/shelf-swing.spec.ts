@@ -5,6 +5,7 @@ import {
   readFreshElementBounds,
   readStageTransform,
 } from "./helpers/groundGlass";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -18,19 +19,8 @@ const shelfCard = (page: Page) =>
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
-const readSharpness = async (page: Page) =>
-  Object.fromEntries(
-    await Promise.all(
-      ["shelf-front", "shelf-middle", "shelf-back"].map(async (id) => [
-        id,
-        Number(
-          await page
-            .getByRole("progressbar", { name: `${id} sharpness` })
-            .getAttribute("aria-valuenow"),
-        ),
-      ] as const),
-    ),
-  );
+const readSharpness = (page: Page) =>
+  readFocusDistributionScores(page, ["shelf-front", "shelf-middle", "shelf-back"]);
 
 const expectGuideLabelClearOfMiddleTarget = async (svg: Locator) => {
   const guideLabel = svg.getByTestId("shelf-swing-subject-trace-label");

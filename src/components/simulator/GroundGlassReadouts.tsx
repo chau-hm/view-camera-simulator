@@ -1,27 +1,28 @@
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import { readoutMessageKeys, type ReadoutMessageKey } from "../../i18n/readoutMessageKeys";
-import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { formatDegrees, formatMillimeter } from "../../utils/formatters";
 import type { RenderQualityProfile } from "../../types/ui";
 import type { CameraMovementField } from "../../types/scene";
 import type { FocusStandard } from "../../types/camera";
 import type { CameraMovementPublicReadout } from "../../scenes/cameraMovementPublicTeaching";
 import type { LearnerReadoutSettingsVariant } from "./learnerReadoutPolicy";
+import { FocusDistributionPanel, type FocusTargetMetric } from "./FocusDistributionPanel";
+import type { FocusDistributionTarget } from "./focusDistributionLayout";
+import type { GroundGlassPreviewMode } from "../../render/groundGlassTargetProjection";
 
 type ActiveMovementInfo = {
   field: CameraMovementField;
   value: number;
 };
 
-type GroundGlassReadoutsProps = {
+type CurrentSettingsReadoutProps = {
   riseMm: number;
   tiltDeg: number;
   swingDeg: number;
   focusDistanceMm: number;
   aperture: number | string;
   renderQuality: RenderQualityProfile;
-  focusTargets?: { id: string; sharpnessPercent: number }[];
   /** Optional active movement info for single-movement scenes. */
   activeMovement?: ActiveMovementInfo | null;
   /** Optional public teaching readout for Understanding Camera Movements. */
@@ -36,7 +37,13 @@ type GroundGlassReadoutsProps = {
   frontShiftMm?: number;
 };
 
-export type FocusTargetMetric = "point" | "patch" | "focus";
+type GroundGlassReadoutsProps = CurrentSettingsReadoutProps & {
+  focusTargets?: FocusDistributionTarget[];
+  sceneId: string;
+  previewMode: GroundGlassPreviewMode;
+  metric?: FocusTargetMetric;
+  closestTargetId?: string;
+};
 
 const MOVEMENT_LABEL_KEYS: Record<CameraMovementField, ReadoutMessageKey> = {
   frontRiseMm: readoutMessageKeys.controls.frontRise,
@@ -68,40 +75,6 @@ const FRONT_MOVEMENT_FIELDS: ReadonlyArray<{
   { field: "frontSwingDeg", valueKey: "swingDeg" },
 ];
 
-const focusTargetMetricKey = (metric: FocusTargetMetric): ReadoutMessageKey => {
-  switch (metric) {
-    case "point":
-      return readoutMessageKeys.focusTargets.pointFocus;
-    case "patch":
-      return readoutMessageKeys.focusTargets.patchCoverage;
-    case "focus":
-      return readoutMessageKeys.focusTargets.focus;
-  }
-};
-
-const focusTargetStatusKey = (status: string | undefined): ReadoutMessageKey => {
-  switch (status) {
-    case "sharp":
-      return readoutMessageKeys.focusTargets.sharp;
-    case "acceptable":
-      return readoutMessageKeys.focusTargets.acceptable;
-    default:
-      return readoutMessageKeys.focusTargets.soft;
-  }
-};
-
-const focusTargetLabelKey = (id: string) => {
-  if (id === "focus-near-detail") return simulatorMessageKeys.controls.focusNearDetailButton;
-  if (id === "focus-far-detail") return simulatorMessageKeys.controls.focusFarDetailButton;
-  return null;
-};
-
-const focusTargetAriaKey = (id: string) => {
-  if (id === "focus-near-detail") return simulatorMessageKeys.controls.focusNearDetailAria;
-  if (id === "focus-far-detail") return simulatorMessageKeys.controls.focusFarDetailAria;
-  return null;
-};
-
 export const CurrentSettingsReadout = ({
   riseMm,
   tiltDeg,
@@ -114,7 +87,7 @@ export const CurrentSettingsReadout = ({
   settingsVariant = "standard",
   cameraPositionMm = 0,
   frontShiftMm = 0,
-}: GroundGlassReadoutsProps) => {
+}: CurrentSettingsReadoutProps) => {
   const { t } = useTranslation();
 
   const formatTeachingReadout = (readout: CameraMovementPublicReadout): string => {
@@ -274,74 +247,6 @@ export const CurrentSettingsReadout = ({
   );
 };
 
-export const FocusTargetsReadout = ({
-  focusTargets,
-  metric,
-  metricLabel,
-  closestTargetId,
-}: {
-  focusTargets?: { id: string; status?: string; sharpnessPercent: number }[];
-  metric?: FocusTargetMetric;
-  /** Compatibility input for existing presentation callers; new callers use the semantic metric. */
-  metricLabel?: "Point focus" | "Patch coverage" | "Focus";
-  closestTargetId?: string;
-}) => {
-  const { t } = useTranslation();
-  if (!focusTargets || focusTargets.length === 0) return null;
-
-  const resolvedMetric: FocusTargetMetric = metric ?? (
-    metricLabel === "Point focus" ? "point" : metricLabel === "Patch coverage" ? "patch" : "focus"
-  );
-  const localizedMetricLabel = t(focusTargetMetricKey(resolvedMetric));
-
-  return (
-    <div
-      aria-label={t(readoutMessageKeys.focusTargets.ariaLabel)}
-      className="simulator-info-card simulator-info-card--focus-targets"
-      data-testid="focus-targets-readout"
-    >
-      <h4>{t(readoutMessageKeys.focusTargets.title)} · {localizedMetricLabel}</h4>
-      <div className="focus-target-list">
-        {focusTargets.map((target) => {
-          const display = Math.max(0, Math.min(100, Math.round(target.sharpnessPercent ?? 0)));
-          const statusKey = focusTargetStatusKey(target.status);
-          const targetLabelKey = focusTargetLabelKey(target.id);
-          const targetAriaKey = focusTargetAriaKey(target.id);
-          const targetLabel = targetLabelKey ? t(targetLabelKey) : formatTargetId(target.id);
-          const targetAriaLabel = targetAriaKey ? t(targetAriaKey) : target.id;
-          const cls = `focus-target-row ${target.status === "sharp" ? "focus-target-row--sharp" : target.status === "acceptable" ? "focus-target-row--acceptable" : "focus-target-row--soft"}`;
-          return (
-            <div key={target.id} className={cls}>
-              <div className="focus-target-row__header">
-                <span className="focus-target-row__name" title={targetLabel}>{targetLabel}</span>
-                <span className="focus-target-row__value">{display}%</span>
-              </div>
-              <div
-                className="focus-target-progress"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={display}
-                aria-label={t(readoutMessageKeys.focusTargets.sharpnessAria, { target: targetAriaLabel })}
-              >
-                <div className="focus-target-progress__fill" style={{ width: `${display}%` }} />
-              </div>
-              <div className="focus-target-row__meta">
-                {localizedMetricLabel} · {t(statusKey)}
-                {target.id === closestTargetId ? ` · ${t(readoutMessageKeys.focusTargets.closestPoint)}` : ""}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-function formatTargetId(id: string) {
-  return id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 export const GroundGlassReadouts = ({
   riseMm,
   tiltDeg,
@@ -350,6 +255,10 @@ export const GroundGlassReadouts = ({
   aperture,
   renderQuality,
   focusTargets,
+  sceneId,
+  previewMode,
+  metric,
+  closestTargetId,
   activeMovement,
   focusStandard,
   settingsVariant,
@@ -373,7 +282,13 @@ export const GroundGlassReadouts = ({
         cameraPositionMm={cameraPositionMm}
         frontShiftMm={frontShiftMm}
       />
-      <FocusTargetsReadout focusTargets={focusTargets} />
+      <FocusDistributionPanel
+        sceneId={sceneId}
+        focusTargets={focusTargets}
+        previewMode={previewMode}
+        metric={metric}
+        closestTargetId={closestTargetId}
+      />
     </div>
   );
 };

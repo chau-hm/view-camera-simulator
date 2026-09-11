@@ -66,6 +66,27 @@ export const readoutMessageKeys = {
     closestPoint: "readouts.focusTargets.closestPoint",
     sharpnessAria: "readouts.focusTargets.sharpnessAria",
   },
+  focusDistribution: {
+    title: "readouts.focusDistribution.title",
+    ariaLabel: "readouts.focusDistribution.ariaLabel",
+    raw: "readouts.focusDistribution.raw",
+    upright: "readouts.focusDistribution.upright",
+    orientationAria: "readouts.focusDistribution.orientationAria",
+    targetAria: "readouts.focusDistribution.targetAria",
+    additionalTargetsAria: "readouts.focusDistribution.additionalTargetsAria",
+    unplacedTarget: "readouts.focusDistribution.unplacedTarget",
+    positions: {
+      upperLeft: "readouts.focusDistribution.positions.upperLeft",
+      upperCentre: "readouts.focusDistribution.positions.upperCentre",
+      upperRight: "readouts.focusDistribution.positions.upperRight",
+      middleLeft: "readouts.focusDistribution.positions.middleLeft",
+      middleRight: "readouts.focusDistribution.positions.middleRight",
+      centre: "readouts.focusDistribution.positions.centre",
+      lowerLeft: "readouts.focusDistribution.positions.lowerLeft",
+      lowerCentre: "readouts.focusDistribution.positions.lowerCentre",
+      lowerRight: "readouts.focusDistribution.positions.lowerRight",
+    },
+  },
 } as const;
 
 type StringLeaves<T> = T extends string

@@ -1,5 +1,6 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
@@ -47,12 +48,13 @@ test("Architecture + Foreground exposes the cumulative photographic problem in F
   expect(Number(await rtt.getAttribute("data-rtt-final-non-background"))).toBeGreaterThan(0);
   await expect(rtt.locator("canvas")).toBeVisible();
 
-  const sharpness = await Promise.all(
-    ["foreground-near", "foreground-middle", "building-base", "building-middle"].map(async (id) => {
-      const progress = page.getByRole("progressbar", { name: `${id} sharpness` });
-      await expect(progress).toBeVisible();
-      return Number(await progress.getAttribute("aria-valuenow"));
-    }),
+  const sharpness = Object.values(
+    await readFocusDistributionScores(page, [
+      "foreground-near",
+      "foreground-middle",
+      "building-base",
+      "building-middle",
+    ]),
   );
   expect(sharpness[0]).toBeLessThan(sharpness[3]);
   expect(sharpness[1]).toBeGreaterThan(sharpness[0]);
