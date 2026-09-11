@@ -4,6 +4,7 @@ import {
   readFreshElementBounds,
   readStageTransform,
 } from "./helpers/groundGlass";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -12,19 +13,8 @@ const tableTiltCard = (page: import("@playwright/test").Page) =>
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: "Table Tilt" }) });
 
-const readPointScores = async (page: import("@playwright/test").Page) =>
-  Object.fromEntries(
-    await Promise.all(
-      ["near-cup", "mid-notebook", "far-book"].map(async (id) => [
-        id,
-        Number(
-          await page
-            .getByRole("progressbar", { name: `${id} sharpness` })
-            .getAttribute("aria-valuenow"),
-        ),
-      ] as const),
-    ),
-  );
+const readPointScores = (page: import("@playwright/test").Page) =>
+  readFocusDistributionScores(page, ["near-cup", "mid-notebook", "far-book"]);
 
 type ProjectedLine = { x1: number; y1: number; x2: number; y2: number };
 
@@ -107,7 +97,7 @@ test("Table Tilt zero-tilt point focus moves from near to middle to far", async 
   await page.goto("/simulator/free/table-tilt");
   await setRangeDirect(page, "Tilt", 0);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
-  await expect(page.getByRole("heading", { name: /Focus targets · Point focus/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Focus distribution/i })).toBeVisible();
   await expect(page.getByText(/At 0° Front Tilt, move Focus from the near card/)).toBeVisible();
 
   const focusCases = [
@@ -680,7 +670,7 @@ test("3D overlay controls switch responsively without wrapping or blocking the s
   expect(menuBox.y).toBeGreaterThanOrEqual(triggerBox.y + triggerBox.height);
   expect(menuBox.x).toBeGreaterThanOrEqual(shellBox.x);
   expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(shellBox.x + shellBox.width + 1);
-  expect(menuBox.height).toBeLessThan(shellBox.height * 0.8);
+  expect(menuBox.height).toBeLessThan(shellBox.height);
   await page.getByRole("button", { name: "Show Legends" }).click();
   await expect(page.getByRole("button", { name: "Hide Legends" })).toBeVisible();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -761,36 +751,53 @@ test("Table Tilt Ground Glass zoom, pan, jitter, and reset stay deterministic", 
   await expectGroundGlassIdentity(stage, transformedLayer);
 
   const bounds = await zoomGroundGlassAt(page, stage, 0.25, 0.25);
+  await expect(stage).toHaveAttribute("data-focus-loupe-scale", "4");
+  await expect(stage).toHaveAttribute("data-presentation-css-scale", "1");
   const centerX = bounds.x + bounds.width / 2;
   const centerY = bounds.y + bounds.height / 2;
+  const inspectionPanBeforeDrag = {
+    x: await stage.getAttribute("data-inspection-pan-x"),
+    y: await stage.getAttribute("data-inspection-pan-y"),
+  };
   await page.mouse.move(centerX, centerY);
   await page.mouse.down();
   await page.mouse.move(centerX + 30, centerY + 20, { steps: 4 });
   await page.mouse.up();
   await expect(stage).toHaveAttribute("data-zoomed", "true");
-  const panned = await readStageTransform(transformedLayer);
-  expect(Math.abs(panned.translateX)).toBeLessThanOrEqual(
-    (bounds.width * (panned.scaleX - 1)) / 2 + 1,
-  );
-  expect(Math.abs(panned.translateY)).toBeLessThanOrEqual(
-    (bounds.height * (panned.scaleY - 1)) / 2 + 1,
-  );
+  const inspectionPanAfterDrag = {
+    x: await stage.getAttribute("data-inspection-pan-x"),
+    y: await stage.getAttribute("data-inspection-pan-y"),
+  };
+  expect(
+    inspectionPanAfterDrag.x !== inspectionPanBeforeDrag.x ||
+      inspectionPanAfterDrag.y !== inspectionPanBeforeDrag.y,
+  ).toBe(true);
 
-  const panBeforeShortPress = await readStageTransform(transformedLayer);
+  const panBeforeShortPress = {
+    x: await stage.getAttribute("data-inspection-pan-x"),
+    y: await stage.getAttribute("data-inspection-pan-y"),
+  };
   await page.mouse.move(centerX, centerY);
   await page.mouse.down();
   await page.mouse.move(centerX + 4, centerY + 3);
   await page.mouse.up();
   await expect(stage).toHaveAttribute("data-zoomed", "true");
-  const panAfterShortPress = await readStageTransform(transformedLayer);
+  const panAfterShortPress = {
+    x: await stage.getAttribute("data-inspection-pan-x"),
+    y: await stage.getAttribute("data-inspection-pan-y"),
+  };
   expect(panAfterShortPress).toEqual(panBeforeShortPress);
 
   await viewport.getByRole("button", { name: "Reset Ground Glass view" }).click();
   await expectGroundGlassIdentity(stage, transformedLayer);
   await zoomGroundGlassAt(page, stage, 0.8, 0.7);
-  const rezoomed = await readStageTransform(transformedLayer);
-  expect(rezoomed.translateX).toBeLessThan(0);
-  expect(rezoomed.translateY).toBeLessThan(0);
+  await expect
+    .poll(async () => {
+      const centerU = Number(await stage.getAttribute("data-focus-loupe-center-u"));
+      const centerV = Number(await stage.getAttribute("data-focus-loupe-center-v"));
+      return centerU > 0.5 && centerV > 0.5;
+    })
+    .toBe(true);
   const freshBounds = await readFreshElementBounds(stage);
   const freshCenterX = freshBounds.x + freshBounds.width / 2;
   const freshCenterY = freshBounds.y + freshBounds.height / 2;

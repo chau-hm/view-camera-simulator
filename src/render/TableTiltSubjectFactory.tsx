@@ -3,6 +3,10 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry, { type TableTiltSubjectDefinition } from "../scenes/tableTiltGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
@@ -420,6 +424,109 @@ const createSemanticSubject = (subject: TableTiltSubjectDefinition): THREE.Group
   return surfaceAnchor;
 };
 
+const addTableTiltContext = (root: THREE.Group): void => {
+  const context = new THREE.Group();
+  context.name = "table-tilt-context-structure";
+
+  const apronMaterial = standardMaterial("#57534e", 0.9);
+  const woodMaterial = createFocusFriendlyMaterial({
+    pattern: "linear-grain",
+    primaryColor: "#8b5e3c",
+    secondaryColor: "#6f452d",
+    repeat: [2, 8],
+    roughness: 0.82,
+  });
+  const accentMaterial = standardMaterial("#334155", 0.78);
+
+  const tableStructure = new THREE.Group();
+  tableStructure.name = "table-tilt-table-structure";
+  tableStructure.position.set(
+    toWorld(geometry.tabletop.center.x),
+    toWorld(geometry.tabletop.center.y),
+    toWorld(geometry.tabletop.center.z),
+  );
+  tableStructure.rotation.x = geometry.tabletop.tiltAngleRad;
+  [-1, 1].forEach((sign) => {
+    const apron = new THREE.Mesh(
+      new THREE.BoxGeometry(toWorld(2200), toWorld(180), toWorld(90)),
+      apronMaterial,
+    );
+    apron.name = `table-tilt-apron-${sign < 0 ? "near" : "far"}`;
+    apron.position.set(0, toWorld(-140), toWorld(sign * 1500));
+    tableStructure.add(apron);
+  });
+  const crossbar = new THREE.Mesh(
+    new THREE.BoxGeometry(toWorld(2100), toWorld(100), toWorld(80)),
+    apronMaterial,
+  );
+  crossbar.name = "table-tilt-underframe-crossbar";
+  crossbar.position.set(0, toWorld(-280), 0);
+  tableStructure.add(crossbar);
+  context.add(tableStructure);
+
+  const addLocalBox = ({
+    name,
+    localX,
+    localDepth,
+    width,
+    height,
+    depth,
+    material,
+  }: {
+    name: string;
+    localX: number;
+    localDepth: number;
+    width: number;
+    height: number;
+    depth: number;
+    material: THREE.Material;
+  }) => {
+    const position = geometry.tabletopLocalToWorld({
+      localX,
+      localDepth,
+      verticalOffsetMm: height / 2,
+    });
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(toWorld(width), toWorld(height), toWorld(depth)),
+      material,
+    );
+    mesh.name = name;
+    mesh.position.set(toWorld(position.x), toWorld(position.y), toWorld(position.z));
+    mesh.rotation.x = geometry.tabletop.tiltAngleRad;
+    context.add(mesh);
+  };
+
+  addLocalBox({
+    name: "table-tilt-context-near-tray",
+    localX: 760,
+    localDepth: -820,
+    width: 360,
+    height: 70,
+    depth: 240,
+    material: woodMaterial,
+  });
+  addLocalBox({
+    name: "table-tilt-context-middle-canister",
+    localX: -720,
+    localDepth: 420,
+    width: 180,
+    height: 250,
+    depth: 180,
+    material: accentMaterial,
+  });
+  addLocalBox({
+    name: "table-tilt-context-far-block",
+    localX: 720,
+    localDepth: 1420,
+    width: 220,
+    height: 220,
+    depth: 180,
+    material: woodMaterial,
+  });
+
+  root.add(context);
+};
+
 /** Create the canonical Table Tilt subject for future offscreen RTT use. */
 export function createTableTiltGroup(): THREE.Group {
   const root = new THREE.Group();
@@ -453,7 +560,13 @@ export function createTableTiltGroup(): THREE.Group {
       toWorld(geometry.tabletop.thickness),
       toWorld(geometry.tabletop.depth),
     ),
-    standardMaterial(geometry.tabletop.color, 0.82),
+    createFocusFriendlyMaterial({
+      pattern: "linear-grain",
+      primaryColor: geometry.tabletop.color,
+      secondaryColor: "#9a7655",
+      repeat: [2, 12],
+      roughness: 0.82,
+    }),
   );
   tabletopMesh.name = "table-tilt-tabletop";
   tabletopAssembly.add(tabletopMesh);
@@ -484,6 +597,8 @@ export function createTableTiltGroup(): THREE.Group {
   }
   root.add(tabletopAssembly);
 
+  addTableTiltContext(root);
+
   geometry.tableSupports.forEach((support) => {
     const leg = new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -508,16 +623,7 @@ export function createTableTiltGroup(): THREE.Group {
 }
 
 export function disposeTableTiltGroup(group: THREE.Group): void {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((geometryResource) => geometryResource.dispose());
-  materials.forEach((material) => material.dispose());
+  disposeTeachingSubjectResources(group);
 }
 
 /** React Three Fiber boundary backed by the exact same group factory as RTT. */

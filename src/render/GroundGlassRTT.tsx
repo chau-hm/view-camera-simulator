@@ -3,10 +3,20 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../core/optics/physicalSharpness";
+import { resolveGroundGlassRelativeIlluminance } from "../core/optics/groundGlassIlluminance";
 
 const SKY_COLOR = new THREE.Color("#dfe5ec");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
 import { vecToWorld } from "./rttUtils";
+import {
+  configureTeachingShadowParticipation,
+  createTeachingLightingRig,
+  disposeTeachingLightingRig,
+  resolveTeachingLightingPlacement,
+  TEACHING_LIGHTING_CONFIG,
+  type TeachingLightingRig,
+  updateTeachingLightingRig,
+} from "./TeachingLighting";
 import {
   CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
   resolveCameraMovementLatticeRenderModel,
@@ -65,6 +75,11 @@ import {
   type GroundGlassProfilingConfiguration,
   type GroundGlassProfilingPass,
 } from "./groundGlassProfiling";
+import {
+  collectSceneGraphCapacity,
+  isSceneCapacityProfilingEnabled,
+  readSceneCapacityRendererResources,
+} from "./sceneCapacityProfiling";
 import type {
   GroundGlassRttChannel,
   GroundGlassRttRuntimeInfo,
@@ -130,6 +145,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
   const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
   const profilingEnabled = isGroundGlassProfilingEnabled();
+  const sceneCapacityProfilingEnabled = isSceneCapacityProfilingEnabled();
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
   const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1 }));
@@ -156,11 +172,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   const resourceGenerationRef = React.useRef<number>(0);
   const focalLengthMmRef = React.useRef(focalLengthMm);
   focalLengthMmRef.current = focalLengthMm;
-  const lightingRigRef = React.useRef<{
-    keyLight: THREE.DirectionalLight;
-    fillLight: THREE.DirectionalLight;
-    target: THREE.Object3D;
-  } | null>(null);
+  const lightingRigRef = React.useRef<TeachingLightingRig | null>(null);
   const mountedSceneSubjectRef = useRef<MountedGroundGlassSceneSubject | null>(null);
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality });
   const inspectionWindowRef = React.useRef<GroundGlassInspectionWindow>(
@@ -431,6 +443,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
         displayUpright: { value: 0.0 },
+        apertureIlluminanceGain: { value: 1.0 },
       },
     });
 
@@ -479,6 +492,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           profilingEnabled: true,
           profilingBackend: snapshot.profilingBackend,
           profilingSnapshot: snapshot,
+          sceneCapacity: sceneCapacityProfilingEnabled
+            ? {
+                rttSubject: currentInfo.sceneCapacity?.rttSubject ?? null,
+                rendererResources: readSceneCapacityRendererResources(gl),
+              }
+            : currentInfo.sceneCapacity,
         });
       },
     );
@@ -560,20 +579,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       }
     } catch (err) { void err; }
 
-    // Lighting: standardized studio lights for visibility
-    const hemi = new THREE.HemisphereLight(new THREE.Color("#ffffff"), new THREE.Color("#64748b"), 0.9);
-    scene.add(hemi);
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.45);
-    const lightTarget = new THREE.Object3D();
-    scene.add(lightTarget);
-    keyLight.position.set(-2, 4, 3);
-    keyLight.target = lightTarget;
-    scene.add(keyLight);
-    fillLight.position.set(2, 1, 1);
-    fillLight.target = lightTarget;
-    scene.add(fillLight);
-    lightingRigRef.current = { keyLight, fillLight, target: lightTarget };
+    // Shared teaching lighting keeps the viewport and RTT on the same
+    // restrained hemisphere/key-light baseline. Scene profiles place the rig
+    // around their existing presentation target below.
+    lightingRigRef.current = createTeachingLightingRig(scene);
 
     return () => {
       try {
@@ -621,7 +630,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           postResourcesRef.current = null;
         }
 
-        if (lightingRigRef.current?.keyLight === keyLight) {
+        const lightingRig = lightingRigRef.current;
+        if (lightingRig) {
+          disposeTeachingLightingRig(scene, lightingRig);
           lightingRigRef.current = null;
         }
         if (offscreenScene.current === scene) offscreenScene.current = null;
@@ -640,6 +651,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     profilingEnabled,
     readRuntimeInfo,
     resolvedSceneId,
+    sceneCapacityProfilingEnabled,
     setRuntimeInfo,
   ]);
 
@@ -655,24 +667,15 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     const lighting = sceneProfile.resolveRttLighting(profileContext);
     const lightingRig = lightingRigRef.current;
     if (lighting && lightingRig) {
-      const lightingTarget = new THREE.Vector3(
-        ...vecToWorld(lighting.targetMm),
-      );
-      lightingRig.target.position.copy(lightingTarget);
-      lightingRig.keyLight.position.set(
-        lightingTarget.x + lighting.keyOffsetWorld.x,
-        lightingTarget.y + lighting.keyOffsetWorld.y,
-        lightingTarget.z + lighting.keyOffsetWorld.z,
-      );
-      lightingRig.fillLight.position.set(
-        lightingTarget.x + lighting.fillOffsetWorld.x,
-        lightingTarget.y + lighting.fillOffsetWorld.y,
-        lightingTarget.z + lighting.fillOffsetWorld.z,
+      updateTeachingLightingRig(
+        lightingRig,
+        resolveTeachingLightingPlacement(lighting),
       );
     }
 
     const mounted = sceneProfile.mountSubject(scene, profileContext);
     if (!mounted) return;
+    configureTeachingShadowParticipation(mounted.group);
     mountedSceneSubjectRef.current = mounted;
 
     const runtimeInfo = mounted.runtimeInfo;
@@ -687,6 +690,20 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         latticeResourceKey: runtimeInfo.resourceKey,
         latticePresentationRegion: runtimeInfo.presentationRegion,
         latticeSubjectGeneration: runtimeInfo.generation,
+        sceneCapacity: sceneCapacityProfilingEnabled
+          ? {
+              rttSubject: collectSceneGraphCapacity(mounted.group),
+              rendererResources: readSceneCapacityRendererResources(gl),
+            }
+          : undefined,
+      });
+    } else if (currentInfo && sceneCapacityProfilingEnabled) {
+      setRuntimeInfo({
+        ...currentInfo,
+        sceneCapacity: {
+          rttSubject: collectSceneGraphCapacity(mounted.group),
+          rendererResources: readSceneCapacityRendererResources(gl),
+        },
       });
     }
 
@@ -709,6 +726,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           latticeResourceKey: undefined,
           latticePresentationRegion: undefined,
           latticeSubjectGeneration: undefined,
+          sceneCapacity: undefined,
         });
       }
     };
@@ -717,7 +735,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     sceneDefinition,
     sceneProfile,
     readRuntimeInfo,
+    sceneCapacityProfilingEnabled,
     setRuntimeInfo,
+    gl,
   ]);
 
   // Scene profiles own any scene-specific mutation of their mounted subject.
@@ -1153,6 +1173,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       // Prepare typed optical state once and apply it to both CoC and gather.
       let uniformPreparationError: string | null = null;
       let preparedDofState: ReturnType<typeof createGroundGlassDofUniformState> | null = null;
+      let apertureIlluminanceGain: number | null = rawDebug ? 1.0 : null;
       try {
         const displayOpticsState = resolveGroundGlassDisplayOpticsState(resolvedSceneId, opticsState);
         preparedDofState = createGroundGlassDofUniformState(
@@ -1169,6 +1190,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           sampledFilmDimensions.widthMm,
           sampledFilmDimensions.heightMm,
         );
+        if (!rawDebug) {
+          apertureIlluminanceGain = resolveGroundGlassRelativeIlluminance(aperture);
+        }
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);
       }
@@ -1239,6 +1263,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       compositeMaterial.uniforms.displayUpright.value = previewMode === "raw" ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
+      if (apertureIlluminanceGain !== null) {
+        compositeMaterial.uniforms.apertureIlluminanceGain.value = apertureIlluminanceGain;
+      }
 
       // Keep the final DOF result in an owned target. Besides enabling a
       // deterministic render sanity readback, this prevents a transient empty
@@ -1362,6 +1389,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
         style={{ width: "100%", height: "100%" }}
         gl={GROUND_GLASS_GL_OPTIONS}
         orthographic={false}
+        shadows={{ type: TEACHING_LIGHTING_CONFIG.shadowMapType }}
       >
         <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} rawDebug={rawDebug} renderQuality={renderQuality} channel={channel} inspectionWindow={inspectionWindow} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
       </Canvas>

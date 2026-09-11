@@ -1,4 +1,6 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -12,10 +14,14 @@ const assertFiniteGroundGlass = async (page: Page) => {
   if (finalContentful !== null) expect(finalContentful).toBe("true");
 
   expect(await page.locator("body").innerText()).not.toMatch(/NaN|Infinity/);
-  for (const targetId of ["foreground-near", "foreground-middle", "building-base", "building-middle"]) {
-    const progress = page.getByRole("progressbar", { name: `${targetId} sharpness` });
-    await expect(progress).toBeVisible();
-    expect(Number.isFinite(Number(await progress.getAttribute("aria-valuenow")))).toBe(true);
+  const scores = await readFocusDistributionScores(page, [
+    "foreground-near",
+    "foreground-middle",
+    "building-base",
+    "building-middle",
+  ]);
+  for (const [targetId, score] of Object.entries(scores)) {
+    expect(Number.isFinite(score), `${targetId} sharpness must be finite`).toBe(true);
   }
   expect(await page.locator("body").innerText()).not.toMatch(/NaN|Infinity/);
 };
@@ -33,6 +39,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (message.type() === "error" || message.type() === "warning") {
       if (!/GL Driver Message .*GPU stall due to ReadPixels/.test(message.text())) {
         consoleProblems.push(message.text());

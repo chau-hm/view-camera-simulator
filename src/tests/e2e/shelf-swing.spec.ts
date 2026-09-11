@@ -1,9 +1,11 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   clickStageAt,
   readFreshElementBounds,
   readStageTransform,
 } from "./helpers/groundGlass";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -17,19 +19,8 @@ const shelfCard = (page: Page) =>
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
-const readSharpness = async (page: Page) =>
-  Object.fromEntries(
-    await Promise.all(
-      ["shelf-front", "shelf-middle", "shelf-back"].map(async (id) => [
-        id,
-        Number(
-          await page
-            .getByRole("progressbar", { name: `${id} sharpness` })
-            .getAttribute("aria-valuenow"),
-        ),
-      ] as const),
-    ),
-  );
+const readSharpness = (page: Page) =>
+  readFocusDistributionScores(page, ["shelf-front", "shelf-middle", "shelf-back"]);
 
 const expectGuideLabelClearOfMiddleTarget = async (svg: Locator) => {
   const guideLabel = svg.getByTestId("shelf-swing-subject-trace-label");
@@ -95,7 +86,7 @@ test("Shelf Swing card exposes free and guided modes", async ({ page }) => {
   const card = shelfCard(page);
   await expect(card).toBeVisible();
   const thumbnail = card.locator("img");
-  await expect(thumbnail).toHaveAttribute("src", /assets\/shelf-swing\.png$/);
+  await expect(thumbnail).toHaveAttribute("src", /assets\/shelf-swing\.webp$/);
   await expect.poll(() => thumbnail.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   await expect(card.getByRole("link", { name: "Open Scene" })).toHaveAttribute(
     "href",
@@ -130,6 +121,7 @@ test("Shelf Swing free and guided workflows stay accessible without console erro
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (message.type() === "error" || message.type() === "warning") {
       if (!isAllowedEnvironmentConsoleMessage(message.text())) {
         consoleProblems.push(message.text());
@@ -236,16 +228,28 @@ test("Shelf Swing Ground Glass zoom, pan, reset, orientation, and quality stay l
 
   await clickStageAt(page, stage, 0.25, 0.25);
   await expect(stage).toHaveAttribute("data-zoomed", "true");
-  const zoomed = await readStageTransform(layer);
-  expect(zoomed.scaleX).toBeGreaterThan(1);
+  // RTT scenes keep the CSS image at identity and crop the physical render target.
+  await expect(stage).toHaveAttribute("data-focus-loupe-scale", "4");
+  await expect(stage).toHaveAttribute("data-presentation-css-scale", "1");
+  await expect(stage).toHaveAttribute("data-scale", "1");
+  await expect
+    .poll(async () => Number(await stage.getAttribute("data-focus-loupe-window-width")))
+    .toBeCloseTo(0.25, 2);
+  const zoomedPan = {
+    x: await stage.getAttribute("data-inspection-pan-x"),
+    y: await stage.getAttribute("data-inspection-pan-y"),
+  };
 
   const bounds = await readFreshElementBounds(stage);
   await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
   await page.mouse.down();
   await page.mouse.move(bounds.x + bounds.width / 2 + 45, bounds.y + bounds.height / 2 + 30, { steps: 4 });
   await page.mouse.up();
-  const panned = await readStageTransform(layer);
-  expect(Math.abs(panned.translateX - zoomed.translateX) + Math.abs(panned.translateY - zoomed.translateY)).toBeGreaterThan(1);
+  const panned = {
+    x: await stage.getAttribute("data-inspection-pan-x"),
+    y: await stage.getAttribute("data-inspection-pan-y"),
+  };
+  expect(panned.x !== zoomedPan.x || panned.y !== zoomedPan.y).toBe(true);
 
   await viewport.getByRole("button", { name: "Reset Ground Glass view" }).click();
   await expect(stage).toHaveAttribute("data-zoomed", "false");

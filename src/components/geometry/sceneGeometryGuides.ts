@@ -181,11 +181,23 @@ const targetMessageKeys: Readonly<Record<string, SceneGeometryTargetMessageKeyMa
     "facade-middle": simulatorMessageKeys.geometry.middleFacadeTarget,
     "facade-far": simulatorMessageKeys.geometry.farFacadeTarget,
   },
+  "architecture-rise": {
+    "building-mid-facade": simulatorMessageKeys.geometry.architectureRiseBuildingMidFacadeTarget,
+  },
   "architecture-foreground": {
     "foreground-near": simulatorMessageKeys.geometry.architectureForegroundNearTarget,
     "foreground-middle": simulatorMessageKeys.geometry.architectureForegroundMiddleTarget,
     "building-base": simulatorMessageKeys.geometry.architectureForegroundBuildingBaseTarget,
     "building-middle": simulatorMessageKeys.geometry.architectureForegroundBuildingMiddleTarget,
+  },
+  "oblique-tabletop": {
+    "near-left": simulatorMessageKeys.geometry.obliqueTabletopNearLeftTarget,
+    "near-centre": simulatorMessageKeys.geometry.obliqueTabletopNearCentreTarget,
+    "near-right": simulatorMessageKeys.geometry.obliqueTabletopNearRightTarget,
+    middle: simulatorMessageKeys.geometry.obliqueTabletopMiddleTarget,
+    "far-left": simulatorMessageKeys.geometry.obliqueTabletopFarLeftTarget,
+    "far-centre": simulatorMessageKeys.geometry.obliqueTabletopFarCentreTarget,
+    "far-right": simulatorMessageKeys.geometry.obliqueTabletopFarRightTarget,
   },
   "interior-corner": {
     "interior-wall-near": simulatorMessageKeys.geometry.interiorCornerNearWallTarget,

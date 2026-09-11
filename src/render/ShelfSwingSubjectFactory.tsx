@@ -3,6 +3,10 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry, { type ShelfSwingSubjectDefinition } from "../scenes/shelfSwingGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
@@ -118,6 +122,72 @@ const addComparisonMotif = (
   chartGroup.add(motifGroup);
 };
 
+const addStationContext = (
+  station: THREE.Group,
+  subject: ShelfSwingSubjectDefinition,
+  frameMaterial: THREE.Material,
+): void => {
+  const context = new THREE.Group();
+  context.name = `${subject.semanticName}-context-structure`;
+
+  const { frameThickness, shelfThickness } = geometry.detailGeometry;
+  const backdrop = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      toWorld(subject.dimensions.width - frameThickness * 2),
+      toWorld(subject.dimensions.height - shelfThickness * 2),
+      toWorld(28),
+    ),
+    frameMaterial,
+  );
+  backdrop.name = `${subject.semanticName}-backdrop-panel`;
+  backdrop.position.set(
+    0,
+    toWorld(subject.dimensions.height / 2),
+    toWorld(subject.dimensions.depth - 14),
+  );
+  context.add(backdrop);
+
+  const bookMaterials = [
+    standardMaterial(subject.materialHints.primary, 0.78),
+    standardMaterial(subject.materialHints.secondary, 0.86),
+    standardMaterial(subject.materialHints.detail, 0.82),
+  ];
+  const bookGeometries = [
+    new THREE.BoxGeometry(toWorld(58), toWorld(230), toWorld(105)),
+    new THREE.BoxGeometry(toWorld(72), toWorld(190), toWorld(112)),
+    new THREE.BoxGeometry(toWorld(48), toWorld(270), toWorld(98)),
+  ];
+  const bookGroup = new THREE.Group();
+  bookGroup.name = `${subject.semanticName}-context-books`;
+
+  const bookRows = [
+    { y: shelfThickness + 115, z: subject.dimensions.depth * 0.68, rotation: 0 },
+    {
+      y: subject.dimensions.height - shelfThickness - 145,
+      z: subject.dimensions.depth * 0.68,
+      rotation: 0.035,
+    },
+  ];
+  bookRows.forEach((row, rowIndex) => {
+    for (let index = 0; index < 4; index += 1) {
+      const book = new THREE.Mesh(
+        bookGeometries[(index + rowIndex) % bookGeometries.length],
+        bookMaterials[(index + rowIndex) % bookMaterials.length],
+      );
+      book.name = `${subject.semanticName}-context-book-${rowIndex + 1}-${index + 1}`;
+      book.position.set(
+        toWorld(-165 + index * 72),
+        toWorld(row.y),
+        toWorld(row.z),
+      );
+      book.rotation.z = row.rotation * (index % 2 === 0 ? 1 : -1);
+      bookGroup.add(book);
+    }
+  });
+  context.add(bookGroup);
+  station.add(context);
+};
+
 const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
   const station = new THREE.Group();
   station.name = subject.semanticName;
@@ -136,13 +206,20 @@ const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
     geometry.detailGeometry;
   const chart = subject.focusChart;
   const frameMaterial = standardMaterial(subject.materialHints.primary, 0.82);
+  const backingMaterial = createFocusFriendlyMaterial({
+    pattern: "fine-grid",
+    primaryColor: subject.materialHints.secondary,
+    secondaryColor: subject.materialHints.detail,
+    repeat: [4, 4],
+    roughness: 0.94,
+  });
   const backing = new THREE.Mesh(
     new THREE.BoxGeometry(
       toWorld(chart.width + frameThickness * 2),
       toWorld(chart.height + frameThickness * 2),
       toWorld(backingThickness),
     ),
-    standardMaterial(subject.materialHints.secondary, 0.94),
+    backingMaterial,
   );
   backing.name = `${subject.semanticName}-chart-backing`;
   // The chart and semantic samples stay on the canonical subject plane. Only
@@ -185,6 +262,8 @@ const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
     shelf.position.set(0, toWorld(y), toWorld(subject.dimensions.depth / 2));
     station.add(shelf);
   }
+
+  addStationContext(station, subject, frameMaterial);
 
   subject.displayObjects.forEach((definition) => {
     const objectGeometry =
@@ -284,16 +363,7 @@ export function createShelfSwingGroup(): THREE.Group {
 }
 
 export function disposeShelfSwingGroup(group: THREE.Group): void {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((geometryResource) => geometryResource.dispose());
-  materials.forEach((material) => material.dispose());
+  disposeTeachingSubjectResources(group);
 }
 
 /** React Three Fiber boundary backed by the exact same group factory as future RTT. */

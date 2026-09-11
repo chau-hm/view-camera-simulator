@@ -231,6 +231,14 @@ export const simulatorMessages = {
     architectureForegroundMiddleTarget: "中間前景",
     architectureForegroundBuildingBaseTarget: "建築物基座",
     architectureForegroundBuildingMiddleTarget: "建築物中段",
+    architectureRiseBuildingMidFacadeTarget: "建築中部立面",
+    obliqueTabletopNearLeftTarget: "近左",
+    obliqueTabletopNearCentreTarget: "近中",
+    obliqueTabletopNearRightTarget: "近右",
+    obliqueTabletopMiddleTarget: "中間",
+    obliqueTabletopFarLeftTarget: "遠左",
+    obliqueTabletopFarCentreTarget: "遠中",
+    obliqueTabletopFarRightTarget: "遠右",
     interiorCornerRecedingWallGuide: "向後延伸的側牆",
     obliqueTabletopNearFarGuide: "主體圖板 · 近 ↔ 遠",
     obliqueTabletopLeftRightGuide: "主體圖板 · 左 ↔ 右",
@@ -287,7 +295,7 @@ export const simulatorMessages = {
         "移動整部相機會改變視點、透視關係及視差；前組或後組移軸則保持整部相機的視點不變。比較對焦屏與相機幾何圖，了解每種操作改變了哪一種關係。",
     },
     focusFundamentals: {
-      objective: "在固定 f/32 下，探索同一物件兩個深度的前組及後組對焦。",
+      objective: "在固定 f/11 下，探索同一物件兩個深度的前組及後組對焦。",
       bullets: {
         focusDistance: "在同一物件的近處及遠處細節之間移動對焦。",
         readouts: "觀察白色近處框線及遠處指標。",

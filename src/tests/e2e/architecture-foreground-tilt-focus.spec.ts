@@ -1,4 +1,6 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
+import { readFocusDistributionPercent } from "./helpers/focusDistribution";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const completedHeading = (page: Page) => page.getByRole("heading", { name: "Task completed" });
@@ -41,6 +43,7 @@ test("Architecture + Foreground Free Practice exposes Rise, Tilt, Focus, and Ape
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (
       (message.type() === "error" || message.type() === "warning") &&
       !isAllowedEnvironmentConsoleMessage(message.text())
@@ -65,21 +68,20 @@ test("Architecture + Foreground Free Practice exposes Rise, Tilt, Focus, and Ape
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
-  const nearSharpness = page.getByRole("progressbar", { name: "foreground-near sharpness" });
-  const buildingSharpness = page.getByRole("progressbar", { name: "building-middle sharpness" });
-  await expect(nearSharpness).toBeVisible();
-  await expect(buildingSharpness).toBeVisible();
-  const initialBuildingSharpness = Number(await buildingSharpness.getAttribute("aria-valuenow"));
+  await expect(page.getByTestId("focus-distribution-panel")).toBeVisible();
+  const readNearSharpness = () => readFocusDistributionPercent(page, { targetId: "foreground-near" });
+  const readBuildingSharpness = () => readFocusDistributionPercent(page, { targetId: "building-middle" });
+  const initialBuildingSharpness = await readBuildingSharpness();
 
   await setStepRangeInput(page, "Rise", 20);
   await setStepRangeInput(page, "Tilt", 2);
   await expect(rtt).toHaveAttribute("data-rtt-dof-mode", "derived-planes");
-  const tiltedBuildingSharpness = Number(await buildingSharpness.getAttribute("aria-valuenow"));
+  const tiltedBuildingSharpness = await readBuildingSharpness();
   expect(tiltedBuildingSharpness).not.toBe(initialBuildingSharpness);
 
   await setStepRangeInput(page, "Focus distance", 6830);
-  await expect.poll(async () => Number(await nearSharpness.getAttribute("aria-valuenow"))).toBeGreaterThanOrEqual(70);
-  await expect.poll(async () => Number(await buildingSharpness.getAttribute("aria-valuenow"))).toBeGreaterThanOrEqual(70);
+  await expect.poll(readNearSharpness).toBeGreaterThanOrEqual(70);
+  await expect.poll(readBuildingSharpness).toBeGreaterThanOrEqual(70);
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);

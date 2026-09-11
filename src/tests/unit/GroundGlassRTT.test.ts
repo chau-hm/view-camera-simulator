@@ -233,6 +233,98 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     view.unmount();
   });
 
+  it("updates aperture illuminance live without recreating RTT resources", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const optics = deriveOpticsState(camera, architectureForegroundScene);
+    const diagnostics = createRuntimeInfoCollector();
+    const createSubject = vi.mocked(createRegisteredRttSubject);
+    createSubject.mockClear();
+    const setSize = vi.spyOn(THREE.WebGLRenderTarget.prototype, "setSize");
+    const props = {
+      opticsState: optics,
+      focalLengthMm: camera.focalLengthMm,
+      scene: architectureForegroundScene,
+      widthPx: 500,
+      heightPx: 400,
+      renderQuality: "standard" as const,
+      onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        ...props,
+        aperture: 11,
+        previewMode: "raw",
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const compositeMaterial = renderedShaderMaterials().find((material) =>
+      material.fragmentShader.includes("uniform float apertureIlluminanceGain"),
+    );
+    expect(compositeMaterial).toBeDefined();
+    expect(compositeMaterial?.uniforms.apertureIlluminanceGain.value).toBe(1);
+    expect(compositeMaterial?.uniforms.displayUpright.value).toBe(1);
+    const initialGeneration = diagnostics.get()?.resourceGeneration;
+    const initialSource = compositeMaterial?.uniforms.tGather.value;
+
+    setSize.mockClear();
+    view.rerender(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        ...props,
+        aperture: 5.6,
+        previewMode: "raw",
+      }),
+    );
+    act(() => fiberTestState.frameCallback?.());
+
+    expect(compositeMaterial?.uniforms.apertureIlluminanceGain.value).toBeCloseTo(
+      (11 / 5.6) ** 2,
+      12,
+    );
+    expect(compositeMaterial?.uniforms.displayUpright.value).toBe(1);
+    expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
+    expect(compositeMaterial?.uniforms.tGather.value).toBe(initialSource);
+    expect(createSubject).toHaveBeenCalledTimes(1);
+    expect(setSize).not.toHaveBeenCalled();
+
+    view.rerender(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        ...props,
+        aperture: 22,
+        previewMode: "upright",
+      }),
+    );
+    act(() => fiberTestState.frameCallback?.());
+
+    expect(compositeMaterial?.uniforms.apertureIlluminanceGain.value).toBeCloseTo(0.25, 12);
+    expect(compositeMaterial?.uniforms.displayUpright.value).toBe(0);
+    expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
+    expect(createSubject).toHaveBeenCalledTimes(1);
+    expect(setSize).not.toHaveBeenCalled();
+
+    view.rerender(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        ...props,
+        aperture: 5.6,
+        previewMode: "raw",
+        rawDebug: true,
+      }),
+    );
+    act(() => fiberTestState.frameCallback?.());
+
+    expect(compositeMaterial?.uniforms.apertureIlluminanceGain.value).toBe(1);
+    expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
+    expect(createSubject).toHaveBeenCalledTimes(1);
+    expect(setSize).not.toHaveBeenCalled();
+
+    view.unmount();
+  });
+
   it("publishes runtime diagnostics through the injected owner-aware callback", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,

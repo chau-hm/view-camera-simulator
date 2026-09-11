@@ -52,6 +52,13 @@ import {
   resolveFocusFundamentalsActiveStandard,
   resolveFocusFundamentalsTeachingCue,
 } from "../scenes/focusFundamentalsPresentation";
+import {
+  TEACHING_LIGHTING_CONFIG,
+  resolveTeachingLightingPlacement,
+  TeachingLighting,
+  TeachingShadowParticipation,
+} from "./TeachingLighting";
+import type { SceneGraphCapacityMetrics } from "./sceneCapacityProfiling";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -72,6 +79,7 @@ type SceneRendererProps = {
   containerStyle?: React.CSSProperties;
   /** Presentation-only anatomy/rear-back/aperture overrides for Lesson 0. */
   cameraPresentation?: ConceptualCameraPresentation;
+  onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
 };
 
 export const shouldRenderReferenceCamera = (
@@ -688,6 +696,7 @@ const SceneContent = ({
   focusFocalLengthMm,
   activeAperture,
   cameraPresentation,
+  onSubjectCapacityChange,
 }: {
   scene: SceneDefinition;
   cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
@@ -699,6 +708,7 @@ const SceneContent = ({
   focusFocalLengthMm: number;
   activeAperture: ApertureValue;
   cameraPresentation?: ConceptualCameraPresentation;
+  onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
 }) => {
   const registration = getSceneSubjectRegistration(scene.id);
   const RegisteredSubject = registration?.SceneSubject;
@@ -713,13 +723,19 @@ const SceneContent = ({
     scene,
     cameraMovementRenderModel,
   );
+  const teachingLightingPlacement = useMemo(() => {
+    const lighting =
+      registration?.resolveRttLighting?.({
+        cameraMovementRenderModel,
+        presentationRegion: "middle",
+      }) ?? registration?.rttLighting;
+    return resolveTeachingLightingPlacement(lighting);
+  }, [cameraMovementRenderModel, registration]);
 
   return (
     <>
     <color attach="background" args={["#f8fafc"]} />
-    <ambientLight intensity={0.65} />
-    <directionalLight position={[2, 4, 2]} intensity={0.7} />
-    <hemisphereLight args={["#ffffff", "#d1d5db", 0.45]} />
+    <TeachingLighting placement={teachingLightingPlacement} />
     <SceneAssets assets={scene.assets} />
     {scene.cameraBodyPitchCapability?.enabled ? (
       <CameraBodyAssembly
@@ -754,16 +770,21 @@ const SceneContent = ({
       showOpticalGeometry={showOpticalGeometry}
       showScheimpflugConstruction={showScheimpflugConstruction}
     />
-    {RegisteredSubject ? (
-      <RegisteredSubject scene={scene} />
-    ) : (
-      scene.focusTargets.map((target) => (
-        <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
-          <sphereGeometry args={[toWorld(50), 16, 16]} />
-          <meshStandardMaterial color="#ef4444" />
-        </mesh>
-      ))
-    )}
+    <TeachingShadowParticipation
+      subjectKey={scene.id}
+      onCapacityChange={onSubjectCapacityChange}
+    >
+      {RegisteredSubject ? (
+        <RegisteredSubject scene={scene} />
+      ) : (
+        scene.focusTargets.map((target) => (
+          <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
+            <sphereGeometry args={[toWorld(50), 16, 16]} />
+            <meshStandardMaterial color="#ef4444" />
+          </mesh>
+        ))
+      )}
+    </TeachingShadowParticipation>
     {referenceCameraVisible ? <OriginalGhostCamera scene={scene} /> : null}
     </>
   );
@@ -838,6 +859,7 @@ export const SceneRenderer = ({
   onAssetError,
   containerStyle,
   cameraPresentation,
+  onSubjectCapacityChange,
 }: SceneRendererProps) => {
   const { t } = useTranslation();
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
@@ -1073,6 +1095,7 @@ export const SceneRenderer = ({
         dpr={qualityConfig.dpr}
         camera={{ position: observerCameraPosition, fov: 45, near: 0.01, far: 200 }}
         gl={{ antialias: qualityConfig.antialias }}
+        shadows={{ type: TEACHING_LIGHTING_CONFIG.shadowMapType }}
       >
         {/* LegendUpdater runs inside the r3f context so it can access camera and gl */}
         {/**/}
@@ -1088,6 +1111,7 @@ export const SceneRenderer = ({
           focusFocalLengthMm={activeFocalLengthMm}
           activeAperture={activeAperture}
           cameraPresentation={cameraPresentation}
+          onSubjectCapacityChange={onSubjectCapacityChange}
         />
         <OrbitControls
           ref={controlsRef}

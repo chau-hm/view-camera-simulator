@@ -39,9 +39,8 @@ import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
 import {
   CurrentSettingsReadout,
-  FocusTargetsReadout,
-  type FocusTargetMetric,
 } from "../simulator/GroundGlassReadouts";
+import { FocusDistributionPanel, type FocusTargetMetric } from "../simulator/FocusDistributionPanel";
 import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
@@ -50,6 +49,10 @@ import { AnatomyControlTeachingPanel } from "../simulator/AnatomyControlTeaching
 import { TaskPanel } from "../simulator/TaskPanel";
 import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
+import {
+  projectSceneFocusTargetsToGroundGlass,
+  resolveGroundGlassPreviewMode,
+} from "../../render/groundGlassTargetProjection";
 import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
@@ -59,6 +62,7 @@ import type {
   GroundGlassRttRuntimeInfoByChannel,
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "../../render/groundGlassRttDimensions";
+import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
 import {
   formatCameraMovementLessonReadout,
@@ -105,6 +109,8 @@ export const SimulatorWorkspace = ({
     (state) => state.clearSimulatorRouteInitialization,
   );
   const camera = useAppStore((state) => state.camera);
+  const [viewportSubjectCapacity, setViewportSubjectCapacity] =
+    useState<SceneGraphCapacityMetrics | null>(null);
   const setGeometryView = useAppStore((state) => state.setGeometryView);
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
   const calibrationSession = useAppStore(
@@ -252,6 +258,9 @@ export const SimulatorWorkspace = ({
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
+  useEffect(() => {
+    setViewportSubjectCapacity(null);
+  }, [safeScene.id]);
   const presentationRegion =
     safeScene.id === "understanding-camera-movements" && camera.cameraMovementLessonState
       ? resolveCameraMovementLessonPresentationTargetRegion(camera.cameraMovementLessonState)
@@ -478,17 +487,30 @@ export const SimulatorWorkspace = ({
 
   const tableTiltFocusMetric =
     safeScene.id === "table-tilt" && mode === "free" ? "point" : "patch";
+  const groundGlassPreviewMode = resolveGroundGlassPreviewMode(camera.groundGlassAssistEnabled);
   const focusTargetReadouts = useMemo(
-    () =>
-      opticsState.focusTargets.map((target) => {
+    () => {
+      const projectedTargets = projectSceneFocusTargetsToGroundGlass({
+        sceneDef: safeScene,
+        opticsState,
+        aperture: camera.aperture,
+        previewMode: groundGlassPreviewMode,
+      });
+      const projectedTargetById = new Map(projectedTargets.map((target) => [target.id, target]));
+
+      return opticsState.focusTargets.map((target) => {
         const metric = resolvePhysicalFocusTargetPresentationMetric(target, tableTiltFocusMetric);
+        const projection = projectedTargetById.get(target.id);
         return {
           id: target.id,
           status: metric.status,
           sharpnessPercent: Math.round(metric.sharpness * 100),
+          displayUv: projection?.displayUv ?? null,
+          visible: projection?.visible ?? false,
         };
-      }),
-    [opticsState.focusTargets, tableTiltFocusMetric],
+      });
+    },
+    [camera.aperture, groundGlassPreviewMode, opticsState, safeScene, tableTiltFocusMetric],
   );
   const learnerReadoutPolicy = useMemo(
     () => resolveLearnerReadoutPolicy(safeScene.id, { hasFocusTargets: focusTargetReadouts.length > 0 }),
@@ -614,6 +636,7 @@ export const SimulatorWorkspace = ({
                     ? `${anatomyViewportInspectionTarget ?? "stable-camera"}:${anatomyViewResetNonce}`
                     : undefined
                 }
+                onSubjectCapacityChange={setViewportSubjectCapacity}
                 showHeader={false}
               />
             </div>}
@@ -704,9 +727,11 @@ export const SimulatorWorkspace = ({
             />
 
             {learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? (
-              <FocusTargetsReadout
+              <FocusDistributionPanel
+                sceneId={safeScene.id}
                 focusTargets={focusTargetReadouts}
                 metric={focusTargetMetric}
+                previewMode={groundGlassPreviewMode}
                 closestTargetId={closestPointTargetId}
               />
             ) : null}
@@ -749,6 +774,7 @@ export const SimulatorWorkspace = ({
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
               rttRuntimeInfo={rttRuntimeInfo}
+              viewportSubjectCapacity={viewportSubjectCapacity}
             />
             </div>
           </>}

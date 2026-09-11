@@ -221,6 +221,7 @@ uniform sampler2D tGather;
 uniform sampler2D tNearGather;
 uniform float useNearGather;
 uniform float displayUpright;
+uniform float apertureIlluminanceGain;
 uniform float renderWidth;
 uniform float renderHeight;
 
@@ -235,6 +236,10 @@ void main(){
     gathered.rgb = mix(gathered.rgb, nearLayer.rgb, clamp(nearLayer.a, 0.0, 1.0));
   }
 
+  // The post-process render targets carry linear-light scene values. Apply
+  // aperture throughput here so scene lighting and the main viewport remain
+  // independent from Ground Glass presentation.
+  gathered.rgb *= apertureIlluminanceGain;
   gl_FragColor = gathered;
 }
 `;

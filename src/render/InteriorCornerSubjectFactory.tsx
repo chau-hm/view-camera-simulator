@@ -3,6 +3,10 @@ import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry from "../scenes/interiorCornerGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 type InteriorCornerMaterials = {
   wall: THREE.Material;
@@ -230,19 +234,129 @@ const addFocusProbes = (root: THREE.Object3D) => {
   });
 };
 
+const addInteriorLocalLight = (root: THREE.Group): void => {
+  // Keep the practical light in the shared subject group so viewport and RTT
+  // receive the same restrained interior contribution.
+  const light = new THREE.PointLight("#fff1d6", 5, 7.5, 2);
+  light.name = "interior-corner-local-light";
+  light.position.set(
+    toWorld(420),
+    toWorld(geometry.room.floorY + 1310),
+    toWorld(8300),
+  );
+  root.add(light);
+};
+
+const addInteriorFurnitureStructure = (
+  root: THREE.Group,
+  materials: InteriorCornerMaterials,
+): void => {
+  const structure = new THREE.Group();
+  structure.name = "interior-corner-furniture-structure";
+
+  const consoleLegGeometry = new THREE.BoxGeometry(toWorld(80), toWorld(480), toWorld(80));
+  [-1, 1].forEach((xSign) => {
+    [-1, 1].forEach((zSign) => {
+      const leg = new THREE.Mesh(consoleLegGeometry, materials.wood);
+      leg.name = `interior-corner-console-leg-${xSign < 0 ? "left" : "right"}-${zSign < 0 ? "near" : "far"}`;
+      leg.position.set(
+        toWorld(-1050 + xSign * 760),
+        toWorld(geometry.room.floorY + 240),
+        toWorld(9850 + zSign * 150),
+      );
+      structure.add(leg);
+    });
+  });
+
+  addBox({
+    root: structure,
+    name: "interior-corner-console-lower-shelf",
+    size: [1400, 50, 300],
+    position: [-1050, geometry.room.floorY + 185, 9850],
+    material: materials.wood,
+  });
+
+  const benchLegGeometry = new THREE.BoxGeometry(toWorld(72), toWorld(260), toWorld(72));
+  [-1, 1].forEach((xSign) => {
+    [-1, 1].forEach((zSign) => {
+      const leg = new THREE.Mesh(benchLegGeometry, materials.wood);
+      leg.name = `interior-corner-bench-leg-${xSign < 0 ? "left" : "right"}-${zSign < 0 ? "near" : "far"}`;
+      leg.position.set(
+        toWorld(-850 + xSign * 720),
+        toWorld(geometry.room.floorY + 130),
+        toWorld(6500 + zSign * 190),
+      );
+      structure.add(leg);
+    });
+  });
+
+  const floorJointMaterial = materials.trim;
+  const floorJointGeometry = new THREE.BoxGeometry(
+    toWorld(geometry.room.width - 220),
+    toWorld(8),
+    toWorld(14),
+  );
+  [3300, 4700, 6100, 7500, 8900, 10300].forEach((z, index) => {
+    const joint = new THREE.Mesh(floorJointGeometry, floorJointMaterial);
+    joint.name = `interior-corner-floor-joint-${index + 1}`;
+    joint.position.set(
+      0,
+      toWorld(geometry.room.floorY + 4),
+      toWorld(z),
+    );
+    structure.add(joint);
+  });
+
+  const vase = new THREE.Mesh(
+    new THREE.CylinderGeometry(toWorld(85), toWorld(110), toWorld(260), 16),
+    materials.artworkAccent,
+  );
+  vase.name = "interior-corner-console-vase";
+  vase.position.set(toWorld(-1050), toWorld(geometry.room.floorY + 820), toWorld(9850));
+  structure.add(vase);
+
+  const finial = new THREE.Mesh(
+    new THREE.CylinderGeometry(toWorld(32), toWorld(42), toWorld(90), 12),
+    materials.metal,
+  );
+  finial.name = "interior-corner-lamp-finial";
+  finial.position.set(toWorld(420), toWorld(geometry.room.floorY + 1495), toWorld(8300));
+  structure.add(finial);
+
+  root.add(structure);
+};
+
 export const createInteriorCornerGroup = (): THREE.Group => {
   const root = new THREE.Group();
   root.name = "interior-corner-subject";
 
   const materials: InteriorCornerMaterials = {
-    wall: createStandardMaterial("#d8d2c5", 0.96),
+    wall: createFocusFriendlyMaterial({
+      pattern: "fine-grid",
+      primaryColor: "#d8d2c5",
+      secondaryColor: "#cfc7b8",
+      repeat: [4, 6],
+      roughness: 0.96,
+    }),
     ceiling: createStandardMaterial("#e8e3d9", 0.98),
     floor: createStandardMaterial("#8e7963", 0.94),
     trim: createStandardMaterial("#f0ece3", 0.84),
-    wood: createStandardMaterial("#594c40", 0.76),
+    wood: createFocusFriendlyMaterial({
+      pattern: "linear-grain",
+      primaryColor: "#594c40",
+      secondaryColor: "#765f4d",
+      repeat: [2, 10],
+      roughness: 0.76,
+    }),
     artwork: createStandardMaterial("#66808a", 0.72),
     artworkAccent: createStandardMaterial("#c48b62", 0.7),
-    fabric: createStandardMaterial("#6d7b78", 0.98),
+    fabric: createFocusFriendlyMaterial({
+      pattern: "subtle-checker",
+      primaryColor: "#6d7b78",
+      secondaryColor: "#788782",
+      repeat: [8, 8],
+      roughness: 0.98,
+    }),
     rug: createStandardMaterial("#b7a995", 1),
     metal: createStandardMaterial("#7f8b88", 0.42),
   };
@@ -330,8 +444,10 @@ export const createInteriorCornerGroup = (): THREE.Group => {
   addBox({
     root,
     name: "interior-corner-console",
-    size: [1700, 620, 420],
-    position: [-1050, geometry.room.floorY + 310, 9850],
+    // Keep the original footprint and upper surface, but leave an open
+    // underframe so the added legs and shelf remain visible in the subject.
+    size: [1700, 260, 420],
+    position: [-1050, geometry.room.floorY + 490, 9850],
     material: materials.wood,
   });
   addBox({
@@ -370,21 +486,14 @@ export const createInteriorCornerGroup = (): THREE.Group => {
     material: materials.artworkAccent,
   });
 
+  addInteriorFurnitureStructure(root, materials);
+  addInteriorLocalLight(root);
   addFocusProbes(root);
   return root;
 };
 
 export const disposeInteriorCornerGroup = (group: THREE.Group): void => {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((resource) => resource.dispose());
-  materials.forEach((resource) => resource.dispose());
+  disposeTeachingSubjectResources(group);
 };
 
 /** React Three Fiber boundary backed by the same group factory used by RTT. */

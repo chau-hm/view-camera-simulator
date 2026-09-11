@@ -200,7 +200,7 @@ src/
 ```ts
 export type CameraState = {
   focalLengthMm: number;
-  aperture: 5.6 | 11 | 22 | 32;
+  aperture: 5.6 | 8 | 11 | 16 | 22 | 32;
   focusDistanceMm: number;
 
   frontRiseMm: number;
@@ -237,7 +237,7 @@ export const CAMERA_CONSTANTS = {
   swingMinDeg: -10,
   swingMaxDeg: 10,
 
-  apertureOptions: [5.6, 11, 22, 32] as const,
+  apertureOptions: [5.6, 8, 11, 16, 22, 32] as const,
 
   tiltParallelThresholdDeg: 0.1,
 };
@@ -419,8 +419,10 @@ type FocusTargetSharpness = {
 | 光圈    | 景深寬度 |
 | ----- | ---- |
 | f/5.6 | 最窄   |
-| f/11  | 較窄   |
-| f/22  | 較寬   |
+| f/8   | 較窄   |
+| f/11  | 中等   |
+| f/16  | 較寬   |
+| f/22  | 寬     |
 | f/32  | 最寬   |
 
 不得讓 Aperture 改變 focus plane 的方向。

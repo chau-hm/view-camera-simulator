@@ -3,6 +3,10 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry from "../scenes/obliqueArchitectureGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 const createStandardMaterial = (color: string, roughness = 0.88) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
@@ -97,12 +101,118 @@ const addFocusProbe = (root: THREE.Group, target: (typeof geometry.focusTargets)
   root.add(probe);
 };
 
+const addObliqueArchitectureContext = (
+  root: THREE.Group,
+  trimMaterial: THREE.Material,
+  groundMaterial: THREE.Material,
+  sideMaterial: THREE.Material,
+): void => {
+  const context = new THREE.Group();
+  context.name = "oblique-architecture-context-structure";
+
+  const cornerReveal = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      toWorld(84),
+      toWorld(geometry.building.height - 240),
+      toWorld(100),
+    ),
+    trimMaterial,
+  );
+  cornerReveal.name = "oblique-architecture-corner-reveal";
+  cornerReveal.position.set(
+    toWorld(geometry.building.leftX - 52),
+    toWorld(geometry.buildingCenter.y),
+    toWorld(geometry.building.nearZ - 52),
+  );
+  context.add(cornerReveal);
+
+  const sideLedgeGeometry = new THREE.BoxGeometry(
+    toWorld(120),
+    toWorld(32),
+    toWorld(geometry.building.farZ - geometry.building.nearZ + 220),
+  );
+  [0, 1, 2].forEach((index) => {
+    const ledge = new THREE.Mesh(sideLedgeGeometry, trimMaterial);
+    ledge.name = `oblique-architecture-side-ledge-${index + 1}`;
+    ledge.position.set(
+      toWorld(geometry.building.leftX - 62),
+      toWorld(geometry.ground.y + 720 + index * 1260),
+      toWorld(geometry.buildingCenter.z),
+    );
+    context.add(ledge);
+  });
+
+  const sideReturn = new THREE.Mesh(
+    new THREE.BoxGeometry(toWorld(360), toWorld(2200), toWorld(700)),
+    sideMaterial,
+  );
+  sideReturn.name = "oblique-architecture-side-return-mass";
+  sideReturn.position.set(
+    toWorld(geometry.building.rightX + 220),
+    toWorld(geometry.ground.y + 1100),
+    toWorld(geometry.building.farZ - 320),
+  );
+  context.add(sideReturn);
+
+  const entryLintel = new THREE.Mesh(
+    new THREE.BoxGeometry(toWorld(680), toWorld(72), toWorld(100)),
+    trimMaterial,
+  );
+  entryLintel.name = "oblique-architecture-entry-lintel";
+  entryLintel.position.set(
+    toWorld(geometry.building.rightX - 260),
+    toWorld(geometry.ground.y + 1560),
+    toWorld(geometry.building.nearZ - 58),
+  );
+  context.add(entryLintel);
+
+  const plinth = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      toWorld(geometry.building.width + 240),
+      toWorld(120),
+      toWorld(geometry.building.farZ - geometry.building.nearZ + 260),
+    ),
+    trimMaterial,
+  );
+  plinth.name = "oblique-architecture-building-plinth";
+  plinth.position.set(
+    toWorld(geometry.buildingCenter.x),
+    toWorld(geometry.ground.y + 60),
+    toWorld(geometry.buildingCenter.z),
+  );
+  context.add(plinth);
+
+  const seamGeometry = new THREE.BoxGeometry(
+    toWorld(geometry.building.width + 900),
+    toWorld(10),
+    toWorld(18),
+  );
+  [geometry.building.nearZ - 900, geometry.building.nearZ + 2500].forEach((z, index) => {
+    const seam = new THREE.Mesh(seamGeometry, groundMaterial);
+    seam.name = `oblique-architecture-ground-seam-${index + 1}`;
+    seam.position.set(
+      toWorld(geometry.buildingCenter.x),
+      toWorld(geometry.ground.y + 5),
+      toWorld(z),
+    );
+    context.add(seam);
+  });
+
+  root.add(context);
+};
+
 export const createObliqueArchitectureGroup = (): THREE.Group => {
   const root = new THREE.Group();
   root.name = "oblique-architecture-subject";
 
   const buildingMaterial = createStandardMaterial("#8fa3b6", 0.9);
-  const frontFacadeMaterial = createStandardMaterial("#a9bbca", 0.9);
+  const frontFacadeMaterial = createFocusFriendlyMaterial({
+    pattern: "fine-grid",
+    primaryColor: "#a9bbca",
+    secondaryColor: "#97adbd",
+    repeat: [5, 4],
+    roughness: 0.9,
+  });
   const sideFacadeMaterial = createStandardMaterial("#71879a", 0.92);
   const parapetMaterial = createStandardMaterial("#d4dee7", 0.82);
   const cornerMaterial = createStandardMaterial("#e2e8f0", 0.8);
@@ -214,6 +324,8 @@ export const createObliqueArchitectureGroup = (): THREE.Group => {
     });
   });
 
+  addObliqueArchitectureContext(root, frameMaterial, groundMaterial, sideFacadeMaterial);
+
   const roofLine = new THREE.Mesh(
     new THREE.BoxGeometry(
       toWorld(geometry.building.width + 180),
@@ -248,16 +360,7 @@ export const createObliqueArchitectureGroup = (): THREE.Group => {
 };
 
 export const disposeObliqueArchitectureGroup = (group: THREE.Group): void => {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((geometryResource) => geometryResource.dispose());
-  materials.forEach((material) => material.dispose());
+  disposeTeachingSubjectResources(group);
 };
 
 /** React Three Fiber boundary backed by the same group factory used by RTT. */

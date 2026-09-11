@@ -44,10 +44,12 @@ pedagogical and terminology reference.
 The simulator has two scene-specific modes:
 
 - **Free Practice** is exploratory. It provides scene-aware teaching guidance,
-  live observations, and learner readouts without a scored task.
+  live observations, and learner readouts without a scored task. The anatomy
+  entry uses this route for its explanatory Lesson 0 walkthrough.
 - **Guided Task** provides an explicit objective, requirements, allowed
   controls, live criterion feedback, and a completion summary. Guided Tasks
-  are available only for the scenes listed below that support them.
+  are available only for the scenes listed below that support them. Some
+  scenes group several Guided Tasks into a staged guided lesson.
 
 The application currently supports English (`en`) and Hong Kong Traditional
 Chinese (`zh-HK`). The Language Selector is available in both the normal site
@@ -67,27 +69,47 @@ The public catalog currently presents these scenes in this order:
 
 | Scene | Learning purpose | Available mode(s) |
 | --- | --- | --- |
+| **Lesson 0 — Meet the View Camera** | Identify the major physical parts of a conceptual view camera and connect the controls to those parts. | Free Practice (anatomy lesson) |
 | **Understanding Camera Movements** | Understand how whole-camera movement and Front/Rear standard movements affect viewpoint, framing, perspective geometry and the Ground Glass image. | Free Practice |
 | **Focus Fundamentals — Two Targets** | Understand how Front and Rear focusing differ when focusing across two depths of the same object. | Free Practice |
 | **Architecture Rise** | Understand how Front Rise changes framing while a level camera keeps verticals parallel. | Free Practice + Guided Task (`rise-01`) |
 | **Table Tilt** | Understand how Front Tilt changes the plane of sharp focus across subject depth. | Free Practice + Guided Task (`tilt-01`) |
 | **Shelf Swing** | Understand how Front Swing changes the plane of sharp focus across subjects arranged diagonally in depth. | Free Practice + Guided Task (`swing-01`) |
+| **Oblique Tabletop** | Understand why an inclined subject plane needs both Tilt and Swing components to align the plane of sharp focus. | Free Practice + Guided Task |
 | **Mirror Shift** | Understand how Front Shift can restore framing without restoring the original viewpoint or parallax. | Free Practice + Guided Task (`mirror-shift-01`) |
+| **Oblique Architecture** | Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp. | Free Practice + Guided Task |
+| **Architecture + Foreground** | Frame level architecture while using foreground depth to study focus-plane alignment and depth of field. | Free Practice + Guided Task |
+| **Interior Corner — Rise + Swing** | Use Front Rise for level composition, then Front Swing, Focus, and Aperture to study a receding wall. | Free Practice + Guided Task |
+
+The catalog and its public order are defined in
+[`src/app/publicScenes.ts`](src/app/publicScenes.ts). Scenes with a staged
+guided lesson expose their current sequence through that catalog; this table
+intentionally omits the detailed task registry.
 
 ## Current scope
 
 The current learner-facing scope includes:
 
 - whole-camera viewpoint movement and its perspective/parallax consequences;
-- Front and Rear standard comparisons, including Front and Rear focusing;
-- Front Rise, Front Tilt, Front Swing, and Front Shift;
-- Rear Tilt in the camera-movement comparison lesson;
-- Front/Rear vertical-framing comparison;
+- a conceptual Front and Rear standard model, with public controls exposed by
+  lesson: Front Rise, Front Shift, Front Tilt, and Front Swing where relevant;
+- Front/Rear Tilt and Front/Rear Vertical Framing comparisons in Understanding
+  Camera Movements, plus Front/Rear focusing in Focus Fundamentals;
+- Mirror Shift's comparison of whole-camera lateral position and Front Shift;
 - focus and aperture controls where a scene exposes them, including the fixed
   f/32 comparison in Focus Fundamentals;
-- plane-of-sharp-focus and depth-of-field visualization;
+- plane-of-sharp-focus and depth-of-field visualization using instructional
+  optical calculations and circle-of-confusion-based sharpness/blur feedback;
+- Ground Glass raw/upright inspection, zoom/pan interaction, and aperture-
+  dependent relative illuminance in the render-to-texture scenes;
+- teaching lighting, shadows, and focus-friendly surface detail that keep
+  movement and focus differences observable in the 3D scenes;
 - synchronized 3D scene, Ground Glass, 2D geometry, and learner-readout views;
 - exploratory Free Practice and scene-specific Guided Tasks.
+
+The underlying camera model contains more state than any one public lesson
+exposes. The public catalog is therefore not a claim that every mechanical
+movement of every real view-camera design is available in every scene.
 
 The simulator does not attempt to reproduce every mechanical movement of every
 real view-camera design. It also does not model a specific camera brand,
@@ -98,8 +120,11 @@ accounts, cloud persistence, or multiplayer features.
 
 - React and TypeScript provide the application and learning surfaces.
 - Three.js and React Three Fiber provide the interactive 3D visualization.
+- A shared camera and scene state drives the 3D scene, Ground Glass, 2D
+  geometry, learner readouts, and Guided Task evaluation.
 - The Ground Glass reflects the current camera and scene state through the
-  simulator's render-to-texture pipeline.
+  simulator's render-to-texture pipeline, including the current focus and
+  aperture-dependent presentation.
 - 2D geometry diagrams expose the relationships being taught.
 - Zustand holds simulator state, while the task and evaluation layer powers
   Guided Tasks.
@@ -181,7 +206,8 @@ npm run preview
 
 The project uses Vitest for unit and integration tests and Playwright for
 browser end-to-end tests. `npm run ci:local` runs the local lint, typecheck,
-test, and build checks. `npm run ci:local:e2e` adds the Playwright suite.
+CSS structure, test, and build checks. `npm run ci:local:e2e` adds the
+Playwright suite.
 
 ## CI/CD and deployment
 
@@ -190,7 +216,15 @@ and pushes to branches. Its CI job runs lint, type-check, and unit/integration
 tests. `main` is the development and integration branch.
 
 Production deployment occurs only after a push to `production`. The release
-process merges the intended reviewed `main` state into that deployment branch;
-CI must pass before the GitHub Pages deploy job runs. The Pages build uses the
-repository-name base path and copies `dist/index.html` to `dist/404.html` for
-SPA deep-link fallback.
+process merges the intended reviewed `origin/main` state into that deployment
+branch from an isolated worktree; `main` must remain production-releasable. CI
+must pass before the GitHub Pages deploy job runs. Use the repository's
+promotion checks for a release:
+
+```bash
+npm run promote:preflight
+npm run promote:production
+```
+
+The Pages build uses the repository-name base path and copies `dist/index.html`
+to `dist/404.html` for SPA deep-link fallback.

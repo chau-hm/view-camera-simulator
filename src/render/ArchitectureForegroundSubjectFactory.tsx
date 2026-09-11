@@ -3,6 +3,10 @@ import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import geometry from "../scenes/architectureForegroundGeometry";
 import { toWorld } from "./rttUtils";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
 
 const createStandardMaterial = (color: string, roughness = 0.9) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
@@ -12,6 +16,7 @@ const addWindow = ({
   window,
   panelGeometry,
   frameGeometry,
+  recessGeometry,
   windowMaterial,
   frameMaterial,
 }: {
@@ -19,6 +24,7 @@ const addWindow = ({
   window: ReturnType<typeof geometry.getWindows>[number];
   panelGeometry: THREE.BoxGeometry;
   frameGeometry: THREE.BoxGeometry;
+  recessGeometry: THREE.BoxGeometry;
   windowMaterial: THREE.Material;
   frameMaterial: THREE.Material;
 }) => {
@@ -44,6 +50,97 @@ const addWindow = ({
     frameMesh.scale.set(toWorld(width) / frameGeometry.parameters.width, toWorld(height) / frameGeometry.parameters.height, 1);
     frameMesh.position.set(toWorld(window.x + x), toWorld(window.y + y), toWorld(window.z - 5));
     group.add(frameMesh);
+  });
+
+  // Layer a shallow reveal around the existing frame so the repeated facade
+  // openings read as depth-bearing architectural elements in both the
+  // viewport and Ground Glass subject. The calibrated window centers stay
+  // unchanged; these pieces are presentation context only.
+  const recess = new THREE.Group();
+  recess.name = `architecture-foreground-${window.id}-recess`;
+  const recessMaterial = frameMaterial;
+  const recessPieces: Array<{
+    name: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }> = [
+    {
+      name: "left",
+      x: -window.width / 2 - frame - 12,
+      y: 0,
+      width: 34,
+      height: window.height + frame * 2 + 24,
+    },
+    {
+      name: "right",
+      x: window.width / 2 + frame + 12,
+      y: 0,
+      width: 34,
+      height: window.height + frame * 2 + 24,
+    },
+    {
+      name: "sill",
+      x: 0,
+      y: -window.height / 2 - frame - 12,
+      width: window.width + frame * 2 + 58,
+      height: 34,
+    },
+    {
+      name: "lintel",
+      x: 0,
+      y: window.height / 2 + frame + 12,
+      width: window.width + frame * 2 + 58,
+      height: 34,
+    },
+  ];
+  recessPieces.forEach(({ name, x, y, width, height }) => {
+    const reveal = new THREE.Mesh(recessGeometry, recessMaterial);
+    reveal.name = `architecture-foreground-${window.id}-recess-${name}`;
+    reveal.scale.set(toWorld(width), toWorld(height), toWorld(76));
+    reveal.position.set(
+      toWorld(window.x + x),
+      toWorld(window.y + y),
+      toWorld(window.z + 12),
+    );
+    recess.add(reveal);
+  });
+  group.add(recess);
+
+  root.add(group);
+};
+
+const addForecourtStructure = (
+  root: THREE.Group,
+  groundMaterial: THREE.Material,
+  trimMaterial: THREE.Material,
+): void => {
+  const group = new THREE.Group();
+  group.name = "architecture-foreground-forecourt-structure";
+
+  const curbGeometry = new THREE.BoxGeometry(toWorld(5200), toWorld(150), toWorld(220));
+  const nearCurb = new THREE.Mesh(curbGeometry, trimMaterial);
+  nearCurb.name = "architecture-foreground-forecourt-near-curb";
+  nearCurb.position.set(0, toWorld(geometry.ground.y + 75), toWorld(3300));
+  group.add(nearCurb);
+
+  const buildingCurb = new THREE.Mesh(curbGeometry, trimMaterial);
+  buildingCurb.name = "architecture-foreground-forecourt-building-curb";
+  buildingCurb.scale.x = 0.78;
+  buildingCurb.position.set(0, toWorld(geometry.ground.y + 75), toWorld(8600));
+  group.add(buildingCurb);
+
+  const returnGeometry = new THREE.BoxGeometry(toWorld(220), toWorld(150), toWorld(820));
+  [-1, 1].forEach((sign) => {
+    const returnPiece = new THREE.Mesh(returnGeometry, groundMaterial);
+    returnPiece.name = `architecture-foreground-forecourt-return-${sign < 0 ? "left" : "right"}`;
+    returnPiece.position.set(
+      toWorld(sign * 2500),
+      toWorld(geometry.ground.y + 75),
+      toWorld(3300),
+    );
+    group.add(returnPiece);
   });
 
   root.add(group);
@@ -86,11 +183,18 @@ export const createArchitectureForegroundGroup = (): THREE.Group => {
   root.name = "architecture-foreground-subject";
 
   const buildingMaterial = createStandardMaterial("#92a7b8", 0.92);
-  const facadeMaterial = createStandardMaterial("#b3c1cc", 0.88);
+  const facadeMaterial = createFocusFriendlyMaterial({
+    pattern: "fine-grid",
+    primaryColor: "#b3c1cc",
+    secondaryColor: "#a2b3bf",
+    repeat: [5, 4],
+    roughness: 0.88,
+  });
   const roofMaterial = createStandardMaterial("#dbe5ec", 0.8);
   const windowMaterial = createStandardMaterial("#20384b", 0.62);
   const frameMaterial = createStandardMaterial("#e5edf2", 0.82);
   const groundMaterial = createStandardMaterial("#d8e1e7", 1);
+  const forecourtTrimMaterial = createStandardMaterial("#b9c5cc", 0.9);
 
   const building = new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -198,12 +302,15 @@ export const createArchitectureForegroundGroup = (): THREE.Group => {
     toWorld(20),
   );
   const frameGeometry = new THREE.BoxGeometry(toWorld(1), toWorld(1), toWorld(26));
+  // Unit geometry lets each reveal scale directly from its millimetre dimensions.
+  const recessGeometry = new THREE.BoxGeometry(1, 1, 1);
   geometry.getWindows().forEach((window) => {
     addWindow({
       root,
       window,
       panelGeometry: windowGeometry,
       frameGeometry,
+      recessGeometry,
       windowMaterial,
       frameMaterial,
     });
@@ -218,6 +325,7 @@ export const createArchitectureForegroundGroup = (): THREE.Group => {
   ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   root.add(ground);
   addPaving(root);
+  addForecourtStructure(root, groundMaterial, forecourtTrimMaterial);
 
   return root;
 };
@@ -226,16 +334,7 @@ const facadeTopY = () =>
   geometry.facade.mainBodyTopY + geometry.building.topHeight / 2;
 
 export const disposeArchitectureForegroundGroup = (group: THREE.Group): void => {
-  const geometries = new Set<THREE.BufferGeometry>();
-  const materials = new Set<THREE.Material>();
-  group.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    geometries.add(object.geometry);
-    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    meshMaterials.forEach((material) => materials.add(material));
-  });
-  geometries.forEach((resource) => resource.dispose());
-  materials.forEach((resource) => resource.dispose());
+  disposeTeachingSubjectResources(group);
 };
 
 /** React Three Fiber boundary backed by the same group factory used by RTT. */

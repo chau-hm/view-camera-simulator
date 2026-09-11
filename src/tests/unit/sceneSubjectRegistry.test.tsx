@@ -19,6 +19,10 @@ import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSc
 import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/CameraMovementsSubjectFactory";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import {
+  mirrorShiftGeometry,
+  reflectPointAcrossMirrorPlane,
+} from "../../scenes/mirrorShiftGeometry";
+import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectGeometry,
 } from "../../scenes/lessonZeroGroundGlassSubject";
@@ -173,6 +177,23 @@ describe("scene subject registry", () => {
     const spies = collectDisposableSpies(group!);
     disposeRegisteredRttSubject("oblique-architecture", group!);
     spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+  });
+
+  it("resolves Oblique Tabletop focus probes before the first render", () => {
+    const group = createRegisteredRttSubject("oblique-tabletop")!;
+    try {
+      for (const marker of obliqueTabletopGeometry.boardMarkers) {
+        const probe = group.getObjectByName(`oblique-tabletop-focus-${marker.id}`)!;
+        // Do not force updateMatrixWorld: getWorldPosition must update the
+        // manually assigned board matrix even before a renderer has visited it.
+        const position = probe.getWorldPosition(new THREE.Vector3());
+        expect(position.x).toBeCloseTo(marker.worldPosition.x * 0.001, 10);
+        expect(position.y).toBeCloseTo(marker.worldPosition.y * 0.001, 10);
+        expect(position.z).toBeCloseTo(marker.worldPosition.z * 0.001, 10);
+      }
+    } finally {
+      disposeRegisteredRttSubject("oblique-tabletop", group);
+    }
   });
 
   it("resolves Oblique Tabletop to one shared static subject for 3D and RTT", () => {
@@ -403,5 +424,17 @@ describe("scene subject registry", () => {
     expect(lighting?.targetMm).toEqual(geometry.middleSubject.focusDetailProbeWorld);
     expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -2.5 });
     expect(lighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: -1.5 });
+  });
+
+  it("aims Mirror Shift lighting into the reflected chamber", () => {
+    const lighting = getSceneSubjectRegistration("mirror-shift")?.rttLighting;
+    expect(lighting?.targetMm).toEqual(
+      reflectPointAcrossMirrorPlane({
+        x: mirrorShiftGeometry.mirror.center.x,
+        y: mirrorShiftGeometry.mirror.center.y,
+        z: mirrorShiftGeometry.floor.centerZ,
+      }),
+    );
+    expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: 2.5 });
   });
 });

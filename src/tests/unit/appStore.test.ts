@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { useAppStore } from "../../state/appStore";
 import { getSceneFocusDistanceRange } from "../../scenes/definitions";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE, isApertureValue } from "../../utils/constants";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
 import { resolveInitialOpticalGeometryVisibility } from "../../state/sceneViewDefaults";
@@ -194,11 +194,21 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera.focusDistanceMm).toBe(tableTiltRange.max);
   });
 
-  it("rejects invalid aperture values", () => {
+  it("accepts only the canonical full-stop aperture values", () => {
     const { setAperture } = useAppStore.getState();
-    setAperture(22);
-    expect(useAppStore.getState().camera.aperture).toBe(22);
+    const supported = CAMERA_CONSTANTS.apertureOptions;
+    expect(supported).toEqual([5.6, 8, 11, 16, 22, 32]);
+    expect(supported.every(isApertureValue)).toBe(true);
+    expect([4, 6.3, 10, 13, 18, 64, Number.NaN, Number.POSITIVE_INFINITY].every(
+      (value) => !isApertureValue(value),
+    )).toBe(true);
 
+    for (const aperture of supported) {
+      setAperture(aperture);
+      expect(useAppStore.getState().camera.aperture).toBe(aperture);
+    }
+
+    setAperture(22);
     Reflect.apply(setAperture, undefined, [7.1]);
     expect(useAppStore.getState().camera.aperture).toBe(22);
   });
@@ -416,7 +426,7 @@ describe("app store STA-001", () => {
       focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
       focusMode: "finite",
       lastFiniteFocusDepthMm: focusFundamentalsReferenceFocusDepthMm,
-      aperture: 32,
+      aperture: 11,
     });
   });
 
@@ -439,14 +449,14 @@ describe("app store STA-001", () => {
       rearRiseMm: 0,
       rearTiltDeg: 0,
       focusDistanceMm: 6000,
-      aperture: 32,
+      aperture: 11,
     });
     expect(useAppStore.getState().selectedMovement).toBeNull();
 
     store.resetMovements();
     expect(useAppStore.getState().camera).toMatchObject({
       focusDistanceMm: 6000,
-      aperture: 32,
+      aperture: 11,
       frontRiseMm: 0,
       frontTiltDeg: 0,
       frontSwingDeg: 0,
@@ -554,6 +564,7 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera).toMatchObject({
       mode: "guided",
       activeTaskId: "mirror-shift-01",
+      aperture: 11,
       frontShiftMm: 0,
       mirrorShiftLessonState: { rigLateralMm: 0 },
     });
@@ -575,6 +586,7 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera).toMatchObject({
       mode: "guided",
       activeTaskId: "mirror-shift-01",
+      aperture: 11,
       frontShiftMm: 0,
       mirrorShiftLessonState: { rigLateralMm: 0 },
     });
@@ -644,31 +656,75 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera.geometryView).toBe("top");
   });
 
-  it("restores Focus Fundamentals f/32 across scene entry, mode changes, and reset actions", () => {
-    const store = useAppStore.getState();
+  const staleAperture = 22 as const;
 
-    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+  const seedStaleFocusFundamentalsAperture = () => {
+    // Focus Fundamentals correctly rejects public aperture changes while locked.
+    // This narrow test seam constructs the stale state that the restoration
+    // actions must repair.
+    useAppStore.setState((state) => ({
+      camera: { ...state.camera, aperture: staleAperture },
+    }));
+    expect(useAppStore.getState().camera.aperture).toBe(staleAperture);
+  };
+
+  const expectFocusFundamentalsFixedAtF11 = () => {
+    const state = useAppStore.getState();
+    expect(state.camera.activeSceneId).toBe(focusFundamentalsTwoTargets.id);
+    expect(state.camera.aperture).toBe(11);
+    expect(focusFundamentalsTwoTargets.cameraControlPolicy?.aperture).toBe("fixed");
+
+    // The public action must remain locked after restoration.
+    state.setAperture(staleAperture);
     expect(useAppStore.getState().camera.aperture).toBe(11);
+  };
+
+  it("route initialization restores Focus Fundamentals f/11 from a stale aperture", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    store.setAperture(staleAperture);
+    expect(useAppStore.getState().camera.aperture).toBe(staleAperture);
 
     store.initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
-    expect(useAppStore.getState().camera.aperture).toBe(32);
+    expectFocusFundamentalsFixedAtF11();
+  });
 
-    store.setAperture(11);
-    store.setMode("guided");
-    expect(useAppStore.getState().camera.aperture).toBe(32);
+  it("scene entry restores Focus Fundamentals f/11 from a stale aperture", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    store.setAperture(staleAperture);
+    expect(useAppStore.getState().camera.aperture).toBe(staleAperture);
 
-    store.setActiveScene("architecture-rise");
-    store.setAperture(11);
     store.setActiveScene(focusFundamentalsTwoTargets.id);
-    expect(useAppStore.getState().camera.aperture).toBe(32);
+    expectFocusFundamentalsFixedAtF11();
+  });
 
-    store.setAperture(11);
+  it("mode transition restores the Focus Fundamentals preset contract", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
+    seedStaleFocusFundamentalsAperture();
+
+    store.setMode("guided");
+    expect(useAppStore.getState().camera.mode).toBe("guided");
+    expectFocusFundamentalsFixedAtF11();
+  });
+
+  it("resetMovements restores Focus Fundamentals f/11 from a stale aperture", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
+    seedStaleFocusFundamentalsAperture();
+
     store.resetMovements();
-    expect(useAppStore.getState().camera.aperture).toBe(32);
+    expectFocusFundamentalsFixedAtF11();
+  });
 
-    store.setAperture(11);
+  it("restartTask restores Focus Fundamentals f/11 from a stale aperture", () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: focusFundamentalsTwoTargets.id, taskId: null });
+    seedStaleFocusFundamentalsAperture();
+
     store.restartTask();
-    expect(useAppStore.getState().camera.aperture).toBe(32);
+    expectFocusFundamentalsFixedAtF11();
   });
 
   it("keeps the selectable-focus route inside the physical focus range", () => {

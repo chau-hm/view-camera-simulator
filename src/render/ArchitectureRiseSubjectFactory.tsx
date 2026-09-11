@@ -15,6 +15,18 @@ let facadeFineDetailGeom: THREE.BoxGeometry | null = null;
 let facadeFinePanelMaterial: THREE.MeshBasicMaterial | null = null;
 let facadeFineFrameMaterial: THREE.MeshBasicMaterial | null = null;
 let facadeFineLineMaterial: THREE.MeshBasicMaterial | null = null;
+let contextSideMassGeom: THREE.BoxGeometry | null = null;
+let contextSideWindowGeom: THREE.BoxGeometry | null = null;
+let contextSideWindowSillGeom: THREE.BoxGeometry | null = null;
+let contextEntryPanelGeom: THREE.BoxGeometry | null = null;
+let contextEntryJambGeom: THREE.BoxGeometry | null = null;
+let contextEntryLintelGeom: THREE.BoxGeometry | null = null;
+let contextPlinthGeom: THREE.BoxGeometry | null = null;
+let contextPavementSeamGeom: THREE.BoxGeometry | null = null;
+let contextSideMassMaterial: THREE.MeshStandardMaterial | null = null;
+let contextTrimMaterial: THREE.MeshStandardMaterial | null = null;
+let contextRecessMaterial: THREE.MeshStandardMaterial | null = null;
+let contextPavementMaterial: THREE.MeshStandardMaterial | null = null;
 
 function ensureResources() {
   if (!buildingGeom) buildingGeom = new THREE.BoxGeometry(toWorld(geometry.building.width), toWorld(geometry.building.height), toWorld(geometry.building.depth));
@@ -27,6 +39,18 @@ function ensureResources() {
   if (!facadeFinePanelMaterial) facadeFinePanelMaterial = new THREE.MeshBasicMaterial({ color: "#294354" });
   if (!facadeFineFrameMaterial) facadeFineFrameMaterial = new THREE.MeshBasicMaterial({ color: "#dbeafe" });
   if (!facadeFineLineMaterial) facadeFineLineMaterial = new THREE.MeshBasicMaterial({ color: "#f8fafc" });
+  if (!contextSideMassGeom) contextSideMassGeom = new THREE.BoxGeometry(toWorld(520), toWorld(3000), toWorld(760));
+  if (!contextSideWindowGeom) contextSideWindowGeom = new THREE.BoxGeometry(toWorld(18), toWorld(720), toWorld(430));
+  if (!contextSideWindowSillGeom) contextSideWindowSillGeom = new THREE.BoxGeometry(toWorld(70), toWorld(36), toWorld(520));
+  if (!contextEntryPanelGeom) contextEntryPanelGeom = new THREE.BoxGeometry(toWorld(480), toWorld(1120), toWorld(26));
+  if (!contextEntryJambGeom) contextEntryJambGeom = new THREE.BoxGeometry(toWorld(72), toWorld(1200), toWorld(90));
+  if (!contextEntryLintelGeom) contextEntryLintelGeom = new THREE.BoxGeometry(toWorld(652), toWorld(72), toWorld(90));
+  if (!contextPlinthGeom) contextPlinthGeom = new THREE.BoxGeometry(toWorld(3500), toWorld(180), toWorld(260));
+  if (!contextPavementSeamGeom) contextPavementSeamGeom = new THREE.BoxGeometry(toWorld(4200), toWorld(10), toWorld(18));
+  if (!contextSideMassMaterial) contextSideMassMaterial = new THREE.MeshStandardMaterial({ color: "#64748b", roughness: 0.9 });
+  if (!contextTrimMaterial) contextTrimMaterial = new THREE.MeshStandardMaterial({ color: "#dbeafe", roughness: 0.82 });
+  if (!contextRecessMaterial) contextRecessMaterial = new THREE.MeshStandardMaterial({ color: "#25364a", roughness: 0.72 });
+  if (!contextPavementMaterial) contextPavementMaterial = new THREE.MeshStandardMaterial({ color: "#94a3b8", roughness: 0.98 });
 }
 
 const addFacadeFineDetail = (parent: THREE.Group): void => {
@@ -46,6 +70,101 @@ const addFacadeFineDetail = (parent: THREE.Group): void => {
     detailGroup.add(mesh);
   });
   parent.add(detailGroup);
+};
+
+const addArchitectureRiseContext = (parent: THREE.Group): void => {
+  ensureResources();
+  const context = new THREE.Group();
+  context.name = "architecture-rise-context-structure";
+
+  const sideMass = new THREE.Mesh(
+    contextSideMassGeom!,
+    contextSideMassMaterial!,
+  );
+  sideMass.name = "architecture-rise-side-return";
+  sideMass.position.set(
+    toWorld(1900),
+    toWorld(geometry.ground.y + 1500),
+    toWorld(geometry.building.center.z + 220),
+  );
+  context.add(sideMass);
+
+  const sideWindow = new THREE.Mesh(
+    contextSideWindowGeom!,
+    contextRecessMaterial!,
+  );
+  sideWindow.name = "architecture-rise-side-return-window";
+  sideWindow.position.set(
+    toWorld(1628),
+    toWorld(geometry.ground.y + 1780),
+    toWorld(geometry.building.center.z + 220),
+  );
+  context.add(sideWindow);
+
+  const sideWindowSill = new THREE.Mesh(
+    contextSideWindowSillGeom!,
+    contextTrimMaterial!,
+  );
+  sideWindowSill.name = "architecture-rise-side-return-window-sill";
+  sideWindowSill.position.set(
+    toWorld(1610),
+    toWorld(geometry.ground.y + 1400),
+    toWorld(geometry.building.center.z + 220),
+  );
+  context.add(sideWindowSill);
+
+  const entryX = -880;
+  const entryY = geometry.ground.y + 760;
+  const entryZ = geometry.facade.frontFacadeZ - 42;
+  const entryGroup = new THREE.Group();
+  entryGroup.name = "architecture-rise-entry-recess";
+  const entryPanel = new THREE.Mesh(
+    contextEntryPanelGeom!,
+    contextRecessMaterial!,
+  );
+  entryPanel.name = "architecture-rise-entry-recess-panel";
+  entryPanel.position.set(toWorld(entryX), toWorld(entryY + 560), toWorld(entryZ));
+  entryGroup.add(entryPanel);
+  [-1, 1].forEach((sign) => {
+    const jamb = new THREE.Mesh(contextEntryJambGeom!, contextTrimMaterial!);
+    jamb.name = `architecture-rise-entry-recess-jamb-${sign < 0 ? "left" : "right"}`;
+    jamb.position.set(
+      toWorld(entryX + sign * 290),
+      toWorld(entryY + 600),
+      toWorld(entryZ - 20),
+    );
+    entryGroup.add(jamb);
+  });
+  const lintel = new THREE.Mesh(
+    contextEntryLintelGeom!,
+    contextTrimMaterial!,
+  );
+  lintel.name = "architecture-rise-entry-recess-lintel";
+  lintel.position.set(toWorld(entryX), toWorld(entryY + 1240), toWorld(entryZ - 20));
+  entryGroup.add(lintel);
+  context.add(entryGroup);
+
+  const plinth = new THREE.Mesh(
+    contextPlinthGeom!,
+    contextTrimMaterial!,
+  );
+  plinth.name = "architecture-rise-building-plinth";
+  plinth.position.set(
+    toWorld(0),
+    toWorld(geometry.ground.y + 90),
+    toWorld(geometry.facade.frontFacadeZ - 180),
+  );
+  context.add(plinth);
+
+  const pavementSeam = new THREE.Mesh(
+    contextPavementSeamGeom!,
+    contextPavementMaterial!,
+  );
+  pavementSeam.name = "architecture-rise-pavement-near-seam";
+  pavementSeam.position.set(0, toWorld(geometry.ground.y + 5), toWorld(6900));
+  context.add(pavementSeam);
+
+  parent.add(context);
 };
 
 export function createArchitectureRiseGroup(): THREE.Group {
@@ -93,6 +212,7 @@ export function createArchitectureRiseGroup(): THREE.Group {
 
   // ground plane
   const ground = new THREE.Mesh(floorPlaneGeom!, groundMaterial!);
+  ground.name = "architecture-rise-ground";
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   g.add(ground);
@@ -125,6 +245,7 @@ export function createArchitectureRiseGroup(): THREE.Group {
   g.add(focusGroup);
 
   addFacadeFineDetail(g);
+  addArchitectureRiseContext(g);
 
   // small reference objects (plinths) around the building to aid depth reading
   if (Array.isArray(referenceObjects) && referenceObjects.length > 0) {
@@ -227,7 +348,7 @@ export const ArchitectureRiseSubject: React.FC = () => {
       })}
 
       {/* ground plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, toW(geometry.ground.y), toW(geometry.ground.centerZ)]}>
+      <mesh name="architecture-rise-ground" rotation={[-Math.PI / 2, 0, 0]} position={[0, toW(geometry.ground.y), toW(geometry.ground.centerZ)]}>
         <planeGeometry args={[toW(geometry.ground.width), toW(geometry.ground.depth)]} />
         <meshStandardMaterial color="#e6eef7" roughness={1} metalness={0} />
       </mesh>
@@ -273,6 +394,70 @@ export const ArchitectureRiseSubject: React.FC = () => {
             />
           </mesh>
         ))}
+      </group>
+
+      <group name="architecture-rise-context-structure">
+        <mesh
+          name="architecture-rise-side-return"
+          position={[toW(1900), toW(geometry.ground.y + 1500), toW(geometry.building.center.z + 220)]}
+        >
+          <boxGeometry args={[toW(520), toW(3000), toW(760)]} />
+          <meshStandardMaterial color="#64748b" roughness={0.9} />
+        </mesh>
+        <mesh
+          name="architecture-rise-side-return-window"
+          position={[toW(1628), toW(geometry.ground.y + 1780), toW(geometry.building.center.z + 220)]}
+        >
+          <boxGeometry args={[toW(18), toW(720), toW(430)]} />
+          <meshStandardMaterial color="#25364a" roughness={0.72} />
+        </mesh>
+        <mesh
+          name="architecture-rise-side-return-window-sill"
+          position={[toW(1610), toW(geometry.ground.y + 1400), toW(geometry.building.center.z + 220)]}
+        >
+          <boxGeometry args={[toW(70), toW(36), toW(520)]} />
+          <meshStandardMaterial color="#dbeafe" roughness={0.82} />
+        </mesh>
+        <group name="architecture-rise-entry-recess">
+          <mesh
+            name="architecture-rise-entry-recess-panel"
+            position={[toW(-880), toW(geometry.ground.y + 1320), toW(geometry.facade.frontFacadeZ - 42)]}
+          >
+            <boxGeometry args={[toW(480), toW(1120), toW(26)]} />
+            <meshStandardMaterial color="#25364a" roughness={0.72} />
+          </mesh>
+          {[-1, 1].map((sign) => (
+            <mesh
+              key={sign}
+              name={`architecture-rise-entry-recess-jamb-${sign < 0 ? "left" : "right"}`}
+              position={[toW(-880 + sign * 290), toW(geometry.ground.y + 1360), toW(geometry.facade.frontFacadeZ - 62)]}
+            >
+              <boxGeometry args={[toW(72), toW(1200), toW(90)]} />
+              <meshStandardMaterial color="#dbeafe" roughness={0.82} />
+            </mesh>
+          ))}
+          <mesh
+            name="architecture-rise-entry-recess-lintel"
+            position={[toW(-880), toW(geometry.ground.y + 2000), toW(geometry.facade.frontFacadeZ - 62)]}
+          >
+            <boxGeometry args={[toW(652), toW(72), toW(90)]} />
+            <meshStandardMaterial color="#dbeafe" roughness={0.82} />
+          </mesh>
+        </group>
+        <mesh
+          name="architecture-rise-building-plinth"
+          position={[0, toW(geometry.ground.y + 90), toW(geometry.facade.frontFacadeZ - 180)]}
+        >
+          <boxGeometry args={[toW(3500), toW(180), toW(260)]} />
+          <meshStandardMaterial color="#dbeafe" roughness={0.82} />
+        </mesh>
+        <mesh
+          name="architecture-rise-pavement-near-seam"
+          position={[0, toW(geometry.ground.y + 5), toW(6900)]}
+        >
+          <boxGeometry args={[toW(4200), toW(10), toW(18)]} />
+          <meshStandardMaterial color="#94a3b8" roughness={0.98} />
+        </mesh>
       </group>
 
       {/* reference objects (plinths) */}

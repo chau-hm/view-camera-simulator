@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type ElementHandle, type Page } from "@playwright/test";
 
 type SceneVisit = {
@@ -34,6 +35,7 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if ((message.type() === "error" || message.type() === "warning") && !isAllowedEnvironmentConsoleMessage(message.text())) {
       consoleProblems.push(message.text());
     }

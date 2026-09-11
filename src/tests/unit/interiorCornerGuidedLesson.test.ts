@@ -96,7 +96,7 @@ describe("Interior Corner guided lesson", () => {
     expect(task(taskIds.aperture).enabledControls).toEqual(["aperture", "geometryView"]);
     expect(task(taskIds.compose).constraints).toEqual({ movement: "rise-only" });
     expect(task(taskIds.swing).constraints).toEqual({ movement: "swing-only" });
-    expect(CAMERA_CONSTANTS.apertureOptions).toEqual([5.6, 11, 22, 32]);
+    expect(CAMERA_CONSTANTS.apertureOptions).toEqual([5.6, 8, 11, 16, 22, 32]);
     for (const taskId of Object.values(taskIds)) {
       expect(task(taskId).initialCameraState).toMatchObject({
         focusMode: "finite",

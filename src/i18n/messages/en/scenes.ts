@@ -33,7 +33,7 @@ export const scenesMessages = {
     topics: {
       frontRearFocusing: "Front / Rear focusing",
       imageAlignment: "Image alignment",
-      fixedAperture: "Fixed f/32",
+      fixedAperture: "Fixed f/11",
     },
   },
   architectureRise: {

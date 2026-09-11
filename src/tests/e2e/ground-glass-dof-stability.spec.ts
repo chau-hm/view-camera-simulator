@@ -1,4 +1,6 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
+import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -13,18 +15,14 @@ const numericAttribute = async (
 const expectFiniteFocusDiagnostics = async (
   page: import("@playwright/test").Page,
 ) => {
-  for (const id of [
+  const scores = await readFocusDistributionScores(page, [
     "foreground-near",
     "foreground-middle",
     "building-base",
     "building-middle",
-  ]) {
-    const value = Number(
-      await page
-        .getByRole("progressbar", { name: `${id} sharpness` })
-        .getAttribute("aria-valuenow"),
-    );
-    expect(Number.isFinite(value), `${id} sharpness must be finite`).toBe(true);
+  ]);
+  for (const [targetId, value] of Object.entries(scores)) {
+    expect(Number.isFinite(value), `${targetId} sharpness must be finite`).toBe(true);
     expect(value).toBeGreaterThanOrEqual(0);
     expect(value).toBeLessThanOrEqual(100);
   }
@@ -37,6 +35,7 @@ test("Architecture + Foreground DOF regression stays finite across Raw RTT toggl
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (
       (message.type() === "error" || message.type() === "warning") &&
       !isAllowedEnvironmentConsoleMessage(message.text())

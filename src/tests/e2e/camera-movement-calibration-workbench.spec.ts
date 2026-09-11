@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
 
 const collectGraphicsErrors = (page: Page) => {
@@ -5,6 +6,7 @@ const collectGraphicsErrors = (page: Page) => {
   const graphicsErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (!["warning", "error"].includes(message.type())) return;
     const text = message.text();
     if (!/(WebGL|THREE|GPU)/i.test(text) || /GPU stall due to ReadPixels/i.test(text)) return;

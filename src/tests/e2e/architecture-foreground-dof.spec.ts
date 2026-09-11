@@ -1,3 +1,4 @@
+import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
@@ -20,6 +21,18 @@ test("Architecture + Foreground Free Practice exposes Aperture after Rise, Tilt,
 
   const aperture = page.getByRole("combobox", { name: "Aperture" });
   await expect(aperture).toHaveValue("11");
+  await expect(aperture.locator("option")).toHaveText([
+    "f/5.6",
+    "f/8",
+    "f/11",
+    "f/16",
+    "f/22",
+    "f/32",
+  ]);
+  await aperture.selectOption("8");
+  await expect(aperture).toHaveValue("8");
+  await aperture.selectOption("16");
+  await expect(aperture).toHaveValue("16");
   await aperture.selectOption("22");
   await expect(aperture).toHaveValue("22");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
@@ -31,6 +44,7 @@ test("Architecture + Foreground DOF task starts solved through PR7C and complete
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
+    if (isKnownFiberClockDeprecation(message)) return;
     if (
       (message.type() === "error" || message.type() === "warning") &&
       !isAllowedEnvironmentConsoleMessage(message.text())

@@ -925,7 +925,7 @@ sequenceDiagram
 | Tilt           | -10° 至 +10°          |
 | Swing          | -10° 至 +10°          |
 | Focus Distance | 場景指定最小值至最大值          |
-| Aperture       | f/5.6、f/11、f/22、f/32 |
+| Aperture       | f/5.6、f/8、f/11、f/16、f/22、f/32 |
 
 ## 17.2 WebGL 不支援
 

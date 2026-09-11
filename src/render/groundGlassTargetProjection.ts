@@ -12,6 +12,12 @@ import { pointToPlaneDistance } from "../core/math/plane";
 
 export type GroundGlassPreviewMode = "raw" | "upright";
 
+export function resolveGroundGlassPreviewMode(
+  groundGlassAssistEnabled: boolean,
+): GroundGlassPreviewMode {
+  return groundGlassAssistEnabled ? "upright" : "raw";
+}
+
 export type ProjectedGroundGlassTarget = {
   id: string;
   visible: boolean;

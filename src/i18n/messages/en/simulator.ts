@@ -228,6 +228,14 @@ export const simulatorMessages = {
     architectureForegroundMiddleTarget: "Middle foreground",
     architectureForegroundBuildingBaseTarget: "Building base",
     architectureForegroundBuildingMiddleTarget: "Building middle",
+    architectureRiseBuildingMidFacadeTarget: "Building mid facade",
+    obliqueTabletopNearLeftTarget: "Near left",
+    obliqueTabletopNearCentreTarget: "Near centre",
+    obliqueTabletopNearRightTarget: "Near right",
+    obliqueTabletopMiddleTarget: "Middle",
+    obliqueTabletopFarLeftTarget: "Far left",
+    obliqueTabletopFarCentreTarget: "Far centre",
+    obliqueTabletopFarRightTarget: "Far right",
     interiorCornerRecedingWallGuide: "Receding side wall",
     obliqueTabletopNearFarGuide: "Subject board · near ↔ far",
     obliqueTabletopLeftRightGuide: "Subject board · left ↔ right",
@@ -298,7 +306,7 @@ export const simulatorMessages = {
     },
     focusFundamentals: {
       objective:
-        "Explore Front and Rear focusing across two depths of the same object at fixed f/32.",
+        "Explore Front and Rear focusing across two depths of the same object at fixed f/11.",
       bullets: {
         focusDistance: "Move focus between the near and far detail.",
         readouts: "Watch the white near gate and far pointer.",
