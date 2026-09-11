@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "benchmark:scene-capacity": "node ./scripts/run-scene-capacity-benchmark.mjs",
     "test": "node ./scripts/test.mjs",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

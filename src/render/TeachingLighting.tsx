@@ -3,6 +3,11 @@ import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import type { SceneSubjectRttLighting } from "./sceneSubjectRegistry";
 import { vecToWorld } from "./rttUtils";
+import {
+  collectSceneGraphCapacity,
+  isSceneCapacityProfilingEnabled,
+  type SceneGraphCapacityMetrics,
+} from "./sceneCapacityProfiling";
 
 export const TEACHING_LIGHTING_CONFIG = {
   shadowMapType: THREE.PCFShadowMap,
@@ -227,9 +232,11 @@ export const TeachingLighting = ({
 export const TeachingShadowParticipation = ({
   subjectKey,
   children,
+  onCapacityChange,
 }: {
   subjectKey: string;
   children: ReactNode;
+  onCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
 }) => {
   const subjectRootRef = useRef<THREE.Group>(null);
 
@@ -237,7 +244,13 @@ export const TeachingShadowParticipation = ({
     const subjectRoot = subjectRootRef.current;
     if (!subjectRoot) return;
     configureTeachingShadowParticipation(subjectRoot);
-  }, [subjectKey]);
+    onCapacityChange?.(
+      isSceneCapacityProfilingEnabled()
+        ? collectSceneGraphCapacity(subjectRoot)
+        : null,
+    );
+    return () => onCapacityChange?.(null);
+  }, [onCapacityChange, subjectKey]);
 
   return (
     <group ref={subjectRootRef} name="teaching-shadow-subject">

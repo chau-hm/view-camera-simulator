@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { OpticalDebugPanel } from "../../components/simulator/OpticalDebugPanel";
 import type { GroundGlassProfilingSnapshot } from "../../render/groundGlassProfiling";
 import type { GroundGlassRttRuntimeInfo } from "../../render/groundGlassRttDimensions";
+import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -25,7 +26,10 @@ const makeSnapshot = (marker: string): GroundGlassProfilingSnapshot => ({
   },
 } as unknown as GroundGlassProfilingSnapshot);
 
-const renderPanel = (snapshot: GroundGlassProfilingSnapshot | null) => {
+const renderPanel = (
+  snapshot: GroundGlassProfilingSnapshot | null,
+  viewportSubjectCapacity?: SceneGraphCapacityMetrics | null,
+) => {
   const camera = {
     ...DEFAULT_CAMERA_STATE,
     activeSceneId: architectureRiseScene.id,
@@ -46,6 +50,7 @@ const renderPanel = (snapshot: GroundGlassProfilingSnapshot | null) => {
           profilingSnapshot: snapshot,
         } as unknown as GroundGlassRttRuntimeInfo
       }
+      viewportSubjectCapacity={viewportSubjectCapacity}
     />,
   );
 };
@@ -59,6 +64,7 @@ const mockClipboard = (writeText: ReturnType<typeof vi.fn>) => {
 
 afterEach(() => {
   cleanup();
+  window.history.replaceState({}, "", "/");
   vi.restoreAllMocks();
 });
 
@@ -126,5 +132,83 @@ describe("Ground Glass profiling snapshot copy", () => {
       expect(writeText).toHaveBeenCalledTimes(1);
       expect(screen.getByTestId("ground-glass-profiling-copy")).toHaveTextContent("Copy failed");
     });
+  });
+});
+
+describe("scene capacity diagnostic snapshot", () => {
+  const capacity: SceneGraphCapacityMetrics = {
+    objectCount: 4,
+    meshCount: 2,
+    instancedMeshCount: 0,
+    lightCount: 0,
+    lineCount: 0,
+    pointsCount: 0,
+    uniqueGeometryCount: 1,
+    uniqueMaterialCount: 1,
+    uniqueTextureCount: 0,
+    triangleCount: 24,
+    instancedTriangleCount: 0,
+    effectiveTriangleCount: 24,
+  };
+
+  it("keeps scene-capacity diagnostics absent when the switch is disabled", () => {
+    renderPanel(makeSnapshot("disabled"), capacity);
+
+    expect(screen.queryByTestId("scene-capacity-snapshot")).toBeNull();
+  });
+
+  it("publishes viewport, RTT, cadence, and Ground Glass data when enabled", () => {
+    window.history.replaceState({}, "", "/?sceneCapacityProfiling=1");
+    renderPanel(makeSnapshot("enabled"), capacity);
+
+    const snapshot = JSON.parse(
+      screen.getByTestId("scene-capacity-snapshot").textContent ?? "null",
+    ) as {
+      sceneId: string;
+      viewportSubject: SceneGraphCapacityMetrics;
+      rttSubject: SceneGraphCapacityMetrics | null;
+      frameCadence: { count: number };
+      groundGlass: { marker: string };
+    };
+    expect(snapshot.sceneId).toBe(architectureRiseScene.id);
+    expect(snapshot.viewportSubject.effectiveTriangleCount).toBe(24);
+    expect(snapshot.rttSubject).toBeNull();
+    expect(snapshot.frameCadence.count).toBe(1);
+    expect(snapshot.groundGlass.marker).toBe("enabled");
+  });
+
+  it("updates the scene identity when the diagnostic owner changes scenes", () => {
+    window.history.replaceState({}, "", "/?sceneCapacityProfiling=1");
+    const view = renderPanel(makeSnapshot("first"), capacity);
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      activeSceneId: "interior-corner",
+    };
+    const opticsState = deriveOpticsState(camera, architectureRiseScene);
+
+    view.rerender(
+      <OpticalDebugPanel
+        sceneId="interior-corner"
+        mode="free"
+        opticsState={opticsState}
+        focalLengthMm={camera.focalLengthMm}
+        focusDistanceMm={camera.focusDistanceMm}
+        aperture={camera.aperture}
+        rttRuntimeInfo={
+          {
+            profilingEnabled: true,
+            profilingBackend: "cpu-fallback",
+            profilingSnapshot: makeSnapshot("second"),
+          } as unknown as GroundGlassRttRuntimeInfo
+        }
+        viewportSubjectCapacity={capacity}
+      />,
+    );
+
+    const snapshot = JSON.parse(
+      screen.getByTestId("scene-capacity-snapshot").textContent ?? "null",
+    ) as { sceneId: string; groundGlass: { marker: string } };
+    expect(snapshot.sceneId).toBe("interior-corner");
+    expect(snapshot.groundGlass.marker).toBe("second");
   });
 });

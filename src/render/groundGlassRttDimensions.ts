@@ -5,6 +5,7 @@ import type {
   GroundGlassProfilingBackend,
   GroundGlassProfilingSnapshot,
 } from "./groundGlassProfiling";
+import type { SceneCapacityRuntimeDetails } from "./sceneCapacityProfiling";
 
 export type GroundGlassRttChannel =
   | "default"
@@ -107,6 +108,7 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   profilingEnabled?: boolean;
   profilingBackend?: GroundGlassProfilingBackend;
   profilingSnapshot?: GroundGlassProfilingSnapshot;
+  sceneCapacity?: SceneCapacityRuntimeDetails;
   /** Values actually consumed by the current owned RTT subject/shader graph. */
   focalLengthMm?: number;
   latticeEdgeCount?: number;

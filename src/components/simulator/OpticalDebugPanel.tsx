@@ -13,6 +13,11 @@ import type {
   GroundGlassRttChannel,
   GroundGlassRttRuntimeInfo,
 } from "../../render/groundGlassRttDimensions";
+import {
+  createSceneCapacitySnapshot,
+  isSceneCapacityProfilingEnabled,
+  type SceneGraphCapacityMetrics,
+} from "../../render/sceneCapacityProfiling";
 import { deriveScheimpflugConstruction } from "../../core/optics/scheimpflugConstruction";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
 import type { CameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
@@ -52,6 +57,7 @@ type OpticalDebugPanelProps = {
   >;
   channel?: GroundGlassRttChannel;
   comparison?: OpticalDebugComparison | null;
+  viewportSubjectCapacity?: SceneGraphCapacityMetrics | null;
 };
 
 type OpticalDebugLayerDetailsProps = {
@@ -316,6 +322,7 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({
   rttRuntimeInfoByChannel,
   channel = "default",
   comparison,
+  viewportSubjectCapacity = null,
 }) => {
   const comparisonId = React.useId();
   const defaultLayer: OpticalDebugLayer = {
@@ -362,6 +369,16 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({
     }),
     [sceneId],
   );
+  const sceneCapacityProfilingEnabled = isSceneCapacityProfilingEnabled();
+  const sceneCapacitySnapshot = sceneCapacityProfilingEnabled
+    ? createSceneCapacitySnapshot({
+        sceneId,
+        viewportSubject: viewportSubjectCapacity,
+        rttSubject: rttRuntimeInfo?.sceneCapacity?.rttSubject ?? null,
+        rendererResources: rttRuntimeInfo?.sceneCapacity?.rendererResources ?? null,
+        groundGlass: rttRuntimeInfo?.profilingSnapshot ?? null,
+      })
+    : null;
 
   return (
     <div className="simulator-info-card simulator-info-card--debug optical-debug">
@@ -382,6 +399,20 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({
               <div><strong>Preload for next scene:</strong> {sceneAssetCounts.preload}</div>
             </div>
           </details>
+
+          {sceneCapacitySnapshot ? (
+            <details className="optical-debug__group" data-testid="scene-capacity-profiling">
+              <summary>Scene capacity profiling</summary>
+              <div className="optical-debug__group-content">
+                <pre
+                  data-testid="scene-capacity-snapshot"
+                  style={{ maxHeight: "16rem", overflow: "auto", whiteSpace: "pre-wrap" }}
+                >
+                  {JSON.stringify(sceneCapacitySnapshot, null, 2)}
+                </pre>
+              </div>
+            </details>
+          ) : null}
 
           {comparisonLayers ? (
             <div className="optical-debug__comparison" aria-label="Original and Current optical diagnostics">
