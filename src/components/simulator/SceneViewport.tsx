@@ -19,6 +19,7 @@ import {
   type SceneViewFocus,
 } from "../../render/sceneViewFraming";
 import { useAppStore } from "../../state/appStore";
+import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
 
 type SceneViewportProps = {
   scene: SceneDefinition;
@@ -41,6 +42,7 @@ type SceneViewportProps = {
   initialViewFocus?: SceneViewFocus;
   suppressOpticalOverlays?: boolean;
   viewResetKey?: string | number;
+  onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
 };
 
 const parseRenderQuality = (value: string): RenderQualityProfile => {
@@ -71,6 +73,7 @@ export const SceneViewport = ({
   initialViewFocus = "scene",
   suppressOpticalOverlays = false,
   viewResetKey,
+  onSubjectCapacityChange,
 }: SceneViewportProps) => {
   const { t } = useTranslation();
   const [attempt, setAttempt] = useState(0);
@@ -262,6 +265,7 @@ export const SceneViewport = ({
             simulateAssetFailure={simulateAssetFailure}
             onAssetError={(message) => setAssetError({ title: t(simulatorMessageKeys.viewport.sceneLoadFailed), message })}
             containerStyle={{ width: "100%", height: "100%", border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
+            onSubjectCapacityChange={onSubjectCapacityChange}
           />
 
           {!suppressOpticalOverlays ? <div className="scene-overlay-controls-wrap">

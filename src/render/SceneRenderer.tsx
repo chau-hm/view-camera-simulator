@@ -58,6 +58,7 @@ import {
   TeachingLighting,
   TeachingShadowParticipation,
 } from "./TeachingLighting";
+import type { SceneGraphCapacityMetrics } from "./sceneCapacityProfiling";
 
 type SceneRendererProps = {
   scene: SceneDefinition;
@@ -78,6 +79,7 @@ type SceneRendererProps = {
   containerStyle?: React.CSSProperties;
   /** Presentation-only anatomy/rear-back/aperture overrides for Lesson 0. */
   cameraPresentation?: ConceptualCameraPresentation;
+  onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
 };
 
 export const shouldRenderReferenceCamera = (
@@ -694,6 +696,7 @@ const SceneContent = ({
   focusFocalLengthMm,
   activeAperture,
   cameraPresentation,
+  onSubjectCapacityChange,
 }: {
   scene: SceneDefinition;
   cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
@@ -705,6 +708,7 @@ const SceneContent = ({
   focusFocalLengthMm: number;
   activeAperture: ApertureValue;
   cameraPresentation?: ConceptualCameraPresentation;
+  onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
 }) => {
   const registration = getSceneSubjectRegistration(scene.id);
   const RegisteredSubject = registration?.SceneSubject;
@@ -766,7 +770,10 @@ const SceneContent = ({
       showOpticalGeometry={showOpticalGeometry}
       showScheimpflugConstruction={showScheimpflugConstruction}
     />
-    <TeachingShadowParticipation subjectKey={scene.id}>
+    <TeachingShadowParticipation
+      subjectKey={scene.id}
+      onCapacityChange={onSubjectCapacityChange}
+    >
       {RegisteredSubject ? (
         <RegisteredSubject scene={scene} />
       ) : (
@@ -852,6 +859,7 @@ export const SceneRenderer = ({
   onAssetError,
   containerStyle,
   cameraPresentation,
+  onSubjectCapacityChange,
 }: SceneRendererProps) => {
   const { t } = useTranslation();
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
@@ -1103,6 +1111,7 @@ export const SceneRenderer = ({
           focusFocalLengthMm={activeFocalLengthMm}
           activeAperture={activeAperture}
           cameraPresentation={cameraPresentation}
+          onSubjectCapacityChange={onSubjectCapacityChange}
         />
         <OrbitControls
           ref={controlsRef}
