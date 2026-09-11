@@ -120,7 +120,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(scene).toHaveAttribute("data-scene-subject-id", "focus-fundamentals-two-targets");
   await expect(page.getByRole("group", { name: "Focus standard" })).toBeVisible();
   await expect(front).toBeChecked();
-  await expect(aperture).toHaveValue("32");
+  await expect(aperture).toHaveValue("11");
   await expect(aperture).toBeDisabled();
   await expect(page.getByText("Aperture is fixed for this lesson")).toBeVisible();
   await expect(focusStandard.getByText("Watch the white frame (near gate) and far pointer.")).toBeVisible();

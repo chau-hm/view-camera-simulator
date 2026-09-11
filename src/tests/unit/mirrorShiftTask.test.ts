@@ -48,6 +48,7 @@ describe("Mirror Shift guided task", () => {
       enabledControls: ["cameraPosition", "frontShift", "geometryView"],
     });
     expect(task?.initialCameraState).toMatchObject({
+      aperture: 11,
       frontShiftMm: resolveMirrorShiftTeachingState("neutral").frontShiftMm,
       mirrorShiftLessonState: {
         rigLateralMm: resolveMirrorShiftTeachingState("neutral").rigLateralMm,

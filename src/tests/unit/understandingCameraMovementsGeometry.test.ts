@@ -144,7 +144,7 @@ describe("Understanding Camera Movements focal calibration", () => {
     },
   );
 
-  it("keeps the provisional lattice depth within the selected f/32 depth of field", () => {
+  it("keeps the provisional lattice depth within the current working-aperture depth of field", () => {
     const focalLengthMm = CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm;
     const optics = deriveOpticsState(
       cameraAtFocalLength(focalLengthMm),

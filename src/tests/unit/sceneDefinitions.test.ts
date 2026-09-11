@@ -12,6 +12,7 @@ import {
 } from "../../scenes/definitions";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
@@ -170,13 +171,14 @@ describe("scene definitions", () => {
     expect(obliqueTabletopGeometry.subjectBoardSupports.every((support) => support.height > 0)).toBe(true);
   });
 
-  it("locks Focus Fundamentals to its fixed f/32 teaching aperture", () => {
-    expect(focusFundamentalsTwoTargets.cameraPreset.aperture).toBe(32);
+  it("locks Focus Fundamentals to its fixed f/11 working aperture", () => {
+    expect(focusFundamentalsTwoTargets.cameraPreset.aperture).toBe(11);
     expect(focusFundamentalsTwoTargets.cameraControlPolicy?.aperture).toBe("fixed");
   });
 
   it("keeps Mirror Shift in a fixed neutral camera state", () => {
     expect(mirrorShiftScene.name).toBe("Mirror Shift");
+    expect(mirrorShiftScene.cameraPreset.aperture).toBe(11);
     expect(mirrorShiftScene.cameraControlPolicy).toEqual({
       movement: "fixed",
       focusDistance: "fixed",
@@ -185,6 +187,11 @@ describe("scene definitions", () => {
     });
     expect(mirrorShiftScene.focusTargets).toHaveLength(0);
     expect(mirrorShiftScene.compositionTargets).toHaveLength(0);
+  });
+
+  it("keeps Understanding Camera Movements at its fixed f/11 working aperture", () => {
+    expect(understandingCameraMovementsScene.cameraPreset.aperture).toBe(11);
+    expect(understandingCameraMovementsScene.cameraControlPolicy?.aperture).toBe("fixed");
   });
 
   it("defines the Oblique Architecture scene with the shared Rise/Swing capability", () => {

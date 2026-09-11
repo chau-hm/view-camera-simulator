@@ -73,6 +73,7 @@ const publicCurrentRtt = (page: Page) =>
 
 test("camera movements scene loads and renders valid Ground Glass content", async ({ page }) => {
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
+  const aperture = page.getByRole("combobox", { name: "Aperture" });
   await expect(page.locator('[data-testid="scene-canvas"]')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('[data-optical-geometry-visible="true"]')).toBeVisible({ timeout: 5000 });
 
@@ -109,6 +110,8 @@ test("camera movements scene loads and renders valid Ground Glass content", asyn
 
   await expect(page.getByRole("button", { name: "Reset Movements" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Restart Task" })).toHaveCount(0);
+  await expect(aperture).toHaveValue("11");
+  await expect(aperture).toBeDisabled();
 });
 
 test("continuous viewpoint, tilt, and vertical framing change Ground Glass without breaking", async ({ page }) => {
@@ -149,6 +152,7 @@ test("continuous viewpoint, tilt, and vertical framing change Ground Glass witho
 test("Reset Movements restores zero state and keeps Ground Glass valid", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
+  const aperture = page.getByRole("combobox", { name: "Aperture" });
   const rtt = publicCurrentRtt(page);
   await expect(rtt).toBeVisible({ timeout: 15000 });
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 15000 });
@@ -165,6 +169,8 @@ test("Reset Movements restores zero state and keeps Ground Glass valid", async (
   // Neutral Viewpoint should be selected again.
   await expect(page.getByRole("slider", { name: "Viewpoint" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
+  await expect(aperture).toHaveValue("11");
+  await expect(aperture).toBeDisabled();
 
   // Wait for a new RTT frame after reset
   await expect.poll(async () => {

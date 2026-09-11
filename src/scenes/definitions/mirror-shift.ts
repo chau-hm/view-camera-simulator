@@ -10,7 +10,7 @@ export const mirrorShiftScene: SceneDefinition = {
   cameraPreset: {
     focalLengthMm: 120,
     focusDistanceMm: 6000,
-    aperture: 32,
+    aperture: 11,
     frontRiseMm: 0,
     frontShiftMm: 0,
     frontTiltDeg: 0,
