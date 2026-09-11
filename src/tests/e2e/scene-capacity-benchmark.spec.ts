@@ -11,9 +11,14 @@ import type {
   SceneCapacitySnapshot,
   SceneGraphCapacityMetrics,
 } from "../../render/sceneCapacityProfiling";
+import {
+  classifyGraphicsBackend,
+  type GraphicsBackendQualification,
+} from "../../render/sceneCapacityBenchmarkQualification";
 
 const benchmarkEnabled = process.env.SCENE_CAPACITY_BENCHMARK === "1";
 const benchmarkOutputDirectory = process.env.SCENE_CAPACITY_BENCHMARK_OUTPUT_DIR ?? "test-results";
+const productionPreview = process.env.SCENE_CAPACITY_PRODUCTION_PREVIEW === "1";
 const rawScenes = new Set([
   "focus-fundamentals-two-targets",
   "architecture-foreground",
@@ -72,6 +77,9 @@ type BenchmarkEnvironment = {
   userAgent: string;
   devicePixelRatio: number;
   webgl: { vendor: string | null; renderer: string | null };
+  profilingBackend: string | null;
+  timingUnit: string | null;
+  hardwareQualification: GraphicsBackendQualification & { required: boolean };
 };
 
 const timingStats = (
@@ -177,7 +185,17 @@ const waitForMeasurementState = async (
   const rtt = page.getByTestId("ground-glass-rtt");
   const loupeStage = page.locator("[data-focus-loupe-active]").first();
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", sceneId);
-  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 120_000 });
+  const finalContentful = await rtt.getAttribute("data-rtt-final-contentful");
+  if (productionPreview && finalContentful === null) {
+    // Render-sanity readback is intentionally DEV-only. The production
+    // preview still exposes the renderer-owned camera/readiness and profiler
+    // progress attributes, which are the non-invasive readiness contract for
+    // this hardware run.
+    await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 120_000 });
+    await expect(rtt).toHaveAttribute("data-rtt-profiling-frame-count", /[1-9]\d*/, { timeout: 120_000 });
+  } else {
+    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 120_000 });
+  }
   await expect(loupeStage).toHaveAttribute(
     "data-focus-loupe-active",
     String(state.inspectionWindowActive),
@@ -275,6 +293,11 @@ const waitForFreshStableSnapshot = async (
 
 const readEnvironment = async (page: Page, browserName: string): Promise<BenchmarkEnvironment> => {
   expect(await page.locator("canvas").count()).toBeGreaterThan(0);
+  const capacitySnapshot = await readCapacitySnapshot(page);
+  const profilingSnapshot = capacitySnapshot?.groundGlass;
+  if (!profilingSnapshot) {
+    throw new Error("Scene capacity benchmark could not read profiling metadata after the simulator canvas mounted");
+  }
   const browserInfo = await page.evaluate(() => {
     const canvas = document.querySelector("canvas");
     const context = (
@@ -297,11 +320,22 @@ const readEnvironment = async (page: Page, browserName: string): Promise<Benchma
       webgl: { vendor, renderer },
     };
   });
+  const hardwareQualification = classifyGraphicsBackend({
+    renderer: browserInfo.webgl.renderer,
+    profilingBackend: profilingSnapshot.profilingBackend,
+    timingUnit: profilingSnapshot.timingUnit,
+  });
   return {
     commitSha: process.env.SCENE_CAPACITY_BENCHMARK_COMMIT ?? null,
     timestamp: new Date().toISOString(),
     viewport: { width: 1440, height: 1000 },
     browserName,
+    profilingBackend: profilingSnapshot.profilingBackend,
+    timingUnit: profilingSnapshot.timingUnit,
+    hardwareQualification: {
+      required: process.env.SCENE_CAPACITY_REQUIRE_HARDWARE === "1",
+      ...hardwareQualification,
+    },
     ...browserInfo,
   };
 };
@@ -366,6 +400,18 @@ const markdownSummary = (
       groundGlassP95Ratio: baseGroundGlass > 0 ? groundGlass / baseGroundGlass : null,
     };
   });
+  const hardwareRendererSummary = environment.hardwareQualification.hardwareRendererQualified
+    ? "qualified"
+    : environment.hardwareQualification.softwareRendererDetected
+      ? environment.hardwareQualification.required
+        ? "FAILED — known software renderer detected"
+        : "known software renderer detected (requirement not requested)"
+      : "unavailable";
+  const gpuTimingSummary = environment.hardwareQualification.gpuTimingQualified
+    ? "qualified"
+    : environment.profilingBackend === "cpu-fallback"
+      ? "unavailable — CPU fallback"
+      : "unavailable";
   return [
     "# Scene capacity benchmark",
     "",
@@ -375,6 +421,11 @@ const markdownSummary = (
     `Viewport: ${environment.viewport.width}×${environment.viewport.height}, DPR ${environment.devicePixelRatio}`,
     `WebGL vendor: ${environment.webgl.vendor ?? "unavailable"}`,
     `WebGL renderer: ${environment.webgl.renderer ?? "unavailable"}`,
+    `Hardware renderer requirement: ${environment.hardwareQualification.required ? "required" : "not requested"}`,
+    `Hardware renderer: ${hardwareRendererSummary}`,
+    `GPU timer queries: ${gpuTimingSummary}`,
+    `Profiling backend: ${environment.profilingBackend ?? "unavailable"}`,
+    `Timing unit: ${environment.timingUnit ?? "unavailable"}`,
     "",
     `Each record contains at least ${GROUND_GLASS_PROFILING_WINDOW_SIZE} fresh post-state samples after contentfulness and mode activation. Processed, Focus Loupe, and Raw RTT records use isolated state setup. WebGL metadata is collected after the first simulator canvas mounts.`,
     "Timings are same-session observations. GPU-query values are GPU milliseconds; CPU fallback values are CPU-submit milliseconds. Frame cadence is observed R3F frame cadence, not pure GPU execution time.",
@@ -392,6 +443,24 @@ const markdownSummary = (
   ].join("\n");
 };
 
+const writeBenchmarkOutput = async (
+  environment: BenchmarkEnvironment,
+  records: readonly BenchmarkRecord[],
+): Promise<void> => {
+  const output = {
+    environment,
+    records,
+    notes: {
+      frameCadence: "Observed active Ground Glass R3F frame cadence while the simulator viewport and UI are mounted; it is not pure GPU render time.",
+      rendererResources: "rendererResources.geometries and rendererResources.textures are renderer resource counts, not byte-accurate VRAM measurements.",
+      sampling: `Every timing record waits for a fresh post-state window of at least ${GROUND_GLASS_PROFILING_WINDOW_SIZE} valid backend samples after contentfulness and mode activation.`,
+    },
+  };
+  await mkdir(benchmarkOutputDirectory, { recursive: true });
+  await writeFile(`${benchmarkOutputDirectory}/scene-capacity-benchmark.json`, JSON.stringify(output, null, 2));
+  await writeFile(`${benchmarkOutputDirectory}/scene-capacity-benchmark.md`, markdownSummary(environment, records));
+};
+
 test.describe("scene capacity benchmark", () => {
   test.skip(!benchmarkEnabled, "Run through npm run benchmark:scene-capacity.");
   test.describe.configure({ mode: "serial" });
@@ -406,7 +475,20 @@ test.describe("scene capacity benchmark", () => {
       await page.goto(`/simulator/free/${sceneId}?sceneCapacityProfiling=1&dofProfiling=1&rttDiagnostics=1`);
       const processedState = { rawDebug: false, inspectionWindowActive: false };
       const processed = await waitForFreshStableSnapshot(page, sceneId, processedState);
-      if (!environment.current) environment.current = await readEnvironment(page, browserName);
+      if (!environment.current) {
+        environment.current = await readEnvironment(page, browserName);
+        if (
+          environment.current.hardwareQualification.required &&
+          !environment.current.hardwareQualification.hardwareRendererQualified
+        ) {
+          await writeBenchmarkOutput(environment.current, records);
+          const renderer = environment.current.webgl.renderer ?? "unavailable";
+          throw new Error(
+            `Hardware scene-capacity benchmark requires a qualified renderer; detected ${renderer}. ` +
+            "Use stable Google Chrome with hardware acceleration enabled and rerun.",
+          );
+        }
+      }
       records.push({
         sceneId,
         mode: "processed",
@@ -464,18 +546,7 @@ test.describe("scene capacity benchmark", () => {
     }
 
     expect(environment.current).not.toBeNull();
-    const output = {
-      environment: environment.current,
-      records,
-      notes: {
-        frameCadence: "Observed active Ground Glass R3F frame cadence while the simulator viewport and UI are mounted; it is not pure GPU render time.",
-        rendererResources: "rendererResources.geometries and rendererResources.textures are renderer resource counts, not byte-accurate VRAM measurements.",
-        sampling: `Every timing record waits for a fresh post-state window of at least ${GROUND_GLASS_PROFILING_WINDOW_SIZE} valid backend samples after contentfulness and mode activation.`,
-      },
-    };
-    await mkdir(benchmarkOutputDirectory, { recursive: true });
-    await writeFile(`${benchmarkOutputDirectory}/scene-capacity-benchmark.json`, JSON.stringify(output, null, 2));
-    await writeFile(`${benchmarkOutputDirectory}/scene-capacity-benchmark.md`, markdownSummary(environment.current as BenchmarkEnvironment, records));
+    await writeBenchmarkOutput(environment.current as BenchmarkEnvironment, records);
     expect(records.length).toBe(benchmarkScenes.length + loupeScenes.size + rawScenes.size);
   });
 });
