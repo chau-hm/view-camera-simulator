@@ -245,6 +245,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
   it("shows the Interior Corner Rise composition state from the public free-mode control", async () => {
     render(workspaceRoute("free", "interior-corner", null));
 
+    fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
     const feedback = await screen.findByTestId("interior-corner-rise-composition-feedback");
     const focusFeedback = await screen.findByTestId("interior-corner-focus-feedback");
     expect(feedback).toHaveTextContent(/upper architecture is still too close to the top edge/i);
@@ -442,6 +443,8 @@ describe("SimulatorWorkspace viewport expansion", () => {
 
   it("keeps one SceneRenderer mounted while the workspace hides and restores other main content", async () => {
     const { container } = render(workspace());
+    expect(screen.getByTestId("learning-overlay-panel")).toBeInTheDocument();
+    expect(container.querySelector(".simulator-task-feedback-grid")).not.toBeInTheDocument();
     const originalSceneRenderer = screen.getByTestId("scene-canvas");
     const expand = screen.getByRole("button", { name: "Expand 3D Scene" });
     const normalHost = container.querySelector(".scene-viewport-host");
@@ -460,7 +463,8 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.queryByLabelText("GroundGlassColumn")).not.toBeInTheDocument();
     expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
     expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Task")).not.toBeInTheDocument();
+    expect(screen.getByTestId("learning-overlay-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
@@ -539,7 +543,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     view.rerender(workspaceRoute("guided", "table-tilt", "tilt-01"));
     const taskChangeExpand = await screen.findByRole("button", { name: "Expand 3D Scene" });
     expect(taskChangeExpand).not.toHaveFocus();
-    expect(screen.getByLabelText("Task")).toBeInTheDocument();
+    expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
   });
 
   it("keeps one Ground Glass renderer and its interaction state through expansion", async () => {
@@ -564,7 +568,8 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getByRole("region", { name: "Pan Ground Glass" })).toHaveAttribute("data-zoomed", "true");
     expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
     expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Task")).not.toBeInTheDocument();
+    expect(screen.getByTestId("learning-overlay-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
