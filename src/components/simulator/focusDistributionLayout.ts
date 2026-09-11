@@ -24,12 +24,10 @@ export type FocusDistributionGridPosition = {
   columnIndex: GridIndex;
 };
 
-type FocusDistributionTargetLabelKey = ReadoutMessageKey | SimulatorMessageKey;
-
 export type ResolvedFocusDistributionTarget = FocusDistributionTarget & {
   gridPosition: FocusDistributionGridPosition;
   /** Existing scene target translation, when the target has one. */
-  targetLabelKey?: FocusDistributionTargetLabelKey;
+  targetLabelKey?: SimulatorMessageKey;
 };
 
 export type FocusDistributionGridCell = FocusDistributionGridPosition & {
@@ -38,36 +36,26 @@ export type FocusDistributionGridCell = FocusDistributionGridPosition & {
 };
 
 export type FocusDistributionUnplacedTarget = FocusDistributionTarget & {
-  targetLabelKey?: FocusDistributionTargetLabelKey;
+  targetLabelKey?: SimulatorMessageKey;
 };
 
 const positionLabelKeys: readonly (readonly ReadoutMessageKey[])[] = [
   [
-    readoutMessageKeys.focusDistribution.positions.nearLeft,
-    readoutMessageKeys.focusDistribution.positions.nearCentre,
-    readoutMessageKeys.focusDistribution.positions.nearRight,
+    readoutMessageKeys.focusDistribution.positions.upperLeft,
+    readoutMessageKeys.focusDistribution.positions.upperCentre,
+    readoutMessageKeys.focusDistribution.positions.upperRight,
   ],
   [
     readoutMessageKeys.focusDistribution.positions.middleLeft,
-    readoutMessageKeys.focusDistribution.positions.middle,
+    readoutMessageKeys.focusDistribution.positions.centre,
     readoutMessageKeys.focusDistribution.positions.middleRight,
   ],
   [
-    readoutMessageKeys.focusDistribution.positions.farLeft,
-    readoutMessageKeys.focusDistribution.positions.farCentre,
-    readoutMessageKeys.focusDistribution.positions.farRight,
+    readoutMessageKeys.focusDistribution.positions.lowerLeft,
+    readoutMessageKeys.focusDistribution.positions.lowerCentre,
+    readoutMessageKeys.focusDistribution.positions.lowerRight,
   ],
 ];
-
-const obliqueTabletopTargetLabelKeys: Readonly<Record<string, ReadoutMessageKey>> = {
-  "near-left": readoutMessageKeys.focusDistribution.positions.nearLeft,
-  "near-centre": readoutMessageKeys.focusDistribution.positions.nearCentre,
-  "near-right": readoutMessageKeys.focusDistribution.positions.nearRight,
-  middle: readoutMessageKeys.focusDistribution.positions.middle,
-  "far-left": readoutMessageKeys.focusDistribution.positions.farLeft,
-  "far-centre": readoutMessageKeys.focusDistribution.positions.farCentre,
-  "far-right": readoutMessageKeys.focusDistribution.positions.farRight,
-};
 
 /**
  * Quantize an actual Ground Glass display coordinate into the compact panel.
@@ -99,10 +87,7 @@ export function quantizeFocusDistributionDisplayUv(
 const targetLabelKeyForScene = (
   sceneId: string,
   targetId: string,
-): FocusDistributionTargetLabelKey | undefined =>
-  sceneId === "oblique-tabletop"
-    ? obliqueTabletopTargetLabelKeys[targetId]
-    : getSceneGeometryTargetMessageKey(sceneId, targetId);
+): SimulatorMessageKey | undefined => getSceneGeometryTargetMessageKey(sceneId, targetId);
 
 export function createFocusDistributionLayout(
   sceneId: string,
