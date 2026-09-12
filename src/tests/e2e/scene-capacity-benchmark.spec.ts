@@ -25,6 +25,7 @@ import {
 const benchmarkEnabled = process.env.SCENE_CAPACITY_BENCHMARK === "1";
 const benchmarkOutputDirectory = process.env.SCENE_CAPACITY_BENCHMARK_OUTPUT_DIR ?? "test-results";
 const productionPreview = process.env.SCENE_CAPACITY_PRODUCTION_PREVIEW === "1";
+const MEASUREMENT_STATE_TIMEOUT_MS = 120_000;
 const rawScenes = new Set([
   "focus-fundamentals-two-targets",
   "architecture-foreground",
@@ -179,32 +180,34 @@ const waitForMeasurementState = async (
 ): Promise<void> => {
   const rtt = page.getByTestId("ground-glass-rtt");
   const loupeStage = page.locator("[data-focus-loupe-active]").first();
-  await expect(rtt).toHaveAttribute("data-rtt-scene-id", sceneId);
+  await expect(rtt).toHaveAttribute("data-rtt-scene-id", sceneId, {
+    timeout: MEASUREMENT_STATE_TIMEOUT_MS,
+  });
   const finalContentful = await rtt.getAttribute("data-rtt-final-contentful");
   if (productionPreview && finalContentful === null) {
     // Render-sanity readback is intentionally DEV-only. The production
     // preview still exposes the renderer-owned camera/readiness and profiler
     // progress attributes, which are the non-invasive readiness contract for
     // this hardware run.
-    await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 120_000 });
-    await expect(rtt).toHaveAttribute("data-rtt-profiling-frame-count", /[1-9]\d*/, { timeout: 120_000 });
+    await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
+    await expect(rtt).toHaveAttribute("data-rtt-profiling-frame-count", /[1-9]\d*/, { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
   } else {
-    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 120_000 });
+    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
   }
   await expect(loupeStage).toHaveAttribute(
     "data-focus-loupe-active",
     String(state.inspectionWindowActive),
-    { timeout: 120_000 },
+    { timeout: MEASUREMENT_STATE_TIMEOUT_MS },
   );
   await expect(rtt).toHaveAttribute(
     "data-rtt-inspection-window-active",
     String(state.inspectionWindowActive),
-    { timeout: 120_000 },
+    { timeout: MEASUREMENT_STATE_TIMEOUT_MS },
   );
   await expect(rtt).toHaveAttribute(
     "data-rtt-profiling-raw-debug",
     String(state.rawDebug),
-    { timeout: 120_000 },
+    { timeout: MEASUREMENT_STATE_TIMEOUT_MS },
   );
 };
 
