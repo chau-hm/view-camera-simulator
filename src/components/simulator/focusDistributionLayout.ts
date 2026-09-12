@@ -32,7 +32,8 @@ export type ResolvedFocusDistributionTarget = FocusDistributionTarget & {
 
 export type FocusDistributionGridCell = FocusDistributionGridPosition & {
   positionLabelKey: ReadoutMessageKey;
-  target?: ResolvedFocusDistributionTarget;
+  /** Every visible target that truthfully quantizes to this display cell. */
+  targets: ResolvedFocusDistributionTarget[];
 };
 
 export type FocusDistributionUnplacedTarget = FocusDistributionTarget & {
@@ -89,6 +90,26 @@ const targetLabelKeyForScene = (
   targetId: string,
 ): SimulatorMessageKey | undefined => getSceneGeometryTargetMessageKey(sceneId, targetId);
 
+/**
+ * Keep colliding targets in a stable spatial order without using sharpness as
+ * a proxy for position. The display coordinates are the only spatial source;
+ * the id is only the deterministic final tie-break.
+ */
+const compareTargetsByDisplayPosition = (
+  first: ResolvedFocusDistributionTarget,
+  second: ResolvedFocusDistributionTarget,
+): number => {
+  const firstV = first.displayUv?.v ?? Number.POSITIVE_INFINITY;
+  const secondV = second.displayUv?.v ?? Number.POSITIVE_INFINITY;
+  if (firstV !== secondV) return firstV - secondV;
+
+  const firstU = first.displayUv?.u ?? Number.POSITIVE_INFINITY;
+  const secondU = second.displayUv?.u ?? Number.POSITIVE_INFINITY;
+  if (firstU !== secondU) return firstU - secondU;
+
+  return first.id.localeCompare(second.id);
+};
+
 export function createFocusDistributionLayout(
   sceneId: string,
   focusTargets: readonly FocusDistributionTarget[],
@@ -103,6 +124,7 @@ export function createFocusDistributionLayout(
       rowIndex,
       columnIndex,
       positionLabelKey: positionLabelKeys[rowIndex][columnIndex],
+      targets: [],
     };
   });
   const unplaced: FocusDistributionUnplacedTarget[] = [];
@@ -118,19 +140,14 @@ export function createFocusDistributionLayout(
 
     const cellIndex = gridPosition.rowIndex * 3 + gridPosition.columnIndex;
     const cell = cells[cellIndex];
-    if (cell.target) {
-      // Keep the real score available in the compact fallback instead of
-      // moving it into a visually unrelated cell.
-      unplaced.push({ ...target, targetLabelKey });
-      continue;
-    }
-
-    cell.target = {
+    cell.targets.push({
       ...target,
       gridPosition,
       targetLabelKey,
-    };
+    });
   }
+
+  cells.forEach((cell) => cell.targets.sort(compareTargetsByDisplayPosition));
 
   return {
     rows: [0, 1, 2].map((rowIndex) =>

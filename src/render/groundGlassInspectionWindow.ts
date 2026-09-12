@@ -1,4 +1,8 @@
 import type { GroundGlassPanOffset } from "./groundGlassStageTransform";
+import {
+  mapGroundGlassUvToDisplayUv,
+  type GroundGlassPreviewMode,
+} from "./groundGlassTargetProjection";
 
 /**
  * A film-space inspection window. u/v use the complete film image as their
@@ -13,7 +17,7 @@ export type GroundGlassInspectionWindow = {
   heightFraction: number;
 };
 
-export type GroundGlassInspectionPreviewMode = "raw" | "upright";
+export type GroundGlassInspectionPreviewMode = GroundGlassPreviewMode;
 
 export type GroundGlassFrustum = {
   left: number;
@@ -124,19 +128,23 @@ export const resolveSampledFilmDimensionsMm = (input: {
 });
 
 /**
- * Stage pan coordinates follow the displayed Ground Glass image. Raw RTT
- * presentation mirrors both axes before display, so convert that displayed
- * window back into the camera/film coordinate system before cropping. Upright
- * presentation already uses the same coordinate orientation as the film.
+ * Stage pan coordinates follow the displayed Ground Glass image. The same
+ * physical-film-to-display transform used for focus targets is an involution,
+ * so applying it to the displayed window centre maps it back to the camera /
+ * film coordinate system without maintaining a second Raw/Upright rule.
  */
 export const mapGroundGlassInspectionWindowToFilmSpace = (
   window: GroundGlassInspectionWindow,
   previewMode: GroundGlassInspectionPreviewMode,
 ): GroundGlassInspectionWindow => {
-  if (!window.active || previewMode === "upright") return window;
+  if (!window.active) return window;
+  const filmCenter = mapGroundGlassUvToDisplayUv(
+    { u: window.centerU, v: window.centerV },
+    previewMode,
+  );
   return {
     ...window,
-    centerU: 1 - window.centerU,
-    centerV: 1 - window.centerV,
+    centerU: filmCenter.u,
+    centerV: filmCenter.v,
   };
 };

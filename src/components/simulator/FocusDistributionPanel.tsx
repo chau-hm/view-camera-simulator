@@ -4,6 +4,8 @@ import "../../i18n";
 import { readoutMessageKeys } from "../../i18n/readoutMessageKeys";
 import {
   createFocusDistributionLayout,
+  type FocusDistributionGridCell,
+  type ResolvedFocusDistributionTarget,
   type FocusDistributionTarget,
 } from "./focusDistributionLayout";
 import type { GroundGlassPreviewMode } from "../../render/groundGlassTargetProjection";
@@ -80,6 +82,85 @@ export const FocusDistributionPanel = ({
   );
   const metricLabel = metric ? t(focusTargetMetricKey(metric)) : null;
   const statusForTarget = (status: string | undefined) => t(focusTargetStatusKey(status));
+  const targetLabelFor = (target: Pick<ResolvedFocusDistributionTarget, "targetLabelKey">) =>
+    target.targetLabelKey
+      ? t(target.targetLabelKey)
+      : t(readoutMessageKeys.focusDistribution.unplacedTarget);
+
+  const targetAccessibleLabel = (
+    target: ResolvedFocusDistributionTarget,
+    positionLabel: string,
+  ) => {
+    const display = clampSharpnessPercent(target.sharpnessPercent);
+    const targetLabel = targetLabelFor(target);
+    const statusLabel = statusForTarget(target.status);
+    const closestLabel = target.id === closestTargetId
+      ? ` · ${t(readoutMessageKeys.focusTargets.closestPoint)}`
+      : "";
+    return t(readoutMessageKeys.focusDistribution.targetAria, {
+      target: `${positionLabel} · ${targetLabel}`,
+      percent: `${display}%`,
+      status: statusLabel,
+      closest: closestLabel,
+    });
+  };
+
+  const renderTarget = (
+    target: ResolvedFocusDistributionTarget,
+    positionLabel: string,
+  ) => {
+    const display = clampSharpnessPercent(target.sharpnessPercent);
+    const targetLabel = targetLabelFor(target);
+
+    return (
+      <div
+        aria-label={targetAccessibleLabel(target, positionLabel)}
+        className={`focus-distribution-cell__target ${statusClass(target.status)}`}
+        data-focus-target-id={target.id}
+        key={target.id}
+        role="group"
+      >
+        <span className="focus-distribution-cell__target-name" title={targetLabel}>{targetLabel}</span>
+        <span className="focus-distribution-cell__value">
+          {display}%
+          <span aria-hidden="true" className="focus-distribution-cell__status">
+            {statusGlyph(target.status)}
+          </span>
+        </span>
+      </div>
+    );
+  };
+
+  const renderCell = (cell: FocusDistributionGridCell) => {
+    if (cell.targets.length === 0) {
+      return (
+        <td
+          aria-hidden="true"
+          className="focus-distribution-cell focus-distribution-cell--empty"
+          key={`${cell.rowIndex}-${cell.columnIndex}`}
+        />
+      );
+    }
+
+    const positionLabel = t(cell.positionLabelKey);
+    const cellDisplay = Math.max(
+      ...cell.targets.map((target) => clampSharpnessPercent(target.sharpnessPercent)),
+    );
+    const stackClass = cell.targets.length > 1 ? " focus-distribution-cell--stacked" : "";
+
+    return (
+      <td
+        className={`focus-distribution-cell${stackClass}`}
+        key={`${cell.rowIndex}-${cell.columnIndex}`}
+        style={focusDistributionCellStyle(cellDisplay)}
+      >
+        <span className="focus-distribution-cell__position" title={positionLabel}>{positionLabel}</span>
+        <div className="focus-distribution-cell__targets">
+          {cell.targets.map((target) => renderTarget(target, positionLabel))}
+        </div>
+      </td>
+    );
+  };
 
   return (
     <section
@@ -106,46 +187,7 @@ export const FocusDistributionPanel = ({
         <tbody>
           {layout.rows.map((row, rowIndex) => (
             <tr key={rowIndex}>
-              {row.map((cell) => {
-                if (!cell.target) {
-                  return <td aria-hidden="true" className="focus-distribution-cell focus-distribution-cell--empty" key={`${cell.rowIndex}-${cell.columnIndex}`} />;
-                }
-
-                const target = cell.target;
-                const display = clampSharpnessPercent(target.sharpnessPercent);
-                const positionLabel = t(cell.positionLabelKey);
-                const targetLabel = target.targetLabelKey ? t(target.targetLabelKey) : positionLabel;
-                const accessibleTargetLabel = targetLabel === positionLabel
-                  ? positionLabel
-                  : `${positionLabel} · ${targetLabel}`;
-                const statusLabel = statusForTarget(target.status);
-                const closestLabel = target.id === closestTargetId
-                  ? ` · ${t(readoutMessageKeys.focusTargets.closestPoint)}`
-                  : "";
-
-                return (
-                  <td
-                    aria-label={t(readoutMessageKeys.focusDistribution.targetAria, {
-                      target: accessibleTargetLabel,
-                      percent: `${display}%`,
-                      status: statusLabel,
-                      closest: closestLabel,
-                    })}
-                    className={`focus-distribution-cell ${statusClass(target.status)}`}
-                    data-focus-target-id={target.id}
-                    key={`${cell.rowIndex}-${cell.columnIndex}`}
-                    style={focusDistributionCellStyle(display)}
-                  >
-                    <span className="focus-distribution-cell__position" title={positionLabel}>{targetLabel}</span>
-                    <span className="focus-distribution-cell__value">
-                      {display}%
-                      <span aria-hidden="true" className="focus-distribution-cell__status">
-                        {statusGlyph(target.status)}
-                      </span>
-                    </span>
-                  </td>
-                );
-              })}
+              {row.map(renderCell)}
             </tr>
           ))}
         </tbody>
@@ -158,9 +200,7 @@ export const FocusDistributionPanel = ({
         >
           {layout.unplaced.map((target) => {
             const display = clampSharpnessPercent(target.sharpnessPercent);
-            const targetLabel = target.targetLabelKey
-              ? t(target.targetLabelKey)
-              : t(readoutMessageKeys.focusDistribution.unplacedTarget);
+            const targetLabel = targetLabelFor(target);
             const statusLabel = statusForTarget(target.status);
             return (
               <span
@@ -175,6 +215,7 @@ export const FocusDistributionPanel = ({
                 className={`focus-distribution-panel__additional-item ${statusClass(target.status)}`}
                 data-focus-target-id={target.id}
                 key={target.id}
+                role="group"
               >
                 <span>{targetLabel}</span>
                 <strong>{display}%</strong>

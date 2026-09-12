@@ -97,6 +97,44 @@ test("Table Tilt Ground Glass uses one RTT surface", async ({ page }) => {
   await expect(viewport.getByTestId("ground-glass-focus-ring")).toHaveCount(0);
 });
 
+test("Table Tilt Focus Distribution follows the displayed Raw/Upright orientation", async ({ page }) => {
+  await page.goto("/simulator/free/table-tilt");
+  const panel = page.getByTestId("focus-distribution-panel");
+  await expect(panel).toBeVisible();
+
+  const readTargetCell = async (targetId: string) =>
+    panel.locator(`[data-focus-target-id="${targetId}"]`).evaluate((element) => {
+      const cell = element.closest("td");
+      const row = cell?.closest("tr");
+      if (!cell || !row) throw new Error(`Target ${element.getAttribute("data-focus-target-id")} is not in a grid cell`);
+      return {
+        rowIndex: Array.from(row.parentElement?.children ?? []).indexOf(row),
+        columnIndex: Array.from(row.children).indexOf(cell),
+        label: element.getAttribute("aria-label"),
+      };
+    });
+
+  const targetIds = ["near-cup", "mid-notebook", "far-book"];
+  const rawCells = await Promise.all(targetIds.map(readTargetCell));
+  await expect(page.getByTestId("focus-distribution-orientation")).toHaveText("Raw");
+  expect(new Set(rawCells.map(({ rowIndex, columnIndex }) => `${rowIndex}:${columnIndex}`)).size).toBe(1);
+
+  await page.getByRole("radio", { name: "Upright Assist" }).check();
+  await expect(page.getByTestId("focus-distribution-orientation")).toHaveText("Upright");
+  const uprightCells = await Promise.all(targetIds.map(readTargetCell));
+
+  uprightCells.forEach((cell, index) => {
+    expect(cell.rowIndex).toBe(2 - rawCells[index].rowIndex);
+    expect(cell.columnIndex).toBe(2 - rawCells[index].columnIndex);
+    expect(cell.label).toContain(["Near card", "Middle notebook", "Far chart"][index]);
+    expect(cell.label?.match(/\d+%/)?.[0]).toBe(rawCells[index].label?.match(/\d+%/)?.[0]);
+  });
+
+  await page.getByRole("radio", { name: "Raw Ground Glass" }).check();
+  await expect(page.getByTestId("focus-distribution-orientation")).toHaveText("Raw");
+  await expect.poll(async () => (await readTargetCell("near-cup")).rowIndex).toBe(rawCells[0].rowIndex);
+});
+
 test("Table Tilt zero-tilt point focus moves from near to middle to far", async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto("/simulator/free/table-tilt");
