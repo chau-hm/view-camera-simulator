@@ -768,7 +768,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     disposeRegisteredRttSubject("shelf-swing", second);
 
     expect(getSceneSubjectRegistration("table-tilt")?.disposeRttGroup).toBeDefined();
-    expect(getSceneSubjectRegistration("architecture-rise")?.disposeRttGroup).toBeUndefined();
+    expect(getSceneSubjectRegistration("architecture-rise")?.disposeRttGroup).toBeDefined();
   });
 
   it("removes and disposes a Shelf group before creating a fresh replacement", () => {

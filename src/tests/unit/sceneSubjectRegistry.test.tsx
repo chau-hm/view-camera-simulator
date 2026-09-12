@@ -385,7 +385,7 @@ describe("scene subject registry", () => {
     expect(registration?.showReferenceCamera).toBe(false);
   });
 
-  it.each(["shelf-swing", "table-tilt", "oblique-architecture"])(
+  it.each(["shelf-swing", "table-tilt", "oblique-architecture", "architecture-rise"])(
     "uses the explicit unique-resource disposer for %s",
     (sceneId) => {
       const group = createRegisteredRttSubject(sceneId)!;
@@ -398,7 +398,7 @@ describe("scene subject registry", () => {
     },
   );
 
-  it.each(["focus-fundamentals-two-targets", "architecture-rise"])(
+  it.each(["focus-fundamentals-two-targets"])(
     "does not generically dispose shared factory resources for %s",
     (sceneId) => {
       expect(getSceneSubjectRegistration(sceneId)?.disposeRttGroup).toBeUndefined();
