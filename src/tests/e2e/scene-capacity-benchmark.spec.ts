@@ -21,6 +21,11 @@ import {
   selectQualifyingFreshSnapshot,
   type ProfilingProgressMarker,
 } from "../helpers/sceneCapacityBenchmarkReadiness";
+import {
+  runtimeFromMeasurement,
+  type BenchmarkRuntimeMetadata,
+  type MeasurementStateEvidence,
+} from "../helpers/sceneCapacityBenchmarkRuntime";
 
 const benchmarkEnabled = process.env.SCENE_CAPACITY_BENCHMARK === "1";
 const benchmarkOutputDirectory = process.env.SCENE_CAPACITY_BENCHMARK_OUTPUT_DIR ?? "test-results";
@@ -67,13 +72,7 @@ type BenchmarkRecord = {
   mode: BenchmarkMode;
   snapshot: SceneCapacitySnapshot;
   sampling: BenchmarkSamplingEvidence;
-  runtime: {
-    finalContentful: boolean | null;
-    internalResolution: [number, number] | null;
-    gatherResolution: [number, number] | null;
-    profilingBackend: string | null;
-    inspectionWindowActive: boolean | null;
-  };
+  runtime: BenchmarkRuntimeMetadata;
 };
 
 type BenchmarkEnvironment = {
@@ -177,13 +176,14 @@ const waitForMeasurementState = async (
   page: Page,
   sceneId: string,
   state: RequestedMeasurementState,
-): Promise<void> => {
+): Promise<MeasurementStateEvidence> => {
   const rtt = page.getByTestId("ground-glass-rtt");
   const loupeStage = page.locator("[data-focus-loupe-active]").first();
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", sceneId, {
     timeout: MEASUREMENT_STATE_TIMEOUT_MS,
   });
   const finalContentful = await rtt.getAttribute("data-rtt-final-contentful");
+  let finalContentfulEvidence: boolean | null;
   if (productionPreview && finalContentful === null) {
     // Render-sanity readback is intentionally DEV-only. The production
     // preview still exposes the renderer-owned camera/readiness and profiler
@@ -191,8 +191,10 @@ const waitForMeasurementState = async (
     // this hardware run.
     await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
     await expect(rtt).toHaveAttribute("data-rtt-profiling-frame-count", /[1-9]\d*/, { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
+    finalContentfulEvidence = null;
   } else {
     await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
+    finalContentfulEvidence = true;
   }
   await expect(loupeStage).toHaveAttribute(
     "data-focus-loupe-active",
@@ -209,6 +211,10 @@ const waitForMeasurementState = async (
     String(state.rawDebug),
     { timeout: MEASUREMENT_STATE_TIMEOUT_MS },
   );
+  return {
+    finalContentful: finalContentfulEvidence,
+    inspectionWindowActive: state.inspectionWindowActive,
+  };
 };
 
 const readProgressMarker = (snapshot: SceneCapacitySnapshot | null): ProfilingProgressMarker | null => {
@@ -321,8 +327,12 @@ const waitForFreshStableSnapshot = async (
   page: Page,
   sceneId: string,
   state: RequestedMeasurementState,
-): Promise<{ snapshot: SceneCapacitySnapshot; sampling: BenchmarkSamplingEvidence }> => {
-  await waitForMeasurementState(page, sceneId, state);
+): Promise<{
+  snapshot: SceneCapacitySnapshot;
+  sampling: BenchmarkSamplingEvidence;
+  runtime: BenchmarkRuntimeMetadata;
+}> => {
+  const measurementState = await waitForMeasurementState(page, sceneId, state);
   const initialMarker = await waitForProgressMarker(page, sceneId, state);
   const { snapshot, marker: finalMarker } = await waitForFreshSnapshot(
     page,
@@ -333,6 +343,7 @@ const waitForFreshStableSnapshot = async (
   assertCapacitySnapshot(snapshot, sceneId, state.rawDebug);
   return {
     snapshot,
+    runtime: runtimeFromMeasurement(snapshot, measurementState),
     sampling: {
       backend: finalMarker.backend,
       progressStart: initialMarker.progress,
@@ -391,35 +402,6 @@ const readEnvironment = async (page: Page, browserName: string): Promise<Benchma
       ...hardwareQualification,
     },
     ...browserInfo,
-  };
-};
-
-const readRuntime = async (page: Page): Promise<BenchmarkRecord["runtime"]> => {
-  const rtt = page.getByTestId("ground-glass-rtt");
-  const attrs = await rtt.evaluate((element) => ({
-    finalContentful: element.getAttribute("data-rtt-final-contentful"),
-    internalWidth: element.getAttribute("data-rtt-internal-width"),
-    internalHeight: element.getAttribute("data-rtt-internal-height"),
-    gatherWidth: element.getAttribute("data-rtt-blur-target-width"),
-    gatherHeight: element.getAttribute("data-rtt-blur-target-height"),
-    profilingBackend: element.getAttribute("data-rtt-profiling-backend"),
-    inspectionWindowActive: element.getAttribute("data-rtt-inspection-window-active"),
-  }));
-  const parseNumber = (value: string | null): number | null => {
-    const parsed = value === null ? Number.NaN : Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  };
-  const internalWidth = parseNumber(attrs.internalWidth);
-  const internalHeight = parseNumber(attrs.internalHeight);
-  const gatherWidth = parseNumber(attrs.gatherWidth);
-  const gatherHeight = parseNumber(attrs.gatherHeight);
-  return {
-    finalContentful: attrs.finalContentful === null ? null : attrs.finalContentful === "true",
-    internalResolution: internalWidth !== null && internalHeight !== null ? [internalWidth, internalHeight] : null,
-    gatherResolution: gatherWidth !== null && gatherHeight !== null ? [gatherWidth, gatherHeight] : null,
-    profilingBackend: attrs.profilingBackend,
-    inspectionWindowActive:
-      attrs.inspectionWindowActive === null ? null : attrs.inspectionWindowActive === "true",
   };
 };
 
@@ -548,7 +530,7 @@ test.describe("scene capacity benchmark", () => {
         mode: "processed",
         snapshot: processed.snapshot,
         sampling: processed.sampling,
-        runtime: await readRuntime(page),
+        runtime: processed.runtime,
       });
 
       if (loupeScenes.has(sceneId)) {
@@ -570,7 +552,7 @@ test.describe("scene capacity benchmark", () => {
           mode: "processed-loupe",
           snapshot: loupe.snapshot,
           sampling: loupe.sampling,
-          runtime: await readRuntime(page),
+          runtime: loupe.runtime,
         });
       }
 
@@ -594,7 +576,7 @@ test.describe("scene capacity benchmark", () => {
           mode: "raw-rtt",
           snapshot: raw.snapshot,
           sampling: raw.sampling,
-          runtime: await readRuntime(page),
+          runtime: raw.runtime,
         });
       }
     }
