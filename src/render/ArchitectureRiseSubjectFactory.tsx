@@ -1,551 +1,551 @@
 /* eslint-disable react-refresh/only-export-components */
+import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import React from "react";
-import { toWorld } from "./rttUtils";
-import geometry, { referenceObjects } from "../scenes/architectureRiseGeometry";
+import geometry, {
+  architectureRiseSideWindowBays,
+  architectureRiseWindowBays,
+  getArchitectureRisePrimaryFacadePlacement,
+  referenceObjects,
+} from "../scenes/architectureRiseGeometry";
 import type { ReferenceObjectDef } from "../scenes/architectureRiseGeometry";
+import {
+  createFocusFriendlyMaterial,
+  disposeTeachingSubjectResources,
+} from "./TeachingMaterials";
+import { toWorld } from "./rttUtils";
 
-let buildingGeom: THREE.BoxGeometry | null = null;
-let mullionGeom: THREE.BoxGeometry | null = null;
-let floorPlaneGeom: THREE.PlaneGeometry | null = null;
-let buildingMaterial: THREE.MeshStandardMaterial | null = null;
-let mullionMaterial: THREE.MeshStandardMaterial | null = null;
-let groundMaterial: THREE.MeshStandardMaterial | null = null;
-let facadeFineDetailGeom: THREE.BoxGeometry | null = null;
-let facadeFinePanelMaterial: THREE.MeshBasicMaterial | null = null;
-let facadeFineFrameMaterial: THREE.MeshBasicMaterial | null = null;
-let facadeFineLineMaterial: THREE.MeshBasicMaterial | null = null;
-let contextSideMassGeom: THREE.BoxGeometry | null = null;
-let contextSideWindowGeom: THREE.BoxGeometry | null = null;
-let contextSideWindowSillGeom: THREE.BoxGeometry | null = null;
-let contextEntryPanelGeom: THREE.BoxGeometry | null = null;
-let contextEntryJambGeom: THREE.BoxGeometry | null = null;
-let contextEntryLintelGeom: THREE.BoxGeometry | null = null;
-let contextPlinthGeom: THREE.BoxGeometry | null = null;
-let contextPavementSeamGeom: THREE.BoxGeometry | null = null;
-let contextSideMassMaterial: THREE.MeshStandardMaterial | null = null;
-let contextTrimMaterial: THREE.MeshStandardMaterial | null = null;
-let contextRecessMaterial: THREE.MeshStandardMaterial | null = null;
-let contextPavementMaterial: THREE.MeshStandardMaterial | null = null;
+type ArchitectureRiseResources = {
+  box: THREE.BoxGeometry;
+  ground: THREE.PlaneGeometry;
+  building: THREE.MeshStandardMaterial;
+  facade: THREE.MeshStandardMaterial;
+  roof: THREE.MeshStandardMaterial;
+  trim: THREE.MeshStandardMaterial;
+  glass: THREE.MeshStandardMaterial;
+  recess: THREE.MeshStandardMaterial;
+  pavement: THREE.MeshStandardMaterial;
+  groundMaterial: THREE.MeshStandardMaterial;
+  reference: THREE.MeshStandardMaterial;
+  referenceLight: THREE.MeshStandardMaterial;
+  focusDark: THREE.MeshBasicMaterial;
+  focusLight: THREE.MeshBasicMaterial;
+  focusCrosshair: THREE.MeshBasicMaterial;
+};
 
-function ensureResources() {
-  if (!buildingGeom) buildingGeom = new THREE.BoxGeometry(toWorld(geometry.building.width), toWorld(geometry.building.height), toWorld(geometry.building.depth));
-  if (!mullionGeom) mullionGeom = new THREE.BoxGeometry(toWorld(geometry.mullionWidthMm), toWorld(geometry.building.height - 80), toWorld(geometry.facadeDetailThicknessMm));
-  if (!floorPlaneGeom) floorPlaneGeom = new THREE.PlaneGeometry(toWorld(geometry.ground.width), toWorld(geometry.ground.depth));
-  if (!buildingMaterial) buildingMaterial = new THREE.MeshStandardMaterial({ color: "#94a3b8", roughness: 0.9, metalness: 0.05 });
-  if (!mullionMaterial) mullionMaterial = new THREE.MeshStandardMaterial({ color: "#334155", roughness: 0.92, metalness: 0 });
-  if (!groundMaterial) groundMaterial = new THREE.MeshStandardMaterial({ color: "#e6eef7", roughness: 1, metalness: 0 });
-  if (!facadeFineDetailGeom) facadeFineDetailGeom = new THREE.BoxGeometry(1, 1, 1);
-  if (!facadeFinePanelMaterial) facadeFinePanelMaterial = new THREE.MeshBasicMaterial({ color: "#294354" });
-  if (!facadeFineFrameMaterial) facadeFineFrameMaterial = new THREE.MeshBasicMaterial({ color: "#dbeafe" });
-  if (!facadeFineLineMaterial) facadeFineLineMaterial = new THREE.MeshBasicMaterial({ color: "#f8fafc" });
-  if (!contextSideMassGeom) contextSideMassGeom = new THREE.BoxGeometry(toWorld(520), toWorld(3000), toWorld(760));
-  if (!contextSideWindowGeom) contextSideWindowGeom = new THREE.BoxGeometry(toWorld(18), toWorld(720), toWorld(430));
-  if (!contextSideWindowSillGeom) contextSideWindowSillGeom = new THREE.BoxGeometry(toWorld(70), toWorld(36), toWorld(520));
-  if (!contextEntryPanelGeom) contextEntryPanelGeom = new THREE.BoxGeometry(toWorld(480), toWorld(1120), toWorld(26));
-  if (!contextEntryJambGeom) contextEntryJambGeom = new THREE.BoxGeometry(toWorld(72), toWorld(1200), toWorld(90));
-  if (!contextEntryLintelGeom) contextEntryLintelGeom = new THREE.BoxGeometry(toWorld(652), toWorld(72), toWorld(90));
-  if (!contextPlinthGeom) contextPlinthGeom = new THREE.BoxGeometry(toWorld(3500), toWorld(180), toWorld(260));
-  if (!contextPavementSeamGeom) contextPavementSeamGeom = new THREE.BoxGeometry(toWorld(4200), toWorld(10), toWorld(18));
-  if (!contextSideMassMaterial) contextSideMassMaterial = new THREE.MeshStandardMaterial({ color: "#64748b", roughness: 0.9 });
-  if (!contextTrimMaterial) contextTrimMaterial = new THREE.MeshStandardMaterial({ color: "#dbeafe", roughness: 0.82 });
-  if (!contextRecessMaterial) contextRecessMaterial = new THREE.MeshStandardMaterial({ color: "#25364a", roughness: 0.72 });
-  if (!contextPavementMaterial) contextPavementMaterial = new THREE.MeshStandardMaterial({ color: "#94a3b8", roughness: 0.98 });
-}
+const standard = (
+  color: THREE.ColorRepresentation,
+  roughness = 0.86,
+  metalness = 0,
+): THREE.MeshStandardMaterial =>
+  new THREE.MeshStandardMaterial({ color, roughness, metalness });
 
-const addFacadeFineDetail = (parent: THREE.Group): void => {
+const createResources = (): ArchitectureRiseResources => ({
+  box: new THREE.BoxGeometry(1, 1, 1),
+  ground: new THREE.PlaneGeometry(toWorld(geometry.ground.width), toWorld(geometry.ground.depth)),
+  building: standard("#8798a6", 0.92, 0.04),
+  facade: createFocusFriendlyMaterial({
+    pattern: "fine-grid",
+    primaryColor: "#b7c3c9",
+    secondaryColor: "#a7b4bd",
+    repeat: [7, 8],
+    roughness: 0.9,
+  }),
+  roof: standard("#c7d1d7", 0.78),
+  trim: standard("#e1e8eb", 0.72),
+  glass: standard("#294b5d", 0.34, 0.12),
+  recess: standard("#203847", 0.68),
+  pavement: standard("#697b86", 0.97),
+  groundMaterial: standard("#d2dce1", 0.99),
+  reference: standard("#8799a5", 0.94),
+  referenceLight: standard("#edf2f3", 0.97),
+  focusDark: new THREE.MeshBasicMaterial({ color: "#172331" }),
+  focusLight: new THREE.MeshBasicMaterial({ color: "#f5f8fa" }),
+  focusCrosshair: new THREE.MeshBasicMaterial({
+    color: "#ef4444",
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+  }),
+});
+
+type BoxSpec = {
+  name: string;
+  size: readonly [number, number, number];
+  position: readonly [number, number, number];
+  material: THREE.Material;
+  parent: THREE.Object3D;
+};
+
+const addBox = ({ name, size, position, material, parent }: BoxSpec): THREE.Mesh => {
+  const resources = parent.userData.resources as ArchitectureRiseResources;
+  const mesh = new THREE.Mesh(resources.box, material);
+  mesh.name = name;
+  mesh.scale.set(toWorld(size[0]), toWorld(size[1]), toWorld(size[2]));
+  mesh.position.set(toWorld(position[0]), toWorld(position[1]), toWorld(position[2]));
+  parent.add(mesh);
+  return mesh;
+};
+
+const addWindowBay = (
+  root: THREE.Group,
+  resources: ArchitectureRiseResources,
+  bay: (typeof architectureRiseWindowBays)[number],
+): void => {
+  const windowGroup = new THREE.Group();
+  windowGroup.name = `architecture-rise-facade-window-bay-${bay.id}`;
+  windowGroup.userData.resources = resources;
+  root.add(windowGroup);
+
+  const frame = 34;
+  const front = geometry.facade.frontFacadeZ;
+  addBox({
+    name: `${windowGroup.name}-recess`,
+    size: [bay.width + 88, bay.height + 88, 52],
+    position: [bay.x, bay.y, front - 24],
+    material: resources.recess,
+    parent: windowGroup,
+  });
+  addBox({
+    name: `${windowGroup.name}-glazing`,
+    size: [bay.width, bay.height, bay.depth],
+    position: [bay.x, bay.y, front - 54],
+    material: resources.glass,
+    parent: windowGroup,
+  });
+
+  const frameDepth = 34;
+  const framePieces: Array<{
+    id: string;
+    size: [number, number, number];
+    offset: [number, number];
+  }> = [
+    { id: "top", size: [bay.width + frame * 2, frame, frameDepth], offset: [0, bay.height / 2 + frame / 2] },
+    { id: "bottom", size: [bay.width + frame * 2, frame, frameDepth], offset: [0, -bay.height / 2 - frame / 2] },
+    { id: "left", size: [frame, bay.height, frameDepth], offset: [-bay.width / 2 - frame / 2, 0] },
+    { id: "right", size: [frame, bay.height, frameDepth], offset: [bay.width / 2 + frame / 2, 0] },
+    { id: "mullion", size: [18, bay.height - 30, frameDepth], offset: [0, 0] },
+    { id: "transom", size: [bay.width - 24, 18, frameDepth], offset: [0, 0] },
+  ];
+  framePieces.forEach(({ id, size, offset }) => {
+    addBox({
+      name: `${windowGroup.name}-${id}`,
+      size,
+      position: [bay.x + offset[0], bay.y + offset[1], front - 76],
+      material: resources.trim,
+      parent: windowGroup,
+    });
+  });
+};
+
+const addSideWindowBay = (
+  root: THREE.Group,
+  resources: ArchitectureRiseResources,
+  bay: (typeof architectureRiseSideWindowBays)[number],
+): void => {
+  const group = new THREE.Group();
+  group.name = `architecture-rise-side-return-window-bay-${bay.id}`;
+  group.userData.resources = resources;
+  root.add(group);
+
+  const sideX = bay.x;
+  const sideZ = geometry.building.center.z + 220;
+  const frame = 30;
+  addBox({
+    name: `${group.name}-recess`,
+    size: [40, bay.height + 72, bay.width + 72],
+    position: [sideX, bay.y, sideZ],
+    material: resources.recess,
+    parent: group,
+  });
+  addBox({
+    name: `${group.name}-glazing`,
+    size: [bay.depth, bay.height, bay.width],
+    position: [sideX - 32, bay.y, sideZ],
+    material: resources.glass,
+    parent: group,
+  });
+  [
+    { id: "top", size: [frame, frame, bay.width + frame * 2], offset: [0, bay.height / 2 + frame / 2, 0] },
+    { id: "bottom", size: [frame, frame, bay.width + frame * 2], offset: [0, -bay.height / 2 - frame / 2, 0] },
+    { id: "left", size: [frame, bay.height, frame], offset: [0, 0, -bay.width / 2 - frame / 2] },
+    { id: "right", size: [frame, bay.height, frame], offset: [0, 0, bay.width / 2 + frame / 2] },
+  ].forEach(({ id, size, offset }) => {
+    addBox({
+      name: `${group.name}-${id}`,
+      size: size as [number, number, number],
+      position: [sideX - 54 + offset[0], bay.y + offset[1], sideZ + offset[2]],
+      material: resources.trim,
+      parent: group,
+    });
+  });
+};
+
+const addFacadeFineDetail = (root: THREE.Group, resources: ArchitectureRiseResources): void => {
   const detailGroup = new THREE.Group();
   detailGroup.name = "architecture-rise-facade-fine-detail";
+  detailGroup.userData.resources = resources;
   geometry.getArchitectureFacadeFineDetailPieces().forEach((piece) => {
     const material =
       piece.role === "panel"
-        ? facadeFinePanelMaterial!
+        ? resources.focusDark
         : piece.role === "frame"
-          ? facadeFineFrameMaterial!
-          : facadeFineLineMaterial!;
-    const mesh = new THREE.Mesh(facadeFineDetailGeom!, material);
-    mesh.name = piece.id;
-    mesh.scale.set(toWorld(piece.width), toWorld(piece.height), toWorld(piece.depth));
-    mesh.position.set(toWorld(piece.x), toWorld(piece.y), toWorld(piece.z));
-    detailGroup.add(mesh);
+          ? resources.focusLight
+          : resources.focusCrosshair;
+    addBox({
+      name: piece.id,
+      size: [piece.width, piece.height, piece.depth],
+      position: [piece.x, piece.y, piece.z],
+      material,
+      parent: detailGroup,
+    });
   });
-  parent.add(detailGroup);
+  root.add(detailGroup);
 };
 
-const addArchitectureRiseContext = (parent: THREE.Group): void => {
-  ensureResources();
+const addFocusChart = (root: THREE.Group, resources: ArchitectureRiseResources): void => {
+  const focusGroup = new THREE.Group();
+  focusGroup.name = "architecture-rise-focus-chart";
+  focusGroup.userData.resources = resources;
+  geometry.getArchitectureFocusChartCells().forEach((cell) => {
+    addBox({
+      name: cell.id,
+      size: [cell.width, cell.height, cell.depth],
+      position: [cell.x, cell.y, cell.z],
+      material: cell.dark ? resources.focusDark : resources.focusLight,
+      parent: focusGroup,
+    });
+  });
+  geometry.getArchitectureFocusChartBars().forEach((bar) => {
+    const mesh = addBox({
+      name: `architecture-focus-crosshair-${bar.id}`,
+      size: [bar.width, bar.height, bar.depth],
+      position: [bar.x, bar.y, bar.z],
+      material: resources.focusCrosshair,
+      parent: focusGroup,
+    });
+    mesh.renderOrder = 1000;
+  });
+  root.add(focusGroup);
+};
+
+const addArchitectureContext = (
+  root: THREE.Group,
+  resources: ArchitectureRiseResources,
+): void => {
   const context = new THREE.Group();
   context.name = "architecture-rise-context-structure";
+  context.userData.resources = resources;
+  root.add(context);
 
-  const sideMass = new THREE.Mesh(
-    contextSideMassGeom!,
-    contextSideMassMaterial!,
-  );
-  sideMass.name = "architecture-rise-side-return";
-  sideMass.position.set(
-    toWorld(1900),
-    toWorld(geometry.ground.y + 1500),
-    toWorld(geometry.building.center.z + 220),
-  );
-  context.add(sideMass);
+  const sideMass = addBox({
+    name: "architecture-rise-side-return",
+    size: [520, 3000, 760],
+    position: [1900, geometry.ground.y + 1500, geometry.building.center.z + 220],
+    material: resources.building,
+    parent: context,
+  });
+  sideMass.castShadow = true;
+  architectureRiseSideWindowBays.forEach((bay) => addSideWindowBay(context, resources, bay));
 
-  const sideWindow = new THREE.Mesh(
-    contextSideWindowGeom!,
-    contextRecessMaterial!,
-  );
-  sideWindow.name = "architecture-rise-side-return-window";
-  sideWindow.position.set(
-    toWorld(1628),
-    toWorld(geometry.ground.y + 1780),
-    toWorld(geometry.building.center.z + 220),
-  );
-  context.add(sideWindow);
-
-  const sideWindowSill = new THREE.Mesh(
-    contextSideWindowSillGeom!,
-    contextTrimMaterial!,
-  );
-  sideWindowSill.name = "architecture-rise-side-return-window-sill";
-  sideWindowSill.position.set(
-    toWorld(1610),
-    toWorld(geometry.ground.y + 1400),
-    toWorld(geometry.building.center.z + 220),
-  );
-  context.add(sideWindowSill);
+  [0, 1, 2, 3].forEach((index) => {
+    addBox({
+      name: `architecture-rise-side-return-pilaster-${index + 1}`,
+      size: [52, 3000, 44],
+      position: [1620, geometry.ground.y + 1500, geometry.building.center.z - 150 + index * 250],
+      material: resources.trim,
+      parent: context,
+    });
+  });
 
   const entryX = -880;
-  const entryY = geometry.ground.y + 760;
   const entryZ = geometry.facade.frontFacadeZ - 42;
   const entryGroup = new THREE.Group();
   entryGroup.name = "architecture-rise-entry-recess";
-  const entryPanel = new THREE.Mesh(
-    contextEntryPanelGeom!,
-    contextRecessMaterial!,
-  );
-  entryPanel.name = "architecture-rise-entry-recess-panel";
-  entryPanel.position.set(toWorld(entryX), toWorld(entryY + 560), toWorld(entryZ));
-  entryGroup.add(entryPanel);
-  [-1, 1].forEach((sign) => {
-    const jamb = new THREE.Mesh(contextEntryJambGeom!, contextTrimMaterial!);
-    jamb.name = `architecture-rise-entry-recess-jamb-${sign < 0 ? "left" : "right"}`;
-    jamb.position.set(
-      toWorld(entryX + sign * 290),
-      toWorld(entryY + 600),
-      toWorld(entryZ - 20),
-    );
-    entryGroup.add(jamb);
-  });
-  const lintel = new THREE.Mesh(
-    contextEntryLintelGeom!,
-    contextTrimMaterial!,
-  );
-  lintel.name = "architecture-rise-entry-recess-lintel";
-  lintel.position.set(toWorld(entryX), toWorld(entryY + 1240), toWorld(entryZ - 20));
-  entryGroup.add(lintel);
+  entryGroup.userData.resources = resources;
   context.add(entryGroup);
-
-  const plinth = new THREE.Mesh(
-    contextPlinthGeom!,
-    contextTrimMaterial!,
+  addBox({
+    name: "architecture-rise-entry-recess-panel",
+    size: [480, 1120, 26],
+    position: [entryX, geometry.ground.y + 1320, entryZ],
+    material: resources.recess,
+    parent: entryGroup,
+  });
+  [-1, 1].forEach((sign) =>
+    addBox({
+      name: `architecture-rise-entry-recess-jamb-${sign < 0 ? "left" : "right"}`,
+      size: [72, 1200, 90],
+      position: [entryX + sign * 290, geometry.ground.y + 1360, entryZ - 20],
+      material: resources.trim,
+      parent: entryGroup,
+    }),
   );
-  plinth.name = "architecture-rise-building-plinth";
-  plinth.position.set(
-    toWorld(0),
-    toWorld(geometry.ground.y + 90),
-    toWorld(geometry.facade.frontFacadeZ - 180),
-  );
-  context.add(plinth);
+  addBox({
+    name: "architecture-rise-entry-recess-lintel",
+    size: [652, 72, 90],
+    position: [entryX, geometry.ground.y + 2000, entryZ - 20],
+    material: resources.trim,
+    parent: entryGroup,
+  });
+  addBox({
+    name: "architecture-rise-entry-canopy",
+    size: [780, 72, 300],
+    position: [entryX, geometry.ground.y + 2160, entryZ + 90],
+    material: resources.roof,
+    parent: entryGroup,
+  });
+  addBox({
+    name: "architecture-rise-entry-threshold",
+    size: [620, 34, 230],
+    position: [entryX, geometry.ground.y + 18, entryZ - 80],
+    material: resources.trim,
+    parent: entryGroup,
+  });
+  addBox({
+    name: "architecture-rise-building-plinth",
+    size: [3500, 180, 260],
+    position: [0, geometry.ground.y + 90, geometry.facade.frontFacadeZ - 180],
+    material: resources.trim,
+    parent: context,
+  });
+};
 
-  const pavementSeam = new THREE.Mesh(
-    contextPavementSeamGeom!,
-    contextPavementMaterial!,
+const addStreetContext = (root: THREE.Group, resources: ArchitectureRiseResources): void => {
+  const street = new THREE.Group();
+  street.name = "architecture-rise-street-context";
+  street.userData.resources = resources;
+  root.add(street);
+  addBox({
+    name: "architecture-rise-sidewalk-slab",
+    size: [geometry.streetContext.sidewalkWidth, 80, geometry.streetContext.sidewalkDepth],
+    position: [0, geometry.ground.y + 40, geometry.streetContext.sidewalkCenterZ],
+    material: resources.groundMaterial,
+    parent: street,
+  });
+  addBox({
+    name: "architecture-rise-street-curb",
+    size: [geometry.streetContext.curbWidth, 180, 220],
+    position: [0, geometry.ground.y + 90, geometry.streetContext.curbCenterZ],
+    material: resources.trim,
+    parent: street,
+  });
+  [2300, 3500, 4700, 6000, 6900].forEach((z, index) =>
+    addBox({
+      name: `architecture-rise-pavement-cross-seam-${index + 1}`,
+      size: [geometry.streetContext.sidewalkWidth, 10, 18],
+      position: [0, geometry.ground.y + 86, z],
+      material: resources.pavement,
+      parent: street,
+    }),
   );
-  pavementSeam.name = "architecture-rise-pavement-near-seam";
-  pavementSeam.position.set(0, toWorld(geometry.ground.y + 5), toWorld(6900));
-  context.add(pavementSeam);
+  [-2400, -1200, 0, 1200, 2400].forEach((x, index) =>
+    addBox({
+      name: `architecture-rise-pavement-longitudinal-seam-${index + 1}`,
+      size: [18, 10, geometry.streetContext.sidewalkDepth],
+      position: [x, geometry.ground.y + 86, geometry.streetContext.sidewalkCenterZ],
+      material: resources.pavement,
+      parent: street,
+    }),
+  );
+  addBox({
+    name: "architecture-rise-foreground-planter",
+    size: [340, 560, 340],
+    position: [geometry.streetContext.foregroundPlanterX, geometry.ground.y + 280, geometry.streetContext.foregroundPlanterZ],
+    material: resources.recess,
+    parent: street,
+  });
+  addBox({
+    name: "architecture-rise-foreground-planter-cap",
+    size: [410, 36, 410],
+    position: [geometry.streetContext.foregroundPlanterX, geometry.ground.y + 566, geometry.streetContext.foregroundPlanterZ],
+    material: resources.trim,
+    parent: street,
+  });
+  addBox({
+    name: "architecture-rise-pavement-near-seam",
+    size: [4200, 10, 18],
+    position: [0, geometry.ground.y + 5, 6900],
+    material: resources.pavement,
+    parent: street,
+  });
+};
 
-  parent.add(context);
+const addReferenceObjects = (
+  root: THREE.Group,
+  resources: ArchitectureRiseResources,
+): void => {
+  referenceObjects.forEach((def: ReferenceObjectDef) => {
+    const group = new THREE.Group();
+    group.name = `architecture-rise-reference-${def.id}`;
+    group.userData.resources = resources;
+    root.add(group);
+    addBox({
+      name: def.id,
+      size: [def.width, def.height, def.depth],
+      position: [def.x, geometry.ground.y + def.height / 2, def.z],
+      material: resources.reference,
+      parent: group,
+    });
+    const frontZ = def.z - def.depth / 2 - 4;
+    if (def.detail === "vertical-stripes") {
+      const stripeW = Math.min(80, def.width * 0.22);
+      [-1, 0, 1].forEach((index) =>
+        addBox({
+          name: `${def.id}-stripe-${index + 2}`,
+          size: [stripeW, def.height * 0.7, 10],
+          position: [def.x + index * (stripeW * 1.5), geometry.ground.y + def.height * 0.35, frontZ],
+          material: resources.referenceLight,
+          parent: group,
+        }),
+      );
+    } else if (def.detail === "horizontal-bands") {
+      const bandH = Math.min(80, def.height * 0.18);
+      [-1, 1].forEach((index) =>
+        addBox({
+          name: `${def.id}-band-${index < 0 ? "lower" : "upper"}`,
+          size: [def.width * 0.92, bandH, 10],
+          position: [def.x, geometry.ground.y + def.height * 0.5 + index * (bandH + 20) / 2, frontZ],
+          material: resources.referenceLight,
+          parent: group,
+        }),
+      );
+    } else if (def.detail === "checker") {
+      const panelW = Math.min(320, def.width * 0.9);
+      const panelH = Math.min(320, def.height * 0.9);
+      const cellW = panelW / 4;
+      const cellH = panelH / 4;
+      for (let cx = 0; cx < 4; cx += 1) {
+        for (let cy = 0; cy < 4; cy += 1) {
+          addBox({
+            name: `${def.id}-checker-${cx + 1}-${cy + 1}`,
+            size: [cellW, cellH, 10],
+            position: [
+              def.x - panelW / 2 + cx * cellW + cellW / 2,
+              geometry.ground.y + def.height * 0.5 - panelH / 2 + cy * cellH + cellH / 2,
+              frontZ,
+            ],
+            material: (cx + cy) % 2 === 0 ? resources.recess : resources.referenceLight,
+            parent: group,
+          });
+        }
+      }
+    }
+  });
 };
 
 export function createArchitectureRiseGroup(): THREE.Group {
-  ensureResources();
-  const g = new THREE.Group();
+  const resources = createResources();
+  const root = new THREE.Group();
+  root.name = "architecture-rise-subject";
+  root.userData.resources = resources;
+  const primaryFacadePlacement = getArchitectureRisePrimaryFacadePlacement();
 
-  // building main block
-  const b = new THREE.Mesh(buildingGeom!, buildingMaterial!);
-  b.position.set(toWorld(geometry.building.center.x), toWorld(geometry.building.center.y), toWorld(geometry.building.center.z));
-  g.add(b);
+  addBox({
+    name: "architecture-rise-building-mass",
+    size: [geometry.building.width, geometry.building.height, geometry.building.depth],
+    position: [geometry.building.center.x, geometry.building.center.y, geometry.building.center.z],
+    material: resources.building,
+    parent: root,
+  });
+  addBox({
+    name: "architecture-rise-primary-facade",
+    size: [geometry.building.width - 120, geometry.building.height - 120, primaryFacadePlacement.depth],
+    position: [geometry.building.center.x, geometry.building.center.y, primaryFacadePlacement.centerZ],
+    material: resources.facade,
+    parent: root,
+  });
 
-  // roof/parapet as thin box sitting on top — center computed so parapet touches main body
-  const parapetHeight = geometry.building.topHeight;
-  const parapetGeom = new THREE.BoxGeometry(
-    toWorld(geometry.building.width + 80),
-    toWorld(parapetHeight),
-    toWorld(geometry.building.depth + 80),
+  const parapet = addBox({
+    name: "architecture-rise-roof-parapet",
+    size: [geometry.building.width + 80, geometry.building.topHeight, geometry.building.depth + 80],
+    position: [geometry.building.center.x, geometry.facade.mainBodyTopY + geometry.building.topHeight / 2, geometry.building.center.z],
+    material: resources.roof,
+    parent: root,
+  });
+  parapet.castShadow = true;
+  addBox({
+    name: "architecture-rise-roof-coping-front",
+    size: [geometry.building.width + 220, 70, 120],
+    position: [0, geometry.facade.parapetTopY + 35, geometry.facade.frontFacadeZ - 80],
+    material: resources.trim,
+    parent: root,
+  });
+  addBox({
+    name: "architecture-rise-roof-coping-back",
+    size: [geometry.building.width + 220, 70, 120],
+    position: [0, geometry.facade.parapetTopY + 35, geometry.facade.backFacadeZ + 80],
+    material: resources.trim,
+    parent: root,
+  });
+  addBox({
+    name: "architecture-rise-roof-service-block",
+    size: [420, 220, 360],
+    position: [700, geometry.facade.parapetTopY + 110, geometry.building.center.z + 120],
+    material: resources.recess,
+    parent: root,
+  });
+  [-1, 1].forEach((sign) =>
+    addBox({
+      name: `architecture-rise-roof-service-fin-${sign < 0 ? "left" : "right"}`,
+      size: [24, 180, 280],
+      position: [700 + sign * 85, geometry.facade.parapetTopY + 310, geometry.building.center.z + 120],
+      material: resources.trim,
+      parent: root,
+    }),
   );
-  const parapet = new THREE.Mesh(parapetGeom, new THREE.MeshStandardMaterial({ color: "#cbd5e1", roughness: 0.85 }));
-  const parapetCenterY = geometry.facade.mainBodyTopY + parapetHeight / 2; // mainBodyTopY + topHeight/2
-  parapet.position.set(toWorld(geometry.building.center.x), toWorld(parapetCenterY), toWorld(geometry.building.center.z));
-  g.add(parapet);
 
-  // vertical mullions
   const divisions = geometry.building.facadeVerticalDivisionCount;
-  // vertical mullions placed just in front of the front façade so their front faces are coplanar
-  for (let i = 0; i < divisions; i++) {
-    const x = (-geometry.building.width / 2) + (i / (divisions - 1)) * geometry.building.width;
-    const mull = new THREE.Mesh(mullionGeom!, mullionMaterial!);
-    const detailZ = geometry.facade.frontFacadeZ - geometry.facadeDetailThicknessMm / 2 - geometry.facadeDetailSmallGapMm;
-    mull.position.set(toWorld(x), toWorld(geometry.building.center.y), toWorld(detailZ));
-    g.add(mull);
+  for (let index = 0; index < divisions; index += 1) {
+    const x = -geometry.building.width / 2 + (index / (divisions - 1)) * geometry.building.width;
+    addBox({
+      name: `architecture-rise-facade-pilaster-${index + 1}`,
+      size: [geometry.mullionWidthMm, geometry.building.height - 80, geometry.facadeDetailThicknessMm],
+      position: [x, geometry.building.center.y, geometry.facade.frontFacadeZ - geometry.facadeDetailThicknessMm / 2 - geometry.facadeDetailSmallGapMm],
+      material: resources.trim,
+      parent: root,
+    });
   }
-
-  // horizontal floor/window divisions produced as thin boxes placed just in front of the façade
   const floors = geometry.building.facadeHorizontalDivisionCount;
-  const stripeMat = new THREE.MeshStandardMaterial({ color: "#c7d2fe", roughness: 0.95 });
-  for (let f = 0; f < floors; f++) {
-    const y = geometry.facade.mainBodyBottomY + ((f + 0.5) / floors) * geometry.building.height;
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(toWorld(geometry.building.width + 40), toWorld(geometry.horizontalStripeHeightMm), toWorld(geometry.facadeDetailThicknessMm)), stripeMat);
-    const detailZ = geometry.facade.frontFacadeZ - geometry.facadeDetailThicknessMm / 2 - geometry.facadeDetailSmallGapMm;
-    stripe.position.set(toWorld(geometry.building.center.x), toWorld(y), toWorld(detailZ));
-    g.add(stripe);
-  }
-
-  // ground plane
-  const ground = new THREE.Mesh(floorPlaneGeom!, groundMaterial!);
-  ground.name = "architecture-rise-ground";
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
-  g.add(ground);
-
-  // focus-detail patch: use canonical pure helpers to construct checkerboard and crosshair
-  const focusGroup = new THREE.Group();
-  const cells = geometry.getArchitectureFocusChartCells();
-  const bars = geometry.getArchitectureFocusChartBars();
-
-  // checker cells: use MeshBasicMaterial for stable high-contrast appearance in both RTT and R3F
-  cells.forEach((c) => {
-    const mat = new THREE.MeshBasicMaterial({ color: c.dark ? 0x0f1724 : 0xf8fafc });
-    const box = new THREE.Mesh(new THREE.BoxGeometry(toWorld(c.width), toWorld(c.height), toWorld(c.depth)), mat);
-    box.position.set(toWorld(c.x), toWorld(c.y), toWorld(c.z));
-    box.name = c.id;
-    focusGroup.add(box);
-  });
-
-  // crosshair bars: horizontal and vertical
-  const crossMat = new THREE.MeshBasicMaterial({ color: 0xff0000, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
-  bars.forEach((b) => {
-    const geom = new THREE.BoxGeometry(toWorld(b.width), toWorld(b.height), toWorld(b.depth));
-    const mesh = new THREE.Mesh(geom, crossMat);
-    mesh.position.set(toWorld(b.x), toWorld(b.y), toWorld(b.z));
-    mesh.name = `architecture-focus-crosshair-${b.id}`;
-    mesh.renderOrder = 1000; // render last to avoid z-fighting
-    focusGroup.add(mesh);
-  });
-
-  g.add(focusGroup);
-
-  addFacadeFineDetail(g);
-  addArchitectureRiseContext(g);
-
-  // small reference objects (plinths) around the building to aid depth reading
-  if (Array.isArray(referenceObjects) && referenceObjects.length > 0) {
-    const rots: ReferenceObjectDef[] = referenceObjects;
-    rots.forEach((def) => {
-      const grp = new THREE.Group();
-      const bw = toWorld(def.width);
-      const bd = toWorld(def.depth);
-      const bh = toWorld(def.height);
-      const baseMat = new THREE.MeshStandardMaterial({ color: def.color || "#9aa6b2", roughness: 0.95, metalness: 0 });
-      const base = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), baseMat);
-      base.position.set(toWorld(def.x), toWorld(geometry.ground.y + def.height / 2), toWorld(def.z));
-      grp.add(base);
-      // optional detail patterns rendered as simple geometry on the plinth front face
-      const frontZ = def.z - def.depth / 2 - 4; // small offset forward in mm
-      const stripeDepth = 10; // mm thickness for detail geometry
-      if (def.detail === "vertical-stripes") {
-        const stripeW = Math.min(80, def.width * 0.22);
-        const gap = stripeW * 0.5;
-        const count = 3;
-        for (let i = 0; i < count; i++) {
-          const offsetX = -((count - 1) * (stripeW + gap)) / 2 + i * (stripeW + gap);
-          const stripe = new THREE.Mesh(new THREE.BoxGeometry(toWorld(stripeW), toWorld(def.height * 0.7), toWorld(stripeDepth)), new THREE.MeshStandardMaterial({ color: "#f1f5f9", roughness: 0.98 }));
-          stripe.position.set(toWorld(def.x + offsetX), toWorld(geometry.ground.y + def.height * 0.35), toWorld(frontZ));
-          grp.add(stripe);
-        }
-      } else if (def.detail === "horizontal-bands") {
-        const bandH = Math.min(80, def.height * 0.18);
-        const bandCount = 2;
-        for (let i = 0; i < bandCount; i++) {
-          const offsetY = (i - (bandCount - 1) / 2) * (bandH + 20);
-          const band = new THREE.Mesh(new THREE.BoxGeometry(toWorld(def.width * 0.92), toWorld(bandH), toWorld(stripeDepth)), new THREE.MeshStandardMaterial({ color: "#f1f5f9", roughness: 0.98 }));
-          band.position.set(toWorld(def.x), toWorld(geometry.ground.y + def.height * 0.5 + offsetY), toWorld(frontZ));
-          grp.add(band);
-        }
-      } else if (def.detail === "checker") {
-        const panelW = Math.min(320, def.width * 0.9);
-        const panelH = Math.min(320, def.height * 0.9);
-        const cols = 4;
-        const rows = 4;
-        const cellW = panelW / cols;
-        const cellH = panelH / rows;
-        const panelLeft = def.x - panelW / 2;
-        const panelBottom = geometry.ground.y + def.height * 0.5 - panelH / 2;
-        for (let cx = 0; cx < cols; cx++) {
-          for (let cy = 0; cy < rows; cy++) {
-            const isDark = (cx + cy) % 2 === 0;
-            const cell = new THREE.Mesh(new THREE.BoxGeometry(toWorld(cellW), toWorld(cellH), toWorld(stripeDepth)), new THREE.MeshStandardMaterial({ color: isDark ? "#1f2937" : "#e6eef7", roughness: 0.95 }));
-            const px = panelLeft + cx * cellW + cellW / 2;
-            const py = panelBottom + cy * cellH + cellH / 2;
-            cell.position.set(toWorld(px), toWorld(py), toWorld(frontZ));
-            grp.add(cell);
-          }
-        }
-      }
-      g.add(grp);
+  for (let index = 0; index < floors; index += 1) {
+    const y = geometry.facade.mainBodyBottomY + ((index + 0.5) / floors) * geometry.building.height;
+    addBox({
+      name: `architecture-rise-facade-floor-band-${index + 1}`,
+      size: [geometry.building.width + 40, geometry.horizontalStripeHeightMm, geometry.facadeDetailThicknessMm],
+      position: [0, y, geometry.facade.frontFacadeZ - geometry.facadeDetailThicknessMm / 2 - geometry.facadeDetailSmallGapMm],
+      material: resources.trim,
+      parent: root,
     });
   }
 
-  return g;
+  architectureRiseWindowBays.forEach((bay) => addWindowBay(root, resources, bay));
+  addFocusChart(root, resources);
+  addFacadeFineDetail(root, resources);
+  addArchitectureContext(root, resources);
+  addStreetContext(root, resources);
+
+  const ground = new THREE.Mesh(resources.ground, resources.groundMaterial);
+  ground.name = "architecture-rise-ground";
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
+  root.add(ground);
+  addReferenceObjects(root, resources);
+
+  return root;
 }
 
+export const disposeArchitectureRiseGroup = (group: THREE.Group): void => {
+  disposeTeachingSubjectResources(group);
+};
+
+/** Viewport and RTT intentionally render the same owned subject graph. */
 export const ArchitectureRiseSubject: React.FC = () => {
-  ensureResources();
-  const toW = toWorld;
-  return (
-    <group>
-      {/* building main block */}
-      <mesh position={[toW(geometry.building.center.x), toW(geometry.building.center.y), toW(geometry.building.center.z)]}>
-        <boxGeometry args={[toW(geometry.building.width), toW(geometry.building.height), toW(geometry.building.depth)]} />
-        <meshStandardMaterial color="#94a3b8" roughness={0.9} metalness={0.05} />
-      </mesh>
+  const group = useMemo(() => createArchitectureRiseGroup(), []);
 
-      {/* parapet */}
-      <mesh position={[toW(geometry.building.center.x), toW(geometry.facade.mainBodyTopY + geometry.building.topHeight / 2), toW(geometry.building.center.z)]}>
-        <boxGeometry args={[toW(geometry.building.width + 80), toW(geometry.building.topHeight), toW(geometry.building.depth + 80)]} />
-        <meshStandardMaterial color="#cbd5e1" roughness={0.85} />
-      </mesh>
-
-      {/* mullions */}
-      {Array.from({ length: geometry.building.facadeVerticalDivisionCount }).map((_, i) => {
-        const x = (-geometry.building.width / 2) + (i / (geometry.building.facadeVerticalDivisionCount - 1)) * geometry.building.width;
-        return (
-          <mesh key={i} position={[toW(x), toW(geometry.building.center.y), toW(geometry.facade.frontFacadeZ - geometry.facadeDetailThicknessMm / 2 - geometry.facadeDetailSmallGapMm)]}>
-            <boxGeometry args={[toW(geometry.mullionWidthMm), toW(geometry.building.height - 80), toW(geometry.facadeDetailThicknessMm)]} />
-            <meshStandardMaterial color="#334155" roughness={0.92} />
-          </mesh>
-        );
-      })}
-
-      {/* horizontal stripes */}
-      {Array.from({ length: geometry.building.facadeHorizontalDivisionCount }).map((_, f) => {
-        const y = geometry.facade.mainBodyBottomY + ((f + 0.5) / geometry.building.facadeHorizontalDivisionCount) * geometry.building.height;
-        return (
-          <mesh key={`h-${f}`} position={[toW(geometry.building.center.x), toW(y), toW(geometry.building.center.z)]}>
-            <boxGeometry args={[toW(geometry.building.width + 40), toW(12), toW(geometry.building.depth + 40)]} />
-            <meshStandardMaterial color="#c7d2fe" roughness={0.95} />
-          </mesh>
-        );
-      })}
-
-      {/* ground plane */}
-      <mesh name="architecture-rise-ground" rotation={[-Math.PI / 2, 0, 0]} position={[0, toW(geometry.ground.y), toW(geometry.ground.centerZ)]}>
-        <planeGeometry args={[toW(geometry.ground.width), toW(geometry.ground.depth)]} />
-        <meshStandardMaterial color="#e6eef7" roughness={1} metalness={0} />
-      </mesh>
-
-      {/* focus-detail patch */}
-      <group>
-        {(() => {
-          const cells = geometry.getArchitectureFocusChartCells();
-          const bars = geometry.getArchitectureFocusChartBars();
-          const elems = [] as React.ReactNode[];
-          // render checker cells using MeshBasicMaterial for parity with RTT
-          cells.forEach((c) => {
-            elems.push(
-              <mesh key={c.id} position={[toW(c.x), toW(c.y), toW(c.z)]} name={c.id}>
-                <boxGeometry args={[toW(c.width), toW(c.height), toW(c.depth)]} />
-                <meshBasicMaterial color={c.dark ? "#1f2937" : "#e6eef7"} />
-              </mesh>,
-            );
-          });
-          // render crosshair bars
-          bars.forEach((b) => {
-            elems.push(
-              <mesh key={`bar-${b.id}`} position={[toW(b.x), toW(b.y), toW(b.z)]} name={`architecture-focus-crosshair-${b.id}`} renderOrder={1000}>
-                <boxGeometry args={[toW(b.width), toW(b.height), toW(b.depth)]} />
-                <meshBasicMaterial color="#ff0000" polygonOffset={true} polygonOffsetFactor={1} polygonOffsetUnits={1} />
-              </mesh>,
-            );
-          });
-          return elems;
-        })()}
-      </group>
-
-      <group name="architecture-rise-facade-fine-detail">
-        {geometry.getArchitectureFacadeFineDetailPieces().map((piece) => (
-          <mesh
-            key={piece.id}
-            name={piece.id}
-            position={[toW(piece.x), toW(piece.y), toW(piece.z)]}
-          >
-            <boxGeometry args={[toW(piece.width), toW(piece.height), toW(piece.depth)]} />
-            <meshBasicMaterial
-              color={piece.role === "panel" ? "#294354" : piece.role === "frame" ? "#dbeafe" : "#f8fafc"}
-            />
-          </mesh>
-        ))}
-      </group>
-
-      <group name="architecture-rise-context-structure">
-        <mesh
-          name="architecture-rise-side-return"
-          position={[toW(1900), toW(geometry.ground.y + 1500), toW(geometry.building.center.z + 220)]}
-        >
-          <boxGeometry args={[toW(520), toW(3000), toW(760)]} />
-          <meshStandardMaterial color="#64748b" roughness={0.9} />
-        </mesh>
-        <mesh
-          name="architecture-rise-side-return-window"
-          position={[toW(1628), toW(geometry.ground.y + 1780), toW(geometry.building.center.z + 220)]}
-        >
-          <boxGeometry args={[toW(18), toW(720), toW(430)]} />
-          <meshStandardMaterial color="#25364a" roughness={0.72} />
-        </mesh>
-        <mesh
-          name="architecture-rise-side-return-window-sill"
-          position={[toW(1610), toW(geometry.ground.y + 1400), toW(geometry.building.center.z + 220)]}
-        >
-          <boxGeometry args={[toW(70), toW(36), toW(520)]} />
-          <meshStandardMaterial color="#dbeafe" roughness={0.82} />
-        </mesh>
-        <group name="architecture-rise-entry-recess">
-          <mesh
-            name="architecture-rise-entry-recess-panel"
-            position={[toW(-880), toW(geometry.ground.y + 1320), toW(geometry.facade.frontFacadeZ - 42)]}
-          >
-            <boxGeometry args={[toW(480), toW(1120), toW(26)]} />
-            <meshStandardMaterial color="#25364a" roughness={0.72} />
-          </mesh>
-          {[-1, 1].map((sign) => (
-            <mesh
-              key={sign}
-              name={`architecture-rise-entry-recess-jamb-${sign < 0 ? "left" : "right"}`}
-              position={[toW(-880 + sign * 290), toW(geometry.ground.y + 1360), toW(geometry.facade.frontFacadeZ - 62)]}
-            >
-              <boxGeometry args={[toW(72), toW(1200), toW(90)]} />
-              <meshStandardMaterial color="#dbeafe" roughness={0.82} />
-            </mesh>
-          ))}
-          <mesh
-            name="architecture-rise-entry-recess-lintel"
-            position={[toW(-880), toW(geometry.ground.y + 2000), toW(geometry.facade.frontFacadeZ - 62)]}
-          >
-            <boxGeometry args={[toW(652), toW(72), toW(90)]} />
-            <meshStandardMaterial color="#dbeafe" roughness={0.82} />
-          </mesh>
-        </group>
-        <mesh
-          name="architecture-rise-building-plinth"
-          position={[0, toW(geometry.ground.y + 90), toW(geometry.facade.frontFacadeZ - 180)]}
-        >
-          <boxGeometry args={[toW(3500), toW(180), toW(260)]} />
-          <meshStandardMaterial color="#dbeafe" roughness={0.82} />
-        </mesh>
-        <mesh
-          name="architecture-rise-pavement-near-seam"
-          position={[0, toW(geometry.ground.y + 5), toW(6900)]}
-        >
-          <boxGeometry args={[toW(4200), toW(10), toW(18)]} />
-          <meshStandardMaterial color="#94a3b8" roughness={0.98} />
-        </mesh>
-      </group>
-
-      {/* reference objects (plinths) */}
-      {(() => {
-        const objs: ReferenceObjectDef[] = referenceObjects || [];
-        return objs.map((def) => {
-          const x = def.x;
-          const z = def.z;
-          const w = def.width;
-          const d = def.depth;
-          const h = def.height;
-        return (
-          <group key={def.id}>
-            <mesh position={[toW(x), toW(geometry.ground.y + h / 2), toW(z)]}>
-              <boxGeometry args={[toW(w), toW(h), toW(d)]} />
-              <meshStandardMaterial color={def.color || "#9aa6b2"} roughness={0.95} metalness={0} />
-            </mesh>
-            {def.detail === "vertical-stripes" ? (
-              (() => {
-                const stripes = [] as React.ReactNode[];
-                const stripeW = Math.min(80, w * 0.22);
-                const gap = stripeW * 0.5;
-                const count = 3;
-                const frontZ = toW(z - d / 2 - 4);
-                for (let i = 0; i < count; i++) {
-                  const offsetX = -((count - 1) * (stripeW + gap)) / 2 + i * (stripeW + gap);
-                  stripes.push(
-                    <mesh key={`vs-${def.id}-${i}`} position={[toW(x + offsetX), toW(geometry.ground.y + h * 0.35), frontZ]}>
-                      <boxGeometry args={[toW(stripeW), toW(h * 0.7), toW(10)]} />
-                      <meshStandardMaterial color="#f1f5f9" roughness={0.98} />
-                    </mesh>,
-                  );
-                }
-                return <group>{stripes}</group>;
-              })()
-            ) : null}
-
-            {def.detail === "horizontal-bands" ? (
-              (() => {
-                const bands = [] as React.ReactNode[];
-                const bandH = Math.min(80, h * 0.18);
-                const bandCount = 2;
-                const frontZ = toW(z - d / 2 - 4);
-                for (let i = 0; i < bandCount; i++) {
-                  const offsetY = (i - (bandCount - 1) / 2) * (bandH + 20);
-                  bands.push(
-                    <mesh key={`hb-${def.id}-${i}`} position={[toW(x), toW(geometry.ground.y + h * 0.5 + offsetY), frontZ]}>
-                      <boxGeometry args={[toW(w * 0.92), toW(bandH), toW(10)]} />
-                      <meshStandardMaterial color="#f1f5f9" roughness={0.98} />
-                    </mesh>,
-                  );
-                }
-                return <group>{bands}</group>;
-              })()
-            ) : null}
-
-            {def.detail === "checker" ? (
-              (() => {
-                const cells: React.ReactNode[] = [];
-                const panelW = Math.min(320, w * 0.9);
-                const panelH = Math.min(320, h * 0.9);
-                const cols = 4;
-                const rows = 4;
-                const cellW = panelW / cols;
-                const cellH = panelH / rows;
-                const panelLeft = x - panelW / 2;
-                const panelBottom = geometry.ground.y + h * 0.5 - panelH / 2;
-                const frontZ = toW(z - d / 2 - 4);
-                for (let cx = 0; cx < cols; cx++) {
-                  for (let cy = 0; cy < rows; cy++) {
-                    const isDark = (cx + cy) % 2 === 0;
-                    const px = panelLeft + cx * cellW + cellW / 2;
-                    const py = panelBottom + cy * cellH + cellH / 2;
-                    cells.push(
-                      <mesh key={`ch-${def.id}-${cx}-${cy}`} position={[toW(px), toW(py), frontZ]}>
-                        <boxGeometry args={[toW(cellW), toW(cellH), toW(10)]} />
-                        <meshStandardMaterial color={isDark ? "#1f2937" : "#e6eef7"} roughness={0.95} />
-                      </mesh>,
-                    );
-                  }
-                }
-                return <group>{cells}</group>;
-              })()
-            ) : null}
-          </group>
-        );
-        });
-      })()}
-    </group>
+  useEffect(
+    () => () => {
+      disposeArchitectureRiseGroup(group);
+    },
+    [group],
   );
+
+  return <primitive object={group} dispose={null} />;
 };

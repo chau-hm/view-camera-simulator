@@ -9,6 +9,7 @@ import shelfSwingGeometry from "../scenes/shelfSwingGeometry";
 import {
   ArchitectureRiseSubject,
   createArchitectureRiseGroup,
+  disposeArchitectureRiseGroup,
 } from "./ArchitectureRiseSubjectFactory";
 import {
   ObliqueArchitectureSubject,
@@ -291,6 +292,7 @@ export const sceneSubjectRegistry = {
   "architecture-rise": {
     SceneSubject: ArchitectureRiseRegisteredSubject,
     createRttGroup: createArchitectureRiseGroup,
+    disposeRttGroup: disposeArchitectureRiseGroup,
     rttLighting: {
       targetMm: architectureLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },

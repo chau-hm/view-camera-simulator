@@ -140,6 +140,17 @@ export const referenceObjects: ReferenceObjectDef[] = [
   },
 ];
 
+/** Presentation-only street context surrounding the calibrated building. */
+export const streetContext = {
+  sidewalkWidth: 7200,
+  sidewalkDepth: 2600,
+  sidewalkCenterZ: 3300,
+  curbWidth: 7200,
+  curbCenterZ: 1900,
+  foregroundPlanterX: 1450,
+  foregroundPlanterZ: 2800,
+} as const;
+
 // recompute scene bounds to include reference objects extents and ensure no geometry falls outside
 const padding = 300; // mm padding around extents
 let minX = -building.width / 2 - 200;
@@ -159,6 +170,11 @@ referenceObjects.forEach((r) => {
   minZ = Math.min(minZ, r.z - halfD - padding);
   maxZ = Math.max(maxZ, r.z + halfD + padding);
 });
+
+minX = Math.min(minX, -streetContext.sidewalkWidth / 2 - padding);
+maxX = Math.max(maxX, streetContext.sidewalkWidth / 2 + padding);
+minZ = Math.min(minZ, streetContext.curbCenterZ - 110 - padding);
+maxZ = Math.max(maxZ, streetContext.sidewalkCenterZ + streetContext.sidewalkDepth / 2 + padding);
 
 export const sceneBounds = {
   min: { x: minX, y: minY, z: minZ },
@@ -193,6 +209,43 @@ export const facadeFineDetail = {
   fineLineDepth: 10,
   surfaceGap: 2,
 } as const;
+
+/**
+ * Presentation-only window bays for the richer Architecture Rise façade.
+ * These deliberately leave the canonical focus chart's central band open so
+ * the chart remains the authoritative focus target.
+ */
+export type ArchitectureRiseWindowBay = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  depth: number;
+};
+
+const architectureRiseWindowColumns = [-1080, -540, 540, 1080] as const;
+const architectureRiseWindowRows = [300, 1100, 1900, 2700] as const;
+
+export const architectureRiseWindowBays: ArchitectureRiseWindowBay[] =
+  architectureRiseWindowRows.flatMap((y, row) =>
+    architectureRiseWindowColumns.map((x, column) => ({
+      id: `bay-${row + 1}-${column + 1}`,
+      x,
+      y,
+      width: 300,
+      height: 430,
+      depth: 20,
+    })),
+  );
+
+/** Additional shallow windows on the articulated side-return volume. */
+export const architectureRiseSideWindowBays: ArchitectureRiseWindowBay[] = [
+  { id: "side-1", x: 1628, y: 150, width: 300, height: 460, depth: 24 },
+  { id: "side-2", x: 1628, y: 900, width: 300, height: 460, depth: 24 },
+  { id: "side-3", x: 1628, y: 1650, width: 300, height: 460, depth: 24 },
+  { id: "side-4", x: 1628, y: 2400, width: 300, height: 460, depth: 24 },
+];
 
 export type ArchitectureFacadeFineDetailPiece = {
   id: string;
@@ -268,6 +321,34 @@ export function getArchitectureFacadeFineDetailPieces(): ArchitectureFacadeFineD
   }
 
   return pieces;
+}
+
+/**
+ * Derive the shallow presentation veneer from the existing front-face detail.
+ * Smaller Z values are nearer the camera, so the veneer remains behind every
+ * canonical/detail surface while staying just in front of the building mass.
+ */
+export function getArchitectureRisePrimaryFacadePlacement(): {
+  centerZ: number;
+  depth: number;
+  nearZ: number;
+  farZ: number;
+} {
+  const frontDetailFarZ = Math.max(
+    facade.frontFacadeZ - facadeDetailSmallGapMm,
+    ...getArchitectureFacadeFineDetailPieces().map((piece) => piece.z + piece.depth / 2),
+  );
+  const detailGapMm = 0.5;
+  const buildingGapMm = 0.5;
+  const nearZ = frontDetailFarZ + detailGapMm;
+  const farZ = facade.frontFacadeZ - buildingGapMm;
+
+  return {
+    centerZ: (nearZ + farZ) / 2,
+    depth: farZ - nearZ,
+    nearZ,
+    farZ,
+  };
 }
 
 // Focus chart canonical size and grid
@@ -414,7 +495,11 @@ export default {
   mullionWidthMm,
   horizontalStripeHeightMm,
   facadeFineDetail,
+  architectureRiseWindowBays,
+  architectureRiseSideWindowBays,
+  streetContext,
   getArchitectureFacadeFineDetailPieces,
+  getArchitectureRisePrimaryFacadePlacement,
   focusChartSizeMm,
   focusChartCells,
   // helper exports for consumers that import the default geometry object

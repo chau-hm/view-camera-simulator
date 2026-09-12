@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import {
   createArchitectureRiseGroup,
+  disposeArchitectureRiseGroup,
 } from "../../render/ArchitectureRiseSubjectFactory";
 import {
   createObliqueArchitectureGroup,
@@ -25,32 +26,91 @@ import { toWorld } from "../../render/rttUtils";
 const worldBounds = (object: THREE.Object3D): THREE.Vector3 =>
   new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
 
+const worldZBounds = (object: THREE.Object3D): { min: number; max: number } => {
+  const bounds = new THREE.Box3().setFromObject(object);
+  return { min: bounds.min.z, max: bounds.max.z };
+};
+
 describe("core scene visual richness foundation", () => {
   it("adds architectural context at intended Architecture Rise scale without moving the canonical target", () => {
     const group = createArchitectureRiseGroup();
-    group.updateMatrixWorld(true);
+    try {
+      group.updateMatrixWorld(true);
 
-    const sideReturn = group.getObjectByName("architecture-rise-side-return");
-    const entryLintel = group.getObjectByName("architecture-rise-entry-recess-lintel");
+      const sideReturn = group.getObjectByName("architecture-rise-side-return");
+      const entryLintel = group.getObjectByName("architecture-rise-entry-recess-lintel");
 
-    expect(sideReturn).toBeInstanceOf(THREE.Mesh);
-    expect(entryLintel).toBeInstanceOf(THREE.Mesh);
-    expect(worldBounds(sideReturn!)).toMatchObject({
-      x: expect.closeTo(toWorld(520), 6),
-      y: expect.closeTo(toWorld(3000), 6),
-      z: expect.closeTo(toWorld(760), 6),
-    });
-    expect(worldBounds(entryLintel!)).toMatchObject({
-      x: expect.closeTo(toWorld(652), 6),
-      y: expect.closeTo(toWorld(72), 6),
-      z: expect.closeTo(toWorld(90), 6),
-    });
-    expect(architectureRiseGeometry.focusTarget.worldPosition).toEqual({
-      x: 0,
-      y: architectureRiseGeometry.building.center.y,
-      z: architectureRiseGeometry.facade.frontFacadeZ - 10,
-    });
-    expect(group.getObjectByName("cell-0")).toBeInstanceOf(THREE.Mesh);
+      expect(sideReturn).toBeInstanceOf(THREE.Mesh);
+      expect(entryLintel).toBeInstanceOf(THREE.Mesh);
+      expect(worldBounds(sideReturn!)).toMatchObject({
+        x: expect.closeTo(toWorld(520), 6),
+        y: expect.closeTo(toWorld(3000), 6),
+        z: expect.closeTo(toWorld(760), 6),
+      });
+      expect(worldBounds(entryLintel!)).toMatchObject({
+        x: expect.closeTo(toWorld(652), 6),
+        y: expect.closeTo(toWorld(72), 6),
+        z: expect.closeTo(toWorld(90), 6),
+      });
+      expect(architectureRiseGeometry.focusTarget.worldPosition).toEqual({
+        x: 0,
+        y: architectureRiseGeometry.building.center.y,
+        z: architectureRiseGeometry.facade.frontFacadeZ - 10,
+      });
+      expect(group.getObjectByName("cell-0")).toBeInstanceOf(THREE.Mesh);
+      expect(group.getObjectByName("architecture-rise-facade-window-bay-bay-1-1")).toBeInstanceOf(
+        THREE.Group,
+      );
+      const windowBay = group.getObjectByName("architecture-rise-facade-window-bay-bay-2-2");
+      expect(windowBay).toBeInstanceOf(THREE.Group);
+      expect(worldBounds(windowBay!)).toMatchObject({
+        x: expect.closeTo(toWorld(388), 6),
+        y: expect.closeTo(toWorld(518), 6),
+        z: expect.closeTo(toWorld(95), 6),
+      });
+      expect(group.getObjectByName("architecture-rise-roof-coping-front")).toBeInstanceOf(
+        THREE.Mesh,
+      );
+      expect(group.getObjectByName("architecture-rise-side-return-window-bay-side-2")).toBeInstanceOf(
+        THREE.Group,
+      );
+      expect(group.getObjectByName("architecture-rise-street-curb")).toBeInstanceOf(THREE.Mesh);
+      expect(architectureRiseGeometry.sceneBounds.min.x).toBeLessThanOrEqual(
+        -architectureRiseGeometry.streetContext.sidewalkWidth / 2,
+      );
+      expect(architectureRiseGeometry.sceneBounds.max.x).toBeGreaterThanOrEqual(
+        architectureRiseGeometry.streetContext.sidewalkWidth / 2,
+      );
+
+      const primaryFacade = group.getObjectByName("architecture-rise-primary-facade");
+      const buildingMass = group.getObjectByName("architecture-rise-building-mass");
+      const focusChart = group.getObjectByName("architecture-rise-focus-chart");
+      const crosshairHorizontal = group.getObjectByName("architecture-focus-crosshair-horizontal");
+      const crosshairVertical = group.getObjectByName("architecture-focus-crosshair-vertical");
+      const fineDetail = group.getObjectByName("architecture-rise-facade-fine-detail");
+
+      expect(primaryFacade).toBeInstanceOf(THREE.Mesh);
+      expect(buildingMass).toBeInstanceOf(THREE.Mesh);
+      expect(focusChart).toBeInstanceOf(THREE.Group);
+      expect(crosshairHorizontal).toBeInstanceOf(THREE.Mesh);
+      expect(crosshairVertical).toBeInstanceOf(THREE.Mesh);
+      expect(fineDetail).toBeInstanceOf(THREE.Group);
+
+      const primaryFacadeZ = worldZBounds(primaryFacade!);
+      const buildingMassZ = worldZBounds(buildingMass!);
+      const focusChartZ = worldZBounds(focusChart!);
+      const crosshairHorizontalZ = worldZBounds(crosshairHorizontal!);
+      const crosshairVerticalZ = worldZBounds(crosshairVertical!);
+      const fineDetailZ = worldZBounds(fineDetail!);
+
+      expect(focusChartZ.max).toBeLessThan(primaryFacadeZ.min);
+      expect(crosshairHorizontalZ.max).toBeLessThan(primaryFacadeZ.min);
+      expect(crosshairVerticalZ.max).toBeLessThan(primaryFacadeZ.min);
+      expect(fineDetailZ.max).toBeLessThan(primaryFacadeZ.min);
+      expect(primaryFacadeZ.max).toBeLessThan(buildingMassZ.min);
+    } finally {
+      disposeArchitectureRiseGroup(group);
+    }
   });
 
   it("adds depth-bearing Oblique Architecture structure while preserving focus probes", () => {
