@@ -18,6 +18,8 @@ import {
 import {
   classifyGroundGlassProfilingReadiness,
   profilingProgressForSnapshot,
+  selectQualifyingFreshSnapshot,
+  type ProfilingProgressMarker,
 } from "../helpers/sceneCapacityBenchmarkReadiness";
 
 const benchmarkEnabled = process.env.SCENE_CAPACITY_BENCHMARK === "1";
@@ -206,13 +208,7 @@ const waitForMeasurementState = async (
   );
 };
 
-type ProgressMarker = {
-  backend: "cpu-fallback" | "gpu-query";
-  progress: number;
-  sessionResets: number;
-};
-
-const readProgressMarker = (snapshot: SceneCapacitySnapshot | null): ProgressMarker | null => {
+const readProgressMarker = (snapshot: SceneCapacitySnapshot | null): ProfilingProgressMarker | null => {
   const groundGlass = snapshot?.groundGlass;
   if (!groundGlass) return null;
   assertBackendHealth(groundGlass);
@@ -261,7 +257,7 @@ const waitForProgressMarker = async (
   sceneId: string,
   state: RequestedMeasurementState,
   timeoutMs = 120_000,
-): Promise<ProgressMarker> => {
+): Promise<ProfilingProgressMarker> => {
   const deadline = Date.now() + timeoutMs;
   let latestSnapshot: SceneCapacitySnapshot | null = null;
   while (Date.now() < deadline) {
@@ -277,6 +273,47 @@ const waitForProgressMarker = async (
   );
 };
 
+type FreshSnapshotResult = {
+  snapshot: SceneCapacitySnapshot;
+  marker: ProfilingProgressMarker;
+};
+
+const waitForFreshSnapshot = async (
+  page: Page,
+  sceneId: string,
+  state: RequestedMeasurementState,
+  initialMarker: ProfilingProgressMarker,
+  timeoutMs = 180_000,
+): Promise<FreshSnapshotResult> => {
+  const deadline = Date.now() + timeoutMs;
+  let latestSnapshot: SceneCapacitySnapshot | null = null;
+
+  while (Date.now() < deadline) {
+    latestSnapshot = await readCapacitySnapshot(page);
+    if (latestSnapshot?.sceneId === sceneId && latestSnapshot.groundGlass?.rawDebug === state.rawDebug) {
+      const marker = readProgressMarker(latestSnapshot);
+      const selected = selectQualifyingFreshSnapshot(
+        [{ snapshot: latestSnapshot, marker }],
+        ({ snapshot, marker: candidateMarker }) => {
+          if (!snapshot.groundGlass) return false;
+          if (candidateMarker.backend !== initialMarker.backend) return false;
+          if (candidateMarker.sessionResets !== initialMarker.sessionResets) return false;
+          if (candidateMarker.progress - initialMarker.progress < GROUND_GLASS_PROFILING_WINDOW_SIZE) {
+            return false;
+          }
+          return timingWindowsAreComplete(snapshot.groundGlass, state.rawDebug);
+        },
+      );
+      if (selected) return selected;
+    }
+    await page.waitForTimeout(250);
+  }
+
+  throw new Error(
+    `Timed out waiting for a fresh profiling window after ${timeoutMs}ms: ${formatProfilingDiagnostics(latestSnapshot)}`,
+  );
+};
+
 const waitForFreshStableSnapshot = async (
   page: Page,
   sceneId: string,
@@ -284,27 +321,12 @@ const waitForFreshStableSnapshot = async (
 ): Promise<{ snapshot: SceneCapacitySnapshot; sampling: BenchmarkSamplingEvidence }> => {
   await waitForMeasurementState(page, sceneId, state);
   const initialMarker = await waitForProgressMarker(page, sceneId, state);
-  await expect.poll(
-    async () => {
-      const candidate = await readCapacitySnapshot(page);
-      if (!candidate || candidate.sceneId !== sceneId || !candidate.groundGlass) return false;
-      if (candidate.groundGlass.rawDebug !== state.rawDebug) return false;
-      const currentMarker = readProgressMarker(candidate);
-      if (currentMarker === null) return false;
-      if (currentMarker.backend !== initialMarker.backend) return false;
-      if (currentMarker.sessionResets !== initialMarker.sessionResets) return false;
-      if (currentMarker.progress - initialMarker.progress < GROUND_GLASS_PROFILING_WINDOW_SIZE) return false;
-      if (!timingWindowsAreComplete(candidate.groundGlass, state.rawDebug)) return false;
-      return true;
-    },
-    { timeout: 180_000, intervals: [250, 500, 1_000] },
-  ).toBe(true);
-
-  const snapshot = await readCapacitySnapshot(page);
-  if (!snapshot) throw new Error("Scene capacity benchmark did not produce a fresh timing snapshot");
-  const finalMarkerResult = readProgressMarker(snapshot);
-  if (finalMarkerResult === null) throw new Error("Scene capacity benchmark lost its profiling progress marker");
-  const finalMarker: ProgressMarker = finalMarkerResult;
+  const { snapshot, marker: finalMarker } = await waitForFreshSnapshot(
+    page,
+    sceneId,
+    state,
+    initialMarker,
+  );
   assertCapacitySnapshot(snapshot, sceneId, state.rawDebug);
   return {
     snapshot,

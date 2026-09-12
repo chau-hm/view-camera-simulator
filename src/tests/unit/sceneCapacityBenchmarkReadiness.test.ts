@@ -7,6 +7,8 @@ import type {
 import {
   classifyGroundGlassProfilingReadiness,
   profilingProgressForSnapshot,
+  selectQualifyingFreshSnapshot,
+  type ProfilingProgressMarker,
 } from "../helpers/sceneCapacityBenchmarkReadiness";
 
 const makeSnapshot = (
@@ -71,5 +73,49 @@ describe("scene capacity benchmark profiling readiness", () => {
 
     expect(classifyGroundGlassProfilingReadiness(snapshot)).toBe("healthy");
     expect(profilingProgressForSnapshot(snapshot)).toBe(23);
+  });
+
+  it("retains the qualifying snapshot when the next observation stalls", () => {
+    const qualifyingSnapshot = { id: "qualifying" };
+    const stalledSnapshot = { id: "stalled" };
+    const qualifyingMarker: ProfilingProgressMarker = {
+      backend: "gpu-query",
+      progress: 60,
+      sessionResets: 1,
+    };
+
+    const result = selectQualifyingFreshSnapshot(
+      [
+        { snapshot: qualifyingSnapshot, marker: qualifyingMarker },
+        { snapshot: stalledSnapshot, marker: null },
+      ],
+      ({ snapshot, marker }) => snapshot.id === "qualifying" && marker.progress >= 60,
+    );
+
+    expect(result).toEqual({ snapshot: qualifyingSnapshot, marker: qualifyingMarker });
+  });
+
+  it("skips stalled and incomplete observations until a complete fresh window qualifies", () => {
+    const stalledSnapshot = { id: "stalled" };
+    const incompleteSnapshot = { id: "incomplete" };
+    const qualifyingSnapshot = { id: "qualifying" };
+    const marker = (progress: number): ProfilingProgressMarker => ({
+      backend: "gpu-query",
+      progress,
+      sessionResets: 1,
+    });
+
+    const result = selectQualifyingFreshSnapshot(
+      [
+        { snapshot: stalledSnapshot, marker: null },
+        { snapshot: incompleteSnapshot, marker: marker(40) },
+        { snapshot: qualifyingSnapshot, marker: marker(60) },
+      ],
+      ({ snapshot, marker: candidateMarker }) =>
+        snapshot.id === "qualifying" && candidateMarker.progress >= 60,
+    );
+
+    expect(result?.snapshot).toBe(qualifyingSnapshot);
+    expect(result?.marker.progress).toBe(60);
   });
 });
