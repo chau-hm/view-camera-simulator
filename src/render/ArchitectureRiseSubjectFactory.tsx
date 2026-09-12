@@ -4,6 +4,7 @@ import * as THREE from "three";
 import geometry, {
   architectureRiseSideWindowBays,
   architectureRiseWindowBays,
+  getArchitectureRisePrimaryFacadePlacement,
   referenceObjects,
 } from "../scenes/architectureRiseGeometry";
 import type { ReferenceObjectDef } from "../scenes/architectureRiseGeometry";
@@ -436,6 +437,7 @@ export function createArchitectureRiseGroup(): THREE.Group {
   const root = new THREE.Group();
   root.name = "architecture-rise-subject";
   root.userData.resources = resources;
+  const primaryFacadePlacement = getArchitectureRisePrimaryFacadePlacement();
 
   addBox({
     name: "architecture-rise-building-mass",
@@ -446,8 +448,8 @@ export function createArchitectureRiseGroup(): THREE.Group {
   });
   addBox({
     name: "architecture-rise-primary-facade",
-    size: [geometry.building.width - 120, geometry.building.height - 120, 20],
-    position: [geometry.building.center.x, geometry.building.center.y, geometry.facade.frontFacadeZ - 10],
+    size: [geometry.building.width - 120, geometry.building.height - 120, primaryFacadePlacement.depth],
+    position: [geometry.building.center.x, geometry.building.center.y, primaryFacadePlacement.centerZ],
     material: resources.facade,
     parent: root,
   });

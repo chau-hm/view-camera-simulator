@@ -323,6 +323,34 @@ export function getArchitectureFacadeFineDetailPieces(): ArchitectureFacadeFineD
   return pieces;
 }
 
+/**
+ * Derive the shallow presentation veneer from the existing front-face detail.
+ * Smaller Z values are nearer the camera, so the veneer remains behind every
+ * canonical/detail surface while staying just in front of the building mass.
+ */
+export function getArchitectureRisePrimaryFacadePlacement(): {
+  centerZ: number;
+  depth: number;
+  nearZ: number;
+  farZ: number;
+} {
+  const frontDetailFarZ = Math.max(
+    facade.frontFacadeZ - facadeDetailSmallGapMm,
+    ...getArchitectureFacadeFineDetailPieces().map((piece) => piece.z + piece.depth / 2),
+  );
+  const detailGapMm = 0.5;
+  const buildingGapMm = 0.5;
+  const nearZ = frontDetailFarZ + detailGapMm;
+  const farZ = facade.frontFacadeZ - buildingGapMm;
+
+  return {
+    centerZ: (nearZ + farZ) / 2,
+    depth: farZ - nearZ,
+    nearZ,
+    farZ,
+  };
+}
+
 // Focus chart canonical size and grid
 export const focusChartSizeMm = 750; // ~700-800mm
 export const focusChartCells = 8; // 6 or 8 recommended
@@ -471,6 +499,7 @@ export default {
   architectureRiseSideWindowBays,
   streetContext,
   getArchitectureFacadeFineDetailPieces,
+  getArchitectureRisePrimaryFacadePlacement,
   focusChartSizeMm,
   focusChartCells,
   // helper exports for consumers that import the default geometry object

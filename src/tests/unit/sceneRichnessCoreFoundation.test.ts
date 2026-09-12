@@ -26,6 +26,11 @@ import { toWorld } from "../../render/rttUtils";
 const worldBounds = (object: THREE.Object3D): THREE.Vector3 =>
   new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
 
+const worldZBounds = (object: THREE.Object3D): { min: number; max: number } => {
+  const bounds = new THREE.Box3().setFromObject(object);
+  return { min: bounds.min.z, max: bounds.max.z };
+};
+
 describe("core scene visual richness foundation", () => {
   it("adds architectural context at intended Architecture Rise scale without moving the canonical target", () => {
     const group = createArchitectureRiseGroup();
@@ -76,6 +81,33 @@ describe("core scene visual richness foundation", () => {
       expect(architectureRiseGeometry.sceneBounds.max.x).toBeGreaterThanOrEqual(
         architectureRiseGeometry.streetContext.sidewalkWidth / 2,
       );
+
+      const primaryFacade = group.getObjectByName("architecture-rise-primary-facade");
+      const buildingMass = group.getObjectByName("architecture-rise-building-mass");
+      const focusChart = group.getObjectByName("architecture-rise-focus-chart");
+      const crosshairHorizontal = group.getObjectByName("architecture-focus-crosshair-horizontal");
+      const crosshairVertical = group.getObjectByName("architecture-focus-crosshair-vertical");
+      const fineDetail = group.getObjectByName("architecture-rise-facade-fine-detail");
+
+      expect(primaryFacade).toBeInstanceOf(THREE.Mesh);
+      expect(buildingMass).toBeInstanceOf(THREE.Mesh);
+      expect(focusChart).toBeInstanceOf(THREE.Group);
+      expect(crosshairHorizontal).toBeInstanceOf(THREE.Mesh);
+      expect(crosshairVertical).toBeInstanceOf(THREE.Mesh);
+      expect(fineDetail).toBeInstanceOf(THREE.Group);
+
+      const primaryFacadeZ = worldZBounds(primaryFacade!);
+      const buildingMassZ = worldZBounds(buildingMass!);
+      const focusChartZ = worldZBounds(focusChart!);
+      const crosshairHorizontalZ = worldZBounds(crosshairHorizontal!);
+      const crosshairVerticalZ = worldZBounds(crosshairVertical!);
+      const fineDetailZ = worldZBounds(fineDetail!);
+
+      expect(focusChartZ.max).toBeLessThan(primaryFacadeZ.min);
+      expect(crosshairHorizontalZ.max).toBeLessThan(primaryFacadeZ.min);
+      expect(crosshairVerticalZ.max).toBeLessThan(primaryFacadeZ.min);
+      expect(fineDetailZ.max).toBeLessThan(primaryFacadeZ.min);
+      expect(primaryFacadeZ.max).toBeLessThan(buildingMassZ.min);
     } finally {
       disposeArchitectureRiseGroup(group);
     }
