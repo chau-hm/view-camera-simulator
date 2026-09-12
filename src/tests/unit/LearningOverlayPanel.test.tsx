@@ -190,10 +190,65 @@ describe("LearningOverlayPanel", () => {
     expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
   });
 
+  it("keeps completion discoverable while collapsed and restores the selected Task view", () => {
+    const { rerender } = renderPanel();
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Task and Feedback" }));
+
+    rerender(
+      <MemoryRouter>
+        <LearningOverlayPanel
+          mode="guided"
+          sceneId="oblique-architecture"
+          task={guidedTask}
+          evaluation={completedEvaluation}
+          guidedLessonContext={guidedContext}
+        />
+      </MemoryRouter>,
+    );
+
+    const panel = screen.getByTestId("learning-overlay-panel");
+    expect(panel).toHaveAttribute("data-collapsed", "true");
+    expect(panel.querySelector(".learning-overlay-panel__completion-cue")).toBeInTheDocument();
+    const collapsedControl = screen.getByRole("button", {
+      name: "Show Task and Feedback — Task completed",
+    });
+    expect(collapsedControl).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(collapsedControl);
+    expect(screen.getByRole("button", { name: /^Task$/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Feedback — Task completed" })).toHaveAttribute(
+      "data-status",
+      "completed",
+    );
+
+    rerender(
+      <MemoryRouter>
+        <LearningOverlayPanel
+          mode="guided"
+          sceneId="oblique-architecture"
+          task={guidedTask}
+          evaluation={failedEvaluation}
+          guidedLessonContext={guidedContext}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: "Collapse Task and Feedback" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(screen.queryByRole("button", { name: "Show Task and Feedback — Task completed" })).not.toBeInTheDocument();
+    expect(screen.queryByText("✓")).not.toBeInTheDocument();
+  });
+
   it("keeps Task and Feedback available in Free Practice", () => {
     renderPanel("free");
 
     expect(screen.getByTestId("learning-overlay-task-view")).toHaveTextContent("Free practice");
+    expect(screen.queryByText("✓")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
     expect(screen.getByTestId("learning-overlay-feedback-view")).toHaveTextContent("Live observation");
   });
@@ -212,5 +267,12 @@ describe("LearningOverlayPanel", () => {
       "aria-expanded",
       "true",
     );
+
+    fireEvent.click(screen.getByRole("button", { name: "收起任務及回饋" }));
+    expect(screen.getByRole("button", { name: "顯示任務及回饋 — 任務完成" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(screen.getByText("✓")).toBeInTheDocument();
   });
 });

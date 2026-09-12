@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
   getLearningFeedbackButton,
   getLearningOverlay,
@@ -25,6 +26,21 @@ test("guided learning stays available over the viewport and preserves the camera
   await expect(page.getByRole("region", { name: "Guided lesson progress" })).toBeVisible();
   await expect(page.locator(".simulator-task-feedback-grid")).toHaveCount(0);
 
+  const content = learning.locator(".learning-overlay-panel__content");
+  const scrollTarget = learning.locator(".guided-lesson-progress__stages li").first();
+  await expect(scrollTarget).toBeVisible();
+  const contentMetrics = await content.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(contentMetrics.scrollHeight).toBeGreaterThan(contentMetrics.clientHeight);
+  const scrollTargetBox = await scrollTarget.boundingBox();
+  if (!scrollTargetBox) throw new Error("Expected the Task stage list to have a visible bounding box");
+  await page.mouse.move(scrollTargetBox.x + scrollTargetBox.width / 2, scrollTargetBox.y + scrollTargetBox.height / 2);
+  const initialScrollTop = await content.evaluate((element) => element.scrollTop);
+  await page.mouse.wheel(0, 180);
+  await expect.poll(() => content.evaluate((element) => element.scrollTop)).toBeGreaterThan(initialScrollTop);
+
   await expect(await openLearningFeedback(page)).toContainText("In progress");
 
   const rise = page.getByLabel("Rise", { exact: true });
@@ -48,6 +64,34 @@ test("guided learning stays available over the viewport and preserves the camera
   await expect(page.getByRole("button", { name: "Restore Ground Glass" })).toBeVisible();
   await expect(learning).toBeVisible();
   await expect(getLearningFeedbackButton(page)).toBeVisible();
+});
+
+test("guided completion remains discoverable while the overlay is collapsed", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/simulator/guided/architecture-rise/rise-01");
+
+  const learning = overlay(page);
+  await expect(learning.getByRole("button", { name: "Task", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await learning.getByRole("button", { name: "Collapse Task and Feedback" }).click();
+
+  const expand = learning.getByRole("button", { name: "Show Task and Feedback" });
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+
+  await setStepRangeInput(page, "Rise", 12);
+  await expect(expand).toHaveAccessibleName("Show Task and Feedback — Task completed");
+  await expect(learning.locator(".learning-overlay-panel__completion-cue")).toBeVisible();
+
+  await expand.click();
+  await expect(learning.getByRole("button", { name: "Task", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
 });
 
 test("Free Practice keeps the compact learning views usable at a narrow width", async ({ page }) => {

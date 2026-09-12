@@ -50,6 +50,13 @@ export const LearningOverlayPanel = ({
   const feedbackButtonLabel = hasCompletedEvaluation
     ? `${feedbackLabel} — ${completedLabel}`
     : feedbackLabel;
+  const expandLabel = t(simulatorMessageKeys.learning.expand);
+  const collapseLabel = t(simulatorMessageKeys.learning.collapse);
+  const collapseButtonLabel = collapsed
+    ? hasCompletedEvaluation
+      ? `${expandLabel} — ${completedLabel}`
+      : expandLabel
+    : collapseLabel;
   const activeLabel = activeView === "task" ? taskLabel : feedbackLabel;
 
   return (
@@ -61,7 +68,14 @@ export const LearningOverlayPanel = ({
     >
       <header className="learning-overlay-panel__header">
         {collapsed ? (
-          <span className="learning-overlay-panel__collapsed-label">{activeLabel}</span>
+          <span className="learning-overlay-panel__collapsed-label">
+            {activeLabel}
+            {hasCompletedEvaluation ? (
+              <span aria-hidden="true" className="learning-overlay-panel__completion-cue">
+                ✓
+              </span>
+            ) : null}
+          </span>
         ) : (
           <div
             aria-label={t(simulatorMessageKeys.learning.viewsLabel)}
@@ -97,11 +111,12 @@ export const LearningOverlayPanel = ({
         <button
           aria-controls={contentId}
           aria-expanded={!collapsed}
+          aria-label={collapseButtonLabel}
           className="learning-overlay-panel__collapse-button"
           type="button"
           onClick={() => setCollapsed((value) => !value)}
         >
-          <span>{collapsed ? t(simulatorMessageKeys.learning.expand) : t(simulatorMessageKeys.learning.collapse)}</span>
+          <span>{collapsed ? expandLabel : collapseLabel}</span>
           <span aria-hidden="true" className="material-symbols-outlined">
             {collapsed ? "expand_less" : "expand_more"}
           </span>
