@@ -6,7 +6,7 @@ Run the opt-in matrix with:
 npm run benchmark:scene-capacity
 ```
 
-The command runs `scene-capacity-benchmark.spec.ts` serially at 1440×1000 with device pixel ratio 1 and writes ignored artifacts to:
+The command runs `scene-capacity-benchmark.spec.ts` serially at 1440×1000 with device pixel ratio 1. It owns a dedicated Vite dev server on port 4174 with `reuseExistingServer: false`, so it does not reuse the ordinary E2E server on port 4173. It writes ignored artifacts to:
 
 ```text
 test-results/scene-capacity-benchmark.json
@@ -31,4 +31,4 @@ This builds the production bundle, starts a dedicated preview server on port 417
 
 The output records two separate qualifications. A known software renderer such as SwiftShader, llvmpipe, or Software Rasterizer fails the hardware command. A non-software renderer is a hardware-renderer candidate. `gpu-query` with `gpu-ms` is the preferred full GPU-timing qualification. If the renderer is hardware-backed but profiling falls back to `cpu-submit-ms`, the run is reported as hardware-rendered with GPU timing unavailable; those values remain CPU-submit observations and cannot identify GPU pass cost. Unknown renderer strings are not rejected through an allow-list.
 
-The normal `npm run benchmark:scene-capacity` command remains unchanged and does not require hardware. A useful local hardware baseline is normally several consecutive runs on the same commit, Chrome version, machine, and display configuration. This benchmark is intentionally local/manual and is not part of ordinary CI.
+The normal `npm run benchmark:scene-capacity` command remains software-compatible, uses its isolated port 4174 dev server, and does not require hardware. A useful local hardware baseline is normally several consecutive runs on the same commit, Chrome version, machine, and display configuration. This benchmark is intentionally local/manual and is not part of ordinary CI.
