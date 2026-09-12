@@ -60,6 +60,7 @@ import type {
   GroundGlassRttRuntimeInfoByChannel,
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "../../render/groundGlassRttDimensions";
+import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
 import {
   formatCameraMovementLessonReadout,
@@ -106,6 +107,8 @@ export const SimulatorWorkspace = ({
     (state) => state.clearSimulatorRouteInitialization,
   );
   const camera = useAppStore((state) => state.camera);
+  const [viewportSubjectCapacity, setViewportSubjectCapacity] =
+    useState<SceneGraphCapacityMetrics | null>(null);
   const setGeometryView = useAppStore((state) => state.setGeometryView);
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
   const calibrationSession = useAppStore(
@@ -253,6 +256,9 @@ export const SimulatorWorkspace = ({
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
+  useEffect(() => {
+    setViewportSubjectCapacity(null);
+  }, [safeScene.id]);
   const presentationRegion =
     safeScene.id === "understanding-camera-movements" && camera.cameraMovementLessonState
       ? resolveCameraMovementLessonPresentationTargetRegion(camera.cameraMovementLessonState)
@@ -629,6 +635,7 @@ export const SimulatorWorkspace = ({
                     ? `${anatomyViewportInspectionTarget ?? "stable-camera"}:${anatomyViewResetNonce}`
                     : undefined
                 }
+                onSubjectCapacityChange={setViewportSubjectCapacity}
                 showHeader={false}
               />
             </div>}
@@ -754,6 +761,7 @@ export const SimulatorWorkspace = ({
               aperture={camera.aperture as number}
               renderQuality={renderQuality}
               rttRuntimeInfo={rttRuntimeInfo}
+              viewportSubjectCapacity={viewportSubjectCapacity}
             />
             </div>
           </>}

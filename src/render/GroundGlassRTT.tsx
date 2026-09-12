@@ -75,6 +75,11 @@ import {
   type GroundGlassProfilingConfiguration,
   type GroundGlassProfilingPass,
 } from "./groundGlassProfiling";
+import {
+  collectSceneGraphCapacity,
+  isSceneCapacityProfilingEnabled,
+  readSceneCapacityRendererResources,
+} from "./sceneCapacityProfiling";
 import type {
   GroundGlassRttChannel,
   GroundGlassRttRuntimeInfo,
@@ -140,6 +145,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
   const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
   const profilingEnabled = isGroundGlassProfilingEnabled();
+  const sceneCapacityProfilingEnabled = isSceneCapacityProfilingEnabled();
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
   const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1 }));
@@ -486,6 +492,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           profilingEnabled: true,
           profilingBackend: snapshot.profilingBackend,
           profilingSnapshot: snapshot,
+          sceneCapacity: sceneCapacityProfilingEnabled
+            ? {
+                rttSubject: currentInfo.sceneCapacity?.rttSubject ?? null,
+                rendererResources: readSceneCapacityRendererResources(gl),
+              }
+            : currentInfo.sceneCapacity,
         });
       },
     );
@@ -639,6 +651,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     profilingEnabled,
     readRuntimeInfo,
     resolvedSceneId,
+    sceneCapacityProfilingEnabled,
     setRuntimeInfo,
   ]);
 
@@ -677,6 +690,20 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         latticeResourceKey: runtimeInfo.resourceKey,
         latticePresentationRegion: runtimeInfo.presentationRegion,
         latticeSubjectGeneration: runtimeInfo.generation,
+        sceneCapacity: sceneCapacityProfilingEnabled
+          ? {
+              rttSubject: collectSceneGraphCapacity(mounted.group),
+              rendererResources: readSceneCapacityRendererResources(gl),
+            }
+          : undefined,
+      });
+    } else if (currentInfo && sceneCapacityProfilingEnabled) {
+      setRuntimeInfo({
+        ...currentInfo,
+        sceneCapacity: {
+          rttSubject: collectSceneGraphCapacity(mounted.group),
+          rendererResources: readSceneCapacityRendererResources(gl),
+        },
       });
     }
 
@@ -699,6 +726,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           latticeResourceKey: undefined,
           latticePresentationRegion: undefined,
           latticeSubjectGeneration: undefined,
+          sceneCapacity: undefined,
         });
       }
     };
@@ -707,7 +735,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     sceneDefinition,
     sceneProfile,
     readRuntimeInfo,
+    sceneCapacityProfilingEnabled,
     setRuntimeInfo,
+    gl,
   ]);
 
   // Scene profiles own any scene-specific mutation of their mounted subject.
