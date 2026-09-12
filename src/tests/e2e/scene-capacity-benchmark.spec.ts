@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Frame, type Page } from "@playwright/test";
 import {
   GROUND_GLASS_PROFILING_WINDOW_SIZE,
 } from "../../render/groundGlassProfiling";
@@ -26,6 +26,7 @@ import {
   type BenchmarkRuntimeMetadata,
   type MeasurementStateEvidence,
 } from "../helpers/sceneCapacityBenchmarkRuntime";
+import { createMeasurementNavigationGuard } from "../helpers/sceneCapacityBenchmarkNavigation";
 
 const benchmarkEnabled = process.env.SCENE_CAPACITY_BENCHMARK === "1";
 const benchmarkOutputDirectory = process.env.SCENE_CAPACITY_BENCHMARK_OUTPUT_DIR ?? "test-results";
@@ -176,41 +177,54 @@ const waitForMeasurementState = async (
   page: Page,
   sceneId: string,
   state: RequestedMeasurementState,
+  assertDocumentStable: () => void = () => {},
 ): Promise<MeasurementStateEvidence> => {
   const rtt = page.getByTestId("ground-glass-rtt");
   const loupeStage = page.locator("[data-focus-loupe-active]").first();
+  assertDocumentStable();
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", sceneId, {
     timeout: MEASUREMENT_STATE_TIMEOUT_MS,
   });
+  assertDocumentStable();
   const finalContentful = await rtt.getAttribute("data-rtt-final-contentful");
+  assertDocumentStable();
   let finalContentfulEvidence: boolean | null;
   if (productionPreview && finalContentful === null) {
     // Render-sanity readback is intentionally DEV-only. The production
     // preview still exposes the renderer-owned camera/readiness and profiler
     // progress attributes, which are the non-invasive readiness contract for
     // this hardware run.
+    assertDocumentStable();
     await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
+    assertDocumentStable();
     await expect(rtt).toHaveAttribute("data-rtt-profiling-frame-count", /[1-9]\d*/, { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
+    assertDocumentStable();
     finalContentfulEvidence = null;
   } else {
+    assertDocumentStable();
     await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
+    assertDocumentStable();
     finalContentfulEvidence = true;
   }
+  assertDocumentStable();
   await expect(loupeStage).toHaveAttribute(
     "data-focus-loupe-active",
     String(state.inspectionWindowActive),
     { timeout: MEASUREMENT_STATE_TIMEOUT_MS },
   );
+  assertDocumentStable();
   await expect(rtt).toHaveAttribute(
     "data-rtt-inspection-window-active",
     String(state.inspectionWindowActive),
     { timeout: MEASUREMENT_STATE_TIMEOUT_MS },
   );
+  assertDocumentStable();
   await expect(rtt).toHaveAttribute(
     "data-rtt-profiling-raw-debug",
     String(state.rawDebug),
     { timeout: MEASUREMENT_STATE_TIMEOUT_MS },
   );
+  assertDocumentStable();
   return {
     finalContentful: finalContentfulEvidence,
     inspectionWindowActive: state.inspectionWindowActive,
@@ -265,16 +279,20 @@ const waitForProgressMarker = async (
   page: Page,
   sceneId: string,
   state: RequestedMeasurementState,
+  assertDocumentStable: () => void = () => {},
   timeoutMs = 120_000,
 ): Promise<ProfilingProgressMarker> => {
   const deadline = Date.now() + timeoutMs;
   let latestSnapshot: SceneCapacitySnapshot | null = null;
   while (Date.now() < deadline) {
+    assertDocumentStable();
     latestSnapshot = await readCapacitySnapshot(page);
+    assertDocumentStable();
     if (latestSnapshot?.sceneId === sceneId && latestSnapshot.groundGlass?.rawDebug === state.rawDebug) {
       const marker = readProgressMarker(latestSnapshot);
       if (marker !== null) return marker;
     }
+    assertDocumentStable();
     await page.waitForTimeout(250);
   }
   throw new Error(
@@ -292,13 +310,16 @@ const waitForFreshSnapshot = async (
   sceneId: string,
   state: RequestedMeasurementState,
   initialMarker: ProfilingProgressMarker,
+  assertDocumentStable: () => void = () => {},
   timeoutMs = 180_000,
 ): Promise<FreshSnapshotResult> => {
   const deadline = Date.now() + timeoutMs;
   let latestSnapshot: SceneCapacitySnapshot | null = null;
 
   while (Date.now() < deadline) {
+    assertDocumentStable();
     latestSnapshot = await readCapacitySnapshot(page);
+    assertDocumentStable();
     if (latestSnapshot?.sceneId === sceneId && latestSnapshot.groundGlass?.rawDebug === state.rawDebug) {
       const marker = readProgressMarker(latestSnapshot);
       const selected = selectQualifyingFreshSnapshot(
@@ -315,6 +336,7 @@ const waitForFreshSnapshot = async (
       );
       if (selected) return selected;
     }
+    assertDocumentStable();
     await page.waitForTimeout(250);
   }
 
@@ -332,28 +354,55 @@ const waitForFreshStableSnapshot = async (
   sampling: BenchmarkSamplingEvidence;
   runtime: BenchmarkRuntimeMetadata;
 }> => {
-  const measurementState = await waitForMeasurementState(page, sceneId, state);
-  const initialMarker = await waitForProgressMarker(page, sceneId, state);
-  const { snapshot, marker: finalMarker } = await waitForFreshSnapshot(
-    page,
-    sceneId,
-    state,
-    initialMarker,
-  );
-  assertCapacitySnapshot(snapshot, sceneId, state.rawDebug);
-  return {
-    snapshot,
-    runtime: runtimeFromMeasurement(snapshot, measurementState),
-    sampling: {
-      backend: finalMarker.backend,
-      progressStart: initialMarker.progress,
-      progressEnd: finalMarker.progress,
-      freshSamples: finalMarker.progress - initialMarker.progress,
-      windowSize: GROUND_GLASS_PROFILING_WINDOW_SIZE,
-      sessionResetsStart: initialMarker.sessionResets,
-      sessionResetsEnd: finalMarker.sessionResets,
-    },
+  const navigationGuard = createMeasurementNavigationGuard(sceneId, state);
+  const onFrameNavigated = (frame: Frame): void => {
+    navigationGuard.observeNavigation({
+      isMainFrame: frame === page.mainFrame(),
+      url: frame.url(),
+    });
   };
+  page.on("framenavigated", onFrameNavigated);
+  try {
+    const measurementState = await waitForMeasurementState(
+      page,
+      sceneId,
+      state,
+      navigationGuard.assertStable,
+    );
+    navigationGuard.assertStable();
+    const initialMarker = await waitForProgressMarker(
+      page,
+      sceneId,
+      state,
+      navigationGuard.assertStable,
+    );
+    navigationGuard.assertStable();
+    const { snapshot, marker: finalMarker } = await waitForFreshSnapshot(
+      page,
+      sceneId,
+      state,
+      initialMarker,
+      navigationGuard.assertStable,
+    );
+    navigationGuard.assertStable();
+    assertCapacitySnapshot(snapshot, sceneId, state.rawDebug);
+    navigationGuard.assertStable();
+    return {
+      snapshot,
+      runtime: runtimeFromMeasurement(snapshot, measurementState),
+      sampling: {
+        backend: finalMarker.backend,
+        progressStart: initialMarker.progress,
+        progressEnd: finalMarker.progress,
+        freshSamples: finalMarker.progress - initialMarker.progress,
+        windowSize: GROUND_GLASS_PROFILING_WINDOW_SIZE,
+        sessionResetsStart: initialMarker.sessionResets,
+        sessionResetsEnd: finalMarker.sessionResets,
+      },
+    };
+  } finally {
+    page.off("framenavigated", onFrameNavigated);
+  }
 };
 
 const readEnvironment = async (page: Page, browserName: string): Promise<BenchmarkEnvironment> => {
