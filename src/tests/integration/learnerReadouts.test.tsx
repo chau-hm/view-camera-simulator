@@ -200,12 +200,13 @@ describe("scene-aware learner readouts", () => {
     const panel = screen.getByTestId("focus-distribution-panel");
     const targetPosition = (targetId: string) => {
       const target = panel.querySelector<HTMLElement>(`[data-focus-target-id="${targetId}"]`);
-      const row = target?.closest("tr");
-      if (!target || !row) return null;
+      const cell = target?.closest("td");
+      const row = cell?.closest("tr");
+      if (!target || !cell || !row) return null;
       const rows = within(panel).getAllByRole("row");
       return {
         rowIndex: rows.indexOf(row as HTMLElement),
-        columnIndex: Array.from(row.children).indexOf(target),
+        columnIndex: Array.from(row.children).indexOf(cell),
       };
     };
     const projectedPosition = (previewMode: GroundGlassPreviewMode, targetId: string) => {

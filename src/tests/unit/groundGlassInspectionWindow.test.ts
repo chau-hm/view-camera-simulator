@@ -75,7 +75,7 @@ describe("Ground Glass physical inspection window", () => {
     });
   });
 
-  it("maps raw displayed pan back to the physical film crop", () => {
+  it("maps displayed pan through the shared Raw/Upright display transform", () => {
     const displayedWindow = {
       active: true,
       centerU: 0.875,
@@ -84,13 +84,13 @@ describe("Ground Glass physical inspection window", () => {
       heightFraction: 0.25,
     };
 
-    expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "raw")).toEqual({
+    expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "raw")).toEqual(
+      displayedWindow,
+    );
+    expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "upright")).toEqual({
       ...displayedWindow,
       centerU: 0.125,
       centerV: 0.875,
     });
-    expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "upright")).toBe(
-      displayedWindow,
-    );
   });
 });

@@ -1,7 +1,11 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { FocusDistributionPanel } from "../../components/simulator/FocusDistributionPanel";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { i18n } from "../../i18n";
+import { projectSceneFocusTargetsToGroundGlass } from "../../render/groundGlassTargetProjection";
+import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const allTargets = [
   { id: "near-left", sharpnessPercent: 81.6, status: "sharp", displayUv: { u: 0.1, v: 0.1 }, visible: true },
@@ -168,5 +172,56 @@ describe("FocusDistributionPanel", () => {
     expect(screen.getByRole("cell", { name: /左中.*建築物中段/ })).toHaveAccessibleName(
       /68%.*可接受/,
     );
+  });
+
+  it("keeps the real Table Tilt collision as a compact stacked cell", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...tableTiltScene.cameraPreset,
+      activeSceneId: tableTiltScene.id,
+      activeTaskId: null,
+      mode: "free" as const,
+    };
+    const projectedTargets = projectSceneFocusTargetsToGroundGlass({
+      sceneDef: tableTiltScene,
+      opticsState: deriveOpticsState(camera, tableTiltScene),
+      aperture: camera.aperture,
+      previewMode: "raw",
+    });
+
+    render(
+      <FocusDistributionPanel
+        sceneId={tableTiltScene.id}
+        focusTargets={projectedTargets.map((target) => ({
+          id: target.id,
+          sharpnessPercent: target.id === "near-cup" ? 91 : target.id === "mid-notebook" ? 98 : 99,
+          status: "sharp",
+          displayUv: target.displayUv,
+          visible: target.visible,
+        }))}
+        previewMode="raw"
+        metric="point"
+      />,
+    );
+
+    const panel = screen.getByTestId("focus-distribution-panel");
+    const targetIds = ["near-cup", "mid-notebook", "far-book"];
+    const targetEntries = targetIds.map((targetId) => panel.querySelector(`[data-focus-target-id="${targetId}"]`));
+    expect(targetEntries.every(Boolean)).toBe(true);
+    expect(targetEntries.every((target) => target?.closest("td") === targetEntries[0]?.closest("td"))).toBe(true);
+    expect(panel.querySelectorAll(".focus-distribution-cell--stacked")).toHaveLength(1);
+    expect(panel).toHaveTextContent("Near card");
+    expect(panel).toHaveTextContent("Middle notebook");
+    expect(panel).toHaveTextContent("Far chart");
+    expect(panel).toHaveTextContent("91%");
+    expect(panel).toHaveTextContent("98%");
+    expect(panel).toHaveTextContent("99%");
+    targetEntries.forEach((target) => {
+      expect(target).not.toBeNull();
+      if (!target) return;
+      expect(target).toHaveAttribute("role", "group");
+      expect(target).toHaveAccessibleName(/Raw|Upper|Middle|Lower/);
+      expect(target).toHaveTextContent("✓");
+    });
   });
 });
