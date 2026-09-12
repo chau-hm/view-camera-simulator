@@ -5,6 +5,11 @@ import {
   readStageTransform,
 } from "./helpers/groundGlass";
 import { readFocusDistributionScores } from "./helpers/focusDistribution";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -225,14 +230,16 @@ test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource s
 test("Table Tilt calibrated controls complete the guided task", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/simulator/guided/table-tilt/tilt-01");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
 
   await setRangeDirect(page, "Tilt", 9);
   await setRangeDirect(page, "Focus distance", 6130);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
 
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await expect(page.getByText(/Positive Front Tilt aligned the plane of sharp focus/)).toBeVisible();
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await expect(feedback).toContainText("Positive Front Tilt aligned the plane of sharp focus");
 
   const sceneCanvas = page.getByTestId("scene-canvas");
   for (const attribute of [

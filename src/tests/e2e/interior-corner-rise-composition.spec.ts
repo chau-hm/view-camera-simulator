@@ -1,6 +1,7 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
+import { openLearningFeedback } from "./helpers/learningOverlay";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
@@ -28,7 +29,8 @@ test("Interior Corner free mode exposes reachable Rise composition feedback", as
   await expect(rise).toBeEnabled();
   await expect(rise).toHaveValue("0");
 
-  const feedback = page.getByTestId("interior-corner-rise-composition-feedback");
+  const feedbackView = await openLearningFeedback(page);
+  const feedback = feedbackView.getByTestId("interior-corner-rise-composition-feedback");
   await expect(feedback).toContainText("upper architecture is still too close to the top edge");
 
   const rtt = page.getByTestId("ground-glass-rtt");

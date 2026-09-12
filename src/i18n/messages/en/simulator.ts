@@ -7,6 +7,12 @@ export const simulatorMessages = {
     title: "Feedback",
     liveObservation: "Live observation",
   },
+  learning: {
+    title: "Task and Feedback",
+    viewsLabel: "Task and Feedback views",
+    collapse: "Collapse Task and Feedback",
+    expand: "Show Task and Feedback",
+  },
   controls: {
     movementTitle: "Movement",
     riseLabel: "Rise",

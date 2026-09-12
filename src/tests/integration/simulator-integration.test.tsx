@@ -150,6 +150,7 @@ describe("phase 12 integration", () => {
     const camera = useAppStore.getState().camera;
     const optics = selectDerivedOpticsState(camera);
     const evaluation = evaluateTask(task, scene, camera, optics);
+    fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
     expect(screen.getByText(new RegExp(`Score: ${evaluation.score}`))).toBeInTheDocument();
     for (const criterion of evaluation.criteria) {
       const label = String(
@@ -196,6 +197,7 @@ describe("phase 12 integration", () => {
       fireEvent.keyDown(riseInput, { key: "ArrowRight", code: "ArrowRight" });
     }
 
+    fireEvent.click(screen.getByRole("button", { name: "Feedback — Task completed" }));
     expect(screen.getByRole("heading", { name: "Task completed" })).toBeInTheDocument();
   });
 

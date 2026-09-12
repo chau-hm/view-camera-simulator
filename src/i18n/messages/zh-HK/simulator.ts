@@ -10,6 +10,12 @@ export const simulatorMessages = {
     title: "回饋",
     liveObservation: "即時觀察",
   },
+  learning: {
+    title: "任務及回饋",
+    viewsLabel: "任務及回饋檢視",
+    collapse: "收起任務及回饋",
+    expand: "顯示任務及回饋",
+  },
   controls: {
     movementTitle: "相機移軸",
     riseLabel: "上移",

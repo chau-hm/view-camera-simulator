@@ -58,12 +58,32 @@ const expectSameObserverOffset = (reference: ViewState, actual: ViewState) => {
   }
 };
 
-const orbitScene = async (page: Page, sceneCanvas: Locator) => {
+const getSceneInteractionPoint = async (page: Page, sceneCanvas: Locator) => {
   const canvas = sceneCanvas.locator("canvas");
   const bounds = await canvas.boundingBox();
   if (!bounds) throw new Error("3D Scene canvas bounds unavailable");
-  const x = bounds.x + bounds.width * 0.58;
-  const y = bounds.y + bounds.height * 0.52;
+
+  const overlayBounds = await page.getByTestId("learning-overlay-panel").boundingBox();
+  const candidates = [
+    { x: bounds.x + bounds.width * 0.58, y: bounds.y + bounds.height * 0.2 },
+    { x: bounds.x + bounds.width * 0.8, y: bounds.y + bounds.height * 0.2 },
+    { x: bounds.x + bounds.width * 0.2, y: bounds.y + bounds.height * 0.2 },
+    { x: bounds.x + bounds.width * 0.58, y: bounds.y + bounds.height * 0.8 },
+  ];
+  const point = candidates.find(({ x, y }) =>
+    !overlayBounds ||
+    x < overlayBounds.x ||
+    x > overlayBounds.x + overlayBounds.width ||
+    y < overlayBounds.y ||
+    y > overlayBounds.y + overlayBounds.height,
+  );
+  if (!point) throw new Error("No Scene orbit point available outside the learning overlay");
+
+  return point;
+};
+
+const orbitScene = async (page: Page, sceneCanvas: Locator) => {
+  const { x, y } = await getSceneInteractionPoint(page, sceneCanvas);
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + 72, y - 36, { steps: 6 });
@@ -113,7 +133,8 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   await orbitScene(page, sceneCanvas);
   await expect.poll(async () => (await readViewState(sceneCanvas)).position).not.toEqual(cameraPreset.position);
   const orbitedCameraView = await readViewState(sceneCanvas);
-  await sceneCanvas.locator("canvas").hover();
+  const wheelPoint = await getSceneInteractionPoint(page, sceneCanvas);
+  await page.mouse.move(wheelPoint.x, wheelPoint.y);
   await page.mouse.wheel(0, -360);
   await expect.poll(async () => viewDistance(await readViewState(sceneCanvas))).not.toBeCloseTo(
     viewDistance(orbitedCameraView),

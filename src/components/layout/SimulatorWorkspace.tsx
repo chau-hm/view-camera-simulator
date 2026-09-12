@@ -34,20 +34,18 @@ import { SingleMovementControl } from "../controls/SingleMovementControl";
 import { ResetControls } from "../controls/ResetControls";
 import { MirrorShiftCameraPositionControl } from "../controls/MirrorShiftCameraPositionControl";
 import { MirrorShiftFrontShiftControl } from "../controls/MirrorShiftFrontShiftControl";
-import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
 import {
   CurrentSettingsReadout,
 } from "../simulator/GroundGlassReadouts";
 import { FocusDistributionPanel, type FocusTargetMetric } from "../simulator/FocusDistributionPanel";
+import { LearningOverlayPanel } from "../simulator/LearningOverlayPanel";
 import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { AnatomyLessonPanel } from "../simulator/AnatomyLessonPanel";
 import { AnatomyControlTeachingPanel } from "../simulator/AnatomyControlTeachingPanel";
-import { TaskPanel } from "../simulator/TaskPanel";
-import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
 import {
   projectSceneFocusTargetsToGroundGlass,
@@ -600,6 +598,7 @@ export const SimulatorWorkspace = ({
             <p role="alert">{t(simulatorMessageKeys.viewport.opticsFallbackPrefix)}: {opticsState.diagnostics.errorMessage}</p>
           )}
 
+          <div className={`simulator-viewport-context${viewportExpanded ? " simulator-viewport-context--expanded" : ""}`}>
           <div className={`simulator-viewport-grid${viewportExpanded ? " simulator-viewport-grid--expanded" : ""}`}>
             {(!viewportExpanded || sceneExpanded) && <div className={`simulator-card${sceneExpanded ? " simulator-card--expanded" : ""}`}>
               <div className="simulator-card-header">
@@ -697,6 +696,19 @@ export const SimulatorWorkspace = ({
             )}
           </div>
 
+          {!isAnatomyLesson ? (
+            <LearningOverlayPanel
+              mode={mode}
+              sceneId={safeScene.id}
+              task={task}
+              evaluation={evaluation}
+              guidedLessonContext={guidedLessonContext}
+              freeCompositionEvaluation={interiorCornerRiseEvaluation}
+              freeFocusEvaluation={interiorCornerFocusEvaluation}
+            />
+          ) : null}
+          </div>
+
           {!viewportExpanded && !isAnatomyLesson && <>
             {/* Row 1: scene-aware learner readouts */}
             <div className={`simulator-primary-info-grid${learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? "" : " simulator-primary-info-grid--single"}`}>
@@ -737,32 +749,7 @@ export const SimulatorWorkspace = ({
             ) : null}
             </div>
 
-            {/* Row 2: Task | Feedback (each wrapped in a card shell provided by Workspace) */}
-            <div className="simulator-task-feedback-grid">
-            <div className="simulator-info-card simulator-info-card--task">
-              <h4>{t(simulatorMessageKeys.task.title)}</h4>
-              {guidedLessonContext ? (
-                <GuidedLessonProgress context={guidedLessonContext} evaluation={evaluation} />
-              ) : null}
-              {guidedLessonContext?.stage === "observe" ? null : (
-                <TaskPanel task={task} sceneId={safeScene.id} showTitle={false} />
-              )}
-            </div>
-            <div className="simulator-info-card simulator-info-card--feedback">
-              <h4>{t(simulatorMessageKeys.feedback.title)}</h4>
-              <FeedbackPanel
-                mode={mode}
-                sceneId={safeScene.id}
-                task={task}
-                evaluation={evaluation}
-                freeCompositionEvaluation={interiorCornerRiseEvaluation}
-                freeFocusEvaluation={interiorCornerFocusEvaluation}
-                showTitle={false}
-              />
-            </div>
-            </div>
-
-            {/* Row 3: Optical Debug, full width (component owns its single card shell) */}
+            {/* Optical Debug remains in normal flow below the learner readouts. */}
             <div className="simulator-debug-row">
             <OpticalDebugPanel
               sceneId={camera.activeSceneId}

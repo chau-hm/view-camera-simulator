@@ -140,6 +140,21 @@ button {
   min-width: 0;
 }
 
+.simulator-viewport-context {
+  position: relative;
+  min-width: 0;
+}
+
+.simulator-viewport-context--expanded {
+  height: 100%;
+  min-height: 0;
+}
+
+.simulator-viewport-context--expanded > .simulator-viewport-grid {
+  height: 100%;
+  min-height: 0;
+}
+
 .simulator-viewport-grid--expanded {
   height: 100%;
   width: 100%;
@@ -235,15 +250,6 @@ button {
  grid-template-columns: minmax(0, 1fr);
 }
 
-/* task + feedback grid: two equal columns */
-.simulator-task-feedback-grid {
- grid-column: 1 / -1;
- display: grid;
- grid-template-columns: 1fr 1fr;
- gap: 16px;
- align-items: start;
-}
-
 /* debug row full width */
 .simulator-debug-row {
  grid-column: 1 / -1;
@@ -253,8 +259,7 @@ button {
 .simulator-debug-row > * { width: 100%; }
 
 @media (max-width: 900px) {
- .simulator-primary-info-grid,
- .simulator-task-feedback-grid {
+ .simulator-primary-info-grid {
    grid-template-columns: 1fr;
  }
 }
@@ -552,13 +557,6 @@ button {
   .groundglass-comparison { grid-template-columns: 1fr; }
 }
 
-.simulator-task-feedback-grid {
- grid-column: 1 / -1;
- display: grid;
- grid-template-columns: 1fr 1fr;
- gap: 16px;
-}
-
 /* allow cards to shrink inside grid columns to avoid overflow */
 .simulator-card {
  background: var(--surface);
@@ -584,6 +582,206 @@ button {
 
 .simulator-info-card--feedback {
  background: linear-gradient(180deg, rgba(236,252,245,0.6), rgba(236,252,245,0.4));
+}
+
+/* Viewport learning overlay */
+.learning-overlay-panel {
+ position: absolute;
+ z-index: 20;
+ left: 50%;
+ bottom: 16px;
+ display: grid;
+ grid-template-rows: auto minmax(0, 1fr);
+ width: min(720px, calc(100% - 32px));
+ height: min(220px, 32vh);
+ max-height: min(220px, 32vh);
+ min-height: 0;
+ transform: translateX(-50%);
+ overflow: hidden;
+ border: 1px solid var(--sim-border, rgba(176, 224, 241, 0.2));
+ border-radius: var(--sim-radius-panel, 10px);
+ background: rgba(8, 19, 31, 0.92);
+ box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36);
+ color: var(--sim-text, #f2f7f6);
+ backdrop-filter: blur(8px);
+ -webkit-backdrop-filter: blur(8px);
+ pointer-events: none;
+}
+
+.simulator-viewport-context:not(.simulator-viewport-context--expanded) .learning-overlay-panel {
+ left: 0;
+ width: min(720px, calc(50% - 8px));
+ transform: none;
+}
+
+.learning-overlay-panel--collapsed {
+ height: auto;
+ max-height: none;
+}
+
+.learning-overlay-panel__header {
+ display: flex;
+ align-items: center;
+ justify-content: flex-start;
+ gap: 10px;
+ min-width: 0;
+ padding: 7px 9px;
+ border-bottom: 1px solid var(--sim-border-subtle, rgba(176, 224, 241, 0.12));
+}
+
+.learning-overlay-panel__header button,
+.learning-overlay-panel__content :is(a, button, summary, [role="button"], input, select, textarea) {
+ pointer-events: auto;
+}
+
+.learning-overlay-panel__views {
+ display: inline-flex;
+ min-width: 0;
+ gap: 4px;
+}
+
+.learning-overlay-panel__view-button,
+.learning-overlay-panel__collapse-button {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ min-height: 28px;
+ border: 1px solid transparent;
+ border-radius: var(--sim-radius-control, 6px);
+ background: transparent;
+ color: var(--sim-text-muted, #a9bac7);
+ cursor: pointer;
+ font-size: 12px;
+ font-weight: 700;
+ line-height: 1.1;
+}
+
+.learning-overlay-panel__view-button {
+ gap: 4px;
+ padding: 4px 9px;
+}
+
+.learning-overlay-panel__view-button[aria-pressed="true"] {
+ border-color: var(--sim-accent-border, rgba(143, 234, 255, 0.36));
+ background: var(--sim-accent-soft, rgba(101, 224, 255, 0.13));
+ color: var(--sim-text, #f2f7f6);
+}
+
+.learning-overlay-panel__completion-cue {
+ color: var(--sim-accent, #8feaff);
+ font-size: 13px;
+ line-height: 1;
+}
+
+.learning-overlay-panel__view-button:hover,
+.learning-overlay-panel__collapse-button:hover {
+ border-color: var(--sim-border-strong, rgba(143, 234, 255, 0.42));
+ color: var(--sim-accent, #8feaff);
+}
+
+.learning-overlay-panel__collapse-button {
+ flex: 0 0 auto;
+ margin-left: 4px;
+ gap: 4px;
+ padding: 4px 6px;
+ color: var(--sim-text-muted, #a9bac7);
+}
+
+.learning-overlay-panel__collapse-button .material-symbols-outlined {
+ font-size: 18px;
+}
+
+.learning-overlay-panel__collapsed-label {
+ overflow: hidden;
+ min-width: 0;
+ color: var(--sim-text, #f2f7f6);
+ font-size: 12px;
+ font-weight: 700;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+}
+
+.learning-overlay-panel__content {
+ min-height: 0;
+ overflow-y: auto;
+ overscroll-behavior: contain;
+ pointer-events: auto;
+ scrollbar-color: rgba(143, 234, 255, 0.32) transparent;
+}
+
+.learning-overlay-panel__content::-webkit-scrollbar {
+ width: 7px;
+}
+
+.learning-overlay-panel__content::-webkit-scrollbar-thumb {
+ border: 2px solid transparent;
+ border-radius: 999px;
+ background: rgba(143, 234, 255, 0.28);
+ background-clip: padding-box;
+}
+
+.learning-overlay-panel__view {
+ min-width: 0;
+ padding: 8px 10px 10px;
+}
+
+.learning-overlay-panel__view > .task-panel,
+.learning-overlay-panel__view > .feedback-panel {
+ padding: 0;
+}
+
+.learning-overlay-panel__view > .feedback-panel {
+ border-left: 0;
+}
+
+/* Keep viewport-local controls usable when their dropdowns extend into the
+   learning overlay's lower presentation area. */
+.simulator-viewport-context .scene-overlay-controls-wrap,
+.simulator-viewport-context .btn--viewport-action {
+ z-index: 30;
+}
+
+@media (max-width: 900px) {
+ .learning-overlay-panel__header {
+   flex-wrap: wrap;
+   gap: 4px;
+ }
+
+ .learning-overlay-panel__collapse-button {
+   margin-left: auto;
+ }
+
+ .simulator-viewport-context:not(.simulator-viewport-context--expanded) {
+   display: grid;
+   gap: var(--sim-panel-section-gap);
+ }
+
+ .simulator-viewport-context:not(.simulator-viewport-context--expanded) .learning-overlay-panel {
+   position: static;
+   width: auto;
+   height: min(360px, 45vh);
+   max-width: none;
+   max-height: min(360px, 45vh);
+   transform: none;
+ }
+
+ .simulator-viewport-context:not(.simulator-viewport-context--expanded) .learning-overlay-panel--collapsed {
+   height: auto;
+   max-height: none;
+ }
+}
+
+@media (min-width: 901px) and (max-width: 1100px) {
+ .learning-overlay-panel {
+   height: min(160px, 24vh);
+   max-height: min(160px, 24vh);
+ }
+
+ .learning-overlay-panel__header {
+   flex-wrap: wrap;
+   gap: 4px;
+   justify-content: flex-end;
+ }
 }
 
 /* Task / Feedback panels */

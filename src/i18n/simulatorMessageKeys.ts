@@ -7,6 +7,12 @@ export const simulatorMessageKeys = {
     title: "simulator.feedback.title",
     liveObservation: "simulator.feedback.liveObservation",
   },
+  learning: {
+    title: "simulator.learning.title",
+    viewsLabel: "simulator.learning.viewsLabel",
+    collapse: "simulator.learning.collapse",
+    expand: "simulator.learning.expand",
+  },
   controls: {
     movementTitle: "simulator.controls.movementTitle",
     riseLabel: "simulator.controls.riseLabel",

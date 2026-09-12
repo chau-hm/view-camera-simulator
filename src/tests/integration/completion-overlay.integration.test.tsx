@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
@@ -35,12 +35,18 @@ vi.mock("../../core/tasks/evaluateTask", async () => {
 });
 
 describe("phase 12 completion overlay", () => {
-  it("TST-INT-013 shows completion overlay when task passes", () => {
+  it("TST-INT-013 shows completion overlay when task passes", async () => {
     render(
       <MemoryRouter initialEntries={["/simulator/guided/architecture-rise/rise-01"]}>
         <SimulatorWorkspace mode="guided" sceneId="architecture-rise" taskId="rise-01" simulateAssetFailure={false} />
       </MemoryRouter>,
     );
-    expect(screen.getByText("Task completed")).toBeInTheDocument();
+    expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
+    const feedbackButton = screen.getByRole("button", {
+      name: "Feedback — Task completed",
+    });
+    expect(feedbackButton).toHaveAttribute("data-status", "completed");
+    fireEvent.click(feedbackButton);
+    expect(await screen.findByText("Task completed")).toBeInTheDocument();
   });
 });

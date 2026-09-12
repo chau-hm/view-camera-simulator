@@ -1,9 +1,12 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { readFocusDistributionPercent } from "./helpers/focusDistribution";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
-
-const completedHeading = (page: Page) => page.getByRole("heading", { name: "Task completed" });
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
@@ -102,7 +105,7 @@ test("Architecture + Foreground Tilt + Focus guided task starts composed and is 
       { exact: true },
     ),
   ).toBeVisible();
-  await expect(completedHeading(page)).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
 
   const controls = page.getByRole("region", { name: "Camera Controls" });
   const rise = controls.getByRole("slider", { name: "Rise" });
@@ -120,15 +123,19 @@ test("Architecture + Foreground Tilt + Focus guided task starts composed and is 
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
   await setStepRangeInput(page, "Tilt", 2);
-  await expect(completedHeading(page)).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
   await setStepRangeInput(page, "Focus distance", 6830);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible({ timeout: 20_000 });
   await expect(
-    page.getByText(/Aperture will address the remaining depth-of-field limitation later/i),
+    feedback.getByText(/Aperture will address the remaining depth-of-field limitation later/i),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Restart task" }).click();
-  await expect(completedHeading(page)).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
+  const resetFeedback = await openLearningFeedback(page);
+  await expect(resetFeedback.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
   await expect(rise).toHaveValue("20");
   await expect(tilt).toHaveValue("0");
   await expect(focus).toHaveValue("9490");
