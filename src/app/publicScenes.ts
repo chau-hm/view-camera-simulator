@@ -2,6 +2,11 @@ import type { SceneDefinition } from "../types/scene";
 import type { SimulatorMode } from "../types/camera";
 import { getSceneById } from "../scenes/definitions";
 import {
+  isScenePublished,
+  scenePublication,
+  type ScenePublicationConfig,
+} from "../config/scenePublication";
+import {
   publicSceneMessageKeys,
   type PublicSceneDescriptionKey,
   type PublicSceneTitleKey,
@@ -265,22 +270,32 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
 ];
 
-export const getPublicSceneEntryById = (sceneId: string): PublicSceneEntry | undefined =>
-  publicSceneCatalog.find((entry) => entry.id === sceneId);
+export const getPublicSceneEntryById = (
+  sceneId: string,
+  publication: ScenePublicationConfig = scenePublication,
+): PublicSceneEntry | undefined =>
+  publicSceneCatalog.find(
+    (entry) => entry.id === sceneId && isScenePublished(entry.id, publication),
+  );
 
-export const getPublicSceneEntries = (): Array<{
+export const getPublicSceneEntries = (
+  publication: ScenePublicationConfig = scenePublication,
+): Array<{
   scene: SceneDefinition;
   meta: PublicSceneEntry;
 }> =>
   publicSceneCatalog
+    .filter((entry) => isScenePublished(entry.id, publication))
     .map((entry) => ({ scene: getSceneById(entry.id), meta: entry }))
     .filter(
       (e): e is { scene: SceneDefinition; meta: PublicSceneEntry } =>
         typeof e.scene !== "undefined",
     );
 
-export const getAvailablePublicSceneEntries = () =>
-  getPublicSceneEntries().filter(({ meta }) => meta.availability === "available");
+export const getAvailablePublicSceneEntries = (
+  publication: ScenePublicationConfig = scenePublication,
+) => getPublicSceneEntries(publication).filter(({ meta }) => meta.availability === "available");
 
-export const getPublicScenes = (): SceneDefinition[] =>
-  getAvailablePublicSceneEntries().map((entry) => entry.scene);
+export const getPublicScenes = (
+  publication: ScenePublicationConfig = scenePublication,
+): SceneDefinition[] => getAvailablePublicSceneEntries(publication).map((entry) => entry.scene);
