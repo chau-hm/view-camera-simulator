@@ -929,6 +929,73 @@ button {
  border-bottom: 1px solid rgba(15,23,42,0.04);
 }
 
+.lens-control {
+ display: grid;
+ gap: 7px;
+ min-width: 0;
+ margin: 0;
+ padding: 0;
+ border: 0;
+}
+
+.lens-control__copy {
+ margin: 0;
+ color: var(--text-muted);
+ font-size: 12px;
+ line-height: 1.4;
+}
+
+.lens-control__options {
+ display: grid;
+ grid-template-columns: repeat(2, minmax(0, 1fr));
+ gap: 6px;
+ min-width: 0;
+}
+
+.lens-control__option {
+ position: relative;
+ display: grid;
+ gap: 2px;
+ min-width: 0;
+ min-height: 48px;
+ padding: 8px 10px;
+ border: 1px solid var(--border);
+ border-radius: var(--radius-md);
+ background: var(--surface-muted);
+ color: var(--text);
+ cursor: pointer;
+}
+
+.lens-control__option:focus-within {
+ outline: 2px solid var(--primary);
+ outline-offset: 2px;
+}
+
+.lens-control__option[data-selected="true"] {
+ border-color: var(--primary);
+ background: var(--primary-soft);
+}
+
+.lens-control__option input {
+ position: absolute;
+ inset: 0;
+ width: 100%;
+ height: 100%;
+ margin: 0;
+ opacity: 0;
+ cursor: pointer;
+}
+
+.lens-control__option-value {
+ font-size: 14px;
+ font-weight: 700;
+}
+
+.lens-control__option-label {
+ color: var(--text-muted);
+ font-size: 12px;
+}
+
 .sim-control-row {
  display: flex;
  align-items: center;
@@ -2057,6 +2124,32 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 
 .simulator-shell .sim-section {
   border-bottom-color: var(--sim-border-subtle);
+}
+
+.simulator-shell .lens-control__copy,
+.simulator-shell .lens-control__option-label {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .lens-control__option {
+  border-color: var(--sim-border);
+  background: var(--sim-surface-inset);
+  color: var(--sim-text);
+  border-radius: var(--sim-radius-control);
+}
+
+.simulator-shell .lens-control__option:hover {
+  border-color: var(--sim-border-strong);
+  color: var(--sim-accent);
+}
+
+.simulator-shell .lens-control__option:focus-within {
+  outline-color: var(--sim-accent);
+}
+
+.simulator-shell .lens-control__option[data-selected="true"] {
+  border-color: var(--sim-accent);
+  background: var(--sim-accent-soft);
 }
 
 .simulator-shell .simulator-aside .aside-header h3 {
