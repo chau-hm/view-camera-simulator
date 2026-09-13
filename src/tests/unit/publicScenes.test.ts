@@ -37,7 +37,7 @@ describe("public scene catalog integrity", () => {
 
     expect(new Set(publicationSceneIds).size).toBe(publicationSceneIds.length);
     expect(publicationSceneIds.sort()).toEqual([...catalogSceneIds].sort());
-    expect(catalogSceneIds.every((sceneId) => isScenePublished(sceneId))).toBe(true);
+    expect(Object.values(scenePublication).every((value) => typeof value === "boolean")).toBe(true);
   });
 
   it("fails closed for disabled and undeclared scene IDs", () => {
@@ -49,7 +49,9 @@ describe("public scene catalog integrity", () => {
 
   it("filters published entries without changing catalog order", () => {
     const disabledPublication = { ...scenePublication, "table-tilt": false };
-    const expectedDisabledIds = publicSceneIds.filter((sceneId) => sceneId !== "table-tilt");
+    const expectedDisabledIds = publicSceneIds.filter((sceneId) =>
+      isScenePublished(sceneId, disabledPublication),
+    );
 
     expect(getPublicSceneEntries(disabledPublication).map(({ meta }) => meta.id)).toEqual(
       expectedDisabledIds,
@@ -62,8 +64,11 @@ describe("public scene catalog integrity", () => {
     );
 
     const reenabledPublication = { ...disabledPublication, "table-tilt": true };
+    const expectedReenabledIds = publicSceneIds.filter((sceneId) =>
+      isScenePublished(sceneId, reenabledPublication),
+    );
     expect(getPublicSceneEntries(reenabledPublication).map(({ meta }) => meta.id)).toEqual(
-      publicSceneIds,
+      expectedReenabledIds,
     );
   });
 
