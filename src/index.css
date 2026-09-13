@@ -77,7 +77,7 @@ button {
   padding: 16px;
 }
 
-/* Main owns vertical scrolling and contains viewport grid + info grid */
+/* Main owns vertical scrolling and contains viewport grid + learner readouts */
 .simulator-main {
   min-width: 0;
   min-height: 0;
@@ -238,18 +238,6 @@ button {
   font-weight: 700;
 }
 
-/* primary info row: current settings + focus targets */
-.simulator-primary-info-grid {
- display: grid;
- grid-template-columns: repeat(2, minmax(0, 1fr));
- gap: 16px;
- align-items: start;
-}
-
-.simulator-primary-info-grid--single {
- grid-template-columns: minmax(0, 1fr);
-}
-
 /* debug row full width */
 .simulator-debug-row {
  grid-column: 1 / -1;
@@ -258,23 +246,11 @@ button {
 
 .simulator-debug-row > * { width: 100%; }
 
-@media (max-width: 900px) {
- .simulator-primary-info-grid {
-   grid-template-columns: 1fr;
- }
-}
-
 /* Readout card modifiers */
-.simulator-info-card--settings {}
 .simulator-info-card--focus-distribution {
  container-type: inline-size;
 }
 .simulator-info-card--debug {}
-
-/* Current settings */
-.current-settings-groups { display: grid; gap: 8px; font-size: 13px; }
-.current-settings-group dt { font-weight: 600; }
-.current-settings-row { line-height: 1.2; }
 
 /* Compact focus distribution */
 .focus-distribution-panel__header {
@@ -2002,27 +1978,6 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 
 .simulator-shell .sim-section-label {
   font-size: 12px;
-}
-
-.simulator-shell .current-settings-groups {
-  color: var(--sim-text);
-}
-
-.simulator-shell .current-settings-group {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--sim-border-subtle);
-}
-
-.simulator-shell .current-settings-group:last-child {
-  border-bottom: 0;
-}
-
-.simulator-shell .current-settings-group dt {
-  color: var(--sim-text-muted);
-}
-
-.simulator-shell .current-settings-row {
-  color: var(--sim-text);
 }
 
 .simulator-shell .focus-distribution-cell__position,

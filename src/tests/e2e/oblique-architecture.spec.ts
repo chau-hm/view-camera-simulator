@@ -107,11 +107,10 @@ test("Oblique Architecture free practice exposes Rise, Swing, and Focus", async 
   await expect(page.getByText("Aperture is fixed for this lesson", { exact: true })).toBeVisible();
   await expect(swing).toHaveValue("0");
 
-  const currentSettings = page.getByTestId("current-settings-readout");
   await setStepRangeInput(page, "Rise", 20);
   await setStepRangeInput(page, "Swing", 5);
-  await expect(currentSettings).toContainText("Front Rise: 20.0 mm");
-  await expect(currentSettings).toContainText("Front Swing: 5.0°");
+  await expect(rise).toHaveValue("20");
+  await expect(swing).toHaveValue("5");
 
   const focusBefore = await focus.inputValue();
 
@@ -208,9 +207,6 @@ test("Oblique Architecture guided Swing + Focus task starts from solved Rise and
     "aria-valuenow",
     "6",
   );
-  const currentSettings = page.getByTestId("current-settings-readout");
-  await expect(currentSettings).toContainText("Front Rise: 20.0 mm");
-  await expect(currentSettings).toContainText("Front Swing: 9.8°");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 
@@ -270,10 +266,6 @@ test("Oblique Architecture compound task solves Rise, Swing, and Focus from neut
     "6",
   );
 
-  const currentSettings = page.getByTestId("current-settings-readout");
-  await expect(currentSettings).toContainText("Front Rise: 20.0 mm");
-  await expect(currentSettings).toContainText("Front Swing: 9.8°");
-  await expect(currentSettings).toContainText("Focus: 5190.0 mm");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 
@@ -350,9 +342,6 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   await setRangeDirect(page, "Focus distance", 5190);
   await inspectCompletedFeedbackAndReturnToTask(page);
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("current-settings-readout")).toContainText("Front Rise: 20.0 mm");
-  await expect(page.getByTestId("current-settings-readout")).toContainText("Front Swing: 9.8°");
-  await expect(page.getByTestId("current-settings-readout")).toContainText("Focus: 5190.0 mm");
   await page.getByRole("link", { name: "Back to Scenes" }).click();
   await expect(page).toHaveURL(/\/scenes$/);
 });

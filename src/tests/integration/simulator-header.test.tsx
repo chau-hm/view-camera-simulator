@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
@@ -82,8 +82,7 @@ describe("simulator header", () => {
     await waitFor(() => {
       expect(document.documentElement.lang).toBe("zh-HK");
       expect(screen.getByRole("combobox", { name: "語言" })).toHaveValue("zh-HK");
-      expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("目前設定");
-      expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("移動關係");
+      expect(within(screen.getByRole("region", { name: "相機移動" })).getByRole("status")).toHaveTextContent("較高視點");
       expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-HK");
     });
 

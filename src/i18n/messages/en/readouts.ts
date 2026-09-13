@@ -1,18 +1,4 @@
 export const readoutsMessages = {
-  container: {
-    ariaLabel: "Learner readouts",
-  },
-  currentSettings: {
-    title: "Current settings",
-    ariaLabel: "Current settings",
-  },
-  groups: {
-    movement: "Movement",
-    movementRelationship: "Movement relationship",
-    exposureFocus: "Exposure & focus",
-    focusMethod: "Focus method",
-    viewpointFraming: "Viewpoint & framing",
-  },
   controls: {
     frontRise: "Front Rise",
     rearRise: "Rear Rise",
@@ -20,25 +6,13 @@ export const readoutsMessages = {
     rearTilt: "Rear Tilt",
     frontSwing: "Front Swing",
     rearSwing: "Rear Swing",
-    focus: "Focus",
-    aperture: "Aperture",
-    cameraPosition: "Camera Position",
     frontShift: "Front Shift",
     rearShift: "Rear Shift",
-  },
-  focusMethod: {
-    frontStandard: "Front standard",
-    rearStandard: "Rear standard",
-    movement: "Movement",
-    frontRelationship: "Lens moves · Film fixed",
-    rearRelationship: "Film moves · Lens/viewpoint fixed",
   },
   teaching: {
     neutralViewpoint: "Neutral viewpoint",
     higherViewpoint: "Higher viewpoint",
     lowerViewpoint: "Lower viewpoint",
-    towardHigherViewpoint: "{{percent}}% toward higher viewpoint",
-    towardLowerViewpoint: "{{percent}}% toward lower viewpoint",
     frontTilt: "Front Tilt",
     rearTilt: "Rear Tilt",
     frontRise: "Front Rise",
@@ -46,13 +20,6 @@ export const readoutsMessages = {
     frontFall: "Front Fall",
     rearFall: "Rear Fall",
     bodyPitch: "Body pitch",
-    frontStandard: "Front standard",
-    rearStandard: "Rear standard",
-    frontVerticalFraming: "Front Vertical Framing",
-    rearVerticalFraming: "Rear Vertical Framing",
-    upperFraming: "Upper framing",
-    middleFraming: "Middle framing",
-    lowerFraming: "Lower framing",
   },
   focusTargets: {
     title: "Focus targets",

@@ -2,20 +2,6 @@ import { readoutsMessages as englishReadoutsMessages } from "../en/readouts";
 import type { MessageShape } from "../types";
 
 export const readoutsMessages = {
-  container: {
-    ariaLabel: "學習者讀數",
-  },
-  currentSettings: {
-    title: "目前設定",
-    ariaLabel: "目前設定",
-  },
-  groups: {
-    movement: "相機移軸",
-    movementRelationship: "移動關係",
-    exposureFocus: "曝光與對焦",
-    focusMethod: "對焦方式",
-    viewpointFraming: "視點與構圖",
-  },
   controls: {
     frontRise: "前組上移",
     rearRise: "後組上移",
@@ -23,25 +9,13 @@ export const readoutsMessages = {
     rearTilt: "後組傾斜",
     frontSwing: "前組擺動",
     rearSwing: "後組擺動",
-    focus: "對焦",
-    aperture: "光圈",
-    cameraPosition: "相機位置",
     frontShift: "前組橫移",
     rearShift: "後組橫移",
-  },
-  focusMethod: {
-    frontStandard: "前組",
-    rearStandard: "後組",
-    movement: "移動",
-    frontRelationship: "鏡頭移動 · 底片固定",
-    rearRelationship: "底片移動 · 鏡頭／視點固定",
   },
   teaching: {
     neutralViewpoint: "中立視點",
     higherViewpoint: "較高視點",
     lowerViewpoint: "較低視點",
-    towardHigherViewpoint: "向較高視點 {{percent}}%",
-    towardLowerViewpoint: "向較低視點 {{percent}}%",
     frontTilt: "前組傾斜",
     rearTilt: "後組傾斜",
     frontRise: "前組上移",
@@ -49,13 +23,6 @@ export const readoutsMessages = {
     frontFall: "前組下移",
     rearFall: "後組下移",
     bodyPitch: "相機機身傾角",
-    frontStandard: "前組",
-    rearStandard: "後組",
-    frontVerticalFraming: "前組垂直構圖",
-    rearVerticalFraming: "後組垂直構圖",
-    upperFraming: "上方構圖",
-    middleFraming: "中間構圖",
-    lowerFraming: "下方構圖",
   },
   focusTargets: {
     title: "對焦目標",
