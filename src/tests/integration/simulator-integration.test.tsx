@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { SimulatorRoutePage } from "../../app/pages";
+import { getAvailablePublicSceneEntries } from "../../app/publicScenes";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
@@ -217,6 +218,16 @@ describe("phase 12 integration", () => {
   });
 
   it("keeps Shelf Swing task identity intact across guided and free routes", async () => {
+    const shelfSwingIsAvailable = getAvailablePublicSceneEntries().some(
+      ({ meta }) => meta.id === "shelf-swing",
+    );
+    if (!shelfSwingIsAvailable) {
+      renderWorkspaceRoute("/simulator/guided/shelf-swing/swing-01");
+      expect(await screen.findByText("Scenes route")).toBeInTheDocument();
+      expect(screen.queryByText("Align the diagonal plane of sharp focus")).not.toBeInTheDocument();
+      return;
+    }
+
     renderWorkspaceRoute("/simulator/guided/shelf-swing/swing-01");
     expect(await screen.findByText("Align the diagonal plane of sharp focus")).toBeInTheDocument();
     expect(useAppStore.getState().camera.activeSceneId).toBe("shelf-swing");

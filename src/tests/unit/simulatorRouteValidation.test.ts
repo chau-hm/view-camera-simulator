@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { getPublicSceneEntryById, type PublicSceneEntry } from "../../app/publicScenes";
+import { publicSceneCatalog, type PublicSceneEntry } from "../../app/publicScenes";
 import { isValidSimulatorRoute } from "../../app/simulatorRouteValidation";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import type { SimulatorMode } from "../../types/camera";
 import type { TaskDefinition } from "../../types/task";
 
 const publicEntry = (sceneId: string): PublicSceneEntry => {
-  const entry = getPublicSceneEntryById(sceneId);
+  const entry = publicSceneCatalog.find((candidate) => candidate.id === sceneId);
   if (!entry) {
     throw new Error(`Missing public scene entry: ${sceneId}`);
   }

@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { ScenesPage, SimulatorRoutePage } from "../../app/pages";
+import { getAvailablePublicSceneEntries } from "../../app/publicScenes";
 
 vi.mock("../../components/layout/SimulatorWorkspace", () => ({
   SimulatorWorkspace: ({
@@ -110,6 +111,20 @@ describe("simulator route availability", () => {
     ],
     ["/simulator/guided/table-tilt/tilt-01", "guided:table-tilt:tilt-01:lesson=false"],
   ])("keeps available simulator route %s open", async (route, expectedWorkspace) => {
+    const sceneId = route.split("/")[3]?.split("?")[0];
+    const isAvailableScene = getAvailablePublicSceneEntries().some(
+      ({ meta }) => meta.id === sceneId,
+    );
+
+    if (!sceneId || !isAvailableScene) {
+      renderRoute(route);
+      await waitFor(() =>
+        expect(screen.getByTestId("route-location")).toHaveTextContent("/scenes"),
+      );
+      expect(screen.queryByTestId("simulator-workspace")).not.toBeInTheDocument();
+      return;
+    }
+
     renderRoute(route);
 
     expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(expectedWorkspace);

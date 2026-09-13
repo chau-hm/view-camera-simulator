@@ -2,12 +2,17 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  getAvailablePublicSceneEntries,
+  getPublicSceneEntries,
+  getPublicSceneEntryById,
+  getPublicScenes,
   publicSceneCatalog,
   publicSceneIds,
   type PublicSceneEntry,
 } from "../../app/publicScenes";
 import { validatePublicSceneCatalog } from "../../app/publicSceneCatalogValidation";
 import { isValidSimulatorRoute } from "../../app/simulatorRouteValidation";
+import { isScenePublished, scenePublication } from "../../config/scenePublication";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
 import type { TaskDefinition } from "../../types/task";
@@ -24,6 +29,102 @@ const shelfTask = getTaskById("swing-01")!;
 describe("public scene catalog integrity", () => {
   it("keeps the production catalog internally consistent", () => {
     expect(validate(publicSceneCatalog)).toEqual({ valid: true, errors: [] });
+  });
+
+  it("declares exactly one publication state for every catalog scene", () => {
+    const catalogSceneIds = publicSceneCatalog.map((entry) => entry.id);
+    const publicationSceneIds = Object.keys(scenePublication);
+
+    expect(new Set(publicationSceneIds).size).toBe(publicationSceneIds.length);
+    expect(publicationSceneIds.sort()).toEqual([...catalogSceneIds].sort());
+    expect(Object.values(scenePublication).every((value) => typeof value === "boolean")).toBe(true);
+  });
+
+  it("fails closed for disabled and undeclared scene IDs", () => {
+    const publication = { ...scenePublication, "shelf-swing": false };
+
+    expect(isScenePublished("shelf-swing", publication)).toBe(false);
+    expect(isScenePublished("future-scene", publication)).toBe(false);
+  });
+
+  it("filters published and available entries independently without changing catalog order", () => {
+    const disabledPublication = { ...scenePublication, "table-tilt": false };
+    const expectedPublishedIds = publicSceneCatalog
+      .filter((entry) => isScenePublished(entry.id, disabledPublication))
+      .map((entry) => entry.id);
+    const expectedAvailableIds = publicSceneCatalog
+      .filter(
+        (entry) =>
+          isScenePublished(entry.id, disabledPublication) &&
+          entry.availability === "available",
+      )
+      .map((entry) => entry.id);
+
+    expect(getPublicSceneEntries(disabledPublication).map(({ meta }) => meta.id)).toEqual(
+      expectedPublishedIds,
+    );
+    expect(getAvailablePublicSceneEntries(disabledPublication).map(({ meta }) => meta.id)).toEqual(
+      expectedAvailableIds,
+    );
+    expect(getPublicScenes(disabledPublication).map((scene) => scene.id)).toEqual(
+      expectedAvailableIds,
+    );
+
+    const reenabledPublication = { ...disabledPublication, "table-tilt": true };
+    const expectedReenabledPublishedIds = publicSceneCatalog
+      .filter((entry) => isScenePublished(entry.id, reenabledPublication))
+      .map((entry) => entry.id);
+    const expectedReenabledAvailableIds = publicSceneCatalog
+      .filter(
+        (entry) =>
+          isScenePublished(entry.id, reenabledPublication) &&
+          entry.availability === "available",
+      )
+      .map((entry) => entry.id);
+    expect(getPublicSceneEntries(reenabledPublication).map(({ meta }) => meta.id)).toEqual(
+      expectedReenabledPublishedIds,
+    );
+    expect(getAvailablePublicSceneEntries(reenabledPublication).map(({ meta }) => meta.id)).toEqual(
+      expectedReenabledAvailableIds,
+    );
+    expect(getPublicScenes(reenabledPublication).map((scene) => scene.id)).toEqual(
+      expectedReenabledAvailableIds,
+    );
+  });
+
+  it("keeps a published in-development entry visible but unavailable", () => {
+    const publication = { ...scenePublication, "shelf-swing": true };
+    const originalAvailability = shelfEntry.availability;
+    shelfEntry.availability = "in-development";
+
+    try {
+      expect(isScenePublished(shelfEntry.id, publication)).toBe(true);
+      expect(getPublicSceneEntries(publication).map(({ meta }) => meta.id)).toContain(
+        shelfEntry.id,
+      );
+      expect(getAvailablePublicSceneEntries(publication).map(({ meta }) => meta.id)).not.toContain(
+        shelfEntry.id,
+      );
+      expect(getPublicScenes(publication).map((scene) => scene.id)).not.toContain(shelfEntry.id);
+    } finally {
+      shelfEntry.availability = originalAvailability;
+    }
+  });
+
+  it("keeps unpublished scenes in the internal registry while hiding public lookup", () => {
+    const unpublishedPublication = { ...scenePublication, "shelf-swing": false };
+
+    expect(getSceneById("shelf-swing")).toBeDefined();
+    expect(getPublicSceneEntryById("shelf-swing", unpublishedPublication)).toBeUndefined();
+  });
+
+  it("continues validating catalog metadata independently of publication", () => {
+    const unpublishedPublication = { ...scenePublication, "shelf-swing": false };
+
+    expect(isScenePublished("shelf-swing", unpublishedPublication)).toBe(false);
+    expect(validate([shelfEntry], () => undefined).errors).toContain(
+      "shelf-swing: scene definition is missing",
+    );
   });
 
   it("publishes an existing WebP thumbnail for every public scene", () => {
