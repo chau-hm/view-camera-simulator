@@ -14,10 +14,10 @@ export const scenePublication = {
   "architecture-rise": true,
   "table-tilt": true,
   "shelf-swing": true,
-  "oblique-tabletop": true,
   "mirror-shift": true,
 
   // Combined Movements
+  "oblique-tabletop": true,
   "oblique-architecture": true,
   "architecture-foreground": true,
   "interior-corner": true,
