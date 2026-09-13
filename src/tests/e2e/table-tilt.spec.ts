@@ -135,6 +135,53 @@ test("Table Tilt Focus Distribution follows the displayed Raw/Upright orientatio
   await expect.poll(async () => (await readTargetCell("near-cup")).rowIndex).toBe(rawCells[0].rowIndex);
 });
 
+test("Table Tilt Focus Loupe maps displayed centers to the pre-composite RTT crop", async ({ page }) => {
+  await page.goto("/simulator/free/table-tilt?rttDiagnostics=1");
+  const viewport = page.getByLabel("GroundGlassViewport");
+  const stage = viewport.locator("[data-zoomed]");
+  const rtt = viewport.getByTestId("ground-glass-rtt");
+  await expect(stage).toBeVisible();
+  await expect(rtt).toBeVisible();
+
+  const readCenters = async () => ({
+    displayU: Number(await stage.getAttribute("data-focus-loupe-center-u")),
+    displayV: Number(await stage.getAttribute("data-focus-loupe-center-v")),
+    cropU: Number(await rtt.getAttribute("data-rtt-inspection-center-u")),
+    cropV: Number(await rtt.getAttribute("data-rtt-inspection-center-v")),
+  });
+
+  const expectCropRelation = async (mode: "raw" | "upright") => {
+    await expect.poll(async () => {
+      const centers = await readCenters();
+      if (!Object.values(centers).every(Number.isFinite)) return false;
+      const expectedU = mode === "raw" ? 1 - centers.displayU : centers.displayU;
+      const expectedV = mode === "raw" ? 1 - centers.displayV : centers.displayV;
+      return Math.abs(centers.cropU - expectedU) < 0.01 && Math.abs(centers.cropV - expectedV) < 0.01;
+    }, { timeout: 30_000 }).toBe(true);
+    return readCenters();
+  };
+
+  await expect(page.getByRole("radio", { name: "Raw Ground Glass" })).toBeChecked();
+  await clickStageAt(page, stage, 0.25, 0.25);
+  await expect(stage).toHaveAttribute("data-focus-loupe-active", "true");
+  const rawCenters = await expectCropRelation("raw");
+  expect(rawCenters.displayU).toBeLessThan(0.4);
+  expect(rawCenters.displayV).toBeLessThan(0.4);
+  expect(rawCenters.cropU).toBeGreaterThan(0.6);
+  expect(rawCenters.cropV).toBeGreaterThan(0.6);
+
+  await viewport.getByRole("button", { name: "Reset Ground Glass view" }).click();
+  await expect(stage).toHaveAttribute("data-focus-loupe-active", "false");
+  await page.getByRole("radio", { name: "Upright Assist" }).check();
+  await clickStageAt(page, stage, 0.75, 0.25);
+  await expect(stage).toHaveAttribute("data-focus-loupe-active", "true");
+  const uprightCenters = await expectCropRelation("upright");
+  expect(uprightCenters.displayU).toBeGreaterThan(0.6);
+  expect(uprightCenters.displayV).toBeLessThan(0.4);
+  expect(uprightCenters.cropU).toBeGreaterThan(0.6);
+  expect(uprightCenters.cropV).toBeLessThan(0.4);
+});
+
 test("Table Tilt zero-tilt point focus moves from near to middle to far", async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto("/simulator/free/table-tilt");
