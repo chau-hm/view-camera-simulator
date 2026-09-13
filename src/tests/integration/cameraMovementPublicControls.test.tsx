@@ -75,6 +75,17 @@ describe("public camera movement controls in the workspace", () => {
     expect(useAppStore.getState().camera.focalLengthMm).toBe(150);
   });
 
+  it("hides the public lens selector while the calibration workbench is active", () => {
+    render(calibrationWorkspace());
+
+    expect(screen.getByText("Camera Movement Calibration")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("radiogroup", { name: "Lens options" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: /90 mm.*Wide/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: /150 mm.*Standard/ })).not.toBeInTheDocument();
+  });
+
   it("exposes Front Tilt and Front Swing for Oblique Tabletop while keeping Focus live and f/11 fixed", () => {
     render(obliqueTabletopWorkspace());
     const cameraControls = screen.getByRole("region", { name: "Camera Controls" });

@@ -1525,6 +1525,7 @@ export const useAppStore = create<AppStore>((set) => ({
 
   setFocalLength: (value) =>
     set((state) => {
+      if (state.cameraMovementCalibrationSession.active) return {};
       const capability = getFocalLengthCapability(state.camera.activeSceneId);
       if (
         !capability?.enabled ||

@@ -38,6 +38,39 @@ describe("scene focal-length capability", () => {
 describe("canonical focal-length store policy", () => {
   beforeEach(initUnderstandingCameraMovements);
 
+  it("rejects public focal-length changes during calibration and keeps calibration as the authority", () => {
+    const store = useAppStore.getState();
+    store.clearSimulatorRouteInitialization();
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+      calibrationEnabled: true,
+    });
+
+    const before = useAppStore.getState();
+    expect(before.cameraMovementCalibrationSession.active).toBe(true);
+
+    store.setFocalLength(150);
+
+    const afterPublicAction = useAppStore.getState();
+    expect(afterPublicAction.camera).toEqual(before.camera);
+    expect(afterPublicAction.cameraMovementCalibrationSession).toEqual(
+      before.cameraMovementCalibrationSession,
+    );
+
+    expect(
+      store.updateCameraMovementCalibration({
+        optics: { provisionalFocalLengthMm: 150 },
+      }),
+    ).toBe(true);
+    const afterCalibrationAction = useAppStore.getState();
+    expect(afterCalibrationAction.camera.focalLengthMm).toBe(150);
+    expect(
+      afterCalibrationAction.cameraMovementCalibrationSession.effectiveCalibration.optics
+        .provisionalFocalLengthMm,
+    ).toBe(150);
+  });
+
   it("updates only the canonical lens while preserving the camera state contract", () => {
     useAppStore.getState().applyCameraMovementTeachingCase("C3-high-viewpoint");
     const before = useAppStore.getState().camera;
