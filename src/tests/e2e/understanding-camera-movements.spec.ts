@@ -74,6 +74,8 @@ const publicCurrentRtt = (page: Page) =>
 test("camera movements scene loads and renders valid Ground Glass content", async ({ page }) => {
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
   const aperture = page.getByRole("combobox", { name: "Aperture" });
+  await expect(page.getByTestId("current-settings-readout")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Camera Movement" }).getByRole("status")).toContainText("Neutral viewpoint");
   await expect(page.locator('[data-testid="scene-canvas"]')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('[data-optical-geometry-visible="true"]')).toBeVisible({ timeout: 5000 });
 

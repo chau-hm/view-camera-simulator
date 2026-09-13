@@ -53,11 +53,10 @@ describe("Focus Fundamentals selectable focus integration", () => {
     expect(screen.getByText("Aperture is fixed for this lesson")).toBeInTheDocument();
     fireEvent.change(aperture, { target: { value: "11" } });
     expect(useAppStore.getState().camera.aperture).toBe(11);
+    expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
     expect(front).toBeChecked();
     expect(rear).not.toBeChecked();
-    expect(screen.getByText("Focus method")).toBeInTheDocument();
-    expect(screen.getByText("Front standard", { selector: ".current-settings-row" })).toBeInTheDocument();
-    expect(screen.getByText("Movement · Lens moves · Film fixed")).toBeInTheDocument();
+    expect(screen.getByText("Front focusing moves the lens/viewpoint. The film stays fixed.")).toBeInTheDocument();
     expect(slider).toHaveAttribute("min", String(focusFundamentalsFocusDepthRangeMm.min));
     expect(slider).toHaveAttribute("max", String(focusFundamentalsFocusDepthRangeMm.max));
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-selected", "front");
@@ -75,8 +74,7 @@ describe("Focus Fundamentals selectable focus integration", () => {
     fireEvent.click(rear);
     await waitFor(() => expect(useAppStore.getState().camera.focusStandard).toBe("rear"));
     expect(rear).toBeChecked();
-    expect(screen.getByText("Rear standard", { selector: ".current-settings-row" })).toBeInTheDocument();
-    expect(screen.getByText("Movement · Film moves · Lens/viewpoint fixed")).toBeInTheDocument();
+    expect(screen.getByText("Rear focusing moves the film while the lens/viewpoint stays fixed.")).toBeInTheDocument();
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-selected", "rear");
     expect(sceneCanvas).toHaveAttribute("data-focus-standard-resolved", "rear");
     expect(readZ(sceneCanvas, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 10);

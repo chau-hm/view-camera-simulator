@@ -100,7 +100,10 @@ test("Table Tilt Ground Glass uses one RTT surface", async ({ page }) => {
 test("Table Tilt Focus Distribution follows the displayed Raw/Upright orientation", async ({ page }) => {
   await page.goto("/simulator/free/table-tilt");
   const panel = page.getByTestId("focus-distribution-panel");
+  await expect(page.getByTestId("current-settings-readout")).toHaveCount(0);
   await expect(panel).toBeVisible();
+  await expect(panel.locator("table.focus-distribution-panel__table")).toBeVisible();
+  expect(await panel.evaluate((element) => element.parentElement?.classList.contains("simulator-primary-info-grid"))).toBe(false);
 
   const readTargetCell = async (targetId: string) =>
     panel.locator(`[data-focus-target-id="${targetId}"]`).evaluate((element) => {

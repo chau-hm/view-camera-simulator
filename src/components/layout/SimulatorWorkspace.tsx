@@ -37,9 +37,6 @@ import { MirrorShiftCameraPositionControl } from "../controls/MirrorShiftCameraP
 import { MirrorShiftFrontShiftControl } from "../controls/MirrorShiftFrontShiftControl";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
-import {
-  CurrentSettingsReadout,
-} from "../simulator/GroundGlassReadouts";
 import { FocusDistributionPanel, type FocusTargetMetric } from "../simulator/FocusDistributionPanel";
 import { LearningOverlayPanel } from "../simulator/LearningOverlayPanel";
 import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
@@ -296,11 +293,6 @@ export const SimulatorWorkspace = ({
     guidedLessonContext?.lessonId === "interior-corner" &&
     guidedLessonContext.stage === "observe";
   const interiorCornerGuidedLesson = guidedLessonContext?.lessonId === "interior-corner";
-  const activeSingleMovement =
-    safeScene.movementCapabilities?.selectionMode === "single"
-      ? selectedMovement
-      : null;
-
   const opticsState = selectDerivedOpticsState(
     camera,
     effectiveCameraMovementCalibration,
@@ -512,8 +504,8 @@ export const SimulatorWorkspace = ({
     [camera.aperture, groundGlassPreviewMode, opticsState, safeScene, tableTiltFocusMetric],
   );
   const learnerReadoutPolicy = useMemo(
-    () => resolveLearnerReadoutPolicy(safeScene.id, { hasFocusTargets: focusTargetReadouts.length > 0 }),
-    [focusTargetReadouts.length, safeScene.id],
+    () => resolveLearnerReadoutPolicy({ hasFocusTargets: focusTargetReadouts.length > 0 }),
+    [focusTargetReadouts.length],
   );
   const focusTargetMetric: FocusTargetMetric =
     tableTiltFocusMetric === "point" ? "point" : safeScene.id === "table-tilt" ? "patch" : "focus";
@@ -711,34 +703,6 @@ export const SimulatorWorkspace = ({
           </div>
 
           {!viewportExpanded && !isAnatomyLesson && <>
-            {/* Row 1: scene-aware learner readouts */}
-            <div className={`simulator-primary-info-grid${learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? "" : " simulator-primary-info-grid--single"}`}>
-            <CurrentSettingsReadout
-              riseMm={camera.frontRiseMm}
-              tiltDeg={camera.frontTiltDeg}
-              swingDeg={camera.frontSwingDeg}
-              focusDistanceMm={camera.focusDistanceMm}
-              aperture={camera.aperture as number}
-              renderQuality={renderQuality}
-              activeMovement={activeSingleMovement ? { field: activeSingleMovement, value: (() => {
-                switch (activeSingleMovement) {
-                  case "frontRiseMm": return camera.frontRiseMm;
-                  case "frontShiftMm": return camera.frontShiftMm;
-                  case "rearRiseMm": return camera.rearRiseMm;
-                  case "rearShiftMm": return camera.rearShiftMm;
-                  case "frontTiltDeg": return camera.frontTiltDeg;
-                  case "rearTiltDeg": return camera.rearTiltDeg;
-                  case "frontSwingDeg": return camera.frontSwingDeg;
-                  case "rearSwingDeg": return camera.rearSwingDeg;
-                }
-              })() } : null}
-              teachingReadout={teachingReadout}
-              focusStandard={camera.activeSceneId === "focus-fundamentals-two-targets" ? camera.focusStandard : undefined}
-              settingsVariant={learnerReadoutPolicy.settingsVariant}
-              cameraPositionMm={camera.mirrorShiftLessonState?.rigLateralMm}
-              frontShiftMm={camera.frontShiftMm}
-            />
-
             {learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? (
               <FocusDistributionPanel
                 sceneId={safeScene.id}
@@ -748,7 +712,6 @@ export const SimulatorWorkspace = ({
                 closestTargetId={closestPointTargetId}
               />
             ) : null}
-            </div>
 
             {/* Optical Debug remains in normal flow below the learner readouts. */}
             <div className="simulator-debug-row">
