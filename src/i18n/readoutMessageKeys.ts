@@ -73,7 +73,8 @@ export const readoutMessageKeys = {
     upright: "readouts.focusDistribution.upright",
     orientationAria: "readouts.focusDistribution.orientationAria",
     targetAria: "readouts.focusDistribution.targetAria",
-    additionalTargetsAria: "readouts.focusDistribution.additionalTargetsAria",
+    unplacedHeading: "readouts.focusDistribution.unplacedHeading",
+    unplacedTargetsAria: "readouts.focusDistribution.unplacedTargetsAria",
     unplacedTarget: "readouts.focusDistribution.unplacedTarget",
     positions: {
       upperLeft: "readouts.focusDistribution.positions.upperLeft",

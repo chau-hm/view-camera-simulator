@@ -266,7 +266,9 @@ button {
 
 /* Readout card modifiers */
 .simulator-info-card--settings {}
-.simulator-info-card--focus-distribution {}
+.simulator-info-card--focus-distribution {
+ container-type: inline-size;
+}
 .simulator-info-card--debug {}
 
 /* Current settings */
@@ -302,13 +304,13 @@ button {
  width: calc(100% + 6px);
  margin: -3px;
  table-layout: fixed;
- border-spacing: 3px;
+ border-spacing: 2px;
 }
 
 .focus-distribution-cell {
- height: 44px;
+ height: 40px;
  min-width: 0;
- padding: 5px 4px;
+ padding: 4px;
  overflow: hidden;
  border: 1px solid var(--focus-distribution-border, var(--sim-border-subtle, rgba(176, 224, 241, 0.12)));
  border-radius: 5px;
@@ -320,15 +322,15 @@ button {
 }
 
 .focus-distribution-cell--empty {
- border-color: transparent;
- background: transparent;
+ border-color: rgba(176, 224, 241, 0.06);
+ background: rgba(53, 200, 237, 0.015);
  box-shadow: none;
 }
 
 .focus-distribution-cell--stacked {
  height: auto;
- min-height: 44px;
- padding: 5px 6px;
+ min-height: 40px;
+ padding: 4px 5px;
  text-align: left;
 }
 
@@ -345,28 +347,84 @@ button {
 
 .focus-distribution-cell__targets {
  display: grid;
- gap: 3px;
+ gap: 2px;
  min-width: 0;
- margin-top: 3px;
+ margin-top: 2px;
 }
 
 .focus-distribution-cell__target {
- display: flex;
+ display: grid;
+ grid-template-columns: 12px minmax(0, 1fr) auto;
  align-items: baseline;
- justify-content: space-between;
  gap: 6px;
  min-width: 0;
+ padding-inline-start: 3px;
+ border-inline-start: 2px solid transparent;
+}
+
+.focus-distribution-cell__target-marker {
+ position: relative;
+ display: block;
+ width: 12px;
+ height: 10px;
+ margin-top: 1px;
+ border-radius: 2px;
+ background: rgba(143, 234, 255, 0.08);
+ color: var(--sim-text-muted, #a9bac7);
+}
+
+.focus-distribution-cell__target-marker::before {
+ content: "";
+ position: absolute;
+ top: 50%;
+ left: 50%;
+ width: 4px;
+ height: 4px;
+ border-radius: 50%;
+ background: currentColor;
+ box-shadow: 0 0 4px currentColor;
+ transform: translate(
+   calc(-50% + var(--focus-distribution-target-marker-x, 0px)),
+   calc(-50% + var(--focus-distribution-target-marker-y, 0px))
+ );
+}
+
+.focus-distribution-cell__target.focus-distribution-cell--sharp {
+ border-inline-start-color: var(--sim-success, #7fe2a6);
+}
+
+.focus-distribution-cell__target.focus-distribution-cell--sharp .focus-distribution-cell__target-marker {
+ color: var(--sim-success, #7fe2a6);
+}
+
+.focus-distribution-cell__target.focus-distribution-cell--acceptable {
+ border-inline-start-color: var(--sim-warning, #f2ca78);
+}
+
+.focus-distribution-cell__target.focus-distribution-cell--acceptable .focus-distribution-cell__target-marker {
+ color: var(--sim-warning, #f2ca78);
+}
+
+.focus-distribution-cell__target.focus-distribution-cell--soft .focus-distribution-cell__target-marker {
+ color: var(--sim-text-muted, #a9bac7);
 }
 
 .focus-distribution-cell__target-name {
  min-width: 0;
  overflow: hidden;
  color: var(--sim-text, #f2f7f6);
- font-size: 10px;
+ font-size: 11px;
  font-weight: 600;
- line-height: 1.1;
+ line-height: 1.15;
  text-overflow: ellipsis;
  white-space: nowrap;
+}
+
+.focus-distribution-cell--stacked .focus-distribution-cell__target-name {
+ overflow: visible;
+ overflow-wrap: anywhere;
+ text-overflow: clip;
+ white-space: normal;
 }
 
 .focus-distribution-cell__value {
@@ -404,10 +462,22 @@ button {
 }
 
 .focus-distribution-panel__additional {
+ display: grid;
+ gap: 4px;
+ margin-top: 6px;
+}
+
+.focus-distribution-panel__unplaced-heading {
+ color: var(--sim-text-muted, #a9bac7);
+ font-size: 10px;
+ font-weight: 600;
+ line-height: 1.1;
+}
+
+.focus-distribution-panel__additional-list {
  display: flex;
  flex-wrap: wrap;
  gap: 4px;
- margin-top: 5px;
 }
 
 .focus-distribution-panel__additional-item {
@@ -439,6 +509,58 @@ button {
  clip: rect(0, 0, 0, 0);
  white-space: nowrap;
  border: 0;
+}
+
+/* A 418px card still leaves only about 130px per spatial cell beside the
+   fixed controls rail, so switch before labels begin splitting into fragments. */
+@container (max-width: 440px) {
+ .focus-distribution-cell--stacked {
+   padding: 3px 4px;
+ }
+
+ .focus-distribution-cell__position {
+   font-size: 10px;
+ }
+
+ .focus-distribution-cell__targets {
+   gap: 1px;
+   margin-top: 1px;
+ }
+
+ .focus-distribution-cell__target-marker {
+   display: none;
+ }
+
+ .focus-distribution-cell__target {
+   grid-template-columns: minmax(0, 1fr) auto;
+   gap: 3px;
+   padding-inline-start: 2px;
+ }
+
+ .focus-distribution-cell__target-name,
+ .focus-distribution-cell--stacked .focus-distribution-cell__target-name {
+   overflow: hidden;
+   overflow-wrap: normal;
+   font-size: 10px;
+   line-height: 1.1;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   word-break: normal;
+ }
+
+ .focus-distribution-cell__target .focus-distribution-cell__value {
+   font-size: 10px;
+ }
+
+ .focus-distribution-cell--stacked .focus-distribution-cell__target {
+   grid-template-columns: minmax(0, 1fr);
+   gap: 1px;
+ }
+
+ .focus-distribution-cell--stacked .focus-distribution-cell__value {
+   grid-column: 1;
+   justify-self: end;
+ }
 }
 
 @media (max-width: 420px) {

@@ -63,6 +63,34 @@ const focusDistributionCellStyle = (display: number): CSSProperties => ({
   "--focus-distribution-glow": `rgba(53, 200, 237, ${0.04 + (display / 100) * 0.14})`,
 } as CSSProperties);
 
+/**
+ * Give each target a small three-position marker inside its coarse cell. The
+ * marker preserves relative direction without implying exact screen
+ * coordinates or placing text freely over the cell.
+ */
+const focusDistributionTargetStyle = (
+  target: ResolvedFocusDistributionTarget,
+): CSSProperties => {
+  const displayUv = target.displayUv;
+  if (
+    !displayUv ||
+    !Number.isFinite(displayUv.u) ||
+    !Number.isFinite(displayUv.v)
+  ) {
+    return {};
+  }
+
+  const localU = Math.max(0, Math.min(1, displayUv.u * 3 - target.gridPosition.columnIndex));
+  const localV = Math.max(0, Math.min(1, displayUv.v * 3 - target.gridPosition.rowIndex));
+  const markerOffset = (value: number) =>
+    value < 1 / 3 ? -3 : value > 2 / 3 ? 3 : 0;
+
+  return {
+    "--focus-distribution-target-marker-x": `${markerOffset(localU)}px`,
+    "--focus-distribution-target-marker-y": `${markerOffset(localV)}px`,
+  } as CSSProperties;
+};
+
 export const FocusDistributionPanel = ({
   sceneId,
   focusTargets,
@@ -119,7 +147,9 @@ export const FocusDistributionPanel = ({
         data-focus-target-id={target.id}
         key={target.id}
         role="group"
+        style={focusDistributionTargetStyle(target)}
       >
+        <span aria-hidden="true" className="focus-distribution-cell__target-marker" />
         <span className="focus-distribution-cell__target-name" title={targetLabel}>{targetLabel}</span>
         <span className="focus-distribution-cell__value">
           {display}%
@@ -143,9 +173,12 @@ export const FocusDistributionPanel = ({
     }
 
     const positionLabel = t(cell.positionLabelKey);
-    const cellDisplay = Math.max(
+    const targetDisplay = Math.max(
       ...cell.targets.map((target) => clampSharpnessPercent(target.sharpnessPercent)),
     );
+    // A mixed collision should not read as only its sharpest target. Keep its
+    // cell tint restrained and let each target row carry its own status.
+    const cellDisplay = cell.targets.length > 1 ? 35 : targetDisplay;
     const stackClass = cell.targets.length > 1 ? " focus-distribution-cell--stacked" : "";
 
     return (
@@ -195,34 +228,39 @@ export const FocusDistributionPanel = ({
 
       {layout.unplaced.length > 0 ? (
         <div
-          aria-label={t(readoutMessageKeys.focusDistribution.additionalTargetsAria)}
+          aria-label={t(readoutMessageKeys.focusDistribution.unplacedTargetsAria)}
           className="focus-distribution-panel__additional"
         >
-          {layout.unplaced.map((target) => {
-            const display = clampSharpnessPercent(target.sharpnessPercent);
-            const targetLabel = targetLabelFor(target);
-            const statusLabel = statusForTarget(target.status);
-            return (
-              <span
-                aria-label={t(readoutMessageKeys.focusDistribution.targetAria, {
-                  target: targetLabel,
-                  percent: `${display}%`,
-                  status: statusLabel,
-                  closest: target.id === closestTargetId
-                    ? ` · ${t(readoutMessageKeys.focusTargets.closestPoint)}`
-                    : "",
-                })}
-                className={`focus-distribution-panel__additional-item ${statusClass(target.status)}`}
-                data-focus-target-id={target.id}
-                key={target.id}
-                role="group"
-              >
-                <span>{targetLabel}</span>
-                <strong>{display}%</strong>
-                <span aria-hidden="true">{statusGlyph(target.status)}</span>
-              </span>
-            );
-          })}
+          <span className="focus-distribution-panel__unplaced-heading">
+            {t(readoutMessageKeys.focusDistribution.unplacedHeading)}
+          </span>
+          <div className="focus-distribution-panel__additional-list">
+            {layout.unplaced.map((target) => {
+              const display = clampSharpnessPercent(target.sharpnessPercent);
+              const targetLabel = targetLabelFor(target);
+              const statusLabel = statusForTarget(target.status);
+              return (
+                <span
+                  aria-label={t(readoutMessageKeys.focusDistribution.targetAria, {
+                    target: `${t(readoutMessageKeys.focusDistribution.unplacedHeading)} · ${targetLabel}`,
+                    percent: `${display}%`,
+                    status: statusLabel,
+                    closest: target.id === closestTargetId
+                      ? ` · ${t(readoutMessageKeys.focusTargets.closestPoint)}`
+                      : "",
+                  })}
+                  className={`focus-distribution-panel__additional-item ${statusClass(target.status)}`}
+                  data-focus-target-id={target.id}
+                  key={target.id}
+                  role="group"
+                >
+                  <span>{targetLabel}</span>
+                  <strong>{display}%</strong>
+                  <span aria-hidden="true">{statusGlyph(target.status)}</span>
+                </span>
+              );
+            })}
+          </div>
         </div>
       ) : null}
     </section>

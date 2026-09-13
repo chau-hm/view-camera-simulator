@@ -73,7 +73,8 @@ export const readoutsMessages = {
     upright: "Upright",
     orientationAria: "Ground Glass orientation: {{orientation}}",
     targetAria: "{{target}}: {{percent}} · {{status}}{{closest}}",
-    additionalTargetsAria: "Additional focus targets",
+    unplacedHeading: "Outside current Ground Glass view",
+    unplacedTargetsAria: "Focus targets outside current Ground Glass view",
     unplacedTarget: "Target",
     positions: {
       upperLeft: "Upper left",
