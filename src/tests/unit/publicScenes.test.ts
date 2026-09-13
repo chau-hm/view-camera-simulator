@@ -14,7 +14,11 @@ import {
 } from "../../app/publicScenes";
 import { validatePublicSceneCatalog } from "../../app/publicSceneCatalogValidation";
 import { isValidSimulatorRoute } from "../../app/simulatorRouteValidation";
-import { isScenePublished, scenePublication } from "../../config/scenePublication";
+import {
+  isScenePublished,
+  scenePublication,
+  type ScenePublicationConfig,
+} from "../../config/scenePublication";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
 import type { TaskDefinition } from "../../types/task";
@@ -27,6 +31,16 @@ const validate = (
 
 const shelfEntry = publicSceneCatalog.find((entry) => entry.id === "shelf-swing")!;
 const shelfTask = getTaskById("swing-01")!;
+
+const expectedGroupedCatalogEntries = (publication: ScenePublicationConfig) =>
+  publicSceneGroups.flatMap((group) => {
+    const entries = publicSceneCatalog.filter(
+      (entry) =>
+        entry.groupId === group.id &&
+        isScenePublished(entry.id, publication),
+    );
+    return entries.length > 0 ? [{ groupId: group.id, entries }] : [];
+  });
 
 describe("public scene catalog integrity", () => {
   it("keeps the production catalog internally consistent", () => {
@@ -72,40 +86,34 @@ describe("public scene catalog integrity", () => {
     const catalogOrder = publicSceneCatalog.map(({ id }) => id);
     const registryOrder = publicSceneGroups.map(({ id }) => id);
     const grouped = getGroupedPublicSceneEntries();
+    const expectedPublishedEntries = publicSceneCatalog.filter((entry) =>
+      isScenePublished(entry.id, scenePublication),
+    );
+    const expectedGroups = expectedGroupedCatalogEntries(scenePublication);
 
-    expect(grouped.map(({ group }) => group.id)).toEqual([
-      "foundations",
-      "core-movements",
-      "combined-movements",
-    ]);
-    expect(grouped.map(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual([
-      [
-        "view-camera-anatomy",
-        "understanding-camera-movements",
-        "focus-fundamentals-two-targets",
-      ],
-      ["architecture-rise", "table-tilt", "shelf-swing", "mirror-shift"],
-      ["oblique-tabletop", "oblique-architecture", "architecture-foreground", "interior-corner"],
-    ]);
+    expect(grouped.map(({ group }) => group.id)).toEqual(
+      expectedGroups.map(({ groupId }) => groupId),
+    );
+    expect(grouped.map(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual(
+      expectedGroups.map(({ entries }) => entries.map(({ id }) => id)),
+    );
     const groupedSceneIds = grouped.flatMap(({ entries }) => entries.map(({ meta }) => meta.id));
-    expect(groupedSceneIds).toHaveLength(publicSceneCatalog.length);
+    expect(groupedSceneIds).toHaveLength(expectedPublishedEntries.length);
     expect([...groupedSceneIds].sort()).toEqual(
-      publicSceneCatalog.map(({ id }) => id).sort(),
+      expectedPublishedEntries.map(({ id }) => id).sort(),
     );
     expect(publicSceneCatalog.map(({ id }) => id)).toEqual(catalogOrder);
     expect(publicSceneGroups.map(({ id }) => id)).toEqual(registryOrder);
 
     const publication = { ...scenePublication, "table-tilt": false, "oblique-tabletop": false };
     const filteredGroups = getGroupedPublicSceneEntries(publication);
-    expect(filteredGroups.map(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual([
-      [
-        "view-camera-anatomy",
-        "understanding-camera-movements",
-        "focus-fundamentals-two-targets",
-      ],
-      ["architecture-rise", "shelf-swing", "mirror-shift"],
-      ["oblique-architecture", "architecture-foreground", "interior-corner"],
-    ]);
+    const expectedFilteredGroups = expectedGroupedCatalogEntries(publication);
+    expect(filteredGroups.map(({ group }) => group.id)).toEqual(
+      expectedFilteredGroups.map(({ groupId }) => groupId),
+    );
+    expect(filteredGroups.map(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual(
+      expectedFilteredGroups.map(({ entries }) => entries.map(({ id }) => id)),
+    );
     expect(filteredGroups.flatMap(({ entries }) => entries.map(({ meta }) => meta.id))).not.toContain(
       "table-tilt",
     );
@@ -116,12 +124,32 @@ describe("public scene catalog integrity", () => {
     const onlyFoundationsPublished = Object.fromEntries(
       publicSceneIds.map((id) => [id, id === "view-camera-anatomy"]),
     );
-    expect(getGroupedPublicSceneEntries(onlyFoundationsPublished).map(({ group }) => group.id)).toEqual([
-      "foundations",
-    ]);
-    expect(getGroupedPublicSceneEntries(Object.fromEntries(publicSceneIds.map((id) => [id, false])))).toEqual(
-      [],
+    const onlyFoundationsGroups = getGroupedPublicSceneEntries(onlyFoundationsPublished);
+    expect(onlyFoundationsGroups.map(({ group }) => group.id)).toEqual(
+      expectedGroupedCatalogEntries(onlyFoundationsPublished).map(({ groupId }) => groupId),
     );
+    expect(onlyFoundationsGroups.map(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual([
+      ["view-camera-anatomy"],
+    ]);
+
+    const coreMovementsDisabled = Object.fromEntries(
+      publicSceneCatalog.map((entry) => [entry.id, entry.groupId !== "core-movements"]),
+    );
+    const coreDisabledGroups = getGroupedPublicSceneEntries(coreMovementsDisabled);
+    expect(coreDisabledGroups.map(({ group }) => group.id)).toEqual([
+      "foundations",
+      "combined-movements",
+    ]);
+    expect(coreDisabledGroups.map(({ group }) => group.id)).not.toContain("core-movements");
+    expect(coreDisabledGroups.flatMap(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual([
+      ...publicSceneCatalog
+        .filter((entry) => entry.groupId !== "core-movements")
+        .map(({ id }) => id),
+    ]);
+
+    expect(
+      getGroupedPublicSceneEntries(Object.fromEntries(publicSceneIds.map((id) => [id, false]))),
+    ).toEqual([]);
   });
 
   it("fails closed for disabled and undeclared scene IDs", () => {

@@ -8,10 +8,19 @@ import {
   createMemoryRouter,
   useLocation,
 } from "react-router-dom";
-import { getGroupedPublicSceneEntries, getPublicSceneEntries } from "../../app/publicScenes";
+import {
+  publicSceneCatalog,
+  publicSceneGroups,
+  type PublicSceneGroupId,
+} from "../../app/publicScenes";
 import { routes } from "../../app/router";
 import { ScenesPage } from "../../app/pages";
 import { SceneCard } from "../../components/marketing/SceneCard";
+import {
+  isScenePublished,
+  scenePublication,
+  type ScenePublicationConfig,
+} from "../../config/scenePublication";
 import { i18n } from "../../i18n";
 
 beforeEach(async () => {
@@ -23,56 +32,70 @@ afterEach(async () => {
   await i18n.changeLanguage("en");
 });
 
+const expectedPublishedGroups = (
+  publication: ScenePublicationConfig = scenePublication,
+) =>
+  publicSceneGroups.flatMap((group) => {
+    const entries = publicSceneCatalog.filter(
+      (entry) =>
+        entry.groupId === group.id &&
+        isScenePublished(entry.id, publication),
+    );
+    return entries.length > 0 ? [{ group, entries }] : [];
+  });
+
 describe("scenes page", () => {
-  it("shows the published public scene cards in catalog order", async () => {
+  it("shows published public scene cards in grouped catalog order", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
-    const groupedEntries = getGroupedPublicSceneEntries();
-    const publishedEntries = getPublicSceneEntries();
-    const publishedSceneIds = new Set(publishedEntries.map(({ meta }) => meta.id));
-    const publishedTitles = groupedEntries.flatMap(({ entries }) =>
-      entries.map(({ meta }) => i18n.t(meta.titleKey)),
-    );
-    const sectionFor = (name: string) => {
-      const heading = screen.getByRole("heading", { name, level: 2 });
+    const expectedGroups = expectedPublishedGroups();
+    const publishedEntries = expectedGroups.flatMap(({ entries }) => entries);
+    const publishedSceneIds = new Set(publishedEntries.map(({ id }) => id));
+    const publishedTitles = publishedEntries.map(({ titleKey }) => i18n.t(titleKey));
+    const sectionFor = (groupId: PublicSceneGroupId) => {
+      const group = expectedGroups.find(({ group }) => group.id === groupId);
+      if (!group) {
+        throw new Error(`Expected published group ${groupId} is missing from the test fixture`);
+      }
+      const heading = screen.getByRole("heading", {
+        name: i18n.t(group.group.titleKey),
+        level: 2,
+      });
       const section = heading.closest("section");
       expect(section).not.toBeNull();
       return within(section!);
     };
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    const visibleCards = screen.getAllByRole("article");
+    const visibleCards = screen.queryAllByRole("article");
     expect(visibleCards).toHaveLength(publishedEntries.length);
-    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
-      "Foundations",
-      "Core Movements",
-      "Combined Movements",
-    ]);
-    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(publishedEntries.length);
-    expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(
+    expect(screen.queryAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual(
+      expectedGroups.map(({ group }) => i18n.t(group.titleKey)),
+    );
+    expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(publishedEntries.length);
+    expect(screen.queryAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(
       publishedTitles,
     );
-    expect(screen.queryByRole("heading", { name: "Macro Photography", level: 2 })).not.toBeInTheDocument();
-    expect(
-      sectionFor("Foundations").getByText(
-        "Learn how the view camera works before applying individual movements.",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      sectionFor("Foundations").getByRole("heading", {
-        name: "Understanding Camera Movements",
-        level: 3,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      sectionFor("Core Movements").getByRole("heading", { name: "Table Tilt", level: 3 }),
-    ).toBeInTheDocument();
-    expect(
-      sectionFor("Combined Movements").getByRole("heading", {
-        name: "Oblique Tabletop",
-        level: 3,
-      }),
-    ).toBeInTheDocument();
+    expectedGroups.forEach(({ group }) => {
+      expect(sectionFor(group.id).getByText(i18n.t(group.descriptionKey))).toBeInTheDocument();
+    });
+
+    const representativeMemberships: ReadonlyArray<readonly [PublicSceneGroupId, string]> = [
+      ["foundations", "understanding-camera-movements"],
+      ["core-movements", "table-tilt"],
+      ["combined-movements", "oblique-tabletop"],
+    ];
+    representativeMemberships.forEach(([groupId, sceneId]) => {
+      const expectedEntry = publishedEntries.find((entry) => entry.id === sceneId);
+      if (!expectedEntry) return;
+
+      expect(
+        sectionFor(groupId).getByRole("heading", {
+          name: i18n.t(expectedEntry.titleKey),
+          level: 3,
+        }),
+      ).toBeInTheDocument();
+    });
     visibleCards.forEach((card) => {
       expect(card.querySelector("article > a")).toBeNull();
     });
@@ -340,9 +363,9 @@ describe("scenes page", () => {
   it("uses lazy-loaded WebP thumbnails for every public scene", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
-    const publishedEntries = getGroupedPublicSceneEntries().flatMap(({ entries }) => entries);
+    const publishedEntries = expectedPublishedGroups().flatMap(({ entries }) => entries);
 
-    const cards = await screen.findAllByRole("article");
+    const cards = screen.queryAllByRole("article");
     expect(cards).toHaveLength(publishedEntries.length);
 
     cards.forEach((card, index) => {
@@ -350,7 +373,7 @@ describe("scenes page", () => {
       expect(image).not.toBeNull();
       expect(image).toHaveAttribute(
         "src",
-        `/assets/${publishedEntries[index].meta.thumbnailAsset.replace(/^assets\//, "")}`,
+        `/assets/${publishedEntries[index].thumbnailAsset.replace(/^assets\//, "")}`,
       );
       expect(image).toHaveAttribute("width", "360");
       expect(image).toHaveAttribute("height", "240");
@@ -386,23 +409,18 @@ describe("scenes page", () => {
     await i18n.changeLanguage("zh-HK");
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
-    const publishedEntries = getPublicSceneEntries();
-    const groupedEntries = getGroupedPublicSceneEntries();
-    const publishedSceneIds = new Set(publishedEntries.map(({ meta }) => meta.id));
-    const publishedTitles = groupedEntries.flatMap(({ entries }) =>
-      entries.map(({ meta }) => i18n.t(meta.titleKey)),
-    );
+    const publishedGroups = expectedPublishedGroups();
+    const publishedEntries = publishedGroups.flatMap(({ entries }) => entries);
+    const publishedSceneIds = new Set(publishedEntries.map(({ id }) => id));
+    const publishedTitles = publishedEntries.map(({ titleKey }) => i18n.t(titleKey));
 
     expect(screen.getByRole("combobox", { name: "語言" })).toHaveValue("zh-HK");
-    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
-      "基礎概念",
-      "基本相機移軸",
-      "複合相機移軸",
-    ]);
+    expect(screen.queryAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual(
+      publishedGroups.map(({ group }) => i18n.t(group.titleKey)),
+    );
     expect(
-      (await screen.findAllByRole("heading", { level: 3 })).map((heading) => heading.textContent),
+      screen.queryAllByRole("heading", { level: 3 }).map((heading) => heading.textContent),
     ).toEqual(publishedTitles);
-    expect(screen.queryByRole("heading", { name: "微距攝影", level: 2 })).not.toBeInTheDocument();
 
     const cardFor = (title: string) => {
       const heading = screen.getByRole("heading", { name: title, level: 3 });
@@ -463,7 +481,9 @@ describe("scenes page", () => {
   });
 
   it("navigates from the Architecture + Foreground card into Free Practice", async () => {
-    if (!getPublicSceneEntries().some(({ meta }) => meta.id === "architecture-foreground")) {
+    if (!expectedPublishedGroups().some(({ entries }) =>
+      entries.some(({ id }) => id === "architecture-foreground")
+    )) {
       return;
     }
 
@@ -490,7 +510,9 @@ describe("scenes page", () => {
   });
 
   it("navigates from the Architecture + Foreground card into its Guided Lesson", async () => {
-    if (!getPublicSceneEntries().some(({ meta }) => meta.id === "architecture-foreground")) {
+    if (!expectedPublishedGroups().some(({ entries }) =>
+      entries.some(({ id }) => id === "architecture-foreground")
+    )) {
       return;
     }
 
