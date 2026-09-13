@@ -7,6 +7,24 @@ export const scenesMessages = {
     intro: "選擇一個場景，在對焦屏上比較視點、構圖、透視幾何及清晰焦平面控制。",
     noScenesAvailable: "暫時沒有可用場景。",
   },
+  groups: {
+    foundations: {
+      title: "基礎概念",
+      description: "先了解大片幅相機如何運作，再應用個別相機移軸。",
+    },
+    coreMovements: {
+      title: "基本相機移軸",
+      description: "探索主要相機移軸及各自的效果。",
+    },
+    combinedMovements: {
+      title: "複合相機移軸",
+      description: "在較複雜的攝影問題中，結合相機移軸、對焦與景深。",
+    },
+    macroPhotography: {
+      title: "微距攝影",
+      description: "探索微距距離下的近距離對焦、放大率、景深及相機移軸。",
+    },
+  },
   viewCameraAnatomy: {
     title: "第 0 課 — 認識大片幅相機",
     description: "在探索相機移軸前，先認識概念大片幅相機的主要實體部件。",

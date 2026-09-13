@@ -66,19 +66,22 @@ describe("scene publication gate", () => {
 
     expect(
       (await screen.findAllByRole("heading", { level: 2 })).map((heading) => heading.textContent),
+    ).toEqual(["Foundations", "Core Movements", "Combined Movements"]);
+    expect(
+      (await screen.findAllByRole("heading", { level: 3 })).map((heading) => heading.textContent),
     ).toEqual([
       "Lesson 0 — Meet the View Camera",
       "Understanding Camera Movements",
       "Focus Fundamentals — Two Targets",
       "Architecture Rise",
       "Table Tilt",
-      "Oblique Tabletop",
       "Mirror Shift",
+      "Oblique Tabletop",
       "Oblique Architecture",
       "Architecture + Foreground",
       "Interior Corner — Rise + Swing",
     ]);
-    expect(screen.queryByRole("heading", { name: "Shelf Swing", level: 2 })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Shelf Swing", level: 3 })).toBeNull();
   });
 
   it.each([

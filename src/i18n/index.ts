@@ -12,8 +12,10 @@ import { resources } from "./resources";
 export { defaultLocale, isSupportedLocale, supportedLocales } from "./locales";
 export { LOCALE_STORAGE_KEY, readPersistedLocale, resolveInitialLocale } from "./localePreference";
 export type { SupportedLocale } from "./locales";
-export { publicSceneMessageKeys } from "./messageKeys";
+export { publicSceneGroupMessageKeys, publicSceneMessageKeys } from "./messageKeys";
 export type {
+  PublicSceneGroupDescriptionKey,
+  PublicSceneGroupTitleKey,
   PublicSceneDescriptionKey,
   PublicSceneTitleKey,
   PublicSceneTopicKey,

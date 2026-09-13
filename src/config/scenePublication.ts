@@ -10,14 +10,14 @@ export const scenePublication = {
   "understanding-camera-movements": true,
   "focus-fundamentals-two-targets": true,
 
-  // Camera movements
+  // Core Movements
   "architecture-rise": true,
   "table-tilt": true,
   "shelf-swing": true,
   "oblique-tabletop": true,
   "mirror-shift": true,
 
-  // Compound scenes
+  // Combined Movements
   "oblique-architecture": true,
   "architecture-foreground": true,
   "interior-corner": true,

@@ -8,7 +8,7 @@ import {
   createMemoryRouter,
   useLocation,
 } from "react-router-dom";
-import { getPublicSceneEntries } from "../../app/publicScenes";
+import { getGroupedPublicSceneEntries, getPublicSceneEntries } from "../../app/publicScenes";
 import { routes } from "../../app/router";
 import { ScenesPage } from "../../app/pages";
 import { SceneCard } from "../../components/marketing/SceneCard";
@@ -27,17 +27,52 @@ describe("scenes page", () => {
   it("shows the published public scene cards in catalog order", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
+    const groupedEntries = getGroupedPublicSceneEntries();
     const publishedEntries = getPublicSceneEntries();
     const publishedSceneIds = new Set(publishedEntries.map(({ meta }) => meta.id));
-    const publishedTitles = publishedEntries.map(({ meta }) => i18n.t(meta.titleKey));
+    const publishedTitles = groupedEntries.flatMap(({ entries }) =>
+      entries.map(({ meta }) => i18n.t(meta.titleKey)),
+    );
+    const sectionFor = (name: string) => {
+      const heading = screen.getByRole("heading", { name, level: 2 });
+      const section = heading.closest("section");
+      expect(section).not.toBeNull();
+      return within(section!);
+    };
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     const visibleCards = screen.getAllByRole("article");
     expect(visibleCards).toHaveLength(publishedEntries.length);
-    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(publishedEntries.length);
-    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual(
+    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
+      "Foundations",
+      "Core Movements",
+      "Combined Movements",
+    ]);
+    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(publishedEntries.length);
+    expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(
       publishedTitles,
     );
+    expect(screen.queryByRole("heading", { name: "Macro Photography", level: 2 })).not.toBeInTheDocument();
+    expect(
+      sectionFor("Foundations").getByText(
+        "Learn how the view camera works before applying individual movements.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      sectionFor("Foundations").getByRole("heading", {
+        name: "Understanding Camera Movements",
+        level: 3,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      sectionFor("Core Movements").getByRole("heading", { name: "Table Tilt", level: 3 }),
+    ).toBeInTheDocument();
+    expect(
+      sectionFor("Combined Movements").getByRole("heading", {
+        name: "Oblique Tabletop",
+        level: 3,
+      }),
+    ).toBeInTheDocument();
     visibleCards.forEach((card) => {
       expect(card.querySelector("article > a")).toBeNull();
     });
@@ -45,7 +80,7 @@ describe("scenes page", () => {
     if (publishedSceneIds.has("view-camera-anatomy")) {
       const anatomyHeading = await screen.findByRole("heading", {
         name: "Lesson 0 — Meet the View Camera",
-        level: 2,
+        level: 3,
       });
       const anatomyCard = anatomyHeading.closest("article");
       expect(anatomyCard).not.toBeNull();
@@ -71,7 +106,7 @@ describe("scenes page", () => {
     if (publishedSceneIds.has("focus-fundamentals-two-targets")) {
       const focusHeading = await screen.findByRole("heading", {
         name: "Focus Fundamentals — Two Targets",
-        level: 2,
+        level: 3,
       });
       const focusCard = focusHeading.closest("article");
       expect(focusCard).not.toBeNull();
@@ -85,7 +120,7 @@ describe("scenes page", () => {
     if (publishedSceneIds.has("understanding-camera-movements")) {
       const understandingHeading = await screen.findByRole("heading", {
         name: "Understanding Camera Movements",
-        level: 2,
+        level: 3,
       });
       const understandingCard = understandingHeading.closest("article");
       expect(understandingCard).not.toBeNull();
@@ -99,7 +134,7 @@ describe("scenes page", () => {
     if (publishedSceneIds.has("architecture-rise")) {
       const architectureHeading = await screen.findByRole("heading", {
         name: "Architecture Rise",
-        level: 2,
+        level: 3,
       });
       expect(architectureHeading).toBeInTheDocument();
       const architectureCard = architectureHeading.closest("article");
@@ -114,7 +149,7 @@ describe("scenes page", () => {
     if (publishedSceneIds.has("architecture-foreground")) {
       const architectureForegroundHeading = await screen.findByRole("heading", {
         name: "Architecture + Foreground",
-        level: 2,
+        level: 3,
       });
       const architectureForegroundCard = architectureForegroundHeading.closest("article");
       expect(architectureForegroundCard).not.toBeNull();
@@ -144,7 +179,7 @@ describe("scenes page", () => {
     if (publishedSceneIds.has("interior-corner")) {
       const interiorCornerHeading = await screen.findByRole("heading", {
         name: "Interior Corner — Rise + Swing",
-        level: 2,
+        level: 3,
       });
       const interiorCornerCard = interiorCornerHeading.closest("article");
       expect(interiorCornerCard).not.toBeNull();
@@ -175,7 +210,7 @@ describe("scenes page", () => {
       // Oblique Architecture remains directly available immediately before the final scene.
       const obliqueHeading = await screen.findByRole("heading", {
         name: "Oblique Architecture",
-        level: 2,
+        level: 3,
       });
       const obliqueCard = obliqueHeading.closest("article");
       expect(obliqueCard).not.toBeNull();
@@ -204,7 +239,7 @@ describe("scenes page", () => {
 
     if (publishedSceneIds.has("table-tilt")) {
       // Table Tilt uses the standard enabled SceneCard link.
-      const tableHeading = await screen.findByRole("heading", { name: "Table Tilt", level: 2 });
+      const tableHeading = await screen.findByRole("heading", { name: "Table Tilt", level: 3 });
       const tableCard = tableHeading.closest("article");
       expect(tableCard).not.toBeNull();
       const scopedTableCard = within(tableCard!);
@@ -228,7 +263,7 @@ describe("scenes page", () => {
     }
 
     if (publishedSceneIds.has("shelf-swing")) {
-      const shelfHeading = await screen.findByRole("heading", { name: "Shelf Swing", level: 2 });
+      const shelfHeading = await screen.findByRole("heading", { name: "Shelf Swing", level: 3 });
       const shelfCard = shelfHeading.closest("article");
       expect(shelfCard).not.toBeNull();
       const scopedShelfCard = within(shelfCard!);
@@ -253,7 +288,7 @@ describe("scenes page", () => {
     }
 
     if (publishedSceneIds.has("oblique-tabletop")) {
-      const tabletopHeading = await screen.findByRole("heading", { name: "Oblique Tabletop", level: 2 });
+      const tabletopHeading = await screen.findByRole("heading", { name: "Oblique Tabletop", level: 3 });
       const tabletopCard = tabletopHeading.closest("article");
       expect(tabletopCard).not.toBeNull();
       const scopedTabletopCard = within(tabletopCard!);
@@ -279,12 +314,12 @@ describe("scenes page", () => {
       expect(
         within(visibleCards.at(-1)!).getByRole("heading", {
           name: lastPublishedTitle,
-          level: 2,
+          level: 3,
         }),
       ).toBeInTheDocument();
     }
     if (publishedSceneIds.has("mirror-shift")) {
-      const mirrorHeading = await screen.findByRole("heading", { name: "Mirror Shift", level: 2 });
+      const mirrorHeading = await screen.findByRole("heading", { name: "Mirror Shift", level: 3 });
       const mirrorCard = mirrorHeading.closest("article");
       expect(mirrorCard).not.toBeNull();
       expect(
@@ -305,7 +340,7 @@ describe("scenes page", () => {
   it("uses lazy-loaded WebP thumbnails for every public scene", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
-    const publishedEntries = getPublicSceneEntries();
+    const publishedEntries = getGroupedPublicSceneEntries().flatMap(({ entries }) => entries);
 
     const cards = await screen.findAllByRole("article");
     expect(cards).toHaveLength(publishedEntries.length);
@@ -352,16 +387,25 @@ describe("scenes page", () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
     const publishedEntries = getPublicSceneEntries();
+    const groupedEntries = getGroupedPublicSceneEntries();
     const publishedSceneIds = new Set(publishedEntries.map(({ meta }) => meta.id));
-    const publishedTitles = publishedEntries.map(({ meta }) => i18n.t(meta.titleKey));
+    const publishedTitles = groupedEntries.flatMap(({ entries }) =>
+      entries.map(({ meta }) => i18n.t(meta.titleKey)),
+    );
 
     expect(screen.getByRole("combobox", { name: "語言" })).toHaveValue("zh-HK");
+    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
+      "基礎概念",
+      "基本相機移軸",
+      "複合相機移軸",
+    ]);
     expect(
-      (await screen.findAllByRole("heading", { level: 2 })).map((heading) => heading.textContent),
+      (await screen.findAllByRole("heading", { level: 3 })).map((heading) => heading.textContent),
     ).toEqual(publishedTitles);
+    expect(screen.queryByRole("heading", { name: "微距攝影", level: 2 })).not.toBeInTheDocument();
 
     const cardFor = (title: string) => {
-      const heading = screen.getByRole("heading", { name: title, level: 2 });
+      const heading = screen.getByRole("heading", { name: title, level: 3 });
       const card = heading.closest("article");
       expect(card).not.toBeNull();
       return within(card!);
@@ -433,7 +477,7 @@ describe("scenes page", () => {
       </MemoryRouter>,
     );
 
-    const heading = await screen.findByRole("heading", { name: "Architecture + Foreground", level: 2 });
+    const heading = await screen.findByRole("heading", { name: "Architecture + Foreground", level: 3 });
     const card = heading.closest("article");
     expect(card).not.toBeNull();
     fireEvent.click(within(card!).getByRole("link", { name: "Open Scene" }));
@@ -463,7 +507,7 @@ describe("scenes page", () => {
       </MemoryRouter>,
     );
 
-    const heading = await screen.findByRole("heading", { name: "Architecture + Foreground", level: 2 });
+    const heading = await screen.findByRole("heading", { name: "Architecture + Foreground", level: 3 });
     const card = heading.closest("article");
     expect(card).not.toBeNull();
     fireEvent.click(within(card!).getByRole("link", { name: "Guided Lesson" }));
