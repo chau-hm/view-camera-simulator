@@ -1,9 +1,13 @@
 import type { GroundGlassPanOffset } from "./groundGlassStageTransform";
+import type { GroundGlassPreviewMode } from "./groundGlassTargetProjection";
 
 /**
- * A film-space inspection window. u/v use the complete film image as their
- * coordinate system: u=0 is left, u=1 is right, v=0 is top, and v=1 is
- * bottom. The window is independent of the CSS/layout viewport.
+ * A normalized inspection window. GroundGlassStage expresses its center in
+ * displayed Ground Glass space; GroundGlassRenderer maps that center to the
+ * pre-composite RTT film crop before configuring the off-axis camera. u/v use
+ * the complete image as their coordinate system: u=0 is left, u=1 is right,
+ * v=0 is top, and v=1 is bottom. The window is independent of the
+ * CSS/layout viewport.
  */
 export type GroundGlassInspectionWindow = {
   active: boolean;
@@ -13,7 +17,22 @@ export type GroundGlassInspectionWindow = {
   heightFraction: number;
 };
 
-export type GroundGlassInspectionPreviewMode = "raw" | "upright";
+export type GroundGlassInspectionPreviewMode = GroundGlassPreviewMode;
+
+/**
+ * Map a displayed Ground Glass coordinate to the pre-composite RTT film crop.
+ * This is intentionally distinct from the physical-film-to-display mapping
+ * used by Focus Distribution. Raw compositing samples the RTT with a
+ * 180-degree flip, so its crop is inverted; Upright compositing samples the
+ * RTT directly, so its crop uses the displayed coordinate unchanged.
+ */
+export const mapGroundGlassDisplayUvToFilmUv = (
+  displayUv: { u: number; v: number },
+  previewMode: GroundGlassInspectionPreviewMode,
+): { u: number; v: number } =>
+  previewMode === "raw"
+    ? { u: 1 - displayUv.u, v: 1 - displayUv.v }
+    : { u: displayUv.u, v: displayUv.v };
 
 export type GroundGlassFrustum = {
   left: number;
@@ -124,19 +143,23 @@ export const resolveSampledFilmDimensionsMm = (input: {
 });
 
 /**
- * Stage pan coordinates follow the displayed Ground Glass image. Raw RTT
- * presentation mirrors both axes before display, so convert that displayed
- * window back into the camera/film coordinate system before cropping. Upright
- * presentation already uses the same coordinate orientation as the film.
+ * Stage pan coordinates follow the displayed Ground Glass image. Inspection
+ * cropping configures the pre-composite RTT camera/frustum. Raw presentation
+ * flips the RTT during compositing, so displayed coordinates must be inverted
+ * before selecting the crop; Upright presentation samples the RTT directly.
  */
 export const mapGroundGlassInspectionWindowToFilmSpace = (
   window: GroundGlassInspectionWindow,
   previewMode: GroundGlassInspectionPreviewMode,
 ): GroundGlassInspectionWindow => {
-  if (!window.active || previewMode === "upright") return window;
+  if (!window.active) return window;
+  const filmCenter = mapGroundGlassDisplayUvToFilmUv(
+    { u: window.centerU, v: window.centerV },
+    previewMode,
+  );
   return {
     ...window,
-    centerU: 1 - window.centerU,
-    centerV: 1 - window.centerV,
+    centerU: filmCenter.u,
+    centerV: filmCenter.v,
   };
 };

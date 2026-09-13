@@ -38,10 +38,16 @@ export function mapGroundGlassUvToDisplayUv(
   rawUv: { u: number; v: number },
   previewMode: GroundGlassPreviewMode,
 ): { u: number; v: number } {
+  // projectWorldPointToFilmPlaneGroundGlass returns physical film coordinates
+  // whose origin is the film's top-left corner. The RTT camera renders the
+  // virtual image with that physical orientation reversed; its composite pass
+  // applies that reversal for Raw Ground Glass and leaves Upright Assist in
+  // the opposite orientation. Therefore Raw displays the physical film
+  // coordinate and Upright applies the 180-degree display transform.
   if (previewMode === "raw") {
-    return { u: 1 - rawUv.u, v: 1 - rawUv.v };
+    return { u: rawUv.u, v: rawUv.v };
   }
-  return { u: rawUv.u, v: rawUv.v };
+  return { u: 1 - rawUv.u, v: 1 - rawUv.v };
 }
 
 export function projectSceneFocusTargetsToGroundGlass(params: {
