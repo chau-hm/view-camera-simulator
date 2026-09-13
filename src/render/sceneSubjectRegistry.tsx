@@ -90,8 +90,6 @@ export type SceneSubjectRttLighting = {
   targetMm: Vec3;
   keyOffsetWorld: Vec3;
   fillOffsetWorld: Vec3;
-  /** Absolute key position in world units for placements derived from a transformed light. */
-  keyPositionWorld?: readonly [number, number, number];
 };
 
 export type SceneSubjectRegistration = {

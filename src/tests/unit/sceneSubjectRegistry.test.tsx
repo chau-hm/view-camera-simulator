@@ -27,7 +27,7 @@ import {
   lessonZeroGroundGlassSubjectGeometry,
 } from "../../scenes/lessonZeroGroundGlassSubject";
 import { TEACHING_LIGHTING_CONFIG } from "../../render/TeachingLighting";
-import { WORLD_SCALE, vecToWorld } from "../../render/rttUtils";
+import { WORLD_SCALE } from "../../render/rttUtils";
 
 afterEach(cleanup);
 
@@ -446,12 +446,14 @@ describe("scene subject registry", () => {
     const reflectedKeyPositionMm = reflectPointAcrossMirrorPlane(realKeyPositionMm);
 
     expect(observerLighting?.targetMm).toEqual(realTargetMm);
-    expect(observerLighting?.keyPositionWorld).toEqual(vecToWorld(realKeyPositionMm));
     expect(observerLighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -2.5 });
 
     expect(rttLighting?.targetMm).toEqual(reflectedTargetMm);
-    expect(rttLighting?.keyPositionWorld).toEqual(vecToWorld(reflectedKeyPositionMm));
-    expect(rttLighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: 2.5 });
+    expect(rttLighting?.keyOffsetWorld).toEqual({
+      x: (reflectedKeyPositionMm.x - reflectedTargetMm.x) * WORLD_SCALE,
+      y: (reflectedKeyPositionMm.y - reflectedTargetMm.y) * WORLD_SCALE,
+      z: (reflectedKeyPositionMm.z - reflectedTargetMm.z) * WORLD_SCALE,
+    });
     expect(rttLighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: 1.5 });
   });
 });

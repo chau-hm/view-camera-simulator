@@ -5,7 +5,7 @@ import {
 } from "../scenes/mirrorShiftGeometry";
 import { TEACHING_LIGHTING_CONFIG } from "./TeachingLighting";
 import type { SceneSubjectRttLighting } from "./sceneSubjectRegistry";
-import { WORLD_SCALE, vecToWorld } from "./rttUtils";
+import { WORLD_SCALE } from "./rttUtils";
 
 const mirrorShiftRealLightingTargetMm: Vec3 = {
   x: mirrorShiftGeometry.mirror.center.x,
@@ -43,9 +43,8 @@ const subtractMm = (first: Vec3, second: Vec3) => ({
 /**
  * Resolve the two lighting placements needed by the Mirror Shift split:
  * the inspection subject remains on the real side, while the RTT subject is
- * a virtual mirror-side copy. The virtual key is reflected as an absolute
- * world-space point first; its target-relative offset is only a compatibility
- * representation for the existing teaching-lighting API.
+ * a virtual mirror-side copy. Reflect the real light positions first, then
+ * express the result using the existing target-relative lighting contract.
  */
 export const resolveMirrorShiftLighting = (): Readonly<{
   viewport: SceneSubjectRttLighting;
@@ -76,13 +75,11 @@ export const resolveMirrorShiftLighting = (): Readonly<{
       targetMm: { ...realTargetMm },
       keyOffsetWorld: { ...mirrorShiftRealKeyOffsetWorld },
       fillOffsetWorld: { ...mirrorShiftRealFillOffsetWorld },
-      keyPositionWorld: vecToWorld(realKeyPositionMm),
     },
     rtt: {
       targetMm: reflectedTargetMm,
       keyOffsetWorld: subtractMm(reflectedKeyPositionMm, reflectedTargetMm),
       fillOffsetWorld: subtractMm(reflectedFillPositionMm, reflectedTargetMm),
-      keyPositionWorld: vecToWorld(reflectedKeyPositionMm),
     },
   };
 };

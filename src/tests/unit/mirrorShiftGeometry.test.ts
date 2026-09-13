@@ -19,6 +19,7 @@ import {
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
 import { configureTeachingShadowParticipation } from "../../render/TeachingLighting";
+import { configureMirrorShiftRttShadowParticipation } from "../../render/mirrorShiftShadowParticipation";
 
 const toWorldMm = (millimetres: number): number => millimetres * 0.001;
 
@@ -295,6 +296,46 @@ describe("Mirror Shift planar reflection geometry", () => {
         Math.abs(expectedReflectedDetail.z - mirrorShiftMirrorPlane.point.z),
         10,
       );
+    } finally {
+      disposeMirrorShiftGroup(group);
+    }
+  });
+
+  it("keeps the RTT shadow map in the reflected scene domain", () => {
+    const group = createMirrorShiftRttGroup();
+    try {
+      configureTeachingShadowParticipation(group);
+      const realMarker = group.getObjectByName("mirror-shift-real-tall-marker") as THREE.Mesh;
+      const realReceiver = group.getObjectByName(
+        "mirror-shift-real-context-plinth-top",
+      ) as THREE.Mesh;
+      const physicalFloor = group.getObjectByName("mirror-shift-floor") as THREE.Mesh;
+      const reflectedMarker = group.getObjectByName(
+        "mirror-shift-reflected-tall-marker",
+      ) as THREE.Mesh;
+      const reflectedCamera = group.getObjectByName(
+        "mirror-shift-camera-reflection-front-standard",
+      ) as THREE.Mesh;
+      const reflectedFloor = group.getObjectByName(
+        "mirror-shift-reflected-floor",
+      ) as THREE.Mesh;
+      const mirrorSurface = group.getObjectByName(
+        "mirror-shift-mirror-surface",
+      ) as THREE.Mesh;
+
+      expect(realMarker.castShadow).toBe(true);
+      expect(realReceiver.receiveShadow).toBe(true);
+      configureMirrorShiftRttShadowParticipation(group);
+      expect(realMarker.castShadow).toBe(false);
+      expect(realReceiver.receiveShadow).toBe(false);
+      expect(physicalFloor.castShadow).toBe(false);
+      expect(physicalFloor.receiveShadow).toBe(false);
+      expect(reflectedMarker.castShadow).toBe(true);
+      expect(reflectedCamera.castShadow).toBe(true);
+      expect(reflectedFloor.castShadow).toBe(false);
+      expect(reflectedFloor.receiveShadow).toBe(true);
+      expect(mirrorSurface.castShadow).toBe(false);
+      expect(mirrorSurface.receiveShadow).toBe(false);
     } finally {
       disposeMirrorShiftGroup(group);
     }
