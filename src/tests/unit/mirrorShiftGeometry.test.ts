@@ -33,6 +33,39 @@ describe("Mirror Shift planar reflection geometry", () => {
     );
   });
 
+  it("satisfies the plane reflection invariants for a simple x = 0 teaching plane", () => {
+    const plane = {
+      point: { x: 0, y: 0, z: 0 },
+      normal: { x: 1, y: 0, z: 0 },
+    };
+    const point = { x: 100, y: 20, z: -50 };
+    const reflected = reflectPointAcrossMirrorPlane(point, plane);
+
+    expect(reflectPointAcrossMirrorPlane(plane.point, plane)).toEqual(plane.point);
+    expect(reflected).toEqual({ x: -100, y: 20, z: -50 });
+    expect(reflected.y).toBe(point.y);
+    expect(reflected.z).toBe(point.z);
+
+    const signedDistance = point.x - plane.point.x;
+    const reflectedSignedDistance = reflected.x - plane.point.x;
+    expect(reflectedSignedDistance).toBe(-signedDistance);
+    expect(reflectPointAcrossMirrorPlane(reflected, plane)).toEqual(point);
+  });
+
+  it("normalizes a scene-specific plane normal without changing the reflection result", () => {
+    const point = { x: 100, y: 20, z: -50 };
+    const unitNormalReflection = reflectPointAcrossMirrorPlane(point, {
+      point: { x: 0, y: 0, z: 0 },
+      normal: { x: 1, y: 0, z: 0 },
+    });
+    const scaledNormalReflection = reflectPointAcrossMirrorPlane(point, {
+      point: { x: 0, y: 0, z: 0 },
+      normal: { x: 4, y: 0, z: 0 },
+    });
+
+    expect(scaledNormalReflection).toEqual(unitNormalReflection);
+  });
+
   it("keeps the plane fixed and derives every reflected prop from its real counterpart", () => {
     expect(
       reflectPointAcrossMirrorPlane(mirrorShiftMirrorPlane.point),
