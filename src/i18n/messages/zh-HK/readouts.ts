@@ -76,7 +76,8 @@ export const readoutsMessages = {
     upright: "正像",
     orientationAria: "對焦屏方向：{{orientation}}",
     targetAria: "{{target}}：{{percent}} · {{status}}{{closest}}",
-    additionalTargetsAria: "其他對焦目標",
+    unplacedHeading: "目前毛玻璃視野外",
+    unplacedTargetsAria: "目前毛玻璃視野外的對焦目標",
     unplacedTarget: "目標",
     positions: {
       upperLeft: "左上",

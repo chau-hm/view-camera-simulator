@@ -135,6 +135,21 @@ test("Table Tilt Focus Distribution follows the displayed Raw/Upright orientatio
   await expect.poll(async () => (await readTargetCell("near-cup")).rowIndex).toBe(rawCells[0].rowIndex);
 });
 
+test("Table Tilt Focus Distribution keeps a same-cell target stack co-equal", async ({ page }) => {
+  await page.goto("/simulator/free/table-tilt");
+  const panel = page.getByTestId("focus-distribution-panel");
+  const targetIds = ["near-cup", "mid-notebook", "far-book"];
+
+  await expect(panel.locator(".focus-distribution-cell--stacked")).toHaveCount(1);
+  await expect(panel.locator(".focus-distribution-panel__additional")).toHaveCount(0);
+  for (const targetId of targetIds) {
+    const target = panel.locator(`[data-focus-target-id="${targetId}"]`);
+    await expect(target).toBeVisible();
+    await expect(target.locator(".focus-distribution-cell__target-marker")).toBeVisible();
+    await expect(target).toHaveAttribute("aria-label", /\d+%/);
+  }
+});
+
 test("Table Tilt Focus Loupe maps displayed centers to the pre-composite RTT crop", async ({ page }) => {
   await page.goto("/simulator/free/table-tilt?rttDiagnostics=1");
   const viewport = page.getByLabel("GroundGlassViewport");

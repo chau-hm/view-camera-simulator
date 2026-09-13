@@ -52,6 +52,8 @@ describe("FocusDistributionPanel", () => {
     expect(within(rows[1]).getByRole("cell", { name: /Centre.*Middle/ })).toHaveTextContent("100%");
     expect(within(rows[2]).getByRole("cell", { name: /Lower right.*Far right/ })).toHaveTextContent("83%");
     expect(within(rows[1]).getByRole("cell", { name: /Sharp/ })).toHaveAccessibleName(/Closest point/);
+    expect(panel.querySelectorAll("td")).toHaveLength(9);
+    expect(panel.querySelectorAll(".focus-distribution-cell__target-marker")).toHaveLength(7);
     expect(screen.getByRole("heading", { name: "Focus distribution" })).toBeInTheDocument();
     expect(screen.getByTestId("focus-distribution-orientation")).toHaveTextContent("Upright");
   });
@@ -137,6 +139,9 @@ describe("FocusDistributionPanel", () => {
     expect(screen.getByRole("cell", { name: /Centre.*Middle/ })).toHaveTextContent("75%");
     expect(screen.queryByText("Near right")).not.toBeInTheDocument();
     expect(screen.queryByText("Far right")).not.toBeInTheDocument();
+    const panel = screen.getByTestId("focus-distribution-panel");
+    expect(panel.querySelectorAll("td")).toHaveLength(9);
+    expect(panel.querySelectorAll(".focus-distribution-cell--empty")).toHaveLength(7);
   });
 
   it("localizes the learner-facing panel and position labels", async () => {
@@ -174,6 +179,52 @@ describe("FocusDistributionPanel", () => {
     );
   });
 
+  it("distinguishes genuinely unplaced targets from spatially placed targets", () => {
+    render(
+      <FocusDistributionPanel
+        sceneId="architecture-foreground"
+        focusTargets={[
+          {
+            id: "building-middle",
+            sharpnessPercent: 35,
+            status: "soft",
+            displayUv: { u: 0.5, v: 0.5 },
+            visible: false,
+          },
+        ]}
+        previewMode="upright"
+      />,
+    );
+
+    const panel = screen.getByTestId("focus-distribution-panel");
+    expect(screen.getByText("Outside current Ground Glass view")).toBeInTheDocument();
+    expect(panel.querySelector('[data-focus-target-id="building-middle"]')).toHaveAccessibleName(
+      /Outside current Ground Glass view.*Building middle.*35%.*Soft/,
+    );
+    expect(panel.querySelectorAll(".focus-distribution-cell--empty")).toHaveLength(9);
+  });
+
+  it("localizes the unplaced-target distinction", async () => {
+    await i18n.changeLanguage("zh-HK");
+    render(
+      <FocusDistributionPanel
+        sceneId="architecture-foreground"
+        focusTargets={[
+          {
+            id: "building-middle",
+            sharpnessPercent: 35,
+            status: "soft",
+            displayUv: null,
+            visible: false,
+          },
+        ]}
+        previewMode="upright"
+      />,
+    );
+
+    expect(screen.getByText("目前毛玻璃視野外")).toBeInTheDocument();
+  });
+
   it("keeps the real Table Tilt collision as a compact stacked cell", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
@@ -195,7 +246,7 @@ describe("FocusDistributionPanel", () => {
         focusTargets={projectedTargets.map((target) => ({
           id: target.id,
           sharpnessPercent: target.id === "near-cup" ? 91 : target.id === "mid-notebook" ? 98 : 99,
-          status: "sharp",
+          status: target.id === "near-cup" ? "soft" : target.id === "mid-notebook" ? "acceptable" : "sharp",
           displayUv: target.displayUv,
           visible: target.visible,
         }))}
@@ -216,12 +267,15 @@ describe("FocusDistributionPanel", () => {
     expect(panel).toHaveTextContent("91%");
     expect(panel).toHaveTextContent("98%");
     expect(panel).toHaveTextContent("99%");
-    targetEntries.forEach((target) => {
+    targetEntries.forEach((target, index) => {
       expect(target).not.toBeNull();
       if (!target) return;
       expect(target).toHaveAttribute("role", "group");
       expect(target).toHaveAccessibleName(/Raw|Upper|Middle|Lower/);
-      expect(target).toHaveTextContent("✓");
+      const targetId = targetIds[index];
+      if (targetId === "near-cup") expect(target).toHaveTextContent("—");
+      if (targetId === "mid-notebook") expect(target).toHaveTextContent("~");
+      if (targetId === "far-book") expect(target).toHaveTextContent("✓");
     });
   });
 });
