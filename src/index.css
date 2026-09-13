@@ -266,7 +266,9 @@ button {
 
 /* Readout card modifiers */
 .simulator-info-card--settings {}
-.simulator-info-card--focus-distribution {}
+.simulator-info-card--focus-distribution {
+ container-type: inline-size;
+}
 .simulator-info-card--debug {}
 
 /* Current settings */
@@ -507,6 +509,58 @@ button {
  clip: rect(0, 0, 0, 0);
  white-space: nowrap;
  border: 0;
+}
+
+/* A 418px card still leaves only about 130px per spatial cell beside the
+   fixed controls rail, so switch before labels begin splitting into fragments. */
+@container (max-width: 440px) {
+ .focus-distribution-cell--stacked {
+   padding: 3px 4px;
+ }
+
+ .focus-distribution-cell__position {
+   font-size: 10px;
+ }
+
+ .focus-distribution-cell__targets {
+   gap: 1px;
+   margin-top: 1px;
+ }
+
+ .focus-distribution-cell__target-marker {
+   display: none;
+ }
+
+ .focus-distribution-cell__target {
+   grid-template-columns: minmax(0, 1fr) auto;
+   gap: 3px;
+   padding-inline-start: 2px;
+ }
+
+ .focus-distribution-cell__target-name,
+ .focus-distribution-cell--stacked .focus-distribution-cell__target-name {
+   overflow: hidden;
+   overflow-wrap: normal;
+   font-size: 10px;
+   line-height: 1.1;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   word-break: normal;
+ }
+
+ .focus-distribution-cell__target .focus-distribution-cell__value {
+   font-size: 10px;
+ }
+
+ .focus-distribution-cell--stacked .focus-distribution-cell__target {
+   grid-template-columns: minmax(0, 1fr);
+   gap: 1px;
+ }
+
+ .focus-distribution-cell--stacked .focus-distribution-cell__value {
+   grid-column: 1;
+   justify-self: end;
+ }
 }
 
 @media (max-width: 420px) {
