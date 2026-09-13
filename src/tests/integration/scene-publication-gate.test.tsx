@@ -33,7 +33,8 @@ vi.mock("../../components/layout/SimulatorWorkspace", () => ({
 }));
 
 import { ScenesPage, SimulatorRoutePage } from "../../app/pages";
-import { getPublicSceneEntryById } from "../../app/publicScenes";
+import { publicSceneCatalog, publicSceneGroups, getPublicSceneEntryById } from "../../app/publicScenes";
+import { isScenePublished, scenePublication } from "../../config/scenePublication";
 import { getSceneById } from "../../scenes/definitions";
 import { i18n } from "../../i18n";
 
@@ -60,25 +61,30 @@ const renderRoute = (initialEntry: string) =>
     </MemoryRouter>,
   );
 
+const expectedPublishedGroups = publicSceneGroups.flatMap((group) => {
+  const entries = publicSceneCatalog.filter(
+    (entry) =>
+      entry.groupId === group.id &&
+      isScenePublished(entry.id, scenePublication),
+  );
+  return entries.length > 0 ? [{ group, entries }] : [];
+});
+
 describe("scene publication gate", () => {
-  it("hides an unpublished scene while preserving the remaining catalog order", async () => {
+  it("hides an unpublished scene while preserving the remaining grouped catalog order", async () => {
     renderRoute("/scenes");
 
     expect(
       (await screen.findAllByRole("heading", { level: 2 })).map((heading) => heading.textContent),
-    ).toEqual([
-      "Lesson 0 — Meet the View Camera",
-      "Understanding Camera Movements",
-      "Focus Fundamentals — Two Targets",
-      "Architecture Rise",
-      "Table Tilt",
-      "Oblique Tabletop",
-      "Mirror Shift",
-      "Oblique Architecture",
-      "Architecture + Foreground",
-      "Interior Corner — Rise + Swing",
-    ]);
-    expect(screen.queryByRole("heading", { name: "Shelf Swing", level: 2 })).toBeNull();
+    ).toEqual(expectedPublishedGroups.map(({ group }) => i18n.t(group.titleKey)));
+    expect(
+      (await screen.findAllByRole("heading", { level: 3 })).map((heading) => heading.textContent),
+    ).toEqual(
+      expectedPublishedGroups.flatMap(({ entries }) =>
+        entries.map(({ titleKey }) => i18n.t(titleKey)),
+      ),
+    );
+    expect(screen.queryByRole("heading", { name: "Shelf Swing", level: 3 })).toBeNull();
   });
 
   it.each([

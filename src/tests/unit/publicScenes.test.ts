@@ -3,16 +3,22 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   getAvailablePublicSceneEntries,
+  getGroupedPublicSceneEntries,
   getPublicSceneEntries,
   getPublicSceneEntryById,
   getPublicScenes,
   publicSceneCatalog,
+  publicSceneGroups,
   publicSceneIds,
   type PublicSceneEntry,
 } from "../../app/publicScenes";
 import { validatePublicSceneCatalog } from "../../app/publicSceneCatalogValidation";
 import { isValidSimulatorRoute } from "../../app/simulatorRouteValidation";
-import { isScenePublished, scenePublication } from "../../config/scenePublication";
+import {
+  isScenePublished,
+  scenePublication,
+  type ScenePublicationConfig,
+} from "../../config/scenePublication";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
 import type { TaskDefinition } from "../../types/task";
@@ -26,6 +32,16 @@ const validate = (
 const shelfEntry = publicSceneCatalog.find((entry) => entry.id === "shelf-swing")!;
 const shelfTask = getTaskById("swing-01")!;
 
+const expectedGroupedCatalogEntries = (publication: ScenePublicationConfig) =>
+  publicSceneGroups.flatMap((group) => {
+    const entries = publicSceneCatalog.filter(
+      (entry) =>
+        entry.groupId === group.id &&
+        isScenePublished(entry.id, publication),
+    );
+    return entries.length > 0 ? [{ groupId: group.id, entries }] : [];
+  });
+
 describe("public scene catalog integrity", () => {
   it("keeps the production catalog internally consistent", () => {
     expect(validate(publicSceneCatalog)).toEqual({ valid: true, errors: [] });
@@ -38,6 +54,102 @@ describe("public scene catalog integrity", () => {
     expect(new Set(publicationSceneIds).size).toBe(publicationSceneIds.length);
     expect(publicationSceneIds.sort()).toEqual([...catalogSceneIds].sort());
     expect(Object.values(scenePublication).every((value) => typeof value === "boolean")).toBe(true);
+  });
+
+  it("declares each scene in one registered group with deterministic group order", () => {
+    const groupIds = publicSceneGroups.map(({ id }) => id);
+
+    expect(groupIds).toEqual([
+      "foundations",
+      "core-movements",
+      "combined-movements",
+      "macro-photography",
+    ]);
+    expect(new Set(groupIds).size).toBe(groupIds.length);
+    expect(publicSceneCatalog.every((entry) => groupIds.includes(entry.groupId))).toBe(true);
+    expect(publicSceneCatalog.map(({ id, groupId }) => [id, groupId])).toEqual([
+      ["view-camera-anatomy", "foundations"],
+      ["understanding-camera-movements", "foundations"],
+      ["focus-fundamentals-two-targets", "foundations"],
+      ["architecture-rise", "core-movements"],
+      ["table-tilt", "core-movements"],
+      ["shelf-swing", "core-movements"],
+      ["oblique-tabletop", "combined-movements"],
+      ["mirror-shift", "core-movements"],
+      ["oblique-architecture", "combined-movements"],
+      ["architecture-foreground", "combined-movements"],
+      ["interior-corner", "combined-movements"],
+    ]);
+  });
+
+  it("groups published entries by registry order and omits empty groups", () => {
+    const catalogOrder = publicSceneCatalog.map(({ id }) => id);
+    const registryOrder = publicSceneGroups.map(({ id }) => id);
+    const grouped = getGroupedPublicSceneEntries();
+    const expectedPublishedEntries = publicSceneCatalog.filter((entry) =>
+      isScenePublished(entry.id, scenePublication),
+    );
+    const expectedGroups = expectedGroupedCatalogEntries(scenePublication);
+
+    expect(grouped.map(({ group }) => group.id)).toEqual(
+      expectedGroups.map(({ groupId }) => groupId),
+    );
+    expect(grouped.map(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual(
+      expectedGroups.map(({ entries }) => entries.map(({ id }) => id)),
+    );
+    const groupedSceneIds = grouped.flatMap(({ entries }) => entries.map(({ meta }) => meta.id));
+    expect(groupedSceneIds).toHaveLength(expectedPublishedEntries.length);
+    expect([...groupedSceneIds].sort()).toEqual(
+      expectedPublishedEntries.map(({ id }) => id).sort(),
+    );
+    expect(publicSceneCatalog.map(({ id }) => id)).toEqual(catalogOrder);
+    expect(publicSceneGroups.map(({ id }) => id)).toEqual(registryOrder);
+
+    const publication = { ...scenePublication, "table-tilt": false, "oblique-tabletop": false };
+    const filteredGroups = getGroupedPublicSceneEntries(publication);
+    const expectedFilteredGroups = expectedGroupedCatalogEntries(publication);
+    expect(filteredGroups.map(({ group }) => group.id)).toEqual(
+      expectedFilteredGroups.map(({ groupId }) => groupId),
+    );
+    expect(filteredGroups.map(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual(
+      expectedFilteredGroups.map(({ entries }) => entries.map(({ id }) => id)),
+    );
+    expect(filteredGroups.flatMap(({ entries }) => entries.map(({ meta }) => meta.id))).not.toContain(
+      "table-tilt",
+    );
+    expect(filteredGroups.flatMap(({ entries }) => entries.map(({ meta }) => meta.id))).not.toContain(
+      "oblique-tabletop",
+    );
+
+    const onlyFoundationsPublished = Object.fromEntries(
+      publicSceneIds.map((id) => [id, id === "view-camera-anatomy"]),
+    );
+    const onlyFoundationsGroups = getGroupedPublicSceneEntries(onlyFoundationsPublished);
+    expect(onlyFoundationsGroups.map(({ group }) => group.id)).toEqual(
+      expectedGroupedCatalogEntries(onlyFoundationsPublished).map(({ groupId }) => groupId),
+    );
+    expect(onlyFoundationsGroups.map(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual([
+      ["view-camera-anatomy"],
+    ]);
+
+    const coreMovementsDisabled = Object.fromEntries(
+      publicSceneCatalog.map((entry) => [entry.id, entry.groupId !== "core-movements"]),
+    );
+    const coreDisabledGroups = getGroupedPublicSceneEntries(coreMovementsDisabled);
+    expect(coreDisabledGroups.map(({ group }) => group.id)).toEqual([
+      "foundations",
+      "combined-movements",
+    ]);
+    expect(coreDisabledGroups.map(({ group }) => group.id)).not.toContain("core-movements");
+    expect(coreDisabledGroups.flatMap(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual([
+      ...publicSceneCatalog
+        .filter((entry) => entry.groupId !== "core-movements")
+        .map(({ id }) => id),
+    ]);
+
+    expect(
+      getGroupedPublicSceneEntries(Object.fromEntries(publicSceneIds.map((id) => [id, false]))),
+    ).toEqual([]);
   });
 
   it("fails closed for disabled and undeclared scene IDs", () => {

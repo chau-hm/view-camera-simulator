@@ -5,6 +5,26 @@ export const scenesMessages = {
       "Choose a scene to compare viewpoint, framing, perspective geometry and plane-of-sharp-focus control on the Ground Glass.",
     noScenesAvailable: "No scenes available.",
   },
+  groups: {
+    foundations: {
+      title: "Foundations",
+      description: "Learn how the view camera works before applying individual movements.",
+    },
+    coreMovements: {
+      title: "Core Movements",
+      description: "Explore the main camera movements and their individual effects.",
+    },
+    combinedMovements: {
+      title: "Combined Movements",
+      description:
+        "Combine movements, focusing, and depth of field in more complex photographic problems.",
+    },
+    macroPhotography: {
+      title: "Macro Photography",
+      description:
+        "Explore close focusing, magnification, depth of field, and camera movements at macro distances.",
+    },
+  },
   viewCameraAnatomy: {
     title: "Lesson 0 — Meet the View Camera",
     description:

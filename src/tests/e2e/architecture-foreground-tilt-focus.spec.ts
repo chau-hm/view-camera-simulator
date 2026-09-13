@@ -14,7 +14,7 @@ const isAllowedEnvironmentConsoleMessage = (message: string) =>
 test("Architecture + Foreground is discoverable from the Scenes page", async ({ page }) => {
   await page.goto("/scenes");
 
-  const heading = page.getByRole("heading", { name: "Architecture + Foreground", level: 2 });
+  const heading = page.getByRole("heading", { name: "Architecture + Foreground", level: 3 });
   await expect(heading).toBeVisible();
   const card = heading.locator("xpath=ancestor::article");
   await expect(card.locator("img")).toHaveAttribute("src", "/assets/architecture-foreground.webp");
@@ -27,7 +27,7 @@ test("Architecture + Foreground is discoverable from the Scenes page", async ({ 
     "/simulator/free/architecture-foreground?lesson=1",
   );
 
-  const sceneHeadings = await page.getByRole("heading", { level: 2 }).allTextContents();
+  const sceneHeadings = await page.getByRole("heading", { level: 3 }).allTextContents();
   expect(sceneHeadings.at(-3)).toBe("Oblique Architecture");
   expect(sceneHeadings.at(-2)).toBe("Architecture + Foreground");
   expect(sceneHeadings.at(-1)).toBe("Interior Corner — Rise + Swing");
