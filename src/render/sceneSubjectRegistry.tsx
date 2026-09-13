@@ -53,10 +53,6 @@ import {
 } from "../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
 import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTargets";
-import {
-  mirrorShiftGeometry,
-  reflectPointAcrossMirrorPlane,
-} from "../scenes/mirrorShiftGeometry";
 import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../scenes/architectureForegroundGeometry";
 import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
@@ -84,6 +80,7 @@ import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectCenterMm,
 } from "../scenes/lessonZeroGroundGlassSubject";
+import { resolveMirrorShiftLighting } from "./mirrorShiftLighting";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -93,6 +90,8 @@ export type SceneSubjectRttLighting = {
   targetMm: Vec3;
   keyOffsetWorld: Vec3;
   fillOffsetWorld: Vec3;
+  /** Absolute key position in world units for placements derived from a transformed light. */
+  keyPositionWorld?: readonly [number, number, number];
 };
 
 export type SceneSubjectRegistration = {
@@ -101,6 +100,8 @@ export type SceneSubjectRegistration = {
   disposeRttGroup?: (group: THREE.Group) => void;
   /** Optional subject bounds used for RTT clipping, independent of inspection bounds. */
   rttBounds?: Bounds3;
+  /** Optional lighting for the physical inspection subject when RTT is virtualized. */
+  viewportLighting?: SceneSubjectRttLighting;
   rttLighting?: SceneSubjectRttLighting;
   resolveRttLighting?: (options?: SceneSubjectRttOptions) => SceneSubjectRttLighting;
   showReferenceCamera?: boolean;
@@ -210,11 +211,10 @@ const interiorCornerLightingTargetMm = {
   ...interiorCornerGeometry.focusTargets[1].worldPosition,
 } as const;
 
-const mirrorShiftLightingTargetMm = reflectPointAcrossMirrorPlane({
-  x: mirrorShiftGeometry.mirror.center.x,
-  y: mirrorShiftGeometry.mirror.center.y,
-  z: mirrorShiftGeometry.floor.centerZ,
-});
+const {
+  viewport: mirrorShiftViewportLighting,
+  rtt: mirrorShiftRttLighting,
+} = resolveMirrorShiftLighting();
 
 export const sceneSubjectRegistry = {
   "view-camera-anatomy": {
@@ -353,11 +353,8 @@ export const sceneSubjectRegistry = {
     SceneSubject: MirrorShiftSubject,
     createRttGroup: createMirrorShiftRttGroup,
     disposeRttGroup: disposeMirrorShiftGroup,
-    rttLighting: {
-      targetMm: mirrorShiftLightingTargetMm,
-      keyOffsetWorld: { x: -2.5, y: 3.5, z: 2.5 },
-      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
-    },
+    viewportLighting: mirrorShiftViewportLighting,
+    rttLighting: mirrorShiftRttLighting,
   },
   "interior-corner": {
     SceneSubject: InteriorCornerSubject,

@@ -52,6 +52,26 @@ describe("teaching lighting", () => {
     expect(scene.getObjectByName("teaching-lighting-target")).toBeUndefined();
   });
 
+  it("uses an explicit absolute key position when a placement provides one", () => {
+    const scene = new THREE.Scene();
+    const rig = createTeachingLightingRig(scene, {
+      targetWorld: [1, 2, 3],
+      keyOffsetWorld: [-2, 4, -3],
+      keyPositionWorld: [9, 8, 7],
+    });
+
+    expect(rig.keyLight.position.toArray()).toEqual([9, 8, 7]);
+
+    updateTeachingLightingRig(rig, {
+      targetWorld: [0, 0, 0],
+      keyOffsetWorld: [2, 3, 4],
+      keyPositionWorld: [-5, -6, -7],
+    });
+    expect(rig.keyLight.position.toArray()).toEqual([-5, -6, -7]);
+
+    disposeTeachingLightingRig(scene, rig);
+  });
+
   it("keeps helper geometry out of shadows while opting in lit subjects and receivers", () => {
     const root = new THREE.Group();
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshStandardMaterial());

@@ -26,6 +26,8 @@ import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectGeometry,
 } from "../../scenes/lessonZeroGroundGlassSubject";
+import { TEACHING_LIGHTING_CONFIG } from "../../render/TeachingLighting";
+import { WORLD_SCALE, vecToWorld } from "../../render/rttUtils";
 
 afterEach(cleanup);
 
@@ -426,15 +428,30 @@ describe("scene subject registry", () => {
     expect(lighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: -1.5 });
   });
 
-  it("aims Mirror Shift lighting into the reflected chamber", () => {
-    const lighting = getSceneSubjectRegistration("mirror-shift")?.rttLighting;
-    expect(lighting?.targetMm).toEqual(
-      reflectPointAcrossMirrorPlane({
-        x: mirrorShiftGeometry.mirror.center.x,
-        y: mirrorShiftGeometry.mirror.center.y,
-        z: mirrorShiftGeometry.floor.centerZ,
-      }),
-    );
-    expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: 2.5 });
+  it("derives Mirror Shift observer and RTT lights from mirrored world positions", () => {
+    const registration = getSceneSubjectRegistration("mirror-shift");
+    const observerLighting = registration?.viewportLighting;
+    const rttLighting = registration?.rttLighting;
+    const realTargetMm = {
+      x: mirrorShiftGeometry.mirror.center.x,
+      y: mirrorShiftGeometry.mirror.center.y,
+      z: mirrorShiftGeometry.floor.centerZ,
+    };
+    const realKeyPositionMm = {
+      x: realTargetMm.x + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[0] / WORLD_SCALE,
+      y: realTargetMm.y + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[1] / WORLD_SCALE,
+      z: realTargetMm.z + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[2] / WORLD_SCALE,
+    };
+    const reflectedTargetMm = reflectPointAcrossMirrorPlane(realTargetMm);
+    const reflectedKeyPositionMm = reflectPointAcrossMirrorPlane(realKeyPositionMm);
+
+    expect(observerLighting?.targetMm).toEqual(realTargetMm);
+    expect(observerLighting?.keyPositionWorld).toEqual(vecToWorld(realKeyPositionMm));
+    expect(observerLighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -2.5 });
+
+    expect(rttLighting?.targetMm).toEqual(reflectedTargetMm);
+    expect(rttLighting?.keyPositionWorld).toEqual(vecToWorld(reflectedKeyPositionMm));
+    expect(rttLighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: 2.5 });
+    expect(rttLighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: 1.5 });
   });
 });

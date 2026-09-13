@@ -580,8 +580,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     } catch (err) { void err; }
 
     // Shared teaching lighting keeps the viewport and RTT on the same
-    // restrained hemisphere/key-light baseline. Scene profiles place the rig
-    // around their existing presentation target below.
+    // restrained hemisphere/key-light baseline. Scene registrations may
+    // resolve distinct real/virtual placements around their scene target.
     lightingRigRef.current = createTeachingLightingRig(scene);
 
     return () => {

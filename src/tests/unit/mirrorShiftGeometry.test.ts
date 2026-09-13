@@ -236,6 +236,8 @@ describe("Mirror Shift planar reflection geometry", () => {
       expect(group.getObjectByName("mirror-shift-reflected-floor")).toBeInstanceOf(THREE.Mesh);
       expect((group.getObjectByName("mirror-shift-reflected-floor") as THREE.Mesh).receiveShadow).toBe(true);
       expect((group.getObjectByName("mirror-shift-mirror-surface") as THREE.Mesh).receiveShadow).toBe(false);
+      expect((group.getObjectByName("mirror-shift-reflected-tall-marker") as THREE.Mesh).castShadow).toBe(true);
+      expect((group.getObjectByName("mirror-shift-camera-reflection-front-standard") as THREE.Mesh).castShadow).toBe(true);
       expect(group.getObjectByName("mirror-shift-camera-reflection")).toBeInstanceOf(THREE.Group);
 
       mirrorShiftGeometry.props.forEach((prop) => {

@@ -37,6 +37,7 @@ export const TEACHING_LIGHTING_CONFIG = {
 export type TeachingLightingPlacement = Readonly<{
   targetWorld: readonly [number, number, number];
   keyOffsetWorld: readonly [number, number, number];
+  keyPositionWorld?: readonly [number, number, number];
 }>;
 
 export const DEFAULT_TEACHING_LIGHTING_PLACEMENT: TeachingLightingPlacement = {
@@ -46,14 +47,24 @@ export const DEFAULT_TEACHING_LIGHTING_PLACEMENT: TeachingLightingPlacement = {
 
 export const resolveTeachingLightingPlacement = (
   lighting?: SceneSubjectRttLighting,
-): TeachingLightingPlacement => ({
-  targetWorld: lighting
-    ? vecToWorld(lighting.targetMm)
-    : DEFAULT_TEACHING_LIGHTING_PLACEMENT.targetWorld,
-  keyOffsetWorld: lighting
-    ? [lighting.keyOffsetWorld.x, lighting.keyOffsetWorld.y, lighting.keyOffsetWorld.z]
-    : TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld,
-});
+): TeachingLightingPlacement => {
+  const placement: TeachingLightingPlacement = {
+    targetWorld: lighting
+      ? vecToWorld(lighting.targetMm)
+      : DEFAULT_TEACHING_LIGHTING_PLACEMENT.targetWorld,
+    keyOffsetWorld: lighting
+      ? [lighting.keyOffsetWorld.x, lighting.keyOffsetWorld.y, lighting.keyOffsetWorld.z] as [
+          number,
+          number,
+          number,
+        ]
+      : TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld,
+  };
+
+  return lighting?.keyPositionWorld
+    ? { ...placement, keyPositionWorld: lighting.keyPositionWorld }
+    : placement;
+};
 
 const SHADOW_HELPER_NAME =
   /(?:line|guide|overlay|axis|crosshair|scheimpflug|lattice|construction|ray|frustum|measurement|legend|diagnostic|dof)/i;
@@ -133,8 +144,10 @@ export const updateTeachingLightingRig = (
 ): void => {
   const [targetX, targetY, targetZ] = placement.targetWorld;
   const [offsetX, offsetY, offsetZ] = placement.keyOffsetWorld;
+  const [keyX, keyY, keyZ] =
+    placement.keyPositionWorld ?? [targetX + offsetX, targetY + offsetY, targetZ + offsetZ];
   rig.target.position.set(targetX, targetY, targetZ);
-  rig.keyLight.position.set(targetX + offsetX, targetY + offsetY, targetZ + offsetZ);
+  rig.keyLight.position.set(keyX, keyY, keyZ);
   rig.keyLight.target = rig.target;
   rig.target.updateMatrixWorld();
   rig.keyLight.updateMatrixWorld();
@@ -191,9 +204,17 @@ export const TeachingLighting = ({
   const offsetX = placement.keyOffsetWorld[0];
   const offsetY = placement.keyOffsetWorld[1];
   const offsetZ = placement.keyOffsetWorld[2];
+  const keyPositionWorld = placement.keyPositionWorld;
   const keyPosition = useMemo(
-    () => [targetX + offsetX, targetY + offsetY, targetZ + offsetZ] as [number, number, number],
-    [offsetX, offsetY, offsetZ, targetX, targetY, targetZ],
+    () =>
+      keyPositionWorld
+        ? [...keyPositionWorld] as [number, number, number]
+        : [targetX + offsetX, targetY + offsetY, targetZ + offsetZ] as [
+            number,
+            number,
+            number,
+          ],
+    [keyPositionWorld, offsetX, offsetY, offsetZ, targetX, targetY, targetZ],
   );
 
   useLayoutEffect(() => {
@@ -204,7 +225,7 @@ export const TeachingLighting = ({
     keyLight.target = target;
     configureDirectionalShadow(keyLight);
     keyLight.updateMatrixWorld();
-  }, [offsetX, offsetY, offsetZ, targetX, targetY, targetZ, target]);
+  }, [keyPositionWorld, offsetX, offsetY, offsetZ, targetX, targetY, targetZ, target]);
 
   return (
     <>
