@@ -1,3 +1,28 @@
+export const publicSceneGroupMessageKeys = {
+  foundations: {
+    title: "scenes.groups.foundations.title",
+    description: "scenes.groups.foundations.description",
+  },
+  coreMovements: {
+    title: "scenes.groups.coreMovements.title",
+    description: "scenes.groups.coreMovements.description",
+  },
+  combinedMovements: {
+    title: "scenes.groups.combinedMovements.title",
+    description: "scenes.groups.combinedMovements.description",
+  },
+  macroPhotography: {
+    title: "scenes.groups.macroPhotography.title",
+    description: "scenes.groups.macroPhotography.description",
+  },
+} as const;
+
+type PublicSceneGroupMessage =
+  (typeof publicSceneGroupMessageKeys)[keyof typeof publicSceneGroupMessageKeys];
+
+export type PublicSceneGroupTitleKey = PublicSceneGroupMessage["title"];
+export type PublicSceneGroupDescriptionKey = PublicSceneGroupMessage["description"];
+
 export const publicSceneMessageKeys = {
   viewCameraAnatomy: {
     title: "scenes.viewCameraAnatomy.title",

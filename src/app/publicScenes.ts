@@ -8,11 +8,49 @@ import {
 } from "../config/scenePublication";
 import {
   publicSceneMessageKeys,
+  publicSceneGroupMessageKeys,
   type PublicSceneDescriptionKey,
+  type PublicSceneGroupDescriptionKey,
+  type PublicSceneGroupTitleKey,
   type PublicSceneTitleKey,
   type PublicSceneTopicKey,
 } from "../i18n/messageKeys";
 import { INTERIOR_CORNER_GUIDED_TASK_IDS } from "../scenes/interiorCornerGuidedLesson";
+
+export type PublicSceneGroupId =
+  | "foundations"
+  | "core-movements"
+  | "combined-movements"
+  | "macro-photography";
+
+export type PublicSceneGroup = {
+  id: PublicSceneGroupId;
+  titleKey: PublicSceneGroupTitleKey;
+  descriptionKey: PublicSceneGroupDescriptionKey;
+};
+
+export const publicSceneGroups = [
+  {
+    id: "foundations",
+    titleKey: publicSceneGroupMessageKeys.foundations.title,
+    descriptionKey: publicSceneGroupMessageKeys.foundations.description,
+  },
+  {
+    id: "core-movements",
+    titleKey: publicSceneGroupMessageKeys.coreMovements.title,
+    descriptionKey: publicSceneGroupMessageKeys.coreMovements.description,
+  },
+  {
+    id: "combined-movements",
+    titleKey: publicSceneGroupMessageKeys.combinedMovements.title,
+    descriptionKey: publicSceneGroupMessageKeys.combinedMovements.description,
+  },
+  {
+    id: "macro-photography",
+    titleKey: publicSceneGroupMessageKeys.macroPhotography.title,
+    descriptionKey: publicSceneGroupMessageKeys.macroPhotography.description,
+  },
+] as const satisfies readonly PublicSceneGroup[];
 
 export const publicSceneIds = [
   "view-camera-anatomy",
@@ -55,6 +93,7 @@ export type PublicLessonConfig = {
 
 export type PublicSceneEntry = {
   id: PublicSceneId;
+  groupId: PublicSceneGroupId;
   titleKey: PublicSceneTitleKey;
   descriptionKey: PublicSceneDescriptionKey;
   topicKeys: readonly PublicSceneTopicKey[];
@@ -73,6 +112,7 @@ export type PublicSceneEntry = {
 export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   {
     id: "view-camera-anatomy",
+    groupId: "foundations",
     titleKey: publicSceneMessageKeys.viewCameraAnatomy.title,
     descriptionKey: publicSceneMessageKeys.viewCameraAnatomy.description,
     topicKeys: [
@@ -90,6 +130,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "understanding-camera-movements",
+    groupId: "foundations",
     titleKey: publicSceneMessageKeys.understanding.title,
     descriptionKey: publicSceneMessageKeys.understanding.description,
     topicKeys: [
@@ -104,6 +145,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "focus-fundamentals-two-targets",
+    groupId: "foundations",
     titleKey: publicSceneMessageKeys.focusFundamentals.title,
     descriptionKey: publicSceneMessageKeys.focusFundamentals.description,
     topicKeys: [
@@ -117,6 +159,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "architecture-rise",
+    groupId: "core-movements",
     titleKey: publicSceneMessageKeys.architectureRise.title,
     descriptionKey: publicSceneMessageKeys.architectureRise.description,
     topicKeys: [
@@ -131,6 +174,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "table-tilt",
+    groupId: "core-movements",
     titleKey: publicSceneMessageKeys.tableTilt.title,
     descriptionKey: publicSceneMessageKeys.tableTilt.description,
     topicKeys: [
@@ -145,6 +189,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "shelf-swing",
+    groupId: "core-movements",
     titleKey: publicSceneMessageKeys.shelfSwing.title,
     descriptionKey: publicSceneMessageKeys.shelfSwing.description,
     topicKeys: [
@@ -159,6 +204,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "oblique-tabletop",
+    groupId: "combined-movements",
     titleKey: publicSceneMessageKeys.obliqueTabletop.title,
     descriptionKey: publicSceneMessageKeys.obliqueTabletop.description,
     topicKeys: [
@@ -185,6 +231,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "mirror-shift",
+    groupId: "core-movements",
     titleKey: publicSceneMessageKeys.mirrorShift.title,
     descriptionKey: publicSceneMessageKeys.mirrorShift.description,
     topicKeys: [
@@ -200,6 +247,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "oblique-architecture",
+    groupId: "combined-movements",
     titleKey: publicSceneMessageKeys.obliqueArchitecture.title,
     descriptionKey: publicSceneMessageKeys.obliqueArchitecture.description,
     topicKeys: [
@@ -220,6 +268,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "architecture-foreground",
+    groupId: "combined-movements",
     titleKey: publicSceneMessageKeys.architectureForeground.title,
     descriptionKey: publicSceneMessageKeys.architectureForeground.description,
     topicKeys: [
@@ -245,6 +294,7 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
   },
   {
     id: "interior-corner",
+    groupId: "combined-movements",
     titleKey: publicSceneMessageKeys.interiorCorner.title,
     descriptionKey: publicSceneMessageKeys.interiorCorner.description,
     topicKeys: [
@@ -295,6 +345,20 @@ export const getPublicSceneEntries = (
 export const getAvailablePublicSceneEntries = (
   publication: ScenePublicationConfig = scenePublication,
 ) => getPublicSceneEntries(publication).filter(({ meta }) => meta.availability === "available");
+
+export const getGroupedPublicSceneEntries = (
+  publication: ScenePublicationConfig = scenePublication,
+): Array<{
+  group: (typeof publicSceneGroups)[number];
+  entries: Array<{ scene: SceneDefinition; meta: PublicSceneEntry }>;
+}> => {
+  const publishedEntries = getPublicSceneEntries(publication);
+
+  return publicSceneGroups.flatMap((group) => {
+    const entries = publishedEntries.filter(({ meta }) => meta.groupId === group.id);
+    return entries.length > 0 ? [{ group, entries }] : [];
+  });
+};
 
 export const getPublicScenes = (
   publication: ScenePublicationConfig = scenePublication,

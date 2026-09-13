@@ -178,7 +178,7 @@ describe("internationalization foundation", () => {
       expect(screen.getByRole("combobox", { name: "語言" })).toHaveValue("zh-HK");
     });
 
-    const mirrorHeading = screen.getByRole("heading", { name: "鏡面構圖與視點", level: 2 });
+    const mirrorHeading = screen.getByRole("heading", { name: "鏡面構圖與視點", level: 3 });
     const mirrorCard = mirrorHeading.closest("article");
     expect(mirrorCard).not.toBeNull();
     expect(

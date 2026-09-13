@@ -65,26 +65,28 @@ focusing remains `前組／後組對焦`.
 
 ## Teaching scenes
 
-The public catalog currently presents these scenes in this order:
+The public catalog currently presents these scenes in learning-domain groups.
+Within each group, scenes follow the canonical catalog order:
 
-| Scene | Learning purpose | Available mode(s) |
-| --- | --- | --- |
-| **Lesson 0 — Meet the View Camera** | Identify the major physical parts of a conceptual view camera and connect the controls to those parts. | Free Practice (anatomy lesson) |
-| **Understanding Camera Movements** | Understand how whole-camera movement and Front/Rear standard movements affect viewpoint, framing, perspective geometry and the Ground Glass image. | Free Practice |
-| **Focus Fundamentals — Two Targets** | Understand how Front and Rear focusing differ when focusing across two depths of the same object. | Free Practice |
-| **Architecture Rise** | Understand how Front Rise changes framing while a level camera keeps verticals parallel. | Free Practice + Guided Task (`rise-01`) |
-| **Table Tilt** | Understand how Front Tilt changes the plane of sharp focus across subject depth. | Free Practice + Guided Task (`tilt-01`) |
-| **Shelf Swing** | Understand how Front Swing changes the plane of sharp focus across subjects arranged diagonally in depth. | Free Practice + Guided Task (`swing-01`) |
-| **Oblique Tabletop** | Understand why an inclined subject plane needs both Tilt and Swing components to align the plane of sharp focus. | Free Practice + Guided Task |
-| **Mirror Shift** | Understand how Front Shift can restore framing without restoring the original viewpoint or parallax. | Free Practice + Guided Task (`mirror-shift-01`) |
-| **Oblique Architecture** | Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp. | Free Practice + Guided Task |
-| **Architecture + Foreground** | Frame level architecture while using foreground depth to study focus-plane alignment and depth of field. | Free Practice + Guided Task |
-| **Interior Corner — Rise + Swing** | Use Front Rise for level composition, then Front Swing, Focus, and Aperture to study a receding wall. | Free Practice + Guided Task |
+| Group | Scene | Learning purpose | Available mode(s) |
+| --- | --- | --- | --- |
+| Foundations | **Lesson 0 — Meet the View Camera** | Identify the major physical parts of a conceptual view camera and connect the controls to those parts. | Free Practice (anatomy lesson) |
+| Foundations | **Understanding Camera Movements** | Understand how whole-camera movement and Front/Rear standard movements affect viewpoint, framing, perspective geometry and the Ground Glass image. | Free Practice |
+| Foundations | **Focus Fundamentals — Two Targets** | Understand how Front and Rear focusing differ when focusing across two depths of the same object. | Free Practice |
+| Core Movements | **Architecture Rise** | Understand how Front Rise changes framing while a level camera keeps verticals parallel. | Free Practice + Guided Task (`rise-01`) |
+| Core Movements | **Table Tilt** | Understand how Front Tilt changes the plane of sharp focus across subject depth. | Free Practice + Guided Task (`tilt-01`) |
+| Core Movements | **Shelf Swing** | Understand how Front Swing changes the plane of sharp focus across subjects arranged diagonally in depth. | Free Practice + Guided Task (`swing-01`) |
+| Core Movements | **Mirror Shift** | Understand how Front Shift can restore framing without restoring the original viewpoint or parallax. | Free Practice + Guided Task (`mirror-shift-01`) |
+| Combined Movements | **Oblique Tabletop** | Understand why an inclined subject plane needs both Tilt and Swing components to align the plane of sharp focus. | Free Practice + Guided Task |
+| Combined Movements | **Oblique Architecture** | Combine Front Rise and Front Swing to frame an oblique building while keeping verticals parallel and the receding façade sharp. | Free Practice + Guided Task |
+| Combined Movements | **Architecture + Foreground** | Frame level architecture while using foreground depth to study focus-plane alignment and depth of field. | Free Practice + Guided Task |
+| Combined Movements | **Interior Corner — Rise + Swing** | Use Front Rise for level composition, then Front Swing, Focus, and Aperture to study a receding wall. | Free Practice + Guided Task |
 
 The catalog and its public order are defined in
 [`src/app/publicScenes.ts`](src/app/publicScenes.ts). Scenes with a staged
 guided lesson expose their current sequence through that catalog; this table
 intentionally omits the detailed task registry.
+The future Macro Photography group remains hidden until it has a published scene.
 
 ## Current scope
 
