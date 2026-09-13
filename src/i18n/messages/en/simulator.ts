@@ -14,6 +14,13 @@ export const simulatorMessages = {
     expand: "Show Task and Feedback",
   },
   controls: {
+    lensTitle: "Lens / Angle of View",
+    lensOptionsLabel: "Lens options",
+    lensCopy:
+      "Same camera position. Changing focal length changes angle of view and framing, not perspective; perspective changes when the camera position changes.",
+    lensWide: "Wide",
+    lensStandard: "Standard",
+    lensOptionLabel: "{{focalLength}} mm — {{label}}",
     movementTitle: "Movement",
     riseLabel: "Rise",
     tiltLabel: "Tilt",

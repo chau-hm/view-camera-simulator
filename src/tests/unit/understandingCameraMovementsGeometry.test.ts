@@ -3,6 +3,7 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { cocDiameterMm, imageDistanceMm } from "../../core/optics/thinLensModel";
 import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
+import { CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY } from "../../scenes/cameraMovementLensCapability";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
@@ -15,6 +16,7 @@ import geometry, {
   CAMERA_BODY_PIVOT_WORLD,
   CAMERA_BODY_RAIL_GEOMETRY,
   CAMERA_MOVEMENTS_FOCAL_CALIBRATION,
+  resolveCameraBodyBoundsWorld,
 } from "../../scenes/understandingCameraMovementsGeometry";
 import type { CameraState } from "../../types/camera";
 import type { Bounds3, Vec3 } from "../../types/optics";
@@ -222,9 +224,13 @@ describe("Understanding Camera Movements focal calibration", () => {
 });
 
 describe("Understanding Camera Movements body-pitch foundation", () => {
-  it("preserves the calibrated pivot, rail, and local-then-rigid hierarchy", () => {
+  it("preserves the calibrated pivot while deriving a fixed maximum-range rail", () => {
     const expectedImageDistanceMm = imageDistanceMm(
       CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocusDistanceMm,
+    );
+    const expectedMaximumImageDistanceMm = imageDistanceMm(
+      Math.max(...CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY.optionsMm),
       CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocusDistanceMm,
     );
     expect(CAMERA_BODY_PIVOT_WORLD).toEqual({
@@ -233,13 +239,46 @@ describe("Understanding Camera Movements body-pitch foundation", () => {
       z: -expectedImageDistanceMm / 2,
     });
     expect(CAMERA_BODY_PIVOT_WORLD).toBe(CAMERA_BODY_PIVOT_RIG_LOCAL);
-    expect(CAMERA_BODY_RAIL_GEOMETRY.centerWorld).toBe(CAMERA_BODY_PIVOT_WORLD);
-    expect(CAMERA_BODY_RAIL_GEOMETRY.dimensionsMm.z).toBeCloseTo(expectedImageDistanceMm + 120, 12);
+    expect(CAMERA_BODY_RAIL_GEOMETRY.centerWorld).not.toBe(CAMERA_BODY_PIVOT_WORLD);
+    expect(CAMERA_BODY_RAIL_GEOMETRY.centerWorld.z).toBeCloseTo(
+      (CAMERA_BODY_RAIL_GEOMETRY.rearEndpointWorld.z +
+        CAMERA_BODY_RAIL_GEOMETRY.frontEndpointWorld.z) /
+        2,
+      12,
+    );
+    expect(CAMERA_BODY_RAIL_GEOMETRY.dimensionsMm.z).toBeCloseTo(
+      expectedMaximumImageDistanceMm + 120,
+      12,
+    );
+    expect(CAMERA_BODY_RAIL_GEOMETRY.rearEndpointWorld.z).toBeCloseTo(
+      -expectedMaximumImageDistanceMm - CAMERA_BODY_RAIL_GEOMETRY.standardOverhangMm,
+      12,
+    );
+    expect(CAMERA_BODY_RAIL_GEOMETRY.frontEndpointWorld.z).toBeCloseTo(
+      CAMERA_BODY_RAIL_GEOMETRY.standardOverhangMm,
+      12,
+    );
     expect(geometry.coordinateContract.bodyPitch).toMatchObject({
       axis: "rig-local +X",
       positiveDirection: "rig-local +Z rotates toward rig-local -Y",
       hierarchy: "local standard movements, then local body pitch, then outer rig placement",
       pivotRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
     });
+  });
+
+  it("keeps one conservative camera-body envelope for every public lens state", () => {
+    const boundsByFocalLength = CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY.optionsMm.map(
+      (focalLengthMm) => {
+        const optics = deriveOpticsState(
+          cameraAtFocalLength(focalLengthMm),
+          understandingCameraMovementsScene,
+        );
+        const bounds = resolveCameraBodyBoundsWorld(optics.cameraRigTransform);
+        expect(containsPoint(bounds, optics.filmCenterWorld)).toBe(true);
+        return bounds;
+      },
+    );
+
+    expect(boundsByFocalLength[0]).toEqual(boundsByFocalLength[1]);
   });
 });

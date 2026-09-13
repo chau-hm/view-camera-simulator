@@ -1,4 +1,5 @@
 import type { SceneDefinition } from "../../types/scene";
+import { CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY } from "../cameraMovementLensCapability";
 import geometry from "../understandingCameraMovementsGeometry";
 
 export const understandingCameraMovementsScene: SceneDefinition = {
@@ -42,6 +43,7 @@ export const understandingCameraMovementsScene: SceneDefinition = {
   cameraBodyPitchCapability: {
     enabled: true,
   },
+  focalLengthCapability: CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY,
   movementCapabilities: {
     available: ["frontRiseMm", "rearRiseMm", "frontTiltDeg", "rearTiltDeg"],
     selectionMode: "single",

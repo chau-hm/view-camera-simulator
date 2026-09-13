@@ -235,7 +235,10 @@ describe("optical section projection", () => {
           y: (railWorld!.rear.y + railWorld!.front.y) / 2,
           z: (railWorld!.rear.z + railWorld!.front.z) / 2,
         },
-        optics.cameraBodyPivotWorld,
+        transformRigLocalPointToWorld(
+          cameraMovementsGeometry.cameraBody.rail.centerRigLocal,
+          optics.cameraRigTransform,
+        ),
       );
       expect(distance(railWorld!.rear, railWorld!.front)).toBeCloseTo(
         cameraMovementsGeometry.cameraBody.rail.dimensionsMm.z,

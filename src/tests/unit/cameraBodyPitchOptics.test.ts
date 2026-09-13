@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { distance, rotateAroundX, rotatePointAroundX } from "../../core/math/vec";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY } from "../../scenes/cameraMovementLensCapability";
+import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import geometry, {
   CAMERA_BODY_PIVOT_WORLD,
@@ -10,6 +12,7 @@ import geometry, {
 import type { CameraState } from "../../types/camera";
 import type { Plane, Vec3 } from "../../types/optics";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { imageDistanceMm } from "../../core/optics/thinLensModel";
 
 const expectVecClose = (actual: Vec3, expected: Vec3, digits = 10): void => {
   expect(actual.x).toBeCloseTo(expected.x, digits);
@@ -45,14 +48,26 @@ const cameraFor = (pitchDeg: number, overrides: Partial<CameraState> = {}): Came
 });
 
 describe("canonical camera-body pitch optics", () => {
-  it("publishes a fixed tripod pivot and rail derived from the zero-body standard span", () => {
+  it("publishes a fixed tripod pivot and maximum-range rail", () => {
+    const zeroMovementImageDistanceMm = imageDistanceMm(
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocusDistanceMm,
+    );
+    const maximumImageDistanceMm = imageDistanceMm(
+      Math.max(...CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY.optionsMm),
+      CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocusDistanceMm,
+    );
     expect(CAMERA_BODY_PIVOT_WORLD.x).toBe(0);
     expect(CAMERA_BODY_PIVOT_WORLD.y).toBe(-90);
     expect(CAMERA_BODY_PIVOT_WORLD.z).toBeCloseTo(
-      -geometry.cameraBody.rail.dimensionsMm.z / 2 + CAMERA_BODY_RAIL_GEOMETRY.standardOverhangMm,
+      -zeroMovementImageDistanceMm / 2,
       10,
     );
-    expect(CAMERA_BODY_RAIL_GEOMETRY.centerWorld).toBe(CAMERA_BODY_PIVOT_WORLD);
+    expect(CAMERA_BODY_RAIL_GEOMETRY.centerWorld).not.toBe(CAMERA_BODY_PIVOT_WORLD);
+    expect(CAMERA_BODY_RAIL_GEOMETRY.dimensionsMm.z).toBeCloseTo(
+      maximumImageDistanceMm + CAMERA_BODY_RAIL_GEOMETRY.standardOverhangMm * 2,
+      10,
+    );
     expect(
       CAMERA_BODY_RAIL_GEOMETRY.frontEndpointWorld.z -
         CAMERA_BODY_RAIL_GEOMETRY.rearEndpointWorld.z,

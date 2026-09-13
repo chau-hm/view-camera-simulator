@@ -239,9 +239,21 @@ describe("canonical camera-body render views", () => {
       ),
       opticsState.cameraBodyPivotWorld,
     );
+    const railRearWorld = applyRenderHierarchy(
+      geometry.cameraBody.rail.rearEndpointRigLocal,
+      transform,
+    );
+    const railFrontWorld = applyRenderHierarchy(
+      geometry.cameraBody.rail.frontEndpointRigLocal,
+      transform,
+    );
     expectVecClose(
       applyRenderHierarchy(geometry.cameraBody.rail.centerRigLocal, transform),
-      opticsState.cameraBodyPivotWorld,
+      {
+        x: (railRearWorld.x + railFrontWorld.x) / 2,
+        y: (railRearWorld.y + railFrontWorld.y) / 2,
+        z: (railRearWorld.z + railFrontWorld.z) / 2,
+      },
     );
   });
 

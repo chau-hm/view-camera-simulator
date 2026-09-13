@@ -306,16 +306,27 @@ const resolveRailEndpointRigLocal = (
 const resolveSupportMountRigLocal = (
   rail: ConceptualCameraRail,
   side: SupportSide,
+  rearStandardCenterRigLocal?: Vec3,
 ): Vec3 => ({
   x: rail.centerRigLocal.x,
   y: rail.centerRigLocal.y + rail.dimensionsMm.y / 2 + 10,
   z:
-    rail.centerRigLocal.z +
-    (side === "front" ? 1 : -1) *
-      Math.max(
-        0,
-        rail.dimensionsMm.z / 2 - CONCEPTUAL_CAMERA_SUPPORT_RAIL_OVERHANG_MM,
-      ),
+    side === "rear" && rearStandardCenterRigLocal
+      ? Math.min(
+          rail.centerRigLocal.z +
+            rail.dimensionsMm.z / 2 - CONCEPTUAL_CAMERA_SUPPORT_RAIL_OVERHANG_MM,
+          Math.max(
+            rail.centerRigLocal.z -
+              rail.dimensionsMm.z / 2 + CONCEPTUAL_CAMERA_SUPPORT_RAIL_OVERHANG_MM,
+            rearStandardCenterRigLocal.z,
+          ),
+        )
+      : rail.centerRigLocal.z +
+        (side === "front" ? 1 : -1) *
+          Math.max(
+            0,
+            rail.dimensionsMm.z / 2 - CONCEPTUAL_CAMERA_SUPPORT_RAIL_OVERHANG_MM,
+          ),
 });
 
 /**
@@ -1003,12 +1014,14 @@ const CameraSupport = ({
   rigTransform,
   ghost,
   rigRail,
+  rearStandardCenterRigLocal,
   anatomy,
 }: {
   coordinateSpace: ConceptualCameraCoordinateSpace;
   rigTransform: CameraRigTransform;
   ghost: boolean;
   rigRail?: ConceptualCameraRail;
+  rearStandardCenterRigLocal?: Vec3;
   anatomy?: ConceptualCameraAnatomyPresentation;
 }) => {
   const supportState = resolveConceptualAnatomyPartState("camera-support", anatomy);
@@ -1018,7 +1031,11 @@ const CameraSupport = ({
     state: supportState,
   };
   const rail = rigRail ?? CONCEPTUAL_CAMERA_SUPPORT_RAIL;
-  const rearMountRigLocal = resolveSupportMountRigLocal(rail, "rear");
+  const rearMountRigLocal = resolveSupportMountRigLocal(
+    rail,
+    "rear",
+    rearStandardCenterRigLocal,
+  );
   const frontMountRigLocal = resolveSupportMountRigLocal(rail, "front");
 
   const mount = (
@@ -1149,6 +1166,11 @@ const renderAnatomy = ({
         rigTransform={opticsState.cameraRigTransform}
         ghost={ghost}
         rigRail={rigRail}
+        rearStandardCenterRigLocal={
+          coordinateSpace === "rig-local"
+            ? canonical.rearStandardFrame.centerWorld
+            : undefined
+        }
         anatomy={anatomy}
       />
       <FrontStandardAssembly
