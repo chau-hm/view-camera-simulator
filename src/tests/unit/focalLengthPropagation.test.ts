@@ -58,4 +58,45 @@ describe("scene focal length propagation", () => {
       expect(uniforms.inverseProjectionMatrix.every(Number.isFinite)).toBe(true);
     },
   );
+
+  it("changes the physical Ground Glass frustum while keeping the lens viewpoint fixed", () => {
+    const makeProjection = (focalLengthMm: number) => {
+      const cameraState = {
+        ...DEFAULT_CAMERA_STATE,
+        ...understandingCameraMovementsScene.cameraPreset,
+        activeSceneId: understandingCameraMovementsScene.id,
+        focalLengthMm,
+      };
+      const optics = deriveOpticsState(cameraState, understandingCameraMovementsScene);
+      const camera = new THREE.PerspectiveCamera();
+      const clip = getGroundGlassClipRangeWorld(
+        understandingCameraMovementsScene,
+        optics.lensCenterWorld,
+      );
+      const projection = configureGroundGlassCamera(
+        camera,
+        optics,
+        clip.near,
+        clip.far,
+      );
+      return { optics, projection };
+    };
+
+    const wide = makeProjection(90);
+    const standard = makeProjection(150);
+    if (!wide.projection.ok || !standard.projection.ok) {
+      throw new Error("Expected both public lens projections to be valid");
+    }
+
+    expect(standard.projection.right - standard.projection.left).toBeLessThan(
+      wide.projection.right - wide.projection.left,
+    );
+    expect(standard.projection.top - standard.projection.bottom).toBeLessThan(
+      wide.projection.top - wide.projection.bottom,
+    );
+    expect(standard.projection.pose.positionWorld).toEqual(
+      wide.projection.pose.positionWorld,
+    );
+    expect(standard.optics.filmCenterWorld.z).not.toBe(wide.optics.filmCenterWorld.z);
+  });
 });

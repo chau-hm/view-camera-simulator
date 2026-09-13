@@ -27,6 +27,7 @@ import { LanguageSelector } from "./LanguageSelector";
 import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
 import { FocusControl } from "../controls/FocusControl";
+import { LensControl } from "../controls/LensControl";
 import { CameraMovementTeachingControls } from "../controls/CameraMovementTeachingControls";
 import { MovementControls } from "../controls/MovementControls";
 import { MovementSelector } from "../controls/MovementSelector";
@@ -804,6 +805,12 @@ export const SimulatorWorkspace = ({
               {safeScene.cameraFrontShiftCapability?.enabled ? (
                 <div className="sim-section">
                   <MirrorShiftFrontShiftControl />
+                </div>
+              ) : null}
+
+              {safeScene.focalLengthCapability?.enabled && !calibrationEnabled ? (
+                <div className="sim-section">
+                  <LensControl capability={safeScene.focalLengthCapability} />
                 </div>
               ) : null}
 

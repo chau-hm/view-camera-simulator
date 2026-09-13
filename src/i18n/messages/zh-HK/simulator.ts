@@ -17,6 +17,13 @@ export const simulatorMessages = {
     expand: "顯示任務及回饋",
   },
   controls: {
+    lensTitle: "鏡頭／視角",
+    lensOptionsLabel: "鏡頭選項",
+    lensCopy:
+      "相機位置不變。改變焦距會改變視角及構圖，不會改變透視；透視會在相機位置改變時改變。",
+    lensWide: "廣角",
+    lensStandard: "標準",
+    lensOptionLabel: "{{focalLength}} mm — {{label}}",
     movementTitle: "相機移軸",
     riseLabel: "上移",
     tiltLabel: "傾斜",
