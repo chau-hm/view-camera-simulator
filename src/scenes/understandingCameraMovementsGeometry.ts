@@ -3,6 +3,7 @@ import { imageDistanceMm } from "../core/optics/thinLensModel";
 import type { Bounds3, CameraRigTransform, Vec3 } from "../types/optics";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { CAMERA_MOVEMENT_LATTICE } from "./cameraMovementLatticeGeometry";
+import { CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY } from "./cameraMovementLensCapability";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "./cameraMovementSceneCalibration";
 import { resolveCameraRigViewpointAnchors } from "./cameraRigViewpointGeometry";
 
@@ -41,6 +42,10 @@ const cameraBodyImageDistanceMm = imageDistanceMm(
   CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocalLengthMm,
   CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocusDistanceMm,
 );
+const cameraBodyMaxImageDistanceMm = imageDistanceMm(
+  Math.max(...CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY.optionsMm),
+  CAMERA_MOVEMENT_SCENE_CALIBRATION.optics.provisionalFocusDistanceMm,
+);
 
 /**
  * Fixed tripod/rail mount for rigid camera-body pitch.
@@ -69,42 +74,45 @@ export const DEFAULT_CAMERA_RIG_VIEWPOINT =
   CAMERA_RIG_VIEWPOINT_ANCHORS[CAMERA_MOVEMENT_SCENE_CALIBRATION.cameraRig.defaultAnchor];
 
 /**
- * Canonical fixed rail spans 60 mm beyond both zero-movement standards,
- * leaving a modest carriage allowance without tying its length to movement.
- * Its centre is the tripod/body pivot, so body pitch rotates the rail and both
- * standards as one rigid assembly.
+ * Canonical fixed rail spans 60 mm beyond the front lens datum and the
+ * maximum declared finite-focus rear-standard position. Its geometric centre
+ * is intentionally independent from the calibrated tripod/body pivot: the
+ * pivot preserves the existing 90 mm body-pitch calibration while the static
+ * rail envelope supports every public lens choice.
  */
+const cameraBodyRailRearZ = -cameraBodyMaxImageDistanceMm - CAMERA_BODY_RAIL_OVERHANG_MM;
+const cameraBodyRailFrontZ = CAMERA_BODY_RAIL_OVERHANG_MM;
+const cameraBodyRailCenterRigLocal: Vec3 = {
+  x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
+  y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
+  z: (cameraBodyRailRearZ + cameraBodyRailFrontZ) / 2,
+};
+const cameraBodyRailRearEndpointRigLocal: Vec3 = {
+  x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
+  y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
+  z: cameraBodyRailRearZ,
+};
+const cameraBodyRailFrontEndpointRigLocal: Vec3 = {
+  x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
+  y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
+  z: cameraBodyRailFrontZ,
+};
+
 export const CAMERA_BODY_RAIL_GEOMETRY = {
-  centerRigLocal: CAMERA_BODY_PIVOT_RIG_LOCAL,
+  centerRigLocal: cameraBodyRailCenterRigLocal,
   dimensionsMm: {
     x: CAMERA_BODY_RAIL_WIDTH_MM,
     y: CAMERA_BODY_RAIL_HEIGHT_MM,
-    z: cameraBodyImageDistanceMm + CAMERA_BODY_RAIL_OVERHANG_MM * 2,
+    z: cameraBodyRailFrontZ - cameraBodyRailRearZ,
   } as Vec3,
-  rearEndpointRigLocal: {
-    x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
-    y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
-    z: -cameraBodyImageDistanceMm - CAMERA_BODY_RAIL_OVERHANG_MM,
-  } as Vec3,
-  frontEndpointRigLocal: {
-    x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
-    y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
-    z: CAMERA_BODY_RAIL_OVERHANG_MM,
-  } as Vec3,
+  rearEndpointRigLocal: cameraBodyRailRearEndpointRigLocal,
+  frontEndpointRigLocal: cameraBodyRailFrontEndpointRigLocal,
   /** @deprecated Rig-local compatibility name for existing renderer consumers. */
-  centerWorld: CAMERA_BODY_PIVOT_RIG_LOCAL,
+  centerWorld: cameraBodyRailCenterRigLocal,
   /** @deprecated Rig-local compatibility name for existing 2D consumers. */
-  rearEndpointWorld: {
-    x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
-    y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
-    z: -cameraBodyImageDistanceMm - CAMERA_BODY_RAIL_OVERHANG_MM,
-  } as Vec3,
+  rearEndpointWorld: cameraBodyRailRearEndpointRigLocal,
   /** @deprecated Rig-local compatibility name for existing 2D consumers. */
-  frontEndpointWorld: {
-    x: CAMERA_BODY_PIVOT_RIG_LOCAL.x,
-    y: CAMERA_BODY_PIVOT_RIG_LOCAL.y,
-    z: CAMERA_BODY_RAIL_OVERHANG_MM,
-  } as Vec3,
+  frontEndpointWorld: cameraBodyRailFrontEndpointRigLocal,
   standardOverhangMm: CAMERA_BODY_RAIL_OVERHANG_MM,
 } as const;
 
@@ -130,8 +138,8 @@ const CAMERA_BODY_RIG_LOCAL_BOUNDS: Bounds3 = (() => {
   const rearStandardHalfDepthMm = 9;
   const railHalfWidthMm = CAMERA_BODY_RAIL_WIDTH_MM / 2;
   const railHalfHeightMm = CAMERA_BODY_RAIL_HEIGHT_MM / 2;
-  const railRearZ = -cameraBodyImageDistanceMm - CAMERA_BODY_RAIL_OVERHANG_MM;
-  const railFrontZ = CAMERA_BODY_RAIL_OVERHANG_MM;
+  const railRearZ = cameraBodyRailRearZ;
+  const railFrontZ = cameraBodyRailFrontZ;
   const bellowsHalfWidthMm = 60;
   const bellowsHalfHeightMm = 45;
 
@@ -147,16 +155,16 @@ const CAMERA_BODY_RIG_LOCAL_BOUNDS: Bounds3 = (() => {
       y: frontStandardHalfHeightMm,
       z: frontStandardHalfDepthMm,
     },
-    // Rear standard (centred on the finite-focus film datum at Z = -v).
+    // Rear standard envelope covers the maximum declared finite-focus image distance.
     {
       x: -frontStandardHalfWidthMm,
       y: -frontStandardHalfHeightMm,
-      z: -cameraBodyImageDistanceMm - rearStandardHalfDepthMm,
+      z: -cameraBodyMaxImageDistanceMm - rearStandardHalfDepthMm,
     },
     {
       x: frontStandardHalfWidthMm,
       y: frontStandardHalfHeightMm,
-      z: -cameraBodyImageDistanceMm + rearStandardHalfDepthMm,
+      z: -cameraBodyMaxImageDistanceMm + rearStandardHalfDepthMm,
     },
     // Rail (spans rear overhang to front overhang at the pivot Y level).
     {
@@ -169,11 +177,11 @@ const CAMERA_BODY_RIG_LOCAL_BOUNDS: Bounds3 = (() => {
       y: CAMERA_BODY_PIVOT_RIG_LOCAL.y + railHalfHeightMm,
       z: railFrontZ,
     },
-    // Bellows (between the rear film datum and the front lens datum).
+    // Bellows envelope covers the maximum rear-standard travel.
     {
       x: -bellowsHalfWidthMm,
       y: -bellowsHalfHeightMm,
-      z: -cameraBodyImageDistanceMm,
+      z: -cameraBodyMaxImageDistanceMm,
     },
     {
       x: bellowsHalfWidthMm,

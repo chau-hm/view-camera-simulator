@@ -12,6 +12,7 @@ import type {
 } from "../types/camera";
 import type {
   CameraMovementField,
+  SceneFocalLengthCapability,
   SceneFocusStandardCapability,
 } from "../types/scene";
 import type { TaskEvaluation } from "../types/task";
@@ -68,6 +69,11 @@ const getFocusStandardCapability = (
   sceneId: string,
 ): SceneFocusStandardCapability | undefined =>
   getSceneById(sceneId)?.focusStandardCapability;
+
+const getFocalLengthCapability = (
+  sceneId: string,
+): SceneFocalLengthCapability | undefined =>
+  getSceneById(sceneId)?.focalLengthCapability;
 
 export const supportsFocusStandard = (sceneId: string): boolean => {
   const capability = getFocusStandardCapability(sceneId);
@@ -538,6 +544,8 @@ export type AppStore = {
   setRearTilt: (value: number) => void;
   setRearSwing: (value: number) => void;
 
+  /** Set a focal length declared by the active scene's discrete capability. */
+  setFocalLength: (value: number) => void;
   setFocusDistance: (value: number) => void;
   setFocusStandard: (focusStandard: FocusStandard) => void;
   setInfinityFocus: () => void;
@@ -1514,6 +1522,24 @@ export const useAppStore = create<AppStore>((set) => ({
                 : state.selectedMovement,
             },
     ),
+
+  setFocalLength: (value) =>
+    set((state) => {
+      const capability = getFocalLengthCapability(state.camera.activeSceneId);
+      if (
+        !capability?.enabled ||
+        !Number.isFinite(value) ||
+        !capability.optionsMm.includes(value)
+      ) {
+        return {};
+      }
+      return {
+        camera: {
+          ...state.camera,
+          focalLengthMm: value,
+        },
+      };
+    }),
 
   setFocusDistance: (value) =>
     set((state) => {

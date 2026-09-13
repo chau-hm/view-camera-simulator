@@ -14,6 +14,12 @@ export const simulatorMessageKeys = {
     expand: "simulator.learning.expand",
   },
   controls: {
+    lensTitle: "simulator.controls.lensTitle",
+    lensOptionsLabel: "simulator.controls.lensOptionsLabel",
+    lensCopy: "simulator.controls.lensCopy",
+    lensWide: "simulator.controls.lensWide",
+    lensStandard: "simulator.controls.lensStandard",
+    lensOptionLabel: "simulator.controls.lensOptionLabel",
     movementTitle: "simulator.controls.movementTitle",
     riseLabel: "simulator.controls.riseLabel",
     tiltLabel: "simulator.controls.tiltLabel",

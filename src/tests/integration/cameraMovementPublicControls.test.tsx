@@ -53,6 +53,28 @@ afterEach(() => {
 });
 
 describe("public camera movement controls in the workspace", () => {
+  it("exposes the localized 90/150 lens selector with accessible selected state", () => {
+    render(publicWorkspace());
+    const cameraControls = screen.getByRole("region", { name: "Camera Controls" });
+    const lensOptions = within(cameraControls).getByRole("radiogroup", {
+      name: "Lens options",
+    });
+    const wide = within(lensOptions).getByRole("radio", { name: /90 mm.*Wide/ });
+    const standard = within(lensOptions).getByRole("radio", {
+      name: /150 mm.*Standard/,
+    });
+
+    expect(wide).toBeChecked();
+    expect(standard).not.toBeChecked();
+    wide.focus();
+    expect(document.activeElement).toBe(wide);
+
+    fireEvent.click(standard);
+    expect(standard).toBeChecked();
+    expect(wide).not.toBeChecked();
+    expect(useAppStore.getState().camera.focalLengthMm).toBe(150);
+  });
+
   it("exposes Front Tilt and Front Swing for Oblique Tabletop while keeping Focus live and f/11 fixed", () => {
     render(obliqueTabletopWorkspace());
     const cameraControls = screen.getByRole("region", { name: "Camera Controls" });
