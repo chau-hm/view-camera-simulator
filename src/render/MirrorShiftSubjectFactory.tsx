@@ -546,7 +546,16 @@ export type MirrorShiftGroupOptions = {
   includeVirtualReflection?: boolean;
 };
 
-/** Build the static mirror scene for either the viewport or Ground Glass RTT. */
+/**
+ * Build the scene-specific mirror construction for either rendering surface.
+ *
+ * The observer viewport intentionally receives only the physical room and
+ * mirror. Ground Glass mounts the same physical aperture alongside a bounded
+ * virtual-side duplicate so the existing RTT camera can see the reflection
+ * without introducing a second render target or a recursive mirror pass.
+ * Keeping those groups separate also makes ownership explicit: each caller
+ * disposes the group it mounted.
+ */
 export const createMirrorShiftGroup = ({
   includeVirtualReflection = true,
 }: MirrorShiftGroupOptions = {}): THREE.Group => {
