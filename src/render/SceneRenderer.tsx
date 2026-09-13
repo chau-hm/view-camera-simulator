@@ -725,6 +725,7 @@ const SceneContent = ({
   );
   const teachingLightingPlacement = useMemo(() => {
     const lighting =
+      registration?.viewportLighting ??
       registration?.resolveRttLighting?.({
         cameraMovementRenderModel,
         presentationRegion: "middle",

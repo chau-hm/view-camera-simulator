@@ -9,7 +9,6 @@ const SKY_COLOR = new THREE.Color("#dfe5ec");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
 import { vecToWorld } from "./rttUtils";
 import {
-  configureTeachingShadowParticipation,
   createTeachingLightingRig,
   disposeTeachingLightingRig,
   resolveTeachingLightingPlacement,
@@ -580,8 +579,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     } catch (err) { void err; }
 
     // Shared teaching lighting keeps the viewport and RTT on the same
-    // restrained hemisphere/key-light baseline. Scene profiles place the rig
-    // around their existing presentation target below.
+    // restrained hemisphere/key-light baseline. Scene registrations may
+    // resolve distinct real/virtual placements around their scene target.
     lightingRigRef.current = createTeachingLightingRig(scene);
 
     return () => {
@@ -675,7 +674,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
     const mounted = sceneProfile.mountSubject(scene, profileContext);
     if (!mounted) return;
-    configureTeachingShadowParticipation(mounted.group);
+    sceneProfile.configureRttShadowParticipation(mounted.group);
     mountedSceneSubjectRef.current = mounted;
 
     const runtimeInfo = mounted.runtimeInfo;

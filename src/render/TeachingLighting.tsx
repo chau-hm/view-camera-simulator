@@ -51,7 +51,11 @@ export const resolveTeachingLightingPlacement = (
     ? vecToWorld(lighting.targetMm)
     : DEFAULT_TEACHING_LIGHTING_PLACEMENT.targetWorld,
   keyOffsetWorld: lighting
-    ? [lighting.keyOffsetWorld.x, lighting.keyOffsetWorld.y, lighting.keyOffsetWorld.z]
+    ? [lighting.keyOffsetWorld.x, lighting.keyOffsetWorld.y, lighting.keyOffsetWorld.z] as [
+        number,
+        number,
+        number,
+      ]
     : TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld,
 });
 
@@ -192,7 +196,11 @@ export const TeachingLighting = ({
   const offsetY = placement.keyOffsetWorld[1];
   const offsetZ = placement.keyOffsetWorld[2];
   const keyPosition = useMemo(
-    () => [targetX + offsetX, targetY + offsetY, targetZ + offsetZ] as [number, number, number],
+    () => [targetX + offsetX, targetY + offsetY, targetZ + offsetZ] as [
+      number,
+      number,
+      number,
+    ],
     [offsetX, offsetY, offsetZ, targetX, targetY, targetZ],
   );
 
