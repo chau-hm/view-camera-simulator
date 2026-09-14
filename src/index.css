@@ -1584,6 +1584,8 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   width: 100%;
   min-width: 0;
   min-height: 0;
+  container-type: inline-size;
+  container-name: scene-stage;
 }
 .scene-viewport-stage--expanded {
   height: 100%;
@@ -1678,8 +1680,26 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 }
 
 @media (min-width: 901px) {
-  .scene-overlay-controls-wrap {
-    left: calc(var(--sim-panel-section-gap) + 36px + var(--sim-control-gap));
+  @container scene-stage (min-width: 260px) {
+    .scene-overlay-controls-wrap {
+      left: calc(var(--sim-panel-section-gap) + 36px + var(--sim-control-gap));
+    }
+  }
+
+  @container scene-stage (max-width: 259px) {
+    .scene-overlay-controls-wrap {
+      position: static;
+      width: 100%;
+      margin-top: var(--sim-panel-section-gap);
+      padding-inline: var(--sim-panel-section-gap);
+    }
+
+    .scene-overlay-menu__panel {
+      position: static;
+      width: 280px;
+      max-width: 100%;
+      margin-top: 6px;
+    }
   }
 }
 

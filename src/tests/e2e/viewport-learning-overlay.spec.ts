@@ -22,6 +22,9 @@ const requireBounds = async (locator: Locator, label: string): Promise<Bounds> =
   return bounds;
 };
 
+const right = (bounds: Bounds) => bounds.x + bounds.width;
+const bottom = (bounds: Bounds) => bounds.y + bounds.height;
+
 test("Scene-local learning drawer keeps Focus Distribution full-width and leaves the Scene layout intact", async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -299,4 +302,90 @@ test("desktop learning rail and Scene overlay controls keep separate visual anch
 
   const stageBounds = await requireBounds(stage, "Scene stage");
   expect(triggerBounds.x + triggerBounds.width).toBeLessThanOrEqual(stageBounds.x + stageBounds.width);
+});
+
+test("constrained desktop Scenes move overlay controls below the host without menu clipping", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 920, height: 900 });
+  await page.goto("/simulator/free/architecture-rise");
+
+  const stage = page.locator(".scene-viewport-stage");
+  const host = page.locator(".scene-viewport-host");
+  const controlsWrap = page.locator(".scene-overlay-controls-wrap");
+  const rail = getLearningRail(page);
+  const trigger = page.getByRole("button", { name: "View overlays", exact: true });
+  const expand = host.locator(".btn--viewport-action");
+  await expect(rail).toBeVisible();
+  await expect(trigger).toBeVisible();
+  await expect(expand).toBeVisible();
+  await expect(controlsWrap).toHaveCSS("position", "static");
+
+  const [railBounds, triggerBounds, expandBounds, hostBounds] = await Promise.all([
+    requireBounds(rail, "Learning rail"),
+    requireBounds(trigger, "View overlays trigger"),
+    requireBounds(expand, "Scene expand button"),
+    requireBounds(host, "Scene host"),
+  ]);
+  expect(triggerBounds.y).toBeGreaterThanOrEqual(bottom(hostBounds));
+  expect(triggerBounds.x).toBeGreaterThanOrEqual(hostBounds.x);
+  expect(right(triggerBounds)).toBeLessThanOrEqual(right(hostBounds));
+
+  const rectanglesIntersect = (first: Bounds, second: Bounds) =>
+    !(
+      right(first) <= second.x ||
+      right(second) <= first.x ||
+      bottom(first) <= second.y ||
+      bottom(second) <= first.y
+    );
+  expect(rectanglesIntersect(railBounds, triggerBounds)).toBe(false);
+  expect(rectanglesIntersect(triggerBounds, expandBounds)).toBe(false);
+
+  const triggerIsTopmost = await page.evaluate(({ x, y }) => {
+    const triggerElement = document.querySelector<HTMLButtonElement>(".scene-overlay-menu__trigger");
+    const topmostElement = document.elementFromPoint(x, y);
+    return Boolean(
+      triggerElement &&
+        topmostElement &&
+        (topmostElement === triggerElement || triggerElement.contains(topmostElement)),
+    );
+  }, {
+    x: triggerBounds.x + triggerBounds.width / 2,
+    y: triggerBounds.y + triggerBounds.height / 2,
+  });
+  expect(triggerIsTopmost).toBe(true);
+
+  await trigger.click();
+  const menu = page.locator(".scene-overlay-menu__panel");
+  await expect(menu).toBeVisible();
+  await expect(menu).toHaveCSS("position", "static");
+  const [menuBounds, openStageBounds] = await Promise.all([
+    requireBounds(menu, "Constrained View overlays menu"),
+    requireBounds(stage, "Expanded Scene stage"),
+  ]);
+  expect(menuBounds.x).toBeGreaterThanOrEqual(openStageBounds.x - 1);
+  expect(right(menuBounds)).toBeLessThanOrEqual(right(openStageBounds) + 1);
+  expect(menuBounds.y).toBeGreaterThanOrEqual(bottom(triggerBounds));
+  expect(menuBounds.y).toBeLessThan(bottom(triggerBounds) + 16);
+  expect(rectanglesIntersect(menuBounds, expandBounds)).toBe(false);
+
+  const menuContentMetrics = await menu.locator(".scene-overlay-controls").evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(menuContentMetrics.scrollWidth).toBeLessThanOrEqual(menuContentMetrics.clientWidth + 1);
+  const menuTriggerIsTopmost = await page.evaluate(({ x, y }) => {
+    const triggerElement = document.querySelector<HTMLButtonElement>(".scene-overlay-menu__trigger");
+    const topmostElement = document.elementFromPoint(x, y);
+    return Boolean(
+      triggerElement &&
+        topmostElement &&
+        (topmostElement === triggerElement || triggerElement.contains(topmostElement)),
+    );
+  }, {
+    x: triggerBounds.x + triggerBounds.width / 2,
+    y: triggerBounds.y + triggerBounds.height / 2,
+  });
+  expect(menuTriggerIsTopmost).toBe(true);
+  const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  expect(hasHorizontalOverflow).toBe(false);
 });

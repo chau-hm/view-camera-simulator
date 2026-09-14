@@ -271,6 +271,20 @@ export const SceneViewport = ({
             onSubjectCapacityChange={onSubjectCapacityChange}
           />
 
+          <button
+            ref={expanded ? restoreTriggerRef : expandTriggerRef}
+            type="button"
+            aria-label={expanded ? t(simulatorMessageKeys.viewport.restoreScene) : t(simulatorMessageKeys.viewport.expandScene)}
+            title={expanded ? t(simulatorMessageKeys.viewport.restoreScene) : t(simulatorMessageKeys.viewport.expandScene)}
+            data-viewport-expanded={expanded ? "true" : "false"}
+            className="btn btn--icon btn--viewport-action"
+            onClick={expanded ? onRequestRestore : onRequestExpand}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {expanded ? "close_fullscreen" : "open_in_new"}
+            </span>
+          </button>
+          </div>
           {!suppressOpticalOverlays ? <div className="scene-overlay-controls-wrap">
             <SceneOverlayControls
               resetGeneration={overlayMenuResetGeneration}
@@ -288,21 +302,6 @@ export const SceneViewport = ({
               onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? onToggleScheimpflugConstruction : undefined}
             />
           </div> : null}
-
-          <button
-            ref={expanded ? restoreTriggerRef : expandTriggerRef}
-            type="button"
-            aria-label={expanded ? t(simulatorMessageKeys.viewport.restoreScene) : t(simulatorMessageKeys.viewport.expandScene)}
-            title={expanded ? t(simulatorMessageKeys.viewport.restoreScene) : t(simulatorMessageKeys.viewport.expandScene)}
-            data-viewport-expanded={expanded ? "true" : "false"}
-            className="btn btn--icon btn--viewport-action"
-            onClick={expanded ? onRequestRestore : onRequestExpand}
-          >
-            <span className="material-symbols-outlined" aria-hidden="true">
-              {expanded ? "close_fullscreen" : "open_in_new"}
-            </span>
-          </button>
-          </div>
           {learningOverlay}
         </div>
 
