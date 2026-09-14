@@ -32,6 +32,13 @@ const renderWorkspaceRoute = (initialEntry: string) =>
     </MemoryRouter>,
   );
 
+const openLearningDrawer = () => {
+  const panel = screen.getByTestId("learning-overlay-panel");
+  const rail = panel.querySelector<HTMLButtonElement>(".learning-overlay-panel__rail");
+  if (!rail) throw new Error("Learning rail not found");
+  fireEvent.click(rail);
+};
+
 describe("phase 12 integration", () => {
   afterEach(() => {
     cleanup();
@@ -151,6 +158,7 @@ describe("phase 12 integration", () => {
     const camera = useAppStore.getState().camera;
     const optics = selectDerivedOpticsState(camera);
     const evaluation = evaluateTask(task, scene, camera, optics);
+    openLearningDrawer();
     fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
     expect(screen.getByText(new RegExp(`Score: ${evaluation.score}`))).toBeInTheDocument();
     for (const criterion of evaluation.criteria) {
@@ -198,6 +206,7 @@ describe("phase 12 integration", () => {
       fireEvent.keyDown(riseInput, { key: "ArrowRight", code: "ArrowRight" });
     }
 
+    openLearningDrawer();
     fireEvent.click(screen.getByRole("button", { name: "Feedback — Task completed" }));
     expect(screen.getByRole("heading", { name: "Task completed" })).toBeInTheDocument();
   });

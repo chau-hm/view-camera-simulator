@@ -775,6 +775,10 @@ button {
   pointer-events: none;
 }
 
+.learning-overlay-panel:not(.learning-overlay-panel--peek) .learning-overlay-panel__rail:focus {
+  opacity: 1;
+}
+
 .learning-overlay-panel__drawer {
   position: absolute;
   z-index: 2;

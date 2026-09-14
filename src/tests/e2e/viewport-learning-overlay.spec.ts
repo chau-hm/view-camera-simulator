@@ -127,6 +127,41 @@ test("learning drawer supports keyboard focus and internal scrolling without cha
   await expect(drawer).toBeVisible();
 });
 
+test("keyboard focus remains visible on the rail while the drawer opens transiently", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/simulator/guided/table-tilt/tilt-01");
+
+  const learning = getLearningOverlay(page);
+  const rail = getLearningRail(page);
+  const drawer = getLearningDrawer(page);
+
+  await expect(learning).toHaveAttribute("data-drawer-state", "peek");
+  await expect(drawer).not.toBeVisible();
+
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  });
+  for (let tabCount = 0; tabCount < 80; tabCount += 1) {
+    if (await rail.evaluate((element) => element === document.activeElement)) break;
+    await page.keyboard.press("Tab");
+  }
+  await expect(learning).toHaveAttribute("data-drawer-state", "transient");
+  await expect(rail).toBeFocused();
+  await expect(rail).toHaveCSS("opacity", "1");
+  const railBounds = await requireBounds(rail, "Focused learning rail");
+  expect(railBounds.width).toBeGreaterThan(0);
+  expect(railBounds.height).toBeGreaterThan(0);
+
+  await page.keyboard.press("Tab");
+  await expect(drawer.getByRole("button", { name: "Task", exact: true })).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(learning).toHaveAttribute("data-drawer-state", "peek");
+  await expect(drawer).not.toBeVisible();
+  await expect(rail).toBeFocused();
+});
+
 test("guided completion updates the peek rail without auto-opening or leaving Task", async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 1000 });
