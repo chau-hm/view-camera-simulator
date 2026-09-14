@@ -22,13 +22,20 @@ describe("macro specimen physical renderer contract", () => {
     for (const part of ["outer-rim", "inner-ring", "central-relief", "radial-mark-0", "fine-line-0", "surface-dot-0"]) {
       expect(group.getObjectByName(`macro-specimen-${part}`)).toBeInstanceOf(THREE.Mesh);
     }
-    // Focus samples must land on real lens-facing mesh surfaces, not metadata alone.
+    group.updateMatrixWorld(true);
+    // Every focus sample must land on the first lens-facing surface of real
+    // rendered geometry, not merely inside the subject bounds.
     for (const target of macroBellowsExtensionFocusTargets) {
-      const { x, y, z } = target.worldPosition;
-      const ray = new THREE.Raycaster(new THREE.Vector3(x / 1000, y / 1000, 0), new THREE.Vector3(0, 0, 1));
-      const hit = ray.intersectObject(group)[0];
-      expect(hit).toBeDefined();
-      expect(hit.point.z).toBeCloseTo(z / 1000, 6);
+      const samples = [target.worldPosition, ...(target.sampleWorldPositions ?? [])];
+      for (const { x, y, z } of samples) {
+        const ray = new THREE.Raycaster(
+          new THREE.Vector3(x / 1000, y / 1000, 0),
+          new THREE.Vector3(0, 0, 1),
+        );
+        const hit = ray.intersectObject(group, true)[0];
+        expect(hit).toBeDefined();
+        expect(hit.point.z).toBeCloseTo(z / 1000, 6);
+      }
     }
     disposeMacroSpecimenGroup(group);
   });

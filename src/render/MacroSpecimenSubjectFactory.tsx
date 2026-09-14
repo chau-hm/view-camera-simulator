@@ -3,7 +3,11 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { toWorld } from "./rttUtils";
 import { disposeTeachingSubjectResources } from "./TeachingMaterials";
-import { MACRO_SPECIMEN } from "../scenes/macroSpecimenGeometry";
+import {
+  MACRO_SPECIMEN,
+  MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM,
+  MACRO_SPECIMEN_RADIAL_DOT_RADIUS_MM,
+} from "../scenes/macroSpecimenGeometry";
 
 /** An invented specimen medallion, with all visible detail in physical geometry. */
 export function createMacroSpecimenGroup(): THREE.Group {
@@ -32,12 +36,29 @@ export function createMacroSpecimenGroup(): THREE.Group {
     add(name, new THREE.TorusGeometry(toWorld(radius), toWorld(tube), 8, 128), bright);
   }
   const tick = new THREE.BoxGeometry(toWorld(0.55), toWorld(3.8), toWorld(0.25));
-  const dot = new THREE.SphereGeometry(toWorld(0.48), 8, 6);
+  const dot = new THREE.SphereGeometry(
+    toWorld(MACRO_SPECIMEN_RADIAL_DOT_RADIUS_MM),
+    8,
+    6,
+  );
   for (let i = 0; i < 72; i++) {
     const angle = i * Math.PI * 2 / 72;
-    const mark = add(`radial-mark-${i}`, tick, i % 3 === 0 ? dark : bright, 40 * Math.sin(angle), 40 * Math.cos(angle), -0.125);
+    const mark = add(
+      `radial-mark-${i}`,
+      tick,
+      i % 3 === 0 ? dark : bright,
+      40 * Math.sin(angle),
+      40 * Math.cos(angle),
+      -0.125,
+    );
     mark.rotation.z = -angle;
-    add(`dot-${i}`, dot, dark, 32.5 * Math.sin(angle), 32.5 * Math.cos(angle));
+    add(
+      `dot-${i}`,
+      dot,
+      dark,
+      MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM * Math.sin(angle),
+      MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM * Math.cos(angle),
+    );
   }
   // Asymmetric geometric relief makes image inversion observable without text.
   const relief = new THREE.Shape();

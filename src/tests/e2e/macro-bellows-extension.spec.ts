@@ -18,7 +18,18 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
     if (message.type() === "error") consoleErrors.push(message.text());
   });
 
-  await page.goto("/simulator/free/macro-bellows-extension");
+  await page.goto("/simulator/free/architecture-rise");
+  await expect(page.getByRole("button", { name: "Infinity Reset" })).toBeVisible();
+  await page.getByRole("button", { name: "Infinity Reset" }).click();
+  await expect(page.getByText(/Focus: ∞/)).toBeVisible();
+
+  // Navigate through the SPA so the previous scene's Infinity Focus state is
+  // still present when Macro Scene 1 initializes its route.
+  await page.getByRole("link", { name: "All Scenes" }).click();
+  await expect(page).toHaveURL(/\/scenes$/);
+  await page.locator('a[href="/simulator/free/macro-bellows-extension"]').click();
+  await expect(page).toHaveURL(/\/simulator\/free\/macro-bellows-extension$/);
+
   const sceneCanvas = page.getByTestId("scene-canvas");
   const sceneWebglCanvas = sceneCanvas.locator("canvas");
   const groundGlassCanvas = page.locator(".groundglass-renderer-host canvas");

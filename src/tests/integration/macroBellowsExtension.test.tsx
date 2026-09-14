@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
@@ -28,6 +28,41 @@ describe("Macro Bellows Extension", () => {
     expect(scene.cameraControlPolicy).toEqual({ movement: "fixed", aperture: "fixed", infinityReset: false });
     expect(scene.focusStandardCapability).toBeUndefined();
     expect(scene.focalLengthCapability).toBeUndefined();
+  });
+
+  it("restores finite focus and the initial macro readout after prior Infinity Focus", async () => {
+    const store = useAppStore.getState();
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    store.setInfinityFocus();
+    expect(useAppStore.getState().camera.focusMode).toBe("infinity");
+    store.clearSimulatorRouteInitialization();
+
+    render(
+      <MemoryRouter>
+        <SimulatorWorkspace
+          mode="free"
+          sceneId={scene.id}
+          taskId={null}
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(useAppStore.getState().camera).toMatchObject({
+        activeSceneId: scene.id,
+        focusMode: "finite",
+        focusDistanceMm: 900,
+        lastFiniteFocusDepthMm: 900,
+      }),
+    );
+    const optics = selectDerivedOpticsState(useAppStore.getState().camera);
+    expect(optics.diagnostics.imageDistanceMm).toBeCloseTo(180, 12);
+    expect(optics.filmCenterWorld.z).toBeCloseTo(-180, 12);
+
+    const readout = await screen.findByRole("region", { name: "Macro focus" });
+    expect(readout).toHaveTextContent("180.0 mm");
+    expect(readout).toHaveTextContent("0.20×");
   });
 
   it("exposes only finite focus and updates informational readouts through public keyboard steps", () => {

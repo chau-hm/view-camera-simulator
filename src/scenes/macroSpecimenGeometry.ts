@@ -8,6 +8,9 @@ export const MACRO_SPECIMEN = {
   reliefDepthMm: 0.6,
 } as const;
 
+export const MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM = 32.5;
+export const MACRO_SPECIMEN_RADIAL_DOT_RADIUS_MM = 0.48;
+
 export const macroSpecimenBoundsMm = {
   min: { x: -45, y: -45, z: 299.4 },
   max: { x: 45, y: 45, z: 302 },
@@ -22,7 +25,11 @@ export const macroBellowsExtensionFocusTargets: FocusTarget[] = [
       { x: 0, y: 0, z: 299.5 },
       { x: 0, y: -23, z: 299.88 },
       { x: 0, y: 44.4, z: 299.4 },
-      { x: 32.5, y: 0, z: 299.82 },
+      {
+        x: MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM,
+        y: 0,
+        z: MACRO_SPECIMEN.faceCenterMm.z - MACRO_SPECIMEN_RADIAL_DOT_RADIUS_MM,
+      },
     ],
     weight: 1,
   },

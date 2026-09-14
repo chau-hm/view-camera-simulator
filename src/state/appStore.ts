@@ -477,6 +477,39 @@ const isInfinityResetDisallowed = (sceneId: string): boolean => {
   return scene?.cameraControlPolicy?.infinityReset === false;
 };
 
+/**
+ * A finite-domain scene that disallows the Infinity Reset control is finite-only.
+ * Route entry must enforce that contract instead of inheriting the previous
+ * scene's focus mode.
+ */
+const isFiniteFocusOnlyRoute = (sceneId: string): boolean => {
+  const scene = getSceneById(sceneId);
+  return Boolean(
+    scene?.cameraControlPolicy?.infinityReset === false &&
+      scene.focusDistanceRangeMm !== undefined,
+  );
+};
+
+const resolveFiniteFocusRouteState = (
+  sceneId: string,
+  camera: Pick<CameraState, "focusDistanceMm" | "focalLengthMm">,
+): Partial<Pick<CameraState, "focusDistanceMm" | "focusMode" | "lastFiniteFocusDepthMm">> => {
+  if (!isFiniteFocusOnlyRoute(sceneId)) {
+    return {};
+  }
+
+  const focusDistanceMm = clampFocusDistanceForScene(
+    sceneId,
+    camera.focusDistanceMm,
+    camera.focalLengthMm,
+  );
+  return {
+    focusDistanceMm,
+    focusMode: "finite",
+    lastFiniteFocusDepthMm: focusDistanceMm,
+  };
+};
+
 import type {
   GroundGlassRttChannel,
   GroundGlassRttRuntimeInfo,
@@ -1061,6 +1094,7 @@ export const useAppStore = create<AppStore>((set) => ({
         return {
           camera: {
             ...state.camera,
+            ...resolveFiniteFocusRouteState(sceneId, state.camera),
             mode,
             activeTaskId: taskId ?? null,
             aperture: resolveSceneAperture(
@@ -1228,6 +1262,11 @@ export const useAppStore = create<AppStore>((set) => ({
           activeTaskId: null,
         };
       }
+
+      nextCamera = {
+        ...nextCamera,
+        ...resolveFiniteFocusRouteState(sceneId, nextCamera),
+      };
 
       nextCamera = {
         ...nextCamera,
