@@ -1,4 +1,14 @@
 export const readoutMessageKeys = {
+  macroFocus: {
+    title: "readouts.macroFocus.title",
+    extension: "readouts.macroFocus.extension",
+    magnification: "readouts.macroFocus.magnification",
+    factor: "readouts.macroFocus.factor",
+    exposure: "readouts.macroFocus.exposure",
+    stops: "readouts.macroFocus.stops",
+    lifeSize: "readouts.macroFocus.lifeSize",
+    note: "readouts.macroFocus.note",
+  },
   controls: {
     frontRise: "readouts.controls.frontRise",
     rearRise: "readouts.controls.rearRise",

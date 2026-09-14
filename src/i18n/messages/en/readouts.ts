@@ -1,4 +1,14 @@
 export const readoutsMessages = {
+  macroFocus: {
+    title: "Macro focus",
+    extension: "Bellows extension (lens to film)",
+    magnification: "Magnification",
+    factor: "Bellows factor",
+    exposure: "Exposure compensation",
+    stops: "+{{value}} stops",
+    lifeSize: "Approximately life-size (1:1)",
+    note: "At the selected focus plane. Exposure compensation assumes a symmetric thin lens.",
+  },
   controls: {
     frontRise: "Front Rise",
     rearRise: "Rear Rise",

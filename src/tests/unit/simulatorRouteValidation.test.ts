@@ -43,12 +43,11 @@ const validate = ({
   });
 
 describe("isValidSimulatorRoute", () => {
-  it.each(["shelf-swing", "table-tilt", "oblique-architecture"])("accepts free mode without a task for %s", (sceneId) => {
+  it.each(["shelf-swing", "table-tilt", "oblique-architecture", "macro-bellows-extension"])("accepts free mode without a task for %s", (sceneId) => {
     expect(validate({ mode: "free", sceneId })).toBe(true);
   });
 
   it.each([
-    "macro-bellows-extension",
     "macro-depth-of-field",
     "macro-oblique-plane",
     "macro-compound-movements",

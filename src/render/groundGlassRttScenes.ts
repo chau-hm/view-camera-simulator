@@ -3,6 +3,7 @@ import type { DerivedOpticsState, Vec3 } from "../types/optics";
 import { calculateImageDistanceAlongOpticalAxisMm } from "../core/optics/calculateImageDistance";
 
 export const RTT_SCENES = [
+  "macro-bellows-extension",
   "view-camera-anatomy",
   "focus-fundamentals-two-targets",
   "architecture-rise",

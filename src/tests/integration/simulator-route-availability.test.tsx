@@ -46,6 +46,23 @@ const renderRoute = (initialEntry: string) =>
   );
 
 describe("simulator route availability", () => {
+  it("opens the Macro free route without lesson or task metadata", async () => {
+    renderRoute("/simulator/free/macro-bellows-extension");
+    expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent("free:macro-bellows-extension:none:lesson=false");
+  });
+
+  it.each([
+    "/simulator/guided/macro-bellows-extension",
+    "/simulator/guided/macro-bellows-extension/rise-01",
+    "/simulator/free/macro-bellows-extension/rise-01",
+    ...["macro-depth-of-field", "macro-oblique-plane", "macro-compound-movements"].flatMap(
+      (id) => [`/simulator/free/${id}`, `/simulator/guided/${id}`, `/simulator/guided/${id}/rise-01`],
+    ),
+  ])("keeps unsupported Macro route %s closed", async (route) => {
+    renderRoute(route);
+    await waitFor(() => expect(screen.getByTestId("route-location")).toHaveTextContent("/scenes"));
+    expect(screen.queryByTestId("simulator-workspace")).not.toBeInTheDocument();
+  });
   it.each([
     ["/simulator/free/focus-fundamentals-two-targets", "free:focus-fundamentals-two-targets:none:lesson=false"],
     ["/simulator/free/architecture-rise", "free:architecture-rise:none:lesson=false"],

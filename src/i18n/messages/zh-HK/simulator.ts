@@ -181,6 +181,7 @@ export const simulatorMessages = {
     scheimpflugReasonInvalidFocusPlane: "清晰焦平面不包含底片／鏡頭交線。",
   },
   geometry: {
+    macroSpecimenTarget: "標本硬幣",
     viewLabel: "幾何圖檢視",
     framingLabel: "幾何圖取景",
     side: "側面",

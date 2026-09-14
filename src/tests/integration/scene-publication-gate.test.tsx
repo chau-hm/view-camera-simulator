@@ -100,7 +100,6 @@ describe("scene publication gate", () => {
   });
 
   it.each([
-    "/simulator/free/macro-bellows-extension",
     "/simulator/free/macro-depth-of-field",
     "/simulator/free/macro-oblique-plane",
     "/simulator/free/macro-compound-movements",
@@ -113,6 +112,19 @@ describe("scene publication gate", () => {
 
     await waitFor(() => expect(screen.getByTestId("route-location")).toHaveTextContent("/scenes"));
     expect(screen.queryByTestId("simulator-workspace")).not.toBeInTheDocument();
+  });
+
+  it("allows the published Macro free-practice route without guided metadata", async () => {
+    renderRoute("/simulator/free/macro-bellows-extension");
+
+    await waitFor(() =>
+      expect(screen.getByTestId("route-location")).toHaveTextContent(
+        "/simulator/free/macro-bellows-extension",
+      ),
+    );
+    expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(
+      "free:macro-bellows-extension:none",
+    );
   });
 
   it("keeps an unpublished scene available through the internal registry only", () => {

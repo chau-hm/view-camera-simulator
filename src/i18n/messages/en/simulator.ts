@@ -178,6 +178,7 @@ export const simulatorMessages = {
     scheimpflugReasonInvalidFocusPlane: "The focus plane does not contain the film/lens intersection line.",
   },
   geometry: {
+    macroSpecimenTarget: "Specimen coin",
     viewLabel: "Geometry view",
     framingLabel: "Geometry framing",
     side: "Side",

@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { useAppStore } from "../../state/appStore";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { getSceneFocusDistanceRange } from "../../scenes/definitions";
+import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE, isApertureValue } from "../../utils/constants";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
@@ -255,6 +257,33 @@ describe("app store STA-001", () => {
     // architecture preset focusDistanceMm must equal scene-specified preset (non-default)
     expect(camera.focusDistanceMm).not.toBe(2000);
     expect(camera.activeSceneId).toBe("architecture-rise");
+  });
+
+  it("does not inherit Infinity Focus when entering the finite-only Macro scene", () => {
+    const store = useAppStore.getState();
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise" });
+    store.setInfinityFocus();
+    expect(useAppStore.getState().camera.focusMode).toBe("infinity");
+
+    store.clearSimulatorRouteInitialization();
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: macroBellowsExtensionScene.id,
+      taskId: null,
+    });
+
+    const state = useAppStore.getState();
+    expect(state.camera).toMatchObject({
+      activeSceneId: macroBellowsExtensionScene.id,
+      focusMode: "finite",
+      focusDistanceMm: 900,
+      lastFiniteFocusDepthMm: 900,
+    });
+
+    const optics = deriveOpticsState(state.camera, macroBellowsExtensionScene);
+    expect(optics.diagnostics.imageDistanceMm).toBeCloseTo(180, 12);
+    expect(optics.filmCenterWorld.z).toBeCloseTo(-180, 12);
   });
 
   it("restores finite focus when lesson Observe follows another scene's Infinity Reset", () => {
