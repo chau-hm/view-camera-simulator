@@ -135,6 +135,7 @@ test("keyboard focus remains visible on the rail while the drawer opens transien
   const learning = getLearningOverlay(page);
   const rail = getLearningRail(page);
   const drawer = getLearningDrawer(page);
+  const stage = page.locator(".scene-viewport-stage");
 
   await expect(learning).toHaveAttribute("data-drawer-state", "peek");
   await expect(drawer).not.toBeVisible();
@@ -162,6 +163,19 @@ test("keyboard focus remains visible on the rail while the drawer opens transien
     y: railBounds.y + railBounds.height / 2,
   });
   expect(focusedRailIsTopmost).toBe(true);
+
+  const stageBounds = await requireBounds(stage, "Scene stage");
+  const drawerBounds = await requireBounds(drawer, "Learning drawer");
+  const outsidePoint = {
+    x: stageBounds.x + stageBounds.width - 12,
+    y: stageBounds.y + stageBounds.height / 2,
+  };
+  expect(outsidePoint.x).toBeGreaterThan(drawerBounds.x + drawerBounds.width);
+  await page.mouse.move(outsidePoint.x, outsidePoint.y);
+  await page.waitForTimeout(500);
+  await expect(learning).toHaveAttribute("data-drawer-state", "transient");
+  await expect(drawer).toBeVisible();
+  await expect(rail).toBeFocused();
 
   await page.keyboard.press("Tab");
   await expect(drawer.getByRole("button", { name: "Task", exact: true })).toBeFocused();
@@ -206,6 +220,8 @@ test("narrow layouts keep the learning surface in flow without horizontal overfl
   await expect(drawer).toHaveCSS("position", "static");
   await expect(rail).toHaveCSS("display", "none");
   expect(await rail.boundingBox()).toBeNull();
+  await expect(drawer.getByRole("button", { name: "Keep Task and Feedback open" })).toHaveCount(0);
+  await expect(drawer.getByRole("button", { name: "Close Task and Feedback" })).toHaveCount(0);
   await expect(drawer.getByRole("button", { name: "Task", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(drawer.getByTestId("learning-overlay-task-view")).toContainText("Free practice");
 
@@ -218,6 +234,9 @@ test("narrow layouts keep the learning surface in flow without horizontal overfl
 
   const feedback = await openLearningFeedback(page);
   await expect(feedback).toContainText("Live observation");
+  await expect(learning).toHaveAttribute("data-drawer-state", "flow");
+  await expect(rail).toHaveCSS("display", "none");
+  expect(await rail.boundingBox()).toBeNull();
   const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(hasHorizontalOverflow).toBe(false);
 });

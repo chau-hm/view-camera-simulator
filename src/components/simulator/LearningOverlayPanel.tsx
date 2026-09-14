@@ -141,7 +141,7 @@ export const LearningOverlayPanel = ({
 
     const handlePointerMove = (event: PointerEvent) => {
       if (!resolveHoverCapablePointer(event.pointerType)) return;
-      if (drawerRef.current?.contains(document.activeElement)) {
+      if (panelRef.current?.contains(document.activeElement)) {
         clearCloseTimer();
         return;
       }
@@ -171,6 +171,7 @@ export const LearningOverlayPanel = ({
   }, [updateDrawerState]);
 
   const togglePinned = useCallback(() => {
+    if (narrowLayout) return;
     if (drawerStateRef.current === "pinned") {
       updateDrawerState(narrowLayout ? "flow" : "transient");
       return;
@@ -231,7 +232,9 @@ export const LearningOverlayPanel = ({
           openDrawer(stableTouchRef.current);
         }}
         onPointerDown={(event) => {
-          stableTouchRef.current = !resolveHoverCapablePointer(event.pointerType);
+          const hoverCapablePointer = resolveHoverCapablePointer(event.pointerType);
+          stableTouchRef.current = !hoverCapablePointer;
+          if (hoverCapablePointer) event.preventDefault();
         }}
         onPointerEnter={(event) => {
           if (resolveHoverCapablePointer(event.pointerType)) openDrawer();
@@ -285,33 +288,35 @@ export const LearningOverlayPanel = ({
               ) : null}
             </button>
           </div>
-          <div className="learning-overlay-panel__actions">
-            <button
-              aria-label={drawerPinned ? unpinLabel : pinLabel}
-              aria-pressed={drawerPinned}
-              className="learning-overlay-panel__action-button"
-              title={drawerPinned ? unpinLabel : pinLabel}
-              type="button"
-              onClick={togglePinned}
-            >
-              <span aria-hidden="true" className="material-symbols-outlined">
-                {drawerPinned ? "keep" : "push_pin"}
-              </span>
-              <span>{drawerPinned ? unpinLabel : pinLabel}</span>
-            </button>
-            <button
-              aria-label={closeLabel}
-              className="learning-overlay-panel__action-button learning-overlay-panel__close-button"
-              title={closeLabel}
-              type="button"
-              onClick={closeDrawer}
-            >
-              <span aria-hidden="true" className="material-symbols-outlined">
-                close
-              </span>
-              <span>{closeLabel}</span>
-            </button>
-          </div>
+          {!narrowLayout ? (
+            <div className="learning-overlay-panel__actions">
+              <button
+                aria-label={drawerPinned ? unpinLabel : pinLabel}
+                aria-pressed={drawerPinned}
+                className="learning-overlay-panel__action-button"
+                title={drawerPinned ? unpinLabel : pinLabel}
+                type="button"
+                onClick={togglePinned}
+              >
+                <span aria-hidden="true" className="material-symbols-outlined">
+                  {drawerPinned ? "keep" : "push_pin"}
+                </span>
+                <span>{drawerPinned ? unpinLabel : pinLabel}</span>
+              </button>
+              <button
+                aria-label={closeLabel}
+                className="learning-overlay-panel__action-button learning-overlay-panel__close-button"
+                title={closeLabel}
+                type="button"
+                onClick={closeDrawer}
+              >
+                <span aria-hidden="true" className="material-symbols-outlined">
+                  close
+                </span>
+                <span>{closeLabel}</span>
+              </button>
+            </div>
+          ) : null}
         </header>
 
         <div className="learning-overlay-panel__content" id={contentId} tabIndex={0}>

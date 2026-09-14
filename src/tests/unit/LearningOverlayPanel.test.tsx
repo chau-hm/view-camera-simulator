@@ -240,6 +240,29 @@ describe("LearningOverlayPanel", () => {
     expect(getPanel()).toHaveAttribute("data-drawer-state", "transient");
   });
 
+  it("keeps the transient drawer open while the focused rail remains active", () => {
+    renderPanel();
+    const rail = getRail();
+    fireEvent.focus(rail);
+    rail.focus();
+
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "transient");
+    expect(rail).toHaveFocus();
+
+    vi.useFakeTimers();
+    fireEvent.pointerMove(window, { pointerType: "mouse", clientX: 999, clientY: 999 });
+    act(() => vi.advanceTimersByTime(500));
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "transient");
+
+    const outside = document.createElement("button");
+    document.body.appendChild(outside);
+    outside.focus();
+    fireEvent.pointerMove(window, { pointerType: "mouse", clientX: 999, clientY: 999 });
+    act(() => vi.advanceTimersByTime(500));
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "peek");
+    outside.remove();
+  });
+
   it("keeps the transient drawer open while a drawer descendant remains focused", () => {
     renderPanel();
     openDrawer();
