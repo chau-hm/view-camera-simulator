@@ -630,6 +630,19 @@ export const SimulatorWorkspace = ({
                 }
                 onSubjectCapacityChange={setViewportSubjectCapacity}
                 showHeader={false}
+                learningOverlay={
+                  !isAnatomyLesson ? (
+                    <LearningOverlayPanel
+                      mode={mode}
+                      sceneId={safeScene.id}
+                      task={task}
+                      evaluation={evaluation}
+                      guidedLessonContext={guidedLessonContext}
+                      freeCompositionEvaluation={interiorCornerRiseEvaluation}
+                      freeFocusEvaluation={interiorCornerFocusEvaluation}
+                    />
+                  ) : null
+                }
               />
             </div>}
 
@@ -689,17 +702,6 @@ export const SimulatorWorkspace = ({
             )}
           </div>
 
-          {!isAnatomyLesson ? (
-            <LearningOverlayPanel
-              mode={mode}
-              sceneId={safeScene.id}
-              task={task}
-              evaluation={evaluation}
-              guidedLessonContext={guidedLessonContext}
-              freeCompositionEvaluation={interiorCornerRiseEvaluation}
-              freeFocusEvaluation={interiorCornerFocusEvaluation}
-            />
-          ) : null}
           </div>
 
           {!viewportExpanded && !isAnatomyLesson && <>

@@ -46,7 +46,7 @@ const orbitScene = async (page: Page, scene: Locator) => {
   const bounds = await canvas.boundingBox();
   if (!bounds) throw new Error("3D Scene canvas bounds unavailable");
 
-  const overlayBounds = await page.getByTestId("learning-overlay-panel").boundingBox();
+  const overlayBounds = await page.getByTestId("learning-overlay-drawer").boundingBox();
   const candidates = [
     { x: bounds.x + bounds.width * 0.58, y: bounds.y + bounds.height * 0.2 },
     { x: bounds.x + bounds.width * 0.8, y: bounds.y + bounds.height * 0.2 },

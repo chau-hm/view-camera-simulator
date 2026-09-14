@@ -42,6 +42,7 @@ describe("phase 12 completion overlay", () => {
       </MemoryRouter>,
     );
     expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Task and Feedback/ }));
     const feedbackButton = screen.getByRole("button", {
       name: "Feedback — Task completed",
     });
