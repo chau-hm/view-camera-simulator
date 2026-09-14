@@ -57,6 +57,15 @@ test("Scene-local learning drawer keeps Focus Distribution full-width and leaves
   expect(drawerBounds.x + drawerBounds.width).toBeLessThanOrEqual(stageBounds.x + stageBounds.width + 1);
   expect(drawerBounds.y + drawerBounds.height).toBeLessThanOrEqual(stageBounds.y + stageBounds.height + 1);
 
+  const pinButton = page.getByRole("button", { name: "Keep Task and Feedback open", exact: true });
+  const closeButton = page.getByRole("button", { name: "Close Task and Feedback", exact: true });
+  await expect(pinButton).toHaveAttribute("title", "Keep Task and Feedback open");
+  await expect(pinButton.locator(".material-symbols-outlined")).toHaveText("push_pin");
+  await expect(pinButton.locator("span:not(.material-symbols-outlined)")).toHaveCount(0);
+  await expect(closeButton).toHaveAttribute("title", "Close Task and Feedback");
+  await expect(closeButton.locator(".material-symbols-outlined")).toHaveText("close");
+  await expect(closeButton.locator("span:not(.material-symbols-outlined)")).toHaveCount(0);
+
   const sceneAfter = await requireBounds(sceneCard, "Scene card after opening drawer");
   const groundGlassAfter = await requireBounds(groundGlass, "Ground Glass card after opening drawer");
   expect(sceneAfter.x).toBeCloseTo(sceneBefore.x, 5);
@@ -239,4 +248,55 @@ test("narrow layouts keep the learning surface in flow without horizontal overfl
   expect(await rail.boundingBox()).toBeNull();
   const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(hasHorizontalOverflow).toBe(false);
+});
+
+test("desktop learning rail and Scene overlay controls keep separate visual anchors", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto("/simulator/free/architecture-rise");
+  await page.getByRole("combobox", { name: "Language" }).selectOption("zh-HK");
+
+  const rail = getLearningRail(page);
+  const railLabel = rail.locator(".learning-overlay-panel__rail-label");
+  const trigger = page.getByRole("button", { name: "檢視疊加層", exact: true });
+  const stage = page.locator(".scene-viewport-stage");
+  await expect(rail).toBeVisible();
+  await expect(rail).toHaveAccessibleName("開啟任務及回饋");
+  await expect(railLabel).toHaveText("任務及回饋");
+  await expect(railLabel).toHaveCSS("writing-mode", "vertical-rl");
+  await expect(railLabel).toHaveCSS("text-orientation", "mixed");
+  await expect(railLabel).toHaveCSS("transform", "none");
+  await expect(trigger).toBeVisible();
+
+  const railBounds = await requireBounds(rail, "Learning rail");
+  const triggerBounds = await requireBounds(trigger, "View overlays trigger");
+  expect(triggerBounds.x).toBeGreaterThan(railBounds.x + railBounds.width);
+
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  const menu = page.locator(".scene-overlay-menu__panel");
+  await expect(menu).toBeVisible();
+  const menuBounds = await requireBounds(menu, "View overlays menu");
+  expect(Math.abs(menuBounds.x - triggerBounds.x)).toBeLessThanOrEqual(1);
+  expect(menuBounds.y).toBeGreaterThanOrEqual(triggerBounds.y + triggerBounds.height);
+  expect(menuBounds.y).toBeLessThan(triggerBounds.y + triggerBounds.height + 16);
+
+  const triggerIsTopmost = await page.evaluate(({ x, y }) => {
+    const triggerElement = document.querySelector<HTMLButtonElement>(".scene-overlay-menu__trigger");
+    const topmostElement = document.elementFromPoint(x, y);
+    return Boolean(
+      triggerElement &&
+        topmostElement &&
+        (topmostElement === triggerElement || triggerElement.contains(topmostElement)),
+    );
+  }, {
+    x: triggerBounds.x + triggerBounds.width / 2,
+    y: triggerBounds.y + triggerBounds.height / 2,
+  });
+  expect(triggerIsTopmost).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+  const stageBounds = await requireBounds(stage, "Scene stage");
+  expect(triggerBounds.x + triggerBounds.width).toBeLessThanOrEqual(stageBounds.x + stageBounds.width);
 });

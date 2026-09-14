@@ -756,7 +756,7 @@ button {
 
 .learning-overlay-panel__rail-label {
   writing-mode: vertical-rl;
-  transform: rotate(180deg);
+  text-orientation: mixed;
   color: var(--sim-text, #f2f7f6);
   font-size: 11px;
   font-weight: 700;
@@ -867,11 +867,14 @@ button {
 
 .learning-overlay-panel__action-button {
   gap: 4px;
-  padding: 4px 6px;
+  width: var(--sim-control-height, 32px);
+  min-width: var(--sim-control-height, 32px);
+  min-height: var(--sim-control-height, 32px);
+  padding: 4px;
 }
 
 .learning-overlay-panel__action-button .material-symbols-outlined {
-  font-size: 17px;
+  font-size: 18px;
 }
 
 .learning-overlay-panel__view-button[aria-pressed="true"],
@@ -1654,8 +1657,8 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 .scene-overlay-menu__panel {
   position: absolute;
   top: calc(100% + 6px);
-  left: auto;
-  right: 0;
+  left: 0;
+  right: auto;
   width: 280px;
   max-width: 100%;
   padding: 4px;
@@ -1672,6 +1675,12 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   right: 58px;
   top: var(--sim-panel-section-gap);
   z-index: 10;
+}
+
+@media (min-width: 901px) {
+  .scene-overlay-controls-wrap {
+    left: calc(var(--sim-panel-section-gap) + 36px + var(--sim-control-gap));
+  }
 }
 
 .geometry-viewport {
