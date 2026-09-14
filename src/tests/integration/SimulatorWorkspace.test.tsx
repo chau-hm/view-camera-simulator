@@ -41,6 +41,13 @@ const interiorCornerLessonWorkspace = () => (
   </MemoryRouter>
 );
 
+const openLearningDrawer = async () => {
+  const panel = await screen.findByTestId("learning-overlay-panel");
+  const rail = panel.querySelector<HTMLButtonElement>(".learning-overlay-panel__rail");
+  if (!rail) throw new Error("Learning rail not found");
+  fireEvent.click(rail);
+};
+
 describe("SimulatorWorkspace expanded Geometry accessibility", () => {
   afterEach(() => {
     cleanup();
@@ -63,6 +70,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByRole("heading", { name: "2D Geometry" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "3D Scene" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Ground Glass" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("learning-overlay-panel")).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Camera Controls" })).toBeInTheDocument();
     const restore = screen.getByRole("button", { name: "Restore 2D Geometry" });
     expect(restore).toHaveAttribute("title", "Restore 2D Geometry");
@@ -245,6 +253,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
   it("shows the Interior Corner Rise composition state from the public free-mode control", async () => {
     render(workspaceRoute("free", "interior-corner", null));
 
+    fireEvent.click(screen.getByRole("button", { name: "Open Task and Feedback" }));
     fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
     const feedback = await screen.findByTestId("interior-corner-rise-composition-feedback");
     const focusFeedback = await screen.findByTestId("interior-corner-focus-feedback");
@@ -285,14 +294,15 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
   it("stages the five Interior Corner controls and preserves solved state between lesson stages", async () => {
     render(interiorCornerLessonWorkspace());
 
+    await openLearningDrawer();
     expect(await screen.findByRole("heading", { name: "Observe the Problem" })).toBeInTheDocument();
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeDisabled();
     expect(screen.getByLabelText("Focus distance")).toBeDisabled();
     expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
-
     fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await openLearningDrawer();
     await waitFor(() => expect(screen.getByRole("heading", { name: "Compose the Interior Corner with Rise" })).toBeInTheDocument());
     expect(screen.getByLabelText("Rise")).toBeEnabled();
     expect(screen.getByLabelText("Swing")).toBeDisabled();
@@ -305,6 +315,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await openLearningDrawer();
     await waitFor(() => expect(screen.getByRole("heading", { name: "Turn the Focus Plane with Swing" })).toBeInTheDocument());
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeEnabled();
@@ -319,6 +330,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await openLearningDrawer();
     await waitFor(() => expect(screen.getByRole("heading", { name: "Place the Focus Plane on the Wall" })).toBeInTheDocument());
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeEnabled();
@@ -341,6 +353,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     );
 
     fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await openLearningDrawer();
     await waitFor(() => expect(screen.getByRole("heading", { name: "Add Depth around the Aligned Plane" })).toBeInTheDocument());
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeDisabled();
@@ -365,7 +378,9 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
   it("preserves a solved Refine state when navigating back to Swing and forward again", async () => {
     render(interiorCornerLessonWorkspace());
 
+    await openLearningDrawer();
     fireEvent.click(await screen.findByRole("link", { name: "Continue" }));
+    await openLearningDrawer();
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Compose the Interior Corner with Rise" })).toBeInTheDocument(),
     );
@@ -373,6 +388,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await openLearningDrawer();
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Turn the Focus Plane with Swing" })).toBeInTheDocument(),
     );
@@ -382,6 +398,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await openLearningDrawer();
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Place the Focus Plane on the Wall" })).toBeInTheDocument(),
     );
@@ -397,6 +414,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     });
 
     fireEvent.click(screen.getByRole("link", { name: "Previous" }));
+    await openLearningDrawer();
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Turn the Focus Plane with Swing" })).toBeInTheDocument(),
     );
@@ -412,6 +430,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await openLearningDrawer();
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Place the Focus Plane on the Wall" })).toBeInTheDocument(),
     );
@@ -424,6 +443,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("link", { name: "Continue" }));
+    await openLearningDrawer();
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Add Depth around the Aligned Plane" })).toBeInTheDocument(),
     );
@@ -443,7 +463,10 @@ describe("SimulatorWorkspace viewport expansion", () => {
 
   it("keeps one SceneRenderer mounted while the workspace hides and restores other main content", async () => {
     const { container } = render(workspace());
-    expect(screen.getByTestId("learning-overlay-panel")).toBeInTheDocument();
+    const learning = screen.getByTestId("learning-overlay-panel");
+    expect(learning).toBeInTheDocument();
+    expect(container.querySelector(".simulator-viewport-grid > .simulator-card")).toContainElement(learning);
+    expect(learning.closest(".scene-viewport-stage")).toBeInTheDocument();
     expect(container.querySelector(".simulator-task-feedback-grid")).not.toBeInTheDocument();
     const originalSceneRenderer = screen.getByTestId("scene-canvas");
     const expand = screen.getByRole("button", { name: "Expand 3D Scene" });
@@ -463,8 +486,8 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.queryByLabelText("GroundGlassColumn")).not.toBeInTheDocument();
     expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
     expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
-    expect(screen.getByTestId("learning-overlay-panel")).toBeInTheDocument();
-    expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
+    expect(screen.getByTestId("learning-overlay-panel")).toBe(learning);
+    expect(learning.closest(".scene-viewport-stage")).toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
@@ -482,6 +505,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getByTestId("scene-canvas")).toBe(originalSceneRenderer);
     expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
     expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
+    expect(screen.getByTestId("learning-overlay-panel")).toBe(learning);
   });
 
   it("removes every expanded sizing class after repeated restore cycles", async () => {
@@ -568,8 +592,7 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getByRole("region", { name: "Pan Ground Glass" })).toHaveAttribute("data-zoomed", "true");
     expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
     expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
-    expect(screen.getByTestId("learning-overlay-panel")).toBeInTheDocument();
-    expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
+    expect(screen.queryByTestId("learning-overlay-panel")).not.toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 

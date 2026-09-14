@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type Ref, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type Ref, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import type { ConceptualCameraPresentation } from "../../render/ConceptualViewCamera";
@@ -36,6 +36,7 @@ type SceneViewportProps = {
   onToggleGeometryPanel?: (trigger: HTMLButtonElement) => void;
   geometryTriggerRef?: Ref<HTMLButtonElement>;
   showHeader?: boolean;
+  learningOverlay?: ReactNode;
   overlayMenuResetGeneration: number;
   cameraPresentation?: ConceptualCameraPresentation;
   cameraInspectionTarget?: CameraInspectionTarget;
@@ -67,6 +68,7 @@ export const SceneViewport = ({
   onToggleGeometryPanel,
   geometryTriggerRef,
   showHeader,
+  learningOverlay,
   overlayMenuResetGeneration,
   cameraPresentation,
   cameraInspectionTarget,
@@ -247,7 +249,8 @@ export const SceneViewport = ({
         </div>
       </div>
       <div className={`scene-viewport-shell${expanded ? " scene-viewport-shell--expanded" : ""}`}>
-        <div className={`scene-viewport-host${expanded ? " scene-viewport-host--expanded" : ""}`}>
+        <div className={`scene-viewport-stage${expanded ? " scene-viewport-stage--expanded" : ""}`}>
+          <div className={`scene-viewport-host${expanded ? " scene-viewport-host--expanded" : ""}`}>
           <SceneRenderer
             scene={scene}
             opticsState={opticsState}
@@ -299,6 +302,8 @@ export const SceneViewport = ({
               {expanded ? "close_fullscreen" : "open_in_new"}
             </span>
           </button>
+          </div>
+          {learningOverlay}
         </div>
 
         {supportsScheimpflugConstruction && requestedScheimpflugConstruction ? (

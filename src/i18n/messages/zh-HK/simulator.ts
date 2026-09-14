@@ -13,8 +13,10 @@ export const simulatorMessages = {
   learning: {
     title: "任務及回饋",
     viewsLabel: "任務及回饋檢視",
-    collapse: "收起任務及回饋",
-    expand: "顯示任務及回饋",
+    open: "開啟任務及回饋",
+    close: "關閉任務及回饋",
+    pin: "保持任務及回饋開啟",
+    unpin: "允許任務及回饋自動隱藏",
   },
   controls: {
     lensTitle: "鏡頭／視角",

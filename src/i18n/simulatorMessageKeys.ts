@@ -10,8 +10,10 @@ export const simulatorMessageKeys = {
   learning: {
     title: "simulator.learning.title",
     viewsLabel: "simulator.learning.viewsLabel",
-    collapse: "simulator.learning.collapse",
-    expand: "simulator.learning.expand",
+    open: "simulator.learning.open",
+    close: "simulator.learning.close",
+    pin: "simulator.learning.pin",
+    unpin: "simulator.learning.unpin",
   },
   controls: {
     lensTitle: "simulator.controls.lensTitle",

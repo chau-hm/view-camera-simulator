@@ -10,8 +10,10 @@ export const simulatorMessages = {
   learning: {
     title: "Task and Feedback",
     viewsLabel: "Task and Feedback views",
-    collapse: "Collapse Task and Feedback",
-    expand: "Show Task and Feedback",
+    open: "Open Task and Feedback",
+    close: "Close Task and Feedback",
+    pin: "Keep Task and Feedback open",
+    unpin: "Allow Task and Feedback to auto-hide",
   },
   controls: {
     lensTitle: "Lens / Angle of View",
