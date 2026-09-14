@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { resolveGroundGlassPreviewMode } from "../../render/groundGlassTargetProjection";
@@ -49,6 +49,7 @@ type GroundGlassViewportProps = {
   onRequestRestore: () => void;
   comparison?: CameraMovementGroundGlassComparison | null;
   comparisonLabels?: { original: string; current: string };
+  learningOverlay?: ReactNode;
 };
 
 export const GroundGlassViewport = ({
@@ -81,6 +82,7 @@ export const GroundGlassViewport = ({
   onRequestRestore,
   comparison,
   comparisonLabels,
+  learningOverlay,
 }: GroundGlassViewportProps) => {
   const { t } = useTranslation();
   const sceneId = scene.id;
@@ -316,6 +318,8 @@ export const GroundGlassViewport = ({
             />
           </div>
         )}
+
+        {expanded ? learningOverlay : null}
 
         <button
           ref={expanded ? restoreTriggerRef : expandTriggerRef}

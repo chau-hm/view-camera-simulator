@@ -20,6 +20,8 @@
   --sim-control-group-gap: 16px; /* spacing between distinct control groups */
   --sim-panel-section-gap: 12px; /* spacing between major rows or controls and viewport */
   --sim-control-height: 32px; /* standard button/select height */
+  --sim-learning-rail-width: 44px;
+  --sim-learning-rail-min-height: 136px;
 
   color: var(--text);
   background: var(--app-bg);
@@ -741,14 +743,14 @@ button {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: 36px;
-  min-height: 112px;
+  width: var(--sim-learning-rail-width);
+  min-height: var(--sim-learning-rail-min-height);
   padding: 10px 6px;
-  border: 1px solid var(--sim-border, rgba(176, 224, 241, 0.2));
+  border: 1px solid var(--sim-accent-border, rgba(143, 234, 255, 0.36));
   border-left: 0;
   border-radius: 0 var(--sim-radius-control, 6px) var(--sim-radius-control, 6px) 0;
-  background: rgba(8, 19, 31, 0.94);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(180deg, rgba(18, 53, 73, 0.98), rgba(8, 19, 31, 0.96));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 0 14px rgba(53, 200, 237, 0.16);
   color: var(--sim-text, #f2f7f6);
   cursor: pointer;
   pointer-events: auto;
@@ -758,8 +760,8 @@ button {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   color: var(--sim-text, #f2f7f6);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   line-height: 1.1;
   white-space: nowrap;
 }
@@ -768,6 +770,7 @@ button {
 .learning-overlay-panel__rail:focus-visible {
   border-color: var(--sim-accent-border, rgba(143, 234, 255, 0.36));
   color: var(--sim-accent, #8feaff);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 0 18px rgba(53, 200, 237, 0.28);
 }
 
 .learning-overlay-panel:not(.learning-overlay-panel--peek) .learning-overlay-panel__rail {
@@ -1682,7 +1685,7 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 @media (min-width: 901px) {
   @container scene-stage (min-width: 260px) {
     .scene-overlay-controls-wrap {
-      left: calc(var(--sim-panel-section-gap) + 36px + var(--sim-control-gap));
+      left: calc(var(--sim-panel-section-gap) + var(--sim-learning-rail-width) + var(--sim-control-gap));
     }
   }
 
