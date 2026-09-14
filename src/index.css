@@ -777,6 +777,8 @@ button {
 
 .learning-overlay-panel:not(.learning-overlay-panel--peek) .learning-overlay-panel__rail:focus {
   opacity: 1;
+  pointer-events: auto;
+  z-index: 3;
 }
 
 .learning-overlay-panel__drawer {
@@ -958,6 +960,10 @@ button {
   .learning-overlay-panel__rail-label {
     writing-mode: horizontal-tb;
     transform: none;
+  }
+
+  .learning-overlay-panel--flow .learning-overlay-panel__rail {
+    display: none;
   }
 
   .learning-overlay-panel__drawer,

@@ -149,9 +149,19 @@ test("keyboard focus remains visible on the rail while the drawer opens transien
   await expect(learning).toHaveAttribute("data-drawer-state", "transient");
   await expect(rail).toBeFocused();
   await expect(rail).toHaveCSS("opacity", "1");
+  await expect(drawer).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
   const railBounds = await requireBounds(rail, "Focused learning rail");
   expect(railBounds.width).toBeGreaterThan(0);
   expect(railBounds.height).toBeGreaterThan(0);
+  const focusedRailIsTopmost = await page.evaluate(({ x, y }) => {
+    const railElement = document.querySelector<HTMLElement>(".learning-overlay-panel__rail");
+    const topmostElement = document.elementFromPoint(x, y);
+    return Boolean(railElement && topmostElement && (topmostElement === railElement || railElement.contains(topmostElement)));
+  }, {
+    x: railBounds.x + railBounds.width / 2,
+    y: railBounds.y + railBounds.height / 2,
+  });
+  expect(focusedRailIsTopmost).toBe(true);
 
   await page.keyboard.press("Tab");
   await expect(drawer.getByRole("button", { name: "Task", exact: true })).toBeFocused();
@@ -189,12 +199,22 @@ test("narrow layouts keep the learning surface in flow without horizontal overfl
   await page.goto("/simulator/free/shelf-swing");
 
   const learning = getLearningOverlay(page);
+  const rail = getLearningRail(page);
   const drawer = getLearningDrawer(page);
   await expect(learning).toHaveAttribute("data-drawer-state", "flow");
   await expect(drawer).toBeVisible();
   await expect(drawer).toHaveCSS("position", "static");
+  await expect(rail).toHaveCSS("display", "none");
+  expect(await rail.boundingBox()).toBeNull();
   await expect(drawer.getByRole("button", { name: "Task", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(drawer.getByTestId("learning-overlay-task-view")).toContainText("Free practice");
+
+  const taskButton = drawer.getByRole("button", { name: "Task", exact: true });
+  const feedbackButton = drawer.getByRole("button", { name: "Feedback", exact: true });
+  await taskButton.focus();
+  await expect(taskButton).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(feedbackButton).toBeFocused();
 
   const feedback = await openLearningFeedback(page);
   await expect(feedback).toContainText("Live observation");
