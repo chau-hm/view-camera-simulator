@@ -301,7 +301,6 @@ export const LearningOverlayPanel = ({
                 <span aria-hidden="true" className="material-symbols-outlined">
                   {drawerPinned ? "keep" : "push_pin"}
                 </span>
-                <span>{drawerPinned ? unpinLabel : pinLabel}</span>
               </button>
               <button
                 aria-label={closeLabel}
@@ -313,7 +312,6 @@ export const LearningOverlayPanel = ({
                 <span aria-hidden="true" className="material-symbols-outlined">
                   close
                 </span>
-                <span>{closeLabel}</span>
               </button>
             </div>
           ) : null}

@@ -198,6 +198,9 @@ describe("LearningOverlayPanel", () => {
     openDrawer();
 
     const pin = screen.getByRole("button", { name: "Keep Task and Feedback open" });
+    expect(pin).toHaveAttribute("title", "Keep Task and Feedback open");
+    expect(pin.querySelector(".material-symbols-outlined")).toHaveTextContent("push_pin");
+    expect(pin.querySelectorAll("span:not(.material-symbols-outlined)")).toHaveLength(0);
     fireEvent.click(pin);
     expect(getPanel()).toHaveAttribute("data-drawer-state", "pinned");
     expect(pin).toHaveAttribute("aria-pressed", "true");
@@ -207,9 +210,17 @@ describe("LearningOverlayPanel", () => {
     act(() => vi.advanceTimersByTime(500));
     expect(getPanel()).toHaveAttribute("data-drawer-state", "pinned");
 
-    fireEvent.click(screen.getByRole("button", { name: "Allow Task and Feedback to auto-hide" }));
+    const unpin = screen.getByRole("button", { name: "Allow Task and Feedback to auto-hide" });
+    expect(unpin).toHaveAttribute("title", "Allow Task and Feedback to auto-hide");
+    expect(unpin.querySelector(".material-symbols-outlined")).toHaveTextContent("keep");
+    expect(unpin.querySelectorAll("span:not(.material-symbols-outlined)")).toHaveLength(0);
+    fireEvent.click(unpin);
     expect(getPanel()).toHaveAttribute("data-drawer-state", "transient");
-    fireEvent.click(screen.getByRole("button", { name: "Close Task and Feedback" }));
+    const close = screen.getByRole("button", { name: "Close Task and Feedback" });
+    expect(close).toHaveAttribute("title", "Close Task and Feedback");
+    expect(close.querySelector(".material-symbols-outlined")).toHaveTextContent("close");
+    expect(close.querySelectorAll("span:not(.material-symbols-outlined)")).toHaveLength(0);
+    fireEvent.click(close);
 
     expect(getPanel()).toHaveAttribute("data-drawer-state", "peek");
     expect(getPanel()).toHaveAttribute("data-pinned", "false");
