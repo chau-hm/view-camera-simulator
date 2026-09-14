@@ -11,7 +11,7 @@ import {
   sceneSubjectRegistry,
 } from "../../render/sceneSubjectRegistry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
-import { publicSceneCatalog } from "../../app/publicScenes";
+import { getAvailablePublicSceneEntries } from "../../app/publicScenes";
 import geometry from "../../scenes/shelfSwingGeometry";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
@@ -104,8 +104,8 @@ describe("scene subject registry", () => {
     });
   });
 
-  it("requires every public scene to declare the RTT subject contract", () => {
-    for (const entry of publicSceneCatalog) {
+  it("requires every available public scene to declare the RTT subject contract", () => {
+    for (const { meta: entry } of getAvailablePublicSceneEntries()) {
       expect(isGroundGlassRttScene(entry.id), `public scene ${entry.id} must use RTT`).toBe(true);
       expect(getSceneSubjectRegistration(entry.id), `public scene ${entry.id} needs a subject registration`).toBeDefined();
       expect(getRegisteredSceneSubject(entry.id), `public scene ${entry.id} needs a React subject`).toBeDefined();
@@ -113,6 +113,19 @@ describe("scene subject registry", () => {
       const group = createRegisteredRttSubject(entry.id);
       expect(group, `public scene ${entry.id} needs an RTT subject factory`).not.toBeNull();
       if (group) disposeRegisteredRttSubject(entry.id, group);
+    }
+  });
+
+  it("keeps in-development public roadmap scenes out of the renderer registry", () => {
+    for (const sceneId of [
+      "macro-bellows-extension",
+      "macro-depth-of-field",
+      "macro-oblique-plane",
+      "macro-compound-movements",
+    ]) {
+      expect(isGroundGlassRttScene(sceneId)).toBe(false);
+      expect(getSceneSubjectRegistration(sceneId)).toBeUndefined();
+      expect(getRegisteredSceneSubject(sceneId)).toBeUndefined();
     }
   });
 

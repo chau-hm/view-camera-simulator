@@ -48,6 +48,23 @@ describe("isValidSimulatorRoute", () => {
   });
 
   it.each([
+    "macro-bellows-extension",
+    "macro-depth-of-field",
+    "macro-oblique-plane",
+    "macro-compound-movements",
+  ])("rejects every Macro Photography roadmap route for %s", (sceneId) => {
+    expect(publicEntry(sceneId).availableModes).toEqual([]);
+    expect(validate({ mode: "free", sceneId })).toBe(false);
+    expect(validate({ mode: "guided", sceneId, taskId: "swing-01" })).toBe(false);
+
+    const entry = {
+      ...publicEntry(sceneId),
+      availableModes: ["free"] as const,
+    };
+    expect(validate({ mode: "free", sceneId, entry })).toBe(false);
+  });
+
+  it.each([
     ["shelf-swing", "swing-01"],
     ["table-tilt", "tilt-01"],
   ])("rejects free mode with task %s/%s", (sceneId, taskId) => {

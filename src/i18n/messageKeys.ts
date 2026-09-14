@@ -125,6 +125,42 @@ export const publicSceneMessageKeys = {
       parallax: "scenes.mirrorShift.topics.parallax",
     },
   },
+  macroBellowsExtension: {
+    title: "scenes.macroBellowsExtension.title",
+    description: "scenes.macroBellowsExtension.description",
+    topics: {
+      bellowsExtension: "scenes.macroBellowsExtension.topics.bellowsExtension",
+      magnification: "scenes.macroBellowsExtension.topics.magnification",
+      lifeSizeReproduction: "scenes.macroBellowsExtension.topics.lifeSizeReproduction",
+    },
+  },
+  macroDepthOfField: {
+    title: "scenes.macroDepthOfField.title",
+    description: "scenes.macroDepthOfField.description",
+    topics: {
+      macroDepthOfField: "scenes.macroDepthOfField.topics.macroDepthOfField",
+      aperture: "scenes.macroDepthOfField.topics.aperture",
+      focusDistribution: "scenes.macroDepthOfField.topics.focusDistribution",
+    },
+  },
+  macroObliquePlane: {
+    title: "scenes.macroObliquePlane.title",
+    description: "scenes.macroObliquePlane.description",
+    topics: {
+      frontTilt: "scenes.macroObliquePlane.topics.frontTilt",
+      scheimpflugPrinciple: "scenes.macroObliquePlane.topics.scheimpflugPrinciple",
+      obliqueFocusPlane: "scenes.macroObliquePlane.topics.obliqueFocusPlane",
+    },
+  },
+  macroCompoundMovements: {
+    title: "scenes.macroCompoundMovements.title",
+    description: "scenes.macroCompoundMovements.description",
+    topics: {
+      tiltSwing: "scenes.macroCompoundMovements.topics.tiltSwing",
+      compoundMovements: "scenes.macroCompoundMovements.topics.compoundMovements",
+      macroFocusControl: "scenes.macroCompoundMovements.topics.macroFocusControl",
+    },
+  },
 } as const;
 
 type PublicSceneMessageGroup = (typeof publicSceneMessageKeys)[keyof typeof publicSceneMessageKeys];
@@ -143,4 +179,8 @@ export type PublicSceneTopicKey =
   | TopicValues<typeof publicSceneMessageKeys.tableTilt>
   | TopicValues<typeof publicSceneMessageKeys.shelfSwing>
   | TopicValues<typeof publicSceneMessageKeys.obliqueTabletop>
-  | TopicValues<typeof publicSceneMessageKeys.mirrorShift>;
+  | TopicValues<typeof publicSceneMessageKeys.mirrorShift>
+  | TopicValues<typeof publicSceneMessageKeys.macroBellowsExtension>
+  | TopicValues<typeof publicSceneMessageKeys.macroDepthOfField>
+  | TopicValues<typeof publicSceneMessageKeys.macroObliquePlane>
+  | TopicValues<typeof publicSceneMessageKeys.macroCompoundMovements>;

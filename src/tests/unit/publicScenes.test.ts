@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import {
   getAvailablePublicSceneEntries,
   getGroupedPublicSceneEntries,
+  getPublishedPublicSceneEntries,
   getPublicSceneEntries,
   getPublicSceneEntryById,
   getPublicScenes,
@@ -31,6 +32,12 @@ const validate = (
 
 const shelfEntry = publicSceneCatalog.find((entry) => entry.id === "shelf-swing")!;
 const shelfTask = getTaskById("swing-01")!;
+const macroSceneIds = [
+  "macro-bellows-extension",
+  "macro-depth-of-field",
+  "macro-oblique-plane",
+  "macro-compound-movements",
+] as const;
 
 const expectedGroupedCatalogEntries = (publication: ScenePublicationConfig) =>
   publicSceneGroups.flatMap((group) => {
@@ -79,7 +86,61 @@ describe("public scene catalog integrity", () => {
       ["oblique-architecture", "combined-movements"],
       ["architecture-foreground", "combined-movements"],
       ["interior-corner", "combined-movements"],
+      ["macro-bellows-extension", "macro-photography"],
+      ["macro-depth-of-field", "macro-photography"],
+      ["macro-oblique-plane", "macro-photography"],
+      ["macro-compound-movements", "macro-photography"],
     ]);
+  });
+
+  it("publishes the Macro Photography roadmap in its exact learning order", () => {
+    const catalogMacroEntries = publicSceneCatalog.filter((entry) =>
+      macroSceneIds.includes(entry.id as (typeof macroSceneIds)[number]),
+    );
+
+    expect(publicSceneIds.filter((id) => id.startsWith("macro-"))).toEqual([
+      ...macroSceneIds,
+    ]);
+    expect(catalogMacroEntries.map(({ id }) => id)).toEqual([...macroSceneIds]);
+    expect(catalogMacroEntries.every(({ groupId }) => groupId === "macro-photography")).toBe(true);
+    expect(catalogMacroEntries.every(({ availability }) => availability === "in-development")).toBe(true);
+    expect(catalogMacroEntries.every(({ availableModes }) => availableModes.length === 0)).toBe(true);
+    expect(catalogMacroEntries.every(({ guidedTaskId, guidedTaskIds, guidedLesson, lesson }) =>
+      guidedTaskId === undefined &&
+      guidedTaskIds === undefined &&
+      guidedLesson === undefined &&
+      lesson === undefined,
+    )).toBe(true);
+    expect(macroSceneIds.every((id) => scenePublication[id] === true)).toBe(true);
+  });
+
+  it("shows the Macro Photography group only while its roadmap entries are published", () => {
+    const macroGroup = getGroupedPublicSceneEntries().find(
+      ({ group }) => group.id === "macro-photography",
+    );
+    expect(macroGroup?.entries.map(({ meta }) => meta.id)).toEqual([...macroSceneIds]);
+
+    const disabledPublication = {
+      ...scenePublication,
+      ...Object.fromEntries(macroSceneIds.map((id) => [id, false])),
+    };
+    expect(
+      getGroupedPublicSceneEntries(disabledPublication).some(
+        ({ group }) => group.id === "macro-photography",
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps published roadmap metadata separate from implemented scene APIs", () => {
+    const publishedMacroEntries = getPublishedPublicSceneEntries().filter(({ meta }) =>
+      macroSceneIds.includes(meta.id as (typeof macroSceneIds)[number]),
+    );
+
+    expect(publishedMacroEntries).toHaveLength(macroSceneIds.length);
+    expect(publishedMacroEntries.every(({ scene }) => scene === undefined)).toBe(true);
+    expect(getPublicSceneEntries().some(({ meta }) => macroSceneIds.includes(meta.id as (typeof macroSceneIds)[number]))).toBe(false);
+    expect(getAvailablePublicSceneEntries().some(({ meta }) => macroSceneIds.includes(meta.id as (typeof macroSceneIds)[number]))).toBe(false);
+    expect(getPublicScenes().some((scene) => macroSceneIds.includes(scene.id as (typeof macroSceneIds)[number]))).toBe(false);
   });
 
   it("groups published entries by registry order and omits empty groups", () => {
@@ -139,6 +200,7 @@ describe("public scene catalog integrity", () => {
     expect(coreDisabledGroups.map(({ group }) => group.id)).toEqual([
       "foundations",
       "combined-movements",
+      "macro-photography",
     ]);
     expect(coreDisabledGroups.map(({ group }) => group.id)).not.toContain("core-movements");
     expect(coreDisabledGroups.flatMap(({ entries }) => entries.map(({ meta }) => meta.id))).toEqual([
@@ -164,6 +226,13 @@ describe("public scene catalog integrity", () => {
     const expectedPublishedIds = publicSceneCatalog
       .filter((entry) => isScenePublished(entry.id, disabledPublication))
       .map((entry) => entry.id);
+    const expectedImplementedPublishedIds = publicSceneCatalog
+      .filter(
+        (entry) =>
+          isScenePublished(entry.id, disabledPublication) &&
+          getSceneById(entry.id) !== undefined,
+      )
+      .map((entry) => entry.id);
     const expectedAvailableIds = publicSceneCatalog
       .filter(
         (entry) =>
@@ -172,8 +241,11 @@ describe("public scene catalog integrity", () => {
       )
       .map((entry) => entry.id);
 
-    expect(getPublicSceneEntries(disabledPublication).map(({ meta }) => meta.id)).toEqual(
+    expect(getPublishedPublicSceneEntries(disabledPublication).map(({ meta }) => meta.id)).toEqual(
       expectedPublishedIds,
+    );
+    expect(getPublicSceneEntries(disabledPublication).map(({ meta }) => meta.id)).toEqual(
+      expectedImplementedPublishedIds,
     );
     expect(getAvailablePublicSceneEntries(disabledPublication).map(({ meta }) => meta.id)).toEqual(
       expectedAvailableIds,
@@ -186,6 +258,13 @@ describe("public scene catalog integrity", () => {
     const expectedReenabledPublishedIds = publicSceneCatalog
       .filter((entry) => isScenePublished(entry.id, reenabledPublication))
       .map((entry) => entry.id);
+    const expectedReenabledImplementedIds = publicSceneCatalog
+      .filter(
+        (entry) =>
+          isScenePublished(entry.id, reenabledPublication) &&
+          getSceneById(entry.id) !== undefined,
+      )
+      .map((entry) => entry.id);
     const expectedReenabledAvailableIds = publicSceneCatalog
       .filter(
         (entry) =>
@@ -193,8 +272,11 @@ describe("public scene catalog integrity", () => {
           entry.availability === "available",
       )
       .map((entry) => entry.id);
-    expect(getPublicSceneEntries(reenabledPublication).map(({ meta }) => meta.id)).toEqual(
+    expect(getPublishedPublicSceneEntries(reenabledPublication).map(({ meta }) => meta.id)).toEqual(
       expectedReenabledPublishedIds,
+    );
+    expect(getPublicSceneEntries(reenabledPublication).map(({ meta }) => meta.id)).toEqual(
+      expectedReenabledImplementedIds,
     );
     expect(getAvailablePublicSceneEntries(reenabledPublication).map(({ meta }) => meta.id)).toEqual(
       expectedReenabledAvailableIds,
@@ -504,9 +586,11 @@ describe("public scene catalog integrity", () => {
     ).toBe(true);
   });
 
-  it("places Interior Corner last in the canonical public order", () => {
-    expect(publicSceneCatalog.at(-1)?.id).toBe("interior-corner");
-    expect(publicSceneIds.at(-1)).toBe("interior-corner");
+  it("places the Macro Photography roadmap last in the canonical public order", () => {
+    expect(publicSceneCatalog.slice(-macroSceneIds.length).map(({ id }) => id)).toEqual([
+      ...macroSceneIds,
+    ]);
+    expect(publicSceneIds.slice(-macroSceneIds.length)).toEqual([...macroSceneIds]);
     expect(new Set(publicSceneCatalog.map((entry) => entry.id)).size).toBe(publicSceneCatalog.length);
     expect(new Set(publicSceneIds).size).toBe(publicSceneIds.length);
     expect(publicSceneCatalog.map((entry) => entry.id)).toEqual([...publicSceneIds]);
@@ -515,6 +599,38 @@ describe("public scene catalog integrity", () => {
   it("rejects a missing scene definition", () => {
     expect(validate(publicSceneCatalog, () => undefined).errors).toContain(
       "shelf-swing: scene definition is missing",
+    );
+  });
+
+  it("accepts a missing scene definition only for in-development entries", () => {
+    const entry = publicSceneCatalog.find((candidate) => candidate.id === macroSceneIds[0])!;
+
+    expect(validate([entry], () => undefined)).toEqual({ valid: true, errors: [] });
+  });
+
+  it("rejects in-development entries that claim simulator or lesson behavior", () => {
+    const entry = publicSceneCatalog.find((candidate) => candidate.id === macroSceneIds[0])!;
+    const modeEntry = [{ ...entry, availableModes: ["free"] as const }];
+    const taskEntry = [{ ...entry, guidedTaskId: "future-task" }];
+    const taskIdsEntry = [{ ...entry, guidedTaskIds: [] as const }];
+    const lessonEntry = [
+      {
+        ...entry,
+        lesson: { kind: "anatomy" as const, id: "future-lesson" },
+      },
+    ];
+
+    expect(validate(modeEntry).errors).toContain(
+      `${entry.id}: in-development scenes must not support simulator modes`,
+    );
+    expect(validate(taskEntry).errors).toContain(
+      `${entry.id}: in-development scenes must not claim guided tasks`,
+    );
+    expect(validate(taskIdsEntry).errors).toContain(
+      `${entry.id}: in-development scenes must not claim guided tasks`,
+    );
+    expect(validate(lessonEntry).errors).toContain(
+      `${entry.id}: in-development scenes must not claim lesson metadata`,
     );
   });
 
