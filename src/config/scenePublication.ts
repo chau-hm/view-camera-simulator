@@ -21,6 +21,12 @@ export const scenePublication = {
   "oblique-architecture": true,
   "architecture-foreground": true,
   "interior-corner": true,
+
+  // Macro Photography
+  "macro-bellows-extension": true,
+  "macro-depth-of-field": true,
+  "macro-oblique-plane": true,
+  "macro-compound-movements": true,
 } as const satisfies Record<string, boolean>;
 
 export type ScenePublicationConfig = Readonly<Record<string, boolean>>;

@@ -22,12 +22,24 @@ export const validatePublicSceneCatalog = ({
   const guidedTaskOwners = new Map<string, string>();
 
   entries.forEach((entry) => {
-    if (!resolveScene(entry.id)) {
+    if (entry.availability === "available" && !resolveScene(entry.id)) {
       errors.push(`${entry.id}: scene definition is missing`);
     }
 
     const supportsFree = entry.availableModes.includes("free");
     const supportsGuided = entry.availableModes.includes("guided");
+
+    if (entry.availability === "in-development") {
+      if (entry.availableModes.length > 0) {
+        errors.push(`${entry.id}: in-development scenes must not support simulator modes`);
+      }
+      if (entry.guidedTaskId !== undefined || entry.guidedTaskIds !== undefined) {
+        errors.push(`${entry.id}: in-development scenes must not claim guided tasks`);
+      }
+      if (entry.guidedLesson || entry.lesson) {
+        errors.push(`${entry.id}: in-development scenes must not claim lesson metadata`);
+      }
+    }
 
     if (entry.availability === "available" && !supportsFree) {
       errors.push(`${entry.id}: available scenes must support free mode`);

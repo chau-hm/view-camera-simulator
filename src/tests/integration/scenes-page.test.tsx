@@ -44,6 +44,13 @@ const expectedPublishedGroups = (
     return entries.length > 0 ? [{ group, entries }] : [];
   });
 
+const macroSceneIds = [
+  "macro-bellows-extension",
+  "macro-depth-of-field",
+  "macro-oblique-plane",
+  "macro-compound-movements",
+] as const;
+
 describe("scenes page", () => {
   it("shows published public scene cards in grouped catalog order", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
@@ -382,6 +389,45 @@ describe("scenes page", () => {
     });
   });
 
+  it("renders the four Macro Photography roadmap cards without simulator links", async () => {
+    const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
+    render(<RouterProvider router={memoryRouter} />);
+
+    const groupHeading = await screen.findByRole("heading", {
+      name: "Macro Photography",
+      level: 2,
+    });
+    const section = within(groupHeading.closest("section")!);
+    const macroEntries = macroSceneIds.map((sceneId) =>
+      publicSceneCatalog.find((entry) => entry.id === sceneId)!,
+    );
+
+    expect(section.getAllByRole("article")).toHaveLength(macroSceneIds.length);
+    expect(section.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(
+      macroEntries.map(({ titleKey }) => i18n.t(titleKey)),
+    );
+
+    macroEntries.forEach((entry) => {
+      const card = section.getByRole("heading", {
+        name: i18n.t(entry.titleKey),
+        level: 3,
+      }).closest("article");
+      expect(card).not.toBeNull();
+      const scopedCard = within(card!);
+
+      expect(scopedCard.getByText(i18n.t(entry.descriptionKey))).toBeInTheDocument();
+      entry.topicKeys.forEach((topicKey) => {
+        expect(scopedCard.getByText(i18n.t(topicKey))).toBeInTheDocument();
+      });
+      expect(scopedCard.getByRole("status")).toHaveTextContent("In development");
+      expect(scopedCard.queryByRole("link")).not.toBeInTheDocument();
+      expect(card!.querySelector("img")).toHaveAttribute(
+        "src",
+        `/assets/${entry.thumbnailAsset.replace(/^assets\//, "")}`,
+      );
+    });
+  });
+
   it("keeps in-development scenes non-actionable", () => {
     render(
       <MemoryRouter>
@@ -428,6 +474,19 @@ describe("scenes page", () => {
       expect(card).not.toBeNull();
       return within(card!);
     };
+
+    const macroEntries = macroSceneIds.map((sceneId) =>
+      publicSceneCatalog.find((entry) => entry.id === sceneId)!,
+    );
+    macroEntries.forEach((entry) => {
+      const card = cardFor(i18n.t(entry.titleKey));
+      expect(card.getByText(i18n.t(entry.descriptionKey))).toBeInTheDocument();
+      entry.topicKeys.forEach((topicKey) => {
+        expect(card.getByText(i18n.t(topicKey))).toBeInTheDocument();
+      });
+      expect(card.getByRole("status")).toHaveTextContent("開發中");
+      expect(card.queryByRole("link")).not.toBeInTheDocument();
+    });
 
     if (publishedSceneIds.has("view-camera-anatomy")) {
       expect(cardFor("第 0 課 — 認識大片幅相機").getByRole("link", { name: "開始課程" })).toHaveAttribute(

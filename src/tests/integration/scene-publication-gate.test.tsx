@@ -99,6 +99,22 @@ describe("scene publication gate", () => {
     expect(screen.queryByTestId("simulator-workspace")).not.toBeInTheDocument();
   });
 
+  it.each([
+    "/simulator/free/macro-bellows-extension",
+    "/simulator/free/macro-depth-of-field",
+    "/simulator/free/macro-oblique-plane",
+    "/simulator/free/macro-compound-movements",
+    "/simulator/guided/macro-bellows-extension/future-task",
+    "/simulator/guided/macro-depth-of-field/future-task",
+    "/simulator/guided/macro-oblique-plane/future-task",
+    "/simulator/guided/macro-compound-movements/future-task",
+  ])("redirects non-routable Macro Photography roadmap route %s to Scenes", async (route) => {
+    renderRoute(route);
+
+    await waitFor(() => expect(screen.getByTestId("route-location")).toHaveTextContent("/scenes"));
+    expect(screen.queryByTestId("simulator-workspace")).not.toBeInTheDocument();
+  });
+
   it("keeps an unpublished scene available through the internal registry only", () => {
     expect(getSceneById("shelf-swing")).toBeDefined();
     expect(getPublicSceneEntryById("shelf-swing")).toBeUndefined();

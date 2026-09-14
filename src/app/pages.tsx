@@ -86,10 +86,10 @@ export const ScenesPage = () => {
             </header>
 
             <div className="scenes-grid">
-              {entries.map(({ scene, meta }) => (
+              {entries.map(({ meta }) => (
                 <SceneCard
-                  key={scene.id}
-                  sceneId={scene.id}
+                  key={meta.id}
+                  sceneId={meta.id}
                   title={t(meta.titleKey)}
                   description={t(meta.descriptionKey)}
                   topics={meta.topicKeys.map((topicKey) => t(topicKey))}
