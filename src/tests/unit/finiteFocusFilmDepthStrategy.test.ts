@@ -28,6 +28,25 @@ describe("finite-focus film-depth strategy", () => {
   const lensNormalLocal = vec(0, 0.6, 0.8);
   const imageDistance = imageDistanceMm(focalLengthMm, focusDistanceMm);
 
+  it.each([[900, 180], [450, 225], [300, 300]])(
+    "exposes canonical finite-focus diagnostics for U=%s mm", (U, v) => {
+      const scene = {
+        ...architectureForegroundScene,
+        focusStandardCapability: undefined,
+        finiteFocusStrategy: rearStandardStrategy(),
+      };
+      const result = deriveOpticsState({
+        ...DEFAULT_CAMERA_STATE,
+        focalLengthMm: 150,
+        focusDistanceMm: U,
+      }, scene);
+      expect(result.diagnostics.fallbackApplied).toBe(false);
+      expect(result.diagnostics.focusObjectDistanceMm).toBe(U);
+      expect(result.diagnostics.imageDistanceMm).toBeCloseTo(v, 12);
+      expect(result.filmCenterWorld.z).toBeCloseTo(-v, 12);
+    },
+  );
+
   it("preserves rear-standard Z semantics when the mode is absent", () => {
     const result = calculateFiniteFocusFilmPlane({
       focalLengthMm,

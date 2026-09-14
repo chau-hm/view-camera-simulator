@@ -176,6 +176,7 @@ export const simulatorMessageKeys = {
     scheimpflugReasonInvalidFocusPlane: "simulator.viewport.scheimpflugReasonInvalidFocusPlane",
   },
   geometry: {
+    macroSpecimenTarget: "simulator.geometry.macroSpecimenTarget",
     viewLabel: "simulator.geometry.viewLabel",
     framingLabel: "simulator.geometry.framingLabel",
     side: "simulator.geometry.side",

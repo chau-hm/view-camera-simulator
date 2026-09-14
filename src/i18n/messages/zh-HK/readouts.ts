@@ -2,6 +2,16 @@ import { readoutsMessages as englishReadoutsMessages } from "../en/readouts";
 import type { MessageShape } from "../types";
 
 export const readoutsMessages = {
+  macroFocus: {
+    title: "微距對焦",
+    extension: "皮腔伸長（鏡頭至底片）",
+    magnification: "放大倍率",
+    factor: "皮腔曝光因子",
+    exposure: "曝光補償",
+    stops: "+{{value}} 級",
+    lifeSize: "約等於原物大小（1:1）",
+    note: "數值對應所選焦平面。曝光補償假設使用對稱薄透鏡。",
+  },
   controls: {
     frontRise: "前組上移",
     rearRise: "後組上移",

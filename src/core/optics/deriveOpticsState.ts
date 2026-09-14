@@ -957,8 +957,12 @@ export const deriveOpticsState = (
       isInfinityFocus: false,
       focusStandard: focusFundamentalsFocusing?.standard ?? cameraState.focusStandard,
       requestedFocusStandard: cameraState.focusStandard,
-      focusObjectDistanceMm: focusFundamentalsFocusing?.objectDistanceUMm ?? null,
-      imageDistanceMm: focusFundamentalsFocusing?.imageDistanceVMm ?? null,
+      focusObjectDistanceMm: focusFundamentalsFocusing?.objectDistanceUMm ??
+        (scene.finiteFocusStrategy?.kind === "rear-standard-thin-lens"
+          ? cameraState.focusDistanceMm : null),
+      imageDistanceMm: focusFundamentalsFocusing?.imageDistanceVMm ??
+        (scene.finiteFocusStrategy?.kind === "rear-standard-thin-lens"
+          ? baselineFilm.rawImageDistanceMm : null),
     },
   };
 };

@@ -81,6 +81,8 @@ import {
   lessonZeroGroundGlassSubjectCenterMm,
 } from "../scenes/lessonZeroGroundGlassSubject";
 import { resolveMirrorShiftLighting } from "./mirrorShiftLighting";
+import { MacroSpecimenSubject, createMacroSpecimenGroup, disposeMacroSpecimenGroup } from "./MacroSpecimenSubjectFactory";
+import { MACRO_SPECIMEN, macroSpecimenBoundsMm } from "../scenes/macroSpecimenGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -215,6 +217,17 @@ const {
 } = resolveMirrorShiftLighting();
 
 export const sceneSubjectRegistry = {
+  "macro-bellows-extension": {
+    SceneSubject: MacroSpecimenSubject,
+    createRttGroup: createMacroSpecimenGroup,
+    disposeRttGroup: disposeMacroSpecimenGroup,
+    rttBounds: macroSpecimenBoundsMm,
+    rttLighting: {
+      targetMm: MACRO_SPECIMEN.faceCenterMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
+    },
+  },
   "view-camera-anatomy": {
     SceneSubject: LessonZeroGroundGlassSubject,
     createRttGroup: createLessonZeroGroundGlassGroup,

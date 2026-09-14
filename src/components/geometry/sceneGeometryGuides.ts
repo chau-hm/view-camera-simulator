@@ -204,6 +204,9 @@ const targetMessageKeys: Readonly<Record<string, SceneGeometryTargetMessageKeyMa
     "interior-wall-middle": simulatorMessageKeys.geometry.interiorCornerMiddleWallTarget,
     "interior-wall-far": simulatorMessageKeys.geometry.interiorCornerFarWallTarget,
   },
+  "macro-bellows-extension": {
+    "specimen-coin": simulatorMessageKeys.geometry.macroSpecimenTarget,
+  },
 };
 
 export const getSceneGeometryGuides = (sceneId: string): readonly SceneGeometryGuide[] =>
