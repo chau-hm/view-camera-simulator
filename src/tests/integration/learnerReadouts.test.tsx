@@ -39,28 +39,51 @@ describe("scene-aware learner readouts", () => {
     useAppStore.getState().setActiveTask(null);
   });
 
-  it("keeps Understanding Camera Movements focused on movement relationships", async () => {
-    renderWorkspace("understanding-camera-movements");
+  it("removes Current Settings while keeping Focus Distribution in its learner readout slot", async () => {
+    const { container } = renderWorkspace("table-tilt");
 
-    await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("understanding-camera-movements"));
-    const current = screen.getByTestId("current-settings-readout");
-    expect(current).toHaveTextContent("Movement relationship");
-    expect(current).toHaveTextContent("Neutral viewpoint");
-    expect(current).not.toHaveTextContent("Exposure & focus");
-    expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
-    expect(screen.queryByText("No focus targets")).not.toBeInTheDocument();
-
-    await i18n.changeLanguage("zh-HK");
-    expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("目前設定");
-    expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("移動關係");
-    expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("中立視點");
+    await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("table-tilt"));
+    expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
+    const panel = screen.getByTestId("focus-distribution-panel");
+    expect(panel).toBeInTheDocument();
+    expect(within(panel).getByRole("table", { name: "Focus distribution" })).toBeInTheDocument();
+    expect(panel.parentElement).not.toHaveClass("simulator-primary-info-grid");
+    expect(container.querySelector(".simulator-primary-info-grid")).not.toBeInTheDocument();
   });
 
-  it("localizes Understanding Camera Movements vertical framing for both standards and directions", async () => {
+  it("does not leave an empty learner-readout area when a scene has no focus distribution", async () => {
+    const { container } = renderWorkspace("mirror-shift");
+
+    await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("mirror-shift"));
+    expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
+    expect(container.querySelector(".simulator-primary-info-grid")).not.toBeInTheDocument();
+    expect(screen.getByText("Optical Debug")).toBeInTheDocument();
+  });
+
+  it("keeps Understanding Camera Movements teaching summary in its controls", async () => {
     renderWorkspace("understanding-camera-movements");
 
     await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("understanding-camera-movements"));
-    const current = screen.getByTestId("current-settings-readout");
+    expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
+    const movementControls = screen.getByRole("region", { name: "Camera Movement" });
+    const status = within(movementControls).getByRole("status");
+    expect(status).toHaveTextContent("Neutral viewpoint");
+
+    fireEvent.change(screen.getByRole("slider", { name: "Viewpoint" }), {
+      target: { value: "0.5" },
+    });
+    await waitFor(() => expect(status).toHaveTextContent("Higher viewpoint · 50% toward higher viewpoint"));
+  });
+
+  it("localizes Understanding Camera Movements vertical framing in its teaching controls", async () => {
+    renderWorkspace("understanding-camera-movements");
+
+    await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("understanding-camera-movements"));
+    expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
+    const movementControls = screen.getByRole("region", { name: "Camera Movement" });
+    const status = within(movementControls).getByRole("status");
     const framingSlider = screen.getByRole("slider", { name: "Vertical framing" });
     const standardGroup = screen.getByRole("group", { name: "Vertical framing standard" });
 
@@ -74,9 +97,7 @@ describe("scene-aware learner readouts", () => {
       fireEvent.change(framingSlider, { target: { value } });
 
       await waitFor(() => {
-        expect(current).toHaveTextContent(
-          `${standard} Vertical Framing · ${framing} · ${movement}`,
-        );
+        expect(status).toHaveTextContent(`${standard} standard · ${framing} · ${movement}`);
       });
     };
 
@@ -88,66 +109,57 @@ describe("scene-aware learner readouts", () => {
     await i18n.changeLanguage("zh-HK");
     fireEvent.change(framingSlider, { target: { value: "1" } });
     await waitFor(() => {
-      expect(current).toHaveTextContent("後組垂直構圖 · 上方構圖 · +20.0 mm");
-      expect(current).not.toHaveTextContent("中間構圖");
+      expect(status).toHaveTextContent("後組 · 上方構圖 · +20.0 mm");
+      expect(status).not.toHaveTextContent("中間構圖");
     });
 
     fireEvent.change(framingSlider, { target: { value: "-1" } });
     await waitFor(() => {
-      expect(current).toHaveTextContent("後組垂直構圖 · 下方構圖 · -20.0 mm");
-      expect(current).not.toHaveTextContent("中間構圖");
+      expect(status).toHaveTextContent("後組 · 下方構圖 · -20.0 mm");
+      expect(status).not.toHaveTextContent("中間構圖");
     });
   });
 
-  it("shows Mirror Shift viewpoint and framing values without a focus card", async () => {
+  it("keeps Mirror Shift camera position and front shift controls without Current Settings", async () => {
     renderWorkspace("mirror-shift");
 
     await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("mirror-shift"));
-    const current = screen.getByTestId("current-settings-readout");
-    expect(current).toHaveTextContent("Viewpoint & framing");
-    expect(current).toHaveTextContent("Camera Position: 0.0 mm");
-    expect(current).toHaveTextContent("Front Shift: 0.0 mm");
+    expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
     expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
-    expect(current).not.toHaveTextContent("Rise");
-    expect(current).not.toHaveTextContent("Tilt");
-    expect(current).not.toHaveTextContent("Swing");
-    expect(current).not.toHaveTextContent("Focus");
-    expect(current).not.toHaveTextContent("Aperture");
+    const controls = screen.getByRole("region", { name: "Camera Controls" });
+    const cameraPosition = within(controls).getByRole("slider", { name: "Camera Position" });
+    const frontShift = within(controls).getByRole("slider", { name: "Front Shift" });
+    expect(cameraPosition).toHaveValue("0");
+    expect(frontShift).toHaveValue("0");
 
-    fireEvent.change(screen.getByRole("slider", { name: "Camera Position" }), { target: { value: "100" } });
-    fireEvent.change(screen.getByRole("slider", { name: "Front Shift" }), { target: { value: "-50" } });
+    fireEvent.change(cameraPosition, { target: { value: "100" } });
+    fireEvent.change(frontShift, { target: { value: "-50" } });
     await waitFor(() => {
-      expect(current).toHaveTextContent("Camera Position: 100.0 mm");
-      expect(current).toHaveTextContent("Front Shift: -50.0 mm");
+      expect(cameraPosition).toHaveValue("100");
+      expect(frontShift).toHaveValue("-50");
     });
 
     await i18n.changeLanguage("zh-HK");
-    expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("視點與構圖");
-    expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("相機位置");
-    expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("前組橫移");
+    expect(within(screen.getByRole("region", { name: "相機控制" })).getByRole("slider", { name: "相機位置" })).toHaveValue("100");
+    expect(within(screen.getByRole("region", { name: "相機控制" })).getByRole("slider", { name: "前組橫移" })).toHaveValue("-50");
   });
 
-  it("shows the Front-versus-Rear focus method and fixed aperture", async () => {
+  it("keeps Focus Fundamentals focus-method teaching in Focus controls", async () => {
     renderWorkspace("focus-fundamentals-two-targets");
 
     await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("focus-fundamentals-two-targets"));
-    const current = screen.getByTestId("current-settings-readout");
+    expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
     const targets = screen.getByTestId("focus-distribution-panel");
-    expect(current).toHaveTextContent("Focus method");
-    expect(current).toHaveTextContent("Front standard");
-    expect(current).toHaveTextContent("Focus");
-    expect(current).toHaveTextContent("Aperture: f/11");
-    expect(current.querySelector("dt")).not.toHaveTextContent("Movement");
-    expect(current).not.toHaveTextContent("Rise");
-    expect(current).not.toHaveTextContent("Tilt");
-    expect(current).not.toHaveTextContent("Swing");
+    const controls = screen.getByRole("region", { name: "Camera Controls" });
+    expect(within(controls).getByRole("radio", { name: "Front standard" })).toBeChecked();
+    expect(screen.getByText("Front focusing moves the lens/viewpoint. The film stays fixed.")).toBeInTheDocument();
+    expect(within(controls).getByRole("combobox", { name: "Aperture" })).toBeDisabled();
     expect(targets).toHaveTextContent("Focus distribution");
 
+    fireEvent.click(within(controls).getByRole("radio", { name: "Rear standard" }));
+    await waitFor(() => expect(screen.getByText("Rear focusing moves the film while the lens/viewpoint stays fixed.")).toBeInTheDocument());
+
     await i18n.changeLanguage("zh-HK");
-    const localizedCurrent = screen.getByTestId("current-settings-readout");
-    expect(localizedCurrent).toHaveTextContent("對焦方式");
-    expect(localizedCurrent).toHaveTextContent("前組");
-    expect(localizedCurrent).toHaveTextContent("光圈: f/11");
     expect(screen.getByTestId("focus-distribution-panel")).toHaveTextContent("對焦分佈");
   });
 
@@ -159,31 +171,9 @@ describe("scene-aware learner readouts", () => {
     renderWorkspace(sceneId);
 
     await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe(sceneId));
-    const current = screen.getByTestId("current-settings-readout");
-    expect(current).toHaveTextContent(movementLabel);
-    expect(current).toHaveTextContent("Focus");
-    expect(current).toHaveTextContent("Aperture");
+    expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: movementLabel.replace("Front ", "") })).toBeInTheDocument();
     expect(screen.getByTestId("focus-distribution-panel")).toBeInTheDocument();
-  });
-
-  it("keeps single-movement scenes collapsed to their selected movement", async () => {
-    render(
-      <MemoryRouter>
-        <SimulatorWorkspace
-          mode="free"
-          sceneId="understanding-camera-movements"
-          taskId={null}
-          calibrationEnabled
-          simulateAssetFailure={false}
-        />
-      </MemoryRouter>,
-    );
-
-    await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("understanding-camera-movements"));
-    const current = screen.getByTestId("current-settings-readout");
-    expect(current).toHaveTextContent("Front Rise: 0.0 mm");
-    expect(current).not.toHaveTextContent("Front Tilt: 0.0°");
-    expect(current).not.toHaveTextContent("Front Swing: 0.0°");
   });
 
   it("preserves the Table Tilt patch-coverage metric in the guided readout", async () => {
@@ -200,12 +190,13 @@ describe("scene-aware learner readouts", () => {
     const panel = screen.getByTestId("focus-distribution-panel");
     const targetPosition = (targetId: string) => {
       const target = panel.querySelector<HTMLElement>(`[data-focus-target-id="${targetId}"]`);
-      const row = target?.closest("tr");
-      if (!target || !row) return null;
+      const cell = target?.closest("td");
+      const row = cell?.closest("tr");
+      if (!target || !cell || !row) return null;
       const rows = within(panel).getAllByRole("row");
       return {
         rowIndex: rows.indexOf(row as HTMLElement),
-        columnIndex: Array.from(row.children).indexOf(target),
+        columnIndex: Array.from(row.children).indexOf(cell),
       };
     };
     const projectedPosition = (previewMode: GroundGlassPreviewMode, targetId: string) => {

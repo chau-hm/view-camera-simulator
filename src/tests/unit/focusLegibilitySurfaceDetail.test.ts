@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { createArchitectureRiseGroup } from "../../render/ArchitectureRiseSubjectFactory";
+import {
+  createArchitectureRiseGroup,
+  disposeArchitectureRiseGroup,
+} from "../../render/ArchitectureRiseSubjectFactory";
 import {
   createShelfSwingGroup,
   disposeShelfSwingGroup,
@@ -200,7 +203,7 @@ describe("focus-legibility surface detail", () => {
         THREE.Mesh,
       );
     } finally {
-      architectureGroup.clear();
+      disposeArchitectureRiseGroup(architectureGroup);
       disposeShelfSwingGroup(shelfGroup);
       disposeTableTiltGroup(tableGroup);
     }

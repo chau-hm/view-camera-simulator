@@ -7,6 +7,64 @@ export const scenesMessages = {
     intro: "選擇一個場景，在對焦屏上比較視點、構圖、透視幾何及清晰焦平面控制。",
     noScenesAvailable: "暫時沒有可用場景。",
   },
+  groups: {
+    foundations: {
+      title: "基礎概念",
+      description: "先了解大片幅相機如何運作，再應用個別相機移軸。",
+    },
+    coreMovements: {
+      title: "基本相機移軸",
+      description: "探索主要相機移軸及各自的效果。",
+    },
+    combinedMovements: {
+      title: "複合相機移軸",
+      description: "在較複雜的攝影問題中，結合相機移軸、對焦與景深。",
+    },
+    macroPhotography: {
+      title: "微距攝影",
+      description: "探索微距距離下的近距離對焦、放大率、景深及相機移軸。",
+    },
+  },
+  macroBellowsExtension: {
+    title: "1:1 平面主體",
+    description:
+      "探索近距離對焦時皮腔伸長與放大率如何增加，直到平面主體達至接近 1:1 原大倍率。",
+    topics: {
+      bellowsExtension: "皮腔伸長",
+      magnification: "放大率",
+      lifeSizeReproduction: "1:1 原大倍率",
+    },
+  },
+  macroDepthOfField: {
+    title: "立體微距攝影",
+    description:
+      "觀察高放大率下可用景深如何大幅縮減，以及近、中、遠細節之間的清晰範圍變化。",
+    topics: {
+      macroDepthOfField: "微距景深",
+      aperture: "光圈",
+      focusDistribution: "對焦分佈",
+    },
+  },
+  macroObliquePlane: {
+    title: "傾斜微距平面",
+    description:
+      "探索如何使用前組俯仰，將清晰對焦平面對準與相機斜置的細節主體。",
+    topics: {
+      frontTilt: "前組俯仰",
+      scheimpflugPrinciple: "Scheimpflug 原理",
+      obliqueFocusPlane: "傾斜對焦平面",
+    },
+  },
+  macroCompoundMovements: {
+    title: "複合微距靜物",
+    description:
+      "結合俯仰、搖擺、對焦與光圈，控制同時具有橫向位置與前後深度變化的小型靜物清晰範圍。",
+    topics: {
+      tiltSwing: "俯仰 + 搖擺",
+      compoundMovements: "複合移軸",
+      macroFocusControl: "微距對焦控制",
+    },
+  },
   viewCameraAnatomy: {
     title: "第 0 課 — 認識大片幅相機",
     description: "在探索相機移軸前，先認識概念大片幅相機的主要實體部件。",

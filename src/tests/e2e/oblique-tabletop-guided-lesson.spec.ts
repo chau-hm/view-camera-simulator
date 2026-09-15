@@ -1,16 +1,25 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
+import {
+  expectLearningFeedbackCompleted,
+  getLearningOverlay,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
-
-const completedHeading = (page: Page) =>
-  page.getByRole("heading", { name: "Task completed" });
 
 const expectLessonStage = async (page: Page, step: string, label: string) => {
   const progress = page.getByRole("region", { name: "Guided lesson progress" });
   await expect(progress).toBeVisible();
   await expect(progress).toContainText(step);
   await expect(page.locator('[aria-current="step"]')).toHaveText(new RegExp(label));
+};
+
+const inspectCompletedFeedbackAndReturnToTask = async (page: Page) => {
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 };
 
 const expectGroundGlass = async (page: Page) => {
@@ -81,7 +90,7 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toHaveValue("4740");
   await setRangeDirect(page, "Focus distance", 4540);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expect(page).toHaveURL(
@@ -93,7 +102,7 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
   await setStepRangeInput(page, "Tilt", 3.6);
   await setRangeDirect(page, "Focus distance", 3530);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expect(page).toHaveURL(
@@ -108,7 +117,7 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await setRangeDirect(page, "Tilt", 7.1);
   await setRangeDirect(page, "Swing", 2.1);
   await setRangeDirect(page, "Focus distance", 2440);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expect(page).toHaveURL(
@@ -123,7 +132,7 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
   await setRangeDirect(page, "Focus distance", 2500);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expect(page).toHaveURL(
@@ -143,6 +152,7 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({
     timeout: 20_000,
   });
+  await inspectCompletedFeedbackAndReturnToTask(page);
   await expect(
     page.getByText(/You used Tilt and Swing to orient one three-dimensional focus plane/),
   ).toBeVisible();

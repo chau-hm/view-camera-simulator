@@ -7,7 +7,22 @@ export const simulatorMessages = {
     title: "Feedback",
     liveObservation: "Live observation",
   },
+  learning: {
+    title: "Task and Feedback",
+    viewsLabel: "Task and Feedback views",
+    open: "Open Task and Feedback",
+    close: "Close Task and Feedback",
+    pin: "Keep Task and Feedback open",
+    unpin: "Allow Task and Feedback to auto-hide",
+  },
   controls: {
+    lensTitle: "Lens / Angle of View",
+    lensOptionsLabel: "Lens options",
+    lensCopy:
+      "Same camera position. Changing focal length changes angle of view and framing, not perspective; perspective changes when the camera position changes.",
+    lensWide: "Wide",
+    lensStandard: "Standard",
+    lensOptionLabel: "{{focalLength}} mm — {{label}}",
     movementTitle: "Movement",
     riseLabel: "Rise",
     tiltLabel: "Tilt",
@@ -163,6 +178,7 @@ export const simulatorMessages = {
     scheimpflugReasonInvalidFocusPlane: "The focus plane does not contain the film/lens intersection line.",
   },
   geometry: {
+    macroSpecimenTarget: "Specimen coin",
     viewLabel: "Geometry view",
     framingLabel: "Geometry framing",
     side: "Side",

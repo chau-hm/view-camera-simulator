@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
@@ -82,8 +82,7 @@ describe("simulator header", () => {
     await waitFor(() => {
       expect(document.documentElement.lang).toBe("zh-HK");
       expect(screen.getByRole("combobox", { name: "語言" })).toHaveValue("zh-HK");
-      expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("目前設定");
-      expect(screen.getByTestId("current-settings-readout")).toHaveTextContent("移動關係");
+      expect(within(screen.getByRole("region", { name: "相機移動" })).getByRole("status")).toHaveTextContent("較高視點");
       expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-HK");
     });
 
@@ -116,7 +115,8 @@ describe("simulator header", () => {
     expect(screen.getByRole("checkbox", { name: "Grid" })).toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "Focus assist" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "View overlays" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Expand 2D Geometry" })).toHaveTextContent("2D Geometry");
+    expect(screen.getByRole("button", { name: "Expand 2D Geometry" }).querySelector(".material-symbols-outlined"))
+      .toHaveTextContent("open_in_new");
 
     fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
       target: { value: "zh-HK" },
@@ -131,7 +131,8 @@ describe("simulator header", () => {
       expect(screen.getByRole("checkbox", { name: "網格" })).toBeInTheDocument();
       expect(screen.queryByRole("checkbox", { name: "對焦輔助" })).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: "檢視疊加層" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "展開 2D 幾何圖" })).toHaveTextContent("2D 幾何圖");
+      expect(screen.getByRole("button", { name: "展開 2D 幾何圖" }).querySelector(".material-symbols-outlined"))
+        .toHaveTextContent("open_in_new");
     });
 
     expect(screen.queryByRole("slider", { name: "Viewpoint" })).not.toBeInTheDocument();

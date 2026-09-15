@@ -9,6 +9,7 @@ import shelfSwingGeometry from "../scenes/shelfSwingGeometry";
 import {
   ArchitectureRiseSubject,
   createArchitectureRiseGroup,
+  disposeArchitectureRiseGroup,
 } from "./ArchitectureRiseSubjectFactory";
 import {
   ObliqueArchitectureSubject,
@@ -52,10 +53,6 @@ import {
 } from "../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
 import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTargets";
-import {
-  mirrorShiftGeometry,
-  reflectPointAcrossMirrorPlane,
-} from "../scenes/mirrorShiftGeometry";
 import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../scenes/architectureForegroundGeometry";
 import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
@@ -83,6 +80,9 @@ import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectCenterMm,
 } from "../scenes/lessonZeroGroundGlassSubject";
+import { resolveMirrorShiftLighting } from "./mirrorShiftLighting";
+import { MacroSpecimenSubject, createMacroSpecimenGroup, disposeMacroSpecimenGroup } from "./MacroSpecimenSubjectFactory";
+import { MACRO_SPECIMEN, macroSpecimenBoundsMm } from "../scenes/macroSpecimenGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -100,6 +100,8 @@ export type SceneSubjectRegistration = {
   disposeRttGroup?: (group: THREE.Group) => void;
   /** Optional subject bounds used for RTT clipping, independent of inspection bounds. */
   rttBounds?: Bounds3;
+  /** Optional lighting for the physical inspection subject when RTT is virtualized. */
+  viewportLighting?: SceneSubjectRttLighting;
   rttLighting?: SceneSubjectRttLighting;
   resolveRttLighting?: (options?: SceneSubjectRttOptions) => SceneSubjectRttLighting;
   showReferenceCamera?: boolean;
@@ -209,13 +211,23 @@ const interiorCornerLightingTargetMm = {
   ...interiorCornerGeometry.focusTargets[1].worldPosition,
 } as const;
 
-const mirrorShiftLightingTargetMm = reflectPointAcrossMirrorPlane({
-  x: mirrorShiftGeometry.mirror.center.x,
-  y: mirrorShiftGeometry.mirror.center.y,
-  z: mirrorShiftGeometry.floor.centerZ,
-});
+const {
+  viewport: mirrorShiftViewportLighting,
+  rtt: mirrorShiftRttLighting,
+} = resolveMirrorShiftLighting();
 
 export const sceneSubjectRegistry = {
+  "macro-bellows-extension": {
+    SceneSubject: MacroSpecimenSubject,
+    createRttGroup: createMacroSpecimenGroup,
+    disposeRttGroup: disposeMacroSpecimenGroup,
+    rttBounds: macroSpecimenBoundsMm,
+    rttLighting: {
+      targetMm: MACRO_SPECIMEN.faceCenterMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
+    },
+  },
   "view-camera-anatomy": {
     SceneSubject: LessonZeroGroundGlassSubject,
     createRttGroup: createLessonZeroGroundGlassGroup,
@@ -291,6 +303,7 @@ export const sceneSubjectRegistry = {
   "architecture-rise": {
     SceneSubject: ArchitectureRiseRegisteredSubject,
     createRttGroup: createArchitectureRiseGroup,
+    disposeRttGroup: disposeArchitectureRiseGroup,
     rttLighting: {
       targetMm: architectureLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },
@@ -351,11 +364,8 @@ export const sceneSubjectRegistry = {
     SceneSubject: MirrorShiftSubject,
     createRttGroup: createMirrorShiftRttGroup,
     disposeRttGroup: disposeMirrorShiftGroup,
-    rttLighting: {
-      targetMm: mirrorShiftLightingTargetMm,
-      keyOffsetWorld: { x: -2.5, y: 3.5, z: 2.5 },
-      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
-    },
+    viewportLighting: mirrorShiftViewportLighting,
+    rttLighting: mirrorShiftRttLighting,
   },
   "interior-corner": {
     SceneSubject: InteriorCornerSubject,

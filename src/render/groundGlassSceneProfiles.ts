@@ -19,6 +19,8 @@ import {
   type SceneSubjectRttLighting,
   type SceneSubjectRttOptions,
 } from "./sceneSubjectRegistry";
+import { configureTeachingShadowParticipation } from "./TeachingLighting";
+import { configureMirrorShiftRttShadowParticipation } from "./mirrorShiftShadowParticipation";
 
 export type GroundGlassSceneProfileContext = Readonly<{
   scene: SceneDefinition;
@@ -43,6 +45,7 @@ export type GroundGlassSceneProfile = Readonly<{
   resolveRttLighting: (
     context: GroundGlassSceneProfileContext,
   ) => SceneSubjectRttLighting | undefined;
+  configureRttShadowParticipation: (group: THREE.Group) => void;
   mountSubject: (
     scene: THREE.Scene,
     context: GroundGlassSceneProfileContext,
@@ -59,6 +62,7 @@ type GroundGlassSceneProfileDefinition = Readonly<{
     context: GroundGlassSceneProfileContext,
     options: SceneSubjectRttOptions | undefined,
   ) => MountedGroundGlassSceneSubject | null;
+  configureRttShadowParticipation?: (group: THREE.Group) => void;
   resolveRenderBounds?: (context: GroundGlassSceneProfileContext) => Bounds3;
 }>;
 
@@ -96,6 +100,10 @@ const createProfile = (
       context,
       definition.resolveSubjectOptions?.(context),
     ),
+  configureRttShadowParticipation: (group) => {
+    configureTeachingShadowParticipation(group);
+    definition.configureRttShadowParticipation?.(group);
+  },
   mountSubject: (scene, context) => {
     const options = definition.resolveSubjectOptions?.(context);
     if (definition.mountSubject) {
@@ -140,6 +148,7 @@ const cameraMovementSceneProfile = createProfile({
 });
 
 const mirrorShiftSceneProfile = createProfile({
+  configureRttShadowParticipation: configureMirrorShiftRttShadowParticipation,
   mountSubject: (scene, context, options) => {
     const mounted = mountRegisteredSubject(scene, context, options);
     if (!mounted) return null;

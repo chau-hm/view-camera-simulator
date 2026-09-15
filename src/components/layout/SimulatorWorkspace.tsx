@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getLessonZeroStep,
@@ -26,7 +26,9 @@ import { AppBrand } from "./AppBrand";
 import { LanguageSelector } from "./LanguageSelector";
 import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
+import { MacroFocusReadout } from "../simulator/MacroFocusReadout";
 import { FocusControl } from "../controls/FocusControl";
+import { LensControl } from "../controls/LensControl";
 import { CameraMovementTeachingControls } from "../controls/CameraMovementTeachingControls";
 import { MovementControls } from "../controls/MovementControls";
 import { MovementSelector } from "../controls/MovementSelector";
@@ -34,20 +36,15 @@ import { SingleMovementControl } from "../controls/SingleMovementControl";
 import { ResetControls } from "../controls/ResetControls";
 import { MirrorShiftCameraPositionControl } from "../controls/MirrorShiftCameraPositionControl";
 import { MirrorShiftFrontShiftControl } from "../controls/MirrorShiftFrontShiftControl";
-import { FeedbackPanel } from "../simulator/FeedbackPanel";
 import { GeometryViewport } from "../simulator/GeometryViewport";
 import { GroundGlassViewport } from "../simulator/GroundGlassViewport";
-import {
-  CurrentSettingsReadout,
-} from "../simulator/GroundGlassReadouts";
 import { FocusDistributionPanel, type FocusTargetMetric } from "../simulator/FocusDistributionPanel";
+import { LearningOverlayPanel } from "../simulator/LearningOverlayPanel";
 import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
 import { AnatomyLessonPanel } from "../simulator/AnatomyLessonPanel";
 import { AnatomyControlTeachingPanel } from "../simulator/AnatomyControlTeachingPanel";
-import { TaskPanel } from "../simulator/TaskPanel";
-import { GuidedLessonProgress } from "../simulator/GuidedLessonProgress";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
 import {
   projectSceneFocusTargetsToGroundGlass,
@@ -130,8 +127,6 @@ export const SimulatorWorkspace = ({
   const [anatomyStepIndex, setAnatomyStepIndex] = useState(0);
   const [anatomyShowSmallAperture, setAnatomyShowSmallAperture] = useState(false);
   const [anatomyViewResetNonce, setAnatomyViewResetNonce] = useState(0);
-  const geometryTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const previousExpandedViewportRef = useRef<ExpandedViewport>(null);
   // All registered scenes still available through engine registry
   // const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
@@ -233,17 +228,6 @@ export const SimulatorWorkspace = ({
   }, []);
 
   useEffect(() => {
-    const previousExpandedViewport = previousExpandedViewportRef.current;
-    previousExpandedViewportRef.current = expandedViewport;
-
-    if (expandedViewport !== null) return;
-    if (previousExpandedViewport !== "geometry" || !restoreViewportFocus) return;
-
-    const frame = window.requestAnimationFrame(() => geometryTriggerRef.current?.focus());
-    return () => window.cancelAnimationFrame(frame);
-  }, [expandedViewport, restoreViewportFocus]);
-
-  useEffect(() => {
     if (expandedViewport === null) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -297,11 +281,6 @@ export const SimulatorWorkspace = ({
     guidedLessonContext?.lessonId === "interior-corner" &&
     guidedLessonContext.stage === "observe";
   const interiorCornerGuidedLesson = guidedLessonContext?.lessonId === "interior-corner";
-  const activeSingleMovement =
-    safeScene.movementCapabilities?.selectionMode === "single"
-      ? selectedMovement
-      : null;
-
   const opticsState = selectDerivedOpticsState(
     camera,
     effectiveCameraMovementCalibration,
@@ -448,6 +427,17 @@ export const SimulatorWorkspace = ({
         : null,
     [camera.aperture, mode, opticsState, safeScene.id, task],
   );
+  const learningOverlay = !isAnatomyLesson ? (
+    <LearningOverlayPanel
+      mode={mode}
+      sceneId={safeScene.id}
+      task={task}
+      evaluation={evaluation}
+      guidedLessonContext={guidedLessonContext}
+      freeCompositionEvaluation={interiorCornerRiseEvaluation}
+      freeFocusEvaluation={interiorCornerFocusEvaluation}
+    />
+  ) : null;
   useEffect(() => {
     setCurrentTaskEvaluation(evaluation);
   }, [evaluation, setCurrentTaskEvaluation]);
@@ -513,8 +503,8 @@ export const SimulatorWorkspace = ({
     [camera.aperture, groundGlassPreviewMode, opticsState, safeScene, tableTiltFocusMetric],
   );
   const learnerReadoutPolicy = useMemo(
-    () => resolveLearnerReadoutPolicy(safeScene.id, { hasFocusTargets: focusTargetReadouts.length > 0 }),
-    [focusTargetReadouts.length, safeScene.id],
+    () => resolveLearnerReadoutPolicy({ hasFocusTargets: focusTargetReadouts.length > 0 }),
+    [focusTargetReadouts.length],
   );
   const focusTargetMetric: FocusTargetMetric =
     tableTiltFocusMetric === "point" ? "point" : safeScene.id === "table-tilt" ? "patch" : "focus";
@@ -600,8 +590,13 @@ export const SimulatorWorkspace = ({
             <p role="alert">{t(simulatorMessageKeys.viewport.opticsFallbackPrefix)}: {opticsState.diagnostics.errorMessage}</p>
           )}
 
+          <div className={`simulator-viewport-context${viewportExpanded ? " simulator-viewport-context--expanded" : ""}`}>
           <div className={`simulator-viewport-grid${viewportExpanded ? " simulator-viewport-grid--expanded" : ""}`}>
-            {(!viewportExpanded || sceneExpanded) && <div className={`simulator-card${sceneExpanded ? " simulator-card--expanded" : ""}`}>
+            {(!viewportExpanded || sceneExpanded) && <div
+              key="scene"
+              className={`simulator-card simulator-workspace-grid__scene simulator-workspace-grid__primary${sceneExpanded ? " simulator-card--expanded simulator-workspace-grid__active" : ""}`}
+              data-workspace-slot="scene"
+            >
               <div className="simulator-card-header">
                 <div className="panel-icon" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
@@ -622,11 +617,6 @@ export const SimulatorWorkspace = ({
                 restoreFocusOnCollapse={restoreViewportFocus}
                 onRequestExpand={() => requestViewportExpansion("scene")}
                 onRequestRestore={requestViewportRestore}
-                geometryTriggerRef={geometryTriggerRef}
-                onToggleGeometryPanel={(trigger) => {
-                  geometryTriggerRef.current = trigger;
-                  requestViewportExpansion("geometry");
-                }}
                 cameraPresentation={anatomyPresentation}
                 cameraInspectionTarget={anatomyViewportInspectionTarget}
                 initialViewFocus={isAnatomyLesson ? "camera" : undefined}
@@ -638,10 +628,16 @@ export const SimulatorWorkspace = ({
                 }
                 onSubjectCapacityChange={setViewportSubjectCapacity}
                 showHeader={false}
+                learningOverlay={!groundGlassExpanded && !geometryExpanded ? learningOverlay : null}
               />
             </div>}
 
-            {(!viewportExpanded || groundGlassExpanded) && <div className={`simulator-card${groundGlassExpanded ? " simulator-card--expanded" : ""}`} aria-label={t(simulatorMessageKeys.viewport.groundGlassColumnLabel)}>
+            {(!viewportExpanded || groundGlassExpanded) && <div
+              key="groundGlass"
+              className={`simulator-card simulator-workspace-grid__ground-glass simulator-workspace-grid__primary${groundGlassExpanded ? " simulator-card--expanded simulator-workspace-grid__active" : ""}`}
+              aria-label={t(simulatorMessageKeys.viewport.groundGlassColumnLabel)}
+              data-workspace-slot="ground-glass"
+            >
               <div className="simulator-card-header">
                 <div className="panel-icon panel-icon--muted" aria-hidden="true">
                   <span className="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
@@ -677,92 +673,52 @@ export const SimulatorWorkspace = ({
                 restoreFocusOnCollapse={restoreViewportFocus}
                 onRequestExpand={() => requestViewportExpansion("groundGlass")}
                 onRequestRestore={requestViewportRestore}
+                learningOverlay={groundGlassExpanded ? learningOverlay : null}
               />
             </div>}
 
-            {geometryExpanded && (
-              <div className="simulator-card simulator-card--expanded">
+            {!isAnatomyLesson && (!viewportExpanded || geometryExpanded) && (
+              <div
+                key="geometry"
+                className={`simulator-card simulator-workspace-grid__geometry${geometryExpanded ? " simulator-card--expanded simulator-workspace-grid__active" : ""}`}
+                data-workspace-slot="geometry"
+              >
                 <GeometryViewport
                   opticsState={opticsState}
                   geometryView={camera.geometryView}
                   onGeometryViewChange={setGeometryView}
                   focalLengthMm={camera.focalLengthMm}
-                  scene={scene}
+                  scene={safeScene}
                   riseMm={camera.frontRiseMm}
                   movementSummary={teachingReadout ? `${teachingReadout.label}${teachingReadout.value ? ` · ${teachingReadout.value}` : ""}` : null}
                   expanded={geometryExpanded}
+                  restoreFocusOnCollapse={restoreViewportFocus}
+                  onRequestExpand={() => requestViewportExpansion("geometry")}
                   onRequestRestore={requestViewportRestore}
                 />
               </div>
             )}
+
+            {!viewportExpanded && !isAnatomyLesson && learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? (
+              <div key="focusDistribution" className="simulator-workspace-grid__focus" data-workspace-slot="focus-distribution">
+                <FocusDistributionPanel
+                  sceneId={safeScene.id}
+                  focusTargets={focusTargetReadouts}
+                  metric={focusTargetMetric}
+                  previewMode={groundGlassPreviewMode}
+                  closestTargetId={closestPointTargetId}
+                />
+              </div>
+            ) : null}
+          </div>
+
           </div>
 
           {!viewportExpanded && !isAnatomyLesson && <>
-            {/* Row 1: scene-aware learner readouts */}
-            <div className={`simulator-primary-info-grid${learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? "" : " simulator-primary-info-grid--single"}`}>
-            <CurrentSettingsReadout
-              riseMm={camera.frontRiseMm}
-              tiltDeg={camera.frontTiltDeg}
-              swingDeg={camera.frontSwingDeg}
-              focusDistanceMm={camera.focusDistanceMm}
-              aperture={camera.aperture as number}
-              renderQuality={renderQuality}
-              activeMovement={activeSingleMovement ? { field: activeSingleMovement, value: (() => {
-                switch (activeSingleMovement) {
-                  case "frontRiseMm": return camera.frontRiseMm;
-                  case "frontShiftMm": return camera.frontShiftMm;
-                  case "rearRiseMm": return camera.rearRiseMm;
-                  case "rearShiftMm": return camera.rearShiftMm;
-                  case "frontTiltDeg": return camera.frontTiltDeg;
-                  case "rearTiltDeg": return camera.rearTiltDeg;
-                  case "frontSwingDeg": return camera.frontSwingDeg;
-                  case "rearSwingDeg": return camera.rearSwingDeg;
-                }
-              })() } : null}
-              teachingReadout={teachingReadout}
-              focusStandard={camera.activeSceneId === "focus-fundamentals-two-targets" ? camera.focusStandard : undefined}
-              settingsVariant={learnerReadoutPolicy.settingsVariant}
-              cameraPositionMm={camera.mirrorShiftLessonState?.rigLateralMm}
-              frontShiftMm={camera.frontShiftMm}
-            />
-
-            {learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? (
-              <FocusDistributionPanel
-                sceneId={safeScene.id}
-                focusTargets={focusTargetReadouts}
-                metric={focusTargetMetric}
-                previewMode={groundGlassPreviewMode}
-                closestTargetId={closestPointTargetId}
-              />
-            ) : null}
-            </div>
-
-            {/* Row 2: Task | Feedback (each wrapped in a card shell provided by Workspace) */}
-            <div className="simulator-task-feedback-grid">
-            <div className="simulator-info-card simulator-info-card--task">
-              <h4>{t(simulatorMessageKeys.task.title)}</h4>
-              {guidedLessonContext ? (
-                <GuidedLessonProgress context={guidedLessonContext} evaluation={evaluation} />
-              ) : null}
-              {guidedLessonContext?.stage === "observe" ? null : (
-                <TaskPanel task={task} sceneId={safeScene.id} showTitle={false} />
-              )}
-            </div>
-            <div className="simulator-info-card simulator-info-card--feedback">
-              <h4>{t(simulatorMessageKeys.feedback.title)}</h4>
-              <FeedbackPanel
-                mode={mode}
-                sceneId={safeScene.id}
-                task={task}
-                evaluation={evaluation}
-                freeCompositionEvaluation={interiorCornerRiseEvaluation}
-                freeFocusEvaluation={interiorCornerFocusEvaluation}
-                showTitle={false}
-              />
-            </div>
-            </div>
-
-            {/* Row 3: Optical Debug, full width (component owns its single card shell) */}
+            {safeScene.macroFocusMetricsCapability?.enabled && (
+              <MacroFocusReadout diagnostics={opticsState.diagnostics} focalLengthMm={camera.focalLengthMm} />
+            )}
+            {/* Optical Debug remains in normal flow below the learner readouts. */}
             <div className="simulator-debug-row">
             <OpticalDebugPanel
               sceneId={camera.activeSceneId}
@@ -817,6 +773,12 @@ export const SimulatorWorkspace = ({
               {safeScene.cameraFrontShiftCapability?.enabled ? (
                 <div className="sim-section">
                   <MirrorShiftFrontShiftControl />
+                </div>
+              ) : null}
+
+              {safeScene.focalLengthCapability?.enabled && !calibrationEnabled ? (
+                <div className="sim-section">
+                  <LensControl capability={safeScene.focalLengthCapability} />
                 </div>
               ) : null}
 

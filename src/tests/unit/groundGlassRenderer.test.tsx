@@ -406,15 +406,16 @@ describe("GroundGlassRenderer", () => {
     expect(pFar.vRaw).toBeLessThan(1);
   });
 
-  it("display mapping: raw applies physical inversion; upright uses non-inverted coordinates", () => {
-    // Test A: mapGroundGlassUvToDisplayUv produces expected raw/upright mapping
+  it("display mapping follows the RTT Raw/Upright presentation contract", () => {
+    // The RTT composite displays physical film coordinates directly in Raw;
+    // Upright Assist is the 180-degree display transform.
     const raw = { u: 0.25, v: 0.4 };
     const mappedRaw = mapGroundGlassUvToDisplayUv(raw, "raw");
-    expect(mappedRaw.u).toBeCloseTo(0.75);
-    expect(mappedRaw.v).toBeCloseTo(0.6);
+    expect(mappedRaw.u).toBeCloseTo(0.25);
+    expect(mappedRaw.v).toBeCloseTo(0.4);
     const mappedUpright = mapGroundGlassUvToDisplayUv(raw, "upright");
-    expect(mappedUpright.u).toBeCloseTo(0.25);
-    expect(mappedUpright.v).toBeCloseTo(0.4);
+    expect(mappedUpright.u).toBeCloseTo(0.75);
+    expect(mappedUpright.v).toBeCloseTo(0.6);
 
     // Legacy assertions for backward compatibility using projectWorldPointToGroundGlass
     const cameraState = { ...DEFAULT_CAMERA_STATE, focalLengthMm: 150, focusDistanceMm: 2000 };
@@ -424,21 +425,21 @@ describe("GroundGlassRenderer", () => {
     const target = focusFundamentalsTwoTargets.focusTargets[0].worldPosition;
     const p = projectWorldPointToGroundGlass(target, opticsState.lensCenterWorld, imgDist, CAMERA_CONSTANTS.filmWidthMm, CAMERA_CONSTANTS.filmHeightMm);
 
-    // raw display mapping in this app uses physical inversion (1 - u/v)
+    // Raw display uses the physical film coordinate directly.
     const uRaw = p.uRaw;
     const vRaw = p.vRaw;
-    const displayRawU = 1 - uRaw;
-    const displayRawV = 1 - vRaw;
+    const displayRawU = uRaw;
+    const displayRawV = vRaw;
     expect(displayRawU).toBeGreaterThanOrEqual(0);
     expect(displayRawU).toBeLessThanOrEqual(1);
     expect(displayRawV).toBeGreaterThanOrEqual(0);
     expect(displayRawV).toBeLessThanOrEqual(1);
 
-    // upright mapping is non-inverted (same as uRaw/vRaw)
-    const displayUprightU = uRaw;
-    const displayUprightV = vRaw;
-    expect(displayUprightU).toBeCloseTo(uRaw);
-    expect(displayUprightV).toBeCloseTo(vRaw);
+    // Upright Assist applies the display-only 180-degree transform.
+    const displayUprightU = 1 - uRaw;
+    const displayUprightV = 1 - vRaw;
+    expect(displayUprightU).toBeCloseTo(1 - uRaw);
+    expect(displayUprightV).toBeCloseTo(1 - vRaw);
   });
 
   it("off-frame target returns visible:false rather than clamping", () => {

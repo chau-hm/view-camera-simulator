@@ -12,6 +12,7 @@ import type {
 } from "../types/camera";
 import type {
   CameraMovementField,
+  SceneFocalLengthCapability,
   SceneFocusStandardCapability,
 } from "../types/scene";
 import type { TaskEvaluation } from "../types/task";
@@ -68,6 +69,11 @@ const getFocusStandardCapability = (
   sceneId: string,
 ): SceneFocusStandardCapability | undefined =>
   getSceneById(sceneId)?.focusStandardCapability;
+
+const getFocalLengthCapability = (
+  sceneId: string,
+): SceneFocalLengthCapability | undefined =>
+  getSceneById(sceneId)?.focalLengthCapability;
 
 export const supportsFocusStandard = (sceneId: string): boolean => {
   const capability = getFocusStandardCapability(sceneId);
@@ -471,6 +477,39 @@ const isInfinityResetDisallowed = (sceneId: string): boolean => {
   return scene?.cameraControlPolicy?.infinityReset === false;
 };
 
+/**
+ * A finite-domain scene that disallows the Infinity Reset control is finite-only.
+ * Route entry must enforce that contract instead of inheriting the previous
+ * scene's focus mode.
+ */
+const isFiniteFocusOnlyRoute = (sceneId: string): boolean => {
+  const scene = getSceneById(sceneId);
+  return Boolean(
+    scene?.cameraControlPolicy?.infinityReset === false &&
+      scene.focusDistanceRangeMm !== undefined,
+  );
+};
+
+const resolveFiniteFocusRouteState = (
+  sceneId: string,
+  camera: Pick<CameraState, "focusDistanceMm" | "focalLengthMm">,
+): Partial<Pick<CameraState, "focusDistanceMm" | "focusMode" | "lastFiniteFocusDepthMm">> => {
+  if (!isFiniteFocusOnlyRoute(sceneId)) {
+    return {};
+  }
+
+  const focusDistanceMm = clampFocusDistanceForScene(
+    sceneId,
+    camera.focusDistanceMm,
+    camera.focalLengthMm,
+  );
+  return {
+    focusDistanceMm,
+    focusMode: "finite",
+    lastFiniteFocusDepthMm: focusDistanceMm,
+  };
+};
+
 import type {
   GroundGlassRttChannel,
   GroundGlassRttRuntimeInfo,
@@ -538,6 +577,8 @@ export type AppStore = {
   setRearTilt: (value: number) => void;
   setRearSwing: (value: number) => void;
 
+  /** Set a focal length declared by the active scene's discrete capability. */
+  setFocalLength: (value: number) => void;
   setFocusDistance: (value: number) => void;
   setFocusStandard: (focusStandard: FocusStandard) => void;
   setInfinityFocus: () => void;
@@ -1053,6 +1094,7 @@ export const useAppStore = create<AppStore>((set) => ({
         return {
           camera: {
             ...state.camera,
+            ...resolveFiniteFocusRouteState(sceneId, state.camera),
             mode,
             activeTaskId: taskId ?? null,
             aperture: resolveSceneAperture(
@@ -1220,6 +1262,11 @@ export const useAppStore = create<AppStore>((set) => ({
           activeTaskId: null,
         };
       }
+
+      nextCamera = {
+        ...nextCamera,
+        ...resolveFiniteFocusRouteState(sceneId, nextCamera),
+      };
 
       nextCamera = {
         ...nextCamera,
@@ -1514,6 +1561,25 @@ export const useAppStore = create<AppStore>((set) => ({
                 : state.selectedMovement,
             },
     ),
+
+  setFocalLength: (value) =>
+    set((state) => {
+      if (state.cameraMovementCalibrationSession.active) return {};
+      const capability = getFocalLengthCapability(state.camera.activeSceneId);
+      if (
+        !capability?.enabled ||
+        !Number.isFinite(value) ||
+        !capability.optionsMm.includes(value)
+      ) {
+        return {};
+      }
+      return {
+        camera: {
+          ...state.camera,
+          focalLengthMm: value,
+        },
+      };
+    }),
 
   setFocusDistance: (value) =>
     set((state) => {

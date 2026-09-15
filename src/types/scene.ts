@@ -89,6 +89,17 @@ export type SceneCameraFrontShiftCapability = {
   axis: "x";
 };
 
+export type SceneFocalLengthOptionLabel = "wide" | "standard";
+
+/** Optional discrete focal-length choices exposed by a scene's public controls. */
+export type SceneFocalLengthCapability = {
+  enabled: true;
+  optionsMm: readonly number[];
+  defaultMm: number;
+  /** Semantic labels keep learner-facing wording out of the generic control. */
+  optionLabels?: Readonly<Record<number, SceneFocalLengthOptionLabel>>;
+};
+
 export type SceneFocusStandardCapability = {
   enabled: true;
   defaultStandard: FocusStandard;
@@ -143,6 +154,10 @@ export type SceneDefinition = {
   cameraRigTranslationCapability?: SceneCameraRigTranslationCapability;
   /** Enables a scene-specific horizontal translation of the front standard. */
   cameraFrontShiftCapability?: SceneCameraFrontShiftCapability;
+  /** Optional discrete public focal-length capability. */
+  focalLengthCapability?: SceneFocalLengthCapability;
+  /** Informational conjugate-distance readouts; never task completion criteria. */
+  macroFocusMetricsCapability?: { enabled: true };
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
   movementCapabilities?: SceneMovementCapabilities;
   /** Optional semantic side for the generic camera-inspection body anchor; rear is the default. */

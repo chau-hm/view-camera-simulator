@@ -4,7 +4,13 @@ const commitSha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" 
 const command = process.platform === "win32" ? "npx.cmd" : "npx";
 const child = spawn(
   command,
-  ["playwright", "test", "src/tests/e2e/scene-capacity-benchmark.spec.ts", "--workers=1"],
+  [
+    "playwright",
+    "test",
+    "src/tests/e2e/scene-capacity-benchmark.spec.ts",
+    "--config=playwright.scene-capacity-benchmark.config.ts",
+    "--workers=1",
+  ],
   {
     stdio: "inherit",
     env: {

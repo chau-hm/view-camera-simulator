@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type Ref, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import type { ConceptualCameraPresentation } from "../../render/ConceptualViewCamera";
@@ -33,9 +33,8 @@ type SceneViewportProps = {
   restoreFocusOnCollapse: boolean;
   onRequestExpand: () => void;
   onRequestRestore: () => void;
-  onToggleGeometryPanel?: (trigger: HTMLButtonElement) => void;
-  geometryTriggerRef?: Ref<HTMLButtonElement>;
   showHeader?: boolean;
+  learningOverlay?: ReactNode;
   overlayMenuResetGeneration: number;
   cameraPresentation?: ConceptualCameraPresentation;
   cameraInspectionTarget?: CameraInspectionTarget;
@@ -64,9 +63,8 @@ export const SceneViewport = ({
   restoreFocusOnCollapse,
   onRequestExpand,
   onRequestRestore,
-  onToggleGeometryPanel,
-  geometryTriggerRef,
   showHeader,
+  learningOverlay,
   overlayMenuResetGeneration,
   cameraPresentation,
   cameraInspectionTarget,
@@ -218,22 +216,6 @@ export const SceneViewport = ({
                 ))}
               </div>
             </fieldset>
-            {!suppressOpticalOverlays && onToggleGeometryPanel && (
-              <button
-                ref={geometryTriggerRef}
-                type="button"
-                onClick={(event) => onToggleGeometryPanel(event.currentTarget)}
-                aria-label={t(simulatorMessageKeys.viewport.expandGeometry)}
-                title={t(simulatorMessageKeys.viewport.expandGeometry)}
-                data-viewport-expanded="false"
-                className="btn btn--secondary scene-toolbar__geometry-action"
-              >
-                <span>{t(simulatorMessageKeys.viewport.geometryTitle)}</span>
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  open_in_new
-                </span>
-              </button>
-            )}
           </div>
 
           <label className="scene-toolbar__quality">
@@ -247,7 +229,8 @@ export const SceneViewport = ({
         </div>
       </div>
       <div className={`scene-viewport-shell${expanded ? " scene-viewport-shell--expanded" : ""}`}>
-        <div className={`scene-viewport-host${expanded ? " scene-viewport-host--expanded" : ""}`}>
+        <div className={`scene-viewport-stage${expanded ? " scene-viewport-stage--expanded" : ""}`}>
+          <div className={`scene-viewport-host${expanded ? " scene-viewport-host--expanded" : ""}`}>
           <SceneRenderer
             scene={scene}
             opticsState={opticsState}
@@ -268,6 +251,20 @@ export const SceneViewport = ({
             onSubjectCapacityChange={onSubjectCapacityChange}
           />
 
+          <button
+            ref={expanded ? restoreTriggerRef : expandTriggerRef}
+            type="button"
+            aria-label={expanded ? t(simulatorMessageKeys.viewport.restoreScene) : t(simulatorMessageKeys.viewport.expandScene)}
+            title={expanded ? t(simulatorMessageKeys.viewport.restoreScene) : t(simulatorMessageKeys.viewport.expandScene)}
+            data-viewport-expanded={expanded ? "true" : "false"}
+            className="btn btn--icon btn--viewport-action"
+            onClick={expanded ? onRequestRestore : onRequestExpand}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {expanded ? "close_fullscreen" : "open_in_new"}
+            </span>
+          </button>
+          </div>
           {!suppressOpticalOverlays ? <div className="scene-overlay-controls-wrap">
             <SceneOverlayControls
               resetGeneration={overlayMenuResetGeneration}
@@ -285,20 +282,7 @@ export const SceneViewport = ({
               onToggleScheimpflugConstruction={supportsScheimpflugConstruction ? onToggleScheimpflugConstruction : undefined}
             />
           </div> : null}
-
-          <button
-            ref={expanded ? restoreTriggerRef : expandTriggerRef}
-            type="button"
-            aria-label={expanded ? t(simulatorMessageKeys.viewport.restoreScene) : t(simulatorMessageKeys.viewport.expandScene)}
-            title={expanded ? t(simulatorMessageKeys.viewport.restoreScene) : t(simulatorMessageKeys.viewport.expandScene)}
-            data-viewport-expanded={expanded ? "true" : "false"}
-            className="btn btn--icon btn--viewport-action"
-            onClick={expanded ? onRequestRestore : onRequestExpand}
-          >
-            <span className="material-symbols-outlined" aria-hidden="true">
-              {expanded ? "close_fullscreen" : "open_in_new"}
-            </span>
-          </button>
+          {learningOverlay}
         </div>
 
         {supportsScheimpflugConstruction && requestedScheimpflugConstruction ? (

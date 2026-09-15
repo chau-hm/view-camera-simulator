@@ -2,19 +2,15 @@ import { readoutsMessages as englishReadoutsMessages } from "../en/readouts";
 import type { MessageShape } from "../types";
 
 export const readoutsMessages = {
-  container: {
-    ariaLabel: "學習者讀數",
-  },
-  currentSettings: {
-    title: "目前設定",
-    ariaLabel: "目前設定",
-  },
-  groups: {
-    movement: "相機移軸",
-    movementRelationship: "移動關係",
-    exposureFocus: "曝光與對焦",
-    focusMethod: "對焦方式",
-    viewpointFraming: "視點與構圖",
+  macroFocus: {
+    title: "微距對焦",
+    extension: "皮腔伸長（鏡頭至底片）",
+    magnification: "放大倍率",
+    factor: "皮腔曝光因子",
+    exposure: "曝光補償",
+    stops: "+{{value}} 級",
+    lifeSize: "約等於原物大小（1:1）",
+    note: "數值對應所選焦平面。曝光補償假設使用對稱薄透鏡。",
   },
   controls: {
     frontRise: "前組上移",
@@ -23,25 +19,13 @@ export const readoutsMessages = {
     rearTilt: "後組傾斜",
     frontSwing: "前組擺動",
     rearSwing: "後組擺動",
-    focus: "對焦",
-    aperture: "光圈",
-    cameraPosition: "相機位置",
     frontShift: "前組橫移",
     rearShift: "後組橫移",
-  },
-  focusMethod: {
-    frontStandard: "前組",
-    rearStandard: "後組",
-    movement: "移動",
-    frontRelationship: "鏡頭移動 · 底片固定",
-    rearRelationship: "底片移動 · 鏡頭／視點固定",
   },
   teaching: {
     neutralViewpoint: "中立視點",
     higherViewpoint: "較高視點",
     lowerViewpoint: "較低視點",
-    towardHigherViewpoint: "向較高視點 {{percent}}%",
-    towardLowerViewpoint: "向較低視點 {{percent}}%",
     frontTilt: "前組傾斜",
     rearTilt: "後組傾斜",
     frontRise: "前組上移",
@@ -49,13 +33,6 @@ export const readoutsMessages = {
     frontFall: "前組下移",
     rearFall: "後組下移",
     bodyPitch: "相機機身傾角",
-    frontStandard: "前組",
-    rearStandard: "後組",
-    frontVerticalFraming: "前組垂直構圖",
-    rearVerticalFraming: "後組垂直構圖",
-    upperFraming: "上方構圖",
-    middleFraming: "中間構圖",
-    lowerFraming: "下方構圖",
   },
   focusTargets: {
     title: "對焦目標",
@@ -76,7 +53,8 @@ export const readoutsMessages = {
     upright: "正像",
     orientationAria: "對焦屏方向：{{orientation}}",
     targetAria: "{{target}}：{{percent}} · {{status}}{{closest}}",
-    additionalTargetsAria: "其他對焦目標",
+    unplacedHeading: "目前毛玻璃視野外",
+    unplacedTargetsAria: "目前毛玻璃視野外的對焦目標",
     unplacedTarget: "目標",
     positions: {
       upperLeft: "左上",

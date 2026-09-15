@@ -19,6 +19,7 @@ import {
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
 import { configureTeachingShadowParticipation } from "../../render/TeachingLighting";
+import { configureMirrorShiftRttShadowParticipation } from "../../render/mirrorShiftShadowParticipation";
 
 const toWorldMm = (millimetres: number): number => millimetres * 0.001;
 
@@ -31,6 +32,39 @@ describe("Mirror Shift planar reflection geometry", () => {
     expect(Math.abs(point.z - mirrorShiftMirrorPlane.point.z)).toBe(
       Math.abs(reflected.z - mirrorShiftMirrorPlane.point.z),
     );
+  });
+
+  it("satisfies the plane reflection invariants for a simple x = 0 teaching plane", () => {
+    const plane = {
+      point: { x: 0, y: 0, z: 0 },
+      normal: { x: 1, y: 0, z: 0 },
+    };
+    const point = { x: 100, y: 20, z: -50 };
+    const reflected = reflectPointAcrossMirrorPlane(point, plane);
+
+    expect(reflectPointAcrossMirrorPlane(plane.point, plane)).toEqual(plane.point);
+    expect(reflected).toEqual({ x: -100, y: 20, z: -50 });
+    expect(reflected.y).toBe(point.y);
+    expect(reflected.z).toBe(point.z);
+
+    const signedDistance = point.x - plane.point.x;
+    const reflectedSignedDistance = reflected.x - plane.point.x;
+    expect(reflectedSignedDistance).toBe(-signedDistance);
+    expect(reflectPointAcrossMirrorPlane(reflected, plane)).toEqual(point);
+  });
+
+  it("normalizes a scene-specific plane normal without changing the reflection result", () => {
+    const point = { x: 100, y: 20, z: -50 };
+    const unitNormalReflection = reflectPointAcrossMirrorPlane(point, {
+      point: { x: 0, y: 0, z: 0 },
+      normal: { x: 1, y: 0, z: 0 },
+    });
+    const scaledNormalReflection = reflectPointAcrossMirrorPlane(point, {
+      point: { x: 0, y: 0, z: 0 },
+      normal: { x: 4, y: 0, z: 0 },
+    });
+
+    expect(scaledNormalReflection).toEqual(unitNormalReflection);
   });
 
   it("keeps the plane fixed and derives every reflected prop from its real counterpart", () => {
@@ -203,6 +237,8 @@ describe("Mirror Shift planar reflection geometry", () => {
       expect(group.getObjectByName("mirror-shift-reflected-floor")).toBeInstanceOf(THREE.Mesh);
       expect((group.getObjectByName("mirror-shift-reflected-floor") as THREE.Mesh).receiveShadow).toBe(true);
       expect((group.getObjectByName("mirror-shift-mirror-surface") as THREE.Mesh).receiveShadow).toBe(false);
+      expect((group.getObjectByName("mirror-shift-reflected-tall-marker") as THREE.Mesh).castShadow).toBe(true);
+      expect((group.getObjectByName("mirror-shift-camera-reflection-front-standard") as THREE.Mesh).castShadow).toBe(true);
       expect(group.getObjectByName("mirror-shift-camera-reflection")).toBeInstanceOf(THREE.Group);
 
       mirrorShiftGeometry.props.forEach((prop) => {
@@ -260,6 +296,46 @@ describe("Mirror Shift planar reflection geometry", () => {
         Math.abs(expectedReflectedDetail.z - mirrorShiftMirrorPlane.point.z),
         10,
       );
+    } finally {
+      disposeMirrorShiftGroup(group);
+    }
+  });
+
+  it("keeps the RTT shadow map in the reflected scene domain", () => {
+    const group = createMirrorShiftRttGroup();
+    try {
+      configureTeachingShadowParticipation(group);
+      const realMarker = group.getObjectByName("mirror-shift-real-tall-marker") as THREE.Mesh;
+      const realReceiver = group.getObjectByName(
+        "mirror-shift-real-context-plinth-top",
+      ) as THREE.Mesh;
+      const physicalFloor = group.getObjectByName("mirror-shift-floor") as THREE.Mesh;
+      const reflectedMarker = group.getObjectByName(
+        "mirror-shift-reflected-tall-marker",
+      ) as THREE.Mesh;
+      const reflectedCamera = group.getObjectByName(
+        "mirror-shift-camera-reflection-front-standard",
+      ) as THREE.Mesh;
+      const reflectedFloor = group.getObjectByName(
+        "mirror-shift-reflected-floor",
+      ) as THREE.Mesh;
+      const mirrorSurface = group.getObjectByName(
+        "mirror-shift-mirror-surface",
+      ) as THREE.Mesh;
+
+      expect(realMarker.castShadow).toBe(true);
+      expect(realReceiver.receiveShadow).toBe(true);
+      configureMirrorShiftRttShadowParticipation(group);
+      expect(realMarker.castShadow).toBe(false);
+      expect(realReceiver.receiveShadow).toBe(false);
+      expect(physicalFloor.castShadow).toBe(false);
+      expect(physicalFloor.receiveShadow).toBe(false);
+      expect(reflectedMarker.castShadow).toBe(true);
+      expect(reflectedCamera.castShadow).toBe(true);
+      expect(reflectedFloor.castShadow).toBe(false);
+      expect(reflectedFloor.receiveShadow).toBe(true);
+      expect(mirrorSurface.castShadow).toBe(false);
+      expect(mirrorSurface.receiveShadow).toBe(false);
     } finally {
       disposeMirrorShiftGroup(group);
     }

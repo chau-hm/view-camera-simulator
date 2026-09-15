@@ -1,4 +1,10 @@
 import { expect, test } from "@playwright/test";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  getLearningOverlay,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 
 test("Mirror Shift guided task teaches camera movement followed by opposite Front Shift", async ({ page }) => {
   test.setTimeout(120_000);
@@ -24,29 +30,35 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
   await expect(aperture).toHaveValue("11");
   await expect(aperture).toBeDisabled();
+  const initialFeedback = await openLearningFeedback(page);
   await expect(
-    page.getByRole("heading", {
+    initialFeedback.getByRole("heading", {
       name: "Move the whole camera sideways until its reflection is completely outside the mirror.",
     }),
   ).toBeVisible();
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   const resourceGeneration = await rtt.getAttribute("data-rtt-resource-generation");
   expect(resourceGeneration).toBeTruthy();
 
   await position.fill("2000");
   await expect(position).toHaveValue("2000");
+  const stageFeedback = await openLearningFeedback(page);
   await expect(
-    page.getByRole("heading", {
+    stageFeedback.getByRole("heading", {
       name: "Good—the camera is out of the reflection. Keep it in place and apply opposite Front Shift to restore the mirror framing.",
     }),
   ).toBeVisible();
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   await expect(rtt).toHaveAttribute("data-rtt-resource-generation", resourceGeneration!);
 
   await frontShift.fill("-55");
   await expect(frontShift).toHaveValue("-55");
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await expect(page.getByText("The reflected props still differ from Neutral because the viewpoint changed.")).toBeVisible();
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await expect(feedback).toContainText("The reflected props still differ from Neutral because the viewpoint changed.");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   await expect(rtt).toHaveAttribute("data-rtt-resource-generation", resourceGeneration!);
 
@@ -62,7 +74,9 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
   await expect(position).toHaveValue("0");
   await expect(frontShift).toHaveValue("0");
   await expect(aperture).toHaveValue("11");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
+  const resetFeedback = await openLearningFeedback(page);
+  await expect(resetFeedback.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
   await expect(
     page.getByRole("heading", {
       name: "Move the whole camera sideways until its reflection is completely outside the mirror.",

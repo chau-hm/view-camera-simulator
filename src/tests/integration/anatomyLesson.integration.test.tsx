@@ -36,6 +36,7 @@ describe("Lesson 0 integration", () => {
     renderAnatomyLesson();
 
     expect(await screen.findByRole("heading", { name: "The complete camera" })).toBeInTheDocument();
+    expect(screen.queryByTestId("learning-overlay-panel")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));

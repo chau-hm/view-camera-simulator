@@ -5,6 +5,66 @@ export const scenesMessages = {
       "Choose a scene to compare viewpoint, framing, perspective geometry and plane-of-sharp-focus control on the Ground Glass.",
     noScenesAvailable: "No scenes available.",
   },
+  groups: {
+    foundations: {
+      title: "Foundations",
+      description: "Learn how the view camera works before applying individual movements.",
+    },
+    coreMovements: {
+      title: "Core Movements",
+      description: "Explore the main camera movements and their individual effects.",
+    },
+    combinedMovements: {
+      title: "Combined Movements",
+      description:
+        "Combine movements, focusing, and depth of field in more complex photographic problems.",
+    },
+    macroPhotography: {
+      title: "Macro Photography",
+      description:
+        "Explore close focusing, magnification, depth of field, and camera movements at macro distances.",
+    },
+  },
+  macroBellowsExtension: {
+    title: "1:1 Flat Subject",
+    description:
+      "Explore how close focusing increases bellows extension and magnification as a flat subject approaches life size.",
+    topics: {
+      bellowsExtension: "Bellows Extension",
+      magnification: "Magnification",
+      lifeSizeReproduction: "1:1 Reproduction",
+    },
+  },
+  macroDepthOfField: {
+    title: "Three-Dimensional Macro",
+    description:
+      "See how usable depth of field becomes extremely shallow at high magnification across a subject with near, middle, and far detail.",
+    topics: {
+      macroDepthOfField: "Macro Depth of Field",
+      aperture: "Aperture",
+      focusDistribution: "Focus Distribution",
+    },
+  },
+  macroObliquePlane: {
+    title: "Oblique Macro Plane",
+    description:
+      "Discover how front tilt can align the plane of sharp focus with a detailed subject positioned obliquely to the camera.",
+    topics: {
+      frontTilt: "Front Tilt",
+      scheimpflugPrinciple: "Scheimpflug Principle",
+      obliqueFocusPlane: "Oblique Focus Plane",
+    },
+  },
+  macroCompoundMovements: {
+    title: "Compound Macro Still Life",
+    description:
+      "Combine tilt, swing, focusing, and aperture to control sharpness across a small still life extending both laterally and in depth.",
+    topics: {
+      tiltSwing: "Tilt + Swing",
+      compoundMovements: "Compound Movements",
+      macroFocusControl: "Macro Focus Control",
+    },
+  },
   viewCameraAnatomy: {
     title: "Lesson 0 — Meet the View Camera",
     description:

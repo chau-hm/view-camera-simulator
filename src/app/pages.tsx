@@ -10,7 +10,7 @@ import {
   isInteriorCornerGuidedStageEntryRecoverable,
 } from "../scenes/interiorCornerGuidedLesson";
 import { useAppStore } from "../state/appStore";
-import { getPublicSceneEntries, getPublicSceneEntryById } from "./publicScenes";
+import { getGroupedPublicSceneEntries, getPublicSceneEntryById } from "./publicScenes";
 import { isValidSimulatorRoute } from "./simulatorRouteValidation";
 import type { SimulatorMode } from "../types/camera";
 
@@ -61,7 +61,7 @@ export const FaqPage = () => {
 
 export const ScenesPage = () => {
   const { t } = useTranslation();
-  const entries = getPublicSceneEntries();
+  const groups = getGroupedPublicSceneEntries();
 
   return (
     <AppShell title={t("scenes.page.title")} useSiteShell siteShellClassName="site-shell--scenes">
@@ -69,26 +69,42 @@ export const ScenesPage = () => {
 
       <DesktopExperienceNotice />
 
-      <div className="scenes-grid">
-        {entries.length === 0 ? (
-          <div className="content-note">{t("scenes.page.noScenesAvailable")}</div>
-        ) : (
-          entries.map(({ scene, meta }) => (
-            <SceneCard
-              key={scene.id}
-              sceneId={scene.id}
-              title={t(meta.titleKey)}
-              description={t(meta.descriptionKey)}
-              topics={meta.topicKeys.map((topicKey) => t(topicKey))}
-              availability={meta.availability}
-              thumbnailAsset={meta.thumbnailAsset}
-              guidedTaskId={meta.guidedTaskId}
-              guidedLesson={Boolean(meta.guidedLesson)}
-              lesson={meta.lesson?.kind}
-            />
-          ))
-        )}
-      </div>
+      {groups.length === 0 ? (
+        <div className="content-note">{t("scenes.page.noScenesAvailable")}</div>
+      ) : (
+        groups.map(({ group, entries }) => (
+          <section
+            key={group.id}
+            className="scenes-group"
+            aria-labelledby={`scenes-group-${group.id}`}
+          >
+            <header className="scenes-group-header">
+              <h2 id={`scenes-group-${group.id}`} className="scenes-group-title">
+                {t(group.titleKey)}
+              </h2>
+              <p className="scenes-group-description">{t(group.descriptionKey)}</p>
+            </header>
+
+            <div className="scenes-grid">
+              {entries.map(({ meta }) => (
+                <SceneCard
+                  key={meta.id}
+                  sceneId={meta.id}
+                  title={t(meta.titleKey)}
+                  description={t(meta.descriptionKey)}
+                  topics={meta.topicKeys.map((topicKey) => t(topicKey))}
+                  availability={meta.availability}
+                  thumbnailAsset={meta.thumbnailAsset}
+                  guidedTaskId={meta.guidedTaskId}
+                  guidedLesson={Boolean(meta.guidedLesson)}
+                  lesson={meta.lesson?.kind}
+                  headingLevel={3}
+                />
+              ))}
+            </div>
+          </section>
+        ))
+      )}
     </AppShell>
   );
 };

@@ -1,10 +1,14 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
 import { readFocusDistributionScores } from "./helpers/focusDistribution";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  getLearningOverlay,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
-
-const completedHeading = (page: Page) => page.getByRole("heading", { name: "Task completed" });
 
 const assertFiniteGroundGlass = async (page: Page) => {
   const rtt = page.getByTestId("ground-glass-rtt");
@@ -31,6 +35,13 @@ const expectLessonStage = async (page: Page, step: string, label: string) => {
   await expect(progress).toBeVisible();
   await expect(progress).toContainText(step);
   await expect(page.locator('[aria-current="step"]')).toHaveText(new RegExp(label));
+};
+
+const inspectCompletedFeedbackAndReturnToTask = async (page: Page) => {
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 };
 
 test("Architecture + Foreground completes its five-stage Guided Lesson from the Scenes page", async ({ page }) => {
@@ -79,7 +90,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await setStepRangeInput(page, "Rise", 20);
-  await expect(completedHeading(page)).toBeVisible();
+  await inspectCompletedFeedbackAndReturnToTask(page);
   await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
   await page.getByRole("link", { name: "Continue" }).click();
 
@@ -95,7 +106,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
   await setStepRangeInput(page, "Tilt", 2);
   await setRangeDirect(page, "Focus distance", 6830);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
   await page.getByRole("link", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/architecture-foreground\/architecture-foreground-dof-01\?lesson=1$/);
@@ -121,7 +132,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
 
   await assertFiniteGroundGlass(page);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("32");
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
   await page.getByRole("link", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/architecture-foreground\/architecture-foreground-compound-01\?lesson=1$/);
@@ -132,6 +143,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await expect(page.getByLabel("Focus distance")).toHaveValue("9490");
   await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
   await expect(page.getByText("Lesson complete", { exact: true })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
   await assertFiniteGroundGlass(page);
 
   // Restart remains on the lesson stage and restores the compound task's neutral state.
@@ -149,6 +161,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await setStepRangeInput(page, "Tilt", 2);
   await setRangeDirect(page, "Focus distance", 6830);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("32");
+  await inspectCompletedFeedbackAndReturnToTask(page);
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(/You corrected the framing with Rise/)).toBeVisible();
   await expect(page.getByRole("link", { name: "Back to Scenes" })).toBeVisible();
@@ -185,5 +198,5 @@ test("Architecture + Foreground lesson entry resets after Free Practice and dire
   await expect(page.getByRole("slider", { name: "Rise" })).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("32");
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 });

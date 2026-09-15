@@ -9,6 +9,7 @@ import {
   resolveConceptualAnatomyElementState,
   resolveConceptualAnatomyPartState,
   resolveConceptualSupportBeam,
+  resolveGenericConceptualSupportRail,
 } from "../../render/ConceptualViewCamera";
 import {
   resolveFrontStandardRenderTransform,
@@ -466,7 +467,7 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     },
   );
 
-  it("keeps the Lesson 0 support datum fixed while selectable focus moves a standard", () => {
+  it("keeps the front support datum fixed and contains the canonical rear carriage while focusing", () => {
     const neutralOptics = deriveOpticsState(
       anatomyCameraFor({ focusStandard: "front", focusDistanceMm: 2000 }),
       viewCameraAnatomyScene,
@@ -487,14 +488,37 @@ describe("Conceptual View Camera v2 static anatomy", () => {
       const movedSupport = cameraSupportFor(
         renderConceptualViewCamera({ opticsState: movedOptics }),
       );
-      expect(movedSupport.rail.props.position).toEqual(neutralSupport.rail.props.position);
+      const rearCenter = movedOptics.cameraBodyLocalGeometry.rearStandardFrameLocal.centerWorld;
+      const expectedRail = resolveGenericConceptualSupportRail(rearCenter);
+      const expectedBeam = resolveConceptualSupportBeam(expectedRail, movedOptics.cameraRigTransform);
+      expect(movedSupport.rail.props.position).toEqual(expectedBeam.position);
       expectQuaternionEqual(
         movedSupport.rail.props.quaternion,
         neutralSupport.rail.props.quaternion as Quaternion,
       );
-      expect(movedSupport.frontMount.props.position).toEqual(neutralSupport.frontMount.props.position);
-      expect(movedSupport.rearMount.props.position).toEqual(neutralSupport.rearMount.props.position);
+      movedSupport.frontMount.props.position!.forEach((value, axis) => {
+        expect(value).toBeCloseTo(neutralSupport.frontMount.props.position![axis], 12);
+      });
+      expect(movedSupport.rearMount.props.position![2]).toBeCloseTo(rearCenter.z * WORLD_SCALE, 12);
     }
+  });
+
+  it.each([180, 225, 300])("renders the rear mount at the supplied canonical %s mm extension", (distance) => {
+    const optics = deriveOpticsState(anatomyCameraFor({}), viewCameraAnatomyScene);
+    // Supply canonical frames directly: this tests render plumbing, not thin-lens math.
+    const rear = { x: 0, y: 0, z: -distance };
+    const supplied = {
+      ...optics,
+      rearStandardFrame: { ...optics.rearStandardFrame, centerWorld: rear },
+      cameraBodyLocalGeometry: {
+        ...optics.cameraBodyLocalGeometry,
+        rearStandardFrameLocal: { ...optics.cameraBodyLocalGeometry.rearStandardFrameLocal, centerWorld: rear },
+      },
+    };
+    const support = cameraSupportFor(renderConceptualViewCamera({ opticsState: supplied }));
+    expect(support.rearMount.props.position![2]).toBeCloseTo(-distance * WORLD_SCALE, 12);
+    expect(support.frontMount.props.position![2]).toBeCloseTo(0, 12);
+    expect(support.frontMount.props.position![2] - support.rearMount.props.position![2]).toBeCloseTo(distance * WORLD_SCALE, 12);
   });
 
   it("applies whole-camera rig translation to the fixed support datum", () => {

@@ -116,6 +116,13 @@ describe("Ground Glass scene profiles", () => {
     expect(mounted?.update).toBeTypeOf("function");
 
     const group = mounted!.group;
+    profile.configureRttShadowParticipation(group);
+    expect(
+      (group.getObjectByName("mirror-shift-real-tall-marker") as THREE.Mesh).castShadow,
+    ).toBe(false);
+    expect(
+      (group.getObjectByName("mirror-shift-reflected-floor") as THREE.Mesh).receiveShadow,
+    ).toBe(true);
     const cameraReflection = group.getObjectByName(
       "mirror-shift-camera-reflection",
     )!;

@@ -1,16 +1,26 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type Page } from "@playwright/test";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  getLearningOverlay,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
-
-const completedHeading = (page: Page) =>
-  page.getByRole("heading", { name: "Task completed" });
 
 const expectLessonStage = async (page: Page, step: string, label: string) => {
   const progress = page.getByRole("region", { name: "Guided lesson progress" });
   await expect(progress).toBeVisible();
   await expect(progress).toContainText(step);
   await expect(page.locator('[aria-current="step"]')).toHaveText(new RegExp(label));
+};
+
+const inspectCompletedFeedbackAndReturnToTask = async (page: Page) => {
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 };
 
 const expectGroundGlassMounted = async (page: Page) => {
@@ -82,7 +92,7 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
   await setStepRangeInput(page, "Rise", 33);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expect(page).toHaveURL(
@@ -97,7 +107,7 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
   await setStepRangeInput(page, "Swing", 3.6);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expect(page).toHaveURL(
@@ -110,12 +120,12 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   await expect(page.getByLabel("Focus distance")).toHaveValue("8000");
   await expect(page.getByLabel("Focus distance")).toBeEnabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
-  await expect(completedHeading(page)).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
   // Focus is still changed through the rendered public range input. The
   // shared helper dispatches the native input event once instead of sending
   // thousands of slow key events through the WebGL render loop.
   await setRangeDirect(page, "Focus distance", 38140);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expect(page).toHaveURL(
@@ -134,7 +144,10 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({
     timeout: 20_000,
   });
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
@@ -149,7 +162,7 @@ test("Interior Corner keeps the solved focus state when returning to Swing", asy
   await page.getByRole("link", { name: "Continue" }).click();
   await expectLessonStage(page, "Step 2 of 5", "Compose");
   await setStepRangeInput(page, "Rise", 33);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expectLessonStage(page, "Step 3 of 5", "Front Swing");
@@ -157,12 +170,12 @@ test("Interior Corner keeps the solved focus state when returning to Swing", asy
   // this backward-navigation regression so the WebGL render loop does not
   // spend several seconds processing each intermediate slider keypress.
   await setRangeDirect(page, "Swing", 3.6);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expectLessonStage(page, "Step 4 of 5", "Refine Focus");
   await setRangeDirect(page, "Focus distance", 38140);
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expectLessonStage(page, "Step 5 of 5", "Aperture");
@@ -183,7 +196,7 @@ test("Interior Corner keeps the solved focus state when returning to Swing", asy
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
   await expect(page.getByLabel("Focus distance")).toHaveValue("38140");
   await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
   await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
 
   await page.getByRole("link", { name: "Previous" }).click();
@@ -199,13 +212,13 @@ test("Interior Corner keeps the solved focus state when returning to Swing", asy
   await expect(page.getByRole("slider", { name: "Swing" })).toBeEnabled();
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
   await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expectLessonStage(page, "Step 4 of 5", "Refine Focus");
   await expect(page.getByLabel("Focus distance")).toHaveValue("38140");
-  await expect(completedHeading(page)).toBeVisible({ timeout: 20_000 });
+  await inspectCompletedFeedbackAndReturnToTask(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expectLessonStage(page, "Step 5 of 5", "Aperture");

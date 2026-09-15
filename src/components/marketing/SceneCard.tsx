@@ -13,6 +13,7 @@ type SceneCardProps = {
   guidedTaskId?: string;
   guidedLesson?: boolean;
   lesson?: "anatomy";
+  headingLevel?: 2 | 3;
 };
 
 export const SceneCard = ({
@@ -25,8 +26,10 @@ export const SceneCard = ({
   guidedTaskId,
   guidedLesson = false,
   lesson,
+  headingLevel = 2,
 }: SceneCardProps) => {
   const { t } = useTranslation();
+  const Heading = headingLevel === 3 ? "h3" : "h2";
 
   return (
     <article className="scene-feature-card">
@@ -44,7 +47,7 @@ export const SceneCard = ({
       </div>
 
       <div className="scene-meta">
-        <h2>{title}</h2>
+        <Heading>{title}</Heading>
         <p>{description}</p>
         <div className="topic-pills" aria-hidden>
           {topics.map((topic) => (

@@ -10,7 +10,22 @@ export const simulatorMessages = {
     title: "回饋",
     liveObservation: "即時觀察",
   },
+  learning: {
+    title: "任務及回饋",
+    viewsLabel: "任務及回饋檢視",
+    open: "開啟任務及回饋",
+    close: "關閉任務及回饋",
+    pin: "保持任務及回饋開啟",
+    unpin: "允許任務及回饋自動隱藏",
+  },
   controls: {
+    lensTitle: "鏡頭／視角",
+    lensOptionsLabel: "鏡頭選項",
+    lensCopy:
+      "相機位置不變。改變焦距會改變視角及構圖，不會改變透視；透視會在相機位置改變時改變。",
+    lensWide: "廣角",
+    lensStandard: "標準",
+    lensOptionLabel: "{{focalLength}} mm — {{label}}",
     movementTitle: "相機移軸",
     riseLabel: "上移",
     tiltLabel: "傾斜",
@@ -166,6 +181,7 @@ export const simulatorMessages = {
     scheimpflugReasonInvalidFocusPlane: "清晰焦平面不包含底片／鏡頭交線。",
   },
   geometry: {
+    macroSpecimenTarget: "標本硬幣",
     viewLabel: "幾何圖檢視",
     framingLabel: "幾何圖取景",
     side: "側面",

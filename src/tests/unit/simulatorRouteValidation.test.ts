@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { getPublicSceneEntryById, type PublicSceneEntry } from "../../app/publicScenes";
+import { publicSceneCatalog, type PublicSceneEntry } from "../../app/publicScenes";
 import { isValidSimulatorRoute } from "../../app/simulatorRouteValidation";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import type { SimulatorMode } from "../../types/camera";
 import type { TaskDefinition } from "../../types/task";
 
 const publicEntry = (sceneId: string): PublicSceneEntry => {
-  const entry = getPublicSceneEntryById(sceneId);
+  const entry = publicSceneCatalog.find((candidate) => candidate.id === sceneId);
   if (!entry) {
     throw new Error(`Missing public scene entry: ${sceneId}`);
   }
@@ -43,8 +43,24 @@ const validate = ({
   });
 
 describe("isValidSimulatorRoute", () => {
-  it.each(["shelf-swing", "table-tilt", "oblique-architecture"])("accepts free mode without a task for %s", (sceneId) => {
+  it.each(["shelf-swing", "table-tilt", "oblique-architecture", "macro-bellows-extension"])("accepts free mode without a task for %s", (sceneId) => {
     expect(validate({ mode: "free", sceneId })).toBe(true);
+  });
+
+  it.each([
+    "macro-depth-of-field",
+    "macro-oblique-plane",
+    "macro-compound-movements",
+  ])("rejects every Macro Photography roadmap route for %s", (sceneId) => {
+    expect(publicEntry(sceneId).availableModes).toEqual([]);
+    expect(validate({ mode: "free", sceneId })).toBe(false);
+    expect(validate({ mode: "guided", sceneId, taskId: "swing-01" })).toBe(false);
+
+    const entry = {
+      ...publicEntry(sceneId),
+      availableModes: ["free"] as const,
+    };
+    expect(validate({ mode: "free", sceneId, entry })).toBe(false);
   });
 
   it.each([

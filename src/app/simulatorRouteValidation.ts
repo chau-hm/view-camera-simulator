@@ -17,6 +17,10 @@ export const isValidSimulatorRoute = ({
   publicEntry,
   task,
 }: SimulatorRouteValidationInput): boolean => {
+  if (publicEntry.availability !== "available") {
+    return false;
+  }
+
   if (!publicEntry.availableModes.includes(mode)) {
     return false;
   }

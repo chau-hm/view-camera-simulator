@@ -20,9 +20,50 @@
   --sim-control-group-gap: 16px; /* spacing between distinct control groups */
   --sim-panel-section-gap: 12px; /* spacing between major rows or controls and viewport */
   --sim-control-height: 32px; /* standard button/select height */
+  --sim-learning-rail-width: 44px;
+  --sim-learning-rail-min-height: 136px;
 
   color: var(--text);
   background: var(--app-bg);
+}
+
+.macro-focus-readout {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.macro-focus-readout h3,
+.macro-focus-readout p,
+.macro-focus-readout dl {
+  margin: 0;
+}
+
+.macro-focus-readout h3 {
+  font-size: 16px;
+}
+
+.macro-focus-readout dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 8px 16px;
+}
+
+.macro-focus-readout dt {
+  font-size: 12px;
+}
+
+.macro-focus-readout dd {
+  margin: 2px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.simulator-shell .macro-focus-readout dt,
+.simulator-shell .macro-focus-readout p {
+  color: var(--sim-text-muted);
 }
 
 * {
@@ -77,7 +118,7 @@ button {
   padding: 16px;
 }
 
-/* Main owns vertical scrolling and contains viewport grid + info grid */
+/* Main owns vertical scrolling and contains viewport grid + learner readouts */
 .simulator-main {
   min-width: 0;
   min-height: 0;
@@ -134,10 +175,38 @@ button {
 
 .simulator-viewport-grid {
   display: grid;
- grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "scene groundglass"
+    "geometry focus";
   gap: 16px;
-  align-items: stretch;
+  align-items: start;
   min-width: 0;
+}
+
+.simulator-workspace-grid__scene { grid-area: scene; }
+.simulator-workspace-grid__ground-glass { grid-area: groundglass; }
+.simulator-workspace-grid__geometry { grid-area: geometry; }
+.simulator-workspace-grid__focus { grid-area: focus; min-width: 0; }
+.simulator-workspace-grid__active { grid-area: active; }
+
+.simulator-viewport-grid > .simulator-workspace-grid__primary {
+  align-self: stretch;
+}
+
+.simulator-viewport-context {
+  position: relative;
+  min-width: 0;
+}
+
+.simulator-viewport-context--expanded {
+  height: 100%;
+  min-height: 0;
+}
+
+.simulator-viewport-context--expanded > .simulator-viewport-grid {
+  height: 100%;
+  min-height: 0;
 }
 
 .simulator-viewport-grid--expanded {
@@ -145,17 +214,29 @@ button {
   width: 100%;
   min-height: 0;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "active";
+  align-items: stretch;
 }
 
-/* Make the two viewport cards match height and layout */
+/* Keep workspace cards as column layouts while allowing secondary cards to size naturally. */
 .simulator-viewport-grid > .simulator-card {
-  height: 100%;
-  min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.simulator-viewport-grid > .simulator-card > section {
+.simulator-viewport-grid > .simulator-workspace-grid__primary > section {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.simulator-viewport-grid--expanded > .simulator-card {
+  height: 100%;
+  min-height: 0;
+}
+
+.simulator-viewport-grid--expanded > .simulator-card > section {
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -223,27 +304,6 @@ button {
   font-weight: 700;
 }
 
-/* primary info row: current settings + focus targets */
-.simulator-primary-info-grid {
- display: grid;
- grid-template-columns: repeat(2, minmax(0, 1fr));
- gap: 16px;
- align-items: start;
-}
-
-.simulator-primary-info-grid--single {
- grid-template-columns: minmax(0, 1fr);
-}
-
-/* task + feedback grid: two equal columns */
-.simulator-task-feedback-grid {
- grid-column: 1 / -1;
- display: grid;
- grid-template-columns: 1fr 1fr;
- gap: 16px;
- align-items: start;
-}
-
 /* debug row full width */
 .simulator-debug-row {
  grid-column: 1 / -1;
@@ -252,22 +312,11 @@ button {
 
 .simulator-debug-row > * { width: 100%; }
 
-@media (max-width: 900px) {
- .simulator-primary-info-grid,
- .simulator-task-feedback-grid {
-   grid-template-columns: 1fr;
- }
-}
-
 /* Readout card modifiers */
-.simulator-info-card--settings {}
-.simulator-info-card--focus-distribution {}
+.simulator-info-card--focus-distribution {
+ container-type: inline-size;
+}
 .simulator-info-card--debug {}
-
-/* Current settings */
-.current-settings-groups { display: grid; gap: 8px; font-size: 13px; }
-.current-settings-group dt { font-weight: 600; }
-.current-settings-row { line-height: 1.2; }
 
 /* Compact focus distribution */
 .focus-distribution-panel__header {
@@ -297,13 +346,13 @@ button {
  width: calc(100% + 6px);
  margin: -3px;
  table-layout: fixed;
- border-spacing: 3px;
+ border-spacing: 2px;
 }
 
 .focus-distribution-cell {
- height: 44px;
+ height: 40px;
  min-width: 0;
- padding: 5px 4px;
+ padding: 4px;
  overflow: hidden;
  border: 1px solid var(--focus-distribution-border, var(--sim-border-subtle, rgba(176, 224, 241, 0.12)));
  border-radius: 5px;
@@ -315,9 +364,16 @@ button {
 }
 
 .focus-distribution-cell--empty {
- border-color: transparent;
- background: transparent;
+ border-color: rgba(176, 224, 241, 0.06);
+ background: rgba(53, 200, 237, 0.015);
  box-shadow: none;
+}
+
+.focus-distribution-cell--stacked {
+ height: auto;
+ min-height: 40px;
+ padding: 4px 5px;
+ text-align: left;
 }
 
 .focus-distribution-cell__position {
@@ -331,6 +387,88 @@ button {
  white-space: nowrap;
 }
 
+.focus-distribution-cell__targets {
+ display: grid;
+ gap: 2px;
+ min-width: 0;
+ margin-top: 2px;
+}
+
+.focus-distribution-cell__target {
+ display: grid;
+ grid-template-columns: 12px minmax(0, 1fr) auto;
+ align-items: baseline;
+ gap: 6px;
+ min-width: 0;
+ padding-inline-start: 3px;
+ border-inline-start: 2px solid transparent;
+}
+
+.focus-distribution-cell__target-marker {
+ position: relative;
+ display: block;
+ width: 12px;
+ height: 10px;
+ margin-top: 1px;
+ border-radius: 2px;
+ background: rgba(143, 234, 255, 0.08);
+ color: var(--sim-text-muted, #a9bac7);
+}
+
+.focus-distribution-cell__target-marker::before {
+ content: "";
+ position: absolute;
+ top: 50%;
+ left: 50%;
+ width: 4px;
+ height: 4px;
+ border-radius: 50%;
+ background: currentColor;
+ box-shadow: 0 0 4px currentColor;
+ transform: translate(
+   calc(-50% + var(--focus-distribution-target-marker-x, 0px)),
+   calc(-50% + var(--focus-distribution-target-marker-y, 0px))
+ );
+}
+
+.focus-distribution-cell__target.focus-distribution-cell--sharp {
+ border-inline-start-color: var(--sim-success, #7fe2a6);
+}
+
+.focus-distribution-cell__target.focus-distribution-cell--sharp .focus-distribution-cell__target-marker {
+ color: var(--sim-success, #7fe2a6);
+}
+
+.focus-distribution-cell__target.focus-distribution-cell--acceptable {
+ border-inline-start-color: var(--sim-warning, #f2ca78);
+}
+
+.focus-distribution-cell__target.focus-distribution-cell--acceptable .focus-distribution-cell__target-marker {
+ color: var(--sim-warning, #f2ca78);
+}
+
+.focus-distribution-cell__target.focus-distribution-cell--soft .focus-distribution-cell__target-marker {
+ color: var(--sim-text-muted, #a9bac7);
+}
+
+.focus-distribution-cell__target-name {
+ min-width: 0;
+ overflow: hidden;
+ color: var(--sim-text, #f2f7f6);
+ font-size: 11px;
+ font-weight: 600;
+ line-height: 1.15;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+}
+
+.focus-distribution-cell--stacked .focus-distribution-cell__target-name {
+ overflow: visible;
+ overflow-wrap: anywhere;
+ text-overflow: clip;
+ white-space: normal;
+}
+
 .focus-distribution-cell__value {
  display: block;
  margin-top: 3px;
@@ -338,6 +476,12 @@ button {
  font-weight: 700;
  line-height: 1;
  white-space: nowrap;
+}
+
+.focus-distribution-cell__target .focus-distribution-cell__value {
+ flex: 0 0 auto;
+ margin-top: 0;
+ font-size: 11px;
 }
 
 .focus-distribution-cell__status {
@@ -360,10 +504,22 @@ button {
 }
 
 .focus-distribution-panel__additional {
+ display: grid;
+ gap: 4px;
+ margin-top: 6px;
+}
+
+.focus-distribution-panel__unplaced-heading {
+ color: var(--sim-text-muted, #a9bac7);
+ font-size: 10px;
+ font-weight: 600;
+ line-height: 1.1;
+}
+
+.focus-distribution-panel__additional-list {
  display: flex;
  flex-wrap: wrap;
  gap: 4px;
- margin-top: 5px;
 }
 
 .focus-distribution-panel__additional-item {
@@ -395,6 +551,58 @@ button {
  clip: rect(0, 0, 0, 0);
  white-space: nowrap;
  border: 0;
+}
+
+/* A 418px card still leaves only about 130px per spatial cell beside the
+   fixed controls rail, so switch before labels begin splitting into fragments. */
+@container (max-width: 440px) {
+ .focus-distribution-cell--stacked {
+   padding: 3px 4px;
+ }
+
+ .focus-distribution-cell__position {
+   font-size: 10px;
+ }
+
+ .focus-distribution-cell__targets {
+   gap: 1px;
+   margin-top: 1px;
+ }
+
+ .focus-distribution-cell__target-marker {
+   display: none;
+ }
+
+ .focus-distribution-cell__target {
+   grid-template-columns: minmax(0, 1fr) auto;
+   gap: 3px;
+   padding-inline-start: 2px;
+ }
+
+ .focus-distribution-cell__target-name,
+ .focus-distribution-cell--stacked .focus-distribution-cell__target-name {
+   overflow: hidden;
+   overflow-wrap: normal;
+   font-size: 10px;
+   line-height: 1.1;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   word-break: normal;
+ }
+
+ .focus-distribution-cell__target .focus-distribution-cell__value {
+   font-size: 10px;
+ }
+
+ .focus-distribution-cell--stacked .focus-distribution-cell__target {
+   grid-template-columns: minmax(0, 1fr);
+   gap: 1px;
+ }
+
+ .focus-distribution-cell--stacked .focus-distribution-cell__value {
+   grid-column: 1;
+   justify-self: end;
+ }
 }
 
 @media (max-width: 420px) {
@@ -552,13 +760,6 @@ button {
   .groundglass-comparison { grid-template-columns: 1fr; }
 }
 
-.simulator-task-feedback-grid {
- grid-column: 1 / -1;
- display: grid;
- grid-template-columns: 1fr 1fr;
- gap: 16px;
-}
-
 /* allow cards to shrink inside grid columns to avoid overflow */
 .simulator-card {
  background: var(--surface);
@@ -585,6 +786,316 @@ button {
 .simulator-info-card--feedback {
  background: linear-gradient(180deg, rgba(236,252,245,0.6), rgba(236,252,245,0.4));
 }
+
+/* Scene-local learning drawer */
+.learning-overlay-panel {
+  position: absolute;
+  z-index: 40;
+  inset: 0 auto 0 0;
+  width: clamp(280px, 42%, 380px);
+  max-width: calc(100% - 12px);
+  min-width: 0;
+  pointer-events: none;
+}
+
+.learning-overlay-panel__rail {
+  position: absolute;
+  z-index: 1;
+  inset: 12px auto auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: var(--sim-learning-rail-width);
+  min-height: var(--sim-learning-rail-min-height);
+  padding: 10px 6px;
+  border: 1px solid var(--sim-accent-border, rgba(143, 234, 255, 0.36));
+  border-left: 0;
+  border-radius: 0 var(--sim-radius-control, 6px) var(--sim-radius-control, 6px) 0;
+  background: linear-gradient(180deg, rgba(18, 53, 73, 0.98), rgba(8, 19, 31, 0.96));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 0 14px rgba(53, 200, 237, 0.16);
+  color: var(--sim-text, #f2f7f6);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.learning-overlay-panel__rail-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: var(--sim-text, #f2f7f6);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.learning-overlay-panel__rail:hover,
+.learning-overlay-panel__rail:focus-visible {
+  border-color: var(--sim-accent-border, rgba(143, 234, 255, 0.36));
+  color: var(--sim-accent, #8feaff);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 0 18px rgba(53, 200, 237, 0.28);
+}
+
+.learning-overlay-panel:not(.learning-overlay-panel--peek) .learning-overlay-panel__rail {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.learning-overlay-panel:not(.learning-overlay-panel--peek) .learning-overlay-panel__rail:focus {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 3;
+}
+
+.learning-overlay-panel__drawer {
+  position: absolute;
+  z-index: 2;
+  inset: 0 auto 0 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--sim-border, rgba(176, 224, 241, 0.2));
+  border-radius: var(--sim-radius-panel, 10px);
+  background: rgba(8, 19, 31, 0.92);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36);
+  color: var(--sim-text, #f2f7f6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+  transform: translateX(calc(-100% - 8px));
+  transition:
+    transform 190ms ease,
+    visibility 190ms step-end;
+  visibility: hidden;
+  will-change: transform;
+}
+
+.learning-overlay-panel:not(.learning-overlay-panel--peek) .learning-overlay-panel__drawer {
+  pointer-events: auto;
+  transform: translateX(0);
+  transition:
+    transform 190ms ease,
+    visibility 190ms step-start;
+  visibility: visible;
+}
+
+.learning-overlay-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--sim-border-subtle, rgba(176, 224, 241, 0.12));
+  background: rgba(8, 19, 31, 0.7);
+}
+
+.learning-overlay-panel__views,
+.learning-overlay-panel__actions {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 4px;
+}
+
+.learning-overlay-panel__views {
+  flex: 1 1 auto;
+}
+
+.learning-overlay-panel__actions {
+  flex: 0 1 auto;
+  justify-content: flex-end;
+}
+
+.learning-overlay-panel__view-button,
+.learning-overlay-panel__action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border: 1px solid transparent;
+  border-radius: var(--sim-radius-control, 6px);
+  background: transparent;
+  color: var(--sim-text-muted, #a9bac7);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.learning-overlay-panel__view-button {
+  gap: 4px;
+  padding: 4px 9px;
+}
+
+.learning-overlay-panel__action-button {
+  gap: 4px;
+  width: var(--sim-control-height, 32px);
+  min-width: var(--sim-control-height, 32px);
+  min-height: var(--sim-control-height, 32px);
+  padding: 4px;
+}
+
+.learning-overlay-panel__action-button .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.learning-overlay-panel__view-button[aria-pressed="true"],
+.learning-overlay-panel__action-button[aria-pressed="true"] {
+  border-color: var(--sim-accent-border, rgba(143, 234, 255, 0.36));
+  background: var(--sim-accent-soft, rgba(101, 224, 255, 0.13));
+  color: var(--sim-text, #f2f7f6);
+}
+
+.learning-overlay-panel__view-button:hover,
+.learning-overlay-panel__view-button:focus-visible,
+.learning-overlay-panel__action-button:hover,
+.learning-overlay-panel__action-button:focus-visible {
+  border-color: var(--sim-border-strong, rgba(143, 234, 255, 0.42));
+  color: var(--sim-accent, #8feaff);
+}
+
+.learning-overlay-panel__completion-cue {
+  color: var(--sim-accent, #8feaff);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.learning-overlay-panel__content {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+  scrollbar-color: rgba(143, 234, 255, 0.32) transparent;
+  touch-action: pan-y;
+}
+
+.learning-overlay-panel__content::-webkit-scrollbar {
+  width: 7px;
+}
+
+.learning-overlay-panel__content::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(143, 234, 255, 0.28);
+  background-clip: padding-box;
+}
+
+.learning-overlay-panel__view {
+  min-width: 0;
+  padding: 8px 10px 10px;
+}
+
+.learning-overlay-panel__view > .task-panel,
+.learning-overlay-panel__view > .feedback-panel {
+  padding: 0;
+}
+
+.learning-overlay-panel__view > .feedback-panel {
+  border-left: 0;
+}
+
+@media (max-width: 900px) {
+  .simulator-viewport-grid:not(.simulator-viewport-grid--expanded) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "scene"
+      "groundglass"
+      "geometry"
+      "focus";
+  }
+
+  .groundglass-panel--expanded {
+    grid-template-rows: auto minmax(min(320px, 45vh), 1fr) auto;
+    overflow-y: auto;
+  }
+
+  .scene-viewport-stage {
+    display: grid;
+    gap: var(--sim-panel-section-gap);
+  }
+
+  .scene-viewport-stage--expanded {
+    grid-template-rows: minmax(0, 1fr) auto;
+    height: 100%;
+  }
+
+  .learning-overlay-panel {
+    position: static;
+    width: auto;
+    max-width: none;
+    pointer-events: auto;
+  }
+
+  .learning-overlay-panel__rail {
+    position: static;
+    flex-direction: row;
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 40px;
+    border-left: 1px solid var(--sim-border, rgba(176, 224, 241, 0.2));
+    border-radius: var(--sim-radius-control, 6px);
+  }
+
+  .learning-overlay-panel__rail-label {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  .learning-overlay-panel--flow .learning-overlay-panel__rail {
+    display: none;
+  }
+
+  .learning-overlay-panel__drawer,
+  .learning-overlay-panel:not(.learning-overlay-panel--peek) .learning-overlay-panel__drawer {
+    position: static;
+    width: auto;
+    height: min(360px, 45vh);
+    max-height: min(360px, 45vh);
+    transform: none;
+    transition: none;
+    visibility: visible;
+  }
+
+  .learning-overlay-panel--peek .learning-overlay-panel__drawer {
+    display: none;
+  }
+
+  .learning-overlay-panel__header {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .learning-overlay-panel__actions {
+    margin-left: auto;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1100px) {
+  .learning-overlay-panel__header {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .learning-overlay-panel__actions {
+    margin-left: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learning-overlay-panel__drawer {
+    transition: none;
+  }
+}
+
+.simulator-shell[data-reduced-motion="true"] .learning-overlay-panel__drawer {
+  transition: none;
+}
+
 
 /* Task / Feedback panels */
 .task-panel { padding: 6px; }
@@ -690,6 +1201,73 @@ button {
 .sim-section {
  padding: 10px 0;
  border-bottom: 1px solid rgba(15,23,42,0.04);
+}
+
+.lens-control {
+ display: grid;
+ gap: 7px;
+ min-width: 0;
+ margin: 0;
+ padding: 0;
+ border: 0;
+}
+
+.lens-control__copy {
+ margin: 0;
+ color: var(--text-muted);
+ font-size: 12px;
+ line-height: 1.4;
+}
+
+.lens-control__options {
+ display: grid;
+ grid-template-columns: repeat(2, minmax(0, 1fr));
+ gap: 6px;
+ min-width: 0;
+}
+
+.lens-control__option {
+ position: relative;
+ display: grid;
+ gap: 2px;
+ min-width: 0;
+ min-height: 48px;
+ padding: 8px 10px;
+ border: 1px solid var(--border);
+ border-radius: var(--radius-md);
+ background: var(--surface-muted);
+ color: var(--text);
+ cursor: pointer;
+}
+
+.lens-control__option:focus-within {
+ outline: 2px solid var(--primary);
+ outline-offset: 2px;
+}
+
+.lens-control__option[data-selected="true"] {
+ border-color: var(--primary);
+ background: var(--primary-soft);
+}
+
+.lens-control__option input {
+ position: absolute;
+ inset: 0;
+ width: 100%;
+ height: 100%;
+ margin: 0;
+ opacity: 0;
+ cursor: pointer;
+}
+
+.lens-control__option-value {
+ font-size: 14px;
+ font-weight: 700;
+}
+
+.lens-control__option-label {
+ color: var(--text-muted);
+ font-size: 12px;
 }
 
 .sim-control-row {
@@ -1082,6 +1660,17 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   gap: var(--sim-panel-section-gap);
 }
 .scene-viewport-shell--expanded { grid-template-rows: minmax(0, 1fr) auto; }
+.scene-viewport-stage {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  container-type: inline-size;
+  container-name: scene-stage;
+}
+.scene-viewport-stage--expanded {
+  height: 100%;
+}
 .scene-viewport-host {
   position: relative;
   width: 100%;
@@ -1151,8 +1740,8 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 .scene-overlay-menu__panel {
   position: absolute;
   top: calc(100% + 6px);
-  left: auto;
-  right: 0;
+  left: 0;
+  right: auto;
   width: 280px;
   max-width: 100%;
   padding: 4px;
@@ -1169,6 +1758,30 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   right: 58px;
   top: var(--sim-panel-section-gap);
   z-index: 10;
+}
+
+@media (min-width: 901px) {
+  @container scene-stage (min-width: 260px) {
+    .scene-overlay-controls-wrap {
+      left: calc(var(--sim-panel-section-gap) + var(--sim-learning-rail-width) + var(--sim-control-gap));
+    }
+  }
+
+  @container scene-stage (max-width: 259px) {
+    .scene-overlay-controls-wrap {
+      position: static;
+      width: 100%;
+      margin-top: var(--sim-panel-section-gap);
+      padding-inline: var(--sim-panel-section-gap);
+    }
+
+    .scene-overlay-menu__panel {
+      position: static;
+      width: 280px;
+      max-width: 100%;
+      margin-top: 6px;
+    }
+  }
 }
 
 .geometry-viewport {
@@ -1209,8 +1822,7 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   min-width: 0;
   flex-wrap: wrap;
 }
-.geometry-viewport__restore-action,
-.scene-toolbar__geometry-action {
+.geometry-viewport__viewport-action {
   position: static;
   flex: 0 0 auto;
   z-index: auto;
@@ -1578,27 +2190,6 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   font-size: 12px;
 }
 
-.simulator-shell .current-settings-groups {
-  color: var(--sim-text);
-}
-
-.simulator-shell .current-settings-group {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--sim-border-subtle);
-}
-
-.simulator-shell .current-settings-group:last-child {
-  border-bottom: 0;
-}
-
-.simulator-shell .current-settings-group dt {
-  color: var(--sim-text-muted);
-}
-
-.simulator-shell .current-settings-row {
-  color: var(--sim-text);
-}
-
 .simulator-shell .focus-distribution-cell__position,
 .simulator-shell .focus-distribution-panel__orientation,
 .simulator-shell .control-help,
@@ -1820,6 +2411,32 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 
 .simulator-shell .sim-section {
   border-bottom-color: var(--sim-border-subtle);
+}
+
+.simulator-shell .lens-control__copy,
+.simulator-shell .lens-control__option-label {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .lens-control__option {
+  border-color: var(--sim-border);
+  background: var(--sim-surface-inset);
+  color: var(--sim-text);
+  border-radius: var(--sim-radius-control);
+}
+
+.simulator-shell .lens-control__option:hover {
+  border-color: var(--sim-border-strong);
+  color: var(--sim-accent);
+}
+
+.simulator-shell .lens-control__option:focus-within {
+  outline-color: var(--sim-accent);
+}
+
+.simulator-shell .lens-control__option[data-selected="true"] {
+  border-color: var(--sim-accent);
+  background: var(--sim-accent-soft);
 }
 
 .simulator-shell .simulator-aside .aside-header h3 {

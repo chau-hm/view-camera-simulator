@@ -5,6 +5,11 @@ import {
   readStageTransform,
 } from "./helpers/groundGlass";
 import { readFocusDistributionScores } from "./helpers/focusDistribution";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -90,6 +95,154 @@ test("Table Tilt Ground Glass uses one RTT surface", async ({ page }) => {
   await expect(viewport.locator('[data-testid^="ground-glass-target-"]')).toHaveCount(0);
 
   await expect(viewport.getByTestId("ground-glass-focus-ring")).toHaveCount(0);
+});
+
+test("Table Tilt Focus Distribution follows the displayed Raw/Upright orientation", async ({ page }) => {
+  await page.goto("/simulator/free/table-tilt");
+  const panel = page.getByTestId("focus-distribution-panel");
+  await expect(page.getByTestId("current-settings-readout")).toHaveCount(0);
+  await expect(panel).toBeVisible();
+  await expect(panel.locator("table.focus-distribution-panel__table")).toBeVisible();
+  expect(await panel.evaluate((element) => element.parentElement?.classList.contains("simulator-primary-info-grid"))).toBe(false);
+
+  const readTargetCell = async (targetId: string) =>
+    panel.locator(`[data-focus-target-id="${targetId}"]`).evaluate((element) => {
+      const cell = element.closest("td");
+      const row = cell?.closest("tr");
+      if (!cell || !row) throw new Error(`Target ${element.getAttribute("data-focus-target-id")} is not in a grid cell`);
+      return {
+        rowIndex: Array.from(row.parentElement?.children ?? []).indexOf(row),
+        columnIndex: Array.from(row.children).indexOf(cell),
+        label: element.getAttribute("aria-label"),
+      };
+    });
+
+  const targetIds = ["near-cup", "mid-notebook", "far-book"];
+  const rawCells = await Promise.all(targetIds.map(readTargetCell));
+  await expect(page.getByTestId("focus-distribution-orientation")).toHaveText("Raw");
+  expect(new Set(rawCells.map(({ rowIndex, columnIndex }) => `${rowIndex}:${columnIndex}`)).size).toBe(1);
+
+  await page.getByRole("radio", { name: "Upright Assist" }).check();
+  await expect(page.getByTestId("focus-distribution-orientation")).toHaveText("Upright");
+  const uprightCells = await Promise.all(targetIds.map(readTargetCell));
+
+  uprightCells.forEach((cell, index) => {
+    expect(cell.rowIndex).toBe(2 - rawCells[index].rowIndex);
+    expect(cell.columnIndex).toBe(2 - rawCells[index].columnIndex);
+    expect(cell.label).toContain(["Near card", "Middle notebook", "Far chart"][index]);
+    expect(cell.label?.match(/\d+%/)?.[0]).toBe(rawCells[index].label?.match(/\d+%/)?.[0]);
+  });
+
+  await page.getByRole("radio", { name: "Raw Ground Glass" }).check();
+  await expect(page.getByTestId("focus-distribution-orientation")).toHaveText("Raw");
+  await expect.poll(async () => (await readTargetCell("near-cup")).rowIndex).toBe(rawCells[0].rowIndex);
+});
+
+test("Table Tilt Focus Distribution keeps a same-cell target stack co-equal", async ({ page }) => {
+  await page.setViewportSize({ width: 1680, height: 900 });
+  await page.goto("/simulator/free/table-tilt");
+  const panel = page.getByTestId("focus-distribution-panel");
+  const targetIds = ["near-cup", "mid-notebook", "far-book"];
+
+  await expect(panel.locator(".focus-distribution-cell--stacked")).toHaveCount(1);
+  await expect(panel.locator(".focus-distribution-panel__additional")).toHaveCount(0);
+  for (const targetId of targetIds) {
+    const target = panel.locator(`[data-focus-target-id="${targetId}"]`);
+    await expect(target).toBeVisible();
+    await expect(target.locator(".focus-distribution-cell__target-marker")).toBeVisible();
+    await expect(target).toHaveAttribute("aria-label", /\d+%/);
+  }
+});
+
+test("Table Tilt Focus Distribution stays compact when its panel is constrained", async ({ page }) => {
+  await page.goto("/simulator/free/table-tilt");
+  const panel = page.getByTestId("focus-distribution-panel");
+  const targetIds = ["near-cup", "mid-notebook", "far-book"];
+
+  const readResponsiveLayout = () =>
+    panel.evaluate((element) => {
+      const stackedCell = element.querySelector(".focus-distribution-cell--stacked");
+      const marker = stackedCell?.querySelector(".focus-distribution-cell__target-marker");
+      const cellBounds = stackedCell?.getBoundingClientRect();
+      const targetRows = [...(stackedCell?.querySelectorAll("[data-focus-target-id]") ?? [])];
+      return {
+        panelWidth: element.getBoundingClientRect().width,
+        cellHeight: cellBounds?.height ?? 0,
+        targetRowHeights: targetRows.map((target) => target.getBoundingClientRect().height),
+        markerDisplay: marker ? getComputedStyle(marker).display : "missing",
+        horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
+      };
+    });
+
+  for (const width of [1280, 1100, 1024, 950, 901]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect.poll(async () => (await readResponsiveLayout()).panelWidth).toBeLessThan(440);
+    const layout = await readResponsiveLayout();
+    expect(layout.cellHeight).toBeLessThan(180);
+    expect(layout.targetRowHeights.every((height) => height < 60)).toBe(true);
+    expect(layout.markerDisplay).toBe("none");
+    expect(layout.horizontalOverflow).toBe(false);
+
+    const stackedCell = panel.locator(".focus-distribution-cell--stacked");
+    for (const targetId of targetIds) {
+      const target = stackedCell.locator(`[data-focus-target-id="${targetId}"]`);
+      await expect(target).toBeVisible();
+      await expect(target).toHaveAttribute("aria-label", /\d+%/);
+    }
+  }
+
+  await page.setViewportSize({ width: 1680, height: 900 });
+  await expect.poll(async () => (await readResponsiveLayout()).panelWidth).toBeGreaterThan(440);
+  const wideLayout = await readResponsiveLayout();
+  expect(wideLayout.markerDisplay).not.toBe("none");
+  expect(wideLayout.cellHeight).toBeLessThan(140);
+});
+
+test("Table Tilt Focus Loupe maps displayed centers to the pre-composite RTT crop", async ({ page }) => {
+  await page.goto("/simulator/free/table-tilt?rttDiagnostics=1");
+  const viewport = page.getByLabel("GroundGlassViewport");
+  const stage = viewport.locator("[data-zoomed]");
+  const rtt = viewport.getByTestId("ground-glass-rtt");
+  await expect(stage).toBeVisible();
+  await expect(rtt).toBeVisible();
+
+  const readCenters = async () => ({
+    displayU: Number(await stage.getAttribute("data-focus-loupe-center-u")),
+    displayV: Number(await stage.getAttribute("data-focus-loupe-center-v")),
+    cropU: Number(await rtt.getAttribute("data-rtt-inspection-center-u")),
+    cropV: Number(await rtt.getAttribute("data-rtt-inspection-center-v")),
+  });
+
+  const expectCropRelation = async (mode: "raw" | "upright") => {
+    await expect.poll(async () => {
+      const centers = await readCenters();
+      if (!Object.values(centers).every(Number.isFinite)) return false;
+      const expectedU = mode === "raw" ? 1 - centers.displayU : centers.displayU;
+      const expectedV = mode === "raw" ? 1 - centers.displayV : centers.displayV;
+      return Math.abs(centers.cropU - expectedU) < 0.01 && Math.abs(centers.cropV - expectedV) < 0.01;
+    }, { timeout: 30_000 }).toBe(true);
+    return readCenters();
+  };
+
+  await expect(page.getByRole("radio", { name: "Raw Ground Glass" })).toBeChecked();
+  await clickStageAt(page, stage, 0.25, 0.25);
+  await expect(stage).toHaveAttribute("data-focus-loupe-active", "true");
+  const rawCenters = await expectCropRelation("raw");
+  expect(rawCenters.displayU).toBeLessThan(0.4);
+  expect(rawCenters.displayV).toBeLessThan(0.4);
+  expect(rawCenters.cropU).toBeGreaterThan(0.6);
+  expect(rawCenters.cropV).toBeGreaterThan(0.6);
+
+  await viewport.getByRole("button", { name: "Reset Ground Glass view" }).click();
+  await expect(stage).toHaveAttribute("data-focus-loupe-active", "false");
+  await page.getByRole("radio", { name: "Upright Assist" }).check();
+  await clickStageAt(page, stage, 0.75, 0.25);
+  await expect(stage).toHaveAttribute("data-focus-loupe-active", "true");
+  const uprightCenters = await expectCropRelation("upright");
+  expect(uprightCenters.displayU).toBeGreaterThan(0.6);
+  expect(uprightCenters.displayV).toBeLessThan(0.4);
+  expect(uprightCenters.cropU).toBeGreaterThan(0.6);
+  expect(uprightCenters.cropV).toBeLessThan(0.4);
 });
 
 test("Table Tilt zero-tilt point focus moves from near to middle to far", async ({ page }) => {
@@ -225,14 +378,16 @@ test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource s
 test("Table Tilt calibrated controls complete the guided task", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/simulator/guided/table-tilt/tilt-01");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
 
   await setRangeDirect(page, "Tilt", 9);
   await setRangeDirect(page, "Focus distance", 6130);
   await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
 
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await expect(page.getByText(/Positive Front Tilt aligned the plane of sharp focus/)).toBeVisible();
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
+  await expect(feedback).toContainText("Positive Front Tilt aligned the plane of sharp focus");
 
   const sceneCanvas = page.getByTestId("scene-canvas");
   for (const attribute of [

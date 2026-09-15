@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Frame, type Page } from "@playwright/test";
 import {
   GROUND_GLASS_PROFILING_WINDOW_SIZE,
 } from "../../render/groundGlassProfiling";
@@ -11,9 +11,27 @@ import type {
   SceneCapacitySnapshot,
   SceneGraphCapacityMetrics,
 } from "../../render/sceneCapacityProfiling";
+import {
+  classifyGraphicsBackend,
+  type GraphicsBackendQualification,
+} from "../../render/sceneCapacityBenchmarkQualification";
+import {
+  classifyGroundGlassProfilingReadiness,
+  profilingProgressForSnapshot,
+  selectQualifyingFreshSnapshot,
+  type ProfilingProgressMarker,
+} from "../helpers/sceneCapacityBenchmarkReadiness";
+import {
+  runtimeFromMeasurement,
+  type BenchmarkRuntimeMetadata,
+  type MeasurementStateEvidence,
+} from "../helpers/sceneCapacityBenchmarkRuntime";
+import { createMeasurementNavigationGuard } from "../helpers/sceneCapacityBenchmarkNavigation";
 
 const benchmarkEnabled = process.env.SCENE_CAPACITY_BENCHMARK === "1";
 const benchmarkOutputDirectory = process.env.SCENE_CAPACITY_BENCHMARK_OUTPUT_DIR ?? "test-results";
+const productionPreview = process.env.SCENE_CAPACITY_PRODUCTION_PREVIEW === "1";
+const MEASUREMENT_STATE_TIMEOUT_MS = 120_000;
 const rawScenes = new Set([
   "focus-fundamentals-two-targets",
   "architecture-foreground",
@@ -55,13 +73,7 @@ type BenchmarkRecord = {
   mode: BenchmarkMode;
   snapshot: SceneCapacitySnapshot;
   sampling: BenchmarkSamplingEvidence;
-  runtime: {
-    finalContentful: boolean | null;
-    internalResolution: [number, number] | null;
-    gatherResolution: [number, number] | null;
-    profilingBackend: string | null;
-    inspectionWindowActive: boolean | null;
-  };
+  runtime: BenchmarkRuntimeMetadata;
 };
 
 type BenchmarkEnvironment = {
@@ -72,6 +84,9 @@ type BenchmarkEnvironment = {
   userAgent: string;
   devicePixelRatio: number;
   webgl: { vendor: string | null; renderer: string | null };
+  profilingBackend: string | null;
+  timingUnit: string | null;
+  hardwareQualification: GraphicsBackendQualification & { required: boolean };
 };
 
 const timingStats = (
@@ -105,24 +120,13 @@ const activeAggregateStats = (
   return null;
 };
 
-const progressForSnapshot = (snapshot: GroundGlassProfilingSnapshot): number | null => {
-  if (snapshot.profilingBackend === "cpu-fallback") {
-    return snapshot.profilingDiagnostics.framesAccepted;
-  }
-  if (snapshot.profilingBackend === "gpu-query") {
-    return snapshot.profilingDiagnostics.framesCompletedGpu;
-  }
-  return null;
-};
-
 const assertBackendHealth = (snapshot: GroundGlassProfilingSnapshot): void => {
-  if (snapshot.profilingBackend === "cpu-fallback") return;
-  if (snapshot.profilingBackend !== "gpu-query") {
-    throw new Error(`Scene capacity benchmark has no active timing backend: ${snapshot.profilingBackend}`);
+  const readiness = classifyGroundGlassProfilingReadiness(snapshot);
+  if (readiness === "fatal") {
+    throw new Error(`Scene capacity benchmark GPU timing degraded: ${snapshot.profilingDiagnostics.gpuQueryState}`);
   }
-  const state = snapshot.profilingDiagnostics.gpuQueryState;
-  if (state === "stalled" || state === "disjoint" || state === "error") {
-    throw new Error(`Scene capacity benchmark GPU timing degraded: ${state}`);
+  if (readiness === "unavailable") {
+    throw new Error(`Scene capacity benchmark has no active timing backend: ${snapshot.profilingBackend}`);
   }
 };
 
@@ -173,42 +177,68 @@ const waitForMeasurementState = async (
   page: Page,
   sceneId: string,
   state: RequestedMeasurementState,
-): Promise<void> => {
+  assertDocumentStable: () => void = () => {},
+): Promise<MeasurementStateEvidence> => {
   const rtt = page.getByTestId("ground-glass-rtt");
   const loupeStage = page.locator("[data-focus-loupe-active]").first();
-  await expect(rtt).toHaveAttribute("data-rtt-scene-id", sceneId);
-  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 120_000 });
+  assertDocumentStable();
+  await expect(rtt).toHaveAttribute("data-rtt-scene-id", sceneId, {
+    timeout: MEASUREMENT_STATE_TIMEOUT_MS,
+  });
+  assertDocumentStable();
+  const finalContentful = await rtt.getAttribute("data-rtt-final-contentful");
+  assertDocumentStable();
+  let finalContentfulEvidence: boolean | null;
+  if (productionPreview && finalContentful === null) {
+    // Render-sanity readback is intentionally DEV-only. The production
+    // preview still exposes the renderer-owned camera/readiness and profiler
+    // progress attributes, which are the non-invasive readiness contract for
+    // this hardware run.
+    assertDocumentStable();
+    await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
+    assertDocumentStable();
+    await expect(rtt).toHaveAttribute("data-rtt-profiling-frame-count", /[1-9]\d*/, { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
+    assertDocumentStable();
+    finalContentfulEvidence = null;
+  } else {
+    assertDocumentStable();
+    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: MEASUREMENT_STATE_TIMEOUT_MS });
+    assertDocumentStable();
+    finalContentfulEvidence = true;
+  }
+  assertDocumentStable();
   await expect(loupeStage).toHaveAttribute(
     "data-focus-loupe-active",
     String(state.inspectionWindowActive),
-    { timeout: 120_000 },
+    { timeout: MEASUREMENT_STATE_TIMEOUT_MS },
   );
+  assertDocumentStable();
   await expect(rtt).toHaveAttribute(
     "data-rtt-inspection-window-active",
     String(state.inspectionWindowActive),
-    { timeout: 120_000 },
+    { timeout: MEASUREMENT_STATE_TIMEOUT_MS },
   );
+  assertDocumentStable();
   await expect(rtt).toHaveAttribute(
     "data-rtt-profiling-raw-debug",
     String(state.rawDebug),
-    { timeout: 120_000 },
+    { timeout: MEASUREMENT_STATE_TIMEOUT_MS },
   );
+  assertDocumentStable();
+  return {
+    finalContentful: finalContentfulEvidence,
+    inspectionWindowActive: state.inspectionWindowActive,
+  };
 };
 
-type ProgressMarker = {
-  backend: "cpu-fallback" | "gpu-query";
-  progress: number;
-  sessionResets: number;
-};
-
-const readProgressMarker = (snapshot: SceneCapacitySnapshot | null): ProgressMarker | null => {
+const readProgressMarker = (snapshot: SceneCapacitySnapshot | null): ProfilingProgressMarker | null => {
   const groundGlass = snapshot?.groundGlass;
   if (!groundGlass) return null;
   assertBackendHealth(groundGlass);
   if (groundGlass.profilingBackend !== "cpu-fallback" && groundGlass.profilingBackend !== "gpu-query") {
     return null;
   }
-  const progress = progressForSnapshot(groundGlass);
+  const progress = profilingProgressForSnapshot(groundGlass);
   if (progress === null) return null;
   return {
     backend: groundGlass.profilingBackend,
@@ -217,64 +247,171 @@ const readProgressMarker = (snapshot: SceneCapacitySnapshot | null): ProgressMar
   };
 };
 
+const formatProfilingDiagnostics = (snapshot: SceneCapacitySnapshot | null): string => {
+  const groundGlass = snapshot?.groundGlass;
+  if (!groundGlass) return JSON.stringify({ groundGlass: null });
+  const diagnostics = groundGlass.profilingDiagnostics;
+  return JSON.stringify({
+    sceneId: groundGlass.sceneId,
+    rawDebug: groundGlass.rawDebug,
+    profilingBackend: groundGlass.profilingBackend,
+    timingUnit: groundGlass.timingUnit,
+    gpuQueryState: diagnostics.gpuQueryState,
+    frameCount: groundGlass.frame.count,
+    framesAttempted: diagnostics.framesAttempted,
+    framesAccepted: diagnostics.framesAccepted,
+    framesCompletedGpu: diagnostics.framesCompletedGpu,
+    framesRejectedCapacity: diagnostics.framesRejectedCapacity,
+    framesInvalidated: diagnostics.framesInvalidated,
+    pendingQueries: diagnostics.pendingQueries,
+    pendingFrames: diagnostics.pendingFrames,
+    queriesBegun: diagnostics.queriesBegun,
+    queriesCompleted: diagnostics.queriesCompleted,
+    queriesUnavailable: diagnostics.queriesUnavailable,
+    sessionResets: diagnostics.sessionResets,
+    lastResetReason: diagnostics.lastResetReason,
+    lastRejectedReason: diagnostics.lastRejectedReason,
+    lastGpuQueryError: diagnostics.lastGpuQueryError,
+  });
+};
+
+const waitForProgressMarker = async (
+  page: Page,
+  sceneId: string,
+  state: RequestedMeasurementState,
+  assertDocumentStable: () => void = () => {},
+  timeoutMs = 120_000,
+): Promise<ProfilingProgressMarker> => {
+  const deadline = Date.now() + timeoutMs;
+  let latestSnapshot: SceneCapacitySnapshot | null = null;
+  while (Date.now() < deadline) {
+    assertDocumentStable();
+    latestSnapshot = await readCapacitySnapshot(page);
+    assertDocumentStable();
+    if (latestSnapshot?.sceneId === sceneId && latestSnapshot.groundGlass?.rawDebug === state.rawDebug) {
+      const marker = readProgressMarker(latestSnapshot);
+      if (marker !== null) return marker;
+    }
+    assertDocumentStable();
+    await page.waitForTimeout(250);
+  }
+  throw new Error(
+    `Timed out waiting for a profiling progress marker after ${timeoutMs}ms: ${formatProfilingDiagnostics(latestSnapshot)}`,
+  );
+};
+
+type FreshSnapshotResult = {
+  snapshot: SceneCapacitySnapshot;
+  marker: ProfilingProgressMarker;
+};
+
+const waitForFreshSnapshot = async (
+  page: Page,
+  sceneId: string,
+  state: RequestedMeasurementState,
+  initialMarker: ProfilingProgressMarker,
+  assertDocumentStable: () => void = () => {},
+  timeoutMs = 180_000,
+): Promise<FreshSnapshotResult> => {
+  const deadline = Date.now() + timeoutMs;
+  let latestSnapshot: SceneCapacitySnapshot | null = null;
+
+  while (Date.now() < deadline) {
+    assertDocumentStable();
+    latestSnapshot = await readCapacitySnapshot(page);
+    assertDocumentStable();
+    if (latestSnapshot?.sceneId === sceneId && latestSnapshot.groundGlass?.rawDebug === state.rawDebug) {
+      const marker = readProgressMarker(latestSnapshot);
+      const selected = selectQualifyingFreshSnapshot(
+        [{ snapshot: latestSnapshot, marker }],
+        ({ snapshot, marker: candidateMarker }) => {
+          if (!snapshot.groundGlass) return false;
+          if (candidateMarker.backend !== initialMarker.backend) return false;
+          if (candidateMarker.sessionResets !== initialMarker.sessionResets) return false;
+          if (candidateMarker.progress - initialMarker.progress < GROUND_GLASS_PROFILING_WINDOW_SIZE) {
+            return false;
+          }
+          return timingWindowsAreComplete(snapshot.groundGlass, state.rawDebug);
+        },
+      );
+      if (selected) return selected;
+    }
+    assertDocumentStable();
+    await page.waitForTimeout(250);
+  }
+
+  throw new Error(
+    `Timed out waiting for a fresh profiling window after ${timeoutMs}ms: ${formatProfilingDiagnostics(latestSnapshot)}`,
+  );
+};
+
 const waitForFreshStableSnapshot = async (
   page: Page,
   sceneId: string,
   state: RequestedMeasurementState,
-): Promise<{ snapshot: SceneCapacitySnapshot; sampling: BenchmarkSamplingEvidence }> => {
-  await waitForMeasurementState(page, sceneId, state);
-  await expect.poll(
-    async () => {
-      const candidate = await readCapacitySnapshot(page);
-      if (!candidate || candidate.sceneId !== sceneId || !candidate.groundGlass) return false;
-      if (candidate.groundGlass.rawDebug !== state.rawDebug) return false;
-      return readProgressMarker(candidate) !== null;
-    },
-    { timeout: 120_000, intervals: [250, 500, 1_000] },
-  ).toBe(true);
-
-  const markerSnapshot = await readCapacitySnapshot(page);
-  if (!markerSnapshot) throw new Error("Scene capacity benchmark could not read its profiling progress marker");
-  const initialMarker = readProgressMarker(markerSnapshot);
-  if (initialMarker === null) throw new Error("Scene capacity benchmark could not establish a profiling progress marker");
-  await expect.poll(
-    async () => {
-      const candidate = await readCapacitySnapshot(page);
-      if (!candidate || candidate.sceneId !== sceneId || !candidate.groundGlass) return false;
-      if (candidate.groundGlass.rawDebug !== state.rawDebug) return false;
-      const currentMarker = readProgressMarker(candidate);
-      if (currentMarker === null) return false;
-      if (currentMarker.backend !== initialMarker.backend) return false;
-      if (currentMarker.sessionResets !== initialMarker.sessionResets) return false;
-      if (currentMarker.progress - initialMarker.progress < GROUND_GLASS_PROFILING_WINDOW_SIZE) return false;
-      if (!timingWindowsAreComplete(candidate.groundGlass, state.rawDebug)) return false;
-      return true;
-    },
-    { timeout: 180_000, intervals: [250, 500, 1_000] },
-  ).toBe(true);
-
-  const snapshot = await readCapacitySnapshot(page);
-  if (!snapshot) throw new Error("Scene capacity benchmark did not produce a fresh timing snapshot");
-  const finalMarkerResult = readProgressMarker(snapshot);
-  if (finalMarkerResult === null) throw new Error("Scene capacity benchmark lost its profiling progress marker");
-  const finalMarker: ProgressMarker = finalMarkerResult;
-  assertCapacitySnapshot(snapshot, sceneId, state.rawDebug);
-  return {
-    snapshot,
-    sampling: {
-      backend: finalMarker.backend,
-      progressStart: initialMarker.progress,
-      progressEnd: finalMarker.progress,
-      freshSamples: finalMarker.progress - initialMarker.progress,
-      windowSize: GROUND_GLASS_PROFILING_WINDOW_SIZE,
-      sessionResetsStart: initialMarker.sessionResets,
-      sessionResetsEnd: finalMarker.sessionResets,
-    },
+): Promise<{
+  snapshot: SceneCapacitySnapshot;
+  sampling: BenchmarkSamplingEvidence;
+  runtime: BenchmarkRuntimeMetadata;
+}> => {
+  const navigationGuard = createMeasurementNavigationGuard(sceneId, state);
+  const onFrameNavigated = (frame: Frame): void => {
+    navigationGuard.observeNavigation({
+      isMainFrame: frame === page.mainFrame(),
+      url: frame.url(),
+    });
   };
+  page.on("framenavigated", onFrameNavigated);
+  try {
+    const measurementState = await waitForMeasurementState(
+      page,
+      sceneId,
+      state,
+      navigationGuard.assertStable,
+    );
+    navigationGuard.assertStable();
+    const initialMarker = await waitForProgressMarker(
+      page,
+      sceneId,
+      state,
+      navigationGuard.assertStable,
+    );
+    navigationGuard.assertStable();
+    const { snapshot, marker: finalMarker } = await waitForFreshSnapshot(
+      page,
+      sceneId,
+      state,
+      initialMarker,
+      navigationGuard.assertStable,
+    );
+    navigationGuard.assertStable();
+    assertCapacitySnapshot(snapshot, sceneId, state.rawDebug);
+    navigationGuard.assertStable();
+    return {
+      snapshot,
+      runtime: runtimeFromMeasurement(snapshot, measurementState),
+      sampling: {
+        backend: finalMarker.backend,
+        progressStart: initialMarker.progress,
+        progressEnd: finalMarker.progress,
+        freshSamples: finalMarker.progress - initialMarker.progress,
+        windowSize: GROUND_GLASS_PROFILING_WINDOW_SIZE,
+        sessionResetsStart: initialMarker.sessionResets,
+        sessionResetsEnd: finalMarker.sessionResets,
+      },
+    };
+  } finally {
+    page.off("framenavigated", onFrameNavigated);
+  }
 };
 
 const readEnvironment = async (page: Page, browserName: string): Promise<BenchmarkEnvironment> => {
   expect(await page.locator("canvas").count()).toBeGreaterThan(0);
+  const capacitySnapshot = await readCapacitySnapshot(page);
+  const profilingSnapshot = capacitySnapshot?.groundGlass;
+  if (!profilingSnapshot) {
+    throw new Error("Scene capacity benchmark could not read profiling metadata after the simulator canvas mounted");
+  }
   const browserInfo = await page.evaluate(() => {
     const canvas = document.querySelector("canvas");
     const context = (
@@ -297,41 +434,23 @@ const readEnvironment = async (page: Page, browserName: string): Promise<Benchma
       webgl: { vendor, renderer },
     };
   });
+  const hardwareQualification = classifyGraphicsBackend({
+    renderer: browserInfo.webgl.renderer,
+    profilingBackend: profilingSnapshot.profilingBackend,
+    timingUnit: profilingSnapshot.timingUnit,
+  });
   return {
     commitSha: process.env.SCENE_CAPACITY_BENCHMARK_COMMIT ?? null,
     timestamp: new Date().toISOString(),
     viewport: { width: 1440, height: 1000 },
     browserName,
+    profilingBackend: profilingSnapshot.profilingBackend,
+    timingUnit: profilingSnapshot.timingUnit,
+    hardwareQualification: {
+      required: process.env.SCENE_CAPACITY_REQUIRE_HARDWARE === "1",
+      ...hardwareQualification,
+    },
     ...browserInfo,
-  };
-};
-
-const readRuntime = async (page: Page): Promise<BenchmarkRecord["runtime"]> => {
-  const rtt = page.getByTestId("ground-glass-rtt");
-  const attrs = await rtt.evaluate((element) => ({
-    finalContentful: element.getAttribute("data-rtt-final-contentful"),
-    internalWidth: element.getAttribute("data-rtt-internal-width"),
-    internalHeight: element.getAttribute("data-rtt-internal-height"),
-    gatherWidth: element.getAttribute("data-rtt-blur-target-width"),
-    gatherHeight: element.getAttribute("data-rtt-blur-target-height"),
-    profilingBackend: element.getAttribute("data-rtt-profiling-backend"),
-    inspectionWindowActive: element.getAttribute("data-rtt-inspection-window-active"),
-  }));
-  const parseNumber = (value: string | null): number | null => {
-    const parsed = value === null ? Number.NaN : Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  };
-  const internalWidth = parseNumber(attrs.internalWidth);
-  const internalHeight = parseNumber(attrs.internalHeight);
-  const gatherWidth = parseNumber(attrs.gatherWidth);
-  const gatherHeight = parseNumber(attrs.gatherHeight);
-  return {
-    finalContentful: attrs.finalContentful === null ? null : attrs.finalContentful === "true",
-    internalResolution: internalWidth !== null && internalHeight !== null ? [internalWidth, internalHeight] : null,
-    gatherResolution: gatherWidth !== null && gatherHeight !== null ? [gatherWidth, gatherHeight] : null,
-    profilingBackend: attrs.profilingBackend,
-    inspectionWindowActive:
-      attrs.inspectionWindowActive === null ? null : attrs.inspectionWindowActive === "true",
   };
 };
 
@@ -366,6 +485,18 @@ const markdownSummary = (
       groundGlassP95Ratio: baseGroundGlass > 0 ? groundGlass / baseGroundGlass : null,
     };
   });
+  const hardwareRendererSummary = environment.hardwareQualification.hardwareRendererQualified
+    ? "qualified"
+    : environment.hardwareQualification.softwareRendererDetected
+      ? environment.hardwareQualification.required
+        ? "FAILED — known software renderer detected"
+        : "known software renderer detected (requirement not requested)"
+      : "unavailable";
+  const gpuTimingSummary = environment.hardwareQualification.gpuTimingQualified
+    ? "qualified"
+    : environment.profilingBackend === "cpu-fallback"
+      ? "unavailable — CPU fallback"
+      : "unavailable";
   return [
     "# Scene capacity benchmark",
     "",
@@ -375,6 +506,11 @@ const markdownSummary = (
     `Viewport: ${environment.viewport.width}×${environment.viewport.height}, DPR ${environment.devicePixelRatio}`,
     `WebGL vendor: ${environment.webgl.vendor ?? "unavailable"}`,
     `WebGL renderer: ${environment.webgl.renderer ?? "unavailable"}`,
+    `Hardware renderer requirement: ${environment.hardwareQualification.required ? "required" : "not requested"}`,
+    `Hardware renderer: ${hardwareRendererSummary}`,
+    `GPU timer queries: ${gpuTimingSummary}`,
+    `Profiling backend: ${environment.profilingBackend ?? "unavailable"}`,
+    `Timing unit: ${environment.timingUnit ?? "unavailable"}`,
     "",
     `Each record contains at least ${GROUND_GLASS_PROFILING_WINDOW_SIZE} fresh post-state samples after contentfulness and mode activation. Processed, Focus Loupe, and Raw RTT records use isolated state setup. WebGL metadata is collected after the first simulator canvas mounts.`,
     "Timings are same-session observations. GPU-query values are GPU milliseconds; CPU fallback values are CPU-submit milliseconds. Frame cadence is observed R3F frame cadence, not pure GPU execution time.",
@@ -392,6 +528,24 @@ const markdownSummary = (
   ].join("\n");
 };
 
+const writeBenchmarkOutput = async (
+  environment: BenchmarkEnvironment,
+  records: readonly BenchmarkRecord[],
+): Promise<void> => {
+  const output = {
+    environment,
+    records,
+    notes: {
+      frameCadence: "Observed active Ground Glass R3F frame cadence while the simulator viewport and UI are mounted; it is not pure GPU render time.",
+      rendererResources: "rendererResources.geometries and rendererResources.textures are renderer resource counts, not byte-accurate VRAM measurements.",
+      sampling: `Every timing record waits for a fresh post-state window of at least ${GROUND_GLASS_PROFILING_WINDOW_SIZE} valid backend samples after contentfulness and mode activation.`,
+    },
+  };
+  await mkdir(benchmarkOutputDirectory, { recursive: true });
+  await writeFile(`${benchmarkOutputDirectory}/scene-capacity-benchmark.json`, JSON.stringify(output, null, 2));
+  await writeFile(`${benchmarkOutputDirectory}/scene-capacity-benchmark.md`, markdownSummary(environment, records));
+};
+
 test.describe("scene capacity benchmark", () => {
   test.skip(!benchmarkEnabled, "Run through npm run benchmark:scene-capacity.");
   test.describe.configure({ mode: "serial" });
@@ -406,13 +560,26 @@ test.describe("scene capacity benchmark", () => {
       await page.goto(`/simulator/free/${sceneId}?sceneCapacityProfiling=1&dofProfiling=1&rttDiagnostics=1`);
       const processedState = { rawDebug: false, inspectionWindowActive: false };
       const processed = await waitForFreshStableSnapshot(page, sceneId, processedState);
-      if (!environment.current) environment.current = await readEnvironment(page, browserName);
+      if (!environment.current) {
+        environment.current = await readEnvironment(page, browserName);
+        if (
+          environment.current.hardwareQualification.required &&
+          !environment.current.hardwareQualification.hardwareRendererQualified
+        ) {
+          await writeBenchmarkOutput(environment.current, records);
+          const renderer = environment.current.webgl.renderer ?? "unavailable";
+          throw new Error(
+            `Hardware scene-capacity benchmark requires a qualified renderer; detected ${renderer}. ` +
+            "Use stable Google Chrome with hardware acceleration enabled and rerun.",
+          );
+        }
+      }
       records.push({
         sceneId,
         mode: "processed",
         snapshot: processed.snapshot,
         sampling: processed.sampling,
-        runtime: await readRuntime(page),
+        runtime: processed.runtime,
       });
 
       if (loupeScenes.has(sceneId)) {
@@ -434,7 +601,7 @@ test.describe("scene capacity benchmark", () => {
           mode: "processed-loupe",
           snapshot: loupe.snapshot,
           sampling: loupe.sampling,
-          runtime: await readRuntime(page),
+          runtime: loupe.runtime,
         });
       }
 
@@ -458,24 +625,13 @@ test.describe("scene capacity benchmark", () => {
           mode: "raw-rtt",
           snapshot: raw.snapshot,
           sampling: raw.sampling,
-          runtime: await readRuntime(page),
+          runtime: raw.runtime,
         });
       }
     }
 
     expect(environment.current).not.toBeNull();
-    const output = {
-      environment: environment.current,
-      records,
-      notes: {
-        frameCadence: "Observed active Ground Glass R3F frame cadence while the simulator viewport and UI are mounted; it is not pure GPU render time.",
-        rendererResources: "rendererResources.geometries and rendererResources.textures are renderer resource counts, not byte-accurate VRAM measurements.",
-        sampling: `Every timing record waits for a fresh post-state window of at least ${GROUND_GLASS_PROFILING_WINDOW_SIZE} valid backend samples after contentfulness and mode activation.`,
-      },
-    };
-    await mkdir(benchmarkOutputDirectory, { recursive: true });
-    await writeFile(`${benchmarkOutputDirectory}/scene-capacity-benchmark.json`, JSON.stringify(output, null, 2));
-    await writeFile(`${benchmarkOutputDirectory}/scene-capacity-benchmark.md`, markdownSummary(environment.current as BenchmarkEnvironment, records));
+    await writeBenchmarkOutput(environment.current as BenchmarkEnvironment, records);
     expect(records.length).toBe(benchmarkScenes.length + loupeScenes.size + rawScenes.size);
   });
 });

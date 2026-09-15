@@ -11,7 +11,7 @@ import {
   sceneSubjectRegistry,
 } from "../../render/sceneSubjectRegistry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
-import { publicSceneCatalog } from "../../app/publicScenes";
+import { getAvailablePublicSceneEntries } from "../../app/publicScenes";
 import geometry from "../../scenes/shelfSwingGeometry";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
@@ -26,6 +26,8 @@ import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectGeometry,
 } from "../../scenes/lessonZeroGroundGlassSubject";
+import { TEACHING_LIGHTING_CONFIG } from "../../render/TeachingLighting";
+import { WORLD_SCALE } from "../../render/rttUtils";
 
 afterEach(cleanup);
 
@@ -64,6 +66,7 @@ const boardFootprintsSeparated = (first: BoardFootprint, second: BoardFootprint)
 describe("scene subject registry", () => {
   it("registers every canonical rendered scene and rejects unknown IDs", () => {
     expect(Object.keys(sceneSubjectRegistry)).toEqual([
+      "macro-bellows-extension",
       "view-camera-anatomy",
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
@@ -102,8 +105,8 @@ describe("scene subject registry", () => {
     });
   });
 
-  it("requires every public scene to declare the RTT subject contract", () => {
-    for (const entry of publicSceneCatalog) {
+  it("requires every available public scene to declare the RTT subject contract", () => {
+    for (const { meta: entry } of getAvailablePublicSceneEntries()) {
       expect(isGroundGlassRttScene(entry.id), `public scene ${entry.id} must use RTT`).toBe(true);
       expect(getSceneSubjectRegistration(entry.id), `public scene ${entry.id} needs a subject registration`).toBeDefined();
       expect(getRegisteredSceneSubject(entry.id), `public scene ${entry.id} needs a React subject`).toBeDefined();
@@ -111,6 +114,18 @@ describe("scene subject registry", () => {
       const group = createRegisteredRttSubject(entry.id);
       expect(group, `public scene ${entry.id} needs an RTT subject factory`).not.toBeNull();
       if (group) disposeRegisteredRttSubject(entry.id, group);
+    }
+  });
+
+  it("keeps in-development public roadmap scenes out of the renderer registry", () => {
+    for (const sceneId of [
+      "macro-depth-of-field",
+      "macro-oblique-plane",
+      "macro-compound-movements",
+    ]) {
+      expect(isGroundGlassRttScene(sceneId)).toBe(false);
+      expect(getSceneSubjectRegistration(sceneId)).toBeUndefined();
+      expect(getRegisteredSceneSubject(sceneId)).toBeUndefined();
     }
   });
 
@@ -385,7 +400,7 @@ describe("scene subject registry", () => {
     expect(registration?.showReferenceCamera).toBe(false);
   });
 
-  it.each(["shelf-swing", "table-tilt", "oblique-architecture"])(
+  it.each(["macro-bellows-extension", "shelf-swing", "table-tilt", "oblique-architecture", "architecture-rise"])(
     "uses the explicit unique-resource disposer for %s",
     (sceneId) => {
       const group = createRegisteredRttSubject(sceneId)!;
@@ -398,7 +413,7 @@ describe("scene subject registry", () => {
     },
   );
 
-  it.each(["focus-fundamentals-two-targets", "architecture-rise"])(
+  it.each(["focus-fundamentals-two-targets"])(
     "does not generically dispose shared factory resources for %s",
     (sceneId) => {
       expect(getSceneSubjectRegistration(sceneId)?.disposeRttGroup).toBeUndefined();
@@ -426,15 +441,32 @@ describe("scene subject registry", () => {
     expect(lighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: -1.5 });
   });
 
-  it("aims Mirror Shift lighting into the reflected chamber", () => {
-    const lighting = getSceneSubjectRegistration("mirror-shift")?.rttLighting;
-    expect(lighting?.targetMm).toEqual(
-      reflectPointAcrossMirrorPlane({
-        x: mirrorShiftGeometry.mirror.center.x,
-        y: mirrorShiftGeometry.mirror.center.y,
-        z: mirrorShiftGeometry.floor.centerZ,
-      }),
-    );
-    expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: 2.5 });
+  it("derives Mirror Shift observer and RTT lights from mirrored world positions", () => {
+    const registration = getSceneSubjectRegistration("mirror-shift");
+    const observerLighting = registration?.viewportLighting;
+    const rttLighting = registration?.rttLighting;
+    const realTargetMm = {
+      x: mirrorShiftGeometry.mirror.center.x,
+      y: mirrorShiftGeometry.mirror.center.y,
+      z: mirrorShiftGeometry.floor.centerZ,
+    };
+    const realKeyPositionMm = {
+      x: realTargetMm.x + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[0] / WORLD_SCALE,
+      y: realTargetMm.y + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[1] / WORLD_SCALE,
+      z: realTargetMm.z + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[2] / WORLD_SCALE,
+    };
+    const reflectedTargetMm = reflectPointAcrossMirrorPlane(realTargetMm);
+    const reflectedKeyPositionMm = reflectPointAcrossMirrorPlane(realKeyPositionMm);
+
+    expect(observerLighting?.targetMm).toEqual(realTargetMm);
+    expect(observerLighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -2.5 });
+
+    expect(rttLighting?.targetMm).toEqual(reflectedTargetMm);
+    expect(rttLighting?.keyOffsetWorld).toEqual({
+      x: (reflectedKeyPositionMm.x - reflectedTargetMm.x) * WORLD_SCALE,
+      y: (reflectedKeyPositionMm.y - reflectedTargetMm.y) * WORLD_SCALE,
+      z: (reflectedKeyPositionMm.z - reflectedTargetMm.z) * WORLD_SCALE,
+    });
+    expect(rttLighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: 1.5 });
   });
 });

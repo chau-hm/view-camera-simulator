@@ -1,5 +1,10 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
+import {
+  expectLearningFeedbackCompleted,
+  expectLearningFeedbackNotCompleted,
+  openLearningFeedback,
+} from "./helpers/learningOverlay";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
@@ -66,7 +71,7 @@ test("Architecture + Foreground DOF task starts solved through PR7C and complete
       { exact: true },
     ),
   ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
 
   const controls = page.getByRole("region", { name: "Camera Controls" });
   const rise = controls.getByRole("slider", { name: "Rise" });
@@ -92,18 +97,22 @@ test("Architecture + Foreground DOF task starts solved through PR7C and complete
   // the learner must continue to the first fully Acceptable/Sharp aperture.
   await aperture.selectOption("22");
   await expect(aperture).toHaveValue("22");
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
   await aperture.selectOption("32");
   await expect(aperture).toHaveValue("32");
-  await expect(page.getByRole("heading", { name: "Task completed" })).toBeVisible({ timeout: 20_000 });
+  await expectLearningFeedbackCompleted(page);
+  const feedback = await openLearningFeedback(page);
+  await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible({ timeout: 20_000 });
   await expect(
-    page.getByText(/focus plane was already aligned; stopping down has now expanded usable depth/i),
+    feedback.getByText(/focus plane was already aligned; stopping down has now expanded usable depth/i),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Restart task" }).click();
-  await expect(page.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
+  await expectLearningFeedbackNotCompleted(page);
+  const resetFeedback = await openLearningFeedback(page);
+  await expect(resetFeedback.getByRole("heading", { name: "Task completed" })).not.toBeVisible();
   await expect(rise).toHaveValue("20");
   await expect(tilt).toHaveValue("2");
   await expect(focus).toHaveValue("6830");

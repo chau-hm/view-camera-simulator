@@ -1,7 +1,11 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { FocusDistributionPanel } from "../../components/simulator/FocusDistributionPanel";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { i18n } from "../../i18n";
+import { projectSceneFocusTargetsToGroundGlass } from "../../render/groundGlassTargetProjection";
+import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const allTargets = [
   { id: "near-left", sharpnessPercent: 81.6, status: "sharp", displayUv: { u: 0.1, v: 0.1 }, visible: true },
@@ -48,6 +52,8 @@ describe("FocusDistributionPanel", () => {
     expect(within(rows[1]).getByRole("cell", { name: /Centre.*Middle/ })).toHaveTextContent("100%");
     expect(within(rows[2]).getByRole("cell", { name: /Lower right.*Far right/ })).toHaveTextContent("83%");
     expect(within(rows[1]).getByRole("cell", { name: /Sharp/ })).toHaveAccessibleName(/Closest point/);
+    expect(panel.querySelectorAll("td")).toHaveLength(9);
+    expect(panel.querySelectorAll(".focus-distribution-cell__target-marker")).toHaveLength(7);
     expect(screen.getByRole("heading", { name: "Focus distribution" })).toBeInTheDocument();
     expect(screen.getByTestId("focus-distribution-orientation")).toHaveTextContent("Upright");
   });
@@ -133,6 +139,9 @@ describe("FocusDistributionPanel", () => {
     expect(screen.getByRole("cell", { name: /Centre.*Middle/ })).toHaveTextContent("75%");
     expect(screen.queryByText("Near right")).not.toBeInTheDocument();
     expect(screen.queryByText("Far right")).not.toBeInTheDocument();
+    const panel = screen.getByTestId("focus-distribution-panel");
+    expect(panel.querySelectorAll("td")).toHaveLength(9);
+    expect(panel.querySelectorAll(".focus-distribution-cell--empty")).toHaveLength(7);
   });
 
   it("localizes the learner-facing panel and position labels", async () => {
@@ -168,5 +177,105 @@ describe("FocusDistributionPanel", () => {
     expect(screen.getByRole("cell", { name: /左中.*建築物中段/ })).toHaveAccessibleName(
       /68%.*可接受/,
     );
+  });
+
+  it("distinguishes genuinely unplaced targets from spatially placed targets", () => {
+    render(
+      <FocusDistributionPanel
+        sceneId="architecture-foreground"
+        focusTargets={[
+          {
+            id: "building-middle",
+            sharpnessPercent: 35,
+            status: "soft",
+            displayUv: { u: 0.5, v: 0.5 },
+            visible: false,
+          },
+        ]}
+        previewMode="upright"
+      />,
+    );
+
+    const panel = screen.getByTestId("focus-distribution-panel");
+    expect(screen.getByText("Outside current Ground Glass view")).toBeInTheDocument();
+    expect(panel.querySelector('[data-focus-target-id="building-middle"]')).toHaveAccessibleName(
+      /Outside current Ground Glass view.*Building middle.*35%.*Soft/,
+    );
+    expect(panel.querySelectorAll(".focus-distribution-cell--empty")).toHaveLength(9);
+  });
+
+  it("localizes the unplaced-target distinction", async () => {
+    await i18n.changeLanguage("zh-HK");
+    render(
+      <FocusDistributionPanel
+        sceneId="architecture-foreground"
+        focusTargets={[
+          {
+            id: "building-middle",
+            sharpnessPercent: 35,
+            status: "soft",
+            displayUv: null,
+            visible: false,
+          },
+        ]}
+        previewMode="upright"
+      />,
+    );
+
+    expect(screen.getByText("目前毛玻璃視野外")).toBeInTheDocument();
+  });
+
+  it("keeps the real Table Tilt collision as a compact stacked cell", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...tableTiltScene.cameraPreset,
+      activeSceneId: tableTiltScene.id,
+      activeTaskId: null,
+      mode: "free" as const,
+    };
+    const projectedTargets = projectSceneFocusTargetsToGroundGlass({
+      sceneDef: tableTiltScene,
+      opticsState: deriveOpticsState(camera, tableTiltScene),
+      aperture: camera.aperture,
+      previewMode: "raw",
+    });
+
+    render(
+      <FocusDistributionPanel
+        sceneId={tableTiltScene.id}
+        focusTargets={projectedTargets.map((target) => ({
+          id: target.id,
+          sharpnessPercent: target.id === "near-cup" ? 91 : target.id === "mid-notebook" ? 98 : 99,
+          status: target.id === "near-cup" ? "soft" : target.id === "mid-notebook" ? "acceptable" : "sharp",
+          displayUv: target.displayUv,
+          visible: target.visible,
+        }))}
+        previewMode="raw"
+        metric="point"
+      />,
+    );
+
+    const panel = screen.getByTestId("focus-distribution-panel");
+    const targetIds = ["near-cup", "mid-notebook", "far-book"];
+    const targetEntries = targetIds.map((targetId) => panel.querySelector(`[data-focus-target-id="${targetId}"]`));
+    expect(targetEntries.every(Boolean)).toBe(true);
+    expect(targetEntries.every((target) => target?.closest("td") === targetEntries[0]?.closest("td"))).toBe(true);
+    expect(panel.querySelectorAll(".focus-distribution-cell--stacked")).toHaveLength(1);
+    expect(panel).toHaveTextContent("Near card");
+    expect(panel).toHaveTextContent("Middle notebook");
+    expect(panel).toHaveTextContent("Far chart");
+    expect(panel).toHaveTextContent("91%");
+    expect(panel).toHaveTextContent("98%");
+    expect(panel).toHaveTextContent("99%");
+    targetEntries.forEach((target, index) => {
+      expect(target).not.toBeNull();
+      if (!target) return;
+      expect(target).toHaveAttribute("role", "group");
+      expect(target).toHaveAccessibleName(/Raw|Upper|Middle|Lower/);
+      const targetId = targetIds[index];
+      if (targetId === "near-cup") expect(target).toHaveTextContent("—");
+      if (targetId === "mid-notebook") expect(target).toHaveTextContent("~");
+      if (targetId === "far-book") expect(target).toHaveTextContent("✓");
+    });
   });
 });
