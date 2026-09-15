@@ -2,6 +2,10 @@ import { simulatorMessages as englishSimulatorMessages } from "../en/simulator";
 import type { MessageShape } from "../types";
 
 export const simulatorMessages = {
+  headerContext: {
+    freeExploration: "自由探索",
+    lesson: "課程",
+  },
   task: {
     title: "任務",
     freePractice: "自由練習",

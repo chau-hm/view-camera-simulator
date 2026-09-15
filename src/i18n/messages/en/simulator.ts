@@ -1,4 +1,8 @@
 export const simulatorMessages = {
+  headerContext: {
+    freeExploration: "Free Exploration",
+    lesson: "Lesson",
+  },
   task: {
     title: "Task",
     freePractice: "Free practice",

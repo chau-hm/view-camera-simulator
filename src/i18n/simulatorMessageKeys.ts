@@ -1,4 +1,8 @@
 export const simulatorMessageKeys = {
+  headerContext: {
+    freeExploration: "simulator.headerContext.freeExploration",
+    lesson: "simulator.headerContext.lesson",
+  },
   task: {
     title: "simulator.task.title",
     freePractice: "simulator.task.freePractice",
