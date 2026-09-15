@@ -3,6 +3,7 @@ import { useAppStore } from "../../state/appStore";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { getSceneFocusDistanceRange } from "../../scenes/definitions";
 import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
+import { macroDepthOfFieldScene } from "../../scenes/definitions/macro-depth-of-field";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE, isApertureValue } from "../../utils/constants";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
@@ -284,6 +285,34 @@ describe("app store STA-001", () => {
     const optics = deriveOpticsState(state.camera, macroBellowsExtensionScene);
     expect(optics.diagnostics.imageDistanceMm).toBeCloseTo(180, 12);
     expect(optics.filmCenterWorld.z).toBeCloseTo(-180, 12);
+  });
+
+  it("does not inherit Infinity Focus when entering Macro Scene 2", () => {
+    const store = useAppStore.getState();
+
+    store.initializeSimulatorRoute({ mode: "free", sceneId: "architecture-rise", taskId: null });
+    store.setInfinityFocus();
+    expect(useAppStore.getState().camera.focusMode).toBe("infinity");
+
+    store.clearSimulatorRouteInitialization();
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: macroDepthOfFieldScene.id,
+      taskId: null,
+    });
+
+    const state = useAppStore.getState();
+    expect(state.camera).toMatchObject({
+      activeSceneId: macroDepthOfFieldScene.id,
+      focusMode: "finite",
+      focusDistanceMm: 400,
+      lastFiniteFocusDepthMm: 400,
+    });
+
+    const optics = deriveOpticsState(state.camera, macroDepthOfFieldScene);
+    expect(optics.diagnostics.focusObjectDistanceMm).toBeCloseTo(400, 12);
+    expect(optics.diagnostics.imageDistanceMm).toBeCloseTo(240, 12);
+    expect(optics.filmCenterWorld.z).toBeCloseTo(-240, 12);
   });
 
   it("restores finite focus when lesson Observe follows another scene's Infinity Reset", () => {

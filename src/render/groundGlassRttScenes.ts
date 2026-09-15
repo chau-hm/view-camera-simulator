@@ -4,6 +4,7 @@ import { calculateImageDistanceAlongOpticalAxisMm } from "../core/optics/calcula
 
 export const RTT_SCENES = [
   "macro-bellows-extension",
+  "macro-depth-of-field",
   "view-camera-anatomy",
   "focus-fundamentals-two-targets",
   "architecture-rise",

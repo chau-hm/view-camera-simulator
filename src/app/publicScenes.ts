@@ -346,8 +346,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       publicSceneMessageKeys.macroDepthOfField.topics.aperture,
       publicSceneMessageKeys.macroDepthOfField.topics.focusDistribution,
     ],
-    availability: "in-development",
-    availableModes: [],
+    availability: "available",
+    availableModes: ["free"],
     thumbnailAsset: "assets/macro-depth-of-field.webp",
   },
   {

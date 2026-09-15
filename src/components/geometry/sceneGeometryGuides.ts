@@ -207,6 +207,11 @@ const targetMessageKeys: Readonly<Record<string, SceneGeometryTargetMessageKeyMa
   "macro-bellows-extension": {
     "specimen-coin": simulatorMessageKeys.geometry.macroSpecimenTarget,
   },
+  "macro-depth-of-field": {
+    "macro-depth-near": simulatorMessageKeys.geometry.macroDepthNearTarget,
+    "macro-depth-middle": simulatorMessageKeys.geometry.macroDepthMiddleTarget,
+    "macro-depth-far": simulatorMessageKeys.geometry.macroDepthFarTarget,
+  },
 };
 
 export const getSceneGeometryGuides = (sceneId: string): readonly SceneGeometryGuide[] =>

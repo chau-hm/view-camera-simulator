@@ -43,12 +43,11 @@ const validate = ({
   });
 
 describe("isValidSimulatorRoute", () => {
-  it.each(["shelf-swing", "table-tilt", "oblique-architecture", "macro-bellows-extension"])("accepts free mode without a task for %s", (sceneId) => {
+  it.each(["shelf-swing", "table-tilt", "oblique-architecture", "macro-bellows-extension", "macro-depth-of-field"])("accepts free mode without a task for %s", (sceneId) => {
     expect(validate({ mode: "free", sceneId })).toBe(true);
   });
 
   it.each([
-    "macro-depth-of-field",
     "macro-oblique-plane",
     "macro-compound-movements",
   ])("rejects every Macro Photography roadmap route for %s", (sceneId) => {
@@ -61,6 +60,11 @@ describe("isValidSimulatorRoute", () => {
       availableModes: ["free"] as const,
     };
     expect(validate({ mode: "free", sceneId, entry })).toBe(false);
+  });
+
+  it("keeps Macro Scene 2 Free Practice-only", () => {
+    expect(validate({ mode: "guided", sceneId: "macro-depth-of-field", taskId: "rise-01" })).toBe(false);
+    expect(validate({ mode: "free", sceneId: "macro-depth-of-field", taskId: "rise-01" })).toBe(false);
   });
 
   it.each([

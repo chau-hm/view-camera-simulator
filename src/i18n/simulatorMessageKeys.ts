@@ -181,6 +181,9 @@ export const simulatorMessageKeys = {
   },
   geometry: {
     macroSpecimenTarget: "simulator.geometry.macroSpecimenTarget",
+    macroDepthNearTarget: "simulator.geometry.macroDepthNearTarget",
+    macroDepthMiddleTarget: "simulator.geometry.macroDepthMiddleTarget",
+    macroDepthFarTarget: "simulator.geometry.macroDepthFarTarget",
     viewLabel: "simulator.geometry.viewLabel",
     framingLabel: "simulator.geometry.framingLabel",
     side: "simulator.geometry.side",

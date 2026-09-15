@@ -183,6 +183,9 @@ export const simulatorMessages = {
   },
   geometry: {
     macroSpecimenTarget: "Specimen coin",
+    macroDepthNearTarget: "Near detail",
+    macroDepthMiddleTarget: "Middle detail",
+    macroDepthFarTarget: "Far detail",
     viewLabel: "Geometry view",
     framingLabel: "Geometry framing",
     side: "Side",
