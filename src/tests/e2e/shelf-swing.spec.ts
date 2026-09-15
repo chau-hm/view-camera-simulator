@@ -368,7 +368,7 @@ test("Shelf Swing geometry limits projected depth planes to the movement-relevan
   }
 
   await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
-  await expect(page.locator("section.geometry-viewport")).toHaveCount(0);
+  await expect(page.locator("section.geometry-viewport")).toHaveCount(1);
   await expect(trigger).toBeFocused();
 });
 

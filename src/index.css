@@ -175,10 +175,23 @@ button {
 
 .simulator-viewport-grid {
   display: grid;
- grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "scene groundglass"
+    "geometry focus";
   gap: 16px;
-  align-items: stretch;
+  align-items: start;
   min-width: 0;
+}
+
+.simulator-workspace-grid__scene { grid-area: scene; }
+.simulator-workspace-grid__ground-glass { grid-area: groundglass; }
+.simulator-workspace-grid__geometry { grid-area: geometry; }
+.simulator-workspace-grid__focus { grid-area: focus; min-width: 0; }
+.simulator-workspace-grid__active { grid-area: active; }
+
+.simulator-viewport-grid > .simulator-workspace-grid__primary {
+  align-self: stretch;
 }
 
 .simulator-viewport-context {
@@ -201,17 +214,29 @@ button {
   width: 100%;
   min-height: 0;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "active";
+  align-items: stretch;
 }
 
-/* Make the two viewport cards match height and layout */
+/* Keep workspace cards as column layouts while allowing secondary cards to size naturally. */
 .simulator-viewport-grid > .simulator-card {
-  height: 100%;
-  min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.simulator-viewport-grid > .simulator-card > section {
+.simulator-viewport-grid > .simulator-workspace-grid__primary > section {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.simulator-viewport-grid--expanded > .simulator-card {
+  height: 100%;
+  min-height: 0;
+}
+
+.simulator-viewport-grid--expanded > .simulator-card > section {
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -975,6 +1000,15 @@ button {
 }
 
 @media (max-width: 900px) {
+  .simulator-viewport-grid:not(.simulator-viewport-grid--expanded) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "scene"
+      "groundglass"
+      "geometry"
+      "focus";
+  }
+
   .groundglass-panel--expanded {
     grid-template-rows: auto minmax(min(320px, 45vh), 1fr) auto;
     overflow-y: auto;
@@ -1788,8 +1822,7 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   min-width: 0;
   flex-wrap: wrap;
 }
-.geometry-viewport__restore-action,
-.scene-toolbar__geometry-action {
+.geometry-viewport__viewport-action {
   position: static;
   flex: 0 0 auto;
   z-index: auto;
