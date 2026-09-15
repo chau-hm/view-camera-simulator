@@ -83,6 +83,15 @@ import {
 import { resolveMirrorShiftLighting } from "./mirrorShiftLighting";
 import { MacroSpecimenSubject, createMacroSpecimenGroup, disposeMacroSpecimenGroup } from "./MacroSpecimenSubjectFactory";
 import { MACRO_SPECIMEN, macroSpecimenBoundsMm } from "../scenes/macroSpecimenGeometry";
+import {
+  MacroDepthOfFieldSubject,
+  createMacroDepthOfFieldGroup,
+  disposeMacroDepthOfFieldGroup,
+} from "./MacroDepthOfFieldSubjectFactory";
+import {
+  MACRO_DEPTH_SPECIMEN_CENTER_MM,
+  macroDepthOfFieldSubjectBoundsMm,
+} from "../scenes/macroDepthOfFieldGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -224,6 +233,17 @@ export const sceneSubjectRegistry = {
     rttBounds: macroSpecimenBoundsMm,
     rttLighting: {
       targetMm: MACRO_SPECIMEN.faceCenterMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
+    },
+  },
+  "macro-depth-of-field": {
+    SceneSubject: MacroDepthOfFieldSubject,
+    createRttGroup: createMacroDepthOfFieldGroup,
+    disposeRttGroup: disposeMacroDepthOfFieldGroup,
+    rttBounds: macroDepthOfFieldSubjectBoundsMm,
+    rttLighting: {
+      targetMm: MACRO_DEPTH_SPECIMEN_CENTER_MM,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
