@@ -78,7 +78,7 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("8000");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "5.6");
   await expectGroundGlassReady(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
@@ -90,7 +90,7 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   await expect(page.getByRole("slider", { name: "Rise" })).toBeEnabled();
   await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await setStepRangeInput(page, "Rise", 33);
   await inspectCompletedFeedbackAndReturnToTask(page);
 
@@ -105,7 +105,7 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   await expect(page.getByRole("slider", { name: "Swing" })).toBeEnabled();
   await expect(page.getByLabel("Focus distance")).toHaveValue("8000");
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await setStepRangeInput(page, "Swing", 3.6);
   await inspectCompletedFeedbackAndReturnToTask(page);
 
@@ -119,7 +119,7 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
   await expect(page.getByLabel("Focus distance")).toHaveValue("8000");
   await expect(page.getByLabel("Focus distance")).toBeEnabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await expectLearningFeedbackNotCompleted(page);
   // Focus is still changed through the rendered public range input. The
   // shared helper dispatches the native input event once instead of sending
@@ -136,11 +136,11 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   await expect(page.getByRole("slider", { name: "Rise" })).toBeDisabled();
   await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "5.6");
   await expect(page.getByText("Lesson complete", { exact: true })).not.toBeVisible();
   await expectGroundGlassMounted(page);
 
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({
     timeout: 20_000,
   });
@@ -179,23 +179,23 @@ test("Interior Corner keeps the solved focus state when returning to Swing", asy
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expectLessonStage(page, "Step 5 of 5", "Aperture");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "5.6");
 
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({
     timeout: 20_000,
   });
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("33");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
   await expect(page.getByLabel("Focus distance")).toHaveValue("38140");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
 
   await page.getByRole("link", { name: "Previous" }).click();
   await expectLessonStage(page, "Step 4 of 5", "Refine Focus");
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("33");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
   await expect(page.getByLabel("Focus distance")).toHaveValue("38140");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "5.6");
   await inspectCompletedFeedbackAndReturnToTask(page);
   await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
 
@@ -207,11 +207,11 @@ test("Interior Corner keeps the solved focus state when returning to Swing", asy
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("33");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("3.6");
   await expect(page.getByLabel("Focus distance")).toHaveValue("38140");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("5.6");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "5.6");
   await expect(page.getByRole("slider", { name: "Rise" })).toBeDisabled();
   await expect(page.getByRole("slider", { name: "Swing" })).toBeEnabled();
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await inspectCompletedFeedbackAndReturnToTask(page);
   await expect(page.getByRole("link", { name: "Continue" })).toBeVisible();
 
@@ -222,7 +222,7 @@ test("Interior Corner keeps the solved focus state when returning to Swing", asy
 
   await page.getByRole("link", { name: "Continue" }).click();
   await expectLessonStage(page, "Step 5 of 5", "Aperture");
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({
     timeout: 20_000,
   });

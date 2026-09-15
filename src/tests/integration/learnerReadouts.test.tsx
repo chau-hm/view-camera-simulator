@@ -153,7 +153,7 @@ describe("scene-aware learner readouts", () => {
     const controls = screen.getByRole("region", { name: "Camera Controls" });
     expect(within(controls).getByRole("radio", { name: "Front standard" })).toBeChecked();
     expect(screen.getByText("Front focusing moves the lens/viewpoint. The film stays fixed.")).toBeInTheDocument();
-    expect(within(controls).getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(within(controls).getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
     expect(targets).toHaveTextContent("Focus distribution");
 
     fireEvent.click(within(controls).getByRole("radio", { name: "Rear standard" }));

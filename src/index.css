@@ -150,6 +150,13 @@ button {
   box-shadow: var(--shadow-card);
 }
 
+@media (max-width: 900px) {
+  .simulator-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
 .camera-calibration-workbench { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); font-size: 12px; }
 .camera-calibration-workbench__header { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
 .camera-calibration-workbench h4 { margin: 0; font-size: 14px; }
@@ -1233,6 +1240,19 @@ button {
  margin-bottom: 12px;
 }
 
+.camera-controls__sections {
+ display: block;
+ min-width: 0;
+}
+
+.camera-controls__lock-reason {
+ display: flex;
+ align-items: flex-start;
+ gap: 5px;
+ margin: 7px 0 0;
+ line-height: 1.3;
+}
+
 .sim-section-label {
  font-size: 11px;
  text-transform: uppercase;
@@ -1248,7 +1268,7 @@ button {
 
 .lens-control {
  display: grid;
- gap: 7px;
+ gap: 5px;
  min-width: 0;
  margin: 0;
  padding: 0;
@@ -1259,7 +1279,7 @@ button {
  margin: 0;
  color: var(--text-muted);
  font-size: 12px;
- line-height: 1.4;
+ line-height: 1.3;
 }
 
 .lens-control__options {
@@ -1271,11 +1291,12 @@ button {
 
 .lens-control__option {
  position: relative;
- display: grid;
- gap: 2px;
+ display: flex;
+ align-items: center;
+ gap: 4px;
  min-width: 0;
- min-height: 48px;
- padding: 8px 10px;
+ min-height: 36px;
+ padding: 6px 8px;
  border: 1px solid var(--border);
  border-radius: var(--radius-md);
  background: var(--surface-muted);
@@ -1304,11 +1325,16 @@ button {
 }
 
 .lens-control__option-value {
- font-size: 14px;
+ font-size: 13px;
  font-weight: 700;
 }
 
 .lens-control__option-label {
+ color: var(--text-muted);
+ font-size: 12px;
+}
+
+.lens-control__option-separator {
  color: var(--text-muted);
  font-size: 12px;
 }
@@ -1327,6 +1353,275 @@ button {
  background: #fff;
  text-align: right;
  font-size: 13px;
+}
+
+.compact-range-row {
+ display: grid;
+ grid-template-columns: 6.5rem minmax(0, 1fr) 6.5rem;
+ align-items: center;
+ gap: 8px;
+ min-width: 0;
+}
+
+.compact-range-row--with-trailing {
+ grid-template-columns: 6.5rem minmax(0, 1fr) 6.5rem auto;
+}
+
+.compact-range-row__label {
+ min-width: 0;
+ overflow: hidden;
+ color: var(--text);
+ font-size: 13px;
+ font-weight: 650;
+ line-height: 1.2;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+}
+
+.compact-range-row__slider {
+ min-width: 0;
+}
+
+.compact-range-row__value {
+ display: block;
+ width: 6.5rem;
+ min-width: 0;
+ padding: 4px 7px;
+ border: 1px solid rgba(2, 6, 23, 0.06);
+ border-radius: 6px;
+ background: #fff;
+ color: var(--text-muted);
+ font-size: 12px;
+ font-variant-numeric: tabular-nums;
+ line-height: 1.25;
+ text-align: right;
+ white-space: nowrap;
+}
+
+.compact-range-row[data-active="true"] .compact-range-row__value {
+ border-color: var(--primary);
+ background: var(--primary-soft);
+ color: var(--primary);
+ font-weight: 700;
+}
+
+.compact-range-row__trailing {
+ display: inline-flex;
+ min-width: 0;
+}
+
+.movement-controls,
+.focus-control,
+.aperture-control {
+ display: grid;
+ gap: 7px;
+ min-width: 0;
+}
+
+.movement-controls__header {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: 8px;
+ min-width: 0;
+}
+
+.movement-controls__heading,
+.focus-control > h3,
+.aperture-control > h3 {
+ min-width: 0;
+ margin: 0;
+ color: var(--text);
+ font-size: 12px;
+ font-weight: 700;
+ letter-spacing: 0.06em;
+ line-height: 1.2;
+ text-transform: uppercase;
+}
+
+.movement-controls__help {
+ flex: 0 0 28px;
+ width: 28px;
+ height: 28px;
+ padding: 0;
+}
+
+.movement-controls__rows {
+ display: grid;
+ gap: 3px;
+ min-width: 0;
+}
+
+.movement-controls__lock-reason,
+.focus-control__lock-reason,
+.aperture-control__lock-reason {
+ display: flex;
+ align-items: flex-start;
+ gap: 5px;
+ margin: 0;
+ line-height: 1.3;
+}
+
+.movement-help-dialog {
+ display: grid;
+ gap: 7px;
+ margin-top: 2px;
+ padding: 10px;
+ border: 1px solid var(--border);
+ border-radius: var(--radius-md);
+ background: var(--surface-muted);
+}
+
+.movement-help-dialog h4,
+.movement-help-dialog p {
+ margin: 0;
+}
+
+.focus-control__context,
+.focus-control__standard {
+ display: grid;
+ gap: 4px;
+ min-width: 0;
+}
+
+.focus-control__context {
+ line-height: 1.3;
+}
+
+.focus-control__standard {
+ margin: 0;
+ padding: 0;
+ border: 0;
+}
+
+.focus-control__standard legend {
+ margin: 0;
+ padding: 0;
+ color: var(--text-muted);
+ font-size: 11px;
+ font-weight: 650;
+}
+
+.focus-control__standard-options {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 5px;
+ min-width: 0;
+}
+
+.focus-control__standard .choice-label {
+ min-height: 28px;
+ padding: 4px 8px;
+ border: 1px solid var(--border);
+ border-radius: 6px;
+ background: var(--surface-muted);
+ font-size: 13px;
+}
+
+.focus-control__standard-help,
+.focus-control__target-actions {
+ margin: 0;
+}
+
+.focus-control__target-actions {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 6px;
+ min-width: 0;
+}
+
+.aperture-control__options {
+ display: grid;
+ grid-template-columns: repeat(6, minmax(0, 1fr));
+ gap: 4px;
+ min-width: 0;
+ margin: 0;
+ padding: 0;
+ border: 0;
+}
+
+.aperture-control__option {
+ position: relative;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ min-width: 0;
+ min-height: 32px;
+ padding: 4px 5px;
+ border: 1px solid var(--border);
+ border-radius: 6px;
+ background: var(--surface-muted);
+ color: var(--text);
+ cursor: pointer;
+ font-size: 12px;
+ font-variant-numeric: tabular-nums;
+ white-space: nowrap;
+}
+
+.aperture-control__option:focus-within {
+ outline: 2px solid var(--primary);
+ outline-offset: 2px;
+}
+
+.aperture-control__option[data-selected="true"] {
+ border-color: var(--primary);
+ background: var(--primary-soft);
+ color: var(--primary);
+ font-weight: 700;
+}
+
+.aperture-control__option input {
+ position: absolute;
+ inset: 0;
+ width: 100%;
+ height: 100%;
+ margin: 0;
+ opacity: 0;
+ cursor: pointer;
+}
+
+.aperture-control__options:disabled,
+.aperture-control__options:disabled .aperture-control__option {
+ cursor: not-allowed;
+}
+
+.aperture-control__options:disabled .aperture-control__option {
+ opacity: 0.5;
+}
+
+@media (max-width: 480px) {
+ .simulator-aside {
+  padding: 14px;
+ }
+
+ .compact-range-row {
+  grid-template-columns: 5.8rem minmax(0, 1fr) 5.2rem;
+  gap: 5px;
+ }
+
+ .compact-range-row--with-trailing {
+  grid-template-columns: 5.8rem minmax(0, 1fr) 5.2rem auto;
+ }
+
+ .compact-range-row__label {
+  font-size: 12px;
+ }
+
+ .compact-range-row__value {
+  width: 5.2rem;
+  min-width: 0;
+  padding-inline: 5px;
+  font-size: 11px;
+ }
+
+ .aperture-control__options {
+  gap: 3px;
+ }
+
+ .aperture-control__option {
+  padding-inline: 2px;
+  font-size: 11px;
+ }
 }
 
 .btn-outline-danger {
@@ -2454,6 +2749,60 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 
 .simulator-shell .sim-section {
   border-bottom-color: var(--sim-border-subtle);
+}
+
+.simulator-shell .compact-range-row__label,
+.simulator-shell .movement-controls__heading,
+.simulator-shell .focus-control > h3,
+.simulator-shell .aperture-control > h3 {
+  color: var(--sim-text);
+}
+
+.simulator-shell .compact-range-row__value {
+  border-color: var(--sim-border);
+  background: var(--sim-surface-inset);
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .compact-range-row[data-active="true"] .compact-range-row__value {
+  border-color: var(--sim-accent-border);
+  background: var(--sim-accent-soft);
+  color: var(--sim-accent);
+}
+
+.simulator-shell .movement-help-dialog {
+  border-color: var(--sim-border);
+  background: var(--sim-surface-inset);
+}
+
+.simulator-shell .focus-control__standard legend {
+  color: var(--sim-text-muted);
+}
+
+.simulator-shell .focus-control__standard .choice-label {
+  border-color: var(--sim-border);
+  background: var(--sim-surface-inset);
+  color: var(--sim-text);
+}
+
+.simulator-shell .focus-control__standard .choice-label:hover {
+  border-color: var(--sim-border-strong);
+}
+
+.simulator-shell .aperture-control__option {
+  border-color: var(--sim-border);
+  background: var(--sim-surface-inset);
+  color: var(--sim-text);
+}
+
+.simulator-shell .aperture-control__option[data-selected="true"] {
+  border-color: var(--sim-accent);
+  background: var(--sim-accent-soft);
+  color: var(--sim-accent);
+}
+
+.simulator-shell .aperture-control__option:focus-within {
+  outline-color: var(--sim-accent);
 }
 
 .simulator-shell .lens-control__copy,

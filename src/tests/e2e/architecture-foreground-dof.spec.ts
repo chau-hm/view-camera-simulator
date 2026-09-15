@@ -17,29 +17,25 @@ test("Architecture + Foreground Free Practice exposes Aperture after Rise, Tilt,
   await expect(controls.getByRole("slider", { name: "Rise" })).toBeEnabled();
   await expect(controls.getByRole("slider", { name: "Tilt" })).toBeEnabled();
   await expect(page.getByLabel("Focus distance")).toBeEnabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeEnabled();
   await expect(controls.getByRole("slider", { name: "Swing" })).toBeDisabled();
 
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
-  const aperture = page.getByRole("combobox", { name: "Aperture" });
-  await expect(aperture).toHaveValue("11");
-  await expect(aperture.locator("option")).toHaveText([
-    "f/5.6",
-    "f/8",
-    "f/11",
-    "f/16",
-    "f/22",
-    "f/32",
-  ]);
-  await aperture.selectOption("8");
-  await expect(aperture).toHaveValue("8");
-  await aperture.selectOption("16");
-  await expect(aperture).toHaveValue("16");
-  await aperture.selectOption("22");
-  await expect(aperture).toHaveValue("22");
+  const aperture = page.getByRole("radiogroup", { name: "Aperture" });
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "11");
+  await expect(aperture.getByRole("radio")).toHaveCount(6);
+  for (const label of ["f/5.6", "f/8", "f/11", "f/16", "f/22", "f/32"]) {
+    await expect(aperture.getByRole("radio", { name: label })).toBeVisible();
+  }
+  await aperture.getByRole("radio", { name: "f/8" }).check();
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "8");
+  await aperture.getByRole("radio", { name: "f/16" }).check();
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "16");
+  await aperture.getByRole("radio", { name: "f/22" }).check();
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "22");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 });
 
@@ -77,7 +73,7 @@ test("Architecture + Foreground DOF task starts solved through PR7C and complete
   const rise = controls.getByRole("slider", { name: "Rise" });
   const tilt = controls.getByRole("slider", { name: "Tilt" });
   const focus = page.getByLabel("Focus distance");
-  const aperture = page.getByRole("combobox", { name: "Aperture" });
+  const aperture = page.getByRole("radiogroup", { name: "Aperture" });
   await expect(rise).toBeDisabled();
   await expect(rise).toHaveValue("20");
   await expect(tilt).toBeDisabled();
@@ -85,7 +81,7 @@ test("Architecture + Foreground DOF task starts solved through PR7C and complete
   await expect(focus).toBeDisabled();
   await expect(focus).toHaveValue("6830");
   await expect(aperture).toBeEnabled();
-  await expect(aperture).toHaveValue("11");
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "11");
   await expect(controls.getByRole("slider", { name: "Swing" })).toBeDisabled();
 
   const rtt = page.getByTestId("ground-glass-rtt");
@@ -95,13 +91,13 @@ test("Architecture + Foreground DOF task starts solved through PR7C and complete
 
   // f/22 improves the physical patch score but leaves building-base Soft, so
   // the learner must continue to the first fully Acceptable/Sharp aperture.
-  await aperture.selectOption("22");
-  await expect(aperture).toHaveValue("22");
+  await aperture.getByRole("radio", { name: "f/22" }).check();
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "22");
   await expectLearningFeedbackNotCompleted(page);
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
-  await aperture.selectOption("32");
-  await expect(aperture).toHaveValue("32");
+  await aperture.getByRole("radio", { name: "f/32" }).check();
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "32");
   await expectLearningFeedbackCompleted(page);
   const feedback = await openLearningFeedback(page);
   await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible({ timeout: 20_000 });
@@ -116,7 +112,7 @@ test("Architecture + Foreground DOF task starts solved through PR7C and complete
   await expect(rise).toHaveValue("20");
   await expect(tilt).toHaveValue("2");
   await expect(focus).toHaveValue("6830");
-  await expect(aperture).toHaveValue("11");
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "11");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);

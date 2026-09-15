@@ -72,8 +72,8 @@ describe("Macro Bellows Extension", () => {
     expect(focus).toHaveAttribute("max", "900");
     expect(focus).toHaveAttribute("step", String(CAMERA_CONTROL_STEPS.focusDistanceMm));
     expect(focus).toHaveValue("900");
-    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
-    expect(screen.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+    expect(screen.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
+    expect(screen.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
     expect(screen.queryByRole("group", { name: "Focus standard" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Infinity Reset" })).not.toBeInTheDocument();
     expect(screen.queryByText("Movement", { exact: true })).not.toBeInTheDocument();

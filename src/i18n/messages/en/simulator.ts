@@ -34,6 +34,7 @@ export const simulatorMessages = {
     focusTitle: "Focus",
     focusDistanceLabel: "Focus distance",
     apertureTitle: "Aperture",
+    apertureOptionLabel: "f/{{value}}",
     resetTitle: "Reset",
     resetMovementsButton: "Reset movements",
     restartTaskButton: "Restart task",

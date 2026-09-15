@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { SimulatorRoutePage } from "../../app/pages";
@@ -96,8 +96,8 @@ describe("phase 12 integration", () => {
   it("TST-INT-007 aperture sync updates DOF derived range", () => {
     renderWorkspace("free", "table-tilt", null);
     const before = selectDerivedOpticsState(useAppStore.getState().camera);
-    const apertureSelect = screen.getAllByRole("combobox", { name: "Aperture" })[0];
-    fireEvent.change(apertureSelect, { target: { value: "32" } });
+    const apertureGroup = screen.getAllByRole("radiogroup", { name: "Aperture" })[0];
+    fireEvent.click(within(apertureGroup).getByRole("radio", { name: "f/32" }));
     const after = selectDerivedOpticsState(useAppStore.getState().camera);
     const beforeWidth = before.depthOfFieldFarPlane!.distance - before.depthOfFieldNearPlane!.distance;
     const afterWidth = after.depthOfFieldFarPlane!.distance - after.depthOfFieldNearPlane!.distance;
@@ -126,8 +126,8 @@ describe("phase 12 integration", () => {
     fireEvent.change(screen.getByLabelText("Tilt"), { target: { value: "3" } });
     fireEvent.change(screen.getByLabelText("Swing"), { target: { value: "2" } });
     fireEvent.change(screen.getByLabelText("Focus distance"), { target: { value: "9000" } });
-    const apertureSelect = screen.getAllByRole("combobox", { name: "Aperture" })[0];
-    fireEvent.change(apertureSelect, { target: { value: "22" } });
+    const apertureGroup = screen.getAllByRole("radiogroup", { name: "Aperture" })[0];
+    fireEvent.click(within(apertureGroup).getByRole("radio", { name: "f/22" }));
     fireEvent.click(screen.getByLabelText("Reset movements"));
     const camera = useAppStore.getState().camera;
     expect(camera.frontRiseMm).toBe(0);
@@ -218,7 +218,7 @@ describe("phase 12 integration", () => {
     expect(screen.getByLabelText("Tilt")).toBeInTheDocument();
     expect(screen.getByLabelText("Swing")).toBeInTheDocument();
     expect(screen.getByLabelText("Focus distance")).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: "Aperture" })).toBeInTheDocument();
     expect(screen.getByLabelText("Grid")).toBeInTheDocument();
     expect(screen.getByLabelText("Rise")).toHaveAttribute("step", "1");
     expect(screen.getByLabelText("Tilt")).toHaveAttribute("step", "0.1");

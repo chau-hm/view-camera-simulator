@@ -33,6 +33,7 @@ export const simulatorMessageKeys = {
     focusTitle: "simulator.controls.focusTitle",
     focusDistanceLabel: "simulator.controls.focusDistanceLabel",
     apertureTitle: "simulator.controls.apertureTitle",
+    apertureOptionLabel: "simulator.controls.apertureOptionLabel",
     resetTitle: "simulator.controls.resetTitle",
     resetMovementsButton: "simulator.controls.resetMovementsButton",
     restartTaskButton: "simulator.controls.restartTaskButton",
