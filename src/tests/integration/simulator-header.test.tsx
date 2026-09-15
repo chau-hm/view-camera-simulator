@@ -46,6 +46,119 @@ describe("simulator header", () => {
     expect(screen.queryByRole("combobox", { name: "Scene" })).toBeNull();
   });
 
+  it("shows the canonical scene title and guided context", async () => {
+    render(
+      <MemoryRouter initialEntries={["/simulator/guided/table-tilt/tilt-01"]}>
+        <SimulatorWorkspace
+          mode="guided"
+          sceneId="table-tilt"
+          taskId="tilt-01"
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    const header = await screen.findByRole("banner");
+    expect(within(header).getByText("Table Tilt")).toBeInTheDocument();
+    expect(within(header).getByText("Guided Lesson")).toBeInTheDocument();
+  });
+
+  it("shows free and anatomy context without exposing task text in the header", async () => {
+    const view = render(
+      <MemoryRouter initialEntries={["/simulator/free/understanding-camera-movements"]}>
+        <SimulatorWorkspace
+          mode="free"
+          sceneId="understanding-camera-movements"
+          taskId={null}
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    let header = await screen.findByRole("banner");
+    expect(within(header).getByText("Understanding Camera Movements")).toBeInTheDocument();
+    expect(within(header).getByText("Free Exploration")).toBeInTheDocument();
+
+    view.rerender(
+      <MemoryRouter initialEntries={["/simulator/free/view-camera-anatomy"]}>
+        <SimulatorWorkspace
+          mode="free"
+          sceneId="view-camera-anatomy"
+          taskId={null}
+          anatomyLessonEnabled
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    header = await screen.findByRole("banner");
+    expect(within(header).getByText("Lesson 0 — Meet the View Camera")).toBeInTheDocument();
+    expect(within(header).getByText("Lesson")).toBeInTheDocument();
+    expect(within(header).queryByText("Understanding Camera Movements")).not.toBeInTheDocument();
+    expect(within(header).queryByText("Free Exploration")).not.toBeInTheDocument();
+  });
+
+  it("updates both header context lines when the locale changes", async () => {
+    render(
+      <MemoryRouter initialEntries={["/simulator/guided/table-tilt/tilt-01"]}>
+        <SimulatorWorkspace
+          mode="guided"
+          sceneId="table-tilt"
+          taskId="tilt-01"
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    const header = await screen.findByRole("banner");
+    expect(within(header).getByText("Table Tilt")).toBeInTheDocument();
+    expect(within(header).getByText("Guided Lesson")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
+      target: { value: "zh-HK" },
+    });
+
+    await waitFor(() => {
+      expect(within(header).getByText("桌面焦平面與傾斜")).toBeInTheDocument();
+      expect(within(header).getByText("引導課程")).toBeInTheDocument();
+      expect(within(header).queryByText("Table Tilt")).not.toBeInTheDocument();
+      expect(within(header).queryByText("Guided Lesson")).not.toBeInTheDocument();
+    });
+  });
+
+  it("updates the header when the active scene route changes", async () => {
+    const view = render(
+      <MemoryRouter initialEntries={["/simulator/free/table-tilt"]}>
+        <SimulatorWorkspace
+          mode="free"
+          sceneId="table-tilt"
+          taskId={null}
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    const header = await screen.findByRole("banner");
+    expect(within(header).getByText("Table Tilt")).toBeInTheDocument();
+    expect(within(header).getByText("Free Exploration")).toBeInTheDocument();
+
+    view.rerender(
+      <MemoryRouter initialEntries={["/simulator/free/understanding-camera-movements"]}>
+        <SimulatorWorkspace
+          mode="free"
+          sceneId="understanding-camera-movements"
+          taskId={null}
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(within(header).getByText("Understanding Camera Movements")).toBeInTheDocument();
+      expect(within(header).queryByText("Table Tilt")).not.toBeInTheDocument();
+    });
+  });
+
   it("switches locale without changing simulator route or camera state", async () => {
     render(
       <MemoryRouter initialEntries={["/simulator/free/understanding-camera-movements"]}>

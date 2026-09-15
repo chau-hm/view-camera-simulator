@@ -173,6 +173,36 @@ button {
   gap: 16px;
 }
 
+.simulator-header__context {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  align-content: center;
+}
+
+.simulator-header__lesson-title,
+.simulator-header__lesson-context {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.simulator-header__lesson-title {
+  color: var(--sim-text, var(--text));
+  font-size: 15px;
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+.simulator-header__lesson-context {
+  color: var(--sim-text-muted, var(--text-muted));
+  font-size: 11px;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+}
+
 .simulator-viewport-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1538,6 +1568,11 @@ button {
     padding-inline: 12px;
     gap: 8px;
     flex-wrap: wrap;
+  }
+
+  .simulator-header__context {
+    order: 3;
+    flex: 1 1 100%;
   }
 
   .simulator-header .app-brand__link {
