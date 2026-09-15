@@ -15,6 +15,30 @@ export const MACRO_DEPTH_FOCUS_DISTANCE_RANGE_MM = {
 
 export const MACRO_DEPTH_INITIAL_FOCUS_DISTANCE_MM = 400;
 
+export const MACRO_DEPTH_BRIDGE_DIMENSIONS_MM = {
+  x: 104,
+  y: 5,
+  z: 4,
+} as const;
+
+export const MACRO_DEPTH_BRIDGE_CENTER_MM = {
+  x: 0,
+  y: 5,
+  z: 416,
+} as const;
+
+export const MACRO_DEPTH_FRONT_LIP_DIMENSIONS_MM = {
+  x: 98,
+  y: 2.2,
+  z: 3,
+} as const;
+
+export const MACRO_DEPTH_FRONT_LIP_CENTER_MM = {
+  x: 0,
+  y: 2,
+  z: 419,
+} as const;
+
 /** The first lens-facing surface of each station's flat detail plate. */
 export const MACRO_DEPTH_FOCUS_ZONE_SPECS = [
   {
@@ -79,6 +103,12 @@ export const macroDepthOfFieldFocusTargets: FocusTarget[] =
 
 export const MACRO_DEPTH_STATION_BODY_RADIUS_MM = 12;
 export const MACRO_DEPTH_STATION_BODY_DEPTH_MM = 4;
+export const MACRO_DEPTH_STATION_BODY_CENTER_OFFSET_MM = 3;
+export const MACRO_DEPTH_STATION_SUPPORT_DIMENSIONS_MM = {
+  x: 6,
+  y: 6,
+} as const;
+export const MACRO_DEPTH_STATION_SUPPORT_OVERLAP_MM = 0.5;
 export const MACRO_DEPTH_STATION_FACE_RADIUS_MM = 9;
 export const MACRO_DEPTH_STATION_FACE_THICKNESS_MM = 1.2;
 export const MACRO_DEPTH_STATION_OUTER_RING_RADIUS_MM = 7;
@@ -110,6 +140,6 @@ export const macroDepthOfFieldSceneBoundsMm: Bounds3 = {
 };
 
 export const macroDepthOfFieldCameraPlacement = {
-  position: { x: 130, y: 100, z: 600 },
-  target: { x: 0, y: 0, z: 150 },
+  position: { x: -350, y: 100, z: -600 },
+  target: { x: 150, y: -200, z: 0 },
 };

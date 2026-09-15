@@ -141,7 +141,7 @@ describe("macro-depth-of-field scene", () => {
     const stoppedDown = [
       ...physicalMetricsAt(400, 32).values(),
     ];
-    expect(stoppedDown.some((metric) => metric.status !== "sharp")).toBe(true);
+    expect(stoppedDown.some((metric) => metric.status === "soft")).toBe(true);
   });
 
   it("lets wide-aperture focus select the near, middle, or far depth", () => {

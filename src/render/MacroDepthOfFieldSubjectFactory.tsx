@@ -6,10 +6,17 @@ import { disposeTeachingSubjectResources } from "./TeachingMaterials";
 import {
   MACRO_DEPTH_BASE_CENTER_MM,
   MACRO_DEPTH_BASE_DIMENSIONS_MM,
+  MACRO_DEPTH_BRIDGE_CENTER_MM,
+  MACRO_DEPTH_BRIDGE_DIMENSIONS_MM,
+  MACRO_DEPTH_FRONT_LIP_CENTER_MM,
+  MACRO_DEPTH_FRONT_LIP_DIMENSIONS_MM,
   MACRO_DEPTH_FOCUS_ZONE_SPECS,
   MACRO_DEPTH_SPECIMEN_CENTER_MM,
+  MACRO_DEPTH_STATION_BODY_CENTER_OFFSET_MM,
   MACRO_DEPTH_STATION_BODY_DEPTH_MM,
   MACRO_DEPTH_STATION_BODY_RADIUS_MM,
+  MACRO_DEPTH_STATION_SUPPORT_DIMENSIONS_MM,
+  MACRO_DEPTH_STATION_SUPPORT_OVERLAP_MM,
   MACRO_DEPTH_STATION_FACE_RADIUS_MM,
   MACRO_DEPTH_STATION_FACE_THICKNESS_MM,
   MACRO_DEPTH_STATION_INNER_RING_RADIUS_MM,
@@ -90,15 +97,23 @@ export function createMacroDepthOfFieldGroup(): THREE.Group {
   );
   add(
     "bridge",
-    new THREE.BoxGeometry(toWorld(78), toWorld(5), toWorld(4)),
+    new THREE.BoxGeometry(
+      toWorld(MACRO_DEPTH_BRIDGE_DIMENSIONS_MM.x),
+      toWorld(MACRO_DEPTH_BRIDGE_DIMENSIONS_MM.y),
+      toWorld(MACRO_DEPTH_BRIDGE_DIMENSIONS_MM.z),
+    ),
     chassis,
-    { x: 0, y: 5, z: 416 },
+    MACRO_DEPTH_BRIDGE_CENTER_MM,
   );
   add(
     "front-lip",
-    new THREE.BoxGeometry(toWorld(98), toWorld(2.2), toWorld(3)),
+    new THREE.BoxGeometry(
+      toWorld(MACRO_DEPTH_FRONT_LIP_DIMENSIONS_MM.x),
+      toWorld(MACRO_DEPTH_FRONT_LIP_DIMENSIONS_MM.y),
+      toWorld(MACRO_DEPTH_FRONT_LIP_DIMENSIONS_MM.z),
+    ),
     detail,
-    { x: 0, y: 2, z: 419 },
+    MACRO_DEPTH_FRONT_LIP_CENTER_MM,
   );
 
   const bodyGeometry = new THREE.CylinderGeometry(
@@ -142,7 +157,26 @@ export function createMacroDepthOfFieldGroup(): THREE.Group {
       `station-${stationIndex}-body`,
       bodyGeometry,
       stationBody,
-      { x, y, z: surfaceZ + 3 },
+      { x, y, z: surfaceZ + MACRO_DEPTH_STATION_BODY_CENTER_OFFSET_MM },
+    );
+
+    const bodyRearZMm =
+      surfaceZ +
+      MACRO_DEPTH_STATION_BODY_CENTER_OFFSET_MM +
+      MACRO_DEPTH_STATION_BODY_DEPTH_MM / 2;
+    const bridgeFrontZMm =
+      MACRO_DEPTH_BRIDGE_CENTER_MM.z - MACRO_DEPTH_BRIDGE_DIMENSIONS_MM.z / 2;
+    const supportStartZMm = bodyRearZMm - MACRO_DEPTH_STATION_SUPPORT_OVERLAP_MM;
+    const supportEndZMm = bridgeFrontZMm + MACRO_DEPTH_STATION_SUPPORT_OVERLAP_MM;
+    add(
+      `station-${stationIndex}-support`,
+      new THREE.BoxGeometry(
+        toWorld(MACRO_DEPTH_STATION_SUPPORT_DIMENSIONS_MM.x),
+        toWorld(MACRO_DEPTH_STATION_SUPPORT_DIMENSIONS_MM.y),
+        toWorld(supportEndZMm - supportStartZMm),
+      ),
+      chassis,
+      { x, y, z: (supportStartZMm + supportEndZMm) / 2 },
     );
     add(
       `station-${stationIndex}-face`,
