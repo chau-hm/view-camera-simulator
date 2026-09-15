@@ -39,47 +39,56 @@ export function createMacroDepthOfFieldGroup(): THREE.Group {
   const chassis = createMacroMaterial({
     color: "#3c5661",
     roughness: 0.58,
+    // Powder-coated chassis: a matte dielectric finish over the mechanism.
     metalness: 0.14,
     seed: 41,
-    roughnessVariation: 0.12,
+    roughnessVariation: 0.16,
     repeat: [4, 3],
   });
   const stationBody = createMacroMaterial({
     color: "#66808a",
     roughness: 0.38,
-    metalness: 0.42,
+    // Exposed machined station body, distinct from the coated chassis.
+    metalness: 0.82,
     seed: 47,
-    roughnessVariation: 0.1,
+    roughnessVariation: 0.16,
     repeat: [8, 3],
+    emissiveIntensity: 0.1,
   });
   const face = createMacroMaterial({
     color: "#d6e0e1",
     roughness: 0.34,
-    metalness: 0.38,
+    // Bare machined face plate; relief is carried by geometry and highlights.
+    metalness: 0.84,
     seed: 53,
-    roughnessVariation: 0.08,
+    roughnessVariation: 0.14,
     repeat: [10, 10],
+    emissiveIntensity: 0.14,
   });
   const detail = createMacroMaterial({
     color: "#e0a451",
     roughness: 0.36,
-    metalness: 0.46,
+    // Bare brass-like detail parts and fasteners.
+    metalness: 0.88,
     seed: 59,
-    roughnessVariation: 0.1,
+    roughnessVariation: 0.16,
     repeat: [8, 6],
+    emissiveIntensity: 0.16,
   });
   const accent = createMacroMaterial({
     color: "#62c8c4",
     roughness: 0.4,
-    metalness: 0.28,
+    // Anodized/coated accent parts remain mostly dielectric in this palette.
+    metalness: 0.2,
     seed: 61,
-    roughnessVariation: 0.11,
+    roughnessVariation: 0.14,
     repeat: [6, 6],
   });
   const groove = createMacroMaterial({
     color: "#22333b",
     roughness: 0.8,
-    metalness: 0.05,
+    // Dark recess/oxide treatment: intentionally non-metallic.
+    metalness: 0.04,
     seed: 67,
     roughnessVariation: 0.14,
     repeat: [12, 4],

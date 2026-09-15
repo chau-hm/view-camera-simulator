@@ -75,6 +75,19 @@ describe("Macro Scene 2 physical renderer contract", () => {
     expect(new Set(subjectMaterials).size).toBeGreaterThanOrEqual(6);
     expect(subjectMaterials.every(({ roughnessMap }) => roughnessMap instanceof THREE.DataTexture)).toBe(true);
 
+    const materialFor = (part: string): THREE.MeshStandardMaterial => {
+      const object = group.getObjectByName(`macro-depth-${part}`);
+      expect(object, `missing material-bearing ${part}`).toBeInstanceOf(THREE.Mesh);
+      expect(object && object instanceof THREE.Mesh ? object.material : null).toBeInstanceOf(THREE.MeshStandardMaterial);
+      return (object as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    };
+    expect(materialFor("chassis").metalness).toBeLessThan(0.2);
+    expect(materialFor("station-1-body").metalness).toBeGreaterThan(0.8);
+    expect(materialFor("station-1-face").metalness).toBeGreaterThan(materialFor("chassis").metalness);
+    expect(materialFor("station-1-face-fastener-0").metalness).toBeGreaterThan(0.8);
+    expect(materialFor("station-1-face-fastener-slot-0").metalness).toBeLessThan(0.2);
+    expect(materialFor("station-1-inner-ring").metalness).toBeLessThan(0.3);
+
     const boundsFor = (name: string) => {
       const object = group.getObjectByName(`macro-depth-${name}`);
       expect(object, `missing ${name}`).toBeDefined();

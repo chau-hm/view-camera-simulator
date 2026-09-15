@@ -7,6 +7,11 @@ import { createMacroMaterial } from "./MacroSubjectMaterials";
 import {
   MACRO_SPECIMEN,
   MACRO_SPECIMEN_BACK_DETAIL_MAX_OFFSET_MM,
+  MACRO_SPECIMEN_FACE_INSET_FRONT_OFFSET_MM,
+  MACRO_SPECIMEN_FACE_INSET_RADIUS_MM,
+  MACRO_SPECIMEN_FACE_INSET_THICKNESS_MM,
+  MACRO_SPECIMEN_FACE_PLATE_OUTER_RADIUS_MM,
+  MACRO_SPECIMEN_FACE_PLATE_RELIEF_DEPTH_MM,
   MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM,
   MACRO_SPECIMEN_RADIAL_DOT_RADIUS_MM,
 } from "../scenes/macroSpecimenGeometry";
@@ -23,23 +28,28 @@ export function createMacroSpecimenGroup(): THREE.Group {
   const bronze = createMacroMaterial({
     color: "#b47a3d",
     roughness: 0.4,
-    metalness: 0.32,
+    // Bare fabricated bronze: roughness carries the handled/machined finish.
+    metalness: 0.82,
     seed: 11,
-    roughnessVariation: 0.12,
+    roughnessVariation: 0.18,
     repeat: [6, 6],
+    emissiveIntensity: 0.12,
   });
   const bright = createMacroMaterial({
     color: "#f0ce8b",
     roughness: 0.32,
-    metalness: 0.38,
+    // Bare polished relief metal, with a slightly tighter highlight response.
+    metalness: 0.86,
     seed: 17,
-    roughnessVariation: 0.1,
+    roughnessVariation: 0.16,
     repeat: [8, 8],
+    emissiveIntensity: 0.16,
   });
   const dark = createMacroMaterial({
     color: "#58412d",
     roughness: 0.74,
-    metalness: 0.08,
+    // Dark oxide/recess treatment is intentionally dielectric.
+    metalness: 0.06,
     seed: 23,
     roughnessVariation: 0.14,
     repeat: [10, 4],
@@ -47,10 +57,12 @@ export function createMacroSpecimenGroup(): THREE.Group {
   const copper = createMacroMaterial({
     color: "#d88645",
     roughness: 0.45,
-    metalness: 0.3,
+    // Bare copper accent; the higher roughness suggests machined handling.
+    metalness: 0.84,
     seed: 29,
-    roughnessVariation: 0.1,
+    roughnessVariation: 0.16,
     repeat: [5, 5],
+    emissiveIntensity: 0.14,
   });
   const add = (name: string, geometry: THREE.BufferGeometry, material: THREE.Material, x = 0, y = 0, z = 0) => {
     const mesh = new THREE.Mesh(geometry, material);
@@ -59,15 +71,51 @@ export function createMacroSpecimenGroup(): THREE.Group {
     root.add(mesh);
     return mesh;
   };
-  const disc = new THREE.CylinderGeometry(toWorld(MACRO_SPECIMEN.diameterMm / 2), toWorld(MACRO_SPECIMEN.diameterMm / 2), toWorld(MACRO_SPECIMEN.thicknessMm), 128);
-  disc.rotateX(Math.PI / 2);
-  add("body", disc, bronze, 0, 0, MACRO_SPECIMEN.thicknessMm / 2);
-  const facePlate = new THREE.CylinderGeometry(toWorld(34), toWorld(34), toWorld(0.34), 128);
-  facePlate.rotateX(Math.PI / 2);
-  add("face-plate", facePlate, bronze, 0, 0, 0.17);
-  const faceInset = new THREE.CylinderGeometry(toWorld(30.8), toWorld(30.8), toWorld(0.2), 128);
+  const createAnnularGeometry = (
+    outerRadiusMm: number,
+    innerRadiusMm: number,
+    depthMm: number,
+  ): THREE.ExtrudeGeometry => {
+    const shape = new THREE.Shape();
+    shape.absarc(0, 0, toWorld(outerRadiusMm), 0, Math.PI * 2, false);
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, toWorld(innerRadiusMm), 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+    return new THREE.ExtrudeGeometry(shape, {
+      depth: toWorld(depthMm),
+      bevelEnabled: false,
+    });
+  };
+
+  // Leave a real opening through the body so the central inset is recessed
+  // behind the token's main face rather than hidden by a full coplanar cap.
+  const body = createAnnularGeometry(
+    MACRO_SPECIMEN.diameterMm / 2,
+    MACRO_SPECIMEN_FACE_INSET_RADIUS_MM,
+    MACRO_SPECIMEN.thicknessMm,
+  );
+  add("body", body, bronze);
+  const facePlate = createAnnularGeometry(
+    MACRO_SPECIMEN_FACE_PLATE_OUTER_RADIUS_MM,
+    MACRO_SPECIMEN_FACE_INSET_RADIUS_MM,
+    MACRO_SPECIMEN_FACE_PLATE_RELIEF_DEPTH_MM,
+  );
+  add("face-plate", facePlate, bronze, 0, 0, -MACRO_SPECIMEN_FACE_PLATE_RELIEF_DEPTH_MM);
+  const faceInset = new THREE.CylinderGeometry(
+    toWorld(MACRO_SPECIMEN_FACE_INSET_RADIUS_MM),
+    toWorld(MACRO_SPECIMEN_FACE_INSET_RADIUS_MM),
+    toWorld(MACRO_SPECIMEN_FACE_INSET_THICKNESS_MM),
+    128,
+  );
   faceInset.rotateX(Math.PI / 2);
-  add("face-inset", faceInset, dark, 0, 0, 0.1);
+  add(
+    "face-inset",
+    faceInset,
+    dark,
+    0,
+    0,
+    MACRO_SPECIMEN_FACE_INSET_FRONT_OFFSET_MM + MACRO_SPECIMEN_FACE_INSET_THICKNESS_MM / 2,
+  );
   // Torus relief faces the lens (-Z), leaving the base face at exactly 300 mm.
   for (const [name, radius, tube] of [["outer-rim", 44.4, 0.6], ["inner-ring", 35, 0.45], ["central-ring", 17, 0.3]] as const) {
     add(name, new THREE.TorusGeometry(toWorld(radius), toWorld(tube), 8, 128), bright);

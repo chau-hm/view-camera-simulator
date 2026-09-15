@@ -42,6 +42,33 @@ describe("macro specimen physical renderer contract", () => {
       .filter((material): material is THREE.MeshStandardMaterial => material instanceof THREE.MeshStandardMaterial);
     expect(new Set(specimenMaterials).size).toBeGreaterThanOrEqual(4);
     expect(specimenMaterials.every(({ roughnessMap }) => roughnessMap instanceof THREE.DataTexture)).toBe(true);
+    const materialFor = (part: string): THREE.MeshStandardMaterial => {
+      const object = group.getObjectByName(`macro-specimen-${part}`);
+      expect(object, `missing material-bearing ${part}`).toBeInstanceOf(THREE.Mesh);
+      expect(object && object instanceof THREE.Mesh ? object.material : null).toBeInstanceOf(THREE.MeshStandardMaterial);
+      return (object as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    };
+    expect(materialFor("body").metalness).toBeGreaterThan(0.8);
+    expect(materialFor("central-relief").metalness).toBeGreaterThan(0.8);
+    expect(materialFor("edge-knurl-0").metalness).toBeGreaterThan(0.8);
+    expect(materialFor("face-inset").metalness).toBeLessThan(0.2);
+
+    const roughnessData = (material: THREE.MeshStandardMaterial): Uint8Array => {
+      expect(material.roughnessMap).toBeInstanceOf(THREE.DataTexture);
+      return (material.roughnessMap as THREE.DataTexture).image.data as Uint8Array;
+    };
+    const bronzeData = roughnessData(materialFor("body"));
+    const bronzeChannel = bronzeData.filter((_, index) => index % 4 === 0);
+    expect(Math.max(...bronzeChannel) - Math.min(...bronzeChannel)).toBeGreaterThan(4);
+
+    const bodyBounds = new THREE.Box3().setFromObject(group.getObjectByName("macro-specimen-body")!);
+    const facePlateBounds = new THREE.Box3().setFromObject(group.getObjectByName("macro-specimen-face-plate")!);
+    const faceInsetBounds = new THREE.Box3().setFromObject(group.getObjectByName("macro-specimen-face-inset")!);
+    // The lens is at lower Z: the raised annulus is in front of the body,
+    // while the inset is physically behind the body face through the opening.
+    expect(facePlateBounds.min.z).toBeLessThan(bodyBounds.min.z - 1e-6);
+    expect(faceInsetBounds.min.z).toBeGreaterThan(bodyBounds.min.z + 1e-6);
+    expect(faceInsetBounds.min.z).toBeGreaterThan(facePlateBounds.min.z + 1e-6);
     group.updateMatrixWorld(true);
     // Every focus sample must land on the first lens-facing surface of real
     // rendered geometry, not merely inside the subject bounds.

@@ -7,6 +7,8 @@ export type MacroMaterialOptions = {
   seed: number;
   roughnessVariation?: number;
   repeat?: readonly [number, number];
+  /** Small subject-local ambient lift for metallic readability under teaching lights. */
+  emissiveIntensity?: number;
 };
 
 const TEXTURE_SIZE = 64;
@@ -17,17 +19,21 @@ const hash = (x: number, y: number, seed: number): number => {
 };
 
 /**
- * Create a subject-owned roughness texture with restrained machining grain.
- * The directional component helps highlights reveal relief without turning the
- * macro subjects into a noisy screen-space texture.
+ * Create a subject-owned roughness modulation texture with restrained
+ * machining grain. Three.js multiplies the material's scalar `roughness` by
+ * the red channel of `roughnessMap`, so callers deliberately use a neutral
+ * multiplier of 1 here: the scalar defines the material role and this map
+ * adds local finish variation without replacing that role-level value.
+ * The directional component helps highlights reveal relief without turning
+ * the macro subjects into a noisy screen-space texture.
  */
 export const createMacroRoughnessTexture = ({
-  baseRoughness,
+  baseMultiplier,
   variation = 0.08,
   seed,
   repeat = [1, 1],
 }: {
-  baseRoughness: number;
+  baseMultiplier: number;
   variation?: number;
   seed: number;
   repeat?: readonly [number, number];
@@ -39,7 +45,7 @@ export const createMacroRoughnessTexture = ({
       const microGrain = hash(x, y, seed) - 0.5;
       const machiningBand = Math.sin((x + seed * 11) * 0.72) * 0.5;
       const roughness = THREE.MathUtils.clamp(
-        baseRoughness + variation * (microGrain * 0.8 + machiningBand * 0.2),
+        baseMultiplier + variation * (microGrain * 0.8 + machiningBand * 0.2),
         0.05,
         1,
       );
@@ -78,9 +84,10 @@ export const createMacroMaterial = ({
   seed,
   roughnessVariation,
   repeat,
+  emissiveIntensity = 0,
 }: MacroMaterialOptions): THREE.MeshStandardMaterial => {
   const roughnessMap = createMacroRoughnessTexture({
-    baseRoughness: 1,
+    baseMultiplier: 1,
     variation: roughnessVariation,
     seed,
     repeat,
@@ -91,5 +98,7 @@ export const createMacroMaterial = ({
     roughness,
     metalness,
     roughnessMap,
+    emissive: emissiveIntensity > 0 ? color : "#000000",
+    emissiveIntensity,
   });
 };
