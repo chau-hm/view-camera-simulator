@@ -203,6 +203,19 @@ button {
   letter-spacing: 0.04em;
 }
 
+@media (max-width: 720px) {
+  .simulator-header {
+    height: auto;
+    min-height: 72px;
+    flex-wrap: wrap;
+  }
+
+  .simulator-header__context {
+    order: 3;
+    flex: 1 1 100%;
+  }
+}
+
 .simulator-viewport-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1568,11 +1581,6 @@ button {
     padding-inline: 12px;
     gap: 8px;
     flex-wrap: wrap;
-  }
-
-  .simulator-header__context {
-    order: 3;
-    flex: 1 1 100%;
   }
 
   .simulator-header .app-brand__link {
