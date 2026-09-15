@@ -103,8 +103,8 @@ describe("public scene catalog integrity", () => {
     ]);
     expect(catalogMacroEntries.map(({ id }) => id)).toEqual([...macroSceneIds]);
     expect(catalogMacroEntries.every(({ groupId }) => groupId === "macro-photography")).toBe(true);
-    expect(catalogMacroEntries.every(({ availability }) => availability === "in-development")).toBe(true);
-    expect(catalogMacroEntries.every(({ availableModes }) => availableModes.length === 0)).toBe(true);
+    expect(catalogMacroEntries.map(({ availability }) => availability)).toEqual(["available", "in-development", "in-development", "in-development"]);
+    expect(catalogMacroEntries.map(({ availableModes }) => availableModes)).toEqual([["free"], [], [], []]);
     expect(catalogMacroEntries.every(({ guidedTaskId, guidedTaskIds, guidedLesson, lesson }) =>
       guidedTaskId === undefined &&
       guidedTaskIds === undefined &&
@@ -137,10 +137,10 @@ describe("public scene catalog integrity", () => {
     );
 
     expect(publishedMacroEntries).toHaveLength(macroSceneIds.length);
-    expect(publishedMacroEntries.every(({ scene }) => scene === undefined)).toBe(true);
-    expect(getPublicSceneEntries().some(({ meta }) => macroSceneIds.includes(meta.id as (typeof macroSceneIds)[number]))).toBe(false);
-    expect(getAvailablePublicSceneEntries().some(({ meta }) => macroSceneIds.includes(meta.id as (typeof macroSceneIds)[number]))).toBe(false);
-    expect(getPublicScenes().some((scene) => macroSceneIds.includes(scene.id as (typeof macroSceneIds)[number]))).toBe(false);
+    expect(publishedMacroEntries.filter(({ scene }) => scene !== undefined).map(({ meta }) => meta.id)).toEqual(["macro-bellows-extension"]);
+    expect(getPublicSceneEntries().filter(({ meta }) => meta.id.startsWith("macro-")).map(({ meta }) => meta.id)).toEqual(["macro-bellows-extension"]);
+    expect(getAvailablePublicSceneEntries().filter(({ meta }) => meta.id.startsWith("macro-")).map(({ meta }) => meta.id)).toEqual(["macro-bellows-extension"]);
+    expect(getPublicScenes().filter((scene) => scene.id.startsWith("macro-")).map(({ id }) => id)).toEqual(["macro-bellows-extension"]);
   });
 
   it("groups published entries by registry order and omits empty groups", () => {
@@ -603,13 +603,13 @@ describe("public scene catalog integrity", () => {
   });
 
   it("accepts a missing scene definition only for in-development entries", () => {
-    const entry = publicSceneCatalog.find((candidate) => candidate.id === macroSceneIds[0])!;
+    const entry = publicSceneCatalog.find((candidate) => candidate.id === macroSceneIds[1])!;
 
     expect(validate([entry], () => undefined)).toEqual({ valid: true, errors: [] });
   });
 
   it("rejects in-development entries that claim simulator or lesson behavior", () => {
-    const entry = publicSceneCatalog.find((candidate) => candidate.id === macroSceneIds[0])!;
+    const entry = publicSceneCatalog.find((candidate) => candidate.id === macroSceneIds[1])!;
     const modeEntry = [{ ...entry, availableModes: ["free"] as const }];
     const taskEntry = [{ ...entry, guidedTaskId: "future-task" }];
     const taskIdsEntry = [{ ...entry, guidedTaskIds: [] as const }];

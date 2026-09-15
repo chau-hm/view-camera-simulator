@@ -26,6 +26,7 @@ import { AppBrand } from "./AppBrand";
 import { LanguageSelector } from "./LanguageSelector";
 import { Link } from "react-router-dom";
 import { ApertureControl } from "../controls/ApertureControl";
+import { MacroFocusReadout } from "../simulator/MacroFocusReadout";
 import { FocusControl } from "../controls/FocusControl";
 import { LensControl } from "../controls/LensControl";
 import { CameraMovementTeachingControls } from "../controls/CameraMovementTeachingControls";
@@ -705,6 +706,9 @@ export const SimulatorWorkspace = ({
           </div>
 
           {!viewportExpanded && !isAnatomyLesson && <>
+            {safeScene.macroFocusMetricsCapability?.enabled && (
+              <MacroFocusReadout diagnostics={opticsState.diagnostics} focalLengthMm={camera.focalLengthMm} />
+            )}
             {learnerReadoutPolicy.showFocusTargets && focusTargetReadouts.length > 0 ? (
               <FocusDistributionPanel
                 sceneId={safeScene.id}

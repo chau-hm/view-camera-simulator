@@ -156,6 +156,8 @@ export type SceneDefinition = {
   cameraFrontShiftCapability?: SceneCameraFrontShiftCapability;
   /** Optional discrete public focal-length capability. */
   focalLengthCapability?: SceneFocalLengthCapability;
+  /** Informational conjugate-distance readouts; never task completion criteria. */
+  macroFocusMetricsCapability?: { enabled: true };
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
   movementCapabilities?: SceneMovementCapabilities;
   /** Optional semantic side for the generic camera-inspection body anchor; rear is the default. */

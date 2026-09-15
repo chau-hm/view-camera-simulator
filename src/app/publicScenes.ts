@@ -332,8 +332,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       publicSceneMessageKeys.macroBellowsExtension.topics.magnification,
       publicSceneMessageKeys.macroBellowsExtension.topics.lifeSizeReproduction,
     ],
-    availability: "in-development",
-    availableModes: [],
+    availability: "available",
+    availableModes: ["free"],
     thumbnailAsset: "assets/macro-bellows-extension.webp",
   },
   {

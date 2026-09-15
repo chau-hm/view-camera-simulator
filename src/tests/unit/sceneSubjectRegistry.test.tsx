@@ -66,6 +66,7 @@ const boardFootprintsSeparated = (first: BoardFootprint, second: BoardFootprint)
 describe("scene subject registry", () => {
   it("registers every canonical rendered scene and rejects unknown IDs", () => {
     expect(Object.keys(sceneSubjectRegistry)).toEqual([
+      "macro-bellows-extension",
       "view-camera-anatomy",
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
@@ -118,7 +119,6 @@ describe("scene subject registry", () => {
 
   it("keeps in-development public roadmap scenes out of the renderer registry", () => {
     for (const sceneId of [
-      "macro-bellows-extension",
       "macro-depth-of-field",
       "macro-oblique-plane",
       "macro-compound-movements",
@@ -400,7 +400,7 @@ describe("scene subject registry", () => {
     expect(registration?.showReferenceCamera).toBe(false);
   });
 
-  it.each(["shelf-swing", "table-tilt", "oblique-architecture", "architecture-rise"])(
+  it.each(["macro-bellows-extension", "shelf-swing", "table-tilt", "oblique-architecture", "architecture-rise"])(
     "uses the explicit unique-resource disposer for %s",
     (sceneId) => {
       const group = createRegisteredRttSubject(sceneId)!;

@@ -27,6 +27,45 @@
   background: var(--app-bg);
 }
 
+.macro-focus-readout {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.macro-focus-readout h3,
+.macro-focus-readout p,
+.macro-focus-readout dl {
+  margin: 0;
+}
+
+.macro-focus-readout h3 {
+  font-size: 16px;
+}
+
+.macro-focus-readout dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 8px 16px;
+}
+
+.macro-focus-readout dt {
+  font-size: 12px;
+}
+
+.macro-focus-readout dd {
+  margin: 2px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.simulator-shell .macro-focus-readout dt,
+.simulator-shell .macro-focus-readout p {
+  color: var(--sim-text-muted);
+}
+
 * {
   box-sizing: border-box;
 }
