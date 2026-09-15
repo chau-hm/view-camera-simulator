@@ -69,7 +69,7 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("4540");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
   await expectGroundGlass(page);
   await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true }).click();
   await expect(page.getByRole("region", { name: "Pan Ground Glass", exact: true })).toHaveAttribute(
@@ -87,7 +87,7 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByRole("heading", { name: "Focus the subject-board centre" })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Tilt" })).toBeDisabled();
   await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toHaveValue("4740");
   await setRangeDirect(page, "Focus distance", 4540);
   await inspectCompletedFeedbackAndReturnToTask(page);
@@ -99,7 +99,7 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expectLessonStage(page, "Step 3 of 6", "Front Tilt");
   await expect(page.getByRole("heading", { name: "Improve near-to-far focus" })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await setStepRangeInput(page, "Tilt", 3.6);
   await setRangeDirect(page, "Focus distance", 3530);
   await inspectCompletedFeedbackAndReturnToTask(page);
@@ -113,7 +113,7 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("3.6");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("3530");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await setRangeDirect(page, "Tilt", 7.1);
   await setRangeDirect(page, "Swing", 2.1);
   await setRangeDirect(page, "Focus distance", 2440);
@@ -130,7 +130,7 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByLabel("Focus distance")).toHaveValue("2440");
   await expect(page.getByRole("slider", { name: "Tilt" })).toBeDisabled();
   await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await setRangeDirect(page, "Focus distance", 2500);
   await inspectCompletedFeedbackAndReturnToTask(page);
 
@@ -143,12 +143,12 @@ test("Oblique Tabletop completes the public Focus → Tilt → Swing → Focus �
   await expect(page.getByRole("slider", { name: "Tilt" })).toBeDisabled();
   await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeEnabled();
   await expect(page.getByText("Lesson complete", { exact: true })).not.toBeVisible();
   await expectGroundGlass(page);
 
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/22" }).check();
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({
     timeout: 20_000,
   });

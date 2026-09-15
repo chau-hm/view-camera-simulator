@@ -12,7 +12,7 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
 
   const position = page.getByRole("slider", { name: "Camera Position" });
   const frontShift = page.getByRole("slider", { name: "Front Shift" });
-  const aperture = page.getByRole("combobox", { name: "Aperture" });
+  const aperture = page.getByRole("radiogroup", { name: "Aperture" });
   const rtt = page.getByTestId("ground-glass-rtt").first();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/mirror-shift\/mirror-shift-01/);
@@ -28,7 +28,7 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveCount(0);
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveCount(0);
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
-  await expect(aperture).toHaveValue("11");
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "11");
   await expect(aperture).toBeDisabled();
   const initialFeedback = await openLearningFeedback(page);
   await expect(
@@ -73,7 +73,7 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
   await page.getByRole("button", { name: "Restart task" }).click();
   await expect(position).toHaveValue("0");
   await expect(frontShift).toHaveValue("0");
-  await expect(aperture).toHaveValue("11");
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "11");
   await expectLearningFeedbackNotCompleted(page);
   const resetFeedback = await openLearningFeedback(page);
   await expect(resetFeedback.getByRole("heading", { name: "Task completed" })).not.toBeVisible();

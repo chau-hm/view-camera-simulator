@@ -134,9 +134,7 @@ describe("Lesson 0 integration", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByRole("heading", { name: "Aperture control" })).toBeInTheDocument();
-    fireEvent.change(screen.getByRole("combobox", { name: "Aperture" }), {
-      target: { value: "5.6" },
-    });
+    fireEvent.click(screen.getByRole("radio", { name: "f/5.6" }));
     expect(useAppStore.getState().camera.aperture).toBe(5.6);
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));

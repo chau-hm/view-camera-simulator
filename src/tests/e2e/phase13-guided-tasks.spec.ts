@@ -53,7 +53,7 @@ test("TST-E2E-005: restart resets Architecture Rise guided task", async ({ page 
   await expect(page.getByLabel("Tilt")).toHaveValue("0");
   await expect(page.getByLabel("Swing")).toHaveValue("0");
   // Aperture default for tasks
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
 });
 
 test("TST-E2E-006: free mode can return to All Scenes and open Focus Fundamentals", async ({ page }) => {

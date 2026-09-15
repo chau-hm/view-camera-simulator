@@ -176,7 +176,7 @@ test("Shelf Swing free scene uses canonical R3F and contentful RTT rendering", a
 test("Shelf Swing physical focus becomes near-sharp and approaches the Raw RTT control", async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto("/simulator/free/shelf-swing?rttDiagnostics=1");
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
 
   await setRangeDirect(page, "Swing", -3.961086726);
   await setRangeDirect(page, "Focus distance", 2000);
@@ -294,10 +294,10 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
   await expect(page.getByLabel("Focus distance")).toBeEnabled();
   await expect(page.getByLabel("Swing")).toHaveAttribute("step", "0.1");
   await expect(page.getByLabel("Focus distance")).toHaveAttribute("step", "10");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeEnabled();
   await expect(page.getByLabel("Swing")).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("3800");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
   await expectLearningFeedbackNotCompleted(page);
 
   await setStepRangeInput(page, "Swing", 3.8);
@@ -313,15 +313,15 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
   await expectLearningFeedbackCompleted(page);
   await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
   await expect(feedback).toContainText("Negative Front Swing rotated the plane of sharp focus");
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/22" }).check();
   await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
   await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
 
   await page.getByRole("button", { name: "Restart task" }).click();
   await expect(page.getByLabel("Swing")).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("3800");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
   await expectLearningFeedbackNotCompleted(page);
   const resetFeedback = await openLearningFeedback(page);
   await expect(resetFeedback.getByRole("heading", { name: "Task completed" })).not.toBeVisible();

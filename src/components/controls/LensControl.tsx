@@ -63,14 +63,13 @@ export const LensControl = ({ capability }: LensControlProps) => {
                 aria-label={accessibleLabel}
                 onChange={() => setFocalLength(optionMm)}
               />
-              <span className="lens-control__option-value">
-                {optionMm} mm
-              </span>
               {optionLabel ? (
-                <span className="lens-control__option-label">
-                  {optionLabel}
-                </span>
+                <>
+                  <span className="lens-control__option-label">{optionLabel}</span>
+                  <span className="lens-control__option-separator" aria-hidden="true">·</span>
+                </>
               ) : null}
+              <span className="lens-control__option-value">{optionMm} mm</span>
             </label>
           );
         })}

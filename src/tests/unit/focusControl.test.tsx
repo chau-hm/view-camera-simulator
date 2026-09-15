@@ -89,6 +89,17 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     expect(optics.focusPlane!.point.z).toBeCloseTo(nearFocusDepthMm, 6);
   });
 
+  it("keeps Infinity Reset with the Focus control and preserves infinity semantics", () => {
+    useAppStore.getState().setFocusDistance(1200);
+    render(<FocusControl focusEnabled={true} lockReason="" showInfinityReset />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Infinity Reset" }));
+
+    expect(useAppStore.getState().camera.focusMode).toBe("infinity");
+    expect(screen.getByText("Focus: ∞")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Infinity Reset" }).closest(".compact-range-row--with-trailing")).toBeInTheDocument();
+  });
+
   it("Buttons do not change other camera controls", () => {
     const store = useAppStore.getState();
     // set some non-defaults
