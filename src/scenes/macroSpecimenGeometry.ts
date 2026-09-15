@@ -10,10 +10,26 @@ export const MACRO_SPECIMEN = {
 
 export const MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM = 32.5;
 export const MACRO_SPECIMEN_RADIAL_DOT_RADIUS_MM = 0.48;
+export const MACRO_SPECIMEN_BACK_DETAIL_MAX_OFFSET_MM = 2.4;
+
+/**
+ * Shared face-layer dimensions. The body is an annulus so the inset can sit
+ * behind its actual lens-facing face instead of being hidden by a coplanar
+ * cap.
+ */
+export const MACRO_SPECIMEN_FACE_PLATE_OUTER_RADIUS_MM = 34;
+export const MACRO_SPECIMEN_FACE_INSET_RADIUS_MM = 30.8;
+export const MACRO_SPECIMEN_FACE_PLATE_RELIEF_DEPTH_MM = 0.18;
+export const MACRO_SPECIMEN_FACE_INSET_FRONT_OFFSET_MM = 0.04;
+export const MACRO_SPECIMEN_FACE_INSET_THICKNESS_MM = 0.12;
 
 export const macroSpecimenBoundsMm = {
   min: { x: -45, y: -45, z: 299.4 },
-  max: { x: 45, y: 45, z: 302 },
+  max: {
+    x: 45,
+    y: 45,
+    z: MACRO_SPECIMEN.faceCenterMm.z + MACRO_SPECIMEN_BACK_DETAIL_MAX_OFFSET_MM,
+  },
 };
 
 export const macroBellowsExtensionFocusTargets: FocusTarget[] = [
@@ -36,8 +52,8 @@ export const macroBellowsExtensionFocusTargets: FocusTarget[] = [
 ];
 
 export const macroBellowsExtensionCameraPlacement = {
-  position: { x: 650, y: 380, z: 650 },
-  target: { x: 0, y: -25, z: 0 },
+  position: { x: 280, y: 180, z: 650 },
+  target: { x: 0, y: -15, z: 150 },
 };
 
 /** Includes specimen, standards, and rail throughout the assigned extension range. */
