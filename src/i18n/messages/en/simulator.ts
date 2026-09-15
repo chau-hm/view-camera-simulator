@@ -1,4 +1,8 @@
 export const simulatorMessages = {
+  headerContext: {
+    freeExploration: "Free Exploration",
+    lesson: "Lesson",
+  },
   task: {
     title: "Task",
     freePractice: "Free practice",
@@ -179,6 +183,9 @@ export const simulatorMessages = {
   },
   geometry: {
     macroSpecimenTarget: "Specimen coin",
+    macroDepthNearTarget: "Near detail",
+    macroDepthMiddleTarget: "Middle detail",
+    macroDepthFarTarget: "Far detail",
     viewLabel: "Geometry view",
     framingLabel: "Geometry framing",
     side: "Side",

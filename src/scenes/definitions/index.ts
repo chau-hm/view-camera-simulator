@@ -16,6 +16,7 @@ import { viewCameraAnatomyScene } from "./view-camera-anatomy";
 import { obliqueTabletopScene } from "./oblique-tabletop";
 import { interiorCornerScene } from "./interior-corner";
 import { macroBellowsExtensionScene } from "./macro-bellows-extension";
+import { macroDepthOfFieldScene } from "./macro-depth-of-field";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
   [macroBellowsExtensionScene.id]: macroBellowsExtensionScene,
@@ -30,6 +31,7 @@ export const sceneRegistry: Record<string, SceneDefinition> = {
   [mirrorShiftScene.id]: mirrorShiftScene,
   [obliqueArchitectureScene.id]: obliqueArchitectureScene,
   [interiorCornerScene.id]: interiorCornerScene,
+  [macroDepthOfFieldScene.id]: macroDepthOfFieldScene,
 };
 
 export const sceneOrder = [
@@ -45,6 +47,7 @@ export const sceneOrder = [
   obliqueArchitectureScene.id,
   interiorCornerScene.id,
   macroBellowsExtensionScene.id,
+  macroDepthOfFieldScene.id,
 ] as const;
 
 export const getSceneById = (sceneId: string): SceneDefinition | undefined =>

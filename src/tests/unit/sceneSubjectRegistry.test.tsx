@@ -67,6 +67,7 @@ describe("scene subject registry", () => {
   it("registers every canonical rendered scene and rejects unknown IDs", () => {
     expect(Object.keys(sceneSubjectRegistry)).toEqual([
       "macro-bellows-extension",
+      "macro-depth-of-field",
       "view-camera-anatomy",
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
@@ -119,7 +120,6 @@ describe("scene subject registry", () => {
 
   it("keeps in-development public roadmap scenes out of the renderer registry", () => {
     for (const sceneId of [
-      "macro-depth-of-field",
       "macro-oblique-plane",
       "macro-compound-movements",
     ]) {

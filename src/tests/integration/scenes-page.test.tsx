@@ -389,7 +389,7 @@ describe("scenes page", () => {
     });
   });
 
-  it("activates only Bellows Extension while preserving Macro card order and copy", async () => {
+  it("activates Macro Scenes 1 and 2 while preserving Macro card order and copy", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
 
@@ -419,8 +419,8 @@ describe("scenes page", () => {
       entry.topicKeys.forEach((topicKey) => {
         expect(scopedCard.getByText(i18n.t(topicKey))).toBeInTheDocument();
       });
-      if (entry.id === "macro-bellows-extension") {
-        expect(scopedCard.getByRole("link")).toHaveAttribute("href", "/simulator/free/macro-bellows-extension");
+      if (entry.availability === "available") {
+        expect(scopedCard.getByRole("link")).toHaveAttribute("href", `/simulator/free/${entry.id}`);
       } else {
         expect(scopedCard.getByRole("status")).toHaveTextContent("In development");
         expect(scopedCard.queryByRole("link")).not.toBeInTheDocument();
@@ -488,8 +488,8 @@ describe("scenes page", () => {
       entry.topicKeys.forEach((topicKey) => {
         expect(card.getByText(i18n.t(topicKey))).toBeInTheDocument();
       });
-      if (entry.id === "macro-bellows-extension") {
-        expect(card.getByRole("link")).toHaveAttribute("href", "/simulator/free/macro-bellows-extension");
+      if (entry.availability === "available") {
+        expect(card.getByRole("link")).toHaveAttribute("href", `/simulator/free/${entry.id}`);
       } else {
         expect(card.getByRole("status")).toHaveTextContent("開發中");
         expect(card.queryByRole("link")).not.toBeInTheDocument();

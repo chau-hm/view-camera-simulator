@@ -21,6 +21,7 @@ import {
 import type { SimulatorMode } from "../../types/camera";
 import type { RenderQualityProfile } from "../../types/ui";
 import "../../i18n";
+import { guidedLessonMessageKeys } from "../../i18n/guidedLessonMessageKeys";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import { AppBrand } from "./AppBrand";
 import { LanguageSelector } from "./LanguageSelector";
@@ -250,6 +251,12 @@ export const SimulatorWorkspace = ({
       ? resolveCameraMovementLessonPresentationTargetRegion(camera.cameraMovementLessonState)
       : targetRegion;
   const publicSceneEntry = getPublicSceneEntryById(sceneId);
+  const activeSceneTitle = publicSceneEntry ? t(publicSceneEntry.titleKey) : sceneId;
+  const activeLessonContext = publicSceneEntry?.lesson?.kind === "anatomy"
+    ? t(simulatorMessageKeys.headerContext.lesson)
+    : mode === "guided"
+      ? t(guidedLessonMessageKeys.common.title)
+      : t(simulatorMessageKeys.headerContext.freeExploration);
   const isAnatomyLesson = anatomyLessonEnabled && sceneId === "view-camera-anatomy";
   const anatomyStep = getLessonZeroStep(anatomyStepIndex);
   const anatomyViewportInspectionTarget = isAnatomyLesson
@@ -575,6 +582,11 @@ export const SimulatorWorkspace = ({
       {/* Header */}
       <header className="simulator-header">
         <AppBrand />
+
+        <div className="simulator-header__context">
+          <div className="simulator-header__lesson-title">{activeSceneTitle}</div>
+          <div className="simulator-header__lesson-context">{activeLessonContext}</div>
+        </div>
 
         <div className="sim-header-actions">
           <Link className="btn btn--ghost" to="/scenes">{t(simulatorMessageKeys.viewport.allScenes)}</Link>
