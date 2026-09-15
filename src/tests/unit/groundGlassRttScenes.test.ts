@@ -59,6 +59,11 @@ describe("Ground Glass RTT scene registration", () => {
     expect(isGroundGlassRttScene("interior-corner")).toBe(true);
   });
 
+  it("includes Macro Scene 2 in the centralized RTT scene set", () => {
+    expect(RTT_SCENES).toContain("macro-depth-of-field");
+    expect(isGroundGlassRttScene("macro-depth-of-field")).toBe(true);
+  });
+
   it("derives enough far clipping range for the back station and samples", () => {
     const lensCenter = { x: 0, y: 0, z: 0 };
     const clip = getGroundGlassClipRangeWorld(shelfSwingScene, lensCenter);

@@ -100,7 +100,7 @@ describe("scene publication gate", () => {
   });
 
   it.each([
-    "/simulator/free/macro-depth-of-field",
+    "/simulator/free/macro-depth-of-field/future-task",
     "/simulator/free/macro-oblique-plane",
     "/simulator/free/macro-compound-movements",
     "/simulator/guided/macro-bellows-extension/future-task",
@@ -114,16 +114,16 @@ describe("scene publication gate", () => {
     expect(screen.queryByTestId("simulator-workspace")).not.toBeInTheDocument();
   });
 
-  it("allows the published Macro free-practice route without guided metadata", async () => {
-    renderRoute("/simulator/free/macro-bellows-extension");
+  it.each(["macro-bellows-extension", "macro-depth-of-field"])("allows the published Macro free-practice route without guided metadata: %s", async (sceneId) => {
+    renderRoute(`/simulator/free/${sceneId}`);
 
     await waitFor(() =>
       expect(screen.getByTestId("route-location")).toHaveTextContent(
-        "/simulator/free/macro-bellows-extension",
+        `/simulator/free/${sceneId}`,
       ),
     );
     expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(
-      "free:macro-bellows-extension:none",
+      `free:${sceneId}:none`,
     );
   });
 

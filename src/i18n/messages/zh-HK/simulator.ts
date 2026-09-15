@@ -182,6 +182,9 @@ export const simulatorMessages = {
   },
   geometry: {
     macroSpecimenTarget: "標本硬幣",
+    macroDepthNearTarget: "近處細節",
+    macroDepthMiddleTarget: "中間細節",
+    macroDepthFarTarget: "遠處細節",
     viewLabel: "幾何圖檢視",
     framingLabel: "幾何圖取景",
     side: "側面",
