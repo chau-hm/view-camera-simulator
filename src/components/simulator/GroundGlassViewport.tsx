@@ -17,6 +17,29 @@ import type {
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "../../render/groundGlassRttDimensions";
 
+const NARROW_LAYOUT_QUERY = "(max-width: 900px)";
+
+const resolveNarrowLayout = (): boolean =>
+  typeof window !== "undefined" && typeof window.matchMedia === "function"
+    ? window.matchMedia(NARROW_LAYOUT_QUERY).matches
+    : false;
+
+const useNarrowLayout = (): boolean => {
+  const [narrowLayout, setNarrowLayout] = useState(resolveNarrowLayout);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const mediaQuery = window.matchMedia(NARROW_LAYOUT_QUERY);
+    const handleChange = () => setNarrowLayout(mediaQuery.matches);
+    handleChange();
+    mediaQuery.addEventListener?.("change", handleChange);
+    return () => mediaQuery.removeEventListener?.("change", handleChange);
+  }, []);
+
+  return narrowLayout;
+};
+
 type GroundGlassViewportProps = {
   opticsState: DerivedOpticsState;
   scene: SceneDefinition;
@@ -87,6 +110,7 @@ export const GroundGlassViewport = ({
   const { t } = useTranslation();
   const sceneId = scene.id;
   const previewMode = resolveGroundGlassPreviewMode(groundGlassAssistEnabled);
+  const narrowLayout = useNarrowLayout();
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [originalZoomEnabled, setOriginalZoomEnabled] = useState(false);
@@ -319,7 +343,7 @@ export const GroundGlassViewport = ({
           </div>
         )}
 
-        {expanded ? learningOverlay : null}
+        {expanded && !narrowLayout ? learningOverlay : null}
 
         <button
           ref={expanded ? restoreTriggerRef : expandTriggerRef}
@@ -335,6 +359,8 @@ export const GroundGlassViewport = ({
           </span>
         </button>
       </div>
+
+      {expanded && narrowLayout ? learningOverlay : null}
     </section>
   );
 };

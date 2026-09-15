@@ -936,6 +936,11 @@ button {
 }
 
 @media (max-width: 900px) {
+  .groundglass-panel--expanded {
+    grid-template-rows: auto minmax(min(320px, 45vh), 1fr) auto;
+    overflow-y: auto;
+  }
+
   .scene-viewport-stage {
     display: grid;
     gap: var(--sim-panel-section-gap);
