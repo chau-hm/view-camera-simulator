@@ -52,6 +52,7 @@ test("Scene-local learning drawer keeps Focus Distribution full-width and leaves
   const groundGlassBefore = await requireBounds(groundGlass, "Ground Glass card");
   await rail.click();
   await expect(drawer).toBeVisible();
+  await expect(drawer).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
 
   const stageBounds = await requireBounds(stage, "Scene stage");
   const drawerBounds = await requireBounds(drawer, "Learning drawer");
@@ -273,6 +274,21 @@ test("desktop learning rail and Scene overlay controls keep separate visual anch
 
   const railBounds = await requireBounds(rail, "Learning rail");
   const triggerBounds = await requireBounds(trigger, "View overlays trigger");
+  expect(railBounds.width).toBeGreaterThan(36);
+  expect(railBounds.height).toBeGreaterThan(112);
+  await expect(railLabel).toHaveCSS("font-size", "12px");
+  await expect(railLabel).toHaveCSS("font-weight", "800");
+  const railSurface = await rail.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      borderColor: style.borderTopColor,
+      backgroundImage: style.backgroundImage,
+      boxShadow: style.boxShadow,
+    };
+  });
+  expect(railSurface.borderColor).toContain("143, 234, 255");
+  expect(railSurface.backgroundImage).toContain("linear-gradient");
+  expect(railSurface.boxShadow).toContain("53, 200, 237");
   expect(triggerBounds.x).toBeGreaterThan(railBounds.x + railBounds.width);
 
   await trigger.click();
@@ -280,6 +296,11 @@ test("desktop learning rail and Scene overlay controls keep separate visual anch
   const menu = page.locator(".scene-overlay-menu__panel");
   await expect(menu).toBeVisible();
   const menuBounds = await requireBounds(menu, "View overlays menu");
+  const menuContentMetrics = await menu.locator(".scene-overlay-controls").evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(menuContentMetrics.scrollWidth).toBeLessThanOrEqual(menuContentMetrics.clientWidth + 1);
   expect(Math.abs(menuBounds.x - triggerBounds.x)).toBeLessThanOrEqual(1);
   expect(menuBounds.y).toBeGreaterThanOrEqual(triggerBounds.y + triggerBounds.height);
   expect(menuBounds.y).toBeLessThan(triggerBounds.y + triggerBounds.height + 16);
@@ -388,4 +409,179 @@ test("constrained desktop Scenes move overlay controls below the host without me
   expect(menuTriggerIsTopmost).toBe(true);
   const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(hasHorizontalOverflow).toBe(false);
+});
+
+test("Ground Glass expansion keeps one bounded learning rail and drawer", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/simulator/guided/architecture-rise/rise-01");
+
+  const learning = getLearningOverlay(page);
+  const rail = getLearningRail(page);
+  const drawer = getLearningDrawer(page);
+  const sceneHeading = page.getByRole("heading", { name: "3D Scene", exact: true });
+  const frame = page.getByLabel("GroundGlassViewport");
+  const expand = page.getByRole("button", { name: "Expand Ground Glass" });
+
+  await expect(sceneHeading).toBeVisible();
+  await expect(rail).toBeVisible();
+  await expect(page.getByTestId("learning-overlay-panel")).toHaveCount(1);
+  await expand.click();
+
+  const restore = page.getByRole("button", { name: "Restore Ground Glass" });
+  await expect(restore).toBeFocused();
+  await expect(sceneHeading).toHaveCount(0);
+  await expect(frame).toBeVisible();
+  await expect(learning).toHaveAttribute("data-drawer-state", "peek");
+  await expect(rail).toBeVisible();
+  await expect(page.getByTestId("learning-overlay-panel")).toHaveCount(1);
+
+  const [frameBounds, railBounds, restoreBounds] = await Promise.all([
+    requireBounds(frame, "Expanded Ground Glass frame"),
+    requireBounds(rail, "Expanded Ground Glass learning rail"),
+    requireBounds(restore, "Ground Glass restore button"),
+  ]);
+  expect(railBounds.x).toBeGreaterThanOrEqual(frameBounds.x - 1);
+  expect(railBounds.y).toBeGreaterThanOrEqual(frameBounds.y - 1);
+  expect(right(railBounds)).toBeLessThanOrEqual(right(frameBounds) + 1);
+  expect(bottom(railBounds)).toBeLessThanOrEqual(bottom(frameBounds) + 1);
+  const rectanglesIntersect = (first: Bounds, second: Bounds) =>
+    !(right(first) <= second.x || right(second) <= first.x || bottom(first) <= second.y || bottom(second) <= first.y);
+  expect(rectanglesIntersect(railBounds, restoreBounds)).toBe(false);
+  const restoreIsTopmost = await page.evaluate(({ x, y }) => {
+    const restoreElement = document.querySelector<HTMLButtonElement>('[aria-label="Restore Ground Glass"]');
+    const topmostElement = document.elementFromPoint(x, y);
+    return Boolean(
+      restoreElement &&
+        topmostElement &&
+        (topmostElement === restoreElement || restoreElement.contains(topmostElement)),
+    );
+  }, {
+    x: restoreBounds.x + restoreBounds.width / 2,
+    y: restoreBounds.y + restoreBounds.height / 2,
+  });
+  expect(restoreIsTopmost).toBe(true);
+
+  await rail.click();
+  await expect(learning).toHaveAttribute("data-drawer-state", "transient");
+  await expect(drawer).toBeVisible();
+  await expect(drawer).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+  await expect(drawer.getByTestId("learning-overlay-task-view")).toBeVisible();
+  await expect(sceneHeading).toHaveCount(0);
+  await expect(restore).toBeVisible();
+
+  const [drawerBounds, frameAfterOpenBounds, restoreAfterOpenBounds] = await Promise.all([
+    requireBounds(drawer, "Expanded Ground Glass learning drawer"),
+    requireBounds(frame, "Expanded Ground Glass frame after opening drawer"),
+    requireBounds(restore, "Ground Glass restore button after opening drawer"),
+  ]);
+  expect(drawerBounds.x).toBeGreaterThanOrEqual(frameAfterOpenBounds.x - 1);
+  expect(drawerBounds.y).toBeGreaterThanOrEqual(frameAfterOpenBounds.y - 1);
+  expect(right(drawerBounds)).toBeLessThanOrEqual(right(frameAfterOpenBounds) + 1);
+  expect(bottom(drawerBounds)).toBeLessThanOrEqual(bottom(frameAfterOpenBounds) + 1);
+  expect(frameAfterOpenBounds.x).toBeCloseTo(frameBounds.x, 5);
+  expect(frameAfterOpenBounds.y).toBeCloseTo(frameBounds.y, 5);
+  expect(frameAfterOpenBounds.width).toBeCloseTo(frameBounds.width, 5);
+  expect(frameAfterOpenBounds.height).toBeCloseTo(frameBounds.height, 5);
+  expect(rectanglesIntersect(drawerBounds, restoreAfterOpenBounds)).toBe(false);
+
+  await page.getByRole("button", { name: "Close Task and Feedback" }).click();
+  await expect(learning).toHaveAttribute("data-drawer-state", "peek");
+  await restore.click();
+  await expect(sceneHeading).toBeVisible();
+  await expect(page.getByTestId("learning-overlay-panel")).toHaveCount(1);
+  await expect(getLearningRail(page)).toBeVisible();
+  const restoredLearning = page.getByTestId("learning-overlay-panel");
+  expect(await restoredLearning.evaluate((element) => Boolean(element.closest(".scene-viewport-stage")))).toBe(true);
+});
+
+test("narrow Ground Glass expansion keeps the learning flow outside the clipped frame", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 700, height: 800 });
+  await page.goto("/simulator/guided/architecture-rise/rise-01");
+
+  const learning = getLearningOverlay(page);
+  const rail = getLearningRail(page);
+  const drawer = getLearningDrawer(page);
+  const sceneHeading = page.getByRole("heading", { name: "3D Scene", exact: true });
+  const groundGlassCard = page.getByLabel("GroundGlassColumn");
+  const frame = page.getByLabel("GroundGlassViewport");
+  const expand = page.getByRole("button", { name: "Expand Ground Glass" });
+
+  await expect(learning).toHaveAttribute("data-drawer-state", "flow");
+  await expect(expand).toBeVisible();
+  await expand.click();
+
+  const restore = page.getByRole("button", { name: "Restore Ground Glass" });
+  const renderer = page.getByTestId("ground-glass-rtt");
+  await expect(sceneHeading).toHaveCount(0);
+  await expect(learning).toHaveAttribute("data-drawer-state", "flow");
+  await expect(page.getByTestId("learning-overlay-panel")).toHaveCount(1);
+  await expect(frame).toBeVisible();
+  await expect(renderer).toBeVisible();
+  await expect(restore).toBeVisible();
+  await expect(rail).toHaveCSS("display", "none");
+  expect(await rail.boundingBox()).toBeNull();
+
+  const placement = await learning.evaluate((element) => ({
+    insideFrame: Boolean(element.closest(".groundglass-viewport-frame")),
+    insideGroundGlassCard: Boolean(element.closest('[aria-label="GroundGlassColumn"]')),
+  }));
+  expect(placement.insideFrame).toBe(false);
+  expect(placement.insideGroundGlassCard).toBe(true);
+
+  const [groundGlassBounds, frameBounds, rendererBounds, learningBounds, restoreBounds] = await Promise.all([
+    requireBounds(groundGlassCard, "Expanded Ground Glass card"),
+    requireBounds(frame, "Narrow expanded Ground Glass frame"),
+    requireBounds(renderer, "Narrow expanded Ground Glass renderer"),
+    requireBounds(learning, "Narrow expanded learning surface"),
+    requireBounds(restore, "Narrow Ground Glass restore button"),
+  ]);
+  expect(frameBounds.height).toBeGreaterThan(100);
+  expect(rendererBounds.width).toBeGreaterThan(0);
+  expect(rendererBounds.height).toBeGreaterThan(0);
+  expect(learningBounds.height).toBeGreaterThan(0);
+  expect(learningBounds.y).toBeGreaterThanOrEqual(bottom(frameBounds) - 1);
+  expect(groundGlassBounds.x).toBeLessThanOrEqual(learningBounds.x + 1);
+  expect(right(learningBounds)).toBeLessThanOrEqual(right(groundGlassBounds) + 1);
+
+  const rectanglesIntersect = (first: Bounds, second: Bounds) =>
+    !(right(first) <= second.x || right(second) <= first.x || bottom(first) <= second.y || bottom(second) <= first.y);
+  expect(rectanglesIntersect(learningBounds, restoreBounds)).toBe(false);
+
+  await learning.scrollIntoViewIfNeeded();
+  await expect(drawer).toBeVisible();
+  const panelVisibility = await learning.evaluate((element) => {
+    const panelBounds = element.getBoundingClientRect();
+    const card = element.closest('[aria-label="GroundGlassColumn"]');
+    const cardBounds = card?.getBoundingClientRect();
+    const x = panelBounds.left + Math.min(panelBounds.width / 2, 20);
+    const y = Math.min(panelBounds.bottom - 2, cardBounds?.bottom ?? window.innerHeight - 2, window.innerHeight - 2);
+    const topmost = document.elementFromPoint(x, y);
+    return {
+      bottomWithinCard: cardBounds ? panelBounds.bottom <= cardBounds.bottom + 1 : false,
+      lowerPointHitTestable: Boolean(topmost && (topmost === element || element.contains(topmost))),
+    };
+  });
+  expect(panelVisibility.bottomWithinCard).toBe(true);
+  expect(panelVisibility.lowerPointHitTestable).toBe(true);
+
+  const taskButton = drawer.getByRole("button", { name: "Task", exact: true });
+  const feedbackButton = drawer.getByRole("button", { name: "Feedback", exact: true });
+  await taskButton.focus();
+  await page.keyboard.press("Tab");
+  await expect(feedbackButton).toBeFocused();
+  await feedbackButton.click();
+  await expect(drawer.getByTestId("learning-overlay-feedback-view")).toBeVisible();
+  await expect(learning).toHaveAttribute("data-drawer-state", "flow");
+
+  const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  expect(hasHorizontalOverflow).toBe(false);
+
+  await restore.click();
+  await expect(sceneHeading).toBeVisible();
+  await expect(page.getByTestId("learning-overlay-panel")).toHaveCount(1);
+  const restoredLearning = page.getByTestId("learning-overlay-panel");
+  await expect(restoredLearning).toHaveAttribute("data-drawer-state", "flow");
+  expect(await restoredLearning.evaluate((element) => Boolean(element.closest(".scene-viewport-stage")))).toBe(true);
 });

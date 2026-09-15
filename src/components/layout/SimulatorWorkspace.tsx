@@ -440,6 +440,17 @@ export const SimulatorWorkspace = ({
         : null,
     [camera.aperture, mode, opticsState, safeScene.id, task],
   );
+  const learningOverlay = !isAnatomyLesson ? (
+    <LearningOverlayPanel
+      mode={mode}
+      sceneId={safeScene.id}
+      task={task}
+      evaluation={evaluation}
+      guidedLessonContext={guidedLessonContext}
+      freeCompositionEvaluation={interiorCornerRiseEvaluation}
+      freeFocusEvaluation={interiorCornerFocusEvaluation}
+    />
+  ) : null;
   useEffect(() => {
     setCurrentTaskEvaluation(evaluation);
   }, [evaluation, setCurrentTaskEvaluation]);
@@ -631,19 +642,7 @@ export const SimulatorWorkspace = ({
                 }
                 onSubjectCapacityChange={setViewportSubjectCapacity}
                 showHeader={false}
-                learningOverlay={
-                  !isAnatomyLesson ? (
-                    <LearningOverlayPanel
-                      mode={mode}
-                      sceneId={safeScene.id}
-                      task={task}
-                      evaluation={evaluation}
-                      guidedLessonContext={guidedLessonContext}
-                      freeCompositionEvaluation={interiorCornerRiseEvaluation}
-                      freeFocusEvaluation={interiorCornerFocusEvaluation}
-                    />
-                  ) : null
-                }
+                learningOverlay={!groundGlassExpanded && !geometryExpanded ? learningOverlay : null}
               />
             </div>}
 
@@ -683,6 +682,7 @@ export const SimulatorWorkspace = ({
                 restoreFocusOnCollapse={restoreViewportFocus}
                 onRequestExpand={() => requestViewportExpansion("groundGlass")}
                 onRequestRestore={requestViewportRestore}
+                learningOverlay={groundGlassExpanded ? learningOverlay : null}
               />
             </div>}
 

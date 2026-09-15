@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { resolveGroundGlassPreviewMode } from "../../render/groundGlassTargetProjection";
@@ -16,6 +16,29 @@ import type {
   GroundGlassRttRuntimeInfoByChannel,
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "../../render/groundGlassRttDimensions";
+
+const NARROW_LAYOUT_QUERY = "(max-width: 900px)";
+
+const resolveNarrowLayout = (): boolean =>
+  typeof window !== "undefined" && typeof window.matchMedia === "function"
+    ? window.matchMedia(NARROW_LAYOUT_QUERY).matches
+    : false;
+
+const useNarrowLayout = (): boolean => {
+  const [narrowLayout, setNarrowLayout] = useState(resolveNarrowLayout);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const mediaQuery = window.matchMedia(NARROW_LAYOUT_QUERY);
+    const handleChange = () => setNarrowLayout(mediaQuery.matches);
+    handleChange();
+    mediaQuery.addEventListener?.("change", handleChange);
+    return () => mediaQuery.removeEventListener?.("change", handleChange);
+  }, []);
+
+  return narrowLayout;
+};
 
 type GroundGlassViewportProps = {
   opticsState: DerivedOpticsState;
@@ -49,6 +72,7 @@ type GroundGlassViewportProps = {
   onRequestRestore: () => void;
   comparison?: CameraMovementGroundGlassComparison | null;
   comparisonLabels?: { original: string; current: string };
+  learningOverlay?: ReactNode;
 };
 
 export const GroundGlassViewport = ({
@@ -81,10 +105,12 @@ export const GroundGlassViewport = ({
   onRequestRestore,
   comparison,
   comparisonLabels,
+  learningOverlay,
 }: GroundGlassViewportProps) => {
   const { t } = useTranslation();
   const sceneId = scene.id;
   const previewMode = resolveGroundGlassPreviewMode(groundGlassAssistEnabled);
+  const narrowLayout = useNarrowLayout();
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [originalZoomEnabled, setOriginalZoomEnabled] = useState(false);
@@ -317,6 +343,8 @@ export const GroundGlassViewport = ({
           </div>
         )}
 
+        {expanded && !narrowLayout ? learningOverlay : null}
+
         <button
           ref={expanded ? restoreTriggerRef : expandTriggerRef}
           type="button"
@@ -331,6 +359,8 @@ export const GroundGlassViewport = ({
           </span>
         </button>
       </div>
+
+      {expanded && narrowLayout ? learningOverlay : null}
     </section>
   );
 };

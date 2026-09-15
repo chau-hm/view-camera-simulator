@@ -573,6 +573,11 @@ describe("SimulatorWorkspace viewport expansion", () => {
   it("keeps one Ground Glass renderer and its interaction state through expansion", async () => {
     render(workspace());
     const originalGroundGlassRenderer = screen.getByTestId("ground-glass-rtt");
+    const normalLearning = screen.getByTestId("learning-overlay-panel");
+    const normalGroundGlassColumn = screen.getByLabelText("GroundGlassColumn");
+    expect(screen.getAllByTestId("learning-overlay-panel")).toHaveLength(1);
+    expect(normalLearning.closest(".scene-viewport-stage")).toBeInTheDocument();
+    expect(normalGroundGlassColumn.querySelector('[data-testid="learning-overlay-panel"]')).toBeNull();
 
     expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
@@ -592,9 +597,19 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getByRole("region", { name: "Pan Ground Glass" })).toHaveAttribute("data-zoomed", "true");
     expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
     expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("learning-overlay-panel")).not.toBeInTheDocument();
+    const groundGlassLearning = screen.getByTestId("learning-overlay-panel");
+    expect(screen.getAllByTestId("learning-overlay-panel")).toHaveLength(1);
+    expect(groundGlassLearning).toHaveAttribute("data-drawer-state", "peek");
+    expect(groundGlassLearning.closest(".groundglass-viewport-frame")).toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(groundGlassLearning.querySelector(".learning-overlay-panel__rail") as HTMLButtonElement);
+    expect(screen.getByTestId("learning-overlay-panel")).toHaveAttribute("data-drawer-state", "transient");
+    expect(screen.getByRole("button", { name: "Restore Ground Glass" })).toBeInTheDocument();
+    expect(screen.queryByTestId("scene-canvas")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Close Task and Feedback" }));
+    await waitFor(() => expect(screen.getByTestId("learning-overlay-panel")).toHaveAttribute("data-drawer-state", "peek"));
 
     const controls = screen.getByRole("region", { name: "Camera Controls" });
     const swing = screen.getByLabelText("Swing");
@@ -618,6 +633,9 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getByTestId("ground-glass-rtt")).toBe(originalGroundGlassRenderer);
     expect(screen.getByLabelText("GroundGlassColumn")).toBeInTheDocument();
     expect(screen.queryByTestId("current-settings-readout")).not.toBeInTheDocument();
+    const restoredLearning = screen.getByTestId("learning-overlay-panel");
+    expect(screen.getAllByTestId("learning-overlay-panel")).toHaveLength(1);
+    expect(restoredLearning.closest(".scene-viewport-stage")).toBeInTheDocument();
     expect(screen.getByLabelText("Upright Assist")).toBeChecked();
     expect(screen.getByRole("button", { name: "Focus loupe · 4× Ground Glass" })).toHaveAttribute("data-zoomed", "false");
   });
