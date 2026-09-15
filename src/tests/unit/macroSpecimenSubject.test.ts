@@ -22,6 +22,26 @@ describe("macro specimen physical renderer contract", () => {
     for (const part of ["outer-rim", "inner-ring", "central-relief", "radial-mark-0", "fine-line-0", "surface-dot-0"]) {
       expect(group.getObjectByName(`macro-specimen-${part}`)).toBeInstanceOf(THREE.Mesh);
     }
+    for (const part of [
+      "face-plate",
+      "face-inset",
+      "engraved-channel-0",
+      "edge-knurl-0",
+      "radial-engraving-0",
+      "fastener-0",
+      "fastener-slot-0",
+      "back-cap",
+      "back-outer-ring",
+      "back-relief",
+    ]) {
+      expect(group.getObjectByName(`macro-specimen-${part}`)).toBeInstanceOf(THREE.Mesh);
+    }
+    const specimenMeshes = group.children.filter((object): object is THREE.Mesh => object instanceof THREE.Mesh);
+    const specimenMaterials = specimenMeshes
+      .map(({ material }) => material)
+      .filter((material): material is THREE.MeshStandardMaterial => material instanceof THREE.MeshStandardMaterial);
+    expect(new Set(specimenMaterials).size).toBeGreaterThanOrEqual(4);
+    expect(specimenMaterials.every(({ roughnessMap }) => roughnessMap instanceof THREE.DataTexture)).toBe(true);
     group.updateMatrixWorld(true);
     // Every focus sample must land on the first lens-facing surface of real
     // rendered geometry, not merely inside the subject bounds.

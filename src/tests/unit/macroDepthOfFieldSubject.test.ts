@@ -53,9 +53,27 @@ describe("Macro Scene 2 physical renderer contract", () => {
       "station-1-screw-head",
       "station-1-fine-slot",
       "station-1-micro-dot-0",
+      "station-1-bezel",
+      "station-1-face-trim",
+      "station-1-center-ring",
+      "station-1-machining-band",
+      "station-1-machining-rib-0",
+      "station-1-knurl-0",
+      "station-1-face-fastener-0",
+      "station-1-face-fastener-slot-0",
+      "bridge-fastener-left",
+      "bridge-top-rail",
+      "chassis-fastener-left",
+      "chassis-rail-left",
     ]) {
       expect(group.getObjectByName(`macro-depth-${part}`)).toBeInstanceOf(THREE.Mesh);
     }
+    const subjectMeshes = group.children.filter((object): object is THREE.Mesh => object instanceof THREE.Mesh);
+    const subjectMaterials = subjectMeshes
+      .map(({ material }) => material)
+      .filter((material): material is THREE.MeshStandardMaterial => material instanceof THREE.MeshStandardMaterial);
+    expect(new Set(subjectMaterials).size).toBeGreaterThanOrEqual(6);
+    expect(subjectMaterials.every(({ roughnessMap }) => roughnessMap instanceof THREE.DataTexture)).toBe(true);
 
     const boundsFor = (name: string) => {
       const object = group.getObjectByName(`macro-depth-${name}`);

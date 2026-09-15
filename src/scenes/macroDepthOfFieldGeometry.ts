@@ -140,6 +140,6 @@ export const macroDepthOfFieldSceneBoundsMm: Bounds3 = {
 };
 
 export const macroDepthOfFieldCameraPlacement = {
-  position: { x: -350, y: 100, z: -600 },
-  target: { x: 150, y: -200, z: 0 },
+  position: { x: -220, y: 130, z: -500 },
+  target: { x: 0, y: 30, z: 260 },
 };
