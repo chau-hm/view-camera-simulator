@@ -39,7 +39,7 @@ describe("scene-aware learner readouts", () => {
     useAppStore.getState().setActiveTask(null);
   });
 
-  it("removes Current Settings while keeping Focus Distribution as the full-width learner readout", async () => {
+  it("removes Current Settings while keeping Focus Distribution in its learner readout slot", async () => {
     const { container } = renderWorkspace("table-tilt");
 
     await waitFor(() => expect(useAppStore.getState().camera.activeSceneId).toBe("table-tilt"));

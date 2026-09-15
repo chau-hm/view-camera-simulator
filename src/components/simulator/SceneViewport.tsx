@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type Ref, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import type { ConceptualCameraPresentation } from "../../render/ConceptualViewCamera";
@@ -33,8 +33,6 @@ type SceneViewportProps = {
   restoreFocusOnCollapse: boolean;
   onRequestExpand: () => void;
   onRequestRestore: () => void;
-  onToggleGeometryPanel?: (trigger: HTMLButtonElement) => void;
-  geometryTriggerRef?: Ref<HTMLButtonElement>;
   showHeader?: boolean;
   learningOverlay?: ReactNode;
   overlayMenuResetGeneration: number;
@@ -65,8 +63,6 @@ export const SceneViewport = ({
   restoreFocusOnCollapse,
   onRequestExpand,
   onRequestRestore,
-  onToggleGeometryPanel,
-  geometryTriggerRef,
   showHeader,
   learningOverlay,
   overlayMenuResetGeneration,
@@ -220,22 +216,6 @@ export const SceneViewport = ({
                 ))}
               </div>
             </fieldset>
-            {!suppressOpticalOverlays && onToggleGeometryPanel && (
-              <button
-                ref={geometryTriggerRef}
-                type="button"
-                onClick={(event) => onToggleGeometryPanel(event.currentTarget)}
-                aria-label={t(simulatorMessageKeys.viewport.expandGeometry)}
-                title={t(simulatorMessageKeys.viewport.expandGeometry)}
-                data-viewport-expanded="false"
-                className="btn btn--secondary scene-toolbar__geometry-action"
-              >
-                <span>{t(simulatorMessageKeys.viewport.geometryTitle)}</span>
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  open_in_new
-                </span>
-              </button>
-            )}
           </div>
 
           <label className="scene-toolbar__quality">

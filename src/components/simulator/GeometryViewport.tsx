@@ -35,6 +35,8 @@ type GeometryViewportProps = {
   riseMm?: number;
   showHeader?: boolean;
   expanded?: boolean;
+  restoreFocusOnCollapse?: boolean;
+  onRequestExpand?: () => void;
   onRequestRestore?: () => void;
   /** Public teaching movement summary for the active case. */
   movementSummary?: string | null;
@@ -52,12 +54,16 @@ export const GeometryViewport = ({
   riseMm,
   showHeader,
   expanded = false,
+  restoreFocusOnCollapse = true,
+  onRequestExpand,
   onRequestRestore,
   movementSummary,
 }: GeometryViewportProps) => {
   const { t } = useTranslation();
   const diagramRef = useRef<HTMLDivElement | null>(null);
+  const expandTriggerRef = useRef<HTMLButtonElement | null>(null);
   const restoreTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const previouslyExpandedRef = useRef(expanded);
   const [svgSize, setSvgSize] = useState({ width: SVG_WIDTH, height: SVG_HEIGHT });
   const [fitMode, setFitMode] = useState<"scene" | "construction">("scene");
   const profile = getGeometryPresentationProfile(scene);
@@ -103,11 +109,19 @@ export const GeometryViewport = ({
   }, [scene.id]);
 
   useEffect(() => {
-    if (!expanded) return;
+    const wasExpanded = previouslyExpandedRef.current;
+    previouslyExpandedRef.current = expanded;
+    if (!expanded && !wasExpanded) return;
 
-    const frame = window.requestAnimationFrame(() => restoreTriggerRef.current?.focus());
+    const frame = window.requestAnimationFrame(() => {
+      if (expanded) {
+        restoreTriggerRef.current?.focus();
+      } else if (restoreFocusOnCollapse) {
+        expandTriggerRef.current?.focus();
+      }
+    });
     return () => window.cancelAnimationFrame(frame);
-  }, [expanded]);
+  }, [expanded, restoreFocusOnCollapse]);
 
   const constructionWindow = getScheimpflugConstructionWindow(opticsState);
 
@@ -273,7 +287,7 @@ const cameraProjection = constructionWindow
       data-construction-layout={constructionLayoutActive ? "split" : "single"}
       data-camera-construction-visible={constructionLayoutActive ? "true" : "false"}
       data-subject-field-visible={constructionLayoutActive ? "true" : "false"}
-      style={{ display: "flex", flexDirection: "column", height: "100%" }}
+      style={{ display: "flex", flexDirection: "column", height: expanded ? "100%" : "auto" }}
     >
       {showHeader !== false ? (
         <div className="geometry-viewport__header">
@@ -297,10 +311,10 @@ const cameraProjection = constructionWindow
                 }}>{t(simulatorMessageKeys.geometry.scheimpflugSection)}</button>
               ) : null}
             </div>
-            {onRequestRestore ? (
+            {expanded && onRequestRestore ? (
               <button
                 ref={restoreTriggerRef}
-                className="btn btn--icon btn--viewport-action geometry-viewport__restore-action"
+                className="btn btn--icon btn--viewport-action geometry-viewport__viewport-action"
                 type="button"
                 onClick={onRequestRestore}
                 aria-label={t(simulatorMessageKeys.viewport.restoreGeometry)}
@@ -309,6 +323,21 @@ const cameraProjection = constructionWindow
               >
                 <span className="material-symbols-outlined" aria-hidden="true">
                   close_fullscreen
+                </span>
+              </button>
+            ) : null}
+            {!expanded && onRequestExpand ? (
+              <button
+                ref={expandTriggerRef}
+                className="btn btn--icon btn--viewport-action geometry-viewport__viewport-action"
+                type="button"
+                onClick={onRequestExpand}
+                aria-label={t(simulatorMessageKeys.viewport.expandGeometry)}
+                title={t(simulatorMessageKeys.viewport.expandGeometry)}
+                data-viewport-expanded="false"
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  open_in_new
                 </span>
               </button>
             ) : null}
@@ -358,7 +387,11 @@ const cameraProjection = constructionWindow
         </p>
       ) : null}
 
-      <div ref={diagramRef} className="geometry-diagram-container" style={{ flex: 1, minHeight: 0 }}>
+      <div
+        ref={diagramRef}
+        className="geometry-diagram-container"
+        style={{ flex: expanded ? 1 : "0 0 auto", minHeight: 0 }}
+      >
         {usesMirrorShiftTeachingDiagram && mirrorShiftNeutralOptics ? (
           <MirrorShiftTeachingDiagram
             neutralOptics={mirrorShiftNeutralOptics}

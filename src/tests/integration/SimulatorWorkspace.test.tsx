@@ -56,12 +56,11 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
   });
 
   it("focuses Restore, restores with Escape, and returns focus to its trigger", async () => {
-    render(workspace());
+    const { container } = render(workspace());
     const trigger = screen.getByRole("button", { name: "Expand 2D Geometry" });
 
     expect(trigger).toHaveAttribute("title", "Expand 2D Geometry");
     expect(trigger).toHaveAttribute("data-viewport-expanded", "false");
-    expect(trigger).toHaveTextContent("2D Geometry");
     expect(trigger.querySelector(".material-symbols-outlined")).toHaveTextContent("open_in_new");
 
     fireEvent.click(trigger);
@@ -80,7 +79,8 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
 
     fireEvent.keyDown(document, { key: "Escape" });
 
-    await waitFor(() => expect(screen.queryByRole("heading", { name: "2D Geometry" })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { name: "2D Geometry" })).toBeInTheDocument());
+    expect(container.querySelector('[data-workspace-slot="geometry"].simulator-card--expanded')).toBeNull();
     await waitFor(() => expect(screen.getByRole("button", { name: "Expand 2D Geometry" })).toHaveFocus());
   });
 
@@ -112,38 +112,41 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
   });
 
   it("restores focus after Restore and closes safely on route changes", async () => {
-    const { rerender } = render(workspace());
+    const view = render(workspace());
+    const { container } = view;
     const trigger = screen.getByRole("button", { name: "Expand 2D Geometry" });
     fireEvent.click(trigger);
     fireEvent.click(screen.getByRole("button", { name: "Restore 2D Geometry" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Expand 2D Geometry" })).toHaveFocus());
 
     fireEvent.click(trigger);
-    rerender(workspace("table-tilt"));
-    await waitFor(() => expect(screen.queryByRole("heading", { name: "2D Geometry" })).not.toBeInTheDocument());
+    view.rerender(workspace("table-tilt"));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "2D Geometry" })).toBeInTheDocument());
+    expect(container.querySelector('[data-workspace-slot="geometry"].simulator-card--expanded')).toBeNull();
     expect(document.activeElement).not.toBe(trigger);
   });
 
   it("cancels Geometry expansion when scene, mode, or task route identity changes", async () => {
     const view = render(workspaceRoute("guided", "shelf-swing", "swing-01"));
+    const { container } = view;
     fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
     expect(screen.getByRole("heading", { name: "2D Geometry" })).toBeInTheDocument();
 
     view.rerender(workspaceRoute("guided", "table-tilt", "tilt-01"));
     await screen.findByRole("button", { name: "Expand 2D Geometry" });
-    await waitFor(() => expect(screen.queryByRole("heading", { name: "2D Geometry" })).not.toBeInTheDocument());
+    await waitFor(() => expect(container.querySelector(".simulator-workspace-grid__geometry.simulator-card--expanded")).not.toBeInTheDocument());
     expect(screen.queryByTestId("geometry-svg-top")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
     view.rerender(workspaceRoute("free", "table-tilt", null));
     await screen.findByRole("button", { name: "Expand 2D Geometry" });
-    await waitFor(() => expect(screen.queryByRole("heading", { name: "2D Geometry" })).not.toBeInTheDocument());
+    await waitFor(() => expect(container.querySelector(".simulator-workspace-grid__geometry.simulator-card--expanded")).not.toBeInTheDocument());
     expect(screen.queryByTestId("geometry-svg-top")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Expand 2D Geometry" }));
     view.rerender(workspaceRoute("guided", "table-tilt", "tilt-01"));
     await screen.findByRole("button", { name: "Expand 2D Geometry" });
-    await waitFor(() => expect(screen.queryByRole("heading", { name: "2D Geometry" })).not.toBeInTheDocument());
+    await waitFor(() => expect(container.querySelector(".simulator-workspace-grid__geometry.simulator-card--expanded")).not.toBeInTheDocument());
   });
 
   it("restores Top view after the Shelf task restarts", async () => {
@@ -708,5 +711,53 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
     expect(screen.getByTestId("scene-canvas")).toBe(originalSceneRenderer);
     expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
+  });
+});
+
+describe("SimulatorWorkspace normal workspace pairing", () => {
+  afterEach(() => {
+    cleanup();
+    useAppStore.getState().resetCamera();
+    useAppStore.getState().setActiveTask(null);
+  });
+
+  it("renders one persistent Geometry panel beneath Scene and Focus Distribution beneath Ground Glass", () => {
+    const { container } = render(workspaceRoute("free", "table-tilt", null));
+
+    expect(container.querySelectorAll('[data-workspace-slot="scene"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-workspace-slot="ground-glass"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-workspace-slot="geometry"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-workspace-slot="focus-distribution"]')).toHaveLength(1);
+    expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
+    expect(screen.getAllByTestId("ground-glass-rtt")).toHaveLength(1);
+    expect(container.querySelectorAll("section.geometry-viewport")).toHaveLength(1);
+    expect(screen.getAllByTestId("focus-distribution-panel")).toHaveLength(1);
+    expect(screen.getByTestId("learning-overlay-panel").closest('[data-workspace-slot="scene"]')).toBeInTheDocument();
+  });
+
+  it("keeps Geometry in its left slot when Focus Distribution is unavailable", () => {
+    const { container } = render(workspaceRoute("free", "understanding-camera-movements", null));
+
+    const geometry = container.querySelector('[data-workspace-slot="geometry"]');
+    expect(geometry).toBeInTheDocument();
+    expect(container.querySelector('[data-workspace-slot="focus-distribution"]')).not.toBeInTheDocument();
+    expect(geometry).not.toHaveClass("simulator-card--expanded");
+  });
+
+  it("preserves the Anatomy Lesson exclusion from the normal pairing", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <SimulatorWorkspace
+          mode="free"
+          sceneId="view-camera-anatomy"
+          taskId={null}
+          anatomyLessonEnabled
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(container.querySelector('[data-workspace-slot="geometry"]')).not.toBeInTheDocument();
+    expect(container.querySelector('[data-workspace-slot="focus-distribution"]')).not.toBeInTheDocument();
   });
 });

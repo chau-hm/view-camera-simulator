@@ -25,7 +25,7 @@ const requireBounds = async (locator: Locator, label: string): Promise<Bounds> =
 const right = (bounds: Bounds) => bounds.x + bounds.width;
 const bottom = (bounds: Bounds) => bounds.y + bounds.height;
 
-test("Scene-local learning drawer keeps Focus Distribution full-width and leaves the Scene layout intact", async ({ page }) => {
+test("Scene-local learning drawer leaves the paired workspace layout intact", async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/simulator/guided/table-tilt/tilt-01");
