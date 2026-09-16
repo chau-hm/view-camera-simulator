@@ -37,6 +37,7 @@ export const simulatorMessages = {
     focusTitle: "對焦",
     focusDistanceLabel: "對焦距離",
     apertureTitle: "光圈",
+    apertureOptionLabel: "f/{{value}}",
     resetTitle: "重設",
     resetMovementsButton: "重設移軸",
     restartTaskButton: "重新開始任務",

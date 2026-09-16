@@ -63,7 +63,7 @@ const assertRiseTaskControls = async (page: Page) => {
   await expect(cameraControls.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Reset movements" })).toBeVisible();
   return rise;
 };
@@ -78,7 +78,7 @@ const assertFreeControls = async (page: Page) => {
   await expect(swing).toBeEnabled();
   await expect(tilt).toBeDisabled();
   await expect(focus).toBeEnabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Reset movements" })).toBeVisible();
   return { rise, swing, focus, rtt: page.getByTestId("ground-glass-rtt") };
 };
@@ -195,7 +195,7 @@ test("Oblique Architecture guided Swing + Focus task starts from solved Rise and
   await expect(tilt).toBeDisabled();
   await expect(focus).toHaveValue("13200");
   await expect(focus).toBeEnabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await expectLearningFeedbackNotCompleted(page);
 
   const neutralSanityState = await rtt.getAttribute("data-rtt-sanity-state");
@@ -245,7 +245,7 @@ test("Oblique Architecture compound task solves Rise, Swing, and Focus from neut
   await expect(focus).toHaveValue("13200");
   await expect(focus).toBeEnabled();
   await expect(page.getByRole("button", { name: "Expand 2D Geometry" })).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await expectLearningFeedbackNotCompleted(page);
 
   const neutralSanityState = await rtt.getAttribute("data-rtt-sanity-state");

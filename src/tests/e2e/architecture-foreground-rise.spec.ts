@@ -37,7 +37,7 @@ test("Architecture + Foreground Free Practice exposes cumulative Rise, Tilt, Foc
   await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toBeEnabled();
   await expect(cameraControls.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeEnabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeEnabled();
 
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");
@@ -81,7 +81,7 @@ test("Architecture + Foreground Rise guided task is observable, reachable, and r
   await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toBeDisabled();
   await expect(cameraControls.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
 
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");

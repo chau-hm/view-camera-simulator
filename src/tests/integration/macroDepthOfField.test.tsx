@@ -68,8 +68,8 @@ describe("Macro Depth of Field", () => {
     expect(focus).toHaveValue("400");
     expect(focus).not.toBeDisabled();
 
-    const aperture = screen.getByRole("combobox", { name: "Aperture" });
-    expect(aperture).toHaveValue("5.6");
+    const aperture = screen.getByRole("radiogroup", { name: "Aperture" });
+    expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
     expect(aperture).not.toBeDisabled();
     expect(screen.queryByText("Movement", { exact: true })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Infinity Reset" })).not.toBeInTheDocument();

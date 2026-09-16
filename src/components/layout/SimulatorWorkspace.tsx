@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getLessonZeroStep,
@@ -419,6 +419,27 @@ export const SimulatorWorkspace = ({
     task,
   ]);
 
+  const focusControlEnabled = enabledControls.has("focusDistance") && !focusLocked;
+  const focusControlLockReason = focusLocked
+    ? t(simulatorMessageKeys.controls.focusFixedReason)
+    : lockReason;
+  const apertureControlEnabled = enabledControls.has("aperture") && !apertureLocked;
+  const apertureControlLockReason = apertureLocked
+    ? t(simulatorMessageKeys.controls.apertureFixedReason)
+    : lockReason;
+  const showCommonMovementControls =
+    !movementLocked &&
+    !showPublicTeachingControls &&
+    !(safeScene.movementCapabilities?.selectionMode === "single" && selectedMovement);
+  const commonMovementHasDisabledControl =
+    showCommonMovementControls &&
+    (!enabledControls.has("rise") || !enabledControls.has("tilt") || !enabledControls.has("swing"));
+  const hasSharedControlLockReason =
+    (commonMovementHasDisabledControl && Boolean(lockReason)) ||
+    (!focusControlEnabled && focusControlLockReason === lockReason && Boolean(lockReason)) ||
+    (!apertureControlEnabled && apertureControlLockReason === lockReason && Boolean(lockReason));
+  const sharedControlLockReasonId = useId();
+
   const evaluation = useMemo(() => (task ? evaluateTask(task, safeScene, camera, opticsState) : null), [camera, opticsState, safeScene, task]);
   const interiorCornerRiseEvaluation = useMemo(
     () =>
@@ -526,8 +547,6 @@ export const SimulatorWorkspace = ({
         : closestId;
     }, undefined);
   }, [mode, opticsState.focusTargets, safeScene.id]);
-
-  const setInfinityFocus = useAppStore((state) => state.setInfinityFocus);
 
   const resetAnatomyLesson = useCallback(() => {
     setAnatomyStepIndex(0);
@@ -772,10 +791,16 @@ export const SimulatorWorkspace = ({
           <section aria-label={t(simulatorMessageKeys.controls.cameraControls)}>
             <div className="aside-header">
               <h3 style={{ margin: 0 }}>{t(simulatorMessageKeys.controls.cameraControls)}</h3>
-              {!infinityResetHidden && (<button className="btn btn--secondary" type="button" onClick={setInfinityFocus}>{t(simulatorMessageKeys.controls.infinityReset)}</button>)}
             </div>
 
-            <div style={{ marginTop: 8 }}>
+            {hasSharedControlLockReason ? (
+              <p id={sharedControlLockReasonId} className="control-help camera-controls__lock-reason">
+                <span aria-hidden="true">🔒</span>
+                <span>{lockReason}</span>
+              </p>
+            ) : null}
+
+            <div className="camera-controls__sections">
               {safeScene.cameraRigTranslationCapability?.enabled ? (
                 <div className="sim-section">
                   <MirrorShiftCameraPositionControl />
@@ -812,19 +837,35 @@ export const SimulatorWorkspace = ({
                 </>
               ) : (
                 <div className="sim-section">
-                  <div className="sim-section-label">{t(simulatorMessageKeys.controls.movementTitle)}</div>
-                  <MovementControls riseEnabled={enabledControls.has("rise")} tiltEnabled={enabledControls.has("tilt")} swingEnabled={enabledControls.has("swing")} lockReason={lockReason} showTitle={false} />
+                  <MovementControls
+                    riseEnabled={enabledControls.has("rise")}
+                    tiltEnabled={enabledControls.has("tilt")}
+                    swingEnabled={enabledControls.has("swing")}
+                    lockReason={lockReason}
+                    lockReasonId={commonMovementHasDisabledControl ? sharedControlLockReasonId : undefined}
+                    showLockReason={!hasSharedControlLockReason}
+                    showTitle={false}
+                  />
                 </div>
               )) : null}
 
               <div className="sim-section">
-                <div className="sim-section-label">{t(simulatorMessageKeys.controls.focusTitle)}</div>
-                <FocusControl focusEnabled={enabledControls.has("focusDistance") && !focusLocked} lockReason={focusLocked ? t(simulatorMessageKeys.controls.focusFixedReason) : lockReason} showTitle={false} />
+                <FocusControl
+                  focusEnabled={focusControlEnabled}
+                  lockReason={focusControlLockReason}
+                  lockReasonId={!focusControlEnabled && focusControlLockReason === lockReason ? sharedControlLockReasonId : undefined}
+                  showLockReason={focusControlLockReason !== lockReason || !hasSharedControlLockReason}
+                  showInfinityReset={!infinityResetHidden}
+                />
               </div>
 
               <div className="sim-section">
-                <div className="sim-section-label">{t(simulatorMessageKeys.controls.apertureTitle)}</div>
-                <ApertureControl apertureEnabled={enabledControls.has("aperture") && !apertureLocked} lockReason={apertureLocked ? t(simulatorMessageKeys.controls.apertureFixedReason) : lockReason} showTitle={false} />
+                <ApertureControl
+                  apertureEnabled={apertureControlEnabled}
+                  lockReason={apertureControlLockReason}
+                  lockReasonId={!apertureControlEnabled && apertureControlLockReason === lockReason ? sharedControlLockReasonId : undefined}
+                  showLockReason={apertureControlLockReason !== lockReason || !hasSharedControlLockReason}
+                />
               </div>
 
               {(interiorCornerGuidedLesson

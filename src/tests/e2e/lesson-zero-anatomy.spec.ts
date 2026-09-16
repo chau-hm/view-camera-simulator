@@ -100,7 +100,7 @@ test("Lesson 0 presents the anatomy sequence and isolates its presentation state
 
   await next.click();
   await expect(lessonHeading).toHaveText("Aperture control");
-  await page.getByRole("combobox", { name: "Aperture", exact: true }).selectOption("5.6");
+  await page.getByRole("radiogroup", { name: "Aperture", exact: true }).getByRole("radio", { name: "f/5.6" }).check();
 
   await next.click();
   await expect(lessonHeading).toHaveText("Controls recap");

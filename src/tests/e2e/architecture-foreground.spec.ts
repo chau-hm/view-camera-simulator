@@ -66,7 +66,7 @@ test("Architecture + Foreground exposes the cumulative photographic problem in F
   await expect(cameraControls.getByRole("slider", { name: "Tilt" })).toBeEnabled();
   await expect(cameraControls.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeEnabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeEnabled();
 
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   await expect(page.locator("section[data-geometry-fit]")).toHaveAttribute("data-geometry-view", "side");
@@ -97,10 +97,10 @@ test("Architecture + Foreground focus propagates to the physical film plane and 
   const sceneCanvas = page.getByTestId("scene-canvas");
   const rtt = page.getByTestId("ground-glass-rtt");
   const focus = page.getByLabel("Focus distance");
-  const aperture = page.getByRole("combobox", { name: "Aperture" });
+  const aperture = page.getByRole("radiogroup", { name: "Aperture" });
 
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
-  await aperture.selectOption("5.6");
+  await aperture.getByRole("radio", { name: "f/5.6" }).check();
   await setRangeDirect(page, "Focus distance", 3920);
   await expect(focus).toHaveValue("3920");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });

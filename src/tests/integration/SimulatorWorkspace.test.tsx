@@ -302,7 +302,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeDisabled();
     expect(screen.getByLabelText("Focus distance")).toBeDisabled();
-    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(screen.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: "Continue" }));
     await openLearningDrawer();
@@ -310,7 +310,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByLabelText("Rise")).toBeEnabled();
     expect(screen.getByLabelText("Swing")).toBeDisabled();
     expect(screen.getByLabelText("Focus distance")).toBeDisabled();
-    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(screen.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
     expect(useAppStore.getState().camera.frontRiseMm).toBe(0);
     fireEvent.change(screen.getByLabelText("Rise"), { target: { value: "33" } });
     await waitFor(() => expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument());
@@ -323,7 +323,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeEnabled();
     expect(screen.getByLabelText("Focus distance")).toBeDisabled();
-    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(screen.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
     expect(useAppStore.getState().camera.frontRiseMm).toBe(33);
     expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
 
@@ -338,7 +338,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeEnabled();
     expect(screen.getByLabelText("Focus distance")).toBeEnabled();
-    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(screen.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
     expect(useAppStore.getState().camera).toMatchObject({
       frontRiseMm: 33,
       frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
@@ -361,7 +361,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     expect(screen.getByLabelText("Rise")).toBeDisabled();
     expect(screen.getByLabelText("Swing")).toBeDisabled();
     expect(screen.getByLabelText("Focus distance")).toBeDisabled();
-    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
+    expect(screen.getByRole("radiogroup", { name: "Aperture" })).toBeEnabled();
     expect(useAppStore.getState().camera).toMatchObject({
       frontRiseMm: 33,
       frontSwingDeg: interiorCornerSwingFocusCalibration.public.frontSwingDeg,
@@ -370,7 +370,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     });
     expect(screen.queryByRole("button", { name: "Reset movements" })).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Aperture" }), { target: { value: "11" } });
+    fireEvent.click(screen.getByRole("radio", { name: "f/11" }));
     await waitFor(() => expect(screen.getByText("Lesson complete")).toBeInTheDocument());
     expect(screen.getByRole("link", { name: "Restart lesson" })).toHaveAttribute(
       "href",
@@ -450,9 +450,7 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Add Depth around the Aligned Plane" })).toBeInTheDocument(),
     );
-    fireEvent.change(screen.getByRole("combobox", { name: "Aperture" }), {
-      target: { value: "11" },
-    });
+    fireEvent.click(screen.getByRole("radio", { name: "f/11" }));
     await waitFor(() => expect(screen.getByText("Lesson complete")).toBeInTheDocument());
   });
 });
