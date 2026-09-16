@@ -202,7 +202,7 @@ export const simulatorMessages = {
     continuesToSubjectField: "continues to subject field",
     subjectField: "Subject field",
     opticalAxisAndFov:
-      "Solid amber: FOV boundary rays from the film edges through the lens centre. Dashed amber: optical axis (lens normal). Dark dashed amber: chief ray from film centre through lens centre; it may be off-axis when the centres are displaced.",
+      "Dotted amber: image-side construction lines from the film edges to the lens centre. Solid amber: object-side FOV boundary rays from the lens centre along the film-edge directions. Dashed amber: optical axis (lens normal). Dark dashed amber: chief ray from film centre through lens centre; it may be off-axis when the centres are displaced.",
     constructionScaleNote: "Each labelled region uses its own linear scale. The enlarged camera construction continues to the true-distance subject field.",
     scheimpflugValidNote: "Film, lens and focus planes meet along one line. This section views that line end-on.",
     scheimpflugZeroNote: "At zero tilt and swing the film and lens planes are parallel. Apply a movement to reveal their common Scheimpflug line and perpendicular section.",
@@ -230,6 +230,7 @@ export const simulatorMessages = {
     focusPlaneAria: "focus plane",
     nearDofPlaneAria: "nearDof plane",
     farDofPlaneAria: "farDof plane",
+    filmEdgeLensConstructionAria: "image-side construction line from a film edge to the lens centre",
     fovBoundaryRayAria: "FOV boundary ray from a film edge through the lens centre",
     chiefRayAria: "chief ray from film centre through lens centre",
     cameraBodyRail: "Camera body rail",

@@ -227,6 +227,7 @@ export const simulatorMessageKeys = {
     focusPlaneAria: "simulator.geometry.focusPlaneAria",
     nearDofPlaneAria: "simulator.geometry.nearDofPlaneAria",
     farDofPlaneAria: "simulator.geometry.farDofPlaneAria",
+    filmEdgeLensConstructionAria: "simulator.geometry.filmEdgeLensConstructionAria",
     fovBoundaryRayAria: "simulator.geometry.fovBoundaryRayAria",
     chiefRayAria: "simulator.geometry.chiefRayAria",
     cameraBodyRail: "simulator.geometry.cameraBodyRail",

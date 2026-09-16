@@ -114,6 +114,9 @@ describe("GeometryViewport", () => {
     expect(svg!.querySelectorAll('[data-ray-role="fov-boundary"]')).toHaveLength(2);
     expect(svg!.querySelector('[data-ray-role="optical-axis"]')).not.toBeNull();
     expect(svg!.querySelector('[data-ray-role="chief-ray"]')).not.toBeNull();
+    expect(svg!.querySelector('[data-ray-role="film-edge-to-lens"]'))
+      .toHaveAttribute("aria-label", "image-side construction line from a film edge to the lens centre");
+    expect(container).toHaveTextContent(/dotted amber: image-side construction lines from the film edges to the lens centre/i);
     expect(container).toHaveTextContent(/chief ray from film centre through lens centre/i);
 
     const axis = svg!.querySelector('[data-ray-role="optical-axis"]') as SVGLineElement;

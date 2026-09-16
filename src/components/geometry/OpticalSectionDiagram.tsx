@@ -197,7 +197,7 @@ const ConstructionLayer = ({
                   strokeWidth={1}
                   strokeDasharray="2 2"
                   opacity={0.7}
-                  aria-label={t(simulatorMessageKeys.geometry.fovBoundaryRayAria)}
+                  aria-label={t(simulatorMessageKeys.geometry.filmEdgeLensConstructionAria)}
                 />
               ))}
               {view.fovSegments.map((segment, index) => (
