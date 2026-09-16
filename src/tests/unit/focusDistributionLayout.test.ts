@@ -180,9 +180,8 @@ describe("focus distribution layout", () => {
     const camera = cameraForScene(tableTiltScene);
     const opticsState = deriveOpticsState(camera, tableTiltScene);
     const expectedDisplayUv = (rawUv: { u: number; v: number }, previewMode: GroundGlassPreviewMode) =>
-      // Independent renderer oracle: the RTT composite samples the raw scene
-      // with a 180-degree flip for Raw output, so physical film coordinates
-      // appear directly in Raw and are flipped only for Upright Assist.
+      // Independent renderer oracle: Raw preserves physical film coordinates;
+      // Upright Assist applies the 180-degree display transform.
       previewMode === "raw"
         ? rawUv
         : { u: 1 - rawUv.u, v: 1 - rawUv.v };

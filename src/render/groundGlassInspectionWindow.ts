@@ -22,17 +22,17 @@ export type GroundGlassInspectionPreviewMode = GroundGlassPreviewMode;
 /**
  * Map a displayed Ground Glass coordinate to the pre-composite RTT film crop.
  * This is intentionally distinct from the physical-film-to-display mapping
- * used by Focus Distribution. Raw compositing samples the RTT with a
- * 180-degree flip, so its crop is inverted; Upright compositing samples the
- * RTT directly, so its crop uses the displayed coordinate unchanged.
+ * used by Focus Distribution. Raw compositing samples the RTT directly, so
+ * its crop uses the displayed physical-film coordinate; Upright compositing
+ * applies the 180-degree correction, so its crop is inverted.
  */
 export const mapGroundGlassDisplayUvToFilmUv = (
   displayUv: { u: number; v: number },
   previewMode: GroundGlassInspectionPreviewMode,
 ): { u: number; v: number } =>
   previewMode === "raw"
-    ? { u: 1 - displayUv.u, v: 1 - displayUv.v }
-    : { u: displayUv.u, v: displayUv.v };
+    ? { u: displayUv.u, v: displayUv.v }
+    : { u: 1 - displayUv.u, v: 1 - displayUv.v };
 
 export type GroundGlassFrustum = {
   left: number;
@@ -145,8 +145,9 @@ export const resolveSampledFilmDimensionsMm = (input: {
 /**
  * Stage pan coordinates follow the displayed Ground Glass image. Inspection
  * cropping configures the pre-composite RTT camera/frustum. Raw presentation
- * flips the RTT during compositing, so displayed coordinates must be inverted
- * before selecting the crop; Upright presentation samples the RTT directly.
+ * keeps physical film orientation, while Upright presentation flips the RTT,
+ * so only Upright displayed coordinates must be inverted before selecting the
+ * crop.
  */
 export const mapGroundGlassInspectionWindowToFilmSpace = (
   window: GroundGlassInspectionWindow,

@@ -1259,7 +1259,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         : gatherRT.texture;
       compositeMaterial.uniforms.tNearGather.value = nearGatherRT.texture;
       compositeMaterial.uniforms.useNearGather.value = rawDebug ? 0.0 : 1.0;
-      compositeMaterial.uniforms.displayUpright.value = previewMode === "raw" ? 1.0 : 0.0;
+      // The off-axis Ground Glass camera renders the subject in physical film
+      // coordinates. Raw preserves that inverted film view; Upright Assist
+      // applies the 180-degree display correction in the composite.
+      compositeMaterial.uniforms.displayUpright.value = previewMode === "upright" ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
       if (apertureIlluminanceGain !== null) {
