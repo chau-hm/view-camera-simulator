@@ -65,7 +65,7 @@ test("Architecture + Foreground Free Practice exposes Rise, Tilt, Focus, and Ape
   await expect(tilt).toBeEnabled();
   await expect(controls.getByRole("slider", { name: "Swing" })).toBeDisabled();
   await expect(focus).toBeEnabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeEnabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeEnabled();
 
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");
@@ -116,7 +116,7 @@ test("Architecture + Foreground Tilt + Focus guided task starts composed and is 
   await expect(tilt).toBeEnabled();
   await expect(focus).toBeEnabled();
   await expect(controls.getByRole("slider", { name: "Swing" })).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
 
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");

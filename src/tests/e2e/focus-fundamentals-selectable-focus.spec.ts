@@ -110,7 +110,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   const rtt = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
   const rttCanvas = rtt.locator("canvas");
   const slider = page.getByLabel("Focus distance");
-  const aperture = page.getByRole("combobox", { name: "Aperture" });
+  const aperture = page.getByRole("radiogroup", { name: "Aperture" });
   const front = page.getByRole("radio", { name: "Front standard" });
   const rear = page.getByRole("radio", { name: "Rear standard" });
   const focusStandard = page.getByRole("group", { name: "Focus standard" });
@@ -120,7 +120,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(scene).toHaveAttribute("data-scene-subject-id", "focus-fundamentals-two-targets");
   await expect(page.getByRole("group", { name: "Focus standard" })).toBeVisible();
   await expect(front).toBeChecked();
-  await expect(aperture).toHaveValue("11");
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "11");
   await expect(aperture).toBeDisabled();
   await expect(page.getByText("Aperture is fixed for this lesson")).toBeVisible();
   await expect(focusStandard.getByText("Watch the white frame (near gate) and far pointer.")).toBeVisible();

@@ -80,7 +80,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("9490");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
   await assertFiniteGroundGlass(page);
 
   await page.getByRole("link", { name: "Continue" }).click();
@@ -101,7 +101,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("20");
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("9490");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await assertFiniteGroundGlass(page);
   await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
   await setStepRangeInput(page, "Tilt", 2);
@@ -115,7 +115,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await expect(page.getByRole("slider", { name: "Rise" })).toBeDisabled();
   await expect(page.getByRole("slider", { name: "Tilt" })).toBeDisabled();
   await expect(page.getByLabel("Focus distance")).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
   await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
 
   // Previous uses the shared lesson href and re-enters the task's own initial state.
@@ -131,7 +131,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await expectLessonStage(page, "Step 4 of 5", "Depth of Field");
 
   await assertFiniteGroundGlass(page);
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("32");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/32" }).check();
   await inspectCompletedFeedbackAndReturnToTask(page);
   await page.getByRole("link", { name: "Continue" }).click();
 
@@ -141,7 +141,7 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("9490");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
   await expect(page.getByText("Lesson complete", { exact: true })).not.toBeVisible();
   await expectLearningFeedbackNotCompleted(page);
   await assertFiniteGroundGlass(page);
@@ -154,13 +154,13 @@ test("Architecture + Foreground completes its five-stage Guided Lesson from the 
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("9490");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
   await expect(page.getByText("Lesson complete", { exact: true })).not.toBeVisible();
 
   await setStepRangeInput(page, "Rise", 20);
   await setStepRangeInput(page, "Tilt", 2);
   await setRangeDirect(page, "Focus distance", 6830);
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("32");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/32" }).check();
   await inspectCompletedFeedbackAndReturnToTask(page);
   await expect(page.getByText("Lesson complete", { exact: true })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(/You corrected the framing with Rise/)).toBeVisible();
@@ -178,7 +178,7 @@ test("Architecture + Foreground lesson entry resets after Free Practice and dire
   await setStepRangeInput(page, "Rise", 20);
   await setStepRangeInput(page, "Tilt", 2);
   await setRangeDirect(page, "Focus distance", 6830);
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("22");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/22" }).check();
   await page.getByRole("link", { name: "All Scenes" }).click();
   await expect(page).toHaveURL(/\/scenes$/);
 
@@ -190,13 +190,13 @@ test("Architecture + Foreground lesson entry resets after Free Practice and dire
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("9490");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
 
   await page.goto("/simulator/guided/architecture-foreground/architecture-foreground-dof-01");
   await expect(page.getByRole("region", { name: "Guided lesson progress" })).not.toBeVisible();
   await expect(page.getByRole("heading", { name: "Extend the Depth of Field" })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Rise" })).toBeDisabled();
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("32");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/32" }).check();
   await inspectCompletedFeedbackAndReturnToTask(page);
 });

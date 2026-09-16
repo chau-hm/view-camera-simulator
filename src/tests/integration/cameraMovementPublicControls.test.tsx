@@ -96,7 +96,7 @@ describe("public camera movement controls in the workspace", () => {
     expect(swing).toBeEnabled();
     expect(within(cameraControls).getByRole("slider", { name: "Rise" })).toBeDisabled();
     expect(screen.getByRole("slider", { name: "Focus distance" })).toBeEnabled();
-    expect(screen.getByRole("combobox", { name: "Aperture" })).toBeDisabled();
+    expect(screen.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
 
     fireEvent.change(tilt, { target: { value: "-9.7" } });
     expect(useAppStore.getState().camera.frontTiltDeg).toBe(-9.7);

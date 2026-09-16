@@ -35,10 +35,10 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
   await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-depth-of-field");
 
   const focus = page.getByRole("slider", { name: "Focus distance" });
-  const aperture = page.getByRole("combobox", { name: "Aperture" });
+  const aperture = page.getByRole("radiogroup", { name: "Aperture" });
   const readout = page.getByRole("region", { name: "Macro focus" });
   await expect(focus).toHaveValue("400");
-  await expect(aperture).toHaveValue("5.6");
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
   await expect(aperture).toBeEnabled();
   await expect(readout).toContainText("240.0 mm");
   await expect(readout).toContainText("0.60×");
@@ -66,8 +66,8 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
     await panel.locator('[data-focus-target-id="macro-depth-far"]').getAttribute("aria-label"),
   ).toMatch(/Soft/);
 
-  await aperture.selectOption("32");
-  await expect(aperture).toHaveValue("32");
+  await aperture.getByRole("radio", { name: "f/32" }).check();
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "32");
   await expect.poll(async () => {
     const scores = await readFocusDistributionScores(page, ["macro-depth-near", "macro-depth-far"]);
     return scores["macro-depth-near"] + scores["macro-depth-far"];
@@ -79,7 +79,7 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
   );
   expect(stoppedDownLabels.some((label) => label?.includes("Soft"))).toBe(true);
 
-  await aperture.selectOption("5.6");
+  await aperture.getByRole("radio", { name: "f/5.6" }).check();
   await setStepRangeInput(page, "Focus distance", 390);
   const nearFocusScores = await readFocusDistributionScores(page, TARGET_IDS);
   expect(nearFocusScores["macro-depth-near"]).toBeGreaterThan(nearFocusScores["macro-depth-middle"]);

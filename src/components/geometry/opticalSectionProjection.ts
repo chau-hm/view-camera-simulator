@@ -33,6 +33,10 @@ export type OpticalSectionViewData = {
   planeSegments: PlaneSegment[];
   physicalPlaneSegments: PlaneSegment[];
   fovSegments: Array<{ p1: ScreenPoint; p2: ScreenPoint }>;
+  /** Image-side construction from each film edge to the displaced lens centre. */
+  filmEdgeRaySegments: Array<{ p1: ScreenPoint; p2: ScreenPoint }>;
+  /** The central framing/chief ray from film centre through lens centre. */
+  chiefRaySegment: { p1: ScreenPoint; p2: ScreenPoint } | null;
   opticalAxisSegment: { p1: ScreenPoint; p2: ScreenPoint } | null;
   scheimpflugIntersection: ScreenPoint | null;
   projectWorldPoint: (point: Vec3) => ScreenPoint;
@@ -209,6 +213,46 @@ export const normalizedSegmentCrossResidual = (
     firstVector.x * secondVector.y - firstVector.y * secondVector.x,
   ) / denominator;
 };
+
+/** Return a normalized cross-product residual for a point and projected line. */
+const normalizedPointLineCrossResidual = (
+  point: ScreenPoint,
+  line: Pick<PlaneSegment, "p1" | "p2">,
+): number => {
+  const lineVector = {
+    x: line.p2.x - line.p1.x,
+    y: line.p2.y - line.p1.y,
+  };
+  const offset = {
+    x: point.x - line.p1.x,
+    y: point.y - line.p1.y,
+  };
+  const lineLength = Math.hypot(lineVector.x, lineVector.y);
+  const scale = Math.max(Math.hypot(offset.x, offset.y), 1);
+  const coordinates = [
+    point.x,
+    point.y,
+    line.p1.x,
+    line.p1.y,
+    line.p2.x,
+    line.p2.y,
+  ];
+  if (!coordinates.every(Number.isFinite) || lineLength <= 1e-12) return Number.POSITIVE_INFINITY;
+  return Math.abs(lineVector.x * offset.y - lineVector.y * offset.x) / (lineLength * scale);
+};
+
+/**
+ * Check whether two projected constructions describe the same line through a
+ * shared point, rather than merely having parallel directions.
+ */
+export const areProjectedLinesEquivalent = (
+  first: Pick<PlaneSegment, "p1" | "p2">,
+  second: Pick<PlaneSegment, "p1" | "p2">,
+  sharedPoint: ScreenPoint,
+): boolean =>
+  normalizedSegmentCrossResidual(first, second) <= PROJECTED_COLLINEARITY_TOLERANCE &&
+  normalizedPointLineCrossResidual(sharedPoint, first) <= PROJECTED_COLLINEARITY_TOLERANCE &&
+  normalizedPointLineCrossResidual(sharedPoint, second) <= PROJECTED_COLLINEARITY_TOLERANCE;
 
 /** Build a stable, perimeter-ordered DOF quadrilateral. */
 export const buildDofPolygonPoints = (
@@ -571,6 +615,28 @@ export function computeOpticalSectionData({
         });
         return clipped ? [{ p1: mapToScreen(clipped[0]), p2: mapToScreen(clipped[1]) }] : [];
       });
+      const filmEdgeRaySegments = filmSectionEndpoints.map((filmPoint) => ({
+        p1: mapToScreen(projectPointIntoSection(filmPoint, section)),
+        p2: mapToScreen(projectedLens),
+      }));
+      const projectedFilm = projectPointIntoSection(opticsState.filmCenterWorld, section);
+      const chiefRayDirectionWorld = vecSub(
+        opticsState.lensCenterWorld,
+        opticsState.filmCenterWorld,
+      );
+      const chiefRayDirection = {
+        depth: vecDot(chiefRayDirectionWorld, section.depthAxis),
+        lateral: vecDot(chiefRayDirectionWorld, section.lateralAxis),
+      };
+      const clippedChiefRay = clipSectionLineToWindow({
+        origin: projectedFilm,
+        direction: chiefRayDirection,
+        window,
+        ray: true,
+      });
+      const chiefRaySegment = clippedChiefRay
+        ? { p1: mapToScreen(clippedChiefRay[0]), p2: mapToScreen(clippedChiefRay[1]) }
+        : null;
 
       const commonPointWorld = intersectCommonLineWithSection(construction, section);
       const commonPointSection = commonPointWorld
@@ -592,6 +658,8 @@ export function computeOpticalSectionData({
           planeSegments,
           physicalPlaneSegments,
           fovSegments,
+          filmEdgeRaySegments,
+          chiefRaySegment,
           opticalAxisSegment,
           scheimpflugIntersection,
           projectWorldPoint: (point) => mapToScreen(projectPointIntoSection(point, section)),

@@ -89,6 +89,17 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     expect(optics.focusPlane!.point.z).toBeCloseTo(nearFocusDepthMm, 6);
   });
 
+  it("keeps Infinity Reset with the Focus control and preserves infinity semantics", () => {
+    useAppStore.getState().setFocusDistance(1200);
+    render(<FocusControl focusEnabled={true} lockReason="" showInfinityReset />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Infinity Reset" }));
+
+    expect(useAppStore.getState().camera.focusMode).toBe("infinity");
+    expect(screen.getByText("Focus: ∞")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Infinity Reset" }).closest(".compact-range-row--with-trailing")).toBeInTheDocument();
+  });
+
   it("Buttons do not change other camera controls", () => {
     const store = useAppStore.getState();
     // set some non-defaults
@@ -127,6 +138,21 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     expect(useAppStore.getState().camera.focusDistanceMm).toBe(
       before + CAMERA_CONTROL_STEPS.focusDistanceMm,
     );
+  });
+
+  it("keeps finite and infinity focus values on the range semantics, not the visual readout", () => {
+    render(<FocusControl focusEnabled={true} lockReason="" showInfinityReset />);
+    const finiteSlider = screen.getByLabelText("Focus distance");
+    expect(finiteSlider).toHaveAttribute("aria-valuetext", expect.stringMatching(/mm$/));
+    expect(finiteSlider.closest(".compact-range-row")?.querySelector(".compact-range-row__value"))
+      .toHaveAttribute("aria-hidden", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Infinity Reset" }));
+
+    const infinitySlider = screen.getByLabelText("Focus distance");
+    expect(infinitySlider).toHaveAttribute("aria-valuetext", "Focus: ∞");
+    expect(screen.getByText("Focus: ∞", { selector: ".compact-range-row__value" }))
+      .toHaveAttribute("aria-hidden", "true");
   });
 
   it("renders accessible focus-standard radios and updates concise mode copy", () => {

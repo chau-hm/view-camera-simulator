@@ -3,6 +3,7 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { toWorld } from "./rttUtils";
 import { disposeTeachingSubjectResources } from "./TeachingMaterials";
+import { createMacroMaterial } from "./MacroSubjectMaterials";
 import {
   MACRO_DEPTH_BASE_CENTER_MM,
   MACRO_DEPTH_BASE_DIMENSIONS_MM,
@@ -35,35 +36,62 @@ export function createMacroDepthOfFieldGroup(): THREE.Group {
     toWorld(MACRO_DEPTH_SPECIMEN_CENTER_MM.z),
   );
 
-  const chassis = new THREE.MeshStandardMaterial({
-    color: "#263746",
-    roughness: 0.42,
-    metalness: 0.72,
+  const chassis = createMacroMaterial({
+    color: "#3c5661",
+    roughness: 0.58,
+    // Powder-coated chassis: a matte dielectric finish over the mechanism.
+    metalness: 0.14,
+    seed: 41,
+    roughnessVariation: 0.16,
+    repeat: [4, 3],
   });
-  const stationBody = new THREE.MeshStandardMaterial({
-    color: "#526575",
+  const stationBody = createMacroMaterial({
+    color: "#66808a",
+    roughness: 0.38,
+    // Exposed machined station body, distinct from the coated chassis.
+    metalness: 0.82,
+    seed: 47,
+    roughnessVariation: 0.16,
+    repeat: [8, 3],
+    emissiveIntensity: 0.1,
+  });
+  const face = createMacroMaterial({
+    color: "#d6e0e1",
     roughness: 0.34,
-    metalness: 0.78,
+    // Bare machined face plate; relief is carried by geometry and highlights.
+    metalness: 0.84,
+    seed: 53,
+    roughnessVariation: 0.14,
+    repeat: [10, 10],
+    emissiveIntensity: 0.14,
   });
-  const face = new THREE.MeshStandardMaterial({
-    color: "#aebdca",
-    roughness: 0.28,
-    metalness: 0.7,
+  const detail = createMacroMaterial({
+    color: "#e0a451",
+    roughness: 0.36,
+    // Bare brass-like detail parts and fasteners.
+    metalness: 0.88,
+    seed: 59,
+    roughnessVariation: 0.16,
+    repeat: [8, 6],
+    emissiveIntensity: 0.16,
   });
-  const detail = new THREE.MeshStandardMaterial({
-    color: "#d9a441",
-    roughness: 0.32,
-    metalness: 0.62,
+  const accent = createMacroMaterial({
+    color: "#62c8c4",
+    roughness: 0.4,
+    // Anodized/coated accent parts remain mostly dielectric in this palette.
+    metalness: 0.2,
+    seed: 61,
+    roughnessVariation: 0.14,
+    repeat: [6, 6],
   });
-  const accent = new THREE.MeshStandardMaterial({
-    color: "#62c6c8",
-    roughness: 0.26,
-    metalness: 0.48,
-  });
-  const groove = new THREE.MeshStandardMaterial({
-    color: "#19232e",
-    roughness: 0.64,
-    metalness: 0.54,
+  const groove = createMacroMaterial({
+    color: "#22333b",
+    roughness: 0.8,
+    // Dark recess/oxide treatment: intentionally non-metallic.
+    metalness: 0.04,
+    seed: 67,
+    roughnessVariation: 0.14,
+    repeat: [12, 4],
   });
 
   const add = (
@@ -142,13 +170,26 @@ export function createMacroDepthOfFieldGroup(): THREE.Group {
     10,
     64,
   );
+  const bezelGeometry = new THREE.TorusGeometry(toWorld(10.1), toWorld(0.5), 12, 96);
+  const faceTrimGeometry = new THREE.TorusGeometry(toWorld(8.45), toWorld(0.18), 10, 96);
+  const centerRingGeometry = new THREE.TorusGeometry(toWorld(3.55), toWorld(0.2), 10, 64);
+  const machiningBandGeometry = new THREE.TorusGeometry(toWorld(5.05), toWorld(0.11), 8, 64);
   const radialSlotGeometry = new THREE.BoxGeometry(toWorld(0.55), toWorld(3.4), toWorld(0.18));
   const toothGeometry = new THREE.BoxGeometry(toWorld(0.72), toWorld(2.1), toWorld(0.22));
+  const radialRibGeometry = new THREE.BoxGeometry(toWorld(0.34), toWorld(2.5), toWorld(0.16));
+  const knurlGeometry = new THREE.BoxGeometry(toWorld(0.45), toWorld(1.15), toWorld(0.32));
   const screwGeometry = new THREE.CylinderGeometry(toWorld(1.35), toWorld(1.35), toWorld(0.5), 24);
   screwGeometry.rotateX(Math.PI / 2);
   const screwSlotGeometry = new THREE.BoxGeometry(toWorld(0.35), toWorld(2.1), toWorld(0.12));
   const fineSlotGeometry = new THREE.BoxGeometry(toWorld(5.4), toWorld(0.32), toWorld(0.14));
   const microDotGeometry = new THREE.SphereGeometry(toWorld(0.16), 8, 6);
+  const faceFastenerGeometry = new THREE.CylinderGeometry(toWorld(0.58), toWorld(0.58), toWorld(0.24), 20);
+  faceFastenerGeometry.rotateX(Math.PI / 2);
+  const faceFastenerSlotGeometry = new THREE.BoxGeometry(toWorld(0.18), toWorld(0.95), toWorld(0.1));
+  const bridgeFastenerGeometry = new THREE.CylinderGeometry(toWorld(1.15), toWorld(1.15), toWorld(0.6), 24);
+  bridgeFastenerGeometry.rotateX(Math.PI / 2);
+  const chassisFastenerGeometry = new THREE.CylinderGeometry(toWorld(0.8), toWorld(0.8), toWorld(0.42), 20);
+  chassisFastenerGeometry.rotateX(Math.PI / 2);
 
   MACRO_DEPTH_FOCUS_ZONE_SPECS.forEach((zone, stationIndex) => {
     const { x, y } = zone.centerMm;
@@ -196,6 +237,30 @@ export function createMacroDepthOfFieldGroup(): THREE.Group {
       accent,
       { x, y, z: surfaceZ - MACRO_DEPTH_STATION_INNER_RING_TUBE_MM },
     );
+    add(
+      `station-${stationIndex}-bezel`,
+      bezelGeometry,
+      stationBody,
+      { x, y, z: surfaceZ - 0.18 },
+    );
+    add(
+      `station-${stationIndex}-face-trim`,
+      faceTrimGeometry,
+      face,
+      { x, y, z: surfaceZ - 0.16 },
+    );
+    add(
+      `station-${stationIndex}-center-ring`,
+      centerRingGeometry,
+      detail,
+      { x, y, z: surfaceZ - 0.14 },
+    );
+    add(
+      `station-${stationIndex}-machining-band`,
+      machiningBandGeometry,
+      groove,
+      { x, y, z: surfaceZ - 0.12 },
+    );
 
     for (let index = 0; index < 16; index += 1) {
       const angle = (index * Math.PI * 2) / 16;
@@ -211,6 +276,59 @@ export function createMacroDepthOfFieldGroup(): THREE.Group {
         },
         angle,
       );
+    }
+
+    for (let index = 0; index < 24; index += 1) {
+      const angle = (index * Math.PI * 2) / 24 + Math.PI / 48;
+      const radius = 6.65;
+      const rib = add(
+        `station-${stationIndex}-machining-rib-${index}`,
+        radialRibGeometry,
+        index % 4 === 0 ? accent : groove,
+        {
+          x: x + radius * Math.cos(angle),
+          y: y + radius * Math.sin(angle),
+          z: surfaceZ - 0.08,
+        },
+        angle,
+      );
+      rib.scale.y = index % 3 === 0 ? 0.72 : 1;
+    }
+
+    for (let index = 0; index < 32; index += 1) {
+      const angle = (index * Math.PI * 2) / 32;
+      const knurl = add(
+        `station-${stationIndex}-knurl-${index}`,
+        knurlGeometry,
+        index % 5 === 0 ? detail : stationBody,
+        {
+          x: x + 11.3 * Math.cos(angle),
+          y: y + 11.3 * Math.sin(angle),
+          z: surfaceZ + 1.18,
+        },
+        angle,
+      );
+      knurl.scale.y = index % 4 === 0 ? 0.8 : 1;
+    }
+
+    for (let index = 0; index < 6; index += 1) {
+      const angle = (index * Math.PI * 2) / 6 + Math.PI / 6;
+      const fastenerX = x + 7.1 * Math.cos(angle);
+      const fastenerY = y + 7.1 * Math.sin(angle);
+      add(
+        `station-${stationIndex}-face-fastener-${index}`,
+        faceFastenerGeometry,
+        detail,
+        { x: fastenerX, y: fastenerY, z: surfaceZ - 0.18 },
+      );
+      const slot = add(
+        `station-${stationIndex}-face-fastener-slot-${index}`,
+        faceFastenerSlotGeometry,
+        groove,
+        { x: fastenerX, y: fastenerY, z: surfaceZ - 0.33 },
+        angle,
+      );
+      slot.scale.y = index % 2 === 0 ? 0.85 : 1;
     }
 
     for (let index = 0; index < 12; index += 1) {
@@ -272,6 +390,31 @@ export function createMacroDepthOfFieldGroup(): THREE.Group {
       );
     }
   });
+
+  for (const x of [-46, 46]) {
+    add(
+      `bridge-fastener-${x < 0 ? "left" : "right"}`,
+      bridgeFastenerGeometry,
+      detail,
+      { x, y: 5, z: MACRO_DEPTH_BRIDGE_CENTER_MM.z - MACRO_DEPTH_BRIDGE_DIMENSIONS_MM.z / 2 - 0.18 },
+    );
+  }
+
+  const bridgeRailGeometry = new THREE.BoxGeometry(toWorld(92), toWorld(0.9), toWorld(0.9));
+  add("bridge-top-rail", bridgeRailGeometry, stationBody, { x: 0, y: 6.55, z: 415.45 });
+
+  for (const x of [-44, 44]) {
+    add(
+      `chassis-fastener-${x < 0 ? "left" : "right"}`,
+      chassisFastenerGeometry,
+      detail,
+      { x, y: -11, z: MACRO_DEPTH_BASE_CENTER_MM.z - MACRO_DEPTH_BASE_DIMENSIONS_MM.z / 2 - 0.2 },
+    );
+  }
+
+  const chassisRailGeometry = new THREE.BoxGeometry(toWorld(3.2), toWorld(18), toWorld(1.2));
+  add("chassis-rail-left", chassisRailGeometry, groove, { x: -44, y: -10, z: 419.1 });
+  add("chassis-rail-right", chassisRailGeometry, groove, { x: 44, y: -10, z: 419.1 });
 
   return root;
 }

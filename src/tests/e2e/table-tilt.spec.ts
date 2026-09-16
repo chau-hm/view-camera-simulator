@@ -249,7 +249,7 @@ test("Table Tilt zero-tilt point focus moves from near to middle to far", async 
   test.setTimeout(90_000);
   await page.goto("/simulator/free/table-tilt");
   await setRangeDirect(page, "Tilt", 0);
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
   await expect(page.getByRole("heading", { name: /Focus distribution/i })).toBeVisible();
   await expect(page.getByText(/At 0° Front Tilt, move Focus from the near card/)).toBeVisible();
 
@@ -382,7 +382,7 @@ test("Table Tilt calibrated controls complete the guided task", async ({ page })
 
   await setRangeDirect(page, "Tilt", 9);
   await setRangeDirect(page, "Focus distance", 6130);
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
 
   await expectLearningFeedbackCompleted(page);
   const feedback = await openLearningFeedback(page);
@@ -404,7 +404,7 @@ test("Table Tilt focus and DOF overlays stay renderable at 9 degrees and 5780 mm
   await page.goto("/simulator/free/table-tilt");
   await setRangeDirect(page, "Tilt", 9);
   await setRangeDirect(page, "Focus distance", 5780);
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
 
   const sceneCanvas = page.getByTestId("scene-canvas");
   for (const attribute of [
@@ -421,7 +421,7 @@ test("Table Tilt calibrated side geometry keeps the table, targets, focus, and D
   await page.goto("/simulator/free/table-tilt");
   await setRangeDirect(page, "Tilt", 9);
   await setRangeDirect(page, "Focus distance", 6130);
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
 
   const svg = page.getByTestId("geometry-svg-side");

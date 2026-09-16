@@ -49,7 +49,7 @@ test("Architecture + Foreground DOF regression stays finite across Raw RTT toggl
   await setStepRangeInput(page, "Tilt", 6.6);
   await setRangeDirect(page, "Focus distance", 7750);
   await expect(page.getByLabel("Focus distance")).toHaveValue("7750");
-  await page.getByRole("combobox", { name: "Aperture" }).selectOption("11");
+  await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
 
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-scene-id", "architecture-foreground");
@@ -84,7 +84,7 @@ test("Architecture + Foreground DOF regression stays finite across Raw RTT toggl
   await expect(page.getByLabel("Rise")).toHaveValue("20");
   await expect(page.getByLabel("Tilt")).toHaveValue("6.6");
   await expect(page.getByLabel("Focus distance")).toHaveValue("7750");
-  await expect(page.getByRole("combobox", { name: "Aperture" })).toHaveValue("11");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
 });
@@ -107,7 +107,10 @@ test("Architecture + Foreground DOF remains finite through a transition sequence
     await setStepRangeInput(page, "Tilt", checkpoint.tilt);
     await setRangeDirect(page, "Focus distance", checkpoint.focus);
     await expect(page.getByLabel("Focus distance")).toHaveValue(String(checkpoint.focus));
-    await page.getByRole("combobox", { name: "Aperture" }).selectOption(checkpoint.aperture);
+    await page
+      .getByRole("radiogroup", { name: "Aperture" })
+      .getByRole("radio", { name: `f/${checkpoint.aperture}` })
+      .check();
     await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
     await expectFiniteFocusDiagnostics(page);
     expect(Number.isFinite(await numericAttribute(rtt, "data-rtt-final-variance"))).toBe(true);
