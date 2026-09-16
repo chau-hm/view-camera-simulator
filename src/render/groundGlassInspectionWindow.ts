@@ -1,5 +1,9 @@
 import type { GroundGlassPanOffset } from "./groundGlassStageTransform";
 import type { GroundGlassPreviewMode } from "./groundGlassTargetProjection";
+import {
+  applyGroundGlassRttDisplayTransform,
+  resolveGroundGlassRttDisplayTransform,
+} from "./groundGlassRttOrientation";
 
 /**
  * A normalized inspection window. GroundGlassStage expresses its center in
@@ -22,17 +26,16 @@ export type GroundGlassInspectionPreviewMode = GroundGlassPreviewMode;
 /**
  * Map a displayed Ground Glass coordinate to the pre-composite RTT film crop.
  * This is intentionally distinct from the physical-film-to-display mapping
- * used by Focus Distribution. Raw compositing samples the RTT directly, so
- * its crop uses the displayed physical-film coordinate; Upright compositing
- * applies the 180-degree correction, so its crop is inverted.
+ * used by Focus Distribution. The RTT camera reverses only one source axis;
+ * the per-axis display transform therefore differs between Raw and Upright.
  */
 export const mapGroundGlassDisplayUvToFilmUv = (
   displayUv: { u: number; v: number },
   previewMode: GroundGlassInspectionPreviewMode,
-): { u: number; v: number } =>
-  previewMode === "raw"
-    ? { u: displayUv.u, v: displayUv.v }
-    : { u: 1 - displayUv.u, v: 1 - displayUv.v };
+): { u: number; v: number } => applyGroundGlassRttDisplayTransform(
+  displayUv,
+  resolveGroundGlassRttDisplayTransform(previewMode),
+);
 
 export type GroundGlassFrustum = {
   left: number;
@@ -144,10 +147,9 @@ export const resolveSampledFilmDimensionsMm = (input: {
 
 /**
  * Stage pan coordinates follow the displayed Ground Glass image. Inspection
- * cropping configures the pre-composite RTT camera/frustum. Raw presentation
- * keeps physical film orientation, while Upright presentation flips the RTT,
- * so only Upright displayed coordinates must be inverted before selecting the
- * crop.
+ * cropping configures the pre-composite RTT camera/frustum, so display-space
+ * coordinates must be mapped through the same per-axis transform used by the
+ * composite shader.
  */
 export const mapGroundGlassInspectionWindowToFilmSpace = (
   window: GroundGlassInspectionWindow,

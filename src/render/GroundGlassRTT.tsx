@@ -68,6 +68,7 @@ import {
   resolveSampledFilmDimensionsMm,
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
+import { resolveGroundGlassRttDisplayTransform } from "./groundGlassRttOrientation";
 import {
   GroundGlassProfiler,
   isGroundGlassProfilingEnabled,
@@ -401,7 +402,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         near: { value: 0.01 },
         far: { value: 12.0 },
         useRaw: { value: 0.0 },
-        displayUpright: { value: 0.0 },
         dofMode: { value: 0.0 },
         lensCenterWorld: { value: new THREE.Vector3() },
         lensPlaneNormal: { value: new THREE.Vector3(0, 0, 1) },
@@ -441,7 +441,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         useNearGather: { value: 1.0 },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
-        displayUpright: { value: 0.0 },
+        flipDisplayX: { value: 0.0 },
+        flipDisplayY: { value: 1.0 },
         apertureIlluminanceGain: { value: 1.0 },
       },
     });
@@ -1259,10 +1260,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         : gatherRT.texture;
       compositeMaterial.uniforms.tNearGather.value = nearGatherRT.texture;
       compositeMaterial.uniforms.useNearGather.value = rawDebug ? 0.0 : 1.0;
-      // The off-axis Ground Glass camera renders the subject in physical film
-      // coordinates. Raw preserves that inverted film view; Upright Assist
-      // applies the 180-degree display correction in the composite.
-      compositeMaterial.uniforms.displayUpright.value = previewMode === "upright" ? 1.0 : 0.0;
+      const displayTransform = resolveGroundGlassRttDisplayTransform(previewMode);
+      compositeMaterial.uniforms.flipDisplayX.value = displayTransform.flipDisplayX ? 1.0 : 0.0;
+      compositeMaterial.uniforms.flipDisplayY.value = displayTransform.flipDisplayY ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
       if (apertureIlluminanceGain !== null) {
