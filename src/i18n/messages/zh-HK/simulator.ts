@@ -204,7 +204,8 @@ export const simulatorMessages = {
     cameraConstructionHeading: "相機側 Scheimpflug 構造 — 放大",
     continuesToSubjectField: "延伸至主體區域",
     subjectField: "主體區域",
-    opticalAxisAndFov: "琥珀色線：光軸及視野邊界光線。",
+    opticalAxisAndFov:
+      "實心琥珀色：由底片邊緣經過鏡頭中心的視野邊界光線；虛線琥珀色：光軸（鏡頭法線）；深色虛線琥珀色：由底片中心經過鏡頭中心的主光線，當兩個中心移位時可與光軸成離軸方向。",
     constructionScaleNote: "每個標示區域使用自己的線性比例。放大的相機構造會延伸至按實際距離顯示的主體區域。",
     scheimpflugValidNote: "底片、鏡頭及清晰焦平面沿同一條線相交。此剖面從線的端面查看。",
     scheimpflugZeroNote: "在傾斜及擺動均為零時，底片及鏡頭平面互相平行。施加移軸即可顯示共同的 Scheimpflug 線及垂直剖面。",
@@ -232,6 +233,8 @@ export const simulatorMessages = {
     focusPlaneAria: "清晰焦平面",
     nearDofPlaneAria: "近端景深平面",
     farDofPlaneAria: "遠端景深平面",
+    fovBoundaryRayAria: "由底片邊緣經過鏡頭中心的視野邊界光線",
+    chiefRayAria: "由底片中心經過鏡頭中心的主光線",
     cameraBodyRail: "相機機身導軌",
     bellowsConnector: "簡化皮腔連接器",
     tabletopGuide: "桌面",

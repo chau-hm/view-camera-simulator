@@ -182,18 +182,41 @@ const ConstructionLayer = ({
   return (
     <g data-testid={testId} opacity={opacity}>
       {showCameraConstruction
-        ? view.fovSegments.map((segment, index) => (
-            <line
-              key={`fov-${index}`}
-              x1={segment.p1.x}
-              y1={segment.p1.y}
-              x2={segment.p2.x}
-              y2={segment.p2.y}
-              stroke="#f59e0b"
-              strokeWidth={1}
-              opacity={0.85}
-            />
-          ))
+        ? (
+            <>
+              {view.filmEdgeRaySegments.map((segment, index) => (
+                <line
+                  key={`film-edge-ray-${index}`}
+                  data-testid={`film-edge-ray-${index}`}
+                  data-ray-role="film-edge-to-lens"
+                  x1={segment.p1.x}
+                  y1={segment.p1.y}
+                  x2={segment.p2.x}
+                  y2={segment.p2.y}
+                  stroke="#f59e0b"
+                  strokeWidth={1}
+                  strokeDasharray="2 2"
+                  opacity={0.7}
+                  aria-label={t(simulatorMessageKeys.geometry.fovBoundaryRayAria)}
+                />
+              ))}
+              {view.fovSegments.map((segment, index) => (
+                <line
+                  key={`fov-${index}`}
+                  data-testid={`fov-boundary-ray-${index}`}
+                  data-ray-role="fov-boundary"
+                  x1={segment.p1.x}
+                  y1={segment.p1.y}
+                  x2={segment.p2.x}
+                  y2={segment.p2.y}
+                  stroke="#f59e0b"
+                  strokeWidth={1}
+                  opacity={0.85}
+                  aria-label={t(simulatorMessageKeys.geometry.fovBoundaryRayAria)}
+                />
+              ))}
+            </>
+          )
         : null}
 
       {view.opticalAxisSegment
@@ -212,12 +235,13 @@ const ConstructionLayer = ({
               <g>
                 <line
                   data-testid="optical-axis-line"
+                  data-ray-role="optical-axis"
                   x1={p1.x}
                   y1={p1.y}
                   x2={p2.x}
                   y2={p2.y}
-                  stroke="#f59e0b"
-                  strokeWidth={1.2}
+                  stroke="#d97706"
+                  strokeWidth={1.8}
                   strokeDasharray="6 4"
                   opacity={0.95}
                 />
@@ -373,6 +397,22 @@ const ConstructionLayer = ({
           displayMode={
             geometryView === "scheimpflug" ? "construction" : "compact"
           }
+        />
+      ) : null}
+
+      {showCameraConstruction && view.chiefRaySegment ? (
+        <line
+          data-testid="chief-ray-line"
+          data-ray-role="chief-ray"
+          x1={view.chiefRaySegment.p1.x}
+          y1={view.chiefRaySegment.p1.y}
+          x2={view.chiefRaySegment.p2.x}
+          y2={view.chiefRaySegment.p2.y}
+          stroke="#92400e"
+          strokeWidth={1.8}
+          strokeDasharray="3 3"
+          opacity={0.95}
+          aria-label={t(simulatorMessageKeys.geometry.chiefRayAria)}
         />
       ) : null}
 
