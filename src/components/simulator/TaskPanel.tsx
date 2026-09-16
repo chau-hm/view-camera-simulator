@@ -8,14 +8,17 @@ import {
   getGuidedControlMessageKey,
   getGuidedTaskCopy,
 } from "../../core/tasks/guidedTaskCopyKeys";
+import type { MacroBellowsExtensionTeachingModel } from "../../scenes/macroBellowsExtensionTeaching";
+import { MacroBellowsExtensionTeachingContent } from "./MacroBellowsExtensionTeachingContent";
 
 type TaskPanelProps = {
   task: TaskDefinition | null;
   sceneId?: string;
   showTitle?: boolean;
+  macroTeaching?: MacroBellowsExtensionTeachingModel | null;
 };
 
-export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) => {
+export const TaskPanel = ({ task, sceneId, showTitle = true, macroTeaching }: TaskPanelProps) => {
   const { t } = useTranslation();
   const translateMessage = (message: GuidedTaskMessageRef): string =>
     String(message.values ? t(message.key, message.values as never) : t(message.key));
@@ -31,15 +34,21 @@ export const TaskPanel = ({ task, sceneId, showTitle = true }: TaskPanelProps) =
             <span className="task-status task-status--free">{t(simulatorMessageKeys.task.freePractice)}</span>
           </div>
 
-          {/* single objective paragraph (scene-specific) */}
-          <p className="task-summary__objective">{t(freeGuidance.objectiveKey)}</p>
+          {macroTeaching ? (
+            <MacroBellowsExtensionTeachingContent model={macroTeaching} variant="task" />
+          ) : (
+            <>
+              {/* single objective paragraph (scene-specific) */}
+              <p className="task-summary__objective">{t(freeGuidance.objectiveKey)}</p>
 
-          {freeGuidance.bulletKeys.length > 0 && (
-            <ul className="task-summary__guidance">
-              {freeGuidance.bulletKeys.map((bulletKey) => (
-                <li key={bulletKey}>{t(bulletKey)}</li>
-              ))}
-            </ul>
+              {freeGuidance.bulletKeys.length > 0 && (
+                <ul className="task-summary__guidance">
+                  {freeGuidance.bulletKeys.map((bulletKey) => (
+                    <li key={bulletKey}>{t(bulletKey)}</li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </div>
       </section>

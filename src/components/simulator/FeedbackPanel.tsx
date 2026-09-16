@@ -11,6 +11,7 @@ import type {
   InteriorCornerFocusAlignmentStatus,
   InteriorCornerSwingFocusEvaluation,
 } from "../../scenes/interiorCornerSwingFocus";
+import type { MacroBellowsExtensionTeachingModel } from "../../scenes/macroBellowsExtensionTeaching";
 import {
   getFeedbackStatus,
   getPassedCriteriaCount,
@@ -18,6 +19,7 @@ import {
   formatFinalCameraState,
   getFreePracticeFeedbackKey,
 } from "./taskHelpers";
+import { MacroBellowsExtensionTeachingContent } from "./MacroBellowsExtensionTeachingContent";
 
 type FeedbackPanelProps = {
   mode: string;
@@ -26,6 +28,7 @@ type FeedbackPanelProps = {
   evaluation: TaskEvaluation | null;
   freeCompositionEvaluation?: InteriorCornerRiseCompositionEvaluation | null;
   freeFocusEvaluation?: InteriorCornerSwingFocusEvaluation | null;
+  macroTeaching?: MacroBellowsExtensionTeachingModel | null;
   showTitle?: boolean;
 };
 
@@ -49,6 +52,7 @@ export const FeedbackPanel = ({
   evaluation,
   freeCompositionEvaluation,
   freeFocusEvaluation,
+  macroTeaching,
   showTitle = true,
 }: FeedbackPanelProps) => {
   const { t } = useTranslation();
@@ -96,8 +100,11 @@ export const FeedbackPanel = ({
             ) : null}
           </div>
           <p style={{ marginTop: 8 }}>{t(genericObservationKey)}</p>
-          {freeObs.observationKey !== genericObservationKey ? (
+          {freeObs.observationKey !== genericObservationKey && !macroTeaching ? (
             <p style={{ marginTop: 6, color: 'var(--text-muted)' }}>{t(freeObs.observationKey)}</p>
+          ) : null}
+          {macroTeaching ? (
+            <MacroBellowsExtensionTeachingContent model={macroTeaching} variant="feedback" />
           ) : null}
           {riseCompositionKey ? (
             <p

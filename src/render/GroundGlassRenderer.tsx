@@ -8,11 +8,13 @@ import { GroundGlassRenderSurface } from "./GroundGlassRenderSurface";
 import { GroundGlassTransformedOverlays, GroundGlassFixedOverlays } from "./GroundGlassOverlays";
 import { GroundGlassFocusRing } from "./GroundGlassFocusRing";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
+import { resolveGroundGlassPhysicalGrid } from "./groundGlassPhysicalGrid";
 import type { ApertureValue, CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
+import { CAMERA_CONSTANTS } from "../utils/constants";
 import { resolvePhysicalFocusTargetPresentationMetric } from "./postprocessing/FocusAssistPass";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
@@ -74,6 +76,16 @@ const PANEL_WIDTH_PX = 500;
 const PANEL_HEIGHT_PX = 400;
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+
+const formatGridSquareSize = (squareMm: number): string => {
+  const squareCm = squareMm / 10;
+  if (!Number.isFinite(squareCm) || squareCm <= 0) return `${squareMm} mm`;
+  const roundedCm = Math.round(squareCm * 100) / 100;
+  const formattedCm = Number.isInteger(roundedCm)
+    ? String(roundedCm)
+    : roundedCm.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  return `${formattedCm} cm`;
+};
 
 export const GroundGlassRenderer = ({
   opticsState,
@@ -177,6 +189,17 @@ export const GroundGlassRenderer = ({
     () => mapGroundGlassInspectionWindowToFilmSpace(inspectionWindow, previewMode),
     [inspectionWindow, previewMode],
   );
+  const physicalGrid = scene.macroTeachingCapability?.kind === "bellows-extension" && gridEnabled && !rawDebug
+    ? resolveGroundGlassPhysicalGrid({
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      gridSquareMm: scene.macroTeachingCapability.groundGlassGridSquareMm,
+      displayWidthPx: rttLogicalSize.width,
+      displayHeightPx: rttLogicalSize.height,
+      inspectionWindow,
+      previewMode,
+    })
+    : null;
   const sceneShiftX = isRttSceneFinal ? 0 : clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
   const sceneShiftY = isRttSceneFinal ? 0 : clamp(-riseMm * 2 + tiltDeg * 4 - pipeline.verticalFrameOffsetPx * 0.15, -80, 80);
   const sceneRotationDeg = isRttSceneFinal ? 0 : clamp(tiltDeg * 1.25 + swingDeg * 0.75, -18, 18);
@@ -188,6 +211,11 @@ export const GroundGlassRenderer = ({
     48 - clamp(tiltDeg * 2.2, -18, 18)
   }%, rgba(96,165,250,0.34), rgba(30,41,59,0.9) 42%, rgba(15,23,42,0.97) 100%)`;
   const isInfinityFocus = opticsState.diagnostics?.isInfinityFocus === true;
+  const scaleCue = gridEnabled && !rawDebug && scene.macroTeachingCapability?.kind === "bellows-extension"
+    ? t(simulatorMessageKeys.viewport.groundGlassGridScaleCue, {
+      size: formatGridSquareSize(scene.macroTeachingCapability.groundGlassGridSquareMm),
+    })
+    : undefined;
   // consider RTT scenes when hiding decorative background overlay
   const hideDecorativeBackground = isRttSceneFinal || rawDebug;
   const lastFiniteFocusDepthMm = explicitLastFiniteFocusDepthMm;
@@ -254,7 +282,7 @@ export const GroundGlassRenderer = ({
           onRuntimeInfoChange={onRuntimeInfoChange}
         />
 
-        <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} showDecorativeVignette={presentationPolicy.showDecorativeVignette} blurOpacity={blurOpacity} />
+        <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} showDecorativeVignette={presentationPolicy.showDecorativeVignette} blurOpacity={blurOpacity} physicalGrid={physicalGrid} />
       </div>
     </>
   );
@@ -265,6 +293,7 @@ export const GroundGlassRenderer = ({
         isInfinityFocus={isInfinityFocus}
         lastFiniteFocusDepthMm={lastFiniteFocusDepthMm}
         focusDistanceLabel={focusDistanceLabel}
+        scaleCue={scaleCue}
       />
 
       {!isRttSceneFinal && (

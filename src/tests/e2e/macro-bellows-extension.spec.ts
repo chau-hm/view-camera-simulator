@@ -40,6 +40,23 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
   await expect(readout).toContainText("180.0 mm");
   await expect(readout).toContainText("0.20×");
+  await expect(readout).toContainText("1:5");
+  await expect(readout).toContainText("320.0 mm");
+  await expect(readout).toContainText("Selected focus-plane magnification");
+  const grid = page.getByTestId("ground-glass-grid");
+  await expect(grid).toHaveAttribute("data-grid-mode", "physical");
+  await expect(page.getByTestId("ground-glass-scale-cue")).toHaveText("Grid: 1 cm per square");
+  const initialGridSpacing = await grid.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).backgroundSize.split(" ")[0]),
+  );
+  expect(initialGridSpacing).toBeGreaterThan(30);
+  expect(initialGridSpacing).not.toBeCloseTo(20, 0);
+
+  await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true }).click();
+  await expect(page.getByRole("button", { name: /Reset Ground Glass view/ })).toBeVisible();
+  await expect.poll(async () =>
+    grid.evaluate((element) => Number.parseFloat(getComputedStyle(element).backgroundSize.split(" ")[0])),
+  ).toBeGreaterThan(initialGridSpacing * 3.9);
 
   const initialFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
   expect(initialFilmCenter[2]).toBeCloseTo(-180, 5);
@@ -49,9 +66,11 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   await setStepRangeInput(page, "Focus distance", 300);
   await expect(readout).toContainText("300.0 mm");
   await expect(readout).toContainText("1.00×");
+  await expect(readout).toContainText("1:1");
   await expect(readout).toContainText("4.00×");
   await expect(readout).toContainText("+2.00 stops");
-  await expect(readout).toContainText("Approximately life-size (1:1)");
+  await expect(readout).toContainText("Life-size reproduction reached (1:1)");
+  await expect(readout).toContainText("specimen is now sharply reproduced");
 
   const finalFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
   expect(finalFilmCenter[2]).toBeCloseTo(-300, 5);
