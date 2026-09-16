@@ -239,14 +239,14 @@ describe("public camera movement controls in the workspace", () => {
       target: { value: "0.5" },
     });
     expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
-    expect(within(screen.getByRole("region", { name: "Camera Movement" })).getByRole("status")).toHaveTextContent("Upper framing");
+    expect(screen.getByRole("status")).toHaveTextContent("Upper framing");
     fireEvent.click(
       within(screen.getByRole("group", { name: "Vertical framing standard" })).getByRole("radio", {
         name: "Rear standard",
       }),
     );
     expect(screen.getByTestId("ground-glass-rtt")).toBe(rtt);
-    expect(within(screen.getByRole("region", { name: "Camera Movement" })).getByRole("status")).toHaveTextContent("Rear standard · Upper framing");
+    expect(screen.getByRole("status")).toHaveTextContent("Rear standard · Upper framing");
   });
 
   it("exposes the live default RTT channel in optical diagnostics", () => {
@@ -294,7 +294,7 @@ describe("public camera movement controls in the workspace", () => {
 
     view.rerender(publicWorkspace());
     expect(screen.getByRole("slider", { name: "Viewpoint" })).toHaveValue("1");
-    expect(within(screen.getByRole("region", { name: "Camera Movement" })).getByRole("status")).toHaveTextContent("Higher viewpoint");
+    expect(screen.getByRole("status")).toHaveTextContent("Higher viewpoint");
   });
 
   it("Reset Movements restores complete Neutral without a stale anchor", () => {

@@ -45,7 +45,10 @@ describe("MovementControls", () => {
 
     expect(useAppStore.getState().camera.frontTiltDeg).toBe(3.2);
     expect(tilt.closest(".compact-range-row")).toHaveAttribute("data-active", "true");
-    expect(screen.getByText("3.2°")).toBeInTheDocument();
+    const value = tilt.closest(".compact-range-row")?.querySelector(".compact-range-row__value");
+    expect(value).toHaveTextContent("3.2°");
+    expect(value).toHaveAttribute("aria-hidden", "true");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("keeps disabled movement rows disabled with one shared lock description", () => {

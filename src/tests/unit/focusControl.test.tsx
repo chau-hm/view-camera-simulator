@@ -140,6 +140,21 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     );
   });
 
+  it("keeps finite and infinity focus values on the range semantics, not the visual readout", () => {
+    render(<FocusControl focusEnabled={true} lockReason="" showInfinityReset />);
+    const finiteSlider = screen.getByLabelText("Focus distance");
+    expect(finiteSlider).toHaveAttribute("aria-valuetext", expect.stringMatching(/mm$/));
+    expect(finiteSlider.closest(".compact-range-row")?.querySelector(".compact-range-row__value"))
+      .toHaveAttribute("aria-hidden", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Infinity Reset" }));
+
+    const infinitySlider = screen.getByLabelText("Focus distance");
+    expect(infinitySlider).toHaveAttribute("aria-valuetext", "Focus: ∞");
+    expect(screen.getByText("Focus: ∞", { selector: ".compact-range-row__value" }))
+      .toHaveAttribute("aria-hidden", "true");
+  });
+
   it("renders accessible focus-standard radios and updates concise mode copy", () => {
     render(<FocusControl focusEnabled={true} lockReason="" />);
 

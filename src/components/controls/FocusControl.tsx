@@ -66,7 +66,7 @@ export const FocusControl = ({
         ) : undefined}
         inputProps={{
           "aria-label": t(simulatorMessageKeys.controls.focusDistanceLabel),
-          "aria-valuetext": focusControl.focusMode === "infinity" ? focusValue : undefined,
+          "aria-valuetext": focusValue,
           "aria-describedby": hasFocusLockReason ? describedById : undefined,
           type: "range",
           min: focusControl.focusDistanceMinMm,

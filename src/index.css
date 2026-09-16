@@ -150,13 +150,6 @@ button {
   box-shadow: var(--shadow-card);
 }
 
-@media (max-width: 900px) {
-  .simulator-body {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-  }
-}
-
 .camera-calibration-workbench { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); font-size: 12px; }
 .camera-calibration-workbench__header { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
 .camera-calibration-workbench h4 { margin: 0; font-size: 14px; }

@@ -34,7 +34,9 @@ export const CompactRangeRow = ({
         id={inputId}
         className={`range-slider compact-range-row__slider${className ? ` ${className}` : ""}`}
       />
-      <output className="compact-range-row__value">{value}</output>
+      <span className="compact-range-row__value" aria-hidden="true">
+        {value}
+      </span>
       {hasTrailing ? (
         <span className="compact-range-row__trailing">{trailing}</span>
       ) : null}
