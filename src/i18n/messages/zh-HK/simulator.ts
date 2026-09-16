@@ -312,12 +312,12 @@ export const simulatorMessages = {
     macroBellowsExtension: {
       objective: "使用對焦距離達到等大重現（1:1），並觀察皮腔伸長如何令這個結果成為可能。",
       bullets: {
-        focus: "由起始設定逐步縮短對焦距離，向 300 mm 移動，以增加放大倍率。",
+        focus: "由起始設定逐步縮短對焦距離，向 300 mm 移動，令所選焦平面接近標本。",
         grid: "使用標示為每格 1 cm 的對焦屏網格作為簡單的大小參考。",
         consequences: "觀察放大倍率、所需鏡頭至底片伸長、皮腔因子及曝光補償一同增加。",
         capacity: "皮腔伸長是鏡頭至底片的距離；當實際相機的可用行程不足時，可能需要加長導軌或額外皮腔。",
       },
-      observation: "縮短對焦距離，觀察皮腔伸長及重現比例增加。",
+      observation: "縮短對焦距離，觀察後組伸長及所選焦平面重現比例增加。",
       title: "1:1 等大重現練習",
       labels: {
         goal: "目標",
@@ -325,7 +325,7 @@ export const simulatorMessages = {
         observe: "觀察",
         whyItMatters: "重要性",
       },
-      goal: "達到等大重現。在 1:1 時，底片上的影像與實物大小相同。",
+      goal: "達到標本的等大重現。在 1:1 時，底片上的影像與實物大小相同。",
       try: "逐步縮短對焦距離，由起始微距設定向 300 mm 移動。",
       observe: "將標本與每格 1 cm 的對焦屏網格比較，並觀察後組隨皮腔伸長而移動。",
       whyItMatters: "大畫幅相機透過增加鏡頭至底片的距離，達到高重現比例。這同時會增加放大倍率及皮腔因子造成的曝光代價。",
@@ -333,25 +333,25 @@ export const simulatorMessages = {
         early: {
           title: "早段近距離對焦",
           try: "縮短對焦距離，以增加重現比例。",
-          observe: "目前為 {{magnification}}（{{ratio}}），底片影像仍然比主體小。觀察影像放大時皮腔伸長。",
+          observe: "所選焦平面仍遠在標本後方；目前為 {{magnification}}（{{ratio}}），該平面的清晰重現仍較小。將它移近，觀察皮腔伸長。",
           whyItMatters: "更近的對焦會令底片離鏡頭更遠：更大的伸長會帶來更高的放大倍率及更大的皮腔因子曝光代價。",
         },
         intermediate: {
           title: "接近等大",
           try: "繼續縮短對焦距離，並將標本與每格 1 cm 的對焦屏網格比較。",
-          observe: "目前以 {{magnification}}（{{ratio}}）接近等大。所需伸長為 {{extension}}；皮腔因子造成的曝光影響已變得明顯。",
+          observe: "所選焦平面正接近等大，並逐步移向標本。目前為 {{magnification}}（{{ratio}}），其清晰重現正在變大；所需伸長為 {{extension}}，皮腔因子造成的曝光影響已變得明顯。",
           whyItMatters: "這條因果鏈會累積：更近的對焦 → 更大的伸長 → 更高的放大倍率 → 更多曝光補償。",
         },
         nearLifeSize: {
           title: "接近等大",
           try: "移動最後幾個步驟接近 1:1，並將已知細節與一格網格比較。",
-          observe: "目前為接近等大的 {{magnification}}（{{ratio}}）。每格 1 cm 的網格可作為底片影像逐漸變大的實際參考。",
+          observe: "所選焦平面非常接近等大，幾乎與標本重合。其清晰重現比例為 {{ratio}}（{{magnification}}）；將標本與校準的每格 1 cm 網格比較。",
           whyItMatters: "在高放大倍率下，伸長會變得相當大。當超出相機可用行程時，實際拍攝可能需要加長導軌或額外皮腔。",
         },
         lifeSize: {
           title: "已達到等大重現",
           try: "停留在 1:1，將主體上一個 1 cm 的細節與一格 1 cm 的對焦屏網格比較。",
-          observe: "已達到等大重現（1:1）。主體上 1 cm 的細節會在底片上佔 1 cm。所需伸長為 {{extension}}，皮腔因子為 {{factor}}，曝光補償為 {{stops}}。",
+          observe: "標本現在已清晰地以 1:1 等大重現。直徑 90 mm 的標本在對焦屏上約跨越九格 10 mm 網格。所需伸長為 {{extension}}，皮腔因子為 {{factor}}，曝光補償為 {{stops}}。",
           whyItMatters: "大畫幅相機透過增加鏡頭至底片的距離達到等大。額外伸長會帶來曝光代價，而更高的放大倍率在實際使用中可能需要加長導軌或額外皮腔。",
         },
       },

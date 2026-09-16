@@ -4,6 +4,8 @@ export const readoutMessageKeys = {
     extension: "readouts.macroFocus.extension",
     magnification: "readouts.macroFocus.magnification",
     reproductionRatio: "readouts.macroFocus.reproductionRatio",
+    selectedFocusPlaneMagnification: "readouts.macroFocus.selectedFocusPlaneMagnification",
+    selectedFocusPlaneRatio: "readouts.macroFocus.selectedFocusPlaneRatio",
     factor: "readouts.macroFocus.factor",
     exposure: "readouts.macroFocus.exposure",
     stops: "readouts.macroFocus.stops",

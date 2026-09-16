@@ -19,7 +19,19 @@ export type MacroBellowsExtensionTeachingModel = {
 
 const INTERMEDIATE_MAGNIFICATION = 0.4;
 const NEAR_LIFE_SIZE_MAGNIFICATION = 0.8;
-const CAPACITY_WARNING_FRACTION = 0.85;
+export const MACRO_BELLOWS_CAPACITY_WARNING_FRACTION = 0.85;
+
+export const isMacroBellowsCapacityWarning = ({
+  bellowsExtensionMm,
+  availableBellowsTravelMm,
+}: {
+  bellowsExtensionMm: number;
+  availableBellowsTravelMm: number;
+}): boolean =>
+  Number.isFinite(bellowsExtensionMm) &&
+  Number.isFinite(availableBellowsTravelMm) &&
+  availableBellowsTravelMm > 0 &&
+  bellowsExtensionMm >= availableBellowsTravelMm * MACRO_BELLOWS_CAPACITY_WARNING_FRACTION;
 
 /**
  * A public focus step is the useful tolerance for the life-size indication.
@@ -93,7 +105,10 @@ export const resolveMacroBellowsExtensionTeaching = ({
     metrics,
     focusObjectDistanceMm: resolvedFocusObjectDistanceMm,
     availableBellowsTravelMm: capability.availableBellowsTravelMm,
-    capacityWarning: metrics.bellowsExtensionMm >= capability.availableBellowsTravelMm * CAPACITY_WARNING_FRACTION,
+    capacityWarning: isMacroBellowsCapacityWarning({
+      bellowsExtensionMm: metrics.bellowsExtensionMm,
+      availableBellowsTravelMm: capability.availableBellowsTravelMm,
+    }),
     lifeSize,
   };
 };

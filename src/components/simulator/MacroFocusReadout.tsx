@@ -5,6 +5,7 @@ import type { SceneMacroTeachingCapability } from "../../types/scene";
 import { readoutMessageKeys } from "../../i18n/readoutMessageKeys";
 import {
   formatMacroReproductionRatio,
+  isMacroBellowsCapacityWarning,
   isMacroLifeSizeMagnification,
 } from "../../scenes/macroBellowsExtensionTeaching";
 
@@ -37,16 +38,24 @@ export const MacroFocusReadout = ({
     magnification: metrics.magnification,
     focusObjectDistanceMm,
   });
-  const capacityWarning = bellowsTeachingCapability !== null &&
-    metrics.bellowsExtensionMm >= bellowsTeachingCapability.availableBellowsTravelMm * 0.85;
+  const capacityWarning = bellowsTeachingCapability !== null && isMacroBellowsCapacityWarning({
+    bellowsExtensionMm: metrics.bellowsExtensionMm,
+    availableBellowsTravelMm: bellowsTeachingCapability.availableBellowsTravelMm,
+  });
+  const magnificationLabel = bellowsTeachingCapability
+    ? keys.selectedFocusPlaneMagnification
+    : keys.magnification;
+  const ratioLabel = bellowsTeachingCapability
+    ? keys.selectedFocusPlaneRatio
+    : keys.reproductionRatio;
   return (
     <section className="simulator-info-card macro-focus-readout" aria-label={t(keys.title)}>
       <h3>{t(keys.title)}</h3>
       <dl>
         <div><dt>{t(bellowsTeachingCapability ? keys.requiredExtension : keys.extension)}</dt><dd>{metrics.bellowsExtensionMm.toFixed(1)} mm</dd></div>
-        <div><dt>{t(keys.magnification)}</dt><dd>{metrics.magnification.toFixed(2)}×</dd></div>
+        <div><dt>{t(magnificationLabel)}</dt><dd>{metrics.magnification.toFixed(2)}×</dd></div>
         {bellowsTeachingCapability && (
-          <div><dt>{t(keys.reproductionRatio)}</dt><dd>{formatMacroReproductionRatio(metrics.magnification)}</dd></div>
+          <div><dt>{t(ratioLabel)}</dt><dd>{formatMacroReproductionRatio(metrics.magnification)}</dd></div>
         )}
         <div><dt>{t(keys.factor)}</dt><dd>{metrics.bellowsFactor.toFixed(2)}×</dd></div>
         <div><dt>{t(keys.exposure)}</dt><dd>{t(keys.stops, { value: metrics.exposureCompensationStops.toFixed(2) })}</dd></div>

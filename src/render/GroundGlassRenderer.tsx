@@ -8,11 +8,13 @@ import { GroundGlassRenderSurface } from "./GroundGlassRenderSurface";
 import { GroundGlassTransformedOverlays, GroundGlassFixedOverlays } from "./GroundGlassOverlays";
 import { GroundGlassFocusRing } from "./GroundGlassFocusRing";
 import { projectSceneFocusTargetsToGroundGlass } from "./groundGlassTargetProjection";
+import { resolveGroundGlassPhysicalGrid } from "./groundGlassPhysicalGrid";
 import type { ApertureValue, CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
+import { CAMERA_CONSTANTS } from "../utils/constants";
 import { resolvePhysicalFocusTargetPresentationMetric } from "./postprocessing/FocusAssistPass";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
@@ -187,6 +189,17 @@ export const GroundGlassRenderer = ({
     () => mapGroundGlassInspectionWindowToFilmSpace(inspectionWindow, previewMode),
     [inspectionWindow, previewMode],
   );
+  const physicalGrid = scene.macroTeachingCapability?.kind === "bellows-extension" && gridEnabled && !rawDebug
+    ? resolveGroundGlassPhysicalGrid({
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      gridSquareMm: scene.macroTeachingCapability.groundGlassGridSquareMm,
+      displayWidthPx: rttLogicalSize.width,
+      displayHeightPx: rttLogicalSize.height,
+      inspectionWindow,
+      previewMode,
+    })
+    : null;
   const sceneShiftX = isRttSceneFinal ? 0 : clamp(swingDeg * 4 + (assistEnabled ? 0 : pipeline.verticalFrameOffsetPx * 0.2), -60, 60);
   const sceneShiftY = isRttSceneFinal ? 0 : clamp(-riseMm * 2 + tiltDeg * 4 - pipeline.verticalFrameOffsetPx * 0.15, -80, 80);
   const sceneRotationDeg = isRttSceneFinal ? 0 : clamp(tiltDeg * 1.25 + swingDeg * 0.75, -18, 18);
@@ -269,7 +282,7 @@ export const GroundGlassRenderer = ({
           onRuntimeInfoChange={onRuntimeInfoChange}
         />
 
-        <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} showDecorativeVignette={presentationPolicy.showDecorativeVignette} blurOpacity={blurOpacity} />
+        <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} showDecorativeVignette={presentationPolicy.showDecorativeVignette} blurOpacity={blurOpacity} physicalGrid={physicalGrid} />
       </div>
     </>
   );

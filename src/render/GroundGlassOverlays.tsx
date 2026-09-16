@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import "../i18n";
 import { simulatorMessageKeys } from "../i18n/simulatorMessageKeys";
 import { formatMillimeter } from "../utils/formatters";
+import type { GroundGlassPhysicalGrid } from "./groundGlassPhysicalGrid";
 
 export type GroundGlassOverlaysProps = {
   gridEnabled: boolean;
@@ -14,7 +15,20 @@ export type GroundGlassOverlaysProps = {
   focusDistanceLabel: string;
 };
 
-export const GroundGlassTransformedOverlays = ({ gridEnabled, rawDebug, showDecorativeVignette, blurOpacity }: { gridEnabled: boolean; rawDebug?: boolean; showDecorativeVignette: boolean; blurOpacity: number }): ReactNode | null => {
+export const GroundGlassTransformedOverlays = ({
+  gridEnabled,
+  rawDebug,
+  showDecorativeVignette,
+  blurOpacity,
+  physicalGrid,
+}: {
+  gridEnabled: boolean;
+  rawDebug?: boolean;
+  showDecorativeVignette: boolean;
+  blurOpacity: number;
+  /** Optional physical film grid; absent preserves the legacy decorative grid. */
+  physicalGrid?: GroundGlassPhysicalGrid | null;
+}): ReactNode | null => {
   return (
     <>
       {!rawDebug && (
@@ -42,12 +56,22 @@ export const GroundGlassTransformedOverlays = ({ gridEnabled, rawDebug, showDeco
 
       {gridEnabled && !rawDebug && (
         <div
+          data-testid="ground-glass-grid"
+          data-grid-mode={physicalGrid ? "physical" : "decorative"}
+          data-grid-spacing-x-px={physicalGrid?.spacingXPx}
+          data-grid-spacing-y-px={physicalGrid?.spacingYPx}
           style={{
             position: "absolute",
             inset: 0,
             backgroundImage:
               "linear-gradient(to right, rgba(59,130,246,0.2) 1px, transparent 1px), linear-gradient(to bottom, rgba(59,130,246,0.2) 1px, transparent 1px)",
-            backgroundSize: "20px 20px",
+            backgroundSize: physicalGrid
+              ? `${physicalGrid.spacingXPx}px ${physicalGrid.spacingYPx}px`
+              : "20px 20px",
+            backgroundPosition: physicalGrid
+              ? `${physicalGrid.originXPx}px ${physicalGrid.originYPx}px`
+              : undefined,
+            backgroundRepeat: "repeat",
           }}
         />
       )}

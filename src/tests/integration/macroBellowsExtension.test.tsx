@@ -81,9 +81,12 @@ describe("Macro Bellows Extension", () => {
     const readout = within(screen.getByRole("region", { name: "Macro focus" }));
     expect(readout.getByText("180.0 mm")).toBeInTheDocument();
     expect(readout.getByText("0.20×")).toBeInTheDocument();
+    expect(readout.getByText("Selected focus-plane magnification")).toBeInTheDocument();
+    expect(readout.getByText("Selected focus-plane ratio")).toBeInTheDocument();
     expect(readout.getByText("1:5")).toBeInTheDocument();
     expect(readout.getByText("320.0 mm")).toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-scale-cue")).toHaveTextContent("Grid: 1 cm per square");
+    expect(screen.getByTestId("ground-glass-grid")).toHaveAttribute("data-grid-mode", "physical");
     expect(readout.queryByTestId("macro-life-size-message")).not.toBeInTheDocument();
     fireEvent.keyDown(focus, { key: "Home" });
     expect(focus).toHaveValue("300");
@@ -105,7 +108,8 @@ describe("Macro Bellows Extension", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open Task and Feedback" }));
     const taskView = screen.getByTestId("learning-overlay-task-view");
     expect(taskView).toHaveTextContent("Goal");
-    expect(taskView).toHaveTextContent("film image is still smaller than the subject");
+    expect(taskView).toHaveTextContent("selected focus plane is still well behind the specimen");
+    expect(taskView).not.toHaveTextContent("the specimen is currently");
 
     const focus = screen.getByRole("slider", { name: "Focus distance" });
     fireEvent.change(focus, { target: { value: "450" } });
@@ -117,8 +121,10 @@ describe("Macro Bellows Extension", () => {
     expect(taskView).toHaveTextContent(/is approaching the 320\.0 mm of available bellows travel/i);
 
     fireEvent.change(focus, { target: { value: "300" } });
-    await waitFor(() => expect(taskView).toHaveTextContent(/life-size reproduction reached \(1:1\)/i));
-    expect(taskView).toHaveTextContent(/same size as the real subject/i);
+    await waitFor(() => expect(taskView).toHaveTextContent(/specimen is now sharply reproduced at 1:1/i));
+    expect(taskView).toHaveTextContent(/specimen is now sharply reproduced at 1:1/i);
+    expect(taskView).toHaveTextContent(/90 mm diameter spans about nine 10 mm squares/i);
+    expect(taskView).toHaveTextContent(/\+2\.00 stops exposure compensation/i);
 
     fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
     expect(screen.getByTestId("macro-bellows-feedback")).toHaveTextContent(/life-size reproduction reached/i);
@@ -127,6 +133,7 @@ describe("Macro Bellows Extension", () => {
     render(<MemoryRouter><SimulatorWorkspace mode="free" sceneId="macro-depth-of-field" taskId={null} simulateAssetFailure={false} /></MemoryRouter>);
     expect(screen.queryByTestId("macro-bellows-teaching")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-scale-cue")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ground-glass-grid")).toHaveAttribute("data-grid-mode", "decorative");
     expect(within(screen.getByRole("region", { name: "Macro focus" })).queryByText("Reproduction ratio")).not.toBeInTheDocument();
   });
 
@@ -141,5 +148,18 @@ describe("Macro Bellows Extension", () => {
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
     rerender(<MacroFocusReadout diagnostics={{ ...diagnostics, fallbackApplied: true }} focalLengthMm={150} />);
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
+  });
+
+  it("localizes the Scene 1 teaching stop unit", async () => {
+    await i18n.changeLanguage("zh-HK");
+    render(<MemoryRouter><SimulatorWorkspace mode="free" sceneId={scene.id} taskId={null} simulateAssetFailure={false} /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "開啟任務及回饋" }));
+    const taskView = screen.getByTestId("learning-overlay-task-view");
+    const focus = screen.getByRole("slider", { name: "對焦距離" });
+    fireEvent.change(focus, { target: { value: "300" } });
+
+    await waitFor(() => expect(taskView).toHaveTextContent("級"));
+    expect(taskView).toHaveTextContent("+2.00 級");
+    expect(taskView).not.toHaveTextContent("stops");
   });
 });
