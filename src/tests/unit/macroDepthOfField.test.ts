@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
-import { projectSceneFocusTargetsToGroundGlass } from "../../render/groundGlassTargetProjection";
+import {
+  projectSceneFocusTargetsToGroundGlass,
+  type GroundGlassPreviewMode,
+} from "../../render/groundGlassTargetProjection";
+import { quantizeFocusDistributionDisplayUv } from "../../components/simulator/focusDistributionLayout";
 import { getSceneById, getSceneFocusDistanceRange, sceneOrder } from "../../scenes/definitions";
 import {
   MACRO_DEPTH_FOCUS_DISTANCE_RANGE_MM,
@@ -181,28 +185,100 @@ describe("macro-depth-of-field scene", () => {
   });
 
   it("projects the three semantic regions through the canonical Ground Glass path", () => {
-    const camera = cameraAt(400);
-    const projected = projectSceneFocusTargetsToGroundGlass({
-      sceneDef: macroDepthOfFieldScene,
-      opticsState: deriveOpticsState(camera, macroDepthOfFieldScene),
-      aperture: camera.aperture,
-      previewMode: "upright",
-    });
-
-    expect(projected.map(({ id }) => id)).toEqual([
+    const targetIds = [
       "macro-depth-near",
       "macro-depth-middle",
       "macro-depth-far",
-    ]);
-    expect(projected.every(({ visible, displayUv }) =>
-      visible &&
-      Number.isFinite(displayUv.u) &&
-      Number.isFinite(displayUv.v),
-    )).toBe(true);
-    expect(
-      new Set(projected.map(({ displayUv }) =>
-        `${displayUv.u.toFixed(4)}:${displayUv.v.toFixed(4)}`,
-      )).size,
-    ).toBe(3);
+    ] as const;
+    const expectedColumns: Record<GroundGlassPreviewMode, Record<(typeof targetIds)[number], number>> = {
+      upright: {
+        "macro-depth-near": 0,
+        "macro-depth-middle": 1,
+        "macro-depth-far": 2,
+      },
+      raw: {
+        "macro-depth-near": 2,
+        "macro-depth-middle": 1,
+        "macro-depth-far": 0,
+      },
+    };
+
+    for (const previewMode of ["upright", "raw"] as const) {
+      const camera = cameraAt(400);
+      const projected = projectSceneFocusTargetsToGroundGlass({
+        sceneDef: macroDepthOfFieldScene,
+        opticsState: deriveOpticsState(camera, macroDepthOfFieldScene),
+        aperture: camera.aperture,
+        previewMode,
+      });
+      const byId = new Map(projected.map((target) => [target.id, target]));
+
+      expect(projected.map(({ id }) => id)).toEqual(targetIds);
+      expect(projected.every(({ visible, displayUv }) =>
+        visible &&
+        Number.isFinite(displayUv.u) &&
+        Number.isFinite(displayUv.v),
+      )).toBe(true);
+      const expectedHorizontalOrder = previewMode === "upright"
+        ? targetIds
+        : [...targetIds].reverse();
+      expect(
+        [...byId.values()]
+          .sort((first, second) => first.displayUv.u - second.displayUv.u)
+          .map(({ id }) => id),
+      ).toEqual(expectedHorizontalOrder);
+
+      for (const targetId of targetIds) {
+        const target = byId.get(targetId)!;
+        expect(quantizeFocusDistributionDisplayUv(target.displayUv, target.visible)).toMatchObject({
+          rowIndex: 1,
+          columnIndex: expectedColumns[previewMode][targetId],
+        });
+      }
+
+      expect(
+        new Set(projected.map(({ displayUv }) =>
+          `${displayUv.u.toFixed(4)}:${displayUv.v.toFixed(4)}`,
+        )).size,
+      ).toBe(3);
+    }
+  });
+
+  it("keeps semantic sharpness and horizontal display placement aligned at each depth station", () => {
+    const cases = [
+      { focusDistanceMm: 390, sharpTargetId: "macro-depth-near", expectedUprightColumn: 0 },
+      { focusDistanceMm: 400, sharpTargetId: "macro-depth-middle", expectedUprightColumn: 1 },
+      { focusDistanceMm: 410, sharpTargetId: "macro-depth-far", expectedUprightColumn: 2 },
+    ] as const;
+
+    for (const { focusDistanceMm, sharpTargetId, expectedUprightColumn } of cases) {
+      const metrics = physicalMetricsAt(focusDistanceMm, 5.6);
+      expect(metrics.get(sharpTargetId)?.status).toBe("sharp");
+
+      const camera = cameraAt(focusDistanceMm);
+      const optics = deriveOpticsState(camera, macroDepthOfFieldScene);
+      const upright = projectSceneFocusTargetsToGroundGlass({
+        sceneDef: macroDepthOfFieldScene,
+        opticsState: optics,
+        aperture: camera.aperture,
+        previewMode: "upright",
+      });
+      const raw = projectSceneFocusTargetsToGroundGlass({
+        sceneDef: macroDepthOfFieldScene,
+        opticsState: optics,
+        aperture: camera.aperture,
+        previewMode: "raw",
+      });
+      const uprightTarget = upright.find(({ id }) => id === sharpTargetId)!;
+      const rawTarget = raw.find(({ id }) => id === sharpTargetId)!;
+      expect(quantizeFocusDistributionDisplayUv(uprightTarget.displayUv, uprightTarget.visible)).toMatchObject({
+        rowIndex: 1,
+        columnIndex: expectedUprightColumn,
+      });
+      expect(quantizeFocusDistributionDisplayUv(rawTarget.displayUv, rawTarget.visible)).toMatchObject({
+        rowIndex: 1,
+        columnIndex: 2 - expectedUprightColumn,
+      });
+    }
   });
 });

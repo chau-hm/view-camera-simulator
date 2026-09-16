@@ -213,23 +213,25 @@ void main(){
 }
 `;
 
-/** Final full-resolution display composite, including existing orientation policy. */
+/** Final full-resolution display composite with the RTT camera's per-axis orientation policy. */
 export const groundGlassCompositeFragmentShader = `
 precision highp float;
 varying vec2 vUv;
 uniform sampler2D tGather;
 uniform sampler2D tNearGather;
 uniform float useNearGather;
-uniform float displayUpright;
+uniform float flipDisplayX;
+uniform float flipDisplayY;
 uniform float apertureIlluminanceGain;
 uniform float renderWidth;
 uniform float renderHeight;
 
 void main(){
   vec2 screenUv = vUv;
-  vec2 sampleUv = (displayUpright > 0.5)
-    ? vec2(1.0 - screenUv.x, 1.0 - screenUv.y)
-    : screenUv;
+  vec2 sampleUv = vec2(
+    (flipDisplayX > 0.5) ? 1.0 - screenUv.x : screenUv.x,
+    (flipDisplayY > 0.5) ? 1.0 - screenUv.y : screenUv.y
+  );
   vec4 gathered = texture2D(tGather, sampleUv);
   if(useNearGather > 0.5){
     vec4 nearLayer = texture2D(tNearGather, sampleUv);

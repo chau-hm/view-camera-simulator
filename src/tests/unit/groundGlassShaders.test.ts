@@ -184,7 +184,15 @@ describe("GroundGlass DOF shader source", () => {
   });
 
   test("composite stage owns orientation without the removed focus-assist ring", () => {
-    expect(groundGlassCompositeFragmentShader).toContain("displayUpright");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float flipDisplayX");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float flipDisplayY");
+    expect(groundGlassCompositeFragmentShader).toContain(
+      "(flipDisplayX > 0.5) ? 1.0 - screenUv.x : screenUv.x",
+    );
+    expect(groundGlassCompositeFragmentShader).toContain(
+      "(flipDisplayY > 0.5) ? 1.0 - screenUv.y : screenUv.y",
+    );
+    expect(groundGlassCompositeFragmentShader).not.toContain("displayUpright");
     expect(groundGlassCompositeFragmentShader).toContain("uniform sampler2D tGather");
     expect(groundGlassCompositeFragmentShader).toContain("uniform sampler2D tNearGather");
     expect(groundGlassCompositeFragmentShader).toContain("useNearGather");

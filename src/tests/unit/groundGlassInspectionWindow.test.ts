@@ -76,17 +76,16 @@ describe("Ground Glass physical inspection window", () => {
     });
   });
 
-  it("maps displayed Raw pan to the inverse pre-composite film crop", () => {
+  it("maps displayed Raw pan through the RTT Y-axis inverse", () => {
     const crop = mapGroundGlassDisplayUvToFilmUv({ u: 0.8, v: 0.2 }, "raw");
-    expect(crop.u).toBeCloseTo(0.2, 12);
+    expect(crop.u).toBeCloseTo(0.8, 12);
     expect(crop.v).toBeCloseTo(0.8, 12);
   });
 
-  it("keeps Upright displayed pan aligned with the pre-composite film crop", () => {
-    expect(mapGroundGlassDisplayUvToFilmUv({ u: 0.8, v: 0.2 }, "upright")).toEqual({
-      u: 0.8,
-      v: 0.2,
-    });
+  it("maps displayed Upright pan through the RTT X-axis inverse", () => {
+    const crop = mapGroundGlassDisplayUvToFilmUv({ u: 0.8, v: 0.2 }, "upright");
+    expect(crop.u).toBeCloseTo(0.2, 12);
+    expect(crop.v).toBeCloseTo(0.2, 12);
   });
 
   it("maps the displayed inspection window through the dedicated crop contract", () => {
@@ -98,13 +97,15 @@ describe("Ground Glass physical inspection window", () => {
       heightFraction: 0.25,
     };
 
-    expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "raw")).toEqual(
+    expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "raw")).toEqual({
+      ...displayedWindow,
+      centerV: 0.875,
+    });
+    expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "upright")).toEqual(
       {
         ...displayedWindow,
         centerU: 0.125,
-        centerV: 0.875,
       },
     );
-    expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "upright")).toEqual(displayedWindow);
   });
 });
