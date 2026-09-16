@@ -83,6 +83,85 @@ describe("GeometryViewport", () => {
     expect(svg?.textContent).toContain("Building middle");
   });
 
+  it("separates pure front-rise FOV boundaries, optical axis, and chief ray", () => {
+    const opticsState = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...architectureRiseScene.cameraPreset,
+        activeSceneId: architectureRiseScene.id,
+        frontRiseMm: 35,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
+        focusDistanceMm: 8890,
+        aperture: 11,
+      },
+      architectureRiseScene,
+    );
+    const { container } = render(
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={architectureRiseScene}
+        riseMm={35}
+      />,
+    );
+
+    const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
+    expect(svg).not.toBeNull();
+    expect(svg!.querySelectorAll('[data-ray-role="film-edge-to-lens"]')).toHaveLength(2);
+    expect(svg!.querySelectorAll('[data-ray-role="fov-boundary"]')).toHaveLength(2);
+    expect(svg!.querySelector('[data-ray-role="optical-axis"]')).not.toBeNull();
+    expect(svg!.querySelector('[data-ray-role="chief-ray"]')).not.toBeNull();
+    expect(svg!.querySelector('[data-ray-role="film-edge-to-lens"]'))
+      .toHaveAttribute("aria-label", "image-side construction line from a film edge to the lens centre");
+    expect(container).toHaveTextContent(/dotted amber: image-side construction lines from the film edges to the lens centre/i);
+    expect(container).toHaveTextContent(/chief ray from film centre through lens centre/i);
+
+    const axis = svg!.querySelector('[data-ray-role="optical-axis"]') as SVGLineElement;
+    const chief = svg!.querySelector('[data-ray-role="chief-ray"]') as SVGLineElement;
+    const lineVector = (line: SVGLineElement) => ({
+      x: Number(line.getAttribute("x2")) - Number(line.getAttribute("x1")),
+      y: Number(line.getAttribute("y2")) - Number(line.getAttribute("y1")),
+    });
+    const axisVector = lineVector(axis);
+    const chiefVector = lineVector(chief);
+    expect(Math.abs(axisVector.y / axisVector.x)).toBeLessThan(1e-8);
+    expect(Math.abs(axisVector.x * chiefVector.y - axisVector.y * chiefVector.x)).toBeGreaterThan(1e-6);
+  });
+
+  it("does not render a redundant chief ray in the neutral centred state", () => {
+    const opticsState = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...architectureRiseScene.cameraPreset,
+        activeSceneId: architectureRiseScene.id,
+        frontRiseMm: 0,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
+        focusDistanceMm: 8890,
+        aperture: 11,
+      },
+      architectureRiseScene,
+    );
+    const { container } = render(
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={architectureRiseScene}
+        riseMm={0}
+      />,
+    );
+
+    const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
+    expect(svg).not.toBeNull();
+    expect(svg!.querySelector('[data-ray-role="optical-axis"]')).not.toBeNull();
+    expect(svg!.querySelector('[data-ray-role="chief-ray"]')).toBeNull();
+  });
+
   it("renders top-view svg and has expected primitives", () => {
     const opticsState = deriveOpticsState(
       {

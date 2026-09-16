@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  areProjectedLinesEquivalent,
   buildDofPolygonPoints,
   computeOpticalSectionData,
   normalizedSegmentCrossResidual,
@@ -563,6 +564,98 @@ describe("computeOpticalSectionData rear-movement consumer tests", () => {
     const d1x = fovSegments[1].p2.x - fovSegments[1].p1.x;
     const d1y = fovSegments[1].p2.y - fovSegments[1].p1.y;
     expect(Math.abs(d0x * d1y - d0y * d1x)).toBeGreaterThan(1e-6);
+  });
+
+  it("keeps pure front-rise axis translation distinct from the off-axis chief ray", () => {
+    const neutral = deriveOpticsState(
+      cameraFor(architectureRiseScene, {
+        frontRiseMm: 0,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
+        focusDistanceMm: 8890,
+        aperture: 11,
+      }),
+      architectureRiseScene,
+    );
+    const raised = deriveOpticsState(
+      cameraFor(architectureRiseScene, {
+        frontRiseMm: 35,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
+        focusDistanceMm: 8890,
+        aperture: 11,
+      }),
+      architectureRiseScene,
+    );
+    const neutralView = projectionFor(neutral, architectureRiseScene).views.side;
+    const raisedView = projectionFor(raised, architectureRiseScene).views.side;
+
+    expect(raised.lensNormalWorld).toEqual(neutral.lensNormalWorld);
+    expect(raised.filmCenterWorld).toEqual(neutral.filmCenterWorld);
+
+    const axisDirection = (view: typeof raisedView) => {
+      const segment = view.opticalAxisSegment;
+      expect(segment).not.toBeNull();
+      return {
+        x: segment!.p2.x - segment!.p1.x,
+        y: segment!.p2.y - segment!.p1.y,
+      };
+    };
+    const neutralAxis = axisDirection(neutralView);
+    const raisedAxis = axisDirection(raisedView);
+    expect(neutralAxis.x * raisedAxis.y - neutralAxis.y * raisedAxis.x).toBeCloseTo(0, 8);
+
+    expect(neutralView.chiefRaySegment).not.toBeNull();
+    expect(neutralView.opticalAxisSegment).not.toBeNull();
+    expect(
+      areProjectedLinesEquivalent(
+        neutralView.chiefRaySegment!,
+        neutralView.opticalAxisSegment!,
+        neutralView.projectWorldPoint(neutral.lensCenterWorld),
+      ),
+    ).toBe(true);
+    expect(
+      areProjectedLinesEquivalent(
+        raisedView.chiefRaySegment!,
+        raisedView.opticalAxisSegment!,
+        raisedView.projectWorldPoint(raised.lensCenterWorld),
+      ),
+    ).toBe(false);
+
+    const neutralLens = neutralView.projectWorldPoint(neutral.lensCenterWorld);
+    const raisedLens = raisedView.projectWorldPoint(raised.lensCenterWorld);
+    expect(raisedLens.y).toBeLessThan(neutralLens.y);
+
+    expect(raisedView.filmEdgeRaySegments).toHaveLength(2);
+    expect(raisedView.chiefRaySegment).not.toBeNull();
+    const raisedFilm = raisedView.projectWorldPoint(raised.filmCenterWorld);
+    const raisedChief = raisedView.chiefRaySegment!;
+    const chiefDirection = {
+      x: raisedChief.p2.x - raisedChief.p1.x,
+      y: raisedChief.p2.y - raisedChief.p1.y,
+    };
+    const chiefToAxisCross = chiefDirection.x * raisedAxis.y - chiefDirection.y * raisedAxis.x;
+    expect(Math.abs(chiefToAxisCross)).toBeGreaterThan(1e-6);
+
+    const pointLineResidual = (point: ScreenPoint, line: { p1: ScreenPoint; p2: ScreenPoint }) => {
+      const direction = { x: line.p2.x - line.p1.x, y: line.p2.y - line.p1.y };
+      const offset = { x: point.x - line.p1.x, y: point.y - line.p1.y };
+      return Math.abs(direction.x * offset.y - direction.y * offset.x) / Math.hypot(direction.x, direction.y);
+    };
+    expect(pointLineResidual(raisedLens, raisedChief)).toBeLessThan(1e-8);
+    expect(pointLineResidual(raisedFilm, raisedChief)).toBeLessThan(1e-8);
+
+    const fovDirections = raisedView.fovSegments.map((segment) => ({
+      x: segment.p2.x - segment.p1.x,
+      y: segment.p2.y - segment.p1.y,
+    }));
+    expect(fovDirections).toHaveLength(2);
+    expect(
+      Math.abs(
+        fovDirections[0].x * fovDirections[1].y -
+          fovDirections[0].y * fovDirections[1].x,
+      ),
+    ).toBeGreaterThan(1e-6);
   });
 
   it("signed positive/negative rear tilt produce mirrored FOV rays via actual segments", () => {
