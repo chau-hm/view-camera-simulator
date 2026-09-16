@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  areProjectedLinesEquivalent,
   buildDofPolygonPoints,
   computeOpticalSectionData,
   normalizedSegmentCrossResidual,
@@ -603,6 +604,23 @@ describe("computeOpticalSectionData rear-movement consumer tests", () => {
     const neutralAxis = axisDirection(neutralView);
     const raisedAxis = axisDirection(raisedView);
     expect(neutralAxis.x * raisedAxis.y - neutralAxis.y * raisedAxis.x).toBeCloseTo(0, 8);
+
+    expect(neutralView.chiefRaySegment).not.toBeNull();
+    expect(neutralView.opticalAxisSegment).not.toBeNull();
+    expect(
+      areProjectedLinesEquivalent(
+        neutralView.chiefRaySegment!,
+        neutralView.opticalAxisSegment!,
+        neutralView.projectWorldPoint(neutral.lensCenterWorld),
+      ),
+    ).toBe(true);
+    expect(
+      areProjectedLinesEquivalent(
+        raisedView.chiefRaySegment!,
+        raisedView.opticalAxisSegment!,
+        raisedView.projectWorldPoint(raised.lensCenterWorld),
+      ),
+    ).toBe(false);
 
     const neutralLens = neutralView.projectWorldPoint(neutral.lensCenterWorld);
     const raisedLens = raisedView.projectWorldPoint(raised.lensCenterWorld);

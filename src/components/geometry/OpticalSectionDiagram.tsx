@@ -7,6 +7,7 @@ import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
 import type { GeometryPresentationProfile } from "./geometryPresentationProfiles";
 import {
+  areProjectedLinesEquivalent,
   buildDofPolygonPoints,
   type OpticalSectionData,
   type PlaneSegment,
@@ -170,6 +171,11 @@ const ConstructionLayer = ({
   const safeMargin = 10;
   const filmCenter = view.projectWorldPoint(effectiveOpticsState.filmCenterWorld);
   const lensCenter = view.projectWorldPoint(effectiveOpticsState.lensCenterWorld);
+  const chiefRayIsRedundantWithOpticalAxis = Boolean(
+    view.chiefRaySegment &&
+    view.opticalAxisSegment &&
+    areProjectedLinesEquivalent(view.chiefRaySegment, view.opticalAxisSegment, lensCenter),
+  );
   const subjectGuides =
     displayMode === "camera-construction"
       ? []
@@ -400,7 +406,7 @@ const ConstructionLayer = ({
         />
       ) : null}
 
-      {showCameraConstruction && view.chiefRaySegment ? (
+      {showCameraConstruction && view.chiefRaySegment && !chiefRayIsRedundantWithOpticalAxis ? (
         <line
           data-testid="chief-ray-line"
           data-ray-role="chief-ray"

@@ -131,6 +131,37 @@ describe("GeometryViewport", () => {
     expect(Math.abs(axisVector.x * chiefVector.y - axisVector.y * chiefVector.x)).toBeGreaterThan(1e-6);
   });
 
+  it("does not render a redundant chief ray in the neutral centred state", () => {
+    const opticsState = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...architectureRiseScene.cameraPreset,
+        activeSceneId: architectureRiseScene.id,
+        frontRiseMm: 0,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
+        focusDistanceMm: 8890,
+        aperture: 11,
+      },
+      architectureRiseScene,
+    );
+    const { container } = render(
+      <GeometryViewport
+        opticsState={opticsState}
+        geometryView="side"
+        onGeometryViewChange={noopGeometryViewChange}
+        focalLengthMm={DEFAULT_CAMERA_STATE.focalLengthMm}
+        scene={architectureRiseScene}
+        riseMm={0}
+      />,
+    );
+
+    const svg = container.querySelector('[data-testid="geometry-svg-side"]') as SVGElement | null;
+    expect(svg).not.toBeNull();
+    expect(svg!.querySelector('[data-ray-role="optical-axis"]')).not.toBeNull();
+    expect(svg!.querySelector('[data-ray-role="chief-ray"]')).toBeNull();
+  });
+
   it("renders top-view svg and has expected primitives", () => {
     const opticsState = deriveOpticsState(
       {
