@@ -40,6 +40,9 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
   await expect(readout).toContainText("180.0 mm");
   await expect(readout).toContainText("0.20×");
+  await expect(readout).toContainText("1:5");
+  await expect(readout).toContainText("320.0 mm");
+  await expect(page.getByTestId("ground-glass-scale-cue")).toHaveText("Grid: 1 cm per square");
 
   const initialFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
   expect(initialFilmCenter[2]).toBeCloseTo(-180, 5);
@@ -49,9 +52,10 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   await setStepRangeInput(page, "Focus distance", 300);
   await expect(readout).toContainText("300.0 mm");
   await expect(readout).toContainText("1.00×");
+  await expect(readout).toContainText("1:1");
   await expect(readout).toContainText("4.00×");
   await expect(readout).toContainText("+2.00 stops");
-  await expect(readout).toContainText("Approximately life-size (1:1)");
+  await expect(readout).toContainText("Life-size reproduction reached (1:1)");
 
   const finalFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
   expect(finalFilmCenter[2]).toBeCloseTo(-300, 5);

@@ -69,10 +69,12 @@ export const GroundGlassFixedOverlays = ({
   isInfinityFocus,
   lastFiniteFocusDepthMm,
   focusDistanceLabel,
+  scaleCue,
 }: {
   isInfinityFocus: boolean;
   lastFiniteFocusDepthMm?: number;
   focusDistanceLabel: string;
+  scaleCue?: string;
 }): ReactNode | null => {
   const { t } = useTranslation();
 
@@ -120,6 +122,8 @@ export const GroundGlassFixedOverlays = ({
           <div>{focusDistanceLabel}</div>
         )}
       </div>
+
+      {scaleCue ? <div data-testid="ground-glass-scale-cue" className="groundglass-scale-cue">{scaleCue}</div> : null}
 
     </>
   );

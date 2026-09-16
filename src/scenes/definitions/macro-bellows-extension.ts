@@ -33,6 +33,11 @@ export const macroBellowsExtensionScene: SceneDefinition = {
   focusDistanceRangeMm: { min: 300, max: 900 },
   cameraControlPolicy: { movement: "fixed", aperture: "fixed", infinityReset: false },
   macroFocusMetricsCapability: { enabled: true },
+  macroTeachingCapability: {
+    kind: "bellows-extension",
+    groundGlassGridSquareMm: 10,
+    availableBellowsTravelMm: 320,
+  },
   cameraPlacement: macroBellowsExtensionCameraPlacement,
   bounds: macroBellowsExtensionSceneBoundsMm,
   focusTargets: macroBellowsExtensionFocusTargets,

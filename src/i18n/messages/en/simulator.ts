@@ -146,6 +146,7 @@ export const simulatorMessages = {
     rawGroundGlass: "Raw Ground Glass",
     uprightAssist: "Upright Assist",
     focusLoupe: "Focus loupe · 4×",
+    groundGlassGridScaleCue: "Grid: {{size}} per square",
     viewOptions: "View Options",
     comparisonHeading: "Original and Current Ground Glass comparison",
     comparisonDescription: "Compare the neutral camera with the selected movement.",
@@ -315,6 +316,54 @@ export const simulatorMessages = {
       objective: "Explore the scene without a scored task.",
       observation:
         "Changes are reflected immediately in the 3D Scene, Ground Glass, and learner readouts.",
+    },
+    macroBellowsExtension: {
+      objective: "Reach life-size reproduction (1:1) using Focus Distance and observe the bellows extension that makes it possible.",
+      bullets: {
+        focus: "Reduce Focus Distance from the starting point toward 300 mm to increase magnification.",
+        grid: "Use the Ground Glass grid, labelled 1 cm per square, as a simple size reference.",
+        consequences: "Watch magnification, required lens-to-film extension, bellows factor, and exposure compensation rise together.",
+        capacity: "Bellows extension is the lens-to-film distance; real cameras may need an extension rail or added bellows when their available travel runs out.",
+      },
+      observation: "Move Focus Distance closer to see the bellows extend and the reproduction ratio increase.",
+      title: "1:1 reproduction study",
+      labels: {
+        goal: "Goal",
+        try: "Try",
+        observe: "Observe",
+        whyItMatters: "Why it matters",
+      },
+      goal: "Reach life-size reproduction. At 1:1, the image on the film is the same size as the real subject.",
+      try: "Move Focus Distance closer, from the initial macro setting toward 300 mm.",
+      observe: "Compare the specimen with the 1 cm Ground Glass grid and watch the rear standard move as the bellows extends.",
+      whyItMatters: "A view camera reaches high reproduction ratios by increasing lens-to-film distance. That also increases magnification and the bellows-factor exposure cost.",
+      stages: {
+        early: {
+          title: "Early close focus",
+          try: "Move Focus Distance closer to increase the reproduction ratio.",
+          observe: "At {{magnification}} ({{ratio}}), the film image is still smaller than the subject. Watch the bellows extend as the image grows.",
+          whyItMatters: "Closer focusing moves the film farther from the lens: more extension produces more magnification and a larger bellows-factor exposure cost.",
+        },
+        intermediate: {
+          title: "Approaching life size",
+          try: "Continue reducing Focus Distance and compare the specimen with the 1 cm Ground Glass grid.",
+          observe: "You are approaching life size at {{magnification}} ({{ratio}}). Required extension is {{extension}}; the bellows-factor exposure implication is now significant.",
+          whyItMatters: "The causal chain is cumulative: closer focus → more extension → higher magnification → more exposure compensation.",
+        },
+        nearLifeSize: {
+          title: "Near life size",
+          try: "Move through the last steps toward 1:1 and compare a known feature with one grid square.",
+          observe: "Very close to life size at {{magnification}} ({{ratio}}). The 1 cm grid gives a physical reference for how large the film image is becoming.",
+          whyItMatters: "At high magnification, extension becomes substantial. Beyond a camera's available travel, a real setup may need an extension rail or additional bellows.",
+        },
+        lifeSize: {
+          title: "Life-size reproduction reached",
+          try: "Pause at 1:1 and compare a 1 cm subject feature with one 1 cm Ground Glass square.",
+          observe: "Life-size reproduction reached (1:1). A 1 cm feature on the subject spans 1 cm on the film. Required extension is {{extension}}, with a {{factor}} bellows factor and {{stops}} exposure compensation.",
+          whyItMatters: "View cameras reach life size by extending the lens-to-film distance. The extra extension costs exposure, and greater magnification may require an extension rail or added bellows in real use.",
+        },
+      },
+      capacityWarning: "Required extension ({{extension}}) is approaching the {{availableTravel}} of available bellows travel shown here. Many real cameras would need additional extension beyond their built-in travel.",
     },
     understanding: {
       objective:

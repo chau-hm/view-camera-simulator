@@ -75,6 +75,16 @@ const PANEL_HEIGHT_PX = 400;
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
+const formatGridSquareSize = (squareMm: number): string => {
+  const squareCm = squareMm / 10;
+  if (!Number.isFinite(squareCm) || squareCm <= 0) return `${squareMm} mm`;
+  const roundedCm = Math.round(squareCm * 100) / 100;
+  const formattedCm = Number.isInteger(roundedCm)
+    ? String(roundedCm)
+    : roundedCm.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  return `${formattedCm} cm`;
+};
+
 export const GroundGlassRenderer = ({
   opticsState,
   assistEnabled,
@@ -188,6 +198,11 @@ export const GroundGlassRenderer = ({
     48 - clamp(tiltDeg * 2.2, -18, 18)
   }%, rgba(96,165,250,0.34), rgba(30,41,59,0.9) 42%, rgba(15,23,42,0.97) 100%)`;
   const isInfinityFocus = opticsState.diagnostics?.isInfinityFocus === true;
+  const scaleCue = gridEnabled && !rawDebug && scene.macroTeachingCapability?.kind === "bellows-extension"
+    ? t(simulatorMessageKeys.viewport.groundGlassGridScaleCue, {
+      size: formatGridSquareSize(scene.macroTeachingCapability.groundGlassGridSquareMm),
+    })
+    : undefined;
   // consider RTT scenes when hiding decorative background overlay
   const hideDecorativeBackground = isRttSceneFinal || rawDebug;
   const lastFiniteFocusDepthMm = explicitLastFiniteFocusDepthMm;
@@ -265,6 +280,7 @@ export const GroundGlassRenderer = ({
         isInfinityFocus={isInfinityFocus}
         lastFiniteFocusDepthMm={lastFiniteFocusDepthMm}
         focusDistanceLabel={focusDistanceLabel}
+        scaleCue={scaleCue}
       />
 
       {!isRttSceneFinal && (

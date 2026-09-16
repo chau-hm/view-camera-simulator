@@ -61,6 +61,11 @@ describe("macro-bellows-extension scene", () => {
     expect(macroBellowsExtensionScene.macroFocusMetricsCapability).toEqual({ enabled: true });
     expect(macroBellowsExtensionScene.focusTargets).toHaveLength(1);
     expect(macroBellowsExtensionScene.focusTargets[0].sampleWorldPositions).toHaveLength(4);
+    expect(macroBellowsExtensionScene.macroTeachingCapability).toEqual({
+      kind: "bellows-extension",
+      groundGlassGridSquareMm: 10,
+      availableBellowsTravelMm: 320,
+    });
   });
 
   it.each([

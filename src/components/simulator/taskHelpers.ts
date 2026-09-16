@@ -23,6 +23,15 @@ const genericGuidance: FreePracticeGuidanceKeys = {
 };
 
 const guidanceByScene: Record<string, FreePracticeGuidanceKeys> = {
+  "macro-bellows-extension": {
+    objectiveKey: simulatorMessageKeys.freePractice.macroBellowsExtension.objective,
+    bulletKeys: [
+      simulatorMessageKeys.freePractice.macroBellowsExtension.bullets.focus,
+      simulatorMessageKeys.freePractice.macroBellowsExtension.bullets.grid,
+      simulatorMessageKeys.freePractice.macroBellowsExtension.bullets.consequences,
+      simulatorMessageKeys.freePractice.macroBellowsExtension.bullets.capacity,
+    ],
+  },
   "understanding-camera-movements": {
     objectiveKey: simulatorMessageKeys.freePractice.understanding.objective,
     bulletKeys: [
@@ -123,6 +132,9 @@ const genericFeedback: FreePracticeFeedbackKey = {
 };
 
 const feedbackByScene: Record<string, FreePracticeFeedbackKey> = {
+  "macro-bellows-extension": {
+    observationKey: simulatorMessageKeys.freePractice.macroBellowsExtension.observation,
+  },
   "understanding-camera-movements": {
     observationKey: simulatorMessageKeys.freePractice.understanding.observation,
   },

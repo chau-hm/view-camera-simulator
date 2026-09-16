@@ -8,6 +8,7 @@ import {
 } from "../../app/anatomyLesson";
 import { getCameraControlTeachingDefinition } from "../../app/cameraControlTeaching";
 import { getGuidedLessonContext } from "../../app/guidedLesson";
+import { deriveMacroFocusMetrics } from "../../core/optics/deriveMacroFocusMetrics";
 import { getPublicSceneEntryById } from "../../app/publicScenes";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
@@ -62,6 +63,7 @@ import type {
 } from "../../render/groundGlassRttDimensions";
 import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
+import { resolveMacroBellowsExtensionTeaching } from "../../scenes/macroBellowsExtensionTeaching";
 import {
   formatCameraMovementLessonReadout,
   formatCameraMovementPublicReadout,
@@ -292,6 +294,25 @@ export const SimulatorWorkspace = ({
     camera,
     effectiveCameraMovementCalibration,
   );
+  const macroFocusMetrics = useMemo(() => {
+    if (!safeScene.macroFocusMetricsCapability?.enabled) return null;
+    const { fallbackApplied, focusObjectDistanceMm, imageDistanceMm } = opticsState.diagnostics;
+    if (fallbackApplied || focusObjectDistanceMm == null || imageDistanceMm == null) return null;
+    return deriveMacroFocusMetrics({
+      focalLengthMm: camera.focalLengthMm,
+      objectDistanceMm: focusObjectDistanceMm,
+      imageDistanceMm,
+    });
+  }, [camera.focalLengthMm, opticsState.diagnostics, safeScene.macroFocusMetricsCapability]);
+  const macroTeaching = useMemo(
+    () =>
+      resolveMacroBellowsExtensionTeaching({
+        capability: safeScene.macroTeachingCapability,
+        metrics: macroFocusMetrics,
+        focusObjectDistanceMm: opticsState.diagnostics.focusObjectDistanceMm,
+      }),
+    [macroFocusMetrics, opticsState.diagnostics.focusObjectDistanceMm, safeScene.macroTeachingCapability],
+  );
   const activeTeachingCaseId = useMemo<CameraMovementPublicCaseId | null>(() => {
     if (
       camera.activeSceneId !== "understanding-camera-movements" ||
@@ -464,6 +485,7 @@ export const SimulatorWorkspace = ({
       guidedLessonContext={guidedLessonContext}
       freeCompositionEvaluation={interiorCornerRiseEvaluation}
       freeFocusEvaluation={interiorCornerFocusEvaluation}
+      macroTeaching={macroTeaching}
     />
   ) : null;
   useEffect(() => {
@@ -747,7 +769,12 @@ export const SimulatorWorkspace = ({
 
           {!viewportExpanded && !isAnatomyLesson && <>
             {safeScene.macroFocusMetricsCapability?.enabled && (
-              <MacroFocusReadout diagnostics={opticsState.diagnostics} focalLengthMm={camera.focalLengthMm} />
+              <MacroFocusReadout
+                diagnostics={opticsState.diagnostics}
+                focalLengthMm={camera.focalLengthMm}
+                metrics={macroFocusMetrics}
+                teachingCapability={safeScene.macroTeachingCapability}
+              />
             )}
             {/* Optical Debug remains in normal flow below the learner readouts. */}
             <div className="simulator-debug-row">
