@@ -38,9 +38,9 @@ describe("macro-bellows-extension scene", () => {
     });
   });
 
-  it("keeps movement, aperture, lens, and standard selection fixed", () => {
+  it("keeps movement, lens, and standard selection fixed while allowing aperture control", () => {
     expect(macroBellowsExtensionScene.cameraPreset).toMatchObject({
-      aperture: 11,
+      aperture: 5.6,
       frontRiseMm: 0,
       frontShiftMm: 0,
       frontTiltDeg: 0,
@@ -52,7 +52,6 @@ describe("macro-bellows-extension scene", () => {
     });
     expect(macroBellowsExtensionScene.cameraControlPolicy).toEqual({
       movement: "fixed",
-      aperture: "fixed",
       infinityReset: false,
     });
     expect(macroBellowsExtensionScene.movementCapabilities).toBeUndefined();
@@ -100,5 +99,29 @@ describe("macro-bellows-extension scene", () => {
     expect(farSeparation).toBeCloseTo(180, 12);
     expect(nearSeparation).toBeCloseTo(300, 12);
     expect(nearSeparation).toBeGreaterThan(farSeparation);
+  });
+
+  it("changes physical blur with aperture without changing macro geometry", () => {
+    const wideOpen = deriveOpticsState(
+      cameraAt(300),
+      macroBellowsExtensionScene,
+    );
+    const stoppedDown = deriveOpticsState(
+      { ...cameraAt(300), aperture: 22 },
+      macroBellowsExtensionScene,
+    );
+
+    expect(stoppedDown.diagnostics.focusObjectDistanceMm).toBeCloseTo(
+      wideOpen.diagnostics.focusObjectDistanceMm!,
+      12,
+    );
+    expect(stoppedDown.diagnostics.imageDistanceMm).toBeCloseTo(
+      wideOpen.diagnostics.imageDistanceMm!,
+      12,
+    );
+    expect(stoppedDown.filmCenterWorld.z).toBeCloseTo(wideOpen.filmCenterWorld.z, 12);
+    expect(stoppedDown.focusTargets[0].patchEquivalentCoCDiameterMm).toBeLessThan(
+      wideOpen.focusTargets[0].patchEquivalentCoCDiameterMm!,
+    );
   });
 });

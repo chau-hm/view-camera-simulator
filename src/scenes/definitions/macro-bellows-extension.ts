@@ -13,7 +13,7 @@ export const macroBellowsExtensionScene: SceneDefinition = {
   cameraPreset: {
     focalLengthMm: 150,
     focusDistanceMm: 900,
-    aperture: 11,
+    aperture: 5.6,
     frontRiseMm: 0,
     frontShiftMm: 0,
     frontTiltDeg: 0,
@@ -31,7 +31,7 @@ export const macroBellowsExtensionScene: SceneDefinition = {
     filmDepthReference: "optical-axis-conjugate",
   },
   focusDistanceRangeMm: { min: 300, max: 900 },
-  cameraControlPolicy: { movement: "fixed", aperture: "fixed", infinityReset: false },
+  cameraControlPolicy: { movement: "fixed", infinityReset: false },
   macroFocusMetricsCapability: { enabled: true },
   macroTeachingCapability: {
     kind: "bellows-extension",
