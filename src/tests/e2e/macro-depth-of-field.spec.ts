@@ -36,6 +36,7 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
 
   const focus = page.getByRole("slider", { name: "Focus distance" });
   const aperture = page.getByRole("radiogroup", { name: "Aperture" });
+  const groundGlassRtt = page.getByTestId("ground-glass-rtt");
   const readout = page.getByRole("region", { name: "Macro focus" });
   await expect(focus).toHaveValue("400");
   await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
@@ -46,6 +47,11 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
   await expect(page.getByRole("button", { name: "Infinity Reset" })).toHaveCount(0);
   await expect(page.getByRole("combobox", { name: /focal length/i })).toHaveCount(0);
   await expect(page.getByRole("group", { name: "Focus standard" })).toHaveCount(0);
+
+  const readGroundGlassGain = async () =>
+    Number(await groundGlassRtt.getAttribute("data-rtt-ground-glass-illuminance-gain"));
+  await expect.poll(readGroundGlassGain).toBeGreaterThan(0);
+  const wideApertureGroundGlassGain = await readGroundGlassGain();
 
   const panel = page.getByTestId("focus-distribution-panel");
   await expect(panel.locator("[data-focus-target-id]")).toHaveCount(3);
@@ -68,6 +74,7 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
 
   await aperture.getByRole("radio", { name: "f/32" }).check();
   await expect(aperture).toHaveAttribute("data-selected-aperture", "32");
+  await expect.poll(readGroundGlassGain).toBeLessThan(wideApertureGroundGlassGain);
   await expect.poll(async () => {
     const scores = await readFocusDistributionScores(page, ["macro-depth-near", "macro-depth-far"]);
     return scores["macro-depth-near"] + scores["macro-depth-far"];
