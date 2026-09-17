@@ -119,6 +119,9 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   latticePresentationRegion?: string;
   latticeSubjectGeneration?: number;
 
+  /** Combined aperture and trusted bellows-extension gain applied by the composite. */
+  groundGlassIlluminanceGain?: number;
+
   resourceGeneration: number; // increments when RTT resources are recreated
 };
 

@@ -33,6 +33,7 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   const sceneCanvas = page.getByTestId("scene-canvas");
   const sceneWebglCanvas = sceneCanvas.locator("canvas");
   const groundGlassCanvas = page.locator(".groundglass-renderer-host canvas");
+  const groundGlassRtt = page.getByTestId("ground-glass-rtt");
   const readout = page.getByRole("region", { name: "Macro focus" });
 
   await expect(sceneWebglCanvas).toHaveCount(1);
@@ -43,6 +44,10 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   await expect(readout).toContainText("1:5");
   await expect(readout).toContainText("320.0 mm");
   await expect(readout).toContainText("Selected focus-plane magnification");
+  const readGroundGlassGain = async () =>
+    Number(await groundGlassRtt.getAttribute("data-rtt-ground-glass-illuminance-gain"));
+  await expect.poll(readGroundGlassGain).toBeCloseTo(1 / 1.44, 3);
+  const initialGroundGlassGain = await readGroundGlassGain();
   const grid = page.getByTestId("ground-glass-grid");
   await expect(grid).toHaveAttribute("data-grid-mode", "physical");
   await expect(page.getByTestId("ground-glass-scale-cue")).toHaveText("Grid: 1 cm per square");
@@ -71,6 +76,8 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   await expect(readout).toContainText("+2.00 stops");
   await expect(readout).toContainText("Life-size reproduction reached (1:1)");
   await expect(readout).toContainText("specimen is now sharply reproduced");
+  await expect.poll(readGroundGlassGain).toBeCloseTo(0.25, 3);
+  expect(await readGroundGlassGain()).toBeLessThan(initialGroundGlassGain);
 
   const finalFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
   expect(finalFilmCenter[2]).toBeCloseTo(-300, 5);

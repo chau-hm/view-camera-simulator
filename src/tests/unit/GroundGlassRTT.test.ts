@@ -3,6 +3,7 @@ import React from "react";
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { resolveGroundGlassRelativeIlluminance } from "../../core/optics/groundGlassIlluminance";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import {
   GroundGlassRTT as UnconnectedGroundGlassRTT,
@@ -23,6 +24,7 @@ import { useAppStore } from "../../state/appStore";
 import { selectEffectiveCameraMovementCalibration } from "../../state/selectors";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
+import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import geometry from "../../scenes/shelfSwingGeometry";
@@ -264,10 +266,16 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     act(() => fiberTestState.frameCallback?.());
 
     const compositeMaterial = renderedShaderMaterials().find((material) =>
-      material.fragmentShader.includes("uniform float apertureIlluminanceGain"),
+      material.fragmentShader.includes("uniform float groundGlassIlluminanceGain"),
     );
     expect(compositeMaterial).toBeDefined();
-    expect(compositeMaterial?.uniforms.apertureIlluminanceGain.value).toBe(1);
+    const initialGain = resolveGroundGlassRelativeIlluminance({
+      apertureFNumber: 11,
+      focalLengthMm: camera.focalLengthMm,
+      imageDistanceMm: optics.diagnostics.imageDistanceMm,
+    });
+    expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(initialGain, 12);
+    expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(initialGain, 12);
     expect(compositeMaterial?.uniforms.flipDisplayX.value).toBe(0);
     expect(compositeMaterial?.uniforms.flipDisplayY.value).toBe(1);
     const initialGeneration = diagnostics.get()?.resourceGeneration;
@@ -283,8 +291,12 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     );
     act(() => fiberTestState.frameCallback?.());
 
-    expect(compositeMaterial?.uniforms.apertureIlluminanceGain.value).toBeCloseTo(
-      (11 / 5.6) ** 2,
+    expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(
+      resolveGroundGlassRelativeIlluminance({
+        apertureFNumber: 5.6,
+        focalLengthMm: camera.focalLengthMm,
+        imageDistanceMm: optics.diagnostics.imageDistanceMm,
+      }),
       12,
     );
     expect(compositeMaterial?.uniforms.flipDisplayX.value).toBe(0);
@@ -303,7 +315,14 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     );
     act(() => fiberTestState.frameCallback?.());
 
-    expect(compositeMaterial?.uniforms.apertureIlluminanceGain.value).toBeCloseTo(0.25, 12);
+    expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(
+      resolveGroundGlassRelativeIlluminance({
+        apertureFNumber: 22,
+        focalLengthMm: camera.focalLengthMm,
+        imageDistanceMm: optics.diagnostics.imageDistanceMm,
+      }),
+      12,
+    );
     expect(compositeMaterial?.uniforms.flipDisplayX.value).toBe(1);
     expect(compositeMaterial?.uniforms.flipDisplayY.value).toBe(0);
     expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
@@ -320,10 +339,61 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     );
     act(() => fiberTestState.frameCallback?.());
 
-    expect(compositeMaterial?.uniforms.apertureIlluminanceGain.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBe(1);
     expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(setSize).not.toHaveBeenCalled();
+
+    view.unmount();
+  });
+
+  it("applies canonical macro extension loss at the initial and 1:1 states", () => {
+    const initialCamera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...macroBellowsExtensionScene.cameraPreset,
+      activeSceneId: macroBellowsExtensionScene.id,
+      focusMode: "finite" as const,
+    };
+    const initialOptics = deriveOpticsState(initialCamera, macroBellowsExtensionScene);
+    const diagnostics = createRuntimeInfoCollector();
+    const props = {
+      opticsState: initialOptics,
+      focalLengthMm: initialCamera.focalLengthMm,
+      scene: macroBellowsExtensionScene,
+      widthPx: 500,
+      heightPx: 400,
+      aperture: 11,
+      previewMode: "upright" as const,
+      renderQuality: "standard" as const,
+      onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+    };
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, props));
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const compositeMaterial = renderedShaderMaterials().find((material) =>
+      material.fragmentShader.includes("uniform float groundGlassIlluminanceGain"),
+    );
+    expect(compositeMaterial).toBeDefined();
+    expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(1 / 1.44, 12);
+    expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(1 / 1.44, 12);
+
+    const oneToOneCamera = {
+      ...initialCamera,
+      focusDistanceMm: 300,
+    };
+    const oneToOneOptics = deriveOpticsState(oneToOneCamera, macroBellowsExtensionScene);
+    view.rerender(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        ...props,
+        opticsState: oneToOneOptics,
+      }),
+    );
+    act(() => fiberTestState.frameCallback?.());
+
+    expect(oneToOneOptics.diagnostics.imageDistanceMm).toBeCloseTo(300, 12);
+    expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(0.25, 12);
+    expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(0.25, 12);
 
     view.unmount();
   });

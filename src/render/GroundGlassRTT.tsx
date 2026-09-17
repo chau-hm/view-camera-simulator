@@ -443,7 +443,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         renderHeight: { value: dimsRef.current.internalHeightPx },
         flipDisplayX: { value: 0.0 },
         flipDisplayY: { value: 1.0 },
-        apertureIlluminanceGain: { value: 1.0 },
+        groundGlassIlluminanceGain: { value: 1.0 },
       },
     });
 
@@ -1173,7 +1173,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       // Prepare typed optical state once and apply it to both CoC and gather.
       let uniformPreparationError: string | null = null;
       let preparedDofState: ReturnType<typeof createGroundGlassDofUniformState> | null = null;
-      let apertureIlluminanceGain: number | null = rawDebug ? 1.0 : null;
+      // Keep the composite at a neutral gain until a valid physical DOF state
+      // has been prepared. This is the safe fallback for malformed optics;
+      // Raw RTT Debug deliberately remains an unmodified render diagnostic.
+      let groundGlassIlluminanceGain = 1.0;
       try {
         const displayOpticsState = resolveGroundGlassDisplayOpticsState(resolvedSceneId, opticsState);
         preparedDofState = createGroundGlassDofUniformState(
@@ -1191,7 +1194,15 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           sampledFilmDimensions.heightMm,
         );
         if (!rawDebug) {
-          apertureIlluminanceGain = resolveGroundGlassRelativeIlluminance(aperture);
+          groundGlassIlluminanceGain = resolveGroundGlassRelativeIlluminance({
+            apertureFNumber: aperture,
+            focalLengthMm,
+            // A fallback optics state may contain a geometrically plausible
+            // film plane, but it is not trustworthy physical focus data.
+            imageDistanceMm: opticsState.diagnostics.fallbackApplied
+              ? null
+              : preparedDofState.imageDistanceMm,
+          });
         }
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);
@@ -1265,8 +1276,16 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       compositeMaterial.uniforms.flipDisplayY.value = displayTransform.flipDisplayY ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
-      if (apertureIlluminanceGain !== null) {
-        compositeMaterial.uniforms.apertureIlluminanceGain.value = apertureIlluminanceGain;
+      compositeMaterial.uniforms.groundGlassIlluminanceGain.value = groundGlassIlluminanceGain;
+      const currentIlluminanceInfo = readRuntimeInfo();
+      if (
+        currentIlluminanceInfo &&
+        currentIlluminanceInfo.groundGlassIlluminanceGain !== groundGlassIlluminanceGain
+      ) {
+        setRuntimeInfo({
+          ...currentIlluminanceInfo,
+          groundGlassIlluminanceGain,
+        });
       }
 
       // Keep the final DOF result in an owned target. Besides enabling a

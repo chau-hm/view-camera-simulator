@@ -82,6 +82,7 @@ export const GroundGlassRenderSurface = ({
         data-rtt-lattice-resource-key={rttRuntimeInfo?.latticeResourceKey}
         data-rtt-lattice-presentation-region={rttRuntimeInfo?.latticePresentationRegion}
         data-rtt-lattice-subject-generation={rttRuntimeInfo?.latticeSubjectGeneration}
+        data-rtt-ground-glass-illuminance-gain={rttRuntimeInfo?.groundGlassIlluminanceGain}
         data-rtt-camera-position={rttRuntimeInfo?.cameraPositionWorld?.join(",")}
         data-rtt-camera-up={rttRuntimeInfo?.cameraUpWorld?.join(",")}
         data-rtt-camera-forward={rttRuntimeInfo?.cameraForwardWorld?.join(",")}
