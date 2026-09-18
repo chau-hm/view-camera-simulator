@@ -10,6 +10,7 @@ import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
+import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
 import { DEFAULT_CAMERA_STATE, CAMERA_CONSTANTS } from "../../utils/constants";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import { useAppStore } from "../../state/appStore";
@@ -45,6 +46,38 @@ describe("GroundGlassRenderer", () => {
     expect(screen.getByTestId("ground-glass-focus-label")).toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-focus-loupe")).not.toBeInTheDocument();
     expect(screen.queryByText("Focus assist")).not.toBeInTheDocument();
+  });
+
+  it("uses the physical film scale for the Scene 1 Ground Glass grid", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...macroBellowsExtensionScene.cameraPreset,
+      activeSceneId: macroBellowsExtensionScene.id,
+    };
+    const opticsState = deriveOpticsState(camera, macroBellowsExtensionScene);
+    render(
+      <GroundGlassRenderer
+        opticsState={opticsState}
+        assistEnabled={false}
+        gridEnabled
+        riseMm={camera.frontRiseMm}
+        tiltDeg={camera.frontTiltDeg}
+        swingDeg={camera.frontSwingDeg}
+        focusDistanceMm={camera.focusDistanceMm}
+        aperture={camera.aperture}
+        renderQuality="standard"
+        scene={macroBellowsExtensionScene}
+        focalLengthMm={camera.focalLengthMm}
+        previewMode="raw"
+      />,
+    );
+
+    const grid = screen.getByTestId("ground-glass-grid");
+    expect(grid).toHaveAttribute("data-grid-mode", "physical");
+    expect(grid).toHaveStyle({
+      backgroundSize: `${500 * 10 / CAMERA_CONSTANTS.filmWidthMm}px ${400 * 10 / CAMERA_CONSTANTS.filmHeightMm}px`,
+    });
+    expect(screen.getByTestId("ground-glass-scale-cue")).toHaveTextContent("Grid: 1 cm per square");
   });
 
   it("does not advertise the focus loupe for the raw RTT debug bypass", () => {

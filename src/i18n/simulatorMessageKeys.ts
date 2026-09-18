@@ -145,6 +145,7 @@ export const simulatorMessageKeys = {
     rawGroundGlass: "simulator.viewport.rawGroundGlass",
     uprightAssist: "simulator.viewport.uprightAssist",
     focusLoupe: "simulator.viewport.focusLoupe",
+    groundGlassGridScaleCue: "simulator.viewport.groundGlassGridScaleCue",
     viewOptions: "simulator.viewport.viewOptions",
     comparisonHeading: "simulator.viewport.comparisonHeading",
     comparisonDescription: "simulator.viewport.comparisonDescription",
@@ -301,6 +302,54 @@ export const simulatorMessageKeys = {
     generic: {
       objective: "simulator.freePractice.generic.objective",
       observation: "simulator.freePractice.generic.observation",
+    },
+    macroBellowsExtension: {
+      objective: "simulator.freePractice.macroBellowsExtension.objective",
+      bullets: {
+        focus: "simulator.freePractice.macroBellowsExtension.bullets.focus",
+        grid: "simulator.freePractice.macroBellowsExtension.bullets.grid",
+        consequences: "simulator.freePractice.macroBellowsExtension.bullets.consequences",
+        capacity: "simulator.freePractice.macroBellowsExtension.bullets.capacity",
+      },
+      observation: "simulator.freePractice.macroBellowsExtension.observation",
+      title: "simulator.freePractice.macroBellowsExtension.title",
+      labels: {
+        goal: "simulator.freePractice.macroBellowsExtension.labels.goal",
+        try: "simulator.freePractice.macroBellowsExtension.labels.try",
+        observe: "simulator.freePractice.macroBellowsExtension.labels.observe",
+        whyItMatters: "simulator.freePractice.macroBellowsExtension.labels.whyItMatters",
+      },
+      goal: "simulator.freePractice.macroBellowsExtension.goal",
+      try: "simulator.freePractice.macroBellowsExtension.try",
+      observe: "simulator.freePractice.macroBellowsExtension.observe",
+      whyItMatters: "simulator.freePractice.macroBellowsExtension.whyItMatters",
+      stages: {
+        early: {
+          title: "simulator.freePractice.macroBellowsExtension.stages.early.title",
+          try: "simulator.freePractice.macroBellowsExtension.stages.early.try",
+          observe: "simulator.freePractice.macroBellowsExtension.stages.early.observe",
+          whyItMatters: "simulator.freePractice.macroBellowsExtension.stages.early.whyItMatters",
+        },
+        intermediate: {
+          title: "simulator.freePractice.macroBellowsExtension.stages.intermediate.title",
+          try: "simulator.freePractice.macroBellowsExtension.stages.intermediate.try",
+          observe: "simulator.freePractice.macroBellowsExtension.stages.intermediate.observe",
+          whyItMatters: "simulator.freePractice.macroBellowsExtension.stages.intermediate.whyItMatters",
+        },
+        nearLifeSize: {
+          title: "simulator.freePractice.macroBellowsExtension.stages.nearLifeSize.title",
+          try: "simulator.freePractice.macroBellowsExtension.stages.nearLifeSize.try",
+          observe: "simulator.freePractice.macroBellowsExtension.stages.nearLifeSize.observe",
+          whyItMatters: "simulator.freePractice.macroBellowsExtension.stages.nearLifeSize.whyItMatters",
+        },
+        lifeSize: {
+          title: "simulator.freePractice.macroBellowsExtension.stages.lifeSize.title",
+          try: "simulator.freePractice.macroBellowsExtension.stages.lifeSize.try",
+          observe: "simulator.freePractice.macroBellowsExtension.stages.lifeSize.observe",
+          whyItMatters: "simulator.freePractice.macroBellowsExtension.stages.lifeSize.whyItMatters",
+        },
+      },
+      capacityWarning: "simulator.freePractice.macroBellowsExtension.capacityWarning",
     },
     understanding: {
       objective: "simulator.freePractice.understanding.objective",

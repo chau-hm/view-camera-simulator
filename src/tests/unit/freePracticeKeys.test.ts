@@ -16,6 +16,7 @@ const publicSceneIds = [
   "shelf-swing",
   "oblique-tabletop",
   "mirror-shift",
+  "macro-bellows-extension",
 ] as const;
 
 describe("Free Practice message-key contract", () => {

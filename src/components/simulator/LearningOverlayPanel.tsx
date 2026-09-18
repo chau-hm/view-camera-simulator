@@ -7,6 +7,7 @@ import type { InteriorCornerRiseCompositionEvaluation } from "../../scenes/inter
 import type { InteriorCornerSwingFocusEvaluation } from "../../scenes/interiorCornerSwingFocus";
 import type { SimulatorMode } from "../../types/camera";
 import type { TaskDefinition, TaskEvaluation } from "../../types/task";
+import type { MacroBellowsExtensionTeachingModel } from "../../scenes/macroBellowsExtensionTeaching";
 import { FeedbackPanel } from "./FeedbackPanel";
 import { GuidedLessonProgress } from "./GuidedLessonProgress";
 import { TaskPanel } from "./TaskPanel";
@@ -54,6 +55,7 @@ type LearningOverlayPanelProps = {
   guidedLessonContext: GuidedLessonContext | null;
   freeCompositionEvaluation?: InteriorCornerRiseCompositionEvaluation | null;
   freeFocusEvaluation?: InteriorCornerSwingFocusEvaluation | null;
+  macroTeaching?: MacroBellowsExtensionTeachingModel | null;
 };
 
 export const LearningOverlayPanel = ({
@@ -64,6 +66,7 @@ export const LearningOverlayPanel = ({
   guidedLessonContext,
   freeCompositionEvaluation,
   freeFocusEvaluation,
+  macroTeaching,
 }: LearningOverlayPanelProps) => {
   const { t } = useTranslation();
   const narrowLayout = useNarrowLayout();
@@ -328,7 +331,12 @@ export const LearningOverlayPanel = ({
                 <GuidedLessonProgress context={guidedLessonContext} evaluation={evaluation} />
               ) : null}
               {guidedLessonContext?.stage === "observe" ? null : (
-                <TaskPanel task={task} sceneId={sceneId} showTitle={false} />
+                <TaskPanel
+                  task={task}
+                  sceneId={sceneId}
+                  showTitle={false}
+                  macroTeaching={macroTeaching}
+                />
               )}
             </div>
           ) : (
@@ -344,6 +352,7 @@ export const LearningOverlayPanel = ({
                 evaluation={evaluation}
                 freeCompositionEvaluation={freeCompositionEvaluation}
                 freeFocusEvaluation={freeFocusEvaluation}
+                macroTeaching={macroTeaching}
                 showTitle={false}
               />
             </div>

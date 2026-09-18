@@ -146,6 +146,7 @@ export const simulatorMessages = {
     rawGroundGlass: "Raw Ground Glass",
     uprightAssist: "Upright Assist",
     focusLoupe: "Focus loupe · 4×",
+    groundGlassGridScaleCue: "Grid: {{size}} per square",
     viewOptions: "View Options",
     comparisonHeading: "Original and Current Ground Glass comparison",
     comparisonDescription: "Compare the neutral camera with the selected movement.",
@@ -315,6 +316,54 @@ export const simulatorMessages = {
       objective: "Explore the scene without a scored task.",
       observation:
         "Changes are reflected immediately in the 3D Scene, Ground Glass, and learner readouts.",
+    },
+    macroBellowsExtension: {
+      objective: "Reach life-size reproduction (1:1) using Focus Distance and observe the bellows extension that makes it possible.",
+      bullets: {
+        focus: "Reduce Focus Distance from the starting point toward 300 mm to bring the selected focus plane toward the specimen.",
+        grid: "Use the Ground Glass grid, labelled 1 cm per square, as a simple size reference.",
+        consequences: "Watch magnification, required lens-to-film extension, bellows factor, and exposure compensation rise together.",
+        capacity: "Bellows extension is the lens-to-film distance; real cameras may need an extension rail or added bellows when their available travel runs out.",
+      },
+      observation: "Move Focus Distance closer to see the rear standard extend and the selected focus-plane ratio increase.",
+      title: "1:1 reproduction study",
+      labels: {
+        goal: "Goal",
+        try: "Try",
+        observe: "Observe",
+        whyItMatters: "Why it matters",
+      },
+      goal: "Reach life-size reproduction of the specimen. At 1:1, its image on the film is the same size as the real subject.",
+      try: "Move Focus Distance closer, from the initial macro setting toward 300 mm. If the Ground Glass becomes difficult to see, open the aperture while focusing.",
+      observe: "Compare the specimen with the 1 cm Ground Glass grid and watch the rear standard move as the bellows extends. Opening the aperture makes the focusing view brighter without changing the reproduction geometry.",
+      whyItMatters: "A view camera reaches high reproduction ratios by increasing lens-to-film distance. That also increases magnification and the bellows-factor exposure cost; opening the aperture helps you focus but does not remove that cost.",
+      stages: {
+        early: {
+          title: "Early close focus",
+          try: "Move Focus Distance closer to increase the reproduction ratio. If the Ground Glass becomes difficult to see, open the aperture while focusing.",
+          observe: "The selected focus plane is still well behind the specimen. At {{magnification}} ({{ratio}}), its focused reproduction is smaller; move it closer and watch the bellows extend.",
+          whyItMatters: "Closer focusing moves the film farther from the lens: more extension produces more magnification and a larger bellows-factor exposure cost. If the Ground Glass is dim, open the aperture to focus more easily; this changes viewing brightness, not the reproduction geometry.",
+        },
+        intermediate: {
+          title: "Approaching life size",
+          try: "Continue reducing Focus Distance and compare the specimen with the 1 cm Ground Glass grid. Open the aperture if the dim view makes focusing difficult.",
+          observe: "The selected focus plane is approaching life size as it moves toward the specimen. At {{magnification}} ({{ratio}}), its focused reproduction is growing; required extension is {{extension}} and the bellows-factor exposure implication is now significant.",
+          whyItMatters: "The causal chain is cumulative: closer focus → more extension → higher magnification → more exposure compensation. A wider aperture makes focusing easier, but it does not change the focus geometry or remove the bellows-factor exposure cost.",
+        },
+        nearLifeSize: {
+          title: "Near life size",
+          try: "Move through the last steps toward 1:1 and compare a known feature with one grid square; open the aperture for a brighter focusing view if needed.",
+          observe: "The selected focus plane is very close to life size and nearly coincident with the specimen. Its focused ratio is {{ratio}} ({{magnification}}); compare the specimen with the calibrated 1 cm grid.",
+          whyItMatters: "At high magnification, extension becomes substantial. Opening the aperture only improves the focusing view; beyond a camera's available travel, a real setup may need an extension rail or additional bellows.",
+        },
+        lifeSize: {
+          title: "Life-size reproduction reached",
+          try: "Pause at 1:1 and compare a 1 cm subject feature with one 1 cm Ground Glass square. Open the aperture if you need a clearer view while focusing.",
+          observe: "The specimen is now sharply reproduced at 1:1. Its 90 mm diameter spans about nine 10 mm squares on the Ground Glass. Required extension is {{extension}}, with a {{factor}} bellows factor and {{stops}} exposure compensation.",
+          whyItMatters: "View cameras reach life size by extending the lens-to-film distance. The extra extension still costs exposure; photographers often focus with the lens opened wide, then choose the working aperture before exposure. Greater magnification may require an extension rail or added bellows in real use.",
+        },
+      },
+      capacityWarning: "Required extension ({{extension}}) is approaching the {{availableTravel}} of available bellows travel shown here. Many real cameras would need additional extension beyond their built-in travel.",
     },
     understanding: {
       objective:

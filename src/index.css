@@ -61,9 +61,28 @@
   font-variant-numeric: tabular-nums;
 }
 
+.macro-focus-readout__warning {
+  color: #92400e;
+  font-weight: 600;
+}
+
 .simulator-shell .macro-focus-readout dt,
 .simulator-shell .macro-focus-readout p {
   color: var(--sim-text-muted);
+}
+.simulator-shell .macro-focus-readout__warning {
+  color: #92400e;
+}
+
+.groundglass-scale-cue {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #e2e8f0;
+  font-size: 11px;
 }
 
 * {
@@ -1147,6 +1166,27 @@ button {
 .task-status--free { background: rgba(59,130,246,0.08); color: #0d47a1; }
 .task-status--progress { background: rgba(250,204,21,0.08); color: #92400e; }
 .chip { background: rgba(0,0,0,0.04); padding: 4px 8px; border-radius: 999px; font-size: 13px; }
+
+.macro-bellows-teaching {
+  display: grid;
+  gap: 8px;
+  padding: 8px 0 2px;
+}
+.macro-bellows-teaching h3,
+.macro-bellows-teaching p {
+  margin: 0;
+}
+.macro-bellows-teaching h3 { font-size: 16px; }
+.macro-bellows-teaching__sections { display: grid; gap: 8px; }
+.macro-bellows-teaching__sections > div { display: grid; gap: 2px; }
+.macro-bellows-teaching__sections strong { font-size: 12px; }
+.macro-bellows-teaching__sections p { color: var(--text-muted); }
+.macro-bellows-teaching__muted { color: var(--text-muted); }
+.macro-bellows-teaching__warning {
+  margin-top: 2px !important;
+  color: #92400e;
+  font-weight: 600;
+}
 
 /* Query-scoped Oblique Architecture lesson navigation */
 .guided-lesson-progress { display: grid; gap: 12px; padding: 6px; }

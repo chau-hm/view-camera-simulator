@@ -196,8 +196,8 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassCompositeFragmentShader).toContain("uniform sampler2D tGather");
     expect(groundGlassCompositeFragmentShader).toContain("uniform sampler2D tNearGather");
     expect(groundGlassCompositeFragmentShader).toContain("useNearGather");
-    expect(groundGlassCompositeFragmentShader).toContain("uniform float apertureIlluminanceGain");
-    expect(groundGlassCompositeFragmentShader).toContain("gathered.rgb *= apertureIlluminanceGain");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float groundGlassIlluminanceGain");
+    expect(groundGlassCompositeFragmentShader).toContain("gathered.rgb *= groundGlassIlluminanceGain");
     expect(groundGlassCompositeFragmentShader).not.toContain("applyFocusRing");
     expect(groundGlassCompositeFragmentShader).not.toContain("showRing");
     expect(groundGlassCompositeFragmentShader).not.toContain("sigma");
