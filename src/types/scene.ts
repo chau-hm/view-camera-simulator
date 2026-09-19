@@ -121,11 +121,15 @@ export type SceneFocusDistanceRangeMm = {
 };
 
 /** Declarative teaching affordances for a macro scene's learner-facing readouts. */
-export type SceneMacroTeachingCapability = {
-  kind: "bellows-extension";
-  groundGlassGridSquareMm: number;
-  availableBellowsTravelMm: number;
-};
+export type SceneMacroTeachingCapability =
+  | {
+      kind: "bellows-extension";
+      groundGlassGridSquareMm: number;
+      availableBellowsTravelMm: number;
+    }
+  | {
+      kind: "depth-of-field";
+    };
 
 export type SceneDefinition = {
   id: string;

@@ -351,6 +351,49 @@ export const simulatorMessageKeys = {
       },
       capacityWarning: "simulator.freePractice.macroBellowsExtension.capacityWarning",
     },
+    macroDepthOfField: {
+      title: "simulator.freePractice.macroDepthOfField.title",
+      labels: {
+        goal: "simulator.freePractice.macroDepthOfField.labels.goal",
+        try: "simulator.freePractice.macroDepthOfField.labels.try",
+        observe: "simulator.freePractice.macroDepthOfField.labels.observe",
+        whyItMatters: "simulator.freePractice.macroDepthOfField.labels.whyItMatters",
+      },
+      goal: "simulator.freePractice.macroDepthOfField.goal",
+      regions: {
+        near: "simulator.freePractice.macroDepthOfField.regions.near",
+        middle: "simulator.freePractice.macroDepthOfField.regions.middle",
+        far: "simulator.freePractice.macroDepthOfField.regions.far",
+      },
+      listSeparator: "simulator.freePractice.macroDepthOfField.listSeparator",
+      stages: {
+        wideOpen: {
+          title: "simulator.freePractice.macroDepthOfField.stages.wideOpen.title",
+          try: "simulator.freePractice.macroDepthOfField.stages.wideOpen.try",
+          observe: "simulator.freePractice.macroDepthOfField.stages.wideOpen.observe",
+          whyItMatters: "simulator.freePractice.macroDepthOfField.stages.wideOpen.whyItMatters",
+        },
+        beginStoppingDown: {
+          title: "simulator.freePractice.macroDepthOfField.stages.beginStoppingDown.title",
+          try: "simulator.freePractice.macroDepthOfField.stages.beginStoppingDown.try",
+          observe: "simulator.freePractice.macroDepthOfField.stages.beginStoppingDown.observe",
+          whyItMatters: "simulator.freePractice.macroDepthOfField.stages.beginStoppingDown.whyItMatters",
+        },
+        moderateStoppingDown: {
+          title: "simulator.freePractice.macroDepthOfField.stages.moderateStoppingDown.title",
+          try: "simulator.freePractice.macroDepthOfField.stages.moderateStoppingDown.try",
+          observe: "simulator.freePractice.macroDepthOfField.stages.moderateStoppingDown.observe",
+          whyItMatters: "simulator.freePractice.macroDepthOfField.stages.moderateStoppingDown.whyItMatters",
+        },
+        minimumAperture: {
+          title: "simulator.freePractice.macroDepthOfField.stages.minimumAperture.title",
+          try: "simulator.freePractice.macroDepthOfField.stages.minimumAperture.try",
+          observe: "simulator.freePractice.macroDepthOfField.stages.minimumAperture.observe",
+          observeAllSharp: "simulator.freePractice.macroDepthOfField.stages.minimumAperture.observeAllSharp",
+          whyItMatters: "simulator.freePractice.macroDepthOfField.stages.minimumAperture.whyItMatters",
+        },
+      },
+    },
     understanding: {
       objective: "simulator.freePractice.understanding.objective",
       bullets: {

@@ -365,6 +365,49 @@ export const simulatorMessages = {
       },
       capacityWarning: "Required extension ({{extension}}) is approaching the {{availableTravel}} of available bellows travel shown here. Many real cameras would need additional extension beyond their built-in travel.",
     },
+    macroDepthOfField: {
+      title: "Three-dimensional macro depth-of-field study",
+      labels: {
+        goal: "Goal",
+        try: "Try",
+        observe: "Observe",
+        whyItMatters: "Why it matters",
+      },
+      goal: "Explore how difficult it is to keep a three-dimensional subject sharp at macro distance.",
+      regions: {
+        near: "Near detail",
+        middle: "Middle detail",
+        far: "Far detail",
+      },
+      listSeparator: ", ",
+      stages: {
+        wideOpen: {
+          title: "Move the sharp zone",
+          try: "Keep the aperture wide open at {{aperture}} and move Focus Distance from the Near detail to the Middle and Far details.",
+          observe: "The {{focusedRegion}} is currently strongest. Only a narrow region is sharp; use Focus Distribution to watch the emphasis move through the subject.",
+          whyItMatters: "At macro distance, depth of field is extremely shallow. Refocusing moves which depth is centered on the focus plane; it does not increase total depth of field.",
+        },
+        beginStoppingDown: {
+          title: "Begin stopping down",
+          try: "Return focus toward the Middle detail, then close the aperture to {{aperture}}.",
+          observe: "The {{focusedRegion}} remains centered while the outer regions begin to improve: Near {{nearStatus}}, Middle {{middleStatus}}, Far {{farStatus}}.",
+          whyItMatters: "Changing Focus relocates the sharp zone. Stopping down reduces acceptable blur and widens usable depth around that zone. The Ground Glass also becomes darker.",
+        },
+        moderateStoppingDown: {
+          title: "A wider usable zone",
+          try: "Keep focus near the Middle detail and compare {{aperture}} with the wider settings.",
+          observe: "Stopping down has expanded usable depth around the {{focusedRegion}}: Near {{nearStatus}}, Middle {{middleStatus}}, Far {{farStatus}}.",
+          whyItMatters: "More of the mechanism is usable, but a separated three-dimensional subject can still exceed what aperture alone can solve. Focus and aperture solve different parts of the problem.",
+        },
+        minimumAperture: {
+          title: "Aperture has a limit",
+          try: "At {{aperture}}, inspect all three target regions before deciding whether the whole subject is sharp.",
+          observe: "At {{aperture}}, {{softRegions}} remain Soft. Depth of field is much greater than at f/5.6, but the full subject is not uniformly sharp.",
+          observeAllSharp: "At {{aperture}}, all three target regions currently meet the physical presentation threshold. Keep checking the individual metrics rather than assuming every macro subject will behave this way.",
+          whyItMatters: "Stopping down helps, but aperture alone cannot always cover a deep three-dimensional macro subject. If important details approximately share an oblique plane, a later movement lesson can explore aligning the focus plane rather than treating tilt as a cure for arbitrary depth.",
+        },
+      },
+    },
     understanding: {
       objective:
         "Compare whole-camera viewpoint movement with Front and Rear standard movements, and observe which image relationships change.",

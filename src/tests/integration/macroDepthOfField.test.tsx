@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
@@ -82,5 +82,79 @@ describe("Macro Depth of Field", () => {
     expect(within(panel).getByText("Near detail")).toBeInTheDocument();
     expect(within(panel).getByText("Middle detail")).toBeInTheDocument();
     expect(within(panel).getByText("Far detail")).toBeInTheDocument();
+  });
+
+  it("renders Scene 2 teaching stages from the physical focus distribution metrics", async () => {
+    render(
+      <MemoryRouter>
+        <SimulatorWorkspace
+          mode="free"
+          sceneId={scene.id}
+          taskId={null}
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Open Task and Feedback" }));
+    const taskView = screen.getByTestId("learning-overlay-task-view");
+    const focus = screen.getByRole("slider", { name: "Focus distance" });
+    const aperture = screen.getByRole("radiogroup", { name: "Aperture" });
+    const teaching = screen.getByTestId("macro-depth-teaching");
+
+    expect(teaching).toHaveAttribute("data-stage", "wide-open");
+    expect(teaching).toHaveAttribute("data-focused-region", "middle");
+    expect(taskView).toHaveTextContent("three-dimensional subject");
+    expect(taskView).toHaveTextContent(/Refocusing moves/);
+    expect(taskView).toHaveTextContent(/does not increase total depth of field/);
+    expect(taskView).not.toHaveTextContent(/bellows travel/);
+
+    fireEvent.change(focus, { target: { value: "390" } });
+    await waitFor(() => expect(teaching).toHaveAttribute("data-focused-region", "near"));
+    expect(taskView).toHaveTextContent(/Near detail is currently strongest/);
+
+    fireEvent.change(focus, { target: { value: "410" } });
+    await waitFor(() => expect(teaching).toHaveAttribute("data-focused-region", "far"));
+    expect(taskView).toHaveTextContent(/Far detail is currently strongest/);
+
+    fireEvent.change(focus, { target: { value: "400" } });
+    fireEvent.click(within(aperture).getByRole("radio", { name: "f/11" }));
+    await waitFor(() => expect(teaching).toHaveAttribute("data-stage", "begin-stopping-down"));
+    expect(taskView).toHaveTextContent(/Changing Focus relocates the sharp zone/);
+    expect(taskView).toHaveTextContent(/Stopping down reduces acceptable blur/);
+
+    fireEvent.click(within(aperture).getByRole("radio", { name: "f/22" }));
+    await waitFor(() => expect(teaching).toHaveAttribute("data-stage", "moderate-stopping-down"));
+    expect(taskView).toHaveTextContent(/expanded usable depth/);
+
+    fireEvent.click(within(aperture).getByRole("radio", { name: "f/32" }));
+    await waitFor(() => expect(teaching).toHaveAttribute("data-stage", "minimum-aperture"));
+    expect(taskView).toHaveTextContent(/remain Soft/);
+    expect(taskView).toHaveTextContent(/aperture alone cannot always cover/);
+    expect(focus).toHaveValue("400");
+  });
+
+  it("localizes the Scene 2 teaching content", async () => {
+    await i18n.changeLanguage("zh-HK");
+    render(
+      <MemoryRouter>
+        <SimulatorWorkspace
+          mode="free"
+          sceneId={scene.id}
+          taskId={null}
+          simulateAssetFailure={false}
+        />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "開啟任務及回饋" }));
+    const taskView = screen.getByTestId("learning-overlay-task-view");
+    expect(taskView).toHaveTextContent("目標");
+    expect(taskView).toHaveTextContent("探索在微距距離下");
+    expect(taskView).toHaveTextContent("重新對焦只會移動");
+
+    fireEvent.click(within(screen.getByRole("radiogroup", { name: "光圈" })).getByRole("radio", { name: "f/32" }));
+    await waitFor(() => expect(taskView).toHaveTextContent("仍然柔化"));
+    expect(taskView).toHaveTextContent("收細光圈有幫助");
   });
 });

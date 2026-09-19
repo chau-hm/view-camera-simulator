@@ -48,6 +48,15 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
   await expect(page.getByRole("combobox", { name: /focal length/i })).toHaveCount(0);
   await expect(page.getByRole("group", { name: "Focus standard" })).toHaveCount(0);
 
+  await page.getByRole("button", { name: "Open Task and Feedback" }).click();
+  const teaching = page.getByTestId("macro-depth-teaching");
+  const taskView = page.getByTestId("learning-overlay-task-view");
+  await expect(teaching).toHaveAttribute("data-stage", "wide-open");
+  await expect(teaching).toHaveAttribute("data-focused-region", "middle");
+  await expect(taskView).toContainText("three-dimensional subject");
+  await expect(taskView).toContainText("Refocusing moves");
+  await expect(taskView).not.toContainText("bellows travel");
+
   const readGroundGlassGain = async () =>
     Number(await groundGlassRtt.getAttribute("data-rtt-ground-glass-illuminance-gain"));
   await expect.poll(readGroundGlassGain).toBeGreaterThan(0);
@@ -74,6 +83,9 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
 
   await aperture.getByRole("radio", { name: "f/32" }).check();
   await expect(aperture).toHaveAttribute("data-selected-aperture", "32");
+  await expect(teaching).toHaveAttribute("data-stage", "minimum-aperture");
+  await expect(taskView).toContainText("remain Soft");
+  await expect(taskView).toContainText("aperture alone cannot always cover");
   await expect.poll(readGroundGlassGain).toBeLessThan(wideApertureGroundGlassGain);
   await expect.poll(async () => {
     const scores = await readFocusDistributionScores(page, ["macro-depth-near", "macro-depth-far"]);
@@ -88,11 +100,14 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
 
   await aperture.getByRole("radio", { name: "f/5.6" }).check();
   await setStepRangeInput(page, "Focus distance", 390);
+  await expect(teaching).toHaveAttribute("data-stage", "wide-open");
+  await expect(teaching).toHaveAttribute("data-focused-region", "near");
   const nearFocusScores = await readFocusDistributionScores(page, TARGET_IDS);
   expect(nearFocusScores["macro-depth-near"]).toBeGreaterThan(nearFocusScores["macro-depth-middle"]);
   expect(nearFocusScores["macro-depth-near"]).toBeGreaterThan(nearFocusScores["macro-depth-far"]);
 
   await setStepRangeInput(page, "Focus distance", 410);
+  await expect(teaching).toHaveAttribute("data-focused-region", "far");
   const farFocusScores = await readFocusDistributionScores(page, TARGET_IDS);
   expect(farFocusScores["macro-depth-far"]).toBeGreaterThan(farFocusScores["macro-depth-near"]);
   expect(farFocusScores["macro-depth-far"]).toBeGreaterThan(farFocusScores["macro-depth-middle"]);
