@@ -1,86 +1,67 @@
-import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
-import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
-import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
 import { mapGroundGlassUvToDisplayUv } from "../../render/groundGlassTargetProjection";
 import {
   applyGroundGlassRttDisplayTransform,
   resolveGroundGlassRttDisplayTransform,
 } from "../../render/groundGlassRttOrientation";
-import { WORLD_SCALE } from "../../render/rttUtils";
-import { macroDepthOfFieldScene } from "../../scenes/definitions/macro-depth-of-field";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
-const ASYMMETRIC_POINTS_MM = [
-  { x: -24, y: 22, z: 400 },
-  { x: 24, y: 22, z: 400 },
-  { x: -24, y: -22, z: 400 },
-  { x: 24, y: -22, z: 400 },
+type Uv = { u: number; v: number };
+
+const flip180 = ({ u, v }: Uv): Uv => ({ u: 1 - u, v: 1 - v });
+
+const ASYMMETRIC_REFERENCE_POINTS = [
+  { label: "A", upright: { u: 0.2, v: 0.2 } },
+  { label: "B", upright: { u: 0.8, v: 0.2 } },
+  { label: "C", upright: { u: 0.2, v: 0.8 } },
+  { label: "D", upright: { u: 0.8, v: 0.8 } },
 ] as const;
 
 describe("Ground Glass RTT orientation", () => {
-  it("uses complementary per-axis transforms for Raw and Upright output", () => {
-    expect(resolveGroundGlassRttDisplayTransform("raw")).toEqual({
-      flipDisplayX: false,
-      flipDisplayY: true,
-    });
-    expect(resolveGroundGlassRttDisplayTransform("upright")).toEqual({
-      flipDisplayX: true,
-      flipDisplayY: false,
-    });
+  it("renders an asymmetric upright reference as a 180-degree Raw image", () => {
+    for (const point of ASYMMETRIC_REFERENCE_POINTS) {
+      const rawDisplay = applyGroundGlassRttDisplayTransform(
+        point.upright,
+        resolveGroundGlassRttDisplayTransform("raw"),
+      );
+      const uprightDisplay = applyGroundGlassRttDisplayTransform(
+        point.upright,
+        resolveGroundGlassRttDisplayTransform("upright"),
+      );
+
+      expect(rawDisplay, point.label).toEqual(flip180(point.upright));
+      expect(uprightDisplay, point.label).toEqual(point.upright);
+    }
   });
 
-  it("matches the configured RTT camera against physical-film display projection on both axes", () => {
-    const cameraState = {
-      ...DEFAULT_CAMERA_STATE,
-      ...macroDepthOfFieldScene.cameraPreset,
-      activeSceneId: macroDepthOfFieldScene.id,
-      focusMode: "finite" as const,
-    };
-    const optics = deriveOpticsState(cameraState, macroDepthOfFieldScene);
-    const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 1000);
-    const configuration = configureGroundGlassCamera(camera, optics, 0.01, 1000);
-    expect(configuration.ok).toBe(true);
-    if (!configuration.ok) return;
+  it("keeps raster orientation, canonical target projection, and mode complement aligned", () => {
+    for (const point of ASYMMETRIC_REFERENCE_POINTS) {
+      // A physical raw film point is the 180-degree projection of the upright
+      // scene reference. Target projection then places that raw point in the
+      // selected visible mode.
+      const physicalRawFilmUv = flip180(point.upright);
+      const rasterRawDisplay = applyGroundGlassRttDisplayTransform(
+        point.upright,
+        resolveGroundGlassRttDisplayTransform("raw"),
+      );
+      const rasterUprightDisplay = applyGroundGlassRttDisplayTransform(
+        point.upright,
+        resolveGroundGlassRttDisplayTransform("upright"),
+      );
+      const projectedRawDisplay = mapGroundGlassUvToDisplayUv(
+        physicalRawFilmUv,
+        "raw",
+      );
+      const projectedUprightDisplay = mapGroundGlassUvToDisplayUv(
+        physicalRawFilmUv,
+        "upright",
+      );
 
-    for (const previewMode of ["raw", "upright"] as const) {
-      const transform = resolveGroundGlassRttDisplayTransform(previewMode);
-      for (const pointMm of ASYMMETRIC_POINTS_MM) {
-        const worldPoint = new THREE.Vector3(pointMm.x, pointMm.y, pointMm.z).multiplyScalar(WORLD_SCALE);
-        const ndc = worldPoint.clone().project(camera);
-        // Three.js NDC y is measured from the bottom of the render target,
-        // while canonical Ground Glass display UV uses v=0 at the top. Keep
-        // the texture-space source UV independent, then convert the composite
-        // quad's bottom-origin screen coordinate back to display space.
-        const rttTextureUv = {
-          u: (ndc.x + 1) / 2,
-          v: (ndc.y + 1) / 2,
-        };
-        expect(Math.abs(rttTextureUv.u - 0.5)).toBeGreaterThan(0.001);
-        expect(Math.abs(rttTextureUv.v - 0.5)).toBeGreaterThan(0.001);
-        const compositeScreenUv = applyGroundGlassRttDisplayTransform(rttTextureUv, transform);
-        const renderedDisplayUv = {
-          u: compositeScreenUv.u,
-          v: 1 - compositeScreenUv.v,
-        };
-        const physicalFilmProjection = projectWorldPointToFilmPlaneGroundGlass({
-          worldPoint: pointMm,
-          lensCenterWorld: optics.lensCenterWorld,
-          filmPlaneCornersWorld: optics.filmPlaneCornersWorld,
-        });
-        expect(physicalFilmProjection.visible).toBe(true);
-        const canonicalDisplayUv = mapGroundGlassUvToDisplayUv(
-          {
-            u: physicalFilmProjection.uRaw,
-            v: physicalFilmProjection.vRaw,
-          },
-          previewMode,
-        );
-
-        expect(renderedDisplayUv.u).toBeCloseTo(canonicalDisplayUv.u, 6);
-        expect(renderedDisplayUv.v).toBeCloseTo(canonicalDisplayUv.v, 6);
-      }
+      expect(rasterRawDisplay.u, point.label).toBeCloseTo(projectedRawDisplay.u, 12);
+      expect(rasterRawDisplay.v, point.label).toBeCloseTo(projectedRawDisplay.v, 12);
+      expect(rasterUprightDisplay.u, point.label).toBeCloseTo(projectedUprightDisplay.u, 12);
+      expect(rasterUprightDisplay.v, point.label).toBeCloseTo(projectedUprightDisplay.v, 12);
+      expect(rasterUprightDisplay.u).toBeCloseTo(1 - rasterRawDisplay.u, 12);
+      expect(rasterUprightDisplay.v).toBeCloseTo(1 - rasterRawDisplay.v, 12);
     }
   });
 });

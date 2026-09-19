@@ -6,17 +6,17 @@ export type GroundGlassRttDisplayTransform = {
 };
 
 /**
- * Resolve the axis relationship between the pre-composite RTT texture and
- * the displayed Ground Glass image. The off-axis RTT camera reverses the
- * horizontal camera basis while its configured up vector preserves the
- * vertical basis. Per-axis flips are self-inverse, so this same contract can
- * map display coordinates back to the source crop for inspection windows.
+ * Resolve the source-texture transform used by the final Ground Glass
+ * composite. The RTT source is the upright scene reference; Raw Ground Glass
+ * applies the physical 180-degree inversion and Upright Assist removes it.
+ * Per-axis flips are self-inverse, so this same contract maps displayed
+ * coordinates back to the source crop for inspection windows.
  */
 export const resolveGroundGlassRttDisplayTransform = (
   previewMode: GroundGlassPreviewMode,
 ): GroundGlassRttDisplayTransform => previewMode === "raw"
-  ? { flipDisplayX: false, flipDisplayY: true }
-  : { flipDisplayX: true, flipDisplayY: false };
+  ? { flipDisplayX: true, flipDisplayY: true }
+  : { flipDisplayX: false, flipDisplayY: false };
 
 export const applyGroundGlassRttDisplayTransform = (
   uv: { u: number; v: number },
