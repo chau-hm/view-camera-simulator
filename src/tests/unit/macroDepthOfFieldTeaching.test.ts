@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
 import { macroDepthOfFieldScene } from "../../scenes/definitions/macro-depth-of-field";
-import { resolveMacroDepthOfFieldTeaching } from "../../scenes/macroDepthOfFieldTeaching";
+import {
+  compareFocusTargetPresentationMetrics,
+  resolveMacroDepthOfFieldTeaching,
+} from "../../scenes/macroDepthOfFieldTeaching";
 import type { ApertureValue, CameraState } from "../../types/camera";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -53,6 +56,71 @@ describe("Macro Scene 2 teaching model", () => {
     expect(near?.statuses).toMatchObject({ near: "sharp", middle: "soft", far: "soft" });
     expect(middle?.statuses).toMatchObject({ near: "soft", middle: "sharp", far: "soft" });
     expect(far?.statuses).toMatchObject({ near: "soft", middle: "soft", far: "sharp" });
+  });
+
+  it("uses the smaller equivalent CoC when learner sharpness is tied", () => {
+    const lessBlurred = {
+      sharpness: 0,
+      status: "soft" as const,
+      equivalentCoCDiameterMm: 0.24,
+    };
+    const moreBlurred = {
+      sharpness: 0,
+      status: "soft" as const,
+      equivalentCoCDiameterMm: 0.36,
+    };
+
+    expect(compareFocusTargetPresentationMetrics(lessBlurred, moreBlurred)).toBeGreaterThan(0);
+    expect(compareFocusTargetPresentationMetrics(moreBlurred, lessBlurred)).toBeLessThan(0);
+  });
+
+  it("keeps the least-blurred region meaningful when sharpness saturates at the public endpoints", () => {
+    const nearSide = teachingAt(360);
+    const nearIntermediate = teachingAt(370);
+    const farSide = teachingAt(440);
+
+    if (!nearSide || !nearIntermediate || !farSide) {
+      throw new Error("Expected physical Macro Scene 2 teaching metrics at public focus endpoints");
+    }
+
+    const nearSideNearCoC = nearSide.metrics.near.equivalentCoCDiameterMm;
+    const nearSideMiddleCoC = nearSide.metrics.middle.equivalentCoCDiameterMm;
+    const nearSideFarCoC = nearSide.metrics.far.equivalentCoCDiameterMm;
+    const nearIntermediateNearCoC = nearIntermediate.metrics.near.equivalentCoCDiameterMm;
+    const nearIntermediateMiddleCoC = nearIntermediate.metrics.middle.equivalentCoCDiameterMm;
+    const farSideNearCoC = farSide.metrics.near.equivalentCoCDiameterMm;
+    const farSideMiddleCoC = farSide.metrics.middle.equivalentCoCDiameterMm;
+    const farSideFarCoC = farSide.metrics.far.equivalentCoCDiameterMm;
+
+    if (
+      nearSideNearCoC === null ||
+      nearSideMiddleCoC === null ||
+      nearSideFarCoC === null ||
+      nearIntermediateNearCoC === null ||
+      nearIntermediateMiddleCoC === null ||
+      farSideNearCoC === null ||
+      farSideMiddleCoC === null ||
+      farSideFarCoC === null
+    ) {
+      throw new Error("Expected equivalent physical CoC values at public focus endpoints");
+    }
+
+    expect(nearSide.focusedRegion).toBe("near");
+    expect(nearSide.metrics.near.sharpness).toBe(nearSide.metrics.middle.sharpness);
+    expect(nearSide.metrics.middle.sharpness).toBe(nearSide.metrics.far.sharpness);
+    expect(nearSideNearCoC).toBeLessThan(nearSideMiddleCoC);
+    expect(nearSideMiddleCoC).toBeLessThan(nearSideFarCoC);
+
+    expect(nearIntermediate.focusedRegion).toBe("near");
+    expect(nearIntermediate.metrics.near.sharpness).toBe(nearIntermediate.metrics.middle.sharpness);
+    expect(nearIntermediate.metrics.middle.sharpness).toBe(nearIntermediate.metrics.far.sharpness);
+    expect(nearIntermediateNearCoC).toBeLessThan(nearIntermediateMiddleCoC);
+
+    expect(farSide.focusedRegion).toBe("far");
+    expect(farSide.metrics.near.sharpness).toBe(farSide.metrics.middle.sharpness);
+    expect(farSide.metrics.middle.sharpness).toBe(farSide.metrics.far.sharpness);
+    expect(farSideFarCoC).toBeLessThan(farSideMiddleCoC);
+    expect(farSideMiddleCoC).toBeLessThan(farSideNearCoC);
   });
 
   it("separates aperture stages and preserves the f/32 physical limitation", () => {

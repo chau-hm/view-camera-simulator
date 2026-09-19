@@ -383,7 +383,7 @@ export const simulatorMessages = {
           title: "開始收細光圈",
           try: "將對焦移回中間細節附近，然後把光圈收細至 {{aperture}}。",
           observe: "{{focusedRegion}}仍然位於清晰中心，而外圍區域開始改善：近處{{nearStatus}}、中間{{middleStatus}}、遠處{{farStatus}}。",
-          whyItMatters: "改變對焦會重新定位清晰區域；收細光圈則會減少可接受的模糊，擴大該區域周圍的實用景深。對焦屏亦會變暗。",
+          whyItMatters: "改變對焦會重新定位清晰區域；收細光圈會減少焦平面前後的實際模糊，令更多深度落入相同的可接受清晰度範圍內。對焦屏亦會變暗。",
         },
         moderateStoppingDown: {
           title: "更寬的實用清晰範圍",

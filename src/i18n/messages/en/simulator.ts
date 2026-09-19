@@ -391,7 +391,7 @@ export const simulatorMessages = {
           title: "Begin stopping down",
           try: "Return focus toward the Middle detail, then close the aperture to {{aperture}}.",
           observe: "The {{focusedRegion}} remains centered while the outer regions begin to improve: Near {{nearStatus}}, Middle {{middleStatus}}, Far {{farStatus}}.",
-          whyItMatters: "Changing Focus relocates the sharp zone. Stopping down reduces acceptable blur and widens usable depth around that zone. The Ground Glass also becomes darker.",
+          whyItMatters: "Changing Focus relocates the sharp zone. Stopping down reduces actual blur away from the focus plane, so more depth falls within the same acceptable-sharpness range. The Ground Glass also becomes darker.",
         },
         moderateStoppingDown: {
           title: "A wider usable zone",

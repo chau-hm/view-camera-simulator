@@ -112,6 +112,14 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
   expect(farFocusScores["macro-depth-far"]).toBeGreaterThan(farFocusScores["macro-depth-near"]);
   expect(farFocusScores["macro-depth-far"]).toBeGreaterThan(farFocusScores["macro-depth-middle"]);
 
+  await setStepRangeInput(page, "Focus distance", 360);
+  await expect(teaching).toHaveAttribute("data-focused-region", "near");
+  await expect(taskView).toContainText("Near detail is currently strongest");
+
+  await setStepRangeInput(page, "Focus distance", 440);
+  await expect(teaching).toHaveAttribute("data-focused-region", "far");
+  await expect(taskView).toContainText("Far detail is currently strongest");
+
   expect(pageErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });

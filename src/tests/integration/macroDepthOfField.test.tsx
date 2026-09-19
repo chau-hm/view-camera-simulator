@@ -109,6 +109,14 @@ describe("Macro Depth of Field", () => {
     expect(taskView).toHaveTextContent(/does not increase total depth of field/);
     expect(taskView).not.toHaveTextContent(/bellows travel/);
 
+    fireEvent.change(focus, { target: { value: "360" } });
+    await waitFor(() => expect(teaching).toHaveAttribute("data-focused-region", "near"));
+    expect(taskView).toHaveTextContent(/Near detail is currently strongest/);
+
+    fireEvent.change(focus, { target: { value: "440" } });
+    await waitFor(() => expect(teaching).toHaveAttribute("data-focused-region", "far"));
+    expect(taskView).toHaveTextContent(/Far detail is currently strongest/);
+
     fireEvent.change(focus, { target: { value: "390" } });
     await waitFor(() => expect(teaching).toHaveAttribute("data-focused-region", "near"));
     expect(taskView).toHaveTextContent(/Near detail is currently strongest/);
@@ -121,7 +129,8 @@ describe("Macro Depth of Field", () => {
     fireEvent.click(within(aperture).getByRole("radio", { name: "f/11" }));
     await waitFor(() => expect(teaching).toHaveAttribute("data-stage", "begin-stopping-down"));
     expect(taskView).toHaveTextContent(/Changing Focus relocates the sharp zone/);
-    expect(taskView).toHaveTextContent(/Stopping down reduces acceptable blur/);
+    expect(taskView).toHaveTextContent(/Stopping down reduces actual blur/);
+    expect(taskView).toHaveTextContent(/same acceptable-sharpness range/);
 
     fireEvent.click(within(aperture).getByRole("radio", { name: "f/22" }));
     await waitFor(() => expect(teaching).toHaveAttribute("data-stage", "moderate-stopping-down"));
@@ -153,7 +162,12 @@ describe("Macro Depth of Field", () => {
     expect(taskView).toHaveTextContent("探索在微距距離下");
     expect(taskView).toHaveTextContent("重新對焦只會移動");
 
-    fireEvent.click(within(screen.getByRole("radiogroup", { name: "光圈" })).getByRole("radio", { name: "f/32" }));
+    const aperture = screen.getByRole("radiogroup", { name: "光圈" });
+    fireEvent.click(within(aperture).getByRole("radio", { name: "f/11" }));
+    await waitFor(() => expect(taskView).toHaveTextContent("實際模糊"));
+    expect(taskView).not.toHaveTextContent("減少可接受的模糊");
+
+    fireEvent.click(within(aperture).getByRole("radio", { name: "f/32" }));
     await waitFor(() => expect(taskView).toHaveTextContent("仍然柔化"));
     expect(taskView).toHaveTextContent("收細光圈有幫助");
   });

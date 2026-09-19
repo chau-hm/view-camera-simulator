@@ -45,12 +45,32 @@ export const resolveMacroDepthOfFieldTeachingStage = (
   return "minimum-aperture";
 };
 
+export const compareFocusTargetPresentationMetrics = (
+  candidate: FocusTargetPresentationMetric,
+  current: FocusTargetPresentationMetric,
+): number => {
+  if (candidate.sharpness !== current.sharpness) {
+    return candidate.sharpness - current.sharpness;
+  }
+
+  if (candidate.equivalentCoCDiameterMm === null) {
+    return current.equivalentCoCDiameterMm === null ? 0 : -1;
+  }
+  if (current.equivalentCoCDiameterMm === null) return 1;
+
+  // Smaller physical blur wins when bounded learner sharpness saturates.
+  return current.equivalentCoCDiameterMm - candidate.equivalentCoCDiameterMm;
+};
+
 const resolveStrongestRegion = (
   metrics: Record<MacroDepthOfFieldRegion, FocusTargetPresentationMetric>,
 ): MacroDepthOfFieldRegion =>
-  REGION_ORDER.reduce((strongest, region) =>
-    metrics[region].sharpness > metrics[strongest].sharpness ? region : strongest,
-  "middle");
+  REGION_ORDER.reduce(
+    (strongest, region) =>
+      compareFocusTargetPresentationMetrics(metrics[region], metrics[strongest]) > 0 ? region : strongest,
+    // Only exact metric ties reach this deterministic final ordering.
+    "near",
+  );
 
 /**
  * Resolve Scene 2 teaching state from the same strict physical patch metrics
@@ -106,4 +126,3 @@ export const resolveMacroDepthOfFieldTeaching = ({
     statuses,
   };
 };
-
