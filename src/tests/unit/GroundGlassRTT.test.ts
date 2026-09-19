@@ -268,7 +268,11 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const compositeMaterial = renderedShaderMaterials().find((material) =>
       material.fragmentShader.includes("uniform float groundGlassIlluminanceGain"),
     );
+    const displayMaterial = renderedShaderMaterials().find((material) =>
+      material.uniforms.flipDisplayX !== undefined,
+    );
     expect(compositeMaterial).toBeDefined();
+    expect(displayMaterial).toBeDefined();
     const initialGain = resolveGroundGlassRelativeIlluminance({
       apertureFNumber: 11,
       focalLengthMm: camera.focalLengthMm,
@@ -276,8 +280,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     });
     expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(initialGain, 12);
     expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(initialGain, 12);
-    expect(compositeMaterial?.uniforms.flipDisplayX.value).toBe(0);
-    expect(compositeMaterial?.uniforms.flipDisplayY.value).toBe(1);
+    expect(displayMaterial?.uniforms.flipDisplayX.value).toBe(0);
+    expect(displayMaterial?.uniforms.flipDisplayY.value).toBe(1);
     const initialGeneration = diagnostics.get()?.resourceGeneration;
     const initialSource = compositeMaterial?.uniforms.tGather.value;
 
@@ -299,8 +303,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       }),
       12,
     );
-    expect(compositeMaterial?.uniforms.flipDisplayX.value).toBe(0);
-    expect(compositeMaterial?.uniforms.flipDisplayY.value).toBe(1);
+    expect(displayMaterial?.uniforms.flipDisplayX.value).toBe(0);
+    expect(displayMaterial?.uniforms.flipDisplayY.value).toBe(1);
     expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
     expect(compositeMaterial?.uniforms.tGather.value).toBe(initialSource);
     expect(createSubject).toHaveBeenCalledTimes(1);
@@ -323,8 +327,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       }),
       12,
     );
-    expect(compositeMaterial?.uniforms.flipDisplayX.value).toBe(1);
-    expect(compositeMaterial?.uniforms.flipDisplayY.value).toBe(0);
+    expect(displayMaterial?.uniforms.flipDisplayX.value).toBe(1);
+    expect(displayMaterial?.uniforms.flipDisplayY.value).toBe(0);
     expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(setSize).not.toHaveBeenCalled();
@@ -550,13 +554,16 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     const compositeMaterial = renderedShaderMaterials().find((material) =>
       material.fragmentShader.includes("uniform sampler2D tGather"),
     );
+    const displayMaterial = renderedShaderMaterials().find((material) =>
+      material.uniforms.flipDisplayX !== undefined,
+    );
     const runtimeInfo = diagnostics.get();
     const sourceTexture = compositeMaterial?.uniforms.tGather.value as THREE.Texture;
     const sourceWidth = (sourceTexture.image as { width: number }).width;
     expect(sourceWidth).toBe(runtimeInfo?.colorTargetWidthPx);
     expect(sourceWidth).not.toBe(runtimeInfo?.gatherTargetWidthPx);
-    expect(compositeMaterial?.uniforms.flipDisplayX.value).toBe(0.0);
-    expect(compositeMaterial?.uniforms.flipDisplayY.value).toBe(1.0);
+    expect(displayMaterial?.uniforms.flipDisplayX.value).toBe(0.0);
+    expect(displayMaterial?.uniforms.flipDisplayY.value).toBe(1.0);
     expect(compositeMaterial?.fragmentShader).not.toContain("showRing");
     expect(
       renderedShaderMaterials().some((material) =>

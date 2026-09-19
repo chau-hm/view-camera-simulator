@@ -150,9 +150,9 @@ export const resolveSampledFilmDimensionsMm = (input: {
 /**
  * Stage pan coordinates follow the displayed Ground Glass image. Inspection
  * cropping configures the pre-composite RTT camera/frustum, so display-space
- * coordinates must be mapped through the same transform used by the composite
- * shader. The transform is self-inverse, so it is also the display-to-source
- * mapping needed for the crop.
+ * coordinates must be mapped through the same transform used by the final
+ * display blit. The transform is self-inverse, so it is also the
+ * display-to-source mapping needed for the crop.
  */
 export const mapGroundGlassInspectionWindowToFilmSpace = (
   window: GroundGlassInspectionWindow,

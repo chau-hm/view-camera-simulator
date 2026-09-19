@@ -41,7 +41,7 @@ export function mapGroundGlassUvToDisplayUv(
   // projectWorldPointToFilmPlaneGroundGlass returns physical film coordinates
   // whose origin is the film's top-left corner. This is the canonical
   // physical-film display mapping. The RTT source already carries the
-  // camera-basis horizontal inversion, so the composite's per-axis source
+  // camera-basis horizontal inversion, so the final display stage's per-axis
   // transform is resolved separately by groundGlassRttOrientation and kept
   // aligned by the configured-camera behavior test.
   if (previewMode === "raw") {
