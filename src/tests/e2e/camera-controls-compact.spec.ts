@@ -102,6 +102,7 @@ test("responsive workspace keeps the primary simulator wider than the controls r
 
 test("camera control rows keep useful rendered tracks across rail widths", async ({ page }) => {
   test.setTimeout(120_000);
+  await page.goto("/simulator/free/architecture-foreground");
   for (const viewport of [
     { width: 1440, height: 900 },
     { width: 1280, height: 800 },
@@ -109,9 +110,13 @@ test("camera control rows keep useful rendered tracks across rail widths", async
     { width: 1024, height: 768 },
     { width: 860, height: 768 },
     { width: 390, height: 844 },
+    { width: 1499, height: 900 },
+    { width: 1500, height: 900 },
+    { width: 1501, height: 900 },
+    { width: 1600, height: 900 },
+    { width: 1900, height: 900 },
   ]) {
     await page.setViewportSize(viewport);
-    await page.goto("/simulator/free/architecture-foreground");
 
     const controls = page.getByRole("region", { name: "Camera Controls" });
     const rail = page.locator(".simulator-aside__scroll");
@@ -177,16 +182,21 @@ test("camera control rows keep useful rendered tracks across rail widths", async
   }
 });
 
-test("Focus slider and Infinity Reset stay usable in a narrow rail", async ({ page }) => {
+test("Focus slider and Infinity Reset stay usable across rail widths", async ({ page }) => {
   test.setTimeout(120_000);
+  await page.goto("/simulator/free/architecture-rise");
   for (const viewport of [
     { width: 1133, height: 800 },
     { width: 1024, height: 768 },
     { width: 860, height: 768 },
     { width: 390, height: 844 },
+    { width: 1499, height: 900 },
+    { width: 1500, height: 900 },
+    { width: 1501, height: 900 },
+    { width: 1600, height: 900 },
+    { width: 1900, height: 900 },
   ]) {
     await page.setViewportSize(viewport);
-    await page.goto("/simulator/free/architecture-rise");
 
     const controls = page.getByRole("region", { name: "Camera Controls" });
     const rail = page.locator(".simulator-aside__scroll");
