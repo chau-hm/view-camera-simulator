@@ -277,6 +277,35 @@ const cameraProjection = constructionWindow
         : effectiveGeometryView === "top"
           ? t(simulatorMessageKeys.geometry.topView)
           : t(simulatorMessageKeys.geometry.perpendicularScheimpflugSection);
+  const framingControls = (
+    <div className="geometry-viewport__framing-controls" role="group" aria-label={t(simulatorMessageKeys.geometry.framingLabel)}>
+      <button
+        type="button"
+        className={effectiveFitMode === "scene" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
+        aria-pressed={effectiveFitMode === "scene"}
+        onClick={() => {
+          setFitMode("scene");
+          onGeometryViewChange(subjectGeometryView);
+        }}
+      >
+        {t(simulatorMessageKeys.geometry.fitScene)}
+      </button>
+      {supportsConstruction ? (
+        <button
+          type="button"
+          className={effectiveFitMode === "construction" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
+          aria-pressed={effectiveFitMode === "construction"}
+          disabled={!constructionWindow}
+          onClick={() => {
+            setFitMode("construction");
+            onGeometryViewChange("scheimpflug");
+          }}
+        >
+          {t(simulatorMessageKeys.geometry.fitConstruction)}
+        </button>
+      ) : null}
+    </div>
+  );
 
   return (
     <section
@@ -311,6 +340,7 @@ const cameraProjection = constructionWindow
                 }}>{t(simulatorMessageKeys.geometry.scheimpflugSection)}</button>
               ) : null}
             </div>
+            {!expanded ? framingControls : null}
             {expanded && onRequestRestore ? (
               <button
                 ref={restoreTriggerRef}
@@ -345,35 +375,9 @@ const cameraProjection = constructionWindow
         </div>
       ) : null}
 
-      <div className="geometry-viewport__framing-controls" role="group" aria-label={t(simulatorMessageKeys.geometry.framingLabel)}>
-        <button
-          type="button"
-          className={effectiveFitMode === "scene" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
-          aria-pressed={effectiveFitMode === "scene"}
-          onClick={() => {
-            setFitMode("scene");
-            onGeometryViewChange(subjectGeometryView);
-          }}
-        >
-          {t(simulatorMessageKeys.geometry.fitScene)}
-        </button>
-        {supportsConstruction ? (
-          <button
-            type="button"
-            className={effectiveFitMode === "construction" ? "btn btn--compact btn--primary" : "btn btn--compact btn--secondary"}
-            aria-pressed={effectiveFitMode === "construction"}
-            disabled={!constructionWindow}
-            onClick={() => {
-              setFitMode("construction");
-              onGeometryViewChange("scheimpflug");
-            }}
-          >
-            {t(simulatorMessageKeys.geometry.fitConstruction)}
-          </button>
-        ) : null}
-      </div>
+      {expanded ? framingControls : null}
 
-      <p style={{ marginTop: 6, marginBottom: 8 }}>
+      <p className="geometry-viewport__summary" style={{ marginTop: 6, marginBottom: 8 }}>
         {geometryDescription}{localizedMovementSummary
             ? ` | ${localizedMovementSummary}`
             : ` | ${t(simulatorMessageKeys.controls.riseLabel)}: ${(riseMm ?? 0).toFixed(1)} mm | ${t(simulatorMessageKeys.controls.tiltLabel)}: ${opticsState.diagnostics.tiltAngleDeg.toFixed(1)}° | ${t(simulatorMessageKeys.controls.swingLabel)}: ${opticsState.diagnostics.swingAngleDeg.toFixed(1)}°`}
@@ -451,7 +455,7 @@ const cameraProjection = constructionWindow
       ) : null}
 
       {profile.showDepthStrip ? (
-        <div style={{ marginBottom: 8 }}>
+        <div className="geometry-viewport__secondary" style={{ marginBottom: 8 }}>
           <div className="geometry-viewport__depth-caption" style={{ fontSize: 12 }}>
             {t(simulatorMessageKeys.geometry.opticalAxisAndFov)}
           </div>
@@ -470,7 +474,9 @@ const cameraProjection = constructionWindow
       ) : null}
 
       {profile.showSwatchLegend ? (
-        <DiagramLegend isInfinity={isInfinity} hasNearDof={Boolean(opticsState.depthOfFieldNearPlane)} hasFarDof={Boolean(opticsState.depthOfFieldFarPlane && !isInfinity)} hasTargets={scene.focusTargets.length > 0} />
+        <div className="geometry-viewport__secondary">
+          <DiagramLegend isInfinity={isInfinity} hasNearDof={Boolean(opticsState.depthOfFieldNearPlane)} hasFarDof={Boolean(opticsState.depthOfFieldFarPlane && !isInfinity)} hasTargets={scene.focusTargets.length > 0} />
+        </div>
       ) : null}
     </section>
   );
