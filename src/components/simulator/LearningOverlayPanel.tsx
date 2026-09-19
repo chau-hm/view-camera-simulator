@@ -8,6 +8,7 @@ import type { InteriorCornerSwingFocusEvaluation } from "../../scenes/interiorCo
 import type { SimulatorMode } from "../../types/camera";
 import type { TaskDefinition, TaskEvaluation } from "../../types/task";
 import type { MacroBellowsExtensionTeachingModel } from "../../scenes/macroBellowsExtensionTeaching";
+import type { MacroDepthOfFieldTeachingModel } from "../../scenes/macroDepthOfFieldTeaching";
 import { FeedbackPanel } from "./FeedbackPanel";
 import { GuidedLessonProgress } from "./GuidedLessonProgress";
 import { TaskPanel } from "./TaskPanel";
@@ -56,6 +57,7 @@ type LearningOverlayPanelProps = {
   freeCompositionEvaluation?: InteriorCornerRiseCompositionEvaluation | null;
   freeFocusEvaluation?: InteriorCornerSwingFocusEvaluation | null;
   macroTeaching?: MacroBellowsExtensionTeachingModel | null;
+  macroDepthTeaching?: MacroDepthOfFieldTeachingModel | null;
 };
 
 export const LearningOverlayPanel = ({
@@ -67,6 +69,7 @@ export const LearningOverlayPanel = ({
   freeCompositionEvaluation,
   freeFocusEvaluation,
   macroTeaching,
+  macroDepthTeaching,
 }: LearningOverlayPanelProps) => {
   const { t } = useTranslation();
   const narrowLayout = useNarrowLayout();
@@ -336,6 +339,7 @@ export const LearningOverlayPanel = ({
                   sceneId={sceneId}
                   showTitle={false}
                   macroTeaching={macroTeaching}
+                  macroDepthTeaching={macroDepthTeaching}
                 />
               )}
             </div>
@@ -353,6 +357,7 @@ export const LearningOverlayPanel = ({
                 freeCompositionEvaluation={freeCompositionEvaluation}
                 freeFocusEvaluation={freeFocusEvaluation}
                 macroTeaching={macroTeaching}
+                macroDepthTeaching={macroDepthTeaching}
                 showTitle={false}
               />
             </div>

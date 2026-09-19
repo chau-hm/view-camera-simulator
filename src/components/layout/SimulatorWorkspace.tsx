@@ -64,6 +64,7 @@ import type {
 import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
 import { resolveMacroBellowsExtensionTeaching } from "../../scenes/macroBellowsExtensionTeaching";
+import { resolveMacroDepthOfFieldTeaching } from "../../scenes/macroDepthOfFieldTeaching";
 import {
   formatCameraMovementLessonReadout,
   formatCameraMovementPublicReadout,
@@ -313,6 +314,21 @@ export const SimulatorWorkspace = ({
       }),
     [macroFocusMetrics, opticsState.diagnostics.focusObjectDistanceMm, safeScene.macroTeachingCapability],
   );
+  const macroDepthTeaching = useMemo(
+    () =>
+      resolveMacroDepthOfFieldTeaching({
+        capability: safeScene.macroTeachingCapability,
+        focusObjectDistanceMm: opticsState.diagnostics.focusObjectDistanceMm,
+        aperture: camera.aperture,
+        focusTargets: opticsState.focusTargets,
+      }),
+    [
+      camera.aperture,
+      opticsState.diagnostics.focusObjectDistanceMm,
+      opticsState.focusTargets,
+      safeScene.macroTeachingCapability,
+    ],
+  );
   const activeTeachingCaseId = useMemo<CameraMovementPublicCaseId | null>(() => {
     if (
       camera.activeSceneId !== "understanding-camera-movements" ||
@@ -486,6 +502,7 @@ export const SimulatorWorkspace = ({
       freeCompositionEvaluation={interiorCornerRiseEvaluation}
       freeFocusEvaluation={interiorCornerFocusEvaluation}
       macroTeaching={macroTeaching}
+      macroDepthTeaching={macroDepthTeaching}
     />
   ) : null;
   useEffect(() => {

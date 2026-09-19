@@ -357,6 +357,49 @@ export const simulatorMessages = {
       },
       capacityWarning: "所需伸長（{{extension}}）正在接近此處顯示的可用皮腔行程 {{availableTravel}}。很多實際相機在內置行程之外會需要額外伸長。",
     },
+    macroDepthOfField: {
+      title: "三維微距景深練習",
+      labels: {
+        goal: "目標",
+        try: "嘗試",
+        observe: "觀察",
+        whyItMatters: "重要性",
+      },
+      goal: "探索在微距距離下，保持三維主體清晰有多困難。",
+      regions: {
+        near: "近處細節",
+        middle: "中間細節",
+        far: "遠處細節",
+      },
+      listSeparator: "、",
+      stages: {
+        wideOpen: {
+          title: "移動清晰區域",
+          try: "保持開放光圈 {{aperture}}，將對焦距離由近處細節移到中間及遠處細節。",
+          observe: "目前以{{focusedRegion}}最清晰。只有狹窄的深度範圍清晰；觀察 Focus Distribution，看清晰重點如何在主體上移動。",
+          whyItMatters: "在微距距離下，景深會非常淺。重新對焦只會移動以哪個深度為中心的清晰區域，不會增加總景深。",
+        },
+        beginStoppingDown: {
+          title: "開始收細光圈",
+          try: "將對焦移回中間細節附近，然後把光圈收細至 {{aperture}}。",
+          observe: "{{focusedRegion}}仍然位於清晰中心，而外圍區域開始改善：近處{{nearStatus}}、中間{{middleStatus}}、遠處{{farStatus}}。",
+          whyItMatters: "改變對焦會重新定位清晰區域；收細光圈會減少焦平面前後的實際模糊，令更多深度落入相同的可接受清晰度範圍內。對焦屏亦會變暗。",
+        },
+        moderateStoppingDown: {
+          title: "更寬的實用清晰範圍",
+          try: "保持對焦在中間細節附近，比較 {{aperture}} 與較大的光圈。",
+          observe: "收細光圈已擴大{{focusedRegion}}周圍的實用景深：近處{{nearStatus}}、中間{{middleStatus}}、遠處{{farStatus}}。",
+          whyItMatters: "現在更多機械結構可用，但三維主體的深度仍可能超出單靠光圈可以處理的範圍。對焦與光圈解決的是問題的不同部分。",
+        },
+        minimumAperture: {
+          title: "光圈有其限制",
+          try: "在 {{aperture}} 下檢查三個目標區域，再判斷整個主體是否清晰。",
+          observe: "在 {{aperture}} 下，{{softRegions}}仍然柔化。景深比 f/5.6 大得多，但整個主體並未均勻清晰。",
+          observeAllSharp: "在 {{aperture}} 下，三個目標區域目前都達到物理顯示的清晰門檻。仍應逐一查看指標，不要假設每個微距主體都會有相同結果。",
+          whyItMatters: "收細光圈有幫助，但單靠光圈不一定能涵蓋深度很大的三維微距主體。如果重要細節大致位於同一個斜面，之後的移軸課程可以探索對齊清晰焦平面，而不是把傾斜當作解決任意深度的辦法。",
+        },
+      },
+    },
     understanding: {
       objective: "比較整部相機移動造成的視點改變與前組、後組移軸，並觀察哪些影像關係會隨之改變。",
       bullets: {
