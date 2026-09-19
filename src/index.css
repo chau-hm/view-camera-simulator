@@ -190,6 +190,11 @@ button {
   flex: 1 1 auto;
 }
 
+.simulator-aside__scroll {
+  container-name: camera-controls-rail;
+  container-type: inline-size;
+}
+
 .simulator-aside__macro {
   flex: 0 0 clamp(154px, 23vh, 232px);
   min-height: 0;
@@ -1694,32 +1699,33 @@ button {
  opacity: 0.5;
 }
 
-@media (max-width: 480px) {
- .simulator-aside {
-  padding: 14px;
- }
-
+/* Let the controls follow their usable rail width instead of viewport proxies. */
+@container camera-controls-rail (max-width: 260px) {
  .compact-range-row {
-  grid-template-columns: 5.8rem minmax(0, 1fr) 5.2rem;
-  gap: 5px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+   "label value"
+   "slider slider";
+  row-gap: 4px;
  }
 
  .compact-range-row--with-trailing {
-  grid-template-columns: 5.8rem minmax(0, 1fr) 5.2rem auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+   "label value trailing"
+   "slider slider slider";
  }
 
- .compact-range-row__label {
-  font-size: 12px;
- }
-
+ .compact-range-row__label { grid-area: label; }
+ .compact-range-row__slider { grid-area: slider; }
  .compact-range-row__value {
-  width: 5.2rem;
-  min-width: 0;
-  padding-inline: 5px;
-  font-size: 11px;
+  grid-area: value;
+  width: auto;
  }
+ .compact-range-row__trailing { grid-area: trailing; }
 
  .aperture-control__options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 3px;
  }
 
@@ -1727,50 +1733,21 @@ button {
   padding-inline: 2px;
   font-size: 11px;
  }
+}
 
- .compact-range-row--with-trailing {
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  grid-template-areas:
-   "label value trailing"
-   "slider slider slider";
-  row-gap: 3px;
+@media (max-width: 480px) {
+ .simulator-aside {
+  padding: 14px;
  }
 
- .compact-range-row--with-trailing .compact-range-row__label { grid-area: label; }
- .compact-range-row--with-trailing .compact-range-row__slider { grid-area: slider; }
- .compact-range-row--with-trailing .compact-range-row__value { grid-area: value; }
- .compact-range-row--with-trailing .compact-range-row__trailing { grid-area: trailing; }
+ .compact-range-row__label {
+  font-size: 12px;
+ }
 }
 
 @media (min-width: 901px) and (max-width: 1500px) {
  .simulator-aside {
   padding: 16px;
- }
-
- .compact-range-row {
-  grid-template-columns: 5.5rem minmax(0, 1fr) 5.5rem;
-  gap: 6px;
- }
-
- .compact-range-row__value {
-  width: 5.5rem;
- }
-
- .compact-range-row--with-trailing {
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  grid-template-areas:
-   "label value trailing"
-   "slider slider slider";
-  row-gap: 3px;
- }
-
- .compact-range-row--with-trailing .compact-range-row__label { grid-area: label; }
- .compact-range-row--with-trailing .compact-range-row__slider { grid-area: slider; }
- .compact-range-row--with-trailing .compact-range-row__value { grid-area: value; }
- .compact-range-row--with-trailing .compact-range-row__trailing { grid-area: trailing; }
-
- .aperture-control__options {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
  }
 }
 

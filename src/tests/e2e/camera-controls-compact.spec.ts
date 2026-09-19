@@ -100,6 +100,140 @@ test("responsive workspace keeps the primary simulator wider than the controls r
   }
 });
 
+test("camera control rows keep useful rendered tracks across rail widths", async ({ page }) => {
+  test.setTimeout(120_000);
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 1280, height: 800 },
+    { width: 1133, height: 800 },
+    { width: 1024, height: 768 },
+    { width: 860, height: 768 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/simulator/free/architecture-foreground");
+
+    const controls = page.getByRole("region", { name: "Camera Controls" });
+    const rail = page.locator(".simulator-aside__scroll");
+    await expect(controls).toBeVisible();
+    await expect(controls.getByRole("slider", { name: "Rise" })).toBeEnabled();
+    await expect(controls.getByRole("slider", { name: "Tilt" })).toBeEnabled();
+    await expect(controls.getByRole("slider", { name: "Swing" })).toBeVisible();
+
+    const railBounds = await rail.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+        scrollWidth: element.scrollWidth,
+        clientWidth: element.clientWidth,
+      };
+    });
+    const minimumUsefulTrackWidth = Math.min(160, railBounds.width * 0.6);
+    const rows = await controls.locator(".movement-controls__rows .compact-range-row").evaluateAll(
+      (elements) => elements.map((element) => {
+        const row = element.getBoundingClientRect();
+        const label = element.querySelector<HTMLElement>(".compact-range-row__label")?.getBoundingClientRect();
+        const slider = element.querySelector<HTMLInputElement>(".compact-range-row__slider")?.getBoundingClientRect();
+        const value = element.querySelector<HTMLElement>(".compact-range-row__value")?.getBoundingClientRect();
+        if (!label || !slider || !value) throw new Error("Movement control bounds unavailable");
+        return {
+          row: { left: row.left, right: row.right, width: row.width },
+          label: { width: label.width },
+          slider: { left: slider.left, right: slider.right, width: slider.width },
+          value: { left: value.left, right: value.right, width: value.width },
+        };
+      }),
+    );
+
+    expect(rows).toHaveLength(3);
+    expect(railBounds.scrollWidth).toBeLessThanOrEqual(railBounds.clientWidth + 1);
+    for (const row of rows) {
+      expect(row.row.right).toBeLessThanOrEqual(railBounds.right + 1);
+      expect(row.label.width).toBeGreaterThan(0);
+      expect(row.value.width).toBeGreaterThan(0);
+      expect(row.slider.left).toBeGreaterThanOrEqual(railBounds.left - 1);
+      expect(row.slider.right).toBeLessThanOrEqual(railBounds.right + 1);
+      expect(row.slider.width).toBeGreaterThanOrEqual(minimumUsefulTrackWidth);
+    }
+
+    const tilt = controls.getByRole("slider", { name: "Tilt" });
+    const tiltBefore = await tilt.inputValue();
+    await tilt.focus();
+    await tilt.press("ArrowRight");
+    await expect(tilt).not.toHaveValue(tiltBefore);
+
+    const aperture = controls.getByRole("radiogroup", { name: "Aperture" });
+    await expect(aperture.getByRole("radio")).toHaveCount(6);
+    const apertureOptions = await aperture.locator(".aperture-control__option").evaluateAll(
+      (elements) => elements.map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, width: rect.width };
+      }),
+    );
+    expect(Math.min(...apertureOptions.map((option) => option.width))).toBeGreaterThanOrEqual(48);
+    expect(apertureOptions.every(({ left, right }) => left >= railBounds.left - 1 && right <= railBounds.right + 1)).toBe(true);
+  }
+});
+
+test("Focus slider and Infinity Reset stay usable in a narrow rail", async ({ page }) => {
+  test.setTimeout(120_000);
+  for (const viewport of [
+    { width: 1133, height: 800 },
+    { width: 1024, height: 768 },
+    { width: 860, height: 768 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/simulator/free/architecture-rise");
+
+    const controls = page.getByRole("region", { name: "Camera Controls" });
+    const rail = page.locator(".simulator-aside__scroll");
+    const focus = controls.getByRole("slider", { name: "Focus distance" });
+    const infinityReset = controls.getByRole("button", { name: "Infinity Reset" });
+    await expect(focus).toBeVisible();
+    await expect(infinityReset).toBeVisible();
+
+    const layout = await rail.evaluate((element) => {
+      const railRect = element.getBoundingClientRect();
+      const row = element.querySelector<HTMLElement>(".focus-control .compact-range-row");
+      const slider = row?.querySelector<HTMLInputElement>(".compact-range-row__slider");
+      const value = row?.querySelector<HTMLElement>(".compact-range-row__value");
+      const trailing = row?.querySelector<HTMLElement>(".compact-range-row__trailing");
+      if (!row || !slider || !value || !trailing) throw new Error("Focus control bounds unavailable");
+      const rowRect = row.getBoundingClientRect();
+      const sliderRect = slider.getBoundingClientRect();
+      const valueRect = value.getBoundingClientRect();
+      const trailingRect = trailing.getBoundingClientRect();
+      return {
+        rail: { left: railRect.left, right: railRect.right, width: railRect.width },
+        row: { right: rowRect.right, scrollWidth: row.scrollWidth, clientWidth: row.clientWidth },
+        slider: { left: sliderRect.left, right: sliderRect.right, width: sliderRect.width },
+        value: { left: valueRect.left, right: valueRect.right },
+        trailing: { left: trailingRect.left, right: trailingRect.right, width: trailingRect.width },
+      };
+    });
+    const minimumUsefulTrackWidth = Math.min(160, layout.rail.width * 0.6);
+
+    expect(layout.row.right).toBeLessThanOrEqual(layout.rail.right + 1);
+    expect(layout.row.scrollWidth).toBeLessThanOrEqual(layout.row.clientWidth + 1);
+    expect(layout.slider.left).toBeGreaterThanOrEqual(layout.rail.left - 1);
+    expect(layout.slider.right).toBeLessThanOrEqual(layout.rail.right + 1);
+    expect(layout.slider.width).toBeGreaterThanOrEqual(minimumUsefulTrackWidth);
+    expect(layout.value.right).toBeLessThanOrEqual(layout.trailing.left);
+    expect(layout.trailing.width).toBeGreaterThan(0);
+
+    const focusBefore = await focus.inputValue();
+    await focus.focus();
+    await focus.press("ArrowRight");
+    await expect(focus).not.toHaveValue(focusBefore);
+    await infinityReset.focus();
+    await expect(infinityReset).toBeFocused();
+    await infinityReset.press("Enter");
+  }
+});
+
 test("Macro Focus stays in the lower controls rail at landscape widths", async ({ page }) => {
   for (const viewport of [
     { width: 1440, height: 900 },
