@@ -451,7 +451,7 @@ const cameraProjection = constructionWindow
       ) : null}
 
       {profile.showDepthStrip ? (
-        <div style={{ marginBottom: 8 }}>
+        <div className="geometry-viewport__secondary" style={{ marginBottom: 8 }}>
           <div className="geometry-viewport__depth-caption" style={{ fontSize: 12 }}>
             {t(simulatorMessageKeys.geometry.opticalAxisAndFov)}
           </div>
@@ -470,7 +470,9 @@ const cameraProjection = constructionWindow
       ) : null}
 
       {profile.showSwatchLegend ? (
-        <DiagramLegend isInfinity={isInfinity} hasNearDof={Boolean(opticsState.depthOfFieldNearPlane)} hasFarDof={Boolean(opticsState.depthOfFieldFarPlane && !isInfinity)} hasTargets={scene.focusTargets.length > 0} />
+        <div className="geometry-viewport__secondary">
+          <DiagramLegend isInfinity={isInfinity} hasNearDof={Boolean(opticsState.depthOfFieldNearPlane)} hasFarDof={Boolean(opticsState.depthOfFieldFarPlane && !isInfinity)} hasTargets={scene.focusTargets.length > 0} />
+        </div>
       ) : null}
     </section>
   );

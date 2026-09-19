@@ -90,6 +90,11 @@ test("Geometry owns expansion and restores focus to its normal-workspace trigger
   await expect(trigger).toBeVisible();
   await expect(trigger.locator(".material-symbols-outlined")).toHaveText("open_in_new");
 
+  const secondaryGeometryDetails = page.locator(
+    ".geometry-viewport:not(.geometry-viewport--expanded) .geometry-viewport__secondary",
+  );
+  await expect(secondaryGeometryDetails.first()).toBeHidden();
+
   await trigger.click();
 
   const restore = page.getByRole("button", { name: "Restore 2D Geometry" });
@@ -99,6 +104,7 @@ test("Geometry owns expansion and restores focus to its normal-workspace trigger
   await expect(page.getByTestId("focus-distribution-panel")).toHaveCount(0);
   await expect(page.locator('[data-workspace-slot="geometry"]')).toHaveCount(1);
   await expect(page.locator("section.geometry-viewport")).toBeVisible();
+  await expect(page.locator(".geometry-viewport--expanded .geometry-viewport__secondary").first()).toBeVisible();
   await expect(restore.locator(".material-symbols-outlined")).toHaveText("close_fullscreen");
 
   await restore.click();
@@ -106,6 +112,7 @@ test("Geometry owns expansion and restores focus to its normal-workspace trigger
   await expect(page.getByRole("heading", { name: "Ground Glass" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Expand 2D Geometry" })).toBeFocused();
   await expect(page.getByTestId("focus-distribution-panel")).toBeVisible();
+  await expect(secondaryGeometryDetails.first()).toBeHidden();
 });
 
 test("narrow normal workspace flows Scene, Ground Glass, Geometry, and Focus Distribution in one column", async ({ page }) => {

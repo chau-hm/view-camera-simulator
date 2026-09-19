@@ -768,14 +768,6 @@ export const SimulatorWorkspace = ({
           </div>
 
           {!viewportExpanded && !isAnatomyLesson && <>
-            {safeScene.macroFocusMetricsCapability?.enabled && (
-              <MacroFocusReadout
-                diagnostics={opticsState.diagnostics}
-                focalLengthMm={camera.focalLengthMm}
-                metrics={macroFocusMetrics}
-                teachingCapability={safeScene.macroTeachingCapability}
-              />
-            )}
             {/* Optical Debug remains in normal flow below the learner readouts. */}
             <div className="simulator-debug-row">
             <OpticalDebugPanel
@@ -798,24 +790,28 @@ export const SimulatorWorkspace = ({
         {/* Right aside: independent scroll */}
         <aside className="simulator-aside">
           {isAnatomyLesson ? (
-            <AnatomyLessonPanel
-              stepIndex={anatomyStepIndex}
-              onStepIndexChange={handleAnatomyStepIndexChange}
-              showSmallAperture={anatomyShowSmallAperture}
-              onShowSmallApertureChange={setAnatomyShowSmallAperture}
-              onReset={resetAnatomyLesson}
-              canAdvance={anatomyStepComplete}
-              controlContent={
-                anatomyControlDefinition ? (
-                  <AnatomyControlTeachingPanel
-                    definition={anatomyControlDefinition}
-                    complete={anatomyStepComplete}
-                  />
-                ) : null
-              }
-            />
-          ) : <>
-          <section aria-label={t(simulatorMessageKeys.controls.cameraControls)}>
+            <div className="simulator-aside__lesson">
+              <AnatomyLessonPanel
+                stepIndex={anatomyStepIndex}
+                onStepIndexChange={handleAnatomyStepIndexChange}
+                showSmallAperture={anatomyShowSmallAperture}
+                onShowSmallApertureChange={setAnatomyShowSmallAperture}
+                onReset={resetAnatomyLesson}
+                canAdvance={anatomyStepComplete}
+                controlContent={
+                  anatomyControlDefinition ? (
+                    <AnatomyControlTeachingPanel
+                      definition={anatomyControlDefinition}
+                      complete={anatomyStepComplete}
+                    />
+                  ) : null
+                }
+              />
+            </div>
+          ) : (
+            <>
+              <div className="simulator-aside__scroll">
+                <section aria-label={t(simulatorMessageKeys.controls.cameraControls)}>
             <div className="aside-header">
               <h3 style={{ margin: 0 }}>{t(simulatorMessageKeys.controls.cameraControls)}</h3>
             </div>
@@ -913,9 +909,9 @@ export const SimulatorWorkspace = ({
               )}
             </div>
 
-          </section>
+                </section>
 
-          <section aria-label="Developer Tools" className="developer-tools">
+                <section aria-label="Developer Tools" className="developer-tools">
             <h3 style={{ margin: 0 }}>Developer Tools</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: 8 }}>
               <label className="developer-tools__control">
@@ -927,8 +923,21 @@ export const SimulatorWorkspace = ({
               ) : null}
               {calibrationEnabled && mode === "free" && sceneId === "understanding-camera-movements" ? <CameraMovementCalibrationWorkbench diagnostics={cameraMovementCalibrationDiagnostics} /> : null}
             </div>
-          </section>
-          </>}
+                </section>
+              </div>
+
+              {safeScene.macroFocusMetricsCapability?.enabled && macroFocusMetrics && (
+                <div className="simulator-aside__macro">
+                  <MacroFocusReadout
+                    diagnostics={opticsState.diagnostics}
+                    focalLengthMm={camera.focalLengthMm}
+                    metrics={macroFocusMetrics}
+                    teachingCapability={safeScene.macroTeachingCapability}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </aside>
       </div>
 

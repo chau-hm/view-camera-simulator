@@ -223,10 +223,10 @@ export const GroundGlassViewport = ({
 
       <div className="groundglass-controls">
         <div className="groundglass-control-groups">
-          <fieldset className="groundglass-control-group">
+          <fieldset className="groundglass-control-group groundglass-control-group--preview">
             <legend className="control-group-title">{t(simulatorMessageKeys.viewport.preview)}</legend>
             <div className="groundglass-control-group__options">
-              <div className="choice-list choice-list--stacked">
+              <div className="choice-list choice-list--inline">
                 <label className="choice-label">
                   <input
                     className="form-radio"
@@ -252,7 +252,7 @@ export const GroundGlassViewport = ({
             </div>
           </fieldset>
 
-          <fieldset className="groundglass-control-group">
+          <fieldset className="groundglass-control-group groundglass-control-group--view-options">
             <legend className="control-group-title">{t(simulatorMessageKeys.viewport.viewOptions)}</legend>
             <div className="groundglass-control-group__options">
               <ViewOptions
