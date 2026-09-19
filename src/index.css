@@ -2664,6 +2664,25 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
   display: none;
 }
 
+/* Keep the normal reference diagram compact while leaving the expanded
+   inspection workspace unconstrained. Split construction layouts contain two
+   teaching diagrams and keep their existing natural height. */
+@media (min-width: 901px) {
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-diagram-container {
+    height: clamp(180px, 24vh, 260px);
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-diagram-container > svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .mirror-shift-teaching-diagram {
+    min-height: 0;
+  }
+}
+
 .simulator-shell .geometry-construction-region {
   background: var(--sim-surface-raised);
   border-color: var(--sim-border);

@@ -115,6 +115,69 @@ test("Geometry owns expansion and restores focus to its normal-workspace trigger
   await expect(secondaryGeometryDetails.first()).toBeHidden();
 });
 
+test("normal Geometry uses a compact diagram height while expanded Geometry remains full-size", async ({ page }) => {
+  test.setTimeout(120_000);
+  const viewports = [
+    { width: 1440, height: 900 },
+    { width: 1280, height: 800 },
+    { width: 1133, height: 800 },
+    { width: 1024, height: 768 },
+  ];
+
+  const readGeometryLayout = () => page.evaluate(() => {
+    const geometry = document.querySelector<HTMLElement>("section.geometry-viewport");
+    const diagram = document.querySelector<HTMLElement>(".geometry-diagram-container");
+    const svg = diagram?.querySelector<SVGElement>(":scope > svg");
+    if (!geometry || !diagram || !svg) throw new Error("Geometry layout is incomplete");
+    const geometryBounds = geometry.getBoundingClientRect();
+    const diagramBounds = diagram.getBoundingClientRect();
+    const svgBounds = svg.getBoundingClientRect();
+    return {
+      geometryHeight: geometryBounds.height,
+      diagramHeight: diagramBounds.height,
+      svgHeight: svgBounds.height,
+      diagramClientHeight: diagram.clientHeight,
+      diagramScrollHeight: diagram.scrollHeight,
+      diagramClientWidth: diagram.clientWidth,
+      diagramScrollWidth: diagram.scrollWidth,
+      svgWithinDiagram: svgBounds.top >= diagramBounds.top - 1 &&
+        svgBounds.bottom <= diagramBounds.bottom + 1 &&
+        svgBounds.left >= diagramBounds.left - 1 &&
+        svgBounds.right <= diagramBounds.right + 1,
+      horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/simulator/free/macro-depth-of-field");
+
+    const expand = page.getByRole("button", { name: "Expand 2D Geometry" });
+    await expect(expand).toBeVisible();
+    const normal = await readGeometryLayout();
+    expect(normal.diagramHeight).toBeLessThan(viewport.height * 0.35);
+    expect(normal.diagramHeight).toBeLessThan(normal.geometryHeight);
+    expect(normal.diagramScrollHeight).toBeLessThanOrEqual(normal.diagramClientHeight + 2);
+    expect(normal.diagramScrollWidth).toBeLessThanOrEqual(normal.diagramClientWidth + 2);
+    expect(normal.svgHeight).toBeGreaterThan(0);
+    expect(normal.svgWithinDiagram).toBe(true);
+    expect(normal.horizontalOverflow).toBeLessThanOrEqual(2);
+
+    await expand.click();
+    await expect(page.getByRole("button", { name: "Restore 2D Geometry" })).toBeVisible();
+    const expanded = await readGeometryLayout();
+    expect(expanded.diagramHeight).toBeGreaterThan(normal.diagramHeight * 2);
+    expect(expanded.diagramHeight).toBeGreaterThan(normal.diagramHeight + 80);
+    expect(expanded.svgHeight).toBeGreaterThan(normal.svgHeight);
+    expect(expanded.horizontalOverflow).toBeLessThanOrEqual(2);
+
+    await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
+    await expect(expand).toBeVisible();
+    const restored = await readGeometryLayout();
+    expect(Math.abs(restored.diagramHeight - normal.diagramHeight)).toBeLessThanOrEqual(2);
+  }
+});
+
 test("narrow normal workspace flows Scene, Ground Glass, Geometry, and Focus Distribution in one column", async ({ page }) => {
   await page.setViewportSize({ width: 700, height: 900 });
   await page.goto("/simulator/guided/table-tilt/tilt-01");
