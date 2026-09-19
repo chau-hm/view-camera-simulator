@@ -26,8 +26,10 @@ export type GroundGlassInspectionPreviewMode = GroundGlassPreviewMode;
 /**
  * Map a displayed Ground Glass coordinate to the pre-composite RTT film crop.
  * This is intentionally distinct from the physical-film-to-display mapping
- * used by Focus Distribution. Raw samples the upright RTT source through a
- * 180-degree transform; Upright Assist samples it without a transform.
+ * used by Focus Distribution. The RTT source already carries the physical
+ * horizontal inversion from the configured camera basis; Raw additionally
+ * corrects the texture/display V origin, while Upright Assist applies the
+ * complementary X correction.
  */
 export const mapGroundGlassDisplayUvToFilmUv = (
   displayUv: { u: number; v: number },

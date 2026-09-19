@@ -76,15 +76,15 @@ describe("Ground Glass physical inspection window", () => {
     });
   });
 
-  it("maps displayed Raw pan through the physical 180-degree inverse", () => {
+  it("maps displayed Raw pan through the camera-aware source transform", () => {
     const crop = mapGroundGlassDisplayUvToFilmUv({ u: 0.8, v: 0.2 }, "raw");
-    expect(crop.u).toBeCloseTo(0.2, 12);
+    expect(crop.u).toBeCloseTo(0.8, 12);
     expect(crop.v).toBeCloseTo(0.8, 12);
   });
 
-  it("keeps displayed Upright pan aligned with the upright RTT source", () => {
+  it("maps displayed Upright pan through the complementary source transform", () => {
     const crop = mapGroundGlassDisplayUvToFilmUv({ u: 0.8, v: 0.2 }, "upright");
-    expect(crop.u).toBeCloseTo(0.8, 12);
+    expect(crop.u).toBeCloseTo(0.2, 12);
     expect(crop.v).toBeCloseTo(0.2, 12);
   });
 
@@ -99,11 +99,13 @@ describe("Ground Glass physical inspection window", () => {
 
     expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "raw")).toEqual({
       ...displayedWindow,
-      centerU: 0.125,
       centerV: 0.875,
     });
     expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "upright")).toEqual(
-      displayedWindow,
+      {
+        ...displayedWindow,
+        centerU: 0.125,
+      },
     );
   });
 });
