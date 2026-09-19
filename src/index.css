@@ -2668,8 +2668,48 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
    inspection workspace unconstrained. Split construction layouts contain two
    teaching diagrams and keep their existing natural height. */
 @media (min-width: 901px) {
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-viewport__header {
+    align-items: center;
+    gap: 4px;
+    padding-bottom: 4px;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-viewport__header > h2 {
+    flex: 0 0 auto;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-viewport__header-actions {
+    flex: 1 1 auto;
+    gap: 4px;
+    justify-content: flex-end;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-viewport__view-controls {
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-viewport__header-actions .geometry-viewport__framing-controls {
+    gap: 4px;
+    margin-top: 0;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-viewport__header-actions .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-viewport__summary {
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
   .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-diagram-container {
-    height: clamp(180px, 24vh, 260px);
+    height: clamp(100px, 12vh, 120px);
   }
 
   .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-diagram-container > svg {
@@ -2680,6 +2720,30 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 
   .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .mirror-shift-teaching-diagram {
     min-height: 0;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-depth-strip {
+    gap: 4px !important;
+    margin-top: 4px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-depth-strip__chip {
+    gap: 3px !important;
+    min-width: 0;
+    padding: 2px 3px !important;
+    border-radius: 6px !important;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-depth-strip__swatch {
+    width: 8px !important;
+    height: 8px !important;
+    flex: 0 0 auto;
+  }
+
+  .simulator-shell .geometry-viewport:not(.geometry-viewport--expanded):not([data-construction-layout="split"]) .geometry-depth-strip__label {
+    font-size: 9px !important;
+    white-space: nowrap;
   }
 }
 

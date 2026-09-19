@@ -128,18 +128,29 @@ test("normal Geometry uses a compact diagram height while expanded Geometry rema
     const geometry = document.querySelector<HTMLElement>("section.geometry-viewport");
     const diagram = document.querySelector<HTMLElement>(".geometry-diagram-container");
     const svg = diagram?.querySelector<SVGElement>(":scope > svg");
-    if (!geometry || !diagram || !svg) throw new Error("Geometry layout is incomplete");
+    const geometrySlot = document.querySelector<HTMLElement>('[data-workspace-slot="geometry"]');
+    const focusDistributionSlot = document.querySelector<HTMLElement>('[data-workspace-slot="focus-distribution"]');
+    if (!geometry || !diagram || !svg || !geometrySlot) throw new Error("Geometry layout is incomplete");
     const geometryBounds = geometry.getBoundingClientRect();
     const diagramBounds = diagram.getBoundingClientRect();
     const svgBounds = svg.getBoundingClientRect();
+    const geometrySlotBounds = geometrySlot.getBoundingClientRect();
+    const focusDistributionSlotBounds = focusDistributionSlot?.getBoundingClientRect();
+    const controlsWithinGeometry = Array.from(geometry.querySelectorAll("button")).every((button) => {
+      const buttonBounds = button.getBoundingClientRect();
+      return buttonBounds.left >= geometryBounds.left - 1 && buttonBounds.right <= geometryBounds.right + 1;
+    });
     return {
       geometryHeight: geometryBounds.height,
+      geometryCardHeight: geometrySlotBounds.height,
+      focusDistributionCardHeight: focusDistributionSlotBounds?.height ?? null,
       diagramHeight: diagramBounds.height,
       svgHeight: svgBounds.height,
       diagramClientHeight: diagram.clientHeight,
       diagramScrollHeight: diagram.scrollHeight,
       diagramClientWidth: diagram.clientWidth,
       diagramScrollWidth: diagram.scrollWidth,
+      controlsWithinGeometry,
       svgWithinDiagram: svgBounds.top >= diagramBounds.top - 1 &&
         svgBounds.bottom <= diagramBounds.bottom + 1 &&
         svgBounds.left >= diagramBounds.left - 1 &&
@@ -154,21 +165,29 @@ test("normal Geometry uses a compact diagram height while expanded Geometry rema
 
     const expand = page.getByRole("button", { name: "Expand 2D Geometry" });
     await expect(expand).toBeVisible();
+    await expect(page.getByTestId("focus-distribution-panel")).toBeVisible();
     const normal = await readGeometryLayout();
+    expect(normal.focusDistributionCardHeight).not.toBeNull();
+    const focusDistributionCardHeight = normal.focusDistributionCardHeight ?? 0;
+    expect(normal.geometryCardHeight).toBeGreaterThanOrEqual(focusDistributionCardHeight * 0.8);
+    expect(normal.geometryCardHeight).toBeLessThanOrEqual(focusDistributionCardHeight * 1.4);
     expect(normal.diagramHeight).toBeLessThan(viewport.height * 0.35);
     expect(normal.diagramHeight).toBeLessThan(normal.geometryHeight);
     expect(normal.diagramScrollHeight).toBeLessThanOrEqual(normal.diagramClientHeight + 2);
     expect(normal.diagramScrollWidth).toBeLessThanOrEqual(normal.diagramClientWidth + 2);
     expect(normal.svgHeight).toBeGreaterThan(0);
     expect(normal.svgWithinDiagram).toBe(true);
+    expect(normal.controlsWithinGeometry).toBe(true);
     expect(normal.horizontalOverflow).toBeLessThanOrEqual(2);
 
     await expand.click();
     await expect(page.getByRole("button", { name: "Restore 2D Geometry" })).toBeVisible();
     const expanded = await readGeometryLayout();
+    expect(expanded.geometryCardHeight).toBeGreaterThan(normal.geometryCardHeight * 2);
     expect(expanded.diagramHeight).toBeGreaterThan(normal.diagramHeight * 2);
     expect(expanded.diagramHeight).toBeGreaterThan(normal.diagramHeight + 80);
     expect(expanded.svgHeight).toBeGreaterThan(normal.svgHeight);
+    expect(expanded.controlsWithinGeometry).toBe(true);
     expect(expanded.horizontalOverflow).toBeLessThanOrEqual(2);
 
     await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
