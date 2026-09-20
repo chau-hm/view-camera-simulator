@@ -38,7 +38,6 @@ import {
 import {
   groundGlassApertureGatherFragmentShader,
   groundGlassCompositeFragmentShader,
-  groundGlassDisplayFragmentShader,
   groundGlassPhysicalCocFragmentShader,
   groundGlassVertexShader,
 } from "./groundGlassDofShaderSources";
@@ -442,6 +441,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         useNearGather: { value: 1.0 },
         renderWidth: { value: dimsRef.current.internalWidthPx },
         renderHeight: { value: dimsRef.current.internalHeightPx },
+        flipDisplayX: { value: 1.0 },
+        flipDisplayY: { value: 1.0 },
         groundGlassIlluminanceGain: { value: 1.0 },
       },
     });
@@ -451,14 +452,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     const compositeQuad = new THREE.Mesh(quadGeo, compositeMaterial);
     const copyMaterial = new THREE.ShaderMaterial({
       vertexShader,
-      fragmentShader: groundGlassDisplayFragmentShader,
-      uniforms: {
-        tColor: { value: finalRT.texture },
-        // The frame path writes the current preview mode before the first
-        // browser-visible blit; initialize to the Raw contract for safety.
-        flipDisplayX: { value: 0.0 },
-        flipDisplayY: { value: 1.0 },
-      },
+      fragmentShader: `precision highp float; varying vec2 vUv; uniform sampler2D tColor; void main(){ gl_FragColor = texture2D(tColor, vUv); }`,
+      uniforms: { tColor: { value: finalRT.texture } },
       depthTest: false,
       depthWrite: false,
     });
@@ -1277,8 +1272,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       compositeMaterial.uniforms.tNearGather.value = nearGatherRT.texture;
       compositeMaterial.uniforms.useNearGather.value = rawDebug ? 0.0 : 1.0;
       const displayTransform = resolveGroundGlassRttDisplayTransform(previewMode);
-      copyMaterial.uniforms.flipDisplayX.value = displayTransform.flipDisplayX ? 1.0 : 0.0;
-      copyMaterial.uniforms.flipDisplayY.value = displayTransform.flipDisplayY ? 1.0 : 0.0;
+      compositeMaterial.uniforms.flipDisplayX.value = displayTransform.flipDisplayX ? 1.0 : 0.0;
+      compositeMaterial.uniforms.flipDisplayY.value = displayTransform.flipDisplayY ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
       compositeMaterial.uniforms.groundGlassIlluminanceGain.value = groundGlassIlluminanceGain;

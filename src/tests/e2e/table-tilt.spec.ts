@@ -217,7 +217,7 @@ test("Table Tilt Focus Loupe maps displayed centers to the pre-composite RTT cro
     await expect.poll(async () => {
       const centers = await readCenters();
       if (!Object.values(centers).every(Number.isFinite)) return false;
-      const expectedU = mode === "raw" ? centers.displayU : 1 - centers.displayU;
+      const expectedU = mode === "raw" ? 1 - centers.displayU : centers.displayU;
       const expectedV = mode === "raw" ? 1 - centers.displayV : centers.displayV;
       return Math.abs(centers.cropU - expectedU) < 0.01 && Math.abs(centers.cropV - expectedV) < 0.01;
     }, { timeout: 30_000 }).toBe(true);
@@ -230,7 +230,7 @@ test("Table Tilt Focus Loupe maps displayed centers to the pre-composite RTT cro
   const rawCenters = await expectCropRelation("raw");
   expect(rawCenters.displayU).toBeLessThan(0.4);
   expect(rawCenters.displayV).toBeLessThan(0.4);
-  expect(rawCenters.cropU).toBeLessThan(0.4);
+  expect(rawCenters.cropU).toBeGreaterThan(0.6);
   expect(rawCenters.cropV).toBeGreaterThan(0.6);
 
   await viewport.getByRole("button", { name: "Reset Ground Glass view" }).click();
@@ -241,7 +241,7 @@ test("Table Tilt Focus Loupe maps displayed centers to the pre-composite RTT cro
   const uprightCenters = await expectCropRelation("upright");
   expect(uprightCenters.displayU).toBeGreaterThan(0.6);
   expect(uprightCenters.displayV).toBeLessThan(0.4);
-  expect(uprightCenters.cropU).toBeLessThan(0.4);
+  expect(uprightCenters.cropU).toBeGreaterThan(0.6);
   expect(uprightCenters.cropV).toBeLessThan(0.4);
 });
 

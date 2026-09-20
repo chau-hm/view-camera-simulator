@@ -3,7 +3,6 @@ import { groundGlassSharedGlsl, groundGlassUniformDecls } from "../../render/gro
 import {
   groundGlassApertureGatherFragmentShader,
   groundGlassCompositeFragmentShader,
-  groundGlassDisplayFragmentShader,
   groundGlassPhysicalCocFragmentShader,
   groundGlassVertexShader,
 } from "../../render/groundGlassDofShaderSources";
@@ -117,7 +116,6 @@ describe("GroundGlass DOF shader source", () => {
       groundGlassPhysicalCocFragmentShader,
       groundGlassApertureGatherFragmentShader,
       groundGlassCompositeFragmentShader,
-      groundGlassDisplayFragmentShader,
     ]) {
       expect(shader.length).toBeGreaterThan(0);
       expect(shader).toContain("void main()");
@@ -185,18 +183,16 @@ describe("GroundGlass DOF shader source", () => {
     );
   });
 
-  test("final display stage owns orientation without the removed focus-assist ring", () => {
-    expect(groundGlassDisplayFragmentShader).toContain("uniform float flipDisplayX");
-    expect(groundGlassDisplayFragmentShader).toContain("uniform float flipDisplayY");
-    expect(groundGlassDisplayFragmentShader).toContain(
-      "(flipDisplayX > 0.5) ? 1.0 - vUv.x : vUv.x",
+  test("composite stage owns orientation without the removed focus-assist ring", () => {
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float flipDisplayX");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float flipDisplayY");
+    expect(groundGlassCompositeFragmentShader).toContain(
+      "(flipDisplayX > 0.5) ? 1.0 - screenUv.x : screenUv.x",
     );
-    expect(groundGlassDisplayFragmentShader).toContain(
-      "(flipDisplayY > 0.5) ? 1.0 - vUv.y : vUv.y",
+    expect(groundGlassCompositeFragmentShader).toContain(
+      "(flipDisplayY > 0.5) ? 1.0 - screenUv.y : screenUv.y",
     );
-    expect(groundGlassDisplayFragmentShader).not.toContain("displayUpright");
-    expect(groundGlassCompositeFragmentShader).not.toContain("flipDisplayX");
-    expect(groundGlassCompositeFragmentShader).not.toContain("flipDisplayY");
+    expect(groundGlassCompositeFragmentShader).not.toContain("displayUpright");
     expect(groundGlassCompositeFragmentShader).toContain("uniform sampler2D tGather");
     expect(groundGlassCompositeFragmentShader).toContain("uniform sampler2D tNearGather");
     expect(groundGlassCompositeFragmentShader).toContain("useNearGather");

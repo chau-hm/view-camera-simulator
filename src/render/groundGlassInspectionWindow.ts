@@ -26,10 +26,8 @@ export type GroundGlassInspectionPreviewMode = GroundGlassPreviewMode;
 /**
  * Map a displayed Ground Glass coordinate to the pre-composite RTT film crop.
  * This is intentionally distinct from the physical-film-to-display mapping
- * used by Focus Distribution. The RTT source already carries the physical
- * horizontal inversion from the configured camera basis; Raw additionally
- * corrects the texture/display V origin, while Upright Assist applies the
- * complementary X correction.
+ * used by Focus Distribution. Raw samples the upright RTT source through a
+ * 180-degree transform; Upright Assist samples it without a transform.
  */
 export const mapGroundGlassDisplayUvToFilmUv = (
   displayUv: { u: number; v: number },
@@ -150,8 +148,8 @@ export const resolveSampledFilmDimensionsMm = (input: {
 /**
  * Stage pan coordinates follow the displayed Ground Glass image. Inspection
  * cropping configures the pre-composite RTT camera/frustum, so display-space
- * coordinates must be mapped through the same transform used by the final
- * display blit. The transform is self-inverse, so it is also the
+ * coordinates must be mapped through the same transform used by the composite
+ * shader. The transform is self-inverse, so it is also the
  * display-to-source mapping needed for the crop.
  */
 export const mapGroundGlassInspectionWindowToFilmSpace = (

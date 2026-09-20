@@ -213,21 +213,28 @@ void main(){
 }
 `;
 
-/** Final full-resolution DOF composite in source RTT coordinates. */
+/** Final full-resolution display composite with the RTT camera's per-axis orientation policy. */
 export const groundGlassCompositeFragmentShader = `
 precision highp float;
 varying vec2 vUv;
 uniform sampler2D tGather;
 uniform sampler2D tNearGather;
 uniform float useNearGather;
+uniform float flipDisplayX;
+uniform float flipDisplayY;
 uniform float groundGlassIlluminanceGain;
 uniform float renderWidth;
 uniform float renderHeight;
 
 void main(){
-  vec4 gathered = texture2D(tGather, vUv);
+  vec2 screenUv = vUv;
+  vec2 sampleUv = vec2(
+    (flipDisplayX > 0.5) ? 1.0 - screenUv.x : screenUv.x,
+    (flipDisplayY > 0.5) ? 1.0 - screenUv.y : screenUv.y
+  );
+  vec4 gathered = texture2D(tGather, sampleUv);
   if(useNearGather > 0.5){
-    vec4 nearLayer = texture2D(tNearGather, vUv);
+    vec4 nearLayer = texture2D(tNearGather, sampleUv);
     gathered.rgb = mix(gathered.rgb, nearLayer.rgb, clamp(nearLayer.a, 0.0, 1.0));
   }
 
@@ -237,26 +244,5 @@ void main(){
   // presentation.
   gathered.rgb *= groundGlassIlluminanceGain;
   gl_FragColor = gathered;
-}
-`;
-
-/**
- * Final display blit from the source-coordinate DOF result. The RTT camera
- * and all pre-composite passes use physical-film source coordinates; only
- * this browser-visible boundary applies the Raw/Upright display transform.
- */
-export const groundGlassDisplayFragmentShader = `
-precision highp float;
-varying vec2 vUv;
-uniform sampler2D tColor;
-uniform float flipDisplayX;
-uniform float flipDisplayY;
-
-void main(){
-  vec2 sampleUv = vec2(
-    (flipDisplayX > 0.5) ? 1.0 - vUv.x : vUv.x,
-    (flipDisplayY > 0.5) ? 1.0 - vUv.y : vUv.y
-  );
-  gl_FragColor = texture2D(tColor, sampleUv);
 }
 `;
