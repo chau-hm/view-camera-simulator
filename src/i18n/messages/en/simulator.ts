@@ -452,6 +452,59 @@ export const simulatorMessages = {
         },
       },
     },
+    macroCompoundMovements: {
+      title: "Compound plane alignment study",
+      labels: {
+        goal: "Goal",
+        try: "Try",
+        observe: "Observe",
+        whyItMatters: "Why it matters",
+      },
+      goal: "Align the sharp-focus plane with all three separated critical faces using Front Tilt, Front Swing, and Focus Distance.",
+      regions: {
+        nearLeft: "Near-left",
+        centre: "Centre",
+        farRight: "Far-right",
+      },
+      stages: {
+        focusExploration: {
+          title: "Explore the neutral focus plane",
+          try: "Keep Front Tilt and Front Swing at 0° and move Focus Distance across the Near-left, Centre, and Far-right details.",
+          observe: "The {{strongestRegion}} is currently strongest. Near-left is {{nearLeftStatus}}, Centre is {{centreStatus}}, and Far-right is {{farRightStatus}}.",
+          whyItMatters: "Focus Distance positions the sharp-focus plane. With both movements neutral, its orientation stays parallel to the film and cannot follow a plane that changes in both directions.",
+        },
+        tiltOnly: {
+          title: "Explore Front Tilt alone",
+          try: "Leave Front Swing at 0°, apply Front Tilt, and refocus. Compare the three regions and the Side construction.",
+          observe: "Front Tilt is active while Front Swing is neutral. Near-left is {{nearLeftStatus}}, Centre is {{centreStatus}}, and Far-right is {{farRightStatus}}; {{strongestRegion}} is currently strongest.",
+          whyItMatters: "Tilt changes one orientation component of the sharp-focus plane. A plane that also varies laterally still needs a second orientation component.",
+        },
+        swingOnly: {
+          title: "Explore Front Swing alone",
+          try: "Leave Front Tilt at 0°, apply Front Swing, and refocus. Compare the three regions and the Top construction.",
+          observe: "Front Swing is active while Front Tilt is neutral. Near-left is {{nearLeftStatus}}, Centre is {{centreStatus}}, and Far-right is {{farRightStatus}}; {{strongestRegion}} is currently strongest.",
+          whyItMatters: "Swing changes the lateral orientation component of the sharp-focus plane. Without Tilt, the vertical/depth component remains misaligned.",
+        },
+        compoundAlignment: {
+          title: "Combine Tilt, Swing, and Focus",
+          try: "Apply Front Tilt and Front Swing together, then refocus. Compare Ground Glass, Focus Distribution, Side, Top, and Scheimpflug Section.",
+          observe: "Both orientation controls are active. Near-left is {{nearLeftStatus}}, Centre is {{centreStatus}}, and Far-right is {{farRightStatus}}; {{strongestRegion}} is currently strongest.",
+          whyItMatters: "Front Tilt and Front Swing supply the two orientation components of the compound plane. Focus Distance then positions that plane at the subject.",
+        },
+        refineCompound: {
+          title: "Refine the compound alignment",
+          try: "Use the public 0.1° Tilt and Swing steps plus 10 mm Focus steps while watching the {{weakestRegion}} region.",
+          observe: "{{sharpCount}} of 3 regions are Sharp. The {{weakestRegion}} region is {{weakestStatus}} and is the current limit.",
+          whyItMatters: "A nearly correct compound orientation still needs precise placement. Refine all three controls using the physical target statuses rather than a memorized setting.",
+        },
+        aligned: {
+          title: "Compound plane aligned",
+          try: "Inspect all three critical faces and compare Ground Glass, Focus Distribution, Side, Top, and Scheimpflug Section.",
+          observe: "Near-left, Centre, and Far-right are all Sharp at Front Tilt {{tilt}}, Front Swing {{swing}}, and Focus Distance {{focus}}.",
+          whyItMatters: "The three faces are separated objects, but their critical details share one canonical compound plane. Aligning that plane solves the arrangement without relying on extra depth of field.",
+        },
+      },
+    },
     understanding: {
       objective:
         "Compare whole-camera viewpoint movement with Front and Rear standard movements, and observe which image relationships change.",

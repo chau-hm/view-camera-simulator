@@ -14,6 +14,8 @@ import type { MacroDepthOfFieldTeachingModel } from "../../scenes/macroDepthOfFi
 import { MacroDepthOfFieldTeachingContent } from "./MacroDepthOfFieldTeachingContent";
 import type { MacroObliquePlaneTeachingModel } from "../../scenes/macroObliquePlaneTeaching";
 import { MacroObliquePlaneTeachingContent } from "./MacroObliquePlaneTeachingContent";
+import type { MacroCompoundMovementsTeachingModel } from "../../scenes/macroCompoundMovementsTeaching";
+import { MacroCompoundMovementsTeachingContent } from "./MacroCompoundMovementsTeachingContent";
 
 type TaskPanelProps = {
   task: TaskDefinition | null;
@@ -22,6 +24,7 @@ type TaskPanelProps = {
   macroTeaching?: MacroBellowsExtensionTeachingModel | null;
   macroDepthTeaching?: MacroDepthOfFieldTeachingModel | null;
   macroObliqueTeaching?: MacroObliquePlaneTeachingModel | null;
+  macroCompoundTeaching?: MacroCompoundMovementsTeachingModel | null;
 };
 
 export const TaskPanel = ({
@@ -31,6 +34,7 @@ export const TaskPanel = ({
   macroTeaching,
   macroDepthTeaching,
   macroObliqueTeaching,
+  macroCompoundTeaching,
 }: TaskPanelProps) => {
   const { t } = useTranslation();
   const translateMessage = (message: GuidedTaskMessageRef): string =>
@@ -53,6 +57,8 @@ export const TaskPanel = ({
             <MacroDepthOfFieldTeachingContent model={macroDepthTeaching} variant="task" />
           ) : macroObliqueTeaching ? (
             <MacroObliquePlaneTeachingContent model={macroObliqueTeaching} variant="task" />
+          ) : macroCompoundTeaching ? (
+            <MacroCompoundMovementsTeachingContent model={macroCompoundTeaching} variant="task" />
           ) : (
             <>
               {/* single objective paragraph (scene-specific) */}

@@ -159,6 +159,9 @@ describe("macro-compound-movements scene foundation", () => {
       infinityReset: false,
     });
     expect(macroCompoundMovementsScene.macroFocusMetricsCapability).toEqual({ enabled: true });
+    expect(macroCompoundMovementsScene.macroTeachingCapability).toEqual({
+      kind: "compound-movements",
+    });
     expect(macroCompoundMovementsScene.focusTargets.map(({ id }) => id)).toEqual([
       "macro-compound-near-left",
       "macro-compound-centre",

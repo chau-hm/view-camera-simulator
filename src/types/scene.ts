@@ -132,6 +132,9 @@ export type SceneMacroTeachingCapability =
     }
   | {
       kind: "oblique-plane";
+    }
+  | {
+      kind: "compound-movements";
     };
 
 export type SceneDefinition = {

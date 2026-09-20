@@ -66,6 +66,7 @@ import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementC
 import { resolveMacroBellowsExtensionTeaching } from "../../scenes/macroBellowsExtensionTeaching";
 import { resolveMacroDepthOfFieldTeaching } from "../../scenes/macroDepthOfFieldTeaching";
 import { resolveMacroObliquePlaneTeaching } from "../../scenes/macroObliquePlaneTeaching";
+import { resolveMacroCompoundMovementsTeaching } from "../../scenes/macroCompoundMovementsTeaching";
 import {
   formatCameraMovementLessonReadout,
   formatCameraMovementPublicReadout,
@@ -345,6 +346,23 @@ export const SimulatorWorkspace = ({
       safeScene.macroTeachingCapability,
     ],
   );
+  const macroCompoundTeaching = useMemo(
+    () =>
+      resolveMacroCompoundMovementsTeaching({
+        capability: safeScene.macroTeachingCapability,
+        frontTiltDeg: camera.frontTiltDeg,
+        frontSwingDeg: camera.frontSwingDeg,
+        focusObjectDistanceMm: opticsState.diagnostics.focusObjectDistanceMm,
+        focusTargets: opticsState.focusTargets,
+      }),
+    [
+      camera.frontSwingDeg,
+      camera.frontTiltDeg,
+      opticsState.diagnostics.focusObjectDistanceMm,
+      opticsState.focusTargets,
+      safeScene.macroTeachingCapability,
+    ],
+  );
   const activeTeachingCaseId = useMemo<CameraMovementPublicCaseId | null>(() => {
     if (
       camera.activeSceneId !== "understanding-camera-movements" ||
@@ -520,6 +538,7 @@ export const SimulatorWorkspace = ({
       macroTeaching={macroTeaching}
       macroDepthTeaching={macroDepthTeaching}
       macroObliqueTeaching={macroObliqueTeaching}
+      macroCompoundTeaching={macroCompoundTeaching}
     />
   ) : null;
   useEffect(() => {
