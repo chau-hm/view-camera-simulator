@@ -16,7 +16,7 @@ import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import { MacroObliquePlaneSubject } from "../../render/MacroObliquePlaneSubjectFactory";
 
-describe("Macro Scene 3 planar subject contract", () => {
+describe("Macro Scene 3 planar PCB subject contract", () => {
   it("registers one shared viewport/RTT subject with bounds and disposal", () => {
     const registration = getSceneSubjectRegistration("macro-oblique-plane");
 
@@ -72,6 +72,41 @@ describe("Macro Scene 3 planar subject contract", () => {
         expect(hit?.point.z).toBeCloseTo(sample.z / 1000, 6);
       }
     }
+
+    disposeMacroObliquePlaneGroup(group);
+  });
+
+  it("contains asymmetric PCB layers with distinct visual material roles", () => {
+    const group = createMacroObliquePlaneGroup();
+    group.updateMatrixWorld(true);
+
+    for (const name of [
+      "macro-oblique-pcb-board",
+      "macro-oblique-pcb-pad",
+      "macro-oblique-pcb-via",
+      "macro-oblique-pcb-trace",
+      "macro-oblique-pcb-silkscreen",
+    ]) {
+      const semanticLayer = group.getObjectByName(name);
+      expect(semanticLayer, `${name} is missing`).toBeInstanceOf(THREE.Group);
+      expect(semanticLayer?.children.length, `${name} is empty`).toBeGreaterThan(0);
+    }
+
+    expect(group.getObjectByName("macro-oblique-pcb-j1-footprint-top")).toBeDefined();
+    expect(group.getObjectByName("macro-oblique-pcb-u1-outline-top")).toBeDefined();
+    expect(group.getObjectByName("macro-oblique-pcb-far-footprint-top")).toBeDefined();
+
+    const board = group.getObjectByName("macro-oblique-base-plate") as THREE.Mesh;
+    const pad = group.getObjectByName("macro-oblique-pcb-connector-pad") as THREE.Mesh;
+    const silkscreen = group.getObjectByName("macro-oblique-pcb-board-outline-top") as THREE.Mesh;
+    const boardMaterial = board.material as THREE.MeshStandardMaterial;
+    const padMaterial = pad.material as THREE.MeshStandardMaterial;
+    const silkscreenMaterial = silkscreen.material as THREE.MeshStandardMaterial;
+
+    expect(boardMaterial.metalness).toBeLessThan(0.1);
+    expect(padMaterial.metalness).toBeGreaterThan(0.8);
+    expect(silkscreenMaterial.metalness).toBe(0);
+    expect(padMaterial.roughness).toBeLessThan(boardMaterial.roughness);
 
     disposeMacroObliquePlaneGroup(group);
   });
