@@ -1279,6 +1279,21 @@ button {
 .macro-depth-teaching__sections strong { font-size: 12px; }
 .macro-depth-teaching__sections p { color: var(--text-muted); }
 .macro-depth-teaching__muted { color: var(--text-muted); }
+.macro-oblique-teaching {
+  display: grid;
+  gap: 8px;
+  padding: 8px 0 2px;
+}
+.macro-oblique-teaching h3,
+.macro-oblique-teaching p {
+  margin: 0;
+}
+.macro-oblique-teaching h3 { font-size: 16px; }
+.macro-oblique-teaching__sections { display: grid; gap: 8px; }
+.macro-oblique-teaching__sections > div { display: grid; gap: 2px; }
+.macro-oblique-teaching__sections strong { font-size: 12px; }
+.macro-oblique-teaching__sections p { color: var(--text-muted); }
+.macro-oblique-teaching__muted { color: var(--text-muted); }
 
 /* Query-scoped Oblique Architecture lesson navigation */
 .guided-lesson-progress { display: grid; gap: 12px; padding: 6px; }

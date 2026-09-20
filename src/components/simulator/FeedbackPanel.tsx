@@ -13,6 +13,7 @@ import type {
 } from "../../scenes/interiorCornerSwingFocus";
 import type { MacroBellowsExtensionTeachingModel } from "../../scenes/macroBellowsExtensionTeaching";
 import type { MacroDepthOfFieldTeachingModel } from "../../scenes/macroDepthOfFieldTeaching";
+import type { MacroObliquePlaneTeachingModel } from "../../scenes/macroObliquePlaneTeaching";
 import {
   getFeedbackStatus,
   getPassedCriteriaCount,
@@ -22,6 +23,7 @@ import {
 } from "./taskHelpers";
 import { MacroBellowsExtensionTeachingContent } from "./MacroBellowsExtensionTeachingContent";
 import { MacroDepthOfFieldTeachingContent } from "./MacroDepthOfFieldTeachingContent";
+import { MacroObliquePlaneTeachingContent } from "./MacroObliquePlaneTeachingContent";
 
 type FeedbackPanelProps = {
   mode: string;
@@ -32,6 +34,7 @@ type FeedbackPanelProps = {
   freeFocusEvaluation?: InteriorCornerSwingFocusEvaluation | null;
   macroTeaching?: MacroBellowsExtensionTeachingModel | null;
   macroDepthTeaching?: MacroDepthOfFieldTeachingModel | null;
+  macroObliqueTeaching?: MacroObliquePlaneTeachingModel | null;
   showTitle?: boolean;
 };
 
@@ -57,6 +60,7 @@ export const FeedbackPanel = ({
   freeFocusEvaluation,
   macroTeaching,
   macroDepthTeaching,
+  macroObliqueTeaching,
   showTitle = true,
 }: FeedbackPanelProps) => {
   const { t } = useTranslation();
@@ -111,6 +115,8 @@ export const FeedbackPanel = ({
             <MacroBellowsExtensionTeachingContent model={macroTeaching} variant="feedback" />
           ) : macroDepthTeaching ? (
             <MacroDepthOfFieldTeachingContent model={macroDepthTeaching} variant="feedback" />
+          ) : macroObliqueTeaching ? (
+            <MacroObliquePlaneTeachingContent model={macroObliqueTeaching} variant="feedback" />
           ) : null}
           {riseCompositionKey ? (
             <p

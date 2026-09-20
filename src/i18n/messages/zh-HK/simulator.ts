@@ -403,6 +403,47 @@ export const simulatorMessages = {
         },
       },
     },
+    macroObliquePlane: {
+      title: "傾斜平面對齊練習",
+      labels: {
+        goal: "目標",
+        try: "嘗試",
+        observe: "觀察",
+        whyItMatters: "重要性",
+      },
+      goal: "使用前組傾斜及對焦距離，將清晰焦平面對齊傾斜的 PCB。",
+      regions: {
+        near: "近處區域",
+        middle: "中間區域",
+        far: "遠處區域",
+      },
+      stages: {
+        parallelExploration: {
+          title: "以平行焦平面探索",
+          try: "保持前組傾斜在 0°，將對焦距離移過 PCB 的近處、中間及遠處細節。",
+          observe: "目前以{{strongestRegion}}最清晰。近處{{nearStatus}}、中間{{middleStatus}}、遠處{{farStatus}}。重新對焦會移動清晰區域，但不能同時令這個斜面全部清晰。",
+          whyItMatters: "對焦距離會定位清晰焦平面。前組傾斜為零時，焦平面仍與底片平面平行，無法跟隨 PCB 的斜度。",
+        },
+        tiltAndFocus: {
+          title: "一起使用傾斜及對焦",
+          try: "調整前組傾斜後重新對焦；這塊 PCB 可先從正向傾斜開始探索，並比較三個區域。",
+          observe: "近處{{nearStatus}}、中間{{middleStatus}}、遠處{{farStatus}}。目前以{{strongestRegion}}最清晰；前組傾斜已改變清晰焦平面的方向。重新對焦並比較三個區域，判斷目前的對齊情況。",
+          whyItMatters: "前組傾斜會改變清晰焦平面的方向；對焦距離則定位這個已旋轉的平面。在沙姆構圖中，鏡頭平面、底片平面及清晰焦平面會沿一條共同交線相交。",
+        },
+        refineAlignment: {
+          title: "微調對齊",
+          try: "以 0.1° 傾斜及 10 mm 對焦距離的小步調整，觀察{{weakestRegion}}。",
+          observe: "兩個 PCB 區域已清晰；{{weakestRegion}}仍為{{weakestStatus}}，限制對齊效果。",
+          whyItMatters: "方向接近正確時，仍要把焦平面放在正確位置。觀察物理目標指標，微調兩個控制。",
+        },
+        aligned: {
+          title: "焦平面已對齊",
+          try: "檢查 PCB 三個區域，並比較對焦屏、對焦分佈及沙姆剖面。",
+          observe: "近處、中間及遠處全部清晰；目前前組傾斜為 {{tilt}}，對焦距離為 {{focus}}。",
+          whyItMatters: "重要的 PCB 細節大致位於同一個斜面。對齊清晰焦平面可以處理這個平面主體，但不是增加景深。當細節大致位於同一平面時，傾斜很有效；對任意三維主體並非通用解決方案，若主體亦向左右延伸，日後可能需要擺動。",
+        },
+      },
+    },
     understanding: {
       objective: "比較整部相機移動造成的視點改變與前組、後組移軸，並觀察哪些影像關係會隨之改變。",
       bullets: {

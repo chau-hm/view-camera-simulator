@@ -44,6 +44,7 @@ export const macroObliquePlaneScene: SceneDefinition = {
     infinityReset: false,
   },
   macroFocusMetricsCapability: { enabled: true },
+  macroTeachingCapability: { kind: "oblique-plane" },
   cameraPlacement: macroObliquePlaneCameraPlacement,
   bounds: macroObliquePlaneSceneBoundsMm,
   focusTargets: macroObliquePlaneFocusTargets,

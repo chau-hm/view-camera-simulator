@@ -397,6 +397,47 @@ export const simulatorMessageKeys = {
         },
       },
     },
+    macroObliquePlane: {
+      title: "simulator.freePractice.macroObliquePlane.title",
+      labels: {
+        goal: "simulator.freePractice.macroObliquePlane.labels.goal",
+        try: "simulator.freePractice.macroObliquePlane.labels.try",
+        observe: "simulator.freePractice.macroObliquePlane.labels.observe",
+        whyItMatters: "simulator.freePractice.macroObliquePlane.labels.whyItMatters",
+      },
+      goal: "simulator.freePractice.macroObliquePlane.goal",
+      regions: {
+        near: "simulator.freePractice.macroObliquePlane.regions.near",
+        middle: "simulator.freePractice.macroObliquePlane.regions.middle",
+        far: "simulator.freePractice.macroObliquePlane.regions.far",
+      },
+      stages: {
+        parallelExploration: {
+          title: "simulator.freePractice.macroObliquePlane.stages.parallelExploration.title",
+          try: "simulator.freePractice.macroObliquePlane.stages.parallelExploration.try",
+          observe: "simulator.freePractice.macroObliquePlane.stages.parallelExploration.observe",
+          whyItMatters: "simulator.freePractice.macroObliquePlane.stages.parallelExploration.whyItMatters",
+        },
+        tiltAndFocus: {
+          title: "simulator.freePractice.macroObliquePlane.stages.tiltAndFocus.title",
+          try: "simulator.freePractice.macroObliquePlane.stages.tiltAndFocus.try",
+          observe: "simulator.freePractice.macroObliquePlane.stages.tiltAndFocus.observe",
+          whyItMatters: "simulator.freePractice.macroObliquePlane.stages.tiltAndFocus.whyItMatters",
+        },
+        refineAlignment: {
+          title: "simulator.freePractice.macroObliquePlane.stages.refineAlignment.title",
+          try: "simulator.freePractice.macroObliquePlane.stages.refineAlignment.try",
+          observe: "simulator.freePractice.macroObliquePlane.stages.refineAlignment.observe",
+          whyItMatters: "simulator.freePractice.macroObliquePlane.stages.refineAlignment.whyItMatters",
+        },
+        aligned: {
+          title: "simulator.freePractice.macroObliquePlane.stages.aligned.title",
+          try: "simulator.freePractice.macroObliquePlane.stages.aligned.try",
+          observe: "simulator.freePractice.macroObliquePlane.stages.aligned.observe",
+          whyItMatters: "simulator.freePractice.macroObliquePlane.stages.aligned.whyItMatters",
+        },
+      },
+    },
     understanding: {
       objective: "simulator.freePractice.understanding.objective",
       bullets: {
