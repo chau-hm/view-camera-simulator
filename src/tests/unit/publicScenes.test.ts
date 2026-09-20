@@ -32,6 +32,15 @@ const validate = (
 
 const shelfEntry = publicSceneCatalog.find((entry) => entry.id === "shelf-swing")!;
 const shelfTask = getTaskById("swing-01")!;
+const inDevelopmentEntry: PublicSceneEntry = {
+  ...shelfEntry,
+  availability: "in-development",
+  availableModes: [],
+  guidedTaskId: undefined,
+  guidedTaskIds: undefined,
+  guidedLesson: undefined,
+  lesson: undefined,
+};
 const macroSceneIds = [
   "macro-bellows-extension",
   "macro-depth-of-field",
@@ -103,8 +112,8 @@ describe("public scene catalog integrity", () => {
     ]);
     expect(catalogMacroEntries.map(({ id }) => id)).toEqual([...macroSceneIds]);
     expect(catalogMacroEntries.every(({ groupId }) => groupId === "macro-photography")).toBe(true);
-    expect(catalogMacroEntries.map(({ availability }) => availability)).toEqual(["available", "available", "available", "in-development"]);
-    expect(catalogMacroEntries.map(({ availableModes }) => availableModes)).toEqual([["free"], ["free"], ["free"], []]);
+    expect(catalogMacroEntries.map(({ availability }) => availability)).toEqual(["available", "available", "available", "available"]);
+    expect(catalogMacroEntries.map(({ availableModes }) => availableModes)).toEqual([["free"], ["free"], ["free"], ["free"]]);
     expect(catalogMacroEntries.every(({ guidedTaskId, guidedTaskIds, guidedLesson, lesson }) =>
       guidedTaskId === undefined &&
       guidedTaskIds === undefined &&
@@ -112,6 +121,38 @@ describe("public scene catalog integrity", () => {
       lesson === undefined,
     )).toBe(true);
     expect(macroSceneIds.every((id) => scenePublication[id] === true)).toBe(true);
+  });
+
+  it("publishes Macro Scene 4 as Free Practice only", () => {
+    const entry = publicSceneCatalog.find(
+      (candidate) => candidate.id === "macro-compound-movements",
+    )!;
+
+    expect(entry).toMatchObject({
+      id: "macro-compound-movements",
+      availability: "available",
+      availableModes: ["free"],
+      thumbnailAsset: "assets/macro-compound-movements.webp",
+    });
+    expect(entry.guidedTaskId).toBeUndefined();
+    expect(entry.guidedTaskIds).toBeUndefined();
+    expect(entry.guidedLesson).toBeUndefined();
+    expect(entry.lesson).toBeUndefined();
+    expect(
+      isValidSimulatorRoute({
+        mode: "free",
+        sceneId: entry.id,
+        publicEntry: entry,
+      }),
+    ).toBe(true);
+    expect(
+      isValidSimulatorRoute({
+        mode: "guided",
+        sceneId: entry.id,
+        taskId: "not-a-task",
+        publicEntry: entry,
+      }),
+    ).toBe(false);
   });
 
   it("shows the Macro Photography group only while its roadmap entries are published", () => {
@@ -131,6 +172,30 @@ describe("public scene catalog integrity", () => {
     ).toBe(false);
   });
 
+  it("keeps Scene 4 hideable through the manual publication override", () => {
+    const disabledPublication = {
+      ...scenePublication,
+      "macro-compound-movements": false,
+    };
+
+    expect(
+      getGroupedPublicSceneEntries(disabledPublication)
+        .flatMap(({ entries }) => entries.map(({ meta }) => meta.id)),
+    ).not.toContain("macro-compound-movements");
+    expect(
+      getPublicSceneEntryById("macro-compound-movements", disabledPublication),
+    ).toBeUndefined();
+    expect(
+      getPublicSceneEntries(disabledPublication).map(({ meta }) => meta.id),
+    ).not.toContain("macro-compound-movements");
+    expect(
+      getAvailablePublicSceneEntries(disabledPublication).map(({ meta }) => meta.id),
+    ).not.toContain("macro-compound-movements");
+    expect(getPublicScenes(disabledPublication).map(({ id }) => id)).not.toContain(
+      "macro-compound-movements",
+    );
+  });
+
   it("keeps published roadmap metadata separate from implemented scene APIs", () => {
     const publishedMacroEntries = getPublishedPublicSceneEntries().filter(({ meta }) =>
       macroSceneIds.includes(meta.id as (typeof macroSceneIds)[number]),
@@ -139,8 +204,8 @@ describe("public scene catalog integrity", () => {
     expect(publishedMacroEntries).toHaveLength(macroSceneIds.length);
     expect(publishedMacroEntries.filter(({ scene }) => scene !== undefined).map(({ meta }) => meta.id)).toEqual([...macroSceneIds]);
     expect(getPublicSceneEntries().filter(({ meta }) => meta.id.startsWith("macro-")).map(({ meta }) => meta.id)).toEqual([...macroSceneIds]);
-    expect(getAvailablePublicSceneEntries().filter(({ meta }) => meta.id.startsWith("macro-")).map(({ meta }) => meta.id)).toEqual(["macro-bellows-extension", "macro-depth-of-field", "macro-oblique-plane"]);
-    expect(getPublicScenes().filter((scene) => scene.id.startsWith("macro-")).map(({ id }) => id)).toEqual(["macro-bellows-extension", "macro-depth-of-field", "macro-oblique-plane"]);
+    expect(getAvailablePublicSceneEntries().filter(({ meta }) => meta.id.startsWith("macro-")).map(({ meta }) => meta.id)).toEqual([...macroSceneIds]);
+    expect(getPublicScenes().filter((scene) => scene.id.startsWith("macro-")).map(({ id }) => id)).toEqual([...macroSceneIds]);
   });
 
   it("groups published entries by registry order and omits empty groups", () => {
@@ -603,13 +668,11 @@ describe("public scene catalog integrity", () => {
   });
 
   it("accepts a missing scene definition only for in-development entries", () => {
-    const entry = publicSceneCatalog.find((candidate) => candidate.id === macroSceneIds[3])!;
-
-    expect(validate([entry], () => undefined)).toEqual({ valid: true, errors: [] });
+    expect(validate([inDevelopmentEntry], () => undefined)).toEqual({ valid: true, errors: [] });
   });
 
   it("rejects in-development entries that claim simulator or lesson behavior", () => {
-    const entry = publicSceneCatalog.find((candidate) => candidate.id === macroSceneIds[3])!;
+    const entry = inDevelopmentEntry;
     const modeEntry = [{ ...entry, availableModes: ["free"] as const }];
     const taskEntry = [{ ...entry, guidedTaskId: "future-task" }];
     const taskIdsEntry = [{ ...entry, guidedTaskIds: [] as const }];

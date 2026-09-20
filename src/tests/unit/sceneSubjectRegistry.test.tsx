@@ -120,7 +120,7 @@ describe("scene subject registry", () => {
     }
   });
 
-  it("registers the in-development compound macro scene internally without publishing its route", () => {
+  it("registers Macro Scene 4 with its shared subject contract", () => {
     expect(isGroundGlassRttScene("macro-compound-movements")).toBe(true);
     expect(getSceneSubjectRegistration("macro-compound-movements")).toBeDefined();
     expect(getRegisteredSceneSubject("macro-compound-movements")).toBeDefined();
