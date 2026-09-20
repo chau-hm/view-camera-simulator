@@ -34,8 +34,10 @@ describe("Macro Scene 3 planar PCB subject contract", () => {
 
     const plateAssembly = group.getObjectByName("macro-oblique-plane-plate-assembly");
     const basePlate = group.getObjectByName("macro-oblique-base-plate");
+    const fiberglass = group.getObjectByName("macro-oblique-pcb-fiberglass-edge");
     expect(plateAssembly).toBeInstanceOf(THREE.Group);
     expect(basePlate).toBeInstanceOf(THREE.Mesh);
+    expect(fiberglass).toBeInstanceOf(THREE.Mesh);
 
     const renderedNormal = new THREE.Vector3(0, 0, -1).transformDirection(
       plateAssembly!.matrixWorld,
@@ -53,6 +55,16 @@ describe("Macro Scene 3 planar PCB subject contract", () => {
     expect(renderedSurfacePoint.y).toBeCloseTo(0, 10);
     expect(renderedSurfacePoint.z).toBeCloseTo(MACRO_OBLIQUE_PLANE_SURFACE_CENTER_Z_MM / 1000, 10);
 
+    const frontFaceZ = (mesh: THREE.Mesh): number => {
+      mesh.geometry.computeBoundingBox();
+      const localFront = mesh.geometry.boundingBox?.min.z;
+      if (localFront === undefined) throw new Error(`${mesh.name} has no bounds`);
+      return new THREE.Vector3(0, 0, localFront).applyMatrix4(mesh.matrixWorld).z;
+    };
+    expect(frontFaceZ(fiberglass as THREE.Mesh)).toBeGreaterThan(
+      frontFaceZ(basePlate as THREE.Mesh) + 1e-4,
+    );
+
     const subjectBounds = new THREE.Box3().setFromObject(group);
     expect(subjectBounds.min.x).toBeGreaterThanOrEqual(macroObliquePlaneSubjectBoundsMm.min.x / 1000 - 1e-6);
     expect(subjectBounds.max.x).toBeLessThanOrEqual(macroObliquePlaneSubjectBoundsMm.max.x / 1000 + 1e-6);
@@ -69,6 +81,7 @@ describe("Macro Scene 3 planar PCB subject contract", () => {
         );
         const hit = ray.intersectObject(group, true)[0];
         expect(hit, `${target.id} sample (${sample.x}, ${sample.y}, ${sample.z})`).toBeDefined();
+        expect(hit?.object.name).toBe("macro-oblique-base-plate");
         expect(hit?.point.z).toBeCloseTo(sample.z / 1000, 6);
       }
     }
@@ -95,6 +108,21 @@ describe("Macro Scene 3 planar PCB subject contract", () => {
     expect(group.getObjectByName("macro-oblique-pcb-j1-footprint-top")).toBeDefined();
     expect(group.getObjectByName("macro-oblique-pcb-u1-outline-top")).toBeDefined();
     expect(group.getObjectByName("macro-oblique-pcb-far-footprint-top")).toBeDefined();
+
+    const expectGlyphString = (name: string, glyphs: readonly string[]) => {
+      const label = group.getObjectByName(name);
+      expect(label, `${name} is missing`).toBeInstanceOf(THREE.Group);
+      expect(label?.children.length, `${name} is empty`).toBeGreaterThan(1);
+      for (const glyph of glyphs) {
+        expect(
+          label?.children.some((child) => child.name.includes(`-${glyph}-`)),
+          `${name} is missing ${glyph}`,
+        ).toBe(true);
+      }
+    };
+    expectGlyphString("macro-oblique-pcb-j1-label", ["J", "1"]);
+    expectGlyphString("macro-oblique-pcb-tp1-label", ["T", "P", "1"]);
+    expectGlyphString("macro-oblique-pcb-u1-label", ["U", "1"]);
 
     const board = group.getObjectByName("macro-oblique-base-plate") as THREE.Mesh;
     const pad = group.getObjectByName("macro-oblique-pcb-connector-pad") as THREE.Mesh;

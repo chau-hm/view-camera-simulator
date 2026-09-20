@@ -12,12 +12,21 @@ import {
 } from "../scenes/macroObliquePlaneGeometry";
 
 const plateLocalZ = -MACRO_OBLIQUE_PLATE_DIMENSIONS_MM.thickness / 2;
+const pcbFiberglassThicknessMm = 2.8;
+const pcbFiberglassFrontOffsetMm = 0.2;
+const pcbFiberglassCenterZ =
+  plateLocalZ + pcbFiberglassFrontOffsetMm + pcbFiberglassThicknessMm / 2;
 const pcbReliefCenterZ = plateLocalZ - 0.06;
 const pcbReliefDepth = 0.08;
 const pcbSilkscreenStrokeMm = 0.55;
 const pcbTraceStrokeMm = 0.8;
 
 type Segment = readonly [number, number, number, number];
+type GlyphStringOptions = {
+  glyphWidthMm?: number;
+  glyphHeightMm?: number;
+  spacingMm?: number;
+};
 
 const glyphSegments: Record<string, readonly Segment[]> = {
   "1": [[0.5, 0, 0.5, 1]],
@@ -147,6 +156,35 @@ function addGlyph(
   }
 }
 
+function addGlyphString(
+  parent: THREE.Object3D,
+  name: string,
+  material: THREE.Material,
+  text: string,
+  xMm: number,
+  yMm: number,
+  {
+    glyphWidthMm = 4,
+    glyphHeightMm = 5,
+    spacingMm = 1,
+  }: GlyphStringOptions = {},
+): THREE.Group {
+  const textGroup = addGroup(parent, name);
+  [...text].forEach((glyph, index) => {
+    addGlyph(
+      textGroup,
+      `${name}-${index}`,
+      material,
+      glyph,
+      xMm + index * (glyphWidthMm + spacingMm),
+      yMm,
+      glyphWidthMm,
+      glyphHeightMm,
+    );
+  });
+  return textGroup;
+}
+
 function addPad(
   parent: THREE.Object3D,
   geometry: THREE.BufferGeometry,
@@ -258,11 +296,11 @@ export function createMacroObliquePlaneGroup(): THREE.Group {
   addMesh(
     boardGroup,
     "macro-oblique-pcb-fiberglass-edge",
-    new THREE.BoxGeometry(toWorld(113), toWorld(113), toWorld(2.8)),
+    new THREE.BoxGeometry(toWorld(113), toWorld(113), toWorld(pcbFiberglassThicknessMm)),
     fiberglassMaterial,
     0,
     0,
-    0.2,
+    pcbFiberglassCenterZ,
   );
   addMesh(
     boardGroup,
@@ -304,8 +342,8 @@ export function createMacroObliquePlaneGroup(): THREE.Group {
 
   // Near zone: an asymmetric connector and test-pad bank.
   addSilkscreenRectangle(nearZone, "macro-oblique-pcb-j1-footprint", silkscreenMaterial, 0, -52.8, 68, 8);
-  addGlyph(nearZone, "macro-oblique-pcb-j1-label", silkscreenMaterial, "J", -41, -42);
-  addGlyph(nearZone, "macro-oblique-pcb-tp1-label", silkscreenMaterial, "1", -16, -42);
+  addGlyphString(nearZone, "macro-oblique-pcb-j1-label", silkscreenMaterial, "J1", -41, -42);
+  addGlyphString(nearZone, "macro-oblique-pcb-tp1-label", silkscreenMaterial, "TP1", -16, -42);
   for (const xMm of [-28, -21, -14, -7, 0, 7, 14, 21, 28]) {
     addPad(padGroup, padGeometry, goldMaterial, "macro-oblique-pcb-connector-pad", xMm, -51);
     addPad(padGroup, padGeometry, copperMaterial, "macro-oblique-pcb-connector-pad", xMm, -55);
@@ -326,8 +364,7 @@ export function createMacroObliquePlaneGroup(): THREE.Group {
     pcbReliefCenterZ,
   );
   addSilkscreenRectangle(middleZone, "macro-oblique-pcb-u1-outline", silkscreenMaterial, 18, 0, 31, 29);
-  addGlyph(middleZone, "macro-oblique-pcb-u1-label", silkscreenMaterial, "U", 7, -17);
-  addGlyph(middleZone, "macro-oblique-pcb-u1-number", silkscreenMaterial, "1", 13, -17);
+  addGlyphString(middleZone, "macro-oblique-pcb-u1-label", silkscreenMaterial, "U1", 7, -17);
   for (const xMm of [3, 33]) {
     for (const yMm of [-11, -8, -5, 5, 8, 11]) {
       addPad(padGroup, padGeometry, copperMaterial, "macro-oblique-pcb-u1-pad", xMm, yMm);
@@ -343,8 +380,8 @@ export function createMacroObliquePlaneGroup(): THREE.Group {
 
   // Far zone: a fan-out field and deliberately different silkscreen landmarks.
   addSilkscreenRectangle(farZone, "macro-oblique-pcb-far-footprint", silkscreenMaterial, -22, 36, 22, 12);
-  addGlyph(farZone, "macro-oblique-pcb-tp1-far-label", silkscreenMaterial, "1", -45, 32);
-  addGlyph(farZone, "macro-oblique-pcb-far-marker", silkscreenMaterial, "F", 42, 44);
+  addGlyphString(farZone, "macro-oblique-pcb-tp1-far-label", silkscreenMaterial, "TP1", -45, 32);
+  addGlyphString(farZone, "macro-oblique-pcb-far-marker", silkscreenMaterial, "F", 42, 44);
   for (const xMm of [-30, -24, -18, -12]) {
     addPad(padGroup, smallPadGeometry, goldMaterial, "macro-oblique-pcb-far-pad", xMm, 35);
     addPad(padGroup, smallPadGeometry, copperMaterial, "macro-oblique-pcb-far-pad", xMm, 41);
