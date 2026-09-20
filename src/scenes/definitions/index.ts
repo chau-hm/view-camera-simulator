@@ -17,6 +17,7 @@ import { obliqueTabletopScene } from "./oblique-tabletop";
 import { interiorCornerScene } from "./interior-corner";
 import { macroBellowsExtensionScene } from "./macro-bellows-extension";
 import { macroDepthOfFieldScene } from "./macro-depth-of-field";
+import { macroObliquePlaneScene } from "./macro-oblique-plane";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
   [macroBellowsExtensionScene.id]: macroBellowsExtensionScene,
@@ -32,6 +33,7 @@ export const sceneRegistry: Record<string, SceneDefinition> = {
   [obliqueArchitectureScene.id]: obliqueArchitectureScene,
   [interiorCornerScene.id]: interiorCornerScene,
   [macroDepthOfFieldScene.id]: macroDepthOfFieldScene,
+  [macroObliquePlaneScene.id]: macroObliquePlaneScene,
 };
 
 export const sceneOrder = [
@@ -48,6 +50,7 @@ export const sceneOrder = [
   interiorCornerScene.id,
   macroBellowsExtensionScene.id,
   macroDepthOfFieldScene.id,
+  macroObliquePlaneScene.id,
 ] as const;
 
 export const getSceneById = (sceneId: string): SceneDefinition | undefined =>

@@ -328,11 +328,12 @@ describe("scene definitions", () => {
     expect(lazy.length).toBeGreaterThan(0);
     expect(nextSceneId).toBe("architecture-foreground");
     expect(preload.length).toBeGreaterThan(0);
-    expect(sceneOrder.at(-1)).toBe("macro-depth-of-field");
+    expect(sceneOrder.at(-1)).toBe("macro-oblique-plane");
     expect(getNextSceneId("mirror-shift")).toBe("oblique-architecture");
     expect(getNextSceneId("oblique-architecture")).toBe("interior-corner");
     expect(getNextSceneId("interior-corner")).toBe("macro-bellows-extension");
     expect(getNextSceneId("macro-bellows-extension")).toBe("macro-depth-of-field");
-    expect(getNextSceneId("macro-depth-of-field")).toBeNull();
+    expect(getNextSceneId("macro-depth-of-field")).toBe("macro-oblique-plane");
+    expect(getNextSceneId("macro-oblique-plane")).toBeNull();
   });
 });

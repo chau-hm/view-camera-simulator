@@ -212,6 +212,11 @@ const targetMessageKeys: Readonly<Record<string, SceneGeometryTargetMessageKeyMa
     "macro-depth-middle": simulatorMessageKeys.geometry.macroDepthMiddleTarget,
     "macro-depth-far": simulatorMessageKeys.geometry.macroDepthFarTarget,
   },
+  "macro-oblique-plane": {
+    "macro-oblique-near": simulatorMessageKeys.geometry.macroObliqueNearTarget,
+    "macro-oblique-middle": simulatorMessageKeys.geometry.macroObliqueMiddleTarget,
+    "macro-oblique-far": simulatorMessageKeys.geometry.macroObliqueFarTarget,
+  },
 };
 
 export const getSceneGeometryGuides = (sceneId: string): readonly SceneGeometryGuide[] =>

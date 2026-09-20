@@ -360,8 +360,8 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
       publicSceneMessageKeys.macroObliquePlane.topics.scheimpflugPrinciple,
       publicSceneMessageKeys.macroObliquePlane.topics.obliqueFocusPlane,
     ],
-    availability: "in-development",
-    availableModes: [],
+    availability: "available",
+    availableModes: ["free"],
     thumbnailAsset: "assets/macro-oblique-plane.webp",
   },
   {
