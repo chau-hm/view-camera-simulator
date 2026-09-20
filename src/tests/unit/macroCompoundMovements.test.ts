@@ -12,9 +12,10 @@ import {
   MACRO_COMPOUND_MOVEMENTS_FOCUS_DISTANCE_RANGE_MM,
   MACRO_COMPOUND_MOVEMENTS_INITIAL_FOCUS_DISTANCE_MM,
   macroCompoundMovementsCanonicalPlane,
+  macroCompoundMovementsCompositionTargetBounds,
   macroCompoundMovementsContinuousCalibration,
-  macroCompoundMovementsFocusTargets,
   macroCompoundMovementsFocusFaceCorners,
+  macroCompoundMovementsFocusTargets,
   macroCompoundMovementsPublicCalibration,
   macroCompoundMovementsStationSpecs,
 } from "../../scenes/macroCompoundMovementsGeometry";
@@ -223,6 +224,41 @@ describe("macro-compound-movements scene foundation", () => {
     expect(metrics[1].sharpness).toBeGreaterThan(metrics[0].sharpness);
     expect(metrics[1].sharpness).toBeGreaterThan(metrics[2].sharpness);
     expect(metrics.some((metric) => metric.status !== "sharp")).toBe(true);
+  });
+
+  it("derives composition bounds from every canonical critical-face corner", () => {
+    const allCriticalCorners = macroCompoundMovementsStationSpecs.flatMap(
+      macroCompoundMovementsFocusFaceCorners,
+    );
+    const expectedBounds = {
+      min: {
+        x: Math.min(...allCriticalCorners.map((point) => point.x)),
+        y: Math.min(...allCriticalCorners.map((point) => point.y)),
+        z: Math.min(...allCriticalCorners.map((point) => point.z)),
+      },
+      max: {
+        x: Math.max(...allCriticalCorners.map((point) => point.x)),
+        y: Math.max(...allCriticalCorners.map((point) => point.y)),
+        z: Math.max(...allCriticalCorners.map((point) => point.z)),
+      },
+    };
+
+    expect(allCriticalCorners).toHaveLength(12);
+    expect(macroCompoundMovementsCompositionTargetBounds.min.x).toBeCloseTo(expectedBounds.min.x, 10);
+    expect(macroCompoundMovementsCompositionTargetBounds.min.y).toBeCloseTo(expectedBounds.min.y, 10);
+    expect(macroCompoundMovementsCompositionTargetBounds.min.z).toBeCloseTo(expectedBounds.min.z, 10);
+    expect(macroCompoundMovementsCompositionTargetBounds.max.x).toBeCloseTo(expectedBounds.max.x, 10);
+    expect(macroCompoundMovementsCompositionTargetBounds.max.y).toBeCloseTo(expectedBounds.max.y, 10);
+    expect(macroCompoundMovementsCompositionTargetBounds.max.z).toBeCloseTo(expectedBounds.max.z, 10);
+
+    for (const corner of allCriticalCorners) {
+      expect(corner.x).toBeGreaterThanOrEqual(macroCompoundMovementsCompositionTargetBounds.min.x);
+      expect(corner.x).toBeLessThanOrEqual(macroCompoundMovementsCompositionTargetBounds.max.x);
+      expect(corner.y).toBeGreaterThanOrEqual(macroCompoundMovementsCompositionTargetBounds.min.y);
+      expect(corner.y).toBeLessThanOrEqual(macroCompoundMovementsCompositionTargetBounds.max.y);
+      expect(corner.z).toBeGreaterThanOrEqual(macroCompoundMovementsCompositionTargetBounds.min.z);
+      expect(corner.z).toBeLessThanOrEqual(macroCompoundMovementsCompositionTargetBounds.max.z);
+    }
   });
 
   it("makes all three critical regions sharp at the derived public compound state", () => {

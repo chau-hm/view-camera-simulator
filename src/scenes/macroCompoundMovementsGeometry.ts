@@ -232,6 +232,19 @@ export const macroCompoundMovementsFocusFaceCorners = (
   ];
 };
 
+const boundsFromPoints = (points: readonly Vec3[]): Bounds3 => ({
+  min: {
+    x: Math.min(...points.map((point) => point.x)),
+    y: Math.min(...points.map((point) => point.y)),
+    z: Math.min(...points.map((point) => point.z)),
+  },
+  max: {
+    x: Math.max(...points.map((point) => point.x)),
+    y: Math.max(...points.map((point) => point.y)),
+    z: Math.max(...points.map((point) => point.z)),
+  },
+});
+
 export const macroCompoundMovementsFocusTargets: FocusTarget[] =
   macroCompoundMovementsStationSpecs.map((station) => {
     const focusAnchor = macroCompoundMovementsPointOnFace(
@@ -259,10 +272,13 @@ export const macroCompoundMovementsSubjectBoundsMm: Bounds3 = {
   max: { x: 125, y: 52, z: 540 },
 };
 
-export const macroCompoundMovementsCompositionTargetBounds: Bounds3 = {
-  min: { x: -111, y: -55, z: 470 },
-  max: { x: 111, y: 38, z: 525 },
-};
+const macroCompoundMovementsCriticalFaceCorners = macroCompoundMovementsStationSpecs.flatMap(
+  macroCompoundMovementsFocusFaceCorners,
+);
+
+export const macroCompoundMovementsCompositionTargetBounds: Bounds3 = boundsFromPoints(
+  macroCompoundMovementsCriticalFaceCorners,
+);
 
 export const macroCompoundMovementsSceneBoundsMm: Bounds3 = {
   min: { x: -300, y: -240, z: -360 },
