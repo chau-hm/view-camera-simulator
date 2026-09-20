@@ -101,6 +101,15 @@ import {
   MACRO_OBLIQUE_PLATE_CENTER_MM,
   macroObliquePlaneSubjectBoundsMm,
 } from "../scenes/macroObliquePlaneGeometry";
+import {
+  MacroCompoundMovementsSubject,
+  createMacroCompoundMovementsGroup,
+  disposeMacroCompoundMovementsGroup,
+} from "./MacroCompoundMovementsSubjectFactory";
+import {
+  macroCompoundMovementsLightingTargetMm,
+  macroCompoundMovementsSubjectBoundsMm,
+} from "../scenes/macroCompoundMovementsGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -264,6 +273,17 @@ export const sceneSubjectRegistry = {
     rttBounds: macroObliquePlaneSubjectBoundsMm,
     rttLighting: {
       targetMm: MACRO_OBLIQUE_PLATE_CENTER_MM,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
+    },
+  },
+  "macro-compound-movements": {
+    SceneSubject: MacroCompoundMovementsSubject,
+    createRttGroup: createMacroCompoundMovementsGroup,
+    disposeRttGroup: disposeMacroCompoundMovementsGroup,
+    rttBounds: macroCompoundMovementsSubjectBoundsMm,
+    rttLighting: {
+      targetMm: macroCompoundMovementsLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
