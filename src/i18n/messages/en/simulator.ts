@@ -188,6 +188,9 @@ export const simulatorMessages = {
     macroDepthNearTarget: "Near detail",
     macroDepthMiddleTarget: "Middle detail",
     macroDepthFarTarget: "Far detail",
+    macroObliqueNearTarget: "Near planar detail",
+    macroObliqueMiddleTarget: "Middle planar detail",
+    macroObliqueFarTarget: "Far planar detail",
     viewLabel: "Geometry view",
     framingLabel: "Geometry framing",
     side: "Side",
@@ -364,6 +367,143 @@ export const simulatorMessages = {
         },
       },
       capacityWarning: "Required extension ({{extension}}) is approaching the {{availableTravel}} of available bellows travel shown here. Many real cameras would need additional extension beyond their built-in travel.",
+    },
+    macroDepthOfField: {
+      title: "Three-dimensional macro depth-of-field study",
+      labels: {
+        goal: "Goal",
+        try: "Try",
+        observe: "Observe",
+        whyItMatters: "Why it matters",
+      },
+      goal: "Explore how difficult it is to keep a three-dimensional subject sharp at macro distance.",
+      regions: {
+        near: "Near detail",
+        middle: "Middle detail",
+        far: "Far detail",
+      },
+      listSeparator: ", ",
+      stages: {
+        wideOpen: {
+          title: "Move the sharp zone",
+          try: "Keep the aperture wide open at {{aperture}} and move Focus Distance from the Near detail to the Middle and Far details.",
+          observe: "The {{focusedRegion}} is currently strongest. Only a narrow region is sharp; use Focus Distribution to watch the emphasis move through the subject.",
+          whyItMatters: "At macro distance, depth of field is extremely shallow. Refocusing moves which depth is centered on the focus plane; it does not increase total depth of field.",
+        },
+        beginStoppingDown: {
+          title: "Begin stopping down",
+          try: "Return focus toward the Middle detail, then close the aperture to {{aperture}}.",
+          observe: "The {{focusedRegion}} remains centered while the outer regions begin to improve: Near {{nearStatus}}, Middle {{middleStatus}}, Far {{farStatus}}.",
+          whyItMatters: "Changing Focus relocates the sharp zone. Stopping down reduces actual blur away from the focus plane, so more depth falls within the same acceptable-sharpness range. The Ground Glass also becomes darker.",
+        },
+        moderateStoppingDown: {
+          title: "A wider usable zone",
+          try: "Keep focus near the Middle detail and compare {{aperture}} with the wider settings.",
+          observe: "Stopping down has expanded usable depth around the {{focusedRegion}}: Near {{nearStatus}}, Middle {{middleStatus}}, Far {{farStatus}}.",
+          whyItMatters: "More of the mechanism is usable, but a separated three-dimensional subject can still exceed what aperture alone can solve. Focus and aperture solve different parts of the problem.",
+        },
+        minimumAperture: {
+          title: "Aperture has a limit",
+          try: "At {{aperture}}, inspect all three target regions before deciding whether the whole subject is sharp.",
+          observe: "At {{aperture}}, {{softRegions}} remain Soft. Depth of field is much greater than at f/5.6, but the full subject is not uniformly sharp.",
+          observeAllSharp: "At {{aperture}}, all three target regions currently meet the physical presentation threshold. Keep checking the individual metrics rather than assuming every macro subject will behave this way.",
+          whyItMatters: "Stopping down helps, but aperture alone cannot always cover a deep three-dimensional macro subject. If important details approximately share an oblique plane, a later movement lesson can explore aligning the focus plane rather than treating tilt as a cure for arbitrary depth.",
+        },
+      },
+    },
+    macroObliquePlane: {
+      title: "Oblique plane alignment study",
+      labels: {
+        goal: "Goal",
+        try: "Try",
+        observe: "Observe",
+        whyItMatters: "Why it matters",
+      },
+      goal: "Align the sharp-focus plane with the oblique PCB using Front Tilt and Focus Distance.",
+      regions: {
+        near: "Near region",
+        middle: "Middle region",
+        far: "Far region",
+      },
+      stages: {
+        parallelExploration: {
+          title: "Explore with a parallel focus plane",
+          try: "Keep Front Tilt at 0° and move Focus Distance through the Near, Middle, and Far PCB details.",
+          observe: "The {{strongestRegion}} is currently strongest. Near is {{nearStatus}}, Middle is {{middleStatus}}, and Far is {{farStatus}}. Refocusing moves the sharp region, but it cannot make this oblique plane all Sharp at once.",
+          whyItMatters: "Focus Distance positions the plane of sharp focus. With Front Tilt at zero, its orientation stays parallel to the film, so it cannot follow the PCB's slope.",
+        },
+        tiltAndFocus: {
+          title: "Use Tilt and Focus together",
+          try: "Adjust Front Tilt, then refocus. For this PCB, explore the positive direction first and compare the three regions.",
+          observe: "Near is {{nearStatus}}, Middle is {{middleStatus}}, and Far is {{farStatus}}. The {{strongestRegion}} is currently strongest; Front Tilt has changed the orientation of the sharp-focus plane. Refocus and compare the three regions to judge the alignment.",
+          whyItMatters: "Front Tilt changes the orientation of the sharp-focus plane; Focus Distance positions that rotated plane. In the Scheimpflug construction, the lens plane, film plane, and sharp-focus plane meet along a common line.",
+        },
+        refineAlignment: {
+          title: "Refine the alignment",
+          try: "Use small 0.1° Tilt and 10 mm Focus steps while watching the {{weakestRegion}} region.",
+          observe: "Two PCB regions are Sharp; the {{weakestRegion}} region is still {{weakestStatus}} and limits the alignment.",
+          whyItMatters: "A nearly correct orientation still needs the focus plane positioned correctly. Refine both controls while watching the physical target metrics.",
+        },
+        aligned: {
+          title: "Plane aligned",
+          try: "Inspect all three PCB zones and compare the Ground Glass, Focus Distribution, and Scheimpflug Section.",
+          observe: "Near, Middle, and Far are all Sharp at Front Tilt {{tilt}} and Focus Distance {{focus}}.",
+          whyItMatters: "The important PCB details share one oblique plane. Aligning the sharp-focus plane solves this planar subject without increasing depth of field. Tilt is powerful when details share a plane, not a general solution for arbitrary 3D subjects; a subject that also recedes sideways may need Swing.",
+        },
+      },
+    },
+    macroCompoundMovements: {
+      title: "Compound plane alignment study",
+      labels: {
+        goal: "Goal",
+        try: "Try",
+        observe: "Observe",
+        whyItMatters: "Why it matters",
+      },
+      goal: "Align the sharp-focus plane with all three separated critical faces using Front Tilt, Front Swing, and Focus Distance.",
+      regions: {
+        nearLeft: "Near-left",
+        centre: "Centre",
+        farRight: "Far-right",
+      },
+      stages: {
+        focusExploration: {
+          title: "Explore the neutral focus plane",
+          try: "Keep Front Tilt and Front Swing at 0° and move Focus Distance across the Near-left, Centre, and Far-right details.",
+          observe: "The {{strongestRegion}} is currently strongest. Near-left is {{nearLeftStatus}}, Centre is {{centreStatus}}, and Far-right is {{farRightStatus}}.",
+          whyItMatters: "Focus Distance positions the sharp-focus plane. With both movements neutral, its orientation stays parallel to the film and cannot follow a plane that changes in both directions.",
+        },
+        tiltOnly: {
+          title: "Explore Front Tilt alone",
+          try: "Leave Front Swing at 0°, apply Front Tilt, and refocus. Compare the three regions and the Side construction.",
+          observe: "Front Tilt is active while Front Swing is neutral. Near-left is {{nearLeftStatus}}, Centre is {{centreStatus}}, and Far-right is {{farRightStatus}}; {{strongestRegion}} is currently strongest.",
+          whyItMatters: "Tilt changes one orientation component of the sharp-focus plane. A plane that also varies laterally still needs a second orientation component.",
+        },
+        swingOnly: {
+          title: "Explore Front Swing alone",
+          try: "Leave Front Tilt at 0°, apply Front Swing, and refocus. Compare the three regions and the Top construction.",
+          observe: "Front Swing is active while Front Tilt is neutral. Near-left is {{nearLeftStatus}}, Centre is {{centreStatus}}, and Far-right is {{farRightStatus}}; {{strongestRegion}} is currently strongest.",
+          whyItMatters: "Swing changes the lateral orientation component of the sharp-focus plane. Without Tilt, the vertical/depth component remains misaligned.",
+        },
+        compoundAlignment: {
+          title: "Combine Tilt, Swing, and Focus",
+          try: "Apply Front Tilt and Front Swing together, then refocus. Compare Ground Glass, Focus Distribution, Side, Top, and Scheimpflug Section.",
+          observe: "Both orientation controls are active. Near-left is {{nearLeftStatus}}, Centre is {{centreStatus}}, and Far-right is {{farRightStatus}}; {{strongestRegion}} is currently strongest.",
+          whyItMatters: "Front Tilt and Front Swing supply the two orientation components of the compound plane. Focus Distance then positions that plane at the subject.",
+        },
+        refineCompound: {
+          title: "Refine the compound alignment",
+          try: "Use the public 0.1° Tilt and Swing steps plus 10 mm Focus steps while watching the {{weakestRegion}} region.",
+          observe: "{{sharpCount}} of 3 regions are Sharp. The {{weakestRegion}} region is {{weakestStatus}} and is the current limit.",
+          whyItMatters: "A nearly correct compound orientation still needs precise placement. Refine all three controls using the physical target statuses rather than a memorized setting.",
+        },
+        aligned: {
+          title: "Compound plane aligned",
+          try: "Inspect all three critical faces and compare Ground Glass, Focus Distribution, Side, Top, and Scheimpflug Section.",
+          observe: "Near-left, Centre, and Far-right are all Sharp at Front Tilt {{tilt}}, Front Swing {{swing}}, and Focus Distance {{focus}}.",
+          whyItMatters: "The three faces are separated objects, but their critical details share one canonical compound plane. Aligning that plane solves the arrangement without relying on extra depth of field.",
+        },
+      },
     },
     understanding: {
       objective:

@@ -80,11 +80,11 @@ export const OpticalDepthStrip = ({ opticsState, sectionOrigin, sectionDepthDir,
     return { key: it.key, color: it.color, text: `${it.label} ${fmt(it.depth)}` };
   });
   return (
-    <div aria-label={t(simulatorMessageKeys.geometry.opticalDepthOrder)} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8, marginBottom: 4 }}>
+    <div className="geometry-depth-strip" aria-label={t(simulatorMessageKeys.geometry.opticalDepthOrder)} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8, marginBottom: 4 }}>
       {chips.map((c) => (
-        <div key={c.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 0 rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.03)' }}>
-          <span style={{ width: 12, height: 12, borderRadius: 3, background: c.color, display: 'inline-block' }} />
-          <span style={{ fontSize: 12, color: '#0f172a' }}>{c.text}</span>
+        <div className="geometry-depth-strip__chip" key={c.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 0 rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.03)' }}>
+          <span className="geometry-depth-strip__swatch" style={{ width: 12, height: 12, borderRadius: 3, background: c.color, display: 'inline-block' }} />
+          <span className="geometry-depth-strip__label" style={{ fontSize: 12, color: '#0f172a' }}>{c.text}</span>
         </div>
       ))}
     </div>

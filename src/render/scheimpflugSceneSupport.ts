@@ -1,2 +1,6 @@
 export const supportsScheimpflugConstruction = (sceneId: string): boolean =>
-  sceneId === "table-tilt" || sceneId === "shelf-swing" || sceneId === "oblique-tabletop";
+  sceneId === "table-tilt" ||
+  sceneId === "shelf-swing" ||
+  sceneId === "oblique-tabletop" ||
+  sceneId === "macro-oblique-plane" ||
+  sceneId === "macro-compound-movements";

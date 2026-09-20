@@ -12,6 +12,7 @@ vi.mock("../../config/scenePublication", async () => {
     scenePublication: {
       ...actual.scenePublication,
       "shelf-swing": false,
+      "macro-compound-movements": false,
     },
   };
 });
@@ -85,6 +86,9 @@ describe("scene publication gate", () => {
       ),
     );
     expect(screen.queryByRole("heading", { name: "Shelf Swing", level: 3 })).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Compound Macro Still Life", level: 3 }),
+    ).toBeNull();
   });
 
   it.each([
@@ -101,7 +105,6 @@ describe("scene publication gate", () => {
 
   it.each([
     "/simulator/free/macro-depth-of-field/future-task",
-    "/simulator/free/macro-oblique-plane",
     "/simulator/free/macro-compound-movements",
     "/simulator/guided/macro-bellows-extension/future-task",
     "/simulator/guided/macro-depth-of-field/future-task",
@@ -114,7 +117,7 @@ describe("scene publication gate", () => {
     expect(screen.queryByTestId("simulator-workspace")).not.toBeInTheDocument();
   });
 
-  it.each(["macro-bellows-extension", "macro-depth-of-field"])("allows the published Macro free-practice route without guided metadata: %s", async (sceneId) => {
+  it.each(["macro-bellows-extension", "macro-depth-of-field", "macro-oblique-plane"])("allows the published Macro free-practice route without guided metadata: %s", async (sceneId) => {
     renderRoute(`/simulator/free/${sceneId}`);
 
     await waitFor(() =>

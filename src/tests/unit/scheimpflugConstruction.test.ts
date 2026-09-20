@@ -58,6 +58,8 @@ describe("Scheimpflug construction model", () => {
     expect(supportsScheimpflugConstruction("table-tilt")).toBe(true);
     expect(supportsScheimpflugConstruction("shelf-swing")).toBe(true);
     expect(supportsScheimpflugConstruction("oblique-tabletop")).toBe(true);
+    expect(supportsScheimpflugConstruction("macro-oblique-plane")).toBe(true);
+    expect(supportsScheimpflugConstruction("macro-compound-movements")).toBe(true);
     expect(supportsScheimpflugConstruction("architecture-rise")).toBe(false);
     expect(supportsScheimpflugConstruction("focus-fundamentals-two-targets")).toBe(false);
   });

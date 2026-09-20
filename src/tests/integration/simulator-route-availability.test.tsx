@@ -49,6 +49,8 @@ describe("simulator route availability", () => {
   it.each([
     ["macro-bellows-extension", "free:macro-bellows-extension:none:lesson=false"],
     ["macro-depth-of-field", "free:macro-depth-of-field:none:lesson=false"],
+    ["macro-oblique-plane", "free:macro-oblique-plane:none:lesson=false"],
+    ["macro-compound-movements", "free:macro-compound-movements:none:lesson=false"],
   ])("opens the Macro free route without lesson or task metadata: %s", async (sceneId, expectedWorkspace) => {
     renderRoute(`/simulator/free/${sceneId}`);
     expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(expectedWorkspace);
@@ -61,9 +63,9 @@ describe("simulator route availability", () => {
     "/simulator/guided/macro-depth-of-field",
     "/simulator/guided/macro-depth-of-field/rise-01",
     "/simulator/free/macro-depth-of-field/rise-01",
-    ...["macro-oblique-plane", "macro-compound-movements"].flatMap(
-      (id) => [`/simulator/free/${id}`, `/simulator/guided/${id}`, `/simulator/guided/${id}/rise-01`],
-    ),
+    "/simulator/guided/macro-compound-movements",
+    "/simulator/guided/macro-compound-movements/rise-01",
+    "/simulator/free/macro-compound-movements/rise-01",
   ])("keeps unsupported Macro route %s closed", async (route) => {
     renderRoute(route);
     await waitFor(() => expect(screen.getByTestId("route-location")).toHaveTextContent("/scenes"));
@@ -76,6 +78,7 @@ describe("simulator route availability", () => {
     ["/simulator/free/interior-corner", "free:interior-corner:none:lesson=false"],
     ["/simulator/free/oblique-architecture", "free:oblique-architecture:none:lesson=false"],
     ["/simulator/free/macro-depth-of-field", "free:macro-depth-of-field:none:lesson=false"],
+    ["/simulator/free/macro-oblique-plane", "free:macro-oblique-plane:none:lesson=false"],
     ["/simulator/free/shelf-swing", "free:shelf-swing:none:lesson=false"],
     ["/simulator/free/mirror-shift", "free:mirror-shift:none:lesson=false"],
     ["/simulator/guided/architecture-rise/rise-01", "guided:architecture-rise:rise-01:lesson=false"],

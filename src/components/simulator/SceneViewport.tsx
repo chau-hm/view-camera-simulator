@@ -195,7 +195,7 @@ export const SceneViewport = ({
         {/* Toolbar: left actions and right quality control */}
         <div className="scene-toolbar">
           <div className="scene-toolbar__actions">
-            <button type="button" className="btn" onClick={() => setViewResetNonce((value) => value + 1)}>
+            <button type="button" className="btn btn--compact" onClick={() => setViewResetNonce((value) => value + 1)}>
               {t(simulatorMessageKeys.viewport.sceneViewReset)}
             </button>
             <fieldset className="scene-view-focus" aria-label={t(simulatorMessageKeys.viewport.sceneViewFocusLabel)}>

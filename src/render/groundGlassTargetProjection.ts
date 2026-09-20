@@ -40,8 +40,8 @@ export function mapGroundGlassUvToDisplayUv(
 ): { u: number; v: number } {
   // projectWorldPointToFilmPlaneGroundGlass returns physical film coordinates
   // whose origin is the film's top-left corner. This is the canonical
-  // physical-film display mapping; the RTT source texture has a separate
-  // camera-basis transform resolved by groundGlassRttOrientation.
+  // physical-film display mapping; the composite's source-texture transform
+  // is resolved by groundGlassRttOrientation and is kept aligned by tests.
   if (previewMode === "raw") {
     return { u: rawUv.u, v: rawUv.v };
   }
