@@ -93,10 +93,18 @@ describe("Macro Scene 3 teaching model", () => {
     expect(farSide?.sharpCount).toBe(0);
   });
 
-  it("introduces Tilt and Focus together before the plane is aligned", () => {
-    const model = teachingAt(400, 2);
-    expect(model?.stage).toBe("tilt-and-focus");
-    expect(model?.allSharp).toBe(false);
+  it("keeps wrong-sign and overshoot-side tilt in physical non-aligned stages", () => {
+    const negativeTilt = teachingAt(400, -2);
+    expect(negativeTilt).toMatchObject({
+      stage: "tilt-and-focus",
+      allSharp: false,
+    });
+
+    const overshootSide = teachingAt(400, 8);
+    expect(overshootSide).not.toBeNull();
+    expect(overshootSide?.stage).not.toBe("parallel-exploration");
+    expect(overshootSide?.stage).not.toBe("aligned");
+    expect(overshootSide?.allSharp).toBe(false);
   });
 
   it("uses the physical two-sharp state for refinement", () => {

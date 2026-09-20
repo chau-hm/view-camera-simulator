@@ -71,6 +71,14 @@ test("Macro 3 aligns the oblique planar subject with Front Tilt and Focus", asyn
   await expect(teaching).toHaveAttribute("data-sharp-count", "1");
   await expect(teaching).toHaveAttribute("data-strongest-region", "middle");
 
+  await setStepRangeInput(page, "Front Tilt", -2);
+  await expect(teaching).toHaveAttribute("data-stage", "tilt-and-focus");
+  await expect(teaching).not.toContainText("rotating toward the PCB");
+  await expect(teaching).toContainText("changed the orientation of the sharp-focus plane");
+
+  await setStepRangeInput(page, "Front Tilt", 0);
+  await expect(teaching).toHaveAttribute("data-stage", "parallel-exploration");
+
   await setStepRangeInput(page, "Focus distance", 380);
   await expect(teaching).toHaveAttribute("data-stage", "parallel-exploration");
   await expect(teaching).toHaveAttribute("data-strongest-region", "near");
@@ -81,6 +89,8 @@ test("Macro 3 aligns the oblique planar subject with Front Tilt and Focus", asyn
 
   await setStepRangeInput(page, "Front Tilt", 2);
   await expect(teaching).toHaveAttribute("data-stage", "tilt-and-focus");
+  await expect(teaching).toContainText("changed the orientation of the sharp-focus plane");
+  await expect(teaching).toContainText("positive direction first");
 
   await setStepRangeInput(page, "Front Tilt", 6.2);
   await setStepRangeInput(page, "Focus distance", 390);

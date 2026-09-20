@@ -434,8 +434,8 @@ export const simulatorMessages = {
         },
         tiltAndFocus: {
           title: "Use Tilt and Focus together",
-          try: "Apply a small positive Front Tilt, then refocus. Compare the Ground Glass, Focus Distribution, and Scheimpflug Section.",
-          observe: "Near is {{nearStatus}}, Middle is {{middleStatus}}, and Far is {{farStatus}}. The {{strongestRegion}} is currently strongest; the sharp-focus plane is rotating toward the PCB.",
+          try: "Adjust Front Tilt, then refocus. For this PCB, explore the positive direction first and compare the three regions.",
+          observe: "Near is {{nearStatus}}, Middle is {{middleStatus}}, and Far is {{farStatus}}. The {{strongestRegion}} is currently strongest; Front Tilt has changed the orientation of the sharp-focus plane. Refocus and compare the three regions to judge the alignment.",
           whyItMatters: "Front Tilt changes the orientation of the sharp-focus plane; Focus Distance positions that rotated plane. In the Scheimpflug construction, the lens plane, film plane, and sharp-focus plane meet along a common line.",
         },
         refineAlignment: {

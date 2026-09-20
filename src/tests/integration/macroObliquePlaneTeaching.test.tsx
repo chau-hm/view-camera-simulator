@@ -52,6 +52,21 @@ describe("Macro Scene 3 teaching", () => {
     await waitFor(() => expect(teaching).toHaveAttribute("data-stage", "tilt-and-focus"));
     expect(taskView).toHaveTextContent(/orientation of the sharp-focus plane/i);
     expect(taskView).toHaveTextContent(/positions that rotated plane/i);
+    expect(taskView).toHaveTextContent(/positive direction first/i);
+
+    fireEvent.change(tilt, { target: { value: "-2" } });
+    await waitFor(() => expect(teaching).toHaveAttribute("data-stage", "tilt-and-focus"));
+    expect(taskView).toHaveTextContent(/changed the orientation of the sharp-focus plane/i);
+    expect(taskView).not.toHaveTextContent(/rotating toward the PCB/i);
+
+    fireEvent.change(tilt, { target: { value: "8" } });
+    await waitFor(() => expect(teaching).not.toHaveAttribute("data-stage", "parallel-exploration"));
+    expect(teaching).not.toHaveAttribute("data-stage", "aligned");
+    expect(teaching).toHaveAttribute("data-all-sharp", "false");
+    expect(taskView).not.toHaveTextContent(/rotating toward the PCB/i);
+
+    fireEvent.change(tilt, { target: { value: "2" } });
+    await waitFor(() => expect(teaching).toHaveAttribute("data-stage", "tilt-and-focus"));
 
     fireEvent.change(tilt, { target: { value: "6.2" } });
     fireEvent.change(focus, { target: { value: "390" } });
@@ -82,6 +97,12 @@ describe("Macro Scene 3 teaching", () => {
 
     const tilt = screen.getByRole("slider", { name: "前組傾斜" });
     const focus = screen.getByRole("slider", { name: "對焦距離" });
+    fireEvent.change(tilt, { target: { value: "2" } });
+    await waitFor(() => expect(screen.getByTestId("macro-oblique-teaching")).toHaveAttribute("data-stage", "tilt-and-focus"));
+    expect(taskView).toHaveTextContent("已改變清晰焦平面的方向");
+    expect(taskView).toHaveTextContent("正向傾斜開始探索");
+    expect(taskView).not.toHaveTextContent("轉向 PCB");
+
     fireEvent.change(tilt, { target: { value: "6.3" } });
     fireEvent.change(focus, { target: { value: "390" } });
     await waitFor(() => expect(screen.getByTestId("macro-oblique-teaching")).toHaveAttribute("data-stage", "aligned"));

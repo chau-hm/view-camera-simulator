@@ -426,8 +426,8 @@ export const simulatorMessages = {
         },
         tiltAndFocus: {
           title: "一起使用傾斜及對焦",
-          try: "加入少量正向前組傾斜，然後重新對焦；同時比較對焦屏、對焦分佈及沙姆剖面。",
-          observe: "近處{{nearStatus}}、中間{{middleStatus}}、遠處{{farStatus}}。目前以{{strongestRegion}}最清晰；清晰焦平面正轉向 PCB。",
+          try: "調整前組傾斜後重新對焦；這塊 PCB 可先從正向傾斜開始探索，並比較三個區域。",
+          observe: "近處{{nearStatus}}、中間{{middleStatus}}、遠處{{farStatus}}。目前以{{strongestRegion}}最清晰；前組傾斜已改變清晰焦平面的方向。重新對焦並比較三個區域，判斷目前的對齊情況。",
           whyItMatters: "前組傾斜會改變清晰焦平面的方向；對焦距離則定位這個已旋轉的平面。在沙姆構圖中，鏡頭平面、底片平面及清晰焦平面會沿一條共同交線相交。",
         },
         refineAlignment: {
