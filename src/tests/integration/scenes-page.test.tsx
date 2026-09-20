@@ -389,7 +389,7 @@ describe("scenes page", () => {
     });
   });
 
-  it("activates Macro Scenes 1 through 3 while preserving Macro card order and copy", async () => {
+  it("activates Macro scenes while preserving card order and copy", async () => {
     const memoryRouter = createMemoryRouter(routes, { initialEntries: ["/scenes"] });
     render(<RouterProvider router={memoryRouter} />);
 

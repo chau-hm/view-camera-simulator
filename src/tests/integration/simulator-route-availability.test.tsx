@@ -50,6 +50,7 @@ describe("simulator route availability", () => {
     ["macro-bellows-extension", "free:macro-bellows-extension:none:lesson=false"],
     ["macro-depth-of-field", "free:macro-depth-of-field:none:lesson=false"],
     ["macro-oblique-plane", "free:macro-oblique-plane:none:lesson=false"],
+    ["macro-compound-movements", "free:macro-compound-movements:none:lesson=false"],
   ])("opens the Macro free route without lesson or task metadata: %s", async (sceneId, expectedWorkspace) => {
     renderRoute(`/simulator/free/${sceneId}`);
     expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(expectedWorkspace);
@@ -62,9 +63,9 @@ describe("simulator route availability", () => {
     "/simulator/guided/macro-depth-of-field",
     "/simulator/guided/macro-depth-of-field/rise-01",
     "/simulator/free/macro-depth-of-field/rise-01",
-    ...["macro-compound-movements"].flatMap(
-      (id) => [`/simulator/free/${id}`, `/simulator/guided/${id}`, `/simulator/guided/${id}/rise-01`],
-    ),
+    "/simulator/guided/macro-compound-movements",
+    "/simulator/guided/macro-compound-movements/rise-01",
+    "/simulator/free/macro-compound-movements/rise-01",
   ])("keeps unsupported Macro route %s closed", async (route) => {
     renderRoute(route);
     await waitFor(() => expect(screen.getByTestId("route-location")).toHaveTextContent("/scenes"));

@@ -12,6 +12,7 @@ vi.mock("../../config/scenePublication", async () => {
     scenePublication: {
       ...actual.scenePublication,
       "shelf-swing": false,
+      "macro-compound-movements": false,
     },
   };
 });
@@ -85,6 +86,9 @@ describe("scene publication gate", () => {
       ),
     );
     expect(screen.queryByRole("heading", { name: "Shelf Swing", level: 3 })).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Compound Macro Still Life", level: 3 }),
+    ).toBeNull();
   });
 
   it.each([
