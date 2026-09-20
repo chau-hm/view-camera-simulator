@@ -92,6 +92,15 @@ import {
   MACRO_DEPTH_SPECIMEN_CENTER_MM,
   macroDepthOfFieldSubjectBoundsMm,
 } from "../scenes/macroDepthOfFieldGeometry";
+import {
+  MacroObliquePlaneSubject,
+  createMacroObliquePlaneGroup,
+  disposeMacroObliquePlaneGroup,
+} from "./MacroObliquePlaneSubjectFactory";
+import {
+  MACRO_OBLIQUE_PLATE_CENTER_MM,
+  macroObliquePlaneSubjectBoundsMm,
+} from "../scenes/macroObliquePlaneGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -244,6 +253,17 @@ export const sceneSubjectRegistry = {
     rttBounds: macroDepthOfFieldSubjectBoundsMm,
     rttLighting: {
       targetMm: MACRO_DEPTH_SPECIMEN_CENTER_MM,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
+    },
+  },
+  "macro-oblique-plane": {
+    SceneSubject: MacroObliquePlaneSubject,
+    createRttGroup: createMacroObliquePlaneGroup,
+    disposeRttGroup: disposeMacroObliquePlaneGroup,
+    rttBounds: macroObliquePlaneSubjectBoundsMm,
+    rttLighting: {
+      targetMm: MACRO_OBLIQUE_PLATE_CENTER_MM,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },

@@ -35,6 +35,7 @@ export const macroDepthOfFieldScene: SceneDefinition = {
   focusDistanceRangeMm: MACRO_DEPTH_FOCUS_DISTANCE_RANGE_MM,
   cameraControlPolicy: { movement: "fixed", infinityReset: false },
   macroFocusMetricsCapability: { enabled: true },
+  macroTeachingCapability: { kind: "depth-of-field" },
   cameraPlacement: macroDepthOfFieldCameraPlacement,
   bounds: macroDepthOfFieldSceneBoundsMm,
   focusTargets: macroDepthOfFieldFocusTargets,

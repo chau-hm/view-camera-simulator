@@ -43,14 +43,11 @@ const validate = ({
   });
 
 describe("isValidSimulatorRoute", () => {
-  it.each(["shelf-swing", "table-tilt", "oblique-architecture", "macro-bellows-extension", "macro-depth-of-field"])("accepts free mode without a task for %s", (sceneId) => {
+  it.each(["shelf-swing", "table-tilt", "oblique-architecture", "macro-bellows-extension", "macro-depth-of-field", "macro-oblique-plane"])("accepts free mode without a task for %s", (sceneId) => {
     expect(validate({ mode: "free", sceneId })).toBe(true);
   });
 
-  it.each([
-    "macro-oblique-plane",
-    "macro-compound-movements",
-  ])("rejects every Macro Photography roadmap route for %s", (sceneId) => {
+  it.each(["macro-compound-movements"])("rejects every Macro Photography roadmap route for %s", (sceneId) => {
     expect(publicEntry(sceneId).availableModes).toEqual([]);
     expect(validate({ mode: "free", sceneId })).toBe(false);
     expect(validate({ mode: "guided", sceneId, taskId: "swing-01" })).toBe(false);
@@ -60,6 +57,11 @@ describe("isValidSimulatorRoute", () => {
       availableModes: ["free"] as const,
     };
     expect(validate({ mode: "free", sceneId, entry })).toBe(false);
+  });
+
+  it("keeps Macro Scene 3 Free Practice-only", () => {
+    expect(validate({ mode: "guided", sceneId: "macro-oblique-plane", taskId: "rise-01" })).toBe(false);
+    expect(validate({ mode: "free", sceneId: "macro-oblique-plane", taskId: "rise-01" })).toBe(false);
   });
 
   it("keeps Macro Scene 2 Free Practice-only", () => {
