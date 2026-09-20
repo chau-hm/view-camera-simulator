@@ -69,6 +69,7 @@ describe("scene subject registry", () => {
       "macro-bellows-extension",
       "macro-depth-of-field",
       "macro-oblique-plane",
+      "macro-compound-movements",
       "view-camera-anatomy",
       "understanding-camera-movements",
       "focus-fundamentals-two-targets",
@@ -119,12 +120,10 @@ describe("scene subject registry", () => {
     }
   });
 
-  it("keeps in-development public roadmap scenes out of the renderer registry", () => {
-    for (const sceneId of ["macro-compound-movements"]) {
-      expect(isGroundGlassRttScene(sceneId)).toBe(false);
-      expect(getSceneSubjectRegistration(sceneId)).toBeUndefined();
-      expect(getRegisteredSceneSubject(sceneId)).toBeUndefined();
-    }
+  it("registers the in-development compound macro scene internally without publishing its route", () => {
+    expect(isGroundGlassRttScene("macro-compound-movements")).toBe(true);
+    expect(getSceneSubjectRegistration("macro-compound-movements")).toBeDefined();
+    expect(getRegisteredSceneSubject("macro-compound-movements")).toBeDefined();
   });
 
   it("resolves Shelf Swing to its shared React subject and canonical RTT factory", () => {

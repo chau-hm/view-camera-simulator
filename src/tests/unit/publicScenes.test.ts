@@ -137,8 +137,8 @@ describe("public scene catalog integrity", () => {
     );
 
     expect(publishedMacroEntries).toHaveLength(macroSceneIds.length);
-    expect(publishedMacroEntries.filter(({ scene }) => scene !== undefined).map(({ meta }) => meta.id)).toEqual(["macro-bellows-extension", "macro-depth-of-field", "macro-oblique-plane"]);
-    expect(getPublicSceneEntries().filter(({ meta }) => meta.id.startsWith("macro-")).map(({ meta }) => meta.id)).toEqual(["macro-bellows-extension", "macro-depth-of-field", "macro-oblique-plane"]);
+    expect(publishedMacroEntries.filter(({ scene }) => scene !== undefined).map(({ meta }) => meta.id)).toEqual([...macroSceneIds]);
+    expect(getPublicSceneEntries().filter(({ meta }) => meta.id.startsWith("macro-")).map(({ meta }) => meta.id)).toEqual([...macroSceneIds]);
     expect(getAvailablePublicSceneEntries().filter(({ meta }) => meta.id.startsWith("macro-")).map(({ meta }) => meta.id)).toEqual(["macro-bellows-extension", "macro-depth-of-field", "macro-oblique-plane"]);
     expect(getPublicScenes().filter((scene) => scene.id.startsWith("macro-")).map(({ id }) => id)).toEqual(["macro-bellows-extension", "macro-depth-of-field", "macro-oblique-plane"]);
   });
