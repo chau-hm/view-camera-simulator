@@ -5,6 +5,9 @@ import {
   resolvePhysicalFocusTargetPresentationMetric,
   type FocusTargetPresentationMetric,
 } from "../render/postprocessing/FocusAssistPass";
+import { compareFocusTargetPresentationMetrics } from "./focusTargetPresentationMetrics";
+
+export { compareFocusTargetPresentationMetrics } from "./focusTargetPresentationMetrics";
 
 export type MacroDepthOfFieldRegion = "near" | "middle" | "far";
 
@@ -43,23 +46,6 @@ export const resolveMacroDepthOfFieldTeachingStage = (
   if (aperture <= 11) return "begin-stopping-down";
   if (aperture < 32) return "moderate-stopping-down";
   return "minimum-aperture";
-};
-
-export const compareFocusTargetPresentationMetrics = (
-  candidate: FocusTargetPresentationMetric,
-  current: FocusTargetPresentationMetric,
-): number => {
-  if (candidate.sharpness !== current.sharpness) {
-    return candidate.sharpness - current.sharpness;
-  }
-
-  if (candidate.equivalentCoCDiameterMm === null) {
-    return current.equivalentCoCDiameterMm === null ? 0 : -1;
-  }
-  if (current.equivalentCoCDiameterMm === null) return 1;
-
-  // Smaller physical blur wins when bounded learner sharpness saturates.
-  return current.equivalentCoCDiameterMm - candidate.equivalentCoCDiameterMm;
 };
 
 const resolveStrongestRegion = (

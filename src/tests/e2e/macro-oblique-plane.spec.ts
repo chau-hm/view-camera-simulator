@@ -25,7 +25,7 @@ test("Macro 3 aligns the oblique planar subject with Front Tilt and Focus", asyn
   await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-oblique-plane");
 
   const focus = page.getByRole("slider", { name: "Focus distance" });
-  const tilt = page.getByRole("slider", { name: "Tilt" });
+  const tilt = page.getByRole("slider", { name: "Front Tilt" });
   const readout = page.getByRole("region", { name: "Macro focus" });
   const panel = page.getByTestId("focus-distribution-panel");
 
@@ -65,8 +65,37 @@ test("Macro 3 aligns the oblique planar subject with Front Tilt and Focus", asyn
     await panel.locator('[data-focus-target-id="macro-oblique-far"]').getAttribute("aria-label"),
   ).toMatch(/Soft/);
 
-  await setStepRangeInput(page, "Tilt", 6.3);
+  await page.getByRole("button", { name: "Open Task and Feedback" }).click();
+  const teaching = page.getByTestId("macro-oblique-teaching");
+  await expect(teaching).toHaveAttribute("data-stage", "parallel-exploration");
+  await expect(teaching).toHaveAttribute("data-sharp-count", "1");
+  await expect(teaching).toHaveAttribute("data-strongest-region", "middle");
+
+  await setStepRangeInput(page, "Focus distance", 380);
+  await expect(teaching).toHaveAttribute("data-stage", "parallel-exploration");
+  await expect(teaching).toHaveAttribute("data-strongest-region", "near");
+
+  await setStepRangeInput(page, "Focus distance", 420);
+  await expect(teaching).toHaveAttribute("data-stage", "parallel-exploration");
+  await expect(teaching).toHaveAttribute("data-strongest-region", "far");
+
+  await setStepRangeInput(page, "Front Tilt", 2);
+  await expect(teaching).toHaveAttribute("data-stage", "tilt-and-focus");
+
+  await setStepRangeInput(page, "Front Tilt", 6.2);
   await setStepRangeInput(page, "Focus distance", 390);
+  await expect(teaching).toHaveAttribute("data-stage", "refine-alignment");
+  await expect(teaching).toHaveAttribute("data-sharp-count", "2");
+
+  await setStepRangeInput(page, "Front Tilt", 6.3);
+  await expect(teaching).toHaveAttribute("data-stage", "aligned");
+  await expect(teaching).toHaveAttribute("data-sharp-count", "3");
+  await expect(teaching).toHaveAttribute("data-all-sharp", "true");
+
+  await page.getByRole("button", { name: "Feedback", exact: true }).click();
+  const feedback = page.getByTestId("macro-oblique-feedback");
+  await expect(feedback).toHaveAttribute("data-stage", "aligned");
+  await expect(feedback).toContainText("all Sharp");
   await expect(tilt).toHaveValue("6.3");
   await expect(focus).toHaveValue("390");
   await expect(readout).toContainText("243.8 mm");
@@ -91,6 +120,7 @@ test("Macro 3 aligns the oblique planar subject with Front Tilt and Focus", asyn
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
   await expect(tilt).toHaveValue("0");
+  await expect(feedback).toHaveAttribute("data-stage", "parallel-exploration");
   const dealignedScores = await readFocusDistributionScores(page, TARGET_IDS);
   expect(dealignedScores["macro-oblique-near"] < 100 || dealignedScores["macro-oblique-far"] < 100).toBe(true);
 

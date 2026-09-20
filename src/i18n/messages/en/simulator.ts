@@ -411,6 +411,47 @@ export const simulatorMessages = {
         },
       },
     },
+    macroObliquePlane: {
+      title: "Oblique plane alignment study",
+      labels: {
+        goal: "Goal",
+        try: "Try",
+        observe: "Observe",
+        whyItMatters: "Why it matters",
+      },
+      goal: "Align the sharp-focus plane with the oblique PCB using Front Tilt and Focus Distance.",
+      regions: {
+        near: "Near region",
+        middle: "Middle region",
+        far: "Far region",
+      },
+      stages: {
+        parallelExploration: {
+          title: "Explore with a parallel focus plane",
+          try: "Keep Front Tilt at 0° and move Focus Distance through the Near, Middle, and Far PCB details.",
+          observe: "The {{strongestRegion}} is currently strongest. Near is {{nearStatus}}, Middle is {{middleStatus}}, and Far is {{farStatus}}. Refocusing moves the sharp region, but it cannot make this oblique plane all Sharp at once.",
+          whyItMatters: "Focus Distance positions the plane of sharp focus. With Front Tilt at zero, its orientation stays parallel to the film, so it cannot follow the PCB's slope.",
+        },
+        tiltAndFocus: {
+          title: "Use Tilt and Focus together",
+          try: "Apply a small positive Front Tilt, then refocus. Compare the Ground Glass, Focus Distribution, and Scheimpflug Section.",
+          observe: "Near is {{nearStatus}}, Middle is {{middleStatus}}, and Far is {{farStatus}}. The {{strongestRegion}} is currently strongest; the sharp-focus plane is rotating toward the PCB.",
+          whyItMatters: "Front Tilt changes the orientation of the sharp-focus plane; Focus Distance positions that rotated plane. In the Scheimpflug construction, the lens plane, film plane, and sharp-focus plane meet along a common line.",
+        },
+        refineAlignment: {
+          title: "Refine the alignment",
+          try: "Use small 0.1° Tilt and 10 mm Focus steps while watching the {{weakestRegion}} region.",
+          observe: "Two PCB regions are Sharp; the {{weakestRegion}} region is still {{weakestStatus}} and limits the alignment.",
+          whyItMatters: "A nearly correct orientation still needs the focus plane positioned correctly. Refine both controls while watching the physical target metrics.",
+        },
+        aligned: {
+          title: "Plane aligned",
+          try: "Inspect all three PCB zones and compare the Ground Glass, Focus Distribution, and Scheimpflug Section.",
+          observe: "Near, Middle, and Far are all Sharp at Front Tilt {{tilt}} and Focus Distance {{focus}}.",
+          whyItMatters: "The important PCB details share one oblique plane. Aligning the sharp-focus plane solves this planar subject without increasing depth of field. Tilt is powerful when details share a plane, not a general solution for arbitrary 3D subjects; a subject that also recedes sideways may need Swing.",
+        },
+      },
+    },
     understanding: {
       objective:
         "Compare whole-camera viewpoint movement with Front and Rear standard movements, and observe which image relationships change.",

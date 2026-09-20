@@ -129,6 +129,9 @@ export type SceneMacroTeachingCapability =
     }
   | {
       kind: "depth-of-field";
+    }
+  | {
+      kind: "oblique-plane";
     };
 
 export type SceneDefinition = {

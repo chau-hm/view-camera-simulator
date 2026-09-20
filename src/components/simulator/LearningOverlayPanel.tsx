@@ -9,6 +9,7 @@ import type { SimulatorMode } from "../../types/camera";
 import type { TaskDefinition, TaskEvaluation } from "../../types/task";
 import type { MacroBellowsExtensionTeachingModel } from "../../scenes/macroBellowsExtensionTeaching";
 import type { MacroDepthOfFieldTeachingModel } from "../../scenes/macroDepthOfFieldTeaching";
+import type { MacroObliquePlaneTeachingModel } from "../../scenes/macroObliquePlaneTeaching";
 import { FeedbackPanel } from "./FeedbackPanel";
 import { GuidedLessonProgress } from "./GuidedLessonProgress";
 import { TaskPanel } from "./TaskPanel";
@@ -58,6 +59,7 @@ type LearningOverlayPanelProps = {
   freeFocusEvaluation?: InteriorCornerSwingFocusEvaluation | null;
   macroTeaching?: MacroBellowsExtensionTeachingModel | null;
   macroDepthTeaching?: MacroDepthOfFieldTeachingModel | null;
+  macroObliqueTeaching?: MacroObliquePlaneTeachingModel | null;
 };
 
 export const LearningOverlayPanel = ({
@@ -70,6 +72,7 @@ export const LearningOverlayPanel = ({
   freeFocusEvaluation,
   macroTeaching,
   macroDepthTeaching,
+  macroObliqueTeaching,
 }: LearningOverlayPanelProps) => {
   const { t } = useTranslation();
   const narrowLayout = useNarrowLayout();
@@ -340,6 +343,7 @@ export const LearningOverlayPanel = ({
                   showTitle={false}
                   macroTeaching={macroTeaching}
                   macroDepthTeaching={macroDepthTeaching}
+                  macroObliqueTeaching={macroObliqueTeaching}
                 />
               )}
             </div>
@@ -358,6 +362,7 @@ export const LearningOverlayPanel = ({
                 freeFocusEvaluation={freeFocusEvaluation}
                 macroTeaching={macroTeaching}
                 macroDepthTeaching={macroDepthTeaching}
+                macroObliqueTeaching={macroObliqueTeaching}
                 showTitle={false}
               />
             </div>
