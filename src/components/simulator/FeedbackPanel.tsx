@@ -14,6 +14,7 @@ import type {
 import type { MacroBellowsExtensionTeachingModel } from "../../scenes/macroBellowsExtensionTeaching";
 import type { MacroDepthOfFieldTeachingModel } from "../../scenes/macroDepthOfFieldTeaching";
 import type { MacroObliquePlaneTeachingModel } from "../../scenes/macroObliquePlaneTeaching";
+import type { MacroCompoundMovementsTeachingModel } from "../../scenes/macroCompoundMovementsTeaching";
 import {
   getFeedbackStatus,
   getPassedCriteriaCount,
@@ -24,6 +25,7 @@ import {
 import { MacroBellowsExtensionTeachingContent } from "./MacroBellowsExtensionTeachingContent";
 import { MacroDepthOfFieldTeachingContent } from "./MacroDepthOfFieldTeachingContent";
 import { MacroObliquePlaneTeachingContent } from "./MacroObliquePlaneTeachingContent";
+import { MacroCompoundMovementsTeachingContent } from "./MacroCompoundMovementsTeachingContent";
 
 type FeedbackPanelProps = {
   mode: string;
@@ -35,6 +37,7 @@ type FeedbackPanelProps = {
   macroTeaching?: MacroBellowsExtensionTeachingModel | null;
   macroDepthTeaching?: MacroDepthOfFieldTeachingModel | null;
   macroObliqueTeaching?: MacroObliquePlaneTeachingModel | null;
+  macroCompoundTeaching?: MacroCompoundMovementsTeachingModel | null;
   showTitle?: boolean;
 };
 
@@ -61,6 +64,7 @@ export const FeedbackPanel = ({
   macroTeaching,
   macroDepthTeaching,
   macroObliqueTeaching,
+  macroCompoundTeaching,
   showTitle = true,
 }: FeedbackPanelProps) => {
   const { t } = useTranslation();
@@ -108,7 +112,11 @@ export const FeedbackPanel = ({
             ) : null}
           </div>
           <p style={{ marginTop: 8 }}>{t(genericObservationKey)}</p>
-          {freeObs.observationKey !== genericObservationKey && !macroTeaching ? (
+          {freeObs.observationKey !== genericObservationKey &&
+          !macroTeaching &&
+          !macroDepthTeaching &&
+          !macroObliqueTeaching &&
+          !macroCompoundTeaching ? (
             <p style={{ marginTop: 6, color: 'var(--text-muted)' }}>{t(freeObs.observationKey)}</p>
           ) : null}
           {macroTeaching ? (
@@ -117,6 +125,8 @@ export const FeedbackPanel = ({
             <MacroDepthOfFieldTeachingContent model={macroDepthTeaching} variant="feedback" />
           ) : macroObliqueTeaching ? (
             <MacroObliquePlaneTeachingContent model={macroObliqueTeaching} variant="feedback" />
+          ) : macroCompoundTeaching ? (
+            <MacroCompoundMovementsTeachingContent model={macroCompoundTeaching} variant="feedback" />
           ) : null}
           {riseCompositionKey ? (
             <p

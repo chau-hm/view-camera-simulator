@@ -438,6 +438,59 @@ export const simulatorMessageKeys = {
         },
       },
     },
+    macroCompoundMovements: {
+      title: "simulator.freePractice.macroCompoundMovements.title",
+      labels: {
+        goal: "simulator.freePractice.macroCompoundMovements.labels.goal",
+        try: "simulator.freePractice.macroCompoundMovements.labels.try",
+        observe: "simulator.freePractice.macroCompoundMovements.labels.observe",
+        whyItMatters: "simulator.freePractice.macroCompoundMovements.labels.whyItMatters",
+      },
+      goal: "simulator.freePractice.macroCompoundMovements.goal",
+      regions: {
+        nearLeft: "simulator.freePractice.macroCompoundMovements.regions.nearLeft",
+        centre: "simulator.freePractice.macroCompoundMovements.regions.centre",
+        farRight: "simulator.freePractice.macroCompoundMovements.regions.farRight",
+      },
+      stages: {
+        focusExploration: {
+          title: "simulator.freePractice.macroCompoundMovements.stages.focusExploration.title",
+          try: "simulator.freePractice.macroCompoundMovements.stages.focusExploration.try",
+          observe: "simulator.freePractice.macroCompoundMovements.stages.focusExploration.observe",
+          whyItMatters: "simulator.freePractice.macroCompoundMovements.stages.focusExploration.whyItMatters",
+        },
+        tiltOnly: {
+          title: "simulator.freePractice.macroCompoundMovements.stages.tiltOnly.title",
+          try: "simulator.freePractice.macroCompoundMovements.stages.tiltOnly.try",
+          observe: "simulator.freePractice.macroCompoundMovements.stages.tiltOnly.observe",
+          whyItMatters: "simulator.freePractice.macroCompoundMovements.stages.tiltOnly.whyItMatters",
+        },
+        swingOnly: {
+          title: "simulator.freePractice.macroCompoundMovements.stages.swingOnly.title",
+          try: "simulator.freePractice.macroCompoundMovements.stages.swingOnly.try",
+          observe: "simulator.freePractice.macroCompoundMovements.stages.swingOnly.observe",
+          whyItMatters: "simulator.freePractice.macroCompoundMovements.stages.swingOnly.whyItMatters",
+        },
+        compoundAlignment: {
+          title: "simulator.freePractice.macroCompoundMovements.stages.compoundAlignment.title",
+          try: "simulator.freePractice.macroCompoundMovements.stages.compoundAlignment.try",
+          observe: "simulator.freePractice.macroCompoundMovements.stages.compoundAlignment.observe",
+          whyItMatters: "simulator.freePractice.macroCompoundMovements.stages.compoundAlignment.whyItMatters",
+        },
+        refineCompound: {
+          title: "simulator.freePractice.macroCompoundMovements.stages.refineCompound.title",
+          try: "simulator.freePractice.macroCompoundMovements.stages.refineCompound.try",
+          observe: "simulator.freePractice.macroCompoundMovements.stages.refineCompound.observe",
+          whyItMatters: "simulator.freePractice.macroCompoundMovements.stages.refineCompound.whyItMatters",
+        },
+        aligned: {
+          title: "simulator.freePractice.macroCompoundMovements.stages.aligned.title",
+          try: "simulator.freePractice.macroCompoundMovements.stages.aligned.try",
+          observe: "simulator.freePractice.macroCompoundMovements.stages.aligned.observe",
+          whyItMatters: "simulator.freePractice.macroCompoundMovements.stages.aligned.whyItMatters",
+        },
+      },
+    },
     understanding: {
       objective: "simulator.freePractice.understanding.objective",
       bullets: {

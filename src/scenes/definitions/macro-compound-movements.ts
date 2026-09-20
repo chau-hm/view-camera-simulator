@@ -47,6 +47,7 @@ export const macroCompoundMovementsScene: SceneDefinition = {
     infinityReset: false,
   },
   macroFocusMetricsCapability: { enabled: true },
+  macroTeachingCapability: { kind: "compound-movements" },
   cameraPlacement: macroCompoundMovementsCameraPlacement,
   bounds: macroCompoundMovementsSceneBoundsMm,
   focusTargets: macroCompoundMovementsFocusTargets,

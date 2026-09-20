@@ -444,6 +444,59 @@ export const simulatorMessages = {
         },
       },
     },
+    macroCompoundMovements: {
+      title: "複合平面對齊練習",
+      labels: {
+        goal: "目標",
+        try: "嘗試",
+        observe: "觀察",
+        whyItMatters: "重要性",
+      },
+      goal: "使用前組傾斜、前組擺動及對焦距離，將清晰焦平面對齊三個分開的關鍵表面。",
+      regions: {
+        nearLeft: "近左",
+        centre: "中央",
+        farRight: "遠右",
+      },
+      stages: {
+        focusExploration: {
+          title: "探索中立焦平面",
+          try: "保持前組傾斜及前組擺動在 0°，將對焦距離移過近左、中央及遠右細節。",
+          observe: "目前以{{strongestRegion}}最清晰。近左{{nearLeftStatus}}、中央{{centreStatus}}、遠右{{farRightStatus}}。",
+          whyItMatters: "對焦距離會定位清晰焦平面。兩個移動均保持中立時，焦平面方向與底片平面平行，無法跟隨在兩個方向都改變的平面。",
+        },
+        tiltOnly: {
+          title: "單獨探索前組傾斜",
+          try: "保持前組擺動在 0°，使用前組傾斜後重新對焦。比較三個區域及側面剖面。",
+          observe: "前組傾斜已啟用，而前組擺動保持中立。近左{{nearLeftStatus}}、中央{{centreStatus}}、遠右{{farRightStatus}}；目前以{{strongestRegion}}最清晰。",
+          whyItMatters: "傾斜會改變清晰焦平面的一個方向分量。若平面亦向左右改變，仍需要第二個方向分量。",
+        },
+        swingOnly: {
+          title: "單獨探索前組擺動",
+          try: "保持前組傾斜在 0°，使用前組擺動後重新對焦。比較三個區域及頂部剖面。",
+          observe: "前組擺動已啟用，而前組傾斜保持中立。近左{{nearLeftStatus}}、中央{{centreStatus}}、遠右{{farRightStatus}}；目前以{{strongestRegion}}最清晰。",
+          whyItMatters: "擺動會改變清晰焦平面的左右方向分量。沒有傾斜時，垂直／深度方向的分量仍未對齊。",
+        },
+        compoundAlignment: {
+          title: "結合傾斜、擺動及對焦",
+          try: "同時使用前組傾斜及前組擺動，然後重新對焦。比較對焦屏、對焦分佈、側面、頂部及沙姆剖面。",
+          observe: "兩個方向控制都已啟用。近左{{nearLeftStatus}}、中央{{centreStatus}}、遠右{{farRightStatus}}；目前以{{strongestRegion}}最清晰。",
+          whyItMatters: "前組傾斜及前組擺動提供複合平面的兩個方向分量，對焦距離再將這個平面定位到主體上。",
+        },
+        refineCompound: {
+          title: "微調複合平面對齊",
+          try: "使用公開的 0.1° 傾斜、擺動步進及 10 mm 對焦距離步進，觀察{{weakestRegion}}區域。",
+          observe: "三個區域中有 {{sharpCount}} 個清晰。{{weakestRegion}}目前為{{weakestStatus}}，是現時的限制。",
+          whyItMatters: "複合方向接近正確時，仍要精確定位。根據物理目標狀態微調三個控制，而不是記住某個設定。",
+        },
+        aligned: {
+          title: "複合平面已對齊",
+          try: "檢查三個關鍵表面，並比較對焦屏、對焦分佈、側面、頂部及沙姆剖面。",
+          observe: "近左、中央及遠右全部清晰；目前前組傾斜為 {{tilt}}、前組擺動為 {{swing}}、對焦距離為 {{focus}}。",
+          whyItMatters: "三個表面屬於分開的物件，但其關鍵細節位於同一個複合平面。對齊這個平面可以處理這個排列，而不是依靠額外景深。",
+        },
+      },
+    },
     understanding: {
       objective: "比較整部相機移動造成的視點改變與前組、後組移軸，並觀察哪些影像關係會隨之改變。",
       bullets: {
