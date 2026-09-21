@@ -56,9 +56,24 @@ const macroCard = (page: Page, sceneTitle: string, groupTitle = "Macro Photograp
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: sceneTitle, level: 3, exact: true }) });
 
-const openSceneCard = async (page: Page, scene: (typeof MACRO_SCENES)[number]) => {
+const assertSameDocument = async (page: Page, expectedToken: string) => {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __macroSweepDocumentToken?: string }).__macroSweepDocumentToken,
+      ),
+    )
+    .toBe(expectedToken);
+};
+
+const openSceneCard = async (
+  page: Page,
+  scene: (typeof MACRO_SCENES)[number],
+  expectedDocumentToken?: string,
+) => {
   await macroCard(page, scene.title).getByRole("link", { name: "Open Scene", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/simulator/free/${scene.id}$`));
+  if (expectedDocumentToken) await assertSameDocument(page, expectedDocumentToken);
   const sceneCanvas = page.getByTestId("scene-canvas");
   await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
   await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", scene.id);
@@ -67,9 +82,10 @@ const openSceneCard = async (page: Page, scene: (typeof MACRO_SCENES)[number]) =
   });
 };
 
-const returnToScenes = async (page: Page) => {
+const returnToScenes = async (page: Page, expectedDocumentToken?: string) => {
   await page.getByRole("link", { name: "All Scenes", exact: true }).click();
   await expect(page).toHaveURL(/\/scenes$/);
+  if (expectedDocumentToken) await assertSameDocument(page, expectedDocumentToken);
   await expect(macroGroup(page)).toBeVisible();
 };
 
@@ -153,7 +169,7 @@ test("Macro Photography cards, route initialization, and state isolation survive
     await expect(card.getByText("In development", { exact: true })).toHaveCount(0);
   }
 
-  await openSceneCard(page, MACRO_SCENES[0]);
+  await openSceneCard(page, MACRO_SCENES[0], documentToken);
   await expect(page.getByRole("slider", { name: "Focus distance" })).toHaveValue("900");
   const sceneOneAperture = page.getByRole("radiogroup", { name: "Aperture" });
   await expect(sceneOneAperture).toHaveAttribute("data-selected-aperture", "5.6");
@@ -162,12 +178,8 @@ test("Macro Photography cards, route initialization, and state isolation survive
   await sceneOneAperture.getByRole("radio", { name: "f/22" }).check();
   await expect(page.getByRole("slider", { name: "Focus distance" })).toHaveValue("300");
   await expect(sceneOneAperture).toHaveAttribute("data-selected-aperture", "22");
-  await expect
-    .poll(() => page.evaluate(() => (window as Window & { __macroSweepDocumentToken?: string }).__macroSweepDocumentToken))
-    .toBe(documentToken);
-
-  await returnToScenes(page);
-  await openSceneCard(page, MACRO_SCENES[1]);
+  await returnToScenes(page, documentToken);
+  await openSceneCard(page, MACRO_SCENES[1], documentToken);
   await expect(page.getByRole("slider", { name: "Focus distance" })).toHaveValue("400");
   const sceneTwoAperture = page.getByRole("radiogroup", { name: "Aperture" });
   await expect(sceneTwoAperture).toHaveAttribute("data-selected-aperture", "5.6");
@@ -181,8 +193,8 @@ test("Macro Photography cards, route initialization, and state isolation survive
   await sceneTwoAperture.getByRole("radio", { name: "f/32" }).check();
   await expect(sceneTwoAperture).toHaveAttribute("data-selected-aperture", "32");
 
-  await returnToScenes(page);
-  await openSceneCard(page, MACRO_SCENES[2]);
+  await returnToScenes(page, documentToken);
+  await openSceneCard(page, MACRO_SCENES[2], documentToken);
   await expect(page.getByRole("slider", { name: "Focus distance" })).toHaveValue("400");
   const sceneThreeTilt = page.getByRole("slider", { name: "Front Tilt" });
   const sceneThreeAperture = page.getByRole("radiogroup", { name: "Aperture" });
@@ -197,8 +209,8 @@ test("Macro Photography cards, route initialization, and state isolation survive
   await setPublicRangeInput(page.getByRole("slider", { name: "Front Tilt" }), 6.3);
   await expect(sceneThreeTilt).toHaveValue("6.3");
 
-  await returnToScenes(page);
-  await openSceneCard(page, MACRO_SCENES[3]);
+  await returnToScenes(page, documentToken);
+  await openSceneCard(page, MACRO_SCENES[3], documentToken);
   const sceneFourFocus = page.getByRole("slider", { name: "Focus distance" });
   const sceneFourTilt = page.getByRole("slider", { name: "Tilt" });
   const sceneFourSwing = page.getByRole("slider", { name: "Swing" });
@@ -219,7 +231,7 @@ test("Macro Photography cards, route initialization, and state isolation survive
   await page.getByRole("button", { name: "Open Task and Feedback" }).click();
   await expect(page.getByTestId("macro-compound-teaching")).toHaveAttribute("data-stage", "focus-exploration");
 
-  await returnToScenes(page);
+  await returnToScenes(page, documentToken);
   const language = page.getByRole("combobox", { name: "Language" });
   await language.selectOption("zh-HK");
   const zhGroup = macroGroup(page, "微距攝影");

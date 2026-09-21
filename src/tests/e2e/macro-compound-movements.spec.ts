@@ -109,7 +109,11 @@ test("Macro 4 teaches compound Tilt + Swing + Focus through the public route", a
     );
   }
 
-  await page.getByRole("button", { name: "Feedback", exact: true }).click({ force: true });
+  const feedbackButton = page.getByRole("button", { name: "Feedback", exact: true });
+  await feedbackButton.scrollIntoViewIfNeeded();
+  await expect(feedbackButton).toBeVisible();
+  await expect(feedbackButton).toBeEnabled();
+  await feedbackButton.click();
   const feedback = page.getByTestId("macro-compound-feedback");
   await expect(feedback).toHaveAttribute("data-stage", "aligned");
   await expect(feedback).toContainText("all Sharp");
@@ -123,7 +127,10 @@ test("Macro 4 teaches compound Tilt + Swing + Focus through the public route", a
   await expect(feedback).not.toHaveAttribute("data-stage", "aligned");
 
   const resetMovements = page.getByRole("button", { name: "Reset movements" });
-  await resetMovements.click({ force: true });
+  await resetMovements.scrollIntoViewIfNeeded();
+  await expect(resetMovements).toBeVisible();
+  await expect(resetMovements).toBeEnabled();
+  await resetMovements.click();
   await expect(tilt).toHaveValue("0");
   await expect(swing).toHaveValue("0");
   await expect(focus).toHaveValue("500");
