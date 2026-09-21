@@ -223,8 +223,37 @@ uniform float useNearGather;
 uniform float flipDisplayX;
 uniform float flipDisplayY;
 uniform float groundGlassIlluminanceGain;
+uniform float groundGlassNaturalIlluminationEnabled;
+uniform float groundGlassNaturalIlluminationImageDistanceMm;
+uniform float groundGlassNaturalIlluminationOffsetXMm;
+uniform float groundGlassNaturalIlluminationOffsetYMm;
+uniform float groundGlassNaturalIlluminationWindowCenterXMm;
+uniform float groundGlassNaturalIlluminationWindowCenterYMm;
+uniform float groundGlassNaturalIlluminationWindowWidthMm;
+uniform float groundGlassNaturalIlluminationWindowHeightMm;
 uniform float renderWidth;
 uniform float renderHeight;
+
+float resolveGroundGlassNaturalIllumination(vec2 filmPointMm) {
+  if (groundGlassNaturalIlluminationEnabled < 0.5) return 1.0;
+
+  float imageDistanceMm = groundGlassNaturalIlluminationImageDistanceMm;
+  float imageDistanceSquared = imageDistanceMm * imageDistanceMm;
+  vec2 offsetMm = vec2(
+    groundGlassNaturalIlluminationOffsetXMm,
+    groundGlassNaturalIlluminationOffsetYMm
+  );
+  vec2 deltaMm = filmPointMm - offsetMm;
+  float denominator = imageDistanceSquared + dot(deltaMm, deltaMm);
+  if (imageDistanceMm <= 0.0 || denominator <= 0.0) return 1.0;
+
+  float cosineSquared = imageDistanceSquared / denominator;
+  return cosineSquared * cosineSquared;
+}
+
+vec2 mapGroundGlassRttSourceUvToPhysicalRawFilmUv(vec2 sourceUv) {
+  return vec2(1.0 - sourceUv.x, 1.0 - sourceUv.y);
+}
 
 void main(){
   vec2 screenUv = vUv;
@@ -238,11 +267,29 @@ void main(){
     gathered.rgb = mix(gathered.rgb, nearLayer.rgb, clamp(nearLayer.a, 0.0, 1.0));
   }
 
+  // sampleUv identifies a texel in the RTT source texture. Texture V is
+  // bottom-origin, so express that local sample as the top-origin upright
+  // source before applying the canonical source -> physical Raw-film map.
+  // The inspection window centre was mapped by the same contract in the
+  // render adapter; only its local width/height remain unchanged.
+  vec2 sourceUprightUv = vec2(sampleUv.x, 1.0 - sampleUv.y);
+  vec2 physicalRawFilmUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceUprightUv);
+  vec2 physicalRawFilmLocalUv = physicalRawFilmUv - vec2(0.5);
+  vec2 filmPointMm = vec2(
+    groundGlassNaturalIlluminationWindowCenterXMm +
+      physicalRawFilmLocalUv.x * groundGlassNaturalIlluminationWindowWidthMm,
+    groundGlassNaturalIlluminationWindowCenterYMm -
+      physicalRawFilmLocalUv.y * groundGlassNaturalIlluminationWindowHeightMm
+  );
+  float groundGlassNaturalIlluminationGain =
+    resolveGroundGlassNaturalIllumination(filmPointMm);
+
   // The post-process render targets carry linear-light scene values. Apply
-  // the resolved aperture and bellows-extension throughput here so scene
-  // lighting and the main viewport remain independent from Ground Glass
-  // presentation.
+  // global aperture/bellows throughput and the separate spatial natural
+  // illumination factor so scene lighting and Ground Glass optics remain
+  // independent from one another.
   gathered.rgb *= groundGlassIlluminanceGain;
+  gathered.rgb *= groundGlassNaturalIlluminationGain;
   gl_FragColor = gathered;
 }
 `;

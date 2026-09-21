@@ -198,6 +198,15 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassCompositeFragmentShader).toContain("useNearGather");
     expect(groundGlassCompositeFragmentShader).toContain("uniform float groundGlassIlluminanceGain");
     expect(groundGlassCompositeFragmentShader).toContain("gathered.rgb *= groundGlassIlluminanceGain");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float groundGlassNaturalIlluminationEnabled");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float groundGlassNaturalIlluminationImageDistanceMm");
+    expect(groundGlassCompositeFragmentShader).toContain("resolveGroundGlassNaturalIllumination");
+    expect(groundGlassCompositeFragmentShader).toContain("mapGroundGlassRttSourceUvToPhysicalRawFilmUv");
+    expect(groundGlassCompositeFragmentShader).toContain("vec2 sourceUprightUv");
+    expect(groundGlassCompositeFragmentShader).toContain("1.0 - sampleUv.y");
+    expect(groundGlassCompositeFragmentShader).toContain("physicalRawFilmLocalUv");
+    expect(groundGlassCompositeFragmentShader).toContain("gathered.rgb *= groundGlassNaturalIlluminationGain");
+    expect(groundGlassCompositeFragmentShader).toContain("groundGlassIlluminanceGain");
     expect(groundGlassCompositeFragmentShader).not.toContain("applyFocusRing");
     expect(groundGlassCompositeFragmentShader).not.toContain("showRing");
     expect(groundGlassCompositeFragmentShader).not.toContain("sigma");

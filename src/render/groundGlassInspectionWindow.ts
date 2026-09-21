@@ -2,6 +2,7 @@ import type { GroundGlassPanOffset } from "./groundGlassStageTransform";
 import type { GroundGlassPreviewMode } from "./groundGlassTargetProjection";
 import {
   applyGroundGlassRttDisplayTransform,
+  mapGroundGlassRttSourceUvToPhysicalRawFilmUv,
   resolveGroundGlassRttDisplayTransform,
 } from "./groundGlassRttOrientation";
 
@@ -144,6 +145,47 @@ export const resolveSampledFilmDimensionsMm = (input: {
   widthMm: input.filmWidthMm * clamp(input.inspectionWindow.widthFraction, Number.EPSILON, 1),
   heightMm: input.filmHeightMm * clamp(input.inspectionWindow.heightFraction, Number.EPSILON, 1),
 });
+
+/**
+ * Resolve the current RTT source crop in the rear-standard physical Raw-film
+ * basis. The window centre is an upright-source, top-origin coordinate; map
+ * it through the canonical source-to-Raw orientation contract before
+ * converting it to the rear-standard +X/+Y basis.
+ */
+export const resolveGroundGlassInspectionFilmWindowMm = (input: {
+  filmWidthMm: number;
+  filmHeightMm: number;
+  inspectionWindow: GroundGlassInspectionWindow;
+}): {
+  centerXMm: number;
+  centerYMm: number;
+  widthMm: number;
+  heightMm: number;
+} => {
+  const widthFraction = clamp(
+    finiteOr(input.inspectionWindow.widthFraction, 1),
+    Number.EPSILON,
+    1,
+  );
+  const heightFraction = clamp(
+    finiteOr(input.inspectionWindow.heightFraction, 1),
+    Number.EPSILON,
+    1,
+  );
+  const centerU = clamp(finiteOr(input.inspectionWindow.centerU, 0.5), widthFraction / 2, 1 - widthFraction / 2);
+  const centerV = clamp(finiteOr(input.inspectionWindow.centerV, 0.5), heightFraction / 2, 1 - heightFraction / 2);
+  const physicalRawFilmCenterUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv({
+    u: centerU,
+    v: centerV,
+  });
+
+  return {
+    centerXMm: (physicalRawFilmCenterUv.u - 0.5) * input.filmWidthMm,
+    centerYMm: (0.5 - physicalRawFilmCenterUv.v) * input.filmHeightMm,
+    widthMm: input.filmWidthMm * widthFraction,
+    heightMm: input.filmHeightMm * heightFraction,
+  };
+};
 
 /**
  * Stage pan coordinates follow the displayed Ground Glass image. Inspection

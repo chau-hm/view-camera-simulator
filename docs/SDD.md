@@ -473,6 +473,7 @@ export type DerivedOpticsState = {
   groundGlassProjection: ProjectionData;
   lensDefinition: LensDefinition | null;
   lensCoverage: DerivedLensCoverage | null;
+  groundGlassNaturalIllumination: GroundGlassNaturalIlluminationState;
 };
 ```
 
@@ -501,6 +502,34 @@ fail closed instead of producing a sentinel diameter.
 
 This PR does not intersect coverage with a tilted or swung film plane; that
 film-plane coverage problem is a later optical integration.
+
+## 9.2 Ground Glass natural illumination
+
+Ground Glass exposure and off-axis illumination remain separate optical
+factors. The existing global gain combines aperture throughput with valid
+bellows-extension loss; the Ground Glass RTT then applies the parallel-film
+thin-lens natural-illumination approximation independently:
+
+```text
+global Ground Glass gain
+  = aperture throughput × bellows-extension loss
+
+natural off-axis gain
+  = cos⁴(theta)
+```
+
+For a perpendicular film plane, `theta` is measured from the image-side
+optical axis to each physical film point, using the actual lens-to-film image
+distance. The falloff centre is the canonical optical-axis intersection with
+the film plane, so front rise and shift move it relative to the film. Raw and
+Upright presentation transforms and the inspection crop operate on the same
+physical source-film sample; the falloff is not a screen-space radial
+gradient.
+
+The current approximation is enabled only for a materially parallel
+lens-film relationship. Non-parallel Tilt/Swing states remain neutral until a
+later PR derives their film-plane illumination geometry. Natural illumination
+also does not define a finite image circle or mechanical-vignetting cutoff.
 
 ---
 

@@ -25,3 +25,17 @@ export const applyGroundGlassRttDisplayTransform = (
   u: transform.flipDisplayX ? 1 - uv.u : uv.u,
   v: transform.flipDisplayY ? 1 - uv.v : uv.v,
 });
+
+/**
+ * Map an upright RTT source coordinate to the canonical physical Raw-film
+ * coordinate.  This is deliberately separate from the screen/display
+ * transform: the composite first chooses a source texel for the screen,
+ * then this same 180-degree contract identifies that texel's physical film
+ * location.
+ */
+export const mapGroundGlassRttSourceUvToPhysicalRawFilmUv = (
+  sourceUv: { u: number; v: number },
+): { u: number; v: number } => applyGroundGlassRttDisplayTransform(
+  sourceUv,
+  resolveGroundGlassRttDisplayTransform("raw"),
+);

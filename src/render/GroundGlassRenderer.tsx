@@ -20,7 +20,6 @@ import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { formatGroundGlassFocusLabel } from "./groundGlassFocusLabel";
-import { resolveGroundGlassPresentationPolicy } from "./groundGlassPresentationPolicy";
 import type {
   GroundGlassRttChannel,
   GroundGlassRttRuntimeInfo,
@@ -181,9 +180,7 @@ export const GroundGlassRenderer = ({
     [opticsState, renderQuality, resolvedAperture],
   );
 
-  const blurOpacity = Math.min(0.85, dofSample.blurStrength * 1.2);
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
-  const presentationPolicy = resolveGroundGlassPresentationPolicy(scene);
   const isRttSceneFinal = isRttScene;
   const physicalInspectionWindow = useMemo(
     () => mapGroundGlassInspectionWindowToFilmSpace(inspectionWindow, previewMode),
@@ -282,7 +279,7 @@ export const GroundGlassRenderer = ({
           onRuntimeInfoChange={onRuntimeInfoChange}
         />
 
-        <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} showDecorativeVignette={presentationPolicy.showDecorativeVignette} blurOpacity={blurOpacity} physicalGrid={physicalGrid} />
+        <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} physicalGrid={physicalGrid} />
       </div>
     </>
   );

@@ -276,6 +276,15 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     });
     expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(initialGain, 12);
     expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(initialGain, 12);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value).toBeCloseTo(
+      optics.groundGlassNaturalIllumination.kind === "parallel-cos4"
+        ? optics.groundGlassNaturalIllumination.imageDistanceMm
+        : 0,
+      12,
+    );
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationEnabled).toBe(true);
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationKind).toBe("parallel-cos4");
     expect(compositeMaterial?.uniforms.flipDisplayX.value).toBe(1);
     expect(compositeMaterial?.uniforms.flipDisplayY.value).toBe(1);
     const initialGeneration = diagnostics.get()?.resourceGeneration;
@@ -340,6 +349,10 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     act(() => fiberTestState.frameCallback?.());
 
     expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(0);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value).toBe(0);
+    expect(diagnostics.get()?.groundGlassIlluminanceGain).toBe(1);
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationEnabled).toBe(false);
     expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(setSize).not.toHaveBeenCalled();
@@ -377,6 +390,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(compositeMaterial).toBeDefined();
     expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(1 / 1.44, 12);
     expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(1 / 1.44, 12);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value).toBeCloseTo(180, 12);
 
     const oneToOneCamera = {
       ...initialCamera,
@@ -392,6 +407,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     act(() => fiberTestState.frameCallback?.());
 
     expect(oneToOneOptics.diagnostics.imageDistanceMm).toBeCloseTo(300, 12);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value).toBeCloseTo(300, 12);
     expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(0.25, 12);
     expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(0.25, 12);
 

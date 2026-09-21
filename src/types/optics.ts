@@ -130,6 +130,27 @@ export type LensFilmRelationship = {
   isParallel: boolean;
   commonLine: Line3 | null;
 };
+
+/**
+ * Physical Ground Glass natural-illumination geometry.
+ *
+ * The parallel cos^4 model is deliberately limited to a film plane that is
+ * parallel to the lens plane.  The offsets are measured in the canonical
+ * rear-standard basis from the film centre to the optical-axis intersection.
+ */
+export type GroundGlassNaturalIlluminationState = Readonly<
+  | {
+      kind: "parallel-cos4";
+      imageDistanceMm: number;
+      opticalAxisOffsetXMm: number;
+      opticalAxisOffsetYMm: number;
+    }
+  | {
+      kind: "neutral";
+      reason: "non-parallel-lens-film" | "invalid-geometry";
+    }
+>;
+
 export type DerivedOpticsState = {
   /** Validated resolved outer placement consumed by every downstream view. */
   cameraRigPlacement: CameraRigPlacement;
@@ -147,6 +168,8 @@ export type DerivedOpticsState = {
   lensDefinition: LensDefinition | null;
   /** Coverage derived from the trusted canonical image distance, when valid. */
   lensCoverage: DerivedLensCoverage | null;
+  /** Physical natural-illumination geometry consumed by the Ground Glass RTT. */
+  groundGlassNaturalIllumination: GroundGlassNaturalIlluminationState;
   lensCenterWorld: Vec3;
   lensNormalWorld: Vec3;
   lensPlane: Plane;
