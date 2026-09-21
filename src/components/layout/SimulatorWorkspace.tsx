@@ -502,9 +502,19 @@ export const SimulatorWorkspace = ({
     !movementLocked &&
     !showPublicTeachingControls &&
     !(safeScene.movementCapabilities?.selectionMode === "single" && selectedMovement);
+  const availableMovements = safeScene.movementCapabilities?.available;
+  const hideUnavailableMovementControls = safeScene.movementCapabilities?.hideUnavailableControls === true;
+  const showRiseMovement =
+    !hideUnavailableMovementControls || !availableMovements || availableMovements.includes("frontRiseMm");
+  const showTiltMovement =
+    !hideUnavailableMovementControls || !availableMovements || availableMovements.includes("frontTiltDeg");
+  const showSwingMovement =
+    !hideUnavailableMovementControls || !availableMovements || availableMovements.includes("frontSwingDeg");
   const commonMovementHasDisabledControl =
     showCommonMovementControls &&
-    (!enabledControls.has("rise") || !enabledControls.has("tilt") || !enabledControls.has("swing"));
+    ((showRiseMovement && !enabledControls.has("rise")) ||
+      (showTiltMovement && !enabledControls.has("tilt")) ||
+      (showSwingMovement && !enabledControls.has("swing")));
   const hasSharedControlLockReason =
     (commonMovementHasDisabledControl && Boolean(lockReason)) ||
     (!focusControlEnabled && focusControlLockReason === lockReason && Boolean(lockReason)) ||
@@ -917,6 +927,9 @@ export const SimulatorWorkspace = ({
                     riseEnabled={enabledControls.has("rise")}
                     tiltEnabled={enabledControls.has("tilt")}
                     swingEnabled={enabledControls.has("swing")}
+                    showRise={showRiseMovement}
+                    showTilt={showTiltMovement}
+                    showSwing={showSwingMovement}
                     lockReason={lockReason}
                     lockReasonId={commonMovementHasDisabledControl ? sharedControlLockReasonId : undefined}
                     showLockReason={!hasSharedControlLockReason}
