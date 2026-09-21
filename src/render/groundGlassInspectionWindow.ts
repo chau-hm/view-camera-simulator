@@ -2,6 +2,7 @@ import type { GroundGlassPanOffset } from "./groundGlassStageTransform";
 import type { GroundGlassPreviewMode } from "./groundGlassTargetProjection";
 import {
   applyGroundGlassRttDisplayTransform,
+  mapGroundGlassRttSourceUvToPhysicalRawFilmUv,
   resolveGroundGlassRttDisplayTransform,
 } from "./groundGlassRttOrientation";
 
@@ -146,9 +147,10 @@ export const resolveSampledFilmDimensionsMm = (input: {
 });
 
 /**
- * Resolve the current RTT crop in the rear-standard film basis.  The window's
- * normalized v coordinate is top-origin, while the canonical film basis uses
- * +Y upward, so the center conversion is intentionally inverted here.
+ * Resolve the current RTT source crop in the rear-standard physical Raw-film
+ * basis. The window centre is an upright-source, top-origin coordinate; map
+ * it through the canonical source-to-Raw orientation contract before
+ * converting it to the rear-standard +X/+Y basis.
  */
 export const resolveGroundGlassInspectionFilmWindowMm = (input: {
   filmWidthMm: number;
@@ -172,10 +174,14 @@ export const resolveGroundGlassInspectionFilmWindowMm = (input: {
   );
   const centerU = clamp(finiteOr(input.inspectionWindow.centerU, 0.5), widthFraction / 2, 1 - widthFraction / 2);
   const centerV = clamp(finiteOr(input.inspectionWindow.centerV, 0.5), heightFraction / 2, 1 - heightFraction / 2);
+  const physicalRawFilmCenterUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv({
+    u: centerU,
+    v: centerV,
+  });
 
   return {
-    centerXMm: (centerU - 0.5) * input.filmWidthMm,
-    centerYMm: (0.5 - centerV) * input.filmHeightMm,
+    centerXMm: (physicalRawFilmCenterUv.u - 0.5) * input.filmWidthMm,
+    centerYMm: (0.5 - physicalRawFilmCenterUv.v) * input.filmHeightMm,
     widthMm: input.filmWidthMm * widthFraction,
     heightMm: input.filmHeightMm * heightFraction,
   };

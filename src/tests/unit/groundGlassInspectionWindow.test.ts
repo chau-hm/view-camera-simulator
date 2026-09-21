@@ -109,7 +109,7 @@ describe("Ground Glass physical inspection window", () => {
   });
 
   it("keeps the physical film crop origin when resolving natural illumination", () => {
-    expect(resolveGroundGlassInspectionFilmWindowMm({
+    const filmWindow = resolveGroundGlassInspectionFilmWindowMm({
       filmWidthMm: 127,
       filmHeightMm: 101.6,
       inspectionWindow: {
@@ -119,11 +119,30 @@ describe("Ground Glass physical inspection window", () => {
         widthFraction: 0.25,
         heightFraction: 0.5,
       },
-    })).toEqual({
-      centerXMm: 31.75,
-      centerYMm: 25.4,
-      widthMm: 31.75,
-      heightMm: 50.8,
     });
+
+    expect(filmWindow.centerXMm).toBeCloseTo(-31.75, 12);
+    expect(filmWindow.centerYMm).toBeCloseTo(-25.4, 12);
+    expect(filmWindow.widthMm).toBeCloseTo(31.75, 12);
+    expect(filmWindow.heightMm).toBeCloseTo(50.8, 12);
+  });
+
+  it("maps an asymmetric RTT source crop to its complementary physical Raw-film region", () => {
+    const filmWindow = resolveGroundGlassInspectionFilmWindowMm({
+      filmWidthMm: 127,
+      filmHeightMm: 101.6,
+      inspectionWindow: {
+        active: true,
+        centerU: 0.875,
+        centerV: 0.125,
+        widthFraction: 0.25,
+        heightFraction: 0.25,
+      },
+    });
+
+    expect(filmWindow.centerXMm).toBeCloseTo(-47.625, 12);
+    expect(filmWindow.centerYMm).toBeCloseTo(-38.1, 12);
+    expect(filmWindow.widthMm).toBeCloseTo(31.75, 12);
+    expect(filmWindow.heightMm).toBeCloseTo(25.4, 12);
   });
 });

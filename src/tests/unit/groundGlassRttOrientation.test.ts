@@ -5,6 +5,7 @@ import { configureGroundGlassCamera } from "../../render/configureGroundGlassCam
 import { mapGroundGlassUvToDisplayUv } from "../../render/groundGlassTargetProjection";
 import {
   applyGroundGlassRttDisplayTransform,
+  mapGroundGlassRttSourceUvToPhysicalRawFilmUv,
   resolveGroundGlassRttDisplayTransform,
 } from "../../render/groundGlassRttOrientation";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
@@ -37,6 +38,18 @@ describe("Ground Glass RTT orientation", () => {
 
       expect(rawDisplay, point.label).toEqual(flip180(point.upright));
       expect(uprightDisplay, point.label).toEqual(point.upright);
+    }
+  });
+
+  it("maps an upright RTT source coordinate to the same physical Raw-film coordinate", () => {
+    for (const point of ASYMMETRIC_REFERENCE_POINTS) {
+      const physicalRawFilmUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(point.upright);
+      const rawDisplayUv = applyGroundGlassRttDisplayTransform(
+        point.upright,
+        resolveGroundGlassRttDisplayTransform("raw"),
+      );
+
+      expect(physicalRawFilmUv, point.label).toEqual(rawDisplayUv);
     }
   });
 
@@ -112,7 +125,9 @@ describe("Ground Glass RTT orientation", () => {
           u: rttTextureUv.u,
           v: 1 - rttTextureUv.v,
         };
-        const physicalRawFilmUv = flip180(uprightReferenceUv);
+        const physicalRawFilmUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(
+          uprightReferenceUv,
+        );
 
         const renderedByMode = (previewMode: "raw" | "upright"): Uv => {
           const compositeSampleUv = applyGroundGlassRttDisplayTransform(

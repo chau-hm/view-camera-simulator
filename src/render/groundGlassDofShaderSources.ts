@@ -251,6 +251,10 @@ float resolveGroundGlassNaturalIllumination(vec2 filmPointMm) {
   return cosineSquared * cosineSquared;
 }
 
+vec2 mapGroundGlassRttSourceUvToPhysicalRawFilmUv(vec2 sourceUv) {
+  return vec2(1.0 - sourceUv.x, 1.0 - sourceUv.y);
+}
+
 void main(){
   vec2 screenUv = vUv;
   vec2 sampleUv = vec2(
@@ -263,14 +267,19 @@ void main(){
     gathered.rgb = mix(gathered.rgb, nearLayer.rgb, clamp(nearLayer.a, 0.0, 1.0));
   }
 
-  // sampleUv is the physical source-film sample after the Raw/Upright
-  // transform. The inspection window is already resolved in source-film
-  // space, so zooming cannot recenter this falloff in the viewport.
+  // sampleUv identifies a texel in the RTT source texture. Texture V is
+  // bottom-origin, so express that local sample as the top-origin upright
+  // source before applying the canonical source -> physical Raw-film map.
+  // The inspection window centre was mapped by the same contract in the
+  // render adapter; only its local width/height remain unchanged.
+  vec2 sourceUprightUv = vec2(sampleUv.x, 1.0 - sampleUv.y);
+  vec2 physicalRawFilmUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceUprightUv);
+  vec2 physicalRawFilmLocalUv = physicalRawFilmUv - vec2(0.5);
   vec2 filmPointMm = vec2(
     groundGlassNaturalIlluminationWindowCenterXMm +
-      (sampleUv.x - 0.5) * groundGlassNaturalIlluminationWindowWidthMm,
-    groundGlassNaturalIlluminationWindowCenterYMm +
-      (sampleUv.y - 0.5) * groundGlassNaturalIlluminationWindowHeightMm
+      physicalRawFilmLocalUv.x * groundGlassNaturalIlluminationWindowWidthMm,
+    groundGlassNaturalIlluminationWindowCenterYMm -
+      physicalRawFilmLocalUv.y * groundGlassNaturalIlluminationWindowHeightMm
   );
   float groundGlassNaturalIlluminationGain =
     resolveGroundGlassNaturalIllumination(filmPointMm);
