@@ -471,9 +471,36 @@ export type DerivedOpticsState = {
   depthOfFieldFarPlane: Plane;
 
   groundGlassProjection: ProjectionData;
-  imageCircleData: ImageCircleData;
+  lensDefinition: LensDefinition | null;
+  lensCoverage: DerivedLensCoverage | null;
 };
 ```
+
+## 9.1 Lens specification and coverage contract
+
+The thin-lens equation determines conjugate image distance; it does not, by
+itself, define a finite image circle. Finite coverage belongs to the reusable
+lens specification, not to a scene, renderer, or camera-state constant.
+
+Coverage profiles use an explicit complete included angle in degrees. For an
+image distance `v` in millimetres, the derived circle is on a plane
+perpendicular to the optical axis:
+
+```text
+half-angle = fullCoverageAngleDeg / 2
+radius = v * tan(half-angle)
+diameter = 2 * radius
+```
+
+The physical image distance is therefore part of the derivation. Bellows
+extension in macro focus increases `v` and increases the projected coverage
+diameter for a fixed angular profile. The current simulator focal-length
+compatibility resolver uses explicit `unbounded-ideal` definitions, so it does
+not introduce unapproved finite manufacturer values. Invalid physical inputs
+fail closed instead of producing a sentinel diameter.
+
+This PR does not intersect coverage with a tilted or swung film plane; that
+film-plane coverage problem is a later optical integration.
 
 ---
 
