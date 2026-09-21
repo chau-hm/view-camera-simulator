@@ -14,6 +14,8 @@ import type { SceneDefinition } from "../../types/scene";
 import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
+import { deriveLensCoverage } from "./lensCoverage";
+import { resolveLensDefinitionForFocalLengthMm } from "./lensCatalog";
 import {
   resolveSceneRelativeSelectableFocus,
   resolveFocusFundamentalsFocusing,
@@ -204,6 +206,19 @@ const toLegacyCameraBodyTransform = (
   pivotWorld: transform.bodyPitchPivotRigLocal,
 });
 
+const resolveDerivedLensState = (
+  focalLengthMm: number,
+  imageDistanceMm: number | null,
+) => {
+  const lensDefinition = resolveLensDefinitionForFocalLengthMm(focalLengthMm);
+  const lensCoverage =
+    lensDefinition && imageDistanceMm !== null
+      ? deriveLensCoverage(lensDefinition.coverage, imageDistanceMm)
+      : null;
+
+  return { lensDefinition, lensCoverage };
+};
+
 const createCameraBodyLocalGeometry = ({
   lensCenterLocal,
   lensNormalLocal,
@@ -358,6 +373,8 @@ const baseFallbackState = (
     cameraBodyTransform,
     cameraBodyLocalGeometry,
     cameraBodyPivotWorld,
+    lensDefinition: null,
+    lensCoverage: null,
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,
@@ -577,6 +594,14 @@ export const deriveOpticsState = (
       lensCenterWorld,
       filmPlaneCornersWorld,
     );
+    const infinityImageDistanceMm =
+      focusFundamentalsFocusing?.fallbackApplied
+        ? null
+        : focusFundamentalsFocusing?.imageDistanceVMm ?? f;
+    const derivedLensState = resolveDerivedLensState(
+      f,
+      infinityImageDistanceMm,
+    );
 
     return {
       cameraRigPlacement,
@@ -584,6 +609,7 @@ export const deriveOpticsState = (
       cameraBodyTransform,
       cameraBodyLocalGeometry,
       cameraBodyPivotWorld,
+      ...derivedLensState,
       lensCenterWorld,
       lensNormalWorld,
       lensPlane,
@@ -890,6 +916,17 @@ export const deriveOpticsState = (
     filmPlaneCornersWorld,
   );
   const offAxisProjectionMatrix = calculateOffAxisProjectionMatrix(offAxisProjectionInput);
+  const coverageImageDistanceMm = focusFundamentalsFocusing
+    ? focusFundamentalsFocusing.fallbackApplied
+      ? null
+      : focusFundamentalsFocusing.imageDistanceVMm
+    : scene.finiteFocusStrategy
+      ? baselineFilm.rawImageDistanceMm
+      : baselineFilm.imageDistanceMm;
+  const derivedLensState = resolveDerivedLensState(
+    cameraState.focalLengthMm,
+    coverageImageDistanceMm,
+  );
 
   return {
     cameraRigPlacement,
@@ -897,6 +934,7 @@ export const deriveOpticsState = (
     cameraBodyTransform,
     cameraBodyLocalGeometry,
     cameraBodyPivotWorld,
+    ...derivedLensState,
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,

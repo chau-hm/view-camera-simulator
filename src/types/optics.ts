@@ -1,3 +1,5 @@
+import type { DerivedLensCoverage, LensDefinition } from "./lens";
+
 export type Vec3 = {
   x: number;
   y: number;
@@ -141,6 +143,10 @@ export type DerivedOpticsState = {
   cameraBodyLocalGeometry: CameraBodyLocalGeometry;
   /** Body-pitch pivot resolved into world coordinates. */
   cameraBodyPivotWorld: Vec3;
+  /** Resolved lens specification at the current focalLengthMm compatibility boundary. */
+  lensDefinition: LensDefinition | null;
+  /** Coverage derived from the trusted canonical image distance, when valid. */
+  lensCoverage: DerivedLensCoverage | null;
   lensCenterWorld: Vec3;
   lensNormalWorld: Vec3;
   lensPlane: Plane;
