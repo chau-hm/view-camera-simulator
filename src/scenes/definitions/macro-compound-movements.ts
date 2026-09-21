@@ -39,6 +39,7 @@ export const macroCompoundMovementsScene: SceneDefinition = {
   focusDistanceRangeMm: MACRO_COMPOUND_MOVEMENTS_FOCUS_DISTANCE_RANGE_MM,
   movementCapabilities: {
     available: ["frontTiltDeg", "frontSwingDeg"],
+    hideUnavailableControls: true,
     selectionMode: "multiple",
     defaultMovement: "frontTiltDeg",
   },

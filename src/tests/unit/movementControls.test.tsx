@@ -71,6 +71,22 @@ describe("MovementControls", () => {
     expect(rise.getAttribute("aria-describedby")).toBeTruthy();
   });
 
+  it("can hide movement rows that are not part of a scene capability", () => {
+    render(
+      <MovementControls
+        {...enabledProps}
+        showRise={false}
+        showTilt
+        showSwing
+      />,
+    );
+
+    expect(screen.queryByRole("slider", { name: "Rise" })).not.toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Tilt" })).toBeEnabled();
+    expect(screen.getByRole("slider", { name: "Swing" })).toBeEnabled();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("opens help, closes with Escape, and restores focus to the header trigger", async () => {
     render(<MovementControls {...enabledProps} />);
 

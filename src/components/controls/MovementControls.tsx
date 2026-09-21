@@ -14,6 +14,9 @@ type MovementControlsProps = {
   riseEnabled: boolean;
   tiltEnabled: boolean;
   swingEnabled: boolean;
+  showRise?: boolean;
+  showTilt?: boolean;
+  showSwing?: boolean;
   lockReason: string;
   lockReasonId?: string;
   showLockReason?: boolean;
@@ -24,6 +27,9 @@ export const MovementControls = ({
   riseEnabled,
   tiltEnabled,
   swingEnabled,
+  showRise = true,
+  showTilt = true,
+  showSwing = true,
   lockReason,
   lockReasonId,
   showLockReason = true,
@@ -39,7 +45,10 @@ export const MovementControls = ({
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const helpTitleId = useId();
   const movementLockReasonId = useId();
-  const hasLockedMovement = !riseEnabled || !tiltEnabled || !swingEnabled;
+  const hasLockedMovement =
+    (showRise && !riseEnabled) ||
+    (showTilt && !tiltEnabled) ||
+    (showSwing && !swingEnabled);
   const describedById = lockReasonId ?? movementLockReasonId;
 
   useEffect(() => {
@@ -114,7 +123,7 @@ export const MovementControls = ({
       )}
 
       <div className="movement-controls__rows">
-        <CompactRangeRow
+        {showRise ? <CompactRangeRow
           label={t(simulatorMessageKeys.controls.riseLabel)}
           value={formatMillimeter(movement.frontRiseMm)}
           active={movement.frontRiseMm !== 0}
@@ -137,9 +146,9 @@ export const MovementControls = ({
               }),
             onChange: (event) => setRise(Number(event.target.value)),
           }}
-        />
+        /> : null}
 
-        <CompactRangeRow
+        {showTilt ? <CompactRangeRow
           label={t(simulatorMessageKeys.controls.tiltLabel)}
           value={formatDegrees(movement.frontTiltDeg)}
           active={movement.frontTiltDeg !== 0}
@@ -162,9 +171,9 @@ export const MovementControls = ({
               }),
             onChange: (event) => setTilt(Number(event.target.value)),
           }}
-        />
+        /> : null}
 
-        <CompactRangeRow
+        {showSwing ? <CompactRangeRow
           label={t(simulatorMessageKeys.controls.swingLabel)}
           value={formatDegrees(movement.frontSwingDeg)}
           active={movement.frontSwingDeg !== 0}
@@ -187,7 +196,7 @@ export const MovementControls = ({
               }),
             onChange: (event) => setSwing(Number(event.target.value)),
           }}
-        />
+        /> : null}
       </div>
 
       {showLockReason && hasLockedMovement && lockReason ? (

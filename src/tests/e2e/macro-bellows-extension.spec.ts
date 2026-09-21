@@ -75,7 +75,6 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   const initialFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
   expect(initialFilmCenter[2]).toBeCloseTo(-180, 5);
   const initialSceneImage = await sceneWebglCanvas.screenshot();
-  const initialGroundGlassImage = await groundGlassCanvas.screenshot();
 
   await setStepRangeInput(page, "Focus distance", 300);
   await expect(readout).toContainText("300.0 mm");
@@ -108,7 +107,7 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   const finalFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
   expect(finalFilmCenter[2]).toBeCloseTo(-300, 5);
   expect(await sceneWebglCanvas.screenshot()).not.toEqual(initialSceneImage);
-  expect(await groundGlassCanvas.screenshot()).not.toEqual(initialGroundGlassImage);
+  expect(await readGroundGlassGain()).toBeLessThan(initialGroundGlassGain);
   expect(pageErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });
