@@ -146,6 +146,42 @@ export const resolveSampledFilmDimensionsMm = (input: {
 });
 
 /**
+ * Resolve the current RTT crop in the rear-standard film basis.  The window's
+ * normalized v coordinate is top-origin, while the canonical film basis uses
+ * +Y upward, so the center conversion is intentionally inverted here.
+ */
+export const resolveGroundGlassInspectionFilmWindowMm = (input: {
+  filmWidthMm: number;
+  filmHeightMm: number;
+  inspectionWindow: GroundGlassInspectionWindow;
+}): {
+  centerXMm: number;
+  centerYMm: number;
+  widthMm: number;
+  heightMm: number;
+} => {
+  const widthFraction = clamp(
+    finiteOr(input.inspectionWindow.widthFraction, 1),
+    Number.EPSILON,
+    1,
+  );
+  const heightFraction = clamp(
+    finiteOr(input.inspectionWindow.heightFraction, 1),
+    Number.EPSILON,
+    1,
+  );
+  const centerU = clamp(finiteOr(input.inspectionWindow.centerU, 0.5), widthFraction / 2, 1 - widthFraction / 2);
+  const centerV = clamp(finiteOr(input.inspectionWindow.centerV, 0.5), heightFraction / 2, 1 - heightFraction / 2);
+
+  return {
+    centerXMm: (centerU - 0.5) * input.filmWidthMm,
+    centerYMm: (0.5 - centerV) * input.filmHeightMm,
+    widthMm: input.filmWidthMm * widthFraction,
+    heightMm: input.filmHeightMm * heightFraction,
+  };
+};
+
+/**
  * Stage pan coordinates follow the displayed Ground Glass image. Inspection
  * cropping configures the pre-composite RTT camera/frustum, so display-space
  * coordinates must be mapped through the same transform used by the composite

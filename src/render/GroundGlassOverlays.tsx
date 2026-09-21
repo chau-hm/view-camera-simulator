@@ -5,27 +5,13 @@ import { simulatorMessageKeys } from "../i18n/simulatorMessageKeys";
 import { formatMillimeter } from "../utils/formatters";
 import type { GroundGlassPhysicalGrid } from "./groundGlassPhysicalGrid";
 
-export type GroundGlassOverlaysProps = {
-  gridEnabled: boolean;
-  rawDebug?: boolean;
-  showDecorativeVignette: boolean;
-  blurOpacity: number;
-  isInfinityFocus: boolean;
-  lastFiniteFocusDepthMm?: number;
-  focusDistanceLabel: string;
-};
-
 export const GroundGlassTransformedOverlays = ({
   gridEnabled,
   rawDebug,
-  showDecorativeVignette,
-  blurOpacity,
   physicalGrid,
 }: {
   gridEnabled: boolean;
   rawDebug?: boolean;
-  showDecorativeVignette: boolean;
-  blurOpacity: number;
   /** Optional physical film grid; absent preserves the legacy decorative grid. */
   physicalGrid?: GroundGlassPhysicalGrid | null;
 }): ReactNode | null => {
@@ -76,15 +62,6 @@ export const GroundGlassTransformedOverlays = ({
         />
       )}
 
-      {showDecorativeVignette && !rawDebug && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(0,0,0,${blurOpacity}) 100%)`,
-          }}
-        />
-      )}
     </>
   );
 };

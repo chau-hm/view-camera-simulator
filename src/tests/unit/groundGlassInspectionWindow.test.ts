@@ -5,6 +5,7 @@ import {
   mapGroundGlassInspectionWindowToFilmSpace,
   resolveGroundGlassInspectionFrustum,
   resolveGroundGlassInspectionWindow,
+  resolveGroundGlassInspectionFilmWindowMm,
   resolveSampledFilmDimensionsMm,
 } from "../../render/groundGlassInspectionWindow";
 
@@ -105,5 +106,24 @@ describe("Ground Glass physical inspection window", () => {
     expect(mapGroundGlassInspectionWindowToFilmSpace(displayedWindow, "upright")).toEqual(
       displayedWindow,
     );
+  });
+
+  it("keeps the physical film crop origin when resolving natural illumination", () => {
+    expect(resolveGroundGlassInspectionFilmWindowMm({
+      filmWidthMm: 127,
+      filmHeightMm: 101.6,
+      inspectionWindow: {
+        active: true,
+        centerU: 0.75,
+        centerV: 0.25,
+        widthFraction: 0.25,
+        heightFraction: 0.5,
+      },
+    })).toEqual({
+      centerXMm: 31.75,
+      centerYMm: 25.4,
+      widthMm: 31.75,
+      heightMm: 50.8,
+    });
   });
 });

@@ -68,6 +68,7 @@ import {
   resolveSampledFilmDimensionsMm,
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
+import { resolveGroundGlassNaturalIlluminationUniformState } from "./groundGlassNaturalIllumination";
 import { resolveGroundGlassRttDisplayTransform } from "./groundGlassRttOrientation";
 import {
   GroundGlassProfiler,
@@ -444,6 +445,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         flipDisplayX: { value: 1.0 },
         flipDisplayY: { value: 1.0 },
         groundGlassIlluminanceGain: { value: 1.0 },
+        groundGlassNaturalIlluminationEnabled: { value: 0.0 },
+        groundGlassNaturalIlluminationImageDistanceMm: { value: 0.0 },
+        groundGlassNaturalIlluminationOffsetXMm: { value: 0.0 },
+        groundGlassNaturalIlluminationOffsetYMm: { value: 0.0 },
+        groundGlassNaturalIlluminationWindowCenterXMm: { value: 0.0 },
+        groundGlassNaturalIlluminationWindowCenterYMm: { value: 0.0 },
+        groundGlassNaturalIlluminationWindowWidthMm: { value: initialSampledFilmDimensions.widthMm },
+        groundGlassNaturalIlluminationWindowHeightMm: { value: initialSampledFilmDimensions.heightMm },
       },
     });
 
@@ -913,6 +922,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
       inspectionWindow,
     });
+    const naturalIlluminationUniformState = resolveGroundGlassNaturalIlluminationUniformState({
+      state: opticsState.groundGlassNaturalIllumination,
+      rawDebug,
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      inspectionWindow,
+    });
 
     // Configure once with a conservative preliminary range so the actual
     // Three.js camera forward vector can drive the final pitch-safe range.
@@ -1277,14 +1293,63 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
       compositeMaterial.uniforms.groundGlassIlluminanceGain.value = groundGlassIlluminanceGain;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationEnabled.value =
+        naturalIlluminationUniformState.enabled ? 1.0 : 0.0;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value =
+        naturalIlluminationUniformState.imageDistanceMm;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationOffsetXMm.value =
+        naturalIlluminationUniformState.opticalAxisOffsetXMm;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationOffsetYMm.value =
+        naturalIlluminationUniformState.opticalAxisOffsetYMm;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationWindowCenterXMm.value =
+        naturalIlluminationUniformState.filmWindowCenterXMm;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationWindowCenterYMm.value =
+        naturalIlluminationUniformState.filmWindowCenterYMm;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationWindowWidthMm.value =
+        naturalIlluminationUniformState.filmWindowWidthMm;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationWindowHeightMm.value =
+        naturalIlluminationUniformState.filmWindowHeightMm;
       const currentIlluminanceInfo = readRuntimeInfo();
       if (
         currentIlluminanceInfo &&
-        currentIlluminanceInfo.groundGlassIlluminanceGain !== groundGlassIlluminanceGain
+        (
+          currentIlluminanceInfo.groundGlassIlluminanceGain !== groundGlassIlluminanceGain ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationEnabled !==
+            naturalIlluminationUniformState.enabled ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationKind !==
+            opticsState.groundGlassNaturalIllumination.kind ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationImageDistanceMm !==
+            (opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.imageDistanceMm
+              : undefined) ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationOffsetXMm !==
+            (opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetXMm
+              : undefined) ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationOffsetYMm !==
+            (opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
+              : undefined)
+        )
       ) {
         setRuntimeInfo({
           ...currentIlluminanceInfo,
           groundGlassIlluminanceGain,
+          groundGlassNaturalIlluminationEnabled: naturalIlluminationUniformState.enabled,
+          groundGlassNaturalIlluminationKind:
+            opticsState.groundGlassNaturalIllumination.kind,
+          groundGlassNaturalIlluminationImageDistanceMm:
+            opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.imageDistanceMm
+              : undefined,
+          groundGlassNaturalIlluminationOffsetXMm:
+            opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetXMm
+              : undefined,
+          groundGlassNaturalIlluminationOffsetYMm:
+            opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
+              : undefined,
         });
       }
 

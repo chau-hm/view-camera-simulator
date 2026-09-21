@@ -17,6 +17,10 @@ import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection
 import { deriveLensCoverage } from "./lensCoverage";
 import { resolveLensDefinitionForFocalLengthMm } from "./lensCatalog";
 import {
+  createNeutralGroundGlassNaturalIllumination,
+  deriveGroundGlassNaturalIllumination,
+} from "./groundGlassNaturalIllumination";
+import {
   resolveSceneRelativeSelectableFocus,
   resolveFocusFundamentalsFocusing,
   type FocusFundamentalsFocusingResult,
@@ -375,6 +379,9 @@ const baseFallbackState = (
     cameraBodyPivotWorld,
     lensDefinition: null,
     lensCoverage: null,
+    groundGlassNaturalIllumination: createNeutralGroundGlassNaturalIllumination(
+      "invalid-geometry",
+    ),
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,
@@ -589,6 +596,15 @@ export const deriveOpticsState = (
       filmPlane,
       scene.id === "table-tilt",
     );
+    const groundGlassNaturalIllumination = focusFundamentalsFocusing?.fallbackApplied
+      ? createNeutralGroundGlassNaturalIllumination("invalid-geometry")
+      : deriveGroundGlassNaturalIllumination({
+          lensCenterWorld,
+          filmPlane,
+          rearStandardFrame: rearFrame,
+          opticalAxis,
+          isParallelLensFilm: infinityLensFilmRel.isParallel,
+        });
 
     const offAxisProjectionInput = createOffAxisProjectionInput(
       lensCenterWorld,
@@ -610,6 +626,7 @@ export const deriveOpticsState = (
       cameraBodyLocalGeometry,
       cameraBodyPivotWorld,
       ...derivedLensState,
+      groundGlassNaturalIllumination,
       lensCenterWorld,
       lensNormalWorld,
       lensPlane,
@@ -843,6 +860,13 @@ export const deriveOpticsState = (
   const lensFilmRel = deriveLensFilmRelationship(lensPlane, filmPlane, isTableTilt);
   const isParallelLensFilm = lensFilmRel.isParallel;
   const lensFilmHingeLine = lensFilmRel.commonLine;
+  const groundGlassNaturalIllumination = deriveGroundGlassNaturalIllumination({
+    lensCenterWorld,
+    filmPlane,
+    rearStandardFrame: rearFrame,
+    opticalAxis,
+    isParallelLensFilm,
+  });
   const { focusPlane, focusPlaneModel } = calculateFocusPlaneWithFallback(
     focusPointWorld,
     filmPlane,
@@ -935,6 +959,7 @@ export const deriveOpticsState = (
     cameraBodyLocalGeometry,
     cameraBodyPivotWorld,
     ...derivedLensState,
+    groundGlassNaturalIllumination,
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,

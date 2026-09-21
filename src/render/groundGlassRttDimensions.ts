@@ -121,6 +121,12 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
 
   /** Combined aperture and trusted bellows-extension gain applied by the composite. */
   groundGlassIlluminanceGain?: number;
+  /** Whether the physical parallel-film cos^4 factor is enabled in the composite. */
+  groundGlassNaturalIlluminationEnabled?: boolean;
+  groundGlassNaturalIlluminationKind?: "parallel-cos4" | "neutral";
+  groundGlassNaturalIlluminationImageDistanceMm?: number;
+  groundGlassNaturalIlluminationOffsetXMm?: number;
+  groundGlassNaturalIlluminationOffsetYMm?: number;
 
   resourceGeneration: number; // increments when RTT resources are recreated
 };
