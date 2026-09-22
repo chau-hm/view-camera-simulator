@@ -18,6 +18,11 @@ import { simulatorMessageKeys } from "../i18n/simulatorMessageKeys";
 import { getRenderQualitySettings } from "./renderQuality";
 import { getVisibleSceneLegendKeys } from "./sceneLegendHelpers";
 import {
+  resolvePhysicalImageCircleCoverageRays,
+  resolvePhysicalImageCircleRenderGeometry,
+  type PhysicalImageCircleRenderGeometry,
+} from "./imageCircleGeometry";
+import {
   createScenePlaneOverlayGeometry,
   getScenePlaneOverlayBounds,
   type ScenePlaneOverlayGeometry,
@@ -315,6 +320,87 @@ const OpticalAxisOverlay = ({ opticsState }: { opticsState: DerivedOpticsState }
   );
 };
 
+const PhysicalImageCircleOverlay = ({
+  geometry,
+  lensCenterWorld,
+}: {
+  geometry: PhysicalImageCircleRenderGeometry;
+  lensCenterWorld: { x: number; y: number; z: number };
+}) => {
+  const outlinePoints = [...geometry.perimeterWorld, geometry.perimeterWorld[0]];
+  const outlinePositions = new Float32Array(
+    outlinePoints.flatMap((point) => vecToWorld(point)),
+  );
+  const coverageRays = resolvePhysicalImageCircleCoverageRays({
+    geometry,
+    lensCenterWorld,
+  });
+  const planeQuaternion = quaternionForPlaneNormal(geometry.normalWorld);
+
+  return (
+    <group name="physical-image-circle" renderOrder={12}>
+      <mesh
+        name="physical-image-circle-surface"
+        position={vecToWorld(geometry.centerWorld)}
+        quaternion={planeQuaternion}
+        renderOrder={12}
+      >
+        <circleGeometry args={[toWorld(geometry.radiusMm), geometry.perimeterWorld.length]} />
+        <meshBasicMaterial
+          color="#e11d48"
+          transparent
+          opacity={0.08}
+          side={DoubleSide}
+          depthTest={false}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+      <line name="physical-image-circle-outline">
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[outlinePositions, 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial
+          attach="material"
+          color="#e11d48"
+          transparent
+          opacity={0.9}
+          depthTest={false}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </line>
+      <group name="physical-image-circle-coverage-rays" renderOrder={11}>
+        {coverageRays.map((ray, index) => {
+          const positions = new Float32Array([
+            ...vecToWorld(ray.startWorld),
+            ...vecToWorld(ray.endWorld),
+          ]);
+          return (
+            <line
+              key={`physical-image-circle-coverage-ray-${index}`}
+              name={`physical-image-circle-coverage-ray-${index}`}
+            >
+              <bufferGeometry>
+                <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+              </bufferGeometry>
+              <lineBasicMaterial
+                attach="material"
+                color="#e11d48"
+                transparent
+                opacity={0.55}
+                depthTest={false}
+                depthWrite={false}
+                toneMapped={false}
+              />
+            </line>
+          );
+        })}
+      </group>
+    </group>
+  );
+};
+
 // Helper to render legend text and swatch for a given key
 const renderLegendText = (key: string, t: TFunction) => {
   const swatch = (color: string) => (
@@ -370,6 +456,13 @@ const renderLegendText = (key: string, t: TFunction) => {
           <span>{t(simulatorMessageKeys.sceneLegend.opticalAxis)}</span>
         </>
       );
+    case "imageCircle":
+      return (
+        <>
+          {swatch("#e11d48")}
+          <span>{t(simulatorMessageKeys.sceneLegend.imageCircle)}</span>
+        </>
+      );
     default:
       return <span>{key}</span>;
   }
@@ -379,12 +472,14 @@ const renderLegendText = (key: string, t: TFunction) => {
 const LegendUpdater = ({
   containerRef,
   opticsState,
+  imageCircleGeometry,
   setLegendPositions,
   visibleKeys,
   showLegends,
 }: {
   containerRef: RefObject<HTMLDivElement | null>;
   opticsState: DerivedOpticsState;
+  imageCircleGeometry: PhysicalImageCircleRenderGeometry | null;
   setLegendPositions: React.Dispatch<React.SetStateAction<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>>;
   visibleKeys?: string[];
   showLegends?: boolean;
@@ -402,7 +497,7 @@ const LegendUpdater = ({
     const canvasRect = canvasEl.getBoundingClientRect();
     const containerRect = containerRef.current.getBoundingClientRect();
 
-    const allAnchors: Record<string, [number, number, number]> = {
+    const allAnchors: Record<string, [number, number, number] | undefined> = {
       film: vecToWorld(opticsState.filmCenterWorld),
       lens: vecToWorld(opticsState.lensCenterWorld),
       focus: vecToWorld((opticsState.focusPlane && opticsState.focusPlane.point) || (opticsState.sceneVisualCapDepthMm ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm)) : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000)))),
@@ -410,6 +505,9 @@ const LegendUpdater = ({
       farDof: vecToWorld((opticsState.depthOfFieldFarPlane && opticsState.depthOfFieldFarPlane.point) || (opticsState.sceneVisualCapDepthMm ? add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, opticsState.sceneVisualCapDepthMm)) : add(opticsState.lensCenterWorld, scale(opticsState.opticalAxis.direction, 10000)))),
       fov: vecToWorld({ x: opticsState.lensCenterWorld.x + 0.001, y: opticsState.lensCenterWorld.y + 0.001, z: opticsState.lensCenterWorld.z + 0.001 }),
       axis: vecToWorld({ x: opticsState.lensCenterWorld.x, y: opticsState.lensCenterWorld.y, z: opticsState.lensCenterWorld.z }),
+      imageCircle: imageCircleGeometry
+        ? vecToWorld(imageCircleGeometry.centerWorld)
+        : undefined,
     };
 
     const margin = 8;
@@ -500,6 +598,7 @@ const SceneAssets = ({ assets }: { assets: SceneAsset[] }) => (
 const OpticalGeometryOverlays = ({
   scene,
   opticsState,
+  imageCircleGeometry,
   showFocusPlaneOverlay,
   showDofOverlay,
   showOpticalGeometry,
@@ -507,6 +606,7 @@ const OpticalGeometryOverlays = ({
 }: {
   scene: SceneDefinition;
   opticsState: DerivedOpticsState;
+  imageCircleGeometry: PhysicalImageCircleRenderGeometry | null;
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
   showOpticalGeometry: boolean;
@@ -634,6 +734,12 @@ const OpticalGeometryOverlays = ({
             <meshBasicMaterial color="#0f172a" wireframe transparent opacity={0.7} side={DoubleSide} />
           </mesh>
           <OpticalAxisOverlay opticsState={opticsState} />
+          {imageCircleGeometry ? (
+            <PhysicalImageCircleOverlay
+              geometry={imageCircleGeometry}
+              lensCenterWorld={opticsState.lensCenterWorld}
+            />
+          ) : null}
         </>
       )}
       {constructionGeometry ? (
@@ -689,6 +795,7 @@ const SceneContent = ({
   scene,
   cameraMovementRenderModel,
   opticsState,
+  imageCircleGeometry,
   showFocusPlaneOverlay,
   showDofOverlay,
   showOpticalGeometry,
@@ -701,6 +808,7 @@ const SceneContent = ({
   scene: SceneDefinition;
   cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
   opticsState: DerivedOpticsState;
+  imageCircleGeometry: PhysicalImageCircleRenderGeometry | null;
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
   showOpticalGeometry: boolean;
@@ -769,6 +877,7 @@ const SceneContent = ({
       showFocusPlaneOverlay={showFocusPlaneOverlay}
       showDofOverlay={showDofOverlay}
       showOpticalGeometry={showOpticalGeometry}
+      imageCircleGeometry={imageCircleGeometry}
       showScheimpflugConstruction={showScheimpflugConstruction}
     />
     <TeachingShadowParticipation
@@ -924,16 +1033,23 @@ export const SceneRenderer = ({
     ? { ...containerStyle, position: (containerStyle as React.CSSProperties).position ?? "relative" }
     : { ...defaultContainerStyle, position: "relative" };
 
+  const physicalImageCircleGeometry = resolvePhysicalImageCircleRenderGeometry({
+    coverage: opticsState.groundGlassCoverage,
+    rearStandardFrame: opticsState.rearStandardFrame,
+  });
+
   // If assets failed to load, don't render the canvas content. This return must come after hooks to satisfy hook rules.
   if (simulateAssetFailure && attempt === 0) {
     return null;
   }
 
   // compute legend visibility keys based on parent-controlled overlay states
+  const imageCircleVisible = Boolean(showOpticalGeometry && physicalImageCircleGeometry);
   const visibleLegendKeys = getVisibleSceneLegendKeys({
     showFocusPlane: Boolean(showFocusPlaneOverlay),
     showDofRegion: Boolean(showDofOverlay),
     showOpticalGeometry: Boolean(showOpticalGeometry),
+    hasFiniteImageCircle: imageCircleVisible,
     isInfinityFocus: Boolean(opticsState.diagnostics.isInfinityFocus),
     hasFiniteFarPlane: Boolean(opticsState.depthOfFieldFarPlane),
   });
@@ -1022,6 +1138,19 @@ export const SceneRenderer = ({
       data-dof-overlay-visible={showDofOverlay ? "true" : "false"}
       data-focus-overlay-visible={showFocusPlaneOverlay && !showScheimpflugConstruction ? "true" : "false"}
       data-optical-geometry-visible={showOpticalGeometry ? "true" : "false"}
+      data-image-circle-visible={imageCircleVisible ? "true" : "false"}
+      data-image-circle-radius-mm={imageCircleVisible && physicalImageCircleGeometry
+        ? serializeFiniteRenderNumber(physicalImageCircleGeometry.radiusMm)
+        : undefined}
+      data-image-circle-offset-x-mm={imageCircleVisible && physicalImageCircleGeometry
+        ? serializeFiniteRenderNumber(physicalImageCircleGeometry.opticalAxisOffsetXMm)
+        : undefined}
+      data-image-circle-offset-y-mm={imageCircleVisible && physicalImageCircleGeometry
+        ? serializeFiniteRenderNumber(physicalImageCircleGeometry.opticalAxisOffsetYMm)
+        : undefined}
+      data-image-circle-ray-count={imageCircleVisible && physicalImageCircleGeometry
+        ? String(physicalImageCircleGeometry.coverageRayEndpointsWorld.length)
+        : undefined}
       data-scheimpflug-construction={
         scheimpflugConstructionGeometry ? "true" : "false"
       }
@@ -1100,7 +1229,7 @@ export const SceneRenderer = ({
       >
         {/* LegendUpdater runs inside the r3f context so it can access camera and gl */}
         {/**/}
-        <LegendUpdater containerRef={containerRef} opticsState={opticsState} setLegendPositions={setLegendPositions} visibleKeys={visibleLegendKeys} showLegends={showLegends} />
+        <LegendUpdater containerRef={containerRef} opticsState={opticsState} imageCircleGeometry={physicalImageCircleGeometry} setLegendPositions={setLegendPositions} visibleKeys={visibleLegendKeys} showLegends={showLegends} />
         <SceneContent
           scene={{ ...renderScene, assets: activeAssets }}
           cameraMovementRenderModel={cameraMovementRenderModel}
@@ -1108,6 +1237,7 @@ export const SceneRenderer = ({
           showFocusPlaneOverlay={showFocusPlaneOverlay}
           showDofOverlay={showDofOverlay}
           showOpticalGeometry={Boolean(showOpticalGeometry)}
+          imageCircleGeometry={physicalImageCircleGeometry}
           showScheimpflugConstruction={Boolean(showScheimpflugConstruction)}
           focusFocalLengthMm={activeFocalLengthMm}
           activeAperture={activeAperture}

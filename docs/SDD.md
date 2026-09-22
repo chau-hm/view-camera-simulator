@@ -559,6 +559,19 @@ The simulator's 150 mm lens is currently identified as
 `simulator-parametric-150mm` with a 72° full coverage angle. It is an explicit
 teaching profile and must not be read as measured or manufacturer lens data.
 
+The same `GroundGlassCoverageState` is also consumed by the physical 3D Scene
+overlay. For a valid `parallel-circle` state, the renderer places the circular
+footprint in the canonical rear-standard world basis and draws sparse
+image-side coverage rays from the lens centre to that footprint. The 3D Image
+Circle is therefore a visualization of the Ground Glass finite-coverage state,
+not a second coverage calculation. Unbounded and non-parallel neutral states
+render no circle or coverage cone until the corresponding physical geometry is
+implemented.
+
+This physical 3D Image Circle is separate from the Lesson 0 conceptual Image
+Circle illustration. The Lesson 0 circle remains presentation-only and is not a
+lens specification, Ground Glass input, or movement-limit calculation.
+
 ---
 
 # 10. 焦平面計算設計

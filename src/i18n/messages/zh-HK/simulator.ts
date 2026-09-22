@@ -293,6 +293,7 @@ export const simulatorMessages = {
     farDof: "遠端景深（紫色）",
     fovRays: "視野光線（琥珀色）",
     opticalAxis: "光軸",
+    imageCircle: "成像圈（玫紅色）",
   },
   focusOverlay: {
     preview: "對焦屏預覽",
