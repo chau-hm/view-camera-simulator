@@ -474,6 +474,7 @@ export type DerivedOpticsState = {
   lensDefinition: LensDefinition | null;
   lensCoverage: DerivedLensCoverage | null;
   groundGlassNaturalIllumination: GroundGlassNaturalIlluminationState;
+  groundGlassCoverage: GroundGlassCoverageState;
 };
 ```
 
@@ -495,10 +496,11 @@ diameter = 2 * radius
 
 The physical image distance is therefore part of the derivation. Bellows
 extension in macro focus increases `v` and increases the projected coverage
-diameter for a fixed angular profile. The current simulator focal-length
-compatibility resolver uses explicit `unbounded-ideal` definitions, so it does
-not introduce unapproved finite manufacturer values. Invalid physical inputs
-fail closed instead of producing a sentinel diameter.
+diameter for a fixed angular profile. The simulator focal-length compatibility
+resolver keeps 90, 105, and 120 mm unbounded, while the current 150 mm choice
+uses an explicit 72° parametric teaching profile. That value is simulator data,
+not a manufacturer claim. Invalid physical inputs fail closed instead of
+producing a sentinel diameter.
 
 This PR does not intersect coverage with a tilted or swung film plane; that
 film-plane coverage problem is a later optical integration.
@@ -529,7 +531,33 @@ gradient.
 The current approximation is enabled only for a materially parallel
 lens-film relationship. Non-parallel Tilt/Swing states remain neutral until a
 later PR derives their film-plane illumination geometry. Natural illumination
-also does not define a finite image circle or mechanical-vignetting cutoff.
+does not define a finite image circle or mechanical-vignetting cutoff.
+
+## 9.3 Ground Glass finite coverage
+
+For a finite angular lens profile, the Ground Glass consumes the canonical
+`DerivedLensCoverage.imageCircleRadiusMm` and the shared parallel-film
+optical-axis intersection. The final linear-light response keeps the factors
+separate:
+
+```text
+scene radiance
+  × aperture throughput
+  × bellows-extension loss
+  × cos⁴ natural illumination
+  × finite coverage mask
+```
+
+The first renderer implementation supports only a perpendicular/parallel
+film relationship. Inside the derived circle the binary mask is one; outside
+it is zero. A narrow edge feather derived from one output pixel is raster
+anti-aliasing only, not an optical transition. Unbounded ideal lenses remain
+explicitly unbounded, and non-parallel Tilt/Swing states use a neutral finite
+coverage state rather than an incorrect circular projection.
+
+The simulator's 150 mm lens is currently identified as
+`simulator-parametric-150mm` with a 72° full coverage angle. It is an explicit
+teaching profile and must not be read as measured or manufacturer lens data.
 
 ---
 

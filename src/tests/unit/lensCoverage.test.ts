@@ -74,8 +74,16 @@ describe("lens coverage model", () => {
 });
 
 describe("lens specification compatibility boundary", () => {
-  it("resolves current focal-length values to ideal, unbounded simulator definitions", () => {
-    for (const focalLengthMm of [90, 105, 120, 150]) {
+  it("resolves the 150 mm simulator lens to its explicit parametric profile", () => {
+    expect(resolveLensDefinitionForFocalLengthMm(150)).toMatchObject({
+      id: "simulator-parametric-150mm",
+      focalLengthMm: 150,
+      coverage: { kind: "angular", fullCoverageAngleDeg: 72 },
+    });
+  });
+
+  it("keeps other current focal lengths unbounded in this PR", () => {
+    for (const focalLengthMm of [90, 105, 120]) {
       expect(resolveLensDefinitionForFocalLengthMm(focalLengthMm)).toMatchObject({
         focalLengthMm,
         coverage: { kind: "unbounded-ideal" },
@@ -95,18 +103,22 @@ describe("lens specification compatibility boundary", () => {
 });
 
 describe("canonical derived lens state", () => {
-  it("exposes the resolved ideal lens and explicit unbounded coverage", () => {
+  it("exposes the resolved 150 mm parametric lens and derived finite coverage", () => {
     const optics = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
 
     expect(optics.lensDefinition).toMatchObject({
-      id: "simulator-ideal-150mm",
+      id: "simulator-parametric-150mm",
       focalLengthMm: 150,
-      coverage: { kind: "unbounded-ideal" },
+      coverage: { kind: "angular", fullCoverageAngleDeg: 72 },
     });
-    expect(optics.lensCoverage).toEqual({
-      kind: "unbounded-ideal",
-      imageCircleRadiusMm: null,
-      imageCircleDiameterMm: null,
+    expect(optics.lensCoverage?.kind).toBe("angular");
+    if (optics.lensCoverage?.kind !== "angular") return;
+    expect(optics.lensCoverage.imageCircleRadiusMm).toBeGreaterThan(100);
+    expect(optics.groundGlassCoverage).toMatchObject({
+      kind: "parallel-circle",
+      imageCircleRadiusMm: optics.lensCoverage.imageCircleRadiusMm,
+      opticalAxisOffsetXMm: 0,
+      opticalAxisOffsetYMm: 0,
     });
   });
 
@@ -122,11 +134,10 @@ describe("canonical derived lens state", () => {
     );
 
     expect(optics.diagnostics.imageDistanceMm).toBeCloseTo(300, 12);
-    expect(optics.lensCoverage).toEqual({
-      kind: "unbounded-ideal",
-      imageCircleRadiusMm: null,
-      imageCircleDiameterMm: null,
-    });
+    expect(optics.lensCoverage?.kind).toBe("angular");
+    expect(optics.groundGlassCoverage.kind).toBe("parallel-circle");
+    if (optics.lensCoverage?.kind !== "angular") return;
+    expect(optics.lensCoverage.imageCircleRadiusMm).toBeGreaterThan(120);
   });
 
   it("does not derive lens coverage from an invalid camera fallback", () => {

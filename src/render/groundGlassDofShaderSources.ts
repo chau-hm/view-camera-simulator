@@ -227,10 +227,15 @@ uniform float groundGlassNaturalIlluminationEnabled;
 uniform float groundGlassNaturalIlluminationImageDistanceMm;
 uniform float groundGlassNaturalIlluminationOffsetXMm;
 uniform float groundGlassNaturalIlluminationOffsetYMm;
-uniform float groundGlassNaturalIlluminationWindowCenterXMm;
-uniform float groundGlassNaturalIlluminationWindowCenterYMm;
-uniform float groundGlassNaturalIlluminationWindowWidthMm;
-uniform float groundGlassNaturalIlluminationWindowHeightMm;
+uniform float groundGlassCoverageEnabled;
+uniform float groundGlassCoverageRadiusMm;
+uniform float groundGlassCoverageOffsetXMm;
+uniform float groundGlassCoverageOffsetYMm;
+uniform float groundGlassCoverageEdgeFeatherMm;
+uniform float groundGlassFilmWindowCenterXMm;
+uniform float groundGlassFilmWindowCenterYMm;
+uniform float groundGlassFilmWindowWidthMm;
+uniform float groundGlassFilmWindowHeightMm;
 uniform float renderWidth;
 uniform float renderHeight;
 
@@ -251,8 +256,48 @@ float resolveGroundGlassNaturalIllumination(vec2 filmPointMm) {
   return cosineSquared * cosineSquared;
 }
 
+float resolveGroundGlassCoverage(vec2 filmPointMm) {
+  if (groundGlassCoverageEnabled < 0.5) return 1.0;
+
+  float radiusMm = groundGlassCoverageRadiusMm;
+  if (radiusMm <= 0.0) return 1.0;
+
+  vec2 offsetMm = vec2(
+    groundGlassCoverageOffsetXMm,
+    groundGlassCoverageOffsetYMm
+  );
+  vec2 deltaMm = filmPointMm - offsetMm;
+  float distanceSquared = dot(deltaMm, deltaMm);
+  float radiusSquared = radiusMm * radiusMm;
+  if (distanceSquared < 0.0 || radiusSquared <= 0.0) return 1.0;
+
+  float edgeFeatherMm = groundGlassCoverageEdgeFeatherMm;
+  if (edgeFeatherMm <= 0.0) {
+    return distanceSquared <= radiusSquared ? 1.0 : 0.0;
+  }
+
+  float distanceMm = sqrt(distanceSquared);
+  float halfFeatherMm = edgeFeatherMm * 0.5;
+  return 1.0 - smoothstep(
+    max(0.0, radiusMm - halfFeatherMm),
+    radiusMm + halfFeatherMm,
+    distanceMm
+  );
+}
+
 vec2 mapGroundGlassRttSourceUvToPhysicalRawFilmUv(vec2 sourceUv) {
   return vec2(1.0 - sourceUv.x, 1.0 - sourceUv.y);
+}
+
+vec2 resolveGroundGlassFilmPointMm(vec2 sourceUv) {
+  vec2 physicalRawFilmLocalUv =
+    mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceUv) - vec2(0.5);
+  return vec2(
+    groundGlassFilmWindowCenterXMm +
+      physicalRawFilmLocalUv.x * groundGlassFilmWindowWidthMm,
+    groundGlassFilmWindowCenterYMm -
+      physicalRawFilmLocalUv.y * groundGlassFilmWindowHeightMm
+  );
 }
 
 void main(){
@@ -273,16 +318,10 @@ void main(){
   // The inspection window centre was mapped by the same contract in the
   // render adapter; only its local width/height remain unchanged.
   vec2 sourceUprightUv = vec2(sampleUv.x, 1.0 - sampleUv.y);
-  vec2 physicalRawFilmUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceUprightUv);
-  vec2 physicalRawFilmLocalUv = physicalRawFilmUv - vec2(0.5);
-  vec2 filmPointMm = vec2(
-    groundGlassNaturalIlluminationWindowCenterXMm +
-      physicalRawFilmLocalUv.x * groundGlassNaturalIlluminationWindowWidthMm,
-    groundGlassNaturalIlluminationWindowCenterYMm -
-      physicalRawFilmLocalUv.y * groundGlassNaturalIlluminationWindowHeightMm
-  );
+  vec2 filmPointMm = resolveGroundGlassFilmPointMm(sourceUprightUv);
   float groundGlassNaturalIlluminationGain =
     resolveGroundGlassNaturalIllumination(filmPointMm);
+  float groundGlassCoverageGain = resolveGroundGlassCoverage(filmPointMm);
 
   // The post-process render targets carry linear-light scene values. Apply
   // global aperture/bellows throughput and the separate spatial natural
@@ -290,6 +329,7 @@ void main(){
   // independent from one another.
   gathered.rgb *= groundGlassIlluminanceGain;
   gathered.rgb *= groundGlassNaturalIlluminationGain;
+  gathered.rgb *= groundGlassCoverageGain;
   gl_FragColor = gathered;
 }
 `;

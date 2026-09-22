@@ -69,6 +69,7 @@ import {
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
 import { resolveGroundGlassNaturalIlluminationUniformState } from "./groundGlassNaturalIllumination";
+import { resolveGroundGlassCoverageUniformState } from "./groundGlassCoverage";
 import { resolveGroundGlassRttDisplayTransform } from "./groundGlassRttOrientation";
 import {
   GroundGlassProfiler,
@@ -449,10 +450,15 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         groundGlassNaturalIlluminationImageDistanceMm: { value: 0.0 },
         groundGlassNaturalIlluminationOffsetXMm: { value: 0.0 },
         groundGlassNaturalIlluminationOffsetYMm: { value: 0.0 },
-        groundGlassNaturalIlluminationWindowCenterXMm: { value: 0.0 },
-        groundGlassNaturalIlluminationWindowCenterYMm: { value: 0.0 },
-        groundGlassNaturalIlluminationWindowWidthMm: { value: initialSampledFilmDimensions.widthMm },
-        groundGlassNaturalIlluminationWindowHeightMm: { value: initialSampledFilmDimensions.heightMm },
+        groundGlassCoverageEnabled: { value: 0.0 },
+        groundGlassCoverageRadiusMm: { value: 0.0 },
+        groundGlassCoverageOffsetXMm: { value: 0.0 },
+        groundGlassCoverageOffsetYMm: { value: 0.0 },
+        groundGlassCoverageEdgeFeatherMm: { value: 0.0 },
+        groundGlassFilmWindowCenterXMm: { value: 0.0 },
+        groundGlassFilmWindowCenterYMm: { value: 0.0 },
+        groundGlassFilmWindowWidthMm: { value: initialSampledFilmDimensions.widthMm },
+        groundGlassFilmWindowHeightMm: { value: initialSampledFilmDimensions.heightMm },
       },
     });
 
@@ -929,6 +935,15 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
       inspectionWindow,
     });
+    const coverageUniformState = resolveGroundGlassCoverageUniformState({
+      state: opticsState.groundGlassCoverage,
+      rawDebug,
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      inspectionWindow,
+      renderWidthPx: dimsRef.current.internalWidthPx,
+      renderHeightPx: dimsRef.current.internalHeightPx,
+    });
 
     // Configure once with a conservative preliminary range so the actual
     // Three.js camera forward vector can drive the final pitch-safe range.
@@ -1301,14 +1316,24 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         naturalIlluminationUniformState.opticalAxisOffsetXMm;
       compositeMaterial.uniforms.groundGlassNaturalIlluminationOffsetYMm.value =
         naturalIlluminationUniformState.opticalAxisOffsetYMm;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationWindowCenterXMm.value =
-        naturalIlluminationUniformState.filmWindowCenterXMm;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationWindowCenterYMm.value =
-        naturalIlluminationUniformState.filmWindowCenterYMm;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationWindowWidthMm.value =
-        naturalIlluminationUniformState.filmWindowWidthMm;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationWindowHeightMm.value =
-        naturalIlluminationUniformState.filmWindowHeightMm;
+      compositeMaterial.uniforms.groundGlassCoverageEnabled.value =
+        coverageUniformState.enabled ? 1.0 : 0.0;
+      compositeMaterial.uniforms.groundGlassCoverageRadiusMm.value =
+        coverageUniformState.imageCircleRadiusMm;
+      compositeMaterial.uniforms.groundGlassCoverageOffsetXMm.value =
+        coverageUniformState.opticalAxisOffsetXMm;
+      compositeMaterial.uniforms.groundGlassCoverageOffsetYMm.value =
+        coverageUniformState.opticalAxisOffsetYMm;
+      compositeMaterial.uniforms.groundGlassCoverageEdgeFeatherMm.value =
+        coverageUniformState.edgeFeatherMm;
+      compositeMaterial.uniforms.groundGlassFilmWindowCenterXMm.value =
+        coverageUniformState.filmWindow.centerXMm;
+      compositeMaterial.uniforms.groundGlassFilmWindowCenterYMm.value =
+        coverageUniformState.filmWindow.centerYMm;
+      compositeMaterial.uniforms.groundGlassFilmWindowWidthMm.value =
+        coverageUniformState.filmWindow.widthMm;
+      compositeMaterial.uniforms.groundGlassFilmWindowHeightMm.value =
+        coverageUniformState.filmWindow.heightMm;
       const currentIlluminanceInfo = readRuntimeInfo();
       if (
         currentIlluminanceInfo &&
@@ -1330,6 +1355,22 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             (opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
               ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
               : undefined)
+          || currentIlluminanceInfo.groundGlassCoverageEnabled !==
+            coverageUniformState.enabled
+          || currentIlluminanceInfo.groundGlassCoverageKind !==
+            opticsState.groundGlassCoverage.kind
+          || currentIlluminanceInfo.groundGlassCoverageRadiusMm !==
+            (opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.imageCircleRadiusMm
+              : undefined)
+          || currentIlluminanceInfo.groundGlassCoverageOffsetXMm !==
+            (opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.opticalAxisOffsetXMm
+              : undefined)
+          || currentIlluminanceInfo.groundGlassCoverageOffsetYMm !==
+            (opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.opticalAxisOffsetYMm
+              : undefined)
         )
       ) {
         setRuntimeInfo({
@@ -1349,6 +1390,20 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           groundGlassNaturalIlluminationOffsetYMm:
             opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
               ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
+              : undefined,
+          groundGlassCoverageEnabled: coverageUniformState.enabled,
+          groundGlassCoverageKind: opticsState.groundGlassCoverage.kind,
+          groundGlassCoverageRadiusMm:
+            opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.imageCircleRadiusMm
+              : undefined,
+          groundGlassCoverageOffsetXMm:
+            opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.opticalAxisOffsetXMm
+              : undefined,
+          groundGlassCoverageOffsetYMm:
+            opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.opticalAxisOffsetYMm
               : undefined,
         });
       }

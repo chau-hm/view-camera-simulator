@@ -17,6 +17,10 @@ import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection
 import { deriveLensCoverage } from "./lensCoverage";
 import { resolveLensDefinitionForFocalLengthMm } from "./lensCatalog";
 import {
+  createNeutralGroundGlassCoverage,
+  deriveGroundGlassCoverage,
+} from "./groundGlassCoverage";
+import {
   createNeutralGroundGlassNaturalIllumination,
   deriveGroundGlassNaturalIllumination,
 } from "./groundGlassNaturalIllumination";
@@ -382,6 +386,7 @@ const baseFallbackState = (
     groundGlassNaturalIllumination: createNeutralGroundGlassNaturalIllumination(
       "invalid-geometry",
     ),
+    groundGlassCoverage: createNeutralGroundGlassCoverage("invalid-coverage"),
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,
@@ -618,6 +623,16 @@ export const deriveOpticsState = (
       f,
       infinityImageDistanceMm,
     );
+    const groundGlassCoverage = deriveGroundGlassCoverage({
+      lensCoverage: derivedLensState.lensCoverage,
+      geometry: {
+        lensCenterWorld,
+        filmPlane,
+        rearStandardFrame: rearFrame,
+        opticalAxis,
+        isParallelLensFilm: infinityLensFilmRel.isParallel,
+      },
+    });
 
     return {
       cameraRigPlacement,
@@ -627,6 +642,7 @@ export const deriveOpticsState = (
       cameraBodyPivotWorld,
       ...derivedLensState,
       groundGlassNaturalIllumination,
+      groundGlassCoverage,
       lensCenterWorld,
       lensNormalWorld,
       lensPlane,
@@ -951,6 +967,16 @@ export const deriveOpticsState = (
     cameraState.focalLengthMm,
     coverageImageDistanceMm,
   );
+  const groundGlassCoverage = deriveGroundGlassCoverage({
+    lensCoverage: derivedLensState.lensCoverage,
+    geometry: {
+      lensCenterWorld,
+      filmPlane,
+      rearStandardFrame: rearFrame,
+      opticalAxis,
+      isParallelLensFilm,
+    },
+  });
 
   return {
     cameraRigPlacement,
@@ -960,6 +986,7 @@ export const deriveOpticsState = (
     cameraBodyPivotWorld,
     ...derivedLensState,
     groundGlassNaturalIllumination,
+    groundGlassCoverage,
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,

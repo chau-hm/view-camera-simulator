@@ -5,6 +5,16 @@ const UNBOUNDED_IDEAL_COVERAGE: LensCoverageSpec = Object.freeze({
 });
 
 /**
+ * Explicit simulator teaching profile, not measured or manufacturer data.
+ * The complete included angle is consumed by the canonical lens-coverage
+ * model, which derives the radius from the current physical image distance.
+ */
+const SIMULATOR_PARAMETRIC_150MM_COVERAGE: LensCoverageSpec = Object.freeze({
+  kind: "angular",
+  fullCoverageAngleDeg: 72,
+});
+
+/**
  * Simulator compatibility definitions for the focal lengths currently used
  * by the application. They intentionally carry no finite manufacturer or
  * measured coverage claims.
@@ -26,9 +36,9 @@ export const SIMULATOR_LENS_DEFINITIONS = Object.freeze([
     coverage: UNBOUNDED_IDEAL_COVERAGE,
   }),
   Object.freeze({
-    id: "simulator-ideal-150mm",
+    id: "simulator-parametric-150mm",
     focalLengthMm: 150,
-    coverage: UNBOUNDED_IDEAL_COVERAGE,
+    coverage: SIMULATOR_PARAMETRIC_150MM_COVERAGE,
   }),
 ] as const satisfies readonly LensDefinition[]);
 

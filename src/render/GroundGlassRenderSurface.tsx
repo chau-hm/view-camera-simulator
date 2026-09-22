@@ -88,6 +88,11 @@ export const GroundGlassRenderSurface = ({
         data-rtt-natural-illumination-image-distance-mm={rttRuntimeInfo?.groundGlassNaturalIlluminationImageDistanceMm}
         data-rtt-natural-illumination-offset-x-mm={rttRuntimeInfo?.groundGlassNaturalIlluminationOffsetXMm}
         data-rtt-natural-illumination-offset-y-mm={rttRuntimeInfo?.groundGlassNaturalIlluminationOffsetYMm}
+        data-rtt-coverage-enabled={rttRuntimeInfo?.groundGlassCoverageEnabled === undefined ? undefined : String(rttRuntimeInfo.groundGlassCoverageEnabled)}
+        data-rtt-coverage-kind={rttRuntimeInfo?.groundGlassCoverageKind}
+        data-rtt-coverage-radius-mm={rttRuntimeInfo?.groundGlassCoverageRadiusMm}
+        data-rtt-coverage-offset-x-mm={rttRuntimeInfo?.groundGlassCoverageOffsetXMm}
+        data-rtt-coverage-offset-y-mm={rttRuntimeInfo?.groundGlassCoverageOffsetYMm}
         data-rtt-camera-position={rttRuntimeInfo?.cameraPositionWorld?.join(",")}
         data-rtt-camera-up={rttRuntimeInfo?.cameraUpWorld?.join(",")}
         data-rtt-camera-forward={rttRuntimeInfo?.cameraForwardWorld?.join(",")}
