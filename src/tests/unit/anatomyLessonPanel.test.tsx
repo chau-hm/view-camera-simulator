@@ -36,7 +36,7 @@ describe("AnatomyLessonPanel", () => {
     const { onStepIndexChange } = renderPanel();
 
     expect(screen.getByRole("heading", { name: "The complete camera" })).toBeInTheDocument();
-    expect(screen.getByText("Step 1 of 19")).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 20")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
@@ -52,7 +52,7 @@ describe("AnatomyLessonPanel", () => {
   });
 
   it("visually marks an incomplete step's Next action as disabled", () => {
-    renderPanel(11, false);
+    renderPanel(12, false);
 
     const next = screen.getByRole("button", { name: "Next" });
     expect(next).toBeDisabled();
@@ -60,7 +60,7 @@ describe("AnatomyLessonPanel", () => {
   });
 
   it("uses the enabled primary styling once a step can advance", () => {
-    renderPanel(11, true);
+    renderPanel(12, true);
 
     const next = screen.getByRole("button", { name: "Next" });
     expect(next).toBeEnabled();
@@ -69,14 +69,14 @@ describe("AnatomyLessonPanel", () => {
   });
 
   it("supports Previous, reset, completion and a Scenes exit", () => {
-    const { onStepIndexChange, onReset } = renderPanel(18);
+    const { onStepIndexChange, onReset } = renderPanel(19);
 
     expect(screen.getByText("Lesson complete")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Previous" }));
     fireEvent.click(screen.getByRole("button", { name: "Restart lesson" }));
 
-    expect(onStepIndexChange).toHaveBeenCalledWith(17);
+    expect(onStepIndexChange).toHaveBeenCalledWith(18);
     expect(onReset).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("link", { name: "Back to Scenes" })).toHaveAttribute("href", "/scenes");
   });

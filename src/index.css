@@ -1745,7 +1745,8 @@ button {
 }
 
 /* Keep Camera Controls range rows usable throughout the responsive rail. */
-.simulator-aside__scroll .compact-range-row {
+.simulator-aside__scroll .compact-range-row,
+.simulator-aside__lesson .compact-range-row {
  grid-template-columns: minmax(0, 1fr) auto;
  grid-template-areas:
   "label value"
@@ -1753,20 +1754,25 @@ button {
  row-gap: 4px;
 }
 
-.simulator-aside__scroll .compact-range-row--with-trailing {
+.simulator-aside__scroll .compact-range-row--with-trailing,
+.simulator-aside__lesson .compact-range-row--with-trailing {
  grid-template-columns: minmax(0, 1fr) auto auto;
  grid-template-areas:
   "label value trailing"
   "slider slider slider";
 }
 
-.simulator-aside__scroll .compact-range-row__label { grid-area: label; }
-.simulator-aside__scroll .compact-range-row__slider { grid-area: slider; }
-.simulator-aside__scroll .compact-range-row__value {
+.simulator-aside__scroll .compact-range-row__label,
+.simulator-aside__lesson .compact-range-row__label { grid-area: label; }
+.simulator-aside__scroll .compact-range-row__slider,
+.simulator-aside__lesson .compact-range-row__slider { grid-area: slider; }
+.simulator-aside__scroll .compact-range-row__value,
+.simulator-aside__lesson .compact-range-row__value {
  grid-area: value;
  width: auto;
 }
-.simulator-aside__scroll .compact-range-row__trailing { grid-area: trailing; }
+.simulator-aside__scroll .compact-range-row__trailing,
+.simulator-aside__lesson .compact-range-row__trailing { grid-area: trailing; }
 
 /* Six ~48px options plus five 4px gaps need about 308px; below that use 3 x 2. */
 @container camera-controls-rail (max-width: 307px) {

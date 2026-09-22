@@ -49,6 +49,7 @@ import {
   resolveConceptualApertureVisibleBladePolygons,
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
+  resolveConceptualImageCircleGeometry,
   type ConceptualAperturePoint,
   type ConceptualRearBackMode,
 } from "./conceptualCameraAnatomyGeometry";
@@ -90,12 +91,18 @@ export type ConceptualCameraAnatomyPresentation = {
   targets: readonly ConceptualAnatomyTarget[];
 };
 
+export type ConceptualImageCirclePresentation = Readonly<{
+  visible: boolean;
+}>;
+
 export type ConceptualCameraPresentation = {
   anatomy?: ConceptualCameraAnatomyPresentation;
   /** Physical rear-back presentation; this does not alter optical state. */
   rearBackMode?: ConceptualRearBackMode;
   /** Presentation-only aperture value; canonical state remains authoritative. */
   aperture?: ApertureValue;
+  /** Lesson-only illustration; this is not lens coverage or optical state. */
+  imageCircle?: ConceptualImageCirclePresentation;
 };
 
 const isPartTarget = (
@@ -659,9 +666,16 @@ const FrontStandardAssembly = ({
   );
 };
 
-const GroundGlassBack = ({ ghost, state = "normal" }: PresentationProps) => {
+const GroundGlassBack = ({
+  ghost,
+  state = "normal",
+  imageCircleVisible = false,
+}: PresentationProps & { imageCircleVisible?: boolean }) => {
   const geometry = resolveConceptualGroundGlassGeometry();
   const { frame, surface } = geometry;
+  const imageCircle = imageCircleVisible
+    ? resolveConceptualImageCircleGeometry(surface)
+    : null;
   const frameY = (frame.outerHeightMm - frame.barMm) / 2;
   const frameX = (frame.outerWidthMm - frame.barMm) / 2;
   const renderFrameMaterial = () => (
@@ -677,6 +691,42 @@ const GroundGlassBack = ({ ghost, state = "normal" }: PresentationProps) => {
       position={[0, 0, 0]}
       renderOrder={ghost ? 10 : 0}
     >
+      {imageCircle ? (
+        <group
+          name="lesson-image-circle"
+          position={vecToWorld(surface.centerLocal)}
+          renderOrder={ghost ? 10 : 1}
+        >
+          <mesh
+            name="lesson-image-circle-surface"
+            position={[0, 0, toWorld(0.45)]}
+          >
+            <circleGeometry args={[toWorld(imageCircle.radiusMm), 96]} />
+            <meshBasicMaterial
+              color="#38bdf8"
+              transparent
+              opacity={ghost ? 0.04 : 0.08}
+              depthWrite={false}
+              side={DoubleSide}
+            />
+          </mesh>
+          <mesh
+            name="lesson-image-circle-outline"
+            position={[0, 0, toWorld(0.85)]}
+          >
+            <ringGeometry
+              args={[toWorld(imageCircle.radiusMm - 1.2), toWorld(imageCircle.radiusMm), 96]}
+            />
+            <meshBasicMaterial
+              color="#0284c7"
+              transparent
+              opacity={ghost ? 0.22 : 0.72}
+              depthWrite={false}
+              side={DoubleSide}
+            />
+          </mesh>
+        </group>
+      ) : null}
       <group
         name="ground-glass-frame"
         position={vecToWorld(frame.centerLocal)}
@@ -800,12 +850,14 @@ const RearStandardAssembly = ({
   ghost,
   active,
   rearBackMode,
+  imageCircleVisible,
   anatomy,
 }: {
   frame: StandardFrame;
   ghost: boolean;
   active: boolean;
   rearBackMode: ConceptualRearBackMode;
+  imageCircleVisible: boolean;
   anatomy?: ConceptualCameraAnatomyPresentation;
 }) => {
   const visual = resolveFocusStandardVisualState("rear", active ? "rear" : null);
@@ -884,7 +936,11 @@ const RearStandardAssembly = ({
         </mesh>
 
         {rearBackMode === "ground-glass" ? (
-          <GroundGlassBack ghost={ghost} state={groundGlassState} />
+          <GroundGlassBack
+            ghost={ghost}
+            state={groundGlassState}
+            imageCircleVisible={imageCircleVisible}
+          />
         ) : (
           <FilmHolder ghost={ghost} state={filmHolderState} />
         )}
@@ -1163,6 +1219,7 @@ const renderAnatomy = ({
   aperture,
   focalLengthMm,
   rigRail,
+  imageCircleVisible,
   anatomy,
 }: Required<Pick<ConceptualViewCameraProps, "opticsState" | "coordinateSpace" | "variant" | "showBellows">> & {
   activeStandard?: FocusStandard | null;
@@ -1170,6 +1227,7 @@ const renderAnatomy = ({
   aperture?: ApertureValue;
   focalLengthMm?: number;
   rigRail?: ConceptualCameraRail;
+  imageCircleVisible: boolean;
   anatomy?: ConceptualCameraAnatomyPresentation;
 }) => {
   const canonical = resolveCanonicalCameraGeometry(opticsState, coordinateSpace);
@@ -1214,6 +1272,7 @@ const renderAnatomy = ({
         ghost={ghost}
         active={activeStandard === "rear"}
         rearBackMode={rearBackMode}
+        imageCircleVisible={imageCircleVisible}
         anatomy={anatomy}
       />
     </>
@@ -1244,6 +1303,7 @@ export const renderConceptualViewCamera = ({
   const anatomyPresentation = presentation?.anatomy;
   const visualRearBackMode = presentation?.rearBackMode ?? rearBackMode;
   const visualAperture = presentation?.aperture ?? aperture;
+  const imageCircleVisible = presentation?.imageCircle?.visible === true;
   const anatomy = renderAnatomy({
     opticsState,
     coordinateSpace,
@@ -1254,6 +1314,7 @@ export const renderConceptualViewCamera = ({
     aperture: visualAperture,
     focalLengthMm,
     rigRail,
+    imageCircleVisible,
     anatomy: anatomyPresentation,
   });
 

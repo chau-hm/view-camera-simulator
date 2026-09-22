@@ -26,9 +26,11 @@ import {
   CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_MASK_OFFSET_MM,
   CONCEPTUAL_LENS_DIAPHRAGM_HOUSING_OUTER_RADIUS_MM,
   CONCEPTUAL_LENS_IRIS_BLADE_COUNT,
+  resolveConceptualImageCircleGeometry,
   resolveConceptualApertureBladePolygons,
   resolveConceptualApertureBlades,
   resolveConceptualApertureOpening,
+  resolveConceptualGroundGlassGeometry,
 } from "../../render/conceptualCameraAnatomyGeometry";
 import { WORLD_SCALE } from "../../render/rttUtils";
 
@@ -232,6 +234,32 @@ describe("Conceptual View Camera v2 static anatomy", () => {
     expect(findNamedElement(current, "film-holder-body")).not.toBeNull();
     expect(findNamedElement(current, "film-holder-film-surface")).not.toBeNull();
     expect(findNamedElement(current, "rear-standard-frame")).not.toBeNull();
+  });
+
+  it("renders the Image Circle illustration only when the presentation requests it", () => {
+    const opticsState = deriveOpticsState(anatomyCameraFor(), viewCameraAnatomyScene);
+    const withoutImageCircle = renderConceptualViewCamera({ opticsState });
+    const withImageCircle = renderConceptualViewCamera({
+      opticsState,
+      presentation: { imageCircle: { visible: true } },
+    });
+    const surface = resolveConceptualImageCircleGeometry(
+      resolveConceptualGroundGlassGeometry().surface,
+    );
+
+    expect(findNamedElement(withoutImageCircle, "lesson-image-circle")).toBeNull();
+    expect(findNamedElement(withImageCircle, "lesson-image-circle")).not.toBeNull();
+    expect(findNamedElement(withImageCircle, "lesson-image-circle-surface")).not.toBeNull();
+    expect(findNamedElement(withImageCircle, "lesson-image-circle-outline")).not.toBeNull();
+
+    const circleSurface = findNamedElement(withImageCircle, "lesson-image-circle-surface");
+    const circleGroup = findNamedElement(withImageCircle, "lesson-image-circle");
+    const filmSurface = findNamedElement(withImageCircle, "ground-glass-screen");
+    expect(geometryArgs(circleSurface!, "circleGeometry")[0]).toBeCloseTo(
+      surface.radiusMm * WORLD_SCALE,
+    );
+    expect(filmSurface).not.toBeNull();
+    expect(circleGroup!.props.position).toEqual(filmSurface!.props.position);
   });
 
   it("keeps the Ground Glass and film surface coincident under rear-standard movement", () => {

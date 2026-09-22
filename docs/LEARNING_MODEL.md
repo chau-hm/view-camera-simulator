@@ -140,9 +140,18 @@ assert a required course order.
 This free-only anatomy lesson introduces the conceptual view camera before the
 movement studies. The learner identifies the Front Standard, Lens Board, Lens,
 Aperture, Bellows, Rear Standard, Ground Glass, Film Holder, and Camera
-Support, then connects Front Rise, Front Shift, Front Tilt, Front Swing,
-Front/Rear focusing, and Aperture controls to the physical parts they change.
-It is an anatomy and control walkthrough, not a scored movement task.
+Support, then learns the Image Circle as the conceptual prerequisite for Front
+Rise and Front Shift before connecting Front Rise, Front Shift, Front Tilt,
+Front Swing, Front/Rear focusing, and Aperture controls to the physical parts
+they change. It is an anatomy and control walkthrough, not a scored movement
+task.
+
+The Image Circle step is a presentation-only teaching illustration: it shows a
+circular projected image larger than the existing conceptual 4×5 rear image
+plane. Its diameter is deliberately conceptual and is not a measured lens
+specification, finite coverage model, movement limit, or Ground Glass rendering
+input. The lesson uses it to establish that spare image-circle coverage gives
+Rise and Shift room to change the lens-to-film relationship.
 
 ### Understanding Camera Movements
 

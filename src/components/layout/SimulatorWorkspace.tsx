@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getLessonZeroStep,
@@ -133,6 +133,7 @@ export const SimulatorWorkspace = ({
   const [anatomyStepIndex, setAnatomyStepIndex] = useState(0);
   const [anatomyShowSmallAperture, setAnatomyShowSmallAperture] = useState(false);
   const [anatomyViewResetNonce, setAnatomyViewResetNonce] = useState(0);
+  const anatomyLessonScrollRef = useRef<HTMLDivElement | null>(null);
   // All registered scenes still available through engine registry
   // const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
@@ -263,6 +264,11 @@ export const SimulatorWorkspace = ({
       ? t(guidedLessonMessageKeys.common.title)
       : t(simulatorMessageKeys.headerContext.freeExploration);
   const isAnatomyLesson = anatomyLessonEnabled && sceneId === "view-camera-anatomy";
+  useEffect(() => {
+    if (!isAnatomyLesson) return;
+    if (anatomyLessonScrollRef.current) anatomyLessonScrollRef.current.scrollTop = 0;
+  }, [anatomyStepIndex, isAnatomyLesson]);
+
   const anatomyStep = getLessonZeroStep(anatomyStepIndex);
   const anatomyViewportInspectionTarget = isAnatomyLesson
     ? resolveLessonZeroViewportInspectionTarget(anatomyStep)
@@ -853,7 +859,7 @@ export const SimulatorWorkspace = ({
         {/* Right aside: independent scroll */}
         <aside className="simulator-aside">
           {isAnatomyLesson ? (
-            <div className="simulator-aside__lesson">
+            <div ref={anatomyLessonScrollRef} className="simulator-aside__lesson">
               <AnatomyLessonPanel
                 stepIndex={anatomyStepIndex}
                 onStepIndexChange={handleAnatomyStepIndexChange}
