@@ -297,6 +297,7 @@ export const simulatorMessages = {
     farDof: "Far DOF (violet)",
     fovRays: "FOV rays (amber)",
     opticalAxis: "Optical axis",
+    imageCircle: "Image circle (rose)",
   },
   focusOverlay: {
     preview: "Ground glass preview",
