@@ -79,6 +79,11 @@ export const lessonZeroMessageKeys = {
       body: "lessonZero.steps.controlsOverview.body",
       cue: "lessonZero.steps.controlsOverview.cue",
     },
+    imageCircle: {
+      title: "lessonZero.steps.imageCircle.title",
+      body: "lessonZero.steps.imageCircle.body",
+      cue: "lessonZero.steps.imageCircle.cue",
+    },
     frontRiseControl: {
       title: "lessonZero.steps.frontRiseControl.title",
       body: "lessonZero.steps.frontRiseControl.body",

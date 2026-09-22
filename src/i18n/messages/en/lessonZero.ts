@@ -81,17 +81,23 @@ export const lessonZeroMessages = {
         "The controls change the physical camera parts you just identified. Each short exercise focuses on one real control and its visible result.",
       cue: "Use the highlighted control, then continue when the relationship is clear.",
     },
+    imageCircle: {
+      title: "Understanding the Image Circle",
+      body:
+        "The lens forms a circular image at the rear of the camera, while 4×5 film uses only a rectangular area inside it. View-camera lenses normally provide extra coverage around the film, giving the standards room to move before the film reaches the edge of the usable image. On most 35 mm, DSLR, and mirrorless cameras, the lens and sensor stay centred and fixed relative to each other, so photographers do not usually operate this spare coverage directly.",
+      cue: "Compare the rectangular film area with the larger circular projection around it. That extra area is the movement room used by Rise and Shift.",
+    },
     frontRiseControl: {
       title: "Front Rise",
       body:
-        "Rise moves the Front Standard vertically while the Camera Support stays in place.",
-      cue: "Drag Rise until the Front Standard's vertical movement is easy to see.",
+        "Rise moves the Front Standard vertically while the Camera Support stays in place. Because the lens projects an image circle larger than the film, this movement shifts the circle relative to the film and changes which part of the projected scene reaches it.",
+      cue: "Drag Rise until the Front Standard's vertical movement is easy to see, then connect it to the spare image-circle area from the previous step.",
     },
     frontShiftControl: {
       title: "Front Shift",
       body:
-        "Shift moves the Front Standard sideways without rotating it.",
-      cue: "Drag Front Shift until the lateral movement is easy to see.",
+        "Shift moves the Front Standard sideways without rotating it. It uses the same spare image-circle coverage, changing the lens's position relative to the film.",
+      cue: "Drag Front Shift until the lateral movement is easy to see, then connect it to the spare image-circle area.",
     },
     frontTiltControl: {
       title: "Front Tilt",

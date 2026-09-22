@@ -17,6 +17,7 @@ export type CameraInspectionTarget =
   | "bellows"
   | "rear-standard"
   | "ground-glass"
+  | "image-circle"
   | "film-holder"
   | "camera-support";
 
@@ -124,6 +125,7 @@ export const resolveCameraInspectionTargetWorld = (
         return lens;
       case "rear-standard":
       case "ground-glass":
+      case "image-circle":
       case "film-holder":
         return rear;
       case "camera-support":
@@ -143,8 +145,27 @@ const resolveInspectionPosition = (
   target: [number, number, number],
   inspectionTarget?: CameraInspectionTarget,
 ): [number, number, number] => {
-  if (scene.cameraInspectionPlacement) {
+  if (scene.cameraInspectionPlacement && inspectionTarget !== "image-circle") {
     return toWorldVector(scene.cameraInspectionPlacement.position);
+  }
+
+  if (inspectionTarget === "image-circle") {
+    const sceneDirection: [number, number, number] = [
+      sceneView.position[0] - sceneView.target[0],
+      sceneView.position[1] - sceneView.target[1],
+      sceneView.position[2] - sceneView.target[2],
+    ];
+    const rearBiasedDirection: [number, number, number] = [
+      sceneDirection[0] * 0.35,
+      sceneDirection[1] * 0.35,
+      -Math.max(Math.abs(sceneDirection[2]), 0.1),
+    ];
+    const unitDirection = normalize(rearBiasedDirection);
+    return [
+      target[0] + unitDirection[0] * CAMERA_INSPECTION_DISTANCE_WORLD,
+      target[1] + unitDirection[1] * CAMERA_INSPECTION_DISTANCE_WORLD,
+      target[2] + unitDirection[2] * CAMERA_INSPECTION_DISTANCE_WORLD,
+    ];
   }
 
   // Fallback: compute direction from scene observer

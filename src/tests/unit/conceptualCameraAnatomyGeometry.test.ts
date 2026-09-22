@@ -5,6 +5,7 @@ import {
   CONCEPTUAL_LENS_APERTURE_VISIBILITY_WINDOW_SEGMENT_COUNT,
   CONCEPTUAL_LENS_IRIS_EFFECTIVE_RADIUS_SAMPLE_COUNT,
   CONCEPTUAL_LENS_IRIS_BLADE_COUNT,
+  CONCEPTUAL_IMAGE_CIRCLE_SCALE,
   resolveConceptualApertureBlades,
   resolveConceptualApertureBladePolygon,
   resolveConceptualApertureBladePolygons,
@@ -13,6 +14,7 @@ import {
   resolveConceptualApertureVisibleBladePolygons,
   resolveConceptualFilmHolderGeometry,
   resolveConceptualGroundGlassGeometry,
+  resolveConceptualImageCircleGeometry,
 } from "../../render/conceptualCameraAnatomyGeometry";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -38,6 +40,17 @@ describe("conceptual rear-back anatomy geometry", () => {
     expect(filmHolder.surface.heightMm).toBe(CAMERA_CONSTANTS.filmHeightMm);
     expect(resolveConceptualGroundGlassGeometry()).toEqual(groundGlass);
     expect(resolveConceptualFilmHolderGeometry()).toEqual(filmHolder);
+  });
+
+  it("derives a deterministic conceptual circle larger than the existing film rectangle", () => {
+    const surface = resolveConceptualGroundGlassGeometry().surface;
+    const circle = resolveConceptualImageCircleGeometry(surface);
+
+    expect(circle.filmDiagonalMm).toBeCloseTo(Math.hypot(surface.widthMm, surface.heightMm));
+    expect(circle.diameterMm).toBeCloseTo(circle.filmDiagonalMm * CONCEPTUAL_IMAGE_CIRCLE_SCALE);
+    expect(circle.radiusMm).toBeCloseTo(circle.diameterMm / 2);
+    expect(circle.diameterMm).toBeGreaterThan(circle.filmDiagonalMm);
+    expect(resolveConceptualImageCircleGeometry(surface)).toEqual(circle);
   });
 });
 

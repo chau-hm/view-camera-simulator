@@ -137,6 +137,7 @@ describe("3D observer view framing", () => {
     const optics = deriveOpticsState(cameraState(), architectureRiseScene);
     const lens = resolveCameraInspectionTargetWorld("lens", optics);
     const rear = resolveCameraInspectionTargetWorld("ground-glass", optics);
+    const imageCircle = resolveCameraInspectionTargetWorld("image-circle", optics);
     const bellows = resolveCameraInspectionTargetWorld("bellows", optics);
     const support = resolveCameraInspectionTargetWorld("camera-support", optics);
 
@@ -150,6 +151,7 @@ describe("3D observer view framing", () => {
       optics.filmCenterWorld.y * 0.001,
       optics.filmCenterWorld.z * 0.001,
     ]);
+    expect(imageCircle).toEqual(rear);
     expect(bellows).toEqual([
       (optics.lensCenterWorld.x + optics.filmCenterWorld.x) * 0.0005,
       (optics.lensCenterWorld.y + optics.filmCenterWorld.y) * 0.0005,
@@ -171,6 +173,21 @@ describe("3D observer view framing", () => {
     expect(presets.camera.target).toEqual(expectedCenter);
     expect(expectedCenter).toEqual([0, 0, -0.075]);
     expect(viewDistance(presets.camera)).toBeCloseTo(0.72, 8);
+  });
+
+  it("uses a rear-biased teaching view for the conceptual Image Circle", () => {
+    const view = createCameraInspectionView(
+      viewCameraAnatomyScene,
+      sceneView,
+      resolveCameraInspectionTargetWorld(
+        "image-circle",
+        deriveOpticsState(anatomyCameraState(), viewCameraAnatomyScene),
+      ),
+      "image-circle",
+    );
+
+    expect(view.position[2]).toBeLessThan(view.target[2]);
+    expect(viewDistance(view)).toBeCloseTo(0.72, 8);
   });
 
   it.each([
@@ -273,9 +290,9 @@ describe("3D observer view framing", () => {
       };
     };
 
-    const neutral = resolve(11, { frontRiseMm: 0, frontShiftMm: 0 });
-    const risen = resolve(11, { frontRiseMm: 32, frontShiftMm: 0 });
-    const shifted = resolve(12, { frontRiseMm: 0, frontShiftMm: 28 });
+    const neutral = resolve(12, { frontRiseMm: 0, frontShiftMm: 0 });
+    const risen = resolve(12, { frontRiseMm: 32, frontShiftMm: 0 });
+    const shifted = resolve(13, { frontRiseMm: 0, frontShiftMm: 28 });
 
     expect(risen.optics.lensCenterWorld.y).not.toBe(neutral.optics.lensCenterWorld.y);
     expect(shifted.optics.lensCenterWorld.x).not.toBe(neutral.optics.lensCenterWorld.x);

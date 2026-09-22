@@ -77,6 +77,35 @@ export const resolveConceptualGroundGlassGeometry = (): ConceptualGroundGlassGeo
   };
 };
 
+/**
+ * Presentation-only scale for the Lesson 0 Image Circle illustration. This
+ * is not a lens specification, coverage limit, or input to optical state.
+ */
+export const CONCEPTUAL_IMAGE_CIRCLE_SCALE = 1.65;
+
+export type ConceptualImageCircleGeometry = Readonly<{
+  filmDiagonalMm: number;
+  diameterMm: number;
+  radiusMm: number;
+}>;
+
+/**
+ * Resolve the deliberately conceptual circle used to teach the film-versus-
+ * image-circle relationship. The supplied surface keeps the illustration
+ * attached to the existing conceptual rear image-plane dimensions.
+ */
+export const resolveConceptualImageCircleGeometry = (
+  surface: ConceptualRearBackSurface = resolveConceptualGroundGlassGeometry().surface,
+): ConceptualImageCircleGeometry => {
+  const filmDiagonalMm = Math.hypot(surface.widthMm, surface.heightMm);
+  const diameterMm = filmDiagonalMm * CONCEPTUAL_IMAGE_CIRCLE_SCALE;
+  return {
+    filmDiagonalMm,
+    diameterMm,
+    radiusMm: diameterMm / 2,
+  };
+};
+
 /** Resolve a sheet-film holder whose sensitive film surface remains on z=0. */
 export const resolveConceptualFilmHolderGeometry = (): ConceptualFilmHolderGeometry => {
   const surface = canonicalRearBackSurface();
