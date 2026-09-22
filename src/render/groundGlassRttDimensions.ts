@@ -127,6 +127,12 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   groundGlassNaturalIlluminationImageDistanceMm?: number;
   groundGlassNaturalIlluminationOffsetXMm?: number;
   groundGlassNaturalIlluminationOffsetYMm?: number;
+  /** Whether the finite coverage mask is enabled in the final composite. */
+  groundGlassCoverageEnabled?: boolean;
+  groundGlassCoverageKind?: "parallel-circle" | "unbounded" | "neutral";
+  groundGlassCoverageRadiusMm?: number;
+  groundGlassCoverageOffsetXMm?: number;
+  groundGlassCoverageOffsetYMm?: number;
 
   resourceGeneration: number; // increments when RTT resources are recreated
 };

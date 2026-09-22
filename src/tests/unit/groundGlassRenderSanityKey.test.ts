@@ -199,7 +199,14 @@ describe("groundGlassRenderSanityKey", () => {
       const tokens = part.split(/[:,]/);
       for (const token of tokens) {
         if (token === "null" || token === "no-scene" || token === "empty" || token === "understanding-camera-movements") continue;
-        if (token === "raw" || token === "0" || token === "1") continue;
+        if (
+          token === "raw" ||
+          token === "0" ||
+          token === "1" ||
+          token === "parallel-circle" ||
+          token === "unbounded" ||
+          token === "neutral"
+        ) continue;
         if (token === "") continue;
         const num = Number(token);
         expect(Number.isFinite(num), `token "${token}" from part "${part}" is not finite`).toBe(true);

@@ -5,9 +5,7 @@ import type {
   StandardFrame,
   Vec3,
 } from "../../types/optics";
-import { intersectRayPlane } from "../math/ray";
-import { calculateImageDistanceAlongOpticalAxisMm } from "./calculateImageDistance";
-import { dot, isFiniteVec3, magnitude, scale, subtract } from "../math/vec";
+import { deriveGroundGlassParallelFilmGeometry } from "./groundGlassParallelFilmGeometry";
 
 export type GroundGlassNaturalIlluminationGeometry = Readonly<{
   lensCenterWorld: Vec3;
@@ -40,69 +38,16 @@ export const deriveGroundGlassNaturalIllumination = (
     return createNeutralGroundGlassNaturalIllumination("non-parallel-lens-film");
   }
 
-  const {
-    lensCenterWorld,
-    filmPlane,
-    rearStandardFrame,
-    opticalAxis,
-  } = geometry;
-  if (
-    !isFiniteVec3(lensCenterWorld) ||
-    !isFiniteVec3(filmPlane.point) ||
-    !isFiniteVec3(filmPlane.normal) ||
-    !isFiniteVec3(rearStandardFrame.centerWorld) ||
-    !isFiniteVec3(rearStandardFrame.rightWorld) ||
-    !isFiniteVec3(rearStandardFrame.upWorld) ||
-    !isFiniteVec3(opticalAxis.origin) ||
-    !isFiniteVec3(opticalAxis.direction) ||
-    magnitude(filmPlane.normal) <= 1e-9 ||
-    magnitude(rearStandardFrame.rightWorld) <= 1e-9 ||
-    magnitude(rearStandardFrame.upWorld) <= 1e-9 ||
-    magnitude(opticalAxis.direction) <= 1e-9
-  ) {
-    return createNeutralGroundGlassNaturalIllumination("invalid-geometry");
-  }
-
-  const imageDistanceMm = calculateImageDistanceAlongOpticalAxisMm({
-    lensCenterWorld,
-    filmPlanePointWorld: filmPlane.point,
-    opticalAxisDirection: opticalAxis.direction,
-  });
-  if (
-    imageDistanceMm === null ||
-    !Number.isFinite(imageDistanceMm) ||
-    imageDistanceMm <= 0
-  ) {
-    return createNeutralGroundGlassNaturalIllumination("invalid-geometry");
-  }
-
-  const imageSideRay: Ray = {
-    origin: lensCenterWorld,
-    direction: scale(opticalAxis.direction, -1),
-  };
-  const opticalAxisIntersection = intersectRayPlane(imageSideRay, filmPlane)?.point;
-  if (!opticalAxisIntersection || !isFiniteVec3(opticalAxisIntersection)) {
-    return createNeutralGroundGlassNaturalIllumination("invalid-geometry");
-  }
-
-  const fromFilmCenter = subtract(
-    opticalAxisIntersection,
-    rearStandardFrame.centerWorld,
-  );
-  const opticalAxisOffsetXMm = dot(fromFilmCenter, rearStandardFrame.rightWorld);
-  const opticalAxisOffsetYMm = dot(fromFilmCenter, rearStandardFrame.upWorld);
-  if (
-    !Number.isFinite(opticalAxisOffsetXMm) ||
-    !Number.isFinite(opticalAxisOffsetYMm)
-  ) {
+  const parallelFilmGeometry = deriveGroundGlassParallelFilmGeometry(geometry);
+  if (!parallelFilmGeometry) {
     return createNeutralGroundGlassNaturalIllumination("invalid-geometry");
   }
 
   return {
     kind: "parallel-cos4",
-    imageDistanceMm,
-    opticalAxisOffsetXMm,
-    opticalAxisOffsetYMm,
+    imageDistanceMm: parallelFilmGeometry.imageDistanceMm,
+    opticalAxisOffsetXMm: parallelFilmGeometry.opticalAxisOffsetXMm,
+    opticalAxisOffsetYMm: parallelFilmGeometry.opticalAxisOffsetYMm,
   };
 };
 

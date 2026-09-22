@@ -148,6 +148,30 @@ export type GroundGlassNaturalIlluminationState = Readonly<
   | {
       kind: "neutral";
       reason: "non-parallel-lens-film" | "invalid-geometry";
+  }
+>;
+
+/**
+ * Physical finite-coverage state available to the Ground Glass renderer.
+ *
+ * A circle is valid only for a finite lens profile on a parallel film plane.
+ * `unbounded` deliberately has no fabricated radius; `neutral` means a finite
+ * profile exists but this renderer does not yet have a valid circle/film-plane
+ * intersection for the current geometry.
+ */
+export type GroundGlassCoverageState = Readonly<
+  | {
+      kind: "parallel-circle";
+      imageCircleRadiusMm: number;
+      opticalAxisOffsetXMm: number;
+      opticalAxisOffsetYMm: number;
+    }
+  | {
+      kind: "unbounded";
+    }
+  | {
+      kind: "neutral";
+      reason: "non-parallel-lens-film" | "invalid-coverage" | "invalid-geometry";
     }
 >;
 
@@ -170,6 +194,8 @@ export type DerivedOpticsState = {
   lensCoverage: DerivedLensCoverage | null;
   /** Physical natural-illumination geometry consumed by the Ground Glass RTT. */
   groundGlassNaturalIllumination: GroundGlassNaturalIlluminationState;
+  /** Physical finite-coverage geometry consumed by the Ground Glass RTT. */
+  groundGlassCoverage: GroundGlassCoverageState;
   lensCenterWorld: Vec3;
   lensNormalWorld: Vec3;
   lensPlane: Plane;
