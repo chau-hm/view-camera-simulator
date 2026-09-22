@@ -319,8 +319,9 @@ export const SimulatorWorkspace = ({
         capability: safeScene.macroTeachingCapability,
         metrics: macroFocusMetrics,
         focusObjectDistanceMm: opticsState.diagnostics.focusObjectDistanceMm,
+        lensCoverage: opticsState.lensCoverage,
       }),
-    [macroFocusMetrics, opticsState.diagnostics.focusObjectDistanceMm, safeScene.macroTeachingCapability],
+    [macroFocusMetrics, opticsState.diagnostics.focusObjectDistanceMm, opticsState.lensCoverage, safeScene.macroTeachingCapability],
   );
   const macroDepthTeaching = useMemo(
     () =>
@@ -1003,6 +1004,7 @@ export const SimulatorWorkspace = ({
                   <MacroFocusReadout
                     diagnostics={opticsState.diagnostics}
                     focalLengthMm={camera.focalLengthMm}
+                    lensCoverage={opticsState.lensCoverage}
                     metrics={macroFocusMetrics}
                     teachingCapability={safeScene.macroTeachingCapability}
                   />

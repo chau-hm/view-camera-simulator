@@ -502,6 +502,13 @@ uses an explicit 72° parametric teaching profile. That value is simulator data,
 not a manufacturer claim. Invalid physical inputs fail closed instead of
 producing a sentinel diameter.
 
+Macro Scene 1 uses this fixed angular-coverage profile as a teaching model:
+the physical Image Circle diameter grows with canonical image distance `v`.
+This is not a universal measured law for real photographic lenses, whose
+coverage may depend on optical design and mechanical limits. Keep this coverage
+growth separate from bellows exposure loss: extension enlarges the projected
+coverage footprint while bellows loss reduces overall Ground Glass exposure.
+
 This PR does not intersect coverage with a tilted or swung film plane; that
 film-plane coverage problem is a later optical integration.
 
