@@ -572,6 +572,21 @@ This physical 3D Image Circle is separate from the Lesson 0 conceptual Image
 Circle illustration. The Lesson 0 circle remains presentation-only and is not a
 lens specification, Ground Glass input, or movement-limit calculation.
 
+## 9.4 Catalog-aware lens control
+
+`CameraState.focalLengthMm` remains the current public/runtime compatibility
+boundary. The learner-facing Lens control resolves each declared numeric scene
+option through `resolveLensDefinitionForFocalLengthMm` and presents the
+catalog's coverage semantics without introducing a second selected-lens state.
+
+The current public choices preserve the simulator profiles: 90 mm remains
+coverage-unmodelled, while 150 mm uses the explicit 72° parametric simulator
+profile. The selected Image Circle readout consumes the current canonical
+`DerivedLensCoverage`, so its diameter follows image distance rather than a UI
+calculation. Multiple distinct lens definitions sharing one focal length are
+not representable by this compatibility boundary; a future `lensId` migration
+would be required for that catalog expansion.
+
 ---
 
 # 10. 焦平面計算設計

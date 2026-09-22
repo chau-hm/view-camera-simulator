@@ -9,6 +9,7 @@ import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSc
 import { resolveCameraRigViewpointAnchor } from "../../scenes/cameraRigViewpointGeometry";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { useAppStore } from "../../state/appStore";
+import { selectDerivedOpticsState } from "../../state/selectors";
 import { matchCameraMovementTeachingCase } from "../../scenes/cameraMovementPublicTeaching";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -66,6 +67,13 @@ describe("public camera movement controls in the workspace", () => {
 
     expect(wide).toBeChecked();
     expect(standard).not.toBeChecked();
+    expect(screen.getByText("Coverage", { exact: true })).toBeInTheDocument();
+    expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent("Not modelled");
+    expect(screen.getByTestId("lens-control-image-circle-value")).toHaveTextContent("Not modelled");
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-coverage-kind",
+      "unbounded-ideal",
+    );
     wide.focus();
     expect(document.activeElement).toBe(wide);
 
@@ -73,6 +81,28 @@ describe("public camera movement controls in the workspace", () => {
     expect(standard).toBeChecked();
     expect(wide).not.toBeChecked();
     expect(useAppStore.getState().camera.focalLengthMm).toBe(150);
+    expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent("72° simulator coverage");
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-id",
+      "simulator-parametric-150mm",
+    );
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-coverage-kind",
+      "angular",
+    );
+    const derivedOptics = selectDerivedOpticsState(useAppStore.getState().camera);
+    const derivedCoverage = derivedOptics.lensCoverage;
+    expect(derivedCoverage?.kind).toBe("angular");
+    if (derivedCoverage?.kind !== "angular") {
+      throw new Error("Expected the 150 mm simulator lens to derive angular coverage");
+    }
+    expect(screen.getByTestId("lens-control-image-circle-value")).toHaveTextContent(
+      `${derivedCoverage.imageCircleDiameterMm.toFixed(1)} mm`,
+    );
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-image-circle-diameter-mm",
+      derivedCoverage.imageCircleDiameterMm.toFixed(6),
+    );
   });
 
   it("hides the public lens selector while the calibration workbench is active", () => {

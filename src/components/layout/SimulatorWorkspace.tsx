@@ -907,7 +907,7 @@ export const SimulatorWorkspace = ({
 
               {safeScene.focalLengthCapability?.enabled && !calibrationEnabled ? (
                 <div className="sim-section">
-                  <LensControl capability={safeScene.focalLengthCapability} />
+                  <LensControl capability={safeScene.focalLengthCapability} opticsState={opticsState} />
                 </div>
               ) : null}
 
