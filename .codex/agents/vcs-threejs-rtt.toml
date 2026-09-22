@@ -1,7 +1,7 @@
 name = "vcs_threejs_rtt"
 description = "Implements bounded Three.js/R3F, Ground Glass RTT, shader, projection-plumbing, and WebGL-lifecycle work when renderer-domain reasoning is required."
-model = "gpt-6-astra"
-model_reasoning_effort = "low"
+model = "gpt-6-luna"
+model_reasoning_effort = "max"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Photon", "Raster", "Prism"]
 

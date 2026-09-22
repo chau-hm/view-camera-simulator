@@ -1,7 +1,7 @@
 name = "vcs_orchestrator"
 description = "Coordinates only genuinely multi-domain, ambiguous, integration-sensitive, or high-risk View Camera Simulator work; otherwise keeps execution in the smallest safe context."
-model = "gpt-5.6-sol"
-model_reasoning_effort = "high"
+model = "gpt-6-luna"
+model_reasoning_effort = "max"
 sandbox_mode = "read-only"
 nickname_candidates = ["Conductor", "Navigator", "Planner"]
 

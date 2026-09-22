@@ -1,7 +1,7 @@
 name = "vcs_optics_geometry"
 description = "Implements bounded View Camera Simulator optics and canonical-geometry work when the task depends on optical reasoning, sign conventions, or physically derived calibration."
-model = "gpt-6-astra"
-model_reasoning_effort = "low"
+model = "gpt-6-luna"
+model_reasoning_effort = "max"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Scheimpflug", "Euclid", "Datum"]
 
