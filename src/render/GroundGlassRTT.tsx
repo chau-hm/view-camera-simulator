@@ -451,9 +451,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         groundGlassNaturalIlluminationOffsetXMm: { value: 0.0 },
         groundGlassNaturalIlluminationOffsetYMm: { value: 0.0 },
         groundGlassCoverageEnabled: { value: 0.0 },
+        groundGlassCoverageMode: { value: 0.0 },
         groundGlassCoverageRadiusMm: { value: 0.0 },
         groundGlassCoverageOffsetXMm: { value: 0.0 },
         groundGlassCoverageOffsetYMm: { value: 0.0 },
+        groundGlassCoverageConicQuadratic: { value: new THREE.Vector3() },
+        groundGlassCoverageConicLinear: { value: new THREE.Vector3() },
+        groundGlassCoverageConicAxial: { value: new THREE.Vector3() },
         groundGlassCoverageEdgeFeatherMm: { value: 0.0 },
         groundGlassFilmWindowCenterXMm: { value: 0.0 },
         groundGlassFilmWindowCenterYMm: { value: 0.0 },
@@ -1318,12 +1322,22 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         naturalIlluminationUniformState.opticalAxisOffsetYMm;
       compositeMaterial.uniforms.groundGlassCoverageEnabled.value =
         coverageUniformState.enabled ? 1.0 : 0.0;
+      compositeMaterial.uniforms.groundGlassCoverageMode.value = coverageUniformState.mode;
       compositeMaterial.uniforms.groundGlassCoverageRadiusMm.value =
         coverageUniformState.imageCircleRadiusMm;
       compositeMaterial.uniforms.groundGlassCoverageOffsetXMm.value =
         coverageUniformState.opticalAxisOffsetXMm;
       compositeMaterial.uniforms.groundGlassCoverageOffsetYMm.value =
         coverageUniformState.opticalAxisOffsetYMm;
+      compositeMaterial.uniforms.groundGlassCoverageConicQuadratic.value.set(
+        ...coverageUniformState.conicQuadratic,
+      );
+      compositeMaterial.uniforms.groundGlassCoverageConicLinear.value.set(
+        ...coverageUniformState.conicLinear,
+      );
+      compositeMaterial.uniforms.groundGlassCoverageConicAxial.value.set(
+        ...coverageUniformState.conicAxial,
+      );
       compositeMaterial.uniforms.groundGlassCoverageEdgeFeatherMm.value =
         coverageUniformState.edgeFeatherMm;
       compositeMaterial.uniforms.groundGlassFilmWindowCenterXMm.value =
@@ -1335,6 +1349,23 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       compositeMaterial.uniforms.groundGlassFilmWindowHeightMm.value =
         coverageUniformState.filmWindow.heightMm;
       const currentIlluminanceInfo = readRuntimeInfo();
+      const coverageConicQuadratic = opticsState.groundGlassCoverage.kind === "nonparallel-conic"
+        ? [
+            opticsState.groundGlassCoverage.quadratic.a,
+            opticsState.groundGlassCoverage.quadratic.b,
+            opticsState.groundGlassCoverage.quadratic.c,
+            opticsState.groundGlassCoverage.quadratic.d,
+            opticsState.groundGlassCoverage.quadratic.e,
+            opticsState.groundGlassCoverage.quadratic.f,
+          ].map((value) => value.toPrecision(12)).join(",")
+        : undefined;
+      const coverageConicAxial = opticsState.groundGlassCoverage.kind === "nonparallel-conic"
+        ? [
+            opticsState.groundGlassCoverage.axial.x,
+            opticsState.groundGlassCoverage.axial.y,
+            opticsState.groundGlassCoverage.axial.constant,
+          ].map((value) => value.toPrecision(12)).join(",")
+        : undefined;
       if (
         currentIlluminanceInfo &&
         (
@@ -1371,6 +1402,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             (opticsState.groundGlassCoverage.kind === "parallel-circle"
               ? opticsState.groundGlassCoverage.opticalAxisOffsetYMm
               : undefined)
+          || currentIlluminanceInfo.groundGlassCoverageConicQuadratic !==
+            coverageConicQuadratic
+          || currentIlluminanceInfo.groundGlassCoverageConicAxial !==
+            coverageConicAxial
         )
       ) {
         setRuntimeInfo({
@@ -1405,6 +1440,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             opticsState.groundGlassCoverage.kind === "parallel-circle"
               ? opticsState.groundGlassCoverage.opticalAxisOffsetYMm
               : undefined,
+          groundGlassCoverageConicQuadratic: coverageConicQuadratic,
+          groundGlassCoverageConicAxial: coverageConicAxial,
         });
       }
 

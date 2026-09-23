@@ -509,8 +509,10 @@ coverage may depend on optical design and mechanical limits. Keep this coverage
 growth separate from bellows exposure loss: extension enlarges the projected
 coverage footprint while bellows loss reduces overall Ground Glass exposure.
 
-This PR does not intersect coverage with a tilted or swung film plane; that
-film-plane coverage problem is a later optical integration.
+`DerivedLensCoverage` remains the perpendicular-reference-plane authority. For
+finite coverage, its canonical radius and reference image distance define the
+same image-side right-circular coverage cone used to intersect a tilted or
+swung film plane.
 
 ## 9.2 Ground Glass natural illumination
 
@@ -542,10 +544,26 @@ does not define a finite image circle or mechanical-vignetting cutoff.
 
 ## 9.3 Ground Glass finite coverage
 
-For a finite angular lens profile, the Ground Glass consumes the canonical
-`DerivedLensCoverage.imageCircleRadiusMm` and the shared parallel-film
-optical-axis intersection. The final linear-light response keeps the factors
-separate:
+For a finite angular lens profile, `DerivedLensCoverage` describes a circle on a
+plane perpendicular to the optical axis. The Ground Glass coverage state
+describes that cone's intersection with the actual film plane:
+
+```text
+parallel film       → parallel-circle
+non-parallel film   → nonparallel-conic
+unbounded profile   → unbounded (no finite boundary)
+```
+
+For a non-parallel film, the conic is expressed in the canonical rear-standard
+film basis. Let `a` be the image-side unit optical axis, `L` the lens centre,
+`F` the film centre, `r/u` the rear-standard right/up basis, and
+`P(x,y) = F + x*r + y*u`. The cone slope comes from canonical
+`imageCircleRadiusMm / imageDistanceMm`; coverage is the quadratic cone
+condition `Q(x,y) <= 0` together with the image-side half-space `T(x,y) > 0`.
+The Ground Glass shader consumes these canonical coefficients; it does not
+recompute the coverage angle or approximate the conic as a stretched circle.
+
+The final linear-light response keeps the optical factors separate:
 
 ```text
 scene radiance
@@ -555,25 +573,25 @@ scene radiance
   × finite coverage mask
 ```
 
-The first renderer implementation supports only a perpendicular/parallel
-film relationship. Inside the derived circle the binary mask is one; outside
-it is zero. A narrow edge feather derived from one output pixel is raster
-anti-aliasing only, not an optical transition. Unbounded ideal lenses remain
-explicitly unbounded, and non-parallel Tilt/Swing states use a neutral finite
-coverage state rather than an incorrect circular projection.
+The established parallel-circle path remains unchanged. The non-parallel conic
+mask evaluates the same physical Raw-film point as the circle mask and includes
+the image-side half-space so the object-side branch of the double cone is never
+accepted. Inspection crops change the viewed film window but do not recenter the
+conic. Raw RTT Debug bypasses the finite mask. A narrow edge feather derived
+from one output pixel is raster anti-aliasing only, not an optical transition.
+Natural illumination remains parallel-only and neutral for non-parallel planes;
+finite coverage and natural illumination are independent effects.
 
 The simulator's 150 mm lens is currently identified as
 `simulator-parametric-150mm` with a 72° full coverage angle. It is an explicit
 teaching profile and must not be read as measured or manufacturer lens data.
 
-The same `GroundGlassCoverageState` is also consumed by the physical 3D Scene
-overlay. For a valid `parallel-circle` state, the renderer places the circular
-footprint in the canonical rear-standard world basis and draws sparse
-image-side coverage rays from the lens centre to that footprint. The 3D Image
-Circle is therefore a visualization of the Ground Glass finite-coverage state,
-not a second coverage calculation. Unbounded and non-parallel neutral states
-render no circle or coverage cone until the corresponding physical geometry is
-implemented.
+The same `GroundGlassCoverageState` is consumed by the physical 3D Scene
+overlay, which in G1 still visualizes only a valid `parallel-circle` state. A
+non-parallel `nonparallel-conic` correctly enables the Ground Glass mask while
+remaining hidden in the 3D optical overlay until G2 implements conic geometry
+and rays. G1 does not stretch the old circle or show an Image Circle legend for
+geometry that is not rendered. Unbounded profiles also have no finite circle.
 
 This physical 3D Image Circle is separate from the Lesson 0 conceptual Image
 Circle illustration. The Lesson 0 circle remains presentation-only and is not a

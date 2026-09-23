@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from "vitest";
 import { createGroundGlassRenderSanityStateKey } from "../../render/groundGlassRenderSanityKey";
 import { useAppStore } from "../../state/appStore";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import type { DerivedOpticsState } from "../../types/optics";
 import geometry from "../../scenes/understandingCameraMovementsGeometry";
@@ -96,6 +97,30 @@ describe("groundGlassRenderSanityKey", () => {
     const zero = buildOptics();
     const moved = buildOptics({ rearTiltDeg: 5 });
     expect(makeKey(moved)).not.toBe(makeKey(zero));
+  });
+
+  it("includes conic coefficients even when all other canonical geometry is unchanged", () => {
+    const camera = {
+      ...useAppStore.getState().camera,
+      ...architectureRiseScene.cameraPreset,
+      focalLengthMm: 150,
+      activeSceneId: architectureRiseScene.id,
+      frontSwingDeg: 5,
+    };
+    const optics = deriveOpticsState(camera, architectureRiseScene);
+    expect(optics.groundGlassCoverage.kind).toBe("nonparallel-conic");
+    if (optics.groundGlassCoverage.kind !== "nonparallel-conic") return;
+    const changedConic: DerivedOpticsState = {
+      ...optics,
+      groundGlassCoverage: {
+        ...optics.groundGlassCoverage,
+        quadratic: {
+          ...optics.groundGlassCoverage.quadratic,
+          f: optics.groundGlassCoverage.quadratic.f + 1,
+        },
+      },
+    };
+    expect(makeKey(changedConic)).not.toBe(makeKey(optics));
   });
 
   it("Rear Swing changes the key", () => {
@@ -204,6 +229,7 @@ describe("groundGlassRenderSanityKey", () => {
           token === "0" ||
           token === "1" ||
           token === "parallel-circle" ||
+          token === "nonparallel-conic" ||
           token === "unbounded" ||
           token === "neutral"
         ) continue;

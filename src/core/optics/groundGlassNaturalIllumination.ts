@@ -24,7 +24,9 @@ export const createNeutralGroundGlassNaturalIllumination = (
 
 /**
  * Derive the physical film-space origin and distance for the parallel-film
- * cos^4 natural-illumination approximation.
+ * cos^4 natural-illumination approximation. Non-parallel finite coverage is
+ * handled by the independent cone/film intersection; this illumination model
+ * intentionally remains parallel-only.
  *
  * The canonical optical axis points from the lens towards the object.  The
  * image-side ray therefore uses the opposite direction when intersecting the

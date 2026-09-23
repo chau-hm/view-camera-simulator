@@ -81,7 +81,7 @@ describe("physical 3D Image Circle render geometry", () => {
       rearStandardFrame: frame(),
     })).toBeNull();
     expect(resolvePhysicalImageCircleRenderGeometry({
-      coverage: { kind: "neutral", reason: "non-parallel-lens-film" },
+      coverage: { kind: "neutral", reason: "invalid-geometry" },
       rearStandardFrame: frame(),
     })).toBeNull();
     expect(resolvePhysicalImageCircleRenderGeometry({
