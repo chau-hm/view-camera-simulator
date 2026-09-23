@@ -131,6 +131,8 @@ describe("Macro Bellows Extension", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open Task and Feedback" }));
     const taskView = screen.getByTestId("learning-overlay-task-view");
     expect(taskView).toHaveTextContent("Goal");
+    expect(taskView).toHaveTextContent("current film plane");
+    expect(taskView).toHaveTextContent("separate from subject magnification");
     expect(taskView).toHaveTextContent("selected focus plane is still well behind the specimen");
     expect(taskView).toHaveTextContent(/open the aperture while focusing/i);
     expect(taskView).not.toHaveTextContent("the specimen is currently");
@@ -150,6 +152,9 @@ describe("Macro Bellows Extension", () => {
     expect(taskView).toHaveTextContent(/90 mm diameter spans about nine 10 mm squares/i);
     expect(taskView).toHaveTextContent(/\+2\.00 stops exposure compensation/i);
     expect(taskView).toHaveTextContent(/focus with the lens opened wide/i);
+    expect(taskView).toHaveTextContent("rear standard moves farther from the lens");
+    expect(taskView).toHaveTextContent("carries the film plane with it");
+    expect(taskView).toHaveTextContent("4×5 film rectangle keeps the same physical dimensions");
 
     fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
     expect(screen.getByTestId("macro-bellows-feedback")).toHaveTextContent(/life-size reproduction reached/i);
@@ -236,10 +241,15 @@ describe("Macro Bellows Extension", () => {
     render(<MemoryRouter><SimulatorWorkspace mode="free" sceneId={scene.id} taskId={null} simulateAssetFailure={false} /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "開啟任務及回饋" }));
     const taskView = screen.getByTestId("learning-overlay-task-view");
+    expect(taskView).toHaveTextContent("目前底片平面");
+    expect(taskView).toHaveTextContent("與主體放大倍率是不同概念");
     const focus = screen.getByRole("slider", { name: "對焦距離" });
     fireEvent.change(focus, { target: { value: "300" } });
 
     await waitFor(() => expect(taskView).toHaveTextContent("級"));
+    expect(taskView).toHaveTextContent("後組向後移動");
+    expect(taskView).toHaveTextContent("底片平面離鏡頭更遠");
+    expect(taskView).toHaveTextContent("4×5 底片畫幅的實際尺寸維持不變");
     expect(taskView).toHaveTextContent("+2.00 級");
     expect(taskView).toHaveTextContent(/開大光圈/);
     expect(taskView).not.toHaveTextContent("stops");

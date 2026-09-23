@@ -134,7 +134,9 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   const finalCircleRadiusMm = await expectMacroCoverageState(sceneCanvas, groundGlassRtt, readout, 435.93);
   expect(finalCircleRadiusMm).toBeGreaterThan(middleCircleRadiusMm);
   await expect(taskView).toContainText("435.9 mm");
-  await expect(taskView).toContainText("4×5 film stays fixed");
+  await expect(taskView).toContainText("rear standard moves farther from the lens");
+  await expect(taskView).toContainText("carries the film plane with it");
+  await expect(taskView).toContainText("4×5 film rectangle keeps the same physical dimensions");
   await expect.poll(readGroundGlassGain).toBeCloseTo(((11 / 5.6) ** 2) * 0.25, 3);
   const oneToOneWideOpenGain = await readGroundGlassGain();
   expect(oneToOneWideOpenGain).toBeLessThan(initialGroundGlassGain);
