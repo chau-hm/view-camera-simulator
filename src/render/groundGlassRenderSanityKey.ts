@@ -119,6 +119,23 @@ export function createGroundGlassRenderSanityStateKey(
     o.groundGlassCoverage.kind === "parallel-circle"
       ? finiteOrNull(o.groundGlassCoverage.opticalAxisOffsetYMm)
       : "null",
+    o.groundGlassCoverage.kind === "nonparallel-conic"
+      ? [
+          o.groundGlassCoverage.quadratic.a,
+          o.groundGlassCoverage.quadratic.b,
+          o.groundGlassCoverage.quadratic.c,
+          o.groundGlassCoverage.quadratic.d,
+          o.groundGlassCoverage.quadratic.e,
+          o.groundGlassCoverage.quadratic.f,
+        ].map(finiteOrNull).join(":")
+      : "null",
+    o.groundGlassCoverage.kind === "nonparallel-conic"
+      ? [
+          o.groundGlassCoverage.axial.x,
+          o.groundGlassCoverage.axial.y,
+          o.groundGlassCoverage.axial.constant,
+        ].map(finiteOrNull).join(":")
+      : "null",
 
     // Focus
     vec3Key(o.focusPlane?.point),

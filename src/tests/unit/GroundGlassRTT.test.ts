@@ -286,6 +286,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(diagnostics.get()?.groundGlassNaturalIlluminationEnabled).toBe(true);
     expect(diagnostics.get()?.groundGlassNaturalIlluminationKind).toBe("parallel-cos4");
     expect(compositeMaterial?.uniforms.groundGlassCoverageEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageMode.value).toBe(1);
     expect(compositeMaterial?.uniforms.groundGlassCoverageRadiusMm.value).toBeCloseTo(
       optics.groundGlassCoverage.kind === "parallel-circle"
         ? optics.groundGlassCoverage.imageCircleRadiusMm
@@ -431,6 +432,75 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     );
     expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(0.25, 12);
     expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(0.25, 12);
+
+    view.unmount();
+  });
+
+  it("sends canonical non-parallel conic coefficients to the composite and preserves Raw Debug bypass", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+      frontSwingDeg: 5,
+    };
+    const optics = deriveOpticsState(camera, architectureRiseScene);
+    expect(optics.groundGlassCoverage.kind).toBe("nonparallel-conic");
+    if (optics.groundGlassCoverage.kind !== "nonparallel-conic") return;
+
+    const diagnostics = createRuntimeInfoCollector();
+    const props = {
+      opticsState: optics,
+      focalLengthMm: camera.focalLengthMm,
+      scene: architectureRiseScene,
+      widthPx: 500,
+      heightPx: 400,
+      aperture: 11 as const,
+      previewMode: "raw" as const,
+      renderQuality: "standard" as const,
+      onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+    };
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, props));
+    act(() => fiberTestState.frameCallback?.());
+
+    const compositeMaterial = renderedShaderMaterials().find((material) =>
+      material.fragmentShader.includes("uniform float groundGlassCoverageMode"),
+    );
+    expect(compositeMaterial).toBeDefined();
+    expect(compositeMaterial?.uniforms.groundGlassCoverageEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageMode.value).toBe(2);
+    const q = compositeMaterial?.uniforms.groundGlassCoverageConicQuadratic.value as THREE.Vector3;
+    const linear = compositeMaterial?.uniforms.groundGlassCoverageConicLinear.value as THREE.Vector3;
+    const axial = compositeMaterial?.uniforms.groundGlassCoverageConicAxial.value as THREE.Vector3;
+    expect([q.x, q.y, q.z]).toEqual([
+      optics.groundGlassCoverage.quadratic.a,
+      optics.groundGlassCoverage.quadratic.b,
+      optics.groundGlassCoverage.quadratic.c,
+    ]);
+    expect([linear.x, linear.y, linear.z]).toEqual([
+      optics.groundGlassCoverage.quadratic.d,
+      optics.groundGlassCoverage.quadratic.e,
+      optics.groundGlassCoverage.quadratic.f,
+    ]);
+    expect([axial.x, axial.y, axial.z]).toEqual([
+      optics.groundGlassCoverage.axial.x,
+      optics.groundGlassCoverage.axial.y,
+      optics.groundGlassCoverage.axial.constant,
+    ]);
+    expect(diagnostics.get()?.groundGlassCoverageEnabled).toBe(true);
+    expect(diagnostics.get()?.groundGlassCoverageKind).toBe("nonparallel-conic");
+    expect(diagnostics.get()?.groundGlassCoverageConicQuadratic?.split(",")).toHaveLength(6);
+    expect(diagnostics.get()?.groundGlassCoverageConicAxial?.split(",")).toHaveLength(3);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(0);
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationKind).toBe("neutral");
+
+    const canonicalDiagnostic = diagnostics.get()?.groundGlassCoverageConicQuadratic;
+    view.rerender(React.createElement(UnconnectedGroundGlassRTT, { ...props, rawDebug: true }));
+    act(() => fiberTestState.frameCallback?.());
+    expect(compositeMaterial?.uniforms.groundGlassCoverageEnabled.value).toBe(0);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageMode.value).toBe(0);
+    expect(diagnostics.get()?.groundGlassCoverageEnabled).toBe(false);
+    expect(diagnostics.get()?.groundGlassCoverageKind).toBe("nonparallel-conic");
+    expect(diagnostics.get()?.groundGlassCoverageConicQuadratic).toBe(canonicalDiagnostic);
 
     view.unmount();
   });

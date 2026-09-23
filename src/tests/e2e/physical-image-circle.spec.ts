@@ -91,6 +91,6 @@ test("3D Image Circle consumes the Ground Glass finite coverage state", async ({
 
   await setStepRangeInput(page, "Tilt", 5);
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
-  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "neutral");
-  await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "false");
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "nonparallel-conic");
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
 });

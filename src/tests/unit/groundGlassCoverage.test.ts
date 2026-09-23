@@ -77,7 +77,7 @@ describe("Ground Glass finite coverage state", () => {
       .toBeCloseTo(108.98, 2);
   });
 
-  it("disables finite coverage for non-parallel film geometry", () => {
+  it("derives a film-local conic for non-parallel geometry", () => {
     expect(angularCoverage).not.toBeNull();
     const state = deriveGroundGlassCoverage({
       lensCoverage: angularCoverage,
@@ -87,33 +87,30 @@ describe("Ground Glass finite coverage state", () => {
       },
     });
 
-    expect(state).toEqual({ kind: "neutral", reason: "non-parallel-lens-film" });
+    expect(state.kind).toBe("nonparallel-conic");
+    if (state.kind !== "nonparallel-conic") return;
+    expect(Object.values(state.quadratic).every(Number.isFinite)).toBe(true);
+    expect(Object.values(state.axial).every(Number.isFinite)).toBe(true);
   });
 
-  it("keeps canonical finite coverage neutral for a materially tilted lens", () => {
+  it("derives canonical finite coverage for a materially tilted lens", () => {
     const optics = deriveOpticsState(
       cameraFor({ frontTiltDeg: 5 }),
       architectureRiseScene,
     );
 
     expect(optics.lensCoverage?.kind).toBe("angular");
-    expect(optics.groundGlassCoverage).toEqual({
-      kind: "neutral",
-      reason: "non-parallel-lens-film",
-    });
+    expect(optics.groundGlassCoverage.kind).toBe("nonparallel-conic");
   });
 
-  it("keeps canonical finite coverage neutral for a materially swung lens", () => {
+  it("derives canonical finite coverage for a materially swung lens", () => {
     const optics = deriveOpticsState(
       cameraFor({ frontSwingDeg: 5 }),
       architectureRiseScene,
     );
 
     expect(optics.lensCoverage?.kind).toBe("angular");
-    expect(optics.groundGlassCoverage).toEqual({
-      kind: "neutral",
-      reason: "non-parallel-lens-film",
-    });
+    expect(optics.groundGlassCoverage.kind).toBe("nonparallel-conic");
   });
 
   it("moves the finite circle centre with canonical Front Rise and Shift", () => {

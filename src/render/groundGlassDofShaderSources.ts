@@ -228,9 +228,13 @@ uniform float groundGlassNaturalIlluminationImageDistanceMm;
 uniform float groundGlassNaturalIlluminationOffsetXMm;
 uniform float groundGlassNaturalIlluminationOffsetYMm;
 uniform float groundGlassCoverageEnabled;
+uniform float groundGlassCoverageMode;
 uniform float groundGlassCoverageRadiusMm;
 uniform float groundGlassCoverageOffsetXMm;
 uniform float groundGlassCoverageOffsetYMm;
+uniform vec3 groundGlassCoverageConicQuadratic;
+uniform vec3 groundGlassCoverageConicLinear;
+uniform vec3 groundGlassCoverageConicAxial;
 uniform float groundGlassCoverageEdgeFeatherMm;
 uniform float groundGlassFilmWindowCenterXMm;
 uniform float groundGlassFilmWindowCenterYMm;
@@ -259,29 +263,61 @@ float resolveGroundGlassNaturalIllumination(vec2 filmPointMm) {
 float resolveGroundGlassCoverage(vec2 filmPointMm) {
   if (groundGlassCoverageEnabled < 0.5) return 1.0;
 
-  float radiusMm = groundGlassCoverageRadiusMm;
-  if (radiusMm <= 0.0) return 1.0;
+  if (groundGlassCoverageMode < 1.5) {
+    float radiusMm = groundGlassCoverageRadiusMm;
+    if (radiusMm <= 0.0) return 1.0;
 
-  vec2 offsetMm = vec2(
-    groundGlassCoverageOffsetXMm,
-    groundGlassCoverageOffsetYMm
-  );
-  vec2 deltaMm = filmPointMm - offsetMm;
-  float distanceSquared = dot(deltaMm, deltaMm);
-  float radiusSquared = radiusMm * radiusMm;
-  if (distanceSquared < 0.0 || radiusSquared <= 0.0) return 1.0;
+    vec2 offsetMm = vec2(
+      groundGlassCoverageOffsetXMm,
+      groundGlassCoverageOffsetYMm
+    );
+    vec2 deltaMm = filmPointMm - offsetMm;
+    float distanceSquared = dot(deltaMm, deltaMm);
+    float radiusSquared = radiusMm * radiusMm;
+    if (distanceSquared < 0.0 || radiusSquared <= 0.0) return 1.0;
 
-  float edgeFeatherMm = groundGlassCoverageEdgeFeatherMm;
-  if (edgeFeatherMm <= 0.0) {
-    return distanceSquared <= radiusSquared ? 1.0 : 0.0;
+    float edgeFeatherMm = groundGlassCoverageEdgeFeatherMm;
+    if (edgeFeatherMm <= 0.0) {
+      return distanceSquared <= radiusSquared ? 1.0 : 0.0;
+    }
+
+    float distanceMm = sqrt(distanceSquared);
+    float halfFeatherMm = edgeFeatherMm * 0.5;
+    return 1.0 - smoothstep(
+      max(0.0, radiusMm - halfFeatherMm),
+      radiusMm + halfFeatherMm,
+      distanceMm
+    );
   }
 
-  float distanceMm = sqrt(distanceSquared);
+  float imageSideDistanceMm = dot(
+    groundGlassCoverageConicAxial,
+    vec3(filmPointMm, 1.0)
+  );
+  if (imageSideDistanceMm <= 0.0) return 0.0;
+
+  vec3 quadratic = groundGlassCoverageConicQuadratic;
+  vec3 linear = groundGlassCoverageConicLinear;
+  float x = filmPointMm.x;
+  float y = filmPointMm.y;
+  float conicValue = quadratic.x * x * x +
+    quadratic.y * x * y +
+    quadratic.z * y * y +
+    linear.x * x +
+    linear.y * y +
+    linear.z;
+  vec2 conicGradient = vec2(
+    2.0 * quadratic.x * x + quadratic.y * y + linear.x,
+    quadratic.y * x + 2.0 * quadratic.z * y + linear.y
+  );
+  float signedDistanceMm = conicValue / max(length(conicGradient), 1e-6);
+  float edgeFeatherMm = groundGlassCoverageEdgeFeatherMm;
+  if (edgeFeatherMm <= 0.0) return conicValue <= 0.0 ? 1.0 : 0.0;
   float halfFeatherMm = edgeFeatherMm * 0.5;
   return 1.0 - smoothstep(
-    max(0.0, radiusMm - halfFeatherMm),
-    radiusMm + halfFeatherMm,
-    distanceMm
+    -halfFeatherMm,
+    halfFeatherMm,
+    signedDistanceMm
   );
 }
 

@@ -154,11 +154,29 @@ export type GroundGlassNaturalIlluminationState = Readonly<
 /**
  * Physical finite-coverage state available to the Ground Glass renderer.
  *
- * A circle is valid only for a finite lens profile on a parallel film plane.
- * `unbounded` deliberately has no fabricated radius; `neutral` means a finite
- * profile exists but this renderer does not yet have a valid circle/film-plane
- * intersection for the current geometry.
+ * `DerivedLensCoverage` defines the finite right-circular cone from its
+ * perpendicular reference plane. The Ground Glass state stores that cone's
+ * intersection with the actual film plane: a circle for parallel geometry or
+ * a film-local quadratic conic for non-parallel geometry. `unbounded`
+ * deliberately has no fabricated finite boundary.
  */
+export type GroundGlassCoverageQuadratic = Readonly<{
+  /** Q(x,y) = a*x² + b*x*y + c*y² + d*x + e*y + f. */
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  e: number;
+  f: number;
+}>;
+
+export type GroundGlassCoverageAxial = Readonly<{
+  /** Image-side distance T(x,y) = xCoefficient*x + yCoefficient*y + constant. */
+  x: number;
+  y: number;
+  constant: number;
+}>;
+
 export type GroundGlassCoverageState = Readonly<
   | {
       kind: "parallel-circle";
@@ -167,11 +185,16 @@ export type GroundGlassCoverageState = Readonly<
       opticalAxisOffsetYMm: number;
     }
   | {
+      kind: "nonparallel-conic";
+      quadratic: GroundGlassCoverageQuadratic;
+      axial: GroundGlassCoverageAxial;
+    }
+  | {
       kind: "unbounded";
     }
   | {
       kind: "neutral";
-      reason: "non-parallel-lens-film" | "invalid-coverage" | "invalid-geometry";
+      reason: "invalid-coverage" | "invalid-geometry";
     }
 >;
 
