@@ -1,4 +1,5 @@
 import type { MacroFocusMetrics } from "../core/optics/deriveMacroFocusMetrics";
+import type { DerivedLensCoverage } from "../types/lens";
 import { CAMERA_CONTROL_STEPS } from "../utils/constants";
 import type { SceneMacroTeachingCapability } from "../types/scene";
 
@@ -12,6 +13,7 @@ export type MacroBellowsExtensionTeachingModel = {
   stage: MacroBellowsExtensionTeachingStage;
   metrics: MacroFocusMetrics;
   focusObjectDistanceMm: number;
+  imageCircleDiameterMm: number | null;
   availableBellowsTravelMm: number;
   capacityWarning: boolean;
   lifeSize: boolean;
@@ -70,10 +72,12 @@ export const resolveMacroBellowsExtensionTeaching = ({
   capability,
   metrics,
   focusObjectDistanceMm,
+  lensCoverage,
 }: {
   capability?: SceneMacroTeachingCapability;
   metrics: MacroFocusMetrics | null;
   focusObjectDistanceMm: number | null | undefined;
+  lensCoverage: DerivedLensCoverage | null;
 }): MacroBellowsExtensionTeachingModel | null => {
   if (
     capability?.kind !== "bellows-extension" ||
@@ -99,11 +103,18 @@ export const resolveMacroBellowsExtensionTeaching = ({
       : metrics.magnification >= INTERMEDIATE_MAGNIFICATION
         ? "intermediate"
         : "early";
+  const imageCircleDiameterMm =
+    lensCoverage?.kind === "angular" &&
+    Number.isFinite(lensCoverage.imageCircleDiameterMm) &&
+    lensCoverage.imageCircleDiameterMm > 0
+      ? lensCoverage.imageCircleDiameterMm
+      : null;
 
   return {
     stage,
     metrics,
     focusObjectDistanceMm: resolvedFocusObjectDistanceMm,
+    imageCircleDiameterMm,
     availableBellowsTravelMm: capability.availableBellowsTravelMm,
     capacityWarning: isMacroBellowsCapacityWarning({
       bellowsExtensionMm: metrics.bellowsExtensionMm,

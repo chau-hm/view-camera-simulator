@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
 import { SimulatorWorkspace } from "../../components/layout/SimulatorWorkspace";
 import { MacroFocusReadout } from "../../components/simulator/MacroFocusReadout";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { useAppStore } from "../../state/appStore";
 import { selectDerivedOpticsState } from "../../state/selectors";
 import { macroBellowsExtensionScene as scene } from "../../scenes/definitions/macro-bellows-extension";
@@ -63,6 +64,7 @@ describe("Macro Bellows Extension", () => {
     const readout = await screen.findByRole("region", { name: "Macro focus" });
     expect(readout).toHaveTextContent("180.0 mm");
     expect(readout).toHaveTextContent("0.20×");
+    expect(readout).toHaveTextContent("261.6 mm · simulator profile");
   });
 
   it("exposes only finite focus and updates informational readouts through public keyboard steps", () => {
@@ -87,6 +89,7 @@ describe("Macro Bellows Extension", () => {
     expect(readout.getByText("Selected focus-plane ratio")).toBeInTheDocument();
     expect(readout.getByText("1:5")).toBeInTheDocument();
     expect(readout.getByText("320.0 mm")).toBeInTheDocument();
+    expect(readout.getByText("261.6 mm · simulator profile")).toBeInTheDocument();
     const initialOptics = selectDerivedOpticsState(useAppStore.getState().camera);
     fireEvent.click(within(aperture).getByRole("radio", { name: "f/11" }));
     expect(useAppStore.getState().camera.aperture).toBe(11);
@@ -101,11 +104,15 @@ describe("Macro Bellows Extension", () => {
     );
     expect(readout.getByText("180.0 mm")).toBeInTheDocument();
     expect(readout.getByText("0.20×")).toBeInTheDocument();
+    expect(readout.getByText("261.6 mm · simulator profile")).toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-scale-cue")).toHaveTextContent("Grid: 1 cm per square");
     expect(screen.getByTestId("ground-glass-grid")).toHaveAttribute("data-grid-mode", "physical");
     expect(readout.queryByTestId("macro-life-size-message")).not.toBeInTheDocument();
+    fireEvent.change(focus, { target: { value: "450" } });
+    expect(readout.getByText("326.9 mm · simulator profile")).toBeInTheDocument();
     fireEvent.keyDown(focus, { key: "Home" });
     expect(focus).toHaveValue("300");
+    expect(readout.getByText("435.9 mm · simulator profile")).toBeInTheDocument();
     expect(readout.getByText("300.0 mm")).toBeInTheDocument();
     expect(readout.getByText("1.00×")).toBeInTheDocument();
     expect(readout.getByText("1:1")).toBeInTheDocument();
@@ -124,6 +131,8 @@ describe("Macro Bellows Extension", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open Task and Feedback" }));
     const taskView = screen.getByTestId("learning-overlay-task-view");
     expect(taskView).toHaveTextContent("Goal");
+    expect(taskView).toHaveTextContent("current film plane");
+    expect(taskView).toHaveTextContent("separate from subject magnification");
     expect(taskView).toHaveTextContent("selected focus plane is still well behind the specimen");
     expect(taskView).toHaveTextContent(/open the aperture while focusing/i);
     expect(taskView).not.toHaveTextContent("the specimen is currently");
@@ -143,6 +152,9 @@ describe("Macro Bellows Extension", () => {
     expect(taskView).toHaveTextContent(/90 mm diameter spans about nine 10 mm squares/i);
     expect(taskView).toHaveTextContent(/\+2\.00 stops exposure compensation/i);
     expect(taskView).toHaveTextContent(/focus with the lens opened wide/i);
+    expect(taskView).toHaveTextContent("rear standard moves farther from the lens");
+    expect(taskView).toHaveTextContent("carries the film plane with it");
+    expect(taskView).toHaveTextContent("4×5 film rectangle keeps the same physical dimensions");
 
     fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
     expect(screen.getByTestId("macro-bellows-feedback")).toHaveTextContent(/life-size reproduction reached/i);
@@ -151,20 +163,76 @@ describe("Macro Bellows Extension", () => {
     render(<MemoryRouter><SimulatorWorkspace mode="free" sceneId="macro-depth-of-field" taskId={null} simulateAssetFailure={false} /></MemoryRouter>);
     expect(screen.queryByTestId("macro-bellows-teaching")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ground-glass-scale-cue")).not.toBeInTheDocument();
+    expect(screen.queryByText("Image circle")).not.toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-grid")).toHaveAttribute("data-grid-mode", "decorative");
     expect(within(screen.getByRole("region", { name: "Macro focus" })).queryByText("Reproduction ratio")).not.toBeInTheDocument();
   });
 
   it("uses canonical diagnostics, translates copy, and suppresses unavailable metrics", async () => {
     useAppStore.getState().setActiveScene(scene.id);
-    const diagnostics = selectDerivedOpticsState(useAppStore.getState().camera).diagnostics;
+    const currentOptics = selectDerivedOpticsState(useAppStore.getState().camera);
     await i18n.changeLanguage("zh-HK");
-    const { rerender } = render(<MacroFocusReadout diagnostics={diagnostics} focalLengthMm={150} />);
+    const { rerender } = render(
+      <MacroFocusReadout
+        diagnostics={currentOptics.diagnostics}
+        focalLengthMm={150}
+        lensCoverage={currentOptics.lensCoverage}
+        teachingCapability={scene.macroTeachingCapability}
+      />,
+    );
     expect(screen.getByRole("region", { name: "微距對焦" })).toHaveTextContent("180.0 mm");
-    expect(screen.getByText("放大倍率")).toBeInTheDocument();
-    rerender(<MacroFocusReadout diagnostics={{ ...diagnostics, imageDistanceMm: null }} focalLengthMm={150} />);
+    expect(screen.getByText("所選焦平面放大倍率")).toBeInTheDocument();
+    expect(screen.getByText("成像圈")).toBeInTheDocument();
+    expect(screen.getByText("261.6 mm · 模擬器成像範圍")).toBeInTheDocument();
+
+    const opticsAt450 = deriveOpticsState({
+      ...useAppStore.getState().camera,
+      focusDistanceMm: 450,
+    }, scene);
+    rerender(
+      <MacroFocusReadout
+        diagnostics={opticsAt450.diagnostics}
+        focalLengthMm={150}
+        lensCoverage={opticsAt450.lensCoverage}
+        teachingCapability={scene.macroTeachingCapability}
+      />,
+    );
+    expect(screen.getByText("326.9 mm · 模擬器成像範圍")).toBeInTheDocument();
+
+    rerender(
+      <MacroFocusReadout
+        diagnostics={currentOptics.diagnostics}
+        focalLengthMm={150}
+        lensCoverage={null}
+        teachingCapability={scene.macroTeachingCapability}
+      />,
+    );
+    expect(screen.getByRole("region", { name: "微距對焦" })).toBeInTheDocument();
+    expect(screen.queryByText("成像圈")).not.toBeInTheDocument();
+
+    rerender(
+      <MacroFocusReadout
+        diagnostics={currentOptics.diagnostics}
+        focalLengthMm={150}
+        lensCoverage={currentOptics.lensCoverage}
+        teachingCapability={{ kind: "depth-of-field" }}
+      />,
+    );
+    expect(screen.queryByText("成像圈")).not.toBeInTheDocument();
+
+    rerender(<MacroFocusReadout
+      diagnostics={{ ...currentOptics.diagnostics, imageDistanceMm: null }}
+      focalLengthMm={150}
+      lensCoverage={null}
+      teachingCapability={scene.macroTeachingCapability}
+    />);
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
-    rerender(<MacroFocusReadout diagnostics={{ ...diagnostics, fallbackApplied: true }} focalLengthMm={150} />);
+    rerender(<MacroFocusReadout
+      diagnostics={{ ...currentOptics.diagnostics, fallbackApplied: true }}
+      focalLengthMm={150}
+      lensCoverage={null}
+      teachingCapability={scene.macroTeachingCapability}
+    />);
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
   });
 
@@ -173,10 +241,15 @@ describe("Macro Bellows Extension", () => {
     render(<MemoryRouter><SimulatorWorkspace mode="free" sceneId={scene.id} taskId={null} simulateAssetFailure={false} /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "開啟任務及回饋" }));
     const taskView = screen.getByTestId("learning-overlay-task-view");
+    expect(taskView).toHaveTextContent("目前底片平面");
+    expect(taskView).toHaveTextContent("與主體放大倍率是不同概念");
     const focus = screen.getByRole("slider", { name: "對焦距離" });
     fireEvent.change(focus, { target: { value: "300" } });
 
     await waitFor(() => expect(taskView).toHaveTextContent("級"));
+    expect(taskView).toHaveTextContent("後組向後移動");
+    expect(taskView).toHaveTextContent("底片平面離鏡頭更遠");
+    expect(taskView).toHaveTextContent("4×5 底片畫幅的實際尺寸維持不變");
     expect(taskView).toHaveTextContent("+2.00 級");
     expect(taskView).toHaveTextContent(/開大光圈/);
     expect(taskView).not.toHaveTextContent("stops");
