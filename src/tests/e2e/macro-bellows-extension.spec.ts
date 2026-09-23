@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 
@@ -15,6 +15,26 @@ const readFiniteAttribute = async (locator: Locator, name: string) => {
   expect(Number.isFinite(value), `${name} must be finite`).toBe(true);
   return value;
 };
+
+const collectBrowserErrors = (page: Page) => {
+  const pageErrors: string[] = [];
+  const consoleErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  return () => {
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  };
+};
+
+const readGroundGlassGain = async (rtt: Locator) =>
+  Number(await rtt.getAttribute("data-rtt-ground-glass-illuminance-gain"));
+
+const readGridSpacing = async (grid: Locator) => grid.evaluate((element) =>
+  Number.parseFloat(getComputedStyle(element).backgroundSize.split(" ")[0]),
+);
 
 const expectMacroCoverageState = async (
   scene: Locator,
@@ -38,37 +58,28 @@ const expectMacroCoverageState = async (
   return sceneRadiusMm;
 };
 
-test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus range", async ({ page }) => {
-  test.setTimeout(90_000);
-  const pageErrors: string[] = [];
-  const consoleErrors: string[] = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
-  page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
-  });
+test("Macro 1 tracks canonical Image Circle growth and bellows exposure across focus", async ({ page }) => {
+  test.setTimeout(100_000);
+  const expectNoBrowserErrors = collectBrowserErrors(page);
 
   await page.goto("/simulator/free/architecture-rise");
   await expect(page.getByRole("button", { name: "Infinity Reset" })).toBeVisible();
   await page.getByRole("button", { name: "Infinity Reset" }).click();
   await expect(page.getByText(/Focus: ∞/)).toBeVisible();
 
-  // Navigate through the SPA so the previous scene's Infinity Focus state is
-  // still present when Macro Scene 1 initializes its route.
+  // Preserve the cross-scene Infinity Focus initialization regression.
   await page.getByRole("link", { name: "All Scenes" }).click();
   await expect(page).toHaveURL(/\/scenes$/);
   await page.locator('a[href="/simulator/free/macro-bellows-extension"]').click();
   await expect(page).toHaveURL(/\/simulator\/free\/macro-bellows-extension$/);
 
   const sceneCanvas = page.getByTestId("scene-canvas");
-  const sceneWebglCanvas = sceneCanvas.locator("canvas");
-  const groundGlassCanvas = page.locator(".groundglass-renderer-host canvas");
   const groundGlassRtt = page.getByTestId("ground-glass-rtt");
   const readout = page.getByRole("region", { name: "Macro focus" });
   const focus = page.getByRole("slider", { name: "Focus distance" });
   const aperture = page.getByRole("radiogroup", { name: "Aperture" });
 
-  await expect(sceneWebglCanvas).toHaveCount(1);
-  await expect(groundGlassCanvas).toHaveCount(1);
+  await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
   await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
   await expect(focus).toHaveValue("900");
   await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
@@ -79,36 +90,21 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   await expect(readout).toContainText("180.0 mm");
   await expect(readout).toContainText("0.20×");
   const initialCircleRadiusMm = await expectMacroCoverageState(sceneCanvas, groundGlassRtt, readout, 261.56);
+  const initialFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
+  expect(initialFilmCenter[2]).toBeCloseTo(-180, 5);
   await expect(readout).toContainText("1:5");
   await expect(readout).toContainText("320.0 mm");
   await expect(readout).toContainText("Selected focus-plane magnification");
-  const readGroundGlassGain = async () =>
-    Number(await groundGlassRtt.getAttribute("data-rtt-ground-glass-illuminance-gain"));
+
   const expectedInitialGain = ((11 / 5.6) ** 2) / 1.44;
-  await expect.poll(readGroundGlassGain).toBeCloseTo(expectedInitialGain, 3);
-  const initialGroundGlassGain = await readGroundGlassGain();
-  const grid = page.getByTestId("ground-glass-grid");
-  await expect(grid).toHaveAttribute("data-grid-mode", "physical");
-  await expect(page.getByTestId("ground-glass-scale-cue")).toHaveText("Grid: 1 cm per square");
-  const initialGridSpacing = await grid.evaluate((element) =>
-    Number.parseFloat(getComputedStyle(element).backgroundSize.split(" ")[0]),
-  );
-  expect(initialGridSpacing).toBeGreaterThan(30);
-  expect(initialGridSpacing).not.toBeCloseTo(20, 0);
+  await expect.poll(() => readGroundGlassGain(groundGlassRtt)).toBeCloseTo(expectedInitialGain, 3);
+  const initialGroundGlassGain = await readGroundGlassGain(groundGlassRtt);
 
   await page.getByRole("button", { name: "Open Task and Feedback" }).click();
   const taskView = page.getByTestId("learning-overlay-task-view");
   await expect(taskView).toContainText("261.6 mm");
-
-  await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true }).click();
-  await expect(page.getByRole("button", { name: /Reset Ground Glass view/ })).toBeVisible();
-  await expect.poll(async () =>
-    grid.evaluate((element) => Number.parseFloat(getComputedStyle(element).backgroundSize.split(" ")[0])),
-  ).toBeGreaterThan(initialGridSpacing * 3.9);
-
-  const initialFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
-  expect(initialFilmCenter[2]).toBeCloseTo(-180, 5);
-  const initialSceneImage = await sceneWebglCanvas.screenshot();
+  await expect(taskView).toContainText("current film plane");
+  await expect(taskView).toContainText("separate from subject magnification");
 
   await setStepRangeInput(page, "Focus distance", 450);
   await expect(focus).toHaveValue("450");
@@ -118,12 +114,16 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   await expect(readout).toContainText("+1.17 stops");
   const middleCircleRadiusMm = await expectMacroCoverageState(sceneCanvas, groundGlassRtt, readout, 326.94);
   expect(middleCircleRadiusMm).toBeGreaterThan(initialCircleRadiusMm);
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
+  const middleFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
+  expect(middleFilmCenter[2]).toBeCloseTo(-225, 5);
   await expect(taskView).toContainText("326.9 mm");
   await expect(taskView).toContainText("at a fixed aperture");
-  const middleGroundGlassGain = await readGroundGlassGain();
+  const middleGroundGlassGain = await readGroundGlassGain(groundGlassRtt);
   expect(middleGroundGlassGain).toBeLessThan(initialGroundGlassGain);
 
   await setStepRangeInput(page, "Focus distance", 300);
+  await expect(focus).toHaveValue("300");
   await expect(readout).toContainText("300.0 mm");
   await expect(readout).toContainText("1.00×");
   await expect(readout).toContainText("1:1");
@@ -133,35 +133,80 @@ test("Macro 1 keeps canonical bellows geometry and RTT subject across the focus 
   await expect(readout).toContainText("specimen is now sharply reproduced");
   const finalCircleRadiusMm = await expectMacroCoverageState(sceneCanvas, groundGlassRtt, readout, 435.93);
   expect(finalCircleRadiusMm).toBeGreaterThan(middleCircleRadiusMm);
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
   await expect(taskView).toContainText("435.9 mm");
   await expect(taskView).toContainText("rear standard moves farther from the lens");
   await expect(taskView).toContainText("carries the film plane with it");
   await expect(taskView).toContainText("4×5 film rectangle keeps the same physical dimensions");
-  await expect.poll(readGroundGlassGain).toBeCloseTo(((11 / 5.6) ** 2) * 0.25, 3);
-  const oneToOneWideOpenGain = await readGroundGlassGain();
-  expect(oneToOneWideOpenGain).toBeLessThan(initialGroundGlassGain);
+  const finalFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
+  expect(finalFilmCenter[2]).toBeCloseTo(-300, 5);
+  await expect.poll(() => readGroundGlassGain(groundGlassRtt)).toBeCloseTo(((11 / 5.6) ** 2) * 0.25, 3);
+  expect(await readGroundGlassGain(groundGlassRtt)).toBeLessThan(initialGroundGlassGain);
 
-  await aperture.getByRole("radio", { name: "f/11" }).check();
-  await expect(aperture).toHaveAttribute("data-selected-aperture", "11");
-  await expect.poll(readGroundGlassGain).toBeCloseTo(0.25, 3);
-  expect(await readGroundGlassGain()).toBeLessThan(oneToOneWideOpenGain);
+  expectNoBrowserErrors();
+});
+
+test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions", async ({ page }) => {
+  test.setTimeout(75_000);
+  const expectNoBrowserErrors = collectBrowserErrors(page);
+  await page.goto("/simulator/free/macro-bellows-extension");
+
+  const sceneCanvas = page.getByTestId("scene-canvas");
+  const sceneWebglCanvas = sceneCanvas.locator("canvas");
+  const groundGlassCanvas = page.locator(".groundglass-renderer-host canvas");
+  const groundGlassRtt = page.getByTestId("ground-glass-rtt");
+  const readout = page.getByRole("region", { name: "Macro focus" });
+  const focus = page.getByRole("slider", { name: "Focus distance" });
+  const aperture = page.getByRole("radiogroup", { name: "Aperture" });
+  const grid = page.getByTestId("ground-glass-grid");
+
+  await expect(sceneWebglCanvas).toHaveCount(1);
+  await expect(groundGlassCanvas).toHaveCount(1);
+  await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
+  await expect(focus).toHaveValue("900");
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
+  await expect(readout).toContainText("180.0 mm");
+  const initialCircleRadiusMm = await expectMacroCoverageState(sceneCanvas, groundGlassRtt, readout, 261.56);
+  const initialFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
+  expect(initialFilmCenter[2]).toBeCloseTo(-180, 5);
+
+  await expect(grid).toHaveAttribute("data-grid-mode", "physical");
+  await expect(page.getByTestId("ground-glass-scale-cue")).toHaveText("Grid: 1 cm per square");
+  const initialGridSpacing = await readGridSpacing(grid);
+  expect(initialGridSpacing).toBeGreaterThan(30);
+  expect(initialGridSpacing).not.toBeCloseTo(20, 0);
+  const initialSceneImage = await sceneWebglCanvas.screenshot({ animations: "disabled" });
+
+  await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true }).click();
+  await expect(page.getByRole("button", { name: /Reset Ground Glass view/ })).toBeVisible();
+  await expect.poll(() => readGridSpacing(grid)).toBeGreaterThan(initialGridSpacing * 3.9);
+
+  await setStepRangeInput(page, "Focus distance", 300);
   await expect(focus).toHaveValue("300");
   await expect(readout).toContainText("300.0 mm");
   await expect(readout).toContainText("1.00×");
   await expect(readout).toContainText("1:1");
   await expect(readout).toContainText("4.00×");
   await expect(readout).toContainText("+2.00 stops");
-  expect(await readFiniteAttribute(sceneCanvas, "data-image-circle-radius-mm")).toBeCloseTo(finalCircleRadiusMm, 5);
+  const finalCircleRadiusMm = await expectMacroCoverageState(sceneCanvas, groundGlassRtt, readout, 435.93);
+  expect(finalCircleRadiusMm).toBeGreaterThan(initialCircleRadiusMm);
+  const finalFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
+  expect(finalFilmCenter[2]).toBeCloseTo(-300, 5);
+  expect(await sceneWebglCanvas.screenshot({ animations: "disabled" })).not.toEqual(initialSceneImage);
+
+  const readGain = () => readGroundGlassGain(groundGlassRtt);
+  await expect.poll(readGain).toBeCloseTo(((11 / 5.6) ** 2) * 0.25, 3);
+  const oneToOneWideOpenGain = await readGain();
+  await aperture.getByRole("radio", { name: "f/11" }).check();
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "11");
+  await expect.poll(readGain).toBeCloseTo(0.25, 3);
+  expect(await readGain()).toBeLessThan(oneToOneWideOpenGain);
 
   await aperture.getByRole("radio", { name: "f/22" }).check();
   await expect(aperture).toHaveAttribute("data-selected-aperture", "22");
-  await expect.poll(readGroundGlassGain).toBeCloseTo(0.0625, 3);
-  expect(await readGroundGlassGain()).toBeLessThan(0.25);
-
-  const finalFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
-  expect(finalFilmCenter[2]).toBeCloseTo(-300, 5);
-  expect(await sceneWebglCanvas.screenshot()).not.toEqual(initialSceneImage);
-  expect(await readGroundGlassGain()).toBeLessThan(initialGroundGlassGain);
-  expect(pageErrors).toEqual([]);
-  expect(consoleErrors).toEqual([]);
+  await expect.poll(readGain).toBeCloseTo(0.0625, 3);
+  expect(await readGain()).toBeLessThan(0.25);
+  expect(await readFiniteAttribute(sceneCanvas, "data-image-circle-radius-mm")).toBeCloseTo(finalCircleRadiusMm, 5);
+  expect(await readGain()).toBeLessThan(oneToOneWideOpenGain);
+  expectNoBrowserErrors();
 });
