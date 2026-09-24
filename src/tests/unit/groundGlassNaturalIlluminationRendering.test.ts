@@ -4,7 +4,7 @@ import { resolveGroundGlassNaturalIlluminationUniformState } from "../../render/
 import { FULL_GROUND_GLASS_INSPECTION_WINDOW } from "../../render/groundGlassInspectionWindow";
 import {
   applyGroundGlassRttDisplayTransform,
-  mapGroundGlassRttSourceUvToPhysicalRawFilmUv,
+  mapGroundGlassRttTextureUvToCanonicalFilmUv,
   resolveGroundGlassRttDisplayTransform,
 } from "../../render/groundGlassRttOrientation";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
@@ -35,7 +35,7 @@ describe("Ground Glass natural-illumination render contract", () => {
     });
 
     expect(uniforms.enabled).toBe(true);
-    expect(uniforms.filmWindowCenterXMm).toBeCloseTo(-47.625, 12);
+    expect(uniforms.filmWindowCenterXMm).toBeCloseTo(47.625, 12);
     expect(uniforms.filmWindowCenterYMm).toBeCloseTo(-38.1, 12);
     expect(uniforms.filmWindowWidthMm).toBeCloseTo(31.75, 12);
     expect(uniforms.filmWindowHeightMm).toBeCloseTo(25.4, 12);
@@ -104,20 +104,23 @@ describe("Ground Glass natural-illumination render contract", () => {
 
     const physicalPositiveY = { u: 0.5, v: 0.25 };
     const physicalNegativeY = { u: 0.5, v: 0.75 };
-    const sourcePositiveY = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(physicalPositiveY);
-    const sourceNegativeY = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(physicalNegativeY);
-    const sourceTexturePositiveY = { u: sourcePositiveY.u, v: 1 - sourcePositiveY.v };
-    const sourceTextureNegativeY = { u: sourceNegativeY.u, v: 1 - sourceNegativeY.v };
+    const sourcePositiveY = mapGroundGlassRttTextureUvToCanonicalFilmUv(physicalPositiveY);
+    const sourceNegativeY = mapGroundGlassRttTextureUvToCanonicalFilmUv(physicalNegativeY);
+    const sourceTexturePositiveY = physicalPositiveY;
+    const sourceTextureNegativeY = physicalNegativeY;
     const physicalRawFilmFromSourceTexture = (sourceTextureUv: { u: number; v: number }) =>
-      mapGroundGlassRttSourceUvToPhysicalRawFilmUv({
-        u: sourceTextureUv.u,
-        v: 1 - sourceTextureUv.v,
-      });
+      mapGroundGlassRttTextureUvToCanonicalFilmUv(sourceTextureUv);
 
     expect(displayTopOriginUv(sourceTexturePositiveY, "raw")).toEqual(physicalPositiveY);
     expect(displayTopOriginUv(sourceTextureNegativeY, "raw")).toEqual(physicalNegativeY);
-    expect(displayTopOriginUv(sourceTexturePositiveY, "upright")).toEqual(sourcePositiveY);
-    expect(displayTopOriginUv(sourceTextureNegativeY, "upright")).toEqual(sourceNegativeY);
+    expect(displayTopOriginUv(sourceTexturePositiveY, "upright")).toEqual({
+      u: sourcePositiveY.u,
+      v: 1 - sourcePositiveY.v,
+    });
+    expect(displayTopOriginUv(sourceTextureNegativeY, "upright")).toEqual({
+      u: sourceNegativeY.u,
+      v: 1 - sourceNegativeY.v,
+    });
     expect(physicalRawFilmFromSourceTexture(sourceTexturePositiveY)).toEqual(physicalPositiveY);
     expect(physicalRawFilmFromSourceTexture(sourceTextureNegativeY)).toEqual(physicalNegativeY);
 
@@ -135,10 +138,16 @@ describe("Ground Glass natural-illumination render contract", () => {
     );
     expect(positiveGain).toBeGreaterThan(negativeGain);
 
-    // The reviewed bug treated the upright source coordinate as physical Raw
-    // film, which reverses this asymmetric ordering.
-    const incorrectlyMappedPositive = filmPointFromPhysicalRawFilmUv(sourcePositiveY);
-    const incorrectlyMappedNegative = filmPointFromPhysicalRawFilmUv(sourceNegativeY);
+    // Treating the Upright-only display coordinate as physical film would
+    // reverse this asymmetric ordering.
+    const incorrectlyMappedPositive = filmPointFromPhysicalRawFilmUv({
+      u: sourcePositiveY.u,
+      v: 1 - sourcePositiveY.v,
+    });
+    const incorrectlyMappedNegative = filmPointFromPhysicalRawFilmUv({
+      u: sourceNegativeY.u,
+      v: 1 - sourceNegativeY.v,
+    });
     expect(
       calculateGroundGlassNaturalIlluminationGain(
         riseState,

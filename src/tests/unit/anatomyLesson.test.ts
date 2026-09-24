@@ -102,11 +102,27 @@ describe("Lesson 0 anatomy vocabulary", () => {
     expect(resolveLessonZeroCameraPresentation(imageCircleStep).imageCircle).toEqual({
       visible: true,
     });
+    expect(resolveLessonZeroCameraPresentation(imageCircleStep).showFiniteCoverageOverlay).toBeUndefined();
     expect(resolveLessonZeroCameraPresentation(controlsOverviewStep!).imageCircle).toBeUndefined();
     expect(resolveLessonZeroCameraPresentation(frontRiseStep!).imageCircle).toBeUndefined();
     expect(resolveLessonZeroCameraPresentation(getLessonZeroStep(0)).imageCircle).toBeUndefined();
     expect(resolveLessonZeroCameraPresentation(getLessonZeroStep(19)).imageCircle).toBeUndefined();
     expect(isLessonZeroStepComplete(imageCircleStep, { ...DEFAULT_CAMERA_STATE })).toBe(true);
+  });
+
+  it("shows the same finite coverage model only on the Rise and Shift teaching steps", () => {
+    const imageCircle = resolveLessonZeroCameraPresentation(getLessonZeroStep(11));
+    const rise = resolveLessonZeroCameraPresentation(getLessonZeroStep(12));
+    const shift = resolveLessonZeroCameraPresentation(getLessonZeroStep(13));
+    const tilt = resolveLessonZeroCameraPresentation(getLessonZeroStep(14));
+
+    expect(imageCircle.imageCircle).toEqual({ visible: true });
+    expect(imageCircle.showFiniteCoverageOverlay).toBeUndefined();
+    expect(rise.showFiniteCoverageOverlay).toBe(true);
+    expect(shift.showFiniteCoverageOverlay).toBe(true);
+    expect(rise.imageCircle).toBeUndefined();
+    expect(shift.imageCircle).toBeUndefined();
+    expect(tilt.showFiniteCoverageOverlay).toBeUndefined();
   });
 
   it("maps interactive steps to the centralized control teaching definitions", () => {

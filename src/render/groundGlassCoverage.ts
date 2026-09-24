@@ -52,7 +52,7 @@ const resolvePixelMm = (input: {
 
 /**
  * Adapt canonical finite coverage to the final Ground Glass composite.
- * The crop is resolved through the same physical Raw-film window used by
+ * The crop is resolved through the same canonical physical film window used by
  * natural illumination; Raw RTT Debug deliberately disables the mask.
  */
 export const resolveGroundGlassCoverageUniformState = (input: {
@@ -60,6 +60,7 @@ export const resolveGroundGlassCoverageUniformState = (input: {
   rawDebug: boolean;
   filmWidthMm: number;
   filmHeightMm: number;
+  /** Top-origin RTT-source crop, converted to canonical physical film mm here. */
   inspectionWindow: GroundGlassInspectionWindow;
   renderWidthPx: number;
   renderHeightPx: number;

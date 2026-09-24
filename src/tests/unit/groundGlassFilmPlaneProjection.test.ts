@@ -124,7 +124,7 @@ describe("movement-aware projection", () => {
     const moved = projectedA.some((a, index) => {
       const b = projectedB[index];
       if (!b) return false;
-      return Math.abs(a.rawUv.u - b.rawUv.u) > 1e-6 || Math.abs(a.rawUv.v - b.rawUv.v) > 1e-6;
+      return Math.abs(a.physicalFilmUv.u - b.physicalFilmUv.u) > 1e-6 || Math.abs(a.physicalFilmUv.v - b.physicalFilmUv.v) > 1e-6;
     });
 
     expect(moved).toBe(true);

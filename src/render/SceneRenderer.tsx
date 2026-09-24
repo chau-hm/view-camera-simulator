@@ -76,6 +76,7 @@ type SceneRendererProps = {
   showDofOverlay: boolean;
   showLegends?: boolean;
   showOpticalGeometry?: boolean;
+  showFiniteCoverageOverlay?: boolean;
   showScheimpflugConstruction?: boolean;
   renderQuality: RenderQualityProfile;
   viewResetNonce: number;
@@ -697,6 +698,7 @@ const OpticalGeometryOverlays = ({
   showFocusPlaneOverlay,
   showDofOverlay,
   showOpticalGeometry,
+  showFiniteCoverageOverlay,
   showScheimpflugConstruction,
 }: {
   scene: SceneDefinition;
@@ -705,6 +707,7 @@ const OpticalGeometryOverlays = ({
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
   showOpticalGeometry: boolean;
+  showFiniteCoverageOverlay: boolean;
   showScheimpflugConstruction: boolean;
 }) => {
   const lens = vecToWorld(opticsState.lensCenterWorld);
@@ -829,19 +832,19 @@ const OpticalGeometryOverlays = ({
             <meshBasicMaterial color="#0f172a" wireframe transparent opacity={0.7} side={DoubleSide} />
           </mesh>
           <OpticalAxisOverlay opticsState={opticsState} />
-          {lensCoverageGeometry?.kind === "parallel-circle" ? (
-            <PhysicalImageCircleOverlay
-              geometry={lensCoverageGeometry}
-              lensCenterWorld={opticsState.lensCenterWorld}
-            />
-          ) : lensCoverageGeometry?.kind === "nonparallel-conic" ? (
-            <PhysicalCoverageConicOverlay
-              geometry={lensCoverageGeometry}
-              lensCenterWorld={opticsState.lensCenterWorld}
-            />
-          ) : null}
         </>
       )}
+      {showFiniteCoverageOverlay && lensCoverageGeometry?.kind === "parallel-circle" ? (
+        <PhysicalImageCircleOverlay
+          geometry={lensCoverageGeometry}
+          lensCenterWorld={opticsState.lensCenterWorld}
+        />
+      ) : showFiniteCoverageOverlay && lensCoverageGeometry?.kind === "nonparallel-conic" ? (
+        <PhysicalCoverageConicOverlay
+          geometry={lensCoverageGeometry}
+          lensCenterWorld={opticsState.lensCenterWorld}
+        />
+      ) : null}
       {constructionGeometry ? (
         <group name="scheimpflug-construction">
           {renderOverlayGeometry(constructionGeometry.filmPlane, "#38bdf8", 0.12, "scheimpflug-film-plane", 10)}
@@ -899,6 +902,7 @@ const SceneContent = ({
   showFocusPlaneOverlay,
   showDofOverlay,
   showOpticalGeometry,
+  showFiniteCoverageOverlay,
   showScheimpflugConstruction,
   focusFocalLengthMm,
   activeAperture,
@@ -912,6 +916,7 @@ const SceneContent = ({
   showFocusPlaneOverlay: boolean;
   showDofOverlay: boolean;
   showOpticalGeometry: boolean;
+  showFiniteCoverageOverlay: boolean;
   showScheimpflugConstruction: boolean;
   focusFocalLengthMm: number;
   activeAperture: ApertureValue;
@@ -977,6 +982,7 @@ const SceneContent = ({
       showFocusPlaneOverlay={showFocusPlaneOverlay}
       showDofOverlay={showDofOverlay}
       showOpticalGeometry={showOpticalGeometry}
+      showFiniteCoverageOverlay={showFiniteCoverageOverlay}
       lensCoverageGeometry={lensCoverageGeometry}
       showScheimpflugConstruction={showScheimpflugConstruction}
     />
@@ -1060,6 +1066,7 @@ export const SceneRenderer = ({
   showDofOverlay,
   showLegends,
   showOpticalGeometry,
+  showFiniteCoverageOverlay,
   showScheimpflugConstruction,
   renderQuality,
   viewResetNonce,
@@ -1144,7 +1151,7 @@ export const SceneRenderer = ({
   }
 
   // compute legend visibility keys based on parent-controlled overlay states
-  const renderedLensCoverageGeometry = showOpticalGeometry
+  const renderedLensCoverageGeometry = (showFiniteCoverageOverlay ?? showOpticalGeometry)
     ? physicalLensCoverageGeometry
     : null;
   const parallelImageCircleGeometry =
@@ -1250,6 +1257,9 @@ export const SceneRenderer = ({
       data-dof-overlay-visible={showDofOverlay ? "true" : "false"}
       data-focus-overlay-visible={showFocusPlaneOverlay && !showScheimpflugConstruction ? "true" : "false"}
       data-optical-geometry-visible={showOpticalGeometry ? "true" : "false"}
+      data-conceptual-image-circle-visible={
+        cameraPresentation?.imageCircle?.visible === true ? "true" : "false"
+      }
       data-image-circle-visible={imageCircleVisible ? "true" : "false"}
       data-image-circle-radius-mm={imageCircleVisible && parallelImageCircleGeometry
         ? serializeFiniteRenderNumber(parallelImageCircleGeometry.radiusMm)
@@ -1375,6 +1385,9 @@ export const SceneRenderer = ({
           showFocusPlaneOverlay={showFocusPlaneOverlay}
           showDofOverlay={showDofOverlay}
           showOpticalGeometry={Boolean(showOpticalGeometry)}
+          showFiniteCoverageOverlay={Boolean(
+            showFiniteCoverageOverlay ?? showOpticalGeometry,
+          )}
           lensCoverageGeometry={renderedLensCoverageGeometry}
           showScheimpflugConstruction={Boolean(showScheimpflugConstruction)}
           focusFocalLengthMm={activeFocalLengthMm}

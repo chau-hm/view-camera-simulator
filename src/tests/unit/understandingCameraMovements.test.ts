@@ -319,8 +319,8 @@ describe("Understanding Camera Movements store invariants", () => {
     useAppStore.getState().setInfinityFocus();
     expect(useAppStore.getState().camera.focusMode).toBe("infinity");
 
-    useAppStore.getState().setFocusDistance(3000);
+    useAppStore.getState().setFocusDistance(4000);
     expect(useAppStore.getState().camera.focusMode).toBe("finite");
-    expect(useAppStore.getState().camera.focusDistanceMm).toBe(3000);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(4000);
   });
 });

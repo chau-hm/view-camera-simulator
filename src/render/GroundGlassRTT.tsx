@@ -102,7 +102,7 @@ export type GroundGlassRTTProps = {
   renderQuality?: import("../types/ui").RenderQualityProfile;
   /** Deprecated presentation input; loupe scaling is owned by GroundGlassStage. */
   zoomEnabled?: boolean;
-  /** Physical film window sampled by the RTT; presentation stays at CSS scale 1. */
+  /** Top-origin RTT-source crop. Spatial effects resolve it into canonical rear-standard film millimetres. */
   inspectionWindow?: GroundGlassInspectionWindow;
   /** Independent RTT resource/diagnostic channel for comparison panes. */
   channel?: GroundGlassRttChannel;

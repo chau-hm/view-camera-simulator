@@ -321,18 +321,20 @@ float resolveGroundGlassCoverage(vec2 filmPointMm) {
   );
 }
 
-vec2 mapGroundGlassRttSourceUvToPhysicalRawFilmUv(vec2 sourceUv) {
-  return vec2(1.0 - sourceUv.x, 1.0 - sourceUv.y);
+vec2 mapGroundGlassRttTextureUvToCanonicalFilmUv(vec2 textureUv) {
+  // The off-axis camera's reflected film corners make each sampled source
+  // texel correspond directly to this physical film-local coordinate.
+  return textureUv;
 }
 
-vec2 resolveGroundGlassFilmPointMm(vec2 sourceUv) {
-  vec2 physicalRawFilmLocalUv =
-    mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceUv) - vec2(0.5);
+vec2 resolveGroundGlassFilmPointMm(vec2 textureUv) {
+  vec2 canonicalFilmLocalUv =
+    mapGroundGlassRttTextureUvToCanonicalFilmUv(textureUv) - vec2(0.5);
   return vec2(
     groundGlassFilmWindowCenterXMm +
-      physicalRawFilmLocalUv.x * groundGlassFilmWindowWidthMm,
+      canonicalFilmLocalUv.x * groundGlassFilmWindowWidthMm,
     groundGlassFilmWindowCenterYMm -
-      physicalRawFilmLocalUv.y * groundGlassFilmWindowHeightMm
+      canonicalFilmLocalUv.y * groundGlassFilmWindowHeightMm
   );
 }
 
@@ -348,13 +350,10 @@ void main(){
     gathered.rgb = mix(gathered.rgb, nearLayer.rgb, clamp(nearLayer.a, 0.0, 1.0));
   }
 
-  // sampleUv identifies a texel in the RTT source texture. Texture V is
-  // bottom-origin, so express that local sample as the top-origin upright
-  // source before applying the canonical source -> physical Raw-film map.
-  // The inspection window centre was mapped by the same contract in the
-  // render adapter; only its local width/height remain unchanged.
-  vec2 sourceUprightUv = vec2(sampleUv.x, 1.0 - sampleUv.y);
-  vec2 filmPointMm = resolveGroundGlassFilmPointMm(sourceUprightUv);
+  // Keep the source sample in its configured off-axis camera coordinates.
+  // Raw/Upright only select the source texel; they do not redefine its
+  // physical film-local position.
+  vec2 filmPointMm = resolveGroundGlassFilmPointMm(sampleUv);
   float groundGlassNaturalIlluminationGain =
     resolveGroundGlassNaturalIllumination(filmPointMm);
   float groundGlassCoverageGain = resolveGroundGlassCoverage(filmPointMm);

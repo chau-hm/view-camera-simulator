@@ -327,6 +327,9 @@ export const resolveLessonZeroCameraPresentation = (
     ...(step.id === "image-circle"
       ? { imageCircle: { visible: true } }
       : {}),
+    ...(step.id === "front-rise-control" || step.id === "front-shift-control"
+      ? { showFiniteCoverageOverlay: true }
+      : {}),
   };
 };
 

@@ -27,15 +27,12 @@ export const applyGroundGlassRttDisplayTransform = (
 });
 
 /**
- * Map an upright RTT source coordinate to the canonical physical Raw-film
- * coordinate.  This is deliberately separate from the screen/display
- * transform: the composite first chooses a source texel for the screen,
- * then this same 180-degree contract identifies that texel's physical film
- * location.
+ * Map a WebGL RTT texture coordinate to canonical physical film UV. The
+ * off-axis Ground Glass camera is configured from the lens-reflected physical
+ * film corners, so its sampled source texel already carries the corresponding
+ * rear-standard film-local coordinate. Raw/Upright display transforms choose
+ * a texel; they must not be applied again to its physical coordinate.
  */
-export const mapGroundGlassRttSourceUvToPhysicalRawFilmUv = (
-  sourceUv: { u: number; v: number },
-): { u: number; v: number } => applyGroundGlassRttDisplayTransform(
-  sourceUv,
-  resolveGroundGlassRttDisplayTransform("raw"),
-);
+export const mapGroundGlassRttTextureUvToCanonicalFilmUv = (
+  textureUv: { u: number; v: number },
+): { u: number; v: number } => ({ u: textureUv.u, v: textureUv.v });

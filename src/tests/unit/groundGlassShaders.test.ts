@@ -210,9 +210,11 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassCompositeFragmentShader).toContain("uniform vec3 groundGlassCoverageConicAxial");
     expect(groundGlassCompositeFragmentShader).toContain("resolveGroundGlassCoverage");
     expect(groundGlassCompositeFragmentShader).toContain("groundGlassCoverageEdgeFeatherMm");
-    expect(groundGlassCompositeFragmentShader).toContain("mapGroundGlassRttSourceUvToPhysicalRawFilmUv");
-    expect(groundGlassCompositeFragmentShader).toContain("vec2 sourceUprightUv");
-    expect(groundGlassCompositeFragmentShader).toContain("1.0 - sampleUv.y");
+    expect(groundGlassCompositeFragmentShader).toContain("mapGroundGlassRttTextureUvToCanonicalFilmUv");
+    expect(groundGlassCompositeFragmentShader).toContain(
+      "resolveGroundGlassFilmPointMm(sampleUv)",
+    );
+    expect(groundGlassCompositeFragmentShader).not.toContain("sourceUprightUv");
     expect(groundGlassCompositeFragmentShader).toContain("resolveGroundGlassFilmPointMm");
     expect(groundGlassCompositeFragmentShader).toContain("gathered.rgb *= groundGlassNaturalIlluminationGain");
     expect(groundGlassCompositeFragmentShader).toContain("gathered.rgb *= groundGlassCoverageGain");

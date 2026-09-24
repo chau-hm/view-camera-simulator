@@ -103,6 +103,8 @@ export type ConceptualCameraPresentation = {
   aperture?: ApertureValue;
   /** Lesson-only illustration; this is not lens coverage or optical state. */
   imageCircle?: ConceptualImageCirclePresentation;
+  /** Render canonical finite coverage on Lesson 0 movement steps that teach it. */
+  showFiniteCoverageOverlay?: boolean;
 };
 
 const isPartTarget = (
@@ -703,7 +705,7 @@ const GroundGlassBack = ({
           >
             <circleGeometry args={[toWorld(imageCircle.radiusMm), 96]} />
             <meshBasicMaterial
-              color="#38bdf8"
+              color="#e11d48"
               transparent
               opacity={ghost ? 0.04 : 0.08}
               depthWrite={false}
@@ -718,9 +720,9 @@ const GroundGlassBack = ({
               args={[toWorld(imageCircle.radiusMm - 1.2), toWorld(imageCircle.radiusMm), 96]}
             />
             <meshBasicMaterial
-              color="#0284c7"
+              color="#e11d48"
               transparent
-              opacity={ghost ? 0.22 : 0.72}
+              opacity={ghost ? 0.24 : 0.9}
               depthWrite={false}
               side={DoubleSide}
             />

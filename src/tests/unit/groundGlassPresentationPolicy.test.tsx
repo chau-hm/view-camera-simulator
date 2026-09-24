@@ -13,7 +13,7 @@ const projectedTarget: ProjectedGroundGlassTarget = {
   leftPercent: 25,
   topPercent: 35,
   blurStrengthAtTarget: 0.1,
-  rawUv: { u: 0.25, v: 0.35 },
+  physicalFilmUv: { u: 0.25, v: 0.35 },
   displayUv: { u: 0.25, v: 0.35 },
 };
 
