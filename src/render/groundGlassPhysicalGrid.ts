@@ -3,7 +3,7 @@ import {
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
 import {
-  mapGroundGlassUvToDisplayUv,
+  mapPhysicalFilmUvToGroundGlassDisplayUv,
   type GroundGlassPreviewMode,
 } from "./groundGlassTargetProjection";
 
@@ -106,7 +106,7 @@ export const resolveGroundGlassPhysicalGrid = (input: {
 
   const windowOriginU = centerU - halfWidth;
   const windowOriginV = centerV - halfHeight;
-  const displayOrigin = mapGroundGlassUvToDisplayUv(
+  const displayOrigin = mapPhysicalFilmUvToGroundGlassDisplayUv(
     { u: 0, v: 0 },
     input.previewMode,
   );

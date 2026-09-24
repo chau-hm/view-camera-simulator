@@ -4,7 +4,7 @@ import { resolveGroundGlassNaturalIlluminationUniformState } from "../../render/
 import { FULL_GROUND_GLASS_INSPECTION_WINDOW } from "../../render/groundGlassInspectionWindow";
 import {
   applyGroundGlassRttDisplayTransform,
-  mapGroundGlassRttSourceUvToPhysicalRawFilmUv,
+  mapGroundGlassRttTextureUvToCanonicalFilmUv,
   resolveGroundGlassRttDisplayTransform,
 } from "../../render/groundGlassRttOrientation";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
@@ -104,12 +104,12 @@ describe("Ground Glass natural-illumination render contract", () => {
 
     const physicalPositiveY = { u: 0.5, v: 0.25 };
     const physicalNegativeY = { u: 0.5, v: 0.75 };
-    const sourcePositiveY = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(physicalPositiveY);
-    const sourceNegativeY = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(physicalNegativeY);
+    const sourcePositiveY = mapGroundGlassRttTextureUvToCanonicalFilmUv(physicalPositiveY);
+    const sourceNegativeY = mapGroundGlassRttTextureUvToCanonicalFilmUv(physicalNegativeY);
     const sourceTexturePositiveY = physicalPositiveY;
     const sourceTextureNegativeY = physicalNegativeY;
     const physicalRawFilmFromSourceTexture = (sourceTextureUv: { u: number; v: number }) =>
-      mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceTextureUv);
+      mapGroundGlassRttTextureUvToCanonicalFilmUv(sourceTextureUv);
 
     expect(displayTopOriginUv(sourceTexturePositiveY, "raw")).toEqual(physicalPositiveY);
     expect(displayTopOriginUv(sourceTextureNegativeY, "raw")).toEqual(physicalNegativeY);

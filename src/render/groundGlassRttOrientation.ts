@@ -33,6 +33,6 @@ export const applyGroundGlassRttDisplayTransform = (
  * rear-standard film-local coordinate. Raw/Upright display transforms choose
  * a texel; they must not be applied again to its physical coordinate.
  */
-export const mapGroundGlassRttSourceUvToPhysicalRawFilmUv = (
-  sourceUv: { u: number; v: number },
-): { u: number; v: number } => ({ u: sourceUv.u, v: sourceUv.v });
+export const mapGroundGlassRttTextureUvToCanonicalFilmUv = (
+  textureUv: { u: number; v: number },
+): { u: number; v: number } => ({ u: textureUv.u, v: textureUv.v });

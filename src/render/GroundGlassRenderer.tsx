@@ -29,7 +29,7 @@ import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementS
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
 import {
   FULL_GROUND_GLASS_INSPECTION_WINDOW,
-  mapGroundGlassInspectionWindowToFilmSpace,
+  mapGroundGlassInspectionWindowToRttSourceCrop,
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
 
@@ -182,8 +182,8 @@ export const GroundGlassRenderer = ({
 
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
   const isRttSceneFinal = isRttScene;
-  const physicalInspectionWindow = useMemo(
-    () => mapGroundGlassInspectionWindowToFilmSpace(inspectionWindow, previewMode),
+  const rttSourceInspectionWindow = useMemo(
+    () => mapGroundGlassInspectionWindowToRttSourceCrop(inspectionWindow, previewMode),
     [inspectionWindow, previewMode],
   );
   const physicalGrid = scene.macroTeachingCapability?.kind === "bellows-extension" && gridEnabled && !rawDebug
@@ -272,7 +272,7 @@ export const GroundGlassRenderer = ({
           heightPx={isRttSceneFinal ? rttLogicalSize.height : PANEL_HEIGHT_PX}
           renderQuality={renderQuality}
           channel={channel}
-          inspectionWindow={physicalInspectionWindow}
+          inspectionWindow={rttSourceInspectionWindow}
           presentationRegion={presentationRegion}
           effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
           runtimeInfo={runtimeInfo}

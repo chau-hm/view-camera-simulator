@@ -1,4 +1,13 @@
+import * as THREE from "three";
 import { describe, expect, it } from "vitest";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
+import {
+  applyGroundGlassRttDisplayTransform,
+  resolveGroundGlassRttDisplayTransform,
+} from "../../render/groundGlassRttOrientation";
+import { WORLD_SCALE } from "../../render/rttUtils";
+import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import {
   resolveGroundGlassPhysicalGrid,
 } from "../../render/groundGlassPhysicalGrid";
@@ -6,6 +15,7 @@ import {
   resolveGroundGlassInspectionWindow,
   FULL_GROUND_GLASS_INSPECTION_WINDOW,
 } from "../../render/groundGlassInspectionWindow";
+import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const FILM_WIDTH_MM = 127;
 const FILM_HEIGHT_MM = 101.6;
@@ -86,6 +96,53 @@ describe("physical Ground Glass grid", () => {
     expect(raw?.originYPx).toBeCloseTo(0, 12);
     expect(upright?.originXPx).toBeCloseTo(0, 12);
     expect(upright?.originYPx).toBeCloseTo(DISPLAY_HEIGHT_PX, 12);
+  });
+
+  it("places the physical film origin where the configured RTT camera and composite render it", () => {
+    const cameraState = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+      frontShiftMm: 60,
+      focusDistanceMm: 9000,
+    };
+    const optics = deriveOpticsState(cameraState, architectureRiseScene);
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
+    const configuration = configureGroundGlassCamera(camera, optics, 0.01, 1000);
+    expect(configuration.ok).toBe(true);
+    if (!configuration.ok) return;
+
+    const physicalTopLeft = optics.filmPlaneCornersWorld!.topLeft;
+    const virtualTopLeft = new THREE.Vector3(
+      2 * optics.lensCenterWorld.x - physicalTopLeft.x,
+      2 * optics.lensCenterWorld.y - physicalTopLeft.y,
+      2 * optics.lensCenterWorld.z - physicalTopLeft.z,
+    ).multiplyScalar(WORLD_SCALE);
+    const ndc = virtualTopLeft.project(camera);
+    const sourceTextureUv = { u: (ndc.x + 1) / 2, v: (ndc.y + 1) / 2 };
+    expect(sourceTextureUv.u).toBeCloseTo(0, 8);
+    expect(sourceTextureUv.v).toBeCloseTo(0, 8);
+
+    for (const previewMode of ["raw", "upright"] as const) {
+      const compositeSampleUv = applyGroundGlassRttDisplayTransform(
+        sourceTextureUv,
+        resolveGroundGlassRttDisplayTransform(previewMode),
+      );
+      const visibleTopOriginUv = {
+        u: compositeSampleUv.u,
+        v: 1 - compositeSampleUv.v,
+      };
+      const grid = resolveGrid(FULL_GROUND_GLASS_INSPECTION_WINDOW, previewMode);
+      expect(grid).not.toBeNull();
+      expect(grid?.originXPx).toBeCloseTo(
+        visibleTopOriginUv.u * DISPLAY_WIDTH_PX,
+        8,
+      );
+      expect(grid?.originYPx).toBeCloseTo(
+        visibleTopOriginUv.v * DISPLAY_HEIGHT_PX,
+        8,
+      );
+    }
   });
 
   it("rejects non-physical inputs instead of inventing a screen scale", () => {

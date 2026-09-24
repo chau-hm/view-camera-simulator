@@ -52,6 +52,7 @@ export function configureGroundGlassCamera(
   opticsState: DerivedOpticsState,
   nearWorld: number,
   farWorld: number,
+  /** Top-origin RTT-source frustum crop; V=0 selects the film's projected top edge. */
   inspectionWindow: GroundGlassInspectionWindow = FULL_GROUND_GLASS_INSPECTION_WINDOW,
 ): GroundGlassCameraConfigResult {
   const film = opticsState.filmPlaneCornersWorld;

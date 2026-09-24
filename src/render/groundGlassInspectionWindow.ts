@@ -2,7 +2,7 @@ import type { GroundGlassPanOffset } from "./groundGlassStageTransform";
 import type { GroundGlassPreviewMode } from "./groundGlassTargetProjection";
 import {
   applyGroundGlassRttDisplayTransform,
-  mapGroundGlassRttSourceUvToPhysicalRawFilmUv,
+  mapGroundGlassRttTextureUvToCanonicalFilmUv,
   resolveGroundGlassRttDisplayTransform,
 } from "./groundGlassRttOrientation";
 
@@ -30,7 +30,7 @@ export type GroundGlassInspectionPreviewMode = GroundGlassPreviewMode;
  * used by Focus Distribution. Raw samples the upright RTT source through a
  * 180-degree transform; Upright Assist samples it without a transform.
  */
-export const mapGroundGlassDisplayUvToFilmUv = (
+export const mapGroundGlassDisplayUvToRttSourceTopUv = (
   displayUv: { u: number; v: number },
   previewMode: GroundGlassInspectionPreviewMode,
 ): { u: number; v: number } => applyGroundGlassRttDisplayTransform(
@@ -147,9 +147,9 @@ export const resolveSampledFilmDimensionsMm = (input: {
 });
 
 /**
- * Resolve the current RTT source crop in the rear-standard physical film
- * basis. The window centre uses CSS-style top-origin V, while the off-axis
- * camera frustum and RTT texture use bottom-origin V.
+ * Resolve the RTT source crop in rear-standard physical film millimetres.
+ * The crop window uses top-origin V, matching the off-axis frustum. Convert
+ * to bottom-origin WebGL texture V exactly once before resolving film-local mm.
  */
 export const resolveGroundGlassInspectionFilmWindowMm = (input: {
   filmWidthMm: number;
@@ -177,13 +177,13 @@ export const resolveGroundGlassInspectionFilmWindowMm = (input: {
     u: centerU,
     v: 1 - centerV,
   };
-  const physicalRawFilmCenterUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(
+  const canonicalFilmCenterUv = mapGroundGlassRttTextureUvToCanonicalFilmUv(
     sourceTextureCenterUv,
   );
 
   return {
-    centerXMm: (physicalRawFilmCenterUv.u - 0.5) * input.filmWidthMm,
-    centerYMm: (0.5 - physicalRawFilmCenterUv.v) * input.filmHeightMm,
+    centerXMm: (canonicalFilmCenterUv.u - 0.5) * input.filmWidthMm,
+    centerYMm: (0.5 - canonicalFilmCenterUv.v) * input.filmHeightMm,
     widthMm: input.filmWidthMm * widthFraction,
     heightMm: input.filmHeightMm * heightFraction,
   };
@@ -196,12 +196,12 @@ export const resolveGroundGlassInspectionFilmWindowMm = (input: {
  * shader. The transform is self-inverse, so it is also the
  * display-to-source mapping needed for the crop.
  */
-export const mapGroundGlassInspectionWindowToFilmSpace = (
+export const mapGroundGlassInspectionWindowToRttSourceCrop = (
   window: GroundGlassInspectionWindow,
   previewMode: GroundGlassInspectionPreviewMode,
 ): GroundGlassInspectionWindow => {
   if (!window.active) return window;
-  const filmCenter = mapGroundGlassDisplayUvToFilmUv(
+  const filmCenter = mapGroundGlassDisplayUvToRttSourceTopUv(
     { u: window.centerU, v: window.centerV },
     previewMode,
   );

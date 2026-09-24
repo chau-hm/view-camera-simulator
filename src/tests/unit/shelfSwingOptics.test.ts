@@ -207,7 +207,7 @@ describe("Shelf Swing optics calibration", () => {
     ]);
     raw.forEach((target, index) => {
       expect(target.visible).toBe(true);
-      expect(target.rawUv).toEqual(upright[index].rawUv);
+      expect(target.physicalFilmUv).toEqual(upright[index].physicalFilmUv);
       expect(target.displayUv.u).toBeCloseTo(1 - upright[index].displayUv.u, 10);
       expect(target.displayUv.v).toBeCloseTo(1 - upright[index].displayUv.v, 10);
     });

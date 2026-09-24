@@ -24,26 +24,28 @@ export type ProjectedGroundGlassTarget = {
   leftPercent: number;
   topPercent: number;
   blurStrengthAtTarget: number;
-  rawUv: {
+  /** Physical film-plane UV from the top-left film corner, before display transforms. */
+  physicalFilmUv: {
     u: number;
     v: number;
   };
+  /** Top-origin CSS screen UV after the active Raw/Upright composite transform. */
   displayUv: {
     u: number;
     v: number;
   };
 };
 
-export function mapGroundGlassUvToDisplayUv(
-  rawUv: { u: number; v: number },
+export function mapPhysicalFilmUvToGroundGlassDisplayUv(
+  physicalFilmUv: { u: number; v: number },
   previewMode: GroundGlassPreviewMode,
 ): { u: number; v: number } {
-  // `rawUv` is the canonical physical film point represented in the RTT
-  // source. The composite samples it through the established Raw/Upright
-  // transform, so overlays must use the same display mapping.
+  // `physicalFilmUv` is corner-relative film-plane position. The configured
+  // RTT camera maps it into source texture UV; convert to top-origin screen
+  // coordinates using the actual Raw/Upright composite transform.
   return previewMode === "raw"
-    ? { u: 1 - rawUv.u, v: rawUv.v }
-    : { u: rawUv.u, v: 1 - rawUv.v };
+    ? { u: 1 - physicalFilmUv.u, v: physicalFilmUv.v }
+    : { u: physicalFilmUv.u, v: 1 - physicalFilmUv.v };
 }
 
 export function projectSceneFocusTargetsToGroundGlass(params: {
@@ -93,8 +95,8 @@ export function projectSceneFocusTargetsToGroundGlass(params: {
       );
     }
 
-    const rawUv = { u: p.uRaw, v: p.vRaw };
-    const displayUv = mapGroundGlassUvToDisplayUv(rawUv, previewMode);
+    const physicalFilmUv = { u: p.uRaw, v: p.vRaw };
+    const displayUv = mapPhysicalFilmUvToGroundGlassDisplayUv(physicalFilmUv, previewMode);
 
     const leftPercent = p.visible ? Math.min(100, Math.max(0, displayUv.u * 100)) : -999;
     const topPercent = p.visible ? Math.min(100, Math.max(0, displayUv.v * 100)) : -999;
@@ -124,7 +126,7 @@ export function projectSceneFocusTargetsToGroundGlass(params: {
       leftPercent,
       topPercent,
       blurStrengthAtTarget,
-      rawUv,
+      physicalFilmUv,
       displayUv,
     };
   });

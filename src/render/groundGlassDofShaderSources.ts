@@ -321,20 +321,20 @@ float resolveGroundGlassCoverage(vec2 filmPointMm) {
   );
 }
 
-vec2 mapGroundGlassRttSourceUvToPhysicalRawFilmUv(vec2 sourceUv) {
+vec2 mapGroundGlassRttTextureUvToCanonicalFilmUv(vec2 textureUv) {
   // The off-axis camera's reflected film corners make each sampled source
   // texel correspond directly to this physical film-local coordinate.
-  return sourceUv;
+  return textureUv;
 }
 
-vec2 resolveGroundGlassFilmPointMm(vec2 sourceUv) {
-  vec2 physicalRawFilmLocalUv =
-    mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceUv) - vec2(0.5);
+vec2 resolveGroundGlassFilmPointMm(vec2 textureUv) {
+  vec2 canonicalFilmLocalUv =
+    mapGroundGlassRttTextureUvToCanonicalFilmUv(textureUv) - vec2(0.5);
   return vec2(
     groundGlassFilmWindowCenterXMm +
-      physicalRawFilmLocalUv.x * groundGlassFilmWindowWidthMm,
+      canonicalFilmLocalUv.x * groundGlassFilmWindowWidthMm,
     groundGlassFilmWindowCenterYMm -
-      physicalRawFilmLocalUv.y * groundGlassFilmWindowHeightMm
+      canonicalFilmLocalUv.y * groundGlassFilmWindowHeightMm
   );
 }
 

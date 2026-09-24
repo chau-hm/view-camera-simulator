@@ -127,7 +127,7 @@ describe("focus distribution layout", () => {
     for (const targetId of ["building-base", "building-middle"] as const) {
       const uprightTarget = projectedTargets.find((target) => target.id === targetId);
       const rawTarget = rawProjectedTargets.find((target) => target.id === targetId);
-      expect(rawTarget?.displayUv).toEqual(uprightTarget?.rawUv);
+      expect(rawTarget?.displayUv).toEqual(uprightTarget?.physicalFilmUv);
       const rawPosition = quantizeFocusDistributionDisplayUv(
         rawTarget?.displayUv ?? null,
         rawTarget?.visible ?? false,
@@ -179,11 +179,11 @@ describe("focus distribution layout", () => {
   it("keeps all three Table Tilt targets in their real coarse region and follows the renderer orientation", () => {
     const camera = cameraForScene(tableTiltScene);
     const opticsState = deriveOpticsState(camera, tableTiltScene);
-    const expectedDisplayUv = (rawUv: { u: number; v: number }, previewMode: GroundGlassPreviewMode) =>
+    const expectedDisplayUv = (physicalFilmUv: { u: number; v: number }, previewMode: GroundGlassPreviewMode) =>
       // Independent screen-space oracle for the composite's source sampling.
       previewMode === "raw"
-        ? { u: 1 - rawUv.u, v: rawUv.v }
-        : { u: rawUv.u, v: 1 - rawUv.v };
+        ? { u: 1 - physicalFilmUv.u, v: physicalFilmUv.v }
+        : { u: physicalFilmUv.u, v: 1 - physicalFilmUv.v };
 
     const layouts = (['raw', 'upright'] as const).map((previewMode) => {
       const projected = projectSceneFocusTargetsToGroundGlass({
@@ -211,8 +211,8 @@ describe("focus distribution layout", () => {
           lensCenterWorld: opticsState.lensCenterWorld,
           filmPlaneCornersWorld: opticsState.filmPlaneCornersWorld,
         });
-        expect(target.rawUv.u).toBeCloseTo(physical.uRaw, 10);
-        expect(target.rawUv.v).toBeCloseTo(physical.vRaw, 10);
+        expect(target.physicalFilmUv.u).toBeCloseTo(physical.uRaw, 10);
+        expect(target.physicalFilmUv.v).toBeCloseTo(physical.vRaw, 10);
         expect(target.displayUv.u).toBeCloseTo(expected[index].displayUv.u, 10);
         expect(target.displayUv.v).toBeCloseTo(expected[index].displayUv.v, 10);
         expect(target.visible).toBe(expected[index].visible);

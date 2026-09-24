@@ -25,6 +25,7 @@ export const resolveGroundGlassNaturalIlluminationUniformState = (input: {
   rawDebug: boolean;
   filmWidthMm: number;
   filmHeightMm: number;
+  /** Top-origin RTT-source crop, converted to canonical physical film mm here. */
   inspectionWindow: GroundGlassInspectionWindow;
 }): GroundGlassNaturalIlluminationUniformState => {
   const filmWindow = resolveGroundGlassFilmWindowUniformState({

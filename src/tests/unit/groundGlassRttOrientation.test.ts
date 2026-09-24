@@ -2,10 +2,10 @@ import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
-import { mapGroundGlassUvToDisplayUv } from "../../render/groundGlassTargetProjection";
+import { mapPhysicalFilmUvToGroundGlassDisplayUv } from "../../render/groundGlassTargetProjection";
 import {
   applyGroundGlassRttDisplayTransform,
-  mapGroundGlassRttSourceUvToPhysicalRawFilmUv,
+  mapGroundGlassRttTextureUvToCanonicalFilmUv,
   resolveGroundGlassRttDisplayTransform,
 } from "../../render/groundGlassRttOrientation";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
@@ -46,7 +46,7 @@ describe("Ground Glass RTT orientation", () => {
 
   it("keeps source-to-film coordinates separate from the Raw display flip", () => {
     for (const point of ASYMMETRIC_REFERENCE_POINTS) {
-      const physicalFilmUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(
+      const physicalFilmUv = mapGroundGlassRttTextureUvToCanonicalFilmUv(
         point.sourceTextureUv,
       );
       const rawDisplayUv = applyGroundGlassRttDisplayTransform(
@@ -96,9 +96,9 @@ describe("Ground Glass RTT orientation", () => {
 
     expect(sourceTextureUv.u).toBeCloseTo(expectedFilmUv.u, 6);
     expect(sourceTextureUv.v).toBeCloseTo(expectedFilmUv.v, 6);
-    expect(mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceTextureUv).u)
+    expect(mapGroundGlassRttTextureUvToCanonicalFilmUv(sourceTextureUv).u)
       .toBeCloseTo(expectedFilmUv.u, 6);
-    expect(mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceTextureUv).v)
+    expect(mapGroundGlassRttTextureUvToCanonicalFilmUv(sourceTextureUv).v)
       .toBeCloseTo(expectedFilmUv.v, 6);
   });
 
@@ -143,7 +143,7 @@ describe("Ground Glass RTT orientation", () => {
         optics.lensCenterWorld.z * 2 - physicalPoint.z,
       ).multiplyScalar(WORLD_SCALE);
       const ndc = virtualPoint.project(camera);
-      const sourceUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv({
+      const sourceUv = mapGroundGlassRttTextureUvToCanonicalFilmUv({
         u: (ndc.x + 1) / 2,
         v: (ndc.y + 1) / 2,
       });
@@ -182,7 +182,7 @@ describe("Ground Glass RTT orientation", () => {
 
   it("maps physical film points through the same display transform as the RTT", () => {
     for (const point of ASYMMETRIC_REFERENCE_POINTS) {
-      const physicalFilmUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(
+      const physicalFilmUv = mapGroundGlassRttTextureUvToCanonicalFilmUv(
         point.sourceTextureUv,
       );
       const rasterRawDisplay = applyGroundGlassRttDisplayTransform(
@@ -195,11 +195,11 @@ describe("Ground Glass RTT orientation", () => {
       );
       const rawScreenUv = { u: rasterRawDisplay.u, v: 1 - rasterRawDisplay.v };
       const uprightScreenUv = { u: rasterUprightDisplay.u, v: 1 - rasterUprightDisplay.v };
-      const projectedRawDisplay = mapGroundGlassUvToDisplayUv(
+      const projectedRawDisplay = mapPhysicalFilmUvToGroundGlassDisplayUv(
         physicalFilmUv,
         "raw",
       );
-      const projectedUprightDisplay = mapGroundGlassUvToDisplayUv(
+      const projectedUprightDisplay = mapPhysicalFilmUvToGroundGlassDisplayUv(
         physicalFilmUv,
         "upright",
       );
@@ -246,7 +246,7 @@ describe("Ground Glass RTT orientation", () => {
         expect(rttTextureUv.v, pointLabel).toBeGreaterThan(0);
         expect(rttTextureUv.v, pointLabel).toBeLessThan(1);
 
-        const physicalRawFilmUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(
+        const physicalRawFilmUv = mapGroundGlassRttTextureUvToCanonicalFilmUv(
           rttTextureUv,
         );
 
@@ -265,11 +265,11 @@ describe("Ground Glass RTT orientation", () => {
 
         const rawDisplayUv = renderedByMode("raw");
         const uprightDisplayUv = renderedByMode("upright");
-        const projectedRawDisplay = mapGroundGlassUvToDisplayUv(
+        const projectedRawDisplay = mapPhysicalFilmUvToGroundGlassDisplayUv(
           physicalRawFilmUv,
           "raw",
         );
-        const projectedUprightDisplay = mapGroundGlassUvToDisplayUv(
+        const projectedUprightDisplay = mapPhysicalFilmUvToGroundGlassDisplayUv(
           physicalRawFilmUv,
           "upright",
         );

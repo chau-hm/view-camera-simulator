@@ -77,5 +77,13 @@ test("Lesson 0 shows the same film-relative coverage model for Image Circle, Ris
     return Number.isFinite(sceneOffset) && Math.abs(sceneOffset) > 1e-5 &&
       Number.isFinite(rawOffset) && Math.abs(sceneOffset - rawOffset) < 1e-5;
   }).toBe(true);
+  await expect.poll(async () => {
+    const sceneRadius = Number(await scene.getAttribute("data-image-circle-radius-mm"));
+    const glassRadius = Number(await rtt.getAttribute("data-rtt-coverage-radius-mm"));
+    const sceneOffset = Number(await scene.getAttribute("data-image-circle-offset-x-mm"));
+    const glassOffset = Number(await rtt.getAttribute("data-rtt-coverage-offset-x-mm"));
+    return Number.isFinite(sceneRadius) && Number.isFinite(glassRadius) &&
+      Math.abs(sceneRadius - glassRadius) < 1e-5 && Math.abs(sceneOffset - glassOffset) < 1e-5;
+  }).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("lesson-zero-step14-front-shift-coverage.png") });
 });

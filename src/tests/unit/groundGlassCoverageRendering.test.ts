@@ -5,7 +5,7 @@ import { resolveGroundGlassNaturalIlluminationUniformState } from "../../render/
 import { FULL_GROUND_GLASS_INSPECTION_WINDOW } from "../../render/groundGlassInspectionWindow";
 import {
   applyGroundGlassRttDisplayTransform,
-  mapGroundGlassRttSourceUvToPhysicalRawFilmUv,
+  mapGroundGlassRttTextureUvToCanonicalFilmUv,
   resolveGroundGlassRttDisplayTransform,
 } from "../../render/groundGlassRttOrientation";
 
@@ -31,7 +31,7 @@ const croppedWindow = {
 };
 
 describe("Ground Glass finite-coverage render contract", () => {
-  it("shares the physical Raw-film crop with natural illumination", () => {
+  it("shares the canonical physical film crop with natural illumination", () => {
     const coverage = resolveGroundGlassCoverageUniformState({
       state,
       rawDebug: false,
@@ -184,7 +184,7 @@ describe("Ground Glass finite-coverage render contract", () => {
       yMm: (0.5 - uv.v) * 101.6,
     });
     const physicalRawFilmFromSourceTexture = (sourceTextureUv: { u: number; v: number }) =>
-      mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceTextureUv);
+      mapGroundGlassRttTextureUvToCanonicalFilmUv(sourceTextureUv);
     const displayedScreenUvForSource = (
       sourceTextureUv: { u: number; v: number },
       mode: "raw" | "upright",
@@ -232,9 +232,9 @@ describe("Ground Glass finite-coverage render contract", () => {
       physicalUv: { u: number; v: number },
       mode: "raw" | "upright",
     ) => {
-      const sourceUprightUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(physicalUv);
+      const canonicalFilmUv = mapGroundGlassRttTextureUvToCanonicalFilmUv(physicalUv);
       const sampledTextureUv = applyGroundGlassRttDisplayTransform(
-        sourceUprightUv,
+        canonicalFilmUv,
         resolveGroundGlassRttDisplayTransform(mode),
       );
       return { u: sampledTextureUv.u, v: 1 - sampledTextureUv.v };
@@ -248,7 +248,7 @@ describe("Ground Glass finite-coverage render contract", () => {
         screenTextureUv,
         resolveGroundGlassRttDisplayTransform(mode),
       );
-      return filmPoint(mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sampledTextureUv));
+      return filmPoint(mapGroundGlassRttTextureUvToCanonicalFilmUv(sampledTextureUv));
     };
     const samples = [physicalPositiveY, physicalNegativeY].map((physicalUv) => ({
       rawPoint: physicalPointAtScreenUv(screenUvForPhysicalPoint(physicalUv, "raw"), "raw"),
