@@ -33,7 +33,7 @@ describe("physical Ground Glass grid", () => {
     expect(grid?.sampledFilmHeightMm).toBe(FILM_HEIGHT_MM);
     expect(grid?.spacingXPx).toBeCloseTo(DISPLAY_WIDTH_PX * GRID_SQUARE_MM / FILM_WIDTH_MM, 12);
     expect(grid?.spacingYPx).toBeCloseTo(DISPLAY_HEIGHT_PX * GRID_SQUARE_MM / FILM_HEIGHT_MM, 12);
-    expect(grid?.originXPx).toBeCloseTo(0, 12);
+    expect(grid?.originXPx).toBeCloseTo(DISPLAY_WIDTH_PX, 12);
     expect(grid?.originYPx).toBeCloseTo(0, 12);
   });
 
@@ -67,7 +67,7 @@ describe("physical Ground Glass grid", () => {
 
     expect(grid).not.toBeNull();
     expect(grid?.originXPx).toBeCloseTo(
-      -windowOriginU / widthFraction * DISPLAY_WIDTH_PX,
+      (1 - windowOriginU) / widthFraction * DISPLAY_WIDTH_PX,
       12,
     );
     expect(grid?.originYPx).toBeCloseTo(
@@ -82,9 +82,9 @@ describe("physical Ground Glass grid", () => {
 
     expect(upright?.spacingXPx).toBeCloseTo(raw!.spacingXPx, 12);
     expect(upright?.spacingYPx).toBeCloseTo(raw!.spacingYPx, 12);
-    expect(raw?.originXPx).toBeCloseTo(0, 12);
+    expect(raw?.originXPx).toBeCloseTo(DISPLAY_WIDTH_PX, 12);
     expect(raw?.originYPx).toBeCloseTo(0, 12);
-    expect(upright?.originXPx).toBeCloseTo(DISPLAY_WIDTH_PX, 12);
+    expect(upright?.originXPx).toBeCloseTo(0, 12);
     expect(upright?.originYPx).toBeCloseTo(DISPLAY_HEIGHT_PX, 12);
   });
 

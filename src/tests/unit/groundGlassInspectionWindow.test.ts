@@ -121,13 +121,13 @@ describe("Ground Glass physical inspection window", () => {
       },
     });
 
-    expect(filmWindow.centerXMm).toBeCloseTo(-31.75, 12);
+    expect(filmWindow.centerXMm).toBeCloseTo(31.75, 12);
     expect(filmWindow.centerYMm).toBeCloseTo(-25.4, 12);
     expect(filmWindow.widthMm).toBeCloseTo(31.75, 12);
     expect(filmWindow.heightMm).toBeCloseTo(50.8, 12);
   });
 
-  it("maps an asymmetric RTT source crop to its complementary physical Raw-film region", () => {
+  it("maps an asymmetric RTT source crop to the corresponding physical film region", () => {
     const filmWindow = resolveGroundGlassInspectionFilmWindowMm({
       filmWidthMm: 127,
       filmHeightMm: 101.6,
@@ -140,7 +140,7 @@ describe("Ground Glass physical inspection window", () => {
       },
     });
 
-    expect(filmWindow.centerXMm).toBeCloseTo(-47.625, 12);
+    expect(filmWindow.centerXMm).toBeCloseTo(47.625, 12);
     expect(filmWindow.centerYMm).toBeCloseTo(-38.1, 12);
     expect(filmWindow.widthMm).toBeCloseTo(31.75, 12);
     expect(filmWindow.heightMm).toBeCloseTo(25.4, 12);

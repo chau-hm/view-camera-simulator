@@ -180,11 +180,10 @@ describe("focus distribution layout", () => {
     const camera = cameraForScene(tableTiltScene);
     const opticsState = deriveOpticsState(camera, tableTiltScene);
     const expectedDisplayUv = (rawUv: { u: number; v: number }, previewMode: GroundGlassPreviewMode) =>
-      // Independent renderer oracle: Raw preserves physical film coordinates;
-      // Upright Assist applies the 180-degree display transform.
+      // Independent screen-space oracle for the composite's source sampling.
       previewMode === "raw"
-        ? rawUv
-        : { u: 1 - rawUv.u, v: 1 - rawUv.v };
+        ? { u: 1 - rawUv.u, v: rawUv.v }
+        : { u: rawUv.u, v: 1 - rawUv.v };
 
     const layouts = (['raw', 'upright'] as const).map((previewMode) => {
       const projected = projectSceneFocusTargetsToGroundGlass({

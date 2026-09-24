@@ -147,11 +147,13 @@ they change. It is an anatomy and control walkthrough, not a scored movement
 task.
 
 The Image Circle step is a presentation-only teaching illustration: it shows a
-circular projected image larger than the existing conceptual 4×5 rear image
-plane. Its diameter is deliberately conceptual and is not a measured lens
-specification, finite coverage model, movement limit, or Ground Glass rendering
-input. The lesson uses it to establish that spare image-circle coverage gives
-Rise and Shift room to change the lens-to-film relationship.
+rose circular projection around the rectangular 4×5 film format, using the
+same visual language as the physical finite-coverage overlay shown in the Rise
+and Shift steps. Its diameter is deliberately conceptual and is not a measured
+lens specification, finite coverage model, movement limit, or Ground Glass
+rendering input. Rise and Shift then show canonical finite coverage moving
+relative to the unchanged film rectangle to teach vertical and horizontal spare
+coverage consistently.
 
 ### Understanding Camera Movements
 
@@ -194,6 +196,13 @@ same viewpoint + appropriate film-plane orientation + Front Rise
 
 Teach this as framing and perspective control under level-camera geometry, not
 as the simplistic claim that “rise corrects perspective.”
+
+The public focus range is scene-calibrated to the nearest foreground focus
+probe and far scene bound (3,090–13,000 mm at the current 150 mm lens). The
+generic real-image minimum only protects the mathematical condition `U > f`;
+it is not a suitable learner-facing focus range for every scene. Rear-standard
+position and bellows length continue to follow the canonical thin-lens image
+distance without a rendering travel cap.
 
 ### Table Tilt
 

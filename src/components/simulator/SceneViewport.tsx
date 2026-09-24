@@ -37,6 +37,7 @@ type SceneViewportProps = {
   learningOverlay?: ReactNode;
   overlayMenuResetGeneration: number;
   cameraPresentation?: ConceptualCameraPresentation;
+  showFiniteCoverageOverlay?: boolean;
   cameraInspectionTarget?: CameraInspectionTarget;
   initialViewFocus?: SceneViewFocus;
   suppressOpticalOverlays?: boolean;
@@ -67,6 +68,7 @@ export const SceneViewport = ({
   learningOverlay,
   overlayMenuResetGeneration,
   cameraPresentation,
+  showFiniteCoverageOverlay = false,
   cameraInspectionTarget,
   initialViewFocus = "scene",
   suppressOpticalOverlays = false,
@@ -239,6 +241,11 @@ export const SceneViewport = ({
             showDofOverlay={suppressOpticalOverlays ? false : showDofOverlay}
             showLegends={suppressOpticalOverlays ? false : showLegends}
             showOpticalGeometry={suppressOpticalOverlays ? false : showOpticalGeometry}
+            showFiniteCoverageOverlay={
+              suppressOpticalOverlays
+                ? showFiniteCoverageOverlay
+                : showOpticalGeometry
+            }
             showScheimpflugConstruction={suppressOpticalOverlays ? false : constructionActive}
             cameraPresentation={cameraPresentation}
             renderQuality={renderQuality}

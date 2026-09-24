@@ -741,6 +741,7 @@ export const SimulatorWorkspace = ({
                 onRequestExpand={() => requestViewportExpansion("scene")}
                 onRequestRestore={requestViewportRestore}
                 cameraPresentation={anatomyPresentation}
+                showFiniteCoverageOverlay={anatomyPresentation?.showFiniteCoverageOverlay}
                 cameraInspectionTarget={anatomyViewportInspectionTarget}
                 initialViewFocus={isAnatomyLesson ? "camera" : undefined}
                 suppressOpticalOverlays={isAnatomyLesson}

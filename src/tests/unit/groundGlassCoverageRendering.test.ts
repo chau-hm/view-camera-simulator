@@ -55,7 +55,7 @@ describe("Ground Glass finite-coverage render contract", () => {
     });
 
     expect(coverage.enabled).toBe(true);
-    expect(coverage.filmWindow.centerXMm).toBeCloseTo(-47.625, 12);
+    expect(coverage.filmWindow.centerXMm).toBeCloseTo(47.625, 12);
     expect(coverage.filmWindow.centerYMm).toBeCloseTo(-38.1, 12);
     expect(coverage.filmWindow.widthMm).toBeCloseTo(31.75, 12);
     expect(coverage.filmWindow.heightMm).toBeCloseTo(25.4, 12);
@@ -108,7 +108,7 @@ describe("Ground Glass finite-coverage render contract", () => {
     expect(adapted.conicQuadratic).toEqual([1, 0, 1]);
     expect(adapted.conicLinear).toEqual([0, -40, -825]);
     expect(adapted.conicAxial).toEqual([0, 0, 150]);
-    expect(adapted.filmWindow.centerXMm).toBeCloseTo(-47.625, 12);
+    expect(adapted.filmWindow.centerXMm).toBeCloseTo(47.625, 12);
     expect(adapted.filmWindow.centerYMm).toBeCloseTo(-38.1, 12);
     expect(adapted.edgeFeatherMm).toBeCloseTo(Math.max(31.75 / 800, 25.4 / 600), 12);
 
@@ -177,19 +177,14 @@ describe("Ground Glass finite-coverage render contract", () => {
   it("keeps an asymmetric coverage pattern attached to the physical film in Raw and Upright", () => {
     const physicalPositiveY = { u: 0.5, v: 0.25 };
     const physicalNegativeY = { u: 0.5, v: 0.75 };
-    const sourcePositiveY = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(physicalPositiveY);
-    const sourceNegativeY = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(physicalNegativeY);
-    const sourceTexturePositiveY = { u: sourcePositiveY.u, v: 1 - sourcePositiveY.v };
-    const sourceTextureNegativeY = { u: sourceNegativeY.u, v: 1 - sourceNegativeY.v };
+    const sourceTexturePositiveY = physicalPositiveY;
+    const sourceTextureNegativeY = physicalNegativeY;
     const filmPointFromPhysicalRawFilmUv = (uv: { u: number; v: number }) => ({
       xMm: (uv.u - 0.5) * 127,
       yMm: (0.5 - uv.v) * 101.6,
     });
     const physicalRawFilmFromSourceTexture = (sourceTextureUv: { u: number; v: number }) =>
-      mapGroundGlassRttSourceUvToPhysicalRawFilmUv({
-        u: sourceTextureUv.u,
-        v: 1 - sourceTextureUv.v,
-      });
+      mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sourceTextureUv);
     const displayedScreenUvForSource = (
       sourceTextureUv: { u: number; v: number },
       mode: "raw" | "upright",
@@ -214,6 +209,8 @@ describe("Ground Glass finite-coverage render contract", () => {
       u: 1 - rawPositiveScreen.u,
       v: 1 - rawPositiveScreen.v,
     });
+    expect(rawPositiveScreen.u).toBeCloseTo(0.5, 12);
+    expect(uprightPositiveScreen.v).toBeCloseTo(1 - rawPositiveScreen.v, 12);
     const positivePoint = filmPointFromPhysicalRawFilmUv(
       physicalRawFilmFromSourceTexture(sourceTexturePositiveY),
     );
@@ -236,24 +233,22 @@ describe("Ground Glass finite-coverage render contract", () => {
       mode: "raw" | "upright",
     ) => {
       const sourceUprightUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(physicalUv);
-      const sampledTextureUv = { u: sourceUprightUv.u, v: 1 - sourceUprightUv.v };
-      return applyGroundGlassRttDisplayTransform(
-        sampledTextureUv,
+      const sampledTextureUv = applyGroundGlassRttDisplayTransform(
+        sourceUprightUv,
         resolveGroundGlassRttDisplayTransform(mode),
       );
+      return { u: sampledTextureUv.u, v: 1 - sampledTextureUv.v };
     };
     const physicalPointAtScreenUv = (
       screenUv: { u: number; v: number },
       mode: "raw" | "upright",
     ) => {
+      const screenTextureUv = { u: screenUv.u, v: 1 - screenUv.v };
       const sampledTextureUv = applyGroundGlassRttDisplayTransform(
-        screenUv,
+        screenTextureUv,
         resolveGroundGlassRttDisplayTransform(mode),
       );
-      return filmPoint(mapGroundGlassRttSourceUvToPhysicalRawFilmUv({
-        u: sampledTextureUv.u,
-        v: 1 - sampledTextureUv.v,
-      }));
+      return filmPoint(mapGroundGlassRttSourceUvToPhysicalRawFilmUv(sampledTextureUv));
     };
     const samples = [physicalPositiveY, physicalNegativeY].map((physicalUv) => ({
       rawPoint: physicalPointAtScreenUv(screenUvForPhysicalPoint(physicalUv, "raw"), "raw"),

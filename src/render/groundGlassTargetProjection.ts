@@ -38,14 +38,12 @@ export function mapGroundGlassUvToDisplayUv(
   rawUv: { u: number; v: number },
   previewMode: GroundGlassPreviewMode,
 ): { u: number; v: number } {
-  // projectWorldPointToFilmPlaneGroundGlass returns physical film coordinates
-  // whose origin is the film's top-left corner. This is the canonical
-  // physical-film display mapping; the composite's source-texture transform
-  // is resolved by groundGlassRttOrientation and is kept aligned by tests.
-  if (previewMode === "raw") {
-    return { u: rawUv.u, v: rawUv.v };
-  }
-  return { u: 1 - rawUv.u, v: 1 - rawUv.v };
+  // `rawUv` is the canonical physical film point represented in the RTT
+  // source. The composite samples it through the established Raw/Upright
+  // transform, so overlays must use the same display mapping.
+  return previewMode === "raw"
+    ? { u: 1 - rawUv.u, v: rawUv.v }
+    : { u: rawUv.u, v: 1 - rawUv.v };
 }
 
 export function projectSceneFocusTargetsToGroundGlass(params: {

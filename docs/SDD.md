@@ -582,6 +582,12 @@ from one output pixel is raster anti-aliasing only, not an optical transition.
 Natural illumination remains parallel-only and neutral for non-parallel planes;
 finite coverage and natural illumination are independent effects.
 
+The 3D finite-coverage footprint and the Ground Glass mask use the same
+canonical rear-standard film-local X/Y coordinates. The off-axis RTT camera
+maps each source texel to that physical film basis; Raw and Upright Assist only
+select the displayed source texel and do not alter the physical coverage
+direction.
+
 The simulator's 150 mm lens is currently identified as
 `simulator-parametric-150mm` with a 72° full coverage angle. It is an explicit
 teaching profile and must not be read as measured or manufacturer lens data.

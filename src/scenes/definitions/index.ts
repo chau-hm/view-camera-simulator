@@ -116,6 +116,8 @@ export const getSceneFocusDistanceRange = (
   const usesRealImageFocusDistance =
     scene.finiteFocusStrategy?.kind === "rear-standard-thin-lens" &&
     scene.finiteFocusStrategy.focusDistanceReference === "lens-to-focus-plane";
+  // This generic floor only keeps the thin-lens real-image solution valid
+  // (U > f). Explicit scene ranges define the useful learner-facing domain.
   const realImageMinimum = usesRealImageFocusDistance
     ? minimumRealImageFiniteFocusDistanceMm(focalLengthMm)
     : null;

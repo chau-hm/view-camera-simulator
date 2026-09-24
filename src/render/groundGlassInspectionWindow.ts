@@ -147,10 +147,9 @@ export const resolveSampledFilmDimensionsMm = (input: {
 });
 
 /**
- * Resolve the current RTT source crop in the rear-standard physical Raw-film
- * basis. The window centre is an upright-source, top-origin coordinate; map
- * it through the canonical source-to-Raw orientation contract before
- * converting it to the rear-standard +X/+Y basis.
+ * Resolve the current RTT source crop in the rear-standard physical film
+ * basis. The window centre uses CSS-style top-origin V, while the off-axis
+ * camera frustum and RTT texture use bottom-origin V.
  */
 export const resolveGroundGlassInspectionFilmWindowMm = (input: {
   filmWidthMm: number;
@@ -174,10 +173,13 @@ export const resolveGroundGlassInspectionFilmWindowMm = (input: {
   );
   const centerU = clamp(finiteOr(input.inspectionWindow.centerU, 0.5), widthFraction / 2, 1 - widthFraction / 2);
   const centerV = clamp(finiteOr(input.inspectionWindow.centerV, 0.5), heightFraction / 2, 1 - heightFraction / 2);
-  const physicalRawFilmCenterUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv({
+  const sourceTextureCenterUv = {
     u: centerU,
-    v: centerV,
-  });
+    v: 1 - centerV,
+  };
+  const physicalRawFilmCenterUv = mapGroundGlassRttSourceUvToPhysicalRawFilmUv(
+    sourceTextureCenterUv,
+  );
 
   return {
     centerXMm: (physicalRawFilmCenterUv.u - 0.5) * input.filmWidthMm,

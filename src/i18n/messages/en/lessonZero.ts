@@ -84,20 +84,20 @@ export const lessonZeroMessages = {
     imageCircle: {
       title: "Understanding the Image Circle",
       body:
-        "The lens forms a circular image at the rear of the camera, while 4×5 film uses only a rectangular area inside it. View-camera lenses normally provide extra coverage around the film, giving the standards room to move before the film reaches the edge of the usable image. On most 35 mm, DSLR, and mirrorless cameras, the lens and sensor stay centred and fixed relative to each other, so photographers do not usually operate this spare coverage directly.",
-      cue: "Compare the rectangular film area with the larger circular projection around it. That extra area is the movement room used by Rise and Shift.",
+        "The lens projects a circular Image Circle onto the film plane. The 4×5 film rectangle uses only part of that coverage, leaving spare area around its edges. Front Rise and Front Shift reposition the projected coverage relative to the film rectangle.",
+      cue: "Compare the 4×5 film rectangle with the larger rose Image Circle around it. The extra area is the movement room used by Rise and Shift.",
     },
     frontRiseControl: {
       title: "Front Rise",
       body:
-        "Rise moves the Front Standard vertically while the Camera Support stays in place. Because the lens projects an image circle larger than the film, this movement shifts the circle relative to the film and changes which part of the projected scene reaches it.",
-      cue: "Drag Rise until the Front Standard's vertical movement is easy to see, then connect it to the spare image-circle area from the previous step.",
+        "Front Rise moves the lens and Front Standard vertically while the rear standard and film rectangle stay in place. The projected Image Circle shifts relative to the film, using spare coverage above or below it.",
+      cue: "Drag Rise and watch the rose coverage move against the 4×5 film rectangle; it shows the spare vertical room used by the movement.",
     },
     frontShiftControl: {
       title: "Front Shift",
       body:
-        "Shift moves the Front Standard sideways without rotating it. It uses the same spare image-circle coverage, changing the lens's position relative to the film.",
-      cue: "Drag Front Shift until the lateral movement is easy to see, then connect it to the spare image-circle area.",
+        "Front Shift moves the lens and Front Standard sideways without rotating them, while the rear standard and film rectangle stay in place. The same projected Image Circle shifts relative to the film, using spare coverage to its left or right.",
+      cue: "Drag Front Shift and watch the rose coverage move against the 4×5 film rectangle; it shows the spare horizontal room used by the movement.",
     },
     frontTiltControl: {
       title: "Front Tilt",
