@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
-test("Oblique Architecture keeps finite Ground Glass coverage through Swing transitions", async ({ page }, testInfo) => {
+test("Oblique Architecture transitions between the parallel circle and non-parallel conic", async ({ page }, testInfo) => {
   test.setTimeout(150_000);
   await page.goto("/simulator/free/oblique-architecture?rttDiagnostics=1");
 
@@ -13,6 +13,15 @@ test("Oblique Architecture keeps finite Ground Glass coverage through Swing tran
   await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "parallel-circle");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
   await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-kind", "parallel-circle");
+  await expect(scene).toHaveAttribute("data-lens-coverage-perimeter-count", "72");
+  await expect(scene).toHaveAttribute("data-lens-coverage-ray-count", "12");
+  const overlayTrigger = page.getByRole("button", { name: "View overlays" });
+  if (await overlayTrigger.isVisible()) await overlayTrigger.click();
+  await page.getByRole("button", { name: "Show Legends" }).click();
+  if (await overlayTrigger.isVisible()) await overlayTrigger.click();
+  await expect(page.getByText("Image circle (rose)", { exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("parallel-150mm-baseline.png") });
 
   await setStepRangeInput(page, "Rise", 40);
@@ -27,6 +36,16 @@ test("Oblique Architecture keeps finite Ground Glass coverage through Swing tran
   await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-kind", "neutral");
   await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-enabled", "false");
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-kind", "nonparallel-conic");
+  await expect(scene).toHaveAttribute("data-lens-coverage-perimeter-count", "72");
+  await expect(scene).toHaveAttribute("data-lens-coverage-ray-count", "12");
+  await expect(scene).toHaveAttribute("data-lens-coverage-center-world", /,/);
+  await expect(scene).toHaveAttribute("data-lens-coverage-semi-axis-1-mm", /\d/);
+  await expect(scene).toHaveAttribute("data-lens-coverage-semi-axis-2-mm", /\d/);
+  await expect(scene).not.toHaveAttribute("data-image-circle-radius-mm", /.+/);
+  await expect(page.getByText("Image circle (rose)", { exact: true })).not.toBeVisible();
+  await expect(page.getByText("Coverage footprint (rose)", { exact: true })).toBeVisible();
   const positiveSwingCoefficients = await rtt.getAttribute("data-rtt-coverage-conic-quadratic");
   await page.screenshot({ path: testInfo.outputPath("oblique-architecture-rise40-swing-plus5.png") });
 
@@ -36,6 +55,8 @@ test("Oblique Architecture keeps finite Ground Glass coverage through Swing tran
   const negativeSwingCoefficients = await rtt.getAttribute("data-rtt-coverage-conic-quadratic");
   expect(negativeSwingCoefficients).not.toBe(positiveSwingCoefficients);
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
+  await expect(scene).toHaveAttribute("data-lens-coverage-kind", "nonparallel-conic");
+  await expect(scene).toHaveAttribute("data-lens-coverage-ray-count", "12");
   await page.screenshot({ path: testInfo.outputPath("oblique-architecture-rise40-swing-minus5.png") });
 
   await setStepRangeInput(page, "Swing", 0);
@@ -43,6 +64,12 @@ test("Oblique Architecture keeps finite Ground Glass coverage through Swing tran
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
   await expect(rtt).not.toHaveAttribute("data-rtt-coverage-conic-quadratic", /.+/);
   await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-kind", "parallel-circle");
+  await expect(scene).not.toHaveAttribute("data-lens-coverage-semi-axis-1-mm", /.+/);
+  await expect(page.getByText("Image circle (rose)", { exact: true })).toBeVisible();
+  await expect(page.getByText("Coverage footprint (rose)", { exact: true })).not.toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("oblique-architecture-rise40-swing0-return.png") });
 
   await setStepRangeInput(page, "Swing", 5);
   await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "nonparallel-conic");
@@ -50,11 +77,13 @@ test("Oblique Architecture keeps finite Ground Glass coverage through Swing tran
   await page.getByLabel("Raw RTT — bypass DOF").check();
   await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "nonparallel-conic");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "false");
+  await expect(scene).toHaveAttribute("data-lens-coverage-kind", "nonparallel-conic");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
   await page.getByLabel("Raw RTT — bypass DOF").uncheck();
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
 });
 
-test("Macro Oblique Plane enables finite Ground Glass coverage while its 3D circle stays hidden", async ({ page }, testInfo) => {
+test("Macro Oblique Plane renders the finite non-parallel coverage conic", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.goto("/simulator/free/macro-oblique-plane?rttDiagnostics=1");
 
@@ -69,11 +98,15 @@ test("Macro Oblique Plane enables finite Ground Glass coverage while its 3D circ
   await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-kind", "neutral");
   await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-enabled", "false");
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-kind", "nonparallel-conic");
+  await expect(scene).toHaveAttribute("data-lens-coverage-perimeter-count", "72");
+  await expect(scene).toHaveAttribute("data-lens-coverage-ray-count", "12");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-conic-quadratic", /,/);
   await page.screenshot({ path: testInfo.outputPath("macro-oblique-plane-tilt5.png") });
 });
 
-test("Macro Compound Movements keeps finite coverage through compound Tilt and Swing", async ({ page }) => {
+test("Macro Compound Movements renders a rotated conic for compound Tilt and Swing", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.goto("/simulator/free/macro-compound-movements?rttDiagnostics=1");
 
@@ -89,4 +122,10 @@ test("Macro Compound Movements keeps finite coverage through compound Tilt and S
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-conic-quadratic", /,/);
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-kind", "nonparallel-conic");
+  await expect(scene).toHaveAttribute("data-lens-coverage-ray-count", "12");
+  await expect(scene).toHaveAttribute("data-lens-coverage-orientation-rad", /\d/);
+
+  await page.screenshot({ path: testInfo.outputPath("macro-compound-tilt4-swing4.png") });
 });

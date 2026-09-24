@@ -308,6 +308,7 @@ export const simulatorMessages = {
     fovRays: "FOV rays (amber)",
     opticalAxis: "Optical axis",
     imageCircle: "Image circle (rose)",
+    coverageFootprint: "Coverage footprint (rose)",
   },
   focusOverlay: {
     preview: "Ground glass preview",

@@ -298,6 +298,7 @@ export const simulatorMessageKeys = {
     fovRays: "simulator.sceneLegend.fovRays",
     opticalAxis: "simulator.sceneLegend.opticalAxis",
     imageCircle: "simulator.sceneLegend.imageCircle",
+    coverageFootprint: "simulator.sceneLegend.coverageFootprint",
   },
   focusOverlay: {
     preview: "simulator.focusOverlay.preview",
