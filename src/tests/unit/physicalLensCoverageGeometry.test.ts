@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { calculateGroundGlassCoverageGain } from "../../core/optics/groundGlassCoverage";
 import { add, dot, rotateAroundX, subtract, vec } from "../../core/math/vec";
 import { macroCompoundMovementsScene } from "../../scenes/definitions/macro-compound-movements";
 import { macroObliquePlaneScene } from "../../scenes/definitions/macro-oblique-plane";
@@ -190,7 +191,7 @@ describe("physical finite lens coverage render geometry", () => {
     expectBoundaryAndImageSide(geometry, coverage as Extract<GroundGlassCoverageState, { kind: "nonparallel-conic" }>, standard);
   });
 
-  it("recovers the rotated principal axes and passes positive and negative coefficient scaling", () => {
+  it("preserves the ellipse under positive coefficient scaling", () => {
     const base = ellipseCoverage({
       centerX: -9,
       centerY: 11,
@@ -206,7 +207,60 @@ describe("physical finite lens coverage render geometry", () => {
       orientationRad: Math.PI / 6,
       coefficientScale: 7.5,
     });
-    const negative = ellipseCoverage({
+    const standard = frame();
+    const geometries = [base, scaled].map((coverage) =>
+      resolvePhysicalLensCoverageRenderGeometry({ coverage, rearStandardFrame: standard }),
+    );
+
+    geometries.forEach((geometry) => expect(geometry?.kind).toBe("nonparallel-conic"));
+    const [baseGeometry, scaledGeometry] = geometries;
+    if (
+      baseGeometry?.kind !== "nonparallel-conic" ||
+      scaledGeometry?.kind !== "nonparallel-conic"
+    ) return;
+    expect(baseGeometry.centerFilmXMm).toBeCloseTo(-9, 10);
+    expect(baseGeometry.centerFilmYMm).toBeCloseTo(11, 10);
+    expect(baseGeometry.orientationRad).not.toBeCloseTo(0, 3);
+    expect(scaledGeometry.centerFilmXMm).toBeCloseTo(baseGeometry.centerFilmXMm, 10);
+    expect(scaledGeometry.centerFilmYMm).toBeCloseTo(baseGeometry.centerFilmYMm, 10);
+    expect(scaledGeometry.semiAxis1Mm).toBeCloseTo(baseGeometry.semiAxis1Mm, 10);
+    expect(scaledGeometry.semiAxis2Mm).toBeCloseTo(baseGeometry.semiAxis2Mm, 10);
+    expect(scaledGeometry.orientationRad).toBeCloseTo(baseGeometry.orientationRad, 10);
+    const rotatedAxes = [baseGeometry.semiAxis1Mm, baseGeometry.semiAxis2Mm].sort((x, y) => x - y);
+    expect(rotatedAxes[0]).toBeCloseTo(20, 10);
+    expect(rotatedAxes[1]).toBeCloseTo(40, 10);
+    for (let index = 0; index < baseGeometry.perimeterWorld.length; index += 1) {
+      expect(scaledGeometry.perimeterWorld[index].x).toBeCloseTo(baseGeometry.perimeterWorld[index].x, 8);
+      expect(scaledGeometry.perimeterWorld[index].y).toBeCloseTo(baseGeometry.perimeterWorld[index].y, 8);
+      expect(scaledGeometry.perimeterWorld[index].z).toBeCloseTo(baseGeometry.perimeterWorld[index].z, 8);
+    }
+    const baseSurface = createPhysicalLensCoverageSurfaceMesh(baseGeometry);
+    const scaledSurface = createPhysicalLensCoverageSurfaceMesh(scaledGeometry);
+    expect(baseSurface).not.toBeNull();
+    expect(scaledSurface).not.toBeNull();
+    if (!baseSurface || !scaledSurface) return;
+    expect(scaledSurface.triangleIndices).toEqual(baseSurface.triangleIndices);
+    scaledSurface.verticesWorld.forEach((point, index) => {
+      expect(point.x).toBeCloseTo(baseSurface.verticesWorld[index].x, 8);
+      expect(point.y).toBeCloseTo(baseSurface.verticesWorld[index].y, 8);
+      expect(point.z).toBeCloseTo(baseSurface.verticesWorld[index].z, 8);
+    });
+    const positiveState = base as Extract<GroundGlassCoverageState, { kind: "nonparallel-conic" }>;
+    const scaledState = scaled as Extract<GroundGlassCoverageState, { kind: "nonparallel-conic" }>;
+    expect(calculateGroundGlassCoverageGain(positiveState, -9, 11)).toBe(1);
+    expect(calculateGroundGlassCoverageGain(scaledState, -9, 11)).toBe(1);
+    expectBoundaryAndImageSide(baseGeometry, base as Extract<GroundGlassCoverageState, { kind: "nonparallel-conic" }>, standard);
+  });
+
+  it("rejects negative coefficient scaling because Q<=0 defines the covered side", () => {
+    const positive = ellipseCoverage({
+      centerX: -9,
+      centerY: 11,
+      semiAxisX: 20,
+      semiAxisY: 40,
+      orientationRad: Math.PI / 6,
+    }) as Extract<GroundGlassCoverageState, { kind: "nonparallel-conic" }>;
+    const signReversed = ellipseCoverage({
       centerX: -9,
       centerY: 11,
       semiAxisX: 20,
@@ -214,35 +268,24 @@ describe("physical finite lens coverage render geometry", () => {
       orientationRad: Math.PI / 6,
       coefficientScale: 3,
       coefficientSign: -1,
-    });
+    }) as Extract<GroundGlassCoverageState, { kind: "nonparallel-conic" }>;
     const standard = frame();
-    const geometries = [base, scaled, negative].map((coverage) =>
-      resolvePhysicalLensCoverageRenderGeometry({ coverage, rearStandardFrame: standard }),
-    );
+    const centerX = -9;
+    const centerY = 11;
 
-    geometries.forEach((geometry) => expect(geometry?.kind).toBe("nonparallel-conic"));
-    const [baseGeometry, scaledGeometry, negativeGeometry] = geometries;
-    if (
-      baseGeometry?.kind !== "nonparallel-conic" ||
-      scaledGeometry?.kind !== "nonparallel-conic" ||
-      negativeGeometry?.kind !== "nonparallel-conic"
-    ) return;
-    expect(baseGeometry.centerFilmXMm).toBeCloseTo(-9, 10);
-    expect(baseGeometry.centerFilmYMm).toBeCloseTo(11, 10);
-    expect(baseGeometry.orientationRad).not.toBeCloseTo(0, 3);
-    const rotatedAxes = [baseGeometry.semiAxis1Mm, baseGeometry.semiAxis2Mm].sort((x, y) => x - y);
-    expect(rotatedAxes[0]).toBeCloseTo(20, 10);
-    expect(rotatedAxes[1]).toBeCloseTo(40, 10);
-    for (let index = 0; index < baseGeometry.perimeterWorld.length; index += 1) {
-      for (const other of [scaledGeometry, negativeGeometry]) {
-        expect(other.centerFilmXMm).toBeCloseTo(baseGeometry.centerFilmXMm, 10);
-        expect(other.centerFilmYMm).toBeCloseTo(baseGeometry.centerFilmYMm, 10);
-        expect(other.perimeterWorld[index].x).toBeCloseTo(baseGeometry.perimeterWorld[index].x, 8);
-        expect(other.perimeterWorld[index].y).toBeCloseTo(baseGeometry.perimeterWorld[index].y, 8);
-        expect(other.perimeterWorld[index].z).toBeCloseTo(baseGeometry.perimeterWorld[index].z, 8);
-      }
-    }
-    expectBoundaryAndImageSide(baseGeometry, base as Extract<GroundGlassCoverageState, { kind: "nonparallel-conic" }>, standard);
+    expect(evaluateQ(positive, centerX, centerY).value).toBeLessThan(0);
+    expect(calculateGroundGlassCoverageGain(positive, centerX, centerY)).toBe(1);
+    expect(resolvePhysicalLensCoverageRenderGeometry({
+      coverage: positive,
+      rearStandardFrame: standard,
+    })).not.toBeNull();
+
+    expect(evaluateQ(signReversed, centerX, centerY).value).toBeGreaterThan(0);
+    expect(calculateGroundGlassCoverageGain(signReversed, centerX, centerY)).toBe(0);
+    expect(resolvePhysicalLensCoverageRenderGeometry({
+      coverage: signReversed,
+      rearStandardFrame: standard,
+    })).toBeNull();
   });
 
   it("rejects open, singular, empty, invalid, and wrong-image-side conics", () => {

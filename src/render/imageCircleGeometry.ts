@@ -140,7 +140,7 @@ const normalizeClosedQuadratic = (
   const coefficientScale = Math.max(...source.map(Math.abs));
   if (!Number.isFinite(coefficientScale) || coefficientScale <= 0) return null;
 
-  let [a, b, c, d, e, f] = source.map((value) => value / coefficientScale);
+  const [a, b, c, d, e, f] = source.map((value) => value / coefficientScale);
   const halfB = b / 2;
   const matrixScale = Math.max(Math.abs(a), Math.abs(halfB), Math.abs(c));
   if (!Number.isFinite(matrixScale) || matrixScale <= 0) return null;
@@ -155,16 +155,10 @@ const normalizeClosedQuadratic = (
     return null;
   }
 
-  // The canonical Q may be multiplied by any non-zero scalar. Flip only this
-  // render-local copy when the quadratic matrix is negative definite.
-  if (a + c < 0) {
-    a = -a;
-    b = -b;
-    c = -c;
-    d = -d;
-    e = -e;
-    f = -f;
-  }
+  // The boundary is invariant under any non-zero scalar, but the canonical
+  // coverage state also encodes the covered side through Q <= 0. Normalize
+  // magnitude only by a positive scale; negative scaling reverses inside and
+  // outside and must be rejected.
   if (a <= 0 || c <= 0) return null;
   return { a, b, c, d, e, f };
 };
