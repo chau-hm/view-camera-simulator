@@ -587,11 +587,20 @@ The simulator's 150 mm lens is currently identified as
 teaching profile and must not be read as measured or manufacturer lens data.
 
 The same `GroundGlassCoverageState` is consumed by the physical 3D Scene
-overlay, which in G1 still visualizes only a valid `parallel-circle` state. A
-non-parallel `nonparallel-conic` correctly enables the Ground Glass mask while
-remaining hidden in the 3D optical overlay until G2 implements conic geometry
-and rays. G1 does not stretch the old circle or show an Image Circle legend for
-geometry that is not rendered. Unbounded profiles also have no finite circle.
+overlay. `parallel-circle` keeps the existing canonical circular perimeter;
+`nonparallel-conic` is decomposed locally into a closed ellipse for display,
+with its film-local centre and principal axes lifted through the canonical
+rear-standard frame. The 3D adapter consumes the stored quadratic directly and
+does not reconstruct the cone from lens angles. Its outline, triangle-fan
+surface, and 12 sparse coverage rays share the same perimeter samples. Generic
+coverage diagnostics distinguish this footprint from the parallel Image
+Circle, and the legend is anchored at the resolved coverage centre.
+
+The 3D overlay currently supports finite closed image-side conics within the
+simulator's movement envelope. Open, empty, singular, or numerically unstable
+conics are omitted from the 3D view without changing the authoritative Ground
+Glass quadratic mask. Unbounded or invalid profiles have no finite 3D
+footprint.
 
 This physical 3D Image Circle is separate from the Lesson 0 conceptual Image
 Circle illustration. The Lesson 0 circle remains presentation-only and is not a

@@ -82,15 +82,61 @@ test("3D Image Circle consumes the Ground Glass finite coverage state", async ({
   await page.getByRole("button", { name: "Hide Optical geometry" }).click();
   await expect(scene).toHaveAttribute("data-optical-geometry-visible", "false");
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "false");
+  await expect(scene).not.toHaveAttribute("data-lens-coverage-kind", /.+/);
   await expect(scene).not.toHaveAttribute("data-image-circle-radius-mm", /.+/);
   await expect(page.getByText("Image circle (rose)", { exact: true })).not.toBeVisible();
+  await expect(page.getByText("Coverage footprint (rose)", { exact: true })).not.toBeVisible();
 
   await page.getByRole("button", { name: "Show Optical geometry" }).click();
   await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-kind", "parallel-circle");
   await expect(page.getByText("Image circle (rose)", { exact: true })).toBeVisible();
 
   await setStepRangeInput(page, "Tilt", 5);
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
+  await expect(scene).not.toHaveAttribute("data-image-circle-radius-mm", /.+/);
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-kind", "nonparallel-conic");
+  await expect(scene).toHaveAttribute("data-lens-coverage-perimeter-count", "72");
+  await expect(scene).toHaveAttribute("data-lens-coverage-ray-count", "12");
+  await expect(scene).toHaveAttribute("data-lens-coverage-semi-axis-1-mm", /\d/);
+  await expect(scene).toHaveAttribute("data-lens-coverage-semi-axis-2-mm", /\d/);
   await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "nonparallel-conic");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
+  await expect(page.getByText("Image circle (rose)", { exact: true })).not.toBeVisible();
+  await expect(page.getByText("Coverage footprint (rose)", { exact: true })).toBeVisible();
+
+  const conicAttributeNames = [
+    "data-lens-coverage-center-world",
+    "data-lens-coverage-center-x-mm",
+    "data-lens-coverage-center-y-mm",
+    "data-lens-coverage-semi-axis-1-mm",
+    "data-lens-coverage-semi-axis-2-mm",
+    "data-lens-coverage-orientation-rad",
+    "data-lens-coverage-perimeter-count",
+    "data-lens-coverage-ray-count",
+  ];
+  const conicAttributes = await Promise.all(
+    conicAttributeNames.map((name) => scene.getAttribute(name)),
+  );
+  for (const previewLabel of ["Upright Assist", "Raw Ground Glass"]) {
+    await page.getByRole("radio", { name: previewLabel }).check();
+    expect(await Promise.all(conicAttributeNames.map((name) => scene.getAttribute(name))))
+      .toEqual(conicAttributes);
+  }
+  await aperture.getByRole("radio", { name: "f/5.6" }).check();
+  const wideOpenConicAttributes = await Promise.all(
+    conicAttributeNames.map((name) => scene.getAttribute(name)),
+  );
+  await aperture.getByRole("radio", { name: "f/22" }).check();
+  expect(await Promise.all(conicAttributeNames.map((name) => scene.getAttribute(name))))
+    .toEqual(wideOpenConicAttributes);
+
+  if (await overlayTrigger.isVisible()) await overlayTrigger.click();
+  await page.getByRole("button", { name: "Hide Optical geometry" }).click();
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "false");
+  await expect(scene).not.toHaveAttribute("data-lens-coverage-kind", /.+/);
+  await expect(page.getByText("Coverage footprint (rose)", { exact: true })).not.toBeVisible();
 });
