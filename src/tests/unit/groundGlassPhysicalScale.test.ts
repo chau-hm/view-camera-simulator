@@ -107,11 +107,23 @@ describe("physical Ground Glass blur scale", () => {
   });
 
   it("derives storage range from the physical pixel cap", () => {
-    expect(resolveGroundGlassCocStorageMaxMm({
+    const input = {
       maximumCoCRadiusPx: 42,
       filmWidthMm: 127,
       renderWidthPx: 1270,
-    })).toBeCloseTo(8.4, 12);
+    };
+    const scale1RangeMm = resolveGroundGlassCocStorageMaxMm({
+      ...input,
+      displayBlurScale: 1,
+    });
+    const scale16RangeMm = resolveGroundGlassCocStorageMaxMm({
+      ...input,
+      displayBlurScale: 16,
+    });
+
+    expect(scale1RangeMm).toBeCloseTo(8.4, 12);
+    expect(scale16RangeMm).toBeCloseTo(8.4 / 16, 12);
+    expect(scale1RangeMm / scale16RangeMm).toBeCloseTo(16, 12);
   });
 
   it("applies maximumBlurRadiusPx only as a post-conversion cap", () => {

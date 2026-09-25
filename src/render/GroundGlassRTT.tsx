@@ -304,6 +304,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
       filmWidthMm: initialSampledFilmDimensions.widthMm,
       renderWidthPx: dimsRef.current.internalWidthPx,
+      displayBlurScale,
     });
     const initialFootprintStorageMaxMm = Math.max(1e-6, initialCocStorageMaxMm * 0.5);
     const gatherRT = new THREE.WebGLRenderTarget(
@@ -839,6 +840,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       maximumCoCRadiusPx: resizedMaximumCoCRadiusPx,
       filmWidthMm: sampledFilmDimensions.widthMm,
       renderWidthPx: dims.internalWidthPx,
+      displayBlurScale,
     });
     cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
     gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
@@ -1198,6 +1200,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         maximumCoCRadiusPx: currentMaximumCoCRadiusPx,
         filmWidthMm: sampledFilmDimensions.widthMm,
         renderWidthPx: dimsRef.current.internalWidthPx,
+        displayBlurScale,
       });
       const footprintStorageMaxMm = Math.max(1e-6, cocStorageMaxMm * 0.5);
 

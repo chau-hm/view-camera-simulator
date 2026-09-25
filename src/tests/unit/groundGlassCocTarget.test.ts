@@ -76,6 +76,152 @@ describe("Ground Glass CoC target capability policy", () => {
     ).toBeCloseTo(14.4, 10);
   });
 
+  it("keeps the scale-1 range and reduces the physical byte range by the display scale", () => {
+    const input = {
+      maximumCoCRadiusPx: 60,
+      filmWidthMm: 127,
+      renderWidthPx: 320,
+    };
+    const scale1RangeMm = resolveGroundGlassCocStorageMaxMm({
+      ...input,
+      displayBlurScale: 1,
+    });
+    const scale16RangeMm = resolveGroundGlassCocStorageMaxMm({
+      ...input,
+      displayBlurScale: 16,
+    });
+
+    expect(scale1RangeMm).toBeCloseTo((2 * 60 * 127) / 320, 12);
+    expect(scale16RangeMm).toBeCloseTo(scale1RangeMm / 16, 12);
+    expect(scale1RangeMm / scale16RangeMm).toBeCloseTo(16, 12);
+  });
+
+  it("preserves both signs of the Architecture Rise CoC in encoded-byte storage at 16x", () => {
+    const displayBlurScale = 16;
+    const renderWidthPx = 320;
+    const filmWidthMm = 127;
+    const maximumCoCRadiusPx = 60;
+    const maximumCoCMm = resolveGroundGlassCocStorageMaxMm({
+      maximumCoCRadiusPx,
+      filmWidthMm,
+      renderWidthPx,
+      displayBlurScale,
+    });
+    const cocMagnitudeMm = 0.169;
+    const cases = [
+      { physicalMm: cocMagnitudeMm, expectedByte: 135 },
+      { physicalMm: -cocMagnitudeMm, expectedByte: 121 },
+    ];
+
+    for (const { physicalMm, expectedByte } of cases) {
+      const byteCode = encodeGroundGlassSignedCoCByte(physicalMm, maximumCoCMm);
+      const stored = encodeGroundGlassSignedCoC(
+        physicalMm,
+        "encoded-byte",
+        maximumCoCMm,
+      );
+      const decodedMm = decodeGroundGlassSignedCoC(
+        stored,
+        "encoded-byte",
+        maximumCoCMm,
+      );
+
+      expect(byteCode).toBe(expectedByte);
+      expect(quantizeGroundGlassSignedCoCByte(stored)).toBe(expectedByte);
+      if (physicalMm > 0) {
+        expect(byteCode).toBeGreaterThan(128);
+      } else {
+        expect(byteCode).toBeLessThan(128);
+      }
+      expect(Math.sign(decodedMm)).toBe(Math.sign(physicalMm));
+      expect(Math.abs(decodedMm - physicalMm)).toBeLessThanOrEqual(
+        maximumCoCMm / 127 / 2 + 1e-12,
+      );
+    }
+  });
+
+  it("keeps neutral and saturated signed CoC codes exact under the reduced byte range", () => {
+    const maximumCoCMm = resolveGroundGlassCocStorageMaxMm({
+      maximumCoCRadiusPx: 60,
+      filmWidthMm: 127,
+      renderWidthPx: 320,
+      displayBlurScale: 16,
+    });
+
+    expect(encodeGroundGlassSignedCoCByte(0, maximumCoCMm)).toBe(128);
+    expect(
+      decodeGroundGlassSignedCoC(
+        encodeGroundGlassSignedCoC(0, "encoded-byte", maximumCoCMm),
+        "encoded-byte",
+        maximumCoCMm,
+      ),
+    ).toBe(0);
+
+    const negativeSaturatedByte = encodeGroundGlassSignedCoCByte(
+      -2 * maximumCoCMm,
+      maximumCoCMm,
+    );
+    const positiveSaturatedByte = encodeGroundGlassSignedCoCByte(
+      2 * maximumCoCMm,
+      maximumCoCMm,
+    );
+    const negativeDecodedMm = decodeGroundGlassSignedCoCByte(
+      negativeSaturatedByte,
+      maximumCoCMm,
+    );
+    const positiveDecodedMm = decodeGroundGlassSignedCoCByte(
+      positiveSaturatedByte,
+      maximumCoCMm,
+    );
+
+    expect(negativeSaturatedByte).toBe(0);
+    expect(positiveSaturatedByte).toBe(255);
+    expect(negativeDecodedMm).toBe(-maximumCoCMm);
+    expect(positiveDecodedMm).toBe(maximumCoCMm);
+    expect(negativeDecodedMm).toBeLessThan(0);
+    expect(positiveDecodedMm).toBeGreaterThan(0);
+  });
+
+  it("maps the largest represented physical CoC diameter to the display-space radius cap", () => {
+    const displayBlurScale = 16;
+    const maximumCoCRadiusPx = 60;
+    const filmWidthMm = 127;
+    const renderWidthPx = 320;
+    const maximumRepresentedCocMm = resolveGroundGlassCocStorageMaxMm({
+      maximumCoCRadiusPx,
+      filmWidthMm,
+      renderWidthPx,
+      displayBlurScale,
+    });
+    const displayRadiusPx =
+      maximumRepresentedCocMm * renderWidthPx / filmWidthMm * displayBlurScale / 2;
+
+    expect(displayRadiusPx).toBeCloseTo(maximumCoCRadiusPx, 12);
+  });
+
+  it("keeps half-float CoC values in physical millimetres regardless of display scale", () => {
+    for (const displayBlurScale of [1, 16]) {
+      const range = resolveGroundGlassCocStorageMaxMm({
+        maximumCoCRadiusPx: 60,
+        filmWidthMm: 127,
+        renderWidthPx: 320,
+        displayBlurScale,
+      });
+
+      for (const signedCocMm of [-0.169, 0.169]) {
+        const storedMm = encodeGroundGlassSignedCoC(
+          signedCocMm,
+          "half-float-mm",
+          range,
+        );
+        expect(storedMm).toBe(signedCocMm);
+        expect(
+          decodeGroundGlassSignedCoC(storedMm, "half-float-mm", range),
+        ).toBe(signedCocMm);
+      }
+    }
+  });
+
   it("preserves an exact neutral byte code through normalized RGBA8 quantization", () => {
     const encoded = encodeGroundGlassSignedCoC(0, "encoded-byte", 7.2);
 

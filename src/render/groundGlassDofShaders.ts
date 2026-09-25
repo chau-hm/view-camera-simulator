@@ -315,8 +315,11 @@ float calculateCoCDiameterMmAtFragment(vec2 uv, float depth){
 // The physical CoC is normally stored directly as signed millimetres in the
 // half-float target. The byte fallback uses an explicit RGBA8 code contract:
 // code 128 is neutral, codes 0..127 are negative, and codes 129..255 are
-// positive. Encoding is deliberately after the optical calculation so storage
-// capability cannot change the CoC semantics.
+// positive. The CPU chooses cocStorageMaxMm so the encoded physical range maps
+// to the current display-space gather cap; this is representational only.
+// Encoding follows the optical calculation, and decoding restores physical mm
+// before the gather applies displayBlurScale exactly once. Half-float bypasses
+// the byte range and continues to store physical millimetres directly.
 float encodeSignedPhysicalCoCDiameterMm(float signedCocMm){
   if(!isFiniteFloat(signedCocMm)) return cocStorageEncoded < 0.5 ? 0.0 : 128.0 / 255.0;
   if(cocStorageEncoded < 0.5) return signedCocMm;
@@ -361,6 +364,9 @@ float footprintStorageScaleForAxes(float majorRadiusMm, float minorRadiusMm){
   return footprintStorageMaxMm / largestRadiusMm;
 }
 
+// The CPU pairs footprintStorageMaxMm with half the CoC diameter range because
+// these channels are physical radii. The uniform scale is common to both axes
+// so byte quantization preserves their anisotropy.
 vec2 encodeGroundGlassFootprintAxesMm(float majorRadiusMm, float minorRadiusMm){
   float storageScale = footprintStorageScaleForAxes(majorRadiusMm, minorRadiusMm);
   if(storageScale <= 0.0) return vec2(0.0);

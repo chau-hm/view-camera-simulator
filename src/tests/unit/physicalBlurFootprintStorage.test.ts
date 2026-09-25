@@ -7,6 +7,7 @@ import {
   encodeGroundGlassFootprintOrientation,
   encodeGroundGlassFootprintRadiusMm,
   quantizeGroundGlassFootprintByte,
+  resolveGroundGlassCocStorageMaxMm,
 } from "../../render/groundGlassCocTarget";
 
 describe("Ground Glass oriented footprint storage", () => {
@@ -128,6 +129,52 @@ describe("Ground Glass oriented footprint storage", () => {
 
     expect(encodedAxes.storageScale).toBeCloseTo(0.5, 12);
     expect(decodedAxes.majorRadiusMm / decodedAxes.minorRadiusMm).toBeCloseTo(1.25, 2);
+  });
+
+  it("preserves Architecture Rise scale-16 footprint radii and anisotropy in byte storage", () => {
+    const displayBlurScale = 16;
+    const renderWidthPx = 320;
+    const filmWidthMm = 127;
+    const cocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
+      maximumCoCRadiusPx: 60,
+      filmWidthMm,
+      renderWidthPx,
+      displayBlurScale,
+    });
+    const footprintStorageMaxMm = cocStorageMaxMm * 0.5;
+    const equivalentCocRadiusMm = 0.169 / 2;
+    const physicalAxes = {
+      majorRadiusMm: equivalentCocRadiusMm * Math.sqrt(2),
+      minorRadiusMm: equivalentCocRadiusMm / Math.sqrt(2),
+    };
+    const encoded = encodeGroundGlassFootprintAxesMm({
+      ...physicalAxes,
+      storageFormat: "encoded-byte",
+      maximumRadiusMm: footprintStorageMaxMm,
+    });
+    const decoded = decodeGroundGlassFootprintAxesMm({
+      ...encoded,
+      storageFormat: "encoded-byte",
+      maximumRadiusMm: footprintStorageMaxMm,
+    });
+    const byteStepMm = footprintStorageMaxMm / 255;
+
+    expect(encoded.storageScale).toBe(1);
+    expect(encoded.encodedMajorRadius).toBeGreaterThan(0);
+    expect(encoded.encodedMinorRadius).toBeGreaterThan(0);
+    expect(Math.abs(decoded.majorRadiusMm - physicalAxes.majorRadiusMm)).toBeLessThanOrEqual(
+      byteStepMm / 2 + 1e-12,
+    );
+    expect(Math.abs(decoded.minorRadiusMm - physicalAxes.minorRadiusMm)).toBeLessThanOrEqual(
+      byteStepMm / 2 + 1e-12,
+    );
+    expect(decoded.majorRadiusMm / decoded.minorRadiusMm).toBeCloseTo(2, 1);
+    expect(
+      decoded.majorRadiusMm * renderWidthPx / filmWidthMm * displayBlurScale,
+    ).toBeGreaterThan(0);
+    expect(
+      decoded.minorRadiusMm * renderWidthPx / filmWidthMm * displayBlurScale,
+    ).toBeGreaterThan(0);
   });
 
   it("keeps zero and ordering deterministic for the pair contract", () => {
