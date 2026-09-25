@@ -322,6 +322,40 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   expect(consoleProblems, `React/Three.js/WebGL warnings: ${consoleProblems.join("\n")}`).toEqual([]);
 });
 
+test("Focus Fundamentals rear reference station keeps physical blur and lens position", async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/focus-fundamentals-two-targets?rttDiagnostics=1");
+
+  const scene = page.getByTestId("scene-canvas");
+  const rtt = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
+  const slider = page.getByLabel("Focus distance");
+  const rear = page.getByRole("radio", { name: "Rear standard" });
+  await expect(slider).toHaveValue(String(focusFundamentalsReferenceFocusDepthMm));
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  const lensBefore = await readVector(scene, "data-camera-lens-center-world");
+
+  await rear.click();
+  await expect(rear).toBeChecked();
+  await expect(slider).toHaveValue(String(focusFundamentalsReferenceFocusDepthMm));
+  await expect(scene).toHaveAttribute("data-focus-standard-selected", "rear");
+  await expect(scene).toHaveAttribute("data-focus-standard-resolved", "rear");
+  expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(lensBefore[2], 8);
+  await expectContentfulRtt(rtt);
+
+  const physicalScale = await expectGroundGlassPhysicalScale(rtt);
+  await testInfo.attach("focus-fundamentals-rear-reference-1200mm-physical-scale", {
+    body: JSON.stringify(physicalScale),
+    contentType: "application/json",
+  });
+  await writeFile(
+    testInfo.outputPath("focus-fundamentals-rear-reference-1200mm-physical-scale.json"),
+    JSON.stringify(physicalScale, null, 2),
+  );
+  await rtt.locator("canvas").screenshot({
+    path: testInfo.outputPath("focus-fundamentals-rear-reference-1200mm.png"),
+  });
+});
+
 test("Focus Fundamentals controls remain usable at responsive viewports", async ({ page }) => {
   for (const viewport of [
     { width: 1024, height: 768 },
