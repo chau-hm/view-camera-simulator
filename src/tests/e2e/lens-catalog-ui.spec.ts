@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const openLensCatalogScene = async (page: Page) => {
   await page.goto("/simulator/free/understanding-camera-movements?rttDiagnostics=1");
@@ -22,10 +23,10 @@ test("lens catalog selection updates canonical optics and the 3D image-circle tr
   const rtt = page.getByTestId("ground-glass-rtt");
   const scene = page.getByTestId("scene-canvas");
   const wide = lensControl.getByRole("radio", {
-    name: /90 mm.*Wide.*Coverage: Not modelled/,
+    name: /90 mm.*Wide.*Lens coverage: Not modelled/,
   });
   const standard = lensControl.getByRole("radio", {
-    name: /150 mm.*Standard.*Coverage: 72° simulator coverage/,
+    name: /150 mm.*Standard.*Lens coverage: 72° simulator coverage \(teaching profile\)/,
   });
 
   await expect(wide).toBeChecked();
@@ -53,12 +54,42 @@ test("lens catalog selection updates canonical optics and the 3D image-circle tr
     "data-selected-lens-image-circle-diameter-mm",
     /\d+\.\d{6}/,
   );
-  await expect(lensControl.getByTestId("lens-control-coverage-value")).toHaveText("72° simulator coverage");
+  await expect(lensControl.getByTestId("lens-control-coverage-value")).toHaveText(
+    "72° simulator coverage (teaching profile)",
+  );
+  await expect(lensControl.getByTestId("lens-control-image-circle-label")).toHaveText(
+    "Image circle",
+  );
   await expect(lensControl.getByTestId("lens-control-image-circle-value")).toHaveText(/mm/);
   await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "parallel-circle");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
   await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
   await expect(scene).toHaveAttribute("data-image-circle-radius-mm", /\d+\.\d+/);
+
+  await setStepRangeInput(page, "Tilt", 0.5);
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "nonparallel-conic");
+  await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-kind", "neutral");
+  await expect(scene).toHaveAttribute("data-lens-coverage-kind", "nonparallel-conic");
+  await expect(scene).not.toHaveAttribute("data-image-circle-radius-mm", /.+/);
+  await expect(lensControl.getByTestId("lens-control-image-circle-label")).toHaveText(
+    "Reference image circle",
+  );
+  await expect(lensControl.getByTestId("lens-control-image-circle-reference-note")).toContainText(
+    "Coverage Footprint",
+  );
+  await expect(lensControl.getByTestId("lens-control-image-circle-value")).toHaveText(/mm/);
+  await expect(lensControl).toHaveAttribute(
+    "data-selected-lens-image-circle-diameter-mm",
+    /\d+\.\d{6}/,
+  );
+
+  await setStepRangeInput(page, "Tilt", 0);
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "parallel-circle");
+  await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
+  await expect(lensControl.getByTestId("lens-control-image-circle-label")).toHaveText(
+    "Image circle",
+  );
+  await expect(lensControl.getByTestId("lens-control-image-circle-reference-note")).toHaveCount(0);
 
   await wide.check();
   await expect(wide).toBeChecked();
@@ -97,7 +128,15 @@ test("lens catalog presentation stays readable and localized at desktop and tabl
   await expect(localizedLensControl).toBeVisible();
   await expect(page.getByRole("combobox", { name: "語言" })).toHaveValue("zh-HK");
   await expect(localizedLensControl.getByRole("radiogroup", { name: "鏡頭選項" })).toBeVisible();
-  await expect(localizedLensControl.getByRole("radio", { name: /90 mm.*廣角.*成像範圍: 尚未建模/ })).toBeVisible();
-  await expect(localizedLensControl.getByRole("radio", { name: /150 mm.*標準.*成像範圍: 72° 模擬成像範圍/ })).toBeVisible();
+  await expect(
+    localizedLensControl.getByRole("radio", {
+      name: /90 mm.*廣角.*鏡頭成像範圍: 尚未建模/,
+    }),
+  ).toBeVisible();
+  await expect(
+    localizedLensControl.getByRole("radio", {
+      name: /150 mm.*標準.*鏡頭成像範圍: 72° 模擬成像範圍（教學模型）/,
+    }),
+  ).toBeVisible();
   await expect(localizedLensControl.getByTestId("lens-control-coverage-value")).toHaveText("尚未建模");
 });

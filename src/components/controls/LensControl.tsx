@@ -60,10 +60,20 @@ export const LensControl = ({ capability, opticsState }: LensControlProps) => {
     : selectedPresentation.coveragePresentation.kind === "not-modelled"
       ? t(simulatorMessageKeys.controls.lensCoverageNotModelled)
       : t(simulatorMessageKeys.controls.lensImageCircleUnavailable);
+  const hasTiltedFilmCoverage = opticsState.groundGlassCoverage.kind === "nonparallel-conic";
+  const imageCircleLabel = t(
+    hasTiltedFilmCoverage
+      ? simulatorMessageKeys.controls.lensReferenceImageCircleLabel
+      : simulatorMessageKeys.controls.lensImageCircleLabel,
+  );
+  const imageCircleReferenceNote = hasTiltedFilmCoverage && derivedFiniteCoverage
+    ? t(simulatorMessageKeys.controls.lensImageCircleReferenceNote)
+    : null;
 
   const selectedLensId = opticsState.lensDefinition?.id ?? selectedPresentation.lensId;
   const selectedCoverageKind = opticsState.lensCoverage?.kind ?? selectedPresentation.coveragePresentation.kind;
 
+  // This remains the perpendicular reference-circle diagnostic, including when the film intersection is a conic.
   return (
     <fieldset
       className="lens-control"
@@ -154,9 +164,14 @@ export const LensControl = ({ capability, opticsState }: LensControlProps) => {
           <span data-testid="lens-control-coverage-value">{selectedCoverageText}</span>
         </div>
         <div className="lens-control__summary-row">
-          <span>{t(simulatorMessageKeys.controls.lensImageCircleLabel)}</span>
+          <span data-testid="lens-control-image-circle-label">{imageCircleLabel}</span>
           <span data-testid="lens-control-image-circle-value">{imageCircleText}</span>
         </div>
+        {imageCircleReferenceNote ? (
+          <p className="lens-control__copy" data-testid="lens-control-image-circle-reference-note">
+            {imageCircleReferenceNote}
+          </p>
+        ) : null}
       </div>
     </fieldset>
   );
