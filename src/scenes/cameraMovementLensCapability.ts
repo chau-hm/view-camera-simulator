@@ -3,12 +3,11 @@ import type { SceneFocalLengthCapability } from "../types/scene";
 /**
  * Public focal-length choices for Understanding Camera Movements.
  *
- * The central calibration still keeps its wider candidate set for the
- * workbench; this capability is the deliberately smaller learner-facing API.
+ * The public teaching catalog exposes each published simulator lens profile.
  */
 export const CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY = {
   enabled: true,
-  optionsMm: [90, 150],
+  optionsMm: [90, 105, 120, 150],
   defaultMm: 90,
   optionLabels: {
     90: "wide",

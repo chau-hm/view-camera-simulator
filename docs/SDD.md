@@ -496,11 +496,14 @@ diameter = 2 * radius
 
 The physical image distance is therefore part of the derivation. Bellows
 extension in macro focus increases `v` and increases the projected coverage
-diameter for a fixed angular profile. The simulator focal-length compatibility
-resolver keeps 90, 105, and 120 mm unbounded, while the current 150 mm choice
-uses an explicit 72° parametric teaching profile. That value is simulator data,
-not a manufacturer claim. Invalid physical inputs fail closed instead of
-producing a sentinel diameter.
+diameter for a fixed angular profile. The simulator publishes explicit 90,
+105, 120, and 150 mm angular teaching profiles. Their angles are derived from
+the existing 150 mm / 72° anchor so the infinity reference Image Circle is
+approximately 217.963 mm for every published choice. This equal movement-room
+calibration is a simulator-family design decision, not a real-lens rule or
+manufacturer claim. Unknown positive focal lengths continue to resolve to
+`unbounded-ideal`; invalid physical inputs fail closed instead of producing a
+sentinel diameter.
 
 Macro Scene 1 uses this fixed angular-coverage profile as a teaching model:
 the perpendicular reference Image Circle diameter grows with canonical image
@@ -640,11 +643,13 @@ boundary. The learner-facing Lens control resolves each declared numeric scene
 option through `resolveLensDefinitionForFocalLengthMm` and presents the
 catalog's coverage semantics without introducing a second selected-lens state.
 
-The current public choices preserve the simulator profiles: 90 mm remains
-coverage-unmodelled, while 150 mm uses the explicit 72° parametric simulator
-teaching profile. The 72° value is not manufacturer data. `Not modelled` means
-the simulator imposes no finite boundary for that option; it is not a claim of
-infinite real-world coverage. The selected readout consumes canonical
+The current public choices resolve to four explicit finite simulator teaching
+profiles: 90 mm / 100.9°, 105 mm / 92.1°, 120 mm / 84.5°, and 150 mm / 72°.
+Their shared infinity reference Image Circle is deliberate calibration data,
+not manufacturer data. `Not modelled` applies only to an unpublished focal
+length whose compatibility fallback is `unbounded-ideal`; it means the
+simulator imposes no finite boundary for that option, not that a real lens has
+infinite coverage. The selected readout consumes canonical
 `DerivedLensCoverage`: when Ground Glass state is `parallel-circle`, it is
 labelled “Image circle”; for `nonparallel-conic`, it is labelled “Reference
 image circle” and identifies the actual film region as the Coverage Footprint.

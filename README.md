@@ -112,9 +112,12 @@ The current learner-facing scope includes:
   extension demonstrate how framing uses that coverage;
 - exploratory Free Practice and scene-specific Guided Tasks.
 
-Coverage is a lens property separate from focal length. The current 150 mm
-72° profile is simulator teaching data, and natural-illumination falloff is
-separate from finite coverage. See [the learning model](docs/LEARNING_MODEL.md)
+Coverage is a lens property separate from focal length. The published 90, 105,
+120, and 150 mm simulator teaching profiles share an approximately 217.963 mm
+infinity reference Image Circle by design; those angles are not manufacturer
+data, and unknown focal lengths still use an unbounded compatibility fallback.
+Natural-illumination falloff is separate from finite coverage. See
+[the learning model](docs/LEARNING_MODEL.md)
 and [the current optics architecture](docs/SDD.md#91-lens-specification-and-coverage-contract)
 for the full teaching and implementation contracts.
 

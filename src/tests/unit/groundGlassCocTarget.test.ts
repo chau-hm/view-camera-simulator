@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
+import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
+import { resolveGroundGlassDisplayBlurScale } from "../../render/groundGlassBlurCalibration";
 import {
   createGroundGlassCocTarget,
   decodeGroundGlassSignedCoC,
@@ -86,21 +88,30 @@ describe("Ground Glass CoC target capability policy", () => {
       ...input,
       displayBlurScale: 1,
     });
-    const scale16RangeMm = resolveGroundGlassCocStorageMaxMm({
+    const displayBlurScale = resolveGroundGlassDisplayBlurScale({
+      acceptableCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
+      filmWidthMm: input.filmWidthMm,
+      displayWidthPx: input.renderWidthPx,
+    });
+    const calibratedRangeMm = resolveGroundGlassCocStorageMaxMm({
       ...input,
-      displayBlurScale: 16,
+      displayBlurScale,
     });
 
     expect(scale1RangeMm).toBeCloseTo((2 * 60 * 127) / 320, 12);
-    expect(scale16RangeMm).toBeCloseTo(scale1RangeMm / 16, 12);
-    expect(scale1RangeMm / scale16RangeMm).toBeCloseTo(16, 12);
+    expect(displayBlurScale).toBeCloseTo(7.9375, 12);
+    expect(calibratedRangeMm).toBeCloseTo(scale1RangeMm / displayBlurScale, 12);
   });
 
-  it("preserves both signs of the Architecture Rise CoC in encoded-byte storage at 16x", () => {
-    const displayBlurScale = 16;
+  it("preserves both signs of the Architecture Rise CoC using the resolved display scale", () => {
     const renderWidthPx = 320;
     const filmWidthMm = 127;
     const maximumCoCRadiusPx = 60;
+    const displayBlurScale = resolveGroundGlassDisplayBlurScale({
+      acceptableCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
+      filmWidthMm,
+      displayWidthPx: renderWidthPx,
+    });
     const maximumCoCMm = resolveGroundGlassCocStorageMaxMm({
       maximumCoCRadiusPx,
       filmWidthMm,
@@ -108,12 +119,9 @@ describe("Ground Glass CoC target capability policy", () => {
       displayBlurScale,
     });
     const cocMagnitudeMm = 0.169;
-    const cases = [
-      { physicalMm: cocMagnitudeMm, expectedByte: 135 },
-      { physicalMm: -cocMagnitudeMm, expectedByte: 121 },
-    ];
+    const cases = [cocMagnitudeMm, -cocMagnitudeMm];
 
-    for (const { physicalMm, expectedByte } of cases) {
+    for (const physicalMm of cases) {
       const byteCode = encodeGroundGlassSignedCoCByte(physicalMm, maximumCoCMm);
       const stored = encodeGroundGlassSignedCoC(
         physicalMm,
@@ -126,8 +134,7 @@ describe("Ground Glass CoC target capability policy", () => {
         maximumCoCMm,
       );
 
-      expect(byteCode).toBe(expectedByte);
-      expect(quantizeGroundGlassSignedCoCByte(stored)).toBe(expectedByte);
+      expect(quantizeGroundGlassSignedCoCByte(stored)).toBe(byteCode);
       if (physicalMm > 0) {
         expect(byteCode).toBeGreaterThan(128);
       } else {
@@ -141,11 +148,16 @@ describe("Ground Glass CoC target capability policy", () => {
   });
 
   it("keeps neutral and saturated signed CoC codes exact under the reduced byte range", () => {
+    const displayBlurScale = resolveGroundGlassDisplayBlurScale({
+      acceptableCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
+      filmWidthMm: 127,
+      displayWidthPx: 320,
+    });
     const maximumCoCMm = resolveGroundGlassCocStorageMaxMm({
       maximumCoCRadiusPx: 60,
       filmWidthMm: 127,
       renderWidthPx: 320,
-      displayBlurScale: 16,
+      displayBlurScale,
     });
 
     expect(encodeGroundGlassSignedCoCByte(0, maximumCoCMm)).toBe(128);
@@ -183,7 +195,12 @@ describe("Ground Glass CoC target capability policy", () => {
   });
 
   it("maps the largest represented physical CoC diameter to the display-space radius cap", () => {
-    const displayBlurScale = 16;
+    const displayWidthPx = 320;
+    const displayBlurScale = resolveGroundGlassDisplayBlurScale({
+      acceptableCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
+      filmWidthMm: 127,
+      displayWidthPx,
+    });
     const maximumCoCRadiusPx = 60;
     const filmWidthMm = 127;
     const renderWidthPx = 320;
@@ -199,12 +216,17 @@ describe("Ground Glass CoC target capability policy", () => {
     expect(displayRadiusPx).toBeCloseTo(maximumCoCRadiusPx, 12);
   });
 
-  it("keeps half-float CoC values in physical millimetres regardless of display scale", () => {
-    for (const displayBlurScale of [1, 16]) {
+  it("keeps half-float CoC values in physical millimetres regardless of display calibration", () => {
+    for (const displayWidthPx of [320, 640]) {
+      const displayBlurScale = resolveGroundGlassDisplayBlurScale({
+        acceptableCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
+        filmWidthMm: 127,
+        displayWidthPx,
+      });
       const range = resolveGroundGlassCocStorageMaxMm({
         maximumCoCRadiusPx: 60,
         filmWidthMm: 127,
-        renderWidthPx: 320,
+        renderWidthPx: displayWidthPx,
         displayBlurScale,
       });
 

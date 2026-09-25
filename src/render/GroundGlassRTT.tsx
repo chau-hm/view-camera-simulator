@@ -54,6 +54,10 @@ import {
   getGroundGlassDofVisualSettings,
   resolveGroundGlassDisplayOpticsState,
 } from "./groundGlassVisualSettings";
+import {
+  GROUND_GLASS_TARGET_BOUNDARY_BLUR_RADIUS_PX,
+  resolveGroundGlassDisplayBlurScale,
+} from "./groundGlassBlurCalibration";
 import { analyzeGroundGlassRenderSanity } from "./groundGlassRenderSanity";
 import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 import { createGroundGlassRenderSanityStateKey } from "./groundGlassRenderSanityKey";
@@ -145,7 +149,15 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     : CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
   const resolvedSceneId = sceneDefinition.id;
   const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
-  const { maximumBlurRadiusPx, displayBlurScale } = getGroundGlassDofVisualSettings(resolvedSceneId);
+  const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
+  const displayBlurScale = resolveGroundGlassDisplayBlurScale({
+    acceptableCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
+    filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+    displayWidthPx: widthPx,
+    targetBoundaryBlurRadiusPx: GROUND_GLASS_TARGET_BOUNDARY_BLUR_RADIUS_PX,
+  });
+  const displayBlurScaleRef = useRef(displayBlurScale);
+  displayBlurScaleRef.current = displayBlurScale;
   const profilingEnabled = isGroundGlassProfilingEnabled();
   const sceneCapacityProfilingEnabled = isSceneCapacityProfilingEnabled();
 
@@ -209,6 +221,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
   useEffect(() => {
     const sizeInputs = sizeInputsRef.current;
+    const initialDisplayBlurScale = displayBlurScaleRef.current;
     const initialQualitySettings = getRenderQualitySettings(
       sizeInputs.renderQuality || "standard",
     );
@@ -304,7 +317,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
       filmWidthMm: initialSampledFilmDimensions.widthMm,
       renderWidthPx: dimsRef.current.internalWidthPx,
-      displayBlurScale,
+      displayBlurScale: initialDisplayBlurScale,
     });
     const initialFootprintStorageMaxMm = Math.max(1e-6, initialCocStorageMaxMm * 0.5);
     const gatherRT = new THREE.WebGLRenderTarget(
@@ -380,7 +393,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
-        displayBlurScale: { value: displayBlurScale },
+        displayBlurScale: { value: initialDisplayBlurScale },
         circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
         sampledFilmWidthMm: { value: initialSampledFilmDimensions.widthMm },
         sampledFilmHeightMm: { value: initialSampledFilmDimensions.heightMm },
@@ -425,7 +438,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         inverseProjectionMatrix: { value: new THREE.Matrix4() },
         cameraMatrixWorld: { value: new THREE.Matrix4() },
         maximumCoCRadiusPx: { value: initialMaximumCoCRadiusPx },
-        displayBlurScale: { value: displayBlurScale },
+        displayBlurScale: { value: initialDisplayBlurScale },
         circleOfConfusionMm: { value: ACCEPTABLE_COC_DIAMETER_MM },
         sampledFilmWidthMm: { value: initialSampledFilmDimensions.widthMm },
         sampledFilmHeightMm: { value: initialSampledFilmDimensions.heightMm },
@@ -570,7 +583,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           gatherScale: initialQualitySettings.gatherScale,
           sampleCount: initialQualitySettings.sampleCount,
           maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
-          groundGlassDisplayBlurScale: displayBlurScale,
+          groundGlassDisplayBlurScale: initialDisplayBlurScale,
           cocStorageFormat: cocStorage.storageFormat,
           cocAvailable: true,
           cocTargetWidthPx: cocW,
@@ -669,7 +682,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       }
     };
   }, [
-    displayBlurScale,
     gl,
     maximumBlurRadiusPx,
     profilingEnabled,
@@ -842,6 +854,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       renderWidthPx: dims.internalWidthPx,
       displayBlurScale,
     });
+    // Display calibration changes with visible CSS width. Update the existing
+    // shader graph in place so responsive resizing does not recreate RTT
+    // resources or alter the physical CoC representation.
+    cocMaterial.uniforms.displayBlurScale.value = displayBlurScale;
+    gatherMaterial.uniforms.displayBlurScale.value = displayBlurScale;
     cocMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
     gatherMaterial.uniforms.cocStorageMaxMm.value = cocStorageMaxMm;
     cocMaterial.uniforms.footprintStorageMaxMm.value = Math.max(1e-6, cocStorageMaxMm * 0.5);
@@ -1245,6 +1262,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           sampledFilmDimensions.widthMm,
           sampledFilmDimensions.heightMm,
           displayBlurScale,
+          dimsRef.current.logicalWidthPx,
         );
         if (!rawDebug) {
           groundGlassIlluminanceGain = resolveGroundGlassRelativeIlluminance({

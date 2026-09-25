@@ -1,4 +1,39 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { ACCEPTABLE_COC_DIAMETER_MM } from "../../../core/optics/physicalSharpness";
+import { CAMERA_CONSTANTS } from "../../../utils/constants";
+import { GROUND_GLASS_TARGET_BOUNDARY_BLUR_RADIUS_PX } from "../../../render/groundGlassBlurCalibration";
+
+export type GroundGlassBlurCalibrationReading = {
+  displayWidthPx: number;
+  displayBlurScale: number;
+  acceptableBoundaryRadiusPx: number;
+};
+
+export const expectGroundGlassBlurCalibration = async (
+  rtt: Locator,
+): Promise<GroundGlassBlurCalibrationReading> => {
+  const reading = await rtt.evaluate((element) => ({
+    displayWidthPx: Number(element.getAttribute("data-rtt-logical-width")),
+    displayBlurScale: Number(element.getAttribute("data-rtt-display-blur-scale")),
+  }));
+  if (
+    !Number.isFinite(reading.displayWidthPx) || reading.displayWidthPx <= 0 ||
+    !Number.isFinite(reading.displayBlurScale) || reading.displayBlurScale <= 0
+  ) {
+    throw new Error(`Ground Glass blur diagnostics are invalid: ${JSON.stringify(reading)}`);
+  }
+
+  // Calibration intentionally uses complete film width and visible preview
+  // width, not RTT texture size or a cropped Focus Loupe inspection window.
+  const acceptableBoundaryRadiusPx =
+    ((ACCEPTABLE_COC_DIAMETER_MM * reading.displayWidthPx) / CAMERA_CONSTANTS.filmWidthMm / 2) *
+    reading.displayBlurScale;
+  expect(acceptableBoundaryRadiusPx).toBeCloseTo(
+    GROUND_GLASS_TARGET_BOUNDARY_BLUR_RADIUS_PX,
+    2,
+  );
+  return { ...reading, acceptableBoundaryRadiusPx };
+};
 
 export type StageTransform = {
   translateX: number;

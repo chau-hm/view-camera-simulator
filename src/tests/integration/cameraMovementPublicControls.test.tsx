@@ -54,7 +54,7 @@ afterEach(() => {
 });
 
 describe("public camera movement controls in the workspace", () => {
-  it("exposes the localized 90/150 lens selector with accessible selected state", () => {
+  it("exposes all four finite simulator lens profiles with accessible selected state", () => {
     render(publicWorkspace());
     const cameraControls = screen.getByRole("region", { name: "Camera Controls" });
     const lensOptions = within(cameraControls).getByRole("radiogroup", {
@@ -64,24 +64,62 @@ describe("public camera movement controls in the workspace", () => {
     const standard = within(lensOptions).getByRole("radio", {
       name: /150 mm.*Standard/,
     });
+    const middleProfiles = [
+      { focalLengthMm: 105, angle: "92.1" },
+      { focalLengthMm: 120, angle: "84.5" },
+    ];
+    for (const { focalLengthMm, angle } of middleProfiles) {
+      const option = within(lensOptions).getByRole("radio", {
+        name: new RegExp(`${focalLengthMm} mm.*${angle.replace(".", "\\.")}° simulator coverage`),
+      });
+      expect(option).toBeInTheDocument();
+    }
 
     expect(wide).toBeChecked();
     expect(standard).not.toBeChecked();
     expect(screen.getByText("Lens coverage", { exact: true })).toBeInTheDocument();
-    expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent("Not modelled");
-    expect(screen.getByTestId("lens-control-image-circle-value")).toHaveTextContent("Not modelled");
+    expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent(
+      "100.9° simulator coverage",
+    );
+    expect(screen.getByTestId("lens-control-image-circle-value")).toHaveTextContent(/mm/);
     expect(screen.getByTestId("lens-control")).toHaveAttribute(
       "data-selected-lens-coverage-kind",
-      "unbounded-ideal",
+      "angular",
+    );
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-id",
+      "simulator-parametric-90mm",
     );
     wide.focus();
     expect(document.activeElement).toBe(wide);
+
+    for (const { focalLengthMm, angle } of middleProfiles) {
+      const option = within(lensOptions).getByRole("radio", {
+        name: new RegExp(`${focalLengthMm} mm.*${angle.replace(".", "\\.")}° simulator coverage`),
+      });
+      fireEvent.click(option);
+      expect(option).toBeChecked();
+      expect(useAppStore.getState().camera.focalLengthMm).toBe(focalLengthMm);
+      expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent(
+        `${angle}° simulator coverage`,
+      );
+      expect(screen.getByTestId("lens-control")).toHaveAttribute(
+        "data-selected-lens-id",
+        `simulator-parametric-${focalLengthMm}mm`,
+      );
+      expect(screen.getByTestId("lens-control")).toHaveAttribute(
+        "data-selected-lens-coverage-kind",
+        "angular",
+      );
+    }
 
     fireEvent.click(standard);
     expect(standard).toBeChecked();
     expect(wide).not.toBeChecked();
     expect(useAppStore.getState().camera.focalLengthMm).toBe(150);
-    expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent("72° simulator coverage");
+    expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent(
+      "72° simulator coverage",
+    );
     expect(screen.getByTestId("lens-control")).toHaveAttribute(
       "data-selected-lens-id",
       "simulator-parametric-150mm",

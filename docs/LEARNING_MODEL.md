@@ -134,10 +134,16 @@ option; it does not claim that the real lens has unlimited coverage.
 Coverage is a lens property separate from focal length. Focal length changes
 angle of view and framing at a fixed camera position, but does not determine
 coverage by itself. Two lenses with the same focal length may have different
-coverage. The current 150 mm `simulator-parametric-150mm` profile uses a 72°
-full angular coverage angle as explicit simulator teaching data, not as a
-manufacturer specification. Other current focal-length profiles without
-finite data remain `Not modelled`.
+coverage. The published simulator teaching family has explicit finite angular
+profiles for 90, 105, 120, and 150 mm. Their full angles are approximately
+100.9°, 92.1°, 84.5°, and 72°, respectively, and all are simulator data, not
+manufacturer specifications. The angles are calibrated so each profile has
+the same approximately 217.963 mm infinity reference Image Circle as the
+existing 150 mm / 72° profile. This deliberate family design keeps coverage
+and movement room approximately constant while learners compare focal length
+and framing. It does not imply that shorter real lenses inherently have wider
+coverage. Unknown positive focal lengths remain `Not modelled`; that fallback
+means the simulator imposes no finite boundary for an unpublished option.
 
 ### Image Circle
 

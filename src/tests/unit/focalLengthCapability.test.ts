@@ -19,12 +19,14 @@ afterEach(() => {
 });
 
 describe("scene focal-length capability", () => {
-  it("publishes only the 90 mm and 150 mm public choices with a 90 mm default", () => {
+  it("publishes every finite simulator lens profile with a 90 mm default", () => {
     expect(understandingCameraMovementsScene.focalLengthCapability).toEqual(
       CAMERA_MOVEMENT_FOCAL_LENGTH_CAPABILITY,
     );
     expect(understandingCameraMovementsScene.focalLengthCapability?.optionsMm).toEqual([
       90,
+      105,
+      120,
       150,
     ]);
     expect(understandingCameraMovementsScene.focalLengthCapability?.defaultMm).toBe(90);
@@ -95,7 +97,7 @@ describe("canonical focal-length store policy", () => {
     const store = useAppStore.getState();
     store.setFocalLength(150);
     const supportedBefore = useAppStore.getState().camera;
-    store.setFocalLength(105);
+    store.setFocalLength(210);
     store.setFocalLength(Number.NaN);
     expect(useAppStore.getState().camera).toEqual(supportedBefore);
 

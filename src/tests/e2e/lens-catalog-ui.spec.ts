@@ -1,4 +1,6 @@
+import { writeFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
+import { expectGroundGlassBlurCalibration } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const openLensCatalogScene = async (page: Page) => {
@@ -15,7 +17,7 @@ const openLensCatalogScene = async (page: Page) => {
   );
 };
 
-test("lens catalog selection updates canonical optics and the 3D image-circle transition", async ({ page }) => {
+test("lens catalog selection keeps finite coverage across published simulator profiles", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await openLensCatalogScene(page);
 
@@ -23,25 +25,59 @@ test("lens catalog selection updates canonical optics and the 3D image-circle tr
   const rtt = page.getByTestId("ground-glass-rtt");
   const scene = page.getByTestId("scene-canvas");
   const wide = lensControl.getByRole("radio", {
-    name: /90 mm.*Wide.*Lens coverage: Not modelled/,
+    name: /90 mm.*Wide.*Lens coverage: 100\.9° simulator coverage \(teaching profile\)/,
   });
   const standard = lensControl.getByRole("radio", {
     name: /150 mm.*Standard.*Lens coverage: 72° simulator coverage \(teaching profile\)/,
   });
 
   await expect(wide).toBeChecked();
-  await expect(lensControl).toHaveAttribute("data-selected-lens-id", "simulator-ideal-90mm");
-  await expect(lensControl).toHaveAttribute(
-    "data-selected-lens-coverage-kind",
-    "unbounded-ideal",
-  );
-  await expect(lensControl).not.toHaveAttribute(
-    "data-selected-lens-image-circle-diameter-mm",
-    /.+/,
-  );
-  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "unbounded");
-  await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "false");
-  await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
+  const publishedProfiles = [
+    { focalLengthMm: 90, angle: "100.9" },
+    { focalLengthMm: 105, angle: "92.1" },
+    { focalLengthMm: 120, angle: "84.5" },
+    { focalLengthMm: 150, angle: "72" },
+  ];
+  for (const { focalLengthMm, angle } of publishedProfiles) {
+    const option = lensControl.getByRole("radio", {
+      name: new RegExp(
+        `${focalLengthMm} mm.*Lens coverage: ${angle.replace(".", "\\.")}° simulator coverage \\(teaching profile\\)`,
+      ),
+    });
+    await option.check();
+    await expect(lensControl).toHaveAttribute(
+      "data-selected-lens-id",
+      `simulator-parametric-${focalLengthMm}mm`,
+    );
+    await expect(lensControl).toHaveAttribute("data-selected-lens-coverage-kind", "angular");
+    await expect(lensControl).toHaveAttribute(
+      "data-selected-lens-image-circle-diameter-mm",
+      /\d+\.\d{6}/,
+    );
+    await expect(lensControl.getByTestId("lens-control-coverage-value")).toHaveText(
+      `${angle}° simulator coverage (teaching profile)`,
+    );
+    await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "parallel-circle");
+    await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
+    await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
+    await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+    const calibration = await expectGroundGlassBlurCalibration(rtt);
+    if (focalLengthMm === 90 || focalLengthMm === 150) {
+      await page.getByTestId("scene-canvas").locator("canvas").screenshot({
+        path: testInfo.outputPath(`understanding-camera-movements-${focalLengthMm}mm.png`),
+      });
+      const calibrationFile = `understanding-camera-movements-${focalLengthMm}mm-blur-calibration.json`;
+      const calibrationRecord = { ...calibration, focalLengthMm };
+      await testInfo.attach(calibrationFile, {
+        body: JSON.stringify(calibrationRecord),
+        contentType: "application/json",
+      });
+      await writeFile(
+        testInfo.outputPath(calibrationFile),
+        JSON.stringify(calibrationRecord, null, 2),
+      );
+    }
+  }
 
   await standard.check();
   await expect(standard).toBeChecked();
@@ -93,18 +129,12 @@ test("lens catalog selection updates canonical optics and the 3D image-circle tr
 
   await wide.check();
   await expect(wide).toBeChecked();
-  await expect(lensControl).toHaveAttribute("data-selected-lens-id", "simulator-ideal-90mm");
-  await expect(lensControl).toHaveAttribute(
-    "data-selected-lens-coverage-kind",
-    "unbounded-ideal",
-  );
-  await expect(lensControl).not.toHaveAttribute(
-    "data-selected-lens-image-circle-diameter-mm",
-    /.+/,
-  );
-  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "unbounded");
-  await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "false");
-  await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
+  await expect(lensControl).toHaveAttribute("data-selected-lens-id", "simulator-parametric-90mm");
+  await expect(lensControl).toHaveAttribute("data-selected-lens-coverage-kind", "angular");
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "parallel-circle");
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
+  await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
 });
 
 test("lens catalog presentation stays readable and localized at desktop and tablet widths", async ({ page }) => {
@@ -130,7 +160,7 @@ test("lens catalog presentation stays readable and localized at desktop and tabl
   await expect(localizedLensControl.getByRole("radiogroup", { name: "鏡頭選項" })).toBeVisible();
   await expect(
     localizedLensControl.getByRole("radio", {
-      name: /90 mm.*廣角.*鏡頭成像範圍: 尚未建模/,
+      name: /90 mm.*廣角.*鏡頭成像範圍: 100\.9° 模擬成像範圍（教學模型）/,
     }),
   ).toBeVisible();
   await expect(
@@ -138,5 +168,7 @@ test("lens catalog presentation stays readable and localized at desktop and tabl
       name: /150 mm.*標準.*鏡頭成像範圍: 72° 模擬成像範圍（教學模型）/,
     }),
   ).toBeVisible();
-  await expect(localizedLensControl.getByTestId("lens-control-coverage-value")).toHaveText("尚未建模");
+  await expect(localizedLensControl.getByTestId("lens-control-coverage-value")).toHaveText(
+    "100.9° 模擬成像範圍（教學模型）",
+  );
 });

@@ -1,6 +1,8 @@
+import { writeFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
+import { expectGroundGlassBlurCalibration } from "./helpers/groundGlass";
 
-test("Mirror Shift top-view geometry follows canonical A/B/C state relationships", async ({ page }) => {
+test("Mirror Shift top-view geometry follows canonical A/B/C state relationships", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   await page.goto("/simulator/free/mirror-shift?rttDiagnostics=1");
 
@@ -10,10 +12,26 @@ test("Mirror Shift top-view geometry follows canonical A/B/C state relationships
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 30_000 });
   const scene = page.getByTestId("scene-canvas");
   await expect(scene).toHaveAttribute("data-optical-geometry-visible", "true");
-  await expect(scene).toHaveAttribute("data-lens-coverage-capability", "unbounded-ideal");
-  await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
-  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "false");
-  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "unbounded");
+  await expect(scene).toHaveAttribute("data-lens-coverage-capability", "angular");
+  await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "parallel-circle");
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
+  const calibration = await expectGroundGlassBlurCalibration(rtt);
+  await testInfo.attach("mirror-shift-120mm-blur-calibration", {
+    body: JSON.stringify(calibration),
+    contentType: "application/json",
+  });
+  await writeFile(
+    testInfo.outputPath("mirror-shift-120mm-blur-calibration.json"),
+    JSON.stringify(calibration, null, 2),
+  );
+  await page.getByTestId("scene-canvas").locator("canvas").screenshot({
+    path: testInfo.outputPath("mirror-shift-120mm-image-circle.png"),
+  });
+  await rtt.locator("canvas").screenshot({
+    path: testInfo.outputPath("mirror-shift-120mm-ground-glass-coverage.png"),
+  });
 
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   const geometry = page.getByTestId("mirror-shift-teaching-svg");

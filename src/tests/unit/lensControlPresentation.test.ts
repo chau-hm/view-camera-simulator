@@ -2,24 +2,18 @@ import { describe, expect, it } from "vitest";
 import { resolveLensControlOptionPresentation } from "../../components/controls/lensControlPresentation";
 
 describe("Lens control catalog presentation", () => {
-  it("presents the 90 mm simulator profile as finite coverage not modelled", () => {
-    expect(resolveLensControlOptionPresentation(90, "wide")).toEqual({
-      focalLengthMm: 90,
-      semanticLabel: "wide",
-      lensId: "simulator-ideal-90mm",
-      coveragePresentation: { kind: "not-modelled" },
-    });
-  });
-
-  it("presents the 150 mm simulator profile as finite 72 degree coverage", () => {
-    expect(resolveLensControlOptionPresentation(150, "standard")).toEqual({
-      focalLengthMm: 150,
-      semanticLabel: "standard",
-      lensId: "simulator-parametric-150mm",
-      coveragePresentation: {
-        kind: "finite-angular",
-        fullCoverageAngleDeg: 72,
-      },
+  it.each([
+    [90, 100.8982256313],
+    [105, 92.1318668688],
+    [120, 84.4900859515],
+    [150, 72],
+  ])("presents the %i mm published simulator profile as finite angular coverage", (focalLengthMm, angleDeg) => {
+    const semanticLabel = focalLengthMm === 90 ? "wide" : focalLengthMm === 150 ? "standard" : undefined;
+    expect(resolveLensControlOptionPresentation(focalLengthMm, semanticLabel)).toEqual({
+      focalLengthMm,
+      semanticLabel: semanticLabel ?? null,
+      lensId: `simulator-parametric-${focalLengthMm}mm`,
+      coveragePresentation: { kind: "finite-angular", fullCoverageAngleDeg: angleDeg },
     });
   });
 

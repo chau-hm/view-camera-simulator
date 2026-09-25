@@ -118,6 +118,8 @@ export function createGroundGlassDofUniformState(
   sampledFilmWidthMm = filmWidthMm,
   sampledFilmHeightMm = filmHeightMm,
   displayBlurScale = 1,
+  /** Visible CSS viewport width; internal render width is used for shader pixels. */
+  displayWidthPx = width,
 ): GroundGlassDofUniformState {
   const groundGlassDofModel =
     opticsState.diagnostics.groundGlassDofModel ??
@@ -145,6 +147,9 @@ export function createGroundGlassDofUniformState(
   }
   if (!Number.isFinite(displayBlurScale) || displayBlurScale <= 0) {
     throw new Error("Invalid displayBlurScale");
+  }
+  if (!Number.isFinite(displayWidthPx) || displayWidthPx <= 0) {
+    throw new Error("Invalid display width");
   }
   const lens = opticsState.lensCenterWorld;
   const lensBasis = deriveOrthonormalPlaneBasis(
@@ -197,7 +202,13 @@ export function createGroundGlassDofUniformState(
 
   const boundaryCoCDiameterPx = (circleOfConfusionMm * width) / sampledFilmWidthMm;
   const boundaryBlurRadiusPx = boundaryCoCDiameterPx / 2;
-  if (!Number.isFinite(boundaryCoCDiameterPx) || !Number.isFinite(boundaryBlurRadiusPx)) {
+  const displayBoundaryBlurRadiusPx =
+    (circleOfConfusionMm * displayWidthPx / sampledFilmWidthMm / 2) * displayBlurScale;
+  if (
+    !Number.isFinite(boundaryCoCDiameterPx) ||
+    !Number.isFinite(boundaryBlurRadiusPx) ||
+    !Number.isFinite(displayBoundaryBlurRadiusPx)
+  ) {
     throw new Error("Ground Glass boundary blur calibration is non-finite");
   }
 
@@ -246,10 +257,7 @@ export function createGroundGlassDofUniformState(
     circleOfConfusionMm,
     boundaryCoCDiameterPx,
     boundaryBlurRadiusPx,
-    displayBoundaryBlurRadiusPx: Math.min(
-      maximumBlurRadiusPx,
-      boundaryBlurRadiusPx * displayBlurScale,
-    ),
+    displayBoundaryBlurRadiusPx,
     filmWidthMm,
     filmHeightMm,
     sampledFilmWidthMm,

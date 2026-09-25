@@ -45,7 +45,7 @@ describe("GroundGlassRenderer", () => {
     expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-focus-label")).toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-blur-display-hint")).toHaveTextContent(
-      "Ground Glass blur is magnified for teaching; CoC and sharpness readouts remain physical.",
+      "Ground Glass blur is visually amplified for teaching; CoC and sharpness readouts remain physical.",
     );
     expect(screen.queryByTestId("ground-glass-focus-loupe")).not.toBeInTheDocument();
     expect(screen.queryByText("Focus assist")).not.toBeInTheDocument();

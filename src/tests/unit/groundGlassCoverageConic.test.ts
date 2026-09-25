@@ -342,7 +342,7 @@ describe("non-parallel finite Ground Glass coverage conic", () => {
     expect(unbounded).toEqual({ kind: "unbounded" });
 
     const catalogUnbounded = deriveFor(architectureRiseScene, {
-      focalLengthMm: 90,
+      focalLengthMm: 210,
       frontTiltDeg: 5,
     });
     expect(catalogUnbounded.lensCoverage?.kind).toBe("unbounded-ideal");

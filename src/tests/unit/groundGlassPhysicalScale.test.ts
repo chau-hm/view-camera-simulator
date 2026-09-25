@@ -7,9 +7,10 @@ import {
 import { calculateDofBlurRadiusPx } from "../../core/optics/dofBlurModel";
 import { groundGlassFootprintAxesToRttPixels } from "../../render/groundGlassFootprintCoordinates";
 import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
+import { resolveGroundGlassDisplayBlurScale } from "../../render/groundGlassBlurCalibration";
 
 describe("physical Ground Glass blur scale", () => {
-  it("keeps the display-only blur scale global across scenes", () => {
+  it("keeps scene-specific settings separate from display-space blur calibration", () => {
     for (const sceneId of [
       "architecture-rise",
       "table-tilt",
@@ -18,7 +19,7 @@ describe("physical Ground Glass blur scale", () => {
       "oblique-architecture",
       "architecture-foreground",
     ]) {
-      expect(getGroundGlassDofVisualSettings(sceneId).displayBlurScale).toBe(16);
+      expect(getGroundGlassDofVisualSettings(sceneId)).not.toHaveProperty("displayBlurScale");
       expect(getGroundGlassDofVisualSettings(sceneId)).not.toHaveProperty("inspectionMagnification");
     }
   });
@@ -106,7 +107,7 @@ describe("physical Ground Glass blur scale", () => {
     );
   });
 
-  it("derives storage range from the physical pixel cap", () => {
+  it("derives byte storage range from the resolved display calibration", () => {
     const input = {
       maximumCoCRadiusPx: 42,
       filmWidthMm: 127,
@@ -116,14 +117,19 @@ describe("physical Ground Glass blur scale", () => {
       ...input,
       displayBlurScale: 1,
     });
-    const scale16RangeMm = resolveGroundGlassCocStorageMaxMm({
+    const displayBlurScale = resolveGroundGlassDisplayBlurScale({
+      acceptableCoCDiameterMm: 0.1,
+      filmWidthMm: input.filmWidthMm,
+      displayWidthPx: 500,
+    });
+    const calibratedRangeMm = resolveGroundGlassCocStorageMaxMm({
       ...input,
-      displayBlurScale: 16,
+      displayBlurScale,
     });
 
     expect(scale1RangeMm).toBeCloseTo(8.4, 12);
-    expect(scale16RangeMm).toBeCloseTo(8.4 / 16, 12);
-    expect(scale1RangeMm / scale16RangeMm).toBeCloseTo(16, 12);
+    expect(displayBlurScale).toBeCloseTo(5.08, 12);
+    expect(calibratedRangeMm).toBeCloseTo(scale1RangeMm / displayBlurScale, 12);
   });
 
   it("applies maximumBlurRadiusPx only as a post-conversion cap", () => {

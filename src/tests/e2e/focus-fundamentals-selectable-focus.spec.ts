@@ -1,6 +1,8 @@
+import { writeFile } from "node:fs/promises";
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type ElementHandle, type Locator, type Page } from "@playwright/test";
 import { readFocusDistributionPercent } from "./helpers/focusDistribution";
+import { expectGroundGlassBlurCalibration } from "./helpers/groundGlass";
 import {
   focusFundamentalsFarFocusDepthMm,
   focusFundamentalsFocusDepthRangeMm,
@@ -89,7 +91,7 @@ const expectRttCameraAtLens = async (scene: Locator, rtt: Locator) => {
     .toBeLessThan(1e-5);
 };
 
-test("Focus Fundamentals proves front/rear viewpoint behavior without replacing RTT resources", async ({ page }) => {
+test("Focus Fundamentals proves front/rear viewpoint behavior without replacing RTT resources", async ({ page }, testInfo) => {
   test.setTimeout(240_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
@@ -116,6 +118,18 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   const focusStandard = page.getByRole("group", { name: "Focus standard" });
   const readNearSharpness = () => readFocusDistributionPercent(page, { targetId: "focus-near-detail" });
   const readFarSharpness = () => readFocusDistributionPercent(page, { targetId: "focus-far-detail" });
+  const captureBlurState = async (name: string) => {
+    const calibration = await expectGroundGlassBlurCalibration(rtt);
+    await testInfo.attach(`${name}-calibration`, {
+      body: JSON.stringify(calibration),
+      contentType: "application/json",
+    });
+    await writeFile(
+      testInfo.outputPath(`${name}-calibration.json`),
+      JSON.stringify(calibration, null, 2),
+    );
+    await rttCanvas.screenshot({ path: testInfo.outputPath(`${name}.png`) });
+  };
 
   await expect(scene).toHaveAttribute("data-scene-subject-id", "focus-fundamentals-two-targets");
   await expect(page.getByRole("group", { name: "Focus standard" })).toBeVisible();
@@ -136,7 +150,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   expect(Number(await scene.getAttribute("data-focus-teaching-displacement-mm"))).toBeLessThan(1e-6);
   await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", String(focusFundamentalsFocalLengthMm));
   await expectContentfulRtt(rtt);
-  await expect(rtt).toHaveAttribute("data-rtt-display-blur-scale", "16");
+  await captureBlurState("focus-fundamentals-front-reference-1200mm");
 
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   const geometrySvg = page.getByTestId("geometry-svg-side");
@@ -189,6 +203,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
     .toBeGreaterThan(0);
   await expect.poll(() => rtt.getAttribute("data-rtt-sanity-state"), { timeout: 120_000 }).not.toBe(initialSanityState);
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-front-near-1050mm");
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await page.getByRole("button", { name: "Focus Far Detail" }).click();
@@ -204,11 +219,12 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
     .poll(async () => (await readFarSharpness()) - (await readNearSharpness()))
     .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-front-far-1350mm");
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await rear.click();
   await expect(rear).toBeChecked();
-  await expect(rtt).toHaveAttribute("data-rtt-display-blur-scale", "16");
+  await expectGroundGlassBlurCalibration(rtt);
   await expect(slider).toHaveValue(String(focusFundamentalsFarFocusDepthMm));
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "rear");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "rear");
@@ -223,6 +239,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expectRttCameraAtLens(scene, rtt);
   const rearFarRttPosition = await readVector(rtt, "data-rtt-camera-position");
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-rear-far-1350mm");
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await page.getByRole("button", { name: "Focus Near Detail" }).click();
@@ -239,6 +256,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
     .poll(async () => (await readNearSharpness()) - (await readFarSharpness()))
     .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-rear-near-1050mm");
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await page.getByRole("button", { name: "Focus Far Detail" }).click();
@@ -250,6 +268,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
     .poll(async () => (await readFarSharpness()) - (await readNearSharpness()))
     .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-rear-far-restored-1350mm");
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await front.click();
