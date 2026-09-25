@@ -69,6 +69,8 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   filmWidthMm: number;
   renderWidthPx: number;
   maximumBlurRadiusPx: number;
+  /** Display-only gather multiplier; physical CoC millimetres remain unchanged. */
+  displayBlurScale?: number;
 }): GroundGlassWorldBlurSample {
   const {
     worldPoint,
@@ -79,6 +81,7 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
     filmWidthMm,
     renderWidthPx,
     maximumBlurRadiusPx,
+    displayBlurScale = 1,
   } = input;
 
   const lensCenter = opticsState.lensCenterWorld;
@@ -122,6 +125,9 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
   if (!Number.isFinite(maximumBlurRadiusPx) || maximumBlurRadiusPx < 0) {
     return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid maximumBlurRadiusPx");
   }
+  if (!Number.isFinite(displayBlurScale) || displayBlurScale <= 0) {
+    return createUnresolvedGroundGlassBlurSample(worldPoint, objectDistanceAlongAxisMm, targetRayDistanceMm, "Invalid displayBlurScale");
+  }
   if (model === "scheimpflug-wedge") {
     // form ray and sample wedge
     const ray = {
@@ -162,7 +168,7 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
       cocDiameterMm,
       filmWidthMm,
       renderWidthPx,
-    );
+    ) * displayBlurScale;
     if (!Number.isFinite(cocDiameterPx) || cocDiameterPx < 0) {
       return createUnresolvedGroundGlassBlurSample(
         worldPoint,
@@ -176,8 +182,8 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
       circleOfConfusionMm,
       filmWidthMm,
       renderWidthPx,
-      maximumBlurRadiusPx,
-    });
+      maximumBlurRadiusPx: maximumBlurRadiusPx / displayBlurScale,
+    }) * displayBlurScale;
     if (
       !Number.isFinite(blurRadiusPx) ||
       blurRadiusPx < 0 ||
@@ -253,7 +259,7 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
     cocDiameterMmFinal,
     filmWidthMm,
     renderWidthPx,
-  );
+  ) * displayBlurScale;
   const blurRadiusPxRaw = circleOfConfusionDiameterPx * 0.5;
   const blurRadiusPxClamped = Math.min(maximumBlurRadiusPx, Math.max(0, blurRadiusPxRaw));
 

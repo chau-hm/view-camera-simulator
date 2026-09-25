@@ -130,6 +130,8 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   /** Whether the finite coverage mask is enabled in the final composite. */
   groundGlassCoverageEnabled?: boolean;
   groundGlassCoverageKind?: "parallel-circle" | "nonparallel-conic" | "unbounded" | "neutral";
+  /** Display-only multiplier applied to sampled CoC footprints in the gather pass. */
+  groundGlassDisplayBlurScale?: number;
   groundGlassCoverageRadiusMm?: number;
   groundGlassCoverageOffsetXMm?: number;
   groundGlassCoverageOffsetYMm?: number;

@@ -8,6 +8,12 @@ test("Mirror Shift top-view geometry follows canonical A/B/C state relationships
   const position = page.getByRole("slider", { name: "Camera Position" });
   const frontShift = page.getByRole("slider", { name: "Front Shift" });
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 30_000 });
+  const scene = page.getByTestId("scene-canvas");
+  await expect(scene).toHaveAttribute("data-optical-geometry-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-capability", "unbounded-ideal");
+  await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "false");
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "unbounded");
 
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   const geometry = page.getByTestId("mirror-shift-teaching-svg");

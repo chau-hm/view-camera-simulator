@@ -44,6 +44,9 @@ describe("GroundGlassRenderer", () => {
     // The preview and physical focus-distance overlays remain visible.
     expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-focus-label")).toBeInTheDocument();
+    expect(screen.getByTestId("ground-glass-blur-display-hint")).toHaveTextContent(
+      "Ground Glass blur is magnified for teaching; CoC and sharpness readouts remain physical.",
+    );
     expect(screen.queryByTestId("ground-glass-focus-loupe")).not.toBeInTheDocument();
     expect(screen.queryByText("Focus assist")).not.toBeInTheDocument();
   });
@@ -101,6 +104,7 @@ describe("GroundGlassRenderer", () => {
     );
 
     expect(screen.queryByTestId("ground-glass-focus-loupe")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-blur-display-hint")).not.toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-rtt")).not.toHaveAttribute("data-focus-loupe-active");
   });
 

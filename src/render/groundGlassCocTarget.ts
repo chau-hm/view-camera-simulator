@@ -321,23 +321,35 @@ export const createGroundGlassCocTarget = (
 };
 
 /**
- * Physical CoC diameter range represented by the source-render radius cap.
- * This is used only for byte storage normalization; the Focus Loupe is applied
- * later to the completed Ground Glass image and does not change this range.
+ * Physical CoC diameter range represented by the encoded-byte storage domain.
+ * It is chosen from the physical CoC needed to reach the current display-space
+ * gather cap after displayBlurScale. This range is representational only: byte
+ * values still encode/decode physical millimetres, and the scale is applied
+ * once later by the gather. Half-float storage bypasses this normalization and
+ * stores physical millimetres directly.
  */
 export const resolveGroundGlassCocStorageMaxMm = (input: {
   maximumCoCRadiusPx: number;
   filmWidthMm: number;
   renderWidthPx: number;
+  /** Display-only multiplier used to select an efficient byte range. */
+  displayBlurScale?: number;
 }): number => {
-  const { maximumCoCRadiusPx, filmWidthMm, renderWidthPx } = input;
+  const {
+    maximumCoCRadiusPx,
+    filmWidthMm,
+    renderWidthPx,
+    displayBlurScale = 1,
+  } = input;
   if (
     !Number.isFinite(maximumCoCRadiusPx) ||
     maximumCoCRadiusPx < 0 ||
     !Number.isFinite(filmWidthMm) ||
     filmWidthMm <= 0 ||
     !Number.isFinite(renderWidthPx) ||
-    renderWidthPx <= 0
+    renderWidthPx <= 0 ||
+    !Number.isFinite(displayBlurScale) ||
+    displayBlurScale <= 0
   ) {
     return 1;
   }
@@ -345,6 +357,6 @@ export const resolveGroundGlassCocStorageMaxMm = (input: {
   return Math.max(
     1e-6,
     (maximumCoCRadiusPx * 2 * filmWidthMm) /
-      renderWidthPx,
+      (renderWidthPx * displayBlurScale),
   );
 };

@@ -1,4 +1,6 @@
 import { expect, test, type Locator } from "@playwright/test";
+import { readFocusDistributionPercent } from "./helpers/focusDistribution";
+import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const readVector = async (locator: Locator, attribute: string): Promise<[number, number, number]> => {
   const value = await locator.getAttribute(attribute);
@@ -40,4 +42,32 @@ test("Architecture Rise focus control stays within scene depth and preserves thi
   expect(lensToFilmDistanceMm).toBeLessThan(160);
   expect(lensToFilmDistanceMm).toBeLessThan(2400);
   await page.screenshot({ path: testInfo.outputPath("architecture-rise-focus-minimum.png") });
+});
+
+test("Architecture Rise exposes visible blur for the reported strong-defocus state", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
+
+  const scene = page.getByTestId("scene-canvas");
+  const rtt = page.getByTestId("ground-glass-rtt").first();
+  const focus = page.getByRole("slider", { name: "Focus distance", exact: true });
+  const aperture = page.getByRole("radiogroup", { name: "Aperture", exact: true });
+
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  await setStepRangeInput(page, "Rise", 22);
+  await setStepRangeInput(page, "Tilt", 0.4);
+  await setStepRangeInput(page, "Swing", -1.1);
+  await focus.focus();
+  await focus.press("End");
+  await expect(focus).toHaveValue("13000");
+  await aperture.getByRole("radio", { name: "f/5.6" }).check();
+
+  await expect(focus).toHaveValue("13000");
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
+  await expect(scene).toHaveAttribute("data-optics-fallback-applied", "false");
+  await expect(rtt).toHaveAttribute("data-rtt-display-blur-scale", "16");
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  await expect.poll(() => readFocusDistributionPercent(page, { targetId: "building-mid-facade" })).toBe(0);
+  await page.screenshot({ path: testInfo.outputPath("architecture-rise-strong-defocus.png") });
+  await rtt.locator("canvas").screenshot({ path: testInfo.outputPath("architecture-rise-strong-defocus-ground-glass.png") });
 });

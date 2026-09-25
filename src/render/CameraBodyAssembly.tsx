@@ -4,7 +4,7 @@ import {
   type ConceptualViewCameraProps,
 } from "./ConceptualViewCamera";
 
-type CameraBodyAssemblyProps = Omit<ConceptualViewCameraProps, "coordinateSpace" | "variant"> & {
+type CameraBodyAssemblyProps = Omit<ConceptualViewCameraProps, "variant"> & {
   ghost?: boolean;
 };
 
@@ -26,7 +26,6 @@ export const CameraBodyAssembly = ({
   return renderConceptualViewCamera({
     opticsState,
     variant: ghost ? "ghost" : "current",
-    coordinateSpace: "rig-local",
     showBellows,
     activeStandard,
     rearBackMode,

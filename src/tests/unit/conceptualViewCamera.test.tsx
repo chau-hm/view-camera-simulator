@@ -16,6 +16,11 @@ import {
   resolveRearStandardRenderTransform,
 } from "../../render/planeOrientation";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import {
+  focusFundamentalsNearFocusDepthMm,
+  focusFundamentalsReferenceFocusDepthMm,
+} from "../../scenes/focusFundamentalsTargets";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import type { CameraState } from "../../types/camera";
@@ -117,8 +122,15 @@ const anatomyCameraFor = (overrides: Partial<CameraState> = {}): CameraState => 
   ...overrides,
 });
 
+const focusComparisonCameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
+  ...DEFAULT_CAMERA_STATE,
+  ...focusFundamentalsTwoTargets.cameraPreset,
+  activeSceneId: focusFundamentalsTwoTargets.id,
+  ...overrides,
+});
+
 const expectQuaternionEqual = (actual: unknown, expected: Quaternion): void => {
-  expect((actual as Quaternion).toArray()).toEqual(expected.toArray());
+  expect(((actual as Quaternion | undefined) ?? new Quaternion()).toArray()).toEqual(expected.toArray());
 };
 
 const cameraSupportFor = (
@@ -128,7 +140,7 @@ const cameraSupportFor = (
   frontMount: ReactElement<InspectableProps>;
   rearMount: ReactElement<InspectableProps>;
 } => {
-  const rail = findNamedElement(tree, "camera-support-rail");
+  const rail = findNamedElement(tree, "camera-body-rail");
   const frontMount = findNamedElement(tree, "camera-support-front-mount");
   const rearMount = findNamedElement(tree, "camera-support-rear-mount");
   expect(rail).not.toBeNull();
@@ -142,6 +154,119 @@ const cameraSupportFor = (
 };
 
 describe("Conceptual View Camera v2 static anatomy", () => {
+  it("keeps front/rear focus parts and support under one canonical rig-local camera root", () => {
+    const reference = deriveOpticsState(
+      focusComparisonCameraFor({
+        focusStandard: "front",
+        focusDistanceMm: focusFundamentalsReferenceFocusDepthMm,
+      }),
+      focusFundamentalsTwoTargets,
+    );
+    const frontFocus = deriveOpticsState(
+      focusComparisonCameraFor({
+        focusStandard: "front",
+        focusDistanceMm: focusFundamentalsNearFocusDepthMm,
+      }),
+      focusFundamentalsTwoTargets,
+    );
+    const rearFocus = deriveOpticsState(
+      focusComparisonCameraFor({
+        focusStandard: "rear",
+        focusDistanceMm: focusFundamentalsNearFocusDepthMm,
+      }),
+      focusFundamentalsTwoTargets,
+    );
+
+    const inspectAssembly = (opticsState: ReturnType<typeof deriveOpticsState>) => {
+      const tree = renderConceptualViewCamera({ opticsState });
+      const root = findNamedElement(tree, "camera-rig-placement");
+      const localGeometry = findNamedElement(tree, "camera-body-local-geometry");
+      expect(root?.props.userData).toMatchObject({ cameraAssemblyRoot: true });
+      expect(localGeometry).not.toBeNull();
+
+      for (const part of CONCEPTUAL_CAMERA_ANATOMY_PARTS.filter(
+        (candidate) => candidate !== "film-holder",
+      )) {
+        expect(
+          findNamedElement(localGeometry!.props.children, `camera-anatomy-${part}`),
+          `${part} must remain inside the shared local camera assembly`,
+        ).not.toBeNull();
+      }
+
+      const canonicalLocal = opticsState.cameraBodyLocalGeometry;
+      const frontFrame = findNamedElement(tree, "front-standard-frame");
+      const rearFrame = findNamedElement(tree, "rear-standard-frame");
+      const supportRail = findNamedElement(tree, "camera-body-rail");
+      const frontMount = findNamedElement(tree, "camera-support-front-mount");
+      const rearMount = findNamedElement(tree, "camera-support-rear-mount");
+      const supportRailDatum = resolveGenericConceptualSupportRail(
+        canonicalLocal.rearStandardFrameLocal.centerWorld,
+      );
+      expect(frontFrame?.props.position).toEqual(
+        resolveFrontStandardRenderTransform(
+          canonicalLocal.lensCenterLocal,
+          canonicalLocal.lensNormalLocal,
+        ).position,
+      );
+      expect(rearFrame?.props.position).toEqual(
+        resolveRearStandardRenderTransform(
+          canonicalLocal.rearStandardFrameLocal,
+        ).position,
+      );
+      expect(supportRail?.props.position).toEqual([
+        supportRailDatum.centerRigLocal.x * WORLD_SCALE,
+        supportRailDatum.centerRigLocal.y * WORLD_SCALE,
+        supportRailDatum.centerRigLocal.z * WORLD_SCALE,
+      ]);
+      return {
+        frontFrame: frontFrame!,
+        rearFrame: rearFrame!,
+        supportRail: supportRail!,
+        frontMount: frontMount!,
+        rearMount: rearMount!,
+      };
+    };
+
+    const referenceAssembly = inspectAssembly(reference);
+    const frontAssembly = inspectAssembly(frontFocus);
+    const rearAssembly = inspectAssembly(rearFocus);
+    const filmHolderTree = renderConceptualViewCamera({
+      opticsState: reference,
+      rearBackMode: "film-holder",
+    });
+    const filmHolderGeometry = findNamedElement(
+      findNamedElement(filmHolderTree, "camera-body-local-geometry")?.props.children,
+      "camera-anatomy-film-holder",
+    );
+    expect(filmHolderGeometry).not.toBeNull();
+    expect(findNamedElement(filmHolderGeometry?.props.children, "film-holder-film-surface")).not.toBeNull();
+
+    expect(frontAssembly.frontFrame.props.position).not.toEqual(
+      referenceAssembly.frontFrame.props.position,
+    );
+    expect(frontAssembly.rearFrame.props.position).toEqual(
+      referenceAssembly.rearFrame.props.position,
+    );
+    expect(frontAssembly.supportRail.props.position).toEqual(
+      referenceAssembly.supportRail.props.position,
+    );
+    expect(rearAssembly.frontFrame.props.position).toEqual(
+      referenceAssembly.frontFrame.props.position,
+    );
+    expect(rearAssembly.rearFrame.props.position).not.toEqual(
+      referenceAssembly.rearFrame.props.position,
+    );
+    expect(rearAssembly.supportRail.props.position).toEqual(
+      referenceAssembly.supportRail.props.position,
+    );
+    expect(rearAssembly.frontMount.props.position).toEqual(
+      referenceAssembly.frontMount.props.position,
+    );
+    expect(rearAssembly.rearMount.props.position).not.toEqual(
+      referenceAssembly.rearMount.props.position,
+    );
+  });
+
   it("resolves semantic anatomy presentation without mutating shared materials", () => {
     const bellowsPresentation = { targets: [{ kind: "part", part: "bellows" }] } as const;
     expect(resolveConceptualAnatomyPartState("bellows", bellowsPresentation)).toBe("highlighted");
@@ -579,10 +704,16 @@ describe("Conceptual View Camera v2 static anatomy", () => {
       translatedOptics.cameraRigTransform,
     );
 
-    expect(translatedSupport.props.position).toEqual(expected.position);
-    expectQuaternionEqual(translatedSupport.props.quaternion, expected.quaternion);
-    expect(translatedSupport.props.position![0] - neutralSupport.props.position![0]).toBeCloseTo(0.45, 12);
-    expect(translatedSupport.props.position![1]).toBeCloseTo(neutralSupport.props.position![1], 12);
-    expect(translatedSupport.props.position![2]).toBeCloseTo(neutralSupport.props.position![2], 12);
+    const translatedRoot = findNamedElement(
+      renderConceptualViewCamera({ opticsState: translatedOptics }),
+      "camera-rig-placement",
+    );
+    expect(translatedRoot?.props.userData).toMatchObject({ cameraAssemblyRoot: true });
+    expect(translatedRoot?.props.position).toEqual([0.45, 0, 0]);
+    expectQuaternionEqual(translatedSupport.props.quaternion, new Quaternion());
+    expect(translatedSupport.props.position![0] + translatedRoot!.props.position![0]).toBeCloseTo(expected.position[0], 12);
+    expect(translatedSupport.props.position![1] + translatedRoot!.props.position![1]).toBeCloseTo(expected.position[1], 12);
+    expect(translatedSupport.props.position![2] + translatedRoot!.props.position![2]).toBeCloseTo(expected.position[2], 12);
+    expect(translatedSupport.props.position).toEqual(neutralSupport.props.position);
   });
 });
