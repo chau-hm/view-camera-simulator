@@ -159,7 +159,7 @@ const sanitizeGroundGlassFootprintAxes = (
  * Half-float targets retain physical millimetres. Byte targets first apply
  * one uniform scale when either axis exceeds the representable range, then
  * quantize both normalized channels on the actual RGBA8 code grid. Scaling
- * the pair together preserves anisotropy before display-space clamping.
+ * the pair together preserves anisotropy before the gather cap is applied.
  */
 export const encodeGroundGlassFootprintAxesMm = (input: {
   majorRadiusMm: number;
@@ -321,42 +321,31 @@ export const createGroundGlassCocTarget = (
 };
 
 /**
- * Physical CoC diameter range represented by the encoded-byte storage domain.
- * It is chosen from the physical CoC needed to reach the current display-space
- * gather cap after displayBlurScale. This range is representational only: byte
- * values still encode/decode physical millimetres, and the scale is applied
- * once later by the gather. Half-float storage bypasses this normalization and
- * stores physical millimetres directly.
+ * Physical CoC diameter range represented by encoded-byte storage. The range
+ * reaches the renderer's gather-radius cap using the same physical millimetre
+ * to source-pixel conversion as the shader. It is representational only: byte
+ * values still encode/decode physical millimetres. Half-float storage bypasses
+ * this normalization and stores physical millimetres directly.
  */
 export const resolveGroundGlassCocStorageMaxMm = (input: {
   maximumCoCRadiusPx: number;
   filmWidthMm: number;
   renderWidthPx: number;
-  /** Display-only multiplier used to select an efficient byte range. */
-  displayBlurScale?: number;
 }): number => {
-  const {
-    maximumCoCRadiusPx,
-    filmWidthMm,
-    renderWidthPx,
-    displayBlurScale = 1,
-  } = input;
+  const { maximumCoCRadiusPx, filmWidthMm, renderWidthPx } = input;
   if (
     !Number.isFinite(maximumCoCRadiusPx) ||
     maximumCoCRadiusPx < 0 ||
     !Number.isFinite(filmWidthMm) ||
     filmWidthMm <= 0 ||
     !Number.isFinite(renderWidthPx) ||
-    renderWidthPx <= 0 ||
-    !Number.isFinite(displayBlurScale) ||
-    displayBlurScale <= 0
+    renderWidthPx <= 0
   ) {
     return 1;
   }
 
   return Math.max(
     1e-6,
-    (maximumCoCRadiusPx * 2 * filmWidthMm) /
-      (renderWidthPx * displayBlurScale),
+    (maximumCoCRadiusPx * 2 * filmWidthMm) / renderWidthPx,
   );
 };

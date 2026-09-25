@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { resolveGroundGlassDisplayBlurScale } from "../../render/groundGlassBlurCalibration";
-import { resolveGroundGlassRttDimensions } from "../../render/groundGlassRttDimensions";
 import {
   decodeGroundGlassFootprintAxesMm,
   decodeGroundGlassFootprintOrientation,
@@ -133,25 +131,13 @@ describe("Ground Glass oriented footprint storage", () => {
     expect(decodedAxes.majorRadiusMm / decodedAxes.minorRadiusMm).toBeCloseTo(1.25, 2);
   });
 
-  it("preserves Architecture Rise footprint radii and anisotropy under display calibration", () => {
-    const displayWidthPx = 320;
-    const displayBlurScale = resolveGroundGlassDisplayBlurScale({
-      acceptableCoCDiameterMm: 0.1,
-      filmWidthMm: 127,
-      displayWidthPx,
-    });
-    const renderWidthPx = resolveGroundGlassRttDimensions({
-      logicalWidth: displayWidthPx,
-      logicalHeight: 400,
-      renderQuality: "standard",
-      devicePixelRatio: 1,
-    }).internalWidthPx;
+  it("preserves Architecture Rise footprint radii in physical millimetres under byte storage", () => {
+    const renderWidthPx = 425;
     const filmWidthMm = 127;
     const cocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
       maximumCoCRadiusPx: 60,
       filmWidthMm,
       renderWidthPx,
-      displayBlurScale,
     });
     const footprintStorageMaxMm = cocStorageMaxMm * 0.5;
     const equivalentCocRadiusMm = 0.169 / 2;
@@ -181,12 +167,8 @@ describe("Ground Glass oriented footprint storage", () => {
       byteStepMm / 2 + 1e-12,
     );
     expect(decoded.majorRadiusMm / decoded.minorRadiusMm).toBeCloseTo(2, 0);
-    expect(
-      decoded.majorRadiusMm * renderWidthPx / filmWidthMm * displayBlurScale,
-    ).toBeGreaterThan(0);
-    expect(
-      decoded.minorRadiusMm * renderWidthPx / filmWidthMm * displayBlurScale,
-    ).toBeGreaterThan(0);
+    expect(decoded.majorRadiusMm * renderWidthPx / filmWidthMm).toBeGreaterThan(0);
+    expect(decoded.minorRadiusMm * renderWidthPx / filmWidthMm).toBeGreaterThan(0);
   });
 
   it("keeps zero and ordering deterministic for the pair contract", () => {

@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { expect, test, type Locator } from "@playwright/test";
 import { readFocusDistributionPercent } from "./helpers/focusDistribution";
-import { expectGroundGlassBlurCalibration } from "./helpers/groundGlass";
+import { expectGroundGlassPhysicalScale } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const readVector = async (locator: Locator, attribute: string): Promise<[number, number, number]> => {
@@ -67,17 +67,32 @@ test("Architecture Rise exposes visible blur for the reported strong-defocus sta
   await expect(focus).toHaveValue("13000");
   await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
   await expect(scene).toHaveAttribute("data-optics-fallback-applied", "false");
-  const calibration = await expectGroundGlassBlurCalibration(rtt);
+  const fullFilmScale = await expectGroundGlassPhysicalScale(rtt);
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   await expect.poll(() => readFocusDistributionPercent(page, { targetId: "building-mid-facade" })).toBe(0);
-  await testInfo.attach("architecture-rise-strong-defocus-blur-calibration", {
-    body: JSON.stringify(calibration),
+  await testInfo.attach("architecture-rise-strong-defocus-physical-blur-scale", {
+    body: JSON.stringify(fullFilmScale),
     contentType: "application/json",
   });
   await writeFile(
-    testInfo.outputPath("architecture-rise-strong-defocus-blur-calibration.json"),
-    JSON.stringify(calibration, null, 2),
+    testInfo.outputPath("architecture-rise-strong-defocus-physical-blur-scale.json"),
+    JSON.stringify(fullFilmScale, null, 2),
   );
   await page.screenshot({ path: testInfo.outputPath("architecture-rise-strong-defocus.png") });
   await rtt.locator("canvas").screenshot({ path: testInfo.outputPath("architecture-rise-strong-defocus-ground-glass.png") });
+
+  const loupeButton = page.getByRole("button", { name: /Focus loupe.*Ground Glass view/ });
+  await loupeButton.click();
+  await expect(rtt).toHaveAttribute("data-rtt-inspection-window-active", "true");
+  const loupeScale = await expectGroundGlassPhysicalScale(rtt);
+  expect(loupeScale.physicalBoundaryRadiusPx / fullFilmScale.physicalBoundaryRadiusPx).toBeCloseTo(
+    fullFilmScale.sampledFilmWidthMm / loupeScale.sampledFilmWidthMm,
+    4,
+  );
+  await page.screenshot({ path: testInfo.outputPath("architecture-rise-strong-defocus-focus-loupe.png") });
+  await rtt.locator("canvas").screenshot({ path: testInfo.outputPath("architecture-rise-strong-defocus-focus-loupe-ground-glass.png") });
+  await testInfo.attach("architecture-rise-focus-loupe-physical-scale", {
+    body: JSON.stringify({ fullFilmScale, loupeScale }),
+    contentType: "application/json",
+  });
 });

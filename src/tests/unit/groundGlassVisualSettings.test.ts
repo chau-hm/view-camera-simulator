@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
 import { createGroundGlassDofUniformState } from "../../render/createGroundGlassDofUniformState";
-import { resolveGroundGlassDisplayBlurScale } from "../../render/groundGlassBlurCalibration";
 import {
   getGroundGlassDofVisualSettings,
   resolveGroundGlassDisplayOpticsState,
@@ -38,15 +37,7 @@ describe("Ground Glass visual settings", () => {
     expect(display.depthOfFieldFarPlane).toBe(optics.depthOfFieldFarPlane);
   });
 
-  it("keeps scene settings independent while deriving scale from visible display geometry", () => {
-    const calibration = {
-      acceptableCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
-      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
-      displayWidthPx: 500,
-    };
-    const architectureScale = resolveGroundGlassDisplayBlurScale(calibration);
-    const focusFundamentalsScale = resolveGroundGlassDisplayBlurScale(calibration);
-
+  it("keeps all scenes on the same direct physical blur scale", () => {
     for (const sceneId of [
       "architecture-rise",
       "focus-fundamentals-two-targets",
@@ -60,11 +51,12 @@ describe("Ground Glass visual settings", () => {
       expect(settings).not.toHaveProperty("displayBlurScale");
       expect("inspectionMagnification" in settings).toBe(false);
     }
-    expect(architectureScale).toBeCloseTo(5.08, 12);
-    expect(architectureScale).toBe(focusFundamentalsScale);
+    expect(getGroundGlassDofVisualSettings("architecture-rise")).toEqual(
+      getGroundGlassDofVisualSettings("focus-fundamentals-two-targets"),
+    );
   });
 
-  it("preserves Architecture Rise physical sharpness with the calibrated preview gather", () => {
+  it("preserves Architecture Rise physical sharpness and uses direct physical display scale", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
       ...architectureRiseScene.cameraPreset,
@@ -78,11 +70,6 @@ describe("Ground Glass visual settings", () => {
     const optics = deriveOpticsState(camera, architectureRiseScene);
     const target = optics.focusTargets[0];
     const visual = getGroundGlassDofVisualSettings(architectureRiseScene.id);
-    const displayBlurScale = resolveGroundGlassDisplayBlurScale({
-      acceptableCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
-      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
-      displayWidthPx: 500,
-    });
     const uniformState = createGroundGlassDofUniformState(
       optics,
       new THREE.PerspectiveCamera(),
@@ -96,15 +83,17 @@ describe("Ground Glass visual settings", () => {
       visual.maximumBlurRadiusPx,
       CAMERA_CONSTANTS.filmWidthMm,
       CAMERA_CONSTANTS.filmHeightMm,
-      displayBlurScale,
       500,
     );
 
     expect(target.pointEquivalentCoCDiameterMm).toBeCloseTo(0.169, 2);
     expect(target.physicalPointSharpness).toBe(0);
     expect(uniformState.circleOfConfusionMm).toBe(ACCEPTABLE_COC_DIAMETER_MM);
-    expect(uniformState.displayBlurScale).toBeCloseTo(5.08, 12);
-    expect(uniformState.displayBoundaryBlurRadiusPx).toBeCloseTo(1, 12);
+    expect(uniformState.visibleBoundaryBlurRadiusPx).toBeCloseTo(
+      ACCEPTABLE_COC_DIAMETER_MM * 500 / CAMERA_CONSTANTS.filmWidthMm / 2,
+      12,
+    );
+    expect(uniformState.visibleBoundaryBlurRadiusPx).toBeCloseTo(0.1968503937, 9);
   });
 
   it("leaves unrelated scene optics untouched", () => {

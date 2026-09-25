@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
-import { expectGroundGlassBlurCalibration } from "./helpers/groundGlass";
+import { expectGroundGlassPhysicalScale } from "./helpers/groundGlass";
 
 test("Mirror Shift top-view geometry follows canonical A/B/C state relationships", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
@@ -17,14 +17,14 @@ test("Mirror Shift top-view geometry follows canonical A/B/C state relationships
   await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "parallel-circle");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
-  const calibration = await expectGroundGlassBlurCalibration(rtt);
-  await testInfo.attach("mirror-shift-120mm-blur-calibration", {
-    body: JSON.stringify(calibration),
+  const physicalScale = await expectGroundGlassPhysicalScale(rtt);
+  await testInfo.attach("mirror-shift-120mm-physical-blur-scale", {
+    body: JSON.stringify(physicalScale),
     contentType: "application/json",
   });
   await writeFile(
-    testInfo.outputPath("mirror-shift-120mm-blur-calibration.json"),
-    JSON.stringify(calibration, null, 2),
+    testInfo.outputPath("mirror-shift-120mm-physical-blur-scale.json"),
+    JSON.stringify(physicalScale, null, 2),
   );
   await page.getByTestId("scene-canvas").locator("canvas").screenshot({
     path: testInfo.outputPath("mirror-shift-120mm-image-circle.png"),

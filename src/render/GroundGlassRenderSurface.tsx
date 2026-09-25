@@ -90,7 +90,7 @@ export const GroundGlassRenderSurface = ({
         data-rtt-natural-illumination-offset-y-mm={rttRuntimeInfo?.groundGlassNaturalIlluminationOffsetYMm}
         data-rtt-coverage-enabled={rttRuntimeInfo?.groundGlassCoverageEnabled === undefined ? undefined : String(rttRuntimeInfo.groundGlassCoverageEnabled)}
         data-rtt-coverage-kind={rttRuntimeInfo?.groundGlassCoverageKind}
-        data-rtt-display-blur-scale={rttRuntimeInfo?.groundGlassDisplayBlurScale}
+        data-rtt-physical-boundary-blur-radius-px={rttRuntimeInfo?.groundGlassPhysicalBoundaryRadiusPx}
         data-rtt-coverage-radius-mm={rttRuntimeInfo?.groundGlassCoverageRadiusMm}
         data-rtt-coverage-offset-x-mm={rttRuntimeInfo?.groundGlassCoverageOffsetXMm}
         data-rtt-coverage-offset-y-mm={rttRuntimeInfo?.groundGlassCoverageOffsetYMm}

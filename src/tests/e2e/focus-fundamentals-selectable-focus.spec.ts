@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type ElementHandle, type Locator, type Page } from "@playwright/test";
 import { readFocusDistributionPercent } from "./helpers/focusDistribution";
-import { expectGroundGlassBlurCalibration } from "./helpers/groundGlass";
+import { expectGroundGlassPhysicalScale } from "./helpers/groundGlass";
 import {
   focusFundamentalsFarFocusDepthMm,
   focusFundamentalsFocusDepthRangeMm,
@@ -119,14 +119,14 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   const readNearSharpness = () => readFocusDistributionPercent(page, { targetId: "focus-near-detail" });
   const readFarSharpness = () => readFocusDistributionPercent(page, { targetId: "focus-far-detail" });
   const captureBlurState = async (name: string) => {
-    const calibration = await expectGroundGlassBlurCalibration(rtt);
-    await testInfo.attach(`${name}-calibration`, {
-      body: JSON.stringify(calibration),
+    const physicalScale = await expectGroundGlassPhysicalScale(rtt);
+    await testInfo.attach(`${name}-physicalScale`, {
+      body: JSON.stringify(physicalScale),
       contentType: "application/json",
     });
     await writeFile(
-      testInfo.outputPath(`${name}-calibration.json`),
-      JSON.stringify(calibration, null, 2),
+      testInfo.outputPath(`${name}-physicalScale.json`),
+      JSON.stringify(physicalScale, null, 2),
     );
     await rttCanvas.screenshot({ path: testInfo.outputPath(`${name}.png`) });
   };
@@ -224,7 +224,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
 
   await rear.click();
   await expect(rear).toBeChecked();
-  await expectGroundGlassBlurCalibration(rtt);
+  await expectGroundGlassPhysicalScale(rtt);
   await expect(slider).toHaveValue(String(focusFundamentalsFarFocusDepthMm));
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "rear");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "rear");

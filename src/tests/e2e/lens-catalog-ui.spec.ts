@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
-import { expectGroundGlassBlurCalibration } from "./helpers/groundGlass";
+import { expectGroundGlassPhysicalScale } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const openLensCatalogScene = async (page: Page) => {
@@ -61,13 +61,13 @@ test("lens catalog selection keeps finite coverage across published simulator pr
     await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
     await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
     await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
-    const calibration = await expectGroundGlassBlurCalibration(rtt);
+    const physicalScale = await expectGroundGlassPhysicalScale(rtt);
     if (focalLengthMm === 90 || focalLengthMm === 150) {
       await page.getByTestId("scene-canvas").locator("canvas").screenshot({
         path: testInfo.outputPath(`understanding-camera-movements-${focalLengthMm}mm.png`),
       });
-      const calibrationFile = `understanding-camera-movements-${focalLengthMm}mm-blur-calibration.json`;
-      const calibrationRecord = { ...calibration, focalLengthMm };
+      const calibrationFile = `understanding-camera-movements-${focalLengthMm}mm-physical-blur-scale.json`;
+      const calibrationRecord = { ...physicalScale, focalLengthMm };
       await testInfo.attach(calibrationFile, {
         body: JSON.stringify(calibrationRecord),
         contentType: "application/json",

@@ -159,7 +159,7 @@ export const simulatorMessages = {
     rawGroundGlass: "Raw Ground Glass",
     uprightAssist: "Upright Assist",
     focusLoupe: "Focus loupe · 4×",
-    groundGlassBlurDisplayHint: "Ground Glass blur is visually amplified for teaching; CoC and sharpness readouts remain physical.",
+    groundGlassBlurDisplayHint: "Ground Glass blur follows the physical optical model. Use the Focus Loupe to inspect critical focus.",
     groundGlassGridScaleCue: "Grid: {{size}} per square",
     viewOptions: "View Options",
     comparisonHeading: "Original and Current Ground Glass comparison",

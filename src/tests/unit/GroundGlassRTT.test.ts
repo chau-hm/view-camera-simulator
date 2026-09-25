@@ -11,8 +11,12 @@ import {
   type GroundGlassRTTProps,
 } from "../../render/GroundGlassRTT";
 import { synchronizeGroundGlassDofClipRange } from "../../render/createGroundGlassDofUniformState";
-import { resolveGroundGlassDisplayBlurScale } from "../../render/groundGlassBlurCalibration";
-import { resolveGroundGlassCocStorageMaxMm } from "../../render/groundGlassCocTarget";
+import {
+  decodeGroundGlassSignedCoC,
+  encodeGroundGlassSignedCoC,
+  quantizeGroundGlassSignedCoCByte,
+  resolveGroundGlassCocStorageMaxMm,
+} from "../../render/groundGlassCocTarget";
 import {
   createGroundGlassCamera,
   createGroundGlassDepthTarget,
@@ -144,13 +148,6 @@ const createRuntimeInfoCollector = () => {
   };
 };
 
-const expectedDisplayBlurScale = (displayWidthPx: number) =>
-  resolveGroundGlassDisplayBlurScale({
-    acceptableCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
-    filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
-    displayWidthPx,
-  });
-
 function renderedShaderMaterials() {
   return fiberTestState.renderedScenes.flatMap((scene) => {
     if (!(scene instanceof THREE.Scene)) return [];
@@ -162,7 +159,7 @@ function renderedShaderMaterials() {
 }
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
-  it("passes Architecture Rise physical CoC inputs and the shared display scale to gather", () => {
+  it("passes Architecture Rise physical CoC inputs without a display blur gain", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
       ...architectureRiseScene.cameraPreset,
@@ -200,21 +197,19 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     );
     expect(cocMaterial?.uniforms.fNumber.value).toBe(5.6);
     expect(cocMaterial?.uniforms.circleOfConfusionMm.value).toBe(0.1);
-    expect(gatherMaterial?.uniforms.displayBlurScale.value).toBeCloseTo(
-      expectedDisplayBlurScale(500),
-      12,
-    );
+    expect(cocMaterial?.uniforms).not.toHaveProperty("displayBlurScale");
+    expect(gatherMaterial?.uniforms).not.toHaveProperty("displayBlurScale");
     expect(gatherMaterial?.uniforms.fNumber.value).toBe(5.6);
     expect(gatherMaterial?.uniforms.circleOfConfusionMm.value).toBe(0.1);
-    expect(diagnostics.get()?.groundGlassDisplayBlurScale).toBeCloseTo(
-      expectedDisplayBlurScale(500),
+    expect(diagnostics.get()?.groundGlassPhysicalBoundaryRadiusPx).toBeCloseTo(
+      ACCEPTABLE_COC_DIAMETER_MM * 500 / CAMERA_CONSTANTS.filmWidthMm / 2,
       12,
     );
 
     view.unmount();
   });
 
-  it("wires the display-scale-aware encoded-byte CoC and footprint ranges to both RTT shaders", () => {
+  it("wires physical encoded-byte CoC and footprint ranges to both RTT shaders", () => {
     // Force the production fallback policy: half-float attachment fails and
     // the RGBA8 target succeeds.
     fiberTestState.cocFramebufferStatuses.push(0x8cd6, 0x8cd5);
@@ -263,19 +258,13 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       const { cocMaterial, gatherMaterial } = findCocAndGatherMaterials();
       expect(cocMaterial.uniforms.cocStorageEncoded.value).toBe(1);
       expect(gatherMaterial.uniforms.cocStorageEncoded.value).toBe(1);
-      expect(cocMaterial.uniforms.displayBlurScale.value).toBeCloseTo(
-        expectedDisplayBlurScale(displayWidthPx),
-        12,
-      );
-      expect(gatherMaterial.uniforms.displayBlurScale.value).toBe(
-        cocMaterial.uniforms.displayBlurScale.value,
-      );
+      expect(cocMaterial.uniforms).not.toHaveProperty("displayBlurScale");
+      expect(gatherMaterial.uniforms).not.toHaveProperty("displayBlurScale");
 
       const expectedCocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
         maximumCoCRadiusPx: Number(cocMaterial.uniforms.maximumCoCRadiusPx.value),
         filmWidthMm: Number(cocMaterial.uniforms.sampledFilmWidthMm.value),
         renderWidthPx: Number(cocMaterial.uniforms.renderWidth.value),
-        displayBlurScale: Number(cocMaterial.uniforms.displayBlurScale.value),
       });
       const expectedFootprintStorageMaxMm = expectedCocStorageMaxMm * 0.5;
 
@@ -302,6 +291,25 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
         gatherMaterial.uniforms.footprintStorageMaxMm.value,
       );
       expect(diagnostics.get()?.cocStorageFormat).toBe("encoded-byte");
+      expect(diagnostics.get()?.groundGlassPhysicalBoundaryRadiusPx).toBeCloseTo(
+        ACCEPTABLE_COC_DIAMETER_MM * displayWidthPx / CAMERA_CONSTANTS.filmWidthMm / 2,
+        12,
+      );
+      for (const physicalMm of [0.169, -0.169]) {
+        const encoded = encodeGroundGlassSignedCoC(
+          physicalMm,
+          "encoded-byte",
+          expectedCocStorageMaxMm,
+        );
+        const byte = quantizeGroundGlassSignedCoCByte(encoded);
+        const decoded = decodeGroundGlassSignedCoC(
+          encoded,
+          "encoded-byte",
+          expectedCocStorageMaxMm,
+        );
+        expect(byte).not.toBe(128);
+        expect(Math.sign(decoded)).toBe(Math.sign(physicalMm));
+      }
       return Number(cocMaterial.uniforms.renderWidth.value);
     };
 
@@ -393,12 +401,10 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(gatherMaterial?.uniforms.filmPlaneBasisX.value.length()).toBeCloseTo(1, 6);
     expect(gatherMaterial?.uniforms.filmPlaneBasisY.value.length()).toBeCloseTo(1, 6);
     expect(gatherMaterial?.uniforms.footprintStorageMaxMm.value).toBeGreaterThan(0);
-    expect(gatherMaterial?.uniforms.displayBlurScale.value).toBeCloseTo(
-      expectedDisplayBlurScale(500),
-      12,
-    );
-    expect(diagnostics.get()?.groundGlassDisplayBlurScale).toBeCloseTo(
-      expectedDisplayBlurScale(500),
+    expect(cocMaterial?.uniforms).not.toHaveProperty("displayBlurScale");
+    expect(gatherMaterial?.uniforms).not.toHaveProperty("displayBlurScale");
+    expect(diagnostics.get()?.groundGlassPhysicalBoundaryRadiusPx).toBeCloseTo(
+      ACCEPTABLE_COC_DIAMETER_MM * 500 / CAMERA_CONSTANTS.filmWidthMm / 2,
       12,
     );
     expect(diagnostics.get()?.nearGatherTargetWidthPx).toBe(

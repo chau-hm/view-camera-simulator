@@ -8,7 +8,6 @@ import {
 import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur";
 import type { GroundGlassWorldBlurSample } from "../../render/groundGlassBlur";
 import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
-import { resolveGroundGlassDisplayBlurScale } from "../../render/groundGlassBlurCalibration";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 import type {
   GroundGlassRttChannel,
@@ -104,11 +103,8 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
 
   const internalWidth = rttRuntimeInfo?.internalWidthPx ?? 1024;
   const logicalWidth = rttRuntimeInfo?.logicalWidthPx ?? 800;
-  const displayBlurScale = resolveGroundGlassDisplayBlurScale({
-    acceptableCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
-    filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
-    displayWidthPx: logicalWidth,
-  });
+  const sampledFilmWidthMm =
+    rttRuntimeInfo?.sampledFilmWidthMm ?? CAMERA_CONSTANTS.filmWidthMm;
 
   React.useEffect(() => () => {
     if (copyStatusTimeoutRef.current !== null) clearTimeout(copyStatusTimeoutRef.current);
@@ -149,15 +145,14 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
         focalLengthMm,
         aperture,
         circleOfConfusionMm: ACCEPTABLE_COC_DIAMETER_MM,
-        filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+        filmWidthMm: sampledFilmWidthMm,
         renderWidthPx: internalWidth,
         maximumBlurRadiusPx: visualSettings.maximumBlurRadiusPx,
-        displayBlurScale,
       });
       const logicalBlurRadiusPx = sample.blurRadiusPx * (logicalWidth / Math.max(1, internalWidth));
       return { id: obj.id, role: obj.role, probe, sample, logicalBlurRadiusPx };
     });
-  }, [aperture, displayBlurScale, focalLengthMm, internalWidth, logicalWidth, opticsState, sceneId]);
+  }, [aperture, focalLengthMm, internalWidth, logicalWidth, opticsState, sampledFilmWidthMm, sceneId]);
 
   return (
     <>

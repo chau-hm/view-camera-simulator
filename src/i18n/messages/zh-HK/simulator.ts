@@ -162,7 +162,7 @@ export const simulatorMessages = {
     rawGroundGlass: "原始對焦屏",
     uprightAssist: "正立輔助",
     focusLoupe: "對焦放大鏡 · 4×",
-    groundGlassBlurDisplayHint: "對焦屏模糊效果會為教學作視覺放大；CoC 與清晰度讀數仍採用實際物理值。",
+    groundGlassBlurDisplayHint: "對焦屏模糊效果依照實際光學模型顯示；可使用對焦放大鏡檢查精細對焦。",
     groundGlassGridScaleCue: "網格：每格 {{size}}",
     viewOptions: "檢視選項",
     comparisonHeading: "原始及目前對焦屏比較",
