@@ -503,11 +503,13 @@ not a manufacturer claim. Invalid physical inputs fail closed instead of
 producing a sentinel diameter.
 
 Macro Scene 1 uses this fixed angular-coverage profile as a teaching model:
-the physical Image Circle diameter grows with canonical image distance `v`.
-This is not a universal measured law for real photographic lenses, whose
-coverage may depend on optical design and mechanical limits. Keep this coverage
-growth separate from bellows exposure loss: extension enlarges the projected
-coverage footprint while bellows loss reduces overall Ground Glass exposure.
+the perpendicular reference Image Circle diameter grows with canonical image
+distance `v`. Because this scene keeps lens and film planes parallel, that
+reference circle is also the actual film-plane Image Circle. This is not a
+universal measured law for real photographic lenses, whose coverage may depend
+on optical design and mechanical limits. Keep this coverage growth separate
+from bellows exposure loss: extension enlarges the Image Circle while bellows
+loss reduces overall Ground Glass exposure.
 
 `DerivedLensCoverage` remains the perpendicular-reference-plane authority. For
 finite coverage, its canonical radius and reference image distance define the
@@ -553,6 +555,25 @@ parallel film       → parallel-circle
 non-parallel film   → nonparallel-conic
 unbounded profile   → unbounded (no finite boundary)
 ```
+
+The authority and consumer flow is:
+
+```text
+LensDefinition coverage + canonical image distance
+  → DerivedLensCoverage (perpendicular reference Image Circle)
+  → intersect with the actual canonical film plane
+  → GroundGlassCoverageState
+      ├─ parallel-circle
+      ├─ nonparallel-conic
+      ├─ unbounded
+      └─ neutral (invalid coverage or geometry)
+  → Ground Glass mask and physical 3D coverage overlay
+```
+
+`DerivedLensCoverage` and `GroundGlassCoverageState` are distinct contracts.
+The first remains the lens-level reference-circle authority; the second is the
+actual film-plane intersection authority consumed by both renderers. Neither
+UI nor renderer presentation code recalculates the coverage cone.
 
 For a non-parallel film, the conic is expressed in the canonical rear-standard
 film basis. Let `a` be the image-side unit optical axis, `L` the lens centre,
@@ -621,11 +642,17 @@ catalog's coverage semantics without introducing a second selected-lens state.
 
 The current public choices preserve the simulator profiles: 90 mm remains
 coverage-unmodelled, while 150 mm uses the explicit 72° parametric simulator
-profile. The selected Image Circle readout consumes the current canonical
-`DerivedLensCoverage`, so its diameter follows image distance rather than a UI
-calculation. Multiple distinct lens definitions sharing one focal length are
-not representable by this compatibility boundary; a future `lensId` migration
-would be required for that catalog expansion.
+teaching profile. The 72° value is not manufacturer data. `Not modelled` means
+the simulator imposes no finite boundary for that option; it is not a claim of
+infinite real-world coverage. The selected readout consumes canonical
+`DerivedLensCoverage`: when Ground Glass state is `parallel-circle`, it is
+labelled “Image circle”; for `nonparallel-conic`, it is labelled “Reference
+image circle” and identifies the actual film region as the Coverage Footprint.
+The number remains the perpendicular reference-circle diameter. LensControl
+does not calculate an equivalent conic diameter. Multiple distinct lens
+definitions sharing one focal length are not representable by this
+compatibility boundary; a future `lensId` migration would be required for that
+catalog expansion.
 
 ---
 

@@ -33,6 +33,8 @@ export const simulatorMessageKeys = {
     lensSelectedValue: "simulator.controls.lensSelectedValue",
     lensFocalLengthValue: "simulator.controls.lensFocalLengthValue",
     lensImageCircleLabel: "simulator.controls.lensImageCircleLabel",
+    lensReferenceImageCircleLabel: "simulator.controls.lensReferenceImageCircleLabel",
+    lensImageCircleReferenceNote: "simulator.controls.lensImageCircleReferenceNote",
     lensImageCircleAtInfinity: "simulator.controls.lensImageCircleAtInfinity",
     lensImageCircleAtCurrentFocus: "simulator.controls.lensImageCircleAtCurrentFocus",
     lensImageCircleUnavailable: "simulator.controls.lensImageCircleUnavailable",

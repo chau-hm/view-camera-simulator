@@ -67,7 +67,7 @@ describe("public camera movement controls in the workspace", () => {
 
     expect(wide).toBeChecked();
     expect(standard).not.toBeChecked();
-    expect(screen.getByText("Coverage", { exact: true })).toBeInTheDocument();
+    expect(screen.getByText("Lens coverage", { exact: true })).toBeInTheDocument();
     expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent("Not modelled");
     expect(screen.getByTestId("lens-control-image-circle-value")).toHaveTextContent("Not modelled");
     expect(screen.getByTestId("lens-control")).toHaveAttribute(
@@ -99,9 +99,33 @@ describe("public camera movement controls in the workspace", () => {
     expect(screen.getByTestId("lens-control-image-circle-value")).toHaveTextContent(
       `${derivedCoverage.imageCircleDiameterMm.toFixed(1)} mm`,
     );
+    expect(screen.getByTestId("lens-control-image-circle-label")).toHaveTextContent("Image circle");
     expect(screen.getByTestId("lens-control")).toHaveAttribute(
       "data-selected-lens-image-circle-diameter-mm",
       derivedCoverage.imageCircleDiameterMm.toFixed(6),
+    );
+
+    const tilt = screen.getByRole("slider", { name: "Tilt" });
+    fireEvent.change(tilt, { target: { value: "0.5" } });
+    const tiltedOptics = selectDerivedOpticsState(useAppStore.getState().camera);
+    const tiltedLensCoverage = tiltedOptics.lensCoverage;
+    expect(tiltedLensCoverage?.kind).toBe("angular");
+    if (tiltedLensCoverage?.kind !== "angular") {
+      throw new Error("Expected the tilted 150 mm state to retain its reference circle");
+    }
+    expect(tiltedOptics.groundGlassCoverage.kind).toBe("nonparallel-conic");
+    expect(screen.getByTestId("lens-control-image-circle-label")).toHaveTextContent(
+      "Reference image circle",
+    );
+    expect(screen.getByTestId("lens-control-image-circle-reference-note")).toHaveTextContent(
+      "Coverage Footprint",
+    );
+    expect(screen.getByTestId("lens-control-image-circle-value")).toHaveTextContent(
+      `${tiltedLensCoverage.imageCircleDiameterMm.toFixed(1)} mm`,
+    );
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-image-circle-diameter-mm",
+      tiltedLensCoverage.imageCircleDiameterMm.toFixed(6),
     );
   });
 

@@ -107,7 +107,16 @@ The current learner-facing scope includes:
 - teaching lighting, shadows, and focus-friendly surface detail that keep
   movement and focus differences observable in the 3D scenes;
 - synchronized 3D scene, Ground Glass, 2D geometry, and learner-readout views;
+- finite simulator lens coverage shown as an Image Circle on a parallel film
+  plane or as a Coverage Footprint on a tilted film plane; Rise/Shift and Macro
+  extension demonstrate how framing uses that coverage;
 - exploratory Free Practice and scene-specific Guided Tasks.
+
+Coverage is a lens property separate from focal length. The current 150 mm
+72° profile is simulator teaching data, and natural-illumination falloff is
+separate from finite coverage. See [the learning model](docs/LEARNING_MODEL.md)
+and [the current optics architecture](docs/SDD.md#91-lens-specification-and-coverage-contract)
+for the full teaching and implementation contracts.
 
 The underlying camera model contains more state than any one public lesson
 exposes. The public catalog is therefore not a claim that every mechanical

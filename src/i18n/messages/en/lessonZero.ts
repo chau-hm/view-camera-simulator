@@ -84,7 +84,7 @@ export const lessonZeroMessages = {
     imageCircle: {
       title: "Understanding the Image Circle",
       body:
-        "The lens projects a circular Image Circle onto the film plane. The 4×5 film rectangle uses only part of that coverage, leaving spare area around its edges. Front Rise and Front Shift reposition the projected coverage relative to the film rectangle.",
+        "Conceptually, finite lens coverage forms a circular Image Circle on a plane perpendicular to the optical axis. The 4×5 film rectangle uses only part of it, leaving spare area around its edges. This is a teaching illustration, not measured coverage data for a particular lens. Front Rise and Front Shift change coverage's position relative to the film rectangle.",
       cue: "Compare the 4×5 film rectangle with the larger rose Image Circle around it. The extra area is the movement room used by Rise and Shift.",
     },
     frontRiseControl: {
