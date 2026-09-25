@@ -95,7 +95,8 @@ Several scene-specific branches represent real teaching contracts, not accidenta
 |---|---|---|
 | Continuous viewpoint/body movement lesson state and calibrated camera rail | `deriveOpticsState.ts`, `understandingCameraMovementsGeometry.ts`, `CameraBodyAssembly.tsx`, `SceneRenderer.tsx` | Intentional teaching adapter; still a multi-module contract |
 | Mirror Shift rig lateral state and parallax lesson | `mirrorShiftLessonState.ts`, `deriveOpticsState.ts`, `appStore.ts`, RTT profile | Intentional domain behavior; the state has a latent selector cache-key omission (§7) |
-| Table Tilt focus geometry and Ground Glass derived-plane DOF mode | `deriveOpticsState.ts`, `groundGlassVisualSettings.ts` | Intentional calibrated optics/presentation behavior; the display-policy-to-diagnostics hop should be cleaned up |
+| Table Tilt focus geometry and Ground Glass DOF mode | `deriveOpticsState.ts` | Intentional canonical optics specialization: the core `isTableTilt || Scheimpflug-wedge` branch selects derived-plane Ground Glass semantics; its renderer visual setting remains `planeMode: "automatic"` |
+| Shelf Swing Ground Glass DOF display mode | `groundGlassVisualSettings.ts`, `resolveGroundGlassDisplayOpticsState()` | Intentional presentation specialization: renderer policy selects derived planes even at neutral/zero swing, then copies that selection into optics diagnostics; this is the renderer-to-domain leak to clean up |
 | Focus Fundamentals selected standard, reference camera, and compact geometry view | `deriveOpticsState.ts`, `SceneRenderer.tsx`, `geometryPresentationProfiles.ts` | Intentional lesson behavior; presentation and optical branches are spread out |
 | Architecture Rise DOF fallback and special plane display | `deriveOpticsState.ts`, renderer | Historical scene-specific stabilization; should remain explicit and tested until generalized evidence supports removal |
 | Default geometry view, diagram window, annotation and Scheimpflug presentation | `geometryPresentationProfiles.ts` keyed by scene ID | Presentation map, not optical state; small dispatch debt |
@@ -269,7 +270,7 @@ The RTT path directly creates `THREE.WebGLRenderTarget` and `THREE.ShaderMateria
 - `displayBlurScale`, maximum display radius, render quality, inspection crop, Raw/Upright flip, and diagnostic bypass are presentation/render policy. They do not mutate `DerivedOpticsState` physical planes.
 - The exact global multiplier `16` is a known unstable correction target and must not be treated as an architecture decision.
 - `rawDebug` is a separate development bypass that uses scene color without the DOF/coverage processing. Raw Ground Glass orientation remains a user presentation mode and still uses the postprocess composite.
-- `resolveGroundGlassDisplayOpticsState()` may copy optics diagnostics to set `groundGlassDofModel` from scene-specific renderer display settings (notably the derived-plane mode). This is a renderer-to-domain-diagnostics leak. It does not change the underlying plane values, but a future adapter should pass a presentation model explicitly rather than rewriting canonical optics diagnostics.
+- Table Tilt gets derived-plane Ground Glass semantics from the canonical `isTableTilt || dofResultGlobal?.depthOfFieldModel === "scheimpflug-wedge"` branch in `deriveOpticsState.ts`; its renderer visual setting is `planeMode: "automatic"`. Shelf Swing is the renderer-side exception: `groundGlassVisualSettings.ts` selects `planeMode: "derived-planes"` even at neutral/zero swing, and `resolveGroundGlassDisplayOpticsState()` copies that presentation choice into `DerivedOpticsState.diagnostics.groundGlassDofModel`. The underlying planes are unchanged. This Shelf Swing path is the renderer-to-domain-diagnostics leak to clean up.
 - The CPU `groundGlassBlur` and GLSL CoC implementations are parallel implementations of pixel blur calculations. The CPU path is useful for readouts/tests; it is not proof that the active GPU pass matches for every boundary case. Keep parity evidence and identify one physical input contract before backend migration.
 
 ### Resource/lifecycle and fallback boundary
@@ -313,7 +314,7 @@ The canonical path is scene-agnostic after the scene has contributed valid input
 
 Scene-ID checks fall into three broad groups:
 
-1. **Optical teaching contracts:** body viewpoint interpolation, Mirror Shift rig shift, selectable focus, Table Tilt's plane treatment, and Architecture Rise's fallback. These affect canonical state by design and should stay in core/calibration modules with focused tests.
+1. **Optical teaching contracts:** body viewpoint interpolation, Mirror Shift rig shift, selectable focus, Table Tilt's canonical plane treatment, and Architecture Rise's fallback. These affect canonical state by design and should stay in core/calibration modules with focused tests. Shelf Swing's derived-plane choice is a separate renderer presentation policy (§10).
 2. **Presentation choices:** geometry view windows, reference camera, plane extension, anatomy visibility, RTT bounds/lights/shadow participation. These do not change optical equations and can remain in renderer/lesson policy.
 3. **Dispatch/discoverability debt:** the behavior is spread among `deriveOpticsState.ts`, `appStore.ts`, `SceneRenderer.tsx`, `geometryPresentationProfiles.ts`, `groundGlassVisualSettings.ts`, `groundGlassRttScenes.ts`, and the subject/profile registry. This makes new scene impact review search-heavy. Consolidate only where a concrete behavior currently falls through or drifts; do not move all scene behavior into one speculative schema.
 
@@ -349,7 +350,7 @@ There are two R3F/Three presentation surfaces: the main observer Canvas and an i
 
 The largest domain-to-renderer crossing is the GPU CoC shader that turns canonical planes/focus geometry into a per-pixel visual blur. This is expected to be rendering math, but it has a parallel CPU helper and shader implementation and must retain a clear physical input contract.
 
-The renderer-to-domain crossing is `groundGlassDofModel` stored inside `DerivedOpticsState.diagnostics` by a renderer presentation helper. Separate this hint from physical optics before that contract grows.
+The renderer-to-domain crossing is specifically Shelf Swing's display-policy path: `groundGlassVisualSettings.ts` selects `planeMode: "derived-planes"`, then `resolveGroundGlassDisplayOpticsState()` copies that choice into `DerivedOpticsState.diagnostics.groundGlassDofModel`. Table Tilt's same derived-plane output is selected canonically in `deriveOpticsState.ts`; it is not evidence for this leak. Keep the Shelf Swing presentation hint out of canonical optics diagnostics.
 
 Renderer quality changes RTT dimensions, gather scale/sample count and caps; render target format changes storage encoding. These are visual/representational choices, not changes to physical focus or lens coverage. The current renderer diagnostics expose backend/runtime behavior, but the availability gate and diagnostics are still WebGL-oriented.
 
@@ -383,6 +384,8 @@ Tests cover several useful evidence levels:
 
 The test runner `npm test` runs Vitest. Playwright E2E tests are separate (`npm run test:e2e`, with local CI wrapper available) and are not equivalent to mocked renderer tests.
 
+Table Tilt unit/browser tests and Shelf Swing unit/browser tests can both observe `derived-planes`, but they protect different sources: Table Tilt is selected by canonical optics; Shelf Swing is selected by renderer display policy. The same observable mode does not imply the same architectural ownership.
+
 ### Circular-test risk
 
 Several tests use the implementation helper as one input to a rendering adapter test. They remain useful for contract coverage but are not independent optics or pixel oracles:
@@ -410,7 +413,7 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 | RTT resources are disposed by their owner | `GroundGlassRTT` owns post targets/materials; scene registration provides subject disposer | RTT resource and subject registry lifecycle tests |
 | Public scenes require both subject and RTT contracts | `sceneSubjectRegistry.test.tsx` and route/publication validation | Exact key-set and every-available-scene assertions |
 | Lesson and overlay state are presentation/task policy, not lens physics | task initial state and UI store; `LensControl` uses a presentation adapter | route/task tests; `SceneMovementCapabilities` combines some UI policy with capability |
-| Domain diagnostics describe domain inputs; renderer policy stays with renderer | Core diagnostics plus separate RTT runtime info | Current exception: renderer DOF mode is copied into core diagnostics |
+| Domain diagnostics describe domain inputs; renderer policy stays with renderer | Core diagnostics plus separate RTT runtime info | Current exception is Shelf Swing's renderer-selected DOF mode copied into core diagnostics; Table Tilt's mode is canonical |
 
 ## 21. Architecture health
 
@@ -453,7 +456,7 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 
 **C3 — Include every optics selector dependency in the memoization key.** Mirror Shift derivation reads `mirrorShiftLessonState.rigLateralMm`; the key currently relies on the store also updating `cameraRigPlacement`. That invariant is implicit and fragile for future callers.
 
-**C4 — Keep Ground Glass DOF display selection out of canonical optics diagnostics.** `resolveGroundGlassDisplayOpticsState()` copies a renderer-selected `groundGlassDofModel` into `DerivedOpticsState.diagnostics`. Pass that choice as explicit presentation input instead.
+**C4 — Keep Ground Glass DOF display selection out of canonical optics diagnostics.** For Shelf Swing, `groundGlassVisualSettings.ts` selects `planeMode: "derived-planes"` and `resolveGroundGlassDisplayOpticsState()` copies that renderer choice into `DerivedOpticsState.diagnostics.groundGlassDofModel`. Pass that choice as explicit presentation input instead. Table Tilt's derived-plane mode comes from canonical optics and is a distinct path.
 
 ### Observe only
 
