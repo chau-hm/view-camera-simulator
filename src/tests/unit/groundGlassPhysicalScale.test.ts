@@ -9,7 +9,7 @@ import { groundGlassFootprintAxesToRttPixels } from "../../render/groundGlassFoo
 import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
 
 describe("physical Ground Glass blur scale", () => {
-  it("does not expose scene-specific physical amplification", () => {
+  it("keeps the display-only blur scale global across scenes", () => {
     for (const sceneId of [
       "architecture-rise",
       "table-tilt",
@@ -18,7 +18,7 @@ describe("physical Ground Glass blur scale", () => {
       "oblique-architecture",
       "architecture-foreground",
     ]) {
-      expect(getGroundGlassDofVisualSettings(sceneId)).not.toHaveProperty("displayBlurScale");
+      expect(getGroundGlassDofVisualSettings(sceneId).displayBlurScale).toBe(16);
       expect(getGroundGlassDofVisualSettings(sceneId)).not.toHaveProperty("inspectionMagnification");
     }
   });

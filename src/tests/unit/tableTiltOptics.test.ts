@@ -169,7 +169,7 @@ describe("Table Tilt optics calibration", () => {
     expect(passingSubjectsAtZeroTilt.length).toBeLessThan(geometry.subjects.length);
   });
 
-  it("uses physical zero-tilt detail defocus without scene amplification", () => {
+  it("preserves physical zero-tilt detail defocus with the global display scale", () => {
     const camera = cameraFor({ frontTiltDeg: 0, aperture: 11 });
     const optics = deriveOpticsState(camera, tableTiltScene);
     const visual = getGroundGlassDofVisualSettings(tableTiltScene.id);
@@ -187,7 +187,7 @@ describe("Table Tilt optics calibration", () => {
     );
     const [near, middle, far] = samples;
 
-    expect("displayBlurScale" in visual).toBe(false);
+    expect(visual.displayBlurScale).toBe(16);
     [near, middle, far].forEach((sample) => {
       expect(Number.isFinite(sample.blurRadiusPx)).toBe(true);
       expect(sample.blurRadiusPx).toBeLessThanOrEqual(visual.maximumBlurRadiusPx);

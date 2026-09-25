@@ -72,7 +72,6 @@ export type ConceptualCameraAnatomyPart =
   (typeof CONCEPTUAL_CAMERA_ANATOMY_PARTS)[number];
 
 export type ConceptualCameraVariant = "current" | "ghost";
-export type ConceptualCameraCoordinateSpace = "world" | "rig-local";
 
 export type AnatomyPresentationState = "normal" | "highlighted" | "dimmed";
 
@@ -220,12 +219,6 @@ export const resolveGenericConceptualSupportRail = (
 export type ConceptualViewCameraProps = {
   opticsState: DerivedOpticsState;
   variant?: ConceptualCameraVariant;
-  /**
-   * The calibrated body-pitch scene renders its local geometry below the
-   * canonical rig transform. Other scenes consume the already-resolved world
-   * frame directly.
-   */
-  coordinateSpace?: ConceptualCameraCoordinateSpace;
   showBellows?: boolean;
   activeStandard?: FocusStandard | null;
   /** Physical rear-back anatomy to render; this does not alter optical state. */
@@ -298,21 +291,12 @@ const AnatomyPartGroup = ({
 
 const resolveCanonicalCameraGeometry = (
   opticsState: DerivedOpticsState,
-  coordinateSpace: ConceptualCameraCoordinateSpace,
 ): CanonicalCameraGeometry => {
-  if (coordinateSpace === "rig-local") {
-    const local: CameraBodyLocalGeometry = opticsState.cameraBodyLocalGeometry;
-    return {
-      lensCenter: local.lensCenterLocal,
-      lensNormal: local.lensNormalLocal,
-      rearStandardFrame: local.rearStandardFrameLocal,
-    };
-  }
-
+  const local: CameraBodyLocalGeometry = opticsState.cameraBodyLocalGeometry;
   return {
-    lensCenter: opticsState.lensCenterWorld,
-    lensNormal: opticsState.lensNormalWorld,
-    rearStandardFrame: opticsState.rearStandardFrame,
+    lensCenter: local.lensCenterLocal,
+    lensNormal: local.lensNormalLocal,
+    rearStandardFrame: local.rearStandardFrameLocal,
   };
 };
 
@@ -1090,15 +1074,11 @@ const DeformableBellowsAssembly = ({
 );
 
 const CameraSupport = ({
-  coordinateSpace,
-  rigTransform,
   ghost,
   rigRail,
   rearStandardCenterRigLocal,
   anatomy,
 }: {
-  coordinateSpace: ConceptualCameraCoordinateSpace;
-  rigTransform: CameraRigTransform;
   ghost: boolean;
   rigRail?: ConceptualCameraRail;
   rearStandardCenterRigLocal?: Vec3;
@@ -1139,14 +1119,15 @@ const CameraSupport = ({
     </group>
   );
 
-  if (coordinateSpace === "rig-local") {
-    return (
-      <AnatomyPartGroup part="camera-support" renderOrder={presentation.renderOrder}>
-        <mesh
-          name={ghost ? "original-ghost-camera-rail" : "camera-body-rail"}
-          position={vecToWorld(rail.centerRigLocal)}
-          renderOrder={presentation.renderOrder}
-        >
+  return (
+    <AnatomyPartGroup part="camera-support" renderOrder={presentation.renderOrder}>
+      <group
+        name={ghost ? "original-ghost-camera-rail" : "camera-body-rail"}
+        position={vecToWorld(rail.centerRigLocal)}
+        quaternion={new Quaternion()}
+        renderOrder={presentation.renderOrder}
+      >
+        <mesh>
           <boxGeometry
             args={[
               toWorld(rail.dimensionsMm.x),
@@ -1159,61 +1140,15 @@ const CameraSupport = ({
             {...frameMaterialProps(presentation)}
           />
         </mesh>
-        {mount("camera-support-front-mount", vecToWorld(frontMountRigLocal))}
-        {mount("camera-support-rear-mount", vecToWorld(rearMountRigLocal))}
-      </AnatomyPartGroup>
-    );
-  }
-
-  const beam = resolveConceptualSupportBeam(rail, rigTransform);
-  const rearMountWorld = transformRigLocalPointToWorld(
-    rearMountRigLocal,
-    rigTransform,
-  );
-  const frontMountWorld = transformRigLocalPointToWorld(
-    frontMountRigLocal,
-    rigTransform,
-  );
-
-  return (
-    <AnatomyPartGroup part="camera-support" renderOrder={presentation.renderOrder}>
-      <group
-        name={ghost ? "original-ghost-camera-support-rail" : "camera-support-rail"}
-        position={beam.position}
-        quaternion={beam.quaternion}
-        renderOrder={presentation.renderOrder}
-      >
-        <mesh>
-          <boxGeometry
-            args={[
-              toWorld(rail.dimensionsMm.x),
-              toWorld(rail.dimensionsMm.y),
-              beam.length,
-            ]}
-          />
-          <meshStandardMaterial
-            color={resolvePresentationColor("#334155", "#94a3b8", supportState, ghost)}
-            {...frameMaterialProps(presentation)}
-          />
-        </mesh>
       </group>
-      {mount(
-        "camera-support-front-mount",
-        vecToWorld(frontMountWorld),
-        beam.quaternion,
-      )}
-      {mount(
-        "camera-support-rear-mount",
-        vecToWorld(rearMountWorld),
-        beam.quaternion,
-      )}
+      {mount("camera-support-front-mount", vecToWorld(frontMountRigLocal))}
+      {mount("camera-support-rear-mount", vecToWorld(rearMountRigLocal))}
     </AnatomyPartGroup>
   );
 };
 
 const renderAnatomy = ({
   opticsState,
-  coordinateSpace,
   variant,
   showBellows,
   activeStandard,
@@ -1223,7 +1158,7 @@ const renderAnatomy = ({
   rigRail,
   imageCircleVisible,
   anatomy,
-}: Required<Pick<ConceptualViewCameraProps, "opticsState" | "coordinateSpace" | "variant" | "showBellows">> & {
+}: Required<Pick<ConceptualViewCameraProps, "opticsState" | "variant" | "showBellows">> & {
   activeStandard?: FocusStandard | null;
   rearBackMode: ConceptualRearBackMode;
   aperture?: ApertureValue;
@@ -1232,7 +1167,7 @@ const renderAnatomy = ({
   imageCircleVisible: boolean;
   anatomy?: ConceptualCameraAnatomyPresentation;
 }) => {
-  const canonical = resolveCanonicalCameraGeometry(opticsState, coordinateSpace);
+  const canonical = resolveCanonicalCameraGeometry(opticsState);
   const ghost = variant === "ghost";
   const bellowsFrames = showBellows
     ? resolveConceptualBellowsAttachmentFrames({
@@ -1244,8 +1179,6 @@ const renderAnatomy = ({
   return (
     <>
       <CameraSupport
-        coordinateSpace={coordinateSpace}
-        rigTransform={opticsState.cameraRigTransform}
         ghost={ghost}
         rigRail={rigRail}
         rearStandardCenterRigLocal={
@@ -1284,15 +1217,13 @@ const renderAnatomy = ({
 /**
  * Shared anatomy for the conceptual view camera.
  *
- * Every placement input comes from DerivedOpticsState. The only distinction
- * between coordinate spaces is whether the existing canonical rig hierarchy
- * is applied around local geometry or the already-resolved world frame is
- * consumed directly.
+ * Every placement input comes from DerivedOpticsState. Camera subparts remain
+ * in rig-local geometry and the canonical rig transform is applied once by
+ * this simulator-owned assembly root.
  */
 export const renderConceptualViewCamera = ({
   opticsState,
   variant = "current",
-  coordinateSpace = "world",
   showBellows = true,
   activeStandard = null,
   rearBackMode = "ground-glass",
@@ -1308,7 +1239,6 @@ export const renderConceptualViewCamera = ({
   const imageCircleVisible = presentation?.imageCircle?.visible === true;
   const anatomy = renderAnatomy({
     opticsState,
-    coordinateSpace,
     variant,
     showBellows,
     activeStandard,
@@ -1320,38 +1250,30 @@ export const renderConceptualViewCamera = ({
     anatomy: anatomyPresentation,
   });
 
-  if (coordinateSpace === "rig-local") {
-    const transform = resolveCameraRigRenderTransform(opticsState.cameraRigTransform);
-    return (
-      <group
-        name={ghost ? "original-ghost-camera-rig-placement" : "camera-rig-placement"}
-        userData={{ cameraVariant: variant, conceptualCamera: true }}
-        position={transform.rigPlacement.position}
-        quaternion={transform.rigPlacement.quaternion}
-      >
-        <group
-          name={ghost ? "original-ghost-camera-body-pitch" : "camera-body-pitch"}
-          position={transform.bodyPitch.position}
-          quaternion={transform.bodyPitch.quaternion}
-        >
-          <group
-            name="camera-body-local-geometry"
-            userData={{ cameraCoordinateSpace: "rig-local" }}
-            position={transform.localOffset}
-          >
-            {anatomy}
-          </group>
-        </group>
-      </group>
-    );
-  }
-
+  const transform = resolveCameraRigRenderTransform(opticsState.cameraRigTransform);
+  // The simulator owns this root. All camera parts use canonical rig-local
+  // geometry and receive rig placement/body pitch exactly once here; scenes
+  // may consume opticsState but must not re-parent or reposition subparts.
   return (
     <group
-      name={ghost ? "original-ghost-camera" : "conceptual-view-camera"}
-      userData={{ cameraVariant: variant, conceptualCamera: true }}
+      name={ghost ? "original-ghost-camera-rig-placement" : "camera-rig-placement"}
+      userData={{ cameraVariant: variant, conceptualCamera: true, cameraAssemblyRoot: true }}
+      position={transform.rigPlacement.position}
+      quaternion={transform.rigPlacement.quaternion}
     >
-      {anatomy}
+      <group
+        name={ghost ? "original-ghost-camera-body-pitch" : "camera-body-pitch"}
+        position={transform.bodyPitch.position}
+        quaternion={transform.bodyPitch.quaternion}
+      >
+        <group
+          name="camera-body-local-geometry"
+          userData={{ cameraCoordinateSpace: "rig-local" }}
+          position={transform.localOffset}
+        >
+          {anatomy}
+        </group>
+      </group>
     </group>
   );
 };

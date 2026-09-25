@@ -146,6 +146,7 @@ const OpticalDebugLayerDetails: React.FC<OpticalDebugLayerDetailsProps> = ({
         filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
         renderWidthPx: internalWidth,
         maximumBlurRadiusPx: visualSettings.maximumBlurRadiusPx,
+        displayBlurScale: visualSettings.displayBlurScale,
       });
       const logicalBlurRadiusPx = sample.blurRadiusPx * (logicalWidth / Math.max(1, internalWidth));
       return { id: obj.id, role: obj.role, probe, sample, logicalBlurRadiusPx };

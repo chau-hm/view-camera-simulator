@@ -963,7 +963,6 @@ const SceneContent = ({
       <ConceptualViewCamera
         opticsState={opticsState}
         variant="current"
-        coordinateSpace="world"
         activeStandard={activeFocusStandard}
         aperture={activeAperture}
         focalLengthMm={focusFocalLengthMm}
@@ -1039,19 +1038,16 @@ const OriginalGhostCamera = ({
   if (!hasCapabilities || !originalOptics) return null;
 
   return scene.cameraBodyPitchCapability?.enabled ? (
-    <group name="original-ghost-camera">
-      <CameraBodyAssembly
-        opticsState={originalOptics}
-        ghost
-        aperture={originalAperture}
-        focalLengthMm={originalFocalLengthMm}
-      />
-    </group>
+    <CameraBodyAssembly
+      opticsState={originalOptics}
+      ghost
+      aperture={originalAperture}
+      focalLengthMm={originalFocalLengthMm}
+    />
   ) : (
     <ConceptualViewCamera
       opticsState={originalOptics}
       variant="ghost"
-      coordinateSpace="world"
       aperture={originalAperture}
       focalLengthMm={originalFocalLengthMm}
     />
@@ -1140,6 +1136,9 @@ export const SceneRenderer = ({
     ? { ...containerStyle, position: (containerStyle as React.CSSProperties).position ?? "relative" }
     : { ...defaultContainerStyle, position: "relative" };
 
+  // Global coverage overlays always consume the canonical derived optics.
+  // Scene visibility toggles may hide the layer, while lens capability decides
+  // whether a finite circle/conic exists; scene kind is never a geometry input.
   const physicalLensCoverageGeometry = resolvePhysicalLensCoverageRenderGeometry({
     coverage: opticsState.groundGlassCoverage,
     rearStandardFrame: opticsState.rearStandardFrame,
@@ -1275,6 +1274,7 @@ export const SceneRenderer = ({
         : undefined}
       data-lens-coverage-visible={lensCoverageVisible ? "true" : "false"}
       data-lens-coverage-kind={renderedLensCoverageGeometry?.kind}
+      data-lens-coverage-capability={opticsState.lensCoverage?.kind}
       data-lens-coverage-perimeter-count={renderedLensCoverageGeometry
         ? String(renderedLensCoverageGeometry.perimeterWorld.length)
         : undefined}

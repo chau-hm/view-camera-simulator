@@ -323,6 +323,14 @@ export const GroundGlassRenderer = ({
         imageLayer={transformedImageLayer}
         fixedOverlayLayer={fixedOverlayLayer}
       />
+      {isRttSceneFinal && !rawDebug && (
+        <div
+          data-testid="ground-glass-blur-display-hint"
+          style={{ color: "#64748b", fontSize: "0.75rem", lineHeight: 1.25 }}
+        >
+          {t(simulatorMessageKeys.viewport.groundGlassBlurDisplayHint)}
+        </div>
+      )}
       {isRttSceneFinal && !rawDebug && zoomEnabled && (
         <div
           data-testid="ground-glass-focus-loupe"

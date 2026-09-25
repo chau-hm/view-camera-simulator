@@ -28,10 +28,13 @@ export type GroundGlassDofUniformState = {
   renderWidth: number;
   renderHeight: number;
   maximumBlurRadiusPx: number;
+  /** Display-only gather multiplier; all millimetre optics remain physical. */
+  displayBlurScale: number;
   // Physical CoC / calibration values.
   circleOfConfusionMm: number;
   boundaryCoCDiameterPx: number;
   boundaryBlurRadiusPx: number;
+  displayBoundaryBlurRadiusPx: number;
   /** Complete physical film dimensions retained for diagnostics/compatibility. */
   filmWidthMm: number;
   filmHeightMm: number;
@@ -83,6 +86,9 @@ export function applyGroundGlassDofUniformState(
   if (material.uniforms.maximumCoCRadiusPx) {
     material.uniforms.maximumCoCRadiusPx.value = state.maximumBlurRadiusPx;
   }
+  if (material.uniforms.displayBlurScale) {
+    material.uniforms.displayBlurScale.value = state.displayBlurScale;
+  }
   if (material.uniforms.focalLengthMm) material.uniforms.focalLengthMm.value = state.focalLengthMm;
   if (material.uniforms.filmWidthMm) material.uniforms.filmWidthMm.value = state.filmWidthMm;
   if (material.uniforms.filmHeightMm) material.uniforms.filmHeightMm.value = state.filmHeightMm;
@@ -111,6 +117,7 @@ export function createGroundGlassDofUniformState(
   maximumBlurRadiusPx: number,
   sampledFilmWidthMm = filmWidthMm,
   sampledFilmHeightMm = filmHeightMm,
+  displayBlurScale = 1,
 ): GroundGlassDofUniformState {
   const groundGlassDofModel =
     opticsState.diagnostics.groundGlassDofModel ??
@@ -135,6 +142,9 @@ export function createGroundGlassDofUniformState(
   if (!Number.isFinite(aperture) || aperture <= 0) throw new Error("Invalid aperture");
   if (!Number.isFinite(maximumBlurRadiusPx) || maximumBlurRadiusPx < 0) {
     throw new Error("Invalid maximumBlurRadiusPx");
+  }
+  if (!Number.isFinite(displayBlurScale) || displayBlurScale <= 0) {
+    throw new Error("Invalid displayBlurScale");
   }
   const lens = opticsState.lensCenterWorld;
   const lensBasis = deriveOrthonormalPlaneBasis(
@@ -232,9 +242,14 @@ export function createGroundGlassDofUniformState(
     renderWidth: width,
     renderHeight: height,
     maximumBlurRadiusPx,
+    displayBlurScale,
     circleOfConfusionMm,
     boundaryCoCDiameterPx,
     boundaryBlurRadiusPx,
+    displayBoundaryBlurRadiusPx: Math.min(
+      maximumBlurRadiusPx,
+      boundaryBlurRadiusPx * displayBlurScale,
+    ),
     filmWidthMm,
     filmHeightMm,
     sampledFilmWidthMm,

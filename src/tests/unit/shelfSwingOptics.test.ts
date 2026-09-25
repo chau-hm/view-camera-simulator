@@ -164,9 +164,9 @@ describe("Shelf Swing optics calibration", () => {
     const visual = getGroundGlassDofVisualSettings(shelfSwingScene.id);
     expect(visual).toEqual({
       maximumBlurRadiusPx: 42,
+      displayBlurScale: 16,
       planeMode: "derived-planes",
     });
-    expect("displayBlurScale" in visual).toBe(false);
     const displayOptics = resolveGroundGlassDisplayOpticsState(shelfSwingScene.id, optics);
 
     const displayed = geometry.subjects.map((subject) =>

@@ -8,6 +8,9 @@ export const mirrorShiftScene: SceneDefinition = {
     "See a planar mirror as a viewing aperture containing reflected props and a simplified view-camera reflection.",
   assets: [],
   cameraPreset: {
+    // The shared 120 mm ideal lens profile has unbounded coverage. The
+    // physical Image Circle overlay is therefore intentionally unavailable
+    // here; do not fabricate a finite boundary for this viewpoint lesson.
     focalLengthMm: 120,
     focusDistanceMm: 6000,
     aperture: 11,

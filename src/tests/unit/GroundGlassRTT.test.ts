@@ -149,6 +149,52 @@ function renderedShaderMaterials() {
 }
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
+  it("passes Architecture Rise physical CoC inputs and the shared display scale to gather", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+      focusDistanceMm: 13000,
+      aperture: 5.6 as const,
+      frontRiseMm: 22,
+      frontTiltDeg: 0.4,
+      frontSwingDeg: -1.1,
+    };
+    const optics = deriveOpticsState(camera, architectureRiseScene);
+    const diagnostics = createRuntimeInfoCollector();
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: optics,
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureRiseScene,
+        widthPx: 500,
+        heightPx: 400,
+        aperture: camera.aperture,
+        renderQuality: "standard",
+        previewMode: "upright",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const materials = renderedShaderMaterials();
+    const cocMaterial = materials.find((material) =>
+      material.fragmentShader.includes("calculateCoCDiameterMmAtFragment"),
+    );
+    const gatherMaterial = materials.find((material) =>
+      material.fragmentShader.includes("goldenAngle"),
+    );
+    expect(cocMaterial?.uniforms.fNumber.value).toBe(5.6);
+    expect(cocMaterial?.uniforms.circleOfConfusionMm.value).toBe(0.1);
+    expect(gatherMaterial?.uniforms.displayBlurScale.value).toBe(16);
+    expect(gatherMaterial?.uniforms.fNumber.value).toBe(5.6);
+    expect(gatherMaterial?.uniforms.circleOfConfusionMm.value).toBe(0.1);
+    expect(diagnostics.get()?.groundGlassDisplayBlurScale).toBe(16);
+
+    view.unmount();
+  });
+
   it("synchronizes the active clip range into both CoC and aperture gather materials", () => {
     const cocMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -219,6 +265,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(gatherMaterial?.uniforms.filmPlaneBasisX.value.length()).toBeCloseTo(1, 6);
     expect(gatherMaterial?.uniforms.filmPlaneBasisY.value.length()).toBeCloseTo(1, 6);
     expect(gatherMaterial?.uniforms.footprintStorageMaxMm.value).toBeGreaterThan(0);
+    expect(gatherMaterial?.uniforms.displayBlurScale.value).toBe(16);
+    expect(diagnostics.get()?.groundGlassDisplayBlurScale).toBe(16);
     expect(diagnostics.get()?.nearGatherTargetWidthPx).toBe(
       diagnostics.get()?.gatherTargetWidthPx,
     );

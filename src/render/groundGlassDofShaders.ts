@@ -408,14 +408,15 @@ vec2 footprintMajorAxisPx(float majorRadiusMm, float orientationRad){
      !isFiniteFloat(renderWidth) || renderWidth <= 0.0 ||
      !isFiniteFloat(renderHeight) || renderHeight <= 0.0 ||
      !isFiniteFloat(sampledFilmWidthMm) || sampledFilmWidthMm <= 0.0 ||
-     !isFiniteFloat(sampledFilmHeightMm) || sampledFilmHeightMm <= 0.0) return vec2(0.0);
+     !isFiniteFloat(sampledFilmHeightMm) || sampledFilmHeightMm <= 0.0 ||
+     !isFiniteFloat(displayBlurScale) || displayBlurScale <= 0.0) return vec2(0.0);
   float angle = decodeStoredGroundGlassFootprintOrientation(orientationRad);
   // Physical film +Y points toward the top edge, while raw RTT V increases
   // toward the bottom edge. Apply that reflection here, before any preview
   // orientation policy is applied by the final composite.
   return vec2(
-    cos(angle) * majorRadiusMm * renderWidth / sampledFilmWidthMm,
-    -sin(angle) * majorRadiusMm * renderHeight / sampledFilmHeightMm
+    cos(angle) * majorRadiusMm * renderWidth / sampledFilmWidthMm * displayBlurScale,
+    -sin(angle) * majorRadiusMm * renderHeight / sampledFilmHeightMm * displayBlurScale
   );
 }
 
@@ -424,11 +425,12 @@ vec2 footprintMinorAxisPx(float minorRadiusMm, float orientationRad){
      !isFiniteFloat(renderWidth) || renderWidth <= 0.0 ||
      !isFiniteFloat(renderHeight) || renderHeight <= 0.0 ||
      !isFiniteFloat(sampledFilmWidthMm) || sampledFilmWidthMm <= 0.0 ||
-     !isFiniteFloat(sampledFilmHeightMm) || sampledFilmHeightMm <= 0.0) return vec2(0.0);
+     !isFiniteFloat(sampledFilmHeightMm) || sampledFilmHeightMm <= 0.0 ||
+     !isFiniteFloat(displayBlurScale) || displayBlurScale <= 0.0) return vec2(0.0);
   float angle = decodeStoredGroundGlassFootprintOrientation(orientationRad);
   return vec2(
-    -sin(angle) * minorRadiusMm * renderWidth / sampledFilmWidthMm,
-    -cos(angle) * minorRadiusMm * renderHeight / sampledFilmHeightMm
+    -sin(angle) * minorRadiusMm * renderWidth / sampledFilmWidthMm * displayBlurScale,
+    -cos(angle) * minorRadiusMm * renderHeight / sampledFilmHeightMm * displayBlurScale
   );
 }
 
@@ -475,11 +477,12 @@ float cocDiameterMmToGatherRadiusPx(float cocDiameterMm){
   if(!isFiniteFloat(cocDiameterMm) ||
      !isFiniteFloat(renderWidth) || renderWidth <= 0.0 ||
      !isFiniteFloat(sampledFilmWidthMm) || sampledFilmWidthMm <= 0.0 ||
-     !isFiniteFloat(maximumCoCRadiusPx) || maximumCoCRadiusPx < 0.0) return 0.0;
+     !isFiniteFloat(maximumCoCRadiusPx) || maximumCoCRadiusPx < 0.0 ||
+     !isFiniteFloat(displayBlurScale) || displayBlurScale <= 0.0) return 0.0;
 
   float diameterPx = cocDiameterMm * renderWidth / sampledFilmWidthMm;
   if(!isFiniteFloat(diameterPx)) return 0.0;
-  float radiusPx = diameterPx * 0.5;
+  float radiusPx = diameterPx * 0.5 * displayBlurScale;
   if(!isFiniteFloat(radiusPx)) return 0.0;
   return clamp(radiusPx, 0.0, maximumCoCRadiusPx);
 }
@@ -564,6 +567,7 @@ uniform float hasFiniteFar;
 uniform mat4 inverseProjectionMatrix;
 uniform mat4 cameraMatrixWorld;
 uniform float maximumCoCRadiusPx;
+uniform float displayBlurScale;
 uniform float circleOfConfusionMm;
 uniform float sampledFilmWidthMm;
 uniform float sampledFilmHeightMm;

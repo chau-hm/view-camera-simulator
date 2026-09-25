@@ -128,13 +128,15 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(slider).toHaveValue(String(focusFundamentalsReferenceFocusDepthMm));
   await expect(slider).toHaveAttribute("min", String(focusFundamentalsFocusDepthRangeMm.min));
   await expect(slider).toHaveAttribute("max", String(focusFundamentalsFocusDepthRangeMm.max));
-  await expect(page.getByText("Focus method")).toBeVisible();
-  await expect(page.getByText("Movement · Lens moves · Film fixed")).toBeVisible();
+  await expect(
+    focusStandard.getByText("Front focusing moves the lens/viewpoint. The film stays fixed."),
+  ).toBeVisible();
   await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "front");
   await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "false");
   expect(Number(await scene.getAttribute("data-focus-teaching-displacement-mm"))).toBeLessThan(1e-6);
   await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", String(focusFundamentalsFocalLengthMm));
   await expectContentfulRtt(rtt);
+  await expect(rtt).toHaveAttribute("data-rtt-display-blur-scale", "16");
 
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   const geometrySvg = page.getByTestId("geometry-svg-side");
@@ -174,7 +176,9 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(0, 8);
   const frontNearLensZ = await readZ(scene, "data-camera-lens-center-world");
   expect(frontNearLensZ).not.toBeCloseTo(referenceLensZ, 8);
-  await expect(page.getByText("Movement · Lens moves · Film fixed")).toBeVisible();
+  await expect(
+    focusStandard.getByText("Front focusing moves the lens/viewpoint. The film stays fixed."),
+  ).toBeVisible();
   await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "front");
   await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "true");
   expect(Number(await scene.getAttribute("data-focus-teaching-displacement-mm"))).toBeGreaterThan(0.5);
@@ -204,10 +208,13 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
 
   await rear.click();
   await expect(rear).toBeChecked();
+  await expect(rtt).toHaveAttribute("data-rtt-display-blur-scale", "16");
   await expect(slider).toHaveValue(String(focusFundamentalsFarFocusDepthMm));
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "rear");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "rear");
-  await expect(page.getByText("Movement · Film moves · Lens/viewpoint fixed")).toBeVisible();
+  await expect(
+    focusStandard.getByText("Rear focusing moves the film while the lens/viewpoint stays fixed."),
+  ).toBeVisible();
   await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "rear");
   await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "true");
   expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 8);
