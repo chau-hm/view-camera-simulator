@@ -7,7 +7,7 @@ import { imageDistanceMm } from "../../core/optics/thinLensModel";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
-import { createGroundGlassDofUniformState } from "../../render/createGroundGlassDofUniformState";
+import { createGroundGlassDofRenderState } from "../../render/groundGlassDofRenderState";
 import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur";
 import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
 import { analyzeGroundGlassRenderSanity } from "../../render/groundGlassRenderSanity";
@@ -269,7 +269,7 @@ describe("Table Tilt optics calibration", () => {
     const configured = configureGroundGlassCamera(camera, optics, clip.near, clip.far);
     expect(configured.ok).toBe(true);
 
-    const uniforms = createGroundGlassDofUniformState(
+    const uniforms = createGroundGlassDofRenderState(
       optics,
       camera,
       CAMERA_CONSTANTS.focalLengthMm,
@@ -281,26 +281,14 @@ describe("Table Tilt optics calibration", () => {
       400,
       60,
     );
-    expect(uniforms.focusPlanePoint).toEqual([
-      optics.focusPlane!.point.x * 0.001,
-      optics.focusPlane!.point.y * 0.001,
-      optics.focusPlane!.point.z * 0.001,
-    ]);
-    expect(uniforms.focusPlaneNormal).toEqual([
-      optics.focusPlane!.normal.x,
-      optics.focusPlane!.normal.y,
-      optics.focusPlane!.normal.z,
-    ]);
-    expect(uniforms.nearPlaneNormal).toEqual([
-      optics.depthOfFieldNearPlane!.normal.x,
-      optics.depthOfFieldNearPlane!.normal.y,
-      optics.depthOfFieldNearPlane!.normal.z,
-    ]);
-    expect(uniforms.farPlaneNormal).toEqual([
-      optics.depthOfFieldFarPlane!.normal.x,
-      optics.depthOfFieldFarPlane!.normal.y,
-      optics.depthOfFieldFarPlane!.normal.z,
-    ]);
+    expect(uniforms.focus.plane?.pointWorldM).toEqual({
+      x: optics.focusPlane!.point.x * 0.001,
+      y: optics.focusPlane!.point.y * 0.001,
+      z: optics.focusPlane!.point.z * 0.001,
+    });
+    expect(uniforms.focus.plane?.normal).toEqual(optics.focusPlane!.normal);
+    expect(uniforms.focus.nearPlane?.normal).toEqual(optics.depthOfFieldNearPlane!.normal);
+    expect(uniforms.focus.farPlane?.normal).toEqual(optics.depthOfFieldFarPlane!.normal);
   });
 
   it("moves zero-tilt point focus from near to middle to far while patch scoring stays conservative", () => {
@@ -411,7 +399,7 @@ describe("Table Tilt optics calibration", () => {
       const clip = getGroundGlassClipRangeWorld(tableTiltScene, optics.lensCenterWorld);
       const camera = new THREE.PerspectiveCamera(45, 1.25, clip.near, clip.far);
       expect(configureGroundGlassCamera(camera, optics, clip.near, clip.far).ok).toBe(true);
-      const uniforms = createGroundGlassDofUniformState(
+      const uniforms = createGroundGlassDofRenderState(
         optics,
         camera,
         CAMERA_CONSTANTS.focalLengthMm,
@@ -423,27 +411,27 @@ describe("Table Tilt optics calibration", () => {
         400,
         60,
       );
-      expect(uniforms.mode).toBe(1);
-      expect(uniforms.imageDistanceMm).toBeGreaterThan(0);
+      expect(uniforms.model).toBe("derived-planes");
+      expect(uniforms.optics.imageDistanceMm).toBeGreaterThan(0);
       if (frontTiltDeg === 0) {
-        expect(uniforms.imageDistanceMm).toBeCloseTo(
+        expect(uniforms.optics.imageDistanceMm).toBeCloseTo(
           imageDistanceMm(CAMERA_CONSTANTS.focalLengthMm, geometry.canonicalFocusDistanceMm),
           8,
         );
       }
       expect(
         [
-          ...uniforms.lensCenterWorld,
-          ...uniforms.focusPlanePoint,
-          ...uniforms.focusPlaneNormal,
-          ...(uniforms.nearPlanePoint ?? []),
-          ...(uniforms.nearPlaneNormal ?? []),
-          ...(uniforms.farPlanePoint ?? []),
-          ...(uniforms.farPlaneNormal ?? []),
-          ...uniforms.inverseProjectionMatrix,
-          ...uniforms.cameraMatrixWorld,
-          uniforms.imageDistanceMm,
-          uniforms.fNumber,
+          ...Object.values(uniforms.lens.centerWorldM),
+          ...Object.values(uniforms.focus.plane?.pointWorldM ?? {}),
+          ...Object.values(uniforms.focus.plane?.normal ?? {}),
+          ...Object.values(uniforms.focus.nearPlane?.pointWorldM ?? {}),
+          ...Object.values(uniforms.focus.nearPlane?.normal ?? {}),
+          ...Object.values(uniforms.focus.farPlane?.pointWorldM ?? {}),
+          ...Object.values(uniforms.focus.farPlane?.normal ?? {}),
+          ...uniforms.camera.inverseProjectionMatrixElements,
+          ...uniforms.camera.worldMatrixElements,
+          uniforms.optics.imageDistanceMm,
+          uniforms.optics.apertureFNumber,
         ].every(Number.isFinite),
       ).toBe(true);
     }

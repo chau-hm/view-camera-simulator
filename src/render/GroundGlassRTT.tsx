@@ -30,11 +30,13 @@ import {
   configureGroundGlassCamera,
   readGroundGlassCameraPose,
 } from "./configureGroundGlassCamera";
+import { createGroundGlassDofRenderState } from "./groundGlassDofRenderState";
 import {
-  applyGroundGlassDofUniformState,
-  createGroundGlassDofUniformState,
+  bindGroundGlassDofStateToShaderMaterial,
+  bindGroundGlassPhysicalStateToComposite,
   synchronizeGroundGlassDofClipRange,
-} from "./createGroundGlassDofUniformState";
+} from "./groundGlassShaderBindings";
+import type { GroundGlassPhysicalRenderState } from "./groundGlassPhysicalRenderState";
 import {
   groundGlassApertureGatherFragmentShader,
   groundGlassCompositeFragmentShader,
@@ -71,8 +73,8 @@ import {
   resolveSampledFilmDimensionsMm,
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
-import { resolveGroundGlassNaturalIlluminationUniformState } from "./groundGlassNaturalIllumination";
-import { resolveGroundGlassCoverageUniformState } from "./groundGlassCoverage";
+import { resolveGroundGlassNaturalIlluminationRenderState } from "./groundGlassNaturalIllumination";
+import { resolveGroundGlassCoverageRenderState } from "./groundGlassCoverage";
 import { resolveGroundGlassRttDisplayTransform } from "./groundGlassRttOrientation";
 import {
   GroundGlassProfiler,
@@ -879,14 +881,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
       inspectionWindow,
     });
-    const naturalIlluminationUniformState = resolveGroundGlassNaturalIlluminationUniformState({
+    const naturalIlluminationRenderState = resolveGroundGlassNaturalIlluminationRenderState({
       state: opticsState.groundGlassNaturalIllumination,
       rawDebug,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
       inspectionWindow,
     });
-    const coverageUniformState = resolveGroundGlassCoverageUniformState({
+    const coverageRenderState = resolveGroundGlassCoverageRenderState({
       state: opticsState.groundGlassCoverage,
       rawDebug,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
@@ -1159,14 +1161,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
       // Prepare typed optical state once and apply it to both CoC and gather.
       let uniformPreparationError: string | null = null;
-      let preparedDofState: ReturnType<typeof createGroundGlassDofUniformState> | null = null;
+      let preparedDofState: ReturnType<typeof createGroundGlassDofRenderState> | null = null;
       // Keep the composite at a neutral gain until a valid physical DOF state
       // has been prepared. This is the safe fallback for malformed optics;
       // Raw RTT Debug deliberately remains an unmodified render diagnostic.
       let groundGlassIlluminanceGain = 1.0;
       try {
         const displayOpticsState = resolveGroundGlassDisplayOpticsState(resolvedSceneId, opticsState);
-        preparedDofState = createGroundGlassDofUniformState(
+        preparedDofState = createGroundGlassDofRenderState(
           displayOpticsState,
           cam,
           focalLengthMm,
@@ -1189,15 +1191,22 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             // film plane, but it is not trustworthy physical focus data.
             imageDistanceMm: opticsState.diagnostics.fallbackApplied
               ? null
-              : preparedDofState.imageDistanceMm,
+              : preparedDofState.optics.imageDistanceMm,
           });
         }
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);
       }
 
+      const physicalRenderState: GroundGlassPhysicalRenderState = {
+        dof: preparedDofState,
+        coverage: coverageRenderState,
+        naturalIllumination: naturalIlluminationRenderState,
+        relativeIlluminanceGain: groundGlassIlluminanceGain,
+      };
+
       if (preparedDofState) {
-        applyGroundGlassDofUniformState(cocMaterial, preparedDofState);
+        bindGroundGlassDofStateToShaderMaterial(cocMaterial, preparedDofState);
         reportedUniformPreparationErrorRef.current = null;
       } else {
         // Keep the last valid shader state. Do not conceal configuration errors
@@ -1227,7 +1236,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         gatherMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
         gatherMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
         if (preparedDofState) {
-          applyGroundGlassDofUniformState(gatherMaterial, preparedDofState);
+          bindGroundGlassDofStateToShaderMaterial(gatherMaterial, preparedDofState);
         } else {
           if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
             console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
@@ -1264,43 +1273,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       compositeMaterial.uniforms.flipDisplayY.value = displayTransform.flipDisplayY ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
-      compositeMaterial.uniforms.groundGlassIlluminanceGain.value = groundGlassIlluminanceGain;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationEnabled.value =
-        naturalIlluminationUniformState.enabled ? 1.0 : 0.0;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value =
-        naturalIlluminationUniformState.imageDistanceMm;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationOffsetXMm.value =
-        naturalIlluminationUniformState.opticalAxisOffsetXMm;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationOffsetYMm.value =
-        naturalIlluminationUniformState.opticalAxisOffsetYMm;
-      compositeMaterial.uniforms.groundGlassCoverageEnabled.value =
-        coverageUniformState.enabled ? 1.0 : 0.0;
-      compositeMaterial.uniforms.groundGlassCoverageMode.value = coverageUniformState.mode;
-      compositeMaterial.uniforms.groundGlassCoverageRadiusMm.value =
-        coverageUniformState.imageCircleRadiusMm;
-      compositeMaterial.uniforms.groundGlassCoverageOffsetXMm.value =
-        coverageUniformState.opticalAxisOffsetXMm;
-      compositeMaterial.uniforms.groundGlassCoverageOffsetYMm.value =
-        coverageUniformState.opticalAxisOffsetYMm;
-      compositeMaterial.uniforms.groundGlassCoverageConicQuadratic.value.set(
-        ...coverageUniformState.conicQuadratic,
-      );
-      compositeMaterial.uniforms.groundGlassCoverageConicLinear.value.set(
-        ...coverageUniformState.conicLinear,
-      );
-      compositeMaterial.uniforms.groundGlassCoverageConicAxial.value.set(
-        ...coverageUniformState.conicAxial,
-      );
-      compositeMaterial.uniforms.groundGlassCoverageEdgeFeatherMm.value =
-        coverageUniformState.edgeFeatherMm;
-      compositeMaterial.uniforms.groundGlassFilmWindowCenterXMm.value =
-        coverageUniformState.filmWindow.centerXMm;
-      compositeMaterial.uniforms.groundGlassFilmWindowCenterYMm.value =
-        coverageUniformState.filmWindow.centerYMm;
-      compositeMaterial.uniforms.groundGlassFilmWindowWidthMm.value =
-        coverageUniformState.filmWindow.widthMm;
-      compositeMaterial.uniforms.groundGlassFilmWindowHeightMm.value =
-        coverageUniformState.filmWindow.heightMm;
+      bindGroundGlassPhysicalStateToComposite(compositeMaterial, physicalRenderState);
       const currentIlluminanceInfo = readRuntimeInfo();
       const coverageConicQuadratic = opticsState.groundGlassCoverage.kind === "nonparallel-conic"
         ? [
@@ -1324,7 +1297,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         (
           currentIlluminanceInfo.groundGlassIlluminanceGain !== groundGlassIlluminanceGain ||
           currentIlluminanceInfo.groundGlassNaturalIlluminationEnabled !==
-            naturalIlluminationUniformState.enabled ||
+            naturalIlluminationRenderState.enabled ||
           currentIlluminanceInfo.groundGlassNaturalIlluminationKind !==
             opticsState.groundGlassNaturalIllumination.kind ||
           currentIlluminanceInfo.groundGlassNaturalIlluminationImageDistanceMm !==
@@ -1340,11 +1313,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
               ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
               : undefined)
           || currentIlluminanceInfo.groundGlassCoverageEnabled !==
-            coverageUniformState.enabled
+            coverageRenderState.active
           || currentIlluminanceInfo.groundGlassCoverageKind !==
             opticsState.groundGlassCoverage.kind
           || currentIlluminanceInfo.groundGlassPhysicalBoundaryRadiusPx !==
-            (preparedDofState?.visibleBoundaryBlurRadiusPx ??
+            (preparedDofState?.physicalCoC.visibleBoundaryRadiusPx ??
               (ACCEPTABLE_COC_DIAMETER_MM * dimsRef.current.logicalWidthPx) /
                 sampledFilmDimensions.widthMm / 2)
           || currentIlluminanceInfo.groundGlassCoverageRadiusMm !==
@@ -1368,7 +1341,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         setRuntimeInfo({
           ...currentIlluminanceInfo,
           groundGlassIlluminanceGain,
-          groundGlassNaturalIlluminationEnabled: naturalIlluminationUniformState.enabled,
+          groundGlassNaturalIlluminationEnabled: naturalIlluminationRenderState.enabled,
           groundGlassNaturalIlluminationKind:
             opticsState.groundGlassNaturalIllumination.kind,
           groundGlassNaturalIlluminationImageDistanceMm:
@@ -1383,10 +1356,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
               ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
               : undefined,
-          groundGlassCoverageEnabled: coverageUniformState.enabled,
+          groundGlassCoverageEnabled: coverageRenderState.active,
           groundGlassCoverageKind: opticsState.groundGlassCoverage.kind,
           groundGlassPhysicalBoundaryRadiusPx:
-            preparedDofState?.visibleBoundaryBlurRadiusPx ??
+            preparedDofState?.physicalCoC.visibleBoundaryRadiusPx ??
             (ACCEPTABLE_COC_DIAMETER_MM * dimsRef.current.logicalWidthPx) /
               sampledFilmDimensions.widthMm / 2,
           groundGlassCoverageRadiusMm:
@@ -1468,12 +1441,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
               cameraForwardWorld: configuredPose.forwardWorld,
               depthTextureAvailable: !isFallbackDepth,
               dofMode:
-                preparedDofState?.mode === 1
+                preparedDofState?.model === "derived-planes"
                   ? "derived-planes"
                   : opticsState.diagnostics.groundGlassDofModel ?? "parallel-thin-lens",
               uniformsFinite: Boolean(preparedDofState),
               uniformPreparationError,
-              focalLengthMm: preparedDofState?.focalLengthMm,
+              focalLengthMm: preparedDofState?.optics.focalLengthMm,
               rawColorVariance: rawSanity.luminanceVariance,
               rawNonBackgroundPixelCount: rawSanity.nonBackgroundPixelCount,
               rawContentful: rawSanity.contentful,

@@ -11,10 +11,8 @@ import { understandingCameraMovementsScene } from "../../scenes/definitions/unde
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
 import * as THREE from "three";
 import { getGroundGlassClipRangeWorld } from "../../render/groundGlassRttScenes";
-import {
-  applyGroundGlassDofUniformState,
-  createGroundGlassDofUniformState,
-} from "../../render/createGroundGlassDofUniformState";
+import { createGroundGlassDofRenderState } from "../../render/groundGlassDofRenderState";
+import { bindGroundGlassDofStateToShaderMaterial } from "../../render/groundGlassShaderBindings";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { resolveGroundGlassImageDistanceMm } from "../../render/groundGlassRttScenes";
 import {
@@ -128,7 +126,7 @@ describe("Camera Movements RTT focal uniforms", () => {
         optics.lensCenterWorld,
       );
       expect(configureGroundGlassCamera(camera, optics, clip.near, clip.far).ok).toBe(true);
-      const state = createGroundGlassDofUniformState(
+      const state = createGroundGlassDofRenderState(
         optics,
         camera,
         focalLengthMm,
@@ -142,15 +140,15 @@ describe("Camera Movements RTT focal uniforms", () => {
       );
       const horizontal = createUniformMaterial();
       const vertical = createUniformMaterial();
-      applyGroundGlassDofUniformState(horizontal, state);
-      applyGroundGlassDofUniformState(vertical, state);
+      bindGroundGlassDofStateToShaderMaterial(horizontal, state);
+      bindGroundGlassDofStateToShaderMaterial(vertical, state);
 
       const expectedImageDistanceMm =
         (focalLengthMm * focusDistanceMm) /
         (focusDistanceMm - focalLengthMm);
-      expect(state.focalLengthMm).toBe(focalLengthMm);
-      expect(state.imageDistanceMm).toBeCloseTo(expectedImageDistanceMm, 8);
-      expect(state.imageDistanceMm).not.toBe(focalLengthMm);
+      expect(state.optics.focalLengthMm).toBe(focalLengthMm);
+      expect(state.optics.imageDistanceMm).toBeCloseTo(expectedImageDistanceMm, 8);
+      expect(state.optics.imageDistanceMm).not.toBe(focalLengthMm);
       expect(horizontal.uniforms.focalLengthMm.value).toBe(focalLengthMm);
       expect(vertical.uniforms.focalLengthMm.value).toBe(focalLengthMm);
       expect(horizontal.uniforms.imageDistanceMm.value).toBeCloseTo(
@@ -179,7 +177,7 @@ describe("Camera Movements RTT focal uniforms", () => {
       optics.lensCenterWorld,
     );
     expect(configureGroundGlassCamera(camera, optics, clip.near, clip.far).ok).toBe(true);
-    const state = createGroundGlassDofUniformState(
+    const state = createGroundGlassDofRenderState(
       optics,
       camera,
       cameraState.focalLengthMm,
@@ -193,8 +191,8 @@ describe("Camera Movements RTT focal uniforms", () => {
     );
     const horizontal = createUniformMaterial();
     const vertical = createUniformMaterial();
-    applyGroundGlassDofUniformState(horizontal, state);
-    applyGroundGlassDofUniformState(vertical, state);
+    bindGroundGlassDofStateToShaderMaterial(horizontal, state);
+    bindGroundGlassDofStateToShaderMaterial(vertical, state);
 
     expect(horizontal.uniforms.focalLengthMm.value).toBe(90);
     expect(vertical.uniforms.focalLengthMm.value).toBe(90);
