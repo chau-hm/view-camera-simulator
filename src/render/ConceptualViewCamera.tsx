@@ -173,9 +173,8 @@ const conceptualSupportImageDistanceMm = imageDistanceMm(
 );
 
 /**
- * Fixed generic rig-local support datum for scenes without a calibrated rail.
- * Standard movements never participate in this value; whole-camera transforms
- * are applied separately when the datum is rendered in world space.
+ * Fallback generic rig-local support datum when canonical standard anchors are
+ * unavailable. Whole-camera transforms are applied by the shared assembly root.
  */
 export const CONCEPTUAL_CAMERA_SUPPORT_RAIL: ConceptualCameraRail = {
   centerRigLocal: {
@@ -194,22 +193,30 @@ export const CONCEPTUAL_CAMERA_SUPPORT_RAIL: ConceptualCameraRail = {
   },
 };
 
-/** Extend the generic rail rearward to contain the canonical rear carriage.
- * Preserve the fixed front datum, height, and orientation; calibrated rails opt out.
+/** Span the canonical front and rear standards with a fixed rail overhang.
+ * Callers without a front anchor retain the generic fixed front datum.
  */
 export const resolveGenericConceptualSupportRail = (
   rearStandardCenterRigLocal?: Vec3,
+  frontStandardCenterRigLocal?: Vec3,
 ): ConceptualCameraRail => {
   const base = CONCEPTUAL_CAMERA_SUPPORT_RAIL;
-  if (!rearStandardCenterRigLocal || rearStandardCenterRigLocal.z >= -conceptualSupportImageDistanceMm) {
+  if (!rearStandardCenterRigLocal && !frontStandardCenterRigLocal) {
     return base;
   }
-  const frontZ = base.centerRigLocal.z + base.dimensionsMm.z / 2;
-  const rearZ = Math.min(
-    base.centerRigLocal.z - base.dimensionsMm.z / 2,
-    (rearStandardCenterRigLocal?.z ?? -conceptualSupportImageDistanceMm) -
-      CONCEPTUAL_CAMERA_SUPPORT_RAIL_OVERHANG_MM,
-  );
+  const baseFrontZ = base.centerRigLocal.z + base.dimensionsMm.z / 2;
+  const baseRearZ = base.centerRigLocal.z - base.dimensionsMm.z / 2;
+  const frontZ = frontStandardCenterRigLocal
+    ? frontStandardCenterRigLocal.z + CONCEPTUAL_CAMERA_SUPPORT_RAIL_OVERHANG_MM
+    : baseFrontZ;
+  let rearZ = baseRearZ;
+  if (rearStandardCenterRigLocal) {
+    const canonicalRearZ =
+      rearStandardCenterRigLocal.z - CONCEPTUAL_CAMERA_SUPPORT_RAIL_OVERHANG_MM;
+    rearZ = frontStandardCenterRigLocal
+      ? canonicalRearZ
+      : Math.min(baseRearZ, canonicalRearZ);
+  }
   return {
     centerRigLocal: { ...base.centerRigLocal, z: (frontZ + rearZ) / 2 },
     dimensionsMm: { ...base.dimensionsMm, z: frontZ - rearZ },
@@ -1077,11 +1084,13 @@ const CameraSupport = ({
   ghost,
   rigRail,
   rearStandardCenterRigLocal,
+  frontStandardCenterRigLocal,
   anatomy,
 }: {
   ghost: boolean;
   rigRail?: ConceptualCameraRail;
   rearStandardCenterRigLocal?: Vec3;
+  frontStandardCenterRigLocal?: Vec3;
   anatomy?: ConceptualCameraAnatomyPresentation;
 }) => {
   const supportState = resolveConceptualAnatomyPartState("camera-support", anatomy);
@@ -1090,7 +1099,12 @@ const CameraSupport = ({
     renderOrder: ghost ? 10 : 0,
     state: supportState,
   };
-  const rail = rigRail ?? resolveGenericConceptualSupportRail(rearStandardCenterRigLocal);
+  const rail =
+    rigRail ??
+    resolveGenericConceptualSupportRail(
+      rearStandardCenterRigLocal,
+      frontStandardCenterRigLocal,
+    );
   const rearMountRigLocal = resolveSupportMountRigLocal(
     rail,
     "rear",
@@ -1181,6 +1195,7 @@ const renderAnatomy = ({
       <CameraSupport
         ghost={ghost}
         rigRail={rigRail}
+        frontStandardCenterRigLocal={canonical.lensCenter}
         rearStandardCenterRigLocal={
           opticsState.cameraBodyLocalGeometry.rearStandardFrameLocal.centerWorld
         }
