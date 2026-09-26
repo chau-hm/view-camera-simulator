@@ -9,10 +9,10 @@ import {
   encodeGroundGlassSignedCoC,
   encodeGroundGlassSignedCoCByte,
   GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE,
-  isGroundGlassColorRenderTargetRenderable,
   quantizeGroundGlassSignedCoCByte,
   resolveGroundGlassCocStorageMaxMm,
 } from "../../render/groundGlassCocTarget";
+import { resolveRendererCapabilities } from "../../render/backend/rendererCapabilities";
 
 function createRendererWithFramebufferStatuses(statuses: number[]) {
   const context = {
@@ -21,6 +21,7 @@ function createRendererWithFramebufferStatuses(statuses: number[]) {
     checkFramebufferStatus: vi.fn(() => statuses.shift() ?? 0x8cd5),
   } as unknown as WebGLRenderingContext;
   const renderer = {
+    isWebGLRenderer: true,
     getContext: vi.fn(() => context),
     getRenderTarget: vi.fn(() => null),
     setRenderTarget: vi.fn(),
@@ -132,11 +133,52 @@ describe("Ground Glass CoC target capability policy", () => {
     ).toBeLessThan(0.2);
   });
 
-  it("reports whether a color render target can be sampled", () => {
+  it("reports color render-target support as backend-neutral data and restores the previous target", () => {
     const target = new THREE.WebGLRenderTarget(8, 8);
     const { renderer } = createRendererWithFramebufferStatuses([contextComplete()]);
-    expect(isGroundGlassColorRenderTargetRenderable(renderer, target)).toBe(true);
+    const capabilities = resolveRendererCapabilities(renderer, target);
+    expect(capabilities).toEqual({
+      backend: "webgl",
+      colorRenderTargetRenderable: true,
+    });
+    expect(capabilities).not.toHaveProperty("context");
+    expect(capabilities).not.toHaveProperty("renderer");
+    expect(renderer.setRenderTarget).toHaveBeenNthCalledWith(1, target);
+    expect(renderer.setRenderTarget).toHaveBeenNthCalledWith(2, null);
     target.dispose();
+  });
+
+  it("fails closed when an optional color-target capability is unsupported", () => {
+    const target = new THREE.WebGLRenderTarget(8, 8);
+    const { renderer } = createRendererWithFramebufferStatuses([0x8cd6]);
+    expect(resolveRendererCapabilities(renderer, target)).toEqual({
+      backend: "webgl",
+      colorRenderTargetRenderable: false,
+    });
+    expect(resolveRendererCapabilities({ isWebGLRenderer: false }, target)).toBeNull();
+    target.dispose();
+  });
+
+  it("fails closed when the backend probe throws and restores the previous target", () => {
+    const target = new THREE.WebGLRenderTarget(8, 8);
+    const previousTarget = new THREE.WebGLRenderTarget(4, 4);
+    const renderer = {
+      isWebGLRenderer: true,
+      getRenderTarget: vi.fn(() => previousTarget),
+      setRenderTarget: vi.fn(),
+      getContext: vi.fn(() => {
+        throw new Error("WebGL context unavailable");
+      }),
+    } as unknown as THREE.WebGLRenderer;
+
+    expect(resolveRendererCapabilities(renderer, target)).toEqual({
+      backend: "webgl",
+      colorRenderTargetRenderable: false,
+    });
+    expect(renderer.setRenderTarget).toHaveBeenNthCalledWith(1, target);
+    expect(renderer.setRenderTarget).toHaveBeenNthCalledWith(2, previousTarget);
+    target.dispose();
+    previousTarget.dispose();
   });
 });
 
