@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { resolveRendererCapabilities } from "./backend/rendererCapabilities";
 
 export type GroundGlassCocStorageFormat = "half-float-mm" | "encoded-byte";
 
@@ -250,30 +251,6 @@ type GroundGlassCocRenderer = Pick<
 >;
 
 /**
- * Checks the actual framebuffer status after Three.js has attached the target.
- * A WebGL context alone does not prove that a half-float color attachment is
- * renderable on the current device/browser.
- */
-export const isGroundGlassColorRenderTargetRenderable = (
-  renderer: GroundGlassCocRenderer,
-  target: THREE.WebGLRenderTarget,
-): boolean => {
-  const previousTarget = renderer.getRenderTarget();
-  try {
-    renderer.setRenderTarget(target);
-    const context = renderer.getContext();
-    return (
-      context.checkFramebufferStatus(context.FRAMEBUFFER) ===
-      context.FRAMEBUFFER_COMPLETE
-    );
-  } catch {
-    return false;
-  } finally {
-    renderer.setRenderTarget(previousTarget);
-  }
-};
-
-/**
  * Creates a full-resolution CoC target with an explicit storage fallback.
  * The encoded-byte mode stores the explicit neutral-safe normalized signed CoC
  * code in the red channel; shader uniforms carry the physical millimetre range
@@ -297,7 +274,10 @@ export const createGroundGlassCocTarget = (
     ...targetOptions,
     type: THREE.HalfFloatType,
   });
-  if (isGroundGlassColorRenderTargetRenderable(renderer, halfFloatTarget)) {
+  if (
+    resolveRendererCapabilities(renderer, halfFloatTarget)
+      ?.colorRenderTargetRenderable
+  ) {
     return {
       target: halfFloatTarget,
       storageFormat: "half-float-mm",
@@ -309,7 +289,10 @@ export const createGroundGlassCocTarget = (
     ...targetOptions,
     type: THREE.UnsignedByteType,
   });
-  if (!isGroundGlassColorRenderTargetRenderable(renderer, encodedByteTarget)) {
+  if (
+    !resolveRendererCapabilities(renderer, encodedByteTarget)
+      ?.colorRenderTargetRenderable
+  ) {
     encodedByteTarget.dispose();
     throw new Error("No renderable Ground Glass CoC color target is available");
   }
