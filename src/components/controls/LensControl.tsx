@@ -6,6 +6,9 @@ import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneFocalLengthCapability } from "../../types/scene";
 import { resolveLensControlOptionPresentation } from "./lensControlPresentation";
 
+const formatSimulatorCoverageAngleDeg = (angleDeg: number): number =>
+  Number(angleDeg.toFixed(1));
+
 type LensControlProps = {
   capability: SceneFocalLengthCapability;
   opticsState: DerivedOpticsState;
@@ -43,7 +46,9 @@ export const LensControl = ({ capability, opticsState }: LensControlProps) => {
       });
   const selectedCoverageText = selectedPresentation.coveragePresentation.kind === "finite-angular"
     ? t(simulatorMessageKeys.controls.lensSimulatorCoverage, {
-        angle: selectedPresentation.coveragePresentation.fullCoverageAngleDeg,
+        angle: formatSimulatorCoverageAngleDeg(
+          selectedPresentation.coveragePresentation.fullCoverageAngleDeg,
+        ),
       })
     : t(simulatorMessageKeys.controls.lensCoverageNotModelled);
   const derivedFiniteCoverage = opticsState.lensCoverage?.kind === "angular" &&
@@ -109,7 +114,9 @@ export const LensControl = ({ capability, opticsState }: LensControlProps) => {
             : "";
           const coverageText = presentation.coveragePresentation.kind === "finite-angular"
             ? t(simulatorMessageKeys.controls.lensSimulatorCoverage, {
-                angle: presentation.coveragePresentation.fullCoverageAngleDeg,
+                angle: formatSimulatorCoverageAngleDeg(
+                  presentation.coveragePresentation.fullCoverageAngleDeg,
+                ),
               })
             : t(simulatorMessageKeys.controls.lensCoverageNotModelled);
           const accessibleLabel = t(

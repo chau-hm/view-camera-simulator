@@ -53,7 +53,7 @@ function extractFunctionBody(source: string, name: string) {
 describe("GroundGlass DOF shader source", () => {
   test("shared uniform decls include required uniforms", () => {
     expect(groundGlassUniformDecls).toContain("maximumCoCRadiusPx");
-    expect(groundGlassUniformDecls).toContain("displayBlurScale");
+    expect(groundGlassUniformDecls).not.toContain("displayBlurScale");
     expect(groundGlassUniformDecls).toContain("sampleCount");
     expect(groundGlassUniformDecls).toContain("sampledFilmWidthMm");
     expect(groundGlassUniformDecls).toContain("sampledFilmHeightMm");
@@ -107,7 +107,7 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassSharedGlsl).not.toContain(
       "float focusDist = tFocus > 0.0 ? tFocus : targetDist",
     );
-    expect(groundGlassSharedGlsl).toContain("displayBlurScale");
+    expect(groundGlassSharedGlsl).not.toContain("displayBlurScale");
   });
 
   test("runtime shader sources are present and contain main", () => {
@@ -153,7 +153,7 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassApertureGatherFragmentShader).toContain("footprintAreaPx");
     expect(groundGlassApertureGatherFragmentShader).toContain("ellipseFootprintWeight");
     expect(groundGlassApertureGatherFragmentShader).toContain(
-      "majorRadiusMm * renderWidth / sampledFilmWidthMm * displayBlurScale",
+      "majorRadiusMm * renderWidth / sampledFilmWidthMm",
     );
     expect(groundGlassApertureGatherFragmentShader).toContain("coverageMass");
     expect(groundGlassApertureGatherFragmentShader).toContain("proposalCompensation");

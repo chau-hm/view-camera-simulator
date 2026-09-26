@@ -9,7 +9,6 @@ import {
 } from "../../render/groundGlassVisualSettings";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
-import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import geometry from "../../scenes/shelfSwingGeometry";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -29,7 +28,6 @@ describe("Ground Glass visual settings", () => {
 
     expect(getGroundGlassDofVisualSettings(shelfSwingScene.id)).toEqual({
       maximumBlurRadiusPx: 42,
-      displayBlurScale: 16,
       planeMode: "derived-planes",
     });
     expect(optics.diagnostics.groundGlassDofModel).toBe("parallel-thin-lens");
@@ -39,7 +37,7 @@ describe("Ground Glass visual settings", () => {
     expect(display.depthOfFieldFarPlane).toBe(optics.depthOfFieldFarPlane);
   });
 
-  it("uses one pedagogical blur scale across scenes without changing physical CoC", () => {
+  it("keeps all scenes on the same direct physical blur scale", () => {
     for (const sceneId of [
       "architecture-rise",
       "focus-fundamentals-two-targets",
@@ -50,15 +48,15 @@ describe("Ground Glass visual settings", () => {
       "architecture-foreground",
     ]) {
       const settings = getGroundGlassDofVisualSettings(sceneId);
-      expect(settings.displayBlurScale).toBe(16);
+      expect(settings).not.toHaveProperty("displayBlurScale");
       expect("inspectionMagnification" in settings).toBe(false);
     }
-    expect(getGroundGlassDofVisualSettings(architectureRiseScene.id).displayBlurScale).toBe(
-      getGroundGlassDofVisualSettings(focusFundamentalsTwoTargets.id).displayBlurScale,
+    expect(getGroundGlassDofVisualSettings("architecture-rise")).toEqual(
+      getGroundGlassDofVisualSettings("focus-fundamentals-two-targets"),
     );
   });
 
-  it("preserves Architecture Rise physical sharpness while magnifying the preview gather", () => {
+  it("preserves Architecture Rise physical sharpness and uses direct physical display scale", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
       ...architectureRiseScene.cameraPreset,
@@ -85,17 +83,17 @@ describe("Ground Glass visual settings", () => {
       visual.maximumBlurRadiusPx,
       CAMERA_CONSTANTS.filmWidthMm,
       CAMERA_CONSTANTS.filmHeightMm,
-      visual.displayBlurScale,
+      500,
     );
 
     expect(target.pointEquivalentCoCDiameterMm).toBeCloseTo(0.169, 2);
     expect(target.physicalPointSharpness).toBe(0);
     expect(uniformState.circleOfConfusionMm).toBe(ACCEPTABLE_COC_DIAMETER_MM);
-    expect(uniformState.displayBlurScale).toBe(16);
-    expect(uniformState.displayBoundaryBlurRadiusPx).toBeCloseTo(
-      uniformState.boundaryBlurRadiusPx * 16,
+    expect(uniformState.visibleBoundaryBlurRadiusPx).toBeCloseTo(
+      ACCEPTABLE_COC_DIAMETER_MM * 500 / CAMERA_CONSTANTS.filmWidthMm / 2,
       12,
     );
+    expect(uniformState.visibleBoundaryBlurRadiusPx).toBeCloseTo(0.1968503937, 9);
   });
 
   it("leaves unrelated scene optics untouched", () => {

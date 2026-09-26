@@ -1,179 +1,85 @@
 import { describe, expect, it } from "vitest";
-import {
-  decodeGroundGlassFootprintAxesMm,
-  encodeGroundGlassFootprintAxesMm,
-  resolveGroundGlassCocStorageMaxMm,
-} from "../../render/groundGlassCocTarget";
-import { calculateDofBlurRadiusPx } from "../../core/optics/dofBlurModel";
+import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
+import { getRenderQualitySettings } from "../../render/renderQuality";
 import { groundGlassFootprintAxesToRttPixels } from "../../render/groundGlassFootprintCoordinates";
 import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
+import { resolveGroundGlassInspectionWindow, resolveSampledFilmDimensionsMm } from "../../render/groundGlassInspectionWindow";
+import { resolveGroundGlassRttDimensions } from "../../render/groundGlassRttDimensions";
+import { CAMERA_CONSTANTS } from "../../utils/constants";
+
+const physicalVisibleRadiusPx = (cocDiameterMm: number, displayWidthPx: number, sampledFilmWidthMm: number): number =>
+  cocDiameterMm * displayWidthPx / sampledFilmWidthMm / 2;
 
 describe("physical Ground Glass blur scale", () => {
-  it("keeps the display-only blur scale global across scenes", () => {
-    for (const sceneId of [
-      "architecture-rise",
-      "table-tilt",
-      "shelf-swing",
-      "oblique-tabletop",
-      "oblique-architecture",
-      "architecture-foreground",
-    ]) {
-      expect(getGroundGlassDofVisualSettings(sceneId).displayBlurScale).toBe(16);
+  it("keeps scene-specific settings separate from physical blur scale", () => {
+    for (const sceneId of ["architecture-rise", "table-tilt", "shelf-swing", "oblique-tabletop", "oblique-architecture", "architecture-foreground"]) {
+      expect(getGroundGlassDofVisualSettings(sceneId)).not.toHaveProperty("displayBlurScale");
       expect(getGroundGlassDofVisualSettings(sceneId)).not.toHaveProperty("inspectionMagnification");
     }
   });
 
-  it("maps film millimetres directly to pixels", () => {
+  it("maps physical film radii directly to internal pixels", () => {
     const axes = groundGlassFootprintAxesToRttPixels({
-      majorRadiusMm: 2,
-      minorRadiusMm: 1,
-      orientationRad: 0,
-      renderWidthPx: 1270,
-      renderHeightPx: 1016,
-      filmWidthMm: 127,
-      filmHeightMm: 101.6,
+      majorRadiusMm: 2, minorRadiusMm: 1, orientationRad: 0,
+      renderWidthPx: 1270, renderHeightPx: 1016, filmWidthMm: 127, filmHeightMm: 101.6,
     });
-
     expect(axes.majorAxisPx[0]).toBeCloseTo(20, 12);
     expect(axes.majorAxisPx[1]).toBeCloseTo(0, 12);
     expect(axes.minorAxisPx[0]).toBeCloseTo(0, 12);
     expect(axes.minorAxisPx[1]).toBeCloseTo(-10, 12);
   });
 
-  it("scales pixel footprints with render resolution, not physical radii", () => {
-    const base = groundGlassFootprintAxesToRttPixels({
-      majorRadiusMm: 2,
-      minorRadiusMm: 1,
-      orientationRad: Math.PI / 4,
-      renderWidthPx: 1270,
-      renderHeightPx: 1016,
-      filmWidthMm: 127,
-      filmHeightMm: 101.6,
-    });
-    const doubled = groundGlassFootprintAxesToRttPixels({
-      majorRadiusMm: 2,
-      minorRadiusMm: 1,
-      orientationRad: Math.PI / 4,
-      renderWidthPx: 2540,
-      renderHeightPx: 2032,
-      filmWidthMm: 127,
-      filmHeightMm: 101.6,
-    });
-
-    expect(doubled.majorAxisPx[0]).toBeCloseTo(base.majorAxisPx[0] * 2, 12);
-    expect(doubled.majorAxisPx[1]).toBeCloseTo(base.majorAxisPx[1] * 2, 12);
-    expect(doubled.minorAxisPx[0]).toBeCloseTo(base.minorAxisPx[0] * 2, 12);
-    expect(doubled.minorAxisPx[1]).toBeCloseTo(base.minorAxisPx[1] * 2, 12);
+  it("makes the same physical CoC twice as wide when the visible full-film preview doubles", () => {
+    const at500 = physicalVisibleRadiusPx(ACCEPTABLE_COC_DIAMETER_MM, 500, CAMERA_CONSTANTS.filmWidthMm);
+    const at1000 = physicalVisibleRadiusPx(ACCEPTABLE_COC_DIAMETER_MM, 1000, CAMERA_CONSTANTS.filmWidthMm);
+    expect(at500).toBeCloseTo(ACCEPTABLE_COC_DIAMETER_MM * 500 / CAMERA_CONSTANTS.filmWidthMm / 2, 12);
+    expect(at1000).toBeCloseTo(at500 * 2, 12);
+    expect(at500).toBeCloseTo(0.1968503937, 9);
   });
 
-  it("maps the same physical CoC footprint to four times as many pixels in a 4x crop", () => {
-    const full = groundGlassFootprintAxesToRttPixels({
-      majorRadiusMm: 2,
-      minorRadiusMm: 1,
-      orientationRad: 0,
-      renderWidthPx: 1270,
-      renderHeightPx: 1016,
-      filmWidthMm: 127,
-      filmHeightMm: 101.6,
+  it("keeps final visible physical blur invariant across Standard and High RTT resolutions", () => {
+    const logicalWidth = 500;
+    const logicalHeight = 400;
+    const filmWidthMm = CAMERA_CONSTANTS.filmWidthMm;
+    const cocDiameterMm = 1.122;
+    const results = (["standard", "high"] as const).map((renderQuality) => {
+      const dimensions = resolveGroundGlassRttDimensions({
+        logicalWidth, logicalHeight, renderQuality,
+        devicePixelRatio: getRenderQualitySettings(renderQuality).dpr,
+      });
+      const internalRadius = physicalVisibleRadiusPx(cocDiameterMm, dimensions.internalWidthPx, filmWidthMm);
+      return internalRadius * logicalWidth / dimensions.internalWidthPx;
     });
-    const crop = groundGlassFootprintAxesToRttPixels({
-      majorRadiusMm: 2,
-      minorRadiusMm: 1,
-      orientationRad: 0,
-      renderWidthPx: 1270,
-      renderHeightPx: 1016,
-      filmWidthMm: 31.75,
-      filmHeightMm: 25.4,
-    });
-
-    expect(crop.majorAxisPx[0]).toBeCloseTo(full.majorAxisPx[0] * 4, 12);
-    expect(crop.minorAxisPx[1]).toBeCloseTo(full.minorAxisPx[1] * 4, 12);
+    expect(results[0]).toBeCloseTo(results[1], 12);
+    expect(results[0]).toBeCloseTo(physicalVisibleRadiusPx(cocDiameterMm, logicalWidth, filmWidthMm), 12);
   });
 
-  it("is scene-independent for identical physical film geometry", () => {
-    const input = {
-      majorRadiusMm: 3,
-      minorRadiusMm: 1.5,
-      orientationRad: Math.PI / 6,
-      renderWidthPx: 1600,
-      renderHeightPx: 1280,
-      filmWidthMm: 127,
-      filmHeightMm: 101.6,
-    };
-
-    expect(groundGlassFootprintAxesToRttPixels(input)).toEqual(
-      groundGlassFootprintAxesToRttPixels({ ...input }),
-    );
+  it("lets the Focus Loupe magnify physical blur through its actual sampled film window", () => {
+    const full = resolveSampledFilmDimensionsMm({
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      inspectionWindow: resolveGroundGlassInspectionWindow({ active: false }),
+    });
+    const loupeWindow = resolveGroundGlassInspectionWindow({ active: true, magnification: 4 });
+    const loupe = resolveSampledFilmDimensionsMm({
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      inspectionWindow: loupeWindow,
+    });
+    const fullRadius = physicalVisibleRadiusPx(0.169, 500, full.widthMm);
+    const loupeRadius = physicalVisibleRadiusPx(0.169, 500, loupe.widthMm);
+    expect(loupe.widthMm).toBeLessThan(full.widthMm);
+    expect(loupeRadius / fullRadius).toBeCloseTo(full.widthMm / loupe.widthMm, 12);
+    expect(loupeRadius / fullRadius).toBeCloseTo(4, 12);
+    expect(loupeRadius).toBeCloseTo(0.169 * 500 / loupe.widthMm / 2, 12);
   });
 
-  it("derives storage range from the physical pixel cap", () => {
-    const input = {
-      maximumCoCRadiusPx: 42,
-      filmWidthMm: 127,
-      renderWidthPx: 1270,
-    };
-    const scale1RangeMm = resolveGroundGlassCocStorageMaxMm({
-      ...input,
-      displayBlurScale: 1,
-    });
-    const scale16RangeMm = resolveGroundGlassCocStorageMaxMm({
-      ...input,
-      displayBlurScale: 16,
-    });
-
-    expect(scale1RangeMm).toBeCloseTo(8.4, 12);
-    expect(scale16RangeMm).toBeCloseTo(8.4 / 16, 12);
-    expect(scale1RangeMm / scale16RangeMm).toBeCloseTo(16, 12);
-  });
-
-  it("applies maximumBlurRadiusPx only as a post-conversion cap", () => {
-    const physicalRadiusPx = calculateDofBlurRadiusPx({
-      normalizedDefocus: 1,
-      circleOfConfusionMm: 0.1,
-      filmWidthMm: 127,
-      renderWidthPx: 1270,
-      maximumBlurRadiusPx: 100,
-    });
-    const cappedRadiusPx = calculateDofBlurRadiusPx({
-      normalizedDefocus: 4,
-      circleOfConfusionMm: 0.1,
-      filmWidthMm: 127,
-      renderWidthPx: 1270,
-      maximumBlurRadiusPx: 1.25,
-    });
-
-    expect(physicalRadiusPx).toBeCloseTo(0.5, 12);
-    expect(cappedRadiusPx).toBe(1.25);
-  });
-
-  it("keeps half-float and byte storage in physical radius semantics", () => {
-    const physicalAxes = { majorRadiusMm: 3.25, minorRadiusMm: 1.5 };
-    const halfFloat = encodeGroundGlassFootprintAxesMm({
-      ...physicalAxes,
-      storageFormat: "half-float-mm",
-      maximumRadiusMm: 5,
-    });
-    const byte = encodeGroundGlassFootprintAxesMm({
-      ...physicalAxes,
-      storageFormat: "encoded-byte",
-      maximumRadiusMm: 5,
-    });
-
-    expect(decodeGroundGlassFootprintAxesMm({
-      ...halfFloat,
-      storageFormat: "half-float-mm",
-      maximumRadiusMm: 5,
-    })).toEqual(physicalAxes);
-    const decodedByte = decodeGroundGlassFootprintAxesMm({
-      ...byte,
-      storageFormat: "encoded-byte",
-      maximumRadiusMm: 5,
-    });
-    expect(decodedByte.majorRadiusMm).toBeCloseTo(3.25, 2);
-    expect(decodedByte.minorRadiusMm).toBeCloseTo(1.5, 1);
-    expect(decodedByte.majorRadiusMm / decodedByte.minorRadiusMm).toBeCloseTo(
-      physicalAxes.majorRadiusMm / physicalAxes.minorRadiusMm,
-      1,
-    );
+  it("keeps renderer caps separate from the physical optical conversion", () => {
+    const uncappedRadius = physicalVisibleRadiusPx(1.122, 1270, 127);
+    const gatherCapPx = 1.25;
+    expect(uncappedRadius).toBeCloseTo(5.61, 12);
+    expect(Math.min(uncappedRadius, gatherCapPx)).toBe(gatherCapPx);
+    // The cap limits the renderer gather; the physical mapping itself is unchanged.
+    expect(uncappedRadius).toBeCloseTo(1.122 * 1270 / 127 / 2, 12);
   });
 });

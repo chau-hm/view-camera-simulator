@@ -6,6 +6,7 @@ import {
 } from "../../core/optics/lensCoverage";
 import { resolveLensDefinitionForFocalLengthMm } from "../../core/optics/lensCatalog";
 import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
+import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import type { LensCoverageSpec } from "../../types/lens";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -82,13 +83,53 @@ describe("lens specification compatibility boundary", () => {
     });
   });
 
-  it("keeps other current focal lengths unbounded in this PR", () => {
-    for (const focalLengthMm of [90, 105, 120]) {
-      expect(resolveLensDefinitionForFocalLengthMm(focalLengthMm)).toMatchObject({
+  it("calibrates all published simulator profiles to the common infinity Image Circle", () => {
+    const profiles = [
+      { focalLengthMm: 90, angleDeg: 100.8982256313 },
+      { focalLengthMm: 105, angleDeg: 92.1318668688 },
+      { focalLengthMm: 120, angleDeg: 84.4900859515 },
+      { focalLengthMm: 150, angleDeg: 72 },
+    ];
+    const referenceDiameterMm = calculateAngularImageCircleDiameterMm(72, 150)!;
+    const neutralFourByFiveDiagonalMm = Math.hypot(127, 101.6);
+
+    for (const { focalLengthMm, angleDeg } of profiles) {
+      const definition = resolveLensDefinitionForFocalLengthMm(focalLengthMm);
+      expect(definition?.coverage.kind).toBe("angular");
+      if (definition?.coverage.kind !== "angular") continue;
+
+      expect(definition.id).toBe(`simulator-parametric-${focalLengthMm}mm`);
+      expect(definition.coverage.fullCoverageAngleDeg).toBeCloseTo(angleDeg, 10);
+      expect(definition.coverage.fullCoverageAngleDeg).toBeGreaterThan(0);
+      expect(definition.coverage.fullCoverageAngleDeg).toBeLessThan(180);
+      const infinityDiameterMm = calculateAngularImageCircleDiameterMm(
+        definition.coverage.fullCoverageAngleDeg,
         focalLengthMm,
-        coverage: { kind: "unbounded-ideal" },
-      });
+      );
+      expect(infinityDiameterMm).toBeCloseTo(referenceDiameterMm, 8);
+      expect(infinityDiameterMm).toBeGreaterThan(neutralFourByFiveDiagonalMm);
     }
+    expect(resolveLensDefinitionForFocalLengthMm(150)?.coverage).toEqual({
+      kind: "angular",
+      fullCoverageAngleDeg: 72,
+    });
+  });
+
+  it("resolves the Mirror Shift 120 mm profile to finite parallel coverage", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...mirrorShiftScene.cameraPreset,
+      activeSceneId: mirrorShiftScene.id,
+    };
+    const optics = deriveOpticsState(camera, mirrorShiftScene);
+
+    expect(camera.focalLengthMm).toBe(120);
+    expect(optics.lensDefinition?.coverage).toMatchObject({
+      kind: "angular",
+      fullCoverageAngleDeg: 84.4900859515,
+    });
+    expect(optics.lensCoverage?.kind).toBe("angular");
+    expect(optics.groundGlassCoverage.kind).toBe("parallel-circle");
   });
 
   it("does not invent a finite profile for an otherwise valid unknown focal length", () => {
@@ -138,6 +179,16 @@ describe("canonical derived lens state", () => {
     expect(optics.groundGlassCoverage.kind).toBe("parallel-circle");
     if (optics.lensCoverage?.kind !== "angular") return;
     expect(optics.lensCoverage.imageCircleRadiusMm).toBeGreaterThan(120);
+    const published150 = resolveLensDefinitionForFocalLengthMm(150);
+    expect(published150?.coverage).toMatchObject({ kind: "angular", fullCoverageAngleDeg: 72 });
+    if (!published150 || published150.coverage.kind !== "angular") return;
+    const published150AtInfinity = deriveLensCoverage(published150.coverage, 150);
+    expect(published150AtInfinity?.kind).toBe("angular");
+    if (published150AtInfinity?.kind !== "angular") return;
+    expect(optics.lensCoverage.imageCircleDiameterMm).toBeCloseTo(
+      published150AtInfinity.imageCircleDiameterMm * 2,
+      8,
+    );
   });
 
   it("does not derive lens coverage from an invalid camera fallback", () => {

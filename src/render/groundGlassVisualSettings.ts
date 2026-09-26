@@ -2,17 +2,11 @@ import type { DerivedOpticsState } from "../types/optics";
 
 export type GroundGlassDofVisualSettings = {
   maximumBlurRadiusPx: number;
-  /** Pedagogical rendering scale; physical CoC and sharpness stay unscaled. */
-  displayBlurScale: number;
   planeMode: "automatic" | "derived-planes";
 };
 
 const DEFAULT_DOF_VISUAL_SETTINGS: GroundGlassDofVisualSettings = {
   maximumBlurRadiusPx: 60,
-  // A physical CoC just beyond the acceptable threshold can map to only a
-  // pixel or two at full-frame preview size. Magnify the gathered footprint
-  // so reported defocus is legible without changing physical measurements.
-  displayBlurScale: 16,
   planeMode: "automatic",
 };
 

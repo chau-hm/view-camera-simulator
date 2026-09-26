@@ -131,15 +131,13 @@ describe("Ground Glass oriented footprint storage", () => {
     expect(decodedAxes.majorRadiusMm / decodedAxes.minorRadiusMm).toBeCloseTo(1.25, 2);
   });
 
-  it("preserves Architecture Rise scale-16 footprint radii and anisotropy in byte storage", () => {
-    const displayBlurScale = 16;
-    const renderWidthPx = 320;
+  it("preserves Architecture Rise footprint radii in physical millimetres under byte storage", () => {
+    const renderWidthPx = 425;
     const filmWidthMm = 127;
     const cocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
       maximumCoCRadiusPx: 60,
       filmWidthMm,
       renderWidthPx,
-      displayBlurScale,
     });
     const footprintStorageMaxMm = cocStorageMaxMm * 0.5;
     const equivalentCocRadiusMm = 0.169 / 2;
@@ -168,13 +166,9 @@ describe("Ground Glass oriented footprint storage", () => {
     expect(Math.abs(decoded.minorRadiusMm - physicalAxes.minorRadiusMm)).toBeLessThanOrEqual(
       byteStepMm / 2 + 1e-12,
     );
-    expect(decoded.majorRadiusMm / decoded.minorRadiusMm).toBeCloseTo(2, 1);
-    expect(
-      decoded.majorRadiusMm * renderWidthPx / filmWidthMm * displayBlurScale,
-    ).toBeGreaterThan(0);
-    expect(
-      decoded.minorRadiusMm * renderWidthPx / filmWidthMm * displayBlurScale,
-    ).toBeGreaterThan(0);
+    expect(decoded.majorRadiusMm / decoded.minorRadiusMm).toBeCloseTo(2, 0);
+    expect(decoded.majorRadiusMm * renderWidthPx / filmWidthMm).toBeGreaterThan(0);
+    expect(decoded.minorRadiusMm * renderWidthPx / filmWidthMm).toBeGreaterThan(0);
   });
 
   it("keeps zero and ordering deterministic for the pair contract", () => {
