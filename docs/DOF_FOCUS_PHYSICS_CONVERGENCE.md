@@ -14,7 +14,7 @@ The worktree was created from the pinned origin/main commit. This diagnosis reco
 
 ## 2. Executive summary
 
-The active focus and blur paths already share one physical model across the public scenes:
+All 15 registered scenes reach the same active Ground Glass physical-footprint kernel. That establishes kernel convergence, but does not by itself establish that every scene supplies physically conjugate starting lens/film geometry.
 
 1. Scene configuration and CameraState resolve to actual lens and film geometry.
 2. **deriveOpticsState()** is the canonical producer of that geometry, the focus plane, and target metrics.
@@ -24,13 +24,15 @@ The active focus and blur paths already share one physical model across the publ
 
 The meaningful exceptions are upstream geometry or teaching adapters. Focus Fundamentals intentionally solves front-standard and rear-standard movements differently, then supplies the solved positions to the common downstream optics. Scene configuration also selects a film-depth datum. Those are physical input/configuration semantics, not competing aperture equations.
 
+**Mirror Shift is a physical-configuration exception.** Its fixed focusDistanceMm=6000 matches the reflected tall-marker center, but the scene has no finite-focus strategy, so the current film remains at F=f=120 mm. The conjugate distance is V=122.4489796 mm; the marker center therefore has about 0.2181818 mm physical CoC at f/11. The focus distance's ordinary physical meaning and its exact match to the reflected marker support a missing-configuration diagnosis. A narrow Mirror Shift correction and physical/browser regressions are required before freezing the current scene configuration as a renderer-backend contract.
+
 The main findings on the suspicious paths are:
 
 - **Table Tilt tolerance:** a scene-selected model-classification threshold. It decides whether to construct a Scheimpflug focus/DOF plane or the parallel fallback. It does not alter the constructed lens/film planes or the active GPU footprint. The strict threshold preserves a 0.01° test state, although the public tilt step is 0.1°.
 - **Table Tilt and Shelf Swing groundGlassDofModel:** mode metadata reaches debug output, uniform preparation, an unused shader uniform, CPU diagnostic sampling, and runtime metadata. The active shader does not read dofMode and calculates its footprint from lens and film geometry. The mode can affect CPU preflight validation when derived planes are missing, but it does not select a different valid-state GPU blur equation.
 - **Architecture Rise DOF branch:** current focus semantics already make focusDistanceMm equal to lens-to-focus-plane distance along the optical axis. The direct-U branch is algebraically equivalent to the general projection on valid states. Its history and tests should be preserved when considering consolidation, but no current evidence shows a different physical meaning.
 
-**Conclusion:** one common physical aperture/film footprint kernel already serves all 15 registered scenes. No physics cleanup is required before starting renderer-backend work. The backend contract should explicitly preserve geometry inputs, signed film-space CoC, oriented footprint axes, and millimetre-to-sampled-film mapping. CPU/GPU numerical parity remains unproven by real GPU readback and should be checked as part of backend work.
+**Conclusion:** one common physical aperture/film footprint kernel already serves all 15 registered scenes, but Mirror Shift currently gives its nominal 6000 mm virtual focus a non-conjugate film position. This calls for one narrow scene-configuration correction, not a second optics model or broad rewrite. Correct Mirror Shift and verify it before treating the current scene configuration as the renderer-backend baseline. The backend contract should preserve geometry inputs, signed film-space CoC, oriented footprint axes, and millimetre-to-sampled-film mapping. CPU/GPU numerical parity remains unproven by real GPU readback and should be checked as part of backend work.
 
 ## 3. Scope and non-goals
 
@@ -82,7 +84,11 @@ All twelve scenes with finiteFocusStrategy use kind rear-standard-thin-lens, len
 | Macro Oblique Plane | optical-axis-conjugate | Same shared thin-lens geometry with actual front tilt. |
 | Macro Compound Movements | optical-axis-conjugate | Same shared thin-lens geometry with actual tilt and swing. |
 
-The remaining three scenes do not use finiteFocusStrategy: Focus Fundamentals and View Camera Anatomy use focusStandardCapability; Mirror Shift locks focus and aperture while teaching rig translation.
+The three scenes outside that strategy list are different cases:
+
+- **Focus Fundamentals** has an explicit selectable-focus solver. Its focusStandardCapability selects real front- or rear-standard geometry.
+- **View Camera Anatomy** uses that solver and translates the complete solved lens/film geometry to a scene baseline. It remains conjugate.
+- **Mirror Shift** has neither finiteFocusStrategy nor focusStandardCapability. Its finite 6000 mm focus reference falls through to the historical focal-length film baseline. This is not equivalent to the two selectable-focus cases and is investigated below.
 
 ## 6. Physical focus dataflow
 
@@ -128,7 +134,7 @@ Understanding Camera Movements materializes its continuous lesson state into can
 
 ## 7. Active Ground Glass physical dataflow
 
-Every registered scene ID is in RTT_SCENES; therefore the normal public Ground Glass for the current 15 scenes takes the RTT path. GroundGlassRenderer retains earlier DOM/legacy pipeline code, but for an RTT scene it keeps only presentation metadata and does not render the legacy focus ring.
+Every registered scene ID is in RTT_SCENES; therefore the normal public Ground Glass for the current 15 scenes takes the RTT path and uses the shared physical-footprint kernel. This is kernel convergence, not proof that all scene presets establish conjugate lens/film geometry: Mirror Shift is the current exception. GroundGlassRenderer retains earlier DOM/legacy pipeline code, but for an RTT scene it keeps only presentation metadata and does not render the legacy focus ring.
 
 ~~~mermaid
 flowchart LR
@@ -233,16 +239,16 @@ The repository search covered scene-ID comparisons and capability/configuration 
 | macro-compound-movements | Rear-standard thin lens; optical-axis-conjugate datum; actual tilt+swing and common focus/blur equations. |
 | focus-fundamentals-two-targets | Selectable front/rear standard capability; rear-datum depth S; shared physical solver. |
 | view-camera-anatomy | Selectable front/rear standard capability with scene-baseline placement; shared physical solver. |
-| mirror-shift | Fixed focus and aperture; translates the complete camera rig for a viewpoint/mirror lesson. |
+| mirror-shift | Fixed focus and aperture; no finite-focus or selectable-focus strategy, so focus depth is 6000 mm while film stays at the historical 120 mm focal-length baseline. Rig translation is separate physical viewpoint geometry. |
 
 ### Focus/DOF branch inventory
 
 | Scene | Code location | Trigger | Input meaning | Physical output changed | Active GPU blur affected? | CPU diagnostic affected? | Learner-visible effect | Classification | Evidence | Recommendation |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Understanding Camera Movements | deriveOpticsState.ts and appStore.ts lesson materializers | Scene ID is understanding-camera-movements and lesson state exists | Continuous lesson movement/viewpoint state | Canonical front/rear movements, camera rig pose, therefore actual world geometry | Yes, through changed geometry; no separate blur equation | Yes, same physical inputs and derived planes | Camera pose and image change with lesson movement; focus/aperture remain locked | I, with physical geometry outputs | cameraMovementLessonState.ts, understandingCameraMovements.test.ts, cameraMovementsRtt.test.ts | Keep lesson-state adapter; preserve canonical geometry ownership. |
-| Mirror Shift | appStore.ts rig placement; capability handling in deriveOpticsState.ts | Mirror Shift capability and scene placement | Lateral camera-rig translation | Camera rig/world position; no focus or aperture solution changes | Yes, scene projection changes from actual pose; blur model unchanged | Same geometry-based evaluation if sampled | Learner sees changed viewpoint/reflection | P for physical pose, not distinct optics | mirrorShiftGeometry.test.ts, mirrorShiftTask.test.ts | Keep actual rig translation; no focus/DOF cleanup indicated. |
+| Mirror Shift | mirror-shift.ts; calculateFiniteFocusFilmPlane.ts; deriveOpticsState.ts; mirrorShiftGeometry.ts; MirrorShiftSubjectFactory.tsx | No finiteFocusStrategy or selectable-focus capability; default film placement applies at finite U=6000 mm. Rig lateral translation and Front Shift remain independent inputs. | focusDistanceMm is the physical focus-point depth on the optical axis; mirror reflection supplies the nominal tall-marker point at virtual z=6000 mm. Focus and aperture controls are fixed by lesson policy. | Film stays at F=120 mm instead of V=122.4489796 mm; actual focus plane remains at z=6000 mm. The central reflected tall-marker point has about 0.2181818 mm CoC at f/11. | Yes; Mirror Shift is an RTT scene and the shader consumes actual lens/film geometry. | No current CPU target CoC is emitted: focusTargets is empty. A direct physical-kernel sample would use the same non-conjugate geometry. | RTT reflects nonzero physical blur at the nominal marker center; the task only evaluates framing, reflection clearance, and parallax, and no current assertion measures blur visibility. | P for rig translation and reflection geometry; T for locked focus/aperture policy; C physical-configuration defect candidate for the historical F=f default despite a finite nominal focus. | mirrorShiftGeometry.test.ts, mirrorShiftCalibration.test.ts, mirrorShiftTask.test.ts, mirror-shift-guided-lesson.spec.ts, mirror-shift-teaching-geometry.spec.ts; source/history findings in §14. | Dedicated runtime correction: declare the existing rear-standard thin-lens strategy with baseline-origin, lens-to-focus-plane U, and rear-standard-Z film depth; add physical and browser regressions before backend contract freeze. |
 | Focus Fundamentals | focusFundamentalsFocusing.ts, deriveOpticsState.ts | focusStandardCapability.enabled; state selects front or rear | S: subject/focus-plane depth from rear datum | Solved lens Z and film Z differ by chosen standard; resolved U and V feed common geometry | Yes, because actual lens/film geometry changes; common kernel | Yes, target samples consume solved geometry | Front/rear standard movement and changing image geometry are the lesson | I; necessary physical input adapter | focusFundamentalsFocusing.test.ts, focusFundamentalsSelectableFocus.test.tsx, rearStandardFrame.test.ts | Keep physical front/rear distinction; keep both strategies converging before common optics. |
-| View Camera Anatomy | focusStandardCapability plus resolveSceneRelativeSelectableFocus() | Capability placement scene-baseline | Same rear-datum S semantics, translated to scene datum | Translates both solved lens and film coordinates together | Yes, through translated geometry | Same | Camera parts and finite focus remain registered in anatomy layout | I for coordinates, T for layout | sceneDefinitions.test.ts, deriveOpticsState.test.ts | Keep coordinate adapter while anatomy scene uses it. |
+| View Camera Anatomy | focusStandardCapability plus resolveSceneRelativeSelectableFocus() | Capability placement scene-baseline | Same rear-datum S semantics, translated to scene datum | Translates both solved lens and film coordinates together, preserving solved lens-to-film conjugacy | Yes, through translated geometry | Same | Camera parts and finite focus remain registered in anatomy layout | I for coordinates, T for layout | sceneDefinitions.test.ts, deriveOpticsState.test.ts, anatomyLesson.integration.test.tsx | Safe control case; keep coordinate adapter while anatomy scene uses it. |
 | Focus Fundamentals invalid fallback | baseFallbackState() in deriveOpticsState.ts | Invalid input/geometry triggers fallback | Requested focus standard is retained separately; fallback diagnostic resolves to front | Fallback-only diagnostic/geometry, not valid-state solver output | Only fallback geometry can reach rendering; no valid-state mode distinction | Fallback state and diagnostic fields | Error/fallback diagnostics; no normal front/rear transition | C/L | deriveOpticsState.test.ts, focusFundamentalsFocusing.test.ts | Keep fail-closed behavior; do not count as a second model. |
 | Table Tilt lens/film tolerance | deriveLensFilmRelationship() called from deriveOpticsState.ts; constants.ts | Table Tilt selects 1e-6°; other scenes select 0.1° | No input value changes; compares actual lens/film normal angle | isParallel, hinge-line availability, focus-plane classification/normal and optional DOF plane construction | No CoC equation change for fixed geometry; may change derived planes passed through validation/diagnostics | Yes for legacy wedge samples and plane metadata | Focus/DOF overlay may be Scheimpflug rather than parallel | T/model-selection tolerance, not a distinct physical law | tableTiltOptics.test.ts; rearStandardFrame.test.ts; commit 6e0fb2c | Do not change here. If generalized, make tolerance an explicit geometry/model policy and retain plane-continuity evidence. |
 | Table Tilt groundGlassDofModel | deriveOpticsState.ts finite and fallback diagnostics | isTableTilt or DOF model is scheimpflug-wedge; Table Tilt is always marked derived for finite states | No new focus input meaning | Diagnostic model field and uniform mode; no lens/film point movement | No valid-state equation change; uniform preflight still requires planes in derived mode | Legacy CPU sampler selects wedge if explicitly called | Debug/runtime mode metadata; no learner metric uses this mode | C/L metadata following a presentation model | tableTiltOptics.test.ts, createGroundGlassDofUniformState.ts, shader search | Keep until mode/validation consumers are deliberately retired; not physical authority. |
@@ -311,7 +317,61 @@ This is an I adapter with real physical output. The distinction must remain. Bot
 
 The Focus Fundamentals Ground Glass target marker uses a baseline thin-lens projection special case. That affects marker placement, not physical target CoC or per-pixel RTT blur.
 
-## 13. Architecture Rise deep dive
+## 13. Mirror Shift focus-conjugacy deep dive
+
+### Current runtime path and verified geometry
+
+The scene preset supplies f=120 mm, focusDistanceMm=6000 mm, and aperture N=11. It defines neither finiteFocusStrategy nor focusStandardCapability. The fixed-control policy disables focus and aperture adjustment for the lesson; it does not replace the meaning of the focus-distance input.
+
+For a finite state, deriveOpticsState() calls calculateFiniteFocusFilmPlane() with the scene's optional strategy. calculateFiniteFocusFilmPlane() uses the thin-lens image distance only for kind rear-standard-thin-lens. With no strategy, the fallback is F=f, so the local film center is z=-120 mm while the neutral lens center is z=0. The rig translation capability moves the complete camera only along X; Front Shift moves the lens along X and leaves the rear film plane in place.
+
+The same deriveOpticsState() path places Mirror Shift's focus point along the actual optical axis from the lens center because the scene has cameraRigTranslationCapability. In the neutral state that point is z=6000 mm, and the parallel focus plane passes through it. The focus plane therefore says 6000 mm while the physical film remains at F=120 mm. Mirror Shift is listed in RTT_SCENES, and createMirrorShiftRttGroup() mounts the reflected props for the active RTT. The physical-footprint shader receives actual lens and film geometry, so it evaluates the non-conjugate film position.
+
+For the reflected tall-marker center, the repository's reflectPointAcrossMirrorPlane() returns virtual z = 2 x 4200 - 2400 = 6000 mm. Thus the configured focus distance matches the reflected marker center. The prop has 320 mm depth thickness, so its front and back surfaces lie about 160 mm either side of the center depth. The round-stool center at real z=3100 mm reflects to z=5300 mm; its 340 mm depth thickness spans another range. The reflected floor and camera proxy also occupy other depths. The scene does not place every reflected point on one focus plane.
+
+### Thin-lens and current CoC calculation
+
+For the neutral nominal marker point, U=6000 mm and f=120 mm. The source helper imageDistanceMm() gives:
+
+- V = fU / (U-f) = 120 x 6000 / 5880 = 122.44897959183673 mm.
+- Current F = 120 mm, so the film is 2.44897959183673 mm short of the conjugate position.
+- Aperture diameter A = f/N = 120/11 = 10.909090909090908 mm.
+- The repository helper computePhysicalCoCDiameterMm(), which uses A x abs(1-F/V), returns 0.21818181818181837 mm for U=6000 and F=120.
+
+The parallel neutral geometry also makes the active local-affine footprint's equivalent CoC follow this same scalar diameter. At the corrected conjugate film distance F=V, the nominal center point's physical CoC is zero within numerical tolerance. The 0.1 mm learner scale is a display/evaluation mapping, not the exact-focus oracle.
+
+### Intent, history, and classification
+
+The current scene description, task objective, and lesson copy teach viewpoint, mirror framing, reflection clearance, and parallax. The guided task enables camera position and Front Shift only; focus and aperture are fixed, and the criteria do not score sharpness. This proves that focus is not a learner-controlled objective. It does not establish that a non-conjugate film position is the intended physical starting geometry.
+
+The ordinary focusDistanceMm path in deriveOpticsState() creates a physical focus point and focus plane; Mirror Shift has no adapter or configuration declaring that value presentation-only. The original scene commit b4cb528 introduced focusDistanceMm=6000 together with the z=4200 mirror plane and z=2400 tall marker, whose reflected center is exactly z=6000. The original scene already had F=f and no finite-focus strategy, predating the later finite-focus strategy configuration. PR #149 changed the locked aperture from f/32 to f/11 but left that film datum unchanged. No current test asserts the historical F=120 position or a deliberate amount of defocus.
+
+The evidence therefore supports **Interpretation B: a missing finite-focus configuration**, as a focused reference point is encoded by the exact reflected-marker depth and by the ordinary physical focus semantics. The fixed-focus viewpoint lesson should remain fixed-focus; that teaching policy does not require the film to be non-conjugate. No evidence supports redefining focusDistanceMm as a display-only plane reference. Classify the missing strategy as C, a historical-configuration defect candidate, alongside P for the real rig translation/reflection geometry and T for the lesson's locked controls.
+
+The matching existing strategy is rear-standard-thin-lens with lens datum baseline-origin, focusDistanceReference lens-to-focus-plane, and filmDepthReference rear-standard-z. Mirror Shift has an untilted, parallel lens/film setup and no focus-standard movement, so this places the rear film at z=-V while preserving the lens center, mirror, lateral rig pose, observer camera, and Front Shift parallax. The optical-axis-conjugate option would be numerically equivalent for the neutral parallel geometry, but rear-standard-z matches the scene's fixed rear-standard datum and the existing Architecture Rise / Understanding Camera Movements policy. This is the recommended follow-up configuration; it is not added in this documentation PR.
+
+### Existing Mirror Shift regression coverage
+
+| Behavior | Current evidence | What it does not prove |
+|---|---|---|
+| Rig lateral translation | mirrorShiftGeometry.test.ts and mirrorShiftCalibration.test.ts assert whole-rig X translation; guided E2E drives the public Camera Position control. | No focus-conjugacy result. |
+| Front Shift | Unit/calibration tests and E2E assert the lens shifts independently while the film and rig remain fixed. | No CoC or sharpness result. |
+| Reflected geometry and parallax | Geometry tests exercise reflectPointAcrossMirrorPlane(), reflected props/camera, and depth-dependent prop separation. | No reflected-object focus result. |
+| RTT availability | Unit tests check Mirror Shift is an RTT scene; E2E waits for contentful RTT output across lesson stages. | Contentful output is not a physical-focus assertion. |
+| 120 mm image-circle coverage | E2E asserts angular lens coverage, image-circle visibility, RTT parallel-circle coverage, and captures screenshots. The 120 mm catalog profile is finite angular coverage (84.4900859515 degrees), with a 217.9627584 mm diameter at the current 120 mm image distance. | It does not assert the numeric radius/diameter or compare coverage against a physical threshold. The scene-definition comment calling this profile unbounded conflicts with the current lens catalog and E2E attributes. |
+| Physical Ground Glass mm-to-pixel scale | The Mirror Shift E2E calls expectGroundGlassPhysicalScale() and stores its report. | It does not measure the reflected marker's CoC. |
+| Focus-plane location | No Mirror Shift test asserts focusPlane.point or its depth. | Current focus plane at z=6000 is not regressed. |
+| Actual film distance | Tests verify X movement invariants but do not assert neutral lens-to-film Z distance or imageDistanceMm diagnostics. | Current F=120 versus expected V=122.449 is untested. |
+| Reflected tall-marker CoC or sharpness | No Mirror Shift focus targets exist, and unit/E2E tests do not read a physical CoC or sharpness value. | The RTT's nonzero marker blur is untested. |
+| Virtual-image focus conjugacy | No test relates the mirrored marker's reflected depth to lens/film conjugacy. | The central defect identified here is untested. |
+
+The tests validate viewpoint construction, reflection, public lesson flow, RTT availability, and physical scale. They do not physically validate Mirror Shift focus.
+
+### View Camera Anatomy control case
+
+View Camera Anatomy also has no finiteFocusStrategy, but it is not equivalent to Mirror Shift: its focusStandardCapability is enabled, defines a 2000 mm reference focus depth, and selects placement=scene-baseline. deriveOpticsState() routes it through resolveSceneRelativeSelectableFocus(), which uses the same front/rear thin-lens solver as Focus Fundamentals and translates the solved lens and film positions together. The translation preserves their solved optical separation. The finite-focus unit test asserts the Anatomy lens-to-film separation equals diagnostics.imageDistanceMm for front and rear cases. The scene-baseline placement is therefore a coordinate adapter, not the historical F=f fallback used by Mirror Shift.
+
+## 14. Architecture Rise deep dive
 
 Architecture Rise's scene definition says its finite-focus strategy is lens-to-focus-plane distance with a rear-standard-Z film datum. The legacy branch in deriveOpticsState() feeds focusDistanceMm directly as U to calculateDepthOfField().
 
@@ -321,7 +381,7 @@ Historical context: the branch is present in architecture/focus code consolidate
 
 finiteFocusStrategy already expresses its lens-to-focus-plane U meaning and rear-Z film datum, so no new strategy field is needed for current valid behavior. A future cleanup can first assert equivalence over the public Architecture Rise range and movement states, then consolidate. Do not change it here.
 
-## 14. Other tilted and compound scenes
+## 15. Other tilted and compound scenes
 
 Shelf Swing, Oblique Tabletop, Oblique Architecture, Architecture Foreground, Interior Corner, Macro Oblique Plane, and Macro Compound Movements all construct actual scene/lens/film geometry and feed the common focus-plane, DOF, CPU physical target, and active RTT footprint paths.
 
@@ -329,7 +389,7 @@ The search found scene-specific target calibration, focus-distance ranges, task 
 
 This is useful evidence against a broad scene-specific optics rewrite. The tilted/compound scenes already exercise shared geometry across several different physical setups.
 
-## 15. Macro scenes
+## 16. Macro scenes
 
 The four macro scenes use the same finite-focus film strategy and physical footprint kernel. Close-focus ranges and subjects lead to different real U and V values; that changes physical input, not the blur equation.
 
@@ -344,7 +404,7 @@ The selected lens profile may change image-circle coverage as image distance cha
 
 Macro teaching helpers interpret canonical outputs: Macro DOF, Macro Oblique Plane, and Macro Compound Movements use strict physical patch metrics; Bellows Extension interprets canonical magnification, extension, travel, and image-circle data. They do not re-solve focus, tilt, DOF, or physical CoC.
 
-## 16. calculateDepthOfField() role
+## 17. calculateDepthOfField() role
 
 calculateDepthOfField() owns:
 
@@ -359,7 +419,7 @@ It does not produce the primary focus plane; that comes from focus point plus ac
 
 computePhysicalBlurFootprint() answers another question: given one actual object point, lens/aperture geometry, and actual film plane, what local aperture image footprint reaches film? It returns signed equivalent CoC diameter, ellipse axes, and orientation. The functions are complementary: DOF gives threshold-bounded regions/plane model; footprint gives geometric blur measurement. They are not interchangeable models of the same output.
 
-## 17. Physical sharpness and Focus Distribution
+## 18. Physical sharpness and Focus Distribution
 
 The shared acceptable learner CoC is ACCEPTABLE_COC_DIAMETER_MM = 0.1 mm. calculateSharpness() calls computePhysicalBlurFootprint() on a target point and target patch samples using canonical lens center/plane basis, film plane/basis, focal length, and aperture. It retains legacy wedge fields for compatibility, but also emits physical point/patch CoC/score fields.
 
@@ -369,7 +429,7 @@ FocusAssistPass.resolvePhysicalFocusTargetPresentationMetric() requires both phy
 
 Table Tilt has a scene/mode-dependent sample choice: free practice reads point sharpness, while the other Table Tilt readouts use patch sharpness. Both are physical metrics from the same geometry. This does not modify CoC or learner scale.
 
-## 18. CPU groundGlassBlur.ts role
+## 19. CPU groundGlassBlur.ts role
 
 sampleGroundGlassBlurAtWorldPoint() is not the CPU implementation of the local-affine aperture/film footprint. It has two scalar diagnostic paths selected from mode fields:
 
@@ -380,7 +440,7 @@ It has no per-sample aperture edge projection, oriented footprint ellipse, or di
 
 The only non-test production call found is in OpticalDebugPanel.tsx, guarded to Architecture Rise reference-object diagnostics. The regular public Ground Glass path is RTT for all registered scenes; learner readouts and task evaluation do not use this helper. Table Tilt/Shelf Swing uses in tests exercise compatibility/stability behavior, not the production image. Preserve the distinction between this helper and CPU computePhysicalBlurFootprint().
 
-## 19. GPU physical-footprint role
+## 20. GPU physical-footprint role
 
 groundGlassPhysicalCocFragmentShader reconstructs a world position and calls calculatePhysicalBlurFootprintFromWorldPosition(). It stores signed equivalent CoC and the oriented ellipse. The gather consumes those physical channels and maps film mm to sampled source pixels. It does not call calculateNormalizedWedgeDefocus() or calculateSignedWedgeCoCDiameterMmFromWorldPosition() from its active entry point.
 
@@ -388,20 +448,22 @@ Shared GLSL still contains legacy wedge helpers and uniforms for focus/near/far 
 
 Normal physical scale is direct. Half-float stores mm. Byte fallback encodes and decodes mm within a computed bounded storage interval. Both represent the physical value. The crop changes magnification by changing sampled-film width/height. Gather caps are applied after conversion.
 
-## 20. CPU/GPU relationship and parity evidence
+## 21. CPU/GPU relationship and parity evidence
 
-The CPU physical footprint and GPU footprint implement the same geometric contract:
+The CPU physical footprint and GPU footprint are structurally aligned implementations of the same local-affine geometric contract:
 
 - object point and lens center;
 - lens direction and circular aperture radius f / (2N);
 - ideal thin-lens image point/direction;
-- projection of the circular aperture through image geometry onto actual film plane (CPU uses symmetric edge-ray intersections; GLSL maps local affine aperture directions);
-- local-affine ellipse derived in a film-plane basis;
+- local-affine mapping of aperture-basis X/Y offsets through the ideal image geometry onto the actual film plane;
+- a 2x2 film-plane map whose singular values provide ellipse semi-axes and whose covariance provides orientation;
 - orientation plus signed equivalent CoC diameter.
 
-CPU uses millimetres throughout. The shader receives world geometry in metres and converts film projection terms back to millimetres. Both sign near/far side from image versus film geometry and both fail closed on unresolved geometry.
+computePhysicalBlurFootprint.ts constructs orthonormal lens and film bases, derives object/image geometry, maps the two aperture-basis offsets, and derives the ellipse from the resulting 2x2 map. Its closed-form first derivative is the derivative of the mathematical symmetric +/- aperture-edge construction; the active CPU implementation does not trace four literal aperture-edge rays. The source comment describes that geometric derivation and is not a claim about four runtime intersection calls.
 
-They are separate implementations, not one shared executable function. They are not bit-for-bit guaranteed: CPU uses JavaScript double precision and its own small epsilons; GLSL uses float arithmetic and different guards around near-focal and near-parallel/intersection cases. RTT depth reconstruction, storage quantization, source resolution, and gather/compositing are additional GPU/display differences.
+The GLSL physical footprint implements the same intended local-affine geometric contract. CPU uses millimetres throughout; the shader receives world geometry in metres and converts film projection terms back to millimetres. Both derive sign from image-versus-film geometry and fail closed for unresolved geometry. They remain independently maintained implementations, not one shared executable function.
+
+Runtime numerical parity is not yet proven. Remaining differences include JavaScript double precision versus GLSL float precision; independent implementation maintenance; epsilon thresholds; near-focal and near-parallel/intersection guards; world-position reconstruction from depth; camera projection precision; render-target storage formats and byte quantization; raster/source resolution; gather/composite behavior; and GPU/driver variation.
 
 | Evidence type | What exists | What it proves | What it does not prove |
 |---|---|---|---|
@@ -411,9 +473,9 @@ They are separate implementations, not one shared executable function. They are 
 | Physical-scale/storage tests | groundGlassPhysicalScale.test.ts, physicalBlurFootprintStorage.test.ts | mm-to-pixel and storage contracts, including crop and encoding | Full rendered pixel footprint shape across hardware |
 | Browser/E2E evidence | Existing scene workflows may verify visible functionality | User workflow and rendered availability when run | No test found that reads back shader footprint and compares it with CPU outputs |
 
-Therefore **algebraic/source-contract parity exists; real GPU numerical parity is not established**. Before claiming backend parity, use shared fixtures for ordinary parallel geometry, tilted film, near/far sign, exact focus, aperture scaling, and unresolved geometry, with browser/GPU readback or equivalent measurable output. This can be a backend regression deliverable; it is not a reason to rewrite current optics first.
+Therefore **the CPU and GLSL paths are structurally aligned implementations of the same local-affine physical footprint model, but runtime numerical parity is not yet proven**. Before claiming backend parity, use shared fixtures for ordinary parallel geometry, tilted film, near/far sign, exact focus, aperture scaling, and unresolved geometry, with browser/GPU readback or equivalent measurable output. Mirror Shift's scene-configuration correction is a separate required step before freezing the current physical scene configuration as a backend baseline.
 
-## 21. Scene-specific renderer settings
+## 22. Scene-specific renderer settings
 
 groundGlassVisualSettings.ts separates:
 
@@ -424,32 +486,32 @@ The cap affects a visible footprint only once its post-physics pixel radius reac
 
 planeMode changes the selected diagnostic/uniform mode through the display-state adapter. It has no active GLSL equation branch. Keep it out of canonical optical authority if that renderer policy is later removed or renamed.
 
-## 22. Classification summary
+## 23. Classification summary
 
 | Classification | Current paths |
 |---|---|
-| P — Physical requirement | Real rig translation for Mirror Shift; actual lens/film starting geometry selected by explicit finite-focus datum configuration. These change geometry, not the shared aperture/film equation. |
+| P — Physical requirement | Mirror Shift's real rig translation and reflection geometry; actual lens/film starting geometry selected by explicit finite-focus datum configuration. These change geometry, not the shared aperture/film equation. |
 | I — Input-semantic adapter | Focus Fundamentals front/rear S-to-U/V solve; View Camera Anatomy scene-baseline translation; Understanding Camera Movements structured lesson-state materialization. |
-| T — Teaching/presentation policy | Scene target/range choices, Table Tilt point-vs-patch readout, geometry framing/overlays, macro teaching stages, renderer gather caps, Shelf planeMode. |
-| C — Compatibility/historical stabilization | Architecture Rise direct-U duplicate branch; Shelf renderer-selected diagnostic copy; Table Tilt forced Ground Glass mode metadata. |
+| T — Teaching/presentation policy | Mirror Shift's locked focus/aperture controls and viewpoint/parallax task; scene target/range choices, Table Tilt point-vs-patch readout, geometry framing/overlays, macro teaching stages, renderer gather caps, Shelf planeMode. |
+| C — Compatibility/historical stabilization | Mirror Shift's historical F=f film placement despite a finite 6000 mm nominal focus (physical-configuration defect candidate); Architecture Rise direct-U duplicate branch; Shelf renderer-selected diagnostic copy; Table Tilt forced Ground Glass mode metadata. |
 | L — Legacy/diagnostic-only | Scalar CPU groundGlassBlur.ts; legacy wedge fields from calculateSharpness(); shader wedge helper definitions not called by active physical CoC entry point; fallback-only Focus Fundamentals mode diagnostic. |
 | U — Unresolved | Exact user-visible defect that originally motivated Shelf Swing derived-plane selection is not established in available current source/history. |
 
 The Table Tilt tolerance is categorized as T/model-selection policy. Underlying lens and film geometry remains physical and exact in the physical footprint path.
 
-## 23. What convergence should mean
+## 24. What convergence should mean
 
 The evidence supports this smallest architecture:
 
 ~~~mermaid
 flowchart LR
-  subgraph Input["Input semantics and physical configuration"]
-    SCENE["Scene controls, starting geometry, targets"]
+  subgraph Input["Scene-specific semantics"]
+    SCENE["Controls, focus meaning, starting geometry, targets"]
     ADAPTER["Explicit focus/placement adapters"]
-    SCENE --> ADAPTER
+    SCENE --> ADAPTER --> VALID["Valid physical lens/film geometry"]
   end
   subgraph Shared["Shared canonical physical model"]
-    ADAPTER --> CANON["deriveOpticsState"]
+    VALID --> CANON["deriveOpticsState"]
     CANON --> PLANES["Focus and DOF derived planes"]
     CANON --> SCORE["CPU physical target footprint and score"]
   end
@@ -466,15 +528,15 @@ flowchart LR
   end
 ~~~
 
-Convergence does not mean deleting legitimate input semantics. It means scene adapters produce actual geometry and both target scoring and renderer backends evaluate a clearly stated aperture/film geometry contract. DOF boundaries and teaching modes remain useful derived/presentation data, but must not silently become a competing per-pixel blur equation.
+Convergence requires both a shared physical equation and well-defined physical input semantics. Scene-specific semantics must produce valid, self-consistent lens/film geometry before that geometry reaches the shared physical kernel. A common kernel cannot compensate for inconsistent scene configuration. A scene that supplies inconsistent physical geometry has a configuration defect; it does not need a forked kernel. DOF boundaries and teaching modes remain useful derived/presentation data, but must not silently become a competing per-pixel blur equation.
 
-## 24. Minimum cleanup before renderer/WebGPU work
+## 25. Minimum cleanup before renderer/WebGPU work
 
-### Required before renderer backend work
+### Required before freezing the backend scene baseline
 
-No production cleanup is justified as a prerequisite by this audit. The active physical RTT path already takes actual canonical geometry and has no scene-specific blur gain or active mode branch.
+One narrow Mirror Shift physical-configuration correction is required before treating the current physical scene configuration as the renderer-backend contract. Add the existing rear-standard thin-lens strategy with baseline-origin lens datum, lens-to-focus-plane distance, and rear-standard-Z film depth. Then verify the 6000 mm reflected-marker conjugacy with physical CoC and browser Ground Glass regressions. This correction makes the configured starting geometry conjugate; it does not require a second blur equation or broad optics rewrite.
 
-Carry forward these contract points in backend work:
+After that correction, carry forward these contract points in backend work:
 
 - use canonical lens center/plane/basis and film plane/basis;
 - calculate signed physical CoC and local oriented aperture footprint from actual geometry;
@@ -483,10 +545,11 @@ Carry forward these contract points in backend work:
 - do not port groundGlassDofModel or legacy wedge model as an independent physical mode;
 - add measurable CPU/backend parity cases before claiming numerical equivalence.
 
-The last point is a backend validation requirement because current source/unit tests do not establish real GPU numerical parity; it does not require a pre-backend optics rewrite.
+The last point is a backend validation requirement because current source/unit tests do not establish real GPU numerical parity. It is separate from the Mirror Shift configuration correction.
 
 ### Useful but independent
 
+- Correct Mirror Shift in a dedicated runtime PR before freezing its current scene geometry as the backend baseline; this item is required, not an optional architecture cleanup.
 - Remove or rename the Shelf Swing renderer-to-diagnostics mode copy after runtime metadata and uniform-validation callers are retired or consciously preserved.
 - Consolidate Architecture Rise's direct U branch after equivalence assertions.
 - Decide whether Table Tilt's sub-step 0.01° focus-plane policy should remain explicit.
@@ -496,16 +559,17 @@ The last point is a backend validation requirement because current source/unit t
 ### Leave alone
 
 - Focus Fundamentals front/rear physical standard movement and its shared solver.
-- Scene-selected physical film datum configuration.
+- Explicit finite-focus film-depth strategies remain authoritative; the historical F=f default does not supply finite focus automatically.
 - Actual lens and film planes as optical truth.
 - Common physical target and active RTT footprint equations.
 - Separate lens/film coverage state and Ground Glass coverage state.
 - Gather caps as renderer limits and physical-mm storage encoding.
 
-## 25. Candidate cleanup PRs
+## 26. Candidate cleanup PRs
 
 | Candidate | Current problem | Classification | Behavior risk | Required before WebGPU? | Recommended action |
 |---|---|---|---|---|---|
+| Mirror Shift focus-conjugacy correction | Configured 6000 mm virtual focus with no finite-focus strategy, so film stays at 120 mm instead of V=122.449 mm. | C, historical physical-configuration defect | Nominal reflected marker CoC changes from about 0.218 mm to approximately zero; rear film standard moves about 2.449 mm away from the lens. Lens viewpoint, mirror geometry, rig translation, and Front Shift parallax should remain unchanged. | Yes, before freezing current physical scene configuration as the backend baseline. | Dedicated runtime PR: add the verified rear-standard thin-lens/rear-Z configuration, then add focused physical and browser regressions. |
 | A. Remove Shelf renderer choice from optics diagnostics | Renderer planeMode writes groundGlassDofModel into copied optics diagnostics; current shader does not need it | T/C | Diagnostic-only on current valid public RTT; may affect preflight validation and direct legacy CPU sampling | No | First optional cleanup if desired. Preserve or explicitly remove the data attribute and validation contract; compare real RTT before/after. |
 | B. Replace Table Tilt scene-ID tolerance | A domain calculation receives a scene-ID boolean and selects a stricter focus-plane classification tolerance | T/model policy | Focus/DOF planes, debug and overlays may change for tiny angles; active physical footprint unchanged | No | Investigate public reachability and desired sub-step behavior. Express explicit model policy only if it has a consumer need. |
 | C. Retire/converge scalar groundGlassBlur wedge path | Separate diagnostic approximation can be confused with physical aperture/film kernel | L | Debug sample output may disappear/change; active public RTT and task/readout metrics are unaffected | No | Keep unless debug output is replaced with CPU physical footprint metrics or intentionally dropped. |
@@ -513,12 +577,13 @@ The last point is a backend validation requirement because current source/unit t
 | E. Rename/reduce mode fields | groundGlassDofModel sounds more authoritative than active behavior; planeMode and diagnostic model are coupled | C/T | Debug/runtime metadata or missing-plane preflight validation may change; no valid-state shader equation change | No | Defer until consumers are deliberately changed. Do not combine with backend equation work without parity coverage. |
 | F. Add physical CPU/GPU parity fixtures | Independent TypeScript and GLSL implementations have no numeric readback comparison | Evidence gap | Test infrastructure only unless it uncovers a real divergence | Before claiming a new backend is equivalent; not a pre-backend cleanup gate | Add alongside the first backend vertical slice or its acceptance tests. |
 
-## 26. Contracts that should remain unchanged
+## 27. Contracts that should remain unchanged
 
 This diagnosis provides no evidence to reopen these contracts:
 
 - deriveOpticsState() remains canonical scene-to-camera physical authority.
 - Actual lens and film geometry remains authoritative.
+- A common kernel requires valid scene-specific focus semantics and conjugate starting geometry; the historical F=f fallback does not supply finite focus automatically.
 - Physical Ground Glass scale stays direct; no fixed 16x gain, acceptable-CoC-to-one-pixel normalization, or scene-specific blur gain.
 - Focus Loupe remains geometric magnification through its smaller sampled-film crop.
 - DerivedLensCoverage and GroundGlassCoverageState remain separate.
@@ -529,8 +594,11 @@ This diagnosis provides no evidence to reopen these contracts:
 - Renderer gather caps remain non-optical limits.
 - Encoded-byte storage remains a representation of physical values.
 
-## 27. Regression requirements for future cleanup
+## 28. Regression requirements for future cleanup
 
+- **Mirror Shift focus-conjugacy correction:** In neutral geometry assert f=120 mm and nominal virtual target U=6000 mm resolve to V≈122.449 mm and the film plane uses that conjugate distance. Build the reflected tall-marker sample through reflectPointAcrossMirrorPlane() and require physical CoC approximately zero within a small numerical tolerance; do not use the learner's 0.1 mm score threshold as an exact-focus oracle. Sample a different reflected depth, such as the stool, and require nonzero physical CoC.
+- **Mirror Shift geometry invariance:** Verify changing film conjugacy leaves the lens/rig lateral viewpoint, mirror geometry, Front Shift parallax, observer camera placement, and the finite 120 mm angular coverage path intact. Derive any expected numerical image-circle radius from the corrected image distance.
+- **Mirror Shift Ground Glass and browser acceptance:** Use the physical RTT path with no teaching blur gain. Check neutral, lateral camera movement, and Front Shift states. Confirm the lesson still evaluates reflection clearance, framing, and parallax while focus remains locked; it must not introduce accidental focus movement.
 - **Shelf mode removal:** zero swing, public calibrated swing, Raw/Upright output, target physical point/patch CoC, mode diagnostics, and no unexpected uniform-preparation fallback. Use real browser RTT evidence for visible output; unit state equality alone is insufficient.
 - **Table tolerance change:** exact parallel, sub-step 0.01°, first public 0.1° step, calibrated tilt, matched front/rear planes, finite planes/uniforms, and explicit overlay/target metric expectations. State which sub-step values public controls can reach.
 - **Architecture Rise branch consolidation:** sweep the scene's public focus range and representative supported movement states; compare U, near/far scalar limits, plane geometry, physical target CoC, and RTT footprint inputs. Test invalid input/fallback separately.
@@ -539,27 +607,30 @@ This diagnosis provides no evidence to reopen these contracts:
 - **Renderer backend parity:** compare shared physical fixtures for parallel/tilted film, focus, near/far sign, aperture scaling, anisotropy orientation, singular/invalid cases, and sampled-film crop; run a real browser/GPU measurement for the shader path.
 - No follow-up should alter the physical 0.1 mm learner CoC threshold without an explicit product requirement.
 
-## 28. Recommended sequence
+## 29. Recommended sequence
 
-1. Accept or correct the ownership and branch classifications in this diagnosis.
-2. Start renderer work from the documented physical footprint contract. Do not encode legacy mode metadata into the physical shader API.
-3. Add measurable backend parity coverage with the first backend vertical slice.
-4. If maintainers want a cleanup before then, take only Candidate A first, since it removes the clearest renderer-to-domain-diagnostics coupling. It remains optional and should preserve any mode metadata contract reviewers still need.
-5. Consider Architecture Rise consolidation, Table Tilt policy, or legacy CPU helper changes as separate small follow-ups only if their direct consumers justify them.
+1. Complete the #205 diagnosis and preserve the shared-kernel/input-semantics distinction.
+2. Make the dedicated Mirror Shift finite-focus configuration correction and add its focused physical and browser regressions.
+3. Verify reflected-marker conjugacy and viewpoint/parallax invariance.
+4. Freeze the corrected Ground Glass physical geometry as the renderer-neutral backend contract.
+5. Add measurable CPU/backend parity fixtures with the first backend vertical slice.
+6. Consider Shelf Swing, Architecture Rise, Table Tilt, or legacy CPU helper cleanups independently if their consumers justify them.
 
-## 29. Final conclusion
+## 30. Final conclusion
 
-The active Ground Glass already uses one geometry-based physical aperture/film footprint for every registered scene. CPU target scoring uses a separate TypeScript implementation of the same physical contract, while calculateDepthOfField() constructs near/far limits and plane overlays for another purpose. groundGlassDofModel and its dofMode uniform do not switch the valid-state active GPU footprint equation.
+All registered scenes use the same active Ground Glass physical-footprint kernel. That kernel convergence does not prove every scene supplies physically conjugate geometry. Mirror Shift configures a 6000 mm nominal focus matching the reflected tall-marker center, but its missing finite-focus strategy leaves film at 120 mm rather than the 122.449 mm conjugate position; the current physical CoC is 0.218182 mm at f/11. A narrow Mirror Shift scene-configuration correction and regression are required before freezing its current geometry as a renderer-backend baseline.
 
-The remaining focus exceptions have different roles: Focus Fundamentals and scene placement are legitimate input adapters; Table Tilt's tolerance selects focus/DOF plane representation; Architecture Rise's current direct-U branch duplicates generic U derivation; Shelf Swing's renderer mode copy is historical diagnostic compatibility. The scalar CPU groundGlassBlur path and legacy wedge fields are not the authoritative learner or active Ground Glass metrics.
+CPU target scoring uses a separate TypeScript implementation of the same local-affine physical footprint contract, while calculateDepthOfField() constructs near/far limits and plane overlays for another purpose. The CPU and GLSL algorithms are structurally aligned, but numeric/runtime parity remains unproven. groundGlassDofModel and its dofMode uniform do not switch the valid-state active GPU footprint equation.
 
-The minimum justified pre-WebGPU cleanup is **none**. Preserve the shared geometry contract, keep presentation mode out of a new physical kernel, and establish numerical backend parity before claiming equivalence. A broad optics rewrite or deletion of every scene-specific branch is not supported by the evidence.
+Focus Fundamentals and View Camera Anatomy are valid selectable-focus adapters; Mirror Shift's absent finite-focus configuration is a historical scene-configuration defect. Table Tilt's tolerance selects focus/DOF plane representation; Architecture Rise's direct-U branch duplicates generic U derivation; Shelf Swing's renderer mode copy is historical diagnostic compatibility. The scalar CPU groundGlassBlur path and legacy wedge fields are not the authoritative learner or active Ground Glass metrics.
 
-## Validation at the pinned code snapshot
+The minimum justified pre-WebGPU work is one narrow Mirror Shift focus-configuration correction plus a physical/browser regression. No broad optics rewrite is indicated. After that correction, preserve the shared geometry contract and establish measurable CPU/backend parity before claiming numerical equivalence.
 
-- Focused evidence: 15 suites passed, 141 tests passed. This included Table Tilt, Shelf Swing, Scheimpflug physical focus propagation, RTT/shader/physical-scale/storage coverage, Focus Fundamentals, Architecture Rise, and Macro DOF.
+## Validation for this review-fix round
+
+- Focused regression evidence: 12 suites passed, 169 tests passed. Coverage included Mirror Shift geometry/calibration/task, thin-lens CoC, finite-focus film strategy, physical blur footprint, deriveOpticsState, Ground Glass RTT/scale, and lens coverage.
 - npm run typecheck: passed.
 - npm test: passed, 215 files and 2,061 tests.
-- Tests used bundled Node 24 because the shell's default Node could not import the installed Vite dependency. The repo's installed dependencies were exposed to the isolated worktree with a temporary ignored node_modules symlink; no dependency files were changed.
-- git diff --check and final changed-file/status checks are recorded in the PR handoff after the document is added.
-- No Playwright/E2E run was needed for this documentation-only diagnosis; browser/GPU numerical parity remains an evidence gap, not a claimed pass.
+- Tests used bundled Node 24; the isolated worktree used a temporary dependency symlink to the existing installation. No dependency files were changed.
+- git diff --check and the final changed-file/status checks are reported in the PR handoff.
+- Playwright/E2E was not rerun for this documentation-only review-fix round. Existing Mirror Shift E2E was inspected as evidence; real GPU numerical parity remains unproven.
