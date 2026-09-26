@@ -240,16 +240,14 @@ export const evaluateTask = (
         const reflection = mirrorShiftMeasurements?.current.cameraReflection;
         const passed = Boolean(
           reflection?.valid &&
-            !reflection.intersectsMirrorAperture &&
-            finite(reflection.clearanceMm) &&
-            reflection.clearanceMm >= criterion.minimumClearanceMm,
+            !reflection.intersectsMirrorAperture,
         );
         return {
           criterionId: criterion.id,
           label: guidedCopy.criteria[criterion.id],
           passed,
           score: reflection?.valid
-            ? boundedRatio(reflection.clearanceMm, criterion.minimumClearanceMm)
+            ? boundedRatio(reflection.clearanceMm, criterion.clearanceForFullProgressMm)
             : 0,
           message: getCriterionResultMessageRef(criterion, passed),
         };

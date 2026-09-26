@@ -88,4 +88,24 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
   ).toBeVisible();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   await expect(rtt).toHaveAttribute("data-rtt-resource-generation", resourceGeneration!);
+
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
+  await position.fill("-1750");
+  await frontShift.fill("54");
+  await expect(position).toHaveValue("-1750");
+  await expect(frontShift).toHaveValue("54");
+  await expectLearningFeedbackNotCompleted(page);
+  const visibleBoundaryFeedback = await openLearningFeedback(page);
+  await expect(
+    visibleBoundaryFeedback.getByRole("heading", {
+      name: "Move the whole camera sideways until its reflection is completely outside the mirror.",
+    }),
+  ).toBeVisible();
+
+  await getLearningOverlay(page).getByRole("button", { name: "Task", exact: true }).click();
+  await position.fill("-1850");
+  await expect(position).toHaveValue("-1850");
+  await expectLearningFeedbackCompleted(page);
+  const negativeSideFeedback = await openLearningFeedback(page);
+  await expect(negativeSideFeedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
 });

@@ -141,7 +141,8 @@ export type InteriorCornerGuidedCriterion =
 export type MirrorReflectionClearCriterion = {
   id: string;
   type: "mirror-reflection-clear";
-  minimumClearanceMm: number;
+  /** Clearance used to normalize progress; geometric mirror intersection determines pass/fail. */
+  clearanceForFullProgressMm: number;
 };
 
 export type MirrorFramingRestoredCriterion = {

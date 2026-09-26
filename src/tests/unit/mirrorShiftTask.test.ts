@@ -5,6 +5,7 @@ import { getTaskById } from "../../core/tasks/taskRegistry";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import {
   MIRROR_SHIFT_SCENE_CALIBRATION,
+  measureMirrorShiftTeachingState,
   resolveMirrorShiftTeachingState,
 } from "../../scenes/mirrorShiftCalibration";
 import type { CameraState } from "../../types/camera";
@@ -12,10 +13,7 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const task = getTaskById("mirror-shift-01");
 
-const cameraFor = (
-  state: "neutral" | "camera-moved" | "framing-restored",
-): CameraState => {
-  const values = resolveMirrorShiftTeachingState(state);
+const cameraForValues = (values: { rigLateralMm: number; frontShiftMm: number }): CameraState => {
   return {
     ...DEFAULT_CAMERA_STATE,
     ...mirrorShiftScene.cameraPreset,
@@ -32,10 +30,22 @@ const cameraFor = (
   };
 };
 
-const evaluate = (state: "neutral" | "camera-moved" | "framing-restored") => {
+const cameraFor = (
+  state: "neutral" | "camera-moved" | "framing-restored",
+): CameraState => cameraForValues(resolveMirrorShiftTeachingState(state));
+
+const evaluateValues = (values: { rigLateralMm: number; frontShiftMm: number }) => {
   if (!task) throw new Error("Mirror Shift task is not registered");
-  const camera = cameraFor(state);
-  return evaluateTask(task, mirrorShiftScene, camera, deriveOpticsState(camera, mirrorShiftScene));
+  const camera = cameraForValues(values);
+  const optics = deriveOpticsState(camera, mirrorShiftScene);
+  return {
+    result: evaluateTask(task, mirrorShiftScene, camera, optics),
+    reflection: measureMirrorShiftTeachingState(optics, values).cameraReflection,
+  };
+};
+
+const evaluate = (state: "neutral" | "camera-moved" | "framing-restored") => {
+  return evaluateValues(resolveMirrorShiftTeachingState(state)).result;
 };
 
 describe("Mirror Shift guided task", () => {
@@ -58,7 +68,7 @@ describe("Mirror Shift guided task", () => {
     expect(task?.criteria).toEqual([
       expect.objectContaining({
         type: "mirror-reflection-clear",
-        minimumClearanceMm:
+        clearanceForFullProgressMm:
           MIRROR_SHIFT_SCENE_CALIBRATION.tolerances.cameraReflectionClearanceMm,
       }),
       expect.objectContaining({
@@ -94,6 +104,31 @@ describe("Mirror Shift guided task", () => {
     expect(result.criteria.every((criterion) => criterion.passed)).toBe(true);
     expect(result.primaryFeedback.key).toBe("tasks.mirrorShift.feedback.passPrimary");
     expect(result.secondaryFeedback[0]?.key).toBe("tasks.mirrorShift.feedback.passSecondary");
+  });
+
+  it("passes the reported negative-side state when its reflected footprint is outside the mirror", () => {
+    const { reflection, result } = evaluateValues({ rigLateralMm: -1850, frontShiftMm: 54 });
+
+    expect(reflection.valid).toBe(true);
+    expect(reflection.intersectsMirrorAperture).toBe(false);
+    expect(reflection.clearanceMm).toBeCloseTo(65.67418546365911, 8);
+    expect(reflection.boundsMm.minX).toBeCloseTo(-1961.0714701131733, 8);
+    expect(reflection.boundsMm.maxX).toBeCloseTo(-1665.6741854636591, 8);
+    expect(reflection.boundsMm.minY).toBeCloseTo(-521.6891469055979, 8);
+    expect(reflection.boundsMm.maxY).toBeCloseTo(95.23809523809524, 8);
+    expect(result.criteria.map((criterion) => criterion.passed)).toEqual([true, true, true]);
+    expect(result.status).toBe("passed");
+  });
+
+  it("keeps a nearby public-step state failing while the reflection still intersects the mirror", () => {
+    const { reflection, result } = evaluateValues({ rigLateralMm: -1750, frontShiftMm: 54 });
+
+    expect(reflection.valid).toBe(true);
+    expect(reflection.intersectsMirrorAperture).toBe(true);
+    expect(reflection.boundsMm.maxX).toBeCloseTo(-1565.6741854636591, 8);
+    expect(reflection.clearanceMm).toBe(0);
+    expect(result.criteria[0]?.criterionId).toBe("mirror-reflection-clear");
+    expect(result.criteria[0]?.passed).toBe(false);
   });
 
   it("keeps the unchanged framing threshold tied to the corrected film projection", () => {
