@@ -180,6 +180,47 @@ describe("Ground Glass CoC target capability policy", () => {
     target.dispose();
     previousTarget.dispose();
   });
+
+  it("fails closed when restoring the previous target throws after a complete framebuffer probe", () => {
+    const target = new THREE.WebGLRenderTarget(8, 8);
+    const previousTarget = new THREE.WebGLRenderTarget(4, 4);
+    const context = {
+      FRAMEBUFFER: 0x8d40,
+      FRAMEBUFFER_COMPLETE: contextComplete(),
+      checkFramebufferStatus: vi.fn(() => contextComplete()),
+    } as unknown as WebGLRenderingContext;
+    const setRenderTarget = vi.fn((candidate: THREE.WebGLRenderTarget | null) => {
+      if (candidate === previousTarget) {
+        throw new Error("Previous render target restoration failed");
+      }
+    });
+    const renderer = {
+      isWebGLRenderer: true,
+      getContext: vi.fn(() => context),
+      getRenderTarget: vi.fn(() => previousTarget),
+      setRenderTarget,
+    } as unknown as THREE.WebGLRenderer;
+
+    const capabilities = resolveRendererCapabilities(renderer, target);
+
+    expect(setRenderTarget).toHaveBeenNthCalledWith(1, target);
+    expect(setRenderTarget).toHaveBeenNthCalledWith(2, previousTarget);
+    expect(context.checkFramebufferStatus).toHaveBeenCalledTimes(1);
+    expect(context.checkFramebufferStatus).toHaveReturnedWith(context.FRAMEBUFFER_COMPLETE);
+    expect(capabilities).toEqual({
+      backend: "webgl",
+      colorRenderTargetRenderable: false,
+    });
+    expect(Object.keys(capabilities ?? {}).sort()).toEqual([
+      "backend",
+      "colorRenderTargetRenderable",
+    ]);
+    expect(capabilities).not.toHaveProperty("context");
+    expect(capabilities).not.toHaveProperty("renderer");
+
+    target.dispose();
+    previousTarget.dispose();
+  });
 });
 
 function contextComplete() {

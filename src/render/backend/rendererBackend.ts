@@ -4,7 +4,7 @@ type RendererWithBackendMarker = {
   isWebGLRenderer?: unknown;
 };
 
-/** Identifies the Three.js renderer instance without exposing WebGL state. */
+/** Identifies the backend represented by an actual Three.js renderer instance. */
 export const resolveRendererBackend = (
   renderer: unknown,
 ): RendererBackend | null => {
@@ -15,10 +15,12 @@ export const resolveRendererBackend = (
 };
 
 /**
- * Reports whether the application's currently active renderer backend can be
- * created in this browser. The WebGL context itself stays inside this module.
+ * Reports whether this browser can provide the WebGL context required by the
+ * current production renderer. This is browser availability, not active
+ * renderer identity; use resolveRendererBackend for a renderer instance.
+ * The WebGL context itself stays inside this module.
  */
-export const detectAvailableRendererBackend = (): RendererBackend | null => {
+export const detectAvailableWebGLBackend = (): RendererBackend | null => {
   try {
     const canvas = document.createElement("canvas");
     return canvas.getContext("webgl2") ||

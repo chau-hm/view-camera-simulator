@@ -7,7 +7,7 @@ vi.mock("../render/backend/rendererBackend", async (importOriginal) => {
   >();
   return {
     ...actual,
-    detectAvailableRendererBackend: () => "webgl",
+    detectAvailableWebGLBackend: () => "webgl",
   };
 });
 

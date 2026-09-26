@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import type { ConceptualCameraPresentation } from "../../render/ConceptualViewCamera";
 import { SceneOverlayControls } from "./SceneOverlayControls";
-import { detectAvailableRendererBackend } from "../../render/backend/rendererBackend";
+import { detectAvailableWebGLBackend } from "../../render/backend/rendererBackend";
 import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
 import type { DerivedOpticsState } from "../../types/optics";
@@ -106,7 +106,7 @@ export const SceneViewport = ({
       }),
     [activeFocalLengthMm, cameraInspectionTarget, opticsState, scene],
   );
-  const rendererBackend = useMemo(() => detectAvailableRendererBackend(), []);
+  const availableWebGLBackend = useMemo(() => detectAvailableWebGLBackend(), []);
   const scheimpflugConstruction = useMemo(
     () =>
       deriveScheimpflugConstruction({
@@ -162,7 +162,7 @@ export const SceneViewport = ({
     return () => window.cancelAnimationFrame(frame);
   }, [expanded, restoreFocusOnCollapse]);
 
-  if (rendererBackend === null) {
+  if (availableWebGLBackend === null) {
     return (
       <section>
         <h2>{t(simulatorMessageKeys.viewport.sceneTitle)}</h2>
