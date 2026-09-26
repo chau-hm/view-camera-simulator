@@ -1,5 +1,10 @@
 import type { GroundGlassCocStorageFormat } from "./groundGlassCocTarget";
 import type { RenderQualityProfile } from "../types/ui";
+import {
+  GROUND_GLASS_PASS_ORDER,
+  resolveGroundGlassPassOrder,
+  type GroundGlassPassId,
+} from "./groundGlassPassGraph";
 
 export const GROUND_GLASS_PROFILING_WINDOW_SIZE = 60;
 export const GROUND_GLASS_PROFILING_QUERY_POOL_SIZE = 24;
@@ -24,12 +29,8 @@ export type GroundGlassGpuQueryState =
   | "disjoint"
   | "error";
 
-export type GroundGlassProfilingPass =
-  | "sceneRender"
-  | "cocFootprint"
-  | "farGather"
-  | "nearGather"
-  | "composite";
+/** Profiling measures semantic Ground Glass stages, not renderer operations. */
+export type GroundGlassProfilingPass = GroundGlassPassId;
 
 export type GroundGlassProfilingTimingStats = {
   latestMs: number | null;
@@ -102,13 +103,7 @@ export type GroundGlassProfilingSnapshot = GroundGlassProfilingConfiguration & {
   };
 };
 
-const PASS_NAMES: readonly GroundGlassProfilingPass[] = [
-  "sceneRender",
-  "cocFootprint",
-  "farGather",
-  "nearGather",
-  "composite",
-];
+const PASS_NAMES: readonly GroundGlassProfilingPass[] = GROUND_GLASS_PASS_ORDER;
 
 const EMPTY_TIMING_STATS: GroundGlassProfilingTimingStats = {
   latestMs: null,
@@ -682,9 +677,7 @@ export class GroundGlassProfiler {
       this.frameWindow.push(frameTimeMs as number);
     }
 
-    const expected = configuration.rawDebug
-      ? (["sceneRender", "composite"] as const)
-      : PASS_NAMES;
+    const expected = resolveGroundGlassPassOrder(configuration.rawDebug);
     const measurementAccepted = this.backend !== "gpu-query" ||
       (this.gpuTimer?.canReserve(expected.length) ?? false);
     if (measurementAccepted) {

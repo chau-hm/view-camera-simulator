@@ -47,6 +47,7 @@ import { resolveGroundGlassInspectionWindow } from "../../render/groundGlassInsp
 const fiberTestState = vi.hoisted(() => ({
   frameCallback: null as ((state?: unknown, delta?: number) => void) | null,
   renderedScenes: [] as unknown[],
+  renderEvents: [] as Array<{ scene: unknown; target: unknown }>,
   cocFramebufferStatuses: [] as number[],
   currentTarget: null as unknown,
   gl: {
@@ -66,6 +67,10 @@ const fiberTestState = vi.hoisted(() => ({
     clear: () => undefined,
     render: (scene: unknown) => {
       fiberTestState.renderedScenes.push(scene);
+      fiberTestState.renderEvents.push({
+        scene,
+        target: fiberTestState.currentTarget,
+      });
     },
     domElement: {
       width: 500,
@@ -107,6 +112,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   fiberTestState.frameCallback = null;
   fiberTestState.renderedScenes.length = 0;
+  fiberTestState.renderEvents.length = 0;
   fiberTestState.cocFramebufferStatuses.length = 0;
   fiberTestState.currentTarget = null;
   useAppStore.getState().setGroundGlassRttRuntimeInfo(null);
@@ -778,6 +784,82 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       runtimeInfo?.gatherTargetWidthPx,
       runtimeInfo?.gatherTargetHeightPx,
     ]);
+
+    view.unmount();
+  });
+
+  it("executes the semantic scene, CoC, gather, composite, and output stages in order", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const materials = renderedShaderMaterials();
+    const cocMaterial = materials.find((material) =>
+      material.fragmentShader.includes("calculateCoCDiameterMmAtFragment"),
+    );
+    const gatherMaterial = materials.find((material) =>
+      material.fragmentShader.includes("goldenAngle"),
+    );
+    const compositeMaterial = materials.find((material) =>
+      material.fragmentShader.includes("uniform sampler2D tGather"),
+    );
+    const displayMaterial = materials.find((material) =>
+      material.fragmentShader.includes(
+        "gl_FragColor = texture2D(tColor, vUv)",
+      ),
+    );
+    expect(cocMaterial).toBeDefined();
+    expect(gatherMaterial).toBeDefined();
+    expect(compositeMaterial).toBeDefined();
+    expect(displayMaterial).toBeDefined();
+    expect(fiberTestState.renderEvents).toHaveLength(6);
+
+    const [sceneRender, coc, farGather, nearGather, composite, output] =
+      fiberTestState.renderEvents;
+    const sceneShader = (scene: unknown): THREE.ShaderMaterial | undefined => {
+      if (!(scene instanceof THREE.Scene)) return undefined;
+      return scene.children
+        .map((child) => (child as THREE.Mesh).material)
+        .find((material) => material instanceof THREE.ShaderMaterial) as
+        | THREE.ShaderMaterial
+        | undefined;
+    };
+    const farGatherTexture = compositeMaterial!.uniforms.tGather.value;
+    const nearGatherTexture = compositeMaterial!.uniforms.tNearGather.value;
+    const compositeTexture = displayMaterial!.uniforms.tColor.value;
+
+    expect(
+      (sceneRender.target as THREE.WebGLRenderTarget).texture,
+    ).toBe(gatherMaterial!.uniforms.tColor.value);
+    expect(sceneShader(coc.scene)).toBe(cocMaterial);
+    expect(sceneShader(farGather.scene)).toBe(gatherMaterial);
+    expect(farGather.target).not.toBe(nearGather.target);
+    expect((farGather.target as THREE.WebGLRenderTarget).texture).toBe(
+      farGatherTexture,
+    );
+    expect((nearGather.target as THREE.WebGLRenderTarget).texture).toBe(
+      nearGatherTexture,
+    );
+    expect(sceneShader(composite.scene)).toBe(compositeMaterial);
+    expect((composite.target as THREE.WebGLRenderTarget).texture).toBe(
+      compositeTexture,
+    );
+    expect(sceneShader(output.scene)).toBe(displayMaterial);
+    expect(output.target).toBeNull();
 
     view.unmount();
   });
