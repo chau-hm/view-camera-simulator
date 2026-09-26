@@ -1,30 +1,33 @@
 # View Camera Simulator Architecture Diagnosis
 
-> **Audit status:** Initial snapshot diagnosis. The required delta review after the concurrent Ground Glass/lens correction merges is pending. This document and its PR are intentionally provisional until that review is complete.
+> **Audit status:** Completed focused post-#204 delta refresh. The initial diagnosis remains traceable to its original snapshot; affected conclusions below now describe refreshed `main`.
 
 ## 1. Scope and repository snapshot
 
-This is a read-only architecture audit of the simulator after PR #202. It examines scene ownership, camera assembly, canonical optics, lens coverage, Ground Glass, coordinate conversions, global overlays, renderer boundaries, tests, WebGPU readiness, and readiness for more detailed lighting and materials. No runtime or test files were changed for this audit.
+This is a read-only architecture audit initially pinned after PR #202, followed by a focused delta review of PR #204. It examines scene ownership, camera assembly, canonical optics, lens coverage, Ground Glass, coordinate conversions, global overlays, renderer boundaries, tests, WebGPU readiness, and readiness for more detailed lighting and materials. No runtime or test files were changed for this audit or refresh.
 
-| Item | Initial audit value |
+| Item | Value |
 |---|---|
 | Repository | `chau-hm/view-camera-simulator` |
-| `origin/main` snapshot | `1d6f68b4bdd6350e843b4bd7338ae483ae52b1f2` |
-| Snapshot title | `fix(simulator): restore camera assembly containment and cross-scene optical consistency (#202)` |
+| Initial audit snapshot SHA | `1d6f68b4bdd6350e843b4bd7338ae483ae52b1f2` |
+| Initial snapshot title | `fix(simulator): restore camera assembly containment and cross-scene optical consistency (#202)` |
 | Audit branch | `docs/architecture-diagnosis` |
-| Corrective PR | None found in the remote PR listing at audit time; no PR number/head/status to record. A local corrective worktree existed at the same base without changes. |
-| Final refreshed main SHA | **Pending corrective PR merge and delta review** |
+| Corrective PR | #204 — `fix(optics): recalibrate Ground Glass blur and published lens coverage` |
+| Corrective branch | `fix/ground-glass-blur-and-lens-coverage-calibration` |
+| Corrective merge SHA | `fce2ac19dd40f48ac9e6a827e933fd9cb5af76e3` |
+| Final refreshed `origin/main` SHA | `fce2ac19dd40f48ac9e6a827e933fd9cb5af76e3` |
+| Diagnosis branch refresh commit | Recorded on PR #203 after the documentation refresh commit |
 
-The findings below describe the initial snapshot only. In particular, current Ground Glass blur calibration and the published lens coverage definitions are marked unstable in §2. The audit is not complete until §26 is updated against the correction merge.
+The initial findings were produced against the SHA above. Sections affected by #204 have now been checked against the merged implementation and its tests; unchanged findings retain their original evidence and scope.
 
-## 2. Concurrent corrective-work notice
+## 2. Corrective-work resolution
 
-Two product behaviours are known to be under correction and are excluded from the architecture defect count:
+PR #204 resolved both product-level areas that were explicitly unstable in the initial audit:
 
-1. `src/render/groundGlassVisualSettings.ts` currently sets a global `displayBlurScale` of `16`, which was observed to make ordinary focus scenes look too blurred. This multiplier is a current display calibration choice, not the target architecture.
-2. `src/core/optics/lensCatalog.ts` currently assigns `unbounded-ideal` to its published 90, 105, and 120 mm definitions. The 150 mm profile is angular and parametric. The intended correction is finite teaching coverage for all published focal lengths. This snapshot must not be used to conclude that the 120 mm Mirror Shift scene is meant to lack finite coverage.
+- **Ground Glass:** The fixed 16× gain and the temporary acceptable-CoC-to-1-CSS-pixel normalization are both gone. Normal Ground Glass maps physical blur in millimetres directly through the sampled film width into RTT pixels and then to the visible display. Focus Loupe magnification comes from its physical crop.
+- **Lens coverage:** Published 90, 105, 120, and 150 mm choices all have explicit finite simulator profiles. Mirror Shift's 120 mm choice reaches finite coverage through the shared derived-coverage path.
 
-The stable architectural conclusion is that physical CoC/coverage state is derived separately from display policy, and the lens catalog is the authority for lens coverage semantics. After the correction merges, refresh the Ground Glass display policy, CoC storage range, catalog policy, Mirror Shift coverage path, and related regression evidence before calling this diagnosis final.
+Neither correction required rewriting canonical optics or the camera assembly boundary. Their outcomes support the original separation between physical derivation, catalog capability, and renderer presentation.
 
 ## 3. Executive summary
 
@@ -33,14 +36,14 @@ The stable architectural conclusion is that physical CoC/coverage state is deriv
 | **Camera** | **Mostly self-contained with defined exceptions.** The simulator owns a shared rig-placement root and local camera-part hierarchy; current and ghost cameras use the same renderer. The calibrated camera-movement rail and anatomy presentation are deliberate inputs. |
 | **Scenes** | Scene definition, publication, tasks, subject registration, and renderer policy are distinct systems. The boundary is healthy, with scene-ID dispatch spread across a few domain and presentation modules. Registered subjects are executable renderer code, so the contract prevents direct access to canonical camera state by convention rather than type isolation. |
 | **Optics** | One canonical `deriveOpticsState` path supplies the important physical planes, coverage, focus metrics, and camera geometry. React and renderer code adapt that state. Scene-specific physical strategies are intentional; a cache key omission around Mirror Shift lesson state is a latent exception. |
-| **Ground Glass** | Physical optics and visible blur are separated conceptually: canonical planes and coverage enter a renderer adapter; pixel CoC, gathers, display blur, crops, and Raw/Upright presentation are renderer work. The active pipeline is still directly coupled to Three.js/WebGL, and a renderer DOF hint is written into optics diagnostics. |
+| **Ground Glass** | Canonical optics supplies physical CoC and per-pixel physical footprints; the active RTT converts millimetres through the sampled film width into source pixels, then gathers and composites. There is no normal-view teaching gain. Crop, gather cap, quality, storage, and Raw/Upright presentation are renderer concerns. The active path remains directly coupled to Three.js/WebGL, and a renderer DOF hint is written into optics diagnostics. |
 | **Coordinates** | The highest-risk coordinate chain is world millimetres → rear-standard film basis → RTT source UV → WebGL texture sampling → Raw/Upright display transform → CSS top-origin interactions. The conversions are mostly explicit and tested. Misleading `*World` field names inside rig-local camera geometry are a smaller naming hazard. |
-| **Global features** | Shared coverage and focus features are derived from canonical state; visibility is controlled separately. Mirror Shift's current missing circle is the catalog capability result for 120 mm in this snapshot, not scene-specific renderer suppression. A finite lens profile should flow through the shared path. |
+| **Global features** | Shared coverage and focus features are derived from canonical state; visibility is controlled separately. The four published lens choices have finite explicit catalog profiles, and Mirror Shift 120 mm now demonstrates finite coverage through the shared canonical pipeline without a scene-specific override. |
 | **Renderer** | The highest migration risk is Ground Glass: an inner R3F Canvas owns a direct WebGL render-target and custom GLSL multipass pipeline, with no backend selection seam. Observer and Ground Glass also construct separate subject representations. |
-| **WebGPU** | Staged migration can be planned after the correction, without redesigning canonical optics or scenes. Before moving the active Ground Glass path, define and test its pass/resource/backend contract and preserve the physical film/UV orientation contract. Migrate the observer renderer first and the Ground Glass postprocess last. |
+| **WebGPU** | Ground Glass remains the highest backend-specific risk. Complete a focused DOF/Focus Physics Convergence diagnosis before backend work can freeze historical scene-specific semantics into multiple backends; then define and test pass/resource and physical film/UV contracts. No broad canonical optics rewrite is indicated. |
 | **Realistic visuals** | Wait to increase scene detail until the R3F/RTT subject parity, lighting placement, and material ownership are deliberate. Current simple educational visuals do not justify a wholesale scene or camera rewrite. |
 
-At the initial snapshot, the diagnosis records **1 Must-fix-before-WebGPU finding, 2 Should-fix-before-realistic-expansion findings, and 4 small cleanup findings**. There are no architectural findings caused solely by the two concurrent product corrections.
+The refreshed diagnosis retains **1 Must-fix-before-WebGPU finding, 2 Should-fix-before-realistic-expansion findings, and 4 small cleanup findings**. The resolved blur and lens-catalog issues are not architecture findings.
 
 ## 4. Current ownership map
 
@@ -54,9 +57,9 @@ At the initial snapshot, the diagnosis records **1 Must-fix-before-WebGPU findin
 | Camera physical state | `CameraState` and store/actions | State | Yes; input to canonical derivation | Yes, through derived state | Custom lesson state and presentation flags share the broad state container |
 | Camera geometry and optical quantities | `deriveOpticsState` and helpers in `src/core/optics` | Deterministic domain calculation | Authoritative | Indirectly, through consumers | Healthy central authority; special-case branches and one latent selector-key gap |
 | Camera assembly rendering | `ConceptualViewCamera` / `CameraBodyAssembly` | Executable renderer adapter | No | Yes | Shared hierarchy is healthy; support rail has calibrated/generic paths |
-| Lens coverage definition | `lensCatalog.ts`, `LensDefinition` | Declarative lens data plus canonical derivation | Yes | Yes, via overlay and Ground Glass mask | Catalog data is unstable for three published profiles at this snapshot |
+| Lens coverage definition | `lensCatalog.ts`, `LensDefinition` | Explicit declarative simulator teaching profiles plus canonical derivation | Yes | Yes, via overlay and Ground Glass mask | Healthy current policy for published choices; unknown positive focal lengths retain the unbounded fallback |
 | Ground Glass physical coverage/focus state | `DerivedOpticsState` | Derived domain state | Yes | Consumed by mask, projection, readouts | Healthy separation from overlay visibility |
-| Ground Glass pixel pipeline and display interactions | `GroundGlassRTT`, shaders, `GroundGlassStage` | Executable renderer and UI | Does not update canonical physical optics | Yes | High backend coupling; presentation calibration is pending correction |
+| Ground Glass pixel pipeline and display interactions | `GroundGlassRTT`, shaders, `GroundGlassStage` | Executable renderer and UI | Does not update canonical physical optics | Yes | Direct physical mm-to-sampled-film-pixel mapping is explicit; pass/resource ownership remains tightly coupled to WebGL |
 | Optical overlay visibility | `appStore.ui.showOpticalGeometry`, task initial state, overlay props | UI state | No | Yes | Generally distinct from capability; lesson can hide presentation |
 | Diagnostics | canonical `DerivedOpticsState.diagnostics`, RTT runtime info, `?rttDiagnostics=1` | Domain and renderer telemetry | Some are diagnostic summaries only | Yes | RTT telemetry is useful; one renderer-selected DOF hint crosses into optics diagnostics |
 | Asset metadata | `SceneDefinition.assets` and preload helpers | Declarative metadata | No | Intended to; current `SceneAssetMesh` returns `null` | Names overstate current executable asset boundary; registered subjects draw current geometry |
@@ -217,13 +220,13 @@ The Ground Glass mask packs that canonical state for the shader, and `SceneRende
 
 ### Mirror Shift case study
 
-In this initial snapshot, selecting 120 mm resolves to `unbounded-ideal`. `deriveGroundGlassCoverage()` therefore yields `{ kind: "unbounded" }`; the shared 3D resolver has no finite boundary to draw. The user visibility toggle is a separate layer and cannot create a physical circle without finite lens capability. That explains the observed 120 mm behavior as a catalog result for this snapshot, not a Mirror Shift renderer defect.
+Mirror Shift selects the explicit finite 120 mm simulator profile. It resolves to `DerivedLensCoverage.kind === "angular"`, then to `GroundGlassCoverageState.kind === "parallel-circle"` at neutral geometry. The Ground Glass and 3D Image Circle use the same shared canonical coverage state; no scene-specific overlay override is present.
 
-Once the catalog supplies a finite teaching profile, Mirror Shift should naturally receive finite coverage through the shared derivation path. No Mirror Shift-specific circle code is expected. Verify that in the required post-correction review.
+This confirms the original architecture prediction: supplying finite catalog capability restores the feature through shared derivation without a Mirror Shift renderer change.
 
-### Snapshot catalog caveat
+### Published simulator lens family
 
-`lensCatalog.ts` currently defines 90/105/120 mm as `unbounded-ideal`, 150 mm as an explicit simulator-parametric 72° angular profile, and unknown positive focal lengths as unbounded rather than inventing a physical profile. The 90/105/120 entries are pending product correction and are excluded from findings and recommendations. The policy for unknown lengths should remain intentional and documented after the correction; do not assume unknown focal lengths inherit a finite measured lens profile.
+The published teaching profiles are explicit catalog data: 90 mm → 100.8982256313°, 105 mm → 92.1318668688°, 120 mm → 84.4900859515°, and 150 mm → 72°. These simulator profiles are calibrated from the existing 150 mm / 72° anchor to give an approximately common 217.962758 mm infinity reference Image Circle. The intent is to keep movement room approximately constant while focal length/framing changes; it is not manufacturer data and does not imply real shorter lenses inherently cover wider. Runtime optics still consumes explicit `LensDefinition` data rather than deriving a general coverage angle from focal length. Unknown positive focal lengths remain `unbounded-ideal` until explicitly catalogued.
 
 ## 9. Capability vs visibility
 
@@ -231,7 +234,7 @@ The code mostly distinguishes four questions: what can be modeled, what a scene 
 
 | Feature | Capability authority | Scene policy | User visibility/state | Currently conflated? |
 |---|---|---|---|---|
-| Finite lens coverage | `LensDefinition.coverage` and derived coverage state | Catalog profile applies across scenes for the same focal length | 3D layer toggle; Ground Glass mask follows physical state except raw-debug | No; catalog state and visibility are separate. Snapshot profile data is pending correction. |
+| Finite lens coverage | `LensDefinition.coverage` and derived coverage state | Explicit published simulator profile applies across scenes for that catalog choice | 3D layer toggle; Ground Glass mask follows physical state except raw-debug | No; catalog state and visibility are separate. Unknown focal lengths remain unbounded. |
 | Camera movements | `SceneDefinition.movementCapabilities` / control policy; core accepts supported state | Scene may expose allowed fields, default, single/multiple selection | Control rows can be hidden or locked | Partly: capability includes UI selection and `hideUnavailableControls` presentation metadata |
 | Focal length | `focalLengthCapability` for public control choices; global lens catalog defines each length | Scene supplies discrete options/default | Lens control renders options | No physical coverage math in UI adapter |
 | Focus standard / finite focus | `focusStandardCapability`, finite-focus strategy and focus range | Scene presets and focus behavior | Focus controls can be fixed/hidden; Lesson 0 can visually simplify parts | Mostly separate; same scene declaration describes both physical affordance and allowed control domain |
@@ -265,13 +268,15 @@ The RTT path directly creates `THREE.WebGLRenderTarget` and `THREE.ShaderMateria
 
 ### Physical optics vs presentation
 
-- Canonical focus planes, image distance, lens/film geometry, and coverage remain in core optics.
-- The shader reconstructs per-pixel world position and calculates physical CoC/footprint on the GPU. Physical values are stored in millimetres using a supported float target or encoded-byte representation; gather/display applies the visual scale and pixel cap later.
-- `displayBlurScale`, maximum display radius, render quality, inspection crop, Raw/Upright flip, and diagnostic bypass are presentation/render policy. They do not mutate `DerivedOpticsState` physical planes.
-- The exact global multiplier `16` is a known unstable correction target and must not be treated as an architecture decision.
+- **Physical authority:** Core optics supplies lens and film geometry, aperture, image distance, focus/DOF planes, and physical focus metrics. The active RTT shader reconstructs world position and derives a per-pixel physical CoC or local-affine footprint in millimetres from canonical lens/aperture/film inputs.
+- **Renderer conversion:** The shader maps physical millimetres through `sampledFilmWidthMm`/height into RTT source pixels, gathers samples, then composites and displays the result. For a parallel circular CoC, visible radius follows `physicalCoCDiameterMm × visibleGroundGlassWidthPx / sampledFilmWidthMm / 2`.
+- **No display gain:** There is no active normal-view teaching blur multiplier after #204. A larger displayed Ground Glass naturally makes the same physical blur occupy more display pixels; render quality changes internal RTT resolution, which is mapped back to the visible size.
+- **Storage:** Half-float targets store signed CoC and footprint millimetres directly. Encoded-byte fallback stores normalized representations that decode back to physical millimetres: byte 128 is neutral, lower codes represent negative values, higher codes positive values. Its normalization range is derived from the physical CoC needed to reach the renderer's source-pixel gather cap. Footprint major/minor radii share a representational scale, preserving anisotropy as far as byte quantization allows. This storage normalization is representational, not optical.
+- **Focus Loupe:** The loupe changes the inspected physical film crop, not CoC. At the same display width, sampling approximately one quarter of the film width makes the same physical footprint appear approximately four times larger through ordinary mm-to-pixel conversion.
+- **Renderer limits and presentation:** `maximumBlurRadiusPx` is a gather/performance-quality cap applied after physical conversion; it can truncate very large blur but does not define ordinary CoC. Render quality, target format, Focus Loupe crop, Raw/Upright display transform, and diagnostic bypass are renderer/presentation concerns and do not alter canonical physical optics.
 - `rawDebug` is a separate development bypass that uses scene color without the DOF/coverage processing. Raw Ground Glass orientation remains a user presentation mode and still uses the postprocess composite.
 - Table Tilt gets derived-plane Ground Glass semantics from the canonical `isTableTilt || dofResultGlobal?.depthOfFieldModel === "scheimpflug-wedge"` branch in `deriveOpticsState.ts`; its renderer visual setting is `planeMode: "automatic"`. Shelf Swing is the renderer-side exception: `groundGlassVisualSettings.ts` selects `planeMode: "derived-planes"` even at neutral/zero swing, and `resolveGroundGlassDisplayOpticsState()` copies that presentation choice into `DerivedOpticsState.diagnostics.groundGlassDofModel`. The underlying planes are unchanged. This Shelf Swing path is the renderer-to-domain-diagnostics leak to clean up.
-- The CPU `groundGlassBlur` and GLSL CoC implementations are parallel implementations of pixel blur calculations. The CPU path is useful for readouts/tests; it is not proof that the active GPU pass matches for every boundary case. Keep parity evidence and identify one physical input contract before backend migration.
+- The active GPU Ground Glass pass uses the physical aperture/lens/film footprint kernel. The CPU `groundGlassBlur` helper remains a diagnostic/teaching path with historical derived-plane/wedge model selection; do not claim all CPU and GPU focus/blur paths have converged. Resolve whether those paths are physical requirements, teaching adapters, compatibility history, or redundant legacy behavior in a separate convergence diagnosis.
 
 ### Resource/lifecycle and fallback boundary
 
@@ -306,9 +311,9 @@ One smaller naming trap is `CameraBodyLocalGeometry.rearStandardFrameLocal: Stan
 
 The 3D overlay builder resolves physical coverage from `opticsState.groundGlassCoverage` and the rear-standard frame. Its source comment explicitly separates lens capability from layer visibility; scene kind is not a geometry input. The same global geometry resolver distinguishes parallel Image Circle and non-parallel Coverage Footprint. Focus plane, DOF planes and construction geometry likewise consume canonical optics.
 
-The visibility path is separate: `SceneViewport` reads the global `ui.showOpticalGeometry`; task initial state can set that preference; separate focus/DOF toggles feed `SceneRenderer`; Lesson 0 can suppress/override camera-local teaching visuals. Hiding a layer does not delete the physical coverage state, while showing it cannot fabricate coverage for an unbounded profile.
+The visibility path is separate: `SceneViewport` reads the global `ui.showOpticalGeometry`; task initial state can set that preference; separate focus/DOF toggles feed `SceneRenderer`; Lesson 0 can suppress/override camera-local teaching visuals. Hiding a layer does not delete the physical coverage state, while showing it cannot fabricate coverage for an unbounded profile. Published lens choices now all supply finite catalog capability; unknown focal lengths can still be unbounded.
 
-The canonical path is scene-agnostic after the scene has contributed valid inputs to `DerivedOpticsState`. That is a healthy shared feature boundary. The current Mirror Shift 120 mm behavior is excluded as an unstable catalog data result (§8).
+The canonical path is scene-agnostic after the scene has contributed valid inputs to `DerivedOpticsState`. Mirror Shift is positive evidence: its 120 mm finite profile produces a parallel-circle state and shared physical Image Circle without scene-specific renderer logic (§8).
 
 ## 13. Scene-specific exceptions
 
@@ -348,27 +353,39 @@ The main weakness is again distributed scene presentation policy: geometry profi
 
 There are two R3F/Three presentation surfaces: the main observer Canvas and an inner Ground Glass RTT Canvas. Both use the same Three.js ecosystem, but ownership differs. The observer renders the subject and canonical camera hierarchy; Ground Glass owns offscreen scenes, camera, render-targets, physical CoC and gather/composite shaders, and diagnostic readback. WebGL availability is checked at the viewport boundary. No backend interface currently separates capability discovery, target allocation, shader/pass execution, readback, and lifecycle from the WebGL implementation.
 
-The largest domain-to-renderer crossing is the GPU CoC shader that turns canonical planes/focus geometry into a per-pixel visual blur. This is expected to be rendering math, but it has a parallel CPU helper and shader implementation and must retain a clear physical input contract.
+The largest domain-to-renderer crossing is the GPU shader that reconstructs world position and turns canonical lens/film/aperture inputs into a per-pixel physical footprint. That is expected rendering work. The CPU `groundGlassBlur` diagnostic still has historical derived-plane/wedge model selection and is not a claim of full CPU/GPU convergence; the active GPU pass uses the physical footprint kernel.
 
 The renderer-to-domain crossing is specifically Shelf Swing's display-policy path: `groundGlassVisualSettings.ts` selects `planeMode: "derived-planes"`, then `resolveGroundGlassDisplayOpticsState()` copies that choice into `DerivedOpticsState.diagnostics.groundGlassDofModel`. Table Tilt's same derived-plane output is selected canonically in `deriveOpticsState.ts`; it is not evidence for this leak. Keep the Shelf Swing presentation hint out of canonical optics diagnostics.
 
-Renderer quality changes RTT dimensions, gather scale/sample count and caps; render target format changes storage encoding. These are visual/representational choices, not changes to physical focus or lens coverage. The current renderer diagnostics expose backend/runtime behavior, but the availability gate and diagnostics are still WebGL-oriented.
+Renderer quality changes internal RTT dimensions and gather sampling policy; render target format changes storage encoding. The direct sampled-film-to-RTT conversion preserves the visible physical blur scale at the same CSS viewport size. These remain implementation choices, not changes to physical focus or lens coverage. The current renderer diagnostics expose backend/runtime behavior, but the availability gate and diagnostics are still WebGL-oriented.
 
 ## 18. WebGPU readiness
 
 ### Direct answers
 
-1. **Can migration begin after the corrective PR?** Yes, as a staged project. The observer Three/R3F surface and backend capability/diagnostic inventory can be evaluated without redesigning canonical optics. Treat the active Ground Glass pipeline as a gated stage until its backend contract and orientation tests are explicit.
-2. **Which subsystem first?** Start with the observer renderer's backend capability/initialization boundary, since it is the simpler presentation path and exercises coexistence/diagnostics without porting the Ground Glass postprocess.
+1. **What follows this architecture refresh?** Complete the DOF/Focus Physics Convergence diagnosis below before Ground Glass backend work. The observer capability/diagnostic inventory can proceed as preparation without changing canonical optics.
+2. **Which subsystem first?** After the convergence diagnosis and any justified cleanup, start with the observer renderer's backend capability/initialization boundary; it is the simpler presentation path and exercises coexistence/diagnostics without porting the Ground Glass postprocess.
 3. **Which subsystem last?** Ground Glass CoC, near/far gather, and composite. It is the highest backend-specific risk and should move only after its physical input, UV, resource, fallback, and teardown contracts are stable.
 4. **Is Ground Glass the highest backend-specific risk?** Yes. It directly owns WebGL render-target formats, custom GLSL, depth textures, multiple passes, pixel readback, timer-query profiling and render-target lifecycle.
 5. **Does canonical optics need architectural work first?** No broad rewrite. Preserve `deriveOpticsState`, coverage types, camera rig transform and physical coordinate authority. Address the small cache dependency and diagnostics leak in focused changes where convenient.
 6. **Do scenes need a new abstraction first?** No. Existing definition, publication, task and subject contracts are sufficient to begin staged migration; registry consistency tests should remain in place.
 7. **Can WebGL fallback coexist?** Reasonably, if backend/capability selection and diagnostics are explicit per surface, and each backend is held to the same physical input and output contracts. The repository currently has no seam that proves this coexistence, so it is a migration deliverable rather than an existing capability.
 
+### DOF / Focus Physics Convergence Diagnosis
+
+This is a focused follow-up diagnosis, not an instruction to delete scene branches. Determine whether the current paths represent physical-model requirements, teaching-only presentation policy, compatibility/stabilization history, or redundant legacy behavior now superseded by the active physical blur kernel. Inspect:
+
+- Table Tilt's canonical derived-plane branch;
+- Shelf Swing's renderer-side `planeMode: "derived-planes"` override and diagnostics copy;
+- Architecture Rise fallback/special handling;
+- Focus Fundamentals' selected-standard focusing strategy;
+- CPU `groundGlassBlur` diagnostics versus the active GPU physical footprint path.
+
+The target question is how to retain one physical camera/lens/film authority with explicit teaching presentation adapters. Do not infer that every scene-specific path should be removed. This diagnosis precedes any Ground Glass backend contract or WebGPU implementation so historical duplicate semantics are not frozen into multiple backends.
+
 ### Practical gate
 
-Before implementation of the Ground Glass WebGPU backend, establish a narrow contract for the existing pass sequence and resource ownership, including format fallback and current Raw/Upright/film-coordinate tests. Do not couple that work to changes in lens physics, camera assembly, or photorealistic assets. Keep WebGL and WebGPU adapters able to coexist during a bounded transition if runtime/browser capability supports it; do not claim fallback exists until it is implemented and tested.
+After the convergence diagnosis, make only cleanup changes that are justified by its evidence. Then establish a narrow contract for the existing Ground Glass pass sequence and resource ownership, preserving physical CoC/footprint, sampled-film mapping, encoded-byte fallback, gather-cap semantics, Focus Loupe crop, and Raw/Upright/film-coordinate tests. Do not couple that work to changes in lens physics, camera assembly, or photorealistic assets. Keep WebGL and WebGPU adapters able to coexist during a bounded transition if runtime/browser capability supports it; do not claim fallback exists until it is implemented and tested.
 
 ## 19. Test architecture
 
@@ -404,12 +421,14 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 | Canonical optics is derived before presentation and feeds all views | `selectDerivedOpticsState`, `deriveOpticsState`, `DerivedOpticsState` consumers | Core optics and cross-view tests; renderer adapters may convert units/coordinates |
 | Camera world placement/body pitch has one simulator-owned rendered root | `renderConceptualViewCamera()` hierarchy and canonical `cameraRigTransform` | `cameraRigTransformOptics.test.ts`, `conceptualViewCamera.test.tsx`; ghost uses a renamed parallel root with same transform |
 | Scenes do not position camera subparts through current subject APIs | `SceneSubjectRegistration` receives scene/subject options, not camera geometry; camera built by `SceneRenderer` sibling | Registry and camera tests; executable code is not sandboxed from arbitrary Three operations |
-| Lens coverage capability is resolved once and downstream views consume derived state | `lensCatalog`, `deriveLensCoverage`, `deriveGroundGlassCoverage`, overlay and mask adapters | lens/coverage rendering tests; published lens data pending correction |
+| Lens coverage capability is resolved once and downstream views consume derived state | `lensCatalog`, `deriveLensCoverage`, `deriveGroundGlassCoverage`, overlay and mask adapters | catalog and coverage tests; four published finite teaching profiles are explicit, unknown lengths remain unbounded |
 | Lens reference circle and actual film-plane coverage remain distinct | `DerivedLensCoverage` vs `GroundGlassCoverageState` types and derivation comments | unit tests for parallel circle and non-parallel conic |
 | Overlay visibility cannot change physical optics | global UI state feeds `SceneRenderer`; coverage geometry comes from derived state | overlay tests; lesson presentation can suppress visual layer |
 | Physical film UV is independent of Raw/Upright display mode | identity texture-to-film map; display transform is applied in composite | asymmetric orientation and camera projection tests |
-| Display blur/quality/storage does not change canonical focus planes | RTT settings and shader uniform adaptation consume derived optics | CPU/shader tests and RTT stability E2E; exact scale is pending correction |
-| CoC storage fallback is representational | `groundGlassCocTarget` chooses float/encoded-byte storage, shader decode restores millimetres | forced target-mode tests; real driver coverage still varies |
+| Ground Glass blur preserves physical scale through presentation | Physical mm footprint is converted through sampled film dimensions to RTT/display pixels; Focus Loupe narrows the crop | physical-scale, quality-parity, loupe-crop, shader and browser diagnostics; no hidden normal-view gain |
+| Display/quality policy does not change physical CoC, sharpness, or focus planes | Readouts and planes remain canonical; the RTT maps their physical blur to its sampled film and visible viewport | physical-scale and render-quality parity tests; display size changes visible pixel radius naturally |
+| Renderer gather cap does not redefine optical CoC | `cocDiameterMmToGatherRadiusPx` converts first, then applies the renderer radius cap | shader comments and scale tests; extreme blur can be truncated for quality/performance |
+| CoC storage fallback is representational | `groundGlassCocTarget` chooses float/encoded-byte storage; shader decode restores physical millimetres | forced encoded-byte RTT and storage tests; real driver coverage still varies |
 | RTT resources are disposed by their owner | `GroundGlassRTT` owns post targets/materials; scene registration provides subject disposer | RTT resource and subject registry lifecycle tests |
 | Public scenes require both subject and RTT contracts | `sceneSubjectRegistry.test.tsx` and route/publication validation | Exact key-set and every-available-scene assertions |
 | Lesson and overlay state are presentation/task policy, not lens physics | task initial state and UI store; `LensControl` uses a presentation adapter | route/task tests; `SceneMovementCapabilities` combines some UI policy with capability |
@@ -422,9 +441,9 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 | Scene definitions | Healthy with exceptions | Typed declarations and separate publication/task gates; behavior is also keyed by ID across maps |
 | Camera assembly | Healthy | Shared simulator-owned root, local geometry, canonical rig transform, ghost reuse |
 | Canonical optics | Healthy with exceptions | One producer; deliberate special-case paths and Mirror Shift cache key gap |
-| Lens coverage | Healthy | Explicit definition → reference circle → actual film state; snapshot catalog values pending correction |
-| Ground Glass physical pipeline | High architectural risk | Physical inputs are canonical, but active CoC/gather/composite is direct WebGL/GLSL and format/resource-specific |
-| Ground Glass presentation pipeline | Needs boundary cleanup | Stage interactions are identifiable; scene blur settings and display-model hint cross into optics diagnostics |
+| Lens coverage | Healthy | Explicit published simulator profiles → reference circle → actual film state; unknown lengths retain the unbounded fallback |
+| Ground Glass physical pipeline | High architectural risk | The physical scale contract is explicit and active RTT maps canonical footprints through sampled film dimensions; CoC/gather/composite remain direct WebGL/GLSL and target/resource-specific, while CPU diagnostics retain historical model selection |
+| Ground Glass presentation pipeline | Needs boundary cleanup | No global teaching multiplier remains; crop, quality, byte storage, gather caps and display transforms remain renderer-owned, and Shelf Swing's model hint still crosses into diagnostics |
 | Coordinate transforms | Healthy with exceptions | Helpers and asymmetric tests exist; several conversions cross core/Three/WebGL/CSS and legacy local fields are mislabeled |
 | Global optical overlays | Healthy | Consume canonical state; visibility policy remains distinct |
 | Scene subject registration | Needs boundary cleanup | Explicit registration and disposer/test contracts, but parallel React/imperative subject graphs can drift |
@@ -440,13 +459,17 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 
 ### Must fix before WebGPU migration
 
-**M1 — Define a renderer-neutral Ground Glass pass/resource contract before porting the active RTT.** `GroundGlassRTT` owns WebGL target creation/format probing, direct `gl` execution, GLSL programs, readback, timer-query profiling, and cleanup. Porting it without a pass/resource boundary would duplicate lifecycle and physical display policy in a second backend. This is a migration gate for the Ground Glass stage, not a reason to delay observer/backend discovery or to rewrite optics.
+**M1 — Define a renderer-neutral Ground Glass pass/resource contract before porting the active RTT.** `GroundGlassRTT` owns WebGL target creation/format probing, direct `gl` execution, GLSL programs, readback, timer-query profiling, and cleanup. Porting it without a pass/resource boundary would duplicate lifecycle and physical presentation behavior in a second backend. Preserve the physical CoC/footprint, sampled-film-to-pixel mapping, encoded-byte fallback, gather-cap semantics, Focus Loupe crop, and Raw/Upright contract. Complete the DOF/Focus Physics Convergence diagnosis first; this gate does not require rewriting canonical optics.
 
 ### Should fix before realistic lighting/material expansion
 
 **S1 — Make observer/RTT subject parity and resource ownership explicit before adding complex scene geometry.** The registry pairs `SceneSubject` with a separate `createRttGroup` and optional disposer. This is a reasonable current adapter, but each richer mesh/material/texture/shadow behavior creates two implementations to keep visually aligned. Strengthen the contract or parity checks while retaining separate object graphs.
 
 **S2 — Consolidate scene look ownership across viewport and RTT before adding richer lighting/materials.** The teaching light recipe is shared, but scene target/offsets and shadow participation are separately resolved, and subject modules own many materials. Without a small deliberate look contract, later realism will amplify scene and backend-specific drift.
+
+### Follow-up diagnosis before renderer migration
+
+Complete the **DOF / Focus Physics Convergence Diagnosis** described in §18 after this audit refresh. It should classify the Table Tilt, Shelf Swing, Architecture Rise, Focus Fundamentals, and CPU diagnostic paths before recommending only the cleanup justified by evidence. This is a diagnosis first, not a request to remove scene-specific behavior.
 
 ### Small cleanup / maintainability
 
@@ -462,13 +485,15 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 
 - Core optics has multiple paths and scene branches, but current branches are domain behaviors with central output and tests. Do not flatten them without a failing parity case.
 - A secondary non-RTT Ground Glass pipeline computes a projection from the canonical matrix while active public scenes configure the RTT camera from physical film corners. Confirm whether the alternate path remains supported before investing in convergence.
-- Exact blur multiplier and current 90/105/120 profiles are concurrent product corrections, not architecture findings.
+- Scene-specific focus/DOF branches and CPU diagnostic versus active GPU physical-footprint behavior remain a follow-up convergence diagnosis; do not flatten them without determining which semantics are physical, pedagogical, or legacy.
 - Separate observer and RTT object graphs are an acceptable implementation constraint; share contracts/resources where intended, not live Three objects across two scene owners.
 
 ## 23. Things that should remain unchanged for now
 
 - **Keep `deriveOpticsState` as the physical authority.** It already centralizes the scene-to-camera physical derivation and supplies common values to the renderer, 2D view, Ground Glass and task/readout consumers.
 - **Keep `DerivedLensCoverage` distinct from `GroundGlassCoverageState`.** One represents a perpendicular optical reference circle; the other intersects coverage with the actual film plane. Do not collapse the parallel-circle and tilted-film conic cases.
+- **Keep the physical Ground Glass scale.** Normal rendering maps the physical CoC/footprint through sampled-film millimetres into RTT/display pixels without hidden teaching gain. Use Focus Loupe crop geometry as the explicit inspection magnifier; do not add a scene-specific blur gain.
+- **Keep the four published 90/105/120/150 mm finite profiles as explicit simulator catalog data.** Preserve the common infinity reference circle as a teaching-family choice, not as a focal-length law in the optics engine; unknown positive focal lengths remain `unbounded-ideal` until explicitly defined.
 - **Keep the shared camera rig root and camera part hierarchy from #202.** No further assembly abstraction is justified by the current evidence.
 - **Keep scene subject registration and explicit RTT disposal.** Improve parity contracts without coupling the observers' object graphs or weakening lifecycle ownership.
 - **Keep LensControl as a presentation adapter.** It reads canonical lens definitions and does not duplicate coverage physics.
@@ -486,15 +511,15 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 
 **Why this matters:** WebGPU needs separate implementation of targets/shaders/passes, but must preserve physical CoC inputs, coverage, fallback, diagnostics and disposal.
 
-**Why now / why later:** Do this before porting Ground Glass; after the current product correction and after the observer backend exploration proves the desired capability/diagnostic shape.
+**Why now / why later:** Do this before porting Ground Glass and after the DOF/Focus Physics Convergence diagnosis and any justified narrow cleanup.
 
-**Scope:** Extract the smallest current pass/resource contract from actual `GroundGlassRTT` responsibilities; keep the WebGL adapter behavior unchanged; expose per-surface capability and lifecycle diagnostics; preserve fallback and ownership tests.
+**Scope:** Extract the smallest current pass/resource contract from actual `GroundGlassRTT` responsibilities; keep the WebGL adapter behavior unchanged; expose per-surface capability and lifecycle diagnostics; preserve physical CoC/footprint → sampled-film-pixel mapping, encoded-byte fallback, gather-cap semantics, Focus Loupe crop, Raw/Upright output, and ownership tests.
 
-**Dependencies:** Corrective PR merge for final baseline; no optics refactor.
+**Dependencies:** Final #203 architecture refresh and the convergence diagnosis; no optics refactor.
 
 **Risk:** High, because RTT lifecycle and shader behavior are coupled. Keep behavior-preserving and separate from WebGPU implementation.
 
-**Non-goals:** Rewrite optics, change blur calibration, add WebGPU shaders, or redesign scenes.
+**Non-goals:** Rewrite optics, alter the physical blur mapping or add a gain, add WebGPU shaders, or redesign scenes.
 
 ### PR B — Add the first alternate renderer backend at the observer boundary
 
@@ -502,7 +527,7 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 
 **Why this matters:** Observer rendering can establish backend selection, failure reporting, and WebGL fallback with less pass complexity than Ground Glass.
 
-**Why now / why later:** First implementation slice after contract discovery; Ground Glass remains on WebGL until PR A is in place.
+**Why now / why later:** First backend implementation slice after the convergence diagnosis and contract discovery; Ground Glass remains on WebGL until PR A is in place.
 
 **Scope:** Add capability detection/diagnostics and a bounded observer-backend implementation behind the agreed seam; prove both current WebGL and alternate path can render a representative scene.
 
@@ -518,11 +543,11 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 
 **Why this matters:** Backend projection/texture conventions can invert or offset Image Circle, Raw/Upright, or coverage data.
 
-**Why now / why later:** Before the Ground Glass backend port; safe to prepare in parallel with PR A/B if the changes stay in core type names and coordinate tests.
+**Why now / why later:** After the convergence diagnosis and before the Ground Glass backend port; keep changes limited to existing coordinate boundaries and tests.
 
 **Scope:** Document/encode existing conversion boundaries, tighten asymmetric film-point tests, and perform a narrowly scoped naming cleanup if callsite migration remains mechanical.
 
-**Dependencies:** None beyond snapshot correction; must land before Ground Glass backend conformance work.
+**Dependencies:** Convergence diagnosis; must land before Ground Glass backend conformance work.
 
 **Risk:** Medium due many consumers of legacy names; do not change physical convention or equation.
 
@@ -534,11 +559,11 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 
 **Why this matters:** Direct state callers can violate the store's current paired-field update and receive stale optics.
 
-**Why now / why later:** Small correctness/maintainability change; can run in parallel with renderer contract work.
+**Why now / why later:** If the convergence diagnosis confirms this selector gap remains actionable, include it among the narrow cleanup changes before renderer/backend implementation.
 
 **Scope:** Include the field in the key or reduce derivation to one canonical placement field, then verify selector invalidation without changing store behavior.
 
-**Dependencies:** None.
+**Dependencies:** DOF / Focus Physics Convergence diagnosis; do not broaden into a Mirror Shift lesson refactor.
 
 **Risk:** Low if limited to key dependencies; shared-state contract should be made explicit.
 
@@ -564,17 +589,21 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 
 ```mermaid
 flowchart LR
-  CORR[Concurrent calibration/catalog correction] --> A[PR A: Ground Glass contract]
-  CORR --> B[PR B: observer backend boundary]
-  CORR --> C[PR C: film/texture coordinate contract]
+  P204[PR #204 merged] --> P203[PR #203 final architecture refresh]
+  P203 --> DIAG[DOF / Focus Physics Convergence diagnosis]
+  DIAG --> CLEAN[Only justified narrow cleanup]
+  CLEAN --> A[PR A: Ground Glass contract]
+  CLEAN --> B[PR B: observer backend boundary]
+  CLEAN --> C[PR C: film/texture coordinate contract]
   C --> A
   A --> GG[Ground Glass WebGPU implementation]
   B --> GG
-  D[PR D: selector dependency cleanup]
-  E[PR E: scene look/subject parity] --> REAL[Realistic lighting/material expansion]
+  CLEAN --> D[PR D: selector dependency cleanup, if still needed]
+  GG --> E[PR E: scene look/subject parity]
+  E --> REAL[Realistic lighting/material expansion]
 ```
 
-PR C and PR D can proceed in parallel with the observer boundary once the correction baseline is available. PR E is independent of WebGPU and can proceed in parallel, but realistic visual expansion should wait for it. Ground Glass backend implementation follows A, B, and C. These are candidate boundaries, not a mandate to create five PRs if a smaller vertical slice is reviewable.
+The sequence is #204 merged → #203 final refresh → DOF / Focus Physics Convergence diagnosis → only necessary small cleanup → renderer/backend architecture work. PR A, B, and C are candidate boundaries, not a mandate to create separate PRs if a smaller vertical slice is reviewable. Ground Glass backend implementation follows the physical convergence input and its pass/resource and coordinate contracts. PR E remains a prerequisite for richer visual expansion, not for optics or backend discovery.
 
 ## 25. Current vs target architecture
 
@@ -583,15 +612,15 @@ PR C and PR D can proceed in parallel with the observer boundary once the correc
 | Scene ownership | Typed `SceneDefinition`; executable subjects/policies in separate maps | Scene declaration for physical inputs/capabilities/presentation, renderer subject adapter separate | Search-heavy ID dispatch; current API does keep subjects away from camera state | Cleanup when repeated drift appears |
 | Camera assembly | Shared root and rig-local children after #202 | Simulator owns one canonical part hierarchy and rig transform | Calibrated vs generic support rail; legacy local names | No assembly rewrite; names can be cleaned |
 | Canonical optics | Central `deriveOpticsState` with domain helpers | One physical derivation; adapters only project/encode/display | Scene special branches and latent selector key dependency | Preserve; fix narrow dependency issue |
-| Lens coverage | Explicit lens spec → reference-plane coverage → actual film state | One coverage authority for all renderers | Current published data is being corrected | Recheck after correction; architecture healthy |
-| Ground Glass | Canonical physics feeds direct WebGL/GLSL multipass | Physical contract plus backend-owned pass/resource implementation | No backend seam; renderer DOF hint leaks into diagnostics | Highest priority before Ground Glass migration |
+| Lens coverage | Explicit finite published simulator profile → reference-plane coverage → actual film state | One coverage authority for all renderers; unknown lengths remain unbounded unless catalogued | No current product gap; backend consumers remain renderer-specific | Healthy; preserve explicit catalog policy |
+| Ground Glass | Canonical physical CoC/footprint maps through sampled-film dimensions to direct WebGL/GLSL multipass | Physical mm-to-pixel contract plus backend-owned pass/resource implementation | No backend seam; CPU diagnostic path retains historical model selection; Shelf Swing hint leaks into diagnostics | Convergence diagnosis, then contract, before Ground Glass migration |
 | Coordinate transforms | Explicit helpers across mm, rig-local, film UV, Three meters, WebGL and CSS | Named conversion boundaries with asymmetric conformance tests | Cross-module chain and legacy `*World` names | Before alternate Ground Glass backend |
-| Global overlays | Shared derived geometry and separate visibility | Global feature consumes canonical capability/state; lesson owns visibility | No material gap; snapshot lens capability is unstable | Healthy |
+| Global overlays | Shared derived geometry and separate visibility | Global feature consumes canonical capability/state; lesson owns visibility | No material gap; published finite lens capability now reaches Mirror Shift through shared state | Healthy |
 | Subject registration | Paired React subject/imperative RTT factory and disposer | Explicit per-view adapter/parity and ownership | Two graphs can drift | Before major scene complexity |
 | Lighting | Shared recipe; distinct viewport/RTT placements and shadows | Scene look ownership with explicit renderer placements | Split policy and overrides | Before realistic expansion |
 | Materials | Shared teaching helpers plus local subject/camera materials | Deliberate shared/per-scene ownership across views | Incomplete look package/parity | Before realistic expansion |
 | 2D Geometry | Canonical optics projected by separate diagram adapter | Adapter-only geometry and presentation profile | Scene ID-keyed window/presentation choices | Healthy with cleanup opportunity |
-| Renderer backend | Three/R3F observer and WebGL Ground Glass | Backend capability/resource/pass seams | No current alternate backend contract | Start staged migration after correction |
+| Renderer backend | Three/R3F observer and WebGL Ground Glass | Backend capability/resource/pass seams that preserve physical blur, storage, crop, orientation and lifecycle | No current alternate backend contract; physical DOF path semantics need focused diagnosis first | After convergence diagnosis and justified cleanup |
 | Tests | Numerical, mocked renderer, browser tests and diagnostics | Independent physical and public-view oracle for each backend | Mocked tests cannot prove GPU equivalence | Preserve/extend at migration gates |
 
 ### Target diagram grounded in current code
@@ -622,33 +651,48 @@ The alternate backend is a future target only. The current implementation has di
 
 ## 26. Post-corrective-PR delta refresh
 
-**Status: Pending.** No corrective PR was present in the remote PR listing during the initial audit. The diagnosis PR must remain open and must not be presented as complete until the corrective PR lands and this section is populated.
+**Status: Complete.** This focused delta review was performed against the merged #204 implementation on refreshed `origin/main`. The initial audit remains pinned to its original snapshot for traceability.
 
 | Required record | Value |
 |---|---|
 | Previous audit snapshot SHA | `1d6f68b4bdd6350e843b4bd7338ae483ae52b1f2` |
-| Corrective PR number / branch | Pending PR creation/identification |
-| Corrective merge SHA | Pending |
-| Final refreshed `main` SHA | Pending |
-| Diagnosis branch commit after refresh | Pending |
+| Corrective PR number / branch | #204 — `fix/ground-glass-blur-and-lens-coverage-calibration` (merged) |
+| Corrective merge SHA | `fce2ac19dd40f48ac9e6a827e933fd9cb5af76e3` |
+| Final refreshed `main` SHA | `fce2ac19dd40f48ac9e6a827e933fd9cb5af76e3` |
+| Diagnosis branch commit after refresh | Published PR #203 head; exact SHA is recorded in the PR handoff |
 
-On merge, fetch `origin/main`, rebase/refresh this documentation branch, inspect the corrective diff and revise only affected sections. Specifically verify:
+### Ground Glass
 
-- the old fixed global 16× scale is no longer described as a target;
-- physical CoC remains canonical and display calibration remains presentation policy;
-- encoded-byte storage range follows actual display calibration and decodes back to physical millimetres;
-- published 90/105/120/150 mm profile policy is accurately described;
-- Mirror Shift receives finite coverage naturally from canonical state when its selected catalog profile is finite;
-- the 3D Image Circle/Coverage Footprint and Ground Glass mask remain scene-agnostic consumers of shared derived coverage;
-- unknown focal length fallback remains an intentional catalog policy;
-- new correction regressions support the architecture claims.
+- The fixed 16× multiplier and temporary acceptable-CoC-to-1-CSS-pixel normalization are removed.
+- Active normal-view Ground Glass uses physical scale: physical CoC/local-affine footprint in millimetres → sampled-film millimetres → RTT pixels → visible display.
+- Focus Loupe magnifies geometrically by reducing the physical film crop; it does not change CoC or apply an independent blur multiplier.
+- `maximumBlurRadiusPx` remains a renderer gather/performance-quality cap after physical conversion, not an optical input.
+- The published 90/105/120/150 mm profiles remain at 100.8982256313°, 92.1318668688°, 84.4900859515°, and 72°, respectively; their common infinity reference Image Circle is approximately 217.962758 mm by simulator-family design.
 
-Then rerun `npm run typecheck`, `npm test`, `git diff --check`, and `git status --short`. Confirm the audit branch still changes only this Markdown document.
+### Storage
+
+- Half-float stores signed CoC/footprint physical millimetres directly.
+- Encoded-byte stores normalized representations that decode to physical millimetres; neutral CoC is byte 128, lower codes preserve one sign and higher codes the other.
+- Footprint major/minor radii use a common representational range, preserving anisotropy subject to quantization. The byte range is derived from the physical CoC needed to reach the source-pixel gather cap; storage normalization is not optical normalization.
+
+### Lens catalog and Mirror Shift
+
+- The published 90/105/120/150 mm choices have explicit finite simulator teaching profiles; unknown positive focal lengths remain `unbounded-ideal` unless added to the catalog.
+- Mirror Shift's 120 mm profile flows through `DerivedLensCoverage` angular → `GroundGlassCoverageState` parallel-circle at neutral geometry → shared Ground Glass and 3D Image Circle rendering. No scene-specific overlay override was needed.
+- `DerivedLensCoverage` remains distinct from the actual film-plane coverage conic/circle; natural illumination remains a separate feature.
+
+### Architecture conclusion
+
+The correction validated rather than weakened the original architecture: canonical optics and coverage remained reusable while product catalog data and renderer presentation were corrected independently. The Table Tilt canonical derived-plane path and Shelf Swing renderer-side `derived-planes` policy remain distinct; #204 did not solve their convergence. The focused DOF/Focus Physics Convergence diagnosis is now recorded as an input before renderer migration.
+
+The current source and regression evidence inspected includes `groundGlassPhysicalScale.test.ts`, `groundGlassCocTarget.test.ts`, `physicalBlurFootprintStorage.test.ts`, `GroundGlassRTT.test.ts`, `groundGlassInspectionWindow.test.ts`, `lensCoverage.test.ts`, `groundGlassVisualSettings.test.ts`, `mirror-shift-teaching-geometry.spec.ts`, `lens-catalog-ui.spec.ts`, and `architecture-rise-focus-range.spec.ts`.
+
+Validation on the refreshed branch: `npm run typecheck` passed; `npm test` passed with 215 files and 2,061 tests; `git diff --check` passed. The branch diff remains limited to this Markdown document.
 
 ## 27. Conclusion
 
-The simulator has a sound core boundary: scenes supply inputs and teaching intent; `CameraState` and `deriveOpticsState()` own physical state; the simulator owns a shared camera assembly; global 3D and Ground Glass coverage consume canonical derived state; and UI visibility is separate from physical capability. These boundaries already prevent many scene-local fixes from being required in every renderer.
+PR #204 confirmed that the canonical optics and coverage boundaries survived the corrections without a broad rewrite. Scenes supply inputs and teaching intent; `CameraState` and `deriveOpticsState()` own physical state; the simulator owns the shared camera assembly; global 3D and Ground Glass coverage consume canonical derived state; and UI visibility stays separate from physical capability. Ground Glass now has a clearer physical/presentation separation: normal blur follows physical scale, encoded storage remains representational, and the Focus Loupe supplies geometric inspection magnification.
 
-The largest architectural constraint is the active Ground Glass implementation's direct WebGL/Three ownership, followed by the two subject/light/material representations that will matter as scenes become visually richer. Coordinate handling is a high-sensitivity seam, but existing asymmetric projection and Raw/Upright tests provide a useful base. No broad optics, camera assembly, scene-schema, or lens-coverage rewrite is warranted by this snapshot.
+The active Ground Glass renderer's direct WebGL/Three ownership remains the largest WebGPU migration concern. Complete the DOF/Focus Physics Convergence diagnosis before backend work, so migration does not duplicate unresolved historical scene-specific focus/DOF semantics. Coordinate handling is a high-sensitivity seam, but existing asymmetric projection and Raw/Upright tests provide a useful base. No broad optics, camera assembly, scene-schema, or lens-coverage rewrite is warranted.
 
-The correction merge is still a required audit gate. Until the delta review in §26 is completed and the diagnosis PR is refreshed, this report is an initial snapshot diagnosis rather than a final architecture sign-off.
+This is the final architecture diagnosis for the refreshed `main` baseline; it identifies focused follow-up work without recommending broad renderer, camera, scene-schema, or optics rewrites.
